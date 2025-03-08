@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X.com Enhanced Image Gallery
 // @namespace    https://github.com/PiesP/xcom-enhanced-gallery
-// @version      0.9.0
+// @version      0.9.1
 // @description  Enhanced image viewer for X.com that displays original-sized images in a vertical gallery with adjustable view modes and batch download options.
 // @match        https://x.com/*
 // @match        https://twitter.com/*
@@ -313,12 +313,12 @@
             this.id = '';
             this.imageUrls = [];
         }
-
+    
         extractFromTweet(tweetElement) {
             try {
                 const userMatch = tweetElement.querySelector('a[href^="/"]');
                 this.user = userMatch ? userMatch.getAttribute('href').split('/')[1] : _('unknownUser');
-                this.id = (window.location.href.match(/status\/(\d+)/) || [])[1] || _('unknownID');
+                this.id = this.extractTweetIdFromElement(tweetElement) || _('unknownID');
                 this.imageUrls = this.getAllImagesFromTweet(tweetElement);
                 return this.imageUrls.length > 0;
             } catch (e) {
@@ -326,7 +326,83 @@
                 return false;
             }
         }
-
+    
+        extractTweetIdFromElement(tweetElement) {
+            try {
+                // 방법 1: URL에서 추출 (특정 트윗 페이지에서 작동)
+                let tweetId = (window.location.href.match(/status\/(\d+)/) || [])[1];
+                if (tweetId) return tweetId;
+                
+                // 방법 2: 트윗 내 status 링크 찾기
+                const statusLinks = tweetElement.querySelectorAll('a[href*="/status/"]');
+                for (const link of statusLinks) {
+                    const match = link.href.match(/\/status\/(\d+)/);
+                    if (match && match[1]) {
+                        return match[1];
+                    }
+                }
+                
+                // 방법 3: article 요소와 그 데이터 속성 확인
+                const article = tweetElement.closest('article');
+                if (article) {
+                    // 일반적인 데이터 속성 확인
+                    for (const attr of ['data-tweet-id', 'data-item-id']) {
+                        if (article.hasAttribute(attr)) {
+                            return article.getAttribute(attr);
+                        }
+                    }
+                    
+                    // 숫자로만 이루어진 데이터 속성 찾기 (트윗 ID인 경우가 많음)
+                    for (const attr of article.attributes) {
+                        if (attr.name.startsWith('data-') && /^\d+$/.test(attr.value)) {
+                            return attr.value;
+                        }
+                    }
+                }
+                
+                // 방법 4: time 요소 확인 (종종 트윗 ID 또는 타임스탬프가 포함됨)
+                const timeElement = tweetElement.querySelector('time');
+                if (timeElement) {
+                    const timeLink = timeElement.closest('a[href*="/status/"]');
+                    if (timeLink) {
+                        const match = timeLink.href.match(/\/status\/(\d+)/);
+                        if (match && match[1]) {
+                            return match[1];
+                        }
+                    }
+                }
+                
+                // 방법 5: data-testid 속성을 가진 요소 확인
+                const testIdElements = tweetElement.querySelectorAll('[data-testid]');
+                for (const el of testIdElements) {
+                    if (el.dataset.testid === 'tweet') {
+                        const nearbyLinks = el.querySelectorAll('a[href*="/status/"]');
+                        for (const link of nearbyLinks) {
+                            const match = link.href.match(/\/status\/(\d+)/);
+                            if (match && match[1]) {
+                                return match[1];
+                            }
+                        }
+                    }
+                }
+                
+                // 방법 6: 최후의 수단 - 이미지 URL에서 고유 식별자 추출
+                const imgElements = tweetElement.querySelectorAll('img[src*="pbs.twimg.com/media/"]');
+                if (imgElements.length > 0) {
+                    const imgSrc = imgElements[0].src;
+                    const match = imgSrc.match(/\/media\/([A-Za-z0-9_-]+)/);
+                    if (match && match[1]) {
+                        return `img_${match[1]}`; // 실제 트윗 ID가 아님을 표시하는 접두어
+                    }
+                }
+                
+                return null;
+            } catch (e) {
+                console.error("Error extracting tweet ID:", e);
+                return null;
+            }
+        }
+    
         getAllImagesFromTweet(tweetElement) {
             try {
                 return [...tweetElement.querySelectorAll('img[src*="pbs.twimg.com/media/"]')]
