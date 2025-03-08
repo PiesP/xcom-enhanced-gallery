@@ -15,7 +15,7 @@ A UserScript that enhances image viewing on X.com (formerly Twitter) with origin
 ## Installation
 
 1. Install a UserScript manager ([Tampermonkey](https://www.tampermonkey.net/), [Violentmonkey](https://violentmonkey.github.io/), or [Greasemonkey](https://www.greasespot.net/))
-2. [Click here to install](https://github.com/PiesP/xcom-enhanced-gallery/raw/master/xcom-enhanced-gallery.js)
+2. [Click here to install](https://github.com/PiesP/xcom-enhanced-gallery/raw/master/xcom-enhanced-gallery.user.js)
 3. Confirm installation in your UserScript manager
 
 ## Usage
