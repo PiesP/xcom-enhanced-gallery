@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X.com Enhanced Image Gallery
 // @namespace    https://github.com/PiesP/xcom-enhanced-gallery
-// @version      0.9.1
+// @version      0.9.2
 // @description  Enhanced image viewer for X.com that displays original-sized images in a vertical gallery with adjustable view modes and batch download options.
 // @match        https://x.com/*
 // @match        https://twitter.com/*
@@ -329,11 +329,9 @@
     
         extractTweetIdFromElement(tweetElement) {
             try {
-                // 방법 1: URL에서 추출 (특정 트윗 페이지에서 작동)
                 let tweetId = (window.location.href.match(/status\/(\d+)/) || [])[1];
                 if (tweetId) return tweetId;
                 
-                // 방법 2: 트윗 내 status 링크 찾기
                 const statusLinks = tweetElement.querySelectorAll('a[href*="/status/"]');
                 for (const link of statusLinks) {
                     const match = link.href.match(/\/status\/(\d+)/);
@@ -342,17 +340,14 @@
                     }
                 }
                 
-                // 방법 3: article 요소와 그 데이터 속성 확인
                 const article = tweetElement.closest('article');
                 if (article) {
-                    // 일반적인 데이터 속성 확인
                     for (const attr of ['data-tweet-id', 'data-item-id']) {
                         if (article.hasAttribute(attr)) {
                             return article.getAttribute(attr);
                         }
                     }
                     
-                    // 숫자로만 이루어진 데이터 속성 찾기 (트윗 ID인 경우가 많음)
                     for (const attr of article.attributes) {
                         if (attr.name.startsWith('data-') && /^\d+$/.test(attr.value)) {
                             return attr.value;
@@ -360,7 +355,6 @@
                     }
                 }
                 
-                // 방법 4: time 요소 확인 (종종 트윗 ID 또는 타임스탬프가 포함됨)
                 const timeElement = tweetElement.querySelector('time');
                 if (timeElement) {
                     const timeLink = timeElement.closest('a[href*="/status/"]');
@@ -372,7 +366,6 @@
                     }
                 }
                 
-                // 방법 5: data-testid 속성을 가진 요소 확인
                 const testIdElements = tweetElement.querySelectorAll('[data-testid]');
                 for (const el of testIdElements) {
                     if (el.dataset.testid === 'tweet') {
@@ -386,13 +379,12 @@
                     }
                 }
                 
-                // 방법 6: 최후의 수단 - 이미지 URL에서 고유 식별자 추출
                 const imgElements = tweetElement.querySelectorAll('img[src*="pbs.twimg.com/media/"]');
                 if (imgElements.length > 0) {
                     const imgSrc = imgElements[0].src;
                     const match = imgSrc.match(/\/media\/([A-Za-z0-9_-]+)/);
                     if (match && match[1]) {
-                        return `img_${match[1]}`; // 실제 트윗 ID가 아님을 표시하는 접두어
+                        return `img_${match[1]}`;
                     }
                 }
                 
@@ -478,27 +470,31 @@
 
         addEventListeners() {
             const events = ['pointerdown', 'mousedown', 'click', 'auxclick', 'touchstart'];
-
+        
             events.forEach(evt => {
                 const listener = (event) => {
+                    if (event.type !== 'touchstart' && 'button' in event && event.button !== 0) {
+                        return;
+                    }
+        
                     if (this.viewer && this.viewer.contains(event.target)) {
                         return;
                     }
-
+        
                     if ((event.target.tagName === 'IMG' && event.target.src?.includes('pbs.twimg.com/media/')) ||
                         event.target.closest('img[src*="pbs.twimg.com/media/"]')) {
                         this.preventXViewer(event);
                     }
                 };
-
+        
                 document.addEventListener(evt, listener, {
                     capture: true,
                     passive: false
                 });
-
+        
                 this.eventListeners.push({ event: evt, listener, options: { capture: true } });
             });
-
+        
             try {
                 const titleElement = document.querySelector('title');
                 if (titleElement) {
@@ -508,7 +504,7 @@
                             history.replaceState(null, '', newUrl);
                         }
                     });
-
+        
                     urlObserver.observe(titleElement, {
                         subtree: true,
                         characterData: true,
@@ -529,23 +525,27 @@
             } catch (e) {
                 console.error("Error setting up URL observer:", e);
             }
-
+        
             const themeObserver = new MutationObserver(() => {
                 if (this.viewer) {
                     this.updateUIColors();
                 }
             });
-
+        
             themeObserver.observe(document.body, {
                 attributes: true,
                 attributeFilter: ['class', 'style']
             });
-
+        
             document.addEventListener('click', (event) => {
+                if ('button' in event && event.button !== 0) {
+                    return;
+                }
+        
                 if (this.viewer && this.viewer.contains(event.target)) {
                     return;
                 }
-
+        
                 if (event.target.matches('img[src*="pbs.twimg.com/media/"]') ||
                     event.target.closest('img[src*="pbs.twimg.com/media/"]')) {
                     event.preventDefault();
@@ -556,37 +556,41 @@
 
         preventXViewer(event) {
             try {
+                if (event.type !== 'touchstart' && 'button' in event && event.button !== 0) {
+                    return;
+                }
+        
                 if (this.viewer && this.viewer.contains(event.target)) {
                     return;
                 }
-
+        
                 const imgElement = event.target.tagName === 'IMG' ?
                     event.target : event.target.closest('img[src*="pbs.twimg.com/media/"]');
-
+        
                 if (!imgElement || !imgElement.src || !imgElement.src.includes('pbs.twimg.com/media/')) return;
-
+        
                 if (window.location.href.includes('/photo/')) {
                     const newUrl = window.location.href.replace(/\/photo\/\d+$/, '');
                     history.replaceState(null, '', newUrl);
                 }
-
+        
                 event.preventDefault();
                 event.stopPropagation();
                 event.stopImmediatePropagation();
-
+        
                 if (event.type === 'click' || event.type === 'mousedown' || event.type === 'pointerdown') {
                     const tweet = imgElement.closest('article');
                     if (tweet && this.tweetInfo.extractFromTweet(tweet)) {
                         const origSrc = imgElement.src.replace(/&name=\w+/, '&name=orig');
                         this.currentIndex = this.tweetInfo.imageUrls.indexOf(origSrc);
                         if (this.currentIndex === -1) this.currentIndex = 0;
-
+        
                         setTimeout(() => {
                             this.show();
                         }, 50);
                     }
                 }
-
+        
                 return false;
             } catch (e) {
                 if (event) {
@@ -599,24 +603,28 @@
 
         reinforceEventPrevention() {
             const reinforcementListener = (event) => {
+                if ('button' in event && event.button !== 0) {
+                    return;
+                }
+        
                 if (this.viewer && this.viewer.contains(event.target)) {
                     return;
                 }
-
+        
                 if (event.target.tagName === 'IMG' &&
                     event.target.src &&
                     event.target.src.includes('pbs.twimg.com/media/')) {
-
+        
                     event.preventDefault();
                     event.stopPropagation();
                 }
             };
-
+        
             document.body.addEventListener('click', reinforcementListener, {
                 capture: true,
                 passive: false
             });
-
+        
             this.eventListeners.push({
                 event: 'click',
                 listener: reinforcementListener,
@@ -1195,34 +1203,38 @@
             if (this._backgroundClickHandler) {
                 this.viewer.removeEventListener('click', this._backgroundClickHandler);
             }
-
+        
             this._backgroundClickHandler = (event) => {
+                if ('button' in event && event.button !== 0) {
+                    return;
+                }
+        
                 console.log('Click detected:',
                     'Target:', event.target.tagName,
                     'ID:', event.target.id,
                     'Class:', event.target.className,
                     'Is viewer:', event.target === this.viewer);
-
+        
                 const isInteractiveElement = event.target.closest(
                     '.image-container, .viewer-image, #optionsBar, #thumbnailBar, ' +
                     '.icon-button, select, .thumbnail, .image-placeholder, button'
                 );
-
+        
                 if (event.target === this.viewer || !isInteractiveElement) {
                     console.log('Closing viewer - detected background click');
                     this.destroy();
                 }
             };
-
+        
             this.viewer.addEventListener('click', this._backgroundClickHandler, { capture: true });
-
+        
             this.eventListeners.push({
                 event: 'click',
                 listener: this._backgroundClickHandler,
                 options: { capture: true },
                 element: this.viewer
             });
-
+        
             this.viewer.style.cursor = 'default';
         }
 
