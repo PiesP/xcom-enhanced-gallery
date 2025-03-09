@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X.com Enhanced Image Gallery
 // @namespace    https://github.com/PiesP/xcom-enhanced-gallery
-// @version      0.9.2
+// @version      0.9.3
 // @description  Enhanced image viewer for X.com that displays original-sized images in a vertical gallery with adjustable view modes and batch download options.
 // @match        https://x.com/*
 // @match        https://twitter.com/*
@@ -313,18 +313,214 @@
             this.id = '';
             this.imageUrls = [];
         }
-    
+        
         extractFromTweet(tweetElement) {
             try {
-                const userMatch = tweetElement.querySelector('a[href^="/"]');
-                this.user = userMatch ? userMatch.getAttribute('href').split('/')[1] : _('unknownUser');
-                this.id = this.extractTweetIdFromElement(tweetElement) || _('unknownID');
                 this.imageUrls = this.getAllImagesFromTweet(tweetElement);
+                
+                if (this.imageUrls.length === 0) {
+                    return false;
+                }
+                
+                this.id = this.extractTweetIdFromElement(tweetElement) || _('unknownID');
+                
+                const isRetweet = this.isRetweet(tweetElement);
+                
+                let tweetContentElement = tweetElement.querySelector('[data-testid="tweet"]') || tweetElement;
+                
+                let authorFound = false;
+                
+                if (isRetweet) {
+                    authorFound = this.findOriginalAuthor(tweetContentElement);
+                }
+                
+                if (!authorFound) {
+                    authorFound = this.findAuthorFromTweet(tweetContentElement);
+                }
+                
+                if (!this.user) {
+                    this.user = _('unknownUser');
+                }
+                
                 return this.imageUrls.length > 0;
             } catch (e) {
                 console.error("Error extracting tweet info:", e);
                 return false;
             }
+        }
+        
+        isRetweet(tweetElement) {
+            
+            const socialContext = tweetElement.querySelector('[data-testid="socialContext"]');
+            if (socialContext) {
+                const text = socialContext.textContent.toLowerCase();
+                if (text.includes('리트윗') || text.includes('retweet') || text.includes('리포스트') || text.includes('repost')) {
+                    return true;
+                }
+            }
+            
+            const retweetIcon = tweetElement.querySelector('[data-testid="socialContext"] svg');
+            if (retweetIcon) {
+                return true;
+            }
+            
+            const anyShareText = tweetElement.textContent.match(/리트윗|리포스트|retweet|repost/i);
+            if (anyShareText) {
+                const textNodes = Array.from(tweetElement.querySelectorAll('*'))
+                    .filter(el => el.childNodes.length === 1 && el.childNodes[0].nodeType === 3)
+                    .map(el => el.textContent.trim())
+                    .filter(text => text.length > 0 && text.length < 30); 
+                    
+                for (const text of textNodes) {
+                    if (text.match(/리트윗|리포스트|retweet|repost/i)) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        findOriginalAuthor(tweetContentElement) {
+            try {
+                
+                const imageElements = tweetContentElement.querySelectorAll('img[src*="pbs.twimg.com/media/"]');
+                if (imageElements.length > 0) {
+                    const firstImage = imageElements[0];
+                    const nearbyLinks = this.getNearbyUserLinks(firstImage);
+                    
+                    for (const link of nearbyLinks) {
+                        const username = this.extractUsername(link);
+                        if (username) {
+                            this.user = username;
+                            return true;
+                        }
+                    }
+                }
+                
+                const contentLinks = tweetContentElement.querySelectorAll('a[role="link"][href^="/"]');
+                for (const link of contentLinks) {
+                    if (link.getAttribute('data-testid') === 'timestamp' || 
+                        link.href.includes('/hashtag/') ||
+                        link.href.includes('/search?')) {
+                        continue;
+                    }
+                    
+                    const username = this.extractUsername(link);
+                    if (username) {
+                        this.user = username;
+                        return true;
+                    }
+                }
+                
+                const userNameLinks = tweetContentElement.querySelectorAll('[data-testid="User-Name"] a[href^="/"]');
+                for (const link of userNameLinks) {
+                    const username = this.extractUsername(link);
+                    if (username) {
+                        this.user = username;
+                        return true;
+                    }
+                }
+                
+                return false;
+            } catch (e) {
+                console.error("Error finding original author:", e);
+                return false;
+            }
+        }
+        
+        findAuthorFromTweet(tweetContentElement) {
+            try {
+                
+                const userNameLinks = tweetContentElement.querySelectorAll('[data-testid="User-Name"] a[href^="/"]');
+                for (const link of userNameLinks) {
+                    const username = this.extractUsername(link);
+                    if (username) {
+                        this.user = username;
+                        return true;
+                    }
+                }
+                
+                const headerLinks = this.getNearbyUserLinks(tweetContentElement, 0, 3);
+                for (const link of headerLinks) {
+                    const username = this.extractUsername(link);
+                    if (username) {
+                        this.user = username;
+                        return true;
+                    }
+                }
+                
+                const anyUserLink = tweetContentElement.querySelector('a[href^="/"]');
+                if (anyUserLink) {
+                    const username = this.extractUsername(anyUserLink);
+                    if (username) {
+                        this.user = username;
+                        return true;
+                    }
+                }
+                
+                return false;
+            } catch (e) {
+                console.error("Error finding author from tweet:", e);
+                return false;
+            }
+        }
+        
+        getNearbyUserLinks(element, maxDistance = 3, maxLinks = 5) {
+            const links = [];
+            
+            let parent = element.parentElement;
+            for (let i = 0; i < maxDistance && parent; i++) {
+                const userLinks = parent.querySelectorAll('a[href^="/"]');
+                for (const link of userLinks) {
+                    if (!link.href.includes('/status/') && 
+                        !link.href.includes('/hashtag/') && 
+                        !link.href.includes('/search?')) {
+                        links.push(link);
+                        if (links.length >= maxLinks) return links;
+                    }
+                }
+                parent = parent.parentElement;
+            }
+            
+            let sibling = element.previousElementSibling;
+            for (let i = 0; i < maxDistance && sibling; i++) {
+                const userLinks = sibling.querySelectorAll('a[href^="/"]');
+                for (const link of userLinks) {
+                    if (!link.href.includes('/status/') && 
+                        !link.href.includes('/hashtag/') && 
+                        !link.href.includes('/search?')) {
+                        links.push(link);
+                        if (links.length >= maxLinks) return links;
+                    }
+                }
+                sibling = sibling.previousElementSibling;
+            }
+            
+            return links;
+        }
+        
+        extractUsername(link) {
+            if (!link || !link.getAttribute) return null;
+            
+            const href = link.getAttribute('href');
+            if (!href || !href.startsWith('/')) return null;
+            
+            const parts = href.split('/').filter(part => part.length > 0);
+            if (parts.length > 0) {
+                if (parts[0].includes('#') || parts[0].includes('?')) {
+                    return null;
+                }
+                
+                const nonUsernamePaths = ['search', 'explore', 'notifications', 'messages', 'i', 'bookmarks', 'lists'];
+                if (nonUsernamePaths.includes(parts[0].toLowerCase())) {
+                    return null;
+                }
+                
+                return parts[0];
+            }
+            
+            return null;
         }
     
         extractTweetIdFromElement(tweetElement) {
