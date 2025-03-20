@@ -1,0 +1,12 @@
+{
+  "name": "xcom-enhanced-gallery",
+  "version": "0.9.4",
+  "type": "module",
+  "description": "Enhanced image viewer for X.com that displays original-sized images in a vertical gallery",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js && echo \"Built successfully\""
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}
