@@ -25,8 +25,10 @@ node_modules/
 package-lock.json
 yarn.lock
 
-# Distribution files (if you add a build process later)
-dist/
+# DO NOT ignore dist directory as it contains the built userscript
+# dist/
+
+# Build process temporary files
 build/
 
 # Environment variables

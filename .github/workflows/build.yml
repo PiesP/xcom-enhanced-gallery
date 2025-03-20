@@ -1,0 +1,41 @@
+name: Build UserScript
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:  # 수동 실행을 위한 트리거
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Build UserScript
+      run: |
+        node build.js
+        echo "UserScript built successfully"
+        
+    - name: Check for changes
+      id: check_changes
+      run: |
+        git diff --quiet dist/ || echo "changes=true" >> $GITHUB_OUTPUT
+      
+    - name: Commit and push if changes
+      if: steps.check_changes.outputs.changes == 'true'
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
+        git add dist/
+        git commit -m "Build UserScript [skip ci]"
+        git push
