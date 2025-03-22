@@ -64,7 +64,7 @@ export class ViewerDOM {
 
         imageSelect.selectedIndex = currentIndex;
         imageSelect.addEventListener('change', () => {
-            handlers.selectImage(parseInt(imageSelect.value));
+            handlers.selectImage(parseInt(imageSelect.value), true);
         });
 
         const fitWidthBtn = this.createIconButton('fa-solid fa-arrows-left-right', () => handlers.adjustImages('width'), translate('fitWidth'));
@@ -166,7 +166,7 @@ export class ViewerDOM {
             
             // 클릭된 이미지가 현재 선택된 이미지인지 확인
             if (parseInt(index) !== currentIndex) {
-                handlers.selectImage(parseInt(index));
+                handlers.selectImage(parseInt(index), true);
             } else {
                 handlers.focusImage(parseInt(index));
             }
@@ -225,7 +225,7 @@ export class ViewerDOM {
                 console.log(`썸네일 클릭됨: index=${index}`);
                 
                 // 썸네일 클릭 시에도 동일한 핵심 함수(번호 선택) 사용
-                handlers.selectImage(parseInt(index));
+                handlers.selectImage(parseInt(index), true);
                 
                 // 클릭된 썸네일 효과 추가
                 thumb.style.transform = 'scale(1.2)';

@@ -80,9 +80,9 @@ import { STYLE_ID, CSS } from "./CSS.js";
         event.preventDefault();
         event.stopPropagation();
         
-        // 이미지 뷰어 초기화
+        // 이미지 뷰어 초기화 - 클릭된 이미지 정보 전달
         const viewer = new ImageViewer();
-        viewer.init(containerElement);
+        viewer.init(containerElement, imageElement.src);
     };
     
     // 이벤트 리스너 추가 - 캡처 오더 최상위 설정

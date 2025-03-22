@@ -9,7 +9,7 @@ const OUTPUT_FILE = 'xcom-enhanced-gallery.user.js';
 const METADATA = `// ==UserScript==
 // @name         X.com Enhanced Image Gallery
 // @namespace    https://github.com/PiesP/xcom-enhanced-gallery
-// @version      0.9.4
+// @version      0.9.5
 // @description  Enhanced image viewer for X.com that displays original-sized images in a vertical gallery with adjustable view modes and batch download options.
 // @match        https://x.com/*
 // @match        https://twitter.com/*

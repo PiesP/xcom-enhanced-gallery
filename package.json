@@ -1,6 +1,6 @@
 {
   "name": "xcom-enhanced-gallery",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "type": "module",
   "description": "Enhanced image viewer for X.com that displays original-sized images in a vertical gallery",
   "scripts": {

@@ -33,7 +33,7 @@ export class ViewerNavigation {
         }
     }
 
-    selectImage(index, imagesCount) {
+    selectImage(index, imagesCount, smooth = true) {
         if (index < 0 || index >= imagesCount) return this.currentIndex;
         
         this.isManualNavigating = true;

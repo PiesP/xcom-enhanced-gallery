@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X.com Enhanced Image Gallery
 // @namespace    https://github.com/PiesP/xcom-enhanced-gallery
-// @version      0.9.4
+// @version      0.9.5
 // @description  Enhanced image viewer for X.com that displays original-sized images in a vertical gallery with adjustable view modes and batch download options.
 // @match        https://x.com/*
 // @match        https://twitter.com/*
@@ -372,7 +372,7 @@ class ViewerDOM {
 
         imageSelect.selectedIndex = currentIndex;
         imageSelect.addEventListener('change', () => {
-            handlers.selectImage(parseInt(imageSelect.value));
+            handlers.selectImage(parseInt(imageSelect.value), true);
         });
 
         const fitWidthBtn = this.createIconButton('fa-solid fa-arrows-left-right', () => handlers.adjustImages('width'), translate('fitWidth'));
@@ -474,7 +474,7 @@ class ViewerDOM {
             
             // 클릭된 이미지가 현재 선택된 이미지인지 확인
             if (parseInt(index) !== currentIndex) {
-                handlers.selectImage(parseInt(index));
+                handlers.selectImage(parseInt(index), true);
             } else {
                 handlers.focusImage(parseInt(index));
             }
@@ -533,7 +533,7 @@ class ViewerDOM {
                 console.log(`썸네일 클릭됨: index=${index}`);
                 
                 // 썸네일 클릭 시에도 동일한 핵심 함수(번호 선택) 사용
-                handlers.selectImage(parseInt(index));
+                handlers.selectImage(parseInt(index), true);
                 
                 // 클릭된 썸네일 효과 추가
                 thumb.style.transform = 'scale(1.2)';
@@ -655,7 +655,7 @@ class ViewerNavigation {
         }
     }
 
-    selectImage(index, imagesCount) {
+    selectImage(index, imagesCount, smooth = true) {
         if (index < 0 || index >= imagesCount) return this.currentIndex;
         
         this.isManualNavigating = true;
@@ -1300,6 +1300,7 @@ class TweetInfo {
 class ImageViewer {
     constructor() {
         this.currentIndex = 0;
+        this.initialImageIndex = 0;  // 클릭한 처음 이미지의 인덱스
         this.tweetInfo = new TweetInfo();
         this.viewer = null;
         this.optionsBar = null;
@@ -1333,7 +1334,7 @@ class ImageViewer {
         }, 100);
     }
 
-    init(tweetElement) {
+    init(tweetElement, clickedImageSrc = null) {
         if (!this.tweetInfo.extractFromTweet(tweetElement)) return;
         
         this.destroy();
@@ -1341,6 +1342,17 @@ class ImageViewer {
         document.body.style.overflow = 'hidden';
         
         Utils.createStyleSheet(STYLE_ID, CSS);
+        
+        // 클릭한 이미지의 인덱스 찾기
+        if (clickedImageSrc) {
+            const originalSrc = clickedImageSrc.replace(/&name=\w+/, '&name=orig');
+            const clickedIndex = this.tweetInfo.imageUrls.findIndex(url => url === originalSrc);
+            if (clickedIndex !== -1) {
+                this.currentIndex = clickedIndex;
+                this.initialImageIndex = clickedIndex;
+                console.log(`클릭한 이미지 인덱스: ${clickedIndex}`);
+            }
+        }
         
         this.createViewer();
         this.setupComponents();
@@ -1374,7 +1386,7 @@ class ImageViewer {
         const handlers = {
             prevImage: () => this.prevImage(),
             nextImage: () => this.nextImage(),
-            selectImage: (index) => this.selectImage(index),
+            selectImage: (index, smooth = true) => this.selectImage(index, smooth),
             focusImage: (index) => this.focusCurrentImage(true),
             adjustImages: (mode) => this.adjustImages(mode),
             downloadCurrentImage: () => this.downloadCurrentImage(),
@@ -1395,6 +1407,11 @@ class ImageViewer {
         this.viewer.appendChild(this.imageContainer);
         this.viewer.appendChild(this.thumbnailBar);
         this.viewer.appendChild(this.currentImageIndicator);
+        
+        // 처음 클릭한 이미지가 현재 이미지와 다르면 바로 이동 (약간의 딜레이 후)
+        setTimeout(() => {
+            this.navigation.currentIndex = this.currentIndex; // 네비게이션 인덱스 동기화
+        }, 100);
     }
     
     setupEventHandlers() {
@@ -1693,8 +1710,8 @@ class ImageViewer {
         this.updateViewerForIndex(newIndex);
     }
     
-    selectImage(index) {
-        console.log(`selectImage 호출됨: index=${index}`);
+    selectImage(index, smooth = true) {
+        console.log(`selectImage 호출됨: index=${index}, smooth=${smooth}`);
         
         // 범위 확인
         if (index < 0 || index >= this.tweetInfo.imageUrls.length) {
@@ -1731,6 +1748,7 @@ class ImageViewer {
                 
                 // 현재 인덱스 변경
                 this.currentIndex = index;
+                this.navigation.currentIndex = index; // 네비게이션 인덱스도 업데이트
                 
                 // UI 업데이트 - 모든 UI 요소 동기화
                 this._updateAllUIElements();
@@ -1742,7 +1760,7 @@ class ImageViewer {
             }
             
             // 포커스 설정 - 인덱스 변경여부와 관계없이 항상 실행
-            this.focusCurrentImage(true);
+            this.focusCurrentImage(smooth);
             
             // 이미지가 제대로 로드되었는지 확인
             const targetImage = this.imageContainer.querySelector(`.image-container[data-index="${index}"] img`);
@@ -1750,7 +1768,7 @@ class ImageViewer {
                 // 이미지가 아직 로드 중인 경우
                 console.log(`이미지 ${index}가 아직 로드 중입니다. 로드 완료 후 포커스합니다.`);
                 targetImage.addEventListener('load', () => {
-                    setTimeout(() => this.focusCurrentImage(true), 50);
+                    setTimeout(() => this.focusCurrentImage(smooth), 50);
                 }, { once: true });
             }
         } catch (e) {
@@ -1974,9 +1992,9 @@ class ImageViewer {
         event.preventDefault();
         event.stopPropagation();
         
-        // 이미지 뷰어 초기화
+        // 이미지 뷰어 초기화 - 클릭된 이미지 정보 전달
         const viewer = new ImageViewer();
-        viewer.init(containerElement);
+        viewer.init(containerElement, imageElement.src);
     };
     
     // 이벤트 리스너 추가 - 캡처 오더 최상위 설정

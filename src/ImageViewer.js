@@ -10,6 +10,7 @@ import { ViewerEvents } from "./components/ViewerEvents.js";
 export class ImageViewer {
     constructor() {
         this.currentIndex = 0;
+        this.initialImageIndex = 0;  // 클릭한 처음 이미지의 인덱스
         this.tweetInfo = new TweetInfo();
         this.viewer = null;
         this.optionsBar = null;
@@ -43,7 +44,7 @@ export class ImageViewer {
         }, 100);
     }
 
-    init(tweetElement) {
+    init(tweetElement, clickedImageSrc = null) {
         if (!this.tweetInfo.extractFromTweet(tweetElement)) return;
         
         this.destroy();
@@ -51,6 +52,17 @@ export class ImageViewer {
         document.body.style.overflow = 'hidden';
         
         Utils.createStyleSheet(STYLE_ID, CSS);
+        
+        // 클릭한 이미지의 인덱스 찾기
+        if (clickedImageSrc) {
+            const originalSrc = clickedImageSrc.replace(/&name=\w+/, '&name=orig');
+            const clickedIndex = this.tweetInfo.imageUrls.findIndex(url => url === originalSrc);
+            if (clickedIndex !== -1) {
+                this.currentIndex = clickedIndex;
+                this.initialImageIndex = clickedIndex;
+                console.log(`클릭한 이미지 인덱스: ${clickedIndex}`);
+            }
+        }
         
         this.createViewer();
         this.setupComponents();
@@ -84,7 +96,7 @@ export class ImageViewer {
         const handlers = {
             prevImage: () => this.prevImage(),
             nextImage: () => this.nextImage(),
-            selectImage: (index) => this.selectImage(index),
+            selectImage: (index, smooth = true) => this.selectImage(index, smooth),
             focusImage: (index) => this.focusCurrentImage(true),
             adjustImages: (mode) => this.adjustImages(mode),
             downloadCurrentImage: () => this.downloadCurrentImage(),
@@ -105,6 +117,11 @@ export class ImageViewer {
         this.viewer.appendChild(this.imageContainer);
         this.viewer.appendChild(this.thumbnailBar);
         this.viewer.appendChild(this.currentImageIndicator);
+        
+        // 처음 클릭한 이미지가 현재 이미지와 다르면 바로 이동 (약간의 딜레이 후)
+        setTimeout(() => {
+            this.navigation.currentIndex = this.currentIndex; // 네비게이션 인덱스 동기화
+        }, 100);
     }
     
     setupEventHandlers() {
@@ -403,8 +420,8 @@ export class ImageViewer {
         this.updateViewerForIndex(newIndex);
     }
     
-    selectImage(index) {
-        console.log(`selectImage 호출됨: index=${index}`);
+    selectImage(index, smooth = true) {
+        console.log(`selectImage 호출됨: index=${index}, smooth=${smooth}`);
         
         // 범위 확인
         if (index < 0 || index >= this.tweetInfo.imageUrls.length) {
@@ -441,6 +458,7 @@ export class ImageViewer {
                 
                 // 현재 인덱스 변경
                 this.currentIndex = index;
+                this.navigation.currentIndex = index; // 네비게이션 인덱스도 업데이트
                 
                 // UI 업데이트 - 모든 UI 요소 동기화
                 this._updateAllUIElements();
@@ -452,7 +470,7 @@ export class ImageViewer {
             }
             
             // 포커스 설정 - 인덱스 변경여부와 관계없이 항상 실행
-            this.focusCurrentImage(true);
+            this.focusCurrentImage(smooth);
             
             // 이미지가 제대로 로드되었는지 확인
             const targetImage = this.imageContainer.querySelector(`.image-container[data-index="${index}"] img`);
@@ -460,7 +478,7 @@ export class ImageViewer {
                 // 이미지가 아직 로드 중인 경우
                 console.log(`이미지 ${index}가 아직 로드 중입니다. 로드 완료 후 포커스합니다.`);
                 targetImage.addEventListener('load', () => {
-                    setTimeout(() => this.focusCurrentImage(true), 50);
+                    setTimeout(() => this.focusCurrentImage(smooth), 50);
                 }, { once: true });
             }
         } catch (e) {
