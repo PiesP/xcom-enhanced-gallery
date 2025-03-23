@@ -244,13 +244,86 @@ const CONFIG = {
 const STYLE_ID = 'xcom-image-viewer-styles';
 
 const CSS = `
+    /* CSS 변수 기본값 (폴백) */
+    :root {
+        /* 색상 */
+        --xcom-bg-primary: #ffffff;
+        --xcom-bg-secondary: #f5f8fa;
+        --xcom-bg-tertiary: #e1e8ed;
+        --xcom-bg-overlay: rgba(255, 255, 255, 0.9);
+        --xcom-bg-modal: rgba(0, 0, 0, 0.7);
+        
+        --xcom-text-primary: #14171a;
+        --xcom-text-secondary: #657786;
+        --xcom-text-tertiary: #aab8c2;
+        --xcom-text-inverse: #ffffff;
+        
+        --xcom-accent-primary: #1da1f2;
+        --xcom-accent-secondary: #0c7abf;
+        --xcom-accent-tertiary: #e1f5fe;
+        
+        --xcom-border-light: #e1e8ed;
+        --xcom-border-medium: #ccd6dd;
+        --xcom-border-dark: #657786;
+        
+        /* 그림자 */
+        --xcom-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --xcom-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --xcom-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        
+        /* 레이아웃 */
+        --xcom-radius-sm: 4px;
+        --xcom-radius-md: 8px;
+        --xcom-radius-lg: 16px;
+        --xcom-radius-pill: 9999px;
+        
+        --xcom-space-xs: 4px;
+        --xcom-space-sm: 8px;
+        --xcom-space-md: 16px;
+        --xcom-space-lg: 24px;
+        --xcom-space-xl: 32px;
+        
+        /* 애니메이션 */
+        --xcom-transition-fast: 150ms;
+        --xcom-transition-normal: 300ms;
+        --xcom-transition-slow: 500ms;
+        
+        /* 헤더와 바 요소 */
+        --xcom-header-bg: rgba(255, 255, 255, 0.85);
+        --xcom-header-text: #14171a;
+        --xcom-header-border: #e1e8ed;
+        --xcom-header-height: 50px;
+        
+        --xcom-toolbar-bg: rgba(255, 255, 255, 0.85);
+        --xcom-toolbar-text: #14171a;
+        --xcom-toolbar-border: #e1e8ed;
+        
+        --xcom-thumbnail-bg: rgba(255, 255, 255, 0.85);
+        --xcom-thumbnail-border: #e1e8ed;
+        --xcom-thumbnail-active: #1da1f2;
+        
+        /* 이미지 뷰어 특수 변수 */
+        --xcom-backdrop-color: rgba(0, 0, 0, 0.85);
+        --xcom-indicator-bg: rgba(0, 0, 0, 0.7);
+        --xcom-indicator-text: #ffffff;
+        --xcom-button-hover-bg: #f5f8fa;
+    }
+
+    /* 테마 전환 시 전환 효과 */
+    #xcom-image-viewer * {
+        transition: background-color var(--xcom-transition-normal), 
+                    color var(--xcom-transition-normal), 
+                    border-color var(--xcom-transition-normal), 
+                    box-shadow var(--xcom-transition-normal);
+    }
+    
     #xcom-image-viewer {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.9);
+        background: var(--xcom-backdrop-color);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -264,17 +337,22 @@ const CSS = `
 
     #optionsBar {
         width: 100%;
-        padding: 10px;
+        padding: var(--xcom-space-sm) var(--xcom-space-md);
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 6px;
+        justify-content: space-between;
+        gap: var(--xcom-space-sm);
         position: fixed;
         top: 0;
         left: 0;
         z-index: 10004;
+        background-color: var(--xcom-toolbar-bg);
+        color: var(--xcom-toolbar-text);
+        border-bottom: 1px solid var(--xcom-toolbar-border);
+        box-shadow: var(--xcom-shadow-sm);
         transition: transform 0.3s ease;
         transform: translateY(0);
+        height: var(--xcom-header-height);
     }
 
     #thumbnailBar {
@@ -286,31 +364,37 @@ const CSS = `
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 5px;
+        gap: var(--xcom-space-sm);
         transition: transform 0.3s ease;
         transform: translateY(0);
         z-index: 10004;
-        padding: 0 10px;
+        padding: var(--xcom-space-sm) var(--xcom-space-md);
+        margin-bottom: var(--xcom-space-md);
         overflow-x: auto;
+        background-color: var(--xcom-thumbnail-bg);
+        border-top: 1px solid var(--xcom-thumbnail-border);
     }
 
     .icon-button {
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 6px 10px;
+        padding: var(--xcom-space-xs) var(--xcom-space-sm);
         border: none;
         cursor: pointer;
         font-size: 16px;
-        border-radius: 4px;
+        border-radius: var(--xcom-radius-sm);
+        background-color: transparent;
+        color: var(--xcom-toolbar-text);
+        transition: all var(--xcom-transition-fast) ease;
     }
 
     .icon-button:hover {
-        opacity: 0.8;
+        background-color: var(--xcom-button-hover-bg);
     }
 
     .icon-button:focus {
-        outline: 2px solid #1da1f2;
+        outline: 2px solid var(--xcom-accent-primary);
     }
 
     .viewer-image {
@@ -330,7 +414,7 @@ const CSS = `
 
     .image-container {
         position: relative;
-        margin: 5px 0;
+        margin: var(--xcom-space-sm) 0;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -348,61 +432,117 @@ const CSS = `
         height: 60px;
         max-height: 60px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all var(--xcom-transition-normal) ease;
         border: 3px solid transparent;
         pointer-events: auto;
+        border-radius: var(--xcom-radius-sm);
     }
 
     .thumbnail:hover {
         transform: scale(1.05);
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+        box-shadow: var(--xcom-shadow-md);
     }
 
     .thumbnail.active {
-        border-color: #1da1f2;
+        border-color: var(--xcom-thumbnail-active);
         transform: scale(1.1);
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+        box-shadow: var(--xcom-shadow-md);
     }
 
     .image-indicator {
         position: absolute;
-        top: 10px;
-        right: 10px;
+        top: var(--xcom-space-sm);
+        right: var(--xcom-space-sm);
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        background: #1da1f2;
-        box-shadow: 0 0 5px white;
+        background: var(--xcom-accent-primary);
+        box-shadow: var(--xcom-shadow-sm);
         pointer-events: none;
         z-index: 10003;
     }
 
     #current-image-indicator {
         position: fixed;
-        top: 10px;
-        right: 100px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 5px 10px;
-        border-radius: 4px;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--xcom-indicator-bg);
+        color: var(--xcom-indicator-text);
+        padding: var(--xcom-space-sm) var(--xcom-space-md);
+        border-radius: var(--xcom-radius-pill);
         font-size: 14px;
+        font-weight: bold;
         z-index: 10004;
         pointer-events: none;
+        box-shadow: var(--xcom-shadow-md);
+    }
+    
+    /* 테마 토글 버튼 */
+    .theme-toggle-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--xcom-radius-sm);
+        background-color: transparent;
+        color: var(--xcom-toolbar-text);
+        font-size: 18px;
+        cursor: pointer;
+        transition: all var(--xcom-transition-fast) ease;
     }
 
+    .theme-toggle-button:hover {
+        background-color: var(--xcom-button-hover-bg);
+    }
+
+    /* 반응형 스타일 */
     @media (max-width: 768px) {
         .icon-button {
-            padding: 8px;
+            padding: var(--xcom-space-xs);
+            font-size: 14px;
         }
 
         #optionsBar {
             flex-wrap: wrap;
             justify-content: space-around;
+            padding: var(--xcom-space-xs);
         }
 
         .thumbnail {
             height: 50px;
         }
+        
+        /* 모바일 화면에서 더 직관적인 컨트롤 */
+        #optionsBar > div {
+            flex: 1;
+            justify-content: center;
+        }
+        
+        /* 섹션별 간격 조정 */
+        #optionsBar > div:nth-child(2) {
+            order: 3; /* 모바일에서는 맨 아래로 */
+            width: 100%;
+            margin-top: var(--xcom-space-xs);
+        }
+    }
+    
+    /* 키보드 포커스 스타일 */
+    :focus-visible {
+        outline: 2px solid var(--xcom-accent-primary);
+        outline-offset: 2px;
+    }
+    
+    /* 애니메이션 효과 */
+    @keyframes pulse {
+        0% { opacity: 0.7; }
+        50% { opacity: 1; }
+        100% { opacity: 0.7; }
+    }
+    
+    .loading {
+        animation: pulse 1.5s infinite ease-in-out;
     }
 `;
 
@@ -1498,9 +1638,161 @@ class ThumbnailManager {
     }
 }
 
+// == components/LanguageSelector.js ==
+
+/**
+ * 언어 선택 드롭다운 메뉴 컴포넌트
+ */
+class LanguageSelector {
+    /**
+     * 언어 선택 드롭다운 메뉴 생성
+     * @param {Function} onLanguageChange - 언어 변경 시 호출될 콜백 함수
+     * @returns {HTMLElement} 언어 선택 드롭다운 메뉴 요소
+     */
+    static createLanguageDropdown(onLanguageChange) {
+        const { bgColor, textColor } = Utils.getUserUIColor();
+
+        // 언어 목록 가져오기
+        const supportedLocales = getSupportedLocales();
+        
+        // 현재 선택된 언어 가져오기
+        const currentLocale = getLocale();
+        
+        // 언어 이름 매핑
+        const localeNames = {
+            'en': 'English',
+            'ko': '한국어',
+            'ja': '日本語',
+            'zh-CN': '简体中文',
+            'es': 'Español',
+            'fr': 'Français'
+        };
+        
+        // 컨테이너 생성
+        const container = document.createElement('div');
+        container.className = 'language-selector-container';
+        container.style.cssText = `
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+        `;
+        
+        // 모든 컨테이너 이벤트 중지 - 상위 요소로 전파 방지
+        container.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        }, { capture: true });
+        
+        // 아이콘 생성
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-language';
+        icon.style.cssText = `
+            margin-right: 5px;
+            font-size: 16px;
+        `;
+        
+        // 드롭다운 생성
+        const select = document.createElement('select');
+        select.id = 'language-select';
+        select.className = 'language-select';
+        select.style.cssText = `
+            background: ${bgColor};
+            color: ${textColor};
+            border: none;
+            border-radius: 4px;
+            padding: 2px 5px;
+            font-size: 14px;
+            cursor: pointer;
+        `;
+        
+        // 포커스/클릭 시 이벤트 전파 중지
+        select.addEventListener('focus', (e) => {
+            e.stopPropagation();
+        }, { capture: true });
+        
+        select.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        }, { capture: true });
+        
+        // 각 언어에 대한 옵션 추가
+        supportedLocales.forEach(locale => {
+            const option = document.createElement('option');
+            option.value = locale;
+            option.textContent = localeNames[locale] || locale;
+            option.selected = locale === currentLocale;
+            select.appendChild(option);
+        });
+        
+        // 언어 변경 이벤트 핸들러 - 철저한 이벤트 제어
+        select.addEventListener('change', (e) => {
+            // 이벤트 전파 중지
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            
+            const selectedLocale = select.value;
+            if (setLocale(selectedLocale)) {
+                // 로그 추가
+                console.log(`언어 변경: ${selectedLocale}`);
+                
+                // 로컬 스토리지에 언어 설정 저장
+                try {
+                    localStorage.setItem('xcom-gallery-locale', selectedLocale);
+                } catch (e) {
+                    console.warn('언어 설정 저장 오류:', e);
+                }
+                
+                // 안전한 방식으로 콜백 호출
+                if (typeof onLanguageChange === 'function') {
+                    // 비동기적으로 호출하여 현재 이벤트 루프에 영향을 주지 않도록 함
+                    setTimeout(() => {
+                        try {
+                            onLanguageChange(selectedLocale);
+                        } catch (err) {
+                            console.error('언어 변경 콜백 오류:', err);
+                        }
+                    }, 0);
+                }
+                
+                // 성공 메시지 표시
+                const toast = document.createElement('div');
+                toast.textContent = `언어가 ${localeNames[selectedLocale]}로 변경되었습니다.`;
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: rgba(0, 0, 0, 0.7);
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    z-index: 10010;
+                    font-size: 14px;
+                `;
+                document.body.appendChild(toast);
+                
+                // 3초 후 토스트 메시지 자동 삭제
+                setTimeout(() => {
+                    if (toast && toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 3000);
+            }
+            
+            // 이벤트 전파 방지 강화
+            return false;
+        }, { capture: true });
+        
+        // 요소 조립
+        container.appendChild(icon);
+        container.appendChild(select);
+        
+        return container;
+    }
+}
+
 // == components/ViewerDOM.js ==
-
-
 
 class ViewerDOM {
     constructor(viewer) {
@@ -1544,14 +1836,33 @@ class ViewerDOM {
 
         const optionsBar = document.createElement('div');
         optionsBar.id = 'optionsBar';
-        optionsBar.style.background = Utils.addAlpha(bgColor, 0.8);
-        optionsBar.style.color = textColor;
+        optionsBar.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: ${Utils.addAlpha(bgColor, 0.8)};
+            color: ${textColor};
+            padding: 0 10px;
+            height: 50px;
+        `;
         optionsBar.setAttribute('role', 'toolbar');
         optionsBar.setAttribute('aria-label', 'Image Viewer Controls');
 
+        // 왼쪽, 중앙, 오른쪽 섹션 생성
+        const leftSection = document.createElement('div');
+        leftSection.style.cssText = 'display: flex; align-items: center; gap: 5px;';
+        
+        const centerSection = document.createElement('div');
+        centerSection.style.cssText = 'display: flex; align-items: center; flex: 1; justify-content: center;';
+        
+        const rightSection = document.createElement('div');
+        rightSection.style.cssText = 'display: flex; align-items: center; gap: 5px;';
+
+        // 네비게이션 버튼 생성
         const prevBtn = this.createIconButton('fa-solid fa-arrow-left', handlers.prevImage, translate('viewer.controls.prev'));
         const nextBtn = this.createIconButton('fa-solid fa-arrow-right', handlers.nextImage, translate('viewer.controls.next'));
 
+        // 이미지 선택 드롭다운 생성
         const imageSelect = document.createElement('select');
         imageSelect.id = 'image-select';
         imageSelect.setAttribute('aria-label', 'Select Image');
@@ -1568,30 +1879,54 @@ class ViewerDOM {
             handlers.selectImage(parseInt(imageSelect.value), true);
         });
 
+        // 이미지 조정 버튼 생성
         const fitWidthBtn = this.createIconButton('fa-solid fa-arrows-left-right', () => handlers.adjustImages('width'), translate('viewer.modes.fitWidth'));
         const fitHeightBtn = this.createIconButton('fa-solid fa-arrows-up-down', () => handlers.adjustImages('height'), translate('viewer.modes.fitHeight'));
         const fitWindowBtn = this.createIconButton('fa-solid fa-expand', () => handlers.adjustImages('window'), translate('viewer.modes.fitWindow'));
         const originalSizeBtn = this.createIconButton('fa-solid fa-image', () => handlers.adjustImages('original'), translate('viewer.modes.original'));
 
+        // 다운로드 버튼 생성
         const downloadCurrentBtn = this.createIconButton('fa-solid fa-download', handlers.downloadCurrentImage, translate('viewer.controls.download'));
         const downloadAllBtn = this.createIconButton('fa-solid fa-file-zipper', handlers.downloadAllImages, translate('viewer.controls.downloadZip'));
 
+        // 테마 토글 버튼 생성
+        const themeToggleBtn = ThemeManager.createThemeToggle();
+        
+        // 레이아웃 토글 버튼 생성
+        const layoutToggleBtn = LayoutManager.createLayoutToggle();
+        
+        // 언어 선택기 생성
+        const languageSelector = LanguageSelector.createLanguageDropdown((newLocale) => {
+            // UI 요소들 언어 변경 적용
+            if (handlers.onLanguageChange) {
+                handlers.onLanguageChange(newLocale);
+            }
+        });
+        
+        // 닫기 버튼 생성
         const closeBtn = this.createIconButton('fa-solid fa-xmark', handlers.close, translate('viewer.controls.close'));
-        closeBtn.style.marginLeft = 'auto';
-        closeBtn.style.marginRight = '10px';
-
-        optionsBar.append(
-            prevBtn,
-            imageSelect,
-            nextBtn,
+        
+        // 요소들을 섹션에 배치
+        leftSection.append(prevBtn, imageSelect, nextBtn);
+        
+        centerSection.append(
             fitWidthBtn,
             fitHeightBtn,
             fitWindowBtn,
-            originalSizeBtn,
+            originalSizeBtn
+        );
+        
+        rightSection.append(
             downloadCurrentBtn,
             downloadAllBtn,
+            themeToggleBtn,
+            layoutToggleBtn,
+            languageSelector,
             closeBtn
         );
+
+        // 섹션들을 옵션바에 추가
+        optionsBar.append(leftSection, centerSection, rightSection);
 
         return optionsBar;
     }
@@ -1603,7 +1938,7 @@ class ViewerDOM {
             const button = document.createElement('button');
             button.className = 'icon-button';
             button.innerHTML = `<i class="${iconClass}" aria-hidden="true"></i>`;
-            button.style.background = bgColor;
+            button.style.background = 'transparent';
             button.style.color = textColor;
 
             if (tooltipText) {
@@ -1633,7 +1968,7 @@ class ViewerDOM {
             flex-direction: column;
             align-items: center;
             width: 100%;
-            padding: 60px 0 80px 0;
+            padding: 60px 0 100px 0;
             z-index: 10001;
             pointer-events: none;
         `;
@@ -1680,7 +2015,7 @@ class ViewerDOM {
         
         // 마우스 오버 효과
         imgContainer.addEventListener('mouseenter', () => {
-            imgContainer.style.boxShadow = '0 0 8px rgba(29, 161, 242, 0.5)';
+            imgContainer.style.boxShadow = 'var(--xcom-shadow-md)';
             img.style.opacity = '0.95';
         });
 
@@ -1704,7 +2039,10 @@ class ViewerDOM {
 
         const thumbnailBar = document.createElement('div');
         thumbnailBar.id = 'thumbnailBar';
-        thumbnailBar.style.background = Utils.addAlpha(bgColor, 0.8);
+        thumbnailBar.style.cssText = `
+            background: ${Utils.addAlpha(bgColor, 0.8)};
+            border-top: 1px solid var(--xcom-thumbnail-border);
+        `;
 
         tweetInfo.imageUrls.forEach((url, index) => {
             const thumb = document.createElement('img');
@@ -1730,13 +2068,13 @@ class ViewerDOM {
                 
                 // 클릭된 썸네일 효과 추가
                 thumb.style.transform = 'scale(1.2)';
-                thumb.style.boxShadow = '0 0 10px rgba(29, 161, 242, 0.9)';
+                thumb.style.boxShadow = 'var(--xcom-shadow-md)';
                 
                 // 효과 원복
                 setTimeout(() => {
                     if (thumb.classList.contains('active')) {
                         thumb.style.transform = 'scale(1.1)';
-                        thumb.style.boxShadow = '0 0 8px rgba(255, 255, 255, 0.7)';
+                        thumb.style.boxShadow = 'var(--xcom-shadow-md)';
                     } else {
                         thumb.style.transform = '';
                         thumb.style.boxShadow = '';
@@ -1767,9 +2105,25 @@ class ViewerDOM {
     }
 
     createCurrentImageIndicator(currentIndex, totalImages) {
+        const { bgColor, textColor } = Utils.getUserUIColor();
+        
         const indicator = document.createElement('div');
         indicator.id = 'current-image-indicator';
         indicator.textContent = translate('viewer.indicators.currentImage', { current: currentIndex + 1, total: totalImages });
+        indicator.style.cssText = `
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--xcom-indicator-bg);
+            color: var(--xcom-indicator-text);
+            padding: var(--xcom-space-sm) var(--xcom-space-md);
+            border-radius: var(--xcom-radius-pill);
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10002;
+            box-shadow: var(--xcom-shadow-md);
+        `;
         return indicator;
     }
 
@@ -2845,14 +3199,191 @@ class URLManager {
 
 // == EventListeners.js ==
 
-
-
-
-
 /**
  * 이벤트 리스너 관리 클래스
  */
 class EventListeners {
+    /**
+     * 레이아웃 연결 요소
+     */
+    static layoutConnectors = {
+        // 언어 선택기 연결 요소
+        languageSelectorContainer: null,
+        // 테마 토글 버튼
+        themeToggleBtn: null,
+        // 레이아웃 토글 버튼
+        layoutToggleBtn: null,
+        // 전역 제어 패널
+        controlPanel: null
+    };
+    
+    /**
+     * 전체 UI 초기화 - 추가 UI 기능
+     */
+    static setupGlobalUI() {
+        // 전역 제어 패널 생성
+        EventListeners.setupControlPanel();
+        
+        // 단축키 설정
+        EventListeners.setupGlobalKeyboardShortcuts();
+        
+        debugLog('전역 UI 초기화 완료');
+    }
+    
+    /**
+     * 전역 제어 패널 설정
+     */
+    static setupControlPanel() {
+        // 기존 패널 제거
+        if (EventListeners.layoutConnectors.controlPanel) {
+            try {
+                EventListeners.layoutConnectors.controlPanel.remove();
+            } catch (e) {
+                console.error('제어 패널 요소 삭제 오류:', e);
+            }
+        }
+        
+        const { bgColor, textColor } = Utils.getUserUIColor();
+        
+        // 제어 패널 컨테이너 생성
+        const panel = document.createElement('div');
+        panel.className = 'xcom-control-panel';
+        panel.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            background: var(--xcom-bg-secondary, ${Utils.addAlpha(bgColor, 0.85)});
+            color: var(--xcom-text-primary, ${textColor});
+            padding: 4px 8px;
+            border-radius: var(--xcom-radius-md, 8px);
+            box-shadow: var(--xcom-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+            border: 1px solid var(--xcom-border-light, #e1e8ed);
+            gap: 8px;
+        `;
+        
+        // 테마 토글 버튼 생성
+        const themeToggleBtn = ThemeManager.createThemeToggle();
+        EventListeners.layoutConnectors.themeToggleBtn = themeToggleBtn;
+        
+        // 레이아웃 토글 버튼 생성
+        const layoutToggleBtn = LayoutManager.createLayoutToggle();
+        EventListeners.layoutConnectors.layoutToggleBtn = layoutToggleBtn;
+        
+        // 언어 선택기 생성
+        const languageSelector = LanguageSelector.createLanguageDropdown((newLocale) => {
+            window.location.reload();
+        });
+        EventListeners.layoutConnectors.languageSelectorContainer = languageSelector;
+        
+        // 로고/타이틀 생성
+        const logo = document.createElement('div');
+        logo.className = 'xcom-logo';
+        logo.innerHTML = '<i class="fa-solid fa-image" aria-hidden="true"></i>';
+        logo.style.cssText = `
+            font-size: 18px;
+            color: var(--xcom-accent-primary, #1da1f2);
+            margin-right: 4px;
+        `;
+        
+        // 패널에 요소 추가
+        panel.appendChild(logo);
+        panel.appendChild(themeToggleBtn);
+        panel.appendChild(layoutToggleBtn);
+        panel.appendChild(languageSelector);
+        
+        // 문서에 패널 추가
+        document.body.appendChild(panel);
+        
+        // 패널 참조 저장
+        EventListeners.layoutConnectors.controlPanel = panel;
+        
+        // 글로벌 스타일 추가 (필요한 경우)
+        if (!document.getElementById('xcom-global-styles')) {
+            const style = document.createElement('style');
+            style.id = 'xcom-global-styles';
+            style.textContent = `
+                .xcom-control-panel {
+                    transition: opacity 0.3s ease;
+                }
+                .xcom-control-panel:hover {
+                    opacity: 1;
+                }
+                .xcom-control-panel.minimized {
+                    opacity: 0.3;
+                }
+                @media (max-width: 768px) {
+                    .xcom-control-panel {
+                        top: auto;
+                        bottom: 10px;
+                        right: 10px;
+                        padding: 4px;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // 5초 후 투명도 줄이기
+        setTimeout(() => {
+            panel.classList.add('minimized');
+        }, 5000);
+        
+        // 마우스 오버 시 투명도 복원
+        panel.addEventListener('mouseenter', () => {
+            panel.classList.remove('minimized');
+        });
+        
+        // 마우스 아웃 시 투명도 줄이기
+        panel.addEventListener('mouseleave', () => {
+            setTimeout(() => {
+                panel.classList.add('minimized');
+            }, 1000);
+        });
+        
+        debugLog('전역 제어 패널 설정 완료');
+    }
+    
+    /**
+     * 전역 키보드 단축키 설정
+     */
+    static setupGlobalKeyboardShortcuts() {
+        // 기존 리스너 제거 (중복 방지)
+        if (EventListeners._globalKeyHandler) {
+            document.removeEventListener('keydown', EventListeners._globalKeyHandler);
+        }
+        
+        // 새 키보드 이벤트 리스너
+        EventListeners._globalKeyHandler = (event) => {
+            // 입력 요소에서는 단축키 비활성화
+            if (event.target.matches('input, textarea, select, [contenteditable="true"]')) {
+                return;
+            }
+            
+            // Alt + T: 테마 전환
+            if (event.altKey && event.key === 't') {
+                event.preventDefault();
+                ThemeManager.cycleTheme();
+            }
+            
+            // Alt + L: 레이아웃 전환
+            if (event.altKey && event.key === 'l') {
+                event.preventDefault();
+                const newMode = LayoutManager.getCurrentMode() === LayoutManager.LAYOUT_MODES.COMPACT
+                    ? LayoutManager.LAYOUT_MODES.COMFORTABLE
+                    : LayoutManager.LAYOUT_MODES.COMPACT;
+                LayoutManager.setLayoutMode(newMode);
+            }
+        };
+        
+        // 이벤트 리스너 등록
+        document.addEventListener('keydown', EventListeners._globalKeyHandler);
+        
+        debugLog('전역 키보드 단축키 설정 완료');
+    }
+    
     /**
      * 이미지 클릭 이벤트 핸들러 설정
      */
@@ -2985,6 +3516,11 @@ class EventListeners {
                 return;
             }
             
+            // 제어 패널 내부 요소인지 확인
+            if (event.target.closest('.xcom-control-panel')) {
+                return;
+            }
+            
             // 이미지 요소 찾기 - 간접적인 이미지 클릭도 캡처
             const imgElement = event.target.tagName === 'IMG' ? 
                               event.target : 
@@ -3036,6 +3572,7 @@ class EventListeners {
 }
 
 // == core/ViewerComponentInitializer.js ==
+
 
 /**
  * 뷰어 컴포넌트 초기화를 담당하는 클래스
@@ -3700,12 +4237,680 @@ class ImageViewer {
     }
 }
 
+// == theme/themeVariables.js ==
+/**
+ * 테마 변수 정의
+ * 앱 전체에서 사용되는 색상, 간격, 크기 등의 디자인 변수
+ */
+const themeVariables = {
+  // 라이트 테마 변수
+  light: {
+    // 색상
+    "bg-primary": "#ffffff",
+    "bg-secondary": "#f5f8fa",
+    "bg-tertiary": "#e1e8ed",
+    "bg-overlay": "rgba(255, 255, 255, 0.9)",
+    "bg-modal": "rgba(0, 0, 0, 0.7)",
+    
+    "text-primary": "#14171a",
+    "text-secondary": "#657786",
+    "text-tertiary": "#aab8c2",
+    "text-inverse": "#ffffff",
+    
+    "accent-primary": "#1da1f2",
+    "accent-secondary": "#0c7abf",
+    "accent-tertiary": "#e1f5fe",
+    
+    "border-light": "#e1e8ed",
+    "border-medium": "#ccd6dd",
+    "border-dark": "#657786",
+    
+    // 그림자
+    "shadow-sm": "0 1px 3px rgba(0, 0, 0, 0.1)",
+    "shadow-md": "0 4px 6px rgba(0, 0, 0, 0.1)",
+    "shadow-lg": "0 10px 15px rgba(0, 0, 0, 0.1)",
+    
+    // 효과
+    "opacity-disabled": "0.5",
+    "opacity-hover": "0.8",
+    
+    // 레이아웃
+    "radius-sm": "4px",
+    "radius-md": "8px",
+    "radius-lg": "16px",
+    "radius-pill": "9999px",
+    
+    "space-xs": "4px",
+    "space-sm": "8px",
+    "space-md": "16px",
+    "space-lg": "24px",
+    "space-xl": "32px",
+    
+    // 애니메이션
+    "transition-fast": "150ms",
+    "transition-normal": "300ms",
+    "transition-slow": "500ms",
+    
+    // 헤더와 바 요소
+    "header-bg": "rgba(255, 255, 255, 0.85)",
+    "header-text": "#14171a",
+    "header-border": "#e1e8ed",
+    "header-height": "50px",
+    
+    "toolbar-bg": "rgba(255, 255, 255, 0.85)",
+    "toolbar-text": "#14171a",
+    "toolbar-border": "#e1e8ed",
+    
+    "thumbnail-bg": "rgba(255, 255, 255, 0.85)",
+    "thumbnail-border": "#e1e8ed",
+    "thumbnail-active": "#1da1f2",
+    
+    // 이미지 뷰어 특수 변수
+    "backdrop-color": "rgba(0, 0, 0, 0.85)",
+    "indicator-bg": "rgba(0, 0, 0, 0.7)",
+    "indicator-text": "#ffffff",
+    "button-hover-bg": "#f5f8fa",
+  },
+  
+  // 다크 테마 변수
+  dark: {
+    // 색상
+    "bg-primary": "#15202b",
+    "bg-secondary": "#1c2938",
+    "bg-tertiary": "#243447",
+    "bg-overlay": "rgba(21, 32, 43, 0.9)",
+    "bg-modal": "rgba(0, 0, 0, 0.85)",
+    
+    "text-primary": "#ffffff",
+    "text-secondary": "#8899a6",
+    "text-tertiary": "#66757f",
+    "text-inverse": "#15202b",
+    
+    "accent-primary": "#1da1f2",
+    "accent-secondary": "#1a91da",
+    "accent-tertiary": "#0c2d48",
+    
+    "border-light": "#38444d",
+    "border-medium": "#536471",
+    "border-dark": "#8899a6",
+    
+    // 그림자
+    "shadow-sm": "0 1px 3px rgba(0, 0, 0, 0.3)",
+    "shadow-md": "0 4px 6px rgba(0, 0, 0, 0.4)",
+    "shadow-lg": "0 10px 15px rgba(0, 0, 0, 0.5)",
+    
+    // 효과
+    "opacity-disabled": "0.5",
+    "opacity-hover": "0.9",
+    
+    // 레이아웃
+    "radius-sm": "4px",
+    "radius-md": "8px",
+    "radius-lg": "16px",
+    "radius-pill": "9999px",
+    
+    "space-xs": "4px",
+    "space-sm": "8px",
+    "space-md": "16px",
+    "space-lg": "24px",
+    "space-xl": "32px",
+    
+    // 애니메이션
+    "transition-fast": "150ms",
+    "transition-normal": "300ms",
+    "transition-slow": "500ms",
+    
+    // 헤더와 바 요소
+    "header-bg": "rgba(21, 32, 43, 0.85)",
+    "header-text": "#ffffff",
+    "header-border": "#38444d",
+    "header-height": "50px",
+    
+    "toolbar-bg": "rgba(21, 32, 43, 0.85)",
+    "toolbar-text": "#ffffff",
+    "toolbar-border": "#38444d",
+    
+    "thumbnail-bg": "rgba(21, 32, 43, 0.85)",
+    "thumbnail-border": "#38444d",
+    "thumbnail-active": "#1da1f2",
+    
+    // 이미지 뷰어 특수 변수
+    "backdrop-color": "rgba(0, 0, 0, 0.95)",
+    "indicator-bg": "rgba(29, 161, 242, 0.2)",
+    "indicator-text": "#ffffff",
+    "button-hover-bg": "#243447",
+  }
+};
+
+// == theme/ThemeManager.js ==
+
+/**
+ * 테마 관리 클래스
+ * 라이트/다크 모드와 같은 테마 설정을 관리하고 적용합니다.
+ */
+class ThemeManager {
+  static LOCAL_STORAGE_KEY = "xcom-gallery-theme";
+  static THEMES = {
+    LIGHT: "light",
+    DARK: "dark",
+    SYSTEM: "system",
+  };
+  
+  // 현재 테마
+  static currentTheme = null;
+  
+  // 테마 변경 리스너
+  static themeChangeListeners = [];
+  
+  /**
+   * 테마 관리자 초기화
+   * @returns {string} 적용된 테마
+   */
+  static initialize() {
+    // 저장된 테마 설정 불러오기
+    const savedTheme = StorageUtils.getLocalStorageItem(
+      this.LOCAL_STORAGE_KEY, 
+      this.THEMES.SYSTEM
+    );
+    
+    // 시스템 설정 감지 및 이벤트 리스너 설정
+    this.setupSystemThemeListener();
+    
+    // 테마 적용
+    return this.setTheme(savedTheme, false);
+  }
+  
+  /**
+   * 시스템 테마 설정 감지 리스너 설정
+   */
+  static setupSystemThemeListener() {
+    if (window.matchMedia) {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      
+      // 변경 감지 리스너
+      const handleChange = (e) => {
+        if (this.currentTheme === this.THEMES.SYSTEM) {
+          this.applyThemeVariables(e.matches ? this.THEMES.DARK : this.THEMES.LIGHT);
+          this.notifyThemeChangeListeners();
+        }
+      };
+      
+      // 현대 이벤트 리스너 API 사용
+      try {
+        mediaQuery.addEventListener("change", handleChange);
+      } catch (e) {
+        // 구형 브라우저 호환성
+        mediaQuery.addListener(handleChange);
+      }
+    }
+  }
+  
+  /**
+   * 테마 설정
+   * @param {string} theme - 테마 식별자 (light, dark, system)
+   * @param {boolean} save - 설정 저장 여부
+   * @returns {string} 적용된 테마
+   */
+  static setTheme(theme, save = true) {
+    // 유효한 테마인지 확인
+    if (!Object.values(this.THEMES).includes(theme)) {
+      theme = this.THEMES.SYSTEM;
+    }
+    
+    this.currentTheme = theme;
+    
+    // 시스템 테마일 경우 현재 시스템 설정 감지
+    if (theme === this.THEMES.SYSTEM) {
+      const isDarkMode = window.matchMedia && 
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+      
+      this.applyThemeVariables(isDarkMode ? this.THEMES.DARK : this.THEMES.LIGHT);
+    } else {
+      this.applyThemeVariables(theme);
+    }
+    
+    // 테마 설정 저장
+    if (save) {
+      StorageUtils.setLocalStorageItem(this.LOCAL_STORAGE_KEY, theme);
+    }
+    
+    // 변경 알림
+    this.notifyThemeChangeListeners();
+    
+    return this.getEffectiveTheme();
+  }
+  
+  /**
+   * 현재 적용된 테마 가져오기
+   * @returns {string} 현재 적용 중인 테마
+   */
+  static getCurrentTheme() {
+    return this.currentTheme || this.THEMES.SYSTEM;
+  }
+  
+  /**
+   * 실제로 적용된 테마 가져오기 (시스템 테마가 아닌 실제 표시 테마)
+   * @returns {string} 효과적으로 적용된 테마
+   */
+  static getEffectiveTheme() {
+    if (this.currentTheme !== this.THEMES.SYSTEM) {
+      return this.currentTheme;
+    }
+    
+    // 시스템 테마일 경우 현재 시스템 설정 반환
+    return window.matchMedia && 
+      window.matchMedia("(prefers-color-scheme: dark)").matches ? 
+      this.THEMES.DARK : this.THEMES.LIGHT;
+  }
+  
+  /**
+   * 테마 변수 적용
+   * @param {string} theme - 적용할 테마
+   */
+  static applyThemeVariables(theme) {
+    const variables = theme === this.THEMES.DARK ? 
+      themeVariables.dark : themeVariables.light;
+    
+    // CSS 변수를 루트 요소에 적용
+    const style = document.documentElement.style;
+    
+    // 모든 변수 적용
+    Object.entries(variables).forEach(([key, value]) => {
+      style.setProperty(`--xcom-${key}`, value);
+    });
+    
+    // 테마 클래스 적용 (다른 스타일링 방식에 유용)
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+  
+  /**
+   * 다음 테마로 전환 (순환)
+   * @returns {string} 새로 적용된 테마
+   */
+  static cycleTheme() {
+    const themes = Object.values(this.THEMES);
+    const currentIndex = themes.indexOf(this.currentTheme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    
+    return this.setTheme(themes[nextIndex]);
+  }
+  
+  /**
+   * 테마 변경 리스너 등록
+   * @param {Function} listener - 테마 변경 시 호출될 콜백 함수
+   */
+  static addThemeChangeListener(listener) {
+    if (typeof listener === "function" && 
+        !this.themeChangeListeners.includes(listener)) {
+      this.themeChangeListeners.push(listener);
+    }
+  }
+  
+  /**
+   * 테마 변경 리스너 제거
+   * @param {Function} listener - 제거할 리스너
+   */
+  static removeThemeChangeListener(listener) {
+    const index = this.themeChangeListeners.indexOf(listener);
+    if (index !== -1) {
+      this.themeChangeListeners.splice(index, 1);
+    }
+  }
+  
+  /**
+   * 테마 변경 리스너에 알림
+   */
+  static notifyThemeChangeListeners() {
+    const theme = this.getEffectiveTheme();
+    this.themeChangeListeners.forEach(listener => {
+      try {
+        listener(theme);
+      } catch (e) {
+        console.error("테마 변경 리스너 오류:", e);
+      }
+    });
+  }
+  
+  /**
+   * 테마 전환 버튼 생성
+   * @returns {HTMLElement} 테마 전환 버튼
+   */
+  static createThemeToggle() {
+    const { bgColor, textColor } = Utils.getUserUIColor();
+    
+    const button = document.createElement("button");
+    button.className = "theme-toggle-button icon-button";
+    button.setAttribute("aria-label", "테마 전환");
+    button.title = "테마 전환 (라이트/다크)";
+    
+    // 현재 테마에 맞는 아이콘 설정
+    this.updateThemeToggleIcon(button);
+    
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      this.cycleTheme();
+      this.updateThemeToggleIcon(button);
+    });
+    
+    // 테마 변경 시 아이콘 업데이트
+    this.addThemeChangeListener(() => {
+      this.updateThemeToggleIcon(button);
+    });
+    
+    return button;
+  }
+  
+  /**
+   * 테마 토글 버튼 아이콘 업데이트
+   * @param {HTMLElement} button - 테마 토글 버튼
+   */
+  static updateThemeToggleIcon(button) {
+    const theme = this.getEffectiveTheme();
+    
+    button.innerHTML = theme === this.THEMES.DARK
+      ? '<i class="fa-solid fa-sun" aria-hidden="true"></i>'
+      : '<i class="fa-solid fa-moon" aria-hidden="true"></i>';
+  }
+}
+
+// == theme/LayoutManager.js ==
+
+/**
+ * 레이아웃 관리 클래스
+ * 반응형 레이아웃과 UI 배치를 관리합니다.
+ */
+class LayoutManager {
+  static LOCAL_STORAGE_KEY = "xcom-gallery-layout";
+  
+  // 레이아웃 모드
+  static LAYOUT_MODES = {
+    COMPACT: "compact",
+    COMFORTABLE: "comfortable",
+    CUSTOM: "custom"
+  };
+  
+  // 현재 레이아웃 모드
+  static currentMode = null;
+  
+  // 레이아웃 변경 리스너
+  static layoutChangeListeners = [];
+  
+  // 화면 크기 분기점
+  static BREAKPOINTS = {
+    MOBILE: 480,
+    TABLET: 768,
+    DESKTOP: 1024,
+    LARGE: 1440
+  };
+  
+  /**
+   * 레이아웃 관리자 초기화
+   * @returns {string} 적용된 레이아웃 모드
+   */
+  static initialize() {
+    // 저장된 레이아웃 설정 불러오기
+    const savedMode = StorageUtils.getLocalStorageItem(
+      this.LOCAL_STORAGE_KEY, 
+      this.LAYOUT_MODES.COMFORTABLE
+    );
+    
+    // 화면 크기 변경 감지 리스너 설정
+    this.setupResizeListener();
+    
+    // 레이아웃 적용
+    return this.setLayoutMode(savedMode, false);
+  }
+  
+  /**
+   * 화면 크기 변경 감지 리스너 설정
+   */
+  static setupResizeListener() {
+    // 리사이즈 이벤트 디바운싱
+    let resizeTimeout;
+    
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        this.applyResponsiveLayout();
+        this.notifyLayoutChangeListeners();
+      }, 200);
+    });
+  }
+  
+  /**
+   * 현재 화면 크기에 기반한 반응형 레이아웃 적용
+   */
+  static applyResponsiveLayout() {
+    const width = window.innerWidth;
+    
+    // 사용자 정의 레이아웃인 경우 변경하지 않음
+    if (this.currentMode === this.LAYOUT_MODES.CUSTOM) {
+      return;
+    }
+    
+    // 화면 크기에 따른 레이아웃 조정
+    if (width <= this.BREAKPOINTS.MOBILE) {
+      document.documentElement.setAttribute('data-layout', 'mobile');
+      // 모바일 뷰에서는 항상 컴팩트 모드 강제
+      this.applyCompactLayout();
+    } else if (width <= this.BREAKPOINTS.TABLET) {
+      document.documentElement.setAttribute('data-layout', 'tablet');
+      // 태블릿은 현재 선택된 모드 적용
+      this.applyCurrentLayoutMode();
+    } else {
+      document.documentElement.setAttribute('data-layout', 'desktop');
+      // 데스크톱은 현재 선택된 모드 적용
+      this.applyCurrentLayoutMode();
+    }
+  }
+  
+  /**
+   * 레이아웃 모드 설정
+   * @param {string} mode - 레이아웃 모드 (compact, comfortable, custom)
+   * @param {boolean} save - 설정 저장 여부
+   * @returns {string} 적용된 모드
+   */
+  static setLayoutMode(mode, save = true) {
+    // 유효한 모드인지 확인
+    if (!Object.values(this.LAYOUT_MODES).includes(mode)) {
+      mode = this.LAYOUT_MODES.COMFORTABLE;
+    }
+    
+    this.currentMode = mode;
+    
+    // 모드 적용
+    this.applyCurrentLayoutMode();
+    
+    // 레이아웃 설정 저장
+    if (save) {
+      StorageUtils.setLocalStorageItem(this.LOCAL_STORAGE_KEY, mode);
+    }
+    
+    // 변경 알림
+    this.notifyLayoutChangeListeners();
+    
+    return mode;
+  }
+  
+  /**
+   * 현재 레이아웃 모드 적용
+   */
+  static applyCurrentLayoutMode() {
+    switch (this.currentMode) {
+      case this.LAYOUT_MODES.COMPACT:
+        this.applyCompactLayout();
+        break;
+      case this.LAYOUT_MODES.COMFORTABLE:
+        this.applyComfortableLayout();
+        break;
+      case this.LAYOUT_MODES.CUSTOM:
+        // 사용자 정의 레이아웃은 변경하지 않음
+        break;
+      default:
+        this.applyComfortableLayout();
+    }
+  }
+  
+  /**
+   * 컴팩트 레이아웃 적용
+   * 작은 화면이나 제한된 공간에 최적화
+   */
+  static applyCompactLayout() {
+    document.documentElement.setAttribute('data-density', 'compact');
+    
+    // 옵션바와 썸네일바에 컴팩트 스타일 적용
+    const optionsBar = document.getElementById('optionsBar');
+    if (optionsBar) {
+      optionsBar.classList.add('compact');
+      
+      // 그룹 내 요소 간격 조정
+      const sections = optionsBar.querySelectorAll('div');
+      sections.forEach(section => {
+        section.style.gap = 'var(--xcom-space-xs)';
+      });
+    }
+    
+    const thumbnailBar = document.getElementById('thumbnailBar');
+    if (thumbnailBar) {
+      thumbnailBar.classList.add('compact');
+      thumbnailBar.style.height = '70px';
+    }
+    
+    // 썸네일 크기 조정
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    thumbnails.forEach(thumb => {
+      thumb.style.height = '50px';
+    });
+  }
+  
+  /**
+   * 편안한 레이아웃 적용
+   * 충분한 여백과 시각적 여유 제공
+   */
+  static applyComfortableLayout() {
+    document.documentElement.setAttribute('data-density', 'comfortable');
+    
+    // 옵션바와 썸네일바에 편안한 스타일 적용
+    const optionsBar = document.getElementById('optionsBar');
+    if (optionsBar) {
+      optionsBar.classList.remove('compact');
+      
+      // 그룹 내 요소 간격 조정
+      const sections = optionsBar.querySelectorAll('div');
+      sections.forEach(section => {
+        section.style.gap = 'var(--xcom-space-sm)';
+      });
+    }
+    
+    const thumbnailBar = document.getElementById('thumbnailBar');
+    if (thumbnailBar) {
+      thumbnailBar.classList.remove('compact');
+      thumbnailBar.style.height = '80px';
+    }
+    
+    // 썸네일 크기 조정
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    thumbnails.forEach(thumb => {
+      thumb.style.height = '60px';
+    });
+  }
+  
+  /**
+   * 현재 레이아웃 모드 가져오기
+   * @returns {string} 현재 레이아웃 모드
+   */
+  static getCurrentMode() {
+    return this.currentMode || this.LAYOUT_MODES.COMFORTABLE;
+  }
+  
+  /**
+   * 레이아웃 변경 리스너 등록
+   * @param {Function} listener - 레이아웃 변경 시 호출될 콜백 함수
+   */
+  static addLayoutChangeListener(listener) {
+    if (typeof listener === "function" && 
+        !this.layoutChangeListeners.includes(listener)) {
+      this.layoutChangeListeners.push(listener);
+    }
+  }
+  
+  /**
+   * 레이아웃 변경 리스너 제거
+   * @param {Function} listener - 제거할 리스너
+   */
+  static removeLayoutChangeListener(listener) {
+    const index = this.layoutChangeListeners.indexOf(listener);
+    if (index !== -1) {
+      this.layoutChangeListeners.splice(index, 1);
+    }
+  }
+  
+  /**
+   * 레이아웃 변경 리스너에 알림
+   */
+  static notifyLayoutChangeListeners() {
+    const mode = this.getCurrentMode();
+    this.layoutChangeListeners.forEach(listener => {
+      try {
+        listener(mode);
+      } catch (e) {
+        console.error("레이아웃 변경 리스너 오류:", e);
+      }
+    });
+  }
+  
+  /**
+   * 레이아웃 모드 토글 버튼 생성
+   * @returns {HTMLElement} 레이아웃 모드 토글 버튼
+   */
+  static createLayoutToggle() {
+    const { bgColor, textColor } = Utils.getUserUIColor();
+    
+    const button = document.createElement("button");
+    button.className = "layout-toggle-button icon-button";
+    button.setAttribute("aria-label", "레이아웃 모드 전환");
+    button.title = "레이아웃 모드 전환 (컴팩트/편안함)";
+    
+    // 현재 모드에 맞는 아이콘 설정
+    this.updateLayoutToggleIcon(button);
+    
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // 모드 토글
+      const newMode = this.currentMode === this.LAYOUT_MODES.COMPACT
+        ? this.LAYOUT_MODES.COMFORTABLE
+        : this.LAYOUT_MODES.COMPACT;
+      
+      this.setLayoutMode(newMode);
+      this.updateLayoutToggleIcon(button);
+    });
+    
+    // 레이아웃 변경 시 아이콘 업데이트
+    this.addLayoutChangeListener(() => {
+      this.updateLayoutToggleIcon(button);
+    });
+    
+    return button;
+  }
+  
+  /**
+   * 레이아웃 토글 버튼 아이콘 업데이트
+   * @param {HTMLElement} button - 레이아웃 토글 버튼
+   */
+  static updateLayoutToggleIcon(button) {
+    const mode = this.getCurrentMode();
+    
+    button.innerHTML = mode === this.LAYOUT_MODES.COMPACT
+      ? '<i class="fa-solid fa-expand" aria-hidden="true"></i>'
+      : '<i class="fa-solid fa-compress" aria-hidden="true"></i>';
+  }
+}
+
 // == main.js ==
-
-
-
-
-
 
 (function() {
     'use strict';
@@ -3716,6 +4921,12 @@ class ImageViewer {
         // 스타일시트 생성
         Utils.createStyleSheet(STYLE_ID, CSS);
         
+        // 테마 관리자 초기화
+        ThemeManager.initialize();
+        
+        // 레이아웃 관리자 초기화
+        LayoutManager.initialize();
+        
         // URL 초기 정리 및 변경 감지 설정
         URLManager.cleanPhotoPath();
         URLManager.setupURLChangeDetection();
@@ -3724,6 +4935,9 @@ class ImageViewer {
         EventListeners.setupImageClickHandler();
         EventListeners.setupTouchAndMouseHandlers();
         EventListeners.setupEventPreventionReinforcement();
+        
+        // 전역 UI 초기화 - 언어 선택기 추가
+        EventListeners.setupGlobalUI();
         
         console.log("X.com Enhanced Image Gallery 로드 완료");
     }

@@ -126,12 +126,20 @@ const componentUtilFiles = [
 ];
 
 const componentFiles = [
+  path.join(COMPONENTS_DIR, 'LanguageSelector.js'),
   path.join(COMPONENTS_DIR, 'ViewerDOM.js'),
   path.join(COMPONENTS_DIR, 'ViewerNavigation.js'),
   path.join(COMPONENTS_DIR, 'ViewerDownload.js'),
   path.join(COMPONENTS_DIR, 'ViewerEvents.js'),
   path.join(COMPONENTS_DIR, 'ViewerImageLoader.js'),
   path.join(COMPONENTS_DIR, 'ViewerFocus.js')
+];
+
+// 테마 관련 파일
+const themeFiles = [
+  path.join(SRC_DIR, 'theme', 'themeVariables.js'),
+  path.join(SRC_DIR, 'theme', 'ThemeManager.js'),
+  path.join(SRC_DIR, 'theme', 'LayoutManager.js')
 ];
 
 // 뷰어 코어 파일 (분할된 파일 추가)
@@ -229,6 +237,9 @@ processFileArray(supportFiles, "지원");
 
 console.log("코어 파일 처리 중...");
 processFileArray(coreFiles, "코어");
+
+console.log("테마 파일 처리 중...");
+processFileArray(themeFiles, "테마");
 
 console.log("메인 파일 처리 중...");
 processFileArray(mainFiles, "메인");
