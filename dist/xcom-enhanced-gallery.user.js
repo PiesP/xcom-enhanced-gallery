@@ -215,6 +215,7 @@ const LOCALE_DATA = {
 
 // == debug.js ==
 
+
 /**
  * 디버그 로그 출력 함수
  * @param {string} message - 로그 메시지
@@ -1499,6 +1500,8 @@ class ThumbnailManager {
 
 // == components/ViewerDOM.js ==
 
+
+
 class ViewerDOM {
     constructor(viewer) {
         this.viewer = viewer;
@@ -2181,6 +2184,7 @@ class ViewerDownload {
 
 // == components/ViewerEvents.js ==
 
+
 class ViewerEvents {
     constructor(viewer) {
         this.viewer = viewer;
@@ -2780,6 +2784,7 @@ class ViewerFocus {
 
 // == URLManager.js ==
 
+
 /**
  * URL 관리 클래스
  */
@@ -2839,6 +2844,10 @@ class URLManager {
 }
 
 // == EventListeners.js ==
+
+
+
+
 
 /**
  * 이벤트 리스너 관리 클래스
@@ -3301,6 +3310,7 @@ class ViewerNavigationManager {
 
 // == core/ViewerUIManager.js ==
 
+
 /**
  * 뷰어 UI 관리를 담당하는 클래스
  */
@@ -3440,7 +3450,24 @@ class ViewerCleanup {
 
 // == ViewerCore.js ==
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 // 새로 분할된 핵심 모듈 가져오기
+
+
+
+
 
 /**
  * 이미지 뷰어 핵심 클래스
@@ -3674,6 +3701,11 @@ class ImageViewer {
 }
 
 // == main.js ==
+
+
+
+
+
 
 (function() {
     'use strict';
