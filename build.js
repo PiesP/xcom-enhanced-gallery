@@ -3,6 +3,9 @@ import path from 'path';
 
 const SRC_DIR = './src';
 const COMPONENTS_DIR = path.join(SRC_DIR, 'components');
+const UTILS_DIR = path.join(SRC_DIR, 'utils');
+const CORE_DIR = path.join(SRC_DIR, 'core');
+const TWEET_DIR = path.join(SRC_DIR, 'tweet');
 const I18N_DIR = path.join(SRC_DIR, 'I18N');
 const I18N_UTILS_DIR = path.join(I18N_DIR, 'utils');
 const LOCALES_DIR = path.join(I18N_DIR, 'locales');
@@ -84,11 +87,19 @@ let output = METADATA;
 output += processLocaleFiles();
 
 // 파일 순서 - 의존성 순서대로 정렬
-const utilFiles = [
-  path.join(SRC_DIR, 'Utils.js'),
+const configFiles = [
   path.join(SRC_DIR, 'debug.js'),
   path.join(SRC_DIR, 'config.js'),
   path.join(SRC_DIR, 'CSS.js')
+];
+
+// 유틸리티 파일 (분할된 파일 추가)
+const utilsFiles = [
+  path.join(UTILS_DIR, 'StorageUtils.js'),
+  path.join(UTILS_DIR, 'DOMUtils.js'),
+  path.join(UTILS_DIR, 'URLUtils.js'),
+  path.join(UTILS_DIR, 'FunctionUtils.js'),
+  path.join(SRC_DIR, 'Utils.js')
 ];
 
 const i18nUtilFiles = [
@@ -99,6 +110,13 @@ const i18nUtilFiles = [
 const i18nFiles = [
   path.join(I18N_DIR, 'TranslationManager.js'),
   path.join(I18N_DIR, 'index.js')
+];
+
+// 트윗 관련 파일 (분할된 파일 추가)
+const tweetFiles = [
+  path.join(TWEET_DIR, 'ImageExtractor.js'),
+  path.join(TWEET_DIR, 'TweetDataExtractor.js'),
+  path.join(SRC_DIR, 'TweetInfo.js')
 ];
 
 const componentUtilFiles = [
@@ -116,59 +134,59 @@ const componentFiles = [
   path.join(COMPONENTS_DIR, 'ViewerFocus.js')
 ];
 
+// 뷰어 코어 파일 (분할된 파일 추가)
 const coreFiles = [
-  path.join(SRC_DIR, 'TweetInfo.js'),
-  path.join(SRC_DIR, 'URLManager.js'),
-  path.join(SRC_DIR, 'EventListeners.js')
-];
-
-const viewerFiles = [
+  path.join(CORE_DIR, 'ViewerComponentInitializer.js'),
+  path.join(CORE_DIR, 'ViewerNavigationManager.js'),
+  path.join(CORE_DIR, 'ViewerUIManager.js'),
+  path.join(CORE_DIR, 'ViewerCleanup.js'),
   path.join(SRC_DIR, 'ViewerCore.js'),
   path.join(SRC_DIR, 'ImageViewer.js')
+];
+
+const supportFiles = [
+  path.join(SRC_DIR, 'URLManager.js'),
+  path.join(SRC_DIR, 'EventListeners.js')
 ];
 
 const mainFiles = [
   path.join(SRC_DIR, 'main.js')
 ];
 
-// 유틸리티 파일 처리
-utilFiles.forEach(filePath => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf-8');
-    content = processJavaScriptFile(content, filePath);
-    
-    const relativePath = path.relative(SRC_DIR, filePath).replace(/\\/g, '/');
-    output += `// == ${relativePath} ==\n${content}\n\n`;
-  } else {
-    console.warn(`파일을 찾을 수 없습니다: ${filePath}`);
-  }
-});
+// 파일 배열에 대한 처리 함수
+const processFileArray = (files, description) => {
+  files.forEach(filePath => {
+    if (fs.existsSync(filePath)) {
+      let content = fs.readFileSync(filePath, 'utf-8');
+      content = processJavaScriptFile(content, filePath);
+      
+      const relativePath = path.relative(SRC_DIR, filePath).replace(/\\/g, '/');
+      output += `// == ${relativePath} ==\n${content}\n\n`;
+    } else {
+      console.warn(`파일을 찾을 수 없습니다: ${filePath}`);
+    }
+  });
+};
 
-// I18N 유틸리티 파일 처리
-i18nUtilFiles.forEach(filePath => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf-8');
-    content = processJavaScriptFile(content, filePath);
-    
-    const relativePath = path.relative(SRC_DIR, filePath).replace(/\\/g, '/');
-    output += `// == ${relativePath} ==\n${content}\n\n`;
-  } else {
-    console.warn(`파일을 찾을 수 없습니다: ${filePath}`);
-  }
-});
+// 각 파일 그룹 처리
+console.log("기본 설정 파일 처리 중...");
+processFileArray(configFiles, "기본 설정");
 
-// I18N 파일 처리
+console.log("유틸리티 파일 처리 중...");
+processFileArray(utilsFiles, "유틸리티");
+
+console.log("I18N 유틸리티 파일 처리 중...");
+processFileArray(i18nUtilFiles, "I18N 유틸리티");
+
+console.log("I18N 파일 처리 중...");
 i18nFiles.forEach(filePath => {
   if (fs.existsSync(filePath)) {
     let content = fs.readFileSync(filePath, 'utf-8');
-    // 파일을 처리하기 전에 클래스와 함수 처리
     content = processJavaScriptFile(content, filePath);
     
-    // index.js 파일의 경우 로케일 로더 함수 수정
     if (filePath.endsWith('index.js')) {
       content = modifyLocaleLoader(content);
       
-      // translate 함수 및 관련 함수들이 전역에서 접근 가능하도록 정의
       content = content.replace(
         /const translate = \(key, ...params\) => \{/,
         'function translate(key, ...params) {'
@@ -197,70 +215,23 @@ i18nFiles.forEach(filePath => {
   }
 });
 
-// 컴포넌트 유틸리티 파일 처리
-componentUtilFiles.forEach(filePath => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf-8');
-    content = processJavaScriptFile(content, filePath);
-    
-    const relativePath = path.relative(SRC_DIR, filePath).replace(/\\/g, '/');
-    output += `// == ${relativePath} ==\n${content}\n\n`;
-  } else {
-    console.warn(`파일을 찾을 수 없습니다: ${filePath}`);
-  }
-});
+console.log("트윗 관련 파일 처리 중...");
+processFileArray(tweetFiles, "트윗 관련");
 
-// 컴포넌트 파일 처리
-componentFiles.forEach(filePath => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf-8');
-    content = processJavaScriptFile(content, filePath);
-    
-    const relativePath = path.relative(SRC_DIR, filePath).replace(/\\/g, '/');
-    output += `// == ${relativePath} ==\n${content}\n\n`;
-  } else {
-    console.warn(`파일을 찾을 수 없습니다: ${filePath}`);
-  }
-});
+console.log("컴포넌트 유틸리티 파일 처리 중...");
+processFileArray(componentUtilFiles, "컴포넌트 유틸리티");
 
-// 코어 파일 처리
-coreFiles.forEach(filePath => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf-8');
-    content = processJavaScriptFile(content, filePath);
-    
-    const relativePath = path.relative(SRC_DIR, filePath).replace(/\\/g, '/');
-    output += `// == ${relativePath} ==\n${content}\n\n`;
-  } else {
-    console.warn(`파일을 찾을 수 없습니다: ${filePath}`);
-  }
-});
+console.log("컴포넌트 파일 처리 중...");
+processFileArray(componentFiles, "컴포넌트");
 
-// 뷰어 파일 처리
-viewerFiles.forEach(filePath => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf-8');
-    content = processJavaScriptFile(content, filePath);
-    
-    const relativePath = path.relative(SRC_DIR, filePath).replace(/\\/g, '/');
-    output += `// == ${relativePath} ==\n${content}\n\n`;
-  } else {
-    console.warn(`파일을 찾을 수 없습니다: ${filePath}`);
-  }
-});
+console.log("지원 파일 처리 중...");
+processFileArray(supportFiles, "지원");
 
-// 메인 파일 처리
-mainFiles.forEach(filePath => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf-8');
-    content = processJavaScriptFile(content, filePath);
-    
-    const relativePath = path.relative(SRC_DIR, filePath).replace(/\\/g, '/');
-    output += `// == ${relativePath} ==\n${content}\n\n`;
-  } else {
-    console.warn(`파일을 찾을 수 없습니다: ${filePath}`);
-  }
-});
+console.log("코어 파일 처리 중...");
+processFileArray(coreFiles, "코어");
+
+console.log("메인 파일 처리 중...");
+processFileArray(mainFiles, "메인");
 
 // dist 디렉토리가 없으면 생성
 if (!fs.existsSync(DIST_DIR)) {

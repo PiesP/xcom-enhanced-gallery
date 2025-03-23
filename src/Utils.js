@@ -1,75 +1,42 @@
+import { StorageUtils } from "./utils/StorageUtils.js";
+import { DOMUtils } from "./utils/DOMUtils.js";
+import { URLUtils } from "./utils/URLUtils.js";
+import { FunctionUtils } from "./utils/FunctionUtils.js";
+
+/**
+ * 통합 유틸리티 클래스
+ * 분할된 유틸리티 모듈을 하나의 인터페이스로 제공합니다.
+ */
 export class Utils {
+    // StorageUtils
     static getLocalStorageItem(key, defaultValue) {
-        try {
-            const value = localStorage.getItem(key);
-            return value !== null ? value : defaultValue;
-        } catch (e) {
-            return defaultValue;
-        }
+        return StorageUtils.getLocalStorageItem(key, defaultValue);
     }
 
     static setLocalStorageItem(key, value) {
-        try {
-            localStorage.setItem(key, value);
-        } catch (e) {
-            console.warn(`localStorage save failed: ${e.message}`);
-        }
+        StorageUtils.setLocalStorageItem(key, value);
     }
 
+    // DOMUtils
     static createStyleSheet(id, cssContent) {
-        if (!document.getElementById(id)) {
-            const styleSheet = document.createElement('style');
-            styleSheet.id = id;
-            styleSheet.textContent = cssContent;
-            document.head.appendChild(styleSheet);
-        }
-    }
-
-    static getFileExtension(url) {
-        try {
-            const urlParams = new URL(url).searchParams;
-            const format = urlParams.get('format');
-            return format ? format : 'jpg';
-        } catch (e) {
-            return 'jpg';
-        }
+        DOMUtils.createStyleSheet(id, cssContent);
     }
 
     static getUserUIColor() {
-        try {
-            const computedStyle = getComputedStyle(document.body);
-            return {
-                bgColor: computedStyle.backgroundColor || 'black',
-                textColor: computedStyle.color || 'white'
-            };
-        } catch (e) {
-            return { bgColor: 'black', textColor: 'white' };
-        }
+        return DOMUtils.getUserUIColor();
     }
 
     static addAlpha(color, alpha) {
-        try {
-            if (color.startsWith("rgb(")) {
-                return color.replace("rgb(", "rgba(").replace(")", `, ${alpha})`);
-            }
-            return color;
-        } catch (e) {
-            return `rgba(0, 0, 0, ${alpha})`;
-        }
+        return DOMUtils.addAlpha(color, alpha);
     }
 
+    // URLUtils
+    static getFileExtension(url) {
+        return URLUtils.getFileExtension(url);
+    }
+
+    // FunctionUtils
     static debounce(func, wait, immediate = false) {
-        let timeout;
-        return function(...args) {
-            const context = this;
-            const later = function() {
-                timeout = null;
-                if (!immediate) func.apply(context, args);
-            };
-            const callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-            if (callNow) func.apply(context, args);
-        };
+        return FunctionUtils.debounce(func, wait, immediate);
     }
 }
