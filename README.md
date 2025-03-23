@@ -77,7 +77,7 @@ Contributions are welcome! Please feel free to submit a Pull Request or create a
 
 ## Acknowledgements
 
-This project was developed with assistance from Claude, an AI assistant by Anthropic. Claude helped with code optimization, documentation improvements, and implementation of specific features including the media tab support and smooth scrolling enhancements.
+This project was developed in collaboration with AI.
 
 ## License
 
