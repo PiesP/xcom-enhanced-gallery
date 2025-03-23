@@ -1,4 +1,4 @@
-import { translate } from "./I18N.js";
+import { translate } from "./I18N/index.js";
 
 export class TweetInfo {
     constructor() {

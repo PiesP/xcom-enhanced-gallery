@@ -1,5 +1,5 @@
 import { Utils } from "../Utils.js";
-import { translate } from "../I18N.js";
+import { translate } from "../I18N/index.js";
 
 export class ViewerDOM {
     constructor(viewer) {
@@ -48,8 +48,8 @@ export class ViewerDOM {
         optionsBar.setAttribute('role', 'toolbar');
         optionsBar.setAttribute('aria-label', 'Image Viewer Controls');
 
-        const prevBtn = this.createIconButton('fa-solid fa-arrow-left', handlers.prevImage, translate('prevImage'));
-        const nextBtn = this.createIconButton('fa-solid fa-arrow-right', handlers.nextImage, translate('nextImage'));
+        const prevBtn = this.createIconButton('fa-solid fa-arrow-left', handlers.prevImage, translate('viewer.controls.prev'));
+        const nextBtn = this.createIconButton('fa-solid fa-arrow-right', handlers.nextImage, translate('viewer.controls.next'));
 
         const imageSelect = document.createElement('select');
         imageSelect.id = 'image-select';
@@ -67,15 +67,15 @@ export class ViewerDOM {
             handlers.selectImage(parseInt(imageSelect.value), true);
         });
 
-        const fitWidthBtn = this.createIconButton('fa-solid fa-arrows-left-right', () => handlers.adjustImages('width'), translate('fitWidth'));
-        const fitHeightBtn = this.createIconButton('fa-solid fa-arrows-up-down', () => handlers.adjustImages('height'), translate('fitHeight'));
-        const fitWindowBtn = this.createIconButton('fa-solid fa-expand', () => handlers.adjustImages('window'), translate('fitWindow'));
-        const originalSizeBtn = this.createIconButton('fa-solid fa-image', () => handlers.adjustImages('original'), translate('originalSize'));
+        const fitWidthBtn = this.createIconButton('fa-solid fa-arrows-left-right', () => handlers.adjustImages('width'), translate('viewer.modes.fitWidth'));
+        const fitHeightBtn = this.createIconButton('fa-solid fa-arrows-up-down', () => handlers.adjustImages('height'), translate('viewer.modes.fitHeight'));
+        const fitWindowBtn = this.createIconButton('fa-solid fa-expand', () => handlers.adjustImages('window'), translate('viewer.modes.fitWindow'));
+        const originalSizeBtn = this.createIconButton('fa-solid fa-image', () => handlers.adjustImages('original'), translate('viewer.modes.original'));
 
-        const downloadCurrentBtn = this.createIconButton('fa-solid fa-download', handlers.downloadCurrentImage, translate('saveCurrentImage'));
-        const downloadAllBtn = this.createIconButton('fa-solid fa-file-zipper', handlers.downloadAllImages, translate('saveAllImages'));
+        const downloadCurrentBtn = this.createIconButton('fa-solid fa-download', handlers.downloadCurrentImage, translate('viewer.controls.download'));
+        const downloadAllBtn = this.createIconButton('fa-solid fa-file-zipper', handlers.downloadAllImages, translate('viewer.controls.downloadZip'));
 
-        const closeBtn = this.createIconButton('fa-solid fa-xmark', handlers.close, translate('close'));
+        const closeBtn = this.createIconButton('fa-solid fa-xmark', handlers.close, translate('viewer.controls.close'));
         closeBtn.style.marginLeft = 'auto';
         closeBtn.style.marginRight = '10px';
 
@@ -268,7 +268,7 @@ export class ViewerDOM {
     createCurrentImageIndicator(currentIndex, totalImages) {
         const indicator = document.createElement('div');
         indicator.id = 'current-image-indicator';
-        indicator.textContent = translate('currentImageIndicator', currentIndex + 1, totalImages);
+        indicator.textContent = translate('viewer.indicators.currentImage', { current: currentIndex + 1, total: totalImages });
         return indicator;
     }
 

@@ -1,5 +1,5 @@
 import { Utils } from "../Utils.js";
-import { translate } from "../I18N.js";
+import { translate } from "../I18N/index.js";
 
 export class ViewerDownload {
     constructor(viewer) {
@@ -12,7 +12,13 @@ export class ViewerDownload {
 
             const url = tweetInfo.imageUrls[currentIndex];
             const ext = Utils.getFileExtension(url);
-            const filename = `${tweetInfo.user}_${tweetInfo.id}_${currentIndex + 1}.${ext}`;
+            
+            // 새로운 I18N 구조 사용
+            const filenameTemplate = translate('download.filename');
+            const filename = filenameTemplate
+                .replace('{{username}}', tweetInfo.user)
+                .replace('{{tweetId}}', tweetInfo.id)
+                .replace('{{index}}', (currentIndex + 1).toString()) + '.' + ext;
 
             const downloadIndicator = document.createElement('div');
             downloadIndicator.style.cssText = `
@@ -42,7 +48,7 @@ export class ViewerDownload {
             `;
 
             downloadIndicator.innerHTML = `
-                <h3>Downloading Image ${currentIndex + 1} of ${tweetInfo.imageUrls.length}</h3>
+                <h3>${translate('download.preparing')}</h3>
                 <p>${filename}</p>
             `;
             downloadIndicator.appendChild(preview);
@@ -74,8 +80,7 @@ export class ViewerDownload {
             }
 
             downloadIndicator.innerHTML = `
-                <h3>Download Complete!</h3>
-                <p>Image ${currentIndex + 1} of ${tweetInfo.imageUrls.length} saved as:</p>
+                <h3>${translate('download.complete')}</h3>
                 <p>${filename}</p>
             `;
             downloadIndicator.appendChild(preview);
@@ -105,7 +110,14 @@ export class ViewerDownload {
 
             const ZipConstructor = typeof JSZip === 'function' ? JSZip : window.JSZip;
             const zip = new ZipConstructor();
-            const folder = zip.folder(`${tweetInfo.user}_${tweetInfo.id}`);
+            
+            // 새로운 I18N 구조 사용
+            const zipNameTemplate = translate('download.zipName');
+            const zipFolderName = zipNameTemplate
+                .replace('{{username}}', tweetInfo.user)
+                .replace('{{tweetId}}', tweetInfo.id);
+                
+            const folder = zip.folder(zipFolderName);
 
             const loadingIndicator = document.createElement('div');
             loadingIndicator.style.cssText = `
@@ -126,7 +138,14 @@ export class ViewerDownload {
             const downloadPromises = tweetInfo.imageUrls.map(async (url, index) => {
                 try {
                     const ext = Utils.getFileExtension(url);
-                    const filename = `${tweetInfo.user}_${tweetInfo.id}_${index + 1}.${ext}`;
+                    
+                    // 새로운 I18N 구조 사용
+                    const filenameTemplate = translate('download.filename');
+                    const filename = filenameTemplate
+                        .replace('{{username}}', tweetInfo.user)
+                        .replace('{{tweetId}}', tweetInfo.id)
+                        .replace('{{index}}', (index + 1).toString()) + '.' + ext;
+                    
                     const response = await fetch(url);
 
                     if (!response.ok) {
@@ -141,7 +160,7 @@ export class ViewerDownload {
                         <p>Downloading images (${index + 1}/${tweetInfo.imageUrls.length})...</p>
                     `;
                 } catch (error) {
-                    console.warn(`${translate('downloadFailed')}: ${url}`, error);
+                    console.warn(`${translate('errors.download')}: ${url}`, error);
                 }
             });
 
@@ -151,14 +170,14 @@ export class ViewerDownload {
                 const zipContent = await zip.generateAsync({ type: 'blob' });
                 
                 if (typeof saveAs === 'function') {
-                    saveAs(zipContent, `${tweetInfo.user}_${tweetInfo.id}.zip`);
+                    saveAs(zipContent, `${zipFolderName}.zip`);
                 } else if (typeof window.saveAs === 'function') {
-                    window.saveAs(zipContent, `${tweetInfo.user}_${tweetInfo.id}.zip`);
+                    window.saveAs(zipContent, `${zipFolderName}.zip`);
                 } else {
                     const url = URL.createObjectURL(zipContent);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = `${tweetInfo.user}_${tweetInfo.id}.zip`;
+                    link.download = `${zipFolderName}.zip`;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);

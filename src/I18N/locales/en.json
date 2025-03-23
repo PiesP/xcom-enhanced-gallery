@@ -1,0 +1,33 @@
+{
+  "viewer": {
+    "title": "Enhanced Image Viewer",
+    "controls": {
+      "prev": "Previous",
+      "next": "Next",
+      "close": "Close",
+      "download": "Download",
+      "downloadZip": "Download All"
+    },
+    "modes": {
+      "original": "Original Size",
+      "fitWidth": "Fit to Width",
+      "fitHeight": "Fit to Height",
+      "fitWindow": "Fit to Window"
+    },
+    "indicators": {
+      "currentImage": "Image {{current}} of {{total}}"
+    }
+  },
+  "download": {
+    "filename": "{{username}}_tweet_{{tweetId}}_image_{{index}}",
+    "zipName": "{{username}}_tweet_{{tweetId}}_images",
+    "preparing": "Preparing download...",
+    "complete": "Download complete"
+  },
+  "errors": {
+    "loading": "Failed to load image",
+    "download": "Failed to download image"
+  },
+  "unknownUser": "unknown",
+  "unknownID": "unknown"
+}
