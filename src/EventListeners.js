@@ -2,11 +2,196 @@ import { ImageViewer } from "./ImageViewer.js";
 import { URLManager } from "./URLManager.js";
 import { CONFIG } from "./config.js";
 import { debugLog } from "./debug.js";
+import { LanguageSelector } from "./components/LanguageSelector.js";
+import { Utils } from "./Utils.js";
+import { ThemeManager } from "./theme/ThemeManager.js";
+import { LayoutManager } from "./theme/LayoutManager.js";
 
 /**
  * 이벤트 리스너 관리 클래스
  */
 export class EventListeners {
+    /**
+     * 레이아웃 연결 요소
+     */
+    static layoutConnectors = {
+        // 언어 선택기 연결 요소
+        languageSelectorContainer: null,
+        // 테마 토글 버튼
+        themeToggleBtn: null,
+        // 레이아웃 토글 버튼
+        layoutToggleBtn: null,
+        // 전역 제어 패널
+        controlPanel: null
+    };
+    
+    /**
+     * 전체 UI 초기화 - 추가 UI 기능
+     */
+    static setupGlobalUI() {
+        // 전역 제어 패널 생성
+        EventListeners.setupControlPanel();
+        
+        // 단축키 설정
+        EventListeners.setupGlobalKeyboardShortcuts();
+        
+        debugLog('전역 UI 초기화 완료');
+    }
+    
+    /**
+     * 전역 제어 패널 설정
+     */
+    static setupControlPanel() {
+        // 기존 패널 제거
+        if (EventListeners.layoutConnectors.controlPanel) {
+            try {
+                EventListeners.layoutConnectors.controlPanel.remove();
+            } catch (e) {
+                console.error('제어 패널 요소 삭제 오류:', e);
+            }
+        }
+        
+        const { bgColor, textColor } = Utils.getUserUIColor();
+        
+        // 제어 패널 컨테이너 생성
+        const panel = document.createElement('div');
+        panel.className = 'xcom-control-panel';
+        panel.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            background: var(--xcom-bg-secondary, ${Utils.addAlpha(bgColor, 0.85)});
+            color: var(--xcom-text-primary, ${textColor});
+            padding: 4px 8px;
+            border-radius: var(--xcom-radius-md, 8px);
+            box-shadow: var(--xcom-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+            border: 1px solid var(--xcom-border-light, #e1e8ed);
+            gap: 8px;
+        `;
+        
+        // 테마 토글 버튼 생성
+        const themeToggleBtn = ThemeManager.createThemeToggle();
+        EventListeners.layoutConnectors.themeToggleBtn = themeToggleBtn;
+        
+        // 레이아웃 토글 버튼 생성
+        const layoutToggleBtn = LayoutManager.createLayoutToggle();
+        EventListeners.layoutConnectors.layoutToggleBtn = layoutToggleBtn;
+        
+        // 언어 선택기 생성
+        const languageSelector = LanguageSelector.createLanguageDropdown((newLocale) => {
+            window.location.reload();
+        });
+        EventListeners.layoutConnectors.languageSelectorContainer = languageSelector;
+        
+        // 로고/타이틀 생성
+        const logo = document.createElement('div');
+        logo.className = 'xcom-logo';
+        logo.innerHTML = '<i class="fa-solid fa-image" aria-hidden="true"></i>';
+        logo.style.cssText = `
+            font-size: 18px;
+            color: var(--xcom-accent-primary, #1da1f2);
+            margin-right: 4px;
+        `;
+        
+        // 패널에 요소 추가
+        panel.appendChild(logo);
+        panel.appendChild(themeToggleBtn);
+        panel.appendChild(layoutToggleBtn);
+        panel.appendChild(languageSelector);
+        
+        // 문서에 패널 추가
+        document.body.appendChild(panel);
+        
+        // 패널 참조 저장
+        EventListeners.layoutConnectors.controlPanel = panel;
+        
+        // 글로벌 스타일 추가 (필요한 경우)
+        if (!document.getElementById('xcom-global-styles')) {
+            const style = document.createElement('style');
+            style.id = 'xcom-global-styles';
+            style.textContent = `
+                .xcom-control-panel {
+                    transition: opacity 0.3s ease;
+                }
+                .xcom-control-panel:hover {
+                    opacity: 1;
+                }
+                .xcom-control-panel.minimized {
+                    opacity: 0.3;
+                }
+                @media (max-width: 768px) {
+                    .xcom-control-panel {
+                        top: auto;
+                        bottom: 10px;
+                        right: 10px;
+                        padding: 4px;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // 5초 후 투명도 줄이기
+        setTimeout(() => {
+            panel.classList.add('minimized');
+        }, 5000);
+        
+        // 마우스 오버 시 투명도 복원
+        panel.addEventListener('mouseenter', () => {
+            panel.classList.remove('minimized');
+        });
+        
+        // 마우스 아웃 시 투명도 줄이기
+        panel.addEventListener('mouseleave', () => {
+            setTimeout(() => {
+                panel.classList.add('minimized');
+            }, 1000);
+        });
+        
+        debugLog('전역 제어 패널 설정 완료');
+    }
+    
+    /**
+     * 전역 키보드 단축키 설정
+     */
+    static setupGlobalKeyboardShortcuts() {
+        // 기존 리스너 제거 (중복 방지)
+        if (EventListeners._globalKeyHandler) {
+            document.removeEventListener('keydown', EventListeners._globalKeyHandler);
+        }
+        
+        // 새 키보드 이벤트 리스너
+        EventListeners._globalKeyHandler = (event) => {
+            // 입력 요소에서는 단축키 비활성화
+            if (event.target.matches('input, textarea, select, [contenteditable="true"]')) {
+                return;
+            }
+            
+            // Alt + T: 테마 전환
+            if (event.altKey && event.key === 't') {
+                event.preventDefault();
+                ThemeManager.cycleTheme();
+            }
+            
+            // Alt + L: 레이아웃 전환
+            if (event.altKey && event.key === 'l') {
+                event.preventDefault();
+                const newMode = LayoutManager.getCurrentMode() === LayoutManager.LAYOUT_MODES.COMPACT
+                    ? LayoutManager.LAYOUT_MODES.COMFORTABLE
+                    : LayoutManager.LAYOUT_MODES.COMPACT;
+                LayoutManager.setLayoutMode(newMode);
+            }
+        };
+        
+        // 이벤트 리스너 등록
+        document.addEventListener('keydown', EventListeners._globalKeyHandler);
+        
+        debugLog('전역 키보드 단축키 설정 완료');
+    }
+    
     /**
      * 이미지 클릭 이벤트 핸들러 설정
      */
@@ -136,6 +321,11 @@ export class EventListeners {
                 (event.target.classList.contains('xcom-viewer-img') || 
                  event.target.classList.contains('xcom-viewer-container') || 
                  event.target.classList.contains('xcom-thumbnail'))) {
+                return;
+            }
+            
+            // 제어 패널 내부 요소인지 확인
+            if (event.target.closest('.xcom-control-panel')) {
                 return;
             }
             

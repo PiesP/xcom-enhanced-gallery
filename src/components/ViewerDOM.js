@@ -1,5 +1,8 @@
 import { Utils } from "../Utils.js";
-import { translate } from "../I18N/index.js";
+import { translate, getLocale, setLocale } from "../I18N/index.js";
+import { LanguageSelector } from "./LanguageSelector.js";
+import { ThemeManager } from "../theme/ThemeManager.js";
+import { LayoutManager } from "../theme/LayoutManager.js";
 
 export class ViewerDOM {
     constructor(viewer) {
@@ -43,14 +46,33 @@ export class ViewerDOM {
 
         const optionsBar = document.createElement('div');
         optionsBar.id = 'optionsBar';
-        optionsBar.style.background = Utils.addAlpha(bgColor, 0.8);
-        optionsBar.style.color = textColor;
+        optionsBar.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: ${Utils.addAlpha(bgColor, 0.8)};
+            color: ${textColor};
+            padding: 0 10px;
+            height: 50px;
+        `;
         optionsBar.setAttribute('role', 'toolbar');
         optionsBar.setAttribute('aria-label', 'Image Viewer Controls');
 
+        // 왼쪽, 중앙, 오른쪽 섹션 생성
+        const leftSection = document.createElement('div');
+        leftSection.style.cssText = 'display: flex; align-items: center; gap: 5px;';
+        
+        const centerSection = document.createElement('div');
+        centerSection.style.cssText = 'display: flex; align-items: center; flex: 1; justify-content: center;';
+        
+        const rightSection = document.createElement('div');
+        rightSection.style.cssText = 'display: flex; align-items: center; gap: 5px;';
+
+        // 네비게이션 버튼 생성
         const prevBtn = this.createIconButton('fa-solid fa-arrow-left', handlers.prevImage, translate('viewer.controls.prev'));
         const nextBtn = this.createIconButton('fa-solid fa-arrow-right', handlers.nextImage, translate('viewer.controls.next'));
 
+        // 이미지 선택 드롭다운 생성
         const imageSelect = document.createElement('select');
         imageSelect.id = 'image-select';
         imageSelect.setAttribute('aria-label', 'Select Image');
@@ -67,30 +89,54 @@ export class ViewerDOM {
             handlers.selectImage(parseInt(imageSelect.value), true);
         });
 
+        // 이미지 조정 버튼 생성
         const fitWidthBtn = this.createIconButton('fa-solid fa-arrows-left-right', () => handlers.adjustImages('width'), translate('viewer.modes.fitWidth'));
         const fitHeightBtn = this.createIconButton('fa-solid fa-arrows-up-down', () => handlers.adjustImages('height'), translate('viewer.modes.fitHeight'));
         const fitWindowBtn = this.createIconButton('fa-solid fa-expand', () => handlers.adjustImages('window'), translate('viewer.modes.fitWindow'));
         const originalSizeBtn = this.createIconButton('fa-solid fa-image', () => handlers.adjustImages('original'), translate('viewer.modes.original'));
 
+        // 다운로드 버튼 생성
         const downloadCurrentBtn = this.createIconButton('fa-solid fa-download', handlers.downloadCurrentImage, translate('viewer.controls.download'));
         const downloadAllBtn = this.createIconButton('fa-solid fa-file-zipper', handlers.downloadAllImages, translate('viewer.controls.downloadZip'));
 
+        // 테마 토글 버튼 생성
+        const themeToggleBtn = ThemeManager.createThemeToggle();
+        
+        // 레이아웃 토글 버튼 생성
+        const layoutToggleBtn = LayoutManager.createLayoutToggle();
+        
+        // 언어 선택기 생성
+        const languageSelector = LanguageSelector.createLanguageDropdown((newLocale) => {
+            // UI 요소들 언어 변경 적용
+            if (handlers.onLanguageChange) {
+                handlers.onLanguageChange(newLocale);
+            }
+        });
+        
+        // 닫기 버튼 생성
         const closeBtn = this.createIconButton('fa-solid fa-xmark', handlers.close, translate('viewer.controls.close'));
-        closeBtn.style.marginLeft = 'auto';
-        closeBtn.style.marginRight = '10px';
-
-        optionsBar.append(
-            prevBtn,
-            imageSelect,
-            nextBtn,
+        
+        // 요소들을 섹션에 배치
+        leftSection.append(prevBtn, imageSelect, nextBtn);
+        
+        centerSection.append(
             fitWidthBtn,
             fitHeightBtn,
             fitWindowBtn,
-            originalSizeBtn,
+            originalSizeBtn
+        );
+        
+        rightSection.append(
             downloadCurrentBtn,
             downloadAllBtn,
+            themeToggleBtn,
+            layoutToggleBtn,
+            languageSelector,
             closeBtn
         );
+
+        // 섹션들을 옵션바에 추가
+        optionsBar.append(leftSection, centerSection, rightSection);
 
         return optionsBar;
     }
@@ -102,7 +148,7 @@ export class ViewerDOM {
             const button = document.createElement('button');
             button.className = 'icon-button';
             button.innerHTML = `<i class="${iconClass}" aria-hidden="true"></i>`;
-            button.style.background = bgColor;
+            button.style.background = 'transparent';
             button.style.color = textColor;
 
             if (tooltipText) {
@@ -132,7 +178,7 @@ export class ViewerDOM {
             flex-direction: column;
             align-items: center;
             width: 100%;
-            padding: 60px 0 80px 0;
+            padding: 60px 0 100px 0;
             z-index: 10001;
             pointer-events: none;
         `;
@@ -179,7 +225,7 @@ export class ViewerDOM {
         
         // 마우스 오버 효과
         imgContainer.addEventListener('mouseenter', () => {
-            imgContainer.style.boxShadow = '0 0 8px rgba(29, 161, 242, 0.5)';
+            imgContainer.style.boxShadow = 'var(--xcom-shadow-md)';
             img.style.opacity = '0.95';
         });
 
@@ -203,7 +249,10 @@ export class ViewerDOM {
 
         const thumbnailBar = document.createElement('div');
         thumbnailBar.id = 'thumbnailBar';
-        thumbnailBar.style.background = Utils.addAlpha(bgColor, 0.8);
+        thumbnailBar.style.cssText = `
+            background: ${Utils.addAlpha(bgColor, 0.8)};
+            border-top: 1px solid var(--xcom-thumbnail-border);
+        `;
 
         tweetInfo.imageUrls.forEach((url, index) => {
             const thumb = document.createElement('img');
@@ -229,13 +278,13 @@ export class ViewerDOM {
                 
                 // 클릭된 썸네일 효과 추가
                 thumb.style.transform = 'scale(1.2)';
-                thumb.style.boxShadow = '0 0 10px rgba(29, 161, 242, 0.9)';
+                thumb.style.boxShadow = 'var(--xcom-shadow-md)';
                 
                 // 효과 원복
                 setTimeout(() => {
                     if (thumb.classList.contains('active')) {
                         thumb.style.transform = 'scale(1.1)';
-                        thumb.style.boxShadow = '0 0 8px rgba(255, 255, 255, 0.7)';
+                        thumb.style.boxShadow = 'var(--xcom-shadow-md)';
                     } else {
                         thumb.style.transform = '';
                         thumb.style.boxShadow = '';
@@ -266,9 +315,25 @@ export class ViewerDOM {
     }
 
     createCurrentImageIndicator(currentIndex, totalImages) {
+        const { bgColor, textColor } = Utils.getUserUIColor();
+        
         const indicator = document.createElement('div');
         indicator.id = 'current-image-indicator';
         indicator.textContent = translate('viewer.indicators.currentImage', { current: currentIndex + 1, total: totalImages });
+        indicator.style.cssText = `
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--xcom-indicator-bg);
+            color: var(--xcom-indicator-text);
+            padding: var(--xcom-space-sm) var(--xcom-space-md);
+            border-radius: var(--xcom-radius-pill);
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10002;
+            box-shadow: var(--xcom-shadow-md);
+        `;
         return indicator;
     }
 
