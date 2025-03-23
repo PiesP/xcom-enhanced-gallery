@@ -46,6 +46,105 @@ const LOCALE_DATA = {
     "unknownUser": "unknown",
     "unknownID": "unknown"
   },
+  "es": {
+    "viewer": {
+      "title": "Visor de Imágenes Mejorado",
+      "controls": {
+        "prev": "Anterior",
+        "next": "Siguiente",
+        "close": "Cerrar",
+        "download": "Descargar",
+        "downloadZip": "Descargar Todo"
+      },
+      "modes": {
+        "original": "Tamaño Original",
+        "fitWidth": "Ajustar al Ancho",
+        "fitHeight": "Ajustar a la Altura",
+        "fitWindow": "Ajustar a la Ventana"
+      },
+      "indicators": {
+        "currentImage": "Imagen {{current}} de {{total}}"
+      }
+    },
+    "download": {
+      "filename": "{{username}}_tweet_{{tweetId}}_imagen_{{index}}",
+      "zipName": "{{username}}_tweet_{{tweetId}}_imagenes",
+      "preparing": "Preparando descarga...",
+      "complete": "Descarga completa"
+    },
+    "errors": {
+      "loading": "Error al cargar la imagen",
+      "download": "Error al descargar la imagen"
+    },
+    "unknownUser": "desconocido",
+    "unknownID": "desconocido"
+  },
+  "fr": {
+    "viewer": {
+      "title": "Visionneuse d'Images Améliorée",
+      "controls": {
+        "prev": "Précédent",
+        "next": "Suivant",
+        "close": "Fermer",
+        "download": "Télécharger",
+        "downloadZip": "Tout Télécharger"
+      },
+      "modes": {
+        "original": "Taille Originale",
+        "fitWidth": "Ajuster à la Largeur",
+        "fitHeight": "Ajuster à la Hauteur",
+        "fitWindow": "Ajuster à la Fenêtre"
+      },
+      "indicators": {
+        "currentImage": "Image {{current}} sur {{total}}"
+      }
+    },
+    "download": {
+      "filename": "{{username}}_tweet_{{tweetId}}_image_{{index}}",
+      "zipName": "{{username}}_tweet_{{tweetId}}_images",
+      "preparing": "Préparation du téléchargement...",
+      "complete": "Téléchargement terminé"
+    },
+    "errors": {
+      "loading": "Échec du chargement de l'image",
+      "download": "Échec du téléchargement de l'image"
+    },
+    "unknownUser": "inconnu",
+    "unknownID": "inconnu"
+  },
+  "ja": {
+    "viewer": {
+      "title": "拡張画像ビューア",
+      "controls": {
+        "prev": "前へ",
+        "next": "次へ",
+        "close": "閉じる",
+        "download": "ダウンロード",
+        "downloadZip": "すべてダウンロード"
+      },
+      "modes": {
+        "original": "原寸大",
+        "fitWidth": "幅に合わせる",
+        "fitHeight": "高さに合わせる",
+        "fitWindow": "画面に合わせる"
+      },
+      "indicators": {
+        "currentImage": "画像 {{current}}/{{total}}"
+      }
+    },
+    "download": {
+      "filename": "{{username}}_ツイート_{{tweetId}}_画像_{{index}}",
+      "zipName": "{{username}}_ツイート_{{tweetId}}_画像集",
+      "preparing": "ダウンロード準備中...",
+      "complete": "ダウンロード完了"
+    },
+    "errors": {
+      "loading": "画像の読み込みに失敗しました",
+      "download": "画像のダウンロードに失敗しました"
+    },
+    "unknownUser": "不明",
+    "unknownID": "不明"
+  },
   "ko": {
     "viewer": {
       "title": "고급 이미지 뷰어",
@@ -78,6 +177,39 @@ const LOCALE_DATA = {
     },
     "unknownUser": "알수없음",
     "unknownID": "알수없음"
+  },
+  "zh-CN": {
+    "viewer": {
+      "title": "增强图像查看器",
+      "controls": {
+        "prev": "上一张",
+        "next": "下一张",
+        "close": "关闭",
+        "download": "下载",
+        "downloadZip": "全部下载"
+      },
+      "modes": {
+        "original": "原始尺寸",
+        "fitWidth": "适应宽度",
+        "fitHeight": "适应高度",
+        "fitWindow": "适应窗口"
+      },
+      "indicators": {
+        "currentImage": "图片 {{current}}/{{total}}"
+      }
+    },
+    "download": {
+      "filename": "{{username}}_推文_{{tweetId}}_图片_{{index}}",
+      "zipName": "{{username}}_推文_{{tweetId}}_图片集",
+      "preparing": "准备下载中...",
+      "complete": "下载完成"
+    },
+    "errors": {
+      "loading": "加载图片失败",
+      "download": "下载图片失败"
+    },
+    "unknownUser": "未知用户",
+    "unknownID": "未知ID"
   }
 };
 
@@ -680,8 +812,8 @@ class TranslationManager {
 // 번역 매니저 인스턴스 생성
 const i18n = new TranslationManager();
 
-// 지원 언어 목록
-const SUPPORTED_LOCALES = ['en', 'ko'];
+// 지원 언어 목록 - 새로운 언어 추가
+const SUPPORTED_LOCALES = ['en', 'ko', 'ja', 'zh-CN', 'es', 'fr'];
 
 // 언어 감지 및 설정
 const initI18N = async () => {
