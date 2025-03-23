@@ -1,0 +1,33 @@
+{
+  "viewer": {
+    "title": "拡張画像ビューア",
+    "controls": {
+      "prev": "前へ",
+      "next": "次へ",
+      "close": "閉じる",
+      "download": "ダウンロード",
+      "downloadZip": "すべてダウンロード"
+    },
+    "modes": {
+      "original": "原寸大",
+      "fitWidth": "幅に合わせる",
+      "fitHeight": "高さに合わせる",
+      "fitWindow": "画面に合わせる"
+    },
+    "indicators": {
+      "currentImage": "画像 {{current}}/{{total}}"
+    }
+  },
+  "download": {
+    "filename": "{{username}}_ツイート_{{tweetId}}_画像_{{index}}",
+    "zipName": "{{username}}_ツイート_{{tweetId}}_画像集",
+    "preparing": "ダウンロード準備中...",
+    "complete": "ダウンロード完了"
+  },
+  "errors": {
+    "loading": "画像の読み込みに失敗しました",
+    "download": "画像のダウンロードに失敗しました"
+  },
+  "unknownUser": "不明",
+  "unknownID": "不明"
+}

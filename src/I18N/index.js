@@ -5,8 +5,8 @@ import { StringFormatter } from './utils/StringFormatter.js';
 // 번역 매니저 인스턴스 생성
 const i18n = new TranslationManager();
 
-// 지원 언어 목록
-const SUPPORTED_LOCALES = ['en', 'ko'];
+// 지원 언어 목록 - 새로운 언어 추가
+const SUPPORTED_LOCALES = ['en', 'ko', 'ja', 'zh-CN', 'es', 'fr'];
 
 // 언어 감지 및 설정
 const initI18N = async () => {

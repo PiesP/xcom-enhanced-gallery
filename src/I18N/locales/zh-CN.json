@@ -1,0 +1,33 @@
+{
+  "viewer": {
+    "title": "增强图像查看器",
+    "controls": {
+      "prev": "上一张",
+      "next": "下一张",
+      "close": "关闭",
+      "download": "下载",
+      "downloadZip": "全部下载"
+    },
+    "modes": {
+      "original": "原始尺寸",
+      "fitWidth": "适应宽度",
+      "fitHeight": "适应高度",
+      "fitWindow": "适应窗口"
+    },
+    "indicators": {
+      "currentImage": "图片 {{current}}/{{total}}"
+    }
+  },
+  "download": {
+    "filename": "{{username}}_推文_{{tweetId}}_图片_{{index}}",
+    "zipName": "{{username}}_推文_{{tweetId}}_图片集",
+    "preparing": "准备下载中...",
+    "complete": "下载完成"
+  },
+  "errors": {
+    "loading": "加载图片失败",
+    "download": "下载图片失败"
+  },
+  "unknownUser": "未知用户",
+  "unknownID": "未知ID"
+}
