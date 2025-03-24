@@ -20,16 +20,20 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Dependencies (if you add any in the future)
+# Dependencies
 node_modules/
 package-lock.json
 yarn.lock
 
-# DO NOT ignore dist directory as it contains the built userscript
-# dist/
-
-# Build process temporary files
+# Build process files
 build/
+scripts/
+
+# Utility batch files
+apply-debug.bat
+
+# Git metadata
+# .git/  # 일반적으로 .gitignore에 .git은 포함하지 않습니다
 
 # Environment variables
 .env
@@ -37,3 +41,13 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Backup and temporary files
+*.backup
+*.bak
+*.new
+*.tmp
+*~
+
+# DO NOT ignore dist directory as it contains the built userscript
+# dist/

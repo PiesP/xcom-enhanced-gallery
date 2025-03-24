@@ -949,6 +949,9 @@ class TranslationManager {
 
 // == I18N/index.js ==
 
+
+
+
 // 번역 매니저 인스턴스 생성
 const i18n = new TranslationManager();
 
@@ -1182,6 +1185,9 @@ class TweetDataExtractor {
 }
 
 // == TweetInfo.js ==
+
+
+
 
 /**
  * 트윗 정보 클래스
@@ -1640,6 +1646,8 @@ class ThumbnailManager {
 
 // == components/LanguageSelector.js ==
 
+
+
 /**
  * 언어 선택 드롭다운 메뉴 컴포넌트
  */
@@ -1793,6 +1801,11 @@ class LanguageSelector {
 }
 
 // == components/ViewerDOM.js ==
+
+
+
+
+
 
 class ViewerDOM {
     constructor(viewer) {
@@ -3199,6 +3212,14 @@ class URLManager {
 
 // == EventListeners.js ==
 
+
+
+
+
+
+
+
+
 /**
  * 이벤트 리스너 관리 클래스
  */
@@ -4211,6 +4232,7 @@ class ViewerCore {
 
 // == ImageViewer.js ==
 
+
 /**
  * 이미지 뷰어 진입점 클래스
  * 호환성을 위해 ViewerCore를 감싸는 래퍼 클래스로 유지
@@ -4383,6 +4405,9 @@ const themeVariables = {
 };
 
 // == theme/ThemeManager.js ==
+
+
+
 
 /**
  * 테마 관리 클래스
@@ -4616,6 +4641,8 @@ class ThemeManager {
 }
 
 // == theme/LayoutManager.js ==
+
+
 
 /**
  * 레이아웃 관리 클래스
@@ -4911,6 +4938,13 @@ class LayoutManager {
 }
 
 // == main.js ==
+
+
+
+
+
+
+
 
 (function() {
     'use strict';
