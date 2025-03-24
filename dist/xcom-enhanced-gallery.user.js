@@ -215,7 +215,6 @@ const LOCALE_DATA = {
 
 // == debug.js ==
 
-
 /**
  * 디버그 로그 출력 함수
  * @param {string} message - 로그 메시지
@@ -949,9 +948,6 @@ class TranslationManager {
 
 // == I18N/index.js ==
 
-
-
-
 // 번역 매니저 인스턴스 생성
 const i18n = new TranslationManager();
 
@@ -1185,9 +1181,6 @@ class TweetDataExtractor {
 }
 
 // == TweetInfo.js ==
-
-
-
 
 /**
  * 트윗 정보 클래스
@@ -1646,8 +1639,6 @@ class ThumbnailManager {
 
 // == components/LanguageSelector.js ==
 
-
-
 /**
  * 언어 선택 드롭다운 메뉴 컴포넌트
  */
@@ -1801,11 +1792,6 @@ class LanguageSelector {
 }
 
 // == components/ViewerDOM.js ==
-
-
-
-
-
 
 class ViewerDOM {
     constructor(viewer) {
@@ -2551,7 +2537,6 @@ class ViewerDownload {
 
 // == components/ViewerEvents.js ==
 
-
 class ViewerEvents {
     constructor(viewer) {
         this.viewer = viewer;
@@ -3151,7 +3136,6 @@ class ViewerFocus {
 
 // == URLManager.js ==
 
-
 /**
  * URL 관리 클래스
  */
@@ -3211,14 +3195,6 @@ class URLManager {
 }
 
 // == EventListeners.js ==
-
-
-
-
-
-
-
-
 
 /**
  * 이벤트 리스너 관리 클래스
@@ -3594,7 +3570,6 @@ class EventListeners {
 
 // == core/ViewerComponentInitializer.js ==
 
-
 /**
  * 뷰어 컴포넌트 초기화를 담당하는 클래스
  */
@@ -3868,7 +3843,6 @@ class ViewerNavigationManager {
 
 // == core/ViewerUIManager.js ==
 
-
 /**
  * 뷰어 UI 관리를 담당하는 클래스
  */
@@ -4008,24 +3982,7 @@ class ViewerCleanup {
 
 // == ViewerCore.js ==
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 // 새로 분할된 핵심 모듈 가져오기
-
-
-
-
 
 /**
  * 이미지 뷰어 핵심 클래스
@@ -4232,7 +4189,6 @@ class ViewerCore {
 
 // == ImageViewer.js ==
 
-
 /**
  * 이미지 뷰어 진입점 클래스
  * 호환성을 위해 ViewerCore를 감싸는 래퍼 클래스로 유지
@@ -4405,9 +4361,6 @@ const themeVariables = {
 };
 
 // == theme/ThemeManager.js ==
-
-
-
 
 /**
  * 테마 관리 클래스
@@ -4641,8 +4594,6 @@ class ThemeManager {
 }
 
 // == theme/LayoutManager.js ==
-
-
 
 /**
  * 레이아웃 관리 클래스
@@ -4938,13 +4889,6 @@ class LayoutManager {
 }
 
 // == main.js ==
-
-
-
-
-
-
-
 
 (function() {
     'use strict';
