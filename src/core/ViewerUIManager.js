@@ -1,75 +1,178 @@
-import { translate } from "../I18N/index.js";
+/**
+ * @file ViewerUIManager.js
+ * @description Manager for UI-related operations in the viewer component.
+ * This class encapsulates UI operations like updating elements, adjusting images,
+ * and handling downloads with a consistent error handling approach.
+ */
+
+import { debugLog } from "../debug.js";
+import { ViewerDOMFacade } from "../components/dom/ViewerDOMFacade.js";
 
 /**
- * 뷰어 UI 관리를 담당하는 클래스
+ * @class ViewerUIManager
+ * @description Manages UI operations for the viewer component.
+ * Provides static methods for updating UI elements, adjusting images,
+ * and handling download operations. Works as a layer between the ViewerCore
+ * and the DOM-level components, focusing on UI operations logic.
  */
 export class ViewerUIManager {
     /**
-     * 모든 UI 요소 업데이트
-     * @param {ViewerCore} core - 뷰어 코어 인스턴스
+     * @method updateAllUIElements
+     * @static
+     * @description Updates all UI elements based on the current state of the viewer.
+     * This includes updating the options bar and thumbnail bar to reflect
+     * the current image index and adjustment mode.
+     * @param {ViewerCore} core - Viewer core instance containing all necessary components
      */
     static updateAllUIElements(core) {
-        const currentIndex = core.state.getCurrentIndex();
-        
-        // 드롭다운 메뉴 업데이트
-        const imageSelect = document.getElementById('image-select');
-        if (imageSelect) {
-            imageSelect.value = currentIndex;
-        }
-        
-        // 썸네일 바 업데이트
-        core.thumbnailManager.setCurrentIndex(currentIndex);
-        core.thumbnailManager.updateThumbnailFocus();
-        
-        // 현재 이미지 인디케이터 업데이트
-        if (core.currentImageIndicator) {
-            core.currentImageIndicator.textContent = translate('viewer.indicators.currentImage', { 
-                current: currentIndex + 1, 
-                total: core.tweetInfo.imageUrls.length 
-            });
-        }
-        
-        // 네비게이션 인덱스 업데이트
-        if (core.navigation) {
-            core.navigation.currentIndex = currentIndex;
+        try {
+            debugLog('ViewerUIManager: Updating all UI elements');
+            
+            if (!core.optionsBar || !core.thumbnailBar) {
+                debugLog('ViewerUIManager: Missing UI elements, skipping update');
+                return;
+            }
+            
+            const currentIndex = core.state.getCurrentIndex();
+            const currentAdjustMode = core.state.getCurrentAdjustMode() || 'fit';
+            
+            ViewerDOMFacade.updateOptionsBar(
+                core.optionsBar,
+                currentIndex,
+                currentAdjustMode
+            );
+            
+            ViewerDOMFacade.updateThumbnails(
+                core.thumbnailBar,
+                currentIndex
+            );
+        } catch (error) {
+            debugLog(`ViewerUIManager: Error updating UI elements - ${error.message}`);
         }
     }
     
     /**
-     * 이미지 크기 조정
-     * @param {ViewerCore} core - 뷰어 코어 인스턴스
-     * @param {string} mode - 조정 모드
+     * @method adjustImages
+     * @static
+     * @description Adjusts the display mode of all images in the viewer.
+     * Updates the state with the new adjustment mode and applies it to all
+     * visible images, then updates the UI to reflect the change.
+     * @param {ViewerCore} core - Viewer core instance
+     * @param {string} mode - Adjustment mode: 'original', 'fit', 'width', 'height', or 'window'
      */
     static adjustImages(core, mode) {
-        core.adjustment.adjustImages(mode, () => {
-            core.focus.focusCurrentImage(
-                core.state.getCurrentIndex(), 
-                true, 
-                (idx) => core.imageLoader.forceLoadImage(
-                    core.tweetInfo.imageUrls[idx], 
-                    idx, 
-                    {
-                        selectImage: (i) => core.selectImage(i),
-                        focusImage: (i) => core.focus.focusCurrentImage(i, true)
-                    }
-                )
-            );
-        });
+        try {
+            debugLog(`ViewerUIManager: Adjusting images with mode: ${mode}`);
+            
+            if (!core.imageContainer || !core.adjustment) {
+                debugLog('ViewerUIManager: Missing components for image adjustment');
+                return;
+            }
+            
+            // Update state
+            core.state.setCurrentAdjustMode(mode);
+            
+            // Apply adjustment
+            core.adjustment.adjustAllImages(mode);
+            
+            // Update UI
+            if (core.optionsBar) {
+                ViewerDOMFacade.updateOptionsBar(
+                    core.optionsBar,
+                    core.state.getCurrentIndex(),
+                    mode
+                );
+            }
+        } catch (error) {
+            debugLog(`ViewerUIManager: Error adjusting images - ${error.message}`);
+        }
     }
     
     /**
-     * 현재 이미지 다운로드
-     * @param {ViewerCore} core - 뷰어 코어 인스턴스
+     * @method downloadCurrentImage
+     * @static
+     * @description Downloads the currently displayed image.
+     * Extracts the image URL from the tweet info based on current index
+     * and initiates the download process with appropriate filename.
+     * @param {ViewerCore} core - Viewer core instance
      */
     static downloadCurrentImage(core) {
-        core.download.downloadCurrentImage(core.tweetInfo, core.state.getCurrentIndex());
+        try {
+            debugLog('ViewerUIManager: Downloading current image');
+            
+            if (!core.download) {
+                debugLog('ViewerUIManager: Download component missing');
+                return;
+            }
+            
+            const currentIndex = core.state.getCurrentIndex();
+            const tweetInfo = core.state.getTweetInfo();
+            
+            if (!tweetInfo) {
+                debugLog('ViewerUIManager: Missing tweet info for download');
+                return;
+            }
+            
+            if (!tweetInfo.imageUrls || !Array.isArray(tweetInfo.imageUrls) || tweetInfo.imageUrls.length === 0) {
+                debugLog('ViewerUIManager: No image URLs available for download');
+                return;
+            }
+            
+            if (currentIndex < 0 || currentIndex >= tweetInfo.imageUrls.length) {
+                debugLog(`ViewerUIManager: Invalid image index: ${currentIndex}`);
+                return;
+            }
+            
+            const userName = tweetInfo.userName || tweetInfo.user || 'unknown';
+            const tweetId = tweetInfo.tweetId || tweetInfo.id || 'unknown';
+            
+            core.download.downloadImage(
+                tweetInfo.imageUrls[currentIndex],
+                `${userName}_${tweetId}_${currentIndex}`
+            );
+        } catch (error) {
+            debugLog(`ViewerUIManager: Error downloading image - ${error.message}`);
+        }
     }
     
     /**
-     * 모든 이미지 다운로드
-     * @param {ViewerCore} core - 뷰어 코어 인스턴스
+     * @method downloadAllImages
+     * @static
+     * @description Downloads all images from the current tweet as a ZIP archive.
+     * Collects all image URLs from the tweet info and initiates a batch
+     * download process, creating a ZIP file with an appropriate filename.
+     * @param {ViewerCore} core - Viewer core instance
      */
     static downloadAllImages(core) {
-        core.download.downloadAllImages(core.tweetInfo);
+        try {
+            debugLog('ViewerUIManager: Downloading all images');
+            
+            if (!core.download) {
+                debugLog('ViewerUIManager: Download component missing');
+                return;
+            }
+            
+            const tweetInfo = core.state.getTweetInfo();
+            
+            if (!tweetInfo) {
+                debugLog('ViewerUIManager: Missing tweet info for download');
+                return;
+            }
+            
+            if (!tweetInfo.imageUrls || !Array.isArray(tweetInfo.imageUrls) || tweetInfo.imageUrls.length === 0) {
+                debugLog('ViewerUIManager: No image URLs available for download');
+                return;
+            }
+            
+            const userName = tweetInfo.userName || tweetInfo.user || 'unknown';
+            const tweetId = tweetInfo.tweetId || tweetInfo.id || 'unknown';
+            
+            core.download.downloadAllImages(
+                tweetInfo.imageUrls,
+                `${userName}_${tweetId}`
+            );
+        } catch (error) {
+            debugLog(`ViewerUIManager: Error downloading all images - ${error.message}`);
+        }
     }
 }
