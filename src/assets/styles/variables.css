@@ -1,0 +1,408 @@
+/**
+ * CSS Custom Properties (Variables) for X.com Enhanced Gallery
+ *
+ * 이 파일은 프로젝트 전반에서 사용되는 모든 CSS 변수를 정의합니다.
+ * 테마 지원, 반응형 디자인, 그리고 일관된 디자인 시스템을 위해 사용됩니다.
+ *
+ * @author X.com Enhanced Gallery Team
+ * @version 3.1.0 - 투명도 문제 수정
+ * @since 2024-01-01
+ */
+
+:root {
+  /* ===== 색상 시스템 ===== */
+
+  /* 기본 색상 팔레트 - 차분하고 통일된 색조 (개선) */
+  --xeg-color-primary: #4785a3;
+  --xeg-color-primary-hover: #5496b8;
+  --xeg-color-primary-dark: #3a6f89;
+  --xeg-color-primary-light: #6ba7c7;
+
+  --xeg-color-secondary: #64748b;
+  --xeg-color-secondary-hover: #475569;
+
+  --xeg-color-success: #10b981;
+  /**
+   * 경고 상태를 나타내는 차분한 오렌지 색상
+   * 사용 예: 주의가 필요한 상황, 경고 메시지, 알림 배지 등
+   * 접근성: WCAG AA 대비율 준수 (흰색 배경 기준 4.5:1)
+   * 색상값: #f59e0b (차분한 앰버 계열)
+   */
+  --xeg-color-warning: #f59e0b;
+  --xeg-color-error: #dc2626;
+  --xeg-color-info: #4a90b8;
+  /* 배경 색상 - 개선된 투명도와 현대적 디자인 */
+  --xeg-bg-primary: #fafbfc;
+  --xeg-bg-secondary: #f1f5f9;
+  --xeg-bg-overlay: rgba(15, 23, 42, 0.94); /* 더 진한 오버레이 */
+  --xeg-bg-overlay-light: rgba(15, 23, 42, 0.08);
+  --xeg-bg-overlay-medium: rgba(15, 23, 42, 0.65);
+  --xeg-bg-overlay-strong: rgba(15, 23, 42, 0.88);
+  --xeg-bg-overlay-dark: rgba(15, 23, 42, 0.96);
+  --xeg-bg-modal: rgba(255, 255, 255, 0.96);
+  --xeg-bg-card: rgba(255, 255, 255, 0.92);
+
+  /* 텍스트 색상 - 차분하고 읽기 좋은 대비 */
+  --xeg-text-primary: #1e293b;
+  --xeg-text-secondary: #475569;
+  --xeg-text-tertiary: #64748b;
+  --xeg-text-inverse: #f8fafc;
+  --xeg-text-muted: #94a3b8;
+
+  /* 테두리 색상 - 더 은은한 라인 */
+  --xeg-border-light: #f3f4f6;
+  --xeg-border-medium: #d1d5db;
+  --xeg-border-dark: #9ca3af;
+
+  /* ===== 다크 테마 색상 ===== */
+
+  /* 다크 테마 배경 - 현대적이고 부드러운 어두운 톤 */
+  --xeg-bg-dark-primary: #0f172a;
+  --xeg-bg-dark-secondary: #1e293b;
+  --xeg-bg-dark-overlay: rgba(15, 23, 42, 0.96);
+  --xeg-bg-dark-modal: rgba(30, 41, 59, 0.95);
+  --xeg-bg-dark-card: rgba(51, 65, 85, 0.92);
+
+  /* 다크 테마 텍스트 - 눈에 편한 밝기 */
+  --xeg-text-dark-primary: #f1f5f9;
+  --xeg-text-dark-secondary: #cbd5e1;
+  --xeg-text-dark-tertiary: #94a3b8;
+  --xeg-text-dark-inverse: #1e293b;
+  --xeg-text-dark-muted: #64748b;
+
+  /* 다크 테마 테두리 - 더 세련된 구분선 */
+  --xeg-border-dark-light: #374151;
+  --xeg-border-dark-medium: #4b5563;
+  --xeg-border-dark-dark: #6b7280;
+
+  /* ===== 크기 및 간격 ===== */
+
+  /* 간격 시스템 (8px 기반) */
+  --xeg-spacing-xs: 4px;
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 16px;
+  --xeg-spacing-lg: 24px;
+  --xeg-spacing-xl: 32px;
+  --xeg-spacing-2xl: 48px;
+  --xeg-spacing-3xl: 64px;
+
+  /* 폰트 크기 */
+  --xeg-font-size-xs: 12px;
+  --xeg-font-size-sm: 14px;
+  --xeg-font-size-md: 16px;
+  --xeg-font-size-lg: 18px;
+  --xeg-font-size-xl: 20px;
+  --xeg-font-size-2xl: 24px;
+  --xeg-font-size-3xl: 32px;
+
+  /* 줄 높이 */
+  --xeg-font-line-height-tight: 1.25;
+  --xeg-font-line-height-normal: 1.5;
+  --xeg-font-line-height-relaxed: 1.75;
+
+  /* 폰트 가중치 */
+  --xeg-font-weight-normal: 400;
+  --xeg-font-weight-medium: 500;
+  --xeg-font-weight-semibold: 600;
+  --xeg-font-weight-bold: 700;
+
+  /* ===== 레이아웃 ===== */
+
+  /* Z-index 시스템 */
+  --xeg-z-dropdown: 1000;
+  --xeg-z-sticky: 1020;
+  --xeg-z-fixed: 1030;
+  --xeg-z-modal-backdrop: 1040;
+  --xeg-z-modal: 1050;
+  --xeg-z-popover: 1060;
+  --xeg-z-tooltip: 1070;
+  --xeg-z-toast: 1080;
+
+  /* 갤러리 전용 z-index (가이드라인 준수) */
+  --xeg-z-gallery: 9999;
+  --xeg-z-modal: 10000;
+  --xeg-z-tooltip: 10001;
+
+  /* 그림자 */
+  --xeg-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --xeg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --xeg-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --xeg-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* 경계 반경 */
+  --xeg-radius-sm: 4px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 12px;
+  --xeg-radius-xl: 16px;
+  --xeg-radius-full: 9999px;
+
+  /* ===== 애니메이션 ===== */
+
+  /* 지속 시간 */
+  --xeg-animation-duration-fast: 150ms;
+  --xeg-animation-duration-normal: 250ms;
+  --xeg-animation-duration-slow: 350ms;
+
+  /* 이징 함수 */
+  --xeg-animation-ease-linear: linear;
+  --xeg-animation-ease-in: ease-in;
+  --xeg-animation-ease-out: ease-out;
+  --xeg-animation-ease-in-out: ease-in-out;
+  --xeg-animation-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ===== 컴포넌트별 크기 ===== */
+
+  /* 갤러리 */
+  --xeg-gallery-header-height: 60px;
+  --xeg-gallery-toolbar-height: 48px;
+  --xeg-gallery-thumbnail-size: 80px;
+  --xeg-gallery-thumbnail-gap: 8px;
+
+  /* 모달 */
+  --xeg-modal-max-width: 90vw;
+  --xeg-modal-max-height: 90vh;
+  --xeg-modal-padding: var(--xeg-spacing-lg);
+
+  /* 버튼 */
+  --xeg-button-height-sm: 32px;
+  --xeg-button-height-md: 40px;
+  --xeg-button-height-lg: 48px;
+  --xeg-button-padding-x: var(--xeg-spacing-md);
+
+  /* 입력 필드 */
+  --xeg-input-height: 40px;
+  --xeg-input-padding-x: var(--xeg-spacing-md);
+  --xeg-input-border-width: 1px;
+
+  /* ===== 브레이크포인트 ===== */
+
+  /* 미디어 쿼리용 브레이크포인트 */
+  --xeg-bp-sm: 640px;
+  --xeg-bp-md: 768px;
+  --xeg-bp-lg: 1024px;
+  --xeg-bp-xl: 1280px;
+  --xeg-bp-2xl: 1536px;
+
+  /* ===== 상태별 색상 ===== */
+
+  /* 호버 상태 - 더 은은한 효과 */
+  --xeg-hover-bg: rgba(0, 0, 0, 0.04);
+  --xeg-hover-bg-dark: rgba(255, 255, 255, 0.05);
+
+  /* 포커스 상태 - 차분한 강조 */
+  --xeg-focus-ring: 0 0 0 2px var(--xeg-color-primary);
+  --xeg-focus-ring-offset: 2px;
+
+  /* 비활성화 상태 */
+  --xeg-disabled-opacity: 0.5;
+  --xeg-disabled-cursor: not-allowed;
+
+  /* ===== 유틸리티 ===== */
+
+  /* 전환 효과 */
+  --xeg-transition-colors:
+    color var(--xeg-duration-normal) var(--xeg-ease-in-out),
+    background-color var(--xeg-duration-normal) var(--xeg-ease-in-out),
+    border-color var(--xeg-duration-normal) var(--xeg-ease-in-out);
+
+  --xeg-transition-opacity: opacity var(--xeg-duration-normal) var(--xeg-ease-in-out);
+
+  --xeg-transition-transform: transform var(--xeg-duration-normal) var(--xeg-ease-in-out);
+
+  --xeg-transition-all: all var(--xeg-duration-normal) var(--xeg-ease-in-out);
+
+  /* 통합 색상 시스템 (툴바 & 갤러리) */
+
+  /* 중성 그레이스케일 - slate 기반 */
+  --xeg-color-neutral-50: #f8fafc;
+  --xeg-color-neutral-100: #f1f5f9;
+  --xeg-color-neutral-200: #e2e8f0;
+  --xeg-color-neutral-300: #cbd5e1;
+  --xeg-color-neutral-400: #94a3b8;
+  --xeg-color-neutral-500: #64748b;
+  --xeg-color-neutral-600: #475569;
+  --xeg-color-neutral-700: #334155;
+  --xeg-color-neutral-800: #1e293b;
+  --xeg-color-neutral-900: #0f172a;
+
+  /* 고급스러운 배경 색상 - slate 기반 */
+  --xeg-color-slate-50: #f8fafc;
+  --xeg-color-slate-100: #f1f5f9;
+  --xeg-color-slate-200: #e2e8f0;
+  --xeg-color-slate-300: #cbd5e1;
+  --xeg-color-slate-400: #94a3b8;
+  --xeg-color-slate-500: #64748b;
+  --xeg-color-slate-600: #475569;
+  --xeg-color-slate-700: #334155;
+  --xeg-color-slate-800: #1e293b;
+  --xeg-color-slate-900: #0f172a;
+
+  /* 컴포넌트별 통합 색상 */
+
+  /* 툴바 색상 - 현대적 glassmorphism 효과 */
+  --xeg-bg-toolbar: rgba(248, 250, 252, 0.85); /* 반투명 배경 */
+  --xeg-bg-toolbar-dark: rgba(15, 23, 42, 0.92); /* 다크모드 반투명 */
+  --xeg-border-toolbar: rgba(203, 213, 225, 0.3);
+  --xeg-shadow-toolbar:
+    0 8px 32px rgba(15, 23, 42, 0.12), 0 4px 16px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* 버튼 베이스 색상 - glassmorphism 스타일 */
+  --xeg-bg-button: rgba(248, 250, 252, 0.6);
+  --xeg-bg-button-hover: rgba(226, 232, 240, 0.8);
+  --xeg-border-button: rgba(203, 213, 225, 0.4);
+  --xeg-border-button-hover: rgba(148, 163, 184, 0.6);
+  --xeg-text-button: var(--xeg-color-slate-700);
+  --xeg-text-button-hover: var(--xeg-color-slate-800);
+
+  /* 액션별 버튼 색상 */
+  --xeg-bg-button-navigation: rgba(226, 232, 240, 0.9);
+  --xeg-bg-button-navigation-hover: rgba(203, 213, 225, 0.95);
+  --xeg-text-button-navigation: var(--xeg-color-slate-700);
+
+  --xeg-bg-button-download: var(--xeg-color-primary);
+  --xeg-bg-button-download-hover: var(--xeg-color-primary-hover);
+  --xeg-text-button-download: white;
+
+  --xeg-bg-button-settings: rgba(241, 245, 249, 0.9);
+  --xeg-bg-button-settings-hover: rgba(226, 232, 240, 0.95);
+  --xeg-text-button-settings: var(--xeg-color-neutral-600);
+
+  --xeg-bg-button-close: rgba(241, 245, 249, 0.9);
+  --xeg-bg-button-close-hover: rgba(226, 232, 240, 0.95);
+  --xeg-text-button-close: var(--xeg-color-neutral-600);
+
+  /* 갤러리 색상 - 통일된 배경 */
+  --xeg-gallery-bg: rgba(15, 20, 25, 0.95); /* 다크 배경, 불투명도 증가 */
+  --xeg-gallery-bg-light: rgba(248, 250, 252, 0.95); /* 라이트 배경, 불투명도 증가 */
+  --xeg-gallery-border: var(--xeg-color-neutral-200);
+  --xeg-gallery-item-bg: white;
+  --xeg-gallery-item-border: var(--xeg-color-neutral-200);
+  --xeg-gallery-item-shadow: rgba(15, 23, 42, 0.08);
+
+  /* 미디어 카운터 */
+  --xeg-bg-counter: rgba(241, 245, 249, 0.9);
+  --xeg-text-counter: var(--xeg-color-slate-700);
+  --xeg-border-counter: var(--xeg-color-slate-300);
+
+  /* 포커스 상태 */
+  --xeg-focus-ring-color: var(--xeg-color-primary);
+  --xeg-focus-ring-offset: white;
+
+  /* 전환 효과 */
+  --xeg-transition-normal: 0.15s ease;
+  --xeg-transition-slow: 0.3s ease;
+}
+
+/* ===== 다크 테마 적용 ===== */
+
+.xeg-theme-dark {
+  /* 배경 색상 재정의 */
+  --xeg-bg-primary: var(--xeg-dark-bg-primary);
+  --xeg-bg-secondary: var(--xeg-dark-bg-secondary);
+  --xeg-bg-overlay: var(--xeg-dark-bg-overlay);
+  --xeg-bg-modal: var(--xeg-dark-bg-modal);
+  --xeg-bg-card: var(--xeg-dark-bg-card);
+
+  /* 텍스트 색상 재정의 */
+  --xeg-text-primary: var(--xeg-dark-text-primary);
+  --xeg-text-secondary: var(--xeg-dark-text-secondary);
+  --xeg-text-tertiary: var(--xeg-dark-text-tertiary);
+  --xeg-text-inverse: var(--xeg-dark-text-inverse);
+  --xeg-text-muted: var(--xeg-dark-text-muted);
+
+  /* 테두리 색상 재정의 */
+  --xeg-border-light: var(--xeg-dark-border-light);
+  --xeg-border-medium: var(--xeg-dark-border-medium);
+  --xeg-border-dark: var(--xeg-dark-border-dark);
+
+  /* 다크 테마 툴바 색상 */
+  --xeg-bg-toolbar: var(--xeg-bg-toolbar-dark);
+  --xeg-border-toolbar: rgba(71, 85, 105, 0.4);
+  --xeg-shadow-toolbar:
+    0 8px 32px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+
+  /* 다크 테마 버튼 색상 */
+  --xeg-bg-button: rgba(51, 65, 85, 0.6);
+  --xeg-bg-button-hover: rgba(71, 85, 105, 0.8);
+  --xeg-border-button: rgba(148, 163, 184, 0.3);
+  --xeg-text-button: var(--xeg-color-slate-200);
+  --xeg-text-button-hover: var(--xeg-color-slate-100);
+
+  /* 다크 테마 갤러리 색상 */
+  --xeg-gallery-bg: rgba(15, 20, 25, 0.98);
+  --xeg-bg-counter: rgba(51, 65, 85, 0.9);
+  --xeg-text-counter: var(--xeg-color-slate-200);
+  --xeg-border-counter: var(--xeg-color-slate-600);
+
+  /* 호버 상태 재정의 */
+  --xeg-hover-bg: var(--xeg-hover-bg-dark);
+}
+
+/* ===== 사용자 선호도 기반 자동 테마 ===== */
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.xeg-theme-light) {
+    /* 자동 다크 테마 적용 */
+    --xeg-bg-primary: var(--xeg-dark-bg-primary);
+    --xeg-bg-secondary: var(--xeg-dark-bg-secondary);
+    --xeg-bg-overlay: var(--xeg-dark-bg-overlay);
+    --xeg-bg-modal: var(--xeg-dark-bg-modal);
+    --xeg-bg-card: var(--xeg-dark-bg-card);
+
+    --xeg-text-primary: var(--xeg-dark-text-primary);
+    --xeg-text-secondary: var(--xeg-dark-text-secondary);
+    --xeg-text-tertiary: var(--xeg-dark-text-tertiary);
+    --xeg-text-inverse: var(--xeg-dark-text-inverse);
+    --xeg-text-muted: var(--xeg-dark-text-muted);
+
+    --xeg-border-light: var(--xeg-dark-border-light);
+    --xeg-border-medium: var(--xeg-dark-border-medium);
+    --xeg-border-dark: var(--xeg-dark-border-dark);
+
+    /* 툴바 관련 자동 다크 테마 */
+    --xeg-bg-toolbar: var(--xeg-bg-toolbar-dark);
+    --xeg-border-toolbar: var(--xeg-color-slate-700);
+    --xeg-shadow-toolbar:
+      0 4px 20px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+
+    --xeg-bg-button: rgba(51, 65, 85, 0.9);
+    --xeg-bg-button-hover: rgba(71, 85, 105, 0.95);
+    --xeg-border-button: var(--xeg-color-slate-600);
+    --xeg-text-button: var(--xeg-color-slate-200);
+    --xeg-text-button-hover: var(--xeg-color-slate-100);
+
+    --xeg-gallery-bg: rgba(15, 20, 25, 0.98);
+    --xeg-bg-counter: rgba(51, 65, 85, 0.9);
+    --xeg-text-counter: var(--xeg-color-slate-200);
+    --xeg-border-counter: var(--xeg-color-slate-600);
+
+    --xeg-hover-bg: var(--xeg-hover-bg-dark);
+  }
+}
+
+/* ===== 접근성 관련 변수 ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* 애니메이션 감소 선호 시 지속 시간 단축 */
+    --xeg-duration-fast: 0ms;
+    --xeg-duration-normal: 0ms;
+    --xeg-duration-slow: 0ms;
+  }
+}
+
+/* ===== 고대비 모드 지원 ===== */
+
+@media (prefers-contrast: high) {
+  :root {
+    /* 고대비 모드에서 더 선명한 색상 사용 */
+    --xeg-border-light: var(--xeg-border-dark);
+    --xeg-text-secondary: var(--xeg-text-primary);
+    --xeg-bg-toolbar: rgba(255, 255, 255, 1);
+    --xeg-bg-button: rgba(255, 255, 255, 1);
+    --xeg-gallery-bg: rgba(0, 0, 0, 1);
+  }
+}

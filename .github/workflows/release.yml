@@ -1,55 +1,67 @@
-name: Create Release
+name: Release
 
 on:
   push:
-    branches: [ master ]
-    paths:
-      - 'package.json'  # package.json 파일이 변경되었을 때만 실행
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+
+env:
+  NODE_VERSION: '18'
 
 jobs:
   release:
+    name: Create Release
     runs-on: ubuntu-latest
-    if: "contains(github.event.head_commit.message, 'bumped version')"  # 커밋 메시지에 "bumped version" 포함 시에만 실행
+    timeout-minutes: 20
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0  # 전체 히스토리 가져오기
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-    - name: Build UserScript
-      run: |
-        node build.js
-        echo "UserScript built successfully"
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
 
-    - name: Get version
-      id: get_version
-      run: |
-        VERSION=$(node -p "require('./package.json').version")
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "Version detected: $VERSION"
+      - name: Validate code
+        run: npm run validate
 
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ steps.get_version.outputs.version }}
-        name: Release v${{ steps.get_version.outputs.version }}
-        draft: false
-        prerelease: false
-        files: |
-          dist/xcom-enhanced-gallery.user.js
-        body: |
-          # X.com Enhanced Image Gallery v${{ steps.get_version.outputs.version }}
-          
-          [Click here to install](https://github.com/${{ github.repository }}/raw/v${{ steps.get_version.outputs.version }}/dist/xcom-enhanced-gallery.user.js)
-          
-          ## Changes
-          ${{ github.event.head_commit.message }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: npm run build:all
+
+      - name: Create package
+        run: |
+          cd dist
+          zip -r ../xcom-enhanced-gallery-${{ github.ref_name }}.zip *
+          cd ..
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "Release notes for ${{ github.ref_name }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Installation" >> release_notes.md
+          echo "1. Download the ZIP file" >> release_notes.md
+          echo "2. Extract the contents" >> release_notes.md
+          echo "3. Load as unpacked extension in your browser" >> release_notes.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: X.com Enhanced Gallery ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: xcom-enhanced-gallery-${{ github.ref_name }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,373 @@
+/**
+ * @fileoverview Modern CSS Optimization for X.com Enhanced Gallery
+ * @description :has() 선택자와 최신 CSS 기능을 활용한 성능 최적화
+ * @version 1.0.0
+ * @author X.com Enhanced Gallery Team
+ */
+
+/* ===== 성능 최적화를 위한 :has() 선택자 활용 ===== */
+
+/**
+ * 갤러리 요소 감지 및 자동 스타일링
+ * :has() 선택자를 사용하여 갤러리 관련 요소가 있는 컨테이너에 자동으로 스타일 적용
+ */
+
+/* 갤러리 뷰어가 있는 컨테이너 최적화 - 현대적 디자인 */
+.xeg-container:has([data-gallery-element='viewer']) {
+  /* GPU 가속 활성화 */
+  transform: translateZ(0);
+  will-change: transform, opacity;
+
+  /* 이벤트 최적화 */
+  pointer-events: auto;
+  user-select: none;
+
+  /* 스크롤 차단 */
+  overflow: hidden;
+  height: 100vh;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+
+  /* 자동 테마 시스템 연동 */
+  background: var(--xeg-overlay-background, var(--xeg-gallery-bg));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 갤러리 아이템이 있는 컨테이너 */
+.xeg-container:has([data-gallery-element='item']) {
+  /* 최적화된 스크롤링 */
+  scroll-behavior: smooth;
+  overflow-anchor: auto;
+
+  /* 스크롤 스냅 */
+  scroll-snap-type: y mandatory;
+}
+
+/* 갤러리 아이템에 스크롤 스냅 적용 */
+.xeg-container:has([data-gallery-element='item']) [data-gallery-element='item'] {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* 로딩 상태가 있는 컨테이너 */
+.xeg-container:has([data-gallery-state='loading']) {
+  /* 로딩 중 포인터 이벤트 차단 */
+  pointer-events: none;
+
+  /* 로딩 커서 */
+  cursor: wait;
+}
+
+/* 에러 상태가 있는 컨테이너 */
+.xeg-container:has([data-gallery-state='error']) {
+  /* 에러 상태 표시 */
+  border: 2px solid var(--xeg-color-error);
+  background: rgba(244, 33, 46, 0.05);
+}
+
+/* ===== 컨테이너 쿼리 최적화 ===== */
+
+/**
+ * 갤러리 컨테이너 크기에 따른 반응형 스타일
+ * 컨테이너 쿼리를 사용하여 더 정밀한 반응형 디자인
+ */
+
+@container (width < 480px) {
+  [data-gallery-element='toolbar'] {
+    padding: var(--xeg-spacing-xs);
+    gap: var(--xeg-spacing-xs);
+  }
+
+  [data-gallery-element='navigation'] button {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  [data-gallery-element='counter'] {
+    font-size: var(--xeg-font-size-xs);
+    padding: var(--xeg-spacing-xs);
+  }
+}
+
+@container (width >= 480px) and (width < 768px) {
+  [data-gallery-element='toolbar'] {
+    padding: var(--xeg-spacing-sm);
+    gap: var(--xeg-spacing-sm);
+  }
+
+  [data-gallery-element='navigation'] button {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+}
+
+@container (width >= 768px) {
+  [data-gallery-element='toolbar'] {
+    padding: var(--xeg-spacing-md);
+    gap: var(--xeg-spacing-md);
+  }
+
+  [data-gallery-element='navigation'] button {
+    width: 64px;
+    height: 64px;
+    font-size: 32px;
+  }
+}
+
+/* ===== 성능 최적화된 애니메이션 ===== */
+
+/**
+ * 하드웨어 가속 애니메이션
+ * transform과 opacity만 사용하여 리플로우/리페인트 방지
+ */
+
+/* 갤러리 열림/닫힘 애니메이션 */
+@keyframes galleryFadeIn {
+  from {
+    opacity: 0;
+    transform: translateZ(0) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+@keyframes galleryFadeOut {
+  from {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateZ(0) scale(0.95);
+  }
+}
+
+/* 갤러리 오버레이 애니메이션 */
+[data-gallery-element='overlay'] {
+  animation: galleryFadeIn 0.2s ease-out;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+}
+
+[data-gallery-element='overlay'][data-gallery-state='closing'] {
+  animation: galleryFadeOut 0.2s ease-in;
+}
+
+/* 아이템 전환 애니메이션 */
+@keyframes itemSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateZ(0);
+  }
+}
+
+[data-gallery-element='item'][data-gallery-state='entering'] {
+  animation: itemSlideIn 0.3s ease-out;
+}
+
+/* ===== 향상된 호버 및 포커스 상태 ===== */
+
+/**
+ * 인터랙티브 요소들의 향상된 상태 관리
+ * :has() 선택자를 활용한 상위 요소 상태 전파
+ */
+
+/* 호버 가능한 디바이스에서만 호버 효과 적용 */
+@media (hover: hover) and (pointer: fine) {
+  /* 갤러리 아이템에 호버 시 부모 컨테이너 변경 */
+  .xeg-container:has([data-gallery-element='item']:hover) {
+    --item-hover-scale: 1.02;
+  }
+
+  /* 호버된 아이템 강조 */
+  [data-gallery-element='item']:hover {
+    transform: scale(var(--item-hover-scale, 1)) translateZ(0);
+    transition: transform 0.2s ease-out;
+  }
+
+  /* 네비게이션 버튼 호버 시 컨테이너 변경 */
+  .xeg-container:has([data-gallery-element='navigation'] button:hover) {
+    --nav-glow-opacity: 0.1;
+  }
+
+  [data-gallery-element='navigation'] button:hover {
+    background: var(--xeg-color-primary);
+    box-shadow: 0 0 20px rgba(29, 155, 240, var(--nav-glow-opacity, 0));
+  }
+}
+
+/* 포커스 상태 관리 */
+.xeg-container:has(:focus-visible) {
+  --focus-ring-color: var(--xeg-color-primary);
+  --focus-ring-width: 2px;
+}
+
+[data-gallery-element] *:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+  border-radius: var(--xeg-radius-sm);
+}
+
+/* ===== 고급 레이아웃 최적화 ===== */
+
+/**
+ * CSS Grid와 Flexbox를 조합한 최적화된 레이아웃
+ */
+
+/* 갤러리 메인 컨테이너 - Grid 레이아웃 */
+[data-gallery-element='overlay'] {
+  display: grid;
+  grid-template-areas:
+    'toolbar toolbar toolbar'
+    'nav-prev content nav-next'
+    'counter counter counter';
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: var(--xeg-spacing-md);
+  padding: var(--xeg-spacing-lg);
+  container-type: inline-size;
+}
+
+[data-gallery-element='toolbar'] {
+  grid-area: toolbar;
+  justify-self: stretch;
+}
+
+[data-gallery-element='content'] {
+  grid-area: content;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+[data-gallery-element='navigation'][data-direction='prev'] {
+  grid-area: nav-prev;
+}
+
+[data-gallery-element='navigation'][data-direction='next'] {
+  grid-area: nav-next;
+}
+
+[data-gallery-element='counter'] {
+  grid-area: counter;
+}
+
+/* ===== 접근성 향상 ===== */
+
+/**
+ * 접근성을 고려한 스타일 최적화
+ */
+
+/* 움직임 감소 모드 */
+@media (prefers-reduced-motion: reduce) {
+  [data-gallery-element],
+  [data-gallery-element] * {
+    animation-duration: 0.01s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 고대비 모드 */
+@media (prefers-contrast: high) {
+  [data-gallery-element='overlay'] {
+    background: rgb(0, 0, 0);
+    border: 2px solid white;
+  }
+
+  [data-gallery-element] button {
+    border-width: 2px;
+    background: rgb(0, 0, 0);
+    color: white;
+  }
+
+  [data-gallery-element] button:hover,
+  [data-gallery-element] button:focus {
+    background: white;
+    color: black;
+  }
+}
+
+/* 색상 대비 모드 */
+@media (prefers-color-scheme: light) {
+  [data-gallery-element='overlay'] {
+    --xeg-overlay-bg: rgba(255, 255, 255, 0.95);
+    --xeg-text-color: var(--xeg-color-black);
+  }
+}
+
+/* ===== 성능 모니터링용 CSS ===== */
+
+/**
+ * 개발 및 디버깅을 위한 성능 표시기
+ */
+
+@media (prefers-reduced-data: reduce) {
+  /* 데이터 절약 모드 */
+  [data-gallery-element='item'] img {
+    image-rendering: optimizeSpeed;
+  }
+
+  [data-gallery-element='overlay'] {
+    backdrop-filter: none;
+  }
+}
+
+/* 배터리 절약 모드 감지 (실험적 기능) */
+@media (prefers-reduced-motion: reduce) and (prefers-color-scheme: dark) {
+  [data-gallery-element='overlay'] {
+    /* 배터리 절약을 위해 애니메이션 최소화 */
+    background: rgb(0, 0, 0);
+    backdrop-filter: none;
+  }
+}
+
+/* ===== 디버깅 모드 ===== */
+
+/**
+ * 개발 환경에서 갤러리 요소들을 시각적으로 구분
+ * data-debug="true"일 때만 적용
+ */
+
+[data-debug='true'] [data-gallery-element='overlay'] {
+  outline: 3px dashed red;
+}
+
+[data-debug='true'] [data-gallery-element='content'] {
+  outline: 2px dashed blue;
+}
+
+[data-debug='true'] [data-gallery-element='item'] {
+  outline: 1px dashed green;
+}
+
+[data-debug='true'] [data-gallery-element='navigation'] {
+  outline: 1px dashed yellow;
+}
+
+/* 성능 지표 표시 */
+[data-debug='true'] [data-gallery-element='overlay']::before {
+  content: 'Gallery Overlay - FPS: ' attr(data-fps) ' - Memory: ' attr(data-memory);
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: monospace;
+  z-index: 10000;
+}

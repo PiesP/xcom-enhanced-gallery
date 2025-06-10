@@ -1,0 +1,83 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+    paths: ['package.json', 'package-lock.json']
+  pull_request:
+    branches: [main]
+    paths: ['package.json', 'package-lock.json']
+  schedule:
+    - cron: '0 3 * * 1' # Weekly on Monday at 3 AM
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Audit dependencies
+        run: |
+          npm audit --audit-level=moderate
+          npm audit --audit-level=moderate --json > audit-report.json
+
+      - name: Check for outdated packages
+        run: |
+          npm outdated --json > outdated-report.json || true
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports-${{ github.sha }}
+          path: |
+            audit-report.json
+            outdated-report.json
+          retention-days: 30
+
+      - name: Fail on high severity vulnerabilities
+        run: npm audit --audit-level=high
+
+  license-check:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check licenses
+        run: |
+          npx license-checker --summary --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC' > license-report.txt
+          cat license-report.txt
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report-${{ github.sha }}
+          path: license-report.txt
+          retention-days: 30

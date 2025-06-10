@@ -1,0 +1,66 @@
+{
+  /**
+   * ESLint용 TypeScript 설정 파일
+   *
+   * @description X.com Enhanced Gallery 프로젝트의 ESLint가 TypeScript 파일을
+   * 올바르게 분석할 수 있도록 하는 확장 설정입니다. 기본 tsconfig.json을
+   * 확장하여 ESLint가 검사해야 하는 모든 파일을 포함합니다.
+   *
+   * @see {@link https://typescript-eslint.io/docs/linting/type-linting/} TypeScript ESLint 설정
+   * @see {@link https://www.typescriptlang.org/tsconfig} TSConfig 레퍼런스
+   *
+   * @example
+   * ```bash
+   * # ESLint로 TypeScript 파일 검사
+   * npx eslint --project tsconfig.eslint.json
+   * ```
+   */
+  "extends": "./tsconfig.json",
+
+  /**
+   * ESLint 검사 대상 파일 및 디렉토리
+   *
+   * @description 프로젝트 내 모든 TypeScript/JavaScript 파일을 포함하여
+   * ESLint가 코드 품질과 스타일을 일관되게 검사할 수 있도록 합니다.
+   *
+   * 포함되는 주요 디렉토리:
+   * - src/**: 애플리케이션 소스 코드 (모든 하위 디렉토리 포함)
+   * - scripts/**: 빌드 및 유틸리티 스크립트
+   * - test/**: 테스트 파일
+   * - .vscode/templates/**: VS Code 템플릿 파일
+   * - 설정 파일들 (vite.config.ts, vitest.config.ts 등)
+   */
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "test/**/*",
+    "vite.config.ts",
+    "vitest.config.ts",
+    ".vscode/templates/**/*.ts",
+    ".vscode/templates/**/*.tsx"
+  ],
+
+  /**
+   * ESLint 검사에서 제외할 파일 및 디렉토리
+   *
+   * @description 성능상의 이유나 불필요한 검사를 방지하기 위해
+   * 다음 디렉토리와 파일들을 제외합니다:
+   *
+   * - node_modules: 외부 의존성 패키지
+   * - dist, build: 빌드 결과물
+   * - coverage: 테스트 커버리지 리포트
+   * - backups, src_backup: 백업 파일
+   * - *.bak.*: 백업 파일 패턴
+   */
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "backups/**/*",
+    "src_backup/**/*",
+    "**/*.bak.js",
+    "**/*.bak.ts",
+    "**/*.bak.tsx"
+  ]
+}

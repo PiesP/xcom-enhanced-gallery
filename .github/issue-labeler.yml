@@ -1,0 +1,34 @@
+# 이슈 제목 기반 라벨 설정
+# 자세한 정보: https://github.com/github/issue-labeler
+
+# 버그 리포트
+'bug':
+  - '(\\[버그\\]|\\[bug\\]|버그|bug)'
+
+# 기능 요청
+'enhancement':
+  - '(\\[기능\\]|\\[feature\\]|기능 요청|feature request)'
+
+# 문서화
+'documentation':
+  - '(\\[문서\\]|\\[docs\\]|문서화|documentation)'
+
+# X.com 업데이트 관련
+'x-com-update':
+  - '(\\[X.com\\]|\\[트위터\\]|\\[Twitter\\]|X.com 변경)'
+
+# 질문
+'question':
+  - '(\\[질문\\]|\\[question\\]|질문|question|how to|어떻게)'
+
+# 성능 관련
+'performance':
+  - '(성능|퍼포먼스|느림|속도|performance|slow)'
+
+# 브라우저 호환성
+'compatibility':
+  - '(호환성|compatibility|browser|브라우저)'
+
+# 우선순위 관련
+'high-priority':
+  - '(\\[긴급\\]|\\[urgent\\]|긴급|urgent|critical)'

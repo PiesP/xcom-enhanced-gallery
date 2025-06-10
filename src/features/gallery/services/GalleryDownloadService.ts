@@ -1,0 +1,90 @@
+/**
+ * Gallery Download Service
+ *
+ * 갤러리의 다운로드 기능을 담당하는 통합 서비스입니다.
+ * Core layer의 UnifiedDownloadService를 사용하여 Clean Architecture 원칙을 준수합니다.
+ *
+ * Feature Layer Pattern:
+ * - Core 서비스 위임
+ * - 갤러리 특화 로직
+ * - UI 통합 인터페이스
+ */
+
+import {
+  BulkDownloadService,
+  type DownloadOptions,
+  type DownloadProgress,
+  type DownloadResult,
+} from '@core/services/BulkDownloadService';
+import type { MediaInfo, MediaItem } from '@core/types/media.types';
+import { logger } from '@infrastructure/logging/logger';
+
+// Re-export types for convenience
+export type { DownloadOptions, DownloadProgress, DownloadResult };
+
+/**
+ * 갤러리 다운로드 관리 서비스
+ *
+ * Clean Architecture 패턴을 따라 Core layer의 UnifiedDownloadService를 사용합니다.
+ * 갤러리 특화 기능과 UI 통합을 담당합니다.
+ */
+export class GalleryDownloadService {
+  private static instance: GalleryDownloadService;
+  private readonly coreDownloadService = BulkDownloadService.getInstance();
+
+  public static getInstance(): GalleryDownloadService {
+    GalleryDownloadService.instance ??= new GalleryDownloadService();
+    return GalleryDownloadService.instance;
+  }
+
+  private constructor() {}
+
+  /**
+   * 현재 미디어 다운로드 (갤러리 특화 진입점)
+   */
+  async downloadCurrent(media: MediaItem | MediaInfo): Promise<boolean> {
+    logger.info('Gallery: downloading current media');
+    return this.coreDownloadService.downloadSingle(media);
+  }
+
+  /**
+   * 여러 미디어 다운로드 (갤러리 특화 진입점)
+   */
+  async downloadMultiple(
+    mediaItems: readonly (MediaItem | MediaInfo)[],
+    options: DownloadOptions = {}
+  ): Promise<DownloadResult> {
+    logger.info(`Gallery: downloading ${mediaItems.length} media items`);
+    return this.coreDownloadService.downloadMultiple(mediaItems, options);
+  }
+
+  /**
+   * 갤러리 전체 다운로드 (갤러리 특화 메서드)
+   */
+  async downloadAll(
+    mediaItems: readonly (MediaItem | MediaInfo)[],
+    options: Omit<DownloadOptions, 'strategy'> = {}
+  ): Promise<DownloadResult> {
+    logger.info(`Gallery: downloading all ${mediaItems.length} items as ZIP`);
+
+    return this.coreDownloadService.downloadMultiple(mediaItems, {
+      ...options,
+      strategy: 'zip', // 갤러리 전체 다운로드는 항상 ZIP
+    });
+  }
+
+  /**
+   * 선택된 미디어 개별 다운로드 (갤러리 특화 메서드)
+   */
+  async downloadSelected(
+    mediaItems: readonly (MediaItem | MediaInfo)[],
+    options: Omit<DownloadOptions, 'strategy'> = {}
+  ): Promise<DownloadResult> {
+    logger.info(`Gallery: downloading ${mediaItems.length} selected items individually`);
+
+    return this.coreDownloadService.downloadMultiple(mediaItems, {
+      ...options,
+      strategy: 'individual', // 선택된 항목은 개별 다운로드
+    });
+  }
+}

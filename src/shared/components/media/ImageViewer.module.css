@@ -1,0 +1,314 @@
+/**
+ * @fileoverview ImageViewer component CSS module for X.com Enhanced Gallery
+ * @license MIT
+ * @version 1.1.0 - Modern CSS optimization with :has(), container queries,
+ * and hardware acceleration
+ */
+
+/**
+ * ImageViewer 컴포넌트용 CSS 모듈 - 현대적 최적화
+ *
+ * 이 파일은 X.com Enhanced Gallery의 이미지 뷰어 컴포넌트에 사용되는
+ * 스코프된 스타일을 정의합니다. 하드웨어 가속, 컨테이너 쿼리, :has() 선택자 등
+ * 현대적 CSS 기법을 활용한 성능 최적화가 적용되었습니다.
+ *
+ * 주요 기능:
+ * - GPU 가속 이미지 표시 및 변형
+ * - 컨테이너 쿼리 기반 반응형 레이아웃
+ * - :has() 선택자를 활용한 상태 기반 스타일링
+ * - 최적화된 확대/축소 및 드래그 상호작용
+ * - 향상된 로딩 상태 및 에러 처리
+ */
+
+/* 기본 컨테이너 스타일 - 하드웨어 가속 및 컨테이너 쿼리 지원 */
+.container,
+.mediaContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--xeg-overlay-background);
+
+  /* 인터랙션 */
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-x pan-y pinch-zoom;
+
+  /* 성능 최적화 */
+  transform: translateZ(0);
+  will-change: scroll-position;
+  contain: layout style paint;
+
+  /* 스크롤바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--xeg-color-surface-tertiary) transparent;
+
+  /* 컨테이너 쿼리 활성화 */
+  container-type: size;
+  container-name: image-viewer;
+}
+
+/* 인터랙션 상태 - :has() 선택자 활용 */
+.container:active,
+.mediaContainer:active {
+  cursor: grabbing;
+}
+
+/* :has() 선택자를 활용한 상태 기반 스타일링 */
+.container:has(.image.loading) {
+  /* 로딩 중일 때 컨테이너 상태 */
+  cursor: wait;
+}
+
+.container:has(.image.error) {
+  /* 에러 상태일 때 컨테이너 */
+  cursor: not-allowed;
+}
+
+.container:has(.image[data-dragging='true']) {
+  /* 드래그 중일 때 전체 컨테이너 */
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+/* 웹킷 브라우저용 스크롤바 - 반응형 크기 */
+.container::-webkit-scrollbar,
+.mediaContainer::-webkit-scrollbar {
+  width: clamp(4px, 1vw, var(--xeg-spacing-xs));
+  height: clamp(4px, 1vw, var(--xeg-spacing-xs));
+}
+
+.container::-webkit-scrollbar-track,
+.mediaContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.container::-webkit-scrollbar-thumb,
+.mediaContainer::-webkit-scrollbar-thumb {
+  background: var(--xeg-color-surface-tertiary);
+  border-radius: var(--xeg-radius-sm);
+  transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.container::-webkit-scrollbar-thumb:hover,
+.mediaContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-color-surface-hover);
+}
+
+/* 이미지 요소 - GPU 가속 및 최적화된 변형 */
+.image,
+.media {
+  max-width: none;
+  max-height: none;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+
+  /* 하드웨어 가속 변형 */
+  transform: translate3d(0, 0, 0);
+  transform-origin: center center;
+  transform-style: preserve-3d;
+
+  /* 최적화된 트랜지션 */
+  transition:
+    transform var(--xeg-transition-duration-fast) cubic-bezier(0.16, 1, 0.3, 1),
+    opacity var(--xeg-transition-duration-medium) cubic-bezier(0.23, 1, 0.32, 1),
+    filter var(--xeg-transition-duration-medium) cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* 성능 최적화 */
+  will-change: transform, opacity, filter;
+  contain: layout style;
+  pointer-events: none;
+  display: block;
+
+  /* 이미지 렌더링 최적화 */
+  image-rendering: auto;
+}
+
+/* 상태별 스타일 - 향상된 시각적 피드백 */
+.loading {
+  opacity: 0;
+  filter: blur(clamp(1px, 0.2vw, 2px));
+  transform: translate3d(0, 0, 0) scale3d(0.98, 0.98, 1);
+}
+
+.loaded {
+  opacity: 1;
+  filter: none;
+  transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+}
+
+.error {
+  opacity: 0.3;
+  filter: grayscale(100%) contrast(0.8);
+  transform: translate3d(0, 0, 0) scale3d(0.95, 0.95, 1);
+}
+
+/* 에러 메시지 - 현대적 스타일링 */
+.error::after {
+  content: '이미지를 불러올 수 없습니다';
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate3d(-50%, -50%, 0);
+
+  /* 스타일링 */
+  color: var(--xeg-color-text-primary);
+  background: var(--xeg-overlay-background-alpha);
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-md);
+  border-radius: var(--xeg-radius-sm);
+  font-size: var(--xeg-font-size-sm);
+
+  /* 백드롭 효과 */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  /* 성능 최적화 */
+  pointer-events: none;
+  contain: layout style;
+}
+
+/* 드래그 상태 - GPU 가속 최적화 */
+.dragging {
+  cursor: grabbing !important;
+}
+
+.dragging .image {
+  transition: none;
+  will-change: transform;
+}
+
+/* 드래그 중인 이미지에 데이터 속성 기반 스타일링 */
+.image[data-dragging='true'] {
+  transition: none;
+  cursor: grabbing;
+}
+
+/* 확대/축소 상태별 커서 - 데이터 속성 활용 */
+.container[data-scale='1'] {
+  cursor: zoom-in;
+}
+
+.container[data-scale]:not([data-scale='1']) {
+  cursor: grab;
+}
+
+.container[data-scale]:not([data-scale='1']):active {
+  cursor: grabbing;
+}
+
+/* :has() 선택자를 활용한 확대 상태 감지 */
+.container:has(.image[style*='scale']) {
+  cursor: grab;
+}
+
+.container:has(.image[style*='scale']):active {
+  cursor: grabbing;
+}
+
+/* 로딩 인디케이터 - 현대적 애니메이션 */
+.loadingIndicator {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate3d(-50%, -50%, 0);
+
+  /* 크기 */
+  width: clamp(24px, 5vw, var(--xeg-button-size-md));
+  height: clamp(24px, 5vw, var(--xeg-button-size-md));
+
+  /* 스타일링 */
+  border: 3px solid var(--xeg-color-surface-tertiary);
+  border-top: 3px solid var(--xeg-color-text-primary);
+  border-radius: var(--xeg-radius-full);
+
+  /* 하드웨어 가속 애니메이션 */
+  animation: spin 1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  will-change: transform;
+  contain: layout style;
+}
+
+@keyframes spin {
+  0% {
+    transform: translate3d(-50%, -50%, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(-50%, -50%, 0) rotate(360deg);
+  }
+}
+
+/* 컨테이너 쿼리 기반 반응형 디자인 */
+@container image-viewer (max-width: 480px) {
+  .loadingIndicator {
+    width: clamp(20px, 6vw, 32px);
+    height: clamp(20px, 6vw, 32px);
+    border-width: 2px;
+  }
+
+  .error::after {
+    font-size: clamp(11px, 2.5vw, 13px);
+    padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
+  }
+}
+
+/* 고해상도 디스플레이 최적화 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+  .image {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* 접근성 - 다크 모드 대응 */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background: var(--xeg-overlay-background);
+  }
+
+  .loadingIndicator {
+    border-color: color-mix(in srgb, white 30%, transparent);
+    border-top-color: color-mix(in srgb, white 90%, transparent);
+  }
+}
+
+/* 접근성 - 모션 감소 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .image,
+  .loadingIndicator {
+    transition: none;
+    animation: none;
+    will-change: auto;
+  }
+
+  .loading,
+  .loaded,
+  .error {
+    transform: none;
+  }
+
+  .loadingIndicator {
+    animation: none;
+    border-top-color: var(--xeg-color-text-primary);
+  }
+}
+
+/* 기존 미디어 쿼리는 컨테이너 쿼리 지원이 없는 브라우저를 위한 폴백 */
+@media (max-width: 480px) {
+  .container {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+
+  .loadingIndicator {
+    width: clamp(20px, 6vw, 32px);
+    height: clamp(20px, 6vw, 32px);
+    border-width: 2px;
+  }
+
+  .error::after {
+    font-size: clamp(11px, 2.5vw, 13px);
+    padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
+  }
+}

@@ -1,0 +1,562 @@
+/**
+ * Global styles for X.com Enhanced Gallery
+ *
+ * 이 파일은 프로젝트 전반에서 사용되는 전역 스타일을 정의합니다.
+ * CSS 변수는 variables.css에서 정의되며, 여기서는 기본 스타일만 포함합니다.
+ *
+ * @author X.com Enhanced Gallery Team
+ * @version 3.3.0 - 투명도 문제 수정 및 색상 확장
+ * @since 2024-01-01
+ */
+
+/* ===== Variables Import ===== */
+@import './variables.css';
+
+/* ===== Auto Theme System Import ===== */
+@import './auto-theme.css';
+
+/* ===== 갤러리 전용 스타일 ===== */
+@import '../../features/gallery/styles/gallery-global.css';
+
+/* ===== 컨테이너 쿼리 지원 감지 ===== */
+@supports (container-type: size) {
+  :root {
+    --supports-container-queries: 1;
+  }
+}
+
+/* ===== :has() 선택자 지원 감지 ===== */
+@supports selector(:has(*)) {
+  :root {
+    --supports-has-selector: 1;
+  }
+}
+
+/* ===== CSS 확장 변수 - 최신 기법 활용 ===== */
+
+:root {
+  /* color-mix() 함수를 활용한 확장 색상 - 개선된 버전 */
+  --xeg-color-primary-hover: color-mix(in srgb, var(--xeg-color-primary) 90%, white);
+  --xeg-color-primary-dark: color-mix(in srgb, var(--xeg-color-primary) 70%, black);
+  --xeg-color-secondary-hover: color-mix(in srgb, var(--xeg-color-secondary) 85%, white);
+
+  /* 현대적 glassmorphism 색상 - 가시성 개선 */
+  --xeg-color-text-primary: var(--xeg-text-primary);
+  --xeg-color-surface-tertiary: color-mix(in srgb, white 18%, transparent);
+  --xeg-color-surface-hover: color-mix(in srgb, white 28%, transparent);
+  --xeg-color-primary-alpha-20: color-mix(in srgb, var(--xeg-color-primary) 20%, transparent);
+  --xeg-color-primary-alpha-30: color-mix(in srgb, var(--xeg-color-primary) 30%, transparent);
+  --xeg-color-error-alpha-10: color-mix(in srgb, var(--xeg-color-error) 10%, transparent);
+  --xeg-color-error-alpha-30: color-mix(in srgb, var(--xeg-color-error) 30%, transparent);
+
+  /* 오버레이 배경 - 현대적 블러 효과 */
+  --xeg-overlay-background: radial-gradient(
+    ellipse at center,
+    rgba(15, 23, 42, 0.88) 0%,
+    rgba(15, 23, 42, 0.96) 100%
+  );
+  --xeg-overlay-background-alpha: color-mix(in srgb, #0f172a 80%, transparent);
+  --xeg-overlay-background-high-contrast: color-mix(in srgb, #0f172a 98%, transparent);
+
+  /* 컨테이너 크기 변수들 추가 */
+  --xeg-container-max-width: 1200px;
+  --xeg-container-max-width-sm: 480px;
+  --xeg-container-max-width-md: 768px;
+
+  /* 추가 변수들 - 누락된 변수 정의 */
+  --xeg-gallery-item-shadow: rgba(15, 23, 42, 0.1);
+  --xeg-color-light: #ffffff;
+  --xeg-transition-duration-fast: 150ms;
+  --xeg-transition-duration-medium: 250ms;
+}
+
+/* 다크 테마 적용 - variables.css의 정의 사용 */
+.xeg-theme-dark {
+  --xeg-bg-primary: var(--xeg-dark-bg-primary);
+  --xeg-bg-secondary: var(--xeg-dark-bg-secondary);
+  --xeg-bg-overlay: var(--xeg-dark-bg-overlay);
+  --xeg-bg-modal: var(--xeg-dark-bg-modal);
+  --xeg-bg-card: var(--xeg-dark-bg-card);
+  --xeg-text-primary: var(--xeg-dark-text-primary);
+  --xeg-text-secondary: var(--xeg-dark-text-secondary);
+  --xeg-text-tertiary: var(--xeg-dark-text-tertiary);
+  --xeg-text-inverse: var(--xeg-dark-text-inverse);
+  --xeg-text-muted: var(--xeg-dark-text-muted);
+  --xeg-border-light: var(--xeg-dark-border-light);
+  --xeg-border-medium: var(--xeg-dark-border-medium);
+  --xeg-border-dark: var(--xeg-dark-border-dark);
+  --xeg-hover-bg: var(--xeg-hover-bg-dark);
+
+  /* 다크 테마용 확장 색상 - 가시성 및 일관성 개선 */
+  --xeg-color-text-primary: var(--xeg-dark-text-primary);
+  --xeg-color-surface-tertiary: rgba(255, 255, 255, 0.12);
+  --xeg-color-surface-hover: rgba(255, 255, 255, 0.2);
+  --xeg-overlay-background: radial-gradient(
+    ellipse at center,
+    rgba(15, 23, 42, 0.94) 0%,
+    rgba(15, 23, 42, 0.98) 100%
+  );
+  --xeg-overlay-background-alpha: rgba(15, 23, 42, 0.85);
+  --xeg-overlay-background-high-contrast: rgba(15, 23, 42, 0.99);
+}
+
+/* 사용자 선호도 기반 자동 테마 - variables.css 정의 사용 */
+@media (prefers-color-scheme: dark) {
+  :root:not(.xeg-theme-light) {
+    --xeg-bg-primary: var(--xeg-dark-bg-primary);
+    --xeg-bg-secondary: var(--xeg-dark-bg-secondary);
+    --xeg-bg-overlay: var(--xeg-dark-bg-overlay);
+    --xeg-bg-modal: var(--xeg-dark-bg-modal);
+    --xeg-bg-card: var(--xeg-dark-bg-card);
+    --xeg-text-primary: var(--xeg-dark-text-primary);
+    --xeg-text-secondary: var(--xeg-dark-text-secondary);
+    --xeg-text-tertiary: var(--xeg-dark-text-tertiary);
+    --xeg-text-inverse: var(--xeg-dark-text-inverse);
+    --xeg-text-muted: var(--xeg-dark-text-muted);
+    --xeg-border-light: var(--xeg-dark-border-light);
+    --xeg-border-medium: var(--xeg-dark-border-medium);
+    --xeg-border-dark: var(--xeg-dark-border-dark);
+    --xeg-hover-bg: var(--xeg-hover-bg-dark);
+
+    /* 자동 다크 테마 확장 색상 */
+    --xeg-color-text-primary: var(--xeg-dark-text-primary);
+    --xeg-color-surface-tertiary: rgba(255, 255, 255, 0.15);
+    --xeg-color-surface-hover: rgba(255, 255, 255, 0.25);
+    --xeg-overlay-background: rgba(0, 0, 0, 0.95);
+    --xeg-overlay-background-alpha: rgba(0, 0, 0, 0.8);
+  }
+}
+
+/* 접근성 관련 변수 - variables.css 정의 사용 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --xeg-duration-fast: 0ms;
+    --xeg-duration-normal: 0ms;
+    --xeg-duration-slow: 0ms;
+  }
+}
+
+/* 고대비 모드 지원 - variables.css 정의 사용 */
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-border-light: var(--xeg-border-dark);
+    --xeg-text-secondary: var(--xeg-text-primary);
+  }
+}
+
+/* ===== 전역 리셋 및 기본 스타일 ===== */
+
+/* XEG 네임스페이스 컨테이너 기본 스타일 */
+.xeg-container {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  color: var(--xeg-text-primary);
+  background-color: var(--xeg-bg-primary);
+}
+
+.xeg-container *,
+.xeg-container *::before,
+.xeg-container *::after {
+  box-sizing: inherit;
+}
+
+/* 포커스 스타일 */
+.xeg-container :focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+/* 스크린 리더 전용 텍스트 */
+.xeg-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 공통 트랜지션 */
+.xeg-transition {
+  transition: var(--xeg-transition-all);
+}
+
+/* ===== 버튼 스타일 ===== */
+
+.xeg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  border: 1px solid var(--xeg-border-medium);
+  border-radius: var(--xeg-radius-md);
+  background: rgba(248, 250, 252, 0.6);
+  color: var(--xeg-text-primary);
+  font-size: var(--xeg-font-size-sm);
+  font-weight: var(--xeg-font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: var(--xeg-button-height-md);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.xeg-btn:hover {
+  background: rgba(226, 232, 240, 0.8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+}
+
+.xeg-btn:disabled {
+  opacity: var(--xeg-disabled-opacity);
+  cursor: var(--xeg-disabled-cursor);
+}
+
+.xeg-btn-primary {
+  background-color: var(--xeg-color-primary);
+  color: var(--xeg-text-inverse);
+  border-color: var(--xeg-color-primary);
+}
+
+.xeg-btn-primary:hover {
+  background-color: var(--xeg-color-primary-hover);
+  border-color: var(--xeg-color-primary-hover);
+}
+
+.xeg-btn-sm {
+  min-height: var(--xeg-button-height-sm);
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  font-size: var(--xeg-font-size-xs);
+}
+
+.xeg-btn-lg {
+  min-height: var(--xeg-button-height-lg);
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+  font-size: var(--xeg-font-size-md);
+}
+
+/* ===== 카드 스타일 ===== */
+
+.xeg-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(203, 213, 225, 0.3);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.08),
+    0 2px 8px rgba(15, 23, 42, 0.05);
+  padding: var(--xeg-spacing-md);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.xeg-card-header {
+  padding-bottom: var(--xeg-spacing-md);
+  margin-bottom: var(--xeg-spacing-md);
+  border-bottom: 1px solid var(--xeg-border-light);
+}
+
+.xeg-card-body {
+  padding: 0;
+}
+
+.xeg-card-footer {
+  padding-top: var(--xeg-spacing-md);
+  margin-top: var(--xeg-spacing-md);
+  border-top: 1px solid var(--xeg-border-light);
+}
+
+/* ===== 모달 스타일 ===== */
+
+.xeg-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--xeg-overlay-background);
+  z-index: var(--xeg-z-modal-backdrop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.xeg-modal {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(203, 213, 225, 0.2);
+  border-radius: var(--xeg-radius-xl);
+  box-shadow:
+    0 20px 64px rgba(15, 23, 42, 0.15),
+    0 8px 32px rgba(15, 23, 42, 0.1);
+  z-index: var(--xeg-z-modal);
+  max-width: var(--xeg-modal-max-width);
+  max-height: var(--xeg-modal-max-height);
+  overflow: auto;
+  margin: var(--xeg-spacing-lg);
+  padding: var(--xeg-modal-padding);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ===== 유틸리티 클래스 ===== */
+
+.xeg-hidden {
+  display: none !important;
+}
+
+.xeg-visible {
+  display: block !important;
+}
+
+.xeg-text-center {
+  text-align: center;
+}
+
+.xeg-text-left {
+  text-align: left;
+}
+
+.xeg-text-right {
+  text-align: right;
+}
+
+.xeg-flex {
+  display: flex;
+}
+
+.xeg-flex-col {
+  flex-direction: column;
+}
+
+.xeg-flex-row {
+  flex-direction: row;
+}
+
+.xeg-items-center {
+  align-items: center;
+}
+
+.xeg-items-start {
+  align-items: flex-start;
+}
+
+.xeg-items-end {
+  align-items: flex-end;
+}
+
+.xeg-justify-center {
+  justify-content: center;
+}
+
+.xeg-justify-between {
+  justify-content: space-between;
+}
+
+.xeg-justify-start {
+  justify-content: flex-start;
+}
+
+.xeg-justify-end {
+  justify-content: flex-end;
+}
+
+.xeg-w-full {
+  width: 100%;
+}
+
+.xeg-h-full {
+  height: 100%;
+}
+
+.xeg-w-auto {
+  width: auto;
+}
+
+.xeg-h-auto {
+  height: auto;
+}
+
+/* Spacing utilities */
+.xeg-p-0 {
+  padding: 0;
+}
+.xeg-p-1 {
+  padding: var(--xeg-spacing-xs);
+}
+.xeg-p-2 {
+  padding: var(--xeg-spacing-sm);
+}
+.xeg-p-3 {
+  padding: var(--xeg-spacing-md);
+}
+.xeg-p-4 {
+  padding: var(--xeg-spacing-lg);
+}
+
+.xeg-m-0 {
+  margin: 0;
+}
+.xeg-m-1 {
+  margin: var(--xeg-spacing-xs);
+}
+.xeg-m-2 {
+  margin: var(--xeg-spacing-sm);
+}
+.xeg-m-3 {
+  margin: var(--xeg-spacing-md);
+}
+.xeg-m-4 {
+  margin: var(--xeg-spacing-lg);
+}
+
+.xeg-mt-0 {
+  margin-top: 0;
+}
+.xeg-mt-1 {
+  margin-top: var(--xeg-spacing-xs);
+}
+.xeg-mt-2 {
+  margin-top: var(--xeg-spacing-sm);
+}
+.xeg-mt-3 {
+  margin-top: var(--xeg-spacing-md);
+}
+.xeg-mt-4 {
+  margin-top: var(--xeg-spacing-lg);
+}
+
+.xeg-mb-0 {
+  margin-bottom: 0;
+}
+.xeg-mb-1 {
+  margin-bottom: var(--xeg-spacing-xs);
+}
+.xeg-mb-2 {
+  margin-bottom: var(--xeg-spacing-sm);
+}
+.xeg-mb-3 {
+  margin-bottom: var(--xeg-spacing-md);
+}
+.xeg-mb-4 {
+  margin-bottom: var(--xeg-spacing-lg);
+}
+
+.xeg-ml-0 {
+  margin-left: 0;
+}
+.xeg-ml-1 {
+  margin-left: var(--xeg-spacing-xs);
+}
+.xeg-ml-2 {
+  margin-left: var(--xeg-spacing-sm);
+}
+.xeg-ml-3 {
+  margin-left: var(--xeg-spacing-md);
+}
+.xeg-ml-4 {
+  margin-left: var(--xeg-spacing-lg);
+}
+
+.xeg-mr-0 {
+  margin-right: 0;
+}
+.xeg-mr-1 {
+  margin-right: var(--xeg-spacing-xs);
+}
+.xeg-mr-2 {
+  margin-right: var(--xeg-spacing-sm);
+}
+.xeg-mr-3 {
+  margin-right: var(--xeg-spacing-md);
+}
+.xeg-mr-4 {
+  margin-right: var(--xeg-spacing-lg);
+}
+
+/* ===== 갤러리 독립 레이어 스타일 ===== */
+
+/* 갤러리가 열렸을 때 body에 적용되는 클래스 */
+body.xeg-gallery-open {
+  overflow: hidden !important;
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+}
+
+/* 갤러리 루트 컨테이너 */
+.xeg-gallery-layer {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.95) !important;
+  z-index: var(--xeg-z-gallery-overlay) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  isolation: isolate !important;
+}
+
+/* 갤러리 요소들은 항상 상호작용 가능 */
+.xeg-gallery-layer *,
+[data-xeg-gallery],
+[data-xeg-gallery] *,
+[data-xeg-element],
+[data-xeg-element] *,
+.xeg-gallery-root,
+.xeg-gallery-root * {
+  pointer-events: auto !important;
+}
+
+/* ===== 반응형 디자인 ===== */
+
+@media (max-width: 640px) {
+  .xeg-modal {
+    margin: var(--xeg-spacing-sm);
+    max-width: calc(100vw - var(--xeg-spacing-md));
+  }
+
+  .xeg-card {
+    padding: var(--xeg-spacing-sm);
+  }
+}
+
+/* ===== 접근성 개선 ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  .xeg-transition,
+  .xeg-btn,
+  .xeg-modal {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* 고대비 모드 */
+@media (prefers-contrast: high) {
+  .xeg-btn {
+    border-width: 2px;
+  }
+
+  .xeg-card {
+    border-width: 2px;
+  }
+}
+
+/* ===== 다크 테마 특화 스타일 ===== */
+
+.xeg-theme-dark .xeg-container {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.xeg-theme-light) .xeg-container {
+    color-scheme: dark;
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "playwright-dev": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser",
+        "chrome",
+        "--user-data-dir",
+        "./test-profile",
+        "--caps",
+        "tabs,pdf,history,wait,files"
+      ]
+    },
+    "playwright-ci": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser",
+        "chrome",
+        "--headless",
+        "--caps",
+        "tabs,wait,files"
+      ]
+    },
+    "playwright-visual": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser",
+        "chrome",
+        "--vision",
+        "--user-data-dir",
+        "./test-profile"
+      ]
+    }
+  }
+}

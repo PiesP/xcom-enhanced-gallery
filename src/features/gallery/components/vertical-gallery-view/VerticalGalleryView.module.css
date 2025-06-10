@@ -1,0 +1,438 @@
+/**
+ * Enhanced Vertical Gallery View Styles
+ * @version 3.4.0 - Unified Subdued Color System Integration
+ *
+ * @description
+ * 세로형 갤러리 뷰 컴포넌트의 스타일 정의입니다.
+ * variables.css에서 정의된 통합 색상 시스템을 사용하여
+ * 차분하고 일관된 시각적 경험을 제공합니다.
+ *
+ * @features
+ * - 통합된 neutral/slate 색상 팔레트 사용
+ * - 컨테이너 쿼리 기반 반응형 디자인
+ * - 하드웨어 가속 최적화된 애니메이션
+ * - 접근성을 고려한 포커스 및 호버 상태
+ * - 모바일 최적화된 터치 인터페이스
+ */
+
+/* 컨테이너 쿼리 지원 감지 */
+@supports (container-type: size) {
+  :root {
+    --supports-container-queries: 1;
+  }
+}
+
+/* 공통 CSS 변수 정의 - 통합된 타이밍과 새로운 변수들 */
+:root {
+  --xeg-gallery-z-index: 10000;
+  --xeg-toolbar-z-index: 10001;
+
+  /* 트랜지션 - 하드웨어 가속 최적화 */
+  --xeg-transition-fast:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  --xeg-transition-normal:
+    transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  --xeg-transition-smooth: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 스페이싱 - 컨테이너 쿼리 대응 */
+  --xeg-spacing-gallery: clamp(10px, 2.5vw, 20px);
+  --xeg-spacing-mobile: clamp(8px, 2vw, 15px);
+  --xeg-spacing-compact: clamp(5px, 1.5vw, 10px);
+
+  /* 레이아웃 */
+  --xeg-toolbar-height: clamp(60px, 10vh, 80px);
+
+  /* 블러 효과 */
+  --xeg-backdrop-blur: 8px;
+  --xeg-shadow-soft: 0 8px 32px var(--xeg-gallery-item-shadow);
+}
+
+/* 메인 컨테이너 - 하드웨어 가속과 컨테이너 쿼리 지원 */
+.container {
+  position: fixed;
+  inset: 0; /* top: 0; right: 0; bottom: 0; left: 0; 축약 */
+  background: var(--xeg-gallery-bg); /* variables.css에서 정의된 변수 사용 */
+  display: flex;
+  flex-direction: column;
+  z-index: var(--xeg-gallery-z-index);
+
+  /* 하드웨어 가속 최적화 */
+  transform: translateZ(0);
+  will-change: opacity, transform;
+  contain: layout style paint;
+
+  /* 초기 상태 - GPU 레이어 생성 */
+  opacity: 0;
+  transform: scale3d(1.02, 1.02, 1);
+  transition: var(--xeg-transition-normal);
+
+  /* 이벤트 처리 */
+  cursor: default;
+  pointer-events: auto;
+
+  /* 컨테이너 쿼리 활성화 */
+  container-type: size;
+  container-name: gallery-container;
+}
+
+/* 상태별 최적화 */
+.container.visible {
+  opacity: 1;
+  transform: scale3d(1, 1, 1);
+}
+
+.container.empty {
+  justify-content: center;
+  align-items: center;
+}
+
+/* :has() 선택자를 활용한 상태 기반 스타일링 */
+.container:has(.toolbarWrapper:hover) {
+  /* 툴바 호버 시 컨테이너 상태 변경 */
+  --toolbar-interaction: 1;
+}
+
+.container:has(.itemActive) {
+  /* 활성 아이템이 있을 때 */
+  --has-active-item: 1;
+}
+
+/* 모든 하위 요소의 이벤트 전파 최적화 */
+.container * {
+  pointer-events: auto;
+}
+/* 툴바 래퍼 - 고급 기능과 :has() 선택자 활용 */
+.toolbarWrapper {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: var(--xeg-toolbar-z-index);
+
+  /* 하드웨어 가속 transform */
+  transform: translate3d(0, 0, 0);
+  transition: var(--xeg-transition-normal);
+  will-change: transform, opacity;
+  contain: layout style;
+
+  /* 그라디언트 최적화 */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, black 80%, transparent) 0%,
+    color-mix(in srgb, black 40%, transparent) 70%,
+    transparent 100%
+  );
+  padding-block-end: var(--xeg-spacing-gallery);
+
+  /* 배경 블러 효과 제거 - 갤러리 감상 방해 방지 */
+  /* backdrop-filter: blur(var(--xeg-backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--xeg-backdrop-blur)); */
+}
+
+/* 툴바 상태 - JavaScript 활용 클래스 (CSS 호버 규칙 대신 제거) */
+.toolbarVisible {
+  transform: translate3d(0, 0, 0) !important;
+  opacity: 1 !important;
+  transition: var(--xeg-transition-fast);
+  will-change: transform, opacity;
+}
+
+.toolbarHidden {
+  transform: translate3d(0, -100%, 0) !important;
+  opacity: 0 !important;
+  transition: var(--xeg-transition-fast);
+  will-change: transform, opacity;
+}
+
+/*
+  기존 CSS 호버 규칙 대신 제거 - JavaScript가 대신 관리하여 안정성 보장
+  .container:hover .toolbarWrapper,
+  .container:has(.toolbarWrapper:hover) .toolbarWrapper {
+    // 이 규칙들이 JavaScript 클래스와 충돌하여 제거됨
+  }
+*/
+/* 콘텐츠 영역 - 컨테이너 쿼리 지원과 전체 화면 활용 */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  /* 툴바 영역 제거 - 현재 전체 화면 활용 */
+
+  /* 성능 최적화 */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* 이벤트 전파 */
+  pointer-events: auto;
+
+  /* 컨테이너 쿼리 */
+  container-type: size;
+  container-name: content-area;
+}
+
+/* 미디어 리스트 - 상단 정렬 포커스에 최적화된 스크롤 성능 */
+.itemsList {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+
+  /* 스크롤바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--xeg-neutral-300) transparent;
+
+  /* 레이아웃 */
+  padding: var(--xeg-spacing-gallery);
+  display: flex;
+  flex-direction: column;
+  gap: var(--xeg-spacing-gallery);
+
+  /* 성능 최적화 - 상단 정렬 스크롤에 최적화 */
+  contain: layout style;
+  transform: translateZ(0);
+  will-change: scroll-position;
+
+  /* 부드러운 스크롤 경험을 위한 최적화 */
+  scroll-snap-type: y proximity;
+
+  /* 이벤트 처리 */
+  pointer-events: auto;
+
+  /* 컨테이너 쿼리 */
+  container-type: size;
+  container-name: items-list;
+}
+
+/* 웹킷 기반 브라우저 스크롤바 - 통합된 스타일링 */
+.itemsList::-webkit-scrollbar {
+  width: clamp(6px, 1vw, 8px);
+}
+
+.itemsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.itemsList::-webkit-scrollbar-thumb {
+  background: var(--xeg-neutral-300);
+  border-radius: 4px;
+  transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.itemsList::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-neutral-400);
+}
+
+/* 미디어 아이템 활성 상태 - 상단 정렬 포커스에 최적화된 강조 */
+.itemActive {
+  position: relative;
+  contain: layout style;
+}
+
+.itemActive::before {
+  content: '';
+  position: absolute;
+  inset: -12px; /* 더 넓은 강조 영역 */
+  border: 3px solid var(--xeg-color-primary); /* 더 두꺼운 테두리 */
+  border-radius: 12px; /* 더 둥근 모서리 */
+  pointer-events: none;
+  z-index: 1;
+
+  /* 하드웨어 가속 애니메이션 */
+  transform: translateZ(0);
+  will-change: box-shadow, transform;
+  animation:
+    focusGlow 2s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate,
+    focusScale 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes focusGlow {
+  0% {
+    box-shadow: 0 0 8px color-mix(in srgb, var(--xeg-color-primary) 50%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 24px color-mix(in srgb, var(--xeg-color-primary) 80%, transparent);
+  }
+}
+
+@keyframes focusScale {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 애니메이션 - GPU 가속 */
+.fadeInOut {
+  animation: fadeInOut 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, 10px, 0) scale3d(0.95, 0.95, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1);
+  }
+}
+
+/* 빈 상태 메시지 - 통합된 타이포그래피 */
+.emptyMessage {
+  text-align: center;
+  color: var(--xeg-text-secondary);
+  max-inline-size: min(400px, 90vw);
+  padding: clamp(30px, 5vw, 40px);
+}
+
+.emptyMessage h3 {
+  margin: 0 0 clamp(12px, 2vw, 16px) 0;
+  font-size: clamp(20px, 4vw, 24px);
+  font-weight: 600;
+  color: var(--xeg-text-primary);
+  line-height: 1.2;
+}
+
+.emptyMessage p {
+  margin: 0;
+  font-size: clamp(14px, 2.5vw, 16px);
+  line-height: 1.5;
+  color: var(--xeg-text-tertiary);
+}
+/* 컨테이너 쿼리 기반 반응형 디자인 */
+@container gallery-container (max-width: 768px) {
+  .itemsList {
+    padding: var(--xeg-spacing-mobile);
+    gap: var(--xeg-spacing-mobile);
+  }
+
+  .toolbarWrapper {
+    padding-block-end: var(--xeg-spacing-mobile);
+  }
+}
+
+@container gallery-container (max-width: 480px) {
+  .itemsList {
+    padding: var(--xeg-spacing-compact);
+    gap: var(--xeg-spacing-compact);
+  }
+}
+
+/* 기존 미디어 쿼리는 컨테이너 쿼리 지원이 없는 브라우저를 위한 폴백 */
+@media (max-width: 768px) {
+  .itemsList {
+    padding: var(--xeg-spacing-mobile);
+    gap: var(--xeg-spacing-mobile);
+  }
+
+  .toolbarWrapper {
+    padding-block-end: var(--xeg-spacing-mobile);
+  }
+}
+
+@media (max-width: 480px) {
+  .itemsList {
+    padding: var(--xeg-spacing-compact);
+    gap: var(--xeg-spacing-compact);
+  }
+}
+/* 접근성 - 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-gallery-bg: rgb(0, 0, 0);
+  }
+
+  .toolbarWrapper {
+    background: linear-gradient(
+      to bottom,
+      rgb(0, 0, 0) 0%,
+      color-mix(in srgb, black 80%, transparent) 70%,
+      transparent 100%
+    );
+  }
+
+  .itemActive::before {
+    border-color: rgb(255, 255, 255);
+  }
+}
+
+/* 접근성 - 모션 감소 지원 (상단 정렬 포커스 유지) */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --xeg-transition-fast: none;
+    --xeg-transition-normal: none;
+    --xeg-transition-smooth: none;
+  }
+
+  .container,
+  .toolbarWrapper,
+  .fadeInOut {
+    transition: none;
+    animation: none;
+  }
+
+  .itemActive::before {
+    animation: none;
+    /* 상단 정렬 포커스에 맞춰 더 강한 정적 강조 */
+    box-shadow: 0 0 15px color-mix(in srgb, var(--xeg-color-primary) 70%, transparent);
+    border-width: 3px; /* 더 두꺼운 테두리로 명확한 포커스 표시 */
+  }
+
+  .itemsList {
+    scroll-behavior: auto; /* 즉시 스크롤로 상단 정렬 효과 유지 */
+    scroll-snap-type: none; /* 모션 감소 시 스냅 비활성화 */
+  }
+
+  /* GPU 가속 비활성화 */
+  .container,
+  .toolbarWrapper {
+    transform: none;
+    will-change: auto;
+  }
+}
+
+/* 라이트 모드 선호도 지원 */
+@media (prefers-color-scheme: light) {
+  .container:has(.emptyMessage) {
+    /* 빈 상태에서만 라이트 모드 적용 */
+    background: color-mix(in srgb, white 95%, transparent);
+  }
+
+  .emptyMessage {
+    color: color-mix(in srgb, black 80%, transparent);
+  }
+
+  .emptyMessage h3 {
+    color: color-mix(in srgb, black 90%, transparent);
+  }
+
+  .emptyMessage p {
+    color: color-mix(in srgb, black 70%, transparent);
+  }
+}
+
+/* 빈 상태 버튼 스타일 */
+.emptyButton {
+  margin-top: 1rem;
+}
+
+/* Toast 컨테이너 */
+.toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: calc(var(--xeg-gallery-z-index) + 2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toastContainer > * {
+  pointer-events: auto;
+}

@@ -1,0 +1,35 @@
+name: Stale Issues and PRs
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 매일 자정에 실행
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Handle stale issues and PRs
+        uses: actions/stale@v8
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # 이슈 설정
+          stale-issue-message: '이 이슈는 30일 동안 활동이 없어 자동으로 stale 라벨이 지정되었습니다. 14일 내에 댓글을 추가하지 않으면 자동으로 닫힙니다.'
+          close-issue-message: '이 이슈는 stale 상태에서 추가 활동이 없어 자동으로 닫혔습니다.'
+          days-before-issue-stale: 30
+          days-before-issue-close: 14
+          exempt-issue-labels: 'pinned,security,bug,enhancement'
+
+          # PR 설정
+          stale-pr-message: '이 PR은 30일 동안 활동이 없어 자동으로 stale 라벨이 지정되었습니다. 14일 내에 업데이트가 없으면 자동으로 닫힙니다.'
+          close-pr-message: '이 PR은 stale 상태에서 추가 활동이 없어 자동으로 닫혔습니다.'
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          exempt-pr-labels: 'pinned,dependencies,work-in-progress'
+
+          # 공통 설정
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
+          exempt-all-milestones: true
+          operations-per-run: 100

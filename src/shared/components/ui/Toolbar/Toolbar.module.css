@@ -1,0 +1,591 @@
+/**
+ * Enhanced Gallery Toolbar Styles - Enhanced Visibility
+ * @version 4.6.0 - 시인성 개선 및 동적 대비 조정
+ */
+
+.galleryToolbar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 16px;
+
+  /* 현대적 glassmorphism 배경 */
+  background: var(--xeg-bg-toolbar);
+
+  /* 향상된 테두리와 그림자 */
+  border-radius: 16px;
+  border: 1px solid var(--xeg-border-toolbar);
+  box-shadow: var(--xeg-shadow-toolbar);
+
+  /* 향상된 백드롭 필터 */
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+
+  /* 기존 속성들 */
+  user-select: none;
+  z-index: 10002;
+  justify-content: space-between;
+  gap: 12px;
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  /* 현대적 스타일링 */
+  isolation: isolate;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toolbarContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.toolbarSection {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+}
+
+/* 좌측, 우측 섹션을 같은 크기로 균등 배치 */
+.toolbarLeft,
+.toolbarRight {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.toolbarLeft {
+  justify-content: flex-start;
+}
+
+.toolbarRight {
+  justify-content: flex-end;
+}
+
+/* 중앙 섹션 */
+.toolbarCenter {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 구분선 제거 */
+.toolbarSection::after {
+  display: none; /* 모든 구분선 제거 */
+}
+
+.separator {
+  color: var(--xeg-color-neutral-500);
+  margin: 0 2px;
+}
+
+/* 기본 버튼 스타일 - 현대적 glassmorphism */
+.toolbarButton {
+  background: var(--xeg-bg-button);
+  border: 1px solid var(--xeg-border-button);
+  color: var(--xeg-text-button);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+  width: 40px;
+  height: 40px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.toolbarButton:hover:not(:disabled) {
+  background: var(--xeg-bg-button-hover);
+  color: var(--xeg-text-button-hover);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.toolbarButton:active:not(:disabled) {
+  transform: translateY(0) scale(1);
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.toolbarButton.active {
+  background: var(--xeg-color-primary);
+  color: white;
+  box-shadow:
+    0 0 0 2px var(--xeg-color-primary-alpha-30),
+    0 4px 16px rgba(71, 133, 163, 0.25);
+}
+
+.toolbarButton:disabled {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-neutral-200);
+  color: var(--xeg-color-neutral-400);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+/* 네비게이션 섹션 */
+.toolbarNavigation {
+  gap: 8px;
+}
+
+.navButton {
+  background: var(--xeg-bg-button-navigation);
+  border-color: var(--xeg-color-neutral-300);
+  color: var(--xeg-text-button-navigation);
+}
+
+.navButton:hover:not(:disabled) {
+  background: var(--xeg-bg-button-navigation-hover);
+  color: var(--xeg-color-neutral-800);
+}
+
+.navButton:active:not(:disabled),
+.navButton.active {
+  background: var(--xeg-color-primary);
+  color: white;
+}
+
+/* 미디어 카운터 */
+.mediaCounterWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+}
+
+.mediaCounter {
+  color: var(--xeg-text-counter);
+  font-size: var(--xeg-font-size-md);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  background: var(--xeg-bg-counter);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--xeg-border-counter);
+}
+
+.currentIndex {
+  color: var(--xeg-text-primary);
+  font-weight: 700;
+}
+
+.separator {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 2px;
+}
+
+.totalCount {
+  color: var(--xeg-color-neutral-600);
+}
+/* 진행률 바 */
+.progressBar {
+  width: 60px;
+  height: 2px;
+  background: var(--xeg-color-neutral-200);
+  border-radius: 1px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.progressFill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    var(--xeg-color-primary) 0%,
+    var(--xeg-color-primary-light) 100%
+  );
+  border-radius: 1px;
+  transition: width 0.3s ease;
+  transform-origin: left;
+}
+
+/* 크기 조절 섹션 */
+.fitModeGroup {
+  display: flex;
+  gap: 2px;
+  background: var(--xeg-color-neutral-100);
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid var(--xeg-color-neutral-200);
+}
+
+.fitButton {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--xeg-color-neutral-600);
+  transition: var(--xeg-transition-normal);
+}
+
+.fitButton.selected {
+  background: var(--xeg-color-primary);
+  color: white;
+}
+/* 다운로드 버튼 */
+.downloadButton {
+  position: relative;
+}
+
+.downloadCurrent {
+  background: var(--xeg-bg-button-download);
+  border-color: var(--xeg-color-primary);
+  color: var(--xeg-text-button-download);
+}
+
+.downloadCurrent:hover:not(:disabled) {
+  background: var(--xeg-bg-button-download-hover);
+  border-color: var(--xeg-color-primary-hover);
+}
+
+.downloadAll {
+  background: var(--xeg-color-success);
+  border-color: var(--xeg-color-success);
+  color: white;
+}
+
+.downloadAll:hover:not(:disabled) {
+  background: var(--xeg-color-success-light);
+  border-color: var(--xeg-color-success-light);
+}
+
+.downloadAllBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: rgba(139, 69, 179, 0.8);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 8px;
+  min-width: 14px;
+  text-align: center;
+  line-height: 1;
+}
+
+.downloadSpinner {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* 설정 및 닫기 버튼 */
+.settingsButton {
+  background: var(--xeg-bg-button-settings);
+  border-color: var(--xeg-color-neutral-300);
+  color: var(--xeg-text-button-settings);
+}
+
+.settingsButton:hover:not(:disabled) {
+  background: var(--xeg-bg-button-settings-hover);
+  border-color: var(--xeg-color-neutral-400);
+}
+
+.closeButton {
+  background: var(--xeg-bg-button-close);
+  border-color: var(--xeg-color-neutral-300);
+  color: var(--xeg-text-button-close);
+}
+
+.closeButton:hover:not(:disabled) {
+  background: var(--xeg-bg-button-close-hover);
+  border-color: var(--xeg-color-error);
+  color: var(--xeg-color-error);
+}
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .galleryToolbar {
+    padding: 12px 16px;
+  }
+
+  .toolbarContent {
+    gap: 12px;
+  }
+
+  .toolbarSection {
+    gap: 6px;
+  }
+
+  .toolbarButton {
+    padding: 6px 10px;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .mediaCounter {
+    font-size: 14px;
+  }
+
+  .progressBar {
+    width: 50px;
+  }
+
+  .fitButton {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px 8px;
+  }
+
+  /* 반응형에서도 separator 표시 유지 */
+}
+
+@media (max-width: 480px) {
+  .galleryToolbar {
+    padding: 10px 12px;
+  }
+
+  .toolbarContent {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .toolbarSection {
+    gap: 4px;
+  }
+
+  .toolbarButton {
+    padding: 5px 8px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .mediaCounterWrapper {
+    min-width: 70px;
+  }
+
+  .mediaCounter {
+    font-size: 13px;
+  }
+
+  .progressBar {
+    width: 40px;
+    height: 2px;
+  }
+
+  .fitModeGroup {
+    border-radius: 6px;
+  }
+
+  .fitButton {
+    min-width: 28px;
+    min-height: 28px;
+    padding: 3px 6px;
+  }
+
+  /* 작은 화면에서도 separator 표시 유지 */
+
+  .downloadAllBadge {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+}
+/* 고대비 모드 - 시인성 개선 */
+@media (prefers-contrast: high) {
+  .galleryToolbar {
+    background: rgb(255, 255, 255);
+    border: 2px solid rgb(0, 0, 0);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .toolbarButton {
+    background: rgb(240, 240, 240);
+    border: 1px solid rgb(0, 0, 0);
+    color: rgb(0, 0, 0);
+  }
+
+  .toolbarButton:hover:not(:disabled) {
+    background: rgb(220, 220, 220);
+    border: 2px solid rgb(0, 0, 0);
+  }
+
+  .navButton {
+    background: rgb(0, 100, 200);
+    border: 1px solid rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
+  }
+
+  .downloadButton {
+    background: rgb(0, 150, 50);
+    border: 1px solid rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
+  }
+
+  .closeButton {
+    background: rgb(200, 0, 0);
+    border: 1px solid rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
+  }
+}
+
+/* 다크 테마에서 고대비 모드 */
+[data-theme='dark'] .galleryToolbar {
+  background: rgb(0, 0, 0);
+  border: 2px solid rgb(255, 255, 255);
+}
+
+[data-theme='dark'] .toolbarButton {
+  background: rgb(40, 40, 40);
+  border: 1px solid rgb(255, 255, 255);
+  color: rgb(255, 255, 255);
+}
+
+@media (prefers-color-scheme: dark) and (prefers-contrast: high) {
+  .galleryToolbar {
+    background: rgb(0, 0, 0);
+    border: 2px solid rgb(255, 255, 255);
+  }
+
+  .toolbarButton {
+    background: rgb(40, 40, 40);
+    border: 1px solid rgb(255, 255, 255);
+    color: rgb(255, 255, 255);
+  }
+}
+
+/* 투명도 감소 선호 사용자를 위한 대체 스타일 */
+@media (prefers-reduced-transparency: reduce) {
+  .galleryToolbar {
+    background: rgb(255, 255, 255);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.15),
+      0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  [data-theme='dark'] .galleryToolbar {
+    background: rgb(30, 41, 59);
+  }
+}
+
+/* 모바일 환경에서 시인성 강화 */
+@media (max-width: 768px) {
+  .galleryToolbar {
+    background: rgba(255, 255, 255, 0.99); /* 모바일에서 더 불투명 */
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    padding: 8px 12px;
+    min-height: 48px; /* 터치 타겟 크기 증가 */
+  }
+
+  [data-theme='dark'] .galleryToolbar {
+    background: rgba(15, 23, 42, 0.99);
+  }
+}
+
+/* 작은 모바일 화면 */
+@media (max-width: 480px) {
+  .galleryToolbar {
+    width: calc(100vw - 20px);
+    max-width: none;
+    left: 10px;
+    transform: none;
+    border-radius: 8px;
+  }
+}
+
+/* 감소된 모션 */
+@media (prefers-reduced-motion: reduce) {
+  .toolbarButton,
+  .progressFill,
+  .downloadSpinner {
+    transition: none;
+    animation: none;
+  }
+
+  .toolbarButton:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ===== 동적 시인성 조정 ===== */
+
+/* 동적 고대비 모드 - 완전 불투명 배경 */
+.galleryToolbar.highContrast {
+  background: rgba(255, 255, 255, 1) !important; /* 완전 불투명 */
+  border: 2px solid rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: none !important; /* 블러 효과 제거 */
+  -webkit-backdrop-filter: none !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-theme='dark'] .galleryToolbar.highContrast {
+  background: rgba(15, 23, 42, 1) !important; /* 완전 불투명 */
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 고대비 모드에서 버튼 시인성 개선 */
+.highContrast .toolbarButton {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.highContrast .toolbarButton:hover:not(:disabled) {
+  background: rgba(245, 245, 245, 0.98);
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='dark'] .highContrast .toolbarButton {
+  background: rgba(51, 65, 85, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== 접근성 개선 ===== */
+
+/* 고대비 모드 - 시인성 개선 */

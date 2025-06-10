@@ -1,0 +1,270 @@
+/**
+ * X.com Enhanced Gallery Design System
+ *
+ * @description 통합된 디자인 시스템 - CSS 변수 정의
+ * @version 2.0.0
+ * @license MIT
+ */
+
+:root {
+  /* ===== 기본 색상 팔레트 ===== */
+
+  /* Primary Colors - Twitter/X 브랜드 */
+  --xeg-color-primary: #1d9bf0;
+  --xeg-color-primary-hover: #1a8cd8;
+  --xeg-color-primary-active: #1570b6;
+  --xeg-color-primary-text: #ffffff;
+
+  /* Secondary Colors */
+  --xeg-color-secondary: #536471;
+  --xeg-color-secondary-hover: #677581;
+  --xeg-color-secondary-text: #ffffff;
+
+  /* Neutral Colors - 회색 톤 팔레트 */
+  --xeg-neutral-50: #f8fafc;
+  --xeg-neutral-100: #f1f5f9;
+  --xeg-neutral-200: #e2e8f0;
+  --xeg-neutral-300: #cbd5e1;
+  --xeg-neutral-400: #94a3b8;
+  --xeg-neutral-500: #64748b;
+  --xeg-neutral-600: #475569;
+  --xeg-neutral-700: #334155;
+  --xeg-neutral-800: #1e293b;
+  --xeg-neutral-900: #0f172a;
+
+  /* Semantic Colors */
+  --xeg-color-success: #10b981;
+  --xeg-color-success-hover: #059669;
+  --xeg-color-warning: #f59e0b;
+  --xeg-color-warning-hover: #d97706;
+  --xeg-color-error: #ef4444;
+  --xeg-color-error-hover: #dc2626;
+  --xeg-color-info: #3b82f6;
+  --xeg-color-info-hover: #2563eb;
+
+  /* ===== 의미적 색상 ===== */
+
+  /* Surface Colors */
+  --xeg-color-surface: var(--xeg-neutral-50);
+  --xeg-color-surface-secondary: var(--xeg-neutral-100);
+  --xeg-color-surface-tertiary: var(--xeg-neutral-200);
+  --xeg-color-surface-hover: var(--xeg-neutral-100);
+  --xeg-color-surface-active: var(--xeg-neutral-200);
+
+  /* Text Colors */
+  --xeg-color-text-primary: var(--xeg-neutral-900);
+  --xeg-color-text-secondary: var(--xeg-neutral-600);
+  --xeg-color-text-tertiary: var(--xeg-neutral-500);
+  --xeg-color-text-disabled: var(--xeg-neutral-400);
+  --xeg-color-text-inverse: var(--xeg-neutral-50);
+
+  /* Border Colors */
+  --xeg-color-border: var(--xeg-neutral-200);
+  --xeg-color-border-hover: var(--xeg-neutral-300);
+  --xeg-color-border-focus: var(--xeg-color-primary);
+  --xeg-color-border-error: var(--xeg-color-error);
+
+  /* Focus Colors */
+  --xeg-color-focus: var(--xeg-color-primary);
+  --xeg-color-focus-ring: rgba(29, 155, 240, 0.2);
+
+  /* ===== 갤러리 특화 색상 ===== */
+
+  /* Overlay Colors */
+  --xeg-overlay-background: rgba(0, 0, 0, 0.9);
+  --xeg-overlay-background-light: rgba(255, 255, 255, 0.95);
+  --xeg-overlay-background-alpha: rgba(0, 0, 0, 0.8);
+
+  /* Gallery Backgrounds */
+  --xeg-gallery-bg: var(--xeg-overlay-background);
+  --xeg-gallery-bg-light: var(--xeg-overlay-background-light);
+
+  /* Button Colors */
+  --xeg-button-bg: rgba(255, 255, 255, 0.1);
+  --xeg-button-bg-hover: rgba(255, 255, 255, 0.2);
+  --xeg-button-bg-active: rgba(255, 255, 255, 0.3);
+  --xeg-button-text: var(--xeg-color-text-inverse);
+  --xeg-button-border: rgba(255, 255, 255, 0.2);
+  --xeg-button-border-hover: rgba(255, 255, 255, 0.3);
+
+  /* Navigation Button Colors */
+  --xeg-button-navigation: var(--xeg-button-bg);
+  --xeg-button-navigation-hover: var(--xeg-button-bg-hover);
+
+  /* Close Button Colors */
+  --xeg-bg-button-close: var(--xeg-button-bg);
+  --xeg-bg-button-close-hover: var(--xeg-button-bg-hover);
+  --xeg-text-button-close: var(--xeg-button-text);
+
+  /* Toolbar Colors */
+  --xeg-toolbar-bg: rgba(255, 255, 255, 0.1);
+  --xeg-toolbar-bg-hover: rgba(255, 255, 255, 0.15);
+  --xeg-toolbar-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+  /* ===== 간격 시스템 (8px 기반) ===== */
+
+  --xeg-spacing-xs: 4px;
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 16px;
+  --xeg-spacing-lg: 24px;
+  --xeg-spacing-xl: 32px;
+  --xeg-spacing-2xl: 48px;
+  --xeg-spacing-3xl: 64px;
+
+  /* ===== 컴포넌트 크기 ===== */
+
+  /* Button Sizes */
+  --xeg-button-size-sm: 32px;
+  --xeg-button-size-md: 40px;
+  --xeg-button-size-lg: 48px;
+  --xeg-button-size-xl: 56px;
+
+  /* Icon Sizes */
+  --xeg-icon-size-sm: 16px;
+  --xeg-icon-size-md: 20px;
+  --xeg-icon-size-lg: 24px;
+  --xeg-icon-size-xl: 32px;
+
+  /* Container Sizes */
+  --xeg-container-max-width-sm: 480px;
+  --xeg-container-max-width-md: 768px;
+  --xeg-container-max-width-lg: 1024px;
+  --xeg-container-max-width-xl: 1280px;
+
+  /* ===== 반지름 ===== */
+
+  --xeg-radius-sm: 4px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 12px;
+  --xeg-radius-xl: 16px;
+  --xeg-radius-full: 50%;
+
+  /* ===== 그림자 ===== */
+
+  --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+
+  /* Gallery Specific Shadows */
+  --xeg-shadow-overlay: 0 25px 50px rgba(0, 0, 0, 0.25);
+  --xeg-shadow-button: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+  /* ===== Z-index 계층 ===== */
+
+  --xeg-z-base: 1;
+  --xeg-z-dropdown: 1000;
+  --xeg-z-sticky: 1020;
+  --xeg-z-fixed: 1030;
+  --xeg-z-modal-backdrop: 1040;
+  --xeg-z-modal: 1050;
+  --xeg-z-popover: 1060;
+  --xeg-z-tooltip: 1070;
+  --xeg-z-toast: 1080;
+
+  /* Gallery Specific Z-index */
+  --xeg-z-gallery: 9999;
+  --xeg-z-gallery-overlay: 9999;
+  --xeg-z-gallery-toolbar: 10000;
+  --xeg-z-gallery-modal: 10001;
+  --xeg-z-gallery-tooltip: 10002;
+
+  /* ===== 타이포그래피 ===== */
+
+  /* Font Families */
+  --xeg-font-family-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --xeg-font-family-mono:
+    'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+
+  /* Font Sizes */
+  --xeg-font-size-xs: 0.75rem; /* 12px */
+  --xeg-font-size-sm: 0.875rem; /* 14px */
+  --xeg-font-size-md: 1rem; /* 16px */
+  --xeg-font-size-lg: 1.125rem; /* 18px */
+  --xeg-font-size-xl: 1.25rem; /* 20px */
+  --xeg-font-size-2xl: 1.5rem; /* 24px */
+  --xeg-font-size-3xl: 1.875rem; /* 30px */
+
+  /* Font Weights */
+  --xeg-font-weight-normal: 400;
+  --xeg-font-weight-medium: 500;
+  --xeg-font-weight-semibold: 600;
+  --xeg-font-weight-bold: 700;
+
+  /* Line Heights */
+  --xeg-line-height-tight: 1.25;
+  --xeg-line-height-normal: 1.5;
+  --xeg-line-height-relaxed: 1.75;
+
+  /* ===== 애니메이션 ===== */
+
+  /* Duration */
+  --xeg-transition-duration-fast: 150ms;
+  --xeg-transition-duration-medium: 300ms;
+  --xeg-transition-duration-slow: 500ms;
+
+  /* Easing */
+  --xeg-transition-easing-linear: linear;
+  --xeg-transition-easing-ease: ease;
+  --xeg-transition-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --xeg-transition-easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --xeg-transition-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-transition-easing-spring: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Combined Transitions */
+  --xeg-transition-default: all var(--xeg-transition-duration-medium)
+    var(--xeg-transition-easing-ease-out);
+  --xeg-transition-fast: all var(--xeg-transition-duration-fast)
+    var(--xeg-transition-easing-ease-out);
+  --xeg-transition-spring: all var(--xeg-transition-duration-medium)
+    var(--xeg-transition-easing-spring);
+}
+
+/* ===== 다크 모드 대응 ===== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Surface Colors for Dark Mode */
+    --xeg-color-surface: var(--xeg-neutral-900);
+    --xeg-color-surface-secondary: var(--xeg-neutral-800);
+    --xeg-color-surface-tertiary: var(--xeg-neutral-700);
+    --xeg-color-surface-hover: var(--xeg-neutral-800);
+    --xeg-color-surface-active: var(--xeg-neutral-700);
+
+    /* Text Colors for Dark Mode */
+    --xeg-color-text-primary: var(--xeg-neutral-50);
+    --xeg-color-text-secondary: var(--xeg-neutral-300);
+    --xeg-color-text-tertiary: var(--xeg-neutral-400);
+    --xeg-color-text-disabled: var(--xeg-neutral-600);
+    --xeg-color-text-inverse: var(--xeg-neutral-900);
+
+    /* Border Colors for Dark Mode */
+    --xeg-color-border: var(--xeg-neutral-700);
+    --xeg-color-border-hover: var(--xeg-neutral-600);
+
+    /* Gallery Backgrounds for Dark Mode */
+    --xeg-gallery-bg-light: rgba(15, 23, 42, 0.95);
+  }
+}
+
+/* ===== 고대비 모드 지원 ===== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-color-border: var(--xeg-neutral-900);
+    --xeg-color-text-secondary: var(--xeg-neutral-900);
+    --xeg-overlay-background: rgba(0, 0, 0, 0.95);
+  }
+}
+
+/* ===== 투명도 감소 모드 지원 ===== */
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --xeg-overlay-background: rgb(0, 0, 0);
+    --xeg-overlay-background-light: rgb(255, 255, 255);
+    --xeg-button-bg: rgba(255, 255, 255, 0.9);
+    --xeg-toolbar-bg: rgba(255, 255, 255, 0.95);
+  }
+}

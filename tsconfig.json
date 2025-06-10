@@ -1,0 +1,69 @@
+{
+  // X.com Enhanced Gallery - TypeScript 구성 (최적화)
+  "compilerOptions": {
+    // 컴파일 타겟 및 모듈 설정
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "useDefineForClassFields": true,
+
+    // 모듈 해석 설정
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": false,
+
+    // JSX 설정 (Preact)
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+
+    // 엄격한 타입 검사
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // 점진적 적용 설정
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+
+    // 호환성 설정
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    // 경로 별칭 설정
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["./*"],
+      "@app/*": ["app/*"],
+      "@features/*": ["features/*"],
+      "@shared/*": ["shared/*"],
+      "@core/*": ["core/*"],
+      "@infrastructure/*": ["infrastructure/*"],
+      "@utils/*": ["utils/*"],
+      "@assets/*": ["assets/*"]
+    },
+
+    // 타입 정의
+    "types": ["vite/client", "node", "vitest/globals"],
+
+    // 출력 설정
+    "sourceMap": true,
+    "declaration": true,
+    "removeComments": false,
+
+    // 성능 최적화
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
+  },
+  "include": ["src/**/*", "types/**/*", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "build", "**/*.test.ts", "**/*.spec.ts"]
+}

@@ -1,0 +1,21 @@
+{
+  "timeout": "10s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [200, 206],
+  "ignorePatterns": [
+    { "pattern": "^https://github\\.com/.*/releases/latest" },
+    { "pattern": "^https://github\\.com/.*/issues" },
+    { "pattern": "^https://github\\.com/.*/discussions" },
+    { "pattern": "^https://chrome\\.google\\.com/webstore" },
+    { "pattern": "^https://addons\\.mozilla\\.org" },
+    { "pattern": "^https://apps\\.apple\\.com" }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^/",
+      "replacement": "https://github.com/your-username/xcom-enhanced-gallery/blob/main/"
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+/* VideoViewer Component Styles */
+
+/* 비디오 컨테이너 */
+.videoContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: var(--xeg-color-surface-dark, #000);
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.videoContainer:focus {
+  outline: 2px solid var(--xeg-color-primary, #1d9bf0);
+  outline-offset: 2px;
+}
+
+/* 비디오 요소 */
+.video {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+/* 로딩 상태 */
+.loadingContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  background-color: var(--xeg-color-surface-dark, #1a1a1a);
+  border-radius: 8px;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--xeg-color-secondary, #2f3336);
+  border-top: 3px solid var(--xeg-color-primary, #1d9bf0);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--xeg-spacing-md, 16px);
+}
+
+.loadingText {
+  color: var(--xeg-color-text-secondary, #71767b);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* 에러 상태 */
+.errorContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  background-color: var(--xeg-color-surface-dark, #1a1a1a);
+  border-radius: 8px;
+}
+
+.errorMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--xeg-color-text-error, #f4212e);
+  padding: var(--xeg-spacing-lg, 24px);
+  max-width: 300px;
+}
+
+.errorIcon {
+  font-size: 24px;
+  margin-bottom: var(--xeg-spacing-sm, 8px);
+}
+
+/* 애니메이션 */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    border-radius: 4px;
+  }
+
+  .video {
+    border-radius: 4px;
+  }
+
+  .errorMessage {
+    padding: 16px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .container:focus {
+    outline-width: 3px;
+  }
+
+  .spinner {
+    border-width: 4px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

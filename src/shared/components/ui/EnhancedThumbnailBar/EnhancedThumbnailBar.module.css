@@ -1,0 +1,520 @@
+/**
+ * EnhancedThumbnailBar 컴포넌트 스타일
+ *
+ * 기존 ThumbnailBar를 확장한 향상된 스타일을 제공합니다.
+ * 자동 숨김, 카운터, 가상화 등의 새로운 기능을 스타일링합니다.
+ */
+
+/* =========================== */
+/* 기본 컨테이너 스타일 */
+/* =========================== */
+
+.enhanced {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--xeg-bg-overlay-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 12px;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--xeg-shadow-lg);
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 100;
+}
+
+/* =========================== */
+/* 위치별 스타일 */
+/* =========================== */
+
+.enhanced--top {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.enhanced--bottom {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.enhanced--left {
+  flex-direction: row;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.enhanced--right {
+  flex-direction: row-reverse;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* =========================== */
+/* 크기별 스타일 */
+/* =========================== */
+
+.enhanced--small {
+  padding: 8px;
+  gap: 4px;
+  border-radius: 8px;
+}
+
+.enhanced--medium {
+  /* 기본 스타일 */
+}
+
+.enhanced--large {
+  padding: var(--xeg-spacing-md);
+  gap: 12px;
+  border-radius: 16px;
+}
+
+/* =========================== */
+/* 통합 모드 */
+/* =========================== */
+
+.enhanced--integrated {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 0;
+}
+
+/* =========================== */
+/* 아이템 카운터 */
+/* =========================== */
+
+.counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  min-height: 28px;
+}
+
+.counterText {
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.counterHint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+.enhanced--small .counter {
+  padding: 4px 8px;
+  font-size: 11px;
+  min-height: 24px;
+}
+
+.enhanced--large .counter {
+  padding: 8px 16px;
+  font-size: 13px;
+  min-height: 32px;
+}
+
+/* =========================== */
+/* 썸네일 래퍼 */
+/* =========================== */
+
+.thumbnailWrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.baseThumbnailBar {
+  /* 기본 ThumbnailBar 스타일 오버라이드 */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* =========================== */
+/* 네비게이션 힌트 */
+/* =========================== */
+
+.navigationHints {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.hint {
+  background: var(--xeg-bg-overlay-strong);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.hint[data-position='left'] {
+  margin-right: auto;
+}
+
+.hint[data-position='right'] {
+  margin-left: auto;
+}
+
+.enhanced:hover .hint {
+  opacity: 1;
+}
+
+/* =========================== */
+/* 추가 컨텐츠 */
+/* =========================== */
+
+.additionalContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+}
+
+.enhanced--integrated .additionalContent {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* =========================== */
+/* 방향별 레이아웃 */
+/* =========================== */
+
+.enhanced--left,
+.enhanced--right {
+  max-width: 200px;
+  height: auto;
+}
+
+.enhanced--left .counter,
+.enhanced--right .counter {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  min-width: 28px;
+  min-height: auto;
+  height: 60px;
+}
+
+.enhanced--left .thumbnailWrapper,
+.enhanced--right .thumbnailWrapper {
+  flex-direction: column;
+}
+
+.enhanced--left .navigationHints,
+.enhanced--right .navigationHints {
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+/* =========================== */
+/* 반응형 디자인 */
+/* =========================== */
+
+/* 태블릿 */
+@media (max-width: 1024px) {
+  .enhanced {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .counter {
+    padding: 5px 10px;
+    font-size: 11px;
+    min-height: 26px;
+  }
+
+  .counterHint {
+    font-size: 9px;
+  }
+
+  .hint {
+    padding: 3px 6px;
+    font-size: 9px;
+  }
+}
+
+/* 모바일 */
+@media (max-width: 768px) {
+  .enhanced {
+    padding: 8px;
+    gap: 4px;
+    border-radius: 8px;
+  }
+
+  .counter {
+    padding: 4px 8px;
+    font-size: 10px;
+    min-height: 24px;
+    gap: 4px;
+  }
+
+  .counterHint {
+    display: none; /* 모바일에서는 힌트 숨김 */
+  }
+
+  .navigationHints {
+    padding: 0 4px;
+  }
+
+  .hint {
+    padding: 2px 4px;
+    font-size: 8px;
+  }
+
+  /* 모바일에서는 좌우 레이아웃을 상하로 변경 */
+  .enhanced--left,
+  .enhanced--right {
+    flex-direction: column;
+    max-width: none;
+    width: 100%;
+  }
+
+  .enhanced--left .counter,
+  .enhanced--right .counter {
+    writing-mode: initial;
+    text-orientation: initial;
+    min-width: auto;
+    height: auto;
+    min-height: 24px;
+  }
+}
+
+/* 작은 모바일 화면 */
+@media (max-width: 480px) {
+  .enhanced {
+    padding: 6px;
+    gap: 2px;
+  }
+
+  .counter {
+    padding: 3px 6px;
+    font-size: 9px;
+    min-height: 20px;
+  }
+
+  .navigationHints {
+    display: none; /* 작은 화면에서는 힌트 숨김 */
+  }
+}
+
+/* =========================== */
+/* 다크모드 지원 */
+/* =========================== */
+
+@media (prefers-color-scheme: light) {
+  .enhanced {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: var(--xeg-bg-overlay-light);
+    box-shadow: 0 8px 32px var(--xeg-bg-overlay-light);
+  }
+
+  .counter {
+    background: var(--xeg-bg-overlay-light);
+    border-color: var(--xeg-border-medium);
+    color: black;
+  }
+
+  .counterText {
+    color: var(--xeg-bg-overlay-dark);
+  }
+
+  .counterHint {
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .hint {
+    background: rgba(255, 255, 255, 0.9);
+    color: black;
+    border-color: var(--xeg-border-medium);
+  }
+
+  .additionalContent {
+    border-top-color: var(--xeg-bg-overlay-light);
+  }
+}
+
+/* 시인성 개선을 위한 접근성 지원 */
+@media (prefers-contrast: high) {
+  .enhanced {
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .counter {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.9);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .enhanced {
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 다크 테마에서 고대비 모드 */
+[data-theme='dark'] .enhanced {
+  background: var(--xeg-bg-overlay-strong);
+}
+
+@media (prefers-color-scheme: dark) and (prefers-contrast: high) {
+  .enhanced {
+    background: rgba(0, 0, 0, 1);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* =========================== */
+/* 터치 디바이스 최적화 */
+/* =========================== */
+
+@media (hover: none) and (pointer: coarse) {
+  .enhanced {
+    padding: 12px;
+  }
+
+  .counter {
+    min-height: 32px;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .hint {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* 터치 디바이스에서는 힌트를 항상 표시 */
+  .hint {
+    opacity: 1;
+  }
+}
+
+/* =========================== */
+/* 접근성 지원 */
+/* =========================== */
+
+.enhanced *:focus {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+/* 고대비 모드 */
+@media (prefers-contrast: high) {
+  .enhanced {
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid white;
+  }
+
+  .counter {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid white;
+    color: white;
+  }
+
+  .hint {
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid white;
+    color: white;
+  }
+}
+
+/* =========================== */
+/* 애니메이션 최적화 */
+/* =========================== */
+
+/* 모션 감소 선호 사용자를 위한 설정 */
+@media (prefers-reduced-motion: reduce) {
+  .enhanced,
+  .counter,
+  .hint,
+  .thumbnailWrapper {
+    transition: none;
+  }
+}
+
+/* 하드웨어 가속 최적화 */
+.enhanced {
+  will-change: transform, opacity;
+}
+
+.counter,
+.hint {
+  will-change: auto;
+}
+
+/* =========================== */
+/* 스크롤바 커스터마이징 */
+/* =========================== */
+
+.thumbnailWrapper::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.thumbnailWrapper::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.thumbnailWrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.thumbnailWrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Firefox */
+.thumbnailWrapper {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+}

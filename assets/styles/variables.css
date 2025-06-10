@@ -1,0 +1,38 @@
+:root {
+  /* 기존 색상 */
+  --xeg-color-primary: #1d9bf0;
+  --xeg-color-secondary: #536471;
+  --xeg-color-surface: #ffffff;
+  --xeg-color-surface-dark: #15202b;
+
+  /* 갤러리 전용 색상 */
+  --xeg-gallery-background: rgba(0, 0, 0, 0.95);
+  --xeg-gallery-border-radius: 8px;
+  --xeg-gallery-padding: var(--xeg-spacing-lg);
+
+  /* 버튼 색상 체계 */
+  --xeg-button-primary: #1d9bf0;
+  --xeg-button-secondary: #536471;
+  --xeg-button-danger: #f91880;
+
+  /* 기존 간격 (8px 기반) */
+  --xeg-spacing-xs: 4px;
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 16px;
+  --xeg-spacing-lg: 24px;
+  --xeg-spacing-xl: 32px;
+
+  /* 기존 컴포넌트 크기 */
+  --xeg-button-size-sm: 32px;
+  --xeg-button-size-md: 40px;
+  --xeg-button-size-lg: 48px;
+
+  /* 기존 Z-index */
+  --xeg-z-gallery: 9999;
+  --xeg-z-modal: 10000;
+  --xeg-z-tooltip: 10001;
+
+  /* 애니메이션 */
+  --xeg-transition-fast: 0.15s ease;
+  --xeg-transition-normal: 0.3s ease;
+}

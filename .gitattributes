@@ -1,0 +1,12 @@
+# 모든 텍스트 파일의 개행 문자를 LF로 정규화
+* text=auto eol=lf
+
+# 바이너리 파일은 변경하지 않음
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.ttf binary

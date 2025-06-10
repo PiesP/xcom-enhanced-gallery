@@ -1,0 +1,56 @@
+#!/usr/bin/env sh
+
+# =============================================================================
+# Pre-commit Hook for X.com Enhanced Gallery
+# =============================================================================
+#
+# This Git pre-commit hook ensures code quality by running automated checks
+# before allowing commits to be created. It prevents commits that fail
+# quality standards from being added to the repository.
+#
+# Hook workflow:
+# 1. Type checking - Validates TypeScript types across the project
+# 2. Lint staged files - Runs ESLint on files staged for commit
+#
+# If any step fails, the commit is rejected and must be fixed before retry.
+#
+# @see https://typicode.github.io/husky/ - Husky documentation
+# @see https://github.com/okonet/lint-staged - lint-staged documentation
+# =============================================================================
+
+echo "🔍 Pre-commit validation..."
+
+# =============================================================================
+# TypeScript Type Checking
+# =============================================================================
+# Validates TypeScript types across the entire project to catch type errors
+# before they are committed. This ensures type safety and prevents runtime
+# errors caused by type mismatches.
+#
+# Command: npm run typecheck
+# - Runs TypeScript compiler in check mode (no output files)
+# - Validates all .ts/.tsx files according to tsconfig.json
+# - Exits with error code if any type errors are found
+echo "📋 Type checking..."
+npm run typecheck || exit 1
+
+# =============================================================================
+# Lint Staged Files
+# =============================================================================
+# Runs ESLint only on files that are staged for commit, improving performance
+# by avoiding unnecessary linting of unchanged files.
+#
+# Command: npx lint-staged
+# - Configured via .lintstagedrc.json or package.json
+# - Applies ESLint rules and auto-fixes when possible
+# - Runs Prettier for code formatting
+# - Only processes files matching configured patterns
+#
+# Benefits:
+# - Faster execution (only staged files)
+# - Consistent code style across commits
+# - Early detection of linting issues
+echo "🔧 Linting staged files..."
+npx lint-staged || exit 1
+
+echo "✅ Pre-commit validation complete!"

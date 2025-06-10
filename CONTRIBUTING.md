@@ -1,126 +1,40 @@
-# Contributing to X.com Enhanced Image Gallery
+# 기여 가이드라인
 
-Thank you for considering contributing to the X.com Enhanced Image Gallery project! This document provides guidelines and instructions for contributing to this project.
+X.com Enhanced # 기여 가이드라인 프로젝트에 기여해주셔서 감사합니다. 아래는 기여를 위한 핵심 지침입니다.
 
-## Development Setup
+## 개발 환경
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/PiesP/xcom-enhanced-gallery.git
-   cd xcom-enhanced-gallery
-   ```
+- Node.js 18+, npm 9+, Git 필요
+- 저장소 클론 및 의존성 설치 후 개발 서버 실행:
+  ```bash
+  git clone https://github.com/your-username/xcom-enhanced-gallery.git
+  cd xcom-enhanced-gallery
+  npm install
+  npm run dev
+  ```
 
-2. Install Node.js (if not already installed).
+## 브랜치/커밋/PR
 
-3. No additional dependencies are required as this project is designed to be lightweight and self-contained.
+- `feature/*`, `fix/*`, `docs/*` 브랜치에서 작업 후 `develop` 브랜치로 PR
+- 커밋 메시지: `유형(범위): 제목` (예: `feat(viewer): 키보드 단축키 추가`)
+- PR 제출 전 최신 develop 반영, 테스트/린트 통과, 변경 설명 필수
 
-## Project Structure
+## 코드 스타일/품질
 
-- `src/`: Source code files
-  - `components/`: UI components for the image viewer
-  - `core/`: Core functionality modules
-  - `utils/`: Utility functions
-  - `tweet/`: Twitter/X.com data extraction
-  - `I18N/`: Internationalization support
-    - `locales/`: Translation files (JSON)
-    - `utils/`: I18N utility functions
-  - `*.js`: Core and configuration files
-- `dist/`: Distribution directory where the built UserScript is placed
-- `build.js`: Build script that combines source files into the final UserScript
-- `.github/workflows/`: GitHub Actions workflow definitions
+- ESLint, Prettier로 코드 스타일 자동화
+- 커밋 전 `npm run lint`/`npm run format` 실행
+- 타입 안전성, 접근성, 함수/파일 분리 등 [코드 품질 가이드](docs/CODE_QUALITY.md) 참고
 
-## Building the Project
+## 테스트
 
-To build the UserScript manually:
+- 새로운 기능/버그 수정 시 테스트 코드 작성
+- `npm test`로 실행
 
-```bash
-node build.js
-# or use the npm script
-npm run build
-```
+## 문서화
 
-This will generate `dist/xcom-enhanced-gallery.user.js` which is the file that users can install in their UserScript manager.
+- 새 문서 생성 대신 기존 문서에 추가/확장
+- 코드 변경 시 관련 문서(README, USER_GUIDE 등)도 함께 업데이트
 
-You can also use the development script that provides immediate feedback:
+## 질문/이슈
 
-```bash
-npm run dev
-```
-
-## GitHub Actions Workflows
-
-This project uses GitHub Actions for automated builds and releases:
-
-1. **Build Workflow**: Automatically builds the UserScript when changes are pushed to the master branch.
-2. **Release Workflow**: Creates a new release when version is bumped in package.json.
-
-The workflows are defined in the `.github/workflows/` directory.
-
-## Making Changes
-
-1. Create a new branch for your feature or bugfix:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. Make your changes to the source code in the `src/` directory.
-
-3. Test your changes by building the UserScript and installing it locally.
-
-4. If adding new features, consider adding appropriate translations to the locale files in `src/I18N/locales/`.
-
-5. Commit your changes:
-   ```bash
-   git add .
-   git commit -m "Description of changes"
-   ```
-
-6. Push your branch:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-7. Create a Pull Request on GitHub.
-
-## Versioning
-
-When making significant changes:
-
-1. Update the version in both `package.json` and in the UserScript metadata in `build.js`:
-   ```json
-   // package.json
-   {
-     "version": "x.y.z"
-   }
-   ```
-
-   ```javascript
-   // build.js - in the METADATA variable
-   // @version      x.y.z
-   ```
-
-2. Include "bumped version" in your commit message to trigger the release workflow:
-   ```bash
-   git commit -m "Feature: Add new functionality, bumped version to x.y.z"
-   ```
-
-## Code Style Guidelines
-
-- Use ES6 module syntax (import/export)
-- Follow consistent indentation (2 spaces)
-- Add comments for complex logic
-- Use meaningful variable and function names
-- Keep functions small and focused on a single responsibility
-- Organize related functionality into appropriate directories
-
-## Adding Translations
-
-This project supports multiple languages. To add or modify translations:
-
-1. Navigate to `src/I18N/locales/`
-2. Edit an existing locale file or create a new one following the JSON format of other locale files
-3. Make sure all translation keys are consistent across locale files
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the project's MIT License.
+- [GitHub 이슈](https://github.com/yourusername/xcom-enhanced-gallery/issues)로 문의

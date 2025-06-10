@@ -1,0 +1,53 @@
+#!/usr/bin/env sh
+
+# ============================================================================
+# Git Commit Message Validation Hook
+# ============================================================================
+#
+# This Git commit-msg hook validates commit messages against conventional
+# commit standards using commitlint before allowing commits to be created.
+#
+# Purpose:
+# - Enforces conventional commit message format
+# - Maintains consistent commit history across the project
+# - Enables automated changelog generation
+# - Prevents commits with malformed messages
+#
+# Hook workflow:
+# 1. Message validation - Checks commit message format using commitlint
+# 2. Convention enforcement - Ensures proper type, scope, and subject format
+# 3. Rejection handling - Blocks commits that don't meet standards
+#
+# Dependencies:
+# - @commitlint/cli: Command-line tool for commit message linting
+# - @commitlint/config-conventional: Conventional commit rules configuration
+#
+# Configuration:
+# - Rules defined in commitlint.config.js
+# - Extends conventional commit specification
+# - Custom type enums and formatting rules
+#
+# Usage:
+# This hook runs automatically when creating commits via:
+# - git commit -m "message"
+# - git commit (opens editor)
+# - IDE/GUI commit actions
+#
+# Example valid commit messages:
+# - feat(gallery): add image zoom functionality
+# - fix(download): resolve ZIP file corruption issue
+# - docs(api): update utility function documentation
+# - refactor(core): optimize media extraction logic
+#
+# @see {@link https://commitlint.js.org/} - Commitlint documentation
+# @see {@link https://www.conventionalcommits.org/} - Conventional Commits spec
+# @see {@link ./commitlint.config.js} - Project-specific configuration
+# ============================================================================
+
+echo "📝 Validating commit message..."
+
+# Run commitlint against the commit message file
+# $1 contains the path to the temporary file with the commit message
+npx --no -- commitlint --edit $1
+
+echo "✅ Commit message validation complete!"

@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+release/
+
+# Git
+.git/
+
+# Generated files
+*.min.js
+*.min.css
+*.bundle.js
+*.user.js
+*.tsbuildinfo
+
+# Logs
+*.log
+mcp-debug.log
+
+# Documentation
+docs/api/
+docs/dependency-*.html
+docs/dependency-*.svg
+docs/dependency-*.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

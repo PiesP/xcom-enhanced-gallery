@@ -1,0 +1,322 @@
+/**
+ * Auto Theme System for X.com Enhanced Gallery
+ * @version 1.0.0
+ *
+ * @description
+ * 자동 색조 선택 및 적응형 테마 시스템입니다.
+ * 사용자의 시스템 설정, 시간대, 콘텐츠에 따라 
+ * 최적의 색조를 자동으로 선택하고 적용합니다.
+ *
+ * @features
+ * - 시스템 테마 자동 감지 (prefers-color-scheme)
+ * - 시간대 기반 자동 테마 전환
+ * - 콘텐츠 기반 색상 적응
+ * - 접근성 설정 반영 (고대비, 애니메이션 감소)
+ * - 부드러운 테마 전환 애니메이션
+ */
+
+/* ===== 자동 테마 감지 시스템 ===== */
+
+/**
+ * 시스템 테마 자동 감지
+ * 사용자의 운영체제 설정에 따라 자동으로 테마를 적용합니다.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not(.xeg-theme-dark):not(.xeg-theme-auto-dark) {
+    /* 라이트 테마 강화 색상 */
+    --xeg-auto-primary: #5294c7;
+    --xeg-auto-secondary: #6b7280;
+    --xeg-auto-surface: rgba(255, 255, 255, 0.95);
+    --xeg-auto-overlay: rgba(248, 250, 252, 0.92);
+    --xeg-auto-text: #1e293b;
+    --xeg-auto-text-secondary: #475569;
+    --xeg-auto-border: rgba(203, 213, 225, 0.4);
+    --xeg-auto-shadow: rgba(15, 23, 42, 0.08);
+
+    /* 라이트 테마 glassmorphism */
+    --xeg-auto-glass-bg: rgba(255, 255, 255, 0.75);
+    --xeg-auto-glass-border: rgba(255, 255, 255, 0.2);
+    --xeg-auto-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.1), 0 4px 16px rgba(15, 23, 42, 0.06);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.xeg-theme-light):not(.xeg-theme-auto-light) {
+    /* 다크 테마 강화 색상 */
+    --xeg-auto-primary: #6ba7c7;
+    --xeg-auto-secondary: #94a3b8;
+    --xeg-auto-surface: rgba(15, 23, 42, 0.95);
+    --xeg-auto-overlay: rgba(15, 23, 42, 0.96);
+    --xeg-auto-text: #f1f5f9;
+    --xeg-auto-text-secondary: #cbd5e1;
+    --xeg-auto-border: rgba(71, 85, 105, 0.4);
+    --xeg-auto-shadow: rgba(0, 0, 0, 0.3);
+
+    /* 다크 테마 glassmorphism */
+    --xeg-auto-glass-bg: rgba(15, 23, 42, 0.8);
+    --xeg-auto-glass-border: rgba(255, 255, 255, 0.1);
+    --xeg-auto-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ===== 시간대 기반 자동 테마 ===== */
+
+/**
+ * 시간대별 색온도 조정
+ * CSS의 한계로 JavaScript와 연동하여 구현됩니다.
+ * 이 클래스들은 JavaScript에서 동적으로 적용됩니다.
+ */
+
+/* 아침 시간 (6-10시) - 상쾌한 블루 톤 */
+.xeg-theme-auto-morning {
+  --xeg-auto-primary: #4a8bc2;
+  --xeg-auto-surface: rgba(240, 249, 255, 0.95);
+  --xeg-auto-overlay: linear-gradient(
+    135deg,
+    rgba(240, 249, 255, 0.9) 0%,
+    rgba(224, 242, 254, 0.95) 100%
+  );
+}
+
+/* 낮 시간 (10-17시) - 밝고 명료한 톤 */
+.xeg-theme-auto-day {
+  --xeg-auto-primary: #3b82f6;
+  --xeg-auto-surface: rgba(255, 255, 255, 0.98);
+  --xeg-auto-overlay: rgba(248, 250, 252, 0.95);
+}
+
+/* 저녁 시간 (17-20시) - 따뜻한 골든 톤 */
+.xeg-theme-auto-evening {
+  --xeg-auto-primary: #f59e0b;
+  --xeg-auto-surface: rgba(255, 251, 235, 0.95);
+  --xeg-auto-overlay: linear-gradient(
+    135deg,
+    rgba(255, 251, 235, 0.9) 0%,
+    rgba(254, 243, 199, 0.95) 100%
+  );
+}
+
+/* 밤 시간 (20-6시) - 차분한 다크 톤 */
+.xeg-theme-auto-night {
+  --xeg-auto-primary: #6366f1;
+  --xeg-auto-surface: rgba(15, 23, 42, 0.98);
+  --xeg-auto-overlay: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(30, 41, 59, 0.98) 100%
+  );
+  --xeg-auto-text: #e2e8f0;
+  --xeg-auto-text-secondary: #94a3b8;
+}
+
+/* ===== 콘텐츠 기반 색상 적응 ===== */
+
+/**
+ * 이미지 컨텐츠에 따른 색상 적응
+ * JavaScript에서 이미지의 주요 색상을 분석하여 적용합니다.
+ */
+
+/* 따뜻한 톤의 이미지용 */
+.xeg-content-warm {
+  --xeg-auto-primary: #f97316;
+  --xeg-auto-glass-bg: rgba(255, 247, 237, 0.8);
+  --xeg-auto-glass-border: rgba(251, 146, 60, 0.2);
+}
+
+/* 차가운 톤의 이미지용 */
+.xeg-content-cool {
+  --xeg-auto-primary: #0ea5e9;
+  --xeg-auto-glass-bg: rgba(240, 249, 255, 0.8);
+  --xeg-auto-glass-border: rgba(14, 165, 233, 0.2);
+}
+
+/* 생동감 있는 톤의 이미지용 */
+.xeg-content-vibrant {
+  --xeg-auto-primary: #ec4899;
+  --xeg-auto-glass-bg: rgba(253, 242, 248, 0.8);
+  --xeg-auto-glass-border: rgba(236, 72, 153, 0.2);
+}
+
+/* 모노크롬/중성 톤의 이미지용 */
+.xeg-content-neutral {
+  --xeg-auto-primary: #6b7280;
+  --xeg-auto-glass-bg: rgba(249, 250, 251, 0.8);
+  --xeg-auto-glass-border: rgba(107, 114, 128, 0.2);
+}
+
+/* ===== 접근성 기반 자동 조정 ===== */
+
+/**
+ * 고대비 모드 자동 적응
+ * 시각 장애인을 위한 고대비 색상으로 자동 조정됩니다.
+ */
+@media (prefers-contrast: high) {
+  :root {
+    /* 고대비 색상 오버라이드 */
+    --xeg-auto-primary: #000000;
+    --xeg-auto-text: #000000;
+    --xeg-auto-text-secondary: #000000;
+    --xeg-auto-border: #000000;
+    --xeg-auto-surface: #ffffff;
+    --xeg-auto-overlay: #ffffff;
+
+    /* glassmorphism 효과 제거 */
+    --xeg-auto-glass-bg: #ffffff;
+    --xeg-auto-glass-border: #000000;
+    --xeg-auto-glass-shadow: none;
+  }
+
+  /* 다크 모드에서의 고대비 */
+  .xeg-theme-dark,
+  .xeg-theme-auto-night {
+    --xeg-auto-primary: #ffffff;
+    --xeg-auto-text: #ffffff;
+    --xeg-auto-text-secondary: #ffffff;
+    --xeg-auto-border: #ffffff;
+    --xeg-auto-surface: #000000;
+    --xeg-auto-overlay: #000000;
+    --xeg-auto-glass-bg: #000000;
+    --xeg-auto-glass-border: #ffffff;
+  }
+}
+
+/**
+ * 애니메이션 감소 모드 적응
+ * 전정기관 장애나 애니메이션을 선호하지 않는 사용자를 위한 조정입니다.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* 모든 전환 효과 제거 */
+    --xeg-auto-transition: none;
+    --xeg-auto-animation-duration: 0ms;
+  }
+
+  /* 자동 테마 전환도 즉시 적용 */
+  .xeg-theme-auto-morning,
+  .xeg-theme-auto-day,
+  .xeg-theme-auto-evening,
+  .xeg-theme-auto-night {
+    transition: none !important;
+  }
+}
+
+/* ===== 자동 테마 전환 애니메이션 ===== */
+
+/**
+ * 부드러운 테마 전환
+ * 시간대나 콘텐츠 변경 시 부드럽게 색상이 전환됩니다.
+ */
+.xeg-auto-theme-transition {
+  transition:
+    color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    background-image 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 모든 갤러리 요소에 자동 전환 적용 */
+.xeg-gallery-layer *,
+.xeg-gallery-container *,
+[data-xeg-gallery] *,
+[data-xeg-element] * {
+  transition: inherit;
+}
+
+/* ===== 유틸리티 클래스 ===== */
+
+/**
+ * 자동 색상 적용 유틸리티
+ * JavaScript에서 동적으로 사용할 수 있는 클래스들입니다.
+ */
+
+.xeg-auto-bg {
+  background: var(--xeg-auto-surface) !important;
+}
+
+.xeg-auto-text {
+  color: var(--xeg-auto-text) !important;
+}
+
+.xeg-auto-primary {
+  color: var(--xeg-auto-primary) !important;
+}
+
+.xeg-auto-glass {
+  background: var(--xeg-auto-glass-bg) !important;
+  border: 1px solid var(--xeg-auto-glass-border) !important;
+  box-shadow: var(--xeg-auto-glass-shadow) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* ===== 반응형 자동 조정 ===== */
+
+/**
+ * 화면 크기에 따른 자동 조정
+ * 작은 화면에서는 더 단순한 색상 체계를 사용합니다.
+ */
+@media (max-width: 768px) {
+  :root {
+    /* 모바일에서는 glassmorphism 효과 단순화 */
+    --xeg-auto-glass-bg: var(--xeg-auto-surface);
+    --xeg-auto-glass-shadow: 0 2px 8px var(--xeg-auto-shadow);
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    /* 작은 화면에서는 더욱 단순화 */
+    --xeg-auto-glass-bg: var(--xeg-auto-surface);
+    --xeg-auto-glass-border: var(--xeg-auto-border);
+    --xeg-auto-glass-shadow: none;
+  }
+
+  /* 애니메이션도 단순화 */
+  .xeg-auto-theme-transition {
+    transition-duration: 0.3s;
+  }
+}
+
+/* ===== 성능 최적화 ===== */
+
+/**
+ * will-change 속성으로 성능 최적화
+ * 자주 변경되는 속성에 대해 GPU 가속을 활용합니다.
+ */
+.xeg-auto-optimized {
+  will-change: background-color, color, border-color;
+}
+
+.xeg-auto-optimized:hover {
+  will-change: auto;
+}
+
+/**
+ * contain 속성으로 레이아웃 최적화
+ * 테마 전환 시 레이아웃 재계산을 최소화합니다.
+ */
+.xeg-auto-contained {
+  contain: style;
+}
+
+/* ===== CSS 환경 변수 지원 체크 ===== */
+
+/**
+ * 최신 CSS 기능 지원 체크
+ * 지원되지 않는 브라우저에서는 폴백 색상을 사용합니다.
+ */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  :root {
+    /* color-mix 미지원 시 폴백 */
+    --xeg-auto-primary: #4785a3;
+    --xeg-auto-secondary: #64748b;
+  }
+}
+
+@supports not (backdrop-filter: blur(10px)) {
+  :root {
+    /* backdrop-filter 미지원 시 폴백 */
+    --xeg-auto-glass-bg: var(--xeg-auto-surface);
+  }
+}
