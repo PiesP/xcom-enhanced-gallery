@@ -7,6 +7,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import process from 'process';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -83,12 +84,13 @@ function validateBuild() {
     log(colors.green, '✅ No separate CSS files (properly inlined)');
   }
 
-  // 6. 핵심 기능 검증
+  // 6. 핵심 기능 검증 - 현재 프로젝트 구조에 맞게 업데이트
   const requiredFeatures = [
-    'XEGUserScript',
-    'MediaExtractorService',
-    'GalleryStateManager',
-    'DownloadManager',
+    'ServiceManager',
+    'IntegratedServiceManager',
+    'BulkDownloadService',
+    'GalleryDownloadService',
+    'EnhancedMediaExtractionService',
   ];
 
   requiredFeatures.forEach(feature => {
@@ -110,6 +112,23 @@ function validateBuild() {
     log(colors.green, '✅ JavaScript syntax validation passed');
   } catch (error) {
     errors.push(`JavaScript syntax error: ${error.message}`);
+  }
+
+  // 9. Preact 관련 검증
+  const preactFeatures = ['preact', 'render', 'createElement', 'h'];
+  const foundPreactFeatures = preactFeatures.filter(feature => content.includes(feature));
+
+  if (foundPreactFeatures.length > 0) {
+    log(colors.green, `✅ Preact features detected: ${foundPreactFeatures.join(', ')}`);
+  } else {
+    warnings.push('No Preact features detected - framework might not be properly bundled');
+  }
+
+  // 10. Service pattern 검증
+  if (content.includes('getInstance') && content.includes('initialize')) {
+    log(colors.green, '✅ Service pattern detected');
+  } else {
+    warnings.push('Service pattern not found - architecture might not be properly implemented');
   }
 
   return { errors, warnings };

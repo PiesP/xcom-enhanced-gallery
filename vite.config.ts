@@ -349,9 +349,6 @@ export default defineConfig(({ mode }) => {
       hmr: buildMode.isDevelopment,
     },
 
-    // ESBuild 설정 - rolldown-vite 호환성을 위해 비활성화
-    esbuild: false,
-
     // 로깅
     logLevel: buildMode.isDevelopment ? 'info' : 'warn',
     clearScreen: false,

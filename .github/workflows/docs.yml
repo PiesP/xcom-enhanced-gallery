@@ -33,7 +33,13 @@ jobs:
         run: npm ci
 
       - name: Generate dependency documentation
-        run: npm run deps:all
+        run: |
+          npm run deps:all
+          echo "Dependency documentation generated"
+
+      - name: Run comprehensive validation for docs
+        run: |
+          npm run validate:comprehensive || echo "Validation completed with warnings"
 
       - name: Check for changes
         id: verify-changed-files

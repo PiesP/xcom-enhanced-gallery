@@ -1,57 +1,16 @@
-{
-  "timestamp": "2025-06-08T09:49:50.081Z",
-  "version": "0.1.0",
-  "buildTarget": "userscript",
-  "file": {
-    "size": 161631,
-    "sizeKB": 158,
-    "created": "2025-06-08T09:48:22.463Z",
-    "modified": "2025-06-08T09:48:22.573Z"
-  },
-  "content": {
-    "lines": 914,
-    "characters": 161631,
-    "hasUserScriptHeader": true,
-    "hasCSSInjection": false,
-    "hasErrorHandling": true
-  },
-  "dependencies": {
-    "production": ["@preact/signals", "fflate", "preact"],
-    "development": [
-      "@commitlint/cli",
-      "@commitlint/config-conventional",
-      "@eslint/js",
-      "@preact/preset-vite",
-      "@testing-library/jest-dom",
-      "@types/node",
-      "@types/tampermonkey",
-      "@typescript-eslint/eslint-plugin",
-      "@typescript-eslint/parser",
-      "@vitest/coverage-v8",
-      "@vitest/ui",
-      "cssnano",
-      "dependency-cruiser",
-      "eslint",
-      "eslint-plugin-compat",
-      "eslint-plugin-jsx-a11y",
-      "eslint-plugin-prettier",
-      "eslint-plugin-react",
-      "jsdom",
-      "prettier",
-      "rimraf",
-      "rolldown",
-      "terser",
-      "tsx",
-      "typescript",
-      "typescript-eslint",
-      "vite",
-      "vitest"
+[
+  {
+    "timestamp": "2025-06-11T09:26:30.520Z",
+    "buildTime": "unknown",
+    "files": [
+      {
+        "name": "xcom-enhanced-gallery.user.js",
+        "size": 270237,
+        "sizeKB": 264,
+        "modified": "2025-06-11T09:26:05.107Z"
+      }
     ],
-    "totalCount": 31
-  },
-  "environment": {
-    "nodeVersion": "v20.19.1",
-    "platform": "win32",
-    "arch": "x64"
+    "totalSize": 270237,
+    "compressionRatio": null
   }
-}
+]

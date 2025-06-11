@@ -66,12 +66,9 @@ function recordAndAnalyzeMetrics() {
   let historicalMetrics = [];
   if (fs.existsSync(METRICS_FILE)) {
     try {
-      const data = fs.readFileSync(METRICS_FILE, 'utf8');
-      const parsed = JSON.parse(data);
-      historicalMetrics = Array.isArray(parsed) ? parsed : [];
+      historicalMetrics = JSON.parse(fs.readFileSync(METRICS_FILE, 'utf8'));
     } catch (error) {
       console.warn('⚠️  이전 메트릭스 로드 실패:', error.message);
-      historicalMetrics = [];
     }
   }
 

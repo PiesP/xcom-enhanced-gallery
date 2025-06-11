@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -26,10 +26,12 @@ jobs:
 
       - name: Check for updates
         run: |
+          echo "Checking for dependency updates..."
           npm outdated --json > outdated.json 2>/dev/null || true
-          if [ -s outdated.json ]; then
+
+          if [ -s outdated.json ] && [ "$(cat outdated.json)" != "{}" ]; then
             echo "Updates available"
-            cat outdated.json
+            cat outdated.json | jq '.'
             echo "HAS_UPDATES=true" >> $GITHUB_ENV
           else
             echo "No updates available"

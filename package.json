@@ -8,6 +8,7 @@
     "dev:watch": "vite build --mode development --watch",
     "build": "npm run build:clean && npm run typecheck && npm run lint && vite build --mode production",
     "build:dev": "npm run build:clean && vite build --mode development",
+    "build:all": "npm run build:dev && npm run build",
     "build:clean": "rimraf dist",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -26,6 +27,7 @@
     "deps:validate": "npm run deps:check",
     "clean": "npm run build:clean",
     "validate": "npm run typecheck && npm run lint && npm run format:check && npm run test",
+    "validate:comprehensive": "node scripts/comprehensive-validation.js",
     "quality": "npm run validate && npm run deps:check",
     "package": "node scripts/package.js",
     "build:compile": "vite build --mode production"
@@ -58,7 +60,7 @@
     "rimraf": "^6.0.1",
     "terser": "5.42.0",
     "typescript": "5.8.3",
-    "vite": "npm:rolldown-vite@latest",
+    "vite": "^6.0.5",
     "vitest": "^3.2.3"
   }
 }

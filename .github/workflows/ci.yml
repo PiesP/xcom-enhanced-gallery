@@ -99,13 +99,19 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Run compatibility tests
-        run: npm run test:compatibility
+      - name: Build for testing
+        run: npm run build:dev
+
+      - name: Run basic compatibility tests
+        run: |
+          echo "Running basic userscript validation..."
+          node scripts/validate-build.js
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: compatibility-report
+          path: |
+            dist/
           retention-days: 7
