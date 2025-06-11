@@ -40,10 +40,7 @@ jobs:
         run: npm run build:all
 
       - name: Create package
-        run: |
-          cd dist
-          zip -r ../xcom-enhanced-gallery-${{ github.ref_name }}.zip *
-          cd ..
+        run: npm run package
 
       - name: Generate release notes
         id: release_notes
@@ -51,16 +48,24 @@ jobs:
           echo "Release notes for ${{ github.ref_name }}" > release_notes.md
           echo "" >> release_notes.md
           echo "## Installation" >> release_notes.md
-          echo "1. Download the ZIP file" >> release_notes.md
-          echo "2. Extract the contents" >> release_notes.md
-          echo "3. Load as unpacked extension in your browser" >> release_notes.md
+          echo "### Direct Install (Recommended)" >> release_notes.md
+          echo "Click on [xcom-enhanced-gallery.user.js](https://github.com/piesp/xcom-enhanced-gallery/raw/${{ github.ref_name }}/dist/xcom-enhanced-gallery.user.js) to install directly" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Manual Download" >> release_notes.md
+          echo "1. Download the userscript file from the assets below" >> release_notes.md
+          echo "2. Install using your userscript manager" >> release_notes.md
+          echo "3. Visit X.com to use the enhanced gallery" >> release_notes.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           name: X.com Enhanced Gallery ${{ github.ref_name }}
           body_path: release_notes.md
-          files: xcom-enhanced-gallery-${{ github.ref_name }}.zip
+          files: |
+            release/xcom-enhanced-gallery.user.js
+            release/xcom-enhanced-gallery-*.user.js
+            release/checksums.txt
+            dist/xcom-enhanced-gallery.user.js
           draft: false
           prerelease: false
         env:

@@ -50,7 +50,15 @@ X.com(트위터)에서 이미지와 동영상을 고품질로 다운로드하고
 
 ### 2. 스크립트 설치
 
-[최신 릴리스](https://github.com/your-username/xcom-enhanced-gallery/releases/latest)에서 `xcom-enhanced-gallery.user.js` 파일을 다운로드하여 설치하세요.
+#### 방법 1: 직접 다운로드 (권장)
+
+이 저장소의 `dist/xcom-enhanced-gallery.user.js` 파일을 직접 클릭하여 설치하세요:
+
+🔗 **[dist/xcom-enhanced-gallery.user.js](dist/xcom-enhanced-gallery.user.js)**
+
+#### 방법 2: 릴리스에서 다운로드
+
+[최신 릴리스](https://github.com/piesp/xcom-enhanced-gallery/releases/latest)에서 `xcom-enhanced-gallery.user.js` 파일을 다운로드하여 설치하세요.
 
 ### 3. X.com 방문
 

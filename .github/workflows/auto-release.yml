@@ -104,6 +104,14 @@ jobs:
       - name: Build release
         run: npm run build
 
+      - name: Commit dist files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add dist/xcom-enhanced-gallery.user.js
+          git diff --staged --quiet || git commit -m "build: update dist for release v${{ steps.version.outputs.version }} [skip ci]"
+          git push
+
       - name: Create release package
         run: npm run package
 
@@ -122,6 +130,7 @@ jobs:
             release/xcom-enhanced-gallery.user.js
             release/xcom-enhanced-gallery-*.user.js
             release/checksums.txt
+            dist/xcom-enhanced-gallery.user.js
           generate_release_notes: true
           draft: false
           prerelease: false

@@ -10,10 +10,12 @@ node_modules/
 
 # Build outputs
 dist/
+!dist/xcom-enhanced-gallery.user.js
 build/
 .vite/
 .cache/
 *.user.js
+!dist/*.user.js
 *.min.js
 *.min.css
 *.meta.js

@@ -68,6 +68,15 @@ jobs:
       - name: Build
         run: npm run build:all
 
+      - name: Commit dist files (if on main branch)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add dist/xcom-enhanced-gallery.user.js
+          git diff --staged --quiet || git commit -m "build: update dist files [skip ci]"
+          git push
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
