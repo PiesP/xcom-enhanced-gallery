@@ -128,23 +128,23 @@ jobs:
           name: X.com Enhanced Gallery v${{ steps.version.outputs.version }}
           body: |
             # X.com Enhanced Gallery v${{ steps.version.outputs.version }}
-            
+
             트위터(X) 미디어 뷰어와 다운로드 기능을 향상시키는 유저스크립트입니다.
-            
+
             ## 🚀 빠른 설치
-            
+
             **원클릭 설치:** [xcom-enhanced-gallery.user.js](https://github.com/PiesP/xcom-enhanced-gallery/raw/v${{ steps.version.outputs.version }}/dist/xcom-enhanced-gallery.user.js) 클릭
-            
+
             > 유저스크립트 매니저(Tampermonkey, Greasemonkey 등)가 설치되어 있어야 합니다.
-            
+
             ## 📦 수동 설치
-            
+
             1. 아래 Assets에서 `xcom-enhanced-gallery.user.js` 파일 다운로드
             2. 유저스크립트 매니저에서 파일 설치
             3. X.com 방문하여 향상된 갤러리 기능 사용
-            
+
             ## ✨ 주요 기능
-            
+
             - 🖼️ 향상된 미디어 갤러리 뷰어
             - ⬇️ 원클릭 미디어 다운로드
             - 🔍 이미지/비디오 확대 및 탐색
