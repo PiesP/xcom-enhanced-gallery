@@ -8,10 +8,11 @@
  */
 
 import type { MediaInfo, MediaItem } from '@core/types/media.types';
+import type { BaseService } from '@core/types/services.types';
 import { logger } from '@infrastructure/logging/logger';
-import { generateMediaFilename, generateZipFilename } from '@shared/utils/media';
 import { getNativeDownload } from '@shared/utils/external';
-import { createZipFromItems, type MediaItemForZip } from '@shared/utils/external';
+import { createZipFromItems, type MediaItemForZip } from '@shared/utils/external/zip';
+import { generateMediaFilename, generateZipFilename } from '@shared/utils/media';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'zipping' | 'complete';
@@ -26,12 +27,31 @@ export interface DownloadOptions {
   signal?: AbortSignal;
   zipFilename?: string;
   strategy?: 'auto' | 'zip' | 'individual';
+  includeImages?: boolean;
+  includeVideos?: boolean;
+  maxFiles?: number;
+  compressionLevel?: number;
+  includeMetadata?: boolean;
 }
 
 export interface DownloadResult {
   success: boolean;
   filesProcessed: number;
   filesSuccessful: number;
+  error?: string;
+  filename?: string;
+}
+
+export interface DownloadInfo {
+  isDownloading: boolean;
+  currentItem?: string;
+  progress: number;
+  failedFiles: string[];
+}
+
+export interface SingleDownloadResult {
+  success: boolean;
+  filename?: string;
   error?: string;
 }
 
@@ -41,8 +61,15 @@ export interface DownloadResult {
  * Clean Architecture 원칙을 따라 core layer에서 비즈니스 로직을 관리합니다.
  * Singleton 패턴으로 전역 상태 관리 및 일관된 대량 다운로드 처리를 보장합니다.
  */
-export class BulkDownloadService {
+export class BulkDownloadService implements BaseService {
   private static instance: BulkDownloadService;
+  private _isInitialized = false;
+  private currentAbortController?: AbortController;
+  private downloadInfo: DownloadInfo = {
+    isDownloading: false,
+    progress: 0,
+    failedFiles: [],
+  };
 
   // Core configuration constants
   private static readonly CONFIG = {
@@ -61,12 +88,99 @@ export class BulkDownloadService {
   private constructor() {}
 
   /**
+   * BaseService 인터페이스 구현: 서비스 초기화
+   */
+  public async initialize(): Promise<void> {
+    if (this._isInitialized) {
+      return;
+    }
+
+    logger.info('BulkDownloadService initializing...');
+    this._isInitialized = true;
+    logger.info('BulkDownloadService initialized');
+  }
+
+  /**
+   * BaseService 인터페이스 구현: 서비스 정리
+   */
+  public destroy(): void {
+    if (!this._isInitialized) {
+      return;
+    }
+
+    logger.info('BulkDownloadService destroying...');
+    this._isInitialized = false;
+    logger.info('BulkDownloadService destroyed');
+  }
+
+  /**
+   * BaseService 인터페이스 구현: 초기화 상태 확인
+   */
+  public isInitialized(): boolean {
+    return this._isInitialized;
+  }
+
+  /**
+   * 서비스 상태 확인 (테스트 호환성을 위해)
+   */
+  public getStatus(): 'active' | 'inactive' {
+    return this._isInitialized ? 'active' : 'inactive';
+  }
+
+  /**
    * 단일 미디어 다운로드
    * @param media - 다운로드할 미디어 아이템
    * @returns 다운로드 성공 여부
    */
-  async downloadSingle(media: MediaItem | MediaInfo): Promise<boolean> {
-    return this.downloadSingleWithIndex(media);
+  async downloadSingle(media: MediaItem | MediaInfo): Promise<SingleDownloadResult> {
+    try {
+      const result = await this.downloadSingleWithIndex(media);
+      if (result) {
+        return {
+          success: true,
+          filename: generateMediaFilename(media),
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Download failed',
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * 대량 다운로드 (테스트 호환성을 위한 별칭)
+   */
+  async downloadBulk(
+    mediaItems: readonly (MediaItem | MediaInfo)[],
+    options: DownloadOptions = {}
+  ): Promise<DownloadResult> {
+    return this.downloadMultiple(mediaItems, options);
+  }
+
+  /**
+   * 다운로드 취소
+   */
+  public cancelDownload(): void {
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = undefined;
+    }
+    this.downloadInfo.isDownloading = false;
+    logger.info('Download cancelled');
+  }
+
+  /**
+   * 현재 다운로드 정보 반환
+   */
+  public getCurrentDownloadInfo(): DownloadInfo {
+    return { ...this.downloadInfo };
   }
 
   /**
@@ -84,19 +198,32 @@ export class BulkDownloadService {
       const url = this.extractSafeUrl(media);
       const filename = generateMediaFilename(media, index ? { index } : undefined);
 
-      logger.info('Starting single media download:', filename);
+      logger.info('Starting single media download:', { url, filename });
 
       const response = await fetch(url);
+      logger.info('Fetch response:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const blob = await response.blob();
+      logger.info('Blob created:', {
+        size: blob.size,
+        type: blob.type,
+      });
+
       downloader.downloadBlob(blob, filename);
+      logger.info('downloadBlob called successfully');
 
       logger.info('Single media download completed:', filename);
       return true;
     } catch (error) {
+      logger.info('Download failed with error:', error);
       logger.error('Single media download failed:', error);
       return false;
     }
@@ -208,6 +335,7 @@ export class BulkDownloadService {
         success: true,
         filesProcessed: mediaItems.length,
         filesSuccessful: mediaItems.length,
+        filename: finalZipFilename,
       };
     } catch (error) {
       logger.error('ZIP download failed:', error);

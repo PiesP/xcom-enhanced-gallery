@@ -41,6 +41,13 @@ export class VideoStateManager {
   }
 
   /**
+   * DOM observer 상태 확인 (테스트용)
+   */
+  public get isObservingDOM(): boolean {
+    return this.isObserving;
+  }
+
+  /**
    * 트윗의 미디어 정보를 캐시에 저장
    */
   public cacheMediaForTweet(
@@ -125,8 +132,12 @@ export class VideoStateManager {
 
     // 클릭 이벤트 (마우스 및 키보드)
     const handleTrigger = (event: Event) => {
-      event.preventDefault();
-      event.stopPropagation();
+      if (event.preventDefault) {
+        event.preventDefault();
+      }
+      if (event.stopPropagation) {
+        event.stopPropagation();
+      }
 
       logger.info('VideoStateManager: 갤러리 트리거 활성화됨', { tweetId });
       onTrigger(cache.mediaItems, 0);

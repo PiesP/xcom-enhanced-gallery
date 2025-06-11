@@ -13,9 +13,9 @@
 import type { MediaInfo } from '@core/types/media.types';
 import { logger } from '@infrastructure/logging/logger';
 import { getPageScrollLockManager } from '@shared/utils/core';
+import { getPreactSignals } from '@shared/utils/external';
 import { VideoControlUtil } from '@shared/utils/media/video-control.util';
 import { VideoStateManager } from '@shared/utils/media/video-state-manager';
-import { getPreactSignals } from '@shared/utils/external';
 
 const { batch, computed, effect, signal } = getPreactSignals();
 
@@ -155,18 +155,30 @@ export class GalleryStateManager {
    * 액션 메서드들
    */
   openGallery(items: readonly MediaInfo[], startIndex: number = 0): void {
-    if (items.length === 0) {
+    // null/undefined 배열 체크
+    if (!items || !Array.isArray(items)) {
+      logger.warn('Cannot open gallery with invalid items array');
+      return;
+    }
+
+    // undefined/null 아이템 필터링
+    const validItems = items.filter(
+      (item): item is MediaInfo =>
+        item != null && typeof item === 'object' && 'id' in item && 'type' in item && 'url' in item
+    );
+
+    if (validItems.length === 0) {
       logger.warn('Cannot open gallery with empty items array');
       return;
     }
 
-    const validStartIndex = Math.max(0, Math.min(startIndex, items.length - 1));
+    const validStartIndex = Math.max(0, Math.min(startIndex, validItems.length - 1));
 
     // 갤러리 열기 전 모든 동영상 일시정지
     this.videoControlUtil.pauseAllVideos();
 
     batch(() => {
-      this.mediaItems.value = Object.freeze([...items]);
+      this.mediaItems.value = Object.freeze([...validItems]);
       this.currentIndex.value = validStartIndex;
       this.isOpen.value = true;
       this.error.value = null;
@@ -213,9 +225,9 @@ export class GalleryStateManager {
       this.isOpen.value = false;
       this.isLoading.value = false;
       this.error.value = null;
-      // 재열기 문제 방지를 위해 완전한 상태 초기화
-      this.mediaItems.value = Object.freeze([]);
-      this.currentIndex.value = 0;
+      // 재활성화를 위해 미디어 아이템과 현재 인덱스는 유지
+      // this.mediaItems.value = Object.freeze([]);
+      // this.currentIndex.value = 0;
       this.currentTweetMediaItems.value = Object.freeze([]);
     });
 

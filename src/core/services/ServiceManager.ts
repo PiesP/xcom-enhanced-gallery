@@ -143,6 +143,11 @@ export class ServiceManager {
       }
     }
 
+    // 순환 의존성 검사 추가
+    if (config.dependencies && config.dependencies.length > 0) {
+      this.checkCircularDependency(key, config.dependencies, configs, new Set());
+    }
+
     // 의존성 먼저 로드 (병렬 처리로 성능 향상)
     if (config.dependencies && config.dependencies.length > 0) {
       await this.loadDependenciesOptimized(config.dependencies);
@@ -339,12 +344,48 @@ export class ServiceManager {
   }
 
   /**
+   * 순환 의존성 검사
+   */
+  private checkCircularDependency(
+    currentKey: string,
+    dependencies: string[],
+    configs: Map<string, ServiceConfig>,
+    visitingStack: Set<string>
+  ): void {
+    if (visitingStack.has(currentKey)) {
+      const path = `${Array.from(visitingStack).join(' -> ')} -> ${currentKey}`;
+      throw new Error(`[ServiceManager] Circular dependency detected: ${path}`);
+    }
+
+    visitingStack.add(currentKey);
+
+    for (const dep of dependencies) {
+      const depConfig = configs.get(dep);
+      if (depConfig?.dependencies) {
+        this.checkCircularDependency(dep, depConfig.dependencies, configs, visitingStack);
+      }
+    }
+
+    visitingStack.delete(currentKey);
+  }
+
+  /**
    * 서비스 생성 최적화
    */
   private async createServiceOptimized<T>(key: string, config: ServiceConfig<T>): Promise<T> {
     try {
       const startTime = performance.now();
       const service = await config.factory();
+
+      // BaseService 인터페이스를 구현한 서비스는 초기화해야 함
+      if (
+        service &&
+        typeof (service as unknown as { initialize?: () => Promise<void> }).initialize ===
+          'function'
+      ) {
+        await (service as unknown as { initialize: () => Promise<void> }).initialize();
+      }
+
       const endTime = performance.now();
 
       logger.debug(

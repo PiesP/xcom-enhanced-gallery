@@ -31,6 +31,7 @@ export type { DownloadOptions, DownloadProgress, DownloadResult };
 export class GalleryDownloadService {
   private static instance: GalleryDownloadService;
   private readonly coreDownloadService = BulkDownloadService.getInstance();
+  private _isInitialized = false;
 
   public static getInstance(): GalleryDownloadService {
     GalleryDownloadService.instance ??= new GalleryDownloadService();
@@ -40,11 +41,61 @@ export class GalleryDownloadService {
   private constructor() {}
 
   /**
+   * 서비스 초기화 (테스트 호환성을 위해)
+   */
+  async initialize(): Promise<void> {
+    if (this._isInitialized) {
+      return;
+    }
+
+    logger.info('GalleryDownloadService: initializing...');
+    await this.coreDownloadService.initialize();
+    this._isInitialized = true;
+    logger.info('GalleryDownloadService: initialized');
+  }
+
+  /**
+   * 서비스 정리 (테스트 호환성을 위해)
+   */
+  async destroy(): Promise<void> {
+    if (!this._isInitialized) {
+      return;
+    }
+
+    logger.info('GalleryDownloadService: destroying...');
+    this.coreDownloadService.destroy();
+    this._isInitialized = false;
+    logger.info('GalleryDownloadService: destroyed');
+  }
+
+  /**
+   * 초기화 상태 확인
+   */
+  isInitialized(): boolean {
+    return this._isInitialized;
+  }
+
+  /**
+   * 테스트 호환성을 위한 별칭 메소드
+   */
+  async downloadBulk(
+    mediaItems: readonly (MediaItem | MediaInfo)[],
+    options: DownloadOptions = {}
+  ): Promise<DownloadResult & { downloadedCount?: number }> {
+    const result = await this.downloadMultiple(mediaItems, options);
+    return {
+      ...result,
+      downloadedCount: result.filesSuccessful,
+    };
+  }
+
+  /**
    * 현재 미디어 다운로드 (갤러리 특화 진입점)
    */
   async downloadCurrent(media: MediaItem | MediaInfo): Promise<boolean> {
     logger.info('Gallery: downloading current media');
-    return this.coreDownloadService.downloadSingle(media);
+    const result = await this.coreDownloadService.downloadSingle(media);
+    return result.success;
   }
 
   /**
@@ -86,5 +137,21 @@ export class GalleryDownloadService {
       ...options,
       strategy: 'individual', // 선택된 항목은 개별 다운로드
     });
+  }
+
+  /**
+   * 단일 미디어 다운로드 (테스트 호환성 메서드)
+   */
+  async downloadSingle(media: MediaItem | MediaInfo): Promise<DownloadResult> {
+    logger.info('Gallery: downloading single media item');
+    const singleResult = await this.coreDownloadService.downloadSingle(media);
+
+    // SingleDownloadResult를 DownloadResult로 변환
+    return {
+      success: singleResult.success,
+      filesProcessed: 1,
+      filesSuccessful: singleResult.success ? 1 : 0,
+      error: singleResult.error,
+    };
   }
 }

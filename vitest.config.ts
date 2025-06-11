@@ -3,9 +3,9 @@
  * 간결하고 효율적인 테스트 환경 구성
  */
 
+import preact from '@preact/preset-vite';
 import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
-import preact from '@preact/preset-vite';
 
 export default defineConfig({
   plugins: [preact()],
@@ -28,10 +28,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
+    isolate: true, // 테스트 파일 간 격리
 
     // 파일 패턴
-    include: ['./src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    include: ['./test/**/*.{test,spec}.{ts,tsx}', './src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
 
     // 커버리지 설정
     coverage: {
@@ -60,13 +61,10 @@ export default defineConfig({
     pool: 'threads',
     poolOptions: {
       threads: {
-        singleThread: true,
+        singleThread: false,
+        minThreads: 1,
+        maxThreads: 4,
       },
     },
-  },
-
-  esbuild: {
-    jsx: 'automatic',
-    jsxImportSource: 'preact',
   },
 });

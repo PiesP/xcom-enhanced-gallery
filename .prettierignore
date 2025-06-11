@@ -10,6 +10,9 @@ release/
 # Git
 .git/
 
+# E2E test files (MCP browser automation)
+test/e2e/*.mcp.js
+
 # Generated files
 *.min.js
 *.min.css

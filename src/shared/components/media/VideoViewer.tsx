@@ -155,9 +155,9 @@ export function VideoViewer({
       }
     };
   }, []);
-  // 컴포넌트 마운트 시 임시 다운로드 시작
+  // 컴포넌트 마운트 시 임시 다운로드 시작 (활성화되고 보이는 경우에만)
   useEffect(() => {
-    if (!media.url || isDownloaded) {
+    if (!media.url || isDownloaded || !isActive || !isVisible) {
       return;
     }
 
@@ -170,7 +170,7 @@ export function VideoViewer({
     };
 
     startDownload();
-  }, [media.url, downloadTempVideo, isDownloaded]);
+  }, [media.url, downloadTempVideo, isDownloaded, isActive, isVisible]);
 
   // 컴포넌트 언마운트 시 임시 URL 정리
   useEffect(() => {

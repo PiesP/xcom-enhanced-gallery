@@ -1,18 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from '../../src/infrastructure/logging/logger';
 import {
-  createTestMediaData,
-  waitForDOMUpdate,
-  setupTestEnvironment,
   cleanupTestEnvironment,
+  createMockTweetContainer,
+  createTestMediaData,
   mockExtractMediaFromCurrentTweet,
   mockInitializeGallery,
+  setupTestEnvironment,
+  simulateClick,
+  waitForDOMUpdate,
 } from './setup';
 
 /**
  * DOM API 사용 가능 여부를 확인하는 타입 가드
  */
-function isDOMAvailable() {
+function isDOMAvailable(): boolean {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
 }
 
@@ -30,48 +32,65 @@ function isElementOfType<T extends Element>(
  * Gallery Integration Tests
  *
  * 갤러리 기능의 통합 테스트로 여러 컴포넌트 간의 상호작용을 검증합니다.
- * BEST_PRACTICES.md의 통합 테스트 패턴을 따릅니다.
+ * Feature-based 아키텍처에 따른 통합 테스트를 수행합니다.
  */
 describe('Gallery Integration', () => {
   let galleryRoot: HTMLElement | null = null;
 
   beforeEach(() => {
-    // DOM 초기화
-    if (isDOMAvailable()) {
-      document.body.innerHTML = '';
-
-      // 테스트용 트위터 페이지 구조 생성
-      const mockTweetContainer = document.createElement('div');
-      mockTweetContainer.setAttribute('data-testid', 'tweet');
-
-      const mockImage = document.createElement('img');
-      mockImage.src = 'https://pbs.twimg.com/media/test.jpg';
-      mockImage.alt = 'Test image';
-      mockImage.setAttribute('data-testid', 'tweet-image');
-
-      mockTweetContainer.appendChild(mockImage);
-      document.body.appendChild(mockTweetContainer);
-    }
-
     // 갤러리 루트 설정
     galleryRoot = setupTestEnvironment();
+
+    // DOM 초기화
+    if (isDOMAvailable()) {
+      // 기존 내용 제거하되 갤러리 루트는 유지
+      const galleryRootElement = document.getElementById('xeg-gallery-root');
+      document.body.innerHTML = '';
+      if (galleryRootElement) {
+        document.body.appendChild(galleryRootElement);
+      }
+
+      // 테스트용 트위터 페이지 구조 생성
+      const mockTweetContainer = createMockTweetContainer(true);
+      document.body.appendChild(mockTweetContainer);
+    }
 
     // 로거 모킹
     vi.spyOn(logger, 'info').mockImplementation(() => {});
     vi.spyOn(logger, 'debug').mockImplementation(() => {});
     vi.spyOn(logger, 'error').mockImplementation(() => {});
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    cleanupTestEnvironment();
     if (isDOMAvailable()) {
       document.body.innerHTML = '';
+    }
+    cleanupTestEnvironment();
+  });
+
+  it('갤러리 초기화가 올바르게 수행됨', async () => {
+    if (!isDOMAvailable()) {
+      expect(true).toBe(true); // DOM이 없는 환경에서는 스킵
+      return;
+    }
+
+    // 모킹된 초기화 함수 사용
+    await mockInitializeGallery();
+    await waitForDOMUpdate();
+
+    // 갤러리 루트가 생성되었는지 확인
+    expect(galleryRoot).toBeTruthy();
+
+    if (galleryRoot) {
+      expect(document.body.contains(galleryRoot)).toBe(true);
+      expect(galleryRoot.id).toBe('xeg-gallery-root');
+      expect(galleryRoot.style.display).toBe('block');
     }
   });
 
   it('이미지 클릭 시 갤러리가 열림', async () => {
-    // DOM이 사용 가능한지 확인
     if (!isDOMAvailable()) {
       expect(true).toBe(true); // DOM이 없는 환경에서는 스킵
       return;
@@ -86,63 +105,51 @@ describe('Gallery Integration', () => {
     // 이미지 요소 찾기
     const imageElement = document.querySelector('[data-testid="tweet-image"]');
     expect(imageElement).toBeTruthy();
+    expect(imageElement?.getAttribute('src')).toBe('https://pbs.twimg.com/media/test.jpg');
 
-    // 타입 안전한 이미지 요소 확인 및 클릭 시뮬레이션
-    if (imageElement && isElementOfType(imageElement, HTMLImageElement)) {
-      // MouseEvent 생성자 사용 가능 여부 확인
-      if (typeof MouseEvent !== 'undefined') {
-        const clickEvent = new MouseEvent('click', { bubbles: true });
-        imageElement.dispatchEvent(clickEvent);
+    // 클릭 이벤트 시뮬레이션
+    if (imageElement) {
+      simulateClick(imageElement);
+      await waitForDOMUpdate();
 
-        // 갤러리 컨테이너가 생성되었는지 확인
-        await waitForDOMUpdate();
-
-        // 갤러리 관련 요소 확인
-        const galleryContainer = document.querySelector('#xeg-gallery-root');
-        if (galleryContainer) {
-          expect(galleryContainer).toBeTruthy();
-          expect(document.body.contains(galleryContainer)).toBe(true);
-        } else {
-          // 아직 갤러리가 구현되지 않은 경우 기본 확인
-          expect(logger.debug).toHaveBeenCalled();
-        }
-      } else {
-        // MouseEvent를 사용할 수 없는 환경에서는 스킵
-        expect(true).toBe(true);
+      // 갤러리 컨테이너가 표시되었는지 확인
+      const galleryContainer = document.querySelector('#xeg-gallery-root');
+      if (galleryContainer && isElementOfType(galleryContainer, HTMLElement)) {
+        expect(galleryContainer.style.display).toBe('block');
       }
     }
   });
 
-  it('갤러리 초기화가 올바르게 수행됨', async () => {
-    // 모킹된 초기화 함수 사용
-    await mockInitializeGallery();
-    await waitForDOMUpdate();
+  it('미디어 데이터 추출이 올바르게 작동함', () => {
+    const mediaItems = mockExtractMediaFromCurrentTweet();
 
-    // 갤러리 루트가 생성되었는지 확인
-    expect(galleryRoot).toBeTruthy();
+    expect(Array.isArray(mediaItems)).toBe(true);
+    expect(mediaItems.length).toBeGreaterThan(0);
 
-    if (galleryRoot && isDOMAvailable()) {
-      expect(document.body.contains(galleryRoot)).toBe(true);
-      expect(galleryRoot.id).toBe('xeg-gallery-root');
-    }
+    const testMedia = mediaItems[0];
+    expect(testMedia).toHaveProperty('url');
+    expect(testMedia).toHaveProperty('type');
+    expect(testMedia).toHaveProperty('filename');
+    expect(['image', 'video', 'gif']).toContain(testMedia.type);
   });
 
-  it('미디어 데이터 추출이 올바르게 작동함', async () => {
-    // 테스트 데이터 생성
-    const testMediaData = createTestMediaData();
+  it('여러 미디어 타입이 올바르게 처리됨', () => {
+    const mediaItems = mockExtractMediaFromCurrentTweet();
 
-    // 모킹된 미디어 크롤러 테스트
-    const extractedMedia = mockExtractMediaFromCurrentTweet();
+    // 이미지 타입 확인
+    const imageMedia = mediaItems.find(item => item.type === 'image');
+    expect(imageMedia).toBeTruthy();
+    expect(imageMedia?.url).toContain('pbs.twimg.com');
 
-    // 추출 결과는 배열이어야 함
-    expect(Array.isArray(extractedMedia)).toBe(true);
-    expect(extractedMedia.length).toBeGreaterThan(0);
+    // 비디오 타입 확인
+    const videoMedia = mediaItems.find(item => item.type === 'video');
+    expect(videoMedia).toBeTruthy();
+    expect(videoMedia?.url).toContain('video.twimg.com');
 
-    // 첫 번째 미디어 항목 검증
-    const firstMedia = extractedMedia[0];
-    expect(firstMedia).toHaveProperty('url');
-    expect(firstMedia).toHaveProperty('type');
-    expect(firstMedia.type).toBe(testMediaData.type);
+    // GIF 타입 확인
+    const gifMedia = mediaItems.find(item => item.type === 'gif');
+    expect(gifMedia).toBeTruthy();
+    expect(gifMedia?.filename).toContain('.gif');
   });
 
   it('에러 발생 시 안전하게 처리됨', async () => {
@@ -165,20 +172,52 @@ describe('Gallery Integration', () => {
     expect(galleryRoot).toBeTruthy();
 
     if (galleryRoot) {
+      expect(galleryRoot.style.position).toBe('fixed');
+      expect(galleryRoot.style.top).toBe('0px');
       expect(galleryRoot.style.left).toBe('0px');
       expect(galleryRoot.style.width).toBe('100%');
       expect(galleryRoot.style.height).toBe('100%');
+      expect(galleryRoot.style.zIndex).toBe('10000');
     }
   });
 
   it('테스트 데이터가 올바른 구조를 가짐', () => {
     const testData = createTestMediaData();
 
-    expect(testData).toHaveProperty('url');
-    expect(testData).toHaveProperty('type');
-    expect(testData).toHaveProperty('originalUrl');
-    expect(testData).toHaveProperty('filename');
-    expect(typeof testData.url).toBe('string');
-    expect(['image', 'video', 'gif']).toContain(testData.type);
+    expect(testData).toMatchObject({
+      id: expect.any(String),
+      url: expect.stringContaining('pbs.twimg.com'),
+      type: 'image',
+      originalUrl: expect.stringContaining('name=orig'),
+      thumbnailUrl: expect.stringContaining('name=small'),
+      filename: expect.stringMatching(/\.(jpg|jpeg|png|webp)$/i),
+      width: expect.any(Number),
+      height: expect.any(Number),
+      fileSize: expect.any(Number),
+    });
+  });
+
+  it('트윗 컨테이너가 올바른 구조를 가짐', () => {
+    if (!isDOMAvailable()) {
+      expect(true).toBe(true);
+      return;
+    }
+
+    const tweetContainer = document.querySelector('[data-testid="tweet"]');
+    expect(tweetContainer).toBeTruthy();
+
+    // 상태 링크 확인
+    const statusLink = tweetContainer?.querySelector('[data-testid="tweet-status-link"]');
+    expect(statusLink).toBeTruthy();
+    expect(statusLink?.getAttribute('href')).toContain('x.com');
+
+    // 미디어 컨테이너 확인
+    const mediaContainer = tweetContainer?.querySelector('[data-testid="tweet-media"]');
+    expect(mediaContainer).toBeTruthy();
+
+    // 이미지 확인
+    const image = mediaContainer?.querySelector('[data-testid="tweet-image"]');
+    expect(image).toBeTruthy();
+    expect(image?.getAttribute('src')).toContain('pbs.twimg.com');
   });
 });

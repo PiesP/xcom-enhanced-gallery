@@ -1968,6 +1968,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/media/filename-service.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/type-utils.ts",
       "dependencies": [],
       "dependents": [],
@@ -1977,48 +1984,13 @@
     {
       "source": "src/shared/utils/vendors/core.ts",
       "dependencies": [],
-      "dependents": [
-        "src/shared/utils/vendors/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
       "source": "src/shared/utils/vendors/helpers.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./index",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "require"
-          ],
-          "resolved": "src/shared/utils/vendors/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/utils/vendors/index.ts",
-              "dependencyTypes": [
-                "local",
-                "require"
-              ]
-            },
-            {
-              "name": "src/shared/utils/vendors/helpers.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            }
-          ],
-          "valid": true
-        },
         {
           "dynamic": true,
           "module": "./index",
@@ -2033,122 +2005,20 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/utils/vendors/index.ts",
-              "dependencyTypes": [
-                "local",
-                "require"
-              ]
-            },
-            {
-              "name": "src/shared/utils/vendors/helpers.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            }
-          ],
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./index",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/utils/vendors/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/utils/vendors/index.ts",
-              "dependencyTypes": [
-                "local",
-                "require"
-              ]
-            },
-            {
-              "name": "src/shared/utils/vendors/helpers.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            }
-          ],
+          "circular": false,
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/utils/vendors/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
     {
       "source": "src/shared/utils/vendors/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./core",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/vendors/core.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/vendors/helpers.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/utils/vendors/helpers.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/utils/vendors/index.ts",
-              "dependencyTypes": [
-                "local",
-                "require"
-              ]
-            }
-          ],
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
-        "src/shared/utils/vendors/helpers.ts"
+        "src/shared/utils/vendors/helpers.ts",
+        "src/shared/utils/zip/zip-creator.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2194,11 +2064,36 @@
     },
     {
       "source": "src/shared/utils/zip/zip-creator.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/vendors/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/zip/index.ts"
       ],
       "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/zip/zip-creator-new.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -2215,8 +2110,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 84,
-    "totalDependenciesCruised": 79,
+    "totalCruised": 86,
+    "totalDependenciesCruised": 76,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

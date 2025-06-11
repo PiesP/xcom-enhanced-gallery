@@ -39,12 +39,13 @@
     "@eslint/js": "9.28.0",
     "@preact/preset-vite": "^2.10.1",
     "@testing-library/jest-dom": "6.6.3",
-    "@types/node": "^22.15.30",
+    "@testing-library/preact": "3.2.4",
+    "@types/node": "^24.0.0",
     "@types/tampermonkey": "^5.0.4",
-    "@typescript-eslint/eslint-plugin": "^8.33.1",
-    "@typescript-eslint/parser": "^8.33.1",
-    "@vitest/coverage-v8": "^3.2.2",
-    "@vitest/ui": "^3.2.2",
+    "@typescript-eslint/eslint-plugin": "^8.34.0",
+    "@typescript-eslint/parser": "^8.34.0",
+    "@vitest/coverage-v8": "^3.2.3",
+    "@vitest/ui": "^3.2.3",
     "cssnano": "7.0.7",
     "dependency-cruiser": "^16.10.2",
     "eslint": "9.28.0",
@@ -55,9 +56,9 @@
     "jsdom": "26.1.0",
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
-    "terser": "5.41.0",
+    "terser": "5.42.0",
     "typescript": "5.8.3",
     "vite": "npm:rolldown-vite@latest",
-    "vitest": "^3.2.2"
+    "vitest": "^3.2.3"
   }
 }

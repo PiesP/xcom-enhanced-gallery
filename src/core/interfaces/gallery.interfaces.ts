@@ -9,6 +9,13 @@
 import type { MediaInfo } from '@core/types/media.types';
 import type { ViewMode } from '@core/types/view-mode.types';
 
+// TweetInfo 타입을 위한 임시 인터페이스 (순환 참조 방지)
+interface TweetInfo {
+  username?: string;
+  tweetId?: string;
+  tweetUrl?: string;
+}
+
 /**
  * 갤러리 렌더러 인터페이스
  * Features 계층의 GalleryRenderer를 추상화
@@ -83,6 +90,8 @@ export interface MediaExtractionResult {
   error?: string;
   /** 추출 메타데이터 */
   metadata?: MediaExtractionMetadata;
+  /** 트윗 정보 (추출 가능한 경우) */
+  tweetInfo?: TweetInfo | null;
 }
 
 /**
@@ -94,9 +103,9 @@ export interface MediaExtractionMetadata {
   /** 사용자 ID */
   userId?: string;
   /** 추출 시간 */
-  extractedAt: number;
+  extractedAt?: number;
   /** 소스 타입 */
-  sourceType:
+  sourceType?:
     | 'tweet'
     | 'profile'
     | 'media'
@@ -106,7 +115,19 @@ export interface MediaExtractionMetadata {
     | 'video-elements'
     | 'data-attributes'
     | 'background-images'
-    | 'twitter-api';
+    | 'twitter-api'
+    | 'simple-extraction';
   /** 추출 전략 */
   strategy?: string;
+  /** 사용된 전략 (메타데이터용) */
+  usedStrategy?: string;
+  /** 총 처리 시간 (밀리초) */
+  totalProcessingTime?: number;
+  /** 전략별 결과 */
+  strategyResults?: Array<{
+    strategy: string;
+    success: boolean;
+    itemCount: number;
+    processingTime?: number;
+  }>;
 }

@@ -122,6 +122,12 @@ export class AutoThemeController {
    * 시스템 테마 변경 감지
    */
   private watchSystemTheme(): void {
+    // 테스트 환경에서 window.matchMedia가 없을 수 있음
+    if (!window.matchMedia) {
+      this.log('window.matchMedia not available, skipping system theme watch');
+      return;
+    }
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleThemeChange = (e: MediaQueryListEvent): void => {
@@ -196,6 +202,12 @@ export class AutoThemeController {
    */
   private applyAutoTheme(): void {
     if (!this.config.enabled) {
+      return;
+    }
+
+    // window.matchMedia 가드 추가
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      this.log('window.matchMedia is not available, skipping auto theme');
       return;
     }
 
