@@ -45,16 +45,39 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
-          echo "Release notes for ${{ github.ref_name }}" > release_notes.md
+          echo "# X.com Enhanced Gallery ${{ github.ref_name }}" > release_notes.md
           echo "" >> release_notes.md
-          echo "## Installation" >> release_notes.md
-          echo "### Direct Install (Recommended)" >> release_notes.md
-          echo "Click on [xcom-enhanced-gallery.user.js](https://github.com/PiesP/xcom-enhanced-gallery/raw/${{ github.ref_name }}/dist/xcom-enhanced-gallery.user.js) to install directly" >> release_notes.md
+          echo "트위터(X) 미디어 뷰어와 다운로드 기능을 향상시키는 유저스크립트입니다." >> release_notes.md
           echo "" >> release_notes.md
-          echo "### Manual Download" >> release_notes.md
-          echo "1. Download the userscript file from the assets below" >> release_notes.md
-          echo "2. Install using your userscript manager" >> release_notes.md
-          echo "3. Visit X.com to use the enhanced gallery" >> release_notes.md
+          echo "## 🚀 빠른 설치" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "**원클릭 설치:** [xcom-enhanced-gallery.user.js](https://github.com/PiesP/xcom-enhanced-gallery/raw/${{ github.ref_name }}/dist/xcom-enhanced-gallery.user.js) 클릭" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "> 유저스크립트 매니저(Tampermonkey, Greasemonkey 등)가 설치되어 있어야 합니다." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## 📦 수동 설치" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "1. 아래 Assets에서 \`xcom-enhanced-gallery.user.js\` 파일 다운로드" >> release_notes.md
+          echo "2. 유저스크립트 매니저에서 파일 설치" >> release_notes.md
+          echo "3. X.com 방문하여 향상된 갤러리 기능 사용" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## ✨ 주요 기능" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- 🖼️ 향상된 미디어 갤러리 뷰어" >> release_notes.md
+          echo "- ⬇️ 원클릭 미디어 다운로드" >> release_notes.md
+          echo "- 🔍 이미지/비디오 확대 및 탐색" >> release_notes.md
+          echo "- ⚡ 빠른 키보드 단축키 지원" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## 🔗 링크" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- [GitHub Repository](https://github.com/PiesP/xcom-enhanced-gallery)" >> release_notes.md
+          echo "- [Issues & Feedback](https://github.com/PiesP/xcom-enhanced-gallery/issues)" >> release_notes.md
+
+      - name: Delete existing release if it exists
+        run: |
+          gh release delete ${{ github.ref_name }} --yes --cleanup-tag || echo "Release does not exist, continuing..."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -63,10 +86,10 @@ jobs:
           body_path: release_notes.md
           files: |
             release/xcom-enhanced-gallery.user.js
-            release/xcom-enhanced-gallery-*.user.js
             release/checksums.txt
             dist/xcom-enhanced-gallery.user.js
           draft: false
           prerelease: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
