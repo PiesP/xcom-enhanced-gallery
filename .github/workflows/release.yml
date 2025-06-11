@@ -49,7 +49,7 @@ jobs:
           echo "" >> release_notes.md
           echo "## Installation" >> release_notes.md
           echo "### Direct Install (Recommended)" >> release_notes.md
-          echo "Click on [xcom-enhanced-gallery.user.js](https://github.com/piesp/xcom-enhanced-gallery/raw/${{ github.ref_name }}/dist/xcom-enhanced-gallery.user.js) to install directly" >> release_notes.md
+          echo "Click on [xcom-enhanced-gallery.user.js](https://github.com/PiesP/xcom-enhanced-gallery/raw/${{ github.ref_name }}/dist/xcom-enhanced-gallery.user.js) to install directly" >> release_notes.md
           echo "" >> release_notes.md
           echo "### Manual Download" >> release_notes.md
           echo "1. Download the userscript file from the assets below" >> release_notes.md

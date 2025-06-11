@@ -54,13 +54,13 @@ X.com(트위터)에서 이미지와 동영상을 고품질로 다운로드하고
 
 이 저장소의 `dist/xcom-enhanced-gallery.user.js` 파일을 클릭하여 설치하세요:
 
-🔗 **[dist/xcom-enhanced-gallery.user.js를 클릭하여 설치](https://github.com/piesp/xcom-enhanced-gallery/raw/master/dist/xcom-enhanced-gallery.user.js)**
+🔗 **[dist/xcom-enhanced-gallery.user.js를 클릭하여 설치](https://github.com/PiesP/xcom-enhanced-gallery/raw/master/dist/xcom-enhanced-gallery.user.js)**
 
 > 💡 위 링크를 클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 나타납니다.
 
 #### 방법 2: 릴리스에서 다운로드
 
-[최신 릴리스](https://github.com/piesp/xcom-enhanced-gallery/releases/latest)에서 `xcom-enhanced-gallery.user.js` 파일을 다운로드하여 설치하세요.
+[최신 릴리스](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest)에서 `xcom-enhanced-gallery.user.js` 파일을 다운로드하여 설치하세요.
 
 ### 3. X.com 방문
 
@@ -128,7 +128,7 @@ src/
 
 ```bash
 # 저장소 클론
-git clone https://github.com/your-username/xcom-enhanced-gallery.git
+git clone https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
 
 # 의존성 설치
@@ -220,7 +220,7 @@ npx @playwright/mcp@latest --browser chrome
 - **Twitter API 변경**: Twitter의 API 변경 시 동영상 다운로드가 일시적으로 작동하지 않을 수 있습니다
 - **큰 미디어 파일**: 매우 큰 동영상 파일의 경우 다운로드가 느릴 수 있습니다
 
-이슈 발견 시 [GitHub Issues](https://github.com/your-username/xcom-enhanced-gallery/issues)에 신고해 주세요.
+이슈 발견 시 [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)에 신고해 주세요.
 
 ## 📄 라이선스 및 저작권
 
@@ -265,9 +265,9 @@ AI 도구는 개발 효율성을 높이고 코드 품질을 향상시키는 보�
 
 ## 📞 지원 및 문의
 
-- **버그 신고**: [GitHub Issues](https://github.com/your-username/xcom-enhanced-gallery/issues)
-- **기능 요청**: [Feature Request](https://github.com/your-username/xcom-enhanced-gallery/issues/new?template=feature_request.md)
-- **일반 문의**: [Discussions](https://github.com/your-username/xcom-enhanced-gallery/discussions)
+- **버그 신고**: [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
+- **기능 요청**: [Feature Request](https://github.com/PiesP/xcom-enhanced-gallery/issues/new?template=feature_request.md)
+- **일반 문의**: [Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
 
 ---
 
