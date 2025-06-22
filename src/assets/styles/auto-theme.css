@@ -1,0 +1,139 @@
+/**
+ * Transparent Theme System for X.com Enhanced Gallery
+ * @version 2.0.0
+ *
+ * @description
+ * 투명을 기조로 하는 단순하고 깔끔한 테마 시스템입니다.
+ * 복잡한 테마 변경 기능은 제거하고, 투명도와 블러 효과를 활용한
+ * 모던하고 일관된 디자인을 제공합니다.
+ */
+
+/* ===== 투명 기조 색상 시스템 ===== */
+
+:root {
+  /* 투명 배경 색상 */
+  --xeg-transparent-bg-light: rgba(255, 255, 255, 0.85);
+  --xeg-transparent-bg-medium: rgba(255, 255, 255, 0.65);
+  --xeg-transparent-bg-dark: rgba(0, 0, 0, 0.85);
+  --xeg-transparent-bg-overlay: rgba(0, 0, 0, 0.9);
+
+  /* 블러 효과 */
+  --xeg-blur-light: blur(12px);
+  --xeg-blur-medium: blur(16px);
+  --xeg-blur-strong: blur(20px);
+
+  /* 투명 테두리 */
+  --xeg-transparent-border: rgba(255, 255, 255, 0.2);
+  --xeg-transparent-border-dark: rgba(0, 0, 0, 0.1);
+
+  /* 투명 그림자 */
+  --xeg-transparent-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --xeg-transparent-shadow-strong: 0 16px 64px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== 기본 시스템 테마 자동 감지 ===== */
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --xeg-auto-surface: var(--xeg-transparent-bg-light);
+    --xeg-auto-text: #1e293b;
+    --xeg-auto-text-secondary: #475569;
+    --xeg-auto-border: var(--xeg-transparent-border-dark);
+    --xeg-auto-shadow: var(--xeg-transparent-shadow);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --xeg-auto-surface: var(--xeg-transparent-bg-dark);
+    --xeg-auto-text: #f1f5f9;
+    --xeg-auto-text-secondary: #cbd5e1;
+    --xeg-auto-border: var(--xeg-transparent-border);
+    --xeg-auto-shadow: var(--xeg-transparent-shadow-strong);
+  }
+}
+
+/* ===== 투명 glassmorphism 효과 ===== */
+
+.xeg-glass {
+  background: var(--xeg-auto-surface);
+  backdrop-filter: var(--xeg-blur-medium);
+  -webkit-backdrop-filter: var(--xeg-blur-medium);
+  border: 1px solid var(--xeg-auto-border);
+  box-shadow: var(--xeg-auto-shadow);
+}
+
+.xeg-glass-light {
+  background: var(--xeg-transparent-bg-medium);
+  backdrop-filter: var(--xeg-blur-light);
+  -webkit-backdrop-filter: var(--xeg-blur-light);
+  border: 1px solid var(--xeg-transparent-border-dark);
+}
+
+.xeg-glass-strong {
+  background: var(--xeg-transparent-bg-overlay);
+  backdrop-filter: var(--xeg-blur-strong);
+  -webkit-backdrop-filter: var(--xeg-blur-strong);
+  border: 1px solid var(--xeg-transparent-border);
+}
+
+/* ===== 접근성 고려 ===== */
+
+@media (prefers-contrast: high) {
+  :root {
+    /* 고대비 모드에서는 투명도 제거 */
+    --xeg-transparent-bg-light: rgba(255, 255, 255, 1);
+    --xeg-transparent-bg-dark: rgba(0, 0, 0, 1);
+    --xeg-transparent-border: #000000;
+    --xeg-transparent-border-dark: #000000;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xeg-glass,
+  .xeg-glass-light,
+  .xeg-glass-strong {
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    /* 투명도 감소 선호 시 불투명도 증가 */
+    --xeg-transparent-bg-light: rgba(255, 255, 255, 0.95);
+    --xeg-transparent-bg-medium: rgba(255, 255, 255, 0.9);
+    --xeg-transparent-bg-dark: rgba(0, 0, 0, 0.95);
+    --xeg-transparent-bg-overlay: rgba(0, 0, 0, 0.98);
+  }
+}
+
+/* ===== 성능 최적화 ===== */
+
+.xeg-glass-optimized {
+  will-change: backdrop-filter;
+  contain: layout style;
+}
+
+.xeg-glass-optimized:hover {
+  will-change: auto;
+}
+
+/* ===== 모바일 최적화 ===== */
+
+@media (max-width: 768px) {
+  :root {
+    /* 모바일에서는 blur 효과 단순화 */
+    --xeg-blur-light: blur(8px);
+    --xeg-blur-medium: blur(12px);
+    --xeg-blur-strong: blur(16px);
+  }
+}
+
+@media (max-width: 480px) {
+  .xeg-glass {
+    /* 작은 화면에서는 성능을 위해 blur 제거 */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--xeg-transparent-bg-light);
+  }
+}

@@ -1,0 +1,274 @@
+/**
+ * LoadingSpinner component styles for X.com Enhanced Gallery
+ *
+ * @description
+ * X.com Enhanced Gallery의 LoadingSpinner 컴포넌트를 위한 CSS 모듈 스타일시트입니다.
+ * 다양한 크기와 스타일의 로딩 인디케이터를 제공하며, 오버레이 모드와 인라인 모드를 지원합니다.
+ *
+ * @features
+ * - 2가지 표시 모드 (inline, overlay)
+ * - SVG 기반 부드러운 회전 애니메이션
+ * - 로딩 텍스트 표시 지원
+ * - 다크 테마 자동 지원
+ * - 접근성을 위한 애니메이션 감소 모드 지원
+ * - CSS 커스텀 속성을 통한 테마화
+ *
+ * @accessibility
+ * - prefers-reduced-motion을 통한 애니메이션 제어
+ * - 적절한 색상 대비와 가독성 보장
+ * - 의미론적 구조를 위한 flexbox 레이아웃
+ *
+ * @browser-support
+ * - 모든 모던 브라우저 지원
+ * - CSS 애니메이션과 SVG 지원
+ * - CSS 커스텀 속성 (CSS Variables) 활용
+ *
+ * @since 1.0.0
+ * @module LoadingSpinnerStyles
+ */
+
+/**
+ * 기본 로딩 스피너 컨테이너
+ *
+ * @description
+ * 인라인 모드에서 사용되는 기본 스피너 컨테이너입니다.
+ * 스피너와 텍스트를 수평으로 배치하며, 8px 간격을 유지합니다.
+ *
+ * @layout
+ * - display: inline-flex로 인라인 요소처럼 동작
+ * - align-items: center로 수직 가운데 정렬
+ * - gap: 8px로 스피너와 텍스트 간격 설정
+ */
+.xeg-loading-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/**
+ * 오버레이 모드 스피너
+ *
+ * @description
+ * 전체 화면을 덮는 오버레이 모드 스피너입니다.
+ * 페이지 전체 로딩 상태를 표시할 때 사용됩니다.
+ *
+ * @layout
+ * - position: fixed로 뷰포트에 고정
+ * - 전체 화면 커버 (100vw × 100vh)
+ * - 중앙 정렬 레이아웃
+ * - 반투명 배경으로 뒤 콘텐츠 흐리게 처리
+ *
+ * @z-index 9999로 최상위 레이어에 표시
+ */
+.xeg-loading-spinner--overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 9999;
+}
+
+/**
+ * 오버레이 모드 콘텐츠 컨테이너
+ *
+ * @description
+ * 오버레이 모드에서 스피너와 텍스트를 감싸는 컨테이너입니다.
+ * 카드 스타일의 디자인과 그림자 효과를 제공합니다.
+ *
+ * @features
+ * - 수직 레이아웃 (flex-direction: column)
+ * - 12px 요소 간격
+ * - 24px 내부 패딩
+ * - 8px 모서리 둥글기
+ * - 부드러운 그림자 효과
+ */
+.xeg-loading-spinner__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--xeg-color-background, #ffffff);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/**
+ * 스피너 SVG 요소
+ *
+ * @description
+ * 회전 애니메이션이 적용되는 SVG 스피너입니다.
+ * 1초 주기로 360도 회전합니다.
+ *
+ * @animation xeg-spinner-rotate (1s linear infinite)
+ */
+.xeg-loading-spinner__svg {
+  animation: xeg-spinner-rotate 1s linear infinite;
+}
+
+/**
+ * 스피너 원형 경로
+ *
+ * @description
+ * 스피너의 원형 경로에 적용되는 대시 애니메이션입니다.
+ * 2초 주기로 stroke-dasharray와 stroke-dashoffset이 변화합니다.
+ *
+ * @animation xeg-spinner-dash (2s ease-in-out infinite)
+ * @features
+ * - stroke-linecap: round로 끝점 둥글게 처리
+ * - 부드러운 대시 패턴 애니메이션
+ */
+.xeg-loading-spinner__circle {
+  animation: xeg-spinner-dash 2s ease-in-out infinite;
+  stroke-linecap: round;
+}
+
+/**
+ * 인라인 모드 텍스트
+ *
+ * @description
+ * 인라인 모드에서 스피너와 함께 표시되는 텍스트입니다.
+ * 작은 크기와 보조 색상으로 표시됩니다.
+ *
+ * @typography
+ * - font-size: 14px (작은 크기)
+ * - color: 보조 텍스트 색상
+ * - white-space: nowrap으로 줄바꿈 방지
+ */
+.xeg-loading-spinner__text {
+  font-size: 14px;
+  color: var(--xeg-color-text-secondary, #536471);
+  white-space: nowrap;
+}
+
+/**
+ * 오버레이 모드 텍스트
+ *
+ * @description
+ * 오버레이 모드에서 표시되는 텍스트의 강조된 스타일입니다.
+ * 더 큰 크기와 굵은 글꼴로 가독성을 높입니다.
+ *
+ * @typography
+ * - font-size: 16px (큰 크기)
+ * - font-weight: 500 (중간 굵기)
+ * - color: 주 텍스트 색상
+ */
+.xeg-loading-spinner--overlay .xeg-loading-spinner__text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--xeg-color-text, #0f1419);
+}
+
+/* ===== 애니메이션 정의 (Animations) ===== */
+
+/**
+ * 스피너 회전 애니메이션
+ *
+ * @description
+ * SVG 스피너를 360도 회전시키는 키프레임 애니메이션입니다.
+ * 시계 방향으로 연속 회전합니다.
+ *
+ * @keyframes
+ * - 0%: transform: rotate(0deg)
+ * - 100%: transform: rotate(360deg)
+ */
+@keyframes xeg-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/**
+ * 스피너 대시 애니메이션
+ *
+ * @description
+ * 원형 경로의 stroke-dasharray와 stroke-dashoffset을 조작하여
+ * 대시가 원을 따라 이동하는 듯한 효과를 만듭니다.
+ *
+ * @keyframes
+ * - 0%: 대시 없음 (stroke-dasharray: 0 31.416)
+ * - 50%: 반원 대시 (stroke-dasharray: 15.708 15.708)
+ * - 100%: 대시 없음, 오프셋 이동 완료
+ *
+ * @note 31.416은 반지름 5px 원의 둘레 (2π × 5)
+ */
+@keyframes xeg-spinner-dash {
+  0% {
+    stroke-dasharray: 0 31.416;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 15.708 15.708;
+    stroke-dashoffset: -15.708;
+  }
+  100% {
+    stroke-dasharray: 0 31.416;
+    stroke-dashoffset: -31.416;
+  }
+}
+
+/* ===== 다크 테마 지원 (Dark Theme Support) ===== */
+
+/**
+ * 다크 테마 스타일
+ *
+ * @description
+ * prefers-color-scheme: dark 미디어 쿼리를 통해
+ * 다크 테마 환경에서 적절한 색상을 제공합니다.
+ *
+ * @features
+ * - 오버레이 배경: 반투명 검은색
+ * - 콘텐츠 배경: 어두운 배경색
+ * - 텍스트 색상: 밝은 색상으로 변경
+ * - CSS 커스텀 속성을 통한 테마 색상 활용
+ */
+@media (prefers-color-scheme: dark) {
+  .xeg-loading-spinner--overlay {
+    background: var(--xeg-bg-overlay-dark);
+  }
+
+  .xeg-loading-spinner__content {
+    background: var(--xeg-color-background-dark, #15202b);
+    color: var(--xeg-color-text-dark, #e7e9ea);
+  }
+
+  .xeg-loading-spinner__text {
+    color: var(--xeg-color-text-secondary-dark, #8b98a5);
+  }
+
+  .xeg-loading-spinner--overlay .xeg-loading-spinner__text {
+    color: var(--xeg-color-text-dark, #e7e9ea);
+  }
+}
+
+/* ===== 접근성: 애니메이션 감소 지원 (Reduced Motion Support) ===== */
+
+/**
+ * 애니메이션 감소 모드
+ *
+ * @description
+ * prefers-reduced-motion: reduce 설정을 가진 사용자를 위해
+ * 모든 애니메이션을 비활성화합니다. 전정 장애나 주의력 장애가 있는
+ * 사용자의 접근성을 향상시킵니다.
+ *
+ * @accessibility
+ * - 회전 애니메이션 비활성화
+ * - 대시 애니메이션 비활성화
+ * - 정적인 원형 로딩 인디케이터로 표시
+ */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-loading-spinner__svg {
+    animation: none;
+  }
+
+  .xeg-loading-spinner__circle {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+}

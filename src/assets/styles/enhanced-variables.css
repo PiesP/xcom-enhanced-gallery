@@ -1,0 +1,418 @@
+/**
+ * Enhanced CSS Variables System for X.com Enhanced Gallery
+ * @version 2.0.0 - Comprehensive design system with responsive and theme support
+ */
+
+:root {
+  /* ===========================================
+     색상 시스템 (Light Theme Base)
+     =========================================== */
+
+  /* Primary Colors */
+  --xeg-color-primary: #1d9bf0;
+  --xeg-color-primary-hover: #1a8cd8;
+  --xeg-color-primary-active: #1570b3;
+  --xeg-color-primary-light: rgba(29, 155, 240, 0.1);
+  --xeg-color-primary-lighter: rgba(29, 155, 240, 0.05);
+
+  /* Secondary Colors */
+  --xeg-color-secondary: #536471;
+  --xeg-color-secondary-hover: #404040;
+  --xeg-color-secondary-light: rgba(83, 100, 113, 0.1);
+
+  /* Surface Colors */
+  --xeg-color-surface: #ffffff;
+  --xeg-color-surface-elevated: #ffffff;
+  --xeg-color-surface-hover: #f7f9fa;
+  --xeg-color-surface-pressed: #e1e8ed;
+  --xeg-color-surface-dark: #15202b;
+  --xeg-color-surface-darker: #0f1419;
+
+  /* Text Colors */
+  --xeg-color-text-primary: #0f1419;
+  --xeg-color-text-secondary: #536471;
+  --xeg-color-text-tertiary: #8b98a5;
+  --xeg-color-text-inverse: #ffffff;
+  --xeg-color-text-disabled: #b9cad3;
+
+  /* Border Colors */
+  --xeg-color-border: #e1e8ed;
+  --xeg-color-border-strong: #cfd9de;
+  --xeg-color-border-weak: #f1f3f4;
+  --xeg-color-border-interactive: var(--xeg-color-primary);
+
+  /* Status Colors */
+  --xeg-color-success: #00ba7c;
+  --xeg-color-success-light: rgba(0, 186, 124, 0.1);
+  --xeg-color-warning: #ffad1f;
+  --xeg-color-warning-light: rgba(255, 173, 31, 0.1);
+  --xeg-color-error: #f4212e;
+  --xeg-color-error-light: rgba(244, 33, 46, 0.1);
+  --xeg-color-info: #1d9bf0;
+  --xeg-color-info-light: rgba(29, 155, 240, 0.1);
+
+  /* ===========================================
+     간격 시스템 (8px 기반)
+     =========================================== */
+
+  --xeg-spacing-xs: 2px;
+  --xeg-spacing-sm: 4px;
+  --xeg-spacing-md: 8px;
+  --xeg-spacing-lg: 12px;
+  --xeg-spacing-xl: 16px;
+  --xeg-spacing-2xl: 24px;
+  --xeg-spacing-3xl: 32px;
+  --xeg-spacing-4xl: 48px;
+  --xeg-spacing-5xl: 64px;
+  --xeg-spacing-6xl: 96px;
+
+  /* Component Specific Spacing */
+  --xeg-spacing-component-sm: 8px;
+  --xeg-spacing-component-md: 16px;
+  --xeg-spacing-component-lg: 24px;
+  --xeg-spacing-section: 48px;
+
+  /* ===========================================
+     타이포그래피 시스템
+     =========================================== */
+
+  /* Font Families */
+  --xeg-font-family-primary:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --xeg-font-family-mono:
+    'SF Mono', Monaco, 'Inconsolata', 'Roboto Mono', Consolas, 'Courier New', monospace;
+
+  /* Font Sizes */
+  --xeg-font-size-xs: 0.75rem; /* 12px */
+  --xeg-font-size-sm: 0.875rem; /* 14px */
+  --xeg-font-size-md: 1rem; /* 16px */
+  --xeg-font-size-lg: 1.125rem; /* 18px */
+  --xeg-font-size-xl: 1.25rem; /* 20px */
+  --xeg-font-size-2xl: 1.5rem; /* 24px */
+  --xeg-font-size-3xl: 1.875rem; /* 30px */
+  --xeg-font-size-4xl: 2.25rem; /* 36px */
+
+  /* Font Weights */
+  --xeg-font-weight-light: 300;
+  --xeg-font-weight-normal: 400;
+  --xeg-font-weight-medium: 500;
+  --xeg-font-weight-semibold: 600;
+  --xeg-font-weight-bold: 700;
+  --xeg-font-weight-extrabold: 800;
+
+  /* Line Heights */
+  --xeg-line-height-tight: 1.25;
+  --xeg-line-height-normal: 1.5;
+  --xeg-line-height-relaxed: 1.75;
+
+  /* ===========================================
+     레이아웃 시스템
+     =========================================== */
+
+  /* Container Widths */
+  --xeg-container-xs: 480px;
+  --xeg-container-sm: 640px;
+  --xeg-container-md: 768px;
+  --xeg-container-lg: 1024px;
+  --xeg-container-xl: 1280px;
+  --xeg-container-2xl: 1536px;
+
+  /* Component Sizes */
+  --xeg-button-size-sm: 32px;
+  --xeg-button-size-md: 40px;
+  --xeg-button-size-lg: 48px;
+  --xeg-button-size-xl: 56px;
+
+  --xeg-input-size-sm: 32px;
+  --xeg-input-size-md: 40px;
+  --xeg-input-size-lg: 48px;
+
+  --xeg-avatar-size-xs: 24px;
+  --xeg-avatar-size-sm: 32px;
+  --xeg-avatar-size-md: 40px;
+  --xeg-avatar-size-lg: 48px;
+  --xeg-avatar-size-xl: 64px;
+
+  /* ===========================================
+     테두리 및 모서리
+     =========================================== */
+
+  /* Border Radius */
+  --xeg-radius-none: 0;
+  --xeg-radius-sm: 4px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 12px;
+  --xeg-radius-xl: 16px;
+  --xeg-radius-2xl: 24px;
+  --xeg-radius-full: 9999px;
+
+  /* Border Widths */
+  --xeg-border-width-thin: 1px;
+  --xeg-border-width-medium: 2px;
+  --xeg-border-width-thick: 4px;
+
+  /* ===========================================
+     애니메이션 시스템
+     =========================================== */
+
+  /* Duration */
+  --xeg-duration-instant: 0ms;
+  --xeg-duration-fast: 150ms;
+  --xeg-duration-normal: 300ms;
+  --xeg-duration-slow: 500ms;
+  --xeg-duration-slower: 750ms;
+  --xeg-duration-slowest: 1000ms;
+
+  /* Easing Functions */
+  --xeg-ease-linear: linear;
+  --xeg-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --xeg-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --xeg-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --xeg-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Combined Transitions */
+  --xeg-transition-fast: var(--xeg-duration-fast) var(--xeg-ease-out);
+  --xeg-transition-normal: var(--xeg-duration-normal) var(--xeg-ease-out);
+  --xeg-transition-slow: var(--xeg-duration-slow) var(--xeg-ease-out);
+  --xeg-transition-bounce: var(--xeg-duration-normal) var(--xeg-ease-bounce);
+  --xeg-transition-spring: var(--xeg-duration-normal) var(--xeg-ease-spring);
+
+  /* ===========================================
+     그림자 시스템
+     =========================================== */
+
+  --xeg-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --xeg-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --xeg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --xeg-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --xeg-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --xeg-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --xeg-shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+  /* ===========================================
+     Z-index 스케일
+     =========================================== */
+
+  --xeg-z-base: 0;
+  --xeg-z-raised: 10;
+  --xeg-z-dropdown: 100;
+  --xeg-z-sticky: 200;
+  --xeg-z-fixed: 300;
+  --xeg-z-modal-backdrop: 400;
+  --xeg-z-modal: 500;
+  --xeg-z-popover: 600;
+  --xeg-z-tooltip: 700;
+  --xeg-z-toast: 800;
+  --xeg-z-gallery: 999;
+  --xeg-z-maximum: 9999;
+
+  /* ===========================================
+     반응형 브레이크포인트
+     =========================================== */
+
+  --xeg-breakpoint-sm: 576px;
+  --xeg-breakpoint-md: 768px;
+  --xeg-breakpoint-lg: 992px;
+  --xeg-breakpoint-xl: 1200px;
+  --xeg-breakpoint-2xl: 1400px;
+
+  /* ===========================================
+     갤러리 특화 변수
+     =========================================== */
+
+  /* Gallery Colors */
+  --xeg-gallery-backdrop: rgba(0, 0, 0, 0.9);
+  --xeg-gallery-surface: rgba(0, 0, 0, 0.8);
+  --xeg-gallery-control-bg: rgba(255, 255, 255, 0.1);
+  --xeg-gallery-control-hover: rgba(255, 255, 255, 0.2);
+  --xeg-gallery-control-active: rgba(255, 255, 255, 0.3);
+
+  /* Gallery Dimensions */
+  --xeg-gallery-toolbar-height: 60px;
+  --xeg-gallery-nav-size: 48px;
+  --xeg-gallery-control-size: 40px;
+  --xeg-gallery-thumbnail-size: 80px;
+
+  /* Gallery Spacing */
+  --xeg-gallery-padding: var(--xeg-spacing-2xl);
+  --xeg-gallery-gap: var(--xeg-spacing-lg);
+}
+
+/* ===========================================
+   다크 테마
+   =========================================== */
+
+[data-theme='dark'],
+:root.dark-theme {
+  /* Surface Colors */
+  --xeg-color-surface: #15202b;
+  --xeg-color-surface-elevated: #192734;
+  --xeg-color-surface-hover: #1e2732;
+  --xeg-color-surface-pressed: #273340;
+  --xeg-color-surface-dark: #0f1419;
+  --xeg-color-surface-darker: #000000;
+
+  /* Text Colors */
+  --xeg-color-text-primary: #e7e9ea;
+  --xeg-color-text-secondary: #71767b;
+  --xeg-color-text-tertiary: #536471;
+  --xeg-color-text-disabled: #3a444c;
+
+  /* Border Colors */
+  --xeg-color-border: #2f3336;
+  --xeg-color-border-strong: #536471;
+  --xeg-color-border-weak: #202327;
+
+  /* Gallery Colors for Dark Theme */
+  --xeg-gallery-backdrop: rgba(0, 0, 0, 0.95);
+  --xeg-gallery-surface: rgba(21, 32, 43, 0.9);
+}
+
+/* ===========================================
+   시스템 다크 모드 대응
+   =========================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --xeg-color-surface: #15202b;
+    --xeg-color-surface-elevated: #192734;
+    --xeg-color-surface-hover: #1e2732;
+    --xeg-color-surface-pressed: #273340;
+    --xeg-color-surface-dark: #0f1419;
+    --xeg-color-surface-darker: #000000;
+
+    --xeg-color-text-primary: #e7e9ea;
+    --xeg-color-text-secondary: #71767b;
+    --xeg-color-text-tertiary: #536471;
+    --xeg-color-text-disabled: #3a444c;
+
+    --xeg-color-border: #2f3336;
+    --xeg-color-border-strong: #536471;
+    --xeg-color-border-weak: #202327;
+
+    --xeg-gallery-backdrop: rgba(0, 0, 0, 0.95);
+    --xeg-gallery-surface: rgba(21, 32, 43, 0.9);
+  }
+}
+
+/* ===========================================
+   고대비 모드 대응
+   =========================================== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-color-border: #000000;
+    --xeg-color-border-strong: #000000;
+    --xeg-shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+    --xeg-shadow-md: 0 4px 8px 0 rgba(0, 0, 0, 0.3);
+    --xeg-shadow-lg: 0 8px 16px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ===========================================
+   모션 감소 선호 대응
+   =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --xeg-duration-fast: 0.01ms;
+    --xeg-duration-normal: 0.01ms;
+    --xeg-duration-slow: 0.01ms;
+    --xeg-duration-slower: 0.01ms;
+    --xeg-duration-slowest: 0.01ms;
+
+    --xeg-transition-fast: none;
+    --xeg-transition-normal: none;
+    --xeg-transition-slow: none;
+    --xeg-transition-bounce: none;
+    --xeg-transition-spring: none;
+  }
+}
+
+/* ===========================================
+   인쇄 미디어 대응
+   =========================================== */
+
+@media print {
+  :root {
+    --xeg-color-surface: #ffffff;
+    --xeg-color-text-primary: #000000;
+    --xeg-color-text-secondary: #333333;
+    --xeg-color-border: #cccccc;
+
+    /* Remove shadows for print */
+    --xeg-shadow-xs: none;
+    --xeg-shadow-sm: none;
+    --xeg-shadow-md: none;
+    --xeg-shadow-lg: none;
+    --xeg-shadow-xl: none;
+    --xeg-shadow-2xl: none;
+  }
+}
+
+/* ===========================================
+   레거시 브라우저 지원
+   =========================================== */
+
+/* Fallback values for older browsers */
+:root {
+  color: #0f1419; /* fallback for --xeg-color-text-primary */
+  background-color: #ffffff; /* fallback for --xeg-color-surface */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ===========================================
+   개발자 도구 및 디버깅
+   =========================================== */
+
+/* Development mode indicators */
+:root[data-env='development'] {
+  --xeg-debug-border: 1px solid red;
+}
+
+:root[data-env='development'] * {
+  /* Enable debugging borders in development */
+  /* border: var(--xeg-debug-border); */
+}
+
+/* ===========================================
+   사용자 정의 속성 검증
+   =========================================== */
+
+/* CSS feature detection and validation */
+@supports (color: color(display-p3 1 0 0)) {
+  :root {
+    /* Use wider color gamut when supported */
+    --xeg-color-primary: color(display-p3 0.114 0.608 0.941);
+  }
+}
+
+@supports (backdrop-filter: blur(10px)) {
+  :root {
+    --xeg-gallery-backdrop: rgba(0, 0, 0, 0.7);
+    --xeg-gallery-backdrop-filter: blur(10px);
+  }
+}
+
+/* ===========================================
+   접근성 개선
+   =========================================== */
+
+/* Focus indicators */
+:root {
+  --xeg-focus-ring: 2px solid var(--xeg-color-primary);
+  --xeg-focus-ring-offset: 2px;
+  --xeg-focus-ring-color: var(--xeg-color-primary);
+}
+
+/* Large text preference */
+@media (prefers-color-scheme: large) {
+  :root {
+    --xeg-font-size-xs: 0.875rem;
+    --xeg-font-size-sm: 1rem;
+    --xeg-font-size-md: 1.125rem;
+    --xeg-font-size-lg: 1.25rem;
+    --xeg-font-size-xl: 1.375rem;
+  }
+}

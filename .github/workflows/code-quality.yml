@@ -1,0 +1,59 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+    paths: ['src/**/*.{ts,tsx}', 'scripts/**/*.{ts,js}', 'package.json', 'tsconfig.json']
+  pull_request:
+    branches: [main, develop]
+    paths: ['src/**/*.{ts,tsx}', 'scripts/**/*.{ts,js}', 'package.json', 'tsconfig.json']
+  schedule:
+    - cron: '0 2 * * 1' # Weekly on Monday at 2 AM
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Quality Check
+        run: npm run quality
+
+      - name: Generate dependency reports
+        run: npm run deps:all
+
+      - name: Build and analyze bundle
+        run: |
+          npm run build
+          node scripts/build-metrics.js
+
+      - name: Upload quality reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports-${{ github.sha }}
+          path: |
+            docs/dependency-report.html
+            docs/dependency-graph.svg
+            docs/dependency-graph.json
+            build-metrics.json
+          retention-days: 30

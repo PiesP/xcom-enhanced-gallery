@@ -1,0 +1,483 @@
+/**
+ * ErrorBoundary component styles for X.com Enhanced Gallery
+ *
+ * @description
+ * X.com Enhanced Gallery의 ErrorBoundary 컴포넌트를 위한 CSS 모듈 스타일시트입니다.
+ * JavaScript 오류가 발생했을 때 사용자 친화적인 에러 화면을 표시하기 위한
+ * 스타일을 정의합니다. 다크 테마 지원과 반응형 디자인을 포함합니다.
+ *
+ * @features
+ * - 중앙 정렬된 에러 화면 레이아웃
+ * - 아이콘, 제목, 설명, 액션 버튼을 포함한 구조화된 UI
+ * - 개발자용 에러 상세 정보 표시 (접을 수 있는 섹션)
+ * - 다크 테마 자동 지원
+ * - 모바일 친화적 반응형 디자인
+ * - CSS 커스텀 속성을 통한 테마화 지원
+ *
+ * @layout-structure
+ * ```
+ * .xeg-error-boundary
+ * └── .xeg-error-boundary__content
+ *     ├── .xeg-error-boundary__icon
+ *     ├── .xeg-error-boundary__title
+ *     ├── .xeg-error-boundary__description
+ *     ├── .xeg-error-boundary__button
+ *     └── .xeg-error-boundary__details
+ *         ├── summary
+ *         └── .xeg-error-boundary__error-info
+ *             ├── h4
+ *             └── pre
+ * ```
+ *
+ * @accessibility
+ * - focus-visible을 통한 키보드 내비게이션 지원
+ * - 적절한 색상 대비와 가독성 보장
+ * - 의미론적 HTML 요소(details/summary) 활용
+ * - 모노스페이스 폰트로 코드 가독성 향상
+ *
+ * @browser-support
+ * - 모든 모던 브라우저 지원
+ * - CSS Grid와 Flexbox 활용
+ * - CSS 커스텀 속성 (CSS Variables) 활용
+ * - media query를 통한 다크 테마와 반응형 지원
+ *
+ * @theming
+ * CSS 커스텀 속성을 통해 다음과 같은 테마 변수를 지원합니다:
+ * - --xeg-color-background: 배경색
+ * - --xeg-color-border: 테두리색
+ * - --xeg-color-text: 주요 텍스트색
+ * - --xeg-color-text-secondary: 보조 텍스트색
+ * - --xeg-color-primary: 기본 액션 색상
+ * - --xeg-color-danger: 위험/오류 색상
+ *
+ * @since 1.0.0
+ * @module ErrorBoundaryStyles
+ */
+
+/**
+ * 에러 바운더리 메인 컨테이너
+ *
+ * @description
+ * 에러가 발생했을 때 표시되는 메인 컨테이너입니다.
+ * 중앙 정렬된 플렉스 레이아웃을 사용하여 에러 콘텐츠를 화면 중앙에 배치합니다.
+ *
+ * @layout
+ * - display: flex로 플렉스 컨테이너 설정
+ * - align-items: center로 수직 가운데 정렬
+ * - justify-content: center로 수평 가운데 정렬
+ * - min-height: 200px로 최소 높이 보장
+ *
+ * @visual
+ * - padding: 24px로 내부 여백 설정
+ * - border-radius: 8px로 둥근 모서리
+ * - border: 1px solid로 경계선 설정
+ * - CSS 커스텀 속성을 통한 테마 지원
+ */
+.xeg-error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 24px;
+  background: var(--xeg-color-background, #ffffff);
+  border-radius: 8px;
+  border: 1px solid var(--xeg-color-border, #e1e8ed);
+}
+
+/**
+ * 에러 콘텐츠 래퍼
+ *
+ * @description
+ * 에러 정보를 담는 콘텐츠 영역입니다. 아이콘, 제목, 설명, 버튼 등
+ * 모든 에러 관련 UI 요소들을 포함하는 컨테이너 역할을 합니다.
+ *
+ * @layout
+ * - text-align: center로 텍스트 중앙 정렬
+ * - max-width: 480px로 최대 너비 제한 (가독성 향상)
+ *
+ * @responsive
+ * 모바일에서는 max-width 제한을 해제하여 전체 너비 활용
+ */
+.xeg-error-boundary__content {
+  text-align: center;
+  max-width: 480px;
+}
+
+/**
+ * 에러 아이콘 컨테이너
+ *
+ * @description
+ * 에러를 시각적으로 나타내는 아이콘을 표시하는 영역입니다.
+ * 일반적으로 경고나 오류를 나타내는 SVG 아이콘이 배치됩니다.
+ *
+ * @layout
+ * - display: flex로 플렉스 컨테이너 설정
+ * - justify-content: center로 아이콘 중앙 정렬
+ * - margin-bottom: 16px로 아래 요소와의 간격 설정
+ *
+ * @visual
+ * - color: var(--xeg-color-danger)로 위험 색상 적용
+ * - 기본값 #f4212e (빨간색)
+ */
+.xeg-error-boundary__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: var(--xeg-color-danger, #f4212e);
+}
+
+/**
+ * 에러 제목
+ *
+ * @description
+ * 에러의 주요 메시지를 표시하는 제목 영역입니다.
+ * 사용자가 가장 먼저 인식할 수 있는 핵심 정보를 담습니다.
+ *
+ * @typography
+ * - font-size: 20px로 크고 눈에 띄는 크기
+ * - font-weight: 700으로 볼드 처리
+ * - margin: 0 0 12px 0으로 아래 간격만 설정
+ *
+ * @visual
+ * - color: var(--xeg-color-text)로 주요 텍스트 색상 적용
+ * - 기본값 #0f1419 (짙은 회색)
+ *
+ * @responsive
+ * 모바일에서는 font-size: 18px로 약간 축소
+ */
+.xeg-error-boundary__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--xeg-color-text, #0f1419);
+  margin: 0 0 12px 0;
+}
+
+/**
+ * 에러 설명
+ *
+ * @description
+ * 에러에 대한 상세한 설명이나 해결 방법을 안내하는 텍스트 영역입니다.
+ * 사용자가 에러 상황을 이해하고 다음 행동을 취할 수 있도록 돕습니다.
+ *
+ * @typography
+ * - font-size: 16px로 가독성 좋은 크기
+ * - line-height: 1.5로 충분한 줄간격
+ * - margin: 0 0 24px 0으로 아래 버튼과의 간격 설정
+ *
+ * @visual
+ * - color: var(--xeg-color-text-secondary)로 보조 텍스트 색상 적용
+ * - 기본값 #536471 (회색)
+ *
+ * @responsive
+ * 모바일에서는 font-size: 15px로 약간 축소
+ */
+.xeg-error-boundary__description {
+  font-size: 16px;
+  color: var(--xeg-color-text-secondary, #536471);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+/**
+ * 액션 버튼 (예: 새로고침, 재시도)
+ *
+ * @description
+ * 사용자가 에러 상황에서 취할 수 있는 액션(새로고침, 재시도 등)을
+ * 실행할 수 있는 버튼입니다. 명확한 CTA(Call To Action) 역할을 합니다.
+ *
+ * @layout
+ * - display: inline-flex로 인라인 플렉스 컨테이너
+ * - align-items: center로 수직 가운데 정렬
+ * - justify-content: center로 수평 가운데 정렬
+ * - padding: 12px 24px로 충분한 클릭 영역 확보
+ *
+ * @visual
+ * - background: var(--xeg-color-primary)로 기본 브랜드 색상
+ * - color: var(--xeg-color-primary-text)로 버튼 텍스트 색상
+ * - border-radius: 6px로 둥근 모서리
+ * - border: none으로 기본 테두리 제거
+ *
+ * @typography
+ * - font-size: 15px로 적절한 크기
+ * - font-weight: 500으로 중간 굵기
+ *
+ * @interaction
+ * - cursor: pointer로 클릭 가능 표시
+ * - transition: background-color 0.2s ease로 부드러운 호버 효과
+ * - :hover 상태에서 배경색 변경
+ * - :focus-visible 상태에서 아웃라인 표시 (접근성)
+ */
+.xeg-error-boundary__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  background: var(--xeg-color-primary, #1d9bf0);
+  color: var(--xeg-color-primary-text, #ffffff);
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/**
+ * 버튼 호버 상태
+ *
+ * @description
+ * 마우스를 버튼 위에 올렸을 때의 시각적 피드백을 제공합니다.
+ *
+ * @visual
+ * - background: var(--xeg-color-primary-hover)로 어두운 색상 적용
+ * - 기본값 #1a8cd8 (더 어두운 파란색)
+ */
+.xeg-error-boundary__button:hover {
+  background: var(--xeg-color-primary-hover, #1a8cd8);
+}
+
+/**
+ * 버튼 포커스 상태 (접근성)
+ *
+ * @description
+ * 키보드 내비게이션 시 현재 포커스된 버튼을 시각적으로 표시합니다.
+ * focus-visible을 사용하여 마우스 클릭 시에는 아웃라인이 표시되지 않습니다.
+ *
+ * @accessibility
+ * - outline: 2px solid로 명확한 포커스 표시
+ * - outline-offset: 2px로 버튼과 아웃라인 간격
+ * - var(--xeg-color-focus)로 브랜드 색상 활용
+ */
+.xeg-error-boundary__button:focus-visible {
+  outline: 2px solid var(--xeg-color-focus, #1d9bf0);
+  outline-offset: 2px;
+}
+
+/**
+ * 에러 상세 정보 컨테이너 (접을 수 있는 섹션)
+ *
+ * @description
+ * 개발자나 고급 사용자를 위한 상세한 에러 정보를 담는 영역입니다.
+ * HTML5 details/summary 요소를 사용하여 접을 수 있는 섹션으로 구현됩니다.
+ *
+ * @layout
+ * - margin-top: 24px로 위 요소와의 간격 설정
+ * - text-align: left로 좌측 정렬 (코드 가독성을 위해)
+ * - overflow: hidden으로 둥근 모서리 내부 요소 잘림 처리
+ *
+ * @visual
+ * - border: 1px solid로 경계선 설정
+ * - border-radius: 6px로 둥근 모서리
+ * - var(--xeg-color-border)로 테마 색상 적용
+ */
+.xeg-error-boundary__details {
+  margin-top: 24px;
+  text-align: left;
+  border: 1px solid var(--xeg-color-border, #e1e8ed);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/**
+ * 상세 정보 토글 헤더 (summary 요소)
+ *
+ * @description
+ * 에러 상세 정보 섹션을 펼치거나 접을 수 있는 클릭 가능한 헤더입니다.
+ * 기본적으로 "에러 상세 정보" 같은 라벨을 표시합니다.
+ *
+ * @layout
+ * - padding: 12px 16px로 충분한 클릭 영역 확보
+ * - user-select: none으로 텍스트 선택 방지
+ *
+ * @visual
+ * - background: var(--xeg-color-background-secondary)로 구분되는 배경
+ * - cursor: pointer로 클릭 가능 표시
+ * - font-weight: 500으로 중간 굵기
+ *
+ * @interaction
+ * - :hover 상태에서 배경색 변경으로 상호작용 피드백
+ * - [open] 상태에서 border-bottom 추가로 열린 상태 표시
+ */
+.xeg-error-boundary__details summary {
+  padding: 12px 16px;
+  background: var(--xeg-color-background-secondary, #f7f9fa);
+  cursor: pointer;
+  font-weight: 500;
+  user-select: none;
+}
+
+/**
+ * summary 호버 상태
+ *
+ * @description
+ * 마우스를 summary 위에 올렸을 때의 시각적 피드백을 제공합니다.
+ */
+.xeg-error-boundary__details summary:hover {
+  background: var(--xeg-color-background-secondary-hover, #eff3f4);
+}
+
+/**
+ * details 열린 상태의 summary
+ *
+ * @description
+ * 상세 정보가 펼쳐진 상태에서 summary와 내용 사이의 구분선을 표시합니다.
+ */
+.xeg-error-boundary__details[open] summary {
+  border-bottom: 1px solid var(--xeg-color-border, #e1e8ed);
+}
+
+/**
+ * 에러 상세 정보 내용
+ *
+ * @description
+ * 실제 에러 메시지, 스택 트레이스, 추가 디버깅 정보를 표시하는 영역입니다.
+ * 개발자가 문제를 진단할 수 있도록 기술적인 정보를 제공합니다.
+ *
+ * @layout
+ * - padding: 16px로 내부 여백 설정
+ *
+ * @typography
+ * - font-family: 모노스페이스 폰트로 코드 가독성 향상
+ * - font-size: 12px로 작은 크기 (많은 정보 표시를 위해)
+ * - line-height: 1.4로 적절한 줄간격
+ *
+ * @responsive
+ * 모바일에서는 padding: 12px, font-size: 11px로 축소
+ */
+.xeg-error-boundary__error-info {
+  padding: 16px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/**
+ * 에러 정보 섹션 제목 (h4)
+ *
+ * @description
+ * 에러 정보 내의 각 섹션 제목 (예: "Error Message", "Stack Trace")을
+ * 표시하는 요소입니다.
+ *
+ * @typography
+ * - margin: 0 0 8px 0으로 아래 간격만 설정
+ * - font-size: 13px로 본문보다 약간 큰 크기
+ * - font-weight: 600으로 볼드 처리
+ * - font-family: inherit로 부모의 모노스페이스 폰트 상속
+ *
+ * @visual
+ * - color: var(--xeg-color-text)로 주요 텍스트 색상
+ */
+.xeg-error-boundary__error-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--xeg-color-text, #0f1419);
+  font-family: inherit;
+}
+
+/**
+ * 에러 메시지 및 스택 트레이스 표시 영역 (pre)
+ *
+ * @description
+ * 실제 에러 메시지나 스택 트레이스를 표시하는 코드 블록입니다.
+ * 원본 포맷을 유지하면서 가독성을 높이기 위해 스타일링됩니다.
+ *
+ * @layout
+ * - margin: 0 0 16px 0으로 섹션 간 간격 설정
+ * - padding: 12px로 내부 여백
+ * - overflow-x: auto로 가로 스크롤 허용
+ *
+ * @visual
+ * - background: var(--xeg-color-code-background)로 코드 배경색
+ * - border: 1px solid로 경계선 설정
+ * - border-radius: 4px로 둥근 모서리
+ * - color: var(--xeg-color-code-text)로 코드 텍스트 색상
+ *
+ * @typography
+ * - white-space: pre-wrap으로 공백과 줄바꿈 유지
+ * - word-break: break-all로 긴 URL 등의 줄바꿈 처리
+ *
+ * @last-child
+ * 마지막 pre 요소는 margin-bottom: 0으로 불필요한 하단 여백 제거
+ */
+.xeg-error-boundary__error-info pre {
+  margin: 0 0 16px 0;
+  padding: 12px;
+  background: var(--xeg-color-code-background, #f6f8fa);
+  border: 1px solid var(--xeg-color-border, #e1e8ed);
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--xeg-color-code-text, #24292f);
+}
+
+.xeg-error-boundary__error-info pre:last-child {
+  margin-bottom: 0;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .xeg-error-boundary {
+    background: var(--xeg-color-background-dark, #15202b);
+    border-color: var(--xeg-color-border-dark, #2f3336);
+  }
+
+  .xeg-error-boundary__title {
+    color: var(--xeg-color-text-dark, #e7e9ea);
+  }
+
+  .xeg-error-boundary__description {
+    color: var(--xeg-color-text-secondary-dark, #8b98a5);
+  }
+
+  .xeg-error-boundary__details summary {
+    background: var(--xeg-color-background-secondary-dark, #1e2732);
+  }
+
+  .xeg-error-boundary__details summary:hover {
+    background: var(--xeg-color-background-secondary-hover-dark, #283341);
+  }
+
+  .xeg-error-boundary__details {
+    border-color: var(--xeg-color-border-dark, #2f3336);
+  }
+
+  .xeg-error-boundary__details[open] summary {
+    border-bottom-color: var(--xeg-color-border-dark, #2f3336);
+  }
+
+  .xeg-error-boundary__error-info h4 {
+    color: var(--xeg-color-text-dark, #e7e9ea);
+  }
+
+  .xeg-error-boundary__error-info pre {
+    background: var(--xeg-color-code-background-dark, #0d1117);
+    border-color: var(--xeg-color-border-dark, #2f3336);
+    color: var(--xeg-color-code-text-dark, #e6edf3);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .xeg-error-boundary {
+    padding: 16px;
+  }
+
+  .xeg-error-boundary__content {
+    max-width: none;
+  }
+
+  .xeg-error-boundary__title {
+    font-size: 18px;
+  }
+
+  .xeg-error-boundary__description {
+    font-size: 15px;
+  }
+
+  .xeg-error-boundary__error-info {
+    padding: 12px;
+    font-size: 11px;
+  }
+}

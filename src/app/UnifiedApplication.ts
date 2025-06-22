@@ -1,0 +1,440 @@
+/**
+ * 통합된 애플리케이션 클래스
+ *
+ * 기존의 분산된 Application 클래스들을 하나로 통합:
+ * - AppBootstrapper.ts
+ * - Application.ts
+ * - ApplicationManager.ts
+ *
+ * Clean Architecture App Layer - 애플리케이션 생명주기 관리
+ */
+
+import { removeUndefinedProperties } from '@shared/utils/core/type-safety-helpers';
+
+import { ServiceManager } from '@core/services/ServiceManager';
+import { logger } from '@infrastructure/logging/logger';
+import type { AppConfig } from '@shared/types/app';
+import { UnifiedGalleryApp } from './UnifiedGalleryApp';
+
+/**
+ * 통합된 애플리케이션 관리자
+ *
+ * 책임:
+ * - 애플리케이션 초기화 및 생명주기 관리
+ * - 서비스 등록 및 의존성 관리
+ * - 메모리 및 리소스 관리
+ * - 에러 처리 및 정리
+ */
+export class UnifiedApplication {
+  private static instance: UnifiedApplication | null = null;
+  private readonly serviceManager: ServiceManager;
+  private galleryApp: UnifiedGalleryApp | null = null;
+  private isStarted = false;
+  private config: AppConfig;
+
+  // 메모리 관리
+  private memoryMonitoringInterval: number | null = null;
+  private readonly injectedStyles = new Set<string>();
+
+  // 정리 관련
+  private readonly cleanupHandlers: (() => Promise<void> | void)[] = [];
+
+  private constructor(config: AppConfig) {
+    this.config = config;
+    this.serviceManager = ServiceManager.getInstance();
+    this.setupCleanupHandlers();
+  }
+
+  public static create(config: AppConfig): UnifiedApplication {
+    UnifiedApplication.instance ??= new UnifiedApplication(config);
+    return UnifiedApplication.instance;
+  }
+
+  /**
+   * 애플리케이션 시작
+   *
+   * 통합된 3단계 초기화:
+   * 1. 기본 인프라 초기화
+   * 2. 서비스 등록 및 초기화
+   * 3. 갤러리 앱 시작
+   */
+  public async start(): Promise<void> {
+    if (this.isStarted) {
+      logger.debug('UnifiedApplication: Already started');
+      return;
+    }
+
+    try {
+      logger.info(`🚀 X.com Enhanced Gallery v${this.config.version} 시작`);
+      const startTime = performance.now();
+
+      // 1단계: 기본 인프라 초기화
+      await this.initializeInfrastructure();
+
+      // 2단계: 서비스 시스템 초기화
+      await this.initializeServices();
+
+      // 3단계: 갤러리 앱 시작
+      await this.startGalleryApp();
+
+      // 부가 기능 초기화
+      this.initializeMemoryManagement();
+      this.setupGlobalEventHandlers();
+
+      this.isStarted = true;
+      const duration = performance.now() - startTime;
+
+      logger.info(`✅ 애플리케이션 시작 완료 (${duration.toFixed(2)}ms)`);
+
+      // 개발 모드 설정
+      if (this.config.isDevelopment) {
+        this.setupDevelopmentTools();
+      }
+    } catch (error) {
+      logger.error('❌ 애플리케이션 시작 실패:', error);
+      await this.cleanup();
+      throw error;
+    }
+  }
+
+  /**
+   * 1단계: 기본 인프라 초기화
+   */
+  private async initializeInfrastructure(): Promise<void> {
+    try {
+      // Vendor 라이브러리 초기화
+      const { initializeVendors } = await import('@infrastructure/external/vendors');
+      await initializeVendors();
+      logger.debug('✅ Vendor 라이브러리 초기화 완료');
+
+      // 기본 스타일 주입
+      this.injectBaseStyles();
+      logger.debug('✅ 기본 스타일 주입 완료');
+    } catch (error) {
+      logger.error('❌ 인프라 초기화 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 2단계: 서비스 시스템 초기화
+   */
+  private async initializeServices(): Promise<void> {
+    try {
+      // 모든 서비스 등록
+      const { registerAllServices } = await import('@core/services');
+      await registerAllServices();
+
+      // 핵심 서비스들 초기화
+      await this.serviceManager.initializeAll();
+
+      const registeredServices = this.serviceManager.getRegisteredServices();
+      logger.debug(`✅ 서비스 시스템 초기화 완료: ${registeredServices.length}개 서비스`);
+
+      if (this.config.isDevelopment) {
+        logger.debug('등록된 서비스:', registeredServices);
+      }
+    } catch (error) {
+      logger.error('❌ 서비스 시스템 초기화 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 3단계: 갤러리 앱 시작
+   */
+  private async startGalleryApp(): Promise<void> {
+    try {
+      this.galleryApp = new UnifiedGalleryApp();
+      await this.galleryApp.initialize();
+
+      // 전역 접근 등록 (정리용)
+      (globalThis as Record<string, unknown>).__XEG_APP__ = this.galleryApp;
+
+      logger.debug('✅ 갤러리 앱 시작 완료');
+    } catch (error) {
+      logger.error('❌ 갤러리 앱 시작 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 메모리 관리 초기화
+   */
+  private initializeMemoryManagement(): void {
+    if (!this.config.performanceMonitoring) {
+      return;
+    }
+
+    // 30초마다 메모리 체크
+    this.memoryMonitoringInterval = window.setInterval(() => {
+      this.checkMemoryUsage();
+    }, 30000);
+
+    logger.debug('✅ 메모리 관리 시스템 활성화');
+  }
+
+  /**
+   * 메모리 사용량 체크
+   */
+  private checkMemoryUsage(): void {
+    const memory = (performance as unknown as Record<string, unknown>).memory as
+      | { usedJSHeapSize?: number; totalJSHeapSize?: number }
+      | undefined;
+
+    if (memory?.usedJSHeapSize) {
+      const usedMB = memory.usedJSHeapSize / (1024 * 1024);
+
+      // 100MB 이상 사용 시 경고
+      if (usedMB > 100) {
+        logger.warn('높은 메모리 사용량 감지:', {
+          usedMB: Math.round(usedMB),
+          totalMB: Math.round((memory.totalJSHeapSize ?? 0) / (1024 * 1024)),
+        });
+
+        // 가비지 컬렉션 힌트
+        if ('gc' in globalThis && typeof globalThis.gc === 'function') {
+          globalThis.gc();
+        }
+      }
+    }
+  }
+
+  /**
+   * 기본 스타일 주입
+   */
+  private injectBaseStyles(): void {
+    const styleId = 'xeg-base-styles';
+
+    if (this.injectedStyles.has(styleId)) {
+      return;
+    }
+
+    const styles = `
+      /* X.com Enhanced Gallery 기본 스타일 */
+      .xeg-hidden {
+        _display: none !important;
+      }
+      .xeg-disabled {
+        pointer-events: none !important;
+        opacity: 0.5 !important;
+      }
+      .xeg-loading {
+        cursor: wait !important;
+      }
+      #xeg-gallery-root {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 999999;
+        pointer-events: none;
+      }
+    `;
+
+    const styleElement = document.createElement('style');
+    styleElement.id = styleId;
+    styleElement.textContent = styles;
+    document.head.appendChild(styleElement);
+
+    this.injectedStyles.add(styleId);
+    logger.debug('기본 스타일 주입 완료');
+  }
+
+  /**
+   * 전역 이벤트 핸들러 설정
+   */
+  private setupGlobalEventHandlers(): void {
+    // 페이지 언로드 시 정리
+    const beforeUnloadHandler = (): void => {
+      this.cleanup().catch(error => logger.error('페이지 언로드 정리 중 오류:', error));
+    };
+
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+    window.addEventListener('pagehide', beforeUnloadHandler);
+
+    this.cleanupHandlers.push(() => {
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+      window.removeEventListener('pagehide', beforeUnloadHandler);
+    });
+  }
+
+  /**
+   * 정리 핸들러 설정
+   */
+  private setupCleanupHandlers(): void {
+    // 프로세스 종료 시 정리 (Node.js 환경)
+    if (typeof process !== 'undefined') {
+      const processCleanup = (): void => {
+        this.cleanup().catch(() => {
+          // 무시 - 프로세스 종료 중
+        });
+      };
+
+      process.on('exit', processCleanup);
+      process.on('SIGINT', processCleanup);
+      process.on('SIGTERM', processCleanup);
+    }
+  }
+
+  /**
+   * 개발 도구 설정
+   */
+  private setupDevelopmentTools(): void {
+    // 전역 접근
+    (globalThis as Record<string, unknown>).__XEG_UNIFIED_APP__ = this;
+
+    // 진단 도구
+    import('@core/services/ServiceDiagnostics').then(({ diagnoseServiceManager }) => {
+      (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ = diagnoseServiceManager;
+
+      logger.debug('🛠️ 개발 도구 활성화됨:', {
+        availableCommands: ['__XEG_UNIFIED_APP__', '__XEG_DIAGNOSE__()', '__XEG_APP__ (갤러리 앱)'],
+      });
+    });
+  }
+
+  /**
+   * 애플리케이션 정리
+   */
+  public async cleanup(): Promise<void> {
+    try {
+      logger.info('🧹 애플리케이션 정리 시작');
+
+      // 갤러리 앱 정리
+      if (this.galleryApp) {
+        await this.galleryApp.cleanup();
+        this.galleryApp = null;
+        delete (globalThis as Record<string, unknown>).__XEG_APP__;
+      }
+
+      // 서비스 매니저 정리
+      this.serviceManager.cleanup();
+
+      // 메모리 모니터링 정리
+      if (this.memoryMonitoringInterval) {
+        clearInterval(this.memoryMonitoringInterval);
+        this.memoryMonitoringInterval = null;
+      }
+
+      // 스타일 정리
+      this.injectedStyles.forEach(styleId => {
+        const element = document.getElementById(styleId);
+        if (element) {
+          element.remove();
+        }
+      });
+      this.injectedStyles.clear();
+
+      // 정리 핸들러 실행
+      await Promise.all(
+        this.cleanupHandlers.map(handler =>
+          Promise.resolve(handler()).catch((error: unknown) =>
+            logger.warn('정리 핸들러 실행 중 오류:', error)
+          )
+        )
+      );
+      this.cleanupHandlers.length = 0;
+
+      this.isStarted = false;
+      logger.info('✅ 애플리케이션 정리 완료');
+    } catch (error) {
+      logger.error('❌ 애플리케이션 정리 중 오류:', error);
+    }
+  }
+
+  /**
+   * 상태 확인
+   */
+  public isRunning(): boolean {
+    return this.isStarted && this.galleryApp !== null;
+  }
+
+  /**
+   * 설정 업데이트
+   */
+  public updateConfig(newConfig: Partial<AppConfig>): void {
+    this.config = { ...this.config, ...newConfig };
+
+    // 갤러리 앱에 설정 전달
+    if (this.galleryApp) {
+      // AppConfig를 UnifiedGalleryConfig로 변환
+      const galleryConfig: Partial<import('./UnifiedGalleryApp').UnifiedGalleryConfig> =
+        removeUndefinedProperties({
+          performanceMonitoring: newConfig.performanceMonitoring,
+          keyboardShortcuts: true, // 기본값 유지
+          autoTheme: true, // 기본값 유지
+        });
+
+      this.galleryApp.updateConfig(galleryConfig);
+    }
+
+    logger.debug('설정 업데이트 완료');
+  }
+
+  /**
+   * 진단 정보 반환
+   */
+  public getDiagnostics(): {
+    application: {
+      isRunning: boolean;
+      version: string;
+      isDevelopment: boolean;
+      hasGalleryApp: boolean;
+      injectedStylesCount: number;
+      cleanupHandlersCount: number;
+    };
+    services: unknown;
+    memory: {
+      usedJSHeapSize: number | undefined;
+      totalJSHeapSize: number | undefined;
+      jsHeapSizeLimit: number | undefined;
+    };
+  } {
+    const servicesDiagnostics = this.serviceManager.getDiagnostics();
+
+    return {
+      application: {
+        isRunning: this.isRunning(),
+        version: this.config.version,
+        isDevelopment: this.config.isDevelopment,
+        hasGalleryApp: !!this.galleryApp,
+        injectedStylesCount: this.injectedStyles.size,
+        cleanupHandlersCount: this.cleanupHandlers.length,
+      },
+      services: servicesDiagnostics,
+      memory: this.getMemoryInfo(),
+    };
+  }
+
+  /**
+   * 메모리 정보 반환
+   */
+  private getMemoryInfo(): {
+    usedJSHeapSize: number | undefined;
+    totalJSHeapSize: number | undefined;
+    jsHeapSizeLimit: number | undefined;
+  } {
+    const memory = (performance as unknown as Record<string, unknown>).memory as
+      | {
+          usedJSHeapSize?: number;
+          totalJSHeapSize?: number;
+          jsHeapSizeLimit?: number;
+        }
+      | undefined;
+
+    return {
+      usedJSHeapSize: memory?.usedJSHeapSize,
+      totalJSHeapSize: memory?.totalJSHeapSize,
+      jsHeapSizeLimit: memory?.jsHeapSizeLimit,
+    };
+  }
+
+  /**
+   * 인스턴스 재설정 (테스트용)
+   */
+  public static resetInstance(): void {
+    UnifiedApplication.instance = null;
+  }
+}

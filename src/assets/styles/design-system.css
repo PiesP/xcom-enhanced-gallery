@@ -1,0 +1,254 @@
+/**
+ * X.com Enhanced Gallery - Transparent Design System
+ *
+ * @description 투명을 기조로 하는 깔끔한 디자인 시스템
+ * @version 3.0.0
+ * @license MIT
+ */
+
+:root {
+  /* ===== 투명 기조 색상 팔레트 ===== */
+
+  /* Primary Colors - 단순화된 브랜드 컬러 */
+  --xeg-color-primary: #4785a3;
+  --xeg-color-primary-hover: #5496b8;
+  --xeg-color-primary-active: #3a6f89;
+
+  /* Neutral Colors - 투명도를 활용한 색상 */
+  --xeg-neutral-50: rgba(248, 250, 252, 0.9);
+  --xeg-neutral-100: rgba(241, 245, 249, 0.9);
+  --xeg-neutral-200: rgba(226, 232, 240, 0.8);
+  --xeg-neutral-300: rgba(203, 213, 225, 0.7);
+  --xeg-neutral-400: rgba(148, 163, 184, 0.6);
+  --xeg-neutral-500: rgba(100, 116, 139, 0.9);
+  --xeg-neutral-600: rgba(71, 85, 105, 0.9);
+  --xeg-neutral-700: rgba(51, 65, 85, 0.9);
+  --xeg-neutral-800: rgba(30, 41, 59, 0.9);
+  --xeg-neutral-900: rgba(15, 23, 42, 0.95);
+
+  /* ===== 의미적 색상 (투명 기반) ===== */
+
+  /* Surface Colors - 투명 배경 */
+  --xeg-color-surface: rgba(255, 255, 255, 0.85);
+  --xeg-color-surface-hover: rgba(255, 255, 255, 0.9);
+  --xeg-color-surface-active: rgba(255, 255, 255, 0.95);
+
+  /* Text Colors - 선명한 가독성 */
+  --xeg-color-text-primary: #1e293b;
+  --xeg-color-text-secondary: #475569;
+  --xeg-color-text-tertiary: #64748b;
+  --xeg-color-text-inverse: #ffffff;
+
+  /* Border Colors - 투명 테두리 */
+  --xeg-color-border: rgba(203, 213, 225, 0.4);
+  --xeg-color-border-hover: rgba(148, 163, 184, 0.6);
+  --xeg-color-border-focus: var(--xeg-color-primary);
+
+  /* ===== 갤러리 특화 색상 (투명 기조) ===== */
+
+  /* Overlay - 투명한 오버레이 */
+  --xeg-overlay-background: rgba(0, 0, 0, 0.9);
+  --xeg-overlay-background-light: rgba(255, 255, 255, 0.9);
+
+  /* Gallery Background - 투명도 활용 */
+  --xeg-gallery-bg: var(--xeg-overlay-background);
+
+  /* Button Colors - 투명하지만 시인성 확보 */
+  --xeg-button-bg: rgba(255, 255, 255, 0.15);
+  --xeg-button-bg-hover: rgba(255, 255, 255, 0.25);
+  --xeg-button-bg-active: rgba(255, 255, 255, 0.35);
+  --xeg-button-text: var(--xeg-color-text-inverse);
+  --xeg-button-border: rgba(255, 255, 255, 0.3);
+  --xeg-button-border-hover: rgba(255, 255, 255, 0.5);
+
+  /* Toolbar - 투명한 툴바 */
+  --xeg-toolbar-bg: rgba(255, 255, 255, 0.1);
+  --xeg-toolbar-bg-hover: rgba(255, 255, 255, 0.15);
+  --xeg-toolbar-shadow: 0 4px 32px rgba(0, 0, 0, 0.1);
+
+  /* ===== 간격 시스템 (단순화) ===== */
+
+  --xeg-spacing-xs: 4px;
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 16px;
+  --xeg-spacing-lg: 24px;
+  --xeg-spacing-xl: 32px;
+
+  /* ===== 컴포넌트 크기 ===== */
+
+  /* Button Sizes - 일관된 크기 */
+  --xeg-button-size-sm: 32px;
+  --xeg-button-size-md: 40px;
+  --xeg-button-size-lg: 48px;
+
+  /* Icon Sizes */
+  --xeg-icon-size-sm: 16px;
+  --xeg-icon-size-md: 20px;
+  --xeg-icon-size-lg: 24px;
+
+  /* ===== 블러 및 투명 효과 ===== */
+
+  --xeg-blur-sm: blur(8px);
+  --xeg-blur-md: blur(12px);
+  --xeg-blur-lg: blur(16px);
+
+  /* ===== 그림자 (투명도 강화) ===== */
+
+  --xeg-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --xeg-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --xeg-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+  /* ===== Z-index 계층 (단순화) ===== */
+
+  --xeg-z-gallery: 9999;
+  --xeg-z-modal: 10000;
+  --xeg-z-tooltip: 10001;
+
+  /* ===== 애니메이션 (부드러운 전환) ===== */
+
+  --xeg-transition-fast: 150ms ease-out;
+  --xeg-transition-normal: 250ms ease-out;
+  --xeg-transition-slow: 350ms ease-out;
+
+  /* ===== 반지름 ===== */
+
+  --xeg-radius-sm: 6px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 12px;
+  --xeg-radius-full: 50%;
+}
+
+/* ===== 다크 모드 자동 적용 ===== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Surface Colors for Dark Mode */
+    --xeg-color-surface: rgba(15, 23, 42, 0.85);
+    --xeg-color-surface-hover: rgba(30, 41, 59, 0.9);
+    --xeg-color-surface-active: rgba(51, 65, 85, 0.95);
+
+    /* Text Colors for Dark Mode */
+    --xeg-color-text-primary: #f1f5f9;
+    --xeg-color-text-secondary: #cbd5e1;
+    --xeg-color-text-tertiary: #94a3b8;
+
+    /* Border Colors for Dark Mode */
+    --xeg-color-border: rgba(71, 85, 105, 0.4);
+    --xeg-color-border-hover: rgba(100, 116, 139, 0.6);
+
+    /* Gallery Background for Dark Mode */
+    --xeg-overlay-background-light: rgba(15, 23, 42, 0.9);
+  }
+}
+
+/* ===== 투명 glassmorphism 유틸리티 클래스 ===== */
+
+.xeg-glass {
+  background: var(--xeg-color-surface);
+  backdrop-filter: var(--xeg-blur-md);
+  -webkit-backdrop-filter: var(--xeg-blur-md);
+  border: 1px solid var(--xeg-color-border);
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.xeg-glass-light {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: var(--xeg-blur-sm);
+  -webkit-backdrop-filter: var(--xeg-blur-sm);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.xeg-glass-strong {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: var(--xeg-blur-lg);
+  -webkit-backdrop-filter: var(--xeg-blur-lg);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ===== 버튼 스타일 (시인성 확보) ===== */
+
+.xeg-button {
+  background: var(--xeg-button-bg);
+  color: var(--xeg-button-text);
+  border: 1px solid var(--xeg-button-border);
+  backdrop-filter: var(--xeg-blur-sm);
+  -webkit-backdrop-filter: var(--xeg-blur-sm);
+  transition: var(--xeg-transition-fast);
+  font-weight: 500;
+}
+
+.xeg-button:hover {
+  background: var(--xeg-button-bg-hover);
+  border-color: var(--xeg-button-border-hover);
+  transform: translateY(-1px);
+}
+
+.xeg-button:active {
+  background: var(--xeg-button-bg-active);
+  transform: translateY(0);
+}
+
+/* Primary Button - 더 눈에 띄는 디자인 */
+.xeg-button-primary {
+  background: var(--xeg-color-primary);
+  color: white;
+  border-color: var(--xeg-color-primary);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.xeg-button-primary:hover {
+  background: var(--xeg-color-primary-hover);
+  border-color: var(--xeg-color-primary-hover);
+  box-shadow: var(--xeg-shadow-md);
+}
+
+/* ===== 접근성 개선 ===== */
+
+@media (prefers-contrast: high) {
+  :root {
+    /* 고대비 모드에서 투명도 제거 */
+    --xeg-color-surface: rgba(255, 255, 255, 1);
+    --xeg-button-bg: rgba(255, 255, 255, 0.9);
+    --xeg-overlay-background: rgba(0, 0, 0, 1);
+  }
+
+  .xeg-glass,
+  .xeg-glass-light,
+  .xeg-glass-strong {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xeg-button,
+  .xeg-glass {
+    transition: none;
+  }
+
+  .xeg-button:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    /* 투명도 감소 선호 시 */
+    --xeg-color-surface: rgba(255, 255, 255, 0.95);
+    --xeg-button-bg: rgba(255, 255, 255, 0.8);
+    --xeg-overlay-background: rgba(0, 0, 0, 0.98);
+  }
+}
+
+/* ===== 모바일 최적화 ===== */
+
+@media (max-width: 768px) {
+  .xeg-glass {
+    backdrop-filter: var(--xeg-blur-sm);
+    -webkit-backdrop-filter: var(--xeg-blur-sm);
+  }
+
+  .xeg-button {
+    min-height: 44px; /* 터치 친화적 크기 */
+  }
+}

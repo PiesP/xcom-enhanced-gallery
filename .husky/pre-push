@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+# =============================================================================
+# Git Pre-Push Hook for X.com Enhanced Gallery
+# =============================================================================
+#
+# This Git pre-push hook ensures code quality and stability by running
+# comprehensive tests before allowing pushes to remote repositories.
+# It prevents broken code from being pushed to shared branches.
+#
+# Hook workflow:
+# 1. Test execution - Runs the full test suite to validate functionality
+# 2. Exit on failure - Prevents push if any tests fail
+#
+# Requirements:
+# - Node.js and npm must be installed
+# - Test dependencies must be available
+# - All tests must pass for push to succeed
+#
+# Usage:
+# This hook is automatically triggered when running 'git push' command.
+# To bypass this hook (not recommended): git push --no-verify
+#
+# Troubleshooting:
+# - If tests fail, fix the issues before attempting to push again
+# - Ensure all dependencies are installed with 'npm install'
+# - Run 'npm run test' manually to debug test failures
+#
+# @see package.json - Test script configuration
+# @see vitest.config.ts - Test runner configuration
+# =============================================================================
+
+echo "🧪 Pre-push testing..."
+
+# Run tests
+# Executes the complete test suite to ensure code quality and functionality
+# before allowing the push to proceed to remote repository
+npm run test || exit 1
+
+echo "✅ Pre-push validation complete!"

@@ -1,0 +1,94 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnpm-store/
+
+# Build outputs
+dist/
+!dist/xcom-enhanced-gallery.user.js
+build/
+.vite/
+.cache/
+*.user.js
+!dist/*.user.js
+*.min.js
+*.min.css
+*.meta.js
+
+# Testing & Coverage
+sample_page/
+coverage/
+test-results/
+.nyc_output/
+.jest-cache/
+playwright-report/
+playwright/.cache/
+test-profile/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+mcp-debug.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# TypeScript
+*.tsbuildinfo
+.tscache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+.vs/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE_BIN/
+
+# Project specific
+project-tree*.json
+FileScopeMCP-tree.json
+mcp-debug.log
+sample_pages/
+src_backup/
+backup*/
+temp/
+tmp/
+archived/
+x.com-*.log
+test/setup-old.ts
+
+# Cache & temp files
+.dependency-cruiser-cache
+.stylelintcache
+.eslintcache
+.history/
+docs/archived
+*.backup
+*.bak
+*.old
+*.orig
+*~
+
+# Documentation
+docs/api/

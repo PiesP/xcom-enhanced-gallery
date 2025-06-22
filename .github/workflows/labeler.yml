@@ -1,0 +1,48 @@
+name: Issue and PR Labeler
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v4
+        with:
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+          configuration-path: .github/labeler.yml
+
+      - name: Label issues based on title
+        if: github.event_name == 'issues'
+        uses: github/issue-labeler@v3
+        with:
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+          configuration-path: .github/issue-labeler.yml
+          enable-versioned-regex: 0
+
+      - name: Feature request
+        if: github.event_name == 'issues' && contains(github.event.issue.title, '기능') || contains(github.event.issue.title, 'feature')
+        uses: andymckay/labeler@master
+        with:
+          add-labels: 'enhancement'
+
+      - name: Bug report
+        if: github.event_name == 'issues' && contains(github.event.issue.title, '버그') || contains(github.event.issue.title, 'bug')
+        uses: andymckay/labeler@master
+        with:
+          add-labels: 'bug'
+
+      - name: Documentation
+        if: github.event_name == 'issues' && contains(github.event.issue.title, '문서') || contains(github.event.issue.title, 'doc')
+        uses: andymckay/labeler@master
+        with:
+          add-labels: 'documentation'
+
+      - name: X.com Update
+        if: github.event_name == 'issues' && contains(github.event.issue.title, 'X.com') || contains(github.event.issue.title, '트위터')
+        uses: andymckay/labeler@master
+        with:
+          add-labels: 'x-com-update'

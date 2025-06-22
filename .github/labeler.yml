@@ -1,0 +1,63 @@
+# 파일 경로 기반 라벨 설정
+# 자세한 정보: https://github.com/actions/labeler
+
+# 코어 구성요소
+core:
+  - src/utils/**/*
+  - src/core/**/*
+
+# 다운로드 관련
+download:
+  - src/utils/download/**/*
+  - src/downloaders/**/*
+
+# UI 관련
+ui:
+  - src/components/**/*
+  - src/viewers/**/*
+  - src/styles/**/*
+
+# 문서
+documentation:
+  - docs/**/*
+  - '**/*.md'
+  - '.github/*.md'
+
+# 테스트
+test:
+  - tests/**/*
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/*.spec.ts'
+  - '**/*.spec.tsx'
+
+# 타입 정의
+types:
+  - src/types/**/*
+  - '**/*.d.ts'
+
+# 국제화
+i18n:
+  - src/i18n/**/*
+  - src/**/i18n/**/*
+
+# 구성 파일
+config:
+  - '*.config.js'
+  - '*.config.ts'
+  - '*.json'
+  - '.github/workflows/**/*'
+  - '.vscode/**/*'
+
+# 의존성
+dependencies:
+  - package.json
+  - package-lock.json
+  - 'yarn.lock'
+
+# X.com 관련 코드
+x-com:
+  - src/**/twitter*
+  - src/**/x-com*
+  - src/**/*twitter*
+  - src/**/*x-com*

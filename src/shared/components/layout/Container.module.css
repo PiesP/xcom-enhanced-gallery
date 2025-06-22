@@ -1,0 +1,360 @@
+/**
+ * Container component styles for X.com Enhanced Gallery
+ *
+ * @description
+ * X.com Enhanced Gallery의 Container 컴포넌트를 위한 CSS 모듈 스타일시트입니다.
+ * 다양한 레이아웃 패턴과 크기 옵션을 제공하여 일관된 컨테이너 스타일링을 지원합니다.
+ *
+ * @features
+ * - 4가지 레이아웃 변형 (default, centered, fullscreen, modal)
+ * - 3단계 최대 너비 제한 (small, medium, large)
+ * - 3단계 패딩 옵션 (small, medium, large)
+ * - 스크롤 가능한 컨테이너 옵션
+ * - 모바일 반응형 디자인
+ * - Touch 스크롤 최적화
+ *
+ * @accessibility
+ * - touch-action과 -webkit-overflow-scrolling을 통한 터치 디바이스 최적화
+ * - 적절한 z-index 관리로 레이어 순서 보장
+ *
+ * @browser-support
+ * - 모든 모던 브라우저 지원
+ * - -webkit- 접두사로 Safari 터치 스크롤 최적화
+ * - CSS Grid와 Flexbox 기반 레이아웃
+ *
+ * @since 1.0.0
+ * @module ContainerStyles
+ */
+
+/**
+ * 기본 컨테이너 클래스
+ *
+ * @description
+ * 모든 Container 변형의 기본이 되는 클래스입니다. 상대적 위치 지정과
+ * 전체 너비, box-sizing 설정을 제공합니다.
+ *
+ * @features
+ * - 상대적 위치 지정 (position: relative)
+ * - 전체 너비 (width: 100%)
+ * - Border-box 크기 계산
+ */
+.xeg-container {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ===== 레이아웃 변형 (Layout Variants) ===== */
+
+/**
+ * 기본 변형
+ *
+ * @description
+ * 표준 블록 레벨 컨테이너입니다. 특별한 레이아웃 조정 없이
+ * 일반적인 문서 흐름을 따릅니다.
+ *
+ * @use-case
+ * - 일반적인 콘텐츠 영역
+ * - 텍스트 및 미디어 컨테이너
+ * - 기본 섹션 래퍼
+ */
+.xeg-container--default {
+  /* Default container styling */
+}
+
+/**
+ * 중앙 정렬 변형
+ *
+ * @description
+ * Flexbox를 사용하여 내용을 수직/수평 중앙에 정렬합니다.
+ * 로딩 스피너나 메시지 표시에 주로 사용됩니다.
+ *
+ * @features
+ * - Flexbox 중앙 정렬 (align-items, justify-content: center)
+ * - 최소 높이 100% 보장
+ *
+ * @use-case
+ * - 로딩 스피너 컨테이너
+ * - 빈 상태 메시지
+ * - 단일 요소 중앙 배치
+ *
+ * @example
+ * ```tsx
+ * <Container variant="centered">
+ *   <LoadingSpinner />
+ * </Container>
+ * ```
+ */
+.xeg-container--centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+}
+
+/**
+ * 전체 화면 변형
+ *
+ * @description
+ * 뷰포트 전체를 덮는 고정 위치 컨테이너입니다.
+ * 갤러리 뷰어나 전체 화면 콘텐츠에 사용됩니다.
+ *
+ * @features
+ * - 고정 위치 지정 (position: fixed)
+ * - 뷰포트 전체 크기 (100vw × 100vh)
+ * - 높은 z-index (9999)
+ *
+ * @use-case
+ * - 갤러리 뷰어
+ * - 전체 화면 미디어 플레이어
+ * - 몰입형 콘텐츠 표시
+ *
+ * @accessibility
+ * - 키보드 네비게이션과 스크린 리더 호환성 고려 필요
+ * - 적절한 포커스 관리 구현 권장
+ */
+.xeg-container--fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+}
+
+/**
+ * 모달 변형
+ *
+ * @description
+ * 반투명 배경과 함께 중앙 정렬된 모달 컨테이너입니다.
+ * 대화상자나 팝업 콘텐츠 표시에 사용됩니다.
+ *
+ * @features
+ * - 고정 위치 전체 화면 오버레이
+ * - 반투명 검은색 배경 (var(--xeg-bg-overlay-strong))
+ * - Flexbox 중앙 정렬
+ * - 높은 z-index (9999)
+ *
+ * @use-case
+ * - 설정 대화상자
+ * - 확인 팝업
+ * - 이미지 미리보기 모달
+ *
+ * @accessibility
+ * - 배경 클릭으로 모달 닫기 기능 구현 권장
+ * - ESC 키 지원 필요
+ * - 포커스 트랩 구현 권장
+ */
+.xeg-container--modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--xeg-bg-overlay-strong);
+  z-index: 9999;
+}
+
+/* ===== 최대 너비 제한 (Max Width Constraints) ===== */
+
+/**
+ * 소형 최대 너비 (480px)
+ *
+ * @description
+ * 모바일 우선 콘텐츠나 좁은 폼 요소에 적합한 작은 최대 너비를 설정합니다.
+ *
+ * @features
+ * - 최대 너비: 480px
+ * - 자동 수평 중앙 정렬
+ *
+ * @use-case
+ * - 로그인 폼
+ * - 간단한 메시지
+ * - 모바일 우선 콘텐츠
+ */
+.xeg-container--max-small {
+  max-width: var(--xeg-container-max-width-sm);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/**
+ * 중형 최대 너비 (768px)
+ *
+ * @description
+ * 태블릿 크기의 콘텐츠에 적합한 중간 크기 최대 너비를 설정합니다.
+ *
+ * @features
+ * - 최대 너비: 768px
+ * - 자동 수평 중앙 정렬
+ *
+ * @use-case
+ * - 기사 콘텐츠
+ * - 카드 레이아웃
+ * - 태블릿 최적화 UI
+ */
+.xeg-container--max-medium {
+  max-width: var(--xeg-container-max-width-md);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/**
+ * 대형 최대 너비 (1200px)
+ *
+ * @description
+ * 데스크톱 환경의 넓은 콘텐츠에 적합한 큰 최대 너비를 설정합니다.
+ *
+ * @features
+ * - 최대 너비: 1200px
+ * - 자동 수평 중앙 정렬
+ *
+ * @use-case
+ * - 대시보드 레이아웃
+ * - 갤러리 그리드
+ * - 데스크톱 메인 콘텐츠
+ */
+.xeg-container--max-large {
+  max-width: var(--xeg-container-max-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ===== 패딩 옵션 (Padding Options) ===== */
+
+/**
+ * 소형 패딩 (8px)
+ *
+ * @description
+ * 최소한의 여백이 필요한 콘텐츠에 적합한 작은 패딩을 제공합니다.
+ *
+ * @use-case
+ * - 밀집된 레이아웃
+ * - 작은 카드 요소
+ * - 모바일 공간 절약
+ */
+.xeg-container--padding-small {
+  padding: var(--xeg-spacing-sm);
+}
+
+/**
+ * 중형 패딩 (16px)
+ *
+ * @description
+ * 일반적인 콘텐츠에 적합한 표준 패딩을 제공합니다.
+ *
+ * @use-case
+ * - 일반 콘텐츠 영역
+ * - 카드 내부 여백
+ * - 표준 섹션 패딩
+ */
+.xeg-container--padding-medium {
+  padding: var(--xeg-spacing-md);
+}
+
+/**
+ * 대형 패딩 (24px)
+ *
+ * @description
+ * 여유로운 공간이 필요한 콘텐츠에 적합한 큰 패딩을 제공합니다.
+ *
+ * @use-case
+ * - 중요한 콘텐츠 강조
+ * - 넓은 레이아웃
+ * - 데스크톱 환경 최적화
+ */
+.xeg-container--padding-large {
+  padding: var(--xeg-spacing-lg);
+}
+
+/* ===== 스크롤 옵션 (Scrolling Options) ===== */
+
+/**
+ * 스크롤 가능한 컨테이너
+ *
+ * @description
+ * 내용이 컨테이너를 초과할 때 스크롤을 허용하는 옵션입니다.
+ * 터치 디바이스에서 부드러운 스크롤을 위한 최적화가 포함되어 있습니다.
+ *
+ * @features
+ * - 자동 오버플로우 처리 (overflow: auto)
+ * - iOS Safari 터치 스크롤 최적화 (-webkit-overflow-scrolling: touch)
+ *
+ * @use-case
+ * - 긴 콘텐츠 목록
+ * - 고정 높이 영역
+ * - 사이드바나 메뉴
+ *
+ * @accessibility
+ * - 키보드 스크롤 지원
+ * - 스크린 리더 호환성
+ */
+.xeg-container--scrollable {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== 반응형 조정 (Responsive Adjustments) ===== */
+
+/**
+ * 태블릿 반응형 (768px 이하)
+ *
+ * @description
+ * 태블릿 크기 화면에서 적절한 여백과 크기 조정을 제공합니다.
+ *
+ * @features
+ * - 좌우 여백 16px로 조정
+ * - 최대 너비를 calc(100% - 32px)로 제한
+ * - 패딩 크기 축소 (medium: 16px→12px, large: 24px→16px)
+ */
+@media (max-width: 768px) {
+  .xeg-container--max-small,
+  .xeg-container--max-medium,
+  .xeg-container--max-large {
+    margin-left: var(--xeg-spacing-md);
+    margin-right: var(--xeg-spacing-md);
+    max-width: calc(100% - var(--xeg-spacing-xl));
+  }
+
+  .xeg-container--padding-medium {
+    padding: var(--xeg-spacing-sm);
+  }
+
+  .xeg-container--padding-large {
+    padding: var(--xeg-spacing-md);
+  }
+}
+
+/**
+ * 모바일 반응형 (480px 이하)
+ *
+ * @description
+ * 모바일 크기 화면에서 공간을 최적화하고 터치 인터페이스에
+ * 적합한 크기 조정을 제공합니다.
+ *
+ * @features
+ * - 좌우 여백 8px로 최소화
+ * - 최대 너비를 calc(100% - 16px)로 제한
+ * - 패딩 크기 추가 축소 (medium: 12px→8px, large: 16px→12px)
+ * - 터치 친화적인 공간 활용
+ */
+@media (max-width: 480px) {
+  .xeg-container--max-small,
+  .xeg-container--max-medium,
+  .xeg-container--max-large {
+    margin-left: var(--xeg-spacing-sm);
+    margin-right: var(--xeg-spacing-sm);
+    max-width: calc(100% - var(--xeg-spacing-md));
+  }
+
+  .xeg-container--padding-medium {
+    padding: var(--xeg-spacing-sm);
+  }
+
+  .xeg-container--padding-large {
+    padding: var(--xeg-spacing-sm);
+  }
+}

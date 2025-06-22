@@ -1,0 +1,20 @@
+/**
+ * Core Utilities - Simplified
+ *
+ * DOM manipulation, accessibility utilities (테마 관련 기능 제거)
+ */
+
+// DOM manipulation utilities
+export * from './dom';
+
+// Accessibility utilities
+export * from './accessibility';
+
+// Type utilities
+export * from './type-utils';
+
+// 테마 관련 유틸리티는 단순화를 위해 제거됨:
+// - auto-theme-helpers.ts.disabled
+// - auto-theme-helpers-simple.ts.disabled
+// - theme-helpers.ts.disabled
+// - theme.disabled/

@@ -1,0 +1,229 @@
+/**
+ * Button 컴포넌트 스타일
+ *
+ * X.com Enhanced Gallery의 재사용 가능한 버튼 컴포넌트를 위한 CSS 모듈
+ *
+ * @module Button.module.css
+ * @author X.com Enhanced Gallery Team
+ * @version 3.0.0
+ */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--xeg-spacing-sm);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  border: 1px solid var(--xeg-border-button);
+  border-radius: var(--xeg-radius-md);
+  font-size: var(--xeg-font-size-sm);
+  font-weight: var(--xeg-font-weight-medium);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  min-height: var(--xeg-button-height-md);
+  background: var(--xeg-bg-button);
+  color: var(--xeg-text-button);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+/* 기본 스타일 */
+.button:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+.button:disabled {
+  opacity: var(--xeg-disabled-opacity);
+  cursor: var(--xeg-disabled-cursor);
+  pointer-events: none;
+}
+
+/* 버튼 변형 */
+.primary {
+  background: var(--xeg-color-primary);
+  color: var(--xeg-text-inverse);
+  border-color: var(--xeg-color-primary);
+  box-shadow:
+    0 2px 8px rgba(71, 133, 163, 0.15),
+    0 1px 4px rgba(71, 133, 163, 0.1);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--xeg-color-primary-hover);
+  border-color: var(--xeg-color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(71, 133, 163, 0.25),
+    0 3px 10px rgba(71, 133, 163, 0.15);
+}
+
+.secondary {
+  background: rgba(248, 250, 252, 0.6);
+  color: var(--xeg-text-primary);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+}
+
+.secondary:hover:not(:disabled) {
+  background: rgba(226, 232, 240, 0.8);
+  border-color: rgba(148, 163, 184, 0.6);
+  transform: translateY(-1px);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--xeg-text-primary);
+  border-color: transparent;
+}
+
+.ghost:hover:not(:disabled) {
+  background: rgba(248, 250, 252, 0.1);
+  border-color: rgba(203, 213, 225, 0.2);
+}
+
+.danger {
+  background: var(--xeg-color-error);
+  color: white;
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--xeg-color-error);
+  filter: brightness(0.9);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--xeg-color-error) 30%, transparent);
+}
+
+/* 크기 변형 */
+.small {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.medium {
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.large {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+/* 아이콘 전용 버튼 */
+.iconOnly {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.iconOnly.small {
+  width: 32px;
+  height: 32px;
+}
+
+.iconOnly.large {
+  width: 48px;
+  height: 48px;
+}
+
+/* 로딩 상태 */
+.loading {
+  position: relative;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading > * {
+  opacity: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 풀 너비 */
+.fullWidth {
+  width: 100%;
+}
+
+/* 리플 효과 */
+.button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.3s,
+    height 0.3s;
+}
+
+.button:active::before {
+  width: 100px;
+  height: 100px;
+}
+
+/* 다크/라이트 테마 지원 */
+@media (prefers-color-scheme: light) {
+  .secondary {
+    background: rgba(0, 0, 0, 0.05);
+    color: #0f1419;
+    border-color: var(--xeg-bg-overlay-light);
+  }
+
+  .secondary:hover:not(:disabled) {
+    background: var(--xeg-bg-overlay-light);
+    border-color: var(--xeg-border-medium);
+  }
+
+  .ghost {
+    color: #0f1419;
+  }
+
+  .ghost:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .loading::after {
+    animation: none;
+  }
+}

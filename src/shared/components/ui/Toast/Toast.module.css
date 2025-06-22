@@ -1,0 +1,285 @@
+/**
+ * Toast Component Styles for X.com Enhanced Gallery
+ *
+ * @description
+ * Defines styles for toast notification components supporting
+ * 4 types: info, success, warning, error with unified design system.
+ *
+ * @features
+ * - Unified color system from variables.css
+ * - Slide-in animation (right to left)
+ * - Responsive design (mobile and desktop)
+ * - Accessibility considerations
+ * - Action buttons and close functionality
+ */
+
+/**
+ * Base toast container styles - 현대적 glassmorphism 디자인
+ *
+ * @styles
+ * - 둥근 모서리 (12px border-radius)
+ * - 향상된 그림자와 백드롭 필터
+ * - 왼쪽 4px 테두리로 타입 표시
+ * - 부드러운 슬라이드인 애니메이션 (0.4s cubic-bezier)
+ * - 크기: 최소 320px, 최대 480px
+ * - glassmorphism 배경 효과
+ */
+.toast {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 32px rgba(15, 23, 42, 0.15),
+    0 4px 16px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  margin-bottom: 12px;
+  padding: 18px;
+  min-width: 320px;
+  max-width: 480px;
+  border-left: 4px solid;
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  isolation: isolate;
+}
+
+/**
+ * Info toast variant - 현대적 색상
+ *
+ * @colors
+ * - 테두리: var(--xeg-color-primary) (X.com 브랜드 블루)
+ * - 배경: 반투명 블루 톤
+ */
+.toast.info {
+  border-left-color: var(--xeg-color-primary);
+  background: rgba(71, 133, 163, 0.08);
+  border-color: rgba(71, 133, 163, 0.2);
+}
+
+/**
+ * Success toast variant - 현대적 그린
+ *
+ * @colors
+ * - 테두리: var(--xeg-color-success) (그린)
+ * - 배경: 반투명 그린 톤
+ */
+.toast.success {
+  border-left-color: var(--xeg-color-success);
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/**
+ * Warning toast variant - 현대적 앰버
+ *
+ * @colors
+ * - 테두리: var(--xeg-color-warning) (오렌지/앰버)
+ * - 배경: 반투명 앰버 톤
+ */
+.toast.warning {
+  border-left-color: var(--xeg-color-warning);
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+/**
+ * Error toast variant - 현대적 레드
+ *
+ * @colors
+ * - 테두리: var(--xeg-color-error) (레드)
+ * - 배경: 반투명 레드 톤
+ */
+.toast.error {
+  border-left-color: var(--xeg-color-error);
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+/**
+ * Toast content wrapper
+ *
+ * @layout
+ * - Flex column layout
+ * - 8px gap between elements
+ */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/**
+ * Toast header (title and close button)
+ *
+ * @layout
+ * - Flex row layout
+ * - Space between alignment
+ * - 12px gap between title and close button
+ */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/**
+ * Toast title text
+ *
+ * @typography
+ * - Size: 14px
+ * - Weight: 600 (semi-bold)
+ * - Color: var(--xeg-text-primary) (primary text color)
+ * - Line height: 1.3
+ */
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--xeg-text-primary);
+  line-height: 1.3;
+}
+
+/**
+ * Toast message text
+ *
+ * @typography
+ * - Size: 13px
+ * - Color: var(--xeg-text-secondary) (secondary text color)
+ * - Line height: 1.4 (readable)
+ */
+.message {
+  font-size: 13px;
+  color: var(--xeg-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/**
+ * Close button
+ *
+ * @interaction
+ * - Size: 20x20px clickable area
+ * - Transparent background, hover state available
+ * - Rounded corners (4px)
+ * - 0.15s hover transition
+ */
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--xeg-text-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+/**
+ * Close button hover state
+ *
+ * @hover
+ * - Light gray background (rgba(83, 100, 113, 0.1))
+ */
+.closeButton:hover {
+  background-color: rgba(83, 100, 113, 0.1);
+}
+
+/**
+ * Toast actions container
+ *
+ * @layout
+ * - Top margin 4px for spacing
+ */
+.actions {
+  margin-top: 4px;
+}
+
+/**
+ * Action button styling - 현대적 glassmorphism
+ *
+ * @appearance
+ * - 차분한 프라이머리 색상 배경
+ * - 반투명 효과와 백드롭 필터
+ * - 둥근 모서리 (8px)
+ * - 적절한 크기 (13px 폰트, 8x16px 패딩)
+ *
+ * @interaction
+ * - 호버 시 더 진한 색상과 상승 효과
+ * - 0.3s cubic-bezier 전환
+ */
+.actionButton {
+  background: var(--xeg-color-primary);
+  border: 1px solid rgba(71, 133, 163, 0.3);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(71, 133, 163, 0.15);
+}
+
+/**
+ * Action button hover state - 상승 효과
+ *
+ * @hover
+ * - 더 진한 프라이머리 색상 배경
+ * - 위로 상승하는 변환 효과
+ * - 향상된 그림자
+ */
+.actionButton:hover {
+  background: var(--xeg-color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(71, 133, 163, 0.25);
+}
+
+/**
+ * Slide-in animation keyframes - 현대적 이징
+ *
+ * @animation
+ * - From: 오른쪽에서 슬라이드 (100% translateX)
+ * - To: 최종 위치와 완전한 불투명도
+ * - 지속 시간: 0.4s
+ * - 이징: cubic-bezier(0.4, 0, 0.2, 1) (부드러운 감속)
+ *
+ * @accessibility
+ * - prefers-reduced-motion 사용자 환경설정 반영
+ */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/**
+ * 애니메이션 감소 모드 지원
+ */
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+
+  .actionButton {
+    transition: none;
+  }
+
+  .actionButton:hover {
+    transform: none;
+  }
+}

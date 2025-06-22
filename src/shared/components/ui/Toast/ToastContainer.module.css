@@ -1,0 +1,25 @@
+/**
+ * 토스트 컨테이너 - 화면 우상단에 고정된 알림 영역
+ *
+ * 주요 특징:
+ * - 최상단 z-index로 다른 요소들 위에 표시
+ * - 컨테이너 자체는 pointer-events 비활성화하여 배경 클릭 허용
+ * - 자식 요소들은 pointer-events 활성화하여 상호작용 가능
+ */
+.container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: var(--xeg-z-toast);
+  pointer-events: none;
+}
+
+/**
+ * 토스트 개별 요소 - 사용자 상호작용 활성화
+ *
+ * 컨테이너의 pointer-events: none을 덮어써서
+ * 토스트 메시지와의 상호작용(닫기, 액션 버튼 등)을 가능하게 함
+ */
+.container > * {
+  pointer-events: auto;
+}
