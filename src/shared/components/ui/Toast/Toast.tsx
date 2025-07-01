@@ -1,4 +1,4 @@
-import styles from '@shared/components/ui/Toast/Toast.module.css';
+import styles from './Toast.module.css';
 import { getPreactHooks, getPreactSignals } from '@infrastructure/external/vendors';
 import type { VNode } from '@infrastructure/external/vendors';
 

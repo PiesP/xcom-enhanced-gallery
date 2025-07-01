@@ -29,30 +29,10 @@ export type Size = 'small' | 'medium' | 'large';
 /** 색상 변형 타입 */
 export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
 
-/** 버튼 변형 타입 */
-export type ButtonVariant = 'filled' | 'outlined' | 'text' | 'icon';
+// ButtonVariant는 DesignSystem.ts에서 import하여 사용
 
-/** 버튼 Props - 실제 구현된 Button 컴포넌트와 일치 */
-export interface ButtonProps extends BaseComponentProps {
-  /** 버튼 변형 */
-  variant?: ButtonVariant;
-  /** 색상 */
-  color?: ColorVariant;
-  /** 크기 */
-  size?: Size;
-  /** 비활성화 여부 */
-  disabled?: boolean;
-  /** 로딩 상태 */
-  loading?: boolean;
-  /** 클릭 핸들러 */
-  onClick?: (event: MouseEvent) => void;
-  /** 버튼 타입 */
-  type?: 'button' | 'submit' | 'reset';
-  /** 아이콘 (선택적) */
-  icon?: string;
-  /** 전체 너비 사용 여부 */
-  fullWidth?: boolean;
-}
+// ButtonProps는 Button 컴포넌트에서 직접 정의하므로 여기서는 제거
+// 중복 방지를 위해 Button 컴포넌트의 타입을 사용하세요.
 
 /** 애니메이션 설정 타입 */
 export interface AnimationConfig {

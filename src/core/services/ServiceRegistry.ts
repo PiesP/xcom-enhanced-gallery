@@ -101,11 +101,11 @@ export async function registerAllServices(): Promise<void> {
     lazy: true,
   });
 
-  // Theme Service - AutoThemeService로 수정
+  // Theme Service - SimpleThemeManager로 업데이트
   serviceManager.register(SERVICE_KEYS.AUTO_THEME, {
     factory: async () => {
-      const { AutoThemeService } = await import('./AutoThemeService');
-      return AutoThemeService.getInstance();
+      const { SimpleThemeManager } = await import('./AutoThemeService');
+      return SimpleThemeManager.getInstance();
     },
     singleton: true,
     lazy: true,

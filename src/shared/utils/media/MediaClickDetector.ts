@@ -100,7 +100,7 @@ export class MediaClickDetector {
       return true;
     }
 
-    // 2. 동영상 제어 버튼들은 기본 동작 허용
+    // 2. 확장된 비디오 제어 요소들 차단
     const videoControlSelectors = [
       'button[aria-label*="다시보기"]',
       'button[aria-label*="일시정지"]',
@@ -108,16 +108,40 @@ export class MediaClickDetector {
       'button[aria-label*="Replay"]',
       'button[aria-label*="Pause"]',
       'button[aria-label*="Play"]',
+      '[data-testid="videoComponent"]',
+      '[data-testid="videoPlayer"]',
+      '.video-controls',
+      '.player-controls',
+      '[role="slider"]', // 진행 바
+      'video', // 비디오 요소 자체
     ];
 
     for (const selector of videoControlSelectors) {
       if (target.closest(selector)) {
-        logger.debug('MediaClickDetector: 동영상 제어 버튼 클릭 - 기본 동작 허용');
+        logger.debug('MediaClickDetector: 비디오 제어 요소 클릭 - 기본 동작 허용');
         return true;
       }
     }
 
-    // 3. 플레이 버튼 내부의 SVG 아이콘들은 기본 동작 유지
+    // 3. 갤러리 내부 요소들 차단 (갤러리 중복 열기 방지)
+    const galleryInternalSelectors = [
+      '.xeg-gallery-container',
+      '[data-gallery-element]',
+      '#xeg-gallery-root',
+      '.vertical-gallery-view',
+      '[data-xeg-gallery-container]',
+      '[data-xeg-gallery]',
+      '.xeg-vertical-gallery',
+    ];
+
+    for (const selector of galleryInternalSelectors) {
+      if (target.closest(selector)) {
+        logger.debug('MediaClickDetector: 갤러리 내부 요소 클릭 - 차단');
+        return true;
+      }
+    }
+
+    // 4. 플레이 버튼 내부의 SVG 아이콘들은 기본 동작 유지
     const playButton = target.closest('[data-testid="playButton"]');
     if (
       playButton &&
@@ -127,7 +151,7 @@ export class MediaClickDetector {
       return true;
     }
 
-    // 4. 명확한 UI 버튼들만 차단
+    // 5. 명확한 UI 버튼들만 차단
     const uiButtonSelectors = [
       'button[data-testid*="bookmark"]',
       'button[data-testid*="retweet"]',

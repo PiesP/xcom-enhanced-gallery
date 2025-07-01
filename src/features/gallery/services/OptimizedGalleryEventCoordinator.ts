@@ -10,7 +10,8 @@
  */
 
 import type { MediaInfo } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
+import { GalleryStateGuard, VideoControlBlocker } from '@shared/utils';
 import { GalleryService, type GalleryInfo } from './GalleryService';
 
 /**
@@ -193,6 +194,20 @@ export class OptimizedGalleryEventCoordinator {
     tweetContainer?: HTMLElement
   ): void {
     try {
+      // **핵심 수정**: 갤러리 상태 사전 체크
+      if (!GalleryStateGuard.canTriggerGallery(event)) {
+        logger.debug('OptimizedGalleryEventCoordinator: Gallery trigger blocked by state guard');
+        return;
+      }
+
+      // **강화된 차단 로직**: 비디오 제어 요소 통합 체크
+      if (VideoControlBlocker.shouldBlockGalleryTrigger(element)) {
+        logger.debug(
+          'OptimizedGalleryEventCoordinator: Video control element click - allowing default behavior'
+        );
+        return;
+      }
+
       // 미디어 클릭 컨텍스트 생성
       const context = createMediaClickContext(mediaInfo, element, event, tweetContainer);
 

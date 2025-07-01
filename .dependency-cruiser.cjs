@@ -67,14 +67,11 @@ module.exports = {
           '(^|/)tsconfig[.]json$', // TypeScript config
           '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // configs
           '^src/main[.]ts$', // 메인 진입점
-          '^src/types/', // 타입 정의 파일들
           '^src/.*/index[.]ts$', // 배럴 export 파일들
           'REFACTORING_PLAN[.]ts$', // 리팩토링 계획 문서
-          '^src/shared/utils/(timer-utils|performance-core)[.]ts$', // 실제 사용되는 파일들
-          '^src/infrastructure/types[.]ts$', // 인프라 타입 파일
-          '^src/core/services/(ScrollLockService|PreciseMediaMapper|MediaPageTypeDetector)[.]ts$',
+          '^src/shared/utils/timer-utils[.]ts$', // 실제 사용되는 유틸리티
+          '^src/core/constants/STABLE_SELECTORS[.]ts$', // 실제 사용되는 상수
           '^src/core/services/cache/EnhancedMediaCacheService[.]ts$',
-          '^src/core/constants/STABLE_SELECTORS[.]ts$',
           // 레거시 서비스들 (deprecated, 직접 사용되지 않음)
           '^src/features/media/services/(MediaExtractionService|StableMediaExtractionService)[.]ts$',
           '^src/app/coordinators/MediaExtractionCoordinator[.]ts$',

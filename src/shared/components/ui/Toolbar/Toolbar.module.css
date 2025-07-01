@@ -1,39 +1,82 @@
 /**
- * Enhanced Gallery Toolbar Styles - Enhanced Visibility
- * @version 4.6.0 - 시인성 개선 및 동적 대비 조정
+ * Enhanced Gallery Toolbar Styles - Modern State-Based Architecture
+ * @version 5.0.0 - 상태 기반 CSS 아키텍처 및 CSS 커스텀 프로퍼티 활용
  */
 
+/* ===== CSS 커스텀 프로퍼티 정의 ===== */
+:root {
+  /* 툴바 전용 디자인 토큰 */
+  --toolbar-bg-idle: rgba(255, 255, 255, 0.1);
+  --toolbar-bg-loading: rgba(255, 255, 255, 0.15);
+  --toolbar-bg-downloading: rgba(0, 186, 124, 0.1);
+  --toolbar-bg-error: rgba(244, 33, 46, 0.1);
+
+  /* 버튼 상태 */
+  --button-bg-idle: rgba(255, 255, 255, 0.1);
+  --button-bg-hover: rgba(255, 255, 255, 0.2);
+  --button-bg-active: var(--xeg-color-primary);
+  --button-bg-loading: rgba(255, 255, 255, 0.05);
+  --button-bg-disabled: rgba(255, 255, 255, 0.05);
+
+  /* 전환 효과 */
+  --toolbar-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --button-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 다크 테마 오버라이드 */
+[data-theme='dark'] {
+  --toolbar-bg-idle: rgba(0, 0, 0, 0.3);
+  --toolbar-bg-loading: rgba(0, 0, 0, 0.4);
+  --button-bg-idle: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== 상태 기반 CSS 아키텍처 ===== */
+
+/* 기본 툴바 */
 .galleryToolbar {
-  display: inline-flex;
-  align-items: center;
-  min-height: 48px;
-  padding: 8px 16px;
-
-  /* 현대적 glassmorphism 배경 */
-  background: var(--xeg-bg-toolbar);
-
-  /* 향상된 테두리와 그림자 */
-  border-radius: 16px;
-  border: 1px solid var(--xeg-border-toolbar);
-  box-shadow: var(--xeg-shadow-toolbar);
-
-  /* 향상된 백드롭 필터 */
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-
-  /* 기존 속성들 */
-  user-select: none;
-  z-index: 10002;
-  justify-content: space-between;
-  gap: 12px;
+  /* 기본 레이아웃 및 시각적 속성만 */
   position: fixed;
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 10002;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 8px 16px;
+  gap: 12px;
+
+  /* CSS 커스텀 프로퍼티로 상태별 변화 관리 */
+  background: var(--toolbar-bg, var(--toolbar-bg-idle));
+  opacity: var(--toolbar-opacity, 1);
+  transform: translateX(-50%) translateY(var(--toolbar-offset-y, 0));
+  transition: var(--toolbar-transition);
 
   /* 현대적 스타일링 */
+  border-radius: 16px;
+  border: 1px solid var(--xeg-border-toolbar);
+  box-shadow: var(--xeg-shadow-toolbar);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  user-select: none;
   isolation: isolate;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 상태별 CSS 커스텀 프로퍼티 정의 */
+.galleryToolbar[data-state='loading'] {
+  --toolbar-opacity: 0.7;
+  --toolbar-bg: var(--toolbar-bg-loading);
+}
+
+.galleryToolbar[data-state='downloading'] {
+  --toolbar-bg: var(--toolbar-bg-downloading);
+}
+
+.galleryToolbar[data-state='error'] {
+  --toolbar-bg: var(--toolbar-bg-error);
+  --toolbar-offset-y: -4px;
 }
 
 .toolbarContent {
@@ -88,14 +131,16 @@
   margin: 0 2px;
 }
 
-/* 기본 버튼 스타일 - 현대적 glassmorphism */
+/* 버튼 상태 관리 */
 .toolbarButton {
-  background: var(--xeg-bg-button);
-  border: 1px solid var(--xeg-border-button);
-  color: var(--xeg-text-button);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 기본 버튼 스타일 */
+  background: var(--button-bg, var(--button-bg-idle));
+  color: var(--button-color, var(--xeg-text-button));
+  opacity: var(--button-opacity, 1);
+  transform: var(--button-transform, none);
+  transition: var(--button-transition);
+
+  /* 레이아웃 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -105,6 +150,11 @@
   overflow: hidden;
   width: 40px;
   height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--xeg-border-button);
+  cursor: pointer;
+
+  /* 현대적 스타일링 */
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow:
@@ -112,37 +162,50 @@
     0 1px 4px rgba(15, 23, 42, 0.05);
 }
 
-.toolbarButton:hover:not(:disabled) {
-  background: var(--xeg-bg-button-hover);
-  color: var(--xeg-text-button-hover);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow:
-    0 4px 16px rgba(15, 23, 42, 0.12),
-    0 2px 8px rgba(15, 23, 42, 0.08);
-}
-
-.toolbarButton:active:not(:disabled) {
-  transform: translateY(0) scale(1);
-  box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.08),
-    0 1px 4px rgba(15, 23, 42, 0.05);
-}
-
-.toolbarButton.active {
-  background: var(--xeg-color-primary);
-  color: white;
+/* 데이터 속성 기반 상태 관리 */
+.toolbarButton[data-active='true'] {
+  --button-bg: var(--button-bg-active);
+  --button-color: white;
   box-shadow:
     0 0 0 2px var(--xeg-color-primary-alpha-30),
     0 4px 16px rgba(71, 133, 163, 0.25);
 }
 
-.toolbarButton:disabled {
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-neutral-200);
-  color: var(--xeg-color-neutral-400);
+.toolbarButton[data-selected='true'] {
+  --button-bg: var(--xeg-color-primary);
+  --button-color: white;
+  border-color: var(--xeg-color-primary);
+}
+
+.toolbarButton[data-loading='true'] {
+  --button-opacity: 0.7;
+  --button-transform: scale(0.95);
+}
+
+.toolbarButton[data-disabled='true'] {
+  --button-opacity: 0.5;
+  --button-bg: var(--button-bg-disabled);
+  --button-color: var(--xeg-color-neutral-400);
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+}
+
+/* 호버 상태는 CSS에서만 관리 */
+@media (hover: hover) {
+  .toolbarButton:hover:not([data-disabled='true']) {
+    --button-transform: translateY(-2px) scale(1.05);
+    --button-bg: var(--button-bg-hover);
+    box-shadow:
+      0 4px 16px rgba(15, 23, 42, 0.12),
+      0 2px 8px rgba(15, 23, 42, 0.08);
+  }
+}
+
+/* 클릭 상태 */
+.toolbarButton:active:not([data-disabled='true']) {
+  --button-transform: translateY(0) scale(1);
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    0 1px 4px rgba(15, 23, 42, 0.05);
 }
 /* 네비게이션 섹션 */
 .toolbarNavigation {
@@ -272,21 +335,6 @@
 .downloadAll:hover:not(:disabled) {
   background: var(--xeg-color-success-light);
   border-color: var(--xeg-color-success-light);
-}
-
-.downloadAllBadge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: rgba(139, 69, 179, 0.8);
-  color: white;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 4px;
-  border-radius: 8px;
-  min-width: 14px;
-  text-align: center;
-  line-height: 1;
 }
 
 .downloadSpinner {
@@ -419,11 +467,6 @@
   }
 
   /* 작은 화면에서도 separator 표시 유지 */
-
-  .downloadAllBadge {
-    font-size: 9px;
-    padding: 1px 4px;
-  }
 }
 /* 고대비 모드 - 시인성 개선 */
 @media (prefers-contrast: high) {

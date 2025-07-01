@@ -7,6 +7,7 @@
  * - core/        : DOM, accessibility, theming 등 핵심 유틸리티
  * - media/       : 미디어 처리 및 파일명 생성
  * - patterns/    : 패턴 인식 및 Twitter/X.com 특화 기능
+ * - gallery/     : 갤러리 상태 관리 및 보호
  * - vendors/     : 외부 라이브러리 접근점
  *
  * @example
@@ -24,6 +25,9 @@
 
 // Core utilities (DOM, accessibility, theming)
 export * from './core';
+
+// Gallery utilities (state management, protection)
+export * from './gallery';
 
 // Media processing utilities (images, videos, filenames)
 export * from './media';

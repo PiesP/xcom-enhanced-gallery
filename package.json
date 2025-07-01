@@ -24,7 +24,7 @@
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "deps:graph": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | dot -Gdpi=150 -Gconcentrate=true -Grankdir=LR -Gsplines=ortho -T svg > docs/dependency-graph.svg",
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
-    "deps:report": "dependency-cruiser --config .dependency-cruiser.cjs --output-type html -f docs/dependency-report.html src",
+    "deps:report": "dependency-cruiser --config .dependency-cruiser.cjs --metrics --output-type html --output-to docs/dependency-report.html src",
     "deps:all": "npm run deps:check && npm run deps:graph && npm run deps:json && npm run deps:report"
   },
   "dependencies": {

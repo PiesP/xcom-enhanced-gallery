@@ -469,7 +469,7 @@ export function VerticalGalleryView({
     [handleClose]
   );
 
-  // 콘텐츠 영역 클릭 이벤트 처리 개선 (tweetPhoto 관련 요소는 허용)
+  // 콘텐츠 영역 클릭 이벤트 처리 개선 (갤러리 중복 열기 방지)
   const handleContentClick = useCallback((event: MouseEvent) => {
     const target = event.target as HTMLElement;
 
@@ -479,6 +479,34 @@ export function VerticalGalleryView({
     if (tweetPhotoContainer) {
       // tweetPhoto 내부 클릭은 GalleryApp에서 처리하도록 허용
       logger.debug('VerticalGalleryView: tweetPhoto 클릭 감지 - 갤러리 앱에서 처리');
+      return;
+    }
+
+    // 비디오 제어 요소 차단 (갤러리 중복 열기 방지)
+    const videoControlSelectors = [
+      '[data-testid="playButton"]',
+      'button[aria-label*="재생"]',
+      'button[aria-label*="Play"]',
+      'button[aria-label*="일시정지"]',
+      'button[aria-label*="Pause"]',
+      'video',
+      '.video-controls',
+      '.player-controls',
+    ];
+
+    const isVideoControl = videoControlSelectors.some(selector => {
+      try {
+        return target.matches(selector) || target.closest(selector) !== null;
+      } catch {
+        return false;
+      }
+    });
+
+    if (isVideoControl) {
+      logger.debug('VerticalGalleryView: Video control element click - blocking propagation');
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       return;
     }
 
@@ -602,6 +630,32 @@ export function VerticalGalleryView({
         ref={contentRef}
         className={styles.content}
         onClick={handleContentClick}
+        // 추가: 이벤트 캡처링으로 내부 이벤트 사전 차단
+        onClickCapture={event => {
+          const target = event.target as HTMLElement;
+
+          // 비디오 제어 요소 클릭 시 갤러리 이벤트 차단
+          const videoSelectors = [
+            '[data-testid="playButton"]',
+            'button[aria-label*="재생"]',
+            'button[aria-label*="Play"]',
+            'video',
+            '.video-controls',
+          ];
+
+          const isVideoElement = videoSelectors.some(selector => {
+            try {
+              return target.matches(selector) || target.closest(selector) !== null;
+            } catch {
+              return false;
+            }
+          });
+
+          if (isVideoElement) {
+            event.stopPropagation();
+            logger.debug('VerticalGalleryView: Video element click captured and blocked');
+          }
+        }}
         onKeyDown={e => {
           e.preventDefault();
           e.stopPropagation();

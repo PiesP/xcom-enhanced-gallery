@@ -56,16 +56,17 @@ export class BrowserManager extends BaseSingleton {
       return;
     }
 
-    // 이미 주입된 스타일은 건너뜀
-    if (this.injectedStyles.has(id)) {
+    // 이미 주입된 스타일은 건너뜀 (DOM 요소 존재 여부로도 이중 체크)
+    if (this.injectedStyles.has(id) && document.getElementById(id)) {
       logger.debug(`[BrowserManager] CSS already injected, skipping: ${id}`);
       return;
     }
 
-    // 기존 스타일 제거
+    // 기존 스타일 요소 정리 (있다면)
     const existingStyle = document.getElementById(id);
     if (existingStyle) {
       existingStyle.remove();
+      this.injectedStyles.delete(id); // Set에서도 제거
     }
 
     // 새 스타일 주입
@@ -74,9 +75,10 @@ export class BrowserManager extends BaseSingleton {
     styleElement.textContent = css;
     styleElement.setAttribute('data-injected-by', 'xeg-browser-manager');
     styleElement.setAttribute('data-injected-at', Date.now().toString());
-    document.head.appendChild(styleElement);
 
+    document.head.appendChild(styleElement);
     this.injectedStyles.add(id);
+
     logger.debug(`[BrowserManager] CSS injected: ${id} (${css.length} characters)`);
   }
 

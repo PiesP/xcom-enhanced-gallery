@@ -32,7 +32,7 @@ export type BulkDownloadServiceType = import('../services/BulkDownloadService').
 export type MediaFilenameServiceType = import('../../infrastructure/media').MediaFilenameService;
 export type PageScrollLockManagerType =
   import('../../infrastructure/dom/ScrollLockService').ScrollLockService;
-export type AutoThemeServiceType = import('../services/AutoThemeService').AutoThemeService;
+export type SimpleThemeManagerType = import('../services/AutoThemeService').SimpleThemeManager;
 export type GalleryScrollProtectionServiceType =
   import('../services/GalleryScrollProtectionService').GalleryScrollProtectionService;
 
@@ -88,7 +88,7 @@ export interface ServiceTypeMapping {
   'scroll.pageLock': PageScrollLockManagerType;
   'scroll.gallery': unknown; // GalleryScrollManagerType - shared layer 타입이므로 unknown 사용
   'scroll.galleryProtection': GalleryScrollProtectionServiceType;
-  'theme.auto': AutoThemeServiceType;
+  'theme.auto': SimpleThemeManagerType;
   'video.service': unknown; // VideoServiceType - shared layer 타입이므로 unknown 사용
 }
 

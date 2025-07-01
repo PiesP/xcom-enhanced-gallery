@@ -22,9 +22,9 @@ export { diagnoseServiceManager } from './ServiceDiagnostics';
 export type { ServiceTypeMapping } from '../types/services.types';
 export type { DownloadOptions, DownloadProgress, DownloadResult } from './BulkDownloadService';
 
-// Auto Theme Service (Simplified)
-export { AutoThemeService } from './AutoThemeService';
-export type { SimpleTheme, SimpleThemeSettings } from './AutoThemeService';
+// Theme Service (Simplified)
+export { SimpleThemeManager, AutoThemeService, themeManager } from './AutoThemeService';
+export type { Theme } from './AutoThemeService';
 
 // Application Lifecycle Management
 export { AppLifecycle, appLifecycle } from './AppLifecycle';

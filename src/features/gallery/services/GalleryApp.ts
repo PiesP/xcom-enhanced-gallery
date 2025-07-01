@@ -28,6 +28,7 @@ import type { MediaInfo } from '@core/types/media.types';
 import { SimplifiedMediaExtractor } from '@features/media/extraction/services/SimplifiedMediaExtractor';
 import { logger } from '@infrastructure/logging/logger';
 import { undefinedToNull } from '@shared/utils/core/type-safety-helpers';
+import { GalleryStateGuard, VideoControlBlocker } from '@shared/utils';
 import { MediaClickDetector } from '@shared/utils/media';
 import type { GalleryAppConfig, IGalleryApp } from '../types';
 
@@ -106,8 +107,8 @@ export class GalleryApp implements IGalleryApp {
    */
   private setupTweetPhotoClickListener(): void {
     this.clickHandler = (event: MouseEvent) => {
-      // 기본 조건 확인
-      if (event.button !== 0 || galleryState.value.isOpen) {
+      // **핵심 수정**: 통합된 상태 보호 체크
+      if (!GalleryStateGuard.canTriggerGallery(event)) {
         return;
       }
 
@@ -118,7 +119,13 @@ export class GalleryApp implements IGalleryApp {
         return;
       }
 
-      // 갤러리 차단 요소 확인 (핵심 수정 사항)
+      // **강화된 차단 로직**: 비디오 제어 요소 통합 체크
+      if (VideoControlBlocker.shouldBlockGalleryTrigger(target)) {
+        logger.debug('GalleryApp: Video control element click - allowing default behavior');
+        return;
+      }
+
+      // 갤러리 차단 요소 확인 (기존 로직도 유지)
       if (MediaClickDetector.shouldBlockGalleryTrigger(target)) {
         logger.debug('GalleryApp: 갤러리 차단 요소 클릭 - 기본 동작 허용');
         return;

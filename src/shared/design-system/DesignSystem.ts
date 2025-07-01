@@ -252,23 +252,19 @@ export class DesignSystem {
   }
 
   /**
-   * 테마 설정
+   * 현재 테마 가져오기 (단순화됨)
    */
-  static setTheme(theme: 'light' | 'dark' | 'auto'): void {
-    if (typeof window === 'undefined') return;
+  static getCurrentTheme(): 'light' | 'dark' {
+    if (typeof window === 'undefined') return 'light';
 
-    document.documentElement.setAttribute('data-theme', theme);
+    return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
   }
 
   /**
-   * 현재 테마 가져오기
+   * 다크 모드 여부 확인
    */
-  static getCurrentTheme(): 'light' | 'dark' | 'auto' {
-    if (typeof window === 'undefined') return 'auto';
-
-    return (
-      (document.documentElement.getAttribute('data-theme') as 'light' | 'dark' | 'auto') || 'auto'
-    );
+  static isDarkMode(): boolean {
+    return DesignSystem.getCurrentTheme() === 'dark';
   }
 }
 

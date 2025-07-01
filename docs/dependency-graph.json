@@ -147,6 +147,7 @@
         "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
         "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
         "src/features/media/extraction/services/TwitterAPIExtractor.ts",
+        "src/core/services/AutoThemeService.ts",
         "src/core/services/TwitterGalleryService.new.ts",
         "src/core/services/cache/EnhancedMediaCacheService.ts",
         "src/core/services/cache/MediaCacheService.ts",
@@ -2303,12 +2304,29 @@
     },
     {
       "source": "src/core/services/AutoThemeService.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../infrastructure/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/core/services/index.ts",
         "src/core/types/services.types.ts",
-        "src/core/services/ServiceRegistry.ts",
-        "src/core/services/ThemeManager.ts"
+        "src/core/services/ServiceRegistry.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2817,52 +2835,6 @@
         "src/core/types/index.ts",
         "src/features/gallery/services/GalleryService.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/MediaPageTypeDetector.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/PreciseMediaMapper.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/ScrollLockService.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/ThemeManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./AutoThemeService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/AutoThemeService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -6187,13 +6159,6 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/types.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/infrastructure/types/userscript.d.ts",
       "dependencies": [],
       "dependents": [],
@@ -6761,7 +6726,25 @@
     },
     {
       "source": "src/shared/components/ui/Toast/Toast.tsx",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Toast.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Toast/Toast.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/components/ui/index.ts"
       ],
@@ -6769,8 +6752,42 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/Toast/Toast.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/Toast/Toast.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/ui/Toolbar/Toolbar.tsx",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../hooks/useToolbarState",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/hooks/useToolbarState.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../../../types",
@@ -6844,6 +6861,16 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Toolbar/Toolbar.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useToolbarState.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/shared/hooks/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7052,6 +7079,31 @@
       "valid": true
     },
     {
+      "source": "src/shared/hooks/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./useToolbarState",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useToolbarState.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/index.ts",
       "dependencies": [
         {
@@ -7175,6 +7227,23 @@
             "export"
           ],
           "resolved": "src/shared/utils/error-handling.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./gallery",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/gallery/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7395,6 +7464,68 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/gallery/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./GalleryStateGuard",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/gallery/GalleryStateGuard.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VideoControlBlocker",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/gallery/VideoControlBlocker.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/gallery/GalleryStateGuard.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/gallery/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/gallery/VideoControlBlocker.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/gallery/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8451,8 +8582,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 221,
-    "totalDependenciesCruised": 361,
+    "totalCruised": 222,
+    "totalDependenciesCruised": 367,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
@@ -8546,7 +8677,7 @@
           "severity": "info",
           "from": {
             "orphan": true,
-            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/types/|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/shared/utils/(timer-utils|performance-core)[.]ts$|^src/infrastructure/types[.]ts$|^src/core/services/(ScrollLockService|PreciseMediaMapper|MediaPageTypeDetector)[.]ts$|^src/core/services/cache/EnhancedMediaCacheService[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/media/services/(MediaExtractionService|StableMediaExtractionService)[.]ts$|^src/app/coordinators/MediaExtractionCoordinator[.]ts$"
+            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/shared/utils/timer-utils[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/core/services/cache/EnhancedMediaCacheService[.]ts$|^src/features/media/services/(MediaExtractionService|StableMediaExtractionService)[.]ts$|^src/app/coordinators/MediaExtractionCoordinator[.]ts$"
           },
           "to": {},
           "scope": "module"

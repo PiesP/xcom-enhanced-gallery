@@ -240,10 +240,6 @@
   transform: translateY(-2px);
 }
 
-.xeg-hover-scale:hover {
-  transform: scale(1.02);
-}
-
 .xeg-focus-ring:focus-visible {
   outline: 2px solid var(--xeg-color-primary);
   outline-offset: 2px;

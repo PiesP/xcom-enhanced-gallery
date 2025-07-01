@@ -3,17 +3,22 @@
  * Licensed under the MIT License
  *
  * @fileoverview Enhanced Gallery Toolbar Component
- * @version 4.1.0 - 3-section layout with centered media counter
+ * @version 5.0.0 - 상태 기반 CSS 아키텍처 및 책임 분리
  */
 
 import type { ViewMode } from '../../../types';
 import type { ImageFitCallbacks } from '../../../types/image-fit.types';
 import { getPreact, getPreactHooks } from '@infrastructure/external/vendors';
-import type { VNode } from '@infrastructure/external/vendors';
+import type { VNode } from 'preact';
+import {
+  useToolbarState,
+  getToolbarDataState,
+  getToolbarClassName,
+} from '../../../hooks/useToolbarState';
 import styles from './Toolbar.module.css';
 
 const { h } = getPreact();
-const { useMemo, useState, useCallback, useEffect, useRef } = getPreactHooks();
+const { useMemo, useCallback, useEffect, useRef } = getPreactHooks();
 
 export interface ToolbarProps extends ImageFitCallbacks {
   currentIndex: number;
@@ -52,10 +57,14 @@ export function Toolbar({
   onFitWidth,
   onFitContainer,
 }: ToolbarProps): VNode {
-  const [activeButton, setActiveButton] = useState<string | null>(null);
-  const [currentFitMode, setCurrentFitMode] = useState<string>('fitWidth');
-  const [needsHighContrast, setNeedsHighContrast] = useState(false);
+  // 새로운 상태 관리 훅 사용
+  const [toolbarState, toolbarActions] = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
+
+  // Props에서 받은 isDownloading 상태를 내부 상태와 동기화
+  useEffect(() => {
+    toolbarActions.setDownloading(isDownloading);
+  }, [isDownloading, toolbarActions]);
 
   // 배경 밝기 감지 및 자동 대비 조정 - 개선된 다중 포인트 샘플링
   useEffect(() => {
@@ -100,7 +109,7 @@ export function Toolbar({
       });
 
       // 3개 중 2개 이상이 밝으면 고대비 모드 활성화
-      setNeedsHighContrast(lightBackgroundCount >= 2);
+      toolbarActions.setNeedsHighContrast(lightBackgroundCount >= 2);
     };
 
     // 초기 감지
@@ -127,34 +136,30 @@ export function Toolbar({
   const canGoPrevious = useMemo(() => currentIndex > 0, [currentIndex, totalCount]);
 
   // 버튼 클릭 피드백
-  const handleButtonClick = useCallback((buttonId: string, action: () => void) => {
-    setActiveButton(buttonId);
-    action();
-    setTimeout(() => setActiveButton(null), 150);
-  }, []);
+  const handleButtonClick = useCallback(
+    (buttonId: string, action: () => void) => {
+      toolbarActions.setActiveButton(buttonId);
+      action();
+      setTimeout(() => toolbarActions.setActiveButton(null), 150);
+    },
+    [toolbarActions]
+  );
 
   // 크기 조절 버튼 핸들러
   const handleFitMode = useCallback(
     (mode: string, action?: () => void) => {
-      setCurrentFitMode(mode);
+      toolbarActions.setCurrentFitMode(mode);
       if (action) {
         handleButtonClick(`fit-${mode}`, action);
       }
     },
-    [handleButtonClick]
+    [handleButtonClick, toolbarActions]
   );
 
   // 툴바 클래스명 계산
   const toolbarClassName = useMemo(() => {
-    const classes = [styles.galleryToolbar];
-    if (className) {
-      classes.push(className);
-    }
-    if (needsHighContrast) {
-      classes.push(styles.highContrast);
-    }
-    return classes.join(' ');
-  }, [className, needsHighContrast]);
+    return getToolbarClassName(toolbarState, styles.galleryToolbar || '', className || '');
+  }, [toolbarState, className]);
 
   return h(
     'div',
@@ -165,7 +170,9 @@ export function Toolbar({
       'aria-label': '갤러리 도구모음',
       'aria-disabled': disabled,
       'data-gallery-element': 'toolbar',
-      'data-high-contrast': needsHighContrast,
+      'data-state': getToolbarDataState(toolbarState),
+      'data-disabled': disabled,
+      'data-high-contrast': toolbarState.needsHighContrast,
     } as Record<string, unknown>,
     h(
       'div',
@@ -187,14 +194,14 @@ export function Toolbar({
               'button',
               {
                 type: 'button',
-                className: `${styles.toolbarButton} ${styles.navButton} ${
-                  activeButton === 'previous' ? styles.active : ''
-                }`,
+                className: `${styles.toolbarButton} ${styles.navButton}`,
                 onClick: () => handleButtonClick('previous', onPrevious),
                 disabled: disabled || !canGoPrevious,
                 'aria-label': '이전 미디어',
                 title: '이전 미디어 (←)',
                 'data-gallery-element': 'nav-previous',
+                'data-active': toolbarState.activeButton === 'previous',
+                'data-disabled': disabled || !canGoPrevious,
                 key: 'previous-button',
               },
               h(
@@ -212,14 +219,14 @@ export function Toolbar({
               'button',
               {
                 type: 'button',
-                className: `${styles.toolbarButton} ${styles.navButton} ${
-                  activeButton === 'next' ? styles.active : ''
-                }`,
+                className: `${styles.toolbarButton} ${styles.navButton}`,
                 onClick: () => handleButtonClick('next', onNext),
                 disabled: disabled || !canGoNext,
                 'aria-label': '다음 미디어',
                 title: '다음 미디어 (→)',
                 'data-gallery-element': 'nav-next',
+                'data-active': toolbarState.activeButton === 'next',
+                'data-disabled': disabled || !canGoNext,
                 key: 'next-button',
               },
               h(
@@ -304,14 +311,15 @@ export function Toolbar({
                   'button',
                   {
                     type: 'button',
-                    className: `${styles.toolbarButton} ${styles.fitButton} ${
-                      currentFitMode === 'original' ? styles.selected : ''
-                    } ${activeButton === 'fit-original' ? styles.active : ''}`,
+                    className: `${styles.toolbarButton} ${styles.fitButton}`,
                     onClick: () => handleFitMode('original', onFitOriginal),
                     disabled: disabled || !onFitOriginal,
                     'aria-label': '원본 크기',
                     title: '원본 크기 (1:1)',
                     'data-gallery-element': 'fit-original',
+                    'data-selected': toolbarState.currentFitMode === 'original',
+                    'data-active': toolbarState.activeButton === 'fit-original',
+                    'data-disabled': disabled || !onFitOriginal,
                     key: 'fit-original',
                   },
                   h(
@@ -350,14 +358,15 @@ export function Toolbar({
                   'button',
                   {
                     type: 'button',
-                    className: `${styles.toolbarButton} ${styles.fitButton} ${
-                      currentFitMode === 'fitWidth' ? styles.selected : ''
-                    } ${activeButton === 'fit-fitWidth' ? styles.active : ''}`,
+                    className: `${styles.toolbarButton} ${styles.fitButton}`,
                     onClick: () => handleFitMode('fitWidth', onFitWidth),
                     disabled: disabled || !onFitWidth,
                     'aria-label': '가로에 맞춤',
                     title: '가로에 맞추기',
                     'data-gallery-element': 'fit-width',
+                    'data-selected': toolbarState.currentFitMode === 'fitWidth',
+                    'data-active': toolbarState.activeButton === 'fit-fitWidth',
+                    'data-disabled': disabled || !onFitWidth,
                     key: 'fit-width',
                   },
                   h(
@@ -390,14 +399,15 @@ export function Toolbar({
                   'button',
                   {
                     type: 'button',
-                    className: `${styles.toolbarButton} ${styles.fitButton} ${
-                      currentFitMode === 'fitHeight' ? styles.selected : ''
-                    } ${activeButton === 'fit-fitHeight' ? styles.active : ''}`,
+                    className: `${styles.toolbarButton} ${styles.fitButton}`,
                     onClick: () => handleFitMode('fitHeight', onFitHeight),
                     disabled: disabled || !onFitHeight,
                     'aria-label': '세로에 맞춤',
                     title: '세로에 맞추기',
                     'data-gallery-element': 'fit-height',
+                    'data-selected': toolbarState.currentFitMode === 'fitHeight',
+                    'data-active': toolbarState.activeButton === 'fit-fitHeight',
+                    'data-disabled': disabled || !onFitHeight,
                     key: 'fit-height',
                   },
                   h(
@@ -430,14 +440,15 @@ export function Toolbar({
                   'button',
                   {
                     type: 'button',
-                    className: `${styles.toolbarButton} ${styles.fitButton} ${
-                      currentFitMode === 'fitContainer' ? styles.selected : ''
-                    } ${activeButton === 'fit-fitContainer' ? styles.active : ''}`,
+                    className: `${styles.toolbarButton} ${styles.fitButton}`,
                     onClick: () => handleFitMode('fitContainer', onFitContainer),
                     disabled: disabled || !onFitContainer,
                     'aria-label': '창에 맞춤',
                     title: '창에 맞추기',
                     'data-gallery-element': 'fit-container',
+                    'data-selected': toolbarState.currentFitMode === 'fitContainer',
+                    'data-active': toolbarState.activeButton === 'fit-fitContainer',
+                    'data-disabled': disabled || !onFitContainer,
                     key: 'fit-container',
                   },
                   h(
@@ -483,14 +494,15 @@ export function Toolbar({
               'button',
               {
                 type: 'button',
-                className: `${styles.toolbarButton} ${styles.downloadButton} ${
-                  styles.downloadCurrent
-                } ${activeButton === 'download-current' ? styles.active : ''}`,
+                className: `${styles.toolbarButton} ${styles.downloadButton} ${styles.downloadCurrent}`,
                 onClick: () => handleButtonClick('download-current', onDownloadCurrent),
                 disabled: disabled || isDownloading,
                 'aria-label': '현재 파일 다운로드',
                 title: '현재 파일 다운로드 (Ctrl+D)',
                 'data-gallery-element': 'download-current',
+                'data-active': toolbarState.activeButton === 'download-current',
+                'data-disabled': disabled || isDownloading,
+                'data-loading': isDownloading,
                 key: 'download-current',
               },
               [
@@ -529,39 +541,30 @@ export function Toolbar({
                 'button',
                 {
                   type: 'button',
-                  className: `${styles.toolbarButton} ${styles.downloadButton} ${
-                    styles.downloadAll
-                  } ${activeButton === 'download-all' ? styles.active : ''}`,
+                  className: `${styles.toolbarButton} ${styles.downloadButton} ${styles.downloadAll}`,
                   onClick: () => handleButtonClick('download-all', onDownloadAll),
                   disabled: disabled || isDownloading,
                   'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
                   title: `전체 ${totalCount}개 파일 ZIP 다운로드`,
                   'data-gallery-element': 'download-all',
+                  'data-active': toolbarState.activeButton === 'download-all',
+                  'data-disabled': disabled || isDownloading,
+                  'data-loading': isDownloading,
                   key: 'download-all',
                 },
-                [
-                  h(
-                    'svg',
-                    {
-                      width: '16',
-                      height: '16',
-                      viewBox: '0 0 16 16',
-                      fill: 'currentColor',
-                      key: 'download-all-icon',
-                    },
-                    h('path', {
-                      d: 'M2 3h12v1H2V3zm0 3h12v1H2V6zm0 3h12v1H2V9zm6 2v2.5L5.5 11 4 12.5 8 16.5l4-4L10.5 11 8 13.5V11z',
-                    })
-                  ),
-                  h(
-                    'span',
-                    {
-                      className: styles.downloadAllBadge,
-                      key: 'download-all-badge',
-                    },
-                    totalCount
-                  ),
-                ]
+                h(
+                  'svg',
+                  {
+                    width: '16',
+                    height: '16',
+                    viewBox: '0 0 16 16',
+                    fill: 'currentColor',
+                    key: 'download-all-icon',
+                  },
+                  h('path', {
+                    d: 'M2 3h12v1H2V3zm0 3h12v1H2V6zm0 3h12v1H2V9zm6 2v2.5L5.5 11 4 12.5 8 16.5l4-4L10.5 11 8 13.5V11z',
+                  })
+                )
               ),
 
             // 설정 버튼
@@ -570,14 +573,14 @@ export function Toolbar({
                 'button',
                 {
                   type: 'button',
-                  className: `${styles.toolbarButton} ${styles.settingsButton} ${
-                    activeButton === 'settings' ? styles.active : ''
-                  }`,
+                  className: `${styles.toolbarButton} ${styles.settingsButton}`,
                   onClick: () => handleButtonClick('settings', onOpenSettings),
                   disabled,
                   'aria-label': '설정 열기',
                   title: '설정',
                   'data-gallery-element': 'settings',
+                  'data-active': toolbarState.activeButton === 'settings',
+                  'data-disabled': disabled,
                   key: 'settings',
                 },
                 h(
@@ -604,14 +607,14 @@ export function Toolbar({
               'button',
               {
                 type: 'button',
-                className: `${styles.toolbarButton} ${styles.closeButton} ${
-                  activeButton === 'close' ? styles.active : ''
-                }`,
+                className: `${styles.toolbarButton} ${styles.closeButton}`,
                 onClick: () => handleButtonClick('close', onClose),
                 disabled,
                 'aria-label': '갤러리 닫기',
                 title: '갤러리 닫기 (Esc)',
                 'data-gallery-element': 'close',
+                'data-active': toolbarState.activeButton === 'close',
+                'data-disabled': disabled,
                 key: 'close',
               },
               h(

@@ -1,10 +1,10 @@
 /**
- * Transparent Theme System for X.com Enhanced Gallery
- * @version 2.0.0
+ * Unified Theme System for X.com Enhanced Gallery
+ * @version 2.1.0
  *
  * @description
  * 투명을 기조로 하는 단순하고 깔끔한 테마 시스템입니다.
- * 복잡한 테마 변경 기능은 제거하고, 투명도와 블러 효과를 활용한
+ * 시스템 테마 감지를 통한 자동 적용과 투명도/블러 효과를 활용한
  * 모던하고 일관된 디자인을 제공합니다.
  */
 
@@ -51,6 +51,24 @@
     --xeg-auto-border: var(--xeg-transparent-border);
     --xeg-auto-shadow: var(--xeg-transparent-shadow-strong);
   }
+}
+
+/* ===== data-theme 기반 명시적 테마 설정 ===== */
+
+[data-theme='light'] {
+  --xeg-auto-surface: var(--xeg-transparent-bg-light);
+  --xeg-auto-text: #1e293b;
+  --xeg-auto-text-secondary: #475569;
+  --xeg-auto-border: var(--xeg-transparent-border-dark);
+  --xeg-auto-shadow: var(--xeg-transparent-shadow);
+}
+
+[data-theme='dark'] {
+  --xeg-auto-surface: var(--xeg-transparent-bg-dark);
+  --xeg-auto-text: #f1f5f9;
+  --xeg-auto-text-secondary: #cbd5e1;
+  --xeg-auto-border: var(--xeg-transparent-border);
+  --xeg-auto-shadow: var(--xeg-transparent-shadow-strong);
 }
 
 /* ===== 투명 glassmorphism 효과 ===== */

@@ -1,35 +1,25 @@
 /**
- * Core Layer - Simplified Theme Service
+ * Core Layer - Simple Theme Manager
  *
- * 투명 기조의 단순한 테마 서비스
- * 복잡한 테마 변경 기능은 제거하고 기본적인 시스템 테마 감지만 유지
+ * 투명 기조의 시스템 테마 감지 서비스
+ * 복잡한 자동 전환 기능 제거, 시스템 테마 감지만 유지
  */
 
-import { logger } from '@infrastructure/logging/logger';
-
-/**
- * 단순화된 테마 설정
- */
-export interface SimpleThemeSettings {
-  /** 시스템 테마 자동 감지 여부 */
-  autoDetectSystemTheme: boolean;
-  /** 디버그 모드 */
-  debug: boolean;
-}
+import { logger } from '../../infrastructure/logging/logger';
 
 /**
- * 단순 테마 타입
+ * 단순 테마 타입 (auto 제거)
  */
-export type SimpleTheme = 'light' | 'dark' | 'auto';
+export type Theme = 'light' | 'dark';
 
 /**
- * 단순화된 자동 테마 서비스
- * 복잡한 테마 변경 기능을 제거하고 시스템 테마 감지만 유지
+ * 단순화된 시스템 테마 서비스
+ * 시스템 테마 감지만 수행, 복잡한 자동 전환 제거
  */
-export class AutoThemeService {
-  private static instance: AutoThemeService | null = null;
+export class SimpleThemeManager {
+  private static instance: SimpleThemeManager | null = null;
   private mediaQueryList: MediaQueryList | null = null;
-  private currentTheme: SimpleTheme = 'auto';
+  private currentTheme: Theme = 'light';
 
   private constructor() {
     if (typeof window !== 'undefined') {
@@ -38,9 +28,9 @@ export class AutoThemeService {
     }
   }
 
-  public static getInstance(): AutoThemeService {
-    AutoThemeService.instance ??= new AutoThemeService();
-    return AutoThemeService.instance;
+  public static getInstance(): SimpleThemeManager {
+    SimpleThemeManager.instance ??= new SimpleThemeManager();
+    return SimpleThemeManager.instance;
   }
 
   /**
@@ -69,14 +59,16 @@ export class AutoThemeService {
     const isDark = this.mediaQueryList.matches;
     this.currentTheme = isDark ? 'dark' : 'light';
 
-    // CSS 변수는 이미 media query로 자동 적용되므로 추가 작업 불필요
+    // data-theme 속성 설정으로 CSS에서 자동 적용
+    document.documentElement.setAttribute('data-theme', this.currentTheme);
+
     logger.debug(`System theme applied: ${this.currentTheme}`);
   }
 
   /**
    * 현재 테마 반환
    */
-  public getCurrentTheme(): SimpleTheme {
+  public getCurrentTheme(): Theme {
     return this.currentTheme;
   }
 
@@ -95,12 +87,16 @@ export class AutoThemeService {
       this.mediaQueryList.removeEventListener('change', this.applySystemTheme);
       this.mediaQueryList = null;
     }
-    AutoThemeService.instance = null;
-    logger.info('AutoThemeService destroyed');
+    SimpleThemeManager.instance = null;
+    logger.info('SimpleThemeManager destroyed');
   }
 }
 
 /**
  * 전역 테마 서비스 인스턴스
  */
-export const autoThemeService = AutoThemeService.getInstance();
+export const themeManager = SimpleThemeManager.getInstance();
+
+// 하위 호환성을 위한 legacy export
+export const AutoThemeService = SimpleThemeManager;
+export const autoThemeService = themeManager;

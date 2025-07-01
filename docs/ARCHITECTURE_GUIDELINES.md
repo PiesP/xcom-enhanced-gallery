@@ -702,377 +702,62 @@ export class OptimizedCSSManager {
 
 ---
 
-## 🎨 CSS 스타일링 방법론 가이드
+## 🎨 테마 시스템 단순화 (v2.1.0 업데이트)
 
-### 유저스크립트에서의 스타일링 접근법
+### 단순화된 테마 아키텍처
 
-유저스크립트 환경에서는 **두 가지 주요 스타일링 방법**을 상황에 맞게 선택적으로 사용해야 합니다:
+기존의 복잡한 자동 테마 전환 기능을 제거하고, 투명 기조의 단순한 시스템 테마 감지 방식으로 전환했습니다.
 
-| 방법                                         | 적용 범위   | 재사용성 | 성능               | 동적 스타일링 | 우선순위           |
-| -------------------------------------------- | ----------- | -------- | ------------------ | ------------- | ------------------ |
-| **CSS 주입** (`GM_addStyle`, `<style>` 태그) | 넓음 (다수) | 높음     | 효율적             | 제한적        | 높음 (유연함)      |
-| **인라인 스타일** (`element.style`)          | 좁음 (단일) | 낮음     | 비효율적일 수 있음 | 매우 유연함   | 매우 높음 (고정적) |
+**변경사항**:
 
-### 1. CSS 주입 방식 (권장 - 정적 스타일)
+- `AutoThemeService` → `SimpleThemeManager`로 이름 변경 및 단순화
+- 복잡한 테마 전환 로직 제거
+- 시스템 테마 감지만 유지 (`prefers-color-scheme` 기반)
+- `data-theme` 속성을 통한 CSS 자동 적용
 
-**언제 사용하는가**: UI의 기본 구조, 레이아웃, 디자인 테마 등 **정적이고 재사용 가능한 스타일**
+**새로운 테마 시스템 구조**:
 
 ```typescript
-// ✅ 올바른 사용 - 스타일과 로직 분리
-import { CSSManager } from '@infrastructure/styling/CSSManager';
-
-const cssManager = CSSManager.getInstance();
-
-// 1. 스크립트 상단에서 CSS 정의 (한 번만)
-cssManager.inject(
-  'gallery-components',
-  `
-  /* 갤러리 기본 스타일 */
-  .xeg-gallery-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: var(--xeg-gallery-bg);
-    z-index: var(--xeg-z-gallery);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+// Core Layer - Simple Theme Manager
+export class SimpleThemeManager {
+  // 시스템 테마 감지 및 data-theme 속성 설정
+  private applySystemTheme(): void {
+    const isDark = this.mediaQueryList?.matches;
+    this.currentTheme = isDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', this.currentTheme);
   }
+}
 
-  /* 버튼 컴포넌트 */
-  .xeg-button {
-    padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-    border: 1px solid var(--xeg-color-primary);
-    background: var(--xeg-bg-button);
-    color: var(--xeg-text-button);
-    cursor: pointer;
-    transition: var(--xeg-transition-fast);
-    border-radius: var(--xeg-radius-md);
-  }
+// CSS - data-theme 기반 자동 적용
+[data-theme='light'] {
+  --xeg-auto-surface: var(--xeg-transparent-bg-light);
+  --xeg-auto-text: #1e293b;
+}
 
-  .xeg-button:hover {
-    background: var(--xeg-bg-button-hover);
-    transform: translateY(-1px);
-  }
-
-  .xeg-button--active {
-    background: var(--xeg-color-primary);
-    color: white;
-  }
-
-  .xeg-button--disabled {
-    opacity: var(--xeg-disabled-opacity);
-    cursor: var(--xeg-disabled-cursor);
-  }
-
-  /* 의사 클래스와 미디어 쿼리 활용 */
-  @media (prefers-reduced-motion: reduce) {
-    .xeg-button {
-      transition: none;
-    }
-  }
-`
-);
-
-// 2. 로직 코드에서는 클래스만 제어
-function createGalleryButton(text: string, isActive: boolean = false): HTMLButtonElement {
-  const button = document.createElement('button');
-  button.className = `xeg-button ${isActive ? 'xeg-button--active' : ''}`;
-  button.textContent = text;
-
-  // 상태 변경은 클래스 토글로
-  button.addEventListener('click', () => {
-    button.classList.toggle('xeg-button--active');
-  });
-
-  return button;
+[data-theme='dark'] {
+  --xeg-auto-surface: var(--xeg-transparent-bg-dark);
+  --xeg-auto-text: #f1f5f9;
 }
 ```
 
-**장점**:
-
-- **코드 분리**: CSS와 JavaScript 로직이 명확히 분리되어 유지보수성 향상
-- **재사용성**: 정의된 클래스를 여러 요소에 적용 가능
-- **CSS 기능 활용**: `:hover`, `::before`, `@media` 등 CSS의 모든 기능 사용 가능
-- **성능 효율성**: 브라우저의 CSSOM을 통한 최적화된 렌더링
-
-### 2. 인라인 스타일 방식 (동적 값 전용)
-
-**언제 사용하는가**: **실시간으로 계속 변하는 동적인 값** (좌표, 크기, 진행률 등)
+**사용법**:
 
 ```typescript
-// ✅ 올바른 사용 - 동적 값에만 인라인 스타일 사용
-export class DraggablePanel {
-  private element: HTMLElement;
-  private isDragging = false;
-  private offset = { x: 0, y: 0 };
+import { themeManager } from '@core/services';
 
-  constructor() {
-    this.element = document.createElement('div');
-    // 기본 스타일은 CSS 클래스로 적용
-    this.element.className = 'xeg-draggable-panel';
+// 현재 테마 확인
+const currentTheme = themeManager.getCurrentTheme(); // 'light' | 'dark'
+const isDark = themeManager.isDarkMode(); // boolean
 
-    this.setupEventListeners();
-  }
-
-  private setupEventListeners(): void {
-    this.element.addEventListener('mousedown', e => {
-      this.isDragging = true;
-      this.offset.x = e.clientX - this.element.offsetLeft;
-      this.offset.y = e.clientY - this.element.offsetTop;
-
-      // 드래깅 상태는 클래스로 관리
-      this.element.classList.add('xeg-draggable-panel--dragging');
-    });
-
-    document.addEventListener('mousemove', e => {
-      if (!this.isDragging) return;
-
-      // ✅ 계산된 동적 값은 인라인 스타일로 적용
-      const newX = e.clientX - this.offset.x;
-      const newY = e.clientY - this.offset.y;
-
-      this.element.style.left = `${newX}px`;
-      this.element.style.top = `${newY}px`;
-    });
-
-    document.addEventListener('mouseup', () => {
-      this.isDragging = false;
-      this.element.classList.remove('xeg-draggable-panel--dragging');
-    });
-  }
-}
-
-// 프로그레스 바 예시
-export class ProgressIndicator {
-  private progressBar: HTMLElement;
-
-  constructor(container: HTMLElement) {
-    container.innerHTML = `
-      <div class="xeg-progress-container">
-        <div class="xeg-progress-bar"></div>
-      </div>
-    `;
-
-    this.progressBar = container.querySelector('.xeg-progress-bar')!;
-  }
-
-  public updateProgress(percentage: number): void {
-    // ✅ 동적으로 계산되는 값은 인라인 스타일로
-    this.progressBar.style.width = `${Math.max(0, Math.min(100, percentage))}%`;
-
-    // 상태 변화는 클래스로 관리
-    if (percentage >= 100) {
-      this.progressBar.classList.add('xeg-progress-bar--complete');
-    } else {
-      this.progressBar.classList.remove('xeg-progress-bar--complete');
-    }
-  }
-}
+// CSS 변수는 자동으로 적용됨
 ```
 
-**장점**:
+**이점**:
 
-- **동적 값 최적화**: JavaScript 변수 값을 직접 스타일에 할당하기 편리
-- **최고 우선순위**: 복잡한 CSS 규칙을 확실하게 덮어쓸 수 있음
-
-**단점**:
-
-- **CSS 기능 제한**: `:hover` 같은 의사 클래스 사용 불가
-- **코드 복잡성**: 많은 인라인 스타일은 코드를 지저분하게 만듦
-
-### 3. 하이브리드 접근법 (권장 패턴)
-
-**최선의 방법**: 두 방식을 목적에 맞게 조합하여 사용
-
-```typescript
-// ✅ 권장: 하이브리드 스타일링 패턴
-export class InteractiveGallery {
-  private container: HTMLElement;
-  private currentIndex = 0;
-
-  constructor() {
-    // 1. CSS 주입으로 기본 구조와 테마 정의
-    this.injectStyles();
-
-    // 2. DOM 생성 시 클래스 적용
-    this.container = this.createGalleryDOM();
-
-    // 3. 동적 상호작용 설정
-    this.setupInteractions();
-  }
-
-  private injectStyles(): void {
-    cssManager.inject(
-      'interactive-gallery',
-      `
-      .xeg-gallery {
-        /* 기본 레이아웃과 테마 */
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
-        align-items: center;
-        gap: var(--xeg-spacing-lg);
-        padding: var(--xeg-spacing-xl);
-      }
-
-      .xeg-gallery-item {
-        /* 아이템 기본 스타일 */
-        border-radius: var(--xeg-radius-lg);
-        overflow: hidden;
-        transition: var(--xeg-transition-normal);
-      }
-
-      .xeg-gallery-item--active {
-        /* 활성화 상태 스타일 */
-        transform: scale(1.05);
-        box-shadow: var(--xeg-shadow-lg);
-      }
-
-      .xeg-gallery-nav {
-        /* 내비게이션 버튼 기본 스타일 */
-        opacity: 0.7;
-        transition: var(--xeg-transition-fast);
-      }
-
-      .xeg-gallery-nav:hover {
-        opacity: 1;
-        transform: translateY(-2px);
-      }
-    `
-    );
-  }
-
-  private createGalleryDOM(): HTMLElement {
-    const gallery = document.createElement('div');
-    gallery.className = 'xeg-gallery';
-
-    // 정적 구조는 클래스로 스타일링
-    gallery.innerHTML = `
-      <button class="xeg-gallery-nav xeg-gallery-nav--prev">◀</button>
-      <div class="xeg-gallery-viewport"></div>
-      <button class="xeg-gallery-nav xeg-gallery-nav--next">▶</button>
-    `;
-
-    return gallery;
-  }
-
-  private setupInteractions(): void {
-    const viewport = this.container.querySelector('.xeg-gallery-viewport')!;
-
-    // 동적 위치 계산은 인라인 스타일로
-    this.updateViewportPosition();
-
-    // 내비게이션 이벤트
-    this.container.addEventListener('click', e => {
-      const target = e.target as HTMLElement;
-
-      if (target.classList.contains('xeg-gallery-nav--prev')) {
-        this.navigate(-1);
-      } else if (target.classList.contains('xeg-gallery-nav--next')) {
-        this.navigate(1);
-      }
-    });
-  }
-
-  private navigate(direction: number): void {
-    this.currentIndex += direction;
-
-    // ✅ 계산된 위치는 인라인 스타일로 적용
-    this.updateViewportPosition();
-
-    // ✅ 상태 변화는 클래스로 관리
-    this.updateActiveStates();
-  }
-
-  private updateViewportPosition(): void {
-    const viewport = this.container.querySelector('.xeg-gallery-viewport')! as HTMLElement;
-    const translateX = -this.currentIndex * 100;
-
-    // 동적 변환 값은 인라인으로
-    viewport.style.transform = `translateX(${translateX}%)`;
-  }
-
-  private updateActiveStates(): void {
-    // 활성화 상태는 클래스로 관리
-    const items = this.container.querySelectorAll('.xeg-gallery-item');
-    items.forEach((item, index) => {
-      item.classList.toggle('xeg-gallery-item--active', index === this.currentIndex);
-    });
-  }
-}
-```
-
-### 성능 최적화 고려사항
-
-**1. CSS 주입 최적화**
-
-```typescript
-// ✅ 효율적인 CSS 관리
-export class OptimizedStyleManager {
-  private static unifiedCSS = new Map<string, string>();
-  private static isInjected = false;
-
-  public static registerStyle(id: string, css: string): void {
-    this.unifiedCSS.set(id, css);
-
-    // 다음 프레임에 일괄 주입
-    if (!this.isInjected) {
-      requestAnimationFrame(() => this.injectUnifiedStyles());
-    }
-  }
-
-  private static injectUnifiedStyles(): void {
-    const combinedCSS = Array.from(this.unifiedCSS.values()).join('\n');
-
-    // 단일 <style> 태그로 모든 CSS 주입
-    const style = document.createElement('style');
-    style.id = 'xeg-unified-styles';
-    style.textContent = combinedCSS;
-    document.head.appendChild(style);
-
-    this.isInjected = true;
-  }
-}
-```
-
-**2. 인라인 스타일 최적화**
-
-```typescript
-// ✅ 배치 업데이트로 리플로우 최소화
-export class BatchStyleUpdater {
-  private pendingUpdates = new Map<HTMLElement, Record<string, string>>();
-  private updateScheduled = false;
-
-  public scheduleUpdate(element: HTMLElement, styles: Record<string, string>): void {
-    this.pendingUpdates.set(element, { ...this.pendingUpdates.get(element), ...styles });
-
-    if (!this.updateScheduled) {
-      this.updateScheduled = true;
-      requestAnimationFrame(() => this.applyBatchUpdates());
-    }
-  }
-
-  private applyBatchUpdates(): void {
-    // 모든 스타일을 한 번에 적용하여 리플로우 최소화
-    for (const [element, styles] of this.pendingUpdates) {
-      Object.assign(element.style, styles);
-    }
-
-    this.pendingUpdates.clear();
-    this.updateScheduled = false;
-  }
-}
-```
-
-### 요약 및 베스트 프랙티스
-
-1. **기본 원칙**: CSS 주입은 정적 스타일, 인라인은 동적 값만
-2. **구조 분리**: 스타일 정의와 로직 코드를 명확히 분리
-3. **성능 고려**: 배치 업데이트와 통합 CSS 주입으로 최적화
-4. **유지보수**: 클래스 기반 상태 관리로 코드 가독성 향상
-5. **CSS 기능 활용**: 의사 클래스, 미디어 쿼리 등 CSS의 강력한 기능 최대한 활용
+- 단순하고 예측 가능한 동작
+- 시스템 테마와 완벽 동기화
+- 투명 기조의 일관된 디자인
+- 성능 향상 (불필요한 로직 제거)
 
 ---
 

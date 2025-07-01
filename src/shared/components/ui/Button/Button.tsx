@@ -78,9 +78,9 @@ export function Button({
 
   // CSS Modules를 사용한 클래스 생성
   const buttonClasses = [
-    styles.button,
-    variant && styles[variant],
-    size && (size === 'sm' ? styles.small : size === 'md' ? styles.medium : styles.large),
+    styles.primary, // 기본 버튼 스타일은 primary로 설정
+    styles[variant], // variant에 따른 스타일
+    size === 'sm' ? styles.small : size === 'lg' ? styles.large : styles.medium, // size에 따른 스타일
     iconOnly && styles.iconOnly,
     loading && styles.loading,
     disabled && styles.disabled,

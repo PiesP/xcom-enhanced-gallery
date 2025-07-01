@@ -90,13 +90,39 @@ export function useGalleryMouse({
     [onToggleUI, isToolbarHovering, hideTimeoutRef]
   );
 
-  // 배경 클릭 핸들러
+  // 배경 클릭 핸들러 (갤러리 중복 열기 방지 강화)
   const handleBackgroundClick = useCallback(
     (event: MouseEvent, containerRef: { current: HTMLDivElement | null }) => {
+      // 기본 이벤트 차단
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
 
+      const target = event.target as HTMLElement;
+
+      // 비디오 제어 요소 클릭 시 갤러리 닫기 무시
+      const videoControlSelectors = [
+        '[data-testid="playButton"]',
+        'button[aria-label*="재생"]',
+        'button[aria-label*="Play"]',
+        'video',
+        '.video-controls',
+      ];
+
+      const isVideoControl = videoControlSelectors.some(selector => {
+        try {
+          return target.matches(selector) || target.closest(selector) !== null;
+        } catch {
+          return false;
+        }
+      });
+
+      if (isVideoControl) {
+        logger.debug('Gallery: Video control element click - ignoring background click');
+        return;
+      }
+
+      // 배경 클릭인지 확인
       if (event.target === containerRef.current) {
         logger.debug('Gallery: Background click, closing gallery');
         onClose();
@@ -105,7 +131,7 @@ export function useGalleryMouse({
     [onClose]
   );
 
-  // 콘텐츠 클릭 핸들러
+  // 콘텐츠 클릭 핸들러 (갤러리 중복 열기 방지 강화)
   const handleContentClick = useCallback((event: MouseEvent) => {
     const target = event.target as HTMLElement;
 
@@ -114,6 +140,34 @@ export function useGalleryMouse({
 
     if (tweetPhotoContainer) {
       logger.debug('Gallery: tweetPhoto click detected - allowing propagation');
+      return;
+    }
+
+    // 비디오 제어 요소 클릭 시 차단 (갤러리 중복 열기 방지)
+    const videoControlSelectors = [
+      '[data-testid="playButton"]',
+      'button[aria-label*="재생"]',
+      'button[aria-label*="Play"]',
+      'button[aria-label*="일시정지"]',
+      'button[aria-label*="Pause"]',
+      'video',
+      '.video-controls',
+      '.player-controls',
+    ];
+
+    const isVideoControl = videoControlSelectors.some(selector => {
+      try {
+        return target.matches(selector) || target.closest(selector) !== null;
+      } catch {
+        return false;
+      }
+    });
+
+    if (isVideoControl) {
+      logger.debug('Gallery: Video control element click - blocking propagation');
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       return;
     }
 

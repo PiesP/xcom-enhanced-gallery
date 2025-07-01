@@ -3,8 +3,16 @@
  * Infrastructure Layer - 에러 처리 및 로깅
  */
 
-import { logger } from '@infrastructure/logging/logger';
-import type { ErrorContext } from '@infrastructure/types';
+import { logger } from '@infrastructure/logging';
+
+/**
+ * 에러 컨텍스트 타입
+ */
+interface ErrorContext {
+  location: string;
+  context: Record<string, unknown>;
+  timestamp: number;
+}
 
 /**
  * 전역 에러 핸들러 클래스
