@@ -13,7 +13,7 @@ import type { TweetExtractionStrategy, TweetInfo } from './types';
  */
 export class DomStructureStrategy implements TweetExtractionStrategy {
   readonly name = 'DomStructureStrategy';
-  readonly priority = EXTRACTION_STRATEGY_PRIORITY.DOM_STRUCTURE;
+  readonly priority = EXTRACTION_STRATEGY_PRIORITY.DOM_BACKUP;
 
   /**
    * DOM 구조에서 트윗 정보 추출

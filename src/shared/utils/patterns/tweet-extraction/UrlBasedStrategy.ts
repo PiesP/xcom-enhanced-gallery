@@ -13,7 +13,7 @@ import type { TweetExtractionStrategy, TweetInfo } from './types';
  */
 export class UrlBasedStrategy implements TweetExtractionStrategy {
   readonly name = 'UrlBasedStrategy';
-  readonly priority = EXTRACTION_STRATEGY_PRIORITY.URL_BASED;
+  readonly priority = EXTRACTION_STRATEGY_PRIORITY.API_FIRST;
 
   /**
    * URL에서 트윗 정보 추출

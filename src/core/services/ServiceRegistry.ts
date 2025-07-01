@@ -50,25 +50,13 @@ export async function registerAllServices(): Promise<void> {
     lazy: true,
   });
 
-  // Media Services (Legacy)
+  // Media Services (Simplified)
   serviceManager.register(SERVICE_KEYS.MEDIA_EXTRACTION, {
     factory: async () => {
-      const { MediaExtractionService } = await import(
-        '../../features/media/services/MediaExtractionService'
+      const { SimplifiedMediaExtractor } = await import(
+        '../../features/media/extraction/services/SimplifiedMediaExtractor'
       );
-      return MediaExtractionService.getInstance();
-    },
-    singleton: true,
-    lazy: true,
-  });
-
-  // Media Services (New Unified)
-  serviceManager.register(SERVICE_KEYS.MEDIA_EXTRACTION_UNIFIED, {
-    factory: async () => {
-      const { UnifiedMediaExtractionService } = await import(
-        '../../features/media/extraction/services/UnifiedMediaExtractionService.v2'
-      );
-      return new UnifiedMediaExtractionService();
+      return new SimplifiedMediaExtractor();
     },
     singleton: true,
     lazy: true,

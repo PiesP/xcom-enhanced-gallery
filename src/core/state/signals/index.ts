@@ -1,10 +1,6 @@
 /**
- * 통합된 Signal 상태 관리 - 메인 export
- *
- * 기존 분산된 signal 파일들을 unified-gallery.signals.ts로 통합
- * - gallery-state.signals.ts (복잡한 클래스 기반) → deprecated
- * - gallery.signals.ts (미확인) → deprecated
- * - migration-wrapper.ts → 제거
+ * 갤러리 상태 관리 통합 Export
+ * @version 2.0.0 - Clean Architecture
  */
 
 // 메인 통합 Signal (권장)
@@ -47,6 +43,9 @@ export {
  * unified-gallery.signals의 함수형 접근을 사용하세요.
  */
 export { GalleryStateManager } from './GalleryStateSignals';
+
+// 다운로드 상태 관리
+export * from './download.signals';
 
 // 타입 별칭들 (호환성)
 export type { UnifiedGalleryState as GalleryState } from './unified-gallery.signals';

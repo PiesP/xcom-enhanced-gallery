@@ -1,9 +1,9 @@
 /**
- * @fileoverview Gallery State Signals - Migration Wrapper
+ * @fileoverview Gallery State Signals - Legacy Compatibility
  * @version 5.0.0 - Unified Architecture Migration
  *
  * @deprecated 이 파일은 하위 호환성을 위해 유지됩니다.
- * 새로운 코드에서는 @core/state/signals/unified-gallery.signals를 사용하세요.
+ * 새로운 코드에서는 @core/state/signals/unified-gallery.signals를 직접 사용하세요.
  *
  * 마이그레이션 가이드:
  * - openGallery → unified-gallery.signals의 openGallery
@@ -11,5 +11,25 @@
  * - getCurrentMediaItem → unified-gallery.signals의 getCurrentMedia
  */
 
-// 통합된 signals로 마이그레이션
-export * from './migration-wrapper';
+// 통합된 signals로 직접 위임
+export {
+  galleryState,
+  openGallery,
+  closeGallery,
+  navigateToMedia as selectMediaItem,
+  navigatePrevious,
+  navigateNext,
+  setLoading,
+  setError,
+  setViewMode,
+  getCurrentMedia as getCurrentMediaItem,
+  getGalleryInfo,
+
+  // 추가 함수들
+  hasNext,
+  hasPrevious,
+  isGallerySignalsInitialized,
+  isGalleryValid,
+  navigateToMedia as navigateToIndex,
+  openGallery as openGalleryOptimized,
+} from './unified-gallery.signals';

@@ -16,13 +16,12 @@ import { MediaExtractionCoordinator } from './MediaExtractionCoordinator';
 import type { MediaInfo } from '@core/types/media.types';
 
 /**
- * 코디네이터 매니저 설정
+ * 간소화된 코디네이터 매니저 설정
  */
 export interface CoordinatorManagerConfig {
   clickDebounceMs?: number;
   extractionTimeout?: number;
   enableKeyboard?: boolean;
-  enableBackgroundExtraction?: boolean;
   enablePerformanceMonitoring?: boolean;
 }
 
@@ -57,9 +56,8 @@ export class CoordinatorManager {
 
   private static readonly DEFAULT_CONFIG: Required<CoordinatorManagerConfig> = {
     clickDebounceMs: 500,
-    extractionTimeout: 15000,
+    extractionTimeout: 5000, // 간소화된 타임아웃
     enableKeyboard: true,
-    enableBackgroundExtraction: true,
     enablePerformanceMonitoring: false,
   };
 
@@ -72,10 +70,7 @@ export class CoordinatorManager {
       enableKeyboard: this.config.enableKeyboard,
     });
 
-    this.extractionCoordinator = new MediaExtractionCoordinator({
-      timeout: this.config.extractionTimeout,
-      enableBackgroundExtraction: this.config.enableBackgroundExtraction,
-    });
+    this.extractionCoordinator = new MediaExtractionCoordinator();
   }
 
   /**
@@ -199,7 +194,7 @@ export class CoordinatorManager {
    * 추출 상태 정리
    */
   public clearExtractionState(): void {
-    this.extractionCoordinator.clearExtractionState();
+    this.extractionCoordinator.cleanup();
     logger.debug('CoordinatorManager: 추출 상태 정리됨');
   }
 
@@ -217,11 +212,7 @@ export class CoordinatorManager {
       });
     }
 
-    if (newConfig.extractionTimeout !== undefined) {
-      this.extractionCoordinator.updateConfig({
-        timeout: this.config.extractionTimeout,
-      });
-    }
+    // 간소화된 추출 코디네이터는 설정 업데이트 불필요
 
     logger.debug('CoordinatorManager: 설정 업데이트됨');
   }
@@ -236,7 +227,10 @@ export class CoordinatorManager {
       metrics: { ...this.extractionMetrics },
       coordinators: {
         event: this.eventCoordinator.getDiagnostics(),
-        extraction: this.extractionCoordinator.getDiagnostics(),
+        extraction: {
+          status: 'simplified-version',
+          message: 'Simplified extraction coordinator - no diagnostics available',
+        },
       },
     };
   }

@@ -90,34 +90,48 @@ export const TWITTER_API_CONFIG = {
   USER_BY_SCREEN_NAME_QUERY_ID: '1VOOyvKkiI3FMmkeDNxM9A',
 } as const;
 
-/** 백그라운드 추출 관련 상수 */
+/** 백그라운드 추출 관련 상수 (제거 예정) */
 export const BACKGROUND_EXTRACTION = {
-  /** 백그라운드 추출 활성화 */
-  ENABLED: true,
-  /** 자동 감지 활성화 */
-  AUTO_DETECT_ENABLED: true,
-  /** 백그라운드 추출 타임아웃 (ms) */
-  TIMEOUT: 30000,
-  /** 기본 타임아웃 (ms) */
-  DEFAULT_TIMEOUT: 30000,
-  /** 최대 재시도 횟수 */
-  MAX_RETRIES: 3,
-  /** 재시도 딜레이 (ms) */
-  RETRY_DELAY: 1000,
+  /** 백그라운드 추출 비활성화 (간소화) */
+  ENABLED: false,
+  /** 자동 감지 비활성화 (간소화) */
+  AUTO_DETECT_ENABLED: false,
+  /** 타임아웃 (간소화된 값) */
+  TIMEOUT: 5000,
+  /** 기본 타임아웃 (간소화된 값) */
+  DEFAULT_TIMEOUT: 5000,
+  /** 최대 재시도 횟수 (간소화) */
+  MAX_RETRIES: 1,
+  /** 재시도 딜레이 (간소화) */
+  RETRY_DELAY: 500,
 } as const;
 
-/** 추출 전략 우선순위 */
+/** 간소화된 미디어 추출 설정 */
+export const MEDIA_EXTRACTION = {
+  /** 기본 타임아웃 (ms) */
+  DEFAULT_TIMEOUT: 5000,
+  /** 최대 재시도 횟수 */
+  MAX_RETRY_COUNT: 1,
+  /** API 우선 시도 타임아웃 */
+  API_TIMEOUT: 3000,
+  /** DOM 백업 타임아웃 */
+  DOM_TIMEOUT: 2000,
+} as const;
+
+/** 간소화된 추출 전략 타입 */
+export const EXTRACTION_STRATEGIES = {
+  /** API 우선 전략 */
+  API_FIRST: 'api-first',
+  /** DOM 백업 전략 */
+  DOM_BACKUP: 'dom-backup',
+} as const;
+
+/** 간소화된 추출 전략 우선순위 (2단계만) */
 export const EXTRACTION_STRATEGY_PRIORITY = {
-  /** 높은 우선순위 */
-  HIGH: 100,
-  /** 중간 우선순위 */
-  MEDIUM: 50,
-  /** 낮은 우선순위 */
-  LOW: 10,
-  /** URL 기반 추출 */
-  URL_BASED: 80,
-  /** DOM 구조 분석 */
-  DOM_STRUCTURE: 70,
+  /** API 우선 (높은 우선순위) */
+  API_FIRST: 100,
+  /** DOM 백업 (낮은 우선순위) */
+  DOM_BACKUP: 50,
 } as const;
 
 /** 타입 정의 */

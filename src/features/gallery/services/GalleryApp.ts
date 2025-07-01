@@ -18,7 +18,7 @@ import type { GalleryRenderer, MediaExtractor } from '@core/interfaces/gallery.i
 import { getService } from '@core/services/ServiceRegistry';
 import { GalleryStateManager } from '@core/state/signals/GalleryStateSignals';
 import type { MediaInfo } from '@core/types/media.types';
-import { UnifiedMediaExtractionService } from '@features/media/services/UnifiedMediaExtractionService';
+import { SimplifiedMediaExtractor } from '@features/media/extraction/services/SimplifiedMediaExtractor';
 import { logger } from '@infrastructure/logging/logger';
 import { undefinedToNull } from '@shared/utils/core/type-safety-helpers';
 import { MediaClickDetector } from '@shared/utils/media';
@@ -28,11 +28,11 @@ export class GalleryApp implements IGalleryApp {
   // 서비스 의존성 (필수만 유지)
   private galleryRenderer: GalleryRenderer | null = null;
   private mediaExtractor: MediaExtractor | null = null;
-  private readonly unifiedExtractor: UnifiedMediaExtractionService;
+  private readonly simplifiedExtractor: SimplifiedMediaExtractor;
   private readonly stateManager: GalleryStateManager;
 
   constructor() {
-    this.unifiedExtractor = UnifiedMediaExtractionService.getInstance();
+    this.simplifiedExtractor = new SimplifiedMediaExtractor();
     this.stateManager = GalleryStateManager.getInstance('gallery-app');
   }
 
@@ -86,7 +86,7 @@ export class GalleryApp implements IGalleryApp {
       this.galleryRenderer = (await getService(SERVICE_KEYS.GALLERY_RENDERER)) as GalleryRenderer;
 
       // 통합된 미디어 추출 서비스 사용 (이미 constructor에서 초기화됨)
-      this.mediaExtractor = this.unifiedExtractor;
+      this.mediaExtractor = this.simplifiedExtractor;
 
       logger.debug('GalleryApp: 서비스 초기화 완료');
     } catch (error) {
@@ -157,11 +157,10 @@ export class GalleryApp implements IGalleryApp {
       logger.debug('Loading state: true');
 
       // 통합된 미디어 추출 서비스 사용
-      let result = await this.unifiedExtractor.extractFromClickedElement(target, {
-        timeout: 3000,
+      let result = await this.simplifiedExtractor.extractFromClickedElement(target, {
+        timeoutMs: 3000,
         includeVideos: true,
-        enableBackgroundLoading: true,
-        maxRetries: 2,
+        enableValidation: true,
       });
 
       // 폴백: 기존 미디어 추출 서비스 사용

@@ -14,6 +14,7 @@ export interface MediaExtractionOptions {
   includeVideos?: boolean;
   useApiFallback?: boolean;
   enableValidation?: boolean;
+  timeoutMs?: number;
 }
 
 // TweetInfo 타입을 위한 인터페이스 (순환 참조 방지)
@@ -109,6 +110,8 @@ export interface MediaExtractionResult {
   mediaItems: readonly MediaInfo[];
   /** 클릭된 미디어의 인덱스 (0부터 시작) */
   clickedIndex?: number | undefined;
+  /** 소스 타입 (간소화) */
+  sourceType?: string | undefined;
   /** 에러 메시지 (실패시) */
   error?: string | undefined;
   /** 추출 메타데이터 */
@@ -139,7 +142,10 @@ export interface MediaExtractionMetadata {
     | 'data-attributes'
     | 'background-images'
     | 'twitter-api'
-    | 'simple-extraction';
+    | 'simple-extraction'
+    | 'error'
+    | 'api-first'
+    | 'dom-backup';
   /** 추출 전략 */
   strategy?: string;
   /** 사용된 전략 (메타데이터용) */
