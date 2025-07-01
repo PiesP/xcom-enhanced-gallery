@@ -19,6 +19,7 @@ export const SERVICE_KEYS = {
 
   // Media Services
   MEDIA_EXTRACTION: 'media.extraction',
+  MEDIA_EXTRACTION_UNIFIED: 'media.extraction.unified',
   MEDIA_FILENAME: 'media.filename',
 
   // UI Services

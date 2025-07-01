@@ -176,7 +176,6 @@ npm run test:coverage  # 커버리지 포함
 ### 자동 검사 항목
 
 1. **CI Pipeline**
-
    - TypeScript 타입 검사
    - ESLint 코딩 규칙
    - Prettier 포맷 검사
@@ -184,7 +183,6 @@ npm run test:coverage  # 커버리지 포함
    - 의존성 구조 검증
 
 2. **Build Test**
-
    - Development 빌드
    - Production 빌드
    - 빌드 검증 스크립트

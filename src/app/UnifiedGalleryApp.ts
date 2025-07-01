@@ -102,10 +102,10 @@ export class UnifiedGalleryApp {
    * 갤러리 렌더러 초기화
    */
   private async initializeRenderer(): Promise<void> {
-    this.galleryRenderer = await getService(SERVICE_KEYS.GALLERY_RENDERER);
+    this.galleryRenderer = (await getService(SERVICE_KEYS.GALLERY_RENDERER)) as GalleryRenderer;
 
     // 갤러리 닫기 콜백 설정
-    this.galleryRenderer.setOnCloseCallback(() => {
+    this.galleryRenderer?.setOnCloseCallback(() => {
       this.handleGalleryClose();
     });
 

@@ -18,8 +18,7 @@ import type { GalleryRenderer, MediaExtractor } from '@core/interfaces/gallery.i
 import { getService } from '@core/services/ServiceRegistry';
 import { GalleryStateManager } from '@core/state/signals/GalleryStateSignals';
 import type { MediaInfo } from '@core/types/media.types';
-import { MediaExtractionService } from '@features/media/services/MediaExtractionService';
-import { StableMediaExtractionService } from '@features/media/services/StableMediaExtractionService';
+import { UnifiedMediaExtractionService } from '@features/media/services/UnifiedMediaExtractionService';
 import { logger } from '@infrastructure/logging/logger';
 import { undefinedToNull } from '@shared/utils/core/type-safety-helpers';
 import { MediaClickDetector } from '@shared/utils/media';
@@ -29,11 +28,11 @@ export class GalleryApp implements IGalleryApp {
   // 서비스 의존성 (필수만 유지)
   private galleryRenderer: GalleryRenderer | null = null;
   private mediaExtractor: MediaExtractor | null = null;
-  private readonly stableExtractor: StableMediaExtractionService;
+  private readonly unifiedExtractor: UnifiedMediaExtractionService;
   private readonly stateManager: GalleryStateManager;
 
   constructor() {
-    this.stableExtractor = StableMediaExtractionService.getInstance();
+    this.unifiedExtractor = UnifiedMediaExtractionService.getInstance();
     this.stateManager = GalleryStateManager.getInstance('gallery-app');
   }
 
@@ -84,10 +83,10 @@ export class GalleryApp implements IGalleryApp {
       logger.debug('GalleryApp: 서비스 초기화 중...');
 
       // ServiceRegistry를 통한 서비스 인스턴스 생성
-      this.galleryRenderer = await getService(SERVICE_KEYS.GALLERY_RENDERER);
+      this.galleryRenderer = (await getService(SERVICE_KEYS.GALLERY_RENDERER)) as GalleryRenderer;
 
-      // 통합된 미디어 추출 서비스 사용
-      this.mediaExtractor = MediaExtractionService.getInstance();
+      // 통합된 미디어 추출 서비스 사용 (이미 constructor에서 초기화됨)
+      this.mediaExtractor = this.unifiedExtractor;
 
       logger.debug('GalleryApp: 서비스 초기화 완료');
     } catch (error) {
@@ -157,12 +156,12 @@ export class GalleryApp implements IGalleryApp {
       this.stateManager.setLoading(true);
       logger.debug('Loading state: true');
 
-      // 안정적인 미디어 추출 서비스 사용 (우선)
-      let result = await this.stableExtractor.extractFromClick(target, {
-        activateVideos: true,
-        maxWaitTime: 3000,
-        observeChanges: true,
-        retryCount: 2,
+      // 통합된 미디어 추출 서비스 사용
+      let result = await this.unifiedExtractor.extractFromClickedElement(target, {
+        timeout: 3000,
+        includeVideos: true,
+        enableBackgroundLoading: true,
+        maxRetries: 2,
       });
 
       // 폴백: 기존 미디어 추출 서비스 사용

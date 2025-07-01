@@ -5,8 +5,8 @@
  * 모든 서비스를 등록하고 설정하는 중앙 레지스트리
  */
 
-import { SERVICE_KEYS } from '@core/constants';
-import type { ServiceTypeMapping } from '@core/types/services.types';
+import { SERVICE_KEYS } from '../constants';
+import type { ServiceTypeMapping } from '../types/services.types';
 import { ServiceManager } from './ServiceManager';
 
 // Type-safe service keys
@@ -32,7 +32,7 @@ export async function registerAllServices(): Promise<void> {
   // Gallery Services
   serviceManager.register(SERVICE_KEYS.GALLERY_RENDERER, {
     factory: async () => {
-      const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
+      const { GalleryRenderer } = await import('../../features/gallery/GalleryRenderer');
       return new GalleryRenderer();
     },
     singleton: true,
@@ -42,7 +42,7 @@ export async function registerAllServices(): Promise<void> {
   serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, {
     factory: async () => {
       const { GalleryDownloadService } = await import(
-        '@features/gallery/services/GalleryDownloadService'
+        '../../features/gallery/services/GalleryDownloadService'
       );
       return GalleryDownloadService.getInstance();
     },
@@ -50,11 +50,11 @@ export async function registerAllServices(): Promise<void> {
     lazy: true,
   });
 
-  // Media Services
+  // Media Services (Legacy)
   serviceManager.register(SERVICE_KEYS.MEDIA_EXTRACTION, {
     factory: async () => {
       const { MediaExtractionService } = await import(
-        '@features/media/services/MediaExtractionService'
+        '../../features/media/services/MediaExtractionService'
       );
       return MediaExtractionService.getInstance();
     },
@@ -62,9 +62,21 @@ export async function registerAllServices(): Promise<void> {
     lazy: true,
   });
 
+  // Media Services (New Unified)
+  serviceManager.register(SERVICE_KEYS.MEDIA_EXTRACTION_UNIFIED, {
+    factory: async () => {
+      const { UnifiedMediaExtractionService } = await import(
+        '../../features/media/extraction/services/UnifiedMediaExtractionService.v2'
+      );
+      return new UnifiedMediaExtractionService();
+    },
+    singleton: true,
+    lazy: true,
+  });
+
   serviceManager.register(SERVICE_KEYS.MEDIA_FILENAME, {
     factory: async () => {
-      const { MediaFilenameService } = await import('@infrastructure/media');
+      const { MediaFilenameService } = await import('../../infrastructure/media');
       return MediaFilenameService.getInstance();
     },
     singleton: true,
@@ -74,7 +86,7 @@ export async function registerAllServices(): Promise<void> {
   // Scroll Services
   serviceManager.register(SERVICE_KEYS.PAGE_SCROLL_LOCK, {
     factory: async () => {
-      const { ScrollLockService } = await import('@infrastructure/dom/ScrollLockService');
+      const { ScrollLockService } = await import('../../infrastructure/dom/ScrollLockService');
       return ScrollLockService.getInstance();
     },
     singleton: true,
@@ -84,7 +96,7 @@ export async function registerAllServices(): Promise<void> {
   serviceManager.register(SERVICE_KEYS.GALLERY_SCROLL, {
     factory: async () => {
       const { GalleryScrollManager } = await import(
-        '@shared/utils/core/dom/gallery-scroll-manager'
+        '../../shared/utils/core/dom/gallery-scroll-manager'
       );
       return GalleryScrollManager.getInstance();
     },
@@ -114,7 +126,7 @@ export async function registerAllServices(): Promise<void> {
   // Video Services
   serviceManager.register(SERVICE_KEYS.VIDEO_STATE, {
     factory: async () => {
-      const { VideoService } = await import('@shared/utils/media');
+      const { VideoService } = await import('../../shared/utils/media');
       return VideoService.getInstance();
     },
     singleton: true,
@@ -123,7 +135,7 @@ export async function registerAllServices(): Promise<void> {
 
   serviceManager.register(SERVICE_KEYS.VIDEO_CONTROL, {
     factory: async () => {
-      const { VideoService } = await import('@shared/utils/media');
+      const { VideoService } = await import('../../shared/utils/media');
       return VideoService.getInstance();
     },
     singleton: true,

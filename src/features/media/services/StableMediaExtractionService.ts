@@ -1,6 +1,7 @@
 /**
  * @fileoverview StableMediaExtractionService - 안정적인 미디어 추출 서비스
  * @description UI 변경에 강건한 미디어 추출 로직과 프로그래매틱 비디오 활성화
+ * @deprecated 이 서비스는 더 이상 사용되지 않습니다. UnifiedMediaExtractionService를 사용하세요.
  */
 
 import { STABLE_SELECTORS } from '@core/constants/STABLE_SELECTORS';

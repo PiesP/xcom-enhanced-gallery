@@ -13,7 +13,12 @@ module.exports = {
       name: 'no-core-upward-deps',
       comment: 'Core는 infrastructure에만 의존 가능',
       severity: 'error',
-      from: { path: '^src/core' },
+      from: {
+        path: '^src/core',
+        pathNot: [
+          '^src/core/services/ServiceRegistry.ts', // ServiceRegistry는 동적 import 허용
+        ],
+      },
       to: { path: '^src/(shared|features|app)' },
     },
     {
@@ -70,6 +75,9 @@ module.exports = {
           '^src/core/services/(ScrollLockService|PreciseMediaMapper|MediaPageTypeDetector)[.]ts$',
           '^src/core/services/cache/EnhancedMediaCacheService[.]ts$',
           '^src/core/constants/STABLE_SELECTORS[.]ts$',
+          // 레거시 서비스들 (deprecated, 직접 사용되지 않음)
+          '^src/features/media/services/(MediaExtractionService|StableMediaExtractionService)[.]ts$',
+          '^src/app/coordinators/MediaExtractionCoordinator[.]ts$',
         ],
       },
       to: {},

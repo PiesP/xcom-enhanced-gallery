@@ -1,4 +1,7 @@
 /**
+ * @deprecated 이 서비스는 더 이상 사용되지 않습니다.
+ * UnifiedMediaExtractionService를 사용하세요.
+ *
  * @fileoverview Enhanced Media Extractor Service
  * @description 현재 페이지와 백그라운드 로딩을 결합한 강화된 미디어 추출 서비스
  */

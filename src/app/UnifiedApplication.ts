@@ -264,18 +264,9 @@ export class UnifiedApplication {
    * 정리 핸들러 설정
    */
   private setupCleanupHandlers(): void {
-    // 프로세스 종료 시 정리 (Node.js 환경)
-    if (typeof process !== 'undefined') {
-      const processCleanup = (): void => {
-        this.cleanup().catch(() => {
-          // 무시 - 프로세스 종료 중
-        });
-      };
-
-      process.on('exit', processCleanup);
-      process.on('SIGINT', processCleanup);
-      process.on('SIGTERM', processCleanup);
-    }
+    // 브라우저 환경에서는 Node.js process 이벤트를 사용할 수 없음
+    // 대신 브라우저 특화된 정리 로직은 setupGlobalEventHandlers에서 처리
+    logger.debug('Cleanup handlers initialized for browser environment');
   }
 
   /**

@@ -1,4 +1,7 @@
 /**
+ * @deprecated 이 서비스는 더 이상 사용되지 않습니다.
+ * UnifiedMediaExtractionService를 사용하세요.
+ *
  * Media Extraction Service
  *
  * 동영상 재생으로 인한 DOM 변화와 요소 소실 문제를 해결하는 미디어 추출 서비스

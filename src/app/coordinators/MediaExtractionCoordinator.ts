@@ -15,13 +15,13 @@ import {
   getExtractionStateManager,
   hasSuccessfulExtraction,
   recordSuccessfulExtraction,
-} from '@core/state/ExtractionStateManager';
-import type { MediaInfo } from '@core/types/media.types';
-import { BackgroundTweetLoader } from '@features/media/services/BackgroundTweetLoader';
-import { MediaExtractionService } from '@features/media/services/MediaExtractionService';
-import { HiddenTweetLoaderService } from '@features/media/services/HiddenTweetLoaderService';
-import { logger } from '@infrastructure/logging/logger';
-import { URLPatterns } from '@shared/utils/patterns/url-patterns';
+} from '../../core/state/ExtractionStateManager';
+import type { MediaInfo } from '../../core/types/media.types';
+import { BackgroundTweetLoader } from '../../features/media/services/BackgroundTweetLoader';
+import { UnifiedMediaExtractionService } from '../../features/media/extraction/services/UnifiedMediaExtractionService.v2';
+import { HiddenTweetLoaderService } from '../../features/media/services/HiddenTweetLoaderService';
+import { logger } from '../../infrastructure/logging/logger';
+import { URLPatterns } from '../../shared/utils/patterns/url-patterns';
 
 /**
  * 추출 결과
@@ -49,7 +49,7 @@ export class MediaExtractionCoordinator {
   private config: Required<ExtractionCoordinatorConfig>;
 
   // 추출 서비스들
-  private immediateExtractor: MediaExtractionService | null = null;
+  private immediateExtractor: UnifiedMediaExtractionService | null = null;
   private backgroundTweetLoader: BackgroundTweetLoader | null = null;
   private hiddenTweetLoader: HiddenTweetLoaderService | null = null;
 
@@ -77,7 +77,7 @@ export class MediaExtractionCoordinator {
 
     try {
       // 즉시 추출 서비스 초기화
-      this.immediateExtractor = MediaExtractionService.getInstance();
+      this.immediateExtractor = new UnifiedMediaExtractionService();
 
       // 백그라운드 추출 서비스들 초기화
       if (this.config.enableBackgroundExtraction) {
@@ -162,10 +162,9 @@ export class MediaExtractionCoordinator {
       logger.debug('즉시 추출 시도');
 
       const result = await this.immediateExtractor.extractFromClickedElement(target, {
-        includeVideoElements: true,
-        preserveVideoState: true,
-        enableMutationObserver: false,
-        fallbackToVideoAPI: true,
+        includeVideos: true,
+        enableValidation: true,
+        useApiFallback: true,
       });
 
       if (result.success && result.mediaItems.length > 0) {

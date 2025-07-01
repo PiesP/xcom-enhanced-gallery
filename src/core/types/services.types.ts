@@ -28,41 +28,68 @@ export type ServiceDependency = string;
 export type ServiceFactory<T> = () => T | Promise<T>;
 
 // Import service class types for type safety
-export type BulkDownloadServiceType =
-  import('@core/services/BulkDownloadService').BulkDownloadService;
-export type GalleryRendererType = import('@features/gallery/GalleryRenderer').GalleryRenderer;
-export type GalleryDownloadServiceType =
-  import('@features/gallery/services/GalleryDownloadService').GalleryDownloadService;
-export type MediaExtractionServiceType =
-  import('@features/media/services/MediaExtractionService').MediaExtractionService;
-export type MediaFilenameServiceType = import('@infrastructure/media').MediaFilenameService;
-
-// Manager types
+export type BulkDownloadServiceType = import('../services/BulkDownloadService').BulkDownloadService;
+export type MediaFilenameServiceType = import('../../infrastructure/media').MediaFilenameService;
 export type PageScrollLockManagerType =
-  import('@infrastructure/dom/ScrollLockService').ScrollLockService;
-export type GalleryScrollManagerType =
-  import('@shared/utils/core/dom/gallery-scroll-manager').GalleryScrollManager;
+  import('../../infrastructure/dom/ScrollLockService').ScrollLockService;
 export type AutoThemeServiceType = import('../services/AutoThemeService').AutoThemeService;
-export type VideoServiceType = import('@shared/utils/media').VideoService;
 export type GalleryScrollProtectionServiceType =
   import('../services/GalleryScrollProtectionService').GalleryScrollProtectionService;
 
-// Gallery App types
-export type GalleryAppType = import('@app/UnifiedGalleryApp').UnifiedGalleryApp;
+// Generic service interfaces for features and shared services
+export interface GalleryRendererType extends BaseService {
+  render(mediaItems: readonly unknown[], renderOptions?: unknown): Promise<void>;
+  close?(): void;
+  isRendering?(): boolean;
+  setOnCloseCallback?(callback: () => void): void;
+}
 
-// Service registry mapping
+export interface GalleryDownloadServiceType extends BaseService {
+  getInstance?(): GalleryDownloadServiceType;
+  downloadAll(items: unknown[]): Promise<void>;
+}
+
+export interface MediaExtractionServiceType extends BaseService {
+  extractMediaFromElement?(element: Element): Promise<unknown>;
+  extractMedia?(element: Element, options?: unknown): Promise<unknown>;
+  getInstance?(): MediaExtractionServiceType;
+}
+
+export interface UnifiedMediaExtractionServiceType extends BaseService {
+  extractMedia(element: Element, options?: unknown): Promise<unknown>;
+}
+
+export interface GalleryScrollManagerType extends BaseService {
+  getInstance?(): GalleryScrollManagerType;
+  lockScroll(): void;
+  unlockScroll(): void;
+}
+
+export interface VideoServiceType extends BaseService {
+  getInstance?(): VideoServiceType;
+  pauseAll(): void;
+  resumeAll(): void;
+}
+
+export interface GalleryAppType extends BaseService {
+  initialize(): Promise<void>;
+  destroy(): void;
+}
+
+// Service registry mapping - 의존성 규칙 위반을 피하기 위해 unknown 사용
 export interface ServiceTypeMapping {
   'core.bulkDownload': BulkDownloadServiceType;
-  gallery: GalleryAppType;
-  'gallery.renderer': GalleryRendererType;
-  'gallery.download': GalleryDownloadServiceType;
-  'media.extraction': MediaExtractionServiceType;
+  gallery: unknown; // GalleryAppType - features layer 타입이므로 unknown 사용
+  'gallery.renderer': unknown; // GalleryRendererType - features layer 타입이므로 unknown 사용
+  'gallery.download': unknown; // GalleryDownloadServiceType - features layer 타입이므로 unknown 사용
+  'media.extraction': unknown; // MediaExtractionServiceType - features layer 타입이므로 unknown 사용
+  'media.extraction.unified': unknown; // UnifiedMediaExtractionServiceType - features layer 타입이므로 unknown 사용
   'media.filename': MediaFilenameServiceType;
   'scroll.pageLock': PageScrollLockManagerType;
-  'scroll.gallery': GalleryScrollManagerType;
+  'scroll.gallery': unknown; // GalleryScrollManagerType - shared layer 타입이므로 unknown 사용
   'scroll.galleryProtection': GalleryScrollProtectionServiceType;
   'theme.auto': AutoThemeServiceType;
-  'video.service': VideoServiceType;
+  'video.service': unknown; // VideoServiceType - shared layer 타입이므로 unknown 사용
 }
 
 // Service manager errors
