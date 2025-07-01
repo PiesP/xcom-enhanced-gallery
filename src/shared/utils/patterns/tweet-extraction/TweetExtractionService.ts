@@ -3,7 +3,7 @@
  * @description 전략 패턴을 사용한 통합된 트윗 정보 추출 서비스
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '../../../../infrastructure/logging/logger';
 import { ClickedElementStrategy } from './ClickedElementStrategy';
 import { DataAttributesStrategy } from './DataAttributesStrategy';
 import { StatusLinksStrategy } from './StatusLinksStrategy';
@@ -121,15 +121,4 @@ let serviceInstance: TweetExtractionService | null = null;
 export function getTweetExtractionService(): TweetExtractionService {
   serviceInstance ??= new TweetExtractionService();
   return serviceInstance;
-}
-
-/**
- * 호환성을 위한 레거시 함수
- * @deprecated TweetExtractionService.extractTweetInfo 사용 권장
- */
-export function extractTweetInfoUnified(
-  tweetContainer: HTMLElement,
-  clickedElement?: HTMLElement
-): TweetInfo | null {
-  return getTweetExtractionService().extractTweetInfo(tweetContainer, clickedElement);
 }

@@ -9,7 +9,7 @@
  * 4. CSS 기반 강력한 스크롤 차단 - 브라우저 레벨 보호
  */
 
-import type { EnhancedPageScrollLockService } from '../scroll/EnhancedPageScrollLockService';
+import type { PageScrollLockService } from '../scroll/PageScrollLockService';
 import type { ScrollCoordinateManager } from '../scroll/ScrollCoordinateManager';
 import type { MediaInfo } from '../../types/media.types';
 import { GalleryEarlyInitializer } from './GalleryEarlyInitializer';
@@ -59,12 +59,12 @@ export interface AtomicInitializationResult {
  * 모든 DOM 조작과 스크롤 보호를 원자적으로 처리합니다.
  */
 export class AtomicGalleryInitializer {
-  private readonly scrollLockService: EnhancedPageScrollLockService;
+  private readonly scrollLockService: PageScrollLockService;
   private readonly coordinateManager: ScrollCoordinateManager;
   private isInitializing = false;
 
   constructor(
-    scrollLockService: EnhancedPageScrollLockService,
+    scrollLockService: PageScrollLockService,
     coordinateManager: ScrollCoordinateManager
   ) {
     this.scrollLockService = scrollLockService;

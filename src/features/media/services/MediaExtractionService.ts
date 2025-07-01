@@ -8,18 +8,9 @@ import { logger } from '../../../infrastructure/logging/logger';
 import type {
   MediaExtractionResult,
   MediaExtractor,
+  MediaExtractionOptions,
 } from '../../../core/interfaces/gallery.interfaces';
 import { SimplifiedMediaExtractor } from '../extraction/services/SimplifiedMediaExtractor';
-
-/**
- * 간소화된 미디어 추출 옵션
- */
-export interface EnhancedMediaExtractionOptions {
-  /** 비디오 요소도 포함할지 여부 (기본값: true) */
-  includeVideos?: boolean;
-  /** 검증 활성화 (기본값: true) */
-  enableValidation?: boolean;
-}
 
 /**
  * 미디어 추출 서비스 (SimplifiedMediaExtractor 래퍼)
@@ -43,7 +34,7 @@ export class MediaExtractionService implements MediaExtractor {
    */
   public async extractFromClickedElement(
     element: HTMLElement,
-    options: EnhancedMediaExtractionOptions = {}
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     try {
       // SimplifiedMediaExtractor에 위임
@@ -74,7 +65,7 @@ export class MediaExtractionService implements MediaExtractor {
    */
   public async extractAllFromContainer(
     container: HTMLElement,
-    options: EnhancedMediaExtractionOptions = {}
+    options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     logger.debug('[MediaExtractionService] 컨테이너 추출 시작');
 

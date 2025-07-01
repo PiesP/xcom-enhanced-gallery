@@ -10,7 +10,16 @@ import type {
   GalleryRenderOptions,
   GalleryRenderer as GalleryRendererInterface,
 } from '@core/interfaces/gallery.interfaces';
-import { GalleryStateManager } from '@core/state/signals/GalleryStateSignals';
+import {
+  galleryState,
+  closeGallery,
+  navigatePrevious,
+  navigateNext,
+  setLoading,
+  setError,
+  getCurrentMedia,
+  openGallery,
+} from '../../core/state/signals/unified-gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view';
 import '@features/gallery/styles/gallery-global.css';
@@ -32,11 +41,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
   private cleanupFunctions: (() => void)[] = [];
   private isRenderingFlag = false;
-  private readonly galleryState: GalleryStateManager;
   private onCloseCallback: (() => void) | undefined;
 
-  constructor(galleryState?: GalleryStateManager, onClose?: () => void) {
-    this.galleryState = galleryState ?? GalleryStateManager.getInstance();
+  constructor(onClose?: () => void) {
     this.onCloseCallback = onClose;
     this.setupStateEffects();
   }
@@ -54,8 +61,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private setupStateEffects(): void {
     const openEffect = effect(() => {
       try {
-        const signals = this.galleryState.getSignals();
-        const isOpen = signals.isOpen.value;
+        const isOpen = galleryState.value.isOpen;
 
         if (isOpen === true) {
           this.show();
@@ -140,10 +146,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
       return;
     }
 
-    const signals = this.galleryState.getSignals();
-    const mediaItems = signals.mediaItems.value ?? [];
-    const currentIndex = signals.currentIndex.value ?? 0;
-    const isOpen = signals.isOpen.value ?? false;
+    const state = galleryState.value;
+    const mediaItems = state.mediaItems ?? [];
+    const currentIndex = state.currentIndex ?? 0;
+    const isOpen = state.isOpen ?? false;
 
     if (!isOpen || mediaItems.length === 0) {
       logger.warn('[GalleryRenderer] 갤러리가 닫혀있거나 미디어가 없음');
@@ -156,10 +162,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
       const galleryElement = createElement(VerticalGalleryView, {
         mediaItems,
         currentIndex,
-        isDownloading: signals.isLoading?.value ?? false,
+        isDownloading: state.isLoading ?? false,
         onClose: this.handleClose.bind(this),
-        onPrevious: () => this.galleryState.goToPrevious(),
-        onNext: () => this.galleryState.goToNext(),
+        onPrevious: () => navigatePrevious(),
+        onNext: () => navigateNext(),
         onDownloadCurrent: () => this.downloadCurrentMedia(),
         onDownloadAll: () => this.downloadAllMedia(),
         className: 'xeg-vertical-gallery',
@@ -179,7 +185,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     logger.debug('[GalleryRenderer] 닫기 요청');
 
     // 1. UI 상태 닫기
-    this.galleryState.closeGallery();
+    closeGallery();
 
     // 2. 추가 정리 작업
     if (this.onCloseCallback) {
@@ -191,12 +197,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * 현재 미디어 다운로드
    */
   private async downloadCurrentMedia(): Promise<void> {
-    const signals = this.galleryState.getSignals();
-    const currentMedia = signals.currentMedia?.value;
+    const currentMedia = getCurrentMedia();
     if (!currentMedia) return;
 
     try {
-      this.galleryState.setLoading(true);
+      setLoading(true);
 
       const { GalleryDownloadService } = await import(
         '@features/gallery/services/GalleryDownloadService'
@@ -205,13 +210,13 @@ export class GalleryRenderer implements GalleryRendererInterface {
       const success = await downloadService.downloadCurrent(currentMedia);
 
       if (!success) {
-        this.galleryState.setError('다운로드에 실패했습니다.');
+        setError('다운로드에 실패했습니다.');
       }
     } catch (error) {
       logger.error('[GalleryRenderer] 다운로드 실패:', error);
-      this.galleryState.setError('다운로드에 실패했습니다.');
+      setError('다운로드에 실패했습니다.');
     } finally {
-      this.galleryState.setLoading(false);
+      setLoading(false);
     }
   }
 
@@ -219,12 +224,12 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * 전체 미디어 다운로드
    */
   private async downloadAllMedia(): Promise<void> {
-    const signals = this.galleryState.getSignals();
-    const mediaItems = signals.mediaItems?.value ?? [];
+    const state = galleryState.value;
+    const mediaItems = state.mediaItems ?? [];
     if (mediaItems.length === 0) return;
 
     try {
-      this.galleryState.setLoading(true);
+      setLoading(true);
 
       const { GalleryDownloadService } = await import(
         '@features/gallery/services/GalleryDownloadService'
@@ -233,13 +238,13 @@ export class GalleryRenderer implements GalleryRendererInterface {
       const result = await downloadService.downloadAll(mediaItems);
 
       if (!result.success) {
-        this.galleryState.setError('ZIP 다운로드에 실패했습니다.');
+        setError('ZIP 다운로드에 실패했습니다.');
       }
     } catch (error) {
       logger.error('[GalleryRenderer] ZIP 다운로드 실패:', error);
-      this.galleryState.setError('ZIP 다운로드에 실패했습니다.');
+      setError('ZIP 다운로드에 실패했습니다.');
     } finally {
-      this.galleryState.setLoading(false);
+      setLoading(false);
     }
   }
 
@@ -251,14 +256,12 @@ export class GalleryRenderer implements GalleryRendererInterface {
     renderOptions?: GalleryRenderOptions
   ): Promise<void> {
     try {
-      this.galleryState.openGallery(mediaItems, renderOptions?.startIndex ?? 0);
+      openGallery(mediaItems, renderOptions?.startIndex ?? 0);
 
-      if (renderOptions?.viewMode) {
-        const signals = this.galleryState.getSignals();
-        if (signals.viewMode) {
-          signals.viewMode.value = renderOptions.viewMode;
-        }
-      }
+      // viewMode 설정은 현재 타입 불일치로 인해 비활성화
+      // if (renderOptions?.viewMode && (renderOptions.viewMode === 'horizontal' || renderOptions.viewMode === 'vertical')) {
+      //   setViewMode(renderOptions.viewMode);
+      // }
 
       logger.info(`[GalleryRenderer] Rendered ${mediaItems.length} media items`);
     } catch (error) {
@@ -271,7 +274,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * GalleryRendererInterface 구현: 갤러리 닫기
    */
   close(): void {
-    this.galleryState.closeGallery();
+    closeGallery();
   }
 
   /**

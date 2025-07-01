@@ -10,10 +10,10 @@ import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 import {
   closeGallery,
   galleryState,
-  getCurrentMediaItem,
+  getCurrentMedia as getCurrentMediaItem,
   getGalleryInfo,
   openGallery,
-} from '../state/signals/gallery.signals';
+} from '../state/signals/unified-gallery.signals';
 import type { MediaInfo } from '../types/media.types';
 import { logger } from '../../infrastructure/logging/logger';
 

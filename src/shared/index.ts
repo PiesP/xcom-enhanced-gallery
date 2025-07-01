@@ -33,8 +33,6 @@ export {
   enhancedImageFilter,
   extractTweetId,
   extractTweetInfoFromUrl,
-  // Pattern utilities
-  extractTweetInfoUnified,
   // Filename utilities
   generateMediaFilename,
   generateZipFilename,

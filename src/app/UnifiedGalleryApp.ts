@@ -13,7 +13,11 @@ import { removeUndefinedProperties } from '@shared/utils/core/type-safety-helper
 import { SERVICE_KEYS } from '@core/constants';
 import type { GalleryRenderer } from '@core/interfaces/gallery.interfaces';
 import { getService } from '@core/services/ServiceRegistry';
-import { GalleryStateManager } from '@core/state/signals/GalleryStateSignals';
+import {
+  galleryState,
+  openGallery,
+  closeGallery,
+} from '../core/state/signals/unified-gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { logger } from '@infrastructure/logging/logger';
 import type { ManagedExtractionResult } from './coordinators/CoordinatorManager';
@@ -41,7 +45,6 @@ export interface UnifiedGalleryConfig {
 
 export class UnifiedGalleryApp {
   private readonly coordinatorManager: CoordinatorManager;
-  private readonly galleryState: GalleryStateManager;
   private galleryRenderer: GalleryRenderer | null = null;
 
   private isInitialized = false;
@@ -65,8 +68,6 @@ export class UnifiedGalleryApp {
         enablePerformanceMonitoring: this.config.performanceMonitoring,
       })
     );
-
-    this.galleryState = GalleryStateManager.getInstance();
   }
 
   /**
@@ -172,7 +173,7 @@ export class UnifiedGalleryApp {
       await this.ensureGalleryContainer();
 
       // 갤러리 상태 업데이트
-      this.galleryState.openGallery(mediaItems, validIndex);
+      openGallery(mediaItems, validIndex);
 
       logger.info(`✅ 갤러리 열기 성공: ${mediaItems.length}개 미디어`);
     } catch (error) {
@@ -187,8 +188,8 @@ export class UnifiedGalleryApp {
    */
   public closeGallery(): void {
     try {
-      if (this.galleryState.getSignals().isOpen.value) {
-        this.galleryState.closeGallery();
+      if (galleryState.value.isOpen) {
+        closeGallery();
       }
 
       this.handleGalleryClose();
@@ -296,9 +297,9 @@ export class UnifiedGalleryApp {
       config: this.config,
       coordinatorManager: this.coordinatorManager.getDiagnostics(),
       galleryState: {
-        isOpen: this.galleryState.getSignals().isOpen.value,
-        mediaCount: this.galleryState.getSignals().mediaItems.value.length,
-        currentIndex: this.galleryState.getSignals().currentIndex.value,
+        isOpen: galleryState.value.isOpen,
+        mediaCount: galleryState.value.mediaItems.length,
+        currentIndex: galleryState.value.currentIndex,
       },
     };
   }
@@ -311,7 +312,7 @@ export class UnifiedGalleryApp {
       openGallery: this.openGallery.bind(this),
       closeGallery: this.closeGallery.bind(this),
       getDiagnostics: this.getDiagnostics.bind(this),
-      getState: () => this.galleryState.getSignals(),
+      getState: () => galleryState.value,
       getMetrics: () => this.coordinatorManager.getDiagnostics().metrics,
       clearExtractionState: () => this.coordinatorManager.clearExtractionState(),
     };
@@ -327,7 +328,7 @@ export class UnifiedGalleryApp {
       logger.info('UnifiedGalleryApp 정리 시작');
 
       // 갤러리가 열려있다면 닫기
-      if (this.galleryState.getSignals().isOpen.value) {
+      if (galleryState.value.isOpen) {
         this.closeGallery();
       }
 

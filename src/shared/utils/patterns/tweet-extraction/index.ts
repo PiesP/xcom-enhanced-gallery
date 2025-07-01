@@ -6,14 +6,7 @@
 // 메인 통합 추출기 (권장)
 export { UnifiedTweetIdExtractor, type TweetExtractionResult } from './UnifiedTweetIdExtractor';
 
-// 호환성을 위한 래퍼 함수들
-export {
-  extractTweetInfoUnified,
-  convertToLegacyTweetInfo,
-  extractSimpleTweetInfo,
-} from './compat';
-
-// 전략 서비스 (내부 사용)
+// 서비스 레이어
 export { TweetExtractionService, getTweetExtractionService } from './TweetExtractionService';
 
 // 타입 정의
@@ -24,3 +17,5 @@ export { isValidTweetInfo, generateSyntheticTweetInfo } from './types';
 export { ClickedElementStrategy } from './ClickedElementStrategy';
 export { DataAttributesStrategy } from './DataAttributesStrategy';
 export { StatusLinksStrategy } from './StatusLinksStrategy';
+export { UrlBasedStrategy } from './UrlBasedStrategy';
+export { DomStructureStrategy } from './DomStructureStrategy';

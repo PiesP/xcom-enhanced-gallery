@@ -11,20 +11,20 @@
 
 import {
   closeGallery,
-  getCurrentMediaItem,
+  getCurrentMedia as getCurrentMediaItem,
   galleryState,
   hasNext,
   hasPrevious,
   isGallerySignalsInitialized,
   isGalleryValid,
-  navigateToIndex,
-  openGalleryOptimized,
-} from '@core/state/signals/gallery.signals';
-import type { MediaInfo } from '@core/types/media.types';
-import type { ViewMode } from '@core/types/view-mode.types';
-import { isVendorsInitialized } from '@infrastructure/external/vendors';
-import { logger } from '@infrastructure/logging/logger';
-import { recordInitialization } from '@shared/utils/diagnostics';
+  navigateToMedia as navigateToIndex,
+  openGallery as openGalleryOptimized,
+} from '../../../core/state/signals/unified-gallery.signals';
+import type { MediaInfo } from '../../../core/types/media.types';
+import type { ViewMode } from '../../../core/types/view-mode.types';
+import { isVendorsInitialized } from '../../../infrastructure/external/vendors';
+import { logger } from '../../../infrastructure/logging/logger';
+import { recordInitialization } from '../../../shared/utils/diagnostics';
 
 /**
  * 갤러리 열기 옵션

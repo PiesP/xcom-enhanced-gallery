@@ -30,19 +30,12 @@ export {
   type GalleryEvents,
 } from './unified-gallery.signals';
 
-// 하위 호환성을 위한 별칭들 (deprecated)
+// 하위 호환성을 위한 별칭들
 export {
   navigateToMedia as selectMediaItem,
   getCurrentMedia as getCurrentMediaItem,
   setLoading as setGalleryLoading,
 } from './unified-gallery.signals';
-
-/**
- * @deprecated Use unified signals instead
- * 기존 GalleryStateManager 클래스는 더 이상 권장되지 않습니다.
- * unified-gallery.signals의 함수형 접근을 사용하세요.
- */
-export { GalleryStateManager } from './GalleryStateSignals';
 
 // 다운로드 상태 관리
 export * from './download.signals';

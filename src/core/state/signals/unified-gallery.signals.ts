@@ -247,7 +247,7 @@ export function getGalleryInfo(): {
     mediaCount: state.mediaItems.length,
     totalItems: state.mediaItems.length,
     currentIndex: state.currentIndex,
-    currentItem: getCurrentMediaItem(),
+    currentItem: getCurrentMedia(),
     hasNext: state.currentIndex < state.mediaItems.length - 1,
     hasPrevious: state.currentIndex > 0,
     isLoading: state.isLoading,
@@ -295,16 +295,7 @@ export function isGallerySignalsInitialized(): boolean {
 }
 
 /**
- * 갤러리 상태 접근자 (하위 호환성)
- * @deprecated galleryState를 직접 사용하세요
- */
-export function getGalleryState(): UnifiedGalleryState {
-  logger.warn('[DEPRECATED] getGalleryState 사용 중. galleryState를 직접 사용하세요.');
-  return galleryState.value;
-}
-
-/**
- * 다음 미디어 존재 여부 (하위 호환성)
+ * 다음 미디어 존재 여부
  */
 export function hasNext(): boolean {
   const state = galleryState.value;
@@ -312,7 +303,7 @@ export function hasNext(): boolean {
 }
 
 /**
- * 이전 미디어 존재 여부 (하위 호환성)
+ * 이전 미디어 존재 여부
  */
 export function hasPrevious(): boolean {
   const state = galleryState.value;
@@ -320,7 +311,7 @@ export function hasPrevious(): boolean {
 }
 
 /**
- * 갤러리 유효성 확인 (하위 호환성)
+ * 갤러리 유효성 확인
  */
 export function isGalleryValid(): boolean {
   const state = galleryState.value;
@@ -330,31 +321,4 @@ export function isGalleryValid(): boolean {
     state.currentIndex >= 0 &&
     state.currentIndex < state.mediaItems.length
   );
-}
-
-/**
- * 인덱스로 네비게이션 (하위 호환성)
- * @deprecated navigateToMedia를 사용하세요
- */
-export function navigateToIndex(index: number): void {
-  logger.warn('[DEPRECATED] navigateToIndex 사용 중. navigateToMedia를 사용하세요.');
-  navigateToMedia(index);
-}
-
-/**
- * 최적화된 갤러리 열기 (하위 호환성)
- * @deprecated openGallery를 사용하세요
- */
-export function openGalleryOptimized(items: readonly MediaInfo[], startIndex = 0): void {
-  logger.warn('[DEPRECATED] openGalleryOptimized 사용 중. openGallery를 사용하세요.');
-  openGallery(items, startIndex);
-}
-
-/**
- * 현재 미디어 아이템 가져오기 (하위 호환성)
- * @deprecated getCurrentMedia를 사용하세요
- */
-export function getCurrentMediaItem(): MediaInfo | null {
-  logger.warn('[DEPRECATED] getCurrentMediaItem 사용 중. getCurrentMedia를 사용하세요.');
-  return getCurrentMedia();
 }

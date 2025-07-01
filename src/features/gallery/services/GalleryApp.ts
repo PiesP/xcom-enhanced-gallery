@@ -16,7 +16,14 @@
 import { SERVICE_KEYS } from '@core/constants';
 import type { GalleryRenderer, MediaExtractor } from '@core/interfaces/gallery.interfaces';
 import { getService } from '@core/services/ServiceRegistry';
-import { GalleryStateManager } from '@core/state/signals/GalleryStateSignals';
+import {
+  galleryState,
+  closeGallery,
+  navigatePrevious,
+  navigateNext,
+  navigateToMedia,
+  setLoading,
+} from '../../../core/state/signals/unified-gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { SimplifiedMediaExtractor } from '@features/media/extraction/services/SimplifiedMediaExtractor';
 import { logger } from '@infrastructure/logging/logger';
@@ -29,11 +36,9 @@ export class GalleryApp implements IGalleryApp {
   private galleryRenderer: GalleryRenderer | null = null;
   private mediaExtractor: MediaExtractor | null = null;
   private readonly simplifiedExtractor: SimplifiedMediaExtractor;
-  private readonly stateManager: GalleryStateManager;
 
   constructor() {
     this.simplifiedExtractor = new SimplifiedMediaExtractor();
-    this.stateManager = GalleryStateManager.getInstance('gallery-app');
   }
 
   // 상태 관리 (간소화)
@@ -102,7 +107,7 @@ export class GalleryApp implements IGalleryApp {
   private setupTweetPhotoClickListener(): void {
     this.clickHandler = (event: MouseEvent) => {
       // 기본 조건 확인
-      if (event.button !== 0 || this.stateManager.isOpen?.value) {
+      if (event.button !== 0 || galleryState.value.isOpen) {
         return;
       }
 
@@ -153,7 +158,7 @@ export class GalleryApp implements IGalleryApp {
       const tweetContainer = target.closest('[data-testid="tweet"]') as HTMLElement;
 
       // 로딩 상태 시작
-      this.stateManager.setLoading(true);
+      setLoading(true);
       logger.debug('Loading state: true');
 
       // 통합된 미디어 추출 서비스 사용
@@ -182,7 +187,7 @@ export class GalleryApp implements IGalleryApp {
       logger.error('GalleryApp: 갤러리 열기 실패:', error);
     } finally {
       // 로딩 상태 종료
-      this.stateManager.setLoading(false);
+      setLoading(false);
       logger.debug('Loading state: false');
     }
   }
@@ -227,30 +232,30 @@ export class GalleryApp implements IGalleryApp {
   private setupGalleryKeyboardEvents(): void {
     this.keyHandler = (event: KeyboardEvent) => {
       // 갤러리가 열려있지 않으면 무시
-      if (!this.stateManager.isOpen?.value) {
+      if (!galleryState.value.isOpen) {
         return;
       }
 
       switch (event.key) {
         case 'Escape':
-          this.stateManager.closeGallery();
+          closeGallery();
           event.preventDefault();
           break;
         case 'ArrowLeft':
-          this.stateManager.goToPrevious();
+          navigatePrevious();
           event.preventDefault();
           break;
         case 'ArrowRight':
-          this.stateManager.goToNext();
+          navigateNext();
           event.preventDefault();
           break;
         case 'Home':
-          this.stateManager.goToIndex(0);
+          navigateToMedia(0);
           event.preventDefault();
           break;
         case 'End': {
-          const totalItems = this.stateManager.mediaItems?.value?.length ?? 0;
-          this.stateManager.goToIndex(totalItems - 1);
+          const totalItems = galleryState.value.mediaItems.length ?? 0;
+          navigateToMedia(totalItems - 1);
           event.preventDefault();
           break;
         }
@@ -273,7 +278,7 @@ export class GalleryApp implements IGalleryApp {
    * 갤러리 닫기 (공개 메서드)
    */
   closeGallery(): void {
-    this.stateManager.closeGallery();
+    closeGallery();
   }
 
   /**
@@ -318,8 +323,8 @@ export class GalleryApp implements IGalleryApp {
     if (process.env.NODE_ENV === 'development') {
       (window as Window & { xegDebug?: unknown }).xegDebug = {
         gallery: this,
-        state: this.stateManager,
-        closeGallery: () => this.stateManager.closeGallery(),
+        state: galleryState,
+        closeGallery: () => closeGallery(),
         openGallery: (items: MediaInfo[], index = 0) => this.openGalleryWithIndex(items, index),
       };
       logger.debug('GalleryApp: 디버깅 명령어 노출됨 - window.xegDebug');
@@ -345,8 +350,8 @@ export class GalleryApp implements IGalleryApp {
       }
 
       // 갤러리 닫기
-      if (this.stateManager.isOpen?.value) {
-        this.stateManager.closeGallery();
+      if (galleryState.value.isOpen) {
+        closeGallery();
       }
 
       // 갤러리 렌더러 정리
@@ -378,11 +383,11 @@ export class GalleryApp implements IGalleryApp {
       hasRenderer: !!this.galleryRenderer,
       hasExtractor: !!this.mediaExtractor,
       galleryState: {
-        isOpen: this.stateManager.isOpen?.value ?? false,
-        mediaItems: this.stateManager.mediaItems?.value ?? [],
-        currentIndex: this.stateManager.currentIndex?.value ?? 0,
-        isLoading: this.stateManager.isLoading?.value ?? false,
-        error: this.stateManager.error?.value ?? null,
+        isOpen: galleryState.value.isOpen ?? false,
+        mediaItems: galleryState.value.mediaItems ?? [],
+        currentIndex: galleryState.value.currentIndex ?? 0,
+        isLoading: galleryState.value.isLoading ?? false,
+        error: galleryState.value.error ?? null,
       },
       config: this.config,
     };
