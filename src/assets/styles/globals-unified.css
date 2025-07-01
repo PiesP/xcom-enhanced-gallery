@@ -1,0 +1,182 @@
+/**
+ * @fileoverview Unified Global Style System
+ * @description Final version integrating all global styles into one
+ * @version 1.0.0
+ */
+
+/* Import unified design tokens */
+@import '../../shared/styles/design-tokens.css';
+
+/* ===========================================
+ * 전역 리셋 및 기본 스타일
+ * =========================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(
+    --xeg-font-family-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
+  line-height: var(--xeg-line-height-normal, 1.5);
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  color: var(--xeg-color-text-primary, #0f1419);
+  background-color: var(--xeg-color-bg-primary, #ffffff);
+  font-size: var(--xeg-font-size-md, 16px);
+  line-height: var(--xeg-line-height-normal, 1.5);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===========================================
+ * 공통 유틸리티 클래스
+ * =========================================== */
+
+.xeg-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.xeg-focus-visible:focus-visible {
+  outline: var(--xeg-focus-ring, 2px solid var(--xeg-color-primary, #1d9bf0));
+  outline-offset: var(--xeg-focus-ring-offset, 2px);
+}
+
+.xeg-transition-all {
+  transition: all var(--xeg-duration-normal, 300ms) var(--xeg-ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.xeg-transition-colors {
+  transition:
+    color var(--xeg-duration-normal, 300ms) var(--xeg-ease-out, cubic-bezier(0, 0, 0.2, 1)),
+    background-color var(--xeg-duration-normal, 300ms)
+      var(--xeg-ease-out, cubic-bezier(0, 0, 0.2, 1)),
+    border-color var(--xeg-duration-normal, 300ms) var(--xeg-ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.xeg-transition-transform {
+  transition: transform var(--xeg-duration-normal, 300ms)
+    var(--xeg-ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+/* ===========================================
+ * 갤러리 전역 상태 클래스
+ * =========================================== */
+
+.xeg-gallery-open {
+  overflow: hidden;
+  height: 100vh;
+}
+
+.xeg-gallery-open #react-root {
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+/* ===========================================
+ * 반응형 유틸리티
+ * =========================================== */
+
+@media (max-width: 640px) {
+  .xeg-hidden-mobile {
+    display: none !important;
+  }
+
+  .xeg-visible-mobile {
+    display: block !important;
+  }
+}
+
+@media (min-width: 641px) {
+  .xeg-hidden-desktop {
+    display: none !important;
+  }
+
+  .xeg-visible-desktop {
+    display: block !important;
+  }
+}
+
+/* ===========================================
+ * 다크 테마 지원
+ * =========================================== */
+
+@media (prefers-color-scheme: dark) {
+  body {
+    color: var(--xeg-color-text-primary, #ffffff);
+    background-color: var(--xeg-color-bg-primary, #111827);
+  }
+}
+
+[data-theme='dark'] {
+  color: var(--xeg-color-text-primary, #ffffff);
+  background-color: var(--xeg-color-bg-primary, #111827);
+}
+
+/* ===========================================
+ * 고대비 모드 지원
+ * =========================================== */
+
+@media (prefers-contrast: high) {
+  .xeg-focus-visible:focus-visible {
+    outline-width: 3px;
+    outline-color: currentColor;
+  }
+}
+
+/* ===========================================
+ * 레거시 변수 호환성 (단계적 마이그레이션용)
+ * =========================================== */
+
+:root {
+  /* 기존 변수들을 새로운 통합 변수로 매핑 */
+  --xeg-text-primary: var(--xeg-color-text-primary);
+  --xeg-text-secondary: var(--xeg-color-text-secondary);
+  --xeg-text-tertiary: var(--xeg-color-text-tertiary);
+  --xeg-text-inverse: var(--xeg-color-text-inverse);
+  --xeg-text-muted: var(--xeg-color-text-muted);
+
+  /* 배경 색상 */
+  --xeg-bg-primary: var(--xeg-color-bg-primary);
+  --xeg-bg-secondary: var(--xeg-color-bg-secondary);
+  --xeg-surface: var(--xeg-color-surface);
+
+  /* 테두리 색상 */
+  --xeg-border-primary: var(--xeg-color-border-primary);
+  --xeg-border-secondary: var(--xeg-color-border-secondary);
+
+  /* 간격 */
+  --xeg-spacing-xs: var(--xeg-spacing-xs);
+  --xeg-spacing-sm: var(--xeg-spacing-sm);
+  --xeg-spacing-md: var(--xeg-spacing-md);
+  --xeg-spacing-lg: var(--xeg-spacing-lg);
+  --xeg-spacing-xl: var(--xeg-spacing-xl);
+}

@@ -530,7 +530,7 @@ export function VerticalGalleryView({
           <p>표시할 이미지나 동영상이 없습니다.</p>
           <Button
             variant='secondary'
-            size='medium'
+            size='md'
             onClick={handleClose}
             className={styles.emptyButton}
           >

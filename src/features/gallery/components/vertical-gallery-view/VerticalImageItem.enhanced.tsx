@@ -312,7 +312,7 @@ function BaseVerticalImageItem({
             </span>
             <Button
               variant='secondary'
-              size='small'
+              size='sm'
               onClick={handleRetry}
               className={styles.retryButton}
             >
@@ -345,7 +345,7 @@ function BaseVerticalImageItem({
       {onDownload && isLoaded && (
         <Button
           variant='ghost'
-          size='small'
+          size='sm'
           className={styles.downloadButton}
           onClick={handleDownloadClick}
           aria-label={`Download ${displayName}`}

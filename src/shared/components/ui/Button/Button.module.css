@@ -1,229 +1,364 @@
 /**
- * Button 컴포넌트 스타일
+ * Button 컴포넌트 스타일 - 통합 디자인 시스템 기반
  *
  * X.com Enhanced Gallery의 재사용 가능한 버튼 컴포넌트를 위한 CSS 모듈
+ * 통합 디자인 토큰과 CSS 변수를 사용하여 일관성 있는 디자인 제공
  *
  * @module Button.module.css
  * @author X.com Enhanced Gallery Team
- * @version 3.0.0
+ * @version 4.0.0 - 통합 디자인 시스템 적용
  */
 
-.button {
+/* ===========================================
+ * 통합 디자인 시스템 버튼 - Global Classes
+ * =========================================== */
+
+/* 기본 버튼 스타일 */
+:global(.xeg-button) {
+  /* 레이아웃 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--xeg-spacing-sm);
-  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-  border: 1px solid var(--xeg-border-button);
-  border-radius: var(--xeg-radius-md);
-  font-size: var(--xeg-font-size-sm);
-  font-weight: var(--xeg-font-weight-medium);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: var(--xeg-spacing-sm, 8px);
+
+  /* 크기 */
+  padding: var(--xeg-spacing-sm, 8px) var(--xeg-spacing-md, 16px);
+  min-height: var(--xeg-button-height-md, 40px);
+
+  /* 외관 */
+  border: 1px solid var(--xeg-color-border-primary, #e5e7eb);
+  border-radius: var(--xeg-radius-md, 8px);
+  background: var(--xeg-color-surface, #ffffff);
+  color: var(--xeg-color-text-primary, #0f1419);
+
+  /* 타이포그래피 */
+  font-family: var(
+    --xeg-font-family-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
+  font-size: var(--xeg-font-size-sm, 14px);
+  font-weight: var(--xeg-font-weight-medium, 500);
+  line-height: var(--xeg-line-height-normal, 1.5);
   text-decoration: none;
+  white-space: nowrap;
+
+  /* 인터랙션 */
+  cursor: pointer;
+  transition: var(--xeg-duration-normal, 300ms) var(--xeg-ease-out, cubic-bezier(0, 0, 0.2, 1));
   outline: none;
+  user-select: none;
+
+  /* 성능 최적화 */
   position: relative;
   overflow: hidden;
-  min-height: var(--xeg-button-height-md);
-  background: var(--xeg-bg-button);
-  color: var(--xeg-text-button);
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+
+  /* 현대적 효과 */
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--xeg-shadow-sm, 0 1px 3px 0 rgba(0, 0, 0, 0.1));
+}
+
+/* ===========================================
+ * 버튼 변형 (Variants)
+ * =========================================== */
+
+:global(.xeg-button--primary) {
+  background: var(--xeg-color-primary, #1d9bf0);
+  border-color: var(--xeg-color-primary, #1d9bf0);
+  color: var(--xeg-color-text-inverse, #ffffff);
   box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.08),
-    0 1px 4px rgba(15, 23, 42, 0.05);
+    0 4px 12px rgba(29, 155, 240, 0.2),
+    var(--xeg-shadow-sm, 0 1px 3px 0 rgba(0, 0, 0, 0.1));
 }
 
-/* 기본 스타일 */
-.button:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+:global(.xeg-button--secondary) {
+  background: var(--xeg-color-surface-elevated, #ffffff);
+  border-color: var(--xeg-color-border-primary, #e5e7eb);
+  color: var(--xeg-color-text-primary, #0f1419);
 }
 
-.button:disabled {
-  opacity: var(--xeg-disabled-opacity);
-  cursor: var(--xeg-disabled-cursor);
+:global(.xeg-button--ghost) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--xeg-color-text-secondary, #536471);
+  box-shadow: none;
+}
+
+:global(.xeg-button--danger) {
+  background: var(--xeg-color-error, #dc2626);
+  border-color: var(--xeg-color-error, #dc2626);
+  color: var(--xeg-color-text-inverse, #ffffff);
+  box-shadow:
+    0 4px 12px rgba(220, 38, 38, 0.2),
+    var(--xeg-shadow-sm, 0 1px 3px 0 rgba(0, 0, 0, 0.1));
+}
+
+/* ===========================================
+ * 버튼 크기 (Sizes)
+ * =========================================== */
+
+:global(.xeg-button--sm) {
+  padding: var(--xeg-spacing-xs, 4px) var(--xeg-spacing-sm, 8px);
+  min-height: var(--xeg-button-height-sm, 32px);
+  font-size: var(--xeg-font-size-xs, 12px);
+  gap: var(--xeg-spacing-xs, 4px);
+}
+
+:global(.xeg-button--md) {
+  padding: var(--xeg-spacing-sm, 8px) var(--xeg-spacing-md, 16px);
+  min-height: var(--xeg-button-height-md, 40px);
+  font-size: var(--xeg-font-size-sm, 14px);
+  gap: var(--xeg-spacing-sm, 8px);
+}
+
+:global(.xeg-button--lg) {
+  padding: var(--xeg-spacing-md, 16px) var(--xeg-spacing-lg, 24px);
+  min-height: var(--xeg-button-height-lg, 48px);
+  font-size: var(--xeg-font-size-md, 16px);
+  gap: var(--xeg-spacing-sm, 8px);
+}
+
+/* ===========================================
+ * 버튼 상태 (States)
+ * =========================================== */
+
+:global(.xeg-button--loading) {
+  pointer-events: none;
+  opacity: var(--xeg-loading-opacity, 0.7);
+  cursor: wait;
+}
+
+:global(.xeg-button--disabled) {
+  opacity: var(--xeg-disabled-opacity, 0.5);
+  cursor: var(--xeg-disabled-cursor, not-allowed);
   pointer-events: none;
 }
 
-/* 버튼 변형 */
-.primary {
-  background: var(--xeg-color-primary);
-  color: var(--xeg-text-inverse);
-  border-color: var(--xeg-color-primary);
-  box-shadow:
-    0 2px 8px rgba(71, 133, 163, 0.15),
-    0 1px 4px rgba(71, 133, 163, 0.1);
+:global(.xeg-button--icon-only) {
+  aspect-ratio: 1;
+  padding: var(--xeg-spacing-sm, 8px);
 }
 
-.primary:hover:not(:disabled) {
-  background: var(--xeg-color-primary-hover);
-  border-color: var(--xeg-color-primary-hover);
-  transform: translateY(-2px);
-  box-shadow:
-    0 6px 20px rgba(71, 133, 163, 0.25),
-    0 3px 10px rgba(71, 133, 163, 0.15);
+:global(.xeg-button--icon-only.xeg-button--sm) {
+  padding: var(--xeg-spacing-xs, 4px);
 }
 
-.secondary {
-  background: rgba(248, 250, 252, 0.6);
-  color: var(--xeg-text-primary);
-  border: 1px solid rgba(203, 213, 225, 0.4);
+:global(.xeg-button--icon-only.xeg-button--lg) {
+  padding: var(--xeg-spacing-md, 16px);
 }
 
-.secondary:hover:not(:disabled) {
-  background: rgba(226, 232, 240, 0.8);
-  border-color: rgba(148, 163, 184, 0.6);
-  transform: translateY(-1px);
+/* ===========================================
+ * 호버 상태 (Hover States)
+ * =========================================== */
+
+@media (hover: hover) and (pointer: fine) {
+  :global(.xeg-button:hover:not(.xeg-button--disabled):not(.xeg-button--loading)) {
+    transform: translateY(-1px) translateZ(0);
+    box-shadow: var(--xeg-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+
+  :global(.xeg-button--primary:hover) {
+    background: var(--xeg-color-primary-hover, #1a8cd8);
+    border-color: var(--xeg-color-primary-hover, #1a8cd8);
+    box-shadow:
+      0 8px 20px rgba(29, 155, 240, 0.25),
+      var(--xeg-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+
+  :global(.xeg-button--secondary:hover) {
+    background: var(--xeg-color-gray-50, #f9fafb);
+    border-color: var(--xeg-color-border-secondary, #d1d5db);
+  }
+
+  :global(.xeg-button--ghost:hover) {
+    background: var(--xeg-color-gray-100, #f3f4f6);
+    color: var(--xeg-color-text-primary, #0f1419);
+  }
+
+  :global(.xeg-button--danger:hover) {
+    background: var(--xeg-color-error-light, #f87171);
+    border-color: var(--xeg-color-error-light, #f87171);
+    box-shadow:
+      0 8px 20px rgba(220, 38, 38, 0.25),
+      var(--xeg-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
 }
 
-.ghost {
-  background: transparent;
-  color: var(--xeg-text-primary);
-  border-color: transparent;
+/* ===========================================
+ * 액티브 상태 (Active States)
+ * =========================================== */
+
+:global(.xeg-button:active:not(.xeg-button--disabled):not(.xeg-button--loading)) {
+  transform: translateY(0) translateZ(0);
+  transition-duration: var(--xeg-duration-fast, 150ms);
 }
 
-.ghost:hover:not(:disabled) {
-  background: rgba(248, 250, 252, 0.1);
-  border-color: rgba(203, 213, 225, 0.2);
+:global(.xeg-button--primary:active) {
+  background: var(--xeg-color-primary-active, #1570b3);
+  border-color: var(--xeg-color-primary-active, #1570b3);
 }
 
-.danger {
-  background: var(--xeg-color-error);
-  color: white;
+/* ===========================================
+ * 포커스 상태 (Focus States)
+ * =========================================== */
+
+:global(.xeg-button:focus-visible) {
+  outline: var(--xeg-focus-ring, 2px solid var(--xeg-color-primary, #1d9bf0));
+  outline-offset: var(--xeg-focus-ring-offset, 2px);
 }
 
-.danger:hover:not(:disabled) {
-  background: var(--xeg-color-error);
-  filter: brightness(0.9);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--xeg-color-error) 30%, transparent);
+/* ===========================================
+ * 버튼 요소들 (Button Elements)
+ * =========================================== */
+
+:global(.xeg-button__icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-/* 크기 변형 */
-.small {
-  padding: 6px 12px;
-  font-size: 12px;
-  border-radius: 6px;
+:global(.xeg-button__text) {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-.medium {
-  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-  font-size: 14px;
-  border-radius: 8px;
-}
-
-.large {
-  padding: 12px 24px;
-  font-size: 16px;
-  border-radius: 10px;
-}
-
-/* 아이콘 전용 버튼 */
-.iconOnly {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 50%;
-}
-
-.iconOnly.small {
-  width: 32px;
-  height: 32px;
-}
-
-.iconOnly.large {
-  width: 48px;
-  height: 48px;
-}
-
-/* 로딩 상태 */
-.loading {
-  position: relative;
-}
-
-.loading::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
+:global(.xeg-button__spinner) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 16px;
   height: 16px;
-  margin: -8px 0 0 -8px;
+}
+
+:global(.xeg-button__spinner::after) {
+  content: '';
+  width: 12px;
+  height: 12px;
   border: 2px solid transparent;
-  border-top-color: currentColor;
+  border-top: 2px solid currentColor;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: xeg-button-spin 0.8s linear infinite;
 }
 
-.loading > * {
-  opacity: 0;
-}
-
-@keyframes spin {
+@keyframes xeg-button-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* 풀 너비 */
-.fullWidth {
-  width: 100%;
+/* ===========================================
+ * 레거시 호환성 - 기존 모듈 CSS 클래스들
+ * =========================================== */
+
+.button {
+  /* 기본 스타일은 :global(.xeg-button)과 동일하게 설정 */
+  composes: xeg-button from global;
 }
 
-/* 리플 효과 */
-.button::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition:
-    width 0.3s,
-    height 0.3s;
+/* 버튼 변형 - 레거시 이름 지원 */
+.primary {
+  composes: xeg-button--primary from global;
 }
 
-.button:active::before {
-  width: 100px;
-  height: 100px;
+.secondary {
+  composes: xeg-button--secondary from global;
 }
 
-/* 다크/라이트 테마 지원 */
-@media (prefers-color-scheme: light) {
+.ghost {
+  composes: xeg-button--ghost from global;
+}
+
+.danger {
+  composes: xeg-button--danger from global;
+}
+
+/* 크기 변형 - 레거시 이름 지원 */
+.small {
+  composes: xeg-button--sm from global;
+}
+
+.medium {
+  composes: xeg-button--md from global;
+}
+
+.large {
+  composes: xeg-button--lg from global;
+}
+
+/* 상태 변형 */
+.loading {
+  composes: xeg-button--loading from global;
+}
+
+.disabled {
+  composes: xeg-button--disabled from global;
+}
+
+.iconOnly {
+  composes: xeg-button--icon-only from global;
+}
+
+/* 아이콘과 텍스트 요소 */
+.icon {
+  composes: xeg-button__icon from global;
+}
+
+.text {
+  composes: xeg-button__text from global;
+}
+
+.spinner {
+  composes: xeg-button__spinner from global;
+}
+
+/* ===========================================
+ * 다크 테마 최적화
+ * =========================================== */
+
+@media (prefers-color-scheme: dark) {
   .secondary {
-    background: rgba(0, 0, 0, 0.05);
-    color: #0f1419;
-    border-color: var(--xeg-bg-overlay-light);
-  }
-
-  .secondary:hover:not(:disabled) {
-    background: var(--xeg-bg-overlay-light);
-    border-color: var(--xeg-border-medium);
+    background: rgba(55, 65, 81, 0.6);
+    border-color: rgba(75, 85, 99, 0.4);
+    color: var(--xeg-color-text-primary, #ffffff);
   }
 
   .ghost {
-    color: #0f1419;
-  }
-
-  .ghost:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.05);
+    color: var(--xeg-color-text-secondary, #9ca3af);
   }
 }
 
-/* 접근성 개선 */
+/* ===========================================
+ * 접근성 향상
+ * =========================================== */
+
 @media (prefers-reduced-motion: reduce) {
-  .button {
+  .button,
+  :global(.xeg-button) {
     transition: none;
   }
 
-  .button:hover:not(:disabled) {
+  .button:hover,
+  :global(.xeg-button:hover) {
     transform: none;
   }
+}
 
-  .loading::after {
-    animation: none;
+/* ===========================================
+ * 고대비 모드 지원
+ * =========================================== */
+
+@media (prefers-contrast: high) {
+  .button,
+  :global(.xeg-button) {
+    border-width: 2px;
+    font-weight: var(--xeg-font-weight-semibold, 600);
   }
 }

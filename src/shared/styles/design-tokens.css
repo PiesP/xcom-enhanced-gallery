@@ -1,0 +1,391 @@
+/**
+ * @fileoverview 통합 CSS 디자인 토큰 시스템
+ * @description 모든 CSS 변수를 중앙집중식으로 관리하는 통합 시스템
+ * @version 1.0.0
+ */
+
+:root {
+  /* ===========================================
+   * COLOR SYSTEM - 통합 색상 시스템
+   * =========================================== */
+
+  /* Primary Colors */
+  --xeg-color-primary: #1d9bf0;
+  --xeg-color-primary-hover: #1a8cd8;
+  --xeg-color-primary-active: #1570b3;
+  --xeg-color-primary-light: rgba(29, 155, 240, 0.1);
+  --xeg-color-primary-lighter: rgba(29, 155, 240, 0.05);
+
+  /* Semantic Colors */
+  --xeg-color-success: #10b981;
+  --xeg-color-success-light: #34d399;
+  --xeg-color-warning: #f59e0b;
+  --xeg-color-warning-light: #fbbf24;
+  --xeg-color-error: #dc2626;
+  --xeg-color-error-light: #f87171;
+  --xeg-color-info: #3b82f6;
+  --xeg-color-info-light: #60a5fa;
+
+  /* Neutral Colors */
+  --xeg-color-white: #ffffff;
+  --xeg-color-black: #000000;
+  --xeg-color-gray-50: #f9fafb;
+  --xeg-color-gray-100: #f3f4f6;
+  --xeg-color-gray-200: #e5e7eb;
+  --xeg-color-gray-300: #d1d5db;
+  --xeg-color-gray-400: #9ca3af;
+  --xeg-color-gray-500: #6b7280;
+  --xeg-color-gray-600: #4b5563;
+  --xeg-color-gray-700: #374151;
+  --xeg-color-gray-800: #1f2937;
+  --xeg-color-gray-900: #111827;
+
+  /* Text Colors */
+  --xeg-color-text-primary: #0f1419;
+  --xeg-color-text-secondary: #536471;
+  --xeg-color-text-tertiary: #8b98a5;
+  --xeg-color-text-muted: #6b7280;
+  --xeg-color-text-inverse: #ffffff;
+  --xeg-color-text-disabled: #9ca3af;
+
+  /* Surface Colors */
+  --xeg-color-surface: #ffffff;
+  --xeg-color-surface-elevated: #ffffff;
+  --xeg-color-surface-overlay: rgba(255, 255, 255, 0.95);
+  --xeg-color-surface-disabled: #f9fafb;
+
+  /* Background Colors */
+  --xeg-color-bg-primary: #ffffff;
+  --xeg-color-bg-secondary: #f9fafb;
+  --xeg-color-bg-tertiary: #f3f4f6;
+  --xeg-color-bg-overlay: rgba(0, 0, 0, 0.8);
+  --xeg-color-bg-modal: rgba(0, 0, 0, 0.95);
+  --xeg-color-bg-blur: rgba(255, 255, 255, 0.8);
+
+  /* Border Colors */
+  --xeg-color-border-primary: #e5e7eb;
+  --xeg-color-border-secondary: #d1d5db;
+  --xeg-color-border-interactive: var(--xeg-color-primary);
+  --xeg-color-border-focus: var(--xeg-color-primary);
+  --xeg-color-border-error: var(--xeg-color-error);
+
+  /* ===========================================
+   * SPACING SYSTEM - 통합 간격 시스템
+   * =========================================== */
+
+  --xeg-spacing-xs: 4px;
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 16px;
+  --xeg-spacing-lg: 24px;
+  --xeg-spacing-xl: 32px;
+  --xeg-spacing-xxl: 48px;
+  --xeg-spacing-xxxl: 64px;
+
+  /* ===========================================
+   * TYPOGRAPHY SYSTEM - 통합 타이포그래피
+   * =========================================== */
+
+  /* Font Families */
+  --xeg-font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --xeg-font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  /* Font Sizes */
+  --xeg-font-size-xs: 12px;
+  --xeg-font-size-sm: 14px;
+  --xeg-font-size-md: 16px;
+  --xeg-font-size-lg: 18px;
+  --xeg-font-size-xl: 20px;
+  --xeg-font-size-xxl: 24px;
+  --xeg-font-size-xxxl: 32px;
+
+  /* Font Weights */
+  --xeg-font-weight-normal: 400;
+  --xeg-font-weight-medium: 500;
+  --xeg-font-weight-semibold: 600;
+  --xeg-font-weight-bold: 700;
+
+  /* Line Heights */
+  --xeg-line-height-tight: 1.25;
+  --xeg-line-height-normal: 1.5;
+  --xeg-line-height-relaxed: 1.75;
+
+  /* Letter Spacing */
+  --xeg-letter-spacing-tight: -0.025em;
+  --xeg-letter-spacing-normal: 0em;
+  --xeg-letter-spacing-wide: 0.025em;
+
+  /* ===========================================
+   * LAYOUT SYSTEM - 통합 레이아웃
+   * =========================================== */
+
+  /* Border Radius */
+  --xeg-radius-none: 0;
+  --xeg-radius-sm: 4px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 12px;
+  --xeg-radius-xl: 16px;
+  --xeg-radius-xxl: 24px;
+  --xeg-radius-full: 9999px;
+
+  /* Shadows */
+  --xeg-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --xeg-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --xeg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --xeg-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --xeg-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --xeg-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Z-Index */
+  --xeg-z-base: 0;
+  --xeg-z-dropdown: 1000;
+  --xeg-z-sticky: 1020;
+  --xeg-z-fixed: 1030;
+  --xeg-z-modal-backdrop: 1040;
+  --xeg-z-modal: 1050;
+  --xeg-z-popover: 1060;
+  --xeg-z-tooltip: 1070;
+  --xeg-z-toast: 1080;
+  --xeg-z-gallery: 10000;
+
+  /* Container Sizes */
+  --xeg-container-max-width-sm: 640px;
+  --xeg-container-max-width-md: 768px;
+  --xeg-container-max-width-lg: 1024px;
+  --xeg-container-max-width-xl: 1280px;
+  --xeg-container-max-width-2xl: 1536px;
+
+  /* ===========================================
+   * MOTION SYSTEM - 통합 모션 시스템
+   * =========================================== */
+
+  /* Duration */
+  --xeg-duration-instant: 0ms;
+  --xeg-duration-fast: 150ms;
+  --xeg-duration-normal: 300ms;
+  --xeg-duration-slow: 500ms;
+  --xeg-duration-slower: 750ms;
+
+  /* Easing */
+  --xeg-ease-linear: linear;
+  --xeg-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --xeg-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --xeg-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ===========================================
+   * COMPONENT SPECIFIC - 컴포넌트 전용 변수
+   * =========================================== */
+
+  /* Button */
+  --xeg-button-height-sm: 32px;
+  --xeg-button-height-md: 40px;
+  --xeg-button-height-lg: 48px;
+  --xeg-button-padding-x-sm: 12px;
+  --xeg-button-padding-x-md: 16px;
+  --xeg-button-padding-x-lg: 20px;
+
+  /* Gallery */
+  --xeg-gallery-backdrop-blur: 20px;
+  --xeg-gallery-toolbar-height: 64px;
+  --xeg-gallery-padding: var(--xeg-spacing-lg);
+
+  /* Toast */
+  --xeg-toast-width: 380px;
+  --xeg-toast-padding: var(--xeg-spacing-md);
+
+  /* Toolbar */
+  --xeg-toolbar-height: 56px;
+  --xeg-toolbar-padding: var(--xeg-spacing-md);
+
+  /* ===========================================
+   * INTERACTION STATES - 상호작용 상태
+   * =========================================== */
+
+  /* Focus */
+  --xeg-focus-ring-width: 2px;
+  --xeg-focus-ring-offset: 2px;
+  --xeg-focus-ring-color: var(--xeg-color-primary);
+  --xeg-focus-ring: var(--xeg-focus-ring-width) solid var(--xeg-focus-ring-color);
+
+  /* Disabled */
+  --xeg-disabled-opacity: 0.5;
+  --xeg-disabled-cursor: not-allowed;
+
+  /* Loading */
+  --xeg-loading-opacity: 0.7;
+
+  /* ===========================================
+   * RESPONSIVE BREAKPOINTS - 반응형 중단점
+   * =========================================== */
+
+  --xeg-breakpoint-sm: 640px;
+  --xeg-breakpoint-md: 768px;
+  --xeg-breakpoint-lg: 1024px;
+  --xeg-breakpoint-xl: 1280px;
+  --xeg-breakpoint-2xl: 1536px;
+}
+
+/* ===========================================
+ * DARK THEME - 다크 테마
+ * =========================================== */
+
+[data-theme='dark'],
+:root.dark-theme {
+  /* Dark Theme Color Overrides */
+  --xeg-color-text-primary: #ffffff;
+  --xeg-color-text-secondary: #9ca3af;
+  --xeg-color-text-tertiary: #6b7280;
+  --xeg-color-text-muted: #4b5563;
+
+  --xeg-color-surface: #1f2937;
+  --xeg-color-surface-elevated: #374151;
+  --xeg-color-surface-overlay: rgba(31, 41, 55, 0.95);
+
+  --xeg-color-bg-primary: #111827;
+  --xeg-color-bg-secondary: #1f2937;
+  --xeg-color-bg-tertiary: #374151;
+  --xeg-color-bg-blur: rgba(31, 41, 55, 0.8);
+
+  --xeg-color-border-primary: #374151;
+  --xeg-color-border-secondary: #4b5563;
+
+  /* Dark Theme Shadows */
+  --xeg-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --xeg-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.24);
+  --xeg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.24);
+  --xeg-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --xeg-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.16);
+  --xeg-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* ===========================================
+ * AUTO THEME - 시스템 테마 자동 감지
+ * =========================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    /* Auto Dark Theme */
+    --xeg-color-text-primary: #ffffff;
+    --xeg-color-text-secondary: #9ca3af;
+    --xeg-color-text-tertiary: #6b7280;
+    --xeg-color-text-muted: #4b5563;
+
+    --xeg-color-surface: #1f2937;
+    --xeg-color-surface-elevated: #374151;
+    --xeg-color-surface-overlay: rgba(31, 41, 55, 0.95);
+
+    --xeg-color-bg-primary: #111827;
+    --xeg-color-bg-secondary: #1f2937;
+    --xeg-color-bg-tertiary: #374151;
+    --xeg-color-bg-blur: rgba(31, 41, 55, 0.8);
+
+    --xeg-color-border-primary: #374151;
+    --xeg-color-border-secondary: #4b5563;
+  }
+}
+
+/* ===========================================
+ * HIGH CONTRAST MODE - 고대비 모드
+ * =========================================== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-color-border-primary: #000000;
+    --xeg-color-border-secondary: #000000;
+    --xeg-focus-ring-width: 3px;
+    --xeg-shadow-xs: 0 0 0 1px rgba(0, 0, 0, 0.8);
+    --xeg-shadow-sm: 0 0 0 1px rgba(0, 0, 0, 0.8);
+    --xeg-shadow-md: 0 0 0 2px rgba(0, 0, 0, 0.8);
+  }
+}
+
+/* ===========================================
+ * REDUCED MOTION - 모션 감소 모드
+ * =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --xeg-duration-fast: 0ms;
+    --xeg-duration-normal: 0ms;
+    --xeg-duration-slow: 0ms;
+    --xeg-duration-slower: 0ms;
+  }
+}
+
+/* ===========================================
+ * PRINT STYLES - 인쇄 스타일
+ * =========================================== */
+
+@media print {
+  :root {
+    --xeg-color-text-primary: #000000;
+    --xeg-color-text-secondary: #4b5563;
+    --xeg-color-bg-primary: #ffffff;
+    --xeg-color-surface: #ffffff;
+    --xeg-shadow-xs: none;
+    --xeg-shadow-sm: none;
+    --xeg-shadow-md: none;
+    --xeg-shadow-lg: none;
+    --xeg-shadow-xl: none;
+    --xeg-shadow-2xl: none;
+  }
+}
+
+/* ===========================================
+ * LEGACY SUPPORT - 레거시 브라우저 지원
+ * =========================================== */
+
+/* Fallback values for older browsers */
+:root {
+  color: #0f1419; /* fallback for --xeg-color-text-primary */
+  background-color: #ffffff; /* fallback for --xeg-color-bg-primary */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ===========================================
+ * DEVELOPMENT MODE - 개발 모드 표시
+ * =========================================== */
+
+:root[data-env='development'] {
+  --xeg-debug-color: #ff0000;
+  --xeg-debug-border: 1px dashed var(--xeg-debug-color);
+}
+
+:root[data-env='development'] * {
+  outline: var(--xeg-debug-border) !important;
+  outline-offset: -1px !important;
+}
+
+/* ===========================================
+ * CSS FEATURE DETECTION - CSS 기능 감지
+ * =========================================== */
+
+/* P3 색상 공간 지원 시 */
+@supports (color: color(display-p3 1 0 0)) {
+  :root {
+    --xeg-color-primary: color(display-p3 0.114 0.608 0.941);
+  }
+}
+
+/* backdrop-filter 지원 시 */
+@supports (backdrop-filter: blur(10px)) {
+  :root {
+    --xeg-gallery-backdrop-blur-supported: blur(var(--xeg-gallery-backdrop-blur));
+  }
+}
+
+/* ===========================================
+ * LARGE TEXT PREFERENCE - 큰 텍스트 선호도
+ * =========================================== */
+
+@media (prefers-reduced-data: reduce) {
+  :root {
+    --xeg-font-size-xs: 14px;
+    --xeg-font-size-sm: 16px;
+    --xeg-font-size-md: 18px;
+    --xeg-font-size-lg: 20px;
+    --xeg-font-size-xl: 22px;
+    --xeg-font-size-xxl: 26px;
+    --xeg-font-size-xxxl: 34px;
+  }
+}

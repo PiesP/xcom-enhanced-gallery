@@ -1,66 +1,44 @@
 /**
- * Button 컴포넌트 for X.com Enhanced Gallery
+ * Button Component for X.com Enhanced Gallery
  *
- * X.com Enhanced Gallery에서 사용되는 재사용 가능한 버튼 컴포넌트입니다.
- * 다양한 스타일, 크기, 상태를 지원하며 접근성을 고려하여 설계되었습니다.
+ * Reusable button component used throughout X.com Enhanced Gallery.
+ * Improved version with unified design system in mind.
  *
  * @fileoverview
- * 이 파일은 갤러리 UI 전반에서 사용되는 범용 Button 컴포넌트를 정의합니다.
+ * This file defines the universal Button component used across the gallery UI.
  *
  * @module Button
  * @since 1.0.0
+ * @updated 2.0.0 - Enhanced type safety and accessibility
  */
 
 import type { ComponentChildren } from '@shared/types/global.types';
-import { getPreact } from '@infrastructure/external/vendors';
-import styles from './Button.module.css';
+import { getPreact, getPreactHooks } from '@infrastructure/external/vendors';
+import {
+  DesignSystem,
+  type ButtonVariant,
+  type ButtonSize,
+} from '@shared/design-system/DesignSystem';
+import { StyleStateManager } from '@shared/styling/StyleStateManager';
 
 const { h } = getPreact();
+const { useRef, useEffect } = getPreactHooks();
+const styleStateManager = StyleStateManager.getInstance();
 
 /**
- * Button 컴포넌트의 Props 인터페이스
- *
- * @interface ButtonProps
- * @description Button 컴포넌트에서 사용 가능한 모든 속성들을 정의합니다.
- *
- * @example
- * ```tsx
- * const buttonProps: ButtonProps = {
- *   variant: 'primary',
- *   size: 'medium',
- *   loading: true,
- *   onClick: handleClick,
- *   children: '로딩 중...'
- * };
- * ```
+ * Button component Props interface
  */
 export interface ButtonProps {
-  /** 버튼 내용 (텍스트, 아이콘 등) */
+  /** Button content (text, icons, etc.) */
   children: ComponentChildren;
-  /** 버튼 변형 스타일 */
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-  /** 버튼 크기 */
-  size?: 'small' | 'medium' | 'large';
+  /** Button variant style */
+  variant?: ButtonVariant;
+  /** Button size */
+  size?: ButtonSize;
   /** 버튼 비활성화 여부 */
   disabled?: boolean;
-  /**
-   * 로딩 상태 여부
-   *
-   * @description
-   * true일 때 버튼에 스피너가 표시되고 클릭이 비활성화됩니다.
-   * 비동기 작업(파일 다운로드, API 호출 등) 진행 중임을 사용자에게 알립니다.
-   *
-   * @example
-   * ```tsx
-   * // 다운로드 진행 중 로딩 상태 표시
-   * <Button loading={isDownloading} onClick={handleDownload}>
-   *   {isDownloading ? '다운로드 중...' : '다운로드'}
-   * </Button>
-   * ```
-   *
-   * @default false
-   */
-  loading?: boolean | undefined;
+  /** 로딩 상태 여부 */
+  loading?: boolean;
   /** 클릭 이벤트 핸들러 */
   onClick?: ((event: MouseEvent) => void) | undefined;
   /** 버튼 타입 */
@@ -77,14 +55,12 @@ export interface ButtonProps {
 
 /**
  * Button 컴포넌트
- *
- * X.com Enhanced Gallery에서 사용되는 재사용 가능한 버튼 컴포넌트입니다.
- * 다양한 스타일, 크기, 상태를 지원하며 접근성을 고려하여 설계되었습니다.
+ * 통합 디자인 시스템과 스타일 상태 관리자를 사용하는 현대적 버튼 컴포넌트
  */
 export function Button({
   children,
   variant = 'primary',
-  size = 'medium',
+  size = 'md',
   disabled = false,
   loading = false,
   type = 'button',
@@ -95,14 +71,21 @@ export function Button({
   onClick,
   ...props
 }: ButtonProps): ComponentChildren {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // 상태 변경 시 CSS 클래스 업데이트
+  useEffect(() => {
+    if (buttonRef.current) {
+      styleStateManager.updateComponentState(buttonRef.current, 'button', {
+        loading,
+        disabled,
+        active: false, // 필요시 추가 상태
+      });
+    }
+  }, [loading, disabled]);
+
   /**
    * 버튼 클릭 이벤트 핸들러
-   *
-   * @description
-   * 버튼이 비활성화되거나 로딩 중일 때는 클릭을 방지하고,
-   * 그렇지 않으면 전달받은 onClick 핸들러를 실행합니다.
-   *
-   * @param event - 클릭 이벤트 객체
    */
   const handleClick = (event: Event): void => {
     if (disabled || loading) {
@@ -112,33 +95,38 @@ export function Button({
     onClick?.(event as MouseEvent);
   };
 
-  const buttonClasses = [
-    styles.button,
-    styles[variant],
-    styles[size],
-    loading && styles.loading,
-    disabled && styles.disabled,
-    iconOnly && styles.iconOnly,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  // 디자인 시스템을 사용한 클래스 생성
+  const buttonClasses = DesignSystem.createClassName(
+    DesignSystem.components.button.base,
+    {
+      variant,
+      size,
+      iconOnly,
+    },
+    className ? [className] : []
+  );
 
   return h(
     'button',
     {
+      ref: buttonRef,
       type,
       className: buttonClasses,
       disabled: disabled || loading,
       onClick: handleClick,
       'aria-label': ariaLabel,
+      'aria-busy': loading,
       ...props,
     },
     loading
-      ? h('span', { className: styles.spinner, 'aria-hidden': 'true' })
+      ? h('span', {
+          className: 'xeg-button__spinner',
+          'aria-hidden': 'true',
+          role: 'status',
+        })
       : [
-          icon && h('span', { className: styles.icon }, icon),
-          !iconOnly && h('span', { className: styles.text }, children),
+          icon && h('span', { className: 'xeg-button__icon' }, icon),
+          !iconOnly && h('span', { className: 'xeg-button__text' }, children),
         ].filter(Boolean)
   );
 }

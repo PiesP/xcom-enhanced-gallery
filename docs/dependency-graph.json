@@ -6658,44 +6658,9 @@
     },
     {
       "source": "src/shared/components/ui/Button/Button.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Button.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Button/Button.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Button/Button.module.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
       "dependencies": [],
       "dependents": [
-        "src/shared/components/ui/Button/Button.tsx"
+        "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6988,6 +6953,16 @@
       "dependencies": [],
       "dependents": [
         "src/shared/types/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/design-system/DesignSystem.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/styling/StyleStateManager.ts",
+        "src/shared/styling/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8133,6 +8108,119 @@
       "valid": true
     },
     {
+      "source": "src/shared/styling/PerformantStyler.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/styling/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/styling/StyleStateManager.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../design-system/DesignSystem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/design-system/DesignSystem.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/styling/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/styling/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../design-system/DesignSystem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/design-system/DesignSystem.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../design-system/DesignSystem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/design-system/DesignSystem.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PerformantStyler",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/styling/PerformantStyler.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./StyleStateManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/styling/StyleStateManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/common/deduplication.ts",
       "dependencies": [],
       "dependents": [
@@ -8377,8 +8465,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 223,
-    "totalDependenciesCruised": 356,
+    "totalCruised": 226,
+    "totalDependenciesCruised": 360,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

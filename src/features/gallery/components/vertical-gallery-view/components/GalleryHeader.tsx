@@ -41,7 +41,7 @@ export function GalleryHeader({
         {onClose && (
           <Button
             variant='ghost'
-            size='small'
+            size='sm'
             onClick={onClose}
             className={styles.closeButton}
             aria-label='갤러리 닫기'

@@ -3,8 +3,8 @@
  * @version 2.0.0 - Unified design system with responsive and theme support
  */
 
-/* Import enhanced CSS variables first */
-@import './enhanced-variables.css';
+/* Import unified design tokens */
+@import '../../shared/styles/design-tokens.css';
 
 /* ===== CSS Variables - LEGACY SUPPORT ===== */
 :root {
