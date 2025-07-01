@@ -22,3 +22,7 @@ export * from './media';
 
 // Memory management
 export * from './memory';
+
+// Infrastructure types
+export * from './types/media.types';
+export * from './types/lifecycle.types';

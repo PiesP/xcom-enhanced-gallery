@@ -54,36 +54,38 @@
   }
 }
 
-/* 공통 CSS 변수 정의 - 통합된 타이밍과 새로운 변수들 */
+/* 공통 CSS 변수 정의 - 새로운 디자인 토큰 시스템 적용 */
 :root {
-  --xeg-gallery-z-index: 10000;
-  --xeg-toolbar-z-index: 10001;
+  --xeg-gallery-z-index: var(--xeg-z-gallery, 10000);
+  --xeg-toolbar-z-index: var(--xeg-z-modal, 10001);
 
-  /* 트랜지션 - 하드웨어 가속 최적화 */
+  /* 트랜지션 - 새로운 애니메이션 토큰 사용 */
   --xeg-transition-fast:
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    opacity var(--xeg-duration-fast) var(--xeg-easing-easeOut);
   --xeg-transition-normal:
-    transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  --xeg-transition-smooth: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transform var(--xeg-duration-normal) var(--xeg-easing-easeInOut),
+    opacity var(--xeg-duration-normal) var(--xeg-easing-easeInOut);
+  --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-easeOut);
 
-  /* 스페이싱 - 컨테이너 쿼리 대응 */
-  --xeg-spacing-gallery: clamp(10px, 2.5vw, 20px);
-  --xeg-spacing-mobile: clamp(8px, 2vw, 15px);
-  --xeg-spacing-compact: clamp(5px, 1.5vw, 10px);
+  /* 스페이싱 - 새로운 간격 토큰 사용 */
+  --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
+  --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
+  --xeg-spacing-compact: clamp(4px, 1.5vw, var(--xeg-spacing-sm));
 
   /* 레이아웃 */
   --xeg-toolbar-height: clamp(60px, 10vh, 80px);
 
-  /* 블러 효과 */
+  /* 블러 효과와 그림자 */
   --xeg-backdrop-blur: 8px;
-  --xeg-shadow-soft: 0 8px 32px var(--xeg-gallery-item-shadow);
+  --xeg-shadow-soft: var(--xeg-shadow-lg);
 }
 
-/* 메인 컨테이너 - 하드웨어 가속과 컨테이너 쿼리 지원 */
+/* 메인 컨테이너 - 새로운 디자인 토큰 적용 */
 .container {
   position: fixed !important;
-  inset: 0 !important; /* top: 0; right: 0; bottom: 0; left: 0; 축약 */
-  background: var(--xeg-gallery-bg) !important; /* variables.css에서 정의된 변수 사용 */
+  inset: 0 !important;
+  background: var(--xeg-color-overlay-strong) !important;
   display: flex !important;
   flex-direction: column !important;
   z-index: var(--xeg-gallery-z-index) !important;
@@ -93,7 +95,7 @@
   will-change: opacity, transform;
   contain: layout style paint;
 
-  /* 초기 상태 - GPU 레이어 생성 및 즉시 표시 */
+  /* 초기 상태 */
   opacity: 1 !important;
   visibility: visible !important;
   transform: scale3d(1, 1, 1);

@@ -11,6 +11,7 @@
 
 import { removeUndefinedProperties } from '../shared/utils/core/type-safety-helpers';
 import { BrowserManager } from '../shared/utils/BrowserManager';
+import { designSystemManager } from '../shared/design-system';
 
 import { ServiceManager } from '../core/services/ServiceManager';
 import { logger } from '../infrastructure/logging/logger';
@@ -107,6 +108,10 @@ export class UnifiedApplication {
       const { initializeVendors } = await import('@infrastructure/external/vendors');
       await initializeVendors();
       logger.debug('✅ Vendor 라이브러리 초기화 완료');
+
+      // 디자인 시스템 초기화
+      await designSystemManager.initialize({ theme: 'auto', validateTokens: true });
+      logger.debug('✅ 디자인 시스템 초기화 완료');
 
       // 기본 스타일 주입
       this.injectBaseStyles();

@@ -19,17 +19,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--xeg-spacing-sm, 8px);
+  gap: var(--xeg-spacing-sm);
 
   /* 크기 */
-  padding: var(--xeg-spacing-sm, 8px) var(--xeg-spacing-md, 16px);
-  min-height: var(--xeg-button-height-md, 40px);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  min-height: 40px;
 
   /* 외관 */
-  border: 1px solid var(--xeg-color-border-primary, #e5e7eb);
+  border: 1px solid var(--xeg-color-neutral-300);
   border-radius: var(--xeg-radius-md, 8px);
-  background: var(--xeg-color-surface, #ffffff);
-  color: var(--xeg-color-text-primary, #0f1419);
+  background: var(--xeg-color-bg-primary);
+  color: var(--xeg-color-neutral-900);
 
   /* 타이포그래피 */
   font-family: var(
@@ -69,12 +69,10 @@
  * =========================================== */
 
 :global(.xeg-button--primary) {
-  background: var(--xeg-color-primary, #1d9bf0);
-  border-color: var(--xeg-color-primary, #1d9bf0);
-  color: var(--xeg-color-text-inverse, #ffffff);
-  box-shadow:
-    0 4px 12px rgba(29, 155, 240, 0.2),
-    var(--xeg-shadow-sm, 0 1px 3px 0 rgba(0, 0, 0, 0.1));
+  background: var(--xeg-color-primary-500);
+  border-color: var(--xeg-color-primary-500);
+  color: white;
+  box-shadow: var(--xeg-shadow-md);
 }
 
 :global(.xeg-button--secondary) {
