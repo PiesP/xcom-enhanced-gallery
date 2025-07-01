@@ -9,11 +9,12 @@
  * Clean Architecture App Layer - 애플리케이션 생명주기 관리
  */
 
-import { removeUndefinedProperties } from '@shared/utils/core/type-safety-helpers';
+import { removeUndefinedProperties } from '../shared/utils/core/type-safety-helpers';
+import { BrowserManager } from '../shared/utils/BrowserManager';
 
-import { ServiceManager } from '@core/services/ServiceManager';
-import { logger } from '@infrastructure/logging/logger';
-import type { AppConfig } from '@shared/types/app';
+import { ServiceManager } from '../core/services/ServiceManager';
+import { logger } from '../infrastructure/logging/logger';
+import type { AppConfig } from '../shared/types/app';
 import { UnifiedGalleryApp } from './UnifiedGalleryApp';
 
 /**
@@ -213,7 +214,7 @@ export class UnifiedApplication {
     const styles = `
       /* X.com Enhanced Gallery 기본 스타일 */
       .xeg-hidden {
-        _display: none !important;
+        display: none !important;
       }
       .xeg-disabled {
         pointer-events: none !important;
@@ -233,13 +234,12 @@ export class UnifiedApplication {
       }
     `;
 
-    const styleElement = document.createElement('style');
-    styleElement.id = styleId;
-    styleElement.textContent = styles;
-    document.head.appendChild(styleElement);
+    // BrowserManager를 사용하여 CSS 주입
+    const browserManager = BrowserManager.getInstance();
+    browserManager.injectCSS(styleId, styles);
 
     this.injectedStyles.add(styleId);
-    logger.debug('기본 스타일 주입 완료');
+    logger.debug('기본 스타일 주입 완료 (BrowserManager 사용)');
   }
 
   /**

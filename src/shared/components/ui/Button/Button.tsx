@@ -12,18 +12,12 @@
  * @updated 2.0.0 - Enhanced type safety and accessibility
  */
 
-import type { ComponentChildren } from '@shared/types/global.types';
-import { getPreact, getPreactHooks } from '@infrastructure/external/vendors';
-import {
-  DesignSystem,
-  type ButtonVariant,
-  type ButtonSize,
-} from '@shared/design-system/DesignSystem';
-import { StyleStateManager } from '@shared/styling/StyleStateManager';
+import type { ComponentChildren } from '../../../types/global.types';
+import { getPreact } from '../../../../infrastructure/external/vendors';
+import { type ButtonVariant, type ButtonSize } from '../../../design-system/DesignSystem';
+import styles from './Button.module.css';
 
 const { h } = getPreact();
-const { useRef, useEffect } = getPreactHooks();
-const styleStateManager = StyleStateManager.getInstance();
 
 /**
  * Button component Props interface
@@ -71,19 +65,6 @@ export function Button({
   onClick,
   ...props
 }: ButtonProps): ComponentChildren {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  // 상태 변경 시 CSS 클래스 업데이트
-  useEffect(() => {
-    if (buttonRef.current) {
-      styleStateManager.updateComponentState(buttonRef.current, 'button', {
-        loading,
-        disabled,
-        active: false, // 필요시 추가 상태
-      });
-    }
-  }, [loading, disabled]);
-
   /**
    * 버튼 클릭 이벤트 핸들러
    */
@@ -95,21 +76,22 @@ export function Button({
     onClick?.(event as MouseEvent);
   };
 
-  // 디자인 시스템을 사용한 클래스 생성
-  const buttonClasses = DesignSystem.createClassName(
-    DesignSystem.components.button.base,
-    {
-      variant,
-      size,
-      iconOnly,
-    },
-    className ? [className] : []
-  );
+  // CSS Modules를 사용한 클래스 생성
+  const buttonClasses = [
+    styles.button,
+    variant && styles[variant],
+    size && (size === 'sm' ? styles.small : size === 'md' ? styles.medium : styles.large),
+    iconOnly && styles.iconOnly,
+    loading && styles.loading,
+    disabled && styles.disabled,
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return h(
     'button',
     {
-      ref: buttonRef,
       type,
       className: buttonClasses,
       disabled: disabled || loading,

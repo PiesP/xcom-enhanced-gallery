@@ -2,4 +2,4 @@
  * Styles utilities index
  */
 
-export * from './css-variables';
+export * from './style-utils';

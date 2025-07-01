@@ -24,12 +24,13 @@
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "deps:graph": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | dot -Gdpi=150 -Gconcentrate=true -Grankdir=LR -Gsplines=ortho -T svg > docs/dependency-graph.svg",
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
-    "deps:all": "npm run deps:check && npm run deps:graph && npm run deps:json"
+    "deps:report": "dependency-cruiser --config .dependency-cruiser.cjs --output-type html -f docs/dependency-report.html src",
+    "deps:all": "npm run deps:check && npm run deps:graph && npm run deps:json && npm run deps:report"
   },
   "dependencies": {
     "@preact/signals": "^2.2.1",
     "fflate": "^0.8.2",
-    "motion": "^12.20.1",
+    "motion": "^12.19.2",
     "preact": "^10.26.9"
   },
   "devDependencies": {
@@ -37,10 +38,10 @@
     "@preact/preset-vite": "^2.10.2",
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/preact": "3.2.4",
-    "@types/node": "^24.0.8",
+    "@types/node": "^24.0.7",
     "@types/tampermonkey": "^5.0.4",
-    "@typescript-eslint/eslint-plugin": "^8.35.1",
-    "@typescript-eslint/parser": "^8.35.1",
+    "@typescript-eslint/eslint-plugin": "^8.35.0",
+    "@typescript-eslint/parser": "^8.35.0",
     "@typescript/native-preview": "7.0.0-dev.20250630.1",
     "@vitest/coverage-istanbul": "^3.2.4",
     "@vitest/coverage-v8": "^3.2.4",

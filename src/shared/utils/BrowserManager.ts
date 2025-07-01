@@ -6,7 +6,7 @@
  * DOM 조작, CSS 주입, 브라우저 API 래핑 등 순수한 브라우저 기능만 제공
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '../../infrastructure/logging/logger';
 import { BaseSingleton } from './patterns/singleton';
 
 /**
@@ -48,7 +48,7 @@ export class BrowserManager extends BaseSingleton {
   }
 
   /**
-   * CSS 주입 (순수 DOM 조작)
+   * CSS 주입 (통합된 관리 방식)
    */
   public injectCSS(id: string, css: string): void {
     if (!css) {
@@ -58,6 +58,7 @@ export class BrowserManager extends BaseSingleton {
 
     // 이미 주입된 스타일은 건너뜀
     if (this.injectedStyles.has(id)) {
+      logger.debug(`[BrowserManager] CSS already injected, skipping: ${id}`);
       return;
     }
 
@@ -71,10 +72,12 @@ export class BrowserManager extends BaseSingleton {
     const styleElement = document.createElement('style');
     styleElement.id = id;
     styleElement.textContent = css;
+    styleElement.setAttribute('data-injected-by', 'xeg-browser-manager');
+    styleElement.setAttribute('data-injected-at', Date.now().toString());
     document.head.appendChild(styleElement);
 
     this.injectedStyles.add(id);
-    logger.debug(`[BrowserManager] CSS injected: ${id}`);
+    logger.debug(`[BrowserManager] CSS injected: ${id} (${css.length} characters)`);
   }
 
   /**

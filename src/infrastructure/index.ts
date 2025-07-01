@@ -22,6 +22,3 @@ export * from './media';
 
 // Memory management
 export * from './memory';
-
-// Styling utilities
-export * from './styling';

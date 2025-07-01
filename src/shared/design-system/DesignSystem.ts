@@ -131,69 +131,19 @@ export class DesignSystem {
   } as const;
 
   /**
-   * 컴포넌트별 스타일 스키마
+   * 기본 유틸리티 클래스명들
    */
-  static readonly components = {
-    button: {
-      base: 'xeg-button',
-      variants: {
-        primary: 'xeg-button--primary',
-        secondary: 'xeg-button--secondary',
-        ghost: 'xeg-button--ghost',
-        danger: 'xeg-button--danger',
-      },
-      sizes: {
-        sm: 'xeg-button--sm',
-        md: 'xeg-button--md',
-        lg: 'xeg-button--lg',
-      },
-      states: {
-        loading: 'xeg-button--loading',
-        disabled: 'xeg-button--disabled',
-        active: 'xeg-button--active',
-      },
-    },
-    gallery: {
-      base: 'xeg-gallery',
-      states: {
-        open: 'xeg-gallery--open',
-        loading: 'xeg-gallery--loading',
-        error: 'xeg-gallery--error',
-        closing: 'xeg-gallery--closing',
-      },
-      elements: {
-        overlay: 'xeg-gallery__overlay',
-        container: 'xeg-gallery__container',
-        content: 'xeg-gallery__content',
-        toolbar: 'xeg-gallery__toolbar',
-        media: 'xeg-gallery__media',
-      },
-    },
-    toast: {
-      base: 'xeg-toast',
-      variants: {
-        info: 'xeg-toast--info',
-        success: 'xeg-toast--success',
-        warning: 'xeg-toast--warning',
-        error: 'xeg-toast--error',
-      },
-      states: {
-        entering: 'xeg-toast--entering',
-        exiting: 'xeg-toast--exiting',
-      },
-    },
-    toolbar: {
-      base: 'xeg-toolbar',
-      states: {
-        visible: 'xeg-toolbar--visible',
-        hidden: 'xeg-toolbar--hidden',
-      },
-      sections: {
-        left: 'xeg-toolbar__left',
-        center: 'xeg-toolbar__center',
-        right: 'xeg-toolbar__right',
-      },
-    },
+  static readonly classNames = {
+    // 컴포넌트 기본 클래스
+    button: 'xeg-button',
+    gallery: 'xeg-gallery',
+    toast: 'xeg-toast',
+    toolbar: 'xeg-toolbar',
+
+    // 상태 클래스 생성 헬퍼
+    withState: (base: string, state: string) => `${base}--${state}`,
+    withVariant: (base: string, variant: string) => `${base}--${variant}`,
+    withSize: (base: string, size: string) => `${base}--${size}`,
   } as const;
 
   /**
@@ -336,17 +286,17 @@ export type ZIndexToken = keyof typeof DesignSystem.layout.zIndex;
 export type ShadowToken = keyof typeof DesignSystem.layout.shadow;
 
 /**
- * 컴포넌트 관련 타입들
+ * 간소화된 컴포넌트 타입들
  */
-export type ButtonVariant = keyof typeof DesignSystem.components.button.variants;
-export type ButtonSize = keyof typeof DesignSystem.components.button.sizes;
-export type ButtonState = keyof typeof DesignSystem.components.button.states;
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonState = 'loading' | 'disabled' | 'active';
 
-export type GalleryState = keyof typeof DesignSystem.components.gallery.states;
-export type GalleryElement = keyof typeof DesignSystem.components.gallery.elements;
+export type GalleryState = 'open' | 'loading' | 'error' | 'closing';
+export type GalleryElement = 'overlay' | 'container' | 'content' | 'toolbar' | 'media';
 
-export type ToastVariant = keyof typeof DesignSystem.components.toast.variants;
-export type ToastState = keyof typeof DesignSystem.components.toast.states;
+export type ToastVariant = 'info' | 'success' | 'warning' | 'error';
+export type ToastState = 'entering' | 'exiting';
 
-export type ToolbarState = keyof typeof DesignSystem.components.toolbar.states;
-export type ToolbarSection = keyof typeof DesignSystem.components.toolbar.sections;
+export type ToolbarState = 'visible' | 'hidden';
+export type ToolbarSection = 'left' | 'center' | 'right';

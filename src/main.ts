@@ -8,7 +8,6 @@
  */
 
 import { measurePerformance } from '@shared/utils/performance';
-import { initializeCSSVariables } from '@shared/utils/styles';
 import { UnifiedApplication } from './app/UnifiedApplication';
 import { logger } from './infrastructure/logging/logger';
 import type { AppConfig } from './shared/types/app';
@@ -63,9 +62,6 @@ async function initializeDevTools(): Promise<void> {
  */
 async function startApplication(): Promise<void> {
   try {
-    // CSS 변수 시스템 초기화 (가장 먼저)
-    initializeCSSVariables();
-
     // 시작 성능 측정
     const startMetric = await measurePerformance('app-startup', async () => {
       // 설정 생성

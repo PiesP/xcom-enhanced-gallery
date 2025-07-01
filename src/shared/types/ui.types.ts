@@ -4,8 +4,6 @@
  * 사용자 인터페이스 컴포넌트에서 사용되는 공통 타입들을 정의합니다.
  */
 
-import type { MediaItem } from '@shared/types/media.types';
-
 /** 기본 컴포넌트 Props */
 export interface BaseComponentProps {
   /** CSS 클래스명 */
@@ -34,7 +32,7 @@ export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'er
 /** 버튼 변형 타입 */
 export type ButtonVariant = 'filled' | 'outlined' | 'text' | 'icon';
 
-/** 버튼 Props */
+/** 버튼 Props - 실제 구현된 Button 컴포넌트와 일치 */
 export interface ButtonProps extends BaseComponentProps {
   /** 버튼 변형 */
   variant?: ButtonVariant;
@@ -54,69 +52,6 @@ export interface ButtonProps extends BaseComponentProps {
   icon?: string;
   /** 전체 너비 사용 여부 */
   fullWidth?: boolean;
-}
-
-/** 모달 Props */
-export interface ModalProps extends BaseComponentProps {
-  /** 모달 열림 상태 */
-  open: boolean;
-  /** 닫기 핸들러 */
-  onClose: () => void;
-  /** 제목 */
-  title?: string;
-  /** 크기 */
-  size?: Size;
-  /** 배경 클릭으로 닫기 방지 */
-  disableBackdropClick?: boolean;
-  /** ESC 키로 닫기 방지 */
-  disableEscapeKeyDown?: boolean;
-}
-
-/** 오버레이 Props */
-export interface OverlayProps extends BaseComponentProps {
-  /** 표시 여부 */
-  visible: boolean;
-  /** 클릭 핸들러 */
-  onClick?: () => void;
-  /** 배경 색상 투명도 */
-  opacity?: number;
-  /** z-index 값 */
-  zIndex?: number;
-}
-
-/** 썸네일바 Props */
-export interface ThumbnailBarProps extends BaseComponentProps {
-  /** 썸네일 목록 */
-  items: MediaItem[];
-  /** 현재 선택된 인덱스 */
-  selectedIndex: number;
-  /** 썸네일 클릭 핸들러 */
-  onThumbnailClick: (index: number) => void;
-  /** 표시 여부 */
-  visible: boolean;
-}
-
-// ThumbnailItem은 MediaItem으로 대체됨 (core/types/media.types.ts 참조)
-// 중복 제거: MediaItem을 사용하세요
-
-/** 로딩 스피너 Props */
-export interface LoadingSpinnerProps extends BaseComponentProps {
-  /** 크기 */
-  size?: Size;
-  /** 색상 */
-  color?: string;
-  /** 두께 */
-  thickness?: number;
-}
-
-/** 아이콘 Props */
-export interface IconProps extends BaseComponentProps {
-  /** 아이콘 이름 */
-  name: string;
-  /** 크기 */
-  size?: Size | number;
-  /** 색상 */
-  color?: string;
 }
 
 /** 애니메이션 설정 타입 */
