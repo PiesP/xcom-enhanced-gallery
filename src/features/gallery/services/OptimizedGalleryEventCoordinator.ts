@@ -25,7 +25,7 @@ interface MediaClickContext {
   readonly timestamp: number;
 }
 
-import { SmartDebouncer } from '@shared/utils/performance/SmartDebouncer';
+import { Debouncer } from '../../../shared/utils/performance/Debouncer';
 
 /**
  * 미디어 추출 결과 인터페이스
@@ -80,7 +80,7 @@ export class OptimizedGalleryEventCoordinator {
   private static instance: OptimizedGalleryEventCoordinator | null = null;
 
   private galleryService: GalleryService | null = null;
-  private readonly debouncer: SmartDebouncer<[MediaClickContext]>;
+  private readonly debouncer: Debouncer<[MediaClickContext]>;
   private readonly options: CoordinatorOptions;
   private isInitialized = false;
   private readonly eventListeners: Map<string, EventListener> = new Map();
@@ -93,12 +93,11 @@ export class OptimizedGalleryEventCoordinator {
       ...options,
     };
 
-    // SmartDebouncer 사용으로 더 지능적인 디바운싱 적용
-    this.debouncer = new SmartDebouncer(this.handleDebouncedMediaClick.bind(this), {
-      delay: this.options.debounceDelay ?? 150,
-      strategy: 'smart',
-      debug: this.options.debug ?? false,
-    });
+    // 간소화된 디바운서 사용
+    this.debouncer = new Debouncer(
+      this.handleDebouncedMediaClick.bind(this),
+      this.options.debounceDelay ?? 150
+    );
 
     logger.debug('OptimizedGalleryEventCoordinator: Instance created (lazy initialization)');
   }

@@ -9,19 +9,12 @@ export * from './BasicUtilities';
 // 성능 모니터링
 export * from './AdvancedPerformanceMonitor';
 
-// 스마트 디바운싱 시스템
-export {
-  SmartDebouncer,
-  createSmartDebouncer,
-  type DebounceContext,
-  type DebounceStrategy,
-  type SmartDebouncerOptions,
-} from './SmartDebouncer';
+// 간소화된 디바운싱 시스템
+export { Debouncer, createDebouncer, debounce } from './Debouncer';
 
-// 미디어 클릭 스마트 디바운서
+// 미디어 클릭 디바운서
 export {
   MediaClickDebouncer,
-  createMediaClickContext,
   createMediaClickDebouncer,
   type MediaClickContext,
   type MediaClickDebouncerOptions,

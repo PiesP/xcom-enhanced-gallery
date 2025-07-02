@@ -1,7 +1,7 @@
 /**
  * @fileoverview 통합 디자인 시스템 진입점
- * @description 모든 디자인 관련 기능의 단일 진입점 (v2.0)
- * @version 2.0.0
+ * @description 모든 디자인 관련 기능의 단일 진입점 (v3.1.0)
+ * @version 3.1.0
  */
 
 // 통합 디자인 토큰
@@ -9,6 +9,24 @@ export * from './tokens/UnifiedDesignTokens';
 
 // 통합 디자인 시스템 매니저
 export * from './DesignSystemManager';
+
+// 디자인 유틸리티 (중복 제거)
+export {
+  getCSSVariable,
+  setCSSVariable,
+  tokenToCSSVariable,
+  getColorToken,
+  getSpacingToken,
+  getTypographyToken,
+  getShadowToken,
+  getThemeColorToken,
+  validateDesignTokens,
+  getBreakpointToken,
+  createMediaQuery,
+  createCSSProperties,
+  createStyleString,
+  getSystemTheme,
+} from './utils/design-utils';
 
 // 편의 타입 및 상수
 export type Theme = 'light' | 'dark';
@@ -25,9 +43,16 @@ export const DESIGN_SYSTEM_CONSTANTS = {
   GALLERY_ACTIVE_CLASS: 'xeg-gallery-active',
 } as const;
 
-// 하위 호환성을 위한 레거시 export (점진적 제거 예정)
-// @deprecated - UnifiedDesignTokens 사용 권장
-export { DesignSystem } from './DesignSystem';
-
-// @deprecated - DesignSystemManager 사용 권장
-export { getDesignTokens, DESIGN_TOKENS } from './tokens/DesignTokens';
+/**
+ * 편의 함수들 (통합된 API)
+ */
+export {
+  designSystemManager,
+  initDesignSystem,
+  getDesignToken,
+  getCSSVar,
+  switchTheme,
+  getTheme,
+  isDesignSystemReady,
+  diagnoseDesignSystem,
+} from './DesignSystemManager';

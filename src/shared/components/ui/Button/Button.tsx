@@ -14,7 +14,7 @@
 
 import type { ComponentChildren } from '../../../types/global.types';
 import { getPreact } from '../../../../infrastructure/external/vendors';
-import { type ButtonVariant, type ButtonSize } from '../../../design-system/DesignSystem';
+import { type ButtonVariant, type ButtonSize } from '@shared/types/ui.types';
 import styles from './Button.module.css';
 
 const { h } = getPreact();

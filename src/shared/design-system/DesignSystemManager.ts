@@ -46,6 +46,7 @@ export class DesignSystemManager implements Cleanupable {
     options: {
       theme?: 'light' | 'dark' | 'auto';
       injectGlobalStyles?: boolean;
+      validateTokens?: boolean;
     } = {}
   ): Promise<void> {
     if (this.isInitialized) {
@@ -54,18 +55,25 @@ export class DesignSystemManager implements Cleanupable {
     }
 
     try {
+      const { theme = 'auto', injectGlobalStyles = true, validateTokens = true } = options;
+
       logger.info('🎨 Initializing unified design system...');
 
       // 1. CSS 변수 주입
       this.injectCSSVariables();
 
       // 2. 전역 스타일 주입 (옵션)
-      if (options.injectGlobalStyles !== false) {
+      if (injectGlobalStyles) {
         this.injectGlobalStyles();
       }
 
       // 3. 테마 설정
-      this.setupTheme(options.theme || 'auto');
+      this.setupTheme(theme);
+
+      // 4. 토큰 검증 (옵션)
+      if (validateTokens && !this.validateTokens()) {
+        logger.warn('Some design tokens are missing or invalid');
+      }
 
       this.isInitialized = true;
       logger.info(`✅ Design system initialized (theme: ${this.currentTheme})`);
@@ -388,6 +396,53 @@ export class DesignSystemManager implements Cleanupable {
 
     // 변경 감지
     this.mediaQuery.addEventListener('change', updateTheme);
+  }
+
+  /**
+   * 자동 테마 모드 활성화
+   */
+  public enableAutoTheme(): void {
+    if (!window.matchMedia) {
+      logger.warn('matchMedia not supported, auto theme disabled');
+      return;
+    }
+
+    this.setupAutoTheme();
+    logger.info('Auto theme enabled');
+  }
+
+  /**
+   * 토큰 검증
+   */
+  private validateTokens(): boolean {
+    try {
+      const requiredTokens = [
+        'color-primary-500',
+        'color-neutral-500',
+        'spacing-md',
+        'font-size-base',
+        'shadow-md',
+        'duration-normal',
+        'easing-easeOut',
+      ];
+
+      for (const token of requiredTokens) {
+        const cssVar = `--xeg-${token}`;
+        const computedStyle = getComputedStyle(document.documentElement);
+        const value = computedStyle.getPropertyValue(cssVar);
+
+        if (!value.trim()) {
+          logger.warn(`Missing required design token: ${cssVar}`);
+          return false;
+        }
+      }
+
+      logger.info('All required design tokens are available');
+      return true;
+    } catch (error) {
+      logger.error('Design token validation failed:', error);
+      return false;
+    }
   }
 
   /**

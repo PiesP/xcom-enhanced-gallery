@@ -4,8 +4,8 @@
  * @fileoverview 미디어 파일명 생성 서비스
  */
 
-import type { MediaInfo, MediaItem } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
+import type { MediaInfo, MediaItem } from '../types/media.types';
+import { logger } from '../logging/logger';
 import { safeParseInt, undefinedToNull } from '../utils/type-safety-helpers';
 
 /**
@@ -174,10 +174,10 @@ export class MediaFilenameService {
         return (zeroBasedIndex + 1).toString();
       }
 
-      // 레거시 형식 지원: {tweetId}_{index} 또는 {tweetId}_video_{index}
-      const legacyMatch = mediaId.match(/_(\d+)$/);
-      if (legacyMatch) {
-        return undefinedToNull(legacyMatch[1]);
+      // 이전 형식 지원: {tweetId}_{index} 또는 {tweetId}_video_{index}
+      const previousMatch = mediaId.match(/_(\d+)$/);
+      if (previousMatch) {
+        return undefinedToNull(previousMatch[1]);
       }
     } catch (error) {
       logger.debug('Failed to extract index from media ID:', mediaId, error);

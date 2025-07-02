@@ -1,0 +1,217 @@
+/**
+ * @fileoverview 통합 스타일 시스템 (v4.0.0)
+ * @description 통합된 전역 스타일 및 CSS 주입
+ * @version 4.0.0
+ */
+
+/* 1. 디자인 토큰 (최우선) */
+@import '../../shared/styles/unified-design-tokens.css';
+
+/* 2. 기본 스타일 */
+@import './base/reset.css';
+@import './base/typography.css';
+
+/* 3. 컴포넌트 스타일 */
+@import './components/gallery.css';
+@import './components/controls.css';
+@import './components/animations.css';
+
+/* 4. 유틸리티 스타일 */
+@import './utilities/responsive.css';
+@import './utilities/accessibility.css';
+
+/* ===== 통합된 기존 스타일들 (Legacy에서 이동) ===== */
+
+/* 갤러리 기본 스타일 */
+body.xeg-gallery-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.xeg-gallery-container {
+  font-family: var(--xeg-font-family-sans);
+  color: var(--xeg-color-text-inverse);
+  background: var(--xeg-gallery-backdrop);
+  backdrop-filter: var(--xeg-blur-strong);
+  -webkit-backdrop-filter: var(--xeg-blur-strong);
+  z-index: var(--xeg-z-gallery) !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 갤러리 트리거 버튼 */
+.xeg-gallery-trigger {
+  position: absolute;
+  top: var(--xeg-spacing-sm);
+  right: var(--xeg-spacing-sm);
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: var(--xeg-radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: var(--xeg-transition-fast);
+  backdrop-filter: var(--xeg-blur-light);
+  -webkit-backdrop-filter: var(--xeg-blur-light);
+  font-size: 0;
+  outline: none;
+}
+
+.xeg-gallery-trigger:hover {
+  background: var(--xeg-color-primary) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.xeg-gallery-trigger:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+/* 통합 애니메이션 키프레임 */
+@keyframes xeg-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes xeg-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes xeg-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes xeg-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes xeg-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes xeg-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes xeg-slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes xeg-slide-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 동적 애니메이션 클래스 */
+.xeg-animate-fade-in {
+  animation: xeg-fade-in var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-animate-fade-out {
+  animation: xeg-fade-out var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-animate-scale-in {
+  animation: xeg-scale-in var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-animate-scale-out {
+  animation: xeg-scale-out var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-animate-slide-in-left {
+  animation: xeg-slide-in-left var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-animate-slide-in-right {
+  animation: xeg-slide-in-right var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-animate-slide-in-up {
+  animation: xeg-slide-in-up var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-animate-slide-in-down {
+  animation: xeg-slide-in-down var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+/* 접근성 고려 */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-animate-fade-in,
+  .xeg-animate-fade-out,
+  .xeg-animate-scale-in,
+  .xeg-animate-scale-out,
+  .xeg-animate-slide-in-left,
+  .xeg-animate-slide-in-right,
+  .xeg-animate-slide-in-up,
+  .xeg-animate-slide-in-down {
+    animation: none;
+  }
+
+  .xeg-gallery-trigger:hover {
+    transform: none;
+  }
+}

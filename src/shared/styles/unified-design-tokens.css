@@ -291,30 +291,6 @@
 }
 
 /* ===========================================
-   LEGACY COMPATIBILITY (점진적 제거 예정)
-   =========================================== */
-
-:root {
-  /* Legacy color names */
-  --xeg-text-primary: var(--xeg-color-text-primary);
-  --xeg-text-secondary: var(--xeg-color-text-secondary);
-  --xeg-bg-primary: var(--xeg-color-background);
-  --xeg-border-primary: var(--xeg-color-border-primary);
-
-  /* Legacy button colors */
-  --xeg-bg-button: var(--xeg-color-surface);
-  --xeg-bg-button-hover: var(--xeg-color-neutral-100);
-  --xeg-text-button: var(--xeg-color-text-primary);
-
-  /* Legacy spacing */
-  --xeg-spacing-xs: var(--xeg-spacing-xs);
-  --xeg-spacing-sm: var(--xeg-spacing-sm);
-  --xeg-spacing-md: var(--xeg-spacing-md);
-  --xeg-spacing-lg: var(--xeg-spacing-lg);
-  --xeg-spacing-xl: var(--xeg-spacing-xl);
-}
-
-/* ===========================================
    UTILITY CLASSES
    =========================================== */
 

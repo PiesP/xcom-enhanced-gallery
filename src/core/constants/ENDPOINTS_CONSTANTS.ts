@@ -10,8 +10,8 @@
 export const X_DOMAINS = {
   /** Main X.com domain */
   MAIN: 'x.com',
-  /** Legacy Twitter domain */
-  LEGACY: 'twitter.com',
+  /** Previous Twitter domain */
+  TWITTER: 'twitter.com',
   /** Mobile X.com domain */
   MOBILE: 'm.x.com',
 } as const;

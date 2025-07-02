@@ -96,7 +96,3 @@ export class SimpleThemeManager {
  * 전역 테마 서비스 인스턴스
  */
 export const themeManager = SimpleThemeManager.getInstance();
-
-// 하위 호환성을 위한 legacy export
-export const AutoThemeService = SimpleThemeManager;
-export const autoThemeService = themeManager;

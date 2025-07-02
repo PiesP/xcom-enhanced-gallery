@@ -6,7 +6,6 @@
  */
 
 // Bulk Download Service
-// Legacy export for compatibility
 export { BulkDownloadService } from './BulkDownloadService';
 
 // New unified service management system
@@ -23,7 +22,7 @@ export type { ServiceTypeMapping } from '../types/services.types';
 export type { DownloadOptions, DownloadProgress, DownloadResult } from './BulkDownloadService';
 
 // Theme Service (Simplified)
-export { SimpleThemeManager, AutoThemeService, themeManager } from './AutoThemeService';
+export { SimpleThemeManager, themeManager } from './AutoThemeService';
 export type { Theme } from './AutoThemeService';
 
 // Application Lifecycle Management

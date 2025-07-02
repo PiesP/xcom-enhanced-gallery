@@ -1,0 +1,169 @@
+/**
+ * @fileoverview 타이포그래피 시스템 (v4.0.0)
+ * @description 통합된 타이포그래피 스타일
+ */
+
+/* 헤딩 스타일 */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--xeg-font-weight-semibold);
+  line-height: var(--xeg-line-height-tight);
+  color: var(--xeg-color-text-primary);
+  margin-bottom: var(--xeg-spacing-sm);
+}
+
+h1 {
+  font-size: var(--xeg-font-size-3xl);
+}
+
+h2 {
+  font-size: var(--xeg-font-size-2xl);
+}
+
+h3 {
+  font-size: var(--xeg-font-size-xl);
+}
+
+h4 {
+  font-size: var(--xeg-font-size-lg);
+}
+
+h5 {
+  font-size: var(--xeg-font-size-base);
+}
+
+h6 {
+  font-size: var(--xeg-font-size-sm);
+}
+
+/* 본문 텍스트 */
+p {
+  margin-bottom: var(--xeg-spacing-md);
+  line-height: var(--xeg-line-height-normal);
+  color: var(--xeg-color-text-primary);
+}
+
+/* 강조 텍스트 */
+strong,
+b {
+  font-weight: var(--xeg-font-weight-bold);
+}
+
+em,
+i {
+  font-style: italic;
+}
+
+/* 코드 */
+code {
+  font-family: var(--xeg-font-family-mono);
+  font-size: 0.875em;
+  background: var(--xeg-color-neutral-100);
+  padding: 0.125rem 0.25rem;
+  border-radius: var(--xeg-radius-sm);
+}
+
+pre {
+  font-family: var(--xeg-font-family-mono);
+  background: var(--xeg-color-neutral-100);
+  padding: var(--xeg-spacing-md);
+  border-radius: var(--xeg-radius-md);
+  overflow-x: auto;
+}
+
+/* 인용문 */
+blockquote {
+  border-left: 4px solid var(--xeg-color-primary);
+  padding-left: var(--xeg-spacing-md);
+  margin: var(--xeg-spacing-md) 0;
+  font-style: italic;
+  color: var(--xeg-color-text-secondary);
+}
+
+/* 작은 텍스트 */
+small {
+  font-size: var(--xeg-font-size-sm);
+  color: var(--xeg-color-text-secondary);
+}
+
+/* 링크 */
+a {
+  color: var(--xeg-color-primary);
+  text-decoration: none;
+  transition: var(--xeg-transition-fast);
+}
+
+a:hover {
+  color: var(--xeg-color-primary-hover);
+  text-decoration: underline;
+}
+
+/* 유틸리티 클래스 */
+.xeg-text-xs {
+  font-size: var(--xeg-font-size-xs);
+}
+.xeg-text-sm {
+  font-size: var(--xeg-font-size-sm);
+}
+.xeg-text-base {
+  font-size: var(--xeg-font-size-base);
+}
+.xeg-text-lg {
+  font-size: var(--xeg-font-size-lg);
+}
+.xeg-text-xl {
+  font-size: var(--xeg-font-size-xl);
+}
+.xeg-text-2xl {
+  font-size: var(--xeg-font-size-2xl);
+}
+.xeg-text-3xl {
+  font-size: var(--xeg-font-size-3xl);
+}
+
+.xeg-font-normal {
+  font-weight: var(--xeg-font-weight-normal);
+}
+.xeg-font-medium {
+  font-weight: var(--xeg-font-weight-medium);
+}
+.xeg-font-semibold {
+  font-weight: var(--xeg-font-weight-semibold);
+}
+.xeg-font-bold {
+  font-weight: var(--xeg-font-weight-bold);
+}
+
+.xeg-leading-tight {
+  line-height: var(--xeg-line-height-tight);
+}
+.xeg-leading-normal {
+  line-height: var(--xeg-line-height-normal);
+}
+.xeg-leading-relaxed {
+  line-height: var(--xeg-line-height-relaxed);
+}
+
+.xeg-text-center {
+  text-align: center;
+}
+.xeg-text-left {
+  text-align: left;
+}
+.xeg-text-right {
+  text-align: right;
+}
+
+.xeg-text-primary {
+  color: var(--xeg-color-text-primary);
+}
+.xeg-text-secondary {
+  color: var(--xeg-color-text-secondary);
+}
+.xeg-text-inverse {
+  color: var(--xeg-color-text-inverse);
+}

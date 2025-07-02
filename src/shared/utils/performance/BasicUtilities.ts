@@ -7,7 +7,6 @@
 
 /**
  * 디바운스된 함수를 생성합니다
- * @deprecated SmartDebouncer 사용 권장 (더 지능적인 디바운싱 제공)
  * @param func 디바운스할 함수
  * @param wait 대기 시간 (밀리초)
  * @returns 디바운스된 함수
@@ -96,35 +95,6 @@ export function setupLazyLoading(
   elements.forEach(element => observer.observe(element));
 
   return observer;
-}
-
-/**
- * 메모리 사용량 모니터링 (가능한 경우)
- * @deprecated UnifiedMemoryManager.getMemoryInfo() 사용 권장
- * @returns 메모리 정보 또는 null
- */
-export function getMemoryUsage(): {
-  usedJSHeapSize: number;
-  totalJSHeapSize: number;
-  jsHeapSizeLimit: number;
-} | null {
-  if ('performance' in window && 'memory' in performance) {
-    const memory = (
-      performance as unknown as {
-        memory: {
-          usedJSHeapSize: number;
-          totalJSHeapSize: number;
-          jsHeapSizeLimit: number;
-        };
-      }
-    ).memory;
-    return {
-      usedJSHeapSize: memory.usedJSHeapSize,
-      totalJSHeapSize: memory.totalJSHeapSize,
-      jsHeapSizeLimit: memory.jsHeapSizeLimit,
-    };
-  }
-  return null;
 }
 
 /**

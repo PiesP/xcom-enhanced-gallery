@@ -29,10 +29,11 @@ export type Size = 'small' | 'medium' | 'large';
 /** 색상 변형 타입 */
 export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
 
-// ButtonVariant는 DesignSystem.ts에서 import하여 사용
+/** 버튼 변형 타입 */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
-// ButtonProps는 Button 컴포넌트에서 직접 정의하므로 여기서는 제거
-// 중복 방지를 위해 Button 컴포넌트의 타입을 사용하세요.
+/** 버튼 크기 타입 */
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 /** 애니메이션 설정 타입 */
 export interface AnimationConfig {

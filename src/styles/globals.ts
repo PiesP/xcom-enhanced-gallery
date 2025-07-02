@@ -1,32 +1,14 @@
 /**
- * Global styles initialization module
- *
- * Centralized management of all global CSS files
+ * @fileoverview 전역 스타일 시스템 (v4.0.0)
+ * @description 통합된 전역 스타일 및 CSS 주입
+ * @version 4.0.0
  */
 
-// Unified design system
+// 통합 디자인 토큰 (최우선)
 import '@shared/styles/unified-design-tokens.css';
 
-// Gallery global styles
-import '@features/gallery/styles/gallery-global.css';
+// 통합 스타일 시스템
+import '@assets/styles/unified-styles.css';
 
-// Component-specific global styles
-import '@assets/styles/video-trigger.css';
-
-/**
- * Global styles related additional initialization logic
- */
-export function initializeGlobalStyles(): void {
-  // Dark mode detection
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  }
-
-  // System theme change detection
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-  });
-}
-
-// 자동 초기화
-initializeGlobalStyles();
+// 브라우저 스타일 초기화
+import '@assets/styles/base/reset.css';

@@ -1,0 +1,164 @@
+/**
+ * @fileoverview 접근성 유틸리티 (v4.0.0)
+ * @description 접근성 향상을 위한 유틸리티 클래스
+ */
+
+/* 스크린 리더 전용 */
+.xeg-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* 포커스 시에만 표시 */
+.xeg-focus-visible {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.xeg-focus-visible:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* 포커스 링 강화 */
+.xeg-focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline var(--xeg-duration-fast);
+}
+
+.xeg-focus-ring:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .xeg-focus-ring:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  .xeg-btn {
+    border: 2px solid currentColor;
+  }
+
+  .xeg-gallery-container {
+    background: var(--xeg-color-background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 모션 감소 선호 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 투명도 감소 선호 */
+@media (prefers-reduced-transparency: reduce) {
+  .xeg-gallery-container {
+    background: var(--xeg-color-background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .xeg-btn {
+    background: var(--xeg-color-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 터치 친화적 크기 */
+.xeg-touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* 키보드 내비게이션 향상 */
+.xeg-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--xeg-color-primary);
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: var(--xeg-radius-sm);
+  z-index: 100000;
+}
+
+.xeg-skip-link:focus {
+  top: 6px;
+}
+
+/* ARIA 상태 표시 */
+[aria-expanded='false'] .xeg-collapse-icon {
+  transform: rotate(0deg);
+}
+
+[aria-expanded='true'] .xeg-collapse-icon {
+  transform: rotate(180deg);
+}
+
+[aria-busy='true'] {
+  cursor: wait;
+}
+
+[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 로딩 상태 접근성 */
+.xeg-loading[aria-hidden='false'] {
+  speak: never;
+}
+
+.xeg-loading::before {
+  content: '로딩 중...';
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* 언어별 폰트 최적화 */
+:lang(ko) {
+  font-family: var(--xeg-font-family-sans), 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+:lang(ja) {
+  font-family: var(--xeg-font-family-sans), 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+}
+
+:lang(zh) {
+  font-family: var(--xeg-font-family-sans), 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* 색맹 고려 패턴 */
+.xeg-colorblind-safe {
+  --xeg-color-success: #0066cc;
+  --xeg-color-warning: #ff6600;
+  --xeg-color-error: #cc0000;
+}

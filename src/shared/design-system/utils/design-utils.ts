@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import { DESIGN_TOKENS } from '../tokens/DesignTokens';
+import { UNIFIED_DESIGN_TOKENS, getTokenValue } from '../tokens/UnifiedDesignTokens';
 import { logger } from '../../../infrastructure/logging/logger';
 
 /**
@@ -74,17 +74,29 @@ export function getThemeColorToken(colorName: string, theme: 'light' | 'dark' = 
 }
 
 /**
- * 디자인 토큰 검증 유틸리티
+ * 디자인 토큰 검증 유틸리티 (개선된 버전)
  */
-export function validateDesignTokens(): boolean {
-  try {
-    // 필수 토큰들이 존재하는지 확인
-    const requiredTokens = ['color-primary', 'spacing-md', 'typography-fontSize-base', 'shadow-md'];
+export function validateDesignTokens(requiredTokens?: string[]): boolean {
+  const defaultRequiredTokens = [
+    'color-primary-500',
+    'color-neutral-500',
+    'spacing-md',
+    'font-size-base',
+    'shadow-md',
+    'duration-normal',
+    'easing-easeOut',
+  ];
 
-    for (const token of requiredTokens) {
+  const tokensToCheck = requiredTokens || defaultRequiredTokens;
+
+  try {
+    const computedStyle = getComputedStyle(document.documentElement);
+
+    for (const token of tokensToCheck) {
       const cssVar = `--xeg-${token}`;
-      const value = getCSSVariable(cssVar);
-      if (!value) {
+      const value = computedStyle.getPropertyValue(cssVar);
+
+      if (!value.trim()) {
         logger.warn(`Missing required design token: ${cssVar}`);
         return false;
       }
@@ -99,10 +111,49 @@ export function validateDesignTokens(): boolean {
 }
 
 /**
+ * 시스템 테마 감지 유틸리티
+ */
+export function getSystemTheme(): 'light' | 'dark' {
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark';
+  }
+  return 'light';
+}
+
+/**
+ * 테마별 토큰 값 조회 (타입 안전성 개선)
+ */
+export function getThemeTokenValue(tokenPath: string, theme: 'light' | 'dark' = 'light'): string {
+  const value = getTokenValue(tokenPath);
+
+  if (typeof value !== 'string' && typeof value !== 'number') {
+    logger.warn(`Invalid token value for path: ${tokenPath}`);
+    return '';
+  }
+
+  // 테마별 오버라이드 로직
+  if (theme === 'dark') {
+    const overrides: Record<string, string> = {
+      'colors.surface.light': UNIFIED_DESIGN_TOKENS.colors.surface.dark,
+      'colors.neutral.50': UNIFIED_DESIGN_TOKENS.colors.neutral[950],
+      'colors.neutral.900': UNIFIED_DESIGN_TOKENS.colors.neutral[50],
+    };
+
+    return overrides[tokenPath] || String(value);
+  }
+
+  return String(value);
+}
+
+/**
  * 반응형 디자인을 위한 브레이크포인트 유틸리티
  */
 export function getBreakpointToken(breakpoint: string): string {
-  return DESIGN_TOKENS.breakpoints[breakpoint as keyof typeof DESIGN_TOKENS.breakpoints] || '';
+  return (
+    UNIFIED_DESIGN_TOKENS.breakpoints[
+      breakpoint as keyof typeof UNIFIED_DESIGN_TOKENS.breakpoints
+    ] || ''
+  );
 }
 
 /**
