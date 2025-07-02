@@ -10,7 +10,6 @@
  */
 
 import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
-import { BrowserManager } from '../shared/utils/BrowserManager';
 import { designSystemManager } from '../shared/design-system';
 
 import { ServiceManager } from '../core/services/ServiceManager';
@@ -36,7 +35,6 @@ export class UnifiedApplication {
 
   // 메모리 관리
   private memoryMonitoringInterval: number | null = null;
-  private readonly injectedStyles = new Set<string>();
 
   // 정리 관련
   private readonly cleanupHandlers: (() => Promise<void> | void)[] = [];
@@ -109,13 +107,12 @@ export class UnifiedApplication {
       await initializeVendors();
       logger.debug('✅ Vendor 라이브러리 초기화 완료');
 
-      // 디자인 시스템 초기화
-      await designSystemManager.initialize({ theme: 'auto', validateTokens: true });
-      logger.debug('✅ 디자인 시스템 초기화 완료');
-
-      // 기본 스타일 주입
-      this.injectBaseStyles();
-      logger.debug('✅ 기본 스타일 주입 완료');
+      // 통합 디자인 시스템 초기화 (v2.0)
+      await designSystemManager.initialize({
+        theme: 'auto',
+        injectGlobalStyles: true,
+      });
+      logger.debug('✅ 통합 디자인 시스템 초기화 완료');
     } catch (error) {
       logger.error('❌ 인프라 초기화 실패:', error);
       throw error;
@@ -194,47 +191,6 @@ export class UnifiedApplication {
   }
 
   /**
-   * 기본 스타일 주입
-   */
-  private injectBaseStyles(): void {
-    const styleId = 'xeg-base-styles';
-
-    if (this.injectedStyles.has(styleId)) {
-      return;
-    }
-
-    const styles = `
-      /* X.com Enhanced Gallery 기본 스타일 */
-      .xeg-hidden {
-        display: none !important;
-      }
-      .xeg-disabled {
-        pointer-events: none !important;
-        opacity: 0.5 !important;
-      }
-      .xeg-loading {
-        cursor: wait !important;
-      }
-      #xeg-gallery-root {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 999999;
-        pointer-events: none;
-      }
-    `;
-
-    // BrowserManager를 사용하여 CSS 주입
-    const browserManager = BrowserManager.getInstance();
-    browserManager.injectCSS(styleId, styles);
-
-    this.injectedStyles.add(styleId);
-    logger.debug('기본 스타일 주입 완료 (BrowserManager 사용)');
-  }
-
-  /**
    * 전역 이벤트 핸들러 설정
    */
   private setupGlobalEventHandlers(): void {
@@ -301,15 +257,6 @@ export class UnifiedApplication {
         this.memoryMonitoringInterval = null;
       }
 
-      // 스타일 정리
-      this.injectedStyles.forEach(styleId => {
-        const element = document.getElementById(styleId);
-        if (element) {
-          element.remove();
-        }
-      });
-      this.injectedStyles.clear();
-
       // 정리 핸들러 실행
       await Promise.all(
         this.cleanupHandlers.map(handler =>
@@ -365,7 +312,6 @@ export class UnifiedApplication {
       version: string;
       isDevelopment: boolean;
       hasGalleryApp: boolean;
-      injectedStylesCount: number;
       cleanupHandlersCount: number;
     };
     services: unknown;
@@ -383,7 +329,6 @@ export class UnifiedApplication {
         version: this.config.version,
         isDevelopment: this.config.isDevelopment,
         hasGalleryApp: !!this.galleryApp,
-        injectedStylesCount: this.injectedStyles.size,
         cleanupHandlersCount: this.cleanupHandlers.length,
       },
       services: servicesDiagnostics,

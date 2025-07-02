@@ -3,32 +3,7 @@
  * @version 5.0.0 - 상태 기반 CSS 아키텍처 및 CSS 커스텀 프로퍼티 활용
  */
 
-/* ===== CSS 커스텀 프로퍼티 정의 ===== */
-:root {
-  /* 툴바 전용 디자인 토큰 */
-  --toolbar-bg-idle: rgba(255, 255, 255, 0.1);
-  --toolbar-bg-loading: rgba(255, 255, 255, 0.15);
-  --toolbar-bg-downloading: rgba(0, 186, 124, 0.1);
-  --toolbar-bg-error: rgba(244, 33, 46, 0.1);
-
-  /* 버튼 상태 */
-  --button-bg-idle: rgba(255, 255, 255, 0.1);
-  --button-bg-hover: rgba(255, 255, 255, 0.2);
-  --button-bg-active: var(--xeg-color-primary);
-  --button-bg-loading: rgba(255, 255, 255, 0.05);
-  --button-bg-disabled: rgba(255, 255, 255, 0.05);
-
-  /* 전환 효과 */
-  --toolbar-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --button-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 다크 테마 오버라이드 */
-[data-theme='dark'] {
-  --toolbar-bg-idle: rgba(0, 0, 0, 0.3);
-  --toolbar-bg-loading: rgba(0, 0, 0, 0.4);
-  --button-bg-idle: rgba(255, 255, 255, 0.1);
-}
+/* 통합 디자인 토큰 사용 - 로컬 CSS 변수 제거됨 */
 
 /* ===== 상태 기반 CSS 아키텍처 ===== */
 
@@ -49,10 +24,10 @@
   gap: 12px;
 
   /* CSS 커스텀 프로퍼티로 상태별 변화 관리 */
-  background: var(--toolbar-bg, var(--toolbar-bg-idle));
+  background: var(--xeg-surface-overlay-light);
   opacity: var(--toolbar-opacity, 1);
   transform: translateX(-50%) translateY(var(--toolbar-offset-y, 0));
-  transition: var(--toolbar-transition);
+  transition: var(--xeg-transition-normal);
 
   /* 현대적 스타일링 */
   border-radius: 16px;
@@ -134,11 +109,11 @@
 /* 버튼 상태 관리 */
 .toolbarButton {
   /* 기본 버튼 스타일 */
-  background: var(--button-bg, var(--button-bg-idle));
+  background: var(--xeg-surface-interactive);
   color: var(--button-color, var(--xeg-text-button));
   opacity: var(--button-opacity, 1);
   transform: var(--button-transform, none);
-  transition: var(--button-transition);
+  transition: var(--xeg-transition-fast);
 
   /* 레이아웃 */
   display: flex;
@@ -164,7 +139,7 @@
 
 /* 데이터 속성 기반 상태 관리 */
 .toolbarButton[data-active='true'] {
-  --button-bg: var(--button-bg-active);
+  background: var(--xeg-color-primary);
   --button-color: white;
   box-shadow:
     0 0 0 2px var(--xeg-color-primary-alpha-30),
@@ -184,7 +159,7 @@
 
 .toolbarButton[data-disabled='true'] {
   --button-opacity: 0.5;
-  --button-bg: var(--button-bg-disabled);
+  background: var(--xeg-surface-disabled);
   --button-color: var(--xeg-color-neutral-400);
   cursor: not-allowed;
 }
@@ -193,7 +168,7 @@
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
     --button-transform: translateY(-2px) scale(1.05);
-    --button-bg: var(--button-bg-hover);
+    background: var(--xeg-surface-hover);
     box-shadow:
       0 4px 16px rgba(15, 23, 42, 0.12),
       0 2px 8px rgba(15, 23, 42, 0.08);

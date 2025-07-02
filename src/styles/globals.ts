@@ -4,13 +4,8 @@
  * Centralized management of all global CSS files
  */
 
-// Unified design system (v2 tokens are now the main design-tokens.css)
-import '@shared/styles/design-tokens.css';
-import '@shared/styles/utilities.css';
-import '@assets/styles/globals-unified.css';
-
-// Auto theme system
-import '@assets/styles/auto-theme.css';
+// Unified design system
+import '@shared/styles/unified-design-tokens.css';
 
 // Gallery global styles
 import '@features/gallery/styles/gallery-global.css';

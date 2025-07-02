@@ -1,33 +1,33 @@
 /**
- * @fileoverview 디자인 시스템 매니저
- * @description 디자인 시스템의 중앙 집중식 관리 및 활용
- * @version 1.0.0
+ * @fileoverview 통합 디자인 시스템 매니저
+ * @description 디자인 시스템의 중앙 집중식 관리 및 활용 (v2.0)
+ * @version 2.0.0
  */
 
 import {
-  initializeDesignSystem,
-  changeTheme,
-  enableAutoTheme,
-} from './utils/design-system-initializer';
-import { CSSVariablesManager } from '../utils/styles/css-variables-manager';
-import { validateDesignTokens, getCSSVariable, setCSSVariable } from './utils/design-utils';
-import { DESIGN_TOKENS, getDesignTokens } from './tokens/DesignTokens';
+  UNIFIED_DESIGN_TOKENS,
+  createCSSVariable,
+  getThemeTokenValue,
+} from './tokens/UnifiedDesignTokens';
 import { logger } from '../../infrastructure/logging/logger';
 import type { Cleanupable } from '../../infrastructure/types/lifecycle.types';
 
 /**
- * 디자인 시스템 매니저 클래스
+ * CSS 스타일시트 ID
+ */
+const DESIGN_SYSTEM_STYLE_ID = 'xeg-unified-design-system';
+
+/**
+ * 통합 디자인 시스템 매니저 클래스
  * 애플리케이션의 모든 디자인 관련 기능을 통합 관리
  */
 export class DesignSystemManager implements Cleanupable {
   private static instance: DesignSystemManager | null = null;
-  private readonly cssManager: CSSVariablesManager;
   private isInitialized = false;
   private currentTheme: 'light' | 'dark' = 'light';
+  private mediaQuery: MediaQueryList | null = null;
 
-  private constructor() {
-    this.cssManager = CSSVariablesManager.getInstance();
-  }
+  private constructor() {}
 
   /**
    * 싱글톤 인스턴스 반환
@@ -45,42 +45,32 @@ export class DesignSystemManager implements Cleanupable {
   public async initialize(
     options: {
       theme?: 'light' | 'dark' | 'auto';
-      validateTokens?: boolean;
+      injectGlobalStyles?: boolean;
     } = {}
   ): Promise<void> {
     if (this.isInitialized) {
-      logger.debug('Design system already initialized');
+      logger.debug('[DesignSystemManager] Already initialized');
       return;
     }
 
     try {
-      logger.info('Initializing unified design system...');
+      logger.info('🎨 Initializing unified design system...');
 
-      // 1. CSS 변수 매니저 초기화
-      await this.cssManager.initialize();
+      // 1. CSS 변수 주입
+      this.injectCSSVariables();
 
-      // 2. 디자인 토큰 시스템 초기화
-      await initializeDesignSystem(options);
-
-      // 3. 자동 테마 활성화 (옵션)
-      if (options.theme === 'auto') {
-        enableAutoTheme();
+      // 2. 전역 스타일 주입 (옵션)
+      if (options.injectGlobalStyles !== false) {
+        this.injectGlobalStyles();
       }
 
-      // 4. 토큰 검증
-      if (options.validateTokens !== false) {
-        const isValid = validateDesignTokens();
-        if (!isValid) {
-          logger.warn('Some design tokens validation failed');
-        }
-      }
+      // 3. 테마 설정
+      this.setupTheme(options.theme || 'auto');
 
-      this.currentTheme = this.determineCurrentTheme(options.theme);
       this.isInitialized = true;
-
-      logger.info(`Design system initialized successfully (theme: ${this.currentTheme})`);
+      logger.info(`✅ Design system initialized (theme: ${this.currentTheme})`);
     } catch (error) {
-      logger.error('Failed to initialize design system:', error);
+      logger.error('❌ Failed to initialize design system:', error);
       throw error;
     }
   }
@@ -95,13 +85,13 @@ export class DesignSystemManager implements Cleanupable {
   /**
    * 테마 변경
    */
-  public async changeTheme(theme: 'light' | 'dark'): Promise<void> {
+  public changeTheme(theme: 'light' | 'dark'): void {
     try {
-      changeTheme(theme);
       this.currentTheme = theme;
-      logger.info(`Theme changed to ${theme}`);
+      document.documentElement.setAttribute('data-theme', theme);
+      logger.info(`🎨 Theme changed to ${theme}`);
     } catch (error) {
-      logger.error('Failed to change theme:', error);
+      logger.error('❌ Failed to change theme:', error);
       throw error;
     }
   }
@@ -109,22 +99,22 @@ export class DesignSystemManager implements Cleanupable {
   /**
    * 디자인 토큰 값 반환
    */
-  public getToken(path: string): string | undefined {
-    return getCSSVariable(path);
+  public getToken(path: string): string {
+    return getThemeTokenValue(path, this.currentTheme);
   }
 
   /**
-   * 디자인 토큰 값 설정
+   * CSS 변수 반환
    */
-  public setToken(path: string, value: string): void {
-    setCSSVariable(path, value);
+  public getCSSVariable(path: string): string {
+    return createCSSVariable(path);
   }
 
   /**
    * 현재 테마의 토큰 객체 반환
    */
-  public getTokens(): typeof DESIGN_TOKENS {
-    return getDesignTokens(this.currentTheme);
+  public getTokens(): typeof UNIFIED_DESIGN_TOKENS {
+    return UNIFIED_DESIGN_TOKENS;
   }
 
   /**
@@ -133,14 +123,14 @@ export class DesignSystemManager implements Cleanupable {
   public diagnose(): {
     isInitialized: boolean;
     currentTheme: string;
-    tokensValid: boolean;
-    cssManagerReady: boolean;
+    cssVariablesInjected: boolean;
+    globalStylesInjected: boolean;
   } {
     return {
       isInitialized: this.isInitialized,
       currentTheme: this.currentTheme,
-      tokensValid: validateDesignTokens(),
-      cssManagerReady: this.cssManager ? true : false,
+      cssVariablesInjected: !!document.getElementById(`${DESIGN_SYSTEM_STYLE_ID}-variables`),
+      globalStylesInjected: !!document.getElementById(`${DESIGN_SYSTEM_STYLE_ID}-globals`),
     };
   }
 
@@ -152,24 +142,281 @@ export class DesignSystemManager implements Cleanupable {
   }
 
   /**
-   * 정리 (메모리 해제)
+   * CSS 변수 주입
    */
-  public cleanup(): void {
-    // 필요한 정리 작업 수행
-    this.isInitialized = false;
-    logger.debug('Design system cleaned up');
+  private injectCSSVariables(): void {
+    const styleId = `${DESIGN_SYSTEM_STYLE_ID}-variables`;
+
+    if (document.getElementById(styleId)) {
+      return;
+    }
+
+    const cssVariables = this.generateCSSVariables();
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = cssVariables;
+    document.head.appendChild(style);
+
+    logger.debug('🎨 CSS variables injected');
   }
 
   /**
-   * 현재 테마 결정
+   * 전역 스타일 주입
    */
-  private determineCurrentTheme(themeOption?: 'light' | 'dark' | 'auto'): 'light' | 'dark' {
-    if (themeOption === 'auto') {
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
+  private injectGlobalStyles(): void {
+    const styleId = `${DESIGN_SYSTEM_STYLE_ID}-globals`;
+
+    if (document.getElementById(styleId)) {
+      return;
     }
-    return themeOption || 'light';
+
+    const globalStyles = this.generateGlobalStyles();
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = globalStyles;
+    document.head.appendChild(style);
+
+    logger.debug('🎨 Global styles injected');
+  }
+
+  /**
+   * CSS 변수 생성
+   */
+  private generateCSSVariables(): string {
+    const { colors, spacing, typography, layout, animation } = UNIFIED_DESIGN_TOKENS;
+
+    return `
+      :root {
+        /* 색상 시스템 */
+        ${this.generateColorVariables(colors)}
+
+        /* 간격 시스템 */
+        ${Object.entries(spacing)
+          .map(([key, value]) => `--xeg-spacing-${key}: ${value};`)
+          .join('\n        ')}
+
+        /* 타이포그래피 */
+        ${Object.entries(typography.fontSize)
+          .map(([key, value]) => `--xeg-font-size-${key}: ${value};`)
+          .join('\n        ')}
+        ${Object.entries(typography.fontWeight)
+          .map(([key, value]) => `--xeg-font-weight-${key}: ${value};`)
+          .join('\n        ')}
+        ${Object.entries(typography.lineHeight)
+          .map(([key, value]) => `--xeg-line-height-${key}: ${value};`)
+          .join('\n        ')}
+
+        /* 레이아웃 */
+        ${Object.entries(layout.borderRadius)
+          .map(([key, value]) => `--xeg-radius-${key}: ${value};`)
+          .join('\n        ')}
+        ${Object.entries(layout.zIndex)
+          .map(([key, value]) => `--xeg-z-${key}: ${value};`)
+          .join('\n        ')}
+        ${Object.entries(layout.shadow)
+          .map(([key, value]) => `--xeg-shadow-${key}: ${value};`)
+          .join('\n        ')}
+
+        /* 애니메이션 */
+        ${Object.entries(animation.duration)
+          .map(([key, value]) => `--xeg-duration-${key}: ${value};`)
+          .join('\n        ')}
+        ${Object.entries(animation.easing)
+          .map(([key, value]) => `--xeg-easing-${key}: ${value};`)
+          .join('\n        ')}
+      }
+
+      /* 다크 테마 */
+      [data-theme='dark'] {
+        --xeg-color-surface: var(--xeg-color-surface-dark);
+        --xeg-color-text-primary: var(--xeg-color-neutral-50);
+        --xeg-color-text-secondary: var(--xeg-color-neutral-300);
+      }
+
+      /* 시스템 테마 감지 */
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme]) {
+          --xeg-color-surface: var(--xeg-color-surface-dark);
+          --xeg-color-text-primary: var(--xeg-color-neutral-50);
+          --xeg-color-text-secondary: var(--xeg-color-neutral-300);
+        }
+      }
+    `;
+  }
+
+  /**
+   * 색상 변수 생성
+   */
+  private generateColorVariables(colors: typeof UNIFIED_DESIGN_TOKENS.colors): string {
+    let css = '';
+
+    // Primary colors
+    Object.entries(colors.primary).forEach(([key, value]) => {
+      css += `--xeg-color-primary-${key}: ${value};\n        `;
+    });
+
+    // Neutral colors
+    Object.entries(colors.neutral).forEach(([key, value]) => {
+      css += `--xeg-color-neutral-${key}: ${value};\n        `;
+    });
+
+    // Semantic colors
+    Object.entries(colors.semantic).forEach(([category, scale]) => {
+      Object.entries(scale).forEach(([key, value]) => {
+        css += `--xeg-color-${category}-${key}: ${value};\n        `;
+      });
+    });
+
+    // Surface colors
+    Object.entries(colors.surface).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        css += `--xeg-color-surface-${key}: ${value};\n        `;
+      } else {
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          css += `--xeg-color-surface-${key}-${subKey}: ${subValue};\n        `;
+        });
+      }
+    });
+
+    // 기본 색상 별칭
+    css += `
+        --xeg-color-primary: var(--xeg-color-primary-500);
+        --xeg-color-surface: var(--xeg-color-surface-light);
+        --xeg-color-text-primary: var(--xeg-color-neutral-900);
+        --xeg-color-text-secondary: var(--xeg-color-neutral-600);
+    `;
+
+    return css;
+  }
+
+  /**
+   * 전역 스타일 생성
+   */
+  private generateGlobalStyles(): string {
+    return `
+      /* CSS Reset & Base */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: ${UNIFIED_DESIGN_TOKENS.typography.fontFamily.sans};
+        background: var(--xeg-color-surface);
+        color: var(--xeg-color-text-primary);
+        transition: background-color var(--xeg-duration-normal) var(--xeg-easing-easeOut),
+                    color var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+      }
+
+      /* 스크롤바 스타일링 */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--xeg-color-surface-overlay-light);
+        border-radius: var(--xeg-radius-sm);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--xeg-color-surface-overlay-medium);
+        border-radius: var(--xeg-radius-sm);
+        transition: background-color var(--xeg-duration-fast) var(--xeg-easing-easeOut);
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--xeg-color-surface-overlay-strong);
+      }
+
+      /* 포커스 링 */
+      :focus-visible {
+        outline: 2px solid var(--xeg-color-primary);
+        outline-offset: 2px;
+        border-radius: var(--xeg-radius-sm);
+      }
+
+      /* XEG 갤러리 활성화 */
+      .xeg-gallery-active {
+        overflow: hidden !important;
+      }
+
+      /* 유틸리티 클래스 */
+      .xeg-transition {
+        transition: all var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+      }
+
+      .xeg-sr-only {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+    `;
+  }
+
+  /**
+   * 테마 설정
+   */
+  private setupTheme(themeOption: 'light' | 'dark' | 'auto'): void {
+    if (themeOption === 'auto') {
+      this.setupAutoTheme();
+    } else {
+      this.changeTheme(themeOption);
+    }
+  }
+
+  /**
+   * 자동 테마 설정
+   */
+  private setupAutoTheme(): void {
+    this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const updateTheme = (e: MediaQueryListEvent | MediaQueryList) => {
+      const newTheme = e.matches ? 'dark' : 'light';
+      this.changeTheme(newTheme);
+    };
+
+    // 초기 설정
+    updateTheme(this.mediaQuery);
+
+    // 변경 감지
+    this.mediaQuery.addEventListener('change', updateTheme);
+  }
+
+  /**
+   * 정리 (메모리 해제)
+   */
+  public cleanup(): void {
+    // 미디어 쿼리 리스너 제거
+    if (this.mediaQuery) {
+      this.mediaQuery.removeEventListener('change', () => {});
+      this.mediaQuery = null;
+    }
+
+    // 스타일시트 제거
+    const variablesStyle = document.getElementById(`${DESIGN_SYSTEM_STYLE_ID}-variables`);
+    const globalsStyle = document.getElementById(`${DESIGN_SYSTEM_STYLE_ID}-globals`);
+
+    variablesStyle?.remove();
+    globalsStyle?.remove();
+
+    this.isInitialized = false;
+    logger.debug('🧹 Design system cleaned up');
+  }
+
+  /**
+   * 테스트용 인스턴스 리셋
+   */
+  public static resetInstance(): void {
+    DesignSystemManager.instance?.cleanup();
+    DesignSystemManager.instance = null;
   }
 }
 
@@ -186,11 +433,12 @@ export const initDesignSystem = (options?: Parameters<typeof designSystemManager
 
 export const getDesignToken = (path: string) => designSystemManager.getToken(path);
 
-export const setDesignToken = (path: string, value: string) =>
-  designSystemManager.setToken(path, value);
+export const getCSSVar = (path: string) => designSystemManager.getCSSVariable(path);
 
 export const switchTheme = (theme: 'light' | 'dark') => designSystemManager.changeTheme(theme);
 
 export const getTheme = () => designSystemManager.getCurrentTheme();
 
 export const isDesignSystemReady = () => designSystemManager.isReady();
+
+export const diagnoseDesignSystem = () => designSystemManager.diagnose();
