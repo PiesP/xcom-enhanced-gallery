@@ -28,9 +28,9 @@ export interface DOMElementCreationOptions {
   styles?: Record<string, string>;
 }
 
-// ========== 통합 DOM 유틸리티 클래스 ==========
+// ========== DOM 유틸리티 클래스 ==========
 
-export class UnifiedDOMUtils {
+export class DOMUtils {
   private static readonly scrollState = {
     isLocked: false,
     originalScrollY: 0,
@@ -359,12 +359,8 @@ export const {
   isElementInViewport,
   isScrollLocked,
   getScrollPosition,
-} = UnifiedDOMUtils;
+} = DOMUtils;
 
 // ========== 기본 export ==========
 
-export default UnifiedDOMUtils;
-
-// ========== 레거시 호환성을 위한 alias ==========
-
-export { UnifiedDOMUtils as DOMUtils };
+export default DOMUtils;

@@ -9,15 +9,6 @@
 import { logger } from '../logging/logger';
 
 /**
- * 메모리 정보 인터페이스
- */
-interface MemoryInfo {
-  usedJSHeapSize?: number;
-  totalJSHeapSize?: number;
-  jsHeapSizeLimit?: number;
-}
-
-/**
  * 브라우저 관리자
  * Infrastructure 레이어의 브라우저 API 래핑 서비스
  */
@@ -103,26 +94,6 @@ export class BrowserManager {
   }
 
   /**
-   * 메모리 정보 조회
-   */
-  public getMemoryInfo(): MemoryInfo | null {
-    try {
-      const perfWithMemory = performance as unknown as { memory?: MemoryInfo };
-      return perfWithMemory.memory ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * 메모리 사용량 조회 (MB)
-   */
-  public getMemoryUsageMB(): number {
-    const memory = this.getMemoryInfo();
-    return memory ? Math.round(memory.usedJSHeapSize! / 1024 / 1024) : 0;
-  }
-
-  /**
    * 페이지 가시성 상태 확인
    */
   public isPageVisible(): boolean {
@@ -141,13 +112,11 @@ export class BrowserManager {
    */
   public getDiagnostics(): {
     injectedStylesCount: number;
-    memoryUsageMB: number;
     isPageVisible: boolean;
     isDOMReady: boolean;
   } {
     return {
       injectedStylesCount: this.injectedStyles.size,
-      memoryUsageMB: this.getMemoryUsageMB(),
       isPageVisible: this.isPageVisible(),
       isDOMReady: this.isDOMReady(),
     };
@@ -168,8 +137,6 @@ export const browserUtils = {
   removeCSS: (id: string) => BrowserManager.getInstance().removeCSS(id),
   downloadFile: (url: string, filename?: string) =>
     BrowserManager.getInstance().downloadFile(url, filename),
-  getMemoryInfo: () => BrowserManager.getInstance().getMemoryInfo(),
-  getMemoryUsage: () => BrowserManager.getInstance().getMemoryUsageMB(),
   isPageVisible: () => BrowserManager.getInstance().isPageVisible(),
   isDOMReady: () => BrowserManager.getInstance().isDOMReady(),
   diagnostics: () => BrowserManager.getInstance().getDiagnostics(),

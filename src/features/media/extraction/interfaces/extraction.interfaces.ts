@@ -79,9 +79,9 @@ export interface MediaExtractionOptions {
 }
 
 /**
- * 통합 미디어 추출기 인터페이스
+ * 미디어 추출기 인터페이스
  */
-export interface UnifiedMediaExtractor {
+export interface MediaExtractor {
   /**
    * 클릭된 요소에서 미디어 추출
    */

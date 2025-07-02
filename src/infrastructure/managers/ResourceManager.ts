@@ -15,16 +15,16 @@ interface ManagedResource {
   cleanup: () => void;
 }
 
-export class UnifiedResourceManager implements Cleanupable {
-  private static instance: UnifiedResourceManager | null = null;
+export class ResourceManager implements Cleanupable {
+  private static instance: ResourceManager | null = null;
   private readonly resources = new Map<string, ManagedResource>();
   private resourceIdCounter = 0;
 
   private constructor() {}
 
-  public static getInstance(): UnifiedResourceManager {
-    UnifiedResourceManager.instance ??= new UnifiedResourceManager();
-    return UnifiedResourceManager.instance;
+  public static getInstance(): ResourceManager {
+    ResourceManager.instance ??= new ResourceManager();
+    return ResourceManager.instance;
   }
 
   /**
@@ -184,10 +184,10 @@ export class UnifiedResourceManager implements Cleanupable {
     try {
       resource.cleanup();
       this.resources.delete(id);
-      logger.debug(`[UnifiedResourceManager] Released resource: ${id}`);
+      logger.debug(`[ResourceManager] Released resource: ${id}`);
       return true;
     } catch (error) {
-      logger.error(`[UnifiedResourceManager] Failed to release resource: ${id}`, error);
+      logger.error(`[ResourceManager] Failed to release resource: ${id}`, error);
       return false;
     }
   }
@@ -211,7 +211,7 @@ export class UnifiedResourceManager implements Cleanupable {
       }
     }
 
-    logger.debug(`[UnifiedResourceManager] Released ${released} resources for context: ${context}`);
+    logger.debug(`[ResourceManager] Released ${released} resources for context: ${context}`);
     return released;
   }
 
@@ -234,7 +234,7 @@ export class UnifiedResourceManager implements Cleanupable {
       }
     }
 
-    logger.debug(`[UnifiedResourceManager] Released ${released} resources of type: ${type}`);
+    logger.debug(`[ResourceManager] Released ${released} resources of type: ${type}`);
     return released;
   }
 
@@ -253,7 +253,7 @@ export class UnifiedResourceManager implements Cleanupable {
     }
 
     logger.info(
-      `[UnifiedResourceManager] Cleanup complete: ${cleaned}/${totalResources} resources cleaned`
+      `[ResourceManager] Cleanup complete: ${cleaned}/${totalResources} resources cleaned`
     );
   }
 
@@ -325,15 +325,15 @@ export class UnifiedResourceManager implements Cleanupable {
    * 테스트용 인스턴스 리셋
    */
   public static resetInstance(): void {
-    if (UnifiedResourceManager.instance) {
-      UnifiedResourceManager.instance.cleanup();
-      UnifiedResourceManager.instance = null;
+    if (ResourceManager.instance) {
+      ResourceManager.instance.cleanup();
+      ResourceManager.instance = null;
     }
   }
 }
 
 // 싱글톤 인스턴스 export
-export const resourceManager = UnifiedResourceManager.getInstance();
+export const resourceManager = ResourceManager.getInstance();
 
 // 편의 함수들
 export function createManagedTimer(callback: () => void, delay: number, context?: string): string {

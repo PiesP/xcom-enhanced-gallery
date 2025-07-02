@@ -72,8 +72,6 @@ export function getCurrentUrlInfo(): {
   };
 }
 
-// Legacy scroll position function removed - use @infrastructure/dom instead
-
 /**
  * 스크롤 위치 설정
  */

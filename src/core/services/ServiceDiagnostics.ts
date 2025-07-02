@@ -45,8 +45,8 @@ export async function diagnoseServiceManager(): Promise<void> {
 
     // 5. 메모리 사용량 (infrastructure UnifiedResourceManager 사용)
     try {
-      const { UnifiedResourceManager } = await import('@infrastructure/managers');
-      const resourceManager = UnifiedResourceManager.getInstance();
+      const { ResourceManager } = await import('@infrastructure/managers');
+      const resourceManager = ResourceManager.getInstance();
       const resourceCount = resourceManager.getResourceCount();
       if (resourceCount > 0) {
         logger.info('💾 리소스 사용량:', { activeResources: resourceCount });

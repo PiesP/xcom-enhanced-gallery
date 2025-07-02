@@ -20,7 +20,7 @@
 @import './utilities/responsive.css';
 @import './utilities/accessibility.css';
 
-/* ===== 통합된 기존 스타일들 (Legacy에서 이동) ===== */
+/* ===== 통합된 갤러리 스타일 ===== */
 
 /* 갤러리 기본 스타일 */
 body.xeg-gallery-open {

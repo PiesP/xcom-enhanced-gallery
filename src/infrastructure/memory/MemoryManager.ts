@@ -27,18 +27,18 @@ export const MEMORY_THRESHOLDS = {
 } as const;
 
 /**
- * 통합 메모리 매니저 클래스
+ * 메모리 매니저 클래스
  *
  * 모든 메모리 관련 작업을 중앙화하여 중복을 제거하고 일관성을 보장합니다.
  */
-export class UnifiedMemoryManager {
-  private static instance: UnifiedMemoryManager | null = null;
+export class MemoryManager {
+  private static instance: MemoryManager | null = null;
 
   private constructor() {}
 
-  public static getInstance(): UnifiedMemoryManager {
-    UnifiedMemoryManager.instance ??= new UnifiedMemoryManager();
-    return UnifiedMemoryManager.instance;
+  public static getInstance(): MemoryManager {
+    MemoryManager.instance ??= new MemoryManager();
+    return MemoryManager.instance;
   }
 
   /**
@@ -55,7 +55,7 @@ export class UnifiedMemoryManager {
 
       return performanceWithMemory.memory ?? null;
     } catch (error) {
-      logger.warn('[UnifiedMemoryManager] Memory info access failed:', error);
+      logger.warn('[MemoryManager] Memory info access failed:', error);
       return null;
     }
   }
@@ -105,11 +105,11 @@ export class UnifiedMemoryManager {
     try {
       if ('gc' in globalThis && typeof globalThis.gc === 'function') {
         globalThis.gc();
-        logger.debug('[UnifiedMemoryManager] Garbage collection triggered manually');
+        logger.debug('[MemoryManager] Garbage collection triggered manually');
         return true;
       }
     } catch (error) {
-      logger.warn('[UnifiedMemoryManager] Garbage collection trigger failed:', error);
+      logger.warn('[MemoryManager] Garbage collection trigger failed:', error);
     }
     return false;
   }
@@ -128,13 +128,13 @@ export class UnifiedMemoryManager {
     }
 
     if (force || status === 'critical') {
-      logger.warn('[UnifiedMemoryManager] Critical memory usage detected:', {
+      logger.warn('[MemoryManager] Critical memory usage detected:', {
         usageMB,
         status,
       });
       this.triggerGarbageCollection();
     } else if (status === 'warning') {
-      logger.debug('[UnifiedMemoryManager] Warning memory usage:', {
+      logger.debug('[MemoryManager] Warning memory usage:', {
         usageMB,
         status,
       });
@@ -155,11 +155,11 @@ export class UnifiedMemoryManager {
     const status = this.getMemoryStatus();
 
     if (!memInfo) {
-      logger.debug('[UnifiedMemoryManager] Memory info not available');
+      logger.debug('[MemoryManager] Memory info not available');
       return;
     }
 
-    logger.debug('[UnifiedMemoryManager] Memory status:', {
+    logger.debug('[MemoryManager] Memory status:', {
       usedMB: usageMB,
       totalMB: Math.round(memInfo.totalJSHeapSize / (1024 * 1024)),
       limitMB: Math.round(memInfo.jsHeapSizeLimit / (1024 * 1024)),
@@ -172,14 +172,14 @@ export class UnifiedMemoryManager {
    * 인스턴스 재설정 (테스트용)
    */
   public static resetInstance(): void {
-    UnifiedMemoryManager.instance = null;
+    MemoryManager.instance = null;
   }
 }
 
 /**
  * 편의 함수: 싱글톤 인스턴스 접근
  */
-export const memoryManager = UnifiedMemoryManager.getInstance();
+export const memoryManager = MemoryManager.getInstance();
 
 /**
  * 편의 함수: 메모리 정보 조회

@@ -181,7 +181,7 @@ export class UnifiedApplication {
    * 메모리 사용량 체크
    */
   private checkMemoryUsage(): void {
-    import('@infrastructure/memory/UnifiedMemoryManager')
+    import('@infrastructure/memory/MemoryManager')
       .then(({ memoryManager }) => {
         memoryManager.checkAndCleanup();
       })

@@ -5872,8 +5872,34 @@
       "valid": true
     },
     {
+      "source": "src/infrastructure/dom/dom-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/infrastructure/dom/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./dom-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/infrastructure/dom/dom-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./ScrollLockService",
@@ -5890,36 +5916,10 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./unified-dom-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/dom/unified-dom-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
         "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/dom/unified-dom-utils.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/dom/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6204,14 +6204,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./UnifiedResourceManager",
+          "module": "./ResourceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/infrastructure/managers/UnifiedResourceManager.ts",
+          "resolved": "src/infrastructure/managers/ResourceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6227,7 +6227,7 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/managers/UnifiedResourceManager.ts",
+      "source": "src/infrastructure/managers/ResourceManager.ts",
       "dependencies": [],
       "dependents": [
         "src/infrastructure/managers/index.ts"
@@ -6263,21 +6263,7 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/memory/EventManager.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/memory/ResourcePool.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/memory/UnifiedMemoryManager.ts",
+      "source": "src/infrastructure/memory/MemoryManager.ts",
       "dependencies": [],
       "dependents": [
         "src/infrastructure/memory/index.ts"
@@ -6290,14 +6276,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./UnifiedMemoryManager",
+          "module": "./MemoryManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/infrastructure/memory/UnifiedMemoryManager.ts",
+          "resolved": "src/infrastructure/memory/MemoryManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8101,7 +8087,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 205,
+    "totalCruised": 203,
     "totalDependenciesCruised": 348,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

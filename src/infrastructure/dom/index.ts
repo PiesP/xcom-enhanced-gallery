@@ -4,12 +4,8 @@
  * DOM 관련 인프라스트럭처 유틸리티들을 export합니다.
  */
 
-// Unified DOM utilities (primary interface)
-export {
-  UnifiedDOMUtils,
-  type DOMElementCreationOptions,
-  type ScrollLockOptions,
-} from './unified-dom-utils';
+// DOM utilities (primary interface)
+export { DOMUtils, type DOMElementCreationOptions, type ScrollLockOptions } from './dom-utils';
 
 // Unified scroll manager
 export { scrollManager } from './ScrollLockService';
@@ -30,4 +26,4 @@ export {
   removeElement,
   removeEventListener,
   unlockPageScroll,
-} from './unified-dom-utils';
+} from './dom-utils';

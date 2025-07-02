@@ -1,13 +1,13 @@
 /**
  * Infrastructure Memory Management - Unified Access Point
  *
- * UnifiedResourceManager로 통합되었으므로 해당 모듈 사용을 권장합니다.
- * @see UnifiedResourceManager in @infrastructure/managers
+ * ResourceManager로 통합된 리소스 관리와 메모리 관리 기능을 제공합니다.
+ * @see ResourceManager in @infrastructure/managers
  */
 
 // 통합된 리소스 관리자로 리다이렉트
 export {
-  UnifiedResourceManager,
+  ResourceManager,
   createManagedTimer,
   createManagedInterval,
   addManagedEventListener,
@@ -18,15 +18,15 @@ export {
   releaseResource,
   releaseResourcesByContext,
   cleanupAllResources,
-} from '@infrastructure/managers/UnifiedResourceManager';
+} from '@infrastructure/managers/ResourceManager';
 
 // 메모리 상태 관리
 export {
-  UnifiedMemoryManager,
+  MemoryManager,
   memoryManager,
   getMemoryInfo,
   getMemoryUsageMB,
   getMemoryStatus,
   triggerGarbageCollection,
   checkMemoryAndCleanup,
-} from './UnifiedMemoryManager';
+} from './MemoryManager';
