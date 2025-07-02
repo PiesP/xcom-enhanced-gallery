@@ -3,6 +3,7 @@
  */
 
 import { logger } from '../../../../infrastructure/logging/logger';
+import { extractUsername } from '../../../../shared/utils/media/username-extraction';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '../interfaces/extraction.interfaces';
 
 export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
@@ -17,7 +18,15 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
       const tweetId = this.findTweetIdInContainer(tweetContainer as HTMLElement);
       if (!tweetId) return null;
 
-      const username = this.findUsernameInContainer(tweetContainer as HTMLElement) || 'unknown';
+      const username =
+        this.findUsernameInContainer(tweetContainer as HTMLElement) ||
+        extractUsername() ||
+        'fallback';
+
+      if (!username || username === 'fallback') {
+        logger.debug('DomStructureTweetStrategy: 사용자명 추출 실패');
+        return null;
+      }
 
       return {
         tweetId,

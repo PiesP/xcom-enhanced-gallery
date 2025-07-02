@@ -3,6 +3,7 @@
  */
 
 import { logger } from '../../../../../infrastructure/logging/logger';
+import { extractUsername } from '../../../../../shared/utils/media/username-extraction';
 import type { MediaInfo } from '../../../../../core/types/media.types';
 import type {
   TweetInfo,
@@ -35,8 +36,8 @@ export class VideoElementFallbackStrategy implements FallbackExtractionStrategy 
             url: src,
             type: 'video',
             filename: '',
-            tweetUsername: tweetInfo?.username || 'unknown',
-            tweetId: tweetInfo?.tweetId || 'unknown',
+            tweetUsername: tweetInfo?.username || extractUsername() || undefined,
+            tweetId: tweetInfo?.tweetId || undefined,
             tweetUrl: tweetInfo?.tweetUrl || '',
             originalUrl: src,
             thumbnailUrl: video.getAttribute('poster') || src,

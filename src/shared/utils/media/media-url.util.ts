@@ -8,8 +8,9 @@
  * BackgroundTweetLoader와 함께 사용되어 정확한 미디어 정보를 제공합니다.
  */
 
-import { logger } from '@infrastructure/logging/logger';
-import type { MediaInfo } from '@shared/types/media.types';
+import { logger } from '../../../infrastructure/logging/logger';
+import { extractUsername } from './username-extraction';
+import type { MediaInfo } from '../../types/media.types';
 
 /**
  * 트윗 document에서 미디어 URL들을 추출
@@ -104,7 +105,7 @@ function createMediaInfoFromImage(
       originalUrl: `https://twitter.com/i/status/${tweetId}/photo/${index + 1}`,
       tweetId,
       filename,
-      tweetUsername: extractUsernameFromPage() ?? '',
+      tweetUsername: extractUsername() || undefined,
       tweetUrl: `https://twitter.com/i/status/${tweetId}`,
       alt,
     };
@@ -139,41 +140,12 @@ function createMediaInfoFromVideo(
       originalUrl: `https://twitter.com/i/status/${tweetId}/video/${index + 1}`,
       tweetId,
       filename,
-      tweetUsername: extractUsernameFromPage() ?? '',
+      tweetUsername: extractUsername() || undefined,
       tweetUrl: `https://twitter.com/i/status/${tweetId}`,
       alt: `Video ${index + 1} from tweet`,
     };
   } catch (error) {
     logger.error('createMediaInfoFromVideo: 비디오 정보 생성 실패:', error);
-    return null;
-  }
-}
-
-/**
- * 페이지에서 사용자명 추출
- */
-function extractUsernameFromPage(): string | null {
-  try {
-    // 여러 방법으로 사용자명 추출 시도
-    const selectors = [
-      '[data-testid="User-Name"] span:not([aria-hidden="true"])',
-      '[data-testid="UserName"] span',
-      'article [role="link"] span',
-    ];
-
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      if (element?.textContent) {
-        const username = element.textContent.trim().replace('@', '');
-        if (username && username !== '') {
-          return username;
-        }
-      }
-    }
-
-    return null;
-  } catch (error) {
-    logger.debug('extractUsernameFromPage: 사용자명 추출 실패:', error);
     return null;
   }
 }

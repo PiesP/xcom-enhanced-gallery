@@ -15,6 +15,7 @@ export interface FilenameOptions {
   index?: string | number;
   extension?: string;
   fallbackPrefix?: string;
+  fallbackUsername?: string;
 }
 
 /**
@@ -49,7 +50,7 @@ export class MediaFilenameService {
     return MediaFilenameService.instance;
   }
 
-  private constructor() {}
+  private constructor() { }
 
   /**
    * 미디어 파일명을 생성합니다
@@ -75,14 +76,31 @@ export class MediaFilenameService {
         return media.filename;
       }
 
-      if (media.tweetUsername && media.tweetId) {
+      // 사용자명과 트윗ID가 모두 유효한 경우에만 표준 형식 사용
+      if (media.tweetUsername && media.tweetUsername !== 'unknown' && media.tweetId) {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
-
-        // ID에서 인덱스 추출 (fallback으로 options.index 사용)
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
-        // 요구사항: {유저ID}_{트윗ID}_{인덱스}.{확장자} 형식
         return `${media.tweetUsername}_${media.tweetId}_${index}.${extension}`;
+      }
+
+      // URL에서 사용자명 추출 시도
+      const urlToCheck = ('originalUrl' in media ? media.originalUrl : null) || media.url;
+      const extractedUsername =
+        typeof urlToCheck === 'string' ? this.extractUsernameFromUrl(urlToCheck) : null;
+      if (extractedUsername && media.tweetId) {
+        const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
+        const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
+
+        return `${extractedUsername}_${media.tweetId}_${index}.${extension}`;
+      }
+
+      // 옵션에서 제공된 사용자명 사용
+      if (options.fallbackUsername && media.tweetId) {
+        const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
+        const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
+
+        return `${options.fallbackUsername}_${media.tweetId}_${index}.${extension}`;
       }
 
       return this.generateFallbackFilename(media, options);
@@ -238,6 +256,57 @@ export class MediaFilenameService {
     const timestamp = Date.now();
     const index = this.normalizeIndex(options.index);
     return `${prefix}_${timestamp}_${index}.${extension}`;
+  }
+
+  /**
+   * URL에서 사용자명 추출
+   */
+  private extractUsernameFromUrl(url: string): string | null {
+    try {
+      const match = url.match(/(?:twitter\.com|x\.com)\/([^/?#]+)/);
+      if (match?.[1]) {
+        const username = match[1];
+
+        // 예약된 경로들 제외
+        const reservedPaths = [
+          'i',
+          'home',
+          'explore',
+          'notifications',
+          'messages',
+          'bookmarks',
+          'lists',
+          'profile',
+          'more',
+          'compose',
+          'search',
+          'settings',
+          'help',
+          'display',
+          'keyboard_shortcuts',
+          'moments',
+          'topics',
+          'login',
+          'logout',
+          'signup',
+          'account',
+          'privacy',
+          'tos',
+        ];
+
+        if (reservedPaths.includes(username.toLowerCase())) {
+          return null;
+        }
+
+        // 유효한 사용자명 패턴 확인
+        if (/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
+          return username;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 }
 

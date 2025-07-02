@@ -15,11 +15,7 @@ export {
 
 export { Debouncer, createDebouncer } from './Debouncer';
 
-export {
-  AdvancedPerformanceMonitor,
-  performanceTrack,
-  profileApplicationDev,
-} from './PerformanceMonitor';
+export { PerformanceMonitor, performanceTrack, profileApplicationDev } from './PerformanceMonitor';
 
 export {
   MediaClickDebouncer,

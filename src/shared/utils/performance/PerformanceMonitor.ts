@@ -25,7 +25,7 @@ interface MemoryInfo {
   jsHeapSizeLimit: number;
 }
 
-export class AdvancedPerformanceMonitor {
+export class PerformanceMonitor {
   private static readonly metrics = new Map<string, PerformanceMetric[]>();
   private static readonly budgets: PerformanceBudget[] = [
     { metric: 'bundle-size', threshold: 500 * 1024, warning: 400 * 1024 },
@@ -186,7 +186,7 @@ export class AdvancedPerformanceMonitor {
       const currentTime = performance.now();
 
       if (currentTime >= lastTime + 1000) {
-        AdvancedPerformanceMonitor.addMetric('frame-rate', frames, 'count');
+        PerformanceMonitor.addMetric('frame-rate', frames, 'count');
         frames = 0;
         lastTime = currentTime;
         requestAnimationFrame(countFrames);
@@ -246,7 +246,7 @@ export class AdvancedPerformanceMonitor {
 
 // 성능 측정 데코레이터
 export function performanceTrack(metricName?: string) {
-  return function (
+  return function(
     target: Record<string, unknown>,
     propertyKey: string,
     descriptor: PropertyDescriptor
@@ -254,8 +254,8 @@ export function performanceTrack(metricName?: string) {
     const originalMethod = descriptor.value as (...args: unknown[]) => unknown;
     const name = metricName ?? `${String(target.constructor.name)}.${propertyKey}`;
 
-    descriptor.value = async function (this: unknown, ...args: unknown[]): Promise<unknown> {
-      const measurementId = AdvancedPerformanceMonitor.startMeasurement(name, {
+    descriptor.value = async function(this: unknown, ...args: unknown[]): Promise<unknown> {
+      const measurementId = PerformanceMonitor.startMeasurement(name, {
         className: String(target.constructor.name),
         methodName: propertyKey,
         args: args.length,
@@ -263,10 +263,10 @@ export function performanceTrack(metricName?: string) {
 
       try {
         const result = await originalMethod.apply(this, args);
-        AdvancedPerformanceMonitor.endMeasurement(measurementId);
+        PerformanceMonitor.endMeasurement(measurementId);
         return result;
       } catch (error) {
-        AdvancedPerformanceMonitor.endMeasurement(measurementId, { error: true });
+        PerformanceMonitor.endMeasurement(measurementId, { error: true });
         throw error;
       }
     };
@@ -283,7 +283,7 @@ export async function profileApplicationDev(): Promise<void> {
 
   logger.info('🚀 애플리케이션 성능 프로파일링 시작...');
 
-  const memoryInfo = AdvancedPerformanceMonitor.getMemoryInfo();
+  const memoryInfo = PerformanceMonitor.getMemoryInfo();
   if (memoryInfo.usedJSHeapSize > 0) {
     logger.debug('💾 메모리 정보:');
     logger.debug(`  사용 중: ${(memoryInfo.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
@@ -291,13 +291,16 @@ export async function profileApplicationDev(): Promise<void> {
     logger.debug(`  힙 제한: ${(memoryInfo.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`);
   }
 
-  const summary = AdvancedPerformanceMonitor.getMetricsSummary();
+  const summary = PerformanceMonitor.getMetricsSummary();
   logger.debug('📈 성능 메트릭 요약:');
   for (const [name, data] of Object.entries(summary)) {
-    logger.debug(`  ${name}: ${data.average.toFixed(2)} ${data.unit} (평균)`);
+    if (data && typeof data === 'object' && 'average' in data && 'unit' in data) {
+      const metricData = data as { average: number; unit: string };
+      logger.debug(`  ${name}: ${metricData.average.toFixed(2)} ${metricData.unit} (평균)`);
+    }
   }
 
-  const report = AdvancedPerformanceMonitor.generatePerformanceReport();
+  const report = PerformanceMonitor.generatePerformanceReport();
   if (typeof window !== 'undefined') {
     try {
       const blob = new Blob([report], { type: 'text/markdown' });

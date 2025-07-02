@@ -14,12 +14,12 @@
  * ```typescript
  * // 카테고리별 import (권장)
  * import { lockPageScroll } from '@shared/utils/core';
- * import { enhancedImageFilter } from '@shared/utils/media';
+ * import { imageFilter } from '@shared/utils/media';
  * import { extractTweetInfoFromUrl } from '@shared/utils/patterns';
  * import { getFflate } from '@infrastructure/external/vendors';
  *
  * // 또는 전체 import
- * import { lockPageScroll, enhancedImageFilter } from '@shared/utils';
+ * import { lockPageScroll, imageFilter } from '@shared/utils';
  * ```
  */
 

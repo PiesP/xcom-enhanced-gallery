@@ -26,7 +26,7 @@ export interface ImageFilterResult {
 /**
  * 고급 이미지 필터링 옵션
  */
-export interface EnhancedFilterOptions {
+export interface FilterOptions {
   /** 엄격한 모드 (기본: true) - false시 더 관대한 검증 */
   strict?: boolean;
   /** 비디오 썸네일 허용 여부 (기본: true) */
@@ -87,9 +87,9 @@ export interface ComprehensiveFilterResult {
  * @param options - 검증 옵션 (선택적)
  * @returns 유효한 트위터 이미지 URL인지 여부
  */
-export function isValidEnhancedTweetImage(
+export function isValidTweetImage(
   url: string | null | undefined,
-  options: EnhancedFilterOptions = {}
+  options: FilterOptions = {}
 ): boolean {
   // Null/undefined 검사
   if (!url || typeof url !== 'string' || url.trim().length === 0) {
@@ -151,12 +151,12 @@ export function isValidEnhancedTweetImage(
  * @param options - 필터링 옵션 (선택적)
  * @returns 유효한 이미지 URL 배열
  */
-export function filterValidImages(urls: string[], options: EnhancedFilterOptions = {}): string[] {
+export function filterValidImages(urls: string[], options: FilterOptions = {}): string[] {
   if (!Array.isArray(urls) || urls.length === 0) {
     return [];
   }
 
-  let filtered = urls.filter(url => isValidEnhancedTweetImage(url, options));
+  let filtered = urls.filter(url => isValidTweetImage(url, options));
 
   // 중복 제거
   if (options.removeDuplicates) {
@@ -180,7 +180,7 @@ export function filterValidImages(urls: string[], options: EnhancedFilterOptions
  */
 export function getDetailedFilterResults(
   urls: string[],
-  options: EnhancedFilterOptions = {}
+  options: FilterOptions = {}
 ): DetailedFilterResults {
   if (!Array.isArray(urls)) {
     return {
@@ -196,7 +196,7 @@ export function getDetailedFilterResults(
   const invalidUrls: string[] = [];
 
   urls.forEach(url => {
-    if (isValidEnhancedTweetImage(url, options)) {
+    if (isValidTweetImage(url, options)) {
       validUrls.push(url);
     } else {
       invalidUrls.push(url);
@@ -228,9 +228,9 @@ export function getDetailedFilterResults(
  * @param options - 필터링 옵션 (선택적)
  * @returns 포괄적인 필터링 결과
  */
-export function enhancedImageFilter(
+export function imageFilter(
   urls: string[],
-  options: EnhancedFilterOptions = {}
+  options: FilterOptions = {}
 ): ComprehensiveFilterResult {
   const startTime = performance.now();
 

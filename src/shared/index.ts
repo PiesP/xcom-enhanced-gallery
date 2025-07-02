@@ -30,7 +30,7 @@ export {
   detectActualBackgroundColor,
   detectLightBackground,
   // Media utilities
-  enhancedImageFilter,
+  imageFilter,
   extractTweetInfoFromUrl,
   // Accessibility utilities
   getRelativeLuminance,

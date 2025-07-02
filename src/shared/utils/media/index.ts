@@ -1,12 +1,20 @@
 // Image filtering utilities
 export {
-  enhancedImageFilter,
+  imageFilter,
   filterValidImages,
   getDetailedFilterResults,
-  isValidEnhancedTweetImage,
-  type EnhancedFilterOptions,
+  isValidTweetImage,
+  type FilterOptions,
   type ImageFilterResult,
-} from './enhanced-image-filter';
+} from './image-filter';
+
+// Username extraction utilities
+export {
+  extractUsername,
+  extractUsernameWithConfidence,
+  UsernameExtractionService,
+  type UsernameExtractionResult,
+} from './username-extraction';
 
 // Media URL utilities
 export { getHighQualityMediaUrl, getMediaUrlsFromTweet, isValidMediaUrl } from './media-url.util';

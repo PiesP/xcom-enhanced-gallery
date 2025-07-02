@@ -293,7 +293,7 @@ export class MediaDimensions implements ValueObject<{ width: number; height: num
  * 불변 미디어 엔티티
  * Clean Architecture + DDD 원칙 완전 구현
  */
-export class EnhancedMediaEntity implements DomainEntity {
+export class MediaEntity implements DomainEntity {
   readonly id: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -478,7 +478,7 @@ export class EnhancedMediaEntity implements DomainEntity {
     fileSize?: number;
     alt?: string;
     metadata?: Record<string, unknown>;
-  }): EnhancedMediaEntity {
+  }): MediaEntity {
     const config = buildSafeObject<{
       id?: string;
       url: string;
@@ -511,7 +511,7 @@ export class EnhancedMediaEntity implements DomainEntity {
       builder.set('metadata', { ...this.metadata, ...updates.metadata });
     });
 
-    return new EnhancedMediaEntity(
+    return new MediaEntity(
       config as {
         id?: string;
         url: string;
@@ -588,9 +588,9 @@ export class EnhancedMediaEntity implements DomainEntity {
 // ================================
 
 /**
- * 기존 MediaInfo에서 EnhancedMediaEntity 생성
+ * 기존 MediaInfo에서 MediaEntity 생성
  */
-export function createEnhancedMediaEntity(mediaInfo: {
+export function createMediaEntity(mediaInfo: {
   id?: string;
   url: string;
   type: string;
@@ -605,14 +605,14 @@ export function createEnhancedMediaEntity(mediaInfo: {
   tweetUsername?: string;
   tweetUrl?: string;
   metadata?: Record<string, unknown>;
-}): EnhancedMediaEntity {
-  return new EnhancedMediaEntity(mediaInfo);
+}): MediaEntity {
+  return new MediaEntity(mediaInfo);
 }
 
 /**
- * EnhancedMediaEntity에서 기존 MediaInfo 타입으로 변환
+ * MediaEntity에서 기존 MediaInfo 타입으로 변환
  */
-export function toMediaInfo(entity: EnhancedMediaEntity): {
+export function toMediaInfo(entity: MediaEntity): {
   id: string;
   url: string;
   originalUrl?: string;
