@@ -1,12 +1,13 @@
 /**
- * 통합된 애플리케이션 클래스
+ * Application Class
  *
- * 기존의 분산된 Application 클래스들을 하나로 통합:
- * - AppBootstrapper.ts
- * - Application.ts
- * - ApplicationManager.ts
+ * Clean Architecture App Layer - Application lifecycle management
  *
- * Clean Architecture App Layer - 애플리케이션 생명주기 관리
+ * Responsibilities:
+ * - Application initialization and lifecycle management
+ * - Service registration and dependency management
+ * - Memory and resource management
+ * - Error handling and cleanup
  */
 
 import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
@@ -15,21 +16,21 @@ import { designSystemManager } from '../shared/design-system';
 import { ServiceManager } from '../core/services/ServiceManager';
 import { logger } from '../infrastructure/logging/logger';
 import type { AppConfig } from '../shared/types/app';
-import { UnifiedGalleryApp } from './UnifiedGalleryApp';
+import { GalleryApp } from './GalleryApp';
 
 /**
- * 통합된 애플리케이션 관리자
+ * Main application manager
  *
- * 책임:
- * - 애플리케이션 초기화 및 생명주기 관리
- * - 서비스 등록 및 의존성 관리
- * - 메모리 및 리소스 관리
- * - 에러 처리 및 정리
+ * Responsibilities:
+ * - Application initialization and lifecycle management
+ * - Service registration and dependency management
+ * - Memory and resource management
+ * - Error handling and cleanup
  */
-export class UnifiedApplication {
-  private static instance: UnifiedApplication | null = null;
+export class Application {
+  private static instance: Application | null = null;
   private readonly serviceManager: ServiceManager;
-  private galleryApp: UnifiedGalleryApp | null = null;
+  private galleryApp: GalleryApp | null = null;
   private isStarted = false;
   private config: AppConfig;
 
@@ -45,9 +46,9 @@ export class UnifiedApplication {
     this.setupCleanupHandlers();
   }
 
-  public static create(config: AppConfig): UnifiedApplication {
-    UnifiedApplication.instance ??= new UnifiedApplication(config);
-    return UnifiedApplication.instance;
+  public static create(config: AppConfig): Application {
+    Application.instance ??= new Application(config);
+    return Application.instance;
   }
 
   /**
@@ -148,7 +149,7 @@ export class UnifiedApplication {
    */
   private async startGalleryApp(): Promise<void> {
     try {
-      this.galleryApp = new UnifiedGalleryApp();
+      this.galleryApp = new GalleryApp();
       await this.galleryApp.initialize();
 
       // 전역 접근 등록 (정리용)
@@ -290,7 +291,7 @@ export class UnifiedApplication {
     // 갤러리 앱에 설정 전달
     if (this.galleryApp) {
       // AppConfig를 UnifiedGalleryConfig로 변환
-      const galleryConfig: Partial<import('./UnifiedGalleryApp').UnifiedGalleryConfig> =
+      const galleryConfig: Partial<import('./GalleryApp').GalleryConfig> =
         removeUndefinedProperties({
           performanceMonitoring: newConfig.performanceMonitoring,
           keyboardShortcuts: true, // 기본값 유지
@@ -375,6 +376,6 @@ export class UnifiedApplication {
    * 인스턴스 재설정 (테스트용)
    */
   public static resetInstance(): void {
-    UnifiedApplication.instance = null;
+    Application.instance = null;
   }
 }

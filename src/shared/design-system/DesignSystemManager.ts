@@ -8,7 +8,7 @@ import {
   UNIFIED_DESIGN_TOKENS,
   createCSSVariable,
   getThemeTokenValue,
-} from './tokens/UnifiedDesignTokens';
+} from './tokens/DesignTokens';
 import { logger } from '../../infrastructure/logging/logger';
 import type { Cleanupable } from '../../infrastructure/types/lifecycle.types';
 

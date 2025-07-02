@@ -1,0 +1,88 @@
+/*
+ * X.com Enhanced Gallery Unified Design Tokens (CSS Variables)
+ * 이 파일은 DesignTokens.ts의 토큰을 CSS 변수로 선언합니다.
+ * 모든 글로벌/컴포넌트 스타일에서 --xeg- 접두사로 사용하세요.
+ */
+:root {
+  /* 색상(Color) */
+  --xeg-color-primary-500: #1da1f2;
+  --xeg-color-primary-600: #1a8cd8;
+  --xeg-color-primary-700: #1777b6;
+  --xeg-color-secondary-500: #657786;
+  --xeg-color-success-500: #17bf63;
+  --xeg-color-error-500: #e0245e;
+  --xeg-color-error-400: #f87171;
+  --xeg-color-warning-500: #ffad1f;
+  --xeg-color-info-500: #1b95e0;
+  --xeg-color-surface: #fff;
+  --xeg-color-surface-elevated: #f7f9fa;
+  --xeg-color-surface-glass-light: rgba(255, 255, 255, 0.85);
+  --xeg-color-surface-glass-dark: rgba(21, 32, 43, 0.85);
+  --xeg-color-border-primary: #e1e8ed;
+  --xeg-color-border-secondary: #ccd6dd;
+  --xeg-color-text-primary: #14171a;
+  --xeg-color-text-secondary: #657786;
+  --xeg-color-text-inverse: #fff;
+  --xeg-color-backdrop: rgba(21, 32, 43, 0.7);
+  --xeg-gallery-backdrop: rgba(21, 32, 43, 0.85);
+  --xeg-gallery-backdrop-filter: blur(16px);
+
+  /* 간격(Spacing) */
+  --xeg-spacing-xs: 4px;
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 16px;
+  --xeg-spacing-lg: 24px;
+  --xeg-spacing-xl: 32px;
+
+  /* 반지름(Radius) */
+  --xeg-radius-xs: 2px;
+  --xeg-radius-sm: 4px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 16px;
+  --xeg-radius-full: 9999px;
+
+  /* 그림자(Shadow) */
+  --xeg-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --xeg-shadow-sm: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+  --xeg-shadow-md: 0 4px 16px 0 rgba(0, 0, 0, 0.12);
+  --xeg-shadow-lg: 0 8px 32px 0 rgba(0, 0, 0, 0.16);
+  --xeg-shadow-xl: 0 16px 48px 0 rgba(0, 0, 0, 0.2);
+
+  /* 타이포그래피(Typography) */
+  --xeg-font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif;
+  --xeg-font-size-xs: 12px;
+  --xeg-font-size-sm: 14px;
+  --xeg-font-size-md: 16px;
+  --xeg-font-size-lg: 20px;
+  --xeg-font-size-xl: 24px;
+  --xeg-font-weight-regular: 400;
+  --xeg-font-weight-medium: 500;
+  --xeg-font-weight-bold: 700;
+
+  /* z-index */
+  --xeg-z-gallery: 1200;
+  --xeg-z-toolbar: 1210;
+  --xeg-z-toast: 1300;
+
+  /* 애니메이션(Animation) */
+  --xeg-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --xeg-easing-spring: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --xeg-color-surface: #15202b;
+    --xeg-color-surface-elevated: #22303c;
+    --xeg-color-surface-glass-light: rgba(21, 32, 43, 0.85);
+    --xeg-color-surface-glass-dark: rgba(0, 0, 0, 0.85);
+    --xeg-color-border-primary: #38444d;
+    --xeg-color-border-secondary: #253341;
+    --xeg-color-text-primary: #fff;
+    --xeg-color-text-secondary: #8899a6;
+    --xeg-color-backdrop: rgba(21, 32, 43, 0.85);
+    --xeg-gallery-backdrop: rgba(21, 32, 43, 0.95);
+  }
+}

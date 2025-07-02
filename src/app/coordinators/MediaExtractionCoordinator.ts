@@ -9,7 +9,7 @@ import {
   recordSuccessfulExtraction,
 } from '../../core/state/ExtractionStateManager';
 import type { MediaInfo } from '../../core/types/media.types';
-import { SimplifiedMediaExtractor } from '../../features/media/extraction/services/SimplifiedMediaExtractor';
+import { MediaExtractionService } from '../../features/media/extraction/services/MediaExtractor';
 import { logger } from '../../infrastructure/logging/logger';
 
 /**
@@ -32,12 +32,12 @@ export interface ExtractionResult {
  * - 정리 작업 관리
  */
 export class MediaExtractionCoordinator {
-  private readonly extractor: SimplifiedMediaExtractor;
+  private readonly extractor: MediaExtractionService;
   private extractionCounter = 0;
   private isInitialized = false;
 
   constructor() {
-    this.extractor = new SimplifiedMediaExtractor();
+    this.extractor = new MediaExtractionService();
   }
 
   /**

@@ -5,8 +5,8 @@
  */
 
 // 메인 exports
-export { UnifiedApplication } from './UnifiedApplication';
-export { UnifiedGalleryApp } from './UnifiedGalleryApp';
+export { Application } from './Application';
+export { GalleryApp } from './GalleryApp';
 
 // 타입 정의들
 export type {

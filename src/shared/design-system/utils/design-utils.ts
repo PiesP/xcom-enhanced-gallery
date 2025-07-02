@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import { UNIFIED_DESIGN_TOKENS, getTokenValue } from '../tokens/UnifiedDesignTokens';
+import { UNIFIED_DESIGN_TOKENS, getTokenValue } from '../tokens/DesignTokens';
 import { logger } from '../../../infrastructure/logging/logger';
 
 /**

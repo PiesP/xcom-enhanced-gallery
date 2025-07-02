@@ -19,7 +19,7 @@ export {
   AdvancedPerformanceMonitor,
   performanceTrack,
   profileApplicationDev,
-} from './AdvancedPerformanceMonitor';
+} from './PerformanceMonitor';
 
 export {
   MediaClickDebouncer,

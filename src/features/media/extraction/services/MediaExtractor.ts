@@ -18,7 +18,7 @@ import { DOMDirectExtractor } from './DOMDirectExtractor';
  * 간소화된 미디어 추출기
  * API 우선 + DOM 백업 2단계 전략만 사용
  */
-export class SimplifiedMediaExtractor implements MediaExtractor {
+export class MediaExtractionService implements MediaExtractor {
   private readonly tweetInfoExtractor: TweetInfoExtractor;
   private readonly apiExtractor: TwitterAPIExtractor;
   private readonly domExtractor: DOMDirectExtractor;

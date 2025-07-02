@@ -11,15 +11,13 @@
 
 import {
   closeGallery,
-  getCurrentMedia as getCurrentMediaItem,
+  getCurrentMediaItem,
   galleryState,
-  hasNext,
-  hasPrevious,
-  isGallerySignalsInitialized,
-  isGalleryValid,
-  navigateToMedia as navigateToIndex,
+  // isGallerySignalsInitialized,
+  // isGalleryValid,
+  navigateToItem as navigateToIndex,
   openGallery as openGalleryOptimized,
-} from '../../../core/state/signals/unified-gallery.signals';
+} from '../../../core/state/signals/gallery.signals';
 import type { MediaInfo } from '../../../core/types/media.types';
 import type { ViewMode } from '../../../core/types/view-mode.types';
 import { isVendorsInitialized } from '../../../infrastructure/external/vendors';
@@ -121,15 +119,8 @@ export class GalleryService {
         return; // 초기화하지 않고 안전 모드 유지
       }
 
-      // Gallery Signals 초기화 확인
-      if (!isGallerySignalsInitialized()) {
-        logger.warn(
-          'GalleryService: Gallery Signals가 아직 초기화되지 않았습니다. 잠시 후 재시도합니다.'
-        );
-        // 즉시 재시도 (initialization race condition 해결)
-        setTimeout(() => this.retryInitialization(), 100);
-        return; // 초기화하지 않고 안전 모드 유지
-      }
+      // Gallery Signals는 항상 사용 가능합니다
+      // 별도의 초기화 체크가 필요하지 않습니다
 
       this.isInitialized = true;
       addHealthCheck('GalleryService', () => true, 'Gallery service initialized successfully');
@@ -205,13 +196,13 @@ export class GalleryService {
     const stateValue = state.value;
     return {
       isOpen: stateValue.isOpen,
-      isValid: isGalleryValid(),
+      isValid: stateValue.isOpen && stateValue.mediaItems.length > 0,
       mediaCount: stateValue.mediaItems.length,
       currentIndex: stateValue.currentIndex,
       currentMedia: getCurrentMediaItem(),
       viewMode: 'verticalList', // 프로젝트에서 지원하는 뷰 모드
-      canNavigateNext: hasNext(),
-      canNavigatePrevious: hasPrevious(),
+      canNavigateNext: stateValue.currentIndex < stateValue.mediaItems.length - 1,
+      canNavigatePrevious: stateValue.currentIndex > 0,
       isLoading: stateValue.isLoading,
       error: stateValue.error,
     };
@@ -319,7 +310,7 @@ export class GalleryService {
       const state = galleryState;
       const stateValue = state.value;
 
-      if (!isGalleryValid()) {
+      if (!(stateValue.isOpen && stateValue.mediaItems.length > 0)) {
         return {
           success: false,
           newIndex: stateValue.currentIndex,
@@ -328,7 +319,7 @@ export class GalleryService {
         };
       }
 
-      if (!hasNext()) {
+      if (!(stateValue.currentIndex < stateValue.mediaItems.length - 1)) {
         return {
           success: false,
           newIndex: stateValue.currentIndex,
@@ -374,7 +365,7 @@ export class GalleryService {
       const state = galleryState;
       const stateValue = state.value;
 
-      if (!isGalleryValid()) {
+      if (!(stateValue.isOpen && stateValue.mediaItems.length > 0)) {
         return {
           success: false,
           newIndex: stateValue.currentIndex,
@@ -383,7 +374,7 @@ export class GalleryService {
         };
       }
 
-      if (!hasPrevious()) {
+      if (!(stateValue.currentIndex > 0)) {
         return {
           success: false,
           newIndex: stateValue.currentIndex,
@@ -429,7 +420,7 @@ export class GalleryService {
       const state = galleryState;
       const stateValue = state.value;
 
-      if (!isGalleryValid()) {
+      if (!(stateValue.isOpen && stateValue.mediaItems.length > 0)) {
         return {
           success: false,
           newIndex: stateValue.currentIndex,

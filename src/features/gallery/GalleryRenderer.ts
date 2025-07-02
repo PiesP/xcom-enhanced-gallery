@@ -17,7 +17,7 @@ import {
   galleryState,
   setError,
   setLoading,
-} from '@core/state/signals/unified-gallery.signals';
+} from '@core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view';
 import '@features/gallery/styles/gallery-global.css';
@@ -166,10 +166,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
    */
   private handleNavigation(direction: 'previous' | 'next'): void {
     // unified-gallery.signals의 함수들을 사용
-    const {
-      navigatePrevious,
-      navigateNext,
-    } = require('@core/state/signals/unified-gallery.signals');
+    const { navigatePrevious, navigateNext } = require('@core/state/signals/gallery.signals');
 
     if (direction === 'previous') {
       navigatePrevious();
@@ -250,7 +247,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     renderOptions?: GalleryRenderOptions
   ): Promise<void> {
     // unified-gallery.signals의 함수들을 사용
-    const { openGallery, setViewMode } = require('@core/state/signals/unified-gallery.signals');
+    const { openGallery, setViewMode } = require('@core/state/signals/gallery.signals');
 
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
 

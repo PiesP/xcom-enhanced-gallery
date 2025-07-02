@@ -8,7 +8,7 @@
  */
 
 import { logger } from '@infrastructure/logging';
-import { galleryState } from '@core/state/signals';
+import { galleryState } from '@core/state/signals/gallery.signals';
 
 /**
  * 갤러리 상태 보호 유틸리티
@@ -180,7 +180,7 @@ export class GalleryStateGuard {
    * @returns 리스너 해제 함수
    */
   static onGalleryStateChange(callback: (isOpen: boolean) => void): () => void {
-    const unsubscribe = galleryState.subscribe(state => {
+    const unsubscribe = galleryState.subscribe((state: { isOpen: boolean }) => {
       callback(state.isOpen);
     });
 

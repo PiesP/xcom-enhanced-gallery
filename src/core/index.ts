@@ -53,5 +53,21 @@ export type {
 // Business services
 export * from './services';
 
-// State management
-export * from './state';
+// State management (specific exports to avoid conflicts)
+export {
+  galleryState,
+  openGallery,
+  closeGallery,
+  navigateToItem,
+  navigatePrevious,
+  navigateNext,
+  setLoading,
+  setError,
+  setViewMode,
+  getCurrentMediaItem,
+  hasMediaItems,
+  getMediaItemsCount,
+  hasPreviousMedia,
+  hasNextMedia,
+  type GalleryEvents,
+} from './state/signals/gallery.signals';

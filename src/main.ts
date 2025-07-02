@@ -7,7 +7,7 @@
  */
 
 import { measurePerformance } from '@shared/utils/performance';
-import { UnifiedApplication } from './app/UnifiedApplication';
+import { Application } from './app/Application';
 import { logger } from './infrastructure/logging/logger';
 import type { AppConfig } from './shared/types/app';
 
@@ -64,7 +64,7 @@ async function startApplication(): Promise<void> {
       const config = createAppConfig();
 
       // 통합 애플리케이션 시작
-      const app = UnifiedApplication.create(config);
+      const app = Application.create(config);
       await app.start();
 
       // 개발 환경에서 전역 접근 제공
@@ -102,7 +102,7 @@ if (document.readyState === 'loading') {
 export default {
   start: startApplication,
   createConfig: createAppConfig,
-  UnifiedApplication, // 직접 접근 가능
+  Application, // 직접 접근 가능
 };
 
 // 개발 환경에서 전역 접근 허용
@@ -110,6 +110,6 @@ if (import.meta.env.DEV) {
   (globalThis as Record<string, unknown>).__XEG_MAIN__ = {
     start: startApplication,
     createConfig: createAppConfig,
-    UnifiedApplication,
+    Application,
   };
 }

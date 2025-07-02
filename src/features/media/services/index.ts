@@ -1,13 +1,10 @@
 /**
  * @fileoverview Media Services Exports
- * @version 2.0.0 - Simplified Architecture
+ * @version 2.0.0 - Clean Architecture
  */
 
-// 간소화된 미디어 추출기 (메인 서비스)
-export { SimplifiedMediaExtractor } from '../extraction/services/SimplifiedMediaExtractor';
+// Main media extraction service
+export { MediaExtractionService } from '../extraction/services/MediaExtractor';
 
-// DOM 직접 추출기
+// DOM direct extractor
 export { DOMDirectExtractor } from '../extraction/services/DOMDirectExtractor';
-
-// 호환성을 위한 서비스 래퍼
-export { MediaExtractionService } from './MediaExtractionService';

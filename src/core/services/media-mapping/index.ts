@@ -4,7 +4,7 @@
  */
 
 // 서비스
-export { SimplifiedMediaMappingService } from './SimplifiedMediaMappingService';
+export { MediaMappingService } from './MediaMappingService';
 
 // 전략들
 export { MediaTabUrlDirectStrategy } from './MediaTabUrlDirectStrategy';

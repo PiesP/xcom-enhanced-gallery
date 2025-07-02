@@ -1,0 +1,432 @@
+/**
+ * @fileoverview 인터랙션 유틸리티 클래스
+ * @description 일관된 인터랙션 패턴을 위한 유틸리티 클래스들
+ * @version 1.0.0
+ */
+
+/* ===========================================
+   INTERACTION UTILITIES
+   =========================================== */
+
+/* 기본 인터랙티브 요소 */
+.xeg-interactive {
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  position: relative;
+  outline: none;
+}
+
+.xeg-interactive:disabled,
+.xeg-interactive[aria-disabled='true'] {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 호버 상태 표준화 */
+.xeg-hover-lift:hover:not(:disabled):not([aria-disabled='true']) {
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.xeg-hover-scale:hover:not(:disabled):not([aria-disabled='true']) {
+  transform: scale(1.02);
+}
+
+.xeg-hover-glow:hover:not(:disabled):not([aria-disabled='true']) {
+  box-shadow: 0 0 20px var(--xeg-color-primary-200);
+}
+
+.xeg-hover-bright:hover:not(:disabled):not([aria-disabled='true']) {
+  filter: brightness(1.1);
+}
+
+/* 활성 상태 피드백 */
+.xeg-active-press:active:not(:disabled):not([aria-disabled='true']) {
+  transform: translateY(0) scale(0.98);
+  transition-duration: var(--xeg-duration-fastest);
+}
+
+.xeg-active-dim:active:not(:disabled):not([aria-disabled='true']) {
+  opacity: 0.8;
+  transition-duration: var(--xeg-duration-fastest);
+}
+
+/* 로딩 상태 */
+.xeg-loading {
+  position: relative;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.xeg-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--xeg-color-overlay-light);
+  border-radius: inherit;
+  animation: xeg-pulse 2s infinite;
+  z-index: 1;
+}
+
+.xeg-loading-spinner {
+  position: relative;
+  pointer-events: none;
+}
+
+.xeg-loading-spinner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--xeg-color-primary-200);
+  border-top-color: var(--xeg-color-primary-500);
+  border-radius: 50%;
+  animation: xeg-spin 1s linear infinite;
+  z-index: 2;
+}
+
+/* 스켈레톤 로딩 */
+.xeg-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--xeg-color-neutral-200) 25%,
+    var(--xeg-color-neutral-100) 50%,
+    var(--xeg-color-neutral-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: xeg-shimmer 2s infinite;
+  border-radius: var(--xeg-radius-md);
+}
+
+[data-theme='dark'] .xeg-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--xeg-color-neutral-800) 25%,
+    var(--xeg-color-neutral-700) 50%,
+    var(--xeg-color-neutral-800) 75%
+  );
+  background-size: 200% 100%;
+}
+
+.xeg-skeleton-text {
+  height: 1em;
+  border-radius: var(--xeg-radius-sm);
+}
+
+.xeg-skeleton-title {
+  height: 1.5em;
+  border-radius: var(--xeg-radius-sm);
+}
+
+.xeg-skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.xeg-skeleton-card {
+  height: 200px;
+  border-radius: var(--xeg-radius-lg);
+}
+
+/* 리플 효과 */
+.xeg-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.xeg-ripple::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: var(--xeg-color-interactive-focus);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.3s,
+    height 0.3s;
+  pointer-events: none;
+}
+
+.xeg-ripple:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* 드래그 앤 드롭 */
+.xeg-draggable {
+  cursor: grab;
+  user-select: none;
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+.xeg-draggable:active {
+  cursor: grabbing;
+  transform: rotate(5deg) scale(1.05);
+  z-index: var(--xeg-z-docked);
+}
+
+.xeg-drop-zone {
+  border: 2px dashed var(--xeg-color-neutral-300);
+  border-radius: var(--xeg-radius-lg);
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+.xeg-drop-zone-active {
+  border-color: var(--xeg-color-primary-500);
+  background-color: var(--xeg-color-primary-50);
+}
+
+[data-theme='dark'] .xeg-drop-zone-active {
+  background-color: var(--xeg-color-primary-950);
+}
+
+/* 스무스 스크롤 */
+.xeg-scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+.xeg-scroll-container {
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--xeg-color-neutral-400) var(--xeg-color-neutral-100);
+}
+
+.xeg-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.xeg-scroll-container::-webkit-scrollbar-track {
+  background: var(--xeg-color-neutral-100);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.xeg-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--xeg-color-neutral-400);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.xeg-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-color-neutral-500);
+}
+
+[data-theme='dark'] .xeg-scroll-container {
+  scrollbar-color: var(--xeg-color-neutral-600) var(--xeg-color-neutral-800);
+}
+
+[data-theme='dark'] .xeg-scroll-container::-webkit-scrollbar-track {
+  background: var(--xeg-color-neutral-800);
+}
+
+[data-theme='dark'] .xeg-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--xeg-color-neutral-600);
+}
+
+[data-theme='dark'] .xeg-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-color-neutral-500);
+}
+
+/* 클릭 가능한 카드 */
+.xeg-card-interactive {
+  cursor: pointer;
+  transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  border: 1px solid var(--xeg-color-border-primary);
+  border-radius: var(--xeg-radius-lg);
+  background: var(--xeg-color-surface);
+}
+
+.xeg-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--xeg-shadow-lg);
+  border-color: var(--xeg-color-primary-300);
+}
+
+.xeg-card-interactive:active {
+  transform: translateY(-1px);
+  transition-duration: var(--xeg-duration-fast);
+}
+
+/* 토글 상태 */
+.xeg-toggle {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.xeg-toggle[aria-pressed='true'] {
+  background-color: var(--xeg-color-primary-500);
+  color: white;
+}
+
+.xeg-toggle[aria-pressed='false'] {
+  background-color: var(--xeg-color-neutral-100);
+  color: var(--xeg-color-text-primary);
+}
+
+/* 확장/축소 애니메이션 */
+.xeg-expandable {
+  overflow: hidden;
+  transition: max-height var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-expandable[aria-expanded='false'] {
+  max-height: 0;
+}
+
+.xeg-expandable[aria-expanded='true'] {
+  max-height: 1000px; /* 충분히 큰 값 */
+}
+
+/* 페이드 인/아웃 */
+.xeg-fade-in {
+  animation: xeg-fade-in var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-fade-out {
+  animation: xeg-fade-out var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-slide-in-up {
+  animation: xeg-slide-in-up var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-slide-in-down {
+  animation: xeg-slide-in-down var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-slide-in-left {
+  animation: xeg-slide-in-left var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-slide-in-right {
+  animation: xeg-slide-in-right var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+/* 키프레임 애니메이션 */
+@keyframes xeg-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes xeg-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes xeg-slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes xeg-slide-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes xeg-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes xeg-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes xeg-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes xeg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes xeg-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* 스케일 애니메이션 */
+@keyframes xeg-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes xeg-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.xeg-scale-in {
+  animation: xeg-scale-in var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+.xeg-scale-out {
+  animation: xeg-scale-out var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}

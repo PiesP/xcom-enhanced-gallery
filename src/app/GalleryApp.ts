@@ -1,11 +1,11 @@
 /**
- * 통합된 갤러리 애플리케이션
+ * 갤러리 애플리케이션
  *
- * 기존 GalleryApp.ts의 과도한 책임을 분리하여 재구성:
- * - 핵심 갤러리 로직만 담당
- * - 이벤트 처리는 별도 클래스로 분리
- * - 미디어 추출은 별도 클래스로 분리
- * - 상태 관리는 기존 GalleryStateManager 활용
+ * 책임:
+ * - 핵심 갤러리 로직 관리
+ * - 이벤트 처리 (별도 클래스로 분리)
+ * - 미디어 추출 (별도 클래스로 분리)
+ * - 상태 관리는 기존 signals 활용
  */
 
 import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
@@ -13,11 +13,7 @@ import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-h
 import { SERVICE_KEYS } from '@core/constants';
 import type { GalleryRenderer } from '@core/interfaces/gallery.interfaces';
 import { getService } from '@core/services/ServiceRegistry';
-import {
-  galleryState,
-  openGallery,
-  closeGallery,
-} from '../core/state/signals/unified-gallery.signals';
+import { galleryState, openGallery, closeGallery } from '../core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { logger } from '@infrastructure/logging/logger';
 import type { ManagedExtractionResult } from './coordinators/CoordinatorManager';
@@ -26,7 +22,7 @@ import { CoordinatorManager } from './coordinators/CoordinatorManager';
 /**
  * 갤러리 앱 설정
  */
-export interface UnifiedGalleryConfig {
+export interface GalleryConfig {
   autoTheme?: boolean;
   keyboardShortcuts?: boolean;
   performanceMonitoring?: boolean;
@@ -35,20 +31,14 @@ export interface UnifiedGalleryConfig {
 }
 
 /**
- * 통합된 갤러리 애플리케이션
- *
- * 리팩토링된 구조:
- * - CoordinatorManager를 통한 통합 관리
- * - 간결한 갤러리 생명주기 관리
- * - 성능 모니터링 및 메트릭 수집
+ * 갤러리 애플리케이션
  */
-
-export class UnifiedGalleryApp {
+export class GalleryApp {
   private readonly coordinatorManager: CoordinatorManager;
   private galleryRenderer: GalleryRenderer | null = null;
 
   private isInitialized = false;
-  private config: UnifiedGalleryConfig = {
+  private config: GalleryConfig = {
     autoTheme: true,
     keyboardShortcuts: true,
     performanceMonitoring: false,
@@ -56,7 +46,7 @@ export class UnifiedGalleryApp {
     clickDebounceMs: 500,
   };
 
-  constructor(config?: Partial<UnifiedGalleryConfig>) {
+  constructor(config?: Partial<GalleryConfig>) {
     this.config = { ...this.config, ...config };
 
     // 코디네이터 매니저 초기화
@@ -265,7 +255,7 @@ export class UnifiedGalleryApp {
   /**
    * 설정 업데이트
    */
-  public updateConfig(newConfig: Partial<UnifiedGalleryConfig>): void {
+  public updateConfig(newConfig: Partial<GalleryConfig>): void {
     this.config = { ...this.config, ...newConfig };
 
     // 코디네이터 매니저에 설정 전달

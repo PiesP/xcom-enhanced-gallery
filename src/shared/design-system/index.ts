@@ -5,7 +5,7 @@
  */
 
 // 통합 디자인 토큰
-export * from './tokens/UnifiedDesignTokens';
+export * from './tokens/DesignTokens';
 
 // 통합 디자인 시스템 매니저
 export * from './DesignSystemManager';

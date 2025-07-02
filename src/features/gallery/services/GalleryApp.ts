@@ -21,11 +21,11 @@ import {
   closeGallery,
   navigatePrevious,
   navigateNext,
-  navigateToMedia,
+  navigateToItem,
   setLoading,
-} from '../../../core/state/signals/unified-gallery.signals';
+} from '../../../core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
-import { SimplifiedMediaExtractor } from '@features/media/extraction/services/SimplifiedMediaExtractor';
+import { MediaExtractionService } from '@features/media/extraction/services/MediaExtractor';
 import { logger } from '@infrastructure/logging/logger';
 import { undefinedToNull } from '../../../infrastructure/utils/type-safety-helpers';
 import { GalleryStateGuard, VideoControlBlocker } from '@shared/utils';
@@ -36,10 +36,10 @@ export class GalleryApp implements IGalleryApp {
   // 서비스 의존성 (필수만 유지)
   private galleryRenderer: GalleryRenderer | null = null;
   private mediaExtractor: MediaExtractor | null = null;
-  private readonly simplifiedExtractor: SimplifiedMediaExtractor;
+  private readonly mediaExtractionService: MediaExtractionService;
 
   constructor() {
-    this.simplifiedExtractor = new SimplifiedMediaExtractor();
+    this.mediaExtractionService = new MediaExtractionService();
   }
 
   // 상태 관리 (간소화)
@@ -92,7 +92,7 @@ export class GalleryApp implements IGalleryApp {
       this.galleryRenderer = (await getService(SERVICE_KEYS.GALLERY_RENDERER)) as GalleryRenderer;
 
       // 통합된 미디어 추출 서비스 사용 (이미 constructor에서 초기화됨)
-      this.mediaExtractor = this.simplifiedExtractor;
+      this.mediaExtractor = this.mediaExtractionService;
 
       logger.debug('GalleryApp: 서비스 초기화 완료');
     } catch (error) {
@@ -169,7 +169,7 @@ export class GalleryApp implements IGalleryApp {
       logger.debug('Loading state: true');
 
       // 통합된 미디어 추출 서비스 사용
-      let result = await this.simplifiedExtractor.extractFromClickedElement(target, {
+      let result = await this.mediaExtractionService.extractFromClickedElement(target, {
         timeoutMs: 3000,
         includeVideos: true,
         enableValidation: true,
@@ -257,12 +257,12 @@ export class GalleryApp implements IGalleryApp {
           event.preventDefault();
           break;
         case 'Home':
-          navigateToMedia(0);
+          navigateToItem(0);
           event.preventDefault();
           break;
         case 'End': {
           const totalItems = galleryState.value.mediaItems.length ?? 0;
-          navigateToMedia(totalItems - 1);
+          navigateToItem(totalItems - 1);
           event.preventDefault();
           break;
         }

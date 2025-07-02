@@ -11,8 +11,8 @@ import type { MappingCacheEntry, MediaMappingStrategy, StrategyMetrics } from '.
 /**
  * 간소화된 미디어 매핑 서비스
  */
-export class SimplifiedMediaMappingService {
-  private static instance: SimplifiedMediaMappingService | null = null;
+export class MediaMappingService {
+  private static instance: MediaMappingService | null = null;
   private strategies: MediaMappingStrategy[] = [];
   private readonly strategyMetrics = new Map<string, StrategyMetrics>();
   private readonly mappingCache = new Map<string, MappingCacheEntry>();
@@ -23,9 +23,9 @@ export class SimplifiedMediaMappingService {
     logger.debug('[SimplifiedMediaMappingService] 초기화됨');
   }
 
-  public static getInstance(): SimplifiedMediaMappingService {
-    SimplifiedMediaMappingService.instance ??= new SimplifiedMediaMappingService();
-    return SimplifiedMediaMappingService.instance;
+  public static getInstance(): MediaMappingService {
+    MediaMappingService.instance ??= new MediaMappingService();
+    return MediaMappingService.instance;
   }
 
   /**

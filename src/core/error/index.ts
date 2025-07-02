@@ -5,4 +5,4 @@
  * 통합 에러 처리 시스템의 진입점
  */
 
-export * from './UnifiedErrorHandler';
+export * from './ErrorHandler';

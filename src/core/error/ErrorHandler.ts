@@ -1,9 +1,9 @@
 /**
- * @fileoverview Unified Error Handling System
+ * @fileoverview Error Handling System
  * @version 2.0.0
  *
- * Clean Architecture 원칙에 따른 통합 에러 처리 시스템
- * 모든 레이어에서 일관된 에러 처리 패턴 제공
+ * Clean Architecture error handling system
+ * Provides consistent error handling patterns across all layers
  */
 
 import { logger } from '@infrastructure/logging/logger';
