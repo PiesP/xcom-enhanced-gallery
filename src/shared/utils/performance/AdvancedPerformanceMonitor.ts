@@ -3,6 +3,8 @@
  * 실시간 성능 메트릭 수집 및 분석
  */
 
+import { logger } from '../../../infrastructure/logging/logger';
+
 interface PerformanceMetric {
   name: string;
   value: number;
@@ -55,7 +57,7 @@ export class AdvancedPerformanceMonitor {
 
     const measure = performance.getEntriesByName(measurementId)[0];
     if (!measure) {
-      console.warn(`Performance measurement not found: ${measurementId}`);
+      logger.warn(`Performance measurement not found: ${measurementId}`);
       return 0;
     }
 
@@ -110,13 +112,11 @@ export class AdvancedPerformanceMonitor {
     if (!budget) return;
 
     if (value > budget.threshold) {
-      console.error(
+      logger.error(
         `🚨 성능 예산 초과: ${metricName} (${value.toFixed(2)}ms > ${budget.threshold}ms)`
       );
     } else if (value > budget.warning) {
-      console.warn(
-        `⚠️ 성능 예산 경고: ${metricName} (${value.toFixed(2)}ms > ${budget.warning}ms)`
-      );
+      logger.warn(`⚠️ 성능 예산 경고: ${metricName} (${value.toFixed(2)}ms > ${budget.warning}ms)`);
     }
   }
 
@@ -275,35 +275,29 @@ export function performanceTrack(metricName?: string) {
   };
 }
 
-// 메인 프로파일링 함수
-export async function profileApplication(): Promise<void> {
-  console.log('🚀 애플리케이션 성능 프로파일링 시작...\n');
-
-  // 메모리 정보 수집
-  const memoryInfo = AdvancedPerformanceMonitor.getMemoryInfo();
-  console.log('💾 메모리 정보:');
-  console.log(`  사용 중: ${(memoryInfo.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`  총 힙: ${(memoryInfo.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`  힙 제한: ${(memoryInfo.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`);
-
-  // 성능 메트릭 요약
-  const summary = AdvancedPerformanceMonitor.getMetricsSummary();
-
-  console.log('\n📈 성능 메트릭 요약:');
-  for (const [name, data] of Object.entries(summary)) {
-    console.log(`  ${name}: ${data.average.toFixed(2)} ${data.unit} (평균)`);
+// 메인 프로파일링 함수 (개발 환경 전용)
+export async function profileApplicationDev(): Promise<void> {
+  if (process.env.NODE_ENV !== 'development') {
+    return;
   }
 
-  // 상세 리포트 생성
+  logger.info('🚀 애플리케이션 성능 프로파일링 시작...');
+
+  const memoryInfo = AdvancedPerformanceMonitor.getMemoryInfo();
+  if (memoryInfo.usedJSHeapSize > 0) {
+    logger.debug('💾 메모리 정보:');
+    logger.debug(`  사용 중: ${(memoryInfo.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
+    logger.debug(`  총 힙: ${(memoryInfo.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
+    logger.debug(`  힙 제한: ${(memoryInfo.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`);
+  }
+
+  const summary = AdvancedPerformanceMonitor.getMetricsSummary();
+  logger.debug('📈 성능 메트릭 요약:');
+  for (const [name, data] of Object.entries(summary)) {
+    logger.debug(`  ${name}: ${data.average.toFixed(2)} ${data.unit} (평균)`);
+  }
+
   const report = AdvancedPerformanceMonitor.generatePerformanceReport();
-
-  // 브라우저 환경에서는 콘솔에 리포트 출력
-  console.log('\n📄 성능 분석 리포트:');
-  console.log('='.repeat(50));
-  console.log(report);
-  console.log('='.repeat(50));
-
-  // 브라우저에서 리포트를 다운로드 가능하게 제공
   if (typeof window !== 'undefined') {
     try {
       const blob = new Blob([report], { type: 'text/markdown' });
@@ -314,23 +308,17 @@ export async function profileApplication(): Promise<void> {
       link.style.display = 'none';
       document.body.appendChild(link);
 
-      console.log('\n� 성능 리포트 다운로드를 위해 다음 코드를 실행하세요:');
-      console.log('document.querySelector("a[download*=performance-report]")?.click()');
-
       // 5초 후 자동 정리
       setTimeout(() => {
-        document.body.removeChild(link);
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
         URL.revokeObjectURL(url);
       }, 5000);
     } catch (error) {
-      console.warn('리포트 다운로드 준비 실패:', error);
+      logger.warn('리포트 다운로드 준비 실패:', error);
     }
   }
 
-  console.log('\n✅ 성능 프로파일링 완료!');
-}
-
-// 실행 스크립트
-if (typeof window === 'undefined' && typeof process !== 'undefined') {
-  profileApplication().catch(console.error);
+  logger.info('✅ 성능 프로파일링 완료!');
 }

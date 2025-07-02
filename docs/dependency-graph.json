@@ -156,6 +156,7 @@
         "src/core/services/scroll/ScrollCoordinateManager.ts",
         "src/core/services/gallery/GalleryEarlyInitializer.ts",
         "src/features/gallery/services/GalleryService.ts",
+        "src/shared/utils/diagnostics/Monitor.ts",
         "src/features/media/extraction/services/FallbackExtractor.ts",
         "src/features/media/extraction/strategies/fallback/BackgroundImageFallbackStrategy.ts",
         "src/features/media/extraction/strategies/fallback/DataAttributeFallbackStrategy.ts",
@@ -165,7 +166,9 @@
         "src/infrastructure/browser/BrowserManager.ts",
         "src/main.ts",
         "src/shared/components/GalleryViewer.tsx",
-        "src/shared/components/hoc/GalleryMarker.tsx"
+        "src/shared/components/hoc/GalleryMarker.tsx",
+        "src/shared/utils/performance/AdvancedPerformanceMonitor.ts",
+        "src/shared/utils/performance/BasicUtilities.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5044,14 +5047,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./InitializationMonitor",
+          "module": "./Monitor",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/diagnostics/InitializationMonitor.ts",
+          "resolved": "src/shared/utils/diagnostics/Monitor.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5061,7 +5064,7 @@
         },
         {
           "dynamic": false,
-          "module": "./InitializationMonitor",
+          "module": "./Monitor",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -5069,7 +5072,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/shared/utils/diagnostics/InitializationMonitor.ts",
+          "resolved": "src/shared/utils/diagnostics/Monitor.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5085,8 +5088,26 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/diagnostics/InitializationMonitor.ts",
-      "dependencies": [],
+      "source": "src/shared/utils/diagnostics/Monitor.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../infrastructure/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/diagnostics/index.ts"
       ],
@@ -6124,23 +6145,6 @@
         },
         {
           "dynamic": false,
-          "module": "./memory",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/memory/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./types/lifecycle.types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6232,6 +6236,60 @@
       "valid": true
     },
     {
+      "source": "src/infrastructure/utils/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./type-safety-helpers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/infrastructure/utils/type-safety-helpers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/infrastructure/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/memory/EventManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/memory/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/memory/ResourcePool.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/memory/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/memory/UnifiedMemoryManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/memory/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/infrastructure/memory/index.ts",
       "dependencies": [
         {
@@ -6286,63 +6344,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/memory/EventManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/memory/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/memory/ResourcePool.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/memory/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/memory/UnifiedMemoryManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/memory/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/utils/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./type-safety-helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/utils/type-safety-helpers.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/infrastructure/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -7057,6 +7059,24 @@
         },
         {
           "dynamic": false,
+          "module": "./common.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/types/common.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./filename.types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7185,6 +7205,15 @@
     },
     {
       "source": "src/shared/types/branded.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/types/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/types/common.types.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/types/index.ts"
@@ -7931,7 +7960,25 @@
     },
     {
       "source": "src/shared/utils/performance/AdvancedPerformanceMonitor.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../infrastructure/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/performance/index.ts"
       ],
@@ -7940,7 +7987,25 @@
     },
     {
       "source": "src/shared/utils/performance/BasicUtilities.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../infrastructure/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/performance/index.ts"
       ],
@@ -8054,6 +8119,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/diagnostics/InitializationMonitor.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/types/css-modules.d.ts",
       "dependencies": [],
       "dependents": [],
@@ -8069,13 +8147,23 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/utils/diagnostics/InitializationMonitor.ts",
+        "to": "src/shared/utils/diagnostics/InitializationMonitor.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 204,
-    "totalDependenciesCruised": 347,
+    "totalCruised": 206,
+    "totalDependenciesCruised": 350,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

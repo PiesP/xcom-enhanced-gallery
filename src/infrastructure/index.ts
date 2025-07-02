@@ -26,9 +26,6 @@ export * from './managers';
 // Media utilities
 export * from './media';
 
-// Memory management (deprecated, use managers)
-export * from './memory';
-
 // 유틸리티
 export * from './utils';
 

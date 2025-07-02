@@ -69,3 +69,17 @@ export * from './result';
 
 // Vendor types
 export * from './vendor.types';
+
+// 새로운 공통 타입들 (중복 방지를 위해 별칭 사용)
+export type {
+  Position as CommonPosition,
+  Size as CommonSize,
+  Rect as CommonRect,
+  TimestampedEntity,
+  IdentifiableEntity,
+  Lifecycle,
+  LoadingState as CommonLoadingState,
+  AsyncState,
+  BaseEvent,
+  BaseConfig,
+} from './common.types';

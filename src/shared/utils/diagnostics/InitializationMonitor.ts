@@ -1,5 +1,5 @@
 /**
- * @fileoverview Initialization Monitor - Diagnostics and Monitoring Utility
+ * @fileoverview Monitor - Diagnostics and Monitoring Utility
  * @version 1.0.0 - Clean Architecture Implementation
  * @author X.com Enhanced Gallery Team
  * @since 4.0.0

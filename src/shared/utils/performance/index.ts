@@ -3,16 +3,24 @@
  * @version 4.0.0 - Enhanced Clean Architecture implementation
  */
 
-// 기본 성능 유틸리티 (debounce, throttle, RAF)
-export * from './BasicUtilities';
+// 통합된 성능 유틸리티 export
+export {
+  debounce,
+  throttle,
+  scheduleWork,
+  measurePerformance,
+  measureAsyncPerformance,
+  setupLazyLoading,
+} from './BasicUtilities';
 
-// 성능 모니터링
-export * from './AdvancedPerformanceMonitor';
+export { Debouncer, createDebouncer } from './Debouncer';
 
-// 간소화된 디바운싱 시스템
-export { Debouncer, createDebouncer, debounce } from './Debouncer';
+export {
+  AdvancedPerformanceMonitor,
+  performanceTrack,
+  profileApplicationDev,
+} from './AdvancedPerformanceMonitor';
 
-// 미디어 클릭 디바운서
 export {
   MediaClickDebouncer,
   createMediaClickDebouncer,

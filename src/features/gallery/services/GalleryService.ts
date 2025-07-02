@@ -24,7 +24,7 @@ import type { MediaInfo } from '../../../core/types/media.types';
 import type { ViewMode } from '../../../core/types/view-mode.types';
 import { isVendorsInitialized } from '../../../infrastructure/external/vendors';
 import { logger } from '../../../infrastructure/logging/logger';
-import { recordInitialization } from '../../../shared/utils/diagnostics';
+import { addHealthCheck } from '../../../shared/utils/diagnostics';
 
 /**
  * 갤러리 열기 옵션
@@ -132,12 +132,12 @@ export class GalleryService {
       }
 
       this.isInitialized = true;
-      recordInitialization('Features', 'GalleryService', true);
+      addHealthCheck('GalleryService', () => true, 'Gallery service initialized successfully');
       logger.info('GalleryService: 초기화 완료 (복구 성공)');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('GalleryService: 초기화 실패', error);
-      recordInitialization('Features', 'GalleryService', false, errorMessage);
+      addHealthCheck('GalleryService', () => false, `Gallery service failed: ${errorMessage}`);
       // 안전 모드로 동작
       logger.warn('GalleryService: 안전 모드로 동작');
     }

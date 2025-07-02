@@ -16,53 +16,52 @@ import { TWITTER_API_CONFIG } from '../../../../core/constants/MEDIA_CONSTANTS';
 interface TwitterAPIResponse {
   data?: {
     tweetResult?: {
-      result?: TwitterTweetResult;
+      result?: TwitterTweet;
     };
   };
 }
 
-interface TwitterTweetResult {
+// 간소화된 트윗 타입 정의
+interface TwitterTweet {
   __typename?: string;
-  tweet?: TwitterTweetResult;
+  tweet?: TwitterTweet;
   rest_id?: string;
   core?: {
     user_results?: {
-      result?: TwitterUserResult;
+      result?: TwitterUser;
     };
   };
-  legacy?: TwitterTweetLegacy;
+  legacy?: {
+    id_str?: string;
+    full_text?: string;
+    extended_entities?: {
+      media?: TwitterMedia[];
+    };
+  };
   quoted_status_result?: {
-    result?: TwitterTweetResult;
+    result?: TwitterTweet;
   };
 }
 
-interface TwitterUserResult {
+interface TwitterUser {
   legacy?: {
     screen_name?: string;
   };
 }
 
-interface TwitterTweetLegacy {
-  id_str?: string;
-  full_text?: string;
-  extended_entities?: {
-    media?: TwitterMediaEntity[];
-  };
-}
-
-interface TwitterMediaEntity {
-  type?: string;
-  id_str?: string;
+interface TwitterMedia {
+  type: 'photo' | 'video' | 'animated_gif';
+  id_str: string;
   media_key?: string;
-  media_url_https?: string;
+  media_url_https: string;
   expanded_url?: string;
   display_url?: string;
   url?: string;
   video_info?: {
-    variants?: Array<{
+    variants: Array<{
       bitrate?: number;
-      url?: string;
-      content_type?: string;
+      url: string;
+      content_type: string;
     }>;
   };
 }
@@ -267,91 +266,91 @@ export class TwitterAPI {
   }
 
   /**
-   * 트윗 JSON에서 미디어 파싱
+   * 트윗에서 미디어 정보 추출 (간소화된 버전)
    */
-  private static parseTweetLegacyMedias(
-    tweetResult: TwitterTweetResult,
-    tweetLegacy: TwitterTweetLegacy,
-    tweetUser: TwitterUserResult
+  private static extractMediaFromTweet(
+    tweetResult: TwitterTweet,
+    tweetLegacy: NonNullable<TwitterTweet['legacy']>,
+    tweetUser: TwitterUser
   ): TweetMediaEntry[] {
     if (!tweetLegacy.extended_entities?.media) {
       return [];
     }
 
-    const medias: TweetMediaEntry[] = [];
+    const mediaItems: TweetMediaEntry[] = [];
     const typeIndex: Record<string, number> = {};
-    let index = -1;
+    const screenName = tweetUser.legacy?.screen_name ?? '';
+    const tweetId = tweetResult.rest_id ?? tweetLegacy.id_str ?? '';
 
-    for (const media of tweetLegacy.extended_entities.media) {
-      if (!media.type || !media.id_str || !media.media_url_https) {
+    for (let index = 0; index < tweetLegacy.extended_entities.media.length; index++) {
+      const media: TwitterMedia | undefined = tweetLegacy.extended_entities.media[index];
+      if (!media?.type || !media.id_str || !media.media_url_https) {
         continue;
       }
 
-      index++;
-      let type = media.type;
-      const typeOriginal = media.type;
+      try {
+        const mediaUrl = this.getHighQualityMediaUrl(media);
+        if (!mediaUrl) continue;
 
-      typeIndex[type] = (typeIndex[type] ?? -1) + 1;
+        const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
+        typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
 
-      if (type === 'animated_gif') {
-        type = 'video';
-        typeIndex[type] = (typeIndex[type] ?? -1) + 1;
+        const tweetText = (tweetLegacy.full_text ?? '').replace(` ${media.url}`, '').trim();
+
+        const mediaEntry: TweetMediaEntry = {
+          screen_name: screenName,
+          tweet_id: tweetId,
+          download_url: mediaUrl,
+          type: mediaType as 'photo' | 'video',
+          typeOriginal: media.type as 'photo' | 'video' | 'animated_gif',
+          index,
+          typeIndex: typeIndex[mediaType] ?? 0,
+          typeIndexOriginal: typeIndex[media.type] ?? 0,
+          preview_url: media.media_url_https,
+          media_id: media.id_str,
+          media_key: media.media_key ?? '',
+          expanded_url: media.expanded_url ?? '',
+          short_expanded_url: media.display_url ?? '',
+          short_tweet_url: media.url ?? '',
+          tweet_text: tweetText,
+        };
+
+        mediaItems.push(mediaEntry);
+      } catch (error) {
+        logger.warn(`Failed to process media ${media.id_str}:`, error);
       }
-
-      let download_url: string;
-
-      if (media.video_info?.variants) {
-        // 동영상의 경우 최고 품질 비트레이트 선택
-        const videoInfo = media.video_info.variants
-          .filter(el => el.bitrate !== undefined)
-          .reduce((acc, cur) => ((cur.bitrate ?? 0) > (acc.bitrate ?? 0) ? cur : acc));
-        download_url = videoInfo.url ?? media.media_url_https;
-      } else {
-        // 이미지의 경우
-        if (media.media_url_https.includes('?format=')) {
-          download_url = media.media_url_https;
-        } else {
-          const parts = media.media_url_https.split('.');
-          const ext = parts[parts.length - 1];
-          const urlPart = parts.slice(0, -1).join('.');
-          download_url = `${urlPart}?format=${ext}&name=orig`;
-        }
-      }
-
-      const screen_name = tweetUser.legacy?.screen_name ?? '';
-      const tweet_id = tweetResult.rest_id ?? tweetLegacy.id_str ?? '';
-      const typeIndexValue = typeIndex[type] ?? 0;
-      const typeIndexOriginal = typeIndex[typeOriginal] ?? 0;
-      const preview_url = media.media_url_https;
-      const media_id = media.id_str;
-      const media_key = media.media_key ?? '';
-      const expanded_url = media.expanded_url ?? '';
-      const short_expanded_url = media.display_url ?? '';
-      const short_tweet_url = media.url ?? '';
-      const tweet_text = (tweetLegacy.full_text ?? '').replace(` ${media.url}`, '');
-
-      const mediaEntry: TweetMediaEntry = {
-        screen_name,
-        tweet_id,
-        download_url,
-        type: type as 'photo' | 'video',
-        typeOriginal: typeOriginal as 'photo' | 'video' | 'animated_gif',
-        index,
-        typeIndex: typeIndexValue,
-        typeIndexOriginal,
-        preview_url,
-        media_id,
-        media_key,
-        expanded_url,
-        short_expanded_url,
-        short_tweet_url,
-        tweet_text,
-      };
-
-      medias.push(mediaEntry);
     }
 
-    return medias;
+    return mediaItems;
+  }
+
+  /**
+   * 고품질 미디어 URL 추출
+   */
+  private static getHighQualityMediaUrl(media: TwitterMedia): string | null {
+    if (media.type === 'photo') {
+      return media.media_url_https.includes('?format=')
+        ? media.media_url_https
+        : media.media_url_https.replace(/\.(jpg|png)$/, '?format=$1&name=orig');
+    }
+
+    if (media.type === 'video' || media.type === 'animated_gif') {
+      const variants = media.video_info?.variants ?? [];
+      const mp4Variants = variants.filter(v => v.content_type === 'video/mp4');
+
+      if (mp4Variants.length === 0) return null;
+
+      // 가장 높은 비트레이트 선택
+      const bestVariant = mp4Variants.reduce((best, current) => {
+        const bestBitrate = best.bitrate ?? 0;
+        const currentBitrate = current.bitrate ?? 0;
+        return currentBitrate > bestBitrate ? current : best;
+      });
+
+      return bestVariant.url;
+    }
+
+    return null;
   }
 
   /**
@@ -377,19 +376,16 @@ export class TwitterAPI {
       return [];
     }
 
-    let result = this.parseTweetLegacyMedias(tweetResult, tweetLegacy, tweetUser);
+    let result = this.extractMediaFromTweet(tweetResult, tweetLegacy, tweetUser);
 
     // 인용 트윗 처리
     if (tweetResult.quoted_status_result?.result) {
-      const tweetResultQuoted = tweetResult.quoted_status_result.result;
-      const tweetLegacyQuoted = tweetResultQuoted.legacy;
-      const tweetUserQuoted = tweetResultQuoted.core?.user_results?.result;
+      const quotedTweet = tweetResult.quoted_status_result.result;
+      const quotedLegacy = quotedTweet.legacy;
+      const quotedUser = quotedTweet.core?.user_results?.result;
 
-      if (tweetLegacyQuoted && tweetUserQuoted) {
-        result = [
-          ...result,
-          ...this.parseTweetLegacyMedias(tweetResultQuoted, tweetLegacyQuoted, tweetUserQuoted),
-        ];
+      if (quotedLegacy && quotedUser) {
+        result = [...result, ...this.extractMediaFromTweet(quotedTweet, quotedLegacy, quotedUser)];
       }
     }
 

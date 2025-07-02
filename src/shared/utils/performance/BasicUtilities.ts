@@ -2,8 +2,29 @@
  * @fileoverview Basic Performance Utilities
  * @version 1.0.0
  *
- * 기본적인 성능 최적화 유틸리티 함수들 (debounce, throttle, RAF)
+ * 기본적인 성능 최적화 유틸리티 함수들 (debounce, thexport function measurePexport async function measureAsyncPerformance<T>(
+  label: string,
+  fn: () => Promise<T>
+): Promise<{ result: T; duration: number }> {
+  const start = performance.now();
+  const result = await fn();
+  const duration = performance.now() - start;
+
+  logger.debug(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+
+  return { result, duration };
+}>(label: string, fn: () => T): { result: T; duration: number } {
+  const start = performance.now();
+  const result = fn();
+  const duration = performance.now() - start;
+
+  logger.debug(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+
+  return { result, duration };
+}AF)
  */
+
+import { logger } from '../../../infrastructure/logging/logger';
 
 /**
  * 디바운스된 함수를 생성합니다
@@ -108,7 +129,7 @@ export function measurePerformance<T>(label: string, fn: () => T): { result: T; 
   const result = fn();
   const duration = performance.now() - start;
 
-  console.log(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+  logger.debug(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
 
   return { result, duration };
 }
@@ -127,7 +148,7 @@ export async function measureAsyncPerformance<T>(
   const result = await fn();
   const duration = performance.now() - start;
 
-  console.log(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+  logger.debug(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
 
   return { result, duration };
 }

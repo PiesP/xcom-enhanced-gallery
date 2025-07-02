@@ -8,18 +8,7 @@
  * 진단 및 모니터링 유틸리티들의 배럴 익스포트
  */
 
-export {
-  checkVendorHealth,
-  generateInitializationReport,
-  printDiagnosticReport,
-  recordInitialization,
-  resetMonitor,
-  runHealthCheck,
-  validateInitializationOrder,
-} from './InitializationMonitor';
+// 간소화된 모니터링 유틸리티
+export { Monitor, addHealthCheck, getHealthReport, resetMonitor } from './Monitor';
 
-export type {
-  HealthCheckResult,
-  InitializationReport,
-  InitializationStatus,
-} from './InitializationMonitor';
+export type { HealthCheck, MonitorReport } from './Monitor';
