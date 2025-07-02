@@ -112,15 +112,15 @@
 /* ===== Typography Utilities ===== */
 
 .xeg-text-primary {
-  color: var(--xeg-text-primary);
+  color: var(--xeg-color-text-primary);
 }
 
 .xeg-text-secondary {
-  color: var(--xeg-text-secondary);
+  color: var(--xeg-color-text-secondary);
 }
 
 .xeg-text-muted {
-  color: var(--xeg-text-muted);
+  color: var(--xeg-color-text-muted);
 }
 
 .xeg-text-center {
@@ -267,28 +267,28 @@
 }
 
 .xeg-btn-primary:hover {
-  background: var(--xeg-color-primary-alpha-30);
+  background: var(--xeg-color-primary-hover);
 }
 
 .xeg-btn-secondary {
-  background: var(--xeg-bg-secondary);
-  color: var(--xeg-text-primary);
-  border: 1px solid var(--xeg-border-light);
+  background: var(--xeg-color-bg-secondary);
+  color: var(--xeg-color-text-primary);
+  border: 1px solid var(--xeg-color-border-primary);
 }
 
 .xeg-btn-secondary:hover {
-  background: var(--xeg-hover-bg);
+  background: var(--xeg-color-neutral-100);
 }
 
 .xeg-btn-ghost {
   background: transparent;
-  color: var(--xeg-text-primary);
+  color: var(--xeg-color-text-primary);
   border: 1px solid transparent;
 }
 
 .xeg-btn-ghost:hover {
-  background: var(--xeg-hover-bg);
-  border-color: var(--xeg-border-light);
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-border-primary);
 }
 
 /* ===== Accessibility ===== */

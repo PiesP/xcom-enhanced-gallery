@@ -25,39 +25,7 @@ interface MediaClickContext {
   readonly timestamp: number;
 }
 
-/**
- * 간단한 디바운서 클래스 (임시 구현)
- */
-class SimpleDebouncer {
-  private timeoutId: number | null = null;
-
-  constructor(
-    private readonly fn: (context: MediaClickContext) => void,
-    private readonly delay: number = 150
-  ) {}
-
-  handleClick(context: MediaClickContext): void {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-    }
-
-    this.timeoutId = window.setTimeout(() => {
-      this.fn(context);
-      this.timeoutId = null;
-    }, this.delay);
-  }
-
-  cancel(): void {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-      this.timeoutId = null;
-    }
-  }
-
-  isPending(): boolean {
-    return this.timeoutId !== null;
-  }
-}
+import { SmartDebouncer } from '@shared/utils/performance/SmartDebouncer';
 
 /**
  * 미디어 추출 결과 인터페이스
@@ -112,7 +80,7 @@ export class OptimizedGalleryEventCoordinator {
   private static instance: OptimizedGalleryEventCoordinator | null = null;
 
   private galleryService: GalleryService | null = null;
-  private readonly debouncer: SimpleDebouncer;
+  private readonly debouncer: SmartDebouncer<[MediaClickContext]>;
   private readonly options: CoordinatorOptions;
   private isInitialized = false;
   private readonly eventListeners: Map<string, EventListener> = new Map();
@@ -125,11 +93,12 @@ export class OptimizedGalleryEventCoordinator {
       ...options,
     };
 
-    // 갤러리 서비스는 초기화 시점에 가져옴 (Lazy initialization)
-    this.debouncer = new SimpleDebouncer(
-      this.handleDebouncedMediaClick.bind(this),
-      this.options.debounceDelay
-    );
+    // SmartDebouncer 사용으로 더 지능적인 디바운싱 적용
+    this.debouncer = new SmartDebouncer(this.handleDebouncedMediaClick.bind(this), {
+      delay: this.options.debounceDelay ?? 150,
+      strategy: 'smart',
+      debug: this.options.debug ?? false,
+    });
 
     logger.debug('OptimizedGalleryEventCoordinator: Instance created (lazy initialization)');
   }
@@ -217,8 +186,8 @@ export class OptimizedGalleryEventCoordinator {
         elementTag: element.tagName,
       });
 
-      // 디바운싱된 처리로 전달
-      this.debouncer.handleClick(context);
+      // SmartDebouncer로 지능적인 디바운싱 처리
+      this.debouncer.execute(context);
     } catch (error) {
       logger.error('OptimizedGalleryEventCoordinator: Failed to handle media click:', error);
     }

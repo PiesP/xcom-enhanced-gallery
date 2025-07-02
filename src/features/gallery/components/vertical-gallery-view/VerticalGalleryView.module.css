@@ -320,7 +320,7 @@
 /* 빈 상태 메시지 - 통합된 타이포그래피 */
 .emptyMessage {
   text-align: center;
-  color: var(--xeg-text-secondary);
+  color: var(--xeg-color-text-secondary);
   max-inline-size: min(400px, 90vw);
   padding: clamp(30px, 5vw, 40px);
 }
@@ -329,7 +329,7 @@
   margin: 0 0 clamp(12px, 2vw, 16px) 0;
   font-size: clamp(20px, 4vw, 24px);
   font-weight: 600;
-  color: var(--xeg-text-primary);
+  color: var(--xeg-color-text-primary);
   line-height: 1.2;
 }
 
@@ -337,7 +337,7 @@
   margin: 0;
   font-size: clamp(14px, 2.5vw, 16px);
   line-height: 1.5;
-  color: var(--xeg-text-tertiary);
+  color: var(--xeg-color-text-tertiary);
 }
 /* 컨테이너 쿼리 기반 반응형 디자인 */
 @container gallery-container (max-width: 768px) {

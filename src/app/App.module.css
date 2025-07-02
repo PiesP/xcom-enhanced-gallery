@@ -107,25 +107,25 @@
  */
 .closeButton {
   position: absolute;
-  top: calc(-1 * var(--xeg-spacing-3xl));
-  right: calc(-1 * var(--xeg-spacing-3xl));
-  background-color: var(--xeg-bg-primary);
-  border: 1px solid var(--xeg-border-light);
+  top: calc(-1 * var(--xeg-spacing-xxxl));
+  right: calc(-1 * var(--xeg-spacing-xxxl));
+  background-color: var(--xeg-color-bg-primary);
+  border: 1px solid var(--xeg-color-border-primary);
   border-radius: var(--xeg-radius-full);
   width: 40px;
   height: 40px;
   cursor: pointer;
   font-size: var(--xeg-font-size-lg);
-  color: var(--xeg-text-primary);
+  color: var(--xeg-color-text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: var(--xeg-shadow-md);
-  transition: var(--xeg-transition-colors);
+  transition: var(--xeg-transition-normal);
 }
 
 .closeButton:hover {
-  background-color: var(--xeg-hover-bg);
+  background-color: var(--xeg-color-neutral-100);
   transform: scale(1.05);
 }
 

@@ -56,7 +56,7 @@
 
   /* 현대적 스타일링 */
   border-radius: 16px;
-  border: 1px solid var(--xeg-border-toolbar);
+  border: 1px solid var(--xeg-color-border-primary);
   box-shadow: var(--xeg-shadow-toolbar);
   backdrop-filter: blur(12px) saturate(120%);
   -webkit-backdrop-filter: blur(12px) saturate(120%);
@@ -213,13 +213,13 @@
 }
 
 .navButton {
-  background: var(--xeg-bg-button-navigation);
+  background: var(--xeg-color-neutral-100);
   border-color: var(--xeg-color-neutral-300);
   color: var(--xeg-text-button-navigation);
 }
 
 .navButton:hover:not(:disabled) {
-  background: var(--xeg-bg-button-navigation-hover);
+  background: var(--xeg-color-neutral-200);
   color: var(--xeg-color-neutral-800);
 }
 
@@ -251,7 +251,7 @@
 }
 
 .currentIndex {
-  color: var(--xeg-text-primary);
+  color: var(--xeg-color-text-primary);
   font-weight: 700;
 }
 

@@ -50,7 +50,7 @@
   right: 0;
   height: 60px;
   background: var(--xeg-bg-toolbar);
-  border-bottom: 1px solid var(--xeg-border-toolbar);
+  border-bottom: 1px solid var(--xeg-color-border-primary);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 1005;
@@ -157,7 +157,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: var(--xeg-bg-toolbar);
-  border: 1px solid var(--xeg-border-toolbar);
+  border: 1px solid var(--xeg-color-border-primary);
   border-radius: 8px;
   padding: 12px 16px;
   min-width: 200px;
@@ -233,7 +233,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--xeg-bg-button-navigation);
+  background: var(--xeg-color-neutral-100);
   border: 1px solid var(--xeg-border-button);
   border-radius: 50%;
   width: 50px;
@@ -263,7 +263,7 @@
 
 .xeg-gallery-nav-left:hover,
 .xeg-gallery-nav-right:hover {
-  background: var(--xeg-bg-button-navigation-hover);
+  background: var(--xeg-color-neutral-200);
   transform: translateY(-50%) translateY(-3px) scale(1.05);
   box-shadow:
     0 8px 24px rgba(15, 23, 42, 0.15),
@@ -297,7 +297,7 @@
   gap: 8px;
   padding: 14px;
   background: var(--xeg-bg-toolbar);
-  border: 1px solid var(--xeg-border-toolbar);
+  border: 1px solid var(--xeg-color-border-primary);
   border-radius: 16px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

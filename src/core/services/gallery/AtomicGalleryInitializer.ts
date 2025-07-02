@@ -9,7 +9,7 @@
  * 4. CSS 기반 강력한 스크롤 차단 - 브라우저 레벨 보호
  */
 
-import type { PageScrollLockService } from '../scroll/PageScrollLockService';
+import { ScrollLockService } from '../../../infrastructure/dom/ScrollLockService';
 import type { ScrollCoordinateManager } from '../scroll/ScrollCoordinateManager';
 import type { MediaInfo } from '../../types/media.types';
 import { GalleryEarlyInitializer } from './GalleryEarlyInitializer';
@@ -59,14 +59,11 @@ export interface AtomicInitializationResult {
  * 모든 DOM 조작과 스크롤 보호를 원자적으로 처리합니다.
  */
 export class AtomicGalleryInitializer {
-  private readonly scrollLockService: PageScrollLockService;
+  private readonly scrollLockService: ScrollLockService;
   private readonly coordinateManager: ScrollCoordinateManager;
   private isInitializing = false;
 
-  constructor(
-    scrollLockService: PageScrollLockService,
-    coordinateManager: ScrollCoordinateManager
-  ) {
+  constructor(scrollLockService: ScrollLockService, coordinateManager: ScrollCoordinateManager) {
     this.scrollLockService = scrollLockService;
     this.coordinateManager = coordinateManager;
   }
@@ -204,7 +201,7 @@ export class AtomicGalleryInitializer {
     const position = this.coordinateManager.getSavedPosition();
 
     // 사전 스크롤 잠금 활성화 (promise 대응)
-    await this.scrollLockService.preemptiveLock();
+    this.scrollLockService.lockPageScroll();
 
     if (debug) {
       logger.debug('[AtomicGalleryInitializer] 새로운 스크롤 위치 캡처됨:', position);
@@ -316,7 +313,7 @@ export class AtomicGalleryInitializer {
     }
 
     // 사전 잠금 해제
-    this.scrollLockService.unlock();
+    this.scrollLockService.unlockPageScroll();
 
     return scrollChanged;
   }
@@ -392,7 +389,7 @@ export class AtomicGalleryInitializer {
   private async emergencyScrollRestore(): Promise<void> {
     try {
       // 강제 스크롤 잠금 해제
-      await this.scrollLockService.forceUnlock();
+      this.scrollLockService.forceReset();
 
       // CSS 클래스 제거
       document.body.classList.remove('xeg-gallery-active');
@@ -412,7 +409,7 @@ export class AtomicGalleryInitializer {
   async cleanup(): Promise<void> {
     try {
       // 스크롤 잠금 해제
-      await this.scrollLockService.unlock();
+      this.scrollLockService.unlockPageScroll();
 
       // CSS 클래스 정리
       document.body.classList.remove('xeg-gallery-active');

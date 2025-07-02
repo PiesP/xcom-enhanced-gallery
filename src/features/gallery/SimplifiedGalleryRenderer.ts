@@ -1,6 +1,6 @@
 /**
- * @fileoverview Simplified Gallery Renderer
- * @version 1.0.0 - Clean Architecture 적용
+ * @fileoverview Gallery Renderer
+ * @version 2.0.0 - Clean Architecture 적용
  *
  * 단일 책임 원칙에 따른 갤러리 렌더러
  * - 렌더링만 담당
@@ -49,7 +49,7 @@ class GalleryCleanupManager {
 /**
  * 간소화된 갤러리 렌더러
  */
-export class SimplifiedGalleryRenderer implements GalleryRendererInterface {
+export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
   private isRenderingFlag = false;
   private readonly cleanupManager = new GalleryCleanupManager();
@@ -280,4 +280,4 @@ export class SimplifiedGalleryRenderer implements GalleryRendererInterface {
 }
 
 // 싱글톤 인스턴스 export
-export const galleryRenderer = new SimplifiedGalleryRenderer();
+export const galleryRenderer = new GalleryRenderer();

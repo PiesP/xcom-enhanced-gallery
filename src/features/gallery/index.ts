@@ -3,11 +3,8 @@
  * @version 1.0.0 - Unified Architecture
  */
 
-// 간소화된 갤러리 렌더러 (권장)
-export { SimplifiedGalleryRenderer, galleryRenderer } from './SimplifiedGalleryRenderer';
-
-// 기존 렌더러 (하위 호환성을 위해 유지)
-export { GalleryRenderer } from './GalleryRenderer';
+// 통합된 갤러리 렌더러
+export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
 
 // 갤러리 컴포넌트들
 export * from './components';

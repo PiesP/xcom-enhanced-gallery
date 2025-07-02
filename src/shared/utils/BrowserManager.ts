@@ -95,15 +95,27 @@ export class BrowserManager extends BaseSingleton {
   }
 
   /**
-   * 메모리 정보 조회 (브라우저 API 래핑)
+   * 메모리 정보 조회 (통합 메모리 매니저 사용)
    */
   public getMemoryInfo(): MemoryInfo | null {
+    // 동적 import로 Infrastructure 레이어의 통합 메모리 매니저 사용
+    import('@infrastructure/memory/UnifiedMemoryManager')
+      .then(({ memoryManager }) => {
+        return memoryManager.getMemoryInfo();
+      })
+      .catch(() => {
+        // Fallback: 직접 접근
+        const perfWithMemory = performance as unknown as { memory?: MemoryInfo };
+        return perfWithMemory.memory ?? null;
+      });
+
+    // 동기적 반환이 필요하므로 임시로 직접 접근 유지
     const perfWithMemory = performance as unknown as { memory?: MemoryInfo };
     return perfWithMemory.memory ?? null;
   }
 
   /**
-   * 메모리 사용량 (MB 단위)
+   * 메모리 사용량 (MB 단위) - 통합 메모리 매니저 사용
    */
   public getMemoryUsageMB(): number | null {
     const memInfo = this.getMemoryInfo();

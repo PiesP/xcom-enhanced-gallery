@@ -172,7 +172,6 @@
         "src/shared/utils/media/VideoService.ts",
         "src/core/services/cache/MediaCacheService.ts",
         "src/core/services/gallery/AtomicGalleryInitializer.ts",
-        "src/core/services/scroll/PageScrollLockService.ts",
         "src/core/services/scroll/ScrollCoordinateManager.ts",
         "src/core/services/gallery/GalleryEarlyInitializer.ts",
         "src/features/gallery/services/GalleryService.ts",
@@ -203,8 +202,7 @@
         "src/features/gallery/services/GalleryApp.ts",
         "src/infrastructure/utils/index.ts",
         "src/shared/utils/core/accessibility.ts",
-        "src/shared/utils/patterns/url-patterns.ts",
-        "src/shared/utils/patterns/video-extractor.ts"
+        "src/shared/utils/patterns/url-patterns.ts"
       ],
       "orphan": false,
       "valid": true
@@ -862,7 +860,6 @@
       ],
       "dependents": [
         "src/app/UnifiedGalleryApp.ts",
-        "src/features/gallery/GalleryRenderer.ts",
         "src/core/state/index.ts",
         "src/core/state/signals/index.ts",
         "src/features/gallery/services/GalleryApp.ts",
@@ -2818,6 +2815,7 @@
       "dependents": [
         "src/core/types/services.types.ts",
         "src/core/services/ServiceRegistry.ts",
+        "src/core/services/gallery/AtomicGalleryInitializer.ts",
         "src/core/services/gallery/GalleryEarlyInitializer.ts",
         "src/infrastructure/dom/index.ts"
       ],
@@ -3200,25 +3198,7 @@
     },
     {
       "source": "src/features/gallery/GalleryRenderer.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../core/state/signals/unified-gallery.signals",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/state/signals/unified-gallery.signals.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/core/services/ServiceRegistry.ts",
         "src/features/gallery/index.ts"
@@ -3464,6 +3444,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../../../infrastructure/dom/ScrollLockService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/dom/ScrollLockService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../../infrastructure/logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3490,24 +3487,6 @@
             "import"
           ],
           "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../scroll/PageScrollLockService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/services/scroll/PageScrollLockService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3552,33 +3531,6 @@
         }
       ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/scroll/PageScrollLockService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/gallery/AtomicGalleryInitializer.ts"
-      ],
       "orphan": false,
       "valid": true
     },
@@ -4298,11 +4250,15 @@
     {
       "source": "src/features/gallery/SimplifiedGalleryRenderer.ts",
       "dependencies": [],
-      "dependents": [
-        "src/features/gallery/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/features/gallery/components/index.ts",
@@ -5150,23 +5106,6 @@
             "export"
           ],
           "resolved": "src/features/gallery/services/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./SimplifiedGalleryRenderer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/SimplifiedGalleryRenderer.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6457,6 +6396,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./UnifiedMemoryManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/infrastructure/memory/UnifiedMemoryManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -6476,6 +6432,15 @@
     },
     {
       "source": "src/infrastructure/memory/ResourcePool.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/memory/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/memory/UnifiedMemoryManager.ts",
       "dependencies": [],
       "dependents": [
         "src/infrastructure/memory/index.ts"
@@ -8197,29 +8162,17 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/patterns/video-extractor.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/utils/type-safety-helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/utils/type-safety-helpers.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "source": "src/shared/utils/error-handling-legacy.ts",
+      "dependencies": [],
       "dependents": [],
-      "orphan": false,
-      "valid": true
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/utils/styles/index.ts",
@@ -8262,13 +8215,32 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/features/gallery/SimplifiedGalleryRenderer.ts",
+        "to": "src/features/gallery/SimplifiedGalleryRenderer.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/error-handling-legacy.ts",
+        "to": "src/shared/utils/error-handling-legacy.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 2,
     "ignore": 0,
     "totalCruised": 208,
-    "totalDependenciesCruised": 356,
+    "totalDependenciesCruised": 353,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

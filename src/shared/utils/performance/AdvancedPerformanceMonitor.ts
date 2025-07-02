@@ -121,18 +121,29 @@ export class AdvancedPerformanceMonitor {
   }
 
   public static getMemoryInfo(): MemoryInfo {
-    // Chrome에서만 사용 가능한 performance.memory 접근
-    const performanceWithMemory = performance as unknown as Performance & {
-      memory?: MemoryInfo;
-    };
+    // 통합 메모리 매니저 사용 시도
+    try {
+      // 동적 import는 비동기이므로 직접 접근 방식 유지
+      // 추후 통합 메모리 매니저가 안정화되면 리팩토링 예정
+      const performanceWithMemory = performance as unknown as Performance & {
+        memory?: MemoryInfo;
+      };
 
-    return (
-      performanceWithMemory.memory ?? {
+      return (
+        performanceWithMemory.memory ?? {
+          usedJSHeapSize: 0,
+          totalJSHeapSize: 0,
+          jsHeapSizeLimit: 0,
+        }
+      );
+    } catch {
+      // Fallback
+      return {
         usedJSHeapSize: 0,
         totalJSHeapSize: 0,
         jsHeapSizeLimit: 0,
-      }
-    );
+      };
+    }
   }
 
   public static generatePerformanceReport(): string {

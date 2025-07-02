@@ -184,26 +184,13 @@ export class UnifiedApplication {
    * 메모리 사용량 체크
    */
   private checkMemoryUsage(): void {
-    const memory = (performance as unknown as Record<string, unknown>).memory as
-      | { usedJSHeapSize?: number; totalJSHeapSize?: number }
-      | undefined;
-
-    if (memory?.usedJSHeapSize) {
-      const usedMB = memory.usedJSHeapSize / (1024 * 1024);
-
-      // 100MB 이상 사용 시 경고
-      if (usedMB > 100) {
-        logger.warn('높은 메모리 사용량 감지:', {
-          usedMB: Math.round(usedMB),
-          totalMB: Math.round((memory.totalJSHeapSize ?? 0) / (1024 * 1024)),
-        });
-
-        // 가비지 컬렉션 힌트
-        if ('gc' in globalThis && typeof globalThis.gc === 'function') {
-          globalThis.gc();
-        }
-      }
-    }
+    import('@infrastructure/memory/UnifiedMemoryManager')
+      .then(({ memoryManager }) => {
+        memoryManager.checkAndCleanup();
+      })
+      .catch(error => {
+        logger.warn('메모리 체크 모듈 로드 실패:', error);
+      });
   }
 
   /**
@@ -412,19 +399,31 @@ export class UnifiedApplication {
     totalJSHeapSize: number | undefined;
     jsHeapSizeLimit: number | undefined;
   } {
-    const memory = (performance as unknown as Record<string, unknown>).memory as
-      | {
-          usedJSHeapSize?: number;
-          totalJSHeapSize?: number;
-          jsHeapSizeLimit?: number;
-        }
-      | undefined;
+    // 동적 import를 사용하여 순환 의존성 방지
+    try {
+      // 동기적으로 UnifiedMemoryManager 사용이 어려우므로 기존 방식 유지
+      // (진단 정보는 실시간으로 필요하므로)
+      const memory = (performance as unknown as Record<string, unknown>).memory as
+        | {
+            usedJSHeapSize?: number;
+            totalJSHeapSize?: number;
+            jsHeapSizeLimit?: number;
+          }
+        | undefined;
 
-    return {
-      usedJSHeapSize: memory?.usedJSHeapSize,
-      totalJSHeapSize: memory?.totalJSHeapSize,
-      jsHeapSizeLimit: memory?.jsHeapSizeLimit,
-    };
+      return {
+        usedJSHeapSize: memory?.usedJSHeapSize,
+        totalJSHeapSize: memory?.totalJSHeapSize,
+        jsHeapSizeLimit: memory?.jsHeapSizeLimit,
+      };
+    } catch (error) {
+      logger.warn('메모리 정보 조회 실패:', error);
+      return {
+        usedJSHeapSize: undefined,
+        totalJSHeapSize: undefined,
+        jsHeapSizeLimit: undefined,
+      };
+    }
   }
 
   /**

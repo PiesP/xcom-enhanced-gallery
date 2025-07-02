@@ -263,20 +263,6 @@ export class ScrollLockService {
     this.forceReset();
     this.lockCondition = null;
   }
-
-  /**
-   * @deprecated Use isLocked() instead
-   */
-  public isPageScrollLockedState(): boolean {
-    return this.isLocked();
-  }
-
-  /**
-   * @deprecated Use forceReset() instead
-   */
-  public forceUnlock(): void {
-    this.forceReset();
-  }
 }
 
 /**

@@ -45,8 +45,8 @@ export async function diagnoseServiceManager(): Promise<void> {
 
     // 5. 메모리 사용량 (infrastructure ResourcePool 사용)
     try {
-      const { resourcePool } = await import('@infrastructure/memory');
-      const memoryUsage = resourcePool.getUsage();
+      const { ResourcePool } = await import('@infrastructure/memory');
+      const memoryUsage = ResourcePool.getInstance().getUsage();
       if (memoryUsage) {
         logger.info('💾 메모리 사용량:', memoryUsage);
       }

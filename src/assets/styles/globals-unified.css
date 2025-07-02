@@ -159,9 +159,7 @@ body {
   /* 기존 변수들을 새로운 통합 변수로 매핑 */
   --xeg-text-primary: var(--xeg-color-text-primary);
   --xeg-text-secondary: var(--xeg-color-text-secondary);
-  --xeg-text-tertiary: var(--xeg-color-text-tertiary);
-  --xeg-text-inverse: var(--xeg-color-text-inverse);
-  --xeg-text-muted: var(--xeg-color-text-muted);
+  --xeg-text-muted: var(--xeg-color-neutral-500);
 
   /* 배경 색상 */
   --xeg-bg-primary: var(--xeg-color-bg-primary);
@@ -170,7 +168,6 @@ body {
 
   /* 테두리 색상 */
   --xeg-border-primary: var(--xeg-color-border-primary);
-  --xeg-border-secondary: var(--xeg-color-border-secondary);
 
   /* 간격 */
   --xeg-spacing-xs: var(--xeg-spacing-xs);
@@ -178,4 +175,74 @@ body {
   --xeg-spacing-md: var(--xeg-spacing-md);
   --xeg-spacing-lg: var(--xeg-spacing-lg);
   --xeg-spacing-xl: var(--xeg-spacing-xl);
+
+  /* 추가 호환성 변수들 */
+  --xeg-border-toolbar: var(--xeg-color-border-primary);
+  --xeg-bg-button-navigation: var(--xeg-color-neutral-100);
+  --xeg-bg-button-navigation-hover: var(--xeg-color-neutral-200);
+
+  /* Focus 관련 변수 */
+  --xeg-focus-ring: 2px solid var(--xeg-color-primary-500);
+  --xeg-focus-ring-offset: 2px;
+
+  /* Overlay 관련 변수 */
+  --xeg-bg-overlay-light: var(--xeg-color-overlay-light);
+  --xeg-bg-overlay-medium: var(--xeg-color-overlay-medium);
+  --xeg-bg-overlay-strong: var(--xeg-color-overlay-strong);
+  --xeg-text-inverse: white;
+
+  /* Z-index 변수 */
+  --xeg-gallery-z-index: var(--xeg-z-gallery);
+  --xeg-toolbar-z-index: var(--xeg-z-modal);
+
+  /* 버튼 크기 변수 */
+  --xeg-button-size-md: 40px;
+  --xeg-button-size-lg: 48px;
+  --xeg-button-size-xl: 56px;
+
+  /* 기타 유틸리티 변수 */
+  --xeg-backdrop-blur: 12px;
+  --xeg-neutral-300: var(--xeg-color-neutral-300);
+  --xeg-neutral-400: var(--xeg-color-neutral-400);
+
+  /* Gallery 배경 변수 */
+  --xeg-overlay-background: rgba(0, 0, 0, 0.9);
+  --xeg-gallery-bg: var(--xeg-color-bg-primary);
+  --xeg-gallery-bg-light: var(--xeg-color-bg-secondary);
+
+  /* 버튼 관련 변수 */
+  --xeg-bg-button-close: var(--xeg-color-neutral-100);
+  --xeg-bg-button-close-hover: var(--xeg-color-neutral-200);
+  --xeg-button-border: var(--xeg-color-border-primary);
+  --xeg-button-border-hover: var(--xeg-color-primary-500);
+  --xeg-text-button-close: var(--xeg-color-text-primary);
+  --xeg-button-navigation: var(--xeg-color-neutral-100);
+  --xeg-button-bg-hover: var(--xeg-color-neutral-200);
+  --xeg-button-text: var(--xeg-color-text-primary);
+
+  /* 아이콘 크기 변수 */
+  --xeg-icon-size-lg: 20px;
+
+  /* 툴바 관련 변수 */
+  --xeg-toolbar-shadow: var(--xeg-shadow-lg);
+  --xeg-text-button: var(--xeg-color-text-primary);
+  --xeg-border-button: var(--xeg-color-border-primary);
+  --xeg-text-button-navigation: var(--xeg-color-text-primary);
+  --xeg-text-counter: var(--xeg-color-text-secondary);
+  --xeg-bg-counter: var(--xeg-color-bg-secondary);
+  --xeg-border-counter: var(--xeg-color-border-primary);
+  --xeg-bg-button-download: var(--xeg-color-success-500);
+  --xeg-bg-button-download-hover: var(--xeg-color-success-600);
+  --xeg-text-button-download: white;
+  --xeg-bg-button-settings: var(--xeg-color-neutral-100);
+  --xeg-bg-button-settings-hover: var(--xeg-color-neutral-200);
+  --xeg-text-button-settings: var(--xeg-color-text-primary);
+
+  /* 버튼 높이 변수 */
+  --xeg-button-height-sm: 32px;
+  --xeg-button-height-md: 40px;
+  --xeg-button-height-lg: 48px;
+
+  /* 이징 함수 변수 */
+  --xeg-ease-out: var(--xeg-easing-easeOut);
 }

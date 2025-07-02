@@ -1,9 +1,11 @@
 /**
- * @fileoverview Unified Gallery Renderer
- * @version 2.0.0
+ * @fileoverview Gallery Renderer
+ * @version 2.0.0 - Clean Architecture 적용
  *
- * 여러 버전의 GalleryRenderer를 하나로 통합
- * 최고의 전략들을 결합하여 안정적이고 효율적인 렌더링 제공
+ * 단일 책임 원칙에 따른 갤러리 렌더러
+ * - 렌더링만 담당
+ * - 상태 관리는 signals에 위임
+ * - 간결한 생명주기 관리
  */
 
 import type {
@@ -11,115 +13,104 @@ import type {
   GalleryRenderer as GalleryRendererInterface,
 } from '@core/interfaces/gallery.interfaces';
 import {
-  galleryState,
   closeGallery,
-  navigatePrevious,
-  navigateNext,
-  setLoading,
+  galleryState,
   setError,
-  getCurrentMedia,
-  openGallery,
-} from '../../core/state/signals/unified-gallery.signals';
+  setLoading,
+} from '@core/state/signals/unified-gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view';
 import '@features/gallery/styles/gallery-global.css';
 import { logger } from '@infrastructure/logging/logger';
-import { getPreact, getPreactSignals } from '@infrastructure/external/vendors';
-
-const { effect } = getPreactSignals();
-const { createElement, render } = getPreact();
+import { getPreact } from '@infrastructure/external/vendors';
 
 /**
- * 통합된 갤러리 렌더러
- *
- * 기존 구현들의 장점을 결합:
- * - 안정적인 상태 관리
- * - 효율적인 렌더링
- * - 완전한 정리 메커니즘
+ * 갤러리 정리 관리자
+ */
+class GalleryCleanupManager {
+  private cleanupTasks: (() => void)[] = [];
+
+  addTask(task: () => void): void {
+    this.cleanupTasks.push(task);
+  }
+
+  executeAll(): void {
+    this.cleanupTasks.forEach(task => {
+      try {
+        task();
+      } catch (error) {
+        logger.warn('[CleanupManager] 정리 작업 실패:', error);
+      }
+    });
+    this.cleanupTasks = [];
+  }
+}
+
+/**
+ * 간소화된 갤러리 렌더러
  */
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
-  private cleanupFunctions: (() => void)[] = [];
   private isRenderingFlag = false;
-  private onCloseCallback: (() => void) | undefined;
+  private readonly cleanupManager = new GalleryCleanupManager();
+  private stateUnsubscribe: (() => void) | null = null;
+  private onCloseCallback?: () => void;
 
-  constructor(onClose?: () => void) {
-    this.onCloseCallback = onClose;
-    this.setupStateEffects();
+  constructor() {
+    this.setupStateSubscription();
   }
 
   /**
-   * 갤러리 닫기 콜백 설정
+   * 갤러리 닫기 콜백 설정 (인터페이스 구현)
    */
-  public setOnCloseCallback(onClose: () => void): void {
+  setOnCloseCallback(onClose: () => void): void {
     this.onCloseCallback = onClose;
   }
 
   /**
-   * 상태 효과 설정
+   * 상태 구독 설정
    */
-  private setupStateEffects(): void {
-    const openEffect = effect(() => {
-      try {
-        const isOpen = galleryState.value.isOpen;
-
-        if (isOpen === true) {
-          this.show();
-        } else if (isOpen === false) {
-          this.hide();
-        }
-      } catch (error) {
-        logger.warn('[GalleryRenderer] Effect error:', error);
+  private setupStateSubscription(): void {
+    this.stateUnsubscribe = galleryState.subscribe(state => {
+      if (state.isOpen && !this.isRenderingFlag) {
+        this.renderGallery();
+      } else if (!state.isOpen && this.container) {
+        this.cleanupGallery();
       }
     });
-
-    this.cleanupFunctions.push(openEffect);
-    logger.debug('[GalleryRenderer] State effects 설정 완료');
   }
 
   /**
-   * 갤러리 표시
+   * 갤러리 렌더링
    */
-  show(): void {
-    if (this.isRenderingFlag) {
-      logger.debug('[GalleryRenderer] 이미 렌더링 중');
-      return;
-    }
+  private renderGallery(): void {
+    if (this.isRenderingFlag) return;
 
-    logger.info('[GalleryRenderer] 갤러리 표시 시작');
+    const state = galleryState.value;
+    if (!state.isOpen || state.mediaItems.length === 0) return;
+
     this.isRenderingFlag = true;
+    logger.info('[GalleryRenderer] 렌더링 시작');
 
     try {
-      this.createGalleryContainer();
-      this.renderGalleryComponent();
+      this.createContainer();
+      this.renderComponent(state);
+    } catch (error) {
+      logger.error('[GalleryRenderer] 렌더링 실패:', error);
+      setError('갤러리 렌더링에 실패했습니다.');
     } finally {
       this.isRenderingFlag = false;
     }
   }
 
   /**
-   * 갤러리 숨김
+   * 컨테이너 생성
    */
-  hide(): void {
-    logger.info('[GalleryRenderer] 갤러리 숨김 시작');
-
-    this.isRenderingFlag = false;
-    this.cleanupDOM();
-    this.performCleanup();
-
-    logger.debug('[GalleryRenderer] 갤러리 숨김 완료');
-  }
-
-  /**
-   * 갤러리 컨테이너 생성
-   */
-  private createGalleryContainer(): void {
-    this.cleanupDOM();
+  private createContainer(): void {
+    this.cleanupContainer();
 
     this.container = document.createElement('div');
     this.container.className = 'xeg-gallery-container';
-    this.container.setAttribute('data-gallery-element', 'root');
-
     this.container.style.cssText = `
       position: fixed !important;
       top: 0 !important;
@@ -130,90 +121,88 @@ export class GalleryRenderer implements GalleryRendererInterface {
       background: rgba(0, 0, 0, 0.95) !important;
       display: flex !important;
       flex-direction: column !important;
-      contain: layout style paint !important;
     `;
 
     document.body.appendChild(this.container);
-    logger.debug('[GalleryRenderer] 컨테이너 생성 완료');
+    document.body.classList.add('xeg-gallery-open');
+
+    // 정리 작업 등록
+    this.cleanupManager.addTask(() => {
+      document.body.classList.remove('xeg-gallery-open');
+    });
   }
 
   /**
-   * 갤러리 컴포넌트 렌더링
+   * 컴포넌트 렌더링
    */
-  private renderGalleryComponent(): void {
-    if (!this.container) {
-      logger.error('[GalleryRenderer] 컨테이너가 없음');
-      return;
-    }
+  private renderComponent(state: typeof galleryState.value): void {
+    if (!this.container) return;
 
-    const state = galleryState.value;
-    const mediaItems = state.mediaItems ?? [];
-    const currentIndex = state.currentIndex ?? 0;
-    const isOpen = state.isOpen ?? false;
+    const { render, createElement } = getPreact();
 
-    if (!isOpen || mediaItems.length === 0) {
-      logger.warn('[GalleryRenderer] 갤러리가 닫혀있거나 미디어가 없음');
-      return;
-    }
+    const galleryElement = createElement(VerticalGalleryView, {
+      mediaItems: state.mediaItems,
+      currentIndex: state.currentIndex,
+      isDownloading: state.isLoading,
+      onClose: () => {
+        closeGallery();
+        if (this.onCloseCallback) {
+          this.onCloseCallback();
+        }
+      },
+      onPrevious: () => this.handleNavigation('previous'),
+      onNext: () => this.handleNavigation('next'),
+      onDownloadCurrent: () => this.handleDownload('current'),
+      onDownloadAll: () => this.handleDownload('all'),
+      className: 'xeg-vertical-gallery',
+    });
 
-    try {
-      logger.info(`[GalleryRenderer] 렌더링 시작 - ${mediaItems.length}개 미디어`);
-
-      const galleryElement = createElement(VerticalGalleryView, {
-        mediaItems,
-        currentIndex,
-        isDownloading: state.isLoading ?? false,
-        onClose: this.handleClose.bind(this),
-        onPrevious: () => navigatePrevious(),
-        onNext: () => navigateNext(),
-        onDownloadCurrent: () => this.downloadCurrentMedia(),
-        onDownloadAll: () => this.downloadAllMedia(),
-        className: 'xeg-vertical-gallery',
-      });
-
-      render(galleryElement, this.container);
-      logger.info('[GalleryRenderer] 컴포넌트 렌더링 완료');
-    } catch (error) {
-      logger.error('[GalleryRenderer] 렌더링 실패:', error);
-    }
+    render(galleryElement, this.container);
+    logger.info('[GalleryRenderer] 컴포넌트 렌더링 완료');
   }
 
   /**
-   * 갤러리 닫기 처리
+   * 네비게이션 처리
    */
-  private handleClose(): void {
-    logger.debug('[GalleryRenderer] 닫기 요청');
+  private handleNavigation(direction: 'previous' | 'next'): void {
+    // unified-gallery.signals의 함수들을 사용
+    const {
+      navigatePrevious,
+      navigateNext,
+    } = require('@core/state/signals/unified-gallery.signals');
 
-    // 1. UI 상태 닫기
-    closeGallery();
-
-    // 2. 추가 정리 작업
-    if (this.onCloseCallback) {
-      this.onCloseCallback();
+    if (direction === 'previous') {
+      navigatePrevious();
+    } else {
+      navigateNext();
     }
   }
 
   /**
-   * 현재 미디어 다운로드
+   * 다운로드 처리
    */
-  private async downloadCurrentMedia(): Promise<void> {
-    const currentMedia = getCurrentMedia();
-    if (!currentMedia) return;
-
+  private async handleDownload(type: 'current' | 'all'): Promise<void> {
     try {
       setLoading(true);
 
+      // 다운로드 서비스는 별도 모듈로 분리
       const { GalleryDownloadService } = await import(
         '@features/gallery/services/GalleryDownloadService'
       );
-      const downloadService = GalleryDownloadService.getInstance();
-      const success = await downloadService.downloadCurrent(currentMedia);
 
-      if (!success) {
-        setError('다운로드에 실패했습니다.');
+      const downloadService = GalleryDownloadService.getInstance();
+      const state = galleryState.value;
+
+      if (type === 'current') {
+        const currentMedia = state.mediaItems[state.currentIndex];
+        if (currentMedia) {
+          await downloadService.downloadCurrent(currentMedia);
+        }
+      } else {
+        await downloadService.downloadAll(state.mediaItems);
       }
     } catch (error) {
-      logger.error('[GalleryRenderer] 다운로드 실패:', error);
+      logger.error(`[GalleryRenderer] ${type} 다운로드 실패:`, error);
       setError('다운로드에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -221,166 +210,74 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   /**
-   * 전체 미디어 다운로드
+   * 갤러리 정리
    */
-  private async downloadAllMedia(): Promise<void> {
-    const state = galleryState.value;
-    const mediaItems = state.mediaItems ?? [];
-    if (mediaItems.length === 0) return;
-
-    try {
-      setLoading(true);
-
-      const { GalleryDownloadService } = await import(
-        '@features/gallery/services/GalleryDownloadService'
-      );
-      const downloadService = GalleryDownloadService.getInstance();
-      const result = await downloadService.downloadAll(mediaItems);
-
-      if (!result.success) {
-        setError('ZIP 다운로드에 실패했습니다.');
-      }
-    } catch (error) {
-      logger.error('[GalleryRenderer] ZIP 다운로드 실패:', error);
-      setError('ZIP 다운로드에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /**
-   * GalleryRendererInterface 구현: 갤러리 렌더링
-   */
-  async render(
-    mediaItems: readonly MediaInfo[],
-    renderOptions?: GalleryRenderOptions
-  ): Promise<void> {
-    try {
-      openGallery(mediaItems, renderOptions?.startIndex ?? 0);
-
-      // viewMode 설정은 현재 타입 불일치로 인해 비활성화
-      // if (renderOptions?.viewMode && (renderOptions.viewMode === 'horizontal' || renderOptions.viewMode === 'vertical')) {
-      //   setViewMode(renderOptions.viewMode);
-      // }
-
-      logger.info(`[GalleryRenderer] Rendered ${mediaItems.length} media items`);
-    } catch (error) {
-      logger.error('[GalleryRenderer] Failed to render gallery:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * GalleryRendererInterface 구현: 갤러리 닫기
-   */
-  close(): void {
-    closeGallery();
-  }
-
-  /**
-   * GalleryRendererInterface 구현: 렌더링 상태 확인
-   */
-  isRendering(): boolean {
-    return this.isRenderingFlag;
-  }
-
-  /**
-   * 완전한 정리
-   */
-  destroy(): void {
-    logger.info('[GalleryRenderer] 완전 정리 시작');
+  private cleanupGallery(): void {
+    logger.info('[GalleryRenderer] 정리 시작');
 
     this.isRenderingFlag = false;
-    this.cleanupSignals();
-    this.cleanupDOM();
-    this.performCleanup();
+    this.cleanupContainer();
+    this.cleanupManager.executeAll();
 
-    logger.info('[GalleryRenderer] 완전 정리 완료');
+    logger.debug('[GalleryRenderer] 정리 완료');
   }
 
   /**
-   * 공통 정리 작업
+   * 컨테이너 정리
    */
-  private performCleanup(): void {
-    this.cleanupMediaElements();
-    this.restorePageState();
-  }
-
-  /**
-   * Signals 정리
-   */
-  private cleanupSignals(): void {
-    this.cleanupFunctions.forEach(cleanup => cleanup());
-    this.cleanupFunctions = [];
-  }
-
-  /**
-   * DOM 정리
-   */
-  private cleanupDOM(): void {
-    // 갤러리 관련 CSS 클래스 정리
-    document.body.classList.remove('xeg-gallery-open');
-
-    // 기존 컨테이너 정리
-    const existingContainers = document.querySelectorAll(
-      '.xeg-gallery-container, [data-gallery-element="root"]'
-    );
-    existingContainers.forEach(container => {
-      try {
-        render(null, container as HTMLElement);
-        container.remove();
-      } catch (error) {
-        logger.warn('[GalleryRenderer] Container cleanup failed:', error);
-      }
-    });
-
-    // 현재 컨테이너 정리
+  private cleanupContainer(): void {
     if (this.container) {
       try {
+        const { render } = getPreact();
         render(null, this.container);
+
         if (document.contains(this.container)) {
           this.container.remove();
         }
       } catch (error) {
-        logger.warn('[GalleryRenderer] Current container cleanup failed:', error);
+        logger.warn('[GalleryRenderer] 컨테이너 정리 실패:', error);
       }
       this.container = null;
     }
   }
 
-  /**
-   * 미디어 요소 정리
-   */
-  private cleanupMediaElements(): void {
-    try {
-      const videos = document.querySelectorAll(
-        '.xeg-gallery-container video, [data-gallery-element] video'
-      );
-      videos.forEach(video => {
-        if (video instanceof HTMLVideoElement && !video.paused) {
-          video.pause();
-          video.currentTime = 0;
-        }
-      });
-    } catch (error) {
-      logger.debug('[GalleryRenderer] Media cleanup error:', error);
+  // =============================================================================
+  // GalleryRendererInterface 구현
+  // =============================================================================
+
+  async render(
+    mediaItems: readonly MediaInfo[],
+    renderOptions?: GalleryRenderOptions
+  ): Promise<void> {
+    // unified-gallery.signals의 함수들을 사용
+    const { openGallery, setViewMode } = require('@core/state/signals/unified-gallery.signals');
+
+    openGallery(mediaItems, renderOptions?.startIndex ?? 0);
+
+    if (renderOptions?.viewMode) {
+      setViewMode(renderOptions.viewMode);
     }
+
+    logger.info(`[GalleryRenderer] ${mediaItems.length}개 미디어로 갤러리 렌더링`);
   }
 
-  /**
-   * 페이지 상태 복원
-   */
-  private restorePageState(): void {
-    requestAnimationFrame(() => {
-      try {
-        const twitterRoot = document.querySelector('#react-root');
-        if (twitterRoot instanceof HTMLElement) {
-          twitterRoot.style.removeProperty('pointer-events');
-          twitterRoot.style.removeProperty('user-select');
-        }
-      } catch (error) {
-        logger.warn('[GalleryRenderer] Page state restore failed:', error);
-      }
-    });
+  close(): void {
+    closeGallery();
+  }
+
+  isRendering(): boolean {
+    return this.isRenderingFlag;
+  }
+
+  destroy(): void {
+    logger.info('[GalleryRenderer] 완전 정리 시작');
+
+    this.stateUnsubscribe?.();
+    this.cleanupGallery();
+
+    logger.info('[GalleryRenderer] 완전 정리 완료');
   }
 }
+
+// 싱글톤 인스턴스 export
+export const galleryRenderer = new GalleryRenderer();

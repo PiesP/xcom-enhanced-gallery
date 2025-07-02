@@ -258,9 +258,9 @@
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 2px solid var(--xeg-neutral-400);
+  border: 2px solid var(--xeg-color-neutral-400);
   border-radius: 50%;
-  border-top-color: var(--xeg-text-primary);
+  border-top-color: var(--xeg-color-text-primary);
   animation: spin 1s linear infinite;
   margin-right: 10px;
 }

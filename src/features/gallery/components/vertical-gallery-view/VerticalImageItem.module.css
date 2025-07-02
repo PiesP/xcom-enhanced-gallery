@@ -39,7 +39,7 @@
 
 .imageWrapper {
   position: relative;
-  background: var(--xeg-bg-secondary);
+  background: var(--xeg-color-bg-secondary);
   /* 이미지 크기에 맞는 컨테이너 */
   width: fit-content;
   max-width: 100%;
@@ -59,14 +59,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--xeg-bg-secondary);
+  background: var(--xeg-color-bg-secondary);
   min-height: 200px;
 }
 
 .loadingSpinner {
   width: var(--xeg-spacing-lg);
   height: var(--xeg-spacing-lg);
-  border: 2px solid var(--xeg-border-light);
+  border: 2px solid var(--xeg-color-border-primary);
   border-top: 2px solid var(--xeg-color-primary);
   border-radius: var(--xeg-radius-full);
   animation: spin 1s linear infinite;
@@ -134,8 +134,8 @@
   align-items: center;
   justify-content: center;
   padding: var(--xeg-spacing-3xl) var(--xeg-spacing-lg);
-  background: var(--xeg-bg-secondary);
-  color: var(--xeg-text-secondary);
+  background: var(--xeg-color-bg-secondary);
+  color: var(--xeg-color-text-secondary);
   min-height: 200px;
 }
 
@@ -179,13 +179,13 @@
 
 .metadata {
   padding: var(--xeg-spacing-sm);
-  background: var(--xeg-bg-primary);
+  background: var(--xeg-color-bg-primary);
 }
 
 .filename {
   font-size: var(--xeg-font-size-sm);
   font-weight: var(--xeg-font-weight-medium);
-  color: var(--xeg-text-primary);
+  color: var(--xeg-color-text-primary);
   margin-bottom: var(--xeg-spacing-xs);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -194,7 +194,7 @@
 
 .fileSize {
   font-size: var(--xeg-font-size-xs);
-  color: var(--xeg-text-secondary);
+  color: var(--xeg-color-text-secondary);
 }
 
 .downloadButton {
@@ -238,8 +238,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--xeg-bg-secondary);
-  color: var(--xeg-text-secondary);
+  background: var(--xeg-color-bg-secondary);
+  color: var(--xeg-color-text-secondary);
   min-height: 200px;
 }
 
