@@ -27,7 +27,7 @@ import {
 import type { MediaInfo } from '@core/types/media.types';
 import { SimplifiedMediaExtractor } from '@features/media/extraction/services/SimplifiedMediaExtractor';
 import { logger } from '@infrastructure/logging/logger';
-import { undefinedToNull } from '@shared/utils/core/type-safety-helpers';
+import { undefinedToNull } from '../../../infrastructure/utils/type-safety-helpers';
 import { GalleryStateGuard, VideoControlBlocker } from '@shared/utils';
 import { MediaClickDetector } from '@shared/utils/media';
 import type { GalleryAppConfig, IGalleryApp } from '../types';

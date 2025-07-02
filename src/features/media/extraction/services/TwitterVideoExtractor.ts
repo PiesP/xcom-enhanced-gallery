@@ -5,10 +5,10 @@
  * 동영상 썸네일에서 실제 동영상 URL을 추출합니다.
  */
 
-import { logger } from '@infrastructure/logging/logger';
-import { undefinedToNull } from '../../../infrastructure/utils/type-safety-helpers';
+import { logger } from '../../../../infrastructure/logging/logger';
+import { undefinedToNull } from '../../../../infrastructure/utils/type-safety-helpers';
 
-import { TWITTER_API_CONFIG } from '@core/constants/MEDIA_CONSTANTS';
+import { TWITTER_API_CONFIG } from '../../../../core/constants/MEDIA_CONSTANTS';
 
 /**
  * Twitter API 응답 타입 정의
@@ -75,10 +75,10 @@ export interface TweetMediaEntry {
   tweet_id: string;
   download_url: string;
   type: 'photo' | 'video';
-  type_original: 'photo' | 'video' | 'animated_gif';
+  typeOriginal: 'photo' | 'video' | 'animated_gif';
   index: number;
-  type_index: number;
-  type_index_original: number;
+  typeIndex: number;
+  typeIndexOriginal: number;
   preview_url: string;
   media_id: string;
   media_key: string;
@@ -289,7 +289,7 @@ export class TwitterAPI {
 
       index++;
       let type = media.type;
-      const type_original = media.type;
+      const typeOriginal = media.type;
 
       typeIndex[type] = (typeIndex[type] ?? -1) + 1;
 
@@ -320,8 +320,8 @@ export class TwitterAPI {
 
       const screen_name = tweetUser.legacy?.screen_name ?? '';
       const tweet_id = tweetResult.rest_id ?? tweetLegacy.id_str ?? '';
-      const type_index = typeIndex[type] ?? 0;
-      const type_index_original = typeIndex[type_original] ?? 0;
+      const typeIndexValue = typeIndex[type] ?? 0;
+      const typeIndexOriginal = typeIndex[typeOriginal] ?? 0;
       const preview_url = media.media_url_https;
       const media_id = media.id_str;
       const media_key = media.media_key ?? '';
@@ -335,10 +335,10 @@ export class TwitterAPI {
         tweet_id,
         download_url,
         type: type as 'photo' | 'video',
-        type_original: type_original as 'photo' | 'video' | 'animated_gif',
+        typeOriginal: typeOriginal as 'photo' | 'video' | 'animated_gif',
         index,
-        type_index,
-        type_index_original,
+        typeIndex: typeIndexValue,
+        typeIndexOriginal,
         preview_url,
         media_id,
         media_key,

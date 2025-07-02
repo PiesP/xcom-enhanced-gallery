@@ -9,7 +9,6 @@
 import type { MediaInfo } from '@core/types/media.types';
 import { logger } from '@infrastructure/logging/logger';
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { clearManagedTimer, createManagedTimeout } from '@shared/utils/timer-utils';
 
 const { useEffect, useRef, useCallback } = getPreactHooks();
 
@@ -23,6 +22,18 @@ export function useGalleryThemeAndScroll(
 ) {
   const themeTimerRef = useRef<string | null>(null);
   const scrollTimerRef = useRef<string | null>(null);
+
+  // 타이머 헬퍼 함수들
+  const clearTimer = (timerId: string | null) => {
+    if (timerId) {
+      clearTimeout(timerId);
+    }
+  };
+
+  const createTimeout = (callback: () => void, delay: number): string => {
+    const timerId = setTimeout(callback, delay);
+    return timerId as unknown as string;
+  };
 
   /**
    * 갤러리 초기화 - 단순화된 버전
@@ -85,12 +96,12 @@ export function useGalleryThemeAndScroll(
 
         // 타이머 정리
         if (themeTimerRef.current) {
-          clearManagedTimer(themeTimerRef.current);
+          clearTimer(themeTimerRef.current);
           themeTimerRef.current = null;
         }
 
         if (scrollTimerRef.current) {
-          clearManagedTimer(scrollTimerRef.current);
+          clearTimer(scrollTimerRef.current);
           scrollTimerRef.current = null;
         }
 
@@ -106,16 +117,16 @@ export function useGalleryThemeAndScroll(
    */
   useEffect(() => {
     if (scrollTimerRef.current) {
-      clearManagedTimer(scrollTimerRef.current);
+      clearTimer(scrollTimerRef.current);
     }
 
-    scrollTimerRef.current = createManagedTimeout(() => {
+    scrollTimerRef.current = createTimeout(() => {
       updateScrollPosition();
     }, 100);
 
     return () => {
       if (scrollTimerRef.current) {
-        clearManagedTimer(scrollTimerRef.current);
+        clearTimer(scrollTimerRef.current);
         scrollTimerRef.current = null;
       }
     };

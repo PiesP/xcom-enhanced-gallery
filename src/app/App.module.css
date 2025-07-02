@@ -23,32 +23,32 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: var(--xeg-bg-overlay);
+  background-color: var(--xeg-color-overlay-strong);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--xeg-z-gallery-overlay);
-  transition: var(--xeg-transition-opacity);
+  z-index: var(--xeg-z-modal);
+  transition: var(--xeg-transition-normal);
 }
 
 /**
- * 테마별 오버레이 스타일
+ * 테마별 오버레이 스타일 (v2 디자인 토큰 사용)
  */
 .galleryOverlay.themeLight {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--xeg-color-overlay-light);
 }
 
 .galleryOverlay.themeDark {
-  background-color: rgba(0, 0, 0, 0.95);
+  background-color: var(--xeg-color-overlay-strong);
 }
 
 .galleryOverlay.themeAuto {
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: var(--xeg-color-overlay-medium);
 }
 
 @media (prefers-color-scheme: light) {
   .galleryOverlay.themeAuto {
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: var(--xeg-color-overlay-light);
   }
 }
 
@@ -72,8 +72,8 @@
  */
 .content {
   position: relative;
-  max-width: var(--xeg-modal-max-width);
-  max-height: var(--xeg-modal-max-height);
+  max-width: 90vw;
+  max-height: 90vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,18 +84,19 @@
  * object-fit: contain을 사용하여 미디어의 원본 비율을 유지합니다.
  */
 .media {
-  max-width: var(--xeg-modal-max-width);
-  max-height: var(--xeg-modal-max-height);
+  max-width: 90vw;
+  max-height: 90vh;
   object-fit: contain;
-  border-radius: var(--xeg-radius-sm);
-  transition: var(--xeg-transition-transform);
+  border-radius: var(--xeg-radius-md);
+  transition: var(--xeg-transition-normal);
+  box-shadow: var(--xeg-shadow-xl);
 }
 
 /**
  * 로딩 상태 텍스트
  */
 .loading {
-  color: var(--xeg-text-inverse);
+  color: var(--xeg-color-text-inverse);
   font-size: var(--xeg-font-size-lg);
   font-weight: var(--xeg-font-weight-medium);
 }

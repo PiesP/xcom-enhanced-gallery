@@ -5,7 +5,10 @@
 
 import { Button } from '@shared/components/ui/Button/Button';
 import type { ComponentChildren } from '@shared/types/global.types';
-import { safeEventHandler, stringWithDefault } from '@shared/utils/core/type-safety-helpers';
+import {
+  safeEventHandler,
+  stringWithDefault,
+} from '../../../../../infrastructure/utils/type-safety-helpers';
 import { getPreactHooks } from '@infrastructure/external/vendors';
 import styles from '../VerticalGalleryView.module.css';
 

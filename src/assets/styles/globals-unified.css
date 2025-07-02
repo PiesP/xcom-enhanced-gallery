@@ -4,8 +4,7 @@
  * @version 1.0.0
  */
 
-/* Import unified design tokens v2 */
-@import '../../shared/styles/design-tokens-v2.css';
+/* Design tokens are imported separately in globals.ts */
 
 /* ===========================================
  * 전역 리셋 및 기본 스타일

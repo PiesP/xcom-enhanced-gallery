@@ -5,10 +5,7 @@
  */
 
 import { logger } from '../../../../infrastructure/logging/logger';
-import {
-  TwitterAPI,
-  type TweetMediaEntry,
-} from '../../../../shared/utils/patterns/video-extractor';
+import { TwitterAPI, type TweetMediaEntry } from './TwitterVideoExtractor';
 import type { MediaInfo } from '../../../../core/types/media.types';
 import type {
   TweetInfo,

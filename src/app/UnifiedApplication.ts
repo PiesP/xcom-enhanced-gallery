@@ -9,7 +9,7 @@
  * Clean Architecture App Layer - 애플리케이션 생명주기 관리
  */
 
-import { removeUndefinedProperties } from '../shared/utils/core/type-safety-helpers';
+import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
 import { BrowserManager } from '../shared/utils/BrowserManager';
 import { designSystemManager } from '../shared/design-system';
 

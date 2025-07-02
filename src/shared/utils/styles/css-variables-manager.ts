@@ -8,6 +8,7 @@
  */
 
 import { logger } from '../../../infrastructure/logging/logger';
+import { combineClasses, toggleClass, updateComponentState } from './style-utils';
 import type { MediaType } from '../../../infrastructure/types/media.types';
 
 /**
@@ -15,13 +16,13 @@ import type { MediaType } from '../../../infrastructure/types/media.types';
  * Variables that must be available at runtime
  */
 const CRITICAL_CSS_VARIABLES = {
-  // === Core Color System ===
-  '--xeg-color-primary': '#1d9bf0',
-  '--xeg-color-primary-hover': '#1a8cd8',
-  '--xeg-color-text-primary': '#0f1419',
-  '--xeg-color-text-secondary': '#536471',
+  // === Core Color System (compatible with design-tokens.css) ===
+  '--xeg-color-primary': '#3b82f6', // design-tokens primary-500
+  '--xeg-color-primary-hover': '#2563eb', // design-tokens primary-600
+  '--xeg-color-text-primary': '#171717', // design-tokens neutral-900
+  '--xeg-color-text-secondary': '#525252', // design-tokens neutral-600
   '--xeg-color-surface': '#ffffff',
-  '--xeg-color-border-primary': '#e5e7eb',
+  '--xeg-color-border-primary': '#e5e5e5', // design-tokens neutral-200
 
   // === Core Spacing System ===
   '--xeg-spacing-xs': '4px',
@@ -295,20 +296,6 @@ export const setCSSVariables = (variables: Record<string, string>) =>
  */
 
 /**
- * Conditional class name combination
- */
-export function combineClasses(...classes: (string | undefined | false | null)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
-
-/**
- * Conditional class toggle
- */
-export function toggleClass(element: HTMLElement, className: string, condition: boolean): void {
-  element.classList.toggle(className, condition);
-}
-
-/**
  * Set CSS variable on specific element
  */
 export function setElementCSSVariable(element: HTMLElement, variable: string, value: string): void {
@@ -325,20 +312,6 @@ export function setElementCSSVariables(
 ): void {
   Object.entries(variables).forEach(([key, value]) => {
     setElementCSSVariable(element, key, value);
-  });
-}
-
-/**
- * Component state class management
- */
-export function updateComponentState(
-  element: HTMLElement,
-  baseClass: string,
-  states: Record<string, boolean>
-): void {
-  Object.entries(states).forEach(([state, active]) => {
-    const stateClass = `${baseClass}--${state}`;
-    toggleClass(element, stateClass, active);
   });
 }
 

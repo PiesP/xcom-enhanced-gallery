@@ -10,19 +10,20 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: var(--xeg-z-gallery, 9999);
+  z-index: var(--xeg-z-modal);
 
-  /* Glassmorphism 디자인 */
-  background: rgba(0, 0, 0, 0.8);
+  /* Modern Glassmorphism 디자인 */
+  background: var(--xeg-color-overlay-strong);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--xeg-spacing-lg, 24px);
+  padding: var(--xeg-spacing-lg);
 
   /* 애니메이션 */
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn var(--xeg-duration-normal) var(--xeg-easing-easeOut);
 }
 
 /* 갤러리 컨테이너 */
@@ -33,14 +34,13 @@
   width: 100%;
   height: 100%;
 
-  /* Glassmorphism 컨테이너 */
-  background: rgba(255, 255, 255, 0.1);
+  /* Modern Glassmorphism 컨테이너 */
+  background: var(--xeg-color-bg-glass-light);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--xeg-color-border-glass);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--xeg-shadow-xl);
 
   display: flex;
   flex-direction: column;
@@ -57,15 +57,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--xeg-spacing-md, 16px);
+  padding: var(--xeg-spacing-md);
 
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.6) 0%,
-    rgba(0, 0, 0, 0.3) 50%,
+    var(--xeg-color-overlay-medium) 0%,
+    var(--xeg-color-overlay-light) 50%,
     transparent 100%
   );
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
 }
 
 /* 닫기 버튼 */
@@ -73,22 +73,24 @@
   width: 40px;
   height: 40px;
   border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 24px;
-  font-weight: bold;
+  border-radius: var(--xeg-radius-full);
+  background: var(--xeg-color-bg-glass-light);
+  color: var(--xeg-color-text-inverse);
+  font-size: var(--xeg-font-size-xl);
+  font-weight: var(--xeg-font-weight-bold);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--xeg-transition-normal);
 
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--xeg-shadow-lg);
 }
 
 .closeButton:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--xeg-color-bg-glass-strong);
   transform: scale(1.1);
+  box-shadow: var(--xeg-shadow-xl);
 }
 
 /* 네비게이션 버튼 */
@@ -96,8 +98,8 @@
   width: 40px;
   height: 40px;
   border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--xeg-radius-full);
+  background: var(--xeg-color-bg-glass-light);
   color: white;
   font-size: 20px;
   cursor: pointer;

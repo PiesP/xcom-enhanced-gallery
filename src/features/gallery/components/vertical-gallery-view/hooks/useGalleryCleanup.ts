@@ -8,7 +8,6 @@
 
 import { logger } from '@infrastructure/logging/logger';
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { clearManagedTimer } from '@shared/utils/timer-utils';
 
 const { useCallback, useEffect } = getPreactHooks();
 
@@ -23,6 +22,13 @@ export function useGalleryCleanup({
   hideTimeoutRef,
   themeCleanup,
 }: UseGalleryCleanupOptions) {
+  // 타이머 헬퍼 함수
+  const clearTimer = (timerId: string | null) => {
+    if (timerId) {
+      clearTimeout(timerId);
+    }
+  };
+
   // 미디어 요소 정리
   const cleanupMediaElements = useCallback(() => {
     try {
@@ -105,7 +111,7 @@ export function useGalleryCleanup({
   // 타이머 정리
   const cleanupTimers = useCallback(() => {
     if (hideTimeoutRef.current) {
-      clearManagedTimer(hideTimeoutRef.current);
+      clearTimer(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
   }, [hideTimeoutRef]);

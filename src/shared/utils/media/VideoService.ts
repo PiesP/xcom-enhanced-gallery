@@ -6,7 +6,7 @@
  * Clean Architecture 원칙에 따라 비디오 관련 모든 기능을 통합 관리
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '../../../infrastructure/logging/logger';
 
 /**
  * 갤러리 트리거 버튼 정보
@@ -442,8 +442,3 @@ export class VideoService {
  * 전역 인스턴스
  */
 export const videoService = VideoService.getInstance();
-
-// 기존 호환성을 위한 별칭
-export const UnifiedVideoManager = VideoService;
-export const VideoStateManager = VideoService;
-export const VideoControlUtil = VideoService;

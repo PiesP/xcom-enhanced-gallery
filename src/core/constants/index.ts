@@ -18,3 +18,6 @@ export * from './ENDPOINTS_CONSTANTS';
 
 // Service configuration constants
 export * from './SERVICE_CONSTANTS';
+
+// DOM selector constants
+export * from './STABLE_SELECTORS';

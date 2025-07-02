@@ -167,14 +167,20 @@ export function safeClickedIndex(index: number | undefined): number | undefined 
  * 안전한 객체 빌더
  */
 export function buildSafeObject<T extends Record<string, unknown>>(
-  builderFn: (builder: { set<K extends keyof T>(key: K, value: T[K]): void }) => void
+  builderFn: (builder: {
+    set<K extends keyof T>(
+      key: K,
+      value: T[K]
+    ): { set<K extends keyof T>(key: K, value: T[K]): unknown };
+  }) => void
 ): Partial<T> {
   const result: Partial<T> = {};
   const builder = {
-    set<K extends keyof T>(key: K, value: T[K]): void {
+    set<K extends keyof T>(key: K, value: T[K]) {
       if (value !== undefined) {
         result[key] = value;
       }
+      return builder;
     },
   };
 

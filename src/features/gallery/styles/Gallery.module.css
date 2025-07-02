@@ -1,34 +1,21 @@
 /**
- * Gallery component styles - Unified Subdued Color System
+ * Gallery component styles - Unified Design Token System
  * CSS Modules implementation for X.com Enhanced Gallery
- * @version 1.1.0 - 통합된 차분한 색상 시스템 적용
+ * @version 2.0.0 - 통합된 디자인 토큰 시스템 적용
  *
  * @description
  * X.com Enhanced Gallery의 갤러리 뷰어 컴포넌트를 위한 스타일 정의입니다.
- * variables.css에서 정의된 통합 색상 시스템을 사용하여 CSS Modules를 통한
+ * design-tokens.css에서 정의된 통합 디자인 토큰을 사용하여 CSS Modules를 통한
  * 스타일 캡슐화를 제공합니다.
  *
  * @features
- * - 통합된 neutral/slate 색상 팔레트 사용
- * - CSS Modules를 통한 스타일 격리
- * - 테마별 변형 지원 (light/dark/auto)
- * - 반응형 디자인 및 접근성 /**
- * Gallery component styles - Unified Subdued Color System
- * CSS Modules implementation for X.com Enhanced Gallery
- * @version 1.1.0 - 통합된 차분한 색상 시스템 적용
- *
- * @description
- * X.com Enhanced Gallery의 갤러리 뷰어 컴포넌트를 위한 스타일 정의입니다.
- * variables.css에서 정의된 통합 색상 시스템을 사용하여 CSS Modules를 통한
- * 스타일 캡슐화를 제공합니다.
- *
- * @features
- * - 통합된 neutral/slate 색상 팔레트 사용
+ * - 통합된 디자인 토큰 시스템 사용
  * - CSS Modules를 통한 스타일 격리
  * - 테마별 변형 지원 (light/dark/auto)
  * - 반응형 디자인 및 접근성
  * @author X.com Enhanced Gallery Team
  */
+*/
 
 /**
  * 갤러리 뷰어 오버레이 - 현대적 glassmorphism 디자인

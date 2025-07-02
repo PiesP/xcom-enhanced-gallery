@@ -4,7 +4,9 @@
  * Centralized management of all global CSS files
  */
 
-// Unified design system (tokens + global styles)
+// Unified design system (v2 tokens are now the main design-tokens.css)
+import '@shared/styles/design-tokens.css';
+import '@shared/styles/utilities.css';
 import '@assets/styles/globals-unified.css';
 
 // Auto theme system

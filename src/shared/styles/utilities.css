@@ -293,20 +293,6 @@
 
 /* ===== Accessibility ===== */
 
-.xeg-high-contrast {
-  --xeg-text-primary: #000000;
-  --xeg-bg-primary: #ffffff;
-  --xeg-border-light: #000000;
-}
-
-@media (prefers-contrast: high) {
-  :root {
-    --xeg-text-primary: #000000;
-    --xeg-bg-primary: #ffffff;
-    --xeg-border-light: #000000;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .xeg-transition,
   .xeg-transition-fast,
@@ -316,19 +302,5 @@
   .xeg-scale-in {
     animation: none;
     transition: none;
-  }
-}
-
-/* ===== Dark Theme Support ===== */
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.xeg-theme-light) {
-    --xeg-text-primary: #e7e9ea;
-    --xeg-text-secondary: #71767b;
-    --xeg-text-muted: #536471;
-    --xeg-bg-primary: #15202b;
-    --xeg-bg-secondary: #1c2732;
-    --xeg-border-light: #2f3336;
-    --xeg-hover-bg: #1c2732;
   }
 }

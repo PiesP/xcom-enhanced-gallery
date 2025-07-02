@@ -4,7 +4,7 @@
  *
  * @description
  * 세로형 갤러리 뷰 컴포넌트의 스타일 정의입니다.
- * variables.css에서 정의된 통합 색상 시스템을 사용하여
+ * design-tokens.css에서 정의된 통합 디자인 토큰 시스템을 사용하여
  * 차분하고 일관된 시각적 경험을 제공합니다.
  *
  * @features

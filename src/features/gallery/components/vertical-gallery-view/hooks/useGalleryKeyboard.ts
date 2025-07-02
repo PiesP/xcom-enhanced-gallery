@@ -8,7 +8,6 @@
 
 import { logger } from '@infrastructure/logging/logger';
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { clearManagedTimer, createRefManagedTimeout } from '@shared/utils/timer-utils';
 
 const { useEffect, useCallback } = getPreactHooks();
 
@@ -31,14 +30,31 @@ export function useGalleryKeyboard({
   hideTimeoutRef,
   isToolbarHovering,
 }: UseGalleryKeyboardOptions) {
+  // 타이머 헬퍼 함수들
+  const clearTimer = (timerId: string | null) => {
+    if (timerId) {
+      clearTimeout(timerId);
+    }
+  };
+
+  const createRefTimeout = (
+    ref: { current: string | null },
+    callback: () => void,
+    delay: number
+  ) => {
+    const timerId = setTimeout(callback, delay);
+    ref.current = timerId as unknown as string;
+    return timerId;
+  };
+
   // UI 자동 숨김 타이머 설정
   const setAutoHideTimer = useCallback(() => {
     if (hideTimeoutRef.current) {
-      clearManagedTimer(hideTimeoutRef.current);
+      clearTimer(hideTimeoutRef.current);
     }
     onToggleUI(true);
     if (!isToolbarHovering) {
-      createRefManagedTimeout(
+      createRefTimeout(
         hideTimeoutRef,
         () => {
           onToggleUI(false);

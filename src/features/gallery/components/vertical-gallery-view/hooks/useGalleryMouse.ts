@@ -8,7 +8,6 @@
 
 import { logger } from '@infrastructure/logging/logger';
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { clearManagedTimer, createRefManagedTimeout } from '@shared/utils/timer-utils';
 
 const { useCallback } = getPreactHooks();
 
@@ -25,13 +24,30 @@ export function useGalleryMouse({
   isToolbarHovering,
   hideTimeoutRef,
 }: UseGalleryMouseOptions) {
+  // 타이머 헬퍼 함수들
+  const clearTimer = (timerId: string | null) => {
+    if (timerId) {
+      clearTimeout(timerId);
+    }
+  };
+
+  const createRefTimeout = (
+    ref: { current: string | null },
+    callback: () => void,
+    delay: number
+  ) => {
+    const timerId = setTimeout(callback, delay);
+    ref.current = timerId as unknown as string;
+    return timerId;
+  };
+
   // 툴바 마우스 엔터 핸들러
   const handleToolbarMouseEnter = useCallback(() => {
     onToggleUI(true);
 
     // 기존 타이머 정리
     if (hideTimeoutRef.current) {
-      clearManagedTimer(hideTimeoutRef.current);
+      clearTimer(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
   }, [onToggleUI, hideTimeoutRef]);
@@ -40,10 +56,10 @@ export function useGalleryMouse({
   const handleToolbarMouseLeave = useCallback(() => {
     // 툴바를 벗어나면 0.5초 후 숨김
     if (hideTimeoutRef.current) {
-      clearManagedTimer(hideTimeoutRef.current);
+      clearTimer(hideTimeoutRef.current);
     }
 
-    createRefManagedTimeout(
+    createRefTimeout(
       hideTimeoutRef,
       () => {
         onToggleUI(false);
@@ -62,13 +78,13 @@ export function useGalleryMouse({
 
         // 기존 타이머 정리
         if (hideTimeoutRef.current) {
-          clearManagedTimer(hideTimeoutRef.current);
+          clearTimer(hideTimeoutRef.current);
           hideTimeoutRef.current = null;
         }
 
         // 툴바 호버 상태가 아닐 때만 자동 숨김 타이머 설정
         if (!isToolbarHovering) {
-          createRefManagedTimeout(
+          createRefTimeout(
             hideTimeoutRef,
             () => {
               onToggleUI(false);
@@ -80,7 +96,7 @@ export function useGalleryMouse({
         // 상단 100px 외부: 툴바 호버 상태 확인 후 즉시 숨김
         if (!isToolbarHovering) {
           if (hideTimeoutRef.current) {
-            clearManagedTimer(hideTimeoutRef.current);
+            clearTimer(hideTimeoutRef.current);
             hideTimeoutRef.current = null;
           }
           onToggleUI(false);

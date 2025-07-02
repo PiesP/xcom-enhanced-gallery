@@ -31,23 +31,12 @@ export {
   detectLightBackground,
   // Media utilities
   enhancedImageFilter,
-  extractTweetId,
   extractTweetInfoFromUrl,
-  // Filename utilities
-  generateMediaFilename,
-  generateZipFilename,
   // Accessibility utilities
   getRelativeLuminance,
-  getTweetIdFromContainer,
-  getVideoMediaEntry,
-  getVideoUrlFromThumbnail,
-  // Twitter utilities
-  isVideoThumbnail,
   meetsWCAGAA,
   meetsWCAGAAA,
   parseColor,
-  type TweetInfo,
-  type TweetMediaEntry,
 } from './utils';
 
 // Types (중복 방지를 위해 특정 타입만 export)

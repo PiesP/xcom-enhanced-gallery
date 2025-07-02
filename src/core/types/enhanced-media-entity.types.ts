@@ -6,7 +6,7 @@
  * 불변성, 타입 안전성, 비즈니스 규칙 캡슐화를 완전 구현
  */
 
-import { buildSafeObject } from '@shared/utils/core/type-safety-helpers';
+import { buildSafeObject } from '../../infrastructure/utils/type-safety-helpers';
 import type { DomainEntity, ValueObject } from './architecture.types';
 
 // ================================
@@ -495,21 +495,20 @@ export class EnhancedMediaEntity implements DomainEntity {
       tweetUrl?: string;
       metadata?: Record<string, unknown>;
     }>(builder => {
-      builder
-        .set('id', this.id)
-        .set('url', this.url.value)
-        .set('type', this.type.value)
-        .set('filename', updates.filename ?? this.filename.value)
-        .set('width', this.dimensions?.value.width)
-        .set('height', this.dimensions?.value.height)
-        .set('originalUrl', this.originalUrl?.value)
-        .set('thumbnailUrl', this.thumbnailUrl?.value)
-        .set('fileSize', updates.fileSize ?? this.fileSize)
-        .set('alt', updates.alt ?? this.alt)
-        .set('tweetId', this.tweetId)
-        .set('tweetUsername', this.tweetUsername)
-        .set('tweetUrl', this.tweetUrl)
-        .set('metadata', { ...this.metadata, ...updates.metadata });
+      builder.set('id', this.id);
+      builder.set('url', this.url.value);
+      builder.set('type', this.type.value);
+      builder.set('filename', updates.filename ?? this.filename.value);
+      builder.set('width', this.dimensions?.value.width);
+      builder.set('height', this.dimensions?.value.height);
+      builder.set('originalUrl', this.originalUrl?.value);
+      builder.set('thumbnailUrl', this.thumbnailUrl?.value);
+      builder.set('fileSize', updates.fileSize ?? this.fileSize);
+      builder.set('alt', updates.alt ?? this.alt);
+      builder.set('tweetId', this.tweetId);
+      builder.set('tweetUsername', this.tweetUsername);
+      builder.set('tweetUrl', this.tweetUrl);
+      builder.set('metadata', { ...this.metadata, ...updates.metadata });
     });
 
     return new EnhancedMediaEntity(
@@ -645,21 +644,20 @@ export function toMediaInfo(entity: EnhancedMediaEntity): {
     tweetUrl?: string;
     metadata?: Record<string, unknown>;
   }>(builder => {
-    builder
-      .set('id', entity.id)
-      .set('url', entity.url.value)
-      .set('originalUrl', entity.originalUrl?.value)
-      .set('type', entity.type.value)
-      .set('filename', entity.filename.value)
-      .set('fileSize', entity.fileSize)
-      .set('width', entity.dimensions?.value.width)
-      .set('height', entity.dimensions?.value.height)
-      .set('thumbnailUrl', entity.thumbnailUrl?.value)
-      .set('alt', entity.alt)
-      .set('tweetUsername', entity.tweetUsername)
-      .set('tweetId', entity.tweetId)
-      .set('tweetUrl', entity.tweetUrl)
-      .set('metadata', entity.metadata);
+    builder.set('id', entity.id);
+    builder.set('url', entity.url.value);
+    builder.set('originalUrl', entity.originalUrl?.value);
+    builder.set('type', entity.type.value);
+    builder.set('filename', entity.filename.value);
+    builder.set('fileSize', entity.fileSize);
+    builder.set('width', entity.dimensions?.value.width);
+    builder.set('height', entity.dimensions?.value.height);
+    builder.set('thumbnailUrl', entity.thumbnailUrl?.value);
+    builder.set('alt', entity.alt);
+    builder.set('tweetUsername', entity.tweetUsername);
+    builder.set('tweetId', entity.tweetId);
+    builder.set('tweetUrl', entity.tweetUrl);
+    builder.set('metadata', entity.metadata);
   });
 
   return result as {

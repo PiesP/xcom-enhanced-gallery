@@ -6,7 +6,7 @@
 
 import type { MediaInfo, MediaItem } from '@core/types/media.types';
 import { logger } from '@infrastructure/logging/logger';
-import { safeParseInt, undefinedToNull } from '@shared/utils/core/type-safety-helpers';
+import { safeParseInt, undefinedToNull } from '../utils/type-safety-helpers';
 
 /**
  * 파일명 생성 옵션

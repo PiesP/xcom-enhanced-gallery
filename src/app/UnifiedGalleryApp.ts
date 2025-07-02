@@ -8,7 +8,7 @@
  * - 상태 관리는 기존 GalleryStateManager 활용
  */
 
-import { removeUndefinedProperties } from '@shared/utils/core/type-safety-helpers';
+import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
 
 import { SERVICE_KEYS } from '@core/constants';
 import type { GalleryRenderer } from '@core/interfaces/gallery.interfaces';
