@@ -1,6 +1,8 @@
 /**
  * @fileoverview Event Manager - 이벤트 리스너 관리
  * @version 1.0.0
+ * @deprecated 이 클래스는 더 이상 사용되지 않습니다. UnifiedResourceManager를 사용하세요.
+ * @see UnifiedResourceManager in @infrastructure/managers
  */
 
 import { logger } from '@infrastructure/logging/logger';

@@ -185,7 +185,7 @@ export class GalleryEventCoordinator {
         elementTag: element.tagName,
       });
 
-      // SmartDebouncer로 지능적인 디바운싱 처리
+      // 디바운서로 지능적인 디바운싱 처리
       this.debouncer.execute(context);
     } catch (error) {
       logger.error('GalleryEventCoordinator: Failed to handle media click:', error);

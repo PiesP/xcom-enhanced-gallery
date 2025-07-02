@@ -1,20 +1,32 @@
 /**
- * Infrastructure Memory Management Barrel Export
+ * Infrastructure Memory Management - Unified Access Point
  *
- * @deprecated 이 모듈들은 deprecated 되었습니다.
- * @see UnifiedResourceManager in @infrastructure/managers 사용 권장
- *
- * 메모리 자원 관리를 위한 유틸리티들을 export합니다.
+ * UnifiedResourceManager로 통합되었으므로 해당 모듈 사용을 권장합니다.
+ * @see UnifiedResourceManager in @infrastructure/managers
  */
 
-// @deprecated Use UnifiedResourceManager instead
-export * from './UnifiedMemoryManager';
+// 통합된 리소스 관리자로 리다이렉트
+export {
+  UnifiedResourceManager,
+  createManagedTimer,
+  createManagedInterval,
+  addManagedEventListener,
+  createManagedObserver,
+  createManagedController,
+  createManagedObjectURL,
+  registerManagedMemoryResource,
+  releaseResource,
+  releaseResourcesByContext,
+  cleanupAllResources,
+} from '@infrastructure/managers/UnifiedResourceManager';
 
-// @deprecated Use UnifiedResourceManager instead
-export * from './ResourcePool';
-
-// @deprecated Use UnifiedResourceManager instead
-export * from './EventManager';
-
-// 편의를 위한 별칭 export
-export { ResourcePool as resourcePool } from './ResourcePool';
+// 메모리 상태 관리
+export {
+  UnifiedMemoryManager,
+  memoryManager,
+  getMemoryInfo,
+  getMemoryUsageMB,
+  getMemoryStatus,
+  triggerGarbageCollection,
+  checkMemoryAndCleanup,
+} from './UnifiedMemoryManager';

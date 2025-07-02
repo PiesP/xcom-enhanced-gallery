@@ -69,12 +69,13 @@ module.exports = {
           '^src/main[.]ts$', // 메인 진입점
           '^src/.*/index[.]ts$', // 배럴 export 파일들
           'REFACTORING_PLAN[.]ts$', // 리팩토링 계획 문서
-          '^src/shared/utils/timer-utils[.]ts$', // 실제 사용되는 유틸리티
           '^src/core/constants/STABLE_SELECTORS[.]ts$', // 실제 사용되는 상수
           '^src/core/services/cache/EnhancedMediaCacheService[.]ts$',
           // 레거시 서비스들 (deprecated, 직접 사용되지 않음)
           '^src/features/media/services/(MediaExtractionService|StableMediaExtractionService)[.]ts$',
           '^src/app/coordinators/MediaExtractionCoordinator[.]ts$',
+          // Deprecated 메모리 관리 모듈들 (UnifiedResourceManager로 대체됨)
+          '^src/infrastructure/memory/(ResourcePool|EventManager)[.]ts$',
         ],
       },
       to: {},

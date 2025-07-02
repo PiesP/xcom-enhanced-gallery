@@ -6265,19 +6265,15 @@
     {
       "source": "src/infrastructure/memory/EventManager.ts",
       "dependencies": [],
-      "dependents": [
-        "src/infrastructure/memory/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
       "source": "src/infrastructure/memory/ResourcePool.ts",
       "dependencies": [],
-      "dependents": [
-        "src/infrastructure/memory/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -6292,40 +6288,6 @@
     {
       "source": "src/infrastructure/memory/index.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./EventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/memory/EventManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ResourcePool",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/memory/ResourcePool.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./UnifiedMemoryManager",
@@ -8119,19 +8081,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/diagnostics/InitializationMonitor.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/types/css-modules.d.ts",
       "dependencies": [],
       "dependents": [],
@@ -8147,23 +8096,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/utils/diagnostics/InitializationMonitor.ts",
-        "to": "src/shared/utils/diagnostics/InitializationMonitor.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 206,
-    "totalDependenciesCruised": 350,
+    "totalCruised": 205,
+    "totalDependenciesCruised": 348,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
@@ -8257,7 +8196,7 @@
           "severity": "info",
           "from": {
             "orphan": true,
-            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/shared/utils/timer-utils[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/core/services/cache/EnhancedMediaCacheService[.]ts$|^src/features/media/services/(MediaExtractionService|StableMediaExtractionService)[.]ts$|^src/app/coordinators/MediaExtractionCoordinator[.]ts$"
+            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/core/services/cache/EnhancedMediaCacheService[.]ts$|^src/features/media/services/(MediaExtractionService|StableMediaExtractionService)[.]ts$|^src/app/coordinators/MediaExtractionCoordinator[.]ts$|^src/infrastructure/memory/(ResourcePool|EventManager)[.]ts$"
           },
           "to": {},
           "scope": "module"

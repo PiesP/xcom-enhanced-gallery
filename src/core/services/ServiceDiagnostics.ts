@@ -43,15 +43,16 @@ export async function diagnoseServiceManager(): Promise<void> {
       scrollLock: scrollLock ? '성공' : '실패',
     });
 
-    // 5. 메모리 사용량 (infrastructure ResourcePool 사용)
+    // 5. 메모리 사용량 (infrastructure UnifiedResourceManager 사용)
     try {
-      const { ResourcePool } = await import('@infrastructure/memory');
-      const memoryUsage = ResourcePool.getInstance().getUsage();
-      if (memoryUsage) {
-        logger.info('💾 메모리 사용량:', memoryUsage);
+      const { UnifiedResourceManager } = await import('@infrastructure/managers');
+      const resourceManager = UnifiedResourceManager.getInstance();
+      const resourceCount = resourceManager.getResourceCount();
+      if (resourceCount > 0) {
+        logger.info('💾 리소스 사용량:', { activeResources: resourceCount });
       }
     } catch (error) {
-      logger.warn('메모리 사용량 조회 실패:', error);
+      logger.warn('리소스 사용량 조회 실패:', error);
     }
 
     logger.info('✅ ServiceManager 진단 완료');

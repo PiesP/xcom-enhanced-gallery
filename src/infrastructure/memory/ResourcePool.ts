@@ -1,6 +1,8 @@
 /**
  * @fileoverview Resource Pool - 메모리 자원 통합 관리
  * @version 2.1.0 - Simplified naming
+ * @deprecated 이 클래스는 더 이상 사용되지 않습니다. UnifiedResourceManager를 사용하세요.
+ * @see UnifiedResourceManager in @infrastructure/managers
  *
  * 모든 메모리 자원을 통합 관리하는 리소스 풀
  * Clean Architecture 원칙에 따라 Infrastructure 레이어에 위치

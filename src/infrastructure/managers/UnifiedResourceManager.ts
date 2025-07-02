@@ -308,6 +308,13 @@ export class UnifiedResourceManager implements Cleanupable {
   }
 
   /**
+   * 현재 관리 중인 리소스 수 조회
+   */
+  public getResourceCount(): number {
+    return this.resources.size;
+  }
+
+  /**
    * 유니크 ID 생성
    */
   private generateId(type: string): string {
