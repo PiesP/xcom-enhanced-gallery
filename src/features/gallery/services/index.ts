@@ -5,7 +5,9 @@
  * Feature layer 패턴을 따라 shared, core, infrastructure 사용 가능합니다.
  */
 
-// Gallery Download Service
+// Gallery Services
+export { GalleryService, galleryService } from './GalleryService';
+export { GalleryEventCoordinator, galleryEventCoordinator } from './GalleryEventCoordinator';
 export { GalleryDownloadService } from './GalleryDownloadService';
 
 // Re-export types for convenience

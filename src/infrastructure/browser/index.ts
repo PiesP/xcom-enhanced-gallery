@@ -3,3 +3,4 @@
  */
 
 export * from './browser-utils';
+export { BrowserManager, browserUtils } from './BrowserManager';

@@ -44,8 +44,11 @@ export * from './error-handling';
 // Performance utilities
 export * from './performance';
 
-// Browser management (통합 매니저)
-export { BrowserManager, browserManager } from './BrowserManager';
+// Style utilities
+export * from './styles';
 
 // Initialization guard
-export { InitializationGuard, initGuard } from './InitializationGuard';
+export { InitializationGuard } from './InitializationGuard';
+
+// Common utilities
+export * from './common';

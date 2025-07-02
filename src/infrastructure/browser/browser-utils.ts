@@ -72,18 +72,7 @@ export function getCurrentUrlInfo(): {
   };
 }
 
-/**
- * 스크롤 위치 가져오기
- */
-export function getScrollPosition(): { x: number; y: number } {
-  const win = safeWindow();
-  if (!win) return { x: 0, y: 0 };
-
-  return {
-    x: win.scrollX || 0,
-    y: win.scrollY || 0,
-  };
-}
+// Legacy scroll position function removed - use @infrastructure/dom instead
 
 /**
  * 스크롤 위치 설정

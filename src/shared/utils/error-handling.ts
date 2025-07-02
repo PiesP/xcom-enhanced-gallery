@@ -16,14 +16,3 @@ export interface SafeOperationResult<T> {
   data?: T;
   error?: Error;
 }
-
-/**
- * 에러 바운더리 클래스
- *
- * 레거시 호환성을 위해 유지되지만 Core 레이어의 에러 핸들링 사용 권장
- * @deprecated safeAsync, safeSync from @core/error/UnifiedErrorHandler 사용 권장
- */
-export class ErrorBoundary {
-  // 모든 메서드는 Core 레이어의 통합 에러 핸들러로 대체됨
-  // @deprecated - 직접 사용하지 말고 safeAsync, safeSync 사용
-}

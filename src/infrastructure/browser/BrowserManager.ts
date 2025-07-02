@@ -1,0 +1,176 @@
+/**
+ * @fileoverview Browser Manager
+ * @version 2.0.0 - Infrastructure layer
+ *
+ * 브라우저 관련 유틸리티를 관리하는 Infrastructure 레이어 서비스
+ * DOM 조작, CSS 주입, 브라우저 API 래핑 등 브라우저 기능 제공
+ */
+
+import { logger } from '../logging/logger';
+
+/**
+ * 메모리 정보 인터페이스
+ */
+interface MemoryInfo {
+  usedJSHeapSize?: number;
+  totalJSHeapSize?: number;
+  jsHeapSizeLimit?: number;
+}
+
+/**
+ * 브라우저 관리자
+ * Infrastructure 레이어의 브라우저 API 래핑 서비스
+ */
+export class BrowserManager {
+  private static instance: BrowserManager | null = null;
+  private readonly injectedStyles = new Set<string>();
+
+  private constructor() {
+    logger.debug('[BrowserManager] Initialized');
+  }
+
+  public static getInstance(): BrowserManager {
+    BrowserManager.instance ??= new BrowserManager();
+    return BrowserManager.instance;
+  }
+
+  public static resetInstance(): void {
+    if (BrowserManager.instance) {
+      BrowserManager.instance.cleanup();
+      BrowserManager.instance = null;
+    }
+  }
+
+  /**
+   * CSS 주입
+   */
+  public injectCSS(id: string, css: string): void {
+    if (!css) {
+      logger.warn('[BrowserManager] Empty CSS provided');
+      return;
+    }
+
+    // 기존 스타일 요소 제거
+    const existingStyle = document.getElementById(id);
+    if (existingStyle) {
+      existingStyle.remove();
+      this.injectedStyles.delete(id);
+    }
+
+    // 새 스타일 주입
+    const styleElement = document.createElement('style');
+    styleElement.id = id;
+    styleElement.textContent = css;
+    styleElement.setAttribute('data-injected-by', 'xeg-browser-manager');
+
+    document.head.appendChild(styleElement);
+    this.injectedStyles.add(id);
+
+    logger.debug(`[BrowserManager] CSS injected: ${id}`);
+  }
+
+  /**
+   * CSS 제거
+   */
+  public removeCSS(id: string): void {
+    const styleElement = document.getElementById(id);
+    if (styleElement) {
+      styleElement.remove();
+      this.injectedStyles.delete(id);
+      logger.debug(`[BrowserManager] CSS removed: ${id}`);
+    }
+  }
+
+  /**
+   * 파일 다운로드 트리거
+   */
+  public downloadFile(url: string, filename?: string): void {
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      if (filename) {
+        link.download = filename;
+      }
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      logger.debug(`[BrowserManager] Download triggered: ${filename || url}`);
+    } catch (error) {
+      logger.error(`[BrowserManager] Download failed: ${filename || url}`, error);
+    }
+  }
+
+  /**
+   * 메모리 정보 조회
+   */
+  public getMemoryInfo(): MemoryInfo | null {
+    try {
+      const perfWithMemory = performance as unknown as { memory?: MemoryInfo };
+      return perfWithMemory.memory ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * 메모리 사용량 조회 (MB)
+   */
+  public getMemoryUsageMB(): number {
+    const memory = this.getMemoryInfo();
+    return memory ? Math.round(memory.usedJSHeapSize! / 1024 / 1024) : 0;
+  }
+
+  /**
+   * 페이지 가시성 상태 확인
+   */
+  public isPageVisible(): boolean {
+    return document.visibilityState === 'visible';
+  }
+
+  /**
+   * DOM 준비 상태 확인
+   */
+  public isDOMReady(): boolean {
+    return document.readyState === 'complete';
+  }
+
+  /**
+   * 진단 정보 조회
+   */
+  public getDiagnostics(): {
+    injectedStylesCount: number;
+    memoryUsageMB: number;
+    isPageVisible: boolean;
+    isDOMReady: boolean;
+  } {
+    return {
+      injectedStylesCount: this.injectedStyles.size,
+      memoryUsageMB: this.getMemoryUsageMB(),
+      isPageVisible: this.isPageVisible(),
+      isDOMReady: this.isDOMReady(),
+    };
+  }
+
+  /**
+   * 모든 관리 중인 리소스 정리
+   */
+  public cleanup(): void {
+    this.injectedStyles.clear();
+    logger.debug('[BrowserManager] Cleanup complete');
+  }
+}
+
+// 편의 함수들
+export const browserUtils = {
+  injectCSS: (id: string, css: string) => BrowserManager.getInstance().injectCSS(id, css),
+  removeCSS: (id: string) => BrowserManager.getInstance().removeCSS(id),
+  downloadFile: (url: string, filename?: string) =>
+    BrowserManager.getInstance().downloadFile(url, filename),
+  getMemoryInfo: () => BrowserManager.getInstance().getMemoryInfo(),
+  getMemoryUsage: () => BrowserManager.getInstance().getMemoryUsageMB(),
+  isPageVisible: () => BrowserManager.getInstance().isPageVisible(),
+  isDOMReady: () => BrowserManager.getInstance().isDOMReady(),
+  diagnostics: () => BrowserManager.getInstance().getDiagnostics(),
+};

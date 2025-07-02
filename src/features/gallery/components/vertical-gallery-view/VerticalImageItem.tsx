@@ -2,7 +2,9 @@
  * Copyright (c) 2024 X.com Enhanced Gallery
  * Licensed under the MIT License
  *
- * Enhanced Vertical Image Item Component for Gallery Display
+ * @fileoverview Vertical Image Item Component
+ * @version 2.0.0 - Unified implementation
+ * @description 통합된 수직 이미지 아이템 컴포넌트
  */
 
 import { withGalleryItem, type GalleryComponentProps } from '@shared/components/hoc/GalleryMarker';

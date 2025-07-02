@@ -1,7 +1,7 @@
 /**
- * @fileoverview Optimized Gallery Event Coordinator - Clean Architecture Implementation
+ * @fileoverview Gallery Event Coordinator - Clean Architecture Implementation
  * @license MIT
- * @version 2.0.0 - Enhanced Clean Architecture
+ * @version 2.0.0 - Clean Architecture
  * @author X.com Enhanced Gallery Team
  *
  * @description
@@ -76,8 +76,8 @@ export interface CoordinatorOptions {
  * - 이벤트 라이프사이클 관리
  * - 에러 처리 및 복구
  */
-export class OptimizedGalleryEventCoordinator {
-  private static instance: OptimizedGalleryEventCoordinator | null = null;
+export class GalleryEventCoordinator {
+  private static instance: GalleryEventCoordinator | null = null;
 
   private galleryService: GalleryService | null = null;
   private readonly debouncer: Debouncer<[MediaClickContext]>;
@@ -99,15 +99,15 @@ export class OptimizedGalleryEventCoordinator {
       this.options.debounceDelay ?? 150
     );
 
-    logger.debug('OptimizedGalleryEventCoordinator: Instance created (lazy initialization)');
+    logger.debug('GalleryEventCoordinator: Instance created (lazy initialization)');
   }
 
   /**
    * 싱글톤 인스턴스 반환
    */
-  static getInstance(options?: CoordinatorOptions): OptimizedGalleryEventCoordinator {
-    OptimizedGalleryEventCoordinator.instance ??= new OptimizedGalleryEventCoordinator(options);
-    return OptimizedGalleryEventCoordinator.instance;
+  static getInstance(options?: CoordinatorOptions): GalleryEventCoordinator {
+    GalleryEventCoordinator.instance ??= new GalleryEventCoordinator(options);
+    return GalleryEventCoordinator.instance;
   }
 
   /**
@@ -115,7 +115,7 @@ export class OptimizedGalleryEventCoordinator {
    */
   private ensureGalleryServiceInitialized(): GalleryService {
     if (!this.galleryService) {
-      logger.error('OptimizedGalleryEventCoordinator: GalleryService is not initialized');
+      logger.error('GalleryEventCoordinator: GalleryService is not initialized');
       throw new Error('GalleryService is not initialized. Call initialize() first.');
     }
     return this.galleryService;
@@ -126,12 +126,12 @@ export class OptimizedGalleryEventCoordinator {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      logger.debug('OptimizedGalleryEventCoordinator: Already initialized');
+      logger.debug('GalleryEventCoordinator: Already initialized');
       return;
     }
 
     try {
-      logger.debug('OptimizedGalleryEventCoordinator: Initializing');
+      logger.debug('GalleryEventCoordinator: Initializing');
 
       // 갤러리 서비스 인스턴스 가져오기 및 초기화
       this.galleryService = GalleryService.getInstance();
@@ -145,9 +145,9 @@ export class OptimizedGalleryEventCoordinator {
       this.attachEventListeners();
 
       this.isInitialized = true;
-      logger.debug('OptimizedGalleryEventCoordinator: Initialization complete');
+      logger.debug('GalleryEventCoordinator: Initialization complete');
     } catch (error) {
-      logger.error('OptimizedGalleryEventCoordinator: Failed to initialize:', error);
+      logger.error('GalleryEventCoordinator: Failed to initialize:', error);
       throw error;
     }
   }
@@ -164,14 +164,14 @@ export class OptimizedGalleryEventCoordinator {
     try {
       // **핵심 수정**: 갤러리 상태 사전 체크
       if (!GalleryStateGuard.canTriggerGallery(event)) {
-        logger.debug('OptimizedGalleryEventCoordinator: Gallery trigger blocked by state guard');
+        logger.debug('GalleryEventCoordinator: Gallery trigger blocked by state guard');
         return;
       }
 
       // **강화된 차단 로직**: 비디오 제어 요소 통합 체크
       if (VideoControlBlocker.shouldBlockGalleryTrigger(element)) {
         logger.debug(
-          'OptimizedGalleryEventCoordinator: Video control element click - allowing default behavior'
+          'GalleryEventCoordinator: Video control element click - allowing default behavior'
         );
         return;
       }
@@ -188,7 +188,7 @@ export class OptimizedGalleryEventCoordinator {
       // SmartDebouncer로 지능적인 디바운싱 처리
       this.debouncer.execute(context);
     } catch (error) {
-      logger.error('OptimizedGalleryEventCoordinator: Failed to handle media click:', error);
+      logger.error('GalleryEventCoordinator: Failed to handle media click:', error);
     }
   }
 
@@ -218,7 +218,7 @@ export class OptimizedGalleryEventCoordinator {
         await this.openGalleryWithSingleMedia(context);
       }
     } catch (error) {
-      logger.error('OptimizedGalleryEventCoordinator: Failed to process debounced click:', error);
+      logger.error('GalleryEventCoordinator: Failed to process debounced click:', error);
     }
   }
 
@@ -237,7 +237,7 @@ export class OptimizedGalleryEventCoordinator {
         mediaItems: [context.mediaInfo],
       };
     } catch (error) {
-      logger.error('OptimizedGalleryEventCoordinator: Media extraction failed:', error);
+      logger.error('GalleryEventCoordinator: Media extraction failed:', error);
       return {
         success: false,
         mediaItems: [],
@@ -280,10 +280,7 @@ export class OptimizedGalleryEventCoordinator {
         this.log('Gallery opening was skipped (already open with same media)');
       }
     } catch (error) {
-      logger.error(
-        'OptimizedGalleryEventCoordinator: Failed to open gallery with extracted media:',
-        error
-      );
+      logger.error('GalleryEventCoordinator: Failed to open gallery with extracted media:', error);
       // 실패 시 단일 미디어로 폴백
       await this.openGalleryWithSingleMedia(context);
     }
@@ -312,10 +309,7 @@ export class OptimizedGalleryEventCoordinator {
         this.log('Gallery opening was skipped (already open with same media)');
       }
     } catch (error) {
-      logger.error(
-        'OptimizedGalleryEventCoordinator: Failed to open gallery with single media:',
-        error
-      );
+      logger.error('GalleryEventCoordinator: Failed to open gallery with single media:', error);
     }
   }
 
@@ -341,7 +335,7 @@ export class OptimizedGalleryEventCoordinator {
 
       this.log('Event listeners attached (including media click capture)');
     } catch (error) {
-      logger.error('OptimizedGalleryEventCoordinator: Failed to attach event listeners:', error);
+      logger.error('GalleryEventCoordinator: Failed to attach event listeners:', error);
     }
   }
 
@@ -379,7 +373,7 @@ export class OptimizedGalleryEventCoordinator {
       // 미디어 클릭 처리
       this.handleMediaClick(mediaInfo, target, mouseEvent, tweetContainer);
     } catch (error) {
-      logger.error('OptimizedGalleryEventCoordinator: Failed to handle document click:', error);
+      logger.error('GalleryEventCoordinator: Failed to handle document click:', error);
     }
   }
 
@@ -559,7 +553,7 @@ export class OptimizedGalleryEventCoordinator {
    */
   private log(message: string, data?: Record<string, unknown>): void {
     if (this.options.debug) {
-      logger.debug(`OptimizedGalleryEventCoordinator: ${message}`, data);
+      logger.debug(`GalleryEventCoordinator: ${message}`, data);
     }
   }
 
@@ -601,11 +595,11 @@ export class OptimizedGalleryEventCoordinator {
       }
 
       this.isInitialized = false;
-      OptimizedGalleryEventCoordinator.instance = null;
+      GalleryEventCoordinator.instance = null;
 
-      logger.debug('OptimizedGalleryEventCoordinator: Disposed successfully');
+      logger.debug('GalleryEventCoordinator: Disposed successfully');
     } catch (error) {
-      logger.error('OptimizedGalleryEventCoordinator: Failed to dispose:', error);
+      logger.error('GalleryEventCoordinator: Failed to dispose:', error);
     }
   }
 
@@ -620,4 +614,4 @@ export class OptimizedGalleryEventCoordinator {
 /**
  * 전역 이벤트 코디네이터 인스턴스
  */
-export const galleryEventCoordinator = OptimizedGalleryEventCoordinator.getInstance();
+export const galleryEventCoordinator = GalleryEventCoordinator.getInstance();
