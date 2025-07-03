@@ -4,11 +4,8 @@
  * @version 4.0.0
  */
 
-// 통합 디자인 토큰 (최우선)
-import '@shared/styles/unified-design-tokens.css';
-
-// 통합 스타일 시스템
-import '@assets/styles/unified-styles.css';
+// 디자인 토큰 CSS 변수
+import '@shared/design-system/tokens/DesignTokens.css';
 
 // 브라우저 스타일 초기화
 import '@assets/styles/base/reset.css';

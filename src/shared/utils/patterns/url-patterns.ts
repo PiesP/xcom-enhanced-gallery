@@ -1,5 +1,5 @@
 /**
- * URL Pattern Utilities for X.com Enhanced Gallery
+ * URL Pattern Utilities for X.com Gallery
  *
  * Centralized URL pattern matching and extraction logic.
  */

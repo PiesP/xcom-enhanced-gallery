@@ -1,5 +1,5 @@
 /**
- * Vite Configuration for X.com Enhanced Gallery (UserScript Build)
+ * Vite Configuration for X.com Gallery (UserScript Build)
  *
  * 유저스크립트 형식으로 빌드하기 위한 완전한 설정
  */
@@ -81,8 +81,8 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
     : packageJson.version;
 
   return `// ==UserScript==
-// @name         X.com Enhanced Gallery${devSuffix}
-// @namespace    https://github.com/piesp/xcom-enhanced-gallery
+// @name         X.com Gallery${devSuffix}
+// @namespace    https://github.com/piesp/xcom-gallery
 // @version      ${version}
 // @description  ${packageJson.description}
 // @author       PiesP
@@ -98,9 +98,9 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
 // @connect      pbs.twimg.com
 // @connect      video.twimg.com
 // @run-at       document-idle
-// @supportURL   https://github.com/piesp/xcom-enhanced-gallery/issues
-// @downloadURL  https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
-// @updateURL    https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
+// @supportURL   https://github.com/piesp/xcom-gallery/issues
+// @downloadURL  https://github.com/piesp/xcom-gallery/releases/latest/download/xcom-gallery.user.js
+// @updateURL    https://github.com/piesp/xcom-gallery/releases/latest/download/xcom-gallery.user.js
 // @noframes
 // ==/UserScript==
 `;
@@ -181,8 +181,8 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
 })();`;
 
         const outputFileName = buildMode.isDevelopment
-          ? 'xcom-enhanced-gallery.dev.user.js'
-          : 'xcom-enhanced-gallery.user.js';
+          ? 'xcom-gallery.dev.user.js'
+          : 'xcom-gallery.user.js';
 
         const outputFilePath = path.resolve(outDir, outputFileName);
         fs.writeFileSync(outputFilePath, wrappedCode, 'utf8');
@@ -246,11 +246,11 @@ export default defineConfig(({ mode }) => {
 
         output: {
           entryFileNames: buildMode.isDevelopment
-            ? 'xcom-enhanced-gallery.dev.user.js'
-            : 'xcom-enhanced-gallery.user.js',
+            ? 'xcom-gallery.dev.user.js'
+            : 'xcom-gallery.user.js',
           assetFileNames: '[name][extname]',
           format: 'iife',
-          name: 'XEG',
+          name: 'XG',
           inlineDynamicImports: true,
           manualChunks: undefined,
         },

@@ -4,8 +4,8 @@
  * DOM manipulation, accessibility utilities (테마 관련 기능 제거)
  */
 
-// DOM manipulation utilities
-export * from './dom';
+// DOM utilities는 통합된 ScrollManager로 대체됨
+// @core/services/scroll/ScrollManager 사용하세요
 
 // Accessibility utilities
 export * from './accessibility';

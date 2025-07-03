@@ -30,11 +30,8 @@ export type ServiceFactory<T> = () => T | Promise<T>;
 // Import service class types for type safety
 export type BulkDownloadServiceType = import('../services/BulkDownloadService').BulkDownloadService;
 export type MediaFilenameServiceType = import('../../infrastructure/media').MediaFilenameService;
-export type PageScrollLockManagerType =
-  import('../../infrastructure/dom/ScrollLockService').ScrollLockService;
 export type SimpleThemeManagerType = import('../services/AutoThemeService').SimpleThemeManager;
-export type GalleryScrollProtectionServiceType =
-  import('../services/GalleryScrollProtectionService').GalleryScrollProtectionService;
+export type ScrollManagerType = import('../services/scroll/ScrollManager').ScrollManager;
 
 // Generic service interfaces for features and shared services
 export interface GalleryRendererType extends BaseService {
@@ -85,9 +82,8 @@ export interface ServiceTypeMapping {
   'media.extraction': unknown; // MediaExtractionServiceType - features layer 타입이므로 unknown 사용
   'media.extraction.unified': unknown; // UnifiedMediaExtractionServiceType - features layer 타입이므로 unknown 사용
   'media.filename': MediaFilenameServiceType;
-  'scroll.pageLock': PageScrollLockManagerType;
+  'scroll.manager': ScrollManagerType;
   'scroll.gallery': unknown; // GalleryScrollManagerType - shared layer 타입이므로 unknown 사용
-  'scroll.galleryProtection': GalleryScrollProtectionServiceType;
   'theme.auto': SimpleThemeManagerType;
   'video.service': unknown; // VideoServiceType - shared layer 타입이므로 unknown 사용
 }

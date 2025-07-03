@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
+ * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
  * @fileoverview 갤러리 상태 보호 유틸리티

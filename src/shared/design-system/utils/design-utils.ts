@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import { UNIFIED_DESIGN_TOKENS, getTokenValue } from '../tokens/DesignTokens';
+import { DESIGN_TOKENS, getTokenValue } from '../tokens/DesignTokens';
 import { logger } from '../../../infrastructure/logging/logger';
 
 /**
@@ -134,9 +134,9 @@ export function getThemeTokenValue(tokenPath: string, theme: 'light' | 'dark' = 
   // 테마별 오버라이드 로직
   if (theme === 'dark') {
     const overrides: Record<string, string> = {
-      'colors.surface.light': UNIFIED_DESIGN_TOKENS.colors.surface.dark,
-      'colors.neutral.50': UNIFIED_DESIGN_TOKENS.colors.neutral[950],
-      'colors.neutral.900': UNIFIED_DESIGN_TOKENS.colors.neutral[50],
+      'colors.surface.light': DESIGN_TOKENS.colors.surface.dark,
+      'colors.neutral.50': DESIGN_TOKENS.colors.neutral[950],
+      'colors.neutral.900': DESIGN_TOKENS.colors.neutral[50],
     };
 
     return overrides[tokenPath] || String(value);
@@ -149,11 +149,7 @@ export function getThemeTokenValue(tokenPath: string, theme: 'light' | 'dark' = 
  * 반응형 디자인을 위한 브레이크포인트 유틸리티
  */
 export function getBreakpointToken(breakpoint: string): string {
-  return (
-    UNIFIED_DESIGN_TOKENS.breakpoints[
-      breakpoint as keyof typeof UNIFIED_DESIGN_TOKENS.breakpoints
-    ] || ''
-  );
+  return DESIGN_TOKENS.breakpoints[breakpoint as keyof typeof DESIGN_TOKENS.breakpoints] || '';
 }
 
 /**

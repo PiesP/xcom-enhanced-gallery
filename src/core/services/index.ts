@@ -28,3 +28,6 @@ export type { Theme } from './AutoThemeService';
 // Application Lifecycle Management
 export { AppLifecycle, appLifecycle } from './AppLifecycle';
 export type { AppLifecycleState, LifecycleConfig } from './AppLifecycle';
+
+// Scroll Management
+export { ScrollManager, scrollManager } from './scroll';

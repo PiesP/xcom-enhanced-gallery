@@ -7,7 +7,6 @@
 
 // Gallery Services
 export { GalleryService, galleryService } from './GalleryService';
-export { GalleryEventCoordinator, galleryEventCoordinator } from './GalleryEventCoordinator';
 export { GalleryDownloadService } from './GalleryDownloadService';
 
 // Re-export types for convenience

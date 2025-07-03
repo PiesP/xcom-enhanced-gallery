@@ -7,8 +7,7 @@
 // DOM utilities (primary interface)
 export { DOMUtils, type DOMElementCreationOptions, type ScrollLockOptions } from './dom-utils';
 
-// Unified scroll manager
-export { scrollManager } from './ScrollLockService';
+// Legacy scroll service removed - use core/services/scroll/ScrollManager instead
 
 // Named exports for convenience
 export {

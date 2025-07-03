@@ -321,4 +321,4 @@ export class MediaClickDetector {
 }
 
 // 하위 호환성을 위한 별칭
-export { MediaClickDetector as SimpleMediaClickDetector };
+// Export 정리 - 클래스 자체 export만 유지

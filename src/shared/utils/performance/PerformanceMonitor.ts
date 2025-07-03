@@ -246,7 +246,7 @@ export class PerformanceMonitor {
 
 // 성능 측정 데코레이터
 export function performanceTrack(metricName?: string) {
-  return function(
+  return function (
     target: Record<string, unknown>,
     propertyKey: string,
     descriptor: PropertyDescriptor
@@ -254,7 +254,7 @@ export function performanceTrack(metricName?: string) {
     const originalMethod = descriptor.value as (...args: unknown[]) => unknown;
     const name = metricName ?? `${String(target.constructor.name)}.${propertyKey}`;
 
-    descriptor.value = async function(this: unknown, ...args: unknown[]): Promise<unknown> {
+    descriptor.value = async function (this: unknown, ...args: unknown[]): Promise<unknown> {
       const measurementId = PerformanceMonitor.startMeasurement(name, {
         className: String(target.constructor.name),
         methodName: propertyKey,

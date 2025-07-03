@@ -4,7 +4,7 @@
  */
 
 import { logger } from '@infrastructure/logging/logger';
-import { galleryScrollManager } from '@shared/utils/core/dom/gallery-scroll-manager';
+import { scrollManager } from '@core/services/scroll/ScrollManager';
 import { getPreactHooks } from '@infrastructure/external/vendors';
 
 const { useCallback, useEffect, useRef } = getPreactHooks();
@@ -24,7 +24,7 @@ interface UseGalleryScrollProtectionReturn {
 
 /**
  * 갤러리 스크롤 보호 Hook
- * 갤러리 내부 스크롤만 관리 (페이지 스크롤은 GalleryStateManager에서 처리)
+ * 통합된 ScrollManager를 사용하여 갤러리 내부 스크롤을 관리
  */
 export function useGalleryScrollProtection({
   isGalleryOpen,
@@ -43,7 +43,7 @@ export function useGalleryScrollProtection({
     }
 
     isInitializedRef.current = true;
-    logger.debug('Gallery scroll protection initialized', {
+    logger.debug('갤러리 스크롤 보호 초기화 완료', {
       currentIndex,
       mediaCount: mediaItems.length,
     });
@@ -57,10 +57,11 @@ export function useGalleryScrollProtection({
       return;
     }
 
-    galleryScrollManager.reset();
+    // ScrollManager 상태 리셋 (갤러리 부분만)
+    scrollManager.saveGalleryScrollPosition(0);
     isInitializedRef.current = false;
 
-    logger.debug('Gallery scroll protection cleanup completed');
+    logger.debug('갤러리 스크롤 보호 정리 완료');
   }, []);
 
   /**
@@ -68,7 +69,6 @@ export function useGalleryScrollProtection({
    */
   const resetScrollProtection = useCallback(() => {
     cleanupGalleryScrollProtection();
-    galleryScrollManager.reset();
 
     if (isGalleryOpen && mediaItems.length > 0) {
       initializeGalleryScrollProtection();
@@ -91,14 +91,15 @@ export function useGalleryScrollProtection({
     const itemsList = containerRef.current.querySelector('.itemsList') as HTMLElement;
 
     if (itemsList) {
-      galleryScrollManager.setFocusedImageIndex(currentIndex);
-      galleryScrollManager.scrollToImageTopSafely(itemsList, currentIndex, {
+      // 통합된 ScrollManager를 사용하여 갤러리 아이템으로 스크롤
+      scrollManager.scrollToGalleryItem(itemsList, currentIndex, {
         behavior: 'smooth',
+        offset: -10, // 약간의 여백
       });
 
-      logger.debug(`Safe scroll to image ${currentIndex} executed`);
+      logger.debug(`안전한 스크롤: 이미지 ${currentIndex}로 이동 완료`);
     } else {
-      logger.warn('Items list not found for safe scrolling');
+      logger.warn('아이템 리스트를 찾을 수 없어 안전한 스크롤을 실행할 수 없음');
     }
   }, [containerRef, currentIndex]);
 

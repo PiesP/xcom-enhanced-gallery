@@ -50,7 +50,7 @@ export class MediaFilenameService {
     return MediaFilenameService.instance;
   }
 
-  private constructor() { }
+  private constructor() {}
 
   /**
    * 미디어 파일명을 생성합니다

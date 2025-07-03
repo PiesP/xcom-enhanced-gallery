@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
+ * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
  * GalleryApp - 간결한 갤러리 애플리케이션 (리팩토링됨)
@@ -7,15 +7,16 @@
  * 예시 코드를 기반으로 한 간결하고 직관적인 구현
  *
  * 설계 원칙:
- * - SimpleMediaClickDetector를 사용한 간결한 클릭 감지
+ * - MediaClickDetector를 사용한 간결한 클릭 감지
  * - 복잡한 상태 관리 로직 제거
  * - Clean Architecture 준수
  * - 핵심 기능에만 집중
  */
 
-import { SERVICE_KEYS } from '@core/constants';
-import type { GalleryRenderer, MediaExtractor } from '@core/interfaces/gallery.interfaces';
-import { getService } from '@core/services/ServiceRegistry';
+import { SERVICE_KEYS } from '../../../core/constants';
+import type { GalleryRenderer, MediaExtractor } from '../../../core/interfaces/gallery.interfaces';
+import { getService } from '../../../core/services/ServiceRegistry';
+import { scrollManager } from '../../../core/services';
 import {
   galleryState,
   closeGallery,
@@ -24,12 +25,12 @@ import {
   navigateToItem,
   setLoading,
 } from '../../../core/state/signals/gallery.signals';
-import type { MediaInfo } from '@core/types/media.types';
-import { MediaExtractionService } from '@features/media/extraction/services/MediaExtractor';
-import { logger } from '@infrastructure/logging/logger';
+import type { MediaInfo } from '../../../core/types/media.types';
+import { MediaExtractionService } from '../../media/extraction/services/MediaExtractor';
+import { logger } from '../../../infrastructure/logging/logger';
 import { undefinedToNull } from '../../../infrastructure/utils/type-safety-helpers';
-import { GalleryStateGuard, VideoControlBlocker } from '@shared/utils';
-import { MediaClickDetector } from '@shared/utils/media';
+import { GalleryStateGuard, VideoControlBlocker } from '../../../shared/utils';
+import { MediaClickDetector } from '../../../shared/utils/media';
 import type { GalleryAppConfig, IGalleryApp } from '../types';
 
 export class GalleryApp implements IGalleryApp {
@@ -131,6 +132,9 @@ export class GalleryApp implements IGalleryApp {
         return;
       }
 
+      // 즉시 스크롤 보호 적용 (갤러리 렌더링 전)
+      scrollManager.lockPageScroll();
+
       // 트위터 기본 동작 차단하고 갤러리 실행
       event.preventDefault();
       event.stopPropagation();
@@ -146,7 +150,7 @@ export class GalleryApp implements IGalleryApp {
     };
 
     document.addEventListener('click', this.clickHandler, { capture: true, passive: false });
-    logger.info('GalleryApp: 간결한 클릭 리스너 등록 완료');
+    logger.info('GalleryApp: 간결한 클릭 리스너 등록 완료 (즉시 스크롤 보호 포함)');
   }
 
   /**

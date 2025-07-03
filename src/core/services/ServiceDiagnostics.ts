@@ -4,8 +4,10 @@
  * ServiceManager의 상태와 서비스 등록 상황을 확인하는 도구
  */
 
-import { registerAllServices, SERVICE_KEYS, ServiceManager } from '@core/services';
-import { logger } from '@infrastructure/logging/logger';
+import { SERVICE_KEYS } from '../constants';
+import { registerAllServices } from './ServiceRegistry';
+import { ServiceManager } from './ServiceManager';
+import { logger } from '../../infrastructure/logging/logger';
 
 // Create service manager instance
 const serviceManager = ServiceManager.getInstance();
@@ -36,16 +38,16 @@ export async function diagnoseServiceManager(): Promise<void> {
     // 4. 필수 서비스 초기화 테스트
     logger.info('🧪 필수 서비스 초기화 테스트 중...');
     const autoTheme = await serviceManager.tryGet(SERVICE_KEYS.AUTO_THEME);
-    const scrollLock = await serviceManager.tryGet(SERVICE_KEYS.PAGE_SCROLL_LOCK);
+    const scrollManager = await serviceManager.tryGet(SERVICE_KEYS.SCROLL_MANAGER);
 
     logger.info('✅ 서비스 초기화 결과:', {
       autoTheme: autoTheme ? '성공' : '실패',
-      scrollLock: scrollLock ? '성공' : '실패',
+      scrollManager: scrollManager ? '성공' : '실패',
     });
 
     // 5. 메모리 사용량 (infrastructure UnifiedResourceManager 사용)
     try {
-      const { ResourceManager } = await import('@infrastructure/managers');
+      const { ResourceManager } = await import('../../infrastructure/managers');
       const resourceManager = ResourceManager.getInstance();
       const resourceCount = resourceManager.getResourceCount();
       if (resourceCount > 0) {

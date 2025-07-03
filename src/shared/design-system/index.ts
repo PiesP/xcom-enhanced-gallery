@@ -36,7 +36,7 @@ export type ThemeOption = Theme | 'auto';
  * 디자인 시스템 상수
  */
 export const DESIGN_SYSTEM_CONSTANTS = {
-  STYLE_ID_PREFIX: 'xeg-unified-design-system',
+  STYLE_ID_PREFIX: 'xg-design-system',
   CSS_VAR_PREFIX: '--xeg-',
   CLASS_PREFIX: 'xeg-',
   THEME_ATTRIBUTE: 'data-theme',

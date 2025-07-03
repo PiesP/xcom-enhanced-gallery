@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
+ * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
  * @fileoverview 비디오 제어 요소 차단 유틸리티

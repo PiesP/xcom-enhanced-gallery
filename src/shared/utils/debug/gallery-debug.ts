@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
+ * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
  * 갤러리 디버깅 유틸리티

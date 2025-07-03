@@ -12,7 +12,7 @@ import { Button } from '@shared/components/ui/Button/Button';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types/image-fit.types';
-import { galleryScrollManager } from '@shared/utils/core';
+import { scrollManager } from '@core/services/scroll/ScrollManager';
 import { getPreactHooks } from '@infrastructure/external/vendors';
 import { useGalleryScrollProtection } from './hooks/useGalleryScrollProtection';
 import styles from './VerticalGalleryView.module.css';
@@ -321,8 +321,16 @@ export function VerticalGalleryView({
       // 갤러리 닫기 전 비디오 정지
       setIsVisible(false);
 
-      // GalleryScrollManager 상태 리셋
-      galleryScrollManager.reset();
+      // 통합 스크롤 보호 해제
+      try {
+        const { scrollManager } = require('../../../../core/services/scroll/ScrollManager');
+        scrollManager.unlockAndRestore();
+      } catch (error) {
+        logger.warn('Failed to unlock scroll during gallery close:', error);
+      }
+
+      // ScrollManager 상태 리셋
+      scrollManager.saveGalleryScrollPosition(0);
 
       // 스크롤 보호 상태 정리 (에러 방지)
       try {

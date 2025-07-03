@@ -4,18 +4,14 @@
  * @version 2.0.0
  */
 
-import {
-  UNIFIED_DESIGN_TOKENS,
-  createCSSVariable,
-  getThemeTokenValue,
-} from './tokens/DesignTokens';
+import { DESIGN_TOKENS, createCSSVariable, getThemeTokenValue } from './tokens/DesignTokens';
 import { logger } from '../../infrastructure/logging/logger';
 import type { Cleanupable } from '../../infrastructure/types/lifecycle.types';
 
 /**
  * CSS 스타일시트 ID
  */
-const DESIGN_SYSTEM_STYLE_ID = 'xeg-unified-design-system';
+const DESIGN_SYSTEM_STYLE_ID = 'xg-design-system';
 
 /**
  * 통합 디자인 시스템 매니저 클래스
@@ -57,7 +53,7 @@ export class DesignSystemManager implements Cleanupable {
     try {
       const { theme = 'auto', injectGlobalStyles = true, validateTokens = true } = options;
 
-      logger.info('🎨 Initializing unified design system...');
+      logger.info('🎨 Initializing design system...');
 
       // 1. CSS 변수 주입
       this.injectCSSVariables();
@@ -121,8 +117,8 @@ export class DesignSystemManager implements Cleanupable {
   /**
    * 현재 테마의 토큰 객체 반환
    */
-  public getTokens(): typeof UNIFIED_DESIGN_TOKENS {
-    return UNIFIED_DESIGN_TOKENS;
+  public getTokens(): typeof DESIGN_TOKENS {
+    return DESIGN_TOKENS;
   }
 
   /**
@@ -191,7 +187,7 @@ export class DesignSystemManager implements Cleanupable {
    * CSS 변수 생성
    */
   private generateCSSVariables(): string {
-    const { colors, spacing, typography, layout, animation } = UNIFIED_DESIGN_TOKENS;
+    const { colors, spacing, typography, layout, animation } = DESIGN_TOKENS;
 
     return `
       :root {
@@ -255,7 +251,7 @@ export class DesignSystemManager implements Cleanupable {
   /**
    * 색상 변수 생성
    */
-  private generateColorVariables(colors: typeof UNIFIED_DESIGN_TOKENS.colors): string {
+  private generateColorVariables(colors: typeof DESIGN_TOKENS.colors): string {
     let css = '';
 
     // Primary colors
@@ -310,7 +306,7 @@ export class DesignSystemManager implements Cleanupable {
       }
 
       body {
-        font-family: ${UNIFIED_DESIGN_TOKENS.typography.fontFamily.sans};
+        font-family: ${DESIGN_TOKENS.typography.fontFamily.sans};
         background: var(--xeg-color-surface);
         color: var(--xeg-color-text-primary);
         transition: background-color var(--xeg-duration-normal) var(--xeg-easing-easeOut),

@@ -1,9 +1,9 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
+ * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
- * @fileoverview Simplified Gallery Theme and Scroll Management Hook
- * @description 갤러리의 단순화된 테마 및 스크롤 관리를 처리하는 커스텀 훅
+ * @fileoverview 갤러리 테마 및 스크롤 관리 Hook
+ * @description 갤러리의 테마 및 스크롤 관리를 처리하는 커스텀 훅
  */
 
 import type { MediaInfo } from '@core/types/media.types';

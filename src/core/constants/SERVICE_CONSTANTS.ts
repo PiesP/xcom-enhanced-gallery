@@ -23,9 +23,8 @@ export const SERVICE_KEYS = {
   MEDIA_FILENAME: 'media.filename',
 
   // UI Services
-  PAGE_SCROLL_LOCK: 'scroll.pageLock',
+  SCROLL_MANAGER: 'scroll.manager',
   GALLERY_SCROLL: 'scroll.gallery',
-  GALLERY_SCROLL_PROTECTION: 'scroll.galleryProtection',
   AUTO_THEME: 'theme.auto',
 
   // Video Services

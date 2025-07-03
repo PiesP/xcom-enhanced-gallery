@@ -72,10 +72,10 @@ export async function registerAllServices(): Promise<void> {
   });
 
   // Scroll Services
-  serviceManager.register(SERVICE_KEYS.PAGE_SCROLL_LOCK, {
+  serviceManager.register(SERVICE_KEYS.SCROLL_MANAGER, {
     factory: async () => {
-      const { ScrollLockService } = await import('../../infrastructure/dom/ScrollLockService');
-      return ScrollLockService.getInstance();
+      const { ScrollManager } = await import('./scroll/ScrollManager');
+      return ScrollManager.getInstance();
     },
     singleton: true,
     lazy: true,
@@ -83,19 +83,8 @@ export async function registerAllServices(): Promise<void> {
 
   serviceManager.register(SERVICE_KEYS.GALLERY_SCROLL, {
     factory: async () => {
-      const { GalleryScrollManager } = await import(
-        '../../shared/utils/core/dom/gallery-scroll-manager'
-      );
-      return GalleryScrollManager.getInstance();
-    },
-    singleton: true,
-    lazy: true,
-  });
-
-  serviceManager.register(SERVICE_KEYS.GALLERY_SCROLL_PROTECTION, {
-    factory: async () => {
-      const { GalleryScrollProtectionService } = await import('./GalleryScrollProtectionService');
-      return GalleryScrollProtectionService.getInstance();
+      const { scrollManager } = await import('./scroll/ScrollManager');
+      return scrollManager;
     },
     singleton: true,
     lazy: true,

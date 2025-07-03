@@ -1,5 +1,5 @@
 {
-  // X.com Enhanced Gallery - TypeScript 설정 (Clean Architecture 최적화)
+  // X.com Gallery - TypeScript 설정 (Clean Architecture 최적화)
   "compilerOptions": {
     // 컴파일 타겟 및 모듈 설정
     "target": "ES2022",

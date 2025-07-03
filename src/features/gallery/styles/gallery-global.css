@@ -371,11 +371,11 @@
 /* Body 클래스 - 갤러리 오픈 시 스크롤 보호 (일원화된 버전) */
 body.xeg-gallery-open,
 html.xeg-gallery-open {
-  /* 스크롤 완전 차단 - EnhancedScrollProtectionService와 연동 */
+  /* 스크롤 완전 차단 - ScrollManager와 연동 */
   overflow: hidden !important;
   scroll-behavior: auto !important;
   overscroll-behavior: none !important;
-  /* position: fixed는 EnhancedScrollProtectionService에서 관리 */
+  /* position: fixed는 ScrollManager에서 관리 */
 }
 
 /* 갤러리 컨테이너 내부 스크롤 허용 영역 명확화 */

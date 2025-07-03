@@ -1,5 +1,5 @@
 /**
- * X.com Enhanced Gallery - 통합된 메인 진입점
+ * X.com Gallery - 통합된 메인 진입점
  *
  * Clean Architecture App Layer를 통한 간소화된 애플리케이션 부트스트래핑
  *
@@ -53,7 +53,7 @@ async function initializeDevTools(): Promise<void> {
  */
 async function startApplication(): Promise<void> {
   try {
-    logger.info('🚀 X.com Enhanced Gallery 시작 중...');
+    logger.info('🚀 X.com Gallery 시작 중...');
 
     // 성능 측정 시작
     const metrics = await measurePerformance('app-initialization', async () => {

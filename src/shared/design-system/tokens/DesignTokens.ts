@@ -24,7 +24,7 @@ export interface ColorScale {
 /**
  * 통합 디자인 토큰
  */
-export const UNIFIED_DESIGN_TOKENS = {
+export const DESIGN_TOKENS = {
   /**
    * 색상 시스템
    */
@@ -219,10 +219,10 @@ export const UNIFIED_DESIGN_TOKENS = {
 /**
  * 타입 정의
  */
-export type UnifiedDesignTokens = typeof UNIFIED_DESIGN_TOKENS;
-export type ColorToken = keyof typeof UNIFIED_DESIGN_TOKENS.colors;
-export type SpacingToken = keyof typeof UNIFIED_DESIGN_TOKENS.spacing;
-export type TypographyToken = keyof typeof UNIFIED_DESIGN_TOKENS.typography;
+export type DesignTokens = typeof DESIGN_TOKENS;
+export type ColorToken = keyof typeof DESIGN_TOKENS.colors;
+export type SpacingToken = keyof typeof DESIGN_TOKENS.spacing;
+export type TypographyToken = keyof typeof DESIGN_TOKENS.typography;
 
 /**
  * CSS 변수명 생성 유틸리티
@@ -236,7 +236,7 @@ export function createCSSVariable(tokenPath: string): string {
  */
 export function getTokenValue(tokenPath: string): string | number {
   const keys = tokenPath.split('.');
-  let value: unknown = UNIFIED_DESIGN_TOKENS;
+  let value: unknown = DESIGN_TOKENS;
 
   for (const key of keys) {
     if (typeof value === 'object' && value !== null && key in value) {
@@ -260,13 +260,13 @@ export function getThemeTokenValue(tokenPath: string, theme: 'light' | 'dark' = 
   if (theme === 'dark') {
     // 다크 테마 특별 처리
     if (tokenPath.includes('surface.light')) {
-      return UNIFIED_DESIGN_TOKENS.colors.surface.dark;
+      return DESIGN_TOKENS.colors.surface.dark;
     }
     if (tokenPath.includes('neutral.50')) {
-      return UNIFIED_DESIGN_TOKENS.colors.neutral[950];
+      return DESIGN_TOKENS.colors.neutral[950];
     }
     if (tokenPath.includes('neutral.900')) {
-      return UNIFIED_DESIGN_TOKENS.colors.neutral[50];
+      return DESIGN_TOKENS.colors.neutral[50];
     }
   }
 

@@ -1,8 +1,8 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
+ * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
- * @fileoverview Enhanced Gallery Toolbar Component
+ * @fileoverview Gallery Toolbar Component
  * @version 5.0.0 - 상태 기반 CSS 아키텍처 및 책임 분리
  */
 
