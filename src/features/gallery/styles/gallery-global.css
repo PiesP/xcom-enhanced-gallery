@@ -414,6 +414,57 @@ body.xeg-gallery-open .xeg-gallery-container * {
   overscroll-behavior: auto;
 }
 
+/* 강화된 스크롤 잠금 스타일
+ * ScrollManager에서 사용하는 통합 스크롤 보호 클래스
+ */
+
+/* 페이지 스크롤 잠금 상태 */
+body.xeg-scroll-locked {
+  position: fixed !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  /* 추가 보호: 의도하지 않은 스크롤 방지 */
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* HTML 요소 스크롤 잠금 */
+html.xeg-scroll-locked {
+  overflow: hidden !important;
+}
+
+/* 모바일 장치에서 추가 보호 */
+@media (hover: none) and (pointer: coarse) {
+  body.xeg-scroll-locked {
+    position: fixed !important;
+    top: var(--xeg-scroll-lock-top, 0) !important;
+    left: var(--xeg-scroll-lock-left, 0) !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    touch-action: none !important;
+    overscroll-behavior: none !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 스크롤바 너비 보정 */
+body.xeg-scroll-locked {
+  padding-right: var(--xeg-scrollbar-width, 0px) !important;
+}
+
+/* 갤러리 열려있을 때 배경 스크롤 완전 차단 */
+body.xeg-scroll-locked .xeg-gallery-overlay {
+  /* 갤러리 컨테이너 내부 스크롤만 허용 */
+  overflow: hidden;
+}
+
+body.xeg-scroll-locked .xeg-gallery-overlay .vertical-gallery-container {
+  /* 갤러리 내부 스크롤은 허용 */
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .xeg-gallery-toolbar {

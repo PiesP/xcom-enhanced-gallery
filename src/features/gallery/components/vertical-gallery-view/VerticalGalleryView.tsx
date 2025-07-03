@@ -321,11 +321,20 @@ export function VerticalGalleryView({
       // 갤러리 닫기 전 비디오 정지
       setIsVisible(false);
 
-      // 통합 스크롤 보호 해제 (ScrollManager만 사용)
+      // 통합 스크롤 보호 해제 (ScrollManager만 사용) - 강화된 버전
       try {
         scrollManager.unlockPageScroll();
+        logger.debug('VerticalGalleryView: 스크롤 잠금 해제 완료');
       } catch (error) {
-        logger.warn('Failed to unlock scroll during gallery close:', error);
+        logger.warn('VerticalGalleryView: 스크롤 잠금 해제 중 오류:', error);
+
+        // 비상 복원 시도
+        try {
+          scrollManager.forceRestoreScrollPosition();
+          logger.debug('VerticalGalleryView: 비상 스크롤 복원 시도 완료');
+        } catch (forceError) {
+          logger.error('VerticalGalleryView: 비상 스크롤 복원 실패:', forceError);
+        }
       }
 
       // ScrollManager 상태 리셋

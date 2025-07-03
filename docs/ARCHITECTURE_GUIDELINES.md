@@ -135,7 +135,9 @@ core/
 │   └── signals/        # 각 도메인별 Signal
 ├── services/           # 핵심 비즈니스 서비스
 │   ├── MediaService/
-│   └── DownloadService/
+│   ├── DownloadService/
+│   └── scroll/         # 통합 스크롤 관리
+│       └── ScrollManager.ts  # 스크롤 보호 및 복원
 ├── constants/          # 전역 상수
 └── types/             # 핵심 도메인 타입
 ```
@@ -145,6 +147,40 @@ core/
 - 애플리케이션 상태 관리
 - 도메인 모델 정의
 - 핵심 비즈니스 규칙 구현
+- **통합 스크롤 관리 시스템**
+
+#### 스크롤 관리 아키텍처
+
+**ScrollManager**: 페이지 스크롤 보호와 갤러리 내부 스크롤을 통합 관리
+
+```typescript
+// ✅ 스크롤 관리 사용법
+import { scrollManager } from '@core/services/scroll/ScrollManager';
+
+// 갤러리 진입 시 페이지 스크롤 잠금
+const savedPosition = scrollManager.lockPageScroll();
+
+// 갤러리 종료 시 스크롤 위치 복원
+scrollManager.unlockPageScroll();
+
+// 갤러리 내부 스크롤 관리
+scrollManager.scrollToGalleryItem(containerElement, itemIndex);
+```
+
+**주요 기능**:
+
+- 페이지 스크롤 즉시 잠금/해제
+- 스크롤 위치 안전한 복원 (실패 시 강제 복원)
+- 갤러리 내부 스크롤 관리
+- 모바일 터치 스크롤 보호
+- CSS 기반 스크롤 잠금 (스크롤바 너비 보정 포함)
+
+**설계 원칙**:
+
+- **단일 책임**: 스크롤 관련 모든 기능을 하나의 클래스에서 관리
+- **통합 관리**: 중복되었던 여러 스크롤 서비스를 하나로 통합
+- **안전한 복원**: 스크롤 위치 복원 실패 시 자동 재시도
+- **모바일 대응**: 터치 스크롤 및 오버스크롤 보호
 
 ### 5. Infrastructure Layer (`src/infrastructure/`)
 
@@ -846,5 +882,147 @@ export class ApplicationContext {
   static setConfigManager(manager: IConfigManager): void {
     this.configManager = manager;
   }
+}
+```
+
+---
+
+## 스크롤 관리 성능 최적화
+
+**ScrollManager 성능 특성**
+
+```typescript
+// ✅ 싱글톤 패턴으로 메모리 효율성
+export class ScrollManager {
+  private static instance: ScrollManager;
+
+  public static getInstance(): ScrollManager {
+    ScrollManager.instance ??= new ScrollManager();
+    return ScrollManager.instance;
+  }
+}
+
+// ✅ 디바운싱으로 스크롤 이벤트 최적화
+public scrollToGalleryItem(
+  containerElement: HTMLElement,
+  itemIndex: number,
+  options: GalleryScrollOptions = {}
+): void {
+  const { debounceDelay = this.scrollDebounceDelay } = options;
+
+  // 디바운스 처리로 과도한 스크롤 이벤트 방지
+  const currentTime = Date.now();
+  if (currentTime - this.galleryScrollState.lastScrollTime < debounceDelay) {
+    return;
+  }
+
+  this.galleryScrollState.lastScrollTime = currentTime;
+  // ... 스크롤 로직
+}
+```
+
+**CSS 기반 스크롤 잠금 최적화**
+
+```typescript
+// ✅ 스크롤바 너비 캐싱으로 성능 향상
+private scrollbarWidthCache: number | null = null;
+
+private getScrollbarWidth(): number {
+  if (this.scrollbarWidthCache !== null) {
+    return this.scrollbarWidthCache;
+  }
+
+  const outer = document.createElement('div');
+  outer.style.visibility = 'hidden';
+  outer.style.overflow = 'scroll';
+  document.body.appendChild(outer);
+
+  const inner = document.createElement('div');
+  outer.appendChild(inner);
+
+  this.scrollbarWidthCache = outer.offsetWidth - inner.offsetWidth;
+  outer.parentNode?.removeChild(outer);
+
+  return this.scrollbarWidthCache;
+}
+
+// ✅ CSS 변수를 통한 모바일 최적화
+private applyCSSLock(position: ScrollPosition): void {
+  // CSS 변수로 위치 저장 (모바일 대응)
+  document.documentElement.style.setProperty('--xeg-scroll-lock-top', `-${position.y}px`);
+  document.documentElement.style.setProperty('--xeg-scroll-lock-left', `-${position.x}px`);
+  document.documentElement.style.setProperty('--xeg-scrollbar-width', `${scrollbarWidth}px`);
+
+  // 터치 스크롤 완전 차단
+  body.style.touchAction = 'none';
+  body.style.overscrollBehavior = 'none';
+}
+```
+
+**강화된 스크롤 복원 메커니즘**
+
+```typescript
+// ✅ 비동기 검증으로 복원 안정성 향상
+private restoreScrollPositionSafely(): void {
+  const targetPosition = this.pageScrollState.savedPosition;
+
+  // 즉시 복원 시도
+  window.scrollTo({
+    left: targetPosition.x,
+    top: targetPosition.y,
+    behavior: 'instant',
+  });
+
+  // 100ms 후 검증 및 재시도
+  setTimeout(() => {
+    const currentX = window.scrollX || window.pageXOffset || 0;
+    const currentY = window.scrollY || window.pageYOffset || 0;
+
+    if (Math.abs(currentX - targetPosition.x) > 5 || Math.abs(currentY - targetPosition.y) > 5) {
+      this.forceRestoreScrollPosition(); // 강제 복원
+    }
+  }, 100);
+}
+```
+
+**메모리 관리 최적화**
+
+```typescript
+// ✅ 타임아웃 정리로 메모리 누수 방지
+public forceReset(): void {
+  this.pageScrollState.isLocked = false;
+  this.pageScrollState.savedPosition = { x: 0, y: 0 };
+  this.pageScrollState.lockTimestamp = 0;
+  this.pageScrollState.forceRestoreAttempts = 0;
+  delete this.pageScrollState.backupPosition;
+
+  // CSS 정리
+  this.removeCSSLock();
+
+  // 스크롤바 너비 캐시 초기화
+  this.scrollbarWidthCache = null;
+}
+```
+
+**갤러리 스크롤 성능 최적화**
+
+```typescript
+// ✅ 배경 요소 스크롤 차단으로 성능 향상
+private isBackgroundElement(element: HTMLElement): boolean {
+  const gallerySelectors = [
+    '.xeg-gallery',
+    '.gallery-container',
+    '.vertical-gallery',
+    '[data-gallery]',
+  ];
+
+  // 캐시된 셀렉터로 빠른 검증
+  for (const selector of gallerySelectors) {
+    if (element.closest(selector)) {
+      return false; // 갤러리 내부 요소
+    }
+  }
+
+  return true; // 배경 요소 - 스크롤 차단
 }
 ```

@@ -926,75 +926,117 @@ export async function createGallery() {
 }
 ```
 
-### 6. CSS 최적화 도구 연동
+### 6. 스크롤 관리 (ScrollManager)
 
-**PostCSS 플러그인을 통한 자동 최적화**
+**통합 스크롤 관리 시스템**
 
 ```typescript
-// 빌드 시 CSS 자동 최적화
-export class CSSOptimizer {
-  static async optimizeForProduction(css: string): Promise<string> {
-    // 1. 사용하지 않는 CSS 제거
-    const purgedCSS = await this.removeUnusedCSS(css);
+// ✅ 스크롤 관리자 import 및 사용
+import { scrollManager } from '@core/services/scroll/ScrollManager';
 
-    // 2. 벤더 프리픽스 자동 추가
-    const prefixedCSS = await this.addVendorPrefixes(purgedCSS);
+// 갤러리 진입 시 페이지 스크롤 보호
+function openGallery() {
+  const savedPosition = scrollManager.lockPageScroll();
+  console.log('스크롤 잠금 적용:', savedPosition);
+}
 
-    // 3. CSS 압축 및 최적화
-    const minifiedCSS = await this.minifyCSS(prefixedCSS);
+// 갤러리 종료 시 스크롤 복원
+function closeGallery() {
+  scrollManager.unlockPageScroll();
+  console.log('스크롤 위치 복원 완료');
+}
 
-    // 4. 중복 선택자 병합
-    const optimizedCSS = await this.mergeDuplicateSelectors(minifiedCSS);
-
-    return optimizedCSS;
-  }
-
-  private static async removeUnusedCSS(css: string): Promise<string> {
-    // PurgeCSS 또는 유사한 도구 사용
-    // DOM에서 실제 사용되는 클래스만 유지
-  }
-
-  private static async addVendorPrefixes(css: string): Promise<string> {
-    // Autoprefixer 사용하여 브라우저 호환성 확보
-  }
+// 갤러리 내부 아이템으로 스크롤
+function scrollToItem(containerElement: HTMLElement, itemIndex: number) {
+  scrollManager.scrollToGalleryItem(containerElement, itemIndex, {
+    behavior: 'smooth',
+    offset: -10, // 약간의 여백
+  });
 }
 ```
 
-### 7. 런타임 CSS 성능 모니터링
-
-**스타일 성능 추적 시스템**
+**스크롤 보호 Hook 패턴**
 
 ```typescript
-export class CSSPerformanceMonitor {
-  private static paintMetrics = new Map<string, number>();
+// ✅ 갤러리 스크롤 보호 커스텀 훅
+import { useGalleryScrollProtection } from '@features/gallery/hooks';
 
-  static measureCSSImpact(selector: string): void {
-    const observer = new PerformanceObserver(list => {
-      for (const entry of list.getEntries()) {
-        if (entry.entryType === 'paint') {
-          this.paintMetrics.set(selector, entry.startTime);
-        }
-      }
-    });
+function GalleryComponent() {
+  const { scrollToCurrentImageSafely, isScrollProtected } = useGalleryScrollProtection({
+    isGalleryOpen: true,
+    currentIndex: 0,
+    containerRef: galleryRef,
+    mediaItems: items,
+  });
 
-    observer.observe({ entryTypes: ['paint'] });
-  }
-
-  static getCSSPerformanceReport(): CSSPerformanceReport {
-    return {
-      totalPaintTime: Array.from(this.paintMetrics.values()).reduce((sum, time) => sum + time, 0),
-      slowestSelectors: this.identifySlowSelectors(),
-      recommendations: this.generateOptimizationRecommendations(),
-    };
-  }
-
-  private static identifySlowSelectors(): { selector: string; paintTime: number }[] {
-    return Array.from(this.paintMetrics.entries())
-      .map(([selector, time]) => ({ selector, paintTime: time }))
-      .sort((a, b) => b.paintTime - a.paintTime)
-      .slice(0, 5);
-  }
+  return (
+    <div ref={galleryRef}>
+      {/* 갤러리 내용 */}
+    </div>
+  );
 }
 ```
 
----
+**스크롤 관리 모범 사례**
+
+```typescript
+// ✅ 안전한 스크롤 관리 - 에러 처리 포함
+function handleGalleryClose() {
+  try {
+    scrollManager.unlockPageScroll();
+    logger.debug('스크롤 정상 복원');
+  } catch (error) {
+    logger.warn('스크롤 복원 실패, 강제 복원 시도:', error);
+
+    // 비상 복원 시도
+    try {
+      scrollManager.forceRestoreScrollPosition();
+      logger.debug('강제 스크롤 복원 성공');
+    } catch (forceError) {
+      logger.error('강제 스크롤 복원 실패:', forceError);
+    }
+  }
+}
+
+// ✅ 스크롤 상태 진단 (디버깅용)
+function debugScrollState() {
+  const diagnostics = scrollManager.getDiagnostics();
+  console.log('스크롤 상태 진단:', diagnostics);
+}
+```
+
+**❌ 금지사항**
+
+```typescript
+// ❌ 직접 window.scrollTo 사용 금지
+window.scrollTo(0, 0); // 금지
+
+// ❌ 개별 스크롤 보호 구현 금지
+document.body.style.overflow = 'hidden'; // 금지
+
+// ❌ 중복 스크롤 서비스 생성 금지
+class MyScrollService {} // 금지 - ScrollManager 사용
+```
+
+**CSS 스크롤 잠금 클래스**
+
+```css
+/* ✅ ScrollManager가 사용하는 CSS 클래스 */
+body.xeg-scroll-locked {
+  position: fixed !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* 모바일 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  body.xeg-scroll-locked {
+    top: var(--xeg-scroll-lock-top, 0) !important;
+    left: var(--xeg-scroll-lock-left, 0) !important;
+    height: 100% !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+```

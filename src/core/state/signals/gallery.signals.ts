@@ -110,15 +110,26 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
 }
 
 /**
- * Close gallery
+ * Close gallery with enhanced scroll restoration
  */
 export function closeGallery(): void {
-  // 스크롤 잠금 해제 (ScrollManager를 통한 통합 관리)
+  // 스크롤 잠금 해제 (ScrollManager를 통한 통합 관리) - 강화된 버전
   try {
     const { scrollManager } = require('../../services/scroll/ScrollManager');
     scrollManager.unlockPageScroll();
+
+    logger.debug('[Gallery] 스크롤 잠금 해제 완료');
   } catch (error) {
-    logger.error('[Gallery] Failed to unlock scroll during close:', error);
+    logger.error('[Gallery] 스크롤 잠금 해제 중 오류 발생:', error);
+
+    // 비상 복원 시도
+    try {
+      const { scrollManager } = require('../../services/scroll/ScrollManager');
+      scrollManager.forceRestoreScrollPosition();
+      logger.debug('[Gallery] 비상 스크롤 복원 시도 완료');
+    } catch (forceError) {
+      logger.error('[Gallery] 비상 스크롤 복원 실패:', forceError);
+    }
   }
 
   galleryState.value = {
@@ -128,7 +139,7 @@ export function closeGallery(): void {
     error: null,
   };
 
-  logger.debug('[Gallery] Closed with scroll unlock');
+  logger.debug('[Gallery] 갤러리 종료 완료 (강화된 스크롤 복원 포함)');
 }
 
 /**

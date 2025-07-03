@@ -132,8 +132,13 @@ export class GalleryApp implements IGalleryApp {
         return;
       }
 
-      // 즉시 스크롤 보호 적용 (갤러리 렌더링 전)
-      scrollManager.lockPageScroll();
+      // 즉시 스크롤 보호 적용 (갤러리 렌더링 전) - 강화된 버전
+      const savedPosition = scrollManager.lockPageScroll();
+
+      logger.debug('GalleryApp: 스크롤 보호 적용 완료', {
+        savedPosition,
+        timestamp: Date.now(),
+      });
 
       // 트위터 기본 동작 차단하고 갤러리 실행
       event.preventDefault();

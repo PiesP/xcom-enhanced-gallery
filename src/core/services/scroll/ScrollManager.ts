@@ -17,6 +17,8 @@ export interface ScrollState {
   isLocked: boolean;
   savedPosition: ScrollPosition;
   lockTimestamp: number;
+  backupPosition?: ScrollPosition | undefined; // 백업 위치 (복원 실패 시 사용)
+  forceRestoreAttempts: number; // 강제 복원 시도 횟수
 }
 
 export interface GalleryScrollOptions {
@@ -42,6 +44,7 @@ export class ScrollManager {
     isLocked: false,
     savedPosition: { x: 0, y: 0 },
     lockTimestamp: 0,
+    forceRestoreAttempts: 0,
   };
 
   // 갤러리 내부 스크롤 상태
@@ -54,7 +57,7 @@ export class ScrollManager {
   // 설정
   private readonly scrollDebounceDelay = 50;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): ScrollManager {
     ScrollManager.instance ??= new ScrollManager();
@@ -64,7 +67,7 @@ export class ScrollManager {
   // ===== 페이지 스크롤 보호 기능 =====
 
   /**
-   * 페이지 스크롤 즉시 잠금
+   * 페이지 스크롤 즉시 잠금 (강화된 버전)
    */
   public lockPageScroll(): ScrollPosition {
     if (this.pageScrollState.isLocked) {
@@ -78,13 +81,15 @@ export class ScrollManager {
     };
 
     this.pageScrollState.savedPosition = currentPosition;
+    this.pageScrollState.backupPosition = { ...currentPosition }; // 백업 위치 저장
     this.pageScrollState.lockTimestamp = Date.now();
+    this.pageScrollState.forceRestoreAttempts = 0;
 
     // CSS 기반 스크롤 잠금 적용
     this.applyCSSLock(currentPosition);
     this.pageScrollState.isLocked = true;
 
-    logger.debug('ScrollManager: 페이지 스크롤 잠금 적용', {
+    logger.debug('ScrollManager: 페이지 스크롤 잠금 적용 (강화된 버전)', {
       position: currentPosition,
       timestamp: this.pageScrollState.lockTimestamp,
     });
@@ -93,7 +98,7 @@ export class ScrollManager {
   }
 
   /**
-   * 페이지 스크롤 잠금 해제 및 위치 복원
+   * 페이지 스크롤 잠금 해제 및 위치 복원 (강화된 버전)
    */
   public unlockPageScroll(): void {
     if (!this.pageScrollState.isLocked) {
@@ -103,17 +108,14 @@ export class ScrollManager {
     // CSS 잠금 해제
     this.removeCSSLock();
 
-    // 원래 위치로 복원
-    window.scrollTo({
-      left: this.pageScrollState.savedPosition.x,
-      top: this.pageScrollState.savedPosition.y,
-      behavior: 'instant',
-    });
+    // 원래 위치로 복원 (실패 시 재시도)
+    this.restoreScrollPositionSafely();
 
     this.pageScrollState.isLocked = false;
 
-    logger.debug('ScrollManager: 페이지 스크롤 잠금 해제', {
+    logger.debug('ScrollManager: 페이지 스크롤 잠금 해제 (강화된 버전)', {
       restoredPosition: this.pageScrollState.savedPosition,
+      forceRestoreAttempts: this.pageScrollState.forceRestoreAttempts,
     });
   }
 
@@ -205,15 +207,61 @@ export class ScrollManager {
     return this.galleryScrollState.focusedImageIndex;
   }
 
+  /**
+   * 강제 스크롤 위치 복원 (비상 상황 시)
+   */
+  public forceRestoreScrollPosition(): void {
+    if (this.pageScrollState.forceRestoreAttempts >= 3) {
+      logger.warn('ScrollManager: 강제 복원 시도 한도 초과, 복원 중단');
+      return;
+    }
+
+    this.pageScrollState.forceRestoreAttempts++;
+    const targetPosition =
+      this.pageScrollState.backupPosition || this.pageScrollState.savedPosition;
+
+    // 즉시 복원 시도
+    window.scrollTo({
+      left: targetPosition.x,
+      top: targetPosition.y,
+      behavior: 'instant',
+    });
+
+    // 50ms 후 검증 및 재시도
+    setTimeout(() => {
+      const currentX = window.scrollX || window.pageXOffset || 0;
+      const currentY = window.scrollY || window.pageYOffset || 0;
+
+      if (Math.abs(currentX - targetPosition.x) > 5 || Math.abs(currentY - targetPosition.y) > 5) {
+        logger.warn('ScrollManager: 스크롤 위치 복원 실패, 재시도 중', {
+          target: targetPosition,
+          current: { x: currentX, y: currentY },
+          attempt: this.pageScrollState.forceRestoreAttempts,
+        });
+
+        if (this.pageScrollState.forceRestoreAttempts < 3) {
+          this.forceRestoreScrollPosition();
+        }
+      } else {
+        logger.debug('ScrollManager: 강제 스크롤 위치 복원 성공', {
+          position: targetPosition,
+          attempts: this.pageScrollState.forceRestoreAttempts,
+        });
+      }
+    }, 50);
+  }
+
   // ===== 진단 및 상태 관리 =====
 
   /**
-   * 전체 상태 강제 초기화
+   * 전체 상태 강제 초기화 (강화된 버전)
    */
   public forceReset(): void {
     this.pageScrollState.isLocked = false;
     this.pageScrollState.savedPosition = { x: 0, y: 0 };
     this.pageScrollState.lockTimestamp = 0;
+    this.pageScrollState.forceRestoreAttempts = 0;
+    delete this.pageScrollState.backupPosition;
 
     this.galleryScrollState.focusedImageIndex = 0;
     this.galleryScrollState.savedScrollPosition = 0;
@@ -221,18 +269,22 @@ export class ScrollManager {
 
     this.removeCSSLock();
 
-    logger.debug('ScrollManager: 전체 상태 강제 초기화 완료');
+    logger.debug('ScrollManager: 전체 상태 강제 초기화 완료 (강화된 버전)');
   }
 
   /**
-   * 진단 정보 반환
+   * 진단 정보 반환 (강화된 버전)
    */
   public getDiagnostics() {
     return {
       pageScroll: {
         isLocked: this.pageScrollState.isLocked,
         savedPosition: { ...this.pageScrollState.savedPosition },
+        backupPosition: this.pageScrollState.backupPosition
+          ? { ...this.pageScrollState.backupPosition }
+          : undefined,
         lockTimestamp: this.pageScrollState.lockTimestamp,
+        forceRestoreAttempts: this.pageScrollState.forceRestoreAttempts,
       },
       galleryScroll: {
         focusedImageIndex: this.galleryScrollState.focusedImageIndex,
@@ -245,7 +297,7 @@ export class ScrollManager {
   // ===== 내부 메서드 =====
 
   /**
-   * CSS 기반 스크롤 잠금 적용
+   * CSS 기반 스크롤 잠금 적용 (강화된 버전)
    */
   private applyCSSLock(position: ScrollPosition): void {
     const body = document.body;
@@ -254,6 +306,11 @@ export class ScrollManager {
     // 스크롤바 너비 계산
     const scrollbarWidth = this.getScrollbarWidth();
 
+    // CSS 변수를 통한 위치 저장 (모바일 대응)
+    document.documentElement.style.setProperty('--xeg-scroll-lock-top', `-${position.y}px`);
+    document.documentElement.style.setProperty('--xeg-scroll-lock-left', `-${position.x}px`);
+    document.documentElement.style.setProperty('--xeg-scrollbar-width', `${scrollbarWidth}px`);
+
     // 스크롤 잠금 스타일 적용
     body.style.position = 'fixed';
     body.style.top = `-${position.y}px`;
@@ -261,13 +318,16 @@ export class ScrollManager {
     body.style.width = '100%';
     body.style.overflow = 'hidden';
     body.style.paddingRight = `${scrollbarWidth}px`;
+    body.style.touchAction = 'none';
+    body.style.overscrollBehavior = 'none';
 
     html.style.overflow = 'hidden';
+    html.classList.add('xeg-scroll-locked');
     body.classList.add('xeg-scroll-locked');
   }
 
   /**
-   * CSS 스크롤 잠금 해제
+   * CSS 스크롤 잠금 해제 (강화된 버전)
    */
   private removeCSSLock(): void {
     const body = document.body;
@@ -280,8 +340,18 @@ export class ScrollManager {
     body.style.width = '';
     body.style.overflow = '';
     body.style.paddingRight = '';
+    body.style.touchAction = '';
+    body.style.overscrollBehavior = '';
 
     html.style.overflow = '';
+
+    // CSS 변수 제거
+    document.documentElement.style.removeProperty('--xeg-scroll-lock-top');
+    document.documentElement.style.removeProperty('--xeg-scroll-lock-left');
+    document.documentElement.style.removeProperty('--xeg-scrollbar-width');
+
+    // 클래스 제거
+    html.classList.remove('xeg-scroll-locked');
     body.classList.remove('xeg-scroll-locked');
   }
 
@@ -343,6 +413,41 @@ export class ScrollManager {
     }
 
     return true; // 배경 요소
+  }
+
+  /**
+   * 안전한 스크롤 위치 복원 (private 메서드)
+   */
+  private restoreScrollPositionSafely(): void {
+    const targetPosition = this.pageScrollState.savedPosition;
+
+    // 첫 번째 시도: 즉시 복원
+    window.scrollTo({
+      left: targetPosition.x,
+      top: targetPosition.y,
+      behavior: 'instant',
+    });
+
+    // 100ms 후 검증
+    setTimeout(() => {
+      const currentX = window.scrollX || window.pageXOffset || 0;
+      const currentY = window.scrollY || window.pageYOffset || 0;
+
+      // 위치 차이가 5px 이상이면 복원 실패로 간주
+      if (Math.abs(currentX - targetPosition.x) > 5 || Math.abs(currentY - targetPosition.y) > 5) {
+        logger.warn('ScrollManager: 스크롤 위치 복원 실패, 강제 복원 시도', {
+          target: targetPosition,
+          current: { x: currentX, y: currentY },
+        });
+
+        // 강제 복원 시도
+        this.forceRestoreScrollPosition();
+      } else {
+        logger.debug('ScrollManager: 스크롤 위치 복원 성공', {
+          position: targetPosition,
+        });
+      }
+    }, 100);
   }
 }
 
