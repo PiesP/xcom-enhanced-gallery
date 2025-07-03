@@ -6,7 +6,7 @@
  * Provides consistent error handling patterns across all layers
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '../../infrastructure/logging/logger';
 
 // ================================
 // Core Error Types
@@ -80,23 +80,23 @@ export class AppError extends Error {
 // Error Handler Interface
 // ================================
 
-export interface ErrorHandler {
+export interface IErrorHandler {
   handle(error: Error | AppError, context?: string): void;
   handleAsync(error: Error | AppError, context?: string): Promise<void>;
 }
 
 /**
- * 통합 에러 핸들러 구현
+ * 에러 핸들러 구현
  */
-export class UnifiedErrorHandler implements ErrorHandler {
-  private static instance: UnifiedErrorHandler | null = null;
+export class ErrorHandler implements IErrorHandler {
+  private static instance: ErrorHandler | null = null;
 
-  public static getInstance(): UnifiedErrorHandler {
-    this.instance ??= new UnifiedErrorHandler();
+  public static getInstance(): ErrorHandler {
+    this.instance ??= new ErrorHandler();
     return this.instance;
   }
 
-  private constructor() {}
+  private constructor() { }
 
   /**
    * 동기적 에러 처리
@@ -185,7 +185,7 @@ export class UnifiedErrorHandler implements ErrorHandler {
 // Convenience Functions
 // ================================
 
-const errorHandler = UnifiedErrorHandler.getInstance();
+const errorHandler = ErrorHandler.getInstance();
 
 /**
  * 안전한 비동기 함수 실행 래퍼

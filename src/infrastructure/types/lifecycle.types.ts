@@ -46,9 +46,9 @@ export interface Lifecycle extends Cleanupable, Disposable, Destroyable {
 }
 
 /**
- * 간소화된 생명주기 인터페이스 (cleanup + destroy)
+ * 생명주기 인터페이스 (cleanup + destroy)
  */
-export interface SimpleLifecycle extends Cleanupable, Destroyable {
+export interface BasicLifecycle extends Cleanupable, Destroyable {
   isActive(): boolean;
 }
 
@@ -67,7 +67,7 @@ export type LifecycleState = 'idle' | 'active' | 'disposing' | 'destroyed';
 /**
  * 생명주기 관리 베이스 클래스
  */
-export abstract class BaseLifecycleManager implements SimpleLifecycle {
+export abstract class BaseLifecycleManager implements BasicLifecycle {
   protected state: LifecycleState = 'idle';
 
   public isActive(): boolean {

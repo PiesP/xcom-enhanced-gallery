@@ -61,7 +61,7 @@ export class Application {
    */
   public async start(): Promise<void> {
     if (this.isStarted) {
-      logger.debug('UnifiedApplication: Already started');
+      logger.debug('Application: Already started');
       return;
     }
 
@@ -223,14 +223,14 @@ export class Application {
    */
   private setupDevelopmentTools(): void {
     // 전역 접근
-    (globalThis as Record<string, unknown>).__XEG_UNIFIED_APP__ = this;
+    (globalThis as Record<string, unknown>).__XEG_APP__ = this;
 
     // 진단 도구
     import('@core/services/ServiceDiagnostics').then(({ diagnoseServiceManager }) => {
       (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ = diagnoseServiceManager;
 
       logger.debug('🛠️ 개발 도구 활성화됨:', {
-        availableCommands: ['__XEG_UNIFIED_APP__', '__XEG_DIAGNOSE__()', '__XEG_APP__ (갤러리 앱)'],
+        availableCommands: ['__XEG_APP__', '__XEG_DIAGNOSE__()', '__XEG_GALLERY__ (갤러리 앱)'],
       });
     });
   }
@@ -290,7 +290,7 @@ export class Application {
 
     // 갤러리 앱에 설정 전달
     if (this.galleryApp) {
-      // AppConfig를 UnifiedGalleryConfig로 변환
+      // AppConfig를 GalleryConfig로 변환
       const galleryConfig: Partial<import('./GalleryApp').GalleryConfig> =
         removeUndefinedProperties({
           performanceMonitoring: newConfig.performanceMonitoring,
@@ -347,14 +347,14 @@ export class Application {
   } {
     // 동적 import를 사용하여 순환 의존성 방지
     try {
-      // 동기적으로 UnifiedMemoryManager 사용이 어려우므로 기존 방식 유지
+      // 동기적으로 MemoryManager 사용이 어려우므로 기존 방식 유지
       // (진단 정보는 실시간으로 필요하므로)
       const memory = (performance as unknown as Record<string, unknown>).memory as
         | {
-            usedJSHeapSize?: number;
-            totalJSHeapSize?: number;
-            jsHeapSizeLimit?: number;
-          }
+          usedJSHeapSize?: number;
+          totalJSHeapSize?: number;
+          jsHeapSizeLimit?: number;
+        }
         | undefined;
 
       return {

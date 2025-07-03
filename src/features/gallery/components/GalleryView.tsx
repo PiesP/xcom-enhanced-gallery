@@ -45,7 +45,7 @@ export function GalleryView({
   onDownloadAll,
   isDownloading = false,
 }: GalleryViewProps): ComponentChildren {
-  logger.debug('🎨 UnifiedGalleryView: 렌더링 시작', {
+  logger.debug('🎨 GalleryView: 렌더링 시작', {
     mediaCount: mediaItems.length,
     currentIndex,
     isDownloading,
@@ -164,7 +164,7 @@ export function GalleryView({
   }
 
   return (
-    <div ref={containerRef} className={styles.container} data-testid='unified-gallery-view'>
+    <div ref={containerRef} className={styles.container} data-testid='gallery-view'>
       {/* 통합된 툴바 */}
       <div
         className={`${styles.toolbar} ${isToolbarVisible ? styles.toolbarVisible : styles.toolbarHidden}`}
@@ -251,10 +251,10 @@ export function GalleryView({
               className={`${styles.media} ${styles.image}`}
               loading='eager'
               onLoad={() => {
-                logger.debug('🎨 UnifiedGalleryView: 이미지 로드 완료');
+                logger.debug('🎨 GalleryView: 이미지 로드 완료');
               }}
               onError={() => {
-                logger.warn('🎨 UnifiedGalleryView: 이미지 로드 실패');
+                logger.warn('🎨 GalleryView: 이미지 로드 실패');
               }}
             />
           ) : currentMediaItem.type === 'video' ? (
@@ -266,10 +266,10 @@ export function GalleryView({
               muted
               playsInline
               onLoadedData={() => {
-                logger.debug('🎨 UnifiedGalleryView: 비디오 로드 완료');
+                logger.debug('🎨 GalleryView: 비디오 로드 완료');
               }}
               onError={() => {
-                logger.warn('🎨 UnifiedGalleryView: 비디오 로드 실패');
+                logger.warn('🎨 GalleryView: 비디오 로드 실패');
               }}
             />
           ) : (

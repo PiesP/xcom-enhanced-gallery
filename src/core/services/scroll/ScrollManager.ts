@@ -57,7 +57,7 @@ export class ScrollManager {
   // 설정
   private readonly scrollDebounceDelay = 50;
 
-  private constructor() { }
+  private constructor() {}
 
   public static getInstance(): ScrollManager {
     ScrollManager.instance ??= new ScrollManager();

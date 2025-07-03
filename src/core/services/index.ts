@@ -22,8 +22,8 @@ export type { ServiceTypeMapping } from '../types/services.types';
 export type { DownloadOptions, DownloadProgress, DownloadResult } from './BulkDownloadService';
 
 // Theme Service (Simplified)
-export { SimpleThemeManager, themeManager } from './AutoThemeService';
-export type { Theme } from './AutoThemeService';
+export { ThemeManager, themeManager } from './ThemeService';
+export type { Theme } from './ThemeService';
 
 // Application Lifecycle Management
 export { AppLifecycle, appLifecycle } from './AppLifecycle';
