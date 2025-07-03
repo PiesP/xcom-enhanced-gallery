@@ -113,6 +113,14 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
  * Close gallery
  */
 export function closeGallery(): void {
+  // 스크롤 잠금 해제 (ScrollManager를 통한 통합 관리)
+  try {
+    const { scrollManager } = require('../../services/scroll/ScrollManager');
+    scrollManager.unlockPageScroll();
+  } catch (error) {
+    logger.error('[Gallery] Failed to unlock scroll during close:', error);
+  }
+
   galleryState.value = {
     ...galleryState.value,
     isOpen: false,
@@ -120,7 +128,7 @@ export function closeGallery(): void {
     error: null,
   };
 
-  logger.debug('[Gallery] Closed');
+  logger.debug('[Gallery] Closed with scroll unlock');
 }
 
 /**

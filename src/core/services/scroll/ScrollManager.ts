@@ -6,7 +6,7 @@
  * 트위터 페이지 스크롤 문제를 근본적으로 해결합니다.
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '../../../infrastructure/logging/logger';
 
 export interface ScrollPosition {
   x: number;
@@ -240,36 +240,6 @@ export class ScrollManager {
         lastScrollTime: this.galleryScrollState.lastScrollTime,
       },
     };
-  }
-
-  // ===== 레거시 호환성 메서드 =====
-
-  /**
-   * @deprecated use isPageScrollLocked() instead
-   */
-  public isLocked(): boolean {
-    return this.isPageScrollLocked();
-  }
-
-  /**
-   * @deprecated use lockPageScroll() instead
-   */
-  public lockScrollImmediately(): void {
-    this.lockPageScroll();
-  }
-
-  /**
-   * @deprecated use unlockPageScroll() instead
-   */
-  public unlockAndRestore(): void {
-    this.unlockPageScroll();
-  }
-
-  /**
-   * @deprecated use getSavedPagePosition() instead
-   */
-  public getSavedPosition(): ScrollPosition {
-    return this.getSavedPagePosition();
   }
 
   // ===== 내부 메서드 =====

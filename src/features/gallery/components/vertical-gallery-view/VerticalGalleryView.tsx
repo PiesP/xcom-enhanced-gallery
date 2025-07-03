@@ -6,14 +6,14 @@
  * @version 3.0 - Optimized with better toast management and image fitting
  */
 
-import type { MediaInfo } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
-import { Button } from '@shared/components/ui/Button/Button';
-import { Toast } from '@shared/components/ui/Toast/Toast';
-import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import type { ImageFitMode } from '@shared/types/image-fit.types';
-import { scrollManager } from '@core/services/scroll/ScrollManager';
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import type { MediaInfo } from '../../../../core/types/media.types';
+import { logger } from '../../../../infrastructure/logging/logger';
+import { Button } from '../../../../shared/components/ui/Button/Button';
+import { Toast } from '../../../../shared/components/ui/Toast/Toast';
+import { Toolbar } from '../../../../shared/components/ui/Toolbar/Toolbar';
+import type { ImageFitMode } from '../../../../shared/types/image-fit.types';
+import { scrollManager } from '../../../../core/services/scroll/ScrollManager';
+import { getPreactHooks } from '../../../../infrastructure/external/vendors';
 import { useGalleryScrollProtection } from './hooks/useGalleryScrollProtection';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
@@ -321,10 +321,9 @@ export function VerticalGalleryView({
       // 갤러리 닫기 전 비디오 정지
       setIsVisible(false);
 
-      // 통합 스크롤 보호 해제
+      // 통합 스크롤 보호 해제 (ScrollManager만 사용)
       try {
-        const { scrollManager } = require('../../../../core/services/scroll/ScrollManager');
-        scrollManager.unlockAndRestore();
+        scrollManager.unlockPageScroll();
       } catch (error) {
         logger.warn('Failed to unlock scroll during gallery close:', error);
       }

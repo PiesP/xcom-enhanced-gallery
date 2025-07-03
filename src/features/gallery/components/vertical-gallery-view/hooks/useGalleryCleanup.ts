@@ -6,8 +6,8 @@
  * @description 갤러리 정리 작업을 담당하는 커스텀 훅
  */
 
-import { logger } from '@infrastructure/logging/logger';
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import { logger } from '../../../../../infrastructure/logging/logger';
+import { getPreactHooks } from '../../../../../infrastructure/external/vendors';
 
 const { useCallback, useEffect } = getPreactHooks();
 
@@ -96,13 +96,14 @@ export function useGalleryCleanup({
     }
   }, []);
 
-  // 페이지 상태 복원
+  // 페이지 상태 복원 (ScrollManager를 통한 통합 관리)
   const restorePageState = useCallback(() => {
     try {
-      document.body.style.removeProperty('overflow');
-      document.body.style.removeProperty('pointer-events');
-      document.documentElement.style.removeProperty('overflow');
+      // ScrollManager가 이미 페이지 스크롤을 관리하므로, 갤러리 관련 클래스만 제거
       document.body.classList.remove('xeg-gallery-open');
+
+      // ScrollManager가 관리하지 않는 추가 스타일만 정리
+      document.body.style.removeProperty('pointer-events');
     } catch (error) {
       logger.debug('Failed to restore page state:', error);
     }

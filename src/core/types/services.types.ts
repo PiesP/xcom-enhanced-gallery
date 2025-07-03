@@ -52,10 +52,6 @@ export interface MediaExtractionServiceType extends BaseService {
   getInstance?(): MediaExtractionServiceType;
 }
 
-export interface UnifiedMediaExtractionServiceType extends BaseService {
-  extractMedia(element: Element, options?: unknown): Promise<unknown>;
-}
-
 export interface GalleryScrollManagerType extends BaseService {
   getInstance?(): GalleryScrollManagerType;
   lockScroll(): void;
@@ -80,7 +76,6 @@ export interface ServiceTypeMapping {
   'gallery.renderer': unknown; // GalleryRendererType - features layer 타입이므로 unknown 사용
   'gallery.download': unknown; // GalleryDownloadServiceType - features layer 타입이므로 unknown 사용
   'media.extraction': unknown; // MediaExtractionServiceType - features layer 타입이므로 unknown 사용
-  'media.extraction.unified': unknown; // UnifiedMediaExtractionServiceType - features layer 타입이므로 unknown 사용
   'media.filename': MediaFilenameServiceType;
   'scroll.manager': ScrollManagerType;
   'scroll.gallery': unknown; // GalleryScrollManagerType - shared layer 타입이므로 unknown 사용
