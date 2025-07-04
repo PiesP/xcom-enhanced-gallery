@@ -8,6 +8,14 @@
 // Bulk Download Service
 export { BulkDownloadService } from './BulkDownloadService';
 
+// Media services
+export {
+  UsernameExtractionService,
+  extractUsername,
+  extractUsernameSimple,
+  type UsernameExtractionResult,
+} from './media/UsernameExtractionService';
+
 // Service management system
 export { SERVICE_KEYS } from '../constants';
 export { ServiceManager, serviceManager } from './ServiceManager';

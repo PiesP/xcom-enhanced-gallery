@@ -1,7 +1,8 @@
 /**
  * @fileoverview 사용자명 추출 통합 유틸리티
  * @description Twitter/X.com에서 사용자명을 안전하게 추출하는 통합 서비스
- * @version 1.0.0
+ * @version 1.0.0 - Core 레이어로 이동
+ * @moved-from shared/utils/media/username-extraction.ts
  */
 
 import { logger } from '../../../infrastructure/logging/logger';
@@ -103,12 +104,11 @@ export class UsernameExtractionService {
           }
         }
       }
-
-      return { username: null, method: 'dom', confidence: 0 };
     } catch (error) {
-      logger.debug('UsernameExtractionService: DOM 추출 실패:', error);
-      return { username: null, method: 'dom', confidence: 0 };
+      logger.warn('[UsernameExtractionService] DOM 추출 실패:', error);
     }
+
+    return { username: null, method: 'dom', confidence: 0 };
   }
 
   /**
@@ -117,40 +117,32 @@ export class UsernameExtractionService {
   private extractFromURL(): UsernameExtractionResult {
     try {
       const url = window.location.href;
-
-      // Twitter/X URL 패턴 매칭
       const patterns = [
-        // 일반 프로필: twitter.com/username
-        /(?:twitter\.com|x\.com)\/([^/?#]+)(?:\/|$)/,
-        // 트윗 URL: twitter.com/username/status/123
-        /(?:twitter\.com|x\.com)\/([^/?#]+)\/status\/\d+/,
-        // 미디어 URL: twitter.com/username/status/123/photo/1
-        /(?:twitter\.com|x\.com)\/([^/?#]+)\/status\/\d+\/(?:photo|video)\/\d+/,
+        // 프로필 페이지: https://x.com/username
+        /\/([a-zA-Z0-9_]+)(?:\/status\/\d+)?(?:\?|$)/,
+        // 구 트위터 도메인
+        /twitter\.com\/([a-zA-Z0-9_]+)/,
       ];
 
       for (const pattern of patterns) {
         const match = url.match(pattern);
         if (match?.[1]) {
           const username = match[1];
-
-          // 유효하지 않은 경로 제외
-          if (!this.isValidUsername(username)) {
-            continue;
+          // 시스템 페이지 제외
+          if (!this.isSystemPage(username)) {
+            return {
+              username,
+              method: 'url',
+              confidence: 0.8,
+            };
           }
-
-          return {
-            username,
-            method: 'url',
-            confidence: 0.8,
-          };
         }
       }
-
-      return { username: null, method: 'url', confidence: 0 };
     } catch (error) {
-      logger.debug('UsernameExtractionService: URL 추출 실패:', error);
-      return { username: null, method: 'url', confidence: 0 };
+      logger.warn('[UsernameExtractionService] URL 추출 실패:', error);
     }
+
+    return { username: null, method: 'url', confidence: 0 };
   }
 
   /**
@@ -159,18 +151,17 @@ export class UsernameExtractionService {
   private extractFromMeta(): UsernameExtractionResult {
     try {
       const metaSelectors = [
-        'meta[property="og:url"]',
-        'link[rel="canonical"]',
+        'meta[property="profile:username"]',
+        'meta[property="twitter:creator"]',
         'meta[name="twitter:creator"]',
+        'meta[property="og:url"]',
       ];
 
       for (const selector of metaSelectors) {
-        const element = document.querySelector(selector);
-        if (element) {
-          const content = element.getAttribute('content') || element.getAttribute('href') || '';
-          const username = this.extractUsernameFromUrl(content);
-
-          if (username) {
+        const metaElement = document.querySelector(selector) as HTMLMetaElement;
+        if (metaElement?.content) {
+          const username = this.cleanUsername(metaElement.content);
+          if (username && !this.isSystemPage(username)) {
             return {
               username,
               method: 'meta',
@@ -179,52 +170,65 @@ export class UsernameExtractionService {
           }
         }
       }
-
-      return { username: null, method: 'meta', confidence: 0 };
     } catch (error) {
-      logger.debug('UsernameExtractionService: 메타데이터 추출 실패:', error);
-      return { username: null, method: 'meta', confidence: 0 };
+      logger.warn('[UsernameExtractionService] 메타데이터 추출 실패:', error);
     }
+
+    return { username: null, method: 'meta', confidence: 0 };
   }
 
   /**
    * HTML 요소에서 사용자명 추출
    */
   private extractUsernameFromElement(element: HTMLElement): string | null {
-    const text = element.textContent?.trim();
-    if (!text) return null;
+    if (!element) return null;
 
-    // @ 제거
-    const username = text.replace(/^@/, '');
-
-    return this.isValidUsername(username) ? username : null;
-  }
-
-  /**
-   * URL에서 사용자명 추출
-   */
-  private extractUsernameFromUrl(url: string): string | null {
     try {
-      const match = url.match(/(?:twitter\.com|x\.com)\/([^/?#]+)/);
-      if (match?.[1]) {
-        const username = match[1];
-        return this.isValidUsername(username) ? username : null;
+      let text = '';
+
+      // 텍스트 추출
+      if (element.tagName === 'A' && element.hasAttribute('href')) {
+        // 링크에서 href 사용
+        const href = element.getAttribute('href') || '';
+        const match = href.match(/^\/([a-zA-Z0-9_]+)$/);
+        if (match?.[1]) {
+          text = match[1];
+        }
+      } else {
+        // 일반 텍스트 추출
+        text = element.textContent?.trim() || '';
       }
-      return null;
-    } catch {
+
+      const username = this.cleanUsername(text);
+      return username && !this.isSystemPage(username) ? username : null;
+    } catch (error) {
+      logger.warn('[UsernameExtractionService] 요소 추출 실패:', error);
       return null;
     }
   }
 
   /**
-   * 유효한 사용자명인지 확인
+   * 사용자명 정제
    */
-  private isValidUsername(username: string): boolean {
-    if (!username || username.length === 0) return false;
+  private cleanUsername(text: string): string {
+    if (!text) return '';
 
-    // Twitter/X에서 예약된 경로들 제외
-    const reservedPaths = [
-      'i',
+    // @ 제거, 공백 제거, 소문자로 변환
+    let cleaned = text.replace(/^@/, '').trim();
+
+    // URL에서 추출된 경우 경로 제거
+    cleaned = cleaned.replace(/^.*\/([^/]+)$/, '$1');
+
+    // 유효한 사용자명 패턴만 허용
+    const validPattern = /^[a-zA-Z0-9_]{1,15}$/;
+    return validPattern.test(cleaned) ? cleaned : '';
+  }
+
+  /**
+   * 시스템 페이지 확인
+   */
+  private isSystemPage(username: string): boolean {
+    const systemPages = [
       'home',
       'explore',
       'notifications',
@@ -236,62 +240,37 @@ export class UsernameExtractionService {
       'compose',
       'search',
       'settings',
-      'help',
-      'display',
-      'keyboard_shortcuts',
-      'moments',
-      'topics',
-      'login',
       'logout',
+      'login',
       'signup',
-      'account',
-      'privacy',
-      'tos',
-      'about',
-      'blog',
-      'status',
-      'apps',
-      'jobs',
-      'advertise',
-      'media',
-      'hashtag',
+      'i',
       'intent',
       'oauth',
-      'api',
+      'privacy',
+      'tos',
+      'help',
+      'about',
+      'download',
+      'jobs',
+      'advertising',
+      'who_to_follow',
+      'trends',
     ];
 
-    if (reservedPaths.includes(username.toLowerCase())) {
-      return false;
-    }
-
-    // 유효한 사용자명 패턴 확인 (영문, 숫자, 언더스코어)
-    return /^[a-zA-Z0-9_]{1,15}$/.test(username);
+    return systemPages.includes(username.toLowerCase());
   }
 }
 
 /**
- * 사용자명 추출 편의 함수
+ * 편의 함수: 사용자명 추출
  */
-export function extractUsername(element?: HTMLElement | Document): string | null {
+export function extractUsername(element?: HTMLElement | Document): UsernameExtractionResult {
+  return UsernameExtractionService.getInstance().extractUsername(element);
+}
+
+/**
+ * 편의 함수: 간단한 사용자명 추출 (문자열만 반환)
+ */
+export function extractUsernameSimple(element?: HTMLElement | Document): string | null {
   return UsernameExtractionService.getInstance().extractUsername(element).username;
-}
-
-/**
- * 신뢰도가 높은 사용자명 추출
- */
-export function extractUsernameWithConfidence(
-  element?: HTMLElement | Document,
-  minConfidence = 0.5
-): UsernameExtractionResult {
-  const result = UsernameExtractionService.getInstance().extractUsername(element);
-
-  if (result.confidence >= minConfidence) {
-    return result;
-  }
-
-  return {
-    username: null,
-    method: 'fallback',
-    confidence: 0,
-  };
 }

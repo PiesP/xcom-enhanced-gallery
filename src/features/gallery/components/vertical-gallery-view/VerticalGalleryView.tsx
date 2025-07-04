@@ -438,7 +438,7 @@ export function VerticalGalleryView({
           event.stopPropagation();
           // 스크롤을 위로
           if (contentRef.current) {
-            const itemsList = contentRef.current.querySelector(`.${styles.itemsList}`);
+            const itemsList = contentRef.current.querySelector('[data-xeg-role="items-list"]');
             if (itemsList) {
               itemsList.scrollBy({ top: -200, behavior: 'smooth' });
             }
@@ -449,7 +449,7 @@ export function VerticalGalleryView({
           event.stopPropagation();
           // 스크롤을 아래로
           if (contentRef.current) {
-            const itemsList = contentRef.current.querySelector(`.${styles.itemsList}`);
+            const itemsList = contentRef.current.querySelector('[data-xeg-role="items-list"]');
             if (itemsList) {
               itemsList.scrollBy({ top: 200, behavior: 'smooth' });
             }
@@ -460,7 +460,7 @@ export function VerticalGalleryView({
           event.stopPropagation();
           // 첫 번째 이미지로 스크롤
           if (contentRef.current) {
-            const itemsList = contentRef.current.querySelector(`.${styles.itemsList}`);
+            const itemsList = contentRef.current.querySelector('[data-xeg-role="items-list"]');
             if (itemsList) {
               itemsList.scrollTo({ top: 0, behavior: 'smooth' });
             }
@@ -471,7 +471,7 @@ export function VerticalGalleryView({
           event.stopPropagation();
           // 마지막 이미지로 스크롤
           if (contentRef.current) {
-            const itemsList = contentRef.current.querySelector(`.${styles.itemsList}`);
+            const itemsList = contentRef.current.querySelector('[data-xeg-role="items-list"]');
             if (itemsList) {
               itemsList.scrollTo({ top: itemsList.scrollHeight, behavior: 'smooth' });
             }
@@ -713,7 +713,7 @@ export function VerticalGalleryView({
           e.stopImmediatePropagation();
         }}
       >
-        <div className={styles.itemsList} role='list'>
+        <div className={styles.itemsList} role='list' data-xeg-role='items-list'>
           {_memoizedMediaItems.map((media, index) => {
             if (!media) {
               return null;

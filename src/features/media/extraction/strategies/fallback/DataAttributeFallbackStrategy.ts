@@ -3,7 +3,7 @@
  */
 
 import { logger } from '../../../../../infrastructure/logging/logger';
-import { extractUsername } from '../../../../../shared/utils/media/username-extraction';
+import { extractUsernameSimple } from '../../../../../core/services/media/UsernameExtractionService';
 import type { MediaInfo } from '../../../../../core/types/media.types';
 import type {
   TweetInfo,
@@ -41,7 +41,7 @@ export class DataAttributeFallbackStrategy implements FallbackExtractionStrategy
             url,
             type: this.detectMediaType(url),
             filename: '',
-            tweetUsername: tweetInfo?.username || extractUsername() || undefined,
+            tweetUsername: tweetInfo?.username || extractUsernameSimple() || undefined,
             tweetId: tweetInfo?.tweetId || undefined,
             tweetUrl: tweetInfo?.tweetUrl || '',
             originalUrl: url,

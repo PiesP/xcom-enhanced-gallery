@@ -17,11 +17,3 @@ export * from './view-mode.types';
 
 // Service types
 export * from './services.types';
-
-// Type aliases for better semantics
-export type {
-  MediaType as CoreMediaType,
-  MediaQuality as CoreMediaQuality,
-  MediaInfo as CoreMediaInfo,
-  MediaItem as CoreMediaItem,
-} from './media.types';

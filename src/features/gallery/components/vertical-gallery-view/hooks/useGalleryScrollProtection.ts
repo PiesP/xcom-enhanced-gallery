@@ -88,7 +88,9 @@ export function useGalleryScrollProtection({
       return;
     }
 
-    const itemsList = containerRef.current.querySelector('.itemsList') as HTMLElement;
+    const itemsList = containerRef.current.querySelector(
+      '[data-xeg-role="items-list"]'
+    ) as HTMLElement;
 
     if (itemsList) {
       // 통합된 ScrollManager를 사용하여 갤러리 아이템으로 스크롤

@@ -17,13 +17,6 @@ export function isValidViewMode(mode: string): mode is ViewMode {
 }
 
 /**
- * 기본 ViewMode 반환
- */
-export function getDefaultViewMode(): ViewMode {
-  return 'verticalList';
-}
-
-/**
  * ViewMode 변환 함수 (하위 호환성)
  */
 export function normalizeViewMode(_mode: unknown): ViewMode {

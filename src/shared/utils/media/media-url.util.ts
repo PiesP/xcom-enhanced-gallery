@@ -9,7 +9,7 @@
  */
 
 import { logger } from '../../../infrastructure/logging/logger';
-import { extractUsername } from './username-extraction';
+import { extractUsernameSimple } from '../../../core/services/media/UsernameExtractionService';
 import type { MediaInfo } from '../../types/media.types';
 
 /**
@@ -105,7 +105,7 @@ function createMediaInfoFromImage(
       originalUrl: `https://twitter.com/i/status/${tweetId}/photo/${index + 1}`,
       tweetId,
       filename,
-      tweetUsername: extractUsername() || undefined,
+      tweetUsername: extractUsernameSimple() || undefined,
       tweetUrl: `https://twitter.com/i/status/${tweetId}`,
       alt,
     };
@@ -140,7 +140,7 @@ function createMediaInfoFromVideo(
       originalUrl: `https://twitter.com/i/status/${tweetId}/video/${index + 1}`,
       tweetId,
       filename,
-      tweetUsername: extractUsername() || undefined,
+      tweetUsername: extractUsernameSimple() || undefined,
       tweetUrl: `https://twitter.com/i/status/${tweetId}`,
       alt: `Video ${index + 1} from tweet`,
     };

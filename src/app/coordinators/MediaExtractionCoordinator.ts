@@ -4,10 +4,6 @@
  * @version 2.0.0 - Clean Architecture
  */
 
-import {
-  clearAllExtractions,
-  recordSuccessfulExtraction,
-} from '../../core/state/ExtractionStateManager';
 import type { MediaInfo } from '../../core/types/media.types';
 import { MediaExtractionService } from '../../features/media/extraction/services/MediaExtractor';
 import { logger } from '../../infrastructure/logging/logger';
@@ -50,8 +46,7 @@ export class MediaExtractionCoordinator {
     }
 
     try {
-      // 추출 상태 초기화
-      clearAllExtractions();
+      // 내부 상태 초기화
       this.extractionCounter = 0;
       this.isInitialized = true;
 
@@ -91,11 +86,6 @@ export class MediaExtractionCoordinator {
         logger.info(
           `[MediaExtractionCoordinator] ✅ 추출 성공 [${extractionId}]: ${result.mediaItems.length}개 미디어 (${duration.toFixed(1)}ms)`
         );
-
-        // 성공 기록
-        if (result.tweetInfo?.tweetId) {
-          recordSuccessfulExtraction(result.tweetInfo.tweetId);
-        }
 
         return {
           success: true,
@@ -167,9 +157,6 @@ export class MediaExtractionCoordinator {
   public async cleanup(): Promise<void> {
     try {
       logger.info('[MediaExtractionCoordinator] 정리 시작');
-
-      // 추출 상태 정리
-      clearAllExtractions();
 
       // 내부 상태 초기화
       this.extractionCounter = 0;

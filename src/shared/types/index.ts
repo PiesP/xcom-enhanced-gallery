@@ -54,11 +54,7 @@ export * from './ui.types';
 export * from './filename.types';
 
 // View mode types (from core layer)
-export {
-  getDefaultViewMode,
-  isValidViewMode,
-  normalizeViewMode,
-} from '@core/types/view-mode.types';
+export { isValidViewMode, normalizeViewMode } from '@core/types/view-mode.types';
 export type { VIEW_MODES, ViewMode } from '@core/types/view-mode.types';
 
 // 브랜드 타입들

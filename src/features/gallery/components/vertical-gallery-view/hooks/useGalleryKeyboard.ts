@@ -67,7 +67,9 @@ export function useGalleryKeyboard({
   // 스크롤 유틸리티
   const scrollInList = useCallback(
     (direction: 'up' | 'down' | 'home' | 'end') => {
-      const itemsList = contentRef.current?.querySelector('.itemsList') as HTMLElement;
+      const itemsList = contentRef.current?.querySelector(
+        '[data-xeg-role="items-list"]'
+      ) as HTMLElement;
       if (!itemsList) return;
 
       switch (direction) {

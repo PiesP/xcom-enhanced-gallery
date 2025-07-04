@@ -8,14 +8,6 @@ export {
   type ImageFilterResult,
 } from './image-filter';
 
-// Username extraction utilities
-export {
-  extractUsername,
-  extractUsernameWithConfidence,
-  UsernameExtractionService,
-  type UsernameExtractionResult,
-} from './username-extraction';
-
 // Media URL utilities
 export { getHighQualityMediaUrl, getMediaUrlsFromTweet, isValidMediaUrl } from './media-url.util';
 

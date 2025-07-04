@@ -3,7 +3,7 @@
  */
 
 import { logger } from '../../../../infrastructure/logging/logger';
-import { extractUsername } from '../../../../shared/utils/media/username-extraction';
+import { extractUsernameSimple } from '../../../../core/services/media/UsernameExtractionService';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '../interfaces/extraction.interfaces';
 
 export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
@@ -20,7 +20,7 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
 
       const username =
         this.findUsernameInContainer(tweetContainer as HTMLElement) ||
-        extractUsername() ||
+        extractUsernameSimple() ||
         'fallback';
 
       if (!username || username === 'fallback') {

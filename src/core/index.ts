@@ -16,8 +16,37 @@ export * from './constants';
 // Business interfaces
 export * from './interfaces';
 
-// State management
-export * from './state/ExtractionStateManager';
+// State management (selective exports to avoid conflicts with constants)
+export {
+  // Gallery signals
+  galleryState,
+  openGallery,
+  closeGallery,
+  navigateToItem,
+  navigatePrevious,
+  navigateNext,
+  setLoading,
+  setError,
+  setViewMode,
+  getCurrentMediaItem,
+  hasMediaItems,
+  getMediaItemsCount,
+  hasPreviousMedia,
+  hasNextMedia,
+  type GalleryEvents,
+} from './state/signals/gallery.signals';
+
+export {
+  // Download signals
+  downloadState,
+  startDownload,
+  updateDownloadProgress,
+  completeDownload,
+  failDownload,
+  removeTask,
+  type DownloadTask,
+  type DownloadState,
+} from './state/signals/download.signals';
 
 // Core types (selective export to avoid conflicts)
 export type {
@@ -36,38 +65,10 @@ export type {
 
 export {
   VIEW_MODES,
-  getDefaultViewMode,
   // View mode utilities
   isValidViewMode,
   normalizeViewMode,
 } from './types/view-mode.types';
 
-// Re-export media types with core namespace to avoid conflicts
-export type {
-  MediaInfo as CoreMediaInfo,
-  MediaItem as CoreMediaItem,
-  MediaQuality as CoreMediaQuality,
-  MediaType as CoreMediaType,
-} from './types/media.types';
-
 // Business services
 export * from './services';
-
-// State management (specific exports to avoid conflicts)
-export {
-  galleryState,
-  openGallery,
-  closeGallery,
-  navigateToItem,
-  navigatePrevious,
-  navigateNext,
-  setLoading,
-  setError,
-  setViewMode,
-  getCurrentMediaItem,
-  hasMediaItems,
-  getMediaItemsCount,
-  hasPreviousMedia,
-  hasNextMedia,
-  type GalleryEvents,
-} from './state/signals/gallery.signals';

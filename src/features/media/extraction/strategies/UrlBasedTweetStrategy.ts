@@ -4,7 +4,7 @@
  */
 
 import { logger } from '../../../../infrastructure/logging/logger';
-import { extractUsername } from '../../../../shared/utils/media/username-extraction';
+import { extractUsernameSimple } from '../../../../core/services/media/UsernameExtractionService';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '../interfaces/extraction.interfaces';
 
 /**
@@ -23,7 +23,8 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
         return null;
       }
 
-      const username = this.extractUsernameFromUrl(currentUrl) || extractUsername() || 'fallback';
+      const username =
+        this.extractUsernameFromUrl(currentUrl) || extractUsernameSimple() || 'fallback';
 
       if (!username || username === 'fallback') {
         logger.debug('UrlBasedTweetStrategy: 사용자명 추출 실패');

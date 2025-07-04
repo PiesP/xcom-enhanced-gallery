@@ -312,20 +312,4 @@ export function logError(
   }
 }
 
-/**
- * Conditional logging utility that only logs in development mode.
- *
- * @param fn - Function that performs logging
- *
- * @example
- * ```typescript
- * devLog(() => logger.debug('This only shows in development', complexObject));
- * ```
- */
-export function devLog(fn: () => void): void {
-  if (import.meta.env.MODE === 'development') {
-    fn();
-  }
-}
-
 export default logger;
