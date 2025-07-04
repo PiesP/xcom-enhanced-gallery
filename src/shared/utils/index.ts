@@ -26,6 +26,39 @@
 // Core utilities (DOM, accessibility, theming)
 export * from './core';
 
+// Type safety utilities (re-exported from infrastructure)
+export {
+  // Number/string parsing utilities
+  safeParseInt,
+  safeParseFloat,
+  // Array access utilities
+  safeArrayGet,
+  safeNodeListAccess,
+  // RegExp utilities
+  safeMatchExtract,
+  // Function call utilities
+  safeCall,
+  safeEventHandler,
+  // Type conversion utilities
+  undefinedToNull,
+  nullToUndefined,
+  stringWithDefault,
+  // Element validation utilities
+  safeElementCheck,
+  safeProp,
+  // Domain-specific utilities
+  safeTweetId,
+  safeUsername,
+  safeClickedIndex,
+  // Object manipulation utilities
+  assignOptionalProperty,
+  conditionalAssign,
+  mergeWithoutUndefined,
+  createWithOptionalProperties,
+  buildSafeObject,
+  removeUndefinedProperties,
+} from '@infrastructure/utils/type-safety-helpers';
+
 // Gallery utilities (state management, protection)
 export * from './gallery';
 

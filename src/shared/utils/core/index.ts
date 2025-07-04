@@ -13,9 +13,6 @@ export * from '../dom/isInsideGallery';
 // Accessibility utilities
 export * from './accessibility';
 
-// Type utilities
-export * from './type-utils';
-
 // 테마 관련 유틸리티는 단순화를 위해 제거됨:
 // - auto-theme-helpers.ts.disabled
 // - auto-theme-helpers-simple.ts.disabled
