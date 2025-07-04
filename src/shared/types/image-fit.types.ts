@@ -1,10 +1,10 @@
 /**
  * @fileoverview 이미지 맞춤 관련 공통 타입 정의
  *
- * X.com Enhanced Gallery에서 사용되는 이미지 크기 조정 및 맞춤 모드에 대한
+ * X.com Gallery에서 사용되는 이미지 크기 조정 및 맞춤 모드에 대한
  * 통일된 타입 정의를 제공합니다.
  *
- * @author X.com Enhanced Gallery Team
+ * @author X.com Gallery Team
  * @since 1.0.0
  * @version 1.0.0
  */

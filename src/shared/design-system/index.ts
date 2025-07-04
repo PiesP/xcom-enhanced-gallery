@@ -8,7 +8,7 @@
 export * from './tokens/DesignTokens';
 
 // 통합 디자인 시스템 매니저
-export * from './DesignSystemManager';
+export * from './DesignSystem';
 
 // 디자인 유틸리티 (중복 제거)
 export {
@@ -47,7 +47,7 @@ export const DESIGN_SYSTEM_CONSTANTS = {
  * 편의 함수들 (통합된 API)
  */
 export {
-  designSystemManager,
+  designSystem,
   initDesignSystem,
   getDesignToken,
   getCSSVar,
@@ -55,4 +55,4 @@ export {
   getTheme,
   isDesignSystemReady,
   diagnoseDesignSystem,
-} from './DesignSystemManager';
+} from './DesignSystem';

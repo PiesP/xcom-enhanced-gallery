@@ -1,5 +1,5 @@
 /**
- * X.com Enhanced Gallery - 전역 타입 정의
+ * X.com Gallery - 전역 타입 정의
  *
  * 애플리케이션 전체에서 사용되는 전역 타입들을 정의합니다.
  * 외부 라이브러리 타입은 vendors 모듈을 통해 re-export됩니다.

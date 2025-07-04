@@ -1,8 +1,8 @@
 /**
- * @fileoverview Unified Gallery Service - Clean Architecture Implementation
+ * @fileoverview Gallery Service - Clean Architecture Implementation
  * @license MIT
- * @version 2.0.0 - Enhanced Clean Architecture
- * @author X.com Enhanced Gallery Team
+ * @version 2.0.0 - Clean Architecture
+ * @author X.com Gallery Team
  *
  * @description
  * 갤러리 비즈니스 로직을 담당하는 Clean Architecture 서비스 레이어.
@@ -16,7 +16,7 @@ import {
   // isGallerySignalsInitialized,
   // isGalleryValid,
   navigateToItem as navigateToIndex,
-  openGallery as openGalleryOptimized,
+  openGallery,
 } from '../../../core/state/signals/gallery.signals';
 import type { MediaInfo } from '../../../core/types/media.types';
 import type { ViewMode } from '../../../core/types/view-mode.types';
@@ -262,7 +262,7 @@ export class GalleryService {
       }
 
       // 갤러리 열기 (최적화된)
-      openGalleryOptimized(validMediaItems, initialIndex);
+      openGallery(validMediaItems, initialIndex);
 
       logger.debug('GalleryService: Gallery opened successfully', {
         mediaCount: validMediaItems.length,

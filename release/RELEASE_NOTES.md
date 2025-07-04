@@ -3,7 +3,7 @@
 **Release Date:** 2025-06-11
 
 ## Features
-- Enhanced X.com media viewer
+- X.com media viewer
 - Batch download functionality
 - Keyboard navigation support
 - Modern Preact-based UI
@@ -11,7 +11,7 @@
 ## Installation
 1. Install a userscript manager (Tampermonkey, Violentmonkey, etc.)
 2. Click on the userscript file to install
-3. Visit X.com and enjoy enhanced media experience
+3. Visit X.com and enjoy media experience
 
 ## Technical Details
 - **Bundle Size:** 264 KB

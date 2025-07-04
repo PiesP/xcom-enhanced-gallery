@@ -1,9 +1,11 @@
 /**
  * @fileoverview 브랜드 타입 정의 - Shared Layer
- * @version 1.0.0
+ * @version 2.0.0
  *
  * 타입 안전성 강화를 위한 브랜드 타입들
  * 런타임에는 string이지만 컴파일 타임에는 구별되는 타입
+ *
+ * Clean Architecture: Shared Layer에서 공통 타입 관리
  */
 
 /**
@@ -104,3 +106,146 @@ export function createMediaUrl(value: string): MediaUrl {
     throw new Error('Invalid URL format');
   }
 }
+
+/**
+ * ThumbnailUrl 생성
+ */
+export function createThumbnailUrl(value: string): ThumbnailUrl {
+  try {
+    new URL(value);
+    return value as ThumbnailUrl;
+  } catch {
+    throw new Error('Invalid thumbnail URL format');
+  }
+}
+
+/**
+ * OriginalUrl 생성
+ */
+export function createOriginalUrl(value: string): OriginalUrl {
+  try {
+    new URL(value);
+    return value as OriginalUrl;
+  } catch {
+    throw new Error('Invalid original URL format');
+  }
+}
+
+/**
+ * Timestamp 생성
+ */
+export function createTimestamp(value: number = Date.now()): Timestamp {
+  if (value < 0) {
+    throw new Error('Timestamp must be non-negative');
+  }
+  return value as Timestamp;
+}
+
+/**
+ * Duration 생성 (밀리초)
+ */
+export function createDuration(milliseconds: number): Duration {
+  if (milliseconds < 0) {
+    throw new Error('Duration must be non-negative');
+  }
+  return milliseconds as Duration;
+}
+
+/**
+ * Bytes 생성
+ */
+export function createBytes(value: number): Bytes {
+  if (value < 0) {
+    throw new Error('Bytes must be non-negative');
+  }
+  return value as Bytes;
+}
+
+/**
+ * Pixels 생성
+ */
+export function createPixels(value: number): Pixels {
+  if (value < 0) {
+    throw new Error('Pixels must be non-negative');
+  }
+  return value as Pixels;
+}
+
+/**
+ * 브랜드 타입 유틸리티 함수들
+ */
+
+/**
+ * 브랜드 타입에서 원시 값 추출
+ */
+export function extractValue<T>(branded: Brand<T, string>): T {
+  return branded as T;
+}
+
+/**
+ * 브랜드 타입 검증 (런타임에서는 의미 없지만 타입 가드 역할)
+ */
+export function isMediaId(value: string): value is MediaId {
+  return typeof value === 'string' && value.length > 0;
+}
+
+export function isTweetId(value: string): value is TweetId {
+  return /^\d{15,20}$/.test(value);
+}
+
+export function isValidUrl(value: string): boolean {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 타입 변환 유틸리티
+ */
+export const brandedTypes = {
+  mediaId: createMediaId,
+  userId: createUserId,
+  tweetId: createTweetId,
+  serviceKey: createServiceKey,
+  elementId: createElementId,
+  mediaUrl: createMediaUrl,
+  thumbnailUrl: createThumbnailUrl,
+  originalUrl: createOriginalUrl,
+  timestamp: createTimestamp,
+  duration: createDuration,
+  bytes: createBytes,
+  pixels: createPixels,
+} as const;
+
+/**
+ * 타입 안전성 예시
+ *
+ * @example
+ * ```typescript
+ * // ✅ 올바른 사용법
+ * const mediaId = createMediaId('abc123');
+ * const tweetId = createTweetId('1234567890123456789');
+ *
+ * function getMedia(id: MediaId): MediaItem | null {
+ *   // MediaId만 허용
+ * }
+ *
+ * getMedia(mediaId); // ✅ OK
+ * getMedia(tweetId); // ❌ Type Error - TweetId는 MediaId가 아님
+ * getMedia('abc123'); // ❌ Type Error - string은 MediaId가 아님
+ *
+ * // ✅ 안전한 URL 처리
+ * const imageUrl = createMediaUrl('https://example.com/image.jpg');
+ * const thumbUrl = createThumbnailUrl('https://example.com/thumb.jpg');
+ *
+ * function displayImage(url: MediaUrl): void {
+ *   // MediaUrl만 허용
+ * }
+ *
+ * displayImage(imageUrl); // ✅ OK
+ * displayImage(thumbUrl); // ❌ Type Error - ThumbnailUrl은 MediaUrl이 아님
+ * ```
+ */

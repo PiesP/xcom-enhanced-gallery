@@ -96,7 +96,7 @@ export class ErrorHandler implements IErrorHandler {
     return this.instance;
   }
 
-  private constructor() { }
+  private constructor() {}
 
   /**
    * 동기적 에러 처리

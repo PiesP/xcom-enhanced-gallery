@@ -1,7 +1,7 @@
 /**
  * @fileoverview 통합 미디어 추출 인터페이스
  * @description 모든 미디어 추출 전략과 서비스의 통합 인터페이스
- * @version 2.0.0 - Unified Architecture
+ * @version 2.0.0 - Clean Architecture
  */
 
 // 필수 타입 임포트

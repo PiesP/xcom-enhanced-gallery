@@ -1,7 +1,7 @@
 /**
  * @fileoverview Twitter API 기반 미디어 추출기
  * @description 트윗 정보가 확보된 후 API를 통한 정확한 미디어 추출
- * @version 2.0.0 - Unified Architecture
+ * @version 2.0.0 - Clean Architecture
  */
 
 import { logger } from '../../../../infrastructure/logging/logger';
@@ -50,7 +50,7 @@ export class TwitterAPIExtractor implements APIExtractor {
         metadata: {
           extractedAt: Date.now(),
           sourceType: 'twitter-api',
-          strategy: 'unified-api-extraction',
+          strategy: 'api-extraction',
           totalProcessingTime: 0,
           apiMediaCount: apiMedias.length,
         },
@@ -272,7 +272,7 @@ export class TwitterAPIExtractor implements APIExtractor {
       metadata: {
         extractedAt: Date.now(),
         sourceType: 'twitter-api',
-        strategy: 'unified-api-extraction-failed',
+        strategy: 'api-extraction-failed',
         error,
       },
       tweetInfo: null,

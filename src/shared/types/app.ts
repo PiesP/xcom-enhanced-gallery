@@ -47,7 +47,6 @@ export interface PerformanceMetrics {
     initialized: number;
   };
   optimizations?: {
-    unifiedServices?: boolean;
     memoryMonitoring?: boolean;
     performanceProfiling?: boolean;
   };

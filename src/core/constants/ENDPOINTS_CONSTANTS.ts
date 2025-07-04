@@ -36,7 +36,7 @@ export const MEDIA_DOMAINS = {
  * 2단계: 갤러리 패턴 (name=orig만) - GALLERY_PATTERN
  * 동영상 썸네일 지원 추가
  */
-export const UNIFIED_MEDIA_PATTERNS = {
+export const MEDIA_PATTERNS = {
   /** 1단계: 탐색용 - 모든 크기의 pbs.twimg.com 이미지 및 동영상 썸네일 허용 */
   DISCOVERY_PATTERN:
     /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=(?:[a-z]+|\d{2,4}x\d{2,4})|[\w-]+_video_thumb\/\d+\/img\/[\w-]+(?:\?.*)?)/,
@@ -85,22 +85,22 @@ export const UNIFIED_MEDIA_PATTERNS = {
 export const MEDIA_URL_UTILS = {
   /** 탐색 단계에서 유효한 미디어 URL인지 검증 */
   isValidDiscoveryUrl: (url: string): boolean => {
-    return UNIFIED_MEDIA_PATTERNS.DISCOVERY_PATTERN.test(url);
+    return MEDIA_PATTERNS.DISCOVERY_PATTERN.test(url);
   },
 
   /** 갤러리 표시용 유효한 미디어 URL인지 검증 */
   isValidGalleryUrl: (url: string): boolean => {
-    return UNIFIED_MEDIA_PATTERNS.GALLERY_PATTERN.test(url);
+    return MEDIA_PATTERNS.GALLERY_PATTERN.test(url);
   },
 
   /** 미디어 ID 추출 */
   extractMediaId: (url: string): string | null => {
     // 일반 미디어 ID 추출
-    const match = url.match(UNIFIED_MEDIA_PATTERNS.MEDIA_ID_PATTERN);
+    const match = url.match(MEDIA_PATTERNS.MEDIA_ID_PATTERN);
     if (match) return match[1] || null;
 
     // 동영상 썸네일 ID 추출
-    const videoMatch = url.match(UNIFIED_MEDIA_PATTERNS.VIDEO_THUMB_ID_PATTERN);
+    const videoMatch = url.match(MEDIA_PATTERNS.VIDEO_THUMB_ID_PATTERN);
     if (videoMatch) return `${videoMatch[1] || ''}_${videoMatch[2] || ''}_${videoMatch[3] || ''}`;
 
     return null;
@@ -109,7 +109,7 @@ export const MEDIA_URL_UTILS = {
   /** 원본 URL 생성 */
   generateOriginalUrl: (url: string): string | null => {
     // 동영상 썸네일인 경우 그대로 반환 (이미 원본 형태)
-    if (UNIFIED_MEDIA_PATTERNS.VIDEO_THUMBNAIL_PATTERN.test(url)) {
+    if (MEDIA_PATTERNS.VIDEO_THUMBNAIL_PATTERN.test(url)) {
       return url;
     }
 
@@ -126,14 +126,12 @@ export const MEDIA_URL_UTILS = {
 
   /** 동영상 썸네일 URL인지 확인 */
   isVideoThumbnailUrl: (url: string): boolean => {
-    return UNIFIED_MEDIA_PATTERNS.VIDEO_THUMBNAIL_PATTERN.test(url);
+    return MEDIA_PATTERNS.VIDEO_THUMBNAIL_PATTERN.test(url);
   },
 
   /** 제외 URL 검증 */
   isExcludedUrl: (url: string): boolean => {
-    return Object.values(UNIFIED_MEDIA_PATTERNS.EXCLUDE_PATTERNS).some(pattern =>
-      pattern.test(url)
-    );
+    return Object.values(MEDIA_PATTERNS.EXCLUDE_PATTERNS).some(pattern => pattern.test(url));
   },
 
   /**

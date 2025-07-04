@@ -1,13 +1,9 @@
 /**
- * @fileoverview Unified Service Manager
- * @version 5.0.0 - Clean Architecture 완전 준수
- *
- * 모든 분산된 서비스 관리 구현을 통합한 최종 버전
- * Clean Architecture 원칙과 코딩 가이드라인을 완전히 준수
+ * @fileoverview Service Manager
+ * @description 서비스 등록, 초기화, 의존성 관리
  */
 
-import { logger } from '@infrastructure/logging/logger';
-import { BaseSingleton } from '@shared/utils/patterns/singleton';
+import { logger } from '../../infrastructure/logging/logger';
 
 export type ServiceFactory<T = unknown> = () => T | Promise<T>;
 
@@ -59,8 +55,8 @@ export interface ServiceMetadata {
  * - 에러 처리 및 복구
  * - 성능 모니터링
  */
-export class ServiceManager extends BaseSingleton {
-  private static readonly INSTANCE_NAME = 'ServiceManager';
+export class ServiceManager {
+  private static instance: ServiceManager | null = null;
 
   private readonly services = new Map<string, unknown>();
   private readonly configs = new Map<string, ServiceConfig>();
@@ -69,25 +65,23 @@ export class ServiceManager extends BaseSingleton {
   private readonly initializationGuard = new Set<string>();
 
   private constructor() {
-    super();
-    logger.debug('[ServiceManager] Unified instance created');
+    logger.debug('[ServiceManager] Instance created');
   }
 
   /**
    * 싱글톤 인스턴스 가져오기
    */
   public static getInstance(): ServiceManager {
-    return BaseSingleton.getOrCreateInstance(
-      ServiceManager.INSTANCE_NAME,
-      () => new ServiceManager()
-    );
+    ServiceManager.instance ??= new ServiceManager();
+    return ServiceManager.instance;
   }
 
   /**
    * 인스턴스 초기화 (테스트용)
    */
-  public static override resetInstance(): boolean {
-    return BaseSingleton.resetInstance(ServiceManager.INSTANCE_NAME);
+  public static resetInstance(): boolean {
+    ServiceManager.instance = null;
+    return true;
   }
 
   /**

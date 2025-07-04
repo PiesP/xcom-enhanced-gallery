@@ -1,6 +1,6 @@
 /**
  * @fileoverview 간소화된 미디어 클릭 디바운서
- * @version 3.0.0 - SmartDebouncer에서 간소화
+ * @version 3.0.0 - Debouncer에서 간소화
  */
 
 import type { MediaInfo } from '../../../core/types/media.types';

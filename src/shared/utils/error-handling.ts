@@ -1,6 +1,6 @@
 /**
  * @fileoverview Error Handling Utilities
- * @version 2.0.0 - Unified with Core layer
+ * @version 2.0.0 - Integrated with Core layer
  *
  * Clean Architecture에 따라 Core 레이어의 통합 에러 핸들러 사용
  */

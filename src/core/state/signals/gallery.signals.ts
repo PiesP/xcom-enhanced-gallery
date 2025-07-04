@@ -110,7 +110,7 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
 }
 
 /**
- * Close gallery with enhanced scroll restoration
+ * Close gallery with scroll restoration
  */
 export function closeGallery(): void {
   // 스크롤 잠금 해제 (ScrollManager를 통한 통합 관리) - 강화된 버전

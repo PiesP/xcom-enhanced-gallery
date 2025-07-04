@@ -1,5 +1,5 @@
 /**
- * ZIP file creation utilities for X.com Enhanced Gallery
+ * ZIP file creation utilities for X.com Gallery
  *
  * Provides functionality to create ZIP files from media items
  * using fflate library for better performance and memory efficiency.
@@ -10,6 +10,7 @@
 
 import { logger } from '@infrastructure/logging/logger';
 import { getFflate } from '@infrastructure/external/vendors';
+import { safeParseInt } from '@infrastructure/utils/type-safety-helpers';
 
 /**
  * Media item interface for ZIP creation
@@ -168,7 +169,7 @@ async function downloadMediaForZip(
     contentLengthValue !== undefined &&
     contentLengthValue !== ''
   ) {
-    const fileSizeBytes = parseInt(contentLengthValue, 10);
+    const fileSizeBytes = safeParseInt(contentLengthValue, 10);
     if (!isNaN(fileSizeBytes) && fileSizeBytes > config.maxFileSize) {
       throw new Error(`File too large: ${fileSizeBytes} bytes`);
     }

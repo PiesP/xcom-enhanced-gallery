@@ -165,7 +165,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * 네비게이션 처리
    */
   private handleNavigation(direction: 'previous' | 'next'): void {
-    // unified-gallery.signals의 함수들을 사용
+    // gallery.signals의 함수들을 사용
     const { navigatePrevious, navigateNext } = require('@core/state/signals/gallery.signals');
 
     if (direction === 'previous') {
@@ -246,7 +246,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     mediaItems: readonly MediaInfo[],
     renderOptions?: GalleryRenderOptions
   ): Promise<void> {
-    // unified-gallery.signals의 함수들을 사용
+    // gallery.signals의 함수들을 사용
     const { openGallery, setViewMode } = require('@core/state/signals/gallery.signals');
 
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);

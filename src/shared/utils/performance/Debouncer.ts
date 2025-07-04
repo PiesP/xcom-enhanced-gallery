@@ -1,6 +1,6 @@
 /**
  * @fileoverview 간소화된 디바운서 시스템
- * @version 2.0.0 - SmartDebouncer에서 간소화
+ * @version 2.0.0 - 간소화된 구현
  *
  * 복잡한 전략 시스템을 제거하고 기본적인 디바운싱 기능만 제공
  */

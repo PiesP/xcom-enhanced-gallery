@@ -14,14 +14,24 @@ export function combineClasses(...classes: (string | undefined | false | null)[]
 /**
  * 조건부 클래스 토글
  */
-export function toggleClass(element: HTMLElement, className: string, condition: boolean): void {
+export function toggleClass(
+  element: HTMLElement | null,
+  className: string,
+  condition: boolean
+): void {
+  if (!element) return;
   element.classList.toggle(className, condition);
 }
 
 /**
  * CSS 변수 설정 (개별)
  */
-export function setStyleCSSVariable(element: HTMLElement, variable: string, value: string): void {
+export function setStyleCSSVariable(
+  element: HTMLElement | null,
+  variable: string,
+  value: string
+): void {
+  if (!element) return;
   const varName = variable.startsWith('--') ? variable : `--${variable}`;
   element.style.setProperty(varName, value);
 }

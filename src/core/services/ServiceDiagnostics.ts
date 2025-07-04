@@ -45,7 +45,7 @@ export async function diagnoseServiceManager(): Promise<void> {
       scrollManager: scrollManager ? '성공' : '실패',
     });
 
-    // 5. 메모리 사용량 (infrastructure UnifiedResourceManager 사용)
+    // 5. 메모리 사용량 (infrastructure ResourceManager 사용)
     try {
       const { ResourceManager } = await import('../../infrastructure/managers');
       const resourceManager = ResourceManager.getInstance();

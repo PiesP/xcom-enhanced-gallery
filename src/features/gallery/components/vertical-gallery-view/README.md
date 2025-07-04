@@ -1,4 +1,4 @@
-# Vertical Gallery View - Simple Implementation
+# Vertical Gallery View
 
 ## 개요
 
@@ -16,7 +16,7 @@
 VerticalGalleryView.tsx                 # 기본 간단 구현 (NEW)
 VerticalGalleryView.backup.module.css   # 간단 구현용 스타일
 VerticalGalleryView.complex.tsx         # 기존 복잡한 구현 (백업)
-VerticalGalleryView.enhanced.tsx        # 향상된 구현 (백업)
+VerticalGalleryView.enhanced.tsx        # 백업 구현
 VerticalGalleryView.ultra.tsx           # Ultra 구현 (백업)
 VerticalGalleryView.v5.tsx              # v5 구현 (백업)
 ```
@@ -95,7 +95,7 @@ function MyComponent() {
 필요에 따라 더 복잡한 기능이 필요한 경우 다른 버전들을 사용할 수 있습니다:
 
 ```tsx
-// 향상된 기능이 필요한 경우
+// 고급 기능이 필요한 경우
 import { VerticalGalleryViewEnhanced } from '@features/gallery/components/vertical-gallery-view';
 
 // Ultra 기능이 필요한 경우 (가상 스크롤링 등)
@@ -108,7 +108,7 @@ import { VerticalGalleryViewUltra } from '@features/gallery/components/vertical-
 
 1. **Props 확인**: 기본 props는 동일하게 유지됨
 2. **스타일 조정**: 필요한 경우 CSS 변수로 커스터마이징
-3. **기능 제거**: 복잡한 기능이 필요한 경우 Enhanced 또는 Ultra 버전 사용
+3. **기능 제거**: 복잡한 기능이 필요한 경우 백업 버전 사용
 
 ## 호환성
 

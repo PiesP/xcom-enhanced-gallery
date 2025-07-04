@@ -1,23 +1,21 @@
 /**
- * Core Layer - Theme Manager
+ * Core Layer - Theme Service
  *
- * 투명 기조의 시스템 테마 감지 서비스
- * 복잡한 자동 전환 기능 제거, 시스템 테마 감지만 유지
+ * 시스템 테마 감지 및 적용 서비스
  */
 
 import { logger } from '../../infrastructure/logging/logger';
 
 /**
- * 테마 타입 (auto 제거)
+ * 테마 타입
  */
 export type Theme = 'light' | 'dark';
 
 /**
  * 시스템 테마 서비스
- * 시스템 테마 감지만 수행, 복잡한 자동 전환 제거
  */
-export class ThemeManager {
-  private static instance: ThemeManager | null = null;
+export class ThemeService {
+  private static instance: ThemeService | null = null;
   private mediaQueryList: MediaQueryList | null = null;
   private currentTheme: Theme = 'light';
 
@@ -28,9 +26,9 @@ export class ThemeManager {
     }
   }
 
-  public static getInstance(): ThemeManager {
-    ThemeManager.instance ??= new ThemeManager();
-    return ThemeManager.instance;
+  public static getInstance(): ThemeService {
+    ThemeService.instance ??= new ThemeService();
+    return ThemeService.instance;
   }
 
   /**
@@ -87,12 +85,12 @@ export class ThemeManager {
       this.mediaQueryList.removeEventListener('change', this.applySystemTheme);
       this.mediaQueryList = null;
     }
-    ThemeManager.instance = null;
-    logger.info('ThemeManager destroyed');
+    ThemeService.instance = null;
+    logger.info('ThemeService destroyed');
   }
 }
 
 /**
  * 전역 테마 서비스 인스턴스
  */
-export const themeManager = ThemeManager.getInstance();
+export const themeService = ThemeService.getInstance();

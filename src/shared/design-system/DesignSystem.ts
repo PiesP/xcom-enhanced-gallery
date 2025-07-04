@@ -44,7 +44,7 @@ export class DesignSystem implements Cleanupable {
     } = {}
   ): Promise<void> {
     if (this.isInitialized) {
-      logger.debug('[DesignSystemManager] Already initialized');
+      logger.debug('[DesignSystem] Already initialized');
       return;
     }
 

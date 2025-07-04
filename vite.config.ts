@@ -73,7 +73,7 @@ function getBuildMode(mode?: string): BuildMode {
   };
 }
 
-// Generate optimized userscript header
+// Generate userscript header
 function generateUserscriptHeader(buildMode: BuildMode): string {
   const devSuffix = buildMode.isDevelopment ? ' (Dev)' : '';
   const version = buildMode.isDevelopment
@@ -136,12 +136,12 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
           if (fs.existsSync(cssFilePath)) {
             const cssContent = fs.readFileSync(cssFilePath, 'utf8');
             // 기본적인 CSS 최적화
-            const optimizedCss = cssContent
+            const processedCss = cssContent
               .replace(/\/\*[\s\S]*?\*\//g, '') // 주석 제거
               .replace(/\s+/g, ' ') // 공백 정규화
               .trim();
 
-            allCss += optimizedCss;
+            allCss += processedCss;
             fs.unlinkSync(cssFilePath);
           }
         }

@@ -6,7 +6,7 @@
  */
 
 import type { MediaInfo } from '../../types/media.types';
-import type { MediaId } from '../../types/branded';
+import type { MediaId } from '@shared/types/branded';
 import type { Result } from '../../types/result';
 import { getPreactSignals } from '../../../infrastructure/external/vendors';
 import { defaultLogger, type ILogger } from '../../services/logger.interface';

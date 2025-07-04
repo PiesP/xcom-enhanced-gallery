@@ -1,7 +1,7 @@
 /**
- * Button Component for X.com Enhanced Gallery
+ * Button Component for X.com Gallery
  *
- * Reusable button component used throughout X.com Enhanced Gallery.
+ * Reusable button component used throughout X.com Gallery.
  * Improved version with unified design system in mind.
  *
  * @fileoverview

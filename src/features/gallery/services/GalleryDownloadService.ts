@@ -2,7 +2,7 @@
  * Gallery Download Service
  *
  * 갤러리의 다운로드 기능을 담당하는 통합 서비스입니다.
- * Core layer의 UnifiedDownloadService를 사용하여 Clean Architecture 원칙을 준수합니다.
+ * Core layer의 DownloadService를 사용하여 Clean Architecture 원칙을 준수합니다.
  *
  * Feature Layer Pattern:
  * - Core 서비스 위임
@@ -25,7 +25,7 @@ export type { DownloadOptions, DownloadProgress, DownloadResult };
 /**
  * 갤러리 다운로드 관리 서비스
  *
- * Clean Architecture 패턴을 따라 Core layer의 UnifiedDownloadService를 사용합니다.
+ * Clean Architecture 패턴을 따라 Core layer의 DownloadService를 사용합니다.
  * 갤러리 특화 기능과 UI 통합을 담당합니다.
  */
 export class GalleryDownloadService {

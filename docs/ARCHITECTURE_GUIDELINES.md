@@ -1,4 +1,4 @@
-# 🏗️ X.com Enhanced Gallery - Clean Architecture Guide
+# 🏗️ X.com Gallery - Clean Architecture Guide
 
 > **트위터(X) 미디어 확장 프로그램 - Clean Architecture 기반 설계 및 구현 가이드**
 
@@ -19,7 +19,7 @@
 
 ### Clean Architecture 원칙
 
-X.com Enhanced Gallery는 Clean Architecture 원칙을 따라 다음과 같이 설계되었습니다:
+X.com Gallery는 Clean Architecture 원칙을 따라 다음과 같이 설계되었습니다:
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -652,7 +652,7 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
   ];
 
   return `// ==UserScript==
-// @name         X.com Enhanced Gallery${devSuffix}
+// @name         X.com Gallery${devSuffix}
 // ...기존 메타데이터...
 ${cdnRequires.join('\n')}
 // ==/UserScript==`;

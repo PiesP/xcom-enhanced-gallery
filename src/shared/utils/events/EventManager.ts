@@ -144,7 +144,7 @@ export class EventManager {
         hasMediaInfo: !!result.mediaInfo,
       });
     } catch (error) {
-      logger.error('UnifiedEventManager: Click handling failed:', error);
+      logger.error('EventManager: Click handling failed:', error);
     }
   }
 
@@ -196,7 +196,7 @@ export class EventManager {
       url: detectionResult.mediaUrl,
       type: detectionResult.type,
       metadata: {
-        source: 'unified-event-manager',
+        source: 'event-manager',
         confidence: detectionResult.confidence,
         method: detectionResult.method,
       },
@@ -223,13 +223,13 @@ export class EventManager {
   ): Promise<void> {
     try {
       if (!this.handlers) {
-        logger.error('UnifiedEventManager: No handlers configured');
+        logger.error('EventManager: No handlers configured');
         return;
       }
 
       await this.handlers.onMediaClick(mediaInfo, element, event);
     } catch (error) {
-      logger.error('UnifiedEventManager: Media click handling failed:', error);
+      logger.error('EventManager: Media click handling failed:', error);
     }
   }
 
@@ -245,7 +245,7 @@ export class EventManager {
         this.handleDefaultKeyboardEvent(event);
       }
     } catch (error) {
-      logger.error('UnifiedEventManager: Keyboard handling failed:', error);
+      logger.error('EventManager: Keyboard handling failed:', error);
     }
   }
 

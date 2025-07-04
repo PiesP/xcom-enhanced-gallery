@@ -1,7 +1,7 @@
 /**
  * @fileoverview 트윗 정보 추출기
  * @description 모든 미디어 추출의 첫 번째 단계 - 트윗 정보 추출
- * @version 2.0.0 - Unified Architecture
+ * @version 2.0.0 - Clean Architecture
  */
 
 import { logger } from '../../../../infrastructure/logging/logger';

@@ -1,4 +1,4 @@
-# 🏗️ X.com Enhanced Gallery 코딩 가이드라인
+# 🏗️ X.com Gallery 코딩 가이드라인
 
 > **트위터(X) 미디어 확장 프로그램의 아키텍처 및 코딩 규칙**
 

@@ -1,6 +1,6 @@
 /**
  * @fileoverview 클릭된 요소에서 URL을 추출하는 전략
- * @version 2.0.0 - Enhanced extraction architecture
+ * @version 2.0.0 - Extraction architecture
  */
 
 import type {
@@ -10,6 +10,7 @@ import type {
   TweetUrlExtractionStrategy,
 } from '../types/extraction.types';
 import { ExtractionError, ExtractionErrorCode } from '../types/extraction.types';
+import { safeParseInt } from '@infrastructure/utils/type-safety-helpers';
 
 /**
  * 클릭된 요소에서 트윗 URL을 추출하는 전략
@@ -205,12 +206,12 @@ export class ClickedElementStrategy implements TweetUrlExtractionStrategy {
   private extractMediaIndex(url: URL): number | undefined {
     const photoMatch = url.pathname.match(/\/photo\/(\d+)/);
     if (photoMatch?.[1]) {
-      return parseInt(photoMatch[1], 10) - 1; // 0-based index
+      return safeParseInt(photoMatch[1], 10) - 1; // 0-based index
     }
 
     const videoMatch = url.pathname.match(/\/video\/(\d+)/);
     if (videoMatch?.[1]) {
-      return parseInt(videoMatch[1], 10) - 1; // 0-based index
+      return safeParseInt(videoMatch[1], 10) - 1; // 0-based index
     }
 
     return undefined;

@@ -1,11 +1,10 @@
 /**
- * @fileoverview 통합 스타일 시스템 (v4.0.0)
- * @description 통합된 전역 스타일 및 CSS 주입
- * @version 4.0.0
+ * @fileoverview 앱 스타일 시스템
+ * @description X.com Gallery 전역 스타일
  */
 
-/* 1. 디자인 토큰 (최우선) */
-@import '../../shared/styles/unified-design-tokens.css';
+/* 1. 디자인 토큰 */
+@import '../../shared/styles/design-tokens.css';
 
 /* 2. 기본 스타일 */
 @import './base/reset.css';

@@ -1,11 +1,9 @@
 /**
- * @fileoverview Performance Utilities Barrel Export
- * @version 4.0.0 - Enhanced Clean Architecture implementation
+ * @fileoverview Performance Utilities
  */
 
-// 통합된 성능 유틸리티 export
+// 기본 성능 유틸리티
 export {
-  debounce,
   throttle,
   scheduleWork,
   measurePerformance,
@@ -13,7 +11,7 @@ export {
   setupLazyLoading,
 } from './BasicUtilities';
 
-export { Debouncer, createDebouncer } from './Debouncer';
+export { Debouncer, createDebouncer, debounce } from './Debouncer';
 
 export { PerformanceMonitor, performanceTrack, profileApplicationDev } from './PerformanceMonitor';
 

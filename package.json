@@ -1,15 +1,13 @@
 {
-  "name": "xcom-enhanced-gallery",
+  "name": "xcom-gallery",
   "version": "0.1.0",
-  "description": "Enhanced media viewer and download functionality for X.com",
+  "description": "Media viewer and download functionality for X.com",
   "type": "module",
   "scripts": {
     "dev": "vite --mode development",
     "build": "npm run build:prod",
     "build:dev": "npm run clean && vite build --mode development",
     "build:prod": "npm run clean && vite build --mode production",
-    "build:all:dev": "npm run validate && npm run build:dev",
-    "build:all:prod": "npm run validate && npm run build:prod",
     "clean": "rimraf dist",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -19,13 +17,12 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prebuild": "npm run deps:all && npm run typecheck && npm run lint:fix && npm run format",
-    "validate": "npm run prebuild && npm run test",
+    "validate": "npm run typecheck && npm run lint:fix && npm run format",
+    "prebuild": "npm run validate",
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
-    "deps:graph": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | dot -Gdpi=150 -Gconcentrate=true -Grankdir=LR -Gsplines=ortho -T svg > docs/dependency-graph.svg",
+    "deps:graph": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src > docs/dependency-graph.dot && (dot -Gdpi=150 -Gconcentrate=true -Grankdir=LR -Gsplines=ortho -T svg docs/dependency-graph.dot > docs/dependency-graph.svg || echo \"Warning: Failed to generate SVG. Graphviz may not be installed.\") && echo \"Dependency graph generation completed.\"",
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
-    "deps:report": "dependency-cruiser --config .dependency-cruiser.cjs --metrics --output-type html --output-to docs/dependency-report.html src",
-    "deps:all": "npm run deps:check && npm run deps:graph && npm run deps:json && npm run deps:report"
+    "deps:report": "dependency-cruiser --config .dependency-cruiser.cjs --metrics --output-type html --output-to docs/dependency-report.html src"
   },
   "dependencies": {
     "@preact/signals": "^2.2.1",

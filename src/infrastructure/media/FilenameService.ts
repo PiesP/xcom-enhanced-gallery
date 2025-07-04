@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery Team
+ * Copyright (c) 2024 X.com Gallery Team
  * Licensed under the MIT License
  * @fileoverview 미디어 파일명 생성 서비스
  */
@@ -231,7 +231,7 @@ export class MediaFilenameService {
       return '1';
     }
 
-    const numIndex = typeof index === 'string' ? parseInt(index, 10) : index;
+    const numIndex = typeof index === 'string' ? safeParseInt(index, 10) : index;
 
     // 유효하지 않은 숫자인 경우 기본값 반환
     if (isNaN(numIndex)) {

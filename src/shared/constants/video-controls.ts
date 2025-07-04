@@ -1,5 +1,5 @@
 /**
- * @fileoverview Video Control Selectors - Unified Constants
+ * @fileoverview Video Control Selectors - Constants
  * @version 1.0.0
  *
  * 비디오 제어 요소 선택자를 통합 관리하여 중복을 제거하고 일관성을 보장합니다.

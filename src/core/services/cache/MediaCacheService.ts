@@ -1,5 +1,5 @@
 /**
- * Enhanced Media Cache Service
+ * Media Cache Service
  *
  * 향상된 미디어 캐시 서비스 - Core Layer의 중앙 캐시 관리
  * Clean Architecture 원칙을 따라 비즈니스 로직을 포함

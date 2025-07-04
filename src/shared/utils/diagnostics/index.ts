@@ -1,7 +1,7 @@
 /**
  * @fileoverview Diagnostics Utilities Index
  * @version 1.0.0 - Clean Architecture Implementation
- * @author X.com Enhanced Gallery Team
+ * @author X.com Gallery Team
  * @since 4.0.0
  *
  * @description

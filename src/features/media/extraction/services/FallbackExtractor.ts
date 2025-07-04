@@ -1,7 +1,7 @@
 /**
  * @fileoverview 백업 추출기
  * @description API 추출이 실패했을 때 DOM 기반 추출
- * @version 2.0.0 - Unified Architecture
+ * @version 2.0.0 - Clean Architecture
  */
 
 import { logger } from '../../../../infrastructure/logging/logger';
@@ -91,7 +91,7 @@ export class FallbackExtractor {
       metadata: {
         extractedAt: Date.now(),
         sourceType: 'fallback',
-        strategy: 'unified-fallback-failed',
+        strategy: 'fallback-failed',
         error,
       },
       tweetInfo: null,

@@ -93,8 +93,8 @@ export async function registerAllServices(): Promise<void> {
   // Theme Service
   serviceManager.register(SERVICE_KEYS.AUTO_THEME, {
     factory: async () => {
-      const { ThemeManager } = await import('./ThemeService');
-      return ThemeManager.getInstance();
+      const { ThemeService } = await import('./ThemeService');
+      return ThemeService.getInstance();
     },
     singleton: true,
     lazy: true,

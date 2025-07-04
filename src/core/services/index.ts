@@ -8,7 +8,7 @@
 // Bulk Download Service
 export { BulkDownloadService } from './BulkDownloadService';
 
-// New unified service management system
+// Service management system
 export { SERVICE_KEYS } from '../constants';
 export { ServiceManager, serviceManager } from './ServiceManager';
 export type { BaseService, ServiceConfig } from './ServiceManager';
@@ -21,8 +21,8 @@ export { diagnoseServiceManager } from './ServiceDiagnostics';
 export type { ServiceTypeMapping } from '../types/services.types';
 export type { DownloadOptions, DownloadProgress, DownloadResult } from './BulkDownloadService';
 
-// Theme Service (Simplified)
-export { ThemeManager, themeManager } from './ThemeService';
+// Theme Service
+export { ThemeService, themeService } from './ThemeService';
 export type { Theme } from './ThemeService';
 
 // Application Lifecycle Management

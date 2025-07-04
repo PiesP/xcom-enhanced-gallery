@@ -1,6 +1,6 @@
 /**
  * @fileoverview Core State Exports
- * @version 1.0.0 - Unified Architecture
+ * @version 1.0.0 - Clean Architecture
  */
 
 // 통합된 갤러리 상태 관리

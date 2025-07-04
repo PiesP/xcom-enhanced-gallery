@@ -30,7 +30,7 @@ export type ServiceFactory<T> = () => T | Promise<T>;
 // Import service class types for type safety
 export type BulkDownloadServiceType = import('../services/BulkDownloadService').BulkDownloadService;
 export type MediaFilenameServiceType = import('../../infrastructure/media').MediaFilenameService;
-export type ThemeManagerType = import('../services/ThemeService').ThemeManager;
+export type ThemeServiceType = import('../services/ThemeService').ThemeService;
 export type ScrollManagerType = import('../services/scroll/ScrollManager').ScrollManager;
 
 // Generic service interfaces for features and shared services
@@ -79,7 +79,7 @@ export interface ServiceTypeMapping {
   'media.filename': MediaFilenameServiceType;
   'scroll.manager': ScrollManagerType;
   'scroll.gallery': unknown; // GalleryScrollManagerType - shared layer 타입이므로 unknown 사용
-  'theme.auto': ThemeManagerType;
+  'theme.auto': ThemeServiceType;
   'video.service': unknown; // VideoServiceType - shared layer 타입이므로 unknown 사용
 }
 

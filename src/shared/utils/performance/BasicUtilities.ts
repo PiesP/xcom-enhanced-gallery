@@ -1,48 +1,11 @@
 /**
- * @fileoverview Basic Performance Utilities
+ * @fileoverview Performance Utilities
  * @version 1.0.0
  *
- * 기본적인 성능 최적화 유틸리티 함수들 (debounce, thexport function measurePexport async function measureAsyncPerformance<T>(
-  label: string,
-  fn: () => Promise<T>
-): Promise<{ result: T; duration: number }> {
-  const start = performance.now();
-  const result = await fn();
-  const duration = performance.now() - start;
-
-  logger.debug(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
-
-  return { result, duration };
-}>(label: string, fn: () => T): { result: T; duration: number } {
-  const start = performance.now();
-  const result = fn();
-  const duration = performance.now() - start;
-
-  logger.debug(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
-
-  return { result, duration };
-}AF)
+ * 성능 최적화를 위한 유틸리티 함수들 (throttle, RAF, lazy loading, measurement)
  */
 
 import { logger } from '../../../infrastructure/logging/logger';
-
-/**
- * 디바운스된 함수를 생성합니다
- * @param func 디바운스할 함수
- * @param wait 대기 시간 (밀리초)
- * @returns 디바운스된 함수
- */
-export function debounce<T extends (...args: unknown[]) => unknown>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: number | undefined;
-
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = window.setTimeout(() => func(...args), wait);
-  };
-}
 
 /**
  * 스로틀된 함수를 생성합니다

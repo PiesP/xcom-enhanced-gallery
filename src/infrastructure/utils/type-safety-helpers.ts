@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unified Type Safety Helper Functions
+ * @fileoverview Type Safety Helper Functions
  * @version 3.0.0 - 완전히 재작성, 중복 제거
  * @description exactOptionalPropertyTypes와 strict type checking을 위한 헬퍼 함수들
  */

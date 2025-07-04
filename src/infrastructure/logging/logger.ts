@@ -1,5 +1,5 @@
 /**
- * Logger utility for X.com Enhanced Gallery
+ * Logger utility for X.com Gallery
  *
  * Provides consistent logging interface with different log levels and formatting.
  * All logs are prefixed with [XEG] for easy identification in browser console.

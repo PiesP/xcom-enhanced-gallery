@@ -1,12 +1,12 @@
 /**
- * Toast Component Styles for X.com Enhanced Gallery
+ * Toast Component Styles for X.com Gallery
  *
  * @description
  * Defines styles for toast notification components supporting
- * 4 types: info, success, warning, error with unified design system.
+ * 4 types: info, success, warning, error with design system.
  *
  * @features
- * - Unified color system from design-tokens.css
+ * - Color system from design-tokens.css
  * - Slide-in animation (right to left)
  * - Responsive design (mobile and desktop)
  * - Accessibility considerations

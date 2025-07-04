@@ -1,6 +1,6 @@
 /**
  * @fileoverview DOM 구조를 분석하여 URL을 추출하는 전략
- * @version 2.0.0 - Enhanced extraction architecture
+ * @version 2.0.0 - Extraction architecture
  */
 
 import type {

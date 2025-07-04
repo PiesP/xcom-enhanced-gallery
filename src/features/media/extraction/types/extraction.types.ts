@@ -1,6 +1,6 @@
 /**
  * @fileoverview 미디어 추출 시스템 핵심 타입 정의
- * @version 2.0.0 - Enhanced extraction architecture
+ * @version 2.0.0 - Extraction architecture
  */
 
 // 로컬 MediaInfo 타입 정의 (의존성 해결)

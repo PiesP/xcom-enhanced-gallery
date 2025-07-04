@@ -1,5 +1,5 @@
 /**
- * @fileoverview Enhanced Media Domain Entity
+ * @fileoverview Media Domain Entity
  * @version 2.0.0
  *
  * Clean Architecture + Domain-Driven Design 기반의 Media Entity

@@ -11,7 +11,7 @@
  */
 
 import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
-import { designSystemManager } from '../shared/design-system';
+import { designSystem } from '../shared/design-system';
 
 import { ServiceManager } from '../core/services/ServiceManager';
 import { logger } from '../infrastructure/logging/logger';
@@ -109,7 +109,7 @@ export class Application {
       logger.debug('✅ Vendor 라이브러리 초기화 완료');
 
       // 통합 디자인 시스템 초기화 (v2.0)
-      await designSystemManager.initialize({
+      await designSystem.initialize({
         theme: 'auto',
         injectGlobalStyles: true,
       });
@@ -351,10 +351,10 @@ export class Application {
       // (진단 정보는 실시간으로 필요하므로)
       const memory = (performance as unknown as Record<string, unknown>).memory as
         | {
-          usedJSHeapSize?: number;
-          totalJSHeapSize?: number;
-          jsHeapSizeLimit?: number;
-        }
+            usedJSHeapSize?: number;
+            totalJSHeapSize?: number;
+            jsHeapSizeLimit?: number;
+          }
         | undefined;
 
       return {
