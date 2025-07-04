@@ -112,6 +112,20 @@ body.xeg-gallery-open #react-root {
 .xeg-button:active {
   background: var(--xeg-button-bg-active);
   transform: translateY(0);
+  animation: xeg-button-click-feedback 150ms ease-out;
+}
+
+/* 버튼 클릭 피드백 애니메이션 */
+@keyframes xeg-button-click-feedback {
+  0% {
+    transform: translateY(-1px) scale(1);
+  }
+  50% {
+    transform: translateY(0) scale(0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Primary 버튼 - 더 명확한 시인성 */

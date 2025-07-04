@@ -32,6 +32,20 @@
 
 .xeg-btn:active {
   transform: translateY(0);
+  animation: xeg-btn-click 150ms ease-out;
+}
+
+/* 버튼 클릭 애니메이션 - 깜빡임 방지 */
+@keyframes xeg-btn-click {
+  0% {
+    transform: translateY(-1px) scale(1);
+  }
+  50% {
+    transform: translateY(0) scale(0.98);
+  }
+  100% {
+    transform: translateY(-0.5px) scale(1);
+  }
 }
 
 .xeg-btn:focus-visible {

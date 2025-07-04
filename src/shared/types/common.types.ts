@@ -6,7 +6,8 @@
  * 중복된 타입 정의를 제거하고 일관성을 보장합니다.
  */
 
-import type { ComponentChildren, ComponentType } from 'preact';
+// Preact 타입들은 global.types.ts에서 가져옴 (vendors 독립적)
+import type { ComponentChildren, ComponentType } from './global.types';
 
 // 기본 위치/크기 타입
 export interface Position {

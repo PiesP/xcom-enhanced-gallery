@@ -65,7 +65,7 @@ export class GalleryApp {
    */
   public async initialize(): Promise<void> {
     try {
-      logger.info('UnifiedGalleryApp: 초기화 시작');
+      logger.info('GalleryApp: 초기화 시작');
 
       // 갤러리 렌더러 초기화
       await this.initializeRenderer();
@@ -77,14 +77,14 @@ export class GalleryApp {
       });
 
       this.isInitialized = true;
-      logger.info('✅ UnifiedGalleryApp 초기화 완료');
+      logger.info('✅ GalleryApp 초기화 완료');
 
       // 개발 모드 디버깅
       if (process.env.NODE_ENV === 'development') {
         this.exposeDebugAPI();
       }
     } catch (error) {
-      logger.error('❌ UnifiedGalleryApp 초기화 실패:', error);
+      logger.error('❌ GalleryApp 초기화 실패:', error);
       throw error;
     }
   }
@@ -315,7 +315,7 @@ export class GalleryApp {
    */
   public async cleanup(): Promise<void> {
     try {
-      logger.info('UnifiedGalleryApp 정리 시작');
+      logger.info('GalleryApp 정리 시작');
 
       // 갤러리가 열려있다면 닫기
       if (galleryState.value.isOpen) {
@@ -332,9 +332,9 @@ export class GalleryApp {
       // 디버그 API 정리
       delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;
 
-      logger.info('✅ UnifiedGalleryApp 정리 완료');
+      logger.info('✅ GalleryApp 정리 완료');
     } catch (error) {
-      logger.error('❌ UnifiedGalleryApp 정리 중 오류:', error);
+      logger.error('❌ GalleryApp 정리 중 오류:', error);
     }
   }
 }

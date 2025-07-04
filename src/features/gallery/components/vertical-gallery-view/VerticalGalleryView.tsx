@@ -58,6 +58,7 @@ export function VerticalGalleryView({
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const hideTimeoutRef = useRef<number | null>(null);
+  const uiShowTimeRef = useRef<number>(0); // UI 표시 시작 시간 추적
 
   // 단순화된 가시성 상태 관리 - 초기값을 props에 기반하여 설정
   const [isVisible, setIsVisible] = useState(mediaItems.length > 0);
@@ -187,6 +188,7 @@ export function VerticalGalleryView({
   const handleToolbarMouseEnter = useCallback(() => {
     setIsToolbarHovering(true);
     setShowUI(true);
+    uiShowTimeRef.current = Date.now(); // UI 표시 시작 시간 기록
 
     // 안전한 타이머 정리
     if (hideTimeoutRef.current) {
@@ -198,14 +200,22 @@ export function VerticalGalleryView({
   const handleToolbarMouseLeave = useCallback(() => {
     setIsToolbarHovering(false);
 
-    // 툴바를 벗어나면 0.5초 후 숨김
+    // 툴바를 벗어나면 최소 표시 시간을 보장한 후 숨김
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
     }
 
-    hideTimeoutRef.current = window.setTimeout(() => {
-      setShowUI(false);
-    }, 500);
+    const ensureMinimumDisplayTime = () => {
+      const elapsedTime = Date.now() - uiShowTimeRef.current;
+      const minimumDisplayTime = 300; // 최소 300ms 표시
+      const remainingTime = Math.max(0, minimumDisplayTime - elapsedTime);
+
+      hideTimeoutRef.current = window.setTimeout(() => {
+        setShowUI(false);
+      }, remainingTime + 500); // 최소 시간 + 추가 500ms
+    };
+
+    ensureMinimumDisplayTime();
   }, []);
 
   // 상단 100px 조건을 엄격하게 적용하는 마우스 이벤트 핸들러
@@ -216,6 +226,7 @@ export function VerticalGalleryView({
 
       if (isInTopArea) {
         setShowUI(true);
+        uiShowTimeRef.current = Date.now(); // UI 표시 시작 시간 기록
 
         // 기존 타이머 안전하게 정리
         if (hideTimeoutRef.current) {
@@ -223,11 +234,19 @@ export function VerticalGalleryView({
           hideTimeoutRef.current = null;
         }
 
-        // 툴바 호버 상태가 아닐 때만 자동 숨김 타이머 설정
+        // 툴바 호버 상태가 아닐 때만 자동 숨김 타이머 설정 (최소 표시 시간 보장)
         if (!isToolbarHovering) {
-          hideTimeoutRef.current = window.setTimeout(() => {
-            setShowUI(false);
-          }, 500);
+          const ensureMinimumDisplayTime = () => {
+            const elapsedTime = Date.now() - uiShowTimeRef.current;
+            const minimumDisplayTime = 300; // 최소 300ms 표시
+            const remainingTime = Math.max(0, minimumDisplayTime - elapsedTime);
+
+            hideTimeoutRef.current = window.setTimeout(() => {
+              setShowUI(false);
+            }, remainingTime + 500); // 최소 시간 + 추가 500ms
+          };
+
+          ensureMinimumDisplayTime();
         }
       } else {
         // 상단 100px 외부: 툴바 호버 상태 확인 후 즉시 숨김
@@ -376,10 +395,18 @@ export function VerticalGalleryView({
             clearTimeout(hideTimeoutRef.current);
           }
           setShowUI(true);
+          uiShowTimeRef.current = Date.now(); // UI 표시 시작 시간 기록
           if (!isToolbarHovering) {
-            hideTimeoutRef.current = window.setTimeout(() => {
-              setShowUI(false);
-            }, 1000); // 네비게이션 시 1초간 표시
+            const ensureMinimumDisplayTime = () => {
+              const elapsedTime = Date.now() - uiShowTimeRef.current;
+              const minimumDisplayTime = 300; // 최소 300ms 표시
+              const remainingTime = Math.max(0, minimumDisplayTime - elapsedTime);
+
+              hideTimeoutRef.current = window.setTimeout(() => {
+                setShowUI(false);
+              }, remainingTime + 1000); // 최소 시간 + 네비게이션 시 1초간 표시
+            };
+            ensureMinimumDisplayTime();
           }
           onPrevious?.();
           break;
@@ -391,10 +418,18 @@ export function VerticalGalleryView({
             clearTimeout(hideTimeoutRef.current);
           }
           setShowUI(true);
+          uiShowTimeRef.current = Date.now(); // UI 표시 시작 시간 기록
           if (!isToolbarHovering) {
-            hideTimeoutRef.current = window.setTimeout(() => {
-              setShowUI(false);
-            }, 1000); // 네비게이션 시 1초간 표시
+            const ensureMinimumDisplayTime = () => {
+              const elapsedTime = Date.now() - uiShowTimeRef.current;
+              const minimumDisplayTime = 300; // 최소 300ms 표시
+              const remainingTime = Math.max(0, minimumDisplayTime - elapsedTime);
+
+              hideTimeoutRef.current = window.setTimeout(() => {
+                setShowUI(false);
+              }, remainingTime + 1000); // 최소 시간 + 네비게이션 시 1초간 표시
+            };
+            ensureMinimumDisplayTime();
           }
           onNext?.();
           break;
@@ -704,10 +739,18 @@ export function VerticalGalleryView({
                       clearTimeout(hideTimeoutRef.current);
                     }
                     setShowUI(true);
+                    uiShowTimeRef.current = Date.now(); // UI 표시 시작 시간 기록
                     if (!isToolbarHovering) {
-                      hideTimeoutRef.current = window.setTimeout(() => {
-                        setShowUI(false);
-                      }, 1000); // 네비게이션 시 1초간 표시
+                      const ensureMinimumDisplayTime = () => {
+                        const elapsedTime = Date.now() - uiShowTimeRef.current;
+                        const minimumDisplayTime = 300; // 최소 300ms 표시
+                        const remainingTime = Math.max(0, minimumDisplayTime - elapsedTime);
+
+                        hideTimeoutRef.current = window.setTimeout(() => {
+                          setShowUI(false);
+                        }, remainingTime + 1000); // 최소 시간 + 네비게이션 시 1초간 표시
+                      };
+                      ensureMinimumDisplayTime();
                     }
 
                     if (index < currentIndex && onPrevious) {

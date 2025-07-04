@@ -1,7 +1,7 @@
 /**
  * @fileoverview 통합된 미디어 추출 코디네이터
  * @description Clean Architecture 기반 통합된 미디어 추출 관리
- * @version 2.0.0 - Unified Architecture
+ * @version 2.0.0 - Clean Architecture
  */
 
 import {

@@ -39,11 +39,13 @@ export function Toast({ toast, onRemove }: ToastProps): VNode {
     };
   }, [toast.id, toast.duration, onRemove]);
 
-  const handleClose = (): void => {
+  const handleClose = (event: Event): void => {
+    event.stopPropagation();
     onRemove(toast.id);
   };
 
-  const handleAction = (): void => {
+  const handleAction = (event: Event): void => {
+    event.stopPropagation();
     if (toast.onAction) {
       toast.onAction();
     }

@@ -48,30 +48,48 @@ export function GalleryViewer({
     });
   }, [mediaItems.length, currentIndex, isVisible]);
 
-  const handleClose = useCallback(() => {
-    logger.debug('[GalleryViewer] 닫기 요청');
-    onClose();
-  }, [onClose]);
-
-  const handleNext = useCallback(() => {
-    if (currentIndex < mediaItems.length - 1) {
-      logger.debug('[GalleryViewer] 다음 미디어로 이동');
-      onNext();
-      if (onIndexChange) {
-        onIndexChange(currentIndex + 1);
+  const handleClose = useCallback(
+    (event?: Event) => {
+      if (event) {
+        event.stopPropagation();
       }
-    }
-  }, [currentIndex, mediaItems.length, onNext, onIndexChange]);
+      logger.debug('[GalleryViewer] 닫기 요청');
+      onClose();
+    },
+    [onClose]
+  );
 
-  const handlePrevious = useCallback(() => {
-    if (currentIndex > 0) {
-      logger.debug('[GalleryViewer] 이전 미디어로 이동');
-      onPrevious();
-      if (onIndexChange) {
-        onIndexChange(currentIndex - 1);
+  const handleNext = useCallback(
+    (event?: Event) => {
+      if (event) {
+        event.stopPropagation();
       }
-    }
-  }, [currentIndex, onPrevious, onIndexChange]);
+      if (currentIndex < mediaItems.length - 1) {
+        logger.debug('[GalleryViewer] 다음 미디어로 이동');
+        onNext();
+        if (onIndexChange) {
+          onIndexChange(currentIndex + 1);
+        }
+      }
+    },
+    [currentIndex, mediaItems.length, onNext, onIndexChange]
+  );
+
+  const handlePrevious = useCallback(
+    (event?: Event) => {
+      if (event) {
+        event.stopPropagation();
+      }
+      if (currentIndex > 0) {
+        logger.debug('[GalleryViewer] 이전 미디어로 이동');
+        onPrevious();
+        if (onIndexChange) {
+          onIndexChange(currentIndex - 1);
+        }
+      }
+    },
+    [currentIndex, onPrevious, onIndexChange]
+  );
 
   if (!isVisible || !mediaItems.length) {
     return null as unknown as VNode;

@@ -203,7 +203,10 @@ function BaseVerticalImageItem({
     <div
       ref={containerRef}
       className={containerClasses}
-      onClick={onClick}
+      onClick={(e: MouseEvent) => {
+        e.stopPropagation();
+        onClick();
+      }}
       onKeyDown={handleKeyDown}
       role='button'
       tabIndex={0}

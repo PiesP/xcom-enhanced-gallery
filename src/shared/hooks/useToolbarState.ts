@@ -18,7 +18,7 @@
 
 import { getPreactHooks } from '@infrastructure/external/vendors';
 
-const { useState, useCallback } = getPreactHooks();
+const { useState, useCallback, useRef } = getPreactHooks();
 
 /**
  * 툴바 상태 인터페이스
@@ -30,8 +30,6 @@ export interface ToolbarState {
   readonly isLoading: boolean;
   /** 에러 발생 상태 */
   readonly hasError: boolean;
-  /** 현재 활성화된 버튼 ID */
-  readonly activeButton: string | null;
   /** 현재 핏 모드 */
   readonly currentFitMode: string;
   /** 고대비 모드 필요 여부 */
@@ -48,8 +46,6 @@ export interface ToolbarActions {
   setLoading: (loading: boolean) => void;
   /** 에러 상태 설정 */
   setError: (hasError: boolean) => void;
-  /** 활성 버튼 설정 */
-  setActiveButton: (buttonId: string | null) => void;
   /** 핏 모드 설정 */
   setCurrentFitMode: (mode: string) => void;
   /** 고대비 모드 설정 */
@@ -70,7 +66,6 @@ const INITIAL_STATE: ToolbarState = {
   isDownloading: false,
   isLoading: false,
   hasError: false,
-  activeButton: null,
   currentFitMode: 'fitWidth',
   needsHighContrast: false,
 } as const;
@@ -100,14 +95,46 @@ const INITIAL_STATE: ToolbarState = {
 export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const [state, setState] = useState<ToolbarState>(INITIAL_STATE);
 
-  // 다운로드 상태 설정
+  // 다운로드 상태 변경 시간 추적
+  const lastDownloadToggleRef = useRef(0);
+  const downloadTimeoutRef = useRef<number | null>(null);
+
+  // 다운로드 상태 설정 - 최소 표시 시간 적용
   const setDownloading = useCallback((downloading: boolean) => {
-    setState((prev: ToolbarState) => ({
-      ...prev,
-      isDownloading: downloading,
-      // 다운로드 시작 시 에러 상태 초기화
-      hasError: downloading ? false : prev.hasError,
-    }));
+    const now = Date.now();
+
+    if (downloading) {
+      // 다운로드 시작
+      lastDownloadToggleRef.current = now;
+      setState((prev: ToolbarState) => ({
+        ...prev,
+        isDownloading: true,
+        hasError: false,
+      }));
+    } else {
+      // 다운로드 완료 - 최소 300ms 표시 시간 보장
+      const timeSinceStart = now - lastDownloadToggleRef.current;
+      const minDisplayTime = 300;
+
+      if (timeSinceStart < minDisplayTime) {
+        // 최소 표시 시간이 지나지 않았으면 지연 후 변경
+        if (downloadTimeoutRef.current) {
+          clearTimeout(downloadTimeoutRef.current);
+        }
+        downloadTimeoutRef.current = window.setTimeout(() => {
+          setState((prev: ToolbarState) => ({
+            ...prev,
+            isDownloading: false,
+          }));
+        }, minDisplayTime - timeSinceStart);
+      } else {
+        // 충분한 시간이 지났으면 즉시 변경
+        setState((prev: ToolbarState) => ({
+          ...prev,
+          isDownloading: false,
+        }));
+      }
+    }
   }, []);
 
   // 로딩 상태 설정
@@ -131,11 +158,6 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     }));
   }, []);
 
-  // 활성 버튼 설정
-  const setActiveButton = useCallback((buttonId: string | null) => {
-    setState((prev: ToolbarState) => ({ ...prev, activeButton: buttonId }));
-  }, []);
-
   // 핏 모드 설정
   const setCurrentFitMode = useCallback((mode: string) => {
     setState((prev: ToolbarState) => ({ ...prev, currentFitMode: mode }));
@@ -146,16 +168,30 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     setState((prev: ToolbarState) => ({ ...prev, needsHighContrast }));
   }, []);
 
-  // 상태 초기화
+  // 상태 초기화 및 cleanup
   const resetState = useCallback(() => {
+    // 타이머 정리
+    if (downloadTimeoutRef.current) {
+      clearTimeout(downloadTimeoutRef.current);
+      downloadTimeoutRef.current = null;
+    }
     setState(INITIAL_STATE);
+  }, []);
+
+  // 컴포넌트 언마운트 시 cleanup
+  const { useEffect } = getPreactHooks();
+  useEffect(() => {
+    return () => {
+      if (downloadTimeoutRef.current) {
+        clearTimeout(downloadTimeoutRef.current);
+      }
+    };
   }, []);
 
   const actions: ToolbarActions = {
     setDownloading,
     setLoading,
     setError,
-    setActiveButton,
     setCurrentFitMode,
     setNeedsHighContrast,
     resetState,

@@ -69,6 +69,7 @@ export function Button({
    * 버튼 클릭 이벤트 핸들러
    */
   const handleClick = (event: Event): void => {
+    event.stopPropagation(); // 이벤트 전파 방지
     if (disabled || loading) {
       event.preventDefault();
       return;

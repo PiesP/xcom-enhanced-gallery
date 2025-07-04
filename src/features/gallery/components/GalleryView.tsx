@@ -8,7 +8,7 @@
  */
 
 import type { MediaInfo } from '../../../core/types';
-import type { ComponentChildren } from 'preact';
+import type { ComponentChildren } from '../../../shared/types/common.types';
 import { Button } from '../../../shared/components/ui/Button/Button';
 import { getPreactHooks } from '../../../infrastructure/external/vendors';
 import { logger } from '../../../infrastructure/logging/logger';

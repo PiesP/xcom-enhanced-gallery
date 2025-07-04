@@ -5,7 +5,29 @@
 
 /* 통합 디자인 토큰 사용 - 로컬 CSS 변수 제거됨 */
 
-/* ===== 상태 기반 CSS 아키텍처 ===== */
+/* ===== 상태 기반 CSS ===== */
+
+/* 클릭 상태 - CSS만으로 처리하여 깜빡임 방지 */
+.toolbarButton:active:not([data-disabled='true']) {
+  --button-transform: translateY(0) scale(0.96);
+  animation: xeg-button-click 150ms ease-out;
+  box-shadow:
+    0 1px 4px rgba(15, 23, 42, 0.08),
+    0 0px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* 버튼 클릭 애니메이션 - 시각적 피드백용 */
+@keyframes xeg-button-click {
+  0% {
+    transform: translateY(-2px) scale(1.05);
+  }
+  50% {
+    transform: translateY(0) scale(0.96);
+  }
+  100% {
+    transform: translateY(-1px) scale(1.02);
+  }
+}
 
 /* 기본 툴바 */
 .galleryToolbar {

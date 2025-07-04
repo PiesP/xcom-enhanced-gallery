@@ -4,6 +4,9 @@
  * DOM manipulation, accessibility utilities (테마 관련 기능 제거)
  */
 
+// DOM utilities
+export * from '../dom/isInsideGallery';
+
 // DOM utilities는 통합된 ScrollManager로 대체됨
 // @core/services/scroll/ScrollManager 사용하세요
 

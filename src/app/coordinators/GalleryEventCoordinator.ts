@@ -11,6 +11,8 @@
  */
 
 import { logger } from '@infrastructure/logging/logger';
+import { galleryState } from '@core/state/signals/gallery.signals';
+import { shouldBlockGalleryEvent } from '@shared/utils/core';
 
 /**
  * 이벤트 코디네이터 설정
@@ -90,6 +92,12 @@ export class GalleryEventCoordinator {
 
       const target = event.target as HTMLElement;
 
+      // 갤러리가 열려 있을 때 갤러리 내부 클릭은 차단
+      if (galleryState.value.isOpen && shouldBlockGalleryEvent(event)) {
+        logger.debug('갤러리 내부 클릭 차단 - 기본 동작 허용');
+        return;
+      }
+
       // 디바운싱 체크
       if (!this.checkDebounce()) {
         return;
@@ -122,6 +130,12 @@ export class GalleryEventCoordinator {
       if (event.button !== 0) return;
 
       const target = event.target as HTMLElement;
+
+      // 갤러리가 열려 있을 때 갤러리 내부 클릭은 차단
+      if (galleryState.value.isOpen && shouldBlockGalleryEvent(event)) {
+        logger.debug('갤러리 내부 그리드 클릭 차단');
+        return;
+      }
 
       // 미디어 그리드 링크 감지
       const mediaGridLink = target.closest(
