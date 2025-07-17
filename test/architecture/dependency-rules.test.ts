@@ -246,10 +246,9 @@ describe('Architecture Dependency Rules', () => {
       const indexFiles = await glob('src/**/index.ts', { ignore: ['**/*.test.*', '**/*.spec.*'] });
       const failedFiles: { file: string; reason: string; problematicLines: string[] }[] = [];
 
-      // 특수한 경우를 허용할 파일들
+      // 특수한 경우를 허용할 파일들 (배럴 export가 아닌 실제 구현/로더 파일들)
       const specialCaseFiles = [
-        'src/shared/styles/index.ts', // CSS import와 조건부 코드 허용
-        'src/infrastructure/external/vendors/index.ts', // 복잡한 타입과 조건부 코드 허용
+        // 이제 단순한 배럴 export로 변경되어 제외할 필요 없음
       ];
 
       for (const indexFile of indexFiles) {
