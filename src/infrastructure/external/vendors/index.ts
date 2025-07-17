@@ -30,7 +30,7 @@ export {
   initializeVendors,
   cleanupVendors,
   getVendorVersions,
-  areVendorsInitialized,
+  isVendorsInitialized,
   getVendorInitializationReport,
   getVendorStatuses,
   isVendorInitialized,
