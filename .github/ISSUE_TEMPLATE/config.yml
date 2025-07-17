@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: 질문 및 토론
-    url: https://github.com/your-username/xcom-enhanced-gallery/discussions
+    url: https://github.com/PiesP/xcom-enhanced-gallery/discussions
     about: 질문이나 토론은 GitHub Discussions에서 진행해주세요.
   - name: 프로젝트 문서
-    url: https://your-username.github.io/xcom-enhanced-gallery/
+    url: https://github.com/PiesP/xcom-enhanced-gallery/blob/master/README.md
     about: 프로젝트 문서를 확인해보세요.

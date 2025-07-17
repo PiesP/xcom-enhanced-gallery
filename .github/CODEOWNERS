@@ -3,6 +3,3 @@
 
 # 전체 프로젝트 소유자
 *       @PiesP
-/.github/workflows/        @devops-team-member
-/vite.config.ts            @devops-team-member
-/tsconfig*.json            @devops-team-member
