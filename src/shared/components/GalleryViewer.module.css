@@ -1,0 +1,309 @@
+/**
+ * Gallery Viewer Styles
+ * Clean Architecture 리팩토링에 따른 모던 갤러리 스타일
+ */
+
+/* 갤러리 오버레이 */
+.galleryOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--xeg-z-modal);
+
+  /* Modern Glassmorphism 디자인 */
+  background: var(--xeg-color-overlay-strong);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--xeg-spacing-lg);
+
+  /* 애니메이션 */
+  animation: fadeIn var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+}
+
+/* 갤러리 컨테이너 */
+.galleryContainer {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 100%;
+  height: 100%;
+
+  /* Modern Glassmorphism 컨테이너 */
+  background: var(--xeg-color-bg-glass-light);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--xeg-color-border-glass);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--xeg-shadow-xl);
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* 컨트롤 영역 */
+.controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--xeg-spacing-md);
+
+  background: linear-gradient(
+    to bottom,
+    var(--xeg-color-overlay-medium) 0%,
+    var(--xeg-color-overlay-light) 50%,
+    transparent 100%
+  );
+  border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
+}
+
+/* 닫기 버튼 */
+.closeButton {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--xeg-radius-full);
+  background: var(--xeg-color-bg-glass-light);
+  color: var(--xeg-color-text-inverse);
+  font-size: var(--xeg-font-size-xl);
+  font-weight: var(--xeg-font-weight-bold);
+  cursor: pointer;
+  transition: var(--xeg-transition-normal);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--xeg-shadow-lg);
+}
+
+.closeButton:hover {
+  background: var(--xeg-color-bg-glass-strong);
+  transform: scale(1.1);
+  box-shadow: var(--xeg-shadow-xl);
+}
+
+/* 네비게이션 버튼 */
+.navButton {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--xeg-radius-full);
+  background: var(--xeg-color-bg-glass-light);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.navButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.prevButton {
+  margin-right: var(--xeg-spacing-sm, 8px);
+}
+
+.nextButton {
+  margin-left: var(--xeg-spacing-sm, 8px);
+}
+
+/* 인덱스 표시 */
+.indexIndicator {
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: var(--xeg-spacing-xs, 4px) var(--xeg-spacing-sm, 8px);
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 미디어 컨테이너 */
+.mediaContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 12px 12px;
+}
+
+/* 미디어 요소 */
+.media {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+}
+
+.image {
+  /* 이미지 특정 스타일 */
+}
+
+.video {
+  /* 비디오 특정 스타일 */
+}
+
+.mediaViewer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 네비게이션 영역 */
+.navigationContainer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
+  padding: var(--xeg-spacing-md, 16px);
+  border-radius: 0 0 12px 12px;
+}
+
+.navigation {
+  /* 네비게이션 컨테이너 추가 스타일 */
+}
+
+/* 썸네일 */
+.thumbnails {
+  display: flex;
+  gap: var(--xeg-spacing-sm, 8px);
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: var(--xeg-spacing-xs, 4px);
+}
+
+.thumbnail {
+  width: 60px;
+  height: 60px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.thumbnail:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.thumbnail.active {
+  border-color: var(--xeg-color-primary, #1d9bf0);
+}
+
+.thumbnailImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 애니메이션 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .galleryOverlay {
+    padding: var(--xeg-spacing-sm, 8px);
+  }
+
+  .controls {
+    padding: var(--xeg-spacing-sm, 8px);
+  }
+
+  .closeButton,
+  .navButton {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .indexIndicator {
+    font-size: 12px;
+  }
+
+  .thumbnail {
+    width: 48px;
+    height: 48px;
+  }
+
+  .navigationContainer {
+    padding: var(--xeg-spacing-sm, 8px);
+  }
+}
+
+/* 접근성 */
+@media (prefers-reduced-motion: reduce) {
+  .galleryOverlay {
+    animation: none;
+  }
+
+  .closeButton,
+  .navButton,
+  .thumbnail {
+    transition: none;
+  }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .galleryContainer {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .closeButton,
+  .navButton {
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+  }
+
+  .closeButton:hover,
+  .navButton:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
+}

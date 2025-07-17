@@ -1,0 +1,202 @@
+/**
+ * @fileoverview 컨트롤 컴포넌트 스타일 (v4.0.0)
+ * @description 갤러리 컨트롤 및 버튼 스타일
+ */
+
+/* 기본 버튼 스타일 */
+.xeg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--xeg-spacing-xs);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  border: 1px solid transparent;
+  border-radius: var(--xeg-radius-md);
+  font-size: var(--xeg-font-size-sm);
+  font-weight: var(--xeg-font-weight-medium);
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--xeg-transition-fast);
+  background: var(--xeg-color-surface-glass-light);
+  color: var(--xeg-color-text-primary);
+  backdrop-filter: var(--xeg-blur-light);
+  -webkit-backdrop-filter: var(--xeg-blur-light);
+  min-height: var(--xeg-button-height-md);
+}
+
+.xeg-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.xeg-btn:active {
+  transform: translateY(0);
+  animation: xeg-btn-click 150ms ease-out;
+}
+
+/* 버튼 클릭 애니메이션 - 깜빡임 방지 */
+@keyframes xeg-btn-click {
+  0% {
+    transform: translateY(-1px) scale(1);
+  }
+  50% {
+    transform: translateY(0) scale(0.98);
+  }
+  100% {
+    transform: translateY(-0.5px) scale(1);
+  }
+}
+
+.xeg-btn:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+/* 버튼 변형 */
+.xeg-btn-primary {
+  background: var(--xeg-color-primary);
+  color: white;
+}
+
+.xeg-btn-primary:hover {
+  background: var(--xeg-color-primary-hover);
+}
+
+.xeg-btn-secondary {
+  background: var(--xeg-color-surface-glass-medium);
+  border: 1px solid var(--xeg-color-border-primary);
+}
+
+.xeg-btn-secondary:hover {
+  background: var(--xeg-color-surface-glass-light);
+  border-color: var(--xeg-color-border-secondary);
+}
+
+.xeg-btn-ghost {
+  background: transparent;
+  color: var(--xeg-color-text-inverse);
+}
+
+.xeg-btn-ghost:hover {
+  background: var(--xeg-color-surface-overlay-light);
+}
+
+.xeg-btn-danger {
+  background: var(--xeg-color-error-500);
+  color: white;
+}
+
+.xeg-btn-danger:hover {
+  background: var(--xeg-color-error-600);
+}
+
+/* 버튼 크기 */
+.xeg-btn-sm {
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  font-size: var(--xeg-font-size-xs);
+  min-height: var(--xeg-button-height-sm);
+}
+
+.xeg-btn-lg {
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+  font-size: var(--xeg-font-size-base);
+  min-height: var(--xeg-button-height-lg);
+}
+
+/* 아이콘 버튼 */
+.xeg-btn-icon {
+  width: var(--xeg-button-height-md);
+  height: var(--xeg-button-height-md);
+  padding: 0;
+  border-radius: 50%;
+}
+
+.xeg-btn-icon.xeg-btn-sm {
+  width: var(--xeg-button-height-sm);
+  height: var(--xeg-button-height-sm);
+}
+
+.xeg-btn-icon.xeg-btn-lg {
+  width: var(--xeg-button-height-lg);
+  height: var(--xeg-button-height-lg);
+}
+
+/* 네비게이션 버튼 */
+.xeg-nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  background: var(--xeg-color-surface-glass-medium);
+  border: 1px solid var(--xeg-color-border-primary);
+  border-radius: 50%;
+  color: var(--xeg-color-text-inverse);
+  font-size: 24px;
+  backdrop-filter: var(--xeg-blur-medium);
+  -webkit-backdrop-filter: var(--xeg-blur-medium);
+  transition: var(--xeg-transition-fast);
+  z-index: 1;
+}
+
+.xeg-nav-button:hover {
+  background: var(--xeg-color-surface-glass-light);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: var(--xeg-shadow-lg);
+}
+
+.xeg-nav-button-prev {
+  left: var(--xeg-spacing-lg);
+}
+
+.xeg-nav-button-next {
+  right: var(--xeg-spacing-lg);
+}
+
+/* 툴바 */
+.xeg-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--xeg-spacing-sm);
+  padding: var(--xeg-spacing-sm);
+  background: var(--xeg-color-surface-glass-medium);
+  border-radius: var(--xeg-radius-lg);
+  backdrop-filter: var(--xeg-blur-medium);
+  -webkit-backdrop-filter: var(--xeg-blur-medium);
+  box-shadow: var(--xeg-shadow-md);
+}
+
+/* 카운터 */
+.xeg-counter {
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  background: var(--xeg-color-surface-overlay-medium);
+  color: var(--xeg-color-text-inverse);
+  border-radius: var(--xeg-radius-md);
+  font-size: var(--xeg-font-size-sm);
+  font-weight: var(--xeg-font-weight-medium);
+  min-width: 64px;
+  text-align: center;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .xeg-nav-button {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .xeg-nav-button-prev {
+    left: var(--xeg-spacing-sm);
+  }
+
+  .xeg-nav-button-next {
+    right: var(--xeg-spacing-sm);
+  }
+
+  .xeg-toolbar {
+    gap: var(--xeg-spacing-xs);
+    padding: var(--xeg-spacing-xs);
+  }
+}

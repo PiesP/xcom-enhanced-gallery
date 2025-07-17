@@ -1,0 +1,212 @@
+/**
+ * @fileoverview X.com Enhanced Gallery 메인 앱 컴포넌트 스타일
+ *
+ * 이 CSS 모듈은 X.com Enhanced Gallery의 메인 App 컴포넌트에서
+ * 사용되는 모든 스타일을 정의합니다. 갤러리 오버레이, 미디어
+ * 컨테이너, 네비게이션 버튼, 로딩 상태 등의 UI 요소들을 포함합니다.
+ *
+ * @module App.module.css
+ * @author X.com Enhanced Gallery Team
+ * @version 3.0.0
+ * @since 1.0.0
+ */
+
+/**
+ * 갤러리 메인 오버레이 컨테이너
+ *
+ * 전체 화면을 덮는 모달 오버레이로, 높은 z-index를 사용하여
+ * 다른 페이지 요소들 위에 표시됩니다.
+ */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--xeg-color-overlay-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--xeg-z-modal);
+  transition: var(--xeg-transition-normal);
+}
+
+/**
+ * 테마별 오버레이 스타일 (v2 디자인 토큰 사용)
+ */
+.galleryOverlay.themeLight {
+  background-color: var(--xeg-color-overlay-light);
+}
+
+.galleryOverlay.themeDark {
+  background-color: var(--xeg-color-overlay-strong);
+}
+
+.galleryOverlay.themeAuto {
+  background-color: var(--xeg-color-overlay-medium);
+}
+
+@media (prefers-color-scheme: light) {
+  .galleryOverlay.themeAuto {
+    background-color: var(--xeg-color-overlay-light);
+  }
+}
+
+/**
+ * 스크린 리더용 숨겨진 안내 텍스트
+ * 시각적으로는 보이지 않지만 스크린 리더에서는 읽힐 수 있습니다.
+ */
+.hiddenInstructions {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+/**
+ * 미디어 콘텐츠 컨테이너
+ * 이미지나 비디오를 중앙에 배치하고 뷰포트 크기에 맞게 최대 크기를
+ * 제한합니다.
+ */
+.content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/**
+ * 미디어 요소 (이미지/비디오) 스타일
+ * object-fit: contain을 사용하여 미디어의 원본 비율을 유지합니다.
+ */
+.media {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--xeg-radius-md);
+  transition: var(--xeg-transition-normal);
+  box-shadow: var(--xeg-shadow-xl);
+}
+
+/**
+ * 로딩 상태 텍스트
+ */
+.loading {
+  color: var(--xeg-color-text-inverse);
+  font-size: var(--xeg-font-size-lg);
+  font-weight: var(--xeg-font-weight-medium);
+}
+
+/**
+ * 갤러리 닫기 버튼
+ * 우상단에 위치한 원형 버튼으로 갤러리를 닫는 기능을 담당합니다.
+ */
+.closeButton {
+  position: absolute;
+  top: calc(-1 * var(--xeg-spacing-xxxl));
+  right: calc(-1 * var(--xeg-spacing-xxxl));
+  background-color: var(--xeg-color-bg-primary);
+  border: 1px solid var(--xeg-color-border-primary);
+  border-radius: var(--xeg-radius-full);
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: var(--xeg-font-size-lg);
+  color: var(--xeg-color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--xeg-shadow-md);
+  transition: var(--xeg-transition-normal);
+}
+
+.closeButton:hover {
+  background-color: var(--xeg-color-neutral-100);
+  transform: scale(1.05);
+}
+
+.closeButton:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+.closeButton:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.8);
+  outline-offset: 2px;
+}
+
+/**
+ * 네비게이션 버튼 기본 스타일
+ *
+ * 이전/다음 미디어로 이동하는 버튼들의 공통 스타일입니다.
+ * 화면 중앙 좌우에 배치되며, 닫기 버튼보다 약간 큰 크기를 가집니다.
+ *
+ * @extends 개별 위치는 .navPrev, .navNext 클래스로 지정
+ * @interaction 부드러운 호버/포커스 전환 효과
+ */
+.navButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.2s ease;
+}
+
+.navButton:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.navButton:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.8);
+  outline-offset: 2px;
+}
+
+/**
+ * 이전 미디어 네비게이션 버튼 위치
+ * 화면 왼쪽에 배치됩니다.
+ */
+.navPrev {
+  left: 20px;
+}
+
+/**
+ * 다음 미디어 네비게이션 버튼 위치
+ * 화면 오른쪽에 배치됩니다.
+ */
+.navNext {
+  right: 20px;
+}
+
+/**
+ * 미디어 카운터 (현재 위치 표시)
+ *
+ * 화면 하단 중앙에 표시되는 "현재/전체" 형태의 카운터입니다.
+ * backdrop-filter를 사용하여 블러 효과를 적용하고,
+ * 반투명한 배경으로 가독성을 향상시킵니다.
+ *
+ * @position 하단 중앙 고정
+ * @effect backdrop-filter: blur(4px) 적용
+ * @format "1 / 5" 형태로 표시
+ */
+.counter {
+  position: absolute;
+  bottom: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  backdrop-filter: blur(4px);
+}

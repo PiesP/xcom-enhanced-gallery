@@ -1,0 +1,562 @@
+/**
+ * Enhanced Vertical Gallery View Styles
+ * @version 3.4.0 - Subdued Color System Integration
+ *
+ * @description
+ * 세로형 갤러리 뷰 컴포넌트의 스타일 정의입니다.
+ * design-tokens.css에서 정의된 통합 디자인 토큰 시스템을 사용하여
+ * 차분하고 일관된 시각적 경험을 제공합니다.
+ *
+ * @features
+ * - 통합된 neutral/slate 색상 팔레트 사용
+ * - 컨테이너 쿼리 기반 반응형 디자인
+ * - 하드웨어 가속 최적화된 애니메이션
+ * - 접근성을 고려한 포커스 및 호버 상태
+ * - 모바일 최적화된 터치 인터페이스
+ */
+
+/* 컨테이너 쿼리 지원 감지 */
+@supports (container-type: size) {
+  :root {
+    --supports-container-queries: 1;
+  }
+}
+
+/* 공통 CSS 변수 정의 - 새로운 디자인 토큰 시스템 적용 */
+:root {
+  --xeg-gallery-z-index: var(--xeg-z-gallery, 10000);
+  --xeg-toolbar-z-index: var(--xeg-z-modal, 10001);
+
+  /* 트랜지션 - 새로운 애니메이션 토큰 사용 */
+  --xeg-transition-fast:
+    transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    opacity var(--xeg-duration-fast) var(--xeg-easing-easeOut);
+  --xeg-transition-normal:
+    transform var(--xeg-duration-normal) var(--xeg-easing-easeInOut),
+    opacity var(--xeg-duration-normal) var(--xeg-easing-easeInOut);
+  --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-easeOut);
+
+  /* 스페이싱 - 새로운 간격 토큰 사용 */
+  --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
+  --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
+  --xeg-spacing-compact: clamp(4px, 1.5vw, var(--xeg-spacing-sm));
+
+  /* 레이아웃 */
+  --xeg-toolbar-height: clamp(60px, 10vh, 80px);
+
+  /* 블러 효과와 그림자 */
+  --xeg-backdrop-blur: 8px;
+  --xeg-shadow-soft: var(--xeg-shadow-lg);
+}
+
+/* 메인 컨테이너 - 단순화된 갤러리 컨테이너 */
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--xeg-gallery-z-index);
+  background: var(--xeg-color-overlay-strong);
+
+  /* 기본 레이아웃 */
+  display: flex;
+  flex-direction: column;
+
+  /* 블러 효과 */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  /* 하드웨어 가속 최적화 */
+  transform: translateZ(0);
+  will-change: opacity, transform;
+  contain: layout style paint;
+
+  /* 초기 상태 */
+  opacity: 1;
+  visibility: visible;
+  transition: var(--xeg-transition-normal);
+
+  /* 이벤트 처리 - 스크롤 이벤트는 항상 허용 */
+  cursor: default;
+  pointer-events: auto;
+
+  /* 컨테이너 쿼리 활성화 */
+  container-type: size;
+  container-name: gallery-container;
+
+  /* 스크롤 최적화 */
+  scroll-behavior: smooth;
+  overscroll-behavior: contain; /* 스크롤 체이닝 방지 */
+
+  /* 갤러리 내부 스크롤만 허용 */
+
+  /* 툴바 표시 상태 제어를 위한 CSS 변수 (통합된 버전) */
+  --toolbar-visible: 0; /* 0 = 숨김, 1 = 표시 */
+}
+
+/* 초기 툴바 표시 상태 (3초간) */
+.container.initialToolbarVisible {
+  --toolbar-visible: 1;
+}
+
+/* UI 숨김 상태 - 스크롤 이벤트는 유지하되 시각적 요소만 숨김 */
+.container.uiHidden {
+  /* UI는 숨기지만 스크롤 이벤트는 차단하지 않음 */
+  cursor: none;
+  /* pointer-events: none; 제거 - 스크롤 차단 방지 */
+}
+
+.container.uiHidden .toolbarWrapper,
+.container.uiHidden .content > *:not([data-xeg-role='items-list']) {
+  /* 개별 UI 요소만 이벤트 차단 */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--xeg-transition-fast);
+}
+
+/* 스크롤 가능한 콘텐츠 영역은 항상 이벤트 허용 */
+.container.uiHidden [data-xeg-role='items-list'],
+.container.uiHidden .itemsList {
+  pointer-events: auto !important;
+}
+
+/* 상태별 최적화 */
+.container.visible {
+  opacity: 1;
+  transform: scale3d(1, 1, 1);
+}
+
+.container.empty {
+  justify-content: center;
+  align-items: center;
+}
+
+/* :has() 선택자를 활용한 상태 기반 스타일링 */
+.container:has(.toolbarWrapper:hover) {
+  /* 툴바 호버 시 컨테이너 상태 변경 */
+  --toolbar-interaction: 1;
+}
+
+.container:has(.itemActive) {
+  /* 활성 아이템이 있을 때 */
+  --has-active-item: 1;
+}
+
+/* 모든 하위 요소의 이벤트 전파 최적화 */
+.container * {
+  pointer-events: auto;
+}
+
+/* 독립적인 상단 호버 감지 영역 */
+.toolbarHoverZone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px; /* 상단 100px만 호버 감지 */
+  z-index: calc(var(--xeg-toolbar-z-index) - 1); /* 툴바보다 낮은 z-index */
+  background: transparent;
+  pointer-events: none; /* 기본적으로 이벤트 차단하지 않음 */
+}
+
+/* 호버 감지만을 위한 영역 - 클릭 이벤트는 항상 차단 */
+.toolbarHoverZone:hover {
+  pointer-events: none;
+}
+
+/* 툴바가 표시된 상태에서는 호버 영역 완전히 비활성화 */
+.container.initialToolbarVisible .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover) .toolbarHoverZone {
+  pointer-events: none;
+}
+
+/* :has() 미지원 브라우저를 위한 대안 */
+@supports not (selector(:has(*))) {
+  .toolbarWrapper:hover ~ .toolbarHoverZone {
+    pointer-events: none;
+  }
+}
+
+/* 툴바 래퍼 - 기본 숨김 상태 */
+.toolbarWrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  z-index: var(--xeg-toolbar-z-index);
+
+  /* 기본 상태: 숨김 */
+  opacity: calc(var(--toolbar-visible, 0));
+  transform: translateY(calc(-100% * (1 - var(--toolbar-visible, 0))));
+  transition:
+    opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
+    transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+  will-change: transform, opacity;
+  contain: layout style;
+  /* 툴바 자체는 항상 클릭 가능하도록 설정 */
+  pointer-events: auto;
+
+  /* 그라디언트 배경 */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, black 80%, transparent) 0%,
+    color-mix(in srgb, black 40%, transparent) 70%,
+    transparent 100%
+  );
+  padding-block-end: var(--xeg-spacing-gallery);
+}
+
+/* 호버 시 부모 컨테이너에 CSS 변수 설정 */
+.container:has(.toolbarHoverZone:hover),
+.container.initialToolbarVisible {
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+}
+
+/* :has() 지원하지 않는 브라우저를 위한 대안 */
+@supports not (selector(:has(*))) {
+  /* 호버 트리거 영역 호버 시 직접 형제 요소인 툴바 래퍼에 적용 */
+  .toolbarHoverZone:hover + .toolbarWrapper {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* 툴바 자체 호버 시에도 표시 유지 */
+.toolbarWrapper:hover {
+  --toolbar-visible: 1;
+}
+
+/* 표시 상태일 때 툴바 위치 */
+.container:has(.toolbarHoverZone:hover) .toolbarWrapper,
+.container.initialToolbarVisible .toolbarWrapper,
+.toolbarWrapper:hover {
+  --toolbar-visible: 1;
+}
+
+/* 접근성: 포커스 시에도 툴바 표시 */
+.toolbarWrapper:focus-within {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+}
+
+/* 툴바 내부 모든 요소 클릭 보장 */
+.toolbarWrapper * {
+  pointer-events: auto !important;
+}
+
+/* 툴바 버튼의 이벤트 전파 방지 및 클릭 보장 */
+.toolbarWrapper button,
+.toolbarWrapper [role='button'],
+.toolbarWrapper .toolbarButton {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 10;
+}
+
+/* 콘텐츠 영역 - 컨테이너 쿼리 지원과 전체 화면 활용 */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  /* 툴바 영역 제거 - 현재 전체 화면 활용 */
+
+  /* 성능 최적화 */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* 이벤트 전파 */
+  pointer-events: auto;
+
+  /* 컨테이너 쿼리 */
+  container-type: size;
+  container-name: content-area;
+}
+
+/* 갤러리 아이템 기본 스타일 - 포커스 스크롤에 최적화 */
+.galleryItem {
+  position: relative;
+  margin-bottom: var(--xeg-spacing-md, 16px);
+  border-radius: var(--xeg-radius-lg, 8px);
+  transition: var(--xeg-transition-normal);
+  scroll-margin-top: 0; /* 스크롤 시 상단 정렬 */
+
+  /* 성능 최적화 */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* 스크롤 스냅 */
+  scroll-snap-align: start;
+  scroll-margin-top: var(--xeg-spacing-sm);
+}
+
+/* 포커스된 아이템 강조 - 2중 테두리 방지를 위해 애니메이션 제거 */
+.itemActive {
+  position: relative;
+  z-index: 1;
+  /* 기존 itemActive::before 애니메이션 제거로 2중 테두리 방지 */
+}
+
+/* focusGlow 애니메이션 제거 - 2중 테두리 방지 */
+
+/* 아이템 리스트 - 네이티브 스크롤만 사용 */
+.itemsList {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+
+  /* 성능 최적화 */
+  contain: layout style paint;
+  transform: translateZ(0);
+  will-change: scroll-position;
+  content-visibility: auto;
+
+  /* 스크롤바 스타일링 */
+  scrollbar-gutter: stable;
+
+  /* 스크롤 스냅 (선택적) */
+  scroll-snap-type: y proximity;
+
+  /* 이벤트 처리 */
+  pointer-events: auto;
+
+  /* 갤러리 내부 스크롤만 허용 */
+
+  /* 컨테이너 쿼리 */
+  container-type: size;
+  container-name: items-list;
+}
+
+/* 웹킷 스크롤바 스타일 */
+.itemsList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.itemsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.itemsList::-webkit-scrollbar-thumb {
+  background: var(--xeg-neutral-300);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.itemsList::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-neutral-400);
+}
+
+/* 애니메이션 - GPU 가속 */
+.fadeInOut {
+  animation: fadeInOut 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, 10px, 0) scale3d(0.95, 0.95, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1);
+  }
+}
+
+/* 빈 상태 메시지 - 통합된 타이포그래피 */
+.emptyMessage {
+  text-align: center;
+  color: var(--xeg-color-text-secondary);
+  max-inline-size: min(400px, 90vw);
+  padding: clamp(30px, 5vw, 40px);
+}
+
+.emptyMessage h3 {
+  margin: 0 0 clamp(12px, 2vw, 16px) 0;
+  font-size: clamp(20px, 4vw, 24px);
+  font-weight: 600;
+  color: var(--xeg-color-text-primary);
+  line-height: 1.2;
+}
+
+.emptyMessage p {
+  margin: 0;
+  font-size: clamp(14px, 2.5vw, 16px);
+  line-height: 1.5;
+  color: var(--xeg-color-text-tertiary);
+}
+/* 컨테이너 쿼리 기반 반응형 디자인 */
+@container gallery-container (max-width: 768px) {
+  .itemsList {
+    padding: var(--xeg-spacing-mobile);
+    gap: var(--xeg-spacing-mobile);
+  }
+
+  .toolbarWrapper {
+    padding-block-end: var(--xeg-spacing-mobile);
+  }
+}
+
+@container gallery-container (max-width: 480px) {
+  .itemsList {
+    padding: var(--xeg-spacing-compact);
+    gap: var(--xeg-spacing-compact);
+  }
+}
+
+/* 기존 미디어 쿼리는 컨테이너 쿼리 지원이 없는 브라우저를 위한 폴백 */
+@media (max-width: 768px) {
+  .itemsList {
+    padding: var(--xeg-spacing-mobile);
+    gap: var(--xeg-spacing-mobile);
+  }
+
+  .toolbarWrapper {
+    padding-block-end: var(--xeg-spacing-mobile);
+  }
+}
+
+@media (max-width: 480px) {
+  .itemsList {
+    padding: var(--xeg-spacing-compact);
+    gap: var(--xeg-spacing-compact);
+  }
+}
+/* 접근성 - 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .itemActive::before {
+    border-color: HighlightText;
+    box-shadow: 0 0 8px HighlightText;
+  }
+
+  .container {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .toolbarWrapper {
+    background: linear-gradient(
+      to bottom,
+      Canvas 0%,
+      color-mix(in srgb, Canvas 80%, transparent) 70%,
+      transparent 100%
+    );
+  }
+}
+
+/* 접근성 - 모션 감소 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .itemsList {
+    scroll-behavior: auto;
+  }
+
+  .itemsList {
+    will-change: auto;
+    transform: none;
+  }
+}
+
+/* 라이트 모드 선호도 지원 */
+@media (prefers-color-scheme: light) {
+  .container {
+    background: color-mix(in srgb, white 95%, transparent);
+  }
+}
+
+/* 빈 상태 버튼 스타일 */
+.emptyButton {
+  margin-top: 1rem;
+}
+
+/* Toast 컨테이너 */
+.toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: calc(var(--xeg-gallery-z-index) + 2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toastContainer > * {
+  pointer-events: auto;
+}
+
+/* 감소된 모션 사용자를 위한 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .toolbarWrapper {
+    transition: opacity 0.1s ease;
+    transform: translateY(-100%); /* Y축 이동만 제거 */
+  }
+
+  .toolbarWrapper:hover,
+  .toolbarWrapper:focus-within {
+    transform: translateY(0); /* 단순한 Y축 이동만 */
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .toolbarWrapper {
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid white;
+  }
+}
+
+/* 페이지 스크롤 방지 - 갤러리 내에서만 스크롤 */
+.container {
+  /* ...existing code... */
+  overscroll-behavior: contain;
+}
+
+/* 툴바 호버 트리거 영역 */
+.toolbarHoverTrigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px; /* 브라우저 상단 100px 영역 */
+  z-index: calc(var(--xeg-toolbar-z-index) - 1);
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* 초기 툴바 표시 (3초간) */
+.container.initialToolbarVisible {
+  --toolbar-visible: 1;
+}
+
+/* 호버 트리거 영역에 마우스가 올라갔을 때 툴바 표시 */
+.toolbarHoverTrigger:hover + * {
+  --toolbar-visible: 1;
+}
+
+/* 브라우저가 :has를 지원하지 않는 경우 대체 */
+@supports not selector(:has(*)) {
+  .toolbarHoverTrigger:hover {
+    /* JavaScript에서 처리할 수 있도록 커스텀 프로퍼티 설정 */
+    --trigger-hover: 1;
+  }
+}
+
+/* 툴바 자체 호버 시에도 표시 유지 */
+.container [class*='galleryToolbar']:hover {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* 브라우저 호환성을 위한 대체 방법 */
+@supports not (selector(:hover + *)) {
+  .container:hover [class*='galleryToolbar'] {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}

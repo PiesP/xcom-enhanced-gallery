@@ -1,0 +1,741 @@
+/**
+ * Gallery component styles - Design Token System
+ * CSS Modules implementation for X.com Enhanced Gallery
+ * @version 2.0.0 - 통합된 디자인 토큰 시스템 적용
+ *
+ * @description
+ * X.com Enhanced Gallery의 갤러리 뷰어 컴포넌트를 위한 스타일 정의입니다.
+ * design-tokens.css에서 정의된 통합 디자인 토큰을 사용하여 CSS Modules를 통한
+ * 스타일 캡슐화를 제공합니다.
+ *
+ * @features
+ * - 통합된 디자인 토큰 시스템 사용
+ * - CSS Modules를 통한 스타일 격리
+ * - 테마별 변형 지원 (light/dark/auto)
+ * - 반응형 디자인 및 접근성
+ * @author X.com Enhanced Gallery Team
+ */
+*/
+
+/**
+ * 갤러리 뷰어 오버레이 - 현대적 glassmorphism 디자인
+ * 전체 화면을 덮는 모달 배경으로 사용됩니다.
+ *
+ * Features:
+ * - 고정 위치 (position: fixed)로 전체 화면 오버레이
+ * - 높은 z-index로 다른 요소들 위에 표시
+ * - 부드러운 블러 효과와 투명도 애니메이션
+ * - 기본적으로 비활성화된 포인터 이벤트
+ * - 통합된 색상 시스템과 현대적 배경 사용
+ */
+.xegGalleryViewer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--xeg-z-gallery-overlay);
+  background: var(--xeg-overlay-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--xeg-transition-default);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/**
+ * 갤러리 뷰어 표시 상태
+ * .xegGalleryViewer와 함께 사용하여 갤러리가 표시될 때 적용됩니다.
+ */
+.xegGalleryViewer.xegVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/**
+ * 테마 변형 스타일
+ * 사용자의 테마 설정에 따라 다른 배경색을 적용합니다.
+ */
+
+/**
+ * 라이트 테마 변형
+ */
+.xegGalleryViewer.xegThemeLight {
+  background: var(--xeg-gallery-bg-light);
+}
+
+/**
+ * 다크 테마 변형
+ */
+.xegGalleryViewer.xegThemeDark {
+  background: var(--xeg-gallery-bg);
+}
+
+/**
+ * 자동 테마 변형
+ */
+.xegGalleryViewer.xegThemeAuto {
+  background: var(--xeg-gallery-bg);
+}
+
+/**
+ * 시스템 라이트 모드 감지
+ */
+@media (prefers-color-scheme: light) {
+  .xegGalleryViewer.xegThemeAuto {
+    background: var(--xeg-gallery-bg-light);
+  }
+}
+
+/**
+ * 갤러리 닫기 버튼 - 현대적 glassmorphism 디자인
+ */
+.xegCloseButton {
+  position: absolute;
+  top: var(--xeg-spacing-lg);
+  right: var(--xeg-spacing-lg);
+  background: var(--xeg-bg-button-close);
+  border: 1px solid var(--xeg-button-border);
+  border-radius: var(--xeg-radius-full);
+  width: var(--xeg-button-size-lg);
+  height: var(--xeg-button-size-lg);
+  color: var(--xeg-text-button-close);
+  font-size: var(--xeg-icon-size-lg);
+  cursor: pointer;
+  z-index: var(--xeg-z-gallery-toolbar);
+  transition: var(--xeg-transition-spring);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--xeg-shadow-button);
+}
+
+.xegCloseButton:hover {
+  background: var(--xeg-bg-button-close-hover);
+  border-color: var(--xeg-button-border-hover);
+  transform: scale(1.1) translateY(-1px);
+  box-shadow: var(--xeg-shadow-lg);
+}
+
+.xegCloseButton:active {
+  transform: scale(0.95);
+}
+
+/**
+ * 네비게이션 버튼 기본 스타일
+ */
+.xegNavButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--xeg-button-navigation);
+  border: 1px solid var(--xeg-button-border);
+  border-radius: var(--xeg-radius-full);
+  width: var(--xeg-button-size-xl);
+  height: var(--xeg-button-size-xl);
+  color: var(--xeg-button-text);
+  font-size: var(--xeg-icon-size-lg);
+  cursor: pointer;
+  z-index: var(--xeg-z-gallery-toolbar);
+  transition: var(--xeg-transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--xeg-toolbar-shadow);
+}
+
+.xegNavButton:hover {
+  background: var(--xeg-button-bg-hover);
+  border-color: var(--xeg-button-border-hover);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.xegNavButton:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.xegNavButton:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: translateY(-50%);
+}
+
+.xegNavButton:disabled:hover {
+  background: var(--xeg-button-navigation);
+  border-color: var(--xeg-button-border);
+  transform: translateY(-50%);
+}
+
+/**
+ * 이전 버튼 위치
+ */
+.xegNavPrev {
+  left: var(--xeg-spacing-lg);
+}
+
+/**
+ * 다음 버튼 위치
+ */
+.xegNavNext {
+  right: var(--xeg-spacing-lg);
+}
+
+/**
+ * 미디어 컨테이너
+ */
+.xegMediaContainer {
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/**
+ * 미디어 요소 (이미지/비디오)
+ * 실제 미디어 콘텐츠가 표시되는 요소입니다.
+ *
+ * Features:
+ * - object-fit: contain으로 비율 유지
+ * - 둥근 모서리와 그림자 효과
+ * - 로딩 상태에 따른 트랜지션
+ */
+.mediaElement {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+/**
+ * 미디어 요소 로딩 상태
+ * 미디어가 로드되는 동안 적용되는 스타일입니다.
+ */
+.mediaElement.loading {
+  transform: scale(0.9);
+  opacity: 0.7;
+}
+
+/**
+ * 미디어 요소 로드 완료 상태
+ * 미디어 로드가 완료되면 적용되는 스타일입니다.
+ */
+.mediaElement.loaded {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/**
+ * 로딩 상태 텍스트
+ * 미디어가 로드되는 동안 표시되는 로딩 메시지 스타일입니다.
+ */
+.loading {
+  color: white;
+  font-size: 18px;
+  text-align: center;
+  padding: 20px;
+}
+
+/**
+ * 로딩 스피너
+ * 회전하는 로딩 인디케이터입니다.
+ *
+ * Features:
+ * - 원형 테두리 디자인
+ * - 무한 회전 애니메이션
+ * - 텍스트와 함께 인라인으로 표시
+ */
+.loadingSpinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--xeg-color-neutral-400);
+  border-radius: 50%;
+  border-top-color: var(--xeg-color-text-primary);
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+}
+
+/**
+ * 스피너 회전 애니메이션
+ * 360도 회전하는 키프레임 애니메이션입니다.
+ */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/**
+ * 오류 상태 스타일
+ * 미디어 로드 실패 시 표시되는 오류 메시지 스타일입니다.
+ *
+ * Features:
+ * - 에러 색상 텍스트
+ * - 툴바 배경과 블러 효과
+ * - 둥근 모서리
+ */
+.error {
+  color: var(--xeg-color-error);
+  font-size: 18px;
+  text-align: center;
+  padding: 20px;
+  background: var(--xeg-toolbar-bg);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--xeg-toolbar-shadow);
+}
+
+/**
+ * 컨트롤 툴바 - 현대적 glassmorphism 디자인
+ * 갤러리 하단에 위치하는 컨트롤 버튼들의 컨테이너입니다.
+ *
+ * Features:
+ * - 절대 위치로 하단 중앙 고정
+ * - flexbox로 버튼들 배열
+ * - 현대적 glassmorphism 배경과 블러 효과
+ * - 부드러운 표시/숨김 트랜지션
+ * - 향상된 그림자와 테두리 효과
+ */
+.controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--xeg-toolbar-bg);
+  border: 1px solid var(--xeg-toolbar-border);
+  border-radius: 28px;
+  z-index: var(--xeg-z-gallery-toolbar);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--xeg-toolbar-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/**
+ * 컨트롤 툴바 숨김 상태
+ * 마우스 비활성화나 자동 숨김 시 적용되는 스타일입니다.
+ */
+.controls.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/**
+ * 컨트롤 버튼 기본 스타일
+ * 툴바 내의 모든 버튼에 적용되는 기본 스타일입니다.
+ *
+ * Features:
+ * - 통합 버튼 배경
+ * - 둥근 모서리
+ * - 호버 및 액티브 상태 애니메이션
+ * - 비활성화 상태 지원
+ */
+.controlButton {
+  background: var(--xeg-button-bg);
+  border: 1px solid var(--xeg-button-border);
+  border-radius: 15px;
+  padding: 8px 12px;
+  color: var(--xeg-button-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/**
+ * 컨트롤 버튼 호버 상태
+ * 마우스를 올렸을 때 위로 이동하는 효과를 제공합니다.
+ */
+.controlButton:hover {
+  background: var(--xeg-button-bg-hover);
+  border-color: var(--xeg-button-border-hover);
+  transform: translateY(-1px);
+}
+
+/**
+ * 컨트롤 버튼 액티브 상태
+ * 클릭했을 때 원래 위치로 돌아가는 효과를 제공합니다.
+ */
+.controlButton:active {
+  transform: translateY(0);
+}
+
+/**
+ * 컨트롤 버튼 비활성화 상태
+ * 기능을 사용할 수 없을 때 적용되는 스타일입니다.
+ */
+.controlButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/**
+ * 다운로드 버튼 스타일
+ * 단일 파일 다운로드 버튼에 적용되는 스타일입니다.
+ *
+ * Features:
+ * - controlButton 스타일 상속
+ * - 프라이머리 색상 배경
+ * - 호버 시 더 진한 프라이머리 색상
+ */
+.downloadButton {
+  composes: controlButton;
+  background: var(--xeg-color-primary);
+  border-color: var(--xeg-color-primary);
+}
+
+/**
+ * 다운로드 버튼 호버 상태
+ * 마우스를 올렸을 때 더 진한 색상을 표시합니다.
+ */
+.downloadButton:hover {
+  background: var(--xeg-color-primary-hover);
+  border-color: var(--xeg-color-primary-hover);
+}
+
+/**
+ * 전체 다운로드 버튼 스타일
+ * 모든 파일을 ZIP으로 다운로드하는 버튼에 적용되는 스타일입니다.
+ *
+ * Features:
+ * - controlButton 스타일 상속
+ * - 성공 색상 배경
+ * - 호버 시 더 진한 성공 색상
+ */
+.downloadAllButton {
+  composes: controlButton;
+  background: var(--xeg-color-success);
+  border-color: var(--xeg-color-success);
+}
+
+/**
+ * 전체 다운로드 버튼 호버 상태
+ * 마우스를 올렸을 때 더 진한 색상을 표시합니다.
+ */
+.downloadAllButton:hover {
+  background: var(--xeg-color-success-hover);
+  border-color: var(--xeg-color-success-hover);
+}
+
+/**
+ * 미디어 카운터
+ * 현재 미디어 위치를 표시하는 텍스트 스타일입니다.
+ *
+ * Features:
+ * - 통합 카운터 색상 사용
+ * - 적절한 패딩과 폰트 크기
+ * - 보조 텍스트 색상으로 덜 두드러지게 표시
+ */
+.counter {
+  color: var(--xeg-counter-text);
+  padding: 8px 12px;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+/**
+ * 반응형 디자인 - 태블릿 크기 (768px 이하)
+ * 중간 크기 화면에서의 레이아웃 조정을 제공합니다.
+ *
+ * Adjustments:
+ * - 버튼 크기 축소
+ * - 여백 조정
+ * - 폰트 크기 축소
+ * - 미디어 컨테이너 크기 조정
+ */
+@media (max-width: 768px) {
+  .closeButton {
+    top: 10px;
+    right: 10px;
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+
+  .navButton {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+
+  .navPrev {
+    left: 10px;
+  }
+
+  .navNext {
+    right: 10px;
+  }
+
+  .controls {
+    bottom: 10px;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .controlButton {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .counter {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .mediaContainer {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+}
+
+/**
+ * 반응형 디자인 - 모바일 크기 (480px 이하)
+ * 작은 화면에서의 최적화된 레이아웃을 제공합니다.
+ *
+ * Adjustments:
+ * - 컨트롤 툴바 flex-wrap 적용
+ * - 더 작은 패딩과 폰트 크기
+ * - 최대 너비 제한
+ */
+@media (max-width: 480px) {
+  .controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 90vw;
+  }
+
+  .controlButton {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .counter {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+}
+
+/**
+ * 애니메이션 클래스들
+ * 갤러리 요소들의 등장/사라짐 효과를 위한 애니메이션 클래스입니다.
+ */
+
+/**
+ * 페이드인 애니메이션
+ * 투명도가 0에서 1로 변화하는 애니메이션입니다.
+ */
+.fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/**
+ * 페이드아웃 애니메이션
+ * 투명도가 1에서 0으로 변화하는 애니메이션입니다.
+ */
+.fadeOut {
+  animation: fadeOut 0.3s ease-in-out;
+}
+
+/**
+ * 스케일인 애니메이션
+ * 크기와 투명도가 동시에 변화하는 애니메이션입니다.
+ */
+.scaleIn {
+  animation: scaleIn 0.2s ease-in-out;
+}
+
+/**
+ * 왼쪽에서 슬라이드인 애니메이션
+ * 왼쪽에서 오른쪽으로 슬라이드하며 등장하는 애니메이션입니다.
+ */
+.slideInLeft {
+  animation: slideInLeft 0.3s ease-in-out;
+}
+
+/**
+ * 오른쪽에서 슬라이드인 애니메이션
+ * 오른쪽에서 왼쪽으로 슬라이드하며 등장하는 애니메이션입니다.
+ */
+.slideInRight {
+  animation: slideInRight 0.3s ease-in-out;
+}
+
+/**
+ * 키프레임 애니메이션 정의들
+ * 위에서 사용되는 애니메이션들의 실제 키프레임을 정의합니다.
+ */
+
+/**
+ * 페이드인 키프레임
+ * 투명도 0에서 1로 변화
+ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/**
+ * 페이드아웃 키프레임
+ * 투명도 1에서 0으로 변화
+ */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/**
+ * 스케일인 키프레임
+ * 0.9배 크기와 투명도 0에서 원래 크기와 투명도 1로 변화
+ */
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/**
+ * 왼쪽 슬라이드인 키프레임
+ * 왼쪽 밖에서 원래 위치로 이동하며 투명도 변화
+ */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * 오른쪽 슬라이드인 키프레임
+ * 오른쪽 밖에서 원래 위치로 이동하며 투명도 변화
+ */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * 접근성 개선
+ * 웹 접근성 표준을 준수하기 위한 스타일들입니다.
+ */
+
+/**
+ * 포커스 내 컨트롤 표시
+ * 갤러리 뷰어에 포커스가 있을 때 컨트롤을 항상 표시합니다.
+ */
+.galleryViewer:focus-within .controls {
+  opacity: 1;
+}
+
+/**
+ * 스크린 리더 전용 텍스트
+ * 시각적으로는 숨기지만 스크린 리더에서는 읽을 수 있는 텍스트 스타일입니다.
+ *
+ * Features:
+ * - 1px 크기로 시각적 숨김
+ * - 절대 위치로 레이아웃 영향 제거
+ * - overflow: hidden으로 완전 숨김
+ */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/**
+ * 고대비 모드 지원
+ * 시각 장애인을 위한 고대비 모드에서의 스타일 조정입니다.
+ *
+ * Features:
+ * - 완전한 검은색 배경
+ * - 모든 버튼에 흰색 테두리 추가
+ * - 오류 메시지에 빨간색 테두리 추가
+ */
+@media (prefers-contrast: high) {
+  .galleryViewer {
+    background: black;
+  }
+
+  .controlButton,
+  .navButton,
+  .closeButton {
+    border: 2px solid white;
+  }
+
+  .error {
+    border: 2px solid #ff4444;
+  }
+}
+
+/**
+ * 애니메이션 감소 모드 지원
+ * 사용자가 애니메이션을 선호하지 않을 때의 스타일 조정입니다.
+ *
+ * Features:
+ * - 모든 트랜지션 제거
+ * - 모든 애니메이션 제거
+ * - 스피너 회전 애니메이션 제거
+ */
+@media (prefers-reduced-motion: reduce) {
+  .galleryViewer,
+  .mediaElement,
+  .controlButton,
+  .navButton,
+  .closeButton {
+    transition: none;
+  }
+
+  .fadeIn,
+  .fadeOut,
+  .scaleIn,
+  .slideInLeft,
+  .slideInRight {
+    animation: none;
+  }
+
+  .loadingSpinner {
+    animation: none;
+  }
+}

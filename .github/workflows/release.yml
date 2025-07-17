@@ -1,0 +1,361 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
+    tags: ["v*"]
+  pull_request:
+    branches: [master]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "Version bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+      version:
+        description: "Manual version (e.g., v1.0.0) - overrides version_type"
+        required: false
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  comprehensive-validation:
+    name: Comprehensive Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Full Quality Check
+        run: npm run quality
+
+      - name: Architecture Validation
+        run: |
+          npm run deps:all
+
+          # Clean Architecture 규칙 검증
+          echo "Validating dependency rules..."
+          npm run deps:check
+
+      - name: PC Environment Compliance
+        run: |
+          # 터치 이벤트 완전 제거 확인
+          if find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "touch\|Touch" | grep -v "// Allow:"; then
+            echo "❌ Touch-related code found in PC-only project"
+            exit 1
+          fi
+
+          # 키보드 이벤트는 Esc만 허용
+          if find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "onKey" | xargs grep -v "Escape\|onKeyDown.*Escape"; then
+            echo "⚠️ Non-Esc keyboard events found - verify PC optimization"
+          fi
+
+      - name: Bundle Validation
+        run: |
+          npm run build:prod
+
+          # UserScript 형식 검증
+          if ! grep -q "// ==UserScript==" dist/xcom-enhanced-gallery.user.js; then
+            echo "❌ Invalid UserScript format"
+            exit 1
+          fi
+
+          # 번들 크기 검증
+          if [ -f "dist/bundle-analysis.json" ]; then
+            node -e "
+              const analysis = require('./dist/bundle-analysis.json');
+              if (!analysis.isWithinBudget) {
+                console.error('❌ Bundle size exceeds limit');
+                process.exit(1);
+              }
+            "
+          fi
+
+  build-production:
+    name: Production Build
+    runs-on: ubuntu-latest
+    needs: comprehensive-validation
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production Build
+        run: npm run build:prod
+
+      - name: Generate Release Notes
+        run: |
+          echo "## 🚀 Release Features" > release-notes.md
+          echo "" >> release-notes.md
+          echo "### Architecture" >> release-notes.md
+          echo "- Clean Architecture with Feature-based structure" >> release-notes.md
+          echo "- PC environment optimized (mouse + Esc keyboard only)" >> release-notes.md
+          echo "- External library access via vendor getters" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Bundle Information" >> release-notes.md
+
+          if [ -f "dist/bundle-analysis.json" ]; then
+            node -e "
+              const analysis = require('./dist/bundle-analysis.json');
+              console.log('- Bundle Size: ' + (analysis.totalSize / 1024).toFixed(2) + ' KB');
+              console.log('- Within Budget: ' + (analysis.isWithinBudget ? '✅' : '❌'));
+            " >> release-notes.md
+          fi
+
+      - name: Upload production build
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-userscript
+          path: |
+            dist/xcom-enhanced-gallery.user.js
+            dist/bundle-analysis.json
+            release-notes.md
+          retention-days: 90
+
+  quality-check:
+    name: Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Quality Check
+        run: npm run quality
+
+      - name: Comprehensive Validation
+        if: github.event_name != 'pull_request'
+        run: npm run validate:comprehensive
+
+  build-test:
+    name: Build Test
+    runs-on: ubuntu-latest
+    needs: [quality-check, comprehensive-validation]
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    strategy:
+      matrix:
+        mode: [development, production]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (${{ matrix.mode }})
+        run: |
+          if [ "${{ matrix.mode }}" = "development" ]; then
+            npm run build:dev
+          else
+            npm run build:prod
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: userscript-${{ matrix.mode }}
+          path: dist/
+          retention-days: 30
+
+  check-changes:
+    name: Check for Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for version changes
+        id: check
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LATEST_VERSION=${LATEST_TAG#v}
+
+          echo "Current version: $CURRENT_VERSION"
+          echo "Latest version: $LATEST_VERSION"
+
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+  auto-release:
+    name: Auto Release
+    runs-on: ubuntu-latest
+    needs: [comprehensive-validation, check-changes]
+    if: |
+      always() &&
+      (needs.check-changes.outputs.should_release == 'true' ||
+       github.event_name == 'workflow_dispatch' ||
+       startsWith(github.ref, 'refs/tags/v'))
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Bump version
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version_type
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            # Manual version specified
+            VERSION="${{ github.event.inputs.version }}"
+            VERSION=${VERSION#v}  # Remove 'v' prefix if present
+            npm version $VERSION --no-git-tag-version
+          else
+            # Use version_type
+            npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+          fi
+
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to v$NEW_VERSION"
+          git push
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build release
+        run: npm run build
+
+      - name: Commit dist files
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add dist/xcom-enhanced-gallery.user.js
+          git diff --staged --quiet || git commit -m "build: update dist for release v${{ steps.version.outputs.version }} [skip ci]"
+          git push
+
+      - name: Create release package
+        run: npm run package
+
+      - name: Generate checksums
+        run: |
+          cd release
+          sha256sum *.js > checksums.txt
+          cat checksums.txt
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "# X.com Enhanced Gallery v${{ steps.version.outputs.version }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "트위터(X) 미디어 뷰어와 다운로드 기능을 향상시키는 유저스크립트입니다." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## 🚀 빠른 설치" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "**원클릭 설치:** [xcom-enhanced-gallery.user.js](https://github.com/PiesP/xcom-enhanced-gallery/raw/v${{ steps.version.outputs.version }}/dist/xcom-enhanced-gallery.user.js) 클릭" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "> 유저스크립트 매니저(Tampermonkey, Greasemonkey 등)가 설치되어 있어야 합니다." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## 📦 수동 설치" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "1. 아래 Assets에서 \`xcom-enhanced-gallery.user.js\` 파일 다운로드" >> release_notes.md
+          echo "2. 유저스크립트 매니저에서 파일 설치" >> release_notes.md
+          echo "3. X.com 방문하여 향상된 갤러리 기능 사용" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## ✨ 주요 기능" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- 🖼️ 향상된 미디어 갤러리 뷰어" >> release_notes.md
+          echo "- ⬇️ 원클릭 미디어 다운로드" >> release_notes.md
+          echo "- 🔍 이미지/비디오 확대 및 탐색" >> release_notes.md
+          echo "- ⚡ 빠른 키보드 단축키 지원" >> release_notes.md
+
+      - name: Delete existing release if it exists
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          gh release delete v${{ steps.version.outputs.version }} --yes --cleanup-tag || echo "Release does not exist, continuing..."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: X.com Enhanced Gallery v${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          files: |
+            release/xcom-enhanced-gallery.user.js
+            release/checksums.txt
+            dist/xcom-enhanced-gallery.user.js
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'alpha') }}
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

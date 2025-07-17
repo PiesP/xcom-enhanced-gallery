@@ -1,0 +1,173 @@
+/**
+ * X.com Enhanced Gallery - Animation Library
+ * 모든 애니메이션 키프레임을 중앙집중식으로 관리
+ */
+
+/* ===== 공통 페이드 애니메이션 ===== */
+@keyframes xeg-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes xeg-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ===== 공통 스케일 애니메이션 ===== */
+@keyframes xeg-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes xeg-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* ===== 공통 슬라이드 애니메이션 ===== */
+@keyframes xeg-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes xeg-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes xeg-slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== 공통 회전 애니메이션 ===== */
+@keyframes xeg-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes xeg-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+/* ===== 갤러리 전용 애니메이션 ===== */
+@keyframes xeg-gallery-fade-in {
+  from {
+    opacity: 0;
+    transform: translateZ(0) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+@keyframes xeg-gallery-fade-out {
+  from {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateZ(0) scale(0.95);
+  }
+}
+
+/* ===== 애니메이션 유틸리티 클래스 ===== */
+.xeg-animate-fade-in {
+  animation: xeg-fade-in var(--xeg-animation-duration-normal) ease-out;
+}
+
+.xeg-animate-fade-out {
+  animation: xeg-fade-out var(--xeg-animation-duration-normal) ease-in;
+}
+
+.xeg-animate-scale-in {
+  animation: xeg-scale-in var(--xeg-animation-duration-normal) ease-out;
+}
+
+.xeg-animate-slide-in-up {
+  animation: xeg-slide-in-up var(--xeg-animation-duration-normal) ease-out;
+}
+
+.xeg-animate-spin {
+  animation: xeg-spin 1s linear infinite;
+}
+
+.xeg-animate-pulse {
+  animation: xeg-pulse 2s ease-in-out infinite;
+}
+
+/* ===== 접근성 지원 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-animate-fade-in,
+  .xeg-animate-fade-out,
+  .xeg-animate-scale-in,
+  .xeg-animate-slide-in-up {
+    animation: none;
+  }
+
+  .xeg-animate-spin,
+  .xeg-animate-pulse {
+    animation: none;
+  }
+
+  /* 정적 상태로 표시 */
+  .xeg-animate-fade-in,
+  .xeg-animate-scale-in,
+  .xeg-animate-slide-in-up {
+    opacity: 1;
+    transform: none;
+  }
+}

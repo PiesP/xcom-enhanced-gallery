@@ -1,0 +1,8 @@
+# X.com Enhanced Gallery CODEOWNERS
+# 이 파일은 PR에 자동으로 리뷰어를 지정합니다.
+
+# 전체 프로젝트 소유자
+*       @PiesP
+/.github/workflows/        @devops-team-member
+/vite.config.ts            @devops-team-member
+/tsconfig*.json            @devops-team-member

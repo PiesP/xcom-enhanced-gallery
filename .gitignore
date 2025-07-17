@@ -1,0 +1,351 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnpm-store/
+
+# Build outputs
+!dist\xcom-enhanced-gallery.user.js
+dist/
+build/
+.vite/
+.cache/
+*.user.js
+!dist/*.user.js
+*.min.js
+*.min.css
+*.meta.js
+
+# Testing & Coverage
+sample_page/
+coverage/
+test-results/
+.nyc_output/
+.jest-cache/
+playwright-report/
+playwright/.cache/
+test-profile/
+*.lcov
+.vitest-cache/
+test-output/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+mcp-debug.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# TypeScript
+*.tsbuildinfo
+.tscache/
+
+# IDEs
+.idea/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+.vs/
+
+# VS Code workspace settings (keep project-wide settings)
+# .vscode/ - commented out to include project settings
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE_BIN/
+
+# Project specific
+project-tree*.json
+FileScopeMCP-tree.json
+mcp-debug.log
+sample_pages/
+src_backup/
+backup*/
+temp/
+tmp/
+archived/
+x.com-*.log
+test/setup-old.ts
+.vscode/
+
+# Cache & temp files
+.dependency-cruiser-cache
+.stylelintcache
+.eslintcache
+.history/
+docs/archived
+*.backup
+*.bak
+*.old
+*.orig
+*~
+
+# Automation & Build artifacts
+build-metrics.json
+bundle-analysis.json
+.lint-staged-cache
+.husky/_
+
+# Documentation
+docs/api/
+
+# Package managers
+package-lock.json.backup
+yarn.lock.backup
+pnpm-lock.yaml.backup
+
+# Runtime
+*.pid
+*.seed
+*.pid.lock
+
+# Generated files
+src/**/*.js.map
+src/**/*.css.map
+*.user.js.map
+
+# Development tools
+.lighthouserc.js
+lighthouse-report.html
+webpack-bundle-analyzer-report.html
+
+# Security
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+secret.key
+*.pem
+*.p12
+
+# macOS specific
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows specific
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+*.stackdump
+
+# === 개발 환경 구성 관련 ===
+
+# 개발자 개인 설정
+.env.personal
+.env.local.*
+local.config.*
+personal.config.*
+dev.config.*
+*.local.json
+.local/
+.editorconfig
+*.code-workspace
+
+# 임시 개발 파일 및 실험
+scratch/
+playground/
+experiments/
+sandbox/
+temp-*/
+tmp-*/
+dev-*/
+test-*/
+debug-*/
+
+# 프로파일링 및 디버깅
+*.prof
+*.profile
+debug.log
+debug-*.log
+profile-*.json
+heap-*.json
+cpu-*.json
+memory-*.json
+profiling/
+debugging/
+
+# 코드 생성 및 자동화 도구
+.generated/
+auto-generated/
+generated-*/
+codegen/
+.codegen/
+*.generated.*
+.scaffold/
+
+# 데이터베이스 및 데이터 파일
+*.db
+*.sqlite
+*.sqlite3
+data/
+db/
+database/
+migrations/temp/
+seeds/temp/
+fixtures/temp/
+
+# 에디터 및 IDE 추가 설정
+.fleet/
+.nova/
+.zed/
+*.sublime-project
+*.sublime-workspace
+.atom/
+.brackets.json
+.editorconfig.local
+
+# 패키지 매니저 개인 설정
+.npmrc.local
+.yarnrc.local
+.pnpmrc.local
+.bun.lockb
+bun.lockb
+
+# 컨테이너 및 가상화
+.docker/
+docker-compose.override.yml
+docker-compose.local.yml
+.devcontainer/local/
+.vagrant/
+Vagrantfile.local
+
+# CI/CD 및 자동화 임시 파일
+.github/workflows/*.tmp
+.github/scripts/temp/
+ci-temp/
+cd-temp/
+deployment-temp/
+release-temp/
+
+# SSL 인증서 및 키 (개발용)
+*.crt
+*.key
+*.cert
+*.pem.local
+ssl/
+certs/
+certificates/
+
+# 모니터링 및 로깅
+monitoring/
+logs-*/
+crash-reports/
+error-reports/
+metrics/
+analytics/
+
+# 에디터 임시 파일 추가
+*.tmp
+*.temp
+*~lock*
+.#*
+#*#
+
+# 백업 및 스냅샷
+snapshots/
+backups/
+*.snapshot
+*.backup.*
+
+# === 추가 개발 환경 구성 ===
+
+# Node.js 버전 관리
+.nvmrc.local
+.node-version.local
+.nodenv-version
+
+# 브라우저 확장 개발
+manifest.json.local
+extension-*/
+*.crx
+*.xpi
+*.zip.backup
+
+# 성능 측정 및 벤치마크
+benchmark-results/
+performance-*/
+*.benchmark
+*.perf
+lighthouse-*/
+
+# 개발 서버 및 미들웨어
+.dev-server/
+middleware-temp/
+proxy-config.local.*
+
+# 소스맵 및 디버그 파일
+*.js.map.local
+*.css.map.local
+source-maps/
+debug-symbols/
+
+# 린터 및 포매터 캐시
+.eslintcache.*
+.prettiercache.*
+.stylelintcache.*
+.markdownlintcache
+
+# 테스트 환경 추가
+e2e-results/
+integration-test-results/
+visual-regression/
+screenshot-diffs/
+test-artifacts/
+.testcafe/
+
+# API 및 모킹
+mock-data/
+api-responses/
+fixtures-temp/
+stubs/
+
+# 문서화 도구
+.docusaurus/
+.vuepress/
+.gitbook/
+docs-build/
+api-docs-temp/
+
+# 개발자 노트 및 할일
+TODO.local.*
+NOTES.local.*
+.todo/
+.notes/
+scratch-pad.*
+dev-notes.*
+
+# 워크플로우 및 태스크
+.workflow/
+.tasks/
+scripts/local/
+automation-temp/
+
+# 개발환경 세팅 백업
+setup-*.backup
+config-*.backup
+settings-*.backup

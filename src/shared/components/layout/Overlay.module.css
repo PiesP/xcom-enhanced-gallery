@@ -1,0 +1,210 @@
+/**
+ * Overlay component styles for X.com Enhanced Gallery
+ *
+ * @description
+ * X.com Enhanced Gallery의 Overlay 컴포넌트를 위한 CSS 모듈 스타일시트입니다.
+ * 모달, 갤러리 뷰어 등에서 사용되는 배경 오버레이 기능을 제공하며,
+ * 블러 효과, 애니메이션, 반응형 디자인을 지원합니다.
+ *
+ * @features
+ * - 전체 화면 오버레이 배경
+ * - 선택적 backdrop-filter 블러 효과
+ * - 부드러운 페이드인/페이드아웃 애니메이션
+ * - 모바일 반응형 패딩 조정
+ * - 접근성을 고려한 reduced motion 지원
+ *
+ * @accessibility
+ * - prefers-reduced-motion을 통한 애니메이션 비활성화 지원
+ * - 적절한 커서 상태 관리 (오버레이 vs 컨텐츠)
+ *
+ * @browser-support
+ * - backdrop-filter는 모던 브라우저에서 지원
+ * - -webkit- 접두사로 Safari 호환성 제공
+ *
+ * @since 1.0.0
+ * @module OverlayStyles
+ */
+
+/**
+ * 기본 오버레이 컨테이너
+ *
+ * @description
+ * 전체 화면을 덮는 고정 위치 오버레이입니다. 모달이나 갤러리 뷰어의
+ * 배경으로 사용되며, 중앙 정렬된 플렉스 컨테이너 역할을 합니다.
+ *
+ * @features
+ * - 뷰포트 전체 크기 (100vw × 100vh)
+ * - 중앙 정렬된 플렉스 레이아웃
+ * - 반투명 검은색 배경 (rgba(0, 0, 0, 0.8))
+ * - 0.3초 페이드인 애니메이션
+ * - 클릭 가능한 커서 표시
+ *
+ * @usage
+ * ```tsx
+ * <div className={styles['xeg-overlay']}>
+ *   <div>오버레이 내용</div>
+ * </div>
+ * ```
+ */
+.xeg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--xeg-overlay-background);
+  /**
+   * 페이드인 애니메이션
+   * @duration CSS 변수 사용으로 일관성 있는 애니메이션
+   * @easing ease-out - 자연스러운 감속 효과
+   */
+  animation: xeg-overlay-fade-in var(--xeg-transition-duration-medium) ease-out;
+  cursor: pointer;
+}
+
+/**
+ * 블러 효과가 적용된 오버레이 변형
+ *
+ * @description
+ * 배경 콘텐츠에 블러 효과를 적용하여 오버레이 위의 콘텐츠에
+ * 시각적 집중을 유도합니다. 모달 다이얼로그나 중요한 알림에 사용됩니다.
+ *
+ * @features
+ * - 4px 백드롭 블러 효과
+ * - WebKit 브라우저 호환성 (-webkit-backdrop-filter)
+ *
+ * @browser-support
+ * - backdrop-filter: Chrome 76+, Firefox 103+, Safari 9+
+ * - -webkit-backdrop-filter: Safari 9+, Chrome 76+
+ *
+ * @usage
+ * ```tsx
+ * <div className={`${styles['xeg-overlay']} ${styles['xeg-overlay--blur']}`}>
+ *   <div>블러 배경의 모달 콘텐츠</div>
+ * </div>
+ * ```
+ */
+.xeg-overlay--blur {
+  backdrop-filter: blur(var(--xeg-spacing-xs));
+  -webkit-backdrop-filter: blur(var(--xeg-spacing-xs));
+}
+
+/**
+ * 애니메이션 정의
+ *
+ * @description
+ * 오버레이의 등장과 사라짐을 위한 키프레임 애니메이션을 정의합니다.
+ * 부드러운 사용자 경험을 위해 opacity 전환을 사용합니다.
+ */
+
+/**
+ * 페이드인 애니메이션
+ *
+ * @description
+ * 오버레이가 나타날 때 사용되는 애니메이션입니다.
+ * 투명도가 0에서 1로 부드럽게 전환됩니다.
+ *
+ * @keyframes xeg-overlay-fade-in
+ * @duration 일반적으로 0.3s와 함께 사용
+ * @property opacity - 0에서 1로 전환
+ */
+@keyframes xeg-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/**
+ * 페이드아웃 애니메이션
+ *
+ * @description
+ * 오버레이가 사라질 때 사용되는 애니메이션입니다.
+ * 투명도가 1에서 0으로 부드럽게 전환됩니다.
+ *
+ * @keyframes xeg-overlay-fade-out
+ * @duration 일반적으로 0.2s와 함께 사용 (빠른 종료)
+ * @property opacity - 1에서 0으로 전환
+ *
+ * @usage
+ * JavaScript에서 동적으로 적용:
+ * ```js
+ * element.style.animation = 'xeg-overlay-fade-out 0.2s ease-in forwards';
+ * ```
+ */
+@keyframes xeg-overlay-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/**
+ * 오버레이 내부 콘텐츠 커서 재설정
+ *
+ * @description
+ * 오버레이 자체는 클릭 가능하지만(pointer 커서), 내부 콘텐츠는
+ * 기본 커서를 사용하도록 재설정합니다. 이는 UX 혼란을 방지합니다.
+ *
+ * @selector .xeg-overlay > *
+ * @applies-to 오버레이의 직접 자식 요소들
+ */
+.xeg-overlay > * {
+  cursor: default;
+}
+
+/**
+ * 반응형 디자인
+ *
+ * @description
+ * 다양한 화면 크기에서 적절한 패딩을 제공하여
+ * 모바일 환경에서도 사용하기 편리하도록 합니다.
+ */
+
+/**
+ * 태블릿 크기 화면 (768px 이하)
+ *
+ * @media CSS 변수 사용으로 일관된 브레이크포인트
+ * @padding 16px - 태블릿에서 적절한 여백 제공
+ */
+@media (max-width: var(--xeg-container-max-width-md)) {
+  .xeg-overlay {
+    padding: var(--xeg-spacing-md);
+  }
+}
+
+/**
+ * 모바일 크기 화면 (480px 이하)
+ *
+ * @media CSS 변수 사용으로 일관된 브레이크포인트
+ * @padding 8px - 작은 화면에서 최소한의 여백 제공
+ */
+@media (max-width: var(--xeg-container-max-width-sm)) {
+  .xeg-overlay {
+    padding: var(--xeg-spacing-sm);
+  }
+}
+
+/**
+ * 접근성: 움직임 감소 설정 지원
+ *
+ * @description
+ * 사용자가 시스템에서 움직임 감소를 설정한 경우
+ * 애니메이션을 비활성화하여 접근성을 향상시킵니다.
+ *
+ * @media (prefers-reduced-motion: reduce)
+ * @accessibility WCAG 2.1 AA 준수
+ * @benefits 전정 장애, 간질 등을 가진 사용자를 위한 배려
+ */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-overlay {
+    animation: none;
+  }
+}

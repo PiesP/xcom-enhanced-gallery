@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+# =============================================================================
+# Pre-push Hook for X.com Enhanced Gallery
+# =============================================================================
+#
+# Ensures code quality and stability before pushing to remote repositories.
+# Prevents broken code from being pushed to shared branches.
+#
+# Workflow: Runs comprehensive quality check including tests
+#
+# =============================================================================
+
+echo "🧪 Pre-push testing..."
+
+# Run comprehensive quality check including tests
+npm run quality || exit 1
+
+echo "✅ Pre-push validation complete!"

@@ -1,0 +1,379 @@
+.container {
+  position: relative;
+  margin-bottom: var(--xeg-spacing-md, 16px);
+  border-radius: var(--xeg-radius-lg, 8px);
+  overflow: visible;
+  transition: var(--xeg-transition-all, all 0.3s ease);
+  cursor: pointer; /* 클릭 가능하도록 변경 */
+  border: none;
+  background: none;
+  padding: 0;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
+
+  /* 통합된 포커스/활성 상태 처리 - 기본 outline 제거 */
+  outline: none;
+}
+
+.container:hover {
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: var(--xeg-shadow-lg);
+}
+
+/* 포커스 상태 - outline 대신 box-shadow 사용 */
+.container:focus-visible {
+  box-shadow: var(--xeg-focus-shadow);
+  border-radius: var(--xeg-radius-lg, 8px);
+}
+
+/* 활성 상태 - 더 강한 강조 */
+.container.active {
+  box-shadow: var(--xeg-active-shadow);
+  border-radius: var(--xeg-radius-lg, 8px);
+  transition: box-shadow 0.2s ease;
+  transform: translateZ(0);
+}
+
+/* 활성+포커스 상태 - 중복 제거 */
+.container.active:focus-visible {
+  box-shadow: var(--xeg-active-shadow);
+}
+
+/* 포커스된 상태 (스크롤 대상) */
+.container.focused {
+  box-shadow: var(--xeg-focus-shadow);
+  border-radius: var(--xeg-radius-lg, 8px);
+  transition: box-shadow 0.2s ease;
+}
+
+.imageWrapper {
+  position: relative;
+  background: var(--xeg-color-bg-secondary);
+  /* 이미지 크기에 맞는 컨테이너 */
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--xeg-color-bg-secondary);
+  min-height: 200px;
+}
+
+.loadingSpinner {
+  width: var(--xeg-spacing-lg);
+  height: var(--xeg-spacing-lg);
+  border: 2px solid var(--xeg-color-border-primary);
+  border-top: 2px solid var(--xeg-color-primary);
+  border-radius: var(--xeg-radius-full);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.image {
+  display: block;
+  border-radius: var(--xeg-radius-md, 4px);
+  /* 기본 스타일 - JavaScript에서 동적으로 크기 조정 */
+  object-fit: contain;
+  /* 이벤트 전파 차단 */
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  /* GPU 가속을 위한 3D 변환 */
+  transform: translateZ(0);
+  will-change: opacity;
+}
+
+/* 이미지 크기 조정 모드별 스타일 */
+.image.fitOriginal {
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: none;
+}
+
+.image.fitWidth {
+  width: 100%;
+  height: auto;
+  max-width: 100vw;
+  object-fit: contain;
+}
+
+.image.fitHeight {
+  width: auto;
+  height: auto;
+  max-height: 80vh; /* 스크롤 방지를 위해 적절한 높이 제한 */
+  object-fit: contain;
+}
+
+.image.fitContainer {
+  width: 100%;
+  height: auto;
+  max-width: 100vw;
+  max-height: 80vh; /* 스크롤 방지를 위해 적절한 높이 제한 */
+  object-fit: contain;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--xeg-spacing-3xl) var(--xeg-spacing-lg);
+  background: var(--xeg-color-bg-secondary);
+  color: var(--xeg-color-text-secondary);
+  min-height: 200px;
+}
+
+.errorIcon {
+  font-size: var(--xeg-font-size-2xl);
+  margin-bottom: var(--xeg-spacing-sm);
+}
+
+.errorText {
+  font-size: var(--xeg-font-size-sm);
+  text-align: center;
+}
+
+.overlay {
+  position: absolute;
+  top: var(--xeg-spacing-sm);
+  right: var(--xeg-spacing-sm);
+  display: flex;
+  gap: var(--xeg-spacing-sm);
+  opacity: 0;
+  transition: var(--xeg-transition-opacity);
+}
+
+.container:hover .overlay {
+  opacity: 1;
+}
+
+.indexBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--xeg-spacing-lg);
+  height: var(--xeg-spacing-lg);
+  background: var(--xeg-bg-overlay-medium);
+  color: var(--xeg-text-inverse);
+  font-size: var(--xeg-font-size-xs);
+  font-weight: var(--xeg-font-weight-semibold);
+  border-radius: var(--xeg-radius-lg);
+  padding: 0 var(--xeg-spacing-sm);
+}
+
+.metadata {
+  padding: var(--xeg-spacing-sm);
+  background: var(--xeg-color-bg-primary);
+}
+
+.filename {
+  font-size: var(--xeg-font-size-sm);
+  font-weight: var(--xeg-font-weight-medium);
+  color: var(--xeg-color-text-primary);
+  margin-bottom: var(--xeg-spacing-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font-size: var(--xeg-font-size-xs);
+  color: var(--xeg-color-text-secondary);
+}
+
+.downloadButton {
+  position: absolute;
+  top: var(--xeg-spacing-sm);
+  right: var(--xeg-spacing-sm);
+  background: var(--xeg-bg-overlay-medium);
+  color: var(--xeg-text-inverse);
+  border: none;
+  border-radius: var(--xeg-radius-full);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: var(--xeg-transition-opacity);
+  font-size: var(--xeg-font-size-md);
+}
+
+.container:hover .downloadButton {
+  opacity: 1;
+}
+
+.downloadButton:hover {
+  background: var(--xeg-bg-overlay-strong);
+}
+
+.downloadIcon {
+  display: block;
+}
+
+.error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--xeg-color-bg-secondary);
+  color: var(--xeg-color-text-secondary);
+  min-height: 200px;
+}
+
+/* State classes */
+.container.loaded .image {
+  opacity: 1;
+}
+
+.container.error {
+  border: 1px solid var(--xeg-color-error, #e0245e);
+}
+
+/* 원본 크기 모드의 컨테이너별 조정 */
+.container.fitOriginal .imageWrapper {
+  width: fit-content;
+  max-width: 100vw;
+  max-height: 80vh;
+  overflow: auto; /* 필요 시에만 스크롤 */
+  /* 스크롤바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--xeg-bg-overlay-light) transparent;
+}
+
+.container.fitWidth .imageWrapper {
+  width: 100%;
+}
+
+.container.fitHeight .imageWrapper {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.container.fitContainer .imageWrapper {
+  width: 100%;
+}
+
+.container.fitOriginal .imageWrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.container.fitOriginal .imageWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.container.fitOriginal .imageWrapper::-webkit-scrollbar-thumb {
+  background: var(--xeg-bg-overlay-light);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.container.fitOriginal .imageWrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-bg-overlay-medium);
+}
+
+.container.fitOriginal .image {
+  cursor: grab; /* 드래그 가능함을 표시 */
+  min-width: auto;
+  min-height: auto;
+}
+
+.container.fitOriginal .image:active {
+  cursor: grabbing;
+}
+
+/* 다운로드 버튼만 클릭 가능 */
+.downloadButton {
+  /* 다운로드 버튼만 클릭 가능 */
+  pointer-events: auto;
+}
+
+/* 이벤트 전파 차단을 위한 CSS 클래스 */
+.eventBlocked {
+  pointer-events: none !important;
+}
+
+/* Twitter 기본 UI 요소 차단 */
+.container ~ [data-testid],
+.container ~ [role='dialog'],
+.container ~ .r-1p0dtai {
+  pointer-events: none !important;
+  z-index: 9999 !important;
+}
+
+/* Video wrapper styling */
+.video {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Video fit modes */
+.video.fitOriginal {
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: none;
+}
+
+.video.fitWidth {
+  width: 100%;
+  height: auto;
+  max-width: 100vw;
+  object-fit: contain;
+}
+
+.video.fitHeight {
+  width: auto;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+.video.fitContainer {
+  width: 100%;
+  height: auto;
+  max-width: 100vw;
+  max-height: 80vh;
+  object-fit: contain;
+}

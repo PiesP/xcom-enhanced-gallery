@@ -1,0 +1,548 @@
+/**
+ * Gallery Component Global Styles - Subdued Color System
+ * @version 2.1.0
+ *
+ * @description
+ * 갤러리 컴포넌트를 위한 전역 스타일을 정의합니다.
+ * design-tokens.css에서 정의된 통합 디자인 토큰 시스템을 사용하여
+ * 차분하고 일관된 시각적 경험을 제공합니다.
+ *
+ * @features
+ * - 통합된 neutral/slate 색상 팔레트 사용
+ * - gallery.constants.ts의 CSS_CLASSES와 연동
+ * - 반응형 디자인 및 접근성 최적화
+ * - 모바일 우선 터치 인터페이스
+ */
+
+/* 갤러리 오버레이 - 통합 색상 시스템 적용 */
+.xeg-gallery-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--xeg-z-gallery);
+  background: var(--xeg-gallery-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: auto;
+}
+
+/* 갤러리 컨테이너 */
+.xeg-gallery-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100vw;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 갤러리 툴바 - 현대적 glassmorphism 디자인 */
+.xeg-gallery-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--xeg-bg-toolbar);
+  border-bottom: 1px solid var(--xeg-color-border-primary);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 1005;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  color: var(--xeg-text-button);
+  box-shadow: var(--xeg-shadow-toolbar);
+}
+
+.xeg-toolbar-section-left,
+.xeg-toolbar-section-center,
+.xeg-toolbar-section-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.xeg-toolbar-section-center {
+  flex: 1;
+  justify-content: center;
+}
+
+/* 툴바 버튼 - 현대적 glassmorphism 디자인 */
+.xeg-toolbar-button {
+  background: var(--xeg-bg-button);
+  border: 1px solid var(--xeg-border-button);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--xeg-text-button);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.xeg-toolbar-button:hover {
+  background: var(--xeg-bg-button-hover);
+  color: var(--xeg-text-button-hover);
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.xeg-toolbar-button:active {
+  transform: translateY(0);
+}
+
+.xeg-toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.xeg-toolbar-button.active {
+  background: var(--xeg-color-primary);
+  color: white;
+  border-color: var(--xeg-color-primary);
+}
+
+/* 갤러리 카운터 - 현대적 디자인 */
+.xeg-gallery-counter {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--xeg-text-counter);
+  background: var(--xeg-bg-counter);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--xeg-border-counter);
+  margin-left: 16px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+/* 이미지 맞춤 버튼들 - 통합 색상 시스템 적용 */
+.xeg-fit-buttons {
+  display: flex;
+  gap: 4px;
+  background: var(--xeg-neutral-100);
+  border: 1px solid var(--xeg-neutral-200);
+  border-radius: 8px;
+  padding: 4px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 다운로드 진행률 - 통합 색상 시스템 적용 */
+.xeg-download-progress {
+  position: absolute;
+  bottom: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--xeg-bg-toolbar);
+  border: 1px solid var(--xeg-color-border-primary);
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 200px;
+  text-align: center;
+  box-shadow: 0 4px 12px var(--xeg-shadow-toolbar);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.xeg-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--xeg-neutral-200);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.xeg-progress-fill {
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    var(--xeg-color-primary) 0%,
+    var(--xeg-color-primary-hover) 100%
+  );
+  transition: width 0.3s ease;
+}
+
+.xeg-progress-text {
+  font-size: 12px;
+  color: var(--xeg-button-text);
+  font-weight: 500;
+}
+
+/* 메인 뷰어 영역 */
+.xeg-gallery-viewer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px 20px;
+  position: relative;
+}
+
+.xeg-gallery-media {
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xeg-gallery-image,
+.xeg-gallery-video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.xeg-gallery-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+}
+
+/* 네비게이션 버튼 - 현대적 glassmorphism 디자인 */
+.xeg-gallery-nav-left,
+.xeg-gallery-nav-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--xeg-color-neutral-100);
+  border: 1px solid var(--xeg-border-button);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  color: var(--xeg-text-button-navigation);
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 1002;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.1),
+    0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.xeg-gallery-nav-left {
+  left: 20px;
+}
+
+.xeg-gallery-nav-right {
+  right: 20px;
+}
+
+.xeg-gallery-nav-left:hover,
+.xeg-gallery-nav-right:hover {
+  background: var(--xeg-color-neutral-200);
+  transform: translateY(-50%) translateY(-3px) scale(1.05);
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.15),
+    0 4px 12px rgba(15, 23, 42, 0.1);
+}
+
+.xeg-gallery-nav-left:active,
+.xeg-gallery-nav-right:active {
+  transform: translateY(-50%) translateY(0);
+}
+
+.xeg-gallery-nav-left:disabled,
+.xeg-gallery-nav-right:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: translateY(-50%);
+}
+
+/* 썸네일 영역 */
+.xeg-gallery-thumbnails {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 40px);
+  z-index: 1002;
+}
+
+.xeg-thumbnails-container {
+  display: flex;
+  gap: 8px;
+  padding: 14px;
+  background: var(--xeg-bg-toolbar);
+  border: 1px solid var(--xeg-color-border-primary);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--xeg-shadow-toolbar);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.xeg-thumbnails-container::-webkit-scrollbar {
+  display: none;
+}
+
+.xeg-thumbnail {
+  position: relative;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.xeg-thumbnail:hover {
+  border-color: var(--xeg-neutral-400);
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+}
+
+.xeg-thumbnail-active {
+  border-color: var(--xeg-color-primary);
+  transform: scale(1.12);
+}
+
+.xeg-thumbnail-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.xeg-thumbnail-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: var(--xeg-color-primary);
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.xeg-thumbnail:focus,
+.xeg-thumbnail:focus-visible {
+  box-shadow: none;
+}
+
+/* 백드롭 */
+.xeg-gallery-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+/* 갤러리 컨테이너 - 내부 스크롤만 관리 */
+.xeg-gallery-container {
+  /* 갤러리 내부 스크롤만 허용 */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 격리된 갤러리 컨테이너 */
+.xeg-gallery.xeg-gallery-isolated {
+  /* 갤러리 컨테이너 기본 스타일 */
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483647 !important;
+
+  /* 갤러리 내부만 제어 */
+  pointer-events: auto !important;
+  display: block !important;
+  opacity: 1 !important;
+
+  /* 배경 페이지와 완전 분리 */
+  isolation: isolate !important;
+  contain: layout style paint !important;
+}
+
+/* 갤러리 내부 요소들은 정상 스크롤 허용 */
+.xeg-gallery-isolated * {
+  /* 갤러리 내부에서는 정상적인 스크롤 동작 허용 */
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .xeg-gallery-toolbar {
+    height: 50px;
+    padding: 0 12px;
+  }
+
+  .xeg-toolbar-section-left,
+  .xeg-toolbar-section-center,
+  .xeg-toolbar-section-right {
+    gap: 8px;
+  }
+
+  .xeg-toolbar-button {
+    min-width: 32px;
+    height: 32px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .xeg-gallery-counter {
+    font-size: 12px;
+    margin-left: 8px;
+  }
+
+  .xeg-gallery-viewer {
+    padding: 50px 12px 12px;
+  }
+
+  .xeg-gallery-nav-left,
+  .xeg-gallery-nav-right {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .xeg-gallery-nav-left {
+    left: 12px;
+  }
+
+  .xeg-gallery-nav-right {
+    right: 12px;
+  }
+
+  .xeg-gallery-thumbnails {
+    bottom: 12px;
+    max-width: calc(100vw - 24px);
+  }
+
+  .xeg-thumbnails-container {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .xeg-thumbnail-image {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* 다크 테마 지원 */
+@media (prefers-color-scheme: light) {
+  .xeg-gallery-overlay {
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  .xeg-gallery-toolbar {
+    background: rgba(255, 255, 255, 0.9);
+    color: #1f2937;
+  }
+
+  .xeg-toolbar-button {
+    background: rgba(0, 0, 0, 0.1);
+    color: #1f2937;
+  }
+
+  .xeg-toolbar-button:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .xeg-gallery-counter {
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .xeg-progress-text {
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .xeg-gallery-error {
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .xeg-gallery-nav-left,
+  .xeg-gallery-nav-right {
+    background: rgba(0, 0, 0, 0.1);
+    color: #1f2937;
+  }
+
+  .xeg-gallery-nav-left:hover,
+  .xeg-gallery-nav-right:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .xeg-thumbnails-container {
+    background: rgba(255, 255, 255, 0.9);
+  }
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-gallery-overlay,
+  .xeg-toolbar-button,
+  .xeg-gallery-nav-left,
+  .xeg-gallery-nav-right,
+  .xeg-thumbnail,
+  .xeg-progress-fill {
+    transition: none;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .xeg-gallery-overlay {
+    background: black;
+  }
+
+  .xeg-gallery-toolbar {
+    background: black;
+    border-bottom: 2px solid white;
+  }
+
+  .xeg-toolbar-button {
+    background: white;
+    color: black;
+    border: 2px solid black;
+  }
+
+  .xeg-gallery-nav-left,
+  .xeg-gallery-nav-right {
+    background: white;
+    color: black;
+    border: 2px solid black;
+  }
+}

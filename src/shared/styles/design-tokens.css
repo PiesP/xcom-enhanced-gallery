@@ -1,0 +1,523 @@
+/**
+ * @fileoverview 통합 디자인 토큰 CSS
+ * @description 모든 CSS 변수를 하나의 파일로 통합 관리
+ * @version 2.0.0
+ */
+
+:root {
+  /* ===========================================
+     PRIMARY COLOR SYSTEM
+     =========================================== */
+
+  /* Primary Blue Scale */
+  --xeg-color-primary-50: #eff6ff;
+  --xeg-color-primary-100: #dbeafe;
+  --xeg-color-primary-200: #bfdbfe;
+  --xeg-color-primary-300: #93c5fd;
+  --xeg-color-primary-400: #60a5fa;
+  --xeg-color-primary-500: #3b82f6; /* base */
+  --xeg-color-primary-600: #2563eb;
+  --xeg-color-primary-700: #1d4ed8;
+  --xeg-color-primary-800: #1e40af;
+  --xeg-color-primary-900: #1e3a8a;
+  --xeg-color-primary-950: #172554;
+
+  /* Neutral Gray Scale */
+  --xeg-color-neutral-50: #fafafa;
+  --xeg-color-neutral-100: #f5f5f5;
+  --xeg-color-neutral-200: #e5e5e5;
+  --xeg-color-neutral-300: #d4d4d4;
+  --xeg-color-neutral-400: #a3a3a3;
+  --xeg-color-neutral-500: #737373; /* base */
+  --xeg-color-neutral-600: #525252;
+  --xeg-color-neutral-700: #404040;
+  --xeg-color-neutral-800: #262626;
+  --xeg-color-neutral-900: #171717;
+  --xeg-color-neutral-950: #0a0a0a;
+
+  /* ===========================================
+     SEMANTIC COLORS
+     =========================================== */
+
+  /* Success Green */
+  --xeg-color-success-50: #f0fdf4;
+  --xeg-color-success-100: #dcfce7;
+  --xeg-color-success-200: #bbf7d0;
+  --xeg-color-success-300: #86efac;
+  --xeg-color-success-400: #4ade80;
+  --xeg-color-success-500: #22c55e; /* base */
+  --xeg-color-success-600: #16a34a;
+  --xeg-color-success-700: #15803d;
+  --xeg-color-success-800: #166534;
+  --xeg-color-success-900: #14532d;
+  --xeg-color-success-950: #052e16;
+
+  /* Warning Orange */
+  --xeg-color-warning-50: #fffbeb;
+  --xeg-color-warning-100: #fef3c7;
+  --xeg-color-warning-200: #fde68a;
+  --xeg-color-warning-300: #fcd34d;
+  --xeg-color-warning-400: #fbbf24;
+  --xeg-color-warning-500: #f59e0b; /* base */
+  --xeg-color-warning-600: #d97706;
+  --xeg-color-warning-700: #b45309;
+  --xeg-color-warning-800: #92400e;
+  --xeg-color-warning-900: #78350f;
+  --xeg-color-warning-950: #451a03;
+
+  /* Error Red */
+  --xeg-color-error-50: #fef2f2;
+  --xeg-color-error-100: #fee2e2;
+  --xeg-color-error-200: #fecaca;
+  --xeg-color-error-300: #fca5a5;
+  --xeg-color-error-400: #f87171;
+  --xeg-color-error-500: #ef4444; /* base */
+  --xeg-color-error-600: #dc2626;
+  --xeg-color-error-700: #b91c1c;
+  --xeg-color-error-800: #991b1b;
+  --xeg-color-error-900: #7f1d1d;
+  --xeg-color-error-950: #450a0a;
+
+  /* ===========================================
+     SURFACE & LAYOUT COLORS
+     =========================================== */
+
+  /* Base Surface Colors */
+  --xeg-color-surface-light: rgba(255, 255, 255, 0.95);
+  --xeg-color-surface-dark: rgba(0, 0, 0, 0.95);
+
+  /* Overlay Colors */
+  --xeg-color-overlay-light: rgba(0, 0, 0, 0.1);
+  --xeg-color-overlay-medium: rgba(0, 0, 0, 0.3);
+  --xeg-color-overlay-strong: rgba(0, 0, 0, 0.8);
+
+  /* Glass Effect Colors */
+  --xeg-color-glass-light: rgba(255, 255, 255, 0.85);
+  --xeg-color-glass-medium: rgba(255, 255, 255, 0.65);
+  --xeg-color-glass-dark: rgba(0, 0, 0, 0.85);
+
+  /* ===========================================
+     SPACING SYSTEM (8px base)
+     =========================================== */
+
+  --xeg-spacing-xs: 4px; /* 0.25rem */
+  --xeg-spacing-sm: 8px; /* 0.5rem */
+  --xeg-spacing-md: 16px; /* 1rem */
+  --xeg-spacing-lg: 24px; /* 1.5rem */
+  --xeg-spacing-xl: 32px; /* 2rem */
+  --xeg-spacing-2xl: 48px; /* 3rem */
+  --xeg-spacing-3xl: 64px; /* 4rem */
+
+  /* ===========================================
+     TYPOGRAPHY SYSTEM
+     =========================================== */
+
+  /* Font Families */
+  --xeg-font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --xeg-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, monospace;
+
+  /* Font Sizes */
+  --xeg-font-size-xs: 12px; /* 0.75rem */
+  --xeg-font-size-sm: 14px; /* 0.875rem */
+  --xeg-font-size-base: 16px; /* 1rem */
+  --xeg-font-size-lg: 18px; /* 1.125rem */
+  --xeg-font-size-xl: 20px; /* 1.25rem */
+  --xeg-font-size-2xl: 24px; /* 1.5rem */
+  --xeg-font-size-3xl: 30px; /* 1.875rem */
+
+  /* Font Weights */
+  --xeg-font-weight-normal: 400;
+  --xeg-font-weight-medium: 500;
+  --xeg-font-weight-semibold: 600;
+  --xeg-font-weight-bold: 700;
+
+  /* Line Heights */
+  --xeg-line-height-tight: 1.25;
+  --xeg-line-height-normal: 1.5;
+  --xeg-line-height-relaxed: 1.75;
+
+  /* ===========================================
+     LAYOUT SYSTEM
+     =========================================== */
+
+  /* Border Radius */
+  --xeg-radius-sm: 4px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 12px;
+  --xeg-radius-xl: 16px;
+  --xeg-radius-full: 9999px;
+
+  /* Shadows */
+  --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+
+  /* Z-Index Scale */
+  --xeg-z-base: 1;
+  --xeg-z-dropdown: 1000;
+  --xeg-z-modal: 2000;
+  --xeg-z-toolbar: 2500; /* 툴바 전용 Z-index 추가 */
+  --xeg-z-overlay: 3000;
+  --xeg-z-gallery: 4000;
+  --xeg-z-toast: 5000;
+
+  /* ===========================================
+     ANIMATION SYSTEM
+     =========================================== */
+
+  /* Duration */
+  --xeg-duration-fast: 150ms;
+  --xeg-duration-normal: 300ms;
+  --xeg-duration-slow: 500ms;
+
+  /* Easing */
+  --xeg-easing-linear: linear;
+  --xeg-easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --xeg-easing-spring: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Backdrop Filter */
+  --xeg-blur-light: blur(12px);
+  --xeg-blur-medium: blur(16px);
+  --xeg-blur-strong: blur(20px);
+
+  /* ===========================================
+     SEMANTIC TOKEN ALIASES
+     =========================================== */
+
+  /* Primary aliases */
+  --xeg-color-primary: var(--xeg-color-primary-500);
+  --xeg-color-primary-hover: var(--xeg-color-primary-600);
+
+  /* Surface aliases */
+  --xeg-color-surface: var(--xeg-color-surface-light);
+  --xeg-color-background: var(--xeg-color-neutral-50);
+
+  /* Text aliases */
+  --xeg-color-text-primary: var(--xeg-color-neutral-900);
+  --xeg-color-text-secondary: var(--xeg-color-neutral-600);
+  --xeg-color-text-inverse: var(--xeg-color-neutral-50);
+
+  /* Border aliases */
+  --xeg-color-border-primary: var(--xeg-color-neutral-300);
+  --xeg-color-border-secondary: var(--xeg-color-neutral-200);
+
+  /* Transition aliases */
+  --xeg-transition-fast: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  --xeg-transition-normal: all var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  --xeg-transition-slow: all var(--xeg-duration-slow) var(--xeg-easing-ease-out);
+
+  /* ===========================================
+     COMPONENT-SPECIFIC TOKENS
+     =========================================== */
+
+  /* Gallery specific */
+  --xeg-gallery-backdrop: rgba(21, 32, 43, 0.85);
+  --xeg-gallery-backdrop-filter: blur(16px);
+  --xeg-gallery-z-index: var(--xeg-z-gallery);
+
+  /* Button specific */
+  --xeg-button-height-sm: 32px;
+  --xeg-button-height-md: 40px;
+  --xeg-button-height-lg: 48px;
+
+  /* Focus ring - 통합된 포커스 시스템 */
+  --xeg-focus-ring-width: 2px;
+  --xeg-focus-ring-color: var(--xeg-color-primary);
+  --xeg-focus-ring: var(--xeg-focus-ring-width) solid var(--xeg-focus-ring-color);
+  --xeg-focus-ring-offset: 2px;
+
+  /* 활성 상태 강조 */
+  --xeg-active-ring-width: 3px;
+  --xeg-active-ring-color: var(--xeg-color-primary);
+  --xeg-active-ring: var(--xeg-active-ring-width) solid var(--xeg-active-ring-color);
+
+  /* 상태별 box-shadow */
+  --xeg-focus-shadow: 0 0 0 var(--xeg-focus-ring-width) var(--xeg-focus-ring-color);
+  --xeg-active-shadow: 0 0 0 var(--xeg-active-ring-width) var(--xeg-active-ring-color);
+}
+
+/* ===========================================
+   DARK THEME OVERRIDES
+   =========================================== */
+
+[data-theme='dark'] {
+  --xeg-color-surface: var(--xeg-color-surface-dark);
+  --xeg-color-background: var(--xeg-color-neutral-950);
+  --xeg-color-text-primary: var(--xeg-color-neutral-50);
+  --xeg-color-text-secondary: var(--xeg-color-neutral-300);
+  --xeg-color-border-primary: var(--xeg-color-neutral-700);
+  --xeg-color-border-secondary: var(--xeg-color-neutral-800);
+
+  /* Dark theme shadows (stronger) */
+  --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+  --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* ===========================================
+   SYSTEM THEME DETECTION
+   =========================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --xeg-color-surface: var(--xeg-color-surface-dark);
+    --xeg-color-background: var(--xeg-color-neutral-950);
+    --xeg-color-text-primary: var(--xeg-color-neutral-50);
+    --xeg-color-text-secondary: var(--xeg-color-neutral-300);
+    --xeg-color-border-primary: var(--xeg-color-neutral-700);
+    --xeg-color-border-secondary: var(--xeg-color-neutral-800);
+  }
+}
+
+/* ===========================================
+   ACCESSIBILITY & RESPONSIVE
+   =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --xeg-duration-fast: 0ms;
+    --xeg-duration-normal: 0ms;
+    --xeg-duration-slow: 0ms;
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-focus-ring: 3px solid currentColor;
+    --xeg-color-border-primary: var(--xeg-color-neutral-800);
+  }
+}
+
+/* ===========================================
+   BREAKPOINTS
+   =========================================== */
+
+:root {
+  --xeg-breakpoint-sm: 640px;
+  --xeg-breakpoint-md: 768px;
+  --xeg-breakpoint-lg: 1024px;
+  --xeg-breakpoint-xl: 1280px;
+  --xeg-breakpoint-2xl: 1536px;
+}
+
+/* ===========================================
+   UTILITY CLASSES
+   =========================================== */
+
+/* Layout Utilities */
+.xeg-flex {
+  display: flex;
+}
+
+.xeg-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xeg-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.xeg-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.xeg-grid {
+  display: grid;
+}
+
+.xeg-hidden {
+  display: none !important;
+}
+
+.xeg-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.xeg-sr-only-focusable:focus {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: inherit !important;
+  margin: inherit !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: inherit !important;
+}
+
+/* Positioning Utilities */
+.xeg-relative {
+  position: relative;
+}
+
+.xeg-absolute {
+  position: absolute;
+}
+
+.xeg-fixed {
+  position: fixed;
+}
+
+.xeg-sticky {
+  position: sticky;
+}
+
+.xeg-full-size {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Common States */
+.xeg-disabled {
+  pointer-events: none !important;
+  opacity: 0.5 !important;
+}
+
+.xeg-loading {
+  cursor: wait !important;
+}
+
+/* Gallery Root Container */
+#xeg-gallery-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999999;
+  pointer-events: none;
+}
+
+/* Spacing Utilities */
+.xeg-p-xs {
+  padding: var(--xeg-spacing-xs);
+}
+.xeg-p-sm {
+  padding: var(--xeg-spacing-sm);
+}
+.xeg-p-md {
+  padding: var(--xeg-spacing-md);
+}
+.xeg-p-lg {
+  padding: var(--xeg-spacing-lg);
+}
+.xeg-p-xl {
+  padding: var(--xeg-spacing-xl);
+}
+
+.xeg-m-xs {
+  margin: var(--xeg-spacing-xs);
+}
+.xeg-m-sm {
+  margin: var(--xeg-spacing-sm);
+}
+.xeg-m-md {
+  margin: var(--xeg-spacing-md);
+}
+.xeg-m-lg {
+  margin: var(--xeg-spacing-lg);
+}
+.xeg-m-xl {
+  margin: var(--xeg-spacing-xl);
+}
+
+/* Text Utilities */
+.xeg-text-center {
+  text-align: center;
+}
+.xeg-text-left {
+  text-align: left;
+}
+.xeg-text-right {
+  text-align: right;
+}
+
+.xeg-font-bold {
+  font-weight: var(--xeg-font-weight-bold);
+}
+.xeg-font-medium {
+  font-weight: var(--xeg-font-weight-medium);
+}
+.xeg-font-normal {
+  font-weight: var(--xeg-font-weight-normal);
+}
+
+/* Visual Utilities */
+.xeg-rounded {
+  border-radius: var(--xeg-border-radius-sm);
+}
+.xeg-rounded-md {
+  border-radius: var(--xeg-border-radius-md);
+}
+.xeg-rounded-lg {
+  border-radius: var(--xeg-border-radius-lg);
+}
+.xeg-rounded-full {
+  border-radius: 50%;
+}
+
+.xeg-shadow {
+  box-shadow: var(--xeg-shadow-sm);
+}
+.xeg-shadow-md {
+  box-shadow: var(--xeg-shadow-md);
+}
+.xeg-shadow-lg {
+  box-shadow: var(--xeg-shadow-lg);
+}
+
+/* Interactive States */
+.xeg-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--xeg-shadow-md);
+  transition: all 0.2s ease;
+}
+
+.xeg-focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+.xeg-focus-ring:focus {
+  outline-color: var(--xeg-color-primary-500);
+  outline-offset: 2px;
+}
+
+.xeg-focus-ring:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.xeg-focus-ring:focus-visible {
+  outline-color: var(--xeg-color-primary-500);
+  outline-width: 2px;
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .xeg-focus-ring:focus,
+  .xeg-focus-ring:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+  }
+}

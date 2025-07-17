@@ -1,0 +1,243 @@
+/**
+ * @fileoverview 반응형 유틸리티 클래스
+ * @description 반응형 디자인을 위한 유틸리티 클래스들
+ * @version 1.0.0
+ */
+
+/* ===========================================
+   RESPONSIVE UTILITIES
+   =========================================== */
+
+/* 반응형 텍스트 크기 */
+.xeg-text-responsive {
+  font-size: clamp(14px, 2.5vw, 18px);
+  line-height: var(--xeg-line-height-normal);
+}
+
+.xeg-text-responsive-sm {
+  font-size: clamp(12px, 2vw, 16px);
+}
+
+.xeg-text-responsive-lg {
+  font-size: clamp(16px, 3vw, 24px);
+}
+
+.xeg-text-responsive-xl {
+  font-size: clamp(20px, 4vw, 32px);
+}
+
+/* 반응형 간격 */
+.xeg-spacing-responsive {
+  padding: clamp(8px, 2vw, 24px);
+}
+
+.xeg-spacing-responsive-sm {
+  padding: clamp(4px, 1vw, 16px);
+}
+
+.xeg-spacing-responsive-lg {
+  padding: clamp(16px, 4vw, 48px);
+}
+
+/* 반응형 갭 */
+.xeg-gap-responsive {
+  gap: clamp(8px, 2vw, 24px);
+}
+
+.xeg-gap-responsive-sm {
+  gap: clamp(4px, 1vw, 16px);
+}
+
+.xeg-gap-responsive-lg {
+  gap: clamp(16px, 4vw, 32px);
+}
+
+/* 컨테이너 쿼리 */
+@container (width < 400px) {
+  .xeg-container-sm {
+    flex-direction: column;
+    gap: var(--xeg-spacing-xs);
+  }
+
+  .xeg-toolbar-responsive {
+    flex-direction: column;
+    padding: var(--xeg-spacing-sm);
+  }
+
+  .xeg-button-responsive {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+@container (width >= 400px) and (width < 768px) {
+  .xeg-container-md {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--xeg-spacing-sm);
+  }
+
+  .xeg-grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@container (width >= 768px) {
+  .xeg-container-lg {
+    flex-direction: row;
+    gap: var(--xeg-spacing-md);
+  }
+
+  .xeg-grid-responsive {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 브레이크포인트별 표시/숨김 */
+.xeg-show-sm {
+  display: none;
+}
+
+.xeg-show-md {
+  display: none;
+}
+
+.xeg-show-lg {
+  display: none;
+}
+
+.xeg-show-xl {
+  display: none;
+}
+
+.xeg-hide-sm {
+  display: block;
+}
+
+.xeg-hide-md {
+  display: block;
+}
+
+.xeg-hide-lg {
+  display: block;
+}
+
+.xeg-hide-xl {
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .xeg-show-sm {
+    display: block;
+  }
+
+  .xeg-hide-sm {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .xeg-show-md {
+    display: block;
+  }
+
+  .xeg-hide-md {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .xeg-show-lg {
+    display: block;
+  }
+
+  .xeg-hide-lg {
+    display: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .xeg-show-xl {
+    display: block;
+  }
+
+  .xeg-hide-xl {
+    display: none;
+  }
+}
+
+/* 반응형 그리드 */
+.xeg-grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--xeg-spacing-md);
+}
+
+.xeg-grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--xeg-spacing-md);
+}
+
+/* 반응형 플렉스 */
+.xeg-flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--xeg-spacing-md);
+}
+
+.xeg-flex-responsive > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 반응형 미디어 */
+.xeg-media-responsive {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: cover;
+}
+
+.xeg-media-responsive-square {
+  aspect-ratio: 1 / 1;
+}
+
+.xeg-media-responsive-video {
+  aspect-ratio: 16 / 9;
+}
+
+.xeg-media-responsive-portrait {
+  aspect-ratio: 3 / 4;
+}
+
+/* 반응형 패딩/마진 */
+@media (max-width: 639px) {
+  .xeg-p-responsive {
+    padding: var(--xeg-spacing-sm);
+  }
+
+  .xeg-m-responsive {
+    margin: var(--xeg-spacing-sm);
+  }
+}
+
+@media (min-width: 640px) {
+  .xeg-p-responsive {
+    padding: var(--xeg-spacing-md);
+  }
+
+  .xeg-m-responsive {
+    margin: var(--xeg-spacing-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .xeg-p-responsive {
+    padding: var(--xeg-spacing-lg);
+  }
+
+  .xeg-m-responsive {
+    margin: var(--xeg-spacing-lg);
+  }
+}

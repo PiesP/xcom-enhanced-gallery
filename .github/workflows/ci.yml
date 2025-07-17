@@ -1,0 +1,279 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [master, develop, feature/*]
+  pull_request:
+    branches: [master, develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20"
+  CACHE_VERSION: v2
+
+jobs:
+  validate:
+    name: Validate Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: TypeScript Check
+        run: npm run typecheck
+
+      - name: Lint Check
+        run: npm run lint
+
+      - name: Format Check
+        run: npm run format:check
+
+      - name: Architecture Validation
+        run: |
+          echo "🏗️ Clean Architecture validation..."
+          npm run deps:check
+
+      - name: PC Environment Compliance
+        run: |
+          echo "🖥️ PC environment compliance check..."
+          # 터치 이벤트 사용 검사 (PC 전용 프로젝트)
+          if find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "onTouch\|TouchEvent" 2>/dev/null; then
+            echo "❌ Touch events found - this is PC-only project"
+            exit 1
+          fi
+          echo "✅ PC environment compliance validated"
+
+      - name: External Library Access Validation
+        run: |
+          echo "📦 External library access pattern check..."
+          # 직접 import 금지 확인 (vendors getters 강제)
+          if find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "from 'fflate'\|from 'preact'\|from 'motion'" 2>/dev/null; then
+            echo "❌ Direct external library imports found - use vendors getters"
+            exit 1
+          fi
+          echo "✅ External library access patterns validated"
+
+      - name: Test Suite
+        run: npm run test:coverage
+
+      - name: Build Test (Development)
+        run: npm run build:dev
+
+      - name: Build Test (Production)
+        run: npm run build:prod
+
+      - name: Bundle Size Check
+        run: |
+          # 번들 크기 검증 (500KB 제한)
+          if [ -f "dist/bundle-analysis.json" ]; then
+            node -e "
+              const analysis = require('./dist/bundle-analysis.json');
+              console.log('Bundle size:', (analysis.totalSize / 1024).toFixed(2), 'KB');
+              if (!analysis.isWithinBudget) {
+                console.error('❌ Bundle size exceeds 500KB limit');
+                process.exit(1);
+              }
+              console.log('✅ Bundle size is within budget');
+            "
+          fi
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: success()
+        with:
+          files: ./coverage/coverage-final.json
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  dependency-analysis:
+    name: Dependency Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: validate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Generate dependency reports
+        run: npm run deps:all
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-reports-${{ github.sha }}
+          path: |
+            docs/dependency-graph.svg
+            docs/dependency-graph.json
+            docs/dependency-graph.dot
+          retention-days: 30
+
+      - name: Architecture Validation
+        run: |
+          echo "Checking Clean Architecture compliance..."
+          # Feature → Shared → Core → Infrastructure 의존성 규칙 검증
+          npm run deps:check
+
+      - name: PC Environment Compliance
+        run: |
+          echo "🖥️ Validating PC environment optimization..."
+
+          # 터치 이벤트 완전 제거 확인
+          if find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "touch\|Touch" | grep -v "// Allow:"; then
+            echo "❌ Touch events found - this is PC-only project"
+            exit 1
+          fi
+
+          # 키보드 이벤트는 Esc만 허용
+          if find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "onKey" | xargs grep -v "Escape\|onKeyDown.*Escape"; then
+            echo "⚠️ Non-Esc keyboard events found - verify PC optimization"
+          fi
+
+          echo "✅ PC environment compliance validated"
+
+      - name: External Library Access Pattern
+        run: |
+          echo "📦 Validating external library access..."
+
+          # 직접 import 금지 확인
+          if find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "from 'fflate'\|from 'preact'\|from 'motion'" 2>/dev/null; then
+            echo "❌ Direct external library imports found - use vendors getters"
+            exit 1
+          fi
+
+          echo "✅ External library access patterns validated"
+
+      - name: Upload architecture reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-reports-${{ github.sha }}
+          path: |
+            docs/dependency-report.html
+            docs/dependency-graph.svg
+            docs/dependency-graph.json
+          retention-days: 7
+
+  build:
+    name: Build Project
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate, architecture-check]
+
+    strategy:
+      matrix:
+        mode: [development, production]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Build (${{ matrix.mode }})
+        run: |
+          if [ "${{ matrix.mode }}" = "development" ]; then
+            npm run build:dev
+          else
+            npm run build:prod
+          fi
+
+      - name: Validate UserScript
+        run: |
+          # UserScript 헤더 검증
+          if [ -f "dist/xcom-enhanced-gallery.user.js" ]; then
+            if grep -q "// ==UserScript==" dist/xcom-enhanced-gallery.user.js; then
+              echo "✅ UserScript header found"
+            else
+              echo "❌ UserScript header missing"
+              exit 1
+            fi
+          else
+            echo "❌ UserScript file not found"
+            exit 1
+          fi
+
+      - name: Commit dist files (if on main branch)
+        if: github.ref == 'refs/heads/main' && matrix.mode == 'production'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add dist/xcom-enhanced-gallery.user.js
+          git diff --staged --quiet || git commit -m "build: update dist files [skip ci]"
+          git push
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ matrix.mode }}
+          path: dist/
+          retention-days: 7
+          compression-level: 6
+
+  compatibility:
+    name: Browser Compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Build for testing
+        run: npm run build:dev
+
+      - name: Run basic compatibility tests
+        run: |
+          echo "Running basic userscript validation..."
+          node scripts/validate-build.js
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compatibility-report
+          path: |
+            dist/
+          retention-days: 7

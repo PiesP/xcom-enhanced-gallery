@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+# =============================================================================
+# Pre-commit Hook for X.com Enhanced Gallery
+# =============================================================================
+#
+# Ensures code quality by running automated checks before commits.
+# Prevents commits that fail quality standards.
+#
+# Workflow:
+# 1. TypeScript type checking
+# 2. Lint staged files
+#
+# =============================================================================
+
+echo "🔍 Pre-commit validation..."
+
+# TypeScript Type Checking
+echo "📋 Type checking..."
+npm run typecheck || exit 1
+
+# Lint Staged Files
+echo "🧹 Linting staged files..."
+npx lint-staged || exit 1
+
+echo "✅ Pre-commit validation complete!"
+# - Consistent code style across commits
+# - Early detection of linting issues
+echo "🔧 Linting staged files..."
+npx lint-staged || exit 1
+
+echo "✅ Pre-commit validation complete!"

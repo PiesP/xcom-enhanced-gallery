@@ -1,0 +1,44 @@
+#!/usr/bin/env sh
+
+# ============================================================================
+# Git Commit Message Validation Hook
+# ============================================================================
+#
+# Validates commit messages against conventional commit standards using commitlint
+#
+# Format: type(scope): description
+# Example: feat(gallery): add image zoom functionality
+#
+# Supported types: feat, fix, docs, style, refactor, test, chore
+#
+# ============================================================================
+
+echo "📝 Validating commit message..."
+
+# Validate commit message with commitlint
+npx commitlint --edit $1
+
+echo "✅ Commit message validation complete!"
+# This hook runs automatically when creating commits via:
+# - git commit -m "message"
+# - git commit (opens editor)
+# - IDE/GUI commit actions
+#
+# Example valid commit messages:
+# - feat(gallery): add image zoom functionality
+# - fix(download): resolve ZIP file corruption issue
+# - docs(api): update utility function documentation
+# - refactor(core): optimize media extraction logic
+#
+# @see {@link https://commitlint.js.org/} - Commitlint documentation
+# @see {@link https://www.conventionalcommits.org/} - Conventional Commits spec
+# @see {@link ./commitlint.config.js} - Project-specific configuration
+# ============================================================================
+
+echo "📝 Validating commit message..."
+
+# Run commitlint against the commit message file
+# $1 contains the path to the temporary file with the commit message
+npx --no -- commitlint --edit $1
+
+echo "✅ Commit message validation complete!"
