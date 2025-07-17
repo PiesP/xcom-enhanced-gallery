@@ -77,6 +77,9 @@ jobs:
 
       - name: Bundle Size Check
         run: |
+          # 번들 분석 실행
+          node scripts/build-metrics.js
+
           # 번들 크기 검증 (500KB 제한)
           if [ -f "dist/bundle-analysis.json" ]; then
             node -e "
@@ -88,11 +91,14 @@ jobs:
               }
               console.log('✅ Bundle size is within budget');
             "
+          else
+            echo "⚠️ Bundle analysis file not found, skipping size check"
           fi
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
-        if: success()
+        if: success() && env.CODECOV_TOKEN != ''
+        continue-on-error: true
         with:
           files: ./coverage/coverage-final.json
           fail_ci_if_error: false
@@ -179,7 +185,7 @@ jobs:
     name: Build Project
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [validate, architecture-check]
+    needs: [validate, dependency-analysis]
 
     strategy:
       matrix:

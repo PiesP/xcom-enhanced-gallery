@@ -12,7 +12,12 @@ function validateUserScript() {
   console.log('🔍 Validating UserScript build...');
 
   const distPath = resolve(process.cwd(), 'dist');
-  const userScriptPath = resolve(distPath, 'xcom-enhanced-gallery.user.js');
+
+  // 프로덕션 파일 우선, 없으면 개발 파일 사용
+  let userScriptPath = resolve(distPath, 'xcom-enhanced-gallery.user.js');
+  if (!existsSync(userScriptPath)) {
+    userScriptPath = resolve(distPath, 'xcom-enhanced-gallery.dev.user.js');
+  }
 
   if (!existsSync(userScriptPath)) {
     console.error('❌ UserScript file not found at:', userScriptPath);
@@ -71,11 +76,9 @@ function validateUserScript() {
 }
 
 // 스크립트 실행
-if (import.meta.url === `file://${process.argv[1]}`) {
-  try {
-    validateUserScript();
-  } catch (error) {
-    console.error('❌ UserScript validation failed:', error.message);
-    process.exit(1);
-  }
+try {
+  validateUserScript();
+} catch (error) {
+  console.error('❌ UserScript validation failed:', error.message);
+  process.exit(1);
 }

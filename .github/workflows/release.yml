@@ -86,6 +86,9 @@ jobs:
             exit 1
           fi
 
+          # 번들 분석 실행
+          node scripts/build-metrics.js
+
           # 번들 크기 검증
           if [ -f "dist/bundle-analysis.json" ]; then
             node -e "

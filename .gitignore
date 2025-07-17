@@ -9,7 +9,7 @@ node_modules/
 .pnpm-store/
 
 # Build outputs
-!dist\xcom-enhanced-gallery.user.js
+!dist/xcom-enhanced-gallery.user.js
 dist/
 build/
 .vite/
