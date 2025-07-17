@@ -12,7 +12,7 @@ echo "🔍 Pre-commit validation..."
 echo "📋 Type checking..."
 npm run typecheck || exit 1
 
-# Lint Staged Files  
+# Lint Staged Files
 echo "🧹 Linting staged files..."
 npx lint-staged || exit 1
 
