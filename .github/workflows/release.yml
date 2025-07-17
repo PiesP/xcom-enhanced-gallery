@@ -40,9 +40,9 @@ jobs:
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync(0)).version")
-          
+
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          
+
           if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
             echo "should_release=true" >> $GITHUB_OUTPUT
             echo "Version changed from $PREV_VERSION to $CURRENT_VERSION"
