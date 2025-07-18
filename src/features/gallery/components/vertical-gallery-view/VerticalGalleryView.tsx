@@ -426,6 +426,45 @@ export function VerticalGalleryView({
     });
   }, [imageFitMode, mediaItems.length]);
 
+  // 툴바 호버 핸들러 - 프로덕션 빌드 호환성을 위한 JavaScript 백업
+  useEffect(() => {
+    const hoverZone = toolbarHoverZoneRef.current;
+    const toolbarWrapper = toolbarWrapperRef.current;
+
+    if (!hoverZone || !toolbarWrapper) return;
+
+    const showToolbar = () => {
+      toolbarWrapper.style.opacity = '1';
+      toolbarWrapper.style.transform = 'translateY(0)';
+      toolbarWrapper.style.pointerEvents = 'auto';
+      toolbarWrapper.style.setProperty('--toolbar-opacity', '1');
+      toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'auto');
+    };
+
+    const hideToolbar = () => {
+      if (!initialToolbarVisible) {
+        toolbarWrapper.style.opacity = '0';
+        toolbarWrapper.style.transform = 'translateY(-100%)';
+        toolbarWrapper.style.pointerEvents = 'auto'; // 툴바 자체는 항상 클릭 가능
+        toolbarWrapper.style.setProperty('--toolbar-opacity', '0');
+        toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'none');
+      }
+    };
+
+    // 호버 이벤트 핸들러
+    hoverZone.addEventListener('mouseenter', showToolbar);
+    hoverZone.addEventListener('mouseleave', hideToolbar);
+    toolbarWrapper.addEventListener('mouseenter', showToolbar);
+    toolbarWrapper.addEventListener('mouseleave', hideToolbar);
+
+    return () => {
+      hoverZone.removeEventListener('mouseenter', showToolbar);
+      hoverZone.removeEventListener('mouseleave', hideToolbar);
+      toolbarWrapper.removeEventListener('mouseenter', showToolbar);
+      toolbarWrapper.removeEventListener('mouseleave', hideToolbar);
+    };
+  }, [initialToolbarVisible]);
+
   // 빈 상태 처리
   if (!isVisible || mediaItems.length === 0) {
     return (
@@ -499,45 +538,6 @@ export function VerticalGalleryView({
       </div>
 
       {/* 툴바 호버 핸들러 - 프로덕션 빌드 호환성을 위한 JavaScript 백업 */}
-      <div>
-        {useEffect(() => {
-          const hoverZone = toolbarHoverZoneRef.current;
-          const toolbarWrapper = toolbarWrapperRef.current;
-
-          if (!hoverZone || !toolbarWrapper) return;
-
-          const showToolbar = () => {
-            toolbarWrapper.style.opacity = '1';
-            toolbarWrapper.style.transform = 'translateY(0)';
-            toolbarWrapper.style.pointerEvents = 'auto';
-            toolbarWrapper.style.setProperty('--toolbar-opacity', '1');
-            toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'auto');
-          };
-
-          const hideToolbar = () => {
-            if (!initialToolbarVisible) {
-              toolbarWrapper.style.opacity = '0';
-              toolbarWrapper.style.transform = 'translateY(-100%)';
-              toolbarWrapper.style.pointerEvents = 'auto'; // 툴바 자체는 항상 클릭 가능
-              toolbarWrapper.style.setProperty('--toolbar-opacity', '0');
-              toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'none');
-            }
-          };
-
-          // 호버 이벤트 핸들러
-          hoverZone.addEventListener('mouseenter', showToolbar);
-          hoverZone.addEventListener('mouseleave', hideToolbar);
-          toolbarWrapper.addEventListener('mouseenter', showToolbar);
-          toolbarWrapper.addEventListener('mouseleave', hideToolbar);
-
-          return () => {
-            hoverZone.removeEventListener('mouseenter', showToolbar);
-            hoverZone.removeEventListener('mouseleave', hideToolbar);
-            toolbarWrapper.removeEventListener('mouseenter', showToolbar);
-            toolbarWrapper.removeEventListener('mouseleave', hideToolbar);
-          };
-        }, [initialToolbarVisible])}
-      </div>
     </div>
   );
 }
