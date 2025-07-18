@@ -4,10 +4,10 @@
 
 현재 다음 버전에 보안 업데이트가 제공됩니다:
 
-| 버전    | 지원 여부          |
-| ------- | ------------------ |
-| 0.1.x   | ✅ 지원            |
-| < 0.1.0 | ❌ 지원 종료       |
+| 버전    | 지원 여부    |
+| ------- | ------------ |
+| 0.1.x   | ✅ 지원      |
+| < 0.1.0 | ❌ 지원 종료 |
 
 ## 🚨 취약점 보고
 
@@ -15,11 +15,13 @@ X.com Enhanced Gallery에서 보안 취약점을 발견한 경우:
 
 ### 1️⃣ GitHub Security Advisories (권장)
 
-[Security Advisories](https://github.com/PiesP/xcom-enhanced-gallery/security/advisories)에서 새로운 보안 권고를 생성해주세요.
+[Security Advisories](https://github.com/PiesP/xcom-enhanced-gallery/security/advisories)에서
+새로운 보안 권고를 생성해주세요.
 
 ### 2️⃣ 이메일 보고
 
-심각한 취약점의 경우, 공개 이슈 생성 대신 프로젝트 유지 관리자에게 직접 연락해주세요.
+심각한 취약점의 경우, 공개 이슈 생성 대신 프로젝트 유지 관리자에게 직접
+연락해주세요.
 
 ## 📝 보고서 포함 정보
 
@@ -74,6 +76,8 @@ X.com Enhanced Gallery에서 보안 취약점을 발견한 경우:
 
 ---
 
-**📞 보안 관련 문의**: [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues) 또는 [Security Advisories](https://github.com/PiesP/xcom-enhanced-gallery/security/advisories)
+**📞 보안 관련 문의**:
+[GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues) 또는
+[Security Advisories](https://github.com/PiesP/xcom-enhanced-gallery/security/advisories)
 
 보안 관련 통신을 위한 PGP 키가 필요한 경우, 유지 관리자에게 이메일로 요청하세요.

@@ -33,7 +33,7 @@ jobs:
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
       current_version: ${{ steps.check.outputs.current_version }}
-      
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -44,13 +44,13 @@ jobs:
         id: check
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          
+
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "should_release=true" >> $GITHUB_OUTPUT
             echo "Manual release triggered"
           else
             PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync(0)).version")
-            
+
             if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
               echo "should_release=true" >> $GITHUB_OUTPUT
               echo "✅ Version changed: $PREV_VERSION → $CURRENT_VERSION"
@@ -59,7 +59,7 @@ jobs:
               echo "⏭️ No version change detected"
             fi
           fi
-          
+
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
   build-and-release:
@@ -92,13 +92,13 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           echo "🔄 Bumping version (${{ inputs.version_type }})..."
           npm version ${{ inputs.version_type }} --no-git-tag-version
-          
+
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "✅ Version bumped to: $NEW_VERSION"
-          
+
           git add package.json
           git commit -m "chore: bump version to $NEW_VERSION"
           git push
@@ -119,29 +119,29 @@ jobs:
         run: |
           echo "📦 Preparing release files..."
           mkdir -p release
-          
+
           # Copy userscript
           cp dist/xcom-enhanced-gallery.user.js release/
-          
+
           # Create release notes
           cat > release/RELEASE_NOTES.md << EOF
           # 🚀 Release v${{ steps.version.outputs.version }}
-          
+
           ## 📥 Installation
-          
+
           **[📥 Click here to install userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
-          
+
           ## 📋 What's Changed
-          
+
           - Built from commit: \`${{ github.sha }}\`
           - Release date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          
+
           ## 🔧 Technical Details
-          
+
           - Version: \`${{ steps.version.outputs.version }}\`
           - Node.js: \`${{ env.NODE_VERSION }}\`
           - Build: Production optimized
-          
+
           EOF
 
       - name: 🏷️ Create Release
