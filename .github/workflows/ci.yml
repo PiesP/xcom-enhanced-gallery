@@ -1,39 +1,55 @@
-name: CI Pipeline
+name: 🔍 CI Pipeline
 
 on:
   push:
-    branches: [master, develop, feature/*]
+    branches: [master, develop, feature/*, fix/*, chore/*]
   pull_request:
     branches: [master, develop]
   workflow_dispatch:
 
 env:
   NODE_VERSION: "20"
+  
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
-    name: Code Quality & Build Test
+    name: 🧪 Code Quality & Build Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🚀 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit
 
-      - name: Quality Check
-        run: npm run quality
+      - name: 🔍 Quality checks
+        run: |
+          echo "🧪 Running comprehensive quality checks..."
+          npm run quality
 
-      - name: Build Test (Development)
-        run: npm run build:dev
+      - name: 🏗️ Test builds
+        run: |
+          echo "🔨 Testing development build..."
+          npm run build:dev
+          
+          echo "🚀 Testing production build..."
+          npm run build:prod
 
-      - name: Build Test (Production)
-        run: npm run build:prod
+      - name: 📊 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: build-artifacts-${{ github.sha }}
+          path: dist/
+          retention-days: 7

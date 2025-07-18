@@ -1,5 +1,29 @@
 # X.com Enhanced Gallery CODEOWNERS
-# 이 파일은 PR에 자동으로 리뷰어를 지정합니다.
+# 코드 리뷰 및 승인 권한 관리
 
-# 전체 프로젝트 소유자
-*       @PiesP
+# 전체 프로젝트
+*                           @PiesP
+
+# 핵심 설정 파일
+package.json                @PiesP
+tsconfig.json              @PiesP
+vite.config.ts             @PiesP
+eslint.config.js           @PiesP
+
+# GitHub 워크플로우
+.github/workflows/         @PiesP
+.github/                   @PiesP
+
+# 문서
+docs/                      @PiesP
+README.md                  @PiesP
+CONTRIBUTING.md            @PiesP
+
+# 소스 코드 - 중요 디렉토리
+src/app/                   @PiesP
+src/core/                  @PiesP
+src/infrastructure/        @PiesP
+
+# 보안 관련
+SECURITY.md                @PiesP
+.github/workflows/security.yml @PiesP

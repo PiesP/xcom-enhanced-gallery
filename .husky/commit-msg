@@ -1,14 +1,21 @@
 #!/usr/bin/env sh
 
-# ============================================================================
-# Git Commit Message Validation Hook
-# ============================================================================
+# =============================================================================
+# Commit Message Validation Hook for X.com Enhanced Gallery
+# =============================================================================
 # Validates commit messages against conventional commit standards
-# Format: type(scope): description
-# ============================================================================
+# =============================================================================
 
 echo "📝 Validating commit message..."
 
-npx --no -- commitlint --edit $1 --config commitlint.config.cjs
+npx --no -- commitlint --edit $1 --config commitlint.config.cjs || {
+  echo "❌ Commit message validation failed"
+  echo "💡 Use format: type(scope): description"
+  echo "   Examples:"
+  echo "   - feat: add new gallery feature"
+  echo "   - fix: resolve download issue"
+  echo "   - docs: update README"
+  exit 1
+}
 
-echo "✅ Commit message validation complete!"
+echo "✅ Commit message validation passed!"

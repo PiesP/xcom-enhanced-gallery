@@ -1,4 +1,4 @@
-name: Security Audit
+name: 🔒 Security Audit
 
 on:
   push:
@@ -8,30 +8,54 @@ on:
     branches: [master]
     paths: ["package.json", "package-lock.json"]
   schedule:
-    - cron: "0 3 * * 1" # Weekly on Monday at 3 AM
+    - cron: "0 2 * * 1" # Weekly on Monday at 2 AM UTC
   workflow_dispatch:
 
 env:
   NODE_VERSION: "20"
 
 jobs:
-  audit:
-    name: Security Audit
+  security-audit:
+    name: 🔍 Security Audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🚀 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: Audit dependencies
-        run: npm audit --audit-level=moderate
+      - name: 🔒 Run npm audit
+        run: |
+          echo "🔍 Running security audit..."
+          npm audit --audit-level=moderate --production
 
-      - name: Check for outdated packages
-        run: npm outdated || true
+      - name: 📊 Check for outdated packages
+        run: |
+          echo "📊 Checking for outdated packages..."
+          npm outdated || true
+
+      - name: 🔍 License compliance check
+        run: |
+          echo "⚖️ Checking license compliance..."
+          npx license-checker --summary --production --excludePrivatePackages
+
+  dependency-review:
+    name: 📋 Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔍 Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          allow-licenses: MIT, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0

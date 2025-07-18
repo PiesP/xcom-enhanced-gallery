@@ -3,17 +3,16 @@
 # =============================================================================
 # Pre-push Hook for X.com Enhanced Gallery
 # =============================================================================
-#
 # Ensures code quality and stability before pushing to remote repositories.
-# Prevents broken code from being pushed to shared branches.
-#
-# Workflow: Runs comprehensive quality check including tests
-#
 # =============================================================================
 
-echo "🧪 Pre-push testing..."
+echo "🧪 Pre-push validation starting..."
 
-# Run comprehensive quality check including tests
-npm run quality || exit 1
+# Run comprehensive quality check
+echo "🔍 Running quality checks..."
+npm run quality || {
+  echo "❌ Quality check failed"
+  exit 1
+}
 
-echo "✅ Pre-push validation complete!"
+echo "✅ Pre-push validation completed successfully!"

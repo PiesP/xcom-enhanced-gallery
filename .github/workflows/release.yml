@@ -1,4 +1,4 @@
-name: Release
+name: 🚀 Release
 
 on:
   push:
@@ -22,102 +22,144 @@ on:
 env:
   NODE_VERSION: "20"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   check-changes:
-    name: Check for Version Changes
+    name: 🔍 Check Version Changes
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
       current_version: ${{ steps.check.outputs.current_version }}
+      
     steps:
-      - name: Checkout
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Check version changes
+      - name: 🔍 Check version changes
         id: check
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync(0)).version")
-
+          
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "Manual release triggered"
+          else
+            PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync(0)).version")
+            
+            if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "✅ Version changed: $PREV_VERSION → $CURRENT_VERSION"
+            else
+              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "⏭️ No version change detected"
+            fi
+          fi
+          
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
-          if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
-            echo "should_release=true" >> $GITHUB_OUTPUT
-            echo "Version changed from $PREV_VERSION to $CURRENT_VERSION"
-          else
-            echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "No version change detected"
-          fi
-
   build-and-release:
-    name: Build and Release
+    name: 🏗️ Build and Release
     runs-on: ubuntu-latest
     needs: check-changes
-    if: needs.check-changes.outputs.should_release == 'true' || github.event_name == 'workflow_dispatch'
+    if: needs.check-changes.outputs.should_release == 'true'
     timeout-minutes: 15
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js
+      - name: 🚀 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: Install dependencies
-        run: npm ci
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit
 
-      - name: Quality check
+      - name: 🧪 Quality checks
         run: npm run quality
 
-      - name: Bump version (if manual dispatch)
+      - name: 📈 Bump version (if manual)
         if: github.event_name == 'workflow_dispatch'
         run: |
-          npm version ${{ inputs.version_type }} --no-git-tag-version
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          
+          echo "🔄 Bumping version (${{ inputs.version_type }})..."
+          npm version ${{ inputs.version_type }} --no-git-tag-version
+          
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "✅ Version bumped to: $NEW_VERSION"
+          
           git add package.json
-          git commit -m "chore: bump version to $(node -p "require('./package.json').version")"
+          git commit -m "chore: bump version to $NEW_VERSION"
           git push
 
-      - name: Get version
+      - name: 📝 Get final version
         id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
-      - name: Build production
-        run: npm run build:prod
-
-      - name: Create release files
         run: |
-          mkdir -p release
-          cp dist/xcom-enhanced-gallery.user.js release/
-          echo "## Release v${{ steps.version.outputs.version }}" > release/RELEASE_NOTES.md
-          echo "" >> release/RELEASE_NOTES.md
-          echo "### Changes" >> release/RELEASE_NOTES.md
-          echo "- Built from commit: ${{ github.sha }}" >> release/RELEASE_NOTES.md
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Release version: $VERSION"
 
-      - name: Create Release
-        uses: actions/create-release@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 🏗️ Build production
+        run: |
+          echo "🚀 Building production version..."
+          npm run build:prod
+
+      - name: 📦 Create release package
+        run: |
+          echo "📦 Preparing release files..."
+          mkdir -p release
+          
+          # Copy userscript
+          cp dist/xcom-enhanced-gallery.user.js release/
+          
+          # Create release notes
+          cat > release/RELEASE_NOTES.md << EOF
+          # 🚀 Release v${{ steps.version.outputs.version }}
+          
+          ## 📥 Installation
+          
+          **[📥 Click here to install userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
+          
+          ## 📋 What's Changed
+          
+          - Built from commit: \`${{ github.sha }}\`
+          - Release date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          
+          ## 🔧 Technical Details
+          
+          - Version: \`${{ steps.version.outputs.version }}\`
+          - Node.js: \`${{ env.NODE_VERSION }}\`
+          - Build: Production optimized
+          
+          EOF
+
+      - name: 🏷️ Create Release
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release v${{ steps.version.outputs.version }}
+          name: 🚀 Release v${{ steps.version.outputs.version }}
           body_path: release/RELEASE_NOTES.md
+          files: |
+            release/xcom-enhanced-gallery.user.js
           draft: false
           prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release/xcom-enhanced-gallery.user.js
-          asset_name: xcom-enhanced-gallery.user.js
-          asset_content_type: application/javascript
+          name: release-v${{ steps.version.outputs.version }}
+          path: release/
+          retention-days: 30
