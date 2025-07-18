@@ -233,7 +233,7 @@
     --toolbar-opacity: 1;
     --toolbar-pointer-events: auto;
   }
-  
+
   /* 추가 대안: 일반 형제 선택자 사용 */
   .toolbarHoverZone:hover ~ .toolbarWrapper {
     opacity: 1 !important;
@@ -242,7 +242,7 @@
     --toolbar-opacity: 1;
     --toolbar-pointer-events: auto;
   }
-  
+
   /* 더 견고한 대안: 부모 호버 */
   .container:hover .toolbarWrapper {
     opacity: 1 !important;
