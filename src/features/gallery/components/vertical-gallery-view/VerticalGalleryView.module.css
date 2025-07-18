@@ -91,13 +91,16 @@
 
   /* 갤러리 내부 스크롤만 허용 */
 
-  /* 툴바 표시 상태 제어를 위한 CSS 변수 (통합된 버전) */
-  --toolbar-visible: 0; /* 0 = 숨김, 1 = 표시 */
+  /* 프로덕션 빌드 호환성을 위해 CSS 커스텀 프로퍼티 제거 */
 }
 
 /* 초기 툴바 표시 상태 (3초간) */
-.container.initialToolbarVisible {
-  --toolbar-visible: 1;
+.container.initialToolbarVisible .toolbarWrapper {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
 }
 
 /* UI 숨김 상태 - 스크롤 이벤트는 유지하되 시각적 요소만 숨김 */
@@ -157,12 +160,13 @@
   height: 100px; /* 상단 100px만 호버 감지 */
   z-index: calc(var(--xeg-toolbar-z-index) - 1); /* 툴바보다 낮은 z-index */
   background: transparent;
-  pointer-events: none; /* 기본적으로 이벤트 차단하지 않음 */
+  pointer-events: auto; /* 호버 감지를 위해 이벤트 허용 */
 }
 
-/* 호버 감지만을 위한 영역 - 클릭 이벤트는 항상 차단 */
+/* 호버 감지를 위한 기본 스타일 - 프로덕션 빌드 호환성 개선 */
 .toolbarHoverZone:hover {
-  pointer-events: none;
+  /* 호버 상태 표시를 위한 더미 속성 */
+  z-index: calc(var(--xeg-toolbar-z-index) - 1);
 }
 
 /* 툴바가 표시된 상태에서는 호버 영역 완전히 비활성화 */
@@ -187,9 +191,9 @@
   height: auto;
   z-index: var(--xeg-toolbar-z-index);
 
-  /* 기본 상태: 숨김 */
-  opacity: calc(var(--toolbar-visible, 0));
-  transform: translateY(calc(-100% * (1 - var(--toolbar-visible, 0))));
+  /* 기본 상태: 숨김 - calc() 제거하여 프로덕션 빌드 호환성 개선 */
+  opacity: 0;
+  transform: translateY(-100%);
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
     transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
@@ -209,32 +213,64 @@
 }
 
 /* 호버 시 부모 컨테이너에 CSS 변수 설정 */
-.container:has(.toolbarHoverZone:hover),
-.container.initialToolbarVisible {
+.container:has(.toolbarHoverZone:hover) .toolbarWrapper,
+.container.initialToolbarVisible .toolbarWrapper {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  /* 하위 툴바 컴포넌트를 위한 CSS 변수 설정 */
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
 }
 
-/* :has() 지원하지 않는 브라우저를 위한 대안 */
+/* :has() 지원하지 않는 브라우저를 위한 대안 - 프로덕션 빌드 호환성 개선 */
 @supports not (selector(:has(*))) {
   /* 호버 트리거 영역 호버 시 직접 형제 요소인 툴바 래퍼에 적용 */
   .toolbarHoverZone:hover + .toolbarWrapper {
     opacity: 1 !important;
     transform: translateY(0) !important;
     pointer-events: auto !important;
+    --toolbar-opacity: 1;
+    --toolbar-pointer-events: auto;
+  }
+  
+  /* 추가 대안: 일반 형제 선택자 사용 */
+  .toolbarHoverZone:hover ~ .toolbarWrapper {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+    --toolbar-opacity: 1;
+    --toolbar-pointer-events: auto;
+  }
+  
+  /* 더 견고한 대안: 부모 호버 */
+  .container:hover .toolbarWrapper {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+    --toolbar-opacity: 1;
+    --toolbar-pointer-events: auto;
   }
 }
 
 /* 툴바 자체 호버 시에도 표시 유지 */
 .toolbarWrapper:hover {
-  --toolbar-visible: 1;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
 }
 
 /* 표시 상태일 때 툴바 위치 */
 .container:has(.toolbarHoverZone:hover) .toolbarWrapper,
 .container.initialToolbarVisible .toolbarWrapper,
 .toolbarWrapper:hover {
-  --toolbar-visible: 1;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
 }
 
 /* 접근성: 포커스 시에도 툴바 표시 */
@@ -242,6 +278,8 @@
   opacity: 1 !important;
   transform: translateY(0) !important;
   pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
 }
 
 /* 툴바 내부 모든 요소 클릭 보장 */
@@ -529,21 +567,21 @@
   background: transparent;
 }
 
-/* 초기 툴바 표시 (3초간) */
-.container.initialToolbarVisible {
-  --toolbar-visible: 1;
-}
+/* 초기 툴바 표시 (3초간) - 이미 위에서 정의됨, 중복 제거 */
 
 /* 호버 트리거 영역에 마우스가 올라갔을 때 툴바 표시 */
-.toolbarHoverTrigger:hover + * {
-  --toolbar-visible: 1;
+.toolbarHoverTrigger:hover + .toolbarWrapper {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
 }
 
 /* 브라우저가 :has를 지원하지 않는 경우 대체 */
-@supports not selector(:has(*)) {
+@supports not (selector(:has(*))) {
   .toolbarHoverTrigger:hover {
-    /* JavaScript에서 처리할 수 있도록 커스텀 프로퍼티 설정 */
-    --trigger-hover: 1;
+    /* JavaScript에서 처리할 수 있도록 표시 */
   }
 }
 

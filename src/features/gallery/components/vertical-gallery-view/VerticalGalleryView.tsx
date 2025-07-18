@@ -76,6 +76,8 @@ export function VerticalGalleryView({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const toolbarHoverZoneRef = useRef<HTMLDivElement>(null);
+  const toolbarWrapperRef = useRef<HTMLDivElement>(null);
 
   // 단순화된 가시성 상태 관리
   const [isVisible, setIsVisible] = useState(mediaItems.length > 0);
@@ -447,10 +449,10 @@ export function VerticalGalleryView({
       data-xeg-role='gallery'
     >
       {/* 툴바 호버 트리거 영역 (브라우저 상단 100px) */}
-      <div className={styles.toolbarHoverZone} />
+      <div className={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
 
       {/* 툴바 래퍼 - 순수 CSS 호버로 제어됨 */}
-      <div className={styles.toolbarWrapper}>
+      <div className={styles.toolbarWrapper} ref={toolbarWrapperRef}>
         <Toolbar
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
@@ -494,6 +496,47 @@ export function VerticalGalleryView({
         {toasts.map(toast => (
           <Toast key={toast.id} toast={toast} onRemove={() => removeToast(toast.id)} />
         ))}
+      </div>
+
+      {/* 툴바 호버 핸들러 - 프로덕션 빌드 호환성을 위한 JavaScript 백업 */}
+      <div>
+        {useEffect(() => {
+          const hoverZone = toolbarHoverZoneRef.current;
+          const toolbarWrapper = toolbarWrapperRef.current;
+
+          if (!hoverZone || !toolbarWrapper) return;
+
+          const showToolbar = () => {
+            toolbarWrapper.style.opacity = '1';
+            toolbarWrapper.style.transform = 'translateY(0)';
+            toolbarWrapper.style.pointerEvents = 'auto';
+            toolbarWrapper.style.setProperty('--toolbar-opacity', '1');
+            toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'auto');
+          };
+
+          const hideToolbar = () => {
+            if (!initialToolbarVisible) {
+              toolbarWrapper.style.opacity = '0';
+              toolbarWrapper.style.transform = 'translateY(-100%)';
+              toolbarWrapper.style.pointerEvents = 'auto'; // 툴바 자체는 항상 클릭 가능
+              toolbarWrapper.style.setProperty('--toolbar-opacity', '0');
+              toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'none');
+            }
+          };
+
+          // 호버 이벤트 핸들러
+          hoverZone.addEventListener('mouseenter', showToolbar);
+          hoverZone.addEventListener('mouseleave', hideToolbar);
+          toolbarWrapper.addEventListener('mouseenter', showToolbar);
+          toolbarWrapper.addEventListener('mouseleave', hideToolbar);
+
+          return () => {
+            hoverZone.removeEventListener('mouseenter', showToolbar);
+            hoverZone.removeEventListener('mouseleave', hideToolbar);
+            toolbarWrapper.removeEventListener('mouseenter', showToolbar);
+            toolbarWrapper.removeEventListener('mouseleave', hideToolbar);
+          };
+        }, [initialToolbarVisible])}
       </div>
     </div>
   );

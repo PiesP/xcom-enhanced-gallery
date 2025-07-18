@@ -53,7 +53,8 @@ X.com(트위터)에서 트윗의 모든 이미지와 동영상을 **고화질 �
 
 _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 나타납니다_
 
-**📦 [최신 릴리스 페이지 보기](https://github.com/PiesP/xcom-enhanced-gallery/releases)**
+**📦
+[최신 릴리스 페이지 보기](https://github.com/PiesP/xcom-enhanced-gallery/releases)**
 
 </div>
 

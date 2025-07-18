@@ -211,7 +211,6 @@
         "src/features/media/extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
         "src/infrastructure/browser/BrowserManager.ts",
         "src/infrastructure/browser/BrowserUtils.ts",
-        "src/infrastructure/external/vendors/index.ts",
         "src/infrastructure/logging/index.ts",
         "src/main.ts",
         "src/shared/components/GalleryViewer.tsx",
@@ -6792,14 +6791,32 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../logging/logger",
+          "module": "./vendor-api",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "export"
           ],
-          "resolved": "src/infrastructure/logging/logger.ts",
+          "resolved": "src/infrastructure/external/vendors/vendor-api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/infrastructure/external/vendors/vendor-manager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6813,6 +6830,69 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/infrastructure/external/vendors/vendor-api.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendor-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/external/vendors/vendor-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/infrastructure/external/vendors/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/external/vendors/vendor-manager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/external/vendors/index.ts",
+        "src/infrastructure/external/vendors/vendor-api.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/external/vendors/vendor-getters.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/infrastructure/external/vendors/vendor-types.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/infrastructure/external/zip/index.ts",
@@ -9351,10 +9431,50 @@
     },
     {
       "source": "src/shared/styles/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./theme-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/styles/theme-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/styles/theme-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/styles/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/styles/style-utils.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": true
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/styling/index.ts",
@@ -9699,13 +9819,41 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/infrastructure/external/vendors/vendor-getters.ts",
+        "to": "src/infrastructure/external/vendors/vendor-getters.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/infrastructure/external/vendors/vendor-types.ts",
+        "to": "src/infrastructure/external/vendors/vendor-types.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/styles/style-utils.ts",
+        "to": "src/shared/styles/style-utils.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 3,
     "ignore": 0,
-    "totalCruised": 241,
-    "totalDependenciesCruised": 418,
+    "totalCruised": 247,
+    "totalDependenciesCruised": 421,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
