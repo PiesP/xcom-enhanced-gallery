@@ -91,53 +91,6 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 | `Escape`     | 갤러리 닫기           |
 | `F`          | 전체화면 토글         |
 
-## 🔧 문제 해결
-
-### 자주 묻는 질문 (FAQ)
-
-<details>
-<summary><strong>Q: 갤러리가 열리지 않아요</strong></summary>
-
-**해결 방법**:
-
-1. 유저스크립트 매니저가 활성화되어 있는지 확인
-2. 스크립트가 x.com 도메인에서 실행되도록 설정되어 있는지 확인
-3. 브라우저를 새로고침 후 다시 시도
-
-</details>
-
-<details>
-<summary><strong>Q: 다운로드가 작동하지 않아요</strong></summary>
-
-**해결 방법**:
-
-1. 브라우저의 팝업 차단 해제
-2. 다운로드 폴더에 쓰기 권한이 있는지 확인
-3. 브라우저의 파일 다운로드 설정 확인
-
-</details>
-
-<details>
-<summary><strong>Q: 이미지 화질이 낮아요</strong></summary>
-
-**해결 방법**:
-
-1. 스크립트가 최신 버전인지 확인
-2. 네트워크 연결 상태 확인
-3. 트위터 서버의 원본 이미지 가용성 확인
-
-</details>
-
-### 기술적 지원
-
-문제가 지속되면 다음 정보와 함께
-[이슈를 등록](https://github.com/PiesP/xcom-enhanced-gallery/issues)해 주세요:
-
-- 브라우저 종류 및 버전
-- 유저스크립트 매니저 종류 및 버전
-- 발생한 오류 메시지
-- 재현 단계
-
 ## 📄 라이센스
 
 이 프로젝트는 [MIT 라이센스](LICENSE) 하에 배포됩니다.
@@ -169,6 +122,6 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 **🌟 이 프로젝트가 유용하다면 Star를 눌러주세요! 🌟**
 
-Made with ❤️ by X.com Enhanced Gallery Team
+Made with GitHub Copilot by PiesP
 
 </div>
