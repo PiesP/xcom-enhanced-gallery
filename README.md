@@ -3,7 +3,7 @@
 > **Twitter(X)에서 이미지와 동영상을 고화질로 다운로드하고 편리하게 탐색하는
 > 브라우저 확장**
 
-[![설치하기](https://img.shields.io/badge/설치하기-클릭-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/raw/master/dist/xcom-enhanced-gallery.user.js)
+[![설치하기](https://img.shields.io/badge/설치하기-클릭-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
 [![Userscript](https://img.shields.io/badge/Userscript-Ready-orange)](https://github.com/OpenUserJS/OpenUserJS.org/wiki/Userscript-Beginners-HOWTO)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Chrome/Edge](https://img.shields.io/badge/Chrome%2FEdge-지원-4285F4)](https://www.google.com/chrome/)
@@ -49,9 +49,11 @@ X.com(트위터)에서 트윗의 모든 이미지와 동영상을 **고화질 �
 
 <div align="center">
 
-### 🔗 **[여기를 클릭하여 설치하기](https://github.com/PiesP/xcom-enhanced-gallery/raw/master/dist/xcom-enhanced-gallery.user.js)**
+### 🔗 **[여기를 클릭하여 설치하기](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)**
 
 _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 나타납니다_
+
+**📦 [최신 릴리스 페이지 보기](https://github.com/PiesP/xcom-enhanced-gallery/releases)**
 
 </div>
 
