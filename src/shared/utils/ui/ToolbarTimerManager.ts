@@ -50,7 +50,7 @@ export class ToolbarTimerManager {
    * @param delay - 지연 시간 (밀리초)
    * @param reason - 타이머 설정 이유
    */
-  public setAutoHideTimer(delay: number = 3000, reason: string = 'auto'): void {
+  public setAutoHideTimer(delay: number = 1500, reason: string = 'auto'): void {
     if (delay < 0) {
       logger.warn('Invalid delay provided for auto-hide timer', { delay, reason });
       return;

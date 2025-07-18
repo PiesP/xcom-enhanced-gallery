@@ -85,13 +85,13 @@ export function VerticalGalleryView({
   // 초기 툴바 표시 상태 (3초간)
   const [initialToolbarVisible, setInitialToolbarVisible] = useState(true);
 
-  // 초기 툴바 표시 타이머 설정
+  // 초기 툴바 표시 타이머 설정 (1.5초로 단축)
   useEffect(() => {
     if (isVisible && initialToolbarVisible) {
       const timer = setTimeout(() => {
         setInitialToolbarVisible(false);
-        logger.debug('VerticalGalleryView: 초기 툴바 표시 종료 (3초 경과)');
-      }, 3000);
+        logger.debug('VerticalGalleryView: 초기 툴바 표시 종료 (1.5초 경과)');
+      }, 1500);
 
       return () => clearTimeout(timer);
     }

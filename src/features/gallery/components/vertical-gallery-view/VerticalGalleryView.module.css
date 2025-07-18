@@ -27,14 +27,15 @@
   --xeg-gallery-z-index: var(--xeg-z-gallery, 10000);
   --xeg-toolbar-z-index: var(--xeg-z-modal, 10001);
 
-  /* 트랜지션 - 새로운 애니메이션 토큰 사용 */
+  /* 트랜지션 - 더 빠르고 부드러운 애니메이션 */
   --xeg-transition-fast:
     transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
     opacity var(--xeg-duration-fast) var(--xeg-easing-easeOut);
   --xeg-transition-normal:
-    transform var(--xeg-duration-normal) var(--xeg-easing-easeInOut),
-    opacity var(--xeg-duration-normal) var(--xeg-easing-easeInOut);
+    transform 250ms var(--xeg-easing-easeInOut), opacity 250ms var(--xeg-easing-easeInOut);
   --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-easeOut);
+  --xeg-transition-toolbar:
+    opacity 200ms var(--xeg-easing-easeOut), transform 200ms var(--xeg-easing-easeOut);
 
   /* 스페이싱 - 새로운 간격 토큰 사용 */
   --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
@@ -151,13 +152,13 @@
   pointer-events: auto;
 }
 
-/* 독립적인 상단 호버 감지 영역 */
+/* 독립적인 상단 호버 감지 영역 - 확장된 감지 영역 */
 .toolbarHoverZone {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 100px; /* 상단 100px만 호버 감지 */
+  height: 120px; /* 상단 120px로 확장하여 사용성 향상 */
   z-index: calc(var(--xeg-toolbar-z-index) - 1); /* 툴바보다 낮은 z-index */
   background: transparent;
   pointer-events: auto; /* 호버 감지를 위해 이벤트 허용 */
@@ -182,7 +183,7 @@
   }
 }
 
-/* 툴바 래퍼 - 기본 숨김 상태 */
+/* 툴바 래퍼 - 기본 숨김 상태 및 개선된 트랜지션 */
 .toolbarWrapper {
   position: fixed;
   top: 0;
@@ -191,12 +192,10 @@
   height: auto;
   z-index: var(--xeg-toolbar-z-index);
 
-  /* 기본 상태: 숨김 - calc() 제거하여 프로덕션 빌드 호환성 개선 */
+  /* 기본 상태: 숨김 - 최적화된 트랜지션 */
   opacity: 0;
   transform: translateY(-100%);
-  transition:
-    opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
-    transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+  transition: var(--xeg-transition-toolbar);
   will-change: transform, opacity;
   contain: layout style;
   /* 툴바 자체는 항상 클릭 가능하도록 설정 */
@@ -273,13 +272,15 @@
   --toolbar-pointer-events: auto;
 }
 
-/* 접근성: 포커스 시에도 툴바 표시 */
+/* 접근성: 포커스 시에도 툴바 표시 - 더 강력한 보장 */
 .toolbarWrapper:focus-within {
   opacity: 1 !important;
   transform: translateY(0) !important;
   pointer-events: auto !important;
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
+  /* 포커스 시에는 더 빠른 트랜지션 */
+  transition: var(--xeg-transition-fast);
 }
 
 /* 툴바 내부 모든 요소 클릭 보장 */
@@ -528,24 +529,42 @@
   pointer-events: auto;
 }
 
-/* 감소된 모션 사용자를 위한 지원 */
+/* 감소된 모션 사용자를 위한 지원 - 개선된 접근성 */
 @media (prefers-reduced-motion: reduce) {
   .toolbarWrapper {
-    transition: opacity 0.1s ease;
+    transition: opacity 150ms ease;
     transform: translateY(-100%); /* Y축 이동만 제거 */
   }
 
   .toolbarWrapper:hover,
   .toolbarWrapper:focus-within {
     transform: translateY(0); /* 단순한 Y축 이동만 */
+    transition: opacity 100ms ease; /* 더 빠른 응답 */
+  }
+
+  /* 컨테이너 레벨에서도 모션 감소 */
+  .container {
+    transition: opacity 200ms ease;
+  }
+
+  /* 모든 애니메이션 제거 */
+  .fadeInOut {
+    animation: none;
   }
 }
 
-/* 고대비 모드 지원 */
+/* 고대비 모드 지원 - 향상된 가시성 */
 @media (prefers-contrast: high) {
   .toolbarWrapper {
     background: rgba(0, 0, 0, 0.95);
-    border: 1px solid white;
+    border: 2px solid white;
+    border-radius: 4px;
+    margin: 4px;
+  }
+
+  /* 고대비 모드에서 호버 영역 시각화 */
+  .toolbarHoverZone:hover {
+    background: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -561,13 +580,11 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 100px; /* 브라우저 상단 100px 영역 */
+  height: 120px; /* 확장된 호버 영역 */
   z-index: calc(var(--xeg-toolbar-z-index) - 1);
   pointer-events: auto;
   background: transparent;
 }
-
-/* 초기 툴바 표시 (3초간) - 이미 위에서 정의됨, 중복 제거 */
 
 /* 호버 트리거 영역에 마우스가 올라갔을 때 툴바 표시 */
 .toolbarHoverTrigger:hover + .toolbarWrapper {
@@ -576,13 +593,6 @@
   pointer-events: auto;
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
-}
-
-/* 브라우저가 :has를 지원하지 않는 경우 대체 */
-@supports not (selector(:has(*))) {
-  .toolbarHoverTrigger:hover {
-    /* JavaScript에서 처리할 수 있도록 표시 */
-  }
 }
 
 /* 툴바 자체 호버 시에도 표시 유지 */
