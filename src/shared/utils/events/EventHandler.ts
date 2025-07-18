@@ -6,7 +6,7 @@
  * 일관성 있는 이벤트 처리를 보장합니다.
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 import { GalleryStateGuard } from '../gallery/GalleryStateGuard';
 import { MediaClickDetector } from '../media/MediaClickDetector';
 import { shouldBlockGalleryForVideo } from '../../constants/video-controls';

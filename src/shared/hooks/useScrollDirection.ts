@@ -6,7 +6,7 @@
  */
 
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 
 /**
  * 스크롤 방향 타입

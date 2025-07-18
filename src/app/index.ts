@@ -9,4 +9,3 @@ export type {
   ServiceState,
 } from './types';
 export type { AppLifecycleState, LifecycleConfig } from './Application';
-export * from './coordinators';

@@ -20,7 +20,7 @@
       };Architecture
  */
 
-import { logger } from '../../../../infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 import type {
   MediaExtractionResult,
   MediaExtractor,

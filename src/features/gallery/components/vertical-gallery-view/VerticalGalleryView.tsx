@@ -11,14 +11,13 @@
  * - 일관된 사용자 경험 제공
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types/image-fit.types';
 import { galleryState, navigateToItem } from '@core/state/signals/gallery.signals';
 import { getPreactHooks } from '@infrastructure/external/vendors';
 import { stringWithDefault } from '@infrastructure/utils/type-safety-helpers';
-import type { MouseEvent } from 'preact/compat';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
@@ -193,7 +192,7 @@ export function VerticalGalleryView({
 
   // 백그라운드 클릭 핸들러 (갤러리 닫기만 처리)
   const handleBackgroundClick = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+    (event: globalThis.MouseEvent) => {
       // 툴바나 툴바 영역 클릭은 무시
       const target = event.target as HTMLElement;
       if (
@@ -215,7 +214,7 @@ export function VerticalGalleryView({
   );
 
   // 콘텐츠 클릭 핸들러 (이벤트 전파 방지)
-  const handleContentClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+  const handleContentClick = useCallback((event: globalThis.MouseEvent) => {
     event.stopPropagation();
   }, []);
 

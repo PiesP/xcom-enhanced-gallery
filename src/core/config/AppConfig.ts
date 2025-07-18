@@ -6,7 +6,7 @@
  */
 
 import { Singleton } from '@core/patterns/Singleton';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 
 /**
  * 메모리 관련 설정

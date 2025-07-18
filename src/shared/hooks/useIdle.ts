@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
+import { getPreactHooks } from '@infrastructure/external/vendors';
 
 /**
  * 사용자가 지정된 시간 동안 활동이 없으면 유휴 상태로 전환하는 Preact 훅.
@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
  * @returns 현재 유휴 상태인지 여부를 나타내는 boolean 값 (true: 유휴, false: 활성).
  */
 export const useIdle = (timeout: number = 3000): boolean => {
+  const { useState, useEffect, useRef, useCallback } = getPreactHooks();
   const [isIdle, setIsIdle] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
 

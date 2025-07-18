@@ -6,7 +6,7 @@
  * 기본적인 서비스 인스턴스 생성에 집중
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 import type { BaseService, ServiceConfig } from '../ServiceManager';
 
 /**

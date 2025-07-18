@@ -4,7 +4,7 @@
  * Centralized URL pattern matching and extraction logic.
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 import { safeParseInt } from '../../../infrastructure/utils/type-safety-helpers';
 
 /**

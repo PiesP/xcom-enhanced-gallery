@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 import { getFflate } from '@infrastructure/external/vendors';
 import { safeParseInt } from '@infrastructure/utils/type-safety-helpers';
 

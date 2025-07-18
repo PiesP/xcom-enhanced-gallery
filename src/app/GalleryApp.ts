@@ -8,17 +8,14 @@
  * - 상태 관리는 기존 signals 활용
  */
 
-import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
-
 import { SERVICE_KEYS } from '@core/constants';
 import type { GalleryRenderer } from '@core/interfaces/gallery.interfaces';
 import { getService } from '@core/services/ServiceRegistry';
 import { VideoControlService } from '@core/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '../core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
-import type { ManagedExtractionResult } from './coordinators/CoordinatorManager';
-import { CoordinatorManager } from './coordinators/CoordinatorManager';
+import { logger } from '@infrastructure/logging';
+import { GalleryEventCoordinator } from '@shared/utils/events/GalleryEventCoordinator';
 import type { ToastController } from '@core/services/ToastController';
 import { unmountIsolatedGallery } from '@shared/components/isolation/IsolatedGalleryRoot';
 
@@ -37,7 +34,7 @@ export interface GalleryConfig {
  * 갤러리 애플리케이션 - 격리된 시스템
  */
 export class GalleryApp {
-  private readonly coordinatorManager: CoordinatorManager;
+  private readonly eventCoordinator: GalleryEventCoordinator;
   private galleryRenderer: GalleryRenderer | null = null;
   private readonly videoControl = VideoControlService.getInstance();
   private toastController: ToastController | null = null;
@@ -57,15 +54,11 @@ export class GalleryApp {
   constructor(config?: Partial<GalleryConfig>) {
     this.config = { ...this.config, ...config };
 
-    // 코디네이터 매니저 초기화
-    this.coordinatorManager = new CoordinatorManager(
-      removeUndefinedProperties({
-        clickDebounceMs: this.config.clickDebounceMs,
-        extractionTimeout: this.config.extractionTimeout,
-        enableKeyboard: this.config.keyboardShortcuts,
-        enablePerformanceMonitoring: this.config.performanceMonitoring,
-      })
-    );
+    // 이벤트 코디네이터 초기화
+    this.eventCoordinator = GalleryEventCoordinator.getInstance({
+      enableKeyboard: this.config.keyboardShortcuts ?? true,
+      debounceDelay: this.config.clickDebounceMs ?? 500,
+    });
   }
 
   /**
@@ -81,9 +74,9 @@ export class GalleryApp {
       // 갤러리 렌더러 초기화
       await this.initializeRenderer();
 
-      // 코디네이터 매니저 초기화
-      await this.coordinatorManager.initialize({
-        onMediaExtracted: this.handleMediaExtracted.bind(this),
+      // 이벤트 코디네이터 초기화
+      await this.eventCoordinator.initialize({
+        onMediaClick: this.handleMediaClick.bind(this),
         onGalleryClose: this.handleGalleryClose.bind(this),
       });
 
@@ -115,28 +108,20 @@ export class GalleryApp {
   }
 
   /**
-   * 미디어 추출 완료 핸들러
+   * 미디어 클릭 핸들러
    */
-  private async handleMediaExtracted(result: ManagedExtractionResult): Promise<void> {
+  private async handleMediaClick(
+    mediaInfo: MediaInfo,
+    _element: HTMLElement,
+    _event: MouseEvent
+  ): Promise<void> {
     try {
-      logger.info('미디어 추출 완료:', {
-        mediaCount: result.mediaItems.length,
-        source: result.source,
-        duration: `${result.duration.toFixed(2)}ms`,
-      });
+      logger.info('미디어 클릭 처리 시작');
 
-      if (result.success && result.mediaItems.length > 0) {
-        // 갤러리 열기
-        await this.openGallery(result.mediaItems, result.clickedIndex);
-      } else {
-        logger.warn('추출된 미디어가 없음');
-        this.toastController?.warning(
-          '미디어 없음',
-          '이 트윗에서 표시할 미디어를 찾을 수 없습니다.'
-        );
-      }
+      // 간단한 갤러리 열기 - 단일 미디어 아이템
+      await this.openGallery([mediaInfo], 0);
     } catch (error) {
-      logger.error('미디어 추출 결과 처리 실패:', error);
+      logger.error('미디어 클릭 처리 실패:', error);
       this.toastController?.error(
         '로딩 오류',
         '미디어를 불러오는 중 문제가 발생했습니다. 다시 시도해 주세요.'
@@ -149,9 +134,6 @@ export class GalleryApp {
    */
   private handleGalleryClose(): void {
     try {
-      // 추출 상태 정리
-      this.coordinatorManager.clearExtractionState();
-
       // 배경 비디오 상태 복원
       this.videoControl.restoreBackgroundVideos();
 
@@ -241,16 +223,6 @@ export class GalleryApp {
   public updateConfig(newConfig: Partial<GalleryConfig>): void {
     this.config = { ...this.config, ...newConfig };
 
-    // 코디네이터 매니저에 설정 전달
-    this.coordinatorManager.updateConfig(
-      removeUndefinedProperties({
-        clickDebounceMs: this.config.clickDebounceMs,
-        extractionTimeout: this.config.extractionTimeout,
-        enableKeyboard: this.config.keyboardShortcuts,
-        enablePerformanceMonitoring: this.config.performanceMonitoring,
-      })
-    );
-
     logger.debug('갤러리 앱 설정 업데이트됨');
   }
 
@@ -268,7 +240,6 @@ export class GalleryApp {
     return {
       isInitialized: this.isInitialized,
       config: this.config,
-      coordinatorManager: this.coordinatorManager.getDiagnostics(),
       galleryState: {
         isOpen: galleryState.value.isOpen,
         mediaCount: galleryState.value.mediaItems.length,
@@ -286,8 +257,6 @@ export class GalleryApp {
       closeGallery: this.closeGallery.bind(this),
       getDiagnostics: this.getDiagnostics.bind(this),
       getState: () => galleryState.value,
-      getMetrics: () => this.coordinatorManager.getDiagnostics().metrics,
-      clearExtractionState: () => this.coordinatorManager.clearExtractionState(),
     };
 
     logger.debug('갤러리 디버그 API 노출됨: xegGalleryDebug');
@@ -311,8 +280,8 @@ export class GalleryApp {
         this.galleryContainer = null;
       }
 
-      // 코디네이터 매니저 정리
-      await this.coordinatorManager.cleanup();
+      // 이벤트 코디네이터 정리
+      await this.eventCoordinator.cleanup();
 
       // 상태 초기화
       this.galleryRenderer = null;

@@ -4,7 +4,7 @@
  * @version 1.0.0 - Core Layer
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 
 /**
  * 표준화된 Singleton 베이스 클래스

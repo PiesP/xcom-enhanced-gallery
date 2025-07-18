@@ -2,7 +2,7 @@
  * @fileoverview 배경 이미지 백업 전략
  */
 
-import { logger } from '../../../../../infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 import type { TweetInfo, MediaExtractionResult } from '../../interfaces/extraction.interfaces';
 import { BaseFallbackStrategy } from './BaseFallbackStrategy';
 

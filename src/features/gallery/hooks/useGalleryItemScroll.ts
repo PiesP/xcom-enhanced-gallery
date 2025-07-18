@@ -8,7 +8,7 @@
  */
 
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 
 const { useCallback, useEffect, useRef } = getPreactHooks();
 

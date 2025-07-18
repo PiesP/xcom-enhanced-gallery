@@ -4,7 +4,7 @@
  * @description 타이머, 이벤트, 메모리, URL 등 모든 리소스를 통합 관리
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 import type { Cleanupable } from '@infrastructure/types/lifecycle.types';
 
 interface ManagedResource {

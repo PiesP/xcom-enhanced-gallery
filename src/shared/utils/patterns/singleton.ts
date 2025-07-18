@@ -5,7 +5,7 @@
  * Clean Architecture 원칙에 따른 통합된 Singleton 관리
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 
 /**
  * Singleton 인터페이스 정의

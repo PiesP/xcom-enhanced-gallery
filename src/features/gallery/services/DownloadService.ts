@@ -17,7 +17,7 @@ import {
   type DownloadResult,
 } from '@core/services/BulkDownloadService';
 import type { MediaInfo, MediaItem } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 
 // Re-export types for convenience
 export type { DownloadOptions, DownloadProgress, DownloadResult };

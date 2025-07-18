@@ -7,7 +7,7 @@
 import { SERVICE_KEYS } from '../constants';
 import { registerAllServices } from './ServiceRegistry';
 import { ServiceManager } from './ServiceManager';
-import { logger } from '../../infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 
 // Create service manager instance
 const serviceManager = ServiceManager.getInstance();

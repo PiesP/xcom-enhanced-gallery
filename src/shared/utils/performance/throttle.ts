@@ -4,7 +4,7 @@
  * @description RAF 기반 throttle과 기존 throttle을 통합하여 제공
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@infrastructure/logging';
 
 /**
  * RAF 기반 throttle 옵션
