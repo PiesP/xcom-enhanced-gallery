@@ -1,10 +1,12 @@
 /**
- * @fileoverview Infrastructure Managers Barrel Export
- * @version 2.0.0 - 리소스 관리자
- * @description 모든 인프라 관리자들을 export
+ * @fileoverview Infrastructure Managers - Re-export Layer
+ * @version 2.0.0 - Clean Architecture Implementation
+ * @description Infrastructure 레이어에서 Core managers로의 재수출
+ * @migrate Phase 2A Step 5 - Core managers migration
+ * @deprecated Use @core/managers instead
  */
 
-// 리소스 매니저
+// Core managers 재수출
 export {
   ResourceManager,
   resourceManager,
@@ -18,7 +20,16 @@ export {
   releaseResource,
   releaseResourcesByContext,
   cleanupAllResources,
+  type ResourceEntry,
+  type TimerResource,
+  type IntervalResource,
+  type EventResource,
+  type ObserverResource,
+  type ControllerResource,
+  type URLResource,
+  type MemoryResource,
+  type ResourceType,
+  type ResourceContext,
 } from './ResourceManager';
 
-// 격리된 관리자들
 export { NamespacedDesignSystem, namespacedDesignSystem } from './NamespacedDesignSystem';

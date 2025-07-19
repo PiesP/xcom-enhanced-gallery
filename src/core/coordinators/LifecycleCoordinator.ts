@@ -8,7 +8,7 @@
 import { Singleton } from '@core/patterns/Singleton';
 import { logger } from '@core/logging/logger';
 import { appConfig } from '@core/config/AppConfig';
-import { resourceManager } from '@infrastructure/managers';
+import { resourceManager } from '@core/managers';
 import { memoryTracker } from '@infrastructure/memory/MemoryTracker';
 
 /**

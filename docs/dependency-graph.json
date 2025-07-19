@@ -159,7 +159,6 @@
       "dependents": [
         "src/app/Application.ts",
         "src/infrastructure/media/FilenameService.ts",
-        "src/infrastructure/managers/ResourceManager.ts",
         "src/infrastructure/browser/BrowserManager.ts",
         "src/infrastructure/browser/BrowserUtils.ts",
         "src/infrastructure/browser/browser-utils.ts",
@@ -2718,43 +2717,7 @@
     },
     {
       "source": "src/infrastructure/managers/NamespacedDesignSystem.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../types/lifecycle.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/infrastructure/types/lifecycle.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/managers/index.ts"
       ],
@@ -2762,67 +2725,8 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/logging/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/managers/NamespacedDesignSystem.ts",
-        "src/infrastructure/dom/dom-utils.ts",
-        "src/infrastructure/error/AppErrorHandler.ts",
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/types/lifecycle.types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/managers/NamespacedDesignSystem.ts",
-        "src/infrastructure/managers/ResourceManager.ts",
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/infrastructure/managers/ResourceManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../types/lifecycle.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/infrastructure/types/lifecycle.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/managers/index.ts"
       ],
@@ -3695,6 +3599,24 @@
       "valid": true
     },
     {
+      "source": "src/core/managers/NamespacedDesignSystem.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/managers/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/ResourceManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/managers/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/managers/index.ts",
       "dependencies": [
         {
@@ -3707,6 +3629,40 @@
             "export"
           ],
           "resolved": "src/core/managers/EventDispatcher.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./NamespacedDesignSystem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/NamespacedDesignSystem.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ResourceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/ResourceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6441,6 +6397,17 @@
       "valid": true
     },
     {
+      "source": "src/infrastructure/logging/index.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/dom/dom-utils.ts",
+        "src/infrastructure/error/AppErrorHandler.ts",
+        "src/infrastructure/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/infrastructure/dom/index.ts",
       "dependencies": [
         {
@@ -6793,6 +6760,15 @@
         }
       ],
       "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/types/lifecycle.types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -9300,8 +9276,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 248,
-    "totalDependenciesCruised": 389,
+    "totalCruised": 250,
+    "totalDependenciesCruised": 387,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -2,7 +2,7 @@
  * Infrastructure Memory Management - Access Point
  *
  * ResourceManager로 통합된 리소스 관리와 메모리 관리 기능을 제공합니다.
- * @see ResourceManager in @infrastructure/managers
+ * @see ResourceManager in @core/managers
  */
 
 // 통합된 리소스 관리자로 리다이렉트
@@ -18,7 +18,7 @@ export {
   releaseResource,
   releaseResourcesByContext,
   cleanupAllResources,
-} from '@infrastructure/managers/ResourceManager';
+} from '@core/managers/ResourceManager';
 
 // 메모리 상태 관리
 export {

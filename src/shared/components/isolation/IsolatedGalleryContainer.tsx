@@ -7,7 +7,7 @@
 import { getPreact, getPreactHooks } from '@core/external/vendors';
 import type { VNode } from '@core/external/vendors';
 import { logger } from '@core/logging';
-import { namespacedDesignSystem } from '@infrastructure/managers/NamespacedDesignSystem';
+import { namespacedDesignSystem } from '@core/managers/NamespacedDesignSystem';
 
 /**
  * 격리된 갤러리 컨테이너 Props

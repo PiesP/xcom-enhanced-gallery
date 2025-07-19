@@ -8,7 +8,7 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { ResourceManager } from '@infrastructure/managers/ResourceManager';
+import { ResourceManager } from '@core/managers/ResourceManager';
 
 /**
  * 툴바 타이머 관리자
