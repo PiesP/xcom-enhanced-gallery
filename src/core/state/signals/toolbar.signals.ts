@@ -8,7 +8,7 @@
  * - 타입 안전성 보장
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 간소화된 툴바 상태 인터페이스

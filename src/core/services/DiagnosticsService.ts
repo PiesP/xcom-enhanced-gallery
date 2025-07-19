@@ -4,7 +4,7 @@
  * @moved-from shared/utils/diagnostics/Monitor.ts
  */
 
-import { logger } from '../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 export interface HealthCheck {
   name: string;

@@ -8,7 +8,7 @@
  * BackgroundTweetLoader와 함께 사용되어 정확한 미디어 정보를 제공합니다.
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { parseUsernameFast } from '../../../core/services/media/UsernameExtractionService';
 import type { MediaInfo } from '../../types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '../../../infrastructure/dom';

@@ -25,7 +25,7 @@ import {
 import type { MediaInfo } from '@core/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
 import './styles/gallery-global.css';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { getPreact } from '@infrastructure/external/vendors';
 
 /**

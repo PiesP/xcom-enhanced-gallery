@@ -7,7 +7,7 @@
  */
 
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * DOM 렌더링 완료를 감지하는 훅

@@ -4,7 +4,7 @@
  * @version 3.0.0 - Clean Architecture
  */
 
-import { logger } from '../../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,

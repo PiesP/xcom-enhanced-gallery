@@ -5,7 +5,7 @@
  */
 
 import { DESIGN_TOKENS, getTokenValue } from '../tokens/DesignTokens';
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * CSS 변수 이름을 생성하는 유틸리티

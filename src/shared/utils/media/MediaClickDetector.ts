@@ -4,7 +4,7 @@
  */
 
 import { SELECTORS } from '../../../constants';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { cachedQuerySelector } from '@infrastructure/dom';
 
 /**

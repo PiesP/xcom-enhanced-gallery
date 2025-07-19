@@ -6,7 +6,7 @@
  * @description 갤러리 키보드 지원을 제공하는 커스텀 훅 (Esc 키만 지원)
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { getPreactHooks } from '@infrastructure/external/vendors';
 
 interface UseGalleryKeyboardOptions {

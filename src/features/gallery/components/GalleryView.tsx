@@ -11,7 +11,7 @@ import type { MediaInfo } from '../../../core/types';
 import type { VNode } from '../../../shared/types/global.types';
 import { Button } from '../../../shared/components/ui/Button/Button';
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import styles from './GalleryView.module.css';
 
 export interface GalleryViewProps {

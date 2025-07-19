@@ -3,7 +3,7 @@
  * 실시간 성능 메트릭 수집 및 분석
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 interface PerformanceMetric {
   name: string;

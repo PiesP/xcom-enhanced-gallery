@@ -6,7 +6,7 @@
 
 import { getPreact, getPreactHooks } from '@infrastructure/external/vendors';
 import type { VNode } from '@infrastructure/external/vendors';
-import { logger } from '@infrastructure/logging';
+import { logger } from '@core/logging';
 import { namespacedDesignSystem } from '@infrastructure/managers/NamespacedDesignSystem';
 
 /**

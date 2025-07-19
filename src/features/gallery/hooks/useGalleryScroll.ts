@@ -7,7 +7,7 @@
  */
 
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { createEventManager } from '@infrastructure/dom/DOMEventManager';
 import { galleryState } from '@core/state/signals/gallery.signals';
 import { preventScrollPropagation, findTwitterScrollContainer } from '@shared/utils/scroll';

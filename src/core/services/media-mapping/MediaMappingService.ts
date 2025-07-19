@@ -4,7 +4,7 @@
  */
 
 import type { MediaMapping, MediaPageType } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { MediaTabUrlDirectStrategy } from './MediaTabUrlDirectStrategy';
 import type { MappingCacheEntry, MediaMappingStrategy, StrategyMetrics } from './types';
 

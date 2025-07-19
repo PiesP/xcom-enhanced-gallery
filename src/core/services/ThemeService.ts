@@ -4,7 +4,7 @@
  * 시스템 테마 감지 및 적용 서비스
  */
 
-import { logger } from '../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 테마 타입

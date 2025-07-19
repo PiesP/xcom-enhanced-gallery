@@ -5,7 +5,7 @@
  * @description 외부 라이브러리 관리 구현체
  */
 
-import { logger } from '@infrastructure/logging';
+import { logger } from '../../logging';
 
 // ================================
 // 메모리 관리 상수 (Infrastructure 레벨)

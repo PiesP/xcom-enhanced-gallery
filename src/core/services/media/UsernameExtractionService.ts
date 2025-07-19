@@ -5,7 +5,7 @@
  * @moved-from shared/utils/media/username-extraction.ts
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { SYSTEM_PAGES } from '../../../constants';
 
 /**

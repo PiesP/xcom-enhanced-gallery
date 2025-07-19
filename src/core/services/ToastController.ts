@@ -3,7 +3,7 @@
  * @description 애플리케이션 전체의 토스트 알림을 관리하는 서비스
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type { BaseService } from './ServiceManager';
 
 // Toast 관련 타입 정의

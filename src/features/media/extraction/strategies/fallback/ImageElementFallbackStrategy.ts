@@ -2,7 +2,7 @@
  * @fileoverview 이미지 요소 백업 전략
  */
 
-import { logger } from '../../../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { parseUsernameFast } from '../../../../../core/services/media/UsernameExtractionService';
 import type { MediaInfo } from '../../../../../core/types/media.types';
 import type {

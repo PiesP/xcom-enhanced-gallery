@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { ServiceManager } from '../ServiceManager';
 import { SERVICE_KEYS } from '../../../constants';
 

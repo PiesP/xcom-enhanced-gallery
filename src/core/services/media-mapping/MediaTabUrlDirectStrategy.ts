@@ -4,7 +4,7 @@
  */
 
 import type { MediaMapping, MediaPageType } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { safeParseInt } from '@core/utils/type-safety-helpers';
 import type { MediaMappingStrategy } from './types';
 

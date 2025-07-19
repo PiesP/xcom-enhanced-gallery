@@ -6,7 +6,7 @@
  * @description 갤러리 정리 작업을 담당하는 커스텀 훅
  */
 
-import { logger } from '../../../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { getPreactHooks } from '@infrastructure/external/vendors';
 
 interface UseGalleryCleanupOptions {

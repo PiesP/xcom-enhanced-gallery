@@ -10,7 +10,7 @@
  * - 갤러리 특화 이벤트 조정
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import {
   GalleryEventCoordinator as EventCoordinator,
   type EventHandlers as EventManagerHandlers,

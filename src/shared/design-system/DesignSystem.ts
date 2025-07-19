@@ -4,7 +4,7 @@
  */
 
 import { DESIGN_TOKENS, createCSSVariable, getThemeTokenValue } from './tokens/DesignTokens';
-import { logger } from '../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type { Cleanupable } from '@core/types/lifecycle.types';
 
 /**

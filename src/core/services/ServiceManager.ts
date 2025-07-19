@@ -3,7 +3,7 @@
  * @description 서비스 등록, 초기화, 의존성 관리
  */
 
-import { logger } from '../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 서비스 팩토리 함수 타입

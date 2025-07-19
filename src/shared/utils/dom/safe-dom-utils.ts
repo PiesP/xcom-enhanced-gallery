@@ -5,7 +5,7 @@
  * DOM 조작의 안전성을 보장하는 유틸리티 함수들
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 안전한 DOM 쿼리 - null 체크 포함

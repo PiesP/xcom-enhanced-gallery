@@ -6,7 +6,7 @@
  * Clean Architecture 원칙에 따라 Infrastructure 레이어에 위치
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '../logging/logger';
 
 /**
  * 메모리 정보 타입 정의

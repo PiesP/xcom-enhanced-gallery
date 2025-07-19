@@ -2,7 +2,7 @@
  * @fileoverview 부모 요소 탐색 기반 트윗 정보 추출 전략
  */
 
-import { logger } from '../../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '../interfaces/extraction.interfaces';
 
 export class ParentTraversalTweetStrategy implements TweetInfoExtractionStrategy {

@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import { logger } from '@infrastructure/logging';
+import { logger } from '../logging';
 import type { Cleanupable } from '../types/lifecycle.types';
 
 /**

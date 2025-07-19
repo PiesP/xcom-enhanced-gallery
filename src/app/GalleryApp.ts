@@ -16,7 +16,7 @@ import { getService } from '@core/services/ServiceRegistry';
 import { VideoControlService } from '@core/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '../core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type { ManagedExtractionResult } from './coordinators/CoordinatorManager';
 import { CoordinatorManager } from './coordinators/CoordinatorManager';
 import type { ToastController } from '@core/services/ToastController';

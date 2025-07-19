@@ -6,7 +6,7 @@
  */
 
 import type { MediaInfo } from '@core/types/media.types';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 범용 중복 제거 함수

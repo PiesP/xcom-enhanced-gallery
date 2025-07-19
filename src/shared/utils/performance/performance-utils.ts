@@ -5,7 +5,7 @@
  * 성능 최적화를 위한 유틸리티 함수들 (RAF, lazy loading, measurement)
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * RAF을 사용한 애니메이션 최적화

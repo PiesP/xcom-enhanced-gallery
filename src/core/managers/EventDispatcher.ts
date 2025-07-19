@@ -4,7 +4,7 @@
  * @version 1.0.0 - Core Layer
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { Singleton } from '../patterns/Singleton';
 
 interface EventContext {

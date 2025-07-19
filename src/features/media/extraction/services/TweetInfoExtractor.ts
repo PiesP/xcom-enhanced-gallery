@@ -4,7 +4,7 @@
  * @version 2.0.0 - Clean Architecture
  */
 
-import { logger } from '../../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '../interfaces/extraction.interfaces';
 import { ClickedElementTweetStrategy } from '../strategies/ClickedElementTweetStrategy';
 import { UrlBasedTweetStrategy } from '../strategies/UrlBasedTweetStrategy';

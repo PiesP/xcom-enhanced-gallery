@@ -3,7 +3,7 @@
  * @description 애플리케이션 설정의 영구 저장, 로드, 검증을 담당
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type { BaseService } from '@core/services/ServiceManager';
 import type {
   AppSettings,

@@ -6,7 +6,7 @@
  * 핵심 원칙: DOM 준비 + X.com 도메인 + 미디어 요소 존재
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { BaseSingleton } from './patterns/singleton';
 
 /**

@@ -7,7 +7,7 @@
  * @version 1.0.0
  */
 
-import { logger } from '@infrastructure/logging';
+import { logger } from '@core/logging';
 import { galleryState } from '@core/state/signals/gallery.signals';
 
 /**

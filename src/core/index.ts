@@ -1,5 +1,6 @@
 export * from '../constants';
 export * from './interfaces';
+export * from './logging';
 export * from './utils';
 export {
   galleryState,

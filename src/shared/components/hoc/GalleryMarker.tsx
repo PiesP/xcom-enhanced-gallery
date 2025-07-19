@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import { logger } from '../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type { ComponentChildren, ComponentType } from '../../types/global.types';
 import { getPreact } from '@infrastructure/external/vendors';
 import type { VNode } from '@infrastructure/external/vendors';

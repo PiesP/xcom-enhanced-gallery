@@ -7,7 +7,7 @@
  * @version 1.0.0
  */
 
-import { logger } from '@infrastructure/logging';
+import { logger } from '@core/logging';
 
 /**
  * 비디오 제어 요소 차단 통합 유틸리티

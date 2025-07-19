@@ -10,7 +10,7 @@
  */
 
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 간소화된 키보드 네비게이션 훅 (Esc 키만 지원)

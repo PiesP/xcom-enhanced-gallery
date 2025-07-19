@@ -6,7 +6,7 @@
  * @description 스크롤 이벤트의 안전한 등록과 처리를 위한 유틸리티 함수들
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { createDebouncer } from './performance/Debouncer';
 
 interface ScrollHandlerOptions {

@@ -3,7 +3,7 @@
  * Infrastructure Layer - 에러 처리 및 로깅
  */
 
-import { logger } from '@infrastructure/logging';
+import { logger } from '../logging';
 
 /**
  * 에러 컨텍스트 타입

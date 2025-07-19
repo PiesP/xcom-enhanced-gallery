@@ -6,7 +6,7 @@
  * @description 이벤트 리스너의 등록, 관리, 정리를 담당하는 클래스
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '../logging/logger';
 
 type EventCleanup = () => void;
 

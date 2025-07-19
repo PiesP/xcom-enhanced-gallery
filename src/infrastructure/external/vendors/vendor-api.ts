@@ -5,7 +5,7 @@
  * @description 외부 라이브러리 공개 API 함수들
  */
 
-import { logger } from '@infrastructure/logging';
+import { logger } from '../../logging';
 import {
   VendorManager,
   type FflateAPI,

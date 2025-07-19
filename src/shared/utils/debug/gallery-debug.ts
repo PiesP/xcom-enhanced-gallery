@@ -6,7 +6,7 @@
  * 갤러리 컨테이너 상태 진단 및 강제 표시 기능
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 갤러리 디버깅을 위한 유틸리티 함수들

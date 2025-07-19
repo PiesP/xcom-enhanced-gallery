@@ -5,7 +5,7 @@
  * 갤러리 이벤트 처리를 위한 DOM 유틸리티 함수들
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 갤러리 내부 요소인지 확인하는 CSS 선택자들

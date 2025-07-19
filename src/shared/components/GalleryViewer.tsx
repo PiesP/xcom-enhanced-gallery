@@ -8,7 +8,7 @@
  */
 
 import type { MediaInfo } from '../types/media.types';
-import { logger } from '../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { getPreactHooks } from '@infrastructure/external/vendors';
 import type { VNode } from '@infrastructure/external/vendors';
 import styles from './GalleryViewer.module.css';

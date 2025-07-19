@@ -7,7 +7,7 @@
  * - 향후 제거 예정
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { ResourceManager } from '@infrastructure/managers/ResourceManager';
 
 /**

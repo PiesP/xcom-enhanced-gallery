@@ -3,7 +3,7 @@
  * @description 현재 페이지 URL에서 트윗 정보를 추출하는 전략
  */
 
-import { logger } from '../../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { parseUsernameFast } from '../../../../core/services/media/UsernameExtractionService';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '../interfaces/extraction.interfaces';
 

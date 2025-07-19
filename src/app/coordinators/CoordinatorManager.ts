@@ -10,7 +10,7 @@
  * - 오류 처리 및 복구
  */
 
-import { logger } from '@infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { GalleryEventCoordinator } from './GalleryEventCoordinator';
 import { MediaExtractorCoordinator } from './MediaExtractionCoordinator';
 import type { MediaInfo } from '@core/types/media.types';

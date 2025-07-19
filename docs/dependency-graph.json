@@ -140,25 +140,7 @@
     },
     {
       "source": "src/core/services/ServiceManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/app/Application.ts",
         "src/core/services/index.ts",
@@ -176,48 +158,14 @@
       "dependencies": [],
       "dependents": [
         "src/app/Application.ts",
-        "src/core/services/ServiceManager.ts",
-        "src/shared/design-system/DesignSystem.ts",
-        "src/shared/design-system/utils/design-utils.ts",
-        "src/app/coordinators/MediaExtractionCoordinator.ts",
-        "src/features/media/extraction/services/MediaExtractor.ts",
-        "src/features/media/extraction/services/DOMDirectExtractor.ts",
-        "src/features/media/extraction/services/TweetInfoExtractor.ts",
-        "src/features/media/extraction/strategies/ClickedElementTweetStrategy.ts",
-        "src/features/media/extraction/strategies/DataAttributeTweetStrategy.ts",
-        "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
-        "src/core/services/media/UsernameExtractionService.ts",
-        "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
-        "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
-        "src/features/media/extraction/services/TwitterAPIExtractor.ts",
-        "src/features/media/extraction/services/TwitterVideoExtractor.ts",
-        "src/core/error/ErrorHandler.ts",
         "src/infrastructure/media/FilenameService.ts",
-        "src/core/services/ThemeService.ts",
-        "src/core/services/ServiceDiagnostics.ts",
-        "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
-        "src/core/services/DiagnosticsService.ts",
-        "src/core/services/gallery/GalleryInitializer.ts",
-        "src/features/gallery/components/GalleryView.tsx",
-        "src/features/gallery/services/GalleryService.ts",
-        "src/features/media/extraction/services/FallbackExtractor.ts",
-        "src/features/media/extraction/strategies/fallback/BackgroundImageFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/DataAttributeFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
+        "src/infrastructure/managers/ResourceManager.ts",
         "src/infrastructure/browser/BrowserManager.ts",
         "src/infrastructure/browser/BrowserUtils.ts",
-        "src/infrastructure/logging/index.ts",
-        "src/main.ts",
-        "src/shared/components/GalleryViewer.tsx",
-        "src/shared/components/hoc/GalleryMarker.tsx",
-        "src/shared/utils/patterns/singleton.ts",
-        "src/shared/utils/media/media-url.util.ts",
-        "src/shared/utils/performance/performance-utils.ts",
-        "src/shared/utils/performance/PerformanceMonitor.ts",
-        "src/shared/utils/dom/safe-dom-utils.ts",
-        "src/shared/utils/events/EventHandler.ts",
-        "src/shared/utils/events/GalleryEventCoordinator.ts"
+        "src/infrastructure/browser/browser-utils.ts",
+        "src/infrastructure/dom/DOMEventManager.ts",
+        "src/infrastructure/external/zip/zip-creator.ts",
+        "src/infrastructure/memory/MemoryTracker.ts"
       ],
       "orphan": false,
       "valid": true
@@ -289,23 +237,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./tokens/DesignTokens",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -342,23 +273,6 @@
     {
       "source": "src/shared/design-system/utils/design-utils.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../tokens/DesignTokens",
@@ -687,23 +601,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -740,23 +637,6 @@
             "import"
           ],
           "resolved": "src/core/interfaces/gallery.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -857,23 +737,6 @@
         },
         {
           "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../interfaces/extraction.interfaces",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -944,23 +807,6 @@
     {
       "source": "src/features/media/extraction/services/TweetInfoExtractor.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../interfaces/extraction.interfaces",
@@ -1076,23 +922,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../interfaces/extraction.interfaces",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1119,23 +948,6 @@
     {
       "source": "src/features/media/extraction/strategies/DataAttributeTweetStrategy.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../interfaces/extraction.interfaces",
@@ -1174,23 +986,6 @@
             "import"
           ],
           "resolved": "src/core/services/media/UsernameExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1242,23 +1037,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -1277,23 +1055,6 @@
     {
       "source": "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../interfaces/extraction.interfaces",
@@ -1341,23 +1102,6 @@
         },
         {
           "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../interfaces/extraction.interfaces",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1395,23 +1139,6 @@
             "import"
           ],
           "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1474,23 +1201,6 @@
             "import"
           ],
           "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1906,25 +1616,7 @@
     },
     {
       "source": "src/core/error/ErrorHandler.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/core/error/index.ts",
         "src/shared/utils/error-handling.ts"
@@ -1987,6 +1679,23 @@
             "export"
           ],
           "resolved": "src/core/interfaces/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/logging/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2169,6 +1878,42 @@
       "dependencies": [],
       "dependents": [
         "src/core/interfaces/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/logging/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/logging/logger.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/logging/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2632,25 +2377,7 @@
     },
     {
       "source": "src/core/services/ThemeService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/core/services/index.ts",
         "src/core/types/services.types.ts",
@@ -2702,23 +2429,6 @@
             "import"
           ],
           "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2834,6 +2544,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../types/lifecycle.types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2858,6 +2585,20 @@
       "valid": true
     },
     {
+      "source": "src/infrastructure/logging/index.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/managers/NamespacedDesignSystem.ts",
+        "src/infrastructure/dom/dom-utils.ts",
+        "src/infrastructure/error/AppErrorHandler.ts",
+        "src/infrastructure/external/vendors/vendor-api.ts",
+        "src/infrastructure/external/vendors/vendor-manager.ts",
+        "src/infrastructure/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/infrastructure/types/lifecycle.types.ts",
       "dependencies": [],
       "dependents": [
@@ -2871,6 +2612,23 @@
     {
       "source": "src/infrastructure/managers/ResourceManager.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../types/lifecycle.types",
@@ -3426,25 +3184,7 @@
     },
     {
       "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
@@ -3831,28 +3571,16 @@
     },
     {
       "source": "src/core/services/DiagnosticsService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [],
-      "orphan": false,
-      "valid": true
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/core/services/gallery/GalleryInitializer.ts",
@@ -3867,23 +3595,6 @@
             "import"
           ],
           "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4764,23 +4475,6 @@
         },
         {
           "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../../shared/components/ui/Button/Button",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5529,23 +5223,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -5592,23 +5269,6 @@
     {
       "source": "src/features/media/extraction/services/FallbackExtractor.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../interfaces/extraction.interfaces",
@@ -5898,23 +5558,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../interfaces/extraction.interfaces",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5958,23 +5601,6 @@
     {
       "source": "src/features/media/extraction/strategies/fallback/DataAttributeFallbackStrategy.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../../interfaces/extraction.interfaces",
@@ -6057,23 +5683,6 @@
         },
         {
           "dynamic": false,
-          "module": "../../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../interfaces/extraction.interfaces",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6128,23 +5737,6 @@
             "import"
           ],
           "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6541,7 +6133,25 @@
     },
     {
       "source": "src/infrastructure/browser/browser-utils.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/infrastructure/browser/index.ts"
       ],
@@ -6603,7 +6213,25 @@
     },
     {
       "source": "src/infrastructure/dom/DOMEventManager.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/infrastructure/dom/index.ts"
       ],
@@ -6612,7 +6240,25 @@
     },
     {
       "source": "src/infrastructure/dom/dom-utils.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/infrastructure/dom/index.ts"
       ],
@@ -6683,7 +6329,25 @@
     },
     {
       "source": "src/infrastructure/error/AppErrorHandler.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/infrastructure/error/index.ts"
       ],
@@ -6794,6 +6458,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./vendor-manager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6818,7 +6499,25 @@
     },
     {
       "source": "src/infrastructure/external/vendors/vendor-manager.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/infrastructure/external/vendors/index.ts",
         "src/infrastructure/external/vendors/vendor-api.ts"
@@ -6854,6 +6553,23 @@
     {
       "source": "src/infrastructure/external/zip/zip-creator.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/infrastructure/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../../utils",
@@ -7057,16 +6773,16 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/logging/index.ts",
+      "source": "src/infrastructure/memory/MemoryTracker.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./logger",
+          "module": "../logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "export"
+            "import"
           ],
           "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
@@ -7077,15 +6793,6 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/memory/MemoryTracker.ts",
-      "dependencies": [],
       "dependents": [
         "src/infrastructure/memory/index.ts"
       ],
@@ -7146,23 +6853,6 @@
         },
         {
           "dynamic": false,
-          "module": "./infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./shared/types/app",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7213,23 +6903,6 @@
     {
       "source": "src/shared/components/GalleryViewer.tsx",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../types/media.types",
@@ -7320,23 +6993,6 @@
     {
       "source": "src/shared/components/hoc/GalleryMarker.tsx",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../../types/global.types",
@@ -8799,25 +8455,7 @@
     },
     {
       "source": "src/shared/utils/patterns/singleton.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/utils/InitializationGuard.ts"
       ],
@@ -8924,23 +8562,6 @@
             "import"
           ],
           "resolved": "src/infrastructure/dom/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -9191,25 +8812,7 @@
     },
     {
       "source": "src/shared/utils/performance/performance-utils.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/utils/performance/index.ts"
       ],
@@ -9218,25 +8821,7 @@
     },
     {
       "source": "src/shared/utils/performance/PerformanceMonitor.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/utils/performance/index.ts"
       ],
@@ -9427,25 +9012,7 @@
     },
     {
       "source": "src/shared/utils/dom/safe-dom-utils.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/utils/dom/index.ts"
       ],
@@ -9483,23 +9050,6 @@
             "import"
           ],
           "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -9577,23 +9127,6 @@
             "import"
           ],
           "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../infrastructure/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -9701,13 +9234,23 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/core/services/DiagnosticsService.ts",
+        "to": "src/core/services/DiagnosticsService.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 240,
-    "totalDependenciesCruised": 418,
+    "totalCruised": 242,
+    "totalDependenciesCruised": 391,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

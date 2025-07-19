@@ -4,7 +4,7 @@
  * @version 2.0.0 - Clean Architecture
  */
 
-import { logger } from '../../../../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import { TwitterAPI, type TweetMediaEntry } from './TwitterVideoExtractor';
 import type { MediaInfo } from '../../../../core/types/media.types';
 import type {
