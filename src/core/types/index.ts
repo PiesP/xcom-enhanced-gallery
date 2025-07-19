@@ -18,5 +18,11 @@ export * from './media.types';
 // View mode types
 export * from './view-mode.types';
 
+// Lifecycle types (Infrastructure에서 이동)
+export * from './lifecycle.types';
+
+// UserScript types (Infrastructure에서 이동)
+export * from './userscript.d';
+
 // Service types
 export * from './services.types';

@@ -10,7 +10,7 @@
  * - Error handling and cleanup
  */
 
-import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
+import { removeUndefinedProperties } from '@core/utils/type-safety-helpers';
 import { designSystem } from '../shared/design-system';
 
 import { ServiceManager } from '../core/services/ServiceManager';

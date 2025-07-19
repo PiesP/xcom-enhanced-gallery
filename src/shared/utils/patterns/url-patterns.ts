@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@infrastructure/logging/logger';
-import { safeParseInt } from '../../../infrastructure/utils/type-safety-helpers';
+import { safeParseInt } from '@core/utils/type-safety-helpers';
 
 /**
  * URL 패턴 매칭 및 추출을 위한 유틸리티 클래스

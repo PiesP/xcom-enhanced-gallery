@@ -17,7 +17,7 @@ import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types/image-fit.types';
 import { galleryState, navigateToItem } from '@core/state/signals/gallery.signals';
 import { getPreactHooks } from '@infrastructure/external/vendors';
-import { stringWithDefault } from '@infrastructure/utils/type-safety-helpers';
+import { stringWithDefault } from '@core/utils/type-safety-helpers';
 import type { MouseEvent } from 'preact/compat';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';

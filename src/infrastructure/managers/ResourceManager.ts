@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@infrastructure/logging/logger';
-import type { Cleanupable } from '@infrastructure/types/lifecycle.types';
+import type { Cleanupable } from '../types/lifecycle.types';
 
 interface ManagedResource {
   id: string;

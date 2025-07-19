@@ -5,7 +5,7 @@
  * WCAG 2.1 기준에 따른 색상 대비, 시인성 관련 계산 함수들을 제공합니다.
  */
 
-import { safeParseInt } from '../../../infrastructure/utils/type-safety-helpers';
+import { safeParseInt } from '@core/utils/type-safety-helpers';
 
 /**
  * RGB 색상을 상대 휘도(relative luminance)로 변환합니다.

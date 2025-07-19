@@ -10,7 +10,7 @@ import type {
   TweetUrlExtractionStrategy,
 } from '../types/extraction.types';
 import { ExtractionError, ExtractionErrorCode } from '../types/extraction.types';
-import { safeParseInt } from '@infrastructure/utils/type-safety-helpers';
+import { safeParseInt } from '@core/utils/type-safety-helpers';
 
 /**
  * 클릭된 요소에서 트윗 URL을 추출하는 전략

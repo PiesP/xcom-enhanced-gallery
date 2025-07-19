@@ -7,7 +7,7 @@
 import { getPreact } from '@infrastructure/external/vendors';
 import { logger } from '@infrastructure/logging';
 import type { MediaInfo } from '@core/types/media.types';
-import type { Cleanupable } from '@infrastructure/types/lifecycle.types';
+import type { Cleanupable } from '@core/types/lifecycle.types';
 import { namespacedDesignSystem } from '@infrastructure/managers/NamespacedDesignSystem';
 import { IsolatedGalleryContainer } from '@shared/components/isolation/IsolatedGalleryContainer';
 import { VerticalGalleryView } from '../components/vertical-gallery-view/VerticalGalleryView';

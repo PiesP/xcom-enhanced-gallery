@@ -67,9 +67,7 @@ export interface MediaInfo {
   metadata?: Record<string, unknown> | undefined;
   /** 대체 URL 목록 */
   urlAlternatives?: string[] | undefined;
-}
-
-/**
+} /**
  * 미디어 아이템 타입 (MediaInfo와 동일한 구조)
  * 애플리케이션 전반에서 일관된 미디어 데이터 구조를 위해 사용
  */
@@ -107,6 +105,33 @@ export interface MediaInfoWithFilename extends MediaInfo {
 }
 
 /**
+ * FilenameService에서 사용하는 기본 미디어 정보
+ * (Infrastructure에서 이동한 타입)
+ */
+export interface MediaItemForFilename {
+  /** 미디어 고유 식별자 */
+  id?: string | undefined;
+  /** 미디어 URL */
+  url: string;
+  /** 원본 URL (사용자명 추출용) */
+  originalUrl?: string | undefined;
+  /** 미디어 타입 */
+  type: MediaType;
+  /** 기존 파일명 */
+  filename?: string | undefined;
+  /** 트윗 작성자 사용자명 */
+  tweetUsername?: string | undefined;
+  /** 트윗 ID */
+  tweetId?: string | undefined;
+}
+
+/**
+ * FilenameService에서 사용하는 미디어 정보 타입
+ * (Infrastructure에서 이동한 타입)
+ */
+export interface MediaInfoForFilename extends MediaItemForFilename {}
+
+/**
  * 갤러리 열기 이벤트 세부 정보
  */
 export interface GalleryOpenEventDetail {
@@ -137,9 +162,7 @@ export interface MediaCollection {
   items: MediaItem[];
   totalCount: number;
   currentIndex: number;
-}
-
-/**
+} /**
  * 미디어 페이지 타입
  */
 export type MediaPageType =

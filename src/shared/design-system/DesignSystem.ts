@@ -5,7 +5,7 @@
 
 import { DESIGN_TOKENS, createCSSVariable, getThemeTokenValue } from './tokens/DesignTokens';
 import { logger } from '../../infrastructure/logging/logger';
-import type { Cleanupable } from '../../infrastructure/types/lifecycle.types';
+import type { Cleanupable } from '@core/types/lifecycle.types';
 
 /**
  * CSS 스타일시트 ID

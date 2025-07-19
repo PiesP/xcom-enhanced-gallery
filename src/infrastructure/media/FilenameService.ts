@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../logging/logger';
-import { safeParseInt, undefinedToNull } from '../utils/type-safety-helpers';
+import { safeParseInt, undefinedToNull } from '../utils';
 import type { MediaInfoForFilename, MediaItemForFilename } from '../types/media.types';
 
 /**

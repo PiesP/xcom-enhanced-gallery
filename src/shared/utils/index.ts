@@ -59,7 +59,7 @@ export {
   createWithOptionalProperties,
   buildSafeObject,
   removeUndefinedProperties,
-} from '@infrastructure/utils/type-safety-helpers';
+} from '@core/utils/type-safety-helpers';
 
 // Gallery utilities (state management, protection)
 export * from './gallery';

@@ -8,7 +8,7 @@
  * - 상태 관리는 기존 signals 활용
  */
 
-import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
+import { removeUndefinedProperties } from '@core/utils/type-safety-helpers';
 
 import { SERVICE_KEYS } from '../constants';
 import type { GalleryRenderer } from '@core/interfaces/gallery.interfaces';

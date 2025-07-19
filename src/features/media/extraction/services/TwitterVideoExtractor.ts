@@ -6,7 +6,7 @@
  */
 
 import { logger } from '../../../../infrastructure/logging/logger';
-import { undefinedToNull } from '../../../../infrastructure/utils/type-safety-helpers';
+import { undefinedToNull } from '@core/utils/type-safety-helpers';
 
 import { TWITTER_API_CONFIG } from '../../../../constants';
 

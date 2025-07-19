@@ -6,7 +6,7 @@
  * 불변성, 타입 안전성, 비즈니스 규칙 캡슐화를 완전 구현
  */
 
-import { buildSafeObject } from '../../infrastructure/utils/type-safety-helpers';
+import { buildSafeObject } from '@core/utils/type-safety-helpers';
 import type { DomainEntity, ValueObject } from './architecture.types';
 
 // ================================
