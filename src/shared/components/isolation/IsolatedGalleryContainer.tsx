@@ -4,8 +4,8 @@
  * @version 1.0.0
  */
 
-import { getPreact, getPreactHooks } from '@infrastructure/external/vendors';
-import type { VNode } from '@infrastructure/external/vendors';
+import { getPreact, getPreactHooks } from '@core/external/vendors';
+import type { VNode } from '@core/external/vendors';
 import { logger } from '@core/logging';
 import { namespacedDesignSystem } from '@infrastructure/managers/NamespacedDesignSystem';
 

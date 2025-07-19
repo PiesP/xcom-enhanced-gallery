@@ -8,7 +8,7 @@
 
 import type { MediaInfo } from '@core/types/media.types';
 import type { ImageFitMode } from '@shared/types/image-fit.types';
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import { getPreactHooks } from '@core/external/vendors';
 import styles from '../VerticalGalleryView.module.css';
 import { VerticalImageItem } from '../VerticalImageItem';
 

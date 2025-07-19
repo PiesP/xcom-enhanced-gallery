@@ -1,37 +1,9 @@
 /**
- * External Vendor Library Access - Barrel Export
+ * Infrastructure External Vendors - 하위 호환성을 위한 re-export
  *
- * @version 8.0.0 - Clean Architecture 완전 적용
- * @description 외부 라이브러리 통합 접근점 - 배럴 export
+ * @deprecated Core 레이어로 이동 완료, @core/external/vendors 사용 권장
+ * @see src/core/external/vendors/index.ts
  */
 
-// 타입 정의 exports
-export type {
-  FflateAPI,
-  PreactAPI,
-  PreactHooksAPI,
-  PreactSignalsAPI,
-  PreactCompatAPI,
-  MotionAPI,
-  NativeDownloadAPI,
-  VNode,
-  ComponentChildren,
-} from './vendor-manager';
-
-// 공개 API exports
-export {
-  getFflate,
-  getPreact,
-  getPreactHooks,
-  getPreactSignals,
-  getPreactCompat,
-  getMotion,
-  getNativeDownload,
-  initializeVendors,
-  cleanupVendors,
-  getVendorVersions,
-  isVendorsInitialized,
-  getVendorInitializationReport,
-  getVendorStatuses,
-  isVendorInitialized,
-} from './vendor-api';
+// Re-export from Core layer for backward compatibility
+export * from '@core/external/vendors';

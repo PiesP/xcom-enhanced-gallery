@@ -26,7 +26,7 @@ import type { MediaInfo } from '@core/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
 import './styles/gallery-global.css';
 import { logger } from '@core/logging/logger';
-import { getPreact } from '@infrastructure/external/vendors';
+import { getPreact } from '@core/external/vendors';
 
 /**
  * 갤러리 정리 관리자

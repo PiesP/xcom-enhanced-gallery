@@ -1,9 +1,9 @@
 /**
- * Infrastructure External Dependencies Barrel Export
+ * Infrastructure External Layer - 하위 호환성을 위한 re-export
  *
- * Centralized access to external libraries and utilities.
- * Moved from shared layer to follow architecture guidelines.
+ * @deprecated Core 레이어로 이동 완료, @core/external 사용 권장
+ * @see src/core/external/index.ts
  */
 
-// Vendor library access
-export * from './vendors';
+// Re-export from Core layer for backward compatibility
+export * from '@core/external';

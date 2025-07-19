@@ -9,7 +9,7 @@
  */
 
 import type { MediaInfo } from '../../types/media.types';
-import { getPreactSignals } from '@infrastructure/external/vendors';
+import { getPreactSignals } from '@core/external/vendors';
 import { defaultLogger, type ILogger } from '../../services/logger.interface';
 
 // Signal type

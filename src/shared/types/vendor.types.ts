@@ -11,7 +11,7 @@ import type {
   PreactHooksAPI,
   PreactSignalsAPI,
   MotionAPI,
-} from '@infrastructure/external/vendors';
+} from '@core/external/vendors';
 
 // Window 객체 확장을 위한 전역 타입 정의
 declare global {

@@ -3,7 +3,7 @@
  * @version 3.0.0 - Modern Gallery with State Management
  */
 
-import { getPreactHooks, getPreactSignals } from '@infrastructure/external/vendors';
+import { getPreactHooks, getPreactSignals } from '@core/external/vendors';
 import { Button } from '../../../shared/components/ui/Button/Button';
 import {
   useKeyboardNavigation,

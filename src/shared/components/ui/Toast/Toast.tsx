@@ -1,6 +1,6 @@
 import styles from './Toast.module.css';
-import { getPreactHooks, getPreactSignals } from '@infrastructure/external/vendors';
-import type { VNode } from '@infrastructure/external/vendors';
+import { getPreactHooks, getPreactSignals } from '@core/external/vendors';
+import type { VNode } from '@core/external/vendors';
 
 // Constants
 const DEFAULT_TOAST_DURATION = 5000; // 5 seconds

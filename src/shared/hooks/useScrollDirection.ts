@@ -5,7 +5,7 @@
  * 스크롤 방향을 감지하여 툴바 표시/숨김을 제어하는 커스텀 훅
  */
 
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import { getPreactHooks } from '@core/external/vendors';
 import { logger } from '@core/logging/logger';
 
 /**

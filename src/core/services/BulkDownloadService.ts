@@ -11,8 +11,8 @@ import type { MediaInfo, MediaItem } from '@core/types/media.types';
 import type { BaseService } from '@core/types/services.types';
 import type { MediaItemForFilename } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
-import { getNativeDownload } from '@infrastructure/external/vendors';
-import { createZipFromItems, type MediaItemForZip } from '@infrastructure/external/zip';
+import { getNativeDownload } from '@core/external/vendors';
+import { createZipFromItems, type MediaItemForZip } from '@core/external/zip';
 import { generateMediaFilename, generateZipFilename } from '@infrastructure/media';
 
 export interface DownloadProgress {

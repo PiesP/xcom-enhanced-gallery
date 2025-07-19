@@ -6,7 +6,7 @@
 import { Button } from '@shared/components/ui/Button/Button';
 import type { VNode } from '@shared/types/global.types';
 import { stringWithDefault } from '@core/utils/type-safety-helpers';
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import { getPreactHooks } from '@core/external/vendors';
 import styles from '../VerticalGalleryView.module.css';
 
 export interface GalleryControlsProps {

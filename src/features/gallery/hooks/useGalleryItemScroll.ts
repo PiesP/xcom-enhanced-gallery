@@ -7,7 +7,7 @@
  * @version 1.0.0 - 초기 구현
  */
 
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import { getPreactHooks } from '@core/external/vendors';
 import { logger } from '@core/logging/logger';
 
 const { useCallback, useEffect, useRef } = getPreactHooks();

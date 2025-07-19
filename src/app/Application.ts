@@ -165,7 +165,7 @@ export class Application {
   private async initializeInfrastructure(): Promise<void> {
     try {
       // Vendor 라이브러리 초기화
-      const { initializeVendors } = await import('@infrastructure/external/vendors');
+      const { initializeVendors } = await import('@core/external/vendors');
       await initializeVendors();
       logger.debug('✅ Vendor 라이브러리 초기화 완료');
 
@@ -552,7 +552,7 @@ export class Application {
     try {
       // ToastContainer를 DOM에 렌더링
       const { ToastContainer } = await import('@shared/components/ui');
-      const { getPreact } = await import('@infrastructure/external/vendors');
+      const { getPreact } = await import('@core/external/vendors');
       const { h, render } = getPreact();
 
       // 컨테이너 생성 또는 찾기

@@ -164,7 +164,6 @@
         "src/infrastructure/browser/BrowserUtils.ts",
         "src/infrastructure/browser/browser-utils.ts",
         "src/infrastructure/dom/DOMEventManager.ts",
-        "src/infrastructure/external/zip/zip-creator.ts",
         "src/infrastructure/memory/MemoryTracker.ts"
       ],
       "orphan": false,
@@ -1650,6 +1649,168 @@
       "valid": true
     },
     {
+      "source": "src/core/external/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/external/vendors/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./zip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/external/zip/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/external/vendors/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendor-api",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/external/vendors/vendor-api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/core/external/vendors/vendor-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/external/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/external/vendors/vendor-api.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendor-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/external/vendors/vendor-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/external/vendors/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/external/vendors/vendor-manager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/external/vendors/index.ts",
+        "src/core/external/vendors/vendor-api.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/external/zip/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./zip-creator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/external/zip/zip-creator.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/external/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/external/zip/zip-creator.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/external/zip/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/index.ts",
       "dependencies": [
         {
@@ -1662,6 +1823,23 @@
             "export"
           ],
           "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./external",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/external/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2358,7 +2536,6 @@
       "dependencies": [],
       "dependents": [
         "src/infrastructure/media/FilenameService.ts",
-        "src/infrastructure/external/zip/zip-creator.ts",
         "src/infrastructure/index.ts"
       ],
       "orphan": false,
@@ -2591,8 +2768,6 @@
         "src/infrastructure/managers/NamespacedDesignSystem.ts",
         "src/infrastructure/dom/dom-utils.ts",
         "src/infrastructure/error/AppErrorHandler.ts",
-        "src/infrastructure/external/vendors/vendor-api.ts",
-        "src/infrastructure/external/vendors/vendor-manager.ts",
         "src/infrastructure/index.ts"
       ],
       "orphan": false,
@@ -6383,25 +6558,7 @@
     },
     {
       "source": "src/infrastructure/external/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/external/vendors/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/index.ts"
       ],
@@ -6410,189 +6567,56 @@
     },
     {
       "source": "src/infrastructure/external/vendors/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./vendor-api",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/external/vendors/vendor-api.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-manager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/infrastructure/external/vendors/vendor-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/infrastructure/external/index.ts"
-      ],
-      "orphan": false,
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
       "source": "src/infrastructure/external/vendors/vendor-api.ts",
-      "dependencies": [
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
         {
-          "dynamic": false,
-          "module": "../../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-manager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/external/vendors/vendor-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
+          "severity": "info",
+          "name": "no-orphans"
         }
-      ],
-      "dependents": [
-        "src/infrastructure/external/vendors/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
+      ]
     },
     {
       "source": "src/infrastructure/external/vendors/vendor-manager.ts",
-      "dependencies": [
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
         {
-          "dynamic": false,
-          "module": "../../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
+          "severity": "info",
+          "name": "no-orphans"
         }
-      ],
-      "dependents": [
-        "src/infrastructure/external/vendors/index.ts",
-        "src/infrastructure/external/vendors/vendor-api.ts"
-      ],
-      "orphan": false,
-      "valid": true
+      ]
     },
     {
       "source": "src/infrastructure/external/zip/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./zip-creator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/external/zip/zip-creator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [],
-      "orphan": false,
+      "orphan": true,
       "valid": true
     },
     {
       "source": "src/infrastructure/external/zip/zip-creator.ts",
-      "dependencies": [
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
         {
-          "dynamic": false,
-          "module": "../../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/utils/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
+          "severity": "info",
+          "name": "no-orphans"
         }
-      ],
-      "dependents": [
-        "src/infrastructure/external/zip/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
+      ]
     },
     {
       "source": "src/infrastructure/index.ts",
@@ -9243,14 +9267,41 @@
           "severity": "info",
           "name": "no-orphans"
         }
+      },
+      {
+        "type": "module",
+        "from": "src/infrastructure/external/vendors/vendor-api.ts",
+        "to": "src/infrastructure/external/vendors/vendor-api.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/infrastructure/external/vendors/vendor-manager.ts",
+        "to": "src/infrastructure/external/vendors/vendor-manager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/infrastructure/external/zip/zip-creator.ts",
+        "to": "src/infrastructure/external/zip/zip-creator.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
       }
     ],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 4,
     "ignore": 0,
-    "totalCruised": 242,
-    "totalDependenciesCruised": 391,
+    "totalCruised": 248,
+    "totalDependenciesCruised": 389,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

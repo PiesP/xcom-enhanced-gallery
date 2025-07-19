@@ -3,7 +3,7 @@
  * @version 3.0.0 - Simplified State Management with Preact Signals
  */
 
-import { getPreactSignals } from '@infrastructure/external/vendors';
+import { getPreactSignals } from '@core/external/vendors';
 import { MediaItem, GalleryConfig } from '../types/core.types';
 
 const { signal, computed } = getPreactSignals();

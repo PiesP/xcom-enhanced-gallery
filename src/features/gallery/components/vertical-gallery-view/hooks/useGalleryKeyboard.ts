@@ -7,7 +7,7 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import { getPreactHooks } from '@core/external/vendors';
 
 interface UseGalleryKeyboardOptions {
   onClose: () => void;

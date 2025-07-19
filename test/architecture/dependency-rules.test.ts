@@ -178,6 +178,11 @@ describe('Architecture Dependency Rules', () => {
 
       for (const file of sourceFiles) {
         const content = await readFile(file, 'utf-8');
+        const filePath = file.replace(/\\/g, '/');
+
+        const isVendorDefinitionFile =
+          filePath === 'src/core/external/vendors/vendor-manager.ts' ||
+          filePath === 'src/core/external/vendors/vendor-api.ts';
 
         // vendors getter 사용 패턴 검사
         const vendorGetterPatterns = [
@@ -195,8 +200,13 @@ describe('Architecture Dependency Rules', () => {
           if (pattern.test(content)) {
             vendorUsageFound = true;
 
+            if (isVendorDefinitionFile) {
+              // vendor-manager.ts와 vendor-api.ts는 vendor getter를 정의하는 파일이므로 skip
+              continue;
+            }
+
             // vendors import가 있는지 확인
-            const hasVendorsImport = content.includes('@infrastructure/external/vendors');
+            const hasVendorsImport = content.includes('@core/external/vendors');
             if (!hasVendorsImport) {
               console.warn(`❌ ${file}에서 vendor getter 사용하지만 import 없음`, {
                 pattern: pattern.source,

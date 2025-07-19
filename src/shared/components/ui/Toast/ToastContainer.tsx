@@ -1,7 +1,7 @@
-import { getPreact, getPreactHooks } from '@infrastructure/external/vendors';
+import { getPreact, getPreactHooks } from '@core/external/vendors';
 import { toasts, removeToast, Toast } from './Toast';
 import styles from './ToastContainer.module.css';
-import type { VNode } from '@infrastructure/external/vendors';
+import type { VNode } from '@core/external/vendors';
 
 /**
  * Toast 컨테이너 컴포넌트

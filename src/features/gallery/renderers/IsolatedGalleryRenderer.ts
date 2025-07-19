@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import { getPreact } from '@infrastructure/external/vendors';
+import { getPreact } from '@core/external/vendors';
 import { logger } from '@core/logging';
 import type { MediaInfo } from '@core/types/media.types';
 import type { Cleanupable } from '@core/types/lifecycle.types';

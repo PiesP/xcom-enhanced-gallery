@@ -10,8 +10,8 @@
 
 import { logger } from '@core/logging/logger';
 import type { ComponentChildren, ComponentType } from '../../types/global.types';
-import { getPreact } from '@infrastructure/external/vendors';
-import type { VNode } from '@infrastructure/external/vendors';
+import { getPreact } from '@core/external/vendors';
+import type { VNode } from '@core/external/vendors';
 
 /**
  * 갤러리 마킹 옵션

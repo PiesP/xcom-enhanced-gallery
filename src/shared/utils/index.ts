@@ -18,7 +18,7 @@
  * import { imageFilter } from '@shared/utils/media';
  * import { extractTweetInfoFromUrl } from '@shared/utils/patterns';
  * import { ToolbarTimerManager } from '@shared/utils/ui';
- * import { getFflate } from '@infrastructure/external/vendors';
+ * import { getFflate } from '@core/external/vendors';
  *
  * // 또는 전체 import
  * import { accessibility, imageFilter } from '@shared/utils';

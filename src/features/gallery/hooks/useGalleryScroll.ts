@@ -6,7 +6,7 @@
  * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
  */
 
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import { getPreactHooks } from '@core/external/vendors';
 import { logger } from '@core/logging/logger';
 import { createEventManager } from '@infrastructure/dom/DOMEventManager';
 import { galleryState } from '@core/state/signals/gallery.signals';

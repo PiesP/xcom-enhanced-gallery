@@ -7,7 +7,7 @@
  */
 
 import { Button } from '@shared/components/ui/Button/Button';
-import { getPreactHooks } from '@infrastructure/external/vendors';
+import { getPreactHooks } from '@core/external/vendors';
 import { stringWithDefault } from '@core/utils/type-safety-helpers';
 import styles from '../VerticalGalleryView.module.css';
 

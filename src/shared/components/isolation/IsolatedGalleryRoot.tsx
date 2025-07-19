@@ -4,8 +4,8 @@
  * @version 1.0.0
  */
 
-import { getPreact } from '@infrastructure/external/vendors';
-import type { ComponentChildren } from '@infrastructure/external/vendors';
+import { getPreact } from '@core/external/vendors';
+import type { ComponentChildren } from '@core/external/vendors';
 
 export interface IsolatedGalleryRootProps {
   children: ComponentChildren;

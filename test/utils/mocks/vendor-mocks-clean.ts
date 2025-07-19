@@ -299,8 +299,8 @@ export class MockVendorManager {
 export function setupVendorMocks() {
   const mockManager = MockVendorManager.getInstance();
 
-  // @infrastructure/external/vendors 모듈 Mock
-  vi.doMock('@infrastructure/external/vendors', () => ({
+  // @core/external/vendors 모듈 Mock
+  vi.doMock('@core/external/vendors', () => ({
     getFflate: () => mockManager.getFflate(),
     getPreact: () => mockManager.getPreact(),
     getPreactHooks: () => mockManager.getPreactHooks(),
