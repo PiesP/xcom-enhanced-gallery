@@ -10,7 +10,7 @@
 
 import { logger } from '../../../infrastructure/logging/logger';
 import { ServiceManager } from '../ServiceManager';
-import { SERVICE_KEYS } from '../../constants/SERVICE_CONSTANTS';
+import { SERVICE_KEYS } from '../../../constants';
 
 export interface GalleryInitConfig {
   /** 초기화 활성화 여부 */

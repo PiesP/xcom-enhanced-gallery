@@ -3,7 +3,7 @@
  * @description UI 변경에 강건한 미디어 클릭 감지 및 처리 로직 (DOM 캐싱 최적화)
  */
 
-import { STABLE_SELECTORS } from '@core/constants/STABLE_SELECTORS';
+import { SELECTORS } from '../../../constants';
 import { logger } from '@infrastructure/logging/logger';
 import { cachedQuerySelector } from '@infrastructure/dom';
 
@@ -55,7 +55,8 @@ export class MediaClickDetector {
     }
 
     // 1. 미디어 컨테이너 확인 (최우선)
-    for (const selector of STABLE_SELECTORS.IMAGE_CONTAINERS) {
+    const imageSelectors = [SELECTORS.TWEET_PHOTO, 'img[src*="pbs.twimg.com"]'];
+    for (const selector of imageSelectors) {
       if (target.closest(selector)) {
         logger.debug(`MediaClickDetector: 이미지 컨테이너 감지 - ${selector}`);
         return true;
@@ -63,7 +64,8 @@ export class MediaClickDetector {
     }
 
     // 2. 미디어 플레이어 확인
-    for (const selector of STABLE_SELECTORS.MEDIA_PLAYERS) {
+    const videoSelectors = [SELECTORS.VIDEO_PLAYER, 'video'];
+    for (const selector of videoSelectors) {
       if (target.closest(selector)) {
         logger.debug(`MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
         return true;
@@ -80,7 +82,8 @@ export class MediaClickDetector {
     }
 
     // 4. 미디어 링크 확인
-    for (const selector of STABLE_SELECTORS.MEDIA_LINKS) {
+    const linkSelectors = ['a[href*="/photo/"]', 'a[href*="/video/"]'];
+    for (const selector of linkSelectors) {
       if (target.closest(selector)) {
         logger.debug(`MediaClickDetector: 미디어 링크 감지 - ${selector}`);
         return true;
@@ -251,7 +254,8 @@ export class MediaClickDetector {
       }
 
       // 안정적인 선택자를 통한 미디어 컨테이너 검색
-      for (const selector of STABLE_SELECTORS.IMAGE_CONTAINERS) {
+      const imageSelectors = [SELECTORS.TWEET_PHOTO, 'img[src*="pbs.twimg.com"]'];
+      for (const selector of imageSelectors) {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
           // 이미지 찾기
@@ -269,7 +273,8 @@ export class MediaClickDetector {
       }
 
       // 미디어 플레이어 검색
-      for (const selector of STABLE_SELECTORS.MEDIA_PLAYERS) {
+      const videoSelectors = [SELECTORS.VIDEO_PLAYER, 'video'];
+      for (const selector of videoSelectors) {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
           // 비디오 찾기

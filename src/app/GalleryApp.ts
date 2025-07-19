@@ -10,7 +10,7 @@
 
 import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-helpers';
 
-import { SERVICE_KEYS } from '@core/constants';
+import { SERVICE_KEYS } from '../constants';
 import type { GalleryRenderer } from '@core/interfaces/gallery.interfaces';
 import { getService } from '@core/services/ServiceRegistry';
 import { VideoControlService } from '@core/services/media/VideoControlService';

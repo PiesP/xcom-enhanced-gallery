@@ -4,7 +4,7 @@
  * ServiceManager의 상태와 서비스 등록 상황을 확인하는 도구
  */
 
-import { SERVICE_KEYS } from '../constants';
+import { SERVICE_KEYS } from '../../constants';
 import { registerAllServices } from './ServiceRegistry';
 import { ServiceManager } from './ServiceManager';
 import { logger } from '../../infrastructure/logging/logger';

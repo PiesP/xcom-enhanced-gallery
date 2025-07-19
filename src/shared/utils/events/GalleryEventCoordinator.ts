@@ -9,7 +9,7 @@
 import { logger } from '../../../infrastructure/logging/logger';
 import { GalleryStateGuard } from '../gallery/GalleryStateGuard';
 import { MediaClickDetector } from '../media/MediaClickDetector';
-import { shouldBlockGalleryForVideo } from '../../constants/video-controls';
+import { isVideoControlElement } from '../../../constants';
 import type { MediaInfo } from '../../../core/types/media.types';
 
 /**
@@ -179,7 +179,7 @@ export class GalleryEventCoordinator {
     }
 
     // 5. 비디오 제어 요소 체크
-    if (shouldBlockGalleryForVideo(target)) {
+    if (isVideoControlElement(target)) {
       return { handled: false, reason: 'Video control element' };
     }
 

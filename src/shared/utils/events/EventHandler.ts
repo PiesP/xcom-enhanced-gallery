@@ -9,7 +9,7 @@
 import { logger } from '../../../infrastructure/logging/logger';
 import { GalleryStateGuard } from '../gallery/GalleryStateGuard';
 import { MediaClickDetector } from '../media/MediaClickDetector';
-import { shouldBlockGalleryForVideo } from '../../constants/video-controls';
+import { isVideoControlElement } from '../../../constants';
 import type { MediaInfo } from '../../../core/types/media.types';
 
 /**
@@ -231,7 +231,7 @@ export class EventHandler {
    */
   private shouldBlockGallery(target: Element): boolean {
     // 비디오 관련 차단 검사
-    if (shouldBlockGalleryForVideo(target as HTMLElement)) {
+    if (isVideoControlElement(target as HTMLElement)) {
       return true;
     }
 

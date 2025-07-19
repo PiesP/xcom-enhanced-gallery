@@ -6,7 +6,7 @@
  */
 
 import { logger } from '../../../infrastructure/logging/logger';
-import { SYSTEM_PAGES } from '../../constants/MEDIA_CONSTANTS';
+import { SYSTEM_PAGES } from '../../../constants';
 
 /**
  * 사용자명 추출 결과

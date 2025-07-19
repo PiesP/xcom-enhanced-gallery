@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { STABLE_SELECTORS } from '@core/constants/STABLE_SELECTORS';
+import { STABLE_SELECTORS } from '../../../src/constants';
 import {
   isValidCSSSelector,
   calculateSelectorComplexity,

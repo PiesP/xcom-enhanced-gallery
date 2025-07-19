@@ -5,7 +5,7 @@
  * 모든 서비스를 등록하고 설정하는 중앙 레지스트리
  */
 
-import { SERVICE_KEYS } from '../constants';
+import { SERVICE_KEYS } from '../../constants';
 import type { ServiceTypeMapping } from '../types/services.types';
 import { ServiceManager } from './ServiceManager';
 

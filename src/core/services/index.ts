@@ -17,7 +17,7 @@ export {
 } from './media/UsernameExtractionService';
 
 // Service management system
-export { SERVICE_KEYS } from '../constants';
+export { SERVICE_KEYS } from '../../constants';
 export { ServiceManager, serviceManager } from './ServiceManager';
 export type { BaseService, ServiceConfig } from './ServiceManager';
 export { getService, registerAllServices, type ServiceKey } from './ServiceRegistry';

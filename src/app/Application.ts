@@ -14,7 +14,7 @@ import { removeUndefinedProperties } from '../infrastructure/utils/type-safety-h
 import { designSystem } from '../shared/design-system';
 
 import { ServiceManager } from '../core/services/ServiceManager';
-import { SERVICE_KEYS } from '../core/constants/SERVICE_CONSTANTS';
+import { SERVICE_KEYS } from '../constants';
 import { logger } from '../infrastructure/logging/logger';
 import type { AppConfig } from '../shared/types/app';
 import { GalleryApp } from './GalleryApp';
