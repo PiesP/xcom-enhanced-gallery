@@ -308,7 +308,7 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'es2020',
       outDir: 'dist',
-      emptyOutDir: true,
+      emptyOutDir: false,
       cssCodeSplit: false,
       assetsInlineLimit: 0,
       reportCompressedSize: !buildMode.isDevelopment,
