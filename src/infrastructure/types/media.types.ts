@@ -8,10 +8,9 @@
  * 아키텍처 의존성 규칙을 준수합니다.
  */
 
-/**
- * 미디어 타입
- */
-export type MediaType = 'image' | 'video' | 'gif';
+// Re-export from constants to avoid duplication
+import type { MediaType as BaseMediaType } from '../../constants';
+export type MediaType = BaseMediaType;
 
 /**
  * FilenameService에서 사용하는 기본 미디어 정보

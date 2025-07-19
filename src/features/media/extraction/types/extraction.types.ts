@@ -168,14 +168,5 @@ export interface MediaExtractionOrchestrator {
   extractMedia(context: ExtractionContext): Promise<ExtractionResult>;
 }
 
-/**
- * 기본 추출 옵션
- */
-export const DEFAULT_EXTRACTION_OPTIONS: ExtractionOptions = {
-  enableBackgroundLoading: true,
-  enableCache: true,
-  maxRetries: 3,
-  timeout: 10000,
-  fallbackStrategies: true,
-  debugMode: false,
-} as const;
+// Re-export from constants for consistency
+export { DEFAULT_EXTRACTION_OPTIONS } from '../../../../constants';

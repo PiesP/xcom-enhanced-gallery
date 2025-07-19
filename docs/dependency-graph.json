@@ -137,13 +137,18 @@
       "dependents": [
         "src/app/Application.ts",
         "src/app/GalleryApp.ts",
+        "src/core/types/media.types.ts",
         "src/core/services/media/UsernameExtractionService.ts",
         "src/features/media/extraction/services/TwitterVideoExtractor.ts",
         "src/core/index.ts",
         "src/core/services/index.ts",
+        "src/infrastructure/types/media.types.ts",
         "src/core/services/ServiceDiagnostics.ts",
         "src/core/services/ServiceRegistry.ts",
+        "src/features/settings/types/settings.types.ts",
+        "src/core/types/view-mode.types.ts",
         "src/core/services/gallery/GalleryInitializer.ts",
+        "src/features/media/extraction/types/extraction.types.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
         "src/shared/utils/events/EventHandler.ts",
         "src/shared/utils/events/GalleryEventCoordinator.ts"
@@ -610,7 +615,26 @@
     },
     {
       "source": "src/core/types/media.types.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/core/state/signals/gallery.signals.ts",
         "src/app/coordinators/MediaExtractionCoordinator.ts",
@@ -2657,7 +2681,26 @@
     },
     {
       "source": "src/infrastructure/types/media.types.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/infrastructure/media/FilenameService.ts",
         "src/infrastructure/index.ts"
@@ -3564,7 +3607,25 @@
     },
     {
       "source": "src/features/settings/types/settings.types.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/features/settings/services/SettingsService.ts",
         "src/features/settings/types/index.ts"
@@ -3658,7 +3719,25 @@
     },
     {
       "source": "src/core/types/view-mode.types.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/core/index.ts",
         "src/core/types/index.ts",
@@ -5748,7 +5827,25 @@
     },
     {
       "source": "src/features/media/extraction/types/extraction.types.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/features/media/extraction/strategies/ClickedElementStrategy.ts",
         "src/features/media/extraction/strategies/DomStructureStrategy.ts"
@@ -9658,7 +9755,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 237,
-    "totalDependenciesCruised": 417,
+    "totalDependenciesCruised": 422,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

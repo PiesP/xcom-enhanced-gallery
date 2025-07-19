@@ -323,7 +323,7 @@ export default defineConfig(({ mode }) => {
           format: 'iife',
           name: 'XG',
           inlineDynamicImports: true,
-          manualChunks: undefined,
+          manualChunks: undefined as any,
         },
         treeshake: {
           moduleSideEffects: false,

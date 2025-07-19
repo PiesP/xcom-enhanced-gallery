@@ -6,6 +6,11 @@
  * and serve as the single source of truth for media-related interfaces.
  */
 
+// Re-export from constants to avoid duplication
+import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } from '../../constants';
+export type MediaType = BaseMediaType;
+export type MediaQuality = BaseMediaQuality;
+
 /**
  * 브랜드 타입 기본 구조 (core 레이어 독립성을 위해 정의)
  */
@@ -15,16 +20,6 @@ type Brand<T, B> = T & { readonly __brand: B };
  * 미디어 ID 브랜드 타입
  */
 export type MediaId = Brand<string, 'MediaId'>;
-
-/**
- * 미디어 타입
- */
-export type MediaType = 'image' | 'video' | 'gif';
-
-/**
- * 미디어 품질
- */
-export type MediaQuality = 'thumbnail' | 'small' | 'medium' | 'large' | 'original';
 
 /**
  * 기본 미디어 정보 인터페이스

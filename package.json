@@ -48,7 +48,7 @@
     "@types/tampermonkey": "^5.0.4",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
-    "@typescript/native-preview": "7.0.0-dev.20250718.1",
+    "@typescript/native-preview": "7.0.0-dev.20250719.1",
     "@vitest/coverage-istanbul": "^3.2.4",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",

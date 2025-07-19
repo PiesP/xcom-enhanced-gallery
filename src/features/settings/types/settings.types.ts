@@ -136,39 +136,5 @@ export interface SettingValidationResult {
 /**
  * 기본 설정 값들
  */
-export const DEFAULT_SETTINGS: AppSettings = {
-  gallery: {
-    autoScrollSpeed: 5,
-    infiniteScroll: true,
-    preloadCount: 3,
-    virtualScrolling: true,
-    theme: 'auto',
-    animations: true,
-  },
-  download: {
-    filenamePattern: 'original',
-    imageQuality: 'original',
-    maxConcurrentDownloads: 3,
-    autoZip: false,
-    folderStructure: 'flat',
-  },
-  tokens: {
-    autoRefresh: true,
-    expirationMinutes: 60,
-  },
-  performance: {
-    domCaching: true,
-    cacheTTL: 3000,
-    memoryMonitoring: true,
-    performanceLogging: false,
-    debugMode: false,
-  },
-  accessibility: {
-    highContrast: false,
-    reduceMotion: false,
-    screenReaderSupport: true,
-    focusIndicators: true,
-  },
-  version: '1.0.0',
-  lastModified: Date.now(),
-};
+// Re-export from constants for consistency
+export { DEFAULT_SETTINGS } from '../../../constants';

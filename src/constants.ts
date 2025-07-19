@@ -361,6 +361,82 @@ export function extractTweetId(url: string): string | null {
 }
 
 // ================================
+// 뷰 모드 상수
+// ================================
+
+/** 갤러리 뷰 모드 - 수직 갤러리만 지원 */
+export const VIEW_MODES = ['verticalList'] as const;
+
+/**
+ * ViewMode 유효성 검사 함수
+ */
+export function isValidViewMode(mode: string): mode is ViewMode {
+  return VIEW_MODES.includes(mode as ViewMode);
+}
+
+/**
+ * ViewMode 변환 함수 (하위 호환성)
+ */
+export function normalizeViewMode(_mode: unknown): ViewMode {
+  // 모든 모드를 수직 갤러리로 통일
+  return 'verticalList';
+}
+
+// ================================
+// 설정 기본값
+// ================================
+
+export const DEFAULT_SETTINGS = {
+  gallery: {
+    autoScrollSpeed: 5,
+    infiniteScroll: true,
+    preloadCount: 3,
+    virtualScrolling: true,
+    theme: 'auto' as const,
+    animations: true,
+  },
+  download: {
+    filenamePattern: 'original' as const,
+    imageQuality: 'original' as const,
+    maxConcurrentDownloads: 3,
+    autoZip: false,
+    folderStructure: 'flat' as const,
+  },
+  tokens: {
+    autoRefresh: true,
+    expirationMinutes: 60,
+  },
+  performance: {
+    domCaching: true,
+    cacheTTL: 3000,
+    memoryMonitoring: true,
+    performanceLogging: false,
+    debugMode: false,
+  },
+  accessibility: {
+    highContrast: false,
+    reduceMotion: false,
+    screenReaderSupport: true,
+    focusIndicators: true,
+  },
+  version: '1.0.0',
+  lastModified: Date.now(),
+} as const;
+
+// ================================
+// 미디어 추출 기본 옵션
+// ================================
+
+export const DEFAULT_EXTRACTION_OPTIONS = {
+  enableBackgroundLoading: true,
+  enableCache: true,
+  maxRetries: 3,
+  timeout: 10000,
+  fallbackStrategies: true,
+  debugMode: false,
+} as const;
+
+// ================================
 // 타입 정의
 // ================================
 
@@ -369,3 +445,4 @@ export type MediaQuality = (typeof MEDIA.QUALITY)[keyof typeof MEDIA.QUALITY];
 export type FileExtension = (typeof MEDIA.EXTENSIONS)[keyof typeof MEDIA.EXTENSIONS];
 export type AppServiceKey = (typeof SERVICE_KEYS)[keyof typeof SERVICE_KEYS];
 export type EventType = (typeof EVENTS)[keyof typeof EVENTS];
+export type ViewMode = (typeof VIEW_MODES)[number];
