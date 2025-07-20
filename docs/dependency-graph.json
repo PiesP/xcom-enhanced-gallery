@@ -467,8 +467,8 @@
         "src/features/media/extraction/interfaces/extraction.interfaces.ts",
         "src/features/media/extraction/services/TwitterAPIExtractor.ts",
         "src/core/types/core-types.ts",
-        "src/core/state/signals/download.signals.ts",
         "src/core/types/core.types.ts",
+        "src/core/state/signals/download.signals.ts",
         "src/core/types/index.ts",
         "src/features/gallery/services/GalleryService.ts",
         "src/features/media/extraction/strategies/fallback/CompositeFallbackStrategy.ts",
@@ -2962,6 +2962,24 @@
         },
         {
           "dynamic": false,
+          "module": "./core.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/core/types/core.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./media.types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3074,6 +3092,37 @@
         "src/core/services/index.ts",
         "src/core/types/core-types.ts",
         "src/core/services/ServiceRegistry.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/types/core.types.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./media.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/core/types/media.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/types/core-types.ts",
+        "src/core/state/galleryState.ts",
+        "src/core/types/index.ts",
+        "src/shared/types/common.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4425,36 +4474,6 @@
       "valid": true
     },
     {
-      "source": "src/core/types/core.types.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/state/galleryState.ts",
-        "src/core/types/index.ts",
-        "src/shared/types/common.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/core/state/index.ts",
       "dependencies": [
         {
@@ -4627,6 +4646,7 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "export"
           ],
           "resolved": "src/core/types/core.types.ts",
@@ -10144,7 +10164,7 @@
     "info": 2,
     "ignore": 0,
     "totalCruised": 255,
-    "totalDependenciesCruised": 434,
+    "totalDependenciesCruised": 435,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

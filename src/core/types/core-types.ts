@@ -129,9 +129,9 @@ export interface GalleryActions {
 }
 
 /**
- * 갤러리 설정 인터페이스
+ * 갤러리 설정 인터페이스 (Gallery Domain specific)
  */
-export interface GalleryConfig {
+export interface GalleryDomainConfig {
   readonly autoPlay: boolean;
   readonly loopNavigation: boolean;
   readonly keyboardNavigation: boolean;
@@ -170,7 +170,7 @@ export type GalleryLifecycleState =
  */
 export interface GalleryInitOptions {
   readonly container?: HTMLElement;
-  readonly config?: Partial<GalleryConfig>;
+  readonly config?: Partial<GalleryDomainConfig>;
   readonly onError?: (error: string) => void;
 }
 
@@ -186,54 +186,16 @@ export { VIEW_MODES, isValidViewMode, normalizeViewMode, type ViewMode } from '.
 // ========================================
 
 /**
- * 기존 core.types.ts의 유용한 타입들
+ * Re-export utility types from core.types.ts to avoid duplication
  */
-export interface ThemeConfig {
-  /** 테마 모드 */
-  mode: 'light' | 'dark' | 'auto';
-  /** 색상 스킴 */
-  colorScheme?: 'twitter' | 'minimal' | 'custom';
-  /** 애니메이션 활성화 여부 */
-  animationsEnabled?: boolean;
-}
-
-export interface DownloadOptions {
-  /** 압축 파일로 다운로드 여부 */
-  asZip: boolean;
-  /** 파일명 포맷 */
-  filenameFormat: string;
-  /** 최대 동시 다운로드 수 */
-  maxConcurrent: number;
-  /** 다운로드 디렉토리 */
-  directory?: string;
-}
-
-export interface Point {
-  x: number;
-  y: number;
-}
-
-export interface Size {
-  width: number;
-  height: number;
-}
-
-/** 일반적인 이벤트 핸들러 타입 */
-export type EventHandler<T = Event> = (event: T) => void;
-
-/** 비동기 이벤트 핸들러 타입 */
-export type AsyncEventHandler<T = Event> = (event: T) => Promise<void>;
-
-/** 취소 가능한 함수 타입 */
-export type CancelableFunction = () => void;
-
-/** 로딩 상태 */
-export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
-
-/** 에러 정보 */
-export interface ErrorInfo {
-  message: string;
-  code?: string;
-  timestamp: number;
-  context?: Record<string, unknown>;
-}
+export type {
+  ThemeConfig,
+  DownloadOptions,
+  Point,
+  Size,
+  EventHandler,
+  AsyncEventHandler,
+  CancelableFunction,
+  LoadingState,
+  ErrorInfo,
+} from './core.types';

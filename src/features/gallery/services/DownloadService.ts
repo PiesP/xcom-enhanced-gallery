@@ -12,15 +12,16 @@
 
 import {
   BulkDownloadService,
-  type DownloadOptions,
+  type BulkDownloadOptions,
   type DownloadProgress,
   type DownloadResult,
 } from '@core/services/BulkDownloadService';
 import type { MediaInfo, MediaItem } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
+import { currentMediaItems } from '@core/state/galleryState';
 
 // Re-export types for convenience
-export type { DownloadOptions, DownloadProgress, DownloadResult };
+export type { BulkDownloadOptions, DownloadProgress, DownloadResult };
 
 /**
  * 갤러리 다운로드 서비스
@@ -80,7 +81,7 @@ export class DownloadService {
    */
   async downloadBulk(
     mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: DownloadOptions = {}
+    options: BulkDownloadOptions = {}
   ): Promise<DownloadResult & { downloadedCount?: number }> {
     const result = await this.downloadMultiple(mediaItems, options);
     return {
@@ -90,7 +91,7 @@ export class DownloadService {
   }
 
   /**
-   * 현재 미디어 다운로드 (갤러리 특화 진입점)
+   * 현재 미디어 다운로드 (갤러리 특화 메서드)
    */
   async downloadCurrent(media: MediaItem | MediaInfo): Promise<boolean> {
     logger.info('Gallery: downloading current media');
@@ -99,11 +100,26 @@ export class DownloadService {
   }
 
   /**
+   * 모든 미디어 다운로드 (갤러리 특화 진입점)
+   */
+  async downloadAll(
+    items: readonly MediaInfo[],
+    options: BulkDownloadOptions = {}
+  ): Promise<DownloadResult> {
+    logger.info(`Gallery: downloading all ${items.length} media items`);
+    return this.coreDownloadService.downloadMultiple(items, options);
+  }
+
+  /**
+   * 여러 미디어 다운로드 (갤러리 특화 진입점)
+   */
+
+  /**
    * 여러 미디어 다운로드 (갤러리 특화 진입점)
    */
   async downloadMultiple(
     mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: DownloadOptions = {}
+    options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
     logger.info(`Gallery: downloading ${mediaItems.length} media items`);
     return this.coreDownloadService.downloadMultiple(mediaItems, options);
@@ -112,10 +128,11 @@ export class DownloadService {
   /**
    * 갤러리 전체 다운로드 (갤러리 특화 메서드)
    */
-  async downloadAll(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: Omit<DownloadOptions, 'strategy'> = {}
+  async downloadAsZip(
+    items?: MediaInfo[],
+    options: Omit<BulkDownloadOptions, 'strategy'> = {}
   ): Promise<DownloadResult> {
+    const mediaItems = items || currentMediaItems.value;
     logger.info(`Gallery: downloading all ${mediaItems.length} items as ZIP`);
 
     return this.coreDownloadService.downloadMultiple(mediaItems, {
@@ -127,10 +144,8 @@ export class DownloadService {
   /**
    * 선택된 미디어 개별 다운로드 (갤러리 특화 메서드)
    */
-  async downloadSelected(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: Omit<DownloadOptions, 'strategy'> = {}
-  ): Promise<DownloadResult> {
+  async downloadSelected(options: BulkDownloadOptions = {}): Promise<DownloadResult> {
+    const mediaItems = currentMediaItems.value;
     logger.info(`Gallery: downloading ${mediaItems.length} selected items individually`);
 
     return this.coreDownloadService.downloadMultiple(mediaItems, {

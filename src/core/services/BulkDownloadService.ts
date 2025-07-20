@@ -23,7 +23,7 @@ export interface DownloadProgress {
   filename?: string;
 }
 
-export interface DownloadOptions {
+export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;
   signal?: AbortSignal;
   zipFilename?: string;
@@ -186,7 +186,7 @@ export class BulkDownloadService implements BaseService {
    */
   async downloadBulk(
     mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: DownloadOptions = {}
+    options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
     return this.downloadMultiple(mediaItems, options);
   }
@@ -260,14 +260,14 @@ export class BulkDownloadService implements BaseService {
   }
 
   /**
-   * 여러 미디어 다운로드 (전략 자동 선택)
+   * 여러 미디어 아이템을 한 번에 다운로드합니다.
    * @param mediaItems - 다운로드할 미디어 아이템 배열
    * @param options - 다운로드 옵션
    * @returns 다운로드 결과
    */
   async downloadMultiple(
     mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: DownloadOptions = {}
+    options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
     try {
       if (mediaItems.length === 0) {
@@ -308,7 +308,7 @@ export class BulkDownloadService implements BaseService {
    */
   private async downloadAsZip(
     mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: DownloadOptions = {}
+    options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
     const { onProgress, zipFilename } = options;
 
@@ -384,7 +384,7 @@ export class BulkDownloadService implements BaseService {
    */
   private async downloadIndividually(
     mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: DownloadOptions = {}
+    options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
     const { onProgress, signal } = options;
     let successCount = 0;

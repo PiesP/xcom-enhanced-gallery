@@ -214,6 +214,7 @@ strict digraph "dependency-cruiser output"{
     "src/core/types/core-types.ts" -> "src/core/services/media/VideoControlService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/types/core-types.ts" -> "src/core/services/ThemeService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/types/core-types.ts" -> "src/core/services/ToastController.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/core-types.ts" -> "src/core/types/core.types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/types/core-types.ts" -> "src/core/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/core.types.ts" [label=<core.types.ts> tooltip="core.types.ts" URL="src/core/types/core.types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/types/core.types.ts" -> "src/core/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
@@ -221,7 +222,7 @@ strict digraph "dependency-cruiser output"{
     "src/core/types/gallery.types.ts" -> "src/core/types/core-types.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/types/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/types/index.ts" -> "src/core/types/core-types.ts" [arrowhead="inv"]
-    "src/core/types/index.ts" -> "src/core/types/core.types.ts" [arrowhead="inv"]
+    "src/core/types/index.ts" -> "src/core/types/core.types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/types/index.ts" -> "src/core/types/gallery.types.ts" [arrowhead="inv"]
     "src/core/types/index.ts" -> "src/core/types/lifecycle.types.ts" [arrowhead="inv"]
     "src/core/types/index.ts" -> "src/core/types/media.types.ts" [arrowhead="inv"]

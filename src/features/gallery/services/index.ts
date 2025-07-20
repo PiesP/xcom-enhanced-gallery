@@ -13,7 +13,7 @@ export { DownloadService } from './DownloadService';
 export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './GalleryService';
 
 export type {
-  DownloadOptions,
+  BulkDownloadOptions,
   DownloadProgress,
   DownloadResult,
 } from '@core/services/BulkDownloadService';
