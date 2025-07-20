@@ -1,22 +1,32 @@
 /**
  * @fileoverview Gallery Feature Exports
- * @version 1.0.0 - Clean Architecture
+ * @version 2.0.0 - Phase 2B Clean Architecture Optimization
+ * @description 갤러리 Feature 통합 및 최적화 - 단일 렌더러 통합
  */
 
-// 통합된 갤러리 렌더러
+// 통합된 갤러리 렌더러 (기본)
 export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
 
-// 새로운 격리된 갤러리 렌더러
-export * from './renderers';
+// 격리된 갤러리 렌더러 (고급 사용)
+export {
+  IsolatedGalleryRenderer,
+  renderIsolatedGallery,
+  findActiveIsolatedGallery,
+  cleanupAllIsolatedGalleries,
+  type IsolatedGalleryRendererOptions,
+} from './renderers/IsolatedGalleryRenderer';
 
-// 갤러리 컴포넌트들
-export * from './components';
+// 핵심 갤러리 컴포넌트들
+export { VerticalGalleryView } from './components/vertical-gallery-view';
+export { GalleryView } from './components/GalleryView';
 
-// 갤러리 서비스들
-export * from './services';
+// 갤러리 서비스들 (통합)
+export { GalleryService, galleryService } from './services/GalleryService';
+export { DownloadService } from './services/DownloadService';
+export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './services/GalleryService';
 
-// 갤러리 이벤트
+// 갤러리 이벤트 (필요시)
 export * from './events';
 
-// 갤러리 타입
+// 갤러리 타입들
 export * from './types';

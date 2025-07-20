@@ -1,9 +1,12 @@
 /**
- * @fileoverview 설정 모듈 배럴 익스포트
+ * @fileoverview Settings Feature Exports
+ * @version 2.0.0 - Phase 2B Clean Architecture Optimization
+ * @description 설정 Feature 통합 및 최적화
  */
 
-// 서비스
-export * from './services';
+// 핵심 설정 서비스들
+export { SettingsService } from './services/SettingsService';
+export { TwitterTokenExtractor } from './services/TwitterTokenExtractor';
 
-// 타입
-export * from './types';
+// 설정 타입들
+export * from './types/settings.types';
