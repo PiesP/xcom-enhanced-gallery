@@ -355,8 +355,9 @@ export class Application {
     (globalThis as Record<string, unknown>).__XEG_APP__ = this;
 
     // 진단 도구
-    import('@core/services/ServiceDiagnostics').then(({ diagnoseServiceManager }) => {
-      (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ = diagnoseServiceManager;
+    import('@core/services/core-services').then(({ ServiceDiagnostics }) => {
+      (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ =
+        ServiceDiagnostics.diagnoseServiceManager;
 
       logger.debug('🛠️ 개발 도구 활성화됨:', {
         availableCommands: ['__XEG_APP__', '__XEG_DIAGNOSE__()', '__XEG_GALLERY__ (갤러리 앱)'],

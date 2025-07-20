@@ -30,8 +30,8 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
 
     // 이미지 미디어 추출 (캐시된 조회 사용)
     const images = cachedQuerySelectorAll('img[src*="pbs.twimg.com"]', rootElement, 3000);
-    if (images && Array.isArray(images)) {
-      images.forEach(img => {
+    if (images && images.length > 0) {
+      Array.from(images).forEach(img => {
         const imgElement = img as HTMLImageElement;
         const src = imgElement.src;
 
@@ -48,8 +48,8 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
 
     // 비디오 미디어 추출 (캐시된 조회 사용)
     const videos = cachedQuerySelectorAll('video', rootElement, 2000);
-    if (videos && Array.isArray(videos)) {
-      videos.forEach(video => {
+    if (videos && videos.length > 0) {
+      Array.from(videos).forEach(video => {
         const mediaInfo = createMediaInfoFromVideo(video as HTMLVideoElement, tweetId, mediaIndex);
         if (mediaInfo) {
           mediaItems.push(mediaInfo);
@@ -60,8 +60,8 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
 
     // 추가: data-testid="tweetPhoto"와 data-testid="videoPlayer" 요소들도 확인 (캐시된 조회)
     const tweetPhotos = cachedQuerySelectorAll('[data-testid="tweetPhoto"]', rootElement, 3000);
-    if (tweetPhotos && Array.isArray(tweetPhotos)) {
-      tweetPhotos.forEach(photo => {
+    if (tweetPhotos && tweetPhotos.length > 0) {
+      Array.from(tweetPhotos).forEach(photo => {
         const imgElement = cachedQuerySelector('img', photo as Element, 2000) as HTMLImageElement;
         if (imgElement?.src?.includes('pbs.twimg.com')) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);

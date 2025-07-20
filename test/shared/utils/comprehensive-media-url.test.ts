@@ -5,8 +5,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// infrastructure/dom 모킹
-vi.mock('@infrastructure/dom', () => ({
+// @core/dom 모킹
+vi.mock('@core/dom', () => ({
   cachedQuerySelectorAll: vi.fn(),
 }));
 
@@ -17,7 +17,7 @@ import {
   isValidMediaUrl,
   extractOriginalImageUrl,
 } from '@shared/utils/media/media-url.util';
-import { cachedQuerySelectorAll } from '@infrastructure/dom';
+import { cachedQuerySelectorAll } from '@core/dom';
 
 // DOM 환경 모킹
 const createMockDocument = () => {

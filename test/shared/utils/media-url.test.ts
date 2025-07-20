@@ -5,8 +5,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// infrastructure/dom 모킹
-vi.mock('@infrastructure/dom', () => ({
+// @core/dom 모킹
+vi.mock('@core/dom', () => ({
   cachedQuerySelectorAll: vi.fn(),
 }));
 
@@ -15,7 +15,7 @@ import {
   isValidMediaUrl,
   getHighQualityMediaUrl,
 } from '../../../src/shared/utils/media/media-url.util';
-import { cachedQuerySelectorAll } from '@infrastructure/dom';
+import { cachedQuerySelectorAll } from '@core/dom';
 
 // 새로운 테스트 유틸리티 import
 import {

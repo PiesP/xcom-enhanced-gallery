@@ -10,4 +10,8 @@ export { MediaMappingService } from './MediaMappingService';
 export { MediaTabUrlDirectStrategy } from './MediaTabUrlDirectStrategy';
 
 // 타입들
-export type { MappingCacheEntry, MediaMappingStrategy, StrategyMetrics } from './types';
+export type {
+  MappingCacheEntry,
+  MediaMappingStrategy,
+  StrategyMetrics,
+} from '../../types/core-types';

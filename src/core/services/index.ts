@@ -1,13 +1,16 @@
 /**
  * Core Services Export
  *
- * Phase 2B Step 3: 핵심 비즈니스 서비스만 export
+ * Phase 1 Step 3: 서비스 파일 통합 후 export
  */
 
 // Essential business services
 export { BulkDownloadService } from './BulkDownloadService';
 export { ThemeService, themeService } from './ThemeService';
 export { ToastController, toastController } from './ToastController';
+
+// Consolidated core services
+export { type ILogger, ConsoleLogger, defaultLogger, ServiceDiagnostics } from './core-services';
 
 // Media services
 export {
@@ -28,6 +31,3 @@ export type { ServiceTypeMapping } from '../types/services.types';
 export type { BulkDownloadOptions, DownloadProgress, DownloadResult } from './BulkDownloadService';
 export type { Theme } from './ThemeService';
 export type { ToastOptions } from './ToastController';
-
-// Development utilities (optional)
-export { diagnoseServiceManager } from './ServiceDiagnostics';

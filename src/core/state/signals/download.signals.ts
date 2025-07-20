@@ -8,7 +8,7 @@
 import type { MediaInfo, MediaId } from '../../types/media.types';
 import type { Result } from '../../types/result';
 import { getPreactSignals } from '@core/external/vendors';
-import { defaultLogger, type ILogger } from '../../services/logger.interface';
+import { defaultLogger, type ILogger } from '../../services/core-services';
 
 // Signal 타입 정의
 type Signal<T> = {

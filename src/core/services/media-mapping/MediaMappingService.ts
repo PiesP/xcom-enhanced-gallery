@@ -6,7 +6,11 @@
 import type { MediaMapping, MediaPageType } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
 import { MediaTabUrlDirectStrategy } from './MediaTabUrlDirectStrategy';
-import type { MappingCacheEntry, MediaMappingStrategy, StrategyMetrics } from './types';
+import type {
+  MappingCacheEntry,
+  MediaMappingStrategy,
+  StrategyMetrics,
+} from '../../types/core-types';
 
 /**
  * 간소화된 미디어 매핑 서비스

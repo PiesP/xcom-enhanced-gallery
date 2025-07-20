@@ -1,7 +1,7 @@
 /**
  * Core Layer Exports
  *
- * Phase 2B Step 3: Core Layer 최종 정리
+ * Phase 1 Step 3: 중복 제거 및 타입 충돌 해결
  * 핵심 비즈니스 로직과 서비스만 선별적으로 export
  */
 
@@ -10,6 +10,8 @@ export * from '../constants';
 
 // Essential interfaces and types
 export * from './interfaces';
+
+// Core types (consolidated in Phase 1)
 export type {
   BaseService,
   ServiceConfig,
@@ -19,23 +21,18 @@ export type {
   ServiceTypeMapping,
 } from './types/services.types';
 
-// Infrastructure components (moved to Core)
+// Infrastructure components (moved to Core in Phase 1)
 export * from './browser';
 export * from './dom';
 export * from './memory';
-export * from './types/view-mode.types';
+export * from './media';
+export * from './managers';
 
 // Core infrastructure
 export * from './logging';
 export * from './external';
 export * from './error';
 export * from './utils';
-
-// Migrated infrastructure components
-export * from './browser';
-export * from './dom';
-export * from './media';
-export * from './managers';
 
 // Core business services
 export * from './services';

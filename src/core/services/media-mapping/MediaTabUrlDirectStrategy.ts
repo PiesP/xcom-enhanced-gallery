@@ -6,7 +6,7 @@
 import type { MediaMapping, MediaPageType } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
 import { safeParseInt } from '@core/utils/type-safety-helpers';
-import type { MediaMappingStrategy } from './types';
+import type { MediaMappingStrategy } from '../../types/core-types';
 
 export class MediaTabUrlDirectStrategy implements MediaMappingStrategy {
   readonly name = 'media-tab-url-direct';
