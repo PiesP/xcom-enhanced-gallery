@@ -1309,8 +1309,8 @@
 <!-- src/core/index.ts&#45;&gt;src/core/types/view&#45;mode.types.ts -->
 <g id="edge49" class="edge">
 <title>src/core/index.ts&#45;&gt;src/core/types/view&#45;mode.types.ts</title>
-<path fill="none" stroke="#666666" d="M267.4,-8637.49C267.4,-8532.71 267.4,-7853.6 267.4,-7853.6 267.4,-7853.6 1132.66,-7853.6 1132.66,-7853.6"/>
-<polygon fill="none" stroke="#666666" points="1132.66,-7856.4 1140.66,-7853.6 1132.66,-7850.8 1132.66,-7856.4"/>
+<path fill="none" stroke="#666666" d="M267.4,-8637.49C267.4,-8532.71 267.4,-7853.6 267.4,-7853.6 267.4,-7853.6 1133.59,-7853.6 1133.59,-7853.6"/>
+<polygon fill="#666666" stroke="#666666" points="1141.68,-7856.4 1133.68,-7853.6 1141.68,-7850.8 1141.68,-7856.4"/>
 </g>
 <!-- src/core/utils/index.ts -->
 <g id="node46" class="node">

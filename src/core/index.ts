@@ -1,16 +1,41 @@
+/**
+ * Core Layer Exports
+ *
+ * Phase 2B Step 3: Core Layer 최종 정리
+ * 핵심 비즈니스 로직과 서비스만 선별적으로 export
+ */
+
+// Constants and configuration
 export * from '../constants';
+
+// Essential interfaces and types
 export * from './interfaces';
+export type {
+  BaseService,
+  ServiceConfig,
+  ServiceDependency,
+  ServiceFactory,
+  ServiceLifecycle,
+  ServiceTypeMapping,
+} from './types/services.types';
+export * from './types/view-mode.types';
+
+// Core infrastructure
 export * from './logging';
-export * from './utils';
 export * from './external';
 export * from './error';
-export * from './managers';
+export * from './utils';
 
-// Newly migrated components - Phase 2A Step 8
+// Migrated infrastructure components
 export * from './browser';
 export * from './dom';
 export * from './media';
+export * from './managers';
 
+// Core business services
+export * from './services';
+
+// Gallery state management (essential signals)
 export {
   galleryState,
   openGallery,
@@ -28,6 +53,8 @@ export {
   hasNextMedia,
   type GalleryEvents,
 } from './state/signals/gallery.signals';
+
+// Download state management (essential signals)
 export {
   downloadState,
   startDownload,
@@ -38,13 +65,3 @@ export {
   type DownloadTask,
   type DownloadState,
 } from './state/signals/download.signals';
-export type {
-  BaseService,
-  ServiceConfig,
-  ServiceDependency,
-  ServiceFactory,
-  ServiceLifecycle,
-} from './types/services.types';
-export type { ViewMode } from './types/view-mode.types';
-export { VIEW_MODES, isValidViewMode, normalizeViewMode } from './types/view-mode.types';
-export * from './services';

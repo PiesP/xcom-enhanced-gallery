@@ -88,7 +88,6 @@ strict digraph "dependency-cruiser output"{
     "src/core/index.ts" -> "src/core/state/signals/gallery.signals.ts" [arrowhead="inv"]
     "src/core/index.ts" -> "src/core/types/services.types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/index.ts" -> "src/core/types/view-mode.types.ts" [arrowhead="inv"]
-    "src/core/index.ts" -> "src/core/types/view-mode.types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/index.ts" -> "src/core/utils/index.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/interfaces" {label="interfaces" "src/core/interfaces/ServiceInterfaces.ts" [label=<ServiceInterfaces.ts> tooltip="ServiceInterfaces.ts" URL="src/core/interfaces/ServiceInterfaces.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/interfaces" {label="interfaces" "src/core/interfaces/gallery.interfaces.ts" [label=<gallery.interfaces.ts> tooltip="gallery.interfaces.ts" URL="src/core/interfaces/gallery.interfaces.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }

@@ -1,12 +1,14 @@
 /**
- * @fileoverview Core Managers - System Management Components
- * @version 2.0.0 - Clean Architecture Implementation
- * @description Core 레이어의 관리자 컴포넌트들
+ * Core Managers Export
+ *
+ * Phase 2B Step 3: 핵심 관리 컴포넌트만 export
  */
 
+// Essential managers
 export { EventDispatcher } from './EventDispatcher';
+export { NamespacedDesignSystem, namespacedDesignSystem } from './NamespacedDesignSystem';
 
-// 리소스 매니저
+// Resource management
 export {
   ResourceManager,
   resourceManager,
@@ -21,6 +23,3 @@ export {
   releaseResourcesByContext,
   cleanupAllResources,
 } from './ResourceManager';
-
-// 네임스페이스된 디자인 시스템
-export { NamespacedDesignSystem, namespacedDesignSystem } from './NamespacedDesignSystem';
