@@ -7321,6 +7321,23 @@
         },
         {
           "dynamic": false,
+          "module": "./memory",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/infrastructure/memory/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./types/lifecycle.types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7376,26 +7393,26 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/types/lifecycle.types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/index.ts"
+      "source": "src/infrastructure/memory/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./MemoryTracker",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/infrastructure/memory/MemoryTracker.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/types/media.types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/utils/index.ts",
-      "dependencies": [],
       "dependents": [
         "src/infrastructure/index.ts"
       ],
@@ -7430,27 +7447,29 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/memory/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./MemoryTracker",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/memory/MemoryTracker.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
+      "source": "src/infrastructure/types/lifecycle.types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/index.ts"
       ],
-      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/types/media.types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/utils/index.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -10067,7 +10086,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 256,
-    "totalDependenciesCruised": 431,
+    "totalDependenciesCruised": 432,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

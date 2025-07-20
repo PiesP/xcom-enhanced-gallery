@@ -470,6 +470,7 @@ strict digraph "dependency-cruiser output"{
     "src/infrastructure/index.ts" -> "src/infrastructure/logging/index.ts" [arrowhead="inv"]
     "src/infrastructure/index.ts" -> "src/infrastructure/managers/index.ts" [arrowhead="inv"]
     "src/infrastructure/index.ts" -> "src/infrastructure/media/index.ts" [arrowhead="inv"]
+    "src/infrastructure/index.ts" -> "src/infrastructure/memory/index.ts" [arrowhead="inv"]
     "src/infrastructure/index.ts" -> "src/infrastructure/types/lifecycle.types.ts" [arrowhead="inv"]
     "src/infrastructure/index.ts" -> "src/infrastructure/types/media.types.ts" [arrowhead="inv"]
     "src/infrastructure/index.ts" -> "src/infrastructure/utils/index.ts" [arrowhead="inv"]

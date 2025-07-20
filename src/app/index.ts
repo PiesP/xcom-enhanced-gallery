@@ -1,5 +1,17 @@
+/**
+ * App Layer Export
+ *
+ * Phase 2B Step 4: 애플리케이션 진입점과 조정자만 export
+ */
+
+// Application entry points
 export { Application, appLifecycle } from './Application';
 export { GalleryApp } from './GalleryApp';
+
+// Coordination layer
+export * from './coordinators';
+
+// Essential types
 export type {
   AppConfig,
   AppInstance,
@@ -9,4 +21,3 @@ export type {
   ServiceState,
 } from './types';
 export type { AppLifecycleState, LifecycleConfig } from './Application';
-export * from './coordinators';
