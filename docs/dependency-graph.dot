@@ -506,9 +506,18 @@ strict digraph "dependency-cruiser output"{
     "src/shared/components/hoc/index.ts" -> "src/shared/components/hoc/GalleryMarker.tsx" [arrowhead="inv"]
     "src/shared/components/hoc/index.ts" -> "src/shared/components/hoc/GalleryMarker.tsx" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" "src/shared/components/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/components/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
-    "src/shared/components/index.ts" -> "src/shared/components/hoc/index.ts" [arrowhead="inv"]
-    "src/shared/components/index.ts" -> "src/shared/components/isolation/index.ts" [arrowhead="inv"]
-    "src/shared/components/index.ts" -> "src/shared/components/ui/index.ts" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/GalleryViewer.tsx" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/hoc/GalleryMarker.tsx" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/isolation/IsolatedGalleryContainer.tsx" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/isolation/IsolatedGalleryContainer.tsx" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/components/index.ts" -> "src/shared/components/isolation/IsolatedGalleryRoot.tsx" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/ui/Button/Button.tsx" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/ui/Button/Button.tsx" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/components/index.ts" -> "src/shared/components/ui/Toast/Toast.tsx" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/ui/Toast/Toast.tsx" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/components/index.ts" -> "src/shared/components/ui/Toast/ToastContainer.tsx" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/ui/Toolbar/Toolbar.tsx" [arrowhead="inv"]
+    "src/shared/components/index.ts" -> "src/shared/components/ui/Toolbar/Toolbar.tsx" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/isolation" {label="isolation" "src/shared/components/isolation/IsolatedGalleryContainer.tsx" [label=<IsolatedGalleryContainer.tsx> tooltip="IsolatedGalleryContainer.tsx" URL="src/shared/components/isolation/IsolatedGalleryContainer.tsx" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/isolation" {label="isolation" "src/shared/components/isolation/IsolatedGalleryRoot.tsx" [label=<IsolatedGalleryRoot.tsx> tooltip="IsolatedGalleryRoot.tsx" URL="src/shared/components/isolation/IsolatedGalleryRoot.tsx" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/isolation" {label="isolation" "src/shared/components/isolation/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/components/isolation/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
@@ -560,7 +569,9 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/useScrollDirection.ts" [label=<useScrollDirection.ts> tooltip="useScrollDirection.ts" URL="src/shared/hooks/useScrollDirection.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/useToolbarState.ts" [label=<useToolbarState.ts> tooltip="useToolbarState.ts" URL="src/shared/hooks/useToolbarState.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" "src/shared/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } }
-    "src/shared/index.ts" -> "src/shared/components/index.ts" [arrowhead="inv"]
+    "src/shared/index.ts" -> "src/shared/components/hoc/index.ts" [arrowhead="inv"]
+    "src/shared/index.ts" -> "src/shared/components/isolation/index.ts" [arrowhead="inv"]
+    "src/shared/index.ts" -> "src/shared/components/ui/index.ts" [arrowhead="inv"]
     "src/shared/index.ts" -> "src/shared/types/index.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/index.ts" -> "src/shared/utils/index.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/styles" {label="styles" "src/shared/styles/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/styles/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }

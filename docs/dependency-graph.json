@@ -4650,6 +4650,7 @@
       "dependents": [
         "src/features/gallery/components/Gallery.tsx",
         "src/features/gallery/components/GalleryView.tsx",
+        "src/shared/components/index.ts",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
@@ -7586,7 +7587,9 @@
           "valid": true
         }
       ],
-      "dependents": [],
+      "dependents": [
+        "src/shared/components/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -7660,7 +7663,8 @@
         }
       ],
       "dependents": [
-        "src/shared/components/hoc/index.ts"
+        "src/shared/components/hoc/index.ts",
+        "src/shared/components/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7705,7 +7709,7 @@
         }
       ],
       "dependents": [
-        "src/shared/components/index.ts"
+        "src/shared/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7715,14 +7719,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./hoc",
+          "module": "./GalleryViewer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/hoc/index.ts",
+          "resolved": "src/shared/components/GalleryViewer.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7732,14 +7736,14 @@
         },
         {
           "dynamic": false,
-          "module": "./isolation",
+          "module": "./hoc/GalleryMarker",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/isolation/index.ts",
+          "resolved": "src/shared/components/hoc/GalleryMarker.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7749,34 +7753,7 @@
         },
         {
           "dynamic": false,
-          "module": "./ui",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/isolation/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./IsolatedGalleryContainer",
+          "module": "./isolation/IsolatedGalleryContainer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7793,7 +7770,25 @@
         },
         {
           "dynamic": false,
-          "module": "./IsolatedGalleryRoot",
+          "module": "./isolation/IsolatedGalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/IsolatedGalleryContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./isolation/IsolatedGalleryRoot",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7807,38 +7802,10 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/isolation/IsolatedGalleryContainer.tsx",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/isolation/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/isolation/IsolatedGalleryRoot.tsx",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/isolation/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/index.ts",
-      "dependencies": [
+        },
         {
           "dynamic": false,
-          "module": "./Button/Button",
+          "module": "./ui/Button/Button",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7855,7 +7822,7 @@
         },
         {
           "dynamic": false,
-          "module": "./Button/Button",
+          "module": "./ui/Button/Button",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7873,7 +7840,7 @@
         },
         {
           "dynamic": false,
-          "module": "./Toast/Toast",
+          "module": "./ui/Toast/Toast",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7890,7 +7857,7 @@
         },
         {
           "dynamic": false,
-          "module": "./Toast/Toast",
+          "module": "./ui/Toast/Toast",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7908,7 +7875,7 @@
         },
         {
           "dynamic": false,
-          "module": "./Toast/ToastContainer",
+          "module": "./ui/Toast/ToastContainer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7925,7 +7892,7 @@
         },
         {
           "dynamic": false,
-          "module": "./Toolbar/Toolbar",
+          "module": "./ui/Toolbar/Toolbar",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7942,7 +7909,7 @@
         },
         {
           "dynamic": false,
-          "module": "./Toolbar/Toolbar",
+          "module": "./ui/Toolbar/Toolbar",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -7959,8 +7926,26 @@
           "valid": true
         }
       ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/isolation/IsolatedGalleryContainer.tsx",
+      "dependencies": [],
       "dependents": [
-        "src/shared/components/index.ts"
+        "src/shared/components/index.ts",
+        "src/shared/components/isolation/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/isolation/IsolatedGalleryRoot.tsx",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/index.ts",
+        "src/shared/components/isolation/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7987,8 +7972,9 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/index.ts",
-        "src/shared/components/ui/Toast/ToastContainer.tsx"
+        "src/shared/components/index.ts",
+        "src/shared/components/ui/Toast/ToastContainer.tsx",
+        "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8049,6 +8035,7 @@
         }
       ],
       "dependents": [
+        "src/shared/components/index.ts",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
@@ -8146,6 +8133,7 @@
         }
       ],
       "dependents": [
+        "src/shared/components/index.ts",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
@@ -8428,6 +8416,182 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/isolation/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./IsolatedGalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/IsolatedGalleryContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./IsolatedGalleryRoot",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/IsolatedGalleryRoot.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Button/Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Button/Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Toast/Toast",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Toast/Toast.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Toast/Toast",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Toast/Toast.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Toast/ToastContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Toast/ToastContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Toolbar/Toolbar",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Toolbar/Toolbar.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Toolbar/Toolbar",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Toolbar/Toolbar.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/hooks/index.ts",
       "dependencies": [
         {
@@ -8579,14 +8743,48 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./components",
+          "module": "./components/hoc",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/index.ts",
+          "resolved": "src/shared/components/hoc/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./components/isolation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./components/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -9887,7 +10085,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 256,
-    "totalDependenciesCruised": 421,
+    "totalDependenciesCruised": 432,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

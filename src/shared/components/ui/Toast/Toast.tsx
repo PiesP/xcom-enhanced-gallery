@@ -15,7 +15,7 @@ export interface ToastItem {
   onAction?: () => void;
 }
 
-interface ToastProps {
+export interface ToastProps {
   toast: ToastItem;
   onRemove: (id: string) => void;
 }
