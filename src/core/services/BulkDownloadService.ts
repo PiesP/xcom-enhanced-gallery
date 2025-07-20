@@ -13,7 +13,7 @@ import type { MediaItemForFilename } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
 import { getNativeDownload } from '@core/external/vendors';
 import { createZipFromItems, type MediaItemForZip } from '@core/external/zip';
-import { generateMediaFilename, generateZipFilename } from '@infrastructure/media';
+import { generateMediaFilename, generateZipFilename } from '@core/media';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'zipping' | 'complete';

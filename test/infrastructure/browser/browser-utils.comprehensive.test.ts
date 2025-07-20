@@ -14,7 +14,7 @@ import {
   setScrollPosition,
   safeSetTimeout,
   safeClearTimeout,
-} from '@infrastructure/browser/browser-utils';
+} from '@core/browser/utils/browser-utils';
 
 // 브라우저 환경 모킹 헬퍼
 const mockBrowserEnvironment = () => {

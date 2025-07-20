@@ -20,13 +20,5 @@ export {
   cleanupAllResources,
 } from '@core/managers/ResourceManager';
 
-// 메모리 상태 관리
-export {
-  MemoryTracker,
-  memoryTracker,
-  getMemoryInfo,
-  getMemoryUsageMB,
-  getMemoryStatus,
-  triggerGarbageCollection,
-  checkMemoryAndCleanup,
-} from './MemoryTracker';
+// 메모리 상태 관리 (now from Core)
+export * from '@core/memory';

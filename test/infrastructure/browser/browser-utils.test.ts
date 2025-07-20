@@ -18,7 +18,7 @@ import {
   matchesMediaQuery,
   isDarkMode,
   prefersReducedMotion,
-} from '@infrastructure/browser/browser-utils';
+} from '@core/browser/utils/browser-utils';
 
 describe('Browser Utilities', () => {
   let mockWindow: any;

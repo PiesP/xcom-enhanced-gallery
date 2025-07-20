@@ -18,6 +18,11 @@ export type {
   ServiceLifecycle,
   ServiceTypeMapping,
 } from './types/services.types';
+
+// Infrastructure components (moved to Core)
+export * from './browser';
+export * from './dom';
+export * from './memory';
 export * from './types/view-mode.types';
 
 // Core infrastructure

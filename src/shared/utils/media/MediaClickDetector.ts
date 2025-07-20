@@ -5,7 +5,7 @@
 
 import { SELECTORS } from '../../../constants';
 import { logger } from '@core/logging/logger';
-import { cachedQuerySelector } from '@infrastructure/dom';
+import { cachedQuerySelector } from '@core/dom';
 
 /**
  * 미디어 감지 결과

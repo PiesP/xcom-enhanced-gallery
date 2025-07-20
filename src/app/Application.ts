@@ -311,7 +311,7 @@ export class Application {
    * 메모리 사용량 체크
    */
   private checkMemoryUsage(): void {
-    import('@infrastructure/memory/MemoryTracker')
+    import('@core/memory/MemoryTracker')
       .then(({ memoryTracker }) => {
         memoryTracker.checkAndCleanup();
       })

@@ -157,10 +157,7 @@
       "source": "src/infrastructure/logging/logger.ts",
       "dependencies": [],
       "dependents": [
-        "src/app/Application.ts",
-        "src/infrastructure/browser/BrowserUtils.ts",
-        "src/infrastructure/browser/browser-utils.ts",
-        "src/infrastructure/memory/MemoryTracker.ts"
+        "src/app/Application.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1493,6 +1490,44 @@
       "valid": true
     },
     {
+      "source": "src/core/browser/BrowserUtils.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/browser/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/logging/logger.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/browser/BrowserUtils.ts",
+        "src/core/logging/index.ts",
+        "src/core/memory/MemoryTracker.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/browser/index.ts",
       "dependencies": [
         {
@@ -1511,10 +1546,53 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./BrowserUtils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/browser/BrowserUtils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./utils/browser-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/browser/utils/browser-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
         "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/browser/utils/browser-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/browser/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1624,6 +1702,15 @@
       "valid": true
     },
     {
+      "source": "src/core/dom/DOMCache.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/dom/DOMEventManager.ts",
       "dependencies": [],
       "dependents": [
@@ -1635,6 +1722,23 @@
     {
       "source": "src/core/dom/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./DOMCache",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/dom/DOMCache.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./DOMEventManager",
@@ -1651,10 +1755,36 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./utils/dom-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/dom/utils/dom-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
         "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/dom/utils/dom-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/dom/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2050,6 +2180,23 @@
         },
         {
           "dynamic": false,
+          "module": "./memory",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/memory/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./services",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2237,15 +2384,6 @@
       "valid": true
     },
     {
-      "source": "src/core/logging/logger.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/logging/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/core/managers/index.ts",
       "dependencies": [
         {
@@ -2393,6 +2531,60 @@
       "dependencies": [],
       "dependents": [
         "src/core/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/memory/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./MemoryTracker",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/memory/MemoryTracker.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/memory/MemoryTracker.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/memory/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6919,113 +7111,21 @@
     {
       "source": "src/infrastructure/browser/BrowserManager.ts",
       "dependencies": [],
-      "dependents": [
-        "src/infrastructure/browser/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/browser/BrowserUtils.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/browser/browser-utils.ts",
-      "dependencies": [
+      "orphan": true,
+      "valid": false,
+      "rules": [
         {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
+          "severity": "info",
+          "name": "no-orphans"
         }
-      ],
-      "dependents": [
-        "src/infrastructure/browser/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
+      ]
     },
     {
       "source": "src/infrastructure/browser/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./browser-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/browser/browser-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./BrowserManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/browser/BrowserManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/dom/DOMCache.ts",
       "dependencies": [],
       "dependents": [
-        "src/infrastructure/dom/index.ts"
+        "src/infrastructure/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7033,104 +7133,19 @@
     {
       "source": "src/infrastructure/dom/DOMEventManager.ts",
       "dependencies": [],
-      "dependents": [
-        "src/infrastructure/dom/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/dom/dom-utils.ts",
-      "dependencies": [
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
         {
-          "dynamic": false,
-          "module": "../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
+          "severity": "info",
+          "name": "no-orphans"
         }
-      ],
-      "dependents": [
-        "src/infrastructure/dom/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/logging/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/dom/dom-utils.ts",
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
+      ]
     },
     {
       "source": "src/infrastructure/dom/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./dom-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/dom/dom-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./DOMCache",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/dom/DOMCache.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./DOMEventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/dom/DOMEventManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/index.ts",
         "src/shared/utils/media/media-url.util.ts"
@@ -7353,26 +7368,8 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/memory/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./MemoryTracker",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/memory/MemoryTracker.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "source": "src/infrastructure/logging/index.ts",
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/index.ts"
       ],
@@ -7380,28 +7377,10 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/memory/MemoryTracker.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "source": "src/infrastructure/memory/index.ts",
+      "dependencies": [],
       "dependents": [
-        "src/infrastructure/memory/index.ts"
+        "src/infrastructure/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -10040,13 +10019,32 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/infrastructure/browser/BrowserManager.ts",
+        "to": "src/infrastructure/browser/BrowserManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/infrastructure/dom/DOMEventManager.ts",
+        "to": "src/infrastructure/dom/DOMEventManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 2,
     "ignore": 0,
-    "totalCruised": 253,
-    "totalDependenciesCruised": 431,
+    "totalCruised": 254,
+    "totalDependenciesCruised": 429,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

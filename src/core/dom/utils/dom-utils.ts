@@ -5,7 +5,7 @@
  * 이 모듈은 기본적인 DOM 조작 기능만 제공합니다.
  */
 
-import { logger } from '../logging';
+import { logger } from '@core/logging';
 
 // ========== 타입 정의 ==========
 

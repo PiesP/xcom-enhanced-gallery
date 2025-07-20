@@ -9,7 +9,7 @@ import { Singleton } from '@core/patterns/Singleton';
 import { logger } from '@core/logging/logger';
 import { appConfig } from '@core/config/AppConfig';
 import { resourceManager } from '@core/managers';
-import { memoryTracker } from '@infrastructure/memory/MemoryTracker';
+import { memoryTracker } from '@core/memory/MemoryTracker';
 
 /**
  * 생명주기 상태

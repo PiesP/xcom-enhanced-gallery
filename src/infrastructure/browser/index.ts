@@ -5,5 +5,4 @@
  * All browser components now re-export from Core layer.
  */
 
-export * from './browser-utils';
-export { BrowserManager, browserUtils } from './BrowserManager';
+export * from '@core/browser';

@@ -4,7 +4,7 @@
  */
 
 // Infrastructure 레이어에서 실제 구현에 사용되는 타입들을 re-export
-export type { FilenameOptions, ZipFilenameOptions } from '@infrastructure/media/FilenameService';
+export type { FilenameOptions, ZipFilenameOptions } from '@core/media/FilenameService';
 
 /**
  * 파일명 검증 결과

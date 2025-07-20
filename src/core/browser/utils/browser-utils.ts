@@ -6,7 +6,7 @@
  * 서버사이드 렌더링이나 테스트 환경에서도 안전하게 동작합니다.
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@core/logging/logger';
 
 /**
  * 브라우저 환경 체크
