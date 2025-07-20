@@ -1,9 +1,10 @@
 /**
- * Gallery View Modes - Core Types
+ * @fileoverview View Mode Types (Legacy)
+ * @deprecated Use @core/types/core-types instead - this is kept for backward compatibility during migration
  *
- * 갤러리 뷰 모드와 관련된 핵심 타입들을 정의합니다.
- * 이 타입들은 constants.ts에서 가져옵니다.
+ * Phase 1 Step 2: Core 타입 통합
+ * View Mode 관련 타입들이 core-types.ts로 통합되었습니다.
  */
 
-// Re-export from constants for better organization
-export { VIEW_MODES, isValidViewMode, normalizeViewMode, type ViewMode } from '../../constants';
+// Re-export from integrated core types
+export * from './core-types';

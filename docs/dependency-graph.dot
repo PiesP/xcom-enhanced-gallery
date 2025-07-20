@@ -207,12 +207,22 @@ strict digraph "dependency-cruiser output"{
     "src/core/state/signals/index.ts" -> "src/core/state/signals/toolbar.signals.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/state" {label="state" subgraph "cluster_src/core/state/signals" {label="signals" "src/core/state/signals/toolbar.signals.ts" [label=<toolbar.signals.ts> tooltip="toolbar.signals.ts" URL="src/core/state/signals/toolbar.signals.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/architecture.types.ts" [label=<architecture.types.ts> tooltip="architecture.types.ts" URL="src/core/types/architecture.types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/core-types.ts" [label=<core-types.ts> tooltip="core-types.ts" URL="src/core/types/core-types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
+    "src/core/types/core-types.ts" -> "src/constants.ts" [arrowhead="inv"]
+    "src/core/types/core-types.ts" -> "src/infrastructure/media/index.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/core-types.ts" -> "src/core/services/BulkDownloadService.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/core-types.ts" -> "src/core/services/media/VideoControlService.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/core-types.ts" -> "src/core/services/ThemeService.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/core-types.ts" -> "src/core/services/ToastController.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/core-types.ts" -> "src/core/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/core.types.ts" [label=<core.types.ts> tooltip="core.types.ts" URL="src/core/types/core.types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/types/core.types.ts" -> "src/core/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/gallery.types.ts" [label=<gallery.types.ts> tooltip="gallery.types.ts" URL="src/core/types/gallery.types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
-    "src/core/types/gallery.types.ts" -> "src/core/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/gallery.types.ts" -> "src/core/types/core-types.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/types/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
+    "src/core/types/index.ts" -> "src/core/types/core-types.ts" [arrowhead="inv"]
     "src/core/types/index.ts" -> "src/core/types/core.types.ts" [arrowhead="inv"]
+    "src/core/types/index.ts" -> "src/core/types/gallery.types.ts" [arrowhead="inv"]
     "src/core/types/index.ts" -> "src/core/types/lifecycle.types.ts" [arrowhead="inv"]
     "src/core/types/index.ts" -> "src/core/types/media.types.ts" [arrowhead="inv"]
     "src/core/types/index.ts" -> "src/core/types/services.types.ts" [arrowhead="inv"]
@@ -225,14 +235,10 @@ strict digraph "dependency-cruiser output"{
     "src/core/types/media.types.ts" -> "src/constants.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/result.ts" [label=<result.ts> tooltip="result.ts" URL="src/core/types/result.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/services.types.ts" [label=<services.types.ts> tooltip="services.types.ts" URL="src/core/types/services.types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
-    "src/core/types/services.types.ts" -> "src/infrastructure/media/index.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/core/types/services.types.ts" -> "src/core/services/BulkDownloadService.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/core/types/services.types.ts" -> "src/core/services/media/VideoControlService.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/core/types/services.types.ts" -> "src/core/services/ThemeService.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/core/types/services.types.ts" -> "src/core/services/ToastController.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/services.types.ts" -> "src/core/types/core-types.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/userscript.d.ts" [label=<userscript.d.ts> tooltip="userscript.d.ts" URL="src/core/types/userscript.d.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/view-mode.types.ts" [label=<view-mode.types.ts> tooltip="view-mode.types.ts" URL="src/core/types/view-mode.types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
-    "src/core/types/view-mode.types.ts" -> "src/constants.ts" [arrowhead="inv"]
+    "src/core/types/view-mode.types.ts" -> "src/core/types/core-types.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/utils" {label="utils" "src/core/utils/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/utils/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/utils/index.ts" -> "src/core/utils/type-safety-helpers.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/utils" {label="utils" "src/core/utils/type-safety-helpers.ts" [label=<type-safety-helpers.ts> tooltip="type-safety-helpers.ts" URL="src/core/utils/type-safety-helpers.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
