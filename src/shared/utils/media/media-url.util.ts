@@ -11,7 +11,7 @@
 import { logger } from '@core/logging/logger';
 import { parseUsernameFast } from '../../../core/services/media/UsernameExtractionService';
 import type { MediaInfo } from '../../types/media.types';
-import { cachedQuerySelector, cachedQuerySelectorAll } from '../../../infrastructure/dom';
+import { cachedQuerySelector, cachedQuerySelectorAll } from '@core/dom';
 
 /**
  * 트윗 document에서 미디어 URL들을 추출

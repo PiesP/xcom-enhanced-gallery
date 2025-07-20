@@ -7229,51 +7229,6 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/browser/BrowserManager.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/infrastructure/browser/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/dom/DOMEventManager.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/infrastructure/dom/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/index.ts",
-        "src/shared/utils/media/media-url.util.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/infrastructure/error/AppErrorHandler.ts",
       "dependencies": [],
       "dependents": [
@@ -7312,40 +7267,6 @@
     {
       "source": "src/infrastructure/index.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./browser",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/browser/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./dom",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/dom/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./error",
@@ -9459,23 +9380,6 @@
         },
         {
           "dynamic": false,
-          "module": "../../../infrastructure/dom",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/dom/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../types/media.types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -10139,32 +10043,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/infrastructure/browser/BrowserManager.ts",
-        "to": "src/infrastructure/browser/BrowserManager.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/infrastructure/dom/DOMEventManager.ts",
-        "to": "src/infrastructure/dom/DOMEventManager.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 2,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 255,
-    "totalDependenciesCruised": 435,
+    "totalCruised": 251,
+    "totalDependenciesCruised": 432,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
