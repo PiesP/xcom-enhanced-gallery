@@ -7175,29 +7175,6 @@
       "valid": true
     },
     {
-      "source": "src/infrastructure/external/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/external/vendors/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/external/zip/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/infrastructure/index.ts",
       "dependencies": [
         {
@@ -7244,23 +7221,6 @@
             "export"
           ],
           "resolved": "src/infrastructure/error/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./external",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/infrastructure/external/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -10085,8 +10045,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 256,
-    "totalDependenciesCruised": 432,
+    "totalCruised": 253,
+    "totalDependenciesCruised": 431,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

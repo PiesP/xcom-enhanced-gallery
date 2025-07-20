@@ -8,9 +8,6 @@
 export * from './browser';
 export * from './dom';
 
-// External dependencies
-export * from './external';
-
 // Infrastructure services
 export * from './logging';
 export * from './error';
