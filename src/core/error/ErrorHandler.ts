@@ -90,6 +90,7 @@ export interface IErrorHandler {
  */
 export class ErrorHandler implements IErrorHandler {
   private static instance: ErrorHandler | null = null;
+  private isGlobalHandlerInitialized = false;
 
   public static getInstance(): ErrorHandler {
     this.instance ??= new ErrorHandler();
@@ -97,6 +98,87 @@ export class ErrorHandler implements IErrorHandler {
   }
 
   private constructor() {}
+
+  /**
+   * 전역 에러 핸들러 초기화
+   */
+  public initializeGlobalHandlers(): void {
+    if (this.isGlobalHandlerInitialized) {
+      logger.debug('[ErrorHandler] Global handlers already initialized');
+      return;
+    }
+
+    // 전역 에러 핸들링
+    window.addEventListener('error', this.handleGlobalError.bind(this));
+    window.addEventListener('unhandledrejection', this.handleUnhandledRejection.bind(this));
+
+    this.isGlobalHandlerInitialized = true;
+    logger.debug('[ErrorHandler] Global error handlers initialized');
+  }
+
+  /**
+   * 전역 에러 핸들러 정리
+   */
+  public destroyGlobalHandlers(): void {
+    if (!this.isGlobalHandlerInitialized) {
+      return;
+    }
+
+    window.removeEventListener('error', this.handleGlobalError.bind(this));
+    window.removeEventListener('unhandledrejection', this.handleUnhandledRejection.bind(this));
+
+    this.isGlobalHandlerInitialized = false;
+    logger.debug('[ErrorHandler] Global error handlers destroyed');
+  }
+
+  /**
+   * 전역 에러 처리
+   */
+  private handleGlobalError(event: ErrorEvent): void {
+    const context = {
+      location: `${event.filename}:${event.lineno}:${event.colno}`,
+      message: event.message,
+      source: event.filename,
+      line: event.lineno,
+      column: event.colno,
+      timestamp: Date.now(),
+    };
+
+    const error = new AppError(
+      ErrorCode.SYSTEM_ERROR,
+      event.message || 'Global error occurred',
+      ErrorSeverity.HIGH,
+      context,
+      event.error
+    );
+
+    this.handle(error, 'GlobalError');
+  }
+
+  /**
+   * 처리되지 않은 Promise 거부 처리
+   */
+  private handleUnhandledRejection(event: PromiseRejectionEvent): void {
+    const context = {
+      reason: event.reason,
+      timestamp: Date.now(),
+    };
+
+    const error = new AppError(
+      ErrorCode.SYSTEM_ERROR,
+      `Unhandled promise rejection: ${String(event.reason)}`,
+      ErrorSeverity.HIGH,
+      context,
+      event.reason instanceof Error ? event.reason : undefined
+    );
+
+    this.handle(error, 'UnhandledPromiseRejection');
+
+    // 기본 처리 방지 (개발 모드에서만)
+    if (import.meta.env.DEV) {
+      event.preventDefault();
+    }
+  }
 
   /**
    * 동기적 에러 처리
@@ -242,6 +324,35 @@ export const createError = {
  * 전역 에러 핸들러 인스턴스
  */
 export const globalErrorHandler = errorHandler;
+
+/**
+ * AppErrorHandler 호환성 클래스 (Infrastructure 레이어 호환성)
+ */
+export class AppErrorHandler {
+  private static instance: AppErrorHandler | null = null;
+  private readonly errorHandler = ErrorHandler.getInstance();
+
+  public static getInstance(): AppErrorHandler {
+    this.instance ??= new AppErrorHandler();
+    return this.instance;
+  }
+
+  private constructor() {}
+
+  /**
+   * 에러 핸들러 초기화
+   */
+  public initialize(): void {
+    this.errorHandler.initializeGlobalHandlers();
+  }
+
+  /**
+   * 정리
+   */
+  public destroy(): void {
+    this.errorHandler.destroyGlobalHandlers();
+  }
+}
 
 /**
  * 편의 함수: 에러 처리

@@ -3,6 +3,14 @@ export * from './interfaces';
 export * from './logging';
 export * from './utils';
 export * from './external';
+export * from './error';
+export * from './managers';
+
+// Newly migrated components - Phase 2A Step 8
+export * from './browser';
+export * from './dom';
+export * from './media';
+
 export {
   galleryState,
   openGallery,

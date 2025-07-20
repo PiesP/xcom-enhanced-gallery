@@ -158,11 +158,8 @@
       "dependencies": [],
       "dependents": [
         "src/app/Application.ts",
-        "src/infrastructure/media/FilenameService.ts",
-        "src/infrastructure/browser/BrowserManager.ts",
         "src/infrastructure/browser/BrowserUtils.ts",
         "src/infrastructure/browser/browser-utils.ts",
-        "src/infrastructure/dom/DOMEventManager.ts",
         "src/infrastructure/memory/MemoryTracker.ts"
       ],
       "orphan": false,
@@ -1475,6 +1472,42 @@
       "valid": true
     },
     {
+      "source": "src/core/browser/BrowserManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/browser/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/browser/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./BrowserManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/browser/BrowserManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/config/AppConfig.ts",
       "dependencies": [],
       "dependents": [
@@ -1579,6 +1612,42 @@
       "valid": true
     },
     {
+      "source": "src/core/dom/DOMEventManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/dom/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./DOMEventManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/dom/DOMEventManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/domain/base/DomainPrimitives.ts",
       "dependencies": [],
       "dependents": [
@@ -1643,7 +1712,9 @@
           "valid": true
         }
       ],
-      "dependents": [],
+      "dependents": [
+        "src/core/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -1831,6 +1902,57 @@
         },
         {
           "dynamic": false,
+          "module": "./browser",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/browser/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./dom",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/dom/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./error",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/error/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./external",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1873,6 +1995,40 @@
             "export"
           ],
           "resolved": "src/core/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./managers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./media",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/media/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2091,6 +2247,158 @@
       "dependencies": [],
       "dependents": [
         "src/core/logging/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EventDispatcher",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/EventDispatcher.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./NamespacedDesignSystem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/NamespacedDesignSystem.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ResourceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/ResourceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/EventDispatcher.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../patterns/Singleton",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/patterns/Singleton.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/managers/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/patterns/Singleton.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/managers/EventDispatcher.ts",
+        "src/core/patterns/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/NamespacedDesignSystem.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/managers/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/ResourceManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/managers/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/media/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./FilenameService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/media/FilenameService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/media/FilenameService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/media/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2460,82 +2768,9 @@
     },
     {
       "source": "src/infrastructure/media/FilenameService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/infrastructure/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/utils/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/types/media.types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/media/FilenameService.ts",
-        "src/infrastructure/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/infrastructure/utils/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/infrastructure/media/FilenameService.ts",
-        "src/infrastructure/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3558,120 +3793,6 @@
       "dependents": [
         "src/core/utils/index.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/managers/EventDispatcher.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../patterns/Singleton",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/patterns/Singleton.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/patterns/Singleton.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/managers/EventDispatcher.ts",
-        "src/core/patterns/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/managers/NamespacedDesignSystem.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/managers/ResourceManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/managers/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./EventDispatcher",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/managers/EventDispatcher.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./NamespacedDesignSystem",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/managers/NamespacedDesignSystem.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ResourceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/managers/ResourceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -6212,25 +6333,7 @@
     },
     {
       "source": "src/infrastructure/browser/BrowserManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/browser/index.ts"
       ],
@@ -6344,25 +6447,7 @@
     },
     {
       "source": "src/infrastructure/dom/DOMEventManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/dom/index.ts"
       ],
@@ -6401,7 +6486,6 @@
       "dependencies": [],
       "dependents": [
         "src/infrastructure/dom/dom-utils.ts",
-        "src/infrastructure/error/AppErrorHandler.ts",
         "src/infrastructure/index.ts"
       ],
       "orphan": false,
@@ -6471,25 +6555,7 @@
     },
     {
       "source": "src/infrastructure/error/AppErrorHandler.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/infrastructure/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/infrastructure/error/index.ts"
       ],
@@ -6771,6 +6837,37 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/infrastructure/types/media.types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/utils/index.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/infrastructure/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/infrastructure/media/FilenameService.tmp.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/infrastructure/memory/MemoryTracker.ts",
@@ -9270,14 +9367,23 @@
           "severity": "info",
           "name": "no-orphans"
         }
+      },
+      {
+        "type": "module",
+        "from": "src/infrastructure/media/FilenameService.tmp.ts",
+        "to": "src/infrastructure/media/FilenameService.tmp.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
       }
     ],
     "error": 0,
     "warn": 0,
-    "info": 4,
+    "info": 5,
     "ignore": 0,
-    "totalCruised": 250,
-    "totalDependenciesCruised": 387,
+    "totalCruised": 257,
+    "totalDependenciesCruised": 389,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
