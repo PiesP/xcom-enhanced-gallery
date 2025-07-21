@@ -393,7 +393,6 @@ export default defineConfig(({ mode }) => {
         '@features': path.resolve(__dirname, 'src/features'),
         '@shared': path.resolve(__dirname, 'src/shared'),
         '@core': path.resolve(__dirname, 'src/core'),
-        '@infrastructure': path.resolve(__dirname, 'src/infrastructure'),
         '@utils': path.resolve(__dirname, 'src/utils'),
         '@assets': path.resolve(__dirname, 'src/assets'),
       },

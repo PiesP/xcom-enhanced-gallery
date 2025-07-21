@@ -50,7 +50,7 @@ export type ServiceFactory<T> = () => T | Promise<T>;
  * 서비스 타입 매핑 (Infrastructure 서비스들)
  */
 export type BulkDownloadServiceType = import('../services/BulkDownloadService').BulkDownloadService;
-export type FilenameServiceType = import('../../infrastructure/media').FilenameService;
+export type FilenameServiceType = import('../media').FilenameService;
 export type ThemeServiceType = import('../services/ThemeService').ThemeService;
 export type VideoControlServiceType =
   import('../services/media/VideoControlService').VideoControlService;

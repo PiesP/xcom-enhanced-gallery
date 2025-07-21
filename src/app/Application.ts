@@ -15,7 +15,7 @@ import { designSystem } from '../shared/design-system';
 
 import { ServiceManager } from '../core/services/ServiceManager';
 import { SERVICE_KEYS } from '../constants';
-import { logger } from '../infrastructure/logging/logger';
+import { logger } from '@core/logging/logger';
 import type { AppConfig } from '../shared/types/app';
 import { GalleryApp } from './GalleryApp';
 

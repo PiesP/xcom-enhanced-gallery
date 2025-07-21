@@ -21,7 +21,7 @@ export type {
   ServiceTypeMapping,
 } from './types/core-types';
 
-// Infrastructure components (moved to Core in Phase 1)
+// Core infrastructure components
 export * from './browser';
 export * from './dom';
 export * from './memory';

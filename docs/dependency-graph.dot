@@ -6,7 +6,6 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" "src/app/Application.ts" [label=<Application.ts> tooltip="Application.ts" URL="src/app/Application.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } }
     "src/app/Application.ts" -> "src/constants.ts"
     "src/app/Application.ts" -> "src/core/services/ServiceManager.ts"
-    "src/app/Application.ts" -> "src/infrastructure/logging/logger.ts"
     "src/app/Application.ts" -> "src/shared/design-system/index.ts"
     "src/app/Application.ts" -> "src/shared/types/app.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/app/Application.ts" -> "src/app/GalleryApp.ts"
@@ -133,7 +132,7 @@ strict digraph "dependency-cruiser output"{
     "src/core/services/ServiceRegistry.ts" -> "src/features/media/extraction/services/MediaExtractor.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/ServiceRegistry.ts" -> "src/features/settings/services/SettingsService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/ServiceRegistry.ts" -> "src/features/settings/services/TwitterTokenExtractor.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
-    "src/core/services/ServiceRegistry.ts" -> "src/infrastructure/media/index.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
+    "src/core/services/ServiceRegistry.ts" -> "src/core/media/index.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/ServiceRegistry.ts" -> "src/core/types/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/services/ServiceRegistry.ts" -> "src/core/services/BulkDownloadService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/ServiceRegistry.ts" -> "src/core/services/media/VideoControlService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
@@ -145,7 +144,7 @@ strict digraph "dependency-cruiser output"{
     "src/core/services/ToastController.ts" -> "src/core/services/ServiceManager.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" "src/core/services/core-services.ts" [label=<core-services.ts> tooltip="core-services.ts" URL="src/core/services/core-services.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/services/core-services.ts" -> "src/constants.ts"
-    "src/core/services/core-services.ts" -> "src/infrastructure/managers/index.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
+    "src/core/services/core-services.ts" -> "src/core/managers/index.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/core-services.ts" -> "src/core/services/ServiceManager.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/core-services.ts" -> "src/core/services/ServiceRegistry.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/gallery" {label="gallery" "src/core/services/gallery/GalleryInitializer.ts" [label=<GalleryInitializer.ts> tooltip="GalleryInitializer.ts" URL="src/core/services/gallery/GalleryInitializer.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
@@ -206,7 +205,7 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/architecture.types.ts" [label=<architecture.types.ts> tooltip="architecture.types.ts" URL="src/core/types/architecture.types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/core-types.ts" [label=<core-types.ts> tooltip="core-types.ts" URL="src/core/types/core-types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/types/core-types.ts" -> "src/constants.ts" [arrowhead="inv"]
-    "src/core/types/core-types.ts" -> "src/infrastructure/media/index.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/types/core-types.ts" -> "src/core/media/index.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/types/core-types.ts" -> "src/core/services/BulkDownloadService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/types/core-types.ts" -> "src/core/services/media/VideoControlService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/types/core-types.ts" -> "src/core/services/ThemeService.ts" [arrowhead="onormal" penwidth="1.0"]
@@ -448,31 +447,6 @@ strict digraph "dependency-cruiser output"{
     "src/features/settings/types/index.ts" -> "src/features/settings/types/settings.types.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/settings" {label="settings" subgraph "cluster_src/features/settings/types" {label="types" "src/features/settings/types/settings.types.ts" [label=<settings.types.ts> tooltip="settings.types.ts" URL="src/features/settings/types/settings.types.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     "src/features/settings/types/settings.types.ts" -> "src/constants.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/error" {label="error" "src/infrastructure/error/AppErrorHandler.ts" [label=<AppErrorHandler.ts> tooltip="AppErrorHandler.ts" URL="src/infrastructure/error/AppErrorHandler.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/error" {label="error" "src/infrastructure/error/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/infrastructure/error/index.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    "src/infrastructure/error/index.ts" -> "src/infrastructure/error/AppErrorHandler.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" "src/infrastructure/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/infrastructure/index.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } }
-    "src/infrastructure/index.ts" -> "src/infrastructure/error/index.ts" [arrowhead="inv"]
-    "src/infrastructure/index.ts" -> "src/infrastructure/logging/index.ts" [arrowhead="inv"]
-    "src/infrastructure/index.ts" -> "src/infrastructure/managers/index.ts" [arrowhead="inv"]
-    "src/infrastructure/index.ts" -> "src/infrastructure/media/index.ts" [arrowhead="inv"]
-    "src/infrastructure/index.ts" -> "src/infrastructure/memory/index.ts" [arrowhead="inv"]
-    "src/infrastructure/index.ts" -> "src/infrastructure/types/lifecycle.types.ts" [arrowhead="inv"]
-    "src/infrastructure/index.ts" -> "src/infrastructure/utils/index.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/logging" {label="logging" "src/infrastructure/logging/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/infrastructure/logging/index.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/logging" {label="logging" "src/infrastructure/logging/logger.ts" [label=<logger.ts> tooltip="logger.ts" URL="src/infrastructure/logging/logger.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/managers" {label="managers" "src/infrastructure/managers/NamespacedDesignSystem.ts" [label=<NamespacedDesignSystem.ts> tooltip="NamespacedDesignSystem.ts" URL="src/infrastructure/managers/NamespacedDesignSystem.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/managers" {label="managers" "src/infrastructure/managers/ResourceManager.ts" [label=<ResourceManager.ts> tooltip="ResourceManager.ts" URL="src/infrastructure/managers/ResourceManager.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/managers" {label="managers" "src/infrastructure/managers/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/infrastructure/managers/index.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    "src/infrastructure/managers/index.ts" -> "src/infrastructure/managers/NamespacedDesignSystem.ts" [arrowhead="inv"]
-    "src/infrastructure/managers/index.ts" -> "src/infrastructure/managers/ResourceManager.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/media" {label="media" "src/infrastructure/media/FilenameService.ts" [label=<FilenameService.ts> tooltip="FilenameService.ts" URL="src/infrastructure/media/FilenameService.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/media" {label="media" "src/infrastructure/media/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/infrastructure/media/index.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    "src/infrastructure/media/index.ts" -> "src/infrastructure/media/FilenameService.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/memory" {label="memory" "src/infrastructure/memory/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/infrastructure/memory/index.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/types" {label="types" "src/infrastructure/types/lifecycle.types.ts" [label=<lifecycle.types.ts> tooltip="lifecycle.types.ts" URL="src/infrastructure/types/lifecycle.types.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/types" {label="types" "src/infrastructure/types/userscript.d.ts" [label=<userscript.d.ts> tooltip="userscript.d.ts" URL="src/infrastructure/types/userscript.d.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9" style="rounded,filled,dashed" penwidth="1.5"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/infrastructure" {label="infrastructure" subgraph "cluster_src/infrastructure/utils" {label="utils" "src/infrastructure/utils/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/infrastructure/utils/index.ts" fillcolor="#F5F3FF" color="#6D28D9" fontcolor="#6D28D9"] } } }
     subgraph "cluster_src" {label="src" "src/main.ts" [label=<main.ts> tooltip="main.ts" URL="src/main.ts" fillcolor="#ddfeff"] }
     "src/main.ts" -> "src/app/Application.ts"
     "src/main.ts" -> "src/shared/types/app.ts" [arrowhead="onormal" penwidth="1.0"]

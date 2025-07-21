@@ -62,7 +62,7 @@ export async function registerAllServices(): Promise<void> {
 
   serviceManager.register(SERVICE_KEYS.MEDIA_FILENAME, {
     factory: async () => {
-      const { FilenameService } = await import('../../infrastructure/media');
+      const { FilenameService } = await import('../media');
       return FilenameService.getInstance();
     },
     singleton: true,

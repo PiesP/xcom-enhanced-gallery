@@ -109,7 +109,7 @@ export class ServiceDiagnostics {
 
       // 5. 메모리 사용량 (infrastructure ResourceManager 사용)
       try {
-        const { ResourceManager } = await import('../../infrastructure/managers');
+        const { ResourceManager } = await import('../managers');
         const resourceManager = ResourceManager.getInstance();
         const resourceCount = resourceManager.getResourceCount();
         if (resourceCount > 0) {
