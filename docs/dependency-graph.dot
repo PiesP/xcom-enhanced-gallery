@@ -26,6 +26,7 @@ strict digraph "dependency-cruiser output"{
     "src/app/index.ts" -> "src/app/GalleryApp.ts" [arrowhead="inv"]
     "src/app/index.ts" -> "src/app/types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" "src/app/types.ts" [label=<types.ts> tooltip="types.ts" URL="src/app/types.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } }
+    "src/app/types.ts" -> "src/core/types/app.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" "src/constants.ts" [label=<constants.ts> tooltip="constants.ts" URL="src/constants.ts" fillcolor="#ddfeff"] }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" "src/core/Application.ts" [label=<Application.ts> tooltip="Application.ts" URL="src/core/Application.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } }
     "src/core/Application.ts" -> "src/constants.ts"
@@ -535,6 +536,7 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/branded.ts" [label=<branded.ts> tooltip="branded.ts" URL="src/shared/types/branded.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/common.ts" [label=<common.ts> tooltip="common.ts" URL="src/shared/types/common.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/types/common.ts" -> "src/core/types/core.types.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/types/common.ts" -> "src/shared/types/common.types.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/common.types.ts" [label=<common.types.ts> tooltip="common.types.ts" URL="src/shared/types/common.types.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/types/common.types.ts" -> "src/shared/types/global.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/filename.types.ts" [label=<filename.types.ts> tooltip="filename.types.ts" URL="src/shared/types/filename.types.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
