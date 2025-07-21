@@ -1,7 +1,7 @@
 /**
- * X.com Enhanced Gallery - 통합된 메인 진입점
+ * X.com Enhanced Gallery - 메인 진입점
  *
- * Clean Architecture App Layer를 통한 간소화된 애플리케이션 부트스트래핑
+ * Phase 2B: App 레이어 통합으로 단순화된 부트스트래핑
  *
  * @version 3.1.0 - Simplified Architecture
  */
@@ -11,7 +11,7 @@ import { Application } from './app/Application';
 import { logger } from '@core/logging/logger';
 import type { AppConfig } from './shared/types/app';
 
-// 전역 스타일 - 별도 모듈
+// 전역 스타일
 import './styles/globals';
 
 /**

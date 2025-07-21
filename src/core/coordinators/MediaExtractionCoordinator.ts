@@ -11,10 +11,10 @@
  * @version 3.0.0 - Clean Architecture
  */
 
-import type { MediaInfo } from '../../core/types/media.types';
+import type { MediaInfo } from '../types/media.types';
 import { MediaExtractionService } from '../../features/media/extraction/services/MediaExtractor';
-import { VideoControlService } from '../../core/services/media/VideoControlService';
-import { logger } from '@core/logging/logger';
+import { VideoControlService } from '../services/media/VideoControlService';
+import { logger } from '../logging/logger';
 
 /**
  * 추출 결과 인터페이스

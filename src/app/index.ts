@@ -8,9 +8,6 @@
 export { Application, appLifecycle } from './Application';
 export { GalleryApp } from './GalleryApp';
 
-// Coordination layer
-export * from './coordinators';
-
 // Essential types
 export type {
   AppConfig,

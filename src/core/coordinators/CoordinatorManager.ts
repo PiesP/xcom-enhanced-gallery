@@ -1,7 +1,7 @@
 /**
- * 코디네이터
+ * 코디네이터 매니저
  *
- * 갤러리 앱의 코디네이터들을 통합 관리하는 클래스
+ * 갤러리 앱의 코디네이터들을 통합 관리하는 매니저
  *
  * 책임:
  * - 코디네이터들의 생명주기 관리
@@ -11,14 +11,14 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { GalleryEventCoordinator } from '@shared/utils/events';
+import { GalleryEventCoordinator } from './GalleryEventCoordinator';
 import { MediaExtractorCoordinator } from '@features/media/coordinators';
 import type { MediaInfo } from '@core/types/media.types';
 
 /**
- * 간소화된 코디네이터 설정
+ * 간소화된 코디네이터 매니저 설정
  */
-export interface CoordinatorConfig {
+export interface CoordinatorManagerConfig {
   clickDebounceMs?: number;
   extractionTimeout?: number;
   enableKeyboard?: boolean;
@@ -40,11 +40,11 @@ export interface ManagedExtractionResult {
 /**
  * 코디네이터 매니저
  */
-export class Coordinator {
+export class CoordinatorManager {
   private readonly eventCoordinator: GalleryEventCoordinator;
   private readonly extractionCoordinator: MediaExtractorCoordinator;
 
-  private config: Required<CoordinatorConfig>;
+  private config: Required<CoordinatorManagerConfig>;
   private isInitialized = false;
 
   // 성능 모니터링
@@ -55,15 +55,15 @@ export class Coordinator {
     lastExtractedAt: 0,
   };
 
-  private static readonly DEFAULT_CONFIG: Required<CoordinatorConfig> = {
+  private static readonly DEFAULT_CONFIG: Required<CoordinatorManagerConfig> = {
     clickDebounceMs: 500,
     extractionTimeout: 5000, // 간소화된 타임아웃
     enableKeyboard: true,
     enablePerformanceMonitoring: false,
   };
 
-  constructor(config: CoordinatorConfig = {}) {
-    this.config = { ...Coordinator.DEFAULT_CONFIG, ...config };
+  constructor(config: CoordinatorManagerConfig = {}) {
+    this.config = { ...CoordinatorManager.DEFAULT_CONFIG, ...config };
 
     // 코디네이터들 생성
     this.eventCoordinator = new GalleryEventCoordinator({
@@ -82,21 +82,17 @@ export class Coordinator {
     onGalleryClose: () => void;
   }): Promise<void> {
     if (this.isInitialized) {
-      logger.debug('Coordinator: Already initialized');
+      logger.debug('CoordinatorManager: Already initialized');
       return;
     }
 
     try {
-      logger.info('Coordinator: 초기화 시작');
+      logger.info('CoordinatorManager: 초기화 시작');
 
       // 이벤트 코디네이터 초기화
       await this.eventCoordinator.initialize({
         onMediaClick: async (target, event) => {
-          await this.handleMediaClick(
-            target as HTMLElement,
-            event as MouseEvent,
-            callbacks.onMediaExtracted
-          );
+          await this.handleMediaClick(target, event, callbacks.onMediaExtracted);
         },
         onGalleryClose: callbacks.onGalleryClose,
       });
@@ -105,9 +101,9 @@ export class Coordinator {
       await this.extractionCoordinator.initialize();
 
       this.isInitialized = true;
-      logger.info('✅ Coordinator 초기화 완료');
+      logger.info('✅ CoordinatorManager 초기화 완료');
     } catch (error) {
-      logger.error('❌ Coordinator 초기화 실패:', error);
+      logger.error('❌ CoordinatorManager 초기화 실패:', error);
       throw error;
     }
   }
@@ -125,7 +121,7 @@ export class Coordinator {
     try {
       this.extractionMetrics.totalExtractions++;
 
-      logger.debug('Coordinator: 미디어 클릭 처리 시작');
+      logger.debug('CoordinatorManager: 미디어 클릭 처리 시작');
 
       // 추출 실행
       const result = await this.extractionCoordinator.extractFromClick(target, event);
@@ -150,7 +146,7 @@ export class Coordinator {
           duration,
         };
 
-        logger.info('Coordinator: 미디어 추출 성공:', {
+        logger.info('CoordinatorManager: 미디어 추출 성공:', {
           mediaCount: result.mediaItems.length,
           source: result.source,
           duration: `${duration.toFixed(2)}ms`,
@@ -207,7 +203,7 @@ export class Coordinator {
   /**
    * 설정 업데이트
    */
-  public updateConfig(newConfig: Partial<CoordinatorConfig>): void {
+  public updateConfig(newConfig: Partial<CoordinatorManagerConfig>): void {
     this.config = { ...this.config, ...newConfig };
 
     // 개별 코디네이터들에 설정 전파

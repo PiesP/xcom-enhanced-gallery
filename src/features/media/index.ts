@@ -16,6 +16,9 @@ export * from './extraction/services';
 // 미디어 서비스들
 export * from './services';
 
+// 미디어 코디네이터들
+export * from './coordinators';
+
 // 미디어 컴포넌트들 (사용 가능한 경우)
 export * from './components';
 

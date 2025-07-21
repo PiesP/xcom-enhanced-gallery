@@ -80,7 +80,7 @@ export interface ExtractionMetadata {
 /**
  * 추출 결과
  */
-export interface ExtractionResult {
+export interface MediaExtractionResult {
   readonly success: boolean;
   readonly mediaItems: MediaInfo[];
   readonly clickedIndex: number;
@@ -165,7 +165,7 @@ export interface TweetData {
  * 미디어 추출 오케스트레이터 인터페이스
  */
 export interface MediaExtractionOrchestrator {
-  extractMedia(context: ExtractionContext): Promise<ExtractionResult>;
+  extractMedia(context: ExtractionContext): Promise<MediaExtractionResult>;
 }
 
 // Re-export from constants for consistency

@@ -11,8 +11,8 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { GalleryEventCoordinator } from './GalleryEventCoordinator';
-import { MediaExtractorCoordinator } from './MediaExtractionCoordinator';
+import { GalleryEventCoordinator } from '@shared/utils/events';
+import { MediaExtractorCoordinator } from '@features/media/coordinators';
 import type { MediaInfo } from '@core/types/media.types';
 
 /**

@@ -1,13 +1,10 @@
 /**
- * 코디네이터 통합 Export
- * @version 2.0.0 - Clean Architecture
+ * @fileoverview App Coordinators - Application-level coordination
+ * @version 2.0.0 - Phase 2B App Layer Integration
  */
 
-export { GalleryEventCoordinator } from './GalleryEventCoordinator';
-export { MediaExtractorCoordinator } from './MediaExtractionCoordinator';
 export { CoordinatorManager } from './CoordinatorManager';
+export { Coordinator } from './Coordinator';
 
-// 타입 exports
-export type { EventCoordinatorConfig, EventHandlers } from './GalleryEventCoordinator';
-export type { ExtractionResult } from './MediaExtractionCoordinator';
-export type { CoordinatorManagerConfig, ManagedExtractionResult } from './CoordinatorManager';
+// Type exports
+export type { ManagedExtractionResult } from './Coordinator';
