@@ -2421,9 +2421,36 @@
       "dependencies": [],
       "dependents": [
         "src/app/types.ts",
+        "src/app/types.new.ts",
         "src/core/Application.ts",
         "src/core/types/index.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/app/types.new.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../core/types/app.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/core/types/app.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -4207,6 +4234,19 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/core/types/app.types.new.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/core/types/architecture.types.ts",
@@ -9418,13 +9458,23 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/core/types/app.types.new.ts",
+        "to": "src/core/types/app.types.new.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 230,
-    "totalDependenciesCruised": 407,
+    "totalCruised": 232,
+    "totalDependenciesCruised": 408,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
