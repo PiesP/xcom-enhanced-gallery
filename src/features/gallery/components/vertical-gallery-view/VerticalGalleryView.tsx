@@ -14,7 +14,7 @@
 import { logger } from '@core/logging/logger';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import type { ImageFitMode } from '@shared/types/image-fit.types';
+import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@core/state/signals/gallery.signals';
 import { getPreactHooks } from '@core/external/vendors';
 import { stringWithDefault } from '@core/utils/type-safety-helpers';

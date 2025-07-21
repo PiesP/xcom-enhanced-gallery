@@ -9,7 +9,7 @@
 
 import { withGalleryItem, type GalleryComponentProps } from '@shared/components/hoc/GalleryMarker';
 import { Button } from '@shared/components/ui/Button/Button';
-import type { ImageFitMode } from '@shared/types/image-fit.types';
+import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@core/types/media.types';
 import type { VNode } from '@shared/types/global.types';
 import { getPreactHooks } from '@core/external/vendors';

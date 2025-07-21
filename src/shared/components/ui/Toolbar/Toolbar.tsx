@@ -7,7 +7,7 @@
  */
 
 import type { ViewMode } from '../../../types';
-import type { ImageFitCallbacks } from '../../../types/image-fit.types';
+import type { ImageFitCallbacks } from '../../../types';
 import { getPreact, getPreactHooks, type VNode } from '@core/external/vendors';
 import {
   useToolbarState,
@@ -31,7 +31,6 @@ export interface ToolbarProps extends ImageFitCallbacks {
   onDownloadAll: () => void;
   onClose: () => void;
   onOpenSettings?: () => void;
-  onFitContainer?: () => void;
 }
 
 // 호환성을 위한 별칭

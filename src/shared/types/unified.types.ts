@@ -1,0 +1,137 @@
+/**
+ * @fileoverview Unified Shared Types
+ * @version 1.0.0 - Phase 1A Integration
+ *
+ * 작은 타입 파일들을 통합하여 복잡성을 줄입니다.
+ * 파일명, UI, Vendor 관련 타입들을 하나의 파일로 통합합니다.
+ */
+
+import type {
+  FflateAPI,
+  PreactAPI,
+  PreactHooksAPI,
+  PreactSignalsAPI,
+  MotionAPI,
+} from '@core/external/vendors';
+
+// ================================
+// FILENAME TYPES (from filename.types.ts)
+// ================================
+
+// Infrastructure 레이어에서 실제 구현에 사용되는 타입들을 re-export
+export type { FilenameOptions, ZipFilenameOptions } from '@core/media/FilenameService';
+
+/**
+ * 파일명 검증 결과
+ */
+export interface FilenameValidationResult {
+  /** 유효성 여부 */
+  isValid: boolean;
+  /** 무효 이유 (유효하지 않은 경우) */
+  reason?: string;
+  /** 제안하는 대안 파일명 */
+  suggestion?: string;
+}
+
+/**
+ * 지원되는 미디어 파일 확장자
+ */
+export type MediaFileExtension = 'jpg' | 'jpeg' | 'png' | 'gif' | 'webp' | 'mp4' | 'mov';
+
+/**
+ * 파일명 생성 전략
+ */
+export type FilenameStrategy = 'simple' | 'detailed' | 'timestamp' | 'custom';
+
+// ================================
+// UI TYPES (from ui.types.ts)
+// ================================
+
+/** 기본 컴포넌트 Props */
+export interface BaseComponentProps {
+  /** CSS 클래스명 */
+  className?: string;
+  /** 인라인 스타일 */
+  style?: Record<string, string | number>;
+  /** 데이터 테스트 ID */
+  'data-testid'?: string;
+}
+
+/** 테마 설정 타입 */
+export type Theme = 'light' | 'dark' | 'auto';
+
+/** 갤러리 테마 설정 타입 (시스템 테마 포함) */
+export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
+
+/** 토스트 메시지 타입 */
+export type ToastType = 'info' | 'warning' | 'error' | 'success';
+
+/** 컴포넌트 크기 설정 */
+export type Size = 'small' | 'medium' | 'large';
+
+/** 색상 변형 타입 */
+export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+
+/** 버튼 변형 타입 */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+
+/** 버튼 크기 타입 */
+export type ButtonSize = 'sm' | 'md' | 'lg';
+
+/** 애니메이션 설정 타입 */
+export interface AnimationConfig {
+  /** 지속 시간 (ms) */
+  duration: number;
+  /** 이징 함수 */
+  easing?: string;
+  /** 지연 시간 (ms) */
+  delay?: number;
+}
+
+// ================================
+// VENDOR TYPES (from vendor.types.ts)
+// ================================
+
+// Window 객체 확장을 위한 전역 타입 정의
+declare global {
+  interface Window {
+    fflate?: FflateAPI;
+    preact?: PreactAPI;
+    preactHooks?: PreactHooksAPI;
+    preactSignals?: PreactSignalsAPI;
+    motion?: MotionAPI;
+  }
+}
+
+// ================================
+// IMAGE FIT TYPES
+// ================================
+
+/** 이미지 맞춤 모드 */
+export type ImageFitMode =
+  | 'original' // 원본 크기 (확대/축소 없음)
+  | 'fitWidth' // 컨테이너 폭에 맞춤
+  | 'fitHeight' // 컨테이너 높이에 맞춤
+  | 'fitContainer'; // 컨테이너에 완전히 맞춤 (종횡비 유지)
+
+/** 이미지 맞춤 콜백 인터페이스 */
+export interface ImageFitCallbacks {
+  /** 원본 크기로 맞추기 */
+  onFitOriginal?: () => void;
+  /** 폭에 맞추기 */
+  onFitWidth?: () => void;
+  /** 높이에 맞추기 */
+  onFitHeight?: () => void;
+  /** 컨테이너에 맞추기 */
+  onFitContainer?: () => void;
+}
+
+/** 이미지 맞춤 설정 */
+export interface ImageFitOptions {
+  /** 맞춤 모드 */
+  fit: ImageFitMode;
+  /** 위치 설정 */
+  position?: string;
+  /** 배경색 */
+  backgroundColor?: string;
+}
