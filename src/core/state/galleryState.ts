@@ -4,7 +4,7 @@
  */
 
 import { getPreactSignals } from '@core/external/vendors';
-import { MediaItem, GalleryConfig } from '../types/core.types';
+import { MediaItem, GalleryConfig } from '../types/core-types';
 
 const { signal, computed } = getPreactSignals();
 

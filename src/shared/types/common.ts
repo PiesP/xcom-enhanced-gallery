@@ -19,4 +19,4 @@ export type {
   CancelableFunction,
   LoadingState,
   ErrorInfo,
-} from '../../core/types/core.types';
+} from '../../core/types/core-types';

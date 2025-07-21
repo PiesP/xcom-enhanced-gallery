@@ -9,7 +9,7 @@
 import { measurePerformance } from '@shared/utils/performance/index';
 import { Application } from './app/Application';
 import { logger } from '@core/logging/logger';
-import type { AppConfig } from './shared/types/app';
+import type { AppConfig } from '@core/types/core-types';
 
 // 전역 스타일
 import './styles/globals';

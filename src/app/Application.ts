@@ -15,7 +15,7 @@ import { removeUndefinedProperties } from '@core/utils/type-safety-helpers';
 import { ServiceManager } from '../core/services/ServiceManager';
 import { SERVICE_KEYS } from '../constants';
 import { logger } from '@core/logging/logger';
-import type { AppConfig } from '@core/types/app.types';
+import type { AppConfig } from '@core/types/core-types';
 import { GalleryApp } from './GalleryApp';
 
 /**

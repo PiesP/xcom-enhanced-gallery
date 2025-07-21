@@ -13,7 +13,7 @@
 import { ServiceManager } from './services/ServiceManager';
 import { SERVICE_KEYS } from '../constants';
 import { logger } from './logging/logger';
-import type { AppConfig, AppLifecycleState, LifecycleConfig } from './types/app.types';
+import type { AppConfig, AppLifecycleState, LifecycleConfig } from './types/core-types';
 
 /**
  * Main application manager
