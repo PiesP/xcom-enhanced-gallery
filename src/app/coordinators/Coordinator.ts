@@ -206,13 +206,12 @@ export class Coordinator {
   public updateConfig(newConfig: Partial<CoordinatorConfig>): void {
     this.config = { ...this.config, ...newConfig };
 
-    // 이벤트 코디네이터는 싱글톤이므로 재생성 또는 설정 업데이트 불가
-    // 필요한 경우 새로운 인스턴스로 교체해야 함
-    logger.warn('CoordinatorManager: EventCoordinator 설정 업데이트는 지원되지 않음');
+    // 이벤트 코디네이터는 싱글톤이므로 설정 업데이트가 제한됨
+    logger.warn('[Coordinator] EventCoordinator는 싱글톤 - 설정 업데이트 제한됨');
 
     // 간소화된 추출 코디네이터는 설정 업데이트 불필요
 
-    logger.debug('CoordinatorManager: 설정 업데이트됨');
+    logger.debug('[Coordinator] 설정 업데이트됨');
   }
 
   /**
