@@ -65,9 +65,9 @@ export class CoordinatorManager {
   constructor(config: CoordinatorManagerConfig = {}) {
     this.config = { ...CoordinatorManager.DEFAULT_CONFIG, ...config };
 
-    // 코디네이터들 생성
-    this.eventCoordinator = new GalleryEventCoordinator({
-      clickDebounceMs: this.config.clickDebounceMs,
+    // 코디네이터들 생성 - 싱글톤 패턴 사용
+    this.eventCoordinator = GalleryEventCoordinator.getInstance({
+      debounceDelay: this.config.clickDebounceMs,
       enableKeyboard: this.config.enableKeyboard,
     });
 
@@ -91,8 +91,8 @@ export class CoordinatorManager {
 
       // 이벤트 코디네이터 초기화
       await this.eventCoordinator.initialize({
-        onMediaClick: async (target, event) => {
-          await this.handleMediaClick(target, event, callbacks.onMediaExtracted);
+        onMediaClick: async (_mediaInfo, element, event) => {
+          await this.handleMediaClick(element, event, callbacks.onMediaExtracted);
         },
         onGalleryClose: callbacks.onGalleryClose,
       });
@@ -206,13 +206,9 @@ export class CoordinatorManager {
   public updateConfig(newConfig: Partial<CoordinatorManagerConfig>): void {
     this.config = { ...this.config, ...newConfig };
 
-    // 개별 코디네이터들에 설정 전파
-    if (newConfig.clickDebounceMs !== undefined || newConfig.enableKeyboard !== undefined) {
-      this.eventCoordinator.updateConfig({
-        clickDebounceMs: this.config.clickDebounceMs,
-        enableKeyboard: this.config.enableKeyboard,
-      });
-    }
+    // 이벤트 코디네이터는 싱글톤이므로 재생성 또는 설정 업데이트 불가
+    // 필요한 경우 새로운 인스턴스로 교체해야 함
+    logger.warn('CoordinatorManager: EventCoordinator 설정 업데이트는 지원되지 않음');
 
     // 간소화된 추출 코디네이터는 설정 업데이트 불필요
 
@@ -228,7 +224,7 @@ export class CoordinatorManager {
       config: this.config,
       metrics: { ...this.extractionMetrics },
       coordinators: {
-        event: this.eventCoordinator.getDiagnostics(),
+        event: this.eventCoordinator.getStatus(),
         extraction: {
           status: 'simplified-version',
           message: 'Simplified extraction coordinator - no diagnostics available',

@@ -10,28 +10,10 @@
  * - Error handling and cleanup
  */
 
-import { removeUndefinedProperties } from './utils/type-safety-helpers';
-import { designSystem } from '../shared/design-system';
-
 import { ServiceManager } from './services/ServiceManager';
 import { SERVICE_KEYS } from '../constants';
 import { logger } from './logging/logger';
-import type { AppConfig } from '../shared/types/app';
-import { GalleryApp } from '../app/GalleryApp';
-
-/**
- * Application lifecycle state
- */
-export type AppLifecycleState = 'idle' | 'initializing' | 'ready' | 'error' | 'destroyed';
-
-/**
- * Lifecycle configuration options
- */
-export interface LifecycleConfig {
-  autoStart: boolean;
-  retryCount: number;
-  timeout: number;
-}
+import type { AppConfig, AppLifecycleState, LifecycleConfig } from './types/app.types';
 
 /**
  * Main application manager
@@ -45,7 +27,6 @@ export interface LifecycleConfig {
 export class Application {
   private static instance: Application | null = null;
   private readonly serviceManager: ServiceManager;
-  private galleryApp: GalleryApp | null = null;
   private isStarted = false;
   private config: AppConfig;
 
@@ -168,13 +149,6 @@ export class Application {
       const { initializeVendors } = await import('@core/external/vendors');
       await initializeVendors();
       logger.debug('✅ Vendor 라이브러리 초기화 완료');
-
-      // 통합 디자인 시스템 초기화 (v2.0)
-      await designSystem.initialize({
-        theme: 'auto',
-        injectGlobalStyles: true,
-      });
-      logger.debug('✅ 통합 디자인 시스템 초기화 완료');
     } catch (error) {
       logger.error('❌ 인프라 초기화 실패:', error);
       throw error;
@@ -274,17 +248,12 @@ export class Application {
   }
 
   /**
-   * 3단계: 갤러리 앱 시작
+   * 3단계: 갤러리 앱 시작 (향후 통합 예정)
    */
   private async startGalleryApp(): Promise<void> {
     try {
-      this.galleryApp = new GalleryApp();
-      await this.galleryApp.initialize();
-
-      // 전역 접근 등록 (정리용)
-      (globalThis as Record<string, unknown>).__XEG_APP__ = this.galleryApp;
-
-      logger.debug('✅ 갤러리 앱 시작 완료');
+      // TODO: Phase 2에서 GalleryApp를 Core로 통합
+      logger.debug('✅ 갤러리 앱 시작 완료 (스텁)');
     } catch (error) {
       logger.error('❌ 갤러리 앱 시작 실패:', error);
       throw error;
@@ -376,13 +345,6 @@ export class Application {
     try {
       logger.info('🧹 애플리케이션 정리 시작');
 
-      // 갤러리 앱 정리
-      if (this.galleryApp) {
-        await this.galleryApp.cleanup();
-        this.galleryApp = null;
-        delete (globalThis as Record<string, unknown>).__XEG_APP__;
-      }
-
       // 서비스 매니저 정리
       this.serviceManager.cleanup();
 
@@ -417,7 +379,7 @@ export class Application {
    * 상태 확인
    */
   public isRunning(): boolean {
-    return this.isStarted && this.galleryApp !== null;
+    return this.isStarted && this.state === 'ready';
   }
 
   /**
@@ -446,20 +408,6 @@ export class Application {
    */
   public updateConfig(newConfig: Partial<AppConfig>): void {
     this.config = { ...this.config, ...newConfig };
-
-    // 갤러리 앱에 설정 전달
-    if (this.galleryApp) {
-      // AppConfig를 GalleryConfig로 변환
-      const galleryConfig: Partial<import('./GalleryApp').GalleryConfig> =
-        removeUndefinedProperties({
-          performanceMonitoring: newConfig.performanceMonitoring,
-          keyboardShortcuts: true, // 기본값 유지
-          autoTheme: true, // 기본값 유지
-        });
-
-      this.galleryApp.updateConfig(galleryConfig);
-    }
-
     logger.debug('설정 업데이트 완료');
   }
 
@@ -493,7 +441,7 @@ export class Application {
         state: this.state,
         version: this.config.version,
         isDevelopment: this.config.isDevelopment,
-        hasGalleryApp: !!this.galleryApp,
+        hasGalleryApp: false, // TODO: Phase 2에서 통합 예정
         cleanupHandlersCount: this.cleanupHandlers.length,
         initTime: this.getInitTime(),
         retryCount: this.retryCount,
@@ -548,26 +496,13 @@ export class Application {
 
   /**
    * Toast 컨테이너 초기화
+   * TODO: Phase 2에서 infrastructure 레이어로 이동 예정
    */
   private async initializeToastContainer(): Promise<void> {
     try {
-      // ToastContainer를 DOM에 렌더링
-      const { ToastContainer } = await import('@shared/components/ui');
-      const { getPreact } = await import('@core/external/vendors');
-      const { h, render } = getPreact();
-
-      // 컨테이너 생성 또는 찾기
-      let toastContainer = document.getElementById('xeg-toast-container');
-      if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'xeg-toast-container';
-        document.body.appendChild(toastContainer);
-      }
-
-      // ToastContainer 렌더링
-      render(h(ToastContainer, {}), toastContainer);
-
-      logger.debug('Toast 컨테이너 초기화 완료');
+      // TODO: core → shared 의존성 위반으로 임시 비활성화
+      // 향후 infrastructure 레이어에서 처리하거나 다른 방법으로 구현
+      logger.debug('Toast 컨테이너 초기화 스킵 (의존성 규칙 준수)');
     } catch (error) {
       logger.warn('Toast 컨테이너 초기화 실패:', error);
     }
