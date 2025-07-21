@@ -53,24 +53,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/app/types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -2157,46 +2139,6 @@
       "valid": true
     },
     {
-      "source": "src/app/types.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../core/types/app.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/core/types/app.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/app/Application.ts",
-        "src/app/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/types/app.types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/app/types.ts",
-        "src/core/Application.ts",
-        "src/core/types/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/app/index.ts",
       "dependencies": [
         {
@@ -2244,24 +2186,6 @@
             "export"
           ],
           "resolved": "src/app/GalleryApp.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/app/types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2359,6 +2283,16 @@
         "src/core/browser/BrowserUtils.ts",
         "src/core/logging/index.ts",
         "src/core/memory/MemoryTracker.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/types/app.types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/Application.ts",
+        "src/core/types/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9308,8 +9242,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 227,
-    "totalDependenciesCruised": 402,
+    "totalCruised": 226,
+    "totalDependenciesCruised": 399,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

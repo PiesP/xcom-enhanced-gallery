@@ -7,7 +7,6 @@ strict digraph "dependency-cruiser output"{
     "src/app/Application.ts" -> "src/constants.ts"
     "src/app/Application.ts" -> "src/core/services/ServiceManager.ts"
     "src/app/Application.ts" -> "src/app/GalleryApp.ts"
-    "src/app/Application.ts" -> "src/app/types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" "src/app/GalleryApp.ts" [label=<GalleryApp.ts> tooltip="GalleryApp.ts" URL="src/app/GalleryApp.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } }
     "src/app/GalleryApp.ts" -> "src/constants.ts"
     "src/app/GalleryApp.ts" -> "src/core/state/signals/gallery.signals.ts"
@@ -23,9 +22,6 @@ strict digraph "dependency-cruiser output"{
     "src/app/index.ts" -> "src/app/Application.ts" [arrowhead="inv"]
     "src/app/index.ts" -> "src/app/Application.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/app/index.ts" -> "src/app/GalleryApp.ts" [arrowhead="inv"]
-    "src/app/index.ts" -> "src/app/types.ts" [arrowhead="onormal" penwidth="1.0"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" "src/app/types.ts" [label=<types.ts> tooltip="types.ts" URL="src/app/types.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } }
-    "src/app/types.ts" -> "src/core/types/app.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" "src/constants.ts" [label=<constants.ts> tooltip="constants.ts" URL="src/constants.ts" fillcolor="#ddfeff"] }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" "src/core/Application.ts" [label=<Application.ts> tooltip="Application.ts" URL="src/core/Application.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } }
     "src/core/Application.ts" -> "src/constants.ts"

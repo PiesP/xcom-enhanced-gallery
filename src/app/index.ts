@@ -16,5 +16,5 @@ export type {
   ApplicationState,
   PerformanceMetrics,
   ServiceState,
-} from './types';
+} from '@core/types/app.types';
 export type { AppLifecycleState, LifecycleConfig } from './Application';
