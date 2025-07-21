@@ -19,7 +19,7 @@ export type {
   ServiceFactory,
   ServiceLifecycle,
   ServiceTypeMapping,
-} from './types/services.types';
+} from './types/core-types';
 
 // Infrastructure components (moved to Core in Phase 1)
 export * from './browser';

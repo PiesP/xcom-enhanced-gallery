@@ -8,11 +8,6 @@
 // Primary consolidated core types (Phase 1 Step 2)
 export * from './core-types';
 
-// Legacy files maintained for backward compatibility during migration
-export * from './services.types';
-export * from './gallery.types';
-export * from './view-mode.types';
-
 // Essential business types (non-conflicting exports only)
 export * from './media.types';
 

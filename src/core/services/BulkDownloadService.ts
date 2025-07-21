@@ -8,7 +8,7 @@
  */
 
 import type { MediaInfo, MediaItem } from '@core/types/media.types';
-import type { BaseService } from '@core/types/services.types';
+import type { BaseService } from '@core/types/core-types';
 import type { MediaItemForFilename } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
 import { getNativeDownload } from '@core/external/vendors';

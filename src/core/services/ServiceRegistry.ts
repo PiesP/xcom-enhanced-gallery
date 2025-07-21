@@ -6,7 +6,7 @@
  */
 
 import { SERVICE_KEYS } from '../../constants';
-import type { ServiceTypeMapping } from '../types/services.types';
+import type { ServiceTypeMapping } from '../types/core-types';
 import { ServiceManager } from './ServiceManager';
 
 // Type-safe service keys

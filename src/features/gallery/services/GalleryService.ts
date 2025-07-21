@@ -19,7 +19,7 @@ import {
   openGallery,
 } from '../../../core/state/signals/gallery.signals';
 import type { MediaInfo } from '../../../core/types/media.types';
-import type { ViewMode } from '../../../core/types/view-mode.types';
+import type { ViewMode } from '../../../core/types/core-types';
 import { isVendorsInitialized } from '@core/external/vendors';
 import { logger } from '@core/logging/logger';
 

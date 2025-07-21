@@ -27,7 +27,7 @@ export { getService, registerAllServices, type ServiceKey } from './ServiceRegis
 
 // Essential types
 export type { BaseService, ServiceConfig } from './ServiceManager';
-export type { ServiceTypeMapping } from '../types/services.types';
+export type { ServiceTypeMapping } from '../types/core-types';
 export type { BulkDownloadOptions, DownloadProgress, DownloadResult } from './BulkDownloadService';
 export type { Theme } from './ThemeService';
 export type { ToastOptions } from './ToastController';

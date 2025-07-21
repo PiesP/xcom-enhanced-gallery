@@ -39,7 +39,6 @@ export type {
 
 // Specialized types
 export * from './image-fit.types';
-export * from './media.types';
 export * from './ui.types';
 export * from './filename.types';
 export * from './branded';
@@ -47,8 +46,11 @@ export * from './result';
 export * from './vendor.types';
 
 // View mode types (from core)
-export { isValidViewMode, normalizeViewMode } from '@core/types/view-mode.types';
-export type { VIEW_MODES, ViewMode } from '@core/types/view-mode.types';
+export { isValidViewMode, normalizeViewMode } from '@core/types/core-types';
+
+// Core media types (Phase 1A - direct access)
+export type { MediaInfo, MediaType, MediaItem } from '@core/types/media.types';
+export type { VIEW_MODES, ViewMode } from '@core/types/core-types';
 
 // Essential common types (no aliases needed)
 export type {

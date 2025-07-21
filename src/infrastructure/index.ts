@@ -16,4 +16,3 @@ export * from './utils';
 
 // Legacy types (will be moved to core)
 export * from './types/lifecycle.types';
-export * from './types/media.types';

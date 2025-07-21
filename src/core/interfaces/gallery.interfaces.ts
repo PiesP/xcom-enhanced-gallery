@@ -7,7 +7,7 @@
  */
 
 import type { MediaInfo } from '@core/types/media.types';
-import type { ViewMode } from '@core/types/view-mode.types';
+import type { ViewMode } from '@core/types/core-types';
 
 // 미디어 추출 옵션 타입
 export interface MediaExtractionOptions {
