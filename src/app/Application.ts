@@ -11,12 +11,11 @@
  */
 
 import { removeUndefinedProperties } from '@core/utils/type-safety-helpers';
-import { designSystem } from '../shared/design-system';
 
 import { ServiceManager } from '../core/services/ServiceManager';
 import { SERVICE_KEYS } from '../constants';
 import { logger } from '@core/logging/logger';
-import type { AppConfig } from '../shared/types/app';
+import type { AppConfig } from './types';
 import { GalleryApp } from './GalleryApp';
 
 /**
@@ -169,12 +168,9 @@ export class Application {
       await initializeVendors();
       logger.debug('✅ Vendor 라이브러리 초기화 완료');
 
-      // 통합 디자인 시스템 초기화 (v2.0)
-      await designSystem.initialize({
-        theme: 'auto',
-        injectGlobalStyles: true,
-      });
-      logger.debug('✅ 통합 디자인 시스템 초기화 완료');
+      // TODO: Phase 2에서 디자인 시스템 통합 예정
+      // 현재는 CSS 파일 직접 로드로 처리
+      logger.debug('✅ 인프라 초기화 완료');
     } catch (error) {
       logger.error('❌ 인프라 초기화 실패:', error);
       throw error;

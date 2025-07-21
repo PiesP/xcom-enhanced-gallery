@@ -39,41 +39,6 @@
         },
         {
           "dynamic": false,
-          "module": "../shared/design-system",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/design-system/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../shared/types/app",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/app.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./GalleryApp",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -82,6 +47,24 @@
             "import"
           ],
           "resolved": "src/app/GalleryApp.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/app/types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -134,143 +117,6 @@
         "src/core/services/index.ts",
         "src/core/services/gallery/GalleryInitializer.ts",
         "src/core/services/managers/ServiceResolver.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/design-system/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./DesignSystem",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/design-system/DesignSystem.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./tokens/DesignTokens",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/design-system/tokens/DesignTokens.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./utils/design-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/design-system/utils/design-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/app/Application.ts",
-        "src/shared/styling/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/design-system/DesignSystem.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./tokens/DesignTokens",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/design-system/tokens/DesignTokens.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/design-system/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/design-system/tokens/DesignTokens.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/design-system/index.ts",
-        "src/shared/design-system/DesignSystem.ts",
-        "src/shared/design-system/utils/design-utils.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/design-system/utils/design-utils.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../tokens/DesignTokens",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/design-system/tokens/DesignTokens.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/design-system/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/types/app.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/app/Application.ts",
-        "src/main.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2311,6 +2157,46 @@
       "valid": true
     },
     {
+      "source": "src/app/types.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../core/types/app.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/core/types/app.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/app/Application.ts",
+        "src/app/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/types/app.types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/app/types.ts",
+        "src/core/Application.ts",
+        "src/core/types/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/app/index.ts",
       "dependencies": [
         {
@@ -2376,72 +2262,6 @@
             "export"
           ],
           "resolved": "src/app/types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/app/types.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../core/types/app.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/core/types/app.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/app/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/types/app.types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/app/types.ts",
-        "src/app/types.new.ts",
-        "src/core/Application.ts",
-        "src/core/types/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/app/types.new.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../core/types/app.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/core/types/app.types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4234,19 +4054,6 @@
       ],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/core/types/app.types.new.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "src/core/types/architecture.types.ts",
@@ -7047,6 +6854,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/types/app.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/main.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/styles/globals.ts",
       "dependencies": [],
       "dependents": [
@@ -8001,6 +7817,132 @@
       ],
       "dependents": [
         "src/shared/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/design-system/DesignSystem.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./tokens/DesignTokens",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/design-system/tokens/DesignTokens.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/design-system/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/design-system/tokens/DesignTokens.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/design-system/DesignSystem.ts",
+        "src/shared/design-system/index.ts",
+        "src/shared/design-system/utils/design-utils.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/design-system/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./DesignSystem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/design-system/DesignSystem.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./tokens/DesignTokens",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/design-system/tokens/DesignTokens.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./utils/design-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/design-system/utils/design-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/styling/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/design-system/utils/design-utils.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../tokens/DesignTokens",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/design-system/tokens/DesignTokens.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/design-system/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9458,23 +9400,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/core/types/app.types.new.ts",
-        "to": "src/core/types/app.types.new.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 232,
-    "totalDependenciesCruised": 408,
+    "totalCruised": 230,
+    "totalDependenciesCruised": 406,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
