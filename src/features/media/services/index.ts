@@ -4,7 +4,7 @@
  */
 
 // Main media extraction service
-export { MediaExtractionService } from '../extraction/services/MediaExtractor';
+export { MediaExtractionService } from '@core/services/media-extraction/MediaExtractionService';
 
 // DOM direct extractor
 export { DOMDirectExtractor } from '../extraction/services/DOMDirectExtractor';

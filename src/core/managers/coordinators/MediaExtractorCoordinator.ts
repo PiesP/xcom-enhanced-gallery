@@ -8,14 +8,15 @@
  * - 정리 작업 관리
  *
  * @description Clean Architecture 기반 미디어 추출 관리
- * @version 3.0.0 - Clean Architecture
+ * @version 3.1.0 - Core 레이어로 이동
  */
 
-import type { MediaExtractionResult } from '@features/media/extraction/types/extraction.types';
-import { ExtractionSource } from '@features/media/extraction/types/extraction.types';
-import { MediaExtractionService } from '@features/media/extraction/services/MediaExtractor';
+import type { MediaExtractionResult } from '@core/types/media.types';
+import { ExtractionSource } from '@core/types/media.types';
+import type { MediaExtractor } from '@core/interfaces/gallery.interfaces';
 import { VideoControlService } from '@core/services/media/VideoControlService';
 import { logger } from '@core/logging/logger';
+import { MediaExtractionService } from '@core/services/media-extraction/MediaExtractionService';
 
 /**
  * 미디어 추출 코디네이터
@@ -27,14 +28,19 @@ import { logger } from '@core/logging/logger';
  * - 정리 작업 관리
  */
 export class MediaExtractorCoordinator {
-  private readonly extractor: MediaExtractionService;
+  private readonly extractor: MediaExtractor;
   private readonly videoControl: VideoControlService;
   private extractionCounter = 0;
   private isInitialized = false;
 
-  constructor() {
-    this.extractor = new MediaExtractionService();
+  constructor(extractor?: MediaExtractor) {
+    this.extractor = extractor || this.createDefaultExtractor();
     this.videoControl = VideoControlService.getInstance();
+  }
+
+  private createDefaultExtractor(): MediaExtractor {
+    // MediaExtractionService 직접 사용
+    return new MediaExtractionService();
   }
 
   /**

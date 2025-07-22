@@ -1,7 +1,7 @@
 /**
- * 코디네이터 매니저
- *
- * 갤러리 앱의 코디네이터들을 통합 관리하는 매니저
+ * @fileoverview 코디네이터 매니저
+ * @description 갤러리 앱의 코디네이터들을 통합 관리하는 매니저
+ * @version 3.1.0 - Core 레이어로 이동
  *
  * 책임:
  * - 코디네이터들의 생명주기 관리
@@ -11,8 +11,7 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { GalleryEventCoordinator } from '@shared/utils/events';
-import { MediaExtractorCoordinator } from './MediaExtractionCoordinator';
+import { MediaExtractorCoordinator } from './MediaExtractorCoordinator';
 import type { MediaInfo } from '@core/types/media.types';
 
 /**
@@ -41,7 +40,6 @@ export interface ManagedExtractionResult {
  * 코디네이터 매니저
  */
 export class CoordinatorManager {
-  private readonly eventCoordinator: GalleryEventCoordinator;
   private readonly extractionCoordinator: MediaExtractorCoordinator;
 
   private config: Required<CoordinatorManagerConfig>;
@@ -65,22 +63,14 @@ export class CoordinatorManager {
   constructor(config: CoordinatorManagerConfig = {}) {
     this.config = { ...CoordinatorManager.DEFAULT_CONFIG, ...config };
 
-    // 코디네이터들 생성 - 싱글톤 패턴 사용
-    this.eventCoordinator = GalleryEventCoordinator.getInstance({
-      debounceDelay: this.config.clickDebounceMs,
-      enableKeyboard: this.config.enableKeyboard,
-    });
-
+    // 추출 코디네이터 생성
     this.extractionCoordinator = new MediaExtractorCoordinator();
   }
 
   /**
    * 코디네이터 매니저 초기화
    */
-  public async initialize(callbacks: {
-    onMediaExtracted: (result: ManagedExtractionResult) => Promise<void>;
-    onGalleryClose: () => void;
-  }): Promise<void> {
+  public async initialize(): Promise<void> {
     if (this.isInitialized) {
       logger.debug('CoordinatorManager: Already initialized');
       return;
@@ -88,14 +78,6 @@ export class CoordinatorManager {
 
     try {
       logger.info('CoordinatorManager: 초기화 시작');
-
-      // 이벤트 코디네이터 초기화
-      await this.eventCoordinator.initialize({
-        onMediaClick: async (_mediaInfo, element, event) => {
-          await this.handleMediaClick(element, event, callbacks.onMediaExtracted);
-        },
-        onGalleryClose: callbacks.onGalleryClose,
-      });
 
       // 추출 코디네이터 초기화
       await this.extractionCoordinator.initialize();
@@ -142,7 +124,7 @@ export class CoordinatorManager {
           mediaItems: result.mediaItems,
           clickedIndex: result.clickedIndex,
           initialIndex: result.clickedIndex, // clickedIndex와 동일하게 설정
-          source: result.source,
+          source: result.source?.toString() || result.sourceType || 'unknown',
           duration,
         };
 
@@ -205,12 +187,6 @@ export class CoordinatorManager {
    */
   public updateConfig(newConfig: Partial<CoordinatorManagerConfig>): void {
     this.config = { ...this.config, ...newConfig };
-
-    // 이벤트 코디네이터는 싱글톤이므로 설정 업데이트가 제한됨
-    logger.warn('[CoordinatorManager] EventCoordinator는 싱글톤 - 설정 업데이트 제한됨');
-
-    // 간소화된 추출 코디네이터는 설정 업데이트 불필요
-
     logger.debug('[CoordinatorManager] 설정 업데이트됨');
   }
 
@@ -223,11 +199,7 @@ export class CoordinatorManager {
       config: this.config,
       metrics: { ...this.extractionMetrics },
       coordinators: {
-        event: this.eventCoordinator.getStatus(),
-        extraction: {
-          status: 'simplified-version',
-          message: 'Simplified extraction coordinator - no diagnostics available',
-        },
+        extraction: this.extractionCoordinator.getDiagnostics(),
       },
     };
   }
@@ -246,8 +218,8 @@ export class CoordinatorManager {
     try {
       logger.info('CoordinatorManager: 정리 시작');
 
-      // 코디네이터들 정리
-      await Promise.all([this.eventCoordinator.cleanup(), this.extractionCoordinator.cleanup()]);
+      // 추출 코디네이터 정리
+      await this.extractionCoordinator.cleanup();
 
       // 메트릭 초기화
       this.extractionMetrics = {

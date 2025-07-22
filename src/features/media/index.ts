@@ -5,7 +5,7 @@
  */
 
 // 핵심 미디어 추출 기능
-export { MediaExtractionService } from './extraction/services/MediaExtractor';
+export { MediaExtractionService } from '@core/services/media-extraction/MediaExtractionService';
 
 // 추출 전략들
 export * from './extraction/strategies';

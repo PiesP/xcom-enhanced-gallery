@@ -51,9 +51,7 @@ export async function registerAllServices(): Promise<void> {
   // Media Services (Simplified)
   serviceManager.register(SERVICE_KEYS.MEDIA_EXTRACTION, {
     factory: async () => {
-      const { MediaExtractionService } = await import(
-        '../../features/media/extraction/services/MediaExtractor'
-      );
+      const { MediaExtractionService } = await import('./media-extraction/MediaExtractionService');
       return new MediaExtractionService();
     },
     singleton: true,

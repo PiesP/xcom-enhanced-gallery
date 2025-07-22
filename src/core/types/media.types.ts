@@ -242,5 +242,124 @@ export interface ValidationIssue {
   field?: string;
 }
 
-// MediaExtractionResult는 @core/interfaces/gallery.interfaces.ts에서 정의됨
-// 중복 제거: 해당 인터페이스는 core/interfaces/gallery.interfaces.ts에서 정의된 것을 사용
+/**
+ * 페이지 타입 정의
+ */
+export enum PageType {
+  TIMELINE = 'timeline',
+  SINGLE_TWEET = 'single_tweet',
+  MEDIA_TAB = 'media_tab',
+  SINGLE_MEDIA = 'single_media',
+  PROFILE = 'profile',
+  UNKNOWN = 'unknown',
+}
+
+/**
+ * 추출 소스 타입
+ */
+export enum ExtractionSource {
+  CURRENT_PAGE = 'current_page',
+  BACKGROUND_LOAD = 'background_load',
+  CACHE = 'cache',
+  API = 'api',
+}
+
+/**
+ * 트윗 URL 정보
+ */
+export interface TweetUrl {
+  readonly url: string;
+  readonly tweetId: string;
+  readonly userId: string;
+  readonly mediaIndex?: number | undefined;
+  readonly isValid: boolean;
+}
+
+/**
+ * 추출 옵션
+ */
+export interface ExtractionOptions {
+  readonly enableBackgroundLoading: boolean;
+  readonly enableCache: boolean;
+  readonly maxRetries: number;
+  readonly timeout: number;
+  readonly fallbackStrategies: boolean;
+  readonly debugMode: boolean;
+}
+
+/**
+ * 추출 메타데이터
+ */
+export interface ExtractionMetadata {
+  readonly extractionTime?: number; // Make optional for backward compatibility
+  readonly extractedAt?: number; // backward compatibility
+  readonly strategiesUsed?: string[]; // Make optional for backward compatibility
+  readonly sourceCount?: number; // Make optional for backward compatibility
+  readonly cacheHits?: number; // Make optional for backward compatibility
+  readonly retryCount?: number; // Make optional for backward compatibility
+  readonly sourceType?: string; // backward compatibility
+  readonly strategy?: string; // backward compatibility
+  readonly error?: string; // backward compatibility
+  readonly performance?: {
+    readonly totalTime: number;
+    readonly backgroundLoadTime?: number;
+    readonly parseTime: number;
+  };
+  // Allow additional properties for flexibility
+  readonly [key: string]: unknown;
+}
+
+/**
+ * 추출 결과
+ */
+export interface MediaExtractionResult {
+  readonly success: boolean;
+  readonly mediaItems: MediaInfo[];
+  readonly clickedIndex: number;
+  readonly source?: ExtractionSource; // Make optional for backward compatibility
+  readonly sourceType?: string; // backward compatibility
+  readonly metadata: ExtractionMetadata;
+  readonly error?: ExtractionError | string; // Allow string for backward compatibility
+  readonly tweetInfo?: unknown; // Allow any tweet info structure for backward compatibility
+}
+
+/**
+ * 추출 컨텍스트
+ */
+export interface ExtractionContext {
+  readonly clickedElement?: HTMLElement;
+  readonly currentUrl: string;
+  readonly pageType: PageType;
+  readonly options: ExtractionOptions;
+  readonly timestamp: number;
+}
+
+/**
+ * 추출 에러 코드
+ */
+export enum ExtractionErrorCode {
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  PARSING_ERROR = 'PARSING_ERROR',
+  PARSE_ERROR = 'PARSE_ERROR', // 호환성을 위한 별칭
+  TIMEOUT_ERROR = 'TIMEOUT_ERROR',
+  NOT_FOUND_ERROR = 'NOT_FOUND_ERROR',
+  NO_MEDIA_FOUND = 'NO_MEDIA_FOUND',
+  INVALID_URL_ERROR = 'INVALID_URL_ERROR',
+  INVALID_URL = 'INVALID_URL', // 호환성을 위한 별칭
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+}
+
+/**
+ * 추출 에러 타입
+ */
+export class ExtractionError extends Error {
+  constructor(
+    message: string,
+    public readonly code: ExtractionErrorCode,
+    public readonly context?: ExtractionContext,
+    public override readonly cause?: Error
+  ) {
+    super(message);
+    this.name = 'ExtractionError';
+  }
+}

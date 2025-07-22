@@ -1,34 +1,15 @@
 /**
  * @fileoverview 미디어 추출기
  * @description API 우선 + DOM 백업 2단계 전략을 사용하는 통합 추출기
- * @versi      // 3단계: DOM 폴백 추출
-      logger.warn(`[MediaExtractor] ${extractionId}: API 추출 실패 - DOM 폴백 전략 실행`);
-      const domResult = await this.domExtractor.extract(element, options, extractionId, tweetInfo);
-
-      // core 인터페이스 형식으로 변환
-      return {
-        success: domResult.success,
-        mediaItems: domResult.mediaItems,
-        clickedIndex: domResult.clickedIndex,
-        sourceType: 'dom-fallback',
-        metadata: {
-          extractedAt: Date.now(),
-          sourceType: 'dom-fallback',
-          strategy: 'media-extraction',
-        },
-        tweetInfo: domResult.tweetInfo,
-      };Architecture
+ * @version 3.0.0 - Core 서비스로 이동 - Clean Architecture
  */
 
 import { logger } from '@core/logging/logger';
-import type {
-  MediaExtractionResult,
-  MediaExtractor,
-  MediaExtractionOptions,
-} from '../../../../core/interfaces/gallery.interfaces';
-import { TweetInfoExtractor } from './TweetInfoExtractor';
-import { TwitterAPIExtractor } from './TwitterAPIExtractor';
-import { DOMDirectExtractor } from './DOMDirectExtractor';
+import type { MediaExtractor, MediaExtractionOptions } from '@core/types/extraction.types';
+import type { MediaExtractionResult } from '@core/types/media.types';
+import { TweetInfoExtractor } from './extractors/TweetInfoExtractor';
+import { TwitterAPIExtractor } from './extractors/TwitterAPIExtractor';
+import { DOMDirectExtractor } from './extractors/DOMDirectExtractor';
 
 /**
  * 미디어 추출기

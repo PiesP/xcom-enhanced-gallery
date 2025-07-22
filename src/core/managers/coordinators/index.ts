@@ -5,6 +5,7 @@
 
 export { CoordinatorManager } from './CoordinatorManager';
 export { Coordinator } from './Coordinator';
+export { MediaExtractorCoordinator } from './MediaExtractorCoordinator';
 
 // Type exports
-export type { ManagedExtractionResult } from './Coordinator';
+export type { ManagedExtractionResult } from './CoordinatorManager';

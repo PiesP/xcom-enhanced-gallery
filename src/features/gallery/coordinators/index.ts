@@ -1,11 +1,12 @@
 /**
- * @fileoverview Gallery Coordinators - Application coordination for Gallery feature
- * @version 3.1.0 - Phase 2B App Layer Integration to Features
+ * @fileoverview Gallery Coordinators - Core로 리다이렉트
+ * @version 3.1.0 - Core 통합 완료
  */
 
-export { CoordinatorManager } from './CoordinatorManager';
-export { Coordinator } from './Coordinator';
-export { MediaExtractorCoordinator } from './MediaExtractionCoordinator';
+// Core로 이동된 코디네이터들을 re-export
+export { CoordinatorManager } from '@core/managers/coordinators/CoordinatorManager';
+export { Coordinator } from '@core/managers/coordinators/Coordinator';
+export { MediaExtractorCoordinator } from '@core/managers/coordinators/MediaExtractorCoordinator';
 
 // Type exports
-export type { ManagedExtractionResult } from './Coordinator';
+export type { ManagedExtractionResult } from '@core/managers/coordinators/CoordinatorManager';

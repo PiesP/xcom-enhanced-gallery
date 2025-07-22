@@ -17,7 +17,6 @@ import { VideoControlService } from '@core/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '@core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
-import type { ManagedExtractionResult } from './coordinators';
 import { CoordinatorManager } from './coordinators';
 import type { ToastController } from '@core/services/ToastController';
 import { unmountIsolatedGallery } from '@shared/components/isolation/IsolatedGalleryRoot';
@@ -82,10 +81,10 @@ export class GalleryApp {
       await this.initializeRenderer();
 
       // 코디네이터 매니저 초기화
-      await this.coordinatorManager.initialize({
-        onMediaExtracted: this.handleMediaExtracted.bind(this),
-        onGalleryClose: this.handleGalleryClose.bind(this),
-      });
+      await this.coordinatorManager.initialize();
+
+      // 이벤트 핸들러 설정
+      await this.setupEventHandlers();
 
       this.isInitialized = true;
       logger.info('✅ GalleryApp 격리된 시스템으로 초기화 완료');
@@ -115,32 +114,36 @@ export class GalleryApp {
   }
 
   /**
-   * 미디어 추출 완료 핸들러
+   * 이벤트 핸들러 설정
    */
-  private async handleMediaExtracted(result: ManagedExtractionResult): Promise<void> {
+  private async setupEventHandlers(): Promise<void> {
     try {
-      logger.info('미디어 추출 완료:', {
-        mediaCount: result.mediaItems.length,
-        source: result.source,
-        duration: `${result.duration.toFixed(2)}ms`,
+      // GalleryEventCoordinator를 사용하여 이벤트 리스너 설정
+      const { GalleryEventCoordinator } = await import(
+        '@shared/utils/events/GalleryEventCoordinator'
+      );
+      const eventCoordinator = GalleryEventCoordinator.getInstance();
+
+      await eventCoordinator.initialize({
+        onMediaClick: async (_mediaInfo, element, event) => {
+          await this.coordinatorManager.handleMediaClick(element, event, async result => {
+            await this.openGallery(result.mediaItems, result.clickedIndex);
+          });
+        },
+        onGalleryClose: () => {
+          this.closeGallery();
+        },
+        onKeyboardEvent: event => {
+          if (event.key === 'Escape' && galleryState.value.isOpen) {
+            this.closeGallery();
+          }
+        },
       });
 
-      if (result.success && result.mediaItems.length > 0) {
-        // 갤러리 열기
-        await this.openGallery(result.mediaItems, result.clickedIndex);
-      } else {
-        logger.warn('추출된 미디어가 없음');
-        this.toastController?.warning(
-          '미디어 없음',
-          '이 트윗에서 표시할 미디어를 찾을 수 없습니다.'
-        );
-      }
+      logger.info('✅ 이벤트 핸들러 설정 완료');
     } catch (error) {
-      logger.error('미디어 추출 결과 처리 실패:', error);
-      this.toastController?.error(
-        '로딩 오류',
-        '미디어를 불러오는 중 문제가 발생했습니다. 다시 시도해 주세요.'
-      );
+      logger.error('❌ 이벤트 핸들러 설정 실패:', error);
+      throw error;
     }
   }
 
@@ -303,6 +306,17 @@ export class GalleryApp {
       // 갤러리가 열려있다면 닫기
       if (galleryState.value.isOpen) {
         this.closeGallery();
+      }
+
+      // 이벤트 핸들러 정리
+      try {
+        const { GalleryEventCoordinator } = await import(
+          '@shared/utils/events/GalleryEventCoordinator'
+        );
+        const eventCoordinator = GalleryEventCoordinator.getInstance();
+        await eventCoordinator.cleanup();
+      } catch (error) {
+        logger.warn('이벤트 코디네이터 정리 실패:', error);
       }
 
       // 격리된 갤러리 컨테이너 제거

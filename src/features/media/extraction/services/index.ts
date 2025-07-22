@@ -4,8 +4,8 @@
  * @description 미디어 추출 서비스들의 통합 export
  */
 
-// 핵심 추출 서비스들
-export { MediaExtractionService } from './MediaExtractor';
+// 핵심 추출 서비스들 (Core에서 가져오기)
+export { MediaExtractionService } from '@core/services/media-extraction/MediaExtractionService';
 export { FallbackExtractor } from './FallbackExtractor';
 export { DOMDirectExtractor } from './DOMDirectExtractor';
 export { TweetInfoExtractor } from './TweetInfoExtractor';

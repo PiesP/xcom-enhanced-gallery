@@ -11,6 +11,22 @@ export * from './core-types';
 // Essential business types
 export * from './media.types';
 
+// Extraction types (Phase 2 - Added - selective export to avoid conflicts)
+export type {
+  TweetInfo,
+  MediaExtractionOptions,
+  MediaExtractor,
+  TweetInfoExtractionStrategy,
+  APIExtractor,
+  FallbackExtractionStrategy,
+} from './extraction.types';
+
+// Re-export MediaExtractionResult from media.types to avoid conflicts
+export type { MediaExtractionResult } from './media.types';
+
+// Extraction enums and classes
+export { ExtractionErrorCode, ExtractionError } from './extraction.types';
+
 // Infrastructure types
 export * from './lifecycle.types';
 export * from './userscript.d';

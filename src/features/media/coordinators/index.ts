@@ -1,7 +1,7 @@
 /**
- * @fileoverview Media Coordinators
- * @version 2.0.0 - Phase 2B App Layer Integration
+ * @fileoverview Media Coordinators - Core로 리다이렉트
+ * @version 3.1.0 - Core 통합 완료
  */
 
-export { MediaExtractorCoordinator } from './MediaExtractionCoordinator';
+export { MediaExtractorCoordinator } from '@core/managers/coordinators/MediaExtractorCoordinator';
 export type { MediaExtractionResult as ExtractionResult } from '../extraction/types/extraction.types';
