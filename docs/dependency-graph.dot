@@ -3,25 +3,6 @@ strict digraph "dependency-cruiser output"{
     node [shape="box" style="rounded,filled" height="0.2" color="#333333" fillcolor="#FAFAFA" fontcolor="#333333" fontname="Arial" fontsize="10" penwidth="1" margin="0.1"]
     edge [arrowhead="normal" arrowsize="0.8" penwidth="1" color="#666666" fontname="Arial" fontsize="8" fontcolor="#333333"]
 
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" "src/app/Application.ts" [label=<Application.ts> tooltip="Application.ts" URL="src/app/Application.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } }
-    "src/app/Application.ts" -> "src/constants.ts"
-    "src/app/Application.ts" -> "src/core/services/ServiceManager.ts"
-    "src/app/Application.ts" -> "src/app/GalleryApp.ts"
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" "src/app/GalleryApp.ts" [label=<GalleryApp.ts> tooltip="GalleryApp.ts" URL="src/app/GalleryApp.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } }
-    "src/app/GalleryApp.ts" -> "src/constants.ts"
-    "src/app/GalleryApp.ts" -> "src/core/state/signals/gallery.signals.ts"
-    "src/app/GalleryApp.ts" -> "src/app/coordinators/index.ts"
-    "src/app/GalleryApp.ts" -> "src/app/coordinators/index.ts" [arrowhead="onormal" penwidth="1.0"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" subgraph "cluster_src/app/coordinators" {label="coordinators" "src/app/coordinators/Coordinator.ts" [label=<Coordinator.ts> tooltip="Coordinator.ts" URL="src/app/coordinators/Coordinator.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" subgraph "cluster_src/app/coordinators" {label="coordinators" "src/app/coordinators/CoordinatorManager.ts" [label=<CoordinatorManager.ts> tooltip="CoordinatorManager.ts" URL="src/app/coordinators/CoordinatorManager.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" subgraph "cluster_src/app/coordinators" {label="coordinators" "src/app/coordinators/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/app/coordinators/index.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } } }
-    "src/app/coordinators/index.ts" -> "src/app/coordinators/Coordinator.ts" [arrowhead="inv"]
-    "src/app/coordinators/index.ts" -> "src/app/coordinators/Coordinator.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/app/coordinators/index.ts" -> "src/app/coordinators/CoordinatorManager.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/app" {label="app" "src/app/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/app/index.ts" fillcolor="#E8F4FD" color="#1E40AF" fontcolor="#1E40AF"] } }
-    "src/app/index.ts" -> "src/app/Application.ts" [arrowhead="inv"]
-    "src/app/index.ts" -> "src/app/Application.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/app/index.ts" -> "src/app/GalleryApp.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" "src/constants.ts" [label=<constants.ts> tooltip="constants.ts" URL="src/constants.ts" fillcolor="#ddfeff"] }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" "src/core/Application.ts" [label=<Application.ts> tooltip="Application.ts" URL="src/core/Application.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } }
     "src/core/Application.ts" -> "src/constants.ts"
@@ -93,6 +74,7 @@ strict digraph "dependency-cruiser output"{
     "src/core/managers/EventDispatcher.ts" -> "src/core/patterns/Singleton.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/managers" {label="managers" "src/core/managers/NamespacedDesignSystem.ts" [label=<NamespacedDesignSystem.ts> tooltip="NamespacedDesignSystem.ts" URL="src/core/managers/NamespacedDesignSystem.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/managers" {label="managers" "src/core/managers/ResourceManager.ts" [label=<ResourceManager.ts> tooltip="ResourceManager.ts" URL="src/core/managers/ResourceManager.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/managers" {label="managers" subgraph "cluster_src/core/managers/coordinators" {label="coordinators" "src/core/managers/coordinators/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/managers/coordinators/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C" style="rounded,filled,dashed" penwidth="1.5"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/managers" {label="managers" "src/core/managers/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/managers/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/managers/index.ts" -> "src/core/managers/EventDispatcher.ts" [arrowhead="inv"]
     "src/core/managers/index.ts" -> "src/core/managers/NamespacedDesignSystem.ts" [arrowhead="inv"]

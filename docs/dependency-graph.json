@@ -1,82 +1,19 @@
 {
   "modules": [
     {
-      "source": "src/app/Application.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../core/services/ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryApp",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/app/GalleryApp.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/app/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/constants.ts",
       "dependencies": [],
       "dependents": [
-        "src/app/Application.ts",
-        "src/app/GalleryApp.ts",
+        "src/core/Application.ts",
+        "src/core/types/core-types.ts",
+        "src/core/types/media.types.ts",
+        "src/core/index.ts",
+        "src/core/services/index.ts",
         "src/core/services/core-services.ts",
         "src/core/services/ServiceRegistry.ts",
-        "src/core/types/media.types.ts",
         "src/core/services/media/UsernameExtractionService.ts",
         "src/features/media/extraction/services/TwitterVideoExtractor.ts",
         "src/features/settings/types/settings.types.ts",
-        "src/core/types/core-types.ts",
-        "src/core/Application.ts",
-        "src/core/index.ts",
-        "src/core/services/index.ts",
         "src/core/services/gallery/GalleryInitializer.ts",
         "src/features/gallery/GalleryApp.ts",
         "src/features/media/extraction/types/extraction.types.ts",
@@ -89,23 +26,7 @@
       "valid": true
     },
     {
-      "source": "src/core/services/ServiceManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/app/Application.ts",
-        "src/core/services/core-services.ts",
-        "src/core/services/ServiceRegistry.ts",
-        "src/core/services/ToastController.ts",
-        "src/core/Application.ts",
-        "src/core/services/index.ts",
-        "src/core/services/gallery/GalleryInitializer.ts",
-        "src/core/services/managers/ServiceResolver.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/app/GalleryApp.ts",
+      "source": "src/core/Application.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -126,14 +47,14 @@
         },
         {
           "dynamic": false,
-          "module": "../core/state/signals/gallery.signals",
+          "module": "./logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/core/state/signals/gallery.signals.ts",
+          "resolved": "src/core/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -143,141 +64,12 @@
         },
         {
           "dynamic": false,
-          "module": "./coordinators",
+          "module": "./services/ServiceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
-          ],
-          "resolved": "src/app/coordinators/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./coordinators",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/app/coordinators/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/app/Application.ts",
-        "src/app/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/state/signals/gallery.signals.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../services/core-services",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/core-services.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/app/GalleryApp.ts",
-        "src/core/index.ts",
-        "src/core/state/index.ts",
-        "src/core/state/signals/index.ts",
-        "src/features/gallery/services/GalleryService.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/core-services.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../managers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/managers/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
           ],
           "resolved": "src/core/services/ServiceManager.ts",
           "coreModule": false,
@@ -288,273 +80,8 @@
           "valid": true
         },
         {
-          "dynamic": true,
-          "module": "./ServiceRegistry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/services/ServiceRegistry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/state/signals/gallery.signals.ts",
-        "src/core/services/index.ts",
-        "src/core/state/signals/download.signals.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/managers/index.ts",
-      "dependencies": [
-        {
           "dynamic": false,
-          "module": "./EventDispatcher",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/managers/EventDispatcher.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./NamespacedDesignSystem",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/managers/NamespacedDesignSystem.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ResourceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/managers/ResourceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/core-services.ts",
-        "src/core/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/managers/EventDispatcher.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../patterns/Singleton",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/patterns/Singleton.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/patterns/Singleton.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/managers/EventDispatcher.ts",
-        "src/core/patterns/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/managers/NamespacedDesignSystem.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/managers/ResourceManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/ServiceRegistry.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../../features/gallery/GalleryRenderer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/gallery/GalleryRenderer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../../features/gallery/services/DownloadService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/gallery/services/DownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../../features/media/extraction/services/MediaExtractor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/media/extraction/services/MediaExtractor.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../../features/settings/services/SettingsService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/settings/services/SettingsService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../../features/settings/services/TwitterTokenExtractor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/settings/services/TwitterTokenExtractor.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../media",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/media/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../types/core-types",
+          "module": "./types/core-types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -569,1243 +96,35 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./BulkDownloadService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/services/BulkDownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./media/VideoControlService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/services/media/VideoControlService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./ThemeService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/services/ThemeService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./ToastController",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/services/ToastController.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
-      "dependents": [
-        "src/core/services/core-services.ts",
-        "src/core/services/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/features/gallery/GalleryRenderer.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./components/vertical-gallery-view",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./services/DownloadService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/gallery/services/DownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./styles/gallery-global.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/styles/gallery-global.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/ServiceRegistry.ts",
-        "src/features/gallery/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/styles/gallery-global.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
+      "source": "src/core/logging/logger.ts",
       "dependencies": [],
       "dependents": [
-        "src/features/gallery/GalleryRenderer.ts"
+        "src/core/Application.ts",
+        "src/core/browser/BrowserUtils.ts",
+        "src/core/logging/index.ts",
+        "src/core/memory/MemoryTracker.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/vertical-gallery-view/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./VerticalGalleryView",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VerticalGalleryView",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VerticalImageItem",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/GalleryRenderer.ts",
-        "src/features/gallery/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../hooks/useGalleryItemScroll",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/hooks/useGalleryItemScroll.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../hooks/useGalleryScroll",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/hooks/useGalleryScroll.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/useGalleryCleanup",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/useGalleryKeyboard",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VerticalGalleryView.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VerticalImageItem",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/index.ts",
-        "src/features/gallery/components/index.ts",
-        "src/features/gallery/renderers/IsolatedGalleryRenderer.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
+      "source": "src/core/services/ServiceManager.ts",
       "dependencies": [],
       "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/components/vertical-gallery-view/components/GalleryContent.tsx",
-        "src/features/gallery/components/vertical-gallery-view/components/GalleryControls.tsx",
-        "src/features/gallery/components/vertical-gallery-view/components/GalleryFooter.tsx",
-        "src/features/gallery/components/vertical-gallery-view/components/GalleryHeader.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/hooks/useGalleryItemScroll.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/hooks/useGalleryScroll.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./VerticalImageItem.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/index.ts",
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/components/index.ts",
-        "src/features/gallery/components/vertical-gallery-view/components/GalleryContent.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/services/DownloadService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/services/ServiceRegistry.ts",
-        "src/features/gallery/GalleryRenderer.ts",
-        "src/features/gallery/index.ts",
-        "src/features/gallery/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/services/MediaExtractor.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../core/interfaces/gallery.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/interfaces/gallery.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./DOMDirectExtractor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/services/DOMDirectExtractor.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./TweetInfoExtractor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/services/TweetInfoExtractor.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./TwitterAPIExtractor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/services/TwitterAPIExtractor.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/ServiceRegistry.ts",
-        "src/features/media/coordinators/MediaExtractionCoordinator.ts",
-        "src/features/media/extraction/services/index.ts",
-        "src/features/media/index.ts",
-        "src/features/media/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/interfaces/gallery.interfaces.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/media/extraction/services/MediaExtractor.ts",
-        "src/core/interfaces/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/services/DOMDirectExtractor.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/MediaExtractor.ts",
-        "src/features/media/extraction/services/index.ts",
-        "src/features/media/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/types/media.types.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/state/signals/gallery.signals.ts",
-        "src/features/media/extraction/services/DOMDirectExtractor.ts",
-        "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-        "src/features/media/extraction/services/TwitterAPIExtractor.ts",
-        "src/core/types/core-types.ts",
-        "src/core/state/signals/download.signals.ts",
-        "src/core/types/index.ts",
-        "src/features/gallery/services/GalleryService.ts",
-        "src/features/media/extraction/strategies/fallback/CompositeFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
-        "src/shared/utils/performance/ClickDebouncer.ts",
-        "src/shared/utils/events/EventHandler.ts",
-        "src/shared/utils/events/GalleryEventCoordinator.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/DOMDirectExtractor.ts",
-        "src/features/media/extraction/services/TweetInfoExtractor.ts",
-        "src/features/media/extraction/strategies/ClickedElementTweetStrategy.ts",
-        "src/features/media/extraction/strategies/DataAttributeTweetStrategy.ts",
-        "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
-        "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
-        "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
-        "src/features/media/extraction/services/TwitterAPIExtractor.ts",
-        "src/features/media/extraction/MediaExtractor.ts",
-        "src/features/media/extraction/services/FallbackExtractor.ts",
-        "src/features/media/extraction/strategies/fallback/CompositeFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/BackgroundImageFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/DataAttributeFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
-        "src/features/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/services/TweetInfoExtractor.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../strategies/ClickedElementTweetStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/strategies/ClickedElementTweetStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../strategies/DataAttributeTweetStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/strategies/DataAttributeTweetStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../strategies/DomStructureTweetStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../strategies/ParentTraversalTweetStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../strategies/UrlBasedTweetStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/MediaExtractor.ts",
-        "src/features/media/extraction/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/strategies/ClickedElementTweetStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/TweetInfoExtractor.ts",
-        "src/features/media/extraction/strategies/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/strategies/DataAttributeTweetStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/TweetInfoExtractor.ts",
-        "src/features/media/extraction/strategies/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../core/services/media/UsernameExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media/UsernameExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/TweetInfoExtractor.ts",
-        "src/features/media/extraction/strategies/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/media/UsernameExtractionService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
-        "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
+        "src/core/Application.ts",
+        "src/core/services/ToastController.ts",
         "src/core/services/index.ts",
-        "src/core/services/media/index.ts",
-        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
-        "src/shared/utils/media/media-url.util.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/TweetInfoExtractor.ts",
-        "src/features/media/extraction/strategies/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../core/services/media/UsernameExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media/UsernameExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/TweetInfoExtractor.ts",
-        "src/features/media/extraction/strategies/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/services/TwitterAPIExtractor.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./TwitterVideoExtractor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/services/TwitterVideoExtractor.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/MediaExtractor.ts",
-        "src/features/media/extraction/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/services/TwitterVideoExtractor.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/services/TwitterAPIExtractor.ts",
-        "src/features/media/extraction/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/settings/services/SettingsService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../types/settings.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/settings/types/settings.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../types/settings.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/settings/types/settings.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
+        "src/core/services/core-services.ts",
         "src/core/services/ServiceRegistry.ts",
-        "src/features/settings/index.ts",
-        "src/features/settings/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/settings/types/settings.types.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/settings/services/SettingsService.ts",
-        "src/features/settings/index.ts",
-        "src/features/settings/types/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/settings/services/TwitterTokenExtractor.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/services/ServiceRegistry.ts",
-        "src/features/settings/index.ts",
-        "src/features/settings/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/media/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./FilenameService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/media/FilenameService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/ServiceRegistry.ts",
-        "src/core/types/core-types.ts",
-        "src/core/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/media/FilenameService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/media/index.ts"
+        "src/core/services/gallery/GalleryInitializer.ts",
+        "src/core/services/managers/ServiceResolver.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1935,10 +254,10 @@
         }
       ],
       "dependents": [
-        "src/core/services/ServiceRegistry.ts",
         "src/core/Application.ts",
         "src/core/index.ts",
         "src/core/services/index.ts",
+        "src/core/services/ServiceRegistry.ts",
         "src/core/services/media-mapping/MediaMappingService.ts",
         "src/core/services/media-mapping/MediaTabUrlDirectStrategy.ts",
         "src/core/services/media-mapping/index.ts",
@@ -1951,12 +270,50 @@
       "valid": true
     },
     {
+      "source": "src/core/media/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./FilenameService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/media/FilenameService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/types/core-types.ts",
+        "src/core/index.ts",
+        "src/core/services/ServiceRegistry.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/media/FilenameService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/services/BulkDownloadService.ts",
       "dependencies": [],
       "dependents": [
-        "src/core/services/ServiceRegistry.ts",
         "src/core/types/core-types.ts",
-        "src/core/services/index.ts"
+        "src/core/services/index.ts",
+        "src/core/services/ServiceRegistry.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1965,8 +322,8 @@
       "source": "src/core/services/media/VideoControlService.ts",
       "dependencies": [],
       "dependents": [
-        "src/core/services/ServiceRegistry.ts",
         "src/core/types/core-types.ts",
+        "src/core/services/ServiceRegistry.ts",
         "src/core/services/media/index.ts"
       ],
       "orphan": false,
@@ -1976,9 +333,9 @@
       "source": "src/core/services/ThemeService.ts",
       "dependencies": [],
       "dependents": [
-        "src/core/services/ServiceRegistry.ts",
         "src/core/types/core-types.ts",
-        "src/core/services/index.ts"
+        "src/core/services/index.ts",
+        "src/core/services/ServiceRegistry.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2006,163 +363,24 @@
         }
       ],
       "dependents": [
-        "src/core/services/ServiceRegistry.ts",
         "src/core/types/core-types.ts",
-        "src/core/services/index.ts"
+        "src/core/services/index.ts",
+        "src/core/services/ServiceRegistry.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/app/coordinators/index.ts",
+      "source": "src/core/types/media.types.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./Coordinator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/app/coordinators/Coordinator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Coordinator",
+          "module": "../../constants",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "type-only",
-            "export"
-          ],
-          "resolved": "src/app/coordinators/Coordinator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./CoordinatorManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/app/coordinators/CoordinatorManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/app/GalleryApp.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/app/coordinators/Coordinator.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/app/coordinators/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/app/coordinators/CoordinatorManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/app/coordinators/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/app/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Application",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/app/Application.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Application",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/app/Application.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryApp",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/app/GalleryApp.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/Application.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "import"
           ],
           "resolved": "src/constants.ts",
@@ -2172,72 +390,24 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./services/ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types/core-types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/core-types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/logging/logger.ts",
-      "dependencies": [],
       "dependents": [
-        "src/core/Application.ts",
-        "src/core/browser/BrowserUtils.ts",
-        "src/core/logging/index.ts",
-        "src/core/memory/MemoryTracker.ts"
+        "src/core/types/core-types.ts",
+        "src/features/media/extraction/services/DOMDirectExtractor.ts",
+        "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+        "src/features/media/extraction/services/TwitterAPIExtractor.ts",
+        "src/core/state/signals/download.signals.ts",
+        "src/core/state/signals/gallery.signals.ts",
+        "src/core/types/index.ts",
+        "src/features/gallery/services/GalleryService.ts",
+        "src/features/media/extraction/strategies/fallback/CompositeFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
+        "src/shared/utils/performance/ClickDebouncer.ts",
+        "src/shared/utils/events/EventHandler.ts",
+        "src/shared/utils/events/GalleryEventCoordinator.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3030,6 +1200,16 @@
       "valid": true
     },
     {
+      "source": "src/core/interfaces/gallery.interfaces.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/interfaces/index.ts",
+        "src/features/media/extraction/services/MediaExtractor.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/interfaces/ServiceInterfaces.ts",
       "dependencies": [],
       "dependents": [
@@ -3061,6 +1241,123 @@
       ],
       "dependents": [
         "src/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EventDispatcher",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/EventDispatcher.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./NamespacedDesignSystem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/NamespacedDesignSystem.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ResourceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/core/managers/ResourceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts",
+        "src/core/services/core-services.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/EventDispatcher.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../patterns/Singleton",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/patterns/Singleton.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/managers/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/patterns/Singleton.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/managers/EventDispatcher.ts",
+        "src/core/patterns/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/NamespacedDesignSystem.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/managers/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/ResourceManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/managers/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3356,6 +1653,1376 @@
       "valid": true
     },
     {
+      "source": "src/core/services/core-services.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../managers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/managers/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./ServiceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/services/ServiceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./ServiceRegistry",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/services/ServiceRegistry.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/services/index.ts",
+        "src/core/state/signals/download.signals.ts",
+        "src/core/state/signals/gallery.signals.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/services/ServiceRegistry.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../../features/gallery/GalleryRenderer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/gallery/GalleryRenderer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../../features/gallery/services/DownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/gallery/services/DownloadService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../../features/media/extraction/services/MediaExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/media/extraction/services/MediaExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../../features/settings/services/SettingsService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/settings/services/SettingsService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../../features/settings/services/TwitterTokenExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/settings/services/TwitterTokenExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../media",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/media/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../types/core-types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/types/core-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./BulkDownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/services/BulkDownloadService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./media/VideoControlService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/services/media/VideoControlService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ServiceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/ServiceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./ThemeService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/services/ThemeService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./ToastController",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/services/ToastController.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/services/index.ts",
+        "src/core/services/core-services.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/GalleryRenderer.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./components/vertical-gallery-view",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./services/DownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/gallery/services/DownloadService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./styles/gallery-global.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/styles/gallery-global.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/services/ServiceRegistry.ts",
+        "src/features/gallery/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/styles/gallery-global.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/GalleryRenderer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./VerticalGalleryView",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VerticalGalleryView",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VerticalImageItem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/GalleryRenderer.ts",
+        "src/features/gallery/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../hooks/useGalleryItemScroll",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/hooks/useGalleryItemScroll.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../hooks/useGalleryScroll",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/hooks/useGalleryScroll.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hooks/useGalleryCleanup",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hooks/useGalleryKeyboard",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VerticalGalleryView.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VerticalImageItem",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/index.ts",
+        "src/features/gallery/components/index.ts",
+        "src/features/gallery/renderers/IsolatedGalleryRenderer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/components/vertical-gallery-view/components/GalleryContent.tsx",
+        "src/features/gallery/components/vertical-gallery-view/components/GalleryControls.tsx",
+        "src/features/gallery/components/vertical-gallery-view/components/GalleryFooter.tsx",
+        "src/features/gallery/components/vertical-gallery-view/components/GalleryHeader.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/hooks/useGalleryItemScroll.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/hooks/useGalleryScroll.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./VerticalImageItem.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/index.ts",
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/components/index.ts",
+        "src/features/gallery/components/vertical-gallery-view/components/GalleryContent.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/services/DownloadService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/services/ServiceRegistry.ts",
+        "src/features/gallery/GalleryRenderer.ts",
+        "src/features/gallery/index.ts",
+        "src/features/gallery/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/services/MediaExtractor.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../core/interfaces/gallery.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/interfaces/gallery.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./DOMDirectExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/services/DOMDirectExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TweetInfoExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/services/TweetInfoExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TwitterAPIExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/services/TwitterAPIExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/services/ServiceRegistry.ts",
+        "src/features/media/coordinators/MediaExtractionCoordinator.ts",
+        "src/features/media/extraction/services/index.ts",
+        "src/features/media/index.ts",
+        "src/features/media/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/services/DOMDirectExtractor.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../core/types/media.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/types/media.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../interfaces/extraction.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/MediaExtractor.ts",
+        "src/features/media/extraction/services/index.ts",
+        "src/features/media/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../core/types/media.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/types/media.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/DOMDirectExtractor.ts",
+        "src/features/media/extraction/services/TweetInfoExtractor.ts",
+        "src/features/media/extraction/strategies/ClickedElementTweetStrategy.ts",
+        "src/features/media/extraction/strategies/DataAttributeTweetStrategy.ts",
+        "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
+        "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
+        "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
+        "src/features/media/extraction/services/TwitterAPIExtractor.ts",
+        "src/features/media/extraction/MediaExtractor.ts",
+        "src/features/media/extraction/services/FallbackExtractor.ts",
+        "src/features/media/extraction/strategies/fallback/CompositeFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/BackgroundImageFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/DataAttributeFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
+        "src/features/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/services/TweetInfoExtractor.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../interfaces/extraction.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../strategies/ClickedElementTweetStrategy",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/strategies/ClickedElementTweetStrategy.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../strategies/DataAttributeTweetStrategy",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/strategies/DataAttributeTweetStrategy.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../strategies/DomStructureTweetStrategy",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../strategies/ParentTraversalTweetStrategy",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../strategies/UrlBasedTweetStrategy",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/MediaExtractor.ts",
+        "src/features/media/extraction/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/strategies/ClickedElementTweetStrategy.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../interfaces/extraction.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/TweetInfoExtractor.ts",
+        "src/features/media/extraction/strategies/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/strategies/DataAttributeTweetStrategy.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../interfaces/extraction.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/TweetInfoExtractor.ts",
+        "src/features/media/extraction/strategies/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../core/services/media/UsernameExtractionService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/media/UsernameExtractionService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../interfaces/extraction.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/TweetInfoExtractor.ts",
+        "src/features/media/extraction/strategies/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/services/media/UsernameExtractionService.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/services/index.ts",
+        "src/features/media/extraction/strategies/DomStructureTweetStrategy.ts",
+        "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
+        "src/core/services/media/index.ts",
+        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
+        "src/features/media/extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
+        "src/shared/utils/media/media-url.util.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/strategies/ParentTraversalTweetStrategy.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../interfaces/extraction.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/TweetInfoExtractor.ts",
+        "src/features/media/extraction/strategies/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../core/services/media/UsernameExtractionService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/media/UsernameExtractionService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../interfaces/extraction.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/TweetInfoExtractor.ts",
+        "src/features/media/extraction/strategies/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/services/TwitterAPIExtractor.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../core/types/media.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/types/media.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../interfaces/extraction.interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TwitterVideoExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/media/extraction/services/TwitterVideoExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/MediaExtractor.ts",
+        "src/features/media/extraction/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/media/extraction/services/TwitterVideoExtractor.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/media/extraction/services/TwitterAPIExtractor.ts",
+        "src/features/media/extraction/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/settings/services/SettingsService.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../types/settings.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/settings/types/settings.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../types/settings.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/settings/types/settings.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/services/ServiceRegistry.ts",
+        "src/features/settings/index.ts",
+        "src/features/settings/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/settings/types/settings.types.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/settings/services/SettingsService.ts",
+        "src/features/settings/index.ts",
+        "src/features/settings/types/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/settings/services/TwitterTokenExtractor.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/services/ServiceRegistry.ts",
+        "src/features/settings/index.ts",
+        "src/features/settings/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/state/signals/download.signals.ts",
       "dependencies": [
         {
@@ -3430,6 +3097,54 @@
       "valid": true
     },
     {
+      "source": "src/core/state/signals/gallery.signals.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../services/core-services",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/core-services.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../types/media.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/types/media.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/index.ts",
+        "src/core/state/index.ts",
+        "src/core/state/signals/index.ts",
+        "src/features/gallery/services/GalleryService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/core/utils/index.ts",
       "dependencies": [
         {
@@ -3463,6 +3178,13 @@
         "src/core/utils/index.ts"
       ],
       "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/managers/coordinators/index.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -9450,8 +9172,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 227,
-    "totalDependenciesCruised": 410,
+    "totalCruised": 222,
+    "totalDependenciesCruised": 397,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
