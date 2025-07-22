@@ -7728,24 +7728,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../types/scroll.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/types/scroll.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./useAccessibility",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7814,6 +7796,24 @@
         },
         {
           "dynamic": false,
+          "module": "./useScrollDirection",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useScrollDirection.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./useToolbarState",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7831,15 +7831,6 @@
         }
       ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/types/scroll.types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/hooks/index.ts"
-      ],
       "orphan": false,
       "valid": true
     },
@@ -8911,13 +8902,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/types/app.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/dom/index.ts",
       "dependencies": [
         {
@@ -9188,7 +9172,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 224,
+    "totalCruised": 222,
     "totalDependenciesCruised": 397,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

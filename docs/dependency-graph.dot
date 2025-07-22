@@ -500,11 +500,11 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/design-system" {label="design-system" subgraph "cluster_src/shared/design-system/utils" {label="utils" "src/shared/design-system/utils/design-utils.ts" [label=<design-utils.ts> tooltip="design-utils.ts" URL="src/shared/design-system/utils/design-utils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/design-system/utils/design-utils.ts" -> "src/shared/design-system/tokens/DesignTokens.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/hooks/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
-    "src/shared/hooks/index.ts" -> "src/shared/types/scroll.types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/hooks/index.ts" -> "src/shared/hooks/useAccessibility.ts" [arrowhead="inv"]
     "src/shared/hooks/index.ts" -> "src/shared/hooks/useDOMReady.ts" [arrowhead="inv"]
     "src/shared/hooks/index.ts" -> "src/shared/hooks/useIdle.ts" [arrowhead="inv"]
     "src/shared/hooks/index.ts" -> "src/shared/hooks/useScrollDirection.ts" [arrowhead="inv"]
+    "src/shared/hooks/index.ts" -> "src/shared/hooks/useScrollDirection.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/hooks/index.ts" -> "src/shared/hooks/useToolbarState.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/useAccessibility.ts" [label=<useAccessibility.ts> tooltip="useAccessibility.ts" URL="src/shared/hooks/useAccessibility.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/useDOMReady.ts" [label=<useDOMReady.ts> tooltip="useDOMReady.ts" URL="src/shared/hooks/useDOMReady.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
@@ -522,7 +522,6 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/styles" {label="styles" "src/shared/styles/theme-utils.ts" [label=<theme-utils.ts> tooltip="theme-utils.ts" URL="src/shared/styles/theme-utils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/styling" {label="styling" "src/shared/styling/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/styling/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/styling/index.ts" -> "src/shared/design-system/index.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/app.ts" [label=<app.ts> tooltip="app.ts" URL="src/shared/types/app.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/branded.ts" [label=<branded.ts> tooltip="branded.ts" URL="src/shared/types/branded.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/common.ts" [label=<common.ts> tooltip="common.ts" URL="src/shared/types/common.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/types/common.ts" -> "src/core/types/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
@@ -537,7 +536,6 @@ strict digraph "dependency-cruiser output"{
     "src/shared/types/index.ts" -> "src/shared/types/result.ts" [arrowhead="inv"]
     "src/shared/types/index.ts" -> "src/shared/types/unified.types.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/result.ts" [label=<result.ts> tooltip="result.ts" URL="src/shared/types/result.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/scroll.types.ts" [label=<scroll.types.ts> tooltip="scroll.types.ts" URL="src/shared/types/scroll.types.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/unified.types.ts" [label=<unified.types.ts> tooltip="unified.types.ts" URL="src/shared/types/unified.types.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/InitializationGuard.ts" [label=<InitializationGuard.ts> tooltip="InitializationGuard.ts" URL="src/shared/utils/InitializationGuard.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/utils/InitializationGuard.ts" -> "src/shared/utils/patterns/singleton.ts"

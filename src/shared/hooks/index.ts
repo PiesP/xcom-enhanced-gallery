@@ -24,14 +24,5 @@ export { useDOMReady } from './useDOMReady';
 export { useIdle } from './useIdle';
 export { useKeyboardNavigation } from './useAccessibility';
 
-// Related scroll types
-export type {
-  ScrollPosition,
-  GalleryScrollPosition,
-  GalleryScrollOptions,
-  GalleryScrollState,
-  ScrollDirection,
-  ScrollBlock,
-  ScrollEventHandler,
-  ScrollCallback,
-} from '../types/scroll.types';
+// Related scroll types (moved to individual hook files)
+export type { ScrollDirection } from './useScrollDirection';
