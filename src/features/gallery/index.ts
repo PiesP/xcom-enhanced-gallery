@@ -7,6 +7,14 @@
 // 통합된 갤러리 렌더러 (기본)
 export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
 
+// 갤러리 앱 (App 레이어에서 이동)
+export { GalleryApp } from './GalleryApp';
+export type { GalleryConfig } from './GalleryApp';
+
+// 갤러리 조정자들 (App 레이어에서 이동)
+export { CoordinatorManager, Coordinator } from './coordinators';
+export type { ManagedExtractionResult } from './coordinators';
+
 // 격리된 갤러리 렌더러 (고급 사용)
 export {
   IsolatedGalleryRenderer,

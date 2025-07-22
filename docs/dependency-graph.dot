@@ -212,6 +212,10 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/utils" {label="utils" "src/core/utils/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/utils/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/utils/index.ts" -> "src/core/utils/type-safety-helpers.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/utils" {label="utils" "src/core/utils/type-safety-helpers.ts" [label=<type-safety-helpers.ts> tooltip="type-safety-helpers.ts" URL="src/core/utils/type-safety-helpers.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryApp.ts" [label=<GalleryApp.ts> tooltip="GalleryApp.ts" URL="src/features/gallery/GalleryApp.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
+    "src/features/gallery/GalleryApp.ts" -> "src/constants.ts"
+    "src/features/gallery/GalleryApp.ts" -> "src/features/gallery/coordinators/index.ts"
+    "src/features/gallery/GalleryApp.ts" -> "src/features/gallery/coordinators/index.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryRenderer.ts" [label=<GalleryRenderer.ts> tooltip="GalleryRenderer.ts" URL="src/features/gallery/GalleryRenderer.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     "src/features/gallery/GalleryRenderer.ts" -> "src/features/gallery/components/vertical-gallery-view/index.ts"
     "src/features/gallery/GalleryRenderer.ts" -> "src/features/gallery/services/DownloadService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
@@ -276,6 +280,16 @@ strict digraph "dependency-cruiser output"{
     "src/features/gallery/components/vertical-gallery-view/index.ts" -> "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx" [arrowhead="inv"]
     "src/features/gallery/components/vertical-gallery-view/index.ts" -> "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx" [arrowhead="onormal" penwidth="1.0"]
     "src/features/gallery/components/vertical-gallery-view/index.ts" -> "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx" [arrowhead="inv"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/coordinators" {label="coordinators" "src/features/gallery/coordinators/Coordinator.ts" [label=<Coordinator.ts> tooltip="Coordinator.ts" URL="src/features/gallery/coordinators/Coordinator.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
+    "src/features/gallery/coordinators/Coordinator.ts" -> "src/features/gallery/coordinators/MediaExtractionCoordinator.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/coordinators" {label="coordinators" "src/features/gallery/coordinators/CoordinatorManager.ts" [label=<CoordinatorManager.ts> tooltip="CoordinatorManager.ts" URL="src/features/gallery/coordinators/CoordinatorManager.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
+    "src/features/gallery/coordinators/CoordinatorManager.ts" -> "src/features/gallery/coordinators/MediaExtractionCoordinator.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/coordinators" {label="coordinators" "src/features/gallery/coordinators/MediaExtractionCoordinator.ts" [label=<MediaExtractionCoordinator.ts> tooltip="MediaExtractionCoordinator.ts" URL="src/features/gallery/coordinators/MediaExtractionCoordinator.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/coordinators" {label="coordinators" "src/features/gallery/coordinators/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/coordinators/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
+    "src/features/gallery/coordinators/index.ts" -> "src/features/gallery/coordinators/Coordinator.ts" [arrowhead="inv"]
+    "src/features/gallery/coordinators/index.ts" -> "src/features/gallery/coordinators/Coordinator.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/features/gallery/coordinators/index.ts" -> "src/features/gallery/coordinators/CoordinatorManager.ts" [arrowhead="inv"]
+    "src/features/gallery/coordinators/index.ts" -> "src/features/gallery/coordinators/MediaExtractionCoordinator.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/events" {label="events" "src/features/gallery/events/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/events/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/hooks" {label="hooks" "src/features/gallery/hooks/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/hooks/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     "src/features/gallery/hooks/index.ts" -> "src/features/gallery/hooks/useGalleryItemScroll.ts" [arrowhead="inv"]
@@ -285,7 +299,11 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     "src/features/gallery/index.ts" -> "src/features/gallery/components/GalleryView.tsx" [arrowhead="inv"]
     "src/features/gallery/index.ts" -> "src/features/gallery/components/vertical-gallery-view/index.ts" [arrowhead="inv"]
+    "src/features/gallery/index.ts" -> "src/features/gallery/coordinators/index.ts" [arrowhead="inv"]
+    "src/features/gallery/index.ts" -> "src/features/gallery/coordinators/index.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/features/gallery/index.ts" -> "src/features/gallery/events/index.ts" [arrowhead="inv"]
+    "src/features/gallery/index.ts" -> "src/features/gallery/GalleryApp.ts" [arrowhead="inv"]
+    "src/features/gallery/index.ts" -> "src/features/gallery/GalleryApp.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/features/gallery/index.ts" -> "src/features/gallery/GalleryRenderer.ts" [arrowhead="inv"]
     "src/features/gallery/index.ts" -> "src/features/gallery/renderers/IsolatedGalleryRenderer.ts" [arrowhead="inv"]
     "src/features/gallery/index.ts" -> "src/features/gallery/services/DownloadService.ts" [arrowhead="inv"]
@@ -439,7 +457,7 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/settings" {label="settings" subgraph "cluster_src/features/settings/types" {label="types" "src/features/settings/types/settings.types.ts" [label=<settings.types.ts> tooltip="settings.types.ts" URL="src/features/settings/types/settings.types.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     "src/features/settings/types/settings.types.ts" -> "src/constants.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" "src/main.ts" [label=<main.ts> tooltip="main.ts" URL="src/main.ts" fillcolor="#ddfeff"] }
-    "src/main.ts" -> "src/app/Application.ts"
+    "src/main.ts" -> "src/constants.ts"
     "src/main.ts" -> "src/styles/globals.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" "src/shared/components/GalleryViewer.module.css" [label=<GalleryViewer.module.css> tooltip="GalleryViewer.module.css" URL="src/shared/components/GalleryViewer.module.css" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" "src/shared/components/GalleryViewer.tsx" [label=<GalleryViewer.tsx> tooltip="GalleryViewer.tsx" URL="src/shared/components/GalleryViewer.tsx" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
