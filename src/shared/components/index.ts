@@ -17,9 +17,6 @@ export { withGalleryMarker } from './hoc/GalleryMarker';
 export { IsolatedGalleryContainer } from './isolation/IsolatedGalleryContainer';
 export { IsolatedGalleryRoot } from './isolation/IsolatedGalleryRoot';
 
-// 레거시 컴포넌트 (향후 제거 예정)
-export { GalleryViewer } from './GalleryViewer';
-
 // 타입들
 export type { IsolatedGalleryContainerProps } from './isolation/IsolatedGalleryContainer';
 export type { ButtonProps } from './ui/Button/Button';

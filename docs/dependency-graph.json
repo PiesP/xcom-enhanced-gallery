@@ -17,7 +17,6 @@
         "src/core/services/gallery/GalleryInitializer.ts",
         "src/core/services/media/TwitterVideoExtractor.ts",
         "src/features/gallery/GalleryApp.ts",
-        "src/features/media/extraction/types/extraction.types.ts",
         "src/main.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
         "src/shared/utils/events/EventHandler.ts",
@@ -401,7 +400,6 @@
         "src/core/interfaces/extraction.interfaces.ts",
         "src/core/types/extraction.types.ts",
         "src/core/types/index.ts",
-        "src/shared/utils/performance/ClickDebouncer.ts",
         "src/shared/utils/events/EventHandler.ts",
         "src/shared/utils/events/GalleryEventCoordinator.ts"
       ],
@@ -4570,92 +4568,6 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/services/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/types/extraction.types.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/types/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/types/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./extraction.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/extraction/types/extraction.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./extraction/types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/extraction/types/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/features/settings/index.ts",
       "dependencies": [
         {
@@ -4851,50 +4763,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/GalleryViewer.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./GalleryViewer.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/GalleryViewer.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/GalleryViewer.module.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/GalleryViewer.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/hoc/GalleryMarker.tsx",
       "dependencies": [
         {
@@ -4982,23 +4850,6 @@
     {
       "source": "src/shared/components/index.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./GalleryViewer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/GalleryViewer.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./hoc/GalleryMarker",
@@ -6797,23 +6648,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./ClickDebouncer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance/ClickDebouncer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./Debouncer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6848,23 +6682,6 @@
         },
         {
           "dynamic": false,
-          "module": "./PerformanceMonitor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance/PerformanceMonitor.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./throttle",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6888,56 +6705,10 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/performance/ClickDebouncer.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Debouncer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/performance/Debouncer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/performance/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/performance/Debouncer.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/performance/index.ts",
-        "src/shared/utils/performance/ClickDebouncer.ts",
         "src/shared/utils/scroll.ts"
       ],
       "orphan": false,
@@ -6945,15 +6716,6 @@
     },
     {
       "source": "src/shared/utils/performance/performance-utils.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/performance/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/performance/PerformanceMonitor.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/performance/index.ts"
@@ -7415,8 +7177,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 202,
-    "totalDependenciesCruised": 312,
+    "totalCruised": 194,
+    "totalDependenciesCruised": 303,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

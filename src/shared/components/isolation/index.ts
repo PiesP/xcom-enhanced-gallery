@@ -15,6 +15,5 @@ export {
 // 레거시 컴포넌트 (사용 중단 예정)
 export {
   IsolatedGalleryContainer,
-  createIsolatedGalleryContainer,
   type IsolatedGalleryContainerProps,
 } from './IsolatedGalleryContainer';

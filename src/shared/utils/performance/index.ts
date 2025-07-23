@@ -14,12 +14,3 @@ export {
 } from './performance-utils';
 
 export { Debouncer, createDebouncer, debounce } from './Debouncer';
-
-export { PerformanceMonitor, performanceTrack, profileApplicationDev } from './PerformanceMonitor';
-
-export {
-  ClickDebouncer,
-  createClickDebouncer,
-  type ClickContext,
-  type ClickDebouncerOptions,
-} from './ClickDebouncer';

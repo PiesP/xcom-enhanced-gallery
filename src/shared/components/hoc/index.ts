@@ -10,6 +10,5 @@ export {
   withGalleryControl,
   withGalleryItem,
   withGalleryMarker,
-  withGalleryViewer,
 } from './GalleryMarker';
 export type { GalleryComponentProps, GalleryMarkerOptions } from './GalleryMarker';

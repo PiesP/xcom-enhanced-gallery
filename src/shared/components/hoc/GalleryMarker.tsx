@@ -228,26 +228,6 @@ export function withGalleryItem<P extends GalleryComponentProps>(
 }
 
 /**
- * 갤러리 뷰어 마커
- *
- * @param Component - 래핑할 뷰어 컴포넌트
- * @param additionalOptions - 추가 옵션
- * @returns 갤러리 뷰어로 마킹된 컴포넌트
- */
-export function withGalleryViewer<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryMarkerOptions> = {}
-): ComponentType<P> {
-  return withGalleryMarker(Component, {
-    type: 'viewer',
-    className: 'viewer',
-    preventClick: false,
-    preventKeyboard: true, // 뷰어는 키보드 이벤트 제어
-    ...additionalOptions,
-  });
-}
-
-/**
  * 갤러리 컨트롤 마커
  *
  * @param Component - 래핑할 컨트롤 컴포넌트
