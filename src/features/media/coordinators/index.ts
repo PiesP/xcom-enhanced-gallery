@@ -4,4 +4,4 @@
  */
 
 export { MediaExtractorCoordinator } from '@core/managers/coordinators/MediaExtractorCoordinator';
-export type { MediaExtractionResult as ExtractionResult } from '../extraction/types/extraction.types';
+export type { MediaExtractionResult as ExtractionResult } from '@core/interfaces/extraction.interfaces';
