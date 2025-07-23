@@ -50,7 +50,6 @@ export {
 
 // Specialized utilities
 export { InitializationGuard } from './InitializationGuard';
-export { ToolbarTimerManager, toolbarTimers } from './ui/ToolbarTimerManager';
 export * from './css-selector-validator';
 
 // Scroll utilities

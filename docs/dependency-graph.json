@@ -1302,37 +1302,9 @@
     },
     {
       "source": "src/core/managers/EventDispatcher.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../patterns/Singleton",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/patterns/Singleton.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/patterns/Singleton.ts",
       "dependencies": [],
       "dependents": [
-        "src/core/managers/EventDispatcher.ts",
-        "src/core/patterns/index.ts"
+        "src/core/managers/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3272,31 +3244,6 @@
             "export"
           ],
           "resolved": "src/core/managers/coordinators/MediaExtractorCoordinator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/patterns/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Singleton",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/patterns/Singleton.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6212,23 +6159,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ui/ToolbarTimerManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/ui/ToolbarTimerManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -6796,15 +6726,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/ui/ToolbarTimerManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/styles/index.ts",
       "dependencies": [
         {
@@ -7177,8 +7098,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 194,
-    "totalDependenciesCruised": 303,
+    "totalCruised": 191,
+    "totalDependenciesCruised": 300,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -1,5 +1,9 @@
 /**
  * @fileoverview 설정 관리 서비스
+ * @description 애플리케이션 설정 저장, 로드, 동기화 관리
+ */
+
+import { logger } from '@core/logging/logger';@fileoverview 설정 관리 서비스
  * @description 애플리케이션 설정의 영구 저장, 로드, 검증을 담당
  */
 
@@ -33,7 +37,7 @@ type SettingChangeListener = (event: SettingChangeEvent) => void;
  * - 설정 유효성 검증
  * - 마이그레이션 지원
  */
-export class SettingsService implements BaseService {
+export class SettingsService {
   private settings: AppSettings = { ...defaultSettings };
   private readonly listeners = new Set<SettingChangeListener>();
   private initialized = false;

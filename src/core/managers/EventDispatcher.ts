@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { Singleton } from '../patterns/Singleton';
+import { BaseSingleton } from '@shared/utils/patterns/singleton';
 
 interface EventContext {
   id: string;
@@ -23,12 +23,21 @@ interface EventContext {
  * 모든 이벤트 리스너를 중앙에서 추적하고 관리하여
  * 메모리 누수를 방지하고 일관된 이벤트 처리를 제공합니다.
  */
-export class EventDispatcher extends Singleton<EventDispatcher> {
+export class EventDispatcher {
+  private static instance: EventDispatcher | null = null;
   private readonly listeners = new Map<string, EventContext>();
   private listenerIdCounter = 0;
 
-  protected constructor() {
-    super();
+  private constructor() {}
+
+  /**
+   * 싱글톤 인스턴스 가져오기
+   */
+  public static getInstance(): EventDispatcher {
+    if (!EventDispatcher.instance) {
+      EventDispatcher.instance = new EventDispatcher();
+    }
+    return EventDispatcher.instance;
   }
 
   /**

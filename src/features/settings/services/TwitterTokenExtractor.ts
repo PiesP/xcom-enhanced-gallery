@@ -4,7 +4,6 @@
  */
 
 import { logger } from '@core/logging/logger';
-import type { BaseService } from '@core/services/ServiceManager';
 
 /**
  * 토큰 추출 결과
@@ -36,7 +35,7 @@ export interface TokenValidationResult {
  * - 자동 갱신 메커니즘
  * - Fallback 토큰 관리
  */
-export class TwitterTokenExtractor implements BaseService {
+export class TwitterTokenExtractor {
   private currentToken: string | null = null;
   private extractionAttempts = 0;
   private readonly maxExtractionAttempts = 10;
