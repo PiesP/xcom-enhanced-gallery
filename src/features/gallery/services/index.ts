@@ -5,15 +5,20 @@
  * Feature layer 패턴을 따라 shared, core, infrastructure 사용 가능합니다.
  */
 
-// Gallery Services
-export { GalleryService, galleryService } from './GalleryService';
-export { DownloadService } from './DownloadService';
+// Gallery Services - Core로 통합됨
+export { GalleryService, galleryService } from '@core/services/gallery/GalleryService';
 
 // Re-export types for convenience
-export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './GalleryService';
-
 export type {
-  BulkDownloadOptions,
-  DownloadProgress,
-  DownloadResult,
+  OpenGalleryOptions,
+  NavigationResult,
+  GalleryInfo,
+} from '@core/services/gallery/GalleryService';
+
+// Download services - Core BulkDownloadService 직접 사용
+export {
+  BulkDownloadService,
+  type BulkDownloadOptions,
+  type DownloadProgress,
+  type DownloadResult,
 } from '@core/services/BulkDownloadService';

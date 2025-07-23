@@ -28,10 +28,14 @@ export {
 export { VerticalGalleryView } from './components/vertical-gallery-view';
 export { GalleryView } from './components/GalleryView';
 
-// 갤러리 서비스들 (통합)
-export { GalleryService, galleryService } from './services/GalleryService';
-export { DownloadService } from './services/DownloadService';
-export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './services/GalleryService';
+// 갤러리 서비스들 (Core로 통합됨)
+export { GalleryService, galleryService } from '@core/services/gallery/GalleryService';
+export { BulkDownloadService } from '@core/services/BulkDownloadService';
+export type {
+  OpenGalleryOptions,
+  NavigationResult,
+  GalleryInfo,
+} from '@core/services/gallery/GalleryService';
 
 // 갤러리 이벤트 (필요시)
 export * from './events';

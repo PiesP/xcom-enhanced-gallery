@@ -192,19 +192,19 @@ export class GalleryRenderer implements GalleryRendererInterface {
     try {
       setLoading(true);
 
-      // 다운로드 서비스는 별도 모듈로 분리
-      const { DownloadService } = await import('./services/DownloadService');
+      // 다운로드 서비스 - Core BulkDownloadService 직접 사용
+      const { BulkDownloadService } = await import('@core/services/BulkDownloadService');
 
-      const downloadService = DownloadService.getInstance();
+      const downloadService = BulkDownloadService.getInstance();
       const state = galleryState.value;
 
       if (type === 'current') {
         const currentMedia = state.mediaItems[state.currentIndex];
         if (currentMedia) {
-          await downloadService.downloadCurrent(currentMedia);
+          await downloadService.downloadSingle(currentMedia);
         }
       } else {
-        await downloadService.downloadAll(state.mediaItems);
+        await downloadService.downloadMultiple(state.mediaItems);
       }
     } catch (error) {
       logger.error(`[GalleryRenderer] ${type} 다운로드 실패:`, error);

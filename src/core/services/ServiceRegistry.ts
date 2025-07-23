@@ -41,8 +41,8 @@ export async function registerAllServices(): Promise<void> {
 
   serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, {
     factory: async () => {
-      const { DownloadService } = await import('../../features/gallery/services/DownloadService');
-      return DownloadService.getInstance();
+      const { BulkDownloadService } = await import('./BulkDownloadService');
+      return BulkDownloadService.getInstance();
     },
     singleton: true,
     lazy: true,

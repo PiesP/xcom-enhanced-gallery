@@ -106,7 +106,6 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" "src/core/services/ServiceRegistry.ts" [label=<ServiceRegistry.ts> tooltip="ServiceRegistry.ts" URL="src/core/services/ServiceRegistry.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/services/ServiceRegistry.ts" -> "src/constants.ts"
     "src/core/services/ServiceRegistry.ts" -> "src/features/gallery/GalleryRenderer.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
-    "src/core/services/ServiceRegistry.ts" -> "src/features/gallery/services/DownloadService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/ServiceRegistry.ts" -> "src/features/settings/services/SettingsService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/ServiceRegistry.ts" -> "src/features/settings/services/TwitterTokenExtractor.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/core/services/ServiceRegistry.ts" -> "src/core/media/index.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
@@ -128,12 +127,22 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/gallery" {label="gallery" "src/core/services/gallery/GalleryInitializer.ts" [label=<GalleryInitializer.ts> tooltip="GalleryInitializer.ts" URL="src/core/services/gallery/GalleryInitializer.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
     "src/core/services/gallery/GalleryInitializer.ts" -> "src/constants.ts"
     "src/core/services/gallery/GalleryInitializer.ts" -> "src/core/services/ServiceManager.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/gallery" {label="gallery" "src/core/services/gallery/GalleryService.ts" [label=<GalleryService.ts> tooltip="GalleryService.ts" URL="src/core/services/gallery/GalleryService.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
+    "src/core/services/gallery/GalleryService.ts" -> "src/core/state/signals/gallery.signals.ts"
+    "src/core/services/gallery/GalleryService.ts" -> "src/core/types/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/services/gallery/GalleryService.ts" -> "src/core/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/gallery" {label="gallery" "src/core/services/gallery/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/services/gallery/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
+    "src/core/services/gallery/index.ts" -> "src/core/services/gallery/GalleryInitializer.ts" [arrowhead="inv"]
+    "src/core/services/gallery/index.ts" -> "src/core/services/gallery/GalleryInitializer.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/services/gallery/index.ts" -> "src/core/services/gallery/GalleryService.ts" [arrowhead="inv"]
+    "src/core/services/gallery/index.ts" -> "src/core/services/gallery/GalleryService.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" "src/core/services/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/services/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/services/index.ts" -> "src/constants.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/types/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/services/index.ts" -> "src/core/services/BulkDownloadService.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/BulkDownloadService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/services/index.ts" -> "src/core/services/core-services.ts" [arrowhead="inv"]
+    "src/core/services/index.ts" -> "src/core/services/gallery/index.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/media/UsernameExtractionService.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/ServiceManager.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/ServiceManager.ts" [arrowhead="onormal" penwidth="1.0"]
@@ -249,7 +258,6 @@ strict digraph "dependency-cruiser output"{
     "src/features/gallery/GalleryApp.ts" -> "src/features/gallery/coordinators/index.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryRenderer.ts" [label=<GalleryRenderer.ts> tooltip="GalleryRenderer.ts" URL="src/features/gallery/GalleryRenderer.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     "src/features/gallery/GalleryRenderer.ts" -> "src/features/gallery/components/vertical-gallery-view/index.ts"
-    "src/features/gallery/GalleryRenderer.ts" -> "src/features/gallery/services/DownloadService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/features/gallery/GalleryRenderer.ts" -> "src/features/gallery/styles/gallery-global.css"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/components" {label="components" "src/features/gallery/components/Gallery.module.css" [label=<Gallery.module.css> tooltip="Gallery.module.css" URL="src/features/gallery/components/Gallery.module.css" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/components" {label="components" "src/features/gallery/components/Gallery.tsx" [label=<Gallery.tsx> tooltip="Gallery.tsx" URL="src/features/gallery/components/Gallery.tsx" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
@@ -328,23 +336,12 @@ strict digraph "dependency-cruiser output"{
     "src/features/gallery/index.ts" -> "src/features/gallery/GalleryApp.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/features/gallery/index.ts" -> "src/features/gallery/GalleryRenderer.ts" [arrowhead="inv"]
     "src/features/gallery/index.ts" -> "src/features/gallery/renderers/IsolatedGalleryRenderer.ts" [arrowhead="inv"]
-    "src/features/gallery/index.ts" -> "src/features/gallery/services/DownloadService.ts" [arrowhead="inv"]
-    "src/features/gallery/index.ts" -> "src/features/gallery/services/GalleryService.ts" [arrowhead="inv"]
-    "src/features/gallery/index.ts" -> "src/features/gallery/services/GalleryService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/features/gallery/index.ts" -> "src/features/gallery/types.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/renderers" {label="renderers" "src/features/gallery/renderers/IsolatedGalleryRenderer.ts" [label=<IsolatedGalleryRenderer.ts> tooltip="IsolatedGalleryRenderer.ts" URL="src/features/gallery/renderers/IsolatedGalleryRenderer.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     "src/features/gallery/renderers/IsolatedGalleryRenderer.ts" -> "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/renderers" {label="renderers" "src/features/gallery/renderers/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/renderers/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     "src/features/gallery/renderers/index.ts" -> "src/features/gallery/renderers/IsolatedGalleryRenderer.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/services" {label="services" "src/features/gallery/services/DownloadService.ts" [label=<DownloadService.ts> tooltip="DownloadService.ts" URL="src/features/gallery/services/DownloadService.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/services" {label="services" "src/features/gallery/services/GalleryService.ts" [label=<GalleryService.ts> tooltip="GalleryService.ts" URL="src/features/gallery/services/GalleryService.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
-    "src/features/gallery/services/GalleryService.ts" -> "src/core/state/signals/gallery.signals.ts"
-    "src/features/gallery/services/GalleryService.ts" -> "src/core/types/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/features/gallery/services/GalleryService.ts" -> "src/core/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/services" {label="services" "src/features/gallery/services/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/services/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
-    "src/features/gallery/services/index.ts" -> "src/features/gallery/services/DownloadService.ts" [arrowhead="inv"]
-    "src/features/gallery/services/index.ts" -> "src/features/gallery/services/GalleryService.ts" [arrowhead="inv"]
-    "src/features/gallery/services/index.ts" -> "src/features/gallery/services/GalleryService.ts" [arrowhead="onormal" penwidth="1.0"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/services" {label="services" "src/features/gallery/services/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/services/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D" style="rounded,filled,dashed" penwidth="1.5"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/styles" {label="styles" "src/features/gallery/styles/gallery-global.css" [label=<gallery-global.css> tooltip="gallery-global.css" URL="src/features/gallery/styles/gallery-global.css" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/types.ts" [label=<types.ts> tooltip="types.ts" URL="src/features/gallery/types.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/media" {label="media" subgraph "cluster_src/features/media/components" {label="components" "src/features/media/components/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/media/components/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }

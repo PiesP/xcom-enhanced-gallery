@@ -1,13 +1,24 @@
 /**
  * Core Services Export
  *
- * Phase 1 Step 3: 서비스 파일 통합 후 export
+ * Phase 1 Step 2: Gallery Services 통합 완료
  */
 
 // Essential business services
 export { BulkDownloadService } from './BulkDownloadService';
 export { ThemeService, themeService } from './ThemeService';
 export { ToastController, toastController } from './ToastController';
+
+// Gallery services
+export {
+  GalleryService,
+  galleryService,
+  GalleryInitializer,
+  type OpenGalleryOptions,
+  type NavigationResult,
+  type GalleryInfo,
+  type GalleryInitConfig,
+} from './gallery';
 
 // Consolidated core services
 export { type ILogger, ConsoleLogger, defaultLogger, ServiceDiagnostics } from './core-services';
