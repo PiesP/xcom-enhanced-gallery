@@ -17,7 +17,7 @@ import { VideoControlService } from '@core/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '@core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
-import { CoordinatorManager } from './coordinators';
+import { CoordinatorManager } from '@core/managers/coordinators/CoordinatorManager';
 import type { ToastController } from '@core/services/ToastController';
 import { unmountIsolatedGallery } from '@shared/components/isolation/IsolatedGalleryRoot';
 

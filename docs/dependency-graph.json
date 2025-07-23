@@ -4173,36 +4173,9 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./coordinators",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/coordinators/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
-        "src/features/gallery/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/coordinators/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/GalleryApp.ts",
         "src/features/gallery/index.ts"
       ],
       "orphan": false,
@@ -4428,41 +4401,6 @@
         },
         {
           "dynamic": false,
-          "module": "./coordinators",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/coordinators/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./coordinators",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/features/gallery/coordinators/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./events",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4639,43 +4577,6 @@
       "valid": true
     },
     {
-      "source": "src/features/media/components/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/coordinators/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../extraction/types/extraction.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/features/media/extraction/types/extraction.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/features/media/extraction/types/extraction.types.ts",
       "dependencies": [
         {
@@ -4697,153 +4598,7 @@
         }
       ],
       "dependents": [
-        "src/features/media/coordinators/index.ts",
-        "src/features/media/extraction/strategies/ClickedElementStrategy.ts",
-        "src/features/media/extraction/strategies/DomStructureStrategy.ts",
         "src/features/media/extraction/types/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/services/index.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/strategies/ClickedElementStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../types/extraction.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/types/extraction.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../types/extraction.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/types/extraction.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/strategies/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/strategies/DomStructureStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../types/extraction.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/types/extraction.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../types/extraction.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/types/extraction.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/strategies/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/media/extraction/strategies/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./ClickedElementStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/extraction/strategies/ClickedElementStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./DomStructureStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/extraction/strategies/DomStructureStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4878,74 +4633,6 @@
     {
       "source": "src/features/media/index.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./components",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/components/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./coordinators",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/coordinators/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./extraction/services",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/extraction/services/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./extraction/strategies",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/extraction/strategies/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./extraction/types",
@@ -7728,8 +7415,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 209,
-    "totalDependenciesCruised": 326,
+    "totalCruised": 202,
+    "totalDependenciesCruised": 312,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
