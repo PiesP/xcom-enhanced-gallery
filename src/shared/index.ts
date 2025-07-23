@@ -25,8 +25,6 @@ export {
   parseColor,
   // 미디어 유틸리티
   imageFilter,
-  // 패턴 유틸리티
-  extractTweetInfoFromUrl,
   // 성능 유틸리티
   throttle,
   rafThrottle,

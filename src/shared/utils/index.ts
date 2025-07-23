@@ -11,9 +11,6 @@ export * from './core';
 // Essential media utilities
 export * from './media';
 
-// Pattern recognition utilities
-export * from './patterns';
-
 // Gallery-specific utilities
 export * from './gallery';
 

@@ -1,13 +1,12 @@
 /**
  * @fileoverview 단순화된 초기화 가드
- * @version 2.0.0
+ * @version 3.0.0
  *
  * Clean Architecture 원칙에 따라 단순화된 초기화 관리자
  * 핵심 원칙: DOM 준비 + X.com 도메인 + 미디어 요소 존재
  */
 
 import { logger } from '@core/logging/logger';
-import { BaseSingleton } from './patterns/singleton';
 
 /**
  * 페이지 타입 감지
@@ -28,15 +27,14 @@ type InitializationState = 'idle' | 'ready' | 'initialized' | 'failed';
  * - 미디어 요소 존재 확인
  * - 페이지 타입 감지
  */
-export class InitializationGuard extends BaseSingleton {
-  private static readonly INSTANCE_NAME = 'InitializationGuard';
+export class InitializationGuard {
+  private static instance: InitializationGuard | null = null;
 
   private state: InitializationState = 'idle';
   private observer: MutationObserver | null = null;
   private lastUrl = '';
 
   private constructor() {
-    super();
     this.setupPageChangeDetection();
   }
 
@@ -44,14 +42,19 @@ export class InitializationGuard extends BaseSingleton {
    * 싱글톤 인스턴스 반환
    */
   public static getInstance(): InitializationGuard {
-    return BaseSingleton.getOrCreateInstance(
-      InitializationGuard.INSTANCE_NAME,
-      () => new InitializationGuard()
-    );
+    if (!InitializationGuard.instance) {
+      InitializationGuard.instance = new InitializationGuard();
+    }
+    return InitializationGuard.instance;
   }
 
-  public static override resetInstance(): boolean {
-    return BaseSingleton.resetInstance(InitializationGuard.INSTANCE_NAME);
+  public static resetInstance(): boolean {
+    if (InitializationGuard.instance) {
+      InitializationGuard.instance.cleanup();
+      InitializationGuard.instance = null;
+      return true;
+    }
+    return false;
   }
 
   /**
