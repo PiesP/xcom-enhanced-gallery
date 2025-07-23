@@ -26,7 +26,6 @@ export {
 
 // 핵심 갤러리 컴포넌트들
 export { VerticalGalleryView } from './components/vertical-gallery-view';
-export { GalleryView } from './components/GalleryView';
 
 // 갤러리 서비스들 (Core로 통합됨)
 export { GalleryService, galleryService } from '@core/services/gallery/GalleryService';
