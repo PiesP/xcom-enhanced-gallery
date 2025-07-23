@@ -5,13 +5,9 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { parseUsernameFast } from '../../../../../core/services/media/UsernameExtractionService';
-import type { MediaInfo } from '../../../../../core/types/media.types';
-import type {
-  TweetInfo,
-  MediaExtractionResult,
-  FallbackExtractionStrategy,
-} from '../../interfaces/extraction.interfaces';
+import { parseUsernameFast } from '@core/services/media/UsernameExtractionService';
+import type { MediaInfo, MediaExtractionResult } from '@core/types/media.types';
+import type { TweetInfo, FallbackExtractionStrategy } from '@core/types/extraction.types';
 
 /**
  * 통합 백업 추출 전략

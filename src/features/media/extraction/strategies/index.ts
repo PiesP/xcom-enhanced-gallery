@@ -13,5 +13,5 @@ export { DomStructureTweetStrategy } from './DomStructureTweetStrategy';
 export { ParentTraversalTweetStrategy } from './ParentTraversalTweetStrategy';
 export { UrlBasedTweetStrategy } from './UrlBasedTweetStrategy';
 
-// 폴백 전략들
-export * from './fallback';
+// 폴백 전략들은 Core로 이동됨
+// Fallback strategies moved to @core/services/media-extraction/strategies/fallback/

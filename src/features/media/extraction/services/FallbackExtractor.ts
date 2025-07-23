@@ -5,12 +5,9 @@
  */
 
 import { logger } from '@core/logging/logger';
-import type {
-  TweetInfo,
-  MediaExtractionResult,
-  MediaExtractionOptions,
-} from '../interfaces/extraction.interfaces';
-import { UnifiedFallbackStrategy } from '../strategies/fallback/UnifiedFallbackStrategy';
+import type { TweetInfo, MediaExtractionOptions } from '@core/types/extraction.types';
+import type { MediaExtractionResult } from '@core/types/media.types';
+import { UnifiedFallbackStrategy } from '@core/services/media-extraction/strategies/fallback/UnifiedFallbackStrategy';
 
 /**
  * 백업 추출기

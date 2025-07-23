@@ -25,13 +25,14 @@ export * from './components';
 // 타입들
 export * from './extraction/types';
 
-// 인터페이스들 (개별 선택적 export - 중복 방지)
+// 인터페이스들 (Core Types로 리다이렉트)
 export type {
   TweetInfo,
-  MediaExtractionResult,
   MediaExtractionOptions,
   MediaExtractor,
   TweetInfoExtractionStrategy,
   APIExtractor,
   FallbackExtractionStrategy,
-} from './extraction/interfaces/extraction.interfaces';
+} from '@core/types/extraction.types';
+
+export type { MediaExtractionResult } from '@core/types/media.types';
