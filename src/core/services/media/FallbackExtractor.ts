@@ -1,7 +1,7 @@
 /**
  * @fileoverview 백업 추출기
  * @description API 추출이 실패했을 때 DOM 기반 추출
- * @version 2.0.0 - Clean Architecture
+ * @version 2.1.0 - Core 서비스로 이동
  */
 
 import { logger } from '@core/logging/logger';

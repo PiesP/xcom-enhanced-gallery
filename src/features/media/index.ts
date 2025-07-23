@@ -1,6 +1,6 @@
 /**
  * @fileoverview Media Feature Exports
- * @version 2.0.0 - Phase 2B Clean Architecture Optimization
+ * @version 2.1.0 - Media Services 통합
  * @description 미디어 처리 Feature 통합 및 최적화
  */
 
@@ -12,9 +12,6 @@ export * from './extraction/strategies';
 
 // 추출 서비스들
 export * from './extraction/services';
-
-// 미디어 서비스들
-export * from './services';
 
 // 미디어 코디네이터들
 export * from './coordinators';

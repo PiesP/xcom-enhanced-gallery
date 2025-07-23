@@ -1,6 +1,6 @@
 /**
  * @fileoverview Media Extraction Services
- * @version 2.0.0 - Phase 2B Optimization
+ * @version 2.1.0 - Media Services 통합
  * @description 미디어 추출 서비스들의 통합 export (Core Services로 리다이렉트)
  */
 
@@ -10,11 +10,9 @@ export { DOMDirectExtractor } from '@core/services/media-extraction/extractors/D
 export { TweetInfoExtractor } from '@core/services/media-extraction/extractors/TweetInfoExtractor';
 export { TwitterAPIExtractor } from '@core/services/media-extraction/extractors/TwitterAPIExtractor';
 
-// 로컬 서비스들 (유지)
-export { FallbackExtractor } from './FallbackExtractor';
-
-// Twitter Video Extractor의 유틸리티들
+// 통합된 미디어 서비스들 (Core로 이동됨)
 export {
+  FallbackExtractor,
   TwitterAPI,
   isVideoThumbnail,
   isVideoPlayer,
@@ -24,4 +22,4 @@ export {
   getVideoMediaEntry,
   getVideoUrlFromThumbnail,
   type TweetMediaEntry,
-} from './TwitterVideoExtractor';
+} from '@core/services/media';
