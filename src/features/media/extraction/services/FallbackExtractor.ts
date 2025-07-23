@@ -10,17 +10,17 @@ import type {
   MediaExtractionResult,
   MediaExtractionOptions,
 } from '../interfaces/extraction.interfaces';
-import { CompositeFallbackStrategy } from '../strategies/fallback/CompositeFallbackStrategy';
+import { UnifiedFallbackStrategy } from '../strategies/fallback/UnifiedFallbackStrategy';
 
 /**
  * 백업 추출기
  * API 추출이 실패했을 때 DOM 기반 추출
  */
 export class FallbackExtractor {
-  private readonly strategy: CompositeFallbackStrategy;
+  private readonly strategy: UnifiedFallbackStrategy;
 
   constructor() {
-    this.strategy = new CompositeFallbackStrategy();
+    this.strategy = new UnifiedFallbackStrategy();
   }
 
   /**

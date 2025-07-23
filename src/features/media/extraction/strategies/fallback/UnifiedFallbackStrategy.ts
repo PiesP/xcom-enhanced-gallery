@@ -1,17 +1,24 @@
 /**
- * @fileoverview 미디어 추출 복합 폴백 전략
+ * @fileoverview 통합 미디어 추출 백업 전략
+ * @description 모든 fallback 방법을 하나의 클래스로 통합
+ * @version 1.0.0 - 단순화 작업
  */
 
-import { BaseFallbackStrategy } from './BaseFallbackStrategy';
+import { logger } from '@core/logging/logger';
+import { parseUsernameFast } from '../../../../../core/services/media/UsernameExtractionService';
 import type { MediaInfo } from '../../../../../core/types/media.types';
-import type { TweetInfo, MediaExtractionResult } from '../../interfaces/extraction.interfaces';
+import type {
+  TweetInfo,
+  MediaExtractionResult,
+  FallbackExtractionStrategy,
+} from '../../interfaces/extraction.interfaces';
 
 /**
- * 모든 fallback 방법을 조합한 전략
- * DOM 요소, 데이터 속성, 배경 이미지 등을 순차적으로 검사
+ * 통합 백업 추출 전략
+ * 이미지, 비디오, 데이터 속성, 배경 이미지 추출을 모두 처리
  */
-export class CompositeFallbackStrategy extends BaseFallbackStrategy {
-  readonly name = 'composite-fallback';
+export class UnifiedFallbackStrategy implements FallbackExtractionStrategy {
+  readonly name = 'unified-fallback';
 
   async extract(
     tweetContainer: HTMLElement,
@@ -23,41 +30,42 @@ export class CompositeFallbackStrategy extends BaseFallbackStrategy {
       let clickedIndex = 0;
 
       // 1. 이미지 요소에서 추출
-      const imageItems = this.extractFromImages(tweetContainer, clickedElement, tweetInfo);
-      if (imageItems.clickedIndex >= 0) {
-        clickedIndex = mediaItems.length + imageItems.clickedIndex;
+      const imageResult = this.extractFromImages(tweetContainer, clickedElement, tweetInfo);
+      if (imageResult.clickedIndex >= 0) {
+        clickedIndex = mediaItems.length + imageResult.clickedIndex;
       }
-      mediaItems.push(...imageItems.items);
+      mediaItems.push(...imageResult.items);
 
       // 2. 비디오 요소에서 추출
-      const videoItems = this.extractFromVideos(tweetContainer, clickedElement, tweetInfo);
-      if (videoItems.clickedIndex >= 0 && clickedIndex === 0) {
-        clickedIndex = mediaItems.length + videoItems.clickedIndex;
+      const videoResult = this.extractFromVideos(tweetContainer, clickedElement, tweetInfo);
+      if (videoResult.clickedIndex >= 0 && clickedIndex === 0) {
+        clickedIndex = mediaItems.length + videoResult.clickedIndex;
       }
-      mediaItems.push(...videoItems.items);
+      mediaItems.push(...videoResult.items);
 
       // 3. 데이터 속성에서 추출
-      const dataItems = this.extractFromDataAttributes(tweetContainer, clickedElement, tweetInfo);
-      if (dataItems.clickedIndex >= 0 && clickedIndex === 0) {
-        clickedIndex = mediaItems.length + dataItems.clickedIndex;
+      const dataResult = this.extractFromDataAttributes(tweetContainer, clickedElement, tweetInfo);
+      if (dataResult.clickedIndex >= 0 && clickedIndex === 0) {
+        clickedIndex = mediaItems.length + dataResult.clickedIndex;
       }
-      mediaItems.push(...dataItems.items);
+      mediaItems.push(...dataResult.items);
 
       // 4. 배경 이미지에서 추출
-      const backgroundItems = this.extractFromBackgroundImages(
+      const backgroundResult = this.extractFromBackgroundImages(
         tweetContainer,
         clickedElement,
         tweetInfo
       );
-      if (backgroundItems.clickedIndex >= 0 && clickedIndex === 0) {
-        clickedIndex = mediaItems.length + backgroundItems.clickedIndex;
+      if (backgroundResult.clickedIndex >= 0 && clickedIndex === 0) {
+        clickedIndex = mediaItems.length + backgroundResult.clickedIndex;
       }
-      mediaItems.push(...backgroundItems.items);
+      mediaItems.push(...backgroundResult.items);
 
-      return this.createSuccessResult(mediaItems, tweetInfo);
+      return this.createSuccessResult(mediaItems, clickedIndex, tweetInfo);
     } catch (error) {
+      logger.error('[UnifiedFallbackStrategy] 추출 오류:', error);
       return this.createFailureResult(
-        error instanceof Error ? error.message : String(error),
+        error instanceof Error ? error.message : 'Unknown error',
         tweetInfo
       );
     }
@@ -83,11 +91,11 @@ export class CompositeFallbackStrategy extends BaseFallbackStrategy {
       if (!src || !this.isValidMediaUrl(src)) continue;
 
       // 클릭된 요소 확인
-      if (img === clickedElement || img.contains(clickedElement)) {
+      if (img === clickedElement || clickedElement.contains(img) || img.contains(clickedElement)) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`fallback_img_${i}`, src, 'image', tweetInfo, {
+      const mediaInfo = this.createMediaInfo(`unified_img_${i}`, src, 'image', tweetInfo, {
         alt: img.getAttribute('alt') || `Image ${i + 1}`,
         fallbackSource: 'img-element',
       });
@@ -118,11 +126,15 @@ export class CompositeFallbackStrategy extends BaseFallbackStrategy {
       if (!src) continue;
 
       // 클릭된 요소 확인
-      if (video === clickedElement || video.contains(clickedElement)) {
+      if (
+        video === clickedElement ||
+        clickedElement.contains(video) ||
+        video.contains(clickedElement)
+      ) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`fallback_video_${i}`, src, 'video', tweetInfo, {
+      const mediaInfo = this.createMediaInfo(`unified_video_${i}`, src, 'video', tweetInfo, {
         thumbnailUrl: video.getAttribute('poster') || src,
         alt: `Video ${i + 1}`,
         fallbackSource: 'video-element',
@@ -165,7 +177,7 @@ export class CompositeFallbackStrategy extends BaseFallbackStrategy {
       }
 
       const mediaInfo = this.createMediaInfo(
-        `fallback_data_${i}`,
+        `unified_data_${i}`,
         url,
         this.detectMediaType(url),
         tweetInfo,
@@ -202,7 +214,7 @@ export class CompositeFallbackStrategy extends BaseFallbackStrategy {
 
       if (!backgroundImage || backgroundImage === 'none') continue;
 
-      const url = this.extractUrlFromStyle(backgroundImage);
+      const url = this.extractUrlFromBackgroundImage(backgroundImage);
       if (!url || !this.isValidMediaUrl(url)) continue;
 
       // 클릭된 요소 확인
@@ -210,7 +222,7 @@ export class CompositeFallbackStrategy extends BaseFallbackStrategy {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`fallback_bg_${i}`, url, 'image', tweetInfo, {
+      const mediaInfo = this.createMediaInfo(`unified_bg_${i}`, url, 'image', tweetInfo, {
         alt: `Background Image ${i + 1}`,
         fallbackSource: 'background-image',
       });
@@ -222,10 +234,96 @@ export class CompositeFallbackStrategy extends BaseFallbackStrategy {
   }
 
   /**
-   * 배경 이미지 스타일에서 URL 추출
+   * MediaInfo 객체 생성
    */
-  private extractUrlFromStyle(backgroundImage: string): string | null {
+  private createMediaInfo(
+    id: string,
+    url: string,
+    type: 'image' | 'video',
+    tweetInfo?: TweetInfo,
+    options: {
+      thumbnailUrl?: string;
+      alt?: string;
+      fallbackSource?: string;
+    } = {}
+  ): MediaInfo {
+    return {
+      id,
+      url,
+      type,
+      filename: '',
+      tweetUsername: tweetInfo?.username || parseUsernameFast() || undefined,
+      tweetId: tweetInfo?.tweetId || undefined,
+      tweetUrl: tweetInfo?.tweetUrl || '',
+      originalUrl: url,
+      thumbnailUrl: options.thumbnailUrl || url,
+      alt: options.alt || `${type} item`,
+      metadata: {
+        fallbackSource: options.fallbackSource || this.name,
+      },
+    };
+  }
+
+  /**
+   * URL 검증
+   */
+  private isValidMediaUrl(url: string): boolean {
+    return url.startsWith('http') && !url.includes('profile_images');
+  }
+
+  /**
+   * 미디어 타입 감지
+   */
+  private detectMediaType(url: string): 'image' | 'video' {
+    return url.includes('video') || url.includes('.mp4') || url.includes('.webm')
+      ? 'video'
+      : 'image';
+  }
+
+  /**
+   * 배경 이미지에서 URL 추출
+   */
+  private extractUrlFromBackgroundImage(backgroundImage: string): string | null {
     const match = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/);
     return match ? (match[1] ?? null) : null;
+  }
+
+  /**
+   * 성공 결과 생성
+   */
+  private createSuccessResult(
+    mediaItems: MediaInfo[],
+    clickedIndex: number,
+    tweetInfo?: TweetInfo
+  ): MediaExtractionResult {
+    return {
+      success: mediaItems.length > 0,
+      mediaItems,
+      clickedIndex,
+      metadata: {
+        extractedAt: Date.now(),
+        sourceType: 'fallback',
+        strategy: this.name,
+      },
+      tweetInfo: tweetInfo ?? null,
+    };
+  }
+
+  /**
+   * 실패 결과 생성
+   */
+  private createFailureResult(error: string, tweetInfo?: TweetInfo): MediaExtractionResult {
+    return {
+      success: false,
+      mediaItems: [],
+      clickedIndex: 0,
+      metadata: {
+        extractedAt: Date.now(),
+        sourceType: 'fallback',
+        strategy: `${this.name}-failed`,
+        error,
+      },
+      tweetInfo: tweetInfo ?? null,
+    };
   }
 }
