@@ -12,5 +12,4 @@ export { DomStructureTweetStrategy } from './DomStructureTweetStrategy';
 export { DataAttributeTweetStrategy } from './DataAttributeTweetStrategy';
 export { ParentTraversalTweetStrategy } from './ParentTraversalTweetStrategy';
 
-// 폴백 전략들
-export * from './fallback';
+// Fallback strategies have been moved to features/media/extraction/strategies/fallback/

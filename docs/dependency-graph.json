@@ -399,12 +399,10 @@
         "src/core/state/signals/gallery.signals.ts",
         "src/core/interfaces/extraction.interfaces.ts",
         "src/core/types/extraction.types.ts",
-        "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
         "src/core/types/index.ts",
         "src/features/gallery/services/GalleryService.ts",
         "src/features/media/extraction/interfaces/extraction.interfaces.ts",
         "src/features/media/extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
         "src/shared/utils/performance/ClickDebouncer.ts",
         "src/shared/utils/events/EventHandler.ts",
         "src/shared/utils/events/GalleryEventCoordinator.ts"
@@ -2666,11 +2664,9 @@
         "src/core/services/index.ts",
         "src/core/services/media-extraction/strategies/DomStructureTweetStrategy.ts",
         "src/core/services/media-extraction/strategies/UrlBasedTweetStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
         "src/core/services/media/index.ts",
         "src/features/media/extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
         "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
-        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
         "src/shared/utils/media/media-url.util.ts"
       ],
       "orphan": false,
@@ -3305,78 +3301,6 @@
       "valid": true
     },
     {
-      "source": "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../../core/services/media/UsernameExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media/UsernameExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/media-extraction/strategies/fallback/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/media-extraction/strategies/fallback/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./BaseFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/media-extraction/strategies/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/core/services/media-extraction/strategies/index.ts",
       "dependencies": [
         {
@@ -3423,23 +3347,6 @@
             "export"
           ],
           "resolved": "src/core/services/media-extraction/strategies/DomStructureTweetStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./fallback",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5506,7 +5413,6 @@
         "src/features/media/extraction/MediaExtractor.ts",
         "src/features/media/extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
         "src/features/media/extraction/services/FallbackExtractor.ts",
-        "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
         "src/features/media/index.ts"
       ],
       "orphan": false,
@@ -6036,88 +5942,8 @@
       "valid": true
     },
     {
-      "source": "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../../core/services/media/UsernameExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media/UsernameExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../interfaces/extraction.interfaces",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/features/media/extraction/interfaces/extraction.interfaces.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/media/extraction/strategies/fallback/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/features/media/extraction/strategies/fallback/index.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./BaseFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/media/extraction/strategies/fallback/BaseFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./UnifiedFallbackStrategy",
@@ -9093,8 +8919,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 232,
-    "totalDependenciesCruised": 389,
+    "totalCruised": 229,
+    "totalDependenciesCruised": 381,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
