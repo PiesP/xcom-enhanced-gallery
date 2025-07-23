@@ -400,9 +400,6 @@
         "src/core/interfaces/extraction.interfaces.ts",
         "src/core/types/extraction.types.ts",
         "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/CompositeFallbackStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
         "src/core/types/index.ts",
         "src/features/gallery/services/GalleryService.ts",
         "src/features/media/extraction/interfaces/extraction.interfaces.ts",
@@ -2670,8 +2667,6 @@
         "src/core/services/media-extraction/strategies/DomStructureTweetStrategy.ts",
         "src/core/services/media-extraction/strategies/UrlBasedTweetStrategy.ts",
         "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
         "src/core/services/media/index.ts",
         "src/features/media/extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
         "src/features/media/extraction/strategies/UrlBasedTweetStrategy.ts",
@@ -3310,199 +3305,7 @@
       "valid": true
     },
     {
-      "source": "src/core/services/media-extraction/strategies/fallback/BackgroundImageFallbackStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./BaseFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/media-extraction/strategies/fallback/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../../core/services/media/UsernameExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media/UsernameExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/media-extraction/strategies/fallback/BackgroundImageFallbackStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/CompositeFallbackStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/DataAttributeFallbackStrategy.ts",
-        "src/core/services/media-extraction/strategies/fallback/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/media-extraction/strategies/fallback/CompositeFallbackStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./BaseFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/media-extraction/strategies/fallback/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/media-extraction/strategies/fallback/DataAttributeFallbackStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./BaseFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/media-extraction/strategies/fallback/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/media-extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../../../core/services/media/UsernameExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/media/UsernameExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/media-extraction/strategies/fallback/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/media-extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -3551,23 +3354,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./BackgroundImageFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/BackgroundImageFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./BaseFallbackStrategy",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3576,74 +3362,6 @@
             "export"
           ],
           "resolved": "src/core/services/media-extraction/strategies/fallback/BaseFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./CompositeFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/CompositeFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./DataAttributeFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/DataAttributeFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ImageElementFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/ImageElementFallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VideoElementFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/media-extraction/strategies/fallback/VideoElementFallbackStrategy.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -9375,8 +9093,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 237,
-    "totalDependenciesCruised": 402,
+    "totalCruised": 232,
+    "totalDependenciesCruised": 389,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
