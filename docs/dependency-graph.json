@@ -318,7 +318,7 @@
       "dependencies": [],
       "dependents": [
         "src/core/types/core-types.ts",
-        "src/core/services/service-initialization.ts",
+        "src/core/services/MediaService.ts",
         "src/core/services/media/index.ts"
       ],
       "orphan": false,
@@ -329,8 +329,7 @@
       "dependencies": [],
       "dependents": [
         "src/core/types/core-types.ts",
-        "src/core/services/index.ts",
-        "src/core/services/service-initialization.ts"
+        "src/core/services/UIService.ts"
       ],
       "orphan": false,
       "valid": true
@@ -359,8 +358,7 @@
       ],
       "dependents": [
         "src/core/types/core-types.ts",
-        "src/core/services/index.ts",
-        "src/core/services/service-initialization.ts"
+        "src/core/services/UIService.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1425,14 +1423,50 @@
         },
         {
           "dynamic": false,
-          "module": "./media/UsernameExtractionService",
+          "module": "./gallery",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/core/services/gallery/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/core/services/media/UsernameExtractionService.ts",
+          "resolved": "src/core/services/MediaService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/core/services/MediaService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1477,14 +1511,14 @@
         },
         {
           "dynamic": false,
-          "module": "./ThemeService",
+          "module": "./UIService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/core/services/ThemeService.ts",
+          "resolved": "src/core/services/UIService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1494,7 +1528,7 @@
         },
         {
           "dynamic": false,
-          "module": "./ThemeService",
+          "module": "./UIService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -1502,42 +1536,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/core/services/ThemeService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ToastController",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/ToastController.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ToastController",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/core/services/ToastController.ts",
+          "resolved": "src/core/services/UIService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1706,31 +1705,14 @@
         },
         {
           "dynamic": true,
-          "module": "./media-extraction/MediaExtractionService",
+          "module": "./MediaService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/core/services/media-extraction/MediaExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./media/VideoControlService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/services/media/VideoControlService.ts",
+          "resolved": "src/core/services/MediaService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1757,31 +1739,14 @@
         },
         {
           "dynamic": true,
-          "module": "./ThemeService",
+          "module": "./UIService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/core/services/ThemeService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./ToastController",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/core/services/ToastController.ts",
+          "resolved": "src/core/services/UIService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1792,6 +1757,120 @@
       ],
       "dependents": [
         "src/core/services/core-services.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/services/MediaService.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./media-extraction/MediaExtractionService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/media-extraction/MediaExtractionService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./media/FallbackExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/media/FallbackExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./media/TwitterVideoExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/core/services/media/TwitterVideoExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./media/UsernameExtractionService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/media/UsernameExtractionService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./media/UsernameExtractionService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/services/media/UsernameExtractionService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./media/VideoControlService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/media/VideoControlService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/services/index.ts",
+        "src/core/services/service-initialization.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1852,7 +1931,7 @@
         }
       ],
       "dependents": [
-        "src/core/services/service-initialization.ts",
+        "src/core/services/MediaService.ts",
         "src/core/services/media-extraction/index.ts"
       ],
       "orphan": false,
@@ -2032,7 +2111,7 @@
         }
       ],
       "dependents": [
-        "src/core/services/index.ts",
+        "src/core/services/MediaService.ts",
         "src/core/services/media-extraction/strategies/DomStructureTweetStrategy.ts",
         "src/core/services/media-extraction/strategies/UrlBasedTweetStrategy.ts",
         "src/core/services/media/index.ts",
@@ -2128,8 +2207,100 @@
         }
       ],
       "dependents": [
+        "src/core/services/MediaService.ts",
         "src/core/services/media-extraction/extractors/TwitterAPIExtractor.ts",
         "src/core/services/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/services/media/FallbackExtractor.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/core/services/MediaService.ts",
+        "src/core/services/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/core/services/UIService.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ThemeService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/ThemeService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ThemeService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/services/ThemeService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ToastController",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/core/services/ToastController.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ToastController",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/services/ToastController.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/core/services/index.ts",
+        "src/core/services/service-initialization.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2674,15 +2845,6 @@
         }
       ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/media/FallbackExtractor.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/core/services/media/index.ts"
-      ],
       "orphan": false,
       "valid": true
     },
@@ -5790,8 +5952,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 149,
-    "totalDependenciesCruised": 247,
+    "totalCruised": 151,
+    "totalDependenciesCruised": 255,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

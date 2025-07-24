@@ -15,8 +15,8 @@ import { VideoControlService } from '@core/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '@core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
 import { logger } from '@core/logging/logger';
-import { MediaExtractionService } from '@core/services/media-extraction/MediaExtractionService';
-import type { ToastController } from '@core/services/ToastController';
+import { MediaService } from '@core/services/MediaService';
+import { UIService } from '@core/services/UIService';
 import { unmountIsolatedGallery } from '@shared/components/isolation/IsolatedGalleryRoot';
 
 /**
@@ -34,10 +34,10 @@ export interface GalleryConfig {
  * 갤러리 애플리케이션 - 격리된 시스템
  */
 export class GalleryApp {
-  private mediaExtractionService: MediaExtractionService | null = null;
+  private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
   private readonly videoControl = VideoControlService.getInstance();
-  private toastController: ToastController | null = null;
+  private uiService: UIService | null = null;
 
   // 새로운 격리 시스템 컴포넌트들
   private galleryContainer: HTMLElement | null = null;
@@ -56,15 +56,13 @@ export class GalleryApp {
   }
 
   /**
-   * 미디어 추출 서비스 lazy 초기화
+   * 미디어 서비스 lazy 초기화
    */
-  private async getMediaExtractionService(): Promise<MediaExtractionService> {
-    if (!this.mediaExtractionService) {
-      this.mediaExtractionService = (await getService(
-        SERVICE_KEYS.MEDIA_EXTRACTION
-      )) as MediaExtractionService;
+  private async getMediaService(): Promise<MediaService> {
+    if (!this.mediaService) {
+      this.mediaService = (await getService(SERVICE_KEYS.MEDIA_SERVICE)) as MediaService;
     }
-    return this.mediaExtractionService;
+    return this.mediaService;
   }
 
   /**
@@ -74,8 +72,8 @@ export class GalleryApp {
     try {
       logger.info('GalleryApp: 격리된 시스템으로 초기화 시작');
 
-      // Toast 컨트롤러 초기화
-      this.toastController = (await getService(SERVICE_KEYS.TOAST_CONTROLLER)) as ToastController;
+      // UI 서비스 초기화
+      this.uiService = (await getService(SERVICE_KEYS.UI_SERVICE)) as UIService;
 
       // 갤러리 렌더러 초기화
       await this.initializeRenderer();
@@ -124,7 +122,7 @@ export class GalleryApp {
       await eventCoordinator.initialize({
         onMediaClick: async (_mediaInfo, element, _event) => {
           try {
-            const mediaService = await this.getMediaExtractionService();
+            const mediaService = await this.getMediaService();
             const result = await mediaService.extractFromClickedElement(element);
             if (result.success && result.mediaItems.length > 0) {
               await this.openGallery(result.mediaItems, result.clickedIndex);
@@ -191,10 +189,10 @@ export class GalleryApp {
       logger.info(`✅ 갤러리 열기 성공: ${mediaItems.length}개 미디어`);
     } catch (error) {
       logger.error('❌ 갤러리 열기 실패:', error);
-      this.toastController?.error(
-        '갤러리 오류',
-        '갤러리를 열 수 없습니다. 페이지를 새로고침하고 다시 시도해 주세요.'
-      );
+      this.uiService?.showError({
+        title: 'Extraction Failed',
+        message: `Failed to extract media: ${error instanceof Error ? error.message : String(error)}`,
+      });
       throw error;
     }
   }

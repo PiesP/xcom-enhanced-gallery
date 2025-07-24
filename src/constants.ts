@@ -231,6 +231,11 @@ export const STABLE_SELECTORS = {
 // ================================
 
 export const SERVICE_KEYS = {
+  // Phase 2: 통합된 서비스들
+  MEDIA_SERVICE: 'media.service', // 통합 미디어 서비스
+  UI_SERVICE: 'ui.service', // 통합 UI 서비스
+
+  // 기존 서비스들 (호환성 유지)
   BULK_DOWNLOAD: 'core.bulkDownload',
   GALLERY: 'gallery',
   GALLERY_RENDERER: 'gallery.renderer',
