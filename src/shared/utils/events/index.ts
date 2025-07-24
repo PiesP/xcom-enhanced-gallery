@@ -1,6 +1,6 @@
 /**
- * @fileoverview Event Management Module - Event Handling
- * @version 2.0.0
+ * @fileoverview Event Management Module
+ * @version 3.0.0 - Simplified Event System
  */
 
 export { GalleryEventCoordinator, galleryEventCoordinator } from './GalleryEventCoordinator';

@@ -19,7 +19,6 @@
         "src/features/gallery/GalleryApp.ts",
         "src/main.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
-        "src/shared/utils/events/EventHandler.ts",
         "src/shared/utils/events/GalleryEventCoordinator.ts"
       ],
       "orphan": false,
@@ -400,7 +399,6 @@
         "src/core/interfaces/extraction.interfaces.ts",
         "src/core/types/extraction.types.ts",
         "src/core/types/index.ts",
-        "src/shared/utils/events/EventHandler.ts",
         "src/shared/utils/events/GalleryEventCoordinator.ts"
       ],
       "orphan": false,
@@ -6118,7 +6116,7 @@
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/performance/index.ts",
+          "resolved": "src/shared/utils/performance.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6316,31 +6314,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./GalleryStateGuard",
+          "module": "../gallery-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/gallery/GalleryStateGuard.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VideoControlBlocker",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/gallery/VideoControlBlocker.ts",
+          "resolved": "src/shared/utils/gallery-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6356,18 +6337,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/gallery/GalleryStateGuard.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/gallery/index.ts",
-        "src/shared/utils/events/EventHandler.ts",
-        "src/shared/utils/events/GalleryEventCoordinator.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/gallery/VideoControlBlocker.ts",
+      "source": "src/shared/utils/gallery-utils.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/gallery/index.ts"
@@ -6531,7 +6501,6 @@
       ],
       "dependents": [
         "src/shared/utils/media/index.ts",
-        "src/shared/utils/events/EventHandler.ts",
         "src/shared/utils/events/GalleryEventCoordinator.ts"
       ],
       "orphan": false,
@@ -6574,89 +6543,10 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/performance/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Debouncer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance/Debouncer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./performance-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance/performance-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./throttle",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance/throttle.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/performance/Debouncer.ts",
+      "source": "src/shared/utils/performance.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/performance/index.ts",
-        "src/shared/utils/scroll.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/performance/performance-utils.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/performance/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/performance/throttle.ts",
-      "dependencies": [],
-      "dependents": [
+        "src/shared/utils/index.ts",
         "src/shared/utils/performance/index.ts"
       ],
       "orphan": false,
@@ -6664,25 +6554,7 @@
     },
     {
       "source": "src/shared/utils/scroll.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./performance/Debouncer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/performance/Debouncer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts"
       ],
@@ -6879,83 +6751,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/events/EventHandler.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../gallery/GalleryStateGuard",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/gallery/GalleryStateGuard.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../media/MediaClickDetector",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/media/MediaClickDetector.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/events/GalleryEventCoordinator.ts",
       "dependencies": [
         {
@@ -7035,6 +6830,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/gallery/GalleryStateGuard.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/events/GalleryEventCoordinator.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/events/index.ts",
       "dependencies": [
         {
@@ -7078,6 +6882,44 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/gallery/VideoControlBlocker.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/utils/performance/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../performance",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/performance.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/types/css-modules.d.ts",
       "dependencies": [],
       "dependents": [],
@@ -7093,13 +6935,23 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/utils/gallery/VideoControlBlocker.ts",
+        "to": "src/shared/utils/gallery/VideoControlBlocker.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 191,
-    "totalDependenciesCruised": 300,
+    "totalCruised": 189,
+    "totalDependenciesCruised": 292,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

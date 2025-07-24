@@ -1,16 +1,7 @@
 /**
- * @fileoverview Performance Utilities
+ * @fileoverview Performance Utilities - 통합 모듈로 리다이렉트
+ * @version 3.0.0 - Phase 4 통합
  */
 
-// Throttle 유틸리티 (우선 export)
-export { rafThrottle, throttle, throttleScroll, type RafThrottleOptions } from './throttle';
-
-// 기본 성능 유틸리티
-export {
-  scheduleWork,
-  measurePerformance,
-  measureAsyncPerformance,
-  setupLazyLoading,
-} from './performance-utils';
-
-export { Debouncer, createDebouncer, debounce } from './Debouncer';
+// 통합된 성능 유틸리티 모듈로 리다이렉트
+export * from '../performance';
