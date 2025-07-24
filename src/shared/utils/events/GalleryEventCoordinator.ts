@@ -6,11 +6,11 @@
  * 일관성 있는 이벤트 처리를 보장합니다.
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@shared/logging/logger';
 import { GalleryUtils } from '../gallery-utils';
 import { MediaClickDetector } from '../media/MediaClickDetector';
 import { isVideoControlElement } from '../../../constants';
-import type { MediaInfo } from '../../../core/types/media.types';
+import type { MediaInfo } from '../../types/core/media.types';
 
 /**
  * 이벤트 처리 결과

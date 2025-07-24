@@ -8,10 +8,10 @@
  * BackgroundTweetLoader와 함께 사용되어 정확한 미디어 정보를 제공합니다.
  */
 
-import { logger } from '@core/logging/logger';
-import { parseUsernameFast } from '../../../core/services/media/UsernameExtractionService';
-import type { MediaInfo } from '@core/types/media.types';
-import { cachedQuerySelector, cachedQuerySelectorAll } from '@core/dom';
+import { logger } from '@shared/logging/logger';
+import { parseUsernameFast } from '../../services/media/UsernameExtractionService';
+import type { MediaInfo } from '@shared/types/core/media.types';
+import { cachedQuerySelector, cachedQuerySelectorAll } from '@shared/dom';
 
 /**
  * 트윗 document에서 미디어 URL들을 추출

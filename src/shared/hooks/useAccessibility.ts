@@ -9,8 +9,8 @@
  * - ARIA 상태 관리
  */
 
-import { getPreactHooks } from '@core/external/vendors';
-import { logger } from '@core/logging/logger';
+import { getPreactHooks } from '@shared/external/vendors';
+import { logger } from '@shared/logging/logger';
 
 /**
  * 간소화된 키보드 네비게이션 훅 (Esc 키만 지원)

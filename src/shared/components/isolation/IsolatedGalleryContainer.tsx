@@ -4,10 +4,10 @@
  * @version 1.0.0
  */
 
-import { getPreact, getPreactHooks } from '@core/external/vendors';
-import type { VNode } from '@core/external/vendors';
-import { logger } from '@core/logging';
-import { namespacedDesignSystem } from '@core/managers/NamespacedDesignSystem';
+import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import type { VNode } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
+import { namespacedDesignSystem } from '@shared/managers/NamespacedDesignSystem';
 
 /**
  * 격리된 갤러리 컨테이너 Props

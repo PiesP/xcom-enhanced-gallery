@@ -42,7 +42,7 @@
       "@app/*": ["app/*"],
       "@features/*": ["features/*"],
       "@shared/*": ["shared/*"],
-      "@core/*": ["core/*"],
+      "@features/*": ["features/*"],
       "@infrastructure/*": ["infrastructure/*"],
       "@assets/*": ["assets/*"]
     },

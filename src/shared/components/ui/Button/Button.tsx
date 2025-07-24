@@ -3,8 +3,8 @@
  * @version 3.0.0 - Button Component
  */
 
-import type { ComponentChildren } from '@core/external/vendors';
-import { getPreactCompat } from '@core/external/vendors';
+import type { ComponentChildren } from '@shared/external/vendors';
+import { getPreactCompat } from '@shared/external/vendors';
 import styles from './Button.module.css';
 
 interface ButtonProps {

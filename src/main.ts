@@ -1,15 +1,15 @@
 /**
  * X.com Enhanced Gallery - 메인 진입점
  *
- * Phase 2B: 단순화된 아키텍처 - App 레이어 제거
+ * Phase 4: 3-레이어 구조 완료 - Core 제거
  *
- * @version 3.1.0 - Simplified Architecture (3-Layer)
+ * @version 3.2.0 - 3-Layer Architecture (features → shared → external)
  */
 
 import { measurePerformance } from '@shared/utils';
-import { logger } from '@core/logging/logger';
-import type { AppConfig } from '@core/types/core-types';
-import { ServiceManager } from '@core/services/ServiceManager';
+import { logger } from '@shared/logging/logger';
+import type { AppConfig } from '@shared/types/core/core-types';
+import { ServiceManager } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from './constants';
 import { GalleryApp } from '@features/gallery/GalleryApp';
 
@@ -41,7 +41,7 @@ function createAppConfig(): AppConfig {
 async function initializeInfrastructure(): Promise<void> {
   try {
     // Vendor 라이브러리 초기화
-    const { initializeVendors } = await import('@core/external/vendors');
+    const { initializeVendors } = await import('@shared/external/vendors');
     await initializeVendors();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
   } catch (error) {
@@ -60,7 +60,7 @@ async function initializeCriticalSystems(): Promise<void> {
     serviceManager = ServiceManager.getInstance();
 
     // Core 서비스 등록
-    const { registerCoreServices } = await import('@core/services');
+    const { registerCoreServices } = await import('@shared/services');
     await registerCoreServices();
 
     // Features 서비스 등록 (의존성 규칙 준수)
@@ -152,7 +152,7 @@ function initializeNonCriticalSystems(): void {
 async function initializeToastContainer(): Promise<void> {
   try {
     const { ToastContainer } = await import('@shared/components/ui');
-    const { getPreact } = await import('@core/external/vendors');
+    const { getPreact } = await import('@shared/external/vendors');
     const { h, render } = getPreact();
 
     let toastContainer = document.getElementById('xeg-toast-container');
@@ -233,7 +233,7 @@ async function initializeDevTools(): Promise<void> {
     (globalThis as Record<string, unknown>).__XEG_DEBUG__ = galleryDebugUtils;
 
     // 서비스 진단 도구
-    const { ServiceDiagnostics } = await import('@core/services/core-services');
+    const { ServiceDiagnostics } = await import('@shared/services/core-services');
     await ServiceDiagnostics.diagnoseServiceManager();
 
     logger.info('🛠️ 개발 도구 활성화됨');

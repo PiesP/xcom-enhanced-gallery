@@ -41,11 +41,11 @@ export * from './unified.types';
 export * from './result';
 
 // View mode types (from core)
-export { isValidViewMode, normalizeViewMode } from '@core/types/core-types';
+export { isValidViewMode, normalizeViewMode } from '@shared/types/core/core-types';
 
 // Core media types (Phase 1A - direct access)
-export type { MediaInfo, MediaType, MediaItem } from '@core/types/media.types';
-export type { VIEW_MODES, ViewMode } from '@core/types/core-types';
+export type { MediaInfo, MediaType, MediaItem } from '@shared/types/core/media.types';
+export type { VIEW_MODES, ViewMode } from '@shared/types/core/core-types';
 
 // Essential common types (no aliases needed)
 export type {

@@ -8,7 +8,7 @@
 
 import type { ViewMode } from '../../../types';
 import type { ImageFitCallbacks } from '../../../types';
-import { getPreact, getPreactHooks, type VNode } from '@core/external/vendors';
+import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import {
   useToolbarState,
   getToolbarDataState,

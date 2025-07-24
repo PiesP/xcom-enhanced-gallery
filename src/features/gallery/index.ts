@@ -24,13 +24,13 @@ export {
 export { VerticalGalleryView } from './components/vertical-gallery-view';
 
 // 갤러리 서비스들 (Core로 통합됨)
-export { GalleryService, galleryService } from '@core/services/gallery/GalleryService';
-export { BulkDownloadService } from '@core/services/BulkDownloadService';
+export { GalleryService, galleryService } from '@shared/services/gallery/GalleryService';
+export { BulkDownloadService } from '@shared/services/BulkDownloadService';
 export type {
   OpenGalleryOptions,
   NavigationResult,
   GalleryInfo,
-} from '@core/services/gallery/GalleryService';
+} from '@shared/services/gallery/GalleryService';
 
 // 갤러리 타입들
 export * from './types';

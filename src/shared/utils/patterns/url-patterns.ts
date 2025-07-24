@@ -4,8 +4,8 @@
  * Centralized URL pattern matching and extraction logic.
  */
 
-import { logger } from '@core/logging/logger';
-import { safeParseInt } from '@core/utils/type-safety-helpers';
+import { logger } from '@shared/logging/logger';
+import { safeParseInt } from '@shared/utils/core/type-safety-helpers';
 
 /**
  * URL 패턴 매칭 및 추출을 위한 유틸리티 클래스

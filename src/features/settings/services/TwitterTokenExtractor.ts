@@ -3,7 +3,7 @@
  * @description 실행 시점에 Twitter 페이지에서 Bearer 토큰을 동적으로 추출
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@shared/logging/logger';
 
 /**
  * 토큰 추출 결과

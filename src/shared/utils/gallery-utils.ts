@@ -8,8 +8,8 @@
  * - 갤러리 내부 요소 감지
  */
 
-import { logger } from '@core/logging';
-import { galleryState } from '@core/state/signals/gallery.signals';
+import { logger } from '@shared/logging';
+import { galleryState } from '@shared/state/signals/gallery.signals';
 
 /**
  * 갤러리 통합 유틸리티 클래스

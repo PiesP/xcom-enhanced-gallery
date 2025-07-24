@@ -8,7 +8,7 @@
  * - DOM 조작 헬퍼 함수들
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@shared/logging/logger';
 
 // ================================
 // 갤러리 요소 감지
