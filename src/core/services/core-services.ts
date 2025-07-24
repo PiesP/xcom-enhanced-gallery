@@ -5,6 +5,7 @@
  * 작은 서비스 파일들의 통합
  * - Logger Interface & ConsoleLogger
  * - ServiceDiagnostics
+ * - ServiceRegistry (통합됨)
  *
  * Phase 1 Step 3: 파일 통합을 통한 복잡도 감소
  */
@@ -15,6 +16,11 @@
 
 import { SERVICE_KEYS } from '../../constants';
 import { logger } from '@core/logging/logger';
+import type { ServiceTypeMapping } from '../types/core-types';
+import { registerAllServices } from './ServiceRegistry';
+
+// Type-safe service keys
+export type ServiceKey = keyof ServiceTypeMapping;
 
 /**
  * 로거 인터페이스
@@ -78,7 +84,7 @@ export class ServiceDiagnostics {
       logger.info('🔍 ServiceManager 진단 시작');
 
       // 동적 import로 순환 의존성 방지
-      const { registerAllServices } = await import('./ServiceRegistry');
+      await registerAllServices();
       const { ServiceManager } = await import('./ServiceManager');
 
       const serviceManager = ServiceManager.getInstance();
@@ -138,3 +144,17 @@ export class ServiceDiagnostics {
 
 // 개발 환경에서 전역 진단 함수 등록
 ServiceDiagnostics.registerGlobalDiagnostic();
+
+// ================================
+// Service Registry (통합됨)
+// ================================
+
+// ================================
+// Service Registry (재export)
+// ================================
+
+/**
+ * ServiceRegistry 기능을 재export합니다
+ * 의존성 규칙 준수를 위해 실제 구현은 ServiceRegistry에 유지
+ */
+export { registerAllServices, getService } from './ServiceRegistry';

@@ -24,6 +24,32 @@ import { isVendorsInitialized } from '@core/external/vendors';
 import { logger } from '@core/logging/logger';
 
 /**
+ * 갤러리 초기화 설정 (GalleryInitializer에서 통합)
+ */
+export interface GalleryInitConfig {
+  /** 초기화 활성화 여부 */
+  enabled: boolean;
+  /** 최대 초기화 대기 시간 (ms) */
+  maxInitWaitTime: number;
+  /** 디버그 로깅 활성화 */
+  debugLogging: boolean;
+  /** 보이지 않는 갤러리 warmup 실행 여부 */
+  invisibleGalleryWarmup: boolean;
+}
+
+/**
+ * 초기화 상태 (GalleryInitializer에서 통합)
+ */
+interface InitializationState {
+  coordinateManagerReady: boolean;
+  galleryServiceReady: boolean;
+  invisibleWarmupCompleted: boolean;
+  allServicesReady: boolean;
+  initStartTime: number;
+  initEndTime: number | null;
+}
+
+/**
  * 갤러리 열기 옵션
  */
 export interface OpenGalleryOptions {
@@ -90,12 +116,28 @@ export class GalleryService {
   private static instance: GalleryService | null = null;
   private isInitialized = false;
 
+  // GalleryInitializer 기능 통합
+  private readonly earlyInitConfig: GalleryInitConfig;
+  private readonly initializationState: InitializationState;
+  private earlyInitPromise: Promise<void> | null = null;
+
   /**
    * 생성자 - Lazy Initialization을 위해 초기화 체크하지 않음
    */
-  private constructor() {
+  private constructor(initConfig: Partial<GalleryInitConfig> = {}) {
     // Lazy initialization - 실제 메서드 호출 시 초기화 확인
     logger.debug('GalleryService: Instance created (lazy initialization)');
+
+    // GalleryInitializer 설정 통합
+    this.earlyInitConfig = {
+      enabled: true,
+      maxInitWaitTime: 5000,
+      debugLogging: false,
+      invisibleGalleryWarmup: true,
+      ...initConfig,
+    };
+
+    this.initializationState = this.createInitialState();
   }
 
   /**
@@ -147,6 +189,141 @@ export class GalleryService {
    */
   public initializeService(): void {
     this.ensureSystemInitialized();
+  }
+
+  /**
+   * 갤러리 서비스 사전 초기화 실행 (GalleryInitializer에서 통합)
+   */
+  public async initializeEarly(): Promise<void> {
+    if (!this.earlyInitConfig.enabled) {
+      this.logDebug('Early initialization disabled');
+      return;
+    }
+
+    if (this.earlyInitPromise) {
+      return this.earlyInitPromise;
+    }
+
+    this.earlyInitPromise = this.performEarlyInitialization();
+    return this.earlyInitPromise;
+  }
+
+  /**
+   * 초기화 상태 확인 (GalleryInitializer에서 통합)
+   */
+  public isEarlyInitReady(): boolean {
+    return this.initializationState.allServicesReady;
+  }
+
+  /**
+   * 초기 상태 생성 (GalleryInitializer에서 통합)
+   */
+  private createInitialState(): InitializationState {
+    return {
+      coordinateManagerReady: false,
+      galleryServiceReady: false,
+      invisibleWarmupCompleted: false,
+      allServicesReady: false,
+      initStartTime: 0,
+      initEndTime: null,
+    };
+  }
+
+  /**
+   * 실제 사전 초기화 수행 (GalleryInitializer에서 통합)
+   */
+  private async performEarlyInitialization(): Promise<void> {
+    this.initializationState.initStartTime = performance.now();
+    this.logDebug('Starting early gallery initialization');
+
+    try {
+      // 1. 갤러리 서비스 초기화
+      await this.initializeGalleryServiceInternal();
+
+      // 2. 보이지 않는 갤러리 Warmup 실행 (선택적)
+      if (this.earlyInitConfig.invisibleGalleryWarmup) {
+        await this.performInvisibleGalleryWarmup();
+      }
+
+      // 3. 전체 상태 확인
+      this.validateAllServicesReady();
+
+      this.initializationState.initEndTime = performance.now();
+
+      this.logDebug('Early initialization completed successfully', {
+        duration: this.initializationState.initEndTime - this.initializationState.initStartTime,
+      });
+    } catch (error) {
+      this.logError('Early initialization failed', error);
+      throw new Error(
+        `Gallery early initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * 갤러리 서비스 내부 초기화 (GalleryInitializer에서 통합)
+   */
+  private async initializeGalleryServiceInternal(): Promise<void> {
+    try {
+      this.ensureSystemInitialized();
+      this.initializationState.galleryServiceReady = true;
+      this.logDebug('Gallery service pre-initialized');
+    } catch (error) {
+      this.logError('Failed to initialize gallery service', error);
+      // 갤러리 서비스 실패는 치명적이지 않으므로 계속 진행
+      this.initializationState.galleryServiceReady = true;
+    }
+  }
+
+  /**
+   * 보이지 않는 갤러리 Warmup 실행 (GalleryInitializer에서 통합)
+   */
+  private async performInvisibleGalleryWarmup(): Promise<void> {
+    try {
+      this.logDebug('보이지 않는 갤러리 Warmup 시작...');
+
+      // 간단한 더미 Warmup - 갤러리 서비스 준비만 확인
+      logger.debug('Gallery service warmup 완료');
+
+      this.initializationState.invisibleWarmupCompleted = true;
+      this.logDebug('보이지 않는 갤러리 Warmup 완료');
+    } catch (error) {
+      this.logError('Invisible gallery warmup failed', error);
+      // Warmup 실패는 치명적이지 않음
+      this.initializationState.invisibleWarmupCompleted = true;
+    }
+  }
+
+  /**
+   * 모든 서비스 준비 상태 검증 (GalleryInitializer에서 통합)
+   */
+  private validateAllServicesReady(): void {
+    this.initializationState.allServicesReady =
+      this.initializationState.galleryServiceReady &&
+      this.initializationState.invisibleWarmupCompleted;
+
+    if (!this.initializationState.allServicesReady) {
+      this.logDebug('Not all services are ready, but continuing anyway');
+      // 모든 서비스가 준비되지 않아도 계속 진행 (비치명적)
+      this.initializationState.allServicesReady = true;
+    }
+  }
+
+  /**
+   * 디버그 로깅 (GalleryInitializer에서 통합)
+   */
+  private logDebug(message: string, data?: Record<string, unknown>): void {
+    if (this.earlyInitConfig.debugLogging) {
+      logger.debug(`[GalleryService] ${message}`, data);
+    }
+  }
+
+  /**
+   * 에러 로깅 (GalleryInitializer에서 통합)
+   */
+  private logError(message: string, error: Error | unknown): void {
+    logger.error(`[GalleryService] ${message}`, { error });
   }
 
   /**

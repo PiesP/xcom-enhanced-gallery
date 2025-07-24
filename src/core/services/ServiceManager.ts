@@ -31,6 +31,21 @@ export interface ServiceConfig<T = unknown> {
 }
 
 /**
+ * 서비스 상태 (ServiceResolver에서 이동)
+ */
+export type ServiceState = 'registered' | 'initializing' | 'initialized' | 'error' | 'destroyed';
+
+/**
+ * 서비스 인스턴스 레코드 (ServiceResolver에서 이동)
+ */
+export interface ServiceInstance<T = unknown> {
+  instance?: T;
+  state: ServiceState;
+  error?: Error;
+  createdAt?: number;
+}
+
+/**
  * 단순화된 서비스 관리자
  *
  * 복잡한 DI 시스템을 제거하고 간단한 팩토리 패턴 적용
@@ -41,7 +56,7 @@ export interface ServiceConfig<T = unknown> {
 export class ServiceManager {
   private static instance: ServiceManager | null = null;
   private readonly services = new Map<string, ServiceConfig>();
-  private readonly instances = new Map<string, unknown>();
+  private readonly instances = new Map<string, ServiceInstance>();
 
   private constructor() {
     logger.debug('[ServiceManager] 초기화됨');
@@ -83,24 +98,41 @@ export class ServiceManager {
       throw new Error(`서비스를 찾을 수 없습니다: ${key}`);
     }
 
-    // 싱글톤인 경우 기존 인스턴스 확인
-    if (config.singleton) {
-      const existing = this.instances.get(key);
-      if (existing) {
-        return existing as T;
-      }
-    }
+    let instance = this.instances.get(key);
 
-    // 새 인스턴스 생성
-    const instance = config.factory();
-
-    // 싱글톤인 경우 저장
-    if (config.singleton) {
+    // 인스턴스 레코드가 없으면 생성
+    if (!instance) {
+      instance = { state: 'registered' };
       this.instances.set(key, instance);
     }
 
-    logger.debug(`[ServiceManager] 서비스 생성: ${key}`);
-    return instance as T;
+    // 이미 초기화된 경우
+    if (instance.instance && instance.state === 'initialized') {
+      return instance.instance as T;
+    }
+
+    // 에러 상태인 경우 재시도
+    if (instance.state === 'error') {
+      logger.warn(`[ServiceManager] 실패한 서비스 재시도: ${key}`);
+    }
+
+    instance.state = 'initializing';
+
+    try {
+      // 새 인스턴스 생성
+      const newInstance = config.factory();
+      instance.instance = newInstance;
+      instance.state = 'initialized';
+      instance.createdAt = Date.now();
+
+      logger.debug(`[ServiceManager] 서비스 생성: ${key}`);
+      return newInstance as T;
+    } catch (error) {
+      instance.state = 'error';
+      instance.error = error as Error;
+      logger.error(`[ServiceManager] 서비스 생성 실패: ${key}`, error);
+      throw error;
+    }
   }
 
   /**
@@ -133,7 +165,24 @@ export class ServiceManager {
    * 생성된 인스턴스 목록
    */
   public getActiveInstances(): string[] {
-    return Array.from(this.instances.keys());
+    return Array.from(this.instances.entries())
+      .filter(([, instance]) => instance.state === 'initialized')
+      .map(([key]) => key);
+  }
+
+  /**
+   * 서비스 초기화 상태 확인 (ServiceResolver에서 이동)
+   */
+  public isInitialized(key: string): boolean {
+    const instance = this.instances.get(key);
+    return instance?.state === 'initialized' && !!instance.instance;
+  }
+
+  /**
+   * 서비스 상태 조회 (ServiceResolver에서 이동)
+   */
+  public getState(key: string): ServiceState {
+    return this.instances.get(key)?.state ?? 'registered';
   }
 
   /**
@@ -160,7 +209,8 @@ export class ServiceManager {
     logger.debug('[ServiceManager] cleanup 시작');
 
     // 인스턴스들 중 cleanup 메서드가 있으면 호출
-    for (const [key, instance] of this.instances) {
+    for (const [key, instanceRecord] of this.instances) {
+      const instance = instanceRecord.instance;
       if (instance && typeof instance === 'object' && 'cleanup' in instance) {
         try {
           (instance as { cleanup(): void }).cleanup();
@@ -169,6 +219,8 @@ export class ServiceManager {
           logger.warn(`[ServiceManager] ${key} cleanup 실패:`, error);
         }
       }
+      // 상태를 destroyed로 변경
+      instanceRecord.state = 'destroyed';
     }
 
     // 인스턴스 맵 정리

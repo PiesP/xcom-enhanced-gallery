@@ -14,7 +14,6 @@
         "src/features/settings/types/settings.types.ts",
         "src/core/services/media/UsernameExtractionService.ts",
         "src/core/services/media-extraction/extractors/TwitterVideoExtractor.ts",
-        "src/core/services/gallery/GalleryInitializer.ts",
         "src/core/services/media/TwitterVideoExtractor.ts",
         "src/features/gallery/GalleryApp.ts",
         "src/main.ts",
@@ -122,8 +121,7 @@
         "src/core/services/index.ts",
         "src/core/services/core-services.ts",
         "src/core/services/ServiceRegistry.ts",
-        "src/core/services/gallery/GalleryInitializer.ts",
-        "src/core/services/managers/ServiceResolver.ts"
+        "src/core/services/managers/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -256,6 +254,7 @@
         "src/core/Application.ts",
         "src/core/index.ts",
         "src/core/services/index.ts",
+        "src/core/services/core-services.ts",
         "src/core/services/ServiceRegistry.ts",
         "src/core/services/gallery/GalleryService.ts",
         "src/core/services/media-mapping/MediaMappingService.ts",
@@ -1540,23 +1539,6 @@
         },
         {
           "dynamic": false,
-          "module": "./ServiceRegistry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/ServiceRegistry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./ThemeService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1670,6 +1652,24 @@
           "valid": true
         },
         {
+          "dynamic": false,
+          "module": "../types/core-types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/types/core-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
           "dynamic": true,
           "module": "./ServiceManager",
           "moduleSystem": "es6",
@@ -1687,13 +1687,13 @@
           "valid": true
         },
         {
-          "dynamic": true,
+          "dynamic": false,
           "module": "./ServiceRegistry",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "dynamic-import"
+            "import"
           ],
           "resolved": "src/core/services/ServiceRegistry.ts",
           "coreModule": false,
@@ -1922,7 +1922,6 @@
         }
       ],
       "dependents": [
-        "src/core/services/index.ts",
         "src/core/services/core-services.ts"
       ],
       "orphan": false,
@@ -2699,41 +2698,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./GalleryInitializer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/core/services/gallery/GalleryInitializer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryInitializer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/core/services/gallery/GalleryInitializer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./GalleryService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2770,50 +2734,6 @@
       ],
       "dependents": [
         "src/core/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/gallery/GalleryInitializer.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/core/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/gallery/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3255,7 +3175,7 @@
       "valid": true
     },
     {
-      "source": "src/core/services/managers/ServiceResolver.ts",
+      "source": "src/core/services/managers/index.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -3264,37 +3184,9 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/core/services/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/core/services/managers/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./ServiceResolver",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "export"
           ],
-          "resolved": "src/core/services/managers/ServiceResolver.ts",
+          "resolved": "src/core/services/ServiceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3304,7 +3196,7 @@
         },
         {
           "dynamic": false,
-          "module": "./ServiceResolver",
+          "module": "../ServiceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -3312,7 +3204,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/core/services/managers/ServiceResolver.ts",
+          "resolved": "src/core/services/ServiceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6867,8 +6759,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 183,
-    "totalDependenciesCruised": 291,
+    "totalCruised": 181,
+    "totalDependenciesCruised": 286,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

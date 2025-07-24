@@ -118,18 +118,14 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" "src/core/services/core-services.ts" [label=<core-services.ts> tooltip="core-services.ts" URL="src/core/services/core-services.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/services/core-services.ts" -> "src/constants.ts"
     "src/core/services/core-services.ts" -> "src/core/managers/index.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
+    "src/core/services/core-services.ts" -> "src/core/types/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/services/core-services.ts" -> "src/core/services/ServiceManager.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
-    "src/core/services/core-services.ts" -> "src/core/services/ServiceRegistry.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/gallery" {label="gallery" "src/core/services/gallery/GalleryInitializer.ts" [label=<GalleryInitializer.ts> tooltip="GalleryInitializer.ts" URL="src/core/services/gallery/GalleryInitializer.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
-    "src/core/services/gallery/GalleryInitializer.ts" -> "src/constants.ts"
-    "src/core/services/gallery/GalleryInitializer.ts" -> "src/core/services/ServiceManager.ts"
+    "src/core/services/core-services.ts" -> "src/core/services/ServiceRegistry.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/gallery" {label="gallery" "src/core/services/gallery/GalleryService.ts" [label=<GalleryService.ts> tooltip="GalleryService.ts" URL="src/core/services/gallery/GalleryService.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
     "src/core/services/gallery/GalleryService.ts" -> "src/core/state/signals/gallery.signals.ts"
     "src/core/services/gallery/GalleryService.ts" -> "src/core/types/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/services/gallery/GalleryService.ts" -> "src/core/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/gallery" {label="gallery" "src/core/services/gallery/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/services/gallery/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
-    "src/core/services/gallery/index.ts" -> "src/core/services/gallery/GalleryInitializer.ts" [arrowhead="inv"]
-    "src/core/services/gallery/index.ts" -> "src/core/services/gallery/GalleryInitializer.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/services/gallery/index.ts" -> "src/core/services/gallery/GalleryService.ts" [arrowhead="inv"]
     "src/core/services/gallery/index.ts" -> "src/core/services/gallery/GalleryService.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" "src/core/services/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/services/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
@@ -142,16 +138,13 @@ strict digraph "dependency-cruiser output"{
     "src/core/services/index.ts" -> "src/core/services/media/UsernameExtractionService.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/ServiceManager.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/ServiceManager.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/core/services/index.ts" -> "src/core/services/ServiceRegistry.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/ThemeService.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/ThemeService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/core/services/index.ts" -> "src/core/services/ToastController.ts" [arrowhead="inv"]
     "src/core/services/index.ts" -> "src/core/services/ToastController.ts" [arrowhead="onormal" penwidth="1.0"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/managers" {label="managers" "src/core/services/managers/ServiceResolver.ts" [label=<ServiceResolver.ts> tooltip="ServiceResolver.ts" URL="src/core/services/managers/ServiceResolver.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
-    "src/core/services/managers/ServiceResolver.ts" -> "src/core/services/ServiceManager.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/managers" {label="managers" "src/core/services/managers/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/core/services/managers/index.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
-    "src/core/services/managers/index.ts" -> "src/core/services/managers/ServiceResolver.ts" [arrowhead="inv"]
-    "src/core/services/managers/index.ts" -> "src/core/services/managers/ServiceResolver.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/core/services/managers/index.ts" -> "src/core/services/ServiceManager.ts" [arrowhead="inv"]
+    "src/core/services/managers/index.ts" -> "src/core/services/ServiceManager.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/services" {label="services" subgraph "cluster_src/core/services/media-extraction" {label="media-extraction" "src/core/services/media-extraction/MediaExtractionService.ts" [label=<MediaExtractionService.ts> tooltip="MediaExtractionService.ts" URL="src/core/services/media-extraction/MediaExtractionService.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
     "src/core/services/media-extraction/MediaExtractionService.ts" -> "src/core/services/media-extraction/extractors/DOMDirectExtractor.ts"
     "src/core/services/media-extraction/MediaExtractionService.ts" -> "src/core/services/media-extraction/extractors/TweetInfoExtractor.ts"

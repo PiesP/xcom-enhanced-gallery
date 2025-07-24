@@ -9,15 +9,11 @@ export { BulkDownloadService } from './BulkDownloadService';
 export { ThemeService, themeService } from './ThemeService';
 export { ToastController, toastController } from './ToastController';
 
-// Gallery services
+// Gallery Services (통합됨)
 export {
   GalleryService,
   galleryService,
-  GalleryInitializer,
-  type OpenGalleryOptions,
-  type NavigationResult,
-  type GalleryInfo,
-  type GalleryInitConfig,
+  // GalleryInitializer는 GalleryService에 통합됨
 } from './gallery';
 
 // Consolidated core services
@@ -34,7 +30,7 @@ export {
 // Service management
 export { SERVICE_KEYS } from '../../constants';
 export { ServiceManager, serviceManager } from './ServiceManager';
-export { getService, registerAllServices, type ServiceKey } from './ServiceRegistry';
+export { getService, registerAllServices, type ServiceKey } from './core-services';
 
 // Essential types
 export type { BaseService, ServiceConfig } from './ServiceManager';

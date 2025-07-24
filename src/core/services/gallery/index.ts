@@ -5,8 +5,13 @@
 
 // Gallery Services
 export { GalleryService, galleryService } from './GalleryService';
-export { GalleryInitializer } from './GalleryInitializer';
+// GalleryInitializer는 GalleryService에 통합됨
+// export { GalleryInitializer } from './GalleryInitializer';
 
 // Re-export types
-export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './GalleryService';
-export type { GalleryInitConfig } from './GalleryInitializer';
+export type {
+  OpenGalleryOptions,
+  NavigationResult,
+  GalleryInfo,
+  GalleryInitConfig,
+} from './GalleryService';
