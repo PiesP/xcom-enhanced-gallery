@@ -1,35 +1,31 @@
 /**
- * Shared Utils Barrel Export
+ * Shared Utils Barrel Export (단순화됨)
  *
- * Phase 4: Utils 및 Helper 단순화
- * 핵심 유틸리티만 선별하여 export하고 중복을 제거합니다.
+ * 통합된 유틸리티를 사용하여 중복 제거
  */
 
-// Core DOM and accessibility utilities (excluding gallery functions)
-export * from './core/accessibility';
+// 통합된 핵심 유틸리티 (중복 제거된 버전)
+export * from '@core/unified-utils';
 
-// Essential media utilities
+// 필수 미디어 유틸리티 (특화 기능)
 export * from './media';
 
-// Pattern recognition utilities
+// 패턴 인식 유틸리티
 export * from './patterns';
 
-// Gallery-specific utilities (includes isInsideGallery functions)
+// 갤러리 전용 유틸리티 (특화 기능)
 export * from './gallery-utils';
 
-// Performance utilities (throttle, debounce, monitoring)
-export * from './performance';
+// 스크롤 유틸리티 (특화 기능)
+export {
+  createScrollHandler,
+  preventScrollPropagation,
+  findTwitterScrollContainer,
+  isGalleryElement,
+  createScrollDebouncer,
+} from './scroll';
 
-// Common utilities (deduplication, type safety helpers)
-export * from './common';
-
-// Performance utilities (throttle, debounce, monitoring)
-export * from './performance';
-
-// Common utilities (deduplication, type safety helpers)
-export * from './common';
-
-// Type safety utilities from infrastructure
+// 타입 안전성 유틸리티
 export {
   safeParseInt,
   safeParseFloat,
@@ -54,23 +50,11 @@ export {
   removeUndefinedProperties,
 } from '@core/utils/type-safety-helpers';
 
-// Specialized utilities
-export * from './css-selector-validator';
-
-// Scroll utilities
-export {
-  createScrollHandler,
-  preventScrollPropagation,
-  findTwitterScrollContainer,
-  isGalleryElement,
-  createScrollDebouncer,
-} from './scroll';
-
-// Error handling (delegates to core)
+// 에러 처리 (위임)
 export * from './error-handling';
 
-// Style utilities
+// 스타일 유틸리티
 export * from './styles';
 
-// Debug utilities
+// 디버그 유틸리티
 export * from './debug/gallery-debug';

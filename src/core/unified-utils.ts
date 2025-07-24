@@ -1,5 +1,5 @@
 /**
- * @fileoverview 통합 유틸리티 모듈
+ * @fileoverview 통합 유틸리티 모듈 (확장 버전)
  * @description 분산된 유틸리티 함수들을 하나로 통합
  *
  * 변경사항:
@@ -10,6 +10,234 @@
  */
 
 import { logger } from '@core/logging/logger';
+import type { MediaInfo } from '@core/types/media.types';
+import { galleryState } from '@core/state/signals/gallery.signals';
+
+// ===========================
+// 중복 제거 유틸리티
+// ===========================
+
+/**
+ * 범용 중복 제거 함수
+ */
+export function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[] {
+  if (!items?.length) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const uniqueItems: T[] = [];
+
+  for (const item of items) {
+    if (!item) {
+      continue;
+    }
+
+    const key = keyExtractor(item);
+    if (!key) {
+      logger.warn('[deduplication] Skipping item without key');
+      continue;
+    }
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueItems.push(item);
+    }
+  }
+
+  return uniqueItems;
+}
+
+/**
+ * 문자열 배열 중복 제거
+ */
+export function removeDuplicateStrings(items: readonly string[]): string[] {
+  return removeDuplicates(items, item => item);
+}
+
+/**
+ * 미디어 아이템 중복 제거
+ */
+export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
+  const result = removeDuplicates(mediaItems, item => item.url);
+
+  // 로깅 (성능 최적화를 위해 실제로 제거된 경우만)
+  const removedCount = mediaItems.length - result.length;
+  if (removedCount > 0) {
+    logger.debug('[deduplication] Removed duplicates:', {
+      original: mediaItems.length,
+      unique: result.length,
+      removed: removedCount,
+    });
+  }
+
+  return result;
+}
+
+// ===========================
+// CSS 선택자 유틸리티
+// ===========================
+
+/**
+ * CSS 선택자의 문법적 유효성을 검증합니다
+ */
+export function isValidCSSSelector(selector: string): boolean {
+  if (!selector || typeof selector !== 'string') {
+    return false;
+  }
+
+  try {
+    const testElement = document.createElement('div');
+    testElement.querySelector(selector);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * CSS 선택자의 복잡도를 측정합니다
+ */
+export function calculateSelectorComplexity(selector: string): number {
+  let complexity = 0;
+
+  // 기본 요소 선택자
+  if (selector.match(/^[a-zA-Z]+/)) complexity += 1;
+
+  // ID 선택자
+  const idMatches = selector.match(/#[a-zA-Z0-9-_]+/g);
+  if (idMatches) complexity += idMatches.length * 10;
+
+  // 클래스 선택자
+  const classMatches = selector.match(/\.[a-zA-Z0-9-_]+/g);
+  if (classMatches) complexity += classMatches.length * 5;
+
+  // 속성 선택자
+  const attributeMatches = selector.match(/\[[^\]]+\]/g);
+  if (attributeMatches) complexity += attributeMatches.length * 2;
+
+  // 자식/후손 선택자
+  const descendantMatches = selector.match(/[>\s+~]/g);
+  if (descendantMatches) complexity += descendantMatches.length * 1;
+
+  return complexity;
+}
+
+// ===========================
+// 갤러리 유틸리티
+// ===========================
+
+/**
+ * 갤러리 관련 선택자들
+ */
+const GALLERY_SELECTORS = [
+  '.xeg-gallery-container',
+  '[data-gallery-element]',
+  '#xeg-gallery-root',
+  '.vertical-gallery-view',
+  '[data-xeg-gallery-container]',
+  '[data-xeg-gallery]',
+  '.xeg-vertical-gallery',
+  '[data-xeg-role="gallery"]',
+  '.toolbar',
+  '.xeg-toolbar',
+  '.xeg-button',
+  '.gallery-controls',
+  '.media-viewer',
+  '.xeg-toast-container',
+  '.xeg-toast',
+];
+
+/**
+ * 비디오 제어 요소 선택자들
+ */
+const VIDEO_CONTROL_SELECTORS = [
+  '[data-testid="playButton"]',
+  'button[aria-label*="재생"]',
+  'button[aria-label*="Play"]',
+  'button[aria-label*="일시정지"]',
+  'button[aria-label*="Pause"]',
+  '.video-controls button',
+  '.player-controls button',
+  '[role="slider"]',
+  '[data-testid="videoPlayer"] button',
+  '[data-testid="videoComponent"] button',
+];
+
+/**
+ * 갤러리 트리거 가능 여부 확인
+ */
+export function canTriggerGallery(event?: MouseEvent): boolean {
+  try {
+    // 갤러리가 이미 열려있으면 차단
+    if (galleryState.value.isOpen) {
+      return false;
+    }
+
+    if (event) {
+      // 좌클릭만 허용
+      if (event.button !== 0) {
+        return false;
+      }
+
+      const target = event.target as HTMLElement;
+
+      // 갤러리 내부 요소나 비디오 제어 요소 클릭 차단
+      if (isGalleryInternalElement(target) || isVideoControlElement(target)) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    logger.error('Error checking gallery trigger capability:', error);
+    return false;
+  }
+}
+
+/**
+ * 갤러리 내부 요소인지 확인
+ */
+export function isGalleryInternalElement(element: HTMLElement): boolean {
+  if (!element) return false;
+
+  try {
+    for (const selector of GALLERY_SELECTORS) {
+      if (element.matches(selector) || element.closest(selector)) {
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    logger.warn('Error checking gallery internal element:', error);
+    return false;
+  }
+}
+
+/**
+ * 비디오 제어 요소인지 확인
+ */
+export function isVideoControlElement(element: HTMLElement): boolean {
+  if (!element) return false;
+
+  try {
+    for (const selector of VIDEO_CONTROL_SELECTORS) {
+      if (element.matches(selector) || element.closest(selector)) {
+        return true;
+      }
+    }
+
+    // 비디오 요소의 자식이거나 controls 속성이 있으면 제어 요소로 간주
+    if (element.closest('video') || element.hasAttribute('controls') || element.tagName.toLowerCase() === 'video') {
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    logger.warn('Error checking video control element:', error);
+    return false;
+  }
+}
 
 // ===========================
 // DOM 유틸리티
@@ -46,10 +274,10 @@ export function safeQuerySelectorAll<T extends Element = Element>(
 }
 
 /**
- * 요소가 갤러리 내부에 있는지 확인
+ * 요소가 갤러리 내부에 있는지 확인 (isGalleryInternalElement의 별칭)
  */
 export function isInsideGallery(element: Element): boolean {
-  return element.closest('[data-xeg-gallery]') !== null;
+  return isGalleryInternalElement(element as HTMLElement);
 }
 
 /**
@@ -305,15 +533,10 @@ export function safeJsonParse<T>(json: string): T | null {
 }
 
 /**
- * CSS 선택자 유효성 검증
+ * CSS 선택자 유효성 검증 (isValidCSSSelector의 별칭)
  */
 export function isValidSelector(selector: string): boolean {
-  try {
-    document.querySelector(selector);
-    return true;
-  } catch {
-    return false;
-  }
+  return isValidCSSSelector(selector);
 }
 
 // ===========================

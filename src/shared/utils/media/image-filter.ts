@@ -5,7 +5,7 @@
  * 트위터/X.com 미디어 URL을 검증하고 필터링합니다.
  */
 
-import { removeDuplicateStrings } from '@shared/utils/common/deduplication';
+import { removeDuplicateStrings } from '@core/unified-utils';
 
 /**
  * 이미지 필터링 결과 타입
