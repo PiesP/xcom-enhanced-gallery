@@ -199,7 +199,6 @@ strict digraph "dependency-cruiser output"{
     "src/core/state/signals/index.ts" -> "src/core/state/signals/gallery.signals.ts" [arrowhead="inv"]
     "src/core/state/signals/index.ts" -> "src/core/state/signals/toolbar.signals.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/state" {label="state" subgraph "cluster_src/core/state/signals" {label="signals" "src/core/state/signals/toolbar.signals.ts" [label=<toolbar.signals.ts> tooltip="toolbar.signals.ts" URL="src/core/state/signals/toolbar.signals.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/architecture.types.ts" [label=<architecture.types.ts> tooltip="no-orphans" URL="src/core/types/architecture.types.ts" fillcolor="#FDF2F8" fontcolor="#B91C1C" color="#B91C1C" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/core" {label="core" subgraph "cluster_src/core/types" {label="types" "src/core/types/core-types.ts" [label=<core-types.ts> tooltip="core-types.ts" URL="src/core/types/core-types.ts" fillcolor="#FDF2F8" color="#B91C1C" fontcolor="#B91C1C"] } } }
     "src/core/types/core-types.ts" -> "src/constants.ts" [arrowhead="inv"]
     "src/core/types/core-types.ts" -> "src/core/media/index.ts" [arrowhead="onormal" penwidth="1.0"]

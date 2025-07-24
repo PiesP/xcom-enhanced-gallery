@@ -3541,19 +3541,6 @@
       "valid": true
     },
     {
-      "source": "src/core/types/architecture.types.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/core/types/index.ts",
       "dependencies": [
         {
@@ -6354,22 +6341,12 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/core/types/architecture.types.ts",
-        "to": "src/core/types/architecture.types.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 167,
+    "totalCruised": 166,
     "totalDependenciesCruised": 270,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
