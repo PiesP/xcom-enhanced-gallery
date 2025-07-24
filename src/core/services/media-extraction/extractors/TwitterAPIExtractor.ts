@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { TwitterAPI, type TweetMediaEntry } from './TwitterVideoExtractor';
+import { TwitterAPI, type TweetMediaEntry } from '../../media/TwitterVideoExtractor';
 import type { MediaInfo, MediaExtractionResult } from '@core/types/media.types';
 import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@core/types/extraction.types';
 

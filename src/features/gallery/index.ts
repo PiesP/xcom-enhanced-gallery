@@ -32,8 +32,5 @@ export type {
   GalleryInfo,
 } from '@core/services/gallery/GalleryService';
 
-// 갤러리 이벤트 (필요시)
-export * from './events';
-
 // 갤러리 타입들
 export * from './types';
