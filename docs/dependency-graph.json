@@ -6847,19 +6847,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/patterns/singleton.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/types/css-modules.d.ts",
       "dependencies": [],
       "dependents": [],
@@ -6875,22 +6862,12 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/utils/patterns/singleton.ts",
-        "to": "src/shared/utils/patterns/singleton.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 184,
+    "totalCruised": 183,
     "totalDependenciesCruised": 291,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

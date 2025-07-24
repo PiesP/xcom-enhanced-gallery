@@ -90,14 +90,14 @@ export class ServiceDiagnostics {
       // 2. 등록 상태 확인
       const diagnostics = serviceManager.getDiagnostics();
       logger.info('📊 진단 결과:', {
-        isReady: diagnostics.isReady,
-        registeredCount: diagnostics.registeredServices.length,
-        initializedCount: diagnostics.initializedServices.length,
-        loadingCount: diagnostics.loadingServices.length,
+        registeredCount: diagnostics.registeredServices,
+        initializedCount: diagnostics.activeInstances,
+        services: diagnostics.services,
+        instances: diagnostics.instances,
       });
 
       // 3. 등록된 서비스 목록
-      logger.debug('🗂️ 등록된 서비스:', diagnostics.registeredServices);
+      logger.debug('🗂️ 등록된 서비스:', diagnostics.services);
 
       // 4. 필수 서비스 초기화 테스트
       logger.info('🧪 필수 서비스 초기화 테스트 중...');

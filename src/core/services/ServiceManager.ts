@@ -12,6 +12,13 @@ import { logger } from '@core/logging/logger';
 export type ServiceFactory<T = unknown> = () => T;
 
 /**
+ * 기본 서비스 인터페이스
+ */
+export interface BaseService {
+  cleanup?(): void;
+}
+
+/**
  * 간단한 서비스 설정
  */
 export interface ServiceConfig<T = unknown> {
@@ -19,6 +26,8 @@ export interface ServiceConfig<T = unknown> {
   factory: ServiceFactory<T>;
   /** 싱글톤 여부 (기본: true) */
   singleton?: boolean;
+  /** 지연 로딩 여부 (기본: false) */
+  lazy?: boolean;
 }
 
 /**
@@ -58,6 +67,7 @@ export class ServiceManager {
 
     this.services.set(key, {
       singleton: true,
+      lazy: false,
       ...config,
     });
 
@@ -94,6 +104,18 @@ export class ServiceManager {
   }
 
   /**
+   * 안전한 서비스 조회 (오류 발생 시 null 반환)
+   */
+  public tryGet<T>(key: string): T | null {
+    try {
+      return this.get<T>(key);
+    } catch (error) {
+      logger.warn(`[ServiceManager] 서비스 조회 실패: ${key}`, error);
+      return null;
+    }
+  }
+
+  /**
    * 서비스 존재 여부 확인
    */
   public has(key: string): boolean {
@@ -112,6 +134,46 @@ export class ServiceManager {
    */
   public getActiveInstances(): string[] {
     return Array.from(this.instances.keys());
+  }
+
+  /**
+   * 서비스 매니저 진단 정보
+   */
+  public getDiagnostics(): {
+    registeredServices: number;
+    activeInstances: number;
+    services: string[];
+    instances: string[];
+  } {
+    return {
+      registeredServices: this.services.size,
+      activeInstances: this.instances.size,
+      services: this.getRegisteredServices(),
+      instances: this.getActiveInstances(),
+    };
+  }
+
+  /**
+   * 리소스 정리 및 cleanup
+   */
+  public cleanup(): void {
+    logger.debug('[ServiceManager] cleanup 시작');
+
+    // 인스턴스들 중 cleanup 메서드가 있으면 호출
+    for (const [key, instance] of this.instances) {
+      if (instance && typeof instance === 'object' && 'cleanup' in instance) {
+        try {
+          (instance as { cleanup(): void }).cleanup();
+          logger.debug(`[ServiceManager] ${key} cleanup 완료`);
+        } catch (error) {
+          logger.warn(`[ServiceManager] ${key} cleanup 실패:`, error);
+        }
+      }
+    }
+
+    // 인스턴스 맵 정리
+    this.instances.clear();
+    logger.debug('[ServiceManager] cleanup 완료');
   }
 
   /**

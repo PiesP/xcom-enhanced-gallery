@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { rafThrottle, throttleScroll } from '@shared/utils/performance/throttle';
+import { rafThrottle, throttleScroll } from '@shared/utils/performance';
 
 // requestAnimationFrame 모킹
 const mockRequestAnimationFrame = vi.fn();
