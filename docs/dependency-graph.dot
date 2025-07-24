@@ -401,6 +401,13 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/events/index.ts" -> "src/shared/utils/events/GalleryEventCoordinator.ts" [arrowhead="inv"]
     "src/shared/utils/events/index.ts" -> "src/shared/utils/events/GalleryEventCoordinator.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/gallery-utils.ts" [label=<gallery-utils.ts> tooltip="gallery-utils.ts" URL="src/shared/utils/gallery-utils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/index-new.ts" [label=<index-new.ts> tooltip="index-new.ts" URL="src/shared/utils/index-new.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/utils/index-new.ts" -> "src/shared/utils/core/accessibility.ts" [arrowhead="inv"]
+    "src/shared/utils/index-new.ts" -> "src/shared/utils/css-selector-validator.ts" [arrowhead="inv"]
+    "src/shared/utils/index-new.ts" -> "src/shared/utils/error-handling.ts" [arrowhead="inv"]
+    "src/shared/utils/index-new.ts" -> "src/shared/utils/media/index.ts" [arrowhead="inv"]
+    "src/shared/utils/index-new.ts" -> "src/shared/utils/patterns/index.ts" [arrowhead="inv"]
+    "src/shared/utils/index-new.ts" -> "src/shared/utils/unified-utils.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/utils/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/utils/index.ts" -> "src/shared/utils/core/accessibility.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/css-selector-validator.ts" [arrowhead="inv"]

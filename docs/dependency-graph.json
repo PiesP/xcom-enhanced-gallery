@@ -5572,7 +5572,8 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts",
-        "src/shared/utils/core/index.ts"
+        "src/shared/utils/core/index.ts",
+        "src/shared/utils/index-new.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5581,7 +5582,8 @@
       "source": "src/shared/utils/css-selector-validator.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/index-new.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5608,7 +5610,8 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/index-new.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5669,7 +5672,8 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/index-new.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5760,7 +5764,8 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/index-new.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5778,7 +5783,8 @@
       "source": "src/shared/utils/unified-utils.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/index-new.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6122,6 +6128,116 @@
       "dependents": [],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/shared/utils/index-new.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./core/accessibility",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/core/accessibility.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./css-selector-validator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/css-selector-validator.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./error-handling",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/error-handling.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./media",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/media/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./patterns",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/patterns/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./unified-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/unified-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
     }
   ],
   "summary": {
@@ -6130,8 +6246,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 157,
-    "totalDependenciesCruised": 262,
+    "totalCruised": 158,
+    "totalDependenciesCruised": 268,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
