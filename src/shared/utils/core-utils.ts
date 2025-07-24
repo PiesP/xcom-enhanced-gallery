@@ -1,11 +1,18 @@
 /**
- * @fileoverview 접근성 관련 유틸리티 함수들
- * @version 1.0.0
+ * @fileoverview Core 유틸리티 통합 모듈
+ * @version 3.0.0 - Phase 3 통합
  *
- * WCAG 2.1 기준에 따른 색상 대비, 시인성 관련 계산 함수들을 제공합니다.
+ * 접근성, 타입 안전성, 에러 처리 등 핵심 유틸리티들을 통합
+ * - WCAG 접근성 유틸리티
+ * - 타입 안전성 헬퍼 함수들
+ * - 에러 처리 위임
  */
 
 import { safeParseInt } from '@core/utils/type-safety-helpers';
+
+// ================================
+// 접근성 유틸리티 (WCAG 2.1 기준)
+// ================================
 
 /**
  * RGB 색상을 상대 휘도(relative luminance)로 변환합니다.
@@ -231,4 +238,49 @@ export function detectLightBackground(element: Element): boolean {
   }
 
   return false;
+}
+
+// ================================
+// 타입 안전성 헬퍼 함수들 (re-export)
+// ================================
+
+// Core의 타입 안전성 헬퍼들을 re-export
+export {
+  safeParseInt,
+  safeParseFloat,
+  safeArrayGet,
+  safeNodeListAccess,
+  safeMatchExtract,
+  safeCall,
+  safeEventHandler,
+  undefinedToNull,
+  nullToUndefined,
+  stringWithDefault,
+  safeElementCheck,
+  safeProp,
+  safeTweetId,
+  safeUsername,
+  safeClickedIndex,
+  assignOptionalProperty,
+  conditionalAssign,
+  mergeWithoutUndefined,
+  createWithOptionalProperties,
+  buildSafeObject,
+  removeUndefinedProperties,
+} from '@core/utils/type-safety-helpers';
+
+// ================================
+// 에러 처리 (위임)
+// ================================
+
+// Core 레이어의 통합 에러 핸들러 re-export
+export { safeAsync, safeSync, handleError } from '@core/error/ErrorHandler';
+
+/**
+ * 안전한 비동기 작업 결과 인터페이스
+ */
+export interface SafeOperationResult<T> {
+  success: boolean;
+  data?: T;
+  error?: Error;
 }

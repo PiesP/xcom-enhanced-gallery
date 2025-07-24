@@ -16,8 +16,8 @@
         "src/features/gallery/GalleryApp.ts",
         "src/features/settings/types/settings.types.ts",
         "src/main.ts",
-        "src/shared/utils/media/MediaClickDetector.ts",
-        "src/shared/utils/events/GalleryEventCoordinator.ts"
+        "src/shared/utils/events/GalleryEventCoordinator.ts",
+        "src/shared/utils/media/MediaClickDetector.ts"
       ],
       "orphan": false,
       "valid": true
@@ -623,8 +623,7 @@
       "source": "src/core/error/ErrorHandler.ts",
       "dependencies": [],
       "dependents": [
-        "src/core/error/index.ts",
-        "src/shared/utils/error-handling.ts"
+        "src/core/error/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5310,14 +5309,14 @@
         },
         {
           "dynamic": false,
-          "module": "./utils/dom/isInsideGallery",
+          "module": "./utils/dom-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/dom/isInsideGallery.ts",
+          "resolved": "src/shared/utils/dom-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5352,14 +5351,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./core/accessibility",
+          "module": "./core-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/core/accessibility.ts",
+          "resolved": "src/shared/utils/core-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5386,14 +5385,31 @@
         },
         {
           "dynamic": false,
-          "module": "./error-handling",
+          "module": "./dom-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/error-handling.ts",
+          "resolved": "src/shared/utils/dom-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./events",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/events/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5460,11 +5476,10 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/core/accessibility.ts",
+      "source": "src/shared/utils/core-utils.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/index.ts",
-        "src/shared/utils/core/index.ts"
+        "src/shared/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5479,18 +5494,46 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/error-handling.ts",
+      "source": "src/shared/utils/dom-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/index.ts",
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/events/index.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../core/error/ErrorHandler",
+          "module": "./GalleryEventCoordinator",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/core/error/ErrorHandler.ts",
+          "resolved": "src/shared/utils/events/GalleryEventCoordinator.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./GalleryEventCoordinator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/utils/events/GalleryEventCoordinator.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5501,6 +5544,123 @@
       ],
       "dependents": [
         "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/events/GalleryEventCoordinator.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../core/types/media.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/core/types/media.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../gallery-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/gallery-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../media/MediaClickDetector",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/media/MediaClickDetector.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/events/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/gallery-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/index.ts",
+        "src/shared/utils/events/GalleryEventCoordinator.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/media/MediaClickDetector.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/events/GalleryEventCoordinator.ts",
+        "src/shared/utils/media/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5603,34 +5763,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/media/MediaClickDetector.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/media/index.ts",
-        "src/shared/utils/events/GalleryEventCoordinator.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/patterns/index.ts",
       "dependencies": [
         {
@@ -5676,27 +5808,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/dom/isInsideGallery.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts",
-        "src/shared/utils/core/index.ts",
-        "src/shared/utils/dom/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/gallery-utils.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts",
-        "src/shared/utils/events/GalleryEventCoordinator.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/styles/index.ts",
       "dependencies": [
         {
@@ -5729,221 +5840,6 @@
       ],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/utils/core/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../dom/isInsideGallery",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/dom/isInsideGallery.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./accessibility",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/core/accessibility.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/dom/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./isInsideGallery",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/dom/isInsideGallery.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./safe-dom-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/dom/safe-dom-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/dom/safe-dom-utils.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/dom/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/events/GalleryEventCoordinator.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../core/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/core/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../gallery-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/gallery-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../media/MediaClickDetector",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/media/MediaClickDetector.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/events/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/events/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./GalleryEventCoordinator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/events/GalleryEventCoordinator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryEventCoordinator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/utils/events/GalleryEventCoordinator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
     }
   ],
   "summary": {
@@ -5952,8 +5848,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 151,
-    "totalDependenciesCruised": 255,
+    "totalCruised": 147,
+    "totalDependenciesCruised": 251,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

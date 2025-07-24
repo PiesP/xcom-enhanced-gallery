@@ -37,7 +37,7 @@ export {
 
 // 갤러리 유틸리티 (별도 import 필요)
 export { GalleryUtils } from './utils/gallery-utils';
-export { isInsideGallery } from './utils/dom/isInsideGallery';
+export { isInsideGallery } from './utils/dom-utils';
 
 // 핵심 타입들
 export type {
