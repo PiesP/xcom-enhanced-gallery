@@ -1,19 +1,15 @@
 /**
- * @fileoverview Gallery Feature Exports
- * @version 2.0.0 - Phase 2B Clean Architecture Optimization
- * @description 갤러리 Feature 통합 및 최적화 - 단일 렌더러 통합
+ * @fileoverview Gallery Feature Exports (단순화됨)
+ * @version 3.0.0 - 단순화된 아키텍처
+ * @description 갤러리 Feature 단순화 - 불필요한 복잡성 제거
  */
 
 // 통합된 갤러리 렌더러 (기본)
 export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
 
-// 갤러리 앱 (App 레이어에서 이동)
+// 갤러리 앱 (단순화됨)
 export { GalleryApp } from './GalleryApp';
 export type { GalleryConfig } from './GalleryApp';
-
-// 갤러리 조정자들 (Core에서 직접 import)
-export { CoordinatorManager, Coordinator } from '@core/managers/coordinators';
-export type { ManagedExtractionResult } from '@core/managers/coordinators/CoordinatorManager';
 
 // 격리된 갤러리 렌더러 (고급 사용)
 export {
