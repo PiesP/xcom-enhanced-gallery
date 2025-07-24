@@ -5948,6 +5948,23 @@
         },
         {
           "dynamic": false,
+          "module": "./utils/dom/isInsideGallery",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/dom/isInsideGallery.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./utils/gallery-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6066,23 +6083,6 @@
             "export"
           ],
           "resolved": "src/shared/utils/gallery-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./InitializationGuard",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/InitializationGuard.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6280,42 +6280,6 @@
         "src/shared/index.ts",
         "src/shared/utils/index.ts",
         "src/shared/utils/events/GalleryEventCoordinator.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/InitializationGuard.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./patterns/singleton",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/patterns/singleton.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/patterns/singleton.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/InitializationGuard.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6555,6 +6519,17 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/dom/isInsideGallery.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/index.ts",
+        "src/shared/utils/core/index.ts",
+        "src/shared/utils/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/styles/index.ts",
       "dependencies": [
         {
@@ -6695,16 +6670,6 @@
         }
       ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/dom/isInsideGallery.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/core/index.ts",
-        "src/shared/utils/dom/index.ts"
-      ],
       "orphan": false,
       "valid": true
     },
@@ -6882,6 +6847,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/patterns/singleton.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/types/css-modules.d.ts",
       "dependencies": [],
       "dependents": [],
@@ -6897,13 +6875,23 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/utils/patterns/singleton.ts",
+        "to": "src/shared/utils/patterns/singleton.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 185,
-    "totalDependenciesCruised": 292,
+    "totalCruised": 184,
+    "totalDependenciesCruised": 291,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
