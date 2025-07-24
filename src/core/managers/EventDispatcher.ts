@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { BaseSingleton } from '@shared/utils/patterns/singleton';
 
 interface EventContext {
   id: string;

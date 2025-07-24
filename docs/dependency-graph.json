@@ -5945,6 +5945,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./utils/gallery-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/gallery-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [],
@@ -5973,14 +5990,14 @@
         },
         {
           "dynamic": false,
-          "module": "./core",
+          "module": "./core/accessibility",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/core/index.ts",
+          "resolved": "src/shared/utils/core/accessibility.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6041,14 +6058,14 @@
         },
         {
           "dynamic": false,
-          "module": "./gallery",
+          "module": "./gallery-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/gallery/index.ts",
+          "resolved": "src/shared/utils/gallery-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6202,63 +6219,10 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/core/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../dom/isInsideGallery",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/dom/isInsideGallery.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./accessibility",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/core/accessibility.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/dom/isInsideGallery.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/core/index.ts",
-        "src/shared/utils/dom/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/core/accessibility.ts",
       "dependencies": [],
       "dependents": [
+        "src/shared/utils/index.ts",
         "src/shared/utils/core/index.ts"
       ],
       "orphan": false,
@@ -6310,37 +6274,12 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/gallery/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../gallery-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/gallery-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/gallery-utils.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/gallery/index.ts"
+        "src/shared/index.ts",
+        "src/shared/utils/index.ts",
+        "src/shared/utils/events/GalleryEventCoordinator.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6547,14 +6486,32 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts",
-        "src/shared/utils/performance/index.ts"
+        "src/shared/utils/scroll.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
       "source": "src/shared/utils/scroll.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./performance",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/index.ts"
       ],
@@ -6700,6 +6657,58 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/core/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../dom/isInsideGallery",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/dom/isInsideGallery.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./accessibility",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/core/accessibility.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/dom/isInsideGallery.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/core/index.ts",
+        "src/shared/utils/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/dom/index.ts",
       "dependencies": [
         {
@@ -6790,14 +6799,14 @@
         },
         {
           "dynamic": false,
-          "module": "../gallery/GalleryStateGuard",
+          "module": "../gallery-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/utils/gallery/GalleryStateGuard.ts",
+          "resolved": "src/shared/utils/gallery-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6825,15 +6834,6 @@
       ],
       "dependents": [
         "src/shared/utils/events/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/gallery/GalleryStateGuard.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/events/GalleryEventCoordinator.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6882,44 +6882,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/gallery/VideoControlBlocker.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/utils/performance/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../performance",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/types/css-modules.d.ts",
       "dependencies": [],
       "dependents": [],
@@ -6935,22 +6897,12 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/utils/gallery/VideoControlBlocker.ts",
-        "to": "src/shared/utils/gallery/VideoControlBlocker.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 189,
+    "totalCruised": 185,
     "totalDependenciesCruised": 292,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

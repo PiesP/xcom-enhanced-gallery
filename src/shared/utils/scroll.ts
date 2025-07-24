@@ -7,7 +7,7 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { createDebouncer } from './performance/Debouncer';
+import { createDebouncer } from './performance';
 
 interface ScrollHandlerOptions {
   /** 휠 이벤트에서 preventDefault 호출 여부 */

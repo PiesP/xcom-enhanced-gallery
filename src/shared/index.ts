@@ -32,9 +32,12 @@ export {
   rafThrottle,
   debounce,
   // DOM 유틸리티
-  isInsideGallery,
   safeElementCheck,
 } from './utils';
+
+// 갤러리 유틸리티 (별도 import 필요)
+export { GalleryUtils } from './utils/gallery-utils';
+export { isInsideGallery } from './utils/dom/isInsideGallery';
 
 // 핵심 타입들
 export type {

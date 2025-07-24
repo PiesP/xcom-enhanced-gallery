@@ -127,7 +127,6 @@ export function rafThrottle<T extends (...args: unknown[]) => void>(
 
   let isThrottled = false;
   let lastArgs: Parameters<T> | null = null;
-  let rafId: number | null = null;
 
   function throttled(...args: Parameters<T>): void {
     lastArgs = args;
@@ -146,9 +145,8 @@ export function rafThrottle<T extends (...args: unknown[]) => void>(
 
       // Trailing 호출 스케줄링
       if (trailing) {
-        rafId = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
           isThrottled = false;
-          rafId = null;
 
           if (lastArgs && (!leading || lastArgs !== args)) {
             try {
@@ -218,7 +216,7 @@ export function measurePerformance<T>(label: string, fn: () => T): { result: T; 
   const duration = endTime - startTime;
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Performance [${label}]: ${duration.toFixed(2)}ms`);
+    console.info(`Performance [${label}]: ${duration.toFixed(2)}ms`);
   }
 
   return { result, duration };
@@ -237,7 +235,7 @@ export async function measureAsyncPerformance<T>(
   const duration = endTime - startTime;
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Async Performance [${label}]: ${duration.toFixed(2)}ms`);
+    console.info(`Async Performance [${label}]: ${duration.toFixed(2)}ms`);
   }
 
   return { result, duration };

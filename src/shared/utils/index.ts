@@ -1,12 +1,12 @@
 /**
  * Shared Utils Barrel Export
  *
- * Phase 2B Step 2: Shared Layer 최적화
- * 핵심 유틸리티만 선별하여 export하고 의존성을 단순화합니다.
+ * Phase 4: Utils 및 Helper 단순화
+ * 핵심 유틸리티만 선별하여 export하고 중복을 제거합니다.
  */
 
-// Core DOM and accessibility utilities
-export * from './core';
+// Core DOM and accessibility utilities (excluding gallery functions)
+export * from './core/accessibility';
 
 // Essential media utilities
 export * from './media';
@@ -14,8 +14,14 @@ export * from './media';
 // Pattern recognition utilities
 export * from './patterns';
 
-// Gallery-specific utilities
-export * from './gallery';
+// Gallery-specific utilities (includes isInsideGallery functions)
+export * from './gallery-utils';
+
+// Performance utilities (throttle, debounce, monitoring)
+export * from './performance';
+
+// Common utilities (deduplication, type safety helpers)
+export * from './common';
 
 // Performance utilities (throttle, debounce, monitoring)
 export * from './performance';
@@ -49,7 +55,6 @@ export {
 } from '@core/utils/type-safety-helpers';
 
 // Specialized utilities
-export { InitializationGuard } from './InitializationGuard';
 export * from './css-selector-validator';
 
 // Scroll utilities

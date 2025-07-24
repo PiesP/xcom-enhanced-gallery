@@ -6,7 +6,7 @@
  * @version 3.1.0 - Simplified Architecture (3-Layer)
  */
 
-import { measurePerformance } from '@shared/utils/performance/index';
+import { measurePerformance } from '@shared/utils/performance';
 import { logger } from '@core/logging/logger';
 import type { AppConfig } from '@core/types/core-types';
 import { ServiceManager } from '@core/services/ServiceManager';

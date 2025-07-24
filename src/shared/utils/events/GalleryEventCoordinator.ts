@@ -7,7 +7,7 @@
  */
 
 import { logger } from '@core/logging/logger';
-import { GalleryStateGuard } from '../gallery/GalleryStateGuard';
+import { GalleryUtils } from '../gallery-utils';
 import { MediaClickDetector } from '../media/MediaClickDetector';
 import { isVideoControlElement } from '../../../constants';
 import type { MediaInfo } from '../../../core/types/media.types';
@@ -169,7 +169,7 @@ export class GalleryEventCoordinator {
     }
 
     // 3. 갤러리 상태 확인
-    if (!GalleryStateGuard.canTriggerGallery(event)) {
+    if (!GalleryUtils.canTriggerGallery(event)) {
       return { handled: false, reason: 'Gallery state guard blocked' };
     }
 
@@ -258,7 +258,7 @@ export class GalleryEventCoordinator {
    */
   private handleDefaultKeyboardEvent(event: KeyboardEvent): void {
     // 갤러리가 열려있을 때만 처리
-    if (!GalleryStateGuard.canTriggerGallery()) {
+    if (!GalleryUtils.canTriggerGallery()) {
       return;
     }
 

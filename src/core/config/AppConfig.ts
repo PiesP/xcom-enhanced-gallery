@@ -5,7 +5,6 @@
  * 모든 설정을 중앙에서 관리하여 분산된 설정 관리 문제를 해결합니다.
  */
 
-import { BaseSingleton } from '@shared/utils/patterns/singleton';
 import { logger } from '@core/logging/logger';
 
 /**
@@ -304,7 +303,6 @@ export class AppConfig {
 }
 
 // 싱글톤 인스턴스 export
-// @ts-expect-error Protected constructor compatibility
 export const appConfig = AppConfig.getInstance();
 
 // 편의 함수들
