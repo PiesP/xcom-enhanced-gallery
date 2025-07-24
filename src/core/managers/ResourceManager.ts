@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@core/logging';
-import type { Cleanupable } from '@core/types/lifecycle.types';
+import type { Cleanupable } from '@core/types/core-types';
 
 /**
  * 리소스 타입 정의

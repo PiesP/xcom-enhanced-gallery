@@ -439,3 +439,152 @@ export interface LifecycleConfig {
   retryCount: number;
   timeout: number;
 }
+
+// ========================================
+// LIFECYCLE TYPES (from lifecycle.types.ts)
+// ========================================
+
+/**
+ * 동기적 정리 인터페이스
+ */
+export interface Cleanupable {
+  /**
+   * 동기적 정리 (메모리, 타이머, 이벤트 리스너 등)
+   */
+  cleanup(): void;
+}
+
+/**
+ * 비동기적 정리 인터페이스
+ */
+export interface Disposable {
+  /**
+   * 비동기적 정리 (파일, 네트워크, 스트림 등)
+   */
+  dispose(): Promise<void>;
+}
+
+/**
+ * 완전한 소멸 인터페이스
+ */
+export interface Destroyable {
+  /**
+   * 완전한 소멸 (상태 초기화 포함)
+   */
+  destroy(): void;
+}
+
+/**
+ * 통합 생명주기 인터페이스
+ */
+export interface Lifecycle extends Cleanupable, Disposable, Destroyable {
+  /**
+   * 리소스 상태 확인
+   */
+  isActive(): boolean;
+}
+
+// ========================================
+// RESULT TYPES (from result.ts)
+// ========================================
+
+/**
+ * Result 타입 - 성공 또는 실패를 명시적으로 표현
+ */
+export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
+
+/**
+ * 비동기 Result 타입
+ */
+export type AsyncResult<T, E = Error> = Promise<Result<T, E>>;
+
+/**
+ * Option 타입 - 값이 있거나 없음을 명시적으로 표현
+ */
+export type Option<T> = T | null;
+
+/**
+ * 성공 Result 생성
+ */
+export function success<T>(data: T): Result<T, never> {
+  return { success: true, data };
+}
+
+/**
+ * 실패 Result 생성
+ */
+export function failure<E>(error: E): Result<never, E> {
+  return { success: false, error };
+}
+
+/**
+ * 비동기 함수를 안전하게 실행하고 Result 반환
+ */
+export async function safeAsync<T>(
+  fn: () => Promise<T>,
+  errorTransform?: (error: unknown) => Error
+): AsyncResult<T> {
+  try {
+    const data = await fn();
+    return success(data);
+  } catch (error) {
+    const processedError = errorTransform
+      ? errorTransform(error)
+      : error instanceof Error
+        ? error
+        : new Error(String(error));
+    return failure(processedError);
+  }
+}
+
+/**
+ * 동기 함수를 안전하게 실행하고 Result 반환
+ */
+export function safe<T>(fn: () => T, errorTransform?: (error: unknown) => Error): Result<T> {
+  try {
+    const data = fn();
+    return success(data);
+  } catch (error) {
+    const processedError = errorTransform
+      ? errorTransform(error)
+      : error instanceof Error
+        ? error
+        : new Error(String(error));
+    return failure(processedError);
+  }
+}
+
+/**
+ * Result에서 값을 추출 (기본값 제공)
+ */
+export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
+  return result.success ? result.data : defaultValue;
+}
+
+/**
+ * Result가 성공인지 확인
+ */
+export function isSuccess<T, E>(result: Result<T, E>): result is { success: true; data: T } {
+  return result.success;
+}
+
+/**
+ * Result가 실패인지 확인
+ */
+export function isFailure<T, E>(result: Result<T, E>): result is { success: false; error: E } {
+  return !result.success;
+}
+
+/**
+ * Result 체이닝 (flatMap)
+ */
+export function chain<T, U, E>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E> {
+  return result.success ? fn(result.data) : result;
+}
+
+/**
+ * Result 매핑 (map)
+ */
+export function map<T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> {
+  return result.success ? success(fn(result.data)) : result;
+}

@@ -135,3 +135,82 @@ export interface ImageFitOptions {
   /** 배경색 */
   backgroundColor?: string;
 }
+
+// ================================
+// BRANDED TYPES (from branded.ts)
+// ================================
+
+/**
+ * 브랜드 타입 기본 구조
+ */
+export type Brand<T, B> = T & { readonly __brand: B };
+
+/**
+ * ID 타입들 - 서로 다른 종류의 ID가 섞이지 않도록 보장
+ */
+export type MediaId = Brand<string, 'MediaId'>;
+export type UserId = Brand<string, 'UserId'>;
+export type TweetId = Brand<string, 'TweetId'>;
+export type ServiceKey = Brand<string, 'ServiceKey'>;
+export type ElementId = Brand<string, 'ElementId'>;
+
+/**
+ * URL 타입들 - 용도별로 구분
+ */
+export type MediaUrl = Brand<string, 'MediaUrl'>;
+export type ThumbnailUrl = Brand<string, 'ThumbnailUrl'>;
+export type OriginalUrl = Brand<string, 'OriginalUrl'>;
+
+/**
+ * 파일명 타입들
+ */
+export type FileName = Brand<string, 'FileName'>;
+export type FileExtension = Brand<string, 'FileExtension'>;
+
+/**
+ * 수치 타입들
+ */
+export type Percentage = Brand<number, 'Percentage'>;
+export type PixelValue = Brand<number, 'PixelValue'>;
+export type Timestamp = Brand<number, 'Timestamp'>;
+
+/**
+ * 브랜드 타입 생성 헬퍼
+ */
+export function createMediaId(id: string): MediaId {
+  return id as MediaId;
+}
+
+export function createUserId(id: string): UserId {
+  return id as UserId;
+}
+
+export function createTweetId(id: string): TweetId {
+  return id as TweetId;
+}
+
+export function createServiceKey(key: string): ServiceKey {
+  return key as ServiceKey;
+}
+
+export function createElementId(id: string): ElementId {
+  return id as ElementId;
+}
+
+// ================================
+// COMMON TYPES (from common.ts)
+// ================================
+
+// Re-export core types for backward compatibility (excluding Size to avoid conflicts)
+export type {
+  MediaItem,
+  GalleryConfig,
+  ThemeConfig,
+  DownloadOptions,
+  Point,
+  EventHandler,
+  AsyncEventHandler,
+  CancelableFunction,
+  LoadingState,
+  ErrorInfo,
+} from '../../core/types/core-types';

@@ -36,11 +36,8 @@ export type {
   Rect,
 } from './global.types';
 
-// Unified specialized types (Phase 1A Integration)
+// Unified specialized types (Phase 2.2 Integration - includes branded types)
 export * from './unified.types';
-
-// Essential types
-export * from './branded';
 export * from './result';
 
 // View mode types (from core)

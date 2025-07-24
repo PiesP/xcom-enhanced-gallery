@@ -6,7 +6,7 @@
  */
 
 import type { MediaInfo, MediaId } from '../../types/media.types';
-import type { Result } from '../../types/result';
+import type { Result } from '../../types/core-types';
 import { getPreactSignals } from '@core/external/vendors';
 import { defaultLogger, type ILogger } from '../../services/core-services';
 
