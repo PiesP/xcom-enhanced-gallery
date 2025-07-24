@@ -17,7 +17,7 @@
 import { SERVICE_KEYS } from '../../constants';
 import { logger } from '@core/logging/logger';
 import type { ServiceTypeMapping } from '../types/core-types';
-import { registerAllServices } from './ServiceRegistry';
+import { registerCoreServices } from './service-initialization';
 
 // Type-safe service keys
 export type ServiceKey = keyof ServiceTypeMapping;
@@ -84,14 +84,14 @@ export class ServiceDiagnostics {
       logger.info('🔍 ServiceManager 진단 시작');
 
       // 동적 import로 순환 의존성 방지
-      await registerAllServices();
+      await registerCoreServices();
       const { ServiceManager } = await import('./ServiceManager');
 
       const serviceManager = ServiceManager.getInstance();
 
       // 1. 서비스 등록
       logger.info('📋 서비스 등록 중...');
-      await registerAllServices();
+      await registerCoreServices();
 
       // 2. 등록 상태 확인
       const diagnostics = serviceManager.getDiagnostics();
@@ -155,6 +155,7 @@ ServiceDiagnostics.registerGlobalDiagnostic();
 
 /**
  * ServiceRegistry 기능을 재export합니다
- * 의존성 규칙 준수를 위해 실제 구현은 ServiceRegistry에 유지
+ * ServiceRegistry가 ServiceManager에 통합되었고, 초기화는 별도 파일로 분리
  */
-export { registerAllServices, getService } from './ServiceRegistry';
+export { registerCoreServices } from './service-initialization';
+export { getService } from './ServiceManager';

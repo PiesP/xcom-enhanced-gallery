@@ -59,9 +59,12 @@ async function initializeCriticalSystems(): Promise<void> {
 
     serviceManager = ServiceManager.getInstance();
 
-    // 모든 서비스 등록 (지연 로딩)
-    const { registerAllServices } = await import('@core/services');
-    await registerAllServices();
+    // Core 서비스 등록
+    const { registerCoreServices } = await import('@core/services');
+    await registerCoreServices();
+
+    // Features 서비스 등록 (의존성 규칙 준수)
+    await registerFeatureServices();
 
     // Critical Services만 즉시 초기화
     const criticalServices = [
@@ -236,6 +239,33 @@ async function initializeDevTools(): Promise<void> {
     logger.info('🛠️ 개발 도구 활성화됨');
   } catch (error) {
     logger.warn('개발 도구 로드 실패:', error);
+  }
+}
+
+/**
+ * Features 레이어 서비스들을 등록합니다
+ * 의존성 규칙을 준수하기 위해 main.ts에서 등록
+ */
+async function registerFeatureServices(): Promise<void> {
+  try {
+    // Gallery Services - Features 레이어
+    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
+    serviceManager!.register(SERVICE_KEYS.GALLERY_RENDERER, new GalleryRenderer());
+
+    // Settings Manager - Features 레이어
+    const { SettingsService } = await import('@features/settings/services/SettingsService');
+    serviceManager!.register(SERVICE_KEYS.SETTINGS_MANAGER, new SettingsService());
+
+    // Twitter Token Extractor - Features 레이어
+    const { TwitterTokenExtractor } = await import(
+      '@features/settings/services/TwitterTokenExtractor'
+    );
+    serviceManager!.register(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, new TwitterTokenExtractor());
+
+    logger.debug('✅ Features 서비스 등록 완료');
+  } catch (error) {
+    // Features 레이어 서비스 로딩 실패는 치명적이지 않음
+    logger.warn('⚠️ 일부 feature 서비스 로딩 실패:', error);
   }
 }
 

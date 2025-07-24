@@ -89,6 +89,30 @@ export class ServiceManager {
   }
 
   /**
+   * 진단 정보 조회
+   */
+  public getDiagnostics(): {
+    registeredServices: number;
+    activeInstances: number;
+    services: string[];
+    instances: Record<string, boolean>;
+  } {
+    const services = Array.from(this.services.keys());
+    const instances: Record<string, boolean> = {};
+
+    for (const key of services) {
+      instances[key] = this.services.get(key) !== null;
+    }
+
+    return {
+      registeredServices: services.length,
+      activeInstances: services.filter(key => instances[key]).length,
+      services,
+      instances,
+    };
+  }
+
+  /**
    * 리소스 정리 및 cleanup
    */
   public cleanup(): void {
@@ -135,18 +159,7 @@ export class ServiceManager {
 export const serviceManager = ServiceManager.getInstance();
 
 /**
- * 간편한 서비스 등록 헬퍼
- */
-export function registerService<T>(
-  key: string,
-  factory: ServiceFactory<T>,
-  singleton = true
-): void {
-  serviceManager.register(key, { factory, singleton });
-}
-
-/**
- * 간편한 서비스 조회 헬퍼
+ * 타입 안전한 서비스 접근을 위한 헬퍼 함수
  */
 export function getService<T>(key: string): T {
   return serviceManager.get<T>(key);

@@ -163,8 +163,8 @@ export class Application {
       logger.info('Critical Path 초기화 시작');
 
       // 모든 서비스 등록 (지연 로딩)
-      const { registerAllServices } = await import('@core/services');
-      await registerAllServices();
+      const { registerCoreServices } = await import('@core/services');
+      await registerCoreServices();
       this.services.add('ServiceManager');
 
       // Critical Services만 즉시 초기화

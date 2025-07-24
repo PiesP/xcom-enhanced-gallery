@@ -10,7 +10,7 @@
 
 import { SERVICE_KEYS } from '../../constants';
 import type { GalleryRenderer } from '@core/interfaces/gallery.interfaces';
-import { getService } from '@core/services/ServiceRegistry';
+import { getService } from '@core/services/ServiceManager';
 import { VideoControlService } from '@core/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '@core/state/signals/gallery.signals';
 import type { MediaInfo } from '@core/types/media.types';
