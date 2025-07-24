@@ -271,9 +271,11 @@ export const VIDEO_CONTROL_SELECTORS = [
   '[data-testid="pauseButton"]',
   '[data-testid="muteButton"]',
   '[data-testid="unmuteButton"]',
-  'video',
-  '.video-controls',
-  '.video-progress',
+  // 'video' 제거 - 너무 포괄적
+  '.video-controls button',
+  '.video-progress button',
+  'video::-webkit-media-controls-play-button',
+  'video::-webkit-media-controls-mute-button',
 ] as const;
 
 // ================================

@@ -105,7 +105,7 @@ export class MediaClickDetector {
       return true;
     }
 
-    // 2. 확장된 비디오 제어 요소들 차단
+    // 2. 확장된 비디오 제어 요소들 차단 (구체적인 컨트롤만)
     const videoControlSelectors = [
       'button[aria-label*="다시보기"]',
       'button[aria-label*="일시정지"]',
@@ -113,12 +113,12 @@ export class MediaClickDetector {
       'button[aria-label*="Replay"]',
       'button[aria-label*="Pause"]',
       'button[aria-label*="Play"]',
-      '[data-testid="videoComponent"]',
-      '[data-testid="videoPlayer"]',
-      '.video-controls',
-      '.player-controls',
+      '[data-testid="videoComponent"] button',
+      '[data-testid="videoPlayer"] button',
+      '.video-controls button',
+      '.player-controls button',
       '[role="slider"]', // 진행 바
-      'video', // 비디오 요소 자체
+      // 'video' 제거됨 - 너무 포괄적
     ];
 
     for (const selector of videoControlSelectors) {

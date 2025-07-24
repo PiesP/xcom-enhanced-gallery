@@ -46,9 +46,9 @@ export class GalleryUtils {
     '.notification',
   ];
 
-  // 비디오 제어 요소 선택자들
+  // 비디오 제어 요소 선택자들 (구체적인 제어 요소만 차단)
   private static readonly VIDEO_CONTROL_SELECTORS = [
-    // 플레이 버튼
+    // 플레이 버튼 (가장 구체적)
     '[data-testid="playButton"]',
     'button[aria-label*="재생"]',
     'button[aria-label*="Play"]',
@@ -57,29 +57,23 @@ export class GalleryUtils {
     'button[aria-label*="다시보기"]',
     'button[aria-label*="Replay"]',
 
-    // 비디오 컨트롤 UI
-    '.video-controls',
-    '.player-controls',
+    // 비디오 컨트롤 UI (구체적인 컨트롤만)
+    '.video-controls button',
+    '.player-controls button',
     '[role="slider"]', // 진행 바
-    'video::-webkit-media-controls',
+    'video::-webkit-media-controls-play-button',
+    'video::-webkit-media-controls-fullscreen-button',
 
-    // 갤러리 내 컨트롤
-    '.xeg-gallery-container video',
-    '.xeg-gallery-container button',
-    '[data-gallery-element] button',
+    // 갤러리 내 컨트롤 (더 구체적으로)
+    '.xeg-gallery-container .video-controls',
+    '.xeg-gallery-container button[aria-label*="Play"]',
+    '.xeg-gallery-container button[aria-label*="Pause"]',
+    '[data-gallery-element] .video-controls',
 
-    // 트위터 비디오 관련
-    '[data-testid="videoPlayer"]',
-    '[data-testid="videoComponent"]',
-    '.tweet-video-control',
-    '.r-1niwhzg', // 트위터 특정 클래스
-
-    // 일반 비디오 요소
-    'video',
-    'video *',
-    '.video-player',
-    '.video-wrapper',
-    '[controls]',
+    // 트위터 비디오 관련 (구체적인 컨트롤 요소만)
+    '[data-testid="videoPlayer"] button',
+    '[data-testid="videoComponent"] button',
+    '.tweet-video-control button',
   ];
 
   /**
