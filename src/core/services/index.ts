@@ -30,10 +30,10 @@ export {
 // Service management
 export { SERVICE_KEYS } from '../../constants';
 export { ServiceManager, serviceManager } from './ServiceManager';
-export { getService, registerAllServices, type ServiceKey } from './core-services';
+export { getService, registerCoreServices, type ServiceKey } from './core-services';
 
 // Essential types
-export type { BaseService, ServiceConfig } from './ServiceManager';
+export type { BaseService } from './ServiceManager';
 export type { ServiceTypeMapping } from '../types/core-types';
 export type { BulkDownloadOptions, DownloadProgress, DownloadResult } from './BulkDownloadService';
 export type { Theme } from './ThemeService';
