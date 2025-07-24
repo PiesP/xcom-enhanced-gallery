@@ -1,7 +1,7 @@
 /**
- * @fileoverview 통합 스타일 시스템 엔트리포인트
- * @description X.com Enhanced Gallery의 모든 스타일을 통합 관리
- * @version 1.0.0
+ * @fileoverview 단순화된 스타일 시스템 엔트리포인트
+ * @description Design System 제거로 단순화된 스타일 관리
+ * @version 1.1.0
  */
 
 // 디자인 토큰 (최우선 로드)
@@ -17,11 +17,6 @@ import '@assets/styles/base/typography.css';
 // 유틸리티 클래스들
 import '@assets/styles/utilities/accessibility.css';
 import '@assets/styles/utilities/responsive.css';
-
-// 디자인 시스템 유틸리티
-import '@shared/design-system/styles/accessibility-utilities.css';
-import '@shared/design-system/styles/interaction-utilities.css';
-import '@shared/design-system/styles/responsive-utilities.css';
 
 // 스타일 유틸리티 함수 export
 export * from '@shared/utils/styles';

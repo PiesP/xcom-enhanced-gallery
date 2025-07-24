@@ -11,10 +11,6 @@ export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
 export { GalleryApp } from './GalleryApp';
 export type { GalleryConfig } from './GalleryApp';
 
-// 갤러리 조정자들 (Core에서 직접 import)
-export { CoordinatorManager, Coordinator } from '@core/managers/coordinators';
-export type { ManagedExtractionResult } from '@core/managers/coordinators/CoordinatorManager';
-
 // 격리된 갤러리 렌더러 (고급 사용)
 export {
   IsolatedGalleryRenderer,

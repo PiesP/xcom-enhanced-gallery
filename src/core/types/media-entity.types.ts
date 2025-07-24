@@ -1,13 +1,32 @@
 /**
- * @fileoverview Media Domain Entity
- * @version 2.0.0
+ * @fileoverview Media Entity Types
+ * @version 2.0.1 - Simplified without Domain layer
  *
- * Clean Architecture + Domain-Driven Design 기반의 Media Entity
- * 불변성, 타입 안전성, 비즈니스 규칙 캡슐화를 완전 구현
+ * 미디어 관련 타입들 - 도메인 계층 제거로 단순화
  */
 
 import { buildSafeObject } from '@core/utils/type-safety-helpers';
-import type { DomainEntity, ValueObject } from './architecture.types';
+
+// ================================
+// 간단한 인터페이스 정의
+// ================================
+
+/**
+ * 단순한 값 객체 인터페이스
+ */
+interface ValueObject<T> {
+  readonly value: T;
+  equals(other: ValueObject<T>): boolean;
+}
+
+/**
+ * 단순한 엔티티 인터페이스
+ */
+interface MediaEntityInterface {
+  readonly id: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
 
 // ================================
 // Value Objects
@@ -291,9 +310,9 @@ export class MediaDimensions implements ValueObject<{ width: number; height: num
 
 /**
  * 불변 미디어 엔티티
- * Clean Architecture + DDD 원칙 완전 구현
+ * 단순화된 구조로 변경
  */
-export class MediaEntity implements DomainEntity {
+export class MediaEntity implements MediaEntityInterface {
   readonly id: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;

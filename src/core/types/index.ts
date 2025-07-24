@@ -33,5 +33,3 @@ export * from './userscript.d';
 
 // Complex domain types (selective exports to avoid conflicts)
 export type { MediaEntity, createMediaEntity, toMediaInfo } from './media-entity.types';
-
-export type { DomainEntity, ValueObject } from './architecture.types';
