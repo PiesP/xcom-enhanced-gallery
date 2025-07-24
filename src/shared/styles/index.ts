@@ -19,7 +19,7 @@ import '@assets/styles/utilities/accessibility.css';
 import '@assets/styles/utilities/responsive.css';
 
 // 스타일 유틸리티 함수 export
-export * from '@shared/utils/styles';
+export * from '@shared/utils';
 
 // 디자인 토큰 export
 export { default as designTokens } from '@shared/styles/design-tokens.css';

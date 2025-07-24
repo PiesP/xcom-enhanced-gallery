@@ -10,7 +10,7 @@ import { getPreactHooks } from '@core/external/vendors';
 import { logger } from '@core/logging/logger';
 import { createEventManager } from '@core/dom/DOMEventManager';
 import { galleryState } from '@core/state/signals/gallery.signals';
-import { preventScrollPropagation, findTwitterScrollContainer } from '@shared/utils/scroll';
+import { findTwitterScrollContainer } from '@shared/utils';
 
 const { useEffect, useRef, useCallback } = getPreactHooks();
 
@@ -123,7 +123,8 @@ export function useGalleryScroll({
   const preventTwitterScroll = useCallback(
     (event: Event) => {
       if (isScrollingRef.current && blockTwitterScroll) {
-        preventScrollPropagation(event, true, false);
+        event.preventDefault();
+        event.stopPropagation();
         logger.debug('useGalleryScroll: 트위터 스크롤 차단');
       }
     },
@@ -152,7 +153,8 @@ export function useGalleryScroll({
 
       // 트위터 페이지로의 이벤트 전파 방지
       if (blockTwitterScroll) {
-        preventScrollPropagation(event, true, false);
+        event.preventDefault();
+        event.stopPropagation();
       }
 
       // 스크롤 종료 감지 타이머 재설정

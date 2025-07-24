@@ -135,7 +135,6 @@ describe('Media URL Utility - Business Logic Tests', () => {
       if (result) {
         expect(result.type).toBe('image');
         expect(result.url).toContain('name=orig');
-        expect(result.order).toBe(0);
         expect(result.width).toBe(1200);
         expect(result.height).toBe(800);
       }
@@ -167,7 +166,6 @@ describe('Media URL Utility - Business Logic Tests', () => {
       if (result) {
         expect(result.type).toBe('video');
         expect(result.url).toContain('.mp4');
-        expect(result.order).toBe(0);
         expect(result.width).toBe(1920);
         expect(result.height).toBe(1080);
       }
@@ -233,7 +231,9 @@ describe('Media URL Utility - Business Logic Tests', () => {
       const mockImg = createMockImageElement('https://pbs.twimg.com/media/test.jpg');
       const result = createMediaInfoFromImage(mockImg, '1234567890', 999999);
 
-      expect(result?.order).toBe(999999);
+      // 인덱스는 내부적으로만 사용되고 order 속성은 제거됨
+      expect(result).toBeDefined();
+      expect(result?.id).toBeDefined();
     });
   });
 

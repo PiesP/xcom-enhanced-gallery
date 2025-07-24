@@ -108,7 +108,6 @@ export class DOMDirectExtractor {
       type: 'image',
       originalUrl: url,
       filename: this.generateFilename('image', index, tweetInfo),
-      order: index,
       tweetId: tweetInfo?.tweetId,
       tweetUsername: tweetInfo?.username,
     };
@@ -125,7 +124,6 @@ export class DOMDirectExtractor {
       originalUrl: url,
       filename: this.generateFilename('video', index, tweetInfo),
       thumbnailUrl: this.generateVideoThumbnail(url),
-      order: index,
       tweetId: tweetInfo?.tweetId,
       tweetUsername: tweetInfo?.username,
     };

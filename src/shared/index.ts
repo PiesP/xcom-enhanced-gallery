@@ -28,9 +28,9 @@ export {
   // 패턴 유틸리티
   extractTweetInfoFromUrl,
   // 성능 유틸리티
-  throttle,
   rafThrottle,
-  debounce,
+  throttleScroll,
+  createDebouncer,
   // DOM 유틸리티
   safeElementCheck,
 } from './utils';

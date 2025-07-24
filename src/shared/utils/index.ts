@@ -1,11 +1,55 @@
 /**
- * Shared Utils Barrel Export
- *
- * Phase 4: Utils 및 Helper 단순화
- * 핵심 유틸리티만 선별하여 export하고 중복을 제거합니다.
+ * @fileoverview Shared Utils - Phase 4 통합 완료
+ * @version 4.0.0 - Utils 통합 및 중복 제거 완료
  */
 
-// Core DOM and accessibility utilities (excluding gallery functions)
+// ================================
+// Primary Unified Utils
+// ================================
+
+// 모든 핵심 유틸리티들을 통합한 파일에서 가져옵니다
+export {
+  // Performance utilities
+  Debouncer,
+  createDebouncer,
+  rafThrottle,
+  throttleScroll,
+  measurePerformance,
+  measureAsyncPerformance,
+
+  // Style utilities
+  combineClasses,
+  toggleClass,
+  setCSSVariable,
+  setCSSVariables,
+  updateComponentState,
+  createThemedClassName,
+
+  // Scroll utilities
+  createScrollHandler,
+  findTwitterScrollContainer,
+  isGalleryElement,
+  createScrollDebouncer,
+  ensureGalleryScrollAvailable,
+  preventScrollPropagation,
+
+  // Deduplication utilities
+  removeDuplicates,
+  removeDuplicateStrings,
+  removeDuplicateMediaItems,
+
+  // Debug utilities
+  galleryDebugUtils,
+
+  // Unified export object
+  unifiedUtils,
+} from './unified-utils';
+
+// ================================
+// Specialized Utils (유지)
+// ================================
+
+// Core DOM and accessibility utilities
 export * from './core/accessibility';
 
 // Essential media utilities
@@ -14,20 +58,15 @@ export * from './media';
 // Pattern recognition utilities
 export * from './patterns';
 
-// Gallery-specific utilities (includes isInsideGallery functions)
-export * from './gallery-utils';
+// CSS selector validation
+export * from './css-selector-validator';
 
-// Performance utilities (throttle, debounce, monitoring)
-export * from './performance';
+// Error handling (delegates to core)
+export * from './error-handling';
 
-// Common utilities (deduplication, type safety helpers)
-export * from './common';
-
-// Performance utilities (throttle, debounce, monitoring)
-export * from './performance';
-
-// Common utilities (deduplication, type safety helpers)
-export * from './common';
+// ================================
+// Type Safety Helpers (from core)
+// ================================
 
 // Type safety utilities from infrastructure
 export {
@@ -53,24 +92,3 @@ export {
   buildSafeObject,
   removeUndefinedProperties,
 } from '@core/utils/type-safety-helpers';
-
-// Specialized utilities
-export * from './css-selector-validator';
-
-// Scroll utilities
-export {
-  createScrollHandler,
-  preventScrollPropagation,
-  findTwitterScrollContainer,
-  isGalleryElement,
-  createScrollDebouncer,
-} from './scroll';
-
-// Error handling (delegates to core)
-export * from './error-handling';
-
-// Style utilities
-export * from './styles';
-
-// Debug utilities
-export * from './debug/gallery-debug';

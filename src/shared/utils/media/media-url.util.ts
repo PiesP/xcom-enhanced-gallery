@@ -125,7 +125,6 @@ export function createMediaInfoFromImage(
       alt,
       width: imgElement.width || 1200,
       height: imgElement.height || 800,
-      order: index, // index 대신 order 사용
     };
   } catch (error) {
     logger.error('createMediaInfoFromImage: 이미지 정보 생성 실패:', error);
@@ -171,7 +170,6 @@ export function createMediaInfoFromVideo(
       alt: `Video ${index + 1} from tweet`,
       width: videoElement.videoWidth || 1920,
       height: videoElement.videoHeight || 1080,
-      order: index, // index 대신 order 사용
     };
   } catch (error) {
     logger.error('createMediaInfoFromVideo: 비디오 정보 생성 실패:', error);

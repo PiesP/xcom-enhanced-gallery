@@ -11,6 +11,10 @@ import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } fro
 export type MediaType = BaseMediaType;
 export type MediaQuality = BaseMediaQuality;
 
+// Re-export MediaInfo and MediaEntity from simplified module
+import type { MediaInfo, MediaEntity } from './media-entity.types';
+export type { MediaInfo, MediaEntity };
+
 /**
  * 브랜드 타입 기본 구조 (core 레이어 독립성을 위해 정의)
  */
@@ -22,52 +26,6 @@ type Brand<T, B> = T & { readonly __brand: B };
 export type MediaId = Brand<string, 'MediaId'>;
 
 /**
- * 기본 미디어 정보 인터페이스
- */
-export interface MediaInfo {
-  /** 미디어의 고유 식별자 */
-  id?: string | undefined;
-  /** 미디어의 기본 URL */
-  url: string;
-  /** 원본 해상도 미디어 URL */
-  originalUrl?: string | undefined;
-  /** 미디어 타입 (이미지, 비디오, GIF) */
-  type: MediaType;
-  /** 미디어 제목 (선택적) */
-  title?: string | undefined;
-  /** 다운로드용 파일명 */
-  filename?: string | undefined;
-  /** 파일 크기 (바이트) */
-  fileSize?: number | undefined;
-  /** 미디어 너비 (픽셀) */
-  width?: number | undefined;
-  /** 미디어 높이 (픽셀) */
-  height?: number | undefined;
-  /** 썸네일 URL (비디오의 경우) */
-  thumbnailUrl?: string | undefined;
-  /** 썸네일 URL (호환성을 위한 별칭) */
-  thumbnail?: string | undefined;
-  /** 대체 텍스트 (접근성) */
-  alt?: string | undefined;
-  /** 비디오 지속시간 (초) */
-  duration?: number | undefined;
-  /** 미디어 출처/소스 */
-  source?: string | undefined;
-  /** 미디어 순서 (컬렉션 내에서의 위치) */
-  order?: number | undefined;
-  // Tweet-specific properties
-  /** 트윗 작성자 사용자명 */
-  tweetUsername?: string | undefined;
-  /** 트윗 ID */
-  tweetId?: string | undefined;
-  /** 트윗 URL */
-  tweetUrl?: string | undefined;
-  // Metadata
-  /** 추가 메타데이터 */
-  metadata?: Record<string, unknown> | undefined;
-  /** 대체 URL 목록 */
-  urlAlternatives?: string[] | undefined;
-} /**
  * 미디어 아이템 타입 (MediaInfo와 동일한 구조)
  * 애플리케이션 전반에서 일관된 미디어 데이터 구조를 위해 사용
  */
@@ -162,7 +120,9 @@ export interface MediaCollection {
   items: MediaItem[];
   totalCount: number;
   currentIndex: number;
-} /**
+}
+
+/**
  * 미디어 페이지 타입
  */
 export type MediaPageType =

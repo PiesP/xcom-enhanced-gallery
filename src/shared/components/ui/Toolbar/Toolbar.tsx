@@ -14,7 +14,7 @@ import {
   getToolbarDataState,
   getToolbarClassName,
 } from '../../../hooks/useToolbarState';
-import { throttleScroll } from '@shared/utils/performance';
+import { throttleScroll } from '@shared/utils';
 import styles from './Toolbar.module.css';
 
 export interface ToolbarProps extends ImageFitCallbacks {

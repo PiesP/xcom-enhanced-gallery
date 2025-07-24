@@ -6,7 +6,7 @@
  * @version 3.1.0 - Simplified Architecture (3-Layer)
  */
 
-import { measurePerformance } from '@shared/utils/performance';
+import { measurePerformance } from '@shared/utils';
 import { logger } from '@core/logging/logger';
 import type { AppConfig } from '@core/types/core-types';
 import { ServiceManager } from '@core/services/ServiceManager';
@@ -226,7 +226,7 @@ async function initializeDevTools(): Promise<void> {
 
   try {
     // 갤러리 디버깅 유틸리티
-    const { galleryDebugUtils } = await import('@shared/utils/debug/gallery-debug');
+    const { galleryDebugUtils } = await import('@shared/utils');
     (globalThis as Record<string, unknown>).__XEG_DEBUG__ = galleryDebugUtils;
 
     // 서비스 진단 도구

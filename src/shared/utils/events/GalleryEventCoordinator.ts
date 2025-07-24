@@ -199,6 +199,7 @@ export class GalleryEventCoordinator {
       id: detectionResult.mediaUrl,
       url: detectionResult.mediaUrl,
       type: detectionResult.type,
+      filename: this.generateFilename(detectionResult.mediaUrl, detectionResult.type),
       metadata: {
         source: 'event-manager',
         confidence: detectionResult.confidence,
@@ -344,6 +345,29 @@ export class GalleryEventCoordinator {
       logger.info('✅ GalleryEventCoordinator cleaned up successfully');
     } catch (error) {
       logger.error('❌ GalleryEventCoordinator cleanup failed:', error);
+    }
+  }
+
+  /**
+   * 파일명 생성
+   */
+  private generateFilename(url: string, type: 'image' | 'video'): string {
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const lastSegment = pathname.split('/').pop() || 'media';
+
+      // 확장자가 없으면 타입에 따라 추가
+      if (!lastSegment.includes('.')) {
+        const ext = type === 'image' ? 'jpg' : 'mp4';
+        return `${lastSegment}.${ext}`;
+      }
+
+      return lastSegment;
+    } catch {
+      // URL 파싱 실패 시 기본 파일명
+      const ext = type === 'image' ? 'jpg' : 'mp4';
+      return `media_${Date.now()}.${ext}`;
     }
   }
 
