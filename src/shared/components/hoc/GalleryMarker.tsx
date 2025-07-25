@@ -9,7 +9,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { ComponentChildren, ComponentType } from '../../types/app.types';
+import type { ComponentChildren, ComponentType } from '@shared/types/app.types';
 import { getPreact } from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
 

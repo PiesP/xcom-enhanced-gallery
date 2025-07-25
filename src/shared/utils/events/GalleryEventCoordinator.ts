@@ -7,9 +7,9 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { GalleryUtils } from '../unified-utils';
-import { MediaClickDetector } from '../media/MediaClickDetector';
-import { isVideoControlElement } from '../../../constants';
+import { GalleryUtils } from '@shared/utils/unified-utils';
+import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
+import { isVideoControlElement } from '@/constants';
 import type { MediaInfo } from '@shared/types/media.types';
 
 /**

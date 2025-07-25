@@ -200,7 +200,7 @@ export interface GalleryInitOptions {
 // ========================================
 
 // Re-export from constants for better organization
-export { VIEW_MODES, isValidViewMode, normalizeViewMode, type ViewMode } from '../../../constants';
+export { VIEW_MODES, isValidViewMode, normalizeViewMode, type ViewMode } from '@/constants';
 
 // ========================================
 // CORE UTILITY TYPES

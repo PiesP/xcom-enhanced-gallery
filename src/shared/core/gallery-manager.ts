@@ -9,10 +9,10 @@
 // 새 코드에서는 GalleryService를 사용하세요.
 
 // Re-export all from GalleryService for backward compatibility
-export * from '../services/gallery/GalleryService';
+export * from '@shared/services/gallery/GalleryService';
 
 // Legacy alias for backward compatibility
-import { GalleryService } from '../services/gallery/GalleryService';
+import { GalleryService } from '@shared/services/gallery/GalleryService';
 
 /**
  * @deprecated Use GalleryService instead

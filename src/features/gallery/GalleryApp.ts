@@ -8,7 +8,7 @@
  * - 상태 관리는 기존 signals 활용
  */
 
-import { SERVICE_KEYS } from '../../constants';
+import { SERVICE_KEYS } from '@/constants';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { getService } from '@shared/services/ServiceManager';
 import { VideoControlService } from '@shared/services/media/VideoControlService';

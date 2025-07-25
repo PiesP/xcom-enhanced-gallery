@@ -8,7 +8,7 @@
 import { logger } from '@shared/logging/logger';
 import { undefinedToNull } from '@shared/utils/core/type-safety-helpers';
 
-import { TWITTER_API_CONFIG } from '../../../constants';
+import { TWITTER_API_CONFIG } from '@/constants';
 
 /**
  * Twitter API 응답 타입 정의

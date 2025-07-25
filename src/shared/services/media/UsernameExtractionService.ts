@@ -6,7 +6,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { SYSTEM_PAGES } from '../../../constants';
+import { SYSTEM_PAGES } from '@/constants';
 
 /**
  * 사용자명 추출 결과

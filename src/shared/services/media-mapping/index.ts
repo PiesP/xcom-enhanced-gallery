@@ -14,4 +14,4 @@ export type {
   MappingCacheEntry,
   MediaMappingStrategy,
   StrategyMetrics,
-} from '../../types/core/core-types';
+} from '@shared/types/core/core-types';

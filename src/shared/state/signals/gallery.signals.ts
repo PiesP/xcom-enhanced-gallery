@@ -10,7 +10,7 @@
 
 import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
-import { defaultLogger, type ILogger } from '../../services/core-services';
+import { defaultLogger, type ILogger } from '@shared/services/core-services';
 
 // Signal type
 type Signal<T> = {

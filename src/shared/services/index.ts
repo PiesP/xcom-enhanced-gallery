@@ -42,10 +42,10 @@ export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './galler
 export { type ILogger, ConsoleLogger, defaultLogger, ServiceDiagnostics } from './core-services';
 
 // 서비스 관리
-export { SERVICE_KEYS } from '../../constants';
+export { SERVICE_KEYS } from '@/constants';
 export { ServiceManager, serviceManager } from './ServiceManager';
 export { getService, registerCoreServices, type ServiceKey } from './core-services';
 
 // 필수 타입들
 export type { BaseService } from './ServiceManager';
-export type { ServiceTypeMapping } from '../types/core/core-types';
+export type { ServiceTypeMapping } from '@shared/types/core/core-types';

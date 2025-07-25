@@ -14,9 +14,9 @@
 // Logger Interface & Implementation
 // ================================
 
-import { SERVICE_KEYS } from '../../constants';
+import { SERVICE_KEYS } from '@/constants';
 import { logger } from '@shared/logging/logger';
-import type { ServiceTypeMapping } from '../types/core/core-types';
+import type { ServiceTypeMapping } from '@shared/types/core/core-types';
 import { registerCoreServices } from './service-initialization';
 
 // Type-safe service keys

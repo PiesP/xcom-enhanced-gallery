@@ -137,4 +137,4 @@ export interface SettingValidationResult {
  * 기본 설정 값들
  */
 // Re-export from constants for consistency
-export { DEFAULT_SETTINGS } from '../../../constants';
+export { DEFAULT_SETTINGS } from '@/constants';

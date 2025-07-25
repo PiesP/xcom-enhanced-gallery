@@ -6,14 +6,14 @@
  * @version 5.0.0 - 상태 기반 CSS 아키텍처 및 책임 분리
  */
 
-import type { ViewMode } from '../../../types';
-import type { ImageFitCallbacks } from '../../../types';
+import type { ViewMode } from '@shared/types';
+import type { ImageFitCallbacks } from '@shared/types';
 import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import {
   useToolbarState,
   getToolbarDataState,
   getToolbarClassName,
-} from '../../../hooks/useToolbarState';
+} from '@shared/hooks/useToolbarState';
 import { throttleScroll } from '@shared/utils';
 import styles from './Toolbar.module.css';
 

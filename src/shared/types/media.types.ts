@@ -13,7 +13,7 @@
 // ================================
 
 // Constants에서 re-export
-import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } from '../../constants';
+import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } from '@/constants';
 
 export type MediaType = BaseMediaType;
 export type MediaQuality = BaseMediaQuality;

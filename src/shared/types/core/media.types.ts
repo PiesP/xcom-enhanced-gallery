@@ -7,10 +7,7 @@
  */
 
 // Re-export from constants to avoid duplication
-import type {
-  MediaType as BaseMediaType,
-  MediaQuality as BaseMediaQuality,
-} from '../../../constants';
+import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } from '@/constants';
 export type MediaType = BaseMediaType;
 export type MediaQuality = BaseMediaQuality;
 

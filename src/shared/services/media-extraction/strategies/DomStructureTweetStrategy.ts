@@ -3,7 +3,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { parseUsernameFast } from '../../media/UsernameExtractionService';
+import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {

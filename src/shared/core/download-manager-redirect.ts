@@ -5,8 +5,8 @@
  */
 
 // BulkDownloadService를 DownloadManager로 alias
-export { BulkDownloadService as DownloadManager } from '../services/BulkDownloadService';
+export { BulkDownloadService as DownloadManager } from '@shared/services/BulkDownloadService';
 
 // 인스턴스도 alias
-import { BulkDownloadService } from '../services/BulkDownloadService';
+import { BulkDownloadService } from '@shared/services/BulkDownloadService';
 export const downloadManager = BulkDownloadService.getInstance();

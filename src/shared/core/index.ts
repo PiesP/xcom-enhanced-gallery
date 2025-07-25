@@ -13,21 +13,21 @@
 export {
   MediaService as MediaExtractor,
   mediaService as mediaExtractor,
-} from '../services/MediaService';
-export { extractUsername, parseUsernameFast } from '../services/MediaService';
-export type { UsernameExtractionResult } from '../services/MediaService';
+} from '@shared/services/MediaService';
+export { extractUsername, parseUsernameFast } from '@shared/services/MediaService';
+export type { UsernameExtractionResult } from '@shared/services/MediaService';
 
 // 갤러리 서비스로 교체됨
 export {
   GalleryService as GalleryManager,
   galleryService as galleryManager,
-} from '../services/gallery/GalleryService';
+} from '@shared/services/gallery/GalleryService';
 export type {
   GalleryInitConfig,
   OpenGalleryOptions,
   NavigationResult,
   GalleryInfo,
-} from '../services/gallery/GalleryService';
+} from '@shared/services/gallery/GalleryService';
 
 // 다운로드 서비스로 교체됨
 export { DownloadManager, downloadManager } from './download-manager-redirect';
@@ -37,7 +37,7 @@ export type {
   DownloadResult,
   DownloadInfo,
   SingleDownloadOptions,
-} from '../services/BulkDownloadService';
+} from '@shared/services/BulkDownloadService';
 
 // 통합 상태 관리
 export * from './app-state';
