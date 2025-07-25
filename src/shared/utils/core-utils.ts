@@ -8,7 +8,7 @@
  * - 에러 처리 위임
  */
 
-import { safeParseInt } from '@core/utils/type-safety-helpers';
+import { safeParseInt } from '@shared/utils/core/type-safety-helpers';
 
 // ================================
 // 접근성 유틸리티 (WCAG 2.1 기준)
@@ -267,14 +267,14 @@ export {
   createWithOptionalProperties,
   buildSafeObject,
   removeUndefinedProperties,
-} from '@core/utils/type-safety-helpers';
+} from '@shared/utils/core/type-safety-helpers';
 
 // ================================
 // 에러 처리 (위임)
 // ================================
 
 // Core 레이어의 통합 에러 핸들러 re-export
-export { safeAsync, safeSync, handleError } from '@core/error/ErrorHandler';
+export { safeAsync, safeSync, handleError } from '@shared/error/ErrorHandler';
 
 /**
  * 안전한 비동기 작업 결과 인터페이스

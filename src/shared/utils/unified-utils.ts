@@ -10,8 +10,8 @@
  * - 중복 제거 유틸리티
  */
 
-import { logger } from '@core/logging/logger';
-import type { MediaInfo } from '@core/types/media.types';
+import { logger } from '@shared/logging/logger';
+import type { MediaInfo } from '@shared/types/core/media.types';
 
 // ================================
 // Performance Utilities

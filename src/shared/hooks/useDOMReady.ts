@@ -6,8 +6,8 @@
  * @description DOM 렌더링 완료를 감지하는 커스텀 훅
  */
 
-import { getPreactHooks } from '@core/external/vendors';
-import { logger } from '@core/logging/logger';
+import { getPreactHooks } from '@shared/external/vendors';
+import { logger } from '@shared/logging/logger';
 
 /**
  * DOM 렌더링 완료를 감지하는 훅

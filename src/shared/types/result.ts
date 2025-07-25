@@ -7,7 +7,7 @@
  */
 
 // Core 레이어에서 Result 타입들을 가져와서 re-export
-export type { Result, AsyncResult, Option } from '@core/types/core-types';
+export type { Result, AsyncResult, Option } from '@shared/types/core/core-types';
 
 export {
   success,
@@ -19,4 +19,4 @@ export {
   isFailure,
   chain,
   map,
-} from '@core/types/core-types';
+} from '@shared/types/core/core-types';

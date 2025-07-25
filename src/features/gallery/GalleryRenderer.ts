@@ -11,7 +11,7 @@
 import type {
   GalleryRenderOptions,
   GalleryRenderer as GalleryRendererInterface,
-} from '@core/interfaces/gallery.interfaces';
+} from '@shared/interfaces/gallery.interfaces';
 import {
   closeGallery,
   galleryState,
@@ -21,12 +21,12 @@ import {
   setViewMode,
   navigatePrevious,
   navigateNext,
-} from '@core/state/signals/gallery.signals';
-import type { MediaInfo } from '@core/types/media.types';
+} from '@shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@shared/types/core/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
 import './styles/gallery-global.css';
-import { logger } from '@core/logging/logger';
-import { getPreact } from '@core/external/vendors';
+import { logger } from '@shared/logging/logger';
+import { getPreact } from '@shared/external/vendors';
 
 /**
  * 갤러리 정리 관리자
@@ -193,7 +193,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       setLoading(true);
 
       // 다운로드 서비스 - Core BulkDownloadService 직접 사용
-      const { BulkDownloadService } = await import('@core/services/BulkDownloadService');
+      const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
 
       const downloadService = BulkDownloadService.getInstance();
       const state = galleryState.value;

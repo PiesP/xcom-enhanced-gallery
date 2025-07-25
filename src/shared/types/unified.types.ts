@@ -12,14 +12,14 @@ import type {
   PreactHooksAPI,
   PreactSignalsAPI,
   MotionAPI,
-} from '@core/external/vendors';
+} from '@shared/external/vendors';
 
 // ================================
 // FILENAME TYPES (from filename.types.ts)
 // ================================
 
 // Infrastructure 레이어에서 실제 구현에 사용되는 타입들을 re-export
-export type { FilenameOptions, ZipFilenameOptions } from '@core/media/FilenameService';
+export type { FilenameOptions, ZipFilenameOptions } from '@shared/media/FilenameService';
 
 /**
  * 파일명 검증 결과
@@ -213,4 +213,4 @@ export type {
   CancelableFunction,
   LoadingState,
   ErrorInfo,
-} from '../../core/types/core-types';
+} from './core/core-types';

@@ -113,7 +113,7 @@ describe('Architecture Dependency Rules', () => {
           imp =>
             imp.startsWith('@features/') ||
             imp.startsWith('@shared/') ||
-            imp.startsWith('@core/') ||
+            inp.startsWith('@shared/') ||
             imp.startsWith('@app/') ||
             imp.startsWith('../features/') ||
             imp.startsWith('../shared/') ||
@@ -206,7 +206,7 @@ describe('Architecture Dependency Rules', () => {
             }
 
             // vendors import가 있는지 확인
-            const hasVendorsImport = content.includes('@core/external/vendors');
+            const hasVendorsImport = content.includes('@shared/external/vendors');
             if (!hasVendorsImport) {
               console.warn(`❌ ${file}에서 vendor getter 사용하지만 import 없음`, {
                 pattern: pattern.source,

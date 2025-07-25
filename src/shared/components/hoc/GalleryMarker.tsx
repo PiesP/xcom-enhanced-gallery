@@ -8,10 +8,10 @@
  * @version 1.0.0
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@shared/logging/logger';
 import type { ComponentChildren, ComponentType } from '../../types/global.types';
-import { getPreact } from '@core/external/vendors';
-import type { VNode } from '@core/external/vendors';
+import { getPreact } from '@shared/external/vendors';
+import type { VNode } from '@shared/external/vendors';
 
 /**
  * 갤러리 마킹 옵션

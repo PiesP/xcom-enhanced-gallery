@@ -4,11 +4,11 @@
  * @version 1.0.0
  */
 
-import { getPreact } from '@core/external/vendors';
-import { logger } from '@core/logging';
-import type { MediaInfo } from '@core/types/media.types';
-import type { Cleanupable } from '@core/types/core-types';
-import { namespacedDesignSystem } from '@core/managers/NamespacedDesignSystem';
+import { getPreact } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
+import type { MediaInfo } from '@shared/types/core/media.types';
+import type { Cleanupable } from '@shared/types/core/core-types';
+import { namespacedDesignSystem } from '@shared/managers/NamespacedDesignSystem';
 import { IsolatedGalleryContainer } from '@shared/components/isolation/IsolatedGalleryContainer';
 import { VerticalGalleryView } from '../components/vertical-gallery-view/VerticalGalleryView';
 

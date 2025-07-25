@@ -16,7 +16,7 @@
  * @module useToolbarState
  */
 
-import { getPreactHooks } from '@core/external/vendors';
+import { getPreactHooks } from '@shared/external/vendors';
 
 /**
  * 툴바 상태 인터페이스

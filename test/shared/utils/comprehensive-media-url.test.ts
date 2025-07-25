@@ -5,10 +5,20 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// @core/dom 모킹
-vi.mock('@core/dom', () => ({
+// @shared/dom 모킹
+vi.mock('@shared/dom', () => ({
   cachedQuerySelectorAll: vi.fn(),
 }));
+
+/**
+ * Media URL Utility 포괄적 테스트
+ * @description 트위터 미디어 URL 처리 및 변환 기능의 통합 테스트
+ * @fileoverview 실제 사용 시나리오를 기반으로 한 종합 테스트
+ */
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { getOriginalImageUrl, getVideoThumbnailUrl } from '@shared/utils/media/media-url.util';
+import { cachedQuerySelectorAll } from '@shared/dom';
 
 import {
   getMediaUrlsFromTweet,
@@ -17,7 +27,6 @@ import {
   isValidMediaUrl,
   extractOriginalImageUrl,
 } from '@shared/utils/media/media-url.util';
-import { cachedQuerySelectorAll } from '@core/dom';
 
 // DOM 환경 모킹
 const createMockDocument = () => {

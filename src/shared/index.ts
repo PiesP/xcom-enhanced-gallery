@@ -1,7 +1,7 @@
 /**
  * @fileoverview Shared Layer Exports
- * @version 2.0.0 - Phase 2B Step 2 Optimization
- * @description 공통 사용 컴포넌트, 유틸리티, 타입들의 통합 export
+ * @version 3.0.0 - Phase 4: Core 통합 완료
+ * @description 모든 공통 기능을 통합한 Shared 레이어
  */
 
 // 핵심 UI 컴포넌트들
@@ -13,6 +13,21 @@ export * from './components/isolation';
 // HOC 컴포넌트들
 export * from './components/hoc';
 
+// 서비스들 (기존 Core에서 이동)
+export * from './services';
+
+// 상태 관리 (기존 Core에서 이동)
+export * from './state';
+
+// 로깅 시스템 (기존 Core에서 이동)
+export * from './logging';
+
+// 관리자들 (기존 Core에서 이동)
+export * from './managers';
+
+// 메모리 관리 (기존 Core에서 이동)
+export * from './memory';
+
 // 핵심 유틸리티들 (주요 기능만)
 export {
   // 접근성 & DOM 유틸리티
@@ -23,23 +38,18 @@ export {
   meetsWCAGAA,
   meetsWCAGAAA,
   parseColor,
-  // 미디어 유틸리티
   imageFilter,
-  // 패턴 유틸리티
   extractTweetInfoFromUrl,
-  // 성능 유틸리티
   rafThrottle,
   throttleScroll,
   createDebouncer,
-  // DOM 유틸리티
   safeElementCheck,
 } from './utils';
 
-// 갤러리 유틸리티 (별도 import 필요)
 export { GalleryUtils } from './utils/gallery-utils';
 export { isInsideGallery } from './utils/dom-utils';
 
-// 핵심 타입들
+// 타입들
 export type {
   BaseComponentProps,
   GalleryTheme,

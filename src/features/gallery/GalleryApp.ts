@@ -9,14 +9,14 @@
  */
 
 import { SERVICE_KEYS } from '../../constants';
-import type { GalleryRenderer } from '@core/interfaces/gallery.interfaces';
-import { getService } from '@core/services/ServiceManager';
-import { VideoControlService } from '@core/services/media/VideoControlService';
-import { galleryState, openGallery, closeGallery } from '@core/state/signals/gallery.signals';
-import type { MediaInfo } from '@core/types/media.types';
-import { logger } from '@core/logging/logger';
-import { MediaService } from '@core/services/MediaService';
-import { UIService } from '@core/services/UIService';
+import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
+import { getService } from '@shared/services/ServiceManager';
+import { VideoControlService } from '@shared/services/media/VideoControlService';
+import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@shared/types/core/media.types';
+import { logger } from '@shared/logging/logger';
+import { MediaService } from '@shared/services/MediaService';
+import { UIService } from '@shared/services/UIService';
 import { unmountIsolatedGallery } from '@shared/components/isolation/IsolatedGalleryRoot';
 
 /**

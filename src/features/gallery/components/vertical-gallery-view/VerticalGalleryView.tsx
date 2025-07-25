@@ -11,13 +11,13 @@
  * - 일관된 사용자 경험 제공
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@shared/logging/logger';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types';
-import { galleryState, navigateToItem } from '@core/state/signals/gallery.signals';
-import { getPreactHooks } from '@core/external/vendors';
-import { stringWithDefault } from '@core/utils/type-safety-helpers';
+import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
+import { getPreactHooks } from '@shared/external/vendors';
+import { stringWithDefault } from '@shared/utils/core/type-safety-helpers';
 import type { MouseEvent } from 'preact/compat';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
