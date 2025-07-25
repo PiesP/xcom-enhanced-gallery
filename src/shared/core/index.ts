@@ -1,36 +1,43 @@
 /**
- * @fileoverview Shared Core Layer
- * @description Phase 2: 통합된 핵심 서비스들
- * @version 2.0.0 - Layer Simplification
+ * @fileoverview Shared Core Layer - DEPRECATED
+ * @description Phase 2: 통합된 핵심 서비스들이 services 레이어로 이전됨
+ * @version 2.0.0 - DEPRECATED - Use services layer instead
+ * @deprecated Use services layer instead
  */
 
 // ====================================
-// 핵심 통합 서비스들
+// DEPRECATED: 모든 기능이 services 레이어로 이전됨
 // ====================================
 
-// 미디어 추출 서비스
-export { MediaExtractor, mediaExtractor } from './media-extractor';
-export { extractUsername, parseUsernameFast } from './media-extractor';
-export type { UsernameExtractionResult } from './media-extractor';
+// 통합된 미디어 서비스로 교체됨
+export {
+  MediaService as MediaExtractor,
+  mediaService as mediaExtractor,
+} from '../services/MediaService';
+export { extractUsername, parseUsernameFast } from '../services/MediaService';
+export type { UsernameExtractionResult } from '../services/MediaService';
 
-// 갤러리 관리 서비스
-export { GalleryManager, galleryManager } from './gallery-manager';
+// 갤러리 서비스로 교체됨
+export {
+  GalleryService as GalleryManager,
+  galleryService as galleryManager,
+} from '../services/gallery/GalleryService';
 export type {
   GalleryInitConfig,
   OpenGalleryOptions,
   NavigationResult,
   GalleryInfo,
-} from './gallery-manager';
+} from '../services/gallery/GalleryService';
 
-// 다운로드 관리 서비스
-export { DownloadManager, downloadManager } from './download-manager';
+// 다운로드 서비스로 교체됨
+export { DownloadManager, downloadManager } from './download-manager-redirect';
 export type {
   BulkDownloadOptions,
   DownloadProgress,
   DownloadResult,
   DownloadInfo,
   SingleDownloadOptions,
-} from './download-manager';
+} from '../services/BulkDownloadService';
 
 // 통합 상태 관리
 export * from './app-state';

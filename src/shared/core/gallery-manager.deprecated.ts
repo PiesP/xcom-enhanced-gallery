@@ -8,18 +8,4 @@
 // DEPRECATED: 이 파일의 모든 기능은 GalleryService로 이전되었습니다.
 // 새 코드에서는 GalleryService를 사용하세요.
 
-// Re-export all from GalleryService for backward compatibility
 export * from '../services/gallery/GalleryService';
-
-// Legacy alias for backward compatibility
-import { GalleryService } from '../services/gallery/GalleryService';
-
-/**
- * @deprecated Use GalleryService instead
- */
-export const GalleryManager = GalleryService;
-
-/**
- * @deprecated Use GalleryService.getInstance() instead
- */
-export const galleryManager = GalleryService.getInstance();

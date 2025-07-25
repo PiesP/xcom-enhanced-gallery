@@ -23,6 +23,12 @@ export interface DownloadProgress {
   filename?: string;
 }
 
+export interface SingleDownloadOptions {
+  filename?: string;
+  onProgress?: (progress: number) => void;
+  signal?: AbortSignal;
+}
+
 export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;
   signal?: AbortSignal;
