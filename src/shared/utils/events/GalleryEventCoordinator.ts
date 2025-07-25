@@ -7,7 +7,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { GalleryUtils } from '../gallery-utils';
+import { GalleryUtils } from '../unified-utils';
 import { MediaClickDetector } from '../media/MediaClickDetector';
 import { isVideoControlElement } from '../../../constants';
 import type { MediaInfo } from '../../types/core/media.types';

@@ -31,6 +31,11 @@ export interface ToolbarProps extends ImageFitCallbacks {
   onDownloadAll: () => void;
   onClose: () => void;
   onOpenSettings?: () => void;
+  // Fit 모드 핸들러들
+  onFitOriginal?: (event?: Event) => void;
+  onFitWidth?: (event?: Event) => void;
+  onFitHeight?: (event?: Event) => void;
+  onFitContainer?: (event?: Event) => void;
 }
 
 // 호환성을 위한 별칭

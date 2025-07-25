@@ -46,7 +46,7 @@ export {
   safeElementCheck,
 } from './utils';
 
-export { GalleryUtils } from './utils/gallery-utils';
+export { GalleryUtils } from './utils/unified-utils';
 export { isInsideGallery } from './utils/dom-utils';
 
 // 타입들

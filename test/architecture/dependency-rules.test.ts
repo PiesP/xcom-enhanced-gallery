@@ -181,8 +181,8 @@ describe('Architecture Dependency Rules', () => {
         const filePath = file.replace(/\\/g, '/');
 
         const isVendorDefinitionFile =
-          filePath === 'src/core/external/vendors/vendor-manager.ts' ||
-          filePath === 'src/core/external/vendors/vendor-api.ts';
+          filePath === 'src/shared/external/vendors/vendor-manager.ts' ||
+          filePath === 'src/shared/external/vendors/vendor-api.ts';
 
         // vendors getter 사용 패턴 검사
         const vendorGetterPatterns = [
@@ -254,7 +254,7 @@ describe('Architecture Dependency Rules', () => {
 
     it('should have proper barrel exports', async () => {
       const indexFiles = await glob('src/**/index.ts', { ignore: ['**/*.test.*', '**/*.spec.*'] });
-      const failedFiles: { file: string; reason: string; problematicLines: string[] }[] = [];
+      const failedFiles: Array<{ file: string; reason: string; problematicLines: string[] }> = [];
 
       // 특수한 경우를 허용할 파일들 (배럴 export가 아닌 실제 구현/로더 파일들)
       const specialCaseFiles = [

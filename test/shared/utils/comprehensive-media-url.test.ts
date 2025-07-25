@@ -1,22 +1,16 @@
 /**
  * Media URL Utility 포괄적 테스트
- * 실제 비즈니스 로직과 함수들을 테스트
+ * @description 트위터 미디어 URL 처리 및 변환 기능의 통합 테스트
+ * @fileoverview 실제 사용 시나리오를 기반으로 한 종합 테스트
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // @shared/dom 모킹
 vi.mock('@shared/dom', () => ({
   cachedQuerySelectorAll: vi.fn(),
 }));
 
-/**
- * Media URL Utility 포괄적 테스트
- * @description 트위터 미디어 URL 처리 및 변환 기능의 통합 테스트
- * @fileoverview 실제 사용 시나리오를 기반으로 한 종합 테스트
- */
-
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { getOriginalImageUrl, getVideoThumbnailUrl } from '@shared/utils/media/media-url.util';
 import { cachedQuerySelectorAll } from '@shared/dom';
 
@@ -37,7 +31,7 @@ const createMockDocument = () => {
     querySelector: vi.fn(),
     querySelectorAll: vi.fn(),
   };
-  return mockDoc as any;
+  return mockDoc as Document;
 };
 
 const createMockImageElement = (src: string): HTMLImageElement => {

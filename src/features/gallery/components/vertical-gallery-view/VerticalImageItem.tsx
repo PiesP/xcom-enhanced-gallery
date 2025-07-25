@@ -11,7 +11,7 @@ import { withGalleryItem, type GalleryComponentProps } from '@shared/components/
 import { Button } from '@shared/components/ui/Button/Button';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/core/media.types';
-import type { VNode } from '@shared/types/global.types';
+import type { VNode } from '@shared/types/app.types';
 import { getPreactHooks } from '@shared/external/vendors';
 import styles from './VerticalImageItem.module.css';
 

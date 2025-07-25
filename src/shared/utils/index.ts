@@ -116,7 +116,7 @@ export {
   safeSync,
   handleError,
   type SafeOperationResult,
-} from './core-utils';
+} from './unified-utils';
 
 // ================================
 // 전문화된 유틸리티들 (유지)
