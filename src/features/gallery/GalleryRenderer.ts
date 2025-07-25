@@ -22,7 +22,7 @@ import {
   navigatePrevious,
   navigateNext,
 } from '@shared/state/signals/gallery.signals';
-import type { MediaInfo } from '@shared/types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
 import './styles/gallery-global.css';
 import { logger } from '@shared/logging/logger';
@@ -258,7 +258,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     if (renderOptions?.viewMode) {
       // ViewMode를 setViewMode에서 허용하는 타입으로 변환
-      const mode = renderOptions.viewMode === 'verticalList' ? 'vertical' : 'vertical';
+      const mode = renderOptions.viewMode === 'horizontal' ? 'horizontal' : 'vertical';
       setViewMode(mode);
     }
 

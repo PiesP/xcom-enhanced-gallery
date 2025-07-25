@@ -18,7 +18,7 @@ import {
   navigateToItem as navigateToIndex,
   openGallery,
 } from '../../state/signals/gallery.signals';
-import type { MediaInfo } from '../../types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 import type { ViewMode } from '../../types/core/core-types';
 import { isVendorsInitialized } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';

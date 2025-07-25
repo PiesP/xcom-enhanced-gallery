@@ -5,7 +5,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { parseUsernameFast } from '../../media/UsernameExtractionService';
-import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/core/extraction.types';
+import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 /**
  * URL 기반 트윗 추출 전략

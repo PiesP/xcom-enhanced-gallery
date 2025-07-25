@@ -7,7 +7,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { safeParseInt, undefinedToNull } from '@shared/utils';
-import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/core/media.types';
+import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
 
 /**
  * 파일명 생성 옵션

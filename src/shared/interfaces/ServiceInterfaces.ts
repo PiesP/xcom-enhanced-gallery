@@ -6,7 +6,7 @@
  * core 레이어에서 features/shared 레이어의 구현체에 의존하지 않도록 추상화
  */
 
-import type { MediaInfo } from '@shared/types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * 갤러리 다운로드 서비스 인터페이스

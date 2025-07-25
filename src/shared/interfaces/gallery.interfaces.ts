@@ -6,14 +6,10 @@
  * 의존성 규칙: features → shared → core → infrastructure
  */
 
-import type { MediaInfo } from '@shared/types/core/media.types';
-import type { ViewMode } from '@shared/types/core/core-types';
-import type {
-  MediaExtractionOptions,
-  MediaExtractor,
-  TweetInfo,
-} from '@shared/types/core/extraction.types';
-import type { MediaExtractionResult } from '@shared/types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
+import type { ViewMode } from '@shared/types/app.types';
+import type { MediaExtractionOptions, MediaExtractor, TweetInfo } from '@shared/types/media.types';
+import type { MediaExtractionResult } from '@shared/types/media.types';
 
 // Re-export extraction types for backward compatibility
 export type { MediaExtractionOptions, MediaExtractionResult, MediaExtractor, TweetInfo };

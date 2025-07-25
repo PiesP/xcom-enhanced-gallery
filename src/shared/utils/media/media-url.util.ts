@@ -10,7 +10,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { parseUsernameFast } from '../../services/media/UsernameExtractionService';
-import type { MediaInfo } from '@shared/types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '@shared/dom';
 
 /**

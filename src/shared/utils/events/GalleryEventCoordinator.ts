@@ -10,7 +10,7 @@ import { logger } from '@shared/logging/logger';
 import { GalleryUtils } from '../unified-utils';
 import { MediaClickDetector } from '../media/MediaClickDetector';
 import { isVideoControlElement } from '../../../constants';
-import type { MediaInfo } from '../../types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * 이벤트 처리 결과

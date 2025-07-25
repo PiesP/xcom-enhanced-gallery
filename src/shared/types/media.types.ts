@@ -34,7 +34,7 @@ export type MediaId = Brand<string, 'MediaId'>;
 export interface MediaInfo {
   id: string;
   url: string;
-  originalUrl?: string;
+  originalUrl?: string | undefined;
   type: 'image' | 'video' | 'gif';
   filename: string;
   fileSize?: number;
@@ -61,6 +61,166 @@ export interface MediaEntity extends MediaInfo {
  */
 export type MediaItem = MediaInfo;
 
+/**
+ * 파일명 생성용 미디어 정보 (별칭)
+ */
+export type MediaInfoForFilename = MediaInfo;
+export type MediaItemForFilename = MediaInfo;
+
+// ================================
+// 추출 관련 타입들 (extraction.types.ts 통합)
+// ================================
+
+/**
+ * 트윗 정보 인터페이스
+ */
+export interface TweetInfo {
+  /** 트윗 ID */
+  tweetId: string;
+  /** 사용자명 */
+  username: string;
+  /** 트윗 URL */
+  tweetUrl: string;
+  /** 추출 방법 */
+  extractionMethod: string;
+  /** 추출 신뢰도 (0-1) */
+  confidence: number;
+  /** 추가 메타데이터 */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * 미디어 추출 옵션
+ */
+export interface MediaExtractionOptions {
+  /** 비디오 포함 여부 */
+  includeVideos?: boolean;
+  /** 타임아웃 (밀리초) */
+  timeoutMs?: number;
+  /** API 폴백 사용 */
+  useApiFallback?: boolean;
+  /** 백그라운드 로딩 활성화 */
+  enableBackgroundLoading?: boolean;
+  /** 유효성 검사 활성화 */
+  enableValidation?: boolean;
+  /** 최대 재시도 횟수 */
+  maxRetries?: number;
+}
+
+/**
+ * 추출 에러 코드
+ */
+export enum ExtractionErrorCode {
+  ELEMENT_NOT_FOUND = 'ELEMENT_NOT_FOUND',
+  INVALID_ELEMENT = 'INVALID_ELEMENT',
+  NO_MEDIA_FOUND = 'NO_MEDIA_FOUND',
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  TIMEOUT = 'TIMEOUT',
+  INVALID_URL = 'INVALID_URL',
+  PERMISSION_DENIED = 'PERMISSION_DENIED',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+}
+
+/**
+ * 추출 에러 클래스
+ */
+export class ExtractionError extends Error {
+  constructor(
+    public readonly code: ExtractionErrorCode,
+    message: string,
+    public readonly originalError?: Error
+  ) {
+    super(message);
+    this.name = 'ExtractionError';
+  }
+}
+
+/**
+ * 미디어 추출 결과
+ */
+export interface MediaExtractionResult {
+  mediaItems: MediaInfo[];
+  success: boolean;
+  errors?: ExtractionError[];
+  clickedIndex?: number | undefined; // 갤러리에서 사용되는 클릭된 인덱스
+  tweetInfo?: TweetInfo | null | undefined; // 추출된 트윗 정보
+  metadata?: {
+    extractionMethod?: string;
+    extractionTime?: number;
+    source?: string;
+    extractionId?: string;
+    extractedAt?: number; // 추출 시간
+    sourceType?: string; // 소스 타입
+    error?: string; // 에러 메시지
+    [key: string]: unknown; // 추가 메타데이터 허용
+  };
+}
+
+/**
+ * 트윗 정보 추출 전략 인터페이스
+ */
+export interface TweetInfoExtractionStrategy {
+  /** 전략 이름 */
+  readonly name: string;
+  /** 전략 우선순위 (낮을수록 높은 우선순위) */
+  readonly priority: number;
+
+  /**
+   * 트윗 정보 추출
+   */
+  extract(element: HTMLElement): Promise<TweetInfo | null>;
+}
+
+/**
+ * API 추출기 인터페이스
+ */
+export interface APIExtractor {
+  /**
+   * API를 통한 미디어 추출
+   */
+  extract(
+    tweetInfo: TweetInfo,
+    clickedElement: HTMLElement,
+    options: MediaExtractionOptions,
+    extractionId: string
+  ): Promise<MediaExtractionResult>;
+}
+
+/**
+ * 백업 추출 전략 인터페이스
+ */
+export interface FallbackExtractionStrategy {
+  /**
+   * 백업 추출 실행
+   */
+  extract(
+    tweetContainer: HTMLElement,
+    clickedElement: HTMLElement,
+    tweetInfo?: TweetInfo
+  ): Promise<MediaExtractionResult>;
+}
+
+/**
+ * 미디어 추출기 인터페이스
+ */
+export interface MediaExtractor {
+  /**
+   * 클릭된 요소에서 미디어 추출
+   */
+  extractFromClickedElement(
+    element: HTMLElement,
+    options?: MediaExtractionOptions
+  ): Promise<MediaExtractionResult>;
+
+  /**
+   * 컨테이너에서 모든 미디어 추출
+   */
+  extractAllFromContainer(
+    container: HTMLElement,
+    options?: MediaExtractionOptions
+  ): Promise<MediaExtractionResult>;
+}
+
 // ================================
 // 다운로드 관련 타입들
 // ================================
@@ -74,481 +234,118 @@ export interface DownloadMediaItem extends MediaInfo {
 }
 
 /**
- * URL과 파일명 쌍
+ * URL과 파일명 쌍을 나타내는 인터페이스
  */
 export interface UrlWithFilename {
+  /** 다운로드할 파일의 URL */
   url: string;
+  /** 파일명 */
   filename: string;
 }
 
 /**
- * 파일명이 포함된 미디어 정보 (다운로드용)
+ * 일괄 다운로드 옵션
  */
-export interface MediaInfoWithFilename extends MediaInfo {
-  id: string;
-  originalUrl: string;
-  filename: string;
+export interface BulkDownloadOptions {
+  /** 병렬 다운로드 수 제한 */
+  concurrency?: number;
+  /** 다운로드 지연 시간 (ms) */
+  delay?: number;
+  /** ZIP 파일로 압축할지 여부 */
+  createZip?: boolean;
+  /** ZIP 파일명 (createZip이 true일 때) */
+  zipFilename?: string;
 }
-
-/**
- * FilenameService용 미디어 정보
- */
-export interface MediaItemForFilename {
-  id?: string | undefined;
-  url: string;
-  originalUrl?: string | undefined;
-  type: MediaType;
-  filename?: string | undefined;
-  tweetUsername?: string | undefined;
-  tweetId?: string | undefined;
-}
-
-export interface MediaInfoForFilename extends MediaItemForFilename {}
 
 // ================================
 // 갤러리 관련 타입들
 // ================================
 
 /**
- * 갤러리 열기 이벤트
+ * 갤러리 렌더링 옵션
  */
-export interface GalleryOpenEventDetail {
-  media: MediaItem[];
-  startIndex: number;
-}
-
-export interface GalleryOpenEvent extends CustomEvent<GalleryOpenEventDetail> {
-  type: 'xeg:gallery:open' | 'xeg:openGallery';
-}
-
-export interface GalleryCloseEvent extends CustomEvent<void> {
-  type: 'xeg:gallery:close';
+export interface GalleryRenderOptions {
+  viewMode: 'horizontal' | 'vertical';
+  enableKeyboardNavigation?: boolean;
+  showDownloadButton?: boolean;
+  showFilenames?: boolean;
+  autoPlay?: boolean;
 }
 
 /**
- * 미디어 컬렉션
+ * 미디어 매핑 정보 (통합 버전)
  */
-export interface MediaCollection {
-  items: MediaItem[];
-  totalCount: number;
-  currentIndex: number;
+export interface MediaMapping {
+  /** 페이지 타입 */
+  pageType: MediaPageType;
+  /** 미디어 URL들 */
+  mediaUrls: string[];
+  /** 트윗 ID (기존 호환성) */
+  tweetId?: string | undefined;
+  /** 미디어 인덱스 (기존 호환성) */
+  mediaIndex?: number | undefined;
+  /** 신뢰도 점수 (기존 호환성) */
+  confidence?: number;
+  /** 매핑 방법 (기존 호환성) */
+  method?: string;
+  /** 메타데이터 */
+  metadata?: Record<string, unknown>;
 }
-
-// ================================
-// 추출 관련 타입들
-// ================================
 
 /**
  * 미디어 페이지 타입
  */
-export type MediaPageType =
-  | 'mediaGrid'
-  | 'photoDetail'
-  | 'videoDetail'
-  | 'mediaTimeline'
-  | 'unknown';
+export type MediaPageType = 'photo' | 'video' | 'gif' | 'mixed' | 'photoDetail' | 'videoDetail';
 
 /**
- * 추출 전략
+ * 미디어 매핑 전략 인터페이스
  */
-export type ExtractionStrategy =
-  | 'api-first'
-  | 'dom-only'
-  | 'hybrid'
-  | 'multi-strategy'
-  | 'conservative';
+export interface MediaMappingStrategy {
+  /** 전략의 고유 이름 */
+  readonly name: string;
 
-/**
- * 추출 신뢰도
- */
-export interface ExtractionConfidence {
-  overall: number;
-  urlMatching: number;
-  domStructure: number;
-  metadata: number;
-  apiData?: number;
+  /** 우선순위 (낮을수록 먼저 실행) */
+  readonly priority: number;
+
+  /**
+   * 미디어 매핑 실행
+   * @param clickedElement 클릭된 요소
+   * @param pageType 페이지 타입
+   * @returns 매핑 결과 또는 null
+   */
+  execute(clickedElement: HTMLElement, pageType: MediaPageType): Promise<MediaMapping | null>;
 }
 
-/**
- * 미디어 매핑
- */
-export interface MediaMapping {
-  tweetId: string | undefined;
-  mediaIndex?: number | undefined;
-  confidence: ExtractionConfidence;
-  method: string;
-  metadata?: Record<string, unknown> | undefined;
-}
+// ================================
+// 유틸리티 타입들
+// ================================
 
 /**
- * 검증 결과
+ * 미디어 검증 결과
  */
-export interface ValidationResult {
+export interface MediaValidationResult {
   isValid: boolean;
-  errors: ValidationIssue[];
-  warnings: ValidationIssue[];
-  confidence: number;
-}
-
-export interface ValidationIssue {
-  code: string;
-  message: string;
-  severity: 'error' | 'warning';
-  field?: string;
+  errors: string[];
+  warnings?: string[];
 }
 
 /**
- * 페이지 타입
+ * 미디어 메타데이터
  */
-export enum PageType {
-  TIMELINE = 'timeline',
-  SINGLE_TWEET = 'single_tweet',
-  MEDIA_TAB = 'media_tab',
-  SINGLE_MEDIA = 'single_media',
-  PROFILE = 'profile',
-  UNKNOWN = 'unknown',
-}
-
-/**
- * 추출 소스
- */
-export enum ExtractionSource {
-  CURRENT_PAGE = 'current_page',
-  BACKGROUND_LOAD = 'background_load',
-  CACHE = 'cache',
-  API = 'api',
-}
-
-/**
- * 트윗 URL 정보
- */
-export interface TweetUrl {
-  url: string;
-  username: string;
-  tweetId: string;
-  isValid: boolean;
-}
-
-/**
- * 추출 옵션
- */
-export interface ExtractionOptions {
-  readonly enableBackgroundLoading: boolean;
-  readonly enableCache: boolean;
-  readonly maxRetries: number;
-  readonly timeout: number;
-  readonly fallbackStrategies: boolean;
-  readonly debugMode: boolean;
-}
-
-export interface MediaExtractionOptions {
-  includeVideos?: boolean;
-  timeoutMs?: number;
-  useApiFallback?: boolean;
-  enableBackgroundLoading?: boolean;
-  enableValidation?: boolean;
-  maxRetries?: number;
-}
-
-/**
- * 추출 메타데이터
- */
-export interface ExtractionMetadata {
-  readonly extractionTime?: number;
-  readonly extractedAt?: number;
-  readonly strategiesUsed?: string[];
-  readonly sourceCount?: number;
-  readonly cacheHits?: number;
-  readonly retryCount?: number;
-  readonly sourceType?: string;
-  readonly strategy?: string;
-  readonly error?: string;
-  readonly performance?: {
-    readonly totalTime: number;
-    readonly backgroundLoadTime?: number;
-    readonly parseTime: number;
-  };
-  readonly [key: string]: unknown;
-}
-
-/**
- * 추출 결과
- */
-export interface MediaExtractionResult {
-  readonly success: boolean;
-  readonly mediaItems: MediaInfo[];
-  readonly clickedIndex: number;
-  readonly source?: ExtractionSource;
-  readonly sourceType?: string;
-  readonly metadata: ExtractionMetadata;
-  readonly error?: ExtractionError | string;
-  readonly tweetInfo?: unknown;
-}
-
-/**
- * 추출 컨텍스트
- */
-export interface ExtractionContext {
-  readonly clickedElement?: HTMLElement;
-  readonly currentUrl: string;
-  readonly pageType: PageType;
-  readonly options: ExtractionOptions;
-  readonly timestamp: number;
-}
-
-/**
- * 추출 에러 코드
- */
-export enum ExtractionErrorCode {
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  ELEMENT_NOT_FOUND = 'ELEMENT_NOT_FOUND',
-  PARSING_ERROR = 'PARSING_ERROR',
-  PARSE_ERROR = 'PARSE_ERROR',
-  TIMEOUT_ERROR = 'TIMEOUT_ERROR',
-  NOT_FOUND_ERROR = 'NOT_FOUND_ERROR',
-  NO_MEDIA_FOUND = 'NO_MEDIA_FOUND',
-  INVALID_URL_ERROR = 'INVALID_URL_ERROR',
-  INVALID_URL = 'INVALID_URL',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
-}
-
-/**
- * 추출 에러
- */
-export class ExtractionError extends Error {
-  constructor(
-    message: string,
-    public readonly code: ExtractionErrorCode,
-    public readonly context?: ExtractionContext,
-    public override readonly cause?: Error
-  ) {
-    super(message);
-    this.name = 'ExtractionError';
-  }
-}
-
-// ================================
-// 추출 인터페이스들
-// ================================
-
-/**
- * 트윗 정보
- */
-export interface TweetInfo {
-  tweetId: string;
-  username: string;
-  tweetUrl: string;
-  extractionMethod: string;
-  confidence: number;
-  metadata?: Record<string, unknown>;
-}
-
-/**
- * 미디어 추출기 인터페이스
- */
-export interface MediaExtractor {
-  extractFromClickedElement(
-    element: HTMLElement,
-    options?: MediaExtractionOptions
-  ): Promise<MediaExtractionResult>;
-
-  extractAllFromContainer(
-    container: HTMLElement,
-    options?: MediaExtractionOptions
-  ): Promise<MediaExtractionResult>;
-}
-
-/**
- * 트윗 정보 추출 전략
- */
-export interface TweetInfoExtractionStrategy {
-  extract(element: HTMLElement): TweetInfo | null;
-}
-
-/**
- * API 추출기
- */
-export interface APIExtractor {
-  extract(
-    element: HTMLElement,
-    options: MediaExtractionOptions,
-    extractionId: string,
-    tweetInfo?: TweetInfo
-  ): Promise<MediaExtractionResult>;
-}
-
-/**
- * 백업 추출 전략
- */
-export interface FallbackExtractionStrategy {
-  extract(element: HTMLElement): Promise<MediaExtractionResult>;
-}
-
-/**
- * 트윗 API 미디어 엔트리
- */
-export interface TweetMediaEntry {
-  type: 'photo' | 'video';
-  type_original: 'photo' | 'video' | 'animated_gif';
-  download_url: string;
-  preview_url: string;
-  expanded_url?: string;
-  media_id?: string;
-  media_key?: string;
-  index?: number;
-  type_index?: number;
-  screen_name?: string;
-  tweet_id?: string;
-  typeOriginal?: 'photo' | 'video' | 'animated_gif';
-  typeIndex?: number;
-  tweet_text?: string;
-}
-
-/**
- * Twitter API
- */
-export interface TwitterAPI {
-  getTweetMedia(tweetId: string): Promise<TweetMediaEntry[]>;
-}
-
-// ================================
-// 유틸리티 함수들
-// ================================
-
-/**
- * URL 유효성 검사
- */
-export function isValidUrl(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Twitter 이미지 URL을 원본 해상도로 변환
- */
-export function toOriginalUrl(url: string): string {
-  return url.replace(/(\?.*)?$/, '?name=orig');
-}
-
-/**
- * 파일 확장자에서 미디어 타입 추론
- */
-export function getMediaTypeFromExtension(extension: string): 'image' | 'video' | 'gif' {
-  const ext = extension.toLowerCase().replace('.', '');
-
-  const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'bmp'];
-  const videoExts = ['mp4', 'webm', 'mov', 'avi'];
-  const gifExts = ['gif'];
-
-  if (imageExts.includes(ext)) return 'image';
-  if (videoExts.includes(ext)) return 'video';
-  if (gifExts.includes(ext)) return 'gif';
-
-  return 'image';
-}
-
-/**
- * 안전한 파일명 생성
- */
-export function createSafeFilename(filename: string): string {
-  return filename
-    .replace(/[<>:"/\\|?*]/g, '_')
-    .replace(/\s+/g, '_')
-    .substring(0, 200);
-}
-
-/**
- * MediaEntity 생성 팩토리
- */
-export function createMediaEntity(config: {
-  id?: string;
-  url: string;
-  type?: string;
-  filename?: string;
-  width?: number;
-  height?: number;
-  originalUrl?: string;
-  thumbnailUrl?: string;
+export interface MediaMetadata {
+  /** 파일 크기 (바이트) */
   fileSize?: number;
-  alt?: string;
-  tweetId?: string;
-  tweetUsername?: string;
-  tweetUrl?: string;
-  metadata?: Record<string, unknown>;
-}): MediaEntity {
-  const now = new Date();
-  const type = (config.type as 'image' | 'video' | 'gif') ?? 'image';
-
-  return {
-    id: config.id ?? generateId(),
-    url: config.url ?? '',
-    type,
-    filename: config.filename ?? generateFilename(config.url ?? '', type),
-    createdAt: now,
-    updatedAt: now,
-
-    ...(config.originalUrl && { originalUrl: config.originalUrl }),
-    ...(config.thumbnailUrl && { thumbnailUrl: config.thumbnailUrl }),
-    ...(config.fileSize && { fileSize: config.fileSize }),
-    ...(config.width && { width: config.width }),
-    ...(config.height && { height: config.height }),
-    ...(config.alt && { alt: config.alt }),
-    ...(config.tweetId && { tweetId: config.tweetId }),
-    ...(config.tweetUsername && { tweetUsername: config.tweetUsername }),
-    ...(config.tweetUrl && { tweetUrl: config.tweetUrl }),
-    ...(config.metadata && { metadata: config.metadata }),
+  /** 이미지/비디오 차원 */
+  dimensions?: {
+    width: number;
+    height: number;
   };
-}
-
-/**
- * MediaEntity를 MediaInfo로 변환
- */
-export function toMediaInfo(entity: MediaEntity): MediaInfo {
-  const { createdAt, updatedAt, ...mediaInfo } = entity;
-  return mediaInfo;
-}
-
-// ================================
-// 내부 헬퍼 함수들
-// ================================
-
-/**
- * 고유 ID 생성
- */
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-/**
- * URL에서 파일명 생성
- */
-function generateFilename(url: string, type: 'image' | 'video' | 'gif'): string {
-  try {
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-    const filename = pathname.split('/').pop() || 'media';
-
-    const extensions = {
-      image: 'jpg',
-      video: 'mp4',
-      gif: 'gif',
-    };
-
-    const hasExtension = filename.includes('.');
-    return hasExtension ? filename : `${filename}.${extensions[type]}`;
-  } catch {
-    const extensions = {
-      image: 'jpg',
-      video: 'mp4',
-      gif: 'gif',
-    };
-    return `media_${Date.now()}.${extensions[type]}`;
-  }
+  /** 비디오 길이 (초) */
+  duration?: number;
+  /** MIME 타입 */
+  mimeType?: string;
+  /** 생성 날짜 */
+  createdAt?: Date;
+  /** 추가 속성 */
+  [key: string]: unknown;
 }

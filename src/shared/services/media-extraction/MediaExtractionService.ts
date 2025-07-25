@@ -5,8 +5,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { MediaExtractor, MediaExtractionOptions } from '@shared/types/core/extraction.types';
-import type { MediaExtractionResult } from '@shared/types/core/media.types';
+import type { MediaExtractor, MediaExtractionOptions } from '@shared/types/media.types';
+import type { MediaExtractionResult } from '@shared/types/media.types';
 import { TweetInfoExtractor } from './extractors/TweetInfoExtractor';
 import { TwitterAPIExtractor } from './extractors/TwitterAPIExtractor';
 import { DOMDirectExtractor } from './extractors/DOMDirectExtractor';
@@ -51,7 +51,6 @@ export class MediaExtractionService implements MediaExtractor {
           success: domResult.success,
           mediaItems: domResult.mediaItems,
           clickedIndex: domResult.clickedIndex,
-          sourceType: 'dom-fallback',
           metadata: {
             extractedAt: Date.now(),
             sourceType: 'dom-fallback',
@@ -75,7 +74,6 @@ export class MediaExtractionService implements MediaExtractor {
           success: apiResult.success,
           mediaItems: apiResult.mediaItems,
           clickedIndex: apiResult.clickedIndex,
-          sourceType: 'api-first',
           metadata: {
             extractedAt: Date.now(),
             sourceType: 'api-first',
@@ -94,7 +92,6 @@ export class MediaExtractionService implements MediaExtractor {
         success: domResult.success,
         mediaItems: domResult.mediaItems,
         clickedIndex: domResult.clickedIndex,
-        sourceType: 'dom-fallback',
         metadata: {
           extractedAt: Date.now(),
           sourceType: 'dom-fallback',
@@ -166,8 +163,6 @@ export class MediaExtractionService implements MediaExtractor {
       success: false,
       mediaItems: [],
       clickedIndex: 0,
-      sourceType: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error',
       metadata: {
         extractedAt: Date.now(),
         sourceType: 'error',

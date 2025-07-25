@@ -5,8 +5,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { MediaExtractionOptions, TweetInfo } from '@shared/types/core/extraction.types';
-import type { MediaExtractionResult, MediaInfo } from '@shared/types/core/media.types';
+import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
+import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
 
 /**
  * DOM 추출기 (백업 전략용)

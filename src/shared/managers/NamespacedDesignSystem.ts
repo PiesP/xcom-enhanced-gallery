@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
-import type { Cleanupable } from '@shared/types/core/core-types';
+import type { Cleanupable } from '@shared/types/app.types';
 
 /**
  * 트위터 페이지와 격리된 디자인 시스템

@@ -7,9 +7,9 @@
  * 여러 미디어 파일의 일괄 다운로드 비즈니스 로직을 중앙 집중화하여 일관성을 보장합니다.
  */
 
-import type { MediaInfo, MediaItem } from '@shared/types/core/media.types';
-import type { BaseService } from '@shared/types/core/core-types';
-import type { MediaItemForFilename } from '@shared/types/core/media.types';
+import type { MediaInfo, MediaItem } from '@shared/types/media.types';
+import type { BaseService } from '@shared/types/app.types';
+import type { MediaItemForFilename } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { createZipFromItems, type MediaItemForZip } from '@shared/external/zip';
@@ -74,7 +74,7 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
   return {
     id: ensured.id,
     url: ensured.url,
-    originalUrl: ensured.originalUrl,
+    originalUrl: ensured.originalUrl || undefined,
     type: ensured.type,
     filename: ensured.filename,
     tweetUsername: ensured.tweetUsername,

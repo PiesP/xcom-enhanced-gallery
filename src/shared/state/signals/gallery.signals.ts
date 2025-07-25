@@ -8,7 +8,7 @@
  * - Immutable state
  */
 
-import type { MediaInfo } from '../../types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '../../services/core-services';
 

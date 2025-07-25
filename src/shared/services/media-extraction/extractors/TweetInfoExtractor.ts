@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/core/extraction.types';
+import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 import { ClickedElementTweetStrategy } from '../strategies/ClickedElementTweetStrategy';
 import { UrlBasedTweetStrategy } from '../strategies/UrlBasedTweetStrategy';
 import { DomStructureTweetStrategy } from '../strategies/DomStructureTweetStrategy';

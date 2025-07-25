@@ -2058,24 +2058,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../types/core/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/core/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -2403,7 +2385,6 @@
         "src/shared/services/index.ts",
         "src/shared/services/gallery/GalleryService.ts",
         "src/shared/services/media-mapping/MediaMappingService.ts",
-        "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
         "src/shared/services/media-mapping/index.ts",
         "src/shared/types/core/index.ts"
       ],
@@ -2564,11 +2545,7 @@
         }
       ],
       "dependents": [
-        "src/shared/state/signals/download.signals.ts",
         "src/shared/types/core/core-types.ts",
-        "src/shared/state/signals/gallery.signals.ts",
-        "src/shared/services/gallery/GalleryService.ts",
-        "src/shared/utils/events/GalleryEventCoordinator.ts",
         "src/shared/types/core/extraction.types.ts",
         "src/shared/types/core/index.ts"
       ],
@@ -3258,24 +3235,6 @@
             "import"
           ],
           "resolved": "src/shared/services/core-services.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../types/core/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/core/media.types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4695,24 +4654,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../types/core/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/core/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -4998,24 +4939,6 @@
             "import"
           ],
           "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../types/core/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/core/media.types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5495,26 +5418,7 @@
     },
     {
       "source": "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../types/core/core-types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/core/core-types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/services/media-mapping/MediaMappingService.ts",
         "src/shared/services/media-mapping/index.ts"
@@ -5960,39 +5864,16 @@
       ],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/utils/dom.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/utils/dom.ts",
-        "to": "src/shared/utils/dom.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 148,
-    "totalDependenciesCruised": 258,
+    "totalCruised": 147,
+    "totalDependenciesCruised": 253,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

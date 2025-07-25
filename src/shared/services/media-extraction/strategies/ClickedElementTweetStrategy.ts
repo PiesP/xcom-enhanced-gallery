@@ -4,7 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/core/extraction.types';
+import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 /**
  * 클릭된 요소 기반 트윗 추출 전략

@@ -5,8 +5,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { BaseService, ViewMode } from '@shared/types/core/core-types';
-import type { MediaInfo } from '@shared/types/core/media.types';
+import type { BaseService, ViewMode } from '@shared/types/app.types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 // 갤러리 상태 관리
 import {

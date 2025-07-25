@@ -13,7 +13,7 @@
 import { logger } from '@shared/logging/logger';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { safeParseInt } from '@shared/utils/core/type-safety-helpers';
-import type { MediaInfo } from '@shared/types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 // ================================
 // Performance Utilities

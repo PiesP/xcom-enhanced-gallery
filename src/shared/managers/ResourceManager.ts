@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
-import type { Cleanupable } from '@shared/types/core/core-types';
+import type { Cleanupable } from '@shared/types/app.types';
 
 /**
  * 리소스 타입 정의

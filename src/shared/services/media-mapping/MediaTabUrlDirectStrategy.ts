@@ -3,10 +3,10 @@
  * @description 미디어 탭 URL에서 직접 매핑하는 전략
  */
 
-import type { MediaMapping, MediaPageType } from '@shared/types/core/media.types';
+import type { MediaMapping, MediaPageType } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { safeParseInt } from '@shared/utils/core/type-safety-helpers';
-import type { MediaMappingStrategy } from '../../types/core/core-types';
+import type { MediaMappingStrategy } from '@shared/types/media.types';
 
 export class MediaTabUrlDirectStrategy implements MediaMappingStrategy {
   readonly name = 'media-tab-url-direct';
@@ -46,14 +46,11 @@ export class MediaTabUrlDirectStrategy implements MediaMappingStrategy {
     }
 
     const result: MediaMapping = {
+      pageType,
+      mediaUrls: [mediaInfo.url], // URL 배열로 설정
       tweetId,
       mediaIndex: mediaInfo.index,
-      confidence: {
-        overall: 0.95,
-        urlMatching: 1.0,
-        domStructure: 0.9,
-        metadata: 0.9,
-      },
+      confidence: 0.95, // 전체 신뢰도 점수
       method: this.name,
       metadata: {
         mediaUrl: mediaInfo.url,

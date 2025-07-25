@@ -3,7 +3,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/core/extraction.types';
+import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 export class DataAttributeTweetStrategy implements TweetInfoExtractionStrategy {
   readonly name = 'data-attribute';

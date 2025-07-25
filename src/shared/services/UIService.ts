@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { BaseService } from '@shared/types/core/core-types';
+import type { BaseService } from '@shared/types/app.types';
 
 // 기존 서비스들 import
 import { ThemeService, themeService } from './ThemeService';

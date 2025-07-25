@@ -5,8 +5,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { BaseService } from '@shared/types/core/core-types';
-import type { MediaInfo, MediaItem, MediaItemForFilename } from '@shared/types/core/media.types';
+import type { BaseService } from '@shared/types/app.types';
+import type { MediaInfo, MediaItem, MediaItemForFilename } from '@shared/types/media.types';
 
 // 다운로드 관련 기존 서비스들
 import { BulkDownloadService } from '../services/BulkDownloadService';

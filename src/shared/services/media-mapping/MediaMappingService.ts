@@ -3,14 +3,16 @@
  * @description 전략 패턴을 사용한 간단한 미디어 매핑 서비스
  */
 
-import type { MediaMapping, MediaPageType } from '@shared/types/core/media.types';
+import type { MediaMapping, MediaPageType, MediaMappingStrategy } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { MediaTabUrlDirectStrategy } from './MediaTabUrlDirectStrategy';
-import type {
-  MappingCacheEntry,
-  MediaMappingStrategy,
-  StrategyMetrics,
-} from '../../types/core/core-types';
+import type { StrategyMetrics } from '../../types/core/core-types';
+
+// 로컬 타입 정의 (core-types 의존성 제거)
+interface MappingCacheEntry {
+  result: MediaMapping;
+  timestamp: number;
+}
 
 /**
  * 간소화된 미디어 매핑 서비스

@@ -13,7 +13,7 @@ import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { getService } from '@shared/services/ServiceManager';
 import { VideoControlService } from '@shared/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
-import type { MediaInfo } from '@shared/types/core/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { MediaService } from '@shared/services/MediaService';
 import { UIService } from '@shared/services/UIService';

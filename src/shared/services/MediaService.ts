@@ -5,9 +5,9 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { BaseService } from '@shared/types/core/core-types';
-import type { MediaExtractionResult } from '@shared/types/core/media.types';
-import type { TweetInfo, MediaExtractionOptions } from '@shared/types/core/extraction.types';
+import type { BaseService } from '@shared/types/app.types';
+import type { MediaExtractionResult } from '@shared/types/media.types';
+import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 
 // 기존 서비스들 import
 import { MediaExtractionService } from './media-extraction/MediaExtractionService';

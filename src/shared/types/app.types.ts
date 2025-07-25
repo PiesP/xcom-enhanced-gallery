@@ -10,6 +10,45 @@
  */
 
 // ================================
+// 기본 서비스 인터페이스
+// ================================
+
+/**
+ * 기본 서비스 인터페이스
+ */
+export interface BaseService {
+  destroy?(): void;
+  initialize?(): Promise<void> | void;
+  isInitialized?(): boolean;
+}
+
+/**
+ * 정리 가능한 리소스 인터페이스
+ */
+export interface Cleanupable {
+  /**
+   * 동기적 정리 (메모리, 타이머, 이벤트 리스너 등)
+   */
+  cleanup(): void;
+}
+
+/**
+ * 애플리케이션 설정
+ */
+export interface AppConfig {
+  /** 애플리케이션 버전 */
+  version: string;
+  /** 개발 모드 여부 */
+  isDevelopment: boolean;
+  /** 디버그 모드 여부 */
+  debug: boolean;
+  /** 자동 시작 여부 */
+  autoStart: boolean;
+  /** 성능 모니터링 활성화 여부 */
+  performanceMonitoring?: boolean;
+}
+
+// ================================
 // Result 패턴 타입들
 // ================================
 
@@ -88,15 +127,6 @@ export function safe<T>(operation: () => T): Result<T, Error> {
 // ================================
 // 서비스 관련 타입들
 // ================================
-
-/**
- * 기본 서비스 인터페이스
- */
-export interface BaseService {
-  initialize(): Promise<void>;
-  destroy(): void;
-  isInitialized(): boolean;
-}
 
 /**
  * 서비스 생명주기 상태

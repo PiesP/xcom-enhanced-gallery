@@ -8,7 +8,7 @@
 
 import { measurePerformance } from '@shared/utils';
 import { logger } from '@shared/logging/logger';
-import type { AppConfig } from '@shared/types/core/core-types';
+import type { AppConfig } from '@shared/types/app.types';
 import { ServiceManager } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from './constants';
 import { GalleryApp } from '@features/gallery/GalleryApp';
