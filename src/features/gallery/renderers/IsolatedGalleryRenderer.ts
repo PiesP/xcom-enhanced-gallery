@@ -140,21 +140,26 @@ export class IsolatedGalleryRenderer implements Cleanupable {
 
     const { h, render } = getPreact();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const galleryElement = h(IsolatedGalleryContainer as any, {
-      onClose: () => this.close(),
-      useShadowDOM: this.options.useShadowDOM,
-      className: 'xeg-isolated-renderer-container',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      children: h(VerticalGalleryView as any, {
-        mediaItems,
+    // 타입 안전한 컴포넌트 렌더링
+    const galleryElement = h(
+      IsolatedGalleryContainer as never, // Preact 컴포넌트 타입 우회
+      {
         onClose: () => this.close(),
-        // 격리 모드에서는 기본 설정 사용
-        initialIndex: 0,
-        enableKeyboard: true,
-        enableMouse: true,
-      }),
-    });
+        useShadowDOM: this.options.useShadowDOM,
+        className: 'xeg-isolated-renderer-container',
+        children: h(
+          VerticalGalleryView as never, // Preact 컴포넌트 타입 우회
+          {
+            mediaItems,
+            onClose: () => this.close(),
+            // 격리 모드에서는 기본 설정 사용
+            initialIndex: 0,
+            enableKeyboard: true,
+            enableMouse: true,
+          }
+        ),
+      }
+    );
 
     // Preact로 렌더링
     render(galleryElement, this.container);

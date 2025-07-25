@@ -33,31 +33,23 @@ export interface ILogger {
 }
 
 /**
- * 기본 콘솔 로거 구현 (개발 환경용)
+ * 기존 ILogger 인터페이스를 logger로 리다이렉트하는 어댑터
  */
 export class ConsoleLogger implements ILogger {
   debug(message: string, ...args: unknown[]): void {
-    if (typeof console !== 'undefined' && console.info) {
-      console.info(`[DEBUG] ${message}`, ...args);
-    }
+    logger.debug(message, ...args);
   }
 
   info(message: string, ...args: unknown[]): void {
-    if (typeof console !== 'undefined' && console.info) {
-      console.info(message, ...args);
-    }
+    logger.info(message, ...args);
   }
 
   warn(message: string, ...args: unknown[]): void {
-    if (typeof console !== 'undefined' && console.warn) {
-      console.warn(message, ...args);
-    }
+    logger.warn(message, ...args);
   }
 
   error(message: string, ...args: unknown[]): void {
-    if (typeof console !== 'undefined' && console.error) {
-      console.error(message, ...args);
-    }
+    logger.error(message, ...args);
   }
 }
 

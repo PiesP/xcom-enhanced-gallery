@@ -1721,195 +1721,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/core/app-state.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../state/signals/download.signals",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/state/signals/download.signals.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../state/signals/gallery.signals",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/state/signals/gallery.signals.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../state/signals/toolbar.signals",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/state/signals/toolbar.signals.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/core/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/state/signals/download.signals.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/core/app-state.ts",
-        "src/shared/state/app-state.ts",
-        "src/shared/state/signals/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/state/signals/gallery.signals.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/core/app-state.ts",
-        "src/shared/state/app-state.ts",
-        "src/shared/state/signals/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/state/signals/toolbar.signals.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/core/app-state.ts",
-        "src/shared/state/app-state.ts",
-        "src/shared/state/signals/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/core/download-manager-redirect.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/core/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/core/gallery-manager.deprecated.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/core/gallery-manager.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/core/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./app-state",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/core/app-state.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./app-state",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/core/app-state.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./download-manager-redirect",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/core/download-manager-redirect.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/dom/DOMCache.ts",
       "dependencies": [],
       "dependents": [
@@ -3788,6 +3599,36 @@
       "valid": true
     },
     {
+      "source": "src/shared/state/signals/download.signals.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/state/app-state.ts",
+        "src/shared/state/signals/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/state/signals/gallery.signals.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/state/app-state.ts",
+        "src/shared/state/signals/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/state/signals/toolbar.signals.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/state/app-state.ts",
+        "src/shared/state/signals/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/types/index.ts",
       "dependencies": [
         {
@@ -5038,32 +4879,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/core/gallery-manager.deprecated.ts",
-        "to": "src/shared/core/gallery-manager.deprecated.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/core/gallery-manager.ts",
-        "to": "src/shared/core/gallery-manager.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 2,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 147,
-    "totalDependenciesCruised": 208,
+    "totalCruised": 142,
+    "totalDependenciesCruised": 202,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

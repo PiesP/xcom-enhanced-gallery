@@ -13,50 +13,534 @@
 5. [PC 환경 최적화 코딩](#pc-환경-최적화-코딩)
 6. [외부 라이브러리 사용](#외부-라이브러리-사용)
 7. [테스트 작성 가이드](#테스트-작성-가이드)
-8. [실무 체크리스트](#실무-체크리스트)
+8. [코드 품질 체크리스트](#코드-품질-체크리스트)
+
+---
 
 ## 🎨 코드 스타일 가이드
 
 ### 포맷팅 규칙
 
 ```typescript
-// ✅ 권장: 명확한 들여쓰기 (2 spaces)
+// ✅ 2 spaces 들여쓰기
 const config = {
   gallery: {
-    autoplay: true,
-    controls: true,
+    autoPlay: false,
+    showThumbnails: true,
   },
 };
 
-// ✅ 권장: 세미콜론 사용
+// ✅ 세미콜론 필수
 const result = processImage(data);
 
-// ✅ 권장: 단일 따옴표 사용
+// ✅ 단일 따옴표 사용
 const message = 'Processing completed';
 
-// ✅ 권장: trailing comma
+// ✅ trailing comma
 const items = [
   'image',
-  'video', // trailing comma
+  'video',
 ];
 ```
 
 ### 파일 구조 규칙
 
 ```typescript
-// 파일 상단: imports 그룹핑
-// 1. 타입 imports
-import type { ComponentProps, MouseEvent } from '@/types';
+// 파일 상단: import 그룹핑
+// 1. 타입 imports (맨 위)
+import type { ComponentProps, MouseEvent } from '@shared/types';
 
 // 2. 외부 라이브러리 (getter 함수 사용)
-import { getPreact } from '@/infrastructure/external/vendors';
+import { getPreact } from '@shared/external/vendors';
 
 // 3. 내부 모듈
-import { Button } from '@/shared/components';
-import { useGalleryState } from '@/core/state';
+import { Button } from '@shared/components';
+import { useGalleryState } from '@shared/state';
 
-// 4. 스타일
+// 4. 스타일 (맨 아래)
 import styles from './Component.module.css';
+
+// 파일 하단: exports
+export { Component };
+export type { ComponentProps };
+```
+
+---
+
+## 🏷️ 네이밍 규칙
+
+### 파일 및 디렉토리
+
+```typescript
+// ✅ 컴포넌트 파일: PascalCase
+GalleryView.tsx
+MediaProcessor.ts
+
+// ✅ 일반 파일: kebab-case
+gallery-utils.ts
+media-extraction.ts
+
+// ✅ 디렉토리: kebab-case
+components/
+services/
+vertical-gallery-view/
+```
+
+### 변수 및 함수
+
+```typescript
+// ✅ 변수: camelCase
+const imageData = await loadImage();
+const currentIndex = signal(0);
+
+// ✅ 상수: SCREAMING_SNAKE_CASE
+const MAX_IMAGE_SIZE = 1024 * 1024;
+const DEFAULT_CONFIG = {
+  autoPlay: false,
+};
+
+// ✅ 함수: 동사 + 명사
+function processImage(data: ImageData): ProcessedImage {}
+function extractMediaUrl(element: HTMLElement): string {}
+
+// ✅ Boolean: is/has/can prefix
+const isLoading = signal(false);
+const hasPermission = checkPermission();
+```
+
+### 타입 및 인터페이스
+
+```typescript
+// ✅ 인터페이스 & 타입: PascalCase
+interface MediaItem {
+  id: string;
+  type: MediaType;
+}
+
+type MediaType = 'image' | 'video';
+type GalleryState = 'loading' | 'ready' | 'error';
+
+// ❌ 금지된 이름들
+Enhanced, Advanced, Simple, Manager, Handler, Util
+```
+
+---
+
+## 📘 TypeScript 패턴
+
+### 엄격한 타입 정의
+
+```typescript
+// ✅ readonly 인터페이스
+interface MediaItem {
+  readonly id: string;
+  readonly type: MediaType;
+  readonly url: string;
+  readonly metadata: MediaMetadata;
+}
+
+// ✅ 유니온 타입 활용
+type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+
+// ✅ 제네릭 타입
+interface ServiceResponse<T> {
+  readonly data: T;
+  readonly success: boolean;
+  readonly error?: string;
+}
+```
+
+### 함수 타입 패턴
+
+```typescript
+// ✅ 함수 시그니처
+type EventHandler<T> = (event: T) => void;
+type AsyncProcessor<TInput, TOutput> = (input: TInput) => Promise<TOutput>;
+
+// ✅ 옵셔널 체이닝
+const imageUrl = mediaItem.metadata?.thumbnail?.url ?? DEFAULT_THUMBNAIL;
+
+// ✅ Result 패턴 (에러 처리)
+type Result<T, E = Error> =
+  | { success: true; data: T }
+  | { success: false; error: E };
+```
+
+---
+
+## 🧩 컴포넌트 작성 규칙
+
+### Preact 컴포넌트 패턴
+
+```typescript
+import type { ComponentProps } from '@shared/types';
+import { signal } from '@preact/signals';
+import { getPreact } from '@shared/external/vendors';
+import styles from './GalleryItem.module.css';
+
+const { useEffect, useCallback } = getPreact();
+
+interface GalleryItemProps {
+  readonly item: MediaItem;
+  className?: string;
+  onSelect?: (item: MediaItem) => void;
+}
+
+export function GalleryItem({
+  item,
+  className,
+  onSelect,
+}: GalleryItemProps) {
+  const isSelected = signal(false);
+
+  const handleClick = useCallback(() => {
+    onSelect?.(item);
+  }, [item, onSelect]);
+
+  return (
+    <div
+      className={`${styles.item} ${className || ''}`}
+      onClick={handleClick}
+    >
+      {/* 컴포넌트 내용 */}
+    </div>
+  );
+}
+```
+
+### 커스텀 훅 패턴
+
+```typescript
+import { signal } from '@preact/signals';
+import { getPreact } from '@shared/external/vendors';
+
+interface UseGalleryKeyboardOptions {
+  onPrevious: () => void;
+  onNext: () => void;
+  onClose: () => void;
+}
+
+export function useGalleryKeyboard({
+  onPrevious,
+  onNext,
+  onClose,
+}: UseGalleryKeyboardOptions) {
+  const { useEffect, useCallback } = getPreact();
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    switch (event.key) {
+      case 'ArrowLeft':
+        onPrevious();
+        break;
+      case 'ArrowRight':
+        onNext();
+        break;
+      case 'Escape':
+        onClose();
+        break;
+    }
+  }, [onPrevious, onNext, onClose]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  return { handleKeyDown };
+}
+```
+
+---
+
+## 💻 PC 환경 최적화 코딩
+
+### 지원되는 이벤트 타입
+
+```typescript
+// ✅ PC 환경 전용 이벤트
+interface PCEventHandlers {
+  onClick?: (event: MouseEvent) => void;
+  onMouseEnter?: (event: MouseEvent) => void;
+  onMouseLeave?: (event: MouseEvent) => void;
+  onWheel?: (event: WheelEvent) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
+  onContextMenu?: (event: MouseEvent) => void;
+}
+
+// ❌ 터치 이벤트 사용 금지
+// onTouchStart, onTouchMove, onTouchEnd
+```
+
+### 키보드 인터랙션
+
+```typescript
+// ✅ 핵심 키만 지원
+const SUPPORTED_KEYS = {
+  ESCAPE: 'Escape',
+  ARROW_LEFT: 'ArrowLeft',
+  ARROW_RIGHT: 'ArrowRight',
+  SPACE: ' ',
+  F: 'f',
+} as const;
+
+function handleKeyboard(event: KeyboardEvent) {
+  event.preventDefault();
+
+  switch (event.key) {
+    case SUPPORTED_KEYS.ESCAPE:
+      closeGallery();
+      break;
+    case SUPPORTED_KEYS.ARROW_LEFT:
+      navigatePrevious();
+      break;
+    case SUPPORTED_KEYS.ARROW_RIGHT:
+      navigateNext();
+      break;
+  }
+}
+```
+
+### 마우스 인터랙션
+
+```typescript
+// ✅ 마우스 휠 스크롤
+function handleWheel(event: WheelEvent) {
+  event.preventDefault();
+
+  if (event.deltaY > 0) {
+    navigateNext();
+  } else {
+    navigatePrevious();
+  }
+}
+
+// ✅ 드래그 감지
+function handleMouseDown(event: MouseEvent) {
+  const startX = event.clientX;
+
+  const handleMouseMove = (moveEvent: MouseEvent) => {
+    const deltaX = moveEvent.clientX - startX;
+    if (Math.abs(deltaX) > 50) {
+      deltaX > 0 ? navigatePrevious() : navigateNext();
+      cleanup();
+    }
+  };
+
+  const cleanup = () => {
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', cleanup);
+  };
+
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', cleanup);
+}
+```
+
+---
+
+## 📦 외부 라이브러리 사용
+
+### 라이브러리 접근 규칙
+
+```typescript
+// ❌ 직접 import 금지
+import { deflate } from 'fflate';
+import { render } from 'preact';
+import { signal } from '@preact/signals';
+
+// ✅ getter 함수 사용 필수
+import {
+  getFflate,
+  getPreact,
+  getPreactSignals,
+} from '@shared/external/vendors';
+
+const { deflate } = getFflate();
+const { render, useEffect } = getPreact();
+const { signal, computed } = getPreactSignals();
+```
+
+### 상태 관리 패턴 (Preact Signals)
+
+```typescript
+// ✅ Signal 정의
+import { signal, computed } from '@preact/signals';
+
+export const mediaItems = signal<MediaItem[]>([]);
+export const selectedIndex = signal(0);
+
+// ✅ Computed values
+export const currentItem = computed(() => {
+  const items = mediaItems.value;
+  const index = selectedIndex.value;
+  return items[index] || null;
+});
+
+// ✅ Action 함수
+export function selectNext() {
+  const maxIndex = mediaItems.value.length - 1;
+  selectedIndex.value = Math.min(selectedIndex.value + 1, maxIndex);
+}
+
+export function selectPrevious() {
+  selectedIndex.value = Math.max(selectedIndex.value - 1, 0);
+}
+
+export function setMediaItems(items: MediaItem[]) {
+  mediaItems.value = items;
+  selectedIndex.value = 0;
+}
+```
+
+---
+
+## 🧪 테스트 작성 가이드
+
+### 테스트 파일 구조
+
+```typescript
+// ✅ 테스트 파일 네이밍
+ComponentName.test.tsx
+utils.test.ts
+media-processor.test.ts
+
+// ✅ 테스트 구조
+describe('GalleryItem', () => {
+  beforeEach(() => {
+    // 테스트 전 설정
+  });
+
+  afterEach(() => {
+    // 테스트 후 정리
+  });
+
+  it('should render item correctly', () => {
+    // 테스트 내용
+  });
+
+  it('should handle click events', () => {
+    // 이벤트 테스트
+  });
+});
+```
+
+### 컴포넌트 테스트 패턴
+
+```typescript
+import { render, fireEvent } from '@testing-library/preact';
+import { signal } from '@preact/signals';
+import { GalleryItem } from './GalleryItem';
+
+describe('GalleryItem', () => {
+  const defaultProps = {
+    item: {
+      id: 'test-1',
+      type: 'image' as const,
+      url: 'https://example.com/image.jpg',
+      metadata: {},
+    },
+  };
+
+  it('should render correctly', () => {
+    const { getByRole } = render(<GalleryItem {...defaultProps} />);
+    expect(getByRole('button')).toBeInTheDocument();
+  });
+
+  it('should call onSelect when clicked', () => {
+    const onSelect = vi.fn();
+    const { getByRole } = render(
+      <GalleryItem {...defaultProps} onSelect={onSelect} />
+    );
+
+    fireEvent.click(getByRole('button'));
+    expect(onSelect).toHaveBeenCalledWith(defaultProps.item);
+  });
+});
+```
+
+### 서비스 테스트 패턴
+
+```typescript
+import { MediaService } from './MediaService';
+
+describe('MediaService', () => {
+  let mediaService: MediaService;
+
+  beforeEach(() => {
+    mediaService = new MediaService();
+  });
+
+  it('should extract media from element', async () => {
+    const element = document.createElement('img');
+    element.src = 'https://example.com/image.jpg';
+
+    const result = await mediaService.extractFromElement(element);
+
+    expect(result.success).toBe(true);
+    expect(result.mediaItems).toHaveLength(1);
+  });
+});
+```
+
+---
+
+## ✅ 코드 품질 체크리스트
+
+### 작성 전 체크리스트
+
+- [ ] 파일명과 폴더 구조가 규칙에 맞는가?
+- [ ] import 순서가 올바른가?
+- [ ] 외부 라이브러리를 getter로 접근하는가?
+- [ ] 타입 정의가 명확한가?
+- [ ] PC 전용 이벤트만 사용하는가?
+
+### 컴포넌트 체크리스트
+
+- [ ] Props가 readonly로 정의되어 있는가?
+- [ ] 이벤트 핸들러가 useCallback으로 최적화되어 있는가?
+- [ ] 접근성 속성이 포함되어 있는가?
+- [ ] CSS Modules를 사용하고 있는가?
+- [ ] Signal을 적절히 사용하고 있는가?
+
+### 성능 체크리스트
+
+- [ ] 불필요한 리렌더링이 없는가?
+- [ ] 메모리 누수 가능성은 없는가?
+- [ ] 이벤트 리스너가 적절히 해제되는가?
+- [ ] 번들 크기에 영향을 주지 않는가?
+
+### 테스트 체크리스트
+
+- [ ] 주요 기능에 대한 테스트가 있는가?
+- [ ] 에러 케이스 테스트가 있는가?
+- [ ] PC 전용 이벤트 테스트가 있는가?
+- [ ] 모킹이 적절히 사용되었는가?
+
+### 리뷰 체크리스트
+
+- [ ] 코딩 가이드라인을 준수하는가?
+- [ ] 보안 이슈가 없는가?
+- [ ] 성능에 문제가 없는가?
+- [ ] 문서화가 충분한가?
+- [ ] 테스트 커버리지가 적절한가?
+
+---
+
+## 📚 참고 자료
+
+- [TypeScript Best Practices](https://typescript-eslint.io/rules/)
+- [Preact Documentation](https://preactjs.com/guide/v10/)
+- [Testing Library](https://testing-library.com/docs/preact-testing-library/intro/)
+- [CSS Modules](https://github.com/css-modules/css-modules)
+- [Vitest](https://vitest.dev/guide/)
+
+---
+
+<div align="center">
+
+**💻 "Clean code is not about rules. It's about professionalism." - Robert C. Martin**
+
+</div>
 
 // 파일 하단: exports
 export { Component };
