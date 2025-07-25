@@ -249,7 +249,7 @@ export default defineConfig(({ mode }) => {
       },
       preprocessorOptions: {
         scss: {
-          additionalData: `@import "@shared/styles/design-tokens.css";`,
+          additionalData: `@import "@assets/styles/base/reset.css";`,
         },
       },
       // PostCSS 설정

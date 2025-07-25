@@ -181,8 +181,8 @@ describe('Architecture Dependency Rules', () => {
         const filePath = file.replace(/\\/g, '/');
 
         const isVendorDefinitionFile =
-          filePath === 'src/core/external/vendors/vendor-manager.ts' ||
-          filePath === 'src/core/external/vendors/vendor-api.ts';
+          filePath === 'src/shared/external/vendors/vendor-manager.ts' ||
+          filePath === 'src/shared/external/vendors/vendor-api.ts';
 
         // vendors getter 사용 패턴 검사
         const vendorGetterPatterns = [

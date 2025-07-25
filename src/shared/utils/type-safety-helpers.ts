@@ -37,20 +37,11 @@ export function safeParseFloat(value: string | undefined | null): number {
   return isNaN(result) ? 0 : result;
 }
 
-// ========== 배열 접근 유틸리티 ==========
-
 /**
  * 배열 요소 안전 접근
  * @param array - 접근할 배열 (null/undefined 허용)
  * @param index - 배열 인덱스
  * @returns 배열의 요소 또는 undefined (인덱스가 범위를 벗어나거나 배열이 null인 경우)
- * @example
- * ```typescript
- * const arr = [1, 2, 3];
- * const item = safeArrayGet(arr, 1); // 2
- * const item2 = safeArrayGet(arr, 10); // undefined
- * const item3 = safeArrayGet(null, 0); // undefined
- * ```
  */
 export function safeArrayGet<T>(array: T[] | undefined | null, index: number): T | undefined {
   if (!array || index < 0 || index >= array.length) {
@@ -60,69 +51,10 @@ export function safeArrayGet<T>(array: T[] | undefined | null, index: number): T
 }
 
 /**
- * NodeList 안전 접근
- */
-export function safeNodeListAccess<T extends Node>(
-  nodeList: NodeListOf<T> | T[] | undefined | null,
-  index: number
-): T | undefined {
-  if (!nodeList || index < 0 || index >= nodeList.length) {
-    return undefined;
-  }
-  return nodeList[index];
-}
-
-// ========== 정규식 매치 유틸리티 ==========
-
-/**
- * 정규식 매치 결과에서 안전하게 값 추출
- */
-export function safeMatchExtract(
-  match: RegExpMatchArray | null,
-  index: number,
-  defaultValue: string | null = null
-): string | null {
-  if (!match?.[index]) {
-    return defaultValue;
-  }
-  return match[index];
-}
-
-// ========== 함수 호출 유틸리티 ==========
-
-/**
- * 안전한 함수 호출
- */
-export function safeCall<T extends unknown[], R>(
-  fn: ((...args: T) => R) | undefined | null,
-  ...args: T
-): R | undefined {
-  return fn ? fn(...args) : undefined;
-}
-
-/**
- * 이벤트 핸들러 안전 wrapper
- */
-export function safeEventHandler<T extends Event>(
-  handler: ((event?: T) => void) | undefined | null
-): (event?: T) => void {
-  return handler ?? ((): void => {});
-}
-
-// ========== 타입 변환 유틸리티 ==========
-
-/**
  * undefined를 null로 변환
  */
 export function undefinedToNull<T>(value: T | undefined): T | null {
   return value ?? null;
-}
-
-/**
- * null을 undefined로 변환
- */
-export function nullToUndefined<T>(value: T | null): T | undefined {
-  return value ?? undefined;
 }
 
 /**
@@ -132,26 +64,12 @@ export function stringWithDefault(value: string | undefined, defaultValue: strin
   return value ?? defaultValue;
 }
 
-// ========== 요소 검증 유틸리티 ==========
-
 /**
  * HTMLElement 안전 검증
  */
 export function safeElementCheck<T extends Element>(element: T | undefined | null): element is T {
   return element != null;
 }
-
-/**
- * 객체 속성 안전 접근
- */
-export function safeProp<T, K extends keyof T>(
-  obj: T | undefined | null,
-  key: K
-): T[K] | undefined {
-  return obj?.[key];
-}
-
-// ========== 도메인 특화 유틸리티 ==========
 
 /**
  * 안전한 트윗 ID 생성 - crypto.randomUUID() 우선 사용
@@ -186,40 +104,74 @@ export function safeUsername(value: string | undefined): string {
 }
 
 /**
+ * NodeList 안전 접근
+ */
+export function safeNodeListAccess<T extends Node>(
+  nodeList: NodeListOf<T> | T[] | undefined | null,
+  index: number
+): T | undefined {
+  if (!nodeList || index < 0 || index >= nodeList.length) {
+    return undefined;
+  }
+  return nodeList[index];
+}
+
+/**
+ * 정규식 매치 결과에서 안전하게 값 추출
+ */
+export function safeMatchExtract(
+  match: RegExpMatchArray | null,
+  index: number,
+  defaultValue: string | null = null
+): string | null {
+  if (!match?.[index]) {
+    return defaultValue;
+  }
+  return match[index];
+}
+
+/**
+ * 안전한 함수 호출
+ */
+export function safeCall<T extends unknown[], R>(
+  fn: ((...args: T) => R) | undefined | null,
+  ...args: T
+): R | undefined {
+  return fn ? fn(...args) : undefined;
+}
+
+/**
+ * 이벤트 핸들러 안전 wrapper
+ */
+export function safeEventHandler<T extends Event>(
+  handler: ((event?: T) => void) | undefined | null
+): (event?: T) => void {
+  return handler ?? ((): void => {});
+}
+
+/**
+ * null을 undefined로 변환
+ */
+export function nullToUndefined<T>(value: T | null): T | undefined {
+  return value ?? undefined;
+}
+
+/**
+ * 객체 속성 안전 접근
+ */
+export function safeProp<T, K extends keyof T>(
+  obj: T | undefined | null,
+  key: K
+): T[K] | undefined {
+  return obj?.[key];
+}
+
+/**
  * ClickedIndex 안전 처리
  */
 export function safeClickedIndex(index: number | undefined): number | undefined {
   return index;
 }
-
-// ========== 객체 빌더 유틸리티 ==========
-
-/**
- * 안전한 객체 빌더
- */
-export function buildSafeObject<T extends Record<string, unknown>>(
-  builderFn: (builder: {
-    set<K extends keyof T>(
-      key: K,
-      value: T[K]
-    ): { set<K extends keyof T>(key: K, value: T[K]): unknown };
-  }) => void
-): Partial<T> {
-  const result: Partial<T> = {};
-  const builder = {
-    set<K extends keyof T>(key: K, value: T[K]) {
-      if (value !== undefined) {
-        result[key] = value;
-      }
-      return builder;
-    },
-  };
-
-  builderFn(builder);
-  return result;
-}
-
-// ========== 객체 조작 유틸리티 ==========
 
 /**
  * 조건부 속성 할당
@@ -282,6 +234,31 @@ export function createWithOptionalProperties<T extends Record<string, unknown>>(
     }
   }
 
+  return result;
+}
+
+/**
+ * 안전한 객체 빌더
+ */
+export function buildSafeObject<T extends Record<string, unknown>>(
+  builderFn: (builder: {
+    set<K extends keyof T>(
+      key: K,
+      value: T[K]
+    ): { set<K extends keyof T>(key: K, value: T[K]): unknown };
+  }) => void
+): Partial<T> {
+  const result: Partial<T> = {};
+  const builder = {
+    set<K extends keyof T>(key: K, value: T[K]) {
+      if (value !== undefined) {
+        result[key] = value;
+      }
+      return builder;
+    },
+  };
+
+  builderFn(builder);
   return result;
 }
 

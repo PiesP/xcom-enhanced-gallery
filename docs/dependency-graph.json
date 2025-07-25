@@ -1045,8 +1045,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/browser/BrowserUtils.ts",
-        "src/shared/logging/index.ts",
-        "src/shared/memory/MemoryTracker.ts"
+        "src/shared/logging/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1942,9 +1941,6 @@
         "src/shared/services/core-services.ts",
         "src/shared/services/gallery/GalleryService.ts",
         "src/shared/state/signals/download.signals.ts",
-        "src/shared/services/media-mapping/MediaMappingService.ts",
-        "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
-        "src/shared/services/media-mapping/index.ts",
         "src/shared/types/core/index.ts"
       ],
       "orphan": false,
@@ -2815,23 +2811,6 @@
         },
         {
           "dynamic": false,
-          "module": "./memory",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/memory/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./services",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3050,60 +3029,6 @@
       "dependencies": [],
       "dependents": [
         "src/shared/managers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/memory/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./MemoryTracker",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/memory/MemoryTracker.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/memory/MemoryTracker.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/memory/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5036,140 +4961,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/media-mapping/MediaMappingService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../types/core/core-types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/core/core-types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./MediaTabUrlDirectStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/media-mapping/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../types/core/core-types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/core/core-types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/media-mapping/MediaMappingService.ts",
-        "src/shared/services/media-mapping/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/media-mapping/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../types/core/core-types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/types/core/core-types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./MediaMappingService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/media-mapping/MediaMappingService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./MediaTabUrlDirectStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/services/media/index.ts",
       "dependencies": [
         {
@@ -5327,40 +5118,6 @@
       "dependencies": [],
       "dependents": [
         "src/shared/state/signals/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/styles/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./theme-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/styles/theme-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/styles/theme-utils.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/styles/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5533,48 +5290,37 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/core/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./type-safety-helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/core/type-safety-helpers.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/core/type-safety-helpers.ts",
+      "source": "src/shared/utils/type-safety-helpers.ts",
       "dependencies": [],
-      "dependents": [
-        "src/shared/utils/core/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/utils/type-safety-helpers.ts",
+        "to": "src/shared/utils/type-safety-helpers.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 145,
-    "totalDependenciesCruised": 237,
+    "totalCruised": 137,
+    "totalDependenciesCruised": 226,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

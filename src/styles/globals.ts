@@ -4,11 +4,10 @@
  * @version 5.0.0
  */
 
-// 격리된 갤러리 스타일 (트위터 페이지에 영향 없음)
-import '@shared/styles/isolated-gallery.css';
-
-// 디자인 토큰 CSS 변수 (필요시에만)
-import '@shared/styles/design-tokens.css';
-
 // 브라우저 스타일 초기화 (갤러리 컨테이너 내부에만 적용)
 import '@assets/styles/base/reset.css';
+
+// 갤러리 핵심 스타일
+import '@assets/styles/twitter-gallery.css';
+import '@assets/styles/components/gallery.css';
+import '@assets/styles/animations.css';
