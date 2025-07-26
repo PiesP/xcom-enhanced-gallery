@@ -1012,6 +1012,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/hoc/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/hoc/index.ts",
       "dependencies": [
         {
@@ -1021,6 +1030,7 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "export"
           ],
           "resolved": "src/shared/components/hoc/GalleryMarker.tsx",
@@ -1033,7 +1043,24 @@
         },
         {
           "dynamic": false,
-          "module": "./GalleryMarker",
+          "module": "./UnifiedGalleryHOC",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./UnifiedGalleryHOC",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -1041,7 +1068,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/shared/components/hoc/GalleryMarker.tsx",
+          "resolved": "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4803,8 +4830,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 139,
-    "totalDependenciesCruised": 199,
+    "totalCruised": 140,
+    "totalDependenciesCruised": 200,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

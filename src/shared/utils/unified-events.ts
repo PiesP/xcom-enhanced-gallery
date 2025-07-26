@@ -7,7 +7,7 @@
 import { logger } from '@shared/logging/logger';
 import { GalleryUtils } from '@shared/utils/unified-utils';
 import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
-import { isVideoControlElement } from '@/constants';
+import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 
@@ -393,6 +393,14 @@ async function handleMediaClick(
     // 비디오 컨트롤 클릭인지 확인
     if (isVideoControlElement(target)) {
       return { handled: false, reason: 'Video control element' };
+    }
+
+    // 트위터 네이티브 갤러리 요소 확인 (중복 실행 방지)
+    if (isTwitterNativeGalleryElement(target)) {
+      // 트위터 네이티브 이벤트를 즉시 차단
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      logger.debug('Twitter native gallery event blocked');
     }
 
     // 미디어 감지 시도

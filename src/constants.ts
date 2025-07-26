@@ -360,6 +360,34 @@ export function isVideoControlElement(element: HTMLElement): boolean {
 }
 
 /**
+ * 트위터 네이티브 갤러리 요소인지 확인 (중복 실행 방지용)
+ */
+export function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
+  const twitterGallerySelectors = [
+    '[data-testid="tweetPhoto"]',
+    '[data-testid="videoPlayer"]',
+    '[aria-label*="Image"]',
+    '[aria-label*="Video"]',
+    '.css-1dbjc4n[role="button"]:has(img)',
+    '.css-1dbjc4n[role="button"]:has(video)',
+    '[data-testid="card.layoutLarge.media"]',
+    '[data-testid="card.layoutSmall.media"]',
+    // 트위터 갤러리 오버레이 관련
+    '[data-testid="media-overlay"]',
+    '[aria-modal="true"]:has([data-testid="tweetPhoto"])',
+    '[aria-modal="true"]:has([data-testid="videoPlayer"])',
+  ];
+
+  return twitterGallerySelectors.some(selector => {
+    try {
+      return element.matches(selector) || element.closest(selector) !== null;
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
  * 트윗 ID 추출
  */
 export function extractTweetId(url: string): string | null {
