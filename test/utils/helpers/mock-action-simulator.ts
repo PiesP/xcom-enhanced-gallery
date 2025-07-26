@@ -122,20 +122,24 @@ export function simulateNetworkError() {
  */
 export function simulateProgressUpdate(progressElement, targetPercent = 100) {
   let currentPercent = 0;
+  const incrementStep = 20;
   const interval = globalThis.setInterval(() => {
-    currentPercent += 20;
+    // 다음 증가값이 목표를 초과하는지 미리 확인
+    const nextPercent = currentPercent + incrementStep;
 
-    // targetPercent를 초과하지 않도록 제한
-    if (currentPercent > targetPercent) {
+    if (nextPercent >= targetPercent) {
+      // 목표값에 도달했으므로 목표값으로 설정하고 종료
       currentPercent = targetPercent;
-    }
-
-    if (progressElement) {
-      progressElement.textContent = `${currentPercent}%`;
-    }
-
-    if (currentPercent >= targetPercent) {
+      if (progressElement) {
+        progressElement.textContent = `${currentPercent}%`;
+      }
       globalThis.clearInterval(interval);
+    } else {
+      // 아직 목표값에 도달하지 않았으므로 증가
+      currentPercent = nextPercent;
+      if (progressElement) {
+        progressElement.textContent = `${currentPercent}%`;
+      }
     }
   }, 100);
 }
