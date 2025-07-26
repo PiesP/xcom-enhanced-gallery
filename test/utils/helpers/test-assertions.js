@@ -149,7 +149,22 @@ export function expectUrlToHaveParams(url, params) {
     return;
   }
 
-  const urlObj = new URLConstructor(url);
+  // URL 생성자 사용 (안전한 접근)
+  let urlObj;
+  try {
+    // globalThis에서 URL 생성자 가져오기
+    const URLConstructor = globalThis.URL || globalThis.window?.URL;
+    if (!URLConstructor) {
+      throw new Error('URL constructor not available');
+    }
+    urlObj = new URLConstructor(url);
+  } catch {
+    // URL 생성이 실패하면 기본적인 문자열 검사
+    Object.entries(params).forEach(([key, value]) => {
+      expect(url).toContain(`${key}=${value}`);
+    });
+    return;
+  }
 
   Object.entries(params).forEach(([key, value]) => {
     expect(urlObj.searchParams.get(key)).toBe(value);
@@ -393,6 +408,62 @@ export function setupCustomMatchers() {
 
     toBeVisibleElement(received) {
       const pass = received &&
+        received.style &&
+        received.style.display !== 'none' &&
+        received.style.visibility !== 'hidden';
+
+      return {
+        message: () => `expected ${received} to be visible`,
+        pass
+      };
+    }
+  });
+}
+
+// ================================
+// Performance Test Helpers
+// ================================
+
+/**
+ * 함수가 지정된 시간 내에 실행되는지 확인
+ */
+export async function expectFunctionToExecuteWithin(func, maxTimeMs = 1000) {
+  const startTime = Date.now();
+
+  try {
+    await func();
+    const executionTime = Date.now() - startTime;
+    expect(executionTime).toBeLessThan(maxTimeMs);
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    // 실행 시간은 확인하되, 원래 에러는 다시 던짐
+    expect(executionTime).toBeLessThan(maxTimeMs);
+    throw error;
+  }
+}
+}
+
+// ================================
+// Performance Assertion Helpers
+// ================================
+
+/**
+ * 함수가 지정된 시간 내에 실행되는지 확인
+ */
+export async function expectFunctionToExecuteWithin(func, maxTimeMs = 1000) {
+  const startTime = Date.now();
+
+  try {
+    await func();
+    const executionTime = Date.now() - startTime;
+    expect(executionTime).toBeLessThan(maxTimeMs);
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    // 실행 시간은 확인하되, 원래 에러는 다시 던짐
+    expect(executionTime).toBeLessThan(maxTimeMs);
+    throw error;
+  }
+}
                   received.style?.display !== 'none' &&
                   received.style?.visibility !== 'hidden';
 

@@ -3,14 +3,14 @@
  * 다양한 시나리오에 맞는 환경을 쉽게 설정할 수 있도록 도와주는 유틸리티
  */
 
-import { setupUserscriptAPIMocks, clearMockStorage } from '../../__mocks__/userscript-api.mock';
+import { setupUserscriptAPIMocks, clearMockStorage } from '../../__mocks__/userscript-api.mock.js';
 
-import { setupTwitterDOM, clearTwitterDOM } from '../../__mocks__/twitter-dom.mock';
+import { setupTwitterDOM, clearTwitterDOM } from '../../__mocks__/twitter-dom.mock.js';
 
 import {
   setupBrowserEnvironment,
   clearBrowserEnvironment,
-} from '../../__mocks__/browser-environment.mock';
+} from '../../__mocks__/browser-environment.mock.js';
 
 // ================================
 // Environment Setup Functions

@@ -30,6 +30,15 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
     isolate: true, // 테스트 파일 간 격리
 
+    // JSDOM 환경 설정
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable',
+        url: 'https://x.com',
+        storageQuota: 10000000,
+      },
+    },
+
     // 타입 정의 파일 포함
     typecheck: {
       include: ['**/*.{test,spec}.{ts,tsx}'],
