@@ -17,7 +17,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { MediaService } from '@shared/services/MediaService';
 import { UIService } from '@shared/services/UIService';
-import { unmountIsolatedGallery } from '@shared/components/isolation/IsolatedGalleryRoot';
+import { unmountUnifiedGallery } from '@shared/components/isolation/UnifiedGalleryContainer';
 
 /**
  * 갤러리 앱 설정
@@ -297,9 +297,9 @@ export class GalleryApp {
         logger.warn('이벤트 코디네이터 정리 실패:', error);
       }
 
-      // 격리된 갤러리 컨테이너 제거
+      // 통합된 갤러리 컨테이너 제거
       if (this.galleryContainer) {
-        unmountIsolatedGallery();
+        unmountUnifiedGallery();
         this.galleryContainer = null;
       }
 

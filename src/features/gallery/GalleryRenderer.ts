@@ -24,6 +24,7 @@ import {
 } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
+import { UnifiedGalleryContainer } from '@shared/components/isolation/UnifiedGalleryContainer';
 import './styles/gallery-global.css';
 import { logger } from '@shared/logging/logger';
 import { getPreact } from '@shared/external/vendors';
@@ -115,63 +116,59 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   /**
-   * 컨테이너 생성
+   * 컨테이너 생성 - UnifiedGalleryContainer 사용
    */
   private createContainer(): void {
     this.cleanupContainer();
 
     this.container = document.createElement('div');
-    this.container.className = 'xeg-gallery-container';
-    this.container.style.cssText = `
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      z-index: 10000 !important;
-      background: rgba(0, 0, 0, 0.95) !important;
-      display: flex !important;
-      flex-direction: column !important;
-    `;
+    this.container.className = 'xeg-gallery-unified-renderer';
+    this.container.setAttribute('data-renderer', 'unified');
 
     document.body.appendChild(this.container);
-    // 격리된 갤러리에서는 body 클래스 조작하지 않음
-    // document.body.classList.add('xeg-gallery-open'); // 제거됨
 
     // 정리 작업 등록
     this.cleanupManager.addTask(() => {
-      // 격리된 갤러리에서는 body 클래스 조작하지 않음
-      // document.body.classList.remove('xeg-gallery-open'); // 제거됨
+      // 컨테이너 정리는 cleanupContainer에서 처리
     });
   }
 
   /**
-   * 컴포넌트 렌더링 - props 없이 Signal 구독하는 컴포넌트
+   * 컴포넌트 렌더링 - UnifiedGalleryContainer 사용
    */
   private renderComponent(): void {
     if (!this.container) return;
 
     const { render, createElement } = getPreact();
 
-    // VerticalGalleryView에 props를 전달하지 않고,
-    // 컴포넌트가 직접 galleryState signal을 구독하도록 변경
-    const galleryElement = createElement(VerticalGalleryView, {
-      // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
+    // UnifiedGalleryContainer로 VerticalGalleryView를 래핑
+    const galleryElement = createElement(UnifiedGalleryContainer, {
       onClose: () => {
         closeGallery();
         if (this.onCloseCallback) {
           this.onCloseCallback();
         }
       },
-      onPrevious: () => this.handleNavigation('previous'),
-      onNext: () => this.handleNavigation('next'),
-      onDownloadCurrent: () => this.handleDownload('current'),
-      onDownloadAll: () => this.handleDownload('all'),
-      className: 'xeg-vertical-gallery',
+      className: 'xeg-gallery-renderer',
+      useShadowDOM: false, // 기본적으로 Shadow DOM 비사용
+      children: createElement(VerticalGalleryView, {
+        // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
+        onClose: () => {
+          closeGallery();
+          if (this.onCloseCallback) {
+            this.onCloseCallback();
+          }
+        },
+        onPrevious: () => this.handleNavigation('previous'),
+        onNext: () => this.handleNavigation('next'),
+        onDownloadCurrent: () => this.handleDownload('current'),
+        onDownloadAll: () => this.handleDownload('all'),
+        className: 'xeg-vertical-gallery',
+      }),
     });
 
     render(galleryElement, this.container);
-    logger.info('[GalleryRenderer] Signal 기반 컴포넌트 렌더링 완료');
+    logger.info('[GalleryRenderer] UnifiedGalleryContainer 기반 렌더링 완료');
   }
 
   /**
