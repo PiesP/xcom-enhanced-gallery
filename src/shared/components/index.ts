@@ -16,13 +16,8 @@ export { withGalleryMarker } from './hoc/GalleryMarker';
 // 통합된 갤러리 컴포넌트들
 export { UnifiedGalleryContainer } from './isolation/UnifiedGalleryContainer';
 
-// 레거시 격리 컴포넌트들 (하위 호환성)
-export { IsolatedGalleryContainer } from './isolation/IsolatedGalleryContainer';
-export { IsolatedGalleryRoot } from './isolation/IsolatedGalleryRoot';
-
 // 타입들
 export type { UnifiedGalleryContainerProps } from './isolation/UnifiedGalleryContainer';
-export type { IsolatedGalleryContainerProps } from './isolation/IsolatedGalleryContainer';
 export type { ButtonProps } from './ui/Button/Button';
 export type { ToastProps } from './ui/Toast/Toast';
 export type { ToolbarProps } from './ui/Toolbar/Toolbar';

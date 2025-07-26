@@ -156,8 +156,6 @@ export interface BrowserEnvironment {
   userscriptManager: 'tampermonkey' | 'greasemonkey' | 'violentmonkey' | 'unknown';
   /** 브라우저 타입 */
   browser: 'chrome' | 'firefox' | 'safari' | 'edge' | 'unknown';
-  /** 모바일 여부 */
-  isMobile: boolean;
   /** 개발 모드 여부 */
   isDevelopment: boolean;
 }
