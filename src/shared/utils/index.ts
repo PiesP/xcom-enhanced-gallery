@@ -52,6 +52,26 @@ export {
   unifiedUtils,
 } from './unified-utils';
 
+// Resource management utilities
+export {
+  createManagedTimer,
+  createManagedInterval,
+  addManagedEventListener,
+  createManagedObserver,
+  createManagedController,
+  createManagedObjectURL,
+  registerManagedMemoryResource,
+  releaseResource,
+  releaseResourcesByContext,
+  releaseResourcesByType,
+  cleanupAllResources,
+  getResourceCount,
+  getResourceCountByContext,
+  getResourceCountByType,
+  hasResource,
+  getResourceDiagnostics,
+} from './resource-manager';
+
 // DOM utilities (통합된 파일)
 export {
   // 갤러리 요소 감지

@@ -232,11 +232,11 @@ const { render } = getPreact();
 
 ### 현재 사용 라이브러리
 
-| 라이브러리       | 버전   | 용도                 | 번들 크기 |
-| ---------------- | ------ | -------------------- | --------- |
-| **Preact**       | 10.x   | UI 프레임워크        | ~3KB      |
-| **@preact/signals** | 2.x | 반응형 상태 관리     | ~2KB      |
-| **fflate**       | 0.8.x  | 고성능 압축          | ~8KB      |
+| 라이브러리          | 버전  | 용도             | 번들 크기 |
+| ------------------- | ----- | ---------------- | --------- |
+| **Preact**          | 10.x  | UI 프레임워크    | ~3KB      |
+| **@preact/signals** | 2.x   | 반응형 상태 관리 | ~2KB      |
+| **fflate**          | 0.8.x | 고성능 압축      | ~8KB      |
 
 ---
 
@@ -247,8 +247,8 @@ const { render } = getPreact();
 ```typescript
 // 모듈 로딩 전략
 interface ModuleLoadingStrategy {
-  features: 'lazy';     // 지연 로딩
-  shared: 'eager';      // 즉시 로딩
+  features: 'lazy'; // 지연 로딩
+  shared: 'eager'; // 즉시 로딩
   external: 'on-demand'; // 필요시 로딩
 }
 
@@ -266,8 +266,8 @@ export * from './module';
 // 성능 모니터링
 interface PerformanceMetrics {
   bundleSize: {
-    development: number;  // ~400KB
-    production: number;   // ~240KB
+    development: number; // ~400KB
+    production: number; // ~240KB
   };
   loadTime: number;
   memoryUsage: number;
@@ -352,9 +352,9 @@ interface BackwardCompatibility {
 ```typescript
 // 품질 메트릭스 모니터링
 interface QualityMetrics {
-  coupling: CouplingMetrics;      // 결합도
-  cohesion: CohesionMetrics;      // 응집도
-  complexity: ComplexityMetrics;  // 복잡도
+  coupling: CouplingMetrics; // 결합도
+  cohesion: CohesionMetrics; // 응집도
+  complexity: ComplexityMetrics; // 복잡도
   testability: TestabilityMetrics; // 테스트성
 }
 
@@ -381,6 +381,7 @@ const qualityGates = {
 
 <div align="center">
 
-**🏗️ "Architecture is about the important stuff. Whatever that is." - Ralph Johnson**
+**🏗️ "Architecture is about the important stuff. Whatever that is." - Ralph
+Johnson**
 
 </div>

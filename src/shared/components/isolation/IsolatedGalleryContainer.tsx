@@ -7,7 +7,7 @@
 import { getPreact, getPreactHooks } from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
-import { namespacedDesignSystem } from '@shared/managers/NamespacedDesignSystem';
+import { namespacedDesignSystem } from '@shared/styles';
 
 /**
  * 격리된 갤러리 컨테이너 Props
@@ -109,7 +109,7 @@ export function IsolatedGalleryContainer({
 
   // 컨테이너 클래스명 구성
   const containerClassName = [
-    namespacedDesignSystem.getNamespace(),
+    'xeg-gallery', // 네임스페이스 하드코딩
     'xeg-gallery-isolated',
     className,
   ]

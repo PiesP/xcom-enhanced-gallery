@@ -8,7 +8,7 @@ import { getPreact } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { Cleanupable } from '@shared/types/app.types';
-import { namespacedDesignSystem } from '@shared/managers/NamespacedDesignSystem';
+import { namespacedDesignSystem } from '@shared/styles';
 import { IsolatedGalleryContainer } from '@shared/components/isolation/IsolatedGalleryContainer';
 import { VerticalGalleryView } from '../components/vertical-gallery-view/VerticalGalleryView';
 
@@ -98,7 +98,7 @@ export class IsolatedGalleryRenderer implements Cleanupable {
    */
   private createIsolatedContainer(): void {
     this.container = document.createElement('div');
-    this.container.className = `${namespacedDesignSystem.getNamespace()} xeg-gallery-isolated`;
+    this.container.className = `xeg-gallery xeg-gallery-isolated`; // 네임스페이스 하드코딩
     this.container.setAttribute('data-gallery-isolated', 'true');
     this.container.setAttribute('data-renderer', 'isolated');
     this.container.setAttribute('aria-label', 'X.com Enhanced Gallery');
@@ -214,7 +214,7 @@ export class IsolatedGalleryRenderer implements Cleanupable {
       isRendered: this.isRendered,
       hasContainer: !!this.container,
       containerInDOM: this.container ? document.body.contains(this.container) : false,
-      designSystem: namespacedDesignSystem.getDiagnostics(),
+      designSystem: { namespace: 'xeg-gallery', initialized: true }, // 단순화
       options: { ...this.options },
     };
   }

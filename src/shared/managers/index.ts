@@ -6,9 +6,9 @@
 
 // Essential managers
 export { EventDispatcher } from './EventDispatcher';
-export { NamespacedDesignSystem, namespacedDesignSystem } from './NamespacedDesignSystem';
+// NamespacedDesignSystem은 단순 함수로 대체됨 - @shared/styles/namespaced-styles 사용
 
-// Resource management
+// Resource management (단순화된 함수들)
 export {
   ResourceManager,
   resourceManager,
@@ -22,4 +22,4 @@ export {
   releaseResource,
   releaseResourcesByContext,
   cleanupAllResources,
-} from './ResourceManager';
+} from '@shared/utils/resource-manager';

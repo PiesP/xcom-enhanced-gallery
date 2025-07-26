@@ -37,10 +37,7 @@ const result = processImage(data);
 const message = 'Processing completed';
 
 // ✅ trailing comma
-const items = [
-  'image',
-  'video',
-];
+const items = ['image', 'video'];
 ```
 
 ### 파일 구조 규칙
@@ -121,7 +118,7 @@ type MediaType = 'image' | 'video';
 type GalleryState = 'loading' | 'ready' | 'error';
 
 // ❌ 금지된 이름들
-Enhanced, Advanced, Simple, Manager, Handler, Util
+(Enhanced, Advanced, Simple, Manager, Handler, Util);
 ```
 
 ---
@@ -227,19 +224,22 @@ export function useGalleryKeyboard({
 }: UseGalleryKeyboardOptions) {
   const { useEffect, useCallback } = getPreact();
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    switch (event.key) {
-      case 'ArrowLeft':
-        onPrevious();
-        break;
-      case 'ArrowRight':
-        onNext();
-        break;
-      case 'Escape':
-        onClose();
-        break;
-    }
-  }, [onPrevious, onNext, onClose]);
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          onPrevious();
+          break;
+        case 'ArrowRight':
+          onNext();
+          break;
+        case 'Escape':
+          onClose();
+          break;
+      }
+    },
+    [onPrevious, onNext, onClose]
+  );
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -400,9 +400,9 @@ export function setMediaItems(items: MediaItem[]) {
 
 ```typescript
 // ✅ 테스트 파일 네이밍
-ComponentName.test.tsx
-utils.test.ts
-media-processor.test.ts
+ComponentName.test.tsx;
+utils.test.ts;
+media - processor.test.ts;
 
 // ✅ 테스트 구조
 describe('GalleryItem', () => {
@@ -538,14 +538,14 @@ describe('MediaService', () => {
 
 <div align="center">
 
-**💻 "Clean code is not about rules. It's about professionalism." - Robert C. Martin**
+**💻 "Clean code is not about rules. It's about professionalism." - Robert C.
+Martin**
 
 </div>
 
-// 파일 하단: exports
-export { Component };
-export type { ComponentProps };
-```
+// 파일 하단: exports export { Component }; export type { ComponentProps };
+
+````
 
 ## �️ 네이밍 규칙
 
@@ -564,7 +564,7 @@ components / services / media -
     GalleryView.tsx;
 MediaPlayer.tsx;
 DownloadButton.tsx;
-```
+````
 
 ### 변수 및 함수 네이밍
 

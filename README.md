@@ -1,6 +1,7 @@
 # 🚀 X.com Enhanced Gallery
 
-> **X.com에서 미디어를 원본 화질로 다운로드하고 편리하게 탐색하는 PC 전용 브라우저 확장**
+> **X.com에서 미디어를 원본 화질로 다운로드하고 편리하게 탐색하는 PC 전용
+> 브라우저 확장**
 
 [![설치하기](https://img.shields.io/badge/설치하기-클릭-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
 [![버전](https://img.shields.io/badge/버전-v3.2.0-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
@@ -9,7 +10,9 @@
 [![Firefox](https://img.shields.io/badge/Firefox-✓-FF7139)](https://www.mozilla.org/firefox/)
 [![Safari](https://img.shields.io/badge/Safari-✓-00D4FF)](https://www.apple.com/safari/)
 
-**X.com Enhanced Gallery**는 X.com(구 Twitter)에서 이미지와 동영상을 **고화질 원본**으로 다운로드하고, **직관적인 세로 스크롤 갤러리**로 탐색할 수 있는 **PC 환경 전용** 유저스크립트입니다.
+**X.com Enhanced Gallery**는 X.com(구 Twitter)에서 이미지와 동영상을 **고화질
+원본**으로 다운로드하고, **직관적인 세로 스크롤 갤러리**로 탐색할 수 있는 **PC
+환경 전용** 유저스크립트입니다.
 
 ## ✨ 주요 기능
 
@@ -54,7 +57,8 @@
 
 _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 나타납니다_
 
-**📦 [최신 릴리스 보기](https://github.com/PiesP/xcom-enhanced-gallery/releases)**
+**📦
+[최신 릴리스 보기](https://github.com/PiesP/xcom-enhanced-gallery/releases)**
 
 </div>
 
@@ -79,20 +83,20 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ### 다운로드 기능
 
-| 다운로드 유형    | 버튼              | 설명                                            |
-| ---------------- | ----------------- | ----------------------------------------------- |
-| **단일 다운로드** | 📥 다운로드       | 현재 보고 있는 이미지/동영상만 원본 화질로 저장 |
-| **전체 다운로드** | 📦 모두 다운로드  | 트윗의 모든 미디어를 ZIP 파일로 일괄 다운로드   |
+| 다운로드 유형     | 버튼             | 설명                                            |
+| ----------------- | ---------------- | ----------------------------------------------- |
+| **단일 다운로드** | 📥 다운로드      | 현재 보고 있는 이미지/동영상만 원본 화질로 저장 |
+| **전체 다운로드** | 📦 모두 다운로드 | 트윗의 모든 미디어를 ZIP 파일로 일괄 다운로드   |
 
 ### 키보드 단축키
 
-| 키보드           | 기능                      | 설명                              |
-| ---------------- | ------------------------- | --------------------------------- |
-| `←` `→`          | 이전/다음 이미지          | 갤러리 내 미디어 간 이동          |
-| `Home` `End`     | 첫 번째/마지막 이미지     | 갤러리 처음/끝으로 바로 이동      |
-| `Space`          | 동영상 재생/일시정지      | 현재 동영상의 재생 상태 토글      |
-| `Escape`         | 갤러리 닫기               | 갤러리를 닫고 원래 페이지로 복귀  |
-| `F`              | 전체화면 토글             | 브라우저 전체화면 모드 전환       |
+| 키보드       | 기능                  | 설명                             |
+| ------------ | --------------------- | -------------------------------- |
+| `←` `→`      | 이전/다음 이미지      | 갤러리 내 미디어 간 이동         |
+| `Home` `End` | 첫 번째/마지막 이미지 | 갤러리 처음/끝으로 바로 이동     |
+| `Space`      | 동영상 재생/일시정지  | 현재 동영상의 재생 상태 토글     |
+| `Escape`     | 갤러리 닫기           | 갤러리를 닫고 원래 페이지로 복귀 |
+| `F`          | 전체화면 토글         | 브라우저 전체화면 모드 전환      |
 
 ### 고급 기능
 
@@ -119,12 +123,12 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ### 브라우저 호환성
 
-| 브라우저      | 버전    | 상태 |
-| ------------- | ------- | ---- |
-| Chrome        | 88+     | ✅   |
-| Firefox       | 78+     | ✅   |
-| Safari        | 14+     | ✅   |
-| Edge          | 88+     | ✅   |
+| 브라우저 | 버전 | 상태 |
+| -------- | ---- | ---- |
+| Chrome   | 88+  | ✅   |
+| Firefox  | 78+  | ✅   |
+| Safari   | 14+  | ✅   |
+| Edge     | 88+  | ✅   |
 
 ## �📄 라이센스 및 오픈소스
 
@@ -132,11 +136,11 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ### 사용된 오픈소스 라이브러리
 
-| 라이브러리       | 라이센스 | 용도                   |
-| ---------------- | -------- | ---------------------- |
-| **Preact**       | MIT      | UI 프레임워크          |
-| **@preact/signals** | MIT   | 반응형 상태 관리       |
-| **fflate**       | MIT      | 고성능 압축            |
+| 라이브러리          | 라이센스 | 용도             |
+| ------------------- | -------- | ---------------- |
+| **Preact**          | MIT      | UI 프레임워크    |
+| **@preact/signals** | MIT      | 반응형 상태 관리 |
+| **fflate**          | MIT      | 고성능 압축      |
 
 모든 라이센스 전문은 [`LICENSES/`](LICENSES/) 디렉토리에서 확인할 수 있습니다.
 
@@ -145,7 +149,8 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 프로젝트에 기여하고 싶으시다면:
 
 1. **Fork**: 이 저장소를 포크하세요
-2. **Branch**: 새로운 기능 브랜치를 생성하세요 (`git checkout -b feature/amazing-feature`)
+2. **Branch**: 새로운 기능 브랜치를 생성하세요
+   (`git checkout -b feature/amazing-feature`)
 3. **Commit**: 변경사항을 커밋하세요 (`git commit -m 'Add amazing feature'`)
 4. **Push**: 브랜치에 푸시하세요 (`git push origin feature/amazing-feature`)
 5. **Pull Request**: Pull Request를 생성하세요
@@ -174,8 +179,10 @@ npm test
 
 ## 📞 지원 및 피드백
 
-- **🐛 버그 신고**: [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
-- **💡 기능 제안**: [GitHub Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
+- **🐛 버그 신고**:
+  [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
+- **💡 기능 제안**:
+  [GitHub Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
 - **📚 문서**: [docs/](docs/) 디렉토리
 - **📝 변경사항**: [RELEASE_NOTES.md](release/RELEASE_NOTES.md)
 

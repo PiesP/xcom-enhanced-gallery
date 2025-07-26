@@ -25,10 +25,13 @@ export * from '@shared/utils';
 export { default as designTokens } from '@shared/styles/design-tokens.css';
 
 // 테마 유틸리티 함수들 export
+export { getXEGVariable, setGalleryTheme } from './theme-utils';
+
+// 네임스페이스된 스타일 시스템 (단순화됨)
 export {
-  getXEGVariable,
-  setGalleryTheme,
-  isInsideGallery,
-  STYLE_CONSTANTS,
-  type Theme,
-} from './theme-utils';
+  initializeNamespacedStyles,
+  cleanupNamespacedStyles,
+  createNamespacedClass,
+  createNamespacedSelector,
+  namespacedDesignSystem,
+} from './namespaced-styles';
