@@ -376,26 +376,44 @@ export function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
     return false;
   }
 
-  const twitterGallerySelectors = [
-    // 트위터 네이티브 갤러리 모달의 특징적 요소들만 포함
+  // 트위터 네이티브 갤러리 트리거 요소들 (클릭 시 갤러리가 열리는 요소들)
+  const twitterGalleryTriggerSelectors = [
+    // 미디어 컨테이너들 - 클릭 시 갤러리가 열림
+    '[data-testid="tweetPhoto"]',
+    '[data-testid="tweetPhoto"] img',
+    '[data-testid="tweetPhoto"] > div',
+    '[data-testid="videoPlayer"]',
+    '[data-testid="videoPlayer"] > *',
+
+    // 미디어 링크들
+    'a[href*="/photo/"]',
+    'a[href*="/status/"][href*="/photo/"] *',
+    'a[href*="/status/"][href*="/video/"] *',
+
+    // 트위터 이미지/비디오 요소들
+    'img[src*="pbs.twimg.com"]',
+    'img[src*="twimg.com"]',
+    'video[poster*="twimg.com"]',
+
+    // 미디어 오버레이 및 플레이 버튼들
+    '[data-testid="playButton"]',
+    '[data-testid="videoComponent"]',
+    'div[role="button"][aria-label*="재생"]',
+    'div[role="button"][aria-label*="Play"]',
+  ];
+
+  // 이미 열린 트위터 갤러리 모달 요소들
+  const twitterGalleryModalSelectors = [
     '[aria-modal="true"][data-testid="Drawer"]',
     '[data-testid="swipe-to-dismiss"]',
     '[data-testid="photoViewer"]',
-
-    // 트위터 갤러리 내비게이션 버튼들
-    '[data-testid="media-overlay"] button',
-    '[data-testid="Drawer"] [role="button"][aria-label*="Close"]',
-    '[data-testid="Drawer"] [role="button"][aria-label*="닫기"]',
-
-    // 트위터 갤러리 모달 백드롭
-    '[data-testid="Drawer"] > div[style*="position: fixed"]',
-
-    // 트위터 갤러리가 열렸을 때만 나타나는 요소들
-    'div[aria-modal="true"] [data-testid="tweetPhoto"]',
-    'div[aria-modal="true"] [data-testid="videoPlayer"]',
+    '[data-testid="media-overlay"]',
+    '[data-testid="Drawer"] [role="button"]',
   ];
 
-  return twitterGallerySelectors.some(selector => {
+  const allSelectors = [...twitterGalleryTriggerSelectors, ...twitterGalleryModalSelectors];
+
+  return allSelectors.some(selector => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch {

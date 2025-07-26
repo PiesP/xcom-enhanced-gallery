@@ -462,7 +462,31 @@ async function handleMediaClick(
       return { handled: false, reason: 'Video control element' };
     }
 
-    // 우선 미디어 감지 시도 (우리의 갤러리가 우선)
+    // **우선순위 1: 트위터 네이티브 갤러리 요소 확인 및 차단 (중복 실행 방지)**
+    if (isTwitterNativeGalleryElement(target)) {
+      // 트위터 네이티브 이벤트를 즉시 차단
+      event.stopImmediatePropagation();
+      event.preventDefault();
+
+      // 미디어 감지 후 우리의 갤러리 열기 시도
+      if (options.enableMediaDetection) {
+        const mediaInfo = await detectMediaFromClick(event);
+        if (mediaInfo) {
+          await handlers.onMediaClick(mediaInfo, target, event);
+          logger.debug('Twitter gallery blocked, our gallery opened instead');
+          return {
+            handled: true,
+            reason: 'Twitter blocked, our gallery opened',
+            mediaInfo,
+          };
+        }
+      }
+
+      logger.debug('Twitter native gallery event blocked');
+      return { handled: true, reason: 'Twitter native gallery blocked' };
+    }
+
+    // **우선순위 2: 일반 미디어 감지 (트위터 요소가 아닌 경우)**
     if (options.enableMediaDetection) {
       const mediaInfo = await detectMediaFromClick(event);
       if (mediaInfo) {
@@ -473,15 +497,6 @@ async function handleMediaClick(
           mediaInfo,
         };
       }
-    }
-
-    // 미디어 감지 실패 후 트위터 네이티브 갤러리 요소 확인 (중복 실행 방지)
-    if (isTwitterNativeGalleryElement(target)) {
-      // 트위터 네이티브 이벤트를 즉시 차단
-      event.stopImmediatePropagation();
-      event.preventDefault();
-      logger.debug('Twitter native gallery event blocked');
-      return { handled: true, reason: 'Twitter native gallery blocked' };
     }
 
     return { handled: false, reason: 'No media detected' };
