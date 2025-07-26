@@ -364,18 +364,46 @@ export function isVideoControlElement(element: HTMLElement): boolean {
  */
 export function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
   const twitterGallerySelectors = [
+    // 기본 미디어 요소들
     '[data-testid="tweetPhoto"]',
     '[data-testid="videoPlayer"]',
+    '[data-testid="videoComponent"]',
+
+    // 미디어 버튼들
     '[aria-label*="Image"]',
     '[aria-label*="Video"]',
+    '[aria-label*="사진"]',
+    '[aria-label*="동영상"]',
+
+    // CSS 클래스 기반 (트위터가 자주 사용하는 패턴)
     '.css-1dbjc4n[role="button"]:has(img)',
     '.css-1dbjc4n[role="button"]:has(video)',
+
+    // 카드 레이아웃
     '[data-testid="card.layoutLarge.media"]',
     '[data-testid="card.layoutSmall.media"]',
-    // 트위터 갤러리 오버레이 관련
+
+    // 갤러리 오버레이 및 모달
     '[data-testid="media-overlay"]',
     '[aria-modal="true"]:has([data-testid="tweetPhoto"])',
     '[aria-modal="true"]:has([data-testid="videoPlayer"])',
+
+    // 미디어 컨테이너들
+    '[data-testid="photoViewer"]',
+    '[data-testid="swipe-to-dismiss"]',
+
+    // 미디어 내비게이션
+    '[data-testid="mediaPreview"]',
+    '[data-testid="mediaViewer"]',
+
+    // 트위터 갤러리 특징적 구조
+    'div[style*="background-image"]:has(img)',
+    'a[href*="/photo/"]',
+    'a[href*="/video/"]',
+
+    // 실제 미디어 요소들
+    'img[src*="pbs.twimg.com"]',
+    'video[src*="video.twimg.com"]',
   ];
 
   return twitterGallerySelectors.some(selector => {

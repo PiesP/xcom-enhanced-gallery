@@ -304,6 +304,7 @@ let galleryEventState = {
   listenerIds: [] as string[],
   options: null as GalleryEventOptions | null,
   handlers: null as EventHandlers | null,
+  priorityInterval: null as ReturnType<typeof setTimeout> | null,
 };
 
 /**
@@ -347,12 +348,12 @@ export async function initializeGalleryEvents(
       handleKeyboardEvent(event, handlers, finalOptions);
     };
 
-    // 이벤트 리스너 등록
+    // 이벤트 리스너 등록 (캡처 단계에서 처리하여 트위터보다 먼저 실행)
     const clickId = addEventListenerManaged(
       document,
       'click',
       clickHandler,
-      { passive: false },
+      { passive: false, capture: true },
       finalOptions.context
     );
 
@@ -360,18 +361,78 @@ export async function initializeGalleryEvents(
       document,
       'keydown',
       keyHandler,
-      { passive: false },
+      { passive: false, capture: true },
       finalOptions.context
     );
 
     galleryEventState.listenerIds = [clickId, keyId];
     galleryEventState.initialized = true;
 
+    // 우선순위 강화 메커니즘 시작 (트위터가 동적으로 리스너를 추가할 경우 대비)
+    startPriorityEnforcement(handlers, finalOptions);
+
     logger.debug('Gallery events initialized', { options: finalOptions });
   } catch (error) {
     logger.error('Failed to initialize gallery events:', error);
     throw error;
   }
+}
+
+/**
+ * 우선순위 강화 메커니즘
+ * 트위터가 동적으로 이벤트 리스너를 추가하는 경우를 대비해 주기적으로 우리의 리스너를 재등록
+ */
+function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEventOptions): void {
+  // 기존 인터벌 정리
+  if (galleryEventState.priorityInterval) {
+    clearInterval(galleryEventState.priorityInterval);
+  }
+
+  // 5초마다 우선순위 재설정
+  galleryEventState.priorityInterval = setInterval(() => {
+    try {
+      if (!galleryEventState.initialized) return;
+
+      // 기존 리스너 제거
+      galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
+
+      // 새로운 리스너 등록 (최신 우선순위로)
+      const clickHandler: EventListener = async (evt: Event) => {
+        const event = evt as MouseEvent;
+        const result = await handleMediaClick(event, handlers, options);
+        if (result.handled && options.preventBubbling) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      };
+
+      const keyHandler: EventListener = (evt: Event) => {
+        const event = evt as KeyboardEvent;
+        handleKeyboardEvent(event, handlers, options);
+      };
+
+      const clickId = addEventListenerManaged(
+        document,
+        'click',
+        clickHandler,
+        { passive: false, capture: true },
+        options.context
+      );
+
+      const keyId = addEventListenerManaged(
+        document,
+        'keydown',
+        keyHandler,
+        { passive: false, capture: true },
+        options.context
+      );
+
+      galleryEventState.listenerIds = [clickId, keyId];
+      logger.debug('Gallery event priority reinforced');
+    } catch (error) {
+      logger.warn('Failed to reinforce gallery event priority:', error);
+    }
+  }, 5000);
 }
 
 /**
@@ -401,6 +462,7 @@ async function handleMediaClick(
       event.stopImmediatePropagation();
       event.preventDefault();
       logger.debug('Twitter native gallery event blocked');
+      return { handled: true, reason: 'Twitter native gallery blocked' };
     }
 
     // 미디어 감지 시도
@@ -467,11 +529,17 @@ export function cleanupGalleryEvents(): void {
       removeEventListenersByContext(galleryEventState.options.context);
     }
 
+    // 우선순위 강화 인터벌 정리
+    if (galleryEventState.priorityInterval) {
+      clearInterval(galleryEventState.priorityInterval);
+    }
+
     galleryEventState = {
       initialized: false,
       listenerIds: [],
       options: null,
       handlers: null,
+      priorityInterval: null,
     };
 
     logger.debug('Gallery events cleaned up');
@@ -489,6 +557,7 @@ export function getGalleryEventStatus() {
     listenerCount: galleryEventState.listenerIds.length,
     options: galleryEventState.options,
     hasHandlers: !!galleryEventState.handlers,
+    hasPriorityInterval: !!galleryEventState.priorityInterval,
   };
 }
 
