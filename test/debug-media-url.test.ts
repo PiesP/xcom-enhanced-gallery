@@ -3,16 +3,18 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { URL } from 'node:url';
 
 describe('Debug Media URL', () => {
   it('should test URL constructor in test environment', () => {
     console.log('globalThis.URL:', typeof globalThis.URL);
-    console.log('URL constructor available:', !!globalThis.URL);
+    console.log('NodeURL available:', !!URL);
 
-    if (globalThis.URL) {
+    if (URL) {
       const testUrl = 'https://pbs.twimg.com/media/F1a2b3c4d5e.jpg?format=jpg&name=large';
       try {
-        const urlObj = new globalThis.URL(testUrl);
+        // Node.js URL을 직접 사용
+        const urlObj = new URL(testUrl);
         console.log('URL parsing successful');
         console.log('Hostname:', urlObj.hostname);
         console.log('Pathname:', urlObj.pathname);
@@ -40,7 +42,7 @@ describe('Debug Media URL', () => {
       }
 
       try {
-        const urlObj = new globalThis.URL(url);
+        const urlObj = new URL(url);
 
         if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
           return false;

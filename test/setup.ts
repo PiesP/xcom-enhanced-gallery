@@ -11,97 +11,96 @@ import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/te
 // 전역 테스트 환경 설정
 // ================================
 
-// 간단한 URL 구현
-function SimpleURL(url) {
-  if (!(this instanceof SimpleURL)) {
-    return new SimpleURL(url);
-  }
-
-  this.href = url;
-
-  // URL 파싱
+// URL 생성자 폴백 - Node.js URL 직접 사용
+function createURLPolyfill() {
   try {
-    const urlMatch = url.match(/^(https?):\/\/([^/?]+)(\/[^?]*)?(\?.*)?$/);
-    if (urlMatch) {
-      this.protocol = urlMatch[1] + ':';
-      this.hostname = urlMatch[2];
-      this.pathname = urlMatch[3] || '/';
-      this.search = urlMatch[4] || '';
-    } else {
-      throw new Error('Invalid URL');
+    // Node.js의 기본 URL을 직접 사용
+    const { URL: NodeURL } = require('node:url');
+    console.log('Using Node.js URL constructor');
+    return NodeURL;
+  } catch (error) {
+    console.warn('Node URL import failed, using fallback:', error);
+
+    // fallback implementation
+    function URLConstructor(url) {
+      if (!(this instanceof URLConstructor)) {
+        return new URLConstructor(url);
+      }
+
+      const urlRegex = /^(https?):\/\/([^/]+)(\/[^?]*)?\??(.*)$/;
+      const match = url.match(urlRegex);
+
+      if (!match) {
+        throw new Error('Invalid URL');
+      }
+
+      const [, protocol, hostname, pathname = '/', search = ''] = match;
+
+      this.protocol = `${protocol}:`;
+      this.hostname = hostname;
+      this.pathname = pathname;
+      this.search = search ? `?${search}` : '';
+      this.href = url;
+
+      this.toString = () => this.href;
+
+      return this;
     }
 
-    // searchParams 구현
-    this.searchParams = {
-      get: key => {
-        const queryString = this.search.slice(1); // Remove ?
-        const pairs = queryString.split('&');
-        for (const pair of pairs) {
-          const [k, v] = pair.split('=');
-          if (k === key) {
-            return decodeURIComponent(v || '');
-          }
-        }
-        return null;
-      },
-      set: (key, value) => {
-        const queryString = this.search.slice(1);
-        const pairs = queryString ? queryString.split('&') : [];
-        let found = false;
+    return URLConstructor;
+  }
+}
 
-        for (let i = 0; i < pairs.length; i++) {
-          const [k] = pairs[i].split('=');
-          if (k === key) {
-            pairs[i] = `${key}=${encodeURIComponent(value)}`;
-            found = true;
-            break;
-          }
-        }
+// URL 폴백 설정
+function setupURLPolyfill() {
+  const URLPolyfill = createURLPolyfill();
 
-        if (!found) {
-          pairs.push(`${key}=${encodeURIComponent(value)}`);
-        }
+  // globalThis 레벨에 설정
+  globalThis.URL = URLPolyfill;
 
-        this.search = pairs.length > 0 ? '?' + pairs.join('&') : '';
-        this.href = `${this.protocol}//${this.hostname}${this.pathname}${this.search}`;
-      },
-      has: key => {
-        const queryString = this.search.slice(1);
-        const pairs = queryString.split('&');
-        return pairs.some(pair => pair.split('=')[0] === key);
-      },
-    };
+  // window 레벨에도 설정 (안전하게)
+  try {
+    if (typeof window !== 'undefined') {
+      window.URL = URLPolyfill;
+    }
   } catch {
-    throw new TypeError(`Invalid URL: ${url}`);
+    // 무시
+  }
+
+  // global 레벨에도 설정 (안전하게)
+  try {
+    if (typeof global !== 'undefined') {
+      global.URL = URLPolyfill;
+    }
+  } catch {
+    // 무시
   }
 }
 
-SimpleURL.prototype.toString = function () {
-  return this.href;
-};
+// URL 폴백 설정 실행
+setupURLPolyfill();
 
-// URL 생성자 설정 - constructor 함수로 만들기
-if (!globalThis.URL || typeof globalThis.URL !== 'function') {
-  // SimpleURL을 직접 globalThis.URL로 설정
-  globalThis.URL = SimpleURL;
-
-  // Window 객체에도 설정 (브라우저 호환성)
-  if (typeof globalThis.window === 'object') {
-    globalThis.window.URL = SimpleURL;
-  }
-}
-
-// 기본적인 브라우저 환경 설정
+// 기본적인 브라우저 환경 설정 강화
 if (typeof globalThis !== 'undefined') {
-  if (!globalThis.window) {
+  // 안전한 window 객체 설정
+  if (!globalThis.window || typeof globalThis.window !== 'object') {
     globalThis.window = {};
   }
 
-  if (!globalThis.document) {
-    globalThis.document = { body: { innerHTML: '' } };
+  // 안전한 document 객체 설정 - body 포함
+  if (!globalThis.document || typeof globalThis.document !== 'object') {
+    globalThis.document = {
+      body: { innerHTML: '' },
+      createElement: () => ({ innerHTML: '' }),
+      querySelector: () => null,
+      querySelectorAll: () => [],
+    };
+  } else if (!globalThis.document.body) {
+    globalThis.document.body = { innerHTML: '' };
   }
 
-  if (!globalThis.location) {
+  // 안전한 location 객체 설정
+  if (!globalThis.location || typeof globalThis.location !== 'object') {
     globalThis.location = {
       href: 'https://x.com',
       hostname: 'x.com',
@@ -116,17 +115,10 @@ if (typeof globalThis !== 'undefined') {
  * 모든 테스트가 깨끗한 환경에서 실행되도록 보장
  */
 beforeEach(async () => {
-  // URL 생성자를 매번 새로 설정 (constructor 확실히 보장)
+  // URL 생성자 다시 확인 및 설정
   if (!globalThis.URL || typeof globalThis.URL !== 'function') {
-    globalThis.URL = SimpleURL;
-  }
-
-  // URL 생성자가 제대로 작동하는지 확인
-  try {
-    new globalThis.URL('https://test.com');
-  } catch {
-    // 만약 실패하면 강제로 다시 설정
-    globalThis.URL = SimpleURL;
+    const URLPolyfill = createURLPolyfill();
+    globalThis.URL = URLPolyfill;
   }
 
   // 기본 테스트 환경 설정 (minimal)

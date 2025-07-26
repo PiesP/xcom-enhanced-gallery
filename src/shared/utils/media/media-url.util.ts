@@ -223,11 +223,21 @@ export function isValidMediaUrl(url: string): boolean {
   }
 
   try {
-    // 테스트 환경을 위한 안전한 URL 파싱
-    const URLConstructor = globalThis.URL || globalThis.window?.URL;
-    if (!URLConstructor) {
-      // Fallback: 기본적인 문자열 검사
-      return isValidMediaUrlFallback(url);
+    // 테스트 환경에서 URL 생성자 확인
+    let URLConstructor: typeof URL;
+
+    if (typeof globalThis.URL === 'function') {
+      URLConstructor = globalThis.URL;
+    } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+      URLConstructor = window.URL;
+    } else {
+      // Node.js 환경이나 다른 환경에서 URL import 시도
+      try {
+        const { URL: NodeURL } = require('node:url');
+        URLConstructor = NodeURL;
+      } catch {
+        return isValidMediaUrlFallback(url);
+      }
     }
 
     const urlObj = new URLConstructor(url);
@@ -250,8 +260,9 @@ export function isValidMediaUrl(url: string): boolean {
 
     // 기타 도메인은 허용하지 않음 (Twitter 미디어만)
     return false;
-  } catch {
+  } catch (error) {
     // URL 생성이 실패하면 fallback 사용
+    console.warn('URL parsing failed, using fallback:', error);
     return isValidMediaUrlFallback(url);
   }
 }
