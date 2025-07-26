@@ -12,11 +12,12 @@
  */
 
 // ================================
-// 이벤트 관리 시스템 (새로 단순화됨)
+// 통합 이벤트 관리 시스템 (Phase 1 통합 완료)
 // ================================
 
-// 단순화된 이벤트 디스패처
+// 통합된 이벤트 관리 (event-dispatcher + event-utils 통합)
 export {
+  // 기본 이벤트 관리
   addEventListenerManaged,
   addMultipleEventListeners,
   removeEventListenerManaged,
@@ -25,22 +26,49 @@ export {
   removeAllEventListeners,
   getEventListenerStatus,
   cleanupEventDispatcher,
-  EventDispatcher,
-} from './event-dispatcher';
 
-// 갤러리 이벤트 조정
-export {
+  // 갤러리 이벤트 관리
   initializeGalleryEvents,
   cleanupGalleryEvents,
   getGalleryEventStatus,
   updateGalleryEventOptions,
+
+  // 통합 관리자 클래스들
+  GalleryEventManager,
+  EventDispatcher,
   GalleryEventCoordinator,
+
+  // 타입 정의
   type EventHandlers,
   type GalleryEventOptions,
-} from './event-utils';
+} from './unified-events';
 
-// CSS 선택자 검증 및 분석
+// ================================
+// DOM + CSS 선택자 유틸리티 (Phase 1 통합)
+// ================================
+
 export {
+  // 갤러리 요소 감지
+  isInsideGallery,
+  isGalleryContainer,
+  isGalleryInternalEvent,
+  shouldBlockGalleryEvent,
+
+  // 안전한 DOM 접근
+  safeQuerySelector,
+  safeQuerySelectorAll,
+  safeGetAttribute,
+  safeSetAttribute,
+  safeAddClass,
+  safeRemoveClass,
+  safeSetStyle,
+  safeRemoveElement,
+  safeAddEventListener,
+  safeRemoveEventListener,
+  isElementConnected,
+  safeGetBoundingClientRect,
+
+  // CSS 선택자 유틸리티
   isValidCSSSelector,
   parseAttributeSelector,
   findFirstMatchingSelector,
@@ -48,7 +76,7 @@ export {
   hasPerformanceIssues,
   calculateSelectorSpecificity,
   compareSelectorSpecificity,
-} from './selector-utils';
+} from './unified-dom';
 
 // ================================
 // 기존 통합 유틸리티들
@@ -111,31 +139,6 @@ export {
   hasResource,
   getResourceDiagnostics,
 } from './resource-manager';
-
-// DOM utilities (통합된 파일)
-export {
-  // 갤러리 요소 감지
-  isInsideGallery,
-  isGalleryContainer,
-  isGalleryInternalEvent,
-  shouldBlockGalleryEvent,
-
-  // 안전한 DOM 접근
-  safeQuerySelector,
-  safeQuerySelectorAll,
-  createIntersectionObserver,
-  createMutationObserver,
-  safeGetAttribute,
-  safeSetAttribute,
-  safeAddClass,
-  safeRemoveClass,
-  safeSetStyle,
-  safeRemoveElement,
-  safeAddEventListener,
-  safeRemoveEventListener,
-  isElementConnected,
-  safeGetBoundingClientRect,
-} from './dom-utils';
 
 // Core utilities (통합된 파일)
 export {
