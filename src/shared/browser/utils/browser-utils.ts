@@ -58,7 +58,12 @@ export function safeWindow(): Window | null {
 export function safeLocation(): Location | null {
   try {
     const win = safeWindow();
-    if (!win?.location) return null;
+    if (!win) return null;
+
+    // location 객체가 존재하는지 확인
+    if (!win.location) return null;
+
+    // location 객체가 부분적으로만 정의된 경우도 허용
     return win.location;
   } catch (error) {
     logger.debug('safeLocation: Location access failed:', error);
@@ -106,15 +111,22 @@ export function getCurrentUrlInfo(): {
   pathname: string;
   hostname: string;
   search: string;
-} | null {
+} {
   const location = safeLocation();
-  if (!location) return null;
+  if (!location) {
+    return {
+      href: '',
+      pathname: '',
+      hostname: '',
+      search: '',
+    };
+  }
 
   return {
-    href: location.href,
-    pathname: location.pathname,
-    hostname: location.hostname,
-    search: location.search,
+    href: location.href || '',
+    pathname: location.pathname || '',
+    hostname: location.hostname || '',
+    search: location.search || '',
   };
 }
 

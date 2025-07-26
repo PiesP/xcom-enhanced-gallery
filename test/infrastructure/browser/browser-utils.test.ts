@@ -221,7 +221,12 @@ describe('Browser Utilities', () => {
       global.window = undefined;
 
       const urlInfo = getCurrentUrlInfo();
-      expect(urlInfo).toBeNull();
+      expect(urlInfo).toEqual({
+        href: '',
+        pathname: '',
+        hostname: '',
+        search: '',
+      });
 
       // Restore
       global.window = originalWindow;
@@ -384,7 +389,12 @@ describe('Browser Utilities', () => {
     it('should handle corrupted location object', () => {
       mockWindow.location = null;
 
-      expect(getCurrentUrlInfo()).toBeNull();
+      expect(getCurrentUrlInfo()).toEqual({
+        href: '',
+        pathname: '',
+        hostname: '',
+        search: '',
+      });
       expect(isTwitterSite()).toBe(false);
     });
   });

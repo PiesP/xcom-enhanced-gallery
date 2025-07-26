@@ -222,7 +222,12 @@ describe('Browser Utils - Environment Detection', () => {
     it('should handle missing location', () => {
       mockServerEnvironment();
       const result = getCurrentUrlInfo();
-      expect(result).toBeNull();
+      expect(result).toEqual({
+        href: '',
+        pathname: '',
+        hostname: '',
+        search: '',
+      });
     });
 
     it('should handle incomplete location object', () => {
@@ -231,7 +236,7 @@ describe('Browser Utils - Environment Detection', () => {
       };
       const result = getCurrentUrlInfo();
       expect(result.hostname).toBe('x.com');
-      expect(result.href).toBeUndefined();
+      expect(result.href).toBe('');
     });
   });
 
