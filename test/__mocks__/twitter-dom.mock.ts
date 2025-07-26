@@ -270,15 +270,66 @@ export function triggerEvent(element, eventType, eventData) {
 /**
  * 마우스 클릭 이벤트 시뮬레이션
  */
-export function simulateClick(element, options) {
-  const clickEvent = new MouseEvent('click', {
-    bubbles: true,
-    cancelable: true,
-    ctrlKey: options?.ctrlKey || false,
-    shiftKey: options?.shiftKey || false,
+/**
+ * 트윗 이미지 클릭 시뮬레이션
+ */
+export function simulateTweetImageClick() {
+  globalThis.document.addEventListener('click', event => {
+    const target = event.target;
+    if (target && target.tagName === 'IMG' && target.src.includes('pbs.twimg.com')) {
+      const galleryModal = simulateGalleryModal(target.src);
+      return galleryModal;
+    }
   });
+}
 
-  element.dispatchEvent(clickEvent);
+/**
+ * 대량 다운로드 모드 생성 함수 (통합 테스트용)
+ */
+export function createBulkDownloadMode() {
+  const existingUI = globalThis.document.querySelector('[data-testid="bulk-download-mode"]');
+  if (existingUI) {
+    existingUI.remove();
+  }
+
+  const bulkUI = globalThis.document.createElement('div');
+  bulkUI.setAttribute('data-testid', 'bulk-download-mode');
+  bulkUI.innerHTML = `
+    <div class="bulk-download-toolbar">
+      <button data-testid="select-all">모두 선택</button>
+      <button data-testid="download-selected">선택한 항목 다운로드</button>
+      <button data-testid="download-all-btn">모두 다운로드</button>
+    </div>
+  `;
+
+  globalThis.document.body.appendChild(bulkUI);
+  return bulkUI;
+}
+
+/**
+ * 다운로드 진행률 생성 함수 (통합 테스트용)
+ */
+export function createDownloadProgress(percentage = 0) {
+  const existingProgress = globalThis.document.querySelector('[data-testid="download-progress"]');
+  if (existingProgress) {
+    existingProgress.remove();
+  }
+
+  const progressElement = globalThis.document.createElement('div');
+  progressElement.setAttribute('data-testid', 'download-progress');
+  progressElement.textContent = `${percentage}%`;
+  progressElement.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px;
+    background: #1da1f2;
+    color: white;
+    border-radius: 4px;
+  `;
+
+  globalThis.document.body.appendChild(progressElement);
+  return progressElement;
 }
 
 /**
@@ -297,80 +348,48 @@ export function simulateKeypress(key, options) {
 }
 
 /**
- * 갤러리 모달 생성 (행위 중심 테스트용)
- * 이미지 클릭 시 동적으로 갤러리 모달을 생성합니다
+ * 갤러리 모달 생성 함수 (통합 테스트용)
+ * 환경 격리 원칙에 따라 안전한 DOM 조작 보장
  */
-export function createGalleryModal(mediaUrl, isVideo = false) {
-  // 기존 모달이 있으면 제거
-  const existingModal = document.querySelector('[data-testid="photoModal"]');
+export function createGalleryModal(
+  mediaUrl = 'https://pbs.twimg.com/media/test.jpg',
+  isVideo = false
+) {
+  const existingModal = globalThis.document.querySelector('[data-testid="photoModal"]');
   if (existingModal) {
     existingModal.remove();
   }
 
-  // 갤러리 모달 생성
-  const modal = document.createElement('div');
+  const modal = globalThis.document.createElement('div');
   modal.setAttribute('data-testid', 'photoModal');
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-label', '이미지 갤러리');
-  modal.style.cssText =
-    'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;';
-
-  // 현재 미디어 표시
-  const mediaElement = document.createElement(isVideo ? 'video' : 'img');
-  mediaElement.src = mediaUrl;
-  mediaElement.setAttribute('data-current', 'true');
-  mediaElement.style.cssText = 'max-width: 100%; max-height: 100%;';
-
-  modal.appendChild(mediaElement);
-  document.body.appendChild(modal);
-
-  return modal;
-}
-
-/**
- * 대량 다운로드 모드 UI 생성
- */
-export function createBulkDownloadMode() {
-  // 기존 UI가 있으면 제거
-  const existingUI = document.querySelector('[data-testid="bulk-download-mode"]');
-  if (existingUI) {
-    existingUI.remove();
-  }
-
-  // 대량 다운로드 UI 생성
-  const bulkUI = document.createElement('div');
-  bulkUI.setAttribute('data-testid', 'bulk-download-mode');
-  bulkUI.innerHTML = `
-    <div class="bulk-download-toolbar">
-      <span class="selected-count">1개 선택됨</span>
-      <button data-testid="download-all-btn">모두 다운로드</button>
-      <button data-testid="clear-selection-btn">선택 해제</button>
-    </div>
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   `;
 
-  document.body.appendChild(bulkUI);
-  return bulkUI;
-}
+  const mediaElement = globalThis.document.createElement(isVideo ? 'video' : 'img');
+  mediaElement.src = mediaUrl;
+  mediaElement.alt = '갤러리 이미지';
+  mediaElement.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain;';
 
-/**
- * 다운로드 진행률 표시 요소 생성
- */
-export function createDownloadProgress() {
-  // 기존 진행률 요소가 있으면 제거
-  const existingProgress = document.querySelector('[data-testid="download-progress"]');
-  if (existingProgress) {
-    existingProgress.remove();
+  if (isVideo) {
+    mediaElement.controls = true;
   }
 
-  // 진행률 표시 요소 생성
-  const progressElement = document.createElement('div');
-  progressElement.setAttribute('data-testid', 'download-progress');
-  progressElement.textContent = '0%';
-  progressElement.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10000;';
-
-  document.body.appendChild(progressElement);
-  return progressElement;
+  modal.appendChild(mediaElement);
+  globalThis.document.body.appendChild(modal);
+  return modal;
 }
 
 /**

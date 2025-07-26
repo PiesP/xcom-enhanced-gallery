@@ -43,6 +43,26 @@ export function simulateNotificationAction(options) {
 }
 
 /**
+ * 클릭 이벤트 시뮬레이션
+ */
+export function simulateClick(element, options = {}) {
+  if (!element) return;
+
+  const event = new globalThis.MouseEvent('click', {
+    bubbles: true,
+    cancelable: true,
+    button: 0,
+    ctrlKey: options.ctrlKey || false,
+    shiftKey: options.shiftKey || false,
+    altKey: options.altKey || false,
+    metaKey: options.metaKey || false,
+    ...options,
+  });
+
+  element.dispatchEvent(event);
+}
+
+/**
  * 키보드 이벤트 시뮬레이션 (다운로드 트리거 포함)
  */
 export function simulateKeyboardDownload(key, imageElement) {

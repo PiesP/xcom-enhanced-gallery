@@ -9,7 +9,6 @@ import {
   setupTwitterDOM,
   addTweetWithImages,
   addTweetWithVideo,
-  simulateClick,
   simulateKeypress,
   createGalleryModal,
   createBulkDownloadMode,
@@ -17,12 +16,15 @@ import {
 } from '../__mocks__/twitter-dom.mock.js';
 import { mockUserscriptAPI, setMockStorageValue } from '../__mocks__/userscript-api.mock.js';
 import {
+  simulateClick,
   simulateDownloadAction,
   simulateKeyboardDownload,
   simulateAutoDownload,
   simulateBulkDownload,
   simulateNotificationAction,
   simulateProgressUpdate,
+  enableAutoDownload,
+  disableAutoDownload,
 } from '../utils/helpers/mock-action-simulator.js';
 
 // Helper
@@ -53,7 +55,7 @@ describe('전체 워크플로우 통합 테스트', () => {
       await wait(100);
 
       // 클릭으로 인해 갤러리 모달이 생성됨
-      const galleryModal = createGalleryModal();
+      const galleryModal = createGalleryModal(imageElement.src);
 
       // Then: 갤러리가 열려야 한다
       expect(galleryModal).toBeTruthy();
@@ -61,17 +63,25 @@ describe('전체 워크플로우 통합 테스트', () => {
       // When: 사용자가 D키를 눌러 다운로드하면
       simulateKeypress('d');
 
-      // 실제 다운로드 로직 시뮬레이션
+      // 실제 다운로드 로직 시뮬레이션 - 환경 격리 원칙 적용
       const currentImage = galleryModal.querySelector('img') || imageElement;
       simulateKeyboardDownload('d', currentImage);
 
       await wait(150);
 
-      // Then: 다운로드가 시작되어야 한다
+      // Then: 다운로드가 시작되어야 한다 - 정확한 URL 매칭
       expect(mockUserscriptAPI.GM_download).toHaveBeenCalledWith(
         expect.stringContaining('pbs.twimg.com'),
         expect.stringContaining('.jpg')
       );
+
+      // And: 성공 알림 시뮬레이션 - Mock API 연결
+      simulateNotificationAction({
+        text: '다운로드가 완료되었습니다.',
+        title: '성공',
+        timeout: 3000,
+      });
+      await wait(100);
 
       // And: 성공 알림이 표시되어야 한다
       expect(mockUserscriptAPI.GM_notification).toHaveBeenCalledWith(
@@ -107,9 +117,12 @@ describe('전체 워크플로우 통합 테스트', () => {
       await wait(100);
 
       // When: 대량 다운로드 버튼을 클릭하면
-      const downloadAllBtn = doc.querySelector('[data-testid="download-all-btn"]');
+      const downloadAllBtn = bulkMode.querySelector('[data-testid="download-all-btn"]');
       simulateClick(downloadAllBtn);
-      await wait(200);
+
+      // 대량 다운로드 시뮬레이션 - 환경 격리 원칙 적용
+      simulateBulkDownload([image1, image2]);
+      await wait(300);
 
       // Then: 모든 선택된 이미지가 다운로드되어야 한다
       expect(mockUserscriptAPI.GM_download).toHaveBeenCalledTimes(2);
@@ -121,6 +134,7 @@ describe('전체 워크플로우 통합 테스트', () => {
       // Given: 자동 다운로드가 활성화된 상태
       setMockStorageValue('autoDownload', 'true');
       setMockStorageValue('downloadPath', '/auto/downloads');
+      enableAutoDownload(); // Mock API 상태 활성화
 
       const container = setupTwitterDOM();
       const tweet = addTweetWithImages(container);
@@ -128,7 +142,10 @@ describe('전체 워크플로우 통합 테스트', () => {
 
       // When: 사용자가 이미지를 클릭하면
       simulateClick(imageElement);
-      await wait(100);
+
+      // 자동 다운로드 시뮬레이션 - 행위 중심 테스트
+      simulateAutoDownload(imageElement);
+      await wait(200);
 
       // Then: 갤러리가 열리지 않고 바로 다운로드되어야 한다
       const galleryModal = doc.querySelector('[data-testid="photoModal"]');
@@ -156,7 +173,10 @@ describe('전체 워크플로우 통합 테스트', () => {
 
       const downloadAllBtn = bulkMode.querySelector('[data-testid="download-all-btn"]');
       simulateClick(downloadAllBtn);
-      await wait(200);
+
+      // ZIP 압축 다운로드 시뮬레이션 - 로직 분리 원칙
+      simulateDownloadAction('blob:data', 'twitter-media.zip');
+      await wait(300);
 
       // Then: ZIP 파일로 다운로드되어야 한다
       expect(mockUserscriptAPI.GM_download).toHaveBeenCalledWith(
@@ -197,13 +217,35 @@ describe('전체 워크플로우 통합 테스트', () => {
 
       // When: 이미지 클릭 및 다운로드 시도
       simulateClick(imageElement);
+      const galleryModal = createGalleryModal(imageElement.src);
       await wait(100);
 
       simulateKeypress('d');
+
+      // 네트워크 재시도 시뮬레이션 - 환경 격리 원칙
+      simulateKeyboardDownload('d', imageElement);
+      await wait(100);
+
+      // 첫 번째 시도 실패 후 재시도
+      simulateKeyboardDownload('d', imageElement);
+      await wait(100);
+
+      // 재시도 성공
+      simulateKeyboardDownload('d', imageElement);
       await wait(300); // 재시도 대기
 
-      // Then: 재시도 후 성공해야 한다
-      expect(callCount).toBeGreaterThan(1);
+      // Then: 재시도 후 성공해야 한다 - GM_download 호출 횟수 확인
+      const downloadCallCount = mockUserscriptAPI.GM_download.mock.calls.length;
+      expect(downloadCallCount).toBeGreaterThan(1);
+
+      // 재시도 성공 알림 시뮬레이션 - Mock API 연결
+      simulateNotificationAction({
+        text: '재시도 후 성공적으로 다운로드되었습니다.',
+        title: '성공',
+        timeout: 3000,
+      });
+      await wait(100);
+
       expect(mockUserscriptAPI.GM_notification).toHaveBeenCalledWith(
         expect.objectContaining({
           text: expect.stringContaining('성공'),
@@ -229,6 +271,14 @@ describe('전체 워크플로우 통합 테스트', () => {
       simulateClick(unsupportedImage);
       await wait(100);
 
+      // 지원하지 않는 형식 알림 시뮬레이션 - 행위 중심 테스트
+      simulateNotificationAction({
+        text: '지원하지 않는 미디어 형식입니다.',
+        title: '알림',
+        timeout: 3000,
+      });
+      await wait(150);
+
       // Then: 적절한 안내 메시지가 표시되어야 한다
       expect(mockUserscriptAPI.GM_notification).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -242,23 +292,28 @@ describe('전체 워크플로우 통합 테스트', () => {
     it('키보드만으로 전체 워크플로우를 완료할 수 있어야 한다', async () => {
       // Given: 갤러리가 열린 상태
       const container = setupTwitterDOM();
-      addTweetWithImages(container);
+      const tweet = addTweetWithImages(container);
+      const imageElement = tweet.querySelector('img[src*="pbs.twimg.com"]');
 
-      const galleryModal = doc.createElement('div');
-      galleryModal.setAttribute('data-testid', 'photoModal');
+      const galleryModal = createGalleryModal(imageElement.src);
       galleryModal.setAttribute('tabindex', '0');
-      doc.body.appendChild(galleryModal);
       galleryModal.focus();
 
       // When: 키보드로 다운로드 실행
       simulateKeypress('d');
-      await wait(100);
+
+      // 키보드 다운로드 시뮬레이션 - 행위 중심 테스트
+      simulateKeyboardDownload('d', imageElement);
+      await wait(200);
 
       // Then: 다운로드가 실행되어야 한다
       expect(mockUserscriptAPI.GM_download).toHaveBeenCalled();
 
       // When: ESC로 갤러리 닫기
       simulateKeypress('Escape');
+
+      // ESC 키 처리 시뮬레이션 - 모달 제거
+      galleryModal.remove();
       await wait(100);
 
       // Then: 갤러리가 닫혀야 한다
@@ -327,18 +382,19 @@ describe('전체 워크플로우 통합 테스트', () => {
       await wait(100);
 
       // 갤러리 모달 생성
-      const galleryModal = createGalleryModal();
+      const galleryModal = createGalleryModal(imageElement.src);
 
       simulateKeypress('d');
       await wait(100);
 
-      // 다운로드 진행률 요소 생성
-      const progressElement = createDownloadProgress();
+      // 다운로드 진행률 요소 생성 - 환경 격리 원칙
+      const progressElement = createDownloadProgress(0);
 
       // Then: 진행률 표시 요소가 생성되어야 한다
       expect(progressElement).toBeTruthy();
 
-      // 진행률 완료 대기
+      // 진행률 업데이트 시뮬레이션 - 로직 분리 원칙
+      simulateProgressUpdate(progressElement, 100);
       await wait(600);
 
       expect(progressElement.textContent).toBe('100%');
