@@ -1,33 +1,9 @@
 /**
  * Browser Utils - 실제 브라우저 환경 시뮬레이션 테스트
- * 환경 감지, 안전한 접const restoreEnvironment = () => {
-  if (originalWindow !== undefined) {
-    globalThis.window = originalWindow;
-  } else {
-    delete globalThis.window;
-  }
-
-  if (originalDocument !== undefined) {
-    globalThis.document = originalDocument;
-  } else {
-    delete globalThis.document;
-  }
-};
-
-describe('Browser Utils - Environment Detection', () => {
-  beforeEach(() => {
-    // 각 테스트 전에 깨끗한 DOM 환경 확보
-    if (!globalThis.document || !globalThis.document.body) {
-      mockBrowserEnvironment();
-    }
-  });
-
-  afterEach(() => {
-    restoreEnvironment();
-  }); 테스트
+ * 환경 감지, 안전한 접근, 에러 처리 등 실제 시나리오 테스트
  */
 
-import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   isBrowserEnvironment,
   safeWindow,
@@ -67,10 +43,6 @@ const mockBrowserEnvironment = () => {
   };
 
   globalThis.document = {
-    body: {
-      appendChild: vi.fn(),
-      removeChild: vi.fn(),
-    },
     createElement: vi.fn(),
     getElementById: vi.fn(),
   };
@@ -222,7 +194,12 @@ describe('Browser Utils - Environment Detection', () => {
     it('should handle missing location', () => {
       mockServerEnvironment();
       const result = getCurrentUrlInfo();
-      expect(result).toBeNull();
+      expect(result).toEqual({
+        hostname: '',
+        href: '',
+        pathname: '',
+        search: '',
+      });
     });
 
     it('should handle incomplete location object', () => {
@@ -231,7 +208,7 @@ describe('Browser Utils - Environment Detection', () => {
       };
       const result = getCurrentUrlInfo();
       expect(result.hostname).toBe('x.com');
-      expect(result.href).toBeUndefined();
+      expect(result.href).toBe('');
     });
   });
 

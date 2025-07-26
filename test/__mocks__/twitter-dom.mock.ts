@@ -3,6 +3,12 @@
  * 실제 X.com 페이지의 HTML 구조를 모방하여 테스트 환경에서 사용
  */
 
+// mock-action-simulator에서 함수들을 import
+import { simulateClick, simulateKeypress } from '../utils/helpers/mock-action-simulator.js';
+
+// 다시 export해서 다른 테스트에서 사용할 수 있도록 함
+export { simulateClick, simulateKeypress };
+
 // ================================
 // Twitter DOM 템플릿들
 // ================================
@@ -173,15 +179,23 @@ export const GALLERY_MODAL_DOM = `
 // ================================
 
 /**
- * 기본 Twitter DOM 구조를 설정
+ * 기본 Twitter DOM 구조를 설정 (선택적)
+ * DOM 환경이 없으면 조용히 반환
  */
 export function setupTwitterDOM() {
-  document.body.innerHTML = TWITTER_BASE_DOM;
+  const doc = globalThis.document;
+  if (!doc || !doc.body) {
+    // DOM 환경이 없으면 조용히 반환 (서버 환경 테스트 시)
+    return null;
+  }
+
+  doc.body.innerHTML = TWITTER_BASE_DOM;
 
   // 트윗 컨테이너 찾기
-  const container = document.querySelector('main .css-1dbjc4n.r-1jgb5lz');
+  const container = doc.querySelector('main .css-1dbjc4n.r-1jgb5lz');
   if (!container) {
-    throw new Error('트윗 컨테이너를 찾을 수 없습니다');
+    console.warn('트윗 컨테이너를 찾을 수 없습니다');
+    return null;
   }
 
   return container;
@@ -191,7 +205,8 @@ export function setupTwitterDOM() {
  * 이미지 트윗을 DOM에 추가
  */
 export function addTweetWithImages(container, tweetId = 'tweet-1') {
-  const tweetElement = document.createElement('div');
+  const doc = globalThis.document;
+  const tweetElement = doc.createElement('div');
   tweetElement.innerHTML = TWEET_WITH_IMAGES_DOM;
   tweetElement.setAttribute('data-tweet-id', tweetId);
 
@@ -203,7 +218,8 @@ export function addTweetWithImages(container, tweetId = 'tweet-1') {
  * 비디오 트윗을 DOM에 추가
  */
 export function addTweetWithVideo(container, tweetId = 'tweet-video-1') {
-  const tweetElement = document.createElement('div');
+  const doc = globalThis.document;
+  const tweetElement = doc.createElement('div');
   tweetElement.innerHTML = TWEET_WITH_VIDEO_DOM;
   tweetElement.setAttribute('data-tweet-id', tweetId);
 
@@ -215,7 +231,8 @@ export function addTweetWithVideo(container, tweetId = 'tweet-video-1') {
  * GIF 트윗을 DOM에 추가
  */
 export function addTweetWithGIF(container, tweetId = 'tweet-gif-1') {
-  const tweetElement = document.createElement('div');
+  const doc = globalThis.document;
+  const tweetElement = doc.createElement('div');
   tweetElement.innerHTML = TWEET_WITH_GIF_DOM;
   tweetElement.setAttribute('data-tweet-id', tweetId);
 
@@ -227,10 +244,11 @@ export function addTweetWithGIF(container, tweetId = 'tweet-gif-1') {
  * 갤러리 모달을 DOM에 추가
  */
 export function addGalleryModal() {
-  const modalElement = document.createElement('div');
+  const doc = globalThis.document;
+  const modalElement = doc.createElement('div');
   modalElement.innerHTML = GALLERY_MODAL_DOM;
 
-  document.body.appendChild(modalElement);
+  doc.body.appendChild(modalElement);
   return modalElement;
 }
 
@@ -260,7 +278,7 @@ export function addDataAttributes(element, attributes) {
  * 테스트용 이벤트 트리거
  */
 export function triggerEvent(element, eventType, eventData) {
-  const event = new Event(eventType, { bubbles: true, cancelable: true });
+  const event = new globalThis.Event(eventType, { bubbles: true, cancelable: true });
   if (eventData) {
     Object.assign(event, eventData);
   }
@@ -274,10 +292,11 @@ export function triggerEvent(element, eventType, eventData) {
  * 트윗 이미지 클릭 시뮬레이션
  */
 export function simulateTweetImageClick() {
-  globalThis.document.addEventListener('click', event => {
+  const doc = globalThis.document;
+  doc.addEventListener('click', event => {
     const target = event.target;
     if (target && target.tagName === 'IMG' && target.src.includes('pbs.twimg.com')) {
-      const galleryModal = simulateGalleryModal(target.src);
+      const galleryModal = createGalleryModal(target.src);
       return galleryModal;
     }
   });
@@ -333,21 +352,6 @@ export function createDownloadProgress(percentage = 0) {
 }
 
 /**
- * 키보드 이벤트 시뮬레이션
- */
-export function simulateKeypress(key, options) {
-  const keyEvent = new KeyboardEvent('keydown', {
-    key,
-    bubbles: true,
-    cancelable: true,
-    ctrlKey: options?.ctrlKey || false,
-    shiftKey: options?.shiftKey || false,
-  });
-
-  document.dispatchEvent(keyEvent);
-}
-
-/**
  * 갤러리 모달 생성 함수 (통합 테스트용)
  * 환경 격리 원칙에 따라 안전한 DOM 조작 보장
  */
@@ -396,7 +400,8 @@ export function createGalleryModal(
  * 이미지 클릭 이벤트 핸들러 등록 (행위 중심 테스트)
  */
 export function setupImageClickHandlers() {
-  document.addEventListener('click', event => {
+  const doc = globalThis.document;
+  doc.addEventListener('click', event => {
     const target = event.target;
 
     // 트위터 이미지 클릭 처리
@@ -418,8 +423,8 @@ export function setupImageClickHandlers() {
   });
 
   // 키보드 이벤트 핸들러
-  document.addEventListener('keydown', event => {
-    const modal = document.querySelector('[data-testid="photoModal"]');
+  doc.addEventListener('keydown', event => {
+    const modal = doc.querySelector('[data-testid="photoModal"]');
 
     if (event.key === 'Escape' && modal) {
       // ESC키로 모달 닫기

@@ -165,3 +165,26 @@ export function getMockApiCallArgs(apiName, callIndex = 0) {
     ? mockFunction.mock.calls[callIndex]
     : null;
 }
+
+/**
+ * 키보드 이벤트 시뮬레이션
+ */
+export function simulateKeypress(key, options = {}) {
+  const keyEvent = new globalThis.KeyboardEvent('keydown', {
+    key,
+    bubbles: true,
+    cancelable: true,
+    ctrlKey: options.ctrlKey || false,
+    shiftKey: options.shiftKey || false,
+    altKey: options.altKey || false,
+    metaKey: options.metaKey || false,
+    ...options,
+  });
+
+  globalThis.document.dispatchEvent(keyEvent);
+
+  // 특정 키에 대한 특별한 처리
+  if (key === 'd' || key === 'D') {
+    simulateKeyboardDownload(key);
+  }
+}
