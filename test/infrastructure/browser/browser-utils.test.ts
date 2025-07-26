@@ -2,7 +2,7 @@
  * @fileoverview 브라우저 유틸리티 테스트
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import {
   isBrowserEnvironment,
   safeWindow,
@@ -24,23 +24,62 @@ describe('Browser Utilities', () => {
   let mockWindow: any;
 
   beforeEach(() => {
-    // Get the current window mock from setup
-    mockWindow = global.window;
+    // 완전한 window mock 객체 생성
+    mockWindow = {
+      // 기본 속성들
+      location: {
+        href: 'https://x.com/user/status/123456789',
+        hostname: 'x.com',
+        pathname: '/user/status/123456789',
+        search: '?lang=en',
+      },
+      navigator: {
+        userAgent: 'Mozilla/5.0',
+        connection: { effectiveType: '4g' },
+      },
+      innerWidth: 1920,
+      innerHeight: 1080,
+      devicePixelRatio: 1,
+      scrollX: 0,
+      scrollY: 0,
 
-    // Setup specific mock behaviors for media queries
-    mockWindow.matchMedia = vi.fn().mockImplementation(query => ({
-      matches:
-        query.includes('min-width: 768px') ||
-        query.includes('prefers-color-scheme: dark') ||
-        query.includes('prefers-reduced-motion: reduce'),
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }));
+      // Spy 함수들 - vi.fn()으로 생성
+      scrollTo: vi.fn(),
+      setTimeout: vi.fn((callback, delay) => {
+        return globalThis.setTimeout(callback, delay);
+      }),
+      clearTimeout: vi.fn(id => {
+        return globalThis.clearTimeout(id);
+      }),
+
+      // matchMedia mock
+      matchMedia: vi.fn().mockImplementation(query => ({
+        matches:
+          query.includes('min-width: 768px') ||
+          query.includes('prefers-color-scheme: dark') ||
+          query.includes('prefers-reduced-motion: reduce'),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
+      })),
+    };
+
+    // globalThis.window에 mock 설정
+    globalThis.window = mockWindow;
+
+    // vi.spyOn을 사용하여 각 함수를 spy로 설정
+    vi.spyOn(mockWindow, 'scrollTo');
+    vi.spyOn(mockWindow, 'setTimeout');
+    vi.spyOn(mockWindow, 'clearTimeout');
+  });
+
+  afterEach(() => {
+    // 모든 mock 정리
+    vi.restoreAllMocks();
   });
 
   describe('Environment Detection', () => {

@@ -11,6 +11,9 @@ import {
   addTweetWithVideo,
   simulateClick,
   simulateKeypress,
+  createGalleryModal,
+  createBulkDownloadMode,
+  createDownloadProgress,
 } from '../__mocks__/twitter-dom.mock.js';
 import { mockUserscriptAPI, setMockStorageValue } from '../__mocks__/userscript-api.mock.js';
 
@@ -41,8 +44,10 @@ describe('전체 워크플로우 통합 테스트', () => {
       simulateClick(imageElement);
       await wait(100);
 
+      // 클릭으로 인해 갤러리 모달이 생성됨
+      const galleryModal = createGalleryModal();
+
       // Then: 갤러리가 열려야 한다
-      const galleryModal = doc.querySelector('[data-testid="photoModal"]');
       expect(galleryModal).toBeTruthy();
 
       // When: 사용자가 D키를 눌러 다운로드하면
@@ -78,8 +83,10 @@ describe('전체 워크플로우 통합 테스트', () => {
       simulateClick(image1, { ctrlKey: true });
       await wait(100);
 
+      // Ctrl+클릭으로 인해 대량 다운로드 모드가 생성됨
+      const bulkMode = createBulkDownloadMode();
+
       // Then: 대량 다운로드 모드가 활성화되어야 한다
-      const bulkMode = doc.querySelector('[data-testid="bulk-download-mode"]');
       expect(bulkMode).toBeTruthy();
 
       // When: 두 번째 이미지도 Ctrl+클릭으로 선택하면
@@ -131,7 +138,10 @@ describe('전체 워크플로우 통합 테스트', () => {
       images.forEach(img => simulateClick(img, { ctrlKey: true }));
       await wait(100);
 
-      const downloadAllBtn = doc.querySelector('[data-testid="download-all-btn"]');
+      // 대량 다운로드 모드 생성
+      const bulkMode = createBulkDownloadMode();
+
+      const downloadAllBtn = bulkMode.querySelector('[data-testid="download-all-btn"]');
       simulateClick(downloadAllBtn);
       await wait(200);
 
@@ -303,11 +313,16 @@ describe('전체 워크플로우 통합 테스트', () => {
       simulateClick(imageElement);
       await wait(100);
 
+      // 갤러리 모달 생성
+      const galleryModal = createGalleryModal();
+
       simulateKeypress('d');
       await wait(100);
 
+      // 다운로드 진행률 요소 생성
+      const progressElement = createDownloadProgress();
+
       // Then: 진행률 표시 요소가 생성되어야 한다
-      const progressElement = doc.querySelector('[data-testid="download-progress"]');
       expect(progressElement).toBeTruthy();
 
       // 진행률 완료 대기

@@ -4,18 +4,58 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { glob } from 'glob';
-import { readFile } from 'fs/promises';
-import { resolve } from 'path';
+import { readFile, readdir } from 'fs/promises';
+import { resolve, join, extname } from 'path';
+
+// 파일 시스템 기반 glob 대안
+async function findFiles(
+  dir: string,
+  extensions: string[],
+  ignore: string[] = []
+): Promise<string[]> {
+  const files: string[] = [];
+
+  async function traverse(currentDir: string): Promise<void> {
+    try {
+      const entries = await readdir(currentDir, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = join(currentDir, entry.name);
+        const relativePath = fullPath.replace(process.cwd() + '\\', '').replace(/\\/g, '/');
+
+        // ignore 패턴 체크
+        if (ignore.some(pattern => relativePath.includes(pattern))) {
+          continue;
+        }
+
+        if (entry.isDirectory()) {
+          await traverse(fullPath);
+        } else if (entry.isFile()) {
+          const ext = extname(entry.name);
+          if (extensions.includes(ext)) {
+            files.push(relativePath);
+          }
+        }
+      }
+    } catch (error) {
+      // 디렉토리가 존재하지 않으면 무시
+    }
+  }
+
+  await traverse(dir);
+  return files;
+}
 
 describe('Architecture Dependency Rules', () => {
   const srcPath = resolve(process.cwd(), 'src');
 
   describe('Layer Dependency Rules', () => {
     it('features should only import from shared, core, infrastructure', async () => {
-      const featureFiles = await glob('src/features/**/*.{ts,tsx}', {
-        ignore: ['**/*.test.*', '**/*.spec.*'],
-      });
+      const featureFiles = await findFiles(
+        resolve(srcPath, 'features'),
+        ['.ts', '.tsx'],
+        ['.test.', '.spec.']
+      );
 
       for (const file of featureFiles) {
         const content = await readFile(file, 'utf-8');
@@ -44,9 +84,11 @@ describe('Architecture Dependency Rules', () => {
     });
 
     it('shared should only import from core, infrastructure', async () => {
-      const sharedFiles = await glob('src/shared/**/*.{ts,tsx}', {
-        ignore: ['**/*.test.*', '**/*.spec.*'],
-      });
+      const sharedFiles = await findFiles(
+        resolve(srcPath, 'shared'),
+        ['.ts', '.tsx'],
+        ['.test.', '.spec.']
+      );
 
       for (const file of sharedFiles) {
         const content = await readFile(file, 'utf-8');
@@ -71,9 +113,11 @@ describe('Architecture Dependency Rules', () => {
     });
 
     it('core should only import from infrastructure', async () => {
-      const coreFiles = await glob('src/core/**/*.{ts,tsx}', {
-        ignore: ['**/*.test.*', '**/*.spec.*', '**/ServiceRegistry.ts'], // ServiceRegistry는 동적 import 허용
-      });
+      const coreFiles = await findFiles(
+        resolve(srcPath, 'core'),
+        ['.ts', '.tsx'],
+        ['.test.', '.spec.', 'ServiceRegistry.ts']
+      );
 
       for (const file of coreFiles) {
         const content = await readFile(file, 'utf-8');
@@ -101,9 +145,11 @@ describe('Architecture Dependency Rules', () => {
     });
 
     it('infrastructure should not import from upper layers', async () => {
-      const infraFiles = await glob('src/infrastructure/**/*.{ts,tsx}', {
-        ignore: ['**/*.test.*', '**/*.spec.*'],
-      });
+      const infraFiles = await findFiles(
+        resolve(srcPath, 'infrastructure'),
+        ['.ts', '.tsx'],
+        ['.test.', '.spec.']
+      );
 
       for (const file of infraFiles) {
         const content = await readFile(file, 'utf-8');
@@ -136,15 +182,17 @@ describe('Architecture Dependency Rules', () => {
 
   describe('Vendor Library Access Rules', () => {
     it('should use vendors getters for external libraries', async () => {
-      const sourceFiles = await glob('src/**/*.{ts,tsx}', {
-        ignore: [
-          '**/*.test.*',
-          '**/*.spec.*',
-          '**/infrastructure/external/vendors/**', // vendors 디렉토리는 제외
-          '**/shared/types/vendor.types.ts', // 타입 정의 파일 제외
-          '**/types/**', // 전역 타입 정의 제외
-        ],
-      });
+      const sourceFiles = await findFiles(
+        srcPath,
+        ['.ts', '.tsx'],
+        [
+          '.test.',
+          '.spec.',
+          'infrastructure/external/vendors/',
+          'shared/types/vendor.types.ts',
+          'types/',
+        ]
+      );
 
       for (const file of sourceFiles) {
         const content = await readFile(file, 'utf-8');
@@ -170,9 +218,11 @@ describe('Architecture Dependency Rules', () => {
     });
 
     it('should validate vendors getter usage pattern', async () => {
-      const sourceFiles = await glob('src/**/*.{ts,tsx}', {
-        ignore: ['**/*.test.*', '**/*.spec.*', '**/infrastructure/external/vendors/**'],
-      });
+      const sourceFiles = await findFiles(
+        srcPath,
+        ['.ts', '.tsx'],
+        ['.test.', '.spec.', 'infrastructure/external/vendors/']
+      );
 
       let vendorUsageFound = false;
 
@@ -225,9 +275,7 @@ describe('Architecture Dependency Rules', () => {
 
   describe('Code Quality Rules', () => {
     it('should not have circular dependencies (basic check)', async () => {
-      const sourceFiles = await glob('src/**/*.{ts,tsx}', {
-        ignore: ['**/*.test.*', '**/*.spec.*'],
-      });
+      const sourceFiles = await findFiles(srcPath, ['.ts', '.tsx'], ['.test.', '.spec.']);
 
       const importGraph = new Map();
 
@@ -253,7 +301,10 @@ describe('Architecture Dependency Rules', () => {
     });
 
     it('should have proper barrel exports', async () => {
-      const indexFiles = await glob('src/**/index.ts', { ignore: ['**/*.test.*', '**/*.spec.*'] });
+      const indexFiles = await findFiles(srcPath, ['.ts'], ['.test.', '.spec.']);
+
+      // index.ts 파일만 필터링
+      const filteredIndexFiles = indexFiles.filter(file => file.endsWith('index.ts'));
       const failedFiles: Array<{ file: string; reason: string; problematicLines: string[] }> = [];
 
       // 특수한 경우를 허용할 파일들 (배럴 export가 아닌 실제 구현/로더 파일들)
@@ -261,7 +312,7 @@ describe('Architecture Dependency Rules', () => {
         // 이제 단순한 배럴 export로 변경되어 제외할 필요 없음
       ];
 
-      for (const indexFile of indexFiles) {
+      for (const indexFile of filteredIndexFiles) {
         // 특수한 경우 파일들은 스킵
         if (specialCaseFiles.some(special => indexFile.includes(special.replace(/\//g, '\\')))) {
           continue;

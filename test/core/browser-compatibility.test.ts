@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { URL } from 'node:url';
 
 describe('Browser Environment Compatibility', () => {
   let originalWindow: any;
@@ -83,7 +84,14 @@ describe('Browser Environment Compatibility', () => {
       const isValidDomain = (url: string) => {
         try {
           const domain = new URL(url).hostname.toLowerCase();
-          return domain.endsWith('x.com') || domain.endsWith('twitter.com');
+          return (
+            domain === 'x.com' ||
+            domain === 'www.x.com' ||
+            domain === 'mobile.x.com' ||
+            domain === 'twitter.com' ||
+            domain === 'www.twitter.com' ||
+            domain === 'mobile.twitter.com'
+          );
         } catch {
           return false;
         }

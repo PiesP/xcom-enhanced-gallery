@@ -80,6 +80,45 @@ function setupURLPolyfill() {
 // URL 폴백 설정 실행
 setupURLPolyfill();
 
+// jsdom 환경 호환성 향상을 위한 polyfill 설정
+function setupJsdomPolyfills() {
+  // window.scrollTo polyfill (jsdom에서 지원하지 않음)
+  if (typeof globalThis.window !== 'undefined' && !globalThis.window.scrollTo) {
+    globalThis.window.scrollTo = function (x, y) {
+      // 테스트에서는 실제 스크롤이 필요하지 않으므로 빈 함수로 구현
+      globalThis.window.scrollX = x || 0;
+      globalThis.window.scrollY = y || 0;
+    };
+  }
+
+  // navigation API polyfill (jsdom limitation)
+  if (typeof globalThis.window !== 'undefined' && !globalThis.window.navigation) {
+    globalThis.window.navigation = {
+      navigate: () => Promise.resolve(),
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    };
+  }
+
+  // matchMedia polyfill 강화
+  if (typeof globalThis.window !== 'undefined' && !globalThis.window.matchMedia) {
+    globalThis.window.matchMedia = function (query) {
+      return {
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: function () {},
+        removeListener: function () {},
+        addEventListener: function () {},
+        removeEventListener: function () {},
+        dispatchEvent: function () {
+          return true;
+        },
+      };
+    };
+  }
+}
+
 // 기본적인 브라우저 환경 설정 강화
 if (typeof globalThis !== 'undefined') {
   // 안전한 window 객체 설정
@@ -108,6 +147,9 @@ if (typeof globalThis !== 'undefined') {
       search: '',
     };
   }
+
+  // jsdom polyfill 적용
+  setupJsdomPolyfills();
 }
 
 /**
