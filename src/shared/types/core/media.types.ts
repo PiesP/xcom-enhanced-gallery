@@ -1,9 +1,8 @@
 /**
- * Core Media Types for X.com Enhanced Gallery
+ * Core Media Types - 통합 미디어 타입 정의
  *
- * This module contains the fundamental media type definitions that are used
- * across all layers of the application. These types should remain stable
- * and serve as the single source of truth for media-related interfaces.
+ * 모든 미디어 관련 타입을 통합하여 중복 제거
+ * @version 4.0.0 - Phase 4 통합 완료
  */
 
 // Re-export from constants to avoid duplication
@@ -11,9 +10,33 @@ import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } fro
 export type MediaType = BaseMediaType;
 export type MediaQuality = BaseMediaQuality;
 
-// Re-export MediaInfo and MediaEntity from simplified module
-import type { MediaInfo, MediaEntity } from './media-entity.types';
-export type { MediaInfo, MediaEntity };
+/**
+ * 기본 미디어 정보 (main/shared/types/media.types.ts와 통합)
+ */
+export interface MediaInfo {
+  id: string;
+  url: string;
+  originalUrl?: string;
+  type: 'image' | 'video' | 'gif';
+  filename: string;
+  fileSize?: number;
+  width?: number;
+  height?: number;
+  thumbnailUrl?: string;
+  alt?: string;
+  tweetUsername?: string | undefined;
+  tweetId?: string | undefined;
+  tweetUrl?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * 미디어 엔티티
+ */
+export interface MediaEntity extends MediaInfo {
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
 
 /**
  * 브랜드 타입 기본 구조 (core 레이어 독립성을 위해 정의)

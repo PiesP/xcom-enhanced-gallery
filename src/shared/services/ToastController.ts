@@ -4,7 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { BaseService } from './ServiceManager';
+import type { BaseService } from '@shared/types/app.types';
 
 // Toast 관련 타입 정의
 export interface ToastItem {

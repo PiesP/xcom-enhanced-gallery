@@ -2472,24 +2472,6 @@
         },
         {
           "dynamic": false,
-          "module": "./ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./UIService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3137,8 +3119,7 @@
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/core-services.ts",
-        "src/shared/services/service-initialization.ts",
-        "src/shared/services/ToastController.ts"
+        "src/shared/services/service-initialization.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3236,26 +3217,7 @@
     },
     {
       "source": "src/shared/services/ToastController.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/services/UIService.ts",
         "src/shared/types/core/core-types.ts"
@@ -4436,39 +4398,10 @@
     },
     {
       "source": "src/shared/types/core/media.types.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./media-entity.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/core/media-entity.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/types/core/core-types.ts",
         "src/shared/types/core/extraction.types.ts",
-        "src/shared/types/core/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/types/core/media-entity.types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/types/core/media.types.ts",
         "src/shared/types/core/index.ts"
       ],
       "orphan": false,
@@ -4550,24 +4483,6 @@
             "export"
           ],
           "resolved": "src/shared/types/core/extraction.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./media-entity.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/types/core/media-entity.types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4698,8 +4613,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 137,
-    "totalDependenciesCruised": 194,
+    "totalCruised": 136,
+    "totalDependenciesCruised": 190,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

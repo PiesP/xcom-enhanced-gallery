@@ -6,6 +6,10 @@
 
 // 필수 타입 임포트
 import type { MediaExtractionResult } from './media.types';
+import type { MediaExtractionOptions } from '@shared/types/media.types';
+
+// Re-export for external usage
+export type { MediaExtractionOptions };
 
 /**
  * 트윗 정보 인터페이스
@@ -23,24 +27,6 @@ export interface TweetInfo {
   confidence: number;
   /** 추가 메타데이터 */
   metadata?: Record<string, unknown>;
-}
-
-/**
- * 미디어 추출 옵션
- */
-export interface MediaExtractionOptions {
-  /** 비디오 포함 여부 */
-  includeVideos?: boolean;
-  /** 타임아웃 (밀리초) */
-  timeoutMs?: number;
-  /** API 폴백 사용 */
-  useApiFallback?: boolean;
-  /** 백그라운드 로딩 활성화 */
-  enableBackgroundLoading?: boolean;
-  /** 유효성 검사 활성화 */
-  enableValidation?: boolean;
-  /** 최대 재시도 횟수 */
-  maxRetries?: number;
 }
 
 /**

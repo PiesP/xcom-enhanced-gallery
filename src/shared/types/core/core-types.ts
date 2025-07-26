@@ -19,13 +19,9 @@ import type { MediaInfo } from './media.types';
 // ========================================
 
 /**
- * 기본 서비스 인터페이스
+ * 기본 서비스 인터페이스 (app.types.ts에서 가져옴)
  */
-export interface BaseService {
-  destroy?(): void;
-  initialize?(): Promise<void> | void;
-  isInitialized?(): boolean;
-}
+import type { BaseService } from '@shared/types/app.types';
 
 /**
  * 서비스 생명주기 상태

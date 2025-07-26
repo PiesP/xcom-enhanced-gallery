@@ -47,5 +47,5 @@ export { ServiceManager, serviceManager } from './ServiceManager';
 export { getService, registerCoreServices, type ServiceKey } from './core-services';
 
 // 필수 타입들
-export type { BaseService } from './ServiceManager';
+export type { BaseService } from '@shared/types/app.types';
 export type { ServiceTypeMapping } from '@shared/types/core/core-types';

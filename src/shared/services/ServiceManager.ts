@@ -7,13 +7,6 @@
 import { logger } from '@shared/logging/logger';
 
 /**
- * 기본 서비스 인터페이스
- */
-export interface BaseService {
-  cleanup?(): void;
-}
-
-/**
  * 단순화된 서비스 저장소
  *
  * 복잡한 팩토리 패턴을 제거하고 단순한 인스턴스 저장소로 변경
