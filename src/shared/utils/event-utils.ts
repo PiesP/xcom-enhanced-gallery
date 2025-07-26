@@ -135,7 +135,7 @@ export async function initializeGalleryEvents(
     eventOptions = {
       debounceDelay: options.debounceDelay ?? 150,
       enableKeyboard: options.enableKeyboard ?? true,
-      debug: options.debug ?? false,
+      debug: options.debug ?? true, // 기본값을 true로 변경하여 디버깅 활성화
     };
 
     setupGalleryEventListeners();
@@ -166,6 +166,15 @@ function setupGalleryEventListeners(): void {
     document,
     'mousedown',
     handleGlobalMouseDown,
+    { capture: true, passive: false },
+    'gallery-events'
+  );
+
+  // pointerdown 이벤트도 추가 (모바일 지원)
+  addEventListenerManaged(
+    document,
+    'pointerdown',
+    handleGlobalPointerDown,
     { capture: true, passive: false },
     'gallery-events'
   );
@@ -212,12 +221,30 @@ async function handleGlobalClick(event: Event): Promise<void> {
     }
     lastClickTime = now;
 
+    // 디버그를 위한 클릭 정보 로깅
+    const target = mouseEvent.target as HTMLElement;
+    if (eventOptions.debug) {
+      logger.debug('Global click detected:', {
+        tagName: target?.tagName,
+        className: target?.className,
+        id: target?.id,
+        dataset: target?.dataset,
+        closest_tweet: target?.closest('[data-testid="tweet"]') ? 'YES' : 'NO',
+        closest_photo: target?.closest('[data-testid="tweetPhoto"]') ? 'YES' : 'NO',
+        closest_video: target?.closest('[data-testid="videoPlayer"]') ? 'YES' : 'NO',
+      });
+    }
+
     const result = await processClickEvent(mouseEvent);
 
     if (result.handled) {
       if (eventOptions.debug) {
-        logger.debug('Click event handled:', result);
+        logger.info('✅ Click event successfully handled:', result);
+      } else {
+        logger.info('✅ Media click handled - Gallery should open');
       }
+    } else if (eventOptions.debug) {
+      logger.debug('Click event not handled:', result.reason);
     }
   } catch (error) {
     logger.error('Error in global click handler:', error);
@@ -237,6 +264,26 @@ function handleGlobalMouseDown(event: Event): void {
   if (MediaClickDetector.isProcessableMedia(target)) {
     if (eventOptions.debug) {
       logger.debug('Media mousedown detected, preventing default');
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  }
+}
+
+/**
+ * 전역 포인터다운 이벤트 처리 (모바일 지원)
+ */
+function handleGlobalPointerDown(event: Event): void {
+  const pointerEvent = event as PointerEvent;
+  const target = pointerEvent.target as HTMLElement;
+
+  if (!target) return;
+
+  // 미디어 요소인 경우 즉시 기본 동작 차단
+  if (MediaClickDetector.isProcessableMedia(target)) {
+    if (eventOptions.debug) {
+      logger.debug('Media pointerdown detected, preventing default');
     }
     event.preventDefault();
     event.stopPropagation();
@@ -281,6 +328,13 @@ async function processClickEvent(event: MouseEvent): Promise<EventHandlingResult
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
+
+    // 약간의 지연을 두고 트위터의 원본 핸들러가 실행되기 전에 차단
+    setTimeout(() => {
+      if (eventOptions.debug) {
+        logger.debug('Additional event blocking for Twitter handlers');
+      }
+    }, 0);
 
     // 미디어 정보 감지 및 갤러리 열기
     const mediaInfo = await detectMediaFromClick(event);

@@ -44,30 +44,52 @@ export class MediaClickDetector {
   public static isProcessableMedia(target: HTMLElement): boolean {
     if (!target) return false;
 
+    logger.debug('MediaClickDetector: Checking processable media for:', {
+      tagName: target.tagName,
+      className: target.className,
+      id: target.id,
+      dataset: target.dataset,
+    });
+
     // 갤러리가 이미 열려있으면 무시 (캐시된 조회 사용)
     if (cachedQuerySelector('.xeg-gallery-container', document, 1000)) {
+      logger.debug('MediaClickDetector: Gallery already open - blocking');
       return false;
     }
 
     // 갤러리를 차단해야 하는 요소들 먼저 확인
     if (MediaClickDetector.shouldBlockGalleryTrigger(target)) {
+      logger.debug('MediaClickDetector: Blocked by shouldBlockGalleryTrigger');
       return false;
     }
 
-    // 1. 미디어 컨테이너 확인 (최우선)
-    const imageSelectors = [SELECTORS.TWEET_PHOTO, 'img[src*="pbs.twimg.com"]'];
+    // 1. 미디어 컨테이너 확인 (최우선) - 더 포괄적인 선택자 사용
+    const imageSelectors = [
+      SELECTORS.TWEET_PHOTO,
+      'img[src*="pbs.twimg.com"]',
+      '[data-testid="tweetPhoto"]',
+      '[data-testid="tweet"] img',
+      'article img[src*="twimg.com"]',
+    ];
     for (const selector of imageSelectors) {
       if (target.closest(selector)) {
-        logger.debug(`MediaClickDetector: 이미지 컨테이너 감지 - ${selector}`);
+        logger.info(`✅ MediaClickDetector: 이미지 컨테이너 감지 - ${selector}`);
         return true;
       }
     }
 
-    // 2. 미디어 플레이어 확인
-    const videoSelectors = [SELECTORS.VIDEO_PLAYER, 'video'];
+    // 2. 미디어 플레이어 확인 - 더 포괄적인 선택자 사용
+    const videoSelectors = [
+      SELECTORS.VIDEO_PLAYER,
+      'video',
+      '[data-testid="videoPlayer"]',
+      '[data-testid="videoComponent"]',
+      '[data-testid="tweet"] video',
+      'article video',
+    ];
     for (const selector of videoSelectors) {
       if (target.closest(selector)) {
-        logger.debug(`MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
+        logger.info(`✅ MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
         return true;
       }
     }
@@ -76,20 +98,39 @@ export class MediaClickDetector {
     if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
       const isTwitterMedia = MediaClickDetector.isTwitterMediaElement(target);
       if (isTwitterMedia) {
-        logger.debug('MediaClickDetector: 트위터 미디어 요소 직접 클릭');
+        logger.info('✅ MediaClickDetector: 트위터 미디어 요소 직접 클릭');
         return true;
       }
     }
 
-    // 4. 미디어 링크 확인
-    const linkSelectors = ['a[href*="/photo/"]', 'a[href*="/video/"]'];
+    // 4. 미디어 링크 확인 - 더 포괄적인 선택자 사용
+    const linkSelectors = [
+      'a[href*="/photo/"]',
+      'a[href*="/video/"]',
+      'a[href*="pic.twitter.com"]',
+      'a[href*="pbs.twimg.com"]',
+    ];
     for (const selector of linkSelectors) {
       if (target.closest(selector)) {
-        logger.debug(`MediaClickDetector: 미디어 링크 감지 - ${selector}`);
+        logger.info(`✅ MediaClickDetector: 미디어 링크 감지 - ${selector}`);
         return true;
       }
     }
 
+    // 5. 트윗 내부의 미디어 영역 확인 (넓은 범위)
+    const tweetContainer = target.closest('article[data-testid="tweet"], [data-testid="tweet"]');
+    if (tweetContainer) {
+      // 트윗 내부에서 이미지나 비디오가 포함된 영역 클릭 확인
+      const hasMediaInTweet = tweetContainer.querySelector(
+        'img[src*="twimg.com"], video, [data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
+      );
+      if (hasMediaInTweet) {
+        logger.info('✅ MediaClickDetector: 미디어가 있는 트윗 영역 클릭');
+        return true;
+      }
+    }
+
+    logger.debug('MediaClickDetector: No media detected');
     return false;
   }
 
