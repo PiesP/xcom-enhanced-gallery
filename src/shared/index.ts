@@ -47,7 +47,7 @@ export {
 } from './utils';
 
 export { GalleryUtils } from './utils/unified-utils';
-export { isInsideGallery } from './utils/dom-utils';
+export { isInsideGallery } from './utils/unified-dom';
 
 // 타입들
 export type {

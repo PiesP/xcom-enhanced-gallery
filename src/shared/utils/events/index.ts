@@ -17,4 +17,4 @@ export {
   GalleryEventCoordinator,
   type EventHandlers,
   type GalleryEventOptions,
-} from '../event-utils';
+} from '../unified-events';

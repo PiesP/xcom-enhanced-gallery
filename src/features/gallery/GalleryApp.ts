@@ -114,7 +114,7 @@ export class GalleryApp {
   private async setupEventHandlers(): Promise<void> {
     try {
       // 새로운 갤러리 이벤트 시스템 사용
-      const { initializeGalleryEvents } = await import('@shared/utils/event-utils');
+      const { initializeGalleryEvents } = await import('@shared/utils/unified-events');
 
       await initializeGalleryEvents({
         onMediaClick: async (_mediaInfo, element, _event) => {
@@ -291,7 +291,7 @@ export class GalleryApp {
 
       // 이벤트 핸들러 정리
       try {
-        const { cleanupGalleryEvents } = await import('@shared/utils/event-utils');
+        const { cleanupGalleryEvents } = await import('@shared/utils/unified-events');
         cleanupGalleryEvents();
       } catch (error) {
         logger.warn('이벤트 코디네이터 정리 실패:', error);

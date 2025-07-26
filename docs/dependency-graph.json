@@ -2332,14 +2332,14 @@
         },
         {
           "dynamic": false,
-          "module": "./utils/dom-utils",
+          "module": "./utils/unified-dom",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/dom-utils.ts",
+          "resolved": "src/shared/utils/unified-dom.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3905,6 +3905,7 @@
       "source": "src/shared/utils/unified-dom.ts",
       "dependencies": [],
       "dependents": [
+        "src/shared/index.ts",
         "src/shared/utils/index.ts"
       ],
       "orphan": false,
@@ -3914,7 +3915,8 @@
       "source": "src/shared/utils/unified-events.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/events/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3925,15 +3927,6 @@
       "dependents": [
         "src/shared/index.ts",
         "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/dom-utils.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4789,43 +4782,38 @@
     },
     {
       "source": "src/shared/utils/events/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/selector-utils.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
+      "dependencies": [
         {
-          "severity": "info",
-          "name": "no-orphans"
+          "dynamic": false,
+          "module": "../unified-events",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/unified-events.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
-      ]
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/utils/selector-utils.ts",
-        "to": "src/shared/utils/selector-utils.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 142,
-    "totalDependenciesCruised": 198,
+    "totalCruised": 140,
+    "totalDependenciesCruised": 199,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
