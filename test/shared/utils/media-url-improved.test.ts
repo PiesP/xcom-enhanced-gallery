@@ -11,19 +11,17 @@ import {
 } from '../../../src/shared/utils/media/media-url.util';
 
 // 새로운 테스트 유틸리티 import
+import { setupTestEnvironment, cleanupTestEnvironment } from '../../utils/helpers/test-environment';
 import {
-  setupTestEnvironment,
-  cleanupTestEnvironment,
+  createMockMediaUrl,
   createMockElement,
   createMockImageElement,
   createMockVideoElement,
-} from '../../utils/helpers/test-environment';
-import { createMockMediaUrl } from '../../utils/fixtures/test-factories';
+} from '../../utils/helpers/test-factories.js';
 import {
   expectUrlToBeMediaUrl,
   expectUrlToHaveParams,
-  expectFunctionToExecuteWithin,
-} from '../../utils/helpers/test-assertions';
+} from '../../utils/helpers/test-assertions.js';
 
 describe('Media URL Utilities', () => {
   beforeEach(async () => {
@@ -236,13 +234,12 @@ describe('Media URL Utilities', () => {
         },
       };
 
-      await expectFunctionToExecuteWithin(
-        () => {
-          const result = getMediaUrlsFromTweet(mockDocument, '1234567890');
-          expect(Array.isArray(result)).toBe(true);
-        },
-        1000 // 1초 이내에 완료되어야 함
-      );
+      // 성능 테스트 - 1초 이내에 완료되어야 함
+      const startTime = Date.now();
+      const result = getMediaUrlsFromTweet(mockDocument, '1234567890');
+      expect(Array.isArray(result)).toBe(true);
+      const endTime = Date.now();
+      expect(endTime - startTime).toBeLessThan(1000);
     });
   });
 });

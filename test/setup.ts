@@ -28,8 +28,12 @@ afterEach(async () => {
   await cleanupTestEnvironment();
 });
 
+// ================================
+// 환경 사용 가이드
+// ================================
 // 이 파일은 vitest.config.ts의 setupFiles에서 자동으로 로드됩니다
 // 개별 테스트에서 특별한 환경이 필요한 경우:
 // - setupTestEnvironment('component') : DOM + 브라우저 확장 + 컴포넌트 환경
 // - setupTestEnvironment('browser') : DOM + 브라우저 확장 환경
+// - setupTestEnvironment('full') : 모든 환경 + 샘플 데이터
 // - setupTestEnvironment('minimal') : 기본 환경 (기본값)

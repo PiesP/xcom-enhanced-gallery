@@ -18,20 +18,17 @@ import {
 import { cachedQuerySelectorAll } from '@shared/dom';
 
 // 새로운 테스트 유틸리티 import
+import { setupTestEnvironment, cleanupTestEnvironment } from '../../utils/helpers/test-environment';
 import {
-  setupTestEnvironment,
-  cleanupTestEnvironment,
+  createMockMediaUrl,
   createMockElement,
   createMockImageElement,
   createMockVideoElement,
-} from '../../utils/helpers/test-environment';
-import { createMockMediaUrl, createMockTwitterUrl } from '../../utils/fixtures/test-factories';
+} from '../../utils/helpers/test-factories.js';
 import {
   expectUrlToBeMediaUrl,
-  expectUrlToBeTwitterUrl,
   expectUrlToHaveParams,
-  expectFunctionToExecuteWithin,
-} from '../../utils/helpers/test-assertions';
+} from '../../utils/helpers/test-assertions.js';
 
 describe('Media URL Utilities', () => {
   beforeEach(async () => {

@@ -4,7 +4,6 @@
  */
 
 import { expect } from 'vitest';
-import type { MediaItem, ImageInfo, VideoInfo, GalleryState } from './test-factories';
 
 // ================================
 // DOM Assertion Helpers
@@ -118,7 +117,20 @@ export function expectUrlToBeMediaUrl(url: string, type: 'image' | 'video'): voi
  * URL 파라미터 확인
  */
 export function expectUrlToHaveParams(url: string, params: Record<string, string>): void {
-  const urlObj = new URL(url);
+  // URL 생성자가 사용 가능한지 확인
+  const URLConstructor = globalThis.URL;
+  if (!URLConstructor) {
+    // Fallback: 간단한 query parameter 파싱
+    const queryString = url.split('?')[1] || '';
+    const urlParams = new URLSearchParams(queryString);
+
+    Object.entries(params).forEach(([key, value]) => {
+      expect(urlParams.get(key)).toBe(value);
+    });
+    return;
+  }
+
+  const urlObj = new URLConstructor(url);
 
   Object.entries(params).forEach(([key, value]) => {
     expect(urlObj.searchParams.get(key)).toBe(value);
