@@ -251,8 +251,7 @@
       ],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/index.ts",
-        "src/features/gallery/components/index.ts",
-        "src/features/gallery/renderers/IsolatedGalleryRenderer.ts"
+        "src/features/gallery/components/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -623,23 +622,6 @@
         },
         {
           "dynamic": false,
-          "module": "./renderers/IsolatedGalleryRenderer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/renderers/IsolatedGalleryRenderer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -661,64 +643,11 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/renderers/IsolatedGalleryRenderer.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../components/vertical-gallery-view/VerticalGalleryView",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/index.ts",
-        "src/features/gallery/renderers/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/features/gallery/types.ts",
       "dependencies": [],
       "dependents": [
         "src/features/gallery/index.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/renderers/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./IsolatedGalleryRenderer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/renderers/IsolatedGalleryRenderer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -1201,6 +1130,41 @@
         },
         {
           "dynamic": false,
+          "module": "./isolation/UnifiedGalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./isolation/UnifiedGalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ui/Button/Button",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1338,6 +1302,16 @@
     },
     {
       "source": "src/shared/components/isolation/IsolatedGalleryRoot.tsx",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/index.ts",
+        "src/shared/components/isolation/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
       "dependencies": [],
       "dependents": [
         "src/shared/components/index.ts",
@@ -1574,6 +1548,23 @@
             "export"
           ],
           "resolved": "src/shared/components/isolation/IsolatedGalleryRoot.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./UnifiedGalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4812,7 +4803,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 140,
+    "totalCruised": 139,
     "totalDependenciesCruised": 199,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

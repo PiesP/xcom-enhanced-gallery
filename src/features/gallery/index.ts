@@ -1,6 +1,6 @@
 /**
  * @fileoverview Gallery Feature Exports
- * @version 2.0.0 - Phase 2B Clean Architecture Optimization
+ * @version 2.0.0 - Phase 2 컴포넌트 단순화
  * @description 갤러리 Feature 통합 및 최적화 - 단일 렌더러 통합
  */
 
@@ -10,15 +10,6 @@ export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
 // 갤러리 앱 (App 레이어에서 이동)
 export { GalleryApp } from './GalleryApp';
 export type { GalleryConfig } from './GalleryApp';
-
-// 격리된 갤러리 렌더러 (고급 사용)
-export {
-  IsolatedGalleryRenderer,
-  renderIsolatedGallery,
-  findActiveIsolatedGallery,
-  cleanupAllIsolatedGalleries,
-  type IsolatedGalleryRendererOptions,
-} from './renderers/IsolatedGalleryRenderer';
 
 // 핵심 갤러리 컴포넌트들
 export { VerticalGalleryView } from './components/vertical-gallery-view';
