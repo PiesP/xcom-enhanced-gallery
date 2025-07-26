@@ -170,6 +170,15 @@ function setupGalleryEventListeners(): void {
     'gallery-events'
   );
 
+  // pointerdown 이벤트도 추가 (모바일 지원)
+  addEventListenerManaged(
+    document,
+    'pointerdown',
+    handleGlobalPointerDown,
+    { capture: true, passive: false },
+    'gallery-events'
+  );
+
   // 키보드 이벤트 리스너 (옵션에 따라)
   if (eventOptions.enableKeyboard) {
     addEventListenerManaged(
@@ -245,6 +254,26 @@ function handleGlobalMouseDown(event: Event): void {
 }
 
 /**
+ * 전역 포인터다운 이벤트 처리 (모바일 지원)
+ */
+function handleGlobalPointerDown(event: Event): void {
+  const pointerEvent = event as PointerEvent;
+  const target = pointerEvent.target as HTMLElement;
+
+  if (!target) return;
+
+  // 미디어 요소인 경우 즉시 기본 동작 차단
+  if (MediaClickDetector.isProcessableMedia(target)) {
+    if (eventOptions.debug) {
+      logger.debug('Media pointerdown detected, preventing default');
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  }
+}
+
+/**
  * 클릭 이벤트 처리 로직
  */
 async function processClickEvent(event: MouseEvent): Promise<EventHandlingResult> {
@@ -281,6 +310,13 @@ async function processClickEvent(event: MouseEvent): Promise<EventHandlingResult
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
+
+    // 약간의 지연을 두고 트위터의 원본 핸들러가 실행되기 전에 차단
+    setTimeout(() => {
+      if (eventOptions.debug) {
+        logger.debug('Additional event blocking for Twitter handlers');
+      }
+    }, 0);
 
     // 미디어 정보 감지 및 갤러리 열기
     const mediaInfo = await detectMediaFromClick(event);
