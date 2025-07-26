@@ -3,7 +3,7 @@
  * 다양한 시나리오에 맞는 환경을 쉽게 설정할 수 있도록 도와주는 유틸리티
  */
 
-import { setupUserscriptAPIMocks, clearMockStorage } from '../../__mocks__/userscript-api.mock.js';
+import { clearMockStorage } from '../../__mocks__/userscript-api.mock.js';
 import { setupTwitterDOM, clearTwitterDOM } from '../../__mocks__/twitter-dom.mock.js';
 import {
   setupBrowserEnvironment,
@@ -51,7 +51,7 @@ export async function setupComponentTestEnvironment() {
  */
 export async function setupTestEnvironment() {
   await setupComponentTestEnvironment();
-  setupUserscriptAPIMocks();
+  // setupUserscriptAPIMocks(); // 이미 setup.ts에서 처리됨
   setupTwitterDOM();
 }
 

@@ -9,23 +9,23 @@ import { vi } from 'vitest';
 // 유저스크립트 API Mock Storage
 // ================================
 
-const mockStorage = new Map<string, string>();
+const mockStorage = new Map();
 
 // ================================
 // GM_* API Mocks
 // ================================
 
 export const mockUserscriptAPI = {
-  GM_getValue: vi.fn((key: string, defaultValue?: string) => {
+  GM_getValue: vi.fn((key, defaultValue) => {
     return mockStorage.get(key) ?? defaultValue;
   }),
 
-  GM_setValue: vi.fn((key: string, value: string) => {
+  GM_setValue: vi.fn((key, value) => {
     mockStorage.set(key, value);
     return Promise.resolve();
   }),
 
-  GM_deleteValue: vi.fn((key: string) => {
+  GM_deleteValue: vi.fn(key => {
     mockStorage.delete(key);
     return Promise.resolve();
   }),
@@ -34,7 +34,7 @@ export const mockUserscriptAPI = {
     return Array.from(mockStorage.keys());
   }),
 
-  GM_xmlhttpRequest: vi.fn((details: any) => {
+  GM_xmlhttpRequest: vi.fn(details => {
     // 기본적으로 성공 응답을 반환
     const mockResponse = {
       status: 200,
@@ -56,7 +56,7 @@ export const mockUserscriptAPI = {
     };
   }),
 
-  GM_download: vi.fn((url: string, filename: string) => {
+  GM_download: vi.fn((url, filename) => {
     return Promise.resolve({
       url,
       filename,
@@ -64,24 +64,24 @@ export const mockUserscriptAPI = {
     });
   }),
 
-  GM_notification: vi.fn((options: any) => {
+  GM_notification: vi.fn(options => {
     globalThis.console.log('Mock notification:', options);
   }),
 
-  GM_openInTab: vi.fn((url: string) => {
+  GM_openInTab: vi.fn(url => {
     globalThis.console.log('Mock open in tab:', url);
     return { close: vi.fn() };
   }),
 
-  GM_registerMenuCommand: vi.fn((caption: string, _commandFunc: Function) => {
+  GM_registerMenuCommand: vi.fn(caption => {
     return caption;
   }),
 
-  GM_unregisterMenuCommand: vi.fn((_menuCmdId: string) => {
+  GM_unregisterMenuCommand: vi.fn(() => {
     // Mock implementation
   }),
 
-  GM_setClipboard: vi.fn((data: string) => {
+  GM_setClipboard: vi.fn(data => {
     globalThis.console.log('Mock clipboard:', data);
   }),
 
@@ -96,20 +96,89 @@ export const mockUserscriptAPI = {
 };
 
 // ================================
-// Global Mock Setup
+// Global Mock Setup & API Connection
 // ================================
 
 /**
- * 전역 유저스크립트 API를 모의로 설정
+ * Mock API 상태 추적
  */
-export function setupUserscriptAPIMocks() {
-  // window 객체에 GM_* 함수들 추가
-  Object.entries(mockUserscriptAPI).forEach(([key, value]) => {
-    (globalThis as any)[key] = value;
-    if (typeof window !== 'undefined') {
-      (window as any)[key] = value;
-    }
+export const mockApiState = {
+  downloadQueue: [],
+  notifications: [],
+  isAutoDownloadEnabled: false,
+  lastDownloadCall: null,
+};
+
+/**
+ * Mock API에 실제 동작 연결
+ */
+export function connectMockAPI() {
+  // GM_download 향상된 Mock - 상태 추적 포함
+  mockUserscriptAPI.GM_download = vi.fn((url, filename) => {
+    mockApiState.downloadQueue.push({ url, filename });
+    mockApiState.lastDownloadCall = { url, filename, timestamp: Date.now() };
+
+    globalThis.console.log(`[Mock API] Download triggered: ${filename} from ${url}`);
+
+    return Promise.resolve({
+      url,
+      filename,
+      error: null,
+    });
   });
+
+  // GM_notification 향상된 Mock - 상태 추적 포함
+  mockUserscriptAPI.GM_notification = vi.fn(options => {
+    mockApiState.notifications.push(options);
+    globalThis.console.log('[Mock API] Notification triggered:', options);
+  });
+
+  return mockApiState;
+}
+
+/**
+ * Mock API 상태 초기화
+ */
+export function resetMockApiState() {
+  mockApiState.downloadQueue.length = 0;
+  mockApiState.notifications.length = 0;
+  mockApiState.isAutoDownloadEnabled = false;
+  mockApiState.lastDownloadCall = null;
+
+  // Mock 함수 호출 카운터 초기화
+  vi.clearAllMocks();
+}
+
+/**
+ * 글로벌 스코프에 Mock API 설정
+ * 실제 애플리케이션에서 GM_* 함수들이 호출될 때 Mock이 사용되도록 함
+ */
+export function setupGlobalMocks() {
+  // Mock API 연결 활성화
+  connectMockAPI();
+
+  // globalThis에 직접 설정 (안전한 설정)
+  if (typeof globalThis !== 'undefined') {
+    Object.assign(globalThis, mockUserscriptAPI);
+  }
+
+  // window에도 설정 (브라우저 환경)
+  try {
+    if (typeof globalThis.window !== 'undefined') {
+      Object.assign(globalThis.window, mockUserscriptAPI);
+    }
+  } catch {
+    // 무시
+  }
+
+  // global에도 설정 (Node.js 환경)
+  try {
+    if (typeof globalThis.global !== 'undefined') {
+      Object.assign(globalThis.global, mockUserscriptAPI);
+    }
+  } catch {
+    // 무시
+  }
 }
 
 /**
@@ -120,7 +189,7 @@ export function clearMockStorage() {
   // 모든 mock 함수들의 호출 기록 초기화
   Object.values(mockUserscriptAPI).forEach(mock => {
     if (typeof mock === 'function' && 'mockClear' in mock) {
-      (mock as any).mockClear();
+      mock.mockClear();
     }
   });
 }
@@ -128,15 +197,15 @@ export function clearMockStorage() {
 /**
  * 특정 GM_getValue 응답 설정
  */
-export function setMockStorageValue(key: string, value: string) {
+export function setMockStorageValue(key, value) {
   mockStorage.set(key, value);
 }
 
 /**
  * XML HTTP Request 모의 응답 설정
  */
-export function setupMockXMLHttpResponse(response: Partial<any>) {
-  mockUserscriptAPI.GM_xmlhttpRequest.mockImplementation((details: any) => {
+export function setupMockXMLHttpResponse(response) {
+  mockUserscriptAPI.GM_xmlhttpRequest.mockImplementation(details => {
     const mockResponse = {
       status: 200,
       statusText: 'OK',

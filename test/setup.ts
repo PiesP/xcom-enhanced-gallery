@@ -6,6 +6,7 @@
 import '@testing-library/jest-dom';
 import { beforeEach, afterEach } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
+import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
 
 // ================================
 // 전역 테스트 환경 설정
@@ -138,6 +139,11 @@ if (typeof globalThis !== 'undefined') {
     globalThis.document.body = { innerHTML: '' };
   }
 
+  // document.body가 안전하게 설정되었는지 다시 확인
+  if (globalThis.document.body && typeof globalThis.document.body !== 'object') {
+    globalThis.document.body = { innerHTML: '' };
+  }
+
   // 안전한 location 객체 설정
   if (!globalThis.location || typeof globalThis.location !== 'object') {
     globalThis.location = {
@@ -157,6 +163,9 @@ if (typeof globalThis !== 'undefined') {
  * 모든 테스트가 깨끗한 환경에서 실행되도록 보장
  */
 beforeEach(async () => {
+  // Mock API 연결 활성화
+  setupGlobalMocks();
+
   // URL 생성자 다시 확인 및 설정
   if (!globalThis.URL || typeof globalThis.URL !== 'function') {
     const URLPolyfill = createURLPolyfill();
@@ -172,6 +181,9 @@ beforeEach(async () => {
  * 메모리 누수 방지 및 테스트 격리 보장
  */
 afterEach(async () => {
+  // Mock API 상태 초기화
+  resetMockApiState();
+
   await cleanupTestEnvironment();
 });
 

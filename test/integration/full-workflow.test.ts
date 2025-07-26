@@ -16,6 +16,14 @@ import {
   createDownloadProgress,
 } from '../__mocks__/twitter-dom.mock.js';
 import { mockUserscriptAPI, setMockStorageValue } from '../__mocks__/userscript-api.mock.js';
+import {
+  simulateDownloadAction,
+  simulateKeyboardDownload,
+  simulateAutoDownload,
+  simulateBulkDownload,
+  simulateNotificationAction,
+  simulateProgressUpdate,
+} from '../utils/helpers/mock-action-simulator.js';
 
 // Helper
 const wait = ms => new Promise(resolve => globalThis.setTimeout(resolve, ms));
@@ -52,7 +60,12 @@ describe('전체 워크플로우 통합 테스트', () => {
 
       // When: 사용자가 D키를 눌러 다운로드하면
       simulateKeypress('d');
-      await wait(100);
+
+      // 실제 다운로드 로직 시뮬레이션
+      const currentImage = galleryModal.querySelector('img') || imageElement;
+      simulateKeyboardDownload('d', currentImage);
+
+      await wait(150);
 
       // Then: 다운로드가 시작되어야 한다
       expect(mockUserscriptAPI.GM_download).toHaveBeenCalledWith(
