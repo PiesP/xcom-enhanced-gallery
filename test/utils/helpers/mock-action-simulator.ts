@@ -119,6 +119,7 @@ export function simulateNetworkError() {
 
 /**
  * 진행률 업데이트 시뮬레이션
+ * CI 캐시 갱신을 위한 수정
  */
 export function simulateProgressUpdate(progressElement, targetPercent = 100) {
   let currentPercent = 0;
