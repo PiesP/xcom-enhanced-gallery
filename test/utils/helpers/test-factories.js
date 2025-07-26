@@ -14,7 +14,7 @@ export function createMockMediaUrl(type = 'image', options = {}) {
   const defaults = {
     id: 'test123',
     format: type === 'video' ? 'mp4' : 'jpg',
-    quality: 'large'
+    quality: 'large',
   };
 
   const config = { ...defaults, ...options };
@@ -34,7 +34,7 @@ export function createMockImageUrls(id = 'test123') {
     thumb: createMockMediaUrl('image', { id, quality: 'thumb' }),
     small: createMockMediaUrl('image', { id, quality: 'small' }),
     medium: createMockMediaUrl('image', { id, quality: 'medium' }),
-    large: createMockMediaUrl('image', { id, quality: 'large' })
+    large: createMockMediaUrl('image', { id, quality: 'large' }),
   };
 }
 
@@ -48,21 +48,29 @@ export function createMockImageUrls(id = 'test123') {
 export function createMockElement(tagName = 'div', attributes = {}) {
   const element = {
     tagName: tagName.toUpperCase(),
-    getAttribute: function(name) { return this.attributes[name] || null; },
-    setAttribute: function(name, value) { this.attributes[name] = value; },
-    hasAttribute: function(name) { return name in this.attributes; },
+    getAttribute: function (name) {
+      return this.attributes[name] || null;
+    },
+    setAttribute: function (name, value) {
+      this.attributes[name] = value;
+    },
+    hasAttribute: function (name) {
+      return name in this.attributes;
+    },
     classList: {
-      contains: function(className) { return (element.className || '').split(' ').includes(className); },
-      add: function(className) {
+      contains: function (className) {
+        return (element.className || '').split(' ').includes(className);
+      },
+      add: function (className) {
         const current = element.className || '';
         if (!this.contains(className)) {
           element.className = current ? `${current} ${className}` : className;
         }
       },
-      remove: function(className) {
+      remove: function (className) {
         const classes = (element.className || '').split(' ').filter(c => c !== className);
         element.className = classes.join(' ');
-      }
+      },
     },
     style: {},
     textContent: '',
@@ -72,9 +80,15 @@ export function createMockElement(tagName = 'div', attributes = {}) {
     onkeydown: null,
     onkeypress: null,
     tabIndex: -1,
-    querySelectorAll: function() { return []; },
-    querySelector: function() { return null; },
-    addEventListener: function() { return true; }
+    querySelectorAll: function () {
+      return [];
+    },
+    querySelector: function () {
+      return null;
+    },
+    addEventListener: function () {
+      return true;
+    },
   };
 
   // 속성 설정
@@ -97,7 +111,7 @@ export function createMockImageElement(src, attributes = {}) {
   const defaultAttrs = {
     src,
     alt: 'Test image',
-    loading: 'lazy'
+    loading: 'lazy',
   };
 
   const element = createMockElement('img', { ...defaultAttrs, ...attributes });
@@ -115,7 +129,7 @@ export function createMockVideoElement(src, attributes = {}) {
   const defaultAttrs = {
     src,
     controls: true,
-    muted: true
+    muted: true,
   };
 
   const element = createMockElement('video', { ...defaultAttrs, ...attributes });
@@ -142,7 +156,7 @@ export function createMockMediaItem(type = 'image', options = {}) {
     type,
     originalUrl: options.originalUrl || url,
     altText: options.altText || `Test ${type}`,
-    ...options
+    ...options,
   };
 }
 
@@ -154,7 +168,7 @@ export function createMockImageInfo(options = {}) {
     src: createMockMediaUrl('image'),
     alt: 'Test image',
     width: 1920,
-    height: 1080
+    height: 1080,
   };
 
   return { ...defaults, ...options };
@@ -167,7 +181,7 @@ export function createMockVideoInfo(options = {}) {
   const defaults = {
     src: createMockMediaUrl('video'),
     poster: createMockMediaUrl('image'),
-    duration: 30
+    duration: 30,
   };
 
   return { ...defaults, ...options };
@@ -184,7 +198,7 @@ export function createMockGalleryState(options = {}) {
   const defaults = {
     isOpen: false,
     currentIndex: 0,
-    items: []
+    items: [],
   };
 
   return { ...defaults, ...options };
@@ -201,7 +215,7 @@ export function createMockOpenGalleryState(itemCount = 3) {
   return createMockGalleryState({
     isOpen: true,
     currentIndex: 0,
-    items
+    items,
   });
 }
 
@@ -222,7 +236,7 @@ export function createMockMouseEvent(type = 'click', options = {}) {
     ctrlKey: false,
     shiftKey: false,
     altKey: false,
-    metaKey: false
+    metaKey: false,
   };
 
   return { ...defaults, ...options };
@@ -241,7 +255,7 @@ export function createMockKeyboardEvent(key, type = 'keydown', options = {}) {
     ctrlKey: false,
     shiftKey: false,
     altKey: false,
-    metaKey: false
+    metaKey: false,
   };
 
   return { ...defaults, ...options };
@@ -256,10 +270,12 @@ export function createMockDragEvent(type = 'dragstart', options = {}) {
     bubbles: true,
     cancelable: true,
     dataTransfer: {
-      getData: function() { return ''; },
-      setData: function() {},
-      files: []
-    }
+      getData: function () {
+        return '';
+      },
+      setData: function () {},
+      files: [],
+    },
   };
 
   return { ...defaults, ...options };
@@ -282,10 +298,10 @@ export function createMockTweetStructure(mediaCount = 1, mediaType = 'image') {
   });
 
   const tweetElement = createMockElement('article', {
-    'data-testid': 'tweet'
+    'data-testid': 'tweet',
   });
 
-  tweetElement.querySelectorAll = function(selector) {
+  tweetElement.querySelectorAll = function (selector) {
     if (selector.includes('img')) {
       return media.filter(m => m.tagName === 'IMG');
     } else if (selector.includes('video')) {
@@ -330,7 +346,7 @@ export function createMockPerformanceMetrics(options = {}) {
     loadTime: 150,
     renderTime: 50,
     memoryUsage: 1024 * 1024, // 1MB
-    errorCount: 0
+    errorCount: 0,
   };
 
   return { ...defaults, ...options };

@@ -5,19 +5,23 @@ X.com Enhanced Gallery의 새로운 테스트 아키텍처 가이드입니다.
 ## 🎯 핵심 원칙
 
 ### 1. 테스트 프레임워크
+
 - **Vitest** 사용 (describe, it, expect, vi)
 - TypeScript 지원
 - 빠른 실행 속도
 
 ### 2. DOM 시뮬레이션
+
 - `document.body.innerHTML`을 사용하여 실제 X.com 페이지 구조 모방
 - 실제 브라우저 환경과 유사한 테스트 환경 제공
 
 ### 3. API 모의(Mocking)
-- 모든 유저스크립트 API (GM_*, chrome.* 등) 완전 모의 처리
+
+- 모든 유저스크립트 API (GM\__, chrome._ 등) 완전 모의 처리
 - 실제 API 호출 금지 → 안전하고 예측 가능한 테스트
 
 ### 4. 행위 중심 테스트
+
 - 사용자 관점에서 "무엇을 해야 하는가" 검증
 - 내부 구현이 아닌 결과와 행동에 집중
 
@@ -73,10 +77,10 @@ import { setupTestEnvironment } from '../utils/helpers/test-environment';
 
 beforeEach(async () => {
   // 환경 타입 선택
-  await setupTestEnvironment('minimal');    // 기본 DOM만
-  await setupTestEnvironment('browser');    // DOM + 브라우저 API
-  await setupTestEnvironment('component');  // DOM + Twitter 구조
-  await setupTestEnvironment('full');       // 모든 환경 + 샘플 데이터
+  await setupTestEnvironment('minimal'); // 기본 DOM만
+  await setupTestEnvironment('browser'); // DOM + 브라우저 API
+  await setupTestEnvironment('component'); // DOM + Twitter 구조
+  await setupTestEnvironment('full'); // 모든 환경 + 샘플 데이터
 });
 ```
 
@@ -114,10 +118,10 @@ describe('extractImageUrls', () => {
         media: [
           {
             type: 'photo',
-            media_url_https: 'https://pbs.twimg.com/media/test1.jpg'
-          }
-        ]
-      }
+            media_url_https: 'https://pbs.twimg.com/media/test1.jpg',
+          },
+        ],
+      },
     };
 
     // When: 이미지 URL을 추출하면
@@ -159,7 +163,10 @@ describe('기본 이미지 다운로드 워크플로우', () => {
 ### 유저스크립트 API Mock
 
 ```typescript
-import { mockUserscriptAPI, setMockStorageValue } from '../__mocks__/userscript-api.mock';
+import {
+  mockUserscriptAPI,
+  setMockStorageValue,
+} from '../__mocks__/userscript-api.mock';
 
 // GM_getValue 응답 설정
 setMockStorageValue('autoDownload', 'true');
@@ -177,7 +184,7 @@ expect(mockUserscriptAPI.GM_download).toHaveBeenCalledWith(
 import {
   setupTwitterDOM,
   addTweetWithImages,
-  simulateClick
+  simulateClick,
 } from '../__mocks__/twitter-dom.mock';
 
 // Twitter DOM 구조 설정
@@ -228,14 +235,17 @@ vi.clearAllMocks();
 ## 🚀 성능 최적화
 
 ### 1. 병렬 실행
+
 - Vitest가 자동으로 테스트를 병렬 실행
 - 무거운 테스트는 `describe.sequential()` 사용
 
 ### 2. 선택적 환경 설정
+
 - 필요한 최소한의 환경만 설정
 - 'minimal' → 'browser' → 'component' → 'full' 순으로 무거워짐
 
 ### 3. Mock 재사용
+
 - 공통 Mock은 `__mocks__` 디렉토리에 정의
 - 테스트별 특별한 설정만 개별 구현
 
@@ -251,4 +261,5 @@ vi.clearAllMocks();
 - [ ] 비동기 처리 대기
 - [ ] 의미 있는 테스트 이름
 
-이 가이드를 따라 작성된 테스트는 안정적이고, 빠르며, 유지보수가 쉬운 코드가 될 것입니다.
+이 가이드를 따라 작성된 테스트는 안정적이고, 빠르며, 유지보수가 쉬운 코드가 될
+것입니다.

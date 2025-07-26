@@ -141,7 +141,7 @@ export function safelySetupGlobalEnvironment() {
       href: 'https://x.com',
       hostname: 'x.com',
       pathname: '/',
-      search: ''
+      search: '',
     };
   }
 }

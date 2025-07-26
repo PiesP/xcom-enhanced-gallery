@@ -223,7 +223,14 @@ export function isValidMediaUrl(url: string): boolean {
   }
 
   try {
-    const urlObj = new URL(url);
+    // 테스트 환경을 위한 안전한 URL 파싱
+    const URLConstructor = globalThis.URL || globalThis.window?.URL;
+    if (!URLConstructor) {
+      // Fallback: 기본적인 문자열 검사
+      return isValidMediaUrlFallback(url);
+    }
+
+    const urlObj = new URLConstructor(url);
 
     // 프로토콜 검증 - https 또는 http만 허용
     if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
@@ -244,8 +251,44 @@ export function isValidMediaUrl(url: string): boolean {
     // 기타 도메인은 허용하지 않음 (Twitter 미디어만)
     return false;
   } catch {
+    // URL 생성이 실패하면 fallback 사용
+    return isValidMediaUrlFallback(url);
+  }
+}
+
+/**
+ * URL 생성자를 사용할 수 없는 환경에서의 fallback 검증 함수
+ */
+function isValidMediaUrlFallback(url: string): boolean {
+  // 기본적인 프로토콜 검사
+  if (!url.startsWith('https://') && !url.startsWith('http://')) {
     return false;
   }
+
+  // 지원하지 않는 트위터 서브도메인 명시적 거부
+  if (url.includes('ton.twimg.com')) {
+    return false;
+  }
+
+  // 도메인 스푸핑 방지: 정확한 호스트명 매칭
+  const protocolRegex = /^https?:\/\/([^/]+)/;
+  const match = url.match(protocolRegex);
+  if (!match) {
+    return false;
+  }
+
+  const hostname = match[1];
+
+  // 트위터 미디어 도메인 정확한 검사
+  if (hostname === 'pbs.twimg.com') {
+    return url.includes('/media/') && !url.includes('/profile_images/');
+  }
+
+  if (hostname === 'video.twimg.com') {
+    return true;
+  }
+
+  return false;
 }
 
 /**

@@ -4,7 +4,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { setupTestEnvironment, cleanupTestEnvironment } from '../../utils/helpers/test-environment';
+import {
+  setupTestEnvironment,
+  cleanupTestEnvironment,
+} from '../../utils/helpers/test-environment.js';
 import {
   setupTwitterDOM,
   addTweetWithImages,

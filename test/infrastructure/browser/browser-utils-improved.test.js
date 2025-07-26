@@ -30,16 +30,16 @@ describe('Browser Utilities', () => {
         body: { innerHTML: '' },
         createElement: vi.fn().mockReturnValue({}),
         querySelector: vi.fn(),
-        querySelectorAll: vi.fn().mockReturnValue([])
+        querySelectorAll: vi.fn().mockReturnValue([]),
       },
       location: {
         hostname: 'x.com',
         href: 'https://x.com/user/status/123456789',
         pathname: '/user/status/123456789',
-        search: '?lang=en'
+        search: '?lang=en',
       },
       navigator: {
-        userAgent: 'Mozilla/5.0 (compatible; Node.js)'
+        userAgent: 'Mozilla/5.0 (compatible; Node.js)',
       },
       innerWidth: 1920,
       innerHeight: 1080,
@@ -48,7 +48,7 @@ describe('Browser Utilities', () => {
       setTimeout: vi.fn().mockImplementation((callback, delay) => {
         return globalThis.setTimeout(callback, delay);
       }),
-      clearTimeout: vi.fn().mockImplementation((id) => {
+      clearTimeout: vi.fn().mockImplementation(id => {
         return globalThis.clearTimeout(id);
       }),
       // Mock scroll function with spy
@@ -65,7 +65,7 @@ describe('Browser Utilities', () => {
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
         dispatchEvent: vi.fn(),
-      }))
+      })),
     };
 
     // Set as global for browser utilities to access
@@ -159,7 +159,7 @@ describe('Browser Utilities', () => {
       // X.com hostname 설정
       mockWindow.location = {
         ...mockWindow.location,
-        hostname: 'x.com'
+        hostname: 'x.com',
       };
       globalThis.location = mockWindow.location;
       expect(isTwitterSite()).toBe(true);
@@ -169,7 +169,7 @@ describe('Browser Utilities', () => {
       // twitter.com hostname 설정
       mockWindow.location = {
         ...mockWindow.location,
-        hostname: 'twitter.com'
+        hostname: 'twitter.com',
       };
       globalThis.location = mockWindow.location;
       expect(isTwitterSite()).toBe(true);
@@ -178,7 +178,7 @@ describe('Browser Utilities', () => {
     it('should reject non-Twitter sites', () => {
       mockWindow.location = {
         ...mockWindow.location,
-        hostname: 'example.com'
+        hostname: 'example.com',
       };
       globalThis.location = mockWindow.location;
       expect(isTwitterSite()).toBe(false);
@@ -372,7 +372,7 @@ describe('Browser Utilities', () => {
 
     it('should handle corrupted location object', () => {
       globalThis.window = {
-        location: null
+        location: null,
       };
 
       expect(safeLocation()).toBeNull();
@@ -382,7 +382,7 @@ describe('Browser Utilities', () => {
   describe('Edge Cases', () => {
     it('should handle partial window object', () => {
       globalThis.window = {
-        document: mockWindow.document
+        document: mockWindow.document,
       };
 
       expect(isBrowserEnvironment()).toBe(true);
@@ -392,7 +392,7 @@ describe('Browser Utilities', () => {
     it('should handle window with missing methods', () => {
       globalThis.window = {
         document: mockWindow.document,
-        location: mockWindow.location
+        location: mockWindow.location,
       };
 
       expect(() => {

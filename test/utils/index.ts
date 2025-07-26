@@ -13,4 +13,4 @@ export * from './mocks/browser-mocks';
 export * from './mocks/vendor-mocks';
 
 // 편의 함수들
-export { setupTestEnvironment, cleanupTestEnvironment } from './helpers/test-environment';
+export { setupTestEnvironment, cleanupTestEnvironment } from './helpers/test-environment.js';

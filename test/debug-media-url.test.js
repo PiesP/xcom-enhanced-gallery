@@ -47,7 +47,9 @@ describe('Debug Media URL', () => {
         }
 
         if (urlObj.hostname === 'pbs.twimg.com') {
-          return urlObj.pathname.includes('/media/') && !urlObj.pathname.includes('/profile_images/');
+          return (
+            urlObj.pathname.includes('/media/') && !urlObj.pathname.includes('/profile_images/')
+          );
         }
 
         if (urlObj.hostname === 'video.twimg.com') {
@@ -63,7 +65,7 @@ describe('Debug Media URL', () => {
     const testUrls = [
       'https://pbs.twimg.com/media/F1a2b3c4d5e.jpg?format=jpg&name=large',
       'https://video.twimg.com/video.mp4',
-      'https://example.com/image.jpg'
+      'https://example.com/image.jpg',
     ];
 
     testUrls.forEach((url, index) => {

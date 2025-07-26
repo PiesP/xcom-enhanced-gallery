@@ -8,7 +8,7 @@ describe('Debug Media URL', () => {
   it('should test URL constructor in test environment', () => {
     console.log('globalThis.URL:', typeof globalThis.URL);
     console.log('URL constructor available:', !!globalThis.URL);
-    
+
     if (globalThis.URL) {
       const testUrl = 'https://pbs.twimg.com/media/F1a2b3c4d5e.jpg?format=jpg&name=large';
       try {
@@ -18,7 +18,7 @@ describe('Debug Media URL', () => {
         console.log('Pathname:', urlObj.pathname);
         console.log('Has /media/:', urlObj.pathname.includes('/media/'));
         console.log('Has profile_images:', urlObj.pathname.includes('/profile_images/'));
-        
+
         expect(urlObj.hostname).toBe('pbs.twimg.com');
         expect(urlObj.pathname.includes('/media/')).toBe(true);
         expect(urlObj.pathname.includes('/profile_images/')).toBe(false);
@@ -47,7 +47,9 @@ describe('Debug Media URL', () => {
         }
 
         if (urlObj.hostname === 'pbs.twimg.com') {
-          return urlObj.pathname.includes('/media/') && !urlObj.pathname.includes('/profile_images/');
+          return (
+            urlObj.pathname.includes('/media/') && !urlObj.pathname.includes('/profile_images/')
+          );
         }
 
         if (urlObj.hostname === 'video.twimg.com') {
@@ -63,14 +65,14 @@ describe('Debug Media URL', () => {
     const testUrls = [
       'https://pbs.twimg.com/media/F1a2b3c4d5e.jpg?format=jpg&name=large',
       'https://video.twimg.com/video.mp4',
-      'https://example.com/image.jpg'
+      'https://example.com/image.jpg',
     ];
 
     testUrls.forEach((url, index) => {
       const result = testIsValidMediaUrl(url);
       console.log(`URL ${index + 1}: ${url}`);
       console.log(`Result: ${result}`);
-      
+
       if (index < 2) {
         expect(result).toBe(true);
       } else {

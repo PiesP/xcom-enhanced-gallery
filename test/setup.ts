@@ -78,9 +78,14 @@ class SimpleURL {
   }
 }
 
-// URL 생성자 설정
+// URL 생성자 설정 - constructor 함수로 만들기
 if (!globalThis.URL || typeof globalThis.URL !== 'function') {
-  globalThis.URL = SimpleURL;
+  // SimpleURL을 직접 globalThis.URL로 설정
+  Object.defineProperty(globalThis, 'URL', {
+    value: SimpleURL,
+    writable: true,
+    configurable: true,
+  });
 }
 
 // 기본적인 브라우저 환경 설정
@@ -108,6 +113,9 @@ if (typeof globalThis !== 'undefined') {
  * 모든 테스트가 깨끗한 환경에서 실행되도록 보장
  */
 beforeEach(async () => {
+  // URL 생성자를 매번 새로 설정
+  globalThis.URL = SimpleURL;
+
   // 기본 테스트 환경 설정 (minimal)
   await setupTestEnvironment();
 });

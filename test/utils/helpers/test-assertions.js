@@ -63,7 +63,9 @@ export function expectElementToHaveAttribute(element, attributeName, expectedVal
  */
 export function expectElementToBeInDocument(element) {
   expect(element).toBeTruthy();
-  expect(globalThis.document?.contains?.(element) || globalThis.document?.body?.contains?.(element)).toBe(true);
+  expect(
+    globalThis.document?.contains?.(element) || globalThis.document?.body?.contains?.(element)
+  ).toBe(true);
 }
 
 // ================================
@@ -305,7 +307,7 @@ export function expectNotificationToHaveBeenShown(mockNotificationFn, expectedMe
   if (expectedMessage) {
     expect(mockNotificationFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        text: expect.stringContaining(expectedMessage)
+        text: expect.stringContaining(expectedMessage),
       })
     );
   }
@@ -330,8 +332,9 @@ export function expectElementToBeAccessible(element) {
   expect(hasAccessibleName).toBeTruthy();
 
   // 포커스 가능한 요소인지 확인
-  const isFocusable = element.tabIndex >= 0 ||
-                     ['button', 'a', 'input', 'select', 'textarea'].includes(element.tagName.toLowerCase());
+  const isFocusable =
+    element.tabIndex >= 0 ||
+    ['button', 'a', 'input', 'select', 'textarea'].includes(element.tagName.toLowerCase());
 
   if (isFocusable) {
     expect(element.tabIndex).toBeGreaterThanOrEqual(0);
@@ -346,10 +349,8 @@ export function expectElementToBeKeyboardAccessible(element) {
   expect(element.tabIndex).toBeGreaterThanOrEqual(0);
 
   // Enter나 Space 키 이벤트 핸들러가 있는지 확인
-  const hasKeyboardHandler = element.onclick ||
-                            element.onkeydown ||
-                            element.onkeypress ||
-                            element.addEventListener;
+  const hasKeyboardHandler =
+    element.onclick || element.onkeydown || element.onkeypress || element.addEventListener;
   expect(hasKeyboardHandler).toBeTruthy();
 }
 
@@ -377,9 +378,31 @@ export function expectTaskToCompleteWithinTime(taskPromise, maxTimeMs = 1000) {
 /**
  * 메모리 사용량이 적절한지 확인 (단순 휴리스틱)
  */
-export function expectReasonableMemoryUsage(beforeHeapUsed, afterHeapUsed, maxIncreaseBytes = 10000000) {
+export function expectReasonableMemoryUsage(
+  beforeHeapUsed,
+  afterHeapUsed,
+  maxIncreaseBytes = 10000000
+) {
   const memoryIncrease = afterHeapUsed - beforeHeapUsed;
   expect(memoryIncrease).toBeLessThan(maxIncreaseBytes);
+}
+
+/**
+ * 함수가 지정된 시간 내에 실행되는지 확인
+ */
+export async function expectFunctionToExecuteWithin(func, maxTimeMs = 1000) {
+  const startTime = Date.now();
+
+  try {
+    await func();
+    const executionTime = Date.now() - startTime;
+    expect(executionTime).toBeLessThan(maxTimeMs);
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    // 실행 시간은 확인하되, 원래 에러는 다시 던짐
+    expect(executionTime).toBeLessThan(maxTimeMs);
+    throw error;
+  }
 }
 
 // ================================
@@ -392,85 +415,29 @@ export function expectReasonableMemoryUsage(beforeHeapUsed, afterHeapUsed, maxIn
 export function setupCustomMatchers() {
   expect.extend({
     toBeMediaUrl(received, mediaType = 'image') {
-      const pass = (
+      const pass =
         typeof received === 'string' &&
-        (
-          (mediaType === 'image' && (received.includes('pbs.twimg.com') || received.includes('ton.twitter.com'))) ||
-          (mediaType === 'video' && received.includes('video.twimg.com'))
-        )
-      );
+        ((mediaType === 'image' &&
+          (received.includes('pbs.twimg.com') || received.includes('ton.twitter.com'))) ||
+          (mediaType === 'video' && received.includes('video.twimg.com')));
 
       return {
         message: () => `expected ${received} to be a valid ${mediaType} URL`,
-        pass
+        pass,
       };
     },
 
     toBeVisibleElement(received) {
-      const pass = received &&
+      const pass =
+        received &&
         received.style &&
         received.style.display !== 'none' &&
         received.style.visibility !== 'hidden';
 
       return {
         message: () => `expected ${received} to be visible`,
-        pass
+        pass,
       };
-    }
-  });
-}
-
-// ================================
-// Performance Test Helpers
-// ================================
-
-/**
- * 함수가 지정된 시간 내에 실행되는지 확인
- */
-export async function expectFunctionToExecuteWithin(func, maxTimeMs = 1000) {
-  const startTime = Date.now();
-
-  try {
-    await func();
-    const executionTime = Date.now() - startTime;
-    expect(executionTime).toBeLessThan(maxTimeMs);
-  } catch (error) {
-    const executionTime = Date.now() - startTime;
-    // 실행 시간은 확인하되, 원래 에러는 다시 던짐
-    expect(executionTime).toBeLessThan(maxTimeMs);
-    throw error;
-  }
-}
-}
-
-// ================================
-// Performance Assertion Helpers
-// ================================
-
-/**
- * 함수가 지정된 시간 내에 실행되는지 확인
- */
-export async function expectFunctionToExecuteWithin(func, maxTimeMs = 1000) {
-  const startTime = Date.now();
-
-  try {
-    await func();
-    const executionTime = Date.now() - startTime;
-    expect(executionTime).toBeLessThan(maxTimeMs);
-  } catch (error) {
-    const executionTime = Date.now() - startTime;
-    // 실행 시간은 확인하되, 원래 에러는 다시 던짐
-    expect(executionTime).toBeLessThan(maxTimeMs);
-    throw error;
-  }
-}
-                  received.style?.display !== 'none' &&
-                  received.style?.visibility !== 'hidden';
-
-      return {
-        message: () => `expected element to be visible`,
-        pass
-      };
-    }
+    },
   });
 }

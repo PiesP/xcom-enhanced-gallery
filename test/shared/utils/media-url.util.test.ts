@@ -3,7 +3,7 @@
  * 실제 Twitter/X.com URL 패턴을 기반으로 한 테스트
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   extractOriginalImageUrl,
   cleanFilename,
@@ -133,7 +133,7 @@ describe('Media URL Utility - Real-world Scenarios', () => {
       const patterns = [
         { url: 'https://pbs.twimg.com/media/image.jpg', valid: true },
         { url: 'https://video.twimg.com/ext_tw_video/123/video.mp4', valid: true },
-        { url: 'https://ton.twimg.com/i/something.jpg', valid: false }, // Different subdomain
+        { url: 'https://ton.twimg.com/i/something.jpg', valid: false }, // ton.twimg.com은 지원하지 않음
         { url: 'https://pbs.twimg.com.evil.com/media/image.jpg', valid: false }, // Domain spoofing
       ];
 
