@@ -388,10 +388,16 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
     clearInterval(galleryEventState.priorityInterval);
   }
 
-  // 5초마다 우선순위 재설정
+  // 15초마다 우선순위 재설정 (빈도 줄임)
   galleryEventState.priorityInterval = setInterval(() => {
     try {
       if (!galleryEventState.initialized) return;
+
+      // 갤러리가 열린 상태에서는 우선순위 강화 중단
+      if (checkGalleryOpen()) {
+        logger.debug('Gallery is open, skipping priority enforcement');
+        return;
+      }
 
       // 기존 리스너 제거
       galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
@@ -432,7 +438,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
     } catch (error) {
       logger.warn('Failed to reinforce gallery event priority:', error);
     }
-  }, 5000);
+  }, 15000);
 }
 
 /**
@@ -456,16 +462,7 @@ async function handleMediaClick(
       return { handled: false, reason: 'Video control element' };
     }
 
-    // 트위터 네이티브 갤러리 요소 확인 (중복 실행 방지)
-    if (isTwitterNativeGalleryElement(target)) {
-      // 트위터 네이티브 이벤트를 즉시 차단
-      event.stopImmediatePropagation();
-      event.preventDefault();
-      logger.debug('Twitter native gallery event blocked');
-      return { handled: true, reason: 'Twitter native gallery blocked' };
-    }
-
-    // 미디어 감지 시도
+    // 우선 미디어 감지 시도 (우리의 갤러리가 우선)
     if (options.enableMediaDetection) {
       const mediaInfo = await detectMediaFromClick(event);
       if (mediaInfo) {
@@ -476,6 +473,15 @@ async function handleMediaClick(
           mediaInfo,
         };
       }
+    }
+
+    // 미디어 감지 실패 후 트위터 네이티브 갤러리 요소 확인 (중복 실행 방지)
+    if (isTwitterNativeGalleryElement(target)) {
+      // 트위터 네이티브 이벤트를 즉시 차단
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      logger.debug('Twitter native gallery event blocked');
+      return { handled: true, reason: 'Twitter native gallery blocked' };
     }
 
     return { handled: false, reason: 'No media detected' };

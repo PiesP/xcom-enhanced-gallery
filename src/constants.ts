@@ -363,47 +363,36 @@ export function isVideoControlElement(element: HTMLElement): boolean {
  * 트위터 네이티브 갤러리 요소인지 확인 (중복 실행 방지용)
  */
 export function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
+  // 우리의 갤러리 요소는 제외
+  if (
+    element.closest('.xeg-gallery-container') ||
+    element.closest('[data-xeg-gallery]') ||
+    element.classList.contains('xeg-gallery-item') ||
+    element.classList.contains('xeg-gallery') ||
+    element.classList.contains('xeg-gallery-unified') ||
+    element.closest('.xeg-gallery') ||
+    element.hasAttribute('data-xeg-gallery-type')
+  ) {
+    return false;
+  }
+
   const twitterGallerySelectors = [
-    // 기본 미디어 요소들
-    '[data-testid="tweetPhoto"]',
-    '[data-testid="videoPlayer"]',
-    '[data-testid="videoComponent"]',
-
-    // 미디어 버튼들
-    '[aria-label*="Image"]',
-    '[aria-label*="Video"]',
-    '[aria-label*="사진"]',
-    '[aria-label*="동영상"]',
-
-    // CSS 클래스 기반 (트위터가 자주 사용하는 패턴)
-    '.css-1dbjc4n[role="button"]:has(img)',
-    '.css-1dbjc4n[role="button"]:has(video)',
-
-    // 카드 레이아웃
-    '[data-testid="card.layoutLarge.media"]',
-    '[data-testid="card.layoutSmall.media"]',
-
-    // 갤러리 오버레이 및 모달
-    '[data-testid="media-overlay"]',
-    '[aria-modal="true"]:has([data-testid="tweetPhoto"])',
-    '[aria-modal="true"]:has([data-testid="videoPlayer"])',
-
-    // 미디어 컨테이너들
-    '[data-testid="photoViewer"]',
+    // 트위터 네이티브 갤러리 모달의 특징적 요소들만 포함
+    '[aria-modal="true"][data-testid="Drawer"]',
     '[data-testid="swipe-to-dismiss"]',
+    '[data-testid="photoViewer"]',
 
-    // 미디어 내비게이션
-    '[data-testid="mediaPreview"]',
-    '[data-testid="mediaViewer"]',
+    // 트위터 갤러리 내비게이션 버튼들
+    '[data-testid="media-overlay"] button',
+    '[data-testid="Drawer"] [role="button"][aria-label*="Close"]',
+    '[data-testid="Drawer"] [role="button"][aria-label*="닫기"]',
 
-    // 트위터 갤러리 특징적 구조
-    'div[style*="background-image"]:has(img)',
-    'a[href*="/photo/"]',
-    'a[href*="/video/"]',
+    // 트위터 갤러리 모달 백드롭
+    '[data-testid="Drawer"] > div[style*="position: fixed"]',
 
-    // 실제 미디어 요소들
-    'img[src*="pbs.twimg.com"]',
-    'video[src*="video.twimg.com"]',
+    // 트위터 갤러리가 열렸을 때만 나타나는 요소들
+    'div[aria-modal="true"] [data-testid="tweetPhoto"]',
+    'div[aria-modal="true"] [data-testid="videoPlayer"]',
   ];
 
   return twitterGallerySelectors.some(selector => {
