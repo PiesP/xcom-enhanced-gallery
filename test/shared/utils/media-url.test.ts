@@ -29,8 +29,9 @@ import {
   createMockVideoElement,
 } from '../../utils/helpers/test-factories.js';
 import {
-  expectUrlToBeMediaUrl,
   expectUrlToHaveParams,
+  expectFunctionToExecuteWithin,
+  expectUrlToBeMediaUrl,
 } from '../../utils/helpers/test-assertions.js';
 
 describe('Media URL Utilities', () => {
