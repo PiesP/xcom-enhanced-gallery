@@ -44,13 +44,22 @@ export class MediaClickDetector {
   public static isProcessableMedia(target: HTMLElement): boolean {
     if (!target) return false;
 
+    logger.debug('MediaClickDetector: Checking processable media for:', {
+      tagName: target.tagName,
+      className: target.className,
+      id: target.id,
+      dataset: target.dataset,
+    });
+
     // 갤러리가 이미 열려있으면 무시 (캐시된 조회 사용)
     if (cachedQuerySelector('.xeg-gallery-container', document, 1000)) {
+      logger.debug('MediaClickDetector: Gallery already open - blocking');
       return false;
     }
 
     // 갤러리를 차단해야 하는 요소들 먼저 확인
     if (MediaClickDetector.shouldBlockGalleryTrigger(target)) {
+      logger.debug('MediaClickDetector: Blocked by shouldBlockGalleryTrigger');
       return false;
     }
 
@@ -64,7 +73,7 @@ export class MediaClickDetector {
     ];
     for (const selector of imageSelectors) {
       if (target.closest(selector)) {
-        logger.debug(`MediaClickDetector: 이미지 컨테이너 감지 - ${selector}`);
+        logger.info(`✅ MediaClickDetector: 이미지 컨테이너 감지 - ${selector}`);
         return true;
       }
     }
@@ -80,7 +89,7 @@ export class MediaClickDetector {
     ];
     for (const selector of videoSelectors) {
       if (target.closest(selector)) {
-        logger.debug(`MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
+        logger.info(`✅ MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
         return true;
       }
     }
@@ -89,7 +98,7 @@ export class MediaClickDetector {
     if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
       const isTwitterMedia = MediaClickDetector.isTwitterMediaElement(target);
       if (isTwitterMedia) {
-        logger.debug('MediaClickDetector: 트위터 미디어 요소 직접 클릭');
+        logger.info('✅ MediaClickDetector: 트위터 미디어 요소 직접 클릭');
         return true;
       }
     }
@@ -103,7 +112,7 @@ export class MediaClickDetector {
     ];
     for (const selector of linkSelectors) {
       if (target.closest(selector)) {
-        logger.debug(`MediaClickDetector: 미디어 링크 감지 - ${selector}`);
+        logger.info(`✅ MediaClickDetector: 미디어 링크 감지 - ${selector}`);
         return true;
       }
     }
@@ -116,11 +125,12 @@ export class MediaClickDetector {
         'img[src*="twimg.com"], video, [data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
       );
       if (hasMediaInTweet) {
-        logger.debug('MediaClickDetector: 미디어가 있는 트윗 영역 클릭');
+        logger.info('✅ MediaClickDetector: 미디어가 있는 트윗 영역 클릭');
         return true;
       }
     }
 
+    logger.debug('MediaClickDetector: No media detected');
     return false;
   }
 

@@ -135,7 +135,7 @@ export async function initializeGalleryEvents(
     eventOptions = {
       debounceDelay: options.debounceDelay ?? 150,
       enableKeyboard: options.enableKeyboard ?? true,
-      debug: options.debug ?? false,
+      debug: options.debug ?? true, // 기본값을 true로 변경하여 디버깅 활성화
     };
 
     setupGalleryEventListeners();
@@ -221,12 +221,30 @@ async function handleGlobalClick(event: Event): Promise<void> {
     }
     lastClickTime = now;
 
+    // 디버그를 위한 클릭 정보 로깅
+    const target = mouseEvent.target as HTMLElement;
+    if (eventOptions.debug) {
+      logger.debug('Global click detected:', {
+        tagName: target?.tagName,
+        className: target?.className,
+        id: target?.id,
+        dataset: target?.dataset,
+        closest_tweet: target?.closest('[data-testid="tweet"]') ? 'YES' : 'NO',
+        closest_photo: target?.closest('[data-testid="tweetPhoto"]') ? 'YES' : 'NO',
+        closest_video: target?.closest('[data-testid="videoPlayer"]') ? 'YES' : 'NO',
+      });
+    }
+
     const result = await processClickEvent(mouseEvent);
 
     if (result.handled) {
       if (eventOptions.debug) {
-        logger.debug('Click event handled:', result);
+        logger.info('✅ Click event successfully handled:', result);
+      } else {
+        logger.info('✅ Media click handled - Gallery should open');
       }
+    } else if (eventOptions.debug) {
+      logger.debug('Click event not handled:', result.reason);
     }
   } catch (error) {
     logger.error('Error in global click handler:', error);
