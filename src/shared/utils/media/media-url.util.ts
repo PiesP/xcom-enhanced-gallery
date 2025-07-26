@@ -231,13 +231,9 @@ export function isValidMediaUrl(url: string): boolean {
     } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
       URLConstructor = window.URL;
     } else {
-      // Node.js 환경이나 다른 환경에서 URL import 시도
-      try {
-        const { URL: NodeURL } = require('node:url');
-        URLConstructor = NodeURL;
-      } catch {
-        return isValidMediaUrlFallback(url);
-      }
+      // 테스트 환경에서만 필요한 경우, fallback 사용
+      // 브라우저 환경에서는 globalThis.URL 또는 window.URL이 항상 사용 가능
+      return isValidMediaUrlFallback(url);
     }
 
     const urlObj = new URLConstructor(url);

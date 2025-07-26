@@ -124,12 +124,12 @@ export function simulateProgressUpdate(progressElement, targetPercent = 100) {
   let currentPercent = 0;
   const interval = globalThis.setInterval(() => {
     currentPercent += 20;
-    
+
     // targetPercent를 초과하지 않도록 제한
     if (currentPercent > targetPercent) {
       currentPercent = targetPercent;
     }
-    
+
     if (progressElement) {
       progressElement.textContent = `${currentPercent}%`;
     }
