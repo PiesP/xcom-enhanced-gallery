@@ -38,14 +38,42 @@ async function detectMediaFromClick(event: MouseEvent): Promise<MediaInfo | null
     const detector = MediaClickDetector.getInstance();
     const result = detector.detectMediaFromClick(target);
 
-    // MediaDetectionResult를 MediaInfo로 변환 (간단한 변환)
-    if (result && typeof result === 'object' && 'mediaInfo' in result) {
-      return result.mediaInfo as MediaInfo;
+    // MediaDetectionResult를 MediaInfo로 변환
+    if (result && result.type !== 'none' && result.mediaUrl) {
+      const mediaInfo: MediaInfo = {
+        id: `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        url: result.mediaUrl,
+        originalUrl: result.mediaUrl,
+        type: result.type === 'video' ? 'video' : result.type === 'image' ? 'image' : 'image',
+        filename: extractFilenameFromUrl(result.mediaUrl) || 'untitled',
+      };
+
+      logger.debug('Media detected and converted:', {
+        detectionResult: result,
+        mediaInfo,
+        confidence: result.confidence,
+        method: result.method,
+      });
+
+      return mediaInfo;
     }
 
+    logger.debug('No media detected or invalid result:', result);
     return null;
   } catch (error) {
     logger.warn('Failed to detect media from click:', error);
+    return null;
+  }
+}
+
+// 파일명 추출 헬퍼 함수
+function extractFilenameFromUrl(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    const filename = pathname.split('/').pop();
+    return filename && filename.length > 0 ? filename : null;
+  } catch {
     return null;
   }
 }
@@ -124,11 +152,20 @@ export async function initializeGalleryEvents(
  * 갤러리 이벤트 리스너 설정
  */
 function setupGalleryEventListeners(): void {
-  // 전역 클릭 이벤트 리스너
+  // 전역 클릭 이벤트 리스너 - 최고 우선순위로 설정
   addEventListenerManaged(
     document,
     'click',
     handleGlobalClick,
+    { capture: true, passive: false },
+    'gallery-events'
+  );
+
+  // mousedown도 추가로 캐치하여 더 빠른 반응
+  addEventListenerManaged(
+    document,
+    'mousedown',
+    handleGlobalMouseDown,
     { capture: true, passive: false },
     'gallery-events'
   );
@@ -188,6 +225,26 @@ async function handleGlobalClick(event: Event): Promise<void> {
 }
 
 /**
+ * 전역 마우스다운 이벤트 처리 (더 빠른 반응을 위해)
+ */
+function handleGlobalMouseDown(event: Event): void {
+  const mouseEvent = event as MouseEvent;
+  const target = mouseEvent.target as HTMLElement;
+
+  if (!target) return;
+
+  // 미디어 요소인 경우 즉시 기본 동작 차단
+  if (MediaClickDetector.isProcessableMedia(target)) {
+    if (eventOptions.debug) {
+      logger.debug('Media mousedown detected, preventing default');
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  }
+}
+
+/**
  * 클릭 이벤트 처리 로직
  */
 async function processClickEvent(event: MouseEvent): Promise<EventHandlingResult> {
@@ -211,18 +268,30 @@ async function processClickEvent(event: MouseEvent): Promise<EventHandlingResult
     return { handled: true, reason: 'Gallery closed by outside click' };
   }
 
-  // 비디오 컨트롤 요소인 경우 무시
+  // 비디오 컨트롤 요소인 경우 무시 (하지만 차단하지는 않음)
   if (isVideoControlElement(target)) {
     return { handled: false, reason: 'Video control element' };
   }
 
-  // 미디어 클릭 감지
-  const mediaInfo = await detectMediaFromClick(event);
-  if (mediaInfo) {
-    await eventHandlers.onMediaClick(mediaInfo, target, event);
+  // 미디어 클릭 감지 - 더 적극적으로 확인
+  const isMediaClick = MediaClickDetector.isProcessableMedia(target);
+
+  if (isMediaClick) {
+    // 즉시 이벤트 차단하여 트위터 원본 동작 방지
     event.preventDefault();
     event.stopPropagation();
-    return { handled: true, reason: 'Media click processed', mediaInfo };
+    event.stopImmediatePropagation();
+
+    // 미디어 정보 감지 및 갤러리 열기
+    const mediaInfo = await detectMediaFromClick(event);
+    if (mediaInfo) {
+      logger.debug('Media click detected, opening gallery:', mediaInfo);
+      await eventHandlers.onMediaClick(mediaInfo, target, event);
+      return { handled: true, reason: 'Media click processed', mediaInfo };
+    } else {
+      logger.warn('Media detected but failed to extract info');
+      return { handled: true, reason: 'Media detected but extraction failed' };
+    }
   }
 
   return { handled: false, reason: 'No media detected' };
