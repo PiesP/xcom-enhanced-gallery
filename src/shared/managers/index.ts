@@ -5,7 +5,7 @@
  */
 
 // Essential managers
-export { EventDispatcher } from './EventDispatcher';
+// EventDispatcher는 Phase 3에서 제거됨 - @shared/utils/event-dispatcher 사용
 // NamespacedDesignSystem은 단순 함수로 대체됨 - @shared/styles/namespaced-styles 사용
 
 // Resource management (단순화된 함수들)

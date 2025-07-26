@@ -113,13 +113,10 @@ export class GalleryApp {
    */
   private async setupEventHandlers(): Promise<void> {
     try {
-      // GalleryEventCoordinator를 사용하여 이벤트 리스너 설정
-      const { GalleryEventCoordinator } = await import(
-        '@shared/utils/events/GalleryEventCoordinator'
-      );
-      const eventCoordinator = GalleryEventCoordinator.getInstance();
+      // 새로운 갤러리 이벤트 시스템 사용
+      const { initializeGalleryEvents } = await import('@shared/utils/event-utils');
 
-      await eventCoordinator.initialize({
+      await initializeGalleryEvents({
         onMediaClick: async (_mediaInfo, element, _event) => {
           try {
             const mediaService = await this.getMediaService();
@@ -294,11 +291,8 @@ export class GalleryApp {
 
       // 이벤트 핸들러 정리
       try {
-        const { GalleryEventCoordinator } = await import(
-          '@shared/utils/events/GalleryEventCoordinator'
-        );
-        const eventCoordinator = GalleryEventCoordinator.getInstance();
-        await eventCoordinator.cleanup();
+        const { cleanupGalleryEvents } = await import('@shared/utils/event-utils');
+        cleanupGalleryEvents();
       } catch (error) {
         logger.warn('이벤트 코디네이터 정리 실패:', error);
       }

@@ -1,6 +1,7 @@
 /**
- * @fileoverview CSS 선택자 검증 유틸리티
+ * @fileoverview CSS 선택자 검증 및 분석 유틸리티
  * @description jsdom 환경에서도 작동하는 CSS 선택자 검증 함수들
+ * @version 2.0.0 - Phase 3 Optimized
  */
 
 /**
@@ -93,11 +94,11 @@ export function calculateSelectorComplexity(selector: string): number {
 
   // 속성 선택자 (예: [attr], [attr="value"])
   const attributeMatches = selector.match(/\[[^\]]+\]/g);
-  if (attributeMatches) complexity += attributeMatches.length * 2; // 3에서 2로 감소
+  if (attributeMatches) complexity += attributeMatches.length * 2;
 
   // 자식/후손 선택자 (예: >, 공백)
   const descendantMatches = selector.match(/[>\s+~]/g);
-  if (descendantMatches) complexity += descendantMatches.length * 1; // 2에서 1로 감소
+  if (descendantMatches) complexity += descendantMatches.length * 1;
 
   // 전체 선택자 (*) - 매우 비효율적 (속성 선택자 내부의 *= 제외)
   const universalMatches = selector.match(/(?<!\[[^*]*)\*(?![^[]*\])/g);
@@ -112,7 +113,7 @@ export function calculateSelectorComplexity(selector: string): number {
  * @returns 성능 문제 여부
  */
 export function hasPerformanceIssues(selector: string): boolean {
-  // 매우 높은 복잡도 (조정된 임계값)
+  // 매우 높은 복잡도
   if (calculateSelectorComplexity(selector) > 100) {
     return true;
   }
@@ -129,4 +130,52 @@ export function hasPerformanceIssues(selector: string): boolean {
   }
 
   return false;
+}
+
+/**
+ * 선택자 우선순위 계산 (CSS 명세 기준)
+ * @param selector - 계산할 선택자
+ * @returns 명세도 점수 [인라인, ID, 클래스, 요소] 형태
+ */
+export function calculateSelectorSpecificity(selector: string): [number, number, number, number] {
+  const inline = 0; // style 속성 (userscript에서는 사용하지 않음)
+  let ids = 0;
+  let classes = 0;
+  let elements = 0;
+
+  // ID 선택자
+  const idMatches = selector.match(/#[a-zA-Z0-9-_]+/g);
+  if (idMatches) ids += idMatches.length;
+
+  // 클래스, 속성, 의사 클래스 선택자
+  const classMatches = selector.match(/(\.[a-zA-Z0-9-_]+|\[[^\]]+\]|:[^:][a-zA-Z0-9-()]*)/g);
+  if (classMatches) classes += classMatches.length;
+
+  // 요소 및 의사 요소 선택자
+  const elementMatches = selector.match(/(^|[\s>+~])[a-zA-Z][a-zA-Z0-9-]*|::[a-zA-Z0-9-]+/g);
+  if (elementMatches) {
+    elements += elementMatches.filter(match => !match.startsWith('::')).length;
+  }
+
+  return [inline, ids, classes, elements];
+}
+
+/**
+ * 두 선택자의 명세도를 비교합니다
+ * @param selector1 - 첫 번째 선택자
+ * @param selector2 - 두 번째 선택자
+ * @returns 1(첫 번째가 높음), -1(두 번째가 높음), 0(동일)
+ */
+export function compareSelectorSpecificity(selector1: string, selector2: string): number {
+  const spec1 = calculateSelectorSpecificity(selector1);
+  const spec2 = calculateSelectorSpecificity(selector2);
+
+  for (let i = 0; i < 4; i++) {
+    const val1 = spec1[i] ?? 0;
+    const val2 = spec2[i] ?? 0;
+    if (val1 > val2) return 1;
+    if (val1 < val2) return -1;
+  }
+
+  return 0;
 }

@@ -1,17 +1,57 @@
 /**
  * @fileoverview Shared Utils - Phase 3 통합 완료
- * @version 3.0.0 - Utils 단순화 및 통합 완료
+ * @version 3.0.0 - 이벤트 시스템 및 유틸리티 단순화 완료
  *
- * 5개 통합 파일로 단순화:
- * - unified-utils.ts (성능, 스타일, 스크롤, 디버그)
- * - dom-utils.ts (DOM 조작, 갤러리 감지, 안전한 DOM 접근)
- * - core-utils.ts (접근성, 타입 안전성, 에러 처리)
- * - media/ (미디어 전용 로직)
- * - patterns/ (URL 패턴 매칭)
+ * 새로운 구조:
+ * - event-dispatcher.ts (단순화된 이벤트 관리)
+ * - event-utils.ts (갤러리 이벤트 조정)
+ * - selector-utils.ts (CSS 선택자 검증)
+ * - dom-utils.ts (DOM 조작 및 안전한 접근)
+ * - unified-utils.ts (통합 유틸리티)
+ * - resource-manager.ts (리소스 관리)
  */
 
 // ================================
-// 통합된 핵심 유틸리티들
+// 이벤트 관리 시스템 (새로 단순화됨)
+// ================================
+
+// 단순화된 이벤트 디스패처
+export {
+  addEventListenerManaged,
+  addMultipleEventListeners,
+  removeEventListenerManaged,
+  removeEventListenersByContext,
+  removeEventListenersByType,
+  removeAllEventListeners,
+  getEventListenerStatus,
+  cleanupEventDispatcher,
+  EventDispatcher,
+} from './event-dispatcher';
+
+// 갤러리 이벤트 조정
+export {
+  initializeGalleryEvents,
+  cleanupGalleryEvents,
+  getGalleryEventStatus,
+  updateGalleryEventOptions,
+  GalleryEventCoordinator,
+  type EventHandlers,
+  type GalleryEventOptions,
+} from './event-utils';
+
+// CSS 선택자 검증 및 분석
+export {
+  isValidCSSSelector,
+  parseAttributeSelector,
+  findFirstMatchingSelector,
+  calculateSelectorComplexity,
+  hasPerformanceIssues,
+  calculateSelectorSpecificity,
+  compareSelectorSpecificity,
+} from './selector-utils';
+
+// ================================
+// 기존 통합 유틸리티들
 // ================================
 
 // Performance, Style, Scroll, Debug utilities
@@ -147,9 +187,3 @@ export * from './media';
 
 // Pattern recognition utilities
 export * from './patterns';
-
-// CSS selector validation
-export * from './css-selector-validator';
-
-// Event coordination (중요한 기능이므로 유지)
-export * from './events';

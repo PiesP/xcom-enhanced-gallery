@@ -8,7 +8,7 @@ import {
   isValidCSSSelector,
   calculateSelectorComplexity,
   hasPerformanceIssues,
-} from '@shared/utils/css-selector-validator';
+} from '@shared/utils/selector-utils';
 
 describe('STABLE_SELECTORS', () => {
   let testContainer;

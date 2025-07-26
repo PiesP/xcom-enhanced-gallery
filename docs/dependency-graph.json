@@ -2398,37 +2398,10 @@
     },
     {
       "source": "src/shared/managers/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./EventDispatcher",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/managers/EventDispatcher.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/index.ts",
         "src/shared/services/core-services.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/managers/EventDispatcher.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/managers/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3688,23 +3661,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./css-selector-validator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/css-selector-validator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./dom-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3722,14 +3678,31 @@
         },
         {
           "dynamic": false,
-          "module": "./events",
+          "module": "./event-dispatcher",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/events/index.ts",
+          "resolved": "src/shared/utils/event-dispatcher.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./event-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/event-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3790,6 +3763,23 @@
         },
         {
           "dynamic": false,
+          "module": "./selector-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/selector-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./unified-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3813,15 +3803,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/css-selector-validator.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/dom-utils.ts",
       "dependencies": [],
       "dependents": [
@@ -3832,36 +3813,28 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/events/index.ts",
+      "source": "src/shared/utils/event-dispatcher.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts",
+        "src/shared/utils/event-utils.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/event-utils.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./GalleryEventCoordinator",
+          "module": "./event-dispatcher",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "export"
+            "import"
           ],
-          "resolved": "src/shared/utils/events/GalleryEventCoordinator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryEventCoordinator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/utils/events/GalleryEventCoordinator.ts",
+          "resolved": "src/shared/utils/event-dispatcher.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3871,15 +3844,7 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/events/GalleryEventCoordinator.ts",
-      "dependencies": [],
-      "dependents": [
+        "src/shared/utils/index.ts",
         "src/shared/utils/events/index.ts"
       ],
       "orphan": false,
@@ -4011,6 +3976,15 @@
     },
     {
       "source": "src/shared/utils/resource-manager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/selector-utils.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts"
@@ -4874,6 +4848,31 @@
       "dependents": [
         "src/shared/utils/core/index.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/events/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../event-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/event-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     }
