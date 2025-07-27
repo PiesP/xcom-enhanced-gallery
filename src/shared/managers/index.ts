@@ -23,3 +23,6 @@ export {
   releaseResourcesByContext,
   cleanupAllResources,
 } from '@shared/utils/resource-manager';
+
+// Phase 4: 런타임 성능 최적화 리소스 관리자
+export { OptimizedResourceManager as RuntimeResourceManager } from './ResourceManager';

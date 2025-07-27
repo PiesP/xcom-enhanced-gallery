@@ -21,6 +21,9 @@ export type { UsernameExtractionResult } from './MediaService';
 export { UnifiedMediaLoadingService, unifiedMediaLoader } from './UnifiedMediaLoadingService';
 export type { MediaLoadingState, MediaLoadingOptions } from './UnifiedMediaLoadingService';
 
+// Phase 4: 런타임 성능 최적화 서비스들
+export { OptimizedLazyLoadingService } from './OptimizedLazyLoadingService';
+
 // 통합된 UI 서비스
 export { UIService, uiService } from './UIService';
 export { themeService, toastController } from './UIService'; // 호환성

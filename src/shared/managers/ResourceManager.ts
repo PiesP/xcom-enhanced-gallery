@@ -445,6 +445,25 @@ export class OptimizedResourceManager {
   }
 
   /**
+   * 메모리 사용량 정보 조회
+   */
+  getMemoryUsage(): {
+    current: number;
+    max: number;
+    percentage: number;
+    resourceCount: number;
+    maxResourceCount: number;
+  } {
+    return {
+      current: this.currentMemoryUsage,
+      max: this.options.maxMemoryUsage,
+      percentage: Math.round((this.currentMemoryUsage / this.options.maxMemoryUsage) * 100),
+      resourceCount: this.resources.size,
+      maxResourceCount: this.options.maxResourceCount,
+    };
+  }
+
+  /**
    * 모든 리소스 해제
    */
   releaseAll(): number {

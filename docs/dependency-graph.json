@@ -2632,10 +2632,37 @@
     },
     {
       "source": "src/shared/managers/index.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ResourceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/managers/ResourceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/index.ts",
         "src/shared/services/core-services.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/managers/ResourceManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/managers/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2794,6 +2821,23 @@
             "export"
           ],
           "resolved": "src/shared/services/MediaService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./OptimizedLazyLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/OptimizedLazyLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3663,6 +3707,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/OptimizedLazyLoadingService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/UnifiedMediaLoadingService.ts",
       "dependencies": [],
       "dependents": [
@@ -4277,32 +4330,6 @@
       "dependents": [],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/managers/ResourceManager.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/services/OptimizedLazyLoadingService.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "src/shared/services/media-extraction/index.ts",
@@ -5123,32 +5150,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/managers/ResourceManager.ts",
-        "to": "src/shared/managers/ResourceManager.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/services/OptimizedLazyLoadingService.ts",
-        "to": "src/shared/services/OptimizedLazyLoadingService.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 2,
+    "info": 0,
     "ignore": 0,
     "totalCruised": 147,
-    "totalDependenciesCruised": 213,
+    "totalDependenciesCruised": 215,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
