@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import type { Debouncer } from './unified-utils';
 
 // ================================
 // DOM 유틸리티
@@ -452,56 +453,10 @@ export const galleryDebugUtils = {
 };
 
 // ================================
-// 디바운서 클래스
+// Debouncer import from unified-utils
 // ================================
 
-/**
- * 디바운서 클래스 - 중복 실행 방지
- */
-export class Debouncer<T extends unknown[] = unknown[]> {
-  private timerId: number | null = null;
-  private lastArgs: T | null = null;
-
-  constructor(
-    private readonly fn: (...args: T) => void,
-    private readonly delay: number
-  ) {}
-
-  execute(...args: T): void {
-    this.lastArgs = args;
-    this.clearTimer();
-    this.timerId = window.setTimeout(() => {
-      if (this.lastArgs) {
-        this.fn(...this.lastArgs);
-        this.lastArgs = null;
-      }
-    }, this.delay);
-  }
-
-  flush(): void {
-    if (this.lastArgs) {
-      this.clearTimer();
-      this.fn(...this.lastArgs);
-      this.lastArgs = null;
-    }
-  }
-
-  cancel(): void {
-    this.clearTimer();
-    this.lastArgs = null;
-  }
-
-  isPending(): boolean {
-    return this.timerId !== null;
-  }
-
-  private clearTimer(): void {
-    if (this.timerId !== null) {
-      clearTimeout(this.timerId);
-      this.timerId = null;
-    }
-  }
-}
+export { Debouncer } from './unified-utils';
 
 /**
  * 디바운서 팩토리 함수
@@ -535,9 +490,5 @@ export function extractTweetInfoFromUrl(
   return result;
 }
 
-/**
- * 문자열 배열에서 중복 제거
- */
-export function removeDuplicateStrings(strings: string[]): string[] {
-  return [...new Set(strings)];
-}
+// Import duplicated utilities from unified-utils
+export { removeDuplicateStrings } from './unified-utils';
