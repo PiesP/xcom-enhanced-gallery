@@ -22,7 +22,7 @@ function readCSSFile(relativePath: string) {
 describe('Phase 2: 최신 CSS 기능 완전 통합', () => {
   describe('1. CSS Cascade Layers 검증', () => {
     it('cascade-layers.css 파일이 올바른 레이어 구조를 정의해야 함', () => {
-      const content = readCSSFile('src/assets/styles/base/cascade-layers.css');
+      const content = readCSSFile('src/shared/styles/cascade-layers.css');
 
       // 7개 레이어 구조 확인
       expect(content).toContain(
@@ -44,7 +44,7 @@ describe('Phase 2: 최신 CSS 기능 완전 통합', () => {
 
       // Phase 2 헤더 확인
       expect(content).toContain('Phase 2: 최신 CSS 기능 완전 통합');
-      expect(content).toContain('v3.0.0');
+      expect(content).toContain('@version 3.0.0');
 
       // Layer 정의 확인 (선택적)
       const hasLayerDefinition =
@@ -55,13 +55,13 @@ describe('Phase 2: 최신 CSS 기능 완전 통합', () => {
 
   describe('2. OKLCH 색상 공간 검증', () => {
     it('modern-features.css에서 OKLCH 색상 변수 정의해야 함', () => {
-      const content = readCSSFile('src/assets/styles/base/modern-features.css');
+      const content = readCSSFile('src/shared/styles/modern-features.css');
 
       // OKLCH 색상 변수 확인
       expect(content).toContain('oklch(');
       expect(content).toContain('--xeg-color-primary-oklch');
-      expect(content).toContain('--xeg-color-surface-oklch');
-      expect(content).toContain('--xeg-color-background-oklch');
+      expect(content).toContain('--xeg-color-primary-hover-oklch');
+      expect(content).toContain('--xeg-color-accent-oklch');
     });
 
     it('Gallery.module.css에서 OKLCH 색상 사용해야 함', () => {
@@ -92,7 +92,7 @@ describe('Phase 2: 최신 CSS 기능 완전 통합', () => {
 
   describe('3. Container Queries 검증', () => {
     it('modern-features.css에서 Container Queries 정의해야 함', () => {
-      const content = readCSSFile('src/assets/styles/base/modern-features.css');
+      const content = readCSSFile('src/shared/styles/modern-features.css');
 
       // Container Queries 기본 설정
       expect(content).toContain('container-type: size');
@@ -124,7 +124,7 @@ describe('Phase 2: 최신 CSS 기능 완전 통합', () => {
 
   describe('4. CSS Subgrid 검증', () => {
     it('modern-features.css에서 CSS Subgrid 패턴 정의해야 함', () => {
-      const content = readCSSFile('src/assets/styles/base/modern-features.css');
+      const content = readCSSFile('src/shared/styles/modern-features.css');
 
       // Subgrid 패턴 확인
       expect(content).toContain('grid-template-rows: subgrid');
@@ -142,7 +142,7 @@ describe('Phase 2: 최신 CSS 기능 완전 통합', () => {
 
   describe('5. CSS Containment 검증', () => {
     it('performance.css에서 CSS Containment 최적화 정의해야 함', () => {
-      const content = readCSSFile('src/assets/styles/base/performance.css');
+      const content = readCSSFile('src/shared/styles/performance.css');
 
       // CSS Containment 패턴
       expect(content).toContain('contain: layout style paint');
@@ -189,7 +189,7 @@ describe('Phase 2: 최신 CSS 기능 완전 통합', () => {
 
   describe('7. 고급 CSS 선택자 검증', () => {
     it('modern-features.css에서 고급 선택자 정의해야 함', () => {
-      const content = readCSSFile('src/assets/styles/base/modern-features.css');
+      const content = readCSSFile('src/shared/styles/modern-features.css');
 
       // 고급 선택자 사용
       expect(content).toMatch(/:has\(|:where\(|:is\(/);
@@ -243,9 +243,9 @@ describe('Phase 2: 최신 CSS 기능 완전 통합', () => {
   describe('10. 전체 통합 검증', () => {
     it('모든 주요 CSS 파일이 Phase 2 기능을 포함해야 함', () => {
       const files = [
-        'src/assets/styles/base/cascade-layers.css',
-        'src/assets/styles/base/modern-features.css',
-        'src/assets/styles/base/performance.css',
+        'src/shared/styles/cascade-layers.css',
+        'src/shared/styles/modern-features.css',
+        'src/shared/styles/performance.css',
         'src/features/gallery/styles/Gallery.module.css',
         'src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css',
       ];
