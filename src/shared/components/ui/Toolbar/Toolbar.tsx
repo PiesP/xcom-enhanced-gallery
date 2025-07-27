@@ -641,22 +641,55 @@ function ToolbarCore({
   );
 }
 
-// memo를 적용한 최적화된 Toolbar 컴포넌트 - 동적 로딩 방식
-const Toolbar = (() => {
-  // 개발 환경에서는 memo 없이 사용 (Hot Reload 호환성)
-  if (import.meta.env.DEV) {
-    Object.defineProperty(ToolbarCore, 'displayName', {
-      value: 'Toolbar',
-      writable: false,
-      configurable: true,
-    });
-    return ToolbarCore;
-  }
+/**
+ * Props 비교 함수 - Toolbar 최적화
+ */
+export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarProps): boolean => {
+  // 핵심 상태 props 비교
+  if (prevProps.currentIndex !== nextProps.currentIndex) return false;
+  if (prevProps.totalCount !== nextProps.totalCount) return false;
+  if (prevProps.isDownloading !== nextProps.isDownloading) return false;
+  if (prevProps.disabled !== nextProps.disabled) return false;
+  if (prevProps.className !== nextProps.className) return false;
 
-  // 프로덕션에서는 지연 로딩으로 memo 적용
-  return ToolbarCore;
-})();
+  // ViewMode 비교
+  if (prevProps.currentViewMode !== nextProps.currentViewMode) return false;
 
-export { Toolbar };
+  // 함수 props 참조 비교
+  if (prevProps.onPrevious !== nextProps.onPrevious) return false;
+  if (prevProps.onNext !== nextProps.onNext) return false;
+  if (prevProps.onDownloadCurrent !== nextProps.onDownloadCurrent) return false;
+  if (prevProps.onDownloadAll !== nextProps.onDownloadAll) return false;
+  if (prevProps.onClose !== nextProps.onClose) return false;
+  if (prevProps.onViewModeChange !== nextProps.onViewModeChange) return false;
+
+  // ImageFit 콜백들
+  if (prevProps.onFitOriginal !== nextProps.onFitOriginal) return false;
+  if (prevProps.onFitWidth !== nextProps.onFitWidth) return false;
+  if (prevProps.onFitHeight !== nextProps.onFitHeight) return false;
+  if (prevProps.onFitContainer !== nextProps.onFitContainer) return false;
+
+  // 이벤트 핸들러들
+  if (prevProps.onFocus !== nextProps.onFocus) return false;
+  if (prevProps.onBlur !== nextProps.onBlur) return false;
+  if (prevProps.onKeyDown !== nextProps.onKeyDown) return false;
+
+  return true;
+};
+
+// memo 적용
+import { getPreactCompat } from '@shared/external/vendors';
+const { memo } = getPreactCompat();
+const MemoizedToolbar = memo(ToolbarCore, compareToolbarProps);
+
+// displayName 설정
+Object.defineProperty(MemoizedToolbar, 'displayName', {
+  value: 'memo(Toolbar)',
+  writable: false,
+  configurable: true,
+});
+
+// 메모이제이션된 컴포넌트를 export
+export const Toolbar = MemoizedToolbar;
 
 export default Toolbar;

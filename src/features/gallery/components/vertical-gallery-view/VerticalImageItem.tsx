@@ -403,15 +403,17 @@ function BaseVerticalImageItemCore({
 }
 
 // Props 비교 함수 - 성능 최적화를 위한 shallow comparison
-const areImageItemPropsEqual = (
+export const compareVerticalImageItemProps = (
   prevProps: VerticalImageItemProps,
   nextProps: VerticalImageItemProps
 ): boolean => {
   // 중요한 props들을 우선적으로 체크
   if (prevProps.media?.url !== nextProps.media?.url) return false;
+  if (prevProps.media?.filename !== nextProps.media?.filename) return false;
   if (prevProps.isActive !== nextProps.isActive) return false;
   if (prevProps.isFocused !== nextProps.isFocused) return false;
   if (prevProps.index !== nextProps.index) return false;
+  if (prevProps.isVisible !== nextProps.isVisible) return false;
   if (prevProps.forceVisible !== nextProps.forceVisible) return false;
   if (prevProps.fitMode !== nextProps.fitMode) return false;
 
@@ -419,22 +421,28 @@ const areImageItemPropsEqual = (
   if (prevProps.onClick !== nextProps.onClick) return false;
   if (prevProps.onDownload !== nextProps.onDownload) return false;
   if (prevProps.onMediaLoad !== nextProps.onMediaLoad) return false;
+  if (prevProps.onFocus !== nextProps.onFocus) return false;
+  if (prevProps.onBlur !== nextProps.onBlur) return false;
+  if (prevProps.onKeyDown !== nextProps.onKeyDown) return false;
 
   // 기타 props
   if (prevProps.className !== nextProps.className) return false;
   if (prevProps['data-testid'] !== nextProps['data-testid']) return false;
   if (prevProps['aria-label'] !== nextProps['aria-label']) return false;
+  if (prevProps['aria-describedby'] !== nextProps['aria-describedby']) return false;
+  if (prevProps.role !== nextProps.role) return false;
+  if (prevProps.tabIndex !== nextProps.tabIndex) return false;
 
   return true;
 };
 
 // memo를 적용한 최적화된 컴포넌트
 const { memo } = getPreactCompat();
-const BaseVerticalImageItem = memo(BaseVerticalImageItemCore, areImageItemPropsEqual);
+const BaseVerticalImageItem = memo(BaseVerticalImageItemCore, compareVerticalImageItemProps);
 
 // displayName 설정
 Object.defineProperty(BaseVerticalImageItem, 'displayName', {
-  value: 'BaseVerticalImageItem',
+  value: 'memo(BaseVerticalImageItem)',
   writable: false,
   configurable: true,
 });
@@ -447,4 +455,11 @@ export const VerticalImageItem = withGalleryItem(BaseVerticalImageItem, {
     component: 'vertical-image-item',
     role: 'gallery-item',
   },
+});
+
+// VerticalImageItem displayName 설정
+Object.defineProperty(VerticalImageItem, 'displayName', {
+  value: 'memo(VerticalImageItem)',
+  writable: false,
+  configurable: true,
 });

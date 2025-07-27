@@ -204,24 +204,6 @@ function UnifiedGalleryContainerCore({
   ) as VNode;
 }
 
-// memo를 적용한 최적화된 UnifiedGalleryContainer 컴포넌트 - 동적 로딩 방식
-const UnifiedGalleryContainer = (() => {
-  // 개발 환경에서는 memo 없이 사용 (Hot Reload 호환성)
-  if (import.meta.env.DEV) {
-    Object.defineProperty(UnifiedGalleryContainerCore, 'displayName', {
-      value: 'UnifiedGalleryContainer',
-      writable: false,
-      configurable: true,
-    });
-    return UnifiedGalleryContainerCore;
-  }
-
-  // 프로덕션에서는 지연 로딩으로 memo 적용
-  return UnifiedGalleryContainerCore;
-})();
-
-export { UnifiedGalleryContainer };
-
 /**
  * Shadow DOM용 격리된 스타일 생성
  */
@@ -289,6 +271,46 @@ function getShadowDOMStyles(): string {
     }
   `;
 }
+
+/**
+ * Props 비교 함수 - UnifiedGalleryContainer 최적화
+ */
+export const compareUnifiedGalleryContainerProps = (
+  prevProps: UnifiedGalleryContainerProps,
+  nextProps: UnifiedGalleryContainerProps
+): boolean => {
+  // children 비교 (참조 비교)
+  if (prevProps.children !== nextProps.children) return false;
+
+  // 기본 props 비교
+  if (prevProps.useShadowDOM !== nextProps.useShadowDOM) return false;
+  if (prevProps.className !== nextProps.className) return false;
+  if (prevProps['data-testid'] !== nextProps['data-testid']) return false;
+
+  // 함수 props 참조 비교
+  if (prevProps.onClose !== nextProps.onClose) return false;
+  if (prevProps.onKeyDown !== nextProps.onKeyDown) return false;
+
+  return true;
+};
+
+// memo 적용
+import { getPreactCompat } from '@shared/external/vendors';
+const { memo } = getPreactCompat();
+const MemoizedUnifiedGalleryContainer = memo(
+  UnifiedGalleryContainerCore,
+  compareUnifiedGalleryContainerProps
+);
+
+// displayName 설정
+Object.defineProperty(MemoizedUnifiedGalleryContainer, 'displayName', {
+  value: 'memo(UnifiedGalleryContainer)',
+  writable: false,
+  configurable: true,
+});
+
+// 메모이제이션된 컴포넌트를 export
+export const UnifiedGalleryContainer = MemoizedUnifiedGalleryContainer;
 
 /**
  * 통합된 갤러리를 DOM에 마운트하는 헬퍼 함수
