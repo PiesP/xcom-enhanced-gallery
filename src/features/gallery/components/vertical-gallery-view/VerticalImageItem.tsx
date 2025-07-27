@@ -13,7 +13,7 @@ import { ComponentStandards } from '@shared/components/ui/StandardProps';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
-import { getPreactHooks } from '@shared/external/vendors';
+import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import styles from './VerticalImageItem.module.css';
 
 /**
@@ -138,7 +138,7 @@ function getFitModeClass(fitMode?: ImageFitMode): string {
  * A vertical image item component that displays media with lazy loading
  * and download functionality - StandardProps 시스템 적용
  */
-function BaseVerticalImageItem({
+function BaseVerticalImageItemCore({
   media,
   index,
   isActive,
@@ -401,6 +401,43 @@ function BaseVerticalImageItem({
     </div>
   ) as unknown as VNode;
 }
+
+// Props 비교 함수 - 성능 최적화를 위한 shallow comparison
+const areImageItemPropsEqual = (
+  prevProps: VerticalImageItemProps,
+  nextProps: VerticalImageItemProps
+): boolean => {
+  // 중요한 props들을 우선적으로 체크
+  if (prevProps.media?.url !== nextProps.media?.url) return false;
+  if (prevProps.isActive !== nextProps.isActive) return false;
+  if (prevProps.isFocused !== nextProps.isFocused) return false;
+  if (prevProps.index !== nextProps.index) return false;
+  if (prevProps.forceVisible !== nextProps.forceVisible) return false;
+  if (prevProps.fitMode !== nextProps.fitMode) return false;
+
+  // 함수들은 참조 비교
+  if (prevProps.onClick !== nextProps.onClick) return false;
+  if (prevProps.onDownload !== nextProps.onDownload) return false;
+  if (prevProps.onMediaLoad !== nextProps.onMediaLoad) return false;
+
+  // 기타 props
+  if (prevProps.className !== nextProps.className) return false;
+  if (prevProps['data-testid'] !== nextProps['data-testid']) return false;
+  if (prevProps['aria-label'] !== nextProps['aria-label']) return false;
+
+  return true;
+};
+
+// memo를 적용한 최적화된 컴포넌트
+const { memo } = getPreactCompat();
+const BaseVerticalImageItem = memo(BaseVerticalImageItemCore, areImageItemPropsEqual);
+
+// displayName 설정
+Object.defineProperty(BaseVerticalImageItem, 'displayName', {
+  value: 'BaseVerticalImageItem',
+  writable: false,
+  configurable: true,
+});
 
 // Gallery Marker HOC를 적용한 VerticalImageItem
 export const VerticalImageItem = withGalleryItem(BaseVerticalImageItem, {

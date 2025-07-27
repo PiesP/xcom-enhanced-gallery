@@ -68,6 +68,7 @@ export interface PreactSignalsAPI {
 
 export interface PreactCompatAPI {
   forwardRef: typeof import('preact/compat').forwardRef;
+  memo: typeof import('preact/compat').memo;
 }
 
 export type ComponentChildren = import('preact').ComponentChildren;
@@ -277,12 +278,18 @@ export class VendorManager {
     try {
       const compat = await import('preact/compat');
 
-      if (!compat.forwardRef || typeof compat.forwardRef !== 'function') {
+      if (
+        !compat.forwardRef ||
+        typeof compat.forwardRef !== 'function' ||
+        !compat.memo ||
+        typeof compat.memo !== 'function'
+      ) {
         throw new Error('Preact Compat 라이브러리 검증 실패');
       }
 
       const api: PreactCompatAPI = {
         forwardRef: compat.forwardRef,
+        memo: compat.memo,
       };
 
       this.cache.set(cacheKey, api);

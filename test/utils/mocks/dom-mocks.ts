@@ -213,6 +213,8 @@ export function setupDOMEnvironment(): void {
       devicePixelRatio: 1,
       setTimeout: vi.fn().mockImplementation((callback, delay) => setTimeout(callback, delay)),
       clearTimeout: vi.fn().mockImplementation(clearTimeout),
+      setInterval: vi.fn().mockImplementation((callback, delay) => setInterval(callback, delay)),
+      clearInterval: vi.fn().mockImplementation(clearInterval),
       scrollTo: vi.fn(),
       requestAnimationFrame: vi.fn().mockImplementation(callback => setTimeout(callback, 16)),
       cancelAnimationFrame: vi.fn(),

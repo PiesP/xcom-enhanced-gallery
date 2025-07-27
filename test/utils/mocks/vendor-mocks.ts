@@ -232,6 +232,33 @@ export function createMockMotion() {
   };
 }
 
+/**
+ * Mock Preact Compat API 생성
+ */
+export function createMockPreactCompat() {
+  return {
+    forwardRef: vi.fn().mockImplementation(component => {
+      // forwardRef 컴포넌트 시뮬레이션
+      const wrappedComponent = vi.fn().mockImplementation((props, ref) => {
+        return component(props, ref);
+      });
+      wrappedComponent.displayName = `forwardRef(${component.name || 'Component'})`;
+      return wrappedComponent;
+    }),
+
+    memo: vi.fn().mockImplementation((component, areEqual) => {
+      // memo 컴포넌트 시뮬레이션
+      const memoizedComponent = vi.fn().mockImplementation(props => {
+        return component(props);
+      });
+      memoizedComponent.displayName = `memo(${component.name || 'Component'})`;
+      memoizedComponent._isMemoized = true;
+      memoizedComponent.compare = areEqual;
+      return memoizedComponent;
+    }),
+  };
+}
+
 // ================================
 // Vendor Manager Mock
 // ================================
@@ -281,6 +308,13 @@ export class MockVendorManager {
     return this.cache.get('preact-signals');
   }
 
+  async getPreactCompat() {
+    if (!this.cache.has('preact-compat')) {
+      this.cache.set('preact-compat', createMockPreactCompat());
+    }
+    return this.cache.get('preact-compat');
+  }
+
   getMotion() {
     if (!this.cache.has('motion')) {
       this.cache.set('motion', createMockMotion());
@@ -310,6 +344,7 @@ export function setupVendorMocks() {
     getPreact: () => mockManager.getPreact(),
     getPreactHooks: () => mockManager.getPreactHooks(),
     getPreactSignals: () => mockManager.getPreactSignals(),
+    getPreactCompat: () => mockManager.getPreactCompat(),
     getMotion: () => mockManager.getMotion(),
   }));
 

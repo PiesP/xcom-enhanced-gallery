@@ -1,5 +1,5 @@
 import styles from './Toast.module.css';
-import { getPreactHooks, getPreactSignals } from '@shared/external/vendors';
+import { getPreactHooks, getPreactSignals, getPreactCompat } from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastProps } from '../StandardProps';
@@ -30,7 +30,7 @@ export interface ToastProps extends Partial<StandardToastProps>, Partial<LegacyT
   onRemove?: (id: string) => void;
 }
 
-export function Toast({
+function ToastComponent({
   toast,
   onRemove,
   className,
@@ -109,6 +109,42 @@ export function Toast({
     </div>
   );
 }
+
+// Toast props 비교 함수 - 효율적인 메모이제이션을 위함
+const areToastPropsEqual = (prevProps: ToastProps, nextProps: ToastProps): boolean => {
+  // toast 객체가 변경되었는지 확인
+  if (prevProps.toast?.id !== nextProps.toast?.id) return false;
+  if (prevProps.toast?.type !== nextProps.toast?.type) return false;
+  if (prevProps.toast?.title !== nextProps.toast?.title) return false;
+  if (prevProps.toast?.message !== nextProps.toast?.message) return false;
+  if (prevProps.toast?.duration !== nextProps.toast?.duration) return false;
+  if (prevProps.toast?.actionText !== nextProps.toast?.actionText) return false;
+
+  // onRemove 함수 비교 (참조 비교)
+  if (prevProps.onRemove !== nextProps.onRemove) return false;
+
+  // 기타 props 비교
+  if (prevProps.className !== nextProps.className) return false;
+  if (prevProps['data-testid'] !== nextProps['data-testid']) return false;
+  if (prevProps['aria-label'] !== nextProps['aria-label']) return false;
+  if (prevProps.role !== nextProps.role) return false;
+
+  return true;
+};
+
+// memo를 적용한 최적화된 Toast 컴포넌트
+const { memo } = getPreactCompat();
+const MemoizedToast = memo(ToastComponent, areToastPropsEqual);
+
+// displayName 설정
+Object.defineProperty(MemoizedToast, 'displayName', {
+  value: 'Toast',
+  writable: false,
+  configurable: true,
+});
+
+// 메모이제이션된 컴포넌트를 Toast로 export
+export const Toast = MemoizedToast;
 
 // Global toast state - lazy initialization
 let _toasts: ReturnType<typeof import('@preact/signals').signal<ToastItem[]>> | null = null;

@@ -3,7 +3,7 @@
  * @version 3.0.0 - Phase 3 StandardProps 시스템 적용
  */
 
-import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import { getPreact, getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import { toasts, removeToast, Toast } from './Toast';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
@@ -26,7 +26,7 @@ export interface ToastContainerProps extends Partial<StandardToastContainerProps
  * 화면에 고정되어 모든 토스트 알림을 표시합니다.
  * Phase 3: StandardProps 시스템 적용으로 일관된 인터페이스 제공
  */
-export function ToastContainer({
+function ToastContainerCore({
   className = '',
   position = 'top-right',
   maxToasts = 5,
@@ -85,3 +85,42 @@ export function ToastContainer({
     )
   );
 }
+
+// ToastContainer props 비교 함수
+const areToastContainerPropsEqual = (
+  prevProps: ToastContainerProps,
+  nextProps: ToastContainerProps
+): boolean => {
+  // 구조적 변경이 적은 props들 우선 체크
+  if (prevProps.position !== nextProps.position) return false;
+  if (prevProps.maxToasts !== nextProps.maxToasts) return false;
+  if (prevProps.className !== nextProps.className) return false;
+
+  // 이벤트 핸들러들 (참조 비교)
+  if (prevProps.onFocus !== nextProps.onFocus) return false;
+  if (prevProps.onBlur !== nextProps.onBlur) return false;
+  if (prevProps.onKeyDown !== nextProps.onKeyDown) return false;
+
+  // 기타 props
+  if (prevProps['data-testid'] !== nextProps['data-testid']) return false;
+  if (prevProps['aria-label'] !== nextProps['aria-label']) return false;
+  if (prevProps['aria-describedby'] !== nextProps['aria-describedby']) return false;
+  if (prevProps.role !== nextProps.role) return false;
+  if (prevProps.tabIndex !== nextProps.tabIndex) return false;
+
+  return true;
+};
+
+// memo로 최적화된 ToastContainer
+const { memo } = getPreactCompat();
+const MemoizedToastContainer = memo(ToastContainerCore, areToastContainerPropsEqual);
+
+// displayName 설정
+Object.defineProperty(MemoizedToastContainer, 'displayName', {
+  value: 'ToastContainer',
+  writable: false,
+  configurable: true,
+});
+
+// 메모이제이션된 컴포넌트를 export
+export const ToastContainer = MemoizedToastContainer;

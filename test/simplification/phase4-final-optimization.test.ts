@@ -1,9 +1,9 @@
 /**
  * @fileoverview Phase 4: 최종 통합 및 최적화 테스트
- * @description 
+ * @description
  * Phase 4에서는 다음을 검증합니다:
  * 1. VerticalImageItem StandardProps 시스템 적용
- * 2. 성능 최적화 구현 
+ * 2. 성능 최적화 구현
  * 3. 접근성 향상
  * 4. 최종 통합 검증
  * 5. 리팩토링 품질 검증
@@ -18,7 +18,7 @@ const mockDocument = {
   createElement: vi.fn(() => ({
     style: {
       setProperty: vi.fn(),
-      getPropertyValue: vi.fn((prop) => {
+      getPropertyValue: vi.fn(prop => {
         if (prop === '--xeg-color-primary') return '#1da1f2';
         if (prop === '--xeg-high-contrast') return '1';
         return '';
@@ -72,11 +72,11 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx'
       );
-      
+
       expect(fs.existsSync(componentPath)).toBe(true);
-      
+
       const content = fs.readFileSync(componentPath, 'utf-8');
-      
+
       // ComponentStandards 사용 확인
       expect(content).toContain('ComponentStandards');
       expect(content).toContain('createClassName');
@@ -126,7 +126,7 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css'
       );
-      
+
       if (fs.existsSync(cssPath)) {
         const content = fs.readFileSync(cssPath, 'utf-8');
         expect(content).toContain('var(--');
@@ -142,7 +142,7 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx'
       );
-      
+
       if (fs.existsSync(componentPath)) {
         const content = fs.readFileSync(componentPath, 'utf-8');
         expect(content).toContain('useCallback');
@@ -159,7 +159,7 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css'
       );
-      
+
       if (fs.existsSync(cssPath)) {
         const content = fs.readFileSync(cssPath, 'utf-8');
         expect(content).toContain('will-change');
@@ -198,7 +198,7 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx'
       );
-      
+
       if (fs.existsSync(componentPath)) {
         const content = fs.readFileSync(componentPath, 'utf-8');
         expect(content).toContain('onKeyDown');
@@ -214,7 +214,7 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css'
       );
-      
+
       if (fs.existsSync(cssPath)) {
         const content = fs.readFileSync(cssPath, 'utf-8');
         expect(content).toContain('@media (prefers-contrast:');
@@ -310,7 +310,7 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css'
       );
-      
+
       if (fs.existsSync(cssPath)) {
         const content = fs.readFileSync(cssPath, 'utf-8');
         expect(content).toContain('transition');
@@ -325,7 +325,7 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css'
       );
-      
+
       if (fs.existsSync(cssPath)) {
         const content = fs.readFileSync(cssPath, 'utf-8');
         expect(content).toContain('@media');
@@ -340,7 +340,7 @@ describe('Phase 4: 최종 통합 및 최적화', () => {
         process.cwd(),
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css'
       );
-      
+
       if (fs.existsSync(cssPath)) {
         const content = fs.readFileSync(cssPath, 'utf-8');
         expect(content).toContain('@media (prefers-color-scheme:');

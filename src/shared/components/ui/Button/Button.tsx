@@ -19,8 +19,9 @@ export interface ButtonProps extends Omit<StandardButtonProps, 'onClick'> {
 }
 
 export const Button = (() => {
-  const { forwardRef } = getPreactCompat();
-  return forwardRef<HTMLButtonElement, ButtonProps>(
+  const { forwardRef, memo } = getPreactCompat();
+
+  const ButtonComponent = forwardRef<HTMLButtonElement, ButtonProps>(
     (
       {
         children,
@@ -91,6 +92,34 @@ export const Button = (() => {
       );
     }
   );
+
+  // Props 비교 함수 - shallow comparison에 최적화
+  const areEqual = (prevProps: ButtonProps, nextProps: ButtonProps): boolean => {
+    // 자주 변경되는 props들을 우선적으로 체크
+    if (prevProps.loading !== nextProps.loading) return false;
+    if (prevProps.disabled !== nextProps.disabled) return false;
+    if (prevProps.variant !== nextProps.variant) return false;
+    if (prevProps.children !== nextProps.children) return false;
+    if (prevProps.onClick !== nextProps.onClick) return false;
+
+    // 나머지 props는 shallow comparison
+    const keys = Object.keys(nextProps) as (keyof ButtonProps)[];
+    for (const key of keys) {
+      if (prevProps[key] !== nextProps[key]) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // memo로 컴포넌트를 감싸서 최적화
+  const MemoizedButton = memo(ButtonComponent, areEqual);
+
+  // displayName 설정으로 디버깅 용이성 제공
+  MemoizedButton.displayName = 'Button';
+
+  return MemoizedButton;
 })();
 
 export default Button;
