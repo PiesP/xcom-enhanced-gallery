@@ -5,6 +5,9 @@
  * 이를 통해 import 경로를 단순화하고 코드 가독성을 향상시킵니다.
  */
 
+// 표준화된 컴포넌트 Props 및 유틸리티
+export * from './StandardProps';
+
 // Button 컴포넌트
 export { default as Button } from './Button/Button';
 export type { ButtonProps } from './Button/Button';

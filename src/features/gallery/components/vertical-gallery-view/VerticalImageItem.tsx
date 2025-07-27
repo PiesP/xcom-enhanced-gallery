@@ -351,7 +351,7 @@ function BaseVerticalImageItem({
         <Button
           variant='ghost'
           size='sm'
-          className={styles.downloadButton}
+          className={styles.downloadButton || ''}
           onClick={handleDownloadClick}
           aria-label={`Download ${cleanFilename(media.filename)}`}
         >

@@ -1,6 +1,8 @@
 import styles from './Toast.module.css';
 import { getPreactHooks, getPreactSignals } from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
+import { ComponentStandards } from '../StandardProps';
+import type { StandardToastProps } from '../StandardProps';
 
 // Constants
 const DEFAULT_TOAST_DURATION = 5000; // 5 seconds
@@ -15,13 +17,33 @@ export interface ToastItem {
   onAction?: () => void;
 }
 
-export interface ToastProps {
+// 레거시 Props 인터페이스 (하위 호환성)
+interface LegacyToastProps {
   toast: ToastItem;
   onRemove: (id: string) => void;
 }
 
-export function Toast({ toast, onRemove }: ToastProps): VNode {
+// 통합된 Toast Props
+export interface ToastProps extends Partial<StandardToastProps>, Partial<LegacyToastProps> {
+  // 필수 props
+  toast?: ToastItem;
+  onRemove?: (id: string) => void;
+}
+
+export function Toast({
+  toast,
+  onRemove,
+  className,
+  'data-testid': testId,
+  'aria-label': ariaLabel,
+  role = 'alert',
+}: ToastProps): VNode {
   const { useEffect } = getPreactHooks();
+
+  // 안전성 체크
+  if (!toast || !onRemove) {
+    throw new Error('Toast component requires both toast and onRemove props');
+  }
 
   useEffect(() => {
     if (toast.duration && toast.duration > 0) {
@@ -51,8 +73,23 @@ export function Toast({ toast, onRemove }: ToastProps): VNode {
     onRemove(toast.id);
   };
 
+  // 표준화된 클래스명 생성
+  const toastClass = ComponentStandards.createClassName(
+    styles.toast,
+    styles[toast.type],
+    className
+  );
+
+  // 표준화된 테스트 속성 생성
+  const testProps = ComponentStandards.createTestProps(testId);
+
   return (
-    <div className={`${styles.toast} ${styles[toast.type]}`} role='alert'>
+    <div
+      className={toastClass}
+      role={role as 'alert' | 'status' | 'log'}
+      aria-label={ariaLabel || `${toast.type} 알림: ${toast.title}`}
+      {...testProps}
+    >
       <div className={styles.content}>
         <div className={styles.header}>
           <h4 className={styles.title}>{toast.title}</h4>
