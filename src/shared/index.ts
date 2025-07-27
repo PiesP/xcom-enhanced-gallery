@@ -13,6 +13,9 @@ export * from './components/isolation';
 // HOC 컴포넌트들
 export * from './components/hoc';
 
+// 최적화 컴포넌트들 (Phase 3)
+export * from './components/optimization';
+
 // 서비스들 (기존 Core에서 이동)
 export * from './services';
 
@@ -48,6 +51,9 @@ export {
 
 export { GalleryUtils } from './utils/unified-utils';
 export { isInsideGallery } from './utils/unified-dom';
+
+// 최적화 유틸리티들 (Phase 3)
+export * from './utils/optimization';
 
 // 타입들
 export type {
