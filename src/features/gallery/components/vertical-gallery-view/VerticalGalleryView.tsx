@@ -16,7 +16,7 @@ import { Toast } from '@shared/components/ui/Toast/Toast';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
-import { getPreactHooks } from '@shared/external/vendors';
+import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/core/type-safety-helpers';
 import type { MouseEvent } from 'preact/compat';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
@@ -36,7 +36,7 @@ export interface VerticalGalleryViewProps {
   onDownloadAll?: () => void;
 }
 
-export function VerticalGalleryView({
+function VerticalGalleryViewCore({
   onClose,
   className = '',
   onPrevious,
@@ -541,3 +541,35 @@ export function VerticalGalleryView({
     </div>
   );
 }
+
+// Props 비교 함수 - VerticalGalleryView 메모이제이션 최적화
+const areGalleryViewPropsEqual = (
+  prevProps: VerticalGalleryViewProps,
+  nextProps: VerticalGalleryViewProps
+): boolean => {
+  // 기본 props 비교
+  if (prevProps.className !== nextProps.className) return false;
+
+  // 함수 props 비교 (참조 비교)
+  if (prevProps.onClose !== nextProps.onClose) return false;
+  if (prevProps.onPrevious !== nextProps.onPrevious) return false;
+  if (prevProps.onNext !== nextProps.onNext) return false;
+  if (prevProps.onDownloadCurrent !== nextProps.onDownloadCurrent) return false;
+  if (prevProps.onDownloadAll !== nextProps.onDownloadAll) return false;
+
+  return true;
+};
+
+// memo를 적용한 최적화된 VerticalGalleryView 컴포넌트
+const { memo } = getPreactCompat();
+const MemoizedVerticalGalleryView = memo(VerticalGalleryViewCore, areGalleryViewPropsEqual);
+
+// displayName 설정
+Object.defineProperty(MemoizedVerticalGalleryView, 'displayName', {
+  value: 'VerticalGalleryView',
+  writable: false,
+  configurable: true,
+});
+
+// 메모이제이션된 컴포넌트를 export
+export const VerticalGalleryView = MemoizedVerticalGalleryView;

@@ -4,7 +4,7 @@
  * @version 2.0.0 - Phase 2 컴포넌트 단순화
  */
 
-import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import { getPreact, getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import type { VNode, ComponentChildren } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { namespacedDesignSystem } from '@shared/styles';
@@ -38,7 +38,7 @@ export interface UnifiedGalleryContainerProps {
  * - 비침습적 이벤트 처리
  * - 자동 정리
  */
-export function UnifiedGalleryContainer({
+function UnifiedGalleryContainerCore({
   children,
   onClose,
   useShadowDOM = false,
@@ -203,6 +203,40 @@ export function UnifiedGalleryContainer({
     )
   ) as VNode;
 }
+
+// Props 비교 함수 - UnifiedGalleryContainer 메모이제이션 최적화
+const areContainerPropsEqual = (
+  prevProps: UnifiedGalleryContainerProps,
+  nextProps: UnifiedGalleryContainerProps
+): boolean => {
+  // 기본 props 비교
+  if (prevProps.useShadowDOM !== nextProps.useShadowDOM) return false;
+  if (prevProps.className !== nextProps.className) return false;
+  if (prevProps['data-testid'] !== nextProps['data-testid']) return false;
+
+  // 함수 props 비교 (참조 비교)
+  if (prevProps.onClose !== nextProps.onClose) return false;
+  if (prevProps.onKeyDown !== nextProps.onKeyDown) return false;
+
+  // children은 참조 비교 (React children의 일반적인 패턴)
+  if (prevProps.children !== nextProps.children) return false;
+
+  return true;
+};
+
+// memo를 적용한 최적화된 UnifiedGalleryContainer 컴포넌트
+const { memo } = getPreactCompat();
+const MemoizedUnifiedGalleryContainer = memo(UnifiedGalleryContainerCore, areContainerPropsEqual);
+
+// displayName 설정
+Object.defineProperty(MemoizedUnifiedGalleryContainer, 'displayName', {
+  value: 'UnifiedGalleryContainer',
+  writable: false,
+  configurable: true,
+});
+
+// 메모이제이션된 컴포넌트를 export
+export const UnifiedGalleryContainer = MemoizedUnifiedGalleryContainer;
 
 /**
  * Shadow DOM용 격리된 스타일 생성
