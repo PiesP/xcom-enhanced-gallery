@@ -273,16 +273,16 @@ export class TwitterAPI {
     };
 
     const urlBase = `https://${sitename}.com/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`;
-    
+
     // URL 생성자를 안전하게 시도
     let URLConstructor: typeof URL | undefined;
-    
+
     if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
       URLConstructor = globalThis.URL;
     } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
       URLConstructor = window.URL;
     }
-    
+
     if (!URLConstructor) {
       // Fallback: 간단한 문자열 조합
       const encodedVariables = encodeURIComponent(JSON.stringify(variables));

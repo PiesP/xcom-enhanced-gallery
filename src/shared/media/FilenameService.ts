@@ -212,13 +212,13 @@ export class FilenameService {
     try {
       // URL 생성자를 안전하게 시도
       let URLConstructor: typeof URL | undefined;
-      
+
       if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
         URLConstructor = globalThis.URL;
       } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
         URLConstructor = window.URL;
       }
-      
+
       if (!URLConstructor) {
         // Fallback: 간단한 파싱
         const lastSlashIndex = url.lastIndexOf('/');

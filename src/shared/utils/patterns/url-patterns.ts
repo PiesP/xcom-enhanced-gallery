@@ -397,13 +397,13 @@ export const URLPatterns = {
 
       // URL 객체 생성으로 유효성 검사
       let URLConstructor: typeof URL | undefined;
-      
+
       if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
         URLConstructor = globalThis.URL;
       } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
         URLConstructor = window.URL;
       }
-      
+
       if (!URLConstructor) {
         // Fallback: 기본적인 검증만 수행
         return url.includes('://') && url.length > 10;
@@ -446,13 +446,13 @@ export const URLPatterns = {
       }
 
       let URLConstructor: typeof URL | undefined;
-      
+
       if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
         URLConstructor = globalThis.URL;
       } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
         URLConstructor = window.URL;
       }
-      
+
       if (!URLConstructor) {
         // Fallback: 간단한 결합
         return baseUrl.endsWith('/') ? `${baseUrl}${relativeUrl}` : `${baseUrl}/${relativeUrl}`;
