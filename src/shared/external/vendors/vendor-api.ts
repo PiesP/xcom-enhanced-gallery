@@ -144,6 +144,41 @@ export function getPreactCompat(): PreactCompatAPI {
       }
     }
 
+    // 자동 초기화 시도
+    logger.warn('Preact Compat이 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+    try {
+      // initializeVendors를 비동기로 호출하고 결과를 캐시
+      initializeVendors().catch(error => {
+        logger.error('자동 초기화 실패:', error);
+      });
+
+      // 임시 호환성을 위한 기본 구현 반환
+      if (!cachedPreactCompat) {
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        const preactCompat = {
+          memo: (Component: any, _compare?: any) => {
+            const MemoComponent = (props: any) => {
+              // memo가 초기화되지 않은 경우 원본 컴포넌트 반환
+              return Component(props);
+            };
+            MemoComponent.displayName = Component.displayName || Component.name || 'Component';
+            return MemoComponent;
+          },
+          forwardRef: (Component: any) => {
+            const ForwardedComponent = (props: any) => Component(props);
+            ForwardedComponent.displayName = Component.displayName || Component.name || 'Component';
+            return ForwardedComponent;
+          },
+        };
+        /* eslint-enable @typescript-eslint/no-explicit-any */
+
+        logger.debug('임시 Preact Compat 구현 반환');
+        return preactCompat as PreactCompatAPI;
+      }
+    } catch (error) {
+      logger.error('자동 초기화 실패:', error);
+    }
+
     throw new Error(
       'Preact Compat이 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.'
     );
