@@ -7,7 +7,7 @@
  */
 
 import { measurePerformance } from '@/utils';
-import { logger } from '@/utils';
+import { logger } from '@shared/logging/logger'; // 직접 import로 변경
 import type { AppConfig } from '@/types';
 import { ServiceManager } from '@/utils';
 import { SERVICE_KEYS } from './constants';
@@ -16,16 +16,7 @@ import { GalleryApp } from '@/components';
 // 전역 스타일
 import './styles/globals';
 
-// 즉시 vendor 초기화 - 모든 모듈 로딩 전에 수행
-(async () => {
-  try {
-    const { initializeVendors } = await import('@/external');
-    await initializeVendors();
-    logger.debug('✅ Vendor 라이브러리 조기 초기화 완료');
-  } catch (error) {
-    logger.error('❌ Vendor 조기 초기화 실패:', error);
-  }
-})();
+// Vendor 초기화는 startApplication에서 처리하도록 이동
 
 // 애플리케이션 상태 관리
 let isStarted = false;
