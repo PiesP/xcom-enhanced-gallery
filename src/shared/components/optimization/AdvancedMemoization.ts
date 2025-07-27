@@ -231,15 +231,21 @@ class AdvancedMemoization {
   }
 
   /**
-   * 메모리 사용량 최적화 - 사용하지 않는 프로파일 데이터 정리
+   * 메모리 사용량 최적화 - 적응형 정리 시스템
    */
   cleanup(): void {
     const now = Date.now();
     const oldEntries: string[] = [];
 
+    // 페이지 가시성에 따른 정리 기준 조정
+    const cleanupThreshold = document.hidden ? 3 * 60 * 1000 : 5 * 60 * 1000; // 숨김: 3분, 보임: 5분
+
     for (const [componentName, profile] of this.profileData.entries()) {
-      // 5분 이상 사용되지 않은 컴포넌트는 정리
-      if (now - profile.lastRenderTime > 5 * 60 * 1000) {
+      // 적응형 정리: 사용 빈도와 시간 고려
+      const timeSinceLastRender = now - profile.lastRenderTime;
+      const isLowUsage = profile.renderCount < 5 && profile.skipCount > 20;
+
+      if (timeSinceLastRender > cleanupThreshold || isLowUsage) {
         oldEntries.push(componentName);
       }
     }
@@ -248,6 +254,36 @@ class AdvancedMemoization {
       this.profileData.delete(name);
       this.cacheSize.delete(name);
     });
+
+    // 메모리 압박 상황에서 추가 정리
+    if (this.profileData.size > 50) {
+      this.performMemoryPressureCleanup();
+    }
+  }
+
+  /**
+   * 메모리 압박 상황에서의 적극적 정리
+   */
+  private performMemoryPressureCleanup(): void {
+    const entries = Array.from(this.profileData.entries());
+
+    // 성능이 낮은 컴포넌트 우선 정리 (skip 비율이 높은 것들)
+    const sortedByEfficiency = entries.sort(([, a], [, b]) => {
+      const aEfficiency = a.renderCount / (a.renderCount + a.skipCount);
+      const bEfficiency = b.renderCount / (b.renderCount + b.skipCount);
+      return aEfficiency - bEfficiency;
+    });
+
+    // 하위 30% 정리
+    const itemsToRemove = Math.floor(sortedByEfficiency.length * 0.3);
+    for (let i = 0; i < itemsToRemove; i++) {
+      const entry = sortedByEfficiency[i];
+      if (entry) {
+        const [componentName] = entry;
+        this.profileData.delete(componentName);
+        this.cacheSize.delete(componentName);
+      }
+    }
   }
 }
 

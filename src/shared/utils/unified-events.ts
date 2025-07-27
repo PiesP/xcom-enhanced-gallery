@@ -379,8 +379,13 @@ export async function initializeGalleryEvents(
 }
 
 /**
- * 우선순위 강화 메커니즘
+ * 우선순위 강화 메커니즘 - Phase 4: 런타임 성능 최적화
  * 트위터가 동적으로 이벤트 리스너를 추가하는 경우를 대비해 주기적으로 우리의 리스너를 재등록
+ *
+ * 성능 최적화 사항:
+ * - 인터벌 빈도를 15초로 제한하여 CPU 오버헤드 최소화
+ * - 갤러리 열린 상태에서는 우선순위 강화 중단으로 메모리 절약
+ * - 불필요한 리스너 재등록 방지로 성능 향상
  */
 function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEventOptions): void {
   // 기존 인터벌 정리
@@ -388,14 +393,20 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
     clearInterval(galleryEventState.priorityInterval);
   }
 
-  // 15초마다 우선순위 재설정 (빈도 줄임)
+  // 15초마다 우선순위 재설정 (성능 최적화: 적응형 스케줄링)
   galleryEventState.priorityInterval = setInterval(() => {
     try {
       if (!galleryEventState.initialized) return;
 
-      // 갤러리가 열린 상태에서는 우선순위 강화 중단
+      // 갤러리가 열린 상태에서는 우선순위 강화 중단 (메모리 최적화)
       if (checkGalleryOpen()) {
         logger.debug('Gallery is open, skipping priority enforcement');
+        return;
+      }
+
+      // 페이지가 비활성 상태일 때는 스케줄링 중단 (CPU 절약)
+      if (document.hidden) {
+        logger.debug('Page is hidden, skipping priority enforcement');
         return;
       }
 

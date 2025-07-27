@@ -4279,6 +4279,32 @@
       "valid": true
     },
     {
+      "source": "src/shared/managers/ResourceManager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/services/OptimizedLazyLoadingService.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/media-extraction/index.ts",
       "dependencies": [
         {
@@ -5097,12 +5123,31 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/managers/ResourceManager.ts",
+        "to": "src/shared/managers/ResourceManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/services/OptimizedLazyLoadingService.ts",
+        "to": "src/shared/services/OptimizedLazyLoadingService.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 2,
     "ignore": 0,
-    "totalCruised": 145,
+    "totalCruised": 147,
     "totalDependenciesCruised": 213,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

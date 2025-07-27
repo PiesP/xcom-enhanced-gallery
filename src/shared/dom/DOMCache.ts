@@ -3,6 +3,8 @@
  * @description 반복적인 DOM 쿼리 최적화를 위한 캐싱 시스템
  */
 
+import { logger } from '@shared/logging/logger';
+
 /**
  * DOM 캐시 엔트리 타입
  */
@@ -36,14 +38,14 @@ export class DOMCache {
       cleanupIntervalMs?: number;
     } = {}
   ) {
-    this.defaultTTL = options.defaultTTL ?? 15000; // 15초 기본 TTL (더 긴 캐시)
-    this.maxCacheSize = options.maxCacheSize ?? 200; // 더 큰 캐시 크기
+    this.defaultTTL = options.defaultTTL ?? 20000; // 20초로 증가 (더 긴 캐시 유지)
+    this.maxCacheSize = options.maxCacheSize ?? 300; // 더 큰 캐시 크기 (300개)
 
-    // 주기적 정리 스케줄링 (덜 빈번한 정리)
+    // 주기적 정리 스케줄링 (성능 최적화: 적응형 정리)
     if (options.cleanupIntervalMs !== 0) {
       this.cleanupInterval = window.setInterval(
-        () => this.cleanup(),
-        options.cleanupIntervalMs ?? 30000 // 30초마다 정리
+        () => this.adaptiveCleanup(),
+        options.cleanupIntervalMs ?? 45000 // 45초마다 정리 (빈도 감소)
       );
     }
   }
@@ -247,6 +249,53 @@ export class DOMCache {
       this.cache.delete(key);
       this.hitCount.delete(key);
     });
+  }
+
+  /**
+   * 적응형 정리 - 시스템 상태에 따라 정리 강도 조절
+   */
+  private adaptiveCleanup(): void {
+    const now = Date.now();
+    const cacheSize = this.cache.size;
+
+    // 페이지가 숨겨진 상태면 적극적 정리
+    const isPageHidden = document.hidden;
+
+    // 캐시 사용률에 따른 정리 전략
+    const usageRatio = cacheSize / this.maxCacheSize;
+
+    let cleanupRatio = 0.1; // 기본 10% 정리
+
+    if (isPageHidden) {
+      cleanupRatio = 0.3; // 페이지 숨김 시 30% 정리
+    } else if (usageRatio > 0.8) {
+      cleanupRatio = 0.2; // 80% 이상 사용 시 20% 정리
+    }
+
+    const entriesToClean = Math.floor(cacheSize * cleanupRatio);
+
+    // 오래된 엔트리부터 정리
+    const sortedEntries = Array.from(this.cache.entries()).sort(
+      ([, a], [, b]) => a.timestamp - b.timestamp
+    );
+
+    let cleanedCount = 0;
+    for (const [key, entry] of sortedEntries) {
+      if (cleanedCount >= entriesToClean) break;
+
+      if (!this.isValid(entry, now) || cleanedCount < entriesToClean) {
+        this.cache.delete(key);
+        this.hitCount.delete(key);
+        cleanedCount++;
+      }
+    }
+
+    if (cleanedCount > 0) {
+      logger.debug(`DOMCache: Adaptive cleanup removed ${cleanedCount} entries`);
+    }
+
+    // 추가 정리 수행
+    this.cleanup();
   }
 
   private cleanup(): void {
