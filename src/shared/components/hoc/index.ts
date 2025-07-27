@@ -14,6 +14,8 @@ export {
   isUnifiedGalleryElement,
   getUnifiedGalleryType,
   isEventFromUnifiedGallery,
+  validateHOCIntegration,
+  createHOCStandardProps,
 } from './UnifiedGalleryHOC';
 
 export type {

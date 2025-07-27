@@ -398,3 +398,96 @@ export function isEventFromUnifiedGallery(event: Event): boolean {
   const galleryElement = target.closest('[data-xeg-gallery-version="2.0"]');
   return galleryElement !== null;
 }
+
+/**
+ * Phase 3: HOC 시스템 통합 검증 유틸리티
+ */
+export function validateHOCIntegration(element: Element): {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+} {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // 기본 갤러리 마킹 검증
+  if (!element.hasAttribute('data-xeg-gallery')) {
+    errors.push('Missing required data-xeg-gallery attribute');
+  }
+
+  // 버전 검증
+  const version = element.getAttribute('data-xeg-gallery-version');
+  if (version !== '2.0') {
+    if (!version) {
+      errors.push('Missing data-xeg-gallery-version attribute');
+    } else {
+      warnings.push(`Outdated gallery version: ${version}. Expected: 2.0`);
+    }
+  }
+
+  // 타입 검증
+  const type = element.getAttribute('data-xeg-gallery-type');
+  if (!type) {
+    errors.push('Missing data-xeg-gallery-type attribute');
+  } else if (!['container', 'item', 'control', 'overlay', 'viewer'].includes(type)) {
+    errors.push(`Invalid gallery type: ${type}`);
+  }
+
+  // 접근성 검증
+  const role = element.getAttribute('role');
+  if (!role) {
+    warnings.push('Missing role attribute for accessibility');
+  }
+
+  // 레거시 마커 검출
+  if (element.hasAttribute('data-gallery-marker')) {
+    warnings.push('Legacy gallery marker detected. Consider migrating to UnifiedGalleryHOC');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
+
+/**
+ * Phase 3: HOC와 StandardProps 연동을 위한 Props 생성
+ */
+export function createHOCStandardProps<T extends UnifiedGalleryComponentProps>(
+  baseProps: T,
+  hocOptions: UnifiedGalleryOptions
+): T & {
+  'data-xeg-gallery': string;
+  'data-xeg-gallery-type': string;
+  'data-xeg-gallery-version': string;
+  className: string;
+} {
+  // ComponentStandards 동적 import
+  const { ComponentStandards } = require('../ui/StandardProps');
+
+  // 마킹 속성 생성
+  const markerAttributes = createUnifiedMarkerAttributes(mergeOptionsWithDefaults(hocOptions));
+
+  // 표준화된 클래스명 생성
+  const standardClassName = ComponentStandards.createClassName(
+    baseProps.className,
+    hocOptions.className,
+    `xeg-gallery-${hocOptions.type}`
+  );
+
+  // ARIA 속성 생성
+  const ariaProps = ComponentStandards.createAriaProps(baseProps);
+
+  return {
+    ...baseProps,
+    ...markerAttributes,
+    ...ariaProps,
+    className: standardClassName,
+  } as T & {
+    'data-xeg-gallery': string;
+    'data-xeg-gallery-type': string;
+    'data-xeg-gallery-version': string;
+    className: string;
+  };
+}

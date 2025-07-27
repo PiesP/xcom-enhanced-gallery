@@ -6,7 +6,7 @@
 import { getPreact, getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import { toasts, removeToast, Toast } from './Toast';
 import { ComponentStandards } from '../StandardProps';
-import type { StandardToastContainerProps } from '../StandardProps';
+import type { StandardToastContainerProps, BaseUIComponentProps } from '../StandardProps';
 import styles from './ToastContainer.module.css';
 import type { VNode } from '@shared/external/vendors';
 
@@ -50,6 +50,25 @@ function ToastContainerCore({
     className
   );
 
+  // 표준화된 ARIA 속성 생성
+  const ariaPropsData: Partial<BaseUIComponentProps> = {
+    'aria-label': ariaLabel || 'Toast 알림 컨테이너',
+    role: role || 'region',
+  };
+
+  if (ariaDescribedBy) {
+    ariaPropsData['aria-describedby'] = ariaDescribedBy;
+  }
+
+  if (typeof tabIndex === 'number') {
+    ariaPropsData.tabIndex = tabIndex;
+  }
+
+  const ariaProps = ComponentStandards.createAriaProps(ariaPropsData);
+
+  // 표준화된 테스트 속성 생성
+  const testProps = ComponentStandards.createTestProps(testId || 'toast-container');
+
   useEffect(() => {
     // 토스트 상태 변경 구독
     const unsubscribe = toasts.subscribe(setCurrentToasts);
@@ -63,15 +82,12 @@ function ToastContainerCore({
     'div',
     {
       className: containerClass,
-      'data-testid': testId || 'toast-container',
       'data-position': position,
       'data-max-toasts': maxToasts,
-      'aria-label': ariaLabel || 'Toast 알림 컨테이너',
-      'aria-describedby': ariaDescribedBy,
       'aria-live': 'polite',
       'aria-atomic': 'false',
-      role: role || 'region',
-      tabIndex,
+      ...ariaProps,
+      ...testProps,
       onFocus,
       onBlur,
       onKeyDown,

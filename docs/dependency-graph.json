@@ -1039,9 +1039,41 @@
     },
     {
       "source": "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../ui/StandardProps",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "require"
+          ],
+          "resolved": "src/shared/components/ui/StandardProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/components/hoc/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/StandardProps.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
+        "src/shared/components/ui/Button/Button.tsx",
+        "src/shared/components/ui/Toast/Toast.tsx",
+        "src/shared/components/ui/Toast/ToastContainer.tsx",
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1377,19 +1409,6 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Button/Button.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/StandardProps.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/ui/Button/Button.tsx",
-        "src/shared/components/ui/Toast/Toast.tsx",
-        "src/shared/components/ui/Toast/ToastContainer.tsx",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4959,7 +4978,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 141,
-    "totalDependenciesCruised": 207,
+    "totalDependenciesCruised": 208,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

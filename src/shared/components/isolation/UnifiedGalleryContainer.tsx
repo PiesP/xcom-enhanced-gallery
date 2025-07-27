@@ -25,6 +25,15 @@ export interface UnifiedGalleryContainerProps {
   onKeyDown?: (event: KeyboardEvent) => void;
   /** 테스트 ID */
   'data-testid'?: string;
+  /** Phase 3: 접근성 향상을 위한 옵션들 */
+  ariaLabel?: string;
+  ariaDescribedBy?: string;
+  /** Phase 3: 성능 최적화 옵션들 */
+  enableHardwareAcceleration?: boolean;
+  enableMemoryOptimization?: boolean;
+  /** Phase 3: 사용자 경험 개선 옵션들 */
+  enableFocusTrap?: boolean;
+  enableAnimations?: boolean;
 }
 
 /**
@@ -45,6 +54,13 @@ function UnifiedGalleryContainerCore({
   className = '',
   onKeyDown,
   'data-testid': testId,
+  // Phase 3: 새로운 옵션들
+  ariaLabel = 'X.com Enhanced Gallery',
+  ariaDescribedBy,
+  enableHardwareAcceleration = true,
+  enableMemoryOptimization = true,
+  enableFocusTrap = true,
+  enableAnimations = true,
 }: UnifiedGalleryContainerProps): VNode {
   const { h } = getPreact();
   const { useEffect, useRef, useState } = getPreactHooks();
@@ -52,6 +68,29 @@ function UnifiedGalleryContainerCore({
   const containerRef = useRef<HTMLDivElement>(null);
   const shadowRootRef = useRef<ShadowRoot | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const focusableElementsRef = useRef<HTMLElement[]>([]);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Phase 3: Focus trap을 위한 첫 번째와 마지막 focusable 요소 추적
+  const updateFocusableElements = () => {
+    if (!enableFocusTrap || !containerRef.current) return;
+
+    const focusableSelectors = [
+      'button:not([disabled])',
+      '[href]',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+
+    focusableElementsRef.current = Array.from(
+      containerRef.current.querySelectorAll(focusableSelectors)
+    ).filter((el: Element) => {
+      const htmlEl = el as HTMLElement;
+      return htmlEl.offsetParent !== null && !htmlEl.hasAttribute('aria-hidden');
+    }) as HTMLElement[];
+  };
 
   // 초기화 Effect
   useEffect(() => {
@@ -59,6 +98,11 @@ function UnifiedGalleryContainerCore({
 
     // 네임스페이스된 디자인 시스템 초기화
     namespacedDesignSystem.initialize();
+
+    // Phase 3: 이전 포커스 요소 저장
+    if (enableFocusTrap) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+    }
 
     // Shadow DOM 설정 (선택사항)
     if (useShadowDOM && containerRef.current && !shadowRootRef.current) {
@@ -79,12 +123,39 @@ function UnifiedGalleryContainerCore({
       }
     }
 
-    // ESC 키 이벤트 리스너 추가
-    const handleEscKey = (event: KeyboardEvent) => {
+    // Phase 3: 키보드 핸들러 확장
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // ESC 키 처리
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
         onClose();
+        return;
+      }
+
+      // Phase 3: Focus trap 구현
+      if (enableFocusTrap && event.key === 'Tab') {
+        updateFocusableElements();
+        const focusableElements = focusableElementsRef.current;
+
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey) {
+          // Shift + Tab (역방향)
+          if (document.activeElement === firstElement && lastElement) {
+            event.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          // Tab (정방향)
+          if (document.activeElement === lastElement && firstElement) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
 
       // 커스텀 키보드 핸들러 실행
@@ -93,15 +164,43 @@ function UnifiedGalleryContainerCore({
       }
     };
 
-    document.addEventListener('keydown', handleEscKey, true);
-    setIsReady(true);
+    document.addEventListener('keydown', handleKeyDown, true);
+
+    // Phase 3: 초기 포커스 설정
+    setTimeout(() => {
+      if (enableFocusTrap && containerRef.current) {
+        updateFocusableElements();
+        const focusableElements = focusableElementsRef.current;
+        if (focusableElements.length > 0 && focusableElements[0]) {
+          focusableElements[0].focus();
+        } else {
+          containerRef.current.focus();
+        }
+      }
+      setIsReady(true);
+    }, 16); // 한 프레임 지연으로 DOM 안정화
 
     // 정리 함수
     return () => {
       logger.info('[UnifiedGalleryContainer] Cleaning up unified gallery container');
-      document.removeEventListener('keydown', handleEscKey, true);
+      document.removeEventListener('keydown', handleKeyDown, true);
+
+      // Phase 3: 포커스 복원
+      if (enableFocusTrap && previousFocusRef.current) {
+        try {
+          previousFocusRef.current.focus();
+        } catch (error) {
+          logger.debug('[UnifiedGalleryContainer] Failed to restore focus', error);
+        }
+      }
+
+      // Phase 3: 메모리 최적화
+      if (enableMemoryOptimization) {
+        focusableElementsRef.current = [];
+        previousFocusRef.current = null;
+      }
     };
-  }, [onClose, useShadowDOM, onKeyDown]);
+  }, [onClose, useShadowDOM, onKeyDown, enableFocusTrap, enableMemoryOptimization]);
 
   // 배경 클릭 핸들러
   const handleBackgroundClick = (event: Event) => {
@@ -132,7 +231,10 @@ function UnifiedGalleryContainerCore({
       'data-xeg-gallery': 'container',
       'data-xeg-gallery-type': 'unified-root',
       'data-shadow-dom': useShadowDOM ? 'true' : 'false',
-      'aria-label': 'X.com Enhanced Gallery',
+      'data-focus-trap': enableFocusTrap ? 'true' : 'false',
+      'data-animations': enableAnimations ? 'true' : 'false',
+      'aria-label': ariaLabel,
+      'aria-describedby': ariaDescribedBy,
       'aria-modal': 'true',
       role: 'dialog',
       tabIndex: -1,
@@ -175,9 +277,17 @@ function UnifiedGalleryContainerCore({
         pointerEvents: 'auto',
         userSelect: 'none',
 
-        // 하드웨어 가속
-        transform: 'translateZ(0)',
-        willChange: 'opacity, transform',
+        // Phase 3: 하드웨어 가속 조건부 적용
+        ...(enableHardwareAcceleration && {
+          transform: 'translateZ(0)',
+          willChange: 'opacity, transform',
+        }),
+
+        // Phase 3: 애니메이션 조건부 적용
+        ...(enableAnimations && {
+          transition: 'opacity 0.2s ease-out',
+          opacity: isReady ? '1' : '0',
+        }),
 
         // 접근성
         outline: 'none',
