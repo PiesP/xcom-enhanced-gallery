@@ -1,0 +1,241 @@
+/**
+ * @fileoverview 최신 CSS 기능 활용
+ * @description CSS Color Module, Container Queries, CSS Subgrid 등 최신 기능
+ * @version 1.0.0
+ */
+
+/**
+ * CSS Color Module Level 4 활용
+ * oklch() 색상 공간을 사용한 더 나은 색상 정의
+ */
+:root {
+  /* OKLCH 색상 공간 - 더 자연스러운 색상 보간 */
+  --xeg-color-primary-oklch: oklch(0.7 0.15 220);
+  --xeg-color-primary-hover-oklch: oklch(0.65 0.15 220);
+  --xeg-color-accent-oklch: oklch(0.8 0.12 180);
+
+  /* 동적 색상 보간 */
+  --xeg-color-primary-gradient: linear-gradient(
+    45deg,
+    var(--xeg-color-primary-oklch),
+    color-mix(in oklch, var(--xeg-color-primary-oklch) 80%, white)
+  );
+
+  /* 상대적 색상 구문 (Relative Color Syntax) */
+  --xeg-color-primary-light: oklch(from var(--xeg-color-primary-oklch) calc(l + 0.2) c h);
+  --xeg-color-primary-dark: oklch(from var(--xeg-color-primary-oklch) calc(l - 0.2) c h);
+}
+
+/**
+ * CSS Grid Subgrid 활용
+ */
+.xeg-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-rows: repeat(auto-fit, minmax(200px, auto));
+  gap: var(--xeg-spacing-md);
+
+  /* Container Queries 지원 */
+  container-type: size;
+  container-name: gallery-grid;
+}
+
+.xeg-gallery-item {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
+
+  /* Subgrid를 통한 정렬 */
+  grid-template-areas:
+    'header'
+    'content'
+    'footer';
+}
+
+.xeg-gallery-item-header {
+  grid-area: header;
+}
+
+.xeg-gallery-item-content {
+  grid-area: content;
+}
+
+.xeg-gallery-item-footer {
+  grid-area: footer;
+}
+
+/**
+ * Container Queries 확장
+ */
+@container gallery-grid (width > 768px) {
+  .xeg-gallery-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--xeg-spacing-lg);
+  }
+}
+
+@container gallery-grid (width > 1200px) {
+  .xeg-gallery-grid {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--xeg-spacing-xl);
+  }
+}
+
+@container gallery-grid (height > 800px) {
+  .xeg-gallery-item {
+    grid-template-rows: subgrid;
+    grid-row: span 4; /* 더 많은 공간 활용 */
+  }
+}
+
+/**
+ * CSS Nesting 활용
+ */
+.xeg-toolbar {
+  background: var(--xeg-color-surface);
+  border-radius: var(--xeg-radius-lg);
+  padding: var(--xeg-spacing-md);
+
+  /* Nesting으로 가독성 향상 */
+  & .toolbar-button {
+    background: transparent;
+    border: 1px solid var(--xeg-color-border-primary);
+    border-radius: var(--xeg-radius-md);
+    padding: var(--xeg-spacing-sm);
+    transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+
+    &:hover {
+      background: var(--xeg-color-primary-light);
+      border-color: var(--xeg-color-primary);
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--xeg-color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  & .toolbar-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--xeg-color-border-secondary);
+    margin: 0 var(--xeg-spacing-sm);
+  }
+}
+
+/**
+ * CSS Logical Properties 활용
+ */
+.xeg-content {
+  padding-block: var(--xeg-spacing-lg);
+  padding-inline: var(--xeg-spacing-md);
+  margin-block-start: var(--xeg-spacing-md);
+  border-inline-start: 2px solid var(--xeg-color-border-primary);
+}
+
+/**
+ * 고급 CSS 선택자 활용
+ */
+/* :has() 선택자 */
+.xeg-gallery-container:has(.xeg-toolbar:hover) {
+  --toolbar-interaction: 1;
+}
+
+.xeg-gallery-container:has(.xeg-item:focus-visible) {
+  --has-focused-item: 1;
+}
+
+/* :where() 선택자로 우선순위 조정 */
+:where(.xeg-button) {
+  background: var(--xeg-color-surface);
+  border: 1px solid var(--xeg-color-border-primary);
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+}
+
+/* :is() 선택자로 그룹화 */
+:is(.xeg-primary, .xeg-secondary, .xeg-tertiary) {
+  font-weight: var(--xeg-font-weight-medium);
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+/**
+ * View Transitions API 준비
+ */
+.xeg-gallery-transition {
+  view-transition-name: gallery-main;
+}
+
+.xeg-gallery-item-transition {
+  view-transition-name: var(--item-transition-name);
+}
+
+/* View Transition 스타일 */
+::view-transition-old(gallery-main) {
+  animation: slideOut 300ms ease-out;
+}
+
+::view-transition-new(gallery-main) {
+  animation: slideIn 300ms ease-out;
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * CSS Anchor Positioning (미래 기능 준비)
+ */
+.xeg-tooltip {
+  position: absolute;
+  position-anchor: --tooltip-anchor;
+  inset-area: top;
+  margin-bottom: 8px;
+}
+
+/**
+ * 폴백 지원
+ */
+@supports not (color: oklch(0.7 0.15 220)) {
+  :root {
+    --xeg-color-primary-oklch: var(--xeg-color-primary-500);
+    --xeg-color-primary-hover-oklch: var(--xeg-color-primary-600);
+    --xeg-color-accent-oklch: var(--xeg-color-primary-400);
+  }
+}
+
+@supports not (container-type: size) {
+  .xeg-gallery-grid {
+    /* 미디어 쿼리 폴백 */
+  }
+}
+
+@supports not (display: subgrid) {
+  .xeg-gallery-item {
+    display: flex;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,279 @@
+/**
+ * @fileoverview CSS 성능 최적화
+ * @description CSS Containment, Critical CSS, 렌더링 최적화
+ * @version 1.0.0
+ */
+
+/**
+ * CSS Containment 적용
+ * 레이아웃 성능 최적화를 위한 격리 설정
+ */
+.xeg-gallery-item {
+  /* 레이아웃, 스타일, 페인트 격리 */
+  contain: layout style paint;
+
+  /* 콘텐츠 가시성 최적화 */
+  content-visibility: auto;
+
+  /* 내재적 크기 설정으로 스크롤 성능 향상 */
+  contain-intrinsic-size: 300px 200px;
+
+  /* GPU 레이어 생성 */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.xeg-gallery-container {
+  /* 엄격한 격리 */
+  contain: strict;
+
+  /* 레이아웃 스레싱 방지 */
+  contain-intrinsic-size: 100vw 100vh;
+}
+
+.xeg-toolbar {
+  /* 툴바는 레이아웃에만 영향 */
+  contain: layout;
+}
+
+/**
+ * Critical CSS 최적화
+ * 중요한 스타일을 우선적으로 로드
+ */
+.xeg-critical {
+  /* 즉시 표시되어야 하는 요소들 */
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--xeg-color-overlay-strong);
+  z-index: var(--xeg-z-gallery);
+}
+
+/**
+ * 렌더링 최적화
+ */
+.xeg-optimized-scroll {
+  /* 스크롤 성능 최적화 */
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+
+  /* 스크롤 스냅 */
+  scroll-snap-type: y mandatory;
+  scroll-snap-align: start;
+}
+
+.xeg-optimized-item {
+  /* 스크롤 스냅 포인트 */
+  scroll-snap-align: start;
+  scroll-margin-top: var(--xeg-spacing-lg);
+
+  /* 레이어 최적화 */
+  isolation: isolate;
+
+  /* 변형 최적화 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/**
+ * 애니메이션 최적화
+ */
+.xeg-gpu-accelerated {
+  /* GPU에서 처리되는 속성만 사용 */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+
+  /* 하드웨어 가속 트랜지션 */
+  transition:
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+.xeg-gpu-accelerated:hover {
+  /* GPU에서 처리되는 변환만 사용 */
+  transform: translateZ(0) scale(1.02);
+}
+
+/* 애니메이션 완료 후 will-change 제거 */
+.xeg-gpu-accelerated:not(:hover):not(:focus) {
+  will-change: auto;
+}
+
+/**
+ * 이미지 최적화
+ */
+.xeg-optimized-image {
+  /* 이미지 로딩 최적화 */
+  loading: lazy;
+  decoding: async;
+
+  /* 레이아웃 시프트 방지 */
+  aspect-ratio: 16 / 9; /* 기본 비율 */
+  object-fit: cover;
+
+  /* 렌더링 최적화 */
+  image-rendering: optimizeQuality;
+  image-rendering: crisp-edges; /* 작은 이미지용 */
+}
+
+.xeg-optimized-image[data-loaded='true'] {
+  /* 로딩 완료 후 애니메이션 */
+  animation: fadeIn var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/**
+ * 메모리 최적화
+ */
+.xeg-memory-optimized {
+  /* 사용하지 않는 속성 제거 */
+  transform: none;
+  filter: none;
+  backdrop-filter: none;
+
+  /* 필요한 경우에만 레이어 생성 */
+  will-change: auto;
+}
+
+/**
+ * 텍스트 렌더링 최적화
+ */
+.xeg-optimized-text {
+  /* 텍스트 렌더링 품질 */
+  text-rendering: optimizeLegibility;
+  font-display: swap;
+
+  /* 폰트 로딩 최적화 */
+  font-variant-ligatures: common-ligatures;
+  font-kerning: auto;
+
+  /* CLS 방지 */
+  font-size-adjust: 0.5;
+}
+
+/**
+ * 레이아웃 최적화
+ */
+.xeg-layout-optimized {
+  /* Flexbox 최적화 */
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Firefox 버그 방지 */
+
+  /* Grid 최적화 */
+  display: grid;
+  grid-template-rows: min-content 1fr min-content;
+
+  /* 오버플로우 최적화 */
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+/**
+ * 네트워크 최적화
+ */
+.xeg-network-optimized {
+  /* 프리로딩 힌트 */
+  content: '';
+}
+
+/* 리소스 힌트 */
+.xeg-preload-critical::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>');
+}
+
+/**
+ * 반응형 최적화
+ */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-optimized {
+    /* 모션 감소 선호 시 애니메이션 제거 */
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-data: reduce) {
+  .xeg-optimized-image {
+    /* 데이터 절약 모드 */
+    image-rendering: pixelated;
+  }
+
+  .xeg-gpu-accelerated {
+    /* GPU 가속 비활성화 */
+    will-change: auto;
+    transform: none;
+  }
+}
+
+/**
+ * 성능 모니터링을 위한 CSS
+ */
+.xeg-performance-marker {
+  /* 성능 측정을 위한 가상 요소 */
+  --start-time: 0;
+  --end-time: 0;
+}
+
+.xeg-performance-marker::before {
+  content: attr(data-timing);
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  opacity: 0;
+}
+
+/**
+ * 다크 모드 성능 최적화
+ */
+@media (prefers-color-scheme: dark) {
+  .xeg-optimized {
+    /* 다크 모드에서 GPU 메모리 절약 */
+    backdrop-filter: none;
+    filter: none;
+  }
+}
+
+/**
+ * 고대비 모드 최적화
+ */
+@media (prefers-contrast: high) {
+  .xeg-optimized {
+    /* 고대비 모드에서 불필요한 효과 제거 */
+    box-shadow: none;
+    text-shadow: none;
+    backdrop-filter: none;
+  }
+}
+
+/**
+ * 프린트 최적화
+ */
+@media print {
+  .xeg-optimized {
+    /* 프린트 시 불필요한 요소 숨김 */
+    background: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    color: black !important;
+  }
+}

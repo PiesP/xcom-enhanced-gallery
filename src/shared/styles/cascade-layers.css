@@ -1,0 +1,127 @@
+/**
+ * @fileoverview CSS Cascade Layers 정의
+ * @description CSS 스타일 우선순위 계층 구조 정의
+ * @version 1.0.0
+ */
+
+/**
+ * CSS Cascade Layers 순서 정의
+ *
+ * Layer 우선순위 (낮음 → 높음):
+ * 1. reset - CSS 리셋
+ * 2. tokens - 디자인 토큰
+ * 3. base - 기본 스타일
+ * 4. layout - 레이아웃 컴포넌트
+ * 5. components - UI 컴포넌트
+ * 6. utilities - 유틸리티 클래스
+ * 7. overrides - 긴급 오버라이드
+ */
+@layer reset, tokens, base, layout, components, utilities, overrides;
+
+/**
+ * Reset Layer - 브라우저 기본 스타일 초기화
+ */
+@layer reset {
+  @import url('./reset.css');
+}
+
+/**
+ * Tokens Layer - 디자인 토큰 시스템
+ */
+@layer tokens {
+  @import url('./design-tokens.css');
+}
+
+/**
+ * Base Layer - 기본 HTML 요소 스타일
+ */
+@layer base {
+  @import url('../assets/styles/base/reset.css');
+}
+
+/**
+ * Layout Layer - 레이아웃 관련 스타일
+ */
+@layer layout {
+  /* 갤러리 전체 레이아웃 */
+  .xeg-gallery-layout {
+    display: grid;
+    grid-template-areas:
+      'toolbar'
+      'content'
+      'controls';
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .xeg-gallery-toolbar {
+    grid-area: toolbar;
+  }
+
+  .xeg-gallery-content {
+    grid-area: content;
+    overflow: hidden;
+  }
+
+  .xeg-gallery-controls {
+    grid-area: controls;
+  }
+}
+
+/**
+ * Components Layer - UI 컴포넌트 스타일
+ * CSS Modules로 관리되는 컴포넌트들이 이 레이어에 속함
+ */
+@layer components {
+  /* CSS Modules 컴포넌트들은 빌드 시 자동으로 이 레이어에 포함 */
+}
+
+/**
+ * Utilities Layer - 유틸리티 클래스
+ */
+@layer utilities {
+  /* 기존 design-tokens.css의 유틸리티 클래스들을 이곳으로 이동 예정 */
+  .xeg-sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  .xeg-visually-hidden {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  .xeg-focus-visible {
+    outline: 2px solid var(--xeg-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/**
+ * Overrides Layer - 긴급 상황을 위한 오버라이드
+ */
+@layer overrides {
+  /* 외부 스타일 시스템과의 충돌 해결을 위한 긴급 오버라이드 */
+  .xeg-important-reset {
+    all: unset !important;
+  }
+
+  /* 트위터 UI와의 격리를 위한 오버라이드 */
+  .xeg-isolated {
+    isolation: isolate !important;
+    contain: layout style paint !important;
+  }
+}
