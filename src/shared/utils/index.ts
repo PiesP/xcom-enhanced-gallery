@@ -13,6 +13,15 @@
 // 통합 유틸리티 (Phase 1 Consolidation)
 // ================================
 
+// Type safety helpers (이동된 위치)
+export {
+  safeParseInt,
+  safeParseFloat,
+  undefinedToNull,
+  stringWithDefault,
+  safeElementCheck,
+} from './type-safety-helpers';
+
 // 핵심 DOM, 성능, 스타일 유틸리티
 export {
   // 핵심 유틸리티
@@ -68,18 +77,6 @@ export {
   initializeGalleryEvents,
   cleanupGalleryEvents,
 } from './unified-events';
-
-// ================================
-// 타입 안전성 헬퍼
-// ================================
-
-export {
-  safeParseInt,
-  safeParseFloat,
-  stringWithDefault,
-  undefinedToNull,
-  safeElementCheck,
-} from './core/type-safety-helpers';
 
 // ================================
 // 리소스 관리

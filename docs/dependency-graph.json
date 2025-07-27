@@ -4160,23 +4160,6 @@
         },
         {
           "dynamic": false,
-          "module": "./core/type-safety-helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/core/type-safety-helpers.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./media/image-filter",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4262,6 +4245,23 @@
         },
         {
           "dynamic": false,
+          "module": "./type-safety-helpers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/type-safety-helpers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./unified-events",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4290,14 +4290,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./core/type-safety-helpers",
+          "module": "./type-safety-helpers",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/utils/core/type-safety-helpers.ts",
+          "resolved": "src/shared/utils/type-safety-helpers.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4313,7 +4313,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/core/type-safety-helpers.ts",
+      "source": "src/shared/utils/type-safety-helpers.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts",
@@ -5229,14 +5229,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./type-safety-helpers",
+          "module": "../type-safety-helpers",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/core/type-safety-helpers.ts",
+          "resolved": "src/shared/utils/type-safety-helpers.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,

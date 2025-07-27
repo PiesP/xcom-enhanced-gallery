@@ -223,8 +223,8 @@
 </g>
 <g id="clust43" class="cluster">
 <title>cluster_src/shared/services/media&#45;mapping</title>
-<path fill="#ffffff" stroke="black" stroke-width="2" d="M60,-3045C60,-3045 574.43,-3045 574.43,-3045 580.43,-3045 586.43,-3051 586.43,-3057 586.43,-3057 586.43,-3142 586.43,-3142 586.43,-3148 580.43,-3154 574.43,-3154 574.43,-3154 60,-3154 60,-3154 54,-3154 48,-3148 48,-3142 48,-3142 48,-3057 48,-3057 48,-3051 54,-3045 60,-3045"/>
-<text xml:space="preserve" text-anchor="middle" x="317.21" y="-3138.6" font-family="Arial" font-size="12.00">media&#45;mapping</text>
+<path fill="#ffffff" stroke="black" stroke-width="2" d="M60,-3048C60,-3048 574.43,-3048 574.43,-3048 580.43,-3048 586.43,-3054 586.43,-3060 586.43,-3060 586.43,-3145 586.43,-3145 586.43,-3151 580.43,-3157 574.43,-3157 574.43,-3157 60,-3157 60,-3157 54,-3157 48,-3151 48,-3145 48,-3145 48,-3060 48,-3060 48,-3054 54,-3048 60,-3048"/>
+<text xml:space="preserve" text-anchor="middle" x="317.21" y="-3141.6" font-family="Arial" font-size="12.00">media&#45;mapping</text>
 </g>
 <g id="clust44" class="cluster">
 <title>cluster_src/shared/services/media</title>
@@ -258,13 +258,13 @@
 </g>
 <g id="clust50" class="cluster">
 <title>cluster_src/shared/utils</title>
-<path fill="#ffffff" stroke="black" stroke-width="2" d="M242.25,-4823C242.25,-4823 797.2,-4823 797.2,-4823 803.2,-4823 809.2,-4829 809.2,-4835 809.2,-4835 809.2,-5757 809.2,-5757 809.2,-5763 803.2,-5769 797.2,-5769 797.2,-5769 242.25,-5769 242.25,-5769 236.25,-5769 230.25,-5763 230.25,-5757 230.25,-5757 230.25,-4835 230.25,-4835 230.25,-4829 236.25,-4823 242.25,-4823"/>
-<text xml:space="preserve" text-anchor="middle" x="519.73" y="-5753.6" font-family="Arial" font-size="12.00">utils</text>
+<path fill="#ffffff" stroke="black" stroke-width="2" d="M242.25,-4823C242.25,-4823 789.2,-4823 789.2,-4823 795.2,-4823 801.2,-4829 801.2,-4835 801.2,-4835 801.2,-5757 801.2,-5757 801.2,-5763 795.2,-5769 789.2,-5769 789.2,-5769 242.25,-5769 242.25,-5769 236.25,-5769 230.25,-5763 230.25,-5757 230.25,-5757 230.25,-4835 230.25,-4835 230.25,-4829 236.25,-4823 242.25,-4823"/>
+<text xml:space="preserve" text-anchor="middle" x="515.73" y="-5753.6" font-family="Arial" font-size="12.00">utils</text>
 </g>
 <g id="clust51" class="cluster">
 <title>cluster_src/shared/utils/core</title>
-<path fill="#ffffff" stroke="black" stroke-width="2" d="M484.1,-5315C484.1,-5315 789.2,-5315 789.2,-5315 795.2,-5315 801.2,-5321 801.2,-5327 801.2,-5327 801.2,-5367 801.2,-5367 801.2,-5373 795.2,-5379 789.2,-5379 789.2,-5379 484.1,-5379 484.1,-5379 478.1,-5379 472.1,-5373 472.1,-5367 472.1,-5367 472.1,-5327 472.1,-5327 472.1,-5321 478.1,-5315 484.1,-5315"/>
-<text xml:space="preserve" text-anchor="middle" x="636.65" y="-5363.6" font-family="Arial" font-size="12.00">core</text>
+<path fill="#ffffff" stroke="black" stroke-width="2" d="M484.1,-5315C484.1,-5315 530.1,-5315 530.1,-5315 536.1,-5315 542.1,-5321 542.1,-5327 542.1,-5327 542.1,-5367 542.1,-5367 542.1,-5373 536.1,-5379 530.1,-5379 530.1,-5379 484.1,-5379 484.1,-5379 478.1,-5379 472.1,-5373 472.1,-5367 472.1,-5367 472.1,-5327 472.1,-5327 472.1,-5321 478.1,-5315 484.1,-5315"/>
+<text xml:space="preserve" text-anchor="middle" x="507.1" y="-5363.6" font-family="Arial" font-size="12.00">core</text>
 </g>
 <g id="clust52" class="cluster">
 <title>cluster_src/shared/utils/media</title>
@@ -1676,8 +1676,8 @@
 <!-- src/shared/services/index.ts&#45;&gt;src/shared/services/MediaService.ts -->
 <g id="edge119" class="edge">
 <title>src/shared/services/index.ts&#45;&gt;src/shared/services/MediaService.ts</title>
-<path fill="none" stroke="#666666" d="M303.66,-3419.93C340.11,-3419.93 399.92,-3419.93 399.92,-3419.93 399.92,-3419.93 399.92,-3038.13 399.92,-3038.13 399.92,-3038.13 915.23,-3038.13 915.23,-3038.13"/>
-<polygon fill="none" stroke="#666666" points="915.23,-3040.93 923.23,-3038.13 915.23,-3035.33 915.23,-3040.93"/>
+<path fill="none" stroke="#666666" d="M303.66,-3419.93C340.11,-3419.93 399.92,-3419.93 399.92,-3419.93 399.92,-3419.93 399.92,-3039.13 399.92,-3039.13 399.92,-3039.13 915.23,-3039.13 915.23,-3039.13"/>
+<polygon fill="none" stroke="#666666" points="915.23,-3041.93 923.23,-3039.13 915.23,-3036.33 915.23,-3041.93"/>
 </g>
 <!-- src/shared/services/OptimizedLazyLoadingService.ts -->
 <g id="node96" class="node">
@@ -1841,23 +1841,23 @@
 <!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/accessibility.ts -->
 <g id="edge177" class="edge">
 <title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/accessibility.ts</title>
-<path fill="none" stroke="#666666" d="M291.92,-5446.44C291.92,-5470.62 291.92,-5519 291.92,-5519 291.92,-5519 458.8,-5519 458.8,-5519"/>
+<path fill="none" stroke="#666666" d="M284.92,-5446.44C284.92,-5470.62 284.92,-5519 284.92,-5519 284.92,-5519 458.79,-5519 458.79,-5519"/>
 <polygon fill="#666666" stroke="#666666" points="466.88,-5521.8 458.88,-5519 466.88,-5516.2 466.88,-5521.8"/>
 </g>
-<!-- src/shared/utils/core/type&#45;safety&#45;helpers.ts -->
+<!-- src/shared/utils/type&#45;safety&#45;helpers.ts -->
 <g id="node138" class="node">
-<title>src/shared/utils/core/type&#45;safety&#45;helpers.ts</title>
-<g id="a_node138"><a xlink:href="src/shared/utils/core/type-safety-helpers.ts" xlink:title="type&#45;safety&#45;helpers.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M784.4,-5349.2C784.4,-5349.2 693.1,-5349.2 693.1,-5349.2 688.7,-5349.2 684.3,-5344.8 684.3,-5340.4 684.3,-5340.4 684.3,-5331.6 684.3,-5331.6 684.3,-5327.2 688.7,-5322.8 693.1,-5322.8 693.1,-5322.8 784.4,-5322.8 784.4,-5322.8 788.8,-5322.8 793.2,-5327.2 793.2,-5331.6 793.2,-5331.6 793.2,-5340.4 793.2,-5340.4 793.2,-5344.8 788.8,-5349.2 784.4,-5349.2"/>
-<text xml:space="preserve" text-anchor="start" x="691.5" y="-5332.5" font-family="Arial" font-size="10.00" fill="#b45309">type&#45;safety&#45;helpers.ts</text>
+<title>src/shared/utils/type&#45;safety&#45;helpers.ts</title>
+<g id="a_node138"><a xlink:href="src/shared/utils/type-safety-helpers.ts" xlink:title="type&#45;safety&#45;helpers.ts">
+<path fill="#fffbeb" stroke="#b45309" d="M784.4,-5475.2C784.4,-5475.2 693.1,-5475.2 693.1,-5475.2 688.7,-5475.2 684.3,-5470.8 684.3,-5466.4 684.3,-5466.4 684.3,-5457.6 684.3,-5457.6 684.3,-5453.2 688.7,-5448.8 693.1,-5448.8 693.1,-5448.8 784.4,-5448.8 784.4,-5448.8 788.8,-5448.8 793.2,-5453.2 793.2,-5457.6 793.2,-5457.6 793.2,-5466.4 793.2,-5466.4 793.2,-5470.8 788.8,-5475.2 784.4,-5475.2"/>
+<text xml:space="preserve" text-anchor="start" x="691.5" y="-5458.5" font-family="Arial" font-size="10.00" fill="#b45309">type&#45;safety&#45;helpers.ts</text>
 </a>
 </g>
 </g>
-<!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/core/type&#45;safety&#45;helpers.ts -->
-<g id="edge180" class="edge">
-<title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/core/type&#45;safety&#45;helpers.ts</title>
-<path fill="none" stroke="#666666" d="M303.61,-5441.8C396.54,-5441.8 693.92,-5441.8 693.92,-5441.8 693.92,-5441.8 693.92,-5357.98 693.92,-5357.98"/>
-<polygon fill="#666666" stroke="#666666" points="696.73,-5349.9 693.93,-5357.9 691.13,-5349.9 696.73,-5349.9"/>
+<!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/type&#45;safety&#45;helpers.ts -->
+<g id="edge185" class="edge">
+<title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/type&#45;safety&#45;helpers.ts</title>
+<path fill="none" stroke="#666666" d="M293.92,-5446.48C293.92,-5454.05 293.92,-5462 293.92,-5462 293.92,-5462 675.62,-5462 675.62,-5462"/>
+<polygon fill="#666666" stroke="#666666" points="683.71,-5464.8 675.71,-5462 683.71,-5459.2 683.71,-5464.8"/>
 </g>
 <!-- src/shared/utils/convenience.ts -->
 <g id="node139" class="node">
@@ -1871,8 +1871,8 @@
 <!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/convenience.ts -->
 <g id="edge178" class="edge">
 <title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/convenience.ts</title>
-<path fill="none" stroke="#666666" d="M259.92,-5446.53C259.92,-5503.59 259.92,-5721.6 259.92,-5721.6 259.92,-5721.6 457.98,-5721.6 457.98,-5721.6"/>
-<polygon fill="#666666" stroke="#666666" points="466.06,-5724.4 458.06,-5721.6 466.06,-5718.8 466.06,-5724.4"/>
+<path fill="none" stroke="#666666" d="M257.92,-5446.53C257.92,-5503.59 257.92,-5721.6 257.92,-5721.6 257.92,-5721.6 457.93,-5721.6 457.93,-5721.6"/>
+<polygon fill="#666666" stroke="#666666" points="466.01,-5724.4 458.01,-5721.6 466.01,-5718.8 466.01,-5724.4"/>
 </g>
 <!-- src/shared/utils/core&#45;utils.ts -->
 <g id="node140" class="node">
@@ -1886,8 +1886,8 @@
 <!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/core&#45;utils.ts -->
 <g id="edge179" class="edge">
 <title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/core&#45;utils.ts</title>
-<path fill="none" stroke="#666666" d="M281.92,-5446.48C281.92,-5484.19 281.92,-5588 281.92,-5588 281.92,-5588 465.77,-5588 465.77,-5588"/>
-<polygon fill="#666666" stroke="#666666" points="473.86,-5590.8 465.86,-5588 473.86,-5585.2 473.86,-5590.8"/>
+<path fill="none" stroke="#666666" d="M275.92,-5446.48C275.92,-5484.19 275.92,-5588 275.92,-5588 275.92,-5588 465.39,-5588 465.39,-5588"/>
+<polygon fill="#666666" stroke="#666666" points="473.48,-5590.8 465.48,-5588 473.48,-5585.2 473.48,-5590.8"/>
 </g>
 <!-- src/shared/utils/media/image&#45;filter.ts -->
 <g id="node142" class="node">
@@ -1899,9 +1899,9 @@
 </g>
 </g>
 <!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/media/image&#45;filter.ts -->
-<g id="edge181" class="edge">
+<g id="edge180" class="edge">
 <title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/media/image&#45;filter.ts</title>
-<path fill="none" stroke="#666666" d="M303.7,-5433C314.75,-5433 324.92,-5433 324.92,-5433 324.92,-5433 324.92,-4994.4 324.92,-4994.4 324.92,-4994.4 461.21,-4994.4 461.21,-4994.4"/>
+<path fill="none" stroke="#666666" d="M303.7,-5435.64C314.75,-5435.64 324.92,-5435.64 324.92,-5435.64 324.92,-5435.64 324.92,-4994.4 324.92,-4994.4 324.92,-4994.4 461.21,-4994.4 461.21,-4994.4"/>
 <polygon fill="#666666" stroke="#666666" points="469.29,-4997.2 461.29,-4994.4 469.29,-4991.6 469.29,-4997.2"/>
 </g>
 <!-- src/shared/utils/media/media&#45;url.util.ts -->
@@ -1914,9 +1914,9 @@
 </g>
 </g>
 <!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/media/media&#45;url.util.ts -->
-<g id="edge182" class="edge">
+<g id="edge181" class="edge">
 <title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/media/media&#45;url.util.ts</title>
-<path fill="none" stroke="#666666" d="M303.33,-5424.2C311.3,-5424.2 317.92,-5424.2 317.92,-5424.2 317.92,-5424.2 317.92,-4856.4 317.92,-4856.4 317.92,-4856.4 457.47,-4856.4 457.47,-4856.4"/>
+<path fill="none" stroke="#666666" d="M303.33,-5425.08C311.3,-5425.08 317.92,-5425.08 317.92,-5425.08 317.92,-5425.08 317.92,-4856.4 317.92,-4856.4 317.92,-4856.4 457.47,-4856.4 457.47,-4856.4"/>
 <polygon fill="#666666" stroke="#666666" points="465.55,-4859.2 457.55,-4856.4 465.55,-4853.6 465.55,-4859.2"/>
 </g>
 <!-- src/shared/utils/media/MediaClickDetector.ts -->
@@ -1929,9 +1929,9 @@
 </g>
 </g>
 <!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/media/MediaClickDetector.ts -->
-<g id="edge183" class="edge">
+<g id="edge182" class="edge">
 <title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/media/MediaClickDetector.ts</title>
-<path fill="none" stroke="#666666" d="M303.51,-5428.6C312.82,-5428.6 320.92,-5428.6 320.92,-5428.6 320.92,-5428.6 320.92,-4925.4 320.92,-4925.4 320.92,-4925.4 442.15,-4925.4 442.15,-4925.4"/>
+<path fill="none" stroke="#666666" d="M303.51,-5430.36C312.82,-5430.36 320.92,-5430.36 320.92,-5430.36 320.92,-5430.36 320.92,-4925.4 320.92,-4925.4 320.92,-4925.4 442.15,-4925.4 442.15,-4925.4"/>
 <polygon fill="#666666" stroke="#666666" points="450.24,-4928.2 442.24,-4925.4 450.24,-4922.6 450.24,-4928.2"/>
 </g>
 <!-- src/shared/utils/patterns/url&#45;patterns.ts -->
@@ -1944,9 +1944,9 @@
 </g>
 </g>
 <!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/patterns/url&#45;patterns.ts -->
-<g id="edge184" class="edge">
+<g id="edge183" class="edge">
 <title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/patterns/url&#45;patterns.ts</title>
-<path fill="none" stroke="#666666" d="M303.58,-5437.4C315.98,-5437.4 327.92,-5437.4 327.92,-5437.4 327.92,-5437.4 327.92,-5268.4 327.92,-5268.4 327.92,-5268.4 460.95,-5268.4 460.95,-5268.4"/>
+<path fill="none" stroke="#666666" d="M303.58,-5440.92C315.98,-5440.92 327.92,-5440.92 327.92,-5440.92 327.92,-5440.92 327.92,-5268.4 327.92,-5268.4 327.92,-5268.4 460.95,-5268.4 460.95,-5268.4"/>
 <polygon fill="#666666" stroke="#666666" points="469.04,-5271.2 461.04,-5268.4 469.04,-5265.6 469.04,-5271.2"/>
 </g>
 <!-- src/shared/utils/resource&#45;manager.ts -->
@@ -1959,10 +1959,10 @@
 </g>
 </g>
 <!-- src/shared/utils/index.ts&#45;&gt;src/shared/utils/resource&#45;manager.ts -->
-<g id="edge185" class="edge">
+<g id="edge184" class="edge">
 <title>src/shared/utils/index.ts&#45;&gt;src/shared/utils/resource&#45;manager.ts</title>
-<path fill="none" stroke="#666666" d="M270.92,-5446.68C270.92,-5495.31 270.92,-5657 270.92,-5657 270.92,-5657 446.39,-5657 446.39,-5657"/>
-<polygon fill="#666666" stroke="#666666" points="454.48,-5659.8 446.48,-5657 454.48,-5654.2 454.48,-5659.8"/>
+<path fill="none" stroke="#666666" d="M266.92,-5446.68C266.92,-5495.31 266.92,-5657 266.92,-5657 266.92,-5657 446.4,-5657 446.4,-5657"/>
+<polygon fill="#666666" stroke="#666666" points="454.49,-5659.8 446.49,-5657 454.49,-5654.2 454.49,-5659.8"/>
 </g>
 <!-- src/shared/utils/unified&#45;events.ts -->
 <g id="node147" class="node">
@@ -2260,15 +2260,15 @@
 <!-- src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/MediaService.ts -->
 <g id="edge149" class="edge">
 <title>src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/MediaService.ts</title>
-<path fill="none" stroke="#6366f1" stroke-dasharray="5,2" d="M785.92,-3414.39C785.92,-3346.24 785.92,-3045.47 785.92,-3045.47 785.92,-3045.47 915.34,-3045.47 915.34,-3045.47"/>
-<polygon fill="#6366f1" stroke="#6366f1" points="915.34,-3048.27 923.34,-3045.47 915.34,-3042.67 915.34,-3048.27"/>
-<text xml:space="preserve" text-anchor="middle" x="771.3" y="-3157.62" font-family="Arial" font-size="8.00" fill="#6366f1">dynamic</text>
+<path fill="none" stroke="#6366f1" stroke-dasharray="5,2" d="M785.92,-3414.46C785.92,-3346.67 785.92,-3047.47 785.92,-3047.47 785.92,-3047.47 915.34,-3047.47 915.34,-3047.47"/>
+<polygon fill="#6366f1" stroke="#6366f1" points="915.34,-3050.27 923.34,-3047.47 915.34,-3044.67 915.34,-3050.27"/>
+<text xml:space="preserve" text-anchor="middle" x="771.3" y="-3158.65" font-family="Arial" font-size="8.00" fill="#6366f1">dynamic</text>
 </g>
 <!-- src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/ServiceManager.ts -->
 <g id="edge150" class="edge">
 <title>src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/ServiceManager.ts</title>
-<path fill="none" stroke="#666666" d="M787.92,-3414.49C787.92,-3354.34 787.92,-3113.7 787.92,-3113.7 787.92,-3113.7 909.32,-3113.7 909.32,-3113.7"/>
-<polygon fill="#666666" stroke="#666666" points="909.32,-3116.5 917.32,-3113.7 909.32,-3110.9 909.32,-3116.5"/>
+<path fill="none" stroke="#666666" d="M787.92,-3414.56C787.92,-3354.69 787.92,-3115.2 787.92,-3115.2 787.92,-3115.2 909.32,-3115.2 909.32,-3115.2"/>
+<polygon fill="#666666" stroke="#666666" points="909.32,-3118 917.32,-3115.2 909.32,-3112.4 909.32,-3118"/>
 </g>
 <!-- src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/UIService.ts -->
 <g id="edge151" class="edge">
@@ -2449,8 +2449,8 @@
 <g id="node118" class="node">
 <title>src/shared/services/media&#45;mapping/MediaMappingService.ts</title>
 <g id="a_node118"><a xlink:href="src/shared/services/media-mapping/MediaMappingService.ts" xlink:title="MediaMappingService.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M328.23,-3079.2C328.23,-3079.2 224.17,-3079.2 224.17,-3079.2 219.77,-3079.2 215.38,-3074.8 215.38,-3070.4 215.38,-3070.4 215.38,-3061.6 215.38,-3061.6 215.38,-3057.2 219.78,-3052.8 224.17,-3052.8 224.17,-3052.8 328.23,-3052.8 328.23,-3052.8 332.63,-3052.8 337.03,-3057.2 337.03,-3061.6 337.03,-3061.6 337.03,-3070.4 337.03,-3070.4 337.03,-3074.8 332.63,-3079.2 328.23,-3079.2"/>
-<text xml:space="preserve" text-anchor="start" x="222.58" y="-3062.5" font-family="Arial" font-size="10.00" fill="#b45309">MediaMappingService.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M328.23,-3082.2C328.23,-3082.2 224.17,-3082.2 224.17,-3082.2 219.77,-3082.2 215.38,-3077.8 215.38,-3073.4 215.38,-3073.4 215.38,-3064.6 215.38,-3064.6 215.38,-3060.2 219.78,-3055.8 224.17,-3055.8 224.17,-3055.8 328.23,-3055.8 328.23,-3055.8 332.63,-3055.8 337.03,-3060.2 337.03,-3064.6 337.03,-3064.6 337.03,-3073.4 337.03,-3073.4 337.03,-3077.8 332.63,-3082.2 328.23,-3082.2"/>
+<text xml:space="preserve" text-anchor="start" x="222.58" y="-3065.5" font-family="Arial" font-size="10.00" fill="#b45309">MediaMappingService.ts</text>
 </a>
 </g>
 </g>
@@ -2458,37 +2458,37 @@
 <g id="node119" class="node">
 <title>src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts</title>
 <g id="a_node119"><a xlink:href="src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts" xlink:title="MediaTabUrlDirectStrategy.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M569.63,-3101.2C569.63,-3101.2 444.58,-3101.2 444.58,-3101.2 440.18,-3101.2 435.78,-3096.8 435.78,-3092.4 435.78,-3092.4 435.78,-3083.6 435.78,-3083.6 435.78,-3079.2 440.18,-3074.8 444.58,-3074.8 444.58,-3074.8 569.63,-3074.8 569.63,-3074.8 574.03,-3074.8 578.43,-3079.2 578.43,-3083.6 578.43,-3083.6 578.43,-3092.4 578.43,-3092.4 578.43,-3096.8 574.03,-3101.2 569.63,-3101.2"/>
-<text xml:space="preserve" text-anchor="start" x="442.98" y="-3084.5" font-family="Arial" font-size="10.00" fill="#b45309">MediaTabUrlDirectStrategy.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M569.63,-3104.2C569.63,-3104.2 444.58,-3104.2 444.58,-3104.2 440.18,-3104.2 435.78,-3099.8 435.78,-3095.4 435.78,-3095.4 435.78,-3086.6 435.78,-3086.6 435.78,-3082.2 440.18,-3077.8 444.58,-3077.8 444.58,-3077.8 569.63,-3077.8 569.63,-3077.8 574.03,-3077.8 578.43,-3082.2 578.43,-3086.6 578.43,-3086.6 578.43,-3095.4 578.43,-3095.4 578.43,-3099.8 574.03,-3104.2 569.63,-3104.2"/>
+<text xml:space="preserve" text-anchor="start" x="442.98" y="-3087.5" font-family="Arial" font-size="10.00" fill="#b45309">MediaTabUrlDirectStrategy.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/services/media&#45;mapping/MediaMappingService.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts -->
 <g id="edge139" class="edge">
 <title>src/shared/services/media&#45;mapping/MediaMappingService.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts</title>
-<path fill="none" stroke="#666666" d="M337.07,-3066C383.99,-3066 440.92,-3066 440.92,-3066 440.92,-3066 440.92,-3066.84 440.92,-3066.84"/>
-<polygon fill="#666666" stroke="#666666" points="438.13,-3064.93 440.93,-3072.93 443.73,-3064.93 438.13,-3064.93"/>
+<path fill="none" stroke="#666666" d="M337.07,-3067.5C383.99,-3067.5 440.92,-3067.5 440.92,-3067.5 440.92,-3067.5 440.92,-3068.48 440.92,-3068.48"/>
+<polygon fill="#666666" stroke="#666666" points="438.13,-3067.82 440.93,-3075.82 443.73,-3067.82 438.13,-3067.82"/>
 </g>
 <!-- src/shared/services/media&#45;mapping/index.ts -->
 <g id="node120" class="node">
 <title>src/shared/services/media&#45;mapping/index.ts</title>
 <g id="a_node120"><a xlink:href="src/shared/services/media-mapping/index.ts" xlink:title="index.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M101.2,-3101.2C101.2,-3101.2 64.8,-3101.2 64.8,-3101.2 60.4,-3101.2 56,-3096.8 56,-3092.4 56,-3092.4 56,-3083.6 56,-3083.6 56,-3079.2 60.4,-3074.8 64.8,-3074.8 64.8,-3074.8 101.2,-3074.8 101.2,-3074.8 105.6,-3074.8 110,-3079.2 110,-3083.6 110,-3083.6 110,-3092.4 110,-3092.4 110,-3096.8 105.6,-3101.2 101.2,-3101.2"/>
-<text xml:space="preserve" text-anchor="start" x="65.75" y="-3084.5" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M101.2,-3104.2C101.2,-3104.2 64.8,-3104.2 64.8,-3104.2 60.4,-3104.2 56,-3099.8 56,-3095.4 56,-3095.4 56,-3086.6 56,-3086.6 56,-3082.2 60.4,-3077.8 64.8,-3077.8 64.8,-3077.8 101.2,-3077.8 101.2,-3077.8 105.6,-3077.8 110,-3082.2 110,-3086.6 110,-3086.6 110,-3095.4 110,-3095.4 110,-3099.8 105.6,-3104.2 101.2,-3104.2"/>
+<text xml:space="preserve" text-anchor="start" x="65.75" y="-3087.5" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/services/media&#45;mapping/index.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaMappingService.ts -->
 <g id="edge140" class="edge">
 <title>src/shared/services/media&#45;mapping/index.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaMappingService.ts</title>
-<path fill="none" stroke="#666666" d="M110.16,-3086.53C153.86,-3086.53 234.92,-3086.53 234.92,-3086.53 234.92,-3086.53 234.92,-3085.84 234.92,-3085.84"/>
-<polygon fill="#666666" stroke="#666666" points="237.73,-3080.08 234.93,-3088.08 232.13,-3080.08 237.73,-3080.08"/>
+<path fill="none" stroke="#666666" d="M110.16,-3089.53C153.86,-3089.53 234.92,-3089.53 234.92,-3089.53 234.92,-3089.53 234.92,-3088.84 234.92,-3088.84"/>
+<polygon fill="#666666" stroke="#666666" points="237.73,-3083.08 234.93,-3091.08 232.13,-3083.08 237.73,-3083.08"/>
 </g>
 <!-- src/shared/services/media&#45;mapping/index.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts -->
 <g id="edge141" class="edge">
 <title>src/shared/services/media&#45;mapping/index.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts</title>
-<path fill="none" stroke="#666666" d="M110.5,-3093.87C110.5,-3093.87 427.08,-3093.87 427.08,-3093.87"/>
-<polygon fill="#666666" stroke="#666666" points="435.17,-3096.67 427.17,-3093.87 435.17,-3091.07 435.17,-3096.67"/>
+<path fill="none" stroke="#666666" d="M110.5,-3096.87C110.5,-3096.87 427.08,-3096.87 427.08,-3096.87"/>
+<polygon fill="#666666" stroke="#666666" points="435.17,-3099.67 427.17,-3096.87 435.17,-3094.07 435.17,-3099.67"/>
 </g>
 <!-- src/shared/services/media/index.ts -->
 <g id="node121" class="node">
@@ -2736,11 +2736,11 @@
 <path fill="none" stroke="#666666" d="M501.92,-6036.56C501.92,-6007.29 501.92,-5940.4 501.92,-5940.4 501.92,-5940.4 691.59,-5940.4 691.59,-5940.4"/>
 <polygon fill="#666666" stroke="#666666" points="699.67,-5943.2 691.67,-5940.4 699.67,-5937.6 699.67,-5943.2"/>
 </g>
-<!-- src/shared/utils/accessibility.ts&#45;&gt;src/shared/utils/core/type&#45;safety&#45;helpers.ts -->
+<!-- src/shared/utils/accessibility.ts&#45;&gt;src/shared/utils/type&#45;safety&#45;helpers.ts -->
 <g id="edge175" class="edge">
-<title>src/shared/utils/accessibility.ts&#45;&gt;src/shared/utils/core/type&#45;safety&#45;helpers.ts</title>
-<path fill="none" stroke="#666666" d="M546.89,-5519C602.56,-5519 696.92,-5519 696.92,-5519 696.92,-5519 696.92,-5358.97 696.92,-5358.97"/>
-<polygon fill="#666666" stroke="#666666" points="699.73,-5358.97 696.93,-5350.97 694.13,-5358.97 699.73,-5358.97"/>
+<title>src/shared/utils/accessibility.ts&#45;&gt;src/shared/utils/type&#45;safety&#45;helpers.ts</title>
+<path fill="none" stroke="#666666" d="M546.93,-5519C602.07,-5519 694.92,-5519 694.92,-5519 694.92,-5519 694.92,-5485.02 694.92,-5485.02"/>
+<polygon fill="#666666" stroke="#666666" points="697.73,-5485.02 694.93,-5477.02 692.13,-5485.02 697.73,-5485.02"/>
 </g>
 <!-- src/shared/utils/core/index.ts -->
 <g id="node141" class="node">
@@ -2751,11 +2751,11 @@
 </a>
 </g>
 </g>
-<!-- src/shared/utils/core/index.ts&#45;&gt;src/shared/utils/core/type&#45;safety&#45;helpers.ts -->
+<!-- src/shared/utils/core/index.ts&#45;&gt;src/shared/utils/type&#45;safety&#45;helpers.ts -->
 <g id="edge176" class="edge">
-<title>src/shared/utils/core/index.ts&#45;&gt;src/shared/utils/core/type&#45;safety&#45;helpers.ts</title>
-<path fill="none" stroke="#666666" d="M534.58,-5336C534.58,-5336 675.42,-5336 675.42,-5336"/>
-<polygon fill="#666666" stroke="#666666" points="683.5,-5338.8 675.5,-5336 683.5,-5333.2 683.5,-5338.8"/>
+<title>src/shared/utils/core/index.ts&#45;&gt;src/shared/utils/type&#45;safety&#45;helpers.ts</title>
+<path fill="none" stroke="#666666" d="M534.15,-5336C595.3,-5336 738.92,-5336 738.92,-5336 738.92,-5336 738.92,-5439.93 738.92,-5439.93"/>
+<polygon fill="#666666" stroke="#666666" points="736.13,-5448.02 738.93,-5440.02 741.73,-5448.02 736.13,-5448.02"/>
 </g>
 <!-- src/shared/utils/media/index.ts -->
 <g id="node148" class="node">

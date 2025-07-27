@@ -4,7 +4,7 @@
  * @version 1.0.0 - Phase 1 Consolidation
  */
 
-import { safeParseInt } from './core/type-safety-helpers';
+import { safeParseInt } from './type-safety-helpers';
 
 /**
  * 상대 휘도 계산 (WCAG 기준)

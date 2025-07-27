@@ -12,7 +12,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-import { safeParseInt } from '@shared/utils/core/type-safety-helpers';
+import { safeParseInt } from '@shared/utils/type-safety-helpers';
 import type { MediaInfo } from '@shared/types/media.types';
 
 // ================================
@@ -1058,7 +1058,7 @@ export {
   createWithOptionalProperties,
   buildSafeObject,
   removeUndefinedProperties,
-} from '@shared/utils/core/type-safety-helpers';
+} from '@shared/utils/type-safety-helpers';
 
 // 에러 처리 (위임)
 export { safeAsync, safeSync, handleError } from '@shared/error/ErrorHandler';
