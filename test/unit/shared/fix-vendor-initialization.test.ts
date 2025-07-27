@@ -15,19 +15,15 @@ describe('Vendor 초기화 에러 수정', () => {
   });
 
   describe('초기화 순서 문제', () => {
-    it('initializeVendors() 없이 getPreactCompat() 호출 시 에러가 발생해야 한다', async () => {
+    it('initializeVendors() 없이 getPreactCompat() 호출 시 자동 초기화가 작동해야 한다', async () => {
       // vendor-api를 다시 import하여 초기화되지 않은 상태 테스트
       const { getPreactCompat } = await import('@shared/external/vendors');
 
-      try {
-        getPreactCompat();
-        // 에러가 발생하지 않으면 테스트 실패
-        expect(false).toBe(true);
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        expect(errorMessage).toContain('Preact Compat이 초기화되지 않았습니다');
-      }
+      // 자동 초기화가 작동하므로 에러가 발생하지 않아야 함
+      const compat = getPreactCompat();
+      expect(compat).toBeDefined();
+      expect(compat.memo).toBeDefined();
+      expect(compat.forwardRef).toBeDefined();
     });
 
     it('initializeVendors() 호출 후에는 getPreactCompat()이 정상 작동해야 한다', async () => {

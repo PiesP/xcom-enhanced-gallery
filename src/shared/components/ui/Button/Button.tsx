@@ -117,7 +117,7 @@ export const Button = (() => {
   const MemoizedButton = memo(ButtonComponent, areEqual);
 
   // displayName 설정으로 디버깅 용이성 제공
-  MemoizedButton.displayName = 'Button';
+  MemoizedButton.displayName = 'memo(Button)';
 
   return MemoizedButton;
 })();
