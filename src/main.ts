@@ -107,22 +107,14 @@ async function initializeCriticalSystems(): Promise<void> {
 /**
  * 갤러리 앱 시작
  */
-async function startGalleryApp(): Promise<void> {
+// 메인 애플리케이션 entry point
+(async () => {
   try {
-    galleryApp = new GalleryApp();
-    await galleryApp.initialize();
-
-    // 전역 접근 등록 (정리용)
-    if (import.meta.env.DEV) {
-      (globalThis as Record<string, unknown>).__XEG_GALLERY_APP__ = galleryApp;
-    }
-
-    logger.debug('✅ 갤러리 앱 시작 완료');
+    await startApplication();
   } catch (error) {
-    logger.error('❌ 갤러리 앱 시작 실패:', error);
-    throw error;
+    logger.error('Main initialization failed', error);
   }
-}
+})();
 
 /**
  * Non-Critical 시스템 백그라운드 초기화
@@ -291,22 +283,18 @@ async function startApplication(): Promise<void> {
 
   try {
     logger.info('🚀 X.com Enhanced Gallery 시작 중...');
-    const startTime = performance.now();
 
-    await measurePerformance('app-initialization', async () => {
+    const _result = await measurePerformance(async () => {
       // 개발 도구 초기화 (개발 환경만)
       await initializeDevTools();
 
       // 1단계: 기본 인프라 초기화
       await initializeInfrastructure();
 
-      // 2단계: Critical Path - 필수 시스템만 먼저 초기화
+      // 2단계: 핵심 시스템 초기화
       await initializeCriticalSystems();
 
-      // 3단계: 갤러리 앱 시작
-      await startGalleryApp();
-
-      // 4단계: Non-Critical - 백그라운드에서 지연 초기화
+      // 3단계: 비필수 시스템 초기화
       initializeNonCriticalSystems();
 
       // 부가 기능 초기화
@@ -315,9 +303,8 @@ async function startApplication(): Promise<void> {
       isStarted = true;
     });
 
-    const duration = performance.now() - startTime;
     logger.info('✅ 애플리케이션 초기화 완료', {
-      startupTime: `${duration.toFixed(2)}ms`,
+      startupTime: `${_result.duration.toFixed(2)}ms`,
     });
 
     // 개발 환경에서 전역 접근 제공

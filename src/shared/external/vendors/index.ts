@@ -18,6 +18,14 @@ export type {
   ComponentChildren,
 } from './vendor-manager';
 
+// Vendor-specific types
+export type {
+  PreactComponent,
+  MemoCompareFunction,
+  ForwardRefComponent,
+  PreactCompat,
+} from './vendor-types';
+
 // 공개 API exports
 export {
   getFflate,

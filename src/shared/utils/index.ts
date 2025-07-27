@@ -1,17 +1,39 @@
 /**
- * @fileoverview Shared Utils - Phase 1 단순화 완료
- * @version 1.0.0 - 유틸리티 통합 및 단순화
+ * @fileoverview Shared Utils - Phase C 에러 처리 통합
+ * @version 1.0.0 - 유틸리티 통합 및 단순화, 에러 처리 표준화
  *
  * 새로운 구조:
  * - core-utils.ts (통합된 핵심 유틸리티)
  * - unified-events.ts (이벤트 시스템)
  * - resource-manager.ts (리소스 관리)
  * - convenience.ts (편의 함수들)
+ * - error-handling.ts (에러 처리 표준화)
  */
 
 // ================================
 // 통합 유틸리티 (Phase 1 Consolidation)
 // ================================
+
+// Error handling utilities (Phase C 추가)
+export {
+  standardizeError,
+  getErrorMessage,
+  isRetryableError,
+  isFatalError,
+  serializeError,
+  withFallback,
+  withRetry,
+} from './error-handling';
+
+// Timer management utilities (Phase C 추가)
+export {
+  TimerManager,
+  globalTimerManager,
+  safePerformanceNow,
+  measurePerformance,
+  createManagedDebounce,
+  createManagedThrottle,
+} from './timer-management';
 
 // Type safety helpers (이동된 위치)
 export {
@@ -32,7 +54,6 @@ export {
   galleryDebugUtils,
   extractTweetInfoFromUrl,
   removeDuplicateStrings,
-  measurePerformance,
   rafThrottle,
   throttleScroll,
   safeQuerySelector,

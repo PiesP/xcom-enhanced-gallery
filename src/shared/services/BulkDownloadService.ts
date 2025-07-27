@@ -13,6 +13,7 @@ import type { MediaItemForFilename } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { createZipFromItems, type MediaItemForZip } from '@shared/external/zip';
+import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename, generateZipFilename } from '@shared/media';
 
 export interface DownloadProgress {
@@ -182,7 +183,7 @@ export class BulkDownloadService implements BaseService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       };
     }
   }

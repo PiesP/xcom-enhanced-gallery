@@ -18,6 +18,7 @@ import {
   navigateToItem as navigateToIndex,
   openGallery,
 } from '@shared/state/signals/gallery.signals';
+import { getErrorMessage } from '@shared/utils/error-handling';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ViewMode } from '@shared/types/core/core-types';
 import { isVendorsInitialized } from '@shared/external/vendors';
@@ -255,9 +256,7 @@ export class GalleryService {
       });
     } catch (error) {
       this.logError('Early initialization failed', error);
-      throw new Error(
-        `Gallery early initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      throw new Error(`Gallery early initialization failed: ${getErrorMessage(error)}`);
     }
   }
 
@@ -523,7 +522,7 @@ export class GalleryService {
         success: false,
         newIndex: galleryState.value.currentIndex,
         currentMedia: getCurrentMediaItem(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       };
     }
   }
@@ -578,7 +577,7 @@ export class GalleryService {
         success: false,
         newIndex: galleryState.value.currentIndex,
         currentMedia: getCurrentMediaItem(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       };
     }
   }
@@ -631,7 +630,7 @@ export class GalleryService {
         success: false,
         newIndex: galleryState.value.currentIndex,
         currentMedia: getCurrentMediaItem(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       };
     }
   }

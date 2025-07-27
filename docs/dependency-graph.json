@@ -1366,6 +1366,24 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -1409,6 +1427,15 @@
       "dependents": [
         "src/shared/external/vendors/index.ts",
         "src/shared/external/vendors/vendor-api.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/vendors/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4160,6 +4187,23 @@
         },
         {
           "dynamic": false,
+          "module": "./error-handling",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/error-handling.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./media/image-filter",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4236,6 +4280,23 @@
             "export"
           ],
           "resolved": "src/shared/utils/resource-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4343,6 +4404,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/error-handling.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/media/image-filter.ts",
       "dependencies": [],
       "dependents": [
@@ -4392,6 +4462,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/timer-management.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/unified-events.ts",
       "dependencies": [],
       "dependents": [
@@ -4419,6 +4498,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SimpleBundleUtils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/optimization/SimpleBundleUtils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -4429,6 +4525,15 @@
     },
     {
       "source": "src/shared/utils/optimization/BundleOptimizer.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/optimization/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/optimization/SimpleBundleUtils.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/optimization/index.ts"
@@ -5526,8 +5631,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 152,
-    "totalDependenciesCruised": 233,
+    "totalCruised": 156,
+    "totalDependenciesCruised": 237,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
