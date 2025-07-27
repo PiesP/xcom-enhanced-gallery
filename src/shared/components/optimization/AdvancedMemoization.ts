@@ -37,13 +37,16 @@ interface ProfileData {
  * Features:
  * - 커스텀 비교 함수 지원
  * - 성능 프로파일링
- * - 메모리 최적화
+ * - 메모리 최적화 (WeakMap 사용)
  * - 캐시 관리
  */
 class AdvancedMemoization {
   private static instance: AdvancedMemoization;
   private readonly profileData = new Map<string, ProfileData>();
   private readonly cacheSize = new Map<string, number>();
+  // Phase 4: WeakMap을 사용한 메모리 효율적인 캐싱
+  private readonly componentCache = new WeakMap<Function, unknown>();
+  private readonly propsCache = new WeakMap<object, unknown>();
 
   /**
    * 싱글톤 인스턴스 반환
@@ -66,18 +69,36 @@ class AdvancedMemoization {
 
     const componentName = Component.name || 'AnonymousComponent';
 
+    // WeakMap에서 컴포넌트 캐시 확인
+    if (this.componentCache.has(Component)) {
+      return this.componentCache.get(Component) as ComponentFunction<T>;
+    }
+
     if (enableProfiling) {
       this.initializeProfile(componentName);
     }
 
     const { memo } = getPreactCompat();
 
-    return memo(Component as never, (prevProps: T, nextProps: T) => {
+    const memoizedComponent = memo(Component as never, (prevProps: T, nextProps: T) => {
       const startTime = performance.now();
+
+      // props 캐시 확인
+      if (this.propsCache.has(prevProps) && this.propsCache.has(nextProps)) {
+        const cachedPrev = this.propsCache.get(prevProps);
+        const cachedNext = this.propsCache.get(nextProps);
+        if (cachedPrev === cachedNext) {
+          return true; // 동일한 props, 리렌더링 스킵
+        }
+      }
 
       try {
         const shouldSkip = compare(prevProps, nextProps);
         const endTime = performance.now();
+
+        // props를 WeakMap에 캐시
+        this.propsCache.set(prevProps, prevProps);
+        this.propsCache.set(nextProps, nextProps);
 
         if (enableProfiling) {
           this.updateProfile(componentName, shouldSkip, endTime - startTime);
@@ -92,6 +113,10 @@ class AdvancedMemoization {
         return false; // 에러 시 리렌더링
       }
     });
+
+    // WeakMap에 컴포넌트 캐시
+    this.componentCache.set(Component, memoizedComponent);
+    return memoizedComponent;
   }
 
   /**

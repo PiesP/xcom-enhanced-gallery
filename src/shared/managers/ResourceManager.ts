@@ -445,6 +445,26 @@ export class OptimizedResourceManager {
   }
 
   /**
+   * 리소스 할당 (별칭: addResource - 테스트 호환성)
+   */
+  addResource<T = unknown>(
+    id: string,
+    type: ResourceType,
+    resource: T,
+    size: number = 0,
+    metadata?: Record<string, unknown>
+  ): boolean {
+    return this.allocate(id, type, resource, size, metadata);
+  }
+
+  /**
+   * 리소스 개수 조회
+   */
+  getResourceCount(): number {
+    return this.resources.size;
+  }
+
+  /**
    * 메모리 사용량 정보 조회
    */
   getMemoryUsage(): {
@@ -461,6 +481,14 @@ export class OptimizedResourceManager {
       resourceCount: this.resources.size,
       maxResourceCount: this.options.maxResourceCount,
     };
+  }
+
+  /**
+   * 리소스 정리 (별칭: cleanup - 테스트 호환성)
+   */
+  cleanup(): void {
+    this.performMemoryPressureCleanup();
+    this.performInactiveResourceCleanup();
   }
 
   /**

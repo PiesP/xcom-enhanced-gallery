@@ -246,7 +246,7 @@ describe('Phase 4: 런타임 성능 최적화', () => {
 
       // 리소스가 등록되었는지 확인
       expect(resourceManager.getResourceCount()).toBeGreaterThan(0);
-      expect(resourceManager.getMemoryUsage()).toBeGreaterThan(0);
+      expect(resourceManager.getMemoryUsage().current).toBeGreaterThan(0);
 
       // 정리 실행
       resourceManager.cleanup();

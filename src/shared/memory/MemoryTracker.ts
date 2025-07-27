@@ -111,6 +111,22 @@ export class MemoryTracker {
   }
 
   /**
+   * 메모리 추적 활성화 (Phase 4 추가)
+   *
+   * @param target 추적 대상 식별자
+   * @param size 할당된 메모리 크기 (바이트)
+   */
+  public trackMemory(target: string, size: number): void {
+    const currentUsage = this.getMemoryUsageMB() || 0;
+    logger.debug(
+      `[MemoryTracker] Tracking memory for ${target}: ${size} bytes, current usage: ${currentUsage} MB`
+    );
+
+    // 메모리 사용량 임계값 체크
+    this.checkAndCleanup();
+  }
+
+  /**
    * 메모리 상태 모니터링 및 자동 정리
    *
    * @param force 강제 정리 여부
@@ -139,6 +155,13 @@ export class MemoryTracker {
         this.triggerGarbageCollection();
       }
     }
+  }
+
+  /**
+   * 메모리 정리 함수 (Phase 4 추가)
+   */
+  public cleanup(): void {
+    this.checkAndCleanup(true);
   }
 
   /**
