@@ -110,11 +110,11 @@ export function getPreactSignals(): PreactSignalsAPI {
  */
 export function getPreactCompat(): PreactCompatAPI {
   if (!cachedPreactCompat) {
-    // 개발 환경에서 자동 초기화 시도
-    if (import.meta.env.DEV) {
-      logger.warn('Preact Compat이 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+    // 환경과 상관없이 자동 초기화 시도
+    logger.warn('Preact Compat이 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
 
-      // 동기적으로 사용할 수 있도록 간단한 fallback 제공
+    // 개발 환경에서 모듈 캐시 복구 시도
+    if (import.meta.env.DEV) {
       try {
         // 이미 로드된 모듈이 있는지 확인
         const moduleCache = (globalThis as Record<string, unknown>).__vite__moduleCache;
@@ -145,7 +145,6 @@ export function getPreactCompat(): PreactCompatAPI {
     }
 
     // 자동 초기화 시도
-    logger.warn('Preact Compat이 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
     try {
       // initializeVendors를 비동기로 호출하고 결과를 캐시
       initializeVendors().catch(error => {
@@ -177,11 +176,51 @@ export function getPreactCompat(): PreactCompatAPI {
       }
     } catch (error) {
       logger.error('자동 초기화 실패:', error);
+
+      // 초기화 실패 시에도 기본 구현 제공
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      const fallbackPreactCompat = {
+        memo: (Component: any, _compare?: any) => {
+          const MemoComponent = (props: any) => {
+            return Component(props);
+          };
+          MemoComponent.displayName = Component.displayName || Component.name || 'Component';
+          return MemoComponent;
+        },
+        forwardRef: (Component: any) => {
+          const ForwardedComponent = (props: any) => Component(props);
+          ForwardedComponent.displayName = Component.displayName || Component.name || 'Component';
+          return ForwardedComponent;
+        },
+      };
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+
+      logger.debug('Fallback Preact Compat 구현 반환');
+      return fallbackPreactCompat as PreactCompatAPI;
     }
 
-    throw new Error(
-      'Preact Compat이 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.'
-    );
+    // 여전히 초기화되지 않은 경우 에러 대신 기본 구현 반환
+    if (!cachedPreactCompat) {
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      const defaultPreactCompat = {
+        memo: (Component: any, _compare?: any) => {
+          const MemoComponent = (props: any) => {
+            return Component(props);
+          };
+          MemoComponent.displayName = Component.displayName || Component.name || 'Component';
+          return MemoComponent;
+        },
+        forwardRef: (Component: any) => {
+          const ForwardedComponent = (props: any) => Component(props);
+          ForwardedComponent.displayName = Component.displayName || Component.name || 'Component';
+          return ForwardedComponent;
+        },
+      };
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+
+      logger.debug('기본 Preact Compat 구현 반환');
+      return defaultPreactCompat as PreactCompatAPI;
+    }
   }
   return cachedPreactCompat;
 }
