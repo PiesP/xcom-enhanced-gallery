@@ -1,6 +1,7 @@
 # 🚀 X.com Enhanced Gallery
 
-> **X.com에서 미디어를 원본 화질로 다운로드하고 편리하게 탐색하는 PC 전용 유저스크립트**
+> **X.com에서 미디어를 원본 화질로 다운로드하고 편리하게 탐색하는 PC 전용
+> 유저스크립트**
 
 [![설치하기](https://i## 🛠️ 기술 정보
 
@@ -9,14 +10,17 @@
 - **UI 프레임워크**: Preact (3KB) - React 호환, 경량화
 - **번들 크기**: 250KB 미만으로 최적화
 - **브라우저 호환**: Chrome 88+, Firefox 78+, Safari 14+, Edge 88+
-- **PC 전용 설계**: 마우스/키보드 최적화, 터치 인터페이스 미지원.io/badge/설치하기-클릭-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
-[![버전](https://img.shields.io/badge/버전-v3.2.0-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
-[![라이센스](https://img.shields.io/badge/라이센스-MIT-green.svg)](LICENSE)
-[![Chrome/Edge](https://img.shields.io/badge/Chrome%2FEdge-✓-4285F4)](https://www.google.com/chrome/)
-[![Firefox](https://img.shields.io/badge/Firefox-✓-FF7139)](https://www.mozilla.org/firefox/)
-[![Safari](https://img.shields.io/badge/Safari-✓-00D4FF)](https://www.apple.com/safari/)
+- **PC 전용 설계**: 마우스/키보드 최적화, 터치 인터페이스
+  미지원.io/badge/설치하기-클릭-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
+  [![버전](https://img.shields.io/badge/버전-v3.2.0-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
+  [![라이센스](https://img.shields.io/badge/라이센스-MIT-green.svg)](LICENSE)
+  [![Chrome/Edge](https://img.shields.io/badge/Chrome%2FEdge-✓-4285F4)](https://www.google.com/chrome/)
+  [![Firefox](https://img.shields.io/badge/Firefox-✓-FF7139)](https://www.mozilla.org/firefox/)
+  [![Safari](https://img.shields.io/badge/Safari-✓-00D4FF)](https://www.apple.com/safari/)
 
-**X.com Enhanced Gallery**는 X.com(구 Twitter)에서 이미지와 동영상을 **고화질 원본**으로 다운로드하고, **직관적인 세로 스크롤 갤러리**로 탐색할 수 있는 **PC 환경 전용** 유저스크립트입니다.
+**X.com Enhanced Gallery**는 X.com(구 Twitter)에서 이미지와 동영상을 **고화질
+원본**으로 다운로드하고, **직관적인 세로 스크롤 갤러리**로 탐색할 수 있는 **PC
+환경 전용** 유저스크립트입니다.
 
 ## ✨ 주요 기능
 

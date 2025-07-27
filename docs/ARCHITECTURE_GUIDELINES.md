@@ -107,11 +107,11 @@ const { deflate } = getFflate();
 
 ### 현재 사용 라이브러리
 
-| 라이브러리 | 용도 | 크기 |
-|------------|------|------|
-| **Preact** | UI 프레임워크 | ~3KB |
-| **@preact/signals** | 상태 관리 | ~2KB |
-| **fflate** | ZIP 압축 | ~8KB |
+| 라이브러리          | 용도          | 크기 |
+| ------------------- | ------------- | ---- |
+| **Preact**          | UI 프레임워크 | ~3KB |
+| **@preact/signals** | 상태 관리     | ~2KB |
+| **fflate**          | ZIP 압축      | ~8KB |
 
 ---
 
@@ -136,10 +136,10 @@ interface PCEvents {
 
 ```typescript
 const SUPPORTED_KEYS = {
-  ESCAPE: 'Escape',    // 갤러리 닫기
-  ARROW_LEFT: 'ArrowLeft',   // 이전 이미지
+  ESCAPE: 'Escape', // 갤러리 닫기
+  ARROW_LEFT: 'ArrowLeft', // 이전 이미지
   ARROW_RIGHT: 'ArrowRight', // 다음 이미지
-  F: 'f',              // 전체화면
+  F: 'f', // 전체화면
 } as const;
 ```
 
@@ -171,7 +171,7 @@ function handleWheel(event: WheelEvent) {
 ```typescript
 // 이미지 캐시 관리
 interface ImageCache {
-  maxSize: number;      // 최대 캐시 크기
+  maxSize: number; // 최대 캐시 크기
   evictionPolicy: 'LRU'; // 제거 정책
 }
 

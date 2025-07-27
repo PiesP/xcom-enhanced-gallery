@@ -155,7 +155,7 @@ import { deflate } from 'fflate';
 import {
   getPreact,
   getPreactSignals,
-  getFflate
+  getFflate,
 } from '@shared/external/vendors';
 
 const { render, useEffect } = getPreact();
@@ -168,9 +168,9 @@ const { deflate } = getFflate();
 ```typescript
 // ✅ 현재 허용된 라이브러리 (MIT 라이센스)
 const ALLOWED_LIBRARIES = {
-  preact: '10.x.x',           // UI 라이브러리
+  preact: '10.x.x', // UI 라이브러리
   '@preact/signals': '2.x.x', // 상태 관리
-  fflate: '0.8.x',            // ZIP 압축
+  fflate: '0.8.x', // ZIP 압축
 } as const;
 ```
 
@@ -235,22 +235,25 @@ export function useGalleryKeyboard({
   onNext,
   onClose,
 }: UseGalleryKeyboardOptions) {
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    switch (event.key) {
-      case 'ArrowLeft':
-        event.preventDefault();
-        onPrevious();
-        break;
-      case 'ArrowRight':
-        event.preventDefault();
-        onNext();
-        break;
-      case 'Escape':
-        event.preventDefault();
-        onClose();
-        break;
-    }
-  }, [onPrevious, onNext, onClose]);
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          onPrevious();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          onNext();
+          break;
+        case 'Escape':
+          event.preventDefault();
+          onClose();
+          break;
+      }
+    },
+    [onPrevious, onNext, onClose]
+  );
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -434,7 +437,8 @@ function handleMouseDown(event: MouseEvent) {
 
 <div align="center">
 
-**💻 "Clean code is not about rules. It's about professionalism." - Robert C. Martin**
+**💻 "Clean code is not about rules. It's about professionalism." - Robert C.
+Martin**
 
 </div>
 

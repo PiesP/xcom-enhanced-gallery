@@ -675,3 +675,119 @@ export class GalleryEventManager {
 // 백워드 호환성을 위한 별칭
 export const EventDispatcher = GalleryEventManager;
 export const GalleryEventCoordinator = GalleryEventManager;
+
+// ================================
+// 백워드 호환성을 위한 추가 유틸리티 함수들
+// ================================
+
+/**
+ * 활성 리스너 개수 조회
+ */
+export function getActiveListenerCount(): number {
+  return listeners.size;
+}
+
+/**
+ * 모든 이벤트 리스너 제거 (removeAllEventListeners의 별칭)
+ */
+export function clearAllEventListeners(): void {
+  removeAllEventListeners();
+}
+
+/**
+ * 이벤트 리스너 정리 (cleanupEventDispatcher의 별칭)
+ */
+export function cleanupEventListeners(): void {
+  cleanupEventDispatcher();
+}
+
+/**
+ * 클릭 가능한 요소인지 확인
+ */
+export function isClickableElement(element: Element): boolean {
+  if (!element) return false;
+
+  const clickableTags = ['BUTTON', 'A', 'INPUT'];
+  if (clickableTags.includes(element.tagName)) return true;
+
+  const clickableRoles = ['button', 'link', 'tab', 'menuitem'];
+  const role = element.getAttribute('role');
+  if (role && clickableRoles.includes(role)) return true;
+
+  return (
+    element.hasAttribute('onclick') ||
+    element.hasAttribute('data-testid') ||
+    getComputedStyle(element).cursor === 'pointer'
+  );
+}
+
+/**
+ * 미디어 요소인지 확인
+ */
+export function isMediaElement(element: Element): boolean {
+  if (!element) return false;
+
+  const mediaTags = ['IMG', 'VIDEO', 'AUDIO', 'PICTURE', 'SOURCE'];
+  if (mediaTags.includes(element.tagName)) return true;
+
+  // Twitter 미디어 관련 클래스나 속성 확인
+  const classList = element.className || '';
+  return (
+    classList.includes('media') ||
+    classList.includes('image') ||
+    classList.includes('video') ||
+    element.hasAttribute('data-image-url') ||
+    element.hasAttribute('data-video-url')
+  );
+}
+
+/**
+ * 커스텀 이벤트 생성
+ */
+export function createCustomEvent<T = unknown>(
+  type: string,
+  detail?: T,
+  options?: EventInit
+): CustomEvent<T> {
+  const eventOptions = {
+    bubbles: true,
+    cancelable: true,
+    ...options,
+  };
+
+  if (detail !== undefined) {
+    return new CustomEvent(type, { ...eventOptions, detail });
+  }
+
+  return new CustomEvent(type, eventOptions) as CustomEvent<T>;
+}
+
+/**
+ * 관리형 이벤트 발송
+ */
+export function dispatchManagedEvent<T = unknown>(
+  element: EventTarget,
+  type: string,
+  detail?: T,
+  options?: EventInit
+): boolean {
+  const event = createCustomEvent(type, detail, options);
+  return element.dispatchEvent(event);
+}
+
+/**
+ * Twitter 이벤트 처리
+ */
+export function handleTwitterEvent(
+  element: EventTarget,
+  eventType: string,
+  handler: EventListener,
+  context?: string
+): string {
+  return addEventListenerManaged(element, eventType, handler, undefined, context);
+}
+
+/**
+ * TwitterEventManager 클래스 (GalleryEventManager의 별칭)
+ */
+export const TwitterEventManager = GalleryEventManager;

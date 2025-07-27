@@ -9,15 +9,9 @@
 // ================================
 
 const GALLERY_SELECTORS = [
-  '.xeg-gallery-container',
-  '[data-gallery-element]',
-  '#xeg-gallery-root',
-  '.vertical-gallery-view',
-  '[data-xeg-gallery-container]',
-  '[data-xeg-gallery]',
-  '.xeg-vertical-gallery',
-  '.xeg-gallery',
+  '[data-gallery-container]',
   '.gallery-container',
+  '.xeg-gallery-container',
   '[data-gallery]',
   '.xeg-toolbar',
   '.xeg-button',
@@ -58,22 +52,38 @@ export function shouldBlockGalleryEvent(event: Event): boolean {
 // ================================
 
 export function safeQuerySelector<T extends Element = Element>(
-  root: ParentNode,
-  selector: string
+  selectorOrRoot: string | ParentNode,
+  selector?: string
 ): T | null {
   try {
-    return root.querySelector(selector) as T | null;
+    // 1개 파라미터: document에서 검색 (기존 API 호환)
+    if (typeof selectorOrRoot === 'string') {
+      return document.querySelector(selectorOrRoot) as T | null;
+    }
+    // 2개 파라미터: 지정된 root에서 검색
+    if (selector) {
+      return selectorOrRoot.querySelector(selector) as T | null;
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 export function safeQuerySelectorAll<T extends Element = Element>(
-  root: ParentNode,
-  selector: string
+  selectorOrRoot: string | ParentNode,
+  selector?: string
 ): T[] {
   try {
-    return Array.from(root.querySelectorAll(selector)) as T[];
+    // 1개 파라미터: document에서 검색 (기존 API 호환)
+    if (typeof selectorOrRoot === 'string') {
+      return Array.from(document.querySelectorAll(selectorOrRoot)) as T[];
+    }
+    // 2개 파라미터: 지정된 root에서 검색
+    if (selector) {
+      return Array.from(selectorOrRoot.querySelectorAll(selector)) as T[];
+    }
+    return [];
   } catch {
     return [];
   }
