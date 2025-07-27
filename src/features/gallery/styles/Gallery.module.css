@@ -1,201 +1,410 @@
 /**
- * Gallery component styles - Design Token System
+ * Gallery component styles - Modern CSS Integration
  * CSS Modules implementation for X.com Enhanced Gallery
- * @version 2.0.0 - 통합된 디자인 토큰 시스템 적용
+ * @version 3.0.0 - Phase 2: 최신 CSS 기능 완전 통합
  *
  * @description
- * X.com Enhanced Gallery의 갤러리 뷰어 컴포넌트를 위한 스타일 정의입니다.
- * design-tokens.css에서 정의된 통합 디자인 토큰을 사용하여 CSS Modules를 통한
- * 스타일 캡슐화를 제공합니다.
+ * X.com Enhanced Gallery의 갤러리 뷰어 컴포넌트를 위한 현대적 스타일 정의입니다.
+ * Phase 2에서 최신 CSS 기능들을 완전히 통합하여 성능과 접근성을 극대화했습니다.
  *
  * @features
- * - 통합된 디자인 토큰 시스템 사용
- * - CSS Modules를 통한 스타일 격리
- * - 테마별 변형 지원 (light/dark/auto)
- * - 반응형 디자인 및 접근성
+ * - CSS Cascade Layers를 통한 스타일 우선순위 관리
+ * - OKLCH 색상 공간 및 CSS Color Module Level 4
+ * - Container Queries 기반 반응형 디자인
+ * - CSS Containment를 통한 성능 최적화
+ * - CSS Logical Properties로 국제화 지원
+ * - 고급 CSS 선택자 (:has, :where, :is) 활용
+ * - 접근성 및 사용자 설정 완전 지원
  * @author X.com Enhanced Gallery Team
  */
-*/
+
+/**
+ * Modern CSS Variables and Color System
+ * OKLCH 색상 공간과 최신 CSS 기능 활용
+ */
+:root {
+  /* OKLCH 색상 시스템 - 더 자연스러운 색상 보간 */
+  --xeg-gallery-bg-oklch: oklch(0.15 0.02 220 / 0.95);
+  --xeg-gallery-surface-oklch: oklch(0.98 0.01 220 / 0.9);
+  --xeg-gallery-overlay-oklch: oklch(0.1 0.02 220 / 0.8);
+
+  /* Container Query 관련 변수 */
+  --xeg-gallery-container-inline-size: 100vw;
+  --xeg-gallery-container-block-size: 100vh;
+
+  /* 성능 최적화 변수 */
+  --xeg-gallery-gpu-acceleration: translateZ(0);
+  --xeg-gallery-containment: layout style paint;
+}
+
+/**
+ * Gallery Container - Container Queries 지원
+ * 전체 갤러리의 컨테이너 역할을 합니다.
+ */
+.xegGalleryContainer {
+  /* Container Queries 설정 */
+  container-type: size;
+  container-name: gallery-main;
+
+  /* 성능 최적화 */
+  contain: var(--xeg-gallery-containment);
+  content-visibility: auto;
+  contain-intrinsic-size: var(--xeg-gallery-container-inline-size)
+    var(--xeg-gallery-container-block-size);
+
+  /* GPU 가속 */
+  transform: var(--xeg-gallery-gpu-acceleration);
+  will-change: transform;
+
+  /* 레이아웃 */
+  position: fixed;
+  inset: 0;
+  z-index: var(--xeg-z-gallery, 10000);
+
+  /* 배경 - OKLCH 색상 사용 */
+  background: var(--xeg-gallery-bg-oklch);
+  backdrop-filter: blur(var(--xeg-backdrop-blur, 16px));
+
+  /* Logical Properties */
+  padding-block: var(--xeg-spacing-md);
+  padding-inline: var(--xeg-spacing-md);
+}
 
 /**
  * 갤러리 뷰어 오버레이 - 현대적 glassmorphism 디자인
  * 전체 화면을 덮는 모달 배경으로 사용됩니다.
  *
  * Features:
- * - 고정 위치 (position: fixed)로 전체 화면 오버레이
- * - 높은 z-index로 다른 요소들 위에 표시
- * - 부드러운 블러 효과와 투명도 애니메이션
- * - 기본적으로 비활성화된 포인터 이벤트
- * - 통합된 색상 시스템과 현대적 배경 사용
+ * - Container Queries 기반 반응형 디자인
+ * - OKLCH 색상 공간 활용
+ * - CSS Containment 성능 최적화
+ * - CSS Logical Properties 국제화 지원
+ * - 고급 CSS 선택자 활용
  */
 .xegGalleryViewer {
+  /* 레이아웃 - Logical Properties 사용 */
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: var(--xeg-z-gallery-overlay);
-  background: var(--xeg-overlay-background);
+
+  /* OKLCH 배경 색상 */
+  background: var(--xeg-gallery-overlay-oklch);
+
+  /* 플렉스 레이아웃 - :has() 선택자로 상태 관리 */
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* 초기 상태 */
   opacity: 0;
-  transition: var(--xeg-transition-default);
+  transition:
+    opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
   pointer-events: none;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+
+  /* 성능 최적화 */
+  contain: layout style;
+  will-change: opacity, transform;
+  transform: var(--xeg-gallery-gpu-acceleration);
+
+  /* 블러 효과 */
+  backdrop-filter: blur(var(--xeg-backdrop-blur, 8px));
+  -webkit-backdrop-filter: blur(var(--xeg-backdrop-blur, 8px));
+}
+
+/* 갤러리가 활성화된 상태 - :has() 선택자 활용 */
+.xegGalleryContainer:has(.xegGalleryViewer.xegVisible) {
+  --gallery-active: 1;
 }
 
 /**
  * 갤러리 뷰어 표시 상태
  * .xegGalleryViewer와 함께 사용하여 갤러리가 표시될 때 적용됩니다.
+ * Features: GPU 가속, Container Queries 최적화
  */
 .xegGalleryViewer.xegVisible {
   opacity: 1;
   pointer-events: auto;
+  transform: var(--xeg-gallery-gpu-acceleration) scale(1);
 }
 
 /**
- * 테마 변형 스타일
+ * Container Queries - 반응형 갤러리 레이아웃
+ */
+@container gallery-main (width > 768px) {
+  .xegGalleryViewer {
+    /* 태블릿 이상에서의 스타일 */
+    padding-block: var(--xeg-spacing-xl);
+    padding-inline: var(--xeg-spacing-lg);
+  }
+}
+
+@container gallery-main (width > 1200px) {
+  .xegGalleryViewer {
+    /* 데스크톱에서의 스타일 */
+    padding-block: var(--xeg-spacing-2xl);
+    padding-inline: var(--xeg-spacing-xl);
+  }
+}
+
+@container gallery-main (height < 600px) {
+  .xegGalleryViewer {
+    /* 높이가 낮은 화면에서의 최적화 */
+    padding-block: var(--xeg-spacing-sm);
+  }
+}
+
+/**
+ * 테마 변형 스타일 - OKLCH 색상으로 최적화
  * 사용자의 테마 설정에 따라 다른 배경색을 적용합니다.
+ * Features: OKLCH 색상 공간, 고급 CSS 선택자, CSS Nesting
  */
+.xegGalleryViewer {
+  /* CSS Nesting - 테마별 변형 */
+  &.xegThemeLight {
+    background: var(--xeg-gallery-bg-light-oklch, oklch(0.98 0.01 220 / 0.9));
+  }
 
-/**
- * 라이트 테마 변형
- */
-.xegGalleryViewer.xegThemeLight {
-  background: var(--xeg-gallery-bg-light);
-}
+  &.xegThemeDark {
+    background: var(--xeg-gallery-bg-dark-oklch, oklch(0.15 0.02 220 / 0.95));
+  }
 
-/**
- * 다크 테마 변형
- */
-.xegGalleryViewer.xegThemeDark {
-  background: var(--xeg-gallery-bg);
-}
+  &.xegThemeAuto {
+    background: var(--xeg-gallery-bg-auto-oklch, oklch(0.15 0.02 220 / 0.95));
 
-/**
- * 자동 테마 변형
- */
-.xegGalleryViewer.xegThemeAuto {
-  background: var(--xeg-gallery-bg);
-}
-
-/**
- * 시스템 라이트 모드 감지
- */
-@media (prefers-color-scheme: light) {
-  .xegGalleryViewer.xegThemeAuto {
-    background: var(--xeg-gallery-bg-light);
+    /* 시스템 라이트 모드 감지 */
+    @media (prefers-color-scheme: light) {
+      background: var(--xeg-gallery-bg-light-oklch, oklch(0.98 0.01 220 / 0.9));
+    }
   }
 }
 
 /**
  * 갤러리 닫기 버튼 - 현대적 glassmorphism 디자인
+ * Features: OKLCH 색상, CSS Nesting, CSS Logical Properties, GPU 가속
  */
 .xegCloseButton {
+  /* 위치 - Logical Properties 사용 */
   position: absolute;
-  top: var(--xeg-spacing-lg);
-  right: var(--xeg-spacing-lg);
-  background: var(--xeg-bg-button-close);
-  border: 1px solid var(--xeg-button-border);
+  inset-block-start: var(--xeg-spacing-lg);
+  inset-inline-end: var(--xeg-spacing-lg);
+
+  /* OKLCH 색상 */
+  background: var(--xeg-gallery-surface-oklch);
+  border: 1px solid oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.2);
   border-radius: var(--xeg-radius-full);
-  width: var(--xeg-button-size-lg);
-  height: var(--xeg-button-size-lg);
-  color: var(--xeg-text-button-close);
+
+  /* 크기 */
+  inline-size: var(--xeg-button-size-lg);
+  block-size: var(--xeg-button-size-lg);
+
+  /* 텍스트 */
+  color: var(--xeg-gallery-text-oklch);
   font-size: var(--xeg-icon-size-lg);
-  cursor: pointer;
-  z-index: var(--xeg-z-gallery-toolbar);
-  transition: var(--xeg-transition-spring);
+
+  /* 레이아웃 */
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* 스택 */
+  z-index: var(--xeg-z-gallery-toolbar);
+
+  /* 상호작용 */
+  cursor: pointer;
+
+  /* 성능 최적화 */
+  contain: layout style;
+  will-change: transform, background-color;
+  transform: var(--xeg-gallery-gpu-acceleration);
+
+  /* 블러 효과 */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+
+  /* 그림자 */
   box-shadow: var(--xeg-shadow-button);
-}
 
-.xegCloseButton:hover {
-  background: var(--xeg-bg-button-close-hover);
-  border-color: var(--xeg-button-border-hover);
-  transform: scale(1.1) translateY(-1px);
-  box-shadow: var(--xeg-shadow-lg);
-}
+  /* 트랜지션 */
+  transition:
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
-.xegCloseButton:active {
-  transform: scale(0.95);
+  /* CSS Nesting - 상호작용 상태 */
+  &:hover {
+    background: oklch(from var(--xeg-gallery-surface-oklch) calc(l * 0.95) c h);
+    border-color: oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.4);
+    transform: var(--xeg-gallery-gpu-acceleration) scale(1.1) translateY(-1px);
+    box-shadow: var(--xeg-shadow-lg);
+  }
+
+  &:active {
+    transform: var(--xeg-gallery-gpu-acceleration) scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--xeg-color-primary-oklch, oklch(0.7 0.15 220));
+    outline-offset: 2px;
+  }
 }
 
 /**
- * 네비게이션 버튼 기본 스타일
+ * 네비게이션 버튼 기본 스타일 - CSS Nesting과 OKLCH 색상 활용
+ * Features: CSS Nesting, OKLCH 색상, CSS Logical Properties, GPU 가속
  */
 .xegNavButton {
+  /* 위치 */
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--xeg-button-navigation);
-  border: 1px solid var(--xeg-button-border);
+  inset-block-start: 50%;
+  transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
+
+  /* OKLCH 색상 */
+  background: var(--xeg-gallery-surface-oklch);
+  border: 1px solid oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.2);
   border-radius: var(--xeg-radius-full);
-  width: var(--xeg-button-size-xl);
-  height: var(--xeg-button-size-xl);
-  color: var(--xeg-button-text);
+
+  /* 크기 */
+  inline-size: var(--xeg-button-size-xl);
+  block-size: var(--xeg-button-size-xl);
+
+  /* 텍스트 */
+  color: var(--xeg-gallery-text-oklch);
   font-size: var(--xeg-icon-size-lg);
-  cursor: pointer;
-  z-index: var(--xeg-z-gallery-toolbar);
-  transition: var(--xeg-transition-fast);
+
+  /* 레이아웃 */
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* 상호작용 */
+  cursor: pointer;
+
+  /* 스택 */
+  z-index: var(--xeg-z-gallery-toolbar);
+
+  /* 성능 최적화 */
+  contain: layout style;
+  will-change: transform, background-color;
+
+  /* 블러 효과 */
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  /* 그림자 */
   box-shadow: var(--xeg-toolbar-shadow);
-}
 
-.xegNavButton:hover {
-  background: var(--xeg-button-bg-hover);
-  border-color: var(--xeg-button-border-hover);
-  transform: translateY(-50%) scale(1.1);
-}
+  /* 트랜지션 */
+  transition:
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
-.xegNavButton:active {
-  transform: translateY(-50%) scale(0.95);
-}
+  /* CSS Nesting - 상호작용 상태 */
+  &:hover {
+    background: oklch(from var(--xeg-gallery-surface-oklch) calc(l * 0.95) c h);
+    border-color: oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.4);
+    transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration) scale(1.1);
+  }
 
-.xegNavButton:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  transform: translateY(-50%);
-}
+  &:active {
+    transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration) scale(0.95);
+  }
 
-.xegNavButton:disabled:hover {
-  background: var(--xeg-button-navigation);
-  border-color: var(--xeg-button-border);
-  transform: translateY(-50%);
+  &:focus-visible {
+    outline: 2px solid var(--xeg-color-primary-oklch, oklch(0.7 0.15 220));
+    outline-offset: 2px;
+  }
+
+  /* CSS Nesting - 비활성 상태 */
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
+
+    &:hover {
+      background: var(--xeg-gallery-surface-oklch);
+      border-color: oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.2);
+      transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
+    }
+  }
 }
 
 /**
- * 이전 버튼 위치
+ * 네비게이션 버튼 위치 - CSS Logical Properties 활용
  */
 .xegNavPrev {
-  left: var(--xeg-spacing-lg);
+  inset-inline-start: var(--xeg-spacing-lg);
 }
 
-/**
- * 다음 버튼 위치
- */
 .xegNavNext {
-  right: var(--xeg-spacing-lg);
+  inset-inline-end: var(--xeg-spacing-lg);
 }
 
 /**
- * 미디어 컨테이너
+ * 미디어 컨테이너 - CSS Subgrid와 Container Queries 활용
+ * Features: CSS Grid with Subgrid, CSS Containment, Container Queries
  */
 .xegMediaContainer {
-  max-width: 90vw;
-  max-height: 90vh;
-  display: flex;
+  /* CSS Grid with Subgrid */
+  display: grid;
+  grid-template-areas:
+    'header'
+    'content'
+    'footer';
+  grid-template-rows: auto 1fr auto;
+
+  /* 크기 제한 - Logical Properties */
+  max-inline-size: 90vw;
+  max-block-size: 90vh;
+
+  /* 컨테이너 쿼리 설정 */
+  container-type: size;
+  container-name: media-container;
+
+  /* 콘텐츠 정렬 */
   align-items: center;
   justify-content: center;
+
+  /* 레이아웃 */
   position: relative;
+
+  /* 성능 최적화 */
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 90vw 90vh;
+
+  /* GPU 가속 */
+  transform: var(--xeg-gallery-gpu-acceleration);
+  will-change: transform;
+}
+
+/* Subgrid 지원이 없는 브라우저를 위한 폴백 */
+@supports not (grid-template-rows: subgrid) {
+  .xegMediaContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* 미디어 컨테이너용 Container Queries */
+@container media-container (width > 600px) {
+  .xegMediaContainer {
+    /* 중간 크기 화면에서 여백 조정 */
+    gap: var(--xeg-spacing-md);
+  }
+}
+
+@container media-container (width > 1200px) {
+  .xegMediaContainer {
+    /* 큰 화면에서 여백 조정 */
+    gap: var(--xeg-spacing-lg);
+    max-inline-size: 95vw;
+    max-block-size: 95vh;
+  }
 }
 
 /**

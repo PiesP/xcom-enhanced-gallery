@@ -1,52 +1,81 @@
 /**
  * VerticalGalleryView Component Styles
- * @version 4.0.0 - Phase 4 최종 최적화 완료
+ * @version 5.0.0 - Phase 2: 최신 CSS 기능 완전 통합
  *
  * @description
- * Phase 4에서 완성된 수직 갤러리 뷰 컴포넌트의 최적화된 스타일.
- * 성능, 접근성, 일관성을 모두 고려한 최종 구현체입니다.
+ * Phase 2에서 현대적 CSS 기능을 완전히 통합한 수직 갤러리 뷰 컴포넌트.
+ * CSS Cascade Layers, OKLCH 색상, Container Queries, CSS Subgrid, CSS Containment 활용.
  *
  * @features
- * - 표준화된 CSS 변수 시스템
- * - 고성능 하드웨어 가속 최적화
- * - 완전한 접근성 지원 (고대비, 모션 감소, 강제 색상)
- * - 모바일 최적화된 터치 인터페이스
- * - 컨테이너 쿼리 기반 반응형 디자인
+ * - CSS Cascade Layers로 스타일 우선순위 명확화
+ * - OKLCH 색상 공간으로 일관된 색상 시스템
+ * - Container Queries로 진정한 컴포넌트 기반 반응형 디자인
+ * - CSS Subgrid로 고급 레이아웃 구현
+ * - CSS Containment로 렌더링 성능 최적화
+ * - CSS Logical Properties로 국제화 지원
+ * - 고급 CSS 선택자 (:has, :where, :is) 활용
+ * - CSS Nesting으로 가독성 향상
  */
 
-/* 컨테이너 쿼리 지원 감지 */
-@supports (container-type: size) {
+/* CSS Cascade Layer 정의 */
+@layer base, components, utilities;
+
+/* 컨테이너 설정 - 수직 갤러리 전용 컨테이너 */
+.xegVerticalGalleryContainer {
+  container-type: size;
+  container-name: vertical-gallery;
+
+  /* CSS Containment로 성능 최적화 */
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 100vw 100vh;
+}
+
+@layer base {
+  /* OKLCH 색상 변수 정의 */
   :root {
+    /* 수직 갤러리 전용 OKLCH 색상 */
+    --xeg-vertical-bg-oklch: oklch(0.15 0.02 220 / 0.95);
+    --xeg-vertical-surface-oklch: oklch(0.25 0.03 220 / 0.9);
+    --xeg-vertical-text-oklch: oklch(0.95 0.01 220);
+    --xeg-vertical-border-oklch: oklch(0.35 0.05 220 / 0.3);
+
+    /* 성능 최적화 변수 */
+    --xeg-vertical-gpu-acceleration: translateZ(0);
+
+    /* Container Query 지원 감지 */
     --supports-container-queries: 1;
   }
 }
 
-/* 공통 CSS 변수 정의 - 새로운 디자인 토큰 시스템 적용 */
-:root {
-  --xeg-gallery-z-index: var(--xeg-z-gallery, 10000);
-  --xeg-toolbar-z-index: var(--xeg-z-modal, 10001);
+@layer components {
+  /* 공통 CSS 변수 정의 - OKLCH 색상 시스템 적용 */
+  :root {
+    --xeg-gallery-z-index: var(--xeg-z-gallery, 10000);
+    --xeg-toolbar-z-index: var(--xeg-z-modal, 10001);
 
-  /* 트랜지션 - 더 빠르고 부드러운 애니메이션 */
-  --xeg-transition-fast:
-    transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
-    opacity var(--xeg-duration-fast) var(--xeg-easing-easeOut);
-  --xeg-transition-normal:
-    transform 250ms var(--xeg-easing-easeInOut), opacity 250ms var(--xeg-easing-easeInOut);
-  --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-easeOut);
-  --xeg-transition-toolbar:
-    opacity 200ms var(--xeg-easing-easeOut), transform 200ms var(--xeg-easing-easeOut);
+    /* 트랜지션 - 최신 easing 함수 사용 */
+    --xeg-transition-fast:
+      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    --xeg-transition-normal:
+      transform 250ms var(--xeg-easing-ease-in-out), opacity 250ms var(--xeg-easing-ease-in-out);
+    --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-ease-out);
+    --xeg-transition-toolbar:
+      opacity 200ms var(--xeg-easing-ease-out), transform 200ms var(--xeg-easing-ease-out);
 
-  /* 스페이싱 - 새로운 간격 토큰 사용 */
-  --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
-  --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
-  --xeg-spacing-compact: clamp(4px, 1.5vw, var(--xeg-spacing-sm));
+    /* 스페이싱 - CSS Logical Properties 활용 */
+    --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
+    --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
+    --xeg-spacing-compact: clamp(4px, 1.5vw, var(--xeg-spacing-sm));
 
-  /* 레이아웃 */
-  --xeg-toolbar-height: clamp(60px, 10vh, 80px);
+    /* 레이아웃 */
+    --xeg-toolbar-height: clamp(60px, 10vh, 80px);
 
-  /* 블러 효과와 그림자 */
-  --xeg-backdrop-blur: 8px;
-  --xeg-shadow-soft: var(--xeg-shadow-lg);
+    /* 블러 효과와 그림자 */
+    --xeg-backdrop-blur: 8px;
+    --xeg-shadow-soft: var(--xeg-shadow-lg);
+  }
 }
 
 /* 메인 컨테이너 - 단순화된 갤러리 컨테이너 */
