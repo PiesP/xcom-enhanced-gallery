@@ -172,6 +172,14 @@ beforeEach(async () => {
     globalThis.URL = URLPolyfill;
   }
 
+  // Vendor 초기화 - 모든 테스트에서 사용할 수 있도록
+  try {
+    const { initializeVendors } = await import('../src/shared/external/vendors/vendor-api.js');
+    await initializeVendors();
+  } catch (error) {
+    // vendor 초기화 실패는 무시하고 계속 진행
+  }
+
   // 기본 테스트 환경 설정 (minimal)
   await setupTestEnvironment();
 });

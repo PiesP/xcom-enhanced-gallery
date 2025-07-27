@@ -121,11 +121,35 @@ export class GalleryApp {
           try {
             const mediaService = await this.getMediaService();
             const result = await mediaService.extractFromClickedElement(element);
+
             if (result.success && result.mediaItems.length > 0) {
               await this.openGallery(result.mediaItems, result.clickedIndex);
+            } else {
+              // 미디어 추출 실패 시 사용자에게 알림
+              logger.warn('미디어 추출 실패:', {
+                success: result.success,
+                mediaCount: result.mediaItems.length,
+                errors: result.errors,
+              });
+
+              // UI 서비스를 통해 알림 표시
+              if (this.uiService) {
+                this.uiService.showError({
+                  title: '미디어 로드 실패',
+                  message: '이미지나 비디오를 찾을 수 없습니다.',
+                });
+              }
             }
           } catch (error) {
-            logger.error('미디어 추출 실패:', error);
+            logger.error('미디어 추출 중 오류:', error);
+
+            // UI 서비스를 통해 에러 알림 표시
+            if (this.uiService) {
+              this.uiService.showError({
+                title: '오류 발생',
+                message: `미디어 추출 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+              });
+            }
           }
         },
         onGalleryClose: () => {

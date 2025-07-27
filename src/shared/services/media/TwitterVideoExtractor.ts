@@ -147,20 +147,59 @@ export function isVideoElement(element: HTMLElement): boolean {
 }
 
 /**
- * 쿠키에서 값 가져오기
+ * 쿠키에서 값 가져오기 (환경 안전성 보장)
  */
 function getCookie(name: string): string | undefined {
-  const regExp = new RegExp(`(?<=${name}=)[^;]+`);
-  return document.cookie.match(regExp)?.[0];
+  // 환경 격리: 테스트 환경에서 안전하게 처리
+  if (typeof document === 'undefined' || !document.cookie) {
+    return undefined;
+  }
+
+  try {
+    const regExp = new RegExp(`(?<=${name}=)[^;]+`);
+    return document.cookie.match(regExp)?.[0];
+  } catch {
+    // 테스트 환경이나 제한된 환경에서 안전하게 처리
+    return undefined;
+  }
 }
 
 /**
  * Twitter API 클래스 (외부 사용을 위해 export)
  */
 export class TwitterAPI {
-  private static readonly guestToken = getCookie('gt');
-  private static readonly csrfToken = getCookie('ct0');
+  // lazy initialization으로 변경하여 모듈 로드 시점 문제 해결
+  private static _guestToken: string | undefined = undefined;
+  private static _csrfToken: string | undefined = undefined;
+  private static _tokensInitialized = false;
   private static readonly requestCache = new Map<string, TwitterAPIResponse>();
+
+  /**
+   * 토큰 lazy 초기화
+   */
+  private static initializeTokens(): void {
+    if (!this._tokensInitialized) {
+      this._guestToken = getCookie('gt');
+      this._csrfToken = getCookie('ct0');
+      this._tokensInitialized = true;
+    }
+  }
+
+  /**
+   * Guest Token 가져오기
+   */
+  private static get guestToken(): string | undefined {
+    this.initializeTokens();
+    return this._guestToken;
+  }
+
+  /**
+   * CSRF Token 가져오기
+   */
+  private static get csrfToken(): string | undefined {
+    this.initializeTokens();
+    return this._csrfToken;
+  }
 
   /**
    * 캐시 정리 (16개 이상일 때)

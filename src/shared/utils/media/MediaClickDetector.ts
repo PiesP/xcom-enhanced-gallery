@@ -70,6 +70,10 @@ export class MediaClickDetector {
       '[data-testid="tweetPhoto"]',
       '[data-testid="tweet"] img',
       'article img[src*="twimg.com"]',
+      // 트위터 미디어 컨테이너
+      '[data-testid="tweetText"] img',
+      '.tweet-media img',
+      '.media-entity img',
     ];
     for (const selector of imageSelectors) {
       if (target.closest(selector)) {
@@ -86,6 +90,9 @@ export class MediaClickDetector {
       '[data-testid="videoComponent"]',
       '[data-testid="tweet"] video',
       'article video',
+      // 추가 비디오 선택자
+      '.video-container',
+      '.media-video',
     ];
     for (const selector of videoSelectors) {
       if (target.closest(selector)) {
@@ -117,7 +124,7 @@ export class MediaClickDetector {
       }
     }
 
-    // 5. 트윗 내부의 미디어 영역 확인 (넓은 범위)
+    // 5. 트윗 내부의 미디어 영역 확인 (가장 넓은 범위)
     const tweetContainer = target.closest('article[data-testid="tweet"], [data-testid="tweet"]');
     if (tweetContainer) {
       // 트윗 내부에서 이미지나 비디오가 포함된 영역 클릭 확인
@@ -125,8 +132,21 @@ export class MediaClickDetector {
         'img[src*="twimg.com"], video, [data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
       );
       if (hasMediaInTweet) {
-        logger.info('✅ MediaClickDetector: 미디어가 있는 트윗 영역 클릭');
-        return true;
+        // 클릭된 위치가 미디어 영역 근처인지 확인
+        const mediaRect = hasMediaInTweet.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+
+        // 미디어 영역과 클릭 영역이 겹치는지 확인
+        const isNearMedia =
+          targetRect.left < mediaRect.right &&
+          targetRect.right > mediaRect.left &&
+          targetRect.top < mediaRect.bottom &&
+          targetRect.bottom > mediaRect.top;
+
+        if (isNearMedia) {
+          logger.info('✅ MediaClickDetector: 미디어가 있는 트윗 영역 클릭');
+          return true;
+        }
       }
     }
 

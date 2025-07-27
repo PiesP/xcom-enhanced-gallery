@@ -33,6 +33,9 @@ export async function registerCoreServices(): Promise<void> {
   const uiService = UIService.getInstance();
   serviceManager.register(SERVICE_KEYS.UI_SERVICE, uiService);
 
+  // 하위 호환성을 위한 추가 키 등록
+  serviceManager.register('ui.service', uiService); // 테스트에서 사용하는 키
+
   // 기존 키들과의 호환성을 위해 중복 등록
   serviceManager.register(SERVICE_KEYS.AUTO_THEME, uiService);
   serviceManager.register(SERVICE_KEYS.TOAST_CONTROLLER, uiService);

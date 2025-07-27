@@ -363,6 +363,7 @@ describe('전체 워크플로우 통합 테스트', () => {
         let progress = 0;
         const interval = globalThis.setInterval(() => {
           progress += 0.1;
+          if (progress > 1) progress = 1; // 100%를 초과하지 않도록 제한
           progressCallback(progress);
 
           if (progress >= 1) {

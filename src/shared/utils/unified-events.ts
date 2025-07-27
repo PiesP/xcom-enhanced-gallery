@@ -43,7 +43,7 @@ function generateListenerId(context?: string): string {
 }
 
 /**
- * 이벤트 리스너 추가
+ * 이벤트 리스너 추가 (안전성 검사 포함)
  */
 export function addEventListenerManaged(
   element: EventTarget,
@@ -55,6 +55,17 @@ export function addEventListenerManaged(
   const id = generateListenerId(context);
 
   try {
+    // 안전성 검사: element가 유효한지 확인
+    if (!element || typeof element.addEventListener !== 'function') {
+      logger.warn(`Invalid element passed to addEventListenerManaged: ${element}`, {
+        type,
+        context,
+        elementType: typeof element,
+        hasAddEventListener: element && typeof element.addEventListener,
+      });
+      return id; // 빈 ID 반환하여 오류 방지
+    }
+
     element.addEventListener(type, listener, options);
 
     listeners.set(id, {
@@ -70,8 +81,8 @@ export function addEventListenerManaged(
     logger.debug(`Event listener added: ${type} (${id})`, { context });
     return id;
   } catch (error) {
-    logger.error(`Failed to add event listener: ${type}`, error);
-    throw error;
+    logger.error(`Failed to add event listener: ${type}`, { error, context });
+    return id; // 빈 ID 반환하여 오류 방지
   }
 }
 
@@ -349,6 +360,17 @@ export async function initializeGalleryEvents(
     galleryEventState.options = finalOptions;
     galleryEventState.handlers = handlers;
 
+    // Document 객체 안전성 검사
+    const documentElement =
+      (typeof document !== 'undefined' && document) ||
+      (typeof globalThis !== 'undefined' && globalThis.document) ||
+      null;
+
+    if (!documentElement) {
+      logger.warn('Document is not available, skipping event registration');
+      return;
+    }
+
     // 클릭 이벤트 처리
     const clickHandler: EventListener = async (evt: Event) => {
       const event = evt as MouseEvent;
@@ -367,7 +389,7 @@ export async function initializeGalleryEvents(
 
     // 이벤트 리스너 등록 (캡처 단계에서 처리하여 트위터보다 먼저 실행)
     const clickId = addEventListenerManaged(
-      document,
+      documentElement,
       'click',
       clickHandler,
       { passive: false, capture: true },
@@ -375,7 +397,7 @@ export async function initializeGalleryEvents(
     );
 
     const keyId = addEventListenerManaged(
-      document,
+      documentElement,
       'keydown',
       keyHandler,
       { passive: false, capture: true },
@@ -421,8 +443,19 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
         return;
       }
 
+      // Document 안전성 검사
+      const documentElement =
+        (typeof document !== 'undefined' && document) ||
+        (typeof globalThis !== 'undefined' && globalThis.document) ||
+        null;
+
+      if (!documentElement) {
+        logger.debug('Document not available, skipping priority enforcement');
+        return;
+      }
+
       // 페이지가 비활성 상태일 때는 스케줄링 중단 (CPU 절약)
-      if (document.hidden) {
+      if (documentElement.hidden) {
         logger.debug('Page is hidden, skipping priority enforcement');
         return;
       }
@@ -446,7 +479,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
       };
 
       const clickId = addEventListenerManaged(
-        document,
+        documentElement,
         'click',
         clickHandler,
         { passive: false, capture: true },
@@ -454,7 +487,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
       );
 
       const keyId = addEventListenerManaged(
-        document,
+        documentElement,
         'keydown',
         keyHandler,
         { passive: false, capture: true },

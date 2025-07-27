@@ -394,6 +394,7 @@ strict digraph "dependency-cruiser output"{
     "src/utils/index.ts" -> "src/shared/logging/index.ts" [arrowhead="inv"]
     "src/utils/index.ts" -> "src/shared/memory/index.ts" [arrowhead="inv"]
     "src/utils/index.ts" -> "src/shared/services/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/services/ServiceManager.ts" [arrowhead="inv"]
     "src/utils/index.ts" -> "src/shared/state/index.ts" [arrowhead="inv"]
     "src/utils/index.ts" -> "src/shared/utils/index.ts" [arrowhead="inv"]
     "src/utils/index.ts" -> "src/shared/utils/convenience.ts" [arrowhead="inv"]

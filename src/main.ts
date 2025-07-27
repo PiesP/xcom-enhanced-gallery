@@ -9,9 +9,8 @@
 import { measurePerformance } from '@/utils';
 import { logger } from '@shared/logging/logger'; // 직접 import로 변경
 import type { AppConfig } from '@/types';
-import { ServiceManager } from '@/utils';
+import { ServiceManager } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from './constants';
-import { GalleryApp } from '@/components';
 
 // 전역 스타일
 import './styles/globals';
@@ -20,7 +19,7 @@ import './styles/globals';
 
 // 애플리케이션 상태 관리
 let isStarted = false;
-let galleryApp: GalleryApp | null = null;
+let galleryApp: unknown = null; // Features GalleryApp 인스턴스
 let serviceManager: ServiceManager | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
 
@@ -188,7 +187,7 @@ async function cleanup(): Promise<void> {
     logger.info('🧹 애플리케이션 정리 시작');
 
     if (galleryApp) {
-      await galleryApp.cleanup();
+      await (galleryApp as { cleanup(): Promise<void> }).cleanup();
       galleryApp = null;
       delete (globalThis as Record<string, unknown>).__XEG_GALLERY_APP__;
     }
@@ -264,6 +263,36 @@ async function registerFeatureServices(): Promise<void> {
 }
 
 /**
+ * 갤러리 앱 생성 및 초기화
+ */
+async function initializeGalleryApp(): Promise<void> {
+  try {
+    logger.info('🎨 갤러리 앱 초기화 시작');
+
+    // 갤러리 앱 인스턴스 생성
+    const { GalleryApp } = await import('@features/gallery/GalleryApp');
+    galleryApp = new GalleryApp({
+      autoTheme: true,
+      keyboardShortcuts: true,
+      performanceMonitoring: import.meta.env.DEV,
+      extractionTimeout: 15000,
+      clickDebounceMs: 500,
+    });
+
+    // 갤러리 앱 초기화
+    await (galleryApp as { initialize(): Promise<void> }).initialize();
+
+    // 전역 접근을 위한 등록
+    (globalThis as Record<string, unknown>).__XEG_GALLERY_APP__ = galleryApp;
+
+    logger.info('✅ 갤러리 앱 초기화 완료');
+  } catch (error) {
+    logger.error('❌ 갤러리 앱 초기화 실패:', error);
+    throw error;
+  }
+}
+
+/**
  * 애플리케이션 메인 진입점
  */
 async function startApplication(): Promise<void> {
@@ -285,7 +314,10 @@ async function startApplication(): Promise<void> {
       // 2단계: 핵심 시스템 초기화
       await initializeCriticalSystems();
 
-      // 3단계: 비필수 시스템 초기화
+      // 3단계: 갤러리 앱 생성 및 초기화
+      await initializeGalleryApp();
+
+      // 4단계: 비필수 시스템 초기화
       initializeNonCriticalSystems();
 
       // 부가 기능 초기화

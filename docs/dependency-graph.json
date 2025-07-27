@@ -3727,7 +3727,8 @@
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/core-services.ts",
-        "src/shared/services/service-initialization.ts"
+        "src/shared/services/service-initialization.ts",
+        "src/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5589,6 +5590,23 @@
         },
         {
           "dynamic": false,
+          "module": "../shared/services/ServiceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/ServiceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../shared/state",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5651,7 +5669,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 156,
-    "totalDependenciesCruised": 238,
+    "totalDependenciesCruised": 239,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

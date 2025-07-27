@@ -7,6 +7,7 @@
 import { logger } from '@shared/logging/logger';
 import type { MediaExtractor, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaExtractionResult } from '@shared/types/media.types';
+import { ExtractionError, ExtractionErrorCode } from '@shared/types/media.types';
 import { TweetInfoExtractor } from './extractors/TweetInfoExtractor';
 import { TwitterAPIExtractor } from './extractors/TwitterAPIExtractor';
 import { DOMDirectExtractor } from './extractors/DOMDirectExtractor';
@@ -45,6 +46,45 @@ export class MediaExtractionService implements MediaExtractor {
       if (!tweetInfo?.tweetId) {
         logger.debug(`[MediaExtractor] ${extractionId}: 트윗 정보 없음 - DOM 직접 추출로 진행`);
         const domResult = await this.domExtractor.extract(element, options, extractionId);
+
+        // DOM 직접 추출 실패 시 자세한 디버그 정보 포함
+        if (!domResult.success || domResult.mediaItems.length === 0) {
+          logger.warn(`[MediaExtractor] ${extractionId}: DOM 직접 추출 실패`, {
+            success: domResult.success,
+            mediaCount: domResult.mediaItems.length,
+            element: element.tagName,
+            elementClass: element.className,
+            parentElement: element.parentElement?.tagName,
+          });
+
+          return {
+            success: false,
+            mediaItems: [],
+            clickedIndex: 0,
+            metadata: {
+              extractedAt: Date.now(),
+              sourceType: 'dom-direct-failed',
+              strategy: 'media-extraction',
+              error: '트윗 정보 없음 및 DOM 직접 추출 실패',
+              debug: {
+                element: element.tagName,
+                elementClass: element.className,
+                parentElement: element.parentElement?.tagName,
+                domResult: {
+                  success: domResult.success,
+                  mediaCount: domResult.mediaItems.length,
+                },
+              },
+            },
+            tweetInfo: domResult.tweetInfo,
+            errors: [
+              new ExtractionError(
+                ExtractionErrorCode.NO_MEDIA_FOUND,
+                '트윗에서 미디어를 찾을 수 없습니다.'
+              ),
+            ],
+          };
+        }
 
         // core 인터페이스 형식으로 변환
         return {
@@ -86,6 +126,45 @@ export class MediaExtractionService implements MediaExtractor {
       // 3단계: DOM 백업 추출
       logger.warn(`[MediaExtractor] ${extractionId}: API 추출 실패 - DOM 백업 전략 실행`);
       const domResult = await this.domExtractor.extract(element, options, extractionId, tweetInfo);
+
+      // DOM 추출도 실패한 경우 자세한 오류 정보 포함
+      if (!domResult.success || domResult.mediaItems.length === 0) {
+        logger.error(`[MediaExtractor] ${extractionId}: DOM 백업 추출도 실패`, {
+          domSuccess: domResult.success,
+          mediaCount: domResult.mediaItems.length,
+          element: element.tagName,
+          elementClass: element.className,
+          tweetId: tweetInfo.tweetId,
+        });
+
+        return {
+          success: false,
+          mediaItems: [],
+          clickedIndex: 0,
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'extraction-failed',
+            strategy: 'media-extraction',
+            error: `미디어 추출 실패: API 및 DOM 추출 모두 실패`,
+            debug: {
+              element: element.tagName,
+              elementClass: element.className,
+              tweetId: tweetInfo.tweetId,
+              domResult: {
+                success: domResult.success,
+                mediaCount: domResult.mediaItems.length,
+              },
+            },
+          },
+          tweetInfo: domResult.tweetInfo,
+          errors: [
+            new ExtractionError(
+              ExtractionErrorCode.NO_MEDIA_FOUND,
+              'API 및 DOM 추출 모두 실패하였습니다.'
+            ),
+          ],
+        };
+      }
 
       // core 인터페이스 형식으로 변환
       return {
@@ -159,6 +238,15 @@ export class MediaExtractionService implements MediaExtractor {
    * 오류 결과 생성
    */
   private createErrorResult(error: unknown): MediaExtractionResult {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    logger.error('MediaExtractionService: 추출 중 오류 발생', {
+      message: errorMessage,
+      stack: errorStack,
+      timestamp: new Date().toISOString(),
+    });
+
     return {
       success: false,
       mediaItems: [],
@@ -167,9 +255,20 @@ export class MediaExtractionService implements MediaExtractor {
         extractedAt: Date.now(),
         sourceType: 'error',
         strategy: 'media-extraction',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
+        debug: {
+          originalError: error,
+          stack: errorStack,
+        },
       },
       tweetInfo: null,
+      errors: [
+        new ExtractionError(
+          ExtractionErrorCode.UNKNOWN_ERROR,
+          `미디어 추출 중 오류가 발생했습니다: ${errorMessage}`,
+          error instanceof Error ? error : undefined
+        ),
+      ],
     };
   }
 }

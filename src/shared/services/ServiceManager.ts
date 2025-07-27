@@ -153,7 +153,8 @@ export const serviceManager = ServiceManager.getInstance();
 
 /**
  * 타입 안전한 서비스 접근을 위한 헬퍼 함수
+ * 항상 최신 인스턴스에서 서비스를 가져옵니다 (테스트 환경 대응)
  */
 export function getService<T>(key: string): T {
-  return serviceManager.get<T>(key);
+  return ServiceManager.getInstance().get<T>(key);
 }
