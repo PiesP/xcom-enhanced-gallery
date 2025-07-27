@@ -260,7 +260,24 @@ async function detectMediaFromClick(event: MouseEvent): Promise<MediaInfo | null
 
 function extractFilenameFromUrl(url: string): string | null {
   try {
-    const urlObj = new URL(url);
+    // URL 생성자를 안전하게 시도
+    let URLConstructor: typeof URL | undefined;
+    
+    if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
+      URLConstructor = globalThis.URL;
+    } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+      URLConstructor = window.URL;
+    }
+    
+    if (!URLConstructor) {
+      // Fallback: 간단한 파싱
+      const lastSlashIndex = url.lastIndexOf('/');
+      if (lastSlashIndex === -1) return null;
+      const filename = url.substring(lastSlashIndex + 1);
+      return filename.length > 0 ? filename : null;
+    }
+
+    const urlObj = new URLConstructor(url);
     const pathname = urlObj.pathname;
     const filename = pathname.split('/').pop();
     return filename && filename.length > 0 ? filename : null;

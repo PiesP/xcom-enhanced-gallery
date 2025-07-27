@@ -224,15 +224,19 @@ export function isValidMediaUrl(url: string): boolean {
 
   try {
     // 테스트 환경에서 URL 생성자 확인
-    let URLConstructor: typeof URL;
+    let URLConstructor: typeof URL | undefined;
 
-    if (typeof globalThis.URL === 'function') {
+    if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
       URLConstructor = globalThis.URL;
     } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
       URLConstructor = window.URL;
     } else {
       // 테스트 환경에서만 필요한 경우, fallback 사용
       // 브라우저 환경에서는 globalThis.URL 또는 window.URL이 항상 사용 가능
+      return isValidMediaUrlFallback(url);
+    }
+
+    if (!URLConstructor) {
       return isValidMediaUrlFallback(url);
     }
 
@@ -316,7 +320,14 @@ export function getHighQualityMediaUrl(
 
   try {
     // URL 생성자를 안전하게 시도
-    const URLConstructor = globalThis.URL || globalThis.window?.URL;
+    let URLConstructor: typeof URL | undefined;
+    
+    if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
+      URLConstructor = globalThis.URL;
+    } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+      URLConstructor = window.URL;
+    }
+    
     if (!URLConstructor) {
       return getHighQualityMediaUrlFallback(url, quality);
     }

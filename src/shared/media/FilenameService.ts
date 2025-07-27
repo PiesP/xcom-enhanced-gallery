@@ -210,7 +210,30 @@ export class FilenameService {
 
   private extractExtensionFromUrl(url: string): string {
     try {
-      const urlObj = new URL(url);
+      // URL 생성자를 안전하게 시도
+      let URLConstructor: typeof URL | undefined;
+      
+      if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
+        URLConstructor = globalThis.URL;
+      } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+        URLConstructor = window.URL;
+      }
+      
+      if (!URLConstructor) {
+        // Fallback: 간단한 파싱
+        const lastSlashIndex = url.lastIndexOf('/');
+        const pathname = lastSlashIndex >= 0 ? url.substring(lastSlashIndex) : url;
+        const lastDot = pathname.lastIndexOf('.');
+        if (lastDot > 0) {
+          const extension = pathname.substring(lastDot + 1);
+          if (/^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(extension)) {
+            return extension.toLowerCase();
+          }
+        }
+        return 'jpg';
+      }
+
+      const urlObj = new URLConstructor(url);
       const pathname = urlObj.pathname;
       const lastDot = pathname.lastIndexOf('.');
       if (lastDot > 0) {

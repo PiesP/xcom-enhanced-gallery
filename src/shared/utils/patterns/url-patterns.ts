@@ -396,7 +396,20 @@ export const URLPatterns = {
       }
 
       // URL 객체 생성으로 유효성 검사
-      const urlObj = new URL(url);
+      let URLConstructor: typeof URL | undefined;
+      
+      if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
+        URLConstructor = globalThis.URL;
+      } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+        URLConstructor = window.URL;
+      }
+      
+      if (!URLConstructor) {
+        // Fallback: 기본적인 검증만 수행
+        return url.includes('://') && url.length > 10;
+      }
+
+      const urlObj = new URLConstructor(url);
 
       // 추가 검증: hostname이 존재해야 함
       if (!urlObj.hostname || urlObj.hostname.length === 0) {
@@ -432,7 +445,20 @@ export const URLPatterns = {
         return relativeUrl;
       }
 
-      const resolved = new URL(relativeUrl, baseUrl);
+      let URLConstructor: typeof URL | undefined;
+      
+      if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
+        URLConstructor = globalThis.URL;
+      } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+        URLConstructor = window.URL;
+      }
+      
+      if (!URLConstructor) {
+        // Fallback: 간단한 결합
+        return baseUrl.endsWith('/') ? `${baseUrl}${relativeUrl}` : `${baseUrl}/${relativeUrl}`;
+      }
+
+      const resolved = new URLConstructor(relativeUrl, baseUrl);
 
       // 경로 정규화: ../ 등을 명시적으로 처리
       const urlParts = resolved.pathname.split('/');
@@ -448,7 +474,7 @@ export const URLPatterns = {
 
       // 정규화된 경로로 URL 재구성
       const normalizedPath = `/${normalizedParts.join('/')}`;
-      const normalizedUrl = new URL(
+      const normalizedUrl = new URLConstructor(
         resolved.origin + normalizedPath + resolved.search + resolved.hash
       );
 

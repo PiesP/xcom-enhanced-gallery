@@ -8,18 +8,17 @@ describe('Logger Import Issue Debug', () => {
     // 직접 logger import 테스트
     try {
       const { logger } = await import('../../../src/utils/index');
-      
+
       expect(logger).toBeDefined();
       expect(typeof logger.error).toBe('function');
       expect(typeof logger.info).toBe('function');
       expect(typeof logger.debug).toBe('function');
       expect(typeof logger.warn).toBe('function');
-      
+
       // 실제 logger 메서드 호출 테스트
       expect(() => {
         logger.info('Logger import test successful');
       }).not.toThrow();
-      
     } catch (error) {
       throw new Error(`Logger import failed: ${error}`);
     }
@@ -28,15 +27,14 @@ describe('Logger Import Issue Debug', () => {
   it('should import logger directly from shared/logging', async () => {
     try {
       const { logger } = await import('../../../src/shared/logging/logger');
-      
+
       expect(logger).toBeDefined();
       expect(typeof logger.error).toBe('function');
-      
+
       // 실제 logger 메서드 호출 테스트
       expect(() => {
         logger.debug('Direct logger import test successful');
       }).not.toThrow();
-      
     } catch (error) {
       throw new Error(`Direct logger import failed: ${error}`);
     }

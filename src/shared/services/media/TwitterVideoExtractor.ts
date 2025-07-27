@@ -273,7 +273,25 @@ export class TwitterAPI {
     };
 
     const urlBase = `https://${sitename}.com/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`;
-    const urlObj = new URL(urlBase);
+    
+    // URL 생성자를 안전하게 시도
+    let URLConstructor: typeof URL | undefined;
+    
+    if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
+      URLConstructor = globalThis.URL;
+    } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+      URLConstructor = window.URL;
+    }
+    
+    if (!URLConstructor) {
+      // Fallback: 간단한 문자열 조합
+      const encodedVariables = encodeURIComponent(JSON.stringify(variables));
+      const encodedFeatures = encodeURIComponent(JSON.stringify(features));
+      const encodedFieldToggles = encodeURIComponent(JSON.stringify(fieldToggles));
+      return `${urlBase}?variables=${encodedVariables}&features=${encodedFeatures}&fieldToggles=${encodedFieldToggles}`;
+    }
+
+    const urlObj = new URLConstructor(urlBase);
     urlObj.searchParams.set('variables', JSON.stringify(variables));
     urlObj.searchParams.set('features', JSON.stringify(features));
     urlObj.searchParams.set('fieldToggles', JSON.stringify(fieldToggles));

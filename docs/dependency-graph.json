@@ -4396,9 +4396,37 @@
     },
     {
       "source": "src/shared/utils/core-utils.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./unified-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/unified-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/unified-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/index.ts",
+        "src/shared/utils/core-utils.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4543,15 +4571,6 @@
     },
     {
       "source": "src/shared/utils/unified-dom.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/unified-utils.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/index.ts"
@@ -5632,7 +5651,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 156,
-    "totalDependenciesCruised": 237,
+    "totalDependenciesCruised": 238,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

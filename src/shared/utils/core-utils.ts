@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { Debouncer } from './unified-utils';
+import { Debouncer } from './unified-utils';
 
 // ================================
 // DOM 유틸리티
