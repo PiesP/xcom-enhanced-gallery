@@ -184,7 +184,7 @@ export const GALLERY_MODAL_DOM = `
  */
 export function setupTwitterDOM() {
   const doc = globalThis.document;
-  if (!doc || !doc.body) {
+  if (!doc || !doc.body || typeof doc.querySelector !== 'function') {
     // DOM 환경이 없으면 조용히 반환 (서버 환경 테스트 시)
     return null;
   }
@@ -194,7 +194,7 @@ export function setupTwitterDOM() {
   // 트윗 컨테이너 찾기
   const container = doc.querySelector('main .css-1dbjc4n.r-1jgb5lz');
   if (!container) {
-    console.warn('트윗 컨테이너를 찾을 수 없습니다');
+    // 트윗 컨테이너를 찾을 수 없을 때도 조용히 처리
     return null;
   }
 

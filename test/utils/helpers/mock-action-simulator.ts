@@ -125,24 +125,21 @@ export function simulateProgressUpdate(progressElement, targetPercent = 100) {
   let currentPercent = 0;
   const incrementStep = 20;
   const interval = globalThis.setInterval(() => {
-    // 다음 증가값이 목표를 초과하는지 미리 확인
-    const nextPercent = currentPercent + incrementStep;
+    currentPercent += incrementStep;
 
-    if (nextPercent >= targetPercent) {
-      // 목표값에 도달했으므로 목표값으로 설정하고 종료
+    // 목표값을 초과하지 않도록 제한
+    if (currentPercent >= targetPercent) {
       currentPercent = targetPercent;
       if (progressElement) {
         progressElement.textContent = `${currentPercent}%`;
       }
       globalThis.clearInterval(interval);
     } else {
-      // 아직 목표값에 도달하지 않았으므로 증가
-      currentPercent = nextPercent;
       if (progressElement) {
         progressElement.textContent = `${currentPercent}%`;
       }
     }
-  }, 100);
+  }, 50);
 }
 
 /**

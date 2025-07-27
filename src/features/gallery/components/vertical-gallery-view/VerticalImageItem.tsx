@@ -3,12 +3,13 @@
  * Licensed under the MIT License
  *
  * @fileoverview Vertical Image Item Component
- * @version 2.0.0 - Standard implementation
- * @description 통합된 수직 이미지 아이템 컴포넌트
+ * @version 3.0.0 - Phase 4 StandardProps 시스템 적용
+ * @description 통합된 수직 이미지 아이템 컴포넌트 - StandardProps 표준화 완료
  */
 
 import { withGalleryItem, type GalleryComponentProps } from '@shared/components/hoc/GalleryMarker';
 import { Button } from '@shared/components/ui/Button/Button';
+import { ComponentStandards } from '@shared/components/ui/StandardProps';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
@@ -68,7 +69,7 @@ function isVideoMedia(media: MediaInfo): boolean {
 }
 
 /**
- * Props for the VerticalImageItem component
+ * Props for the VerticalImageItem component - StandardProps 통합
  */
 interface VerticalImageItemProps extends GalleryComponentProps {
   /** Media information for the image */
@@ -91,6 +92,24 @@ interface VerticalImageItemProps extends GalleryComponentProps {
   fitMode?: ImageFitMode;
   /** Callback when media load completes */
   onMediaLoad?: (mediaId: string, index: number) => void;
+  /** 추가 클래스명 */
+  className?: string;
+  /** 테스트 ID */
+  'data-testid'?: string;
+  /** 접근성 레이블 */
+  'aria-label'?: string;
+  /** ARIA 속성들 */
+  'aria-describedby'?: string;
+  /** 접근성 역할 */
+  role?: string;
+  /** 탭 인덱스 */
+  tabIndex?: number;
+  /** 포커스 이벤트 핸들러 */
+  onFocus?: (event: FocusEvent) => void;
+  /** 블러 이벤트 핸들러 */
+  onBlur?: (event: FocusEvent) => void;
+  /** 키보드 이벤트 핸들러 */
+  onKeyDown?: (event: KeyboardEvent) => void;
 }
 
 /**
@@ -117,7 +136,7 @@ function getFitModeClass(fitMode?: ImageFitMode): string {
 
 /**
  * A vertical image item component that displays media with lazy loading
- * and download functionality
+ * and download functionality - StandardProps 시스템 적용
  */
 function BaseVerticalImageItem({
   media,
@@ -131,6 +150,14 @@ function BaseVerticalImageItem({
   className = '',
   fitMode,
   onMediaLoad,
+  'data-testid': testId,
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  role,
+  tabIndex,
+  onFocus,
+  onBlur,
+  onKeyDown,
 }: VerticalImageItemProps): VNode | null {
   const { useCallback, useEffect, useRef, useState } = getPreactHooks();
 
@@ -264,16 +291,25 @@ function BaseVerticalImageItem({
     }
   }, [isVisible, isLoaded, isVideo, handleVideoLoaded, handleImageLoad]);
 
-  const containerClasses = [
+  const containerClasses = ComponentStandards.createClassName(
     styles.container,
-    isActive && styles.active,
-    isFocused && styles.focused,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+    isActive ? styles.active : undefined,
+    isFocused ? styles.focused : undefined,
+    className
+  );
 
-  const imageClasses = [styles.image, getFitModeClass(fitMode)].filter(Boolean).join(' ');
+  const imageClasses = ComponentStandards.createClassName(styles.image, getFitModeClass(fitMode));
+
+  // 표준화된 ARIA 속성 생성
+  const ariaProps = ComponentStandards.createAriaProps({
+    'aria-label': ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
+    'aria-describedby': ariaDescribedBy,
+    role: role || 'button',
+    tabIndex: tabIndex ?? 0,
+  } as Record<string, string | number | boolean | undefined>);
+
+  // 표준화된 테스트 속성 생성
+  const testProps = ComponentStandards.createTestProps(testId);
 
   return (
     <div
@@ -281,7 +317,11 @@ function BaseVerticalImageItem({
       className={containerClasses}
       data-index={index}
       onClick={handleClick}
-      aria-label={`미디어 ${index + 1}: ${cleanFilename(media.filename)}`}
+      onFocus={onFocus as (event: FocusEvent) => void}
+      onBlur={onBlur as (event: FocusEvent) => void}
+      onKeyDown={onKeyDown as (event: KeyboardEvent) => void}
+      {...ariaProps}
+      {...testProps}
     >
       <div className={styles.imageWrapper}>
         {isVisible && (

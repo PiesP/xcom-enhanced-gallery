@@ -1,10 +1,26 @@
+/**
+ * VerticalImageItem Component Styles
+ * @version 3.0.0 - Phase 4 최적화 및 표준화
+ * @description 성능 최적화된 수직 이미지 아이템 스타일
+ */
+
+/* CSS 변수 시스템 표준화 */
+:root {
+  --xeg-item-border-radius: var(--xeg-radius-lg, 8px);
+  --xeg-item-spacing: var(--xeg-spacing-md, 16px);
+  --xeg-item-transition: var(--xeg-transition-all, all 0.3s ease);
+  --xeg-item-hover-transform: translateY(-2px) translateZ(0);
+  --xeg-item-focus-shadow: var(--xeg-focus-shadow, 0 0 0 2px var(--xeg-color-primary));
+  --xeg-item-active-shadow: var(--xeg-active-shadow, 0 4px 16px rgba(0, 0, 0, 0.15));
+}
+
 .container {
   position: relative;
-  margin-bottom: var(--xeg-spacing-md, 16px);
-  border-radius: var(--xeg-radius-lg, 8px);
+  margin-bottom: var(--xeg-item-spacing);
+  border-radius: var(--xeg-item-border-radius);
   overflow: visible;
-  transition: var(--xeg-transition-all, all 0.3s ease);
-  cursor: pointer; /* 클릭 가능하도록 변경 */
+  transition: var(--xeg-item-transition);
+  cursor: pointer;
   border: none;
   background: none;
   padding: 0;
@@ -14,41 +30,44 @@
   flex-direction: column;
   align-items: center;
   pointer-events: auto;
+
+  /* 성능 최적화 */
   transform: translateZ(0);
   will-change: transform, box-shadow;
+  contain: layout style;
 
   /* 통합된 포커스/활성 상태 처리 - 기본 outline 제거 */
   outline: none;
 }
 
 .container:hover {
-  transform: translateY(-2px) translateZ(0);
-  box-shadow: var(--xeg-shadow-lg);
+  transform: var(--xeg-item-hover-transform);
+  box-shadow: var(--xeg-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.12));
 }
 
 /* 포커스 상태 - outline 대신 box-shadow 사용 */
 .container:focus-visible {
-  box-shadow: var(--xeg-focus-shadow);
-  border-radius: var(--xeg-radius-lg, 8px);
+  box-shadow: var(--xeg-item-focus-shadow);
+  border-radius: var(--xeg-item-border-radius);
 }
 
 /* 활성 상태 - 더 강한 강조 */
 .container.active {
-  box-shadow: var(--xeg-active-shadow);
-  border-radius: var(--xeg-radius-lg, 8px);
+  box-shadow: var(--xeg-item-active-shadow);
+  border-radius: var(--xeg-item-border-radius);
   transition: box-shadow 0.2s ease;
   transform: translateZ(0);
 }
 
 /* 활성+포커스 상태 - 중복 제거 */
 .container.active:focus-visible {
-  box-shadow: var(--xeg-active-shadow);
+  box-shadow: var(--xeg-item-active-shadow);
 }
 
 /* 포커스된 상태 (스크롤 대상) */
 .container.focused {
-  box-shadow: var(--xeg-focus-shadow);
-  border-radius: var(--xeg-radius-lg, 8px);
+  box-shadow: var(--xeg-item-focus-shadow);
+  border-radius: var(--xeg-item-border-radius);
   transition: box-shadow 0.2s ease;
 }
 
@@ -376,4 +395,99 @@
   max-width: 100vw;
   max-height: 80vh;
   object-fit: contain;
+}
+
+/* === 접근성 향상 === */
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .container {
+    border: 2px solid HighlightText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .container:focus-visible,
+  .container.active,
+  .container.focused {
+    border-color: Highlight;
+    box-shadow: 0 0 8px Highlight;
+  }
+
+  .downloadButton {
+    background: ButtonFace;
+    color: ButtonText;
+    border: 1px solid ButtonText;
+  }
+
+  .error {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+  }
+}
+
+/* 모션 감소 모드 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    transition: none;
+    will-change: auto;
+  }
+
+  .container:hover {
+    transform: none;
+  }
+
+  .image,
+  .video {
+    transition: none;
+  }
+
+  .loadingSpinner {
+    animation: none;
+  }
+
+  /* 정적 로딩 표시 */
+  .loadingSpinner::after {
+    content: '⏳';
+    font-size: 2rem;
+  }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background: var(--xeg-color-bg-secondary-dark, rgba(255, 255, 255, 0.05));
+  }
+
+  .placeholder {
+    background: var(--xeg-color-bg-tertiary-dark, rgba(255, 255, 255, 0.08));
+  }
+
+  .error {
+    background: var(--xeg-color-bg-error-dark, rgba(220, 38, 38, 0.1));
+    color: var(--xeg-color-text-error-dark, #fca5a5);
+  }
+}
+
+/* 강제 색상 모드 지원 (Windows 고대비 모드) */
+@media (forced-colors: active) {
+  .container {
+    border: 1px solid ButtonText;
+    background: ButtonFace;
+    forced-color-adjust: none;
+  }
+
+  .container:focus-visible,
+  .container.active {
+    border: 2px solid Highlight;
+    background: HighlightText;
+  }
+
+  .downloadButton {
+    background: ButtonFace;
+    color: ButtonText;
+    border: 1px solid ButtonText;
+    forced-color-adjust: none;
+  }
 }
