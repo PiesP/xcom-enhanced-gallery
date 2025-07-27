@@ -3,11 +3,10 @@
  * Licensed under the MIT License
  *
  * @fileoverview Gallery Toolbar Component
- * @version 5.0.0 - 상태 기반 CSS 아키텍처 및 책임 분리
+ * @version 6.0.0 - Phase 3 StandardProps 시스템 적용
  */
 
 import type { ViewMode } from '@shared/types';
-import type { ImageFitCallbacks } from '@shared/types';
 import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import {
   useToolbarState,
@@ -15,27 +14,24 @@ import {
   getToolbarClassName,
 } from '@shared/hooks/useToolbarState';
 import { throttleScroll } from '@shared/utils';
+import { ComponentStandards } from '../StandardProps';
+import type { StandardToolbarProps } from '../StandardProps';
 import styles from './Toolbar.module.css';
 
-export interface ToolbarProps extends ImageFitCallbacks {
-  currentIndex: number;
-  totalCount: number;
-  isDownloading?: boolean;
-  disabled?: boolean;
-  className?: string;
+// 통합된 Toolbar Props (표준 우선, 레거시 fallback)
+export interface ToolbarProps extends Omit<StandardToolbarProps, 'onViewModeChange'> {
+  // 레거시 호환성을 위한 추가 속성들
   currentViewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  onDownloadCurrent: () => void;
-  onDownloadAll: () => void;
-  onClose: () => void;
-  onOpenSettings?: () => void;
-  // Fit 모드 핸들러들
+  // ImageFitCallbacks 지원
   onFitOriginal?: (event?: Event) => void;
   onFitWidth?: (event?: Event) => void;
   onFitHeight?: (event?: Event) => void;
   onFitContainer?: (event?: Event) => void;
+  // 표준 이벤트 핸들러들
+  onFocus?: (event: FocusEvent) => void;
+  onBlur?: (event: FocusEvent) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
 }
 
 // 호환성을 위한 별칭
@@ -57,6 +53,14 @@ export function Toolbar({
   onFitHeight,
   onFitWidth,
   onFitContainer,
+  'data-testid': testId,
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  role,
+  tabIndex,
+  onFocus,
+  onBlur,
+  onKeyDown,
 }: ToolbarProps): VNode {
   const { h } = getPreact();
   const { useMemo, useCallback, useEffect, useRef } = getPreactHooks();
@@ -64,6 +68,13 @@ export function Toolbar({
   // 새로운 상태 관리 훅 사용
   const [toolbarState, toolbarActions] = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
+
+  // 표준화된 클래스명 생성
+  const toolbarClass = ComponentStandards.createClassName(
+    styles.toolbar,
+    getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
+    className
+  );
 
   // Props에서 받은 isDownloading 상태를 내부 상태와 동기화
   useEffect(() => {
@@ -155,23 +166,24 @@ export function Toolbar({
     [toolbarActions, disabled]
   );
 
-  // 툴바 클래스명 계산
-  const toolbarClassName = useMemo(() => {
-    return getToolbarClassName(toolbarState, styles.galleryToolbar || '', className || '');
-  }, [toolbarState, className]);
-
   return h(
     'div',
     {
       ref: toolbarRef,
-      className: toolbarClassName,
-      role: 'toolbar',
-      'aria-label': '갤러리 도구모음',
+      className: toolbarClass,
+      role: role || 'toolbar',
+      'aria-label': ariaLabel || '갤러리 도구모음',
+      'aria-describedby': ariaDescribedBy,
       'aria-disabled': disabled,
+      'data-testid': testId,
       'data-gallery-element': 'toolbar',
       'data-state': getToolbarDataState(toolbarState),
       'data-disabled': disabled,
       'data-high-contrast': toolbarState.needsHighContrast,
+      tabIndex,
+      onFocus,
+      onBlur,
+      onKeyDown,
     } as Record<string, unknown>,
     h(
       'div',

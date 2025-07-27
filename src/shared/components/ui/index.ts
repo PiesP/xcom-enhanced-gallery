@@ -16,6 +16,7 @@ export type { ButtonProps } from './Button/Button';
 export { Toast, addToast, clearAllToasts, removeToast, toasts } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';
 export type { ToastItem } from './Toast/Toast';
+export type { ToastContainerProps } from './Toast/ToastContainer';
 
 // Toolbar 컴포넌트
 export { Toolbar } from './Toolbar/Toolbar';
