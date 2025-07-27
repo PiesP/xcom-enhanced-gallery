@@ -16,6 +16,20 @@ import { GalleryApp } from '@features/gallery/GalleryApp';
 // 전역 스타일
 import './styles/globals';
 
+// 즉시 vendor 초기화 - 모든 모듈 로딩 전에 수행
+(async () => {
+  try {
+    const { initializeVendors } = await import('@shared/external/vendors');
+    await initializeVendors();
+    logger.debug('✅ Vendor 라이브러리 조기 초기화 완료');
+  } catch (error) {
+    logger.error('❌ Vendor 조기 초기화 실패:', error);
+  }
+})();
+
+// 전역 스타일
+import './styles/globals';
+
 // 애플리케이션 상태 관리
 let isStarted = false;
 let galleryApp: GalleryApp | null = null;

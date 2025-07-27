@@ -110,6 +110,40 @@ export function getPreactSignals(): PreactSignalsAPI {
  */
 export function getPreactCompat(): PreactCompatAPI {
   if (!cachedPreactCompat) {
+    // 개발 환경에서 자동 초기화 시도
+    if (import.meta.env.DEV) {
+      logger.warn('Preact Compat이 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+
+      // 동기적으로 사용할 수 있도록 간단한 fallback 제공
+      try {
+        // 이미 로드된 모듈이 있는지 확인
+        const moduleCache = (globalThis as Record<string, unknown>).__vite__moduleCache;
+        if (moduleCache) {
+          // Vite의 모듈 캐시에서 preact/compat을 찾아서 사용
+          for (const [path, mod] of Object.entries(moduleCache)) {
+            if (
+              typeof path === 'string' &&
+              path.includes('preact/compat') &&
+              mod &&
+              typeof mod === 'object'
+            ) {
+              const compatMod = mod as Record<string, unknown>;
+              if (compatMod.memo && compatMod.forwardRef) {
+                cachedPreactCompat = {
+                  memo: compatMod.memo as PreactCompatAPI['memo'],
+                  forwardRef: compatMod.forwardRef as PreactCompatAPI['forwardRef'],
+                };
+                logger.debug('Preact Compat 캐시에서 복구 성공');
+                return cachedPreactCompat;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        logger.debug('Preact Compat 캐시 복구 실패:', error);
+      }
+    }
+
     throw new Error(
       'Preact Compat이 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.'
     );
