@@ -17,6 +17,10 @@ export { MediaService, mediaService } from './MediaService';
 export { extractUsername, parseUsernameFast } from './MediaService';
 export type { UsernameExtractionResult } from './MediaService';
 
+// 통합 미디어 로딩 서비스 (Phase 9)
+export { UnifiedMediaLoadingService, unifiedMediaLoader } from './UnifiedMediaLoadingService';
+export type { MediaLoadingState, MediaLoadingOptions } from './UnifiedMediaLoadingService';
+
 // 통합된 UI 서비스
 export { UIService, uiService } from './UIService';
 export { themeService, toastController } from './UIService'; // 호환성

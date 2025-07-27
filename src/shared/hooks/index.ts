@@ -23,5 +23,8 @@ export {
 export { useDOMReady } from './useDOMReady';
 export { useKeyboardNavigation } from './useAccessibility';
 
+// Phase 9: 통합 미디어 로딩 훅
+export { useUnifiedMediaLoading } from './useUnifiedMediaLoading';
+
 // Related scroll types (moved to individual hook files)
 export type { ScrollDirection } from './useScrollDirection';

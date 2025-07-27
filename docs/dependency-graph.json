@@ -354,7 +354,8 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.unified.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -503,6 +504,31 @@
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.unified.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./VerticalImageItem.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2188,6 +2214,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./useUnifiedMediaLoading",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useUnifiedMediaLoading.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [],
@@ -2223,6 +2266,15 @@
     },
     {
       "source": "src/shared/hooks/useToolbarState.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useUnifiedMediaLoading.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/hooks/index.ts"
@@ -2686,6 +2738,41 @@
             "export"
           ],
           "resolved": "src/shared/services/UIService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./UnifiedMediaLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/UnifiedMediaLoadingService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./UnifiedMediaLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/services/UnifiedMediaLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3463,6 +3550,15 @@
       "dependencies": [],
       "dependents": [
         "src/shared/services/gallery/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/UnifiedMediaLoadingService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4862,8 +4958,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 138,
-    "totalDependenciesCruised": 203,
+    "totalCruised": 141,
+    "totalDependenciesCruised": 207,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
