@@ -3,7 +3,16 @@ strict digraph "dependency-cruiser output"{
     node [shape="box" style="rounded,filled" height="0.2" color="#333333" fillcolor="#FAFAFA" fontcolor="#333333" fontname="Arial" fontsize="10" penwidth="1" margin="0.1"]
     edge [arrowhead="normal" arrowsize="0.8" penwidth="1" color="#666666" fontname="Arial" fontsize="8" fontcolor="#333333"]
 
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/components" {label="components" "src/components/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/components/index.ts" fillcolor="#ddfeff"] } }
+    "src/components/index.ts" -> "src/features/gallery/components/index.ts" [arrowhead="inv"]
+    "src/components/index.ts" -> "src/features/gallery/GalleryApp.ts" [arrowhead="inv"]
+    "src/components/index.ts" -> "src/features/gallery/GalleryRenderer.ts" [arrowhead="inv"]
+    "src/components/index.ts" -> "src/features/settings/index.ts" [arrowhead="inv"]
+    "src/components/index.ts" -> "src/shared/components/index.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" "src/constants.ts" [label=<constants.ts> tooltip="constants.ts" URL="src/constants.ts" fillcolor="#ddfeff"] }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/external" {label="external" "src/external/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/external/index.ts" fillcolor="#ddfeff"] } }
+    "src/external/index.ts" -> "src/shared/external/vendors/index.ts" [arrowhead="inv"]
+    "src/external/index.ts" -> "src/shared/external/zip/index.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryApp.ts" [label=<GalleryApp.ts> tooltip="GalleryApp.ts" URL="src/features/gallery/GalleryApp.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryRenderer.ts" [label=<GalleryRenderer.ts> tooltip="GalleryRenderer.ts" URL="src/features/gallery/GalleryRenderer.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     "src/features/gallery/GalleryRenderer.ts" -> "src/features/gallery/components/vertical-gallery-view/index.ts"
@@ -333,12 +342,14 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/types" {label="types" "src/shared/types/media.types.ts" [label=<media.types.ts> tooltip="media.types.ts" URL="src/shared/types/media.types.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/accessibility.ts" [label=<accessibility.ts> tooltip="accessibility.ts" URL="src/shared/utils/accessibility.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/utils/accessibility.ts" -> "src/shared/utils/core/type-safety-helpers.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/convenience.ts" [label=<convenience.ts> tooltip="convenience.ts" URL="src/shared/utils/convenience.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/core-utils.ts" [label=<core-utils.ts> tooltip="core-utils.ts" URL="src/shared/utils/core-utils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/core" {label="core" "src/shared/utils/core/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/utils/core/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/utils/core/index.ts" -> "src/shared/utils/core/type-safety-helpers.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/core" {label="core" "src/shared/utils/core/type-safety-helpers.ts" [label=<type-safety-helpers.ts> tooltip="type-safety-helpers.ts" URL="src/shared/utils/core/type-safety-helpers.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/utils/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/utils/index.ts" -> "src/shared/utils/accessibility.ts" [arrowhead="inv"]
+    "src/shared/utils/index.ts" -> "src/shared/utils/convenience.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/core-utils.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/core/type-safety-helpers.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/media/image-filter.ts" [arrowhead="inv"]
@@ -365,4 +376,16 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/unified-events.ts" [label=<unified-events.ts> tooltip="unified-events.ts" URL="src/shared/utils/unified-events.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/unified-utils.ts" [label=<unified-utils.ts> tooltip="unified-utils.ts" URL="src/shared/utils/unified-utils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/styles" {label="styles" "src/styles/globals.ts" [label=<globals.ts> tooltip="globals.ts" URL="src/styles/globals.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/types" {label="types" "src/types/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/types/index.ts" fillcolor="#ddfeff"] } }
+    "src/types/index.ts" -> "src/shared/types/core/index.ts" [arrowhead="inv"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/utils" {label="utils" "src/utils/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/utils/index.ts" fillcolor="#ddfeff"] } }
+    "src/utils/index.ts" -> "src/shared/browser/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/dom/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/error/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/logging/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/memory/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/services/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/state/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/utils/index.ts" [arrowhead="inv"]
+    "src/utils/index.ts" -> "src/shared/utils/convenience.ts" [arrowhead="inv"]
 }

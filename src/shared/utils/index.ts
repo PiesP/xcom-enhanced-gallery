@@ -6,6 +6,7 @@
  * - core-utils.ts (통합된 핵심 유틸리티)
  * - unified-events.ts (이벤트 시스템)
  * - resource-manager.ts (리소스 관리)
+ * - convenience.ts (편의 함수들)
  */
 
 // ================================
@@ -116,3 +117,9 @@ export { MediaClickDetector } from './media/MediaClickDetector';
 // ================================
 
 export { imageFilter } from './media/image-filter';
+
+// ================================
+// 편의 함수들
+// ================================
+
+export * from './convenience';

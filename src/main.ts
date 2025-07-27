@@ -1,17 +1,17 @@
 /**
  * X.com Enhanced Gallery - 메인 진입점
  *
- * Phase 4: 3-레이어 구조 완료 - Core 제거
+ * 단순화된 구조 - 유저스크립트에 최적화
  *
- * @version 3.2.0 - 3-Layer Architecture (features → shared → external)
+ * @version 4.0.0 - Simplified Architecture
  */
 
-import { measurePerformance } from '@shared/utils';
-import { logger } from '@shared/logging/logger';
-import type { AppConfig } from '@shared/types/app.types';
-import { ServiceManager } from '@shared/services/ServiceManager';
+import { measurePerformance } from '@/utils';
+import { logger } from '@/utils';
+import type { AppConfig } from '@/types';
+import { ServiceManager } from '@/utils';
 import { SERVICE_KEYS } from './constants';
-import { GalleryApp } from '@features/gallery/GalleryApp';
+import { GalleryApp } from '@/components';
 
 // 전역 스타일
 import './styles/globals';
@@ -19,16 +19,13 @@ import './styles/globals';
 // 즉시 vendor 초기화 - 모든 모듈 로딩 전에 수행
 (async () => {
   try {
-    const { initializeVendors } = await import('@shared/external/vendors');
+    const { initializeVendors } = await import('@/external');
     await initializeVendors();
     logger.debug('✅ Vendor 라이브러리 조기 초기화 완료');
   } catch (error) {
     logger.error('❌ Vendor 조기 초기화 실패:', error);
   }
 })();
-
-// 전역 스타일
-import './styles/globals';
 
 // 애플리케이션 상태 관리
 let isStarted = false;
