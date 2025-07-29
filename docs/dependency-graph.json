@@ -1173,6 +1173,7 @@
         "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/shared/components/hoc/GalleryHOC.tsx",
         "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
         "src/shared/components/ui/index.ts"
       ],
@@ -2069,6 +2070,33 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/hoc/GalleryHOC.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../ui/StandardProps",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "require"
+          ],
+          "resolved": "src/shared/components/ui/StandardProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/hoc/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
       "dependencies": [
         {
@@ -2098,6 +2126,23 @@
     {
       "source": "src/shared/components/hoc/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./GalleryHOC",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/hoc/GalleryHOC.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./GalleryMarker",
@@ -6892,8 +6937,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 190,
-    "totalDependenciesCruised": 290,
+    "totalCruised": 191,
+    "totalDependenciesCruised": 292,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

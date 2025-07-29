@@ -13,14 +13,7 @@ import { safeParseInt } from '@shared/utils/type-safety-helpers';
 import type { MediaInfo } from '@shared/types/media.types';
 
 // Phase 5: 성능 유틸리티들을 별도 모듈에서 import
-import {
-  Debouncer,
-  createDebouncer,
-  rafThrottle,
-  throttleScroll,
-  measurePerformance,
-  measureAsyncPerformance,
-} from './performance/performance-utils';
+import { Debouncer, createDebouncer } from './performance/performance-utils';
 
 // ================================
 // Performance Utilities (Re-exports)
@@ -948,61 +941,5 @@ export interface SafeOperationResult<T> {
 }
 
 // ================================
-// Unified Export Object
+// All utility functions are exported individually above
 // ================================
-
-/**
- * 모든 유틸리티를 포함하는 통합 객체
- */
-export const unifiedUtils = {
-  // Performance
-  createDebouncer,
-  rafThrottle,
-  throttleScroll,
-  measurePerformance,
-  measureAsyncPerformance,
-
-  // Style
-  combineClasses,
-  toggleClass,
-  setCSSVariable,
-  setCSSVariables,
-  updateComponentState,
-  createThemedClassName,
-
-  // Scroll
-  createScrollHandler,
-  findTwitterScrollContainer,
-  isGalleryElement,
-  createScrollDebouncer,
-  ensureGalleryScrollAvailable,
-  preventScrollPropagation,
-
-  // Deduplication
-  removeDuplicates,
-  removeDuplicateMediaItems,
-
-  // Debug
-  galleryDebugUtils,
-
-  // Gallery Utils
-  GalleryUtils,
-  GalleryStateGuard,
-  VideoControlBlocker,
-  canTriggerGallery,
-  shouldBlockGalleryTrigger,
-  isGalleryInternalElement,
-  isGalleryContainer,
-  isVideoControlElement,
-  isGalleryInternalEvent,
-  shouldBlockGalleryEvent,
-
-  // Core Utils - Accessibility
-  getRelativeLuminance,
-  parseColor,
-  calculateContrastRatio,
-  meetsWCAGAA,
-  meetsWCAGAAA,
-  detectActualBackgroundColor,
-  detectLightBackground,
-} as const;
