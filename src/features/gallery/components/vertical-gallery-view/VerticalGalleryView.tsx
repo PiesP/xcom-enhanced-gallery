@@ -25,7 +25,7 @@ import {
   animateToolbarShow,
   animateToolbarHide,
   setupScrollAnimation,
-} from '@shared/utils/animations';
+} from '@shared/utils/animations-integrated';
 import { useVirtualScroll } from '@shared/hooks/useVirtualScroll';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
