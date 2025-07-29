@@ -35,6 +35,7 @@
   "dependencies": {
     "@preact/signals": "^2.2.1",
     "fflate": "^0.8.2",
+    "motion": "^12.23.11",
     "preact": "^10.26.9"
   },
   "devDependencies": {

@@ -144,3 +144,19 @@ export { imageFilter } from './media/image-filter';
 // ================================
 
 export * from './convenience';
+
+// ================================
+// Phase 6: 고급 성능 최적화 (Advanced Performance Optimization)
+// ================================
+
+// Web Workers Pool (CPU 집약적 작업 오프로드)
+export * from './workers';
+
+// 메모리 풀링 (객체 재사용을 통한 GC 최적화)
+export * from './memory';
+
+// 배치 DOM 업데이트 (레이아웃 스래싱 방지)
+export * from './dom/BatchDOMUpdateManager';
+
+// 성능 프로파일링 (실시간 성능 모니터링)
+export * from './profiling';

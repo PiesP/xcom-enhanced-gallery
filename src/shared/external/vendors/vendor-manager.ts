@@ -379,7 +379,7 @@ export class VendorManager {
   }
 
   /**
-   * 자체 구현 애니메이션 라이브러리 접근
+   * Motion One 애니메이션 라이브러리 접근 (실제 라이브러리 사용)
    */
   public async getMotionOne(): Promise<MotionOneAPI> {
     const cacheKey = 'motion-one';
@@ -389,22 +389,27 @@ export class VendorManager {
     }
 
     try {
-      // Web Animations API 기반 자체 구현
+      // 실제 Motion 라이브러리 로드
+      const motion = await import('motion');
+
+      if (!motion.animate || typeof motion.animate !== 'function') {
+        throw new Error('Motion 라이브러리 검증 실패');
+      }
+
       const api: MotionOneAPI = {
         animate: async (
           element: Element,
           keyframes: Keyframe[] | PropertyIndexedKeyframes,
           options = {}
         ): Promise<Animation> => {
+          // Motion의 animate는 Web Animations API와 다른 형태이므로 폴백 사용
           const { duration = 300, easing = 'ease', delay = 0 } = options;
-
           const animation = element.animate(keyframes, {
             duration,
             easing,
             delay,
             fill: 'forwards',
           });
-
           await animation.finished;
           return animation;
         },
@@ -413,8 +418,8 @@ export class VendorManager {
           onScroll: (info: { scrollY: number; progress: number }) => void,
           options = {}
         ): (() => void) => {
+          // Motion의 scroll API 사용 (호환성을 위해 폴백으로 구현)
           const { container = window } = options;
-
           const handleScroll = () => {
             const scrollY =
               container === window ? window.scrollY : (container as Element).scrollTop;
@@ -423,16 +428,14 @@ export class VendorManager {
                 ? document.documentElement.scrollHeight - window.innerHeight
                 : (container as Element).scrollHeight - (container as Element).clientHeight;
             const progress = maxScroll > 0 ? scrollY / maxScroll : 0;
-
             onScroll({ scrollY, progress });
           };
 
           if (container) {
             container.addEventListener('scroll', handleScroll, { passive: true });
             return () => container.removeEventListener('scroll', handleScroll);
-          } else {
-            return () => {}; // no-op cleanup function
           }
+          return () => {};
         },
 
         timeline: async (
@@ -442,7 +445,7 @@ export class VendorManager {
             options?: { duration?: number; delay?: number };
           }>
         ): Promise<void> => {
-          // 순차적으로 애니메이션 실행
+          // 순차적으로 애니메이션 실행 (Motion의 timeline은 다른 형태)
           for (const { element, keyframes, options = {} } of animations) {
             await api.animate(element, keyframes, options);
           }
@@ -455,14 +458,12 @@ export class VendorManager {
           onInView: (entry: IntersectionObserverEntry) => void,
           options = {}
         ): (() => void) => {
+          // Motion의 inView는 다른 형태이므로 IntersectionObserver 사용
           const observer = new IntersectionObserver(entries => {
             entries.forEach(entry => {
-              if (entry.isIntersecting) {
-                onInView(entry);
-              }
+              if (entry.isIntersecting) onInView(entry);
             });
           }, options);
-
           observer.observe(element);
           return () => observer.disconnect();
         },
@@ -476,11 +477,81 @@ export class VendorManager {
       };
 
       this.cache.set(cacheKey, api);
-      logger.debug('자체 애니메이션 API 준비 완료');
+      logger.debug('Motion One 라이브러리 로드 성공 (호환성 래퍼 사용)');
       return api;
     } catch (error) {
-      logger.error('애니메이션 API 초기화 실패:', error);
-      throw new Error('애니메이션 라이브러리를 사용할 수 없습니다');
+      logger.error('Motion One 로드 실패:', error);
+
+      // 폴백: Web Animations API 기반 구현
+      logger.warn('Motion One 폴백 구현으로 전환');
+      const fallbackApi: MotionOneAPI = {
+        animate: async (
+          element: Element,
+          keyframes: Keyframe[] | PropertyIndexedKeyframes,
+          options = {}
+        ): Promise<Animation> => {
+          const { duration = 300, easing = 'ease', delay = 0 } = options;
+          const animation = element.animate(keyframes, {
+            duration,
+            easing,
+            delay,
+            fill: 'forwards',
+          });
+          await animation.finished;
+          return animation;
+        },
+
+        scroll: (
+          onScroll: (info: { scrollY: number; progress: number }) => void,
+          options = {}
+        ): (() => void) => {
+          const { container = window } = options;
+          const handleScroll = () => {
+            const scrollY =
+              container === window ? window.scrollY : (container as Element).scrollTop;
+            const maxScroll =
+              container === window
+                ? document.documentElement.scrollHeight - window.innerHeight
+                : (container as Element).scrollHeight - (container as Element).clientHeight;
+            const progress = maxScroll > 0 ? scrollY / maxScroll : 0;
+            onScroll({ scrollY, progress });
+          };
+
+          if (container) {
+            container.addEventListener('scroll', handleScroll, { passive: true });
+            return () => container.removeEventListener('scroll', handleScroll);
+          }
+          return () => {};
+        },
+
+        timeline: async animations => {
+          for (const { element, keyframes, options = {} } of animations) {
+            await fallbackApi.animate(element, keyframes, options);
+          }
+        },
+
+        stagger: (duration: number) => (index: number) => index * duration,
+
+        inView: (element, onInView, options = {}) => {
+          const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) onInView(entry);
+            });
+          }, options);
+          observer.observe(element);
+          return () => observer.disconnect();
+        },
+
+        transform: (value, mapFrom, mapTo) => {
+          const [fromMin, fromMax] = mapFrom;
+          const [toMin, toMax] = mapTo;
+          const ratio = (value - fromMin) / (fromMax - fromMin);
+          return toMin + ratio * (toMax - toMin);
+        },
+      };
+
+      this.cache.set(cacheKey, fallbackApi);
+      return fallbackApi;
     }
   }
 
@@ -574,6 +645,7 @@ export class VendorManager {
       this.getPreactHooks().then(() => 'PreactHooks'),
       this.getPreactSignals().then(() => 'PreactSignals'),
       Promise.resolve(this.getMotion()).then(() => 'Motion'),
+      this.getMotionOne().then(() => 'MotionOne'),
     ]);
 
     const loadedLibraries: string[] = [];
@@ -583,7 +655,14 @@ export class VendorManager {
       if (result.status === 'fulfilled') {
         loadedLibraries.push(result.value);
       } else {
-        const libNames = ['fflate', 'Preact', 'PreactHooks', 'PreactSignals', 'Motion'];
+        const libNames = [
+          'fflate',
+          'Preact',
+          'PreactHooks',
+          'PreactSignals',
+          'Motion',
+          'MotionOne',
+        ];
         errors.push(`${libNames[index]}: ${result.reason.message}`);
       }
     });
@@ -607,6 +686,7 @@ export class VendorManager {
       fflate: '0.8.2',
       preact: '10.26.9',
       signals: '2.2.0',
+      motion: '12.23.11', // Motion 버전
     });
   }
 

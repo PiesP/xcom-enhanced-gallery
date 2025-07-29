@@ -4242,6 +4242,23 @@
         },
         {
           "dynamic": false,
+          "module": "./dom/BatchDOMUpdateManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/dom/BatchDOMUpdateManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./error-handling",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4310,6 +4327,23 @@
         },
         {
           "dynamic": false,
+          "module": "./memory",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/memory/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./patterns/url-patterns",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4318,6 +4352,23 @@
             "export"
           ],
           "resolved": "src/shared/utils/patterns/url-patterns.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./profiling",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/profiling/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4386,6 +4437,23 @@
             "export"
           ],
           "resolved": "src/shared/utils/unified-events.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./workers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/workers/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4561,6 +4629,16 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/dom/BatchDOMUpdateManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts",
+        "src/shared/utils/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/error-handling.ts",
       "dependencies": [],
       "dependents": [
@@ -4600,11 +4678,101 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/memory/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./MemoryPoolManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/memory/MemoryPoolManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/memory/MemoryPoolManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/memory/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/patterns/url-patterns.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts",
         "src/shared/utils/patterns/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/profiling/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./PerformanceProfiler",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/profiling/PerformanceProfiler.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PerformanceProfiler",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/utils/profiling/PerformanceProfiler.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/profiling/PerformanceProfiler.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/profiling/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4632,6 +4800,60 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/workers/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./WorkerPoolManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/workers/WorkerPoolManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./WorkerPoolManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/utils/workers/WorkerPoolManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/workers/WorkerPoolManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/workers/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5503,6 +5725,49 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/dom/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./BatchDOMUpdateManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/dom/BatchDOMUpdateManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./BatchDOMUpdateManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/utils/dom/BatchDOMUpdateManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/media/index.ts",
       "dependencies": [
         {
@@ -5899,8 +6164,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 162,
-    "totalDependenciesCruised": 249,
+    "totalCruised": 170,
+    "totalDependenciesCruised": 260,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
