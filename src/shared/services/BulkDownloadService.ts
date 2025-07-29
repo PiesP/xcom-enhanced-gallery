@@ -12,9 +12,8 @@ import type { BaseService } from '@shared/types/app.types';
 import type { MediaItemForFilename } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
-import { createZipFromItems, type MediaItemForZip } from '@shared/external/zip';
 import { getErrorMessage } from '@shared/utils/error-handling';
-import { generateMediaFilename, generateZipFilename } from '@shared/media';
+import { generateMediaFilename } from '@shared/media';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'zipping' | 'complete';
@@ -311,77 +310,28 @@ export class BulkDownloadService implements BaseService {
   }
 
   /**
-   * ZIP 파일로 일괄 다운로드
+   * ZIP 파일로 일괄 다운로드 (지연 로딩)
    */
   private async downloadAsZip(
     mediaItems: readonly (MediaItem | MediaInfo)[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
-    const { onProgress, zipFilename } = options;
-
     try {
-      logger.info(`Starting ZIP download for ${mediaItems.length} items`);
+      // 지연 로딩: ZIP 기능이 필요할 때만 LazyZipDownloadService 로드
+      logger.debug('Loading ZIP download service...');
+      const { downloadAsZip } = await import('./LazyZipDownloadService');
+      logger.debug('ZIP download service loaded successfully');
 
-      // Progress callback for ZIP creation
-      const progressCallback = (progress: number): void => {
-        onProgress?.({
-          phase: progress < 0.7 ? 'downloading' : 'zipping',
-          current: Math.floor(progress * mediaItems.length),
-          total: mediaItems.length,
-          percentage: Math.round(progress * 100),
-        });
-      };
-
-      // Prepare items for ZIP creation
-      const zipItems: MediaItemForZip[] = mediaItems.map((item, index) => ({
-        url: this.extractSafeUrl(item),
-        originalUrl: this.extractSafeUrl(item),
-        filename: generateMediaFilename(toFilenameCompatible(item), { index: index + 1 }),
-      }));
-
-      const finalZipFilename =
-        zipFilename ?? generateZipFilename(mediaItems.map(item => toFilenameCompatible(item)));
-
-      onProgress?.({
-        phase: 'preparing',
-        current: 0,
-        total: mediaItems.length,
-        percentage: 0,
-      });
-
-      // Create ZIP with core configuration
-      const zipBlob = (await createZipFromItems(zipItems, finalZipFilename, progressCallback, {
-        compressionLevel: BulkDownloadService.CONFIG.ZIP_COMPRESSION_LEVEL,
-        maxFileSize: BulkDownloadService.CONFIG.MAX_FILE_SIZE_MB * 1024 * 1024,
-        requestTimeout: BulkDownloadService.CONFIG.REQUEST_TIMEOUT_MS,
-        maxConcurrent: BulkDownloadService.CONFIG.DEFAULT_CONCURRENT_DOWNLOADS,
-      })) as Blob;
-
-      // Download the ZIP file
-      const downloader = getNativeDownload();
-      downloader.downloadBlob(zipBlob, finalZipFilename);
-
-      onProgress?.({
-        phase: 'complete',
-        current: mediaItems.length,
-        total: mediaItems.length,
-        percentage: 100,
-      });
-
-      logger.info('ZIP download completed successfully:', finalZipFilename);
-      return {
-        success: true,
-        filesProcessed: mediaItems.length,
-        filesSuccessful: mediaItems.length,
-        filename: finalZipFilename,
-      };
+      // 타입 단언을 통한 호환성 확보 (인터페이스가 호환됨)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await downloadAsZip(mediaItems, options as any);
     } catch (error) {
-      logger.error('ZIP download failed:', error);
+      logger.error('Failed to load ZIP download service:', error);
       return {
         success: false,
         filesProcessed: mediaItems.length,
         filesSuccessful: 0,
-        error: error instanceof Error ? error.message : 'ZIP download failed',
+        error: error instanceof Error ? error.message : 'ZIP download service loading failed',
       };
     }
   }

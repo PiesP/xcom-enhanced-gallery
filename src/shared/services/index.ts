@@ -24,6 +24,27 @@ export type { MediaLoadingState, MediaLoadingOptions } from './UnifiedMediaLoadi
 // Phase 4: 런타임 성능 최적화 서비스들
 export { OptimizedLazyLoadingService } from './OptimizedLazyLoadingService';
 
+// Phase 3: 동적 import 서비스들
+export { LazyMotionService } from './LazyMotionService';
+export { LazyVirtualScrollService } from './LazyVirtualScrollService';
+export { LazyIntersectionService } from './LazyIntersectionService';
+export { LazyMemoizationService } from './LazyMemoizationService';
+
+// Phase 3: 편의 함수들
+export {
+  createVirtualScrollWhenNeeded,
+  checkVirtualScrollNeed,
+  forceLoadVirtualScroll,
+} from './LazyVirtualScrollService';
+
+export {
+  observeImageWhenSupported,
+  observeVideoWhenSupported,
+  observeElementWhenSupported,
+} from './LazyIntersectionService';
+
+export { memoizeConditionally, smartMemoize } from './LazyMemoizationService';
+
 // 통합된 UI 서비스
 export { UIService, uiService } from './UIService';
 export { themeService, toastController } from './UIService'; // 호환성

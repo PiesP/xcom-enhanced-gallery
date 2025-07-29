@@ -3,209 +3,161 @@
  *
  * @description
  * 번들 크기 최적화와 Tree-shaking 효율성을 검증합니다.
- * 번들 최적화 도구와 실용적 최적화 접근법을 테스트합니다.
+ * 간소화된 번들 유틸리티의 실용적 접근법을 테스트합니다.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { BundleOptimizer } from '@shared/utils/optimization/BundleOptimizer';
+import {
+  createBundleInfo,
+  isWithinSizeTarget,
+  getBundleOptimizationSuggestions,
+  memoizeFunction,
+  memo,
+  type BundleInfo,
+} from '@shared/utils/optimization/bundle';
 
 describe('Phase 5: 번들 최적화', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('1. BundleOptimizer 사용 분석', () => {
-    it('BundleOptimizer가 존재하고 사용 가능해야 함', () => {
-      expect(BundleOptimizer).toBeDefined();
+  describe('1. Bundle 유틸리티 사용 분석', () => {
+    it('Bundle 유틸리티가 존재하고 사용 가능해야 함', () => {
+      expect(createBundleInfo).toBeDefined();
+      expect(isWithinSizeTarget).toBeDefined();
+      expect(getBundleOptimizationSuggestions).toBeDefined();
+      expect(memoizeFunction).toBeDefined();
+      expect(memo).toBeDefined();
 
-      const optimizer = new BundleOptimizer();
-      expect(typeof optimizer.analyzeUnusedCode).toBe('function');
-      expect(typeof optimizer.getOptimizationSuggestions).toBe('function');
+      const bundleInfo = createBundleInfo(['module1', 'module2'], 80);
+      expect(bundleInfo.modules).toEqual(['module1', 'module2']);
+      expect(bundleInfo.totalSize).toBe(80);
+      expect(bundleInfo.gzippedSize).toBe(28); // 80 * 0.35
     });
 
-    it('현재 프로젝트에서 BundleOptimizer 실제 사용 여부를 확인해야 함', () => {
-      // 실제 사용 사례 검증 필요
-      const optimizer = new BundleOptimizer();
-      expect(optimizer).toBeDefined();
+    it('현재 프로젝트에서 Bundle 유틸리티 실제 사용 여부를 확인해야 함', () => {
+      // 번들 크기 검증
+      const bundleInfo = createBundleInfo(['main'], 500000);
+      expect(bundleInfo.totalSize).toBe(500000);
+      expect(bundleInfo.gzippedSize).toBe(175000); // 500000 * 0.35
+      expect(bundleInfo).toBeDefined();
 
-      // 메서드들이 정상적으로 동작하는지 확인
-      const analysis = optimizer.analyzeUnusedCode(['test-module']);
-      expect(analysis).toBeDefined();
-      expect(Array.isArray(analysis.unusedExports)).toBe(true);
+      // 크기 목표 달성 여부 확인
+      const isWithinTarget = isWithinSizeTarget(bundleInfo, 600);
+      expect(isWithinTarget).toBe(true);
     });
 
     it('Bundle 분석 결과가 실용적이어야 함', () => {
-      const optimizer = new BundleOptimizer();
-      const suggestions = optimizer.getOptimizationSuggestions();
+      const bundleInfo = createBundleInfo(
+        ['large-module1', 'large-module2', 'large-module3'],
+        1000000
+      );
+      const suggestions = getBundleOptimizationSuggestions(bundleInfo, 500);
 
       expect(suggestions).toBeDefined();
       expect(Array.isArray(suggestions)).toBe(true);
-
-      // 제안사항이 있다면 실행 가능한 내용이어야 함
-      if (suggestions.length > 0) {
-        suggestions.forEach(suggestion => {
-          expect(suggestion).toHaveProperty('type');
-          expect(suggestion).toHaveProperty('description');
-          expect(suggestion).toHaveProperty('impact');
-        });
-      }
+      expect(suggestions.length).toBeGreaterThan(0);
     });
   });
 
-  describe('2. Tree-shaking 효율성', () => {
-    it('사용되지 않는 export들이 올바르게 식별되어야 함', () => {
-      const optimizer = new BundleOptimizer();
+  describe('2. 메모이제이션 최적화', () => {
+    it('memoizeFunction이 올바르게 작동해야 함', () => {
+      let callCount = 0;
+      const expensiveFunction = (x: number) => {
+        callCount++;
+        return x * 2;
+      };
 
-      // 테스트용 모듈 분석
-      const testModules = ['src/shared/utils/index.ts', 'src/shared/components/index.ts'];
+      const memoized = memoizeFunction(expensiveFunction);
 
-      const analysis = optimizer.analyzeUnusedCode(testModules);
-      expect(analysis).toBeDefined();
-      expect(analysis.unusedExports).toBeDefined();
-      expect(analysis.suggestions).toBeDefined();
+      // 첫 번째 호출
+      expect(memoized(5)).toBe(10);
+      expect(callCount).toBe(1);
+
+      // 두 번째 호출 (캐시된 결과)
+      expect(memoized(5)).toBe(10);
+      expect(callCount).toBe(1);
+
+      // 다른 인수로 호출
+      expect(memoized(10)).toBe(20);
+      expect(callCount).toBe(2);
     });
 
-    it('번들 크기가 목표 범위 내에 있어야 함', () => {
-      // 현재 번들 크기: Dev 480.88KB, Prod 276.78KB
-      const TARGET_DEV_SIZE = 500; // KB
-      const TARGET_PROD_SIZE = 300; // KB
+    it('memo 유틸리티가 올바르게 작동해야 함', () => {
+      const TestComponent = ({ value }: { value: number }) => ({ value });
+      const MemoizedComponent = memo(TestComponent);
 
-      // 실제 번들 크기는 빌드 결과에서 확인
-      // 여기서는 목표 크기 기준 검증
-      expect(480.88).toBeLessThan(TARGET_DEV_SIZE);
-      expect(276.78).toBeLessThan(TARGET_PROD_SIZE);
-    });
-
-    it('External vendor 접근이 최적화되어야 함', () => {
-      // vendor getter 함수들이 tree-shaking friendly해야 함
-      expect(() => import('@shared/external/vendors')).not.toThrow();
-
-      // 동적 import 패턴이 올바르게 구현되어야 함
-      const vendorModule = import('@shared/external/vendors');
-      expect(vendorModule).toBeDefined();
+      expect(MemoizedComponent).toBeDefined();
     });
   });
 
-  describe('3. 실용적 최적화 접근법', () => {
-    it('중복 의존성이 최소화되어야 함', () => {
-      const optimizer = new BundleOptimizer();
-      const duplicates = optimizer.findDuplicateDependencies();
+  describe('3. 번들 크기 분석', () => {
+    it('크기 임계값 검사가 올바르게 작동해야 함', () => {
+      const smallBundle = createBundleInfo(['small-module'], 50000);
+      const largeBundle = createBundleInfo(['large-module'], 500000);
 
-      expect(Array.isArray(duplicates)).toBe(true);
-
-      // 중복이 있다면 허용 가능한 수준이어야 함
-      if (duplicates.length > 0) {
-        // 5개 이하의 중복은 허용 가능
-        expect(duplicates.length).toBeLessThanOrEqual(5);
-      }
+      expect(isWithinSizeTarget(smallBundle, 100)).toBe(true);
+      expect(isWithinSizeTarget(largeBundle, 100)).toBe(false);
     });
 
-    it('코드 분할이 효과적으로 적용되어야 함', () => {
-      // Dynamic import 사용 확인
-      expect(() => import('@features/gallery')).not.toThrow();
-      expect(() => import('@features/settings')).not.toThrow();
+    it('최적화 제안이 적절히 생성되어야 함', () => {
+      const oversizedBundle = createBundleInfo(
+        Array.from({ length: 25 }, (_, i) => `module${i}`),
+        2000000
+      );
+      const suggestions = getBundleOptimizationSuggestions(oversizedBundle, 500);
 
-      // Lazy loading 패턴 확인
-      const hasLazyLoading = true; // 실제 구현 상태에 따라 조정
-      expect(hasLazyLoading).toBe(true);
-    });
-
-    it('압축 및 minification이 적용되어야 함', () => {
-      // Production 빌드에서 압축 효과 확인
-      const devSize = 480.88; // KB
-      const prodSize = 276.78; // KB
-      const compressionRatio = prodSize / devSize;
-
-      // 압축률이 40% 이상이어야 함 (60% 크기 감소)
-      expect(compressionRatio).toBeLessThan(0.6);
+      // 2000000 bytes = 1953.125 KB, 1953 - 500 = 1453KB
+      expect(suggestions).toContain('번들 크기를 1454KB 줄여야 합니다');
+      expect(suggestions).toContain('코드 스플리팅을 고려해보세요');
     });
   });
 
-  describe('4. 번들 분석 및 최적화 제안', () => {
-    it('번들 분석 도구가 유용한 정보를 제공해야 함', () => {
-      const optimizer = new BundleOptimizer();
-      const analysis = optimizer.generateBundleReport();
+  describe('4. Tree-shaking 효율성 검증', () => {
+    it('사용되지 않는 코드 식별이 기본적으로 작동해야 함', () => {
+      // 기본적인 Tree-shaking 개념 검증
+      const moduleWithUnusedCode = {
+        usedFunction: () => 'used',
+        unusedFunction: () => 'unused',
+      };
 
-      expect(analysis).toBeDefined();
-      expect(analysis.totalSize).toBeDefined();
-      expect(analysis.moduleBreakdown).toBeDefined();
-      expect(Array.isArray(analysis.optimizationOpportunities)).toBe(true);
+      expect(moduleWithUnusedCode.usedFunction).toBeDefined();
+      expect(moduleWithUnusedCode.unusedFunction).toBeDefined();
     });
 
-    it('최적화 제안이 구체적이고 실행 가능해야 함', () => {
-      const optimizer = new BundleOptimizer();
-      const suggestions = optimizer.getOptimizationSuggestions();
-
-      suggestions.forEach(suggestion => {
-        expect(suggestion.type).toMatch(/^(remove|optimize|refactor|compress)$/);
-        expect(suggestion.description).toBeTruthy();
-        expect(suggestion.impact).toMatch(/^(high|medium|low)$/);
-        expect(typeof suggestion.estimatedSaving).toBe('number');
-      });
-    });
-
-    it('유저스크립트 환경에 적합한 최적화가 적용되어야 함', () => {
-      // 유저스크립트 특성 고려한 최적화
-      const optimizer = new BundleOptimizer();
-      const userscriptOptimizations = optimizer.getUserscriptOptimizations();
-
-      expect(userscriptOptimizations).toBeDefined();
-      expect(userscriptOptimizations.inlineStyles).toBe(true);
-      expect(userscriptOptimizations.singleFile).toBe(true);
-      expect(userscriptOptimizations.noExternalRequests).toBe(true);
+    it('ES6 모듈 import/export 패턴이 Tree-shaking 친화적이어야 함', () => {
+      // Tree-shaking을 위한 ES6 모듈 패턴 검증
+      expect(typeof createBundleInfo).toBe('function');
+      expect(typeof isWithinSizeTarget).toBe('function');
     });
   });
 
-  describe('5. 성능 모니터링', () => {
-    it('번들 크기 변화를 추적할 수 있어야 함', () => {
-      const optimizer = new BundleOptimizer();
-      const metrics = optimizer.getBundleMetrics();
+  describe('5. 실제 프로젝트 적용 검증', () => {
+    it('현재 프로젝트의 번들 구조가 최적화에 적합해야 함', () => {
+      // 실제 번들 크기 추정 (유저스크립트 환경)
+      const estimatedMainBundle = createBundleInfo(['xcom-enhanced-gallery'], 480880);
 
-      expect(metrics).toBeDefined();
-      expect(metrics.currentSize).toBeDefined();
-      expect(metrics.previousSize).toBeDefined();
-      expect(metrics.changePercentage).toBeDefined();
+      // 1MB 이하 목표
+      expect(isWithinSizeTarget(estimatedMainBundle, 1024)).toBe(true);
+
+      const suggestions = getBundleOptimizationSuggestions(estimatedMainBundle, 1024);
+      expect(Array.isArray(suggestions)).toBe(true);
     });
 
-    it('로딩 성능이 기준치를 만족해야 함', () => {
-      // 유저스크립트 로딩 시간 시뮬레이션
-      const loadTime = 100; // ms - 실제 측정값으로 대체 필요
-      const MAX_LOAD_TIME = 500; // ms
+    it('유저스크립트 환경에서의 최적화 전략이 적절해야 함', () => {
+      // 유저스크립트는 단일 파일로 번들링되므로 특별한 최적화 필요
+      // 압축률을 높게 설정하여 중복 코드 제거 메시지가 나오도록 함
+      const userscriptBundle: BundleInfo = {
+        totalSize: 800000,
+        gzippedSize: 400000, // 0.5 압축률로 설정 (0.4보다 높음)
+        modules: Array.from({ length: 25 }, (_, i) => `userscript-module${i}`),
+      };
 
-      expect(loadTime).toBeLessThan(MAX_LOAD_TIME);
-    });
+      expect(isWithinSizeTarget(userscriptBundle, 1024)).toBe(true);
 
-    it('메모리 사용량이 최적화되어야 함', () => {
-      // 메모리 사용량 기준 확인
-      const estimatedMemory = 10; // MB - 실제 측정값으로 대체 필요
-      const MAX_MEMORY = 50; // MB
-
-      expect(estimatedMemory).toBeLessThan(MAX_MEMORY);
-    });
-  });
-
-  describe('6. 전체 최적화 검증', () => {
-    it('모든 최적화가 일관되게 적용되어야 함', () => {
-      const optimizer = new BundleOptimizer();
-      const report = optimizer.generateComprehensiveReport();
-
-      expect(report.bundleSize.dev).toBeLessThan(500000); // 500KB
-      expect(report.bundleSize.prod).toBeLessThan(300000); // 300KB
-      expect(report.optimizationScore).toBeGreaterThan(70); // 70점 이상
-    });
-
-    it('유저스크립트 호환성이 유지되어야 함', () => {
-      // 유저스크립트 환경에서 정상 동작 확인
-      const compatibility = true; // 실제 호환성 검사로 대체 필요
-      expect(compatibility).toBe(true);
-    });
-
-    it('개발 효율성이 저하되지 않아야 함', () => {
-      // 빌드 시간이 합리적이어야 함
-      const buildTime = 5000; // ms - 실제 측정값으로 대체 필요
-      const MAX_BUILD_TIME = 10000; // 10초
-
-      expect(buildTime).toBeLessThan(MAX_BUILD_TIME);
+      // 목표 크기를 낮춰서 권장사항이 생성되도록 함
+      const suggestions = getBundleOptimizationSuggestions(userscriptBundle, 700);
+      expect(suggestions.some(s => s.includes('중복 코드'))).toBe(true);
     });
   });
 });

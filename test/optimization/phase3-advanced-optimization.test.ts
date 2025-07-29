@@ -21,7 +21,7 @@ const ROOT_DIR = join(__dirname, '..', '..');
 /**
  * 파일 읽기 유틸리티 - 환경 격리
  */
-function readFile(relativePath: string) {
+function readFile(relativePath: string): string {
   return readFileSync(join(ROOT_DIR, relativePath), 'utf-8');
 }
 
@@ -102,9 +102,9 @@ describe('Phase 3: 고급 최적화 통합', () => {
   });
 
   describe('3. Bundle 최적화', () => {
-    it('BundleOptimizer 모듈이 존재해야 함', () => {
+    it('Bundle 유틸리티 모듈이 존재해야 함', () => {
       expect(() => {
-        readFile('src/shared/utils/optimization/BundleOptimizer.ts');
+        readFile('src/shared/utils/optimization/bundle.ts');
       }).not.toThrow();
     });
 
@@ -397,7 +397,7 @@ describe('Phase 3: 고급 최적화 통합', () => {
     it('모든 최적화 모듈이 올바르게 구조화되어야 함', () => {
       const files = [
         'src/shared/components/optimization/AdvancedMemoization.ts',
-        'src/shared/utils/optimization/BundleOptimizer.ts',
+        'src/shared/utils/optimization/bundle.ts',
         'src/features/gallery/styles/Gallery.module.css',
         'src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css',
       ];

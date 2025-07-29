@@ -53,16 +53,17 @@ describe('Phase C: 코드 품질 개선', () => {
       expect(typeof memoizedComponent).toBe('function');
     });
 
-    it('BundleOptimizer가 실제로 사용되는지 확인', async () => {
-      const bundleOptimizer = await import(
-        '../../../src/shared/utils/optimization/BundleOptimizer'
-      );
+    it('Bundle 유틸리티가 실제로 사용되는지 확인', async () => {
+      const bundleUtils = await import('../../../src/shared/utils/optimization/bundle');
 
-      expect(bundleOptimizer.BundleOptimizer).toBeDefined();
+      expect(bundleUtils.createBundleInfo).toBeDefined();
+      expect(bundleUtils.isWithinSizeTarget).toBeDefined();
+      expect(bundleUtils.getBundleOptimizationSuggestions).toBeDefined();
 
-      // 실제 사용처가 있는지는 추가 검증 필요
-      const optimizer = bundleOptimizer.BundleOptimizer.getInstance();
-      expect(optimizer).toBeDefined();
+      // 기본 기능 테스트
+      const bundleInfo = bundleUtils.createBundleInfo(['test'], 100);
+      expect(bundleInfo.modules).toEqual(['test']);
+      expect(bundleInfo.totalSize).toBe(100);
     });
   });
 

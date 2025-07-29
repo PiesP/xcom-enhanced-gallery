@@ -53,7 +53,7 @@ describe('최적화 모듈 정리', () => {
   describe('최적화 모듈 단순화 방향', () => {
     it('사용되지 않는 기능은 제거 대상이어야 한다', () => {
       const removalCandidates = [
-        'BundleOptimizer', // 프로덕션에서 미사용
+        'BundleOptimizer', // ✅ 제거됨 - 590줄의 거대한 클래스, 프로덕션에서 미사용
         'AdvancedMemoization', // 복잡하지만 실제 사용되지 않음
         'ComplexTreeShaking', // 과도한 최적화
       ];
@@ -68,6 +68,8 @@ describe('최적화 모듈 정리', () => {
       const coreFeatures = [
         'debounce', // 실제 사용됨
         'throttle', // 실제 사용됨
+        'bundle utilities', // ✅ 간소화된 번들 유틸리티로 대체
+        'memoization', // ✅ 핵심 메모이제이션만 보존
         'performance.now()', // 성능 측정에 사용됨
         'setTimeout/setInterval 관리', // 리소스 관리에 필요
       ];
