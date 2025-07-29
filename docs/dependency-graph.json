@@ -2626,6 +2626,23 @@
         },
         {
           "dynamic": false,
+          "module": "./useMediaLoading",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useMediaLoading.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./useScrollDirection",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2709,6 +2726,15 @@
     },
     {
       "source": "src/shared/hooks/useDOMReady.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useMediaLoading.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/hooks/index.ts"
@@ -6937,8 +6963,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 191,
-    "totalDependenciesCruised": 292,
+    "totalCruised": 192,
+    "totalDependenciesCruised": 293,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
