@@ -324,10 +324,32 @@ export default defineConfig(({ mode }) => {
           name: 'XG',
           inlineDynamicImports: true,
           manualChunks: undefined as any,
+          // Phase 5: 추가적인 최적화 설정
+          compact: buildMode.isProduction,
+          generatedCode: {
+            constBindings: true,
+            arrowFunctions: true,
+          },
         },
         treeshake: {
           moduleSideEffects: false,
           unknownGlobalSideEffects: false,
+          // Phase 5: 더 적극적인 tree-shaking
+          propertyReadSideEffects: false,
+          tryCatchDeoptimization: false,
+          annotations: true,
+        },
+        // Phase 5: 번들 분석을 위한 onwarn 핸들러
+        onwarn(warning, warn) {
+          // 순환 의존성 경고 억제 (vendor 라이브러리에서 발생)
+          if (warning.code === 'CIRCULAR_DEPENDENCY') {
+            return;
+          }
+          // 사용되지 않는 import 경고 표시
+          if (warning.code === 'UNUSED_EXTERNAL_IMPORT') {
+            console.warn(`Unused import: ${warning.message}`);
+          }
+          warn(warning);
         },
       },
 

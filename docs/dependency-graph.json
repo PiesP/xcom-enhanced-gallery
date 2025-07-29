@@ -4450,7 +4450,42 @@
     },
     {
       "source": "src/shared/utils/convenience.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./core-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/core-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/index.ts",
         "src/utils/index.ts"
@@ -4480,17 +4515,47 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/convenience.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
       "source": "src/shared/utils/unified-utils.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/index.ts",
         "src/shared/utils/core-utils.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/performance/performance-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/convenience.ts",
+        "src/shared/utils/unified-utils.ts",
+        "src/shared/utils/performance/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5522,6 +5587,31 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/performance/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/virtual-scroll/index.ts",
       "dependencies": [
         {
@@ -5809,8 +5899,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 160,
-    "totalDependenciesCruised": 245,
+    "totalCruised": 162,
+    "totalDependenciesCruised": 249,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

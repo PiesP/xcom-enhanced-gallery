@@ -1,13 +1,10 @@
 /**
- * @fileoverview 통합 유틸리티 - Phase 4 최종 결과물
- * @version 4.0.0 - 완전 통합 버전
+ * @fileoverview 통합 유틸리티 - Phase 5 번들 최적화 적용
+ * @version 5.0.0 - Tree-shaking 최적화
  *
- * 기존에 분산되어 있던 모든 공통 유틸리티들을 하나의 파일로 통합
- * - 성능 유틸리티 (debounce, throttle, RAF)
- * - 스타일 유틸리티 (클래스 조작, CSS 변수)
- * - 스크롤 유틸리티 (핸들링, 컨테이너 검색)
- * - 디버그 유틸리티 (갤러리 진단)
- * - 중복 제거 유틸리티
+ * Phase 5에서 성능 유틸리티들을 별도 모듈로 분리하여 번들 크기 최적화
+ * - Performance utilities → performance/performance-utils.ts
+ * - 필요한 경우에만 import되도록 구조 개선
  */
 
 import { logger } from '@shared/logging/logger';
@@ -15,150 +12,30 @@ import { galleryState } from '@shared/state/signals/gallery.signals';
 import { safeParseInt } from '@shared/utils/type-safety-helpers';
 import type { MediaInfo } from '@shared/types/media.types';
 
+// Phase 5: 성능 유틸리티들을 별도 모듈에서 import
+import {
+  Debouncer,
+  createDebouncer,
+  rafThrottle,
+  throttleScroll,
+  measurePerformance,
+  measureAsyncPerformance,
+} from './performance/performance-utils';
+
 // ================================
-// Performance Utilities
+// Performance Utilities (Re-exports)
 // ================================
 
-/**
- * 디바운서 클래스 - 중복 실행 방지
- */
-export class Debouncer<T extends unknown[] = unknown[]> {
-  private timerId: number | null = null;
-  private lastArgs: T | null = null;
-
-  constructor(
-    private readonly fn: (...args: T) => void,
-    private readonly delay: number
-  ) {}
-
-  execute(...args: T): void {
-    this.lastArgs = args;
-    this.clearTimer();
-    this.timerId = window.setTimeout(() => {
-      if (this.lastArgs) {
-        this.fn(...this.lastArgs);
-        this.lastArgs = null;
-      }
-    }, this.delay);
-  }
-
-  flush(): void {
-    if (this.lastArgs) {
-      this.clearTimer();
-      this.fn(...this.lastArgs);
-      this.lastArgs = null;
-    }
-  }
-
-  cancel(): void {
-    this.clearTimer();
-    this.lastArgs = null;
-  }
-
-  isPending(): boolean {
-    return this.timerId !== null;
-  }
-
-  private clearTimer(): void {
-    if (this.timerId !== null) {
-      clearTimeout(this.timerId);
-      this.timerId = null;
-    }
-  }
-}
-
-/**
- * 디바운서 팩토리 함수
- */
-export function createDebouncer<T extends unknown[]>(
-  fn: (...args: T) => void,
-  delay: number
-): Debouncer<T> {
-  return new Debouncer(fn, delay);
-}
-
-/**
- * RAF 기반 throttle (성능 최적화)
- */
-export function rafThrottle<T extends (...args: unknown[]) => void>(
-  fn: T,
-  options: { leading?: boolean; trailing?: boolean } = {}
-): T {
-  const { leading = true, trailing = true } = options;
-  let isThrottled = false;
-  let pendingArgs: Parameters<T> | null = null;
-
-  function throttled(...args: Parameters<T>): void {
-    pendingArgs = args;
-
-    if (!isThrottled) {
-      if (leading) {
-        try {
-          fn(...args);
-        } catch (error) {
-          logger.warn('RAF throttle function error:', error);
-        }
-      }
-
-      isThrottled = true;
-      requestAnimationFrame(() => {
-        isThrottled = false;
-        if (trailing && pendingArgs) {
-          try {
-            fn(...pendingArgs);
-          } catch (error) {
-            logger.warn('RAF throttle trailing function error:', error);
-          }
-        }
-        pendingArgs = null;
-      });
-    }
-  }
-
-  return throttled as T;
-}
-
-/**
- * 스크롤 전용 throttle
- */
-export function throttleScroll<T extends (...args: unknown[]) => void>(func: T): T {
-  return rafThrottle(func, { leading: true, trailing: true });
-}
-
-/**
- * 성능 측정 유틸리티
- */
-export function measurePerformance<T>(label: string, fn: () => T): { result: T; duration: number } {
-  const startTime = performance.now();
-  const result = fn();
-  const endTime = performance.now();
-  const duration = endTime - startTime;
-
-  if (duration > 10) {
-    logger.debug(`Performance: ${label} took ${duration.toFixed(2)}ms`);
-  }
-
-  return { result, duration };
-}
-
-/**
- * 비동기 성능 측정
- */
-export async function measureAsyncPerformance<T>(
-  label: string,
-  fn: () => Promise<T>
-): Promise<{ result: T; duration: number }> {
-  const startTime = performance.now();
-  const result = await fn();
-  const endTime = performance.now();
-  const duration = endTime - startTime;
-
-  if (duration > 10) {
-    logger.debug(`Async Performance: ${label} took ${duration.toFixed(2)}ms`);
-  }
-
-  return { result, duration };
-}
+// Phase 5: 성능 유틸리티들을 별도 모듈로 분리
+// Tree-shaking을 위해 re-export만 제공
+export {
+  Debouncer,
+  createDebouncer,
+  rafThrottle,
+  throttleScroll,
+  measurePerformance,
+  measureAsyncPerformance,
+} from './performance/performance-utils';
 
 // ================================
 // Style Utilities
