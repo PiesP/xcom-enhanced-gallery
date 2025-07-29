@@ -45,7 +45,7 @@ export {
   ResourceManager,
 
   // 이벤트 관리
-  addEventListenerManaged,
+  addListener,
   removeEventListenerManaged,
   cleanupEventListeners,
 

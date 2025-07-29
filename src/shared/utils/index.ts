@@ -89,7 +89,7 @@ export {
 // ================================
 
 export {
-  addEventListenerManaged,
+  addListener,
   addMultipleEventListeners,
   removeEventListenerManaged,
   removeEventListenersByContext,
@@ -111,7 +111,7 @@ export {
 // 리소스 관리
 // ================================
 
-export { createManagedTimer, createManagedInterval, ResourceManager } from './resource-manager';
+export { createTimer, createManagedInterval, ResourceManager } from './resource-manager';
 
 // ================================
 // 미디어 유틸리티

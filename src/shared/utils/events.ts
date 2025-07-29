@@ -45,7 +45,7 @@ function generateListenerId(context?: string): string {
 /**
  * 이벤트 리스너 추가 (안전성 검사 포함)
  */
-export function addEventListenerManaged(
+export function addListener(
   element: EventTarget,
   type: string,
   listener: EventListener,
@@ -96,7 +96,7 @@ export function addMultipleEventListeners(
   options?: AddEventListenerOptions,
   context?: string
 ): string[] {
-  return types.map(type => addEventListenerManaged(element, type, listener, options, context));
+  return types.map(type => addListener(element, type, listener, options, context));
 }
 
 /**
