@@ -14,6 +14,9 @@
 // 통합 유틸리티 (Phase 1 Consolidation)
 // ================================
 
+// Animation utilities (Phase 1 추가)
+export * from './animations';
+
 // Error handling utilities (Phase C 추가)
 export {
   standardizeError,

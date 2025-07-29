@@ -65,7 +65,7 @@
     "rimraf": "^6.0.1",
     "terser": "5.43.1",
     "typescript": "5.8.3",
-    "vite": "7.0.6",
+    "vite": "npm:rolldown-vite@latest",
     "vitest": "^3.2.4"
   },
   "lint-staged": {
