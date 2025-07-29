@@ -14,6 +14,7 @@ import {
   type PreactSignalsAPI,
   type PreactCompatAPI,
   type MotionAPI,
+  type MotionOneAPI,
   type NativeDownloadAPI,
 } from './vendor-manager';
 
@@ -30,6 +31,7 @@ let cachedPreactHooks: PreactHooksAPI | null = null;
 let cachedPreactSignals: PreactSignalsAPI | null = null;
 let cachedPreactCompat: PreactCompatAPI | null = null;
 let cachedMotion: MotionAPI | null = null;
+let cachedMotionOne: MotionOneAPI | null = null;
 let isInitialized = false;
 
 /**
@@ -39,13 +41,14 @@ export async function initializeVendors(): Promise<void> {
   if (isInitialized) return;
 
   try {
-    const [fflate, preact, hooks, signals, compat, motion] = await Promise.all([
+    const [fflate, preact, hooks, signals, compat, motion, motionOne] = await Promise.all([
       vendorManager.getFflate(),
       vendorManager.getPreact(),
       vendorManager.getPreactHooks(),
       vendorManager.getPreactSignals(),
       vendorManager.getPreactCompat(),
       Promise.resolve(vendorManager.getMotion()),
+      vendorManager.getMotionOne(),
     ]);
 
     cachedFflate = fflate;
@@ -54,6 +57,7 @@ export async function initializeVendors(): Promise<void> {
     cachedPreactSignals = signals;
     cachedPreactCompat = compat;
     cachedMotion = motion;
+    cachedMotionOne = motionOne;
     isInitialized = true;
 
     logger.info('모든 vendor 라이브러리 초기화 완료');
@@ -236,6 +240,16 @@ export function getMotion(): MotionAPI {
 }
 
 /**
+ * Motion One 접근 (동기)
+ */
+export function getMotionOne(): MotionOneAPI {
+  if (!cachedMotionOne) {
+    throw new Error('Motion One이 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
+  }
+  return cachedMotionOne;
+}
+
+/**
  * 네이티브 다운로드 접근
  */
 export const getNativeDownload = (): NativeDownloadAPI => vendorManager.getNativeDownload();
@@ -260,6 +274,7 @@ export const cleanupVendors = (): void => {
   cachedPreactHooks = null;
   cachedPreactSignals = null;
   cachedMotion = null;
+  cachedMotionOne = null;
   isInitialized = false;
 };
 
@@ -280,6 +295,7 @@ export function getVendorInitializationReport() {
     preactHooks: { initialized: !!cachedPreactHooks },
     preactSignals: { initialized: !!cachedPreactSignals },
     motion: { initialized: !!cachedMotion },
+    motionOne: { initialized: !!cachedMotionOne },
   };
 
   const initializedCount = Object.values(statuses).filter(status => status.initialized).length;

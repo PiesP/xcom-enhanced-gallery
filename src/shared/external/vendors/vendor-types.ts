@@ -28,6 +28,7 @@ export interface VendorInitState {
   preact: boolean;
   fflate: boolean;
   motion: boolean;
+  motionOne: boolean;
 }
 
 /**

@@ -2535,6 +2535,43 @@
       "valid": true
     },
     {
+      "source": "src/shared/hooks/useVirtualScroll.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../utils/virtual-scroll/VirtualScrollManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/virtual-scroll/VirtualScrollManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/virtual-scroll/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/virtual-scroll/VirtualScrollManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/hooks/useVirtualScroll.ts",
+        "src/shared/utils/virtual-scroll/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/index.ts",
       "dependencies": [
         {
@@ -4154,6 +4191,23 @@
         },
         {
           "dynamic": false,
+          "module": "./animations",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/animations.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./convenience",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4381,6 +4435,15 @@
         "src/shared/utils/index.ts",
         "src/shared/utils/accessibility.ts",
         "src/shared/utils/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/animations.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5459,6 +5522,84 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/virtual-scroll/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../hooks/useVirtualScroll",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useVirtualScroll.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../hooks/useVirtualScroll",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useVirtualScroll.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VirtualScrollManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/virtual-scroll/VirtualScrollManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VirtualScrollManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/utils/virtual-scroll/VirtualScrollManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/types/index.ts",
       "dependencies": [
         {
@@ -5668,8 +5809,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 156,
-    "totalDependenciesCruised": 239,
+    "totalCruised": 160,
+    "totalDependenciesCruised": 245,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

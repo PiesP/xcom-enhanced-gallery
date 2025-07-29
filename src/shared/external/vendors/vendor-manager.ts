@@ -74,6 +74,7 @@ export interface PreactCompatAPI {
 export type ComponentChildren = import('preact').ComponentChildren;
 
 export interface MotionAPI {
+  // Motion One 지원 (기존)
   animate: (
     element: Element,
     keyframes: Record<string, unknown>,
@@ -88,6 +89,33 @@ export interface MotionAPI {
     options?: Record<string, unknown>
   ) => Promise<void>;
   stagger: (duration?: number, options?: Record<string, unknown>) => (index: number) => number;
+}
+
+// 자체 구현 애니메이션 API 타입 정의
+export interface MotionOneAPI {
+  animate: (
+    element: Element,
+    keyframes: Keyframe[] | PropertyIndexedKeyframes,
+    options?: { duration?: number; easing?: string; delay?: number }
+  ) => Promise<Animation>;
+  scroll: (
+    onScroll: (info: { scrollY: number; progress: number }) => void,
+    options?: { container?: Element | null }
+  ) => () => void;
+  timeline: (
+    animations: Array<{
+      element: Element;
+      keyframes: Keyframe[] | PropertyIndexedKeyframes;
+      options?: { duration?: number; delay?: number };
+    }>
+  ) => Promise<void>;
+  stagger: (duration: number) => (index: number) => number;
+  inView: (
+    element: Element,
+    onInView: (entry: IntersectionObserverEntry) => void,
+    options?: IntersectionObserverInit
+  ) => () => void;
+  transform: (value: number, mapFrom: [number, number], mapTo: [number, number]) => number;
 }
 
 export interface NativeDownloadAPI {
@@ -347,6 +375,112 @@ export class VendorManager {
     } catch (error) {
       logger.error('Motion API 초기화 실패:', error);
       throw new Error('Motion 라이브러리를 사용할 수 없습니다');
+    }
+  }
+
+  /**
+   * 자체 구현 애니메이션 라이브러리 접근
+   */
+  public async getMotionOne(): Promise<MotionOneAPI> {
+    const cacheKey = 'motion-one';
+
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) as MotionOneAPI;
+    }
+
+    try {
+      // Web Animations API 기반 자체 구현
+      const api: MotionOneAPI = {
+        animate: async (
+          element: Element,
+          keyframes: Keyframe[] | PropertyIndexedKeyframes,
+          options = {}
+        ): Promise<Animation> => {
+          const { duration = 300, easing = 'ease', delay = 0 } = options;
+
+          const animation = element.animate(keyframes, {
+            duration,
+            easing,
+            delay,
+            fill: 'forwards',
+          });
+
+          await animation.finished;
+          return animation;
+        },
+
+        scroll: (
+          onScroll: (info: { scrollY: number; progress: number }) => void,
+          options = {}
+        ): (() => void) => {
+          const { container = window } = options;
+
+          const handleScroll = () => {
+            const scrollY =
+              container === window ? window.scrollY : (container as Element).scrollTop;
+            const maxScroll =
+              container === window
+                ? document.documentElement.scrollHeight - window.innerHeight
+                : (container as Element).scrollHeight - (container as Element).clientHeight;
+            const progress = maxScroll > 0 ? scrollY / maxScroll : 0;
+
+            onScroll({ scrollY, progress });
+          };
+
+          if (container) {
+            container.addEventListener('scroll', handleScroll, { passive: true });
+            return () => container.removeEventListener('scroll', handleScroll);
+          } else {
+            return () => {}; // no-op cleanup function
+          }
+        },
+
+        timeline: async (
+          animations: Array<{
+            element: Element;
+            keyframes: Keyframe[] | PropertyIndexedKeyframes;
+            options?: { duration?: number; delay?: number };
+          }>
+        ): Promise<void> => {
+          // 순차적으로 애니메이션 실행
+          for (const { element, keyframes, options = {} } of animations) {
+            await api.animate(element, keyframes, options);
+          }
+        },
+
+        stagger: (duration: number) => (index: number) => index * duration,
+
+        inView: (
+          element: Element,
+          onInView: (entry: IntersectionObserverEntry) => void,
+          options = {}
+        ): (() => void) => {
+          const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                onInView(entry);
+              }
+            });
+          }, options);
+
+          observer.observe(element);
+          return () => observer.disconnect();
+        },
+
+        transform: (value: number, mapFrom: [number, number], mapTo: [number, number]): number => {
+          const [fromMin, fromMax] = mapFrom;
+          const [toMin, toMax] = mapTo;
+          const ratio = (value - fromMin) / (fromMax - fromMin);
+          return toMin + ratio * (toMax - toMin);
+        },
+      };
+
+      this.cache.set(cacheKey, api);
+      logger.debug('자체 애니메이션 API 준비 완료');
+      return api;
+    } catch (error) {
+      logger.error('애니메이션 API 초기화 실패:', error);
+      throw new Error('애니메이션 라이브러리를 사용할 수 없습니다');
     }
   }
 

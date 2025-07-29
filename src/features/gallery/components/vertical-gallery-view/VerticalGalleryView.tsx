@@ -19,6 +19,14 @@ import { galleryState, navigateToItem } from '@shared/state/signals/gallery.sign
 import { getPreactHooks } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import type { MouseEvent } from 'preact/compat';
+import {
+  animateGalleryEnter,
+  animateGalleryExit,
+  animateToolbarShow,
+  animateToolbarHide,
+  setupScrollAnimation,
+} from '@shared/utils/animations';
+import { useVirtualScroll } from '@shared/hooks/useVirtualScroll';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
@@ -89,6 +97,10 @@ function VerticalGalleryViewCore({
   useEffect(() => {
     if (isVisible && initialToolbarVisible) {
       const timer = setTimeout(() => {
+        // 툴바 숨김 애니메이션 실행
+        if (toolbarWrapperRef.current) {
+          animateToolbarHide(toolbarWrapperRef.current);
+        }
         setInitialToolbarVisible(false);
         logger.debug('VerticalGalleryView: 초기 툴바 표시 종료 (1.5초 경과)');
       }, 1500);
@@ -99,6 +111,14 @@ function VerticalGalleryViewCore({
     // 조건이 맞지 않을 때는 아무것도 정리할 것이 없음
     return () => {};
   }, [isVisible, initialToolbarVisible]);
+
+  // 툴바 표시 애니메이션
+  useEffect(() => {
+    if (toolbarWrapperRef.current && initialToolbarVisible) {
+      animateToolbarShow(toolbarWrapperRef.current);
+      logger.debug('툴바 표시 애니메이션 실행');
+    }
+  }, [initialToolbarVisible]);
 
   // 포커스 상태 관리
   const [focusedIndex, setFocusedIndex] = useState<number>(currentIndex);
@@ -131,6 +151,30 @@ function VerticalGalleryViewCore({
     return itemsWithKeys;
   }, [mediaItems]);
 
+  // 가상 스크롤링 설정
+  const virtualScrollConfig = useMemo(
+    () => ({
+      itemHeight: 500, // 평균 아이템 높이
+      viewportHeight: 800, // 기본 뷰포트 높이
+      bufferSize: 5, // 버퍼 아이템 수
+      threshold: 50, // 가상 스크롤링 활성화 임계값
+    }),
+    []
+  );
+
+  // 가상 스크롤링 훅
+  const virtualScroll = useVirtualScroll({
+    ...virtualScrollConfig,
+    items: memoizedMediaItems,
+    containerRef,
+    enabled: memoizedMediaItems.length >= virtualScrollConfig.threshold,
+  });
+
+  // 렌더링할 아이템들 (가상 스크롤링 고려)
+  const itemsToRender = virtualScroll.isVirtualScrolling
+    ? virtualScroll.visibleItems
+    : memoizedMediaItems;
+
   // 최적화: 미디어 개수 변경 시에만 가시성 업데이트
   useEffect(() => {
     const shouldBeVisible = mediaItems.length > 0;
@@ -143,6 +187,19 @@ function VerticalGalleryViewCore({
       });
     }
   }, [mediaItems.length, isVisible]);
+
+  // 갤러리 진입/종료 애니메이션
+  useEffect(() => {
+    if (containerRef.current) {
+      if (isVisible) {
+        animateGalleryEnter(containerRef.current);
+        logger.debug('갤러리 진입 애니메이션 실행');
+      } else {
+        animateGalleryExit(containerRef.current);
+        logger.debug('갤러리 종료 애니메이션 실행');
+      }
+    }
+  }, [isVisible]);
 
   // 갤러리 닫힘 시 비디오 정리
   useEffect(() => {
@@ -191,7 +248,18 @@ function VerticalGalleryViewCore({
     blockTwitterScroll: true,
   });
 
-  // 백그라운드 클릭 핸들러 (갤러리 닫기만 처리)
+  // 부드러운 스크롤 애니메이션 설정
+  useEffect(() => {
+    if (containerRef.current) {
+      const cleanup = setupScrollAnimation(({ scrollY, progress }) => {
+        // 스크롤 진행도에 따른 동적 효과
+        logger.debug('스크롤 애니메이션', { scrollY, progress });
+      }, containerRef.current);
+
+      return cleanup;
+    }
+    return () => {}; // cleanup 함수가 없는 경우 빈 함수 반환
+  }, [isVisible]); // 백그라운드 클릭 핸들러 (갤러리 닫기만 처리)
   const handleBackgroundClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       // 툴바나 툴바 영역 클릭은 무시
@@ -511,22 +579,37 @@ function VerticalGalleryViewCore({
 
       {/* 콘텐츠 영역 */}
       <div ref={contentRef} className={styles.content} onClick={handleContentClick}>
-        <div className={styles.itemsList} data-xeg-role='items-list'>
-          {memoizedMediaItems.map((item, index) => (
-            <VerticalImageItem
-              key={item._galleryKey}
-              media={item}
-              index={index}
-              isActive={index === currentIndex}
-              isFocused={index === focusedIndex}
-              forceVisible={forceVisibleItems.has(index)}
-              fitMode={imageFitMode}
-              onClick={() => handleMediaItemClick(index)}
-              onMediaLoad={handleMediaLoad}
-              className={`${styles.galleryItem} ${index === currentIndex ? styles.itemActive : ''}`}
-              data-index={index}
-            />
-          ))}
+        <div
+          className={styles.itemsList}
+          data-xeg-role='items-list'
+          style={virtualScroll.isVirtualScrolling ? virtualScroll.listStyle : undefined}
+          onScroll={virtualScroll.isVirtualScrolling ? virtualScroll.onScroll : undefined}
+        >
+          {itemsToRender.map((item, index) => {
+            // 가상 스크롤링 사용 시 실제 인덱스 계산
+            const actualIndex = virtualScroll.isVirtualScrolling
+              ? virtualScroll.renderRange.start + index
+              : index;
+
+            // 키 생성 (memoizedMediaItems와 동일한 방식)
+            const itemKey = `${item.id || item.url}-${actualIndex}`;
+
+            return (
+              <VerticalImageItem
+                key={itemKey}
+                media={item}
+                index={actualIndex}
+                isActive={actualIndex === currentIndex}
+                isFocused={actualIndex === focusedIndex}
+                forceVisible={forceVisibleItems.has(actualIndex)}
+                fitMode={imageFitMode}
+                onClick={() => handleMediaItemClick(actualIndex)}
+                onMediaLoad={handleMediaLoad}
+                className={`${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`}
+                data-index={actualIndex}
+              />
+            );
+          })}
         </div>
       </div>
 
