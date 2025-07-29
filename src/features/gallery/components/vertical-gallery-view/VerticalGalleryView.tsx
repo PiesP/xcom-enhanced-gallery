@@ -23,7 +23,6 @@ import {
   animateGalleryEnter,
   animateGalleryExit,
   animateToolbarShow,
-  animateToolbarHide,
   setupScrollAnimation,
 } from '@shared/services/SimpleAnimationService';
 import { useVirtualScroll } from '@shared/hooks/useVirtualScroll';
@@ -93,30 +92,52 @@ function VerticalGalleryViewCore({
   // 초기 툴바 표시 상태 (3초간)
   const [initialToolbarVisible, setInitialToolbarVisible] = useState(true);
 
-  // 초기 툴바 표시 타이머 설정 (1.5초로 단축)
+  // 초기 툴바 표시 타이머 설정 - 가시성 문제 해결을 위해 항상 표시로 변경
   useEffect(() => {
-    if (isVisible && initialToolbarVisible) {
+    if (isVisible) {
+      // 초기에 툴바가 보이도록 강제 설정
+      if (toolbarWrapperRef.current) {
+        const toolbar = toolbarWrapperRef.current;
+        toolbar.style.setProperty('opacity', '1', 'important');
+        toolbar.style.setProperty('visibility', 'visible', 'important');
+        toolbar.style.setProperty('display', 'block', 'important');
+        toolbar.style.setProperty('transform', 'translateY(0)', 'important');
+        toolbar.style.setProperty('pointer-events', 'auto', 'important');
+        toolbar.style.setProperty('z-index', '999999', 'important');
+      }
+
+      // 타이머는 유지하되 더 긴 시간으로 설정 (5초)
       const timer = setTimeout(() => {
-        // 툴바 숨김 애니메이션 실행
-        if (toolbarWrapperRef.current) {
-          animateToolbarHide(toolbarWrapperRef.current);
-        }
+        // 툴바를 숨기는 대신 호버로만 제어되도록 변경
         setInitialToolbarVisible(false);
-        logger.debug('VerticalGalleryView: 초기 툴바 표시 종료 (1.5초 경과)');
-      }, 1500);
+        logger.debug('VerticalGalleryView: 초기 툴바 표시 상태 해제 (5초 경과)');
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
 
     // 조건이 맞지 않을 때는 아무것도 정리할 것이 없음
     return () => {};
-  }, [isVisible, initialToolbarVisible]);
+  }, [isVisible]);
 
-  // 툴바 표시 애니메이션
+  // 툴바 표시 애니메이션 - 가시성 보장
   useEffect(() => {
-    if (toolbarWrapperRef.current && initialToolbarVisible) {
-      animateToolbarShow(toolbarWrapperRef.current);
-      logger.debug('툴바 표시 애니메이션 실행');
+    if (toolbarWrapperRef.current) {
+      const toolbar = toolbarWrapperRef.current;
+
+      // 강제로 가시성 보장
+      toolbar.style.setProperty('opacity', '1', 'important');
+      toolbar.style.setProperty('visibility', 'visible', 'important');
+      toolbar.style.setProperty('display', 'block', 'important');
+      toolbar.style.setProperty('transform', 'translateY(0)', 'important');
+      toolbar.style.setProperty('pointer-events', 'auto', 'important');
+
+      // 애니메이션 실행
+      if (initialToolbarVisible) {
+        animateToolbarShow(toolbar);
+      }
+
+      logger.debug('툴바 가시성 강제 적용 및 애니메이션 실행');
     }
   }, [initialToolbarVisible]);
 
@@ -502,21 +523,28 @@ function VerticalGalleryViewCore({
     if (!hoverZone || !toolbarWrapper) return;
 
     const showToolbar = () => {
-      toolbarWrapper.style.opacity = '1';
-      toolbarWrapper.style.transform = 'translateY(0)';
-      toolbarWrapper.style.pointerEvents = 'auto';
+      // 강화된 가시성 보장
+      toolbarWrapper.style.setProperty('opacity', '1', 'important');
+      toolbarWrapper.style.setProperty('visibility', 'visible', 'important');
+      toolbarWrapper.style.setProperty('display', 'block', 'important');
+      toolbarWrapper.style.setProperty('transform', 'translateY(0)', 'important');
+      toolbarWrapper.style.setProperty('pointer-events', 'auto', 'important');
+      toolbarWrapper.style.setProperty('z-index', '999999', 'important');
       toolbarWrapper.style.setProperty('--toolbar-opacity', '1');
       toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'auto');
     };
 
     const hideToolbar = () => {
-      if (!initialToolbarVisible) {
-        toolbarWrapper.style.opacity = '0';
-        toolbarWrapper.style.transform = 'translateY(-100%)';
-        toolbarWrapper.style.pointerEvents = 'auto'; // 툴바 자체는 항상 클릭 가능
-        toolbarWrapper.style.setProperty('--toolbar-opacity', '0');
-        toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'none');
-      }
+      // 가시성 문제 해결을 위해 툴바를 숨기지 않음
+      // 대신 항상 보이도록 유지
+      toolbarWrapper.style.setProperty('opacity', '1', 'important');
+      toolbarWrapper.style.setProperty('visibility', 'visible', 'important');
+      toolbarWrapper.style.setProperty('display', 'block', 'important');
+      toolbarWrapper.style.setProperty('transform', 'translateY(0)', 'important');
+      toolbarWrapper.style.setProperty('pointer-events', 'auto', 'important');
+      toolbarWrapper.style.setProperty('z-index', '999999', 'important');
+      toolbarWrapper.style.setProperty('--toolbar-opacity', '1');
+      toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'auto');
     };
 
     // 호버 이벤트 핸들러

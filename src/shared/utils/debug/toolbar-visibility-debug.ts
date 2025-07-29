@@ -175,7 +175,15 @@ export function debugToolbarVisibility(
   }
 
   if (debugInfo.computed && parseInt(debugInfo.computed.zIndex) < 1000) {
-    issues.push(`z-index가 낮습니다 (${debugInfo.computed.zIndex})`);
+    issues.push(`z-index가 너무 낮습니다 (최소 1000 권장)`);
+  }
+
+  // CSS transform 문제 감지
+  if (debugInfo.computed?.transform && debugInfo.computed.transform !== 'none') {
+    const transform = debugInfo.computed.transform;
+    if (transform.includes('translateY(-100%)') || transform.includes('scale(0)')) {
+      issues.push('CSS transform으로 화면 밖으로 이동되었습니다');
+    }
   }
 
   debugInfo.issues = issues;
