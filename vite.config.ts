@@ -325,11 +325,6 @@ export default defineConfig(({ mode }) => {
           inlineDynamicImports: true,
           manualChunks: undefined as any,
           // Phase 5: 추가적인 최적화 설정
-          compact: buildMode.isProduction,
-          generatedCode: {
-            constBindings: true,
-            arrowFunctions: true,
-          },
         },
         treeshake: {
           moduleSideEffects: false,
