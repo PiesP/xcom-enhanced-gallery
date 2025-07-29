@@ -15,9 +15,11 @@ export { withGalleryMarker } from './hoc/GalleryMarker';
 
 // 통합된 갤러리 컴포넌트들
 export { UnifiedGalleryContainer } from './isolation/UnifiedGalleryContainer';
+export { VirtualGallery } from './virtual/VirtualGallery';
 
 // 타입들
 export type { UnifiedGalleryContainerProps } from './isolation/UnifiedGalleryContainer';
+export type { VirtualGalleryProps } from './virtual/VirtualGallery';
 export type { ButtonProps } from './ui/Button/Button';
 export type { ToastProps } from './ui/Toast/Toast';
 export type { ToolbarProps } from './ui/Toolbar/Toolbar';

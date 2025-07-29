@@ -26,28 +26,6 @@ describe('외부 라이브러리 통합 테스트', () => {
       expect(typeof query.QueryClient).toBe('function');
       expect(typeof query.QueryCache).toBe('function');
     });
-
-    it('QueryService가 기본적으로 작동해야 한다', async () => {
-      const { QueryService } = await import('@shared/services/QueryService');
-      const queryService = QueryService.getInstance();
-
-      expect(queryService).toBeDefined();
-      expect(typeof queryService.fetchTweetMedia).toBe('function');
-      expect(typeof queryService.invalidateCache).toBe('function');
-    });
-
-    it('QueryService 폴백이 작동해야 한다', async () => {
-      const { QueryService } = await import('@shared/services/QueryService');
-      const queryService = QueryService.getInstance();
-
-      // 존재하지 않는 트윗 ID로 테스트
-      const result = await queryService.fetchTweetMedia('non-existent-tweet');
-
-      expect(result).toBeDefined();
-      expect(result.data).toBeDefined();
-      expect(result.isLoading).toBe(false);
-      expect(typeof result.refetch).toBe('function');
-    });
   });
 
   describe('TanStack Virtual 통합', () => {
@@ -93,7 +71,7 @@ describe('외부 라이브러리 통합 테스트', () => {
 
       // 기본 렌더링 테스트 (실제 DOM 없이는 제한적)
       try {
-        const result = VirtualGallery(props);
+        VirtualGallery(props);
         // 에러가 발생하지 않으면 성공
         expect(true).toBe(true);
       } catch (error) {
@@ -174,10 +152,6 @@ describe('외부 라이브러리 통합 테스트', () => {
 
   describe('전체 통합 검증', () => {
     it('모든 새로운 서비스가 함께 작동해야 한다', async () => {
-      // QueryService
-      const { QueryService } = await import('@shared/services/QueryService');
-      const queryService = QueryService.getInstance();
-
       // SimpleAnimationService
       const { SimpleAnimationService } = await import('@shared/services/SimpleAnimationService');
       const animationService = SimpleAnimationService.getInstance();
@@ -185,12 +159,11 @@ describe('외부 라이브러리 통합 테스트', () => {
       // VirtualGallery
       const { VirtualGallery } = await import('@shared/components/virtual/VirtualGallery');
 
-      expect(queryService).toBeDefined();
       expect(animationService).toBeDefined();
       expect(VirtualGallery).toBeDefined();
 
-      // 서비스들이 서로 독립적으로 작동하는지 확인
-      expect(queryService !== animationService).toBe(true);
+      // 서비스가 정상적으로 작동하는지 확인
+      expect(typeof animationService.fadeIn).toBe('function');
     });
 
     it('새로운 라이브러리들이 기존 시스템과 호환되어야 한다', async () => {
@@ -216,18 +189,13 @@ describe('외부 라이브러리 통합 테스트', () => {
     });
 
     it('메모리 정리가 올바르게 작동해야 한다', async () => {
-      const { QueryService } = await import('@shared/services/QueryService');
       const { SimpleAnimationService } = await import('@shared/services/SimpleAnimationService');
-
-      const queryService = QueryService.getInstance();
       const animationService = SimpleAnimationService.getInstance();
 
       // 정리 메서드가 존재하는지 확인
-      expect(typeof queryService.cleanup).toBe('function');
       expect(typeof animationService.cleanup).toBe('function');
 
       // 정리 실행
-      queryService.cleanup();
       animationService.cleanup();
 
       // 에러가 발생하지 않으면 성공

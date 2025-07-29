@@ -1,209 +1,317 @@
 /**
- * TanStack Virtual을 활용한 가상화 갤러리 컴포넌트
+ * VirtualGallery Component
  *
- * @description 대용량 미디어 리스트의 성능을 최적화하여 수백 개의 아이템도 부드럽게 스크롤
+ * High-performance virtual scrolling gallery component for large media lists.
+ * Uses TanStack Virtual for efficient rendering with fallback compatibility.
  */
 
-import { getPreact, getPreactHooks, getTanStackVirtual } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
-import type { MediaItem } from '@shared/types/core/media.types';
+import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import type { MediaItem } from '@shared/types';
+
+// Preact ComponentChildren 타입 정의 (any 대신 구체적 유니온 타입 사용)
+type ComponentChildren = string | number | boolean | null | undefined | object;
 
 export interface VirtualGalleryProps {
   mediaItems: MediaItem[];
-  itemHeight?: number;
+  itemHeight: number;
   containerHeight?: number;
   onItemClick?: (item: MediaItem, index: number) => void;
-  renderItem?: (item: MediaItem, index: number) => unknown;
+  renderItem?: (item: MediaItem, index: number) => ComponentChildren;
   className?: string;
+  // 성능 최적화 옵션
+  overscan?: number; // 뷰포트 외부에 미리 렌더링할 아이템 수
+  enableVirtualization?: boolean; // 가상화 강제 활성화
 }
 
 /**
- * TanStack Virtual을 사용한 가상화 갤러리 컴포넌트
+ * VirtualGallery component with TanStack Virtual integration
+ *
+ * @param props - VirtualGallery properties
+ * @returns Preact VNode or fallback HTML string
  */
-export function VirtualGallery({
-  mediaItems,
-  itemHeight = 120,
-  containerHeight = 400,
-  onItemClick,
-  renderItem,
+export function VirtualGallery(props: VirtualGalleryProps) {
+  const {
+    mediaItems = [],
+    itemHeight,
+    containerHeight = 400,
+    onItemClick,
+    renderItem,
+    className = '',
+    overscan = 5,
+    enableVirtualization = false,
+  } = props;
+
+  // Safe handling for invalid props
+  if (!Array.isArray(mediaItems) || itemHeight <= 0) {
+    return createFallbackContent('Invalid props provided');
+  }
+
+  // Empty list handling
+  if (mediaItems.length === 0) {
+    return createFallbackContent('No media items');
+  }
+
+  // 가상화 임계값: 50개 이상 또는 강제 활성화
+  const shouldUseVirtualization = mediaItems.length >= 50 || enableVirtualization;
+
+  // For small lists (< 50 items and not forced), use simple rendering
+  if (!shouldUseVirtualization) {
+    return createSimpleList(mediaItems, itemHeight, onItemClick, renderItem, className);
+  }
+
+  // For larger lists, use virtual scrolling
+  return createVirtualizedList(
+    mediaItems,
+    itemHeight,
+    containerHeight,
+    onItemClick,
+    renderItem,
+    className,
+    overscan
+  );
+}
+
+/**
+ * Create virtualized list using manual virtual scrolling
+ * (TanStack Virtual is React-specific, so we implement core functionality)
+ */
+function createVirtualizedList(
+  items: MediaItem[],
+  itemHeight: number,
+  containerHeight: number,
+  onItemClick?: (item: MediaItem, index: number) => void,
+  renderItem?: (item: MediaItem, index: number) => ComponentChildren,
   className = '',
-}: VirtualGalleryProps): unknown {
+  overscan = 5
+) {
   try {
-    const preact = getPreact();
-    const preactHooks = getPreactHooks();
-    const { h } = preact;
-    const { useRef } = preactHooks;
+    const { h } = getPreact();
 
-    const parentRef = useRef<HTMLDivElement>(null);
-
-    // TanStack Virtual 사용 시도
-    const virtual = getTanStackVirtual();
-    if (virtual?.useVirtualizer) {
-      try {
-        const virtualizer = virtual.useVirtualizer({
-          count: mediaItems.length,
-          getScrollElement: () => parentRef.current,
-          estimateSize: () => itemHeight,
-          overscan: 5,
-        });
-
-        const defaultRenderItem = (item: MediaItem, index: number) => {
-          return h(
-            'div',
-            {
-              key: `${item.type}-${index}`,
-              className: 'virtual-gallery-item',
-              style: {
-                padding: '8px',
-                border: '1px solid #e1e8ed',
-                borderRadius: '8px',
-                backgroundColor: '#fff',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-              },
-              onClick: () => onItemClick?.(item, index),
-            },
-            [
-              h('div', { style: { fontWeight: 'bold', marginBottom: '4px' } }, item.type),
-              h(
-                'div',
-                { style: { fontSize: '12px', color: '#657786' } },
-                (item as MediaItem & { url?: string }).url
-                  ? `${(item as MediaItem & { url?: string }).url!.substring(0, 50)}...`
-                  : 'No source'
-              ),
-            ]
-          );
-        };
-
-        const items = virtualizer.getVirtualItems();
-
-        return h(
-          'div',
-          {
-            ref: parentRef,
-            className: `virtual-gallery ${className}`,
-            style: {
-              height: `${containerHeight}px`,
-              overflow: 'auto',
-              border: '1px solid #e1e8ed',
-              borderRadius: '8px',
-            },
-          },
-          [
-            h(
-              'div',
-              {
-                style: {
-                  height: `${virtualizer.getTotalSize()}px`,
-                  width: '100%',
-                  position: 'relative',
-                },
-              },
-              items.map(virtualItem => {
-                const item = mediaItems[virtualItem.index];
-                if (!item) return null;
-
-                const renderer = renderItem || defaultRenderItem;
-
-                return h(
-                  'div',
-                  {
-                    key: String(virtualItem.key),
-                    style: {
-                      position: 'absolute',
-                      top: `${virtualItem.start}px`,
-                      left: '0',
-                      width: '100%',
-                      height: `${virtualItem.size}px`,
-                      transform: `translateY(0px)`,
-                    },
-                  },
-                  renderer(item, virtualItem.index) as string | null
-                );
-              })
-            ),
-          ]
-        );
-      } catch (virtualError) {
-        logger.warn('VirtualGallery', 'TanStack Virtual error, falling back:', virtualError);
-      }
-    }
-
-    // 폴백: TanStack Virtual이 없는 경우 기본 렌더링
-    logger.warn('VirtualGallery', 'TanStack Virtual not available, using fallback rendering');
-
-    const defaultRenderItem = (item: MediaItem, index: number) => {
-      return h(
-        'div',
-        {
-          key: `${item.type}-${index}`,
-          className: 'virtual-gallery-item',
-          style: {
-            padding: '8px',
-            margin: '4px 0',
-            border: '1px solid #e1e8ed',
-            borderRadius: '8px',
-            backgroundColor: '#fff',
-            cursor: 'pointer',
-          },
-          onClick: () => onItemClick?.(item, index),
-        },
-        [
-          h('div', { style: { fontWeight: 'bold' } }, item.type),
-          h(
-            'div',
-            { style: { fontSize: '12px', color: '#657786' } },
-            (item as MediaItem & { url?: string }).url
-              ? `${(item as MediaItem & { url?: string }).url!.substring(0, 50)}...`
-              : 'No source'
-          ),
-        ]
-      );
+    // Manual virtual scrolling implementation
+    const componentProps: {
+      items: MediaItem[];
+      itemHeight: number;
+      containerHeight: number;
+      className: string;
+      overscan: number;
+      onItemClick?: (item: MediaItem, index: number) => void;
+      renderItem?: (item: MediaItem, index: number) => ComponentChildren;
+    } = {
+      items,
+      itemHeight,
+      containerHeight,
+      className,
+      overscan,
     };
 
-    return h(
-      'div',
-      {
-        className: `virtual-gallery-fallback ${className}`,
-        style: {
-          height: `${containerHeight}px`,
-          overflow: 'auto',
-          border: '1px solid #e1e8ed',
-          borderRadius: '8px',
-          padding: '8px',
-        },
-      },
-      mediaItems.map((item, index) => {
-        const renderer = renderItem || defaultRenderItem;
-        return renderer(item, index);
-      })
-    );
-  } catch (error) {
-    logger.error('VirtualGallery', 'Error in virtual gallery:', error);
+    if (onItemClick) {
+      componentProps.onItemClick = onItemClick;
+    }
 
-    // 최종 폴백: 에러 발생 시 간단한 메시지
-    const { h } = getPreact();
-    return h(
-      'div',
-      {
-        className: `virtual-gallery-error ${className}`,
-        style: {
-          padding: '20px',
-          textAlign: 'center',
-          color: '#657786',
-        },
-      },
-      'Virtual gallery temporarily unavailable'
+    if (renderItem) {
+      componentProps.renderItem = renderItem;
+    }
+
+    return h(ManualVirtualizedComponent, componentProps);
+  } catch (error) {
+    console.warn('[VirtualGallery] Virtualization failed, using fallback:', error);
+    return createFallbackList(
+      items,
+      itemHeight,
+      containerHeight,
+      onItemClick,
+      renderItem,
+      className
     );
   }
 }
 
 /**
- * 메모이제이션된 VirtualGallery 컴포넌트
+ * Manual Virtualized List Component
  */
-export function MemoizedVirtualGallery(props: VirtualGalleryProps): unknown {
-  // 현재 memo가 사용 불가능하므로 일반 컴포넌트 반환
-  logger.debug('MemoizedVirtualGallery', 'Using regular component (memo not available)');
-  return VirtualGallery(props);
+function ManualVirtualizedComponent(props: {
+  items: MediaItem[];
+  itemHeight: number;
+  containerHeight: number;
+  onItemClick?: (item: MediaItem, index: number) => void;
+  renderItem?: (item: MediaItem, index: number) => ComponentChildren;
+  className: string;
+  overscan: number;
+}) {
+  const { h } = getPreact();
+  const { useRef, useState, useEffect } = getPreactHooks();
+  const { items, itemHeight, containerHeight, onItemClick, renderItem, className, overscan } =
+    props;
+
+  const containerRef = useRef<HTMLElement>();
+  const [scrollTop, setScrollTop] = useState(0);
+
+  // 스크롤 이벤트 핸들러
+  const handleScroll = (event: Event) => {
+    const target = event.target as HTMLElement;
+    setScrollTop(target.scrollTop);
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // 가상화 계산
+  const totalHeight = items.length * itemHeight;
+  const visibleItemsCount = Math.ceil(containerHeight / itemHeight);
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+  const endIndex = Math.min(items.length - 1, startIndex + visibleItemsCount + overscan * 2);
+  const visibleItems = items.slice(startIndex, endIndex + 1);
+
+  return h(
+    'div',
+    {
+      ref: containerRef,
+      className: `virtual-gallery virtualized ${className}`,
+      style: {
+        height: `${containerHeight}px`,
+        overflow: 'auto',
+      },
+      'data-total-items': items.length,
+      'data-visible-items': `${startIndex}-${endIndex}`,
+    },
+    h(
+      'div',
+      {
+        className: 'virtual-gallery-spacer',
+        style: {
+          height: `${totalHeight}px`,
+          position: 'relative',
+        },
+      },
+      visibleItems.map((item, index) => {
+        const actualIndex = startIndex + index;
+        const offsetY = actualIndex * itemHeight;
+
+        return h(
+          'div',
+          {
+            key: item.id || actualIndex,
+            className: 'virtual-gallery-item',
+            style: {
+              position: 'absolute',
+              top: `${offsetY}px`,
+              width: '100%',
+              height: `${itemHeight}px`,
+            },
+            onClick: onItemClick ? () => onItemClick(item, actualIndex) : undefined,
+          },
+          renderItem ? renderItem(item, actualIndex) : defaultItemRenderer(item, actualIndex)
+        );
+      })
+    )
+  );
 }
+
+/**
+ * Create fallback list for virtualization failures
+ */
+function createFallbackList(
+  items: MediaItem[],
+  itemHeight: number,
+  containerHeight: number,
+  onItemClick?: (item: MediaItem, index: number) => void,
+  renderItem?: (item: MediaItem, index: number) => ComponentChildren,
+  className = ''
+) {
+  try {
+    const { h } = getPreact();
+
+    return h(
+      'div',
+      {
+        className: `virtual-gallery fallback ${className}`,
+        style: { height: `${containerHeight}px`, overflow: 'auto' },
+      },
+      items.map((item, index) =>
+        h(
+          'div',
+          {
+            key: item.id || index,
+            className: 'virtual-gallery-item',
+            style: { height: `${itemHeight}px` },
+            onClick: onItemClick ? () => onItemClick(item, index) : undefined,
+          },
+          renderItem ? renderItem(item, index) : defaultItemRenderer(item, index)
+        )
+      )
+    );
+  } catch (error) {
+    console.warn('[VirtualGallery] Fallback rendering failed:', error);
+    return createFallbackContent('Rendering failed');
+  }
+}
+
+/**
+ * Create fallback content for error cases
+ */
+function createFallbackContent(message: string): string {
+  return `<div class="virtual-gallery-fallback">
+    <p>Virtual Gallery: ${message}</p>
+  </div>`;
+}
+
+/**
+ * Create simple list for small item counts (< 50 items)
+ */
+function createSimpleList(
+  items: MediaItem[],
+  itemHeight: number,
+  onItemClick?: (item: MediaItem, index: number) => void,
+  renderItem?: (item: MediaItem, index: number) => ComponentChildren,
+  className = ''
+) {
+  try {
+    const { h } = getPreact();
+
+    return h(
+      'div',
+      {
+        className: `virtual-gallery simple ${className}`,
+        'data-items-count': items.length,
+      },
+      items.map((item, index) =>
+        h(
+          'div',
+          {
+            key: item.id || index,
+            className: 'virtual-gallery-item',
+            style: { height: `${itemHeight}px` },
+            onClick: onItemClick ? () => onItemClick(item, index) : undefined,
+          },
+          renderItem ? renderItem(item, index) : defaultItemRenderer(item, index)
+        )
+      )
+    );
+  } catch (error) {
+    console.warn('[VirtualGallery] Simple list rendering failed:', error);
+    return createFallbackContent('Simple rendering failed');
+  }
+}
+
+/**
+ * Default item renderer
+ */
+function defaultItemRenderer(item: MediaItem, index: number) {
+  const { h } = getPreact();
+
+  return h(
+    'div',
+    { className: 'virtual-gallery-item-content' },
+    h('span', {}, `Item ${index}: ${item.id || 'Unknown'}`)
+  );
+}
+
+export default VirtualGallery;

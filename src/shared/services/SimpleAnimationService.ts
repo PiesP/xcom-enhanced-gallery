@@ -435,3 +435,43 @@ export const openGalleryWithAnimation = (element: Element, config?: AnimationCon
 export const closeGalleryWithAnimation = (element: Element, config?: AnimationConfig) => {
   return SimpleAnimationService.getInstance().closeGallery(element, config);
 };
+
+/**
+ * 기존 호환성을 위한 애니메이션 함수들
+ */
+export const animateGalleryEnter = (element: Element) => {
+  return SimpleAnimationService.getInstance().openGallery(element, {
+    duration: 400,
+    easing: 'ease-out',
+  });
+};
+
+export const animateGalleryExit = (element: Element) => {
+  return SimpleAnimationService.getInstance().closeGallery(element, {
+    duration: 300,
+    easing: 'ease-in',
+  });
+};
+
+export const animateToolbarShow = (element: Element) => {
+  return SimpleAnimationService.getInstance().fadeIn(element, {
+    duration: 200,
+    easing: 'ease-out',
+  });
+};
+
+export const animateToolbarHide = (element: Element) => {
+  return SimpleAnimationService.getInstance().fadeOut(element, {
+    duration: 200,
+    easing: 'ease-in',
+  });
+};
+
+export const setupScrollAnimation = (
+  onScroll: (info: { scrollY: number; progress: number }) => void,
+  container?: Element | null
+) => {
+  return SimpleAnimationService.getInstance().setupScrollAnimation(onScroll, {
+    container: container || null,
+  });
+};

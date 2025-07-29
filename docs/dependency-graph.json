@@ -897,6 +897,41 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./virtual/VirtualGallery",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/virtual/VirtualGallery.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./virtual/VirtualGallery",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/virtual/VirtualGallery.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -1273,6 +1308,15 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Toolbar/Toolbar.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/virtual/VirtualGallery.tsx",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2211,19 +2255,6 @@
       ],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/components/virtual/VirtualGallery.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "src/shared/dom/DOMCache.ts",
@@ -5223,19 +5254,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/QueryService.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/services/SimpleAnimationService.ts",
       "dependencies": [],
       "dependents": [],
@@ -5959,19 +5977,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/animations-integrated.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/utils/core/index.ts",
       "dependencies": [
         {
@@ -6468,35 +6473,8 @@
     "violations": [
       {
         "type": "module",
-        "from": "src/shared/components/virtual/VirtualGallery.tsx",
-        "to": "src/shared/components/virtual/VirtualGallery.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/services/QueryService.ts",
-        "to": "src/shared/services/QueryService.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "src/shared/services/SimpleAnimationService.ts",
         "to": "src/shared/services/SimpleAnimationService.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/utils/animations-integrated.ts",
-        "to": "src/shared/utils/animations-integrated.ts",
         "rule": {
           "severity": "info",
           "name": "no-orphans"
@@ -6505,10 +6483,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 4,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 183,
-    "totalDependenciesCruised": 270,
+    "totalCruised": 181,
+    "totalDependenciesCruised": 272,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
