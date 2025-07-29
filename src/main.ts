@@ -10,6 +10,7 @@ import { measureAsyncPerformance } from '@/utils';
 import { logger } from '@shared/logging/logger'; // 직접 import로 변경
 import type { AppConfig } from '@/types';
 import { ServiceManager } from '@shared/services/ServiceManager';
+import { EarlyEventCaptureService } from '@shared/services/EarlyEventCaptureService';
 import { SERVICE_KEYS } from './constants';
 
 // 전역 스타일
@@ -21,6 +22,7 @@ import './styles/globals';
 let isStarted = false;
 let galleryApp: unknown = null; // Features GalleryApp 인스턴스
 let serviceManager: ServiceManager | null = null;
+let earlyEventCapture: EarlyEventCaptureService | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
 
 /**
@@ -214,6 +216,11 @@ async function cleanup(): Promise<void> {
   try {
     logger.info('🧹 애플리케이션 정리 시작');
 
+    if (earlyEventCapture) {
+      earlyEventCapture.destroy();
+      earlyEventCapture = null;
+    }
+
     if (galleryApp) {
       await (galleryApp as { cleanup(): Promise<void> }).cleanup();
       galleryApp = null;
@@ -314,6 +321,9 @@ async function startApplication(): Promise<void> {
     logger.info('🚀 X.com Enhanced Gallery 시작 중...');
 
     const _result = await measureAsyncPerformance('애플리케이션 초기화', async () => {
+      // 0단계: 즉시 이벤트 캐처 시작 (지연 없음)
+      earlyEventCapture = new EarlyEventCaptureService();
+
       // 개발 도구 초기화 (개발 환경만)
       await initializeDevTools();
 
@@ -329,8 +339,8 @@ async function startApplication(): Promise<void> {
       // 4단계: 전역 이벤트 핸들러 설정
       setupGlobalEventHandlers();
 
-      // 5단계: 갤러리 앱은 실제 필요시에만 초기화 (지연 로딩)
-      scheduleGalleryInitialization();
+      // 5단계: 갤러리 앱을 즉시 초기화 (지연 없음)
+      await initializeGalleryImmediately();
 
       // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
       initializeNonCriticalSystems();
@@ -365,24 +375,31 @@ async function startApplication(): Promise<void> {
 }
 
 /**
- * 갤러리 초기화 스케줄링 (지연 로딩)
+ * 갤러리 즉시 초기화 (지연 없음)
  */
-function scheduleGalleryInitialization(): void {
-  // 사용자 상호작용 감지시 갤러리 초기화
-  const initializeOnInteraction = () => {
-    if (!galleryApp) {
-      initializeGalleryApp().catch(error => {
-        logger.error('갤러리 지연 초기화 실패:', error);
+async function initializeGalleryImmediately(): Promise<void> {
+  try {
+    logger.debug('🎯 갤러리 즉시 초기화 시작');
+
+    // 기존의 scheduleGalleryInitialization 대신 즉시 실행
+    await initializeGalleryApp();
+
+    // 갤러리 준비 완료 알림
+    if (earlyEventCapture) {
+      earlyEventCapture.onGalleryReady((element: HTMLElement, _event: MouseEvent) => {
+        // 실제 갤러리 핸들러 연결
+        logger.debug('🔗 Processing early captured click', { element: element.tagName });
+        // TODO: 실제 미디어 클릭 핸들러와 연결
       });
+
+      logger.debug(`📋 Processed ${earlyEventCapture.getPendingClicksCount()} pending clicks`);
     }
-  };
 
-  // 미디어 클릭, 키보드 단축키 등 감지
-  document.addEventListener('click', initializeOnInteraction, { once: true, passive: true });
-  document.addEventListener('keydown', initializeOnInteraction, { once: true, passive: true });
-
-  // 또는 5초 후 자동 초기화
-  setTimeout(initializeOnInteraction, 5000);
+    logger.debug('✅ 갤러리 즉시 초기화 완료');
+  } catch (error) {
+    logger.error('❌ 갤러리 즉시 초기화 실패:', error);
+    throw error;
+  }
 }
 
 // DOM 준비 시 애플리케이션 시작

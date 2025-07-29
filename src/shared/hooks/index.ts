@@ -15,12 +15,6 @@ export {
 } from './useToolbarState';
 
 export {
-  useToolbarAutoHide,
-  type UseToolbarAutoHideOptions,
-  type ToolbarAutoHideState,
-} from './useToolbarAutoHide';
-
-export {
   useScrollDirection,
   type UseScrollDirectionOptions,
   type UseScrollDirectionReturn,

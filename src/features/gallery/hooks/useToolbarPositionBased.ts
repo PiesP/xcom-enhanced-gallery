@@ -49,18 +49,29 @@ export function useToolbarPositionBased({
   const [isVisible, setIsVisible] = useState(enabled);
 
   /**
-   * CSS 변수를 통한 툴바 스타일 업데이트
+   * 툴바 스타일 직접 업데이트 (빠른 반응을 위해)
    */
-  const updateToolbarVisibility = useCallback((visible: boolean) => {
-    const opacity = visible ? '1' : '0';
-    const pointerEvents = visible ? 'auto' : 'none';
+  const updateToolbarVisibility = useCallback(
+    (visible: boolean) => {
+      if (!toolbarElement) return;
 
-    // CSS 변수 업데이트로 기존 시스템과 호환성 유지
-    document.documentElement.style.setProperty('--toolbar-opacity', opacity);
-    document.documentElement.style.setProperty('--toolbar-pointer-events', pointerEvents);
+      const opacity = visible ? '1' : '0';
+      const pointerEvents = visible ? 'auto' : 'none';
+      const visibility = visible ? 'visible' : 'hidden';
 
-    logger.debug(`Toolbar visibility updated: ${visible ? 'visible' : 'hidden'}`);
-  }, []);
+      // 직접 스타일 업데이트로 즉시 반응
+      toolbarElement.style.setProperty('--toolbar-opacity', opacity);
+      toolbarElement.style.setProperty('--toolbar-pointer-events', pointerEvents);
+      toolbarElement.style.setProperty('--toolbar-visibility', visibility);
+
+      // 전역 CSS 변수도 업데이트 (호환성 유지)
+      document.documentElement.style.setProperty('--toolbar-opacity', opacity);
+      document.documentElement.style.setProperty('--toolbar-pointer-events', pointerEvents);
+
+      logger.debug(`Toolbar visibility updated: ${visible ? 'visible' : 'hidden'}`);
+    },
+    [toolbarElement]
+  );
 
   /**
    * 툴바 표시
