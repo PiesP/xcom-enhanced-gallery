@@ -6,7 +6,7 @@
  * @version 4.0.0 - Simplified Architecture
  */
 
-import { measurePerformance } from '@/utils';
+import { measureAsyncPerformance } from '@/utils';
 import { logger } from '@shared/logging/logger'; // 직접 import로 변경
 import type { AppConfig } from '@/types';
 import { ServiceManager } from '@shared/services/ServiceManager';
@@ -313,7 +313,7 @@ async function startApplication(): Promise<void> {
   try {
     logger.info('🚀 X.com Enhanced Gallery 시작 중...');
 
-    const _result = await measurePerformance(async () => {
+    const _result = await measureAsyncPerformance('애플리케이션 초기화', async () => {
       // 개발 도구 초기화 (개발 환경만)
       await initializeDevTools();
 

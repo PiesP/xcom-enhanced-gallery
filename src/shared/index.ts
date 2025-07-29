@@ -13,8 +13,8 @@ export * from './components/isolation';
 // HOC 컴포넌트들
 export * from './components/hoc';
 
-// 최적화 컴포넌트들 (Phase 3)
-export * from './components/optimization';
+// 최적화 컴포넌트들 제거됨 (기본 Preact memo 사용 권장)
+// export * from './components/optimization';
 
 // 서비스들 (기존 Core에서 이동)
 export * from './services';

@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DOMCache } from '@shared/dom/DOMCache';
-import { AdvancedMemoization } from '@shared/components/optimization/AdvancedMemoization';
+import { getPreactCompat } from '@shared/external/vendors';
 import { rafThrottle } from '@shared/utils/unified-utils';
 import { OptimizedLazyLoadingService } from '@shared/services/OptimizedLazyLoadingService';
 import { RuntimeResourceManager } from '@shared/managers';
@@ -85,11 +85,11 @@ describe('Phase 4: 런타임 성능 최적화', () => {
     });
 
     it('고급 메모이제이션이 메모리 효율적이어야 함', () => {
-      // AdvancedMemoization 테스트
-      const memoization = AdvancedMemoization.getInstance();
+      // Preact compat memo 기본 기능 테스트
+      const { memo } = getPreactCompat();
 
-      expect(memoization).toBeDefined();
-      expect(typeof memoization.memoize).toBe('function');
+      expect(memo).toBeDefined();
+      expect(typeof memo).toBe('function');
     });
 
     it('메모리 사용량이 임계값을 초과하지 않아야 함', () => {

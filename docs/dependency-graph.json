@@ -1432,7 +1432,6 @@
       ],
       "dependents": [
         "src/external/index.ts",
-        "src/shared/components/optimization/AdvancedMemoization.ts",
         "src/shared/external/index.ts"
       ],
       "orphan": false,
@@ -2036,57 +2035,10 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/optimization/AdvancedMemoization.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/optimization/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/optimization/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./AdvancedMemoization",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/optimization/AdvancedMemoization.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -2654,23 +2606,6 @@
         },
         {
           "dynamic": false,
-          "module": "./components/optimization",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/optimization/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./components/ui",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3184,6 +3119,23 @@
             "export"
           ],
           "resolved": "src/shared/services/ServiceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SimpleAnimationService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/SimpleAnimationService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4112,6 +4064,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/SimpleAnimationService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/UnifiedMediaLoadingService.ts",
       "dependencies": [],
       "dependents": [
@@ -4538,6 +4499,23 @@
         },
         {
           "dynamic": false,
+          "module": "./performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./profiling",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4743,14 +4721,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./unified-utils",
+          "module": "./performance/performance-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "export"
           ],
-          "resolved": "src/shared/utils/unified-utils.ts",
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4767,38 +4745,13 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/unified-utils.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./performance/performance-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/performance/performance-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/index.ts",
-        "src/shared/utils/core-utils.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/performance/performance-utils.ts",
       "dependencies": [],
       "dependents": [
+        "src/shared/utils/index.ts",
         "src/shared/utils/convenience.ts",
+        "src/shared/utils/core-utils.ts",
+        "src/shared/utils/timer-management.ts",
         "src/shared/utils/unified-utils.ts",
         "src/shared/utils/performance/index.ts"
       ],
@@ -4965,7 +4918,25 @@
     },
     {
       "source": "src/shared/utils/timer-management.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/index.ts"
       ],
@@ -5074,6 +5045,33 @@
     {
       "source": "src/shared/utils/unified-dom.ts",
       "dependencies": [],
+      "dependents": [
+        "src/shared/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/unified-utils.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/index.ts"
       ],
@@ -5252,19 +5250,6 @@
       ],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/services/SimpleAnimationService.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "src/shared/services/media-extraction/index.ts",
@@ -6470,22 +6455,12 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/services/SimpleAnimationService.ts",
-        "to": "src/shared/services/SimpleAnimationService.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 181,
+    "totalCruised": 180,
     "totalDependenciesCruised": 272,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

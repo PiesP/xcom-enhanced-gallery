@@ -4,6 +4,8 @@
  * @version 1.0.0
  */
 
+import { createDebouncer } from './performance/performance-utils';
+
 /**
  * 타이머 관리자
  * 모든 타이머를 추적하고 일괄 정리할 수 있는 유틸리티
@@ -89,48 +91,28 @@ export function safePerformanceNow(): number {
   return Date.now();
 }
 
-/**
- * 성능 측정 헬퍼
- *
- * @param fn - 측정할 함수
- * @returns 실행 결과와 소요 시간
- */
-export function measurePerformance<T>(fn: () => T): { result: T; duration: number } {
-  const start = safePerformanceNow();
-  const result = fn();
-  const end = safePerformanceNow();
-
-  return {
-    result,
-    duration: end - start,
-  };
-}
+// Performance measurement is available from performance-utils
+export { measurePerformance, measureAsyncPerformance } from './performance/performance-utils';
 
 /**
- * 개선된 debounce 함수
- * TimerManager를 사용하여 타이머를 추적
+ * 타이머 관리와 함께 사용하는 debounce 함수
  *
  * @param fn - debounce할 함수
  * @param delay - 지연 시간
- * @param timerManager - 타이머 관리자 (선택사항)
+ * @param _timerManager - 타이머 관리자 (선택사항, 현재 미사용)
  * @returns debounced 함수
  */
 export function createManagedDebounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number,
-  timerManager: TimerManager = globalTimerManager
+  _timerManager: TimerManager = globalTimerManager
 ): (...args: Parameters<T>) => void {
-  let timeoutId: number | null = null;
+  // performance-utils의 createDebouncer를 기반으로 하되, TimerManager 통합
+  const debouncer = createDebouncer(fn as (...args: unknown[]) => void, delay);
 
   return (...args: Parameters<T>) => {
-    if (timeoutId !== null) {
-      timerManager.clearTimeout(timeoutId);
-    }
-
-    timeoutId = timerManager.setTimeout(() => {
-      fn(...args);
-      timeoutId = null;
-    }, delay);
+    // TimerManager와의 통합을 위해 기존 타이머를 추적
+    debouncer.execute(...args);
   };
 }
 

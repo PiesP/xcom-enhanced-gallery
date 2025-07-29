@@ -21,6 +21,7 @@ export {
   rafThrottle,
   throttleScroll,
   measurePerformance,
+  measureAsyncPerformance,
 
   // 갤러리 관련
   galleryDebugUtils,

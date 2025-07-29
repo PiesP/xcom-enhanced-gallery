@@ -54,6 +54,9 @@ export type { Theme, ToastOptions } from './UIService';
 // 독립 유지 서비스들
 // ====================================
 
+// 애니메이션 서비스 (Motion One 통합)
+export { SimpleAnimationService } from './SimpleAnimationService';
+
 // 대량 다운로드 서비스 (복잡도로 인해 독립 유지)
 export { BulkDownloadService } from './BulkDownloadService';
 export type { BulkDownloadOptions, DownloadProgress, DownloadResult } from './BulkDownloadService';

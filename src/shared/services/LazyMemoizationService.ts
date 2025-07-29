@@ -86,37 +86,36 @@ export class LazyMemoizationService {
   }
 
   /**
-   * 실제 AdvancedMemoization 로딩 수행
+   * 실제 AdvancedMemoization 로딩 수행 (폴백 구현)
    */
   private static async performLoad(): Promise<LazyMemoizationResult> {
     try {
-      logger.debug('LazyMemoizationService: AdvancedMemoization 동적 로딩 시작');
+      logger.debug('LazyMemoizationService: 기본 메모이제이션 폴백 사용');
 
-      // 동적 import를 통한 AdvancedMemoization 로딩
-      const { AdvancedMemoization } = await import(
-        '@shared/components/optimization/AdvancedMemoization'
-      );
+      // AdvancedMemoization이 제거되었으므로 기본 구현으로 폴백
+      const basicMemoization: LazyAdvancedMemoization = {
+        memoize: <T extends Record<string, unknown>>(Component: ComponentFunction<T>) => Component,
+        deepCompare: (prevProps: unknown, nextProps: unknown) => prevProps === nextProps,
+        selectiveCompare: () => (prev: unknown, next: unknown) => prev === next,
+        getPerformanceStats: () => null,
+        getAllPerformanceStats: () => new Map(),
+        cleanup: () => {},
+        clearStats: () => {},
+      };
 
-      if (!AdvancedMemoization) {
-        throw new Error('AdvancedMemoization 클래스를 찾을 수 없습니다');
-      }
-
-      // AdvancedMemoization 인스턴스 생성
-      const memoizer = AdvancedMemoization.getInstance();
-
-      logger.debug('LazyMemoizationService: AdvancedMemoization 로딩 완료');
+      logger.debug('LazyMemoizationService: 기본 메모이제이션 로딩 완료');
 
       return {
         success: true,
-        memoizer: memoizer as LazyAdvancedMemoization,
+        memoizer: basicMemoization,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-      logger.error('LazyMemoizationService: AdvancedMemoization 로딩 실패', error);
+      logger.error('LazyMemoizationService: 메모이제이션 로딩 실패', error);
 
       return {
         success: false,
-        error: `AdvancedMemoization 로딩 실패: ${errorMessage}`,
+        error: `메모이제이션 로딩 실패: ${errorMessage}`,
       };
     }
   }

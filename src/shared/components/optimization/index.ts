@@ -1,7 +1,8 @@
 /**
  * @fileoverview 최적화 컴포넌트 export
- * @description Phase 3: 고급 최적화 컴포넌트들
- * @version 3.0.0
+ * @description Simplified optimization exports
+ * @version 4.0.0 - Simplified
  */
 
-export * from './AdvancedMemoization';
+// 간소화된 최적화: 기본 Preact memo 사용 권장
+// import { memo } from '@preact/compat'; 를 직접 사용하세요

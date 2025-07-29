@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { Debouncer } from './unified-utils';
 
 // ================================
 // DOM 유틸리티
@@ -453,20 +452,10 @@ export const galleryDebugUtils = {
 };
 
 // ================================
-// Debouncer import from unified-utils
+// Performance utilities re-export
 // ================================
 
-export { Debouncer } from './unified-utils';
-
-/**
- * 디바운서 팩토리 함수
- */
-export function createDebouncer<T extends unknown[]>(
-  fn: (...args: T) => void,
-  delay: number
-): Debouncer<T> {
-  return new Debouncer(fn, delay);
-}
+export { Debouncer, createDebouncer } from './performance/performance-utils';
 
 /**
  * Twitter URL에서 트윗 정보 추출
@@ -490,5 +479,12 @@ export function extractTweetInfoFromUrl(
   return result;
 }
 
-// Import duplicated utilities from unified-utils
-export { removeDuplicateStrings } from './unified-utils';
+/**
+ * 문자열 배열 중복 제거
+ *
+ * @param items - 중복이 있을 수 있는 문자열 배열
+ * @returns 중복이 제거된 문자열 배열
+ */
+export function removeDuplicateStrings(items: readonly string[]): string[] {
+  return [...new Set(items)];
+}

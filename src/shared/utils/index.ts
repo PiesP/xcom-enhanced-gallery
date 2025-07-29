@@ -33,7 +33,6 @@ export {
   TimerManager,
   globalTimerManager,
   safePerformanceNow,
-  measurePerformance,
   createManagedDebounce,
   createManagedThrottle,
 } from './timer-management';
@@ -49,16 +48,22 @@ export {
 
 // 핵심 DOM, 성능, 스타일 유틸리티
 export {
-  // 핵심 유틸리티
+  // 성능 유틸리티 (직접 performance-utils에서)
   createDebouncer,
   Debouncer,
+  rafThrottle,
+  throttleScroll,
+  measurePerformance,
+  measureAsyncPerformance,
+} from './performance/performance-utils';
+
+export {
+  // DOM 및 기타 핵심 유틸리티
   findTwitterScrollContainer,
   ensureGalleryScrollAvailable,
   galleryDebugUtils,
   extractTweetInfoFromUrl,
   removeDuplicateStrings,
-  rafThrottle,
-  throttleScroll,
   safeQuerySelector,
   isInsideGallery,
   combineClasses,
