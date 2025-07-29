@@ -42,7 +42,7 @@ interface ResourceManagerOptions {
 }
 
 /**
- * 런타임 최적화된 리소스 관리자
+ * 런타임 리소스 관리자
  *
  * 성능 최적화 특징:
  * - 적응형 메모리 관리
@@ -51,8 +51,8 @@ interface ResourceManagerOptions {
  * - 타입별 리소스 추적
  * - 페이지 가시성 기반 최적화
  */
-export class OptimizedResourceManager {
-  private static instance: OptimizedResourceManager | null = null;
+export class ResourceManager {
+  private static instance: ResourceManager | null = null;
 
   private readonly resources = new Map<string, ResourceItem>();
   private readonly typeCounters = new Map<ResourceType, number>();
@@ -85,9 +85,9 @@ export class OptimizedResourceManager {
   /**
    * 싱글톤 인스턴스 반환
    */
-  static getInstance(options?: ResourceManagerOptions): OptimizedResourceManager {
+  static getInstance(options?: ResourceManagerOptions): ResourceManager {
     if (!this.instance) {
-      this.instance = new OptimizedResourceManager(options);
+      this.instance = new ResourceManager(options);
     }
     return this.instance;
   }
@@ -519,7 +519,7 @@ export class OptimizedResourceManager {
     }
 
     this.releaseAll();
-    OptimizedResourceManager.instance = null;
+    ResourceManager.instance = null;
   }
 }
 
@@ -531,7 +531,7 @@ export function allocateImageResource(
   img: HTMLImageElement,
   estimatedSize?: number
 ): boolean {
-  const manager = OptimizedResourceManager.getInstance();
+  const manager = ResourceManager.getInstance();
   const size = estimatedSize || img.naturalWidth * img.naturalHeight * 4; // RGBA 추정
 
   return manager.allocate(id, 'image', img, size, {
@@ -545,7 +545,7 @@ export function allocateImageResource(
  * 편의 함수: Blob URL 리소스 할당
  */
 export function allocateBlobResource(id: string, blob: Blob): string | null {
-  const manager = OptimizedResourceManager.getInstance();
+  const manager = ResourceManager.getInstance();
 
   try {
     const url = URL.createObjectURL(blob);

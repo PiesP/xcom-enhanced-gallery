@@ -1,7 +1,7 @@
 /**
  * Core Managers Export
  *
- * Phase 2B Step 3: 핵심 관리 컴포넌트만 export
+ * Phase 4: 리소스 관리자 통합 완료
  */
 
 // Essential managers
@@ -10,7 +10,6 @@
 
 // Resource management (단순화된 함수들)
 export {
-  ResourceManager,
   resourceManager,
   createTimer,
   createManagedInterval,
@@ -25,4 +24,4 @@ export {
 } from '@shared/utils/resource-manager';
 
 // Phase 4: 런타임 성능 최적화 리소스 관리자
-export { OptimizedResourceManager as RuntimeResourceManager } from './ResourceManager';
+export { ResourceManager } from './ResourceManager';
