@@ -52,7 +52,7 @@ async function initializeInfrastructure(): Promise<void> {
 }
 
 /**
- * Critical Path - 필수 시스템 초기화
+ * Critical Path - 필수 시스템 초기화 (동기 부분만)
  */
 async function initializeCriticalSystems(): Promise<void> {
   try {
@@ -60,12 +60,9 @@ async function initializeCriticalSystems(): Promise<void> {
 
     serviceManager = ServiceManager.getInstance();
 
-    // Core 서비스 등록
+    // Core 서비스 등록 (동적 import)
     const { registerCoreServices } = await import('@shared/services');
     await registerCoreServices();
-
-    // Features 서비스 등록 (의존성 규칙 준수)
-    await registerFeatureServices();
 
     // Critical Services만 즉시 초기화
     const criticalServices = [
@@ -84,13 +81,38 @@ async function initializeCriticalSystems(): Promise<void> {
       }
     }
 
-    // Toast 컨테이너 초기화
+    // Toast 컨테이너 초기화 (동적 import)
     await initializeToastContainer();
 
     logger.info(`✅ Critical Path 초기화 완료: ${criticalServices.length}개 서비스`);
   } catch (error) {
     logger.error('❌ Critical Path 초기화 실패:', error);
     throw error;
+  }
+}
+
+/**
+ * Feature Services 지연 등록 (필요시에만 로드)
+ */
+async function registerFeatureServicesLazy(): Promise<void> {
+  try {
+    // Features 서비스들을 지연 로딩으로 등록만 하고 초기화는 하지 않음
+    logger.debug('Features 서비스 지연 등록 시작');
+
+    // Settings Manager - Features 레이어
+    const { SettingsService } = await import('@features/settings/services/SettingsService');
+    serviceManager!.register(SERVICE_KEYS.SETTINGS_MANAGER, new SettingsService());
+
+    // Twitter Token Extractor - Features 레이어
+    const { TwitterTokenExtractor } = await import(
+      '@features/settings/services/TwitterTokenExtractor'
+    );
+    serviceManager!.register(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, new TwitterTokenExtractor());
+
+    logger.debug('✅ Features 서비스 지연 등록 완료');
+  } catch (error) {
+    // Features 레이어 서비스 로딩 실패는 치명적이지 않음
+    logger.warn('⚠️ Features 서비스 지연 로딩 실패:', error);
   }
 }
 
@@ -140,12 +162,18 @@ function initializeNonCriticalSystems(): void {
 }
 
 /**
- * Toast 컨테이너 초기화
+ * Toast 컨테이너 지연 초기화
  */
 async function initializeToastContainer(): Promise<void> {
   try {
-    const { ToastContainer } = await import('@shared/components/ui');
-    const { getPreact } = await import('@shared/external/vendors');
+    logger.debug('Toast 컨테이너 지연 로딩 시작');
+
+    // UI 컴포넌트를 지연 로딩
+    const [{ ToastContainer }, { getPreact }] = await Promise.all([
+      import('@shared/components/ui'),
+      import('@shared/external/vendors'),
+    ]);
+
     const { h, render } = getPreact();
 
     let toastContainer = document.getElementById('xeg-toast-container');
@@ -156,7 +184,7 @@ async function initializeToastContainer(): Promise<void> {
     }
 
     render(h(ToastContainer, {}), toastContainer);
-    logger.debug('Toast 컨테이너 초기화 완료');
+    logger.debug('✅ Toast 컨테이너 지연 초기화 완료');
   } catch (error) {
     logger.warn('Toast 컨테이너 초기화 실패:', error);
   }
@@ -236,38 +264,20 @@ async function initializeDevTools(): Promise<void> {
 }
 
 /**
- * Features 레이어 서비스들을 등록합니다
- * 의존성 규칙을 준수하기 위해 main.ts에서 등록
- */
-async function registerFeatureServices(): Promise<void> {
-  try {
-    // Gallery Services - Features 레이어
-    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
-    serviceManager!.register(SERVICE_KEYS.GALLERY_RENDERER, new GalleryRenderer());
-
-    // Settings Manager - Features 레이어
-    const { SettingsService } = await import('@features/settings/services/SettingsService');
-    serviceManager!.register(SERVICE_KEYS.SETTINGS_MANAGER, new SettingsService());
-
-    // Twitter Token Extractor - Features 레이어
-    const { TwitterTokenExtractor } = await import(
-      '@features/settings/services/TwitterTokenExtractor'
-    );
-    serviceManager!.register(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, new TwitterTokenExtractor());
-
-    logger.debug('✅ Features 서비스 등록 완료');
-  } catch (error) {
-    // Features 레이어 서비스 로딩 실패는 치명적이지 않음
-    logger.warn('⚠️ 일부 feature 서비스 로딩 실패:', error);
-  }
-}
-
-/**
- * 갤러리 앱 생성 및 초기화
+ * 갤러리 앱 생성 및 초기화 (지연 로딩)
  */
 async function initializeGalleryApp(): Promise<void> {
+  if (galleryApp) {
+    logger.debug('갤러리 앱이 이미 초기화됨');
+    return;
+  }
+
   try {
-    logger.info('🎨 갤러리 앱 초기화 시작');
+    logger.info('🎨 갤러리 앱 지연 초기화 시작');
+
+    // Gallery Renderer 서비스 등록 (갤러리 앱에만 필요)
+    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
+    serviceManager!.register(SERVICE_KEYS.GALLERY_RENDERER, new GalleryRenderer());
 
     // 갤러리 앱 인스턴스 생성
     const { GalleryApp } = await import('@features/gallery/GalleryApp');
@@ -281,11 +291,10 @@ async function initializeGalleryApp(): Promise<void> {
 
     // 갤러리 앱 초기화
     await (galleryApp as { initialize(): Promise<void> }).initialize();
-
-    // 전역 접근을 위한 등록
-    (globalThis as Record<string, unknown>).__XEG_GALLERY_APP__ = galleryApp;
-
     logger.info('✅ 갤러리 앱 초기화 완료');
+
+    // 개발 환경에서 디버깅용 전역 접근
+    (globalThis as Record<string, unknown>).__XEG_GALLERY_APP__ = galleryApp;
   } catch (error) {
     logger.error('❌ 갤러리 앱 초기화 실패:', error);
     throw error;
@@ -311,17 +320,20 @@ async function startApplication(): Promise<void> {
       // 1단계: 기본 인프라 초기화
       await initializeInfrastructure();
 
-      // 2단계: 핵심 시스템 초기화
+      // 2단계: 핵심 시스템만 초기화 (갤러리 제외)
       await initializeCriticalSystems();
 
-      // 3단계: 갤러리 앱 생성 및 초기화
-      await initializeGalleryApp();
+      // 3단계: Feature Services 지연 등록
+      await registerFeatureServicesLazy();
 
-      // 4단계: 비필수 시스템 초기화
-      initializeNonCriticalSystems();
-
-      // 부가 기능 초기화
+      // 4단계: 전역 이벤트 핸들러 설정
       setupGlobalEventHandlers();
+
+      // 5단계: 갤러리 앱은 실제 필요시에만 초기화 (지연 로딩)
+      scheduleGalleryInitialization();
+
+      // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
+      initializeNonCriticalSystems();
 
       isStarted = true;
     });
@@ -348,8 +360,29 @@ async function startApplication(): Promise<void> {
       startApplication().catch(retryError => {
         logger.error('❌ 재시작 실패:', retryError);
       });
-    }, 5000);
+    }, 2000);
   }
+}
+
+/**
+ * 갤러리 초기화 스케줄링 (지연 로딩)
+ */
+function scheduleGalleryInitialization(): void {
+  // 사용자 상호작용 감지시 갤러리 초기화
+  const initializeOnInteraction = () => {
+    if (!galleryApp) {
+      initializeGalleryApp().catch(error => {
+        logger.error('갤러리 지연 초기화 실패:', error);
+      });
+    }
+  };
+
+  // 미디어 클릭, 키보드 단축키 등 감지
+  document.addEventListener('click', initializeOnInteraction, { once: true, passive: true });
+  document.addEventListener('keydown', initializeOnInteraction, { once: true, passive: true });
+
+  // 또는 5초 후 자동 초기화
+  setTimeout(initializeOnInteraction, 5000);
 }
 
 // DOM 준비 시 애플리케이션 시작
