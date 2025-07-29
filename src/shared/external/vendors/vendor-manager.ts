@@ -124,6 +124,32 @@ export interface NativeDownloadAPI {
   revokeDownloadUrl: (url: string) => void;
 }
 
+// TanStack Query API 타입 정의
+export interface TanStackQueryAPI {
+  QueryClient: typeof import('@tanstack/query-core').QueryClient;
+  QueryCache: typeof import('@tanstack/query-core').QueryCache;
+  MutationCache: typeof import('@tanstack/query-core').MutationCache;
+  queryKey: (key: unknown[]) => unknown[];
+  queryOptions: (options: {
+    queryKey: unknown[];
+    queryFn: () => Promise<unknown>;
+    staleTime?: number;
+    cacheTime?: number;
+  }) => unknown;
+}
+
+// TanStack Virtual API 타입 정의
+export interface TanStackVirtualAPI {
+  useVirtualizer: typeof import('@tanstack/react-virtual').useVirtualizer;
+  defaultRangeExtractor: typeof import('@tanstack/react-virtual').defaultRangeExtractor;
+  observeElementOffset: typeof import('@tanstack/react-virtual').observeElementOffset;
+  observeElementRect: typeof import('@tanstack/react-virtual').observeElementRect;
+  observeWindowOffset: typeof import('@tanstack/react-virtual').observeWindowOffset;
+  observeWindowRect: typeof import('@tanstack/react-virtual').observeWindowRect;
+  elementScroll: typeof import('@tanstack/react-virtual').elementScroll;
+  windowScroll: typeof import('@tanstack/react-virtual').windowScroll;
+}
+
 // ================================
 // 벤더 매니저 싱글톤
 // ================================
@@ -632,6 +658,82 @@ export class VendorManager {
   }
 
   /**
+   * TanStack Query Core 안전 접근
+   */
+  public async getTanStackQuery(): Promise<TanStackQueryAPI> {
+    const cacheKey = 'tanstack-query';
+
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) as TanStackQueryAPI;
+    }
+
+    try {
+      const query = await import('@tanstack/query-core');
+
+      if (!query.QueryClient || typeof query.QueryClient !== 'function') {
+        throw new Error('TanStack Query 라이브러리 검증 실패');
+      }
+
+      const api: TanStackQueryAPI = {
+        QueryClient: query.QueryClient,
+        QueryCache: query.QueryCache,
+        MutationCache: query.MutationCache,
+        queryKey: (key: unknown[]) => key,
+        queryOptions: (options: {
+          queryKey: unknown[];
+          queryFn: () => Promise<unknown>;
+          staleTime?: number;
+          cacheTime?: number;
+        }) => options,
+      };
+
+      this.cache.set(cacheKey, api);
+      logger.debug('TanStack Query 로드 성공');
+      return api;
+    } catch (error) {
+      logger.error('TanStack Query 로드 실패:', error);
+      throw new Error('TanStack Query 라이브러리를 사용할 수 없습니다');
+    }
+  }
+
+  /**
+   * TanStack Virtual 안전 접근
+   */
+  public async getTanStackVirtual(): Promise<TanStackVirtualAPI> {
+    const cacheKey = 'tanstack-virtual';
+
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) as TanStackVirtualAPI;
+    }
+
+    try {
+      const virtual = await import('@tanstack/react-virtual');
+
+      if (!virtual.useVirtualizer || typeof virtual.useVirtualizer !== 'function') {
+        throw new Error('TanStack Virtual 라이브러리 검증 실패');
+      }
+
+      const api: TanStackVirtualAPI = {
+        useVirtualizer: virtual.useVirtualizer,
+        defaultRangeExtractor: virtual.defaultRangeExtractor,
+        observeElementOffset: virtual.observeElementOffset,
+        observeElementRect: virtual.observeElementRect,
+        observeWindowOffset: virtual.observeWindowOffset,
+        observeWindowRect: virtual.observeWindowRect,
+        elementScroll: virtual.elementScroll,
+        windowScroll: virtual.windowScroll,
+      };
+
+      this.cache.set(cacheKey, api);
+      logger.debug('TanStack Virtual 로드 성공');
+      return api;
+    } catch (error) {
+      logger.error('TanStack Virtual 로드 실패:', error);
+      throw new Error('TanStack Virtual 라이브러리를 사용할 수 없습니다');
+    }
+  }
+
+  /**
    * 모든 라이브러리 검증
    */
   public async validateAll(): Promise<{
@@ -646,6 +748,8 @@ export class VendorManager {
       this.getPreactSignals().then(() => 'PreactSignals'),
       Promise.resolve(this.getMotion()).then(() => 'Motion'),
       this.getMotionOne().then(() => 'MotionOne'),
+      this.getTanStackQuery().then(() => 'TanStackQuery'),
+      this.getTanStackVirtual().then(() => 'TanStackVirtual'),
     ]);
 
     const loadedLibraries: string[] = [];
@@ -662,6 +766,8 @@ export class VendorManager {
           'PreactSignals',
           'Motion',
           'MotionOne',
+          'TanStackQuery',
+          'TanStackVirtual',
         ];
         errors.push(`${libNames[index]}: ${result.reason.message}`);
       }
@@ -687,6 +793,8 @@ export class VendorManager {
       preact: '10.26.9',
       signals: '2.2.0',
       motion: '12.23.11', // Motion 버전
+      tanStackQuery: '5.17.19',
+      tanStackVirtual: '3.0.1',
     });
   }
 

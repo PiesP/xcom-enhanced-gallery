@@ -16,6 +16,8 @@ import {
   type MotionAPI,
   type MotionOneAPI,
   type NativeDownloadAPI,
+  type TanStackQueryAPI,
+  type TanStackVirtualAPI,
 } from './vendor-manager';
 
 // ================================
@@ -32,6 +34,8 @@ let cachedPreactSignals: PreactSignalsAPI | null = null;
 let cachedPreactCompat: PreactCompatAPI | null = null;
 let cachedMotion: MotionAPI | null = null;
 let cachedMotionOne: MotionOneAPI | null = null;
+let cachedTanStackQuery: TanStackQueryAPI | null = null;
+let cachedTanStackVirtual: TanStackVirtualAPI | null = null;
 let isInitialized = false;
 
 /**
@@ -41,7 +45,17 @@ export async function initializeVendors(): Promise<void> {
   if (isInitialized) return;
 
   try {
-    const [fflate, preact, hooks, signals, compat, motion, motionOne] = await Promise.all([
+    const [
+      fflate,
+      preact,
+      hooks,
+      signals,
+      compat,
+      motion,
+      motionOne,
+      tanStackQuery,
+      tanStackVirtual,
+    ] = await Promise.all([
       vendorManager.getFflate(),
       vendorManager.getPreact(),
       vendorManager.getPreactHooks(),
@@ -49,6 +63,8 @@ export async function initializeVendors(): Promise<void> {
       vendorManager.getPreactCompat(),
       Promise.resolve(vendorManager.getMotion()),
       vendorManager.getMotionOne(),
+      vendorManager.getTanStackQuery(),
+      vendorManager.getTanStackVirtual(),
     ]);
 
     cachedFflate = fflate;
@@ -58,6 +74,8 @@ export async function initializeVendors(): Promise<void> {
     cachedPreactCompat = compat;
     cachedMotion = motion;
     cachedMotionOne = motionOne;
+    cachedTanStackQuery = tanStackQuery;
+    cachedTanStackVirtual = tanStackVirtual;
     isInitialized = true;
 
     logger.info('모든 vendor 라이브러리 초기화 완료');
@@ -343,6 +361,30 @@ export function isVendorInitialized(vendorName: string): boolean {
     default:
       return false;
   }
+}
+
+/**
+ * TanStack Query 라이브러리 접근 (동기)
+ */
+export function getTanStackQuery(): TanStackQueryAPI {
+  if (!cachedTanStackQuery) {
+    throw new Error(
+      'TanStack Query가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.'
+    );
+  }
+  return cachedTanStackQuery;
+}
+
+/**
+ * TanStack Virtual 라이브러리 접근 (동기)
+ */
+export function getTanStackVirtual(): TanStackVirtualAPI {
+  if (!cachedTanStackVirtual) {
+    throw new Error(
+      'TanStack Virtual이 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.'
+    );
+  }
+  return cachedTanStackVirtual;
 }
 
 // 정리 핸들러 등록
