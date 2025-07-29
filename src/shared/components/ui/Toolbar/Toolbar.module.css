@@ -47,8 +47,8 @@
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
   background: var(--xeg-surface-overlay-light);
-  opacity: var(--toolbar-opacity, 0);
-  pointer-events: var(--toolbar-pointer-events, none);
+  opacity: var(--toolbar-opacity, 1);
+  pointer-events: var(--toolbar-pointer-events, auto);
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
     transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
@@ -71,16 +71,27 @@
 }
 
 /* 상태별 CSS 커스텀 프로퍼티 정의 */
+.galleryToolbar[data-state='idle'],
+.galleryToolbar:not([data-state]) {
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+}
+
 .galleryToolbar[data-state='loading'] {
   --toolbar-opacity: 0.7;
+  --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-loading);
 }
 
 .galleryToolbar[data-state='downloading'] {
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-downloading);
 }
 
 .galleryToolbar[data-state='error'] {
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-error);
   --toolbar-offset-y: -4px;
 }

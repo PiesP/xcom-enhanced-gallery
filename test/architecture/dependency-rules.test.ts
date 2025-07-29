@@ -159,7 +159,6 @@ describe('Architecture Dependency Rules', () => {
           imp =>
             imp.startsWith('@features/') ||
             imp.startsWith('@shared/') ||
-            inp.startsWith('@shared/') ||
             imp.startsWith('@app/') ||
             imp.startsWith('../features/') ||
             imp.startsWith('../shared/') ||

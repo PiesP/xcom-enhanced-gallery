@@ -85,6 +85,14 @@ export function createManagedInterval(
 }
 
 /**
+ * 인터벌 등록 및 관리(setInterval)
+ * @deprecated Use createManagedInterval instead
+ */
+export function createInterval(callback: () => void, delay: number, context?: string): string {
+  return createManagedInterval(callback, delay, context);
+}
+
+/**
  * ?�벤??리스???�록 �?관�? */
 export function addManagedEventListener(
   element: EventTarget,

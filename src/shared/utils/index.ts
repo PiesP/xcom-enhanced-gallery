@@ -17,6 +17,9 @@
 // Animation utilities (Phase 1 추가)
 export * from './animations';
 
+// Debug utilities for toolbar visibility
+export * from './debug/toolbar-visibility-debug';
+
 // Error handling utilities (Phase C 추가)
 export {
   standardizeError,

@@ -217,8 +217,8 @@ strict digraph "dependency-cruiser output"{
     "src/shared/services/BulkDownloadService.ts" -> "src/shared/services/LazyZipDownloadService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/DynamicModuleLoaderSimple.ts" [label=<DynamicModuleLoaderSimple.ts> tooltip="DynamicModuleLoaderSimple.ts" URL="src/shared/services/DynamicModuleLoaderSimple.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/services/DynamicModuleLoaderSimple.ts" -> "src/shared/services/BulkDownloadService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
-    "src/shared/services/DynamicModuleLoaderSimple.ts" -> "src/shared/services/LazyLoadingService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/shared/services/DynamicModuleLoaderSimple.ts" -> "src/shared/services/MediaPrefetchingService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
+    "src/shared/services/DynamicModuleLoaderSimple.ts" -> "src/shared/services/OptimizedLazyLoadingService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/shared/services/DynamicModuleLoaderSimple.ts" -> "src/shared/services/WebPOptimizationService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/LazyIntersectionService.ts" [label=<LazyIntersectionService.ts> tooltip="LazyIntersectionService.ts" URL="src/shared/services/LazyIntersectionService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/LazyLoadingService.ts" [label=<LazyLoadingService.ts> tooltip="LazyLoadingService.ts" URL="src/shared/services/LazyLoadingService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
@@ -236,6 +236,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/UsernameExtractionService.ts"
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/UsernameExtractionService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/VideoControlService.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/OptimizedLazyLoadingService.ts" [label=<OptimizedLazyLoadingService.ts> tooltip="OptimizedLazyLoadingService.ts" URL="src/shared/services/OptimizedLazyLoadingService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/ServiceManager.ts" [label=<ServiceManager.ts> tooltip="ServiceManager.ts" URL="src/shared/services/ServiceManager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/SimpleAnimationService.ts" [label=<SimpleAnimationService.ts> tooltip="SimpleAnimationService.ts" URL="src/shared/services/SimpleAnimationService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/ThemeService.ts" [label=<ThemeService.ts> tooltip="ThemeService.ts" URL="src/shared/services/ThemeService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
@@ -385,6 +386,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/core-utils.ts" -> "src/shared/utils/performance/performance-utils.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/core" {label="core" "src/shared/utils/core/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/utils/core/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/utils/core/index.ts" -> "src/shared/utils/type-safety-helpers.ts" [arrowhead="inv"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/debug" {label="debug" "src/shared/utils/debug/toolbar-visibility-debug.ts" [label=<toolbar-visibility-debug.ts> tooltip="toolbar-visibility-debug.ts" URL="src/shared/utils/debug/toolbar-visibility-debug.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/dom.ts" [label=<dom.ts> tooltip="dom.ts" URL="src/shared/utils/dom.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/dom" {label="dom" "src/shared/utils/dom/BatchDOMUpdateManager.ts" [label=<BatchDOMUpdateManager.ts> tooltip="BatchDOMUpdateManager.ts" URL="src/shared/utils/dom/BatchDOMUpdateManager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/utils/dom/BatchDOMUpdateManager.ts" -> "src/shared/utils/dom/DOMBatcher.ts" [arrowhead="inv"]
@@ -400,6 +402,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/index.ts" -> "src/shared/utils/animations.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/convenience.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/core-utils.ts" [arrowhead="inv"]
+    "src/shared/utils/index.ts" -> "src/shared/utils/debug/toolbar-visibility-debug.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/dom/BatchDOMUpdateManager.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/error-handling.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/events.ts" [arrowhead="inv"]

@@ -127,7 +127,7 @@ describe('갤러리 앱 활성화', () => {
       const mockInitializeGalleryEvents = vi.fn().mockResolvedValue(undefined);
 
       // 모듈 모킹
-      vi.doMock('@shared/utils/unified-events', () => ({
+      vi.doMock('@shared/utils/events', () => ({
         initializeGalleryEvents: mockInitializeGalleryEvents,
       }));
 

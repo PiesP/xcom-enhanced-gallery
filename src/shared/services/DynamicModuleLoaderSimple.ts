@@ -38,10 +38,10 @@ export async function loadServiceModule(serviceName: string) {
       }
 
       case 'OptimizedLazyLoadingService': {
-        const module = await import('./LazyLoadingService');
+        const module = await import('./OptimizedLazyLoadingService');
         const loadTime = performance.now() - startTime;
         logger.debug('OptimizedLazyLoadingService 로딩 완료:', { loadTime });
-        return module.LazyLoadingService;
+        return module.OptimizedLazyLoadingService;
       }
 
       case 'BulkDownloadService': {

@@ -4128,8 +4128,7 @@
       "source": "src/shared/services/LazyLoadingService.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/services/index.ts",
-        "src/shared/services/DynamicModuleLoaderSimple.ts"
+        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4524,6 +4523,23 @@
         },
         {
           "dynamic": false,
+          "module": "./debug/toolbar-visibility-debug",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/debug/toolbar-visibility-debug.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./dom/BatchDOMUpdateManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4899,6 +4915,15 @@
         "src/shared/utils/timer-management.ts",
         "src/shared/utils/utils.ts",
         "src/shared/utils/performance/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/debug/toolbar-visibility-debug.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5368,14 +5393,14 @@
         },
         {
           "dynamic": true,
-          "module": "./LazyLoadingService",
+          "module": "./MediaPrefetchingService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/shared/services/LazyLoadingService.ts",
+          "resolved": "src/shared/services/MediaPrefetchingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5385,14 +5410,14 @@
         },
         {
           "dynamic": true,
-          "module": "./MediaPrefetchingService",
+          "module": "./OptimizedLazyLoadingService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/shared/services/MediaPrefetchingService.ts",
+          "resolved": "src/shared/services/OptimizedLazyLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5455,6 +5480,15 @@
       "dependents": [
         "src/shared/services/DynamicModuleLoaderSimple.ts",
         "src/shared/services/MediaPrefetchingService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/OptimizedLazyLoadingService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/DynamicModuleLoaderSimple.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6730,8 +6764,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 184,
-    "totalDependenciesCruised": 285,
+    "totalCruised": 186,
+    "totalDependenciesCruised": 286,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
