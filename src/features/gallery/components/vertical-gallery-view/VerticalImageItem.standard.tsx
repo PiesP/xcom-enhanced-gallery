@@ -10,7 +10,7 @@
 import { withGalleryItem, type GalleryComponentProps } from '@shared/components/hoc/GalleryMarker';
 import { Button } from '@shared/components/ui/Button/Button';
 import { ComponentStandards } from '@shared/components/ui/StandardProps';
-import { useUnifiedMediaLoading } from '@shared/hooks/useUnifiedMediaLoading';
+import { useMediaLoading } from '@shared/hooks';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
@@ -142,7 +142,7 @@ function BaseVerticalImageItemCore({
   const cleanedFilename = useMemo(() => cleanFilename(media.filename), [media.filename]);
 
   // 통합 미디어 로딩 서비스 사용
-  const { isLoading, hasError, forceLoad } = useUnifiedMediaLoading(mediaRef, {
+  const { isLoading, hasError, forceLoad } = useMediaLoading(mediaRef, {
     enableLazyLoading: !forceVisible,
     retryAttempts: 3,
     rootMargin: '100px',

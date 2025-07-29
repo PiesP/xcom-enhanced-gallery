@@ -17,7 +17,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { MediaService } from '@shared/services/MediaService';
 import { UIService } from '@shared/services/UIService';
-import { unmountUnifiedGallery } from '@shared/components/isolation/UnifiedGalleryContainer';
+import { unmountGallery } from '@shared/components/isolation';
 
 /**
  * 갤러리 앱 설정
@@ -323,7 +323,7 @@ export class GalleryApp {
 
       // 통합된 갤러리 컨테이너 제거
       if (this.galleryContainer) {
-        unmountUnifiedGallery(this.galleryContainer);
+        unmountGallery(this.galleryContainer);
         this.galleryContainer = null;
       }
 
