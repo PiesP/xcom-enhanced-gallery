@@ -89,15 +89,25 @@ function VerticalGalleryViewCore({
   // 단순화된 가시성 상태 관리
   const [isVisible, setIsVisible] = useState(mediaItems.length > 0);
 
+  // DOM 요소 준비 상태 추적
+  const [domReady, setDomReady] = useState(false);
+
+  // DOM 요소 준비 확인
+  useEffect(() => {
+    if (toolbarWrapperRef.current && toolbarHoverZoneRef.current) {
+      setDomReady(true);
+    }
+  }, [isVisible]); // isVisible이 변경될 때마다 DOM 요소 확인
+
   // useToolbarPositionBased 훅을 사용하여 간소화된 위치 기반 툴바 제어
   const {
     isVisible: _toolbarVisible,
     show: _showToolbar,
     hide: _hideToolbar,
   } = useToolbarPositionBased({
-    toolbarElement: toolbarWrapperRef.current,
-    hoverZoneElement: toolbarHoverZoneRef.current,
-    enabled: isVisible && mediaItems.length > 0,
+    toolbarElement: domReady ? toolbarWrapperRef.current : null,
+    hoverZoneElement: domReady ? toolbarHoverZoneRef.current : null,
+    enabled: isVisible && mediaItems.length > 0 && domReady,
   });
 
   // 간소화된 위치 기반 시스템으로 교체:
@@ -479,51 +489,8 @@ function VerticalGalleryViewCore({
     });
   }, [imageFitMode, mediaItems.length]);
 
-  // 툴바 호버 핸들러 - 프로덕션 빌드 호환성을 위한 JavaScript 백업
-  useEffect(() => {
-    const hoverZone = toolbarHoverZoneRef.current;
-    const toolbarWrapper = toolbarWrapperRef.current;
-
-    if (!hoverZone || !toolbarWrapper) return;
-
-    const showToolbar = () => {
-      // 강화된 가시성 보장
-      toolbarWrapper.style.setProperty('opacity', '1', 'important');
-      toolbarWrapper.style.setProperty('visibility', 'visible', 'important');
-      toolbarWrapper.style.setProperty('display', 'block', 'important');
-      toolbarWrapper.style.setProperty('transform', 'translateY(0)', 'important');
-      toolbarWrapper.style.setProperty('pointer-events', 'auto', 'important');
-      toolbarWrapper.style.setProperty('z-index', '999999', 'important');
-      toolbarWrapper.style.setProperty('--toolbar-opacity', '1');
-      toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'auto');
-    };
-
-    const hideToolbar = () => {
-      // 가시성 문제 해결을 위해 툴바를 숨기지 않음
-      // 대신 항상 보이도록 유지
-      toolbarWrapper.style.setProperty('opacity', '1', 'important');
-      toolbarWrapper.style.setProperty('visibility', 'visible', 'important');
-      toolbarWrapper.style.setProperty('display', 'block', 'important');
-      toolbarWrapper.style.setProperty('transform', 'translateY(0)', 'important');
-      toolbarWrapper.style.setProperty('pointer-events', 'auto', 'important');
-      toolbarWrapper.style.setProperty('z-index', '999999', 'important');
-      toolbarWrapper.style.setProperty('--toolbar-opacity', '1');
-      toolbarWrapper.style.setProperty('--toolbar-pointer-events', 'auto');
-    };
-
-    // 호버 이벤트 핸들러
-    hoverZone.addEventListener('mouseenter', showToolbar);
-    hoverZone.addEventListener('mouseleave', hideToolbar);
-    toolbarWrapper.addEventListener('mouseenter', showToolbar);
-    toolbarWrapper.addEventListener('mouseleave', hideToolbar);
-
-    return () => {
-      hoverZone.removeEventListener('mouseenter', showToolbar);
-      hoverZone.removeEventListener('mouseleave', hideToolbar);
-      toolbarWrapper.removeEventListener('mouseenter', showToolbar);
-      toolbarWrapper.removeEventListener('mouseleave', hideToolbar);
-    };
-  }, []);
+  // useToolbarPositionBased 훅이 모든 툴바 이벤트 처리를 담당
+  // 중복된 이벤트 핸들러 제거 완료
 
   // 빈 상태 처리
   if (!isVisible || mediaItems.length === 0) {

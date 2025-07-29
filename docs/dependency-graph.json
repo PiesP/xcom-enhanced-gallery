@@ -2537,23 +2537,6 @@
         },
         {
           "dynamic": false,
-          "module": "./useToolbarAutoHide",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/useToolbarAutoHide.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./useToolbarState",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2611,15 +2594,6 @@
     },
     {
       "source": "src/shared/hooks/useScrollDirection.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/useToolbarAutoHide.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/hooks/index.ts"
@@ -5546,6 +5520,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/EarlyEventCaptureService.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/media-extraction/index.ts",
       "dependencies": [
         {
@@ -6811,13 +6798,23 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/services/EarlyEventCaptureService.ts",
+        "to": "src/shared/services/EarlyEventCaptureService.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
     "totalCruised": 188,
-    "totalDependenciesCruised": 288,
+    "totalDependenciesCruised": 287,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

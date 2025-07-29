@@ -245,4 +245,71 @@ describe('useToolbarPositionBased', () => {
       expect(mockHoverZoneElement.addEventListener).toHaveBeenCalled();
     });
   });
+
+  describe('DOM 요소 참조와 실제 동작', () => {
+    it('실제 DOM 요소가 제공될 때 이벤트 리스너가 등록되어야 한다', () => {
+      const realToolbarElement = document.createElement('div');
+      const realHoverZoneElement = document.createElement('div');
+
+      const { result } = renderHook(() =>
+        useToolbarPositionBased({
+          toolbarElement: realToolbarElement,
+          hoverZoneElement: realHoverZoneElement,
+          enabled: true,
+        })
+      );
+
+      expect(result.current.isVisible).toBe(true);
+
+      // DOM 요소에 실제 이벤트 리스너가 등록되었는지 확인하기 위해
+      // mousenter/mouseleave 이벤트를 발생시켜 봅니다
+      const mouseEnterEvent = new Event('mouseenter');
+      const mouseLeaveEvent = new Event('mouseleave');
+
+      // 호버 존에 마우스 진입
+      act(() => {
+        realHoverZoneElement.dispatchEvent(mouseEnterEvent);
+      });
+      expect(result.current.isVisible).toBe(true);
+
+      // 호버 존에서 마우스 이탈
+      act(() => {
+        realHoverZoneElement.dispatchEvent(mouseLeaveEvent);
+      });
+      expect(result.current.isVisible).toBe(false);
+    });
+
+    it('DOM 요소가 나중에 제공될 때도 정상 동작해야 한다', () => {
+      let toolbarElement: HTMLElement | null = null;
+      let hoverZoneElement: HTMLElement | null = null;
+
+      const { result, rerender } = renderHook(props => useToolbarPositionBased(props), {
+        initialProps: {
+          toolbarElement,
+          hoverZoneElement,
+          enabled: true,
+        },
+      });
+
+      // 초기에는 DOM 요소가 null이므로 이벤트 리스너가 없음
+      expect(result.current.isVisible).toBe(true);
+
+      // DOM 요소가 생성된 후 다시 렌더링
+      toolbarElement = document.createElement('div');
+      hoverZoneElement = document.createElement('div');
+
+      rerender({
+        toolbarElement,
+        hoverZoneElement,
+        enabled: true,
+      });
+
+      // 이제 이벤트가 정상 동작해야 함
+      const mouseLeaveEvent = new Event('mouseleave');
+      act(() => {
+        hoverZoneElement.dispatchEvent(mouseLeaveEvent);
+      });
+      expect(result.current.isVisible).toBe(false);
+    });
+  });
 });

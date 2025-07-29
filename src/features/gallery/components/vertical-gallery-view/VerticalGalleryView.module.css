@@ -62,7 +62,8 @@
       transform 250ms var(--xeg-easing-ease-in-out), opacity 250ms var(--xeg-easing-ease-in-out);
     --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-ease-out);
     --xeg-transition-toolbar:
-      opacity 200ms var(--xeg-easing-ease-out), transform 200ms var(--xeg-easing-ease-out);
+      opacity 100ms var(--xeg-easing-ease-out), transform 100ms var(--xeg-easing-ease-out),
+      visibility 0ms;
 
     /* 스페이싱 - CSS Logical Properties 활용 */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
@@ -125,13 +126,10 @@
 
 /* 초기 툴바 표시 상태 (3초간) - 가시성 강화 */
 .container.initialToolbarVisible .toolbarWrapper {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-  visibility: visible !important;
-  display: block !important;
   --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
   --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
 }
 
 /* UI 숨김 상태 - 스크롤 이벤트는 유지하되 시각적 요소만 숨김 */
@@ -152,7 +150,7 @@
 /* 스크롤 가능한 콘텐츠 영역은 항상 이벤트 허용 */
 .container.uiHidden [data-xeg-role='items-list'],
 .container.uiHidden .itemsList {
-  pointer-events: auto !important;
+  pointer-events: auto;
 }
 
 /* 상태별 최적화 */
@@ -222,18 +220,23 @@
   height: auto;
   z-index: var(--xeg-toolbar-z-index);
 
-  /* 기본 상태: 가시성 보장 - 문제 해결 */
-  opacity: 1 !important; /* 기본적으로 보이도록 수정 */
-  transform: translateY(0) !important; /* 기본 위치로 수정 */
-  visibility: visible !important;
-  display: block !important;
+  /* 기본 상태: CSS 변수로 제어되는 숨김 상태 */
+  opacity: var(--toolbar-opacity, 0);
+  visibility: var(--toolbar-visibility, hidden);
+  pointer-events: var(--toolbar-pointer-events, none);
+  transform: translateY(var(--toolbar-transform-y, -10px));
+  display: block;
 
   transition: var(--xeg-transition-toolbar);
-  will-change: transform, opacity;
+  will-change: transform, opacity, visibility;
   contain: layout style;
 
+  /* 즉시 반응을 위한 추가 최적화 */
+  transform: translateZ(0); /* GPU 가속 활성화 */
+  backface-visibility: hidden; /* 렌더링 최적화 */
+
   /* 툴바 자체는 항상 클릭 가능하도록 설정 */
-  pointer-events: auto !important;
+  pointer-events: var(--toolbar-pointer-events, none);
 
   /* 그라디언트 배경 */
   background: linear-gradient(
@@ -248,110 +251,86 @@
 /* 호버 시 부모 컨테이너에 CSS 변수 설정 - 강화된 가시성 */
 .container:has(.toolbarHoverZone:hover) .toolbarWrapper,
 .container.initialToolbarVisible .toolbarWrapper {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-  visibility: visible !important;
-  /* 하위 툴바 컴포넌트를 위한 CSS 변수 설정 */
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
 }
 
 /* :has() 지원하지 않는 브라우저를 위한 대안 - 프로덕션 빌드 호환성 개선 */
 @supports not (selector(:has(*))) {
   /* 호버 트리거 영역 호버 시 직접 형제 요소인 툴바 래퍼에 적용 */
   .toolbarHoverZone:hover + .toolbarWrapper {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    pointer-events: auto !important;
     --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
     --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
   }
 
   /* 추가 대안: 일반 형제 선택자 사용 */
   .toolbarHoverZone:hover ~ .toolbarWrapper {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    pointer-events: auto !important;
     --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
     --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
   }
 
   /* 더 견고한 대안: 부모 호버 */
   .container:hover .toolbarWrapper {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    pointer-events: auto !important;
     --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
     --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
   }
 }
 
 /* 툴바 자체 호버 시에도 표시 유지 - 강화된 가시성 */
 .toolbarWrapper:hover {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-  visibility: visible !important;
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
 }
 
 /* 표시 상태일 때 툴바 위치 - 강화된 가시성 */
 .container:has(.toolbarHoverZone:hover) .toolbarWrapper,
 .container.initialToolbarVisible .toolbarWrapper,
 .toolbarWrapper:hover {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-  visibility: visible !important;
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
 }
 
 /* 접근성: 포커스 시에도 툴바 표시 - 더 강력한 보장 */
 .toolbarWrapper:focus-within {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-  visibility: visible !important;
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
   /* 포커스 시에는 더 빠른 트랜지션 */
   transition: var(--xeg-transition-fast);
-}
-
-/* 툴바 강제 가시성 보장 - 모든 상황에서 보이도록 */
-.toolbarWrapper {
-  /* 기본 가시성 규칙들을 다시 한번 강조 */
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: block !important;
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-  /* z-index 충돌 방지 */
-  z-index: 999999 !important;
 }
 
 /* 갤러리 툴바 컴포넌트 자체의 가시성 보장 */
 .toolbarWrapper [class*='galleryToolbar'],
 .toolbarWrapper [data-testid*='toolbar'] {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  pointer-events: auto !important;
+  opacity: var(--toolbar-opacity, 0);
+  visibility: var(--toolbar-visibility, hidden);
+  display: flex;
+  pointer-events: var(--toolbar-pointer-events, none);
 }
 
 /* 툴바 내부 모든 요소 클릭 보장 */
 .toolbarWrapper * {
-  pointer-events: auto !important;
+  pointer-events: inherit;
 }
 
 /* 툴바 버튼의 이벤트 전파 방지 및 클릭 보장 */
 .toolbarWrapper button,
 .toolbarWrapper [role='button'],
 .toolbarWrapper .toolbarButton {
-  pointer-events: auto !important;
+  pointer-events: auto;
   position: relative;
   z-index: 10;
 }
@@ -656,14 +635,14 @@
 
 /* 툴바 자체 호버 시에도 표시 유지 */
 .container [class*='galleryToolbar']:hover {
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
 }
 
 /* 브라우저 호환성을 위한 대체 방법 */
 @supports not (selector(:hover + *)) {
   .container:hover [class*='galleryToolbar'] {
-    opacity: 1 !important;
-    pointer-events: auto !important;
+    --toolbar-opacity: 1;
+    --toolbar-pointer-events: auto;
   }
 }
