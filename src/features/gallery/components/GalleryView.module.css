@@ -1,0 +1,204 @@
+/**
+ * @fileoverview 통합 갤러리 뷰 컴포넌트 스타일
+ * @description 모든 갤러리 레이아웃을 지원하는 통합 스타일
+ */
+
+/* 베이스 변수 */
+.container {
+  /* CSS 변수 계층 구조 정의 */
+  --xeg-z-gallery: 10000;
+  --xeg-z-toolbar: calc(var(--xeg-z-gallery) + 1);
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 16px;
+  --xeg-spacing-lg: 24px;
+  --xeg-duration-fast: 150ms;
+  --xeg-easing-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* 툴바 관련 CSS 변수 */
+  --toolbar-opacity: 0;
+  --toolbar-visibility: hidden;
+  --toolbar-pointer-events: none;
+  --toolbar-transform-y: -10px;
+
+  /* 컨테이너 기본 스타일 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--xeg-z-gallery);
+  background: rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  /* 초기 상태는 숨김 */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+/* 가시성 상태 */
+.container.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 레이아웃별 스타일 */
+.verticalLayout {
+  --item-direction: column;
+  --item-align: center;
+  --scroll-direction: vertical;
+}
+
+.horizontalLayout {
+  --item-direction: row;
+  --item-align: flex-start;
+  --scroll-direction: horizontal;
+}
+
+/* 툴바 호버 존 */
+.toolbarHoverZone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  z-index: calc(var(--xeg-z-toolbar) - 1);
+  pointer-events: auto;
+}
+
+/* 툴바 래퍼 */
+.toolbarWrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  z-index: var(--xeg-z-toolbar);
+
+  /* CSS 변수로 제어되는 상태 */
+  opacity: var(--toolbar-opacity);
+  visibility: var(--toolbar-visibility);
+  pointer-events: var(--toolbar-pointer-events);
+  transform: translateY(var(--toolbar-transform-y));
+
+  transition:
+    opacity 100ms var(--xeg-easing-ease-out),
+    transform 100ms var(--xeg-easing-ease-out),
+    visibility 0ms;
+
+  /* 성능 최적화 */
+  will-change: transform, opacity, visibility;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+
+  /* 그라디언트 배경 */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, black 80%, transparent) 0%,
+    color-mix(in srgb, black 40%, transparent) 70%,
+    transparent 100%
+  );
+  padding-bottom: var(--xeg-spacing-lg);
+}
+
+/* 호버 시 툴바 표시 */
+.container:has(.toolbarHoverZone:hover) .toolbarWrapper {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
+/* :has() 지원하지 않는 브라우저 대안 */
+@supports not (selector(:has(*))) {
+  .toolbarHoverZone:hover + .toolbarWrapper {
+    --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
+    --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
+  }
+}
+
+/* 메인 콘텐츠 */
+.content {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: var(--item-direction, column);
+  align-items: var(--item-align, center);
+  gap: var(--xeg-spacing-md);
+  padding: 80px var(--xeg-spacing-md) var(--xeg-spacing-md);
+}
+
+/* Vertical 레이아웃 */
+.verticalLayout .content {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Horizontal 레이아웃 */
+.horizontalLayout .content {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* 빈 상태 */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.2rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .content {
+    padding: 60px var(--xeg-spacing-sm) var(--xeg-spacing-sm);
+    gap: var(--xeg-spacing-sm);
+  }
+
+  .toolbarHoverZone {
+    height: 80px;
+  }
+}
+
+/* 가상 스크롤링 지원 */
+.container[data-virtualization='true'] .content {
+  /* 가상 스크롤링 시 성능 최적화 */
+  contain: layout style;
+  transform: translateZ(0);
+}
+
+/* 접근성 */
+.container:focus-within {
+  outline: 2px solid #007acc;
+  outline-offset: -2px;
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .container {
+    background: black;
+  }
+
+  .toolbarWrapper {
+    background: linear-gradient(to bottom, black 0%, rgba(0, 0, 0, 0.8) 70%, transparent 100%);
+  }
+}
+
+/* 모션 선호도 고려 */
+@media (prefers-reduced-motion: reduce) {
+  .container,
+  .toolbarWrapper {
+    transition: none;
+  }
+}

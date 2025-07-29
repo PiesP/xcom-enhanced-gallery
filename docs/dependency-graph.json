@@ -98,6 +98,41 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./GalleryView",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/features/gallery/components/GalleryView.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./GalleryView",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/features/gallery/components/GalleryView.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./vertical-gallery-view/hooks",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -168,6 +203,50 @@
       ],
       "dependents": [
         "src/components/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/GalleryView.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./GalleryView.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/GalleryView.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/GalleryView.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/GalleryView.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -6813,8 +6892,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 188,
-    "totalDependenciesCruised": 287,
+    "totalCruised": 190,
+    "totalDependenciesCruised": 290,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
