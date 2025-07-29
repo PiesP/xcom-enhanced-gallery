@@ -17,12 +17,19 @@ export { MediaService, mediaService } from './MediaService';
 export { extractUsername, parseUsernameFast } from './MediaService';
 export type { UsernameExtractionResult } from './MediaService';
 
-// 통합 미디어 로딩 서비스 (Phase 9)
+// 새로운 명명
+export { MediaLoadingService } from './MediaLoadingService';
+export type { MediaLoadingState, MediaLoadingOptions } from './MediaLoadingService';
+
+// 하위 호환성 (구 명명)
 export { UnifiedMediaLoadingService, unifiedMediaLoader } from './UnifiedMediaLoadingService';
-export type { MediaLoadingState, MediaLoadingOptions } from './UnifiedMediaLoadingService';
+export type {
+  UnifiedMediaLoadingState,
+  UnifiedMediaLoadingOptions,
+} from './UnifiedMediaLoadingService';
 
 // Phase 4: 런타임 성능 최적화 서비스들
-export { OptimizedLazyLoadingService } from './OptimizedLazyLoadingService';
+export { LazyLoadingService } from './LazyLoadingService';
 
 // Phase 3: 동적 import 서비스들
 export { LazyMotionService } from './LazyMotionService';

@@ -4,7 +4,10 @@
  * @version 2.0.0
  */
 
-// 새로운 통합된 갤러리 컨테이너 컴포넌트
+// 새로운 명명
+export { GalleryContainer, type GalleryContainerProps } from './GalleryContainer';
+
+// 하위 호환성 (구 명명)
 export {
   UnifiedGalleryContainer,
   mountUnifiedGallery,

@@ -105,7 +105,7 @@ export {
   TwitterEventManager,
   initializeGalleryEvents,
   cleanupGalleryEvents,
-} from './unified-events';
+} from './events';
 
 // ================================
 // 리소스 관리

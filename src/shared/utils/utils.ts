@@ -272,11 +272,9 @@ export function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T)
 }
 
 /**
- * 문자열 배열 중복 제거
+ * 문자열 배열 중복 제거 (core-utils에서 import)
  */
-export function removeDuplicateStrings(items: readonly string[]): string[] {
-  return removeDuplicates(items, item => item);
-}
+export { removeDuplicateStrings } from './core-utils';
 
 /**
  * 미디어 아이템 중복 제거
@@ -982,7 +980,6 @@ export const unifiedUtils = {
 
   // Deduplication
   removeDuplicates,
-  removeDuplicateStrings,
   removeDuplicateMediaItems,
 
   // Debug

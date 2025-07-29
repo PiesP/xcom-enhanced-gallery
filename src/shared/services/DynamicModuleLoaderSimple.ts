@@ -38,10 +38,10 @@ export async function loadServiceModule(serviceName: string) {
       }
 
       case 'OptimizedLazyLoadingService': {
-        const module = await import('./OptimizedLazyLoadingService');
+        const module = await import('./LazyLoadingService');
         const loadTime = performance.now() - startTime;
         logger.debug('OptimizedLazyLoadingService 로딩 완료:', { loadTime });
-        return module.OptimizedLazyLoadingService;
+        return module.LazyLoadingService;
       }
 
       case 'BulkDownloadService': {
@@ -69,7 +69,7 @@ export async function loadUtilityModule(utilityName: string) {
   try {
     switch (utilityName) {
       case 'VirtualScrollManager': {
-        const module = await import('@shared/utils/virtual-scroll/VirtualScrollManager');
+        const module = await import('@shared/utils/virtual-scroll/SimpleScrollHelper');
         const loadTime = performance.now() - startTime;
         logger.debug('VirtualScrollManager 로딩 완료:', { loadTime });
         return module.VirtualScrollManager;

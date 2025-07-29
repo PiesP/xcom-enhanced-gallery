@@ -952,9 +952,55 @@
     },
     {
       "source": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./GalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./GalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/components/index.ts",
+        "src/shared/components/isolation/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/isolation/GalleryContainer.tsx",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
         "src/shared/components/isolation/index.ts"
       ],
       "orphan": false,
@@ -2012,6 +2058,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./GalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./UnifiedGalleryContainer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2535,14 +2598,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../utils/virtual-scroll/VirtualScrollManager",
+          "module": "../utils/virtual-scroll/SimpleScrollHelper",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/utils/virtual-scroll/VirtualScrollManager.ts",
+          "resolved": "src/shared/utils/virtual-scroll/SimpleScrollHelper.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2558,7 +2621,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/virtual-scroll/VirtualScrollManager.ts",
+      "source": "src/shared/utils/virtual-scroll/SimpleScrollHelper.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/hooks/useVirtualScroll.ts",
@@ -3050,6 +3113,41 @@
             "export"
           ],
           "resolved": "src/shared/services/LazyVirtualScrollService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/MediaLoadingService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/services/MediaLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4054,6 +4152,16 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/MediaLoadingService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts",
+        "src/shared/services/UnifiedMediaLoadingService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/OptimizedLazyLoadingService.ts",
       "dependencies": [],
       "dependents": [
@@ -4074,7 +4182,43 @@
     },
     {
       "source": "src/shared/services/UnifiedMediaLoadingService.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./MediaLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/MediaLoadingService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/services/MediaLoadingService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/services/index.ts"
       ],
@@ -4739,7 +4883,8 @@
       ],
       "dependents": [
         "src/shared/utils/index.ts",
-        "src/shared/utils/convenience.ts"
+        "src/shared/utils/convenience.ts",
+        "src/shared/utils/unified-utils.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4760,9 +4905,37 @@
     },
     {
       "source": "src/shared/utils/dom/BatchDOMUpdateManager.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./DOMBatcher",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/dom/DOMBatcher.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/index.ts",
+        "src/shared/utils/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/dom/DOMBatcher.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/dom/BatchDOMUpdateManager.ts",
         "src/shared/utils/dom/index.ts"
       ],
       "orphan": false,
@@ -4812,14 +4985,32 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./MemoryPoolManager",
+          "module": "./SimpleResourceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/memory/MemoryPoolManager.ts",
+          "resolved": "src/shared/utils/memory/SimpleResourceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SimpleResourceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/utils/memory/SimpleResourceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4835,7 +5026,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/memory/MemoryPoolManager.ts",
+      "source": "src/shared/utils/memory/SimpleResourceManager.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/memory/index.ts"
@@ -4957,14 +5148,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./WorkerPoolManager",
+          "module": "./SimpleTaskManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/workers/WorkerPoolManager.ts",
+          "resolved": "src/shared/utils/workers/SimpleTaskManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4974,7 +5165,7 @@
         },
         {
           "dynamic": false,
-          "module": "./WorkerPoolManager",
+          "module": "./SimpleTaskManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -4982,7 +5173,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/shared/utils/workers/WorkerPoolManager.ts",
+          "resolved": "src/shared/utils/workers/SimpleTaskManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4998,7 +5189,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/workers/WorkerPoolManager.ts",
+      "source": "src/shared/utils/workers/SimpleTaskManager.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/workers/index.ts"
@@ -5054,6 +5245,23 @@
     {
       "source": "src/shared/utils/unified-utils.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./core-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/core-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./performance/performance-utils",
@@ -5277,8 +5485,36 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/media-extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
+      "source": "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
       "dependencies": [],
+      "dependents": [
+        "src/shared/services/media-extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
+        "src/shared/services/media-extraction/strategies/fallback/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/media-extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./FallbackStrategy",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/services/media-extraction/strategies/fallback/index.ts"
       ],
@@ -5288,6 +5524,23 @@
     {
       "source": "src/shared/services/media-extraction/strategies/fallback/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./FallbackStrategy",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./UnifiedFallbackStrategy",
@@ -6008,7 +6261,24 @@
         },
         {
           "dynamic": false,
-          "module": "./BatchDOMUpdateManager",
+          "module": "./DOMBatcher",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/dom/DOMBatcher.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./DOMBatcher",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -6016,7 +6286,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/shared/utils/dom/BatchDOMUpdateManager.ts",
+          "resolved": "src/shared/utils/dom/DOMBatcher.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6212,14 +6482,14 @@
         },
         {
           "dynamic": false,
-          "module": "./VirtualScrollManager",
+          "module": "./SimpleScrollHelper",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/virtual-scroll/VirtualScrollManager.ts",
+          "resolved": "src/shared/utils/virtual-scroll/SimpleScrollHelper.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6229,7 +6499,7 @@
         },
         {
           "dynamic": false,
-          "module": "./VirtualScrollManager",
+          "module": "./SimpleScrollHelper",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -6237,7 +6507,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/shared/utils/virtual-scroll/VirtualScrollManager.ts",
+          "resolved": "src/shared/utils/virtual-scroll/SimpleScrollHelper.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6460,8 +6730,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 180,
-    "totalDependenciesCruised": 272,
+    "totalCruised": 184,
+    "totalDependenciesCruised": 285,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

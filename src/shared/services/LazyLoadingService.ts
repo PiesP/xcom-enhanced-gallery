@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { rafThrottle } from '@shared/utils/unified-utils';
+import { rafThrottle } from '@shared/utils/utils';
 
 /**
  * 지연 로딩 옵션
@@ -46,8 +46,8 @@ interface LazyLoadItem {
  * - 메모리 효율적인 요소 관리
  * - 적응형 임계값 조정
  */
-export class OptimizedLazyLoadingService {
-  private static instance: OptimizedLazyLoadingService | null = null;
+export class LazyLoadingService {
+  private static instance: LazyLoadingService | null = null;
 
   private observer: IntersectionObserver | null = null;
   private readonly items = new Map<HTMLElement, LazyLoadItem>();
@@ -79,9 +79,9 @@ export class OptimizedLazyLoadingService {
   /**
    * 싱글톤 인스턴스 반환
    */
-  static getInstance(options?: LazyLoadingOptions): OptimizedLazyLoadingService {
+  static getInstance(options?: LazyLoadingOptions): LazyLoadingService {
     if (!this.instance) {
-      this.instance = new OptimizedLazyLoadingService(options);
+      this.instance = new LazyLoadingService(options);
     }
     return this.instance;
   }
@@ -330,7 +330,7 @@ export class OptimizedLazyLoadingService {
     this.loadingQueue.length = 0;
     this.currentlyLoading = 0;
 
-    OptimizedLazyLoadingService.instance = null;
+    LazyLoadingService.instance = null;
   }
 
   /**
@@ -349,7 +349,7 @@ export function observeImageLazy(
   src: string,
   options?: LazyLoadingOptions
 ): void {
-  const service = OptimizedLazyLoadingService.getInstance(options);
+  const service = LazyLoadingService.getInstance(options);
 
   service.observe(img, async () => {
     return new Promise((resolve, reject) => {
@@ -372,7 +372,7 @@ export function observeVideoLazy(
   src: string,
   options?: LazyLoadingOptions
 ): void {
-  const service = OptimizedLazyLoadingService.getInstance(options);
+  const service = LazyLoadingService.getInstance(options);
 
   service.observe(video, async () => {
     video.src = src;

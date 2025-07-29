@@ -7,8 +7,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DOMCache } from '@shared/dom/DOMCache';
 import { getPreactCompat } from '@shared/external/vendors';
-import { rafThrottle } from '@shared/utils/unified-utils';
-import { OptimizedLazyLoadingService } from '@shared/services/OptimizedLazyLoadingService';
+import { rafThrottle } from '@shared/utils/utils';
+import { LazyLoadingService } from '@shared/services/LazyLoadingService';
 import { RuntimeResourceManager } from '@shared/managers';
 
 /**

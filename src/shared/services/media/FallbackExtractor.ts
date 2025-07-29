@@ -7,17 +7,17 @@
 import { logger } from '@shared/logging/logger';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import { UnifiedFallbackStrategy } from '@shared/services/media-extraction/strategies/fallback/UnifiedFallbackStrategy';
+import { FallbackStrategy } from '@shared/services/media-extraction/strategies/fallback/FallbackStrategy';
 
 /**
  * 백업 추출기
  * API 추출이 실패했을 때 DOM 기반 추출
  */
 export class FallbackExtractor {
-  private readonly strategy: UnifiedFallbackStrategy;
+  private readonly strategy: FallbackStrategy;
 
   constructor() {
-    this.strategy = new UnifiedFallbackStrategy();
+    this.strategy = new FallbackStrategy();
   }
 
   /**

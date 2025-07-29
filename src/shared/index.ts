@@ -49,8 +49,8 @@ export {
   safeElementCheck,
 } from './utils';
 
-export { GalleryUtils } from './utils/unified-utils';
-export { isInsideGallery } from './utils/unified-dom';
+export { GalleryUtils } from './utils/utils';
+export { isInsideGallery } from './utils/dom';
 
 // 최적화 유틸리티들 (Phase 3)
 export * from './utils/optimization';

@@ -92,16 +92,14 @@ export class LazyIntersectionService {
       logger.debug('LazyIntersectionService: OptimizedLazyLoadingService 동적 로딩 시작');
 
       // 동적 import를 통한 OptimizedLazyLoadingService 로딩
-      const { OptimizedLazyLoadingService } = await import(
-        '@shared/services/OptimizedLazyLoadingService'
-      );
+      const { LazyLoadingService } = await import('@shared/services/LazyLoadingService');
 
-      if (!OptimizedLazyLoadingService) {
-        throw new Error('OptimizedLazyLoadingService 클래스를 찾을 수 없습니다');
+      if (!LazyLoadingService) {
+        throw new Error('LazyLoadingService 클래스를 찾을 수 없습니다');
       }
 
-      // OptimizedLazyLoadingService 인스턴스 생성
-      const service = OptimizedLazyLoadingService.getInstance({
+      // LazyLoadingService 인스턴스 생성
+      const service = LazyLoadingService.getInstance({
         rootMargin: '100px',
         threshold: 0.1,
         maxConcurrentLoads: 5,

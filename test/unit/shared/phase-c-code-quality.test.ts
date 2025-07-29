@@ -205,16 +205,16 @@ describe('Phase C: 코드 품질 개선', () => {
     });
 
     it('과도한 메모리 풀링 시스템이 단순화되어야 한다', async () => {
-      const memoryPoolManager = await import('../../../src/shared/utils/memory/MemoryPoolManager');
+      const memoryUtils = await import('../../../src/shared/utils/memory');
 
-      // 기본 ObjectPool은 유지하되, 복잡한 시스템들은 단순화
-      expect(memoryPoolManager.ObjectPool).toBeDefined();
+      // SimpleResourceManager를 통한 기본적인 리소스 관리 확인
+      expect(memoryUtils.SimpleResourceManager).toBeDefined();
 
-      // DOMElementPool, CanvasPool 등은 유저스크립트에 과도할 수 있음
-      // 필요에 따라 존재 여부 확인
-      if (memoryPoolManager.DOMElementPool) {
-        expect(typeof memoryPoolManager.DOMElementPool).toBe('function');
-      }
+      // MemoryPoolManager는 SimpleResourceManager의 별칭으로 존재해야 함
+      expect(memoryUtils.MemoryPoolManager).toBeDefined();
+      expect(memoryUtils.MemoryPoolManager).toBe(memoryUtils.SimpleResourceManager);
+
+      // 복잡한 최적화보다는 단순한 리소스 관리에 중점
     });
   });
 });

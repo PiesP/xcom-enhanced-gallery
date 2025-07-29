@@ -8,7 +8,7 @@ import {
   isValidCSSSelector,
   calculateSelectorComplexity,
   hasPerformanceIssues,
-} from '@shared/utils/unified-dom';
+} from '@shared/utils/dom';
 
 describe('STABLE_SELECTORS', () => {
   let testContainer;

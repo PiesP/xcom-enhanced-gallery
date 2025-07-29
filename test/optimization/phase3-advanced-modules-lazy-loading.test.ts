@@ -9,8 +9,13 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock 실제 최적화 모듈들
+// Mock 단순화된 최적화 모듈들
 vi.mock('@shared/utils/virtual-scroll', () => ({
+  SimpleScrollHelper: vi.fn().mockImplementation(() => ({
+    calculateVisibleRange: vi.fn(() => ({ start: 0, end: 10 })),
+    calculateRenderRange: vi.fn(() => ({ start: 0, end: 12, bufferStart: 0, bufferEnd: 12 })),
+  })),
+  // 하위 호환성을 위한 별칭
   VirtualScrollManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn(),
     updateConfig: vi.fn(),
@@ -20,34 +25,33 @@ vi.mock('@shared/utils/virtual-scroll', () => ({
   })),
 }));
 
-vi.mock('@shared/services/OptimizedLazyLoadingService', () => ({
-  OptimizedLazyLoadingService: {
-    getInstance: vi.fn(() => ({
-      observeImage: vi.fn(),
-      observeImages: vi.fn(),
+vi.mock('@shared/services/LazyIntersectionService', () => ({
+  LazyIntersectionService: {
+    loadIntersectionService: vi.fn().mockResolvedValue({
+      observe: vi.fn(),
       unobserve: vi.fn(),
-      disconnect: vi.fn(),
+      getMetrics: vi.fn(() => ({})),
+      dispose: vi.fn(),
+    }),
+    isIntersectionObserverSupported: vi.fn(() => true),
+    observeWhenSupported: vi.fn().mockResolvedValue(undefined),
+    unobserveElement: vi.fn().mockResolvedValue(undefined),
+    getPerformanceMetrics: vi.fn().mockResolvedValue({}),
+    clearCache: vi.fn(),
+    getStatus: vi.fn(() => ({
+      isLoaded: false,
+      isLoading: false,
+      isSupported: true,
     })),
   },
+  observeImageWhenSupported: vi.fn().mockResolvedValue(undefined),
+  observeVideoWhenSupported: vi.fn().mockResolvedValue(undefined),
+  observeElementWhenSupported: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@shared/components/optimization/AdvancedMemoization', () => ({
-  AdvancedMemoization: {
-    getInstance: vi.fn(() => ({
-      memoize: vi.fn(comp => comp),
-      memoizeWithCompare: vi.fn(comp => comp),
-      getProfile: vi.fn(() => ({ renderCount: 0, skipCount: 0 })),
-      clearCache: vi.fn(),
-    })),
-  },
-  default: {
-    getInstance: vi.fn(() => ({
-      memoize: vi.fn(comp => comp),
-      memoizeWithCompare: vi.fn(comp => comp),
-      getProfile: vi.fn(() => ({ renderCount: 0, skipCount: 0 })),
-      clearCache: vi.fn(),
-    })),
-  },
+// AdvancedMemoization은 제거됨 - 기본 Preact memo 사용 권장
+vi.mock('@shared/components/optimization', () => ({
+  // 빈 export - 최적화 컴포넌트들이 단순화됨
 }));
 
 vi.mock('@shared/logging/logger', () => ({

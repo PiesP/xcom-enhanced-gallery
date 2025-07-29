@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   unifiedMediaLoader,
-  type MediaLoadingOptions,
+  type UnifiedMediaLoadingOptions as MediaLoadingOptions,
 } from '@shared/services/UnifiedMediaLoadingService';
 
 /**
