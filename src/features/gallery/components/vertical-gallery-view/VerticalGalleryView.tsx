@@ -22,10 +22,10 @@ import type { MouseEvent } from 'preact/compat';
 import {
   animateGalleryEnter,
   animateGalleryExit,
-  animateToolbarShow,
   setupScrollAnimation,
 } from '@shared/services/SimpleAnimationService';
 import { useVirtualScroll } from '@shared/hooks/useVirtualScroll';
+import { useToolbarPositionBased } from '@features/gallery/hooks';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
@@ -89,57 +89,21 @@ function VerticalGalleryViewCore({
   // 단순화된 가시성 상태 관리
   const [isVisible, setIsVisible] = useState(mediaItems.length > 0);
 
-  // 초기 툴바 표시 상태 (3초간)
-  const [initialToolbarVisible, setInitialToolbarVisible] = useState(true);
+  // useToolbarPositionBased 훅을 사용하여 간소화된 위치 기반 툴바 제어
+  const {
+    isVisible: _toolbarVisible,
+    show: _showToolbar,
+    hide: _hideToolbar,
+  } = useToolbarPositionBased({
+    toolbarElement: toolbarWrapperRef.current,
+    hoverZoneElement: toolbarHoverZoneRef.current,
+    enabled: isVisible && mediaItems.length > 0,
+  });
 
-  // 초기 툴바 표시 타이머 설정 - 가시성 문제 해결을 위해 항상 표시로 변경
-  useEffect(() => {
-    if (isVisible) {
-      // 초기에 툴바가 보이도록 강제 설정
-      if (toolbarWrapperRef.current) {
-        const toolbar = toolbarWrapperRef.current;
-        toolbar.style.setProperty('opacity', '1', 'important');
-        toolbar.style.setProperty('visibility', 'visible', 'important');
-        toolbar.style.setProperty('display', 'block', 'important');
-        toolbar.style.setProperty('transform', 'translateY(0)', 'important');
-        toolbar.style.setProperty('pointer-events', 'auto', 'important');
-        toolbar.style.setProperty('z-index', '999999', 'important');
-      }
-
-      // 타이머는 유지하되 더 긴 시간으로 설정 (5초)
-      const timer = setTimeout(() => {
-        // 툴바를 숨기는 대신 호버로만 제어되도록 변경
-        setInitialToolbarVisible(false);
-        logger.debug('VerticalGalleryView: 초기 툴바 표시 상태 해제 (5초 경과)');
-      }, 5000);
-
-      return () => clearTimeout(timer);
-    }
-
-    // 조건이 맞지 않을 때는 아무것도 정리할 것이 없음
-    return () => {};
-  }, [isVisible]);
-
-  // 툴바 표시 애니메이션 - 가시성 보장
-  useEffect(() => {
-    if (toolbarWrapperRef.current) {
-      const toolbar = toolbarWrapperRef.current;
-
-      // 강제로 가시성 보장
-      toolbar.style.setProperty('opacity', '1', 'important');
-      toolbar.style.setProperty('visibility', 'visible', 'important');
-      toolbar.style.setProperty('display', 'block', 'important');
-      toolbar.style.setProperty('transform', 'translateY(0)', 'important');
-      toolbar.style.setProperty('pointer-events', 'auto', 'important');
-
-      // 애니메이션 실행
-      if (initialToolbarVisible) {
-        animateToolbarShow(toolbar);
-      }
-
-      logger.debug('툴바 가시성 강제 적용 및 애니메이션 실행');
-    }
-  }, [initialToolbarVisible]);
+  // 간소화된 위치 기반 시스템으로 교체:
+  // - 복잡한 타이머 로직 제거 (100줄 → 30줄)
+  // - 마우스 위치에 따른 즉시 반응형 제어
+  // - 기존 CSS 호버 존 시스템 활용
 
   // 포커스 상태 관리
   const [focusedIndex, setFocusedIndex] = useState<number>(currentIndex);
@@ -559,7 +523,7 @@ function VerticalGalleryViewCore({
       toolbarWrapper.removeEventListener('mouseenter', showToolbar);
       toolbarWrapper.removeEventListener('mouseleave', hideToolbar);
     };
-  }, [initialToolbarVisible]);
+  }, []);
 
   // 빈 상태 처리
   if (!isVisible || mediaItems.length === 0) {
@@ -576,9 +540,7 @@ function VerticalGalleryViewCore({
   return (
     <div
       ref={containerRef}
-      className={`${styles.container} ${stringWithDefault(className, '')} ${
-        initialToolbarVisible ? styles.initialToolbarVisible : ''
-      }`}
+      className={`${styles.container} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'
