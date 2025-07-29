@@ -27,7 +27,7 @@ describe('Phase C: 코드 품질 개선', () => {
     });
 
     it('모든 다른 모듈들은 performance-utils에서 import해야 한다', async () => {
-      // core-utils에서 unified-utils를 거치지 않고 직접 import하는지 확인
+      // core-utils에서 utils를 거치지 않고 직접 import하는지 확인
       const coreUtils = await import('../../../src/shared/utils/core-utils');
       const performanceUtils = await import(
         '../../../src/shared/utils/performance/performance-utils'
@@ -43,7 +43,7 @@ describe('Phase C: 코드 품질 개선', () => {
 
     it('중복 제거 함수들이 통합되어야 한다', async () => {
       const coreUtils = await import('../../../src/shared/utils/core-utils');
-      const unifiedUtils = await import('../../../src/shared/utils/unified-utils');
+      const unifiedUtils = await import('../../../src/shared/utils/utils');
 
       // removeDuplicateStrings 함수가 중복되지 않아야 함
       expect(typeof coreUtils.removeDuplicateStrings).toBe('function');
@@ -91,7 +91,7 @@ describe('Phase C: 코드 품질 개선', () => {
   describe('성능 최적화 검증', () => {
     it('중복 제거된 유틸리티들이 올바르게 동작해야 한다', async () => {
       const { removeDuplicates, removeDuplicateStrings } = await import(
-        '../../../src/shared/utils/unified-utils'
+        '../../../src/shared/utils/utils'
       );
 
       // 범용 중복 제거 함수 테스트
@@ -124,8 +124,8 @@ describe('Phase C: 코드 품질 개선', () => {
       expect(timerManagement.globalTimerManager).toBeDefined();
 
       // 리소스 관리의 타이머 함수들도 존재해야 함
-      expect(resourceManager.createManagedTimer).toBeDefined();
-      expect(resourceManager.createManagedInterval).toBeDefined();
+      expect(resourceManager.createTimer).toBeDefined();
+      expect(resourceManager.createInterval).toBeDefined();
 
       // TimerManager 기본 동작 검증
       const manager = new timerManagement.TimerManager();
@@ -134,7 +134,7 @@ describe('Phase C: 코드 품질 개선', () => {
 
     it('타이머 관리가 일관되게 동작해야 한다', async () => {
       const { TimerManager } = await import('../../../src/shared/utils/timer-management');
-      const { createManagedTimer, createManagedInterval } = await import(
+      const { createTimer, createInterval } = await import(
         '../../../src/shared/utils/resource-manager'
       );
 
@@ -144,8 +144,8 @@ describe('Phase C: 코드 품질 개선', () => {
       expect(initialCount).toBe(0);
 
       // 관리되는 타이머들
-      const timerId = createManagedTimer(() => {}, 1000);
-      const intervalId = createManagedInterval(() => {}, 1000);
+      const timerId = createTimer(() => {}, 1000);
+      const intervalId = createInterval(() => {}, 1000);
 
       expect(typeof timerId).toBe('string');
       expect(typeof intervalId).toBe('string');

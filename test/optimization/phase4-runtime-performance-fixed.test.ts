@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { join } from 'path';
 import { readFileSync } from 'fs';
 // Phase 4: 실제 서비스 import로 연결
-import { OptimizedLazyLoadingService } from '@shared/services/OptimizedLazyLoadingService';
+import { LazyLoadingService } from '@shared/services/LazyLoadingService';
 import { RuntimeResourceManager } from '@shared/managers';
 
 const ROOT_DIR = join(__dirname, '..', '..');
@@ -189,8 +189,8 @@ describe('Phase 4: 런타임 성능 최적화', () => {
     });
 
     it('뷰포트 진입 시에만 로딩이 시작되어야 함', () => {
-      // 실제 OptimizedLazyLoadingService 테스트
-      const lazyService = OptimizedLazyLoadingService.getInstance();
+      // 실제 LazyLoadingService 테스트
+      const lazyService = LazyLoadingService.getInstance();
       let loadCount = 0;
 
       const testElement = document.createElement('div');

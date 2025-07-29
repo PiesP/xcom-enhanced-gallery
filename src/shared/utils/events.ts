@@ -388,7 +388,7 @@ export async function initializeGalleryEvents(
     };
 
     // 이벤트 리스너 등록 (캡처 단계에서 처리하여 트위터보다 먼저 실행)
-    const clickId = addEventListenerManaged(
+    const clickId = addListener(
       documentElement,
       'click',
       clickHandler,
@@ -396,7 +396,7 @@ export async function initializeGalleryEvents(
       finalOptions.context
     );
 
-    const keyId = addEventListenerManaged(
+    const keyId = addListener(
       documentElement,
       'keydown',
       keyHandler,
@@ -478,7 +478,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
         handleKeyboardEvent(event, handlers, options);
       };
 
-      const clickId = addEventListenerManaged(
+      const clickId = addListener(
         documentElement,
         'click',
         clickHandler,
@@ -486,7 +486,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
         options.context
       );
 
-      const keyId = addEventListenerManaged(
+      const keyId = addListener(
         documentElement,
         'keydown',
         keyHandler,
@@ -675,7 +675,7 @@ export class GalleryEventManager {
     options?: AddEventListenerOptions,
     context?: string
   ): string {
-    return addEventListenerManaged(element, type, listener, options, context);
+    return addListener(element, type, listener, options, context);
   }
 
   public addMultipleListeners(
@@ -845,7 +845,7 @@ export function handleTwitterEvent(
   handler: EventListener,
   context?: string
 ): string {
-  return addEventListenerManaged(element, eventType, handler, undefined, context);
+  return addListener(element, eventType, handler, undefined, context);
 }
 
 /**

@@ -54,8 +54,8 @@ describe('Phase 1: 유틸리티 통합 검증', () => {
       cleanupFunctions = [];
     });
 
-    it('addEventListenerManaged는 이벤트를 안전하게 관리해야 한다', async () => {
-      const { addEventListenerManaged, removeEventListenerManaged } = await import('@shared/utils');
+    it('addListener는 이벤트를 안전하게 관리해야 한다', async () => {
+      const { addListener, removeEventListener } = await import('@shared/utils');
 
       let clickCount = 0;
       const handler = () => {
@@ -67,7 +67,7 @@ describe('Phase 1: 유틸리티 통합 검증', () => {
       document.body.appendChild(button);
 
       // 이벤트 등록
-      const listenerId = addEventListenerManaged(button, 'click', handler);
+      const listenerId = addListener(button, 'click', handler);
       expect(typeof listenerId).toBe('string');
 
       // 이벤트 발생 테스트
@@ -75,7 +75,7 @@ describe('Phase 1: 유틸리티 통합 검증', () => {
       expect(clickCount).toBe(1);
 
       // 이벤트 제거
-      const removed = removeEventListenerManaged(listenerId);
+      const removed = removeEventListener(listenerId);
       expect(removed).toBe(true);
 
       // 제거 후 이벤트가 발생하지 않아야 함
@@ -197,15 +197,15 @@ describe('Phase 1: 유틸리티 통합 검증', () => {
   });
 
   describe('리소스 관리', () => {
-    it('createManagedTimer는 타이머를 안전하게 관리해야 한다', async () => {
-      const { createManagedTimer, releaseResource } = await import('@shared/utils');
+    it('createTimer는 타이머를 안전하게 관리해야 한다', async () => {
+      const { createTimer, releaseResource } = await import('@shared/utils');
 
       let called = false;
       const callback = () => {
         called = true;
       };
 
-      const id = createManagedTimer(callback, 0, 'test-context');
+      const id = createTimer(callback, 0, 'test-context');
       expect(typeof id).toBe('string');
 
       // 타이머 정리
@@ -226,12 +226,12 @@ describe('통합 작업 무결성 검증', () => {
     const requiredExports = [
       'safeQuerySelector',
       'isInsideGallery',
-      'addEventListenerManaged',
+      'addListener',
       'initializeGalleryEvents',
       'combineClasses',
       'throttleScroll',
       'safeParseInt',
-      'createManagedTimer',
+      'createTimer',
     ];
 
     requiredExports.forEach(exportName => {
@@ -242,7 +242,7 @@ describe('통합 작업 무결성 검증', () => {
 
   it('중복 제거 후에도 기능이 정상 동작해야 한다', async () => {
     // 실제 갤러리 동작과 유사한 시나리오 테스트
-    const { safeQuerySelector, isInsideGallery, addEventListenerManaged, combineClasses } =
+    const { safeQuerySelector, isInsideGallery, addListener, combineClasses } =
       await import('@shared/utils');
 
     // DOM 설정
@@ -265,7 +265,7 @@ describe('통합 작업 무결성 검증', () => {
 
     // 이벤트 관리
     let clicked = false;
-    const listenerId = addEventListenerManaged(button!, 'click', () => {
+    const listenerId = addListener(button!, 'click', () => {
       clicked = true;
     });
 

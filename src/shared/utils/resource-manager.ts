@@ -1,10 +1,10 @@
 /**
- * @fileoverview ?�순?�된 리소??관�??�스?? * @description 복잡???�래??기반 ResourceManager�??�순 ?�수�??��? * @version 2.0.0 - Phase 2 ?�순?? */
+ * @fileoverview ?�순?�된 리소??관�??�스?? * @description 복잡???�래??기반 ResourceManager�??�순 ?�수�??��? * @version 2.0.0 - Phase 2 ?�순?? */
 
 import { logger } from '@shared/logging';
 
 /**
- * 리소???�???�의
+ * 리소???�???�의
  */
 export type ResourceType =
   | 'timer'
@@ -16,12 +16,12 @@ export type ResourceType =
   | 'memory';
 
 /**
- * 리소??컨텍?�트 (그룹?��? ?�한 ?�별??
+ * 리소??컨텍?�트 (그룹?��? ?�한 ?�별??
  */
 export type ResourceContext = string;
 
 /**
- * 기본 리소???�트�? */
+ * 기본 리소???�트�? */
 export interface ResourceEntry {
   id: string;
   type: ResourceType;
@@ -30,19 +30,19 @@ export interface ResourceEntry {
   metadata?: Record<string, unknown>;
 }
 
-// 글로벌 리소???�?�소
+// 글로벌 리소???�?�소
 const resources = new Map<string, ResourceEntry>();
 let resourceIdCounter = 0;
 
 /**
- * 고유 ID ?�성
+ * 고유 ID ?�성
  */
 function generateId(type: ResourceType): string {
   return `${type}_${++resourceIdCounter}_${Date.now()}`;
 }
 
 /**
- * ?�?�머 ?�록 �?관�?(setTimeout)
+ * ?�?�머 ?�록 �?관�?(setTimeout)
  */
 export function createTimer(callback: () => void, delay: number, context?: string): string {
   const id = generateId('timer');
@@ -63,7 +63,7 @@ export function createTimer(callback: () => void, delay: number, context?: strin
 }
 
 /**
- * ?�터�??�록 �?관�?(setInterval)
+ * ?�터�??�록 �?관�?(setInterval)
  */
 export function createManagedInterval(
   callback: () => void,
@@ -85,7 +85,7 @@ export function createManagedInterval(
 }
 
 /**
- * ?�벤??리스???�록 �?관�? */
+ * ?�벤??리스???�록 �?관�? */
 export function addManagedEventListener(
   element: EventTarget,
   type: string,
@@ -109,7 +109,7 @@ export function addManagedEventListener(
 }
 
 /**
- * MutationObserver ?�록 �?관�? */
+ * MutationObserver ?�록 �?관�? */
 export function createManagedObserver(
   callback: MutationCallback,
   target: Node,
@@ -132,7 +132,7 @@ export function createManagedObserver(
 }
 
 /**
- * AbortController ?�록 �?관�? */
+ * AbortController ?�록 �?관�? */
 export function createManagedController(context?: string): {
   id: string;
   controller: AbortController;
@@ -152,7 +152,7 @@ export function createManagedController(context?: string): {
 }
 
 /**
- * Object URL ?�록 �?관�? */
+ * Object URL ?�록 �?관�? */
 export function createManagedObjectURL(blob: Blob, context?: string): { id: string; url: string } {
   const id = generateId('url');
   const url = URL.createObjectURL(blob);
@@ -169,7 +169,7 @@ export function createManagedObjectURL(blob: Blob, context?: string): { id: stri
 }
 
 /**
- * 메모�?리소???�록 �?관�? */
+ * 메모�?리소???�록 �?관�? */
 export function registerManagedMemoryResource(
   resource: unknown,
   cleanupFn: () => void,
@@ -189,7 +189,7 @@ export function registerManagedMemoryResource(
 }
 
 /**
- * ?�정 리소???�제
+ * ?�정 리소???�제
  */
 export function releaseResource(id: string): boolean {
   const resource = resources.get(id);
@@ -209,7 +209,7 @@ export function releaseResource(id: string): boolean {
 }
 
 /**
- * 컨텍?�트�?리소???�제
+ * 컨텍?�트�?리소???�제
  */
 export function releaseResourcesByContext(context: string): number {
   let released = 0;
@@ -227,7 +227,7 @@ export function releaseResourcesByContext(context: string): number {
 }
 
 /**
- * ?�?�별 리소???�제
+ * ?�?�별 리소???�제
  */
 export function releaseResourcesByType(type: ResourceType): number {
   let released = 0;
@@ -245,7 +245,7 @@ export function releaseResourcesByType(type: ResourceType): number {
 }
 
 /**
- * 모든 리소???�제
+ * 모든 리소???�제
  */
 export function cleanupAllResources(): void {
   const totalResources = resources.size;
@@ -270,7 +270,7 @@ export function getResourceCount(): number {
 }
 
 /**
- * 컨텍?�트�?리소??개수 조회
+ * 컨텍?�트�?리소??개수 조회
  */
 export function getResourceCountByContext(context: string): number {
   let count = 0;
@@ -283,7 +283,7 @@ export function getResourceCountByContext(context: string): number {
 }
 
 /**
- * ?�?�별 리소??개수 조회
+ * ?�?�별 리소??개수 조회
  */
 export function getResourceCountByType(type: ResourceType): number {
   let count = 0;
@@ -296,14 +296,14 @@ export function getResourceCountByType(type: ResourceType): number {
 }
 
 /**
- * 리소??존재 ?��? ?�인
+ * 리소??존재 ?��? ?�인
  */
 export function hasResource(id: string): boolean {
   return resources.has(id);
 }
 
 /**
- * 진단 ?�보 조회
+ * 진단 ?�보 조회
  */
 export function getResourceDiagnostics() {
   const byType: Record<ResourceType, number> = {
@@ -333,11 +333,11 @@ export function getResourceDiagnostics() {
 }
 
 /**
- * ?�환?�을 ?�한 ?�거??객체
- * @deprecated Phase 3?�서 ?�거 ?�정
+ * ?�환?�을 ?�한 ?�거??객체
+ * @deprecated Phase 3?�서 ?�거 ?�정
  */
 export const resourceManager = {
-  createTimer: createTimer,
+  createTimer,
   createInterval: createManagedInterval,
   addEventListener: addManagedEventListener,
   createObserver: createManagedObserver,
@@ -356,7 +356,7 @@ export const resourceManager = {
 } as const;
 
 /**
- * ?�환?�을 ?�한 ?�거???�래?? * @deprecated Phase 3?�서 ?�거 ?�정
+ * ?�환?�을 ?�한 ?�거???�래?? * @deprecated Phase 3?�서 ?�거 ?�정
  */
 export class ResourceManager {
   static getInstance() {

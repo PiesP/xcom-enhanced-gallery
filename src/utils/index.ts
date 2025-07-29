@@ -40,7 +40,7 @@ export {
   safeElementCheck,
 
   // 리소스 관리
-  createManagedTimer,
+  createTimer,
   createManagedInterval,
   ResourceManager,
 

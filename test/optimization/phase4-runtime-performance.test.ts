@@ -112,13 +112,13 @@ describe('Phase 4: 런타임 성능 최적화', () => {
 
       global.IntersectionObserver = vi.fn(() => mockObserver) as any;
 
-      const service = OptimizedLazyLoadingService.getInstance();
+      const service = LazyLoadingService.getInstance();
       expect(service).toBeDefined();
     });
 
     it('뷰포트 진입 시에만 로딩이 시작되어야 함', () => {
-      // OptimizedLazyLoadingService 테스트
-      const lazyService = OptimizedLazyLoadingService.getInstance();
+      // LazyLoadingService 테스트
+      const lazyService = LazyLoadingService.getInstance();
 
       const testElement = document.createElement('div');
 

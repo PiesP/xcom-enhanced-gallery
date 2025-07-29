@@ -454,7 +454,7 @@
       "dependencies": [],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.unified.tsx"
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.standard.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1567,7 +1567,7 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.unified.tsx",
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.standard.tsx",
       "dependencies": [
         {
           "dynamic": false,
@@ -2806,6 +2806,23 @@
         },
         {
           "dynamic": false,
+          "module": "./utils/dom",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/dom.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./utils/optimization",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2823,31 +2840,14 @@
         },
         {
           "dynamic": false,
-          "module": "./utils/unified-dom",
+          "module": "./utils/utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/unified-dom.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./utils/unified-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/unified-utils.ts",
+          "resolved": "src/shared/utils/utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3071,6 +3071,23 @@
         },
         {
           "dynamic": false,
+          "module": "./LazyLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/LazyLoadingService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./LazyMemoizationService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3183,23 +3200,6 @@
             "export"
           ],
           "resolved": "src/shared/services/MediaService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./OptimizedLazyLoadingService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/OptimizedLazyLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4125,6 +4125,16 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/LazyLoadingService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts",
+        "src/shared/services/DynamicModuleLoaderSimple.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/LazyMemoizationService.ts",
       "dependencies": [],
       "dependents": [
@@ -4157,16 +4167,6 @@
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/UnifiedMediaLoadingService.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/OptimizedLazyLoadingService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/index.ts",
-        "src/shared/services/DynamicModuleLoaderSimple.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4558,6 +4558,23 @@
         },
         {
           "dynamic": false,
+          "module": "./events",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/events.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./media/image-filter",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4728,23 +4745,6 @@
         },
         {
           "dynamic": false,
-          "module": "./unified-events",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/unified-events.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./workers",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4884,7 +4884,7 @@
       "dependents": [
         "src/shared/utils/index.ts",
         "src/shared/utils/convenience.ts",
-        "src/shared/utils/unified-utils.ts"
+        "src/shared/utils/utils.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4897,7 +4897,7 @@
         "src/shared/utils/convenience.ts",
         "src/shared/utils/core-utils.ts",
         "src/shared/utils/timer-management.ts",
-        "src/shared/utils/unified-utils.ts",
+        "src/shared/utils/utils.ts",
         "src/shared/utils/performance/index.ts"
       ],
       "orphan": false,
@@ -4943,6 +4943,15 @@
     },
     {
       "source": "src/shared/utils/error-handling.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/events.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts"
@@ -5135,15 +5144,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/unified-events.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/workers/index.ts",
       "dependencies": [
         {
@@ -5198,6 +5198,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/dom.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/optimization/index.ts",
       "dependencies": [
         {
@@ -5234,16 +5243,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/unified-dom.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/unified-utils.ts",
+      "source": "src/shared/utils/utils.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -5368,14 +5368,14 @@
         },
         {
           "dynamic": true,
-          "module": "./MediaPrefetchingService",
+          "module": "./LazyLoadingService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/shared/services/MediaPrefetchingService.ts",
+          "resolved": "src/shared/services/LazyLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5385,14 +5385,14 @@
         },
         {
           "dynamic": true,
-          "module": "./OptimizedLazyLoadingService",
+          "module": "./MediaPrefetchingService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/shared/services/OptimizedLazyLoadingService.ts",
+          "resolved": "src/shared/services/MediaPrefetchingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,

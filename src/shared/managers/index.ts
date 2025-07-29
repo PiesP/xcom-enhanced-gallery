@@ -12,7 +12,7 @@
 export {
   ResourceManager,
   resourceManager,
-  createManagedTimer,
+  createTimer,
   createManagedInterval,
   addManagedEventListener,
   createManagedObserver,
