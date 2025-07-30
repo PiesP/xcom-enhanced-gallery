@@ -1,53 +1,23 @@
 /**
  * @fileoverview 통합 디자인 토큰 CSS
- * @description 모든 CSS 변수를 하나의 파일로 통합 관리
- * @version 2.0.0
  */
 
 :root {
-  /* ===========================================
-     PRIMARY COLOR SYSTEM
-     =========================================== */
-
-  /* Primary Blue Scale */
-  --xeg-color-primary-50: #eff6ff;
-  --xeg-color-primary-100: #dbeafe;
-  --xeg-color-primary-200: #bfdbfe;
-  --xeg-color-primary-300: #93c5fd;
-  --xeg-color-primary-400: #60a5fa;
-  --xeg-color-primary-500: #3b82f6; /* base */
+  /* Primary Colors */
+  --xeg-color-primary-500: #3b82f6;
   --xeg-color-primary-600: #2563eb;
   --xeg-color-primary-700: #1d4ed8;
-  --xeg-color-primary-800: #1e40af;
-  --xeg-color-primary-900: #1e3a8a;
-  --xeg-color-primary-950: #172554;
 
-  /* Neutral Gray Scale */
-  --xeg-color-neutral-50: #fafafa;
+  /* Neutral Colors */
   --xeg-color-neutral-100: #f5f5f5;
-  --xeg-color-neutral-200: #e5e5e5;
-  --xeg-color-neutral-300: #d4d4d4;
-  --xeg-color-neutral-400: #a3a3a3;
-  --xeg-color-neutral-500: #737373; /* base */
-  --xeg-color-neutral-600: #525252;
+  --xeg-color-neutral-500: #737373;
   --xeg-color-neutral-700: #404040;
-  --xeg-color-neutral-800: #262626;
   --xeg-color-neutral-900: #171717;
-  --xeg-color-neutral-950: #0a0a0a;
 
-  /* ===========================================
-     SEMANTIC COLORS
-     =========================================== */
-
-  /* Success Green */
-  --xeg-color-success-50: #f0fdf4;
-  --xeg-color-success-100: #dcfce7;
-  --xeg-color-success-200: #bbf7d0;
-  --xeg-color-success-300: #86efac;
-  --xeg-color-success-400: #4ade80;
-  --xeg-color-success-500: #22c55e; /* base */
-  --xeg-color-success-600: #16a34a;
-  --xeg-color-success-700: #15803d;
+  /* Semantic Colors */
+  --xeg-color-success-500: #22c55e;
+  --xeg-color-error-500: #ef4444;
+  --xeg-color-warning-500: #f59e0b;
   --xeg-color-success-800: #166534;
   --xeg-color-success-900: #14532d;
   --xeg-color-success-950: #052e16;

@@ -1,69 +1,14 @@
 /**
  * @fileoverview Scroll Utilities
- * @description 스크롤 관련 유틸리티 함수들
  */
 
 import { logger } from '@shared/logging/logger';
 import { Debouncer } from '../performance/performance-utils';
 
-/**
- * 스크롤 핸들러 생성
- */
-export function createScrollHandler(
-  element: HTMLElement | null,
-  options: {
-    throttle?: boolean;
-    preventBubbling?: boolean;
-    onScroll?: (element: HTMLElement) => void;
-  } = {}
-): () => void {
-  if (!element) {
-    logger.warn('Cannot create scroll handler: element is null');
-    return () => {};
-  }
-
-  const { throttle = true, preventBubbling = false, onScroll } = options;
-
-  let isScrolling = false;
-
-  const handleScroll = (e: Event) => {
-    if (preventBubbling) {
-      e.stopPropagation();
-    }
-
-    if (throttle && isScrolling) {
-      return;
-    }
-
-    isScrolling = true;
-
-    const performScroll = () => {
-      onScroll?.(element);
-      isScrolling = false;
-    };
-
-    if (throttle) {
-      requestAnimationFrame(performScroll);
-    } else {
-      performScroll();
-    }
-  };
-
-  element.addEventListener('scroll', handleScroll, { passive: true });
-
-  return () => {
-    element.removeEventListener('scroll', handleScroll);
-  };
-}
-
-/**
- * Twitter 스크롤 컨테이너 찾기 (core-utils에서 re-export)
- */
+/** Twitter 스크롤 컨테이너 찾기 */
 export { findTwitterScrollContainer } from '../core-utils';
 
-/**
- * 갤러리 요소인지 확인
- */
+/** 갤러리 요소인지 확인 */
 export function isGalleryElement(element: HTMLElement | null): boolean {
   if (!element) return false;
 
@@ -89,9 +34,7 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
   });
 }
 
-/**
- * 스크롤 디바운서 생성 (간편 함수)
- */
+/** 스크롤 디바운서 생성 */
 export function createScrollDebouncer(callback: () => void, delay: number = 150): Debouncer<[]> {
   return new Debouncer(callback, delay);
 }
@@ -117,4 +60,73 @@ export function preventScrollPropagation(
   return () => {
     element.removeEventListener('wheel', handleWheel);
   };
+}
+
+/**
+ * 스크롤 스로틀링 유틸리티
+ * @description utils-backup.ts에서 이동된 함수
+ */
+export function throttleScroll<T extends readonly unknown[]>(
+  callback: (...args: T) => void,
+  delay: number = 16
+): (...args: T) => void {
+  let isThrottled = false;
+
+  return (...args: T) => {
+    if (!isThrottled) {
+      callback(...args);
+      isThrottled = true;
+      setTimeout(() => {
+        isThrottled = false;
+      }, delay);
+    }
+  };
+}
+
+/**
+ * 스크롤 핸들러 생성 (휠 이벤트용)
+ * @description utils-backup.ts에서 이동된 함수
+ */
+export function createScrollHandler(
+  element: HTMLElement,
+  callback: (deltaY: number, event: WheelEvent) => void,
+  options: {
+    threshold?: number;
+    captureOnDocument?: boolean;
+  } = {}
+): () => void {
+  const { threshold = 0, captureOnDocument = false } = options;
+
+  const wheelHandler = (event: Event) => {
+    const wheelEvent = event as WheelEvent;
+    if (Math.abs(wheelEvent.deltaY) > threshold) {
+      try {
+        callback(wheelEvent.deltaY, wheelEvent);
+      } catch (error) {
+        logger.error('Scroll handler execution failed', error);
+      }
+    }
+  };
+
+  const targetElement = captureOnDocument ? document : element;
+
+  try {
+    targetElement.addEventListener('wheel', wheelHandler, { passive: false });
+    logger.debug('Wheel event listener registered', {
+      target: captureOnDocument ? 'document' : 'element',
+      threshold,
+    });
+
+    return () => {
+      try {
+        targetElement.removeEventListener('wheel', wheelHandler);
+        logger.debug('Wheel event listener removed');
+      } catch (error) {
+        logger.warn('Event listener removal failed', error);
+      }
+    };
+  } catch (error) {
+    logger.error('Event listener registration failed', error);
+    return () => {}; // noop cleanup function
+  }
 }

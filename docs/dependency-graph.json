@@ -5059,7 +5059,8 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/utils.ts",
-        "src/shared/utils/debug/index.ts"
+        "src/shared/utils/debug/index.ts",
+        "src/shared/utils/utils-backup.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5113,7 +5114,8 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/deduplication/index.ts"
+        "src/shared/utils/deduplication/index.ts",
+        "src/shared/utils/utils-backup.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5184,7 +5186,8 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/scroll/index.ts"
+        "src/shared/utils/scroll/index.ts",
+        "src/shared/utils/utils-backup.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6278,6 +6281,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/gallery/gallery-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/utils-backup.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/media/index.ts",
       "dependencies": [
         {
@@ -6432,7 +6444,8 @@
       "source": "src/shared/utils/styles/style-utils.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/styles/index.ts"
+        "src/shared/utils/styles/index.ts",
+        "src/shared/utils/utils-backup.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6459,14 +6472,99 @@
         },
         {
           "dynamic": false,
+          "module": "./debug/gallery-debug",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/debug/gallery-debug.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./deduplication/deduplication-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/deduplication/deduplication-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./gallery/gallery-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/gallery/gallery-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./performance/performance-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "export"
           ],
           "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./scroll/scroll-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/scroll/scroll-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./styles/style-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/styles/style-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6689,8 +6787,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 187,
-    "totalDependenciesCruised": 281,
+    "totalCruised": 188,
+    "totalDependenciesCruised": 286,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

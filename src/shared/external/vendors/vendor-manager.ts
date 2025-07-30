@@ -1,27 +1,18 @@
 /**
  * Core External Vendor Manager Implementation
- *
- * @version 8.0.0 - Clean Architecture 완전 적용
- * @description 외부 라이브러리 관리 구현체 - Core 레이어로 이동 완료
  */
 
 import { logger } from '@shared/logging';
 
-// ================================
-// 메모리 관리 상수 (Core 레벨)
-// ================================
-
+// 메모리 관리 상수
 const MEMORY_CONSTANTS = {
-  MAX_CACHE_SIZE: 50, // 최대 캐시 항목 수
-  CLEANUP_INTERVAL: 30000, // 30초마다 정리
-  INSTANCE_TIMEOUT: 300000, // 5분 후 인스턴스 해제
-  URL_CLEANUP_TIMEOUT: 60000, // 1분 후 URL 정리
+  MAX_CACHE_SIZE: 50,
+  CLEANUP_INTERVAL: 30000,
+  INSTANCE_TIMEOUT: 300000,
+  URL_CLEANUP_TIMEOUT: 60000,
 } as const;
 
-// ================================
 // 타입 정의들
-// ================================
-
 export interface FflateAPI {
   zip: typeof import('fflate').zip;
   unzip: typeof import('fflate').unzip;

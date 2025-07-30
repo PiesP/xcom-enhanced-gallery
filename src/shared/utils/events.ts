@@ -1,7 +1,5 @@
 /**
  * @fileoverview 통합 이벤트 관리 시스템
- * @description event-dispatcher.ts와 event-utils.ts를 통합한 단일 이벤트 관리 시스템
- * @version 1.0.0 - Phase 1 Consolidation
  */
 
 import { logger } from '@shared/logging/logger';
@@ -11,10 +9,7 @@ import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constant
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 
-// ================================
-// 기본 이벤트 관리 (기존 event-dispatcher 기능)
-// ================================
-
+// 기본 이벤트 관리
 interface EventContext {
   id: string;
   element: EventTarget;

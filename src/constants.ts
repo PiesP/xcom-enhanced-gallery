@@ -1,53 +1,29 @@
 /**
  * @fileoverview 통합 상수 파일
- * @description X.com Enhanced Gallery에서 사용되는 모든 상수들을 통합 관리
- * @version 1.0.0 - Simplified Structure
  */
 
-// ================================
 // 애플리케이션 기본 설정
-// ================================
-
 export const APP_CONFIG = {
-  /** 애플리케이션 버전 */
   VERSION: '3.1.0',
-  /** 애플리케이션 이름 */
   NAME: 'X.com Enhanced Gallery',
-  /** 최대 미디어 아이템 수 */
   MAX_MEDIA_ITEMS: 100,
-  /** 애니메이션 지속 시간 (ms) */
   ANIMATION_DURATION: 300,
 } as const;
 
-// ================================
 // 타이밍 및 성능 상수
-// ================================
-
 export const TIMING = {
-  /** 디바운싱 지연 시간 (ms) */
   DEBOUNCE_DELAY: 100,
-  /** 클릭 처리 타임아웃 (ms) */
   CLICK_TIMEOUT: 5000,
-  /** 미디어 로딩 타임아웃 (ms) */
   LOAD_TIMEOUT: 30000,
-  /** URL 정리 딜레이 (ms) */
   URL_CLEANUP_DELAY: 100,
-  /** 캐시 정리 간격 (ms) */
   CACHE_CLEANUP_INTERVAL: 60 * 1000,
 } as const;
 
-// ================================
 // DOM 선택자
-// ================================
-
 export const SELECTORS = {
-  /** 트윗 컨테이너 */
   TWEET: 'article[data-testid="tweet"]',
-  /** 미디어 컨테이너 */
   TWEET_PHOTO: '[data-testid="tweetPhoto"]',
-  /** 비디오 플레이어 */
   VIDEO_PLAYER: '[data-testid="videoPlayer"]',
-  /** 갤러리 오버레이 */
   GALLERY_OVERLAY: '.xeg-gallery-overlay',
   /** 갤러리 컨테이너 */
   GALLERY_CONTAINER: '.xeg-gallery-container',
