@@ -1,5 +1,5 @@
 /**
- * @fileoverview Simplified Utilities
+ * @fileoverview 유틸리티 모음
  * @description 유저스크립트에 적합한 간소화된 유틸리티 모음
  * @version 2.0.0 - Complexity Reduction & Modularization
  */

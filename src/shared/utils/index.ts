@@ -135,7 +135,7 @@ export { imageFilter } from './media/image-filter';
 // Removed convenience aliases - use direct imports from specific modules
 
 // ================================
-// Phase 6: 고급 성능 최적화 (Advanced Performance Optimization)
+// Phase 6: 성능 최적화 (Performance Optimization)
 // ================================
 
 // 메모리 풀링 (객체 재사용을 통한 GC 최적화)
