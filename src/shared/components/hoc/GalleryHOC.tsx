@@ -44,7 +44,7 @@ export interface GalleryOptions {
 /**
  * 갤러리 컴포넌트 기본 Props
  */
-export interface UnifiedGalleryComponentProps {
+export interface GalleryComponentProps {
   children?: ComponentChildren;
   className?: string;
   onClick?: (event: MouseEvent) => void;
@@ -79,10 +79,10 @@ const TYPE_DEFAULTS: Record<GalleryType, Partial<GalleryOptions>> = {
 };
 
 /**
- * 통합 갤러리 HOC
+ * 갤러리 HOC
  *
  * @description
- * 모든 갤러리 관련 컴포넌트에 대한 통합 HOC입니다.
+ * 모든 갤러리 관련 컴포넌트에 대한 HOC입니다.
  * - 일관된 마킹 시스템
  * - 타입별 최적화된 기본값
  * - 향상된 이벤트 처리
@@ -97,24 +97,24 @@ const TYPE_DEFAULTS: Record<GalleryType, Partial<GalleryOptions>> = {
  * });
  * ```
  */
-export function withGallery<P extends UnifiedGalleryComponentProps>(
+export function withGallery<P extends GalleryComponentProps>(
   Component: ComponentType<P>,
   options: GalleryOptions
 ): ComponentType<P> {
   // 타입별 기본값과 사용자 옵션 병합
   const mergedOptions = mergeOptionsWithDefaults(options);
 
-  const UnifiedGalleryComponent = (props: P): VNode | null => {
+  const GalleryComponent = (props: P): VNode | null => {
     const { createElement } = getPreact();
 
     // 마킹 속성 생성
-    const markerAttributes = createUnifiedMarkerAttributes(mergedOptions);
+    const markerAttributes = createMarkerAttributes(mergedOptions);
 
     // 클래스명 통합
-    const unifiedClassName = createUnifiedClassName(props.className, mergedOptions);
+    const className = createClassName(props.className, mergedOptions);
 
     // 이벤트 핸들러 생성
-    const eventHandlers = createUnifiedEventHandlers(props, mergedOptions);
+    const eventHandlers = createEventHandlers(props, mergedOptions);
 
     // 접근성 속성 생성
     const accessibilityAttributes = createAccessibilityAttributes(mergedOptions);
@@ -125,12 +125,12 @@ export function withGallery<P extends UnifiedGalleryComponentProps>(
       ...markerAttributes,
       ...eventHandlers,
       ...accessibilityAttributes,
-      className: unifiedClassName,
+      className,
     };
 
-    logger.debug(`Rendering unified gallery component: ${mergedOptions.type}`, {
+    logger.debug(`Rendering gallery component: ${mergedOptions.type}`, {
       type: mergedOptions.type,
-      className: unifiedClassName,
+      className,
       events: mergedOptions.events,
     });
 
@@ -139,10 +139,9 @@ export function withGallery<P extends UnifiedGalleryComponentProps>(
 
   // 컴포넌트 이름 설정
   const componentName = getComponentName(Component);
-  (UnifiedGalleryComponent as { displayName?: string }).displayName =
-    `withGallery(${componentName})`;
+  (GalleryComponent as { displayName?: string }).displayName = `withGallery(${componentName})`;
 
-  return UnifiedGalleryComponent;
+  return GalleryComponent;
 }
 
 /**
@@ -173,9 +172,9 @@ function mergeOptionsWithDefaults(options: GalleryOptions): Required<GalleryOpti
 }
 
 /**
- * 통합 마킹 속성 생성
+ * 마킹 속성 생성
  */
-function createUnifiedMarkerAttributes(options: Required<GalleryOptions>): Record<string, string> {
+function createMarkerAttributes(options: Required<GalleryOptions>): Record<string, string> {
   const attributes: Record<string, string> = {
     'data-xeg-gallery': 'true',
     'data-xeg-gallery-type': options.type,
@@ -204,12 +203,9 @@ function createUnifiedMarkerAttributes(options: Required<GalleryOptions>): Recor
 }
 
 /**
- * 통합 클래스명 생성
+ * 클래스명 생성
  */
-function createUnifiedClassName(
-  existingClassName?: string,
-  options?: Required<GalleryOptions>
-): string {
+function createClassName(existingClassName?: string, options?: Required<GalleryOptions>): string {
   const classNames = [
     'xeg-gallery',
     `xeg-gallery-${options?.type}`,
@@ -221,18 +217,18 @@ function createUnifiedClassName(
 }
 
 /**
- * 통합 이벤트 핸들러 생성
+ * 이벤트 핸들러 생성
  */
-function createUnifiedEventHandlers<P extends UnifiedGalleryComponentProps>(
+function createEventHandlers<P extends GalleryComponentProps>(
   props: P,
   options: Required<GalleryOptions>
-): Partial<UnifiedGalleryComponentProps> {
-  const handlers: Partial<UnifiedGalleryComponentProps> = {};
+): Partial<GalleryComponentProps> {
+  const handlers: Partial<GalleryComponentProps> = {};
 
   // 클릭 이벤트 핸들러
   if (options.events.preventClick || options.events.blockTwitterNative) {
     handlers.onClick = (event: MouseEvent): void => {
-      logger.debug(`Unified gallery click handler: ${options.type}`, {
+      logger.debug(`Gallery click handler: ${options.type}`, {
         preventDefault: options.events.preventClick,
         blockTwitter: options.events.blockTwitterNative,
       });
@@ -258,7 +254,7 @@ function createUnifiedEventHandlers<P extends UnifiedGalleryComponentProps>(
   // 키보드 이벤트 핸들러
   if (options.events.preventKeyboard) {
     handlers.onKeyDown = (event: KeyboardEvent): void => {
-      logger.debug(`Unified gallery keyboard handler: ${options.type}`);
+      logger.debug(`Gallery keyboard handler: ${options.type}`);
 
       // 기존 핸들러 호출
       if (props.onKeyDown) {
@@ -317,7 +313,7 @@ function getComponentName<T>(Component: ComponentType<T>): string {
 /**
  * 갤러리 컨테이너 HOC
  */
-export function withGalleryContainer<P extends UnifiedGalleryComponentProps>(
+export function withGalleryContainer<P extends GalleryComponentProps>(
   Component: ComponentType<P>,
   additionalOptions: Partial<GalleryOptions> = {}
 ): ComponentType<P> {
@@ -330,7 +326,7 @@ export function withGalleryContainer<P extends UnifiedGalleryComponentProps>(
 /**
  * 갤러리 아이템 HOC
  */
-export function withGalleryItem<P extends UnifiedGalleryComponentProps>(
+export function withGalleryItem<P extends GalleryComponentProps>(
   Component: ComponentType<P>,
   additionalOptions: Partial<GalleryOptions> = {}
 ): ComponentType<P> {
@@ -343,7 +339,7 @@ export function withGalleryItem<P extends UnifiedGalleryComponentProps>(
 /**
  * 갤러리 컨트롤 HOC
  */
-export function withGalleryControl<P extends UnifiedGalleryComponentProps>(
+export function withGalleryControl<P extends GalleryComponentProps>(
   Component: ComponentType<P>,
   additionalOptions: Partial<GalleryOptions> = {}
 ): ComponentType<P> {
@@ -356,7 +352,7 @@ export function withGalleryControl<P extends UnifiedGalleryComponentProps>(
 /**
  * 갤러리 오버레이 HOC
  */
-export function withGalleryOverlay<P extends UnifiedGalleryComponentProps>(
+export function withGalleryOverlay<P extends GalleryComponentProps>(
   Component: ComponentType<P>,
   additionalOptions: Partial<GalleryOptions> = {}
 ): ComponentType<P> {
@@ -374,7 +370,7 @@ export const GalleryHOC = withGallery;
 /**
  * 갤러리 마커 HOC (하위 호환성)
  */
-export function withGalleryMarker<P extends UnifiedGalleryComponentProps>(
+export function withGalleryMarker<P extends GalleryComponentProps>(
   Component: ComponentType<P>,
   options: { type: GalleryType; [key: string]: unknown }
 ): ComponentType<P> {
@@ -387,9 +383,9 @@ export function withGalleryMarker<P extends UnifiedGalleryComponentProps>(
  */
 
 /**
- * DOM 요소가 통합 갤러리 요소인지 확인
+ * DOM 요소가 갤러리 요소인지 확인
  */
-export function isUnifiedGalleryElement(element: Element): boolean {
+export function isGalleryElement(element: Element): boolean {
   return (
     element.hasAttribute('data-xeg-gallery') &&
     element.getAttribute('data-xeg-gallery-version') === '2.0'
@@ -405,9 +401,9 @@ export function getGalleryType(element: Element): GalleryType | null {
 }
 
 /**
- * 이벤트가 통합 갤러리 요소에서 발생했는지 확인
+ * 이벤트가 갤러리 요소에서 발생했는지 확인
  */
-export function isEventFromUnifiedGallery(event: Event): boolean {
+export function isEventFromGallery(event: Event): boolean {
   const target = event.target as Element | null;
   if (!target) return false;
 
@@ -470,7 +466,7 @@ export function validateHOCIntegration(element: Element): {
 /**
  * Phase 3: HOC와 StandardProps 연동을 위한 Props 생성
  */
-export function createHOCStandardProps<T extends UnifiedGalleryComponentProps>(
+export function createHOCStandardProps<T extends GalleryComponentProps>(
   baseProps: T,
   hocOptions: GalleryOptions
 ): T & {
@@ -483,7 +479,7 @@ export function createHOCStandardProps<T extends UnifiedGalleryComponentProps>(
   const { ComponentStandards } = require('../ui/StandardProps');
 
   // 마킹 속성 생성
-  const markerAttributes = createUnifiedMarkerAttributes(mergeOptionsWithDefaults(hocOptions));
+  const markerAttributes = createMarkerAttributes(mergeOptionsWithDefaults(hocOptions));
 
   // 표준화된 클래스명 생성
   const standardClassName = ComponentStandards.createClassName(
