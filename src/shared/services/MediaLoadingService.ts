@@ -340,12 +340,7 @@ export class MediaLoadingService {
   }
 }
 
-// 하위 호환성을 위한 별칭들
-export { MediaLoadingService as UnifiedMediaLoadingService };
-export type {
-  MediaLoadingState as UnifiedMediaLoadingState,
-  MediaLoadingOptions as UnifiedMediaLoadingOptions,
-};
+// 하위 호환성 별칭 제거됨 - 직접 MediaLoadingService 사용 권장
 
 // 기본 export
 export default MediaLoadingService;

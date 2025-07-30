@@ -1,7 +1,7 @@
 /**
- * @fileoverview Lazy Intersection Service - OptimizedLazyLoadingService 지연 로딩
+ * @fileoverview Lazy Intersection Service - LazyLoadingService 지연 로딩
  * @version 1.0.0
- * @description IntersectionObserver 지원 시에만 OptimizedLazyLoadingService를 동적으로 로드
+ * @description IntersectionObserver 지원 시에만 LazyLoadingService를 동적으로 로드
  */
 
 import { logger } from '@shared/logging/logger';
@@ -26,10 +26,10 @@ export interface LazyIntersectionResult {
 }
 
 /**
- * OptimizedLazyLoadingService 지연 로딩 서비스
+ * LazyLoadingService 지연 로딩 서비스
  *
- * IntersectionObserver가 지원되는 환경에서만 OptimizedLazyLoadingService를 로드하여
- * 초기 번들 크기를 최적화하고 브라우저 호환성을 향상시킵니다.
+ * IntersectionObserver가 지원되는 환경에서만 LazyLoadingService를 로드하여
+ * 번들 크기를 최적화합니다.
  */
 export class LazyIntersectionService {
   private static service: LazyIntersectionObserverService | null = null;
@@ -48,23 +48,23 @@ export class LazyIntersectionService {
   }
 
   /**
-   * OptimizedLazyLoadingService 동적 로딩
+   * LazyLoadingService 동적 로딩
    */
   static async loadIntersectionService(): Promise<LazyIntersectionObserverService> {
     // 이미 로드된 경우 캐시된 인스턴스 반환
     if (this.service) {
-      logger.debug('LazyIntersectionService: 캐시된 OptimizedLazyLoadingService 반환');
+      logger.debug('LazyIntersectionService: 캐시된 LazyLoadingService 반환');
       return this.service;
     }
 
     // 로딩 중인 경우 동일한 Promise 반환
     if (this.isLoading && this.loadPromise) {
-      logger.debug('LazyIntersectionService: OptimizedLazyLoadingService 로딩 중, 대기...');
+      logger.debug('LazyIntersectionService: LazyLoadingService 로딩 중, 대기...');
       const result = await this.loadPromise;
       if (result.success && result.service) {
         return result.service;
       }
-      throw new Error(result.error || 'OptimizedLazyLoadingService 로딩 실패');
+      throw new Error(result.error || 'LazyLoadingService 로딩 실패');
     }
 
     // 새로운 로딩 시작
@@ -77,7 +77,7 @@ export class LazyIntersectionService {
         this.service = result.service;
         return result.service;
       }
-      throw new Error(result.error || 'OptimizedLazyLoadingService 로딩 실패');
+      throw new Error(result.error || 'LazyLoadingService 로딩 실패');
     } finally {
       this.isLoading = false;
       this.loadPromise = null;
@@ -85,13 +85,13 @@ export class LazyIntersectionService {
   }
 
   /**
-   * 실제 OptimizedLazyLoadingService 로딩 수행
+   * 실제 LazyLoadingService 로딩 수행
    */
   private static async performLoad(): Promise<LazyIntersectionResult> {
     try {
-      logger.debug('LazyIntersectionService: OptimizedLazyLoadingService 동적 로딩 시작');
+      logger.debug('LazyIntersectionService: LazyLoadingService 동적 로딩 시작');
 
-      // 동적 import를 통한 OptimizedLazyLoadingService 로딩
+      // 동적 import를 통한 LazyLoadingService 로딩
       const { LazyLoadingService } = await import('@shared/services/LazyLoadingService');
 
       if (!LazyLoadingService) {
@@ -106,7 +106,7 @@ export class LazyIntersectionService {
         loadDelay: 0,
       });
 
-      logger.debug('LazyIntersectionService: OptimizedLazyLoadingService 로딩 완료');
+      logger.debug('LazyIntersectionService: LazyLoadingService 로딩 완료');
 
       return {
         success: true,
@@ -114,11 +114,11 @@ export class LazyIntersectionService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-      logger.error('LazyIntersectionService: OptimizedLazyLoadingService 로딩 실패', error);
+      logger.error('LazyIntersectionService: LazyLoadingService 로딩 실패', error);
 
       return {
         success: false,
-        error: `OptimizedLazyLoadingService 로딩 실패: ${errorMessage}`,
+        error: `LazyLoadingService 로딩 실패: ${errorMessage}`,
       };
     }
   }

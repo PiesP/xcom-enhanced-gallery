@@ -1,6 +1,10 @@
 /**
- * @fileoverview 동적 모듈 로더 서비스 - 간소화 버전
- * @description 코드 스플리팅과 지연 로딩을 위한 유틸리티 함수들
+ * @fileoverview 동적 모듈 로더 서비스 - 간소화      case 'LazyLoadingService': {
+        const module = await import('./LazyLoadingService');
+        const loadTime = Date.now() - start;
+        logger.debug('LazyLoadingService 로딩 완료:', { loadTime });
+        return module.LazyLoadingService;
+      } @description 코드 스플리팅과 지연 로딩을 위한 유틸리티 함수들
  * @version 1.0.0 - Phase 3: 동적 임포트 확장
  */
 
@@ -37,11 +41,11 @@ export async function loadServiceModule(serviceName: string) {
         return module.MediaPrefetchingService;
       }
 
-      case 'OptimizedLazyLoadingService': {
-        const module = await import('./OptimizedLazyLoadingService');
+      case 'LazyLoadingService': {
+        const module = await import('./LazyLoadingService');
         const loadTime = performance.now() - startTime;
-        logger.debug('OptimizedLazyLoadingService 로딩 완료:', { loadTime });
-        return module.OptimizedLazyLoadingService;
+        logger.debug('LazyLoadingService 로딩 완료:', { loadTime });
+        return module.LazyLoadingService;
       }
 
       case 'BulkDownloadService': {

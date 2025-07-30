@@ -13,12 +13,12 @@ export { Toolbar } from './ui/Toolbar/Toolbar';
 // 고차 컴포넌트들
 export { withGalleryMarker } from './hoc/GalleryMarker';
 
-// 통합된 갤러리 컴포넌트들
-export { UnifiedGalleryContainer } from './isolation/UnifiedGalleryContainer';
+// 갤러리 컴포넌트들 (간소화된 명명)
+export { GalleryContainer } from './isolation/GalleryContainer';
 export { VirtualGallery } from './virtual/VirtualGallery';
 
 // 타입들
-export type { UnifiedGalleryContainerProps } from './isolation/UnifiedGalleryContainer';
+export type { GalleryContainerProps } from './isolation/GalleryContainer';
 export type { VirtualGalleryProps } from './virtual/VirtualGallery';
 export type { ButtonProps } from './ui/Button/Button';
 export type { ToastProps } from './ui/Toast/Toast';

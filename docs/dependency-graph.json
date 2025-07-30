@@ -821,14 +821,14 @@
         },
         {
           "dynamic": false,
-          "module": "./isolation/UnifiedGalleryContainer",
+          "module": "./isolation/GalleryContainer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
+          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -838,7 +838,7 @@
         },
         {
           "dynamic": false,
-          "module": "./isolation/UnifiedGalleryContainer",
+          "module": "./isolation/GalleryContainer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -846,7 +846,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
+          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1029,56 +1029,10 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./GalleryContainer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryContainer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/index.ts",
-        "src/shared/components/isolation/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/isolation/GalleryContainer.tsx",
       "dependencies": [],
       "dependents": [
-        "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
+        "src/shared/components/index.ts",
         "src/shared/components/isolation/index.ts"
       ],
       "orphan": false,
@@ -1173,7 +1127,6 @@
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/shared/components/hoc/GalleryHOC.tsx",
-        "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
@@ -2071,33 +2024,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../ui/StandardProps",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "require"
-          ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/hoc/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/hoc/index.ts",
       "dependencies": [
         {
@@ -2134,41 +2060,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./UnifiedGalleryHOC",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./UnifiedGalleryHOC",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/hoc/UnifiedGalleryHOC.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -2196,23 +2087,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./UnifiedGalleryContainer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/isolation/UnifiedGalleryContainer.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -2227,6 +2101,19 @@
       "dependents": [],
       "orphan": true,
       "valid": true
+    },
+    {
+      "source": "src/shared/components/optimization/memo.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/components/ui/index.ts",
@@ -3212,23 +3099,6 @@
         },
         {
           "dynamic": false,
-          "module": "./LazyMemoizationService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/LazyMemoizationService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./LazyMotionService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3393,41 +3263,6 @@
             "export"
           ],
           "resolved": "src/shared/services/UIService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./UnifiedMediaLoadingService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/UnifiedMediaLoadingService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./UnifiedMediaLoadingService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/services/UnifiedMediaLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4252,16 +4087,8 @@
       "source": "src/shared/services/LazyLoadingService.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/LazyMemoizationService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/index.ts"
+        "src/shared/services/index.ts",
+        "src/shared/services/DynamicModuleLoaderSimple.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4288,8 +4115,7 @@
       "source": "src/shared/services/MediaLoadingService.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/services/index.ts",
-        "src/shared/services/UnifiedMediaLoadingService.ts"
+        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4297,51 +4123,6 @@
     {
       "source": "src/shared/services/SimpleAnimationService.ts",
       "dependencies": [],
-      "dependents": [
-        "src/shared/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/UnifiedMediaLoadingService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./MediaLoadingService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/MediaLoadingService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./MediaLoadingService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/services/MediaLoadingService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
       "dependents": [
         "src/shared/services/index.ts"
       ],
@@ -5544,14 +5325,14 @@
         },
         {
           "dynamic": true,
-          "module": "./MediaPrefetchingService",
+          "module": "./LazyLoadingService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/shared/services/MediaPrefetchingService.ts",
+          "resolved": "src/shared/services/LazyLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5561,14 +5342,14 @@
         },
         {
           "dynamic": true,
-          "module": "./OptimizedLazyLoadingService",
+          "module": "./MediaPrefetchingService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/shared/services/OptimizedLazyLoadingService.ts",
+          "resolved": "src/shared/services/MediaPrefetchingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5631,15 +5412,6 @@
       "dependents": [
         "src/shared/services/DynamicModuleLoaderSimple.ts",
         "src/shared/services/MediaPrefetchingService.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/OptimizedLazyLoadingService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/DynamicModuleLoaderSimple.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6926,6 +6698,15 @@
     "violations": [
       {
         "type": "module",
+        "from": "src/shared/components/optimization/memo.ts",
+        "to": "src/shared/components/optimization/memo.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/services/EarlyEventCaptureService.ts",
         "to": "src/shared/services/EarlyEventCaptureService.ts",
         "rule": {
@@ -6936,10 +6717,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 2,
     "ignore": 0,
-    "totalCruised": 191,
-    "totalDependenciesCruised": 292,
+    "totalCruised": 187,
+    "totalDependenciesCruised": 281,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

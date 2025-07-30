@@ -17,16 +17,11 @@ export { MediaService, mediaService } from './MediaService';
 export { extractUsername, parseUsernameFast } from './MediaService';
 export type { UsernameExtractionResult } from './MediaService';
 
-// 새로운 명명
+// 새로운 명명 (간소화)
 export { MediaLoadingService } from './MediaLoadingService';
 export type { MediaLoadingState, MediaLoadingOptions } from './MediaLoadingService';
 
-// 하위 호환성 (구 명명)
-export { UnifiedMediaLoadingService, unifiedMediaLoader } from './UnifiedMediaLoadingService';
-export type {
-  UnifiedMediaLoadingState,
-  UnifiedMediaLoadingOptions,
-} from './UnifiedMediaLoadingService';
+// 하위 호환성 제거됨 - 직접 MediaLoadingService 사용 권장
 
 // Phase 4: 런타임 성능 최적화 서비스들
 export { LazyLoadingService } from './LazyLoadingService';
@@ -35,7 +30,7 @@ export { LazyLoadingService } from './LazyLoadingService';
 export { LazyMotionService } from './LazyMotionService';
 export { LazyVirtualScrollService } from './LazyVirtualScrollService';
 export { LazyIntersectionService } from './LazyIntersectionService';
-export { LazyMemoizationService } from './LazyMemoizationService';
+// LazyMemoizationService 제거됨 - 간단한 memo 사용 권장
 
 // Phase 3: 편의 함수들
 export {
@@ -50,7 +45,7 @@ export {
   observeElementWhenSupported,
 } from './LazyIntersectionService';
 
-export { memoizeConditionally, smartMemoize } from './LazyMemoizationService';
+// memoizeConditionally, smartMemoize 제거됨 - 기본 memo 사용 권장
 
 // 통합된 UI 서비스
 export { UIService, uiService } from './UIService';

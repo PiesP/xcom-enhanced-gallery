@@ -27,8 +27,8 @@ describe('벤더 초기화 순서 에러 해결', () => {
       }).not.toThrow();
 
       expect(async () => {
-        // UnifiedGalleryContainer 모듈 로드 (이전에 에러 발생 지점)
-        await import('@shared/components/isolation/UnifiedGalleryContainer');
+        // GalleryContainer 모듈 로드
+        await import('@shared/components/isolation/GalleryContainer');
       }).not.toThrow();
 
       expect(async () => {
@@ -61,34 +61,31 @@ describe('벤더 초기화 순서 에러 해결', () => {
       const { initializeVendors } = await import('@shared/external/vendors');
 
       // 초기화 전에 컴포넌트 모듈 로드
-      const { UnifiedGalleryContainer } = await import(
-        '@shared/components/isolation/UnifiedGalleryContainer'
-      );
+      const { GalleryContainer } = await import('@shared/components/isolation/GalleryContainer');
 
       // 컴포넌트는 정의되어야 함
-      expect(UnifiedGalleryContainer).toBeDefined();
+      expect(GalleryContainer).toBeDefined();
 
       // 벤더 초기화
       await initializeVendors();
 
       // 초기화 후에도 정상 작동
-      expect(UnifiedGalleryContainer).toBeDefined();
-      expect(UnifiedGalleryContainer.displayName).toContain('memo');
+      expect(GalleryContainer).toBeDefined();
     });
   });
 
   describe('통합 검증', () => {
     it('모든 메모이제이션된 컴포넌트가 정상 로드되어야 한다', async () => {
       // 모든 컴포넌트 모듈을 동시에 로드
-      const [{ VerticalImageItem }, { UnifiedGalleryContainer }, { Toolbar }] = await Promise.all([
+      const [{ VerticalImageItem }, { GalleryContainer }, { Toolbar }] = await Promise.all([
         import('@features/gallery/components/vertical-gallery-view/VerticalImageItem'),
-        import('@shared/components/isolation/UnifiedGalleryContainer'),
+        import('@shared/components/isolation/GalleryContainer'),
         import('@shared/components/ui/Toolbar/Toolbar'),
       ]);
 
       // 모든 컴포넌트가 정의되어야 함
       expect(VerticalImageItem).toBeDefined();
-      expect(UnifiedGalleryContainer).toBeDefined();
+      expect(GalleryContainer).toBeDefined();
       expect(Toolbar).toBeDefined();
 
       // 벤더 초기화

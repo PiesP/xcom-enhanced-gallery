@@ -51,12 +51,10 @@ describe('런타임 vendor 초기화 에러', () => {
         },
       });
 
-      // UnifiedGalleryContainer import 시 에러가 발생하지 않아야 함
+      // GalleryContainer import 시 에러가 발생하지 않아야 함
       expect(async () => {
-        const { UnifiedGalleryContainer } = await import(
-          '@shared/components/isolation/UnifiedGalleryContainer'
-        );
-        expect(UnifiedGalleryContainer).toBeDefined();
+        const { GalleryContainer } = await import('@shared/components/isolation/GalleryContainer');
+        expect(GalleryContainer).toBeDefined();
       }).not.toThrow();
     });
   });
