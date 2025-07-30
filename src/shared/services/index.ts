@@ -26,6 +26,9 @@ export type { MediaLoadingState, MediaLoadingOptions } from './MediaLoadingServi
 // Phase 4: 런타임 성능 최적화 서비스들
 export { LazyLoadingService } from './LazyLoadingService';
 
+// 이벤트 처리 서비스
+export { EarlyEventCaptureService } from './EarlyEventCaptureService';
+
 // Phase 3: 동적 import 서비스들
 export { LazyMotionService } from './LazyMotionService';
 export { LazyVirtualScrollService } from './LazyVirtualScrollService';

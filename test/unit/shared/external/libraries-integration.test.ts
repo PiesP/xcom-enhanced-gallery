@@ -152,9 +152,9 @@ describe('외부 라이브러리 통합 테스트', () => {
 
   describe('전체 통합 검증', () => {
     it('모든 새로운 서비스가 함께 작동해야 한다', async () => {
-      // SimpleAnimationService
-      const { SimpleAnimationService } = await import('@shared/services/SimpleAnimationService');
-      const animationService = SimpleAnimationService.getInstance();
+      // AnimationService
+      const { AnimationService } = await import('@shared/services/AnimationService');
+      const animationService = AnimationService.getInstance();
 
       // VirtualGallery
       const { VirtualGallery } = await import('@shared/components/virtual/VirtualGallery');
@@ -189,8 +189,8 @@ describe('외부 라이브러리 통합 테스트', () => {
     });
 
     it('메모리 정리가 올바르게 작동해야 한다', async () => {
-      const { SimpleAnimationService } = await import('@shared/services/SimpleAnimationService');
-      const animationService = SimpleAnimationService.getInstance();
+      const { AnimationService } = await import('@shared/services/AnimationService');
+      const animationService = AnimationService.getInstance();
 
       // 정리 메서드가 존재하는지 확인
       expect(typeof animationService.cleanup).toBe('function');

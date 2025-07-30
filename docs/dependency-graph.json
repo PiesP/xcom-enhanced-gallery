@@ -3103,6 +3103,23 @@
         },
         {
           "dynamic": false,
+          "module": "./EarlyEventCaptureService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/EarlyEventCaptureService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./gallery",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4081,6 +4098,15 @@
       "dependents": [
         "src/shared/services/UIService.ts",
         "src/shared/types/core/core-types.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/EarlyEventCaptureService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5360,19 +5386,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/EarlyEventCaptureService.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/services/MediaPrefetchingService.ts",
       "dependencies": [
         {
@@ -6628,23 +6641,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/services/EarlyEventCaptureService.ts",
-        "to": "src/shared/services/EarlyEventCaptureService.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
     "totalCruised": 186,
-    "totalDependenciesCruised": 278,
+    "totalDependenciesCruised": 279,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -7,7 +7,7 @@
 export { ScrollHelper } from './ScrollHelper';
 export type {
   ScrollConfig,
-  SimpleScrollConfig, // 하위 호환성
+  SimpleScrollConfig,
   ScrollVisibleRange,
   ScrollRenderRange,
   VisibleRange,
