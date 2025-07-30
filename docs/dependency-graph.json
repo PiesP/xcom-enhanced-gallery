@@ -2770,23 +2770,6 @@
         },
         {
           "dynamic": false,
-          "module": "./managers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/managers/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./memory",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2951,43 +2934,6 @@
       "dependents": [
         "src/shared/index.ts",
         "src/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/managers/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./ResourceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/managers/ResourceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/index.ts",
-        "src/shared/services/core-services.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/managers/ResourceManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/managers/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3326,14 +3272,14 @@
       "dependencies": [
         {
           "dynamic": true,
-          "module": "../managers",
+          "module": "../utils/memory/ResourceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/shared/managers/index.ts",
+          "resolved": "src/shared/utils/memory/ResourceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3378,6 +3324,16 @@
       ],
       "dependents": [
         "src/shared/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/memory/ResourceManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/core-services.ts",
+        "src/shared/utils/memory/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4606,23 +4562,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./workers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/workers/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -4896,15 +4835,6 @@
       ],
       "dependents": [
         "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/memory/ResourceManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/memory/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5265,60 +5195,6 @@
       "dependents": [
         "src/shared/utils/utils.ts",
         "src/shared/utils/styles/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/workers/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./TaskManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/workers/TaskManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./TaskManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/utils/workers/TaskManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/workers/TaskManager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/workers/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6813,8 +6689,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 191,
-    "totalDependenciesCruised": 286,
+    "totalCruised": 187,
+    "totalDependenciesCruised": 281,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

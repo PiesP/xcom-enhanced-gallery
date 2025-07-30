@@ -138,9 +138,6 @@ export * from './convenience';
 // Phase 6: 고급 성능 최적화 (Advanced Performance Optimization)
 // ================================
 
-// Web Workers Pool (CPU 집약적 작업 오프로드)
-export * from './workers';
-
 // 메모리 풀링 (객체 재사용을 통한 GC 최적화)
 export * from './memory';
 

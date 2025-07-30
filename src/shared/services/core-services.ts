@@ -105,10 +105,10 @@ export class ServiceDiagnostics {
         autoTheme: autoTheme ? '성공' : '실패',
       });
 
-      // 5. 메모리 사용량 (infrastructure ResourceManager 사용)
+      // 5. 메모리 사용량 (간소화된 ResourceManager 사용)
       try {
-        const { ResourceManager } = await import('../managers');
-        const resourceManager = ResourceManager.getInstance();
+        const { ResourceManager } = await import('../utils/memory/ResourceManager');
+        const resourceManager = new ResourceManager();
         const resourceCount = resourceManager.getResourceCount();
         if (resourceCount > 0) {
           logger.info('💾 리소스 사용량:', { activeResources: resourceCount });

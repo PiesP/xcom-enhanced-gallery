@@ -25,9 +25,6 @@ export * from './state';
 // 로깅 시스템 (기존 Core에서 이동)
 export * from './logging';
 
-// 관리자들 (기존 Core에서 이동)
-export * from './managers';
-
 // 메모리 관리 (기존 Core에서 이동)
 export * from './memory';
 
