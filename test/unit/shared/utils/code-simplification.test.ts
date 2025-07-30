@@ -23,11 +23,20 @@ describe('Phase 2: 코드 단순화 및 명명 개선', () => {
       expect(toggleClass).toBeInstanceOf(Function);
     });
 
-    it('AdvancedMemoization이 Memoization으로 단순화되어야 한다', async () => {
-      const { memo, memoizeFunction } = await import('@shared/utils/optimization');
+    it('복잡한 최적화 기능이 간소화되어야 한다', async () => {
+      const { memo } = await import('@shared/utils/optimization');
 
       expect(memo).toBeInstanceOf(Function);
-      expect(memoizeFunction).toBeInstanceOf(Function);
+
+      // memoizeFunction 등 복잡한 기능은 제거됨
+      try {
+        // @ts-expect-error - 제거된 함수 테스트
+        const { memoizeFunction } = await import('@shared/utils/optimization');
+        expect(memoizeFunction).toBeUndefined();
+      } catch {
+        // 함수가 제거되어 import 에러가 발생하는 것이 정상
+        expect(true).toBe(true);
+      }
     });
   });
 

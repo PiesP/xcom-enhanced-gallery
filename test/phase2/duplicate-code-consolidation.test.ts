@@ -49,7 +49,7 @@ describe('Phase 2: 중복 코드 통합', () => {
       expect(typeof memo).toBe('function');
     });
 
-    it('memo 함수가 Preact.memo를 사용해야 한다', async () => {
+    it('memo 함수가 간소화된 구현을 사용해야 한다', async () => {
       const { memo } = await import('@shared/utils/optimization');
 
       // 테스트용 더미 컴포넌트

@@ -6,10 +6,7 @@
 /* eslint-env node */
 /* global console */
 
-import {
-  createBundleInfo,
-  getBundleOptimizationSuggestions,
-} from './src/shared/utils/optimization/bundle.js';
+import { createBundleInfo, isWithinSizeTarget } from './src/shared/utils/optimization/bundle.ts';
 
 // 실제 모듈들의 추정 크기 정보
 const moduleInfo = {
@@ -24,22 +21,26 @@ const moduleInfo = {
 };
 
 // 전체 번들 정보 생성
-const moduleNames = Object.keys(moduleInfo);
 const totalSize = Object.values(moduleInfo).reduce((sum, size) => sum + size, 0);
 
 // 간소화된 번들 정보 생성
-const bundleInfo = createBundleInfo(moduleNames, totalSize);
-const suggestions = getBundleOptimizationSuggestions(bundleInfo, 400); // 400KB 목표
+const bundleInfo = createBundleInfo(totalSize);
+const isOptimal = isWithinSizeTarget(totalSize / 1024, 400); // 400KB 목표
 
 // 분석 결과 출력
 console.log('=== 간소화된 Bundle Analysis Results ===');
-console.log(`Total Size: ${(bundleInfo.totalSize / 1024).toFixed(2)} KB`);
-console.log(`Gzipped Size: ${(bundleInfo.gzippedSize / 1024).toFixed(2)} KB`);
-
-console.log('\n=== Optimization Suggestions ===');
-suggestions.forEach(suggestion => console.log(`- ${suggestion}`));
+console.log(`Total Size: ${(bundleInfo.sizeBytes / 1024).toFixed(2)} KB`);
+console.log(`Target: 400 KB`);
+console.log(`Within Target: ${isOptimal ? '✅ Yes' : '❌ No'}`);
 
 console.log('\n=== Module Breakdown ===');
 Object.entries(moduleInfo).forEach(([name, size]) => {
   console.log(`${name}: ${(size / 1024).toFixed(2)} KB`);
 });
+
+console.log('\n=== Suggestions ===');
+if (!isOptimal) {
+  console.log('- Consider removing unused dependencies');
+  console.log('- Enable tree-shaking for better optimization');
+  console.log('- Review large modules for potential splitting');
+}
