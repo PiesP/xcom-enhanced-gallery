@@ -408,7 +408,6 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/index.ts" -> "src/shared/utils/media/MediaClickDetector.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/memory/index.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/patterns/url-patterns.ts" [arrowhead="inv"]
-    "src/shared/utils/index.ts" -> "src/shared/utils/profiling/index.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/resource-manager.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/timer-management.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/type-safety-helpers.ts" [arrowhead="inv"]
@@ -434,10 +433,6 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/performance" {label="performance" "src/shared/utils/performance/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/utils/performance/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/utils/performance/index.ts" -> "src/shared/utils/performance/performance-utils.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/performance" {label="performance" "src/shared/utils/performance/performance-utils.ts" [label=<performance-utils.ts> tooltip="performance-utils.ts" URL="src/shared/utils/performance/performance-utils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/profiling" {label="profiling" "src/shared/utils/profiling/PerformanceProfiler.ts" [label=<PerformanceProfiler.ts> tooltip="PerformanceProfiler.ts" URL="src/shared/utils/profiling/PerformanceProfiler.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/profiling" {label="profiling" "src/shared/utils/profiling/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/utils/profiling/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
-    "src/shared/utils/profiling/index.ts" -> "src/shared/utils/profiling/PerformanceProfiler.ts" [arrowhead="inv"]
-    "src/shared/utils/profiling/index.ts" -> "src/shared/utils/profiling/PerformanceProfiler.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/resource-manager.ts" [label=<resource-manager.ts> tooltip="resource-manager.ts" URL="src/shared/utils/resource-manager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/scroll" {label="scroll" "src/shared/utils/scroll/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/utils/scroll/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/utils/scroll/index.ts" -> "src/shared/utils/scroll/scroll-utils.ts" [arrowhead="inv"]

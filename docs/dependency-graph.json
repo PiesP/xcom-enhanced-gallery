@@ -4541,23 +4541,6 @@
         },
         {
           "dynamic": false,
-          "module": "./profiling",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/profiling/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./resource-manager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4932,60 +4915,6 @@
       "dependents": [
         "src/shared/utils/index.ts",
         "src/shared/utils/patterns/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/profiling/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./PerformanceProfiler",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/profiling/PerformanceProfiler.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./PerformanceProfiler",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/utils/profiling/PerformanceProfiler.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/profiling/PerformanceProfiler.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/profiling/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6884,8 +6813,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 193,
-    "totalDependenciesCruised": 289,
+    "totalCruised": 191,
+    "totalDependenciesCruised": 286,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
