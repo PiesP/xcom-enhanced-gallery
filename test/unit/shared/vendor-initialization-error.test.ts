@@ -94,8 +94,8 @@ describe('벤더 초기화 순서 에러 해결', () => {
 
       // 초기화 후에도 모든 컴포넌트가 정상 작동
       expect(VerticalImageItem.displayName).toContain('memo');
-      expect(UnifiedGalleryContainer.displayName).toContain('memo');
       expect(Toolbar.displayName).toContain('memo');
+      // UnifiedGalleryContainer는 Phase 1에서 제거됨
     });
   });
 });

@@ -137,28 +137,11 @@ export function createScrollHandler(
   }
 }
 
-/**
- * Twitter 스크롤 컨테이너 찾기
- */
-export function findTwitterScrollContainer(): HTMLElement | null {
-  const selectors = [
-    '[data-testid="primaryColumn"]',
-    'main[role="main"]',
-    '.css-1dbjc4n[data-at-shortcutkeys]',
-    'body',
-  ];
+// ================================
+// Scroll Utilities (re-exported from core-utils)
+// ================================
 
-  for (const selector of selectors) {
-    const element = document.querySelector(selector) as HTMLElement;
-    if (element) {
-      logger.debug('Twitter scroll container found:', selector);
-      return element;
-    }
-  }
-
-  logger.warn('No Twitter scroll container found, using body');
-  return document.body;
-}
+export { findTwitterScrollContainer, ensureGalleryScrollAvailable } from './core-utils';
 
 /**
  * 갤러리 요소인지 확인
@@ -184,26 +167,6 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
  */
 export function createScrollDebouncer(callback: () => void, delay: number = 150): Debouncer<[]> {
   return createDebouncer(callback, delay);
-}
-
-/**
- * 갤러리 스크롤 보장 함수 (단순화)
- */
-export function ensureGalleryScrollAvailable(element: HTMLElement | null): void {
-  if (!element) {
-    return;
-  }
-
-  // 스크롤 가능한 요소들을 찾고 기본 스크롤 활성화
-  const scrollableElements = element.querySelectorAll(
-    '[data-xeg-role="items-list"], .itemsList, .content'
-  ) as NodeListOf<HTMLElement>;
-
-  scrollableElements.forEach(el => {
-    if (el.style.overflowY !== 'auto' && el.style.overflowY !== 'scroll') {
-      el.style.overflowY = 'auto';
-    }
-  });
 }
 
 /**

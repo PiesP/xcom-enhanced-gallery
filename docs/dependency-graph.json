@@ -2097,23 +2097,37 @@
     },
     {
       "source": "src/shared/components/optimization/index.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./memo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/optimization/memo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
-      "orphan": true,
+      "orphan": false,
       "valid": true
     },
     {
       "source": "src/shared/components/optimization/memo.ts",
       "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "dependents": [
+        "src/shared/components/optimization/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/index.ts",
@@ -6698,15 +6712,6 @@
     "violations": [
       {
         "type": "module",
-        "from": "src/shared/components/optimization/memo.ts",
-        "to": "src/shared/components/optimization/memo.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "src/shared/services/EarlyEventCaptureService.ts",
         "to": "src/shared/services/EarlyEventCaptureService.ts",
         "rule": {
@@ -6717,10 +6722,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 2,
+    "info": 1,
     "ignore": 0,
     "totalCruised": 187,
-    "totalDependenciesCruised": 281,
+    "totalDependenciesCruised": 282,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
