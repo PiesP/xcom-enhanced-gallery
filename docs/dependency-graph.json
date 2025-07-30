@@ -5282,36 +5282,8 @@
     },
     {
       "source": "src/shared/services/MediaPrefetchingService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./WebPOptimizationService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-import"
-          ],
-          "resolved": "src/shared/services/WebPOptimizationService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/ModuleLoader.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/WebPOptimizationService.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/services/MediaPrefetchingService.ts",
         "src/shared/services/ModuleLoader.ts"
       ],
       "orphan": false,
@@ -5394,17 +5366,13 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/WebPOptimizationService-simple.ts",
+      "source": "src/shared/services/WebPOptimizationService.ts",
       "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "dependents": [
+        "src/shared/services/ModuleLoader.ts"
+      ],
+      "orphan": false,
+      "valid": true
     },
     {
       "source": "src/shared/services/media-extraction/index.ts",
@@ -6549,23 +6517,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/services/WebPOptimizationService-simple.ts",
-        "to": "src/shared/services/WebPOptimizationService-simple.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 183,
-    "totalDependenciesCruised": 275,
+    "totalCruised": 182,
+    "totalDependenciesCruised": 274,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -1,10 +1,7 @@
 /**
- * @fileoverview Bulk Download Service - Core Business Logic
- * @version 2.0.0
- * @follows Clean Architecture Pattern
- *
- * Core layer에 위치한 대량 다운로드 서비스입니다.
- * 여러 미디어 파일의 일괄 다운로드 비즈니스 로직을 중앙 집중화하여 일관성을 보장합니다.
+ * @fileoverview 간소화된 대량 다운로드 서비스
+ * @description 유저스크립트에 적합한 기본 다운로드 기능
+ * @version 3.0.0 - Phase B: 간소화
  */
 
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
@@ -16,29 +13,17 @@ import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
 
 export interface DownloadProgress {
-  phase: 'preparing' | 'downloading' | 'zipping' | 'complete';
+  phase: 'preparing' | 'downloading' | 'complete';
   current: number;
   total: number;
   percentage: number;
   filename?: string;
 }
 
-export interface SingleDownloadOptions {
-  filename?: string;
-  onProgress?: (progress: number) => void;
-  signal?: AbortSignal;
-}
-
 export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;
   signal?: AbortSignal;
   zipFilename?: string;
-  strategy?: 'auto' | 'zip' | 'individual';
-  includeImages?: boolean;
-  includeVideos?: boolean;
-  maxFiles?: number;
-  compressionLevel?: number;
-  includeMetadata?: boolean;
 }
 
 export interface DownloadResult {
@@ -47,13 +32,6 @@ export interface DownloadResult {
   filesSuccessful: number;
   error?: string;
   filename?: string;
-}
-
-export interface DownloadInfo {
-  isDownloading: boolean;
-  currentItem?: string;
-  progress: number;
-  failedFiles: string[];
 }
 
 export interface SingleDownloadResult {
@@ -89,29 +67,17 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
 }
 
 /**
- * 대량 다운로드 서비스 - Core Business Logic
+ * 간소화된 대량 다운로드 서비스
  *
- * Clean Architecture 원칙을 따라 core layer에서 비즈니스 로직을 관리합니다.
- * Singleton 패턴으로 전역 상태 관리 및 일관된 대량 다운로드 처리를 보장합니다.
+ * 주요 기능:
+ * - 단일/다중 파일 다운로드
+ * - 기본 ZIP 생성
+ * - 간단한 진행률 추적
  */
 export class BulkDownloadService implements BaseService {
   private static instance: BulkDownloadService;
   private _isInitialized = false;
   private currentAbortController: AbortController | undefined;
-  private readonly downloadInfo: DownloadInfo = {
-    isDownloading: false,
-    progress: 0,
-    failedFiles: [],
-  };
-
-  // Core configuration constants
-  private static readonly CONFIG = {
-    ZIP_COMPRESSION_LEVEL: 6,
-    MAX_FILE_SIZE_MB: 100,
-    REQUEST_TIMEOUT_MS: 30000,
-    DEFAULT_CONCURRENT_DOWNLOADS: 3,
-    RATE_LIMIT_DELAY_MS: 500,
-  } as const;
 
   public static getInstance(): BulkDownloadService {
     BulkDownloadService.instance ??= new BulkDownloadService();
@@ -161,28 +127,169 @@ export class BulkDownloadService implements BaseService {
   }
 
   /**
-   * 단일 미디어 다운로드
-   * @param media - 다운로드할 미디어 아이템
-   * @returns 다운로드 성공 여부
+   * 단일 파일 다운로드
    */
-  async downloadSingle(media: MediaItem | MediaInfo): Promise<SingleDownloadResult> {
+  public async downloadSingle(
+    media: MediaInfo | MediaItem,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<SingleDownloadResult> {
+    const log = logger.extend('downloadSingle');
+
     try {
-      const result = await this.downloadSingleWithIndex(media);
-      if (result) {
-        return {
-          success: true,
-          filename: generateMediaFilename(toFilenameCompatible(media)),
-        };
-      } else {
-        return {
-          success: false,
-          error: 'Download failed',
-        };
+      const converted = toFilenameCompatible(media);
+      const filename = generateMediaFilename(converted);
+      const download = getNativeDownload();
+
+      if (options.signal?.aborted) {
+        throw new Error('Download cancelled by user');
       }
+
+      await download(media.url, filename);
+
+      log.debug(`Downloaded: ${filename}`);
+      return { success: true, filename };
     } catch (error) {
+      const message = getErrorMessage(error);
+      log.error(`Download failed: ${message}`);
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * 여러 파일 다운로드 (ZIP 또는 개별)
+   */
+  public async downloadMultiple(
+    mediaItems: Array<MediaInfo | MediaItem>,
+    options: BulkDownloadOptions = {}
+  ): Promise<DownloadResult> {
+    if (mediaItems.length === 0) {
       return {
         success: false,
-        error: getErrorMessage(error),
+        filesProcessed: 0,
+        filesSuccessful: 0,
+        error: 'No files to download',
+      };
+    }
+
+    try {
+      this.currentAbortController = new AbortController();
+      if (options.signal) {
+        options.signal.addEventListener('abort', () => {
+          this.currentAbortController?.abort();
+        });
+      }
+
+      // 단일 파일인 경우 개별 다운로드
+      if (mediaItems.length === 1) {
+        const result = await this.downloadSingle(mediaItems[0], {
+          signal: this.currentAbortController.signal,
+        });
+        return {
+          success: result.success,
+          filesProcessed: 1,
+          filesSuccessful: result.success ? 1 : 0,
+          error: result.error,
+          filename: result.filename,
+        };
+      }
+
+      // 여러 파일인 경우 ZIP 다운로드
+      return await this.downloadAsZip(mediaItems, options);
+    } finally {
+      this.currentAbortController = undefined;
+    }
+  }
+
+  /**
+   * ZIP 파일로 다운로드
+   */
+  private async downloadAsZip(
+    mediaItems: Array<MediaInfo | MediaItem>,
+    options: BulkDownloadOptions
+  ): Promise<DownloadResult> {
+    const log = logger.extend('downloadAsZip');
+
+    try {
+      const { getFflate } = await import('@shared/external/vendors');
+      const fflate = getFflate();
+      const download = getNativeDownload();
+
+      const files: Record<string, Uint8Array> = {};
+      let successful = 0;
+
+      options.onProgress?.({
+        phase: 'preparing',
+        current: 0,
+        total: mediaItems.length,
+        percentage: 0,
+      });
+
+      // 파일들을 다운로드하여 ZIP에 추가
+      for (let i = 0; i < mediaItems.length; i++) {
+        if (this.currentAbortController?.signal.aborted) {
+          throw new Error('Download cancelled by user');
+        }
+
+        const media = mediaItems[i];
+        options.onProgress?.({
+          phase: 'downloading',
+          current: i + 1,
+          total: mediaItems.length,
+          percentage: Math.round(((i + 1) / mediaItems.length) * 100),
+          filename: media.filename,
+        });
+
+        try {
+          const response = await fetch(media.url);
+          const arrayBuffer = await response.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          const converted = toFilenameCompatible(media);
+          const filename = generateMediaFilename(converted);
+          files[filename] = uint8Array;
+          successful++;
+        } catch (error) {
+          log.warn(`Failed to download ${media.filename}: ${getErrorMessage(error)}`);
+        }
+      }
+
+      if (successful === 0) {
+        throw new Error('All downloads failed');
+      }
+
+      // ZIP 생성
+      const zipData = fflate.zipSync(files);
+      const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
+
+      // ZIP 다운로드
+      const blob = new Blob([zipData], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      await download(url, zipFilename);
+      URL.revokeObjectURL(url);
+
+      options.onProgress?.({
+        phase: 'complete',
+        current: mediaItems.length,
+        total: mediaItems.length,
+        percentage: 100,
+      });
+
+      log.debug(`ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`);
+
+      return {
+        success: true,
+        filesProcessed: mediaItems.length,
+        filesSuccessful: successful,
+        filename: zipFilename,
+      };
+    } catch (error) {
+      const message = getErrorMessage(error);
+      log.error(`ZIP download failed: ${message}`);
+      return {
+        success: false,
+        filesProcessed: mediaItems.length,
+        filesSuccessful: 0,
+        error: message,
       };
     }
   }
@@ -194,240 +301,21 @@ export class BulkDownloadService implements BaseService {
     mediaItems: readonly (MediaItem | MediaInfo)[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
-    return this.downloadMultiple(mediaItems, options);
+    return this.downloadMultiple(Array.from(mediaItems), options);
   }
 
   /**
-   * 다운로드 취소
+   * 현재 다운로드 중단
    */
   public cancelDownload(): void {
-    if (this.currentAbortController) {
-      this.currentAbortController.abort();
-    }
-    this.currentAbortController = undefined;
-    this.downloadInfo.isDownloading = false;
-    logger.info('Download cancelled');
+    this.currentAbortController?.abort();
+    logger.debug('Current download cancelled');
   }
 
   /**
-   * 현재 다운로드 정보 반환
+   * 현재 다운로드 중인지 확인
    */
-  public getCurrentDownloadInfo(): DownloadInfo {
-    return { ...this.downloadInfo };
-  }
-
-  /**
-   * 인덱스를 지정한 단일 미디어 다운로드
-   * @param media - 다운로드할 미디어 아이템
-   * @param index - 파일명 생성에 사용할 인덱스 (1-based)
-   * @returns 다운로드 성공 여부
-   */
-  private async downloadSingleWithIndex(
-    media: MediaItem | MediaInfo,
-    index?: number
-  ): Promise<boolean> {
-    try {
-      const downloader = getNativeDownload();
-      const url = this.extractSafeUrl(media);
-      const filename = generateMediaFilename(
-        toFilenameCompatible(media),
-        index ? { index } : undefined
-      );
-
-      logger.info('Starting single media download:', { url, filename });
-
-      const response = await fetch(url);
-      logger.info('Fetch response:', {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      logger.info('Blob created:', {
-        size: blob.size,
-        type: blob.type,
-      });
-
-      downloader.downloadBlob(blob, filename);
-      logger.info('downloadBlob called successfully');
-
-      logger.info('Single media download completed:', filename);
-      return true;
-    } catch (error) {
-      logger.info('Download failed with error:', error);
-      logger.error('Single media download failed:', error);
-      return false;
-    }
-  }
-
-  /**
-   * 여러 미디어 아이템을 한 번에 다운로드합니다.
-   * @param mediaItems - 다운로드할 미디어 아이템 배열
-   * @param options - 다운로드 옵션
-   * @returns 다운로드 결과
-   */
-  async downloadMultiple(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: BulkDownloadOptions = {}
-  ): Promise<DownloadResult> {
-    try {
-      if (mediaItems.length === 0) {
-        return {
-          success: false,
-          filesProcessed: 0,
-          filesSuccessful: 0,
-          error: 'No media items provided',
-        };
-      }
-
-      const strategy = options.strategy ?? this.determineOptimalStrategy(mediaItems);
-
-      switch (strategy) {
-        case 'zip':
-          return await this.downloadAsZip(mediaItems, options);
-        case 'individual':
-          return await this.downloadIndividually(mediaItems, options);
-        default:
-          // Auto strategy selection
-          return mediaItems.length > 1
-            ? await this.downloadAsZip(mediaItems, options)
-            : await this.downloadIndividually(mediaItems, options);
-      }
-    } catch (error) {
-      logger.error('Multiple media download failed:', error);
-      return {
-        success: false,
-        filesProcessed: mediaItems.length,
-        filesSuccessful: 0,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  }
-
-  /**
-   * ZIP 파일로 일괄 다운로드 (지연 로딩)
-   */
-  private async downloadAsZip(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: BulkDownloadOptions = {}
-  ): Promise<DownloadResult> {
-    // ZIP 다운로드는 복잡한 기능이므로 유저스크립트에서 제거
-    // 개별 다운로드로 폴백
-    logger.warn(
-      'ZIP download not supported in simplified version, falling back to individual downloads'
-    );
-
-    return await this.downloadIndividually(mediaItems, options);
-  }
-
-  /**
-   * 개별 파일 다운로드
-   */
-  private async downloadIndividually(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: BulkDownloadOptions = {}
-  ): Promise<DownloadResult> {
-    const { onProgress, signal } = options;
-    let successCount = 0;
-
-    try {
-      logger.info(`Starting individual downloads for ${mediaItems.length} items`);
-
-      for (let i = 0; i < mediaItems.length; i++) {
-        const item = mediaItems[i];
-        if (!item) {
-          continue;
-        }
-
-        // Check for cancellation
-        if (signal?.aborted) {
-          logger.info('Download cancelled by user');
-          break;
-        }
-
-        onProgress?.({
-          phase: 'downloading',
-          current: i + 1,
-          total: mediaItems.length,
-          percentage: Math.round(((i + 1) / mediaItems.length) * 100),
-          filename: generateMediaFilename(toFilenameCompatible(item), { index: i + 1 }),
-        });
-
-        try {
-          const success = await this.downloadSingleWithIndex(item, i + 1);
-          if (success) {
-            successCount++;
-          }
-        } catch (error) {
-          logger.error(`Failed to download item ${i + 1}:`, error);
-        }
-
-        // Rate limiting to prevent overwhelming the server
-        if (i < mediaItems.length - 1) {
-          await this.delay(BulkDownloadService.CONFIG.RATE_LIMIT_DELAY_MS);
-        }
-      }
-
-      onProgress?.({
-        phase: 'complete',
-        current: mediaItems.length,
-        total: mediaItems.length,
-        percentage: 100,
-      });
-
-      logger.info(
-        `Individual downloads completed: ${successCount}/${mediaItems.length} successful`
-      );
-      return {
-        success: successCount > 0,
-        filesProcessed: mediaItems.length,
-        filesSuccessful: successCount,
-      };
-    } catch (error) {
-      logger.error('Individual downloads failed:', error);
-      return {
-        success: false,
-        filesProcessed: mediaItems.length,
-        filesSuccessful: successCount,
-        error: error instanceof Error ? error.message : 'Individual downloads failed',
-      };
-    }
-  }
-
-  /**
-   * 최적 다운로드 전략 결정
-   */
-  private determineOptimalStrategy(
-    mediaItems: readonly (MediaItem | MediaInfo)[]
-  ): 'zip' | 'individual' {
-    // Single file: always individual
-    if (mediaItems.length === 1) {
-      return 'individual';
-    }
-
-    // Multiple files: prefer ZIP for better UX
-    return 'zip';
-  }
-
-  /**
-   * 안전한 URL 추출
-   */
-  private extractSafeUrl(media: MediaItem | MediaInfo): string {
-    if ('originalUrl' in media && media.originalUrl) {
-      return media.originalUrl;
-    }
-    return media.url || '';
-  }
-
-  /**
-   * 비동기 지연 유틸리티
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  public isDownloading(): boolean {
+    return this.currentAbortController !== undefined;
   }
 }
