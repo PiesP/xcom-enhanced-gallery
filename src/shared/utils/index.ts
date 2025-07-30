@@ -146,6 +146,3 @@ export * from './memory';
 
 // 배치 DOM 업데이트 (레이아웃 스래싱 방지)
 export * from './dom/BatchDOMUpdateManager';
-
-// 성능 프로파일링 (실시간 성능 모니터링)
-export * from './profiling';
