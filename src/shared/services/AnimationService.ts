@@ -170,3 +170,40 @@ export class AnimationService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
+// 편의 함수들
+const animationService = AnimationService.getInstance();
+
+/**
+ * 요소 애니메이션 편의 함수
+ */
+export function animateElement(element: Element, config?: AnimationConfig): void {
+  animationService.animateElement(element, config);
+}
+
+/**
+ * 페이드아웃 편의 함수
+ */
+export function fadeOut(element: Element, config?: AnimationConfig): Promise<void> {
+  return animationService.fadeOut(element, config);
+}
+
+/**
+ * 갤러리 열기 애니메이션 편의 함수
+ */
+export function openGalleryWithAnimation(
+  element: Element,
+  config?: AnimationConfig
+): Promise<void> {
+  return animationService.openGallery(element, config);
+}
+
+/**
+ * 갤러리 닫기 애니메이션 편의 함수
+ */
+export function closeGalleryWithAnimation(
+  element: Element,
+  config?: AnimationConfig
+): Promise<void> {
+  return animationService.closeGallery(element, config);
+}

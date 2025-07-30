@@ -15,6 +15,14 @@ export interface MediaLoadingState {
 }
 
 /**
+ * 미디어 로딩 옵션 (하위 호환성을 위해 유지)
+ */
+export interface MediaLoadingOptions {
+  src?: string;
+  enableLazyLoading?: boolean;
+}
+
+/**
  * 간소화된 미디어 로딩 서비스
  *
  * 주요 기능:
@@ -65,8 +73,19 @@ export class MediaLoadingService {
   /**
    * 강제 로딩
    */
-  public forceLoad(id: string): void {
+  public forceLoad(_id: string): void {
     // 간소화된 버전에서는 기본 로딩과 동일
+  }
+
+  /**
+   * 미디어 로딩 (공개 메서드로 변경)
+   */
+  public loadMedia(id: string, element: HTMLElement, src: string): void {
+    if (element instanceof HTMLImageElement) {
+      this.loadImage(id, element, src);
+    } else if (element instanceof HTMLVideoElement) {
+      this.loadVideo(id, element, src);
+    }
   }
 
   /**
@@ -77,7 +96,7 @@ export class MediaLoadingService {
     if (state) {
       state.isLoading = true;
       state.hasError = false;
-      state.errorMessage = undefined;
+      delete state.errorMessage;
     }
   }
 
@@ -86,17 +105,6 @@ export class MediaLoadingService {
    */
   public cleanup(): void {
     this.stateMap.clear();
-  }
-
-  /**
-   * 미디어 로딩 수행
-   */
-  private loadMedia(id: string, element: HTMLElement, src: string): void {
-    if (element instanceof HTMLImageElement) {
-      this.loadImage(id, element, src);
-    } else if (element instanceof HTMLVideoElement) {
-      this.loadVideo(id, element, src);
-    }
   }
 
   /**

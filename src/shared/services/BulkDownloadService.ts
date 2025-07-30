@@ -133,8 +133,6 @@ export class BulkDownloadService implements BaseService {
     media: MediaInfo | MediaItem,
     options: { signal?: AbortSignal } = {}
   ): Promise<SingleDownloadResult> {
-    const log = logger.extend('downloadSingle');
-
     try {
       const converted = toFilenameCompatible(media);
       const filename = generateMediaFilename(converted);
@@ -144,13 +142,16 @@ export class BulkDownloadService implements BaseService {
         throw new Error('Download cancelled by user');
       }
 
-      await download(media.url, filename);
+      // URL로부터 Blob 생성 후 다운로드
+      const response = await fetch(media.url);
+      const blob = await response.blob();
+      download.downloadBlob(blob, filename);
 
-      log.debug(`Downloaded: ${filename}`);
+      logger.debug(`Downloaded: ${filename}`);
       return { success: true, filename };
     } catch (error) {
       const message = getErrorMessage(error);
-      log.error(`Download failed: ${message}`);
+      logger.error(`Download failed: ${message}`);
       return { success: false, error: message };
     }
   }
@@ -159,10 +160,12 @@ export class BulkDownloadService implements BaseService {
    * 여러 파일 다운로드 (ZIP 또는 개별)
    */
   public async downloadMultiple(
-    mediaItems: Array<MediaInfo | MediaItem>,
+    mediaItems: Array<MediaInfo | MediaItem> | readonly (MediaInfo | MediaItem)[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
-    if (mediaItems.length === 0) {
+    const items = Array.from(mediaItems);
+
+    if (items.length === 0) {
       return {
         success: false,
         filesProcessed: 0,
@@ -180,21 +183,31 @@ export class BulkDownloadService implements BaseService {
       }
 
       // 단일 파일인 경우 개별 다운로드
-      if (mediaItems.length === 1) {
-        const result = await this.downloadSingle(mediaItems[0], {
+      if (items.length === 1) {
+        const firstItem = items[0];
+        if (!firstItem) {
+          return {
+            success: false,
+            filesProcessed: 1,
+            filesSuccessful: 0,
+            error: 'Invalid media item',
+          };
+        }
+
+        const result = await this.downloadSingle(firstItem, {
           signal: this.currentAbortController.signal,
         });
         return {
           success: result.success,
           filesProcessed: 1,
           filesSuccessful: result.success ? 1 : 0,
-          error: result.error,
-          filename: result.filename,
+          ...(result.error && { error: result.error }),
+          ...(result.filename && { filename: result.filename }),
         };
       }
 
       // 여러 파일인 경우 ZIP 다운로드
-      return await this.downloadAsZip(mediaItems, options);
+      return await this.downloadAsZip(items, options);
     } finally {
       this.currentAbortController = undefined;
     }
@@ -207,8 +220,6 @@ export class BulkDownloadService implements BaseService {
     mediaItems: Array<MediaInfo | MediaItem>,
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
-    const log = logger.extend('downloadAsZip');
-
     try {
       const { getFflate } = await import('@shared/external/vendors');
       const fflate = getFflate();
@@ -231,6 +242,8 @@ export class BulkDownloadService implements BaseService {
         }
 
         const media = mediaItems[i];
+        if (!media) continue;
+
         options.onProgress?.({
           phase: 'downloading',
           current: i + 1,
@@ -249,7 +262,7 @@ export class BulkDownloadService implements BaseService {
           files[filename] = uint8Array;
           successful++;
         } catch (error) {
-          log.warn(`Failed to download ${media.filename}: ${getErrorMessage(error)}`);
+          logger.warn(`Failed to download ${media.filename}: ${getErrorMessage(error)}`);
         }
       }
 
@@ -263,9 +276,7 @@ export class BulkDownloadService implements BaseService {
 
       // ZIP 다운로드
       const blob = new Blob([zipData], { type: 'application/zip' });
-      const url = URL.createObjectURL(blob);
-      await download(url, zipFilename);
-      URL.revokeObjectURL(url);
+      download.downloadBlob(blob, zipFilename);
 
       options.onProgress?.({
         phase: 'complete',
@@ -274,7 +285,9 @@ export class BulkDownloadService implements BaseService {
         percentage: 100,
       });
 
-      log.debug(`ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`);
+      logger.debug(
+        `ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`
+      );
 
       return {
         success: true,
@@ -284,7 +297,7 @@ export class BulkDownloadService implements BaseService {
       };
     } catch (error) {
       const message = getErrorMessage(error);
-      log.error(`ZIP download failed: ${message}`);
+      logger.error(`ZIP download failed: ${message}`);
       return {
         success: false,
         filesProcessed: mediaItems.length,

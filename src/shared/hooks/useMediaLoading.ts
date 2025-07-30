@@ -35,7 +35,8 @@ export function useMediaLoading(
     mediaIdRef.current = mediaId;
 
     // 미디어 요소 등록
-    mediaLoadingService.registerMediaElement(mediaId, element, options);
+    const src = options?.src || '';
+    mediaLoadingService.registerMediaElement(mediaId, element, { src });
 
     // 상태 변화 감지를 위한 폴링 (성능상 더 나은 방법이 있다면 추후 개선)
     const checkState = () => {
@@ -61,8 +62,9 @@ export function useMediaLoading(
    * 강제 로딩 트리거
    */
   const forceLoad = () => {
-    if (mediaIdRef.current) {
-      mediaLoadingService.loadMedia(mediaIdRef.current);
+    if (mediaIdRef.current && elementRef.current) {
+      const src = options?.src || '';
+      mediaLoadingService.loadMedia(mediaIdRef.current, elementRef.current, src);
     }
   };
 
