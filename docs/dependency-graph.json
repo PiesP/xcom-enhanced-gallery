@@ -4948,9 +4948,36 @@
     },
     {
       "source": "src/shared/utils/animations.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./css-animations",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/css-animations.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/css-animations.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/animations.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6911,8 +6938,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 190,
-    "totalDependenciesCruised": 291,
+    "totalCruised": 191,
+    "totalDependenciesCruised": 292,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

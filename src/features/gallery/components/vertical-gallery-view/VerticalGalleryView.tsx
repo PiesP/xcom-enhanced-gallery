@@ -23,7 +23,7 @@ import {
   animateGalleryEnter,
   animateGalleryExit,
   setupScrollAnimation,
-} from '@shared/services/SimpleAnimationService';
+} from '@shared/utils/animations';
 import { useVirtualScroll } from '@shared/hooks/useVirtualScroll';
 import { useToolbarPositionBased } from '@features/gallery/hooks';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
