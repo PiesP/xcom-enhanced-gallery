@@ -73,14 +73,3 @@ export function useMediaLoading(
     forceLoad,
   };
 }
-
-/**
- * @deprecated Use useMediaLoading instead
- */
-export function useUnifiedMediaLoading(
-  elementRef: { current: HTMLImageElement | HTMLVideoElement | null },
-  options: MediaLoadingOptions = {}
-) {
-  console.warn('[DEPRECATED] useUnifiedMediaLoading is deprecated. Use useMediaLoading instead.');
-  return useMediaLoading(elementRef, options);
-}
