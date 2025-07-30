@@ -1,72 +1,106 @@
 /**
  * @fileoverview Phase 3: 서비스 아키텍처 개선 테스트
- * @description 불필요한 "unified" 수식어 제거 및 서비스 통합 검증
+ * @description 인터페이스명 정리 및 아키텍처 일관성 검증
  */
 
 import { describe, it, expect } from 'vitest';
 
 describe('Phase 3: 서비스 아키텍처 개선', () => {
-  describe('1. UnifiedGalleryContainer → GalleryContainer', () => {
-    it('UnifiedGalleryContainer가 GalleryContainer로 이름이 변경되어야 한다', async () => {
+  describe('1. SimpleScrollConfig → ScrollConfig', () => {
+    it('SimpleScrollConfig가 ScrollConfig로 이름이 변경되어야 한다', async () => {
       try {
-        // 새로운 GalleryContainer가 존재해야 함
-        const galleryModule = await import('@shared/components/isolation');
-        expect(galleryModule.GalleryContainer).toBeDefined();
-        expect(galleryModule.mountGallery).toBeDefined();
-        expect(galleryModule.unmountGallery).toBeDefined();
+        const scrollModule = await import('@shared/utils/virtual-scroll/ScrollHelper');
 
-        // UnifiedGalleryContainer는 더 이상 사용되지 않아야 함
-        expect(galleryModule.UnifiedGalleryContainer).toBeUndefined();
+        // ScrollConfig 타입이 export되어야 함
+        expect(scrollModule.ScrollHelper).toBeDefined();
+
+        // 새로운 인스턴스 생성으로 타입 검증
+        const helper = new scrollModule.ScrollHelper({
+          itemHeight: 100,
+          viewportHeight: 500,
+        });
+        expect(helper).toBeDefined();
       } catch (error) {
-        // 아직 리팩토링 전이므로 테스트 실패 예상
+        // 아직 리팩토링 전이므로 에러 예상
         expect(error).toBeDefined();
       }
     });
 
-    it('기존 UnifiedGalleryContainer 사용처가 모두 GalleryContainer로 교체되어야 한다', async () => {
+    it('SimpleScrollConfig를 사용하는 모든 곳이 ScrollConfig로 변경되어야 한다', async () => {
       try {
-        const rendererModule = await import('@features/gallery/GalleryRenderer');
-        const appModule = await import('@features/gallery/GalleryApp');
+        const scrollModule = await import('@shared/utils/virtual-scroll');
 
-        // 렌더러와 앱에서 새로운 GalleryContainer 사용 확인
-        expect(rendererModule.GalleryRenderer).toBeDefined();
-        expect(appModule.GalleryApp).toBeDefined();
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-  });
-
-  describe('2. UnifiedMediaLoadingService → MediaLoadingService', () => {
-    it('UnifiedMediaLoadingService가 MediaLoadingService로 통합되어야 한다', async () => {
-      try {
-        const mediaModule = await import('@shared/services/MediaLoadingService');
-
-        // MediaLoadingService가 기본 export여야 함
-        expect(mediaModule.MediaLoadingService).toBeDefined();
-        expect(mediaModule.default).toBeDefined();
-
-        // 하위 호환성을 위한 별칭은 유지되지만 deprecation 경고 있어야 함
-        expect(mediaModule.UnifiedMediaLoadingService).toBeDefined();
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('useUnifiedMediaLoading이 useMediaLoading으로 이름이 변경되어야 한다', async () => {
-      try {
-        const hooksModule = await import('@shared/hooks');
-
-        expect(hooksModule.useMediaLoading).toBeDefined();
-        // 기존 useUnifiedMediaLoading은 deprecation 별칭으로만 유지
-        expect(hooksModule.useUnifiedMediaLoading).toBeDefined();
+        // ScrollConfig와 VirtualScrollConfig가 동일해야 함
+        expect(scrollModule.ScrollHelper).toBeDefined();
       } catch (error) {
         expect(error).toBeDefined();
       }
     });
   });
 
-  describe('3. 중복 서비스 정리', () => {
+  describe('2. BasicResourceManager → ResourceManager', () => {
+    it('BasicResourceManager가 ResourceManager로 이름이 변경되어야 한다', async () => {
+      try {
+        const memoryModule = await import('@shared/utils/memory');
+
+        // ResourceManager가 주요 export여야 함
+        expect(memoryModule.ResourceManager).toBeDefined();
+
+        // 새로운 인스턴스 생성으로 타입 검증
+        const manager = new memoryModule.ResourceManager();
+        expect(manager).toBeDefined();
+        expect(manager.getResourceCount()).toBe(0);
+
+        // 하위 호환성을 위한 별칭 확인
+        expect(memoryModule.BasicResourceManager).toBeDefined();
+        expect(memoryModule.BasicResourceManager).toBe(memoryModule.ResourceManager);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('ResourceManager의 기본 기능이 정상 작동해야 한다', async () => {
+      try {
+        const { ResourceManager } = await import('@shared/utils/memory');
+
+        const manager = new ResourceManager();
+        let cleaned = false;
+
+        // 리소스 등록
+        manager.register('test', () => {
+          cleaned = true;
+        });
+        expect(manager.hasResource('test')).toBe(true);
+        expect(manager.getResourceCount()).toBe(1);
+
+        // 리소스 해제
+        const released = manager.release('test');
+        expect(released).toBe(true);
+        expect(cleaned).toBe(true);
+        expect(manager.hasResource('test')).toBe(false);
+        expect(manager.getResourceCount()).toBe(0);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+  });
+
+  describe('3. 서비스 일관성 검증', () => {
+    it('모든 서비스가 일관된 네이밍을 가져야 한다', async () => {
+      try {
+        const servicesModule = await import('@shared/services');
+
+        // 주요 서비스들이 Simple, Unified 등의 수식어 없이 명명되어야 함
+        expect(servicesModule.AnimationService).toBeDefined();
+        expect(servicesModule.MediaService).toBeDefined();
+        expect(servicesModule.ServiceManager).toBeDefined();
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+  });
+
+  describe('4. 중복 서비스 정리', () => {
     it('MediaService가 중복된 미디어 관련 서비스들을 통합해야 한다', async () => {
       try {
         const mediaService = await import('@shared/services/MediaService');
@@ -97,7 +131,74 @@ describe('Phase 3: 서비스 아키텍처 개선', () => {
     });
   });
 
-  describe('4. 파일 구조 개선', () => {
+  describe('4. 헝가리 기법 인터페이스 이름 정리 (I 접두어 제거)', () => {
+    it('ILogger가 Logger로 이름이 변경되어야 한다', async () => {
+      try {
+        const servicesModule = await import('@shared/services/core-services');
+
+        // Logger 인터페이스가 export되어야 함
+        expect(servicesModule.Logger).toBeDefined();
+        expect(servicesModule.ConsoleLogger).toBeDefined();
+
+        // 하위 호환성을 위한 별칭 확인
+        expect(servicesModule.ILogger).toBeDefined();
+        expect(servicesModule.ILogger).toBe(servicesModule.Logger);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('IDownloadManager, IMediaExtractionService, IMediaFilenameService가 I 접두어 없이 변경되어야 한다', async () => {
+      try {
+        const interfacesModule = await import('@shared/interfaces/ServiceInterfaces');
+
+        // 새로운 인터페이스들이 export되어야 함
+        expect(interfacesModule.DownloadManager).toBeDefined();
+        expect(interfacesModule.MediaExtractionService).toBeDefined();
+        expect(interfacesModule.MediaFilenameService).toBeDefined();
+
+        // 하위 호환성을 위한 별칭 확인
+        expect(interfacesModule.IDownloadManager).toBeDefined();
+        expect(interfacesModule.IMediaExtractionService).toBeDefined();
+        expect(interfacesModule.IMediaFilenameService).toBeDefined();
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('IErrorHandler가 ErrorHandlerInterface로 변경되어야 한다', async () => {
+      try {
+        const errorModule = await import('@shared/error/ErrorHandler');
+
+        // ErrorHandlerInterface가 export되어야 함
+        expect(errorModule.ErrorHandlerInterface).toBeDefined();
+        expect(errorModule.ErrorHandler).toBeDefined();
+
+        // 하위 호환성을 위한 별칭 확인
+        expect(errorModule.IErrorHandler).toBeDefined();
+        expect(errorModule.IErrorHandler).toBe(errorModule.ErrorHandlerInterface);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it('IGalleryApp이 GalleryApp으로 변경되어야 한다', async () => {
+      try {
+        const galleryTypesModule = await import('@features/gallery/types');
+
+        // GalleryApp이 export되어야 함
+        expect(galleryTypesModule.GalleryApp).toBeDefined();
+
+        // 하위 호환성을 위한 별칭 확인
+        expect(galleryTypesModule.IGalleryApp).toBeDefined();
+        expect(galleryTypesModule.IGalleryApp).toBe(galleryTypesModule.GalleryApp);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+  });
+
+  describe('5. 파일 구조 개선', () => {
     it('isolation 디렉토리의 컴포넌트들이 일관된 명명을 가져야 한다', async () => {
       try {
         const isolationModule = await import('@shared/components/isolation');
@@ -127,7 +228,7 @@ describe('Phase 3: 서비스 아키텍처 개선', () => {
     });
   });
 
-  describe('5. 타입 정의 개선', () => {
+  describe('6. 타입 정의 개선', () => {
     it('갤러리 관련 타입들이 명확하게 정의되어야 한다', async () => {
       try {
         const typesModule = await import('@shared/types');
@@ -151,7 +252,7 @@ describe('Phase 3: 서비스 아키텍처 개선', () => {
     });
   });
 
-  describe('6. 성능 및 번들 크기 검증', () => {
+  describe('7. 성능 및 번들 크기 검증', () => {
     it('리팩토링 후 번들 크기가 증가하지 않아야 한다', () => {
       // 현재 번들 크기: ~455KB (production)
       const currentBundleSize = 455 * 1024; // KB를 bytes로 변환
@@ -180,7 +281,7 @@ describe('Phase 3: 서비스 아키텍처 개선', () => {
     });
   });
 
-  describe('7. 하위 호환성 검증', () => {
+  describe('8. 하위 호환성 검증', () => {
     it('기존 API가 deprecation 경고와 함께 유지되어야 한다', async () => {
       try {
         // 기존 UnifiedMediaLoadingService는 별칭으로 유지

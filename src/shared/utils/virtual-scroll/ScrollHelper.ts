@@ -9,7 +9,7 @@ import { logger } from '@shared/logging';
 /**
  * 기본 스크롤 설정
  */
-export interface SimpleScrollConfig {
+export interface ScrollConfig {
   /** 각 아이템의 높이 (px) */
   itemHeight: number;
   /** 뷰포트 높이 (px) */
@@ -42,9 +42,9 @@ export interface ScrollRenderRange extends ScrollVisibleRange {
  * 간단한 스크롤 헬퍼
  */
 export class ScrollHelper {
-  private config: Required<SimpleScrollConfig>;
+  private config: Required<ScrollConfig>;
 
-  constructor(config: SimpleScrollConfig) {
+  constructor(config: ScrollConfig) {
     this.config = {
       bufferSize: 5,
       threshold: 50,
@@ -86,7 +86,7 @@ export class ScrollHelper {
   /**
    * 설정 업데이트
    */
-  updateConfig(config: Partial<SimpleScrollConfig>): void {
+  updateConfig(config: Partial<ScrollConfig>): void {
     this.config = { ...this.config, ...config };
     logger.debug('ScrollHelper 설정 업데이트', this.config);
   }
@@ -122,7 +122,9 @@ export class ScrollHelper {
 
 // 하위 호환성을 위한 별칭
 export { ScrollHelper as VirtualScrollManager };
-export type { SimpleScrollConfig as VirtualScrollConfig };
+// 하위 호환성을 위한 별칭
+export type SimpleScrollConfig = ScrollConfig;
+export type { ScrollConfig as VirtualScrollConfig };
 
 // 기존 타입과 호환성을 위한 별칭
 export type VisibleRange = ScrollVisibleRange;

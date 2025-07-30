@@ -80,7 +80,7 @@ export class AppError extends Error {
 // Error Handler Interface
 // ================================
 
-export interface IErrorHandler {
+export interface ErrorHandlerInterface {
   handle(error: Error | AppError, context?: string): void;
   handleAsync(error: Error | AppError, context?: string): Promise<void>;
 }
@@ -88,7 +88,7 @@ export interface IErrorHandler {
 /**
  * 에러 핸들러 구현
  */
-export class ErrorHandler implements IErrorHandler {
+export class ErrorHandler implements ErrorHandlerInterface {
   private static instance: ErrorHandler | null = null;
   private isGlobalHandlerInitialized = false;
 
@@ -367,3 +367,6 @@ export function handleError(error: Error | AppError, context?: string): void {
 export async function handleErrorAsync(error: Error | AppError, context?: string): Promise<void> {
   await errorHandler.handleAsync(error, context);
 }
+
+// 하위 호환성을 위한 별칭
+export type IErrorHandler = ErrorHandlerInterface;

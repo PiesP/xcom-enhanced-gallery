@@ -6,7 +6,8 @@
 // Phase C2: 기본 스크롤 헬퍼로 대체
 export { ScrollHelper } from './ScrollHelper';
 export type {
-  SimpleScrollConfig,
+  ScrollConfig,
+  SimpleScrollConfig, // 하위 호환성
   ScrollVisibleRange,
   ScrollRenderRange,
   VisibleRange,
@@ -15,6 +16,6 @@ export type {
 
 // 하위 호환성을 위한 별칭
 export { ScrollHelper as VirtualScrollManager } from './ScrollHelper';
-export type { SimpleScrollConfig as VirtualScrollConfig } from './ScrollHelper';
+export type { ScrollConfig as VirtualScrollConfig } from './ScrollHelper';
 
 // 순환 의존성 방지를 위해 hooks는 별도로 import

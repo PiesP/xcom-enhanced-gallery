@@ -25,7 +25,7 @@ export type ServiceKey = keyof ServiceTypeMapping;
 /**
  * 로거 인터페이스
  */
-export interface ILogger {
+export interface Logger {
   debug(message: string, ...args: unknown[]): void;
   info(message: string, ...args: unknown[]): void;
   warn(message: string, ...args: unknown[]): void;
@@ -35,7 +35,7 @@ export interface ILogger {
 /**
  * 기존 ILogger 인터페이스를 logger로 리다이렉트하는 어댑터
  */
-export class ConsoleLogger implements ILogger {
+export class ConsoleLogger implements Logger {
   debug(message: string, ...args: unknown[]): void {
     logger.debug(message, ...args);
   }
@@ -151,3 +151,6 @@ ServiceDiagnostics.registerGlobalDiagnostic();
  */
 export { registerCoreServices } from './service-initialization';
 export { getService } from './ServiceManager';
+
+// 하위 호환성을 위한 별칭
+export type ILogger = Logger;

@@ -17,7 +17,7 @@ export interface GalleryAppConfig {
 /**
  * 갤러리 앱 인터페이스
  */
-export interface IGalleryApp extends BaseComponentProps {
+export interface GalleryApp extends BaseComponentProps {
   /** 갤러리 열기 */
   openGallery(mediaItems: unknown[]): Promise<void>;
   /** 갤러리 닫기 */
@@ -46,3 +46,6 @@ export interface MediaExtractionResult {
     sourceType?: string;
   };
 }
+
+// 하위 호환성을 위한 별칭
+export type IGalleryApp = GalleryApp;

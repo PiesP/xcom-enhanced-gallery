@@ -5007,14 +5007,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./BasicResourceManager",
+          "module": "./ResourceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/memory/BasicResourceManager.ts",
+          "resolved": "src/shared/utils/memory/ResourceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5024,7 +5024,7 @@
         },
         {
           "dynamic": false,
-          "module": "./BasicResourceManager",
+          "module": "./ResourceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -5032,7 +5032,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/shared/utils/memory/BasicResourceManager.ts",
+          "resolved": "src/shared/utils/memory/ResourceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5048,7 +5048,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/memory/BasicResourceManager.ts",
+      "source": "src/shared/utils/memory/ResourceManager.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/memory/index.ts"

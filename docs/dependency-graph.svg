@@ -288,8 +288,8 @@
 </g>
 <g id="clust56" class="cluster">
 <title>cluster_src/shared/utils/memory</title>
-<path fill="#ffffff" stroke="black" stroke-width="2" d="M515.5,-4502C515.5,-4502 826.98,-4502 826.98,-4502 832.98,-4502 838.98,-4508 838.98,-4514 838.98,-4514 838.98,-4554 838.98,-4554 838.98,-4560 832.98,-4566 826.98,-4566 826.98,-4566 515.5,-4566 515.5,-4566 509.5,-4566 503.5,-4560 503.5,-4554 503.5,-4554 503.5,-4514 503.5,-4514 503.5,-4508 509.5,-4502 515.5,-4502"/>
-<text xml:space="preserve" text-anchor="middle" x="671.24" y="-4550.6" font-family="Arial" font-size="12.00">memory</text>
+<path fill="#ffffff" stroke="black" stroke-width="2" d="M515.5,-4502C515.5,-4502 814.6,-4502 814.6,-4502 820.6,-4502 826.6,-4508 826.6,-4514 826.6,-4514 826.6,-4554 826.6,-4554 826.6,-4560 820.6,-4566 814.6,-4566 814.6,-4566 515.5,-4566 515.5,-4566 509.5,-4566 503.5,-4560 503.5,-4554 503.5,-4554 503.5,-4514 503.5,-4514 503.5,-4508 509.5,-4502 515.5,-4502"/>
+<text xml:space="preserve" text-anchor="middle" x="665.05" y="-4550.6" font-family="Arial" font-size="12.00">memory</text>
 </g>
 <g id="clust57" class="cluster">
 <title>cluster_src/shared/utils/optimization</title>
@@ -1175,8 +1175,8 @@
 <!-- src/shared/components/ui/Button/Button.tsx&#45;&gt;src/shared/components/ui/StandardProps.ts -->
 <g id="edge58" class="edge">
 <title>src/shared/components/ui/Button/Button.tsx&#45;&gt;src/shared/components/ui/StandardProps.ts</title>
-<path fill="none" stroke="#666666" d="M568.34,-2002.4C586.1,-2002.4 605.2,-2002.4 605.2,-2002.4 605.2,-2002.4 605.2,-2238.8 605.2,-2238.8 605.2,-2238.8 942.76,-2238.8 942.76,-2238.8"/>
-<polygon fill="none" stroke="#666666" points="942.76,-2241.6 950.76,-2238.8 942.76,-2236 942.76,-2241.6"/>
+<path fill="none" stroke="#666666" d="M568.48,-2002.4C585.01,-2002.4 602.2,-2002.4 602.2,-2002.4 602.2,-2002.4 602.2,-2238.8 602.2,-2238.8 602.2,-2238.8 942.8,-2238.8 942.8,-2238.8"/>
+<polygon fill="none" stroke="#666666" points="942.8,-2241.6 950.8,-2238.8 942.8,-2236 942.8,-2241.6"/>
 </g>
 <!-- src/shared/components/ui/Button/Button.module.css -->
 <g id="node53" class="node">
@@ -2442,8 +2442,8 @@
 <!-- src/shared/services/MediaPrefetchingService.ts&#45;&gt;src/shared/services/WebPOptimizationService.ts -->
 <g id="edge109" class="edge">
 <title>src/shared/services/MediaPrefetchingService.ts&#45;&gt;src/shared/services/WebPOptimizationService.ts</title>
-<path fill="none" stroke="#666666" d="M605.74,-6513.8C652.4,-6513.8 706.2,-6513.8 706.2,-6513.8 706.2,-6513.8 706.2,-6514.97 706.2,-6514.97"/>
-<polygon fill="none" stroke="#666666" points="703.4,-6514.97 706.2,-6522.97 709,-6514.97 703.4,-6514.97"/>
+<path fill="none" stroke="#666666" d="M605.9,-6513.8C651.77,-6513.8 704.2,-6513.8 704.2,-6513.8 704.2,-6513.8 704.2,-6514.97 704.2,-6514.97"/>
+<polygon fill="none" stroke="#666666" points="701.4,-6514.97 704.2,-6522.97 707,-6514.97 701.4,-6514.97"/>
 </g>
 <!-- src/shared/services/media&#45;extraction/MediaExtractionService.ts -->
 <g id="node107" class="node">
@@ -2643,8 +2643,8 @@
 <!-- src/shared/services/core&#45;services.ts&#45;&gt;src/shared/services/ServiceManager.ts -->
 <g id="edge123" class="edge">
 <title>src/shared/services/core&#45;services.ts&#45;&gt;src/shared/services/ServiceManager.ts</title>
-<path fill="none" stroke="#666666" d="M580.95,-5638.4C660.98,-5638.4 826.2,-5638.4 826.2,-5638.4 826.2,-5638.4 826.2,-5134.07 826.2,-5134.07 826.2,-5134.07 940.87,-5134.07 940.87,-5134.07"/>
-<polygon fill="#666666" stroke="#666666" points="948.95,-5136.87 940.95,-5134.07 948.95,-5131.27 948.95,-5136.87"/>
+<path fill="none" stroke="#666666" d="M580.79,-5638.4C660.98,-5638.4 827.2,-5638.4 827.2,-5638.4 827.2,-5638.4 827.2,-5134.07 827.2,-5134.07 827.2,-5134.07 940.69,-5134.07 940.69,-5134.07"/>
+<polygon fill="#666666" stroke="#666666" points="948.78,-5136.87 940.78,-5134.07 948.78,-5131.27 948.78,-5136.87"/>
 </g>
 <!-- src/shared/services/service&#45;initialization.ts -->
 <g id="node118" class="node">
@@ -2658,8 +2658,8 @@
 <!-- src/shared/services/core&#45;services.ts&#45;&gt;src/shared/services/service&#45;initialization.ts -->
 <g id="edge122" class="edge">
 <title>src/shared/services/core&#45;services.ts&#45;&gt;src/shared/services/service&#45;initialization.ts</title>
-<path fill="none" stroke="#666666" d="M581.06,-5645C633.63,-5645 716.2,-5645 716.2,-5645 716.2,-5645 716.2,-5667.23 716.2,-5667.23"/>
-<polygon fill="#666666" stroke="#666666" points="713.4,-5667.23 716.2,-5675.23 719,-5667.23 713.4,-5667.23"/>
+<path fill="none" stroke="#666666" d="M580.85,-5645C633.69,-5645 717.2,-5645 717.2,-5645 717.2,-5645 717.2,-5667.23 717.2,-5667.23"/>
+<polygon fill="#666666" stroke="#666666" points="714.4,-5667.23 717.2,-5675.23 720,-5667.23 714.4,-5667.23"/>
 </g>
 <!-- src/shared/services/service&#45;initialization.ts&#45;&gt;src/constants.ts -->
 <g id="edge159" class="edge">
@@ -2685,22 +2685,22 @@
 <!-- src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/MediaService.ts -->
 <g id="edge162" class="edge">
 <title>src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/MediaService.ts</title>
-<path fill="none" stroke="#6366f1" stroke-dasharray="5,2" d="M819.2,-5676.67C819.2,-5649.02 819.2,-5588 819.2,-5588 819.2,-5588 945.41,-5588 945.41,-5588"/>
-<polygon fill="#6366f1" stroke="#6366f1" points="945.41,-5590.8 953.41,-5588 945.41,-5585.2 945.41,-5590.8"/>
-<text xml:space="preserve" text-anchor="middle" x="823.35" y="-5580.4" font-family="Arial" font-size="8.00" fill="#6366f1">dynamic</text>
+<path fill="none" stroke="#6366f1" stroke-dasharray="5,2" d="M816.2,-5676.67C816.2,-5649.02 816.2,-5588 816.2,-5588 816.2,-5588 945.61,-5588 945.61,-5588"/>
+<polygon fill="#6366f1" stroke="#6366f1" points="945.61,-5590.8 953.61,-5588 945.61,-5585.2 945.61,-5590.8"/>
+<text xml:space="preserve" text-anchor="middle" x="821.95" y="-5580.4" font-family="Arial" font-size="8.00" fill="#6366f1">dynamic</text>
 </g>
 <!-- src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/ServiceManager.ts -->
 <g id="edge163" class="edge">
 <title>src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/ServiceManager.ts</title>
-<path fill="none" stroke="#666666" d="M813.2,-5676.46C813.2,-5591.08 813.2,-5130.93 813.2,-5130.93 813.2,-5130.93 939.69,-5130.93 939.69,-5130.93"/>
-<polygon fill="#666666" stroke="#666666" points="939.69,-5133.73 947.69,-5130.93 939.69,-5128.13 939.69,-5133.73"/>
+<path fill="none" stroke="#666666" d="M812.2,-5676.46C812.2,-5591.08 812.2,-5130.93 812.2,-5130.93 812.2,-5130.93 939.91,-5130.93 939.91,-5130.93"/>
+<polygon fill="#666666" stroke="#666666" points="939.91,-5133.73 947.91,-5130.93 939.91,-5128.13 939.91,-5133.73"/>
 </g>
 <!-- src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/UIService.ts -->
 <g id="edge164" class="edge">
 <title>src/shared/services/service&#45;initialization.ts&#45;&gt;src/shared/services/UIService.ts</title>
-<path fill="none" stroke="#6366f1" stroke-dasharray="5,2" d="M816.2,-5676.77C816.2,-5603.23 816.2,-5248 816.2,-5248 816.2,-5248 953.17,-5248 953.17,-5248"/>
-<polygon fill="#6366f1" stroke="#6366f1" points="953.17,-5250.8 961.17,-5248 953.17,-5245.2 953.17,-5250.8"/>
-<text xml:space="preserve" text-anchor="middle" x="801.58" y="-5386.3" font-family="Arial" font-size="8.00" fill="#6366f1">dynamic</text>
+<path fill="none" stroke="#6366f1" stroke-dasharray="5,2" d="M814.2,-5676.77C814.2,-5603.23 814.2,-5248 814.2,-5248 814.2,-5248 953.22,-5248 953.22,-5248"/>
+<polygon fill="#6366f1" stroke="#6366f1" points="953.22,-5250.8 961.22,-5248 953.22,-5245.2 953.22,-5250.8"/>
+<text xml:space="preserve" text-anchor="middle" x="799.58" y="-5385.28" font-family="Arial" font-size="8.00" fill="#6366f1">dynamic</text>
 </g>
 <!-- src/shared/services/gallery/GalleryService.ts -->
 <g id="node119" class="node">
@@ -2975,7 +2975,7 @@
 <!-- src/shared/state/app&#45;state.ts&#45;&gt;src/shared/state/signals/gallery.signals.ts -->
 <g id="edge166" class="edge">
 <title>src/shared/state/app&#45;state.ts&#45;&gt;src/shared/state/signals/gallery.signals.ts</title>
-<path fill="none" stroke="#666666" d="M572.03,-3235.4C620.45,-3235.4 704.2,-3235.4 704.2,-3235.4 704.2,-3235.4 704.2,-3044.4 704.2,-3044.4 704.2,-3044.4 712.57,-3044.4 712.57,-3044.4"/>
+<path fill="none" stroke="#666666" d="M571.85,-3235.4C588.53,-3235.4 605.2,-3235.4 605.2,-3235.4 605.2,-3235.4 605.2,-3044.4 605.2,-3044.4 605.2,-3044.4 712.57,-3044.4 712.57,-3044.4"/>
 <polygon fill="#666666" stroke="#666666" points="712.57,-3047.2 720.57,-3044.4 712.57,-3041.6 712.57,-3047.2"/>
 </g>
 <!-- src/shared/state/signals/toolbar.signals.ts -->
@@ -2990,8 +2990,8 @@
 <!-- src/shared/state/app&#45;state.ts&#45;&gt;src/shared/state/signals/toolbar.signals.ts -->
 <g id="edge167" class="edge">
 <title>src/shared/state/app&#45;state.ts&#45;&gt;src/shared/state/signals/toolbar.signals.ts</title>
-<path fill="none" stroke="#666666" d="M571.83,-3242C620.99,-3242 707.2,-3242 707.2,-3242 707.2,-3242 707.2,-3113.4 707.2,-3113.4 707.2,-3113.4 711.93,-3113.4 711.93,-3113.4"/>
-<polygon fill="#666666" stroke="#666666" points="711.93,-3116.2 719.93,-3113.4 711.93,-3110.6 711.93,-3116.2"/>
+<path fill="none" stroke="#666666" d="M572.04,-3242C589.48,-3242 607.2,-3242 607.2,-3242 607.2,-3242 607.2,-3113.4 607.2,-3113.4 607.2,-3113.4 711.85,-3113.4 711.85,-3113.4"/>
+<polygon fill="#666666" stroke="#666666" points="711.85,-3116.2 719.85,-3113.4 711.85,-3110.6 711.85,-3116.2"/>
 </g>
 <!-- src/shared/state/signals/index.ts -->
 <g id="node141" class="node">
@@ -3251,20 +3251,20 @@
 <path fill="none" stroke="#666666" d="M347.21,-4624.7C347.21,-4624.7 715,-4624.7 715,-4624.7"/>
 <polygon fill="none" stroke="#666666" points="715,-4627.5 723,-4624.7 715,-4621.9 715,-4627.5"/>
 </g>
-<!-- src/shared/utils/memory/BasicResourceManager.ts -->
+<!-- src/shared/utils/memory/ResourceManager.ts -->
 <g id="node176" class="node">
-<title>src/shared/utils/memory/BasicResourceManager.ts</title>
-<g id="a_node176"><a xlink:href="src/shared/utils/memory/BasicResourceManager.ts" xlink:title="BasicResourceManager.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M822.18,-4536.2C822.18,-4536.2 709.88,-4536.2 709.88,-4536.2 705.48,-4536.2 701.08,-4531.8 701.08,-4527.4 701.08,-4527.4 701.08,-4518.6 701.08,-4518.6 701.08,-4514.2 705.48,-4509.8 709.88,-4509.8 709.88,-4509.8 822.18,-4509.8 822.18,-4509.8 826.58,-4509.8 830.98,-4514.2 830.98,-4518.6 830.98,-4518.6 830.98,-4527.4 830.98,-4527.4 830.98,-4531.8 826.58,-4536.2 822.18,-4536.2"/>
-<text xml:space="preserve" text-anchor="start" x="708.28" y="-4519.5" font-family="Arial" font-size="10.00" fill="#b45309">BasicResourceManager.ts</text>
+<title>src/shared/utils/memory/ResourceManager.ts</title>
+<g id="a_node176"><a xlink:href="src/shared/utils/memory/ResourceManager.ts" xlink:title="ResourceManager.ts">
+<path fill="#fffbeb" stroke="#b45309" d="M809.8,-4536.2C809.8,-4536.2 722.25,-4536.2 722.25,-4536.2 717.85,-4536.2 713.45,-4531.8 713.45,-4527.4 713.45,-4527.4 713.45,-4518.6 713.45,-4518.6 713.45,-4514.2 717.85,-4509.8 722.25,-4509.8 722.25,-4509.8 809.8,-4509.8 809.8,-4509.8 814.2,-4509.8 818.6,-4514.2 818.6,-4518.6 818.6,-4518.6 818.6,-4527.4 818.6,-4527.4 818.6,-4531.8 814.2,-4536.2 809.8,-4536.2"/>
+<text xml:space="preserve" text-anchor="start" x="720.65" y="-4519.5" font-family="Arial" font-size="10.00" fill="#b45309">ResourceManager.ts</text>
 </a>
 </g>
 </g>
-<!-- src/shared/utils/memory/index.ts&#45;&gt;src/shared/utils/memory/BasicResourceManager.ts -->
+<!-- src/shared/utils/memory/index.ts&#45;&gt;src/shared/utils/memory/ResourceManager.ts -->
 <g id="edge219" class="edge">
-<title>src/shared/utils/memory/index.ts&#45;&gt;src/shared/utils/memory/BasicResourceManager.ts</title>
-<path fill="none" stroke="#666666" d="M565.94,-4523C565.94,-4523 691.36,-4523 691.36,-4523"/>
-<polygon fill="none" stroke="#666666" points="691.36,-4525.8 699.36,-4523 691.36,-4520.2 691.36,-4525.8"/>
+<title>src/shared/utils/memory/index.ts&#45;&gt;src/shared/utils/memory/ResourceManager.ts</title>
+<path fill="none" stroke="#666666" d="M565.94,-4523C565.94,-4523 703.87,-4523 703.87,-4523"/>
+<polygon fill="none" stroke="#666666" points="703.87,-4525.8 711.87,-4523 703.87,-4520.2 703.87,-4525.8"/>
 </g>
 <!-- src/shared/utils/profiling/PerformanceProfiler.ts -->
 <g id="node180" class="node">

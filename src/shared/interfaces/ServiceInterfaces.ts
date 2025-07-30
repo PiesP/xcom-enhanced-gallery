@@ -11,7 +11,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 /**
  * 갤러리 다운로드 서비스 인터페이스
  */
-export interface IDownloadManager {
+export interface DownloadManager {
   downloadSingle(item: MediaInfo): Promise<void>;
   downloadMultiple(items: MediaInfo[]): Promise<void>;
 }
@@ -19,7 +19,7 @@ export interface IDownloadManager {
 /**
  * 미디어 추출 서비스 인터페이스
  */
-export interface IMediaExtractionService {
+export interface MediaExtractionService {
   extractMediaFromTweet(element: HTMLElement): Promise<MediaInfo[]>;
   extractSingleMedia(element: HTMLElement): Promise<MediaInfo | null>;
 }
@@ -27,7 +27,7 @@ export interface IMediaExtractionService {
 /**
  * 미디어 파일명 서비스 인터페이스
  */
-export interface IMediaFilenameService {
+export interface MediaFilenameService {
   generateFilename(media: MediaInfo, options?: Record<string, unknown>): string;
   generateZipFilename(options?: Record<string, unknown>): string;
   generateUniqueFilename(
@@ -37,3 +37,8 @@ export interface IMediaFilenameService {
   ): string;
   isValidFilename(filename: string): boolean;
 }
+
+// 하위 호환성을 위한 별칭
+export type IDownloadManager = DownloadManager;
+export type IMediaExtractionService = MediaExtractionService;
+export type IMediaFilenameService = MediaFilenameService;
