@@ -24,10 +24,10 @@ export class WebPOptimizationService {
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;
-      
+
       const dataURL = canvas.toDataURL('image/webp');
       this.webpSupported = dataURL.indexOf('data:image/webp') === 0;
-      
+
       logger.debug('WebP support detected:', this.webpSupported);
     } catch (error) {
       this.webpSupported = false;

@@ -5394,7 +5394,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/WebPOptimizationService-old.ts",
+      "source": "src/shared/services/WebPOptimizationService-simple.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -6552,8 +6552,8 @@
     "violations": [
       {
         "type": "module",
-        "from": "src/shared/services/WebPOptimizationService-old.ts",
-        "to": "src/shared/services/WebPOptimizationService-old.ts",
+        "from": "src/shared/services/WebPOptimizationService-simple.ts",
+        "to": "src/shared/services/WebPOptimizationService-simple.ts",
         "rule": {
           "severity": "info",
           "name": "no-orphans"

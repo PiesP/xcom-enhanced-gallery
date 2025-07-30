@@ -94,8 +94,10 @@ describe('Phase 2: 중복 코드 통합', () => {
 
   describe('4. 서비스 통합 검증', () => {
     it('LazyLoadingService가 최적화 기능을 포함해야 한다', async () => {
-      const { LazyLoadingService, lazyLoadingService } = await import('@shared/services/LazyLoadingService');
-      
+      const { LazyLoadingService, lazyLoadingService } = await import(
+        '@shared/services/LazyLoadingService'
+      );
+
       // 클래스와 인스턴스가 모두 존재해야 함
       expect(LazyLoadingService).toBeDefined();
       expect(lazyLoadingService).toBeDefined();

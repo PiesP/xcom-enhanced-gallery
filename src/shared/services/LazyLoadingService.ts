@@ -20,7 +20,7 @@ export interface LazyLoadingOptions {
  */
 export class LazyLoadingService {
   private observer: IntersectionObserver | null = null;
-  private targets = new Map<Element, () => void>();
+  private readonly targets = new Map<Element, () => void>();
 
   constructor() {
     this.initializeObserver();
@@ -36,8 +36,8 @@ export class LazyLoadingService {
     }
 
     this.observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
             const callback = this.targets.get(entry.target);
             if (callback) {
@@ -49,7 +49,7 @@ export class LazyLoadingService {
       },
       {
         rootMargin: '50px',
-        threshold: 0.1
+        threshold: 0.1,
       }
     );
   }
