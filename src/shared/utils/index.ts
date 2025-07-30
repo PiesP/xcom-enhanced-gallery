@@ -129,10 +129,10 @@ export { MediaClickDetector } from './media/MediaClickDetector';
 export { imageFilter } from './media/image-filter';
 
 // ================================
-// 편의 함수들
+// 편의 함수들 - Phase G Week 2: Direct imports recommended
 // ================================
 
-export * from './convenience';
+// Removed convenience aliases - use direct imports from specific modules
 
 // ================================
 // Phase 6: 고급 성능 최적화 (Advanced Performance Optimization)

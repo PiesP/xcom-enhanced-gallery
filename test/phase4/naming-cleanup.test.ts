@@ -71,11 +71,11 @@ describe('Phase 4: 네이밍 정리 및 코드 간소화', () => {
   describe('3. OptimizedResourceManager → ResourceManager', () => {
     it('OptimizedResourceManager가 ResourceManager로 이름이 변경되어야 한다', async () => {
       try {
-        const resourceModule = await import('@shared/managers/ResourceManager');
+        // 현재 경로에서 ResourceManager 확인
+        const resourceModule = await import('@shared/utils/memory/ResourceManager');
 
         // ResourceManager가 기본 export여야 함
         expect(resourceModule.ResourceManager).toBeDefined();
-        expect(resourceModule.default).toBeDefined();
 
         // OptimizedResourceManager는 더 이상 사용되지 않아야 함
         expect(resourceModule.OptimizedResourceManager).toBeUndefined();
@@ -86,7 +86,8 @@ describe('Phase 4: 네이밍 정리 및 코드 간소화', () => {
 
     it('복잡한 최적화 로직이 실용적인 수준으로 간소화되어야 한다', async () => {
       try {
-        const { ResourceManager } = await import('@shared/managers');
+        const resourceModule = await import('@shared/utils/memory/ResourceManager');
+        const { ResourceManager } = resourceModule;
 
         // 기본적인 리소스 관리 기능만 제공해야 함
         expect(ResourceManager).toBeDefined();

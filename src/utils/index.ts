@@ -80,8 +80,7 @@ export * from '../shared/logging';
 export * from '../shared/error';
 
 // ================================
-// 편의 함수들 re-export
+// 편의 함수들 re-export - Phase G Week 2: Direct imports recommended
 // ================================
 
-// 편의 함수들
-export * from '../shared/utils/convenience';
+// Removed convenience aliases - use direct imports from specific modules

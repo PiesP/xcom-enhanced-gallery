@@ -3,5 +3,5 @@
  */
 
 export { DOMBatcher, globalDOMBatcher, updateElementsInBatch, updateElement } from './DOMBatcher';
-export { BatchDOMUpdateManager, batchDOMUpdateManager } from './BatchDOMUpdateManager';
+export { BatchDOMUpdateManager } from './BatchDOMUpdateManager';
 export type { DOMUpdate as DOMUpdateTask } from './DOMBatcher';

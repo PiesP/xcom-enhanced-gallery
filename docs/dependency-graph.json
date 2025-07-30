@@ -4310,23 +4310,6 @@
         },
         {
           "dynamic": false,
-          "module": "./convenience",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/convenience.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./core-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4603,16 +4586,6 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/animations.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/convenience.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/index.ts",
-        "src/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6720,23 +6693,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../shared/utils/convenience",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/convenience.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [],
@@ -6750,8 +6706,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 188,
-    "totalDependenciesCruised": 284,
+    "totalCruised": 187,
+    "totalDependenciesCruised": 282,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

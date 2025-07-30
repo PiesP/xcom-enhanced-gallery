@@ -4,6 +4,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Phase G Week 1: 복잡한 최적화 모듈 제거', () => {
   describe('1. 중복된 ResourceManager 통합', () => {
@@ -41,23 +46,18 @@ describe('Phase G Week 1: 복잡한 최적화 모듈 제거', () => {
   });
 
   describe('2. Workers 모듈 제거', () => {
-    it('TaskManager가 제거되어야 한다', async () => {
+    it('TaskManager가 제거되어야 한다', () => {
       // 유저스크립트에서는 Web Workers 사용이 복잡하므로 제거
-      try {
-        await import('@shared/utils/workers/TaskManager');
-        expect(false).toBe(true); // 파일이 존재하면 실패
-      } catch (error) {
-        expect(error).toBeDefined(); // 파일이 없어야 함
-      }
+      const workersPath = path.join(__dirname, '../../src/shared/utils/workers');
+      const taskManagerPath = path.join(workersPath, 'TaskManager.ts');
+
+      expect(fs.existsSync(taskManagerPath)).toBe(false);
     });
 
-    it('workers 디렉토리가 제거되어야 한다', async () => {
-      try {
-        await import('@shared/utils/workers');
-        expect(false).toBe(true); // 파일이 존재하면 실패
-      } catch (error) {
-        expect(error).toBeDefined(); // 디렉토리가 없어야 함
-      }
+    it('workers 디렉토리가 제거되어야 한다', () => {
+      const workersPath = path.join(__dirname, '../../src/shared/utils/workers');
+
+      expect(fs.existsSync(workersPath)).toBe(false);
     });
   });
 
