@@ -26,7 +26,7 @@ export class MediaMappingService {
 
   private constructor() {
     this.initializeStrategies();
-    logger.debug('[SimplifiedMediaMappingService] 초기화됨');
+    logger.debug('[MediaMappingService] 초기화됨');
   }
 
   public static getInstance(): MediaMappingService {
@@ -50,7 +50,7 @@ export class MediaMappingService {
       });
     }
 
-    logger.debug('[SimplifiedMediaMappingService] 전략 초기화 완료', {
+    logger.debug('[MediaMappingService] 전략 초기화 완료', {
       strategies: this.strategies.map(s => s.name),
     });
   }
@@ -67,11 +67,11 @@ export class MediaMappingService {
     // 캐시 확인
     const cached = this.getFromCache(cacheKey);
     if (cached) {
-      logger.debug('[SimplifiedMediaMappingService] 캐시에서 결과 반환');
+      logger.debug('[MediaMappingService] 캐시에서 결과 반환');
       return cached;
     }
 
-    logger.debug('[SimplifiedMediaMappingService] 매핑 시작', { pageType });
+    logger.debug('[MediaMappingService] 매핑 시작', { pageType });
 
     // 전략들을 우선순위대로 실행
     for (const strategy of this.strategies) {
@@ -84,20 +84,20 @@ export class MediaMappingService {
 
         if (result) {
           this.setCache(cacheKey, result);
-          logger.debug('[SimplifiedMediaMappingService] 매핑 성공', {
+          logger.debug('[MediaMappingService] 매핑 성공', {
             strategy: strategy.name,
             result,
           });
           return result;
         }
       } catch (error) {
-        logger.debug(`[SimplifiedMediaMappingService] 전략 ${strategy.name} 실패:`, error);
+        logger.debug(`[MediaMappingService] 전략 ${strategy.name} 실패:`, error);
         this.updateMetrics(strategy.name, false, 0);
         continue;
       }
     }
 
-    logger.warn('[SimplifiedMediaMappingService] 모든 전략 실패');
+    logger.warn('[MediaMappingService] 모든 전략 실패');
     return null;
   }
 
@@ -161,7 +161,7 @@ export class MediaMappingService {
       priority: strategy.priority,
     });
 
-    logger.debug('[SimplifiedMediaMappingService] 전략 추가됨', { name: strategy.name });
+    logger.debug('[MediaMappingService] 전략 추가됨', { name: strategy.name });
   }
 
   /**
@@ -169,7 +169,7 @@ export class MediaMappingService {
    */
   clearCache(): void {
     this.mappingCache.clear();
-    logger.debug('[SimplifiedMediaMappingService] 캐시 정리됨');
+    logger.debug('[MediaMappingService] 캐시 정리됨');
   }
 
   /**

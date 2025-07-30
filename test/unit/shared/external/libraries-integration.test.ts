@@ -108,10 +108,10 @@ describe('외부 라이브러리 통합 테스트', () => {
     });
   });
 
-  describe('SimpleAnimationService 통합', () => {
-    it('SimpleAnimationService가 초기화되어야 한다', async () => {
-      const { SimpleAnimationService } = await import('@shared/services/SimpleAnimationService');
-      const animationService = SimpleAnimationService.getInstance();
+  describe('AnimationService 통합', () => {
+    it('AnimationService가 초기화되어야 한다', async () => {
+      const { AnimationService } = await import('@shared/services/AnimationService');
+      const animationService = AnimationService.getInstance();
 
       expect(animationService).toBeDefined();
       expect(typeof animationService.fadeIn).toBe('function');
@@ -122,7 +122,7 @@ describe('외부 라이브러리 통합 테스트', () => {
 
     it('편의 함수들이 정의되어야 한다', async () => {
       const { animateElement, fadeOut, openGalleryWithAnimation, closeGalleryWithAnimation } =
-        await import('@shared/services/SimpleAnimationService');
+        await import('@shared/services/AnimationService');
 
       expect(typeof animateElement).toBe('function');
       expect(typeof fadeOut).toBe('function');
@@ -131,8 +131,8 @@ describe('외부 라이브러리 통합 테스트', () => {
     });
 
     it('폴백 애니메이션이 실행되어야 한다', async () => {
-      const { SimpleAnimationService } = await import('@shared/services/SimpleAnimationService');
-      const animationService = SimpleAnimationService.getInstance();
+      const { AnimationService } = await import('@shared/services/AnimationService');
+      const animationService = AnimationService.getInstance();
 
       // 가짜 element 생성
       const mockElement = {

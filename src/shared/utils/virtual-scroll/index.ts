@@ -4,19 +4,17 @@
  */
 
 // Phase C2: 기본 스크롤 헬퍼로 대체
-export { SimpleScrollHelper } from './SimpleScrollHelper';
+export { ScrollHelper } from './ScrollHelper';
 export type {
   SimpleScrollConfig,
   ScrollVisibleRange,
   ScrollRenderRange,
   VisibleRange,
   RenderRange,
-} from './SimpleScrollHelper';
+} from './ScrollHelper';
 
 // 하위 호환성을 위한 별칭
-export { SimpleScrollHelper as VirtualScrollManager } from './SimpleScrollHelper';
-export type { SimpleScrollConfig as VirtualScrollConfig } from './SimpleScrollHelper';
+export { ScrollHelper as VirtualScrollManager } from './ScrollHelper';
+export type { SimpleScrollConfig as VirtualScrollConfig } from './ScrollHelper';
 
-// 훅은 그대로 유지
-export { useVirtualScroll } from '../../hooks/useVirtualScroll';
-export type { UseVirtualScrollOptions, UseVirtualScrollReturn } from '../../hooks/useVirtualScroll';
+// 순환 의존성 방지를 위해 hooks는 별도로 import

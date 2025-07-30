@@ -6,7 +6,7 @@
 import { logger } from '@shared/logging';
 import { getPreactHooks } from '@shared/external/vendors';
 import type { MediaInfo } from '@shared/types';
-import { VirtualScrollManager, type RenderRange } from '../utils/virtual-scroll/SimpleScrollHelper';
+import { VirtualScrollManager, type RenderRange } from '../utils/virtual-scroll';
 
 /**
  * 가상 스크롤 훅 옵션

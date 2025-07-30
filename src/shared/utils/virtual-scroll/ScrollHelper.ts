@@ -41,7 +41,7 @@ export interface ScrollRenderRange extends ScrollVisibleRange {
 /**
  * 간단한 스크롤 헬퍼
  */
-export class SimpleScrollHelper {
+export class ScrollHelper {
   private config: Required<SimpleScrollConfig>;
 
   constructor(config: SimpleScrollConfig) {
@@ -52,7 +52,7 @@ export class SimpleScrollHelper {
       ...config,
     };
 
-    logger.debug('SimpleScrollHelper 초기화', this.config);
+    logger.debug('ScrollHelper 초기화', this.config);
   }
 
   /**
@@ -88,7 +88,7 @@ export class SimpleScrollHelper {
    */
   updateConfig(config: Partial<SimpleScrollConfig>): void {
     this.config = { ...this.config, ...config };
-    logger.debug('SimpleScrollHelper 설정 업데이트', this.config);
+    logger.debug('ScrollHelper 설정 업데이트', this.config);
   }
 
   /**
@@ -121,7 +121,7 @@ export class SimpleScrollHelper {
 }
 
 // 하위 호환성을 위한 별칭
-export { SimpleScrollHelper as VirtualScrollManager };
+export { ScrollHelper as VirtualScrollManager };
 export type { SimpleScrollConfig as VirtualScrollConfig };
 
 // 기존 타입과 호환성을 위한 별칭

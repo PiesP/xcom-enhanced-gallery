@@ -24,7 +24,7 @@ export interface Task<T = unknown> {
 /**
  * 간단한 작업 처리 매니저
  */
-export class SimpleTaskManager {
+export class TaskManager {
   private readonly taskQueue: Array<{
     task: Task;
     resolve: (value: unknown) => void;
@@ -99,7 +99,7 @@ export class SimpleTaskManager {
 /**
  * 글로벌 작업 매니저
  */
-export const globalTaskManager = new SimpleTaskManager();
+export const globalTaskManager = new TaskManager();
 
 /**
  * 편의 함수: 이미지 처리 작업
@@ -124,5 +124,5 @@ export async function processCompressionTask<T, R>(
 }
 
 // 하위 호환성을 위한 별칭
-export { SimpleTaskManager as WorkerPoolManager };
+export { TaskManager as WorkerPoolManager };
 export { globalTaskManager as workerPoolManager };

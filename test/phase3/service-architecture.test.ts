@@ -83,14 +83,14 @@ describe('Phase 3: 서비스 아키텍처 개선', () => {
       }
     });
 
-    it('중복된 애니메이션 서비스가 SimpleAnimationService로 통합되어야 한다', async () => {
+    it('중복된 애니메이션 서비스가 AnimationService로 통합되어야 한다', async () => {
       try {
-        const animationModule = await import('@shared/services/SimpleAnimationService');
-        expect(animationModule.SimpleAnimationService).toBeDefined();
+        const animationModule = await import('@shared/services/AnimationService');
+        expect(animationModule.AnimationService).toBeDefined();
 
         // 다른 애니메이션 서비스들은 제거되어야 함
         const servicesIndex = await import('@shared/services');
-        expect(servicesIndex.SimpleAnimationService).toBeDefined();
+        expect(servicesIndex.AnimationService).toBeDefined();
       } catch (error) {
         expect(error).toBeDefined();
       }

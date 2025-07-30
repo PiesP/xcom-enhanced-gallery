@@ -36,8 +36,8 @@ export interface ScrollAnimationConfig {
  * - GPU 가속 속성 활용
  * - 접근성 고려 (prefers-reduced-motion)
  */
-export class SimpleAnimationService {
-  private static instance: SimpleAnimationService | null = null;
+export class AnimationService {
+  private static instance: AnimationService | null = null;
   private readonly activeAnimations = new Set<() => void>();
   private stylesInjected = false;
 
@@ -46,9 +46,9 @@ export class SimpleAnimationService {
     this.ensureStylesInjected();
   }
 
-  public static getInstance(): SimpleAnimationService {
-    SimpleAnimationService.instance ??= new SimpleAnimationService();
-    return SimpleAnimationService.instance;
+  public static getInstance(): AnimationService {
+    AnimationService.instance ??= new AnimationService();
+    return AnimationService.instance;
   }
 
   /**
@@ -136,6 +136,13 @@ export class SimpleAnimationService {
       logger.warn('slideIn 애니메이션 실패:', error);
       this.fallbackSlideIn(element, direction, config);
     }
+  }
+
+  /**
+   * 요소 애니메이션 (기본 페이드인)
+   */
+  public animateElement(element: Element, config: AnimationConfig = {}): void {
+    this.fadeIn(element, config);
   }
 
   /**
@@ -461,7 +468,7 @@ export class SimpleAnimationService {
 }
 
 // 편의 함수들 export
-const serviceInstance = SimpleAnimationService.getInstance();
+const serviceInstance = AnimationService.getInstance();
 
 /**
  * 요소 애니메이션 편의 함수

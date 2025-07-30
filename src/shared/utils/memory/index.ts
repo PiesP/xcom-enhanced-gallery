@@ -4,9 +4,9 @@
  */
 
 // Phase C2: 기본 리소스 매니저로 대체
-export { SimpleResourceManager } from './SimpleResourceManager';
-export type { ResourceType } from './SimpleResourceManager';
+export { BasicResourceManager } from './BasicResourceManager';
+export type { ResourceType } from './BasicResourceManager';
 
 // 하위 호환성을 위한 별칭
-export { SimpleResourceManager as MemoryPoolManager } from './SimpleResourceManager';
-export { SimpleResourceManager as resourceManager } from './SimpleResourceManager';
+export { BasicResourceManager as MemoryPoolManager } from './BasicResourceManager';
+export { BasicResourceManager as resourceManager } from './BasicResourceManager';

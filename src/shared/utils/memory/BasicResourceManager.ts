@@ -14,7 +14,7 @@ export type ResourceType = 'image' | 'audio' | 'video' | 'data' | 'cache';
 /**
  * 간단한 리소스 관리자
  */
-export class SimpleResourceManager {
+export class BasicResourceManager {
   private readonly resources = new Map<string, () => void>();
 
   /**
@@ -82,7 +82,7 @@ export class SimpleResourceManager {
 /**
  * 글로벌 리소스 매니저
  */
-export const globalResourceManager = new SimpleResourceManager();
+export const globalResourceManager = new BasicResourceManager();
 
 /**
  * 편의 함수: 리소스 등록
@@ -106,5 +106,5 @@ export function releaseAllResources(): void {
 }
 
 // 하위 호환성을 위한 별칭
-export { SimpleResourceManager as MemoryPoolManager };
+export { BasicResourceManager as MemoryPoolManager };
 export { globalResourceManager as memoryPoolManager };

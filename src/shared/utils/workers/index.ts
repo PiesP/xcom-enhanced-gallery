@@ -4,12 +4,12 @@
  */
 
 // Phase C2: 기본 작업 매니저로 대체
-export { SimpleTaskManager, globalTaskManager } from './SimpleTaskManager';
-export { processImageTask, processCompressionTask } from './SimpleTaskManager';
-export type { Task, TaskType } from './SimpleTaskManager';
+export { TaskManager, globalTaskManager } from './TaskManager';
+export { processImageTask, processCompressionTask } from './TaskManager';
+export type { Task, TaskType } from './TaskManager';
 
 // 하위 호환성을 위한 별칭
-export { SimpleTaskManager as WorkerPoolManager } from './SimpleTaskManager';
-export { globalTaskManager as workerPoolManager } from './SimpleTaskManager';
-export type { TaskType as WorkerTaskType } from './SimpleTaskManager';
-export type { Task as WorkerTask } from './SimpleTaskManager';
+export { TaskManager as WorkerPoolManager } from './TaskManager';
+export { globalTaskManager as workerPoolManager } from './TaskManager';
+export type { TaskType as WorkerTaskType } from './TaskManager';
+export type { Task as WorkerTask } from './TaskManager';

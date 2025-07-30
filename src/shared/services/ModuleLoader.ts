@@ -73,7 +73,7 @@ export async function loadUtilityModule(utilityName: string) {
   try {
     switch (utilityName) {
       case 'VirtualScrollManager': {
-        const module = await import('@shared/utils/virtual-scroll/SimpleScrollHelper');
+        const module = await import('@shared/utils/virtual-scroll');
         const loadTime = performance.now() - startTime;
         logger.debug('VirtualScrollManager 로딩 완료:', { loadTime });
         return module.VirtualScrollManager;

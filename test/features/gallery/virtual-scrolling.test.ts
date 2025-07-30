@@ -1,11 +1,11 @@
 /**
  * @fileoverview Phase C: 단순화된 스크롤링 시스템 테스트
- * @description SimpleScrollHelper 기반의 단순화된 스크롤 관리 테스트
+ * @description ScrollHelper 기반의 단순화된 스크롤 관리 테스트
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { initializeVendors } from '@shared/external/vendors';
-import { SimpleScrollHelper } from '@shared/utils/virtual-scroll/SimpleScrollHelper';
+import { ScrollHelper } from '@shared/utils/virtual-scroll/ScrollHelper';
 
 // Test setup
 beforeEach(async () => {
@@ -17,15 +17,15 @@ afterEach(() => {
 });
 
 describe('Phase C: 단순화된 스크롤링 시스템', () => {
-  describe('SimpleScrollHelper', () => {
-    it('SimpleScrollHelper 클래스가 존재해야 한다', async () => {
-      const { SimpleScrollHelper } = await import('@shared/utils/virtual-scroll');
-      expect(SimpleScrollHelper).toBeDefined();
-      expect(typeof SimpleScrollHelper).toBe('function');
+  describe('ScrollHelper', () => {
+    it('ScrollHelper 클래스가 존재해야 한다', async () => {
+      const { ScrollHelper } = await import('@shared/utils/virtual-scroll');
+      expect(ScrollHelper).toBeDefined();
+      expect(typeof ScrollHelper).toBe('function');
     });
 
     it('기본 설정으로 초기화되어야 한다', () => {
-      const helper = new SimpleScrollHelper({
+      const helper = new ScrollHelper({
         itemHeight: 500,
         viewportHeight: 1000,
       });
@@ -34,7 +34,7 @@ describe('Phase C: 단순화된 스크롤링 시스템', () => {
     });
 
     it('스크롤 위치를 기반으로 보이는 범위를 계산해야 한다', () => {
-      const helper = new SimpleScrollHelper({
+      const helper = new ScrollHelper({
         itemHeight: 100,
         viewportHeight: 500,
       });
@@ -46,7 +46,7 @@ describe('Phase C: 단순화된 스크롤링 시스템', () => {
     });
 
     it('스크롤 위치 변경 시 가시 범위를 업데이트해야 한다', () => {
-      const helper = new SimpleScrollHelper({
+      const helper = new ScrollHelper({
         itemHeight: 100,
         viewportHeight: 500,
       });
@@ -58,7 +58,7 @@ describe('Phase C: 단순화된 스크롤링 시스템', () => {
     });
 
     it('렌더링 범위를 계산해야 한다', () => {
-      const helper = new SimpleScrollHelper({
+      const helper = new ScrollHelper({
         itemHeight: 100,
         viewportHeight: 500,
       });
@@ -129,7 +129,7 @@ describe('Phase C: 단순화된 스크롤링 시스템', () => {
         'gallery.virtualScrolling': false,
       });
 
-      const helperOff = new SimpleScrollHelper({
+      const helperOff = new ScrollHelper({
         itemHeight: 200,
         viewportHeight: 800,
       });
@@ -143,7 +143,7 @@ describe('Phase C: 단순화된 스크롤링 시스템', () => {
         'gallery.virtualScrolling': true,
       });
 
-      const helperOn = new SimpleScrollHelper({
+      const helperOn = new ScrollHelper({
         itemHeight: 200,
         viewportHeight: 800,
       });
