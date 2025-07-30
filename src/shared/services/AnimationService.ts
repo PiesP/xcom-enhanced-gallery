@@ -80,15 +80,15 @@ export class AnimationService {
     this.ensureStylesInjected();
 
     const duration = config.duration || 300;
-    
+
     element.classList.add('xcom-fade-in');
-    
+
     if (config.delay) {
       await this.delay(config.delay);
     }
 
     element.classList.add('active');
-    
+
     await this.delay(duration);
   }
 
@@ -99,15 +99,15 @@ export class AnimationService {
     this.ensureStylesInjected();
 
     const duration = config.duration || 300;
-    
+
     element.classList.add('xcom-fade-out');
-    
+
     if (config.delay) {
       await this.delay(config.delay);
     }
 
     element.classList.add('active');
-    
+
     await this.delay(duration);
   }
 
@@ -118,15 +118,15 @@ export class AnimationService {
     this.ensureStylesInjected();
 
     const duration = config.duration || 300;
-    
+
     element.classList.add('xcom-slide-in');
-    
+
     if (config.delay) {
       await this.delay(config.delay);
     }
 
     element.classList.add('active');
-    
+
     await this.delay(duration);
   }
 
