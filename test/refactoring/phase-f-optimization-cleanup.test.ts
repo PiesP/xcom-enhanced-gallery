@@ -4,47 +4,47 @@
  */
 
 describe('Phase F: 최적화 모듈 간소화', () => {
-  	describe('1. AdvancedMemoization 제거 검증', () => {
-		test('간소화된 memo만 export되어야 함', async () => {
-			const { memo } = await import('@shared/components/optimization');
-			expect(memo).toBeDefined();
-			expect(typeof memo).toBe('function');
-		});
+  describe('1. AdvancedMemoization 제거 검증', () => {
+    test('간소화된 memo만 export되어야 함', async () => {
+      const { memo } = await import('@shared/components/optimization');
+      expect(memo).toBeDefined();
+      expect(typeof memo).toBe('function');
+    });
 
-		test('복잡한 memoization 기능이 제거되었는지 확인', async () => {
-			const optimizationModule = await import('@shared/components/optimization');
-			
-			// 복잡한 기능들이 없어야 함
-			expect(optimizationModule.AdvancedMemoization).toBeUndefined();
-			expect(optimizationModule.createMemoizedComponent).toBeUndefined();
-			expect(optimizationModule.memoizeWithProfiling).toBeUndefined();
-		});
+    test('복잡한 memoization 기능이 제거되었는지 확인', async () => {
+      const optimizationModule = await import('@shared/components/optimization');
 
-		test('WeakMap 기반 캐싱이 제거되었는지 확인', async () => {
-			const optimizationModule = await import('@shared/components/optimization');
-			
-			// WeakMap 캐싱 관련 기능이 없어야 함
-			expect(optimizationModule.createWeakMapCache).toBeUndefined();
-			expect(optimizationModule.profiledMemoization).toBeUndefined();
-		});
+      // 복잡한 기능들이 없어야 함
+      expect(optimizationModule.AdvancedMemoization).toBeUndefined();
+      expect(optimizationModule.createMemoizedComponent).toBeUndefined();
+      expect(optimizationModule.memoizeWithProfiling).toBeUndefined();
+    });
 
-		test('optimization 모듈이 간소화된 구조를 가져야 함', async () => {
-			const optimizationModule = await import('@shared/components/optimization');
-			const exportedKeys = Object.keys(optimizationModule);
-			
-			// memo만 export되어야 함
-			expect(exportedKeys).toEqual(['memo']);
-		});
-	});
+    test('WeakMap 기반 캐싱이 제거되었는지 확인', async () => {
+      const optimizationModule = await import('@shared/components/optimization');
+
+      // WeakMap 캐싱 관련 기능이 없어야 함
+      expect(optimizationModule.createWeakMapCache).toBeUndefined();
+      expect(optimizationModule.profiledMemoization).toBeUndefined();
+    });
+
+    test('optimization 모듈이 간소화된 구조를 가져야 함', async () => {
+      const optimizationModule = await import('@shared/components/optimization');
+      const exportedKeys = Object.keys(optimizationModule);
+
+      // memo만 export되어야 함
+      expect(exportedKeys).toEqual(['memo']);
+    });
+  });
 
   describe('2. BundleOptimizer 간소화', () => {
     it('간소화된 bundle 유틸리티만 남아있어야 한다', async () => {
       const bundle = await import('@shared/utils/optimization/bundle');
-      
+
       // 간단한 유틸리티만 존재
       expect(bundle.createBundleInfo).toBeDefined();
       expect(bundle.isWithinSizeTarget).toBeDefined();
-      
+
       // 복잡한 기능들은 제거
       expect(bundle.BundleOptimizer).toBeUndefined();
       expect(bundle.analyzeBundleComposition).toBeUndefined();
@@ -53,7 +53,7 @@ describe('Phase F: 최적화 모듈 간소화', () => {
 
     it('Tree-shaking 관련 복잡한 로직이 간소화되어야 한다', async () => {
       const utils = await import('@shared/utils/optimization');
-      
+
       // 복잡한 tree-shaking 분석 제거 확인
       expect(utils.getTreeShakingRecommendations).toBeUndefined();
       expect(utils.generateSplittingStrategy).toBeUndefined();
@@ -63,7 +63,7 @@ describe('Phase F: 최적화 모듈 간소화', () => {
     it('번들 모듈이 간소화된 구조를 가져야 한다', async () => {
       const bundleModule = await import('@shared/utils/optimization/bundle');
       const exportedKeys = Object.keys(bundleModule);
-      
+
       // 간소화된 함수들만 export되어야 함
       expect(exportedKeys.sort()).toEqual(['createBundleInfo', 'isWithinSizeTarget']);
     });
@@ -76,25 +76,25 @@ describe('Phase F: 최적화 모듈 간소화', () => {
         'index.ts', // 메인 export
         'bundle.ts', // 간단한 번들 유틸리티
       ];
-      
+
       const removedFiles = [
         'BundleOptimizer.ts',
         'AdvancedMemoization.ts', // components/optimization으로 이동됨
         'ComplexTreeShaking.ts',
       ];
-      
+
       expect(requiredFiles.length).toBe(2);
       expect(removedFiles.length).toBeGreaterThan(0);
     });
 
     it('간소화된 optimization index가 깔끔한 export를 제공해야 한다', async () => {
       const optimization = await import('@shared/utils/optimization');
-      
+
       // 간단한 API만 노출
       expect(optimization.createBundleInfo).toBeDefined();
       expect(optimization.isWithinSizeTarget).toBeDefined();
       expect(optimization.memo).toBeDefined();
-      
+
       // 객체로 export되던 복잡한 API들 제거
       expect(optimization.BundleOptimizer).toBeUndefined();
       expect(optimization.AdvancedMemoization).toBeUndefined();
@@ -107,7 +107,7 @@ describe('Phase F: 최적화 모듈 간소화', () => {
       const beforeSizeKB = 423; // 현재 크기
       const targetSizeKB = 400;
       const afterSizeKB = 395; // 예상 크기 (간소화 후)
-      
+
       expect(afterSizeKB).toBeLessThan(targetSizeKB);
       expect(afterSizeKB).toBeLessThan(beforeSizeKB);
     });
@@ -121,13 +121,13 @@ describe('Phase F: 최적화 모듈 간소화', () => {
         'Complex dependency analysis',
         'Dynamic code splitting',
       ];
-      
+
       const simpleFeatures = [
         'Basic memo function',
         'Simple bundle size check',
         'Basic utility functions',
       ];
-      
+
       expect(simpleFeatures.length).toBeGreaterThan(0);
       // 복잡한 기능들이 제거됨을 가정
       expect(complexFeatures.length).toBeGreaterThan(0);
@@ -136,11 +136,11 @@ describe('Phase F: 최적화 모듈 간소화', () => {
     it('개발 편의성은 유지되어야 한다', async () => {
       // 기본적인 개발 도구는 유지
       const utils = await import('@shared/utils/optimization');
-      
+
       expect(utils.createBundleInfo).toBeDefined();
       expect(utils.isWithinSizeTarget).toBeDefined();
       expect(utils.memo).toBeDefined();
-      
+
       // 함수들이 정상 동작하는지 확인
       expect(typeof utils.createBundleInfo).toBe('function');
       expect(typeof utils.isWithinSizeTarget).toBe('function');
@@ -153,7 +153,7 @@ describe('Phase F: 최적화 모듈 간소화', () => {
       // 복잡한 캐시 시스템 제거로 메모리 사용량 감소
       const beforeMemoryMB = 15; // 추정 메모리 사용량 (MB)
       const afterMemoryMB = 10; // 간소화 후 예상 사용량
-      
+
       expect(afterMemoryMB).toBeLessThan(beforeMemoryMB);
     });
 
@@ -161,7 +161,7 @@ describe('Phase F: 최적화 모듈 간소화', () => {
       // 복잡한 최적화 시스템 제거로 초기화 시간 단축
       const beforeInitTimeMs = 50;
       const afterInitTimeMs = 30;
-      
+
       expect(afterInitTimeMs).toBeLessThan(beforeInitTimeMs);
     });
 
@@ -169,7 +169,7 @@ describe('Phase F: 최적화 모듈 간소화', () => {
       // 복잡한 프로파일링, 캐시 관리 제거로 오버헤드 감소
       const hasLowRuntimeOverhead = true;
       const hasComplexProfiling = false;
-      
+
       expect(hasLowRuntimeOverhead).toBe(true);
       expect(hasComplexProfiling).toBe(false);
     });
@@ -178,27 +178,27 @@ describe('Phase F: 최적화 모듈 간소화', () => {
   describe('6. 기능 일관성 검증', () => {
     it('기본 메모이제이션 기능이 정상 작동해야 한다', async () => {
       const { memo } = await import('@shared/components/optimization');
-      
+
       expect(memo).toBeDefined();
       expect(typeof memo).toBe('function');
-      
+
       // 기본 메모이제이션이 작동하는지 확인
       const TestComponent = () => 'test';
       const MemoizedComponent = memo(TestComponent);
-      
+
       expect(MemoizedComponent).toBeDefined();
       expect(typeof MemoizedComponent).toBe('function');
     });
 
     it('번들 정보 생성이 정상 작동해야 한다', async () => {
       const { createBundleInfo } = await import('@shared/utils/optimization');
-      
+
       expect(createBundleInfo).toBeDefined();
       expect(typeof createBundleInfo).toBe('function');
-      
+
       // 기본 번들 정보 생성
       const bundleInfo = createBundleInfo(400000);
-      
+
       expect(bundleInfo).toBeDefined();
       expect(bundleInfo.size).toBeDefined();
       expect(bundleInfo.sizeKB).toBeDefined();
@@ -210,10 +210,10 @@ describe('Phase F: 최적화 모듈 간소화', () => {
 
     it('크기 목표 달성 확인이 정상 작동해야 한다', async () => {
       const { isWithinSizeTarget } = await import('@shared/utils/optimization');
-      
+
       expect(isWithinSizeTarget).toBeDefined();
       expect(typeof isWithinSizeTarget).toBe('function');
-      
+
       // 크기 확인 테스트
       expect(isWithinSizeTarget(350000, 400000)).toBe(true);
       expect(isWithinSizeTarget(450000, 400000)).toBe(false);
@@ -224,13 +224,13 @@ describe('Phase F: 최적화 모듈 간소화', () => {
     it('기존 memo 사용 코드가 깨지지 않아야 한다', async () => {
       // 기본 memo 함수는 계속 사용 가능
       const { memo } = await import('@shared/components/optimization');
-      
+
       expect(memo).toBeDefined();
-      
+
       // 기존 사용법 호환성
       const Component = () => 'test';
       const MemoComponent = memo(Component);
-      
+
       expect(MemoComponent).toBeDefined();
     });
 
@@ -238,7 +238,7 @@ describe('Phase F: 최적화 모듈 간소화', () => {
       // 간소화 후에는 deprecation 경고가 없어야 함
       const hasDeprecationWarnings = false;
       const isCleanAPI = true;
-      
+
       expect(hasDeprecationWarnings).toBe(false);
       expect(isCleanAPI).toBe(true);
     });
