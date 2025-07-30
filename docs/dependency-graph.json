@@ -4609,42 +4609,7 @@
     },
     {
       "source": "src/shared/utils/convenience.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./core-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/core-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./performance/performance-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance/performance-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts",
         "src/utils/index.ts"
@@ -4675,7 +4640,6 @@
       ],
       "dependents": [
         "src/shared/utils/index.ts",
-        "src/shared/utils/convenience.ts",
         "src/shared/utils/utils.ts",
         "src/shared/utils/deduplication/deduplication-utils.ts",
         "src/shared/utils/scroll/scroll-utils.ts",
@@ -4688,7 +4652,6 @@
       "source": "src/shared/utils/performance/performance-utils.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/convenience.ts",
         "src/shared/utils/core-utils.ts",
         "src/shared/utils/timer-management.ts",
         "src/shared/utils/utils.ts",
@@ -4799,14 +4762,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./ResourceManager",
+          "module": "../resource-manager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/memory/ResourceManager.ts",
+          "resolved": "src/shared/utils/resource-manager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4821,7 +4784,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "type-only",
             "export"
           ],
           "resolved": "src/shared/utils/memory/ResourceManager.ts",
@@ -4840,20 +4802,21 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/patterns/url-patterns.ts",
+      "source": "src/shared/utils/resource-manager.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts",
-        "src/shared/utils/patterns/index.ts"
+        "src/shared/utils/memory/index.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/shared/utils/resource-manager.ts",
+      "source": "src/shared/utils/patterns/url-patterns.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/patterns/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6788,7 +6751,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 188,
-    "totalDependenciesCruised": 286,
+    "totalDependenciesCruised": 284,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

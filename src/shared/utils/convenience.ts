@@ -1,13 +1,10 @@
 /**
- * @fileoverview 편의 함수들 (통합됨) - Phase 5 최적화
- * @version 2.1.0 - Bundle Optimization
- *
- * Phase 5에서 성능 함수들을 별도 모듈로 분리
+ * @fileoverview Phase G Week 2: Convenience aliases removed
+ * @description Direct imports recommended for better tree-shaking
+ * @version 3.0.0 - Bundle Size Optimization
  */
 
-// Re-export from appropriate modules for backward compatibility
-export { safeQuerySelector as safeQuery } from './core-utils';
-export {
-  createDebouncer as debounce,
-  rafThrottle as throttle,
-} from './performance/performance-utils';
+// Phase G Week 2: Convenience aliases removed to reduce bundle size
+// Use direct imports from:
+// - '@shared/utils/core-utils' for safeQuerySelector
+// - '@shared/utils/performance' for createDebouncer, rafThrottle

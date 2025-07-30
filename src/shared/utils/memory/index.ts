@@ -1,8 +1,26 @@
 /**
- * @fileoverview Memory 유틸리티 재사용 모듈 (리소스 매니저)
- * @description Phase E: 불필요한 별칭 제거 및 네이밍 간소화
+ * @fileoverview Phase G Week 2: Memory utilities unified
+ * @description Direct function exports for better tree-shaking
+ * @version 3.0.0 - Bundle Size Optimization
  */
 
-// 간소화된 메인 export
+// Phase G Week 2: Use direct function imports from resource-manager
+export {
+  createTimer,
+  createManagedInterval,
+  addManagedEventListener,
+  createManagedObserver,
+  createManagedController,
+  createManagedObjectURL,
+  registerManagedMemoryResource,
+  releaseResource,
+  releaseResourcesByContext,
+  releaseResourcesByType,
+  cleanupAllResources,
+  getResourceCount,
+  hasResource,
+  type ResourceType,
+} from '../resource-manager';
+
+// Backward compatibility - use ResourceManager class from ResourceManager.ts
 export { ResourceManager } from './ResourceManager';
-export type { ResourceType } from './ResourceManager';

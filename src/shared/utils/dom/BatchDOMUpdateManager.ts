@@ -1,15 +1,7 @@
 /**
- * @fileoverview 하위 호환성을 위한 re-export
- * @deprecated Use DOMBatcher from './DOMBatcher' instead
+ * @fileoverview Phase G Week 2: Simplified re-export
+ * Deprecated re-exports removed for bundle size optimization
  */
 
-// 하위 호환성을 위한 re-export
-export {
-  DOMBatcher as BatchDOMUpdateManager,
-  globalDOMBatcher as batchDOMUpdateManager,
-  updateElementsInBatch,
-  updateElement,
-} from './DOMBatcher';
-
-// 기본 export (하위 호환성)
-export { DOMBatcher as default } from './DOMBatcher';
+// Essential re-export only
+export { DOMBatcher as BatchDOMUpdateManager } from './DOMBatcher';
