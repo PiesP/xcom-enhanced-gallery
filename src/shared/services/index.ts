@@ -29,24 +29,9 @@ export { LazyLoadingService } from './LazyLoadingService';
 // 이벤트 처리 서비스
 export { EarlyEventCaptureService } from './EarlyEventCaptureService';
 
-// Phase 3: 동적 import 서비스들
-export { LazyMotionService } from './LazyMotionService';
-export { LazyVirtualScrollService } from './LazyVirtualScrollService';
-export { LazyIntersectionService } from './LazyIntersectionService';
+// Phase 3: 동적 import 서비스들 - 간소화됨
+// LazyMotionService, LazyVirtualScrollService, LazyIntersectionService 제거됨
 // LazyMemoizationService 제거됨 - 간단한 memo 사용 권장
-
-// Phase 3: 편의 함수들
-export {
-  createVirtualScrollWhenNeeded,
-  checkVirtualScrollNeed,
-  forceLoadVirtualScroll,
-} from './LazyVirtualScrollService';
-
-export {
-  observeImageWhenSupported,
-  observeVideoWhenSupported,
-  observeElementWhenSupported,
-} from './LazyIntersectionService';
 
 // memoizeConditionally, smartMemoize 제거됨 - 기본 memo 사용 권장
 

@@ -45,7 +45,7 @@ export async function loadServiceModule(serviceName: string) {
         const module = await import('./LazyLoadingService');
         const loadTime = performance.now() - startTime;
         logger.debug('LazyLoadingService 로딩 완료:', { loadTime });
-        return module.LazyLoadingService;
+        return module.lazyLoadingService;
       }
 
       case 'BulkDownloadService': {

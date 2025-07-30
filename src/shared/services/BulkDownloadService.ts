@@ -316,24 +316,13 @@ export class BulkDownloadService implements BaseService {
     mediaItems: readonly (MediaItem | MediaInfo)[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
-    try {
-      // 지연 로딩: ZIP 기능이 필요할 때만 LazyZipDownloadService 로드
-      logger.debug('Loading ZIP download service...');
-      const { downloadAsZip } = await import('./LazyZipDownloadService');
-      logger.debug('ZIP download service loaded successfully');
+    // ZIP 다운로드는 복잡한 기능이므로 유저스크립트에서 제거
+    // 개별 다운로드로 폴백
+    logger.warn(
+      'ZIP download not supported in simplified version, falling back to individual downloads'
+    );
 
-      // 타입 단언을 통한 호환성 확보 (인터페이스가 호환됨)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await downloadAsZip(mediaItems, options as any);
-    } catch (error) {
-      logger.error('Failed to load ZIP download service:', error);
-      return {
-        success: false,
-        filesProcessed: mediaItems.length,
-        filesSuccessful: 0,
-        error: error instanceof Error ? error.message : 'ZIP download service loading failed',
-      };
-    }
+    return await this.downloadIndividually(mediaItems, options);
   }
 
   /**

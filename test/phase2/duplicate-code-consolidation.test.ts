@@ -94,14 +94,16 @@ describe('Phase 2: 중복 코드 통합', () => {
 
   describe('4. 서비스 통합 검증', () => {
     it('LazyLoadingService가 최적화 기능을 포함해야 한다', async () => {
-      const { LazyLoadingService } = await import('@shared/services/LazyLoadingService');
-      const instance = LazyLoadingService.getInstance();
+      const { LazyLoadingService, lazyLoadingService } = await import('@shared/services/LazyLoadingService');
+      
+      // 클래스와 인스턴스가 모두 존재해야 함
+      expect(LazyLoadingService).toBeDefined();
+      expect(lazyLoadingService).toBeDefined();
 
-      // 최적화 메서드들이 존재해야 함
-      expect(typeof instance.observe).toBe('function');
-      expect(typeof instance.unobserve).toBe('function');
-      expect(typeof instance.getMetrics).toBe('function');
-      expect(typeof instance.dispose).toBe('function');
+      // 기본 메서드들이 존재해야 함 (간소화된 API)
+      expect(typeof lazyLoadingService.observe).toBe('function');
+      expect(typeof lazyLoadingService.unobserve).toBe('function');
+      expect(typeof lazyLoadingService.destroy).toBe('function');
     });
 
     it('MediaService가 미디어 관련 기능을 통합해야 한다', async () => {

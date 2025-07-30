@@ -3155,23 +3155,6 @@
         },
         {
           "dynamic": false,
-          "module": "./LazyIntersectionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/LazyIntersectionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./LazyLoadingService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3180,40 +3163,6 @@
             "export"
           ],
           "resolved": "src/shared/services/LazyLoadingService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./LazyMotionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/LazyMotionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./LazyVirtualScrollService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/LazyVirtualScrollService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3362,39 +3311,12 @@
     },
     {
       "source": "src/shared/services/BulkDownloadService.ts",
-      "dependencies": [
-        {
-          "dynamic": true,
-          "module": "./LazyZipDownloadService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/services/LazyZipDownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/service-initialization.ts",
         "src/shared/services/ModuleLoader.ts",
         "src/shared/types/core/core-types.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/LazyZipDownloadService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/BulkDownloadService.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4166,38 +4088,11 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/LazyIntersectionService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/services/LazyLoadingService.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/ModuleLoader.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/LazyMotionService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/LazyVirtualScrollService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5499,6 +5394,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/WebPOptimizationService-old.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/media-extraction/index.ts",
       "dependencies": [
         {
@@ -6641,13 +6549,23 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/services/WebPOptimizationService-old.ts",
+        "to": "src/shared/services/WebPOptimizationService-old.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 186,
-    "totalDependenciesCruised": 279,
+    "totalCruised": 183,
+    "totalDependenciesCruised": 275,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
