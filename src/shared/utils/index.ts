@@ -1,17 +1,26 @@
 /**
- * @fileoverview Shared Utils - Phase C 에러 처리 통합
- * @version 1.0.0 - 유틸리티 통합 및 단순화, 에러 처리 표준화
+ * @fileoverview Shared Utils - Phase D 복잡도 간소화
+ * @version 2.0.0 - 모듈 분리 및 복잡도 감소
  *
  * 새로운 구조:
- * - core-utils.ts (통합된 핵심 유틸리티)
- * - events.ts (이벤트 시스템)
- * - resource-manager.ts (리소스 관리)
- * - convenience.ts (편의 함수들)
- * - error-handling.ts (에러 처리 표준화)
+ * - utils.ts (메인 간소화된 유틸리티)
+ * - styles/ (CSS 관련)
+ * - scroll/ (스크롤 관련)
+ * - deduplication/ (중복 제거)
+ * - accessibility/ (접근성)
+ * - debug/ (디버깅)
+ * - performance/ (성능)
  */
 
 // ================================
-// 통합 유틸리티 (Phase 1 Consolidation)
+// 메인 유틸리티 (간소화된 버전)
+// ================================
+
+// 모든 간소화된 유틸리티를 utils.ts에서 re-export
+export * from './utils';
+
+// ================================
+// 기존 유틸리티들 (하위 호환성)
 // ================================
 
 // Animation utilities (Phase 1 추가)
@@ -49,43 +58,15 @@ export {
   safeElementCheck,
 } from './type-safety-helpers';
 
-// 핵심 DOM, 성능, 스타일 유틸리티
+// 핵심 DOM 및 기타 유틸리티 (core-utils에서)
 export {
-  // 성능 유틸리티 (직접 performance-utils에서)
-  createDebouncer,
-  Debouncer,
-  rafThrottle,
-  throttleScroll,
-  measurePerformance,
-  measureAsyncPerformance,
-} from './performance/performance-utils';
-
-export {
-  // DOM 및 기타 핵심 유틸리티
   findTwitterScrollContainer,
   ensureGalleryScrollAvailable,
-  galleryDebugUtils,
   extractTweetInfoFromUrl,
-  removeDuplicateStrings,
   safeQuerySelector,
   isInsideGallery,
-  combineClasses,
   releaseResource,
 } from './core-utils';
-
-// ================================
-// 접근성 유틸리티
-// ================================
-
-export {
-  calculateContrastRatio,
-  detectActualBackgroundColor,
-  detectLightBackground,
-  getRelativeLuminance,
-  meetsWCAGAA,
-  meetsWCAGAAA,
-  parseColor,
-} from './accessibility';
 
 // ================================
 // 통합 이벤트 관리 시스템 (기존 유지)
