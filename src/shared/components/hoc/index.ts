@@ -5,7 +5,7 @@
  * Version 4.0 - 간소화된 HOC 시스템 (Phase 1)
  */
 
-// 갤러리 HOC (메인) - 복잡한 Unified 접두사 제거
+// 갤러리 HOC (메인)
 export {
   withGallery,
   GalleryHOC,

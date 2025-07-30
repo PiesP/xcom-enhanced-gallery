@@ -5472,34 +5472,6 @@
       "source": "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/services/media-extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
-        "src/shared/services/media-extraction/strategies/fallback/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/media-extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./FallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
         "src/shared/services/media-extraction/strategies/fallback/index.ts"
       ],
       "orphan": false,
@@ -5518,23 +5490,6 @@
             "export"
           ],
           "resolved": "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./UnifiedFallbackStrategy",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/media-extraction/strategies/fallback/UnifiedFallbackStrategy.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6724,8 +6679,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 187,
-    "totalDependenciesCruised": 282,
+    "totalCruised": 186,
+    "totalDependenciesCruised": 280,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

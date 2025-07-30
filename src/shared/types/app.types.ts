@@ -6,7 +6,7 @@
  * - core-types.ts (서비스, Result 타입)
  * - common.types.ts (공통 기본 타입)
  * - global.types.ts (글로벌 타입)
- * - unified.types.ts (통합 특화 타입)
+ * - app.types.ts (앱 특화 타입)
  */
 
 // ================================

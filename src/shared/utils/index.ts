@@ -4,7 +4,7 @@
  *
  * 새로운 구조:
  * - core-utils.ts (통합된 핵심 유틸리티)
- * - unified-events.ts (이벤트 시스템)
+ * - events.ts (이벤트 시스템)
  * - resource-manager.ts (리소스 관리)
  * - convenience.ts (편의 함수들)
  * - error-handling.ts (에러 처리 표준화)

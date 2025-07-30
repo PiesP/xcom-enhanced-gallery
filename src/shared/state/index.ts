@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unified App State Management
+ * @fileoverview App State Management
  * @version 3.0.0 - Phase 3: 상태 관리 통합
  *
  * 모든 상태 관리를 하나로 통합:

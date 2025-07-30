@@ -116,14 +116,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   /**
-   * 컨테이너 생성 - UnifiedGalleryContainer 사용
+   * 컨테이너 생성 - 갤러리 컨테이너 생성
    */
   private createContainer(): void {
     this.cleanupContainer();
 
     this.container = document.createElement('div');
-    this.container.className = 'xeg-gallery-unified-renderer';
-    this.container.setAttribute('data-renderer', 'unified');
+    this.container.className = 'xeg-gallery-renderer';
+    this.container.setAttribute('data-renderer', 'gallery');
 
     document.body.appendChild(this.container);
 
@@ -134,7 +134,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   /**
-   * 컴포넌트 렌더링 - UnifiedGalleryContainer 사용
+   * 컴포넌트 렌더링 - 갤러리 컴포넌트 렌더링
    */
   private renderComponent(): void {
     if (!this.container) return;
@@ -168,7 +168,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     });
 
     render(galleryElement, this.container);
-    logger.info('[GalleryRenderer] UnifiedGalleryContainer 기반 렌더링 완료');
+    logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료');
   }
 
   /**

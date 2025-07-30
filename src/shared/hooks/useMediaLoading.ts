@@ -15,7 +15,7 @@ const mediaLoadingService = new MediaLoadingService();
 
 /**
  * 미디어 로딩 훅
- * 기존 useUnifiedMediaLoading의 명명을 단순화한 버전
+ * 미디어 요소의 로딩 상태 관리 훅
  */
 export function useMediaLoading(
   elementRef: { current: HTMLImageElement | HTMLVideoElement | null },

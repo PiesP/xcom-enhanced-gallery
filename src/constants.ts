@@ -369,7 +369,6 @@ export function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
     element.closest('[data-xeg-gallery]') ||
     element.classList.contains('xeg-gallery-item') ||
     element.classList.contains('xeg-gallery') ||
-    element.classList.contains('xeg-gallery-unified') ||
     element.closest('.xeg-gallery') ||
     element.hasAttribute('data-xeg-gallery-type')
   ) {

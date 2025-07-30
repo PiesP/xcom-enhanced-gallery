@@ -11,5 +11,3 @@ export {
   unmountGallery,
   type GalleryContainerProps,
 } from './GalleryContainer';
-
-// 복잡한 Unified 접두사 제거

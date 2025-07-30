@@ -2,7 +2,7 @@
  * @fileoverview Performance Utilities - Phase 5 Bundle Optimization
  * @version 1.0.0
  *
- * unified-utils.ts에서 분리된 성능 관련 유틸리티들
+ * 별도 모듈로 분리된 성능 관련 유틸리티들
  * Tree-shaking 최적화를 위해 독립적인 모듈로 분리
  */
 
