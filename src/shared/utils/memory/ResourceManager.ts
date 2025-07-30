@@ -104,8 +104,3 @@ export function releaseResource(id: string): boolean {
 export function releaseAllResources(): void {
   globalResourceManager.releaseAll();
 }
-
-// 하위 호환성을 위한 별칭
-export { ResourceManager as BasicResourceManager };
-export { ResourceManager as MemoryPoolManager };
-export { globalResourceManager as memoryPoolManager };

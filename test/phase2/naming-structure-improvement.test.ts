@@ -19,10 +19,10 @@ describe('Phase 2: 네이밍 정리 및 파일 구조 개선', () => {
       expect(typeof TaskManager).toBe('function');
     });
 
-    it('SimpleResourceManager가 BasicResourceManager로 이름이 변경되어야 한다', async () => {
-      const { BasicResourceManager } = await import('@shared/utils/memory');
-      expect(BasicResourceManager).toBeDefined();
-      expect(typeof BasicResourceManager).toBe('function');
+    it('SimpleResourceManager가 ResourceManager로 간소화되어야 한다', async () => {
+      const { ResourceManager } = await import('@shared/utils/memory');
+      expect(ResourceManager).toBeDefined();
+      expect(typeof ResourceManager).toBe('function');
     });
 
     it('SimpleScrollHelper가 ScrollHelper로 이름이 변경되어야 한다', async () => {
