@@ -1,52 +1,54 @@
 /**
- * @fileoverview 통합 디자인 토큰 CSS
+ * @fileoverview 통합 디자인 토큰 CSS (OKLCH 색상 시스템)
+ * 총 35개의 색상이 OKLCH로 변환되었습니다.
+ * 생성일: 2025-07-31T13:51:46.194Z
  */
 
 :root {
   /* Primary Colors */
-  --xeg-color-primary-500: #3b82f6;
-  --xeg-color-primary-600: #2563eb;
-  --xeg-color-primary-700: #1d4ed8;
+  --xeg-color-primary-500: oklch(0.678 0.182 252.2);
+  --xeg-color-primary-600: oklch(0.623 0.21 252.8);
+  --xeg-color-primary-700: oklch(0.567 0.243 253.4);
 
   /* Neutral Colors */
-  --xeg-color-neutral-100: #f5f5f5;
-  --xeg-color-neutral-500: #737373;
-  --xeg-color-neutral-700: #404040;
-  --xeg-color-neutral-900: #171717;
+  --xeg-color-neutral-100: oklch(0.97 0.002 206.2);
+  --xeg-color-neutral-500: oklch(0.598 0.006 286.3);
+  --xeg-color-neutral-700: oklch(0.378 0.005 286.3);
+  --xeg-color-neutral-900: oklch(0.234 0.006 277.8);
 
   /* Semantic Colors */
-  --xeg-color-success-500: #22c55e;
-  --xeg-color-error-500: #ef4444;
-  --xeg-color-warning-500: #f59e0b;
-  --xeg-color-success-800: #166534;
-  --xeg-color-success-900: #14532d;
-  --xeg-color-success-950: #052e16;
+  --xeg-color-success-500: oklch(0.725 0.17 142.5);
+  --xeg-color-error-500: oklch(0.628 0.257 27.3);
+  --xeg-color-warning-500: oklch(0.761 0.16 70.7);
+  --xeg-color-success-800: oklch(0.456 0.133 145.2);
+  --xeg-color-success-900: oklch(0.398 0.118 146.8);
+  --xeg-color-success-950: oklch(0.241 0.077 150);
 
   /* Warning Orange */
-  --xeg-color-warning-50: #fffbeb;
-  --xeg-color-warning-100: #fef3c7;
-  --xeg-color-warning-200: #fde68a;
-  --xeg-color-warning-300: #fcd34d;
-  --xeg-color-warning-400: #fbbf24;
-  --xeg-color-warning-500: #f59e0b; /* base */
-  --xeg-color-warning-600: #d97706;
-  --xeg-color-warning-700: #b45309;
-  --xeg-color-warning-800: #92400e;
-  --xeg-color-warning-900: #78350f;
-  --xeg-color-warning-950: #451a03;
+  --xeg-color-warning-50: oklch(0.988 0.029 86.7);
+  --xeg-color-warning-100: oklch(0.967 0.069 86);
+  --xeg-color-warning-200: oklch(0.928 0.108 85.4);
+  --xeg-color-warning-300: oklch(0.878 0.142 82.8);
+  --xeg-color-warning-400: oklch(0.825 0.151 78.2);
+  --xeg-color-warning-500: oklch(0.761 0.16 70.7); /* base */
+  --xeg-color-warning-600: oklch(0.685 0.156 65.8);
+  --xeg-color-warning-700: oklch(0.576 0.149 58.8);
+  --xeg-color-warning-800: oklch(0.489 0.142 52.4);
+  --xeg-color-warning-900: oklch(0.427 0.133 47.7);
+  --xeg-color-warning-950: oklch(0.273 0.104 40.9);
 
   /* Error Red */
-  --xeg-color-error-50: #fef2f2;
-  --xeg-color-error-100: #fee2e2;
-  --xeg-color-error-200: #fecaca;
-  --xeg-color-error-300: #fca5a5;
-  --xeg-color-error-400: #f87171;
-  --xeg-color-error-500: #ef4444; /* base */
-  --xeg-color-error-600: #dc2626;
-  --xeg-color-error-700: #b91c1c;
-  --xeg-color-error-800: #991b1b;
-  --xeg-color-error-900: #7f1d1d;
-  --xeg-color-error-950: #450a0a;
+  --xeg-color-error-50: oklch(0.971 0.013 17.4);
+  --xeg-color-error-100: oklch(0.943 0.031 15.6);
+  --xeg-color-error-200: oklch(0.905 0.055 13.6);
+  --xeg-color-error-300: oklch(0.852 0.089 12);
+  --xeg-color-error-400: oklch(0.787 0.15 17);
+  --xeg-color-error-500: oklch(0.628 0.257 27.3); /* base */
+  --xeg-color-error-600: oklch(0.568 0.228 25.3);
+  --xeg-color-error-700: oklch(0.498 0.208 25.9);
+  --xeg-color-error-800: oklch(0.447 0.19 26.2);
+  --xeg-color-error-900: oklch(0.402 0.172 26.5);
+  --xeg-color-error-950: oklch(0.261 0.119 26.8);
 
   /* ===========================================
      SURFACE & LAYOUT COLORS
@@ -489,5 +491,51 @@
   .xeg-focus-ring:focus-visible {
     outline: 3px solid currentColor;
     outline-offset: 2px;
+  }
+}
+
+/* 브라우저 호환성을 위한 OKLCH 지원 감지 */
+@supports not (color: oklch(0 0 0)) {
+  :root {
+    /* OKLCH를 지원하지 않는 브라우저용 RGB 폴백 */
+    --xeg-color-primary-500: #3b82f6;
+    --xeg-color-primary-600: #2563eb;
+    --xeg-color-primary-700: #1d4ed8;
+
+    --xeg-color-neutral-100: #f5f5f5;
+    --xeg-color-neutral-500: #737373;
+    --xeg-color-neutral-700: #404040;
+    --xeg-color-neutral-900: #171717;
+
+    --xeg-color-success-500: #22c55e;
+    --xeg-color-success-800: #166534;
+    --xeg-color-success-900: #14532d;
+    --xeg-color-success-950: #052e16;
+    --xeg-color-error-500: #ef4444;
+    --xeg-color-warning-500: #f59e0b;
+
+    /* Warning Orange 폴백 */
+    --xeg-color-warning-50: #fffbeb;
+    --xeg-color-warning-100: #fef3c7;
+    --xeg-color-warning-200: #fde68a;
+    --xeg-color-warning-300: #fcd34d;
+    --xeg-color-warning-400: #fbbf24;
+    --xeg-color-warning-600: #d97706;
+    --xeg-color-warning-700: #b45309;
+    --xeg-color-warning-800: #92400e;
+    --xeg-color-warning-900: #78350f;
+    --xeg-color-warning-950: #451a03;
+
+    /* Error Red 폴백 */
+    --xeg-color-error-50: #fef2f2;
+    --xeg-color-error-100: #fee2e2;
+    --xeg-color-error-200: #fecaca;
+    --xeg-color-error-300: #fca5a5;
+    --xeg-color-error-400: #f87171;
+    --xeg-color-error-600: #dc2626;
+    --xeg-color-error-700: #b91c1c;
+    --xeg-color-error-800: #991b1b;
+    --xeg-color-error-900: #7f1d1d;
+    --xeg-color-error-950: #450a0a;
   }
 }

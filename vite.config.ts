@@ -257,56 +257,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       // PostCSS 설정
-      postcss: {
-        plugins: [
-          // CSS 변수 폴백 추가
-          {
-            postcssPlugin: 'css-variables-fallback',
-            Once(root) {
-              root.walkDecls(decl => {
-                if (decl.value.includes('var(--xeg-')) {
-                  // CSS 변수에 폴백 값 추가
-                  const match = decl.value.match(/var\(--xeg-([^)]+)\)/);
-                  if (match && !decl.value.includes(',')) {
-                    // 기본 폴백 값 설정
-                    const fallbacks: Record<string, string> = {
-                      'color-primary': '#1d9bf0',
-                      'color-surface': '#ffffff',
-                      'spacing-md': '16px',
-                      'radius-md': '8px',
-                      'z-gallery': '10000',
-                    };
-                    const varName = match[1];
-                    const fallback = varName ? fallbacks[varName] : undefined;
-                    if (fallback) {
-                      decl.value = decl.value.replace(
-                        /var\(--xeg-([^)]+)\)/,
-                        `var(--xeg-$1, ${fallback})`
-                      );
-                    }
-                  }
-                }
-              });
-            },
-          },
-          // 미사용 CSS 제거 (프로덕션에서만)
-          ...(buildMode.isProduction
-            ? [
-                {
-                  postcssPlugin: 'remove-unused-css',
-                  Once(root: any) {
-                    // 개발 전용 클래스 제거
-                    root.walkRules((rule: any) => {
-                      if (rule.selector.includes('debug') || rule.selector.includes('dev-only')) {
-                        rule.remove();
-                      }
-                    });
-                  },
-                },
-              ]
-            : []),
-        ],
-      },
+      postcss: './postcss.config.js',
     },
 
     build: {
