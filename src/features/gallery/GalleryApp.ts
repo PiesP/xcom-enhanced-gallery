@@ -15,7 +15,6 @@ import { VideoControlService } from '@shared/services/media/VideoControlService'
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-import { MediaService } from '@shared/services/MediaService';
 import { UIService } from '@shared/services/UIService';
 import { unmountGallery } from '@shared/components/isolation';
 
@@ -34,7 +33,6 @@ export interface GalleryConfig {
  * 갤러리 애플리케이션 - 격리된 시스템
  */
 export class GalleryApp {
-  private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
   private readonly videoControl = VideoControlService.getInstance();
   private uiService: UIService | null = null;
@@ -58,12 +56,16 @@ export class GalleryApp {
   /**
    * 미디어 서비스 lazy 초기화
    */
-  private async getMediaService(): Promise<MediaService> {
-    if (!this.mediaService) {
-      this.mediaService = (await getService(SERVICE_KEYS.MEDIA_SERVICE)) as MediaService;
-    }
-    return this.mediaService;
-  }
+  // 레거시 미디어 서비스 (미사용)
+  // private async getMediaService(): Promise<MediaService> {
+  //   if (!this.mediaService) {
+  //     const MediaServiceClass = await import('@shared/media/media-service').then(
+  //       (module) => module.MediaService,
+  //     );
+  //     this.mediaService = new MediaServiceClass();
+  //   }
+  //   return this.mediaService;
+  // }
 
   /**
    * 갤러리 앱 초기화 - 격리된 시스템
@@ -117,46 +119,19 @@ export class GalleryApp {
       const { initializeGalleryEvents } = await import('@shared/utils/events');
 
       await initializeGalleryEvents({
-        onMediaClick: async (_mediaInfo, element, _event) => {
+        onMediaClick: async (mediaInfo: MediaInfo) => {
           try {
-            const mediaService = await this.getMediaService();
-            const result = await mediaService.extractFromClickedElement(element);
-
-            if (result.success && result.mediaItems.length > 0) {
-              await this.openGallery(result.mediaItems, result.clickedIndex);
-            } else {
-              // 미디어 추출 실패 시 사용자에게 알림
-              logger.warn('미디어 추출 실패:', {
-                success: result.success,
-                mediaCount: result.mediaItems.length,
-                errors: result.errors,
-              });
-
-              // UI 서비스를 통해 알림 표시
-              if (this.uiService) {
-                this.uiService.showError({
-                  title: '미디어 로드 실패',
-                  message: '이미지나 비디오를 찾을 수 없습니다.',
-                });
-              }
-            }
+            // mediaInfo를 사용해서 갤러리 열기
+            await this.openGallery([mediaInfo], 0);
           } catch (error) {
-            logger.error('미디어 추출 중 오류:', error);
-
-            // UI 서비스를 통해 에러 알림 표시
-            if (this.uiService) {
-              this.uiService.showError({
-                title: '오류 발생',
-                message: `미디어 추출 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
-              });
-            }
+            logger.error('미디어 클릭 처리 실패:', error);
           }
         },
         onGalleryClose: () => {
           this.closeGallery();
         },
-        onKeyboardEvent: event => {
-          if (event.key === 'Escape' && galleryState.value.isOpen) {
+        onKeyboardShortcut: (key: string) => {
+          if (key === 'Escape' && galleryState.value.isOpen) {
             this.closeGallery();
           }
         },

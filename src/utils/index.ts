@@ -47,7 +47,6 @@ export {
   // 이벤트 관리
   addListener,
   removeEventListenerManaged,
-  cleanupEventListeners,
 
   // 접근성
   calculateContrastRatio,

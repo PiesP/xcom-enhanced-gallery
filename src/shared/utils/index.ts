@@ -78,17 +78,12 @@ export {
   removeEventListenerManaged,
   removeEventListenersByContext,
   removeEventListenersByType,
-  getActiveListenerCount,
-  clearAllEventListeners,
-  cleanupEventListeners,
-  isClickableElement,
-  isMediaElement,
-  createCustomEvent,
-  dispatchManagedEvent,
-  handleTwitterEvent,
-  TwitterEventManager,
+  removeAllEventListeners,
+  getEventListenerStatus,
+  cleanupEventDispatcher,
   initializeGalleryEvents,
   cleanupGalleryEvents,
+  getGalleryEventStatus,
 } from './events';
 
 // ================================
