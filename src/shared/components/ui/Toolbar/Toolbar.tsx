@@ -15,15 +15,49 @@ import {
 } from '@shared/hooks/useToolbarState';
 import { throttleScroll } from '@shared/utils';
 import { ComponentStandards } from '../StandardProps';
-import type { StandardToolbarProps } from '../StandardProps';
 import styles from './Toolbar.module.css';
 
-// 통합된 Toolbar Props (표준 우선, 레거시 fallback)
-export interface ToolbarProps extends Omit<StandardToolbarProps, 'onViewModeChange'> {
-  // 레거시 호환성을 위한 추가 속성들
+// 통합된 Toolbar Props - 구체적인 타입 정의
+export interface ToolbarProps {
+  /** 현재 인덱스 */
+  currentIndex: number;
+  /** 전체 개수 */
+  totalCount: number;
+  /** 다운로드 진행 상태 */
+  isDownloading?: boolean;
+  /** 비활성화 상태 */
+  disabled?: boolean;
+  /** 현재 뷰 모드 */
   currentViewMode?: ViewMode;
+  /** 뷰 모드 변경 콜백 */
   onViewModeChange?: (mode: ViewMode) => void;
-  // ImageFitCallbacks 지원
+  /** 이전 버튼 콜백 */
+  onPrevious: () => void;
+  /** 다음 버튼 콜백 */
+  onNext: () => void;
+  /** 현재 항목 다운로드 콜백 */
+  onDownloadCurrent: () => void;
+  /** 전체 다운로드 콜백 */
+  onDownloadAll: () => void;
+  /** 닫기 콜백 */
+  onClose: () => void;
+  /** 설정 열기 콜백 */
+  onOpenSettings?: () => void;
+  /** 툴바 위치 */
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  /** 추가 클래스명 */
+  className?: string;
+  /** 테스트 ID */
+  'data-testid'?: string;
+  /** 접근성 레이블 */
+  'aria-label'?: string;
+  /** ARIA 속성들 */
+  'aria-describedby'?: string;
+  /** 접근성 역할 */
+  role?: string;
+  /** 탭 인덱스 */
+  tabIndex?: number;
+  /** ImageFitCallbacks 지원 */
   onFitOriginal?: (event?: Event) => void;
   onFitWidth?: (event?: Event) => void;
   onFitHeight?: (event?: Event) => void;

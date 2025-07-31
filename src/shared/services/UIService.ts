@@ -4,8 +4,7 @@
  * @version 1.0.0 - Phase 2: Service Consolidation
  */
 
-import { logger } from '@shared/logging/logger';
-import type { BaseService } from '@shared/types/app.types';
+import { SingletonServiceImpl } from './BaseServiceImpl';
 
 // 기존 서비스들 import
 import { ThemeService, themeService } from './ThemeService';
@@ -20,15 +19,15 @@ import type { ToastOptions } from './ToastController';
  * - ThemeService (시스템 테마 감지)
  * - ToastController (알림 관리)
  */
-export class UIService implements BaseService {
+export class UIService extends SingletonServiceImpl {
   private static instance: UIService | null = null;
-  private _isInitialized = false;
 
   // 통합된 서비스 컴포넌트들
   private readonly themeService: ThemeService;
   private readonly toastController: ToastController;
 
   private constructor() {
+    super('UIService');
     this.themeService = ThemeService.getInstance();
     this.toastController = toastController;
   }
@@ -38,28 +37,14 @@ export class UIService implements BaseService {
     return UIService.instance;
   }
 
-  public async initialize(): Promise<void> {
-    if (this._isInitialized) return;
-
-    logger.info('UIService initializing...');
+  protected async onInitialize(): Promise<void> {
     await this.toastController.initialize();
-    this._isInitialized = true;
-    logger.info('UIService initialized');
   }
 
-  public destroy(): void {
-    if (!this._isInitialized) return;
-
-    logger.info('UIService destroying...');
+  protected onDestroy(): void {
     this.themeService.destroy();
     // ToastController는 cleanup 메서드 사용
     this.toastController.cleanup();
-    this._isInitialized = false;
-    logger.info('UIService destroyed');
-  }
-
-  public isInitialized(): boolean {
-    return this._isInitialized;
   }
 
   // ====================================

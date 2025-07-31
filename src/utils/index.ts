@@ -42,7 +42,6 @@ export {
   // 리소스 관리
   createTimer,
   createManagedInterval,
-  ResourceManager,
 
   // 이벤트 관리
   addListener,

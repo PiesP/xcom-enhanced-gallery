@@ -62,7 +62,7 @@ export {
 } from './performance/performance-utils';
 
 // ================================
-// Gallery utilities (simplified)
+// Gallery utilities
 // ================================
 
 import { logger } from '@shared/logging/logger';

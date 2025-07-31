@@ -31,5 +31,4 @@ export {
   cleanupNamespacedStyles,
   createNamespacedClass,
   createNamespacedSelector,
-  namespacedDesignSystem,
 } from './namespaced-styles';

@@ -3,7 +3,7 @@
  *
  * 단순화된 구조 - 유저스크립트에 최적화
  *
- * @version 4.0.0 - Simplified Architecture
+ * @version 4.0.0
  */
 
 import { measureAsyncPerformance } from '@/utils';

@@ -91,50 +91,13 @@ export function safePerformanceNow(): number {
   return Date.now();
 }
 
-// Performance measurement is available from performance-utils
-export { measurePerformance, measureAsyncPerformance } from './performance/performance-utils';
+// Performance utilities re-export (deprecated wrappers removed)
+export {
+  measurePerformance,
+  measureAsyncPerformance,
+  createDebouncer,
+  rafThrottle,
+} from './performance/performance-utils';
 
-/**
- * 타이머 관리와 함께 사용하는 debounce 함수
- *
- * @param fn - debounce할 함수
- * @param delay - 지연 시간
- * @param _timerManager - 타이머 관리자 (선택사항, 현재 미사용)
- * @returns debounced 함수
- */
-export function createManagedDebounce<T extends (...args: unknown[]) => unknown>(
-  fn: T,
-  delay: number,
-  _timerManager: TimerManager = globalTimerManager
-): (...args: Parameters<T>) => void {
-  // performance-utils의 createDebouncer를 기반으로 하되, TimerManager 통합
-  const debouncer = createDebouncer(fn as (...args: unknown[]) => void, delay);
-
-  return (...args: Parameters<T>) => {
-    // TimerManager와의 통합을 위해 기존 타이머를 추적
-    debouncer.execute(...args);
-  };
-}
-
-/**
- * 개선된 throttle 함수
- *
- * @param fn - throttle할 함수
- * @param delay - throttle 간격
- * @returns throttled 함수
- */
-export function createManagedThrottle<T extends (...args: unknown[]) => unknown>(
-  fn: T,
-  delay: number
-): (...args: Parameters<T>) => ReturnType<T> | undefined {
-  let lastExecution = 0;
-
-  return (...args: Parameters<T>): ReturnType<T> | undefined => {
-    const now = safePerformanceNow();
-    if (now - lastExecution >= delay) {
-      lastExecution = now;
-      return fn(...args) as ReturnType<T>;
-    }
-    return undefined;
-  };
-}
+// Aliases for backward compatibility
+export const createManagedDebounce = createDebouncer;

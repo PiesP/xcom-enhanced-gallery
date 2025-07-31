@@ -7,7 +7,7 @@
  * @description 통합된 수직 이미지 아이템 컴포넌트 - StandardProps 표준화 완료
  */
 
-import { withGalleryItem, type GalleryComponentProps } from '@shared/components/hoc/GalleryMarker';
+import { withGallery, type GalleryComponentProps } from '@shared/components/hoc/GalleryHOC';
 import { Button } from '@shared/components/ui/Button/Button';
 import { ComponentStandards } from '@shared/components/ui/StandardProps';
 import type { ImageFitMode } from '@shared/types';
@@ -448,9 +448,14 @@ Object.defineProperty(BaseVerticalImageItem, 'displayName', {
 });
 
 // Gallery Marker HOC를 적용한 VerticalImageItem
-export const VerticalImageItem = withGalleryItem(BaseVerticalImageItem, {
+export const VerticalImageItem = withGallery(BaseVerticalImageItem, {
+  type: 'item',
   className: 'vertical-item',
-  preventClick: false, // 클릭 이벤트는 허용 (갤러리 아이템 선택을 위해)
+  events: {
+    preventClick: false, // 클릭 이벤트는 허용 (갤러리 아이템 선택을 위해)
+    preventKeyboard: false,
+    blockTwitterNative: true,
+  },
   customData: {
     component: 'vertical-image-item',
     role: 'gallery-item',

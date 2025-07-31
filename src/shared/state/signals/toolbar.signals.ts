@@ -1,5 +1,5 @@
 /**
- * @fileoverview Simplified Toolbar State Management
+ * @fileoverview Toolbar State Management
  * @version 2.0.0 - CSS Hover System
  *
  * 간소화된 툴바 상태 관리 시스템
@@ -49,7 +49,7 @@ function getToolbarStateSignal(): Signal<ToolbarState> {
       const signalsModule = require('@preact/signals');
       const { signal } = signalsModule;
       toolbarStateSignal = signal(INITIAL_TOOLBAR_STATE);
-      logger.debug('Simplified toolbar state signal initialized');
+      logger.debug('Toolbar state signal initialized');
     } catch (error) {
       logger.warn('Failed to initialize Preact Signals, using fallback', { error });
       // 폴백 구현

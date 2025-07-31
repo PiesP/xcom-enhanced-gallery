@@ -5,9 +5,9 @@
  */
 
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
-import type { BaseService } from '@shared/types/app.types';
 import type { MediaItemForFilename } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
+import { SingletonServiceImpl } from './BaseServiceImpl';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
@@ -74,9 +74,8 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
  * - 기본 ZIP 생성
  * - 간단한 진행률 추적
  */
-export class BulkDownloadService implements BaseService {
+export class BulkDownloadService extends SingletonServiceImpl {
   private static instance: BulkDownloadService;
-  private _isInitialized = false;
   private currentAbortController: AbortController | undefined;
 
   public static getInstance(): BulkDownloadService {
@@ -84,39 +83,20 @@ export class BulkDownloadService implements BaseService {
     return BulkDownloadService.instance;
   }
 
-  private constructor() {}
-
-  /**
-   * BaseService 인터페이스 구현: 서비스 초기화
-   */
-  public async initialize(): Promise<void> {
-    if (this._isInitialized) {
-      return;
-    }
-
-    logger.info('BulkDownloadService initializing...');
-    this._isInitialized = true;
-    logger.info('BulkDownloadService initialized');
+  private constructor() {
+    super('BulkDownloadService');
   }
 
-  /**
-   * BaseService 인터페이스 구현: 서비스 정리
-   */
-  public destroy(): void {
-    if (!this._isInitialized) {
-      return;
-    }
-
-    logger.info('BulkDownloadService destroying...');
-    this._isInitialized = false;
-    logger.info('BulkDownloadService destroyed');
+  protected async onInitialize(): Promise<void> {
+    // BulkDownloadService는 특별한 초기화 로직이 없음
   }
 
-  /**
-   * BaseService 인터페이스 구현: 초기화 상태 확인
-   */
-  public isInitialized(): boolean {
-    return this._isInitialized;
+  protected onDestroy(): void {
+    // 진행 중인 다운로드 취소
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = undefined;
+    }
   }
 
   /**

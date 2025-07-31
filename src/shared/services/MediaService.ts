@@ -4,8 +4,7 @@
  * @version 1.0.0 - Phase 2: Service Consolidation
  */
 
-import { logger } from '@shared/logging/logger';
-import type { BaseService } from '@shared/types/app.types';
+import { SingletonServiceImpl } from './BaseServiceImpl';
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 
@@ -30,9 +29,8 @@ import type { UsernameExtractionResult } from './media/UsernameExtractionService
  * - UsernameExtractionService
  * - TwitterVideoExtractor 유틸리티들
  */
-export class MediaService implements BaseService {
+export class MediaService extends SingletonServiceImpl {
   private static instance: MediaService | null = null;
-  private _isInitialized = false;
 
   // 통합된 서비스 컴포넌트들
   private readonly mediaExtraction: MediaExtractionService;
@@ -41,6 +39,7 @@ export class MediaService implements BaseService {
   private readonly usernameParser: UsernameParser;
 
   private constructor() {
+    super('MediaService');
     this.mediaExtraction = new MediaExtractionService();
     this.fallbackExtractor = new FallbackExtractor();
     this.videoControl = VideoControlService.getInstance();
@@ -52,25 +51,12 @@ export class MediaService implements BaseService {
     return MediaService.instance;
   }
 
-  public async initialize(): Promise<void> {
-    if (this._isInitialized) return;
-
-    logger.info('MediaService initializing...');
-    this._isInitialized = true;
-    logger.info('MediaService initialized');
+  protected async onInitialize(): Promise<void> {
+    // MediaService는 특별한 초기화 로직이 없음
   }
 
-  public destroy(): void {
-    if (!this._isInitialized) return;
-
-    logger.info('MediaService destroying...');
+  protected onDestroy(): void {
     this.videoControl.destroy();
-    this._isInitialized = false;
-    logger.info('MediaService destroyed');
-  }
-
-  public isInitialized(): boolean {
-    return this._isInitialized;
   }
 
   // ====================================

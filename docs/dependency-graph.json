@@ -804,14 +804,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./hoc/GalleryMarker",
+          "module": "./base",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/hoc/GalleryMarker.tsx",
+          "resolved": "src/shared/components/base/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1019,11 +1019,40 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/hoc/GalleryMarker.tsx",
+      "source": "src/shared/components/base/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./BaseComponentProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/base/BaseComponentProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/base/BaseComponentProps.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/components/index.ts",
-        "src/shared/components/hoc/index.ts"
+        "src/shared/components/base/index.ts",
+        "src/shared/components/ui/Button/Button.tsx",
+        "src/shared/components/ui/StandardProps.ts",
+        "src/shared/components/hoc/GalleryHOC.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1041,6 +1070,24 @@
     {
       "source": "src/shared/components/ui/Button/Button.tsx",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../base/BaseComponentProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/base/BaseComponentProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../StandardProps",
@@ -1120,7 +1167,26 @@
     },
     {
       "source": "src/shared/components/ui/StandardProps.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../base/BaseComponentProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/base/BaseComponentProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/components/ui/Button/Button.tsx",
         "src/shared/components/ui/Toast/Toast.tsx",
@@ -1320,24 +1386,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../StandardProps",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
             "import"
           ],
           "resolved": "src/shared/components/ui/StandardProps.ts",
@@ -2001,6 +2049,24 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../base/BaseComponentProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/base/BaseComponentProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../ui/StandardProps",
           "moduleSystem": "cjs",
           "exoticallyRequired": false,
@@ -2042,24 +2108,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryMarker",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/hoc/GalleryMarker.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -2091,40 +2139,6 @@
       ],
       "dependents": [
         "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/optimization/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./memo",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/optimization/memo.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/optimization/memo.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/optimization/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2997,6 +3011,23 @@
         },
         {
           "dynamic": false,
+          "module": "./BaseServiceImpl",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/BaseServiceImpl.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./BulkDownloadService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3256,8 +3287,38 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/BulkDownloadService.ts",
+      "source": "src/shared/services/BaseServiceImpl.ts",
       "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts",
+        "src/shared/services/BulkDownloadService.ts",
+        "src/shared/services/MediaService.ts",
+        "src/shared/services/UIService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/BulkDownloadService.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./BaseServiceImpl",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/BaseServiceImpl.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/service-initialization.ts",
@@ -3490,6 +3551,23 @@
     {
       "source": "src/shared/services/MediaService.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./BaseServiceImpl",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/BaseServiceImpl.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./media-extraction/MediaExtractionService",
@@ -3882,6 +3960,23 @@
     {
       "source": "src/shared/services/UIService.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./BaseServiceImpl",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/BaseServiceImpl.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./ThemeService",
@@ -4612,23 +4707,6 @@
         },
         {
           "dynamic": false,
-          "module": "./resource-manager",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "require"
-          ],
-          "resolved": "src/shared/utils/resource-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./styles/css-utilities",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4663,17 +4741,6 @@
         "src/shared/utils/utils.ts",
         "src/shared/utils/scroll/scroll-utils.ts",
         "src/shared/utils/performance/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/resource-manager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/index.ts",
-        "src/shared/utils/core-utils.ts",
-        "src/shared/utils/memory/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4825,6 +4892,16 @@
       ],
       "dependents": [
         "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/resource-manager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts",
+        "src/shared/utils/memory/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6157,19 +6234,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/colors/color-conversion.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/utils/core/index.ts",
       "dependencies": [
         {
@@ -6278,19 +6342,6 @@
       "dependents": [],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/utils/gallery/gallery-utils.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "src/shared/utils/media/index.ts",
@@ -6658,32 +6709,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/utils/colors/color-conversion.ts",
-        "to": "src/shared/utils/colors/color-conversion.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/utils/gallery/gallery-utils.ts",
-        "to": "src/shared/utils/gallery/gallery-utils.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 2,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 187,
-    "totalDependenciesCruised": 279,
+    "totalCruised": 185,
+    "totalDependenciesCruised": 283,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -6,16 +6,13 @@
 import { getPreactCompat } from '@shared/external/vendors';
 import styles from './Button.module.css';
 import { ComponentStandards } from '../StandardProps';
-import type { StandardButtonProps, BaseUIComponentProps } from '../StandardProps';
+import type { StandardButtonProps } from '../StandardProps';
+import type { BaseComponentProps } from '../../base/BaseComponentProps';
 
-// 통합된 Button Props (표준 우선, 레거시 fallback)
-export interface ButtonProps extends Omit<StandardButtonProps, 'onClick'> {
-  // onClick은 레거시 호환성을 위해 별도 정의
+// 통합된 Button Props
+export interface ButtonProps extends StandardButtonProps {
+  // onClick 이벤트 핸들러 (구체적 타입)
   onClick?: (event?: Event) => void;
-  // 레거시 호환성을 위한 추가 속성들
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  className?: string;
 }
 
 export const Button = (() => {
@@ -62,7 +59,7 @@ export const Button = (() => {
         'aria-describedby': ariaDescribedBy,
         role: role || 'button',
         tabIndex,
-      } as Partial<BaseUIComponentProps>);
+      } as Partial<BaseComponentProps>);
 
       // 표준화된 테스트 속성 생성
       const testProps = ComponentStandards.createTestProps(testId);

@@ -45,9 +45,10 @@ describe('Phase 3: 코드 품질 향상', () => {
   describe('2. 레거시 패턴 제거', () => {
     it('AdvancedMemoization 클래스가 제거되어야 한다', async () => {
       try {
-        const optimizationModule = await import('@shared/components/optimization');
+        // utils/optimization으로 이동된 memo 함수 확인
+        const optimizationModule = await import('@shared/utils/optimization');
 
-        // AdvancedMemoization 클래스가 없어야 함
+        // AdvancedMemoization 클래스가 없어야 함 (memo 함수만 있어야 함)
         expect(optimizationModule.AdvancedMemoization).toBeUndefined();
 
         // 간단한 memo 함수만 제공되어야 함

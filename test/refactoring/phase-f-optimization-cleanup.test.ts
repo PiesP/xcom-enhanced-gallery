@@ -4,14 +4,12 @@
  */
 
 describe('Phase F: 최적화 모듈 간소화', () => {
-  describe('1. AdvancedMemoization 제거 검증', () => {
-    test('간소화된 memo만 export되어야 함', async () => {
-      const { memo } = await import('@shared/components/optimization');
-      expect(memo).toBeDefined();
-      expect(typeof memo).toBe('function');
-    });
-
-    test('복잡한 memoization 기능이 제거되었는지 확인', async () => {
+	describe('1. AdvancedMemoization 제거 검증', () => {
+		test('간소화된 memo만 export되어야 함', async () => {
+			// utils/optimization으로 이동된 memo 함수 확인
+			const { memo } = await import('@shared/utils/optimization');
+			expect(memo).toBeDefined();
+			expect(typeof memo).toBe('function');    test('복잡한 memoization 기능이 제거되었는지 확인', async () => {
       const optimizationModule = await import('@shared/components/optimization');
 
       // 복잡한 기능들이 없어야 함

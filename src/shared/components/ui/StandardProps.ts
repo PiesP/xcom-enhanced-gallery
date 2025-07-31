@@ -1,74 +1,23 @@
 /**
  * @fileoverview 표준화된 컴포넌트 Props 인터페이스
- * @description Phase 2 컴포넌트 통합 - 공통 Props 표준화
- * @version 1.0.0
+ * @description Phase 2-3A: BaseComponentProps 기반으로 리팩토링
+ * @version 2.0.0
  */
 
-import type { ComponentChildren } from '@shared/external/vendors';
+import type {
+  BaseComponentProps,
+  InteractiveComponentProps,
+  LoadingComponentProps,
+  SizedComponentProps,
+  VariantComponentProps,
+  FormComponentProps,
+} from '../base/BaseComponentProps';
 
+// 하위 호환성을 위한 기존 인터페이스들 (deprecated, 새로운 BaseComponentProps 사용 권장)
 /**
- * 모든 UI 컴포넌트의 기본 Props
+ * @deprecated BaseComponentProps 사용 권장
  */
-export interface BaseUIComponentProps {
-  /** 자식 컴포넌트 */
-  children?: ComponentChildren;
-  /** 추가 클래스명 */
-  className?: string;
-  /** 테스트 ID */
-  'data-testid'?: string;
-  /** 접근성 레이블 */
-  'aria-label'?: string;
-  /** ARIA 속성들 */
-  'aria-describedby'?: string;
-  'aria-expanded'?: boolean;
-  'aria-hidden'?: boolean;
-  /** 접근성 역할 */
-  role?: string;
-  /** 탭 인덱스 */
-  tabIndex?: number;
-}
-
-/**
- * 상호작용 가능한 컴포넌트의 기본 Props
- */
-export interface InteractiveComponentProps extends BaseUIComponentProps {
-  /** 비활성화 상태 */
-  disabled?: boolean;
-  /** 클릭 이벤트 핸들러 */
-  onClick?: (event?: Event) => void;
-  /** 키보드 이벤트 핸들러 */
-  onKeyDown?: (event: KeyboardEvent) => void;
-  /** 포커스 이벤트 핸들러 */
-  onFocus?: (event: FocusEvent) => void;
-  /** 블러 이벤트 핸들러 */
-  onBlur?: (event: FocusEvent) => void;
-}
-
-/**
- * 로딩 상태를 가진 컴포넌트 Props
- */
-export interface LoadingComponentProps {
-  /** 로딩 상태 */
-  loading?: boolean;
-  /** 로딩 텍스트 */
-  loadingText?: string;
-}
-
-/**
- * 크기 변형을 가진 컴포넌트 Props
- */
-export interface SizedComponentProps {
-  /** 크기 변형 */
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-}
-
-/**
- * 색상 변형을 가진 컴포넌트 Props
- */
-export interface VariantComponentProps {
-  /** 색상/스타일 변형 */
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning';
-}
+export interface BaseUIComponentProps extends BaseComponentProps {}
 
 /**
  * 표준화된 Button Props
@@ -77,19 +26,13 @@ export interface StandardButtonProps
   extends InteractiveComponentProps,
     LoadingComponentProps,
     SizedComponentProps,
-    VariantComponentProps {
-  /** 버튼 타입 */
-  type?: 'button' | 'submit' | 'reset';
-  /** 폼 관련 속성 */
-  form?: string;
-  /** 자동 포커스 */
-  autoFocus?: boolean;
-}
+    VariantComponentProps,
+    FormComponentProps {}
 
 /**
  * 표준화된 Toast Props
  */
-export interface StandardToastProps extends BaseUIComponentProps {
+export interface StandardToastProps extends BaseComponentProps {
   /** Toast 타입 */
   type: 'info' | 'warning' | 'error' | 'success';
   /** 제목 */
@@ -109,7 +52,7 @@ export interface StandardToastProps extends BaseUIComponentProps {
 /**
  * 표준화된 ToastContainer Props
  */
-export interface StandardToastContainerProps extends BaseUIComponentProps {
+export interface StandardToastContainerProps extends BaseComponentProps {
   /** Toast 목록 */
   toasts?: unknown[];
   /** 최대 Toast 수 */
@@ -127,7 +70,7 @@ export interface StandardToastContainerProps extends BaseUIComponentProps {
 /**
  * 표준화된 Toolbar Props
  */
-export interface StandardToolbarProps extends BaseUIComponentProps {
+export interface StandardToolbarProps extends BaseComponentProps {
   /** 현재 인덱스 */
   currentIndex: number;
   /** 전체 개수 */
@@ -171,7 +114,7 @@ export const ComponentStandards = {
    * 표준 ARIA 속성 생성
    */
   createAriaProps: (
-    props: Partial<BaseUIComponentProps>
+    props: Partial<BaseComponentProps>
   ): Record<string, string | boolean | number | undefined> => {
     const ariaProps: Record<string, string | boolean | number | undefined> = {};
 
@@ -202,7 +145,7 @@ export const ComponentStandards = {
   /**
    * Props 병합 유틸리티
    */
-  mergeProps: <T extends BaseUIComponentProps>(baseProps: T, overrideProps: Partial<T>): T => {
+  mergeProps: <T extends BaseComponentProps>(baseProps: T, overrideProps: Partial<T>): T => {
     // 클래스명 병합
     const mergedClassName = ComponentStandards.createClassName(
       baseProps.className,
@@ -247,7 +190,7 @@ export const ComponentStandards = {
   /**
    * Props 유효성 검증
    */
-  validateProps: <T extends BaseUIComponentProps>(
+  validateProps: <T extends BaseComponentProps>(
     props: T,
     requiredProps: (keyof T)[] = [],
     validationRules: Partial<Record<keyof T, (value: unknown) => boolean>> = {}
