@@ -45,6 +45,17 @@ export function addListener(
   const id = generateListenerId(context);
 
   try {
+    // 안전성 검사: element가 유효한지 확인
+    if (!element || typeof element.addEventListener !== 'function') {
+      logger.warn(`유효하지 않은 element: ${element}`, {
+        type,
+        context,
+        elementType: typeof element,
+        hasAddEventListener: element && typeof element.addEventListener,
+      });
+      return id; // 빈 ID 반환하여 오류 방지
+    }
+
     element.addEventListener(type, listener, options);
 
     listeners.set(id, {

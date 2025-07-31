@@ -137,7 +137,7 @@ describe('갤러리 앱 활성화', () => {
         expect.objectContaining({
           onMediaClick: expect.any(Function),
           onGalleryClose: expect.any(Function),
-          onKeyboardEvent: expect.any(Function),
+          onKeyboardShortcut: expect.any(Function),
         })
       );
     });

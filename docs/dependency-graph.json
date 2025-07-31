@@ -4757,7 +4757,8 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/events.ts"
+        "src/shared/utils/events.ts",
+        "src/shared/utils/events-refactored.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6316,6 +6317,31 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/events-refactored.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./events/index",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/events/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/gallery/gallery-utils.ts",
       "dependencies": [],
       "dependents": [
@@ -6805,8 +6831,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 190,
-    "totalDependenciesCruised": 286,
+    "totalCruised": 191,
+    "totalDependenciesCruised": 287,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
