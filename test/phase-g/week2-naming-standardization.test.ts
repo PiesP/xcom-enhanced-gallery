@@ -36,9 +36,9 @@ describe('Phase G Week 2: 네이밍 표준화', () => {
       );
       expect(FallbackStrategy).toBeDefined();
 
-      // 하위 호환성 확인 (별칭 제공)
+      // Phase H: 하위 호환성 별칭 완전 제거 확인
       const fallbackModule = await import('@shared/services/media-extraction/strategies/fallback');
-      expect(fallbackModule.UnifiedFallbackStrategy).toBeDefined(); // 별칭
+      expect(fallbackModule.UnifiedFallbackStrategy).toBeUndefined(); // Phase H에서 제거됨
     });
 
     it('네이밍에서 불필요한 수식어가 제거되어야 한다', async () => {
@@ -47,7 +47,7 @@ describe('Phase G Week 2: 네이밍 표준화', () => {
 
       // 주요 export된 클래스명이 금지된 접두사로 시작하지 않는지 확인
       const exportNames = Object.keys(fallbackModule).filter(
-        name => name !== 'UnifiedFallbackStrategy' // 하위 호환성 별칭은 제외
+        name => name !== 'UnifiedFallbackStrategy' // Phase H에서 제거된 별칭
       );
 
       exportNames.forEach(exportName => {

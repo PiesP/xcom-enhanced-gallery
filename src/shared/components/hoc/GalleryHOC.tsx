@@ -453,7 +453,7 @@ export function validateHOCIntegration(element: Element): {
 
   // 레거시 마커 검출
   if (element.hasAttribute('data-gallery-marker')) {
-    warnings.push('Legacy gallery marker detected. Consider migrating to UnifiedGalleryHOC');
+    warnings.push('Legacy gallery marker detected. Consider migrating to GalleryHOC');
   }
 
   return {

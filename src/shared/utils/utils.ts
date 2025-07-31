@@ -180,12 +180,6 @@ export class GalleryUtils {
   }
 }
 
-// 하위 호환성을 위한 별칭들
-export const GalleryStateGuard = GalleryUtils;
-export const VideoControlBlocker = {
-  shouldBlockGalleryTrigger: GalleryUtils.shouldBlockGalleryTrigger.bind(GalleryUtils),
-};
-
 // 편의 함수들 (GalleryUtils 메서드들의 직접 export)
 export const {
   canTriggerGallery,

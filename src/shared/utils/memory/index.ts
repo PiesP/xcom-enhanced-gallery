@@ -1,7 +1,7 @@
 /**
- * @fileoverview Phase G Week 2: Memory utilities unified
+ * @fileoverview Phase H: Memory utilities
  * @description Direct function exports for better tree-shaking
- * @version 3.0.0 - Bundle Size Optimization
+ * @version 4.0.0 - Phase H: Final cleanup
  */
 
 // Phase G Week 2: Use direct function imports from resource-manager

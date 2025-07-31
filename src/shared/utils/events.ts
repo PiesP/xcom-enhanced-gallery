@@ -728,10 +728,6 @@ export class GalleryEventManager {
   }
 }
 
-// 백워드 호환성을 위한 별칭
-export const EventDispatcher = GalleryEventManager;
-export const GalleryEventCoordinator = GalleryEventManager;
-
 // ================================
 // 백워드 호환성을 위한 추가 유틸리티 함수들
 // ================================
