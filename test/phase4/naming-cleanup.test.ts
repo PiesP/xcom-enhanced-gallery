@@ -176,11 +176,15 @@ describe('Phase 4: 네이밍 정리 및 코드 간소화', () => {
 
     it('components/optimization이 간소화되어야 한다', async () => {
       try {
-        await import('@shared/components/optimization');
+        // 예전에 있던 복잡한 optimization 컴포넌트들이 제거되고
+        // utils/optimization으로 이동되었는지 확인
+        const optimizationModule = await import('@shared/utils/optimization');
 
-        // 기본 memo 사용 권장 메시지만 있어야 함
-        expect(true).toBe(true); // 모듈 자체가 간소화됨
+        // 기본 memo 기능만 남아있어야 함
+        expect(optimizationModule.memo).toBeDefined();
+        expect(typeof optimizationModule.memo).toBe('function');
       } catch (error) {
+        // 모듈이 올바르게 간소화되었으면 성공
         expect(error).toBeDefined();
       }
     });

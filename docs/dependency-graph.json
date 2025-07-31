@@ -5302,6 +5302,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./memo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/optimization/memo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -5312,6 +5329,15 @@
     },
     {
       "source": "src/shared/utils/optimization/bundle.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/optimization/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/optimization/memo.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/optimization/index.ts"
@@ -6714,8 +6740,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 185,
-    "totalDependenciesCruised": 283,
+    "totalCruised": 186,
+    "totalDependenciesCruised": 284,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
