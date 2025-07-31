@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery - MIT License
  *
- * @fileoverview Optimized Vertical Gallery View Component
+ * @fileoverview Vertical Gallery View Component
  * @version 6.0 - 통합 툴바 상태 관리 시스템 적용
  *
  * 주요 개선사항:

@@ -11,15 +11,6 @@
 import { logger } from '@shared/logging';
 
 /**
- * 갤러리 컴포넌트 동적 로딩
- * @deprecated features 레이어 컴포넌트는 features 레이어에서 직접 로딩하세요
- */
-export async function loadGalleryComponent(componentName: string) {
-  logger.warn('갤러리 컴포넌트 로딩이 deprecated되었습니다:', { componentName });
-  throw new Error(`갤러리 컴포넌트는 features 레이어에서 직접 로딩하세요: ${componentName}`);
-}
-
-/**
  * 서비스 모듈 동적 로딩
  */
 export async function loadServiceModule(serviceName: string) {
@@ -72,11 +63,11 @@ export async function loadUtilityModule(utilityName: string) {
 
   try {
     switch (utilityName) {
-      case 'VirtualScrollManager': {
-        const module = await import('@shared/utils/virtual-scroll');
+      case 'ScrollHelper': {
+        const module = await import('@shared/utils/virtual-scroll/ScrollHelper');
         const loadTime = performance.now() - startTime;
-        logger.debug('VirtualScrollManager 로딩 완료:', { loadTime });
-        return module.VirtualScrollManager;
+        logger.debug('ScrollHelper 로딩 완료:', { loadTime });
+        return module.ScrollHelper;
       }
 
       case 'AccessibilityUtils': {
@@ -171,7 +162,8 @@ export async function loadModulesParallel(
     try {
       switch (type) {
         case 'component':
-          return { type, name, module: await loadGalleryComponent(name), success: true };
+          logger.warn(`갤러리 컴포넌트는 features 레이어에서 직접 로딩하세요: ${name}`);
+          return { type, name, module: null, success: false, error: 'deprecated' };
         case 'service':
           return { type, name, module: await loadServiceModule(name), success: true };
         case 'utility':

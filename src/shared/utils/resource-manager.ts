@@ -85,14 +85,6 @@ export function createManagedInterval(
 }
 
 /**
- * 인터벌 등록 및 관리(setInterval)
- * @deprecated Use createManagedInterval instead
- */
-export function createInterval(callback: () => void, delay: number, context?: string): string {
-  return createManagedInterval(callback, delay, context);
-}
-
-/**
  * ?�벤??리스???�록 �?관�? */
 export function addManagedEventListener(
   element: EventTarget,
@@ -338,53 +330,4 @@ export function getResourceDiagnostics() {
     byType,
     byContext,
   };
-}
-
-/**
- * ?�환?�을 ?�한 ?�거??객체
- * @deprecated Phase 3?�서 ?�거 ?�정
- */
-export const resourceManager = {
-  createTimer,
-  createInterval: createManagedInterval,
-  addEventListener: addManagedEventListener,
-  createObserver: createManagedObserver,
-  createController: createManagedController,
-  createObjectURL: createManagedObjectURL,
-  registerMemoryResource: registerManagedMemoryResource,
-  release: releaseResource,
-  releaseByContext: releaseResourcesByContext,
-  releaseByType: releaseResourcesByType,
-  cleanup: cleanupAllResources,
-  getResourceCount,
-  getResourceCountByContext,
-  getResourceCountByType,
-  hasResource,
-  getDiagnostics: getResourceDiagnostics,
-} as const;
-
-/**
- * ?�환?�을 ?�한 ?�거???�래?? * @deprecated Phase 3?�서 ?�거 ?�정
- */
-export class ResourceManager {
-  static getInstance() {
-    return resourceManager;
-  }
-
-  createTimer = createTimer;
-  createInterval = createManagedInterval;
-  addEventListener = addManagedEventListener;
-  createObserver = createManagedObserver;
-  createController = createManagedController;
-  createObjectURL = createManagedObjectURL;
-  registerMemoryResource = registerManagedMemoryResource;
-  release = releaseResource;
-  releaseByContext = releaseResourcesByContext;
-  releaseByType = releaseResourcesByType;
-  cleanup = cleanupAllResources;
-  getResourceCount = getResourceCount;
-  getResourceCountByContext = getResourceCountByContext;
-  getResourceCountByType = getResourceCountByType;
-  hasResource = hasResource;
-  getDiagnostics = getResourceDiagnostics;
 }

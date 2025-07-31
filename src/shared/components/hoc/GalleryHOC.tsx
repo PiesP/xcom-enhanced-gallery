@@ -1,13 +1,14 @@
 /**
  * @fileoverview 갤러리 HOC 시스템
- * @description 갤러리 컴포넌트를 위한 고차 컴포넌트
- * @version 2.0.0 - Phase 2 코드 단순화
+ * @description 갤러리 컴포넌트를 위한 고차 컴포넌트 (Phase 2-3B: 통합 완료)
+ * @version 3.0.0 - GalleryMarker 기능 통합
  */
 
 import { logger } from '@shared/logging/logger';
-import type { ComponentChildren, ComponentType } from '@shared/types/app.types';
+import type { ComponentType } from '@shared/types/app.types';
 import { getPreact } from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
+import type { GalleryComponentProps as BaseGalleryComponentProps } from '../base/BaseComponentProps';
 
 /**
  * 갤러리 마킹 타입
@@ -42,14 +43,12 @@ export interface GalleryOptions {
 }
 
 /**
- * 갤러리 컴포넌트 기본 Props
+ * 갤러리 컴포넌트 Props (통합된 인터페이스)
  */
-export interface GalleryComponentProps {
-  children?: ComponentChildren;
-  className?: string;
-  onClick?: (event: MouseEvent) => void;
-  onKeyDown?: (event: KeyboardEvent) => void;
-  [key: string]: unknown;
+export interface GalleryComponentProps extends BaseGalleryComponentProps {
+  /** 마우스 이벤트 핸들러들 */
+  onMouseEnter?: (event: MouseEvent) => void;
+  onMouseLeave?: (event: MouseEvent) => void;
 }
 
 /**
@@ -366,17 +365,6 @@ export function withGalleryOverlay<P extends GalleryComponentProps>(
  * 기본 갤러리 HOC (withGallery의 별칭)
  */
 export const GalleryHOC = withGallery;
-
-/**
- * 갤러리 마커 HOC (하위 호환성)
- */
-export function withGalleryMarker<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  options: { type: GalleryType; [key: string]: unknown }
-): ComponentType<P> {
-  logger.warn('withGalleryMarker is deprecated. Use withGallery instead.');
-  return withGallery(Component, options as GalleryOptions);
-}
 
 /**
  * 유틸리티 함수들

@@ -46,7 +46,6 @@ export {
   globalTimerManager,
   safePerformanceNow,
   createManagedDebounce,
-  createManagedThrottle,
 } from './timer-management';
 
 // Type safety helpers (이동된 위치)
@@ -65,7 +64,6 @@ export {
   extractTweetInfoFromUrl,
   safeQuerySelector,
   isInsideGallery,
-  releaseResource,
 } from './core-utils';
 
 // ================================
@@ -95,7 +93,7 @@ export {
 // 리소스 관리
 // ================================
 
-export { createTimer, createManagedInterval, ResourceManager } from './resource-manager';
+export { createTimer, createManagedInterval } from './resource-manager';
 
 // ================================
 // 미디어 유틸리티

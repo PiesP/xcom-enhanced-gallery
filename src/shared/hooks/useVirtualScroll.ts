@@ -6,7 +6,7 @@
 import { logger } from '@shared/logging';
 import { getPreactHooks } from '@shared/external/vendors';
 import type { MediaInfo } from '@shared/types';
-import { VirtualScrollManager, type RenderRange } from '../utils/virtual-scroll';
+import { ScrollHelper, type RenderRange } from '../utils/virtual-scroll';
 
 /**
  * 가상 스크롤 훅 옵션
@@ -76,7 +76,7 @@ export function useVirtualScroll(options: UseVirtualScrollOptions): UseVirtualSc
   // 가상 스크롤 매니저 초기화
   const manager = useMemo(
     () =>
-      new VirtualScrollManager({
+      new ScrollHelper({
         itemHeight,
         viewportHeight,
         bufferSize,

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Simplified Media Mapping Service
+ * @fileoverview Media Mapping Service
  * @description 전략 패턴을 사용한 간단한 미디어 매핑 서비스
  */
 

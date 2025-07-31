@@ -4,11 +4,14 @@
  * @version 3.0.0
  */
 
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { getPreactHooks } from '@shared/external/vendors';
 import {
   MediaLoadingService,
   type MediaLoadingOptions,
 } from '@shared/services/MediaLoadingService';
+
+// Preact hooks를 vendor 시스템을 통해 가져오기
+const { useEffect, useRef, useState } = getPreactHooks();
 
 // 글로벌 서비스 인스턴스
 const mediaLoadingService = new MediaLoadingService();

@@ -174,7 +174,7 @@ export class MediaExtractionService implements MediaExtractor {
         metadata: {
           extractedAt: Date.now(),
           sourceType: 'dom-fallback',
-          strategy: 'simplified-extraction',
+          strategy: 'extraction',
         },
         tweetInfo: domResult.tweetInfo,
       };

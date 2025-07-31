@@ -56,16 +56,6 @@ export function combineClasses(...classes: (string | undefined | null)[]): strin
 }
 
 /**
- * 리소스 해제
- * @deprecated 중복 함수 - resource-manager.ts의 releaseResource 사용
- */
-export function releaseResource(id: string): boolean {
-  // resourceManager에 위임
-  const { releaseResource: releaseResourceImpl } = require('./resource-manager');
-  return releaseResourceImpl(id);
-}
-
-/**
  * 요소가 갤러리 컨테이너인지 확인
  */
 export function isGalleryContainer(element: HTMLElement | null): boolean {
@@ -198,55 +188,12 @@ export function setCSSVariables(
 // 성능 유틸리티
 // ================================
 
-/**
- * RAF 기반 throttle (최고 성능)
- */
-export function rafThrottle<T extends unknown[]>(
-  fn: (...args: T) => void,
-  options: { leading?: boolean; trailing?: boolean } = {}
-): (...args: T) => void {
-  const { leading = true, trailing = true } = options;
-  let isThrottled = false;
-  let pendingArgs: T | null = null;
+// ================================
+// Performance utilities re-export
+// ================================
 
-  function throttled(this: unknown, ...args: T): void {
-    pendingArgs = args;
-
-    if (!isThrottled) {
-      if (leading) {
-        try {
-          fn(...args);
-        } catch (error) {
-          logger.warn('RAF throttle function error:', error);
-        }
-      }
-
-      isThrottled = true;
-      requestAnimationFrame(() => {
-        isThrottled = false;
-        if (trailing && pendingArgs) {
-          try {
-            fn(...pendingArgs);
-          } catch (error) {
-            logger.warn('RAF throttle trailing function error:', error);
-          }
-        }
-        pendingArgs = null;
-      });
-    }
-  }
-
-  return throttled;
-}
-
-/**
- * 스크롤 이벤트용 throttle (기본값)
- */
-export function throttleScroll<T extends unknown[]>(
-  fn: (...args: T) => void
-): (...args: T) => void {
-  return rafThrottle(fn, { leading: true, trailing: true });
-}
+// RAF throttle and scroll throttle from performance module
+export { rafThrottle, throttleScroll } from './performance/performance-utils';
 
 // ================================
 // 스크롤 유틸리티
@@ -345,40 +292,8 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 // 성능 측정 유틸리티
 // ================================
 
-interface PerformanceMeasurement {
-  name: string;
-  duration: number;
-  startTime: number;
-  endTime: number;
-}
-
-/**
- * 성능 측정 함수
- */
-export function measurePerformance<T>(
-  name: string,
-  fn: () => T
-): { result: T; measurement: PerformanceMeasurement } {
-  const startTime = performance.now();
-  const result = fn();
-  const endTime = performance.now();
-  const duration = endTime - startTime;
-
-  const measurement: PerformanceMeasurement = {
-    name,
-    duration,
-    startTime,
-    endTime,
-  };
-
-  if (duration > 100) {
-    logger.warn(`Performance warning: ${name} took ${duration.toFixed(2)}ms`);
-  } else {
-    logger.debug(`Performance: ${name} took ${duration.toFixed(2)}ms`);
-  }
-
-  return { result, measurement };
-}
+// Performance measurement re-export
+export { measurePerformance, measureAsyncPerformance } from './performance/performance-utils';
 
 // ================================
 // 디버그 유틸리티

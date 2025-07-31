@@ -62,25 +62,8 @@ export function preventScrollPropagation(
   };
 }
 
-/**
- * 스크롤 스로틀링 유틸리티
- */
-export function throttleScroll<T extends readonly unknown[]>(
-  callback: (...args: T) => void,
-  delay: number = 16
-): (...args: T) => void {
-  let isThrottled = false;
-
-  return (...args: T) => {
-    if (!isThrottled) {
-      callback(...args);
-      isThrottled = true;
-      setTimeout(() => {
-        isThrottled = false;
-      }, delay);
-    }
-  };
-}
+// Re-export throttleScroll from performance utils (RAF-based, more efficient)
+export { throttleScroll } from '../performance/performance-utils';
 
 /**
  * 스크롤 이벤트 처리기 생성

@@ -164,12 +164,3 @@ export function createNamespacedClass(className: string): string {
 export function createNamespacedSelector(selector: string): string {
   return `.${NAMESPACE} ${selector}`;
 }
-
-/**
- * 호환성을 위한 레거시 객체
- * @deprecated Phase 2에서 제거 예정
- */
-export const namespacedDesignSystem = {
-  initialize: initializeNamespacedStyles,
-  cleanup: cleanupNamespacedStyles,
-} as const;
