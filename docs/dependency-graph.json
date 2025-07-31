@@ -6435,6 +6435,58 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/patterns/url-patterns-backup.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/utils/patterns/url-patterns-backup2.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/utils/patterns/url-patterns-optimized.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/utils/patterns/url-patterns-ultra.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/utils/performance/index.ts",
       "dependencies": [
         {
@@ -6826,12 +6878,49 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/utils/patterns/url-patterns-backup.ts",
+        "to": "src/shared/utils/patterns/url-patterns-backup.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/patterns/url-patterns-backup2.ts",
+        "to": "src/shared/utils/patterns/url-patterns-backup2.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/patterns/url-patterns-optimized.ts",
+        "to": "src/shared/utils/patterns/url-patterns-optimized.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/patterns/url-patterns-ultra.ts",
+        "to": "src/shared/utils/patterns/url-patterns-ultra.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 4,
     "ignore": 0,
-    "totalCruised": 191,
+    "totalCruised": 195,
     "totalDependenciesCruised": 287,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

@@ -39,7 +39,7 @@ export const URLPatterns = {
   extractTweetId(url: string): string | null {
     if (!url) return null;
     const match = url.match(this.TWEET_URL);
-    return match ? match[2] : null;
+    return match ? match[2] || null : null;
   },
 
   /**
@@ -50,15 +50,15 @@ export const URLPatterns = {
 
     // Try tweet URL first
     let match = url.match(this.TWEET_URL);
-    if (match && match[1] !== 'i') return match[1];
+    if (match && match[1] !== 'i') return match[1] || null;
 
     // Try photo URL
     match = url.match(this.TWEET_PHOTO);
-    if (match && match[1] !== 'i') return match[1];
+    if (match && match[1] !== 'i') return match[1] || null;
 
     // Try media page
     match = url.match(this.MEDIA_PAGE);
-    if (match && match[1] !== 'i') return match[1];
+    if (match && match[1] !== 'i') return match[1] || null;
 
     return null;
   },
@@ -210,13 +210,11 @@ export function detectTwitterUrl(element?: Element): string | null {
 }
 
 // Legacy compatibility exports
-export const {
-  TWEET_URL_PATTERN: TWEET_URL,
-  MEDIA_PAGE_PATTERN: MEDIA_PAGE,
-  TWEET_PHOTO_URL_PATTERN: TWEET_PHOTO,
-  XCOM_URL_PATTERN: X_DOMAIN,
-  TWITTER_URL_PATTERN: TWITTER_DOMAIN,
-  IMAGE_URL_PATTERN: IMAGE,
-  VIDEO_URL_PATTERN: VIDEO,
-  TWITTER_IMAGE_PATTERN: TWITTER_MEDIA,
-} = URLPatterns;
+export const TWEET_URL_PATTERN = URLPatterns.TWEET_URL;
+export const MEDIA_PAGE_PATTERN = URLPatterns.MEDIA_PAGE;
+export const TWEET_PHOTO_URL_PATTERN = URLPatterns.TWEET_PHOTO;
+export const XCOM_URL_PATTERN = URLPatterns.X_DOMAIN;
+export const TWITTER_URL_PATTERN = URLPatterns.TWITTER_DOMAIN;
+export const IMAGE_URL_PATTERN = URLPatterns.IMAGE;
+export const VIDEO_URL_PATTERN = URLPatterns.VIDEO;
+export const TWITTER_IMAGE_PATTERN = URLPatterns.TWITTER_MEDIA;

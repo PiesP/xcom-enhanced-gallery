@@ -27,7 +27,7 @@ export const URLPatterns = {
    * Check if URL is Twitter platform (X.com or Twitter.com)
    */
   isTwitterPlatform(url: string): boolean {
-    return url && this.PLATFORM.test(url);
+    return Boolean(url && this.PLATFORM.test(url));
   },
 
   /**
@@ -76,7 +76,9 @@ export const URLPatterns = {
    * Check if URL is a valid media URL
    */
   isValidMediaUrl(url: string): boolean {
-    return url && (this.IMAGE.test(url) || this.VIDEO.test(url) || this.TWITTER_MEDIA.test(url));
+    return Boolean(
+      url && (this.IMAGE.test(url) || this.VIDEO.test(url) || this.TWITTER_MEDIA.test(url))
+    );
   },
 };
 

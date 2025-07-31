@@ -54,12 +54,22 @@ export interface MotionAPI {
   animate: (
     element: Element,
     keyframes: Keyframe[] | PropertyIndexedKeyframes | Record<string, unknown>,
-    options?: { duration?: number; easing?: string }
+    options?: { duration?: number; easing?: string; delay?: number }
   ) => Promise<Animation | void>;
   scroll: (
-    onScroll: (info: { scrollY: number }) => void,
+    onScroll: (info: { scrollY: number; progress?: number }) => void,
     options?: { container?: Element | null }
   ) => () => void;
+  timeline: (
+    animations: Array<{
+      element: Element;
+      keyframes: Keyframe[] | PropertyIndexedKeyframes | Record<string, unknown>;
+      options?: { duration?: number; easing?: string; delay?: number };
+    }>
+  ) => Promise<void>;
+  stagger: (delay: number) => (index: number) => number;
+  inView: (element: Element, callback: () => void, options?: { threshold?: number }) => () => void;
+  transform: (value: number, input: number[], output: number[]) => number;
 }
 
 export interface NativeDownloadAPI {
@@ -71,10 +81,12 @@ export interface NativeDownloadAPI {
 // TanStack API 타입들
 export interface TanStackQueryAPI {
   QueryClient: typeof import('@tanstack/query-core').QueryClient;
+  QueryCache: typeof import('@tanstack/query-core').QueryCache;
 }
 
 export interface TanStackVirtualAPI {
   useVirtualizer: typeof import('@tanstack/react-virtual').useVirtualizer;
+  defaultRangeExtractor: typeof import('@tanstack/react-virtual').defaultRangeExtractor;
 }
 
 export class VendorManager {
@@ -266,8 +278,15 @@ export class VendorManager {
         animate: async (
           element: Element,
           keyframes: Keyframe[] | PropertyIndexedKeyframes | Record<string, unknown>,
-          _options?: { duration?: number; easing?: string; delay?: number }
+          options?: { duration?: number; easing?: string; delay?: number }
         ): Promise<Animation | void> => {
+          const { delay = 0 } = options || {};
+
+          // delay가 있으면 setTimeout으로 처리
+          if (delay > 0) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+
           // 기본 애니메이션 폴백
           if (
             element instanceof HTMLElement &&
@@ -279,17 +298,77 @@ export class VendorManager {
           return Promise.resolve();
         },
         scroll: (
-          onScroll: (info: { scrollY: number; progress: number }) => void,
-          _options?: { container?: Element | null }
+          onScroll: (info: { scrollY: number; progress?: number }) => void,
+          options?: { container?: Element | null }
         ): (() => void) => {
+          const { container = window } = options || {};
           const handler = () => {
-            const scrollY = window.scrollY;
-            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollY =
+              container === window ? window.scrollY : (container as Element).scrollTop;
+            const maxScroll =
+              container === window
+                ? document.documentElement.scrollHeight - window.innerHeight
+                : (container as Element).scrollHeight - (container as Element).clientHeight;
             const progress = maxScroll > 0 ? scrollY / maxScroll : 0;
             onScroll({ scrollY, progress });
           };
-          window.addEventListener('scroll', handler);
-          return () => window.removeEventListener('scroll', handler);
+          
+          if (container) {
+            container.addEventListener('scroll', handler);
+            return () => container.removeEventListener('scroll', handler);
+          }
+          return () => {};
+        },
+        timeline: async animations => {
+          // 순차적으로 애니메이션 실행
+          for (const animation of animations) {
+            await api.animate(animation.element, animation.keyframes, animation.options);
+          }
+        },
+        stagger: delay => {
+          return (index: number) => index * delay;
+        },
+        inView: (element, callback, options = {}) => {
+          const { threshold = 0 } = options;
+
+          if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver(
+              entries => {
+                entries.forEach(entry => {
+                  if (entry.isIntersecting) {
+                    callback();
+                  }
+                });
+              },
+              { threshold }
+            );
+
+            observer.observe(element);
+            return () => observer.disconnect();
+          }
+
+          // 폴백: 항상 콜백 실행
+          callback();
+          return () => {};
+        },
+        transform: (value, input, output) => {
+          // 선형 보간 구현
+          if (input.length !== 2 || output.length !== 2) {
+            return value;
+          }
+
+          const inputMin = input[0]!;
+          const inputMax = input[1]!;
+          const outputMin = output[0]!;
+          const outputMax = output[1]!;
+
+          const inputRange = inputMax - inputMin;
+          const outputRange = outputMax - outputMin;
+
+          if (inputRange === 0) return outputMin;
+
+          const normalizedValue = (value - inputMin) / inputRange;
+          return outputMin + normalizedValue * outputRange;
         },
       };
 
@@ -313,7 +392,7 @@ export class VendorManager {
     try {
       const api: MotionAPI = {
         animate: async (element, keyframes, options = {}) => {
-          const { duration = 300, easing = 'ease' } = options;
+          const { duration = 300, easing = 'ease', delay = 0 } = options;
           let animationKeyframes: Keyframe[] | PropertyIndexedKeyframes;
 
           if (Array.isArray(keyframes)) {
@@ -322,6 +401,11 @@ export class VendorManager {
             animationKeyframes = keyframes as PropertyIndexedKeyframes;
           } else {
             return Promise.resolve();
+          }
+
+          // delay가 있으면 setTimeout으로 처리
+          if (delay > 0) {
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
 
           const animation = element.animate(animationKeyframes, {
@@ -338,7 +422,12 @@ export class VendorManager {
           const handleScroll = () => {
             const scrollY =
               container === window ? window.scrollY : (container as Element).scrollTop;
-            onScroll({ scrollY });
+            const maxScroll =
+              container === window
+                ? document.documentElement.scrollHeight - window.innerHeight
+                : (container as Element).scrollHeight - (container as Element).clientHeight;
+            const progress = maxScroll > 0 ? scrollY / maxScroll : 0;
+            onScroll({ scrollY, progress });
           };
 
           if (container) {
@@ -346,6 +435,61 @@ export class VendorManager {
             return () => container.removeEventListener('scroll', handleScroll);
           }
           return () => {};
+        },
+
+        timeline: async animations => {
+          // 순차적으로 애니메이션 실행
+          for (const animation of animations) {
+            await api.animate(animation.element, animation.keyframes, animation.options);
+          }
+        },
+
+        stagger: delay => {
+          return (index: number) => index * delay;
+        },
+
+        inView: (element, callback, options = {}) => {
+          const { threshold = 0 } = options;
+
+          if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver(
+              entries => {
+                entries.forEach(entry => {
+                  if (entry.isIntersecting) {
+                    callback();
+                  }
+                });
+              },
+              { threshold }
+            );
+
+            observer.observe(element);
+            return () => observer.disconnect();
+          }
+
+          // 폴백: 항상 콜백 실행
+          callback();
+          return () => {};
+        },
+
+        transform: (value, input, output) => {
+          // 선형 보간 구현
+          if (input.length !== 2 || output.length !== 2) {
+            return value;
+          }
+
+          const inputMin = input[0]!;
+          const inputMax = input[1]!;
+          const outputMin = output[0]!;
+          const outputMax = output[1]!;
+
+          const inputRange = inputMax - inputMin;
+          const outputRange = outputMax - outputMin;
+
+          if (inputRange === 0) return outputMin;
+
+          const normalizedValue = (value - inputMin) / inputRange;
+          return outputMin + normalizedValue * outputRange;
         },
       };
 
@@ -443,12 +587,18 @@ export class VendorManager {
     try {
       const query = await import('@tanstack/query-core');
 
-      if (!query.QueryClient || typeof query.QueryClient !== 'function') {
+      if (
+        !query.QueryClient ||
+        typeof query.QueryClient !== 'function' ||
+        !query.QueryCache ||
+        typeof query.QueryCache !== 'function'
+      ) {
         throw new Error('TanStack Query 라이브러리 검증 실패');
       }
 
       const api: TanStackQueryAPI = {
         QueryClient: query.QueryClient,
+        QueryCache: query.QueryCache,
       };
 
       this.cache.set(cacheKey, api);
@@ -471,12 +621,18 @@ export class VendorManager {
     try {
       const virtual = await import('@tanstack/react-virtual');
 
-      if (!virtual.useVirtualizer || typeof virtual.useVirtualizer !== 'function') {
+      if (
+        !virtual.useVirtualizer ||
+        typeof virtual.useVirtualizer !== 'function' ||
+        !virtual.defaultRangeExtractor ||
+        typeof virtual.defaultRangeExtractor !== 'function'
+      ) {
         throw new Error('TanStack Virtual 라이브러리 검증 실패');
       }
 
       const api: TanStackVirtualAPI = {
         useVirtualizer: virtual.useVirtualizer,
+        defaultRangeExtractor: virtual.defaultRangeExtractor,
       };
 
       this.cache.set(cacheKey, api);
