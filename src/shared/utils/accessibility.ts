@@ -7,19 +7,14 @@
 import { safeParseInt } from './type-safety-helpers';
 
 /**
- * 상대 휘도 계산 (WCAG 기준)
+ * 접근성 유틸리티 함수들
  */
-export function getRelativeLuminance(r: number, g: number, b: number): number {
-  const rsRGB = r / 255;
-  const gsRGB = g / 255;
-  const bsRGB = b / 255;
 
-  const rLin = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
-  const gLin = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
-  const bLin = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+// Re-export from accessibility-utils to avoid duplication
+export { getRelativeLuminance } from './accessibility/accessibility-utils';
 
-  return 0.2126 * rLin + 0.7152 * gLin + 0.0722 * bLin;
-}
+// Import for internal use
+import { getRelativeLuminance } from './accessibility/accessibility-utils';
 
 /**
  * CSS 색상 문자열을 RGB 배열로 파싱합니다.

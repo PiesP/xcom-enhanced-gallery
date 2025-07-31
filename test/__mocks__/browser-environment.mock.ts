@@ -1,6 +1,6 @@
 /**
- * 브라우저 환경 모의 구현
- * 브라우저 확장 API 및 웹 환경을 모의하여 테스트 환경에서 사용
+ * @fileoverview 브라우저 환경 모의 구현
+ * @description 브라우저 확장 API 및 웹 환경을 모의하여 테스트 환경에서 사용
  */
 
 import { vi } from 'vitest';

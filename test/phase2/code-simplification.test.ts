@@ -112,7 +112,7 @@ describe('Phase 2: 코드 단순화 및 명명 개선', () => {
   });
 
   describe('4. 타입 정의 단순화', () => {
-    it('갤러리 관련 타입들이 명확하게 정의되어야 한다', async () => {
+    it('Phase 2: 갤러리 관련 타입들이 코드 간소화를 통해 명확하게 정의되어야 한다', async () => {
       // TypeScript 타입은 런타임에 존재하지 않으므로 컴파일 시점 검증
       // 실제 컴포넌트를 통해 간접적으로 타입 정의 검증
       const galleryModule = await import('@features/gallery/components');

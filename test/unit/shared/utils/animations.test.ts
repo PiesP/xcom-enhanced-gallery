@@ -55,7 +55,7 @@ describe('애니메이션 유틸리티', () => {
   });
 
   describe('ANIMATION_PRESETS', () => {
-    it('모든 기본 애니메이션 프리셋이 정의되어야 한다', () => {
+    it('모든 프리셋 중복 제거 - 기본 애니메이션 프리셋이 정의되어야 한다', () => {
       expect(ANIMATION_PRESETS.fadeIn).toBeDefined();
       expect(ANIMATION_PRESETS.fadeOut).toBeDefined();
       expect(ANIMATION_PRESETS.slideInFromBottom).toBeDefined();
@@ -68,7 +68,7 @@ describe('애니메이션 유틸리티', () => {
       expect(ANIMATION_PRESETS.smooth).toBeDefined();
     });
 
-    it('각 프리셋은 keyframes와 options를 가져야 한다', () => {
+    it('프리셋 구조 검증 - 각 프리셋은 keyframes와 options를 가져야 한다', () => {
       Object.values(ANIMATION_PRESETS).forEach(preset => {
         expect(preset).toHaveProperty('keyframes');
         expect(preset).toHaveProperty('options');

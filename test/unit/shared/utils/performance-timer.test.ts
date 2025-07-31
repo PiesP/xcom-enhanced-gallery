@@ -3,11 +3,11 @@
  * @description Phase C: 타이머 관리 유틸리티 검증
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('타이머 관리 (단순화)', () => {
   describe('타이머 관리 패턴', () => {
-    it('TimerManager 클래스가 올바르게 동작해야 한다', () => {
+    it('타이머 기본 동작 - TimerManager 클래스가 올바르게 동작해야 한다', () => {
       // TimerManager 기본 구조 검증
       const TimerManagerClass = class {
         constructor() {
@@ -38,7 +38,7 @@ describe('타이머 관리 (단순화)', () => {
       expect(manager.getActiveTimersCount()).toBe(0);
     });
 
-    it('성능 측정 패턴이 올바르게 동작해야 한다', () => {
+    it('성능 측정 실행 - 성능 측정 패턴이 올바르게 동작해야 한다', () => {
       function measurePerformance(fn) {
         const start = Date.now();
         const result = fn();
@@ -53,7 +53,7 @@ describe('타이머 관리 (단순화)', () => {
       expect(measurement.duration).toBeGreaterThanOrEqual(0);
     });
 
-    it('debounce 패턴이 구현되어야 한다', () => {
+    it('디바운스 구현 - debounce 패턴이 구현되어야 한다', () => {
       // debounce 기본 구조만 검증
       function createDebounce() {
         let timeoutId = null;
@@ -80,7 +80,7 @@ describe('타이머 관리 (단순화)', () => {
       expect(debouncedFn()).toBe('debounced');
     });
 
-    it('throttle 패턴이 구현되어야 한다', () => {
+    it('스로틀 구현 - throttle 패턴이 구현되어야 한다', () => {
       // throttle 기본 구조만 검증
       function createThrottle() {
         let lastExecution = 0;
@@ -108,7 +108,7 @@ describe('타이머 관리 (단순화)', () => {
   });
 
   describe('메모리 누수 방지 패턴', () => {
-    it('이벤트 리스너 관리 패턴이 구현되어야 한다', () => {
+    it('이벤트 관리 - 이벤트 리스너 관리 패턴이 구현되어야 한다', () => {
       const eventManager = {
         listeners: new Map(),
 
@@ -134,7 +134,7 @@ describe('타이머 관리 (단순화)', () => {
       expect(eventManager.listeners.size).toBe(0);
     });
 
-    it('리소스 정리가 일관되게 수행되어야 한다', () => {
+    it('리소스 정리 - 리소스 정리가 일관되게 수행되어야 한다', () => {
       const resourceManager = {
         resources: new Set(),
 

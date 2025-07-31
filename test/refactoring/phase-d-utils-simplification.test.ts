@@ -163,7 +163,7 @@ describe('Phase D: unified-utils.ts 간소화', () => {
       expect(result).toEqual(['a', 'b', 'c']);
     });
 
-    it('갤러리 관련 함수들이 간소화되어야 한다', async () => {
+    it('Phase D: 갤러리 관련 함수들이 유틸리티 간소화를 통해 명확해져야 한다', async () => {
       const utils = await import('@shared/utils');
 
       // 복잡한 클래스 대신 간단한 함수들

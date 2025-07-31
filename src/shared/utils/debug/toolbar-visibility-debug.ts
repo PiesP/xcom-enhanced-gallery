@@ -205,7 +205,7 @@ export function debugToolbarVisibility(
 /**
  * 툴바 가시성을 강제로 복원하는 유틸리티
  */
-export function forceToolbarVisible(selector = '[data-testid="xcom-gallery-toolbar"]'): boolean {
+export function isForceToolbarVisible(selector = '[data-testid="xcom-gallery-toolbar"]'): boolean {
   const toolbar = document.querySelector(selector) as HTMLElement;
 
   if (!toolbar) {

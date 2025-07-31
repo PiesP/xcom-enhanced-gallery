@@ -199,7 +199,7 @@ describe('Phase E: 네이밍 간소화', () => {
   });
 
   describe('4. 도메인 특화 네이밍', () => {
-    it('갤러리 관련 함수들이 명확한 도메인 네이밍을 사용해야 한다', async () => {
+    it('Phase E: 갤러리 관련 함수들이 네이밍 간소화를 통해 명확한 도메인 네이밍을 사용해야 한다', async () => {
       const utils = await import('@shared/utils');
 
       // 갤러리 도메인의 핵심 개념들

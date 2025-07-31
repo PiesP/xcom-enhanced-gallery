@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('Phase 2: 코드 단순화 및 명명 개선', () => {
   describe('1. 불필요한 수식어 제거', () => {
-    it('SimpleBundleUtils는 BundleUtils로 통합되어야 한다', async () => {
+    it('BundleUtils 통합 - SimpleBundleUtils는 BundleUtils로 통합되어야 한다', async () => {
       // BundleUtils로 통합된 API 확인
       const { createBundleInfo, isWithinSizeTarget } = await import('@shared/utils/optimization');
 
@@ -15,7 +15,7 @@ describe('Phase 2: 코드 단순화 및 명명 개선', () => {
       expect(isWithinSizeTarget).toBeInstanceOf(Function);
     });
 
-    it('unified-utils의 기능이 적절한 모듈로 분리되어야 한다', async () => {
+    it('모듈 분리 - unified-utils의 기능이 적절한 모듈로 분리되어야 한다', async () => {
       // 스타일 관련 유틸리티가 별도 모듈로 분리되었는지 확인
       const { combineClasses, toggleClass } = await import('@shared/utils/styles');
 
@@ -23,7 +23,7 @@ describe('Phase 2: 코드 단순화 및 명명 개선', () => {
       expect(toggleClass).toBeInstanceOf(Function);
     });
 
-    it('복잡한 최적화 기능이 간소화되어야 한다', async () => {
+    it('최적화 간소화 - 복잡한 최적화 기능이 간소화되어야 한다', async () => {
       const { memo } = await import('@shared/utils/optimization');
 
       expect(memo).toBeInstanceOf(Function);

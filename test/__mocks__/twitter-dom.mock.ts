@@ -1,10 +1,16 @@
 /**
- * Twitter(X.com) DOM 구조 모의 구현
- * 실제 X.com 페이지의 HTML 구조를 모방하여 테스트 환경에서 사용
+ * @fileoverview Twitter(X.com) DOM 구조 모의 구현
+ * @description 실제 X.com 페이지의 HTML 구조를 모방하여 테스트 환경에서 사용
  */
+
+import { vi } from 'vitest';
 
 // mock-action-simulator에서 함수들을 import
 import { simulateClick, simulateKeypress } from '../utils/helpers/mock-action-simulator.js';
+
+// Mock functions for DOM interaction
+export const mockClickHandler = vi.fn();
+export const mockKeyboardHandler = vi.fn();
 
 // 다시 export해서 다른 테스트에서 사용할 수 있도록 함
 export { simulateClick, simulateKeypress };

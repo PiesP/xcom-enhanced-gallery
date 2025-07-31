@@ -21,14 +21,20 @@ export function toggleClass(element: HTMLElement, className: string, condition?:
 /**
  * CSS 변수 설정
  */
-export function setCSSVariable(element: HTMLElement, variable: string, value: string): void {
-  element.style.setProperty(`--${variable}`, value);
+export function setCSSVariable(element: HTMLElement | null, variable: string, value: string): void {
+  if (!element) return;
+  const varName = variable.startsWith('--') ? variable : `--${variable}`;
+  element.style.setProperty(varName, value);
 }
 
 /**
  * 여러 CSS 변수를 한 번에 설정
  */
-export function setCSSVariables(element: HTMLElement, variables: Record<string, string>): void {
+export function setCSSVariables(
+  element: HTMLElement | null,
+  variables: Record<string, string>
+): void {
+  if (!element) return;
   Object.entries(variables).forEach(([key, value]) => {
     setCSSVariable(element, key, value);
   });

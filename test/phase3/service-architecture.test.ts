@@ -229,7 +229,7 @@ describe('Phase 3: 서비스 아키텍처 개선', () => {
   });
 
   describe('6. 타입 정의 개선', () => {
-    it('갤러리 관련 타입들이 명확하게 정의되어야 한다', async () => {
+    it('Phase 3: 갤러리 관련 타입들이 서비스 아키텍처를 통해 명확하게 정의되어야 한다', async () => {
       try {
         const typesModule = await import('@shared/types');
         const galleryTypes = await import('@shared/interfaces/gallery.interfaces');

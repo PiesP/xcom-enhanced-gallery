@@ -64,7 +64,6 @@ export function preventScrollPropagation(
 
 /**
  * 스크롤 스로틀링 유틸리티
- * @description utils-backup.ts에서 이동된 함수
  */
 export function throttleScroll<T extends readonly unknown[]>(
   callback: (...args: T) => void,
@@ -84,8 +83,7 @@ export function throttleScroll<T extends readonly unknown[]>(
 }
 
 /**
- * 스크롤 핸들러 생성 (휠 이벤트용)
- * @description utils-backup.ts에서 이동된 함수
+ * 스크롤 이벤트 처리기 생성
  */
 export function createScrollHandler(
   element: HTMLElement,

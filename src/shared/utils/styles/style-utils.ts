@@ -12,12 +12,8 @@ export function toggleClass(element: Element | null, className: string, force?: 
   element?.classList.toggle(className, force);
 }
 
-/** CSS 변수 설정 */
-export function setCSSVariable(element: HTMLElement | null, name: string, value: string): void {
-  if (!element) return;
-  const varName = name.startsWith('--') ? name : `--${name}`;
-  element.style.setProperty(varName, value);
-}
+// Re-export from css-utilities to avoid duplication
+export { setCSSVariable, setCSSVariables, createThemedClassName } from './css-utilities';
 
 /** CSS 변수 조회 */
 export function getCSSVariable(element: HTMLElement | null, name: string): string {
@@ -48,16 +44,4 @@ export function applyTheme(element: Element | null, theme: string, themePrefix =
     .forEach(cls => element.classList.remove(cls));
 
   element.classList.add(`${themePrefix}-${theme}`);
-}
-
-/** CSS 변수 일괄 설정 */
-export function setCSSVariables(element: HTMLElement, variables: Record<string, string>): void {
-  Object.entries(variables).forEach(([variable, value]) => {
-    setCSSVariable(element, variable, value);
-  });
-}
-
-/** 테마 클래스명 생성 */
-export function createThemedClassName(baseClass: string, theme: string = 'auto'): string {
-  return `${baseClass} ${baseClass}--theme-${theme}`;
 }

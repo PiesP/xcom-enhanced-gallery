@@ -1,6 +1,6 @@
 /**
  * @fileoverview 핵심 유틸리티 통합 모듈
- * @description DOM, 이벤트, 성능, 스타일 유틸리티를 단일 파일로 통합
+ * @description DOM, 이벤트, 성능 관련 핵심 유틸리티들을 하나의 파일로 통합
  * @version 1.0.0 - Simplification Phase 1
  */
 
@@ -9,33 +9,6 @@ import { logger } from '@shared/logging/logger';
 // ================================
 // DOM 유틸리티
 // ================================
-
-// 갤러리 요소 감지를 위한 선택자 목록
-const GALLERY_SELECTORS = [
-  '.xeg-gallery-container',
-  '[data-gallery-element]',
-  '#xeg-gallery-root',
-  '.vertical-gallery-view',
-  '[data-xeg-gallery-container]',
-  '[data-xeg-gallery]',
-  '.xeg-vertical-gallery',
-  '.xeg-gallery',
-  '.gallery-container',
-  '[data-gallery]',
-  '.xeg-toolbar',
-  '.xeg-button',
-  '.gallery-controls',
-  '.gallery-toolbar',
-  '.gallery-header',
-  '.gallery-footer',
-  '.gallery-content',
-  '.gallery-item',
-  '.media-viewer',
-  '.xeg-toast-container',
-  '.xeg-toast',
-  '.toast-container',
-  '.notification',
-] as const;
 
 /**
  * 안전한 querySelector 실행
@@ -84,23 +57,28 @@ export function combineClasses(...classes: (string | undefined | null)[]): strin
 
 /**
  * 리소스 해제
+ * @deprecated 중복 함수 - resource-manager.ts의 releaseResource 사용
  */
 export function releaseResource(id: string): boolean {
-  // 실제 리소스 관리 로직이 필요하면 여기에 구현
-  console.info(`Releasing resource: ${id}`);
-  return true;
+  // resourceManager에 위임
+  const { releaseResource: releaseResourceImpl } = require('./resource-manager');
+  return releaseResourceImpl(id);
 }
-
-/**
- * 요소가 갤러리 내부에 있는지 확인
- */
 
 /**
  * 요소가 갤러리 컨테이너인지 확인
  */
 export function isGalleryContainer(element: HTMLElement | null): boolean {
   if (!element) return false;
-  return GALLERY_SELECTORS.some(sel => element.matches(sel));
+
+  const gallerySelectors = [
+    '.xeg-gallery-container',
+    '.xeg-gallery',
+    '[data-xeg-gallery]',
+    '.gallery-overlay',
+  ];
+
+  return gallerySelectors.some(sel => element.matches(sel));
 }
 
 /**
@@ -188,20 +166,24 @@ export function safeRemoveElement(el: Element | null): void {
 // ================================
 // 스타일 유틸리티
 // ================================
+// CSS 유틸리티 (from css-utilities)
+// ================================
+
+import { setCSSVariable as setCSSVarBase } from './styles/css-utilities';
 
 /**
- * CSS 변수 설정
+ * CSS 변수 설정 (core-utils compatible signature)
  */
 export function setCSSVariable(
   name: string,
   value: string,
   element: HTMLElement = document.documentElement
 ): void {
-  element.style.setProperty(name.startsWith('--') ? name : `--${name}`, value);
+  setCSSVarBase(element, name, value);
 }
 
 /**
- * 여러 CSS 변수 설정
+ * 여러 CSS 변수 설정 (core-utils compatible signature)
  */
 export function setCSSVariables(
   variables: Record<string, string>,

@@ -389,7 +389,8 @@ async function initializeGalleryImmediately(): Promise<void> {
       earlyEventCapture.onGalleryReady((element: HTMLElement, _event: MouseEvent) => {
         // 실제 갤러리 핸들러 연결
         logger.debug('🔗 Processing early captured click', { element: element.tagName });
-        // TODO: 실제 미디어 클릭 핸들러와 연결
+        // NOTE: EarlyEventCaptureService와 실제 미디어 클릭 핸들러 연결 필요
+        // 현재는 갤러리 활성화까지만 처리, 향후 MediaClickDetector와 통합 예정
       });
 
       logger.debug(`📋 Processed ${earlyEventCapture.getPendingClicksCount()} pending clicks`);

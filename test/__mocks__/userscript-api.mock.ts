@@ -1,6 +1,6 @@
 /**
- * 유저스크립트 API 모의(Mock) 구현
- * GM_* 함수들을 모의하여 실제 브라우저 확장 API 호출 방지
+ * @fileoverview 유저스크립트 API 모의(Mock) 구현
+ * @description GM_* 함수들을 모의하여 실제 브라우저 확장 API 호출 방지
  */
 
 import { vi } from 'vitest';

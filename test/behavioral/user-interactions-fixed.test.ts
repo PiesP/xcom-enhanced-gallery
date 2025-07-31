@@ -27,7 +27,7 @@ describe('사용자 상호작용 행위 테스트', () => {
   });
 
   describe('트윗 이미지 클릭 시', () => {
-    it('갤러리가 열려야 한다', async () => {
+    it('사용자 상호작용 수정 후 갤러리가 열려야 한다', async () => {
       // Given: 이미지가 포함된 트윗이 있을 때
       const container = setupTwitterDOM();
       const tweet = addTweetWithImages(container);
