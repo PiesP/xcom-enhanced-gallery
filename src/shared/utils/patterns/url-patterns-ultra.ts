@@ -27,7 +27,7 @@ export const URLPatterns = {
    * Check if URL is Twitter platform (X.com or Twitter.com)
    */
   isTwitterPlatform(url: string): boolean {
-    return Boolean(url && this.PLATFORM.test(url));
+    return url && this.PLATFORM.test(url);
   },
 
   /**
@@ -76,9 +76,7 @@ export const URLPatterns = {
    * Check if URL is a valid media URL
    */
   isValidMediaUrl(url: string): boolean {
-    return Boolean(
-      url && (this.IMAGE.test(url) || this.VIDEO.test(url) || this.TWITTER_MEDIA.test(url))
-    );
+    return url && (this.IMAGE.test(url) || this.VIDEO.test(url) || this.TWITTER_MEDIA.test(url));
   },
 };
 
@@ -89,19 +87,17 @@ export function extractTweetUrlsFromPage(): string[] {
   try {
     const urls = new Set<string>();
 
-    // Get URLs from status links
-    const statusSelector = 'a[href*="status"]';
-    document.querySelectorAll(statusSelector).forEach(link => {
+    // Get URLs from links
+    document.querySelectorAll('a[href*="/status/"]').forEach(link => {
       const href = (link as HTMLAnchorElement).href;
-      if (URLPatterns.isTwitterPlatform(href) && !href.includes('i/status')) {
+      if (URLPatterns.isTwitterPlatform(href) && !href.includes('/i/status/')) {
         urls.add(href);
       }
     });
 
     // Add current URL if valid
-    const currentUrl = window.location.href;
-    if (currentUrl.includes('status') && !currentUrl.includes('i/status')) {
-      urls.add(currentUrl);
+    if (window.location.href.includes('/status/') && !window.location.href.includes('/i/status/')) {
+      urls.add(window.location.href);
     }
 
     return Array.from(urls);
@@ -115,7 +111,7 @@ export function extractTweetUrlsFromPage(): string[] {
  * Check if URL is invalid status URL
  */
 export function isInvalidStatusUrl(url: string): boolean {
-  return !url || url.includes('i/status');
+  return !url || url.includes('/i/status/');
 }
 
 /**
@@ -125,8 +121,11 @@ export function cleanUrl(url: string): string | null {
   if (!url) return null;
 
   try {
-    // Simple HTML entity cleanup without regex
-    return url.replace('&amp;', '&').replace('&quot;', '"').replace('&#39;', "'").trim();
+    return url
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .trim();
   } catch {
     return null;
   }
