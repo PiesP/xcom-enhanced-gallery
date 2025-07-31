@@ -69,12 +69,12 @@ function addBrowserCompatibility(cssContent: string): string {
     --xeg-color-primary-500: #3b82f6;
     --xeg-color-primary-600: #2563eb;
     --xeg-color-primary-700: #1d4ed8;
-    
+
     --xeg-color-neutral-100: #f5f5f5;
     --xeg-color-neutral-500: #737373;
     --xeg-color-neutral-700: #404040;
     --xeg-color-neutral-900: #171717;
-    
+
     --xeg-color-success-500: #22c55e;
     --xeg-color-error-500: #ef4444;
     --xeg-color-warning-500: #f59e0b;

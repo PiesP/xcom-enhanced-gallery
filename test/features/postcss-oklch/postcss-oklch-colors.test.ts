@@ -188,7 +188,7 @@ describe('PostCSS OKLCH 색상 시스템', () => {
       // PostCSS 설정에 필요한 플러그인들이 포함되어 있는지 확인
       expect(configContent).toContain('postcssCustomProperties');
       expect(configContent).toContain('autoprefixer');
-      
+
       // 빌드 결과에 OKLCH 색상이 포함되어 있는지 확인
       try {
         const distFile = readFileSync('dist/xcom-enhanced-gallery.user.js', 'utf8');

@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@preact/signals": "^2.2.1",
-    "@tanstack/query-core": "^5.83.0",
+    "@tanstack/query-core": "^5.83.1",
     "@tanstack/react-virtual": "^3.13.12",
     "fflate": "^0.8.2",
     "motion": "^12.23.12",
