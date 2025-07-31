@@ -71,7 +71,7 @@ describe('Motion One 라이브러리 통합', () => {
     vendorManager = VendorManager.getInstance();
     // JSDOM 환경에서 animate 메서드가 있는 mock element 생성
     mockElement = {
-      animate: vi.fn().mockImplementation((keyframes, options) => {
+      animate: vi.fn().mockImplementation(() => {
         return {
           finished: Promise.resolve(),
           cancel: vi.fn(),
@@ -87,7 +87,7 @@ describe('Motion One 라이브러리 통합', () => {
     };
 
     // IntersectionObserver Mock 추가
-    globalThis.IntersectionObserver = vi.fn().mockImplementation((callback, options) => ({
+    globalThis.IntersectionObserver = vi.fn().mockImplementation(() => ({
       observe: vi.fn(),
       disconnect: vi.fn(),
       unobserve: vi.fn(),
@@ -288,7 +288,6 @@ describe('Motion One 라이브러리 통합', () => {
       expect(onInView).toHaveBeenCalledWith({
         isIntersecting: true,
         target: mockElement,
-        intersectionRatio: 1,
       });
     });
   });

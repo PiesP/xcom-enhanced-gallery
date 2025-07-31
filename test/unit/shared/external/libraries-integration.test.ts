@@ -19,7 +19,7 @@ describe('외부 라이브러리 통합 테스트', () => {
 
   describe('TanStack Query 통합', () => {
     it('TanStack Query가 올바르게 로드되어야 한다', async () => {
-      const query = await getTanStackQuery();
+      const query = getTanStackQuery();
 
       expect(query.QueryClient).toBeDefined();
       expect(query.QueryCache).toBeDefined();
@@ -30,7 +30,7 @@ describe('외부 라이브러리 통합 테스트', () => {
 
   describe('TanStack Virtual 통합', () => {
     it('TanStack Virtual이 올바르게 로드되어야 한다', async () => {
-      const virtual = await getTanStackVirtual();
+      const virtual = getTanStackVirtual();
 
       expect(virtual.useVirtualizer).toBeDefined();
       expect(virtual.defaultRangeExtractor).toBeDefined();

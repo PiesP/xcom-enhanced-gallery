@@ -1,94 +1,89 @@
 /**
- * Media URL Utilities - Consolidated Tests
+ * Media URL Utilities - 통합 테스트
  * 미디어 URL 추출, 변환, 검증 기능의 통합 테스트
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+  getMediaUrlsFromTweet,
+  isValidMediaUrl,
+  getHighQualityMediaUrl,
+  extractOriginalImageUrl,
+  cleanFilename,
+} from '@shared/utils/media/media-url.util';
 
-describe('Media URL Utilities - Consolidated', () => {
+describe('Media URL Utilities - 통합 테스트', () => {
   beforeEach(() => {
-    // 테스트 초기화
+    vi.clearAllMocks();
   });
 
-  describe('URL Validation', () => {
-    it('should validate Twitter media URLs correctly', () => {
-      // Twitter 미디어 URL 올바른 검증 확인
-      expect(true).toBe(true);
+  describe('URL 검증', () => {
+    it('유효한 Twitter 미디어 URL을 올바르게 검증해야 한다', () => {
+      const validUrls = [
+        'https://pbs.twimg.com/media/test.jpg',
+        'https://pbs.twimg.com/media/test.png',
+        'https://pbs.twimg.com/media/test.gif',
+      ];
+
+      validUrls.forEach(url => {
+        expect(isValidMediaUrl(url)).toBe(true);
+      });
     });
 
-    it('should reject invalid URLs', () => {
-      // 잘못된 URL 거부 검증
-      expect(true).toBe(true);
-    });
+    it('유효하지 않은 URL을 거부해야 한다', () => {
+      const invalidUrls = ['', 'invalid-url', 'https://example.com/image.jpg'];
 
-    it('should handle edge cases safely', () => {
-      // 엣지 케이스 안전한 처리 검증
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('High Quality URL Conversion', () => {
-    it('should convert URL to high quality version', () => {
-      // URL을 고품질 버전으로 변환 검증
-      expect(true).toBe(true);
-    });
-
-    it('should handle different quality options', () => {
-      // 다양한 품질 옵션 처리 검증
-      expect(true).toBe(true);
-    });
-
-    it('should preserve existing parameters', () => {
-      // 기존 매개변수 보존 검증
-      expect(true).toBe(true);
+      invalidUrls.forEach(url => {
+        expect(isValidMediaUrl(url)).toBe(false);
+      });
     });
   });
 
-  describe('Original Image URL Extraction', () => {
-    it('should extract original image URL from Twitter format', () => {
-      // Twitter 형식에서 원본 이미지 URL 추출 검증
-      expect(true).toBe(true);
-    });
+  describe('고품질 URL 변환', () => {
+    it('이미지 URL을 처리해야 한다', () => {
+      const originalUrl = 'https://pbs.twimg.com/media/test.jpg';
+      const result = getHighQualityMediaUrl(originalUrl);
 
-    it('should handle URLs without quality parameters', () => {
-      // 품질 매개변수가 없는 URL 처리 검증
-      expect(true).toBe(true);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
     });
   });
 
-  describe('Media URLs from Tweet Document', () => {
-    it('should extract media URLs from tweet document', () => {
-      // 트윗 문서에서 미디어 URL 추출 검증
-      expect(true).toBe(true);
-    });
+  describe('원본 이미지 URL 추출', () => {
+    it('URL에서 원본을 추출해야 한다', () => {
+      const url = 'https://pbs.twimg.com/media/test.jpg';
+      const result = extractOriginalImageUrl(url);
 
-    it('should handle documents with no media', () => {
-      // 미디어가 없는 문서 처리 검증
-      expect(true).toBe(true);
-    });
-
-    it('should filter out invalid URLs', () => {
-      // 잘못된 URL 필터링 검증
-      expect(true).toBe(true);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
     });
   });
 
-  describe('Error Handling', () => {
-    it('should handle null and undefined inputs gracefully', () => {
-      // null과 undefined 입력의 우아한 처리 검증
-      expect(true).toBe(true);
-    });
+  describe('파일명 정리', () => {
+    it('파일명을 정리해야 한다', () => {
+      const filename = 'test file.jpg';
+      const result = cleanFilename(filename);
 
-    it('should handle malformed URLs', () => {
-      // 잘못된 형식의 URL 처리 검증
-      expect(true).toBe(true);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
     });
   });
 
-  describe('Performance Considerations', () => {
-    it('should handle large number of media elements efficiently', () => {
-      // 대량의 미디어 요소 효율적 처리 검증
-      expect(true).toBe(true);
+  describe('트윗에서 미디어 추출', () => {
+    let mockElement: HTMLElement;
+
+    beforeEach(() => {
+      mockElement = {
+        querySelectorAll: vi.fn(() => []),
+        querySelector: vi.fn(() => null),
+        getAttribute: vi.fn(() => null),
+      } as any;
+    });
+
+    it('미디어 정보를 추출해야 한다', () => {
+      const result = getMediaUrlsFromTweet(mockElement, 'test123');
+
+      expect(Array.isArray(result)).toBe(true);
     });
   });
 });
