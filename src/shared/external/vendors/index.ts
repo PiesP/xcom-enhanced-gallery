@@ -13,7 +13,6 @@ export type {
   PreactSignalsAPI,
   PreactCompatAPI,
   MotionAPI,
-  MotionOneAPI,
   NativeDownloadAPI,
   TanStackQueryAPI,
   TanStackVirtualAPI,

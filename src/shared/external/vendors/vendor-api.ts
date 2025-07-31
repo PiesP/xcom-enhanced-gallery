@@ -14,7 +14,6 @@ import {
   type PreactSignalsAPI,
   type PreactCompatAPI,
   type MotionAPI,
-  type MotionOneAPI,
   type NativeDownloadAPI,
   type TanStackQueryAPI,
   type TanStackVirtualAPI,
@@ -33,7 +32,7 @@ let cachedPreactHooks: PreactHooksAPI | null = null;
 let cachedPreactSignals: PreactSignalsAPI | null = null;
 let cachedPreactCompat: PreactCompatAPI | null = null;
 let cachedMotion: MotionAPI | null = null;
-let cachedMotionOne: MotionOneAPI | null = null;
+let cachedMotionOne: MotionAPI | null = null;
 let cachedTanStackQuery: TanStackQueryAPI | null = null;
 let cachedTanStackVirtual: TanStackVirtualAPI | null = null;
 let isInitialized = false;
@@ -260,7 +259,7 @@ export function getMotion(): MotionAPI {
 /**
  * Motion One 접근 (동기)
  */
-export function getMotionOne(): MotionOneAPI {
+export function getMotionOne(): MotionAPI {
   if (!cachedMotionOne) {
     throw new Error('Motion One이 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
   }
