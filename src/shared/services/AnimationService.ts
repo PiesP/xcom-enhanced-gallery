@@ -13,7 +13,7 @@ export interface AnimationConfig {
 }
 
 /**
- * 간소화된 애니메이션 서비스
+ * 간소화된 애니메이션 서비스 (싱글톤)
  *
  * 주요 기능:
  * - 기본 CSS 트랜지션
@@ -21,10 +21,21 @@ export interface AnimationConfig {
  * - 유저스크립트 최적화
  */
 export class AnimationService {
+  private static instance: AnimationService | null = null;
   private stylesInjected = false;
 
-  constructor() {
+  private constructor() {
     this.ensureStylesInjected();
+  }
+
+  /**
+   * 싱글톤 인스턴스 반환
+   */
+  public static getInstance(): AnimationService {
+    if (!AnimationService.instance) {
+      AnimationService.instance = new AnimationService();
+    }
+    return AnimationService.instance;
   }
 
   /**
@@ -171,7 +182,7 @@ export class AnimationService {
  * 요소 애니메이션 편의 함수
  */
 export function animateElement(element: Element, config?: AnimationConfig): void {
-  const service = new AnimationService();
+  const service = AnimationService.getInstance();
   service.animateElement(element, config);
 }
 
@@ -179,7 +190,7 @@ export function animateElement(element: Element, config?: AnimationConfig): void
  * 페이드아웃 편의 함수
  */
 export function fadeOut(element: Element, config?: AnimationConfig): Promise<void> {
-  const service = new AnimationService();
+  const service = AnimationService.getInstance();
   return service.fadeOut(element, config);
 }
 
@@ -190,7 +201,7 @@ export function openGalleryWithAnimation(
   element: Element,
   config?: AnimationConfig
 ): Promise<void> {
-  const service = new AnimationService();
+  const service = AnimationService.getInstance();
   return service.openGallery(element, config);
 }
 
@@ -201,6 +212,6 @@ export function closeGalleryWithAnimation(
   element: Element,
   config?: AnimationConfig
 ): Promise<void> {
-  const service = new AnimationService();
+  const service = AnimationService.getInstance();
   return service.closeGallery(element, config);
 }

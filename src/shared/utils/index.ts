@@ -1,8 +1,8 @@
 /**
- * @fileoverview 핵심 유틸리티 export - Phase 4 간소화 (45개로 최적화)
+ * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (44개)
  */
 
-// === 기본 유틸리티 (15개) ===
+// === 기본 유틸리티 (13개) ===
 export {
   combineClasses,
   toggleClass,
@@ -16,8 +16,6 @@ export {
   measurePerformance,
   throttleScroll,
   galleryDebugUtils,
-  getRelativeLuminance,
-  detectLightBackground,
   parseColor,
 } from './utils';
 
@@ -52,6 +50,9 @@ export {
 
 export { canTriggerGallery, isGalleryInternalElement, isGalleryContainer } from './utils';
 
+// === 접근성 (2개) ===
+export { detectLightBackground, getRelativeLuminance } from './accessibility';
+
 // === 에러 처리 (4개) ===
 export {
   standardizeError,
@@ -60,22 +61,20 @@ export {
   withFallback,
 } from './error-handling';
 
-// === 이벤트 (6개) ===
+// === 이벤트 (4개) ===
 export {
   addListener,
   createCustomEvent,
   cleanupEventListeners,
-  removeAllEventListeners,
   isClickableElement,
-  isMediaElement,
 } from './events';
 
-// === 미디어 (4개) ===
-export { imageFilter, getHighQualityMediaUrl, isValidMediaUrl, MediaClickDetector } from './media';
+// === 미디어 (3개) ===
+export { imageFilter, getHighQualityMediaUrl, MediaClickDetector } from './media';
 
 // === DOM 배처 (2개) ===
 export { DOMBatcher, globalDOMBatcher } from './dom/index';
 
-// === 핵심 타입 (총 45개 export) ===
+// === 핵심 타입 (총 44개 export) ===
 export type { DOMUpdate as DOMUpdateTask } from './dom/index';
 export type { StandardError, ErrorContext } from './error-handling';

@@ -6,9 +6,19 @@
  * - Logger Interface & ConsoleLogger
  * - ServiceDiagnostics
  * - ServiceRegistry (통합됨)
+ * - CoreService (구 ServiceManager) export 추가
  *
  * Phase 1 Step 3: 파일 통합을 통한 복잡도 감소
  */
+
+// ================================
+// Core Service Export
+// ================================
+
+// CoreService (구 ServiceManager) - 명명 규칙 통일
+export { CoreService } from './ServiceManager';
+export { serviceManager } from './ServiceManager';
+export { getService } from './ServiceManager';
 
 // ================================
 // Logger Interface & Implementation
@@ -31,6 +41,9 @@ export interface Logger {
   warn(message: string, ...args: unknown[]): void;
   error(message: string, ...args: unknown[]): void;
 }
+
+// 호환성을 위한 ILogger 별칭
+export interface ILogger extends Logger {}
 
 /**
  * 기존 ILogger 인터페이스를 logger로 리다이렉트하는 어댑터
@@ -77,9 +90,9 @@ export class ServiceDiagnostics {
 
       // 동적 import로 순환 의존성 방지
       await registerCoreServices();
-      const { ServiceManager } = await import('./ServiceManager');
+      const { CoreService } = await import('./ServiceManager');
 
-      const serviceManager = ServiceManager.getInstance();
+      const serviceManager = CoreService.getInstance();
 
       // 1. 서비스 등록
       logger.info('📋 서비스 등록 중...');
@@ -153,13 +166,3 @@ ServiceDiagnostics.registerGlobalDiagnostic();
  * ServiceRegistry가 ServiceManager에 통합되었고, 초기화는 별도 파일로 분리
  */
 export { registerCoreServices } from './service-initialization';
-
-// 타입 안전한 서비스 접근을 위한 헬퍼 함수
-export function getService<T>(key: string): T {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { ServiceManager } = require('./ServiceManager') as { ServiceManager: any };
-  return ServiceManager.getInstance().get(key) as T;
-}
-
-// 하위 호환성을 위한 별칭
-export type ILogger = Logger;
