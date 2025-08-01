@@ -123,8 +123,10 @@ export class MediaService {
     this.videoControl = new VideoControlService(); // Phase 4 간소화: 직접 인스턴스화
     this.usernameParser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
 
-    // WebP 지원 감지 초기화
-    this.detectWebPSupport();
+    // WebP 지원 감지 초기화 (async 메서드이므로 await 없이 호출)
+    this.detectWebPSupport().catch(error => {
+      logger.warn('[MediaService] WebP detection initialization failed:', error);
+    });
   }
 
   public static getInstance(): MediaService {

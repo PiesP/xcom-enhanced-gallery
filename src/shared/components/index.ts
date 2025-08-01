@@ -15,11 +15,9 @@ export { Toolbar } from './ui/Toolbar/Toolbar';
 
 // 갤러리 컴포넌트들 (간소화된 명명)
 export { GalleryContainer } from './isolation/GalleryContainer';
-export { VirtualGallery } from './virtual/VirtualGallery';
 
 // 타입들
 export type { GalleryContainerProps } from './isolation/GalleryContainer';
-export type { VirtualGalleryProps } from './virtual/VirtualGallery';
 export type { ButtonProps } from './ui/Button/Button';
 export type { ToastProps } from './ui/Toast/Toast';
 export type { ToolbarProps } from './ui/Toolbar/Toolbar';

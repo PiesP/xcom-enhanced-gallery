@@ -1,11 +1,11 @@
 /**
  * 외부 라이브러리 통합 테스트
  *
- * @description TanStack Query, Virtual, Motion One 통합 검증
+ * @description TanStack Query, Motion One 통합 검증
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { initializeVendors, getTanStackQuery, getTanStackVirtual } from '@shared/external/vendors';
+import { initializeVendors, getTanStackQuery } from '@shared/external/vendors';
 
 describe('외부 라이브러리 통합 테스트', () => {
   beforeEach(async () => {
@@ -25,86 +25,6 @@ describe('외부 라이브러리 통합 테스트', () => {
       expect(query.QueryCache).toBeDefined();
       expect(typeof query.QueryClient).toBe('function');
       expect(typeof query.QueryCache).toBe('function');
-    });
-  });
-
-  describe('TanStack Virtual 통합', () => {
-    it('TanStack Virtual이 올바르게 로드되어야 한다', async () => {
-      const virtual = await getTanStackVirtual();
-
-      expect(virtual.useVirtualizer).toBeDefined();
-      expect(virtual.defaultRangeExtractor).toBeDefined();
-      expect(typeof virtual.useVirtualizer).toBe('function');
-    });
-
-    it('VirtualGallery 컴포넌트가 렌더링되어야 한다', async () => {
-      const { VirtualGallery } = await import('@shared/components/virtual/VirtualGallery');
-
-      const mockMediaItems = [
-        {
-          type: 'image',
-          url: 'https://example.com/image1.jpg',
-          originalUrl: 'https://example.com/image1.jpg',
-          filename: 'image1.jpg',
-          index: 0,
-          metadata: { width: 800, height: 600 },
-        },
-        {
-          type: 'image',
-          url: 'https://example.com/image2.jpg',
-          originalUrl: 'https://example.com/image2.jpg',
-          filename: 'image2.jpg',
-          index: 1,
-          metadata: { width: 800, height: 600 },
-        },
-      ];
-
-      const props = {
-        mediaItems: mockMediaItems,
-        itemHeight: 300,
-        containerHeight: 600,
-      };
-
-      // 컴포넌트 함수가 존재하는지 확인
-      expect(VirtualGallery).toBeDefined();
-      expect(typeof VirtualGallery).toBe('function');
-
-      // 기본 렌더링 테스트 (실제 DOM 없이는 제한적)
-      try {
-        VirtualGallery(props);
-        // 에러가 발생하지 않으면 성공
-        expect(true).toBe(true);
-      } catch (error) {
-        // 브라우저 환경이 아니므로 예상되는 에러
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('useVirtualGallery 훅이 올바른 데이터를 반환해야 한다', async () => {
-      const { useVirtualGallery } = await import('@shared/components/virtual/VirtualGallery');
-
-      const mockMediaItems = [
-        {
-          type: 'image',
-          url: 'https://example.com/image1.jpg',
-          originalUrl: 'https://example.com/image1.jpg',
-          filename: 'image1.jpg',
-          index: 0,
-          metadata: { width: 800, height: 600 },
-        },
-      ];
-
-      try {
-        const result = useVirtualGallery(mockMediaItems, 300);
-
-        expect(result).toBeDefined();
-        expect(result.itemCount).toBe(1);
-        expect(result.totalHeight).toBe(300);
-        expect(result.visibleItems).toEqual(mockMediaItems);
-      } catch (error) {
-        // 브라우저 환경이 아니므로 예상되는 에러
-        expect(error).toBeDefined();
-      }
     });
   });
 
@@ -151,22 +71,18 @@ describe('외부 라이브러리 통합 테스트', () => {
   });
 
   describe('전체 통합 검증', () => {
-    it('모든 새로운 서비스가 함께 작동해야 한다', async () => {
+    it('모든 서비스가 함께 작동해야 한다', async () => {
       // AnimationService
       const { AnimationService } = await import('@shared/services/AnimationService');
       const animationService = AnimationService.getInstance();
 
-      // VirtualGallery
-      const { VirtualGallery } = await import('@shared/components/virtual/VirtualGallery');
-
       expect(animationService).toBeDefined();
-      expect(VirtualGallery).toBeDefined();
 
       // 서비스가 정상적으로 작동하는지 확인
       expect(typeof animationService.fadeIn).toBe('function');
     });
 
-    it('새로운 라이브러리들이 기존 시스템과 호환되어야 한다', async () => {
+    it('라이브러리들이 기존 시스템과 호환되어야 한다', async () => {
       // 기존 vendor 시스템과의 호환성 확인
       const { getPreact, getPreactSignals, getMotionOne } = await import(
         '@shared/external/vendors'
@@ -180,12 +96,9 @@ describe('외부 라이브러리 통합 테스트', () => {
       expect(signals).toBeDefined();
       expect(motionOne).toBeDefined();
 
-      // 새로운 라이브러리들
+      // TanStack Query
       const tanStackQuery = await getTanStackQuery();
-      const tanStackVirtual = await getTanStackVirtual();
-
       expect(tanStackQuery).toBeDefined();
-      expect(tanStackVirtual).toBeDefined();
     });
 
     it('메모리 정리가 올바르게 작동해야 한다', async () => {

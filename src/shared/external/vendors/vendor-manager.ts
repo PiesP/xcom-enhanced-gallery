@@ -129,18 +129,6 @@ export interface TanStackQueryAPI {
   }) => unknown;
 }
 
-// TanStack Virtual API 타입 정의
-export interface TanStackVirtualAPI {
-  useVirtualizer: typeof import('@tanstack/react-virtual').useVirtualizer;
-  defaultRangeExtractor: typeof import('@tanstack/react-virtual').defaultRangeExtractor;
-  observeElementOffset: typeof import('@tanstack/react-virtual').observeElementOffset;
-  observeElementRect: typeof import('@tanstack/react-virtual').observeElementRect;
-  observeWindowOffset: typeof import('@tanstack/react-virtual').observeWindowOffset;
-  observeWindowRect: typeof import('@tanstack/react-virtual').observeWindowRect;
-  elementScroll: typeof import('@tanstack/react-virtual').elementScroll;
-  windowScroll: typeof import('@tanstack/react-virtual').windowScroll;
-}
-
 // ================================
 // 벤더 매니저 싱글톤
 // ================================
@@ -688,43 +676,6 @@ export class VendorManager {
   }
 
   /**
-   * TanStack Virtual 안전 접근
-   */
-  public async getTanStackVirtual(): Promise<TanStackVirtualAPI> {
-    const cacheKey = 'tanstack-virtual';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as TanStackVirtualAPI;
-    }
-
-    try {
-      const virtual = await import('@tanstack/react-virtual');
-
-      if (!virtual.useVirtualizer || typeof virtual.useVirtualizer !== 'function') {
-        throw new Error('TanStack Virtual 라이브러리 검증 실패');
-      }
-
-      const api: TanStackVirtualAPI = {
-        useVirtualizer: virtual.useVirtualizer,
-        defaultRangeExtractor: virtual.defaultRangeExtractor,
-        observeElementOffset: virtual.observeElementOffset,
-        observeElementRect: virtual.observeElementRect,
-        observeWindowOffset: virtual.observeWindowOffset,
-        observeWindowRect: virtual.observeWindowRect,
-        elementScroll: virtual.elementScroll,
-        windowScroll: virtual.windowScroll,
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('TanStack Virtual 로드 성공');
-      return api;
-    } catch (error) {
-      logger.error('TanStack Virtual 로드 실패:', error);
-      throw new Error('TanStack Virtual 라이브러리를 사용할 수 없습니다');
-    }
-  }
-
-  /**
    * 모든 라이브러리 검증
    */
   public async validateAll(): Promise<{
@@ -740,7 +691,6 @@ export class VendorManager {
       Promise.resolve(this.getMotion()).then(() => 'Motion'),
       this.getMotionOne().then(() => 'MotionOne'),
       this.getTanStackQuery().then(() => 'TanStackQuery'),
-      this.getTanStackVirtual().then(() => 'TanStackVirtual'),
     ]);
 
     const loadedLibraries: string[] = [];
@@ -758,7 +708,6 @@ export class VendorManager {
           'Motion',
           'MotionOne',
           'TanStackQuery',
-          'TanStackVirtual',
         ];
         errors.push(`${libNames[index]}: ${result.reason.message}`);
       }

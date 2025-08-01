@@ -16,7 +16,6 @@ export type {
   MotionOneAPI,
   NativeDownloadAPI,
   TanStackQueryAPI,
-  TanStackVirtualAPI,
   VNode,
   ComponentChildren,
 } from './vendor-manager';
@@ -40,7 +39,6 @@ export {
   getMotionOne,
   getNativeDownload,
   getTanStackQuery,
-  getTanStackVirtual,
   initializeVendors,
   cleanupVendors,
   getVendorVersions,

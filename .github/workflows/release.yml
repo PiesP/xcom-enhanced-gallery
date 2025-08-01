@@ -82,10 +82,19 @@ jobs:
           cache: "npm"
 
       - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🧪 Quality checks
-        run: npm run quality
+      - name: 🔍 Type checking
+        run: npm run typecheck
+
+      - name: � Lint code
+        run: npm run lint
+
+      - name: 🎨 Format check
+        run: npm run format:check
+
+      - name: 🧪 Run tests
+        run: npm run test
 
       - name: 📈 Bump version (if manual)
         if: github.event_name == 'workflow_dispatch'
@@ -123,6 +132,22 @@ jobs:
           # Copy userscript
           cp dist/xcom-enhanced-gallery.user.js release/
 
+          # Generate checksums
+          cd release
+          sha256sum xcom-enhanced-gallery.user.js > checksums.txt
+          cd ..
+
+          # Create metadata
+          cat > release/metadata.json << EOF
+          {
+            "version": "${{ steps.version.outputs.version }}",
+            "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+            "commit": "${{ github.sha }}",
+            "node_version": "${{ env.NODE_VERSION }}",
+            "build_type": "production"
+          }
+          EOF
+
           # Create release notes
           cat > release/RELEASE_NOTES.md << EOF
           # 🚀 Release v${{ steps.version.outputs.version }}
@@ -145,13 +170,15 @@ jobs:
           EOF
 
       - name: 🏷️ Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: 🚀 Release v${{ steps.version.outputs.version }}
           body_path: release/RELEASE_NOTES.md
           files: |
             release/xcom-enhanced-gallery.user.js
+            release/checksums.txt
+            release/metadata.json
           draft: false
           prerelease: false
         env:

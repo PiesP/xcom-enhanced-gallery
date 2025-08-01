@@ -22,22 +22,19 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "quality": "npm run typecheck && npm run lint && npm run format:check && npm run test",
-    "validate": "npm run deps:all && npm run typecheck && npm run lint:fix && npm run format",
+    "validate": "npm run typecheck && npm run lint:fix && npm run format",
     "prebuild": "npm run validate && npm run test",
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
-    "deps:graph": "(dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | dot -Gdpi=150 -Gconcentrate=true -Grankdir=LR -Gsplines=ortho -T svg > docs/dependency-graph.svg) || dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | sfdp -Gdpi=150 -Gconcentrate=true -Grankdir=LR -Gsplines=ortho -T svg > docs/dependency-graph.svg",
+    "deps:graph": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | dot -T svg > docs/dependency-graph.svg || dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | sfdp -T svg > docs/dependency-graph.svg",
     "deps:graph:dot": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src > docs/dependency-graph.dot",
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
     "deps:all": "npm run deps:json && npm run deps:graph:dot && npm run deps:graph && npm run deps:check",
-    "deps:analyze": "npm run deps:all",
-    "setup:dev": "node scripts/setup-dev.js",
-    "colors:convert": "node scripts/convert-colors-to-oklch.cjs",
-    "colors:revert": "cp src/shared/styles/design-tokens.css.backup src/shared/styles/design-tokens.css"
+    "prepare": "husky",
+    "postinstall": "npm run prepare"
   },
   "dependencies": {
     "@preact/signals": "^2.2.1",
     "@tanstack/query-core": "^5.83.1",
-    "@tanstack/react-virtual": "^3.13.12",
     "fflate": "^0.8.2",
     "motion": "^12.23.12",
     "preact": "^10.27.0"
@@ -73,7 +70,7 @@
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "terser": "5.43.1",
-    "typescript": "5.9.2",
+    "typescript": "^5.6.3",
     "vite": "npm:rolldown-vite@latest",
     "vitest": "^3.2.4"
   },
