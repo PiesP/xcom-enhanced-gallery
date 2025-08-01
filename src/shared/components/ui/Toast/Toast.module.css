@@ -281,3 +281,67 @@
     transform: none;
   }
 }
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .toast {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(0, 0, 0, 0.8);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .info {
+    border-left-color: rgba(59, 130, 246, 1);
+    background: rgba(239, 246, 255, 0.95);
+  }
+
+  .success {
+    border-left-color: rgba(34, 197, 94, 1);
+    background: rgba(240, 253, 244, 0.95);
+  }
+
+  .warning {
+    border-left-color: rgba(245, 158, 11, 1);
+    background: rgba(255, 251, 235, 0.95);
+  }
+
+  .error {
+    border-left-color: rgba(239, 68, 68, 1);
+    background: rgba(254, 242, 242, 0.95);
+  }
+}
+
+/* 투명도 감소 설정 지원 */
+@media (prefers-reduced-transparency: reduce) {
+  .toast {
+    background: var(--xeg-color-surface-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 다크 테마에서 고대비 모드 */
+@media (prefers-color-scheme: dark) and (prefers-contrast: high) {
+  .toast {
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    color: white;
+  }
+
+  .info {
+    background: rgba(30, 58, 138, 0.95);
+  }
+
+  .success {
+    background: rgba(20, 83, 45, 0.95);
+  }
+
+  .warning {
+    background: rgba(146, 64, 14, 0.95);
+  }
+
+  .error {
+    background: rgba(153, 27, 27, 0.95);
+  }
+}

@@ -251,31 +251,101 @@
 }
 
 .glassmorphism-light {
-  @extend .glassmorphism;
+  /* 기본 글래스모피즘 속성 */
   background: var(--xeg-glass-bg-light);
   backdrop-filter: var(--xeg-glass-blur-light);
   -webkit-backdrop-filter: var(--xeg-glass-blur-light);
+  border: 1px solid var(--xeg-glass-border-light);
   box-shadow: var(--xeg-glass-shadow-light);
+  color: var(--xeg-color-text-primary);
+  position: relative;
+  overflow: hidden;
+
+  /* 성능 최적화 */
+  will-change: backdrop-filter, transform;
+  transform: translateZ(0);
+  contain: layout style paint;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    pointer-events: none;
+  }
 
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--xeg-glass-shadow-strong);
+    transform: translateY(-2px) translateZ(0);
+    border-color: rgba(255, 255, 255, 0.3);
   }
+
+  &:active:not(:disabled) {
+    transform: translateY(-1px) translateZ(0);
+    box-shadow: var(--xeg-glass-shadow-light);
+  }
+
+  /* 텍스트 그림자로 가독성 향상 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .glassmorphism-medium {
-  @extend .glassmorphism;
+  /* 기본 글래스모피즘 속성 */
   background: var(--xeg-glass-bg-medium);
   backdrop-filter: var(--xeg-glass-blur-medium);
   -webkit-backdrop-filter: var(--xeg-glass-blur-medium);
+  border: 1px solid var(--xeg-glass-border-light);
   box-shadow: var(--xeg-glass-shadow-medium);
+  color: var(--xeg-color-text-primary);
+  position: relative;
+  overflow: hidden;
+
+  /* 성능 최적화 */
+  will-change: backdrop-filter, transform;
+  transform: translateZ(0);
+  contain: layout style paint;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    pointer-events: none;
+  }
 
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: var(--xeg-glass-blur-strong);
     -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
+    box-shadow: var(--xeg-glass-shadow-strong);
+    transform: translateY(-2px) translateZ(0);
+    border-color: rgba(255, 255, 255, 0.3);
   }
+
+  &:active:not(:disabled) {
+    transform: translateY(-1px) translateZ(0);
+    box-shadow: var(--xeg-glass-shadow-medium);
+  }
+
+  /* 텍스트 그림자로 가독성 향상 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* 폴백 스타일 (backdrop-filter 미지원 브라우저) */

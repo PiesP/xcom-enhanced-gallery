@@ -150,8 +150,8 @@
 
 /* 버튼 상태 관리 */
 .toolbarButton {
-  /* 글래스모피즘 버튼 스타일 */
-  background: rgba(255, 255, 255, 0.6);
+  /* 글래스모피즘 버튼 스타일 - 디자인 토큰 활용 */
+  background: var(--xeg-glass-bg-medium);
   color: var(--button-color, var(--xeg-text-button));
   opacity: var(--button-opacity, 1);
   transform: var(--button-transform, none);
@@ -168,16 +168,18 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--xeg-glass-border-light);
   cursor: pointer;
 
-  /* 글래스모피즘 스타일링 */
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  /* 글래스모피즘 스타일링 - 디자인 토큰 활용 */
+  backdrop-filter: var(--xeg-glass-blur-medium) saturate(180%);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-medium) saturate(180%);
+  box-shadow: var(--xeg-glass-shadow-medium);
+
+  /* 성능 최적화 */
+  will-change: backdrop-filter, transform;
+  transform: translateZ(0);
+  contain: layout style paint;
 }
 
 /* 데이터 속성 기반 상태 관리 */
