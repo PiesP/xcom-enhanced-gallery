@@ -23,8 +23,5 @@ export {
 export { useDOMReady } from './useDOMReady';
 export { useKeyboardNavigation } from './useAccessibility';
 
-// Phase 3: 미디어 로딩 훅 (명명 개선)
-export { useMediaLoading } from './useMediaLoading';
-
 // Related scroll types (moved to individual hook files)
 export type { ScrollDirection } from './useScrollDirection';

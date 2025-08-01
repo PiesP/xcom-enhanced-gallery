@@ -9,7 +9,6 @@
 import { logger } from '@/shared/logging';
 import type { AppConfig } from '@/types';
 import { CoreService } from '@shared/services/ServiceManager';
-import { EarlyEventCaptureService } from '@shared/services/EarlyEventCaptureService';
 import { SERVICE_KEYS } from './constants';
 
 // 전역 스타일
@@ -21,7 +20,6 @@ import './styles/globals';
 let isStarted = false;
 let galleryApp: unknown = null; // Features GalleryApp 인스턴스
 let serviceManager: CoreService | null = null;
-let earlyEventCapture: EarlyEventCaptureService | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
 
 /**
@@ -215,11 +213,6 @@ async function cleanup(): Promise<void> {
   try {
     logger.info('🧹 애플리케이션 정리 시작');
 
-    if (earlyEventCapture) {
-      earlyEventCapture.destroy();
-      earlyEventCapture = null;
-    }
-
     if (galleryApp) {
       await (galleryApp as { cleanup(): Promise<void> }).cleanup();
       galleryApp = null;
@@ -315,9 +308,6 @@ async function startApplication(): Promise<void> {
 
     const startTime = performance.now();
 
-    // 0단계: 즉시 이벤트 캐처 시작 (지연 없음)
-    earlyEventCapture = new EarlyEventCaptureService();
-
     // 개발 도구 초기화 (개발 환경만)
     await initializeDevTools();
 
@@ -379,18 +369,6 @@ async function initializeGalleryImmediately(): Promise<void> {
 
     // 기존의 scheduleGalleryInitialization 대신 즉시 실행
     await initializeGalleryApp();
-
-    // 갤러리 준비 완료 알림
-    if (earlyEventCapture) {
-      earlyEventCapture.onGalleryReady((element: HTMLElement, _event: MouseEvent) => {
-        // 실제 갤러리 핸들러 연결
-        logger.debug('🔗 Processing early captured click', { element: element.tagName });
-        // NOTE: EarlyEventCaptureService와 실제 미디어 클릭 핸들러 연결 필요
-        // 현재는 갤러리 활성화까지만 처리, 향후 MediaClickDetector와 통합 예정
-      });
-
-      logger.debug(`📋 Processed ${earlyEventCapture.getPendingClicksCount()} pending clicks`);
-    }
 
     logger.debug('✅ 갤러리 즉시 초기화 완료');
   } catch (error) {

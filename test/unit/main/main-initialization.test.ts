@@ -4,24 +4,24 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ServiceManager } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/ServiceManager';
 
 describe('Main.ts 초기화 오류 수정', () => {
   beforeEach(() => {
     // 환경 격리
-    ServiceManager.resetInstance();
+    CoreService.resetInstance();
   });
 
   afterEach(() => {
     // 정리
-    ServiceManager.resetInstance();
+    CoreService.resetInstance();
   });
 
-  describe('ServiceManager import 문제 해결', () => {
-    it('ServiceManager.getInstance()가 정상적으로 작동해야 함', () => {
+  describe('CoreService import 문제 해결', () => {
+    it('CoreService.getInstance()가 정상적으로 작동해야 함', () => {
       // 행위 중심 테스트: getInstance 동작 검증
       expect(() => {
-        const instance = ServiceManager.getInstance();
+        const instance = CoreService.getInstance();
         expect(instance).toBeDefined();
         expect(typeof instance.register).toBe('function');
         expect(typeof instance.get).toBe('function');
@@ -31,7 +31,7 @@ describe('Main.ts 초기화 오류 수정', () => {
     it('main.ts에서 사용하는 패턴이 정상 작동해야 함', () => {
       // 실제 main.ts에서 사용하는 패턴 시뮬레이션
       expect(() => {
-        const serviceManager = ServiceManager.getInstance();
+        const coreService = CoreService.getInstance();
 
         // 테스트 서비스 등록
         const mockService = {
@@ -40,23 +40,23 @@ describe('Main.ts 초기화 오류 수정', () => {
           cleanup: vi.fn(),
         };
 
-        serviceManager.register('test.service', mockService);
+        coreService.register('test.service', mockService);
 
         // Critical Services 조회 패턴 테스트
-        const retrievedService = serviceManager.get('test.service');
+        const retrievedService = coreService.get('test.service');
         expect(retrievedService).toBe(mockService);
       }).not.toThrow();
     });
 
-    it('utils에서 ServiceManager export가 정상 작동해야 함', async () => {
+    it('utils에서 CoreService export가 정상 작동해야 함', async () => {
       // utils/index.ts의 export 검증
-      const { ServiceManager: UtilsServiceManager } = await import('@/utils');
+      const { CoreService: UtilsCoreService } = await import('@/utils');
 
-      expect(UtilsServiceManager).toBeDefined();
-      expect(UtilsServiceManager.getInstance).toBeDefined();
+      expect(UtilsCoreService).toBeDefined();
+      expect(UtilsCoreService.getInstance).toBeDefined();
 
-      const instance = UtilsServiceManager.getInstance();
-      expect(instance).toBeInstanceOf(ServiceManager);
+      const instance = UtilsCoreService.getInstance();
+      expect(instance).toBeInstanceOf(CoreService);
     });
   });
 
@@ -64,7 +64,7 @@ describe('Main.ts 초기화 오류 수정', () => {
     it('initializeCriticalSystems 패턴이 안전하게 작동해야 함', () => {
       // main.ts의 initializeCriticalSystems에서 사용하는 패턴
       expect(() => {
-        const serviceManager = ServiceManager.getInstance();
+        const coreService = CoreService.getInstance();
 
         // Critical Services 시뮬레이션
         const criticalServices = [
@@ -80,12 +80,12 @@ describe('Main.ts 초기화 오류 수정', () => {
             initialize: vi.fn(),
             isInitialized: true,
           };
-          serviceManager.register(serviceKey, mockService);
+          coreService.register(serviceKey, mockService);
         });
 
         // Critical Services 조회 테스트 (main.ts 패턴)
         for (const serviceKey of criticalServices) {
-          const service = serviceManager.get(serviceKey);
+          const service = coreService.get(serviceKey);
           expect(service).toBeDefined();
           expect(service.name).toBe(serviceKey);
         }
@@ -94,14 +94,14 @@ describe('Main.ts 초기화 오류 수정', () => {
 
     it('에러 상황에서도 안전하게 처리되어야 함', () => {
       // 존재하지 않는 서비스 접근 시 적절한 에러 처리
-      const serviceManager = ServiceManager.getInstance();
+      const coreService = CoreService.getInstance();
 
       expect(() => {
-        serviceManager.get('non-existent-service');
+        coreService.get('non-existent-service');
       }).toThrow('서비스를 찾을 수 없습니다: non-existent-service');
 
       // tryGet은 안전하게 null 반환
-      const result = serviceManager.tryGet('non-existent-service');
+      const result = coreService.tryGet('non-existent-service');
       expect(result).toBeNull();
     });
   });

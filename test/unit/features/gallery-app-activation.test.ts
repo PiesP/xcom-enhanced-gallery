@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ServiceManager } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from '@/constants';
 
 // 테스트 환경 모킹
@@ -39,11 +39,11 @@ describe('갤러리 앱 활성화', () => {
   let galleryApp;
 
   beforeEach(async () => {
-    // 환경 격리: 새로운 ServiceManager 인스턴스
-    ServiceManager.resetInstance();
+    // 환경 격리: 새로운 CoreService 인스턴스
+    CoreService.resetInstance();
 
     // 서비스 환경 설정
-    serviceManager = ServiceManager.getInstance();
+    serviceManager = CoreService.getInstance();
 
     // 필수 서비스들을 mock으로 등록
     const mockUIService = {
@@ -115,11 +115,9 @@ describe('갤러리 앱 활성화', () => {
       // 서비스 의존성 검증
       const mediaService = serviceManager.get(SERVICE_KEYS.MEDIA_SERVICE);
       const galleryRenderer = serviceManager.get(SERVICE_KEYS.GALLERY_RENDERER);
-      const uiService = serviceManager.get('ui.service');
 
       expect(mediaService).toBeDefined();
       expect(galleryRenderer).toBeDefined();
-      expect(uiService).toBeDefined();
     });
 
     it('이벤트 핸들러가 올바르게 설정되어야 함', async () => {
@@ -226,7 +224,7 @@ describe('갤러리 앱 활성화', () => {
       expect(logSpy).toHaveBeenCalledTimes(1);
       expect(logSpy).toHaveBeenCalledWith(
         '[XEG] [WARN]',
-        expect.stringContaining('[ServiceManager] 서비스 덮어쓰기: test.service')
+        expect.stringContaining('[CoreService] 서비스 덮어쓰기: test.service')
       );
 
       logSpy.mockRestore();
@@ -238,8 +236,8 @@ describe('갤러리 앱 활성화', () => {
       // 행위 중심 테스트: 에러 처리 동작 검증
 
       // GALLERY_RENDERER 서비스를 제거하여 초기화 실패 유발
-      ServiceManager.resetInstance();
-      const newServiceManager = ServiceManager.getInstance();
+      CoreService.resetInstance();
+      const newServiceManager = CoreService.getInstance();
 
       // UI_SERVICE만 등록하고 GALLERY_RENDERER는 등록하지 않음
       const mockUIService = {

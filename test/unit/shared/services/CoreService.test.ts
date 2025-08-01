@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CoreService } from '@shared/services/ServiceManager';
 
 describe('CoreService (ServiceManager)', () => {
-  let coreService;
+  let coreService: CoreService;
 
   beforeEach(() => {
     // 환경 격리: 각 테스트마다 깨끗한 CoreService 인스턴스
