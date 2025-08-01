@@ -3,7 +3,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { GalleryUtils } from '@shared/utils/utils';
+import { isGalleryInternalElement } from '@shared/utils/utils';
 import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
 import { galleryState } from '@shared/state/signals/gallery.signals';
@@ -223,7 +223,7 @@ function checkGalleryOpen(): boolean {
 function checkInsideGallery(element: HTMLElement | null): boolean {
   try {
     if (!element) return false;
-    return GalleryUtils.isGalleryInternalElement(element);
+    return isGalleryInternalElement(element);
   } catch {
     return false;
   }

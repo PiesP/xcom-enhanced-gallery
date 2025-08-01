@@ -6,7 +6,8 @@
 import { getPreact, getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import { toasts, removeToast, Toast } from './Toast';
 import { ComponentStandards } from '../StandardProps';
-import type { StandardToastContainerProps, BaseUIComponentProps } from '../StandardProps';
+import type { StandardToastContainerProps } from '../StandardProps';
+import type { BaseComponentProps } from '../../base/BaseComponentProps';
 import styles from './ToastContainer.module.css';
 import type { VNode } from '@shared/external/vendors';
 
@@ -51,7 +52,7 @@ function ToastContainerCore({
   );
 
   // 표준화된 ARIA 속성 생성
-  const ariaPropsData: Partial<BaseUIComponentProps> = {
+  const ariaPropsData: Partial<BaseComponentProps> = {
     'aria-label': ariaLabel || 'Toast 알림 컨테이너',
     role: role || 'region',
   };

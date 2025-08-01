@@ -39,7 +39,7 @@ export {
   safeTweetId,
 } from './type-safety-helpers';
 
-// === 핵심 유틸리티 (7개) ===
+// === 핵심 유틸리티 (10개) ===
 export {
   safeQuerySelector,
   isInsideGallery,
@@ -49,6 +49,8 @@ export {
   safeGetAttribute,
   safeSetAttribute,
 } from './core-utils';
+
+export { canTriggerGallery, isGalleryInternalElement, isGalleryContainer } from './utils';
 
 // === 에러 처리 (4개) ===
 export {

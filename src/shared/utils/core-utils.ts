@@ -298,55 +298,10 @@ export { measurePerformance, measureAsyncPerformance } from './performance/perfo
 // ================================
 // 디버그 유틸리티
 // ================================
+// Debug utilities re-export
+// ================================
 
-/**
- * 갤러리 디버그 유틸리티
- */
-export const galleryDebugUtils = {
-  /**
-   * 갤러리 컨테이너 상태 진단
-   */
-  diagnoseContainer(): void {
-    const container = document.querySelector('.xeg-gallery-container');
-
-    if (!container) {
-      console.info('❌ Gallery container not found');
-      return;
-    }
-
-    const style = window.getComputedStyle(container);
-    const rect = container.getBoundingClientRect();
-
-    const diagnosis = {
-      visible: style.display !== 'none' && style.visibility !== 'hidden',
-      dimensions: `${rect.width}x${rect.height}`,
-      position: `${rect.top}, ${rect.left}`,
-      children: container.children.length,
-      inViewport: rect.width > 0 && rect.height > 0,
-    };
-
-    console.info('🔍 Gallery container status:', diagnosis);
-  },
-
-  /**
-   * 갤러리 강제 표시
-   */
-  forceShow(): void {
-    const container = document.querySelector('.xeg-gallery-container') as HTMLElement;
-
-    if (!container) {
-      console.warn('Cannot force show: container not found');
-      return;
-    }
-
-    // 기본적인 스타일 강제 적용
-    container.style.display = 'block';
-    container.style.visibility = 'visible';
-    container.style.opacity = '1';
-
-    console.info('✅ Gallery forced to show');
-  },
-};
+export { galleryDebugUtils } from './debug/gallery-debug';
 
 // ================================
 // Performance utilities re-export

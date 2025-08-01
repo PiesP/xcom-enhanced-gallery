@@ -1052,6 +1052,7 @@
         "src/shared/components/base/index.ts",
         "src/shared/components/ui/Button/Button.tsx",
         "src/shared/components/ui/StandardProps.ts",
+        "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/components/hoc/GalleryHOC.tsx"
       ],
       "orphan": false,
@@ -1282,6 +1283,24 @@
     {
       "source": "src/shared/components/ui/Toast/ToastContainer.tsx",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../base/BaseComponentProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/base/BaseComponentProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../StandardProps",
@@ -2901,23 +2920,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./utils/utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [],
@@ -2992,6 +2994,23 @@
     {
       "source": "src/shared/services/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AnimationService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/AnimationService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./BaseServiceImpl",
@@ -3071,6 +3090,23 @@
             "export"
           ],
           "resolved": "src/shared/services/gallery/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./LazyLoadingService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/LazyLoadingService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3221,6 +3257,15 @@
       "dependents": [
         "src/shared/index.ts",
         "src/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/AnimationService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3968,6 +4013,16 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/LazyLoadingService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts",
+        "src/shared/services/ModuleLoader.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/service-registry.ts",
       "dependencies": [],
       "dependents": [
@@ -4399,6 +4454,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./debug/gallery-debug",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/debug/gallery-debug.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./performance/performance-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4435,8 +4507,18 @@
       "dependents": [
         "src/shared/utils/index.ts",
         "src/shared/utils/utils.ts",
-        "src/shared/utils/deduplication/deduplication-utils.ts",
         "src/shared/utils/scroll/scroll-utils.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/debug/gallery-debug.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/core-utils.ts",
+        "src/shared/utils/utils.ts",
+        "src/shared/utils/debug/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4790,7 +4872,6 @@
         }
       ],
       "dependents": [
-        "src/shared/index.ts",
         "src/shared/utils/index.ts"
       ],
       "orphan": false,
@@ -4852,16 +4933,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/debug/gallery-debug.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/utils.ts",
-        "src/shared/utils/debug/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/deduplication/index.ts",
       "dependencies": [
         {
@@ -4890,25 +4961,7 @@
     },
     {
       "source": "src/shared/utils/deduplication/deduplication-utils.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../core-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/core-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/utils/deduplication/index.ts"
       ],
@@ -5154,19 +5207,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/AnimationService.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/services/EarlyEventCaptureService.ts",
       "dependencies": [],
       "dependents": [],
@@ -5178,15 +5218,6 @@
           "name": "no-orphans"
         }
       ]
-    },
-    {
-      "source": "src/shared/services/LazyLoadingService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/ModuleLoader.ts"
-      ],
-      "orphan": false,
-      "valid": true
     },
     {
       "source": "src/shared/services/MediaLoadingService.ts",
@@ -6521,15 +6552,6 @@
     "violations": [
       {
         "type": "module",
-        "from": "src/shared/services/AnimationService.ts",
-        "to": "src/shared/services/AnimationService.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "src/shared/services/EarlyEventCaptureService.ts",
         "to": "src/shared/services/EarlyEventCaptureService.ts",
         "rule": {
@@ -6558,10 +6580,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 4,
+    "info": 3,
     "ignore": 0,
     "totalCruised": 186,
-    "totalDependenciesCruised": 271,
+    "totalDependenciesCruised": 273,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

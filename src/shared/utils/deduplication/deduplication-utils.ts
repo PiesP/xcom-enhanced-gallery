@@ -38,11 +38,6 @@ export function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T)
 }
 
 /**
- * 문자열 배열 중복 제거 (core-utils에서 re-export)
- */
-export { removeDuplicateStrings } from '../core-utils';
-
-/**
  * 미디어 아이템 중복 제거
  */
 export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
