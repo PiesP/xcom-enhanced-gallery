@@ -221,16 +221,14 @@
   cursor: not-allowed;
 }
 
-/* 호버 상태는 CSS에서만 관리 */
+/* 호버 상태는 CSS에서만 관리 - fitButton 기준으로 통일 */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
-    --button-transform: translateY(-2px) scale(1.05);
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow:
-      0 8px 24px rgba(0, 0, 0, 0.15),
-      0 4px 12px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    /* fitButton과 동일한 단순한 호버 효과 */
+    background: var(--xeg-color-neutral-100);
+    border-color: var(--xeg-color-neutral-400);
+    color: var(--xeg-color-neutral-800);
+    /* 복잡한 transform 효과 제거 */
   }
 }
 
@@ -241,20 +239,35 @@
     0 2px 8px rgba(15, 23, 42, 0.08),
     0 1px 4px rgba(15, 23, 42, 0.05);
 }
+
+/* 접근성 개선 - 포커스 상태 */
+.toolbarButton:focus-visible,
+.navButton:focus-visible,
+.downloadButton:focus-visible,
+.settingsButton:focus-visible,
+.closeButton:focus-visible,
+.fitButton:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
 /* 네비게이션 섹션 */
 .toolbarNavigation {
   gap: 8px;
 }
 
 .navButton {
+  /* toolbarButton 기본 스타일 상속 */
   background: var(--xeg-color-neutral-100);
   border-color: var(--xeg-color-neutral-300);
   color: var(--xeg-text-button-navigation);
 }
 
 .navButton:hover:not(:disabled) {
+  /* fitButton과 동일한 단순한 호버 효과 */
   background: var(--xeg-color-neutral-200);
+  border-color: var(--xeg-color-neutral-400);
   color: var(--xeg-color-neutral-800);
+  /* transform 효과 제거 */
 }
 
 .navButton:active:not(:disabled),
@@ -361,8 +374,10 @@
 }
 
 .downloadCurrent:hover:not(:disabled) {
+  /* fitButton과 동일한 단순한 호버 효과 */
   background: var(--xeg-bg-button-download-hover);
   border-color: var(--xeg-color-primary-hover);
+  /* transform 효과 제거 */
 }
 
 .downloadAll {
@@ -372,8 +387,10 @@
 }
 
 .downloadAll:hover:not(:disabled) {
+  /* fitButton과 동일한 단순한 호버 효과 */
   background: var(--xeg-color-success-light);
   border-color: var(--xeg-color-success-light);
+  /* transform 효과 제거 */
 }
 
 .downloadSpinner {
@@ -408,8 +425,10 @@
 }
 
 .settingsButton:hover:not(:disabled) {
+  /* fitButton과 동일한 단순한 호버 효과 */
   background: var(--xeg-bg-button-settings-hover);
   border-color: var(--xeg-color-neutral-400);
+  /* transform 효과 제거 */
 }
 
 .closeButton {
@@ -419,9 +438,11 @@
 }
 
 .closeButton:hover:not(:disabled) {
+  /* fitButton과 동일한 단순한 호버 효과 */
   background: var(--xeg-bg-button-close-hover);
   border-color: var(--xeg-color-error);
   color: var(--xeg-color-error);
+  /* transform 효과 제거 */
 }
 /* 반응형 디자인 */
 @media (max-width: 768px) {
