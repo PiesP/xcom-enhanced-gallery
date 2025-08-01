@@ -7,26 +7,12 @@
 
 /* ===== 상태 기반 CSS ===== */
 
-/* 클릭 상태 - CSS만으로 처리하여 깜빡임 방지 */
+/* 클릭 상태 - 단순화된 피드백 */
 .toolbarButton:active:not([data-disabled='true']) {
-  --button-transform: translateY(0) scale(0.96);
-  animation: xeg-button-click 150ms ease-out;
   box-shadow:
     0 1px 4px rgba(15, 23, 42, 0.08),
     0 0px 2px rgba(15, 23, 42, 0.04);
-}
-
-/* 버튼 클릭 애니메이션 - 시각적 피드백용 */
-@keyframes xeg-button-click {
-  0% {
-    transform: translateY(-2px) scale(1.05);
-  }
-  50% {
-    transform: translateY(0) scale(0.96);
-  }
-  100% {
-    transform: translateY(-1px) scale(1.02);
-  }
+  /* 단순한 클릭 효과 - transform 제거 */
 }
 
 /* 기본 툴바 - CSS 변수 기반 가시성 제어 */
@@ -234,10 +220,10 @@
 
 /* 클릭 상태 */
 .toolbarButton:active:not([data-disabled='true']) {
-  --button-transform: translateY(0) scale(1);
   box-shadow:
     0 2px 8px rgba(15, 23, 42, 0.08),
     0 1px 4px rgba(15, 23, 42, 0.05);
+  /* 단순한 클릭 효과만 */
 }
 
 /* 접근성 개선 - 포커스 상태 */
@@ -644,8 +630,14 @@
     animation: none;
   }
 
-  .toolbarButton:hover:not(:disabled) {
-    transform: none;
+  /* 모든 버튼에서 transform 효과 제거 */
+  .toolbarButton:hover:not(:disabled),
+  .navButton:hover:not(:disabled),
+  .downloadButton:hover:not(:disabled),
+  .settingsButton:hover:not(:disabled),
+  .closeButton:hover:not(:disabled),
+  .fitButton:hover {
+    transform: none !important;
   }
 }
 

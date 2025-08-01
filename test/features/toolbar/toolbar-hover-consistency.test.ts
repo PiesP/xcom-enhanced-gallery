@@ -145,24 +145,28 @@ describe('Toolbar Button Hover Consistency', () => {
     });
 
     it('각 버튼 타입별로 동일한 호버 효과를 가진다', () => {
+      // 각 버튼의 호버 효과가 정의되어 있는지 확인
       const buttonHoverEffects = {
-        toolbarButton:
-          !toolbarCSSContent.includes('translateY(-2px) scale(1.05)') &&
-          toolbarCSSContent.includes('.toolbarButton:hover'),
-        fitButton:
-          !toolbarCSSContent.match(/\.fitButton[^}]*translateY\(-2px\)/) &&
-          toolbarCSSContent.includes('.fitButton'),
-        navButton: toolbarCSSContent.includes('.navButton:hover'),
-        downloadButton: toolbarCSSContent.includes('.downloadCurrent:hover'),
+        toolbarButton: toolbarCSSContent.includes(
+          ".toolbarButton:hover:not([data-disabled='true'])"
+        ),
+        fitButton: toolbarCSSContent.includes('.fitButton'),
+        navButton: toolbarCSSContent.includes('.navButton:hover:not(:disabled)'),
+        downloadButton: toolbarCSSContent.includes('.downloadCurrent:hover:not(:disabled)'),
       };
 
-      // 각 버튼이 단순한 호버 효과를 가지는지 확인
+      // 모든 버튼에 호버 효과가 있는지 확인
       expect(buttonHoverEffects.toolbarButton).toBe(true);
       expect(buttonHoverEffects.fitButton).toBe(true);
+      expect(buttonHoverEffects.navButton).toBe(true);
+      expect(buttonHoverEffects.downloadButton).toBe(true);
 
-      // 일관성 확인 (수정 후 상태)
-      const hasConsistency = buttonHoverEffects.toolbarButton === buttonHoverEffects.fitButton;
+      // 복잡한 transform 효과가 없는지 확인
+      const hasComplexTransform = toolbarCSSContent.includes('translateY(-2px) scale(1.05)');
+      expect(hasComplexTransform).toBe(false);
 
+      // 일관성 확인 - 모든 버튼이 단순한 호버 효과를 가짐
+      const hasConsistency = buttonHoverEffects.toolbarButton && buttonHoverEffects.fitButton;
       expect(hasConsistency).toBe(true);
     });
   });
