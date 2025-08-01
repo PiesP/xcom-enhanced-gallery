@@ -147,14 +147,17 @@ Object.defineProperty(MemoizedToast, 'displayName', {
 export const Toast = MemoizedToast;
 
 // Global toast state - lazy initialization
-let _toasts: ReturnType<typeof import('@preact/signals').signal<ToastItem[]>> | null = null;
+let _toasts: {
+  value: ToastItem[];
+  subscribe?: (callback: (value: ToastItem[]) => void) => () => void;
+} | null = null;
 export const toasts = {
   get value(): ToastItem[] {
     if (!_toasts) {
       const { signal } = getPreactSignals();
       _toasts = signal<ToastItem[]>([]);
     }
-    return _toasts.value || [];
+    return _toasts.value;
   },
   set value(newValue: ToastItem[]) {
     if (!_toasts) {
@@ -168,7 +171,7 @@ export const toasts = {
       const { signal } = getPreactSignals();
       _toasts = signal<ToastItem[]>([]);
     }
-    return _toasts.subscribe?.(value => callback(value || [])) || (() => {});
+    return _toasts.subscribe?.((value: ToastItem[]) => callback(value || [])) || (() => {});
   },
 };
 

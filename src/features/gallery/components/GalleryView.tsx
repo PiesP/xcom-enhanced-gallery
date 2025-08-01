@@ -1,4 +1,4 @@
-import { useMemo } from 'preact/hooks';
+import { getPreactHooks } from '@shared/external/vendors';
 import { MediaItem } from '@shared/types';
 import styles from './GalleryView.module.css';
 
@@ -25,6 +25,8 @@ export function GalleryView({
   enableVirtualization = true,
   className,
 }: GalleryViewProps) {
+  const { useMemo } = getPreactHooks();
+
   // 가상화 로직
   const visibleItems = useMemo(() => {
     if (!enableVirtualization || mediaItems.length <= 50) {

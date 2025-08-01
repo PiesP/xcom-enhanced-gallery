@@ -18,7 +18,6 @@ import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import { getPreactHooks } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
-import type { MouseEvent } from 'preact/compat';
 import {
   animateGalleryEnter,
   animateGalleryExit,
@@ -29,6 +28,12 @@ import { useToolbarPositionBased } from '@features/gallery/hooks';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
+
+// 타입 정의
+type MouseEvent<T = Element> = Event & {
+  currentTarget: T;
+  target: EventTarget | null;
+};
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
