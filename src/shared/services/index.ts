@@ -45,6 +45,7 @@ export type { Theme } from './ThemeService';
 
 // 4. 토스트 서비스
 export { ToastService } from './ToastService';
+export { ToastController } from './ToastController';
 export type { ToastOptions } from './ToastService';
 
 // 5. 브라우저 서비스
