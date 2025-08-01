@@ -97,12 +97,30 @@ function VerticalGalleryViewCore({
   // DOM 요소 준비 상태 추적
   const [domReady, setDomReady] = useState(false);
 
+  // 초기 툴바 표시 상태 - 갤러리 열림 시 3초간 표시 후 자동 숨김
+  const [initialToolbarVisible, setInitialToolbarVisible] = useState(true);
+
   // DOM 요소 준비 확인
   useEffect(() => {
     if (toolbarWrapperRef.current && toolbarHoverZoneRef.current) {
       setDomReady(true);
     }
   }, [isVisible]); // isVisible이 변경될 때마다 DOM 요소 확인
+
+  // 툴바 자동 숨김 로직 - 갤러리 열림 시 3초 후 자동 숨김
+  useEffect(() => {
+    if (isVisible && domReady && initialToolbarVisible) {
+      const hideTimer = setTimeout(() => {
+        setInitialToolbarVisible(false);
+        logger.debug('Toolbar auto-hidden after initial display');
+      }, 3000); // 3초 후 자동 숨김
+
+      return () => clearTimeout(hideTimer); // 클린업
+    }
+
+    // 조건을 만족하지 않을 때는 undefined 반환 (cleanup 함수 없음)
+    return undefined;
+  }, [isVisible, domReady, initialToolbarVisible]);
 
   // useToolbarPositionBased 훅을 사용하여 간소화된 위치 기반 툴바 제어
   const {
@@ -180,6 +198,13 @@ function VerticalGalleryViewCore({
     const shouldBeVisible = mediaItems.length > 0;
     if (isVisible !== shouldBeVisible) {
       setIsVisible(shouldBeVisible);
+
+      // 갤러리가 새로 열릴 때 초기 툴바 표시 상태 리셋
+      if (shouldBeVisible && !isVisible) {
+        setInitialToolbarVisible(true);
+        logger.debug('VerticalGalleryView: 갤러리 열림 - 초기 툴바 표시 리셋');
+      }
+
       logger.debug('VerticalGalleryView: 가시성 상태 변경', {
         wasVisible: isVisible,
         nowVisible: shouldBeVisible,
@@ -512,7 +537,7 @@ function VerticalGalleryViewCore({
   return (
     <div
       ref={containerRef}
-      className={`${styles.container} ${stringWithDefault(className, '')}`}
+      className={`${styles.container} ${initialToolbarVisible ? styles.initialToolbarVisible : ''} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'
