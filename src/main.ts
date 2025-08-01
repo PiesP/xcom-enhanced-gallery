@@ -8,7 +8,7 @@
 
 import { logger } from '@/shared/logging';
 import type { AppConfig } from '@/types';
-import { ServiceManager } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/ServiceManager';
 import { EarlyEventCaptureService } from '@shared/services/EarlyEventCaptureService';
 import { SERVICE_KEYS } from './constants';
 
@@ -20,7 +20,7 @@ import './styles/globals';
 // 애플리케이션 상태 관리
 let isStarted = false;
 let galleryApp: unknown = null; // Features GalleryApp 인스턴스
-let serviceManager: ServiceManager | null = null;
+let serviceManager: CoreService | null = null;
 let earlyEventCapture: EarlyEventCaptureService | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
 
@@ -59,10 +59,10 @@ async function initializeCriticalSystems(): Promise<void> {
   try {
     logger.info('Critical Path 초기화 시작');
 
-    serviceManager = ServiceManager.getInstance();
+    serviceManager = CoreService.getInstance();
 
     // Core 서비스 등록 (동적 import)
-    const { registerCoreServices } = await import('@shared/services');
+    const { registerCoreServices } = await import('@shared/services/core-services');
     await registerCoreServices();
 
     // Critical Services만 즉시 초기화

@@ -40,9 +40,11 @@ export {
   throttleScroll,
   createDebouncer,
   safeElementCheck,
+  canTriggerGallery,
+  isGalleryInternalElement,
+  isGalleryContainer,
 } from './utils';
 
-export { GalleryUtils } from './utils/utils';
 export { isInsideGallery } from './utils/dom';
 
 // 최적화 유틸리티들 (Phase 3)

@@ -344,13 +344,33 @@ export class MediaService {
    */
   private async detectWebPSupport(): Promise<void> {
     try {
+      // 테스트 환경에서는 기본값 false 사용
+      if (typeof document === 'undefined' || typeof window === 'undefined') {
+        this.webpSupported = false;
+        return;
+      }
+
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;
 
-      const dataURL = canvas.toDataURL('image/webp');
-      this.webpSupported = dataURL.indexOf('data:image/webp') === 0;
+      // canvas.toDataURL이 구현되지 않은 경우 (예: jsdom)
+      if (typeof canvas.toDataURL !== 'function') {
+        this.webpSupported = false;
+        logger.debug('[MediaService] WebP detection skipped (canvas.toDataURL not available)');
+        return;
+      }
 
+      const dataURL = canvas.toDataURL('image/webp');
+
+      // dataURL이 null이나 유효하지 않은 경우 처리
+      if (!dataURL || typeof dataURL !== 'string') {
+        this.webpSupported = false;
+        logger.debug('[MediaService] WebP detection failed (invalid dataURL)');
+        return;
+      }
+
+      this.webpSupported = dataURL.indexOf('data:image/webp') === 0;
       logger.debug('[MediaService] WebP support detected:', this.webpSupported);
     } catch (error) {
       this.webpSupported = false;

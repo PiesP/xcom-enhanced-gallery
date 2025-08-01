@@ -119,11 +119,13 @@ describe('Phase 2: 중복 코드 통합', () => {
       expect(typeof parseUsernameFast).toBe('function');
     });
 
-    it('UIService가 테마와 토스트 기능을 통합해야 한다', async () => {
-      const { UIService } = await import('@shared/services/UIService');
+    it('ThemeService와 ToastService가 개별적으로 작동해야 한다', async () => {
+      const { ThemeService, ToastService } = await import('@shared/services');
 
-      expect(UIService).toBeDefined();
-      expect(typeof UIService).toBe('function');
+      expect(ThemeService).toBeDefined();
+      expect(ToastService).toBeDefined();
+      expect(typeof ThemeService).toBe('function');
+      expect(typeof ToastService).toBe('function');
     });
   });
 
@@ -133,7 +135,8 @@ describe('Phase 2: 중복 코드 통합', () => {
 
       // 통합된 서비스들만 export되어야 함
       expect(servicesModule.MediaService).toBeDefined();
-      expect(servicesModule.UIService).toBeDefined();
+      expect(servicesModule.ThemeService).toBeDefined();
+      expect(servicesModule.ToastService).toBeDefined();
       expect(servicesModule.LazyLoadingService).toBeDefined();
     });
 
@@ -172,9 +175,10 @@ describe('Phase 2: 중복 코드 통합', () => {
       const mediaServiceModule = await import('@shared/services/MediaService');
       expect(mediaServiceModule.MediaService).toBeDefined();
 
-      // UIService 타입들
-      const uiServiceModule = await import('@shared/services/UIService');
-      expect(uiServiceModule.UIService).toBeDefined();
+      // ThemeService와 ToastService 타입들
+      const servicesModule = await import('@shared/services');
+      expect(servicesModule.ThemeService).toBeDefined();
+      expect(servicesModule.ToastService).toBeDefined();
     });
 
     it('중복 제거 후에도 기존 API가 유지되어야 한다', async () => {

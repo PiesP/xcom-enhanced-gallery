@@ -48,7 +48,7 @@ export {
 
 // 서비스들을 유틸리티로 통합
 export * from '../shared/services';
-export { ServiceManager } from '../shared/services/ServiceManager';
+export { CoreService } from '../shared/services/ServiceManager';
 
 // 상태 관리도 유틸리티로 통합
 export * from '../shared/state';

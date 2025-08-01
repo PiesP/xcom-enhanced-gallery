@@ -14,22 +14,22 @@ import { logger } from '@shared/logging/logger';
  * - 팩토리 패턴 제거
  * - 생명주기 관리 제거
  */
-export class ServiceManager {
-  private static instance: ServiceManager | null = null;
+export class CoreService {
+  private static instance: CoreService | null = null;
   private readonly services = new Map<string, unknown>();
 
   private constructor() {
-    logger.debug('[ServiceManager] 초기화됨');
+    logger.debug('[CoreService] 초기화됨');
   }
 
   /**
    * 싱글톤 인스턴스 가져오기
    */
-  public static getInstance(): ServiceManager {
-    if (!ServiceManager.instance) {
-      ServiceManager.instance = new ServiceManager();
+  public static getInstance(): CoreService {
+    if (!CoreService.instance) {
+      CoreService.instance = new CoreService();
     }
-    return ServiceManager.instance;
+    return CoreService.instance;
   }
 
   /**
@@ -37,11 +37,11 @@ export class ServiceManager {
    */
   public register<T>(key: string, instance: T): void {
     if (this.services.has(key)) {
-      logger.warn(`[ServiceManager] 서비스 덮어쓰기: ${key}`);
+      logger.warn(`[CoreService] 서비스 덮어쓰기: ${key}`);
     }
 
     this.services.set(key, instance);
-    logger.debug(`[ServiceManager] 서비스 등록: ${key}`);
+    logger.debug(`[CoreService] 서비스 등록: ${key}`);
   }
 
   /**
@@ -157,9 +157,9 @@ export class ServiceManager {
       // 등록된 서비스 목록
       logger.debug('🗂️ 등록된 서비스:', diagnostics.services);
 
-      logger.info('✅ ServiceManager 진단 완료');
+      logger.info('✅ CoreService 진단 완료');
     } catch (error) {
-      logger.error('❌ ServiceManager 진단 실패:', error);
+      logger.error('❌ CoreService 진단 실패:', error);
     }
   }
 
@@ -167,7 +167,7 @@ export class ServiceManager {
    * 서비스 상태 진단 (정적 메서드)
    */
   public static async diagnoseServiceManager(): Promise<void> {
-    const instance = ServiceManager.getInstance();
+    const instance = CoreService.getInstance();
     return instance.diagnoseServiceManager();
   }
 
@@ -175,10 +175,10 @@ export class ServiceManager {
    * 싱글톤 인스턴스 초기화 (테스트용)
    */
   public static resetInstance(): void {
-    if (ServiceManager.instance) {
-      ServiceManager.instance.reset();
-      ServiceManager.instance = null;
-      logger.debug('[ServiceManager] 싱글톤 초기화됨');
+    if (CoreService.instance) {
+      CoreService.instance.reset();
+      CoreService.instance = null;
+      logger.debug('[CoreService] 싱글톤 초기화됨');
     }
   }
 }
@@ -186,12 +186,12 @@ export class ServiceManager {
 /**
  * 전역 서비스 관리자 인스턴스
  */
-export const serviceManager = ServiceManager.getInstance();
+export const serviceManager = CoreService.getInstance();
 
 /**
  * 타입 안전한 서비스 접근을 위한 헬퍼 함수
  * 항상 최신 인스턴스에서 서비스를 가져옵니다 (테스트 환경 대응)
  */
 export function getService<T>(key: string): T {
-  return ServiceManager.getInstance().get<T>(key);
+  return CoreService.getInstance().get<T>(key);
 }

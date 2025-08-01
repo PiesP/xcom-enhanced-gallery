@@ -1,7 +1,7 @@
 /**
  * @fileoverview 표준화된 컴포넌트 Props 인터페이스
  * @description Phase 2-3A: BaseComponentProps 기반으로 리팩토링
- * @version 2.0.0
+ * @version 2.1.0 - Deprecated 요소 제거
  */
 
 import type {
@@ -12,12 +12,6 @@ import type {
   VariantComponentProps,
   FormComponentProps,
 } from '../base/BaseComponentProps';
-
-// 하위 호환성을 위한 기존 인터페이스들 (deprecated, 새로운 BaseComponentProps 사용 권장)
-/**
- * @deprecated BaseComponentProps 사용 권장
- */
-export interface BaseUIComponentProps extends BaseComponentProps {}
 
 /**
  * 표준화된 Button Props
