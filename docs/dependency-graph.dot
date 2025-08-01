@@ -253,6 +253,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/services/index.ts" -> "src/shared/services/ServiceManager.ts" [arrowhead="inv"]
     "src/shared/services/index.ts" -> "src/shared/services/ThemeService.ts" [arrowhead="inv"]
     "src/shared/services/index.ts" -> "src/shared/services/ThemeService.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/services/index.ts" -> "src/shared/services/ToastController.ts" [arrowhead="inv"]
     "src/shared/services/index.ts" -> "src/shared/services/ToastService.ts" [arrowhead="inv"]
     "src/shared/services/index.ts" -> "src/shared/services/ToastService.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" subgraph "cluster_src/shared/services/media-extraction" {label="media-extraction" "src/shared/services/media-extraction/MediaExtractionService.ts" [label=<MediaExtractionService.ts> tooltip="MediaExtractionService.ts" URL="src/shared/services/media-extraction/MediaExtractionService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }

@@ -770,7 +770,7 @@ export class MediaService {
       const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
 
       // ZIP 다운로드
-      const blob = new Blob([zipData], { type: 'application/zip' });
+      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
       download.downloadBlob(blob, zipFilename);
 
       options.onProgress?.({

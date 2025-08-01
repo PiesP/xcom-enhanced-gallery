@@ -63,10 +63,28 @@
   --xeg-color-overlay-medium: rgba(0, 0, 0, 0.3);
   --xeg-color-overlay-strong: rgba(0, 0, 0, 0.8);
 
-  /* Glass Effect Colors */
+  /* Glass Effect Colors - 글래스모피즘 강화 */
   --xeg-color-glass-light: rgba(255, 255, 255, 0.85);
   --xeg-color-glass-medium: rgba(255, 255, 255, 0.65);
   --xeg-color-glass-dark: rgba(0, 0, 0, 0.85);
+
+  /* 글래스모피즘 전용 색상 시스템 */
+  --xeg-glass-bg-light: rgba(255, 255, 255, 0.85);
+  --xeg-glass-bg-medium: rgba(255, 255, 255, 0.65);
+  --xeg-glass-bg-dark: rgba(0, 0, 0, 0.85);
+  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.95);
+  --xeg-glass-bg-ultra-dark: rgba(0, 0, 0, 0.95);
+
+  /* 글래스 테두리 색상 */
+  --xeg-glass-border-light: rgba(255, 255, 255, 0.2);
+  --xeg-glass-border-medium: rgba(255, 255, 255, 0.15);
+  --xeg-glass-border-dark: rgba(255, 255, 255, 0.1);
+
+  /* 글래스 그림자 */
+  --xeg-glass-shadow-light: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --xeg-glass-shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --xeg-glass-shadow-strong: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --xeg-glass-shadow-ultra: 0 12px 48px rgba(0, 0, 0, 0.25);
 
   /* ===========================================
      SPACING SYSTEM (8px base)
@@ -151,10 +169,17 @@
   --xeg-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --xeg-easing-spring: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Backdrop Filter */
+  /* Backdrop Filter - 글래스모피즘 강화 */
   --xeg-blur-light: blur(12px);
   --xeg-blur-medium: blur(16px);
   --xeg-blur-strong: blur(20px);
+
+  /* 글래스모피즘 전용 블러 */
+  --xeg-glass-blur-subtle: blur(8px);
+  --xeg-glass-blur-light: blur(12px);
+  --xeg-glass-blur-medium: blur(16px);
+  --xeg-glass-blur-strong: blur(20px);
+  --xeg-glass-blur-ultra: blur(24px);
 
   /* ===========================================
      SEMANTIC TOKEN ALIASES
@@ -196,6 +221,30 @@
   --xeg-button-height-md: 40px;
   --xeg-button-height-lg: 48px;
 
+  /* 글래스모피즘 컴포넌트별 토큰 */
+  /* 툴바 글래스모피즘 */
+  --xeg-toolbar-glass-bg: var(--xeg-glass-bg-light);
+  --xeg-toolbar-glass-blur: var(--xeg-glass-blur-medium);
+  --xeg-toolbar-glass-border: var(--xeg-glass-border-light);
+  --xeg-toolbar-glass-shadow: var(--xeg-glass-shadow-medium);
+
+  /* 토스트 글래스모피즘 */
+  --xeg-toast-glass-bg: var(--xeg-glass-bg-ultra-light);
+  --xeg-toast-glass-blur: var(--xeg-glass-blur-strong);
+  --xeg-toast-glass-border: var(--xeg-glass-border-medium);
+  --xeg-toast-glass-shadow: var(--xeg-glass-shadow-strong);
+
+  /* 갤러리 오버레이 글래스모피즘 */
+  --xeg-gallery-glass-bg: var(--xeg-glass-bg-dark);
+  --xeg-gallery-glass-blur: var(--xeg-glass-blur-ultra);
+  --xeg-gallery-glass-shadow: var(--xeg-glass-shadow-ultra);
+
+  /* 미디어 아이템 글래스모피즘 */
+  --xeg-media-glass-bg: rgba(255, 255, 255, 0.1);
+  --xeg-media-glass-blur: var(--xeg-glass-blur-subtle);
+  --xeg-media-glass-border: rgba(255, 255, 255, 0.15);
+  --xeg-media-glass-shadow: var(--xeg-glass-shadow-medium);
+
   /* Focus ring - 통합된 포커스 시스템 */
   --xeg-focus-ring-width: 2px;
   --xeg-focus-ring-color: var(--xeg-color-primary);
@@ -223,6 +272,20 @@
   --xeg-color-text-secondary: var(--xeg-color-neutral-300);
   --xeg-color-border-primary: var(--xeg-color-neutral-700);
   --xeg-color-border-secondary: var(--xeg-color-neutral-800);
+
+  /* 다크모드 글래스모피즘 오버라이드 */
+  --xeg-toolbar-glass-bg: rgba(0, 0, 0, 0.8);
+  --xeg-toolbar-glass-border: rgba(255, 255, 255, 0.1);
+  --xeg-toolbar-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  --xeg-toast-glass-bg: rgba(0, 0, 0, 0.9);
+  --xeg-toast-glass-border: rgba(255, 255, 255, 0.15);
+  --xeg-toast-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  --xeg-gallery-glass-bg: rgba(0, 0, 0, 0.9);
+
+  --xeg-media-glass-bg: rgba(0, 0, 0, 0.3);
+  --xeg-media-glass-border: rgba(255, 255, 255, 0.1);
 
   /* Dark theme shadows (stronger) */
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -537,5 +600,71 @@
     --xeg-color-error-800: #991b1b;
     --xeg-color-error-900: #7f1d1d;
     --xeg-color-error-950: #450a0a;
+  }
+}
+
+/* ===========================================
+   글래스모피즘 접근성 지원
+   =========================================== */
+
+/* 투명도 감소를 선호하는 사용자 지원 */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --xeg-toolbar-glass-bg: rgba(255, 255, 255, 0.95);
+    --xeg-toolbar-glass-blur: blur(4px);
+
+    --xeg-toast-glass-bg: rgba(255, 255, 255, 0.98);
+    --xeg-toast-glass-blur: blur(2px);
+
+    --xeg-gallery-glass-bg: rgba(0, 0, 0, 0.95);
+    --xeg-gallery-glass-blur: blur(4px);
+
+    --xeg-media-glass-bg: rgba(255, 255, 255, 0.2);
+    --xeg-media-glass-blur: blur(2px);
+  }
+
+  [data-theme='dark'] {
+    --xeg-toolbar-glass-bg: rgba(0, 0, 0, 0.95);
+    --xeg-toast-glass-bg: rgba(0, 0, 0, 0.98);
+    --xeg-media-glass-bg: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-toolbar-glass-bg: rgba(255, 255, 255, 0.98);
+    --xeg-toolbar-glass-border: rgba(0, 0, 0, 0.8);
+    --xeg-toolbar-glass-blur: none;
+
+    --xeg-toast-glass-bg: rgba(255, 255, 255, 0.99);
+    --xeg-toast-glass-border: rgba(0, 0, 0, 0.9);
+    --xeg-toast-glass-blur: none;
+
+    --xeg-gallery-glass-bg: rgba(0, 0, 0, 0.98);
+    --xeg-gallery-glass-blur: none;
+
+    --xeg-media-glass-bg: rgba(255, 255, 255, 0.3);
+    --xeg-media-glass-border: rgba(0, 0, 0, 0.7);
+    --xeg-media-glass-blur: none;
+  }
+
+  [data-theme='dark'] {
+    --xeg-toolbar-glass-bg: rgba(0, 0, 0, 0.98);
+    --xeg-toolbar-glass-border: rgba(255, 255, 255, 0.8);
+    --xeg-toast-glass-bg: rgba(0, 0, 0, 0.99);
+    --xeg-toast-glass-border: rgba(255, 255, 255, 0.9);
+    --xeg-media-glass-bg: rgba(0, 0, 0, 0.7);
+    --xeg-media-glass-border: rgba(255, 255, 255, 0.7);
+  }
+}
+
+/* 모바일 최적화 - 블러 강도 조정 */
+@media (max-width: 768px) {
+  :root {
+    --xeg-toolbar-glass-blur: blur(12px);
+    --xeg-toast-glass-blur: blur(16px);
+    --xeg-gallery-glass-blur: blur(20px);
+    --xeg-media-glass-blur: blur(6px);
   }
 }

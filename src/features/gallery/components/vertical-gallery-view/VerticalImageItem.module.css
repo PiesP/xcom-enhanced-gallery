@@ -17,19 +17,24 @@
 .container {
   position: relative;
   margin-bottom: var(--xeg-item-spacing);
-  border-radius: var(--xeg-item-border-radius);
+  border-radius: 16px;
   overflow: visible;
   transition: var(--xeg-item-transition);
   cursor: pointer;
-  border: none;
-  background: none;
-  padding: 0;
+  border: 1px solid var(--xeg-media-glass-border);
+  background: var(--xeg-media-glass-bg);
+  padding: 8px;
   width: 100%;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   pointer-events: auto;
+
+  /* 글래스모피즘 효과 */
+  backdrop-filter: var(--xeg-media-glass-blur);
+  -webkit-backdrop-filter: var(--xeg-media-glass-blur);
+  box-shadow: var(--xeg-media-glass-shadow);
 
   /* 성능 최적화 */
   transform: translateZ(0);
@@ -42,7 +47,11 @@
 
 .container:hover {
   transform: var(--xeg-item-hover-transform);
-  box-shadow: var(--xeg-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.12));
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 /* 포커스 상태 - outline 대신 box-shadow 사용 */

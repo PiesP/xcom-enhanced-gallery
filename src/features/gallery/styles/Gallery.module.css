@@ -87,8 +87,8 @@
   inset: 0;
   z-index: var(--xeg-z-gallery-overlay);
 
-  /* OKLCH 배경 색상 */
-  background: var(--xeg-gallery-overlay-oklch);
+  /* OKLCH 배경 색상 + 글래스모피즘 */
+  background: var(--xeg-gallery-glass-bg);
 
   /* 플렉스 레이아웃 - :has() 선택자로 상태 관리 */
   display: flex;
@@ -107,9 +107,9 @@
   will-change: opacity, transform;
   transform: var(--xeg-gallery-gpu-acceleration);
 
-  /* 블러 효과 */
-  backdrop-filter: blur(var(--xeg-backdrop-blur, 8px));
-  -webkit-backdrop-filter: blur(var(--xeg-backdrop-blur, 8px));
+  /* 글래스모피즘 블러 효과 */
+  backdrop-filter: var(--xeg-gallery-glass-blur);
+  -webkit-backdrop-filter: var(--xeg-gallery-glass-blur);
 }
 
 /* 갤러리가 활성화된 상태 - :has() 선택자 활용 */

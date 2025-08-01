@@ -3186,6 +3186,23 @@
         },
         {
           "dynamic": false,
+          "module": "./ToastController",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/ToastController.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ToastService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3900,6 +3917,7 @@
       "source": "src/shared/services/ToastController.ts",
       "dependencies": [],
       "dependents": [
+        "src/shared/services/index.ts",
         "src/shared/services/service-initialization.ts",
         "src/shared/types/core/core-types.ts"
       ],
@@ -6562,7 +6580,7 @@
     "info": 4,
     "ignore": 0,
     "totalCruised": 186,
-    "totalDependenciesCruised": 271,
+    "totalDependenciesCruised": 272,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

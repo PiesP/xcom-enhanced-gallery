@@ -46,19 +46,19 @@
   gap: 12px;
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
-  background: var(--xeg-surface-overlay-light);
+  background: var(--xeg-toolbar-glass-bg);
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
     transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
 
-  /* 현대적 스타일링 */
+  /* 글래스모피즘 스타일링 */
   border-radius: 16px;
-  border: 1px solid var(--xeg-color-border-primary);
-  box-shadow: var(--xeg-shadow-toolbar);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  border: 1px solid var(--xeg-toolbar-glass-border);
+  box-shadow: var(--xeg-toolbar-glass-shadow);
+  backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
   user-select: none;
   isolation: isolate;
 }
@@ -164,8 +164,8 @@
 
 /* 버튼 상태 관리 */
 .toolbarButton {
-  /* 기본 버튼 스타일 */
-  background: var(--xeg-surface-interactive);
+  /* 글래스모피즘 버튼 스타일 */
+  background: rgba(255, 255, 255, 0.6);
   color: var(--button-color, var(--xeg-text-button));
   opacity: var(--button-opacity, 1);
   transform: var(--button-transform, none);
@@ -181,16 +181,17 @@
   overflow: hidden;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
-  border: 1px solid var(--xeg-border-button);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
 
-  /* 현대적 스타일링 */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* 글래스모피즘 스타일링 */
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.08),
-    0 1px 4px rgba(15, 23, 42, 0.05);
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* 데이터 속성 기반 상태 관리 */
@@ -224,10 +225,12 @@
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
     --button-transform: translateY(-2px) scale(1.05);
-    background: var(--xeg-surface-hover);
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.5);
     box-shadow:
-      0 4px 16px rgba(15, 23, 42, 0.12),
-      0 2px 8px rgba(15, 23, 42, 0.08);
+      0 8px 24px rgba(0, 0, 0, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 }
 
