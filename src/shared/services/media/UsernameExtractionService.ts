@@ -21,19 +21,10 @@ export interface UsernameExtractionResult {
 }
 
 /**
- * 사용자명 파서
+ * 사용자명 파서 - Phase 4 간소화
  */
 export class UsernameParser {
-  private static instance: UsernameParser;
-
-  public static getInstance(): UsernameParser {
-    if (!UsernameParser.instance) {
-      UsernameParser.instance = new UsernameParser();
-    }
-    return UsernameParser.instance;
-  }
-
-  private constructor() {}
+  constructor() {} // public constructor
 
   /**
    * 페이지에서 사용자명을 추출합니다
@@ -237,12 +228,14 @@ export class UsernameParser {
  * 편의 함수: 사용자명 추출
  */
 export function extractUsername(element?: HTMLElement | Document): UsernameExtractionResult {
-  return UsernameParser.getInstance().extractUsername(element);
+  const parser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
+  return parser.extractUsername(element);
 }
 
 /**
  * 편의 함수: 빠른 사용자명 추출 (문자열만 반환)
  */
 export function parseUsernameFast(element?: HTMLElement | Document): string | null {
-  return UsernameParser.getInstance().extractUsername(element).username;
+  const parser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
+  return parser.extractUsername(element).username;
 }

@@ -33,26 +33,12 @@ export interface ZipFilenameOptions {
  *
  * @example
  * ```typescript
- * const service = FilenameService.getInstance();
+ * const service = new FilenameService();
  * const filename = service.generateMediaFilename(mediaItem, { index: 1 });
  * // 결과: "username_1234567890_1.jpg"
  * ```
  */
 export class FilenameService {
-  private static instance: FilenameService;
-
-  /**
-   * 싱글톤 인스턴스 획득
-   *
-   * @returns FilenameService 인스턴스
-   */
-  public static getInstance(): FilenameService {
-    FilenameService.instance ??= new FilenameService();
-    return FilenameService.instance;
-  }
-
-  private constructor() {}
-
   /**
    * 미디어 파일명을 생성합니다
    *
@@ -354,7 +340,8 @@ export function generateMediaFilename(
   media: MediaItemForFilename | MediaInfoForFilename,
   options?: FilenameOptions
 ): string {
-  return FilenameService.getInstance().generateMediaFilename(media, options);
+  const service = new FilenameService();
+  return service.generateMediaFilename(media, options);
 }
 
 /**
@@ -374,7 +361,8 @@ export function generateZipFilename(
   mediaItems: readonly (MediaItemForFilename | MediaInfoForFilename)[],
   options?: ZipFilenameOptions
 ): string {
-  return FilenameService.getInstance().generateZipFilename(mediaItems, options);
+  const service = new FilenameService();
+  return service.generateZipFilename(mediaItems, options);
 }
 
 /**
@@ -390,7 +378,8 @@ export function generateZipFilename(
  * ```
  */
 export function isValidMediaFilename(filename: string): boolean {
-  return FilenameService.getInstance().isValidMediaFilename(filename);
+  const service = new FilenameService();
+  return service.isValidMediaFilename(filename);
 }
 
 /**
@@ -406,5 +395,6 @@ export function isValidMediaFilename(filename: string): boolean {
  * ```
  */
 export function isValidZipFilename(filename: string): boolean {
-  return FilenameService.getInstance().isValidZipFilename(filename);
+  const service = new FilenameService();
+  return service.isValidZipFilename(filename);
 }

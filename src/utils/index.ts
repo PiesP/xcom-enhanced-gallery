@@ -21,7 +21,6 @@ export {
   rafThrottle,
   throttleScroll,
   measurePerformance,
-  measureAsyncPerformance,
 
   // 갤러리 관련
   galleryDebugUtils,
@@ -39,21 +38,12 @@ export {
   undefinedToNull,
   safeElementCheck,
 
-  // 리소스 관리
-  createTimer,
-  createManagedInterval,
-
   // 이벤트 관리
   addListener,
-  removeEventListenerManaged,
   cleanupEventListeners,
 
   // 접근성
-  calculateContrastRatio,
-  detectActualBackgroundColor,
   detectLightBackground,
-  meetsWCAGAA,
-  meetsWCAGAAA,
 } from '../shared/utils';
 
 // 서비스들을 유틸리티로 통합

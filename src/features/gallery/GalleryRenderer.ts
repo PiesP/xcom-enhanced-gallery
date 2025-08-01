@@ -192,7 +192,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       // 다운로드 서비스 - Core BulkDownloadService 직접 사용
       const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
 
-      const downloadService = BulkDownloadService.getInstance();
+      const downloadService = new BulkDownloadService();
       const state = galleryState.value;
 
       if (type === 'current') {

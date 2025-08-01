@@ -25,8 +25,6 @@ export interface PrefetchOptions {
  * - 고정 균형 전략
  */
 export class MediaPrefetchingService {
-  private static instance: MediaPrefetchingService | null = null;
-
   // 간단한 캐시 및 상태 관리
   private readonly cache = new Map<string, Blob>();
   private readonly activeRequests = new Map<string, AbortController>();
@@ -38,19 +36,11 @@ export class MediaPrefetchingService {
   private cacheHits = 0;
   private cacheMisses = 0;
 
-  private constructor() {
+  constructor() {
     // 간소화: 정기 정리 제거
   }
 
-  /**
-   * 싱글톤 인스턴스 반환
-   */
-  public static getInstance(): MediaPrefetchingService {
-    if (!this.instance) {
-      this.instance = new MediaPrefetchingService();
-    }
-    return this.instance;
-  }
+  // getInstance 메서드 제거됨 - Phase 4 간소화
 
   /**
    * 미디어 배열에서 현재 인덱스 기준으로 다음 이미지들을 프리페치
@@ -208,11 +198,10 @@ export class MediaPrefetchingService {
   public dispose(): void {
     this.cancelAllPrefetch();
     this.clearCache();
-    MediaPrefetchingService.instance = null;
   }
 }
 
 /**
- * 전역 미디어 프리페칭 서비스 인스턴스
+ * 전역 미디어 프리페칭 서비스 인스턴스 - 간단한 인스턴스 export
  */
-export const mediaPrefetchingService = MediaPrefetchingService.getInstance();
+export const mediaPrefetchingService = new MediaPrefetchingService();

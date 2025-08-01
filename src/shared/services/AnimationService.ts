@@ -21,16 +21,10 @@ export interface AnimationConfig {
  * - 유저스크립트 최적화
  */
 export class AnimationService {
-  private static instance: AnimationService | null = null;
   private stylesInjected = false;
 
-  private constructor() {
+  constructor() {
     this.ensureStylesInjected();
-  }
-
-  public static getInstance(): AnimationService {
-    AnimationService.instance ??= new AnimationService();
-    return AnimationService.instance;
   }
 
   /**
@@ -172,20 +166,21 @@ export class AnimationService {
 }
 
 // 편의 함수들
-const animationService = AnimationService.getInstance();
-
+// 편의 함수들
 /**
  * 요소 애니메이션 편의 함수
  */
 export function animateElement(element: Element, config?: AnimationConfig): void {
-  animationService.animateElement(element, config);
+  const service = new AnimationService();
+  service.animateElement(element, config);
 }
 
 /**
  * 페이드아웃 편의 함수
  */
 export function fadeOut(element: Element, config?: AnimationConfig): Promise<void> {
-  return animationService.fadeOut(element, config);
+  const service = new AnimationService();
+  return service.fadeOut(element, config);
 }
 
 /**
@@ -195,7 +190,8 @@ export function openGalleryWithAnimation(
   element: Element,
   config?: AnimationConfig
 ): Promise<void> {
-  return animationService.openGallery(element, config);
+  const service = new AnimationService();
+  return service.openGallery(element, config);
 }
 
 /**
@@ -205,5 +201,6 @@ export function closeGalleryWithAnimation(
   element: Element,
   config?: AnimationConfig
 ): Promise<void> {
-  return animationService.closeGallery(element, config);
+  const service = new AnimationService();
+  return service.closeGallery(element, config);
 }

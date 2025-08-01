@@ -325,3 +325,9 @@ export function compareSelectorSpecificity(selector1: string, selector2: string)
 
   return 0;
 }
+
+// ================================
+// DOMBatcher re-export (dom/index.ts와 호환성)
+// ================================
+export { DOMBatcher, globalDOMBatcher, updateElementsInBatch, updateElement } from './dom/index';
+export type { DOMUpdate as DOMUpdateTask } from './dom/index';

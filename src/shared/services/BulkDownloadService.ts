@@ -7,7 +7,6 @@
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import type { MediaItemForFilename } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-import { SingletonServiceImpl } from './BaseServiceImpl';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
@@ -67,43 +66,21 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
 }
 
 /**
- * 간소화된 대량 다운로드 서비스
+ * 간소화된 대량 다운로드 서비스 - Phase 4 간소화
  *
  * 주요 기능:
  * - 단일/다중 파일 다운로드
  * - 기본 ZIP 생성
  * - 간단한 진행률 추적
  */
-export class BulkDownloadService extends SingletonServiceImpl {
-  private static instance: BulkDownloadService;
+export class BulkDownloadService {
   private currentAbortController: AbortController | undefined;
-
-  public static getInstance(): BulkDownloadService {
-    BulkDownloadService.instance ??= new BulkDownloadService();
-    return BulkDownloadService.instance;
-  }
-
-  private constructor() {
-    super('BulkDownloadService');
-  }
-
-  protected async onInitialize(): Promise<void> {
-    // BulkDownloadService는 특별한 초기화 로직이 없음
-  }
-
-  protected onDestroy(): void {
-    // 진행 중인 다운로드 취소
-    if (this.currentAbortController) {
-      this.currentAbortController.abort();
-      this.currentAbortController = undefined;
-    }
-  }
 
   /**
    * 서비스 상태 확인 (테스트 호환성을 위해)
    */
   public getStatus(): 'active' | 'inactive' {
-    return this._isInitialized ? 'active' : 'inactive';
+    return 'active'; // 간소화: 항상 활성상태로 처리
   }
 
   /**
@@ -312,3 +289,7 @@ export class BulkDownloadService extends SingletonServiceImpl {
     return this.currentAbortController !== undefined;
   }
 }
+
+// 간단한 인스턴스 export (복잡한 싱글톤 패턴 없이)
+export const bulkDownloadService = new BulkDownloadService();
+export default bulkDownloadService;

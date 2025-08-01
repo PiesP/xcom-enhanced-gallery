@@ -12,23 +12,17 @@ import { logger } from '@shared/logging/logger';
 export type Theme = 'light' | 'dark';
 
 /**
- * 시스템 테마 서비스
+ * 시스템 테마 서비스 - Phase 4 간소화
  */
 export class ThemeService {
-  private static instance: ThemeService | null = null;
   private mediaQueryList: MediaQueryList | null = null;
   private currentTheme: Theme = 'light';
 
-  private constructor() {
+  constructor() {
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
       this.initializeSystemThemeDetection();
     }
-  }
-
-  public static getInstance(): ThemeService {
-    ThemeService.instance ??= new ThemeService();
-    return ThemeService.instance;
   }
 
   /**
@@ -85,12 +79,11 @@ export class ThemeService {
       this.mediaQueryList.removeEventListener('change', this.applySystemTheme);
       this.mediaQueryList = null;
     }
-    ThemeService.instance = null;
     logger.info('ThemeService destroyed');
   }
 }
 
 /**
- * 전역 테마 서비스 인스턴스
+ * 전역 테마 서비스 인스턴스 - 간단한 인스턴스 export
  */
-export const themeService = ThemeService.getInstance();
+export const themeService = new ThemeService();

@@ -90,23 +90,7 @@ export interface GalleryAppType extends BaseService {
   destroy(): void;
 }
 
-/**
- * 서비스 타입 매핑 (서비스 레지스트리에서 사용)
- */
-export interface ServiceTypeMapping {
-  'core.bulkDownload': BulkDownloadServiceType;
-  gallery: unknown; // GalleryAppType - features layer 타입이므로 unknown 사용
-  'gallery.renderer': unknown; // GalleryRendererType - features layer 타입이므로 unknown 사용
-  'gallery.download': unknown; // DownloadManagerType - features layer 타입이므로 unknown 사용
-  'media.extraction': unknown; // MediaExtractionServiceType - features layer 타입이므로 unknown 사용
-  'media.filename': FilenameServiceType;
-  'theme.auto': ThemeServiceType;
-  'toast.controller': ToastControllerType;
-  'video.state': VideoControlServiceType;
-  'video.control': VideoControlServiceType;
-  'settings.manager': unknown; // Settings 관련 타입들은 features layer이므로 unknown 사용
-  'settings.tokenExtractor': unknown; // Settings 관련 타입들은 features layer이므로 unknown 사용
-}
+// ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
 
 // ========================================
 // GALLERY TYPES (from gallery.types.ts)

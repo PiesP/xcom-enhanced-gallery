@@ -16,11 +16,11 @@
 
 import { SERVICE_KEYS } from '@/constants';
 import { logger } from '@shared/logging/logger';
-import type { ServiceTypeMapping } from '@shared/types/core/core-types';
 import { registerCoreServices } from './service-initialization';
 
-// Type-safe service keys
-export type ServiceKey = keyof ServiceTypeMapping;
+// ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
+// 직접적인 서비스 키 타입 사용
+export type ServiceKey = string;
 
 /**
  * 로거 인터페이스
@@ -138,8 +138,11 @@ export class ServiceDiagnostics {
 ServiceDiagnostics.registerGlobalDiagnostic();
 
 // ================================
-// Service Registry (통합됨)
+// Service Registry는 별도 파일로 분리됨
+// service-registry.ts 참조
 // ================================
+
+// CoreService 클래스 제거됨 - Phase 4 간소화
 
 // ================================
 // Service Registry (재export)
@@ -150,7 +153,13 @@ ServiceDiagnostics.registerGlobalDiagnostic();
  * ServiceRegistry가 ServiceManager에 통합되었고, 초기화는 별도 파일로 분리
  */
 export { registerCoreServices } from './service-initialization';
-export { getService } from './ServiceManager';
+
+// 타입 안전한 서비스 접근을 위한 헬퍼 함수
+export function getService<T>(key: string): T {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { ServiceManager } = require('./ServiceManager') as { ServiceManager: any };
+  return ServiceManager.getInstance().get(key) as T;
+}
 
 // 하위 호환성을 위한 별칭
 export type ILogger = Logger;

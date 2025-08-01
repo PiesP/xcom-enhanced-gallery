@@ -31,12 +31,8 @@ export * from './memory';
 // 핵심 유틸리티들 (주요 기능만)
 export {
   // 접근성 & DOM 유틸리티
-  calculateContrastRatio,
-  detectActualBackgroundColor,
   detectLightBackground,
   getRelativeLuminance,
-  meetsWCAGAA,
-  meetsWCAGAAA,
   parseColor,
   imageFilter,
   extractTweetInfoFromUrl,

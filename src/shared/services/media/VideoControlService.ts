@@ -23,7 +23,7 @@ interface VideoState {
 }
 
 /**
- * 통합 비디오 제어 서비스
+ * 통합 비디오 제어 서비스 - Phase 4 간소화
  *
  * 주요 기능:
  * - 갤러리 진입 시 배경 비디오 즉시 정지
@@ -32,18 +32,12 @@ interface VideoState {
  * - 안전한 상태 저장 및 복원
  */
 export class VideoControlService {
-  private static instance: VideoControlService | null = null;
   private readonly pausedVideos = new Map<HTMLVideoElement, VideoState>();
   private isGalleryActive = false;
   private cleanupInterval: number | null = null;
 
-  private constructor() {
+  constructor() {
     this.startCleanupTimer();
-  }
-
-  public static getInstance(): VideoControlService {
-    VideoControlService.instance ??= new VideoControlService();
-    return VideoControlService.instance;
   }
 
   /**
@@ -153,7 +147,6 @@ export class VideoControlService {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
-    VideoControlService.instance = null;
     logger.info('[VideoControl] 서비스 종료됨');
   }
 
@@ -261,6 +254,6 @@ export class VideoControlService {
 }
 
 /**
- * 전역 비디오 제어 서비스 인스턴스
+ * 전역 비디오 제어 서비스 인스턴스 - 간단한 인스턴스 export
  */
-export const videoControlService = VideoControlService.getInstance();
+export const videoControlService = new VideoControlService();

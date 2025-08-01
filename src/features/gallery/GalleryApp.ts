@@ -16,7 +16,7 @@ import { galleryState, openGallery, closeGallery } from '@shared/state/signals/g
 import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { MediaService } from '@shared/services/MediaService';
-import { UIService } from '@shared/services/UIService';
+import { ToastController } from '@shared/services/ToastController';
 import { unmountGallery } from '@shared/components/isolation';
 
 /**
@@ -36,8 +36,8 @@ export interface GalleryConfig {
 export class GalleryApp {
   private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
-  private readonly videoControl = VideoControlService.getInstance();
-  private uiService: UIService | null = null;
+  private readonly videoControl = new VideoControlService();
+  private readonly toastController: ToastController;
 
   // 새로운 격리 시스템 컴포넌트들
   private galleryContainer: HTMLElement | null = null;
@@ -51,8 +51,9 @@ export class GalleryApp {
     clickDebounceMs: 500,
   };
 
-  constructor(config?: Partial<GalleryConfig>) {
-    this.config = { ...this.config, ...config };
+  constructor() {
+    logger.info('[GalleryApp] 생성자 호출');
+    this.toastController = new ToastController();
   }
 
   /**
@@ -72,8 +73,8 @@ export class GalleryApp {
     try {
       logger.info('GalleryApp: 격리된 시스템으로 초기화 시작');
 
-      // UI 서비스 초기화
-      this.uiService = (await getService(SERVICE_KEYS.UI_SERVICE)) as UIService;
+      // 토스트 컨트롤러 초기화
+      await this.toastController.initialize();
 
       // 갤러리 렌더러 초기화
       await this.initializeRenderer();
@@ -132,22 +133,24 @@ export class GalleryApp {
                 errors: result.errors,
               });
 
-              // UI 서비스를 통해 알림 표시
-              if (this.uiService) {
-                this.uiService.showError({
+              // 직접 토스트 컨트롤러를 통해 알림 표시
+              if (this.toastController) {
+                this.toastController.show({
                   title: '미디어 로드 실패',
                   message: '이미지나 비디오를 찾을 수 없습니다.',
+                  type: 'error',
                 });
               }
             }
           } catch (error) {
             logger.error('미디어 추출 중 오류:', error);
 
-            // UI 서비스를 통해 에러 알림 표시
-            if (this.uiService) {
-              this.uiService.showError({
+            // 직접 토스트 컨트롤러를 통해 에러 알림 표시
+            if (this.toastController) {
+              this.toastController.show({
                 title: '오류 발생',
                 message: `미디어 추출 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+                type: 'error',
               });
             }
           }
@@ -210,9 +213,10 @@ export class GalleryApp {
       logger.info(`✅ 갤러리 열기 성공: ${mediaItems.length}개 미디어`);
     } catch (error) {
       logger.error('❌ 갤러리 열기 실패:', error);
-      this.uiService?.showError({
+      this.toastController?.show({
         title: 'Extraction Failed',
         message: `Failed to extract media: ${error instanceof Error ? error.message : String(error)}`,
+        type: 'error',
       });
       throw error;
     }

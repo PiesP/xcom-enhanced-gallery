@@ -11,25 +11,13 @@ import { logger } from '../logging/logger';
 /**
  * 브라우저 유틸리티
  * Infrastructure 레이어의 브라우저 API 래핑 서비스
+ * Phase 4 Step 4: 싱글톤에서 직접 클래스로 변환
  */
 export class BrowserUtils {
-  private static instance: BrowserUtils | null = null;
   private readonly injectedStyles = new Set<string>();
 
-  private constructor() {
+  constructor() {
     logger.debug('[BrowserUtils] Initialized');
-  }
-
-  public static getInstance(): BrowserUtils {
-    BrowserUtils.instance ??= new BrowserUtils();
-    return BrowserUtils.instance;
-  }
-
-  public static resetInstance(): void {
-    if (BrowserUtils.instance) {
-      BrowserUtils.instance.cleanup();
-      BrowserUtils.instance = null;
-    }
   }
 
   /**
@@ -132,13 +120,14 @@ export class BrowserUtils {
   }
 }
 
-// 편의 함수 export
+// 편의 함수 export - Phase 4 Step 4: 직접 인스턴스 사용
+const defaultBrowserUtils = new BrowserUtils();
+
 export const browserUtils = {
-  injectCSS: (id: string, css: string) => BrowserUtils.getInstance().injectCSS(id, css),
-  removeCSS: (id: string) => BrowserUtils.getInstance().removeCSS(id),
-  downloadFile: (url: string, filename?: string) =>
-    BrowserUtils.getInstance().downloadFile(url, filename),
-  isPageVisible: () => BrowserUtils.getInstance().isPageVisible(),
-  isDOMReady: () => BrowserUtils.getInstance().isDOMReady(),
-  diagnostics: () => BrowserUtils.getInstance().getDiagnostics(),
+  injectCSS: (id: string, css: string) => defaultBrowserUtils.injectCSS(id, css),
+  removeCSS: (id: string) => defaultBrowserUtils.removeCSS(id),
+  downloadFile: (url: string, filename?: string) => defaultBrowserUtils.downloadFile(url, filename),
+  isPageVisible: () => defaultBrowserUtils.isPageVisible(),
+  isDOMReady: () => defaultBrowserUtils.isDOMReady(),
+  diagnostics: () => defaultBrowserUtils.getDiagnostics(),
 } as const;

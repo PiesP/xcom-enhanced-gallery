@@ -7,7 +7,7 @@
 /**
  * 에러 컨텍스트 정보
  */
-interface ErrorContext {
+export interface ErrorContext {
   /** 에러가 발생한 작업 */
   operation: string;
   /** 에러 발생 시점 */
@@ -21,9 +21,9 @@ interface ErrorContext {
 }
 
 /**
- * 표준화된 에러 객체
+ * 표준화된 에러 인터페이스
  */
-interface StandardError {
+export interface StandardError {
   /** 에러 메시지 */
   message: string;
   /** 에러 컨텍스트 */

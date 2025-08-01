@@ -6,8 +6,7 @@
  * @version 4.0.0
  */
 
-import { measureAsyncPerformance } from '@/utils';
-import { logger } from '@shared/logging/logger'; // 직접 import로 변경
+import { logger } from '@/shared/logging';
 import type { AppConfig } from '@/types';
 import { ServiceManager } from '@shared/services/ServiceManager';
 import { EarlyEventCaptureService } from '@shared/services/EarlyEventCaptureService';
@@ -288,13 +287,7 @@ async function initializeGalleryApp(): Promise<void> {
 
     // 갤러리 앱 인스턴스 생성
     const { GalleryApp } = await import('@features/gallery/GalleryApp');
-    galleryApp = new GalleryApp({
-      autoTheme: true,
-      keyboardShortcuts: true,
-      performanceMonitoring: import.meta.env.DEV,
-      extractionTimeout: 15000,
-      clickDebounceMs: 500,
-    });
+    galleryApp = new GalleryApp();
 
     // 갤러리 앱 초기화
     await (galleryApp as { initialize(): Promise<void> }).initialize();
@@ -320,36 +313,39 @@ async function startApplication(): Promise<void> {
   try {
     logger.info('🚀 X.com Enhanced Gallery 시작 중...');
 
-    const _result = await measureAsyncPerformance('애플리케이션 초기화', async () => {
-      // 0단계: 즉시 이벤트 캐처 시작 (지연 없음)
-      earlyEventCapture = new EarlyEventCaptureService();
+    const startTime = performance.now();
 
-      // 개발 도구 초기화 (개발 환경만)
-      await initializeDevTools();
+    // 0단계: 즉시 이벤트 캐처 시작 (지연 없음)
+    earlyEventCapture = new EarlyEventCaptureService();
 
-      // 1단계: 기본 인프라 초기화
-      await initializeInfrastructure();
+    // 개발 도구 초기화 (개발 환경만)
+    await initializeDevTools();
 
-      // 2단계: 핵심 시스템만 초기화 (갤러리 제외)
-      await initializeCriticalSystems();
+    // 1단계: 기본 인프라 초기화
+    await initializeInfrastructure();
 
-      // 3단계: Feature Services 지연 등록
-      await registerFeatureServicesLazy();
+    // 2단계: 핵심 시스템만 초기화 (갤러리 제외)
+    await initializeCriticalSystems();
 
-      // 4단계: 전역 이벤트 핸들러 설정
-      setupGlobalEventHandlers();
+    // 3단계: Feature Services 지연 등록
+    await registerFeatureServicesLazy();
 
-      // 5단계: 갤러리 앱을 즉시 초기화 (지연 없음)
-      await initializeGalleryImmediately();
+    // 4단계: 전역 이벤트 핸들러 설정
+    setupGlobalEventHandlers();
 
-      // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
-      initializeNonCriticalSystems();
+    // 5단계: 갤러리 앱을 즉시 초기화 (지연 없음)
+    await initializeGalleryImmediately();
 
-      isStarted = true;
-    });
+    // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
+    initializeNonCriticalSystems();
+
+    isStarted = true;
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
 
     logger.info('✅ 애플리케이션 초기화 완료', {
-      startupTime: `${_result.duration.toFixed(2)}ms`,
+      startupTime: `${duration.toFixed(2)}ms`,
     });
 
     // 개발 환경에서 전역 접근 제공

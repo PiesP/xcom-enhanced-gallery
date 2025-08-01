@@ -18,13 +18,6 @@ export async function loadServiceModule(serviceName: string) {
 
   try {
     switch (serviceName) {
-      case 'WebPOptimizationService': {
-        const module = await import('./WebPOptimizationService');
-        const loadTime = performance.now() - startTime;
-        logger.debug('WebPOptimizationService 로딩 완료:', { loadTime });
-        return module.WebPOptimizationService;
-      }
-
       case 'MediaPrefetchingService': {
         const module = await import('./MediaPrefetchingService');
         const loadTime = performance.now() - startTime;
