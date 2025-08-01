@@ -129,12 +129,18 @@
   border-radius: var(--xeg-radius-md, 4px);
   /* 기본 스타일 - JavaScript에서 동적으로 크기 조정 */
   object-fit: contain;
-  /* 이벤트 전파 차단 */
-  pointer-events: none;
+  /* 컨텍스트 메뉴 허용을 위해 pointer-events 활성화 */
+  pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  /* 드래그 방지를 위한 추가 속성 */
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
   /* GPU 가속을 위한 3D 변환 */
   transform: translateZ(0);
   will-change: opacity;

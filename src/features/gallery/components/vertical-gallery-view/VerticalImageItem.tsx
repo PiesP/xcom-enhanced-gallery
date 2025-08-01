@@ -92,6 +92,8 @@ interface VerticalImageItemProps extends GalleryComponentProps {
   fitMode?: ImageFitMode;
   /** Callback when media load completes */
   onMediaLoad?: (mediaId: string, index: number) => void;
+  /** Optional image context menu handler */
+  onImageContextMenu?: (event: MouseEvent, media: MediaInfo) => void;
   /** 추가 클래스명 */
   className?: string;
   /** 테스트 ID */
@@ -147,6 +149,7 @@ function BaseVerticalImageItemCore({
   forceVisible = false,
   onClick,
   onDownload,
+  onImageContextMenu,
   className = '',
   fitMode,
   onMediaLoad,
@@ -237,6 +240,23 @@ function BaseVerticalImageItemCore({
       onMediaLoad?.(media.url, index);
     }
   }, [isLoaded, media.url, index, onMediaLoad]);
+
+  // Handle image context menu
+  const handleImageContextMenu = useCallback(
+    (event: MouseEvent) => {
+      // 브라우저 기본 컨텍스트 메뉴 허용 (preventDefault 호출하지 않음)
+      if (onImageContextMenu) {
+        onImageContextMenu(event, media);
+      }
+    },
+    [onImageContextMenu, media]
+  );
+
+  // Handle image drag start (드래그 방지)
+  const handleImageDragStart = useCallback((event: DragEvent) => {
+    // 드래그는 방지
+    event.preventDefault();
+  }, []);
 
   // Intersection Observer for lazy loading (최적화)
   useEffect(() => {
@@ -344,6 +364,8 @@ function BaseVerticalImageItemCore({
                 onLoadedData={handleVideoLoaded}
                 onCanPlay={handleVideoLoaded}
                 onError={handleVideoError}
+                onContextMenu={handleImageContextMenu}
+                onDragStart={handleImageDragStart}
                 style={{
                   opacity: isLoaded ? 1 : 0,
                   transition: 'opacity 0.2s ease-in-out',
@@ -358,6 +380,8 @@ function BaseVerticalImageItemCore({
                 className={imageClasses}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
+                onContextMenu={handleImageContextMenu}
+                onDragStart={handleImageDragStart}
                 style={{
                   opacity: isLoaded ? 1 : 0,
                   transition: 'opacity 0.3s ease',
