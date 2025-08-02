@@ -9,7 +9,7 @@ import { MediaExtractionService } from '@shared/services/media-extraction/MediaE
 import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/TwitterAPIExtractor';
 import { DOMDirectExtractor } from '@shared/services/media-extraction/extractors/DOMDirectExtractor';
 import { FallbackExtractor } from '@shared/services/media/FallbackExtractor';
-import type { MediaExtractionResult, TweetInfo } from '@shared/types/media.types';
+import type { MediaExtractionResult } from '@shared/types/media.types';
 
 describe('TDD Phase 2: 미디어 추출 서비스 중복 구현 통합', () => {
   describe('🔴 RED: 중복 구현 식별', () => {
@@ -42,7 +42,7 @@ describe('TDD Phase 2: 미디어 추출 서비스 중복 구현 통합', () => {
       // 4. 결과 객체 생성
       // 5. 에러 처리
 
-      expect(true).toBe(true); // RED: 중복 구현 존재 상태 확인됨
+      // ✅ RED: 중복 구현 존재 상태 확인됨
     });
 
     it('각 추출 서비스가 서로 다른 인터페이스를 사용하고 있어야 함', () => {
@@ -58,17 +58,17 @@ describe('TDD Phase 2: 미디어 추출 서비스 중복 구현 통합', () => {
       expect(Object.keys(interfaces).length).toBe(4);
       console.log('✅ 인터페이스 불일치 확인:', interfaces);
 
-      expect(true).toBe(true); // RED: 인터페이스 불일치 상태 확인됨
+      // ✅ RED: 인터페이스 불일치 상태 확인됨
     });
   });
 
   describe('🟢 GREEN: 통합 인터페이스 설계', () => {
     interface UnifiedMediaExtractor {
       // 통합된 인터페이스 정의
-      extract(params: {
+      extract(options: {
         element: HTMLElement;
-        options?: any;
-        tweetInfo?: TweetInfo;
+        config?: any;
+        tweetInfo?: any;
         strategy?: 'api' | 'dom' | 'fallback' | 'auto';
       }): Promise<MediaExtractionResult>;
 

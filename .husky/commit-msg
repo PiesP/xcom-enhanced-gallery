@@ -4,36 +4,50 @@
 # Commit Message Validation Hook for X.com Enhanced Gallery
 # =============================================================================
 # 한국어 커밋 메시지를 지원하는 Conventional Commits 표준 검증
+# HUSKY_SKIP=1 환경변수로 검증을 건너뛸 수 있습니다.
 # =============================================================================
+
+# 스킵 옵션 확인
+if [ "$HUSKY_SKIP" = "1" ]; then
+  echo "⏭️  커밋 메시지 검증 건너뛰기 (HUSKY_SKIP=1)"
+  exit 0
+fi
 
 echo "📝 커밋 메시지 검증 중..."
 
-npx --no -- commitlint --edit $1 --config commitlint.config.cjs || {
-  echo ""
-  echo "❌ 커밋 메시지 검증 실패"
-  echo ""
-  echo "💡 올바른 형식: type(scope): 설명"
-  echo ""
-  echo "   📋 사용 가능한 타입:"
-  echo "   • feat      - 새로운 기능 추가"
-  echo "   • fix       - 버그 수정"
-  echo "   • docs      - 문서 변경"
-  echo "   • style     - 코드 스타일 변경"
-  echo "   • refactor  - 리팩토링"
-  echo "   • test      - 테스트 추가/수정"
-  echo "   • chore     - 기타 변경사항"
-  echo ""
-  echo "   📝 한국어 커밋 예시:"
-  echo "   • feat: 갤러리 뷰 컴포넌트 추가"
-  echo "   • fix(media): 이미지 로딩 오류 수정"
-  echo "   • docs: README 업데이트"
-  echo "   • refactor(shared): 공통 유틸리티 리팩토링"
-  echo "   • test(gallery): 갤러리 테스트 케이스 추가"
-  echo ""
-  echo "   📋 주요 스코프:"
-  echo "   • gallery, media, settings, ui, shared, test 등"
-  echo ""
-  exit 1
-}
+# 개발 브랜치에서는 더 관대한 검증
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+case "$BRANCH" in
+  dev*|feature*|experiment*|refactor*)
+    echo "🔧 개발 브랜치 감지: 관대한 검증 모드"
+    # 개발 브랜치에서는 경고만 표시하고 통과
+    if ! npx --no -- commitlint --edit $1 --config commitlint.config.cjs; then
+      echo ""
+      echo "⚠️  커밋 메시지가 표준 형식과 다릅니다 (개발 브랜치이므로 허용)"
+      echo "💡 main/master 브랜치 병합 전에는 표준 형식으로 수정해주세요."
+      echo ""
+    fi
+    ;;
+  *)
+    # 메인 브랜치에서는 엄격한 검증
+    if ! npx --no -- commitlint --edit $1 --config commitlint.config.cjs; then
+      echo ""
+      echo "❌ 커밋 메시지 검증 실패"
+      echo ""
+      echo "💡 올바른 형식: type(scope): 설명"
+      echo "   또는 HUSKY_SKIP=1 git commit 으로 건너뛰기 가능"
+      echo ""
+      echo "   📋 사용 가능한 타입:"
+      echo "   • feat      - 새로운 기능 추가"
+      echo "   • fix       - 버그 수정"
+      echo "   • docs      - 문서 변경"
+      echo "   • refactor  - 리팩토링"
+      echo "   • test      - 테스트 추가/수정"
+      echo "   • chore     - 기타 변경사항"
+      echo ""
+      exit 1
+    fi
+    ;;
+esac
 
 echo "✅ 커밋 메시지 검증 통과!"

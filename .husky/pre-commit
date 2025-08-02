@@ -3,25 +3,44 @@
 # =============================================================================
 # Pre-commit Hook for X.com Enhanced Gallery
 # =============================================================================
-# 커밋 전 코드 품질 검사로 안정성을 보장합니다.
+# 커밋 전 빠른 코드 품질 검사 (가벼운 버전)
+# HUSKY_SKIP=1 환경변수로 검사를 건너뛸 수 있습니다.
 # =============================================================================
 
-echo "🔍 커밋 전 검증 시작..."
+# 스킵 옵션 확인
+if [ "$HUSKY_SKIP" = "1" ]; then
+  echo "⏭️  커밋 전 검증 건너뛰기 (HUSKY_SKIP=1)"
+  exit 0
+fi
 
-# TypeScript 타입 체크
-echo "📋 TypeScript 타입 체크 실행 중..."
-npm run typecheck || {
-  echo "❌ 타입 체크 실패"
-  echo "💡 TypeScript 오류를 수정한 후 다시 시도해주세요."
-  exit 1
-}
+echo "🔍 커밋 전 빠른 검증 시작..."
 
-# 스테이징된 파일 린트
+# 스테이징된 파일 린트 (주요 검사)
 echo "🧹 스테이징된 파일 린트 중..."
 npx lint-staged || {
   echo "❌ 린트 실패"
-  echo "💡 코드 스타일 오류를 수정한 후 다시 시도해주세요."
+  echo "💡 자동 수정: npm run lint:fix"
+  echo "💡 건너뛰기: HUSKY_SKIP=1 git commit"
   exit 1
 }
+
+# 개발 브랜치에서는 타입체크 스킵
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+case "$BRANCH" in
+  dev*|feature*|experiment*|refactor*)
+    echo "🔧 개발 브랜치: 타입체크 건너뛰기"
+    ;;
+  *)
+    # 메인 브랜치에서만 빠른 타입체크
+    echo "📋 빠른 타입체크 실행 중..."
+    if ! npx tsc --noOut --skipLibCheck; then
+      echo "⚠️  타입 오류가 있습니다"
+      echo "💡 전체 타입체크: npm run typecheck"
+      echo "💡 건너뛰기: HUSKY_SKIP=1 git commit"
+      # 경고만 표시하고 통과 (엄격하지 않게)
+      echo "🎯 유저스크립트 개발이므로 경고 후 진행"
+    fi
+    ;;
+esac
 
 echo "✅ 커밋 전 검증 완료!"

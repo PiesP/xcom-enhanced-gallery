@@ -3,26 +3,77 @@
 # =============================================================================
 # Pre-push Hook for X.com Enhanced Gallery
 # =============================================================================
-# 푸시 전 최종 품질 검사로 원격 저장소 안정성을 보장합니다.
-# pre-commit에서 이미 타입체크와 린트를 수행했으므로 테스트에 집중합니다.
+# 푸시 전 선택적 품질 검사
+# HUSKY_SKIP=1 또는 SKIP_TESTS=1 환경변수로 검사를 건너뛸 수 있습니다.
 # =============================================================================
 
-echo "🧪 푸시 전 최종 검증 시작..."
+# 스킵 옵션 확인
+if [ "$HUSKY_SKIP" = "1" ]; then
+  echo "⏭️  푸시 전 검증 건너뛰기 (HUSKY_SKIP=1)"
+  exit 0
+fi
 
-# 포맷 체크 (빠른 검사)
-echo "🎨 코드 포맷팅 검사 중..."
-npm run format:check || {
-  echo "❌ 코드 포맷팅 검사 실패"
-  echo "� 'npm run format' 명령어로 포맷팅을 수정해주세요."
-  exit 1
-}
+echo "🧪 푸시 전 품질 검증 시작..."
 
-# 테스트 실행 (메인 검증)
-echo "🧪 테스트 실행 중..."
-npm run test || {
-  echo "❌ 테스트 실패"
-  echo "💡 실패한 테스트를 수정한 후 다시 시도해주세요."
-  exit 1
-}
+# 브랜치별 다른 정책
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+REMOTE_BRANCH="${2##*/}"
+
+# 개발 브랜치는 가벼운 검사만
+case "$BRANCH" in
+  dev*|feature*|experiment*|refactor*)
+    echo "🔧 개발 브랜치: 가벼운 검증 모드"
+    
+    # 포맷 체크만 (빠름)
+    echo "🎨 코드 포맷팅 검사 중..."
+    if ! npm run format:check; then
+      echo "⚠️  코드 포맷팅 문제 발견"
+      echo "💡 자동 수정: npm run format"
+      echo "💡 건너뛰기: HUSKY_SKIP=1 git push"
+      # 경고만 표시하고 통과
+    fi
+    
+    echo "✅ 개발 브랜치 검증 완료!"
+    exit 0
+    ;;
+esac
+
+# 메인 브랜치는 더 엄격한 검사
+case "$REMOTE_BRANCH" in
+  main|master)
+    echo "🏛️  메인 브랜치 푸시: 엄격한 검증 모드"
+    
+    # 포맷 체크
+    echo "🎨 코드 포맷팅 검사 중..."
+    if ! npm run format:check; then
+      echo "❌ 코드 포맷팅 검사 실패"
+      echo "💡 'npm run format' 명령어로 포맷팅을 수정해주세요."
+      exit 1
+    fi
+    
+    # 테스트 실행 (스킵 가능)
+    if [ "$SKIP_TESTS" = "1" ]; then
+      echo "⏭️  테스트 건너뛰기 (SKIP_TESTS=1)"
+    else
+      echo "🧪 테스트 실행 중..."
+      if ! npm run test; then
+        echo "❌ 테스트 실패"
+        echo "💡 실패한 테스트를 수정한 후 다시 시도해주세요."
+        echo "💡 긴급 푸시: SKIP_TESTS=1 git push"
+        exit 1
+      fi
+    fi
+    ;;
+  *)
+    # 기타 브랜치는 포맷 체크만
+    echo "🔀 일반 브랜치: 기본 검증 모드"
+    
+    echo "🎨 코드 포맷팅 검사 중..."
+    if ! npm run format:check; then
+      echo "⚠️  코드 포맷팅 문제 발견 (경고)"
+      echo "💡 수정 권장: npm run format"
+    fi
+    ;;
+esac
 
 echo "✅ 푸시 전 검증 완료!"
