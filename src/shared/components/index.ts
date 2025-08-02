@@ -3,9 +3,24 @@
  * @description 공유 컴포넌트 통합 진입점
  */
 
-export * from './base';
-export * from './hoc';
+// Base components - 실제 존재하는 타입들만
+export type { BaseComponentProps, InteractiveComponentProps, GalleryComponentProps } from './base';
+
+// HOC components - 실제 존재하는 것들만
+export {
+  withGallery,
+  GalleryHOC,
+  withGalleryContainer,
+  withGalleryItem,
+  withGalleryOverlay,
+  getGalleryType,
+} from './hoc';
+export type { GalleryType, GalleryOptions } from './hoc';
+
+// Isolation components
 export * from './isolation';
+
+// UI components
 export * from './ui';
 
 // 통합 컴포넌트 관리자

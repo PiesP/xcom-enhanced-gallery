@@ -367,6 +367,7 @@ export default defineConfig(({ mode }) => {
         '@/external': path.resolve(__dirname, 'src/external'),
         '@/assets': path.resolve(__dirname, 'src/assets'),
         // 기존 alias들도 호환성을 위해 유지
+        '@core': path.resolve(__dirname, 'src/core'),
         '@features': path.resolve(__dirname, 'src/features'),
         '@shared': path.resolve(__dirname, 'src/shared'),
         '@assets': path.resolve(__dirname, 'src/assets'),

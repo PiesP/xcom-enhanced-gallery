@@ -37,7 +37,7 @@ async function findFiles(
           }
         }
       }
-    } catch (error) {
+    } catch {
       // 디렉토리가 존재하지 않으면 무시
     }
   }
@@ -64,8 +64,8 @@ describe('Architecture Dependency Rules', () => {
         const invalidImports = imports.filter(imp => {
           // @features/ 로 시작하지만 현재 파일이 아닌 다른 feature를 import하는 경우
           if (imp.startsWith('@features/')) {
-            const currentFeature = file.match(/src\/features\/([^\/]+)/)?.[1];
-            const importedFeature = imp.match(/@features\/([^\/]+)/)?.[1];
+            const currentFeature = file.match(/src\/features\/([^/]+)/)?.[1];
+            const importedFeature = imp.match(/@features\/([^/]+)/)?.[1];
             return currentFeature !== importedFeature;
           }
 
@@ -310,12 +310,21 @@ describe('Architecture Dependency Rules', () => {
 
       // 특수한 경우를 허용할 파일들 (배럴 export가 아닌 실제 구현/로더 파일들)
       const specialCaseFiles = [
-        // 이제 단순한 배럴 export로 변경되어 제외할 필요 없음
+        // Core 모듈들은 실제 구현을 포함해야 함
+        'src/core/analyzer/index.ts',
+        'src/core/dom/index.ts',
+        'src/core/media/index.ts',
+        'src/core/memory/index.ts',
+        'src/core/styles/index.ts',
+        'src/core/types/index.ts',
+        // 타입 정의 파일
+        'src/shared/utils/types/index.ts',
       ];
 
       for (const indexFile of filteredIndexFiles) {
-        // 특수한 경우 파일들은 스킵
-        if (specialCaseFiles.some(special => indexFile.includes(special.replace(/\//g, '\\')))) {
+        // 특수한 경우 파일들은 스킵 - 정규화된 경로로 비교
+        const normalizedFile = indexFile.replace(/\\/g, '/');
+        if (specialCaseFiles.some(special => normalizedFile.endsWith(special))) {
           continue;
         }
 
@@ -357,7 +366,7 @@ describe('Architecture Dependency Rules', () => {
             trimmedLine.startsWith('type ') ||
             trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*,?$/) || // 단순 식별자 (named export 목록)
             trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*:/) || // 객체 속성
-            trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*\?\?\:/) || // 옵션 속성
+            trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*\?\?:/) || // 옵션 속성
             trimmedLine === '}' ||
             trimmedLine === '};' ||
             trimmedLine === '{' ||

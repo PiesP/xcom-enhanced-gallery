@@ -4,6 +4,8 @@
  * @version 2.0.0 - 구조 개선
  */
 
+import { coreLogger as logger } from '../logger';
+
 export type GlassmorphismIntensity = 'light' | 'medium' | 'strong' | 'ultra';
 export type Theme = 'light' | 'dark' | 'auto';
 
@@ -143,6 +145,8 @@ export class CoreStyleManager {
   ): void {
     const config = { ...CoreStyleManager.GLASSMORPHISM_PRESETS[intensity], ...customConfig };
 
+    logger.debug(`Applying glassmorphism: ${intensity} to element`);
+
     // 스타일 적용
     element.style.background = config.background!;
     element.style.backdropFilter = config.blur!;
@@ -208,9 +212,9 @@ export class CoreStyleManager {
   }
 
   /**
-   * 글래스모피즘 지원 여부 확인
+   * Glassmorphism 지원 여부 확인
    */
-  private supportsGlassmorphism(): boolean {
+  supportsGlassmorphism(): boolean {
     return (
       'backdropFilter' in document.documentElement.style ||
       'webkitBackdropFilter' in document.documentElement.style
@@ -259,3 +263,10 @@ export const applyGlassmorphism = (
   intensity: GlassmorphismIntensity,
   customConfig?: Partial<GlassmorphismConfig>
 ): void => coreStyleManager.applyGlassmorphism(element, intensity, customConfig);
+
+export const applyAccessibleGlassmorphism = (
+  element: HTMLElement,
+  intensity: GlassmorphismIntensity
+): void => coreStyleManager.applyAccessibleGlassmorphism(element, intensity);
+
+export const supportsGlassmorphism = (): boolean => coreStyleManager.supportsGlassmorphism();

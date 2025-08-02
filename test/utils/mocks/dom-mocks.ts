@@ -23,6 +23,7 @@ export function createMockElement(tagName = 'div') {
     removeChild: vi.fn(),
     insertBefore: vi.fn(),
     replaceChild: vi.fn(),
+    remove: vi.fn(),
     contains: vi.fn(),
     closest: vi.fn(),
     matches: vi.fn(),
@@ -113,14 +114,36 @@ export function createMockEvent(eventType = 'click', options = {}) {
 export function setupMockDOM() {
   const mockDocument = {
     createElement: vi.fn(tagName => createMockElement(tagName)),
-    querySelector: vi.fn(),
-    querySelectorAll: vi.fn(),
+    querySelector: vi.fn(selector => {
+      // 간단한 querySelector 모킹 (className 기반)
+      if (selector.startsWith('.')) {
+        const className = selector.slice(1);
+        return mockDocument.body.children.find((el: any) => el.className === className) || null;
+      }
+      return null;
+    }),
+    querySelectorAll: vi.fn(selector => {
+      // 간단한 querySelectorAll 모킹
+      if (selector.startsWith('.')) {
+        const className = selector.slice(1);
+        return mockDocument.body.children.filter((el: any) => el.className === className);
+      }
+      return [];
+    }),
     getElementById: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     body: createMockElement('body'),
     documentElement: createMockElement('html'),
   };
+
+  // body에 children 배열 추가
+  mockDocument.body.children = [];
+  mockDocument.body.appendChild = vi.fn(element => {
+    mockDocument.body.children.push(element);
+    element.parentNode = mockDocument.body;
+    return element;
+  });
 
   const mockWindow = {
     document: mockDocument,
@@ -140,11 +163,13 @@ export function setupMockDOM() {
   Object.defineProperty(globalThis, 'document', {
     value: mockDocument,
     writable: true,
+    configurable: true,
   });
 
   Object.defineProperty(globalThis, 'window', {
     value: mockWindow,
     writable: true,
+    configurable: true,
   });
 
   return { mockDocument, mockWindow };
@@ -154,9 +179,24 @@ export function setupMockDOM() {
  * DOM 환경 정리
  */
 export function cleanupMockDOM(): void {
-  const globalObj = globalThis as Record<string, unknown>;
-  delete globalObj.document;
-  delete globalObj.window;
+  try {
+    // configurable한 속성으로 설정하여 삭제 가능하게 함
+    Object.defineProperty(globalThis, 'document', {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+
+    Object.defineProperty(globalThis, 'window', {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+  } catch {
+    // 삭제할 수 없는 경우 undefined로 설정
+    (globalThis as any).document = undefined;
+    (globalThis as any).window = undefined;
+  }
 }
 
 /**

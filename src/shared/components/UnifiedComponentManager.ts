@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import { getPreactHooks } from '../external/vendors/vendor-api';
+import { getPreactHooks } from '@shared/external/vendors';
 import { logger } from '../logging/logger';
 
 /**

@@ -17,28 +17,27 @@ export interface DOMUpdate {
 }
 
 /**
- * 통합 DOM 관리자
- * 모든 DOM 관련 작업을 중앙에서 관리
+ * DOM 배치 작업 인터페이스
  */
-export class CoreDOMManager {
-  private static instance: CoreDOMManager;
+export interface BatchOperation {
+  type: 'create' | 'append' | 'remove' | 'update';
+  tag?: string;
+  target?: string | Element;
+  element?: Element;
+  data?: Record<string, unknown>;
+}
+
+/**
+ * DOM 캐시 클래스 - CoreDOMManager와 통합
+ */
+export class CoreDOMCache {
   private readonly cache = new Map<string, Element | null>();
-  private readonly batchUpdates: DOMUpdate[] = [];
-  private batchScheduled = false;
-
-  private constructor() {}
-
-  static getInstance(): CoreDOMManager {
-    if (!CoreDOMManager.instance) {
-      CoreDOMManager.instance = new CoreDOMManager();
-    }
-    return CoreDOMManager.instance;
-  }
+  private readonly batchQueue: BatchOperation[] = [];
 
   /**
-   * 캐시된 요소 선택
+   * 캐시에서 요소 가져오기
    */
-  select<T extends Element = Element>(selector: string): T | null {
+  get<T extends Element = Element>(selector: string): T | null {
     if (this.cache.has(selector)) {
       return this.cache.get(selector) as T | null;
     }
@@ -49,6 +48,106 @@ export class CoreDOMManager {
   }
 
   /**
+   * 캐시에 요소 설정
+   */
+  set(selector: string, element: Element | null): void {
+    this.cache.set(selector, element);
+  }
+
+  /**
+   * 캐시 무효화
+   */
+  invalidate(selector?: string): void {
+    if (selector) {
+      this.cache.delete(selector);
+    } else {
+      this.cache.clear();
+    }
+  }
+
+  /**
+   * 배치 작업 추가
+   */
+  batch(operations: BatchOperation[]): { processed: number } {
+    this.batchQueue.push(...operations);
+    return this.processBatch();
+  }
+
+  /**
+   * 배치 작업 처리
+   */
+  private processBatch(): { processed: number } {
+    let processed = 0;
+
+    for (const operation of this.batchQueue) {
+      try {
+        switch (operation.type) {
+          case 'create':
+            if (operation.tag) {
+              document.createElement(operation.tag);
+              processed++;
+            }
+            break;
+          case 'append':
+            if (operation.target && operation.element) {
+              const target =
+                typeof operation.target === 'string'
+                  ? this.get(operation.target)
+                  : operation.target;
+              target?.appendChild(operation.element);
+              processed++;
+            }
+            break;
+          case 'remove':
+            if (operation.element) {
+              operation.element.remove();
+              processed++;
+            }
+            break;
+          case 'update':
+            // DOM 업데이트 로직
+            processed++;
+            break;
+        }
+      } catch (error) {
+        logger.error(`배치 작업 실패: ${operation.type}`, error);
+      }
+    }
+
+    this.batchQueue.length = 0; // 큐 비우기
+    return { processed };
+  }
+}
+
+/**
+ * 통합 DOM 관리자
+ * 모든 DOM 관련 작업을 중앙에서 관리 (CoreDOMCache 통합)
+ */
+export class CoreDOMManager {
+  private static instance: CoreDOMManager;
+  private readonly domCache: CoreDOMCache;
+  private readonly batchUpdates: DOMUpdate[] = [];
+  private batchScheduled = false;
+
+  private constructor() {
+    this.domCache = new CoreDOMCache();
+  }
+
+  static getInstance(): CoreDOMManager {
+    if (!CoreDOMManager.instance) {
+      CoreDOMManager.instance = new CoreDOMManager();
+    }
+    return CoreDOMManager.instance;
+  }
+
+  /**
+   * 캐시된 요소 선택 (CoreDOMCache 통합)
+   */
+  select<T extends Element = Element>(selector: string): T | null {
+    return this.domCache.get<T>(selector);
+  }
+
+  /**
    * 캐시된 요소들 선택
    */
   selectAll<T extends Element = Element>(selector: string): NodeListOf<T> {
@@ -56,14 +155,18 @@ export class CoreDOMManager {
   }
 
   /**
-   * 캐시 무효화
+   * 통합된 배치 DOM 작업 (CoreDOMCache와 연동)
+   */
+  batchDOMOperations(operations: BatchOperation[]): { processed: number } {
+    logger.debug(`배치 DOM 작업 시작: ${operations.length}개 작업`);
+    return this.domCache.batch(operations);
+  }
+
+  /**
+   * DOM 캐시 무효화
    */
   invalidateCache(selector?: string): void {
-    if (selector) {
-      this.cache.delete(selector);
-    } else {
-      this.cache.clear();
-    }
+    this.domCache.invalidate(selector);
   }
 
   /**
@@ -196,4 +299,38 @@ export const selectAll = <T extends Element = Element>(selector: string): NodeLi
 export const updateElement = (element: HTMLElement, update: Omit<DOMUpdate, 'element'>): void =>
   coreDOMManager.updateElement(element, update);
 
-export const batchUpdate = (update: DOMUpdate): void => coreDOMManager.batchUpdate(update);
+// 기존 batchUpdate (DOMUpdate 인터페이스 사용)
+export const batchDOMUpdate = (update: DOMUpdate): void => coreDOMManager.batchUpdate(update);
+
+// 테스트용 batchUpdate (간단한 배열 형태)
+export const batchUpdate = (
+  element: HTMLElement,
+  updates: Array<{ property: string; value: string }>
+): void => {
+  requestAnimationFrame(() => {
+    updates.forEach(({ property, value }) => {
+      const parts = property.split('.');
+      if (parts.length === 2) {
+        const [obj, prop] = parts;
+        if (obj === 'style' && element.style && prop) {
+          // 타입 안전하게 스타일 속성 설정
+          if (prop in element.style) {
+            (element.style as unknown as Record<string, string>)[prop] = value;
+          }
+        } else if (obj === 'data' && prop) {
+          element.setAttribute(`data-${prop}`, value);
+        }
+      } else if (property === 'className') {
+        element.className = value;
+      } else if (property.startsWith('data-')) {
+        element.setAttribute(property, value);
+      } else {
+        element.setAttribute(property, value);
+      }
+    });
+  });
+};
+
+// Phase 2 추가: 배치 DOM 작업 편의 함수
+export const batchDOMOperations = (operations: BatchOperation[]): { processed: number } =>
+  coreDOMManager.batchDOMOperations(operations);

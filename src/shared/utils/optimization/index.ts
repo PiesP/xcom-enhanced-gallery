@@ -9,3 +9,6 @@ export { createBundleInfo, isWithinSizeTarget } from './bundle';
 
 // Memo 유틸리티
 export { memo } from './memo';
+
+// Bundle 최적화 유틸리티
+export * from './optimization-utils';

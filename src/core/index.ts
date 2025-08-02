@@ -5,16 +5,22 @@
  */
 
 // ===== DOM 관리 =====
-export * from './dom';
-export { coreDOMManager } from './dom';
+export { coreDOMManager, CoreDOMManager } from './dom';
+export { select, selectAll, updateElement, batchUpdate } from './dom';
+export type { DOMUpdate } from './dom';
 
 // ===== 스타일 관리 =====
-export * from './styles';
-export { coreStyleManager } from './styles';
+export { coreStyleManager, combineClasses } from './styles';
 
 // ===== 미디어 관리 =====
-export * from './media';
-export { coreMediaManager } from './media';
+export { coreMediaManager, extractMediaUrls } from './media';
 
-// ===== 타입 정의 =====
-export * from './types';
+// ===== 기본 타입들 =====
+export type {
+  MediaType,
+  MediaQuality,
+  MediaInfo,
+  MediaEntity,
+  MediaExtractionResult,
+  MediaExtractionOptions,
+} from './types';

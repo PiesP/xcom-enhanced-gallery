@@ -5,48 +5,20 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { isInsideGallery } from './dom';
+
+// DOM 유틸리티는 dom.ts에서 재export
+export {
+  safeQuerySelector,
+  safeQuerySelectorAll,
+  isInsideGallery,
+  isGalleryContainer,
+  isGalleryInternalEvent,
+} from './dom';
 
 // ================================
-// DOM 유틸리티
+// 유틸리티 함수들
 // ================================
-
-/**
- * 안전한 querySelector 실행
- * 1개 인자: document에서 검색 (기존 API 호환)
- * 2개 인자: 지정된 root에서 검색
- */
-export function safeQuerySelector<T extends Element = Element>(
-  selectorOrRoot: string | ParentNode,
-  selector?: string
-): T | null {
-  try {
-    // 1개 파라미터: document에서 검색 (기존 API 호환)
-    if (typeof selectorOrRoot === 'string') {
-      return document.querySelector(selectorOrRoot) as T | null;
-    }
-    // 2개 파라미터: 지정된 root에서 검색
-    if (selector) {
-      return selectorOrRoot.querySelector(selector) as T | null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * 갤러리 내부 요소인지 확인
- */
-export function isInsideGallery(element: Element | null): boolean {
-  if (!element) return false;
-
-  return (
-    element.closest('[data-gallery-container]') !== null ||
-    element.closest('.gallery-container') !== null ||
-    element.closest('.xeg-gallery-container') !== null ||
-    element.closest('#gallery-view') !== null
-  );
-}
 
 /**
  * 클래스 이름 결합
@@ -56,34 +28,11 @@ export function combineClasses(...classes: (string | undefined | null)[]): strin
 }
 
 /**
- * 요소가 갤러리 컨테이너인지 확인
- */
-export function isGalleryContainer(element: HTMLElement | null): boolean {
-  if (!element) return false;
-
-  const gallerySelectors = [
-    '.xeg-gallery-container',
-    '.xeg-gallery',
-    '[data-xeg-gallery]',
-    '.gallery-overlay',
-  ];
-
-  return gallerySelectors.some(sel => element.matches(sel));
-}
-
-/**
- * 이벤트가 갤러리 내부 이벤트인지 확인
- */
-export function isGalleryInternalEvent(event: Event): boolean {
-  const target = event.target as HTMLElement;
-  return isInsideGallery(target);
-}
-
-/**
  * 갤러리 이벤트를 블록해야 하는지 확인
  */
 export function shouldBlockGalleryEvent(event: Event): boolean {
-  return isGalleryInternalEvent(event);
+  const target = event.target as HTMLElement;
+  return isInsideGallery(target);
 }
 
 /**

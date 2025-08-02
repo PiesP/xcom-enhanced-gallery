@@ -19,6 +19,22 @@ export type MediaId = Brand<string, 'MediaId'>;
 export type MediaType = 'image' | 'video' | 'gif';
 export type MediaQuality = 'small' | 'medium' | 'large' | 'orig';
 
+// ===== 리소스 타입들 =====
+export type ResourceType =
+  | 'image'
+  | 'video'
+  | 'element'
+  | 'observer'
+  | 'listener'
+  | 'component'
+  | 'dom'
+  | 'worker'
+  | 'event'
+  | 'style'
+  | 'media'
+  | 'network'
+  | 'cache';
+
 export interface MediaInfo {
   url: string;
   type: MediaType;

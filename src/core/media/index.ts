@@ -53,14 +53,28 @@ export class CoreMediaManager {
     images.forEach(img => {
       const url = img.getAttribute('src');
       if (url && this.isValidMediaUrl(url)) {
-        mediaInfos.push({
+        const imgElement = img as HTMLImageElement;
+        const altText = img.getAttribute('alt');
+
+        const mediaInfo: MediaInfo = {
           url: this.getHighQualityUrl(url),
           type: this.getMediaType(url),
           quality: 'orig',
-          alt: img.getAttribute('alt') || undefined,
-          width: img.naturalWidth || undefined,
-          height: img.naturalHeight || undefined,
-        });
+        };
+
+        if (altText) {
+          mediaInfo.alt = altText;
+        }
+
+        if (imgElement.naturalWidth) {
+          mediaInfo.width = imgElement.naturalWidth;
+        }
+
+        if (imgElement.naturalHeight) {
+          mediaInfo.height = imgElement.naturalHeight;
+        }
+
+        mediaInfos.push(mediaInfo);
       }
     });
 
@@ -280,7 +294,7 @@ export class CoreMediaManager {
   private getFileExtension(pathname: string, type: MediaType): string {
     // URL에서 확장자 추출 시도
     const match = pathname.match(/\.(\w+)$/);
-    if (match) {
+    if (match?.[1]) {
       return match[1];
     }
 

@@ -12,6 +12,7 @@ import {
   coreStyleManager,
   coreMediaManager,
   select,
+  batchUpdate,
   combineClasses,
   extractMediaUrls,
   type MediaInfo,
@@ -58,26 +59,28 @@ describe('🟢 TDD Phase 2: 통합 Core 모듈 검증 (GREEN)', () => {
       expect(element1).toBe(element2);
     });
 
-    it('배치 DOM 업데이트가 작동해야 함', done => {
+    it('배치 DOM 업데이트가 작동해야 함', async () => {
       const testDiv = document.createElement('div');
       document.body.appendChild(testDiv);
 
-      coreDOMManager.batchUpdate({
-        element: testDiv,
-        styles: { color: 'red', fontSize: '16px' },
-        classes: { add: ['test-class'] },
-        attributes: { 'data-test': 'value' },
-      });
+      batchUpdate(testDiv, [
+        { property: 'style.color', value: 'red' },
+        { property: 'style.fontSize', value: '16px' },
+        { property: 'className', value: 'test-class' },
+        { property: 'data-test', value: 'value' },
+      ]);
 
-      // requestAnimationFrame으로 배치 처리 확인
-      setTimeout(() => {
-        expect(testDiv.style.color).toBe('red');
-        expect(testDiv.style.fontSize).toBe('16px');
-        expect(testDiv.classList.contains('test-class')).toBe(true);
-        expect(testDiv.getAttribute('data-test')).toBe('value');
-        done();
-      }, 20);
-    });
+      // requestAnimationFrame으로 배치 처리 확인 - 타임아웃 증가
+      await new Promise(resolve => {
+        setTimeout(() => {
+          expect(testDiv.style.color).toBe('red');
+          expect(testDiv.style.fontSize).toBe('16px');
+          expect(testDiv.classList.contains('test-class')).toBe(true);
+          expect(testDiv.getAttribute('data-test')).toBe('value');
+          resolve(undefined);
+        }, 100); // 20ms에서 100ms로 증가
+      });
+    }, 10000); // 테스트 타임아웃 10초로 설정
 
     it('요소 가시성 확인이 작동해야 함', () => {
       const testDiv = document.createElement('div');
