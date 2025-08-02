@@ -31,18 +31,19 @@ module.exports = {
     ],
 
     // 제목 길이 제한
-    'subject-max-length': [2, 'always', 72],
+    'subject-max-length': [2, 'always', 80],
     'subject-min-length': [2, 'always', 3],
 
-    // 제목 형식
+    // 제목 형식 (한국어 지원을 위해 case 검사 비활성화)
     'subject-empty': [2, 'never'],
     'subject-full-stop': [2, 'never', '.'],
+    'subject-case': [0], // 한국어 커밋 메시지 지원을 위해 비활성화
 
     // 타입 형식
     'type-case': [2, 'always', 'lower-case'],
     'type-empty': [2, 'never'],
 
-    // 범위 (scope) 설정
+    // 범위 (scope) 설정 - 프로젝트 특성에 맞게 업데이트
     'scope-enum': [
       2,
       'always',
@@ -53,6 +54,14 @@ module.exports = {
         'settings', // 설정 관리
         'ui', // UI 컴포넌트
         'core', // 핵심 로직
+        'shared', // 공통 모듈
+        'external', // 외부 의존성
+        'hooks', // 커스텀 훅
+        'utils', // 유틸리티
+        'types', // 타입 정의
+        'styles', // 스타일링
+        'components', // 컴포넌트
+        'services', // 서비스 레이어
         'infra', // 인프라스트럭처
         'build', // 빌드 시스템
         'deps', // 의존성
@@ -60,6 +69,9 @@ module.exports = {
         'test', // 테스트
         'ci', // CI/CD
         'docs', // 문서
+        'cleanup', // 코드 정리
+        'refactor', // 리팩토링
+        'tdd', // TDD 관련
       ],
     ],
     'scope-case': [2, 'always', 'lower-case'],
@@ -79,7 +91,7 @@ module.exports = {
   // 커스텀 플러그인 (필요시)
   plugins: [],
 
-  // 무시할 패턴
+  // 무시할 패턴 - 한국어 커밋 패턴 고려
   ignores: [
     // Merge 커밋
     commit => commit.includes('Merge '),
@@ -87,6 +99,10 @@ module.exports = {
     commit => commit.includes('Revert '),
     // 자동 생성된 커밋
     commit => commit.includes('[skip ci]'),
+    // WIP 커밋
+    commit => commit.toLowerCase().includes('wip'),
+    // 임시 커밋
+    commit => commit.includes('임시'),
   ],
 
   // 기본 설정 확장
@@ -99,7 +115,7 @@ module.exports = {
   parserPreset: {
     parserOpts: {
       // 헤더 패턴: type(scope): description
-      headerPattern: /^(\w*)(?:\(([^\)]*)\))?: (.*)$/,
+      headerPattern: /^(\w*)(?:\(([^)]*)\))?: (.*)$/,
       headerCorrespondence: ['type', 'scope', 'subject'],
       // 참조 액션
       referenceActions: [

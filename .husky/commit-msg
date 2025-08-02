@@ -3,19 +3,37 @@
 # =============================================================================
 # Commit Message Validation Hook for X.com Enhanced Gallery
 # =============================================================================
-# Validates commit messages against conventional commit standards
+# 한국어 커밋 메시지를 지원하는 Conventional Commits 표준 검증
 # =============================================================================
 
-echo "📝 Validating commit message..."
+echo "📝 커밋 메시지 검증 중..."
 
 npx --no -- commitlint --edit $1 --config commitlint.config.cjs || {
-  echo "❌ Commit message validation failed"
-  echo "💡 Use format: type(scope): description"
-  echo "   Examples:"
-  echo "   - feat: add new gallery feature"
-  echo "   - fix: resolve download issue"
-  echo "   - docs: update README"
+  echo ""
+  echo "❌ 커밋 메시지 검증 실패"
+  echo ""
+  echo "💡 올바른 형식: type(scope): 설명"
+  echo ""
+  echo "   📋 사용 가능한 타입:"
+  echo "   • feat      - 새로운 기능 추가"
+  echo "   • fix       - 버그 수정"
+  echo "   • docs      - 문서 변경"
+  echo "   • style     - 코드 스타일 변경"
+  echo "   • refactor  - 리팩토링"
+  echo "   • test      - 테스트 추가/수정"
+  echo "   • chore     - 기타 변경사항"
+  echo ""
+  echo "   📝 한국어 커밋 예시:"
+  echo "   • feat: 갤러리 뷰 컴포넌트 추가"
+  echo "   • fix(media): 이미지 로딩 오류 수정"
+  echo "   • docs: README 업데이트"
+  echo "   • refactor(shared): 공통 유틸리티 리팩토링"
+  echo "   • test(gallery): 갤러리 테스트 케이스 추가"
+  echo ""
+  echo "   📋 주요 스코프:"
+  echo "   • gallery, media, settings, ui, shared, test 등"
+  echo ""
   exit 1
 }
 
-echo "✅ Commit message validation passed!"
+echo "✅ 커밋 메시지 검증 통과!"

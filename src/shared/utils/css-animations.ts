@@ -2,9 +2,11 @@
  * @fileoverview CSS 애니메이션 시스템 → AnimationService 리다이렉트
  * @version 4.0.0 - Phase 3: AnimationService로 통합됨
  *
- * @deprecated
- * 이 파일의 기능들은 AnimationService로 통합되었습니다.
- * AnimationService.getInstance()를 사용하세요.
+ * @deprecated This file will be removed in v3.0.0
+ * @migration Use AnimationService directly:
+ *   import { AnimationService } from '@shared/services/AnimationService'
+ *   const service = AnimationService.getInstance()
+ *   service.animateGalleryEnter(element)
  */
 
 import {

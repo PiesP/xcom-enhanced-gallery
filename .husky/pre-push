@@ -3,16 +3,26 @@
 # =============================================================================
 # Pre-push Hook for X.com Enhanced Gallery
 # =============================================================================
-# Ensures code quality and stability before pushing to remote repositories.
+# 푸시 전 최종 품질 검사로 원격 저장소 안정성을 보장합니다.
+# pre-commit에서 이미 타입체크와 린트를 수행했으므로 테스트에 집중합니다.
 # =============================================================================
 
-echo "🧪 Pre-push validation starting..."
+echo "🧪 푸시 전 최종 검증 시작..."
 
-# Run comprehensive quality check
-echo "🔍 Running quality checks..."
-npm run quality || {
-  echo "❌ Quality check failed"
+# 포맷 체크 (빠른 검사)
+echo "🎨 코드 포맷팅 검사 중..."
+npm run format:check || {
+  echo "❌ 코드 포맷팅 검사 실패"
+  echo "� 'npm run format' 명령어로 포맷팅을 수정해주세요."
   exit 1
 }
 
-echo "✅ Pre-push validation completed successfully!"
+# 테스트 실행 (메인 검증)
+echo "🧪 테스트 실행 중..."
+npm run test || {
+  echo "❌ 테스트 실패"
+  echo "💡 실패한 테스트를 수정한 후 다시 시도해주세요."
+  exit 1
+}
+
+echo "✅ 푸시 전 검증 완료!"

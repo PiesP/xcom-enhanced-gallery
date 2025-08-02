@@ -16,7 +16,7 @@ export {
 // toggleClass는 직접 export
 export { toggleClass } from './styles/style-utils';
 
-// Legacy style utils (backward compatibility)
+// Backward compatibility - exports commonly used style utilities
 export { getCSSVariable, applyTheme } from './styles/style-utils';
 
 // Theme utilities

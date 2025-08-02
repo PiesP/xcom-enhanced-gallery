@@ -3,23 +3,25 @@
 # =============================================================================
 # Pre-commit Hook for X.com Enhanced Gallery
 # =============================================================================
-# Ensures code quality by running automated checks before commits.
+# 커밋 전 코드 품질 검사로 안정성을 보장합니다.
 # =============================================================================
 
-echo "🔍 Pre-commit validation starting..."
+echo "🔍 커밋 전 검증 시작..."
 
-# TypeScript Type Checking
-echo "📋 Running type check..."
+# TypeScript 타입 체크
+echo "📋 TypeScript 타입 체크 실행 중..."
 npm run typecheck || {
-  echo "❌ Type check failed"
+  echo "❌ 타입 체크 실패"
+  echo "💡 TypeScript 오류를 수정한 후 다시 시도해주세요."
   exit 1
 }
 
-# Lint Staged Files
-echo "🧹 Linting staged files..."
+# 스테이징된 파일 린트
+echo "🧹 스테이징된 파일 린트 중..."
 npx lint-staged || {
-  echo "❌ Lint staged failed"
+  echo "❌ 린트 실패"
+  echo "💡 코드 스타일 오류를 수정한 후 다시 시도해주세요."
   exit 1
 }
 
-echo "✅ Pre-commit validation completed successfully!"
+echo "✅ 커밋 전 검증 완료!"
