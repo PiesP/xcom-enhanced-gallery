@@ -241,7 +241,15 @@ export default [
   {
     files: ['**/*.{test,spec}.{ts,tsx}', 'test/**/*.{ts,tsx}'],
     languageOptions: {
+      parser: tsParser,
+      sourceType: 'module',
+      ecmaVersion: 2022,
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+        // 테스트 파일은 타입 체크 없이 기본 파싱만 사용
+      },
       globals: {
+        // Vitest globals
         vi: 'readonly',
         describe: 'readonly',
         it: 'readonly',
@@ -251,11 +259,30 @@ export default [
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
+
+        // Node.js globals for test files
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        process: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+        console: 'readonly',
       },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+      react,
+      'jsx-a11y': jsxA11y,
+      prettier,
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
       'no-console': 'off',
+      'no-undef': 'off', // Node.js 환경에서는 더 관대하게
+      'no-empty': 'warn', // error에서 warn으로 완화
       'no-restricted-imports': 'off',
     },
   },
