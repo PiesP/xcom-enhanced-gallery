@@ -1,12 +1,12 @@
 /**
  * X.com Enhanced Gallery - 메인 진입점
  *
- * 단순화된 구조 - 유저스크립트에 최적화
+ * 간소화된 구조 - Core 모듈 기반
  *
- * @version 4.0.0
+ * @version 4.1.0
  */
 
-import { logger } from '@/shared/logging';
+import { coreLogger as logger } from '@/core/logger';
 import type { AppConfig } from '@/types';
 import { CoreService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from './constants';
@@ -14,7 +14,7 @@ import { SERVICE_KEYS } from './constants';
 // 전역 스타일
 import './styles/globals';
 
-// Vendor 초기화는 startApplication에서 처리하도록 이동
+// Core 모듈들은 필요할 때 lazy import
 
 // 애플리케이션 상태 관리
 let isStarted = false;
