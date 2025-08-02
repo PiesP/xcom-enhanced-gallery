@@ -17,12 +17,8 @@ import { logger } from '@shared/logging/logger';
 export class BrowserService {
   private readonly injectedStyles = new Set<string>();
 
-  // AnimationService 통합 (CSS 애니메이션 기본 스타일)
-  private animationStylesInjected = false;
-
   constructor() {
     logger.debug('[BrowserService] Initialized');
-    this.ensureAnimationStylesInjected();
   }
 
   /**
@@ -115,77 +111,14 @@ export class BrowserService {
   }
 
   // ====================================
-  // Animation API (통합됨)
+  // 브라우저 정보 API
   // ====================================
 
   /**
-   * 기본 애니메이션 스타일 주입
+   * 사용자 에이전트 정보 반환
    */
-  private ensureAnimationStylesInjected(): void {
-    if (this.animationStylesInjected) return;
-
-    const styles = `
-      .xeg-fade-in {
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out;
-      }
-      .xeg-fade-in.active {
-        opacity: 1;
-      }
-      .xeg-fade-out {
-        opacity: 1;
-        transition: opacity 0.3s ease-in-out;
-      }
-      .xeg-fade-out.active {
-        opacity: 0;
-      }
-    `;
-
-    this.injectCSS('xeg-animation-base', styles);
-    this.animationStylesInjected = true;
-  }
-
-  /**
-   * 요소에 페이드 인 애니메이션 적용
-   */
-  public fadeIn(element: HTMLElement, duration = 300): Promise<void> {
-    return new Promise(resolve => {
-      element.style.transition = `opacity ${duration}ms ease-in-out`;
-      element.style.opacity = '0';
-
-      requestAnimationFrame(() => {
-        element.style.opacity = '1';
-        setTimeout(resolve, duration);
-      });
-    });
-  }
-
-  /**
-   * 요소에 페이드 아웃 애니메이션 적용
-   */
-  public fadeOut(element: HTMLElement, duration = 300): Promise<void> {
-    return new Promise(resolve => {
-      element.style.transition = `opacity ${duration}ms ease-in-out`;
-      element.style.opacity = '1';
-
-      requestAnimationFrame(() => {
-        element.style.opacity = '0';
-        setTimeout(resolve, duration);
-      });
-    });
-  }
-
-  /**
-   * CSS 클래스 기반 애니메이션
-   */
-  public animate(element: HTMLElement, className: string, duration = 300): Promise<void> {
-    return new Promise(resolve => {
-      element.classList.add(className);
-      setTimeout(() => {
-        element.classList.remove(className);
-        resolve();
-      }, duration);
-    });
+  public getUserAgent(): string {
+    return navigator.userAgent;
   }
 }
 
@@ -202,12 +135,4 @@ export const browserAPI = {
   isDOMReady: () => defaultBrowserService.isDOMReady(),
   getDiagnostics: () => defaultBrowserService.getDiagnostics(),
   cleanup: () => defaultBrowserService.cleanup(),
-
-  // Animation utilities (통합됨)
-  fadeIn: (element: HTMLElement, duration?: number) =>
-    defaultBrowserService.fadeIn(element, duration),
-  fadeOut: (element: HTMLElement, duration?: number) =>
-    defaultBrowserService.fadeOut(element, duration),
-  animate: (element: HTMLElement, className: string, duration?: number) =>
-    defaultBrowserService.animate(element, className, duration),
 };

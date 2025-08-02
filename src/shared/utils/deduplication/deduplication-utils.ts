@@ -4,14 +4,22 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import type { MediaInfo } from '@shared/types';
 
 /**
- * 범용 중복 제거 함수
+ * 범용 중복 제거 함수 (오버로드)
  */
-export function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[] {
+/* eslint-disable no-redeclare */
+export function removeDuplicates<T>(items: readonly T[]): T[];
+export function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[];
+export function removeDuplicates<T>(items: readonly T[], keyExtractor?: (item: T) => string): T[] {
   if (!items?.length) {
     return [];
+  }
+
+  // 기본 타입(string, number)의 경우 keyExtractor 없이 처리
+  if (!keyExtractor) {
+    // 원시 타입들은 Set으로 간단히 중복 제거
+    return [...new Set(items)];
   }
 
   const seen = new Set<string>();
@@ -36,22 +44,4 @@ export function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T)
 
   return uniqueItems;
 }
-
-/**
- * 미디어 아이템 중복 제거
- */
-export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
-  const result = removeDuplicates(mediaItems, item => item.url);
-
-  // 성능 최적화를 위해 실제로 제거된 경우만 로깅
-  const removedCount = mediaItems.length - result.length;
-  if (removedCount > 0) {
-    logger.debug('Removed duplicate media items:', {
-      original: mediaItems.length,
-      unique: result.length,
-      removed: removedCount,
-    });
-  }
-
-  return result;
-}
+/* eslint-enable no-redeclare */

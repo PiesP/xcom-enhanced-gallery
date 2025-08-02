@@ -29,12 +29,10 @@ export {
 
   // 미디어 관련
   extractTweetInfoFromUrl,
-  removeDuplicateStrings,
 
   // 타입 안전성
   safeParseInt,
   safeParseFloat,
-  stringWithDefault,
   undefinedToNull,
   safeElementCheck,
 
@@ -45,6 +43,9 @@ export {
   // 접근성
   detectLightBackground,
 } from '../shared/utils';
+
+// 추가로 필요한 함수들은 직접 import
+export { stringWithDefault } from '../shared/utils/type-safety-helpers';
 
 // 서비스들을 유틸리티로 통합
 export * from '../shared/services';

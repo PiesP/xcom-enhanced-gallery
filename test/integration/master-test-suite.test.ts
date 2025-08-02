@@ -55,8 +55,8 @@ describe('Phase 4 Final Cleanup - Master Test Suite', () => {
       ).length;
       expect(serviceCount).toBeLessThanOrEqual(9);
 
-      // 2. 핵심 유틸리티 접근 가능
-      expect(utils.removeDuplicateStrings).toBeDefined();
+      // 2. 핵심 유틸리티 접근 가능 (통합된 함수 사용)
+      expect(utils.removeDuplicates).toBeDefined(); // removeDuplicateStrings → removeDuplicates 통합됨
       expect(utils.combineClasses).toBeDefined();
       expect(utils.createDebouncer).toBeDefined();
 

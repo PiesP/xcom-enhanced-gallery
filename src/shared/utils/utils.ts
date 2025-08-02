@@ -31,10 +31,10 @@ export {
 } from './scroll';
 
 // Core utilities (from core-utils)
-export { ensureGalleryScrollAvailable, removeDuplicateStrings } from './core-utils';
+export { ensureGalleryScrollAvailable } from './core-utils';
 
 // Deduplication utilities
-export { removeDuplicates, removeDuplicateMediaItems } from './deduplication';
+export { removeDuplicates } from './deduplication';
 
 // Debug utilities
 export { galleryDebugUtils } from './debug/gallery-debug';

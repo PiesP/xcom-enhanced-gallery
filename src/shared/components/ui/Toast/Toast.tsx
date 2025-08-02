@@ -17,14 +17,8 @@ export interface ToastItem {
   onAction?: () => void;
 }
 
-// 레거시 Props 인터페이스 (하위 호환성)
-interface LegacyToastProps {
-  toast: ToastItem;
-  onRemove: (id: string) => void;
-}
-
-// 통합된 Toast Props
-export interface ToastProps extends Partial<StandardToastProps>, Partial<LegacyToastProps> {
+// 통합된 Toast Props - Legacy Props 제거됨
+export interface ToastProps extends Partial<StandardToastProps> {
   // 필수 props
   toast?: ToastItem;
   onRemove?: (id: string) => void;

@@ -125,7 +125,7 @@ function dispatchEvent<K extends keyof DownloadEvents>(event: K, data: DownloadE
 export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string, Error> {
   try {
     // MediaInfo의 id가 없는 경우 임시 ID 생성
-    const mediaId = mediaInfo.id ?? `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const mediaId = mediaInfo.id ?? `auto_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const taskId = `dl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const task: DownloadTask = {

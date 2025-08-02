@@ -330,13 +330,3 @@ export function extractTweetInfoFromUrl(
 
   return result;
 }
-
-/**
- * 문자열 배열 중복 제거
- *
- * @param items - 중복이 있을 수 있는 문자열 배열
- * @returns 중복이 제거된 문자열 배열
- */
-export function removeDuplicateStrings(items: readonly string[]): string[] {
-  return [...new Set(items)];
-}

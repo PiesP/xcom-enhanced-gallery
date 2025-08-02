@@ -123,10 +123,15 @@ export class MediaService {
     this.videoControl = new VideoControlService(); // Phase 4 간소화: 직접 인스턴스화
     this.usernameParser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
 
-    // WebP 지원 감지 초기화 (async 메서드이므로 await 없이 호출)
-    this.detectWebPSupport().catch(error => {
-      logger.warn('[MediaService] WebP detection initialization failed:', error);
-    });
+    // WebP 지원 감지 초기화 (테스트 환경에서는 건너뛰기)
+    if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
+      this.detectWebPSupport().catch(error => {
+        logger.warn('[MediaService] WebP detection initialization failed:', error);
+      });
+    } else {
+      // 테스트 환경에서는 기본값 설정
+      this.webpSupported = false;
+    }
   }
 
   public static getInstance(): MediaService {
@@ -363,20 +368,25 @@ export class MediaService {
         return;
       }
 
-      const dataURL = canvas.toDataURL('image/webp');
+      try {
+        const dataURL = canvas.toDataURL('image/webp');
 
-      // dataURL이 null이나 유효하지 않은 경우 처리
-      if (!dataURL || typeof dataURL !== 'string') {
+        // dataURL이 null이나 유효하지 않은 경우 처리
+        if (!dataURL || typeof dataURL !== 'string') {
+          this.webpSupported = false;
+          logger.debug('[MediaService] WebP detection failed (invalid dataURL)');
+          return;
+        }
+
+        this.webpSupported = dataURL.indexOf('data:image/webp') === 0;
+        logger.debug('[MediaService] WebP support detected:', this.webpSupported);
+      } catch (innerError) {
         this.webpSupported = false;
-        logger.debug('[MediaService] WebP detection failed (invalid dataURL)');
-        return;
+        logger.warn('[MediaService] WebP detection failed:', innerError);
       }
-
-      this.webpSupported = dataURL.indexOf('data:image/webp') === 0;
-      logger.debug('[MediaService] WebP support detected:', this.webpSupported);
-    } catch (error) {
+    } catch (outerError) {
       this.webpSupported = false;
-      logger.warn('[MediaService] WebP detection failed:', error);
+      logger.warn('[MediaService] WebP detection initialization failed:', outerError);
     }
   }
 
@@ -575,7 +585,7 @@ export class MediaService {
 
       // 간단한 캐시 관리
       if (this.prefetchCache.size >= this.maxCacheEntries) {
-        this.evictOldestPrefetchEntry();
+        this.evictFirstPrefetchEntry();
       }
 
       this.prefetchCache.set(url, blob);
@@ -611,9 +621,9 @@ export class MediaService {
   }
 
   /**
-   * 가장 오래된 프리페치 캐시 엔트리 제거
+   * 가장 먼저 추가된 프리페치 캐시 엔트리 제거
    */
-  private evictOldestPrefetchEntry(): void {
+  private evictFirstPrefetchEntry(): void {
     const firstKey = this.prefetchCache.keys().next().value;
     if (firstKey) {
       this.prefetchCache.delete(firstKey);

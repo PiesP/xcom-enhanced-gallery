@@ -42,10 +42,12 @@ export {
   safeElementCheck,
   canTriggerGallery,
   isGalleryInternalElement,
-  isGalleryContainer,
 } from './utils';
 
 export { isInsideGallery } from './utils/dom';
+
+// 추가 유틸리티들 직접 export
+export { isGalleryContainer } from './utils/core-utils';
 
 // 최적화 유틸리티들 (Phase 3)
 export * from './utils/optimization';

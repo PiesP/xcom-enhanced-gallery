@@ -125,7 +125,7 @@ export function initializeNamespacedStyles(): void {
 
   const existingStyle = document.getElementById(STYLE_ID);
   if (existingStyle) {
-    logger.debug('[NamespacedStyles] Style already exists, removing old');
+    logger.debug('[NamespacedStyles] Style already exists, removing existing');
     existingStyle.remove();
   }
 

@@ -5,319 +5,164 @@
 
 import { vi } from 'vitest';
 
-// ================================
-// DOM Element Mock Factory
-// ================================
-
-export interface MockElementConfig {
-  tagName?: string;
-  attributes?: Record<string, string>;
-  children?: MockElement[];
-  textContent?: string;
-}
-
-export interface MockElement extends Partial<HTMLElement> {
-  tagName: string;
-  setAttribute: ReturnType<typeof vi.fn>;
-  getAttribute: ReturnType<typeof vi.fn>;
-  appendChild: ReturnType<typeof vi.fn>;
-  removeChild: ReturnType<typeof vi.fn>;
-  querySelector: ReturnType<typeof vi.fn>;
-  querySelectorAll: ReturnType<typeof vi.fn>;
-  addEventListener: ReturnType<typeof vi.fn>;
-  removeEventListener: ReturnType<typeof vi.fn>;
-  click: ReturnType<typeof vi.fn>;
-  focus: ReturnType<typeof vi.fn>;
-  blur: ReturnType<typeof vi.fn>;
-  dataset: Record<string, string>;
-  style: Record<string, string>;
-  children: MockElement[];
-  parentNode: MockElement | null;
-}
-
 /**
  * Mock DOM 요소 생성
  */
-export function createMockElement(config: MockElementConfig = {}): MockElement {
-  const { tagName = 'div', attributes = {}, children = [], textContent = '' } = config;
-
-  const storedAttributes = new Map<string, string>();
-  const storedDataset = { ...attributes };
-
-  const element: MockElement = {
+export function createMockElement(tagName = 'div') {
+  return {
     tagName: tagName.toUpperCase(),
-    textContent,
-    dataset: storedDataset,
-    style: {},
-    children,
-    parentNode: null,
-
-    setAttribute: vi.fn().mockImplementation((name: string, value: string) => {
-      storedAttributes.set(name, value);
-      if (name.startsWith('data-')) {
-        const dataKey = name.slice(5).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-        storedDataset[dataKey] = value;
-      }
-    }),
-
-    getAttribute: vi.fn().mockImplementation((name: string) => {
-      return storedAttributes.get(name) ?? null;
-    }),
-
-    appendChild: vi.fn().mockImplementation((child: MockElement) => {
-      children.push(child);
-      child.parentNode = element;
-      return child;
-    }),
-
-    removeChild: vi.fn().mockImplementation((child: MockElement) => {
-      const index = children.indexOf(child);
-      if (index > -1) {
-        children.splice(index, 1);
-        child.parentNode = null;
-      }
-      return child;
-    }),
-
-    querySelector: vi.fn().mockImplementation((selector: string) => {
-      // 간단한 선택자 시뮬레이션
-      if (selector.startsWith('#')) {
-        const id = selector.slice(1);
-        return children.find(child => child.getAttribute?.('id') === id) ?? null;
-      }
-      if (selector.startsWith('.')) {
-        const className = selector.slice(1);
-        return children.find(child => child.getAttribute?.('class')?.includes(className)) ?? null;
-      }
-      if (selector.startsWith('[data-testid=')) {
-        const testId = selector.match(/\[data-testid="([^"]+)"\]/)?.[1];
-        return children.find(child => child.getAttribute?.('data-testid') === testId) ?? null;
-      }
-      return (
-        children.find(child => child.tagName?.toLowerCase() === selector.toLowerCase()) ?? null
-      );
-    }),
-
-    querySelectorAll: vi.fn().mockImplementation((selector: string) => {
-      const results: MockElement[] = [];
-      if (selector.startsWith('.')) {
-        const className = selector.slice(1);
-        results.push(
-          ...children.filter(child => child.getAttribute?.('class')?.includes(className))
-        );
-      } else {
-        results.push(
-          ...children.filter(child => child.tagName?.toLowerCase() === selector.toLowerCase())
-        );
-      }
-      return results;
-    }),
-
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
-    click: vi.fn(),
-    focus: vi.fn(),
-    blur: vi.fn(),
+    getAttribute: vi.fn(),
+    setAttribute: vi.fn(),
+    removeAttribute: vi.fn(),
+    hasAttribute: vi.fn(),
+    querySelector: vi.fn(),
+    querySelectorAll: vi.fn(),
+    appendChild: vi.fn(),
+    removeChild: vi.fn(),
+    insertBefore: vi.fn(),
+    replaceChild: vi.fn(),
+    contains: vi.fn(),
+    closest: vi.fn(),
+    matches: vi.fn(),
+    classList: {
+      add: vi.fn(),
+      remove: vi.fn(),
+      toggle: vi.fn(),
+      contains: vi.fn(),
+    },
+    style: {},
+    dataset: {},
+    innerHTML: '',
+    textContent: '',
+    className: '',
+    id: '',
+    parentNode: null,
+    childNodes: [],
+    children: [],
+    firstChild: null,
+    lastChild: null,
+    nextSibling: null,
+    previousSibling: null,
   };
-
-  // 초기 속성 설정
-  Object.entries(attributes).forEach(([key, value]) => {
-    element.setAttribute(key, value);
-  });
-
-  return element;
 }
 
 /**
- * Mock Image 요소 생성
+ * Mock 이미지 요소 생성
  */
-export function createMockImageElement(
-  src: string,
-  overrides: Partial<MockElement> = {}
-): MockElement {
+export function createMockImageElement(src = 'https://example.com/image.jpg') {
+  const element = createMockElement('img');
   return {
-    ...createMockElement({ tagName: 'IMG', attributes: { src } }),
+    ...element,
     src,
     alt: '',
-    width: 1200,
-    height: 800,
-    naturalWidth: 1200,
-    naturalHeight: 800,
+    width: 0,
+    height: 0,
+    naturalWidth: 100,
+    naturalHeight: 100,
     complete: true,
-    ...overrides,
+    loading: 'eager',
+    onload: null,
+    onerror: null,
   };
 }
 
 /**
- * Mock Video 요소 생성
+ * Mock 비디오 요소 생성
  */
-export function createMockVideoElement(
-  src: string,
-  overrides: Partial<MockElement> = {}
-): MockElement {
+export function createMockVideoElement(src = 'https://example.com/video.mp4') {
+  const element = createMockElement('video');
   return {
-    ...createMockElement({ tagName: 'VIDEO', attributes: { src } }),
+    ...element,
     src,
-    poster: '',
-    currentSrc: src,
-    videoWidth: 1280,
-    videoHeight: 720,
-    duration: 30,
+    controls: false,
+    autoplay: false,
+    muted: false,
+    loop: false,
+    duration: 0,
     currentTime: 0,
     paused: true,
-    muted: false,
-    play: vi.fn().mockResolvedValue(undefined),
+    ended: false,
+    play: vi.fn(),
     pause: vi.fn(),
     load: vi.fn(),
-    ...overrides,
   };
 }
 
-// ================================
-// DOM Environment Setup
-// ================================
-
 /**
- * 기본 DOM 환경 설정
+ * Mock 이벤트 생성
  */
-export function setupDOMEnvironment(): void {
-  const mockDocument = createMockDocument();
-
-  Object.defineProperty(global, 'document', {
-    value: mockDocument,
-    writable: true,
-    configurable: true,
-  });
-
-  Object.defineProperty(global, 'window', {
-    value: {
-      document: mockDocument,
-      location: {
-        hostname: 'x.com',
-        href: 'https://x.com/user/status/123456789',
-        pathname: '/user/status/123456789',
-        search: '?lang=en',
-        hash: '',
-        protocol: 'https:',
-        port: '',
-        host: 'x.com',
-      },
-      navigator: {
-        language: 'en-US',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        vendor: 'Google Inc.',
-        platform: 'Win32',
-      },
-      innerWidth: 1920,
-      innerHeight: 1080,
-      devicePixelRatio: 1,
-      setTimeout: vi.fn().mockImplementation((callback, delay) => setTimeout(callback, delay)),
-      clearTimeout: vi.fn().mockImplementation(clearTimeout),
-      setInterval: vi.fn().mockImplementation((callback, delay) => setInterval(callback, delay)),
-      clearInterval: vi.fn().mockImplementation(clearInterval),
-      scrollTo: vi.fn(),
-      requestAnimationFrame: vi.fn().mockImplementation(callback => setTimeout(callback, 16)),
-      cancelAnimationFrame: vi.fn(),
-      matchMedia: vi.fn().mockImplementation(query => ({
-        matches: false,
-        media: query,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    },
-    writable: true,
-    configurable: true,
-  });
+export function createMockEvent(eventType = 'click', options = {}) {
+  return {
+    type: eventType,
+    bubbles: false,
+    cancelable: false,
+    target: null,
+    currentTarget: null,
+    preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
+    stopImmediatePropagation: vi.fn(),
+    ...options,
+  };
 }
 
 /**
- * Mock Document 생성
+ * DOM 환경 설정
  */
-function createMockDocument(): Document {
-  const bodyElement = createMockElement({ tagName: 'body' });
-  const headElement = createMockElement({ tagName: 'head' });
-  const documentElement = createMockElement({
-    tagName: 'html',
-    children: [headElement, bodyElement],
-  });
-
-  return {
-    createElement: vi.fn().mockImplementation((tagName: string) => createMockElement({ tagName })),
-
-    getElementById: vi
-      .fn()
-      .mockImplementation((id: string) => documentElement.querySelector?.(`#${id}`) ?? null),
-
-    querySelector: vi
-      .fn()
-      .mockImplementation((selector: string) => documentElement.querySelector?.(selector) ?? null),
-
-    querySelectorAll: vi
-      .fn()
-      .mockImplementation((selector: string) => documentElement.querySelectorAll?.(selector) ?? []),
-
-    body: bodyElement,
-    head: headElement,
-    documentElement,
-
-    readyState: 'complete',
-    URL: 'https://x.com/user/status/123456789',
-
+export function setupMockDOM() {
+  const mockDocument = {
+    createElement: vi.fn(tagName => createMockElement(tagName)),
+    querySelector: vi.fn(),
+    querySelectorAll: vi.fn(),
+    getElementById: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  } as unknown as Document;
-}
+    body: createMockElement('body'),
+    documentElement: createMockElement('html'),
+  };
 
-/**
- * Twitter/X.com 특화 DOM 구조 생성
- */
-export function setupTwitterDOMStructure(): MockElement {
-  const container = createMockElement({
-    tagName: 'div',
-    attributes: { id: 'test-container' },
-  });
-
-  // 트윗 구조 생성
-  const article = createMockElement({
-    tagName: 'article',
-    attributes: {
-      'data-testid': 'tweet',
-      role: 'article',
+  const mockWindow = {
+    document: mockDocument,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    location: {
+      href: 'https://example.com',
+      hostname: 'example.com',
+      pathname: '/',
     },
+    navigator: {
+      userAgent: 'Mozilla/5.0 (Test)',
+    },
+  };
+
+  // globalThis에 설정
+  Object.defineProperty(globalThis, 'document', {
+    value: mockDocument,
+    writable: true,
   });
 
-  // 미디어 컨테이너
-  const mediaContainer = createMockElement({
-    tagName: 'div',
-    attributes: { 'data-testid': 'tweetPhoto' },
+  Object.defineProperty(globalThis, 'window', {
+    value: mockWindow,
+    writable: true,
   });
 
-  const image = createMockImageElement(
-    'https://pbs.twimg.com/media/test.jpg?format=jpg&name=large'
-  );
-
-  mediaContainer.appendChild(image);
-  article.appendChild(mediaContainer);
-  container.appendChild(article);
-
-  return container;
+  return { mockDocument, mockWindow };
 }
 
 /**
  * DOM 환경 정리
  */
-export function cleanupDOMEnvironment(): void {
-  Object.defineProperty(global, 'document', {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
+export function cleanupMockDOM() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (globalThis as any).document;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (globalThis as any).window;
+}
 
-  Object.defineProperty(global, 'window', {
-    value: undefined,
-    writable: true,
-    configurable: true,
-  });
+/**
+ * DOM 환경 설정 (통합 함수)
+ */
+export function setupDOMEnvironment() {
+  return setupMockDOM();
 }

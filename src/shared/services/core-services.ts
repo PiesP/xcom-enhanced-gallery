@@ -166,3 +166,24 @@ ServiceDiagnostics.registerGlobalDiagnostic();
  * ServiceRegistry가 ServiceManager에 통합되었고, 초기화는 별도 파일로 분리
  */
 export { registerCoreServices } from './service-initialization';
+
+// ================================
+// Phase 3: 통합된 서비스 접근자 (테스트에서 기대하는 함수들)
+// ================================
+
+import { GalleryService } from './gallery/GalleryService';
+import { MediaService } from './MediaService';
+
+/**
+ * 갤러리 서비스 인스턴스 반환
+ */
+export function getGalleryService(): GalleryService {
+  return GalleryService.getInstance();
+}
+
+/**
+ * 미디어 서비스 인스턴스 반환
+ */
+export function getMediaService(): MediaService {
+  return MediaService.getInstance();
+}

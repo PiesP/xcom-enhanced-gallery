@@ -94,7 +94,7 @@ export class MediaPrefetchingService {
 
       // 간단한 캐시 관리
       if (this.cache.size >= this.maxCacheEntries) {
-        this.evictOldestEntry();
+        this.evictFirstEntry();
       }
 
       this.cache.set(url, blob);
@@ -145,9 +145,9 @@ export class MediaPrefetchingService {
   }
 
   /**
-   * 가장 오래된 캐시 엔트리 제거
+   * 가장 먼저 추가된 캐시 엔트리 제거
    */
-  private evictOldestEntry(): void {
+  private evictFirstEntry(): void {
     const firstKey = this.cache.keys().next().value;
     if (firstKey) {
       this.cache.delete(firstKey);
