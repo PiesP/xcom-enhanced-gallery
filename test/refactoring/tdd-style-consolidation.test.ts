@@ -10,7 +10,7 @@ describe('TDD Style & Component Consolidation', () => {
   describe('RED Phase: 중복 식별', () => {
     it('스타일 중복 패턴을 식별해야 함', () => {
       // 스타일 중복 발견 기대값 (테스트용으로 주석 처리)
-      
+
       // RED: 현재는 통합된 스타일 관리자가 없어서 실패해야 함
       expect(() => {
         const UnifiedStyleManager = require('../../src/shared/styles/UnifiedStyleManager').default;
