@@ -16,20 +16,28 @@ import {
   animateCustom,
 } from '../../../../src/shared/utils/animations';
 
+// Mock 함수들 미리 정의
+const mockAnimate = vi.fn().mockResolvedValue({});
+const mockScroll = vi.fn().mockReturnValue(() => {});
+const mockTimeline = vi.fn().mockResolvedValue(undefined);
+const mockStagger = vi.fn().mockReturnValue(index => index * 50);
+const mockInView = vi.fn().mockReturnValue(() => {});
+const mockTransform = vi.fn().mockImplementation((value, from, to) => {
+  const [fromMin, fromMax] = from;
+  const [toMin, toMax] = to;
+  const ratio = (value - fromMin) / (fromMax - fromMin);
+  return toMin + ratio * (toMax - toMin);
+});
+
 // 모킹
 vi.mock('@shared/external/vendors', () => ({
   getMotionOne: vi.fn(() => ({
-    animate: vi.fn().mockResolvedValue({}),
-    scroll: vi.fn().mockReturnValue(() => {}),
-    timeline: vi.fn().mockResolvedValue(undefined),
-    stagger: vi.fn().mockReturnValue(index => index * 50),
-    inView: vi.fn().mockReturnValue(() => {}),
-    transform: vi.fn().mockImplementation((value, from, to) => {
-      const [fromMin, fromMax] = from;
-      const [toMin, toMax] = to;
-      const ratio = (value - fromMin) / (fromMax - fromMin);
-      return toMin + ratio * (toMax - toMin);
-    }),
+    animate: mockAnimate,
+    scroll: mockScroll,
+    timeline: mockTimeline,
+    stagger: mockStagger,
+    inView: mockInView,
+    transform: mockTransform,
   })),
 }));
 
@@ -147,11 +155,18 @@ describe('애니메이션 유틸리티', () => {
 
   describe('커스텀 애니메이션', () => {
     it('커스텀 애니메이션이 실행되어야 한다', async () => {
-      const keyframes = { opacity: 1, transform: 'scale(1)' };
+      const keyframes = { opacity: '1', transform: 'scale(1)' };
       const options = { duration: 300, easing: 'ease-out' };
 
       await animateCustom(mockElement, keyframes, options);
-      expect(true).toBe(true); // 에러 없이 완료되면 성공
+
+      // CSS 트랜지션이 설정되었는지 확인
+      expect(mockElement.style.transition).toContain('opacity 300ms ease-out');
+      expect(mockElement.style.transition).toContain('transform 300ms ease-out');
+
+      // 키프레임 스타일이 설정되었는지 확인
+      expect(mockElement.style.opacity).toBe('1');
+      expect(mockElement.style.transform).toBe('scale(1)');
     });
   });
 
