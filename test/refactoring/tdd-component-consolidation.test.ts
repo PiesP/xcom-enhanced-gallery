@@ -102,28 +102,24 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
   });
 
   describe('🟢 GREEN: 통합 컴포넌트 인프라 구현', () => {
-    it('UnifiedComponentManager가 통합된 컴포넌트 관리를 제공해야 함', async () => {
+    it('ComponentManager가 통합된 컴포넌트 관리를 제공해야 함', async () => {
       // GREEN: 통합된 컴포넌트 매니저 구현
-      const { UnifiedComponentManager } = await import(
-        '../../src/shared/components/UnifiedComponentManager'
-      );
+      const { ComponentManager } = await import('../../src/shared/components/ComponentManager');
 
-      expect(UnifiedComponentManager).toBeDefined();
-      expect(typeof UnifiedComponentManager.createComponent).toBe('function');
-      expect(typeof UnifiedComponentManager.withHooks).toBe('function');
-      expect(typeof UnifiedComponentManager.withStateManagement).toBe('function');
-      expect(typeof UnifiedComponentManager.withEventHandling).toBe('function');
+      expect(ComponentManager).toBeDefined();
+      expect(typeof ComponentManager.createComponent).toBe('function');
+      expect(typeof ComponentManager.withHooks).toBe('function');
+      expect(typeof ComponentManager.withStateManagement).toBe('function');
+      expect(typeof ComponentManager.withEventHandling).toBe('function');
 
-      console.log('✅ UnifiedComponentManager 구현 확인');
+      console.log('✅ ComponentManager 구현 확인');
     });
 
     it('통합 훅 관리자가 작동해야 함', async () => {
       // GREEN: 통합된 훅 시스템
-      const { UnifiedComponentManager } = await import(
-        '../../src/shared/components/UnifiedComponentManager'
-      );
+      const { ComponentManager } = await import('../../src/shared/components/ComponentManager');
 
-      const hookManager = UnifiedComponentManager.getHookManager();
+      const hookManager = ComponentManager.getHookManager();
 
       expect(hookManager.useState).toBeDefined();
       expect(hookManager.useEffect).toBeDefined();
@@ -141,11 +137,9 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
 
     it('통합 상태 관리가 작동해야 함', async () => {
       // GREEN: 통합된 상태 관리
-      const { UnifiedComponentManager } = await import(
-        '../../src/shared/components/UnifiedComponentManager'
-      );
+      const { ComponentManager } = await import('../../src/shared/components/ComponentManager');
 
-      const stateManager = UnifiedComponentManager.getStateManager();
+      const stateManager = ComponentManager.getStateManager();
 
       expect(stateManager.createSharedState).toBeDefined();
       expect(stateManager.useSharedState).toBeDefined();
@@ -163,11 +157,9 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
 
     it('통합 이벤트 핸들링이 작동해야 함', async () => {
       // GREEN: 통합된 이벤트 처리
-      const { UnifiedComponentManager } = await import(
-        '../../src/shared/components/UnifiedComponentManager'
-      );
+      const { ComponentManager } = await import('../../src/shared/components/ComponentManager');
 
-      const eventManager = UnifiedComponentManager.getEventManager();
+      const eventManager = ComponentManager.getEventManager();
 
       expect(eventManager.createClickHandler).toBeDefined();
       expect(eventManager.createKeyboardHandler).toBeDefined();
@@ -186,16 +178,14 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
   describe('🔵 REFACTOR: 성능 및 아키텍처 최적화', () => {
     it('통합 컴포넌트 매니저의 성능을 측정해야 함', async () => {
       // REFACTOR: 성능 측정
-      const { UnifiedComponentManager } = await import(
-        '../../src/shared/components/UnifiedComponentManager'
-      );
+      const { ComponentManager } = await import('../../src/shared/components/ComponentManager');
 
       const startTime = performance.now();
 
       // 통합 시스템 사용
-      const hookManager = UnifiedComponentManager.getHookManager();
-      const stateManager = UnifiedComponentManager.getStateManager();
-      const eventManager = UnifiedComponentManager.getEventManager();
+      const hookManager = ComponentManager.getHookManager();
+      const stateManager = ComponentManager.getStateManager();
+      const eventManager = ComponentManager.getEventManager();
 
       // 여러 컴포넌트에서 동시 사용 시뮬레이션 (훅 호출 제외)
       for (let i = 0; i < 100; i++) {
@@ -213,16 +203,14 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
 
     it('메모리 사용량이 최적화되어야 함', async () => {
       // REFACTOR: 메모리 최적화 검증
-      const { UnifiedComponentManager } = await import(
-        '../../src/shared/components/UnifiedComponentManager'
-      );
+      const { ComponentManager } = await import('../../src/shared/components/ComponentManager');
 
       const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
 
       // 대량 컴포넌트 생성
       const components = [];
       for (let i = 0; i < 1000; i++) {
-        components.push(UnifiedComponentManager.createComponent(`test-${i}`));
+        components.push(ComponentManager.createComponent(`test-${i}`));
       }
 
       const peakMemory = (performance as any).memory?.usedJSHeapSize || 0;
@@ -243,14 +231,12 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
 
     it('컴포넌트 재사용성이 향상되어야 함', async () => {
       // REFACTOR: 재사용성 검증
-      const { UnifiedComponentManager } = await import(
-        '../../src/shared/components/UnifiedComponentManager'
-      );
+      const { ComponentManager } = await import('../../src/shared/components/ComponentManager');
 
       // 동일한 패턴의 컴포넌트들이 통합 시스템을 사용하는지 확인
-      const galleryComponent = UnifiedComponentManager.createComponent('gallery');
-      const toolbarComponent = UnifiedComponentManager.createComponent('toolbar');
-      const toastComponent = UnifiedComponentManager.createComponent('toast');
+      const galleryComponent = ComponentManager.createComponent('gallery');
+      const toolbarComponent = ComponentManager.createComponent('toolbar');
+      const toastComponent = ComponentManager.createComponent('toast');
 
       // 모든 컴포넌트가 동일한 인터페이스를 가져야 함
       [galleryComponent, toolbarComponent, toastComponent].forEach(component => {
@@ -264,9 +250,7 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
 
     it('API 일관성이 유지되어야 함', async () => {
       // REFACTOR: API 일관성 검증
-      const { UnifiedComponentManager } = await import(
-        '../../src/shared/components/UnifiedComponentManager'
-      );
+      const { ComponentManager } = await import('../../src/shared/components/ComponentManager');
 
       const apiMethods = [
         'createComponent',
@@ -279,8 +263,8 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
       ];
 
       apiMethods.forEach(method => {
-        expect(UnifiedComponentManager[method]).toBeDefined();
-        expect(typeof UnifiedComponentManager[method]).toBe('function');
+        expect(ComponentManager[method]).toBeDefined();
+        expect(typeof ComponentManager[method]).toBe('function');
       });
 
       console.log('✅ API 일관성 확인:', apiMethods);
@@ -308,7 +292,7 @@ describe('🔄 TDD Phase 2-4: 컴포넌트 중복 통합', () => {
     it('빌드 시스템 통합이 원활해야 함', () => {
       // 빌드 통합 확인 (통합 매니저가 번들에 포함되는지)
       const buildIntegration = {
-        moduleExports: ['UnifiedComponentManager'],
+        moduleExports: ['ComponentManager'],
         typeDefinitions: ['ComponentManagerInterface'],
         bundleOptimization: true,
       };

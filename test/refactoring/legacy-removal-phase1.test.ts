@@ -7,21 +7,21 @@
 import { describe, it, expect } from 'vitest';
 
 describe('🔴 Phase 1: God Object 패턴 해체', () => {
-  describe('RED: UnifiedStyleManager 분해 필요성 검증', () => {
-    it('UnifiedStyleManager가 너무 많은 책임을 가지고 있다', async () => {
-      const { default: UnifiedStyleManager } = await import('@shared/styles/UnifiedStyleManager');
+  describe('RED: StyleManager 분해 필요성 검증', () => {
+    it('StyleManager가 너무 많은 책임을 가지고 있다', async () => {
+      const { default: StyleManager } = await import('@shared/styles/StyleManager');
 
       // God Object 검증: 348줄의 거대한 클래스
-      const methods = Object.getOwnPropertyNames(UnifiedStyleManager).filter(
-        name => typeof UnifiedStyleManager[name] === 'function'
+      const methods = Object.getOwnPropertyNames(StyleManager).filter(
+        name => typeof StyleManager[name] === 'function'
       );
 
-      console.log('UnifiedStyleManager 메서드 수:', methods.length);
+      console.log('StyleManager 메서드 수:', methods.length);
       console.log('메서드 목록:', methods);
 
       // 13개 이상의 정적 메서드는 적당한 수준
       expect(methods.length).toBeGreaterThan(10);
-      console.log('UnifiedStyleManager 메서드 수:', methods.length);
+      console.log('StyleManager 메서드 수:', methods.length);
 
       // 실제로는 합리적인 수준이지만, 더 분해할 수 있는지 확인
       if (methods.length > 15) {
@@ -101,14 +101,14 @@ describe('🔴 Phase 1: God Object 패턴 해체', () => {
     });
   });
 
-  describe('REFACTOR: UnifiedStyleManager 단순화', () => {
-    it('UnifiedStyleManager가 얇은 레이어가 되어야 한다', async () => {
+  describe('REFACTOR: StyleManager 단순화', () => {
+    it('StyleManager가 얇은 레이어가 되어야 한다', async () => {
       try {
-        const { default: UnifiedStyleManager } = await import('@shared/styles/UnifiedStyleManager');
+        const { default: StyleManager } = await import('@shared/styles/StyleManager');
 
         // 리팩토링 후에는 10개 미만의 메서드만 가져야 함
-        const methods = Object.getOwnPropertyNames(UnifiedStyleManager).filter(
-          name => typeof UnifiedStyleManager[name] === 'function'
+        const methods = Object.getOwnPropertyNames(StyleManager).filter(
+          name => typeof StyleManager[name] === 'function'
         );
 
         expect(methods.length).toBeLessThan(10);
@@ -122,17 +122,17 @@ describe('🔴 Phase 1: God Object 패턴 해체', () => {
 });
 
 describe('🔴 Phase 1: DOM Manager 패턴 해체', () => {
-  describe('RED: UnifiedDOMManager 분해 필요성 검증', () => {
-    it('UnifiedDOMManager가 너무 많은 책임을 가지고 있다', async () => {
-      const { UnifiedDOMManager } = await import('@shared/dom/UnifiedDOMManager');
+  describe('RED: DOMManager 분해 필요성 검증', () => {
+    it('DOMManager가 너무 많은 책임을 가지고 있다', async () => {
+      const { DOMManager } = await import('@shared/dom/DOMManager');
 
       // 인스턴스 메서드 확인
-      const instance = new UnifiedDOMManager();
+      const instance = new DOMManager();
       const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(instance)).filter(
         name => name !== 'constructor' && typeof instance[name] === 'function'
       );
 
-      console.log('UnifiedDOMManager 메서드 수:', methods.length);
+      console.log('DOMManager 메서드 수:', methods.length);
 
       // 20개 이상의 메서드는 God Object
       expect(methods.length).toBeGreaterThan(20);
@@ -179,15 +179,13 @@ describe('🔴 Phase 1: DOM Manager 패턴 해체', () => {
 });
 
 describe('🔴 Phase 1: Component Manager 패턴 해체', () => {
-  describe('RED: UnifiedComponentManager 단순화 필요성', () => {
-    it('UnifiedComponentManager가 과도한 추상화를 가지고 있다', async () => {
+  describe('RED: ComponentManager 단순화 필요성', () => {
+    it('ComponentManager가 과도한 추상화를 가지고 있다', async () => {
       try {
-        const { UnifiedComponentManager } = await import(
-          '@shared/components/UnifiedComponentManager'
-        );
+        const { ComponentManager } = await import('@shared/components/ComponentManager');
 
-        // UnifiedComponentManager가 존재함을 확인
-        expect(UnifiedComponentManager).toBeDefined();
+        // ComponentManager가 존재함을 확인
+        expect(ComponentManager).toBeDefined();
 
         // 복잡한 인터페이스들이 과도한 추상화를 나타냄
         const interfaces = [
@@ -204,7 +202,7 @@ describe('🔴 Phase 1: Component Manager 패턴 해체', () => {
         expect(interfaces.length).toBeGreaterThan(5);
         console.log('과도한 인터페이스 수:', interfaces.length);
       } catch (error) {
-        console.log('UnifiedComponentManager 로드 실패:', error);
+        console.log('ComponentManager 로드 실패:', error);
         expect(true).toBe(true); // 현재는 통과
       }
     });

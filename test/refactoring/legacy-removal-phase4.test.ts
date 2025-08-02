@@ -70,17 +70,17 @@ describe('🔴 Phase 4: 모듈 구조 단순화', () => {
     it('Phase 1-3에서 생성된 단순화 파일들이 잘 동작해야 한다', async () => {
       try {
         // Phase 2에서 생성된 통합 메모리 관리자
-        const memoryManager = await import('@shared/memory/unified-memory-manager');
+        const memoryManager = await import('@shared/memory/memory-manager');
         expect(memoryManager).toBeDefined();
         console.log('✅ Phase 2 통합 메모리 관리자 동작');
 
         // Phase 3에서 생성된 간단한 토큰 관리
-        const tokenManager = await import('@shared/styles/simple-token-manager');
+        const tokenManager = await import('@shared/styles/token-manager');
         expect(tokenManager).toBeDefined();
         console.log('✅ Phase 3 간단한 토큰 관리자 동작');
 
         // Phase 3에서 생성된 간단한 성능 유틸리티
-        const performance = await import('@shared/utils/simple-performance');
+        const performance = await import('@shared/utils/performance');
         expect(performance).toBeDefined();
         console.log('✅ Phase 3 간단한 성능 유틸리티 동작');
       } catch (error) {

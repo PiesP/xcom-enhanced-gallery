@@ -14,7 +14,7 @@ describe('🔍 TDD Phase 1: 구조 분석 (RED)', () => {
     it('DOM 관리 중복 구현 검출', () => {
       // 현재 DOM 관련 파일들
       const domFiles = [
-        'shared/dom/UnifiedDOMManager.ts',
+        'shared/dom/DOMManager.ts',
         'shared/utils/dom/DOMBatcher.ts',
         'shared/utils/core-utils.ts',
         'shared/dom/DOMCache.ts',
@@ -30,7 +30,7 @@ describe('🔍 TDD Phase 1: 구조 분석 (RED)', () => {
 
     it('스타일 관리 중복 구현 검출', () => {
       const styleFiles = [
-        'shared/styles/UnifiedStyleManager.ts',
+        'shared/styles/StyleManager.ts',
         'shared/utils/styles/css-utilities.ts',
         'shared/utils/styles/style-utils.ts',
         'shared/utils/styles.ts',

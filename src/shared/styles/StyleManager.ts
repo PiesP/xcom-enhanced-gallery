@@ -41,7 +41,7 @@ export interface GlassmorphismConfig {
  * 통합 스타일 관리자 클래스
  * 모든 스타일 관련 유틸리티를 하나의 클래스로 통합
  */
-class UnifiedStyleManager {
+class StyleManager {
   // 글래스모피즘 프리셋 정의
   private static readonly GLASSMORPHISM_PRESETS: Record<
     GlassmorphismIntensity,
@@ -300,4 +300,4 @@ class UnifiedStyleManager {
   }
 }
 
-export default UnifiedStyleManager;
+export default StyleManager;

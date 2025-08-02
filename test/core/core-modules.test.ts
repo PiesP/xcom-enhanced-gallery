@@ -308,7 +308,7 @@ describe('🔵 TDD Phase 3: 성능 및 아키텍처 검증 (REFACTOR)', () => {
       expect(typeof nativeTime).toBe('number');
     });
 
-    it('배치 처리가 개별 업데이트보다 효율적이어야 함', done => {
+    it('배치 처리가 개별 업데이트보다 효율적이어야 함', async () => {
       const elements = Array.from({ length: 10 }, () => {
         const el = document.createElement('div');
         document.body.appendChild(el);
@@ -325,23 +325,21 @@ describe('🔵 TDD Phase 3: 성능 및 아키텍처 검증 (REFACTOR)', () => {
         });
       });
 
-      setTimeout(() => {
-        const batchTime = performance.now() - batchStart;
+      await new Promise(resolve => setTimeout(resolve, 20));
+      const batchTime = performance.now() - batchStart;
 
-        // 개별 처리
-        const individualStart = performance.now();
-        elements.forEach(el => {
-          el.style.color = 'blue';
-          el.classList.add('individual-test');
-        });
-        const individualTime = performance.now() - individualStart;
+      // 개별 처리
+      const individualStart = performance.now();
+      elements.forEach(el => {
+        el.style.color = 'blue';
+        el.classList.add('individual-test');
+      });
+      const individualTime = performance.now() - individualStart;
 
-        console.log(`Batch: ${batchTime.toFixed(2)}ms, Individual: ${individualTime.toFixed(2)}ms`);
+      console.log(`Batch: ${batchTime.toFixed(2)}ms, Individual: ${individualTime.toFixed(2)}ms`);
 
-        expect(typeof batchTime).toBe('number');
-        expect(typeof individualTime).toBe('number');
-        done();
-      }, 20);
+      expect(typeof batchTime).toBe('number');
+      expect(typeof individualTime).toBe('number');
     });
   });
 

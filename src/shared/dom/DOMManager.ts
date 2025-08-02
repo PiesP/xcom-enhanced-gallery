@@ -31,7 +31,7 @@ export interface DOMElementCreationOptions {
  * - 배치 업데이트
  * - 성능 최적화
  */
-export class UnifiedDOMManager {
+export class DOMManager {
   private readonly domCache: DOMCache;
   private readonly domBatcher: DOMBatcher;
 
@@ -62,7 +62,7 @@ export class UnifiedDOMManager {
     try {
       return container.querySelector<T>(selector);
     } catch (error) {
-      logger.warn(`[UnifiedDOMManager] Invalid selector: ${selector}`, error);
+      logger.warn(`[DOMManager] Invalid selector: ${selector}`, error);
       return null;
     }
   }
@@ -74,7 +74,7 @@ export class UnifiedDOMManager {
     try {
       return Array.from(container.querySelectorAll<T>(selector));
     } catch (error) {
-      logger.warn(`[UnifiedDOMManager] Invalid selector: ${selector}`, error);
+      logger.warn(`[DOMManager] Invalid selector: ${selector}`, error);
       return [];
     }
   }
@@ -160,7 +160,7 @@ export class UnifiedDOMManager {
 
       return element;
     } catch (error) {
-      logger.error(`[UnifiedDOMManager] Failed to create element: ${tagName}`, error);
+      logger.error(`[DOMManager] Failed to create element: ${tagName}`, error);
       return null;
     }
   }
@@ -176,7 +176,7 @@ export class UnifiedDOMManager {
       }
       return false;
     } catch (error) {
-      logger.error('[UnifiedDOMManager] Failed to remove element:', error);
+      logger.error('[DOMManager] Failed to remove element:', error);
       return false;
     }
   }
@@ -191,7 +191,7 @@ export class UnifiedDOMManager {
       const style = window.getComputedStyle(element);
       return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
     } catch (error) {
-      logger.warn('[UnifiedDOMManager] Failed to check visibility:', error);
+      logger.warn('[DOMManager] Failed to check visibility:', error);
       return false;
     }
   }
@@ -211,7 +211,7 @@ export class UnifiedDOMManager {
         rect.right <= (window.innerWidth || document.documentElement.clientWidth)
       );
     } catch (error) {
-      logger.warn('[UnifiedDOMManager] Failed to check viewport:', error);
+      logger.warn('[DOMManager] Failed to check viewport:', error);
       return false;
     }
   }
@@ -236,7 +236,7 @@ export class UnifiedDOMManager {
       }
       return false;
     } catch (error) {
-      logger.error('[UnifiedDOMManager] Failed to add event listener:', error);
+      logger.error('[DOMManager] Failed to add event listener:', error);
       return false;
     }
   }
@@ -257,7 +257,7 @@ export class UnifiedDOMManager {
       }
       return false;
     } catch (error) {
-      logger.error('[UnifiedDOMManager] Failed to remove event listener:', error);
+      logger.error('[DOMManager] Failed to remove event listener:', error);
       return false;
     }
   }
@@ -360,7 +360,7 @@ export class UnifiedDOMManager {
 /**
  * 전역 통합 DOM 매니저 인스턴스
  */
-export const globalDOMManager = new UnifiedDOMManager({
+export const globalDOMManager = new DOMManager({
   cacheOptions: {
     defaultTTL: 20000, // 20초
     maxCacheSize: 150,

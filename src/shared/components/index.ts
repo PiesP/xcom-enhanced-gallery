@@ -24,7 +24,7 @@ export * from './isolation';
 export * from './ui';
 
 // 통합 컴포넌트 관리자
-export { UnifiedComponentManager, componentUtils } from './UnifiedComponentManager';
+export { componentUtils } from './ComponentManager';
 export type {
   ComponentManagerInterface,
   ComponentInstance,
@@ -35,7 +35,7 @@ export type {
   WithHooksInterface,
   WithStateInterface,
   WithEventInterface,
-} from './UnifiedComponentManager';
+} from './ComponentManager';
 
 // 핵심 UI 컴포넌트들
 export { Button } from './ui/Button/Button';

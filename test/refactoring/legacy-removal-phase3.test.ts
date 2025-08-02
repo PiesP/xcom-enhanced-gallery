@@ -14,7 +14,7 @@ describe('🔴 Phase 3: 진짜 미사용 기능 제거', () => {
       // 브랜드 일관성, 접근성, 성능 최적화 모두 완료된 핵심 기능
 
       try {
-        const styleManager = await import('@shared/styles/UnifiedStyleManager');
+        const styleManager = await import('@shared/styles/StyleManager');
 
         // 핵심 Glassmorphism 기능들이 잘 구현되어 있음을 확인
         expect(styleManager.default.applyGlassmorphism).toBeDefined();
@@ -66,7 +66,7 @@ describe('🔴 Phase 3: 진짜 미사용 기능 제거', () => {
   describe('✅ GREEN: Glassmorphism 시스템 유지 및 강화 (수정됨)', () => {
     it('Glassmorphism이 핵심 UI 기능으로 잘 설계되었다', async () => {
       try {
-        const styleManager = await import('@shared/styles/UnifiedStyleManager');
+        const styleManager = await import('@shared/styles/StyleManager');
 
         // 핵심 Glassmorphism 기능들이 잘 구현되어 있음
         expect(styleManager.default.applyGlassmorphism).toBeDefined();
@@ -116,7 +116,7 @@ describe('🔴 Phase 3: 진짜 미사용 기능 제거', () => {
 
   describe('GREEN: 간단한 토큰 관리 구현', () => {
     it('기본적인 CSS 토큰 관리만 구현되어야 한다', async () => {
-      const tokenManager = await import('@/shared/styles/simple-token-manager');
+      const tokenManager = await import('@/shared/styles/token-manager');
 
       // 기본 토큰 기능만 확인
       expect(tokenManager.setToken).toBeDefined();
@@ -168,7 +168,7 @@ describe('🔴 Phase 3: 진짜 미사용 기능 제거', () => {
 
   describe('GREEN: 간단한 성능 유틸리티 구현', () => {
     it('간단한 debounce/throttle 함수들만 제공되어야 한다', async () => {
-      const { debounce } = await import('@/shared/utils/simple-performance');
+      const { debounce } = await import('@/shared/utils/performance');
 
       let callCount = 0;
       const testFn = () => {

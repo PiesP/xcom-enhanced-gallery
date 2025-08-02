@@ -329,6 +329,11 @@ export const componentUtils = {
 };
 
 /**
+ * Named export for backward compatibility
+ */
+export const ComponentManager = UnifiedComponentManager;
+
+/**
  * 기본 내보내기
  */
 export default UnifiedComponentManager;

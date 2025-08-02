@@ -24,7 +24,7 @@ describe('🔴 Phase 2: 중복 구현 통합', () => {
 
     it('통합된 메모리 관리자가 아직 존재하지 않는다', async () => {
       try {
-        await import('@shared/memory/unified-memory-manager');
+        await import('@shared/memory/memory-manager');
         expect(true).toBe(false); // 아직 존재하지 않아야 함
       } catch {
         expect(true).toBe(true); // 예상된 결과
@@ -35,7 +35,7 @@ describe('🔴 Phase 2: 중복 구현 통합', () => {
   describe('GREEN: 통합된 메모리 관리자 구현', () => {
     it('통합된 메모리 관리자가 구현되어야 한다', async () => {
       try {
-        const memoryManager = await import('@shared/memory/unified-memory-manager');
+        const memoryManager = await import('@shared/memory/memory-manager');
 
         expect(memoryManager.registerResource).toBeDefined();
         expect(memoryManager.releaseResource).toBeDefined();
@@ -51,7 +51,7 @@ describe('🔴 Phase 2: 중복 구현 통합', () => {
     it('통합 메모리 관리자가 기존 기능을 모두 지원해야 한다', async () => {
       try {
         const { registerResource, releaseResource, getMemoryStatus, cleanupResources } =
-          await import('@shared/memory/unified-memory-manager');
+          await import('@shared/memory/memory-manager');
 
         // 리소스 등록/해제
         registerResource('test-resource', () => {});
@@ -87,7 +87,7 @@ describe('🔴 Phase 2: 중복 구현 통합', () => {
 
     it('통합된 DOM 유틸리티가 존재하지 않는다', async () => {
       try {
-        await import('@shared/dom/simple-dom-utils');
+        await import('@shared/dom/dom-utils');
         expect(true).toBe(false);
       } catch {
         expect(true).toBe(true);
@@ -98,7 +98,7 @@ describe('🔴 Phase 2: 중복 구현 통합', () => {
   describe('GREEN: 간단한 DOM 유틸리티 구현', () => {
     it('간단한 DOM 유틸리티가 구현되어야 한다', async () => {
       try {
-        const domUtils = await import('@shared/dom/simple-dom-utils');
+        const domUtils = await import('@shared/dom/dom-utils');
 
         expect(domUtils.querySelector).toBeDefined();
         expect(domUtils.querySelectorAll).toBeDefined();
@@ -114,7 +114,7 @@ describe('🔴 Phase 2: 중복 구현 통합', () => {
 
     it('DOM 유틸리티가 기본적인 캐싱을 지원해야 한다', async () => {
       try {
-        const { querySelector, clearCache } = await import('@shared/dom/simple-dom-utils');
+        const { querySelector, clearCache } = await import('@shared/dom/dom-utils');
 
         // 기본 기능 테스트
         const element = querySelector('.test-element');
@@ -213,26 +213,26 @@ describe('🔴 Phase 2: 중복 구현 통합', () => {
       }
     });
 
-    it('UnifiedDOMManager가 간단한 DOM 유틸리티를 사용하도록 변경되어야 한다', async () => {
+    it('DOMManager가 간단한 DOM 유틸리티를 사용하도록 변경되어야 한다', async () => {
       try {
-        const { UnifiedDOMManager } = await import('@shared/dom/UnifiedDOMManager');
+        const { DOMManager } = await import('@shared/dom/DOMManager');
 
-        // UnifiedDOMManager가 여전히 거대한지 확인
-        const instance = new UnifiedDOMManager();
+        // DOMManager가 여전히 거대한지 확인
+        const instance = new DOMManager();
         const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(instance)).filter(
           name => name !== 'constructor' && typeof instance[name] === 'function'
         );
 
         // 리팩토링 후에는 15개 미만으로 줄어야 함
         if (methods.length < 15) {
-          console.log('✅ UnifiedDOMManager 단순화 완료:', methods.length, '개 메서드');
+          console.log('✅ DOMManager 단순화 완료:', methods.length, '개 메서드');
           expect(methods.length).toBeLessThan(15);
         } else {
-          console.log('UnifiedDOMManager 아직 단순화 필요:', methods.length, '개 메서드');
+          console.log('DOMManager 아직 단순화 필요:', methods.length, '개 메서드');
           expect(true).toBe(true); // 현재는 통과
         }
       } catch (error) {
-        console.log('UnifiedDOMManager 체크 실패:', error);
+        console.log('DOMManager 체크 실패:', error);
         expect(true).toBe(true);
       }
     });

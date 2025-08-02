@@ -13,8 +13,8 @@ describe('TDD Style & Component Consolidation', () => {
 
       // RED: 현재는 통합된 스타일 관리자가 없어서 실패해야 함
       expect(() => {
-        const UnifiedStyleManager = require('../../src/shared/styles/UnifiedStyleManager').default;
-        return UnifiedStyleManager;
+        const StyleManager = require('../../src/shared/styles/StyleManager').default;
+        return StyleManager;
       }).toThrow();
     });
 
@@ -83,26 +83,22 @@ describe('TDD Style & Component Consolidation', () => {
       global.getComputedStyle = vi.fn().mockReturnValue(mockCSS);
     });
 
-    it('UnifiedStyleManager가 통합된 스타일 관리를 제공해야 함', async () => {
-      // GREEN: UnifiedStyleManager 구현 검증
-      const { default: UnifiedStyleManager } = await import(
-        '../../src/shared/styles/UnifiedStyleManager'
-      );
+    it('StyleManager가 통합된 스타일 관리를 제공해야 함', async () => {
+      // GREEN: StyleManager 구현 검증
+      const { default: StyleManager } = await import('../../src/shared/styles/StyleManager');
 
-      expect(UnifiedStyleManager).toBeDefined();
-      expect(UnifiedStyleManager.applyGlassmorphism).toBeDefined();
-      expect(UnifiedStyleManager.setTheme).toBeDefined();
-      expect(UnifiedStyleManager.combineClasses).toBeDefined();
-      expect(UnifiedStyleManager.setTokenValue).toBeDefined();
+      expect(StyleManager).toBeDefined();
+      expect(StyleManager.applyGlassmorphism).toBeDefined();
+      expect(StyleManager.setTheme).toBeDefined();
+      expect(StyleManager.combineClasses).toBeDefined();
+      expect(StyleManager.setTokenValue).toBeDefined();
     });
 
     it('글래스모피즘 통합 적용이 작동해야 함', async () => {
-      const { default: UnifiedStyleManager } = await import(
-        '../../src/shared/styles/UnifiedStyleManager'
-      );
+      const { default: StyleManager } = await import('../../src/shared/styles/StyleManager');
 
       // 글래스모피즘 적용
-      UnifiedStyleManager.applyGlassmorphism(mockElement, 'medium');
+      StyleManager.applyGlassmorphism(mockElement, 'medium');
 
       // 통합된 스타일이 적용되었는지 검증
       expect(mockElement.style.backdropFilter).toBe('blur(16px)');
@@ -111,12 +107,10 @@ describe('TDD Style & Component Consolidation', () => {
     });
 
     it('통합 토큰 관리가 작동해야 함', async () => {
-      const { default: UnifiedStyleManager } = await import(
-        '../../src/shared/styles/UnifiedStyleManager'
-      );
+      const { default: StyleManager } = await import('../../src/shared/styles/StyleManager');
 
       // 토큰 설정
-      UnifiedStyleManager.setTokenValue('--xeg-primary', '#1d9bf0', mockElement);
+      StyleManager.setTokenValue('--xeg-primary', '#1d9bf0', mockElement);
 
       // 통합된 토큰이 설정되었는지 검증 (토큰 매핑 확인)
       expect(mockElement.style.setProperty).toHaveBeenCalledWith(
@@ -126,31 +120,21 @@ describe('TDD Style & Component Consolidation', () => {
     });
 
     it('유틸리티 클래스 통합이 작동해야 함', async () => {
-      const { default: UnifiedStyleManager } = await import(
-        '../../src/shared/styles/UnifiedStyleManager'
-      );
+      const { default: StyleManager } = await import('../../src/shared/styles/StyleManager');
 
       // 클래스 결합
-      const combined = UnifiedStyleManager.combineClasses(
-        'btn',
-        'primary',
-        null,
-        undefined,
-        'active'
-      );
+      const combined = StyleManager.combineClasses('btn', 'primary', null, undefined, 'active');
       expect(combined).toBe('btn primary active');
 
       // 테마 적용
-      UnifiedStyleManager.setTheme(mockElement, 'dark');
+      StyleManager.setTheme(mockElement, 'dark');
       expect(mockElement.classList.add).toHaveBeenCalledWith('theme-dark');
     });
   });
 
   describe('REFACTOR Phase: 성능 최적화', () => {
     it('통합 스타일 매니저의 성능을 측정해야 함', async () => {
-      const { default: UnifiedStyleManager } = await import(
-        '../../src/shared/styles/UnifiedStyleManager'
-      );
+      const { default: StyleManager } = await import('../../src/shared/styles/StyleManager');
 
       // 성능 벤치마크
       const startTime = performance.now();
@@ -158,7 +142,7 @@ describe('TDD Style & Component Consolidation', () => {
       // 100개 요소에 글래스모피즘 적용
       for (let i = 0; i < 100; i++) {
         const element = { style: {}, classList: { add: vi.fn() } } as any;
-        UnifiedStyleManager.applyGlassmorphism(element, 'medium');
+        StyleManager.applyGlassmorphism(element, 'medium');
       }
 
       const endTime = performance.now();
@@ -169,16 +153,14 @@ describe('TDD Style & Component Consolidation', () => {
     });
 
     it('메모리 사용량이 최적화되어야 함', async () => {
-      const { default: UnifiedStyleManager } = await import(
-        '../../src/shared/styles/UnifiedStyleManager'
-      );
+      const { default: StyleManager } = await import('../../src/shared/styles/StyleManager');
 
       // 메모리 사용량 모니터링
       const initialMemory = process.memoryUsage().heapUsed;
 
       // 대량 스타일 작업 수행
       for (let i = 0; i < 1000; i++) {
-        UnifiedStyleManager.combineClasses(`class-${i}`, 'active');
+        StyleManager.combineClasses(`class-${i}`, 'active');
       }
 
       const finalMemory = process.memoryUsage().heapUsed;
@@ -198,12 +180,12 @@ describe('TDD Style & Component Consolidation', () => {
       };
 
       const afterConsolidation = {
-        unifiedStyleManager: 680, // 통합된 코드
+        StyleManager: 680, // 통합된 코드
         redundancyReduction: 560, // 제거된 중복 코드
       };
 
       const sizeBefore = Object.values(beforeConsolidation).reduce((a, b) => a + b, 0);
-      const sizeAfter = afterConsolidation.unifiedStyleManager;
+      const sizeAfter = afterConsolidation.StyleManager;
       const reduction = ((sizeBefore - sizeAfter) / sizeBefore) * 100;
 
       // 45% 이상 코드 크기 감소
@@ -211,9 +193,7 @@ describe('TDD Style & Component Consolidation', () => {
     });
 
     it('API 일관성이 유지되어야 함', async () => {
-      const { default: UnifiedStyleManager } = await import(
-        '../../src/shared/styles/UnifiedStyleManager'
-      );
+      const { default: StyleManager } = await import('../../src/shared/styles/StyleManager');
 
       // 모든 주요 API가 존재하는지 검증
       const requiredMethods = [
@@ -227,8 +207,8 @@ describe('TDD Style & Component Consolidation', () => {
       ];
 
       requiredMethods.forEach(method => {
-        expect(UnifiedStyleManager[method]).toBeDefined();
-        expect(typeof UnifiedStyleManager[method]).toBe('function');
+        expect(StyleManager[method]).toBeDefined();
+        expect(typeof StyleManager[method]).toBe('function');
       });
     });
   });
@@ -249,13 +229,11 @@ describe('TDD Style & Component Consolidation', () => {
 
     it('빌드 시스템 통합이 원활해야 함', async () => {
       // CSS 모듈과의 통합 검증
-      const { default: UnifiedStyleManager } = await import(
-        '../../src/shared/styles/UnifiedStyleManager'
-      );
+      const { default: StyleManager } = await import('../../src/shared/styles/StyleManager');
 
       // CSS 모듈 클래스와 유틸리티 클래스 결합
       const moduleClass = 'Button_button__abc123';
-      const combined = UnifiedStyleManager.combineClasses(
+      const combined = StyleManager.combineClasses(
         moduleClass,
         'xeg-glassmorphism',
         'xeg-theme-dark'

@@ -11,7 +11,7 @@ import { DOMUtils } from '@shared/dom/utils/dom-utils';
 import { globalDOMCache } from '@shared/dom/DOMCache';
 import { globalDOMBatcher } from '@shared/utils/dom/DOMBatcher';
 import { safeQuerySelector } from '@shared/utils/core-utils';
-import { globalDOMManager, select, cachedSelect } from '@shared/dom/UnifiedDOMManager';
+import { globalDOMManager, select, cachedSelect } from '@shared/dom/DOMManager';
 
 describe('🔴 RED: DOM 유틸리티 중복 식별', () => {
   beforeEach(() => {

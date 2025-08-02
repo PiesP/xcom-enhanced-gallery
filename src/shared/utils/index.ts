@@ -8,7 +8,6 @@ export {
   setCSSVariable,
   updateComponentState,
   removeDuplicates,
-  rafThrottle,
   measurePerformance,
   throttleScroll,
   canTriggerGallery,
@@ -17,7 +16,8 @@ export {
   findTwitterScrollContainer,
 } from './utils';
 
-// === 성능 관련 (1개) ===
+// === 성능 관련 (2개) ===
+export { rafThrottle } from './performance/performance-utils';
 export { createDebouncer } from './performance/performance-utils';
 
 // === 최적화 유틸리티 ===

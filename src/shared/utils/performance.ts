@@ -9,6 +9,9 @@ import { createScopedLogger } from '@shared/logging/logger';
 
 const logger = createScopedLogger('SimplePerformance');
 
+// Re-export rafThrottle from performance-utils for backward compatibility
+export { rafThrottle, measurePerformance } from './performance/performance-utils';
+
 /**
  * 간단한 디바운스 함수
  */

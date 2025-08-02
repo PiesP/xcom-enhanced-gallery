@@ -6,7 +6,7 @@ export { DOMEventManager, createEventManager } from './DOMEventManager';
 
 // 🆕 통합 DOM 매니저 (권장)
 export {
-  UnifiedDOMManager,
+  DOMManager,
   globalDOMManager,
   select,
   selectAll,
@@ -18,7 +18,7 @@ export {
   safeQuerySelector,
   isInsideGallery,
   type DOMElementCreationOptions,
-} from './UnifiedDOMManager';
+} from './DOMManager';
 
 // 레거시 DOM utilities (하위 호환성)
 export {
