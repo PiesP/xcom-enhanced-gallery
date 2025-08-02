@@ -153,11 +153,10 @@ export function setupMockDOM() {
 /**
  * DOM 환경 정리
  */
-export function cleanupMockDOM() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (globalThis as any).document;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (globalThis as any).window;
+export function cleanupMockDOM(): void {
+  const globalObj = globalThis as Record<string, unknown>;
+  delete globalObj.document;
+  delete globalObj.window;
 }
 
 /**

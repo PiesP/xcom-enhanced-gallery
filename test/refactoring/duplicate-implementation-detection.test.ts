@@ -135,60 +135,45 @@ describe('TDD Phase 1: 중복 구현 검증', () => {
 
   describe('GREEN: 핵심 기능 동작 검증', () => {
     it('갤러리 서비스가 정상적으로 동작해야 함', async () => {
-      try {
-        const { GalleryService } = await import('../../src/shared/services/gallery/GalleryService');
-        const service = GalleryService.getInstance();
+      const { GalleryService } = await import('../../src/shared/services/gallery/GalleryService');
+      const service = GalleryService.getInstance();
 
-        // 기본 메서드들이 존재하는지 확인
-        expect(typeof service.openGallery).toBe('function');
-        expect(typeof service.closeGallery).toBe('function');
-        expect(service.isInitialized).toBe(false); // 초기화 전이므로 false
+      // 기본 메서드들이 존재하는지 확인
+      expect(typeof service.openGallery).toBe('function');
+      expect(typeof service.closeGallery).toBe('function');
+      expect(service.isInitialized).toBe(false); // 초기화 전이므로 false
 
-        // 초기화 상태 확인
-        expect(typeof service.isInitialized).toBe('boolean');
-      } catch (error) {
-        // 갤러리 서비스 로드 실패
-        throw error;
-      }
+      // 초기화 상태 확인
+      expect(typeof service.isInitialized).toBe('boolean');
     });
 
     it('미디어 서비스가 정상적으로 동작해야 함', async () => {
-      try {
-        const { MediaService } = await import('../../src/shared/services/MediaService');
-        const service = MediaService.getInstance();
+      const { MediaService } = await import('../../src/shared/services/MediaService');
+      const service = MediaService.getInstance();
 
-        // 기본 메서드들이 존재하는지 확인
-        expect(typeof service.extractMedia).toBe('function');
-        expect(typeof service.extractMediaWithUsername).toBe('function');
+      // 기본 메서드들이 존재하는지 확인
+      expect(typeof service.extractMedia).toBe('function');
+      expect(typeof service.extractMediaWithUsername).toBe('function');
 
-        // 서비스가 로드되었는지 확인
-        expect(service).toBeDefined();
-      } catch (error) {
-        // 미디어 서비스 로드 실패
-        throw error;
-      }
+      // 서비스가 로드되었는지 확인
+      expect(service).toBeDefined();
     });
 
     it('핵심 유틸리티들이 정상적으로 동작해야 함', async () => {
-      try {
-        const utils = await import('../../src/shared/utils');
+      const utils = await import('../../src/shared/utils');
 
-        // 핵심 유틸리티 함수들 확인
-        expect(typeof utils.combineClasses).toBe('function');
-        expect(typeof utils.createDebouncer).toBe('function');
-        expect(typeof utils.removeDuplicates).toBe('function');
+      // 핵심 유틸리티 함수들 확인
+      expect(typeof utils.combineClasses).toBe('function');
+      expect(typeof utils.createDebouncer).toBe('function');
+      expect(typeof utils.removeDuplicates).toBe('function');
 
-        // 실제 동작 테스트
-        const combined = utils.combineClasses('class1', null, 'class2', undefined, 'class3');
-        expect(combined).toBe('class1 class2 class3');
+      // 실제 동작 테스트
+      const combined = utils.combineClasses('class1', null, 'class2', undefined, 'class3');
+      expect(combined).toBe('class1 class2 class3');
 
-        const testArray = [1, 2, 2, 3, 3, 4];
-        const uniqueArray = utils.removeDuplicates(testArray);
-        expect(uniqueArray).toEqual([1, 2, 3, 4]);
-      } catch (error) {
-        // 유틸리티 로드 실패
-        throw error;
-      }
+      const testArray = [1, 2, 2, 3, 3, 4];
+      const uniqueArray = utils.removeDuplicates(testArray);
+      expect(uniqueArray).toEqual([1, 2, 3, 4]);
     });
   });
 

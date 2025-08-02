@@ -6,6 +6,11 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES 모듈에서 __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('Phase 1: 중복 구현 통합 TDD', () => {
   describe('Step 1: 애니메이션 시스템 중복 제거', () => {
@@ -41,12 +46,10 @@ describe('Phase 1: 중복 구현 통합 TDD', () => {
   describe('Step 2: 테스트 팩토리 중복 제거', () => {
     it('JavaScript와 TypeScript 테스트 팩토리가 중복되어서는 안 됨 (실패해야 함)', () => {
       // RED: 파일 시스템에서 실제 JavaScript 팩토리 파일 존재 확인
-      const jsFactoryExists = existsSync(
-        path.join(process.cwd(), 'test/utils/helpers/test-factories.js')
-      );
-      const tsFactoryExists = existsSync(
-        path.join(process.cwd(), 'test/utils/fixtures/test-factories.ts')
-      );
+      const jsFactoryPath = path.resolve(__dirname, '../utils/helpers/test-factories.js');
+      const tsFactoryPath = path.resolve(__dirname, '../utils/fixtures/test-factories.ts');
+      
+      const jsFactoryExists = existsSync(jsFactoryPath);
 
       // JavaScript 팩토리가 삭제되어야 함
       expect(jsFactoryExists).toBe(false);
@@ -66,12 +69,8 @@ describe('Phase 1: 중복 구현 통합 TDD', () => {
   describe('Step 3: Vendor Mock 중복 제거', () => {
     it('vendor-mocks.ts와 vendor-mocks-clean.ts가 중복되어서는 안 됨 (실패해야 함)', () => {
       // RED: 파일 시스템에서 실제 중복 파일 존재 확인
-      const vendorMocksExists = existsSync(
-        path.join(process.cwd(), 'test/utils/mocks/vendor-mocks.ts')
-      );
-      const vendorMocksCleanExists = existsSync(
-        path.join(process.cwd(), 'test/utils/mocks/vendor-mocks-clean.ts')
-      );
+      const vendorMocksCleanPath = path.resolve(__dirname, '../utils/mocks/vendor-mocks-clean.ts');
+      const vendorMocksCleanExists = existsSync(vendorMocksCleanPath);
 
       // clean 버전이 삭제되어야 함
       expect(vendorMocksCleanExists).toBe(false);
@@ -92,9 +91,9 @@ describe('Phase 1: 중복 구현 통합 TDD', () => {
     it('여러 DOM Mock 구현이 중복되어서는 안 됨 (실패해야 함)', () => {
       // RED: 실제 파일 시스템에서 DOM Mock 파일 수 확인
       const domMockFiles = [
-        path.join(process.cwd(), 'test/utils/mocks/dom-mocks.ts'),
-        path.join(process.cwd(), 'test/__mocks__/twitter-dom.mock.ts'),
-        path.join(process.cwd(), 'test/utils/dom-test-utils.ts'),
+        path.resolve(__dirname, '../utils/mocks/dom-mocks.ts'),
+        path.resolve(__dirname, '../__mocks__/twitter-dom.mock.ts'),
+        path.resolve(__dirname, '../utils/dom-test-utils.ts'),
       ].filter(file => existsSync(file));
 
       // 3개 이상의 DOM Mock 구현이 있으므로 실패해야 함
