@@ -307,7 +307,7 @@ export { galleryDebugUtils } from './debug/gallery-debug';
 // Performance utilities re-export
 // ================================
 
-export { Debouncer, createDebouncer } from './performance/performance-utils';
+export { Debouncer } from './performance/performance-utils';
 
 /**
  * Twitter URL에서 트윗 정보 추출

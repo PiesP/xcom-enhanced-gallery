@@ -38,7 +38,6 @@ export {
   extractTweetInfoFromUrl,
   rafThrottle,
   throttleScroll,
-  createDebouncer,
   safeElementCheck,
   canTriggerGallery,
   isGalleryInternalElement,

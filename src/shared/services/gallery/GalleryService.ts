@@ -674,6 +674,14 @@ export class GalleryService {
   }
 
   /**
+   * 현재 미디어 아이템 조회
+   */
+  getCurrentMediaItem(): MediaInfo | null {
+    this.ensureSystemInitialized();
+    return getCurrentMediaItem();
+  }
+
+  /**
    * 미디어 아이템 유효성 검증
    */
   private validateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {

@@ -4,8 +4,6 @@
  * @version 1.0.0
  */
 
-import { createDebouncer } from './performance/performance-utils';
-
 /**
  * 타이머 관리자
  * 모든 타이머를 추적하고 일괄 정리할 수 있는 유틸리티
@@ -95,9 +93,5 @@ export function safePerformanceNow(): number {
 export {
   measurePerformance,
   measureAsyncPerformance,
-  createDebouncer,
   rafThrottle,
 } from './performance/performance-utils';
-
-// Aliases for backward compatibility
-export const createManagedDebounce = createDebouncer;

@@ -8,7 +8,6 @@ export {
   setCSSVariable,
   updateComponentState,
   removeDuplicates,
-  createDebouncer,
   rafThrottle,
   measurePerformance,
   throttleScroll,
@@ -17,6 +16,9 @@ export {
   ensureGalleryScrollAvailable,
   findTwitterScrollContainer,
 } from './utils';
+
+// === 성능 관련 (1개) ===
+export { createDebouncer } from './performance/performance-utils';
 
 // === 타이머 관리 (2개) ===
 export { TimerManager, globalTimerManager } from './timer-management';

@@ -55,10 +55,10 @@ describe('Phase 4 Final Cleanup - Master Test Suite', () => {
       ).length;
       expect(serviceCount).toBeLessThanOrEqual(9);
 
-      // 2. 핵심 유틸리티 접근 가능 (통합된 함수 사용)
+      // 2. 통합된 기능들
       expect(utils.removeDuplicates).toBeDefined(); // removeDuplicateStrings → removeDuplicates 통합됨
       expect(utils.combineClasses).toBeDefined();
-      expect(utils.createDebouncer).toBeDefined();
+      // createDebouncer는 이제 performance-utils에서만 export됨 (중복 제거 완료)
 
       // 3. 명명 일관성
       const serviceNames = Object.keys(services).filter(key => key.includes('Service'));

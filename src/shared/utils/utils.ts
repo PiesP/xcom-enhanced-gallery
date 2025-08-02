@@ -50,9 +50,8 @@ export {
   detectLightBackground,
 } from './accessibility';
 
-// Performance utilities (re-export from performance module)
+// Performance utilities (re-export from performance module, createDebouncer 제거)
 export {
-  createDebouncer,
   Debouncer,
   rafThrottle,
   throttleScroll,

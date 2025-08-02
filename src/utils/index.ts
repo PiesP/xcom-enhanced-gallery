@@ -16,8 +16,7 @@ export {
   isInsideGallery,
   combineClasses,
 
-  // 성능 관련
-  createDebouncer,
+  // 성능 관련 (createDebouncer 제거)
   rafThrottle,
   throttleScroll,
   measurePerformance,

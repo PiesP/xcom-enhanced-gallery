@@ -7,24 +7,46 @@
  * Motion One 라이브러리 의존성 제거 및 번들 크기 최적화
  */
 
-// CSS 기반 애니메이션 시스템으로 완전 교체
-export {
-  injectAnimationStyles,
-  animateGalleryEnter,
-  animateGalleryExit,
-  animateImageItemsEnter,
-  cleanupAnimations,
+// AnimationService 기반 시스템으로 완전 교체 - 중복 제거
+import {
+  AnimationService,
   ANIMATION_CLASSES,
   ANIMATION_CONSTANTS,
-  type CSSAnimationOptions,
-} from './css-animations';
+  type AnimationConfig as CSSAnimationOptions,
+} from '../services/AnimationService';
 
-// 기존 함수들을 CSS 기반으로 리다이렉트하여 하위 호환성 유지
-export {
-  animateGalleryEnter as animateToolbarShow,
-  animateGalleryExit as animateToolbarHide,
-  animateGalleryEnter as animateImageLoad,
-} from './css-animations';
+const animationService = AnimationService.getInstance();
+
+// 애니메이션 함수들을 AnimationService로 리다이렉트
+export const injectAnimationStyles = () => {
+  // AnimationService는 자동으로 스타일을 주입하므로 getInstance만 호출
+  AnimationService.getInstance();
+};
+export const animateGalleryEnter = (element: HTMLElement) =>
+  animationService.animateGalleryEnter(element);
+export const animateGalleryExit = (element: HTMLElement) =>
+  animationService.animateGalleryExit(element);
+export const animateImageItemsEnter = (elements: HTMLElement[]) =>
+  animationService.animateImageItemsEnter(elements);
+export const cleanupAnimations = (element?: HTMLElement) => {
+  if (element) {
+    animationService.cleanupAnimations(element);
+  } else {
+    // 전역 정리는 document.body를 대상으로
+    animationService.cleanupAnimations(document.body);
+  }
+};
+
+// 상수들 재내보내기
+export { ANIMATION_CLASSES, ANIMATION_CONSTANTS, type CSSAnimationOptions };
+
+// 기존 함수들을 AnimationService로 리다이렉트하여 하위 호환성 유지
+export const animateToolbarShow = (element: HTMLElement) =>
+  animationService.animateGalleryEnter(element);
+export const animateToolbarHide = (element: HTMLElement) =>
+  animationService.animateGalleryExit(element);
+export const animateImageLoad = (element: HTMLElement) =>
+  animationService.animateGalleryEnter(element);
 
 // Motion One 관련 함수들을 CSS 기반으로 교체
 export const animateCustom = async (
