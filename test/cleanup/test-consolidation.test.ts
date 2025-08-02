@@ -117,15 +117,19 @@ describe('Phase 3: 테스트 코드 정리 및 표준화', () => {
       for (const test of phaseTests) {
         const content = fs.readFileSync(test.path, 'utf-8');
 
-        // Phase 번호나 단계별 describe 블록 확인 (더 관대한 패턴)
+        // Phase 번호나 단계별 describe 블록 확인 (실제 사용되는 패턴들)
         const hasPhasePattern =
           content.includes('Phase ') ||
           content.includes('단계') ||
           content.includes('phase-') ||
-          content.includes('Phase D:') ||
-          content.includes('Phase E:') ||
-          content.includes('Phase G:') ||
-          content.includes('Phase H:');
+          content.includes('Phase 1:') ||
+          content.includes('Phase 2:') ||
+          content.includes('Phase 3:') ||
+          content.includes('Phase 4:') ||
+          content.includes('TDD Phase') ||
+          content.includes('Phase A:') ||
+          content.includes('Phase B:') ||
+          content.includes('Phase C:');
 
         expect(hasPhasePattern).toBe(true);
 

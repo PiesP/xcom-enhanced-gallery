@@ -47,8 +47,7 @@ describe('Phase 1: 중복 구현 통합 TDD', () => {
     it('JavaScript와 TypeScript 테스트 팩토리가 중복되어서는 안 됨 (실패해야 함)', () => {
       // RED: 파일 시스템에서 실제 JavaScript 팩토리 파일 존재 확인
       const jsFactoryPath = path.resolve(__dirname, '../utils/helpers/test-factories.js');
-      const tsFactoryPath = path.resolve(__dirname, '../utils/fixtures/test-factories.ts');
-      
+
       const jsFactoryExists = existsSync(jsFactoryPath);
 
       // JavaScript 팩토리가 삭제되어야 함
