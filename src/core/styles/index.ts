@@ -159,7 +159,6 @@ export class CoreStyleManager {
     element.style.transform = 'translateZ(0)';
     element.style.contain = 'layout style paint';
     element.style.position = 'relative';
-    element.style.overflow = 'hidden';
   }
 
   /**

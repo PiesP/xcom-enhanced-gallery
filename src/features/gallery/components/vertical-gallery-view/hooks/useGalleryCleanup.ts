@@ -107,12 +107,10 @@ export function useGalleryCleanup({
     if (isCleanedUp.current) return;
 
     try {
-      // 스크롤 잠금 기능이 제거되었음 - 갤러리는 자체 컨테이너에서만 동작
+      // Gallery operates only within its own container
       logger.debug('useGalleryCleanup: 페이지 상태 복원 시작');
 
-      // 갤러리 컨테이너는 격리되어 있으므로 body 스타일 조작 불필요
-      // 추가 스타일 정리
-      document.body.style.removeProperty('pointer-events');
+      // 갤러리 컨테이너는 완전히 격리되어 있으므로 body 스타일 조작 없음
 
       // 🔑 개선: 갤러리 상태 명시적 초기화 (이벤트 리스너 정리 보장)
       if (galleryState.value.isOpen) {

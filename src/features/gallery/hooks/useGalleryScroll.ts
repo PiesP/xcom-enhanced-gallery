@@ -20,8 +20,6 @@ interface UseGalleryScrollOptions {
   onScroll?: (delta: number) => void;
   /** 스크롤 처리 활성화 여부 */
   enabled?: boolean;
-  /** 트위터 페이지 스크롤 차단 여부 */
-  blockTwitterScroll?: boolean;
   /** 스크롤 방향 감지 활성화 여부 */
   enableScrollDirection?: boolean;
   /** 스크롤 방향 변경 콜백 */
@@ -53,7 +51,6 @@ export function useGalleryScroll({
   container,
   onScroll,
   enabled = true,
-  blockTwitterScroll = true,
   enableScrollDirection = false,
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
@@ -142,15 +139,8 @@ export function useGalleryScroll({
         onScroll(delta);
       }
 
-      // 🔑 개선된 스크롤 차단 로직: 갤러리 외부에서만 차단
-      if (blockTwitterScroll && !isInsideGallery) {
-        event.preventDefault();
-        event.stopPropagation();
-        logger.debug('useGalleryScroll: 외부 스크롤 차단', {
-          targetElement: eventTarget?.tagName || 'unknown',
-          targetClass: eventTarget?.className || 'none',
-        });
-      } else if (isInsideGallery) {
+      // 갤러리 내부 스크롤 허용
+      if (isInsideGallery) {
         logger.debug('useGalleryScroll: 갤러리 내부 스크롤 허용', {
           targetElement: eventTarget?.tagName || 'unknown',
           targetClass: eventTarget?.className || 'none',
@@ -164,20 +154,12 @@ export function useGalleryScroll({
         delta,
         isGalleryOpen: galleryState.value.isOpen,
         isInsideGallery,
-        eventBlocked: blockTwitterScroll && !isInsideGallery,
         targetElement: eventTarget?.tagName || 'unknown',
         targetClass: eventTarget?.className || 'none',
         timestamp: Date.now(),
       });
     },
-    [
-      container,
-      onScroll,
-      blockTwitterScroll,
-      updateScrollState,
-      handleScrollEnd,
-      updateScrollDirection,
-    ]
+    [container, onScroll, updateScrollState, handleScrollEnd, updateScrollDirection]
   );
 
   // 🎯 정밀한 갤러리 스크롤 처리 - 갤러리 내외부 구분하여 이벤트 제어
@@ -195,37 +177,8 @@ export function useGalleryScroll({
       });
     }
 
-    // 트위터 스크롤 차단 (document 레벨에서 갤러리 외부 이벤트만 차단)
-    if (blockTwitterScroll) {
-      const preventTwitterScroll = (event: WheelEvent) => {
-        // 갤러리가 열려있지 않으면 차단하지 않음
-        if (!galleryState.value.isOpen) {
-          return;
-        }
-
-        const eventTarget = event.target as HTMLElement;
-        const isInsideGallery = container?.contains(eventTarget);
-
-        // 갤러리 내부 이벤트는 허용, 외부에서만 차단
-        if (!isInsideGallery) {
-          event.preventDefault();
-          event.stopPropagation();
-          logger.debug('useGalleryScroll: 트위터 외부 스크롤 차단', {
-            targetElement: eventTarget?.tagName || 'unknown',
-          });
-        }
-      };
-
-      // document 레벨에서 캡처하여 모든 외부 스크롤 차단
-      eventManager.addEventListener(document, 'wheel', preventTwitterScroll, {
-        capture: true,
-        passive: false,
-      });
-    }
-
-    logger.debug('useGalleryScroll: 정밀한 이벤트 리스너 등록 완료', {
+    logger.debug('useGalleryScroll: 이벤트 리스너 등록 완료', {
       hasContainer: !!container,
-      blockTwitterScroll,
     });
 
     return () => {
@@ -243,7 +196,7 @@ export function useGalleryScroll({
 
       logger.debug('useGalleryScroll: 정리 완료 (정밀한 버전)');
     };
-  }, [enabled, container, blockTwitterScroll, handleGalleryWheel]);
+  }, [enabled, container, handleGalleryWheel]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {

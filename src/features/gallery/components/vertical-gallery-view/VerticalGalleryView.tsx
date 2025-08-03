@@ -300,38 +300,6 @@ function VerticalGalleryViewCore({
     }
   }, [mediaItems.length, isVisible]);
 
-  // Body 스크롤 격리 - 갤러리 열림/닫힘 시 body 스크롤 제어
-  useEffect(() => {
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalBodyHeight = document.body.style.height;
-
-    if (isVisible) {
-      // 갤러리 열림 시 body 스크롤 완전 차단
-      document.body.style.overflow = 'hidden';
-      document.body.style.height = '100vh';
-
-      logger.debug('VerticalGalleryView: Body 스크롤 차단', {
-        originalOverflow: originalBodyOverflow,
-        originalHeight: originalBodyHeight,
-      });
-    } else {
-      // 갤러리 닫힘 시 원래 상태 복원
-      document.body.style.overflow = originalBodyOverflow;
-      document.body.style.height = originalBodyHeight;
-
-      logger.debug('VerticalGalleryView: Body 스크롤 복원', {
-        restoredOverflow: originalBodyOverflow,
-        restoredHeight: originalBodyHeight,
-      });
-    }
-
-    return () => {
-      // 컴포넌트 언마운트 시 항상 원래 상태로 복원
-      document.body.style.overflow = originalBodyOverflow;
-      document.body.style.height = originalBodyHeight;
-    };
-  }, [isVisible]);
-
   // 갤러리 진입/종료 애니메이션
   useEffect(() => {
     if (containerRef.current) {
@@ -389,7 +357,6 @@ function VerticalGalleryViewCore({
       // 순수 CSS 호버 시스템으로 인해 별도의 UI 타이머 재설정 불필요
     },
     enabled: isVisible,
-    blockTwitterScroll: true,
   });
 
   // 부드러운 스크롤 애니메이션 설정
@@ -690,11 +657,6 @@ function VerticalGalleryViewCore({
           data-xeg-role='items-list'
           style={virtualScroll.isVirtualScrolling ? virtualScroll.listStyle : undefined}
           onScroll={virtualScroll.isVirtualScrolling ? virtualScroll.onScroll : undefined}
-          onWheel={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-          }}
         >
           {itemsToRender.map((item, index) => {
             // 가상 스크롤링 사용 시 실제 인덱스 계산

@@ -42,17 +42,9 @@ export function createScrollDebouncer(callback: () => void, delay: number = 150)
 /**
  * 스크롤 전파 방지
  */
-export function preventScrollPropagation(
-  element: HTMLElement,
-  options: { disableBodyScroll?: boolean } = {}
-): () => void {
-  const { disableBodyScroll = false } = options;
-
+export function preventScrollPropagation(element: HTMLElement): () => void {
   const handleWheel = (e: Event) => {
     e.stopPropagation();
-    if (disableBodyScroll) {
-      e.preventDefault();
-    }
   };
 
   element.addEventListener('wheel', handleWheel, { passive: false });

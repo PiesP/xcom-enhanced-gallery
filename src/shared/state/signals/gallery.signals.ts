@@ -158,6 +158,8 @@ export function navigateToItem(index: number): void {
  */
 export function navigatePrevious(): void {
   const state = galleryState.value;
+  if (!state.mediaItems || state.mediaItems.length === 0) return;
+
   const newIndex = state.currentIndex > 0 ? state.currentIndex - 1 : state.mediaItems.length - 1;
   navigateToItem(newIndex);
 }
@@ -167,6 +169,8 @@ export function navigatePrevious(): void {
  */
 export function navigateNext(): void {
   const state = galleryState.value;
+  if (!state.mediaItems || state.mediaItems.length === 0) return;
+
   const newIndex = state.currentIndex < state.mediaItems.length - 1 ? state.currentIndex + 1 : 0;
   navigateToItem(newIndex);
 }

@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { isGalleryContainer } from '@shared/utils/utils';
 
 /**
  * 글래스모피즘 강도 타입
@@ -122,13 +121,8 @@ class StyleManager {
     element.style.transform = 'translateZ(0)';
     element.style.contain = 'layout style paint';
 
-    // 접근성을 위한 overflow 처리 (갤러리 컨테이너 제외)
+    // 갤러리 컨테이너는 독립적으로 스크롤 처리
     element.style.position = 'relative';
-
-    // 갤러리 컨테이너에는 overflow hidden을 적용하지 않음 (스크롤 락과 충돌 방지)
-    if (!isGalleryContainer(element)) {
-      element.style.overflow = 'hidden';
-    }
   }
 
   /**
