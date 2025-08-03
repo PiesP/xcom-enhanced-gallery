@@ -238,27 +238,19 @@ function VerticalGalleryViewCore({
   // 🎯 개선된 스크롤 잠금 - TDD 기반 타겟 특정 방식
   const { lockScroll, unlockScroll } = useScrollLock();
 
-  // 🎯 단순화된 스크롤 잠금 관리 - TDD REFACTOR 단계
-  // wheel 이벤트 제거, overflow: hidden만으로 스크롤 제어
+  // 🎯 개선된 스크롤 잠금 관리 - TDD 방식으로 수정
+  // document.documentElement와 body를 직접 제어하여 갤러리 내부 스크롤에 영향 없음
   useEffect(() => {
     if (isVisible && mediaItems.length > 0) {
-      lockScroll(); // 트위터 컨테이너만 잠금 (overflow: hidden 적용)
+      lockScroll();
       logger.debug('🔒 Gallery opened - scroll locked');
-
-      // 컴포넌트 언마운트 시 확실한 클린업
       return () => {
         unlockScroll();
         logger.debug('🔓 Gallery cleanup - scroll unlocked');
       };
-    } else {
-      unlockScroll();
-      logger.debug('🔓 Gallery not visible - scroll unlocked');
-
-      // else 브랜치에서도 cleanup 함수 반환
-      return () => {
-        unlockScroll();
-      };
     }
+    unlockScroll();
+    return () => {};
   }, [isVisible, mediaItems.length, lockScroll, unlockScroll]);
 
   // 포커스된 인덱스와 현재 인덱스 동기화

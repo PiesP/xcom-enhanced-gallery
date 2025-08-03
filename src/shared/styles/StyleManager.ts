@@ -4,6 +4,9 @@
  * @version 1.0.0
  */
 
+import { logger } from '@shared/logging/logger';
+import { isGalleryContainer } from '@shared/utils/utils';
+
 /**
  * 글래스모피즘 강도 타입
  */
@@ -119,9 +122,13 @@ class StyleManager {
     element.style.transform = 'translateZ(0)';
     element.style.contain = 'layout style paint';
 
-    // 접근성을 위한 overflow 처리
+    // 접근성을 위한 overflow 처리 (갤러리 컨테이너 제외)
     element.style.position = 'relative';
-    element.style.overflow = 'hidden';
+
+    // 갤러리 컨테이너에는 overflow hidden을 적용하지 않음 (스크롤 락과 충돌 방지)
+    if (!isGalleryContainer(element)) {
+      element.style.overflow = 'hidden';
+    }
   }
 
   /**
@@ -193,6 +200,12 @@ class StyleManager {
     state: ComponentState,
     prefix: string = 'is'
   ): void {
+    // DOM 요소 유효성 검사
+    if (!element?.classList) {
+      logger.warn('StyleManager: 유효하지 않은 DOM 요소입니다.', element);
+      return;
+    }
+
     Object.entries(state).forEach(([key, value]) => {
       const className = `${prefix}-${key}`;
       if (value) {
@@ -209,6 +222,11 @@ class StyleManager {
    * @param utilities - 유틸리티 클래스 배열
    */
   static applyUtilityClass(element: HTMLElement, ...utilities: string[]): void {
+    if (!element?.classList) {
+      logger.warn('StyleManager: 유효하지 않은 DOM 요소입니다.', element);
+      return;
+    }
+
     utilities.forEach(utility => {
       if (utility) {
         element.classList.add(utility);
@@ -222,6 +240,11 @@ class StyleManager {
    * @param utilities - 제거할 유틸리티 클래스 배열
    */
   static removeUtilityClass(element: HTMLElement, ...utilities: string[]): void {
+    if (!element?.classList) {
+      logger.warn('StyleManager: 유효하지 않은 DOM 요소입니다.', element);
+      return;
+    }
+
     utilities.forEach(utility => {
       if (utility) {
         element.classList.remove(utility);

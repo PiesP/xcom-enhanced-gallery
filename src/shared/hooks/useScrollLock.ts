@@ -1,13 +1,12 @@
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery - MIT License
  *
- * @fileoverview 스크롤 잠금 전용 커스텀 훅
- * @description 트위터 스크롤 컨테이너를 타겟으로 한 안전한 스크롤 잠금/해제
- * @version 1.0.0 - TDD 기반 스크롤 격리 개선
+ * @fileoverview 갤러리 호환 스크롤 잠금 전용 커스텀 훅
+ * @description 갤러리 내부 스크롤과 충돌하지 않는 개선된 스크롤 락 시스템
+ * @version 3.0.0 - 갤러리 충돌 해결
  */
 
 import { getPreactHooks } from '@shared/external/vendors';
-import { findTwitterScrollContainer } from '@shared/utils/core-utils';
 import { logger } from '@shared/logging/logger';
 
 const { useCallback, useRef } = getPreactHooks();
@@ -19,71 +18,110 @@ interface UseScrollLockReturn {
 }
 
 interface OriginalScrollState {
-  overflow: string;
-  overscrollBehavior: string;
+  docOverflow: string;
+  bodyOverflow: string;
+  wheelHandler?: (event: WheelEvent) => void;
 }
 
 /**
- * 스크롤 잠금 전용 커스텀 훅
+ * 갤러리 호환 스크롤 잠금 전용 커스텀 훅
  *
  * @description
- * - 트위터 스크롤 컨테이너만 타겟으로 잠금
- * - document.body 대신 특정 컨테이너 사용으로 갤러리 내부 스크롤 보호
- * - 안전한 상태 관리 및 복원
+ * 갤러리 내부 스크롤을 보존하면서 배경 스크롤을 차단:
+ * - CSS 클래스 기반 스크롤 제어 (우선)
+ * - document.documentElement와 document.body 직접 제어 (백업)
+ * - 갤러리 내부 wheel 이벤트 보존
+ * - 중복 락 방지 및 안전한 언락
  *
- * @returns 스크롤 잠금 제어 함수들
+ * @returns {UseScrollLockReturn} 스크롤 락 제어 함수들
  */
-export function useScrollLock(): UseScrollLockReturn {
+export const useScrollLock = (): UseScrollLockReturn => {
   const originalStateRef = useRef<OriginalScrollState | null>(null);
-  const targetRef = useRef<HTMLElement | null>(null);
 
   const lockScroll = useCallback(() => {
-    const twitterContainer = findTwitterScrollContainer();
-
-    // 이미 잠겨있거나 컨테이너를 찾을 수 없으면 건너뜀
-    if (!twitterContainer || originalStateRef.current) {
-      return;
-    }
-
-    // 원본 상태 저장
-    originalStateRef.current = {
-      overflow: twitterContainer.style.overflow || '',
-      overscrollBehavior: twitterContainer.style.overscrollBehavior || '',
-    };
-
-    // 트위터 컨테이너만 잠금 (갤러리는 별도 fixed 컨테이너이므로 영향 없음)
-    twitterContainer.style.overflow = 'hidden';
-    twitterContainer.style.overscrollBehavior = 'contain';
-    targetRef.current = twitterContainer;
-
-    logger.debug('🔒 Twitter container scroll locked (targeted approach)');
-  }, []);
-
-  const unlockScroll = useCallback(() => {
-    const target = targetRef.current;
-    const originalState = originalStateRef.current;
-
-    if (!target || !originalState) {
-      logger.debug('🔓 Scroll unlock skipped - no target or state');
+    // 중복 락 방지
+    if (originalStateRef.current) {
+      logger.debug('스크롤이 이미 잠겨있습니다.');
       return;
     }
 
     try {
-      // 원본 상태 복원
-      target.style.overflow = originalState.overflow;
-      target.style.overscrollBehavior = originalState.overscrollBehavior;
+      const docElement = document.documentElement;
+      const bodyElement = document.body;
 
-      // 상태 초기화
-      originalStateRef.current = null;
-      targetRef.current = null;
+      // 현재 상태 저장
+      const originalState: OriginalScrollState = {
+        docOverflow: docElement.style.overflow || '',
+        bodyOverflow: bodyElement.style.overflow || '',
+      };
 
-      logger.debug('🔓 Twitter container scroll unlocked (targeted approach)');
+      // CSS 클래스 기반 스크롤 락 적용 (우선 방법)
+      bodyElement.classList.add('xeg-no-scroll');
+
+      // 스타일 기반 백업 제어
+      docElement.style.overflow = 'hidden';
+      bodyElement.style.overflow = 'hidden';
+
+      // 갤러리 외부 wheel 이벤트만 차단하는 핸들러
+      const handleWheelEvent = (event: WheelEvent) => {
+        const target = event.target as Element;
+
+        // 갤러리 내부 요소 확인
+        if (
+          target.closest(
+            '.xeg-gallery-container, .content, .itemsList, [class*="vertical-gallery"], [class*="gallery-view"]'
+          )
+        ) {
+          // 갤러리 내부에서는 스크롤 허용
+          return;
+        }
+
+        // 갤러리 외부에서만 스크롤 차단
+        event.preventDefault();
+        event.stopPropagation();
+      };
+
+      // 캡처링 단계에서 이벤트를 처리하여 확실한 차단
+      document.addEventListener('wheel', handleWheelEvent, {
+        passive: false,
+        capture: true,
+      });
+      originalState.wheelHandler = handleWheelEvent;
+
+      originalStateRef.current = originalState;
+      logger.debug('스크롤 잠금 활성화 (갤러리 호환 모드)');
     } catch (error) {
-      logger.warn('Failed to unlock scroll:', error);
+      logger.error('스크롤 잠금 실패:', error);
+    }
+  }, []);
 
-      // 실패한 경우에도 상태 초기화
+  const unlockScroll = useCallback(() => {
+    if (!originalStateRef.current) {
+      logger.debug('잠금 해제할 스크롤 상태가 없습니다.');
+      return;
+    }
+
+    try {
+      const { docOverflow, bodyOverflow, wheelHandler } = originalStateRef.current;
+      const docElement = document.documentElement;
+      const bodyElement = document.body;
+
+      // CSS 클래스 제거
+      bodyElement.classList.remove('xeg-no-scroll');
+
+      // 원래 스타일 복원
+      docElement.style.overflow = docOverflow;
+      bodyElement.style.overflow = bodyOverflow;
+
+      // wheel 이벤트 리스너 제거 (캡처 옵션과 일치)
+      if (wheelHandler) {
+        document.removeEventListener('wheel', wheelHandler, { capture: true });
+      }
+
       originalStateRef.current = null;
-      targetRef.current = null;
+      logger.debug('스크롤 잠금 해제 완료');
+    } catch (error) {
+      logger.error('스크롤 잠금 해제 실패:', error);
     }
   }, []);
 
@@ -91,5 +129,11 @@ export function useScrollLock(): UseScrollLockReturn {
     return originalStateRef.current !== null;
   }, []);
 
-  return { lockScroll, unlockScroll, isLocked };
-}
+  return {
+    lockScroll,
+    unlockScroll,
+    isLocked,
+  };
+};
+
+export default useScrollLock;
