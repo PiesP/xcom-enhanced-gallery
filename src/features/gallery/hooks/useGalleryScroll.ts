@@ -10,7 +10,6 @@ import { getPreactHooks } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
 import { createEventManager } from '@shared/dom/DOMEventManager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-import { findTwitterScrollContainer } from '@shared/utils';
 
 const { useEffect, useRef, useCallback } = getPreactHooks();
 
@@ -119,37 +118,7 @@ export function useGalleryScroll({
     }, 150);
   }, [updateScrollState]);
 
-  // 트위터 페이지 스크롤 차단 - 개선된 버전 (갤러리 내부 제외)
-  const preventTwitterScroll = useCallback(
-    (event: Event) => {
-      // 갤러리가 열려있지 않으면 차단하지 않음
-      if (!galleryState.value.isOpen || !blockTwitterScroll) {
-        return;
-      }
-
-      // 🔑 핵심 개선: 이벤트가 갤러리 컨테이너 내부에서 발생했는지 확인
-      const eventTarget = event.target as HTMLElement;
-      const isInsideGallery = container?.contains(eventTarget);
-
-      // 갤러리 내부 이벤트는 차단하지 않고, 외부에서만 차단
-      if (!isInsideGallery && isScrollingRef.current) {
-        event.preventDefault();
-        event.stopPropagation();
-        logger.debug('useGalleryScroll: 트위터 외부 스크롤 차단', {
-          targetElement: eventTarget?.tagName || 'unknown',
-          targetClass: eventTarget?.className || 'none',
-        });
-      } else if (isInsideGallery) {
-        logger.debug('useGalleryScroll: 갤러리 내부 스크롤 허용 (preventTwitterScroll)', {
-          targetElement: eventTarget?.tagName || 'unknown',
-          targetClass: eventTarget?.className || 'none',
-        });
-      }
-    },
-    [container, blockTwitterScroll]
-  );
-
-  // 갤러리 휠 이벤트 처리 - 개선된 버전
+  // 갤러리 휠 이벤트 처리 - 단순화된 버전
   const handleGalleryWheel = useCallback(
     (event: WheelEvent) => {
       // 갤러리가 열려있지 않으면 무시
@@ -211,32 +180,50 @@ export function useGalleryScroll({
     ]
   );
 
-  // 이벤트 리스너 설정
+  // 🎯 정밀한 갤러리 스크롤 처리 - 갤러리 내외부 구분하여 이벤트 제어
   useEffect(() => {
-    if (!enabled || !container) {
+    if (!enabled) {
       return;
     }
 
     const eventManager = eventManagerRef.current;
 
-    // 문서 레벨에서 휠 이벤트 처리 (갤러리 열림 상태에 따라 동작)
-    eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
-      capture: true,
-      passive: false,
-    });
-
-    // 트위터 페이지 스크롤 차단 (옵션)
-    if (blockTwitterScroll) {
-      const twitterContainer = findTwitterScrollContainer();
-      if (twitterContainer) {
-        eventManager.addEventListener(twitterContainer, 'wheel', preventTwitterScroll, {
-          capture: true,
-          passive: false,
-        });
-      }
+    // 갤러리 컨테이너에만 휠 이벤트 처리 (갤러리 내부 스크롤)
+    if (container) {
+      eventManager.addEventListener(container, 'wheel', handleGalleryWheel, {
+        passive: false,
+      });
     }
 
-    logger.debug('useGalleryScroll: 이벤트 리스너 등록 완료', {
+    // 트위터 스크롤 차단 (document 레벨에서 갤러리 외부 이벤트만 차단)
+    if (blockTwitterScroll) {
+      const preventTwitterScroll = (event: WheelEvent) => {
+        // 갤러리가 열려있지 않으면 차단하지 않음
+        if (!galleryState.value.isOpen) {
+          return;
+        }
+
+        const eventTarget = event.target as HTMLElement;
+        const isInsideGallery = container?.contains(eventTarget);
+
+        // 갤러리 내부 이벤트는 허용, 외부에서만 차단
+        if (!isInsideGallery) {
+          event.preventDefault();
+          event.stopPropagation();
+          logger.debug('useGalleryScroll: 트위터 외부 스크롤 차단', {
+            targetElement: eventTarget?.tagName || 'unknown',
+          });
+        }
+      };
+
+      // document 레벨에서 캡처하여 모든 외부 스크롤 차단
+      eventManager.addEventListener(document, 'wheel', preventTwitterScroll, {
+        capture: true,
+        passive: false,
+      });
+    }
+
+    logger.debug('useGalleryScroll: 정밀한 이벤트 리스너 등록 완료', {
       hasContainer: !!container,
       blockTwitterScroll,
     });
@@ -254,9 +241,9 @@ export function useGalleryScroll({
         clearTimeout(directionTimeoutRef.current);
       }
 
-      logger.debug('useGalleryScroll: 정리 완료');
+      logger.debug('useGalleryScroll: 정리 완료 (정밀한 버전)');
     };
-  }, [enabled, container, blockTwitterScroll, handleGalleryWheel, preventTwitterScroll]);
+  }, [enabled, container, blockTwitterScroll, handleGalleryWheel]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {

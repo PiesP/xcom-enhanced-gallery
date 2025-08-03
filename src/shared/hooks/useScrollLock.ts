@@ -64,18 +64,27 @@ export function useScrollLock(): UseScrollLockReturn {
     const originalState = originalStateRef.current;
 
     if (!target || !originalState) {
+      logger.debug('🔓 Scroll unlock skipped - no target or state');
       return;
     }
 
-    // 원본 상태 복원
-    target.style.overflow = originalState.overflow;
-    target.style.overscrollBehavior = originalState.overscrollBehavior;
+    try {
+      // 원본 상태 복원
+      target.style.overflow = originalState.overflow;
+      target.style.overscrollBehavior = originalState.overscrollBehavior;
 
-    // 상태 초기화
-    originalStateRef.current = null;
-    targetRef.current = null;
+      // 상태 초기화
+      originalStateRef.current = null;
+      targetRef.current = null;
 
-    logger.debug('🔓 Twitter container scroll unlocked (targeted approach)');
+      logger.debug('🔓 Twitter container scroll unlocked (targeted approach)');
+    } catch (error) {
+      logger.warn('Failed to unlock scroll:', error);
+
+      // 실패한 경우에도 상태 초기화
+      originalStateRef.current = null;
+      targetRef.current = null;
+    }
   }, []);
 
   const isLocked = useCallback(() => {

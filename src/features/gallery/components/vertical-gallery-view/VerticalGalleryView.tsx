@@ -36,7 +36,7 @@ type MouseEvent<T = Element> = Event & {
   target: EventTarget | null;
 };
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
-import { ensureGalleryScrollAvailable, findTwitterScrollContainer } from '@shared/utils';
+import { ensureGalleryScrollAvailable } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 
@@ -238,47 +238,22 @@ function VerticalGalleryViewCore({
   // 🎯 개선된 스크롤 잠금 - TDD 기반 타겟 특정 방식
   const { lockScroll, unlockScroll } = useScrollLock();
 
-  // 스크롤 잠금 관리 useEffect - TDD GREEN 단계 (개선된 버전)
+  // 🎯 단순화된 스크롤 잠금 관리 - TDD REFACTOR 단계
+  // wheel 이벤트 제거, overflow: hidden만으로 스크롤 제어
   useEffect(() => {
     if (isVisible && mediaItems.length > 0) {
-      lockScroll(); // 트위터 컨테이너만 잠금
+      lockScroll(); // 트위터 컨테이너만 잠금 (overflow: hidden 적용)
+      logger.debug('🔒 Gallery opened - scroll locked');
 
-      // 🎯 개선된 wheel 이벤트 방지 - 트위터 컨테이너에만 이벤트 등록
-      const preventTwitterScroll = (event: WheelEvent) => {
-        const eventTarget = event.target as HTMLElement;
-        const isInsideGallery = containerRef.current?.contains(eventTarget);
-
-        // 갤러리 내부에서의 스크롤은 허용
-        if (isInsideGallery) {
-          return;
-        }
-
-        // 트위터 배경 스크롤만 방지
-        event.preventDefault();
-        event.stopPropagation();
-        logger.debug('🔒 Twitter scroll prevented (targeted blocking)', {
-          targetElement: eventTarget?.tagName || 'unknown',
-        });
+      // 컴포넌트 언마운트 시 확실한 클린업
+      return () => {
+        unlockScroll();
+        logger.debug('🔓 Gallery cleanup - scroll unlocked');
       };
-
-      // 트위터 컨테이너에만 이벤트 리스너 추가 (document 대신)
-      const twitterContainer = findTwitterScrollContainer();
-      if (twitterContainer) {
-        twitterContainer.addEventListener('wheel', preventTwitterScroll, { passive: false });
-
-        // 컴포넌트 언마운트 시 확실한 클린업
-        return () => {
-          unlockScroll();
-          twitterContainer.removeEventListener('wheel', preventTwitterScroll);
-        };
-      } else {
-        // 트위터 컨테이너를 찾지 못한 경우 unlock만 실행
-        return () => {
-          unlockScroll();
-        };
-      }
     } else {
       unlockScroll();
+      logger.debug('🔓 Gallery not visible - scroll unlocked');
+
       // else 브랜치에서도 cleanup 함수 반환
       return () => {
         unlockScroll();
