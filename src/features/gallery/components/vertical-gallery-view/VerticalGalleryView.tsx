@@ -24,7 +24,6 @@ import {
   setupScrollAnimation,
 } from '@shared/utils/animations';
 import { useVirtualScroll } from '@shared/hooks/useVirtualScroll';
-import { useScrollLock } from '@shared/hooks/useScrollLock';
 import { useToolbarPositionBased } from '@features/gallery/hooks';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
@@ -234,24 +233,6 @@ function VerticalGalleryViewCore({
 
   // 강제 렌더링 상태 관리 (더 이상 사용하지 않음)
   const [forceVisibleItems] = useState<Set<number>>(new Set());
-
-  // 🎯 개선된 스크롤 잠금 - TDD 기반 타겟 특정 방식
-  const { lockScroll, unlockScroll } = useScrollLock();
-
-  // 🎯 개선된 스크롤 잠금 관리 - TDD 방식으로 수정
-  // document.documentElement와 body를 직접 제어하여 갤러리 내부 스크롤에 영향 없음
-  useEffect(() => {
-    if (isVisible && mediaItems.length > 0) {
-      lockScroll();
-      logger.debug('🔒 Gallery opened - scroll locked');
-      return () => {
-        unlockScroll();
-        logger.debug('🔓 Gallery cleanup - scroll unlocked');
-      };
-    }
-    unlockScroll();
-    return () => {};
-  }, [isVisible, mediaItems.length, lockScroll, unlockScroll]);
 
   // 포커스된 인덱스와 현재 인덱스 동기화
   useEffect(() => {

@@ -432,12 +432,6 @@
   cursor: wait !important;
 }
 
-/* 스크롤 락 상태 - 갤러리 활성화 시 배경 스크롤 방지 */
-.xeg-no-scroll {
-  overflow: hidden !important;
-  height: 100% !important;
-}
-
 /* Gallery Root Container */
 #xeg-gallery-root {
   position: fixed;
