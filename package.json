@@ -11,7 +11,7 @@
     "build:prod": "vite build --mode production",
     "build:all": "npm run build:dev && npm run build:prod",
     "clean": "rimraf dist",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",

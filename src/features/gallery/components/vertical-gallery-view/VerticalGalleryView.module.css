@@ -389,6 +389,9 @@
   overflow-x: hidden;
   scroll-behavior: smooth;
 
+  /* 스크롤 격리 - 배경 페이지 스크롤 방지 */
+  overscroll-behavior: none;
+
   /* 성능 최적화 */
   contain: layout style paint;
   transform: translateZ(0);

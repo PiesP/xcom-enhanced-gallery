@@ -21,6 +21,8 @@ export interface UseToolbarPositionBasedOptions {
   hoverZoneElement: HTMLElement | null;
   /** 기능 활성화 여부 */
   enabled: boolean;
+  /** 초기 자동 숨김 시간 (ms), 기본값: 3000 */
+  autoHideDelay?: number;
 }
 
 export interface UseToolbarPositionBasedReturn {
@@ -42,11 +44,59 @@ export function useToolbarPositionBased({
   toolbarElement,
   hoverZoneElement,
   enabled,
+  autoHideDelay = 3000,
 }: UseToolbarPositionBasedOptions): UseToolbarPositionBasedReturn {
   const { useState, useEffect, useCallback } = getPreactHooks();
 
-  // 툴바 표시 상태
+  // 툴바 표시 상태 - 활성화 시 처음에는 표시
   const [isVisible, setIsVisible] = useState(enabled);
+  // 자동 숨김 타이머 추적
+  const [autoHideTimer, setAutoHideTimer] = useState<number | null>(null);
+
+  /**
+   * 자동 숨김 타이머 시작
+   */
+  const startAutoHideTimer = useCallback(() => {
+    // 기존 타이머 정리
+    if (autoHideTimer) {
+      window.clearTimeout(autoHideTimer);
+    }
+
+    // 새 타이머 시작
+    const timerId = window.setTimeout(() => {
+      setIsVisible(false);
+      if (toolbarElement) {
+        const opacity = '0';
+        const pointerEvents = 'none';
+        const visibility = 'hidden';
+
+        // 직접 스타일 업데이트로 즉시 반응
+        toolbarElement.style.setProperty('--toolbar-opacity', opacity);
+        toolbarElement.style.setProperty('--toolbar-pointer-events', pointerEvents);
+        toolbarElement.style.setProperty('--toolbar-visibility', visibility);
+
+        // 전역 CSS 변수도 업데이트 (호환성 유지)
+        document.documentElement.style.setProperty('--toolbar-opacity', opacity);
+        document.documentElement.style.setProperty('--toolbar-pointer-events', pointerEvents);
+      }
+      setAutoHideTimer(null);
+      logger.debug('Toolbar auto-hidden after delay');
+    }, autoHideDelay);
+
+    setAutoHideTimer(timerId);
+    logger.debug(`Auto-hide timer started: ${autoHideDelay}ms`);
+  }, [autoHideTimer, autoHideDelay, toolbarElement]);
+
+  /**
+   * 자동 숨김 타이머 취소
+   */
+  const cancelAutoHideTimer = useCallback(() => {
+    if (autoHideTimer) {
+      window.clearTimeout(autoHideTimer);
+      setAutoHideTimer(null);
+      logger.debug('Auto-hide timer cancelled');
+    }
+  }, [autoHideTimer]);
 
   /**
    * 툴바 스타일 직접 업데이트 (빠른 반응을 위해)
@@ -94,23 +144,63 @@ export function useToolbarPositionBased({
    */
   const handleMouseEnter = useCallback(() => {
     if (enabled) {
+      cancelAutoHideTimer(); // 타이머 취소
       show();
     }
-  }, [enabled, show]);
+  }, [enabled, show, cancelAutoHideTimer]);
 
   const handleMouseLeave = useCallback(() => {
     if (enabled) {
-      hide();
+      startAutoHideTimer(); // 자동 숨김 타이머 시작
     }
-  }, [enabled, hide]);
+  }, [enabled, startAutoHideTimer]);
 
   /**
-   * 활성화 상태 변경 시 초기 가시성 설정
+   * 활성화 상태 변경 시 초기 가시성 설정 및 자동 숨김 시작
    */
   useEffect(() => {
-    setIsVisible(enabled);
-    updateToolbarVisibility(enabled);
-  }, [enabled, updateToolbarVisibility]);
+    if (enabled) {
+      setIsVisible(true);
+      updateToolbarVisibility(true);
+
+      // 기존 타이머 정리
+      if (autoHideTimer) {
+        window.clearTimeout(autoHideTimer);
+      }
+
+      // 초기 로드 시 자동 숨김 타이머 직접 시작 (의존성 문제 해결)
+      const timerId = window.setTimeout(() => {
+        setIsVisible(false);
+        if (toolbarElement) {
+          const opacity = '0';
+          const pointerEvents = 'none';
+          const visibility = 'hidden';
+
+          // 직접 스타일 업데이트로 즉시 반응
+          toolbarElement.style.setProperty('--toolbar-opacity', opacity);
+          toolbarElement.style.setProperty('--toolbar-pointer-events', pointerEvents);
+          toolbarElement.style.setProperty('--toolbar-visibility', visibility);
+
+          // 전역 CSS 변수도 업데이트 (호환성 유지)
+          document.documentElement.style.setProperty('--toolbar-opacity', opacity);
+          document.documentElement.style.setProperty('--toolbar-pointer-events', pointerEvents);
+        }
+        setAutoHideTimer(null);
+        logger.debug('Toolbar auto-hidden after initial delay');
+      }, autoHideDelay);
+
+      setAutoHideTimer(timerId);
+      logger.debug(`Initial auto-hide timer started: ${autoHideDelay}ms`);
+    } else {
+      setIsVisible(false);
+      updateToolbarVisibility(false);
+      // enabled false일 때 타이머 정리
+      if (autoHideTimer) {
+        window.clearTimeout(autoHideTimer);
+        setAutoHideTimer(null);
+      }
+    }
+  }, [enabled, autoHideDelay, toolbarElement]); // 안정적인 의존성만 사용
 
   /**
    * 이벤트 리스너 등록/해제
@@ -139,6 +229,17 @@ export function useToolbarPositionBased({
       logger.debug('Position-based toolbar events removed');
     };
   }, [enabled, hoverZoneElement, toolbarElement, handleMouseEnter, handleMouseLeave]);
+
+  /**
+   * 컴포넌트 언마운트 시 타이머 정리
+   */
+  useEffect(() => {
+    return () => {
+      if (autoHideTimer) {
+        window.clearTimeout(autoHideTimer);
+      }
+    };
+  }, [autoHideTimer]);
 
   return {
     isVisible,

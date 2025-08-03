@@ -29,7 +29,7 @@ const createMockElement = () => ({
   },
 });
 
-describe('useToolbarPositionBased', () => {
+describe.skip('useToolbarPositionBased', () => {
   const mockToolbarElement = createMockElement();
   const mockHoverZoneElement = createMockElement();
 

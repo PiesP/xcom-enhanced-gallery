@@ -158,6 +158,21 @@ if (typeof globalThis !== 'undefined') {
   setupJsdomPolyfills();
 }
 
+// DOM API 폴리필 추가
+if (!document.elementFromPoint) {
+  document.elementFromPoint = function (_x, _y) {
+    // 단순한 폴백 - 첫 번째 요소를 반환
+    return document.body.firstElementChild || null;
+  };
+}
+
+if (!document.elementsFromPoint) {
+  document.elementsFromPoint = function (x, y) {
+    const element = document.elementFromPoint(x, y);
+    return element ? [element] : [];
+  };
+}
+
 /**
  * 각 테스트 전에 기본 환경 설정
  * 모든 테스트가 깨끗한 환경에서 실행되도록 보장

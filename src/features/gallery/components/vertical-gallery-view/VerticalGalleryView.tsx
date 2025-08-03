@@ -107,6 +107,93 @@ function VerticalGalleryViewCore({
     }
   }, [isVisible]); // isVisible이 변경될 때마다 DOM 요소 확인
 
+  // 🎯 툴바 자동 숨김 기능 - TDD 구현
+  const [toolbarAutoHideTimer, setToolbarAutoHideTimer] = useState<number | null>(null);
+  const [activityTimer, setActivityTimer] = useState<number | null>(null);
+
+  // 툴바 자동 숨김 타이머 초기화 및 관리
+  const resetAutoHideTimer = useCallback(() => {
+    // 기존 타이머 정리
+    if (toolbarAutoHideTimer) {
+      clearTimeout(toolbarAutoHideTimer);
+    }
+
+    // 3초 후 툴바 숨김
+    const timer = window.setTimeout(() => {
+      setInitialToolbarVisible(false);
+      logger.debug('🕐 Toolbar auto-hidden after 3 seconds');
+    }, 3000);
+
+    setToolbarAutoHideTimer(timer);
+  }, [toolbarAutoHideTimer]);
+
+  // 사용자 활동 감지 시 툴바 다시 표시
+  const handleUserActivity = useCallback(() => {
+    setInitialToolbarVisible(true);
+
+    // 기존 활동 타이머 정리
+    if (activityTimer) {
+      clearTimeout(activityTimer);
+    }
+
+    // 새 자동 숨김 타이머 시작
+    resetAutoHideTimer();
+
+    // 활동 감지 타이머 (debounce)
+    const timer = window.setTimeout(() => {
+      logger.debug('🎯 User activity detected, toolbar shown');
+    }, 100);
+
+    setActivityTimer(timer);
+  }, [activityTimer, resetAutoHideTimer]);
+
+  // 갤러리 열림 시 초기 툴바 자동 숨김 타이머 시작
+  useEffect(() => {
+    if (isVisible && domReady && initialToolbarVisible) {
+      resetAutoHideTimer();
+    }
+
+    // 클린업: 모든 타이머 정리
+    return () => {
+      if (toolbarAutoHideTimer) {
+        clearTimeout(toolbarAutoHideTimer);
+      }
+      if (activityTimer) {
+        clearTimeout(activityTimer);
+      }
+    };
+  }, [isVisible, domReady, initialToolbarVisible, resetAutoHideTimer]);
+
+  // 사용자 활동 이벤트 리스너 (마우스 움직임, 클릭, 키보드)
+  useEffect(() => {
+    if (!isVisible || !domReady) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    // 활동 감지 이벤트들
+    const activityEvents = ['mousemove', 'click', 'keydown', 'touchstart'] as const;
+
+    const activityHandler = (event: Event) => {
+      // 갤러리 컨테이너 내부 활동만 감지
+      if (container.contains(event.target as Node)) {
+        handleUserActivity();
+      }
+    };
+
+    // 이벤트 리스너 등록
+    activityEvents.forEach(eventType => {
+      container.addEventListener(eventType, activityHandler, { passive: true });
+    });
+
+    // 클린업
+    return () => {
+      activityEvents.forEach(eventType => {
+        container.removeEventListener(eventType, activityHandler);
+      });
+    };
+  }, [isVisible, domReady, handleUserActivity]);
+
   // 툴바 자동 숨김 로직 - 갤러리 열림 시 3초 후 자동 숨김
   useEffect(() => {
     if (isVisible && domReady && initialToolbarVisible) {
@@ -146,6 +233,76 @@ function VerticalGalleryViewCore({
 
   // 강제 렌더링 상태 관리 (더 이상 사용하지 않음)
   const [forceVisibleItems] = useState<Set<number>>(new Set());
+
+  // 🎯 Phase 1: 스크롤 격리 - useRef 기반 상태 관리
+  const originalScrollStateRef = useRef<{
+    overflow: string;
+    overscrollBehavior: string;
+  } | null>(null);
+
+  // 스크롤 잠금/해제 함수들
+  const lockBodyScroll = useCallback(() => {
+    if (!originalScrollStateRef.current) {
+      // 원본 상태 저장
+      originalScrollStateRef.current = {
+        overflow: document.body.style.overflow || '',
+        overscrollBehavior: document.body.style.overscrollBehavior || '',
+      };
+
+      // 스크롤 잠금 적용
+      document.body.style.overflow = 'hidden';
+      document.body.style.overscrollBehavior = 'none';
+
+      logger.debug('🔒 Body scroll locked (useRef managed)');
+    }
+  }, []);
+
+  const unlockBodyScroll = useCallback(() => {
+    if (originalScrollStateRef.current) {
+      // 원본 상태 복원
+      document.body.style.overflow = originalScrollStateRef.current.overflow;
+      document.body.style.overscrollBehavior = originalScrollStateRef.current.overscrollBehavior;
+
+      // 상태 초기화
+      originalScrollStateRef.current = null;
+
+      logger.debug('🔓 Body scroll unlocked (useRef managed)');
+    }
+  }, []);
+
+  // 스크롤 잠금 관리 useEffect - TDD GREEN 단계
+  useEffect(() => {
+    if (isVisible && mediaItems.length > 0) {
+      lockBodyScroll();
+
+      // wheel 이벤트 방지 (배경 스크롤 차단)
+      const preventWheelScroll = (event: WheelEvent) => {
+        // 갤러리 컨테이너 내부에서의 스크롤은 허용
+        if (containerRef.current?.contains(event.target as Node)) {
+          return;
+        }
+
+        // 배경 스크롤 방지
+        event.preventDefault();
+        event.stopPropagation();
+      };
+
+      // 전역 wheel 이벤트 리스너 추가
+      document.addEventListener('wheel', preventWheelScroll, { passive: false });
+
+      // 컴포넌트 언마운트 시 확실한 클린업
+      return () => {
+        unlockBodyScroll();
+        document.removeEventListener('wheel', preventWheelScroll);
+      };
+    } else {
+      unlockBodyScroll();
+      // else 브랜치에서도 cleanup 함수 반환
+      return () => {
+        unlockBodyScroll();
+      };
+    }
+  }, [isVisible, mediaItems.length, lockBodyScroll, unlockBodyScroll]);
 
   // 포커스된 인덱스와 현재 인덱스 동기화
   useEffect(() => {
@@ -212,6 +369,38 @@ function VerticalGalleryViewCore({
       });
     }
   }, [mediaItems.length, isVisible]);
+
+  // Body 스크롤 격리 - 갤러리 열림/닫힘 시 body 스크롤 제어
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyHeight = document.body.style.height;
+
+    if (isVisible) {
+      // 갤러리 열림 시 body 스크롤 완전 차단
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+
+      logger.debug('VerticalGalleryView: Body 스크롤 차단', {
+        originalOverflow: originalBodyOverflow,
+        originalHeight: originalBodyHeight,
+      });
+    } else {
+      // 갤러리 닫힘 시 원래 상태 복원
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.height = originalBodyHeight;
+
+      logger.debug('VerticalGalleryView: Body 스크롤 복원', {
+        restoredOverflow: originalBodyOverflow,
+        restoredHeight: originalBodyHeight,
+      });
+    }
+
+    return () => {
+      // 컴포넌트 언마운트 시 항상 원래 상태로 복원
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.height = originalBodyHeight;
+    };
+  }, [isVisible]);
 
   // 갤러리 진입/종료 애니메이션
   useEffect(() => {
@@ -571,6 +760,11 @@ function VerticalGalleryViewCore({
           data-xeg-role='items-list'
           style={virtualScroll.isVirtualScrolling ? virtualScroll.listStyle : undefined}
           onScroll={virtualScroll.isVirtualScrolling ? virtualScroll.onScroll : undefined}
+          onWheel={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+          }}
         >
           {itemsToRender.map((item, index) => {
             // 가상 스크롤링 사용 시 실제 인덱스 계산
