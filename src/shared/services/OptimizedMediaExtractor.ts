@@ -3,35 +3,13 @@
  * @description 기존 중복 구현들을 통합한 최적화된 미디어 추출기
  * - MediaClickDetector: 미디어 클릭 감지
  * - MediaExtractionService: 2단계 추출 전략
- * - TwitterAPIExtractor: API 기반 추  priva  private async extractFromAPI(
-    _tweetInfo: TweetInfo,
-    _element: HTMLElement,
-    extractionId: string,
-  ): Promise<{ success: boolean; mediaItems: MediaInfo[]; clickedIndex: number }> {
-    try {
-      logger.debug(`[OptimizedMediaExtractor] ${extractionId}: API 추출 시도`);
-
-      // 현재는 기본 구현 (실제 TwitterAPI 통합은 다음 단계)
-      // TODO: TwitterAPI.getTweetMedias(tweetInfo.tweetId) 통합
-
-      return { success: false, mediaItems: [], clickedIndex: -1 };
-    } catch (error) {
-      logger.warn(`[OptimizedMediaExtractor] API 추출 실패:`, error);
-      return { success: false, mediaItems: [], clickedIndex: -1 };
-    }
-  }  private async extractFromDOM(
-    element: HTMLElement,
-    container: HTMLElement,
-    _extractionId: string,
-  ): Promise<{ success: boolean; mediaItems: MediaInfo[]; clickedIndex: number }> {I(
-    tweetInfo: TweetInfo,
-    element: HTMLElement,
-    _extractionId: string,
-  ): Promise<{ success: boolean; mediaItems: MediaInfo[]; clickedIndex: number }> {- DOMDirectExtractor: DOM 직접 추출
+ * - TwitterAPIExtractor: API 기반 추출
+ * - DOMDirectExtractor: DOM 직접 추출
  */
 
 import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
+import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
 
 /**
  * 미디어 추출 결과
@@ -40,7 +18,7 @@ export interface MediaExtractionResult {
   success: boolean;
   mediaItems: MediaInfo[];
   clickedIndex: number;
-  tweetInfo?: TweetInfo;
+  tweetInfo?: TweetInfo | undefined;
   confidence: number;
   processingTime: number;
 }
@@ -53,16 +31,7 @@ export interface PageTypeDetectionResult {
   confidence: number;
 }
 
-/**
- * 미디어 감지 결과 (MediaClickDetector 통합)
- */
-interface _MediaDetectionResult {
-  type: 'video' | 'image' | 'none';
-  element: HTMLElement | null;
-  mediaUrl?: string;
-  confidence: number;
-  method: string;
-}
+// 미디어 감지 결과는 MediaClickDetector의 MediaDetectionResult 타입 사용
 
 /**
  * 최적화된 미디어 추출기
@@ -98,7 +67,7 @@ export class OptimizedMediaExtractor {
 
     try {
       // 1. 처리 가능한 미디어인지 확인 (MediaClickDetector 통합)
-      if (!this.isProcessableMedia(element)) {
+      if (!MediaClickDetector.isProcessableMedia(element)) {
         logger.debug(`[OptimizedMediaExtractor] ${extractionId}: 처리 불가능한 미디어`);
         return this.createResult(false, [], -1, null, 0, performance.now() - startTime);
       }
@@ -204,51 +173,15 @@ export class OptimizedMediaExtractor {
   // ==================== 내부 메서드 ====================
 
   /**
-   * 처리 가능한 미디어 요소인지 확인 (MediaClickDetector 통합)
-   */
-  private isProcessableMedia(target: HTMLElement): boolean {
-    if (!target) return false;
-
-    logger.debug('[OptimizedMediaExtractor] 미디어 처리 가능성 확인:', {
-      tagName: target.tagName,
-      className: target.className,
-      id: target.id,
-    });
-
-    // 이미지 요소 확인
-    if (target.tagName === 'IMG') return true;
-
-    // 비디오 요소 확인
-    if (target.tagName === 'VIDEO') return true;
-
-    // 미디어 컨테이너 확인
-    const mediaSelectors = [
-      '[data-testid*="media"]',
-      '[data-testid*="video"]',
-      '[data-testid*="image"]',
-      '.css-1dbjc4n img',
-      '[role="img"]',
-    ];
-
-    return mediaSelectors.some(selector => {
-      try {
-        return target.matches(selector) || target.querySelector(selector) !== null;
-      } catch {
-        return false;
-      }
-    });
-  }
-
-  /**
    * API 기반 미디어 추출
    */
   private async extractFromAPI(
-    tweetInfo: TweetInfo,
-    element: HTMLElement,
+    _tweetInfo: TweetInfo,
+    _element: HTMLElement,
     extractionId: string
   ): Promise<{ success: boolean; mediaItems: MediaInfo[]; clickedIndex: number }> {
     try {
-      logger.debug(`[OptimizedMediaExtractor] ${_extractionId}: API 추출 시도`);
+      logger.debug(`[OptimizedMediaExtractor] ${extractionId}: API 추출 시도`);
 
       // 현재는 기본 구현 (실제 TwitterAPI 통합은 다음 단계)
       // TODO: TwitterAPI.getTweetMedias(tweetInfo.tweetId) 통합
@@ -266,7 +199,7 @@ export class OptimizedMediaExtractor {
   private async extractFromDOM(
     element: HTMLElement,
     container: HTMLElement,
-    extractionId: string
+    _extractionId: string
   ): Promise<{ success: boolean; mediaItems: MediaInfo[]; clickedIndex: number }> {
     try {
       const mediaItems: MediaInfo[] = [];
@@ -400,10 +333,13 @@ export class OptimizedMediaExtractor {
     const tweetLink = tweetContainer.querySelector('a[href*="/status/"]') as HTMLAnchorElement;
     if (tweetLink?.href) {
       const tweetIdMatch = tweetLink.href.match(/\/status\/(\d+)/);
-      if (tweetIdMatch) {
+      if (tweetIdMatch?.[1]) {
         return {
           tweetId: tweetIdMatch[1],
           username: this.extractUsernameFromContainer(tweetContainer as HTMLElement),
+          tweetUrl: tweetLink.href,
+          extractionMethod: 'container',
+          confidence: 0.9,
         };
       }
     }
@@ -416,10 +352,13 @@ export class OptimizedMediaExtractor {
    */
   private extractFromURL(): TweetInfo | null {
     const tweetIdMatch = window.location.pathname.match(/\/status\/(\d+)/);
-    if (tweetIdMatch) {
+    if (tweetIdMatch?.[1]) {
       return {
         tweetId: tweetIdMatch[1],
         username: this.extractUsernameFromURL(),
+        tweetUrl: window.location.href,
+        extractionMethod: 'url',
+        confidence: 1.0,
       };
     }
     return null;
@@ -436,10 +375,13 @@ export class OptimizedMediaExtractor {
         const link = tweet.querySelector('a[href*="/status/"]') as HTMLAnchorElement;
         if (link?.href) {
           const tweetIdMatch = link.href.match(/\/status\/(\d+)/);
-          if (tweetIdMatch) {
+          if (tweetIdMatch?.[1]) {
             return {
               tweetId: tweetIdMatch[1],
               username: this.extractUsernameFromContainer(tweet as HTMLElement),
+              tweetUrl: link.href,
+              extractionMethod: 'dom-structure',
+              confidence: 0.8,
             };
           }
         }
@@ -455,7 +397,7 @@ export class OptimizedMediaExtractor {
     const usernameEl = container.querySelector('[data-testid="User-Name"] a') as HTMLAnchorElement;
     if (usernameEl?.href) {
       const usernameMatch = usernameEl.href.match(/twitter\.com\/([^/]+)/);
-      if (usernameMatch) return usernameMatch[1];
+      if (usernameMatch?.[1]) return usernameMatch[1];
     }
     return '';
   }
@@ -489,7 +431,7 @@ export class OptimizedMediaExtractor {
     success: boolean,
     mediaItems: MediaInfo[],
     clickedIndex: number,
-    tweetInfo: TweetInfo | null,
+    tweetInfo: TweetInfo | null | undefined,
     confidence: number,
     processingTime: number
   ): MediaExtractionResult {
