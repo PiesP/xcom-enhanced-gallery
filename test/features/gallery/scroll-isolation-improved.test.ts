@@ -1,14 +1,14 @@
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery - MIT License
  *
- * @fileoverview 스크롤 격리 TDD 테스트
- * @description Phase 1: 스크롤 격리 문제 해결을 위한 TDD 테스트
+ * @fileoverview 스크롤 격리 TDD 테스트 (개선 버전)
+ * @description TDD 방식으로 스크롤 잠금 문제 해결을 위한 테스트
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
-describe('🎯 Phase 1: 스크롤 격리 (TDD)', () => {
+describe('🎯 스크롤 격리 문제 해결 (TDD)', () => {
   let originalBodyOverflow: string;
   let mockContainer: HTMLElement;
   let mockGalleryItemsList: HTMLElement;
@@ -252,85 +252,77 @@ describe('🎯 Phase 1: 스크롤 격리 (TDD)', () => {
         expect(postCloseWheelPrevented).toBe(false); // 🔴 갤러리 닫힌 후에는 외부 스크롤이 차단되지 않아야 함
       });
     });
+  });
 
-    describe('body 스크롤 잠금/해제 로직 테스트', () => {
-      it('lockBodyScroll과 unlockBodyScroll이 정상 동작해야 함', () => {
-        let originalScrollStateRef: { overflow: string; overscrollBehavior: string } | null = null;
-
-        // lockBodyScroll 함수 시뮬레이션
-        const lockBodyScroll = () => {
-          if (!originalScrollStateRef) {
-            originalScrollStateRef = {
-              overflow: document.body.style.overflow || '',
-              overscrollBehavior: document.body.style.overscrollBehavior || '',
-            };
-
-            document.body.style.overflow = 'hidden';
-            document.body.style.overscrollBehavior = 'none';
-          }
-        };
-
-        // unlockBodyScroll 함수 시뮬레이션
-        const unlockBodyScroll = () => {
-          if (originalScrollStateRef) {
-            document.body.style.overflow = originalScrollStateRef.overflow;
-            document.body.style.overscrollBehavior = originalScrollStateRef.overscrollBehavior;
-            originalScrollStateRef = null;
-          }
-        };
-
-        // 테스트 시나리오
-        const initialOverflow = document.body.style.overflow;
-
-        // 스크롤 잠금
-        lockBodyScroll();
-        expect(document.body.style.overflow).toBe('hidden');
-        expect(originalScrollStateRef).not.toBeNull();
-
-        // 스크롤 해제
-        unlockBodyScroll();
-        expect(document.body.style.overflow).toBe(initialOverflow);
-        expect(originalScrollStateRef).toBeNull();
+  describe('🟢 GREEN: 구현 후 통과해야 하는 테스트', () => {
+    it('개선된 useGalleryScroll 훅이 갤러리 내외부를 구분해야 함', () => {
+      // 갤러리 내부 스크롤 테스트
+      let internalEventPrevented = false;
+      const internalEvent = new WheelEvent('wheel', { deltaY: 50 });
+      Object.defineProperty(internalEvent, 'preventDefault', {
+        value: () => {
+          internalEventPrevented = true;
+        },
+      });
+      Object.defineProperty(internalEvent, 'target', {
+        value: mockGalleryItemsList,
+        writable: false,
       });
 
-      it('wheel 이벤트 전파 방지 로직 테스트', () => {
-        let wheelEventPrevented = false;
-        let wheelEventStopped = false;
-
-        // 이벤트 객체 모킹
-        const mockWheelEvent = {
-          preventDefault: () => {
-            wheelEventPrevented = true;
-          },
-          stopPropagation: () => {
-            wheelEventStopped = true;
-          },
-          target: document.body,
-        };
-
-        // 갤러리 컨테이너 모킹
-        const mockContainerRef = {
-          current: {
-            contains: (target: Node) => target === document.body, // 포함하지 않는다고 가정
-          },
-        };
-
-        // preventWheelScroll 함수 시뮬레이션
-        const preventWheelScroll = (event: any) => {
-          if (mockContainerRef.current?.contains(event.target as Node)) {
-            return;
-          }
-          event.preventDefault();
-          event.stopPropagation();
-        };
-
-        // 컨테이너 외부에서 이벤트 발생 시
-        mockContainerRef.current.contains = () => false;
-        preventWheelScroll(mockWheelEvent);
-
-        expect(wheelEventPrevented).toBe(true);
-        expect(wheelEventStopped).toBe(true);
+      // 갤러리 외부 스크롤 테스트
+      let externalEventPrevented = false;
+      const externalEvent = new WheelEvent('wheel', { deltaY: 50 });
+      Object.defineProperty(externalEvent, 'preventDefault', {
+        value: () => {
+          externalEventPrevented = true;
+        },
       });
+      Object.defineProperty(externalEvent, 'target', {
+        value: mockTwitterContainer,
+        writable: false,
+      });
+
+      // 이벤트 발생
+      mockGalleryItemsList.dispatchEvent(internalEvent);
+      mockTwitterContainer.dispatchEvent(externalEvent);
+
+      // 결과 검증
+      expect(internalEventPrevented).toBe(false); // 내부 스크롤은 허용
+      expect(externalEventPrevented).toBe(true); // 외부 스크롤은 차단
     });
+
+    it('갤러리 상태가 닫힌 후 모든 스크롤이 정상 작동해야 함', () => {
+      // 갤러리 닫기
+      galleryState.value = {
+        ...galleryState.value,
+        isOpen: false,
+        mediaItems: [],
+      };
+
+      // 외부 스크롤 테스트
+      let externalEventPrevented = false;
+      const externalEvent = new WheelEvent('wheel', { deltaY: 50 });
+      Object.defineProperty(externalEvent, 'preventDefault', {
+        value: () => {
+          externalEventPrevented = true;
+        },
+      });
+      Object.defineProperty(externalEvent, 'target', {
+        value: mockTwitterContainer,
+        writable: false,
+      });
+
+      mockTwitterContainer.dispatchEvent(externalEvent);
+
+      // 갤러리가 닫힌 후에는 외부 스크롤도 차단되지 않아야 함
+      expect(externalEventPrevented).toBe(false);
+    });
+  });
+
+  describe('🔵 REFACTOR: 리팩토링 검증 테스트', () => {
+    // TODO: Phase 3에서 구현할 예정
+    it.todo('성능 최적화 검증');
+    it.todo('메모리 누수 방지 검증');
+    it.todo('에러 핸들링 검증');
   });
 });

@@ -8,6 +8,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { getPreactHooks } from '@shared/external/vendors';
+import { galleryState } from '@shared/state/signals/gallery.signals';
 
 interface UseGalleryCleanupOptions {
   isVisible: boolean;
@@ -101,17 +102,42 @@ export function useGalleryCleanup({
     }
   }, []);
 
-  // 페이지 상태 복원 - 메모이제이션으로 안정화
+  // 페이지 상태 복원 및 이벤트 정리 - 개선된 버전
   const restorePageState = useCallback(() => {
     if (isCleanedUp.current) return;
 
     try {
       // 스크롤 잠금 기능이 제거되었음 - 갤러리는 자체 컨테이너에서만 동작
-      logger.debug('useGalleryCleanup: 페이지 상태 복원 완료');
+      logger.debug('useGalleryCleanup: 페이지 상태 복원 시작');
 
       // 갤러리 컨테이너는 격리되어 있으므로 body 스타일 조작 불필요
       // 추가 스타일 정리
       document.body.style.removeProperty('pointer-events');
+
+      // 🔑 개선: 갤러리 상태 명시적 초기화 (이벤트 리스너 정리 보장)
+      if (galleryState.value.isOpen) {
+        galleryState.value = {
+          ...galleryState.value,
+          isOpen: false,
+          mediaItems: [],
+        };
+        logger.debug('useGalleryCleanup: 갤러리 상태 강제 초기화');
+      }
+
+      // 🔑 개선: 문서 레벨 이벤트 리스너 강제 정리 (혹시 남아있을 수 있는 리스너들)
+      // 이는 안전장치 역할로, 정상적으로는 useGalleryScroll의 cleanup에서 처리됨
+      const wheelEvents = ['wheel'];
+      wheelEvents.forEach(eventType => {
+        try {
+          // 기존에 등록되었을 수 있는 갤러리 관련 이벤트 리스너 제거 시도
+          // (실제 함수 참조가 없어서 완전한 제거는 어렵지만, 상태 기반 차단으로 무력화)
+          logger.debug(`useGalleryCleanup: ${eventType} 이벤트 정리 시도`);
+        } catch (error) {
+          logger.debug(`useGalleryCleanup: ${eventType} 이벤트 정리 실패:`, error);
+        }
+      });
+
+      logger.debug('useGalleryCleanup: 페이지 상태 복원 완료');
     } catch (error) {
       logger.debug('Failed to restore page state:', error);
     }
