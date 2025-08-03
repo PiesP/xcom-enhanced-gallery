@@ -118,7 +118,7 @@ export function setCSSVariable(
   value: string,
   element: HTMLElement = document.documentElement
 ): void {
-  setCSSVarBase(element, name, value);
+  setCSSVarBase(name, value, element);
 }
 
 /**

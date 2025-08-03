@@ -14,12 +14,14 @@ import { galleryState } from '@shared/state/signals/gallery.signals';
 // Style utilities
 export {
   combineClasses,
-  toggleClass,
   setCSSVariable,
   setCSSVariables,
   updateComponentState,
   createThemedClassName,
 } from './styles/css-utilities';
+
+// Style utilities from style-utils
+export { toggleClass } from './styles/style-utils';
 
 // Scroll utilities
 export {

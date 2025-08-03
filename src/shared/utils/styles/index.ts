@@ -8,11 +8,4 @@
 export * from './css-utilities';
 
 // Backward compatibility utilities for existing components
-export {
-  combineClasses,
-  toggleClass,
-  setCSSVariable,
-  getCSSVariable,
-  updateComponentState,
-  applyTheme,
-} from './style-utils';
+export { toggleClass, getCSSVariable, applyTheme } from './style-utils';
