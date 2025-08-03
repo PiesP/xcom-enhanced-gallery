@@ -113,14 +113,24 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
  * Close gallery
  */
 export function closeGallery(): void {
+  const currentState = galleryState.value;
+
+  // 이미 닫혀있으면 중복 실행 방지
+  if (!currentState.isOpen) {
+    logger.debug('[Gallery] 이미 닫힌 상태 - 건너뜀');
+    return;
+  }
+
+  // 상태 완전 초기화 - mediaItems도 함께 초기화
   galleryState.value = {
-    ...galleryState.value,
+    ...currentState,
     isOpen: false,
+    mediaItems: [], // 🔑 핵심: mediaItems 초기화로 상태 동기화 보장
     currentIndex: 0,
     error: null,
   };
 
-  logger.debug('[Gallery] 갤러리 종료 완료');
+  logger.debug('[Gallery] 갤러리 종료 및 상태 완전 초기화 완료');
 }
 
 /**

@@ -24,6 +24,7 @@ import {
   setupScrollAnimation,
 } from '@shared/utils/animations';
 import { useVirtualScroll } from '@shared/hooks/useVirtualScroll';
+import { useScrollLock } from '@shared/hooks/useScrollLock';
 import { useToolbarPositionBased } from '@features/gallery/hooks';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
@@ -35,7 +36,7 @@ type MouseEvent<T = Element> = Event & {
   target: EventTarget | null;
 };
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
-import { ensureGalleryScrollAvailable } from '@shared/utils';
+import { ensureGalleryScrollAvailable, findTwitterScrollContainer } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 
@@ -234,75 +235,56 @@ function VerticalGalleryViewCore({
   // 강제 렌더링 상태 관리 (더 이상 사용하지 않음)
   const [forceVisibleItems] = useState<Set<number>>(new Set());
 
-  // 🎯 Phase 1: 스크롤 격리 - useRef 기반 상태 관리
-  const originalScrollStateRef = useRef<{
-    overflow: string;
-    overscrollBehavior: string;
-  } | null>(null);
+  // 🎯 개선된 스크롤 잠금 - TDD 기반 타겟 특정 방식
+  const { lockScroll, unlockScroll } = useScrollLock();
 
-  // 스크롤 잠금/해제 함수들
-  const lockBodyScroll = useCallback(() => {
-    if (!originalScrollStateRef.current) {
-      // 원본 상태 저장
-      originalScrollStateRef.current = {
-        overflow: document.body.style.overflow || '',
-        overscrollBehavior: document.body.style.overscrollBehavior || '',
-      };
-
-      // 스크롤 잠금 적용
-      document.body.style.overflow = 'hidden';
-      document.body.style.overscrollBehavior = 'none';
-
-      logger.debug('🔒 Body scroll locked (useRef managed)');
-    }
-  }, []);
-
-  const unlockBodyScroll = useCallback(() => {
-    if (originalScrollStateRef.current) {
-      // 원본 상태 복원
-      document.body.style.overflow = originalScrollStateRef.current.overflow;
-      document.body.style.overscrollBehavior = originalScrollStateRef.current.overscrollBehavior;
-
-      // 상태 초기화
-      originalScrollStateRef.current = null;
-
-      logger.debug('🔓 Body scroll unlocked (useRef managed)');
-    }
-  }, []);
-
-  // 스크롤 잠금 관리 useEffect - TDD GREEN 단계
+  // 스크롤 잠금 관리 useEffect - TDD GREEN 단계 (개선된 버전)
   useEffect(() => {
     if (isVisible && mediaItems.length > 0) {
-      lockBodyScroll();
+      lockScroll(); // 트위터 컨테이너만 잠금
 
-      // wheel 이벤트 방지 (배경 스크롤 차단)
-      const preventWheelScroll = (event: WheelEvent) => {
-        // 갤러리 컨테이너 내부에서의 스크롤은 허용
-        if (containerRef.current?.contains(event.target as Node)) {
+      // 🎯 개선된 wheel 이벤트 방지 - 트위터 컨테이너에만 이벤트 등록
+      const preventTwitterScroll = (event: WheelEvent) => {
+        const eventTarget = event.target as HTMLElement;
+        const isInsideGallery = containerRef.current?.contains(eventTarget);
+
+        // 갤러리 내부에서의 스크롤은 허용
+        if (isInsideGallery) {
           return;
         }
 
-        // 배경 스크롤 방지
+        // 트위터 배경 스크롤만 방지
         event.preventDefault();
         event.stopPropagation();
+        logger.debug('🔒 Twitter scroll prevented (targeted blocking)', {
+          targetElement: eventTarget?.tagName || 'unknown',
+        });
       };
 
-      // 전역 wheel 이벤트 리스너 추가
-      document.addEventListener('wheel', preventWheelScroll, { passive: false });
+      // 트위터 컨테이너에만 이벤트 리스너 추가 (document 대신)
+      const twitterContainer = findTwitterScrollContainer();
+      if (twitterContainer) {
+        twitterContainer.addEventListener('wheel', preventTwitterScroll, { passive: false });
 
-      // 컴포넌트 언마운트 시 확실한 클린업
-      return () => {
-        unlockBodyScroll();
-        document.removeEventListener('wheel', preventWheelScroll);
-      };
+        // 컴포넌트 언마운트 시 확실한 클린업
+        return () => {
+          unlockScroll();
+          twitterContainer.removeEventListener('wheel', preventTwitterScroll);
+        };
+      } else {
+        // 트위터 컨테이너를 찾지 못한 경우 unlock만 실행
+        return () => {
+          unlockScroll();
+        };
+      }
     } else {
-      unlockBodyScroll();
+      unlockScroll();
       // else 브랜치에서도 cleanup 함수 반환
       return () => {
-        unlockBodyScroll();
+        unlockScroll();
       };
     }
-  }, [isVisible, mediaItems.length, lockBodyScroll, unlockBodyScroll]);
+  }, [isVisible, mediaItems.length, lockScroll, unlockScroll]);
 
   // 포커스된 인덱스와 현재 인덱스 동기화
   useEffect(() => {

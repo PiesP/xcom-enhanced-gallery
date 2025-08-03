@@ -23,5 +23,8 @@ export {
 export { useDOMReady } from './useDOMReady';
 export { useKeyboardNavigation } from './useAccessibility';
 
+// Scroll management
+export { useScrollLock } from './useScrollLock';
+
 // Related scroll types (moved to individual hook files)
 export type { ScrollDirection } from './useScrollDirection';
