@@ -143,14 +143,19 @@
   --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
-  /* Z-Index Scale */
+  /* Z-Index Scale - 명확한 간격으로 재정의 */
   --xeg-z-base: 1;
   --xeg-z-dropdown: 1000;
-  --xeg-z-modal: 2000;
-  --xeg-z-toolbar: 2500; /* 툴바 전용 Z-index 추가 */
-  --xeg-z-overlay: 3000;
-  --xeg-z-gallery: 4000;
-  --xeg-z-toast: 5000;
+  --xeg-z-gallery: 2000; /* 갤러리 뷰 (변경: 4000 → 2000) */
+  --xeg-z-toolbar: 2500; /* 툴바 (기존 유지) */
+  --xeg-z-modal: 3000; /* 모달 (변경: 2000 → 3000) */
+  --xeg-z-overlay: 3500; /* 오버레이 (변경: 3000 → 3500) */
+  --xeg-z-toast: 4000; /* 토스트 (변경: 5000 → 4000) */
+
+  /* 갤러리 관련 세부 Z-Index */
+  --xeg-z-gallery-content: var(--xeg-z-gallery); /* 2000 */
+  --xeg-z-gallery-toolbar: var(--xeg-z-toolbar); /* 2500 */
+  --xeg-z-gallery-overlay: calc(var(--xeg-z-toolbar) + 500); /* 3000 */
 
   /* ===========================================
      ANIMATION SYSTEM

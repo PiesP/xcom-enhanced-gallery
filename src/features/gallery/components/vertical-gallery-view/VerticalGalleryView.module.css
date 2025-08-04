@@ -49,10 +49,11 @@
 }
 
 @layer components {
-  /* 공통 CSS 변수 정의 - OKLCH 색상 시스템 적용 */
+  /* 공통 CSS 변수 정의 - Design Token 기반 Z-Index 수정 */
   :root {
-    --xeg-gallery-z-index: var(--xeg-z-gallery, 10000);
-    --xeg-toolbar-z-index: var(--xeg-z-modal, 10001);
+    /* 🎯 Design Token과 일치시킴 */
+    --xeg-gallery-z-index: var(--xeg-z-gallery); /* 2000 */
+    --xeg-toolbar-z-index: var(--xeg-z-toolbar); /* 2500 */
 
     /* 트랜지션 - 최신 easing 함수 사용 */
     --xeg-transition-fast:
@@ -180,14 +181,15 @@
   pointer-events: auto;
 }
 
-/* 독립적인 상단 호버 감지 영역 - 확장된 감지 영역 */
+/* 🎯 호버 존 - 툴바보다 낮게 */
 .toolbarHoverZone {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: 120px; /* 상단 120px로 확장하여 사용성 향상 */
-  z-index: calc(var(--xeg-toolbar-z-index) - 1); /* 툴바보다 낮은 z-index */
+  /* 툴바(2500)보다 1 낮게 */
+  z-index: calc(var(--xeg-z-toolbar) - 1); /* 2499 */
   background: transparent;
   pointer-events: auto; /* 호버 감지를 위해 이벤트 허용 */
 }
@@ -195,7 +197,7 @@
 /* 호버 감지를 위한 기본 스타일 - 프로덕션 빌드 호환성 개선 */
 .toolbarHoverZone:hover {
   /* 호버 상태 표시를 위한 더미 속성 */
-  z-index: calc(var(--xeg-toolbar-z-index) - 1);
+  z-index: calc(var(--xeg-z-toolbar) - 1);
 }
 
 /* 툴바가 표시된 상태에서는 호버 영역 완전히 비활성화 */
@@ -211,14 +213,15 @@
   }
 }
 
-/* 툴바 래퍼 - 기본 가시성 보장 및 개선된 트랜지션 */
+/* 🎯 툴바 래퍼 - 올바른 토큰 사용 */
 .toolbarWrapper {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: auto;
-  z-index: var(--xeg-toolbar-z-index);
+  /* Design Token에 정의된 값 사용 */
+  z-index: var(--xeg-z-toolbar); /* 2500 */
 
   /* 기본 상태: CSS 변수로 제어되는 숨김 상태 */
   opacity: var(--toolbar-opacity, 0);

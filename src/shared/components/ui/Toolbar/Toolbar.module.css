@@ -15,14 +15,15 @@
   /* 단순한 클릭 효과 - transform 제거 */
 }
 
-/* 기본 툴바 - CSS 변수 기반 가시성 제어 */
+/* 🎯 툴바 기본 스타일 - Design Token 값 직접 사용 */
 .galleryToolbar {
   /* 기본 레이아웃 및 시각적 속성만 */
   position: fixed;
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--xeg-z-toolbar);
+  /* Design Token 값 직접 사용 */
+  z-index: var(--xeg-z-toolbar); /* 2500 */
 
   display: inline-flex;
   align-items: center;

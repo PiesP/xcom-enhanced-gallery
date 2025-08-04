@@ -23,7 +23,7 @@ import {
   animateGalleryExit,
   setupScrollAnimation,
 } from '@shared/utils/animations';
-import { useToolbarPositionBased } from '@features/gallery/hooks';
+import { useToolbar } from '@features/gallery/hooks';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
@@ -87,142 +87,15 @@ function VerticalGalleryViewCore({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const toolbarHoverZoneRef = useRef<HTMLDivElement>(null);
-  const toolbarWrapperRef = useRef<HTMLDivElement>(null);
+
+  // 🎯 간소화된 툴바 관리 - 75% 코드 감소
+  const { isVisible: toolbarVisible, hoverZoneRef } = useToolbar({
+    hoverZoneHeight: 100,
+    initialShowDuration: 1000,
+  });
 
   // 단순화된 가시성 상태 관리
   const [isVisible, setIsVisible] = useState(mediaItems.length > 0);
-
-  // DOM 요소 준비 상태 추적
-  const [domReady, setDomReady] = useState(false);
-
-  // 초기 툴바 표시 상태 - 갤러리 열림 시 3초간 표시 후 자동 숨김
-  const [initialToolbarVisible, setInitialToolbarVisible] = useState(true);
-
-  // DOM 요소 준비 확인
-  useEffect(() => {
-    if (toolbarWrapperRef.current && toolbarHoverZoneRef.current) {
-      setDomReady(true);
-    }
-  }, [isVisible]); // isVisible이 변경될 때마다 DOM 요소 확인
-
-  // 🎯 툴바 자동 숨김 기능 - TDD 구현
-  const [toolbarAutoHideTimer, setToolbarAutoHideTimer] = useState<number | null>(null);
-  const [activityTimer, setActivityTimer] = useState<number | null>(null);
-
-  // 툴바 자동 숨김 타이머 초기화 및 관리
-  const resetAutoHideTimer = useCallback(() => {
-    // 기존 타이머 정리
-    if (toolbarAutoHideTimer) {
-      clearTimeout(toolbarAutoHideTimer);
-    }
-
-    // 3초 후 툴바 숨김
-    const timer = window.setTimeout(() => {
-      setInitialToolbarVisible(false);
-      logger.debug('🕐 Toolbar auto-hidden after 3 seconds');
-    }, 3000);
-
-    setToolbarAutoHideTimer(timer);
-  }, [toolbarAutoHideTimer]);
-
-  // 사용자 활동 감지 시 툴바 다시 표시
-  const handleUserActivity = useCallback(() => {
-    setInitialToolbarVisible(true);
-
-    // 기존 활동 타이머 정리
-    if (activityTimer) {
-      clearTimeout(activityTimer);
-    }
-
-    // 새 자동 숨김 타이머 시작
-    resetAutoHideTimer();
-
-    // 활동 감지 타이머 (debounce)
-    const timer = window.setTimeout(() => {
-      logger.debug('🎯 User activity detected, toolbar shown');
-    }, 100);
-
-    setActivityTimer(timer);
-  }, [activityTimer, resetAutoHideTimer]);
-
-  // 갤러리 열림 시 초기 툴바 자동 숨김 타이머 시작
-  useEffect(() => {
-    if (isVisible && domReady && initialToolbarVisible) {
-      resetAutoHideTimer();
-    }
-
-    // 클린업: 모든 타이머 정리
-    return () => {
-      if (toolbarAutoHideTimer) {
-        clearTimeout(toolbarAutoHideTimer);
-      }
-      if (activityTimer) {
-        clearTimeout(activityTimer);
-      }
-    };
-  }, [isVisible, domReady, initialToolbarVisible, resetAutoHideTimer]);
-
-  // 사용자 활동 이벤트 리스너 (마우스 움직임, 클릭, 키보드)
-  useEffect(() => {
-    if (!isVisible || !domReady) return;
-
-    const container = containerRef.current;
-    if (!container) return;
-
-    // 활동 감지 이벤트들
-    const activityEvents = ['mousemove', 'click', 'keydown', 'touchstart'] as const;
-
-    const activityHandler = (event: Event) => {
-      // 갤러리 컨테이너 내부 활동만 감지
-      if (container.contains(event.target as Node)) {
-        handleUserActivity();
-      }
-    };
-
-    // 이벤트 리스너 등록
-    activityEvents.forEach(eventType => {
-      container.addEventListener(eventType, activityHandler, { passive: true });
-    });
-
-    // 클린업
-    return () => {
-      activityEvents.forEach(eventType => {
-        container.removeEventListener(eventType, activityHandler);
-      });
-    };
-  }, [isVisible, domReady, handleUserActivity]);
-
-  // 툴바 자동 숨김 로직 - 갤러리 열림 시 3초 후 자동 숨김
-  useEffect(() => {
-    if (isVisible && domReady && initialToolbarVisible) {
-      const hideTimer = setTimeout(() => {
-        setInitialToolbarVisible(false);
-        logger.debug('Toolbar auto-hidden after initial display');
-      }, 3000); // 3초 후 자동 숨김
-
-      return () => clearTimeout(hideTimer); // 클린업
-    }
-
-    // 조건을 만족하지 않을 때는 undefined 반환 (cleanup 함수 없음)
-    return undefined;
-  }, [isVisible, domReady, initialToolbarVisible]);
-
-  // useToolbarPositionBased 훅을 사용하여 간소화된 위치 기반 툴바 제어
-  const {
-    isVisible: _toolbarVisible,
-    show: _showToolbar,
-    hide: _hideToolbar,
-  } = useToolbarPositionBased({
-    toolbarElement: domReady ? toolbarWrapperRef.current : null,
-    hoverZoneElement: domReady ? toolbarHoverZoneRef.current : null,
-    enabled: isVisible && mediaItems.length > 0 && domReady,
-  });
-
-  // 간소화된 위치 기반 시스템으로 교체:
-  // - 복잡한 타이머 로직 제거 (100줄 → 30줄)
-  // - 마우스 위치에 따른 즉시 반응형 제어
-  // - 기존 CSS 호버 존 시스템 활용
 
   // 포커스 상태 관리
   const [focusedIndex, setFocusedIndex] = useState<number>(currentIndex);
@@ -263,12 +136,6 @@ function VerticalGalleryViewCore({
     const shouldBeVisible = mediaItems.length > 0;
     if (isVisible !== shouldBeVisible) {
       setIsVisible(shouldBeVisible);
-
-      // 갤러리가 새로 열릴 때 초기 툴바 표시 상태 리셋
-      if (shouldBeVisible && !isVisible) {
-        setInitialToolbarVisible(true);
-        logger.debug('VerticalGalleryView: 갤러리 열림 - 초기 툴바 표시 리셋');
-      }
 
       logger.debug('VerticalGalleryView: 가시성 상태 변경', {
         wasVisible: isVisible,
@@ -583,8 +450,8 @@ function VerticalGalleryViewCore({
     });
   }, [imageFitMode, mediaItems.length]);
 
-  // useToolbarPositionBased 훅이 모든 툴바 이벤트 처리를 담당
-  // 중복된 이벤트 핸들러 제거 완료
+  // 🎯 간소화된 툴바 시스템 사용 - 복잡한 이벤트 핸들러 제거 완료
+  // useToolbar 훅이 모든 툴바 표시/숨김 로직을 간단하게 처리
 
   // 빈 상태 처리
   if (!isVisible || mediaItems.length === 0) {
@@ -601,16 +468,22 @@ function VerticalGalleryViewCore({
   return (
     <div
       ref={containerRef}
-      className={`${styles.container} ${initialToolbarVisible ? styles.initialToolbarVisible : ''} ${stringWithDefault(className, '')}`}
+      className={`${styles.container} ${toolbarVisible ? styles.initialToolbarVisible : ''} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'
     >
-      {/* 툴바 호버 트리거 영역 (브라우저 상단 100px) */}
-      <div className={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
+      {/* 🎯 간소화된 툴바 호버 트리거 영역 */}
+      <div className={styles.toolbarHoverZone} ref={hoverZoneRef} style={{ height: '100px' }} />
 
-      {/* 툴바 래퍼 - 순수 CSS 호버로 제어됨 */}
-      <div className={styles.toolbarWrapper} ref={toolbarWrapperRef}>
+      {/* 🎯 툴바 래퍼 - CSS 변수로 제어됨 */}
+      <div
+        className={styles.toolbarWrapper}
+        style={{
+          '--toolbar-opacity': toolbarVisible ? '1' : '0',
+          '--toolbar-pointer-events': toolbarVisible ? 'auto' : 'none',
+        }}
+      >
         <Toolbar
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
