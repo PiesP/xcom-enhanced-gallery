@@ -310,75 +310,8 @@ function getComponentName<T>(Component: ComponentType<T>): string {
  */
 
 /**
- * 갤러리 컨테이너 HOC
- */
-export function withGalleryContainer<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryOptions> = {}
-): ComponentType<P> {
-  return withGallery(Component, {
-    type: 'container',
-    ...additionalOptions,
-  });
-}
-
-/**
- * 갤러리 아이템 HOC
- */
-export function withGalleryItem<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryOptions> = {}
-): ComponentType<P> {
-  return withGallery(Component, {
-    type: 'item',
-    ...additionalOptions,
-  });
-}
-
-/**
- * 갤러리 컨트롤 HOC
- */
-export function withGalleryControl<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryOptions> = {}
-): ComponentType<P> {
-  return withGallery(Component, {
-    type: 'control',
-    ...additionalOptions,
-  });
-}
-
-/**
- * 갤러리 오버레이 HOC
- */
-export function withGalleryOverlay<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryOptions> = {}
-): ComponentType<P> {
-  return withGallery(Component, {
-    type: 'overlay',
-    ...additionalOptions,
-  });
-}
-
-/**
- * 기본 갤러리 HOC (withGallery의 별칭)
- */
-export const GalleryHOC = withGallery;
-
-/**
  * 유틸리티 함수들
  */
-
-/**
- * DOM 요소가 갤러리 요소인지 확인
- */
-export function isGalleryElement(element: Element): boolean {
-  return (
-    element.hasAttribute('data-xeg-gallery') &&
-    element.getAttribute('data-xeg-gallery-version') === '2.0'
-  );
-}
 
 /**
  * DOM 요소의 갤러리 타입 반환
@@ -386,17 +319,6 @@ export function isGalleryElement(element: Element): boolean {
 export function getGalleryType(element: Element): GalleryType | null {
   const type = element.getAttribute('data-xeg-gallery-type');
   return type as GalleryType | null;
-}
-
-/**
- * 이벤트가 갤러리 요소에서 발생했는지 확인
- */
-export function isEventFromGallery(event: Event): boolean {
-  const target = event.target as Element | null;
-  if (!target) return false;
-
-  const galleryElement = target.closest('[data-xeg-gallery-version="2.0"]');
-  return galleryElement !== null;
 }
 
 /**

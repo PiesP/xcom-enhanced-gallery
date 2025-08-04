@@ -5,13 +5,9 @@
  * Version 4.0 - 간소화된 HOC 시스템 (Phase 3)
  */
 
-// 갤러리 HOC (메인)
+// 갤러리 HOC (필수만)
 export {
   withGallery,
-  GalleryHOC,
-  withGalleryContainer,
-  withGalleryItem,
-  withGalleryOverlay,
   getGalleryType,
   type GalleryType,
   type GalleryOptions,

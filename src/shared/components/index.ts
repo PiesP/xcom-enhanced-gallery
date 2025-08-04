@@ -7,14 +7,7 @@
 export type { BaseComponentProps, InteractiveComponentProps, GalleryComponentProps } from './base';
 
 // HOC components - 실제 존재하는 것들만
-export {
-  withGallery,
-  GalleryHOC,
-  withGalleryContainer,
-  withGalleryItem,
-  withGalleryOverlay,
-  getGalleryType,
-} from './hoc';
+export { withGallery, getGalleryType } from './hoc';
 export type { GalleryType, GalleryOptions } from './hoc';
 
 // Isolation components
