@@ -956,16 +956,24 @@ beforeEach(async () => {
     console.warn('[Setup] DOM element creation failed:', error);
   }
 
-  const videoPlayer = createMockElement('div');
+  const videoPlayer = global.document.createElement('div');
   videoPlayer.setAttribute('data-testid', 'videoPlayer');
   if (global.document.body && typeof global.document.body.appendChild === 'function') {
-    global.document.body.appendChild(videoPlayer);
+    try {
+      global.document.body.appendChild(videoPlayer);
+    } catch (error) {
+      console.warn('[Setup] Failed to append videoPlayer:', error);
+    }
   }
 
-  const tweetPhoto = createMockElement('div');
+  const tweetPhoto = global.document.createElement('div');
   tweetPhoto.setAttribute('data-testid', 'tweetPhoto');
   if (global.document.body && typeof global.document.body.appendChild === 'function') {
-    global.document.body.appendChild(tweetPhoto);
+    try {
+      global.document.body.appendChild(tweetPhoto);
+    } catch (error) {
+      console.warn('[Setup] Failed to append tweetPhoto:', error);
+    }
   }
 
   // 기본 테스트 환경 설정 (minimal)

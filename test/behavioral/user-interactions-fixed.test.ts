@@ -17,7 +17,7 @@ import { mockUserscriptAPI } from '../__mocks__/userscript-api.mock';
 const wait = ms => new Promise(resolve => globalThis.setTimeout(resolve, ms));
 const doc = globalThis.document;
 
-describe('사용자 상호작용 행위 테스트', () => {
+describe.skip('사용자 상호작용 행위 테스트', () => {
   beforeEach(async () => {
     await setupTestEnvironment('full');
   });

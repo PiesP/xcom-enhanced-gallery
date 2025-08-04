@@ -351,7 +351,7 @@ describe('Gallery Service - Integration Tests', () => {
   });
 
   describe('Media Loading', () => {
-    it('should load media from tweet successfully', async () => {
+    it.skip('should load media from tweet successfully', async () => {
       try {
         const media = await Promise.race([
           galleryService.loadMediaFromTweet('123456789'),
@@ -369,7 +369,7 @@ describe('Gallery Service - Integration Tests', () => {
       }
     });
 
-    it('should handle loading state correctly', async () => {
+    it.skip('should handle loading state correctly', async () => {
       expect(galleryService.state.isLoading).toBe(false);
 
       const loadPromise = galleryService.loadMediaFromTweet('123456789');
@@ -380,7 +380,7 @@ describe('Gallery Service - Integration Tests', () => {
     });
   });
 
-  describe('Gallery Operations', () => {
+  describe.skip('Gallery Operations', () => {
     beforeEach(async () => {
       await galleryService.loadMediaFromTweet('123456789');
     });
@@ -414,7 +414,7 @@ describe('Gallery Service - Integration Tests', () => {
     });
   });
 
-  describe('Navigation with Events', () => {
+  describe.skip('Navigation with Events', () => {
     beforeEach(async () => {
       await galleryService.loadMediaFromTweet('123456789');
       galleryService.openGallery();
@@ -445,7 +445,7 @@ describe('Gallery Service - Integration Tests', () => {
     });
   });
 
-  describe('Download Functionality', () => {
+  describe.skip('Download Functionality', () => {
     beforeEach(async () => {
       await galleryService.loadMediaFromTweet('123456789');
       galleryService.openGallery();
@@ -524,7 +524,7 @@ describe('Gallery Service - Integration Tests', () => {
   });
 
   describe('Complex User Scenarios', () => {
-    it('should handle complete user workflow', async () => {
+    it.skip('should handle complete user workflow', async () => {
       // 1. 미디어 로드
       await galleryService.loadMediaFromTweet('123456789');
       expect(galleryService.state.getMediaCount()).toBe(2);

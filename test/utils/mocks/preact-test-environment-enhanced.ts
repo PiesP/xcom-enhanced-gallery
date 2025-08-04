@@ -71,7 +71,7 @@ class UltimatePreactContext {
       __c: this,
       __h: [],
       __s: [],
-      __v: this.component
+      __v: this.component,
     };
     this.renderContext = context;
     return context;
@@ -79,7 +79,6 @@ class UltimatePreactContext {
 
   getRenderContext() {
     return this.renderContext || this.createRenderContext();
-  }
   }
 
   startRender() {

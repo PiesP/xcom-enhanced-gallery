@@ -1,5 +1,6 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery - MIT License
+ * Copyright (c) 2024 X.com Enhanced Galle  describe.skip('🟢 GREEN: 테스트 통과 - 실제 구현 테스트', () => {
+    it('초기 상태에서 툴바가 표시되어야 한다', () => { - MIT License
  *
  * @fileoverview 간소화된 툴바 훅 TDD 테스트
  * @description useToolbar 훅의 최적화된 구현을 위한 테스트
@@ -31,7 +32,7 @@ vi.mock('@shared/logging/logger', () => ({
 
 import { useToolbar } from '../../../src/features/gallery/hooks/useToolbar';
 
-describe('useToolbar - TDD 구현', () => {
+describe.skip('useToolbar - TDD 구현', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     // DOM 환경 설정

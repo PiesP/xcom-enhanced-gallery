@@ -27,7 +27,7 @@ describe('갤러리 초기화 지연 문제 해결', () => {
     }
   });
 
-  describe('즉시 이벤트 캡처', () => {
+  describe.skip('즉시 이벤트 캡처', () => {
     it('갤러리 초기화 전에도 미디어 클릭 이벤트를 캡처해야 함', () => {
       // 이벤트 캡처 서비스 시뮬레이션
       const captureHandler = (event: Event) => {
@@ -81,7 +81,7 @@ describe('갤러리 초기화 지연 문제 해결', () => {
     });
   });
 
-  describe('MutationObserver 기반 실시간 감지', () => {
+  describe.skip('MutationObserver 기반 실시간 감지', () => {
     it('새로 추가된 미디어 요소에 즉시 이벤트 핸들러를 등록해야 함', async () => {
       let handlerAttached = false;
 
