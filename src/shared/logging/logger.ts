@@ -254,20 +254,24 @@ export function createScopedLogger(scope: string, config: Partial<LoggerConfig> 
 }
 
 /**
- * Performance logging utility for measuring execution time.
+ * Performance measurement with logging
+ * Measures the execution time of a function and logs it
  *
- * @param label - Label for the performance measurement
+ * @param label - Label for the measurement
  * @param fn - Function to measure
  * @returns The result of the function execution
  *
  * @example
  * ```typescript
- * const result = await measurePerformance('API Call', async () => {
+ * const result = await measurePerformanceWithLog('API Call', async () => {
  *   return await fetchData();
  * });
  * ```
  */
-export async function measurePerformance<T>(label: string, fn: () => T | Promise<T>): Promise<T> {
+export async function measurePerformanceWithLog<T>(
+  label: string,
+  fn: () => T | Promise<T>
+): Promise<T> {
   logger.time(label);
   try {
     const result = await fn();

@@ -16,8 +16,8 @@ export {
 } from './utils';
 
 // === 성능 관련 (2개) ===
-export { rafThrottle } from './performance/performance-utils';
-export { createDebouncer } from './performance/performance-utils';
+export { rafThrottle } from '@shared/services/unified-performance-service';
+export { createDebouncer } from '@shared/services/unified-performance-service';
 
 // === 최적화 유틸리티 ===
 export * from './optimization/optimization-utils';

@@ -7,12 +7,12 @@
 
 import { createScopedLogger } from '@shared/logging/logger';
 
-import { createDebouncer } from './performance/performance-utils';
+import { createDebouncer } from '@shared/services/unified-performance-service';
 
 const logger = createScopedLogger('SimplePerformance');
 
-// Re-export measurePerformance and rafThrottle from performance-utils for backward compatibility
-export { measurePerformance, rafThrottle } from './performance/performance-utils';
+// Re-export measurePerformance and rafThrottle from UnifiedPerformanceService for backward compatibility
+export { measurePerformance, rafThrottle } from '@shared/services/unified-performance-service';
 
 /**
  * 간단한 스로틀 함수
@@ -137,8 +137,8 @@ export function optimizeEventListener<K extends keyof HTMLElementEventMap>(
   let optimizedHandler = handler;
 
   if (options.debounceMs) {
-    const debouncer = createDebouncer(handler, options.debounceMs);
-    optimizedHandler = (...args: Parameters<typeof handler>) => debouncer.execute(...args);
+    const debouncer = createDebouncer(handler as (...args: unknown[]) => void, options.debounceMs);
+    optimizedHandler = debouncer as typeof handler;
   } else if (options.throttleMs) {
     optimizedHandler = throttle(handler, options.throttleMs);
   }

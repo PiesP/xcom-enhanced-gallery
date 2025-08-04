@@ -94,4 +94,4 @@ export {
   measurePerformance,
   measureAsyncPerformance,
   rafThrottle,
-} from './performance/performance-utils';
+} from '@shared/services/unified-performance-service';

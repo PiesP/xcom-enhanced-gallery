@@ -25,7 +25,7 @@ export { ensureGalleryScrollAvailable } from './core-utils';
 
 // CSS utilities (missing exports)
 export { default as StyleManagerClass } from '../styles/StyleManager';
-export { setCSSVariable } from './styles/css-utilities';
+export { setCSSVariable } from '@shared/services/unified-style-service';
 
 // Add combineClasses as a separate export using StyleManager
 import StyleManager from '../styles/StyleManager';
@@ -55,7 +55,7 @@ export {
   throttleScroll,
   measurePerformance,
   measureAsyncPerformance,
-} from './performance/performance-utils';
+} from '@shared/services/unified-performance-service';
 
 // ================================
 // Gallery utilities (simplified functions)

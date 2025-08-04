@@ -24,7 +24,7 @@ export {
 export {
   DOMUtils,
   type DOMElementCreationOptions as LegacyDOMElementCreationOptions,
-} from './utils/dom-utils';
+} from '@shared/services/unified-dom-service';
 
 // 레거시 DOM 캐싱 시스템 (하위 호환성)
 export {
@@ -48,4 +48,4 @@ export {
   querySelectorAll,
   removeElement,
   removeEventListener,
-} from './utils/dom-utils';
+} from '@shared/services/unified-dom-service';

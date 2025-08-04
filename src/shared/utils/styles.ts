@@ -10,7 +10,7 @@ export {
   setCSSVariable,
   setCSSVariables,
   updateComponentState,
-} from './styles/css-utilities';
+} from '@shared/services/unified-style-service';
 
 // Backward compatibility - exports commonly used style utilities
 export { getCSSVariable, applyTheme } from './styles/style-utils';
