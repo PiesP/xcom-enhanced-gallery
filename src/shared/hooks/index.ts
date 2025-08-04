@@ -14,6 +14,9 @@ export {
   type ToolbarDataState,
 } from './useToolbarState';
 
+// Simple toolbar hook
+export { useToolbar } from './useToolbar';
+
 export {
   useScrollDirection,
   type UseScrollDirectionOptions,

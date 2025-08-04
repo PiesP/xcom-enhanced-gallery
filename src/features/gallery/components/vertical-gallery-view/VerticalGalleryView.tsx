@@ -23,7 +23,7 @@ import {
   animateGalleryExit,
   setupScrollAnimation,
 } from '@shared/utils/animations';
-import { useToolbarVisibility } from '@shared/hooks/useToolbarVisibility';
+import { useToolbar } from '@shared/hooks/useToolbar';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
@@ -88,10 +88,9 @@ function VerticalGalleryViewCore({
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // 🎯 통합 툴바 가시성 관리
-  const { isVisible: toolbarVisible, hoverZoneRef } = useToolbarVisibility({
+  // 🎯 통합 컨테이너 방식 툴바 가시성 관리 (깜빡임 해결)
+  const { isVisible: toolbarVisible, containerRef: toolbarContainerRef } = useToolbar({
     initialShowDuration: 1000,
-    hideDelay: 300,
   });
 
   // 단순화된 가시성 상태 관리
@@ -468,37 +467,35 @@ function VerticalGalleryViewCore({
   return (
     <div
       ref={containerRef}
-      className={`${styles.container} ${toolbarVisible ? styles.initialToolbarVisible : ''} ${stringWithDefault(className, '')}`}
+      className={`${styles.container} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'
     >
-      {/* 🎯 간소화된 툴바 호버 트리거 영역 */}
-      <div className={styles.toolbarHoverZone} ref={hoverZoneRef} style={{ height: '100px' }} />
-
-      {/* 🎯 툴바 래퍼 - CSS 변수로 제어됨 */}
+      {/* 🎯 통합 컨테이너: 호버 존 + 툴바 (깜빡임 해결) */}
       <div
-        className={styles.toolbarWrapper}
-        style={{
-          '--toolbar-opacity': toolbarVisible ? '1' : '0',
-          '--toolbar-pointer-events': toolbarVisible ? 'auto' : 'none',
-        }}
+        ref={toolbarContainerRef}
+        className={styles.toolbarContainer}
+        data-testid='toolbar-container'
       >
-        <Toolbar
-          onClose={onClose || (() => {})}
-          onPrevious={onPrevious || (() => {})}
-          onNext={onNext || (() => {})}
-          currentIndex={currentIndex}
-          totalCount={mediaItems.length}
-          isDownloading={isDownloading}
-          onDownloadCurrent={handleDownloadCurrent}
-          onDownloadAll={handleDownloadAll}
-          onFitOriginal={handleFitOriginal}
-          onFitWidth={handleFitWidth}
-          onFitHeight={handleFitHeight}
-          onFitContainer={handleFitContainer}
-          className={styles.toolbar || ''}
-        />
+        {/* 조건부 렌더링으로 툴바 표시 */}
+        {toolbarVisible && (
+          <Toolbar
+            onClose={onClose || (() => {})}
+            onPrevious={onPrevious || (() => {})}
+            onNext={onNext || (() => {})}
+            currentIndex={currentIndex}
+            totalCount={mediaItems.length}
+            isDownloading={isDownloading}
+            onDownloadCurrent={handleDownloadCurrent}
+            onDownloadAll={handleDownloadAll}
+            onFitOriginal={handleFitOriginal}
+            onFitWidth={handleFitWidth}
+            onFitHeight={handleFitHeight}
+            onFitContainer={handleFitContainer}
+            className={styles.toolbar || ''}
+          />
+        )}
       </div>
 
       {/* 콘텐츠 영역 */}

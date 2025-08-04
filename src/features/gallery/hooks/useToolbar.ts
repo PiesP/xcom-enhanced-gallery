@@ -14,14 +14,14 @@
 import { getPreactHooks } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
 
-interface UseSimpleToolbarOptions {
+interface useToolbarOptions {
   /** 호버 존 높이 (기본: 100px) */
   readonly hoverZoneHeight?: number;
   /** 초기 표시 시간 (기본: 1000ms) */
   readonly initialShowDuration?: number;
 }
 
-interface UseSimpleToolbarReturn {
+interface useToolbarReturn {
   /** 툴바 표시 상태 */
   readonly isVisible: boolean;
   /** 호버 존 ref */
@@ -39,7 +39,7 @@ interface UseSimpleToolbarReturn {
 export function useToolbar({
   hoverZoneHeight: _hoverZoneHeight = 100,
   initialShowDuration = 1000,
-}: UseSimpleToolbarOptions = {}): UseSimpleToolbarReturn {
+}: useToolbarOptions = {}): useToolbarReturn {
   const { useState, useRef, useEffect } = getPreactHooks();
 
   // 🎯 단일 상태만 관리
