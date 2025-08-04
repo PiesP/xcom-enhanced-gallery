@@ -54,6 +54,11 @@ export { LazyLoadingService } from './LazyLoadingService';
 // 8. 서비스 관리 (ServiceRegistry 통합)
 export { CoreService } from './ServiceManager';
 
+// 9. 스타일 서비스 (StyleService 통합 완료)
+export { StyleService, styleService } from './style-service';
+export type { GlassmorphismIntensity, ComponentState } from './style-service';
+// Theme 타입은 ThemeService에서 이미 export됨
+
 // ====================================
 // 유틸리티 및 타입들
 // ====================================

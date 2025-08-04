@@ -1,5 +1,9 @@
 /**
- * @fileoverview TDD RED Phase: 스타일 통합 실패 테스트 (수정 버전)
+ * @fileo      // RED: 아직 통합 StyleService가 존재하지 않아서 실패해야 함
+      try {
+        const       // RED: 완전한 통합 서비스가 아니라는 것을 증명해야 함
+      try {
+        const { styleService } = await import('../../src/shared/services/style-service');leService = await import('../../src/shared/services/style-service');view TDD RED Phase: 스타일 통합 실패 테스트 (수정 버전)
  * @description 통합되지 않은 상태에서 실패해야 하는 테스트들
  * @version 1.0.0 - RED Phase Fixed
  */

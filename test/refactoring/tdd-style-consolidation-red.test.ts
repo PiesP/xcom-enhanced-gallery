@@ -13,7 +13,7 @@ describe('🔴 TDD RED Phase: 스타일 통합 요구사항 (실패 예상)', ()
     it('StyleService가 모든 스타일 기능을 통합해야 함', async () => {
       // RED: 아직 통합 StyleService가 존재하지 않아서 실패해야 함
       try {
-        const StyleService = await import('../../src/shared/services/StyleService');
+        const StyleService = await import('../../src/shared/services/style-service');
 
         // 통합 StyleService가 있다면 모든 필수 메서드를 가져야 함
         expect(StyleService.default).toBeDefined();
@@ -87,7 +87,7 @@ describe('🔴 TDD RED Phase: 스타일 통합 요구사항 (실패 예상)', ()
     it('통합된 StyleService가 메모리 누수 없이 작동해야 함', async () => {
       // RED: 완전한 통합 서비스가 아니라는 것을 증명해야 함
       try {
-        const { styleService } = await import('../../src/shared/services/StyleService');
+        const { styleService } = await import('../../src/shared/services/style-service');
 
         // StyleService가 존재하더라도, 완전한 메모리 관리 기능은 없어야 함
         const hasGetActiveResources = typeof styleService.getActiveResources === 'function';
