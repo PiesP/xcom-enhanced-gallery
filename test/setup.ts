@@ -17,6 +17,25 @@ import {
 } from './utils/mocks/dom-environment.js';
 
 // ================================
+// 🔧 Console API 안전 모킹 (최우선)
+// ================================
+
+if (typeof global !== 'undefined') {
+  // console 객체가 없거나 불완전한 경우 보완
+  if (!global.console) {
+    global.console = {} as Console;
+  }
+
+  // 누락된 console 메서드들 추가
+  const consoleMethods = ['debug', 'info', 'warn', 'error', 'log', 'trace', 'table'];
+  consoleMethods.forEach(method => {
+    if (!global.console[method as keyof Console]) {
+      (global.console as any)[method] = () => {}; // no-op
+    }
+  });
+}
+
+// ================================
 // 🎯 Vendor API Mock 설정 (최우선)
 // ================================
 
@@ -597,16 +616,27 @@ beforeEach(async () => {
   }
 
   // 🎯 갤러리 컨테이너 미리 생성 (테스트에서 찾을 수 있도록)
-  const galleryContainer = createMockElement('div');
-  galleryContainer.setAttribute('data-gallery', 'enhanced');
-  galleryContainer.className = 'gallery-container';
-  galleryContainer.id = 'enhanced-gallery';
-  global.document.body.appendChild(galleryContainer);
+  try {
+    const galleryContainer = global.document.createElement('div');
+    galleryContainer.setAttribute('data-gallery', 'enhanced');
+    galleryContainer.className = 'gallery-container';
+    galleryContainer.id = 'enhanced-gallery';
 
-  // 추가 테스트용 요소들
-  const tweetContainer = createMockElement('article');
-  tweetContainer.setAttribute('data-testid', 'tweet');
-  global.document.body.appendChild(tweetContainer);
+    if (global.document.body && typeof global.document.body.appendChild === 'function') {
+      global.document.body.appendChild(galleryContainer);
+    }
+
+    // 추가 테스트용 요소들
+    const tweetContainer = global.document.createElement('article');
+    tweetContainer.setAttribute('data-testid', 'tweet');
+
+    if (global.document.body && typeof global.document.body.appendChild === 'function') {
+      global.document.body.appendChild(tweetContainer);
+    }
+  } catch (error) {
+    // DOM 요소 생성 실패는 조용히 처리
+    console.warn('[Setup] DOM element creation failed:', error);
+  }
 
   const videoPlayer = createMockElement('div');
   videoPlayer.setAttribute('data-testid', 'videoPlayer');

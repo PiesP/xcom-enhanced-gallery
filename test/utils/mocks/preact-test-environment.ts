@@ -138,8 +138,7 @@ export function setupPreactTestEnvironment(): UltimateHookContext {
   options.commit = vi.fn((vnode: any) => {
     if (vnode) {
       // 커밋 단계에서 DOM 참조 설정
-      vnode.__e = vnode.__e || mockComponent.__e;
-      vnode.__e = vnode.__e || mockComponent.__e;
+      vnode.__e = vnode.__e || ultimateComponent.__e;
     }
   });
 
@@ -147,17 +146,10 @@ export function setupPreactTestEnvironment(): UltimateHookContext {
     if (vnode) {
       // 언마운트 시 정리
       vnode.__k = null;
-      // Ultimate VNode 정리
-      vnode.__k = [];
       vnode.__e = null;
       vnode.__P = null;
       vnode.__s = [];
       vnode.__h = [];
-      vnode.__H = 0;
-      vnode.__c = null;
-      vnode.__n = null;
-      vnode.__u = 0;
-      vnode.__d = false;
     }
   });
 
@@ -280,22 +272,22 @@ export function ensurePreactHookContext(): void {
  * 🚀 Ultimate Mock Preact 컴포넌트 생성 함수
  */
 function createUltimatePreactComponent(): UltimatePreactComponent {
+  // DOM 환경 안전성 확인
+  const hasDocument = typeof global !== 'undefined' && global.document;
+  const hasCreateElement = hasDocument && typeof global.document.createElement === 'function';
+
   return {
     __k: [], // 빈 배열로 초기화 (__k 에러 방지!)
-    __e: document.createElement('div'),
+    __e: hasCreateElement ? global.document.createElement('div') : null,
     __P: null,
     __s: ultimateHookStates,
-    __h: [],
-    __H: ultimateHookIndex,
-    __c: null,
-    __n: null,
-    __u: 0,
-    __d: false,
-    constructor: undefined,
+    __h: null,
+    __u: null,
     type: 'div',
-    props: {},
-    ref: null,
     key: null,
+    ref: null,
+    props: {},
+    constructor: undefined,
   };
 }
 
@@ -306,38 +298,21 @@ function createUltimatePreactComponent(): UltimatePreactComponent {
  * 테스트 완료 후 Ultimate Preact 환경을 정리합니다.
  */
 export function cleanupPreactTestEnvironment(): void {
-  // Ultimate 전역 상태 완전 정리
-  ultimateHookIndex = 0;
-  ultimateHookStates.length = 0;
-  ultimateComponentContext = null;
-
-  // Ultimate Global hook context 정리
-  if ((global as any).__PREACT_HOOK_CONTEXT__) {
-    delete (global as any).__PREACT_HOOK_CONTEXT__;
-  }
-  if ((global as any).__ULTIMATE_PREACT_COMPONENT__) {
-    delete (global as any).__ULTIMATE_PREACT_COMPONENT__;
-  }
-
-  // Ultimate Options 초기화
-  const ultimateOptions = {
-    diff: options.diff,
-    commit: options.commit,
-    unmount: options.unmount,
-    __b: options.__b,
-    __r: options.__r,
-    __e: options.__e,
-    __d: options.__d,
-    __c: options.__c,
-    __h: options.__h,
-  };
-
-  // 안전한 정리 (Ultimate Mock 제거)
-  Object.keys(ultimateOptions).forEach(key => {
-    delete (options as any)[key];
+  // 기존 Preact Hook 상태 정리
+  ultimateHookStates.forEach(state => {
+    if (state && typeof state.cleanup === 'function') {
+      try {
+        state.cleanup();
+      } catch {
+        // 정리 중 에러 무시 (테스트 환경)
+      }
+    }
   });
 
-  console.debug('[Ultimate Preact Test Environment] 환경 정리 완료 ✅');
+  // console.debug 안전 호출
+  if (typeof console !== 'undefined' && console.debug) {
+    console.debug('[Ultimate Preact Test Environment] 환경 정리 완료 ✅');
+  }
 }
 
 /**

@@ -10,10 +10,11 @@ export { select, selectAll, updateElement, batchUpdate } from './dom';
 export type { DOMUpdate } from './dom';
 
 // ===== 스타일 관리 =====
-export { coreStyleManager, combineClasses } from './styles';
+export { coreStyleManager, CoreStyleManager, combineClasses } from './styles';
+export type { GlassmorphismIntensity } from './styles';
 
 // ===== 미디어 관리 =====
-export { coreMediaManager, extractMediaUrls } from './media';
+export { coreMediaManager, CoreMediaManager, extractMediaUrls } from './media';
 
 // ===== 기본 타입들 =====
 export type {

@@ -50,7 +50,11 @@ export class OptimizedMediaExtractor {
   }
 
   constructor() {
-    logger.debug('[OptimizedMediaExtractor] 인스턴스 생성됨');
+    // logger.debug('[OptimizedMediaExtractor] 인스턴스 생성됨');
+    // Note: DOM이 없는 테스트 환경에서는 logger 호출을 건너뜀
+    if (typeof document !== 'undefined') {
+      logger.debug('[OptimizedMediaExtractor] 인스턴스 생성됨');
+    }
   }
 
   /**
@@ -170,6 +174,68 @@ export class OptimizedMediaExtractor {
     }
   }
 
+  /**
+   * 공개 메서드: DOM에서 이미지 추출 (테스트용)
+   */
+  async extractImagesFromDOM(container?: HTMLElement): Promise<string[]> {
+    try {
+      const searchContainer = container || document.body;
+      if (!searchContainer) {
+        logger.warn('[OptimizedMediaExtractor] 유효한 컨테이너가 없습니다');
+        return [];
+      }
+
+      const images = this.extractImagesFromDOMInternal(searchContainer);
+      return images.map(img => img.url);
+    } catch (error) {
+      logger.warn('[OptimizedMediaExtractor] 이미지 추출 실패:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 핵심 미디어 추출 메서드 (Phase 4 통합 테스트용)
+   * 클릭된 요소로부터 미디어와 트윗 정보를 종합적으로 추출
+   */
+  async extractMediaFromElement(element: HTMLElement): Promise<{
+    success: boolean;
+    mediaItems: MediaInfo[];
+    clickedIndex: number;
+    tweetInfo: TweetInfo | null;
+  }> {
+    try {
+      logger.debug('[OptimizedMediaExtractor] 요소에서 미디어 추출 시작');
+
+      // 트윗 정보 추출
+      const tweetInfo = await this.extractTweetInfo(element);
+
+      // 미디어 컨테이너 찾기
+      const container =
+        element.closest('article') || element.closest('[data-testid="tweet"]') || document.body;
+
+      if (!container) {
+        return { success: false, mediaItems: [], clickedIndex: -1, tweetInfo };
+      }
+
+      // DOM에서 미디어 추출
+      const extractionResult = await this.extractFromDOM(
+        element,
+        container as HTMLElement,
+        `extract_${Date.now()}`
+      );
+
+      return {
+        success: extractionResult.success,
+        mediaItems: extractionResult.mediaItems,
+        clickedIndex: extractionResult.clickedIndex,
+        tweetInfo,
+      };
+    } catch (error) {
+      logger.error('[OptimizedMediaExtractor] 요소에서 미디어 추출 실패:', error);
+      return { success: false, mediaItems: [], clickedIndex: -1, tweetInfo: null };
+    }
+  }
+
   // ==================== 내부 메서드 ====================
 
   /**
@@ -206,7 +272,7 @@ export class OptimizedMediaExtractor {
       let clickedIndex = -1;
 
       // 이미지 추출
-      const images = this.extractImagesFromDOM(container);
+      const images = this.extractImagesFromDOMInternal(container);
       mediaItems.push(...images);
 
       // 비디오 추출
@@ -232,9 +298,9 @@ export class OptimizedMediaExtractor {
   }
 
   /**
-   * DOM에서 이미지 추출
+   * DOM에서 이미지 추출 (내부용)
    */
-  private extractImagesFromDOM(container: HTMLElement): MediaInfo[] {
+  private extractImagesFromDOMInternal(container: HTMLElement): MediaInfo[] {
     const images: MediaInfo[] = [];
     const imageSelectors = [
       'img[src*="pbs.twimg.com"]',
@@ -243,25 +309,42 @@ export class OptimizedMediaExtractor {
       '.css-1dbjc4n img',
     ];
 
-    const searchContainer =
-      container.closest('article') || container.closest('[data-testid="tweet"]') || container;
+    // 안전한 컨테이너 확인
+    let searchContainer: Element | HTMLElement = container;
+    try {
+      // closest 메서드가 사용 가능한지 확인
+      if (container && typeof container.closest === 'function') {
+        searchContainer =
+          container.closest('article') || container.closest('[data-testid="tweet"]') || container;
+      }
+    } catch {
+      logger.debug('[OptimizedMediaExtractor] closest 메서드 사용 실패, 기본 컨테이너 사용');
+      searchContainer = container;
+    }
 
     imageSelectors.forEach(selector => {
-      const imgElements = searchContainer.querySelectorAll(
-        selector
-      ) as NodeListOf<HTMLImageElement>;
-      imgElements.forEach((img, index) => {
-        if (img.src && !images.some(item => item.url === img.src)) {
-          images.push({
-            id: `img_${Date.now()}_${index}`,
-            url: img.src,
-            type: 'image',
-            filename: this.extractFilenameFromUrl(img.src),
-            thumbnailUrl: img.src,
-            originalUrl: img.src.replace(/&name=\w+$/, '&name=orig'),
-          });
-        }
-      });
+      try {
+        const imgElements = searchContainer.querySelectorAll(
+          selector
+        ) as NodeListOf<HTMLImageElement>;
+        imgElements.forEach((img, index) => {
+          if (img.src && !images.some(item => item.url === img.src)) {
+            // Twitter 미디어 URL 패턴 검증
+            if (this.isValidTwitterMediaUrl(img.src)) {
+              images.push({
+                id: `img_${Date.now()}_${index}`,
+                url: img.src,
+                type: 'image',
+                filename: this.extractFilenameFromUrl(img.src),
+                thumbnailUrl: img.src,
+                originalUrl: img.src.replace(/&name=\w+$/, '&name=orig'),
+              });
+            }
+          }
+        });
+      } catch (error) {
+        logger.debug(`[OptimizedMediaExtractor] 셀렉터 ${selector} 처리 실패:`, error);
+      }
     });
 
     return images;
@@ -408,6 +491,23 @@ export class OptimizedMediaExtractor {
   private extractUsernameFromURL(): string {
     const pathParts = window.location.pathname.split('/');
     return pathParts[1] || '';
+  }
+
+  /**
+   * Twitter 미디어 URL 유효성 검사
+   */
+  private isValidTwitterMediaUrl(url: string): boolean {
+    try {
+      // 로컬 파일 경로 제외
+      if (url.startsWith('./') || url.startsWith('../') || url.startsWith('data/')) {
+        return false;
+      }
+
+      // 실제 Twitter 미디어 URL만 허용
+      return url.includes('pbs.twimg.com') || url.includes('video.twimg.com');
+    } catch {
+      return false;
+    }
   }
 
   /**

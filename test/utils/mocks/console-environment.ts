@@ -10,27 +10,27 @@ import { vi } from 'vitest';
  * Node.js 환경에서 브라우저의 모든 console 메서드를 완전 구현
  */
 export interface UltimateConsole {
-  debug: (...args: any[]) => void;
-  log: (...args: any[]) => void;
-  info: (...args: any[]) => void;
-  warn: (...args: any[]) => void;
-  error: (...args: any[]) => void;
-  trace: (...args: any[]) => void;
-  group: (...args: any[]) => void;
-  groupCollapsed: (...args: any[]) => void;
+  debug: (..._args: any[]) => void;
+  log: (..._args: any[]) => void;
+  info: (..._args: any[]) => void;
+  warn: (..._args: any[]) => void;
+  error: (..._args: any[]) => void;
+  trace: (..._args: any[]) => void;
+  group: (..._args: any[]) => void;
+  groupCollapsed: (..._args: any[]) => void;
   groupEnd: () => void;
   clear: () => void;
-  count: (label?: string) => void;
-  countReset: (label?: string) => void;
-  time: (label?: string) => void;
-  timeEnd: (label?: string) => void;
-  timeLog: (label?: string, ...args: any[]) => void;
-  assert: (condition: boolean, ...args: any[]) => void;
-  dir: (obj: any) => void;
-  dirxml: (...args: any[]) => void;
-  table: (data: any) => void;
-  profile: (label?: string) => void;
-  profileEnd: (label?: string) => void;
+  count: (_label?: string) => void;
+  countReset: (_label?: string) => void;
+  time: (_label?: string) => void;
+  timeEnd: (_label?: string) => void;
+  timeLog: (_label?: string, ..._args: any[]) => void;
+  assert: (_condition: boolean, ..._args: any[]) => void;
+  dir: (_obj: any) => void;
+  dirxml: (..._args: any[]) => void;
+  table: (_data: any) => void;
+  profile: (_label?: string) => void;
+  profileEnd: (_label?: string) => void;
 }
 
 /**
@@ -43,47 +43,48 @@ export function setupUltimateConsoleEnvironment(): void {
     debug: vi.fn((...args: any[]) => {
       // 개발 환경에서만 실제 출력 (테스트 중에는 조용함)
       if (process.env.NODE_ENV === 'development') {
-        console.log('[DEBUG]', ...args);
+        // console 참조 에러 방지를 위해 global.console 사용
+        global.console?.log?.('[DEBUG]', ...args);
       }
     }),
     log: vi.fn((...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[LOG]', ...args);
+        global.console?.log?.('[LOG]', ...args);
       }
     }),
     info: vi.fn((...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[INFO]', ...args);
+        global.console?.log?.('[INFO]', ...args);
       }
     }),
     warn: vi.fn((...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[WARN]', ...args);
+        global.console?.log?.('[WARN]', ...args);
       }
     }),
     error: vi.fn((...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[ERROR]', ...args);
+        global.console?.log?.('[ERROR]', ...args);
       }
     }),
     trace: vi.fn((...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[TRACE]', ...args);
+        global.console?.log?.('[TRACE]', ...args);
       }
     }),
     group: vi.fn((...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[GROUP]', ...args);
+        global.console?.log?.('[GROUP]', ...args);
       }
     }),
     groupCollapsed: vi.fn((...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[GROUP_COLLAPSED]', ...args);
+        global.console?.log?.('[GROUP_COLLAPSED]', ...args);
       }
     }),
     groupEnd: vi.fn(() => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[GROUP_END]');
+        global.console?.log?.('[GROUP_END]');
       }
     }),
     clear: vi.fn(() => {
@@ -91,57 +92,57 @@ export function setupUltimateConsoleEnvironment(): void {
     }),
     count: vi.fn((label?: string) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[COUNT] ${label || 'default'}: 1`);
+        global.console?.log?.(`[COUNT] ${label || 'default'}: 1`);
       }
     }),
     countReset: vi.fn((label?: string) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[COUNT_RESET] ${label || 'default'}`);
+        global.console?.log?.(`[COUNT_RESET] ${label || 'default'}`);
       }
     }),
     time: vi.fn((label?: string) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[TIME] ${label || 'default'}: timer started`);
+        global.console?.log?.(`[TIME] ${label || 'default'}: timer started`);
       }
     }),
     timeEnd: vi.fn((label?: string) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[TIME_END] ${label || 'default'}: 0ms`);
+        global.console?.log?.(`[TIME_END] ${label || 'default'}: 0ms`);
       }
     }),
     timeLog: vi.fn((label?: string, ...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[TIME_LOG] ${label || 'default'}:`, ...args);
+        global.console?.log?.(`[TIME_LOG] ${label || 'default'}:`, ...args);
       }
     }),
     assert: vi.fn((condition: boolean, ...args: any[]) => {
       if (!condition && process.env.NODE_ENV === 'development') {
-        console.log('[ASSERT]', ...args);
+        global.console?.log?.('[ASSERT]', ...args);
       }
     }),
     dir: vi.fn((obj: any) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[DIR]', obj);
+        global.console?.log?.('[DIR]', obj);
       }
     }),
     dirxml: vi.fn((...args: any[]) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[DIRXML]', ...args);
+        global.console?.log?.('[DIRXML]', ...args);
       }
     }),
     table: vi.fn((data: any) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[TABLE]', data);
+        global.console?.log?.('[TABLE]', data);
       }
     }),
     profile: vi.fn((label?: string) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[PROFILE] ${label || 'default'}: started`);
+        global.console?.log?.(`[PROFILE] ${label || 'default'}: started`);
       }
     }),
     profileEnd: vi.fn((label?: string) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[PROFILE_END] ${label || 'default'}: finished`);
+        global.console?.log?.(`[PROFILE_END] ${label || 'default'}: finished`);
       }
     }),
   };

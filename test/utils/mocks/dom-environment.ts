@@ -18,8 +18,6 @@ function createEnhancedElement(tagName: string): any {
     },
     className: '',
     id: '',
-    innerHTML: '',
-    textContent: '',
     children: [],
     childNodes: [],
     parentNode: null,
@@ -288,9 +286,20 @@ export function setupUltimateDOMEnvironment(): void {
 }
 
 export function cleanupUltimateDOMEnvironment(): void {
-  // body 내용 정리
-  if (global.document?.body?.children) {
-    global.document.body.children.length = 0;
+  // body 내용 정리 - 안전한 방법 사용
+  try {
+    if (global.document?.body) {
+      // children.length 직접 설정 대신 innerHTML 초기화 사용
+      global.document.body.innerHTML = '';
+
+      // 또는 removeChild 사용
+      while (global.document.body.firstChild) {
+        global.document.body.removeChild(global.document.body.firstChild);
+      }
+    }
+  } catch (error) {
+    // DOM 정리 실패 시 조용히 처리
+    console.warn('[DOM Cleanup] Warning:', error);
   }
 
   console.debug('[Ultimate DOM Environment] ✅ 환경 정리 완료');
