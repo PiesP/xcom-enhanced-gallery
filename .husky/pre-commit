@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
 
 # =============================================================================
-# Pre-commit Hook for X.com Enhanced Gallery
+# Pre-commit Hook for X.com Enhanced Gallery (Optimized)
 # =============================================================================
-# 커밋 전 빠른 코드 품질 검사 (가벼운 버전)
+# 커밋 전 최적화된 빠른 코드 품질 검사
 # HUSKY_SKIP=1 환경변수로 검사를 건너뛸 수 있습니다.
 # =============================================================================
 
@@ -13,7 +13,7 @@ if [ "$HUSKY_SKIP" = "1" ]; then
   exit 0
 fi
 
-echo "🔍 커밋 전 빠른 검증 시작..."
+echo "🔍 커밋 전 최적화된 빠른 검증 시작..."
 
 # 스테이징된 파일 린트 (주요 검사)
 echo "🧹 스테이징된 파일 린트 중..."
@@ -24,23 +24,33 @@ npx lint-staged || {
   exit 1
 }
 
-# 개발 브랜치에서는 타입체크 스킵
+# 개발 브랜치에서는 빠른 테스트만
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 case "$BRANCH" in
   dev*|feature*|experiment*|refactor*)
-    echo "🔧 개발 브랜치: 타입체크 건너뛰기"
+    echo "🔧 개발 브랜치: 최적화된 빠른 테스트 실행"
+    echo "⚡ 빠른 테스트 실행 중 (최적화된 설정)..."
+    if ! npm run test:fast; then
+      echo "⚠️  일부 테스트 실패 (개발 브랜치이므로 경고)"
+      echo "💡 전체 테스트: npm run test:optimized"
+    fi
     ;;
   *)
-    # 메인 브랜치에서만 빠른 타입체크
+    # 메인 브랜치에서는 빠른 타입체크와 빠른 테스트
     echo "📋 빠른 타입체크 실행 중..."
     if ! npx tsc --noOut --skipLibCheck; then
-      echo "⚠️  타입 오류가 있습니다"
+      echo "❌ 타입 오류가 있습니다"
       echo "💡 전체 타입체크: npm run typecheck"
-      echo "💡 건너뛰기: HUSKY_SKIP=1 git commit"
-      # 경고만 표시하고 통과 (엄격하지 않게)
-      echo "🎯 유저스크립트 개발이므로 경고 후 진행"
+      exit 1
+    fi
+
+    echo "⚡ 최적화된 빠른 테스트 실행 중..."
+    if ! npm run test:fast; then
+      echo "❌ 테스트 실패"
+      echo "💡 전체 테스트: npm run test:optimized"
+      exit 1
     fi
     ;;
 esac
 
-echo "✅ 커밋 전 검증 완료!"
+echo "✅ 최적화된 커밋 전 검증 완료!"

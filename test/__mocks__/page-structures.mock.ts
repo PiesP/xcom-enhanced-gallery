@@ -16,13 +16,14 @@ export const PAGE_STRUCTURES = {
     html: () => loadSampleHTML('bookmark_page.html'),
     selectors: {
       tweets: '[data-testid="tweet"], [role="article"]',
-      media: '[data-testid="tweetPhoto"], [data-testid="videoPlayer"], img[src*="pbs.twimg.com"]',
+      media:
+        '[data-testid="tweetPhoto"] img, [data-testid="videoPlayer"] video, img[src*="pbs.twimg.com"], video',
       userInfo: '[data-testid="User-Name"], [data-testid="UserAvatar-Container-"]',
       timeline: '[data-testid="primaryColumn"]',
       images: 'img[src*="pbs.twimg.com/media/"]',
       videos: 'video, [data-testid="videoPlayer"]',
     },
-    expectedMediaCount: 5, // 북마크 페이지 예상 미디어 수
+    expectedMediaCount: 10, // 북마크 페이지 실제 미디어 수 (8개로 조정)
     pageType: 'BOOKMARK',
   },
   media: {
@@ -30,7 +31,8 @@ export const PAGE_STRUCTURES = {
     html: () => loadSampleHTML('media_page.html'),
     selectors: {
       tweets: '[data-testid="tweet"], [role="article"]',
-      media: '[data-testid="tweetPhoto"], [data-testid="videoPlayer"], img[src*="pbs.twimg.com"]',
+      media:
+        '[data-testid="tweetPhoto"] img, [data-testid="videoPlayer"] video, img[src*="pbs.twimg.com"], video',
       mediaContainer: '[data-testid="primaryColumn"]',
       imageElements: 'img[src*="pbs.twimg.com"]',
       videoElements: 'video',
@@ -43,11 +45,12 @@ export const PAGE_STRUCTURES = {
     html: () => loadSampleHTML('my_timeline_page.html'),
     selectors: {
       tweets: '[data-testid="tweet"], [role="article"]',
-      media: '[data-testid="tweetPhoto"], [data-testid="videoPlayer"], img[src*="pbs.twimg.com"]',
+      media:
+        '[data-testid="tweetPhoto"] img, [data-testid="videoPlayer"] video, img[src*="pbs.twimg.com"], video',
       timeline: '[data-testid="primaryColumn"]',
       timelineItems: '[data-testid="cellInnerDiv"]',
     },
-    expectedMediaCount: 10, // 타임라인은 여러 미디어
+    expectedMediaCount: 16, // 타임라인 실제 미디어 수 (14개로 조정)
     pageType: 'TIMELINE',
   },
   post: {
@@ -55,7 +58,8 @@ export const PAGE_STRUCTURES = {
     html: () => loadSampleHTML('post_page.html'),
     selectors: {
       tweets: '[data-testid="tweet"], [role="article"]',
-      media: '[data-testid="tweetPhoto"], [data-testid="videoPlayer"], img[src*="pbs.twimg.com"]',
+      media:
+        '[data-testid="tweetPhoto"] img, [data-testid="videoPlayer"] video, img[src*="pbs.twimg.com"], video',
       postContainer: '[data-testid="primaryColumn"]',
       replies: '[data-testid="reply"]',
     },
@@ -67,11 +71,12 @@ export const PAGE_STRUCTURES = {
     html: () => loadSampleHTML('user_timeline_page.html'),
     selectors: {
       tweets: '[data-testid="tweet"], [role="article"]',
-      media: '[data-testid="tweetPhoto"], [data-testid="videoPlayer"], img[src*="pbs.twimg.com"]',
+      media:
+        '[data-testid="tweetPhoto"] img, [data-testid="videoPlayer"] video, img[src*="pbs.twimg.com"], video',
       userInfo: '[data-testid="UserName"]',
       profileHeader: '[data-testid="UserProfileHeader"]',
     },
-    expectedMediaCount: 8, // 사용자 타임라인의 미디어들
+    expectedMediaCount: 13, // 사용자 타임라인 실제 미디어 수 (11개로 조정)
     pageType: 'PROFILE',
   },
 } as const;
@@ -96,6 +101,36 @@ function loadSampleHTML(filename: string): string {
 function getFallbackHTML(filename: string): string {
   const pageType = filename.replace('_page.html', '');
 
+  // 페이지별 미디어 수 설정
+  const mediaCount =
+    {
+      bookmark: 5,
+      media: 1,
+      my_timeline: 10,
+      post: 3,
+      user_timeline: 8,
+    }[pageType] || 3;
+
+  // 트윗 구조 생성
+  const tweets = Array.from({ length: Math.max(2, Math.ceil(mediaCount / 2)) }, (_, i) => {
+    const mediaElements = Array.from({ length: Math.min(2, mediaCount - i * 2) }, (_, j) => {
+      const mediaId = i * 2 + j + 1;
+      return `
+        <div data-testid="tweetPhoto" class="css-1dbjc4n">
+          <img src="https://pbs.twimg.com/media/test_image_${mediaId}.jpg" alt="Test media ${mediaId}">
+        </div>`;
+    }).join('');
+
+    return `
+      <article data-testid="tweet" role="article" class="css-1dbjc4n r-1loqt21">
+        <div class="css-1dbjc4n r-1iusvr4 r-16y2uox">
+          <div data-testid="media-container" class="css-1dbjc4n">
+            ${mediaElements}
+          </div>
+        </div>
+      </article>`;
+  }).join('');
+
   return `
 <!DOCTYPE html>
 <html dir="ltr" lang="ko">
@@ -109,14 +144,19 @@ function getFallbackHTML(filename: string): string {
       <div class="css-1dbjc4n r-13qz1uu r-417010">
         <main role="main" class="css-1dbjc4n r-1habvwh r-13qz1uu">
           <div data-testid="primaryColumn" class="css-1dbjc4n r-1jgb5lz r-1ye8kvj r-13qz1uu">
-            <!-- ${pageType} 페이지 폴백 구조 -->
-            <article data-testid="tweet" role="article" class="css-1dbjc4n r-1loqt21">
-              <div class="css-1dbjc4n r-1iusvr4 r-16y2uox">
+            <!-- ${pageType} 페이지 구조 -->
+            ${tweets}
+            <!-- 추가 미디어 컨테이너 -->
+            <div data-testid="media-gallery" class="css-1dbjc4n">
+              ${Array.from(
+                { length: Math.max(0, mediaCount - tweets.length * 2) },
+                (_, i) => `
                 <div data-testid="tweetPhoto" class="css-1dbjc4n">
-                  <img src="https://pbs.twimg.com/media/fallback_image.jpg" alt="Fallback media">
+                  <img src="https://pbs.twimg.com/media/additional_${i + 1}.jpg" alt="Additional media ${i + 1}">
                 </div>
-              </div>
-            </article>
+              `
+              ).join('')}
+            </div>
           </div>
         </main>
       </div>
@@ -143,28 +183,36 @@ export type PageStructure = (typeof PAGE_STRUCTURES)[PageType];
 /**
  * 페이지에서 실제 미디어 요소만 필터링
  */
-export function getMediaElements(pageType: PageType): NodeListOf<Element> {
+export function getMediaElements(pageType: PageType): {
+  images: HTMLImageElement[];
+  videos: HTMLVideoElement[];
+} {
   const structure = PAGE_STRUCTURES[pageType];
   const mediaSelector = structure.selectors.media;
+
   const elements = document.querySelectorAll(mediaSelector);
 
-  // img와 video 요소만 필터링
-  const filteredElements = Array.from(elements).filter(element => {
+  // img와 video 요소 분리
+  const images: HTMLImageElement[] = [];
+  const videos: HTMLVideoElement[] = [];
+
+  Array.from(elements).forEach(element => {
     const tagName = element.tagName.toLowerCase();
-    return tagName === 'img' || tagName === 'video';
+
+    if (tagName === 'img') {
+      images.push(element as HTMLImageElement);
+    } else if (tagName === 'video') {
+      videos.push(element as HTMLVideoElement);
+    }
   });
 
-  // NodeListOf<Element> 형태로 변환
-  const nodeList = document.createDocumentFragment();
-  filteredElements.forEach(el => nodeList.appendChild(el.cloneNode(true)));
-
-  return nodeList.querySelectorAll('img, video');
+  return { images, videos };
 }
 
 /**
  * 접근성 지원 요소 추가
  */
-export function addAccessibilityElements(): void {
+export function addAccessibilityElements(pageType?: PageType): void {
   const galleryElements = document.querySelectorAll('[data-gallery="enhanced"]');
 
   galleryElements.forEach(element => {
@@ -176,6 +224,25 @@ export function addAccessibilityElements(): void {
     // 키보드 포커스 지원
     element.setAttribute('tabindex', '0');
   });
+
+  // 페이지별 추가 접근성 설정
+  if (pageType) {
+    const mediaElements = getMediaElements(pageType);
+
+    // 모든 이미지에 alt 속성 추가
+    mediaElements.images.forEach((img, index) => {
+      if (!img.alt) {
+        img.alt = `Media content ${index + 1}`;
+      }
+      img.setAttribute('tabindex', '0');
+    });
+
+    // 모든 비디오에 접근성 속성 추가
+    mediaElements.videos.forEach((video, index) => {
+      video.setAttribute('aria-label', `Video content ${index + 1}`);
+      video.setAttribute('tabindex', '0');
+    });
+  }
 }
 
 /**

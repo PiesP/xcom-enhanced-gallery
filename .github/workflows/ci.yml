@@ -1,8 +1,8 @@
-name: 🔍 CI Pipeline
+name: 🔍 CI Pipeline (Optimized)
 
 on:
   push:
-    branches: [master, develop, feature/*, fix/*, chore/*]
+    branches: [master, develop, feature/*, fix/*, chore/*, test-*]
   pull_request:
     branches: [master, develop]
   workflow_dispatch:
@@ -20,6 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    strategy:
+      fail-fast: false
+      matrix:
+        task: ["quality", "test", "build"]
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -33,27 +38,37 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔍 Type checking
-        run: npm run typecheck
-
-      - name: 🧹 Lint code
-        run: npm run lint
-
-      - name: 🎨 Format check
-        run: npm run format:check
-
-      - name: 🧪 Run tests with coverage
-        run: npm run test:coverage
-
-      - name: 📊 Upload coverage reports
-        uses: actions/upload-artifact@v4
-        if: success()
+      - name: � Cache test results
+        uses: actions/cache@v4
         with:
-          name: coverage-report-${{ github.sha }}
-          path: coverage/
-          retention-days: 7
+          path: |
+            coverage/
+            test-results/
+            node_modules/.vitest/
+          key: test-cache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            test-cache-${{ runner.os }}-
 
-      - name: 🏗️ Test builds
+      - name: �🔍 Quality Checks
+        if: matrix.task == 'quality'
+        run: |
+          echo "🔍 Type checking..."
+          npm run typecheck
+
+          echo "🧹 Lint code..."
+          npm run lint
+
+          echo "🎨 Format check..."
+          npm run format:check
+
+      - name: 🧪 Optimized Tests with Coverage
+        if: matrix.task == 'test'
+        run: |
+          echo "🧪 Running optimized tests..."
+          npm run test:ci
+
+      - name: 🏗️ Build Tests
+        if: matrix.task == 'build'
         run: |
           echo "🔨 Testing development build..."
           npm run build:dev
@@ -61,10 +76,47 @@ jobs:
           echo "🚀 Testing production build..."
           npm run build:prod
 
-      - name: 📊 Upload build artifacts
+      - name: 📊 Upload coverage reports
+        if: matrix.task == 'test' && success()
         uses: actions/upload-artifact@v4
-        if: success()
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: coverage/
+          retention-days: 7
+
+      - name: 📋 Upload test results
+        if: matrix.task == 'test' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.sha }}
+          path: test-results/
+          retention-days: 7
+
+      - name: 📊 Upload build artifacts
+        if: matrix.task == 'build' && success()
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ github.sha }}
           path: dist/
           retention-days: 7
+
+  summary:
+    name: 📋 CI Summary
+    runs-on: ubuntu-latest
+    needs: validate
+    if: always()
+    steps:
+      - name: 📊 Collect Results
+        run: |
+          echo "## 🔍 CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Quality Checks**: ${{ needs.validate.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tests**: ${{ needs.validate.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build**: ${{ needs.validate.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.validate.result }}" = "success" ]; then
+            echo "✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some checks failed. Please review the logs." >> $GITHUB_STEP_SUMMARY
+          fi

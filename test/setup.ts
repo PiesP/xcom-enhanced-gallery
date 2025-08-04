@@ -4,9 +4,24 @@
  */
 
 import '@testing-library/jest-dom';
-import { beforeEach, afterEach } from 'vitest';
+import { beforeEach, afterEach, vi } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
+
+// ================================
+// 전역 DOM 및 브라우저 API 설정
+// ================================
+
+// HTMLElement 체크를 위한 전역 설정
+global.HTMLElement = global.HTMLElement || class HTMLElement extends Element {};
+global.Element = global.Element || class Element {};
+
+// IntersectionObserver 전역 모킹
+global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
 
 // ================================
 // 전역 테스트 환경 설정
@@ -160,7 +175,7 @@ if (typeof globalThis !== 'undefined') {
 
 // DOM API 폴리필 추가
 if (!document.elementFromPoint) {
-  document.elementFromPoint = function (_x, _y) {
+  document.elementFromPoint = function () {
     // 단순한 폴백 - 첫 번째 요소를 반환
     return document.body.firstElementChild || null;
   };
@@ -191,7 +206,7 @@ beforeEach(async () => {
   try {
     const { initializeVendors } = await import('../src/shared/external/vendors/vendor-api.js');
     await initializeVendors();
-  } catch (error) {
+  } catch {
     // vendor 초기화 실패는 무시하고 계속 진행
   }
 

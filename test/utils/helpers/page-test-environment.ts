@@ -58,6 +58,55 @@ export class PageTestEnvironment {
   }
 
   /**
+   * 범용 페이지 환경 설정 (공용 메서드)
+   */
+  static setupPage(pageType: PageType): void {
+    this.setupPageEnvironment(pageType);
+  }
+
+  /**
+   * 빈 페이지 환경 설정
+   */
+  static setupEmptyPage(pageType: PageType): void {
+    // 이전 환경 백업
+    if (!this.originalHTML) {
+      this.originalHTML = document.body.innerHTML;
+    }
+
+    // 빈 구조로 설정
+    document.body.innerHTML = '<div data-testid="empty-page"></div>';
+    this.currentPageType = pageType;
+  }
+
+  /**
+   * 잘못된 미디어가 있는 페이지 설정
+   */
+  static setupPageWithInvalidMedia(pageType: PageType): void {
+    this.setupPage(pageType);
+
+    // 잘못된 미디어 요소 추가
+    const invalidImg = document.createElement('img');
+    invalidImg.src = 'invalid://url';
+    invalidImg.setAttribute('data-invalid', 'true');
+    document.body.appendChild(invalidImg);
+  }
+
+  /**
+   * 대량 타임라인 페이지 설정
+   */
+  static setupLargeTimelinePage(): void {
+    this.setupPage('timeline');
+
+    // 대량의 미디어 요소 추가 (성능 테스트용)
+    for (let i = 0; i < 100; i++) {
+      const img = document.createElement('img');
+      img.src = `https://example.com/image${i}.jpg`;
+      img.setAttribute('data-testid', `media-${i}`);
+      document.body.appendChild(img);
+    }
+  }
+
+  /**
    * 범용 페이지 환경 설정
    */
   private static setupPageEnvironment(pageType: PageType): void {

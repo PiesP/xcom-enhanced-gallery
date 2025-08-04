@@ -54,7 +54,7 @@ describe('애니메이션 유틸리티', () => {
   let mockElement;
 
   beforeEach(() => {
-    // Mock element
+    // Mock element를 HTMLElement처럼 동작하도록 설정
     mockElement = {
       animate: vi.fn().mockResolvedValue({}),
       style: {},
@@ -63,7 +63,15 @@ describe('애니메이션 유틸리티', () => {
         remove: vi.fn(),
         contains: vi.fn().mockReturnValue(false),
       },
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      // HTMLElement 체크를 위한 prototype 설정
+      constructor: { name: 'HTMLElement' },
     };
+    
+    // instanceof HTMLElement 체크를 위해 prototype 체인 설정
+    Object.setPrototypeOf(mockElement, HTMLElement.prototype);
+    
     vi.clearAllMocks();
   });
 
@@ -133,10 +141,21 @@ describe('애니메이션 유틸리티', () => {
 
   describe('뷰포트 진입 애니메이션', () => {
     it('뷰포트 진입 애니메이션이 설정되어야 한다', () => {
+      // IntersectionObserver 모킹
+      const mockObserver = {
+        observe: vi.fn(),
+        unobserve: vi.fn(),
+        disconnect: vi.fn(),
+      };
+      
+      // 전역 IntersectionObserver 모킹
+      global.IntersectionObserver = vi.fn().mockImplementation(() => mockObserver);
+      
       const mockCallback = vi.fn();
       const cleanup = setupInViewAnimation(mockElement, mockCallback);
 
       expect(typeof cleanup).toBe('function');
+      expect(mockObserver.observe).toHaveBeenCalledWith(mockElement);
       cleanup();
     });
   });

@@ -1,0 +1,156 @@
+name: 🛡️ Security Scan
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+  schedule:
+    # 매주 월요일 새벽 2시 (UTC)
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-scan:
+    name: 🔍 Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 🔍 NPM Audit
+        run: |
+          echo "🔍 Running npm audit..."
+          npm audit --audit-level=moderate || true
+
+          echo "📊 Generating audit report..."
+          npm audit --json > audit-report.json || true
+
+      - name: 📋 Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report-${{ github.sha }}
+          path: audit-report.json
+          retention-days: 30
+
+  codeql-analysis:
+    name: 🕵️ CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript"]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: 🏗️ Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: 🕵️ Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  license-check:
+    name: 📄 License Compliance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 📄 Check licenses
+        run: |
+          echo "📄 Checking license compliance..."
+
+          # 라이센스 정보 수집
+          npx license-checker --summary --production > license-summary.txt || true
+          npx license-checker --json --production > license-report.json || true
+
+          echo "📋 License summary:"
+          cat license-summary.txt || echo "No license summary available"
+
+      - name: 📋 Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report-${{ github.sha }}
+          path: |
+            license-summary.txt
+            license-report.json
+          retention-days: 30
+
+  security-summary:
+    name: 📋 Security Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, codeql-analysis, license-check]
+    if: always()
+
+    steps:
+      - name: 📊 Security Report
+        run: |
+          echo "## 🛡️ Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dependency Scan**: ${{ needs.dependency-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **CodeQL Analysis**: ${{ needs.codeql-analysis.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **License Check**: ${{ needs.license-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # 전체 상태 확인
+          ALL_SUCCESS=true
+          if [ "${{ needs.dependency-scan.result }}" != "success" ]; then ALL_SUCCESS=false; fi
+          if [ "${{ needs.codeql-analysis.result }}" != "success" ]; then ALL_SUCCESS=false; fi
+          if [ "${{ needs.license-check.result }}" != "success" ]; then ALL_SUCCESS=false; fi
+
+          if [ "$ALL_SUCCESS" = "true" ]; then
+            echo "✅ All security checks passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Some security checks need attention. Please review the reports." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Review uploaded security reports" >> $GITHUB_STEP_SUMMARY
+          echo "- Address any critical vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          echo "- Update dependencies if needed" >> $GITHUB_STEP_SUMMARY

@@ -167,6 +167,13 @@ export class AnimationService {
   public async animateGalleryEnter(element: Element, config: AnimationConfig = {}): Promise<void> {
     return new Promise<void>(resolve => {
       try {
+        // Element가 HTMLElement인지 확인
+        if (!(element instanceof HTMLElement)) {
+          logger.warn('갤러리 진입 애니메이션 실패: 유효하지 않은 요소');
+          resolve();
+          return;
+        }
+
         const handleAnimationEnd = () => {
           element.removeEventListener('animationend', handleAnimationEnd);
           element.classList.remove(ANIMATION_CLASSES.FADE_IN);
@@ -189,6 +196,13 @@ export class AnimationService {
   public async animateGalleryExit(element: Element, config: AnimationConfig = {}): Promise<void> {
     return new Promise<void>(resolve => {
       try {
+        // Element가 HTMLElement인지 확인
+        if (!(element instanceof HTMLElement)) {
+          logger.warn('갤러리 종료 애니메이션 실패: 유효하지 않은 요소');
+          resolve();
+          return;
+        }
+
         const handleAnimationEnd = () => {
           element.removeEventListener('animationend', handleAnimationEnd);
           element.classList.remove(ANIMATION_CLASSES.FADE_OUT);
