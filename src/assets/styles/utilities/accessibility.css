@@ -77,7 +77,7 @@
   padding: 8px;
   text-decoration: none;
   border-radius: var(--xeg-radius-sm);
-  z-index: 100000;
+  z-index: var(--xeg-z-emergency);
 }
 
 .xeg-skip-link:focus {

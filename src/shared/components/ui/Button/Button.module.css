@@ -2,7 +2,25 @@
  * Button Component Styles
  * @version 3.0.0 - Design System Implementation
  *
- * 새로운 디자인 시스템을 기반으로 한 Button 컴포넌트 스타일
+ * 새로운 디자인 시스템을 기반으.sm {
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  font-size: var(--xeg-font-size-sm);
+  line-height: var(--xeg-line-height-tight);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.md {
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-font-size-base);
+  line-height: var(--xeg-line-height-normal);
+}
+
+.lg {
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+  font-size: var(--xeg-font-size-lg);
+  line-height: var(--xeg-line-height-normal);
+  border-radius: var(--xeg-radius-lg);
+}
  * - CSS Custom Properties 활용
  * - 다크 모드 지원
  * - 접근성 중심 설계
@@ -14,17 +32,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm, 0.5rem);
+  gap: var(--xeg-spacing-sm);
   border: 1px solid transparent;
-  border-radius: var(--radius-md, 0.5rem);
-  font-family: var(
-    --font-family,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif
-  );
+  border-radius: var(--xeg-radius-md);
+  font-family: var(--xeg-font-family-sans);
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;

@@ -17,7 +17,7 @@
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
   font-size: 14px !important;
   line-height: 1.5 !important;
-  color: #ffffff !important;
+  color: var(--xeg-color-text-inverse) !important;
 
   /* 박스 모델 */
   box-sizing: border-box !important;
@@ -29,15 +29,15 @@
   width: 100vw !important;
   height: 100vh !important;
 
-  /* 레이어링 */
-  z-index: 2147483647 !important;
+  /* 레이어링 - 표준화된 z-index 사용 */
+  z-index: var(--xeg-z-emergency) !important;
 
   /* 스타일 격리 */
   isolation: isolate !important;
   contain: layout style paint !important;
 
   /* 배경 */
-  background: rgba(0, 0, 0, 0.95) !important;
+  background: var(--xeg-color-overlay-strong) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
 
@@ -65,34 +65,34 @@
    ======================================== */
 
 .xeg-root {
-  /* 색상 시스템 */
-  --xeg-isolated-bg: rgba(0, 0, 0, 0.95);
-  --xeg-isolated-bg-secondary: rgba(0, 0, 0, 0.8);
-  --xeg-isolated-text: #ffffff;
-  --xeg-isolated-text-secondary: rgba(255, 255, 255, 0.8);
-  --xeg-isolated-text-muted: rgba(255, 255, 255, 0.6);
+  /* 색상 시스템 - 디자인 토큰 기반 */
+  --xeg-isolated-bg: var(--xeg-color-overlay-strong);
+  --xeg-isolated-bg-secondary: var(--xeg-color-overlay-medium);
+  --xeg-isolated-text: var(--xeg-color-text-inverse);
+  --xeg-isolated-text-secondary: var(--xeg-color-text-inverse-secondary);
+  --xeg-isolated-text-muted: var(--xeg-color-text-inverse-muted);
 
   /* 프라이머리 색상 */
-  --xeg-isolated-primary: #1d9bf0;
-  --xeg-isolated-primary-hover: #1a8cd8;
-  --xeg-isolated-primary-active: #1570b8;
+  --xeg-isolated-primary: var(--xeg-color-primary);
+  --xeg-isolated-primary-hover: var(--xeg-color-primary-hover);
+  --xeg-isolated-primary-active: var(--xeg-color-primary-active);
 
   /* 위험/오류 색상 */
-  --xeg-isolated-danger: #f4212e;
-  --xeg-isolated-danger-hover: #dc1928;
+  --xeg-isolated-danger: var(--xeg-color-error);
+  --xeg-isolated-danger-hover: var(--xeg-color-error-hover);
 
   /* 성공 색상 */
-  --xeg-isolated-success: #00ba7c;
-  --xeg-isolated-success-hover: #00a46c;
+  --xeg-isolated-success: var(--xeg-color-success);
+  --xeg-isolated-success-hover: var(--xeg-color-success-hover);
 
   /* 경고 색상 */
-  --xeg-isolated-warning: #ffad1f;
-  --xeg-isolated-warning-hover: #fd9700;
+  --xeg-isolated-warning: var(--xeg-color-warning);
+  --xeg-isolated-warning-hover: var(--xeg-color-warning-hover);
 
   /* 그레이 스케일 */
-  --xeg-isolated-gray-100: rgba(255, 255, 255, 0.1);
-  --xeg-isolated-gray-200: rgba(255, 255, 255, 0.2);
-  --xeg-isolated-gray-300: rgba(255, 255, 255, 0.3);
+  --xeg-isolated-gray-100: var(--xeg-color-neutral-100);
+  --xeg-isolated-gray-200: var(--xeg-color-neutral-200);
+  --xeg-isolated-gray-300: var(--xeg-color-neutral-300);
   --xeg-isolated-gray-400: rgba(255, 255, 255, 0.4);
   --xeg-isolated-gray-500: rgba(255, 255, 255, 0.5);
 

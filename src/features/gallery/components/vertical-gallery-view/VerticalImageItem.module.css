@@ -6,24 +6,24 @@
 
 /* CSS 변수 시스템 표준화 */
 :root {
-  --xeg-item-border-radius: var(--xeg-radius-lg, 8px);
-  --xeg-item-spacing: var(--xeg-spacing-md, 16px);
-  --xeg-item-transition: var(--xeg-transition-all, all 0.3s ease);
+  --xeg-item-border-radius: var(--xeg-radius-lg);
+  --xeg-item-spacing: var(--xeg-spacing-md);
+  --xeg-item-transition: var(--xeg-transition-normal);
   --xeg-item-hover-transform: translateY(-2px) translateZ(0);
-  --xeg-item-focus-shadow: var(--xeg-focus-shadow, 0 0 0 2px var(--xeg-color-primary));
-  --xeg-item-active-shadow: var(--xeg-active-shadow, 0 4px 16px rgba(0, 0, 0, 0.15));
+  --xeg-item-focus-shadow: var(--xeg-glass-shadow-medium);
+  --xeg-item-active-shadow: var(--xeg-glass-shadow-strong);
 }
 
 .container {
   position: relative;
   margin-bottom: var(--xeg-item-spacing);
-  border-radius: 16px;
+  border-radius: var(--xeg-radius-xl);
   overflow: visible;
   transition: var(--xeg-item-transition);
   cursor: pointer;
-  border: 1px solid var(--xeg-media-glass-border);
-  background: var(--xeg-media-glass-bg);
-  padding: 8px;
+  border: 1px solid var(--xeg-color-neutral-100);
+  background: var(--xeg-color-surface-light);
+  padding: var(--xeg-spacing-sm);
   width: 100%;
   text-align: center;
   display: flex;
@@ -32,9 +32,9 @@
   pointer-events: auto;
 
   /* 글래스모피즘 효과 */
-  backdrop-filter: var(--xeg-media-glass-blur);
-  -webkit-backdrop-filter: var(--xeg-media-glass-blur);
-  box-shadow: var(--xeg-media-glass-shadow);
+  backdrop-filter: var(--xeg-blur-medium);
+  -webkit-backdrop-filter: var(--xeg-blur-medium);
+  box-shadow: var(--xeg-glass-shadow-light);
 
   /* 성능 최적화 */
   transform: translateZ(0);
@@ -47,11 +47,9 @@
 
 .container:hover {
   transform: var(--xeg-item-hover-transform);
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.2),
-    0 4px 16px rgba(0, 0, 0, 0.1);
+  background: var(--xeg-color-primary-alpha-10);
+  border-color: var(--xeg-color-primary-alpha-20);
+  box-shadow: var(--xeg-glass-shadow-medium);
 }
 
 /* 포커스 상태 - outline 대신 box-shadow 사용 */

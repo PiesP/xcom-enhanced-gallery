@@ -5,21 +5,62 @@
  */
 
 :root {
-  /* Primary Colors */
-  --xeg-color-primary-500: oklch(0.678 0.182 252.2);
-  --xeg-color-primary-600: oklch(0.623 0.21 252.8);
-  --xeg-color-primary-700: oklch(0.567 0.243 253.4);
+  /* ========================================
+     Z-INDEX SYSTEM - 표준화된 레이어링 시스템
+     ======================================== */
 
-  /* Neutral Colors */
+  /* Base Layers */
+  --xeg-z-base: 1;
+  --xeg-z-dropdown: 100;
+
+  /* Gallery Layers - 계층적 구조 */
+  --xeg-z-gallery-backdrop: 1000; /* 갤러리 배경 */
+  --xeg-z-gallery-content: 1100; /* 갤러리 콘텐츠 */
+  --xeg-z-gallery-toolbar: 1200; /* 툴바 */
+  --xeg-z-gallery-controls: 1300; /* 컨트롤 버튼 */
+
+  /* Modal Layers */
+  --xeg-z-modal-backdrop: 2000; /* 모달 배경 */
+  --xeg-z-modal-content: 2100; /* 모달 콘텐츠 */
+
+  /* Notification Layers */
+  --xeg-z-toast-container: 3000; /* 토스트 컨테이너 */
+  --xeg-z-toast-item: 3100; /* 개별 토스트 */
+
+  /* Critical Layers */
+  --xeg-z-debug: 9000; /* 디버그 오버레이 */
+  --xeg-z-emergency: 9999; /* 긴급 상황용 */
+
+  /* ========================================
+     COLOR SYSTEM - OKLCH 기반 통합 색상
+     ======================================== */
+
+  /* Primary Colors - OKLCH로 통일 */
+  --xeg-color-primary: oklch(0.678 0.182 252.2);
+  --xeg-color-primary-hover: oklch(0.623 0.21 252.8);
+  --xeg-color-primary-active: oklch(0.567 0.243 253.4);
+  --xeg-color-primary-500: var(--xeg-color-primary);
+  --xeg-color-primary-600: var(--xeg-color-primary-hover);
+  --xeg-color-primary-700: var(--xeg-color-primary-active);
+
+  /* Alpha Variants - color-mix로 하드코딩 제거 */
+  --xeg-color-primary-alpha-10: color-mix(in oklch, var(--xeg-color-primary) 10%, transparent);
+  --xeg-color-primary-alpha-20: color-mix(in oklch, var(--xeg-color-primary) 20%, transparent);
+
+  /* Neutral Colors - OKLCH로 통일 */
+  --xeg-color-neutral-50: oklch(0.98 0.001 206.2);
   --xeg-color-neutral-100: oklch(0.97 0.002 206.2);
   --xeg-color-neutral-500: oklch(0.598 0.006 286.3);
   --xeg-color-neutral-700: oklch(0.378 0.005 286.3);
   --xeg-color-neutral-900: oklch(0.234 0.006 277.8);
 
-  /* Semantic Colors */
-  --xeg-color-success-500: oklch(0.725 0.17 142.5);
-  --xeg-color-error-500: oklch(0.628 0.257 27.3);
-  --xeg-color-warning-500: oklch(0.761 0.16 70.7);
+  /* Semantic Colors - OKLCH로 통일 */
+  --xeg-color-success: oklch(0.725 0.17 142.5);
+  --xeg-color-error: oklch(0.628 0.257 27.3);
+  --xeg-color-warning: oklch(0.761 0.16 70.7);
+  --xeg-color-success-500: var(--xeg-color-success);
+  --xeg-color-error-500: var(--xeg-color-error);
+  --xeg-color-warning-500: var(--xeg-color-warning);
   --xeg-color-success-800: oklch(0.456 0.133 145.2);
   --xeg-color-success-900: oklch(0.398 0.118 146.8);
   --xeg-color-success-950: oklch(0.241 0.077 150);
@@ -55,13 +96,13 @@
      =========================================== */
 
   /* Base Surface Colors */
-  --xeg-color-surface-light: rgba(255, 255, 255, 0.95);
-  --xeg-color-surface-dark: rgba(0, 0, 0, 0.95);
+  --xeg-color-surface-light: color-mix(in oklch, white 95%, transparent);
+  --xeg-color-surface-dark: color-mix(in oklch, black 95%, transparent);
 
-  /* Overlay Colors */
-  --xeg-color-overlay-light: rgba(0, 0, 0, 0.1);
-  --xeg-color-overlay-medium: rgba(0, 0, 0, 0.3);
-  --xeg-color-overlay-strong: rgba(0, 0, 0, 0.8);
+  /* Overlay Colors - OKLCH로 변환 */
+  --xeg-color-overlay-light: color-mix(in oklch, black 10%, transparent);
+  --xeg-color-overlay-medium: color-mix(in oklch, black 30%, transparent);
+  --xeg-color-overlay-strong: color-mix(in oklch, black 80%, transparent);
 
   /* Glass Effect Colors - 글래스모피즘 강화 */
   --xeg-color-glass-light: rgba(255, 255, 255, 0.85);
@@ -99,15 +140,33 @@
   --xeg-spacing-3xl: 64px; /* 4rem */
 
   /* ===========================================
-     Z-INDEX SYSTEM (체계적 레이어링)
+     ANIMATION SYSTEM - 표준화된 지속시간과 이징
      =========================================== */
 
-  --xeg-z-base: 1;
-  --xeg-z-gallery: 1000;
-  --xeg-z-gallery-content: 1100;
-  --xeg-z-toolbar: 1200;
-  --xeg-z-modal: 2000;
-  --xeg-z-toast: 3000;
+  /* Duration Scale */
+  --xeg-duration-instant: 0ms;
+  --xeg-duration-fast: 150ms; /* 빠른 전환 */
+  --xeg-duration-normal: 250ms; /* 일반적인 전환 */
+  --xeg-duration-slow: 400ms; /* 느린 전환 */
+  --xeg-duration-slower: 600ms; /* 매우 느린 전환 */
+
+  /* Easing Functions */
+  --xeg-easing-linear: linear;
+  --xeg-easing-ease: ease;
+  --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --xeg-easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Common Transitions */
+  --xeg-transition-fast: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  --xeg-transition-normal: all var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  --xeg-transition-slow: all var(--xeg-duration-slow) var(--xeg-easing-ease-out);
+
+  /* Specific Property Transitions */
+  --xeg-transition-opacity: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  --xeg-transition-transform: transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  --xeg-transition-color: color var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
   /* ===========================================
      BLUR SYSTEM (통합 블러 효과)
@@ -477,7 +536,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 999999;
+  z-index: var(--xeg-z-emergency);
   pointer-events: none;
 }
 
@@ -704,5 +763,46 @@
     --xeg-toast-glass-blur: blur(16px);
     --xeg-gallery-glass-blur: blur(20px);
     --xeg-media-glass-blur: blur(6px);
+  }
+}
+
+/* ===========================================
+   OKLCH 미지원 브라우저를 위한 Fallback
+   =========================================== */
+
+@supports not (color: oklch(0 0 0)) {
+  :root {
+    /* Primary Colors Fallback */
+    --xeg-color-primary: #1d9bf0;
+    --xeg-color-primary-hover: #1a8cd8;
+    --xeg-color-primary-active: #1570a6;
+
+    /* Semantic Colors Fallback */
+    --xeg-color-success: #10b981;
+    --xeg-color-error: #ef4444;
+    --xeg-color-warning: #f59e0b;
+
+    /* Neutral Colors Fallback */
+    --xeg-color-neutral-50: #f8fafc;
+    --xeg-color-neutral-100: #f1f5f9;
+    --xeg-color-neutral-500: #64748b;
+    --xeg-color-neutral-700: #334155;
+    --xeg-color-neutral-900: #0f172a;
+
+    /* Alpha Variants Fallback */
+    --xeg-color-primary-alpha-10: rgba(29, 155, 240, 0.1);
+    --xeg-color-primary-alpha-20: rgba(29, 155, 240, 0.2);
+    --xeg-color-success-alpha-08: rgba(16, 185, 129, 0.08);
+    --xeg-color-warning-alpha-08: rgba(245, 158, 11, 0.08);
+    --xeg-color-error-alpha-08: rgba(239, 68, 68, 0.08);
+
+    /* Surface Colors Fallback */
+    --xeg-color-surface-light: rgba(255, 255, 255, 0.95);
+    --xeg-color-surface-dark: rgba(0, 0, 0, 0.95);
+
+    /* Overlay Colors Fallback */
+    --xeg-color-overlay-light: rgba(0, 0, 0, 0.1);
+    --xeg-color-overlay-medium: rgba(0, 0, 0, 0.3);
+    --xeg-color-overlay-strong: rgba(0, 0, 0, 0.8);
   }
 }

@@ -51,9 +51,9 @@
 @layer components {
   /* 공통 CSS 변수 정의 - Design Token 기반 Z-Index 수정 */
   :root {
-    /* 🎯 Design Token과 일치시킴 */
-    --xeg-gallery-z-index: var(--xeg-z-gallery); /* 2000 */
-    --xeg-toolbar-z-index: var(--xeg-z-toolbar); /* 2500 */
+    /* Z-Index 시스템 - 표준화된 토큰 사용 */
+    --xeg-gallery-z-index: var(--xeg-z-gallery-backdrop);
+    --xeg-toolbar-z-index: var(--xeg-z-gallery-toolbar);
 
     /* 트랜지션 - 최신 easing 함수 사용 */
     --xeg-transition-fast:

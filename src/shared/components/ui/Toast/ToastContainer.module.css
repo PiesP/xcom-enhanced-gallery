@@ -10,7 +10,7 @@
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: var(--xeg-z-toast);
+  z-index: var(--xeg-z-toast-container);
   pointer-events: none;
 }
 
