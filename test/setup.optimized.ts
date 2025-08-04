@@ -7,8 +7,17 @@
 import { vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/dom';
 
+// 브라우저 환경 Mock 설정
+import {
+  setupBrowserEnvironment,
+  clearBrowserEnvironment,
+} from './__mocks__/browser-environment.mock';
+
 // DOM API 전역 설정
 beforeAll(() => {
+  // 브라우저 환경 설정
+  setupBrowserEnvironment();
+
   // JSDOM 환경 설정
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -107,9 +116,13 @@ beforeAll(() => {
 
 // 각 테스트 전 초기화
 beforeEach(() => {
-  // DOM 초기화
-  document.body.innerHTML = '';
-  document.head.innerHTML = '';
+  // DOM 초기화 (안전하게)
+  if (document.body) {
+    document.body.innerHTML = '';
+  }
+  if (document.head) {
+    document.head.innerHTML = '';
+  }
 
   // Mock 초기화
   vi.clearAllMocks();
@@ -122,7 +135,12 @@ beforeEach(() => {
 // 각 테스트 후 정리
 afterEach(() => {
   // DOM 정리
-  cleanup();
+  if (typeof cleanup === 'function') {
+    cleanup();
+  }
+
+  // 브라우저 환경 정리
+  clearBrowserEnvironment();
 
   // 타이머 정리
   vi.useRealTimers();

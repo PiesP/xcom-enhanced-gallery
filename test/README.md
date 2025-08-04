@@ -216,6 +216,7 @@ it('대량 미디어 처리 성능', async () => {
    - 기타 정리 목록은 `test-cleanup-plan.ts` 참조
 
 2. **새로운 통합 테스트 사용**
+
    ```typescript
    // 기존 방식
    import { MediaExtractionService } from '../services/MediaExtractionService';

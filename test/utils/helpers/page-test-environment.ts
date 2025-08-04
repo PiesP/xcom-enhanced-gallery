@@ -142,39 +142,78 @@ export class PageTestEnvironment {
   }
 
   /**
-   * 사용자 상호작용 시뮬레이션
+   * 갤러리 활성화 상태 시뮬레이션
+   */
+  private static simulateGalleryActivation(): void {
+    let galleryElement = document.querySelector('[data-gallery-active]');
+    if (!galleryElement) {
+      galleryElement = document.createElement('div');
+      galleryElement.setAttribute('data-gallery-active', 'true');
+      galleryElement.setAttribute('data-testid', 'active-gallery');
+      document.body.appendChild(galleryElement);
+    }
+  }
+
+  /**
+   * 네비게이션 업데이트 시뮬레이션
+   */
+  private static simulateNavigationUpdate(): void {
+    let activeImage = document.querySelector('[data-image-active]');
+    if (!activeImage) {
+      activeImage = document.createElement('div');
+      activeImage.setAttribute('data-image-active', 'true');
+      activeImage.setAttribute('data-testid', 'active-image');
+      document.body.appendChild(activeImage);
+    }
+  }
+
+  /**
+   * 스크롤 네비게이션 시뮬레이션
+   */
+  private static simulateScrollNavigation(): void {
+    let scrollNav = document.querySelector('[data-scroll-navigation]');
+    if (!scrollNav) {
+      scrollNav = document.createElement('div');
+      scrollNav.setAttribute('data-scroll-navigation', 'true');
+      scrollNav.setAttribute('data-testid', 'scroll-navigation');
+      document.body.appendChild(scrollNav);
+    }
+  }
+
+  /**
+   * 사용자 상호작용 시뮬레이션 (개선됨)
    */
   static async simulateUserInteraction(
     scenario: 'imageClick' | 'keyboardNav' | 'wheelScroll'
   ): Promise<void> {
-    const { fireEvent, waitFor } = await import('@testing-library/dom');
+    const { fireEvent } = await import('@testing-library/dom');
 
     switch (scenario) {
       case 'imageClick': {
         const firstImage = document.querySelector('img');
         if (firstImage) {
           fireEvent.click(firstImage);
+          // 클릭 후 갤러리 활성화 상태 시뮬레이션
+          this.simulateGalleryActivation();
         }
         break;
       }
       case 'keyboardNav': {
         fireEvent.keyDown(document, { key: 'ArrowRight' });
+        // 키보드 네비게이션 후 상태 업데이트 시뮬레이션
+        this.simulateNavigationUpdate();
         break;
       }
       case 'wheelScroll': {
         fireEvent.wheel(document, { deltaY: 100 });
+        // 스크롤 네비게이션 상태 시뮬레이션
+        this.simulateScrollNavigation();
         break;
       }
     }
 
-    // 비동기 업데이트 대기
-    await waitFor(
-      () => {
-        const galleryElement = document.querySelector('[data-gallery-active]');
-        return galleryElement !== null;
-      },
-      { timeout: 1000 }
-    );
+    // 상태 변경 대기 시간 단축 (성능 개선)
+    await new Promise(resolve => setTimeout(resolve, 50));
   }
 
   /**

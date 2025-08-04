@@ -43,6 +43,35 @@ export const mockBrowserExtensionAPI = {
     revokeObjectURL: vi.fn(),
   },
 
+  // Location API Mock
+  location: {
+    hostname: 'x.com',
+    href: 'https://x.com/home',
+    pathname: '/home',
+    search: '',
+    hash: '',
+    protocol: 'https:',
+    origin: 'https://x.com',
+    reload: vi.fn(),
+    replace: vi.fn(),
+    assign: vi.fn(),
+  },
+
+  // CSS API Mock for jsdom
+  CSS: {
+    supports: vi.fn((property, value) => {
+      // 주요 CSS 기능들에 대한 모의 지원
+      const supportedFeatures = {
+        layer: true,
+        'container-type': true,
+        color: value?.includes('oklch') ? true : true,
+        display: true,
+        position: true,
+      };
+      return supportedFeatures[property] ?? false;
+    }),
+  },
+
   // Fetch API
   fetch: vi.fn(() =>
     Promise.resolve({
@@ -213,12 +242,24 @@ export function setupBrowserEnvironment() {
 
   // Location & History
   Object.defineProperty(globalThis, 'location', {
-    value: mockLocation,
+    value: mockBrowserExtensionAPI.location,
+    writable: true,
+  });
+
+  // window.location도 설정
+  Object.defineProperty(window, 'location', {
+    value: mockBrowserExtensionAPI.location,
     writable: true,
   });
 
   Object.defineProperty(globalThis, 'history', {
     value: mockHistory,
+    writable: true,
+  });
+
+  // CSS API for jsdom
+  Object.defineProperty(globalThis, 'CSS', {
+    value: mockBrowserExtensionAPI.CSS,
     writable: true,
   });
 

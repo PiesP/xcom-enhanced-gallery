@@ -216,7 +216,7 @@ describe('TDD Style & Component Consolidation', () => {
   describe('통합 검증', () => {
     it('레거시 호환성이 유지되어야 함', async () => {
       // 기존 API가 여전히 작동하는지 검증
-      const { combineClasses } = await import('../../src/shared/utils/styles/style-utils');
+      const { combineClasses } = await import('../../src/shared/utils/styles/css-utilities');
       const { setCSSVariable } = await import('../../src/shared/utils/styles/css-utilities');
 
       expect(combineClasses).toBeDefined();
