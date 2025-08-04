@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "test:fast": "vitest run --reporter=basic --pool=threads --poolOptions.threads.minThreads=1 --poolOptions.threads.maxThreads=4",
+    "test:fast": "vitest run --reporter=basic --pool=threads --poolOptions.threads.minThreads=1 --poolOptions.threads.maxThreads=2 --poolOptions.threads.isolate=false --exclude='**/refactoring/**' --exclude='**/tdd-*' --exclude='**/integration/**'",
     "test:optimized": "vitest run --coverage",
     "test:ci": "vitest run --coverage --reporter=verbose --pool=threads",
     "test:fix": "vitest run --reporter=verbose",
@@ -75,7 +75,7 @@
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "terser": "5.43.1",
-    "typescript": "^5.9.2",
+    "typescript": "5.7.2",
     "vite": "npm:rolldown-vite@latest",
     "vitest": "^3.2.4"
   },
