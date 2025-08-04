@@ -37,7 +37,7 @@ export class UIOptimizer {
   private config: OptimizationConfig;
   private performanceObserver?: PerformanceObserver;
   private intersectionObserver?: IntersectionObserver;
-  private readonly metrics: PerformanceMetrics;
+  private metrics: PerformanceMetrics;
   private readonly memoryCleanupTasks: Set<() => void>;
 
   constructor(config: Partial<OptimizationConfig> = {}) {
@@ -302,9 +302,9 @@ export class UIOptimizer {
     // 미사용 이미지 정리
     const images = document.querySelectorAll('img[data-cleanup]');
     images.forEach(img => {
-      if (img.offsetParent === null) {
+      const imgElement = img as HTMLImageElement;
+      if (imgElement.offsetParent === null) {
         // 화면에 표시되지 않는 이미지
-        const imgElement = img as HTMLImageElement;
         imgElement.src = '';
         imgElement.removeAttribute('data-cleanup');
       }

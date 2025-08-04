@@ -302,5 +302,8 @@ export function cleanupUltimateDOMEnvironment(): void {
     console.warn('[DOM Cleanup] Warning:', error);
   }
 
-  console.debug('[Ultimate DOM Environment] ✅ 환경 정리 완료');
+  // console.debug가 없는 환경에서 safe하게 처리
+  if (typeof console.debug === 'function') {
+    console.debug('[Ultimate DOM Environment] ✅ 환경 정리 완료');
+  }
 }

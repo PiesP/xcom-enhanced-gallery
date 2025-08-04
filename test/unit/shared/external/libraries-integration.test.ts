@@ -23,6 +23,7 @@ describe('외부 라이브러리 통합 테스트', () => {
 
       expect(query.QueryClient).toBeDefined();
       expect(query.QueryCache).toBeDefined();
+      expect(query.MutationCache).toBeDefined();
       expect(typeof query.QueryClient).toBe('function');
       expect(typeof query.QueryCache).toBe('function');
     });

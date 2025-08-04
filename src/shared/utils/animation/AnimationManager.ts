@@ -391,7 +391,13 @@ export class AnimationManager {
           return;
         }
 
-        const { element, type, options } = animations[currentIndex];
+        const animation = animations[currentIndex];
+        if (!animation) {
+          resolve();
+          return;
+        }
+
+        const { element, type, options } = animation;
         const originalOnComplete = options.onComplete;
 
         options.onComplete = () => {

@@ -7,9 +7,9 @@
  * - 반응형 디자인
  */
 
+import type { ComponentChildren, Ref } from 'preact';
 import { getPreactHooks } from '@shared/external/vendors';
 import { getAccessibilityManager } from '@shared/utils/accessibility/AccessibilityManager';
-import { styleUtils } from '@shared/styles';
 
 const { useState, useEffect, useRef, useCallback } = getPreactHooks();
 
@@ -17,7 +17,7 @@ const { useState, useEffect, useRef, useCallback } = getPreactHooks();
  * 버튼 Props 인터페이스
  */
 export interface AccessibleButtonProps {
-  children: preact.ComponentChildren;
+  children: ComponentChildren;
   onClick?: (event: MouseEvent | KeyboardEvent) => void;
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;
@@ -159,7 +159,7 @@ export function AccessibleButton(props: AccessibleButtonProps) {
  * 툴팁 Props 인터페이스
  */
 export interface TooltipProps {
-  children: preact.ComponentChildren;
+  children: ComponentChildren;
   content: string;
   position?: 'top' | 'bottom' | 'left' | 'right';
   delay?: number;
@@ -226,6 +226,7 @@ export function Tooltip(props: TooltipProps) {
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
+    return undefined; // 명시적으로 undefined 반환
   }, [isVisible, handleKeyDown]);
 
   // 정리
@@ -249,7 +250,7 @@ export function Tooltip(props: TooltipProps) {
   return (
     <div className='xeg-tooltip-wrapper' style={{ position: 'relative', display: 'inline-block' }}>
       <div
-        ref={triggerRef}
+        ref={triggerRef as Ref<HTMLDivElement>}
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
         onFocus={showTooltip}
@@ -286,7 +287,7 @@ export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
-  children: preact.ComponentChildren;
+  children: ComponentChildren;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'fullscreen';
   closeOnBackdrop?: boolean;
   closeOnEscape?: boolean;

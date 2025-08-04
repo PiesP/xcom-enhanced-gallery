@@ -108,9 +108,9 @@ export class InteractionManager {
    * 터치 이벤트 리스너 추가
    */
   private addTouchListeners(): void {
-    const touchStart = (event: TouchEvent) => this.handleTouchStart(event);
-    const touchEnd = (event: TouchEvent) => this.handleTouchEnd(event);
-    const touchMove = (event: TouchEvent) => this.handleTouchMove(event);
+    const touchStart = (event: Event) => this.handleTouchStart(event as TouchEvent);
+    const touchEnd = (event: Event) => this.handleTouchEnd(event as TouchEvent);
+    const touchMove = (event: Event) => this.handleTouchMove(event as TouchEvent);
 
     this.element.addEventListener('touchstart', touchStart, { passive: false });
     this.element.addEventListener('touchend', touchEnd, { passive: false });
@@ -125,9 +125,9 @@ export class InteractionManager {
    * 마우스 이벤트 리스너 추가
    */
   private addMouseListeners(): void {
-    const mouseDown = (event: MouseEvent) => this.handleMouseDown(event);
-    const mouseUp = (event: MouseEvent) => this.handleMouseUp(event);
-    const mouseMove = (event: MouseEvent) => this.handleMouseMove(event);
+    const mouseDown = (event: Event) => this.handleMouseDown(event as MouseEvent);
+    const mouseUp = (event: Event) => this.handleMouseUp(event as MouseEvent);
+    const mouseMove = (event: Event) => this.handleMouseMove(event as MouseEvent);
 
     this.element.addEventListener('mousedown', mouseDown);
     this.element.addEventListener('mouseup', mouseUp);
@@ -142,7 +142,7 @@ export class InteractionManager {
    * 키보드 이벤트 리스너 추가
    */
   private addKeyboardListeners(): void {
-    const keyDown = (event: KeyboardEvent) => this.handleKeyDown(event);
+    const keyDown = (event: Event) => this.handleKeyDown(event as KeyboardEvent);
     document.addEventListener('keydown', keyDown);
     this.eventListeners.set('keydown', keyDown);
   }

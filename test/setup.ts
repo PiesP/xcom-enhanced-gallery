@@ -7,6 +7,7 @@ import '@testing-library/jest-dom';
 import { beforeEach, afterEach, vi } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
+import { setupVendorMocks, resetVendorMocks } from './__mocks__/vendor-libs.mock.js';
 import {
   setupUltimateConsoleEnvironment,
   cleanupUltimateConsoleEnvironment,
@@ -39,8 +40,40 @@ if (typeof global !== 'undefined') {
 // 🎯 Vendor API Mock 설정 (최우선)
 // ================================
 
+// Helper classes for TanStack Query
+class MockQueryCache {
+  build() {}
+  add() {}
+  remove() {}
+  clear() {}
+  get() {
+    return null;
+  }
+  getAll() {
+    return [];
+  }
+  subscribe() {
+    return () => {};
+  }
+  config = {};
+  mount() {}
+  unmount() {}
+}
+
+class MockMutationCache {
+  clear() {}
+  find() {
+    return null;
+  }
+  getAll() {
+    return [];
+  }
+}
+
 // 즉시 vendor-api Mock 적용
-vi.mock('../src/shared/external/vendors/vendor-api', () => {
+
+// Mock the vendor API module
+vi.mock('@shared/external/vendors/vendor-api', () => {
   // 실제 Hook처럼 작동하는 mock 구현
   const mockPreactHooks = {
     useState: vi.fn(initialValue => {
@@ -124,9 +157,80 @@ vi.mock('../src/shared/external/vendors/vendor-api', () => {
     },
     getTanStackQuery() {
       return {
-        QueryClient: vi.fn(),
-        useQuery: vi.fn(),
-        useMutation: vi.fn(),
+        QueryClient: class {
+          getQueryCache() {
+            return new MockQueryCache();
+          }
+          getMutationCache() {
+            return new MockMutationCache();
+          }
+          getQueryData() {
+            return null;
+          }
+          setQueryData() {}
+          invalidateQueries() {}
+          removeQueries() {}
+          fetchQuery() {
+            return Promise.resolve(null);
+          }
+          prefetchQuery() {
+            return Promise.resolve();
+          }
+          cancelQueries() {
+            return Promise.resolve();
+          }
+          resetQueries() {}
+          isFetching() {
+            return false;
+          }
+          isMutating() {
+            return false;
+          }
+          getDefaultOptions() {
+            return {};
+          }
+          setDefaultOptions() {}
+          setQueryDefaults() {}
+          getQueryDefaults() {
+            return {};
+          }
+          setMutationDefaults() {}
+          getMutationDefaults() {
+            return {};
+          }
+          mount() {}
+          unmount() {}
+          clear() {}
+        },
+        QueryCache: class {
+          build() {}
+          add() {}
+          remove() {}
+          clear() {}
+          get() {
+            return null;
+          }
+          getAll() {
+            return [];
+          }
+          subscribe() {
+            return () => {};
+          }
+          config = {};
+          mount() {}
+          unmount() {}
+        },
+        MutationCache: class {
+          clear() {}
+          find() {
+            return null;
+          }
+          getAll() {
+            return [];
+          }
+        },
+        queryKey: (key: unknown[]) => key,
+        hashQueryKey: (key: unknown[]) => JSON.stringify(key),
       };
     },
   };
@@ -201,14 +305,31 @@ const createMockElement = (tag = 'div') => {
     parentNode: null,
     children: [],
     childNodes: [],
+    role: undefined as string | undefined,
+    ariaLabel: undefined as string | undefined,
+    ariaLabelledBy: undefined as string | undefined,
     setAttribute: vi.fn((name: string, value: string) => {
       if (name === 'data-gallery') element.dataset = { gallery: value };
       if (name === 'data-testid') element.dataset = { ...element.dataset, testid: value };
+      if (name === 'role') element.role = value;
+      if (name === 'aria-label') element.ariaLabel = value;
+      if (name === 'aria-labelledby') element.ariaLabelledBy = value;
     }),
     getAttribute: vi.fn((name: string) => {
       if (name === 'data-gallery') return element.dataset?.gallery || null;
       if (name === 'data-testid') return element.dataset?.testid || null;
+      if (name === 'role') return element.role || null;
+      if (name === 'aria-label') return element.ariaLabel || null;
+      if (name === 'aria-labelledby') return element.ariaLabelledBy || null;
       return null;
+    }),
+    hasAttribute: vi.fn((name: string) => {
+      if (name === 'data-gallery') return !!element.dataset?.gallery;
+      if (name === 'data-testid') return !!element.dataset?.testid;
+      if (name === 'role') return !!element.role;
+      if (name === 'aria-label') return !!element.ariaLabel;
+      if (name === 'aria-labelledby') return !!element.ariaLabelledBy;
+      return false;
     }),
     dataset: {} as any,
     removeAttribute: vi.fn(),
@@ -600,6 +721,7 @@ beforeEach(async () => {
 
   // Mock API 연결 활성화
   setupGlobalMocks();
+  setupVendorMocks();
 
   // URL 생성자 다시 확인 및 설정
   if (!globalThis.URL || typeof globalThis.URL !== 'function') {
@@ -640,11 +762,15 @@ beforeEach(async () => {
 
   const videoPlayer = createMockElement('div');
   videoPlayer.setAttribute('data-testid', 'videoPlayer');
-  global.document.body.appendChild(videoPlayer);
+  if (global.document.body && typeof global.document.body.appendChild === 'function') {
+    global.document.body.appendChild(videoPlayer);
+  }
 
   const tweetPhoto = createMockElement('div');
   tweetPhoto.setAttribute('data-testid', 'tweetPhoto');
-  global.document.body.appendChild(tweetPhoto);
+  if (global.document.body && typeof global.document.body.appendChild === 'function') {
+    global.document.body.appendChild(tweetPhoto);
+  }
 
   // 기본 테스트 환경 설정 (minimal)
   await setupTestEnvironment();
@@ -664,12 +790,15 @@ afterEach(async () => {
   cleanupUltimateDOMEnvironment();
 
   // DOM 정리 - body의 모든 자식 요소 제거
-  while (global.document.body.children.length > 0) {
-    global.document.body.removeChild(global.document.body.children[0]);
+  if (global.document?.body?.children) {
+    while (global.document.body.children.length > 0) {
+      global.document.body.removeChild(global.document.body.children[0]);
+    }
   }
 
   // Mock API 상태 초기화
   resetMockApiState();
+  resetVendorMocks();
 
   await cleanupTestEnvironment();
 });
