@@ -23,7 +23,7 @@ import {
   animateGalleryExit,
   setupScrollAnimation,
 } from '@shared/utils/animations';
-import { useToolbar } from '@features/gallery/hooks';
+import { useToolbarVisibility } from '@shared/hooks/useToolbarVisibility';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
@@ -88,10 +88,10 @@ function VerticalGalleryViewCore({
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // 🎯 간소화된 툴바 관리 - 75% 코드 감소
-  const { isVisible: toolbarVisible, hoverZoneRef } = useToolbar({
-    hoverZoneHeight: 100,
+  // 🎯 통합 툴바 가시성 관리
+  const { isVisible: toolbarVisible, hoverZoneRef } = useToolbarVisibility({
     initialShowDuration: 1000,
+    hideDelay: 300,
   });
 
   // 단순화된 가시성 상태 관리

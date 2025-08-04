@@ -40,12 +40,14 @@
     opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
     transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
 
-  /* 글래스모피즘 스타일링 */
+  /* 글래스모피즘 스타일링 - 통합 토큰 사용 */
   border-radius: 16px;
-  border: 1px solid var(--xeg-toolbar-glass-border);
+  border: 1px solid var(--xeg-toolbar-border);
   box-shadow: var(--xeg-toolbar-glass-shadow);
-  backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
+  backdrop-filter: var(--xeg-blur-medium) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-blur-medium) saturate(120%);
+  background: var(--xeg-toolbar-bg);
+  color: var(--xeg-toolbar-text);
   user-select: none;
   isolation: isolate;
 }
@@ -151,9 +153,9 @@
 
 /* 버튼 상태 관리 */
 .toolbarButton {
-  /* 글래스모피즘 버튼 스타일 - 디자인 토큰 활용 */
-  background: var(--xeg-glass-bg-medium);
-  color: var(--button-color, var(--xeg-text-button));
+  /* 글래스모피즘 버튼 스타일 - 통합 색상 토큰 활용 */
+  background: var(--xeg-toolbar-bg);
+  color: var(--xeg-toolbar-text);
   opacity: var(--button-opacity, 1);
   transform: var(--button-transform, none);
   transition: var(--xeg-transition-fast);
@@ -213,9 +215,9 @@
 /* 호버 상태는 CSS에서만 관리 - fitButton 기준으로 통일 */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
-    /* fitButton과 동일한 단순한 호버 효과 */
-    background: var(--xeg-color-neutral-100);
-    border-color: var(--xeg-color-neutral-400);
+    /* fitButton과 동일한 단순한 호버 효과 - 통합 색상 토큰 사용 */
+    background: var(--xeg-toolbar-button-hover);
+    border-color: var(--xeg-toolbar-border);
     color: var(--xeg-color-neutral-800);
     /* 복잡한 transform 효과 제거 */
   }

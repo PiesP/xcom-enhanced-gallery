@@ -1,7 +1,7 @@
 /**
  * @fileoverview 통합 스타일 서비스
  * @description TDD GREEN Phase: 모든 스타일 관련 중복을 통합하는 단일 서비스
- * @version 1.0.0 - GREEN Phase
+ * @version 2.0.0 - 새로운 디자인 시스템 통합
  */
 
 import { logger } from '@shared/logging/logger';
@@ -11,6 +11,14 @@ import {
   cleanupNamespacedStyles,
   createNamespacedClass,
 } from '@shared/styles/namespaced-styles';
+
+// 새로운 디자인 시스템 모듈들
+import { getZIndex, injectZIndexStyles } from '@shared/styles/z-index-system';
+import {
+  injectGlassmorphismStyles,
+  applyGlassmorphism as applyGlassmorphismDirect,
+  removeGlassmorphism,
+} from '@shared/styles/glassmorphism-system';
 
 /**
  * 글래스모피즘 강도 타입
@@ -90,19 +98,76 @@ export class StyleService {
   }
 
   /**
-   * 글래스모피즘 적용 (StyleManager 위임)
+   * 글래스모피즘 적용 (새로운 시스템 사용)
    */
   applyGlassmorphism(element: HTMLElement, intensity: GlassmorphismIntensity): void {
-    StyleManager.applyGlassmorphism(element, intensity);
+    // 접근성 고려한 옵션 매핑
+    const optionsMap = {
+      light: { blur: 8, opacity: 0.6, borderOpacity: 0.1 },
+      medium: { blur: 12, opacity: 0.8, borderOpacity: 0.2 },
+      strong: { blur: 16, opacity: 0.9, borderOpacity: 0.25 },
+      ultra: { blur: 20, opacity: 0.95, borderOpacity: 0.3 },
+    };
+
+    applyGlassmorphismDirect(element, optionsMap[intensity]);
     this.activeResources++;
   }
 
   /**
-   * 접근성을 고려한 글래스모피즘 적용
+   * 접근성을 고려한 글래스모피즘 적용 (새로운 시스템)
    */
   applyAccessibleGlassmorphism(element: HTMLElement, intensity: GlassmorphismIntensity): void {
-    StyleManager.applyAccessibleGlassmorphism(element, intensity);
+    const optionsMap = {
+      light: { blur: 6, opacity: 0.7, borderOpacity: 0.15, respectAccessibility: true },
+      medium: { blur: 10, opacity: 0.85, borderOpacity: 0.25, respectAccessibility: true },
+      strong: { blur: 14, opacity: 0.95, borderOpacity: 0.3, respectAccessibility: true },
+      ultra: { blur: 18, opacity: 0.98, borderOpacity: 0.35, respectAccessibility: true },
+    };
+
+    applyGlassmorphismDirect(element, optionsMap[intensity]);
     this.activeResources++;
+  }
+
+  /**
+   * 글래스모피즘 제거
+   */
+  removeGlassmorphism(element: HTMLElement): void {
+    removeGlassmorphism(element);
+    this.activeResources = Math.max(0, this.activeResources - 1);
+  }
+
+  /**
+   * Z-Index 값 반환 (새로운 시스템)
+   */
+  getZIndex(layer: 'gallery' | 'toolbar' | 'modal' | 'toast', offset = 0): number {
+    return getZIndex(layer, offset);
+  }
+
+  /**
+   * 요소에 Z-Index 적용
+   */
+  applyZIndex(
+    element: HTMLElement,
+    layer: 'gallery' | 'toolbar' | 'modal' | 'toast',
+    offset = 0
+  ): void {
+    element.style.zIndex = this.getZIndex(layer, offset).toString();
+  }
+
+  /**
+   * 디자인 시스템 초기화 (새로운 시스템)
+   */
+  initializeDesignSystem(): void {
+    // Z-Index 스타일 주입
+    injectZIndexStyles();
+
+    // 글래스모피즘 스타일 주입
+    injectGlassmorphismStyles();
+
+    // 네임스페이스된 스타일 초기화
+    this.initializeNamespacedStyles();
+
+    logger.info('[StyleService] Design system initialized with new features');
   }
 
   /**

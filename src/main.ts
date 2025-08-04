@@ -44,6 +44,11 @@ async function initializeInfrastructure(): Promise<void> {
     const { initializeVendors } = await import('@shared/external/vendors');
     await initializeVendors();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
+
+    // 통합 디자인 시스템 초기화
+    const { styleService } = await import('@shared/services/style-service');
+    await styleService.initializeDesignSystem();
+    logger.debug('✅ 디자인 시스템 초기화 완료');
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);
     throw error;

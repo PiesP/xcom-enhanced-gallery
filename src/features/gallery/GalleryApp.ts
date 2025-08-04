@@ -17,6 +17,7 @@ import { logger } from '@shared/logging/logger';
 import { MediaService } from '@shared/services/MediaService';
 import { ToastService } from '@shared/services/ToastService';
 import { unmountGallery } from '@shared/components/isolation';
+import { injectZIndexStyles } from '@shared/styles/z-index-system';
 
 /**
  * 갤러리 앱 설정
@@ -70,6 +71,9 @@ export class GalleryApp {
   public async initialize(): Promise<void> {
     try {
       logger.info('GalleryApp: 격리된 시스템으로 초기화 시작');
+
+      // Z-Index 스타일 시스템 초기화
+      injectZIndexStyles();
 
       // 토스트 서비스는 간단하므로 초기화 불필요
 
@@ -251,7 +255,6 @@ export class GalleryApp {
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 999999;
         pointer-events: none;
       `;
       document.body.appendChild(container);

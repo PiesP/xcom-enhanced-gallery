@@ -99,6 +99,32 @@
   --xeg-spacing-3xl: 64px; /* 4rem */
 
   /* ===========================================
+     Z-INDEX SYSTEM (체계적 레이어링)
+     =========================================== */
+
+  --xeg-z-base: 1;
+  --xeg-z-gallery: 1000;
+  --xeg-z-gallery-content: 1100;
+  --xeg-z-toolbar: 1200;
+  --xeg-z-modal: 2000;
+  --xeg-z-toast: 3000;
+
+  /* ===========================================
+     BLUR SYSTEM (통합 블러 효과)
+     =========================================== */
+
+  --xeg-blur-light: blur(8px); /* 배경 요소 */
+  --xeg-blur-medium: blur(12px); /* 인터페이스 요소 */
+  --xeg-blur-strong: blur(16px); /* 강조 요소 */
+  --xeg-blur-ultra: blur(20px); /* 모달/오버레이 */
+
+  /* 글래스모피즘 블러 통합 */
+  --xeg-glass-blur-light: var(--xeg-blur-light);
+  --xeg-glass-blur-medium: var(--xeg-blur-medium);
+  --xeg-glass-blur-strong: var(--xeg-blur-strong);
+  --xeg-glass-blur-ultra: var(--xeg-blur-ultra);
+
+  /* ===========================================
      TYPOGRAPHY SYSTEM
      =========================================== */
 
@@ -152,11 +178,6 @@
   --xeg-z-overlay: 3500; /* 오버레이 (변경: 3000 → 3500) */
   --xeg-z-toast: 4000; /* 토스트 (변경: 5000 → 4000) */
 
-  /* 갤러리 관련 세부 Z-Index */
-  --xeg-z-gallery-content: var(--xeg-z-gallery); /* 2000 */
-  --xeg-z-gallery-toolbar: var(--xeg-z-toolbar); /* 2500 */
-  --xeg-z-gallery-overlay: calc(var(--xeg-z-toolbar) + 500); /* 3000 */
-
   /* ===========================================
      ANIMATION SYSTEM
      =========================================== */
@@ -173,18 +194,6 @@
   --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --xeg-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --xeg-easing-spring: cubic-bezier(0.22, 1, 0.36, 1);
-
-  /* Backdrop Filter - 글래스모피즘 강화 */
-  --xeg-blur-light: blur(12px);
-  --xeg-blur-medium: blur(16px);
-  --xeg-blur-strong: blur(20px);
-
-  /* 글래스모피즘 전용 블러 */
-  --xeg-glass-blur-subtle: blur(8px);
-  --xeg-glass-blur-light: blur(12px);
-  --xeg-glass-blur-medium: blur(16px);
-  --xeg-glass-blur-strong: blur(20px);
-  --xeg-glass-blur-ultra: blur(24px);
 
   /* ===========================================
      SEMANTIC TOKEN ALIASES
@@ -264,6 +273,30 @@
   /* 상태별 box-shadow */
   --xeg-focus-shadow: 0 0 0 var(--xeg-focus-ring-width) var(--xeg-focus-ring-color);
   --xeg-active-shadow: 0 0 0 var(--xeg-active-ring-width) var(--xeg-active-ring-color);
+
+  /* ===========================================
+     컴포넌트별 색상 토큰 시스템
+     =========================================== */
+
+  /* 툴바 색상 시스템 */
+  --xeg-toolbar-bg: var(--xeg-glass-bg-medium);
+  --xeg-toolbar-text: var(--xeg-color-text-primary);
+  --xeg-toolbar-text-secondary: var(--xeg-color-text-secondary);
+  --xeg-toolbar-border: var(--xeg-glass-border-light);
+  --xeg-toolbar-button-hover: var(--xeg-glass-bg-light);
+  --xeg-toolbar-button-active: var(--xeg-glass-bg-medium);
+
+  /* 갤러리 색상 시스템 */
+  --xeg-gallery-bg: var(--xeg-color-overlay-strong);
+  --xeg-gallery-surface: var(--xeg-glass-bg-dark);
+  --xeg-gallery-text: var(--xeg-color-text-primary);
+  --xeg-gallery-text-muted: var(--xeg-color-text-tertiary);
+
+  /* 미디어 아이템 색상 시스템 */
+  --xeg-media-item-bg: var(--xeg-glass-bg-light);
+  --xeg-media-item-border: var(--xeg-glass-border-light);
+  --xeg-media-item-hover: var(--xeg-glass-bg-medium);
+  --xeg-media-item-active: var(--xeg-color-primary-100);
 }
 
 /* ===========================================

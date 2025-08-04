@@ -87,16 +87,16 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: var(--xeg-gallery-z-index);
+  z-index: var(--xeg-z-gallery);
   background: var(--xeg-color-overlay-strong);
 
   /* 기본 레이아웃 */
   display: flex;
   flex-direction: column;
 
-  /* 블러 효과 */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* 블러 효과 - 통합 토큰 사용 */
+  backdrop-filter: var(--xeg-blur-light);
+  -webkit-backdrop-filter: var(--xeg-blur-light);
 
   /* 하드웨어 가속 최적화 */
   transform: translateZ(0);
@@ -187,9 +187,8 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 120px; /* 상단 120px로 확장하여 사용성 향상 */
-  /* 툴바(2500)보다 1 낮게 */
-  z-index: calc(var(--xeg-z-toolbar) - 1); /* 2499 */
+  height: clamp(80px, 15vh, 120px); /* 반응형 호버 영역 */
+  z-index: calc(var(--xeg-z-toolbar) - 1);
   background: transparent;
   pointer-events: auto; /* 호버 감지를 위해 이벤트 허용 */
 }
@@ -219,35 +218,36 @@
   top: 0;
   left: 0;
   right: 0;
-  height: auto;
-  /* Design Token에 정의된 값 사용 */
-  z-index: var(--xeg-z-toolbar); /* 2500 */
+  z-index: var(--xeg-z-toolbar);
 
-  /* 기본 상태: CSS 변수로 제어되는 숨김 상태 */
-  opacity: var(--toolbar-opacity, 0);
-  visibility: var(--toolbar-visibility, hidden);
-  pointer-events: var(--toolbar-pointer-events, none);
-  transform: translateY(var(--toolbar-transform-y, -10px));
-  display: block;
+  /* CSS 변수로 제어되는 상태 - 초기 표시로 변경 */
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
 
-  transition: var(--xeg-transition-toolbar);
+  transition:
+    opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
+    visibility var(--xeg-duration-normal) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+
+  /* 성능 최적화 */
   will-change: transform, opacity, visibility;
-  contain: layout style;
-
-  /* 즉시 반응을 위한 추가 최적화 */
-  transform: translateZ(0); /* GPU 가속 활성화 */
-  backface-visibility: hidden; /* 렌더링 최적화 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 
   /* 툴바 자체는 항상 클릭 가능하도록 설정 */
-  pointer-events: var(--toolbar-pointer-events, none);
+  pointer-events: auto;
 
-  /* 그라디언트 배경 */
+  /* 그라디언트 배경 - 통합 블러 효과 적용 */
   background: linear-gradient(
     to bottom,
     color-mix(in srgb, black 80%, transparent) 0%,
     color-mix(in srgb, black 40%, transparent) 70%,
     transparent 100%
   );
+  backdrop-filter: var(--xeg-blur-medium);
+  -webkit-backdrop-filter: var(--xeg-blur-medium);
   padding-block-end: var(--xeg-spacing-gallery);
 }
 
