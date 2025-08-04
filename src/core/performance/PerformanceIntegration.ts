@@ -14,6 +14,8 @@ import type {
   DashboardData,
   PerformanceAlert,
   PerformanceMetrics,
+  AlertThreshold,
+  MetricType,
 } from './types';
 
 /**
@@ -33,23 +35,29 @@ export interface PerformanceIntegrationInterface {
  * 성능 모니터링 시스템을 메인 앱과 연결하고 실시간 데이터를 제공합니다.
  */
 export class PerformanceIntegration implements PerformanceIntegrationInterface {
-  private static readonly instance: PerformanceIntegration | null = null;
-  private readonly performanceMonitor: PerformanceMonitor | null = null;
-  private readonly metricsCollector: MetricsCollector | null = null;
-  private readonly alertSystem: AlertSystem | null = null;
+  private readonly performanceMonitor: PerformanceMonitor;
+  private readonly metricsCollector: MetricsCollector;
+  private readonly alertSystem: AlertSystem;
   private isInitialized = false;
   private isMonitoring = false;
   private dashboardUpdateInterval: number | null = null;
+  private config: MonitoringConfig = {
+    collectionInterval: 5000,
+    historyRetention: 300000,
+    enableAlerts: true,
+    enableSuggestions: true,
+    enableDetailedLogging: false,
+  };
+  private readonly alertCallbacks: Array<(alert: PerformanceAlert) => void> = [];
 
   // 메모리 누수 방지를 위한 WeakMap 기반 참조 관리
-  private readonly componentRefs = new WeakMap<object, unknown>();
   private readonly eventListeners = new Map<string, AbortController>();
   private readonly timers = new Set<number>();
   private readonly rafIds = new Set<number>();
 
   constructor() {
     this.performanceMonitor = new PerformanceMonitor();
-    this.metricsCollector = new MetricsCollector(this.performanceMonitor);
+    this.metricsCollector = new MetricsCollector();
     this.alertSystem = new AlertSystem();
   }
 
@@ -62,35 +70,22 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
         this.config = { ...this.config, ...config };
       }
 
-      // 모니터링이 비활성화된 경우
-      if (!this.config.enabled) {
+      // 기본 설정 적용
+      if (!this.config.enableAlerts) {
         return;
       }
 
-      // AlertSystem 임계값 설정
-      if (this.config.alertThresholds) {
-        Object.entries(this.config.alertThresholds).forEach(([type, thresholds]) => {
-          Object.entries(thresholds).forEach(([metric, value]) => {
-            this.alertSystem.setThreshold(
-              type as keyof typeof this.config.alertThresholds,
-              metric,
-              value as number
-            );
-          });
-        });
-      }
+      // AlertSystem 임계값 설정 - 기본값으로 설정
+      const defaultThresholds: AlertThreshold[] = [
+        { metric: 'memory' as MetricType, value: 50000000, unit: 'bytes', severity: 'warning' },
+        { metric: 'performance' as MetricType, value: 200, unit: 'ms', severity: 'warning' },
+        { metric: 'cls' as MetricType, value: 0.25, unit: 'score', severity: 'warning' },
+        { metric: 'fid' as MetricType, value: 200, unit: 'ms', severity: 'warning' },
+        { metric: 'lcp' as MetricType, value: 4000, unit: 'ms', severity: 'warning' },
+      ];
+      this.alertSystem.setThresholds(defaultThresholds);
 
-      // 알림 콜백 설정
-      this.alertSystem.onAlert(alert => {
-        this.alertCallbacks.forEach(callback => {
-          try {
-            callback(alert);
-          } catch (error) {
-            console.warn('알림 콜백 실행 중 오류:', error);
-          }
-        });
-      });
-
+      // 초기화 완료
       this.isInitialized = true;
     } catch (error) {
       console.error('성능 모니터링 초기화 실패:', error);
@@ -130,13 +125,11 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
         healthScore: 50,
       };
     }
-  }
-
-  /**
+  } /**
    * 성능 모니터링 시작 (최적화된 버전)
    */
   startMonitoring(): void {
-    if (!this.isInitialized || !this.config.enabled) {
+    if (!this.isInitialized || !this.config.enableAlerts) {
       return;
     }
 
@@ -227,7 +220,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
       this.rafIds.add(rafId);
 
       // 다음 수집 스케줄링
-      const timerId = setTimeout(collect, collectionInterval);
+      const timerId = window.setTimeout(collect, collectionInterval);
       this.timers.add(timerId);
     };
 
@@ -317,8 +310,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
         cls: 0,
         fid: 0,
         lcp: 0,
-        throughput: 0,
-        fps: 0,
+        fcp: 0,
       },
     };
   }

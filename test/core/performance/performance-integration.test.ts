@@ -4,7 +4,7 @@
  * @description TDD 방식으로 성능 모니터링을 메인 앱에 통합하는 테스트
  * @author TDD-AI-Assista    it('성능 모니터링이 메인 앱과 함께 초기화되어야 함', async () => {
       // ARRANGE
-      const config: MonitoringConfig = {
+      const testConfig: MonitoringConfig = {
         enabled: true,
         collectInterval: 5000,
         maxHistorySize: 100,
@@ -16,10 +16,10 @@
       };
 
       // ACT
-      await mockPerformanceIntegration.initialize(config);
+      await mockPerformanceIntegration.initialize(testConfig);
 
       // ASSERT
-      expect(mockPerformanceIntegration.initialize).toHaveBeenCalledWith(config);
+      expect(mockPerformanceIntegration.initialize).toHaveBeenCalledWith(testConfig);
     });0
  */
 
