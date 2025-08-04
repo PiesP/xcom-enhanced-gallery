@@ -60,6 +60,11 @@ export function generateZIndexCSS(): string {
  * 앱 초기화 시 Z-Index CSS를 동적으로 주입합니다.
  */
 export function injectZIndexStyles(): void {
+  // 🔧 FIX: 테스트 환경에서 DOM API 접근 안전성 보장
+  if (typeof document === 'undefined') {
+    return;
+  }
+
   const existingStyle = document.getElementById('xeg-zindex-styles');
   if (existingStyle) {
     existingStyle.remove();
@@ -67,9 +72,14 @@ export function injectZIndexStyles(): void {
 
   const styleElement = document.createElement('style');
   styleElement.id = 'xeg-zindex-styles';
-  styleElement.textContent = generateZIndexCSS();
 
-  document.head.appendChild(styleElement);
+  try {
+    styleElement.textContent = generateZIndexCSS();
+    document.head?.appendChild(styleElement);
+  } catch (error) {
+    // 테스트 환경에서 DOM 접근 실패 시 조용히 무시
+    console.warn('Z-Index 스타일 주입 실패 (테스트 환경):', error);
+  }
 }
 
 /**

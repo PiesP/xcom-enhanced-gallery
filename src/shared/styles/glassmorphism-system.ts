@@ -153,6 +153,11 @@ export function createOptimizedGlassClasses(): string {
  * 글래스모피즘 스타일 주입
  */
 export function injectGlassmorphismStyles(): void {
+  // 🔧 FIX: 테스트 환경에서 CSS 파싱 오류 방지
+  if (typeof document === 'undefined') {
+    return;
+  }
+
   const existingStyle = document.getElementById('xeg-glassmorphism-styles');
   if (existingStyle) {
     existingStyle.remove();
@@ -160,9 +165,14 @@ export function injectGlassmorphismStyles(): void {
 
   const styleElement = document.createElement('style');
   styleElement.id = 'xeg-glassmorphism-styles';
-  styleElement.textContent = createOptimizedGlassClasses();
 
-  document.head.appendChild(styleElement);
+  try {
+    styleElement.textContent = createOptimizedGlassClasses();
+    document.head?.appendChild(styleElement);
+  } catch (error) {
+    // 테스트 환경에서 CSS 파싱 실패 시 조용히 무시
+    console.warn('CSS 스타일 주입 실패 (테스트 환경):', error);
+  }
 }
 
 /**

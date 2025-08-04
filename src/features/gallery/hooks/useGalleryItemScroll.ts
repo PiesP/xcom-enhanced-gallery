@@ -7,10 +7,10 @@
  * @version 1.0.0 - 초기 구현
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
 
-const { useCallback, useEffect, useRef } = getPreactHooks();
+const { useCallback, useEffect, useRef } = ComponentManager.getHookManager();
 
 export interface UseGalleryItemScrollOptions {
   /** 스크롤 활성화 여부 */

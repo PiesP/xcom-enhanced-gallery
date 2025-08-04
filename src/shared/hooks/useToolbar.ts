@@ -16,7 +16,7 @@
  * 3. 깜빡임 없는 자연스러운 UX
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
 
 interface ToolbarOptions {
@@ -60,7 +60,7 @@ interface ToolbarState {
  * ```
  */
 export function useToolbar({ initialShowDuration = 1000 }: ToolbarOptions = {}): ToolbarState {
-  const { useState, useRef, useEffect, useCallback } = getPreactHooks();
+  const { useState, useRef, useEffect, useCallback } = ComponentManager.getHookManager();
 
   // 🎯 단일 상태만 관리
   const [isVisible, setIsVisible] = useState(true);

@@ -7,7 +7,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 
 export interface ProgressiveImageState {
   isLoading: boolean;
@@ -53,7 +53,7 @@ export function useProgressiveImage({
   timeout = 30000,
   enableProgressTracking = true,
 }: UseProgressiveImageOptions): UseProgressiveImageReturn {
-  const { useState, useEffect, useCallback, useRef } = getPreactHooks();
+  const { useState, useEffect, useCallback, useRef } = ComponentManager.getHookManager();
   const [state, setState] = useState<ProgressiveImageState>({
     isLoading: false,
     isLoaded: false,

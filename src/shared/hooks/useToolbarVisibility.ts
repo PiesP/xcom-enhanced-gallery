@@ -11,7 +11,7 @@
  * - 자동 메모리 정리
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 
 interface ToolbarVisibilityOptions {
   /** 초기 표시 시간 (기본: 1000ms) */
@@ -41,7 +41,7 @@ export function useToolbarVisibility({
   initialShowDuration = 1000,
   hideDelay = 300,
 }: ToolbarVisibilityOptions = {}): ToolbarVisibilityReturn {
-  const { useState, useRef, useEffect, useCallback } = getPreactHooks();
+  const { useState, useRef, useEffect, useCallback } = ComponentManager.getHookManager();
 
   // 🎯 단일 상태 관리
   const [isVisible, setIsVisible] = useState(true);

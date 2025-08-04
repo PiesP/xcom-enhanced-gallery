@@ -6,12 +6,12 @@
  * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
 import { createEventManager } from '@shared/dom/DOMEventManager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
-const { useEffect, useRef, useCallback } = getPreactHooks();
+const { useEffect, useRef, useCallback } = ComponentManager.getHookManager();
 
 interface UseGalleryScrollOptions {
   /** 갤러리 컨테이너 참조 */

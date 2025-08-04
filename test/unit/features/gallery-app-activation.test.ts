@@ -7,22 +7,8 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { CoreService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from '@/constants';
 
-// 테스트 환경 모킹
-const mockDocument = {
-  createElement: vi.fn(tag => ({
-    src: '',
-    tagName: tag.toUpperCase(),
-    id: '',
-    style: { cssText: '' },
-    setAttribute: vi.fn(),
-    getAttribute: vi.fn(),
-    appendChild: vi.fn(),
-  })),
-  querySelector: vi.fn(() => null),
-  body: {
-    appendChild: vi.fn(),
-  },
-};
+// 🔧 REFACTOR: 전역 DOM 모킹 사용 (setup.ts에서 제공)
+// 더 이상 개별 DOM 모킹이 필요하지 않음
 
 const mockConsole = {
   warn: vi.fn(),
@@ -30,8 +16,7 @@ const mockConsole = {
   error: vi.fn(),
 };
 
-// global 설정
-globalThis.document = mockDocument;
+// console만 개별 설정
 globalThis.console = mockConsole;
 
 describe('갤러리 앱 활성화', () => {
@@ -148,7 +133,7 @@ describe('갤러리 앱 활성화', () => {
 
     it('미디어 클릭 시 갤러리가 열려야 함', async () => {
       // 행위 중심 테스트: 클릭 -> 갤러리 열기 동작 검증
-      const mockElement = mockDocument.createElement('img');
+      const mockElement = document.createElement('img');
       mockElement.src = 'test-image.jpg';
 
       const openGallerySpy = vi.spyOn(galleryApp, 'openGallery');
@@ -185,7 +170,7 @@ describe('갤러리 앱 활성화', () => {
 
       const openGallerySpy = vi.spyOn(galleryApp, 'openGallery');
 
-      const mockElement = mockDocument.createElement('div');
+      const mockElement = document.createElement('div');
       const extractResult = await mediaService.extractFromClickedElement(mockElement);
 
       if (extractResult.success && extractResult.mediaItems.length > 0) {
@@ -264,7 +249,7 @@ describe('갤러리 앱 활성화', () => {
 
       const openGallerySpy = vi.spyOn(galleryApp, 'openGallery');
 
-      const mockElement = mockDocument.createElement('img');
+      const mockElement = document.createElement('img');
 
       try {
         const extractResult = await mediaService.extractFromClickedElement(mockElement);

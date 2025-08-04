@@ -6,15 +6,15 @@
  * @description 갤러리 키보드 지원을 제공하는 커스텀 훅 (Esc 키만 지원)
  */
 
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
-import { getPreactHooks } from '@shared/external/vendors';
 
 interface UseGalleryKeyboardOptions {
   onClose: () => void;
 }
 
 export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions) {
-  const { useCallback, useEffect } = getPreactHooks();
+  const { useCallback, useEffect } = ComponentManager.getHookManager();
 
   // 갤러리 키보드 이벤트 핸들러 (확장된 버전)
   const handleKeyDown = useCallback(

@@ -3,13 +3,14 @@
  * @version 3.0.0 - Accessibility System
  *
  * 접근성을 위한 통합 커스텀 훅들
- * - 키보드 네비게이션
+ * -export function useAriaLiveRegion(message: string, politeness: 'polite' | 'assertive' = 'polite') {
+  const { useEffect } = ComponentManager.getHookManager();보드 네비게이션
  * - 포커스 트랩
  * - 스크린 리더 지원
  * - ARIA 상태 관리
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
 
 /**
@@ -21,7 +22,7 @@ export function useKeyboardNavigation(
   } = {},
   dependencies: unknown[] = []
 ) {
-  const { useEffect } = getPreactHooks();
+  const { useEffect } = ComponentManager.getHookManager();
   const { onEscape } = handlers;
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export function useKeyboardNavigation(
  * 포커스 트랩 훅
  */
 export function useFocusTrap(enabled: boolean = true) {
-  const { useRef, useEffect } = getPreactHooks();
+  const { useRef, useEffect } = ComponentManager.getHookManager();
   const containerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -105,50 +106,47 @@ export function useFocusTrap(enabled: boolean = true) {
   return containerRef;
 }
 
-/**
- * ARIA 라이브 리전 훅
- */
-export function useAriaLive(message: string, politeness: 'polite' | 'assertive' = 'polite') {
-  const { useEffect } = getPreactHooks();
-  useEffect(() => {
-    if (!message) return;
+// TODO: ARIA 접근성 개선 시 다음 코드를 활용 예정
+/*
+type AriaPoliteness = 'polite' | 'assertive';
 
-    const liveRegion = document.createElement('div');
-    liveRegion.setAttribute('aria-live', politeness);
-    liveRegion.setAttribute('aria-atomic', 'true');
-    liveRegion.setAttribute('class', 'sr-only');
-    liveRegion.style.cssText = `
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    `;
-
-    document.body.appendChild(liveRegion);
-
-    const timeoutId = setTimeout(() => {
-      liveRegion.textContent = message;
-    }, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (document.body.contains(liveRegion)) {
-        document.body.removeChild(liveRegion);
-      }
-    };
-  }, [message, politeness]);
+interface AriaAnnouncementHook {
+  announce: (message: string, politeness?: AriaPoliteness) => void;
 }
+*/
+
+/**
+ * ARIA 라이브 리전 훅 (TODO: 향후 구현 예정)
+ * @deprecated 현재 미사용, 향후 접근성 개선에서 활용 예정
+ */
+// function _useAriaAnnouncement(): AriaAnnouncementHook {
+//   const { useCallback } = ComponentManager.getHookManager();
+
+//   const announce = useCallback((message: string, politeness: AriaPoliteness = 'polite') => {
+//     const announcement = document.createElement('div');
+//     announcement.setAttribute('aria-live', politeness);
+//     announcement.setAttribute('aria-atomic', 'true');
+//     announcement.className = 'sr-only';
+//     announcement.textContent = message;
+
+//     document.body.appendChild(announcement);
+
+//     // Remove after announcement
+//     setTimeout(() => {
+//       document.body.removeChild(announcement);
+//     }, 1000);
+//   }, []);
+
+//   return {
+//     announce,
+//   };
+// }
 
 /**
  * 라이브 리전 메시지 알림 훅
  */
 export function useLiveRegion(politeness: 'polite' | 'assertive' = 'polite') {
-  const { useCallback } = getPreactHooks();
+  const { useCallback } = ComponentManager.getHookManager();
   const announce = useCallback(
     (message: string) => {
       if (!message) return;
@@ -190,7 +188,7 @@ export function useLiveRegion(politeness: 'polite' | 'assertive' = 'polite') {
  * 외부 클릭 감지 훅
  */
 export function useClickOutside(callback: () => void, enabled: boolean = true) {
-  const { useRef, useCallback, useEffect } = getPreactHooks();
+  const { useRef, useCallback, useEffect } = ComponentManager.getHookManager();
   const ref = useRef<HTMLElement>(null);
 
   const handleClickOutside = useCallback(
@@ -219,7 +217,7 @@ export function useClickOutside(callback: () => void, enabled: boolean = true) {
  * 화면 크기 감지 훅
  */
 export function useMediaQuery(query: string): boolean {
-  const { useState, useEffect } = getPreactHooks();
+  const { useState, useEffect } = ComponentManager.getHookManager();
 
   const getMatches = (query: string): boolean => {
     if (typeof window !== 'undefined') {

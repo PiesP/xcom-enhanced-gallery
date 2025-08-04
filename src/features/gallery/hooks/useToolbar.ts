@@ -11,7 +11,7 @@
  * - 75% 코드 감소 (250줄 → 60줄)
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
 
 interface useToolbarOptions {
@@ -40,7 +40,7 @@ export function useToolbar({
   hoverZoneHeight: _hoverZoneHeight = 100,
   initialShowDuration = 1000,
 }: useToolbarOptions = {}): useToolbarReturn {
-  const { useState, useRef, useEffect } = getPreactHooks();
+  const { useState, useRef, useEffect } = ComponentManager.getHookManager();
 
   // 🎯 단일 상태만 관리
   const [isVisible, setIsVisible] = useState(true);

@@ -6,8 +6,8 @@
  * @description 갤러리 정리 작업을 담당하는 커스텀 훅
  */
 
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
-import { getPreactHooks } from '@shared/external/vendors';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
 interface UseGalleryCleanupOptions {
@@ -21,7 +21,7 @@ export function useGalleryCleanup({
   hideTimeoutRef,
   themeCleanup,
 }: UseGalleryCleanupOptions) {
-  const { useCallback, useEffect, useRef } = getPreactHooks();
+  const { useCallback, useEffect, useRef } = ComponentManager.getHookManager();
   const isCleanedUp = useRef(false);
 
   // 타이머 헬퍼 함수

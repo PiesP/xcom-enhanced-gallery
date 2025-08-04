@@ -5,7 +5,7 @@
  * 스크롤 방향을 감지하여 툴바 표시/숨김을 제어하는 커스텀 훅
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
 
 /**
@@ -53,7 +53,7 @@ export function useScrollDirection({
   ignoreAtTop = true,
   enabled = true,
 }: UseScrollDirectionOptions = {}): UseScrollDirectionReturn {
-  const { useState, useEffect, useRef, useCallback } = getPreactHooks();
+  const { useState, useEffect, useRef, useCallback } = ComponentManager.getHookManager();
 
   const [scrollDirection, setScrollDirection] = useState<ScrollDirection>('idle');
   const [scrollY, setScrollY] = useState(0);

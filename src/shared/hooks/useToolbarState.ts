@@ -16,7 +16,7 @@
  * @module useToolbarState
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 
 /**
  * 툴바 상태 인터페이스
@@ -91,7 +91,7 @@ const INITIAL_STATE: ToolbarState = {
  * ```
  */
 export function useToolbarState(): [ToolbarState, ToolbarActions] {
-  const { useState, useCallback, useRef, useEffect } = getPreactHooks();
+  const { useState, useCallback, useRef, useEffect } = ComponentManager.getHookManager();
   const [state, setState] = useState<ToolbarState>(INITIAL_STATE);
 
   // 다운로드 상태 변경 시간 추적

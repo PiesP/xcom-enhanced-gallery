@@ -6,7 +6,7 @@
  * @description DOM 렌더링 완료를 감지하는 커스텀 훅
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { ComponentManager } from '@shared/components/ComponentManager';
 import { logger } from '@shared/logging/logger';
 
 /**
@@ -33,7 +33,7 @@ import { logger } from '@shared/logging/logger';
  * ```
  */
 export function useDOMReady(dependencies: unknown[] = []): boolean {
-  const { useEffect, useState, useRef } = getPreactHooks();
+  const { useEffect, useState, useRef } = ComponentManager.getHookManager();
   const [isReady, setIsReady] = useState(false);
   const frameRef = useRef<number>();
 

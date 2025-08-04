@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { getPreactHooks, type PreactHooksAPI } from '@shared/external/vendors';
 import { logger } from '../logging/logger';
 
 /**
@@ -31,17 +31,10 @@ export interface ComponentInstance {
 }
 
 /**
- * 훅 매니저 인터페이스
+ * 훅 매니저 인터페이스 - Preact hooks와 완전히 호환되는 타입
  */
-export interface HookManager {
-  useState: <T>(initialValue: T) => [T, (value: T) => void];
-  useEffect: (effect: () => void | (() => void), deps?: readonly unknown[]) => void;
-  useCallback: <T extends (...args: unknown[]) => unknown>(
-    callback: T,
-    deps: readonly unknown[]
-  ) => T;
-  useMemo: <T>(factory: () => T, deps: readonly unknown[]) => T;
-  useRef: <T>(initialValue: T) => { current: T };
+export interface HookManager extends PreactHooksAPI {
+  // PreactHooksAPI의 모든 hooks를 상속받음
 }
 
 /**
@@ -180,6 +173,9 @@ class UnifiedComponentManagerImpl implements ComponentManagerInterface {
       useCallback: preactHooks.useCallback,
       useMemo: preactHooks.useMemo,
       useRef: preactHooks.useRef,
+      useContext: preactHooks.useContext,
+      useReducer: preactHooks.useReducer,
+      useLayoutEffect: preactHooks.useLayoutEffect,
     };
   }
 
