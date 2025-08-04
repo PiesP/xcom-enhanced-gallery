@@ -87,19 +87,59 @@ describe('OptimizedMediaExtractor - Core Tests', () => {
     );
     const extractor = new OptimizedMediaExtractor();
 
-    // 다양한 이미지 URL을 가진 mock elements
+    // Mock DOM Elements with proper HTMLElement structure
+    const createMockImg = (src: string) => ({
+      src,
+      tagName: 'IMG',
+      getAttribute: vi.fn((attr: string) => (attr === 'src' ? src : null)),
+      classList: { contains: vi.fn(() => false) },
+      style: { display: '' },
+      offsetParent: {},
+      getBoundingClientRect: () => ({ width: 100, height: 100 }),
+    });
+
     const mockImages = [
-      { src: 'https://pbs.twimg.com/media/image.jpg' },
-      { src: './bookmark_page_files/local_image.jpg' },
-      { src: '../relative/photo.png' },
-      { src: 'data/picture.gif' },
-      { src: 'https://example.com/image.jpg' },
+      createMockImg('https://pbs.twimg.com/media/image.jpg'),
+      createMockImg('./bookmark_page_files/local_image.jpg'),
+      createMockImg('../relative/photo.png'),
+      createMockImg('data/picture.gif'),
+      createMockImg('https://example.com/image.jpg'),
     ];
 
-    // querySelectorAll이 mock 이미지들을 반환하도록 설정
-    mockContainer.querySelectorAll = vi.fn(() => mockImages);
+    // Mock document.body with proper querySelectorAll for CSS selectors
+    const mockBody = {
+      closest: vi.fn(() => null), // 컨테이너 fallback
+      querySelectorAll: vi.fn((selector: string) => {
+        // OptimizedMediaExtractor가 사용하는 실제 선택자들
+        if (
+          selector.includes('pbs.twimg.com') ||
+          selector.includes('media') ||
+          selector.includes('img')
+        ) {
+          return mockImages.filter(img =>
+            selector.includes('pbs.twimg.com') ? img.src.includes('pbs.twimg.com') : true
+          );
+        }
+        return [];
+      }),
+    };
+
+    // Mock document.body temporarily
+    const originalBody = document.body;
+    Object.defineProperty(document, 'body', {
+      value: mockBody,
+      writable: true,
+      configurable: true,
+    });
 
     const results = await extractor.extractImagesFromDOM();
+
+    // Restore original body
+    Object.defineProperty(document, 'body', {
+      value: originalBody,
+      writable: true,
+      configurable: true,
+    });
 
     // Twitter 미디어만 추출되어야 함
     expect(results.length).toBe(1);

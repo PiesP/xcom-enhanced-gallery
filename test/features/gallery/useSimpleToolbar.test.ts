@@ -6,6 +6,17 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// Enhanced Mock 환경 로드 확인
+console.log('[useSimpleToolbar.test] Enhanced Mock 환경 로드 확인...');
+
+// Ultimate Preact Test 환경 확인
+if (typeof globalThis !== 'undefined' && globalThis.__TESTING_LIBRARY_PREACT__) {
+  console.log('[useSimpleToolbar.test] ✅ Ultimate Preact Mock 환경 감지됨');
+} else {
+  console.warn('[useSimpleToolbar.test] ⚠️ Preact Mock 환경이 감지되지 않음');
+}
+
 import { renderHook, act } from '@testing-library/preact';
 
 // Mock 의존성

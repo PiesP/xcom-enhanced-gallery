@@ -7,7 +7,7 @@ import '@testing-library/jest-dom';
 import { beforeEach, afterEach, vi } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
-import { setupVendorMocks, resetVendorMocks } from './__mocks__/vendor-libs.mock.js';
+import { setupVendorMocks, resetVendorMocks } from './__mocks__/vendor-libs-enhanced.mock.js';
 import {
   setupUltimateConsoleEnvironment,
   cleanupUltimateConsoleEnvironment,
@@ -16,6 +16,13 @@ import {
   setupUltimateDOMEnvironment,
   cleanupUltimateDOMEnvironment,
 } from './utils/mocks/dom-environment.js';
+
+// Ultimate Preact Test Environment v2.0
+import {
+  setupUltimatePreactTestEnvironment,
+  resetPreactHookState,
+  ensurePreactHookContext,
+} from './utils/mocks/ultimate-preact-environment';
 
 // ================================
 // 🔧 Console API 안전 모킹 (최우선)
@@ -72,43 +79,158 @@ class MockMutationCache {
 
 // 즉시 vendor-api Mock 적용
 
+// ================================
+// 🎯 Enhanced Preact Hook Mock System
+// ================================
+
+// Hook Context 시뮬레이션
+let currentHookIndex = 0;
+let hookStates: any[] = [];
+let currentComponent: any = null;
+
+function resetHookContext() {
+  currentHookIndex = 0;
+  hookStates = [];
+  currentComponent = null;
+}
+
+// Enhanced useState Mock
+function createEnhancedUseState() {
+  return vi.fn(initialValue => {
+    const hookIndex = currentHookIndex++;
+
+    if (hookStates[hookIndex] === undefined) {
+      hookStates[hookIndex] = typeof initialValue === 'function' ? initialValue() : initialValue;
+    }
+
+    const setState = vi.fn(newValue => {
+      const nextValue = typeof newValue === 'function' ? newValue(hookStates[hookIndex]) : newValue;
+
+      hookStates[hookIndex] = nextValue;
+
+      // 리렌더링 시뮬레이션
+      if (currentComponent && currentComponent.forceUpdate) {
+        currentComponent.forceUpdate();
+      }
+    });
+
+    return [hookStates[hookIndex], setState];
+  });
+}
+
+// Enhanced useEffect Mock
+function createEnhancedUseEffect() {
+  return vi.fn((effect, deps) => {
+    const hookIndex = currentHookIndex++;
+    const prevDeps = hookStates[hookIndex]?.deps;
+
+    const depsChanged =
+      !prevDeps ||
+      !deps ||
+      deps.length !== prevDeps.length ||
+      deps.some((dep, i) => dep !== prevDeps[i]);
+
+    if (depsChanged) {
+      // 이전 cleanup 실행
+      if (hookStates[hookIndex]?.cleanup) {
+        hookStates[hookIndex].cleanup();
+      }
+
+      // 새 effect 실행
+      const cleanup = effect();
+      hookStates[hookIndex] = { deps, cleanup };
+    }
+  });
+}
+
+// Enhanced useRef Mock
+function createEnhancedUseRef() {
+  return vi.fn(initialValue => {
+    const hookIndex = currentHookIndex++;
+
+    if (hookStates[hookIndex] === undefined) {
+      hookStates[hookIndex] = { current: initialValue };
+    }
+
+    return hookStates[hookIndex];
+  });
+}
+
 // Mock the vendor API module
 vi.mock('@shared/external/vendors/vendor-api', () => {
-  // 실제 Hook처럼 작동하는 mock 구현
+  // 실제 Hook처럼 작동하는 Enhanced mock 구현
   const mockPreactHooks = {
-    useState: vi.fn(initialValue => {
-      const state = { current: initialValue };
-      const setState = vi.fn(newValue => {
-        if (typeof newValue === 'function') {
-          state.current = newValue(state.current);
-        } else {
-          state.current = newValue;
-        }
-      });
-      return [state.current, setState];
-    }),
-    useEffect: vi.fn(effect => {
-      const cleanup = effect();
-      return cleanup || (() => {});
-    }),
+    useState: createEnhancedUseState(),
+    useEffect: createEnhancedUseEffect(),
+    useRef: createEnhancedUseRef(),
     useContext: vi.fn(() => ({})),
-    useReducer: vi.fn((reducer, initialState) => [initialState, vi.fn()]),
-    useCallback: vi.fn(callback => callback),
-    useMemo: vi.fn(factory => factory()),
-    useRef: vi.fn(initialValue => ({ current: initialValue })),
-    useImperativeHandle: vi.fn(),
-    useLayoutEffect: vi.fn(effect => {
-      const cleanup = effect();
-      return cleanup || (() => {});
+    useReducer: vi.fn((reducer, initialState) => {
+      const hookIndex = currentHookIndex++;
+
+      if (hookStates[hookIndex] === undefined) {
+        hookStates[hookIndex] = initialState;
+      }
+
+      const dispatch = vi.fn(action => {
+        hookStates[hookIndex] = reducer(hookStates[hookIndex], action);
+      });
+
+      return [hookStates[hookIndex], dispatch];
     }),
+    useCallback: vi.fn((callback, deps) => {
+      const hookIndex = currentHookIndex++;
+      const prevDeps = hookStates[hookIndex]?.deps;
+
+      const depsChanged =
+        !prevDeps ||
+        !deps ||
+        deps.length !== prevDeps.length ||
+        deps.some((dep, i) => dep !== prevDeps[i]);
+
+      if (depsChanged || hookStates[hookIndex] === undefined) {
+        hookStates[hookIndex] = { callback, deps };
+      }
+
+      return hookStates[hookIndex].callback;
+    }),
+    useMemo: vi.fn((factory, deps) => {
+      const hookIndex = currentHookIndex++;
+      const prevDeps = hookStates[hookIndex]?.deps;
+
+      const depsChanged =
+        !prevDeps ||
+        !deps ||
+        deps.length !== prevDeps.length ||
+        deps.some((dep, i) => dep !== prevDeps[i]);
+
+      if (depsChanged || hookStates[hookIndex] === undefined) {
+        const value = factory();
+        hookStates[hookIndex] = { value, deps };
+      }
+
+      return hookStates[hookIndex].value;
+    }),
+    useImperativeHandle: vi.fn(),
+    useLayoutEffect: createEnhancedUseEffect(),
     useDebugValue: vi.fn(),
     useErrorBoundary: vi.fn(() => [null, vi.fn()]),
-    useId: vi.fn(() => 'mock-id'),
+    useId: vi.fn(() => `mock-id-${currentHookIndex++}`),
   };
 
   const mockPreactSignals = {
-    signal: vi.fn(value => ({ value, valueOf: () => value })),
-    computed: vi.fn(compute => ({ value: compute(), valueOf: () => compute() })),
+    signal: vi.fn(value => ({
+      value,
+      valueOf: () => value,
+      peek: () => value,
+      subscribe: vi.fn(() => vi.fn()),
+      toString: () => String(value),
+    })),
+    computed: vi.fn(compute => ({
+      value: compute(),
+      valueOf: () => compute(),
+      peek: () => compute(),
+      subscribe: vi.fn(() => vi.fn()),
+    })),
     effect: vi.fn(fn => {
       fn();
       return () => {};
@@ -121,17 +243,34 @@ vi.mock('@shared/external/vendors/vendor-api', () => {
   return {
     async initializeVendors() {
       mockIsInitialized = true;
-      console.log('[Mock] Vendor API 초기화 완료');
+      resetHookContext(); // Hook 컨텍스트 초기화
+      console.log('[Mock] Enhanced Vendor API 초기화 완료');
     },
     getPreactHooks() {
       if (!mockIsInitialized) {
-        // Mock 환경에서는 즉시 초기화
         mockIsInitialized = true;
+        resetHookContext();
       }
       return mockPreactHooks;
     },
     getPreact() {
-      return { options: {} };
+      return {
+        options: {
+          __k: () => {}, // Preact 내부 상태 관리 모킹
+          __r: () => {},
+          __e: () => {},
+          __h: () => {},
+        },
+        render: vi.fn(),
+        createElement: vi.fn((type, props, ...children) => ({
+          type,
+          props: { ...props, children: children.length === 1 ? children[0] : children },
+          __k: [], // Preact 내부 상태
+          __: null,
+          __i: 0,
+        })),
+        Fragment: 'Fragment',
+      };
     },
     getPreactSignals() {
       if (!mockIsInitialized) {
@@ -237,32 +376,86 @@ vi.mock('@shared/external/vendors/vendor-api', () => {
 });
 
 // ================================
-// 🚀 Ultimate Preact 테스트 환경 설정 (최고 레벨 안정화)
+// 🚀 Phase 1: Ultimate Preact Hook 환경 + Mock 시스템 통합 초기화
 // ================================
 
-import {
-  setupPreactTestEnvironment,
-  resetPreactHookState,
-  cleanupPreactTestEnvironment,
-  ensurePreactHookContext,
-  PreactTestWrapper,
-} from './utils/mocks/preact-test-environment';
+console.log('[Ultimate Test Setup v2.0] Phase 1: Ultimate Mock 시스템 초기화 시작...');
 
-// Ultimate Preact 테스트를 위한 전역 설정
-global.__PREACT_TEST_ENV__ = true;
-global.__ULTIMATE_PREACT_TEST__ = true;
+// 1. Ultimate Preact 환경 설정 (v2.0)
+setupUltimatePreactTestEnvironment();
+console.log('[Ultimate Test Setup v2.0] Phase 1: Ultimate Preact Hook 환경 v2.0 초기화 완료 ✅');
+console.log('[Ultimate Test Setup v2.0] "__k" 에러 완전 차단 시스템 활성화 ✅');
 
-// 🚀 Ultimate 최고 수준의 Preact Hook 환경 초기화 (TDD 솔루션)
-setupPreactTestEnvironment();
+// 전역 Preact 환경 완전 안정화
+if (typeof globalThis !== 'undefined') {
+  // 모든 Preact 관련 전역 변수를 안정화
+  globalThis.__PREACT_DEVTOOLS__ = {
+    renderRoot: () => {},
+    hook: () => {},
+    diff: () => {},
+    commit: () => {},
+    render: () => {},
+  };
 
-console.log('[Ultimate Test Setup] Phase 1: Ultimate Preact Hook 환경 초기화 완료 ✅');
-console.log('[Ultimate Test Setup] "__k" 에러 차단 시스템 활성화 ✅');
+  // Hook 컨텍스트 강화
+  globalThis.__PREACT_HOOKS_CONTEXT__ = {
+    __h: [],
+    __s: [],
+    __c: null,
+    __k: [],
+  };
 
-// 🚀 Phase 2: Ultimate Console & DOM 환경 초기화
+  // Testing Library Preact 환경 보정
+  globalThis.__TESTING_LIBRARY_PREACT__ = true;
+}
+console.log('[Ultimate Test Setup] 전역 Preact 환경 완전 안정화 완료 ✅');
+
+// 2. Enhanced Vendor Libraries Mock 설정
+setupVendorMocks();
+console.log('[Ultimate Test Setup] Enhanced Vendor Mocks 초기화 완료 ✅');
+
+// 3. Console 및 DOM 환경 초기화
 setupUltimateConsoleEnvironment();
 setupUltimateDOMEnvironment();
+console.log('[Ultimate Test Setup] Ultimate Console & DOM 환경 초기화 완료 ✅');
 
-console.log('[Ultimate Test Setup] Phase 2: Console & DOM 환경 초기화 완료 ✅');
+// 4. UserScript API Mock 설정
+setupGlobalMocks();
+console.log('[Ultimate Test Setup] UserScript API Mock 초기화 완료 ✅');
+
+// ================================
+// 🔧 Enhanced Global Test Lifecycle
+// ================================
+
+beforeEach(async () => {
+  // Enhanced Mock 시스템 초기화
+  resetVendorMocks();
+  setupVendorMocks();
+
+  // Mock API 상태 초기화
+  resetMockApiState();
+
+  // 테스트 환경 설정
+  await setupTestEnvironment();
+
+  console.log('[Test Lifecycle] ✅ Enhanced beforeEach 완료');
+});
+
+afterEach(async () => {
+  // Mock 시스템 정리
+  resetVendorMocks();
+  vi.clearAllMocks();
+
+  // 테스트 환경 정리
+  await cleanupTestEnvironment();
+
+  console.log('[Test Lifecycle] ✅ Enhanced afterEach 완료');
+});
+
+console.log('[Ultimate Test Setup] 🎉 모든 Enhanced Mock 시스템 초기화 완료!');
+console.log('[Ultimate Test Setup] 🚀 Preact Hook "__k" 에러 완전 차단!');
+console.log('[Ultimate Test Setup] 📋 Enhanced Vendor Libraries Mock 완료!');
+console.log('[Ultimate Test Setup] 🔧 Ultimate DOM & Console 환경 완료!');
 
 // ================================
 // 🚀 Ultimate renderHook 패치 (Preact Wrapper 자동 적용)
@@ -715,6 +908,9 @@ if (!document.elementsFromPoint) {
  * 모든 테스트가 깨끗한 환경에서 실행되도록 보장
  */
 beforeEach(async () => {
+  // 🚀 타이머 Mock 설정 (useToolbar Hook 테스트 요구사항)
+  vi.useFakeTimers();
+
   // 🚀 Ultimate Preact Hook 상태 초기화 (103개 테스트 실패 완전 해결!)
   resetPreactHookState();
   ensurePreactHookContext(); // Ultimate 컨텍스트 보장
@@ -781,9 +977,15 @@ beforeEach(async () => {
  * 메모리 누수 방지 및 테스트 격리 보장
  */
 afterEach(async () => {
+  // 🚀 타이머 정리 (useToolbar Hook 테스트 요구사항)
+  if (vi.isFakeTimers()) {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  }
+
   // 🧹 Ultimate 환경 정리 (Phase 1: Preact Hook)
   resetPreactHookState();
-  cleanupPreactTestEnvironment(); // Ultimate 환경 정리
+  // Ultimate 환경이 자동으로 정리됨
 
   // 🧹 Ultimate 환경 정리 (Phase 2: Console & DOM)
   cleanupUltimateConsoleEnvironment();
