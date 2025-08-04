@@ -36,53 +36,9 @@ export {
   createNamespacedSelector,
 } from './namespaced-styles';
 
-// 새로운 통합 API 편의 함수들
-import StyleManager from './StyleManager';
-
-export const styleUtils = {
-  // 클래스 관리
-  combine: (...classes: (string | undefined | false | null)[]) =>
-    StyleManager.combineClasses(...classes),
-
-  // 글래스모피즘
-  applyGlass: (element: HTMLElement, intensity: 'light' | 'medium' | 'strong' | 'ultra') =>
-    StyleManager.applyGlassmorphism(element, intensity),
-
-  applyAccessibleGlass: (
-    element: HTMLElement,
-    intensity: 'light' | 'medium' | 'strong' | 'ultra'
-  ) => StyleManager.applyAccessibleGlassmorphism(element, intensity),
-
-  // 테마 관리
-  setTheme: (element: HTMLElement, theme: 'light' | 'dark' | 'auto') =>
-    StyleManager.setTheme(element, theme),
-
-  // 토큰 관리
-  setToken: (property: string, value: string, element?: HTMLElement) =>
-    StyleManager.setTokenValue(property, value, element),
-
-  getToken: (property: string, element?: HTMLElement) =>
-    StyleManager.getTokenValue(property, element),
-
-  setMultipleTokens: (variables: Record<string, string>, element?: HTMLElement) =>
-    StyleManager.setMultipleTokens(variables, element),
-
-  // 컴포넌트 상태
-  updateState: (element: HTMLElement, state: Record<string, boolean>, prefix?: string) =>
-    StyleManager.updateComponentState(element, state, prefix),
-
-  // 유틸리티 클래스
-  applyUtility: (element: HTMLElement, ...utilities: string[]) =>
-    StyleManager.applyUtilityClass(element, ...utilities),
-
-  removeUtility: (element: HTMLElement, ...utilities: string[]) =>
-    StyleManager.removeUtilityClass(element, ...utilities),
-
-  // 브라우저 지원 감지
-  supportsGlass: () => StyleManager.supportsGlassmorphism(),
-  isHighContrast: () => StyleManager.isHighContrastMode(),
-  isReducedTransparency: () => StyleManager.isReducedTransparencyMode(),
-};
+// StyleManager를 직접 사용하도록 권장 (v3.1.0)
+// styleUtils 래퍼는 제거됨 - StyleManager를 직접 import하세요
+// import { StyleManager } from '@shared/styles';
 
 // 타입 export
 export type {
