@@ -56,12 +56,6 @@ describe('Optimization Features - Consolidated', () => {
       const { MemoryTracker } = await import('@shared/memory');
       expect(typeof MemoryTracker).toBe('function');
     });
-
-    it('should provide efficient virtual scrolling', async () => {
-      // 가상 스크롤링이 구현되어 있는지 검증
-      const { ScrollHelper } = await import('@shared/utils/virtual-scroll');
-      expect(typeof ScrollHelper).toBe('function');
-    });
   });
 
   describe('Advanced Optimizations', () => {

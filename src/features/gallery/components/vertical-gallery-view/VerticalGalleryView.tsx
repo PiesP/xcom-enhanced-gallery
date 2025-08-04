@@ -23,7 +23,6 @@ import {
   animateGalleryExit,
   setupScrollAnimation,
 } from '@shared/utils/animations';
-import { useVirtualScroll } from '@shared/hooks/useVirtualScroll';
 import { useToolbarPositionBased } from '@features/gallery/hooks';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
@@ -256,29 +255,8 @@ function VerticalGalleryViewCore({
     return itemsWithKeys;
   }, [mediaItems]);
 
-  // 가상 스크롤링 설정
-  const virtualScrollConfig = useMemo(
-    () => ({
-      itemHeight: 500, // 평균 아이템 높이
-      viewportHeight: 800, // 기본 뷰포트 높이
-      bufferSize: 5, // 버퍼 아이템 수
-      threshold: 50, // 가상 스크롤링 활성화 임계값
-    }),
-    []
-  );
-
-  // 가상 스크롤링 훅
-  const virtualScroll = useVirtualScroll({
-    ...virtualScrollConfig,
-    items: memoizedMediaItems,
-    containerRef,
-    enabled: memoizedMediaItems.length >= virtualScrollConfig.threshold,
-  });
-
-  // 렌더링할 아이템들 (가상 스크롤링 고려)
-  const itemsToRender = virtualScroll.isVirtualScrolling
-    ? virtualScroll.visibleItems
-    : memoizedMediaItems;
+  // 렌더링할 아이템들 (가상 스크롤링 제거로 단순화)
+  const itemsToRender = memoizedMediaItems;
 
   // 최적화: 미디어 개수 변경 시에만 가시성 업데이트
   useEffect(() => {
@@ -652,17 +630,10 @@ function VerticalGalleryViewCore({
 
       {/* 콘텐츠 영역 */}
       <div ref={contentRef} className={styles.content} onClick={handleContentClick}>
-        <div
-          className={styles.itemsList}
-          data-xeg-role='items-list'
-          style={virtualScroll.isVirtualScrolling ? virtualScroll.listStyle : undefined}
-          onScroll={virtualScroll.isVirtualScrolling ? virtualScroll.onScroll : undefined}
-        >
+        <div className={styles.itemsList} data-xeg-role='items-list'>
           {itemsToRender.map((item, index) => {
-            // 가상 스크롤링 사용 시 실제 인덱스 계산
-            const actualIndex = virtualScroll.isVirtualScrolling
-              ? virtualScroll.renderRange.start + index
-              : index;
+            // 가상 스크롤링 제거로 인덱스 단순화
+            const actualIndex = index;
 
             // 키 생성 (memoizedMediaItems와 동일한 방식)
             const itemKey = `${item.id || item.url}-${actualIndex}`;

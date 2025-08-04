@@ -56,13 +56,6 @@ export async function loadUtilityModule(utilityName: string) {
 
   try {
     switch (utilityName) {
-      case 'ScrollHelper': {
-        const module = await import('@shared/utils/virtual-scroll/ScrollHelper');
-        const loadTime = performance.now() - startTime;
-        logger.debug('ScrollHelper 로딩 완료:', { loadTime });
-        return module.ScrollHelper;
-      }
-
       case 'AccessibilityUtils': {
         const module = await import('@shared/utils/accessibility');
         const loadTime = performance.now() - startTime;
@@ -88,13 +81,6 @@ export async function loadHookModule(hookName: string) {
 
   try {
     switch (hookName) {
-      case 'useVirtualScroll': {
-        const module = await import('@shared/hooks/useVirtualScroll');
-        const loadTime = performance.now() - startTime;
-        logger.debug('useVirtualScroll 로딩 완료:', { loadTime });
-        return module.useVirtualScroll;
-      }
-
       case 'useAccessibility': {
         const module = await import('@shared/hooks/useAccessibility');
         const loadTime = performance.now() - startTime;
