@@ -51,9 +51,9 @@ export type BulkDownloadServiceType =
   import('../../services/BulkDownloadService').BulkDownloadService;
 export type FilenameServiceType = import('../../media').FilenameService;
 export type ThemeServiceType = import('../../services/ThemeService').ThemeService;
-export type VideoControlServiceType =
-  import('../../services/media/VideoControlService').VideoControlService;
-export type ToastControllerType = import('../../services/ToastController').ToastController;
+// VideoControlService는 MediaService로 통합됨
+// export type VideoControlServiceType = import('../../services/media/VideoControlService').VideoControlService;
+export type ToastControllerType = import('../../services/ToastService').ToastService;
 
 /**
  * 갤러리 렌더러 서비스 타입

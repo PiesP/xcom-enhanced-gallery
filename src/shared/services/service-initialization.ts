@@ -30,17 +30,17 @@ export async function registerCoreServices(): Promise<void> {
 
   // 개별 UI 서비스들
   const { ThemeService } = await import('./ThemeService');
-  const { ToastController } = await import('./ToastController');
+  const { ToastService } = await import('./ToastService');
 
   const themeService = new ThemeService();
-  const toastController = new ToastController();
+  const toastService = new ToastService();
 
   serviceManager.register(SERVICE_KEYS.THEME, themeService);
-  serviceManager.register(SERVICE_KEYS.TOAST_CONTROLLER, toastController);
+  serviceManager.register(SERVICE_KEYS.TOAST_CONTROLLER, toastService);
 
   // 하위 호환성을 위한 추가 키 등록
   serviceManager.register('theme.service', themeService); // 테스트에서 사용하는 키
-  serviceManager.register('toast.controller', toastController); // 테스트에서 사용하는 키
+  serviceManager.register('toast.controller', toastService); // 테스트에서 사용하는 키
 
   // 기존 키들과의 호환성을 위해 중복 등록
   serviceManager.register(SERVICE_KEYS.AUTO_THEME, themeService);

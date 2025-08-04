@@ -3,8 +3,7 @@
  * @version 1.1.0 - Media Services 통합
  */
 
-// Core Media Services
-export { VideoControlService, videoControlService } from './VideoControlService';
+// Core Media Services (VideoControlService는 MediaService로 통합됨)
 export { UsernameParser, extractUsername, parseUsernameFast } from './UsernameExtractionService';
 
 // Media Extraction Services

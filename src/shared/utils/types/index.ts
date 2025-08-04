@@ -1,32 +1,10 @@
 /**
- * @fileoverview 통합된 유틸리티 함수들 - TDD Phase 2
- * @description 중복된 debounce, throttle, 타입 검증 함수들을 통합
- * @version 1.0.0 - Phase 2: Utility Consolidation
+ * @fileoverview 타입 유틸리티 함수들 - TDD Phase 2
+ * @description 타입 검증 관련 함수들만 포함 (debounce는 performance-utils.ts로 이동)
+ * @version 2.0.0 - Phase 2: 중복 제거 완료
  */
 
-/**
- * Debounce 함수 - 중복 구현 통합
- *
- * 기존 위치들:
- * - src/shared/utils/performance/performance-utils.ts (Debouncer 클래스)
- * - src/shared/utils/scroll/scroll-utils.ts (createScrollDebouncer)
- */
-export function debounce<T extends (...args: unknown[]) => void>(
-  fn: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: number | undefined;
-
-  return (...args: Parameters<T>): void => {
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
-    }
-
-    timeoutId = window.setTimeout(() => {
-      fn(...args);
-    }, delay);
-  };
-}
+// debounce 함수는 src/shared/utils/performance/performance-utils.ts의 createDebouncer 사용
 
 /**
  * Throttle 함수 - RAF 기반 최적화

@@ -149,6 +149,7 @@ export type ServiceFactory<T> = () => T | Promise<T>;
 export type BulkDownloadServiceType = unknown;
 export type FilenameServiceType = unknown;
 export type ThemeServiceType = unknown;
+// VideoControlService는 MediaService로 통합됨
 export type VideoControlServiceType = unknown;
 export type ToastControllerType = unknown;
 

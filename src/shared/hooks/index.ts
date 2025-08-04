@@ -21,7 +21,7 @@ export {
 } from './useScrollDirection';
 
 export { useDOMReady } from './useDOMReady';
-export { useKeyboardNavigation } from './useAccessibility';
+export { useKeyboardNavigation as useAccessibility } from './useAccessibility';
 
 // Related scroll types (moved to individual hook files)
 export type { ScrollDirection } from './useScrollDirection';

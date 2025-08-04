@@ -7,25 +7,12 @@
 
 import { createScopedLogger } from '@shared/logging/logger';
 
+import { createDebouncer } from './performance/performance-utils';
+
 const logger = createScopedLogger('SimplePerformance');
 
-// Re-export rafThrottle from performance-utils for backward compatibility
-export { rafThrottle, measurePerformance } from './performance/performance-utils';
-
-/**
- * 간단한 디바운스 함수
- */
-export function debounce<T extends unknown[]>(
-  func: (...args: T) => void,
-  delay: number
-): (...args: T) => void {
-  let timeoutId: ReturnType<typeof setTimeout>;
-
-  return (...args: T) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-}
+// Re-export measurePerformance and rafThrottle from performance-utils for backward compatibility
+export { measurePerformance, rafThrottle } from './performance/performance-utils';
 
 /**
  * 간단한 스로틀 함수
@@ -150,7 +137,8 @@ export function optimizeEventListener<K extends keyof HTMLElementEventMap>(
   let optimizedHandler = handler;
 
   if (options.debounceMs) {
-    optimizedHandler = debounce(handler, options.debounceMs);
+    const debouncer = createDebouncer(handler, options.debounceMs);
+    optimizedHandler = (...args: Parameters<typeof handler>) => debouncer.execute(...args);
   } else if (options.throttleMs) {
     optimizedHandler = throttle(handler, options.throttleMs);
   }

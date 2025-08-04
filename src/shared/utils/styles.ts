@@ -10,11 +10,7 @@ export {
   setCSSVariable,
   setCSSVariables,
   updateComponentState,
-  createThemedClassName,
 } from './styles/css-utilities';
-
-// toggleClass는 직접 export
-export { toggleClass } from './styles/style-utils';
 
 // Backward compatibility - exports commonly used style utilities
 export { getCSSVariable, applyTheme } from './styles/style-utils';

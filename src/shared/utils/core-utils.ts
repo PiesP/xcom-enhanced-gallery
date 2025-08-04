@@ -142,7 +142,7 @@ export function setCSSVariables(
 // ================================
 
 // RAF throttle and scroll throttle from performance module
-export { rafThrottle, throttleScroll } from './performance/performance-utils';
+export { throttleScroll } from './performance/performance-utils';
 
 // ================================
 // 스크롤 유틸리티
@@ -255,8 +255,6 @@ export { galleryDebugUtils } from './debug/gallery-debug';
 // ================================
 // Performance utilities re-export
 // ================================
-
-export { Debouncer } from './performance/performance-utils';
 
 /**
  * Twitter URL에서 트윗 정보 추출

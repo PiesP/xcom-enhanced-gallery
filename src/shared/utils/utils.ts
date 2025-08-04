@@ -11,18 +11,6 @@ import { galleryState } from '@shared/state/signals/gallery.signals';
 // Re-exports from focused modules
 // ================================
 
-// Style utilities
-export {
-  combineClasses,
-  setCSSVariable,
-  setCSSVariables,
-  updateComponentState,
-  createThemedClassName,
-} from './styles/css-utilities';
-
-// Style utilities from style-utils
-export { toggleClass } from './styles/style-utils';
-
 // Scroll utilities
 export {
   createScrollHandler,
@@ -34,6 +22,14 @@ export {
 
 // Core utilities (from core-utils)
 export { ensureGalleryScrollAvailable } from './core-utils';
+
+// CSS utilities (missing exports)
+export { default as StyleManagerClass } from '../styles/StyleManager';
+export { setCSSVariable } from './styles/css-utilities';
+
+// Add combineClasses as a separate export using StyleManager
+import StyleManager from '../styles/StyleManager';
+export const combineClasses = StyleManager.combineClasses;
 
 // Deduplication utilities
 export { removeDuplicates } from './deduplication';

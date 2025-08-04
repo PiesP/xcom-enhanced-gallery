@@ -2,11 +2,10 @@
  * @fileoverview 핵심 유틸리티 export - Phase 2 통합 (30개)
  */
 
-// === 핵심 유틸리티 (12개) ===
+// === 핵심 유틸리티 (11개) ===
 export {
   combineClasses,
   setCSSVariable,
-  updateComponentState,
   removeDuplicates,
   measurePerformance,
   throttleScroll,
