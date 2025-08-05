@@ -178,20 +178,6 @@ export function injectGlassmorphismStyles(): void {
 /**
  * 동적 글래스모피즘 적용
  */
-import StyleManager from '@shared/styles/StyleManager';
-import type { GlassmorphismIntensity } from '@shared/styles/StyleManager';
-
-/**
- * @deprecated StyleManager.applyGlassmorphism를 직접 사용하세요
- */
-export function applyGlassmorphism(
-  element: HTMLElement,
-  options: { intensity?: GlassmorphismIntensity } = {}
-): void {
-  const intensity = options.intensity || 'medium';
-  StyleManager.applyGlassmorphism(element, intensity);
-}
-
 /**
  * 글래스모피즘 제거
  */

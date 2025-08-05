@@ -7,7 +7,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 
 export interface ProgressiveImageState {
   isLoading: boolean;

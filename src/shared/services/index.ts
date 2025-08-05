@@ -27,7 +27,7 @@ export * from '@shared/dom';
 
 // 스타일 관련 통합 서비스 (기존 StyleService 대체)
 // StyleManager를 직접 사용하거나 style-service.ts 래퍼 사용
-export { default as StyleManager } from '@shared/styles/StyleManager';
+export { default as StyleManager } from '@shared/styles/style-manager';
 export { StyleService, setCSSVariable, getCSSVariable, setCSSVariables } from './style-service';
 
 // 성능 관련 통합 서비스
@@ -90,7 +90,7 @@ export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './galler
 export { LazyLoadingService } from './LazyLoadingService';
 
 // 8. 서비스 관리 (ServiceRegistry 통합)
-export { CoreService } from './ServiceManager';
+export { CoreService } from './service-manager';
 
 // 9. 스타일 서비스 (StyleManager로 대체됨 - 하위 호환성 유지)
 // export { StyleService } from './style-service'; // 위에서 이미 export됨
@@ -113,7 +113,7 @@ export type {
   Theme as UnifiedTheme,
   GlassmorphismConfig,
   ComponentState as UnifiedComponentState,
-} from '@shared/styles/StyleManager';
+} from '@shared/styles/style-manager';
 
 // 성능 서비스 타입들
 // 성능 타입들은 별도 모듈에서 제공

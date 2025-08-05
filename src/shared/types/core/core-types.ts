@@ -75,11 +75,12 @@ export interface DownloadManagerType extends BaseService {
 /**
  * 미디어 추출 서비스 타입
  */
-export interface MediaExtractionServiceType extends BaseService {
-  extractMediaFromElement?(element: Element): Promise<unknown>;
-  extractMedia?(element: Element, options?: unknown): Promise<unknown>;
-  getInstance?(): MediaExtractionServiceType;
-}
+// MediaExtractionService는 MediaService로 통합됨
+// export interface MediaExtractionServiceType extends BaseService {
+//   extractMediaFromTweet(element: HTMLElement): Promise<MediaInfo[]>;
+//   extractSingleMedia(element: HTMLElement): Promise<MediaInfo | null>;
+//   getInstance?(): MediaExtractionServiceType;
+// }
 
 /**
  * 갤러리 앱 서비스 타입

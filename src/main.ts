@@ -8,7 +8,7 @@
 
 import { coreLogger as logger } from '@/core/logger';
 import type { AppConfig } from '@/types';
-import { CoreService } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/service-manager';
 import { SERVICE_KEYS } from './constants';
 import { createElement, querySelector } from '@shared/dom';
 

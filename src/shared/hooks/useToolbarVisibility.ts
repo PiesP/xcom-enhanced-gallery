@@ -11,7 +11,7 @@
  * - 자동 메모리 정리
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 
 interface ToolbarVisibilityOptions {
   /** 초기 표시 시간 (기본: 1000ms) */

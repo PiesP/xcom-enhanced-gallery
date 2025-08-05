@@ -23,4 +23,4 @@ export {
 } from '../resource-manager';
 
 // Backward compatibility - use ResourceManager class from ResourceManager.ts
-export { ResourceManager } from './ResourceManager';
+export { ResourceManager } from './resource-manager';

@@ -5,15 +5,6 @@
  */
 
 /**
- * CSS 클래스들을 결합하여 하나의 문자열로 반환
- */
-
-/**
- * @deprecated StyleManager.combineClasses를 직접 사용하세요
- */
-// export 제거 - StyleManager.combineClasses 사용 권장
-
-/**
  * CSS 변수 설정
  */
 export function setCSSVariable(

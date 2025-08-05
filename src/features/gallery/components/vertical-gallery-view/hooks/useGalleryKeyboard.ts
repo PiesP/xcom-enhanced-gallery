@@ -6,7 +6,7 @@
  * @description 갤러리 키보드 지원을 제공하는 커스텀 훅 (Esc 키만 지원)
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging/logger';
 
 interface UseGalleryKeyboardOptions {

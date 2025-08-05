@@ -10,8 +10,8 @@ export * from './DOMService';
 // 기존 코드와의 호환성을 위해 별칭으로 export
 export { DOMCache, globalDOMCache } from './DOMCache';
 
-export { DOMEventManager, createEventManager } from './DOMEventManager';
+export { DOMEventManager, createEventManager } from './dom-event-manager';
 
 // ===== 레거시 호환성 =====
 // 기존 DOM 유틸리티들을 namespace로 분리하여 충돌 방지
-export * as LegacyDOMManager from './DOMManager';
+export * as LegacyDOMManager from './dom-manager';

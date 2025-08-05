@@ -6,7 +6,7 @@
  */
 
 // 표준화된 컴포넌트 Props 및 유틸리티
-export * from './StandardProps';
+export * from './standard-props';
 
 // Button 컴포넌트
 export { default as Button } from './Button/Button';

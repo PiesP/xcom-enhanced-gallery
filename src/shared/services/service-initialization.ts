@@ -4,7 +4,7 @@
  * @version 2.0.0 - Service Consolidation
  */
 
-import { serviceManager } from './ServiceManager';
+import { serviceManager } from './service-manager';
 import { logger } from '@shared/logging/logger';
 
 /**

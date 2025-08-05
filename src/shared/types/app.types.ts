@@ -151,14 +151,15 @@ export type FilenameServiceType = unknown;
 export type ThemeServiceType = unknown;
 // VideoControlService는 MediaService로 통합됨
 export type VideoControlServiceType = unknown;
-export type ToastControllerType = unknown;
+// ToastService로 통합됨 - ToastController 제거됨
+// export type ToastControllerType = unknown;
 
 export interface ServiceTypeMapping {
-  'core.bulkDownload': BulkDownloadServiceType;
-  'media.filename': FilenameServiceType;
-  'theme.auto': ThemeServiceType;
-  'toast.controller': ToastControllerType;
+  'bulk.download': BulkDownloadServiceType;
+  'filename.service': FilenameServiceType;
+  'theme.service': ThemeServiceType;
   'video.control': VideoControlServiceType;
+  // 'toast.controller': ToastControllerType; // ToastService로 통합됨
   [key: string]: unknown;
 }
 

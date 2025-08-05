@@ -5,8 +5,8 @@
 
 import { getPreactCompat } from '@shared/external/vendors';
 import styles from './Button.module.css';
-import { ComponentStandards } from '../StandardProps';
-import type { StandardButtonProps } from '../StandardProps';
+import { ComponentStandards } from '../standard-props';
+import type { StandardButtonProps } from '../standard-props';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';
 
 // 통합된 Button Props

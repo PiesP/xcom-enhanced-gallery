@@ -10,7 +10,7 @@
 
 import { SERVICE_KEYS } from '@/constants';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
-import { getService } from '@shared/services/ServiceManager';
+import { getService } from '@shared/services/service-manager';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';

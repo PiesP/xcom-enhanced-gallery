@@ -24,8 +24,8 @@ export {
 export { ensureGalleryScrollAvailable } from './core-utils';
 
 // CSS utilities (missing exports)
-export { default as StyleManagerClass } from '../styles/StyleManager';
-import StyleManager from '@shared/styles/StyleManager';
+export { default as StyleManagerClass } from '../styles/style-manager';
+import StyleManager from '@shared/styles/style-manager';
 export const setCSSVariable = StyleManager.setCSSVariable;
 
 // Deduplication utilities

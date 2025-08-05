@@ -5,7 +5,7 @@
  */
 
 // 통합 스타일 매니저 (최우선)
-export { default as StyleManager } from './StyleManager';
+export { default as StyleManager } from './style-manager';
 
 // 디자인 토큰 (최우선 로드)
 import '@shared/styles/design-tokens.css';
@@ -46,4 +46,4 @@ export type {
   Theme,
   ComponentState,
   GlassmorphismConfig,
-} from './StyleManager';
+} from './style-manager';

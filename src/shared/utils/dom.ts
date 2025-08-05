@@ -98,6 +98,12 @@ export function safeGetAttribute(el: Element | null, attr: string): string | nul
   }
 }
 
+// DOM 조작 함수들은 @shared/dom/DOMService로 통합됨
+// export function safeAddClass() => DOMService.addClass()
+// export function safeRemoveClass() => DOMService.removeClass()
+// export function safeSetStyle() => DOMService.setStyle()
+// export function safeRemoveElement() => DOMService.removeElement()
+
 export function safeSetAttribute(el: Element | null, attr: string, value: string): void {
   try {
     el?.setAttribute(attr, value);
@@ -106,64 +112,7 @@ export function safeSetAttribute(el: Element | null, attr: string, value: string
   }
 }
 
-export function safeAddClass(el: Element | null, className: string): void {
-  try {
-    el?.classList.add(className);
-  } catch {
-    // Ignore errors for safety
-  }
-}
-
-export function safeRemoveClass(el: Element | null, className: string): void {
-  try {
-    el?.classList.remove(className);
-  } catch {
-    // Ignore errors for safety
-  }
-}
-
-export function safeSetStyle(el: HTMLElement | null, style: Partial<CSSStyleDeclaration>): void {
-  if (!el) return;
-  try {
-    Object.assign(el.style, style);
-  } catch {
-    // Ignore errors for safety
-  }
-}
-
-export function safeRemoveElement(el: Element | null): void {
-  try {
-    el?.parentElement?.removeChild(el);
-  } catch {
-    // Ignore errors for safety
-  }
-}
-
-export function safeAddEventListener(
-  el: EventTarget | null,
-  type: string,
-  listener: EventListenerOrEventListenerObject,
-  options?: boolean | AddEventListenerOptions
-): void {
-  try {
-    el?.addEventListener(type, listener, options);
-  } catch {
-    // Ignore errors for safety
-  }
-}
-
-export function safeRemoveEventListener(
-  el: EventTarget | null,
-  type: string,
-  listener: EventListenerOrEventListenerObject,
-  options?: boolean | EventListenerOptions
-): void {
-  try {
-    el?.removeEventListener(type, listener, options);
-  } catch {
-    // Ignore errors for safety
-  }
-}
+// 이벤트 리스너 함수들은 DOMService로 통합됨
 
 export function isElementConnected(el: Element | null): boolean {
   try {
@@ -331,3 +280,15 @@ export function compareSelectorSpecificity(selector1: string, selector2: string)
 // ================================
 export { DOMBatcher, globalDOMBatcher, updateElementsInBatch, updateElement } from './dom/index';
 export type { DOMUpdate as DOMUpdateTask } from './dom/index';
+
+// ================================
+// DOM Service 통합 함수들 re-export
+// ================================
+export {
+  addClass as safeAddClass,
+  removeClass as safeRemoveClass,
+  setStyle as safeSetStyle,
+  removeElement as safeRemoveElement,
+  addEventListener as safeAddEventListener,
+  removeEventListener as safeRemoveEventListener,
+} from '@shared/dom/DOMService';

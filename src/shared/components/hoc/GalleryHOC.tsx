@@ -386,7 +386,7 @@ export function createHOCStandardProps<T extends GalleryComponentProps>(
   className: string;
 } {
   // ComponentStandards 동적 import
-  const { ComponentStandards } = require('../ui/StandardProps');
+  const { ComponentStandards } = require('../ui/standard-props');
 
   // 마킹 속성 생성
   const markerAttributes = createMarkerAttributes(mergeOptionsWithDefaults(hocOptions));

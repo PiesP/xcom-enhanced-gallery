@@ -16,7 +16,7 @@
  * 3. 깜빡임 없는 자연스러운 UX
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging/logger';
 
 interface ToolbarOptions {

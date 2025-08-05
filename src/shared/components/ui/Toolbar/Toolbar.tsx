@@ -14,7 +14,7 @@ import {
   getToolbarClassName,
 } from '@shared/hooks/useToolbarState';
 import { throttleScroll } from '@shared/utils';
-import { ComponentStandards } from '../StandardProps';
+import { ComponentStandards } from '../standard-props';
 import styles from './Toolbar.module.css';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의

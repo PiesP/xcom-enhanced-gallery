@@ -5,7 +5,7 @@
  * 스크롤 방향을 감지하여 툴바 표시/숨김을 제어하는 커스텀 훅
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging/logger';
 
 /**

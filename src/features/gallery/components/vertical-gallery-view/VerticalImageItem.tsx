@@ -9,7 +9,7 @@
 
 import { withGallery, type GalleryComponentProps } from '@shared/components/hoc/GalleryHOC';
 import { Button } from '@shared/components/ui/Button/Button';
-import { ComponentStandards } from '@shared/components/ui/StandardProps';
+import { ComponentStandards } from '@shared/components/ui/standard-props';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';

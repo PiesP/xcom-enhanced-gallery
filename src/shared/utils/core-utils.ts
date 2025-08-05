@@ -21,12 +21,6 @@ export {
 // ================================
 
 /**
- * 클래스 이름 결합 - StyleManager 사용 권장
- * @deprecated StyleManager.combineClasses를 직접 사용하세요
- */
-// export 제거 - StyleManager.combineClasses 사용 권장
-
-/**
  * 갤러리 이벤트를 블록해야 하는지 확인
  */
 export function shouldBlockGalleryEvent(event: Event): boolean {
@@ -56,50 +50,7 @@ export function safeSetAttribute(el: Element | null, attr: string, value: string
   }
 }
 
-/**
- * 안전한 클래스 추가
- */
-export function safeAddClass(element: Element | null, className: string): void {
-  try {
-    element?.classList.add(className);
-  } catch {
-    // Ignore errors
-  }
-}
-
-/**
- * 안전한 클래스 제거
- */
-export function safeRemoveClass(element: Element | null, className: string): void {
-  try {
-    element?.classList.remove(className);
-  } catch {
-    // Ignore errors
-  }
-}
-
-/**
- * 안전한 스타일 설정
- */
-export function safeSetStyle(el: HTMLElement | null, style: Partial<CSSStyleDeclaration>): void {
-  if (!el) return;
-  try {
-    Object.assign(el.style, style);
-  } catch {
-    // 오류 무시
-  }
-}
-
-/**
- * 안전한 요소 제거
- */
-export function safeRemoveElement(el: Element | null): void {
-  try {
-    el?.parentElement?.removeChild(el);
-  } catch {
-    // 오류 무시
-  }
-}
+// DOM 관련 함수들은 @shared/dom/DOMService로 통합됨
 
 // ================================
 // 스타일 유틸리티
@@ -107,7 +58,7 @@ export function safeRemoveElement(el: Element | null): void {
 // CSS 유틸리티 (from StyleManager)
 // ================================
 
-import StyleManager from '@shared/styles/StyleManager';
+import StyleManager from '@shared/styles/style-manager';
 const setCSSVarBase = StyleManager.setCSSVariable.bind(StyleManager);
 
 /**

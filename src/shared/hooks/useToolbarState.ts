@@ -16,7 +16,7 @@
  * @module useToolbarState
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 
 /**
  * 툴바 상태 인터페이스

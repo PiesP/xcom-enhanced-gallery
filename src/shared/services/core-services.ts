@@ -16,9 +16,9 @@
 // ================================
 
 // CoreService (구 ServiceManager) - 명명 규칙 통일
-export { CoreService } from './ServiceManager';
-export { serviceManager } from './ServiceManager';
-export { getService } from './ServiceManager';
+export { CoreService } from './service-manager';
+export { serviceManager } from './service-manager';
+export { getService } from './service-manager';
 
 // ================================
 // Logger Interface & Implementation
@@ -90,7 +90,7 @@ export class ServiceDiagnostics {
 
       // 동적 import로 순환 의존성 방지
       await registerCoreServices();
-      const { CoreService } = await import('./ServiceManager');
+      const { CoreService } = await import('./service-manager');
 
       const serviceManager = CoreService.getInstance();
 
@@ -120,7 +120,7 @@ export class ServiceDiagnostics {
 
       // 5. 메모리 사용량 (간소화된 ResourceManager 사용)
       try {
-        const { ResourceManager } = await import('../utils/memory/ResourceManager');
+        const { ResourceManager } = await import('../utils/memory/resource-manager');
         const resourceManager = new ResourceManager();
         const resourceCount = resourceManager.getResourceCount();
         if (resourceCount > 0) {

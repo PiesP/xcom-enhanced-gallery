@@ -7,7 +7,7 @@
  * @version 1.0.0 - 초기 구현
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging/logger';
 
 const { useCallback, useEffect, useRef } = ComponentManager.getHookManager();

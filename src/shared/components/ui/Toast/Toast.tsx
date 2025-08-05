@@ -1,8 +1,8 @@
 import styles from './Toast.module.css';
 import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
-import { ComponentStandards } from '../StandardProps';
-import type { StandardToastProps } from '../StandardProps';
+import { ComponentStandards } from '../standard-props';
+import type { StandardToastProps } from '../standard-props';
 import type { ToastItem } from '@shared/services/ToastService';
 
 // Constants - 사용하지 않는 상수 제거

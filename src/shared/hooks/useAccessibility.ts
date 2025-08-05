@@ -10,7 +10,7 @@
  * - ARIA 상태 관리
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging/logger';
 
 /**

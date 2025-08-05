@@ -11,7 +11,7 @@
  * - 75% 코드 감소 (250줄 → 60줄)
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging/logger';
 
 interface useToolbarOptions {

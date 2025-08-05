@@ -6,7 +6,7 @@
  * @description 갤러리 정리 작업을 담당하는 커스텀 훅
  */
 
-import { ComponentManager } from '@shared/components/ComponentManager';
+import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging/logger';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
