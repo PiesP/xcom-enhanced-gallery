@@ -12,8 +12,9 @@ import {
   rafThrottle,
   createDebouncer,
   measurePerformance,
-  memo,
-} from './performance-consolidated';
+} from './performance/performance-utils-enhanced';
+
+import { memo } from './optimization/memo';
 
 // 스타일 유틸리티 통합
 import {

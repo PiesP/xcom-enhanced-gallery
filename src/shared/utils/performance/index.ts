@@ -2,9 +2,16 @@
  * @fileoverview Performance utilities exports - Phase 5 Bundle Optimization
  */
 
-export * from './performance-utils';
+export * from './performance-utils-enhanced';
 
 // Re-export main functions for easier access
-export { rafThrottle, throttle, measureAsyncPerformance } from './performance-utils';
+export {
+  rafThrottle,
+  throttle,
+  debounce,
+  createDebouncer,
+  measurePerformance,
+} from './performance-utils-enhanced';
 
-export { createDebouncer } from '@shared/utils/timer-management';
+// Performance utility class for direct use
+export { PerformanceUtils } from './performance-utils-enhanced';

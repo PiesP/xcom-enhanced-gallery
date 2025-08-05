@@ -26,41 +26,8 @@ export function setCSSVariable(
 }
 
 /**
- * Core 레이어용 기본 CSS 변수 가져오기 (infrastructure 레벨)
+ * Core 레이어용 기본 글래스모피즘 설정 (infrastructure 레벨)
  */
-export function getCSSVariable(
-  name: string,
-  element: HTMLElement = document.documentElement
-): string {
-  const computedStyle = getComputedStyle(element);
-  return computedStyle.getPropertyValue(name.startsWith('--') ? name : `--${name}`).trim();
-}
-
-/**
- * Core 레이어용 컴포넌트 상태 업데이트 (infrastructure 레벨)
- */
-export function updateComponentState(
-  element: HTMLElement,
-  state: Record<string, boolean | string>
-): void {
-  Object.entries(state).forEach(([key, value]) => {
-    if (typeof value === 'boolean') {
-      element.classList.toggle(`is-${key}`, value);
-    } else {
-      setCSSVariable(`component-${key}`, value, element);
-    }
-  });
-}
-
-/**
- * Core 레이어용 글래스모피즘 적용 (setGlassmorphism의 별칭)
- */
-export function applyGlassmorphism(
-  element: HTMLElement,
-  intensity: GlassmorphismIntensity = 'medium'
-): void {
-  setGlassmorphism(element, intensity);
-}
 export function setGlassmorphism(
   element: HTMLElement,
   intensity: GlassmorphismIntensity = 'medium'
@@ -100,17 +67,11 @@ export class CoreStyleManager {
 
   static combineClasses = combineClasses;
   static setCSSVariable = setCSSVariable;
-  static getCSSVariable = getCSSVariable;
   static setGlassmorphism = setGlassmorphism;
-  static applyGlassmorphism = applyGlassmorphism;
-  static updateComponentState = updateComponentState;
 
   public combineClasses = combineClasses;
   public setCSSVariable = setCSSVariable;
-  public getCSSVariable = getCSSVariable;
   public setGlassmorphism = setGlassmorphism;
-  public applyGlassmorphism = applyGlassmorphism;
-  public updateComponentState = updateComponentState;
 }
 
 /**

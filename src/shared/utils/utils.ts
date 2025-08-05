@@ -23,9 +23,12 @@ export {
 // Core utilities (from core-utils)
 export { ensureGalleryScrollAvailable } from './core-utils';
 
-// CSS utilities (missing exports)
+// CSS utilities (통합됨 - 중복 제거)
 export { default as StyleManagerClass } from '../styles/style-manager';
 import StyleManager from '@shared/styles/style-manager';
+/**
+ * @deprecated StyleManager.setCSSVariable() 직접 사용 권장
+ */
 export const setCSSVariable = StyleManager.setCSSVariable;
 
 // Deduplication utilities
@@ -50,9 +53,10 @@ export { Debouncer } from '@shared/utils/timer-management';
 
 export {
   rafThrottle,
-  throttleScroll,
-  measureAsyncPerformance,
-} from '@shared/utils/performance/performance-utils';
+  throttle,
+  debounce,
+  measurePerformance,
+} from '@shared/utils/performance/performance-utils-enhanced';
 
 // ================================
 // Gallery utilities (simplified functions)

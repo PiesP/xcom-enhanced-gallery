@@ -1,13 +1,13 @@
 /**
- * @fileoverview 통합 스타일 관리자 - TDD REFACTOR 단계 최적화 버전
- * @description 모든 스타일 관련 기능을 통합한 단일 API
- * @version 2.0.0 - 완전 통합 및 최적화
+ * @fileoverview 🟢 GREEN: 통합 스타일 관리자 - 단일 진실 소스
+ * @description 모든 스타일 관련 기능을 통합한 단일 API (CoreStyleManager 기능 포함)
+ * @version 3.0.0 - TDD GREEN: 완전 통합 및 단순화
  */
 
 import { logger } from '@shared/logging/logger';
 
-// 타입 정의
-export type GlassmorphismIntensity = 'light' | 'medium' | 'strong' | 'ultra';
+// 🟢 GREEN: CoreStyleManager와 StyleManager 타입 통합
+export type GlassmorphismIntensity = 'light' | 'medium' | 'strong' | 'ultra' | 'subtle';
 export type Theme = 'light' | 'dark' | 'auto';
 
 export interface GlassmorphismConfig {
@@ -23,15 +23,16 @@ export interface ComponentState {
 }
 
 /**
- * 통합 스타일 관리자
- * TDD REFACTOR: 모든 스타일 기능을 최적화된 단일 API로 통합
+ * 🟢 GREEN: 통합 스타일 관리자 - 모든 스타일 기능 통합
+ * CoreStyleManager의 기능을 포함하여 단일 API 제공
  */
 class StyleManager {
-  // 글래스모피즘 프리셋
+  // 🟢 GREEN: CoreStyleManager와 통합된 글래스모피즘 프리셋
   private static readonly GLASSMORPHISM_PRESETS: Record<
     GlassmorphismIntensity,
     GlassmorphismConfig
   > = {
+    // 기존 StyleManager 프리셋
     light: {
       intensity: 'light',
       background: 'rgba(255, 255, 255, 0.85)',
@@ -60,6 +61,14 @@ class StyleManager {
       border: '1px solid rgba(255, 255, 255, 0.05)',
       shadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
     },
+    // 🟢 GREEN: CoreStyleManager의 'subtle' 옵션 추가
+    subtle: {
+      intensity: 'subtle',
+      background: 'rgba(255, 255, 255, 0.8)',
+      blur: 'blur(8px)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      shadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
+    },
   };
 
   // 디자인 토큰 매핑
@@ -69,14 +78,34 @@ class StyleManager {
     '--xeg-success': '--xeg-color-success-500',
     '--xeg-error': '--xeg-color-error-500',
     '--xeg-warning': '--xeg-color-warning-500',
+    // 🟢 GREEN: CoreStyleManager에서 사용되던 변수 추가
+    '--xeg-glass-opacity': '--xeg-glassmorphism-opacity',
   };
 
   /**
-   * 클래스명 결합 유틸리티
+   * 🟢 GREEN: 클래스명 결합 유틸리티 (CoreStyleManager와 동일한 API)
    * null, undefined, false 값을 자동으로 필터링
    */
   static combineClasses(...classes: (string | undefined | false | null)[]): string {
     return classes.filter(Boolean).join(' ');
+  }
+
+  /**
+   * 🟢 GREEN: CoreStyleManager의 setGlassmorphism 메서드 통합
+   */
+  static setGlassmorphism(intensity: GlassmorphismIntensity): void {
+    if (intensity === 'subtle' || intensity === 'medium' || intensity === 'strong') {
+      // CoreStyleManager 방식 호환성
+      const values = {
+        subtle: '0.8',
+        medium: '0.6',
+        strong: '0.4',
+      };
+      this.setTokenValue('--xeg-glass-opacity', values[intensity]);
+    } else {
+      // 기존 StyleManager 방식
+      this.applyGlassmorphism(document.documentElement, intensity);
+    }
   }
 
   /**

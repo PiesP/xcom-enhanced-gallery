@@ -55,7 +55,7 @@ export function preventScrollPropagation(element: HTMLElement): () => void {
 }
 
 // Re-export throttleScroll from performance utils (RAF-based, more efficient)
-export { throttleScroll } from '@shared/utils/performance/performance-utils';
+export { throttleScroll } from '@shared/utils/performance/performance-utils-enhanced';
 
 /**
  * 스크롤 이벤트 처리기 생성

@@ -1,22 +1,20 @@
 /**
- * @fileoverview CSS 유틸리티 함수들
- * @description CSS 클래스 조작 및 CSS 변수 설정 유틸리티
- * @version 2.0.0
+ * @fileoverview CSS 유틸리티 함수들 (통합된 구현)
+ * @description StyleManager 기반 CSS 유틸리티 - 중복 제거됨
+ * @version 3.0.0
  */
+
+import StyleManager from '../../styles/style-manager';
 
 /**
  * CSS 변수 설정
+ * @deprecated StyleManager.setCSSVariable() 사용 권장
  */
-export function setCSSVariable(
-  name: string,
-  value: string,
-  element: HTMLElement = document.documentElement
-): void {
-  element.style.setProperty(name.startsWith('--') ? name : `--${name}`, value);
-}
+export const setCSSVariable = StyleManager.setCSSVariable;
 
 /**
  * CSS 변수 가져오기
+ * @deprecated StyleManager.getTokenValue() 사용 권장
  */
 export function getCSSVariable(
   name: string,
@@ -28,15 +26,9 @@ export function getCSSVariable(
 
 /**
  * 여러 CSS 변수를 한번에 설정
+ * @deprecated StyleManager.setCSSVariables() 사용 권장
  */
-export function setCSSVariables(
-  variables: Record<string, string>,
-  element: HTMLElement = document.documentElement
-): void {
-  Object.entries(variables).forEach(([name, value]) => {
-    setCSSVariable(name, value, element);
-  });
-}
+export const setCSSVariables = StyleManager.setCSSVariables;
 
 /**
  * 컴포넌트 상태에 따른 스타일 업데이트
@@ -49,7 +41,7 @@ export function updateComponentState(
     if (typeof value === 'boolean') {
       element.classList.toggle(`state-${key}`, value);
     } else {
-      setCSSVariable(`component-${key}`, value, element);
+      StyleManager.setCSSVariable(`component-${key}`, value, element);
     }
   });
 }

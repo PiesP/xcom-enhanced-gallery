@@ -263,6 +263,13 @@ export class UIOptimizer {
   }
 
   /**
+   * 애니메이션 성능 최적화 (테스트 호환)
+   */
+  optimizeAnimationPerformance(container: HTMLElement): void {
+    return this.optimizeAnimations(container);
+  }
+
+  /**
    * 메모리 사용량 모니터링 및 최적화
    */
   optimizeMemoryUsage(): void {
@@ -321,26 +328,14 @@ export class UIOptimizer {
   }
 
   /**
-   * 반응형 최적화
+   * 반응형 최적화 (PC 전용 간소화)
    */
   optimizeResponsiveDesign(container: HTMLElement): void {
     const updateLayout = () => {
-      const width = container.offsetWidth;
-
-      // 브레이크포인트별 최적화
-      if (width < 768) {
-        container.classList.add('xeg-mobile');
-        container.classList.remove('xeg-tablet', 'xeg-desktop');
-        this.applyMobileOptimizations(container);
-      } else if (width < 1024) {
-        container.classList.add('xeg-tablet');
-        container.classList.remove('xeg-mobile', 'xeg-desktop');
-        this.applyTabletOptimizations(container);
-      } else {
-        container.classList.add('xeg-desktop');
-        container.classList.remove('xeg-mobile', 'xeg-tablet');
-        this.applyDesktopOptimizations(container);
-      }
+      // PC 전용 - 데스크탑 중심 최적화만 적용
+      container.classList.add('xeg-desktop');
+      container.classList.remove('xeg-mobile', 'xeg-tablet');
+      this.applyDesktopOptimizations(container);
     };
 
     // 초기 레이아웃 설정
@@ -362,32 +357,17 @@ export class UIOptimizer {
   }
 
   /**
-   * 모바일 최적화 (PC 전용 프로젝트 - 간소화된 최적화)
-   */
-  private applyMobileOptimizations(container: HTMLElement): void {
-    // 이미지 품질 조정 (모바일에서는 성능 우선)
-    const images = container.querySelectorAll('img');
-    images.forEach(img => {
-      img.style.imageRendering = 'optimizeSpeed';
-    });
-  }
-
-  /**
-   * 태블릿 최적화 (PC 전용 프로젝트 - 기본 설정)
-   */
-  private applyTabletOptimizations(_container: HTMLElement): void {
-    // PC 환경에서는 기본 설정 유지
-  }
-
-  /**
-   * 데스크탑 최적화
+   * PC 전용 데스크탑 최적화
    */
   private applyDesktopOptimizations(container: HTMLElement): void {
-    // 품질 우선 설정
+    // PC 환경 최적화
     const images = container.querySelectorAll('img');
     images.forEach(img => {
-      img.style.imageRendering = 'optimizeQuality';
+      img.style.imageRendering = 'crisp-edges'; // PC에서는 품질 우선
     });
+
+    // 데스크탑 키보드/마우스 상호작용 최적화
+    container.style.cursor = 'default';
   }
 
   /**

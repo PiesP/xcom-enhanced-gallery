@@ -202,3 +202,7 @@ export class PerformanceUtils {
 // 편의성을 위한 개별 export (기존 코드 호환성)
 export const { rafThrottle, throttle, debounce, createDebouncer, measurePerformance } =
   PerformanceUtils;
+
+// 추가 별칭 함수들 (기존 코드 호환성)
+export const measureAsyncPerformance = measurePerformance;
+export const throttleScroll = rafThrottle;

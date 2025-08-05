@@ -37,7 +37,6 @@ export {
   imageFilter,
   extractTweetInfoFromUrl,
   rafThrottle,
-  throttleScroll,
   safeElementCheck,
   canTriggerGallery,
   isGalleryInternalElement,

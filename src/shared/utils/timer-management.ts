@@ -147,4 +147,7 @@ export function createDebouncer<T extends unknown[] = []>(
 }
 
 // Performance utilities re-export
-export { measureAsyncPerformance, rafThrottle } from '@shared/utils/performance/performance-utils';
+export {
+  measureAsyncPerformance,
+  rafThrottle,
+} from '@shared/utils/performance/performance-utils-enhanced';

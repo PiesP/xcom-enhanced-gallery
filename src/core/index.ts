@@ -8,7 +8,16 @@
 // CoreDOMManager는 src/shared/dom/DOMService.ts로 통합됨
 
 // ===== 스타일 관리 =====
-export { coreStyleManager, CoreStyleManager, combineClasses } from './styles';
+export {
+  coreStyleManager,
+  CoreStyleManager,
+  combineClasses,
+  setCSSVariable,
+  getCSSVariable,
+  setGlassmorphism,
+  applyGlassmorphism,
+  updateComponentState,
+} from './styles';
 export type { GlassmorphismIntensity } from './styles';
 
 // ===== 미디어 관리 =====

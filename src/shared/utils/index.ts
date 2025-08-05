@@ -8,11 +8,10 @@
 export * from './integrated-utils';
 export { default as IntegratedUtils } from './integrated-utils';
 
-// === 핵심 유틸리티 (9개) ===
+// === 핵심 유틸리티 (8개) ===
 export {
   setCSSVariable,
   removeDuplicates,
-  throttleScroll,
   canTriggerGallery,
   isGalleryInternalElement,
   ensureGalleryScrollAvailable,
@@ -20,7 +19,7 @@ export {
 } from './utils';
 
 // === 성능 관련 (2개) ===
-export { rafThrottle } from '@shared/utils/performance/performance-utils';
+export { rafThrottle } from '@shared/utils/performance/performance-utils-enhanced';
 export { createDebouncer } from '@shared/utils/timer-management';
 
 // === 최적화 유틸리티 ===

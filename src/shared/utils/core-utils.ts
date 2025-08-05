@@ -59,30 +59,18 @@ export function safeSetAttribute(el: Element | null, attr: string, value: string
 // ================================
 
 import StyleManager from '@shared/styles/style-manager';
-const setCSSVarBase = StyleManager.setCSSVariable.bind(StyleManager);
 
 /**
- * CSS 변수 설정 (core-utils compatible signature)
+ * CSS 변수 설정 (core-utils 호환성 유지)
+ * @deprecated StyleManager.setCSSVariable() 직접 사용 권장
  */
-export function setCSSVariable(
-  name: string,
-  value: string,
-  element: HTMLElement = document.documentElement
-): void {
-  setCSSVarBase(name, value, element);
-}
+export const setCSSVariable = StyleManager.setCSSVariable;
 
 /**
- * 여러 CSS 변수 설정 (core-utils compatible signature)
+ * 여러 CSS 변수 설정 (core-utils 호환성 유지)
+ * @deprecated StyleManager.setCSSVariables() 직접 사용 권장
  */
-export function setCSSVariables(
-  variables: Record<string, string>,
-  element: HTMLElement = document.documentElement
-): void {
-  Object.entries(variables).forEach(([name, value]) => {
-    setCSSVariable(name, value, element);
-  });
-}
+export const setCSSVariables = StyleManager.setCSSVariables;
 
 // ================================
 // 성능 유틸리티
@@ -93,7 +81,7 @@ export function setCSSVariables(
 // ================================
 
 // RAF throttle and scroll throttle from performance module
-export { throttleScroll } from '@shared/utils/performance/performance-utils';
+export { throttleScroll } from '@shared/utils/performance/performance-utils-enhanced';
 
 // ================================
 // 스크롤 유틸리티
@@ -193,7 +181,7 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 // ================================
 
 // Performance measurement re-export
-export { measureAsyncPerformance } from '@shared/utils/performance/performance-utils';
+export { measureAsyncPerformance } from '@shared/utils/performance/performance-utils-enhanced';
 
 // ================================
 // 디버그 유틸리티
