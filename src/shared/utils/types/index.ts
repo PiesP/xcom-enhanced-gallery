@@ -1,42 +1,11 @@
 /**
  * @fileoverview 타입 유틸리티 함수들 - TDD Phase 2
- * @description 타입 검증 관련 함수들만 포함 (debounce는 performance-utils.ts로 이동)
- * @version 2.0.0 - Phase 2: 중복 제거 완료
+ * @description 타입 검증 관련 함수들만 포함 (throttle은 PerformanceUtils로 이동)
+ * @version 3.0.0 - Phase 2: 중복 제거 완료, PerformanceUtils 통합
  */
 
-// debounce 함수는 src/shared/utils/performance/performance-utils.ts의 createDebouncer 사용
-
-/**
- * Throttle 함수 - RAF 기반 최적화
- *
- * 기존 위치들:
- * - src/shared/utils/performance/performance-utils.ts (rafThrottle)
- * - src/shared/utils/scroll/scroll-utils.ts (throttleScroll)
- */
-export function throttle<T extends (...args: unknown[]) => void>(
-  fn: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let isThrottled = false;
-  let lastArgs: Parameters<T> | undefined;
-
-  return (...args: Parameters<T>): void => {
-    if (!isThrottled) {
-      fn(...args);
-      isThrottled = true;
-
-      setTimeout(() => {
-        isThrottled = false;
-        if (lastArgs) {
-          fn(...lastArgs);
-          lastArgs = undefined;
-        }
-      }, delay);
-    } else {
-      lastArgs = args;
-    }
-  };
-}
+// throttle/debounce 함수는 PerformanceUtils로 통합됨
+export { throttle, debounce } from '../performance/PerformanceUtils';
 
 /**
  * 타입 검증 함수들 - 중복 구현 통합

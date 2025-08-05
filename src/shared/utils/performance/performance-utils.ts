@@ -1,82 +1,28 @@
 /**
  * @fileoverview Performance Utilities - Phase 5 Bundle Optimization
- * @version 1.0.0
+ * @version 2.0.0 - 통합된 PerformanceUtils로 위임
  *
- * 별도 모듈로 분리된 성능 관련 유틸리티들
- * Tree-shaking 최적화를 위해 독립적인 모듈로 분리
- *
- * NOTE: Debouncer 기능은 unified-performance-service로 통합됨
+ * 기존 중복 제거 완료. 모든 함수는 PerformanceUtils.ts로 통합됨
+ * 기존 코드 호환성을 위해 re-export 제공
  */
 
-import { logger } from '@shared/logging/logger';
+// 통합된 PerformanceUtils로부터 re-export
+export {
+  PerformanceUtils,
+  rafThrottle,
+  throttle,
+  debounce,
+  createDebouncer,
+  measurePerformance,
+} from './PerformanceUtils';
 
-/**
- * RAF 기반 throttle (성능 최적화)
- */
-export function rafThrottle<T extends (...args: unknown[]) => void>(
-  fn: T,
-  options: { leading?: boolean; trailing?: boolean } = {}
-): T {
-  const { leading = true, trailing = true } = options;
-  let isThrottled = false;
-  let pendingArgs: Parameters<T> | null = null;
-
-  function throttled(...args: Parameters<T>): void {
-    pendingArgs = args;
-
-    if (!isThrottled) {
-      if (leading) {
-        try {
-          fn(...args);
-        } catch (error) {
-          logger.warn('RAF throttle function error:', error);
-        }
-      }
-
-      isThrottled = true;
-      requestAnimationFrame(() => {
-        isThrottled = false;
-        if (trailing && pendingArgs) {
-          try {
-            fn(...pendingArgs);
-          } catch (error) {
-            logger.warn('RAF throttle trailing function error:', error);
-          }
-        }
-        pendingArgs = null;
-      });
-    }
-  }
-
-  return throttled as T;
-}
-
-/**
- * 스크롤 전용 throttle
- */
+// 스크롤 전용 throttle - rafThrottle의 래퍼
 export function throttleScroll<T extends (...args: unknown[]) => void>(func: T): T {
-  return rafThrottle(func, { leading: true, trailing: true });
+  const { PerformanceUtils } = require('./PerformanceUtils');
+  return PerformanceUtils.rafThrottle(func, { leading: true, trailing: true });
 }
 
-/**
- * 성능 측정 유틸리티
- */
-export function measurePerformance<T>(label: string, fn: () => T): { result: T; duration: number } {
-  const startTime = performance.now();
-  const result = fn();
-  const endTime = performance.now();
-  const duration = endTime - startTime;
-
-  if (duration > 10) {
-    logger.debug(`Performance: ${label} took ${duration.toFixed(2)}ms`);
-  }
-
-  return { result, duration };
-}
-
-/**
- * 비동기 성능 측정
- */
+// 비동기 성능 측정
 export async function measureAsyncPerformance<T>(
   label: string,
   fn: () => Promise<T>
@@ -87,46 +33,8 @@ export async function measureAsyncPerformance<T>(
   const duration = endTime - startTime;
 
   if (duration > 10) {
-    logger.debug(`Async Performance: ${label} took ${duration.toFixed(2)}ms`);
+    console.debug(`Performance: ${label} took ${duration.toFixed(2)}ms`);
   }
 
   return { result, duration };
-}
-
-/**
- * 표준 throttle 함수 (시간 기반)
- * 중복된 throttle 구현들을 통합
- */
-export function throttle<T extends (...args: unknown[]) => void>(
-  fn: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let lastCall = 0;
-  let timeoutId: number | null = null;
-
-  return (...args: Parameters<T>): void => {
-    const now = Date.now();
-
-    if (now - lastCall >= delay) {
-      lastCall = now;
-      try {
-        fn(...args);
-      } catch (error) {
-        logger.warn('Throttle function error:', error);
-      }
-    } else if (!timeoutId) {
-      timeoutId = window.setTimeout(
-        () => {
-          lastCall = Date.now();
-          timeoutId = null;
-          try {
-            fn(...args);
-          } catch (error) {
-            logger.warn('Throttle delayed function error:', error);
-          }
-        },
-        delay - (now - lastCall)
-      );
-    }
-  };
 }
