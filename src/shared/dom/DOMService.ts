@@ -30,14 +30,35 @@ export interface EventOptions extends AddEventListenerOptions {
   throttleMs?: number;
 }
 
+export interface DOMUpdate {
+  operations: DOMOperation[];
+}
+
+export interface DOMOperation {
+  type:
+    | 'addClass'
+    | 'removeClass'
+    | 'setStyle'
+    | 'setAttribute'
+    | 'removeAttribute'
+    | 'setTextContent';
+  element: Element;
+  key?: string;
+  value?: string;
+  styles?: Record<string, string>;
+}
+
 // ===== 통합 DOM 서비스 =====
 
 /**
  * 통합 DOM 서비스
  * 모든 DOM 관련 중복 기능을 하나로 통합
+ * CoreDOMManager의 캐싱과 배치 기능 포함
  */
 class DOMService {
   private static instance: DOMService;
+  private readonly elementCache = new Map<string, Element | null>();
+  private readonly elementsCache = new Map<string, Element[]>();
 
   private constructor() {}
 
@@ -48,17 +69,50 @@ class DOMService {
     return DOMService.instance;
   }
 
-  // ===== 요소 선택 =====
+  // ===== 캐시 관리 =====
 
   /**
-   * 요소 선택
+   * 캐시 무효화
+   */
+  invalidateCache(selector?: string): void {
+    if (selector) {
+      this.elementCache.delete(selector);
+      this.elementsCache.delete(selector);
+    } else {
+      this.elementCache.clear();
+      this.elementsCache.clear();
+    }
+  }
+
+  /**
+   * 캐시 크기 조회
+   */
+  getCacheSize(): { elements: number; arrays: number } {
+    return {
+      elements: this.elementCache.size,
+      arrays: this.elementsCache.size,
+    };
+  }
+
+  // ===== 요소 선택 (캐싱 지원) =====
+
+  /**
+   * 요소 선택 (캐싱 지원)
    */
   querySelector<T extends Element = Element>(
     selector: string,
     container: ParentNode = document
   ): T | null {
     try {
-      return container.querySelector<T>(selector);
+      const cacheKey = `${selector}:${container === document ? 'document' : 'container'}`;
+
+      if (this.elementCache.has(cacheKey)) {
+        return this.elementCache.get(cacheKey) as T | null;
+      }
+
+      const element = container.querySelector<T>(selector);
+      this.elementCache.set(cacheKey, element);
+      return element;
     } catch (error) {
       logger.warn(`[DOMService] Invalid selector: ${selector}`, error);
       return null;
@@ -66,14 +120,22 @@ class DOMService {
   }
 
   /**
-   * 모든 요소 선택
+   * 모든 요소 선택 (캐싱 지원)
    */
   querySelectorAll<T extends Element = Element>(
     selector: string,
     container: ParentNode = document
   ): T[] {
     try {
-      return Array.from(container.querySelectorAll<T>(selector));
+      const cacheKey = `${selector}:${container === document ? 'document' : 'container'}`;
+
+      if (this.elementsCache.has(cacheKey)) {
+        return this.elementsCache.get(cacheKey) as T[];
+      }
+
+      const elements = Array.from(container.querySelectorAll<T>(selector));
+      this.elementsCache.set(cacheKey, elements);
+      return elements;
     } catch (error) {
       logger.warn(`[DOMService] Invalid selector: ${selector}`, error);
       return [];
@@ -202,7 +264,85 @@ class DOMService {
     }
   }
 
-  // ===== DOM 조작 =====
+  // ===== 배치 처리 =====
+
+  /**
+   * 배치 DOM 업데이트
+   */
+  batchUpdate(update: DOMUpdate): void {
+    try {
+      // requestAnimationFrame을 사용한 배치 처리
+      requestAnimationFrame(() => {
+        update.operations.forEach(operation => {
+          this.executeOperation(operation);
+        });
+      });
+    } catch (error) {
+      logger.error('[DOMService] Failed to batch update:', error);
+    }
+  }
+
+  /**
+   * 단일 DOM 작업 실행
+   */
+  private executeOperation(operation: DOMOperation): void {
+    try {
+      const { type, element, key, value, styles } = operation;
+
+      switch (type) {
+        case 'addClass':
+          if (key) element.classList.add(key);
+          break;
+        case 'removeClass':
+          if (key) element.classList.remove(key);
+          break;
+        case 'setStyle':
+          if (styles) {
+            Object.entries(styles).forEach(([prop, val]) => {
+              (element as HTMLElement).style.setProperty(prop, val);
+            });
+          }
+          break;
+        case 'setAttribute':
+          if (key && value) element.setAttribute(key, value);
+          break;
+        case 'removeAttribute':
+          if (key) element.removeAttribute(key);
+          break;
+        case 'setTextContent':
+          if (value !== undefined) element.textContent = value;
+          break;
+      }
+    } catch (error) {
+      logger.warn('[DOMService] Failed to execute operation:', error);
+    }
+  }
+
+  /**
+   * 여러 요소의 DOM 작업을 배치로 처리
+   */
+  batchDOMOperations(operations: DOMOperation[]): void {
+    this.batchUpdate({ operations });
+  }
+
+  /**
+   * 요소 업데이트 (CoreDOMManager 호환)
+   */
+  updateElement(element: Element, update: Partial<DOMOperation>): void {
+    if (!element) return;
+
+    const operation: Partial<DOMOperation> & { element: Element } = {
+      type: update.type || 'setStyle',
+      element,
+      ...(update.key && { key: update.key }),
+      ...(update.value && { value: update.value }),
+      ...(update.styles && { styles: update.styles }),
+    };
+
+    if (operation.type) {
+      this.executeOperation(operation as DOMOperation);
+    }
+  }
 
   /**
    * 클래스 추가
@@ -305,6 +445,22 @@ class DOMService {
       return false;
     }
   }
+
+  // ===== CoreDOMManager 호환 메서드 =====
+
+  /**
+   * 요소 선택 (CoreDOMManager 호환)
+   */
+  select<T extends Element = Element>(selector: string): T | null {
+    return this.querySelector<T>(selector);
+  }
+
+  /**
+   * 모든 요소 선택 (CoreDOMManager 호환)
+   */
+  selectAll<T extends Element = Element>(selector: string): T[] {
+    return this.querySelectorAll<T>(selector);
+  }
 }
 
 // ===== 싱글톤 인스턴스 =====
@@ -324,6 +480,16 @@ export const setStyle = domService.setStyle.bind(domService);
 export const removeElement = domService.removeElement.bind(domService);
 export const isVisible = domService.isVisible.bind(domService);
 export const isInViewport = domService.isInViewport.bind(domService);
+
+// ===== CoreDOMManager 호환 함수들 =====
+
+export const select = domService.select.bind(domService);
+export const selectAll = domService.selectAll.bind(domService);
+export const updateElement = domService.updateElement.bind(domService);
+export const batchUpdate = domService.batchUpdate.bind(domService);
+export const batchDOMOperations = domService.batchDOMOperations.bind(domService);
+export const invalidateCache = domService.invalidateCache.bind(domService);
+export const getCacheSize = domService.getCacheSize.bind(domService);
 
 // ===== 하위 호환성을 위한 별칭들 =====
 

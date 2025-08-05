@@ -4,10 +4,8 @@
  * @version 2.0.0 - 구조 개선
  */
 
-// ===== DOM 관리 =====
-export { coreDOMManager, CoreDOMManager } from './dom';
-export { select, selectAll, updateElement, batchUpdate } from './dom';
-export type { DOMUpdate } from './dom';
+// ===== DOM 관리 (DOMService로 이전) =====
+// CoreDOMManager는 src/shared/dom/DOMService.ts로 통합됨
 
 // ===== 스타일 관리 =====
 export { coreStyleManager, CoreStyleManager, combineClasses } from './styles';

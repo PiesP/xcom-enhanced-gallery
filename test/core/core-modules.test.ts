@@ -8,16 +8,18 @@ import { JSDOM } from 'jsdom';
 
 // 새로운 core 모듈들 import
 import {
-  coreDOMManager,
   coreStyleManager,
   coreMediaManager,
-  select,
-  batchUpdate,
   combineClasses,
   extractMediaUrls,
   type MediaInfo,
   type GlassmorphismIntensity,
-} from '../../src/core';
+} from '@core';
+
+// DOMService를 별도로 import (CoreDOMManager 대체)
+import { select, batchUpdate, DOMService } from '@shared/dom/DOMService';
+
+const domService = DOMService.getInstance();
 
 describe('🟢 TDD Phase 2: 통합 Core 모듈 검증 (GREEN)', () => {
   beforeEach(() => {
@@ -33,9 +35,9 @@ describe('🟢 TDD Phase 2: 통합 Core 모듈 검증 (GREEN)', () => {
   });
 
   describe('통합 DOM 관리자', () => {
-    it('CoreDOMManager가 싱글톤으로 작동해야 함', () => {
-      const instance1 = coreDOMManager;
-      const instance2 = coreDOMManager;
+    it('DOMService가 싱글톤으로 작동해야 함', () => {
+      const instance1 = domService;
+      const instance2 = domService;
 
       expect(instance1).toBe(instance2);
       expect(typeof instance1.select).toBe('function');
@@ -88,7 +90,7 @@ describe('🟢 TDD Phase 2: 통합 Core 모듈 검증 (GREEN)', () => {
       testDiv.style.height = '100px';
       document.body.appendChild(testDiv);
 
-      // JSDOM에서는 getBoundingClientRect가 기본값을 반환하므로 mocking
+      // JSDOM에서는 getBoundingClientRect와 getComputedStyle을 mocking
       testDiv.getBoundingClientRect = () => ({
         width: 100,
         height: 100,
@@ -101,8 +103,20 @@ describe('🟢 TDD Phase 2: 통합 Core 모듈 검증 (GREEN)', () => {
         toJSON: () => ({}),
       });
 
-      const isVisible = coreDOMManager.isVisible(testDiv);
+      // getComputedStyle mock for visibility test
+      const originalGetComputedStyle = window.getComputedStyle;
+      window.getComputedStyle = () =>
+        ({
+          display: 'block',
+          visibility: 'visible',
+          opacity: '1',
+        }) as CSSStyleDeclaration;
+
+      const isVisible = domService.isVisible(testDiv);
       expect(isVisible).toBe(true);
+
+      // 원래 함수 복원
+      window.getComputedStyle = originalGetComputedStyle;
     });
   });
 
@@ -272,7 +286,7 @@ describe('🟢 TDD Phase 2: 통합 Core 모듈 검증 (GREEN)', () => {
     });
 
     it('모든 core 모듈이 정상적으로 export 되어야 함', () => {
-      expect(coreDOMManager).toBeDefined();
+      expect(domService).toBeDefined();
       expect(coreStyleManager).toBeDefined();
       expect(coreMediaManager).toBeDefined();
       expect(select).toBeDefined();
@@ -318,7 +332,7 @@ describe('🔵 TDD Phase 3: 성능 및 아키텍처 검증 (REFACTOR)', () => {
       // 배치 처리
       const batchStart = performance.now();
       elements.forEach(el => {
-        coreDOMManager.batchUpdate({
+        domService.batchUpdate({
           element: el,
           styles: { color: 'red' },
           classes: { add: ['batch-test'] },
@@ -345,7 +359,7 @@ describe('🔵 TDD Phase 3: 성능 및 아키텍처 검증 (REFACTOR)', () => {
 
   describe('아키텍처 검증', () => {
     it('모든 관리자가 싱글톤 패턴을 따라야 함', () => {
-      expect(coreDOMManager).toBe(coreDOMManager);
+      expect(domService).toBe(domService);
       expect(coreStyleManager).toBe(coreStyleManager);
       expect(coreMediaManager).toBe(coreMediaManager);
     });

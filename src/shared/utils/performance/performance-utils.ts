@@ -16,9 +16,12 @@ export {
   measurePerformance,
 } from './PerformanceUtils';
 
+// PerformanceUtils에서 직접 가져와서 사용
+import { PerformanceUtils } from './PerformanceUtils';
+
 // 스크롤 전용 throttle - rafThrottle의 래퍼
 export function throttleScroll<T extends (...args: unknown[]) => void>(func: T): T {
-  const { PerformanceUtils } = require('./PerformanceUtils');
+  // PerformanceUtils에서 직접 rafThrottle 사용
   return PerformanceUtils.rafThrottle(func, { leading: true, trailing: true });
 }
 
