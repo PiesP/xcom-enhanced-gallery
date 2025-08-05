@@ -401,10 +401,10 @@ describe('Architecture Dependency Rules', () => {
       }
 
       if (failedFiles.length > 0) {
-        console.warn('❌ 배럴 export 규칙을 위반하는 파일들:');
+        console.log('❌ 배럴 export 규칙을 위반하는 파일들:');
         failedFiles.forEach(({ file, reason, problematicLines }) => {
-          console.warn(`  ${file}: ${reason}`);
-          problematicLines.forEach(line => console.warn(`    ${line}`));
+          console.log(`  ${file}: ${reason}`);
+          problematicLines.forEach(line => console.log(`    ${line}`));
         });
       }
 

@@ -116,8 +116,8 @@ export type {
 } from '@shared/styles/StyleManager';
 
 // 성능 서비스 타입들
-export type {} from // 성능 타입들은 별도 모듈에서 제공
-'@shared/utils/performance';
+// 성능 타입들은 별도 모듈에서 제공
+export type {} from '@shared/utils/performance';
 
 // ====================================
 // 🆕 통합 서비스 유틸리티들

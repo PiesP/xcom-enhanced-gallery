@@ -5,7 +5,7 @@
  * RED-GREEN-REFACTOR 사이클의 GREEN 단계
  */
 
-import { describe, expect, test } from 'vitest';
+import { describe, it, expect, test } from 'vitest';
 
 describe('🟢 GREEN Phase 2: 중복 구현 제거 및 통합', () => {
   describe('전체 통합 검증', () => {
@@ -29,7 +29,7 @@ describe('🟢 GREEN Phase 2: 중복 구현 제거 및 통합', () => {
         try {
           // 실제 타입 체크는 별도 스크립트에서 수행
           resolve(true);
-        } catch {
+        } catch (error) {
           resolve(false);
         }
       });
