@@ -11,6 +11,7 @@ import { logger } from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
+import { createElement } from '@shared/dom';
 
 // 통합된 서비스 타입들
 /**
@@ -444,9 +445,10 @@ export class MediaService {
         return;
       }
 
-      const canvas = document.createElement('canvas');
-      canvas.width = 1;
-      canvas.height = 1;
+      const canvas = createElement('canvas', {
+        width: '1',
+        height: '1',
+      }) as HTMLCanvasElement;
 
       // canvas.toDataURL이 구현되지 않은 경우 (예: jsdom)
       if (typeof canvas.toDataURL !== 'function') {

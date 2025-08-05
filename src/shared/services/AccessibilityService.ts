@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { createElement } from '@shared/dom';
 
 /**
  * 접근성 설정 인터페이스
@@ -100,19 +101,25 @@ export class AccessibilityService {
    * 라이브 리전 생성
    */
   private createLiveRegions(): void {
-    const politeRegion = document.createElement('div');
-    politeRegion.setAttribute('aria-live', 'polite');
-    politeRegion.setAttribute('aria-atomic', 'true');
-    politeRegion.className = 'xeg-sr-only';
-    document.body.appendChild(politeRegion);
-    this.liveRegions.set('polite', politeRegion);
+    const politeRegion = createElement('div', {
+      'aria-live': 'polite',
+      'aria-atomic': 'true',
+      className: 'xeg-sr-only',
+    });
+    if (politeRegion) {
+      document.body.appendChild(politeRegion);
+      this.liveRegions.set('polite', politeRegion);
+    }
 
-    const assertiveRegion = document.createElement('div');
-    assertiveRegion.setAttribute('aria-live', 'assertive');
-    assertiveRegion.setAttribute('aria-atomic', 'true');
-    assertiveRegion.className = 'xeg-sr-only';
-    document.body.appendChild(assertiveRegion);
-    this.liveRegions.set('assertive', assertiveRegion);
+    const assertiveRegion = createElement('div', {
+      'aria-live': 'assertive',
+      'aria-atomic': 'true',
+      className: 'xeg-sr-only',
+    });
+    if (assertiveRegion) {
+      document.body.appendChild(assertiveRegion);
+      this.liveRegions.set('assertive', assertiveRegion);
+    }
   }
 
   /**

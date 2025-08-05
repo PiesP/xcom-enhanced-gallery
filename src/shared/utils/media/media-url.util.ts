@@ -11,7 +11,7 @@
 import { logger } from '@shared/logging/logger';
 import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { MediaInfo } from '@shared/types/media.types';
-import { cachedQuerySelector, cachedQuerySelectorAll } from '@shared/dom';
+import { querySelector, querySelectorAll } from '@shared/dom';
 
 /**
  * 트윗 document에서 미디어 URL들을 추출
@@ -28,8 +28,8 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     // document의 경우 documentElement를 사용
     const rootElement = doc instanceof Document ? doc.documentElement : doc;
 
-    // 이미지 미디어 추출 (캐시된 조회 사용)
-    const images = cachedQuerySelectorAll('img[src*="pbs.twimg.com"]', rootElement, 3000);
+    // 이미지 미디어 추출
+    const images = querySelectorAll('img[src*="pbs.twimg.com"]', rootElement);
     if (images && images.length > 0) {
       Array.from(images).forEach(img => {
         const imgElement = img as HTMLImageElement;
@@ -46,8 +46,8 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
       });
     }
 
-    // 비디오 미디어 추출 (캐시된 조회 사용)
-    const videos = cachedQuerySelectorAll('video', rootElement, 2000);
+    // 비디오 미디어 추출
+    const videos = querySelectorAll('video', rootElement);
     if (videos && videos.length > 0) {
       Array.from(videos).forEach(video => {
         const mediaInfo = createMediaInfoFromVideo(video as HTMLVideoElement, tweetId, mediaIndex);
@@ -58,11 +58,11 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
       });
     }
 
-    // 추가: data-testid="tweetPhoto"와 data-testid="videoPlayer" 요소들도 확인 (캐시된 조회)
-    const tweetPhotos = cachedQuerySelectorAll('[data-testid="tweetPhoto"]', rootElement, 3000);
+    // 추가: data-testid="tweetPhoto"와 data-testid="videoPlayer" 요소들도 확인
+    const tweetPhotos = querySelectorAll('[data-testid="tweetPhoto"]', rootElement);
     if (tweetPhotos && tweetPhotos.length > 0) {
       Array.from(tweetPhotos).forEach(photo => {
-        const imgElement = cachedQuerySelector('img', photo as Element, 2000) as HTMLImageElement;
+        const imgElement = querySelector('img', photo as Element) as HTMLImageElement;
         if (imgElement?.src?.includes('pbs.twimg.com')) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
           if (mediaInfo && !mediaItems.some(item => item.url === mediaInfo.url)) {

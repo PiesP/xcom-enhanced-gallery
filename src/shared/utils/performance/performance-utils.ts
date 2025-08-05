@@ -4,67 +4,11 @@
  *
  * 별도 모듈로 분리된 성능 관련 유틸리티들
  * Tree-shaking 최적화를 위해 독립적인 모듈로 분리
+ *
+ * NOTE: Debouncer 기능은 unified-performance-service로 통합됨
  */
 
 import { logger } from '@shared/logging/logger';
-
-/**
- * 디바운서 클래스 - 중복 실행 방지
- */
-export class Debouncer<T extends unknown[] = unknown[]> {
-  private timerId: number | null = null;
-  private lastArgs: T | null = null;
-
-  constructor(
-    private readonly fn: (...args: T) => void,
-    private readonly delay: number
-  ) {}
-
-  execute(...args: T): void {
-    this.lastArgs = args;
-    this.clearTimer();
-    this.timerId = window.setTimeout(() => {
-      if (this.lastArgs) {
-        this.fn(...this.lastArgs);
-        this.lastArgs = null;
-      }
-    }, this.delay);
-  }
-
-  flush(): void {
-    if (this.lastArgs) {
-      this.clearTimer();
-      this.fn(...this.lastArgs);
-      this.lastArgs = null;
-    }
-  }
-
-  cancel(): void {
-    this.clearTimer();
-    this.lastArgs = null;
-  }
-
-  isPending(): boolean {
-    return this.timerId !== null;
-  }
-
-  private clearTimer(): void {
-    if (this.timerId !== null) {
-      clearTimeout(this.timerId);
-      this.timerId = null;
-    }
-  }
-}
-
-/**
- * 디바운서 팩토리 함수
- */
-export function createDebouncer<T extends unknown[]>(
-  fn: (...args: T) => void,
-  delay: number
-): Debouncer<T> {
-  return new Debouncer(fn, delay);
-}
 
 /**
  * RAF 기반 throttle (성능 최적화)

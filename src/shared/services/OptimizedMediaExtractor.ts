@@ -10,6 +10,7 @@
 import type { MediaInfo, TweetInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
+import { querySelector } from '@shared/dom';
 
 /**
  * 미디어 추출 결과
@@ -138,7 +139,7 @@ export class OptimizedMediaExtractor {
       }
 
       // DOM 구조 기반 추가 분석
-      const mediaViewerExists = document.querySelector('[data-testid="photoViewerLayer"]');
+      const mediaViewerExists = querySelector('[data-testid="photoViewerLayer"]', document);
       if (mediaViewerExists) {
         return { type: 'POST', confidence: 0.95 };
       }
@@ -365,7 +366,7 @@ export class OptimizedMediaExtractor {
         selector
       ) as NodeListOf<HTMLVideoElement>;
       videoElements.forEach((video, index) => {
-        const src = video.src || video.querySelector('source')?.src;
+        const src = video.src || (querySelector('source', video) as HTMLSourceElement)?.src;
         if (src && !videos.some(item => item.url === src)) {
           videos.push({
             id: `video_${Date.now()}_${index}`,
@@ -387,17 +388,19 @@ export class OptimizedMediaExtractor {
    */
   private calculateClickedIndex(element: HTMLElement, mediaItems: MediaInfo[]): number {
     // 클릭된 요소와 가장 가까운 미디어 아이템 찾기
-    const clickedImg = element.querySelector('img') || (element.closest('img') as HTMLImageElement);
-    const clickedVideo =
-      element.querySelector('video') || (element.closest('video') as HTMLVideoElement);
+    const clickedImg = (querySelector('img', element) ||
+      element.closest('img')) as HTMLImageElement;
+    const clickedVideo = (querySelector('video', element) ||
+      element.closest('video')) as HTMLVideoElement;
 
-    if (clickedImg) {
+    if (clickedImg?.src) {
       const index = mediaItems.findIndex(item => item.url === clickedImg.src);
       if (index !== -1) return index;
     }
 
-    if (clickedVideo) {
-      const src = clickedVideo.src || clickedVideo.querySelector('source')?.src;
+    if (clickedVideo?.src) {
+      const src =
+        clickedVideo.src || (querySelector('source', clickedVideo) as HTMLSourceElement)?.src;
       const index = mediaItems.findIndex(item => item.url === src);
       if (index !== -1) return index;
     }
@@ -413,7 +416,7 @@ export class OptimizedMediaExtractor {
     if (!tweetContainer) return null;
 
     // 링크에서 트윗 ID 추출
-    const tweetLink = tweetContainer.querySelector('a[href*="/status/"]') as HTMLAnchorElement;
+    const tweetLink = querySelector('a[href*="/status/"]', tweetContainer) as HTMLAnchorElement;
     if (tweetLink?.href) {
       const tweetIdMatch = tweetLink.href.match(/\/status\/(\d+)/);
       if (tweetIdMatch?.[1]) {
@@ -455,7 +458,7 @@ export class OptimizedMediaExtractor {
     const tweets = document.querySelectorAll('[data-testid="tweet"]');
     for (const tweet of tweets) {
       if (tweet.contains(element)) {
-        const link = tweet.querySelector('a[href*="/status/"]') as HTMLAnchorElement;
+        const link = querySelector('a[href*="/status/"]', tweet) as HTMLAnchorElement;
         if (link?.href) {
           const tweetIdMatch = link.href.match(/\/status\/(\d+)/);
           if (tweetIdMatch?.[1]) {
@@ -477,7 +480,7 @@ export class OptimizedMediaExtractor {
    * 컨테이너에서 사용자명 추출
    */
   private extractUsernameFromContainer(container: HTMLElement): string {
-    const usernameEl = container.querySelector('[data-testid="User-Name"] a') as HTMLAnchorElement;
+    const usernameEl = querySelector('[data-testid="User-Name"] a', container) as HTMLAnchorElement;
     if (usernameEl?.href) {
       const usernameMatch = usernameEl.href.match(/twitter\.com\/([^/]+)/);
       if (usernameMatch?.[1]) return usernameMatch[1];

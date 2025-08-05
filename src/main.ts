@@ -10,6 +10,7 @@ import { coreLogger as logger } from '@/core/logger';
 import type { AppConfig } from '@/types';
 import { CoreService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from './constants';
+import { createElement, querySelector } from '@shared/dom';
 
 // 전역 스타일
 import './styles/globals';
@@ -180,14 +181,20 @@ async function initializeToastContainer(): Promise<void> {
 
     const { h, render } = getPreact();
 
-    let toastContainer = document.getElementById('xeg-toast-container');
+    let toastContainer = querySelector('#xeg-toast-container', document) as HTMLElement | null;
     if (!toastContainer) {
-      toastContainer = document.createElement('div');
-      toastContainer.id = 'xeg-toast-container';
-      document.body.appendChild(toastContainer);
+      const newContainer = createElement('div', {
+        id: 'xeg-toast-container',
+      });
+      if (newContainer) {
+        document.body.appendChild(newContainer);
+        toastContainer = newContainer;
+      }
     }
 
-    render(h(ToastContainer, {}), toastContainer);
+    if (toastContainer) {
+      render(h(ToastContainer, {}), toastContainer);
+    }
     logger.debug('✅ Toast 컨테이너 지연 초기화 완료');
   } catch (error) {
     logger.warn('Toast 컨테이너 초기화 실패:', error);

@@ -7,6 +7,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { SYSTEM_PAGES } from '@/constants';
+import { querySelector } from '@shared/dom';
 
 /**
  * 사용자명 추출 결과
@@ -150,7 +151,7 @@ export class UsernameParser {
       ];
 
       for (const selector of metaSelectors) {
-        const metaElement = document.querySelector(selector) as HTMLMetaElement;
+        const metaElement = querySelector(selector, document) as HTMLMetaElement;
         if (metaElement?.content) {
           const username = this.cleanUsername(metaElement.content);
           if (username && !this.isSystemPage(username)) {

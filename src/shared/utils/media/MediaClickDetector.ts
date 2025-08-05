@@ -5,7 +5,7 @@
 
 import { SELECTORS } from '@/constants';
 import { logger } from '@shared/logging/logger';
-import { cachedQuerySelector } from '@shared/dom';
+import { querySelector } from '@shared/dom';
 
 /**
  * 미디어 감지 결과
@@ -51,8 +51,8 @@ export class MediaClickDetector {
       dataset: target.dataset,
     });
 
-    // 갤러리가 이미 열려있으면 무시 (캐시된 조회 사용)
-    if (cachedQuerySelector('.xeg-gallery-container', document, 1000)) {
+    // 갤러리가 이미 열려있으면 무시
+    if (querySelector('.xeg-gallery-container', document)) {
       logger.debug('MediaClickDetector: Gallery already open - blocking');
       return false;
     }
@@ -128,8 +128,9 @@ export class MediaClickDetector {
     const tweetContainer = target.closest('article[data-testid="tweet"], [data-testid="tweet"]');
     if (tweetContainer) {
       // 트윗 내부에서 이미지나 비디오가 포함된 영역 클릭 확인
-      const hasMediaInTweet = tweetContainer.querySelector(
-        'img[src*="twimg.com"], video, [data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
+      const hasMediaInTweet = querySelector(
+        'img[src*="twimg.com"], video, [data-testid="tweetPhoto"], [data-testid="videoPlayer"]',
+        tweetContainer
       );
       if (hasMediaInTweet) {
         // 클릭된 위치가 미디어 영역 근처인지 확인
@@ -246,11 +247,10 @@ export class MediaClickDetector {
         return false;
       }
 
-      // 링크 안에 미디어 요소가 있으면 허용 (캐시된 조회 사용)
-      const hasMedia = cachedQuerySelector(
+      // 링크 안에 미디어 요소가 있으면 허용
+      const hasMedia = querySelector(
         'img[src*="twimg.com"], video, [data-testid="tweetPhoto"]',
-        statusLink,
-        2000 // 미디어 요소는 상대적으로 안정적이므로 긴 TTL
+        statusLink
       );
       if (hasMedia) {
         logger.debug('MediaClickDetector: 미디어 포함 링크 - 갤러리 허용');
@@ -320,7 +320,7 @@ export class MediaClickDetector {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
           // 이미지 찾기
-          const img = container.querySelector('img[src*="twimg.com"]') as HTMLImageElement;
+          const img = querySelector('img[src*="twimg.com"]', container) as HTMLImageElement;
           if (img) {
             return {
               type: 'image',
@@ -339,7 +339,7 @@ export class MediaClickDetector {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
           // 비디오 찾기
-          const video = container.querySelector('video') as HTMLVideoElement;
+          const video = querySelector('video', container) as HTMLVideoElement;
           if (video) {
             return {
               type: 'video',
