@@ -43,7 +43,7 @@ describe('🟢 TDD GREEN: 통합 완료 검증', () => {
 
   describe('StyleManager 직접 사용 완료', () => {
     it('StyleManager를 직접 import하여 사용할 수 있어야 함', async () => {
-      const StyleManagerModule = await import('@shared/styles/StyleManager');
+      const StyleManagerModule = await import('@shared/styles/style-manager');
       const StyleManager = StyleManagerModule.default;
 
       expect(StyleManager.combineClasses).toBeDefined();
@@ -92,6 +92,31 @@ describe('🟢 TDD GREEN: 통합 완료 검증', () => {
     });
   });
 
+  describe('MediaService 통합 완료', () => {
+    it('MediaService가 정상적으로 import되어야 함', async () => {
+      const { MediaService } = await import('@shared/services');
+      expect(MediaService).toBeDefined();
+      expect(typeof MediaService).toBe('function');
+    });
+
+    it('MediaService의 핵심 메서드들이 존재해야 함', async () => {
+      const { MediaService } = await import('@shared/services');
+      const service = new MediaService();
+
+      expect(typeof service.extractMediaFromTweet).toBe('function');
+      expect(typeof service.downloadMedia).toBe('function');
+      expect(typeof service.processMediaUrls).toBe('function');
+    });
+
+    it('MediaExtractionService와 MediaService가 통합되었어야 함', async () => {
+      // MediaService가 추출 기능도 포함하고 있는지 확인
+      const { MediaService } = await import('@shared/services');
+      const service = new MediaService();
+
+      expect(service.extractMediaFromTweet).toBeDefined();
+    });
+  });
+
   describe('중복 코드 제거 완료', () => {
     it('removeDuplicates 함수가 단일 위치에서만 제공되어야 함', async () => {
       const { removeDuplicates } = await import('@shared/utils/deduplication/deduplication-utils');
@@ -132,7 +157,7 @@ describe('🟢 TDD GREEN: 통합 완료 검증', () => {
     });
 
     it('StyleManager가 정적 메서드 패턴을 유지해야 함', async () => {
-      const StyleManagerModule = await import('@shared/styles/StyleManager');
+      const StyleManagerModule = await import('@shared/styles/style-manager');
       const StyleManager = StyleManagerModule.default;
 
       // 정적 메서드들이 존재해야 함
