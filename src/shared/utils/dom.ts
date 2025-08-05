@@ -283,10 +283,8 @@ export function compareSelectorSpecificity(selector1: string, selector2: string)
 }
 
 // ================================
-// DOMBatcher re-export (dom/index.ts와 호환성)
+// DOMBatcher 관련 export 제거됨 (deprecated)
 // ================================
-export { DOMBatcher, globalDOMBatcher, updateElementsInBatch, updateElement } from './dom/index';
-export type { DOMUpdate as DOMUpdateTask } from './dom/index';
 
 // ================================
 // DOM Service 통합 함수들 re-export

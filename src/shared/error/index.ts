@@ -6,7 +6,7 @@
  * Infrastructure AppErrorHandler 호환성 포함
  */
 
-export * from './ErrorHandler';
+export * from './error-handler';
 
 // Infrastructure 호환성 re-exports
-export { AppErrorHandler, ErrorHandler as CoreErrorHandler } from './ErrorHandler';
+export { AppErrorHandler, ErrorHandler as CoreErrorHandler } from './error-handler';

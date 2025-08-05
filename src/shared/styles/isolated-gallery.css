@@ -249,16 +249,7 @@
   }
 }
 
-/* 터치 친화적 크기 */
-@media (hover: none) and (pointer: coarse) {
-  .xeg-root .button {
-    min-height: 44px !important;
-    min-width: 44px !important;
-    padding: var(--xeg-isolated-spacing-md) !important;
-  }
-}
-
-/* 모바일 최적화 */
+/* 모바일 최적화 (PC 전용 프로젝트) */
 @media (max-width: 768px) {
   .xeg-root {
     /* 모바일에서 주소창 숨김 대응 */

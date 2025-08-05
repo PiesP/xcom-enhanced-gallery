@@ -12,11 +12,7 @@ import {
   getZIndex,
   injectZIndexStyles,
 } from '../src/shared/styles/z-index-system';
-import {
-  generateGlassmorphismCSS,
-  createOptimizedGlassClasses,
-  injectGlassmorphismStyles,
-} from '../src/shared/styles/glassmorphism-system';
+// glassmorphism-system 제거됨 (deprecated)
 
 describe('🎨 디자인 시스템 통합 테스트', () => {
   describe('Z-Index 관리 시스템', () => {
@@ -76,56 +72,17 @@ describe('🎨 디자인 시스템 통합 테스트', () => {
     });
   });
 
-  describe('글래스모피즘 시스템', () => {
-    it('기본 글래스모피즘 CSS를 생성해야 함', () => {
-      const css = generateGlassmorphismCSS();
-
-      expect(css).toContain('background: rgba(255, 255, 255, 0.8)');
-      expect(css).toContain('backdrop-filter: blur(12px)');
-      expect(css).toContain('border: 1px solid rgba(255, 255, 255, 0.2)');
-      expect(css).toContain('transform: translateZ(0)');
-    });
-
-    it('커스텀 옵션으로 글래스모피즘 CSS를 생성해야 함', () => {
-      const css = generateGlassmorphismCSS({
-        blur: 8,
-        opacity: 0.6,
-        borderOpacity: 0.1,
-      });
-
-      expect(css).toContain('background: rgba(255, 255, 255, 0.6)');
-      expect(css).toContain('backdrop-filter: blur(8px)');
-      expect(css).toContain('border: 1px solid rgba(255, 255, 255, 0.1)');
-    });
-
-    it('접근성 고려 옵션이 적용되어야 함', () => {
-      const css = generateGlassmorphismCSS({ respectAccessibility: true });
-
-      expect(css).toContain('@media (prefers-reduced-motion: reduce)');
-      expect(css).toContain('@media (prefers-reduced-transparency: reduce)');
-      expect(css).toContain('@media (prefers-contrast: high)');
-    });
-
-    it('GPU 가속 옵션이 적용되어야 함', () => {
-      const cssWithGPU = generateGlassmorphismCSS({ useGPUAcceleration: true });
-      const cssWithoutGPU = generateGlassmorphismCSS({ useGPUAcceleration: false });
-
-      expect(cssWithGPU).toContain('transform: translateZ(0)');
-      expect(cssWithGPU).toContain('will-change: backdrop-filter');
-      expect(cssWithoutGPU).not.toContain('transform: translateZ(0)');
-    });
-
-    it('최적화된 글래스 클래스들을 생성해야 함', () => {
-      const css = createOptimizedGlassClasses();
-
-      expect(css).toContain('.xeg-glass {');
-      expect(css).toContain('.xeg-glass-light {');
-      expect(css).toContain('.xeg-glass-heavy {');
-      expect(css).toContain('.xeg-glass-toolbar {');
-      expect(css).toContain('@supports not (backdrop-filter: blur(10px))');
-      expect(css).toContain('@media (prefers-color-scheme: dark)');
-    });
-  });
+  // 글래스모피즘 시스템 테스트 - 제거됨 (deprecated)
+  // describe('글래스모피즘 시스템', () => {
+  //   it('기본 글래스모피즘 CSS를 생성해야 함', () => {
+  //     const css = generateGlassmorphismCSS();
+  //     expect(css).toContain('background: rgba(255, 255, 255, 0.8)');
+  //     expect(css).toContain('backdrop-filter: blur(12px)');
+  //     expect(css).toContain('border: 1px solid rgba(255, 255, 255, 0.2)');
+  //     expect(css).toContain('transform: translateZ(0)');
+  //   });
+  //   // ... 기타 glassmorphism 테스트들 생략 ...
+  // });
 
   describe('스타일 주입 시스템', () => {
     beforeEach(() => {
@@ -147,14 +104,14 @@ describe('🎨 디자인 시스템 통합 테스트', () => {
       expect(styleElement?.textContent).toContain('--xeg-z-gallery: 2000;');
     });
 
-    it('글래스모피즘 스타일을 DOM에 주입해야 함', () => {
-      injectGlassmorphismStyles();
-
-      const styleElement = document.getElementById('xeg-glassmorphism-styles');
-      expect(styleElement).toBeTruthy();
-      expect(styleElement?.tagName).toBe('STYLE');
-      expect(styleElement?.textContent).toContain('.xeg-glass {');
-    });
+    // 글래스모피즘 스타일 주입 테스트 - 제거됨 (deprecated)
+    // it('글래스모피즘 스타일을 DOM에 주입해야 함', () => {
+    //   injectGlassmorphismStyles();
+    //   const styleElement = document.getElementById('xeg-glassmorphism-styles');
+    //   expect(styleElement).toBeTruthy();
+    //   expect(styleElement?.tagName).toBe('STYLE');
+    //   expect(styleElement?.textContent).toContain('.xeg-glass {');
+    // });
 
     it.skip('기존 스타일 요소를 교체해야 함', () => {
       // 첫 번째 주입

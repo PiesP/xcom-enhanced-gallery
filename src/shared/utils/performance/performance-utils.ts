@@ -14,10 +14,10 @@ export {
   debounce,
   createDebouncer,
   measurePerformance,
-} from './PerformanceUtils';
+} from './performance-utils-enhanced';
 
 // PerformanceUtils에서 직접 가져와서 사용
-import { PerformanceUtils } from './PerformanceUtils';
+import { PerformanceUtils } from './performance-utils-enhanced';
 
 // 스크롤 전용 throttle - rafThrottle의 래퍼
 export function throttleScroll<T extends (...args: unknown[]) => void>(func: T): T {

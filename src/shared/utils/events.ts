@@ -4,7 +4,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { isGalleryInternalElement } from '@shared/utils/utils';
-import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
+import { MediaClickDetector } from '@shared/utils/media/media-click-detector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { PagePatternDetector } from '@shared/utils/patterns/PagePatternDetector';
+import { PagePatternDetector } from '@shared/utils/patterns/page-pattern-detector';
 
 describe('PagePatternDetector', () => {
   let detector: PagePatternDetector;

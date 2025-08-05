@@ -22,7 +22,7 @@ export const BREAKPOINTS = {
 export type DeviceType = 'mobile' | 'tablet' | 'desktop' | 'wide';
 
 /**
- * 화면 정보 인터페이스
+ * 화면 정보 인터페이스 (PC 전용)
  */
 export interface ScreenInfo {
   width: number;
@@ -30,7 +30,6 @@ export interface ScreenInfo {
   deviceType: DeviceType;
   orientation: 'portrait' | 'landscape';
   pixelRatio: number;
-  isTouchDevice: boolean;
 }
 
 /**
@@ -106,7 +105,6 @@ export function useScreenInfo(): ScreenInfo {
     deviceType: 'desktop',
     orientation: 'landscape',
     pixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
-    isTouchDevice: typeof window !== 'undefined' && 'ontouchstart' in window,
   }));
 
   useEffect(() => {
@@ -135,7 +133,6 @@ export function useScreenInfo(): ScreenInfo {
         deviceType,
         orientation: width > height ? 'landscape' : 'portrait',
         pixelRatio: window.devicePixelRatio || 1,
-        isTouchDevice: 'ontouchstart' in window,
       });
     };
 
@@ -213,10 +210,6 @@ export function ResponsiveContainer({
 
     classes.push(`xeg-device-${screenInfo.deviceType}`);
     classes.push(`xeg-orientation-${screenInfo.orientation}`);
-
-    if (screenInfo.isTouchDevice) {
-      classes.push('xeg-touch-device');
-    }
 
     if (mobileFirst) {
       classes.push('xeg-mobile-first');
@@ -453,17 +446,6 @@ export function generateResponsiveClasses(): string {
     .xeg-device-wide {
       font-size: 17px;
       line-height: 1.7;
-    }
-
-    /* 터치 디바이스 최적화 */
-    .xeg-touch-device {
-      touch-action: manipulation;
-    }
-
-    .xeg-touch-device button,
-    .xeg-touch-device [role="button"] {
-      min-height: 44px;
-      min-width: 44px;
     }
 
     /* 반응형 그리드 */

@@ -15,7 +15,7 @@ export {
   debounce,
   createDebouncer,
   measurePerformance,
-} from './performance/PerformanceUtils';
+} from './performance/performance-utils-enhanced';
 
 // 기존 코드 호환성을 위한 추가 유틸리티
 export function memo<T extends (...args: unknown[]) => unknown>(

@@ -7,7 +7,7 @@
 export * from './DOMService';
 
 // ===== 지원 구현체들 =====
-export { DOMCache, globalDOMCache } from './DOMCache';
+export { DOMCache, globalDOMCache } from './dom-cache';
 export { DOMEventManager, createEventManager } from './dom-event-manager';
 
 // DOMManager는 DOMService로 통합됨 - 새로운 코드에서는 DOMService 사용 권장

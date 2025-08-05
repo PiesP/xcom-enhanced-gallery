@@ -5,7 +5,7 @@
  */
 
 // throttle/debounce 함수는 PerformanceUtils로 통합됨
-export { throttle, debounce } from '../performance/PerformanceUtils';
+export { throttle, debounce } from '../performance/performance-utils-enhanced';
 
 /**
  * 타입 검증 함수들 - 중복 구현 통합

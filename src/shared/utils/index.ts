@@ -47,8 +47,7 @@ export { addListener, cleanupEventListeners } from './events';
 // === 미디어 (1개) ===
 export { imageFilter } from './media/image-filter';
 
-// === DOM 배처 (2개) ===
-export { DOMBatcher, globalDOMBatcher } from './dom/index';
+// === DOM 배처 관련 제거됨 (deprecated) ===
 
 // === 디버그 유틸리티 (1개) ===
 export { galleryDebugUtils } from './debug/gallery-debug';

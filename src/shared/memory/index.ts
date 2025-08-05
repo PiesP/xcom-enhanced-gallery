@@ -13,4 +13,4 @@ export {
   checkMemoryAndCleanup,
   type MemoryInfo,
   MEMORY_THRESHOLDS,
-} from './MemoryTracker';
+} from './memory-tracker';

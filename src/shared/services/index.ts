@@ -13,7 +13,6 @@
  * - ToastService: 토스트 알림
  * - BrowserService: 브라우저 유틸리티
  * - GalleryService: 갤러리 핵심 기능
- * - LazyLoadingService: 지연 로딩 관리
  * - ServiceManager: 서비스 관리 + 레지스트리 통합
  */
 
@@ -85,9 +84,6 @@ export { BrowserService } from '@shared/browser';
 export { GalleryService } from './gallery';
 export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './gallery';
 
-// 7. 지연 로딩 서비스
-export { LazyLoadingService } from './LazyLoadingService';
-
 // 8. 서비스 관리 (ServiceRegistry 통합)
 export { CoreService } from './service-manager';
 
@@ -123,7 +119,7 @@ export type {} from '@shared/utils/performance';
 // ====================================
 
 // 통합 서비스 관리 유틸리티들
-export { cleanupAllUnifiedServices, getUnifiedServicesStatus } from './unified-services-cleanup';
+export { cleanupAllServices, getServicesStatus } from './service-cleanup-utils';
 
 // ====================================
 // 유틸리티 및 타입들
