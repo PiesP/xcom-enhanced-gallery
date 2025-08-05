@@ -50,11 +50,9 @@ export async function registerCoreServices(): Promise<void> {
   // 독립 유지 서비스들
   // ====================================
 
-  // 대량 다운로드 서비스 (복잡도로 인해 독립 유지)
-  const { BulkDownloadService } = await import('./BulkDownloadService');
-  const bulkDownloadService = new BulkDownloadService();
-  serviceManager.register(SERVICE_KEYS.BULK_DOWNLOAD, bulkDownloadService);
-  serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, bulkDownloadService); // 호환성
+  // 대량 다운로드 기능은 MediaService로 통합됨
+  serviceManager.register(SERVICE_KEYS.BULK_DOWNLOAD, mediaService);
+  serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, mediaService); // 호환성
 
   // 파일명 서비스
   const { FilenameService } = await import('../media');

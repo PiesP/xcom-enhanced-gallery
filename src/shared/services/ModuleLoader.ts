@@ -18,11 +18,13 @@ export async function loadServiceModule(serviceName: string) {
 
   try {
     switch (serviceName) {
-      case 'MediaPrefetchingService': {
-        const module = await import('./MediaPrefetchingService');
+      case 'MediaPrefetchingService':
+      case 'BulkDownloadService': {
+        // 이제 MediaService로 통합됨
+        const module = await import('./MediaService');
         const loadTime = performance.now() - startTime;
-        logger.debug('MediaPrefetchingService 로딩 완료:', { loadTime });
-        return module.MediaPrefetchingService;
+        logger.debug(`${serviceName} -> MediaService로 통합 완료:`, { loadTime });
+        return module.MediaService;
       }
 
       case 'LazyLoadingService': {
@@ -30,13 +32,6 @@ export async function loadServiceModule(serviceName: string) {
         const loadTime = performance.now() - startTime;
         logger.debug('LazyLoadingService 로딩 완료:', { loadTime });
         return module.lazyLoadingService;
-      }
-
-      case 'BulkDownloadService': {
-        const module = await import('./BulkDownloadService');
-        const loadTime = performance.now() - startTime;
-        logger.debug('BulkDownloadService 로딩 완료:', { loadTime });
-        return module.BulkDownloadService;
       }
 
       default:

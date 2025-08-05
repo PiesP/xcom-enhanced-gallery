@@ -16,7 +16,6 @@ export const DEPRECATED_TESTS = [
 
   // 미디어 서비스 중복 테스트들
   'test/unit/shared/services/MediaExtractionService.test.ts',
-  'test/unit/shared/services/OptimizedMediaExtractor.test.ts',
   'test/features/media/media.behavior.test.ts',
 
   // 통합 테스트 중복들
@@ -63,7 +62,6 @@ export const CONSOLIDATED_TESTS = {
   // 미디어 추출 통합
   'test/consolidated/media-extraction.consolidated.test.ts': [
     'test/unit/shared/services/MediaExtractionService.test.ts',
-    'test/unit/shared/services/OptimizedMediaExtractor.test.ts',
     'test/features/media/media.behavior.test.ts',
   ],
 

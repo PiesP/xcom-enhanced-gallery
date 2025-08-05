@@ -1015,23 +1015,26 @@ export class MediaService {
    * 정리 타이머 시작 (메모리 누수 방지)
    */
   private startVideoCleanupTimer(): void {
-    this.cleanupInterval = window.setInterval(() => {
-      // 더 이상 DOM에 없는 비디오 참조 정리
-      const invalidVideos: HTMLVideoElement[] = [];
-      this.pausedVideos.forEach((_state, video) => {
-        if (!this.isValidVideo(video)) {
-          invalidVideos.push(video);
+    // 테스트 환경에서는 setInterval을 사용하지 않음
+    if (typeof window !== 'undefined' && window.setInterval) {
+      this.cleanupInterval = window.setInterval(() => {
+        // 더 이상 DOM에 없는 비디오 참조 정리
+        const invalidVideos: HTMLVideoElement[] = [];
+        this.pausedVideos.forEach((_state, video) => {
+          if (!this.isValidVideo(video)) {
+            invalidVideos.push(video);
+          }
+        });
+
+        invalidVideos.forEach(video => {
+          this.pausedVideos.delete(video);
+        });
+
+        if (invalidVideos.length > 0) {
+          logger.debug(`[MediaService] 무효한 비디오 참조 ${invalidVideos.length}개 정리`);
         }
-      });
-
-      invalidVideos.forEach(video => {
-        this.pausedVideos.delete(video);
-      });
-
-      if (invalidVideos.length > 0) {
-        logger.debug(`[MediaService] 무효한 비디오 참조 ${invalidVideos.length}개 정리`);
-      }
-    }, 30000); // 30초마다 정리
+      }, 30000); // 30초마다 정리
+    }
   }
 }
 

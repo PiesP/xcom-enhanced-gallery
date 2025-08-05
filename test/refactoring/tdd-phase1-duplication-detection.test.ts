@@ -232,8 +232,9 @@ describe('🔴 TDD Phase 1: 중복 구현 식별 (RED)', () => {
       }
 
       try {
-        const extractorService = await import('@shared/services/OptimizedMediaExtractor');
-        if (extractorService) {
+        // OptimizedMediaExtractor는 MediaService에 통합됨
+        const mediaService = await import('@shared/services/MediaService');
+        if (mediaService?.MediaService) {
           optimizedCount++;
         }
       } catch {

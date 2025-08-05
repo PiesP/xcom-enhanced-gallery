@@ -97,7 +97,6 @@ export default defineConfig({
             'test/refactoring/naming-standardization.test.ts',
             'test/refactoring/refactoring-completion.test.ts',
             'test/unit/shared/services/MediaExtractionService.test.ts',
-            'test/unit/shared/services/OptimizedMediaExtractor.test.ts',
             'test/features/media/media.behavior.test.ts',
             'test/integration/extension.integration.test.ts',
             'test/integration/gallery-activation.test.ts',

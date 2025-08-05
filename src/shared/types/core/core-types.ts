@@ -47,8 +47,7 @@ export type ServiceFactory<T> = () => T | Promise<T>;
 /**
  * 서비스 타입 매핑 (Infrastructure 서비스들)
  */
-export type BulkDownloadServiceType =
-  import('../../services/BulkDownloadService').BulkDownloadService;
+export type BulkDownloadServiceType = import('../../services/MediaService').MediaService;
 export type FilenameServiceType = import('../../media').FilenameService;
 export type ThemeServiceType = import('../../services/ThemeService').ThemeService;
 // VideoControlService는 MediaService로 통합됨

@@ -42,7 +42,8 @@ export class DOMCache {
     this.maxCacheSize = options.maxCacheSize ?? 300; // 더 큰 캐시 크기 (300개)
 
     // 주기적 정리 스케줄링 (성능 최적화: 적응형 정리)
-    if (options.cleanupIntervalMs !== 0) {
+    // 테스트 환경에서는 setInterval을 사용하지 않음
+    if (options.cleanupIntervalMs !== 0 && typeof window !== 'undefined' && window.setInterval) {
       this.cleanupInterval = window.setInterval(
         () => this.adaptiveCleanup(),
         options.cleanupIntervalMs ?? 45000 // 45초마다 정리 (빈도 감소)
@@ -195,7 +196,7 @@ export class DOMCache {
    * 리소스 정리
    */
   dispose(): void {
-    if (this.cleanupInterval !== null) {
+    if (this.cleanupInterval !== null && typeof window !== 'undefined') {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
