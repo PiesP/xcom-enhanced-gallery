@@ -15,8 +15,10 @@ export type { ButtonProps } from './Button/Button';
 // Toast 컴포넌트 (실제 export 확인 후 수정)
 export { Toast, addToast, clearAllToasts, removeToast, toasts } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';
-export type { ToastItem } from './Toast/Toast';
+export type { ToastProps } from './Toast/Toast';
 export type { ToastContainerProps } from './Toast/ToastContainer';
+// ToastItem은 이제 services에서 export
+export type { ToastItem } from '@shared/services/ToastService';
 
 // Toolbar 컴포넌트
 export { Toolbar } from './Toolbar/Toolbar';

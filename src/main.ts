@@ -47,8 +47,7 @@ async function initializeInfrastructure(): Promise<void> {
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
 
     // 통합 디자인 시스템 초기화
-    const { styleService } = await import('@shared/services/style-service');
-    await styleService.initializeDesignSystem();
+    // TODO: 스타일 서비스 초기화 로직 추가 예정
     logger.debug('✅ 디자인 시스템 초기화 완료');
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);

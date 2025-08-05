@@ -1,21 +1,14 @@
 import styles from './Toast.module.css';
-import { getPreactHooks, getPreactSignals, getPreactCompat } from '@shared/external/vendors';
+import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastProps } from '../StandardProps';
+import type { ToastItem } from '@shared/services/ToastService';
 
-// Constants
-const DEFAULT_TOAST_DURATION = 5000; // 5 seconds
+// Constants - 사용하지 않는 상수 제거
+// const DEFAULT_TOAST_DURATION = 5000; // ToastService에서 관리
 
-export interface ToastItem {
-  id: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  title: string;
-  message: string;
-  duration?: number;
-  actionText?: string;
-  onAction?: () => void;
-}
+// ToastItem 인터페이스는 ToastService에서 import
 
 // 통합된 Toast Props - Legacy Props 제거됨
 export interface ToastProps extends Partial<StandardToastProps> {
@@ -140,53 +133,5 @@ Object.defineProperty(MemoizedToast, 'displayName', {
 // 메모이제이션된 컴포넌트를 Toast로 export
 export const Toast = MemoizedToast;
 
-// Global toast state - lazy initialization
-let _toasts: {
-  value: ToastItem[];
-  subscribe?: (callback: (value: ToastItem[]) => void) => () => void;
-} | null = null;
-export const toasts = {
-  get value(): ToastItem[] {
-    if (!_toasts) {
-      const { signal } = getPreactSignals();
-      _toasts = signal<ToastItem[]>([]);
-    }
-    return _toasts.value;
-  },
-  set value(newValue: ToastItem[]) {
-    if (!_toasts) {
-      const { signal } = getPreactSignals();
-      _toasts = signal<ToastItem[]>([]);
-    }
-    _toasts.value = newValue;
-  },
-  subscribe(callback: (value: ToastItem[]) => void) {
-    if (!_toasts) {
-      const { signal } = getPreactSignals();
-      _toasts = signal<ToastItem[]>([]);
-    }
-    return _toasts.subscribe?.((value: ToastItem[]) => callback(value || [])) || (() => {});
-  },
-};
-
-let toastIdCounter = 0;
-
-export function addToast(toast: Omit<ToastItem, 'id'>): string {
-  const id = `toast_${++toastIdCounter}_${Date.now()}`;
-  const newToast: ToastItem = {
-    ...toast,
-    id,
-    duration: toast.duration ?? DEFAULT_TOAST_DURATION,
-  };
-
-  toasts.value = [...toasts.value, newToast];
-  return id;
-}
-
-export function removeToast(id: string): void {
-  toasts.value = toasts.value.filter(toast => toast.id !== id);
-}
-
-export function clearAllToasts(): void {
-  toasts.value = [];
-}
+// Global toast state - 통합 레이어 사용
+export { toasts, addToast, removeToast, clearAllToasts } from '@shared/services/toast-integration';

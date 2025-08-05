@@ -4,7 +4,8 @@
  */
 
 import { getPreact, getPreactHooks, getPreactCompat } from '@shared/external/vendors';
-import { toasts, removeToast, Toast } from './Toast';
+import { toasts, removeToast } from '@shared/services/toast-integration';
+import { Toast } from './Toast';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';

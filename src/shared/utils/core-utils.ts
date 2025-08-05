@@ -21,11 +21,10 @@ export {
 // ================================
 
 /**
- * 클래스 이름 결합
+ * 클래스 이름 결합 - StyleManager 사용 권장
+ * @deprecated StyleManager.combineClasses를 직접 사용하세요
  */
-export function combineClasses(...classes: (string | undefined | null)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
+// export 제거 - StyleManager.combineClasses 사용 권장
 
 /**
  * 갤러리 이벤트를 블록해야 하는지 확인

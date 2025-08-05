@@ -28,11 +28,9 @@ export * from '@shared/dom';
 // 스타일 관련 통합 서비스 (기존 StyleService 대체)
 export {
   unifiedStyleService,
-  combineClasses,
   setCSSVariable,
   getCSSVariable,
   setCSSVariables,
-  applyGlassmorphism,
   setTheme,
   updateComponentState,
   applyUtilityClasses,
@@ -83,6 +81,18 @@ export type { Theme } from './ThemeService';
 // 4. 토스트 서비스 (통합됨 - ToastController 제거됨)
 export { ToastService } from './ToastService';
 export type { ToastOptions } from './ToastService';
+
+// 토스트 통합 유틸리티
+export {
+  toasts,
+  addToast,
+  removeToast,
+  clearAllToasts,
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+} from './toast-integration';
 
 // 5. 브라우저 서비스
 export { BrowserService } from '@shared/browser';

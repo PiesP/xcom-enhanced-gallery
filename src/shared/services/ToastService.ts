@@ -9,10 +9,13 @@ import { logger } from '@shared/logging/logger';
 export interface ToastItem {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
-  title?: string;
+  title: string;
   message: string;
   duration?: number;
   dismissible?: boolean;
+  // 컴포넌트에서 추가로 필요한 optional 필드들
+  actionText?: string;
+  onAction?: () => void;
 }
 
 /**

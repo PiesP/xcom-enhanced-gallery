@@ -27,10 +27,6 @@ export { ensureGalleryScrollAvailable } from './core-utils';
 export { default as StyleManagerClass } from '../styles/StyleManager';
 export { setCSSVariable } from '@shared/services/unified-style-service';
 
-// Add combineClasses as a separate export using StyleManager
-import StyleManager from '../styles/StyleManager';
-export const combineClasses = StyleManager.combineClasses;
-
 // Deduplication utilities
 export { removeDuplicates } from './deduplication';
 

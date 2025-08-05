@@ -7,9 +7,11 @@
 /**
  * CSS 클래스들을 결합하여 하나의 문자열로 반환
  */
-export function combineClasses(...classes: (string | undefined | null)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
+
+/**
+ * @deprecated StyleManager.combineClasses를 직접 사용하세요
+ */
+// export 제거 - StyleManager.combineClasses 사용 권장
 
 /**
  * CSS 변수 설정
@@ -20,6 +22,17 @@ export function setCSSVariable(
   element: HTMLElement = document.documentElement
 ): void {
   element.style.setProperty(name.startsWith('--') ? name : `--${name}`, value);
+}
+
+/**
+ * CSS 변수 가져오기
+ */
+export function getCSSVariable(
+  name: string,
+  element: HTMLElement = document.documentElement
+): string {
+  const computedStyle = getComputedStyle(element);
+  return computedStyle.getPropertyValue(name.startsWith('--') ? name : `--${name}`).trim();
 }
 
 /**

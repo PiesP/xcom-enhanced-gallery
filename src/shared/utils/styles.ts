@@ -5,15 +5,17 @@
  */
 
 // Core CSS utilities
+// 스타일 관련 유틸리티 (StyleManager를 사용하세요)
 export {
-  combineClasses,
   setCSSVariable,
+  getCSSVariable,
   setCSSVariables,
+  createThemedClassName,
   updateComponentState,
-} from '@shared/services/unified-style-service';
+} from './styles/css-utilities';
 
 // Backward compatibility - exports commonly used style utilities
-export { getCSSVariable, applyTheme } from './styles/style-utils';
+export { applyTheme } from './styles/style-utils';
 
 // Theme utilities
 export { getXEGVariable, setGalleryTheme } from '../styles/theme-utils';
