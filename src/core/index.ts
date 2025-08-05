@@ -10,7 +10,7 @@ export { select, selectAll, updateElement, batchUpdate } from './dom';
 export type { DOMUpdate } from './dom';
 
 // ===== 스타일 관리 =====
-export { coreStyleManager, CoreStyleManager } from './styles';
+export { coreStyleManager, CoreStyleManager, combineClasses } from './styles';
 export type { GlassmorphismIntensity } from './styles';
 
 // ===== 미디어 관리 =====

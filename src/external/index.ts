@@ -10,4 +10,4 @@ export * from '../shared/external/vendors';
 export * from '../shared/external/zip';
 
 // 편의성을 위한 직접 export
-export { getFflate, getMotion, getPreact, getPreactSignals } from '../shared/external/vendors';
+export { getFflate, getPreact, getPreactSignals } from '../shared/external/vendors';

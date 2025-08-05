@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { initializeVendors, getTanStackQuery } from '@shared/external/vendors';
+import { initializeVendors } from '@shared/external/vendors';
 
 describe('외부 라이브러리 통합 테스트', () => {
   beforeEach(async () => {
@@ -19,13 +19,8 @@ describe('외부 라이브러리 통합 테스트', () => {
 
   describe('TanStack Query 통합', () => {
     it('TanStack Query가 올바르게 로드되어야 한다', async () => {
-      const query = await getTanStackQuery();
-
-      expect(query.QueryClient).toBeDefined();
-      expect(query.QueryCache).toBeDefined();
-      expect(query.MutationCache).toBeDefined();
-      expect(typeof query.QueryClient).toBe('function');
-      expect(typeof query.QueryCache).toBe('function');
+      // TanStack Query가 제거되었으므로 테스트 스킵
+      expect(true).toBe(true);
     });
   });
 
@@ -86,21 +81,15 @@ describe('외부 라이브러리 통합 테스트', () => {
 
     it('라이브러리들이 기존 시스템과 호환되어야 한다', async () => {
       // 기존 vendor 시스템과의 호환성 확인
-      const { getPreact, getPreactSignals, getMotionOne } = await import(
-        '@shared/external/vendors'
-      );
+      const { getPreact, getPreactSignals } = await import('@shared/external/vendors');
 
       const preact = getPreact();
       const signals = getPreactSignals();
-      const motionOne = getMotionOne();
 
       expect(preact).toBeDefined();
       expect(signals).toBeDefined();
-      expect(motionOne).toBeDefined();
 
-      // TanStack Query
-      const tanStackQuery = await getTanStackQuery();
-      expect(tanStackQuery).toBeDefined();
+      // Motion과 TanStack Query는 제거되었으므로 테스트에서 제외
     });
 
     it('메모리 정리가 올바르게 작동해야 한다', async () => {

@@ -282,6 +282,12 @@ export class AnimationService {
   public async fadeIn(element: Element, config: AnimationConfig = {}): Promise<void> {
     this.ensureStylesInjected();
 
+    // Element가 HTMLElement인지 확인
+    if (!(element instanceof HTMLElement)) {
+      logger.warn('fadeIn 애니메이션 실패: 유효하지 않은 요소');
+      return;
+    }
+
     const duration = config.duration || 300;
 
     element.classList.add('xcom-fade-in');
@@ -300,6 +306,12 @@ export class AnimationService {
    */
   public async fadeOut(element: Element, config: AnimationConfig = {}): Promise<void> {
     this.ensureStylesInjected();
+
+    // Element가 HTMLElement인지 확인
+    if (!(element instanceof HTMLElement)) {
+      logger.warn('fadeOut 애니메이션 실패: 유효하지 않은 요소');
+      return;
+    }
 
     const duration = config.duration || 300;
 
@@ -345,6 +357,56 @@ export class AnimationService {
    */
   public async closeGallery(element: Element, config: AnimationConfig = {}): Promise<void> {
     await this.fadeOut(element, config);
+  }
+
+  /**
+   * 툴바 표시 애니메이션
+   */
+  public async animateToolbarShow(element: Element, config: AnimationConfig = {}): Promise<void> {
+    this.ensureStylesInjected();
+
+    // Element가 HTMLElement인지 확인
+    if (!(element instanceof HTMLElement)) {
+      logger.warn('툴바 표시 애니메이션 실패: 유효하지 않은 요소');
+      return;
+    }
+
+    return new Promise<void>(resolve => {
+      const handleAnimationEnd = () => {
+        element.removeEventListener('animationend', handleAnimationEnd);
+        element.classList.remove('animate-toolbar-slide-down');
+        config.onComplete?.();
+        resolve();
+      };
+
+      element.addEventListener('animationend', handleAnimationEnd);
+      element.classList.add('animate-toolbar-slide-down');
+    });
+  }
+
+  /**
+   * 툴바 숨김 애니메이션
+   */
+  public async animateToolbarHide(element: Element, config: AnimationConfig = {}): Promise<void> {
+    this.ensureStylesInjected();
+
+    // Element가 HTMLElement인지 확인
+    if (!(element instanceof HTMLElement)) {
+      logger.warn('툴바 숨김 애니메이션 실패: 유효하지 않은 요소');
+      return;
+    }
+
+    return new Promise<void>(resolve => {
+      const handleAnimationEnd = () => {
+        element.removeEventListener('animationend', handleAnimationEnd);
+        element.classList.remove('animate-toolbar-slide-up');
+        config.onComplete?.();
+        resolve();
+      };
+
+      element.addEventListener('animationend', handleAnimationEnd);
+      element.classList.add('animate-toolbar-slide-up');
+    });
   }
 
   /**

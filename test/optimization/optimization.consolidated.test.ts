@@ -11,10 +11,9 @@ describe('Optimization Features - Consolidated', () => {
   });
 
   describe('Code Splitting and Lazy Loading', () => {
-    it('should implement Motion One lazy loading', async () => {
-      // Motion One 지연 로딩이 구현되어 있는지 검증
-      const { getMotionOne } = await import('@shared/external/vendors');
-      expect(typeof getMotionOne).toBe('function');
+    it.skip('should implement Motion One lazy loading - DEPRECATED (Motion 제거됨)', async () => {
+      // Motion One이 제거되었으므로 이 테스트는 더 이상 유효하지 않음
+      expect(true).toBe(true);
     });
 
     it('should implement fflate lazy loading', async () => {

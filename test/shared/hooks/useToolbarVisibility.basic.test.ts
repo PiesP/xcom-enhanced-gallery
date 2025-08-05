@@ -3,7 +3,7 @@
  * @description 기본 동작 검증을 위한 단위 테스트
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock implementation
 const mockUseState = vi.fn();
@@ -11,13 +11,16 @@ const mockUseRef = vi.fn();
 const mockUseEffect = vi.fn();
 const mockUseCallback = vi.fn();
 
-vi.mock('@shared/external/vendors', () => ({
-  getPreactHooks: () => ({
-    useState: mockUseState,
-    useRef: mockUseRef,
-    useEffect: mockUseEffect,
-    useCallback: mockUseCallback,
-  }),
+// ComponentManager.getHookManager 모킹
+vi.mock('@shared/components/ComponentManager', () => ({
+  ComponentManager: {
+    getHookManager: () => ({
+      useState: mockUseState,
+      useRef: mockUseRef,
+      useEffect: mockUseEffect,
+      useCallback: mockUseCallback,
+    }),
+  },
 }));
 
 describe('useToolbarVisibility - 기본 동작 검증', () => {

@@ -112,9 +112,6 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
  * - Preact (MIT License) - https://github.com/preactjs/preact
  * - @preact/signals (MIT License) - https://github.com/preactjs/signals
  * - fflate (MIT License) - https://github.com/101arrowz/fflate
- * - motion (MIT License) - https://github.com/motiondivision/motion
- * - @tanstack/query-core (MIT License) - https://github.com/TanStack/query
- * - @tanstack/react-virtual (MIT License) - https://github.com/TanStack/virtual
  *
  * All libraries are used under their respective MIT licenses.
  * Full license texts are available at:

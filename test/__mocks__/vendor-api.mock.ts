@@ -37,107 +37,6 @@ const mockPreactSignals = {
   batch: vi.fn(),
 };
 
-// Mock TanStack Query
-// TanStack Query Mock 구현
-export const mockTanStackQuery = {
-  QueryClient: class MockQueryClient {
-    constructor(options?: any) {
-      this.options = options;
-      this.queryCache = new MockQueryCache();
-      this.mutationCache = new MockMutationCache();
-    }
-
-    options: any;
-    queryCache: any;
-    mutationCache: any;
-
-    invalidateQueries() {
-      return Promise.resolve();
-    }
-    setQueryData() {
-      return undefined;
-    }
-    getQueryData() {
-      return undefined;
-    }
-    clear() {
-      return undefined;
-    }
-  },
-
-  QueryCache: class MockQueryCache {
-    constructor() {
-      this.queries = new Map();
-    }
-
-    queries: Map<any, any>;
-
-    find() {
-      return undefined;
-    }
-    findAll() {
-      return [];
-    }
-    notify() {
-      return undefined;
-    }
-    clear() {
-      this.queries.clear();
-    }
-  },
-
-  MutationCache: class MockMutationCache {
-    constructor() {
-      this.mutations = new Map();
-    }
-
-    mutations: Map<any, any>;
-
-    find() {
-      return undefined;
-    }
-    findAll() {
-      return [];
-    }
-    notify() {
-      return undefined;
-    }
-    clear() {
-      this.mutations.clear();
-    }
-  },
-
-  useQuery: () => ({
-    data: undefined,
-    error: null,
-    isLoading: false,
-    isError: false,
-    isSuccess: true,
-    refetch: () => Promise.resolve(),
-  }),
-
-  useMutation: () => ({
-    mutate: () => Promise.resolve(),
-    isLoading: false,
-    isError: false,
-    isSuccess: false,
-    error: null,
-    data: undefined,
-  }),
-
-  QueryClientProvider: ({ children }: { children: any }) => children,
-};
-
-// Mock Motion API
-const mockMotionAPI = {
-  animate: vi.fn().mockResolvedValue(undefined),
-  scroll: vi.fn().mockReturnValue(() => {}),
-  timeline: vi.fn().mockResolvedValue(undefined),
-  stagger: vi.fn().mockReturnValue(0.1),
-  inView: vi.fn().mockReturnValue(() => {}),
-  transform: vi.fn().mockReturnValue(0),
-};
-
 // Mock 초기화 상태
 let mockIsInitialized = false;
 
@@ -171,22 +70,6 @@ export const mockVendorAPI = {
       );
     }
     return mockPreactSignals;
-  },
-
-  getTanStackQuery() {
-    if (!mockIsInitialized) {
-      throw new Error(
-        'TanStack Query가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.'
-      );
-    }
-    return mockTanStackQuery;
-  },
-
-  getMotionAPI() {
-    if (!mockIsInitialized) {
-      throw new Error('Motion API가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
-    }
-    return mockMotionAPI;
   },
 
   // 초기화 상태 확인용
