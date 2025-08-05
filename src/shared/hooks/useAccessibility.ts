@@ -106,42 +106,6 @@ export function useFocusTrap(enabled: boolean = true) {
   return containerRef;
 }
 
-// TODO: ARIA 접근성 개선 시 다음 코드를 활용 예정
-/*
-type AriaPoliteness = 'polite' | 'assertive';
-
-interface AriaAnnouncementHook {
-  announce: (message: string, politeness?: AriaPoliteness) => void;
-}
-*/
-
-/**
- * ARIA 라이브 리전 훅 (TODO: 향후 구현 예정)
- * @deprecated 현재 미사용, 향후 접근성 개선에서 활용 예정
- */
-// function _useAriaAnnouncement(): AriaAnnouncementHook {
-//   const { useCallback } = ComponentManager.getHookManager();
-
-//   const announce = useCallback((message: string, politeness: AriaPoliteness = 'polite') => {
-//     const announcement = document.createElement('div');
-//     announcement.setAttribute('aria-live', politeness);
-//     announcement.setAttribute('aria-atomic', 'true');
-//     announcement.className = 'sr-only';
-//     announcement.textContent = message;
-
-//     document.body.appendChild(announcement);
-
-//     // Remove after announcement
-//     setTimeout(() => {
-//       document.body.removeChild(announcement);
-//     }, 1000);
-//   }, []);
-
-//   return {
-//     announce,
-//   };
-// }
-
 /**
  * 라이브 리전 메시지 알림 훅
  */

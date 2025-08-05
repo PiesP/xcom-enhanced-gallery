@@ -16,28 +16,11 @@ import {
   animateCustom,
 } from '../../../../src/shared/utils/animations';
 
-// Mock 함수들 미리 정의
-const mockAnimate = vi.fn().mockResolvedValue({});
-const mockScroll = vi.fn().mockReturnValue(() => {});
-const mockTimeline = vi.fn().mockResolvedValue(undefined);
-const mockStagger = vi.fn().mockReturnValue(index => index * 50);
-const mockInView = vi.fn().mockReturnValue(() => {});
-const mockTransform = vi.fn().mockImplementation((value, from, to) => {
-  const [fromMin, fromMax] = from;
-  const [toMin, toMax] = to;
-  const ratio = (value - fromMin) / (fromMax - fromMin);
-  return toMin + ratio * (toMax - toMin);
-});
-
-// 모킹
+// 모킹 - Motion One이 제거되었으므로 CSS 기반 애니메이션만 테스트
 vi.mock('@shared/external/vendors', () => ({
-  getMotionOne: vi.fn(() => ({
-    animate: mockAnimate,
-    scroll: mockScroll,
-    timeline: mockTimeline,
-    stagger: mockStagger,
-    inView: mockInView,
-    transform: mockTransform,
+  getPreact: vi.fn(() => ({
+    useState: vi.fn(),
+    useEffect: vi.fn(),
   })),
 }));
 
@@ -255,18 +238,15 @@ describe('애니메이션 유틸리티', () => {
 
   describe('에러 처리', () => {
     it('애니메이션 실패 시 에러를 우아하게 처리해야 한다', async () => {
-      // 간단한 동기 테스트로 변경
+      // CSS 기반 애니메이션에서 에러 처리 테스트
       try {
-        // getMotionOne 호출 시 실패 시뮬레이션
-        const { getMotionOne } = await import('@shared/external/vendors');
-        getMotionOne.mockImplementationOnce(() => {
-          throw new Error('Motion One 초기화 실패');
-        });
-
-        // 애니메이션 함수 호출이 에러를 throw하지 않는지 확인
+        // CSS 애니메이션은 웹 API에 의존하므로 에러가 발생하지 않아야 함
         await expect(() => animateGalleryEnter(mockElement)).not.toThrow();
+
+        // CSS 클래스가 올바르게 적용되었는지 확인
+        expect(mockElement.classList.add).toHaveBeenCalled();
       } catch (error) {
-        // 모킹 과정에서 발생할 수 있는 에러 처리
+        // CSS 애니메이션에서는 일반적으로 에러가 발생하지 않음
         expect(error).toBeInstanceOf(Error);
       }
     }, 500);

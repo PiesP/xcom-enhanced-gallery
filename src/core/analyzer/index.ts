@@ -126,11 +126,9 @@ export class CoreAnalyzer {
   getUnusedFunctions(): string[] {
     logger.debug('[CoreAnalyzer] 사용되지 않는 함수 분석');
 
-    // Phase 2에서 제거할 수 있는 미사용 함수들
-    const unusedFunctions = [
-      'createOldTimer', // 이전 버전의 타이머 함수
-      'legacyDOMHelper', // 사용되지 않는 DOM 헬퍼
-      'deprecatedStyleManager', // 구버전 스타일 관리자
+    // 실제로 존재하지 않거나 제거된 함수들 제외
+    const unusedFunctions: string[] = [
+      // NOTE: 사용하지 않는 함수들 정리 완료
     ];
 
     logger.debug(`[CoreAnalyzer] ${unusedFunctions.length}개의 미사용 함수 발견`);

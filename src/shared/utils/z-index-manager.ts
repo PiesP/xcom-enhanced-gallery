@@ -19,13 +19,13 @@ interface LayerInfo {
 }
 
 /**
- * Z-Index 계층 관리자
+ * Z-Index 계층 서비스
  *
  * 갤러리 시스템의 모든 Z-Index 값을 중앙화하여 관리하고
  * 계층 간 충돌을 방지합니다.
  */
-export class ZIndexManager {
-  private static instance: ZIndexManager | null = null;
+export class ZIndexService {
+  private static _instance: ZIndexService | null = null;
 
   // 기본 계층 정의 (낮음 → 높음)
   private readonly defaultLayers: Record<ZIndexLayer, number> = {
@@ -48,11 +48,11 @@ export class ZIndexManager {
   /**
    * 싱글톤 인스턴스 반환
    */
-  public static getInstance(): ZIndexManager {
-    if (!ZIndexManager.instance) {
-      ZIndexManager.instance = new ZIndexManager();
+  public static getInstance(): ZIndexService {
+    if (!ZIndexService._instance) {
+      ZIndexService._instance = new ZIndexService();
     }
-    return ZIndexManager.instance;
+    return ZIndexService._instance;
   }
 
   /**
@@ -201,3 +201,6 @@ export class ZIndexManager {
     return null;
   }
 }
+
+// 하위 호환성을 위한 별칭
+export { ZIndexService as ZIndexManager };

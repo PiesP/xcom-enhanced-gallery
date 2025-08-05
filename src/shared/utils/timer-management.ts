@@ -5,10 +5,10 @@
  */
 
 /**
- * 타이머 관리자
+ * 타이머 서비스
  * 모든 타이머를 추적하고 일괄 정리할 수 있는 유틸리티
  */
-export class TimerManager {
+export class TimerService {
   private readonly timers = new Set<number>();
   private readonly intervals = new Set<number>();
 
@@ -73,9 +73,12 @@ export class TimerManager {
 }
 
 /**
- * 전역 타이머 관리자 인스턴스
+ * 전역 타이머 서비스 인스턴스
  */
-export const globalTimerManager = new TimerManager();
+export const globalTimerManager = new TimerService();
+
+// 하위 호환성을 위한 별칭
+export { TimerService as TimerManager };
 
 /**
  * 안전한 performance.now() 호출
@@ -143,5 +146,5 @@ export function createDebouncer<T extends unknown[] = []>(
   return new Debouncer(callback, delay);
 }
 
-// Performance utilities re-export (deprecated wrappers removed)
+// Performance utilities re-export
 export { measureAsyncPerformance, rafThrottle } from '@shared/utils/performance/performance-utils';

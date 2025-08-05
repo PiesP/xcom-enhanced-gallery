@@ -1,8 +1,8 @@
 /**
- * @fileoverview Main.ts 초기화 테스트
+ * @fileoveimport { CoreService } from "@shared/services/service-manager";view Main.ts 초기화 테스트
  * @descripti		it("utils에서 CoreService export가 정상 작동해야 함", async () => {
 			// CoreService는 @shared/services에서 직접 import
-			const { CoreService: UtilsCoreService } = await import("@shared/services/ServiceManager");
+			const { CoreService: UtilsCoreService } = await import("@shared/services/service-manager");
 
 			expect(UtilsCoreService).toBeDefined();
 			expect(UtilsCoreService.getInstance).toBeDefined();
@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { CoreService } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/service-manager';
 
 describe('Main.ts 초기화 오류 수정', () => {
   beforeEach(() => {
@@ -59,7 +59,7 @@ describe('Main.ts 초기화 오류 수정', () => {
 
     it('utils에서 CoreService export가 정상 작동해야 함', async () => {
       // CoreService는 @shared/services에서 직접 import
-      const { CoreService: UtilsCoreService } = await import('@shared/services/ServiceManager');
+      const { CoreService: UtilsCoreService } = await import('@shared/services/service-manager');
 
       expect(UtilsCoreService).toBeDefined();
       expect(UtilsCoreService.getInstance).toBeDefined();

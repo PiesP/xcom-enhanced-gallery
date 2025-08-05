@@ -1,7 +1,7 @@
 /**
  * @fileoverview 표준화된 컴포넌트 Props 인터페이스
  * @description Phase 2-3A: BaseComponentProps 기반으로 리팩토링
- * @version 2.1.0 - Deprecated 요소 제거
+ * @version 2.1.0 - 표준화된 컴포넌트 속성
  */
 
 import type {

@@ -1,5 +1,5 @@
 /**
- * @fileoverview InteractionManager - 사용자 상호작용 관리
+ * @fileoverview InteractionService - 사용자 상호작용 관리
  * @description 터치, 키보드, 마우스 등 다양한 입력 방식의 사용자 경험 최적화
  */
 
@@ -56,9 +56,9 @@ export interface KeyboardShortcut {
 }
 
 /**
- * 상호작용 관리자
+ * 상호작용 서비스
  */
-export class InteractionManager {
+export class InteractionService {
   private readonly element: HTMLElement;
   private options: GestureOptions;
   private readonly isTouch: boolean;
@@ -432,14 +432,17 @@ export class InteractionManager {
 }
 
 /**
- * 상호작용 관리자 팩토리
+ * 상호작용 서비스 팩토리
  */
 export function createInteractionManager(
   element: HTMLElement,
   options?: Partial<GestureOptions>
-): InteractionManager {
-  return new InteractionManager(element, options);
+): InteractionService {
+  return new InteractionService(element, options);
 }
+
+// 하위 호환성을 위한 별칭
+export { InteractionService as InteractionManager };
 
 /**
  * 기본 제스처 설정

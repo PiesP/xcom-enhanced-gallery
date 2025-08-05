@@ -1,10 +1,10 @@
 /**
- * @fileoverview 갤러리 앱 활성화 테스트
+ *import { CoreService } from "@shared/services/service-manager";@fileoverview 갤러리 앱 활성화 테스트
  * @description 핵심 사상 기반 테스트: 환경 격리, 로직 분리, 행위 중심 테스트
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { CoreService } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/service-manager';
 import { SERVICE_KEYS } from '@/constants';
 
 // 🔧 REFACTOR: 전역 DOM 모킹 사용 (setup.ts에서 제공)

@@ -287,13 +287,6 @@ vi.mock('@shared/external/vendors/vendor-api', () => {
         strFromU8: vi.fn(data => new TextDecoder().decode(data)),
       };
     },
-    getMotionOne() {
-      return {
-        animate: vi.fn(),
-        timeline: vi.fn(),
-        stagger: vi.fn(),
-      };
-    },
     getTanStackQuery() {
       return {
         QueryClient: class {

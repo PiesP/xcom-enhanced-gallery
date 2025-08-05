@@ -3,7 +3,7 @@
  * @description 사용하지 않는 외부 라이브러리 제거 검증
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('🔴 RED Phase: 의존성 제거 테스트', () => {
   describe('CSS 기반 애니메이션 검증', () => {
@@ -30,18 +30,17 @@ describe('🔴 RED Phase: 의존성 제거 테스트', () => {
 describe('의존성 최적화 테스트 - Phase GREEN (구현 완료)', () => {
   describe('1. Motion 라이브러리 제거 검증', () => {
     it('Motion 관련 import가 존재하지 않아야 한다 (실용적 검증)', async () => {
-      // Motion 라이브러리가 npm에 설치되어 있어도 우리 코드에서 사용하지 않으면 성공
-      // 실제 번들에 포함되지 않는지 확인
-      try {
-        const motion = await import('motion');
-        // 설치되어 있더라도 우리 vendor system에서 제공하지 않으면 OK
-        const vendorApi = await import('../src/shared/external/vendors/vendor-api');
-        expect('getMotion' in vendorApi).toBe(false);
-        expect('getMotionOne' in vendorApi).toBe(false);
-      } catch {
-        // import 실패도 정상 (제거됨)
-        expect(true).toBe(true);
-      }
+      // Motion 라이브러리가 설치되어 있지 않으므로 우리 vendor system에서도 제공하지 않음
+      const vendorApi = await import('../src/shared/external/vendors/vendor-api');
+
+      // vendor system에서 motion 관련 함수가 없는지 확인
+      const allKeys = Object.keys(vendorApi);
+      const motionRelated = allKeys.filter(key => key.toLowerCase().includes('motion'));
+      expect(motionRelated).toEqual([]);
+
+      // 명시적으로 getMotion과 getMotionOne이 없는지 확인
+      expect(allKeys).not.toContain('getMotion');
+      expect(allKeys).not.toContain('getMotionOne');
     });
 
     it('vendor-api에서 getMotion 함수가 제거되었어야 한다', async () => {
@@ -71,8 +70,11 @@ describe('의존성 최적화 테스트 - Phase GREEN (구현 완료)', () => {
   describe('2. TanStack Query 라이브러리 제거 검증', () => {
     it('TanStack Query 관련 import가 존재하지 않아야 한다 (실용적 검증)', async () => {
       // TanStack Query가 package.json에서 제거되었는지 확인
-      const packageJsonPath = new URL('../package.json', import.meta.url);
-      const packageJsonContent = await fetch(packageJsonPath).then(r => r.text());
+      const fs = await import('fs/promises');
+      const path = await import('path');
+
+      const packageJsonPath = path.join(process.cwd(), 'package.json');
+      const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
 
       // package.json에서 @tanstack 관련 의존성이 제거되었는지 확인
       const hasQueryDependency = packageJsonContent.includes('@tanstack/query-core');

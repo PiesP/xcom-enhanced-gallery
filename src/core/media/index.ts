@@ -241,21 +241,6 @@ export class CoreMediaManager {
   }
 
   /**
-   * 미디어 정보 중복 제거
-   */
-  removeDuplicates(mediaInfos: MediaInfo[]): MediaInfo[] {
-    const seen = new Set<string>();
-    return mediaInfos.filter(media => {
-      const key = media.url;
-      if (seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
-  }
-
-  /**
    * 미디어 로드 상태 확인
    */
   async checkMediaLoadStatus(url: string): Promise<boolean> {
@@ -286,6 +271,21 @@ export class CoreMediaManager {
     });
 
     return Promise.all(promises);
+  }
+
+  /**
+   * 중복 미디어 제거
+   */
+  removeDuplicates(mediaInfos: MediaInfo[]): MediaInfo[] {
+    const seen = new Set<string>();
+    return mediaInfos.filter(media => {
+      const key = media.url;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
   }
 
   /**
@@ -330,3 +330,6 @@ export const generateFilename = (
 
 export const filterMedia = (mediaInfos: MediaInfo[], options?: FilterOptions): MediaInfo[] =>
   coreMediaManager.filterMedia(mediaInfos, options);
+
+export const removeDuplicates = (mediaInfos: MediaInfo[]): MediaInfo[] =>
+  coreMediaManager.removeDuplicates(mediaInfos);

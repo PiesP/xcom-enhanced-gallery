@@ -1,5 +1,5 @@
 /**
- * 통합된 메모리 관리자
+ * 통합된 메모리 서비스
  *
  * MemoryTracker와 ResourceManager의 중복 기능을 통합하여
  * 일관된 메모리 관리 인터페이스를 제공합니다.
@@ -8,7 +8,7 @@
 import { createScopedLogger } from '@shared/logging/logger';
 import type { ResourceType } from '@core/types/index';
 
-const logger = createScopedLogger('UnifiedMemoryManager');
+const logger = createScopedLogger('MemoryService');
 
 interface ResourceEntry {
   id: string;
@@ -29,7 +29,7 @@ interface MemoryStatus {
     | undefined;
 }
 
-class UnifiedMemoryManager {
+class MemoryService {
   private readonly resources = new Map<string, ResourceEntry>();
   private readonly cleanupCallbacks = new Set<() => void>();
 
@@ -209,25 +209,25 @@ class UnifiedMemoryManager {
 }
 
 // 싱글톤 인스턴스
-const unifiedMemoryManager = new UnifiedMemoryManager();
+const memoryService = new MemoryService();
 
 // 내보내기
-export const registerResource = unifiedMemoryManager.registerResource.bind(unifiedMemoryManager);
-export const releaseResource = unifiedMemoryManager.releaseResource.bind(unifiedMemoryManager);
-export const getMemoryStatus = unifiedMemoryManager.getMemoryStatus.bind(unifiedMemoryManager);
-export const cleanupResources = unifiedMemoryManager.cleanupResources.bind(unifiedMemoryManager);
+export const registerResource = memoryService.registerResource.bind(memoryService);
+export const releaseResource = memoryService.releaseResource.bind(memoryService);
+export const getMemoryStatus = memoryService.getMemoryStatus.bind(memoryService);
+export const cleanupResources = memoryService.cleanupResources.bind(memoryService);
 
-export const addGlobalCleanupCallback =
-  unifiedMemoryManager.addGlobalCleanupCallback.bind(unifiedMemoryManager);
+export const addGlobalCleanupCallback = memoryService.addGlobalCleanupCallback.bind(memoryService);
 
 export const removeGlobalCleanupCallback =
-  unifiedMemoryManager.removeGlobalCleanupCallback.bind(unifiedMemoryManager);
+  memoryService.removeGlobalCleanupCallback.bind(memoryService);
 
-export const hasResource = unifiedMemoryManager.hasResource.bind(unifiedMemoryManager);
-export const getResourceCount = unifiedMemoryManager.getResourceCount.bind(unifiedMemoryManager);
+export const hasResource = memoryService.hasResource.bind(memoryService);
+export const getResourceCount = memoryService.getResourceCount.bind(memoryService);
 
-export const cleanupOldResources =
-  unifiedMemoryManager.cleanupOldResources.bind(unifiedMemoryManager);
+export const cleanupOldResources = memoryService.cleanupOldResources.bind(memoryService);
 
-export { UnifiedMemoryManager };
+export { MemoryService };
+// 하위 호환성을 위한 별칭
+export { MemoryService as UnifiedMemoryManager };
 export type { ResourceEntry, MemoryStatus };

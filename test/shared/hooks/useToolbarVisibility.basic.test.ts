@@ -12,7 +12,7 @@ const mockUseEffect = vi.fn();
 const mockUseCallback = vi.fn();
 
 // ComponentManager.getHookManager 모킹
-vi.mock('@shared/components/ComponentManager', () => ({
+vi.mock('@shared/components/component-manager', () => ({
   ComponentManager: {
     getHookManager: () => ({
       useState: mockUseState,

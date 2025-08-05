@@ -21,8 +21,7 @@
 // 🆕 TDD 기반 통합 서비스들 (NEW)
 // ====================================
 
-// DOM 관련 통합 서비스 - 새로운 @shared/dom 사용 권장
-// 레거시 DOM 서비스는 deprecated되었으므로 새로운 DOMService 사용
+// DOM 관련 통합 서비스 - @shared/dom 사용
 export * from '@shared/dom';
 
 // 스타일 관련 통합 서비스 (기존 StyleService 대체)
