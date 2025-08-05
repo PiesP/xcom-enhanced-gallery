@@ -15,5 +15,3 @@ export { DOMEventManager, createEventManager } from './DOMEventManager';
 // ===== 레거시 호환성 =====
 // 기존 DOM 유틸리티들을 namespace로 분리하여 충돌 방지
 export * as LegacyDOMManager from './DOMManager';
-export * as LegacyDOMUtils from './dom-utils';
-export * as LegacyDOMUtilsExtended from './utils/dom-utils';

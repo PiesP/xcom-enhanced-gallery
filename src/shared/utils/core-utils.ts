@@ -104,12 +104,11 @@ export function safeRemoveElement(el: Element | null): void {
 // ================================
 // 스타일 유틸리티
 // ================================
-// CSS 유틸리티 (from UnifiedStyleService)
+// CSS 유틸리티 (from StyleManager)
 // ================================
 
-import { getUnifiedStyleService } from '@shared/services/unified-style-service';
-const styleService = getUnifiedStyleService();
-const setCSSVarBase = styleService.setCSSVariable.bind(styleService);
+import StyleManager from '@shared/styles/StyleManager';
+const setCSSVarBase = StyleManager.setCSSVariable.bind(StyleManager);
 
 /**
  * CSS 변수 설정 (core-utils compatible signature)
@@ -143,7 +142,7 @@ export function setCSSVariables(
 // ================================
 
 // RAF throttle and scroll throttle from performance module
-export { throttleScroll } from '@shared/services/unified-performance-service';
+export { throttleScroll } from '@shared/utils/performance/performance-utils';
 
 // ================================
 // 스크롤 유틸리티
@@ -243,10 +242,7 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 // ================================
 
 // Performance measurement re-export
-export {
-  measurePerformance,
-  measureAsyncPerformance,
-} from '@shared/services/unified-performance-service';
+export { measureAsyncPerformance } from '@shared/utils/performance/performance-utils';
 
 // ================================
 // 디버그 유틸리티

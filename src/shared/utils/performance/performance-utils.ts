@@ -92,3 +92,41 @@ export async function measureAsyncPerformance<T>(
 
   return { result, duration };
 }
+
+/**
+ * 표준 throttle 함수 (시간 기반)
+ * 중복된 throttle 구현들을 통합
+ */
+export function throttle<T extends (...args: unknown[]) => void>(
+  fn: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let lastCall = 0;
+  let timeoutId: number | null = null;
+
+  return (...args: Parameters<T>): void => {
+    const now = Date.now();
+
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      try {
+        fn(...args);
+      } catch (error) {
+        logger.warn('Throttle function error:', error);
+      }
+    } else if (!timeoutId) {
+      timeoutId = window.setTimeout(
+        () => {
+          lastCall = Date.now();
+          timeoutId = null;
+          try {
+            fn(...args);
+          } catch (error) {
+            logger.warn('Throttle delayed function error:', error);
+          }
+        },
+        delay - (now - lastCall)
+      );
+    }
+  };
+}

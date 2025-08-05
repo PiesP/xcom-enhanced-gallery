@@ -25,7 +25,8 @@ export { ensureGalleryScrollAvailable } from './core-utils';
 
 // CSS utilities (missing exports)
 export { default as StyleManagerClass } from '../styles/StyleManager';
-export { setCSSVariable } from '@shared/services/unified-style-service';
+import StyleManager from '@shared/styles/StyleManager';
+export const setCSSVariable = StyleManager.setCSSVariable;
 
 // Deduplication utilities
 export { removeDuplicates } from './deduplication';
@@ -45,13 +46,13 @@ export {
 } from './accessibility';
 
 // Performance utilities (re-export from performance module, createDebouncer 제거)
+export { Debouncer } from '@shared/utils/timer-management';
+
 export {
-  Debouncer,
   rafThrottle,
   throttleScroll,
-  measurePerformance,
   measureAsyncPerformance,
-} from '@shared/services/unified-performance-service';
+} from '@shared/utils/performance/performance-utils';
 
 // ================================
 // Gallery utilities (simplified functions)

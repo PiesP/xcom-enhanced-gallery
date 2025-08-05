@@ -26,32 +26,17 @@
 export * from '@shared/dom';
 
 // 스타일 관련 통합 서비스 (기존 StyleService 대체)
-export {
-  unifiedStyleService,
-  setCSSVariable,
-  getCSSVariable,
-  setCSSVariables,
-  setTheme,
-  updateComponentState,
-  applyUtilityClasses,
-  createThemedClassName,
-  // 하위 호환성 별칭들
-  styleService,
-} from './unified-style-service';
+// StyleManager를 직접 사용하거나 style-service.ts 래퍼 사용
+export { default as StyleManager } from '@shared/styles/StyleManager';
+export { StyleService, setCSSVariable, getCSSVariable, setCSSVariables } from './style-service';
 
 // 성능 관련 통합 서비스
 export {
-  unifiedPerformanceService,
-  createDebouncer,
-  createThrottle,
   rafThrottle,
-  runWhenIdle,
-  measurePerformance,
-  batchExecute,
-  // 하위 호환성 별칭들
-  debounce,
   throttle,
-} from './unified-performance-service';
+  createDebouncer,
+  // 성능 유틸리티는 별도 모듈에서 제공
+} from '@shared/utils/performance';
 
 // ====================================
 // 기존 핵심 서비스들 (8개) - 유지
@@ -107,8 +92,8 @@ export { LazyLoadingService } from './LazyLoadingService';
 // 8. 서비스 관리 (ServiceRegistry 통합)
 export { CoreService } from './ServiceManager';
 
-// 9. 스타일 서비스 (UnifiedStyleService로 대체됨 - 하위 호환성 유지)
-export { StyleService } from './style-service';
+// 9. 스타일 서비스 (StyleManager로 대체됨 - 하위 호환성 유지)
+// export { StyleService } from './style-service'; // 위에서 이미 export됨
 export type { GlassmorphismIntensity, ComponentState } from './style-service';
 // Theme 타입은 ThemeService에서 이미 export됨
 
@@ -128,14 +113,11 @@ export type {
   Theme as UnifiedTheme,
   GlassmorphismConfig,
   ComponentState as UnifiedComponentState,
-} from './unified-style-service';
+} from '@shared/styles/StyleManager';
 
 // 성능 서비스 타입들
-export type {
-  DebounceOptions,
-  ThrottleOptions,
-  PerformanceMetrics,
-} from './unified-performance-service';
+export type {} from // 성능 타입들은 별도 모듈에서 제공
+'@shared/utils/performance';
 
 // ====================================
 // 🆕 통합 서비스 유틸리티들

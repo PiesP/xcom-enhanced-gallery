@@ -2,11 +2,10 @@
  * @fileoverview 핵심 유틸리티 export - Phase 2 통합 (30개)
  */
 
-// === 핵심 유틸리티 (10개) ===
+// === 핵심 유틸리티 (9개) ===
 export {
   setCSSVariable,
   removeDuplicates,
-  measurePerformance,
   throttleScroll,
   canTriggerGallery,
   isGalleryInternalElement,
@@ -15,8 +14,8 @@ export {
 } from './utils';
 
 // === 성능 관련 (2개) ===
-export { rafThrottle } from '@shared/services/unified-performance-service';
-export { createDebouncer } from '@shared/services/unified-performance-service';
+export { rafThrottle } from '@shared/utils/performance/performance-utils';
+export { createDebouncer } from '@shared/utils/timer-management';
 
 // === 최적화 유틸리티 ===
 export * from './optimization/optimization-utils';

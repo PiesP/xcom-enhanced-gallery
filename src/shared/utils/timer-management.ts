@@ -89,9 +89,59 @@ export function safePerformanceNow(): number {
   return Date.now();
 }
 
+/**
+ * 디바운서 클래스
+ * 연속된 함수 호출을 지연시켜 성능을 최적화
+ */
+export class Debouncer<T extends unknown[] = []> {
+  private timeoutId: number | null = null;
+
+  constructor(
+    private readonly callback: (...args: T) => void,
+    private readonly delay: number
+  ) {}
+
+  /**
+   * 디바운스된 함수 실행
+   */
+  execute(...args: T): void {
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+    }
+
+    this.timeoutId = window.setTimeout(() => {
+      this.timeoutId = null;
+      this.callback(...args);
+    }, this.delay);
+  }
+
+  /**
+   * 디바운서 정리
+   */
+  cancel(): void {
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+  }
+
+  /**
+   * 디바운서가 활성 상태인지 확인
+   */
+  isPending(): boolean {
+    return this.timeoutId !== null;
+  }
+}
+
+/**
+ * 디바운서 생성 함수
+ */
+export function createDebouncer<T extends unknown[] = []>(
+  callback: (...args: T) => void,
+  delay: number
+): Debouncer<T> {
+  return new Debouncer(callback, delay);
+}
+
 // Performance utilities re-export (deprecated wrappers removed)
-export {
-  measurePerformance,
-  measureAsyncPerformance,
-  rafThrottle,
-} from '@shared/services/unified-performance-service';
+export { measureAsyncPerformance, rafThrottle } from '@shared/utils/performance/performance-utils';
