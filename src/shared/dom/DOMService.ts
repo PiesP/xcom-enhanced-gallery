@@ -4,7 +4,9 @@
  * @version 1.0.0 - DOM 통합
  */
 
-import { logger } from '@shared/logging';
+import { createScopedLogger } from '@shared/logging';
+
+const logger = createScopedLogger('DOMService');
 
 // ===== 타입 정의 =====
 
@@ -322,6 +324,20 @@ export const setStyle = domService.setStyle.bind(domService);
 export const removeElement = domService.removeElement.bind(domService);
 export const isVisible = domService.isVisible.bind(domService);
 export const isInViewport = domService.isInViewport.bind(domService);
+
+// ===== 하위 호환성을 위한 별칭들 =====
+
+export const safeQuerySelector = querySelector;
+export const safeAddClass = addClass;
+export const safeRemoveClass = removeClass;
+export const safeSetStyle = (element: HTMLElement | null, property: string, value: string) => {
+  if (!element) return false;
+  return setStyle(element, { [property]: value });
+};
+export const safeRemoveElement = removeElement;
+export const isElement = (obj: unknown): obj is Element => obj instanceof Element;
+export const isHTMLElement = (obj: unknown): obj is HTMLElement => obj instanceof HTMLElement;
+export const isElementInViewport = isInViewport;
 
 // ===== 기본 Export =====
 

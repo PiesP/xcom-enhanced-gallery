@@ -244,21 +244,27 @@ export class GalleryApp {
    * 갤러리 컨테이너 확인 및 생성
    */
   private async ensureGalleryContainer(): Promise<void> {
-    let container = document.querySelector('#xeg-gallery-root') as HTMLDivElement | null;
+    const { querySelector, createElement } = await import('@shared/dom');
+
+    let container = querySelector('#xeg-gallery-root') as HTMLDivElement | null;
 
     if (!container) {
-      container = document.createElement('div');
-      container.id = 'xeg-gallery-root';
-      container.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-      `;
-      document.body.appendChild(container);
-      logger.debug('갤러리 컨테이너 생성됨');
+      container = createElement('div', {
+        id: 'xeg-gallery-root',
+        styles: {
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100%',
+          height: '100%',
+          'pointer-events': 'none',
+        },
+      }) as HTMLDivElement;
+
+      if (container) {
+        document.body.appendChild(container);
+        logger.debug('갤러리 컨테이너 생성됨');
+      }
     }
   }
 

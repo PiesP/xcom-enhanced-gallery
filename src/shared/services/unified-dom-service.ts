@@ -2,6 +2,8 @@
  * @fileoverview 통합 DOM 서비스
  * @description TDD 기반으로 중복된 DOM 관련 기능들을 하나로 통합
  * @version 1.0.0 - GREEN Phase: 중복 통합 완료
+ * @deprecated 이 서비스는 새로운 @shared/dom/DOMService로 대체되었습니다.
+ * 새로운 코드에서는 `import { DOMService } from '@shared/dom'`을 사용하세요.
  */
 
 import { coreLogger as logger } from '@core/logger';

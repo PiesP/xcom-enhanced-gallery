@@ -1,57 +1,19 @@
 /**
- * @fileoverview Core DOM Utilities Barrel Export - 통합 DOM 서비스 기반
+ * @fileoverview DOM 모듈 통합 export
+ * @description TDD 기반 DOM 통합 - DOMService를 주된 API로 사용
  */
 
-// 🆕 통합 DOM 서비스 (새로운 단일 API)
-export { default as DOMService } from './DOMService';
-export {
-  querySelector,
-  querySelectorAll,
-  createElement,
-  addEventListener,
-  removeEventListener,
-  addClass,
-  removeClass,
-  setStyle,
-  removeElement,
-  isVisible,
-  isInViewport,
-  type ElementOptions,
-  type EventOptions,
-} from './DOMService';
+// ===== 주된 통합 DOM 서비스 =====
+export * from './DOMService';
+
+// ===== 내부 구현체들 (호환성 유지) =====
+// 기존 코드와의 호환성을 위해 별칭으로 export
+export { DOMCache, globalDOMCache } from './DOMCache';
 
 export { DOMEventManager, createEventManager } from './DOMEventManager';
 
-// 레거시 호환성 (단계적 제거 예정)
-export {
-  DOMManager,
-  globalDOMManager,
-  select,
-  selectAll,
-  cachedSelect,
-  cachedSelectAll,
-  batchUpdate,
-  batchUpdateMany,
-  safeQuerySelector,
-  isInsideGallery,
-  type DOMElementCreationOptions,
-} from './DOMManager';
-
-// 레거시 DOM utilities (단계적 제거 예정)
-export {
-  DOMUtils,
-  type DOMElementCreationOptions as LegacyDOMElementCreationOptions,
-} from '@shared/services/unified-dom-service';
-
-// 레거시 DOM 캐싱 시스템 (단계적 제거 예정)
-export {
-  DOMCache,
-  globalDOMCache,
-  cachedQuerySelector,
-  cachedQuerySelectorAll,
-  cachedStableQuery,
-  invalidateCacheOnMutation,
-} from './DOMCache';
-
-// Named exports for convenience (레거시) - 중복 제거됨
-// 새로운 DOMService를 사용하세요
+// ===== 레거시 호환성 =====
+// 기존 DOM 유틸리티들을 namespace로 분리하여 충돌 방지
+export * as LegacyDOMManager from './DOMManager';
+export * as LegacyDOMUtils from './dom-utils';
+export * as LegacyDOMUtilsExtended from './utils/dom-utils';

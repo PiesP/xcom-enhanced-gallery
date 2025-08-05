@@ -2,7 +2,7 @@
  * Core Services Export - Phase 4: TDD 기반 중복 통합
  *
  * 통합된 서비스들:
- * - UnifiedDOMService: 모든 DOM 관련 중복 기능 통합
+ * - DOMService: 모든 DOM 관련 중복 기능 통합 (새로운 @shared/dom 모듈)
  * - UnifiedStyleService: 모든 CSS/스타일 관련 중복 기능 통합
  * - UnifiedPerformanceService: 모든 성능 관련 중복 기능 통합
  *
@@ -21,26 +21,9 @@
 // 🆕 TDD 기반 통합 서비스들 (NEW)
 // ====================================
 
-// DOM 관련 통합 서비스
-export {
-  unifiedDOMService,
-  createElement,
-  querySelector,
-  querySelectorAll,
-  addEventListener,
-  setStyle,
-  addClass,
-  removeClass,
-  removeElement,
-  isVisible,
-  // 하위 호환성 별칭들
-  safeQuerySelector,
-  cachedQuerySelector,
-  safeAddClass,
-  safeRemoveClass,
-  safeSetStyle,
-  safeRemoveElement,
-} from './unified-dom-service';
+// DOM 관련 통합 서비스 - 새로운 @shared/dom 사용 권장
+// 레거시 DOM 서비스는 deprecated되었으므로 새로운 DOMService 사용
+export * from '@shared/dom';
 
 // 스타일 관련 통합 서비스 (기존 StyleService 대체)
 export {
@@ -123,8 +106,11 @@ export type { GlassmorphismIntensity, ComponentState } from './style-service';
 // 🆕 통합 서비스 타입 정의들
 // ====================================
 
-// DOM 서비스 타입들
-export type { DOMElementOptions, EventListenerOptions } from './unified-dom-service';
+// DOM 서비스 타입들 - 새로운 @shared/dom에서 import
+export type {
+  ElementOptions as DOMElementOptions,
+  EventOptions as EventListenerOptions,
+} from '@shared/dom';
 
 // 스타일 서비스 타입들 (통합된 타입들)
 export type {

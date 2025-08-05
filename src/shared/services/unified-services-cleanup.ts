@@ -8,14 +8,12 @@
  * 앱 종료 시 호출하여 메모리 누수 방지
  */
 export function cleanupAllUnifiedServices(): void {
-  const {
-    unifiedDOMService,
-    unifiedStyleService,
-    unifiedPerformanceService,
-  } = require('./unified-dom-service');
-
   try {
-    unifiedDOMService.cleanup();
+    // 새로운 DOMService 사용
+    const { DOMService } = require('@shared/dom');
+    const { unifiedStyleService, unifiedPerformanceService } = require('./unified-style-service');
+
+    DOMService.getInstance().cleanup();
     unifiedStyleService.cleanup();
     unifiedPerformanceService.cleanup();
   } catch (error) {
@@ -32,7 +30,7 @@ export function getUnifiedServicesStatus(): {
   performance: { active: boolean; metricsCount: number };
 } {
   try {
-    const { unifiedStyleService, unifiedPerformanceService } = require('./unified-dom-service');
+    const { unifiedStyleService, unifiedPerformanceService } = require('./unified-style-service');
 
     return {
       dom: { active: true },
