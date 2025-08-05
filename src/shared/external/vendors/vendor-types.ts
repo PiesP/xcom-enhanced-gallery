@@ -27,8 +27,6 @@ export type ForwardRefComponent<P = Record<string, unknown>> = (props: P, ref: u
 export interface VendorInitState {
   preact: boolean;
   fflate: boolean;
-  motion: boolean;
-  motionOne: boolean;
 }
 
 /**

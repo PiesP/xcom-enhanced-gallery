@@ -10,9 +10,6 @@ export {
   getPreactHooks,
   getPreactSignals,
   getPreactCompat,
-  getMotion,
-  getMotionOne,
-  getTanStackQuery,
   getNativeDownload,
   isVendorsInitialized,
 } from './vendors/vendor-api';
@@ -26,9 +23,6 @@ export type {
   PreactHooksAPI,
   PreactSignalsAPI,
   PreactCompatAPI,
-  MotionAPI,
-  MotionOneAPI,
-  TanStackQueryAPI,
   NativeDownloadAPI,
 } from './vendors/vendor-manager';
 

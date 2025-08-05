@@ -64,69 +64,10 @@ export interface PreactCompatAPI {
 
 export type ComponentChildren = import('preact').ComponentChildren;
 
-export interface MotionAPI {
-  // Motion One 지원 (기존)
-  animate: (
-    element: Element,
-    keyframes: Record<string, unknown>,
-    options?: Record<string, unknown>
-  ) => Promise<void>;
-  scroll: (
-    onScroll: (info: Record<string, unknown>) => void,
-    options?: Record<string, unknown>
-  ) => () => void;
-  timeline: (
-    keyframes: Record<string, unknown>[],
-    options?: Record<string, unknown>
-  ) => Promise<void>;
-  stagger: (duration?: number, options?: Record<string, unknown>) => (index: number) => number;
-}
-
-// 자체 구현 애니메이션 API 타입 정의
-export interface MotionOneAPI {
-  animate: (
-    element: Element,
-    keyframes: Keyframe[] | PropertyIndexedKeyframes,
-    options?: { duration?: number; easing?: string; delay?: number }
-  ) => Promise<Animation>;
-  scroll: (
-    onScroll: (info: { scrollY: number; progress: number }) => void,
-    options?: { container?: Element | null }
-  ) => () => void;
-  timeline: (
-    animations: Array<{
-      element: Element;
-      keyframes: Keyframe[] | PropertyIndexedKeyframes;
-      options?: { duration?: number; delay?: number };
-    }>
-  ) => Promise<void>;
-  stagger: (duration: number) => (index: number) => number;
-  inView: (
-    element: Element,
-    onInView: (entry: IntersectionObserverEntry) => void,
-    options?: IntersectionObserverInit
-  ) => () => void;
-  transform: (value: number, mapFrom: [number, number], mapTo: [number, number]) => number;
-}
-
 export interface NativeDownloadAPI {
   downloadBlob: (blob: Blob, filename: string) => void;
   createDownloadUrl: (blob: Blob) => string;
   revokeDownloadUrl: (url: string) => void;
-}
-
-// TanStack Query API 타입 정의
-export interface TanStackQueryAPI {
-  QueryClient: typeof import('@tanstack/query-core').QueryClient;
-  QueryCache: typeof import('@tanstack/query-core').QueryCache;
-  MutationCache: typeof import('@tanstack/query-core').MutationCache;
-  queryKey: (key: unknown[]) => unknown[];
-  queryOptions: (options: {
-    queryKey: unknown[];
-    queryFn: () => Promise<unknown>;
-    staleTime?: number;
-    cacheTime?: number;
-  }) => unknown;
 }
 
 // ================================
@@ -335,232 +276,6 @@ export class VendorManager {
   }
 
   /**
-   * Motion One 애니메이션 라이브러리 안전 접근
-   */
-  public getMotion(): MotionAPI {
-    // Motion One은 이미 전역에서 사용 가능한 것으로 가정
-    // 또는 번들에 포함된 것으로 처리
-    try {
-      // 기본적인 모킹 구현 - 실제 프로젝트에서는 번들된 motion 라이브러리 사용
-      const api: MotionAPI = {
-        animate: async (
-          element: Element,
-          keyframes: Record<string, unknown>,
-          _options?: Record<string, unknown>
-        ): Promise<void> => {
-          // 기본 애니메이션 폴백
-          if (element instanceof HTMLElement) {
-            Object.assign(element.style, keyframes);
-          }
-        },
-        scroll: (
-          onScroll: (info: Record<string, unknown>) => void,
-          _options?: Record<string, unknown>
-        ): (() => void) => {
-          const handler = () => onScroll({ scrollY: window.scrollY });
-          window.addEventListener('scroll', handler);
-          return () => window.removeEventListener('scroll', handler);
-        },
-        timeline: async (
-          _keyframes: Record<string, unknown>[],
-          _options?: Record<string, unknown>
-        ): Promise<void> => {
-          // 타임라인 애니메이션 폴백
-          return Promise.resolve();
-        },
-        stagger:
-          (duration = 0.1, _options?: Record<string, unknown>) =>
-          (index: number) =>
-            index * duration,
-      };
-
-      this.cache.set('motion', api);
-      logger.debug('Motion API 준비 완료 (폴백 구현)');
-      return api;
-    } catch (error) {
-      logger.error('Motion API 초기화 실패:', error);
-      throw new Error('Motion 라이브러리를 사용할 수 없습니다');
-    }
-  }
-
-  /**
-   * Motion One 애니메이션 라이브러리 접근 (실제 라이브러리 사용)
-   */
-  public async getMotionOne(): Promise<MotionOneAPI> {
-    const cacheKey = 'motion-one';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as MotionOneAPI;
-    }
-
-    try {
-      // 실제 Motion 라이브러리 로드
-      const motion = await import('motion');
-
-      if (!motion.animate || typeof motion.animate !== 'function') {
-        throw new Error('Motion 라이브러리 검증 실패');
-      }
-
-      const api: MotionOneAPI = {
-        animate: async (
-          element: Element,
-          keyframes: Keyframe[] | PropertyIndexedKeyframes,
-          options = {}
-        ): Promise<Animation> => {
-          // Motion의 animate는 Web Animations API와 다른 형태이므로 폴백 사용
-          const { duration = 300, easing = 'ease', delay = 0 } = options;
-          const animation = element.animate(keyframes, {
-            duration,
-            easing,
-            delay,
-            fill: 'forwards',
-          });
-          await animation.finished;
-          return animation;
-        },
-
-        scroll: (
-          onScroll: (info: { scrollY: number; progress: number }) => void,
-          options = {}
-        ): (() => void) => {
-          // Motion의 scroll API 사용 (호환성을 위해 폴백으로 구현)
-          const { container = window } = options;
-          const handleScroll = () => {
-            const scrollY =
-              container === window ? window.scrollY : (container as Element).scrollTop;
-            const maxScroll =
-              container === window
-                ? document.documentElement.scrollHeight - window.innerHeight
-                : (container as Element).scrollHeight - (container as Element).clientHeight;
-            const progress = maxScroll > 0 ? scrollY / maxScroll : 0;
-            onScroll({ scrollY, progress });
-          };
-
-          if (container) {
-            container.addEventListener('scroll', handleScroll, { passive: true });
-            return () => container.removeEventListener('scroll', handleScroll);
-          }
-          return () => {};
-        },
-
-        timeline: async (
-          animations: Array<{
-            element: Element;
-            keyframes: Keyframe[] | PropertyIndexedKeyframes;
-            options?: { duration?: number; delay?: number };
-          }>
-        ): Promise<void> => {
-          // 순차적으로 애니메이션 실행 (Motion의 timeline은 다른 형태)
-          for (const { element, keyframes, options = {} } of animations) {
-            await api.animate(element, keyframes, options);
-          }
-        },
-
-        stagger: (duration: number) => (index: number) => index * duration,
-
-        inView: (
-          element: Element,
-          onInView: (entry: IntersectionObserverEntry) => void,
-          options = {}
-        ): (() => void) => {
-          // Motion의 inView는 다른 형태이므로 IntersectionObserver 사용
-          const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-              if (entry.isIntersecting) onInView(entry);
-            });
-          }, options);
-          observer.observe(element);
-          return () => observer.disconnect();
-        },
-
-        transform: (value: number, mapFrom: [number, number], mapTo: [number, number]): number => {
-          const [fromMin, fromMax] = mapFrom;
-          const [toMin, toMax] = mapTo;
-          const ratio = (value - fromMin) / (fromMax - fromMin);
-          return toMin + ratio * (toMax - toMin);
-        },
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('Motion One 라이브러리 로드 성공 (호환성 래퍼 사용)');
-      return api;
-    } catch (error) {
-      logger.error('Motion One 로드 실패:', error);
-
-      // 폴백: Web Animations API 기반 구현
-      logger.warn('Motion One 폴백 구현으로 전환');
-      const fallbackApi: MotionOneAPI = {
-        animate: async (
-          element: Element,
-          keyframes: Keyframe[] | PropertyIndexedKeyframes,
-          options = {}
-        ): Promise<Animation> => {
-          const { duration = 300, easing = 'ease', delay = 0 } = options;
-          const animation = element.animate(keyframes, {
-            duration,
-            easing,
-            delay,
-            fill: 'forwards',
-          });
-          await animation.finished;
-          return animation;
-        },
-
-        scroll: (
-          onScroll: (info: { scrollY: number; progress: number }) => void,
-          options = {}
-        ): (() => void) => {
-          const { container = window } = options;
-          const handleScroll = () => {
-            const scrollY =
-              container === window ? window.scrollY : (container as Element).scrollTop;
-            const maxScroll =
-              container === window
-                ? document.documentElement.scrollHeight - window.innerHeight
-                : (container as Element).scrollHeight - (container as Element).clientHeight;
-            const progress = maxScroll > 0 ? scrollY / maxScroll : 0;
-            onScroll({ scrollY, progress });
-          };
-
-          if (container) {
-            container.addEventListener('scroll', handleScroll, { passive: true });
-            return () => container.removeEventListener('scroll', handleScroll);
-          }
-          return () => {};
-        },
-
-        timeline: async animations => {
-          for (const { element, keyframes, options = {} } of animations) {
-            await fallbackApi.animate(element, keyframes, options);
-          }
-        },
-
-        stagger: (duration: number) => (index: number) => index * duration,
-
-        inView: (element, onInView, options = {}) => {
-          const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-              if (entry.isIntersecting) onInView(entry);
-            });
-          }, options);
-          observer.observe(element);
-          return () => observer.disconnect();
-        },
-
-        transform: (value, mapFrom, mapTo) => {
-          const [fromMin, fromMax] = mapFrom;
-          const [toMin, toMax] = mapTo;
-          const ratio = (value - fromMin) / (fromMax - fromMin);
-          return toMin + ratio * (toMax - toMin);
-        },
-      };
-
-      this.cache.set(cacheKey, fallbackApi);
-      return fallbackApi;
-    }
-  }
-
-  /**
    * 네이티브 다운로드 API (메모리 관리 개선)
    */
   public getNativeDownload(): NativeDownloadAPI {
@@ -637,45 +352,6 @@ export class VendorManager {
   }
 
   /**
-   * TanStack Query Core 안전 접근
-   */
-  public async getTanStackQuery(): Promise<TanStackQueryAPI> {
-    const cacheKey = 'tanstack-query';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as TanStackQueryAPI;
-    }
-
-    try {
-      const query = await import('@tanstack/query-core');
-
-      if (!query.QueryClient || typeof query.QueryClient !== 'function') {
-        throw new Error('TanStack Query 라이브러리 검증 실패');
-      }
-
-      const api: TanStackQueryAPI = {
-        QueryClient: query.QueryClient,
-        QueryCache: query.QueryCache,
-        MutationCache: query.MutationCache,
-        queryKey: (key: unknown[]) => key,
-        queryOptions: (options: {
-          queryKey: unknown[];
-          queryFn: () => Promise<unknown>;
-          staleTime?: number;
-          cacheTime?: number;
-        }) => options,
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('TanStack Query 로드 성공');
-      return api;
-    } catch (error) {
-      logger.error('TanStack Query 로드 실패:', error);
-      throw new Error('TanStack Query 라이브러리를 사용할 수 없습니다');
-    }
-  }
-
-  /**
    * 모든 라이브러리 검증
    */
   public async validateAll(): Promise<{
@@ -688,9 +364,6 @@ export class VendorManager {
       this.getPreact().then(() => 'Preact'),
       this.getPreactHooks().then(() => 'PreactHooks'),
       this.getPreactSignals().then(() => 'PreactSignals'),
-      Promise.resolve(this.getMotion()).then(() => 'Motion'),
-      this.getMotionOne().then(() => 'MotionOne'),
-      this.getTanStackQuery().then(() => 'TanStackQuery'),
     ]);
 
     const loadedLibraries: string[] = [];
@@ -700,15 +373,7 @@ export class VendorManager {
       if (result.status === 'fulfilled') {
         loadedLibraries.push(result.value);
       } else {
-        const libNames = [
-          'fflate',
-          'Preact',
-          'PreactHooks',
-          'PreactSignals',
-          'Motion',
-          'MotionOne',
-          'TanStackQuery',
-        ];
+        const libNames = ['fflate', 'Preact', 'PreactHooks', 'PreactSignals'];
         errors.push(`${libNames[index]}: ${result.reason.message}`);
       }
     });

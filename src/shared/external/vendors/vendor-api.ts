@@ -13,10 +13,7 @@ import {
   type PreactHooksAPI,
   type PreactSignalsAPI,
   type PreactCompatAPI,
-  type MotionAPI,
-  type MotionOneAPI,
   type NativeDownloadAPI,
-  type TanStackQueryAPI,
 } from './vendor-manager';
 
 // ================================
@@ -31,9 +28,6 @@ let cachedPreact: PreactAPI | null = null;
 let cachedPreactHooks: PreactHooksAPI | null = null;
 let cachedPreactSignals: PreactSignalsAPI | null = null;
 let cachedPreactCompat: PreactCompatAPI | null = null;
-let cachedMotion: MotionAPI | null = null;
-let cachedMotionOne: MotionOneAPI | null = null;
-let cachedTanStackQuery: TanStackQueryAPI | null = null;
 let isInitialized = false;
 
 /**
@@ -43,26 +37,19 @@ export async function initializeVendors(): Promise<void> {
   if (isInitialized) return;
 
   try {
-    const [fflate, preact, hooks, signals, compat, motion, motionOne, tanStackQuery] =
-      await Promise.all([
-        vendorManager.getFflate(),
-        vendorManager.getPreact(),
-        vendorManager.getPreactHooks(),
-        vendorManager.getPreactSignals(),
-        vendorManager.getPreactCompat(),
-        Promise.resolve(vendorManager.getMotion()),
-        vendorManager.getMotionOne(),
-        vendorManager.getTanStackQuery(),
-      ]);
+    const [fflate, preact, hooks, signals, compat] = await Promise.all([
+      vendorManager.getFflate(),
+      vendorManager.getPreact(),
+      vendorManager.getPreactHooks(),
+      vendorManager.getPreactSignals(),
+      vendorManager.getPreactCompat(),
+    ]);
 
     cachedFflate = fflate;
     cachedPreact = preact;
     cachedPreactHooks = hooks;
     cachedPreactSignals = signals;
     cachedPreactCompat = compat;
-    cachedMotion = motion;
-    cachedMotionOne = motionOne;
-    cachedTanStackQuery = tanStackQuery;
     isInitialized = true;
 
     logger.info('모든 vendor 라이브러리 초기화 완료');
@@ -272,47 +259,6 @@ export function getPreactCompat(): PreactCompatAPI {
 }
 
 /**
- * Motion One 접근 (동기)
- */
-export function getMotion(): MotionAPI {
-  if (!cachedMotion) {
-    throw new Error('Motion이 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
-  }
-  return cachedMotion;
-}
-
-/**
- * Motion One 접근 (동기)
- */
-export function getMotionOne(): MotionOneAPI {
-  if (!cachedMotionOne) {
-    // 자동 초기화 시도
-    initializeVendors().catch(error => {
-      logger.error('Motion One 자동 초기화 실패:', error);
-    });
-
-    // 기본 구현 제공 - 완전한 MotionOneAPI 호환성
-    const fallbackMotionOne = {
-      animate: () => Promise.resolve({} as Animation),
-      timeline: () => Promise.resolve(),
-      scroll: () => () => {},
-      stagger: (duration: number) => (index: number) => index * duration,
-      inView: () => () => {},
-      transform: (value: number, mapFrom: [number, number], mapTo: [number, number]) => {
-        const [fromMin, fromMax] = mapFrom;
-        const [toMin, toMax] = mapTo;
-        const normalizedValue = (value - fromMin) / (fromMax - fromMin);
-        return toMin + normalizedValue * (toMax - toMin);
-      },
-    };
-
-    logger.debug('임시 Motion One 구현 반환');
-    return fallbackMotionOne as MotionOneAPI;
-  }
-  return cachedMotionOne;
-}
-
-/**
  * 네이티브 다운로드 접근
  */
 export const getNativeDownload = (): NativeDownloadAPI => vendorManager.getNativeDownload();
@@ -336,8 +282,6 @@ export const cleanupVendors = (): void => {
   cachedPreact = null;
   cachedPreactHooks = null;
   cachedPreactSignals = null;
-  cachedMotion = null;
-  cachedMotionOne = null;
   isInitialized = false;
 };
 
@@ -357,8 +301,6 @@ export function getVendorInitializationReport() {
     preact: { initialized: !!cachedPreact },
     preactHooks: { initialized: !!cachedPreactHooks },
     preactSignals: { initialized: !!cachedPreactSignals },
-    motion: { initialized: !!cachedMotion },
-    motionOne: { initialized: !!cachedMotionOne },
   };
 
   const initializedCount = Object.values(statuses).filter(status => status.initialized).length;
@@ -384,7 +326,6 @@ export function getVendorStatuses() {
     preact: !!cachedPreact,
     preactHooks: !!cachedPreactHooks,
     preactSignals: !!cachedPreactSignals,
-    motion: !!cachedMotion,
   };
 }
 
@@ -401,67 +342,9 @@ export function isVendorInitialized(vendorName: string): boolean {
       return !!cachedPreactHooks;
     case 'preactSignals':
       return !!cachedPreactSignals;
-    case 'motion':
-      return !!cachedMotion;
     default:
       return false;
   }
-}
-
-/**
- * TanStack Query 라이브러리 접근 (동기)
- */
-export function getTanStackQuery(): TanStackQueryAPI {
-  if (!cachedTanStackQuery) {
-    // 자동 초기화 시도
-    initializeVendors().catch(error => {
-      logger.error('TanStack Query 자동 초기화 실패:', error);
-    });
-
-    // 기본 구현 제공 - TanStackQueryAPI 호환성 (타입 안전 변환)
-    const fallbackTanStackQuery = {
-      QueryClient: class {
-        getQueryData() {
-          return null;
-        }
-        setQueryData() {}
-        invalidateQueries() {
-          return Promise.resolve();
-        }
-      },
-      QueryCache: class {
-        clear() {}
-        find() {
-          return null;
-        }
-        getAll() {
-          return [];
-        }
-      },
-      MutationCache: class {
-        clear() {}
-        find() {
-          return null;
-        }
-        getAll() {
-          return [];
-        }
-      },
-      queryKey: (key: unknown[]) => key,
-      queryOptions: (options: {
-        queryKey: unknown[];
-        queryFn: () => Promise<unknown>;
-        staleTime?: number;
-        cacheTime?: number;
-      }) => options,
-      useQuery: () => ({ data: null, isLoading: false, error: null }),
-      useMutation: () => ({ mutate: () => {}, isLoading: false }),
-    };
-
-    logger.debug('임시 TanStack Query 구현 반환');
-    return fallbackTanStackQuery as unknown as TanStackQueryAPI;
-  }
-  return cachedTanStackQuery;
 }
 
 // 정리 핸들러 등록
