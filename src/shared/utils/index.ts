@@ -1,6 +1,12 @@
 /**
- * @fileoverview 핵심 유틸리티 export - Phase 2 통합 (30개)
+ * @fileoverview Week 2 TDD: 통합 유틸리티 메인 진입점
+ * @description 스타일/성능 유틸리티 통합 완료
+ * @version 6.0.0 - TDD Week 2 통합
  */
+
+// 🎯 Week 2 메인: 통합 유틸리티 모듈
+export * from './integrated-utils';
+export { default as IntegratedUtils } from './integrated-utils';
 
 // === 핵심 유틸리티 (9개) ===
 export {

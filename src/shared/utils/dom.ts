@@ -48,17 +48,23 @@ export function shouldBlockGalleryEvent(event: Event): boolean {
 }
 
 // ================================
-// 안전한 DOM 접근/조작 (dom-utils)
+// 안전한 DOM 접근/조작 - DOMService 통합 완료
 // ================================
 
+// DOM 조작 함수들은 @shared/dom/DOMService로 완전 통합됨
+// 하위 호환성을 위한 re-export만 유지
+
+import { querySelector, querySelectorAll } from '@shared/dom/DOMService';
+
+// 기본 DOM 선택 함수들 - DOMService로 위임
 export function safeQuerySelector<T extends Element = Element>(
   selectorOrRoot: string | ParentNode,
   selector?: string
 ): T | null {
   try {
-    // 1개 파라미터: document에서 검색 (기존 API 호환)
+    // 1개 파라미터: document에서 검색
     if (typeof selectorOrRoot === 'string') {
-      return document.querySelector(selectorOrRoot) as T | null;
+      return querySelector<T>(selectorOrRoot);
     }
     // 2개 파라미터: 지정된 root에서 검색
     if (selector) {
@@ -75,9 +81,9 @@ export function safeQuerySelectorAll<T extends Element = Element>(
   selector?: string
 ): T[] {
   try {
-    // 1개 파라미터: document에서 검색 (기존 API 호환)
+    // 1개 파라미터: document에서 검색
     if (typeof selectorOrRoot === 'string') {
-      return Array.from(document.querySelectorAll(selectorOrRoot)) as T[];
+      return querySelectorAll<T>(selectorOrRoot);
     }
     // 2개 파라미터: 지정된 root에서 검색
     if (selector) {
@@ -89,6 +95,7 @@ export function safeQuerySelectorAll<T extends Element = Element>(
   }
 }
 
+// 단순 유틸리티 함수들 - 유지
 export function safeGetAttribute(el: Element | null, attr: string): string | null {
   try {
     return el?.getAttribute(attr) ?? null;
@@ -291,4 +298,6 @@ export {
   removeElement as safeRemoveElement,
   addEventListener as safeAddEventListener,
   removeEventListener as safeRemoveEventListener,
+  isVisible as safeIsVisible,
+  isInViewport as safeIsInViewport,
 } from '@shared/dom/DOMService';
