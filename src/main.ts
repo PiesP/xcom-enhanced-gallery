@@ -258,8 +258,8 @@ async function initializeDevTools(): Promise<void> {
     (globalThis as Record<string, unknown>).__XEG_DEBUG__ = galleryDebugUtils;
 
     // 서비스 진단 도구
-    const { ServiceDiagnostics } = await import('@shared/services/core-services');
-    await ServiceDiagnostics.diagnoseServiceManager();
+    const { CoreService } = await import('@shared/services/service-manager');
+    await CoreService.getInstance().diagnoseServiceManager();
 
     logger.info('🛠️ 개발 도구 활성화됨');
   } catch (error) {

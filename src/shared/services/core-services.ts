@@ -1,189 +1,156 @@
 /**
- * @fileoverview Core Services Consolidation
- * @version 1.0.0 - Phase 1 Step 3
- *
- * 작은 서비스 파일들의 통합
- * - Logger Interface & ConsoleLogger
- * - ServiceDiagnostics
- * - ServiceRegistry (통합됨)
- * - CoreService (구 ServiceManager) export 추가
- *
- * Phase 1 Step 3: 파일 통합을 통한 복잡도 감소
+ * @fileoverview 핵심 서비스 export - TDD GREEN Phase
+ * @description ServiceDiagnostics를 CoreService로 통합 완료
+ * @version 2.0.0 - TDD 기반 중복 제거 완료
  */
 
-// ================================
-// Core Service Export
-// ================================
+// 중앙집중식 로깅
+import { logger, type Logger } from '@shared/logging';
 
-// CoreService (구 ServiceManager) - 명명 규칙 통일
-export { CoreService } from './service-manager';
-export { serviceManager } from './service-manager';
-export { getService } from './service-manager';
-
-// ================================
-// Logger Interface & Implementation
-// ================================
-
-import { SERVICE_KEYS } from '@/constants';
-import { logger } from '@shared/logging';
-import { registerCoreServices } from './service-initialization';
-
-// ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
-// 직접적인 서비스 키 타입 사용
-export type ServiceKey = string;
+// defaultLogger alias for backward compatibility
+export const defaultLogger = logger;
+export type ILogger = Logger;
 
 /**
- * 로거 인터페이스
+ * 개발 및 디버깅을 위한 콘솔 로거
+ * 운영 환경에서는 자동으로 비활성화됨
  */
-export interface Logger {
-  debug(message: string, ...args: unknown[]): void;
-  info(message: string, ...args: unknown[]): void;
-  warn(message: string, ...args: unknown[]): void;
-  error(message: string, ...args: unknown[]): void;
-}
+export class ConsoleLogger {
+  private static enabled: boolean = import.meta.env.DEV;
 
-// 호환성을 위한 ILogger 별칭
-export interface ILogger extends Logger {}
-
-/**
- * 기존 ILogger 인터페이스를 logger로 리다이렉트하는 어댑터
- */
-export class ConsoleLogger implements Logger {
-  debug(message: string, ...args: unknown[]): void {
-    logger.debug(message, ...args);
+  static enable(): void {
+    this.enabled = true;
   }
 
-  info(message: string, ...args: unknown[]): void {
-    logger.info(message, ...args);
+  static disable(): void {
+    this.enabled = false;
   }
 
-  warn(message: string, ...args: unknown[]): void {
-    logger.warn(message, ...args);
+  static log(message: string, ...args: unknown[]): void {
+    if (this.enabled) {
+      logger.info(message, ...args);
+    }
   }
 
-  error(message: string, ...args: unknown[]): void {
-    logger.error(message, ...args);
+  static warn(message: string, ...args: unknown[]): void {
+    if (this.enabled) {
+      logger.warn(message, ...args);
+    }
+  }
+
+  static error(message: string, ...args: unknown[]): void {
+    if (this.enabled) {
+      logger.error(message, ...args);
+    }
+  }
+
+  static debug(message: string, ...args: unknown[]): void {
+    if (this.enabled) {
+      logger.debug(message, ...args);
+    }
+  }
+
+  static trace(message: string, ...args: unknown[]): void {
+    if (this.enabled) {
+      logger.debug(`[TRACE] ${message}`, ...args);
+    }
   }
 }
 
+// ================================
+// 간단한 유틸리티 함수들
+// ================================
+
 /**
- * 기본 로거 인스턴스
+ * 환경별 설정값 조회
  */
-export const defaultLogger = new ConsoleLogger();
+export function getEnvConfig(key: string, defaultValue: string = ''): string {
+  return import.meta.env[key] || defaultValue;
+}
+
+/**
+ * 유저스크립트 환경 확인
+ */
+export function isUserScript(): boolean {
+  return (
+    typeof (globalThis as unknown as { GM?: unknown }).GM !== 'undefined' &&
+    typeof (globalThis as unknown as { GM?: { info?: unknown } }).GM?.info !== 'undefined'
+  );
+}
+
+/**
+ * 개발 환경 확인
+ */
+export function isDevelopment(): boolean {
+  return import.meta.env.DEV || import.meta.env.MODE === 'development';
+}
+
+/**
+ * 프로덕션 환경 확인
+ */
+export function isProduction(): boolean {
+  return import.meta.env.PROD || import.meta.env.MODE === 'production';
+}
 
 // ================================
-// Service Diagnostics
+// 하위 호환성을 위한 ServiceDiagnostics
 // ================================
 
 /**
- * ServiceManager 진단 도구
- *
- * ServiceManager의 상태와 서비스 등록 상황을 확인하는 도구
+ * @deprecated ServiceDiagnostics는 CoreService로 통합되었습니다.
+ * CoreService.diagnoseServiceManager()를 사용하세요.
  */
 export class ServiceDiagnostics {
   /**
-   * ServiceManager 상태 진단
+   * @deprecated CoreService.diagnoseServiceManager() 사용 권장
    */
   static async diagnoseServiceManager(): Promise<void> {
-    try {
-      logger.info('🔍 ServiceManager 진단 시작');
-
-      // 동적 import로 순환 의존성 방지
-      await registerCoreServices();
-      const { CoreService } = await import('./service-manager');
-
-      const serviceManager = CoreService.getInstance();
-
-      // 1. 서비스 등록
-      logger.info('📋 서비스 등록 중...');
-      await registerCoreServices();
-
-      // 2. 등록 상태 확인
-      const diagnostics = serviceManager.getDiagnostics();
-      logger.info('📊 진단 결과:', {
-        registeredCount: diagnostics.registeredServices,
-        initializedCount: diagnostics.activeInstances,
-        services: diagnostics.services,
-        instances: diagnostics.instances,
-      });
-
-      // 3. 등록된 서비스 목록
-      logger.debug('🗂️ 등록된 서비스:', diagnostics.services);
-
-      // 4. 필수 서비스 초기화 테스트
-      logger.info('🧪 필수 서비스 초기화 테스트 중...');
-      const autoTheme = await serviceManager.tryGet(SERVICE_KEYS.AUTO_THEME);
-
-      logger.info('✅ 서비스 초기화 결과:', {
-        autoTheme: autoTheme ? '성공' : '실패',
-      });
-
-      // 5. 메모리 사용량 (간소화된 ResourceManager 사용)
-      try {
-        const { ResourceService } = await import('../utils/memory/resource-service');
-        const resourceManager = new ResourceService();
-        const resourceCount = resourceManager.getResourceCount();
-        if (resourceCount > 0) {
-          logger.info('💾 리소스 사용량:', { activeResources: resourceCount });
-        }
-      } catch (error) {
-        logger.warn('리소스 사용량 조회 실패:', error);
-      }
-
-      logger.info('✅ ServiceManager 진단 완료');
-    } catch (error) {
-      logger.error('❌ ServiceManager 진단 실패:', error);
-      throw error;
-    }
+    const { CoreService } = await import('./service-manager');
+    return CoreService.diagnoseServiceManager();
   }
 
   /**
-   * 브라우저 콘솔에서 실행할 수 있는 진단 명령 등록
+   * @deprecated CoreService에서 자동으로 처리됩니다.
    */
-  static registerGlobalDiagnostic(): void {
+  static async registerGlobalDiagnostic(): Promise<void> {
+    // CoreService에서 자동으로 처리됨
     if (import.meta.env.DEV) {
-      (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ = this.diagnoseServiceManager;
+      const { CoreService } = await import('./service-manager');
+      (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ =
+        CoreService.getInstance().diagnoseServiceManager;
     }
   }
 }
 
-// 개발 환경에서 전역 진단 함수 등록
-ServiceDiagnostics.registerGlobalDiagnostic();
+// 개발 환경에서 전역 진단 함수 등록 (CoreService로 위임)
+// ServiceDiagnostics.registerGlobalDiagnostic(); // NOTE: 필요 시 main.ts에서 호출
 
 // ================================
-// Service Registry는 별도 파일로 분리됨
-// service-registry.ts 참조
+// 핵심 서비스 re-export
 // ================================
 
-// CoreService 클래스 제거됨 - Phase 4 간소화
+// 주 서비스 매니저
+export { CoreService, serviceManager, getService } from './service-manager';
 
-// ================================
-// Service Registry (재export)
-// ================================
-
-/**
- * ServiceRegistry 기능을 재export합니다
- * ServiceRegistry가 ServiceManager에 통합되었고, 초기화는 별도 파일로 분리
- */
+// 서비스 초기화 로직
 export { registerCoreServices } from './service-initialization';
 
+// 간소화된 토스트 서비스
+export { toasts as toast } from './toast-integration';
+
 // ================================
-// Phase 3: 통합된 서비스 접근자 (테스트에서 기대하는 함수들)
+// 타입 정의
 // ================================
 
-import { GalleryService } from './gallery/GalleryService';
-import { MediaService } from './media-service';
-
-/**
- * 갤러리 서비스 인스턴스 반환
- */
-export function getGalleryService(): GalleryService {
-  return GalleryService.getInstance();
-}
-
-/**
- * 미디어 서비스 인스턴스 반환
- */
-export function getMediaService(): MediaService {
-  return MediaService.getInstance();
+export interface CoreServiceInterface {
+  register<T>(key: string, instance: T): void;
+  get<T>(key: string): T;
+  tryGet<T>(key: string): T | null;
+  has(key: string): boolean;
+  getDiagnostics(): {
+    registeredServices: number;
+    activeInstances: number;
+    services: string[];
+    instances: unknown[];
+  };
 }
