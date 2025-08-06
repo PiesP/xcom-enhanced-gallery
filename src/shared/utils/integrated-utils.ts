@@ -12,7 +12,7 @@ import {
   rafThrottle,
   createDebouncer,
   measurePerformance,
-} from './performance/performance-utils-enhanced';
+} from './performance/unified-performance-utils';
 
 import { memo } from './optimization/memo';
 

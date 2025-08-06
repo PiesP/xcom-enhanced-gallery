@@ -3,7 +3,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { Debouncer } from '@shared/utils/performance/performance-utils-enhanced';
+import { Debouncer } from '@shared/utils/performance/unified-performance-utils';
 import { unifiedDOMService } from '@shared/dom/unified-dom-service';
 
 /** Twitter 스크롤 컨테이너 찾기 */
@@ -56,7 +56,7 @@ export function preventScrollPropagation(element: HTMLElement): () => void {
 }
 
 // Re-export throttleScroll from performance utils (RAF-based, more efficient)
-export { throttleScroll } from '@shared/utils/performance/performance-utils-enhanced';
+export { throttleScroll } from '@shared/utils/performance/unified-performance-utils';
 
 /**
  * 스크롤 이벤트 처리기 생성

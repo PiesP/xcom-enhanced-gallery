@@ -26,7 +26,7 @@ import {
   throttle,
   debounce,
   createDebouncer,
-} from '@shared/utils/performance/performance-utils-enhanced';
+} from '@shared/utils/performance/unified-performance-utils';
 
 describe('� GREEN Phase: 성능 유틸리티 통합 완료', () => {
   beforeEach(() => {

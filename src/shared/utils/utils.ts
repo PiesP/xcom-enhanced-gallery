@@ -58,14 +58,14 @@ export {
   registerResource,
   releaseResource,
   releaseAllResources,
-} from '@shared/utils/performance/performance-utils-enhanced';
+} from '@shared/utils/performance/unified-performance-utils';
 
 export {
   rafThrottle,
   throttle,
   debounce,
   measurePerformance,
-} from '@shared/utils/performance/performance-utils-enhanced';
+} from '@shared/utils/performance/unified-performance-utils';
 
 // ================================
 // Gallery utilities (simplified functions)

@@ -141,6 +141,62 @@ export function setScrollPosition(x: number, y: number): void {
 }
 
 /**
+ * 저장된 스크롤 위치 (메모리에 저장)
+ */
+let savedScrollY: number | null = null;
+
+/**
+ * 현재 스크롤 위치 저장
+ * @description 현재 페이지의 Y축 스크롤 위치를 메모리에 저장합니다.
+ */
+export function saveScrollPosition(): void {
+  try {
+    const win = safeWindow();
+    if (win && typeof win.scrollY === 'number') {
+      const scrollY = win.scrollY;
+      // NaN 및 음수 체크
+      if (!isNaN(scrollY) && scrollY >= 0) {
+        savedScrollY = scrollY;
+      }
+    }
+  } catch (error) {
+    // 에러가 발생해도 기능이 중단되지 않도록 조용히 처리
+    console.warn('[ScrollPosition] 스크롤 위치 저장 실패:', error);
+  }
+}
+
+/**
+ * 저장된 스크롤 위치로 복원
+ * @description 이전에 저장된 스크롤 위치로 페이지를 이동시킵니다.
+ */
+export function restoreScrollPosition(): void {
+  try {
+    if (savedScrollY !== null && savedScrollY >= 0) {
+      setScrollPosition(0, savedScrollY);
+    }
+  } catch (error) {
+    // 에러가 발생해도 기능이 중단되지 않도록 조용히 처리
+    console.warn('[ScrollPosition] 스크롤 위치 복원 실패:', error);
+  }
+}
+
+/**
+ * 저장된 스크롤 위치 초기화
+ * @description 메모리에 저장된 스크롤 위치를 삭제합니다.
+ */
+export function clearSavedScrollPosition(): void {
+  savedScrollY = null;
+}
+
+/**
+ * 저장된 스크롤 위치 조회 (테스트용)
+ * @description 현재 저장된 스크롤 위치를 반환합니다. 주로 테스트에서 사용됩니다.
+ */
+export function getSavedScrollPosition(): number | null {
+  return savedScrollY;
+}
+
+/**
  * 안전한 타이머 생성 (메모리 관리와 연동)
  */
 export function safeSetTimeout(callback: () => void, delay: number): number | null {

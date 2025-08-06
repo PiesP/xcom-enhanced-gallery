@@ -1,8 +1,8 @@
 /**
- * @fileoverview Performance utilities exports - Phase 5 Bundle Optimization
+ * @fileoverview Performance utilities exports - Unified
  */
 
-export * from './performance-utils-enhanced';
+export * from './unified-performance-utils';
 
 // Re-export main functions for easier access
 export {
@@ -11,7 +11,7 @@ export {
   debounce,
   createDebouncer,
   measurePerformance,
-} from './performance-utils-enhanced';
-
-// Performance utility class for direct use
-export { PerformanceUtils } from './performance-utils-enhanced';
+  measurePerformanceAsync,
+  delay,
+  Debouncer,
+} from './unified-performance-utils';

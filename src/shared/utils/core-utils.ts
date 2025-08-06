@@ -81,7 +81,7 @@ export const setCSSVariables = StyleManager.setCSSVariables;
 // ================================
 
 // RAF throttle and scroll throttle from performance module
-export { throttleScroll } from '@shared/utils/performance/performance-utils-enhanced';
+export { throttleScroll } from '@shared/utils/performance/unified-performance-utils';
 
 // ================================
 // 스크롤 유틸리티
@@ -181,7 +181,7 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 // ================================
 
 // Performance measurement re-export
-export { measureAsyncPerformance } from '@shared/utils/performance/performance-utils-enhanced';
+export { measureAsyncPerformance } from '@shared/utils/performance/unified-performance-utils';
 
 // ================================
 // 디버그 유틸리티

@@ -13,7 +13,7 @@ import {
   getToolbarDataState,
   getToolbarClassName,
 } from '@shared/hooks/useToolbarState';
-import { throttleScroll } from '@shared/utils/performance/performance-utils-enhanced';
+import { throttleScroll } from '@shared/utils/performance/unified-performance-utils';
 import { ComponentStandards } from '../standard-props';
 import styles from './Toolbar.module.css';
 

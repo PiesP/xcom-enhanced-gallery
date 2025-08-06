@@ -5,7 +5,7 @@
  */
 
 // throttle/debounce 함수는 PerformanceUtils로 통합됨 - 호환성을 위해 re-export
-export { throttle, debounce } from '@shared/utils/performance/performance-utils-enhanced';
+export { throttle, debounce } from '@shared/utils/performance/unified-performance-utils';
 
 /**
  * 타입 검증 함수들 - 중복 구현 통합

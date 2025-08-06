@@ -11,6 +11,7 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
+import { saveScrollPosition, restoreScrollPosition } from '@shared/browser/utils/browser-utils';
 
 // Signal type
 type Signal<T> = {
@@ -107,6 +108,9 @@ export const galleryState = {
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = Math.max(0, Math.min(startIndex, items.length - 1));
 
+  // 현재 스크롤 위치 저장
+  saveScrollPosition();
+
   // 배경 페이지 스크롤 방지
   document.body.style.overflow = 'hidden';
 
@@ -135,6 +139,9 @@ export function closeGallery(): void {
 
   // 배경 페이지 스크롤 복원
   document.body.style.overflow = '';
+
+  // 저장된 스크롤 위치로 복원
+  restoreScrollPosition();
 
   // 상태 완전 초기화 - mediaItems도 함께 초기화
   galleryState.value = {

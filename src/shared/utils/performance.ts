@@ -22,7 +22,7 @@ export {
   registerResource,
   releaseResource,
   releaseAllResources,
-} from './performance/performance-utils-enhanced';
+} from './performance/unified-performance-utils';
 
 // memo 함수는 optimization 모듈에서 제공
 export { memo } from './optimization/memo';

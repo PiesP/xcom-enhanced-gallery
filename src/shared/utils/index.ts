@@ -19,8 +19,8 @@ export {
 } from './utils';
 
 // === 성능 관련 (2개) ===
-export { rafThrottle } from '@shared/utils/performance/performance-utils-enhanced';
-export { createDebouncer } from '@shared/utils/performance/performance-utils-enhanced';
+export { rafThrottle } from '@shared/utils/performance/unified-performance-utils';
+export { createDebouncer } from '@shared/utils/performance/unified-performance-utils';
 
 // === 최적화 유틸리티 ===
 export * from './optimization/optimization-utils';
@@ -29,7 +29,7 @@ export * from './optimization/optimization-utils';
 export {
   TimerService as TimerManager,
   globalTimerService as globalTimerManager,
-} from './performance/performance-utils-enhanced';
+} from './performance/unified-performance-utils';
 
 // === 타입 안전 유틸리티 (4개) ===
 export {
