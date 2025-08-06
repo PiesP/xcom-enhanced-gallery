@@ -4,15 +4,14 @@
  * @version 4.0.0 - Phase 3: 통합
  */
 
-// Core CSS utilities
-// 스타일 관련 유틸리티 (StyleManager를 사용하세요)
+// Core CSS utilities - 직접 StyleManager에서 import (중복 제거)
 export {
   setCSSVariable,
   getCSSVariable,
   setCSSVariables,
   createThemedClassName,
   updateComponentState,
-} from './styles/css-utilities';
+} from '../styles/style-manager';
 
 // Backward compatibility - exports commonly used style utilities
 export { applyTheme } from './styles/style-utils';

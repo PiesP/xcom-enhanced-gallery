@@ -47,8 +47,18 @@ export {
   detectLightBackground,
 } from './accessibility';
 
-// Performance utilities (re-export from performance module, createDebouncer 제거)
-export { Debouncer } from '@shared/utils/timer-management';
+// Performance utilities (통합됨 - timer-management.ts에서 이동)
+export {
+  Debouncer,
+  TimerService,
+  globalTimerService,
+  delay,
+  ResourceService,
+  globalResourceService,
+  registerResource,
+  releaseResource,
+  releaseAllResources,
+} from '@shared/utils/performance/performance-utils-enhanced';
 
 export {
   rafThrottle,

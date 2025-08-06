@@ -1,7 +1,7 @@
 /**
- * @fileoverview 통합 성능 유틸리티 클래스
- * @description 중복된 throttle/debounce 구현들을 통합하는 단일 진실 공급원
- * @version 1.0.0 - TDD Phase GREEN
+ * @fileoverview 통합된 성능 최적화 유틸리티
+ * @description throttle, debounce, timer, resource 관리를 통합한 성능 유틸리티
+ * @version 3.0.0 - Phase 2 통합
  */
 
 import { logger } from '@shared/logging';
@@ -204,5 +204,209 @@ export const { rafThrottle, throttle, debounce, createDebouncer, measurePerforma
   PerformanceUtils;
 
 // 추가 별칭 함수들 (기존 코드 호환성)
+export const createTimerDebouncer = <T extends unknown[]>(
+  callback: (...args: T) => void,
+  delay: number
+): Debouncer<T> => new Debouncer(callback, delay);
 export const measureAsyncPerformance = measurePerformance;
 export const throttleScroll = rafThrottle;
+
+/**
+ * Debouncer 클래스 (timer-management.ts 호환)
+ * 기존 timer-management.ts의 Debouncer 클래스와 동일한 인터페이스 제공
+ */
+export class Debouncer<T extends unknown[]> {
+  private timerId: number | null = null;
+  private readonly delay: number;
+  private readonly callback: (...args: T) => void;
+
+  constructor(callback: (...args: T) => void, delay: number) {
+    this.callback = callback;
+    this.delay = delay;
+  }
+
+  execute(...args: T): void {
+    if (this.timerId !== null) {
+      clearTimeout(this.timerId);
+    }
+    this.timerId = window.setTimeout(() => {
+      this.callback(...args);
+      this.timerId = null;
+    }, this.delay);
+  }
+
+  cancel(): void {
+    if (this.timerId !== null) {
+      clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+  }
+
+  get pending(): boolean {
+    return this.timerId !== null;
+  }
+
+  // isPending 메서드도 추가 (createDebouncer와 호환)
+  isPending(): boolean {
+    return this.timerId !== null;
+  }
+}
+
+/**
+ * Timer Handle 인터페이스 (timer-management.ts 호환)
+ */
+export interface TimerHandle {
+  id: number;
+  cancel: () => void;
+}
+
+/**
+ * 타이머 서비스 (timer-management.ts 호환)
+ */
+class TimerServiceImpl {
+  private readonly timers = new Map<number, TimerHandle>();
+  private nextId = 1;
+
+  setTimeout(callback: () => void, delay: number): TimerHandle {
+    const id = this.nextId++;
+    const timerId = window.setTimeout(() => {
+      this.timers.delete(id);
+      callback();
+    }, delay);
+
+    const handle: TimerHandle = {
+      id,
+      cancel: () => {
+        clearTimeout(timerId);
+        this.timers.delete(id);
+      },
+    };
+
+    this.timers.set(id, handle);
+    return handle;
+  }
+
+  clearAllTimers(): void {
+    for (const handle of this.timers.values()) {
+      handle.cancel();
+    }
+    this.timers.clear();
+  }
+
+  getActiveTimerCount(): number {
+    return this.timers.size;
+  }
+}
+
+/**
+ * Timer Service 인스턴스 (timer-management.ts 호환)
+ */
+export const TimerService = new TimerServiceImpl();
+export const globalTimerService = TimerService;
+
+/**
+ * 간단한 지연 실행 (timer-management.ts 호환)
+ */
+export function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * 리소스 타입
+ */
+export type ResourceType = 'image' | 'audio' | 'video' | 'data' | 'cache' | 'timer' | 'event';
+
+/**
+ * 리소스 서비스
+ * 애플리케이션 리소스의 생명주기를 관리합니다
+ */
+export class ResourceService {
+  private readonly resources = new Map<string, () => void>();
+
+  /**
+   * 리소스 등록
+   */
+  register(id: string, cleanup: () => void): void {
+    this.resources.set(id, cleanup);
+  }
+
+  /**
+   * 리소스 해제
+   */
+  release(id: string): boolean {
+    const cleanup = this.resources.get(id);
+    if (cleanup) {
+      try {
+        cleanup();
+        this.resources.delete(id);
+        return true;
+      } catch (error) {
+        logger.error(`Failed to release resource ${id}:`, error);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 모든 리소스 해제
+   */
+  releaseAll(): void {
+    const errors: Error[] = [];
+
+    for (const [id, cleanup] of this.resources) {
+      try {
+        cleanup();
+      } catch (error) {
+        logger.error(`Failed to release resource ${id}:`, error);
+        errors.push(error as Error);
+      }
+    }
+
+    this.resources.clear();
+
+    if (errors.length > 0) {
+      logger.warn(`Released all resources with ${errors.length} errors`);
+    }
+  }
+
+  /**
+   * 등록된 리소스 개수
+   */
+  getResourceCount(): number {
+    return this.resources.size;
+  }
+
+  /**
+   * 리소스가 등록되어 있는지 확인
+   */
+  hasResource(id: string): boolean {
+    return this.resources.has(id);
+  }
+}
+
+/**
+ * 글로벌 리소스 매니저
+ */
+export const globalResourceService = new ResourceService();
+
+/**
+ * 편의 함수: 리소스 등록
+ */
+export function registerResource(id: string, cleanup: () => void): void {
+  globalResourceService.register(id, cleanup);
+}
+
+/**
+ * 편의 함수: 리소스 해제
+ */
+export function releaseResource(id: string): boolean {
+  return globalResourceService.release(id);
+}
+
+/**
+ * 편의 함수: 모든 리소스 해제
+ */
+export function releaseAllResources(): void {
+  globalResourceService.releaseAll();
+}

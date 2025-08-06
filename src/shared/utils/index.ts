@@ -20,7 +20,7 @@ export {
 
 // === 성능 관련 (2개) ===
 export { rafThrottle } from '@shared/utils/performance/performance-utils-enhanced';
-export { createDebouncer } from '@shared/utils/timer-management';
+export { createDebouncer } from '@shared/utils/performance/performance-utils-enhanced';
 
 // === 최적화 유틸리티 ===
 export * from './optimization/optimization-utils';
@@ -29,7 +29,7 @@ export * from './optimization/optimization-utils';
 export {
   TimerService as TimerManager,
   globalTimerService as globalTimerManager,
-} from './timer-management';
+} from './performance/performance-utils-enhanced';
 
 // === 타입 안전 유틸리티 (4개) ===
 export {

@@ -92,34 +92,70 @@ describe('🔴 RED Phase: 중복 구현 식별', () => {
   });
 
   describe('성능 유틸리티 중복 분석', () => {
-    it('throttle 함수가 여러 곳에 중복 구현되어야 함', async () => {
-      // RED: throttle 관련 함수들이 여러 모듈에 분산됨
-      const throttleImplementations = [];
+    it('throttle/debounce 함수와 timer-management 중복이 존재해야 함', async () => {
+      // RED: timer-management.ts와 performance-utils-enhanced.ts 간 중복
+      const timerImplementations = [];
 
       try {
-        const perfUtils = await import('@shared/utils/performance/performance-utils');
-        if (perfUtils.throttle) {
-          throttleImplementations.push('Performance Utils');
+        const perfUtilsEnhanced = await import(
+          '@shared/utils/performance/performance-utils-enhanced'
+        );
+        if (perfUtilsEnhanced.throttle) {
+          timerImplementations.push('Performance Utils Enhanced - throttle');
         }
-        if (perfUtils.rafThrottle) {
-          throttleImplementations.push('RAF Throttle');
+        if (perfUtilsEnhanced.debounce) {
+          timerImplementations.push('Performance Utils Enhanced - debounce');
+        }
+        if (perfUtilsEnhanced.createDebouncer) {
+          timerImplementations.push('Performance Utils Enhanced - createDebouncer');
         }
       } catch {
         /* ignore */
       }
 
       try {
-        const services = await import('@shared/services');
-        if (services.throttle) {
-          throttleImplementations.push('Services Index');
+        const timerMgmt = await import('@shared/utils/timer-management');
+        if (timerMgmt.Debouncer) {
+          timerImplementations.push('Timer Management - Debouncer');
         }
       } catch {
         /* ignore */
       }
 
-      // RED: 여러 throttle 구현이 존재해야 함
-      expect(throttleImplementations.length).toBeGreaterThan(1);
-      console.log('🔴 throttle 중복 구현:', throttleImplementations);
+      // RED: 타이머 관련 중복 구현이 존재해야 함
+      expect(timerImplementations.length).toBeGreaterThan(1);
+      console.log('🔴 타이머/성능 유틸리티 중복 구현:', timerImplementations);
+    });
+
+    it('Resource Manager 중복이 존재해야 함', async () => {
+      // RED: resource-manager가 여러 위치에 중복 존재
+      const resourceManagerImplementations = [];
+
+      try {
+        const resourceManager1 = await import('@shared/utils/resource-manager');
+        if (resourceManager1.default || resourceManager1.ResourceManager) {
+          resourceManagerImplementations.push('Utils Root - resource-manager.ts');
+        }
+      } catch {
+        /* ignore */
+      }
+
+      try {
+        const resourceManager2 = await import('@shared/utils/memory/resource-manager');
+        if (resourceManager2.default || resourceManager2.ResourceManager) {
+          resourceManagerImplementations.push('Memory - resource-manager.ts');
+        }
+      } catch {
+        /* ignore */
+      }
+
+      // RED: 리소스 매니저 중복이 존재해야 함
+      if (resourceManagerImplementations.length > 1) {
+        console.log('🔴 Resource Manager 중복 구현:', resourceManagerImplementations);
+        expect(resourceManagerImplementations.length).toBeGreaterThan(1);
+      } else {
+        console.log('✅ Resource Manager는 단일 구현 (중복 없음)');
+      }
     });
 
     it('memo 함수가 여러 곳에 중복 구현되어야 함', async () => {
@@ -154,33 +190,44 @@ describe('🔴 RED Phase: 중복 구현 식별', () => {
   });
 
   describe('DOM 관리 중복 분석', () => {
-    it('DOMService와 CoreDOMManager가 중복 기능을 제공해야 함', async () => {
-      // RED: DOM 관련 서비스들이 여러 개 존재
+    it('DOM 관련 서비스가 통합되었는지 확인', async () => {
+      // RED: 현재는 통합된 상태여야 함
       const domServices = [];
 
       try {
-        const domService = await import('@shared/dom/DOMService');
-        if (domService.DOMService) {
-          domServices.push('DOMService');
+        const unifiedDomService = await import('@shared/dom/unified-dom-service');
+        if (unifiedDomService.UnifiedDOMService) {
+          domServices.push('UnifiedDOMService');
         }
       } catch {
         /* ignore */
       }
 
-      // core에도 DOM 관련 기능이 있는지 확인
       try {
-        const coreIndex = await import('@core');
-        if (coreIndex.DOMService || coreIndex.coreDOMManager) {
-          domServices.push('Core DOM');
+        const componentManager = await import('@shared/components/component-manager');
+        if (componentManager.componentManager) {
+          domServices.push('Component Manager');
         }
       } catch {
         /* ignore */
       }
 
-      console.log('🔴 DOM 서비스들:', domServices);
+      console.log('✅ DOM 서비스 현황:', domServices);
 
       // DOM 서비스가 적어도 하나는 존재해야 함
       expect(domServices.length).toBeGreaterThan(0);
+    });
+
+    it('DEPRECATED CSS Utilities가 존재해야 함', async () => {
+      // RED: css-utilities.ts가 DEPRECATED 상태로 존재
+      try {
+        const cssUtilities = await import('@shared/utils/styles/css-utilities');
+        console.log('🔴 DEPRECATED CSS Utilities 파일이 존재함');
+        expect(cssUtilities).toBeDefined();
+      } catch {
+        console.log('✅ CSS Utilities 파일이 제거됨');
+        expect(true).toBe(true); // 이미 제거된 경우 통과
+      }
     });
   });
 

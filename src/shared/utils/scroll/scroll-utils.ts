@@ -3,7 +3,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { Debouncer } from '@shared/utils/timer-management';
+import { Debouncer } from '@shared/utils/performance/performance-utils-enhanced';
 import { unifiedDOMService } from '@shared/dom/unified-dom-service';
 
 /** Twitter 스크롤 컨테이너 찾기 */

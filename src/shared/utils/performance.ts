@@ -12,6 +12,16 @@ export {
   debounce,
   createDebouncer,
   measurePerformance,
+  Debouncer,
+  TimerService,
+  globalTimerService,
+  delay,
+  ResourceService,
+  type ResourceType,
+  globalResourceService,
+  registerResource,
+  releaseResource,
+  releaseAllResources,
 } from './performance/performance-utils-enhanced';
 
 // memo 함수는 optimization 모듈에서 제공
