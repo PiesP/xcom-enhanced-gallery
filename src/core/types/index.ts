@@ -80,7 +80,6 @@ export interface GalleryConfig {
   autoPlay?: boolean;
   showThumbnails?: boolean;
   enableKeyboard?: boolean;
-  enableTouch?: boolean;
   loop?: boolean;
 }
 

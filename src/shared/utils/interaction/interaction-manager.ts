@@ -133,11 +133,12 @@ export class InteractionService {
 
     // 더블클릭 확인
     const timeSinceLastClick = endTime - this.lastClickTime;
-    if (timeSinceLastClick < this.options.doubleClickDelay) {
+    if (timeSinceLastClick < this.options.doubleClickDelay && this.lastClickTime > 0) {
       eventInfo.type = 'doubleClick';
       this.triggerGesture('doubleClick', eventInfo);
       this.lastClickTime = 0; // 트리플클릭 방지
     } else {
+      // 단일 클릭 즉시 처리
       this.triggerGesture('click', eventInfo);
       this.lastClickTime = endTime;
     }

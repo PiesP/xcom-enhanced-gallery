@@ -15,21 +15,20 @@ export const URLPatterns = {
    * 트윗 URL 정규표현식 패턴
    * Twitter.com과 x.com 도메인을 모두 지원합니다.
    */
-  TWEET_URL_PATTERN:
-    /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
+  TWEET_URL_PATTERN: /https?:\/\/(?:(?:www\.)?twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
 
   /**
    * 미디어 페이지 URL 정규표현식 패턴
    * x.com과 twitter.com의 미디어 탭을 지원합니다.
    */
-  MEDIA_PAGE_PATTERN: /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/media/,
+  MEDIA_PAGE_PATTERN: /https?:\/\/(?:(?:www\.)?twitter\.com|x\.com)\/([^/]+)\/media/,
 
   /**
    * 트윗 사진 URL 정규표현식 패턴
    * 미디어 페이지에서의 사진 링크를 지원합니다.
    */
   TWEET_PHOTO_URL_PATTERN:
-    /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)\/photo\/(\d+)/,
+    /https?:\/\/(?:(?:www\.)?twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)\/photo\/(\d+)/,
 
   /**
    * X.com URL 패턴
@@ -39,7 +38,7 @@ export const URLPatterns = {
   /**
    * Twitter.com URL 패턴
    */
-  TWITTER_URL_PATTERN: /^https?:\/\/(?:mobile\.|www\.)?twitter\.com/,
+  TWITTER_URL_PATTERN: /^https?:\/\/(?:www\.)?twitter\.com/,
 
   /**
    * 이미지 URL 패턴
