@@ -172,7 +172,7 @@ export function createDebouncer<T extends unknown[] = []>(
   delay: number
 ): (...args: T) => void {
   let timerId: number | null = null;
-  
+
   return (...args: T) => {
     if (timerId !== null) {
       globalTimerService.clearTimer(timerId);

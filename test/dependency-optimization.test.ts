@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 describe('🔴 RED Phase: 의존성 제거 테스트', () => {
   describe('CSS 기반 애니메이션 검증', () => {
     it('애니메이션 기능이 CSS 기반으로 정상 동작해야 한다', async () => {
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
       const service = AnimationService.getInstance();
 
       // 테스트용 DOM 요소 생성
@@ -55,7 +55,7 @@ describe('의존성 최적화 테스트 - Phase GREEN (구현 완료)', () => {
     });
 
     it('AnimationService가 CSS 기반으로 동작해야 한다', async () => {
-      const { AnimationService } = await import('../src/shared/services/AnimationService');
+      const { AnimationService } = await import('../src/shared/services/animation-service');
       const service = AnimationService.getInstance();
 
       // CSS 애니메이션 상수들이 정의되어 있는지 확인
@@ -132,7 +132,7 @@ describe('의존성 최적화 테스트 - Phase GREEN (구현 완료)', () => {
     });
 
     it('애니메이션 기능이 CSS 기반으로 정상 동작해야 한다', async () => {
-      const { AnimationService } = await import('../src/shared/services/AnimationService');
+      const { AnimationService } = await import('../src/shared/services/animation-service');
       const service = AnimationService.getInstance();
 
       // 기본적인 메서드 존재 여부 확인
@@ -228,7 +228,7 @@ describe('의존성 최적화 테스트 - Phase GREEN (구현 완료)', () => {
     });
 
     it('애니메이션 서비스가 Motion 없이도 안전하게 동작해야 한다', async () => {
-      const { AnimationService } = await import('../src/shared/services/AnimationService');
+      const { AnimationService } = await import('../src/shared/services/animation-service');
       const service = AnimationService.getInstance();
 
       // Motion One 없이도 애니메이션이 실행되는지 확인

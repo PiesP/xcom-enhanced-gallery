@@ -3,7 +3,7 @@
  * @description ToastService와 Toast 컴포넌트 간의 통합 레이어
  */
 
-import { toastService, type ToastItem, type ToastOptions } from './ToastService';
+import { toastService, type ToastItem, type ToastOptions } from './toast-service';
 
 // 전역 토스트 상태 관리
 let _toastsSignal: {

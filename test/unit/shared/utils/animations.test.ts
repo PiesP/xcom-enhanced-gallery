@@ -88,7 +88,7 @@ describe('애니메이션 유틸리티', () => {
       };
 
       // 동적 임포트 모킹
-      vi.doMock('../../../../src/shared/services/AnimationService', () => ({
+      vi.doMock('../../../../src/shared/services/animation-service', () => ({
         AnimationService: {
           getInstance: () => mockAnimationService,
         },
@@ -110,7 +110,7 @@ describe('애니메이션 유틸리티', () => {
         animateGalleryExit: vi.fn().mockResolvedValue(undefined),
       };
 
-      vi.doMock('../../../../src/shared/services/AnimationService', () => ({
+      vi.doMock('../../../../src/shared/services/animation-service', () => ({
         AnimationService: {
           getInstance: () => mockAnimationService,
         },
@@ -134,7 +134,7 @@ describe('애니메이션 유틸리티', () => {
         animateToolbarShow: vi.fn().mockResolvedValue(undefined),
       };
 
-      vi.doMock('../../../../src/shared/services/AnimationService', () => ({
+      vi.doMock('../../../../src/shared/services/animation-service', () => ({
         AnimationService: {
           getInstance: () => mockAnimationService,
         },
@@ -156,7 +156,7 @@ describe('애니메이션 유틸리티', () => {
         animateToolbarHide: vi.fn().mockResolvedValue(undefined),
       };
 
-      vi.doMock('../../../../src/shared/services/AnimationService', () => ({
+      vi.doMock('../../../../src/shared/services/animation-service', () => ({
         AnimationService: {
           getInstance: () => mockAnimationService,
         },

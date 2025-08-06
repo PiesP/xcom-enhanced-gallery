@@ -36,7 +36,10 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
 }
 
 /** 스크롤 디바운서 생성 */
-export function createScrollDebouncer(callback: () => void, delay: number = 150): (...args: []) => void {
+export function createScrollDebouncer(
+  callback: () => void,
+  delay: number = 150
+): (...args: []) => void {
   return createDebouncer(callback, delay);
 }
 

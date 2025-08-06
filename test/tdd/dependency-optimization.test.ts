@@ -13,7 +13,7 @@ describe('🔴 RED Phase: 의존성 제거 테스트', () => {
   describe('Motion 라이브러리 제거 검증', () => {
     it('motion 라이브러리 없이도 애니메이션이 작동해야 함', async () => {
       // package.json에서 motion 제거 후에도 애니메이션 기능이 작동하는지 확인
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
 
       const service = AnimationService.getInstance();
       const testElement = document.createElement('div');
@@ -52,7 +52,7 @@ describe('🔴 RED Phase: 의존성 제거 테스트', () => {
   describe('TanStack Query 라이브러리 제거 검증', () => {
     it('@tanstack/query-core 없이도 앱이 정상 작동해야 함', async () => {
       // query-core 의존성 제거 후에도 정상 작동하는지 확인
-      const { MediaService } = await import('@shared/services/MediaService');
+      const { MediaService } = await import('@shared/services/media-service');
 
       const service = new MediaService();
 
@@ -98,7 +98,7 @@ describe('🔴 RED Phase: 의존성 제거 테스트', () => {
 describe('🟢 GREEN Phase: 기능 보장 테스트', () => {
   describe('애니메이션 기능 유지', () => {
     it('CSS 기반 애니메이션이 motion 대신 정상 작동해야 함', async () => {
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
       const service = AnimationService.getInstance();
 
       const testElement = document.createElement('div');
@@ -112,7 +112,7 @@ describe('🟢 GREEN Phase: 기능 보장 테스트', () => {
     });
 
     it('툴바 애니메이션이 정상 작동해야 함', async () => {
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
       const service = AnimationService.getInstance();
 
       const testElement = document.createElement('div');
@@ -133,7 +133,7 @@ describe('🟢 GREEN Phase: 기능 보장 테스트', () => {
     });
 
     it('미디어 추출 기능이 정상 작동해야 함', async () => {
-      const { MediaService } = await import('@shared/services/MediaService');
+      const { MediaService } = await import('@shared/services/media-service');
 
       const service = new MediaService();
       expect(service.extractFromClickedElement).toBeDefined();

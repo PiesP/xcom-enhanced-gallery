@@ -26,7 +26,7 @@ describe('외부 라이브러리 통합 테스트', () => {
 
   describe('AnimationService 통합', () => {
     it('AnimationService가 초기화되어야 한다', async () => {
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
       const animationService = AnimationService.getInstance();
 
       expect(animationService).toBeDefined();
@@ -38,7 +38,7 @@ describe('외부 라이브러리 통합 테스트', () => {
 
     it('편의 함수들이 정의되어야 한다', async () => {
       const { animateElement, fadeOut, openGalleryWithAnimation, closeGalleryWithAnimation } =
-        await import('@shared/services/AnimationService');
+        await import('@shared/services/animation-service');
 
       expect(typeof animateElement).toBe('function');
       expect(typeof fadeOut).toBe('function');
@@ -47,7 +47,7 @@ describe('외부 라이브러리 통합 테스트', () => {
     });
 
     it('폴백 애니메이션이 실행되어야 한다', async () => {
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
       const animationService = AnimationService.getInstance();
 
       // 가짜 element 생성
@@ -70,7 +70,7 @@ describe('외부 라이브러리 통합 테스트', () => {
   describe('전체 통합 검증', () => {
     it('모든 서비스가 함께 작동해야 한다', async () => {
       // AnimationService
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
       const animationService = AnimationService.getInstance();
 
       expect(animationService).toBeDefined();
@@ -93,7 +93,7 @@ describe('외부 라이브러리 통합 테스트', () => {
     });
 
     it('메모리 정리가 올바르게 작동해야 한다', async () => {
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
       const animationService = AnimationService.getInstance();
 
       // 정리 메서드가 존재하는지 확인

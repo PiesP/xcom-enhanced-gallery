@@ -17,7 +17,7 @@ export async function loadServiceModule(serviceName: string) {
       case 'MediaPrefetchingService':
       case 'BulkDownloadService': {
         // 이제 MediaService로 통합됨
-        const module = await import('./MediaService');
+        const module = await import('./media-service');
         const loadTime = performance.now() - startTime;
         logger.debug(`${serviceName} -> MediaService로 통합 완료:`, { loadTime });
         return module.MediaService;

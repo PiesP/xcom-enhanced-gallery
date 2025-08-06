@@ -208,7 +208,7 @@ describe('🔴 RED Phase 1: 완전한 코드베이스 분석', () => {
       const potentialTodoModules = [
         '@shared/hooks/useAccessibility',
         '@core/performance/PerformanceIntegration',
-        '@shared/services/MediaService',
+        '@shared/services/media-service',
       ];
 
       const foundTodos = [];

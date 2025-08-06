@@ -64,7 +64,7 @@ describe('🟢 TDD GREEN: 통합 완료 검증', () => {
 
   describe('애니메이션 시스템 통합 완료', () => {
     it('AnimationService 단일 시스템으로 통합되었어야 함', async () => {
-      const { AnimationService } = await import('@shared/services/AnimationService');
+      const { AnimationService } = await import('@shared/services/animation-service');
       const service = AnimationService.getInstance();
 
       expect(service.animateGalleryEnter).toBeDefined();
