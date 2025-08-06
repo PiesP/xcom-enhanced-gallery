@@ -148,6 +148,8 @@ export async function loadModulesParallel(
 
 /**
  * 컴포넌트 로딩 (deprecated component-manager 기능 통합)
+ * @deprecated 의존성 규칙 위반으로 인해 제거 예정입니다.
+ * Gallery 컴포넌트는 features 계층에서 직접 관리하세요.
  */
 export async function loadComponent(componentName: string) {
   const startTime = performance.now();
@@ -156,10 +158,8 @@ export async function loadComponent(componentName: string) {
     switch (componentName) {
       case 'Gallery':
       case 'MediaViewer': {
-        const module = await import('@features/gallery');
-        const loadTime = performance.now() - startTime;
-        logger.debug(`${componentName} 컴포넌트 로딩 완료:`, { loadTime });
-        return module;
+        // TODO: 의존성 규칙 위반 - features 계층으로 이동 필요
+        throw new Error(`${componentName} 컴포넌트는 features 계층에서 직접 로딩하세요`);
       }
 
       case 'ToastNotification': {

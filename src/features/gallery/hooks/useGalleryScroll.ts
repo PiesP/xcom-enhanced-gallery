@@ -8,7 +8,7 @@
 
 import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging';
-import { createEventManager } from '@shared/dom/dom-event-manager';
+import { createEventManager } from '@shared/dom';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
 const { useEffect, useRef, useCallback } = ComponentManager.getHookManager();
@@ -172,7 +172,7 @@ export function useGalleryScroll({
 
     // 갤러리 컨테이너에만 휠 이벤트 처리 (갤러리 내부 스크롤)
     if (container) {
-      eventManager.addEventListener(container, 'wheel', handleGalleryWheel, {
+      eventManager.addEventListener(container, 'wheel', handleGalleryWheel as EventListener, {
         passive: false,
       });
     }

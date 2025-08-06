@@ -1,5 +1,6 @@
 /**
- * @fileoverview 새로운 Core 구조 테스트
+ * @fileovervi// DOMService를 통합된 경로에서 import (UnifiedDOMService로 통합됨)
+import { DOMService } from "@shared/dom"; 새로운 Core 구조 테스트
  * @description TDD 방식으로 통합된 핵심 모듈들의 기능을 검증
  */
 

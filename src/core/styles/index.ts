@@ -87,10 +87,10 @@ export function setGlassmorphism(
 
 /**
  * @deprecated CoreStyleManager는 제거 예정입니다.
- * 대신 '@shared/styles/style-manager'를 사용하거나 개별 함수들을 직접 사용하세요.
+ * 대신 개별 함수들을 직접 사용하거나 infrastructure 계층의 스타일 관리자를 사용하세요.
  *
  * Migration guide:
- * - CoreStyleManager.getInstance().setCSSVariable() → import { setCSSVariable } from '@shared/styles/style-manager'
+ * - CoreStyleManager.getInstance().setCSSVariable() → setCSSVariable() from infrastructure layer
  * - CoreStyleManager.getInstance().combineClasses() → combineClasses() from this module
  */
 export class CoreStyleManager {

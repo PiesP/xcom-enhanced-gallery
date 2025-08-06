@@ -21,4 +21,4 @@ export { applyTheme } from './styles/style-utils';
 export { getXEGVariable, setGalleryTheme } from '../styles/theme-utils';
 
 // Core DOM style utilities
-export { safeAddClass, safeRemoveClass, safeSetStyle } from '@shared/dom/DOMService';
+export { safeAddClass, safeRemoveClass, safeSetStyle } from '@shared/dom';

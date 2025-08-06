@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "test:fast": "vitest run --reporter=basic --pool=threads --poolOptions.threads.minThreads=1 --poolOptions.threads.maxThreads=2 --poolOptions.threads.isolate=false --exclude='**/refactoring/**' --exclude='**/tdd-*' --exclude='**/integration/**'",
+    "test:fast": "vitest run --pool=threads --poolOptions.threads.minThreads=1 --poolOptions.threads.maxThreads=2 --poolOptions.threads.isolate=false --exclude='**/refactoring/**' --exclude='**/tdd-*' --exclude='**/integration/**'",
     "test:optimized": "vitest run --coverage",
     "test:ci": "vitest run --coverage --reporter=verbose --pool=threads",
     "test:fix": "vitest run --reporter=verbose",

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Week 2 TDD: 통합 유틸리티 메인 진입점
- * @description 스타일/성능 유틸리티 통합 완료
+ * @description 스타일/성능 유틸리티 통합 완료, DOM 기능은 @shared/dom으로 분리
  * @version 6.0.0 - TDD Week 2 통합
  */
 
@@ -26,7 +26,10 @@ export { createDebouncer } from '@shared/utils/timer-management';
 export * from './optimization/optimization-utils';
 
 // === 타이머 관리 (2개) ===
-export { TimerManager, globalTimerManager } from './timer-management';
+export {
+  TimerService as TimerManager,
+  globalTimerService as globalTimerManager,
+} from './timer-management';
 
 // === 타입 안전 유틸리티 (4개) ===
 export {
@@ -36,8 +39,8 @@ export {
   safeElementCheck,
 } from './type-safety-helpers';
 
-// === 핵심 DOM (3개) ===
-export { safeQuerySelector, isInsideGallery, extractTweetInfoFromUrl } from './core-utils';
+// === 핵심 DOM (3개) - safeQuerySelector는 @shared/dom으로 이동됨 ===
+export { isInsideGallery, extractTweetInfoFromUrl } from './core-utils';
 
 // === 접근성 및 이벤트 (5개) ===
 export { getRelativeLuminance, parseColor, detectLightBackground } from './accessibility';
