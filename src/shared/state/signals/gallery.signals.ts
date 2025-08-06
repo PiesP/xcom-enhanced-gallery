@@ -107,6 +107,9 @@ export const galleryState = {
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = Math.max(0, Math.min(startIndex, items.length - 1));
 
+  // 배경 페이지 스크롤 방지
+  document.body.style.overflow = 'hidden';
+
   galleryState.value = {
     ...galleryState.value,
     isOpen: true,
@@ -129,6 +132,9 @@ export function closeGallery(): void {
     logger.debug('[Gallery] 이미 닫힌 상태 - 건너뜀');
     return;
   }
+
+  // 배경 페이지 스크롤 복원
+  document.body.style.overflow = '';
 
   // 상태 완전 초기화 - mediaItems도 함께 초기화
   galleryState.value = {
