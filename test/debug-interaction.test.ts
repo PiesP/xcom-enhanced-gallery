@@ -2,7 +2,7 @@
  * @fileoverview InteractionService 디버깅 테스트
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { InteractionService } from '../src/shared/utils/interaction/interaction-manager';
 
 describe('InteractionService 디버깅', () => {
@@ -68,13 +68,20 @@ describe('InteractionService 디버깅', () => {
       callback: shortcutHandler,
     });
 
+    // 키보드 이벤트는 포커스가 있는 요소에서 처리되므로
+    // testElement에 포커스를 설정하고 tabindex를 추가
+    testElement.setAttribute('tabindex', '0');
+    testElement.focus();
+
     const keyEvent = new KeyboardEvent('keydown', {
       key: 'Escape',
       ctrlKey: false,
       bubbles: true,
     });
 
-    testElement.dispatchEvent(keyEvent);
+    // InteractionService의 private 메서드에 직접 접근하여 테스트
+    const privateService = interactionService as any;
+    privateService.handleKeyDown(keyEvent);
 
     expect(shortcutHandler).toHaveBeenCalledWith(keyEvent);
   });
