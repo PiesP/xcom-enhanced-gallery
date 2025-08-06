@@ -24,9 +24,10 @@
 export * from '@shared/dom';
 
 // 스타일 관련 통합 서비스 (기존 StyleService 대체)
-// StyleManager를 직접 사용하거나 style-service.ts 래퍼 사용
-export { default as StyleManager } from '@shared/styles/style-manager';
-export { StyleService, setCSSVariable, getCSSVariable, setCSSVariables } from './style-service';
+// 🟢 GREEN: StyleManager 직접 사용 (style-service.ts 제거 완료)
+export { default as StyleService, default as styleService } from '@shared/styles/style-service';
+export { setCSSVariable, getCSSVariable, setCSSVariables } from '@shared/styles/style-service';
+export type { GlassmorphismIntensity, ComponentState } from '@shared/styles/style-service';
 
 // 성능 관련 통합 서비스
 export {
@@ -88,8 +89,7 @@ export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './galler
 export { CoreService } from './service-manager';
 
 // 9. 스타일 서비스 (StyleManager로 대체됨 - 하위 호환성 유지)
-// export { StyleService } from './style-service'; // 위에서 이미 export됨
-export type { GlassmorphismIntensity, ComponentState } from './style-service';
+// 🟢 GREEN: StyleService 중복 제거 완료
 // Theme 타입은 ThemeService에서 이미 export됨
 
 // ====================================
@@ -108,7 +108,7 @@ export type {
   Theme as UnifiedTheme,
   GlassmorphismConfig,
   ComponentState as UnifiedComponentState,
-} from '@shared/styles/style-manager';
+} from '@shared/styles/style-service';
 
 // 성능 서비스 타입들
 // 성능 타입들은 별도 모듈에서 제공

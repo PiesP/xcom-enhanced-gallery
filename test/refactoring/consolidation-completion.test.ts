@@ -43,7 +43,7 @@ describe('🟢 TDD GREEN: 통합 완료 검증', () => {
 
   describe('StyleManager 직접 사용 완료', () => {
     it('StyleManager를 직접 import하여 사용할 수 있어야 함', async () => {
-      const StyleManagerModule = await import('@shared/styles/style-manager');
+      const StyleManagerModule = await import('@shared/styles/style-service');
       const StyleManager = StyleManagerModule.default;
 
       expect(StyleManager.combineClasses).toBeDefined();
@@ -157,7 +157,7 @@ describe('🟢 TDD GREEN: 통합 완료 검증', () => {
     });
 
     it('StyleManager가 정적 메서드 패턴을 유지해야 함', async () => {
-      const StyleManagerModule = await import('@shared/styles/style-manager');
+      const StyleManagerModule = await import('@shared/styles/style-service');
       const StyleManager = StyleManagerModule.default;
 
       // 정적 메서드들이 존재해야 함

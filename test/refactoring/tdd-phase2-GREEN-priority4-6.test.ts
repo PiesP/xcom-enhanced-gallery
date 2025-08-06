@@ -58,8 +58,8 @@ describe('🟢 GREEN Phase 2: Priority 4-6 구현 검증', () => {
     });
 
     it('메모리 관리 중복 파일들이 unified-memory-manager로 re-export하는지 확인', async () => {
-      // memory-manager.ts가 통합된 관리자를 사용하는지 확인
-      const memoryManager = await import('@shared/memory/memory-manager');
+      // memory-service.ts가 통합된 관리자를 사용하는지 확인
+      const memoryManager = await import('@shared/memory/memory-service');
       expect(typeof memoryManager.registerResource).toBe('function');
       expect(typeof memoryManager.cleanupResources).toBe('function');
 
@@ -139,7 +139,7 @@ describe('🟢 GREEN Phase 2: Priority 4-6 구현 검증', () => {
 
     it('사용하지 않는 기능 제거 후 핵심 기능이 유지되는지 확인', async () => {
       // 핵심 기능들이 여전히 작동하는지 확인
-      const { setCSSVariable } = await import('@shared/styles/style-manager');
+      const { setCSSVariable } = await import('@shared/styles/style-service');
       const { throttle } = await import('@shared/utils/performance/performance-utils-enhanced');
 
       expect(() => {

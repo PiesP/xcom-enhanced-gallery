@@ -48,8 +48,8 @@ describe('의존성 최적화 테스트 - Phase GREEN (구현 완료)', () => {
       expect('getMotion' in vendorApi).toBe(false);
     });
 
-    it('vendor-manager에서 MotionAPI 타입이 제거되었어야 한다', async () => {
-      const vendorManager = await import('../src/shared/external/vendors/vendor-manager');
+    it('vendor-service에서 MotionAPI 타입이 제거되었어야 한다', async () => {
+      const vendorManager = await import('../src/shared/external/vendors/vendor-service');
       // MotionAPI 타입이 export되지 않는지 확인
       expect('MotionAPI' in vendorManager).toBe(false);
     });
@@ -96,8 +96,8 @@ describe('의존성 최적화 테스트 - Phase GREEN (구현 완료)', () => {
       }
     });
 
-    it('vendor-manager에서 TanStackQueryAPI 타입이 제거되었어야 한다', async () => {
-      const vendorManager = await import('../src/shared/external/vendors/vendor-manager');
+    it('vendor-service에서 TanStackQueryAPI 타입이 제거되었어야 한다', async () => {
+      const vendorManager = await import('../src/shared/external/vendors/vendor-service');
       // TanStackQueryAPI 타입이 export되지 않는지 확인
       expect('TanStackQueryAPI' in vendorManager).toBe(false);
     });

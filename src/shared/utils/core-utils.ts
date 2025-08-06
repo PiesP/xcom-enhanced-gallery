@@ -58,7 +58,7 @@ export function safeSetAttribute(el: Element | null, attr: string, value: string
 // CSS 유틸리티 (from StyleManager)
 // ================================
 
-import StyleManager from '@shared/styles/style-manager';
+import StyleManager from '@shared/styles/style-service';
 
 /**
  * CSS 변수 설정 (core-utils 호환성 유지)

@@ -80,7 +80,7 @@ async function verifyDesignSystemIntegration() {
   try {
     // 5. StyleService 통합 API 검증
     console.log('5️⃣ StyleService 통합 API 검증...');
-    const { styleService } = await import('../src/shared/styles/style-service.ts');
+    const { default: styleService } = await import('../src/shared/styles/style-manager.ts');
 
     const zIndex = styleService.getZIndex('modal');
 

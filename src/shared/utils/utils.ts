@@ -24,11 +24,11 @@ export {
 export { ensureGalleryScrollAvailable } from './core-utils';
 
 // CSS utilities (통합됨 - 중복 제거)
-export { default as StyleManagerClass } from '../styles/style-manager';
+export { default as StyleManagerClass } from '../styles/style-service';
 /**
- * @deprecated Use StyleManager.setCSSVariable() directly from '@shared/styles/style-manager'
+ * @deprecated Use StyleManager.setCSSVariable() directly from '@shared/styles/style-service'
  */
-export { setCSSVariable } from '@shared/styles/style-manager';
+export { setCSSVariable } from '@shared/styles/style-service';
 
 // Deduplication utilities
 export { removeDuplicates } from './deduplication';

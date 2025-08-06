@@ -5,8 +5,8 @@
  */
 
 // CSS utilities
-export * from '@shared/styles/style-manager';
-export { default } from '@shared/styles/style-manager';
+export * from '@shared/styles/style-service';
+export { default } from '@shared/styles/style-service';
 
 // Backward compatibility utilities for existing components
 export { toggleClass, getCSSVariable, applyTheme } from './style-utils';

@@ -11,7 +11,7 @@ export {
   setCSSVariables,
   createThemedClassName,
   updateComponentState,
-} from '../styles/style-manager';
+} from '../styles/style-service';
 
 // Backward compatibility - exports commonly used style utilities
 export { applyTheme } from './styles/style-utils';

@@ -49,8 +49,8 @@ describe('🟢 TDD Phase 2: 코드베이스 통합 성공 (GREEN)', () => {
     it('ZIndexManager 경로 불일치가 해결되었어야 함', async () => {
       // GREEN: 이제 모든 ZIndexManager 경로가 정상 동작해야 함
       const zIndexImportTests = [
-        async () => await import('@shared/utils/z-index-manager'),
-        async () => await import('@shared/utils/z-index-manager'),
+        async () => await import('@shared/utils/z-index-service'),
+        async () => await import('@shared/utils/z-index-service'),
       ];
 
       let successfulImports = 0;
@@ -62,7 +62,7 @@ describe('🟢 TDD Phase 2: 코드베이스 통합 성공 (GREEN)', () => {
           const hasExports = Object.keys(module).length > 0;
 
           results.push({
-            path: i === 0 ? 'ZIndexManager' : 'z-index-manager',
+            path: i === 0 ? 'ZIndexManager' : 'z-index-service',
             success: true,
             hasExports,
           });
@@ -72,7 +72,7 @@ describe('🟢 TDD Phase 2: 코드베이스 통합 성공 (GREEN)', () => {
           }
         } catch {
           results.push({
-            path: i === 0 ? 'ZIndexManager' : 'z-index-manager',
+            path: i === 0 ? 'ZIndexManager' : 'z-index-service',
             success: false,
             hasExports: false,
           });
@@ -88,7 +88,7 @@ describe('🟢 TDD Phase 2: 코드베이스 통합 성공 (GREEN)', () => {
       // GREEN: 이전에 실패했던 import들이 이제 성공해야 함
       const criticalImports = [
         { name: 'CoreService', importPath: '@shared/services/service-manager' },
-        { name: 'ZIndexManager', importPath: '@shared/utils/z-index-manager' },
+        { name: 'ZIndexManager', importPath: '@shared/utils/z-index-service' },
       ];
 
       const importResults = [];
@@ -181,7 +181,7 @@ describe('🟢 TDD Phase 2: 코드베이스 통합 성공 (GREEN)', () => {
       // GREEN: 이제 두 가지 방식 모두 사용 가능하면서 일관성 개선
       const consistencyChecks = [
         { type: 'service-manager', hasKebabCase: true, hasPascalCase: true },
-        { type: 'z-index-manager', hasKebabCase: true, hasPascalCase: true },
+        { type: 'z-index-service', hasKebabCase: true, hasPascalCase: true },
       ];
 
       for (const check of consistencyChecks) {

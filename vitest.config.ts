@@ -175,9 +175,9 @@ export default defineConfig({
     pool: 'threads',
     poolOptions: {
       threads: {
-        singleThread: false,
-        minThreads: isFixMode ? 1 : isOptimized ? 2 : 1,
-        maxThreads: isFixMode ? 2 : isOptimized ? 4 : 2,
+        singleThread: isFixMode,
+        minThreads: isFixMode ? 1 : isOptimized ? 2 : 2,
+        maxThreads: isFixMode ? 1 : isOptimized ? 2 : 22,
         isolate: isFixMode,
       },
     },

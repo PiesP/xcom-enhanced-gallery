@@ -3,7 +3,7 @@
  * @description ZIndexManager를 사용한 중앙화된 Z-Index 관리
  */
 
-import { ZIndexManager } from '@shared/utils/z-index-manager';
+import { ZIndexManager } from '@shared/utils/z-index-service';
 
 // 전역 Z-Index 매니저 인스턴스
 const zIndexManager = ZIndexManager.getInstance();

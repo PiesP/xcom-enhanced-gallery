@@ -24,7 +24,7 @@ import {
   createThemedClassName,
   updateComponentState,
   applyTheme,
-} from '@shared/styles/style-manager';
+} from '@shared/styles/style-service';
 
 // 성능 유틸리티 re-export
 export {

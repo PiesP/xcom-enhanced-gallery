@@ -43,7 +43,7 @@ describe('🟢 GREEN Phase 2: 중복 정리 완료 검증', () => {
 
     it('utils.ts의 setCSSVariable이 StyleManager에서 오는지 확인', async () => {
       const utils = await import('@shared/utils/utils');
-      const styleManager = await import('@shared/styles/style-manager');
+      const styleManager = await import('@shared/styles/style-service');
 
       // utils의 setCSSVariable이 StyleManager에서 오는지 확인
       expect(typeof utils.setCSSVariable).toBe('function');
@@ -105,7 +105,7 @@ describe('🟢 GREEN Phase 2: 중복 정리 완료 검증', () => {
   describe('기능 무결성 검증', () => {
     it('정리 후에도 모든 핵심 기능이 작동하는지 확인', async () => {
       // 스타일 함수 테스트
-      const { setCSSVariable } = await import('@shared/styles/style-manager');
+      const { setCSSVariable } = await import('@shared/styles/style-service');
       expect(() => {
         setCSSVariable('--test-var', 'test-value');
       }).not.toThrow();
@@ -141,7 +141,7 @@ describe('🟢 GREEN Phase 2: 중복 정리 완료 검증', () => {
       const { PerformanceUtils } = await import(
         '@shared/utils/performance/performance-utils-enhanced'
       );
-      const { setCSSVariable } = await import('@shared/styles/style-manager');
+      const { setCSSVariable } = await import('@shared/styles/style-service');
 
       // 타입 검증 (컴파일 타임)
       const mockFn = () => {};

@@ -14,7 +14,7 @@ import {
   type PreactSignalsAPI,
   type PreactCompatAPI,
   type NativeDownloadAPI,
-} from './vendor-manager';
+} from './vendor-service';
 
 // ================================
 // 공개 API

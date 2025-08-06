@@ -46,7 +46,7 @@ describe('🔄 TDD Phase 3: 코드베이스 최종 정리 (REFACTOR)', () => {
       // service-manager.ts를 직접 import하는 코드가 있는지 확인
       const testFiles = [
         'src/shared/services/service-manager.ts',
-        'src/shared/utils/z-index-manager.ts',
+        'src/shared/utils/z-index-service.ts',
       ];
 
       for (const file of testFiles) {
@@ -98,7 +98,7 @@ describe('🔄 TDD Phase 3: 코드베이스 최종 정리 (REFACTOR)', () => {
       // kebab-case 파일명 사용 확인
       const expectedConventions = {
         ServiceManager: 'service-manager',
-        ZIndexManager: 'z-index-manager',
+        ZIndexManager: 'z-index-service',
         DOMManager: 'dom-manager',
         MediaService: 'media-service', // 예시
       };
@@ -155,7 +155,7 @@ describe('🔄 TDD Phase 3: 코드베이스 최종 정리 (REFACTOR)', () => {
     it('클래스명과 파일명의 일관성이 유지되어야 함', () => {
       const namingExamples = [
         { file: 'service-manager.ts', class: 'CoreService' },
-        { file: 'z-index-manager.ts', class: 'ZIndexManager' },
+        { file: 'z-index-service.ts', class: 'ZIndexManager' },
         { file: 'dom-manager.ts', class: 'DOMManager' },
       ];
 
@@ -174,7 +174,7 @@ describe('🔄 TDD Phase 3: 코드베이스 최종 정리 (REFACTOR)', () => {
       // 샘플 체크만 수행 (전체 스캔은 비용이 큼)
       const sampleFiles = [
         'src/shared/services/service-manager.ts',
-        'src/shared/utils/z-index-manager.ts',
+        'src/shared/utils/z-index-service.ts',
       ];
 
       for (const file of sampleFiles) {

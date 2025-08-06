@@ -231,7 +231,7 @@ describe('Architecture Dependency Rules', () => {
 
         // vendor 정의 파일들은 완전히 제외
         const isVendorDefinitionFile =
-          filePath.includes('src/shared/external/vendors/vendor-manager.ts') ||
+          filePath.includes('src/shared/external/vendors/vendor-service.ts') ||
           filePath.includes('src/shared/external/vendors/vendor-api.ts') ||
           filePath.includes('src/shared/external/vendors/index.ts');
 

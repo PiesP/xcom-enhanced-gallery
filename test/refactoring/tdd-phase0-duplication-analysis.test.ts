@@ -57,7 +57,7 @@ describe('🔴 RED Phase 0: 완전한 중복 분석', () => {
         'src/shared/utils/styles/index.ts',
         'src/shared/utils/styles/style-utils.ts',
         'src/shared/utils/styles/css-utilities.ts',
-        'src/shared/styles/style-manager.ts',
+        'src/shared/styles/style-service.ts',
       ];
 
       const duplicates = analyzeStyleUtilsDuplication(styleFiles);

@@ -15,7 +15,7 @@ export type {
   NativeDownloadAPI,
   VNode,
   ComponentChildren,
-} from './vendor-manager';
+} from './vendor-service';
 
 // Vendor-specific types
 export type {

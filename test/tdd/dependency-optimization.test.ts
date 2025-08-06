@@ -39,9 +39,9 @@ describe('🔴 RED Phase: 의존성 제거 테스트', () => {
       expect(typeof animationsModule.animateCustom).toBe('function');
     }, 1000); // 1초 timeout
 
-    it('vendor-manager.ts에서 Motion API 타입이 제거되어야 함', async () => {
+    it('vendor-service.ts에서 Motion API 타입이 제거되어야 함', async () => {
       // Motion 관련 타입 정의가 제거되어야 함
-      const vendorModule = await import('@shared/external/vendors/vendor-manager');
+      const vendorModule = await import('@shared/external/vendors/vendor-service');
 
       // Motion API가 더 이상 정의되지 않아야 함
       expect(vendorModule).toBeDefined();
@@ -61,9 +61,9 @@ describe('🔴 RED Phase: 의존성 제거 테스트', () => {
       expect(typeof service.extractFromClickedElement).toBe('function');
     });
 
-    it('vendor-manager.ts에서 TanStack Query 타입이 제거되어야 함', async () => {
+    it('vendor-service.ts에서 TanStack Query 타입이 제거되어야 함', async () => {
       // TanStack Query 관련 타입 정의가 제거되어야 함
-      const vendorModule = await import('@shared/external/vendors/vendor-manager');
+      const vendorModule = await import('@shared/external/vendors/vendor-service');
 
       // TanStack Query API가 더 이상 정의되지 않아야 함
       expect(vendorModule).toBeDefined();

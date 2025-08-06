@@ -1,12 +1,12 @@
 /**
- * @import { ZIndexManager } from "../src/shared/utils/z-index-manager";ileoverview 디자인 시스템 통합 테스트
+ * @import { ZIndexManager } from "../src/shared/utils/z-index-service";ileoverview 디자인 시스템 통합 테스트
  * @description TDD로 구현한 디자인 시스템 개선사항들을 검증
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // 우리가 구현한 모듈들
-import { ZIndexManager } from '../src/shared/utils/z-index-manager';
+import { ZIndexManager } from '../src/shared/utils/z-index-service';
 import {
   generateZIndexCSS,
   getZIndex,

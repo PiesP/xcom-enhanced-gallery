@@ -113,7 +113,7 @@ describe('🔴 RED Phase 1: 중복 분석 및 테스트 작성', () => {
     });
 
     it('StyleManager가 단일 진실 공급원으로 작동하는지 확인', async () => {
-      const StyleManager = await import('@shared/styles/style-manager');
+      const StyleManager = await import('@shared/styles/style-service');
 
       expect(StyleManager.default).toBeDefined();
       expect(typeof StyleManager.default.setCSSVariable).toBe('function');
@@ -167,9 +167,9 @@ describe('🔴 RED Phase 1: 중복 분석 및 테스트 작성', () => {
       const memoryManagers = [];
 
       try {
-        const memoryManager = await import('@shared/memory/memory-manager');
+        const memoryManager = await import('@shared/memory/memory-service');
         if (memoryManager.MemoryManager) {
-          memoryManagers.push('memory-manager');
+          memoryManagers.push('memory-service');
         }
       } catch {
         /* ignore */
@@ -185,9 +185,9 @@ describe('🔴 RED Phase 1: 중복 분석 및 테스트 작성', () => {
       }
 
       try {
-        const memoryManagerUnified = await import('@shared/memory/memory-manager-unified');
+        const memoryManagerUnified = await import('@shared/memory/memory-service-unified');
         if (memoryManagerUnified) {
-          memoryManagers.push('memory-manager-unified');
+          memoryManagers.push('memory-service-unified');
         }
       } catch {
         /* ignore */
