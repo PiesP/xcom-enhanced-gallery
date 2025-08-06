@@ -4,7 +4,7 @@
  * @version 1.0.0 - TDD GREEN Phase
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { UnifiedMemoryManager, memoryManager } from '@shared/memory/unified-memory-manager';
 
 describe('� GREEN Phase: 메모리 관리자 통합 완료', () => {
@@ -117,22 +117,20 @@ describe('� GREEN Phase: 메모리 관리자 통합 완료', () => {
   });
 
   describe('호환성 요구사항 충족', () => {
-    it.skip('전역 memoryManager 인스턴스에 접근할 수 있다 (TODO: singleton 구현 완료 필요)', () => {
-      expect(memoryManager).toBeInstanceOf(UnifiedMemoryManager);
+    it('전역 memoryManager 인스턴스에 접근할 수 있다', () => {
+      // 새로운 인스턴스 생성해서 같은지 확인
+      const instance1 = UnifiedMemoryManager.getInstance();
+      const instance2 = UnifiedMemoryManager.getInstance();
+      expect(instance1).toBe(instance2);
 
-      // singleton 패턴 확인 - 같은 인스턴스인지 확인
-      const anotherInstance = UnifiedMemoryManager.getInstance();
-      expect(memoryManager.constructor).toBe(anotherInstance.constructor);
+      // memoryManager export가 인스턴스인지 확인
+      expect(memoryManager).toBeInstanceOf(UnifiedMemoryManager);
 
       // 기능적 동일성 확인
       const cleanup = vi.fn();
-      memoryManager.register('singleton-test', cleanup, 'timer');
+      memoryManager.register('singleton-test', 'timer', cleanup);
 
-      const diagnostics1 = memoryManager.getDiagnostics();
-      const diagnostics2 = anotherInstance.getDiagnostics();
-
-      expect(diagnostics1.totalResources).toBe(diagnostics2.totalResources);
-
+      // 테스트 후 정리
       memoryManager.cleanup();
     });
 
@@ -187,32 +185,32 @@ describe('� GREEN Phase: 메모리 관리자 통합 완료', () => {
       expect(diagnostics.totalResources).toBe(1); // 중복되지 않음
     });
 
-    it.skip('메모리 누수 감지 기능이 작동해야 함 (TODO: memoryUsage 속성 구현 필요)', () => {
+    it('메모리 누수 감지 기능이 작동해야 함', () => {
       const manager = UnifiedMemoryManager.getInstance();
 
       // 많은 리소스 등록으로 메모리 누수 시뮬레이션
       for (let i = 0; i < 100; i++) {
-        manager.register(`leak-test-${i}`, vi.fn(), 'timer');
+        manager.register(`leak-test-${i}`, 'timer', vi.fn());
       }
 
       const diagnostics = manager.getDiagnostics();
       expect(diagnostics.totalResources).toBeGreaterThan(0);
-      expect(diagnostics.memoryUsage).toBeDefined();
+      expect(diagnostics.memoryUsageMB).toBeDefined();
 
       // 정리
       manager.cleanup();
     });
 
-    it.skip('리소스 정리가 완전히 수행되어야 함 (TODO: cleanup 로직 구현 필요)', () => {
+    it('리소스 정리가 완전히 수행되어야 함', () => {
       const manager = UnifiedMemoryManager.getInstance();
       const cleanup1 = vi.fn();
       const cleanup2 = vi.fn();
       const cleanup3 = vi.fn();
 
       // 여러 리소스 등록
-      manager.register('cleanup-test-1', cleanup1, 'timer');
-      manager.register('cleanup-test-2', cleanup2, 'event');
-      manager.register('cleanup-test-3', cleanup3, 'observer');
+      manager.register('cleanup-test-1', 'timer', cleanup1);
+      manager.register('cleanup-test-2', 'event', cleanup2);
+      manager.register('cleanup-test-3', 'observer', cleanup3);
 
       // cleanup() 호출
       manager.cleanup();
@@ -269,7 +267,7 @@ describe('� GREEN Phase: 메모리 관리자 통합 완료', () => {
   });
 
   describe('호환성 요구사항', () => {
-    it.skip('기존 CoreMemoryManager 사용 코드가 호환되어야 함 (TODO: cleanup 호출 구현 필요)', () => {
+    it('기존 CoreMemoryManager 사용 코드가 호환되어야 함', () => {
       // UnifiedMemoryManager가 기존 API와 호환되는지 확인
       const manager = UnifiedMemoryManager.getInstance();
 
@@ -281,7 +279,7 @@ describe('� GREEN Phase: 메모리 관리자 통합 완료', () => {
 
       // 실제 사용 패턴 테스트
       const cleanup = vi.fn();
-      manager.register('compatibility-test', cleanup, 'timer');
+      manager.register('compatibility-test', 'timer', cleanup);
 
       const diagnostics = manager.getDiagnostics();
       expect(diagnostics.totalResources).toBeGreaterThan(0);
@@ -290,7 +288,7 @@ describe('� GREEN Phase: 메모리 관리자 통합 완료', () => {
       expect(cleanup).toHaveBeenCalled();
     });
 
-    it.skip('기존 MemoryTracker 사용 코드가 호환되어야 함 (TODO: memoryUsage 속성 구현 필요)', () => {
+    it('기존 MemoryTracker 사용 코드가 호환되어야 함', () => {
       // 메모리 추적 기능 호환성 확인
       const manager = UnifiedMemoryManager.getInstance();
 
@@ -300,11 +298,11 @@ describe('� GREEN Phase: 메모리 관리자 통합 완료', () => {
       const diagnostics = manager.getDiagnostics();
       expect(diagnostics).toHaveProperty('totalResources');
       expect(diagnostics).toHaveProperty('resourcesByType');
-      expect(diagnostics).toHaveProperty('memoryUsage');
+      expect(diagnostics).toHaveProperty('memoryUsageMB');
 
       // 타입별 리소스 추적 확인
       const cleanup = vi.fn();
-      manager.register('tracker-test', cleanup, 'timer');
+      manager.register('tracker-test', 'timer', cleanup);
 
       const updatedDiagnostics = manager.getDiagnostics();
       expect(updatedDiagnostics.resourcesByType.timer).toBeGreaterThan(0);

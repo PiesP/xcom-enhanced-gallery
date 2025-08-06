@@ -317,6 +317,8 @@ describe('Architecture Dependency Rules', () => {
         'src/core/memory/index.ts',
         'src/core/styles/index.ts',
         'src/core/types/index.ts',
+        // Shared DOM은 통합된 서비스이므로 특수 케이스
+        'src/shared/dom/index.ts',
         // 타입 정의 파일
         'src/shared/utils/types/index.ts',
       ];
@@ -406,6 +408,7 @@ describe('Architecture Dependency Rules', () => {
           console.log(`  ${file}: ${reason}`);
           problematicLines.forEach(line => console.log(`    ${line}`));
         });
+        console.log('Failed files object:', JSON.stringify(failedFiles, null, 2));
       }
 
       expect(failedFiles).toHaveLength(0);

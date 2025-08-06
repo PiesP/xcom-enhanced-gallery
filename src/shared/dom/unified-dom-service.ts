@@ -412,8 +412,30 @@ export const measurePerformance = unifiedDOMService.measurePerformance.bind(unif
 export const batch = unifiedDOMService.batch.bind(unifiedDOMService);
 export const cleanup = unifiedDOMService.cleanup.bind(unifiedDOMService);
 
-// 기존 API 호환성을 위한 별칭
-export const DOMService = unifiedDOMService;
+// 기존 API 호환성을 위한 별칭 - 클래스와 인스턴스 모두 지원
+export { UnifiedDOMService as DOMServiceClass };
+export const DOMService = Object.assign(unifiedDOMService, {
+  getInstance: () => unifiedDOMService,
+  select: unifiedDOMService.querySelector.bind(unifiedDOMService),
+  batchUpdate: unifiedDOMService.batch.bind(unifiedDOMService),
+  isVisible: (element: HTMLElement): boolean => {
+    if (!element) return false;
+    const style = getComputedStyle(element);
+
+    // 기본 스타일 체크
+    const isDisplayVisible = style.display !== 'none';
+    const isVisibilityVisible = style.visibility !== 'hidden';
+    const isOpacityVisible = style.opacity !== '0';
+
+    // JSDOM 환경에서는 offsetParent 체크를 더 유연하게 처리
+    const hasOffsetParent =
+      element.offsetParent !== null ||
+      element === document.body ||
+      element === document.documentElement;
+
+    return isDisplayVisible && isVisibilityVisible && isOpacityVisible && hasOffsetParent;
+  },
+});
 export const componentManager = {
   dom: unifiedDOMService,
   // 기존 component-manager의 DOM 관련 메서드들을 위임

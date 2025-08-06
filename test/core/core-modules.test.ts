@@ -17,8 +17,8 @@ import {
   type GlassmorphismIntensity,
 } from '@core';
 
-// DOMService를 별도로 import (CoreDOMManager 대체)
-import { select, batchUpdate, DOMService } from '@shared/dom/DOMService';
+// DOMService를 통합된 경로에서 import (UnifiedDOMService로 통합됨)
+import { DOMService, querySelector as select, batch as batchUpdate } from '@shared/dom';
 
 const domService = DOMService.getInstance();
 
@@ -102,6 +102,12 @@ describe('🟢 TDD Phase 2: 통합 Core 모듈 검증 (GREEN)', () => {
         x: 0,
         y: 0,
         toJSON: () => ({}),
+      });
+
+      // JSDOM에서 offsetParent mocking
+      Object.defineProperty(testDiv, 'offsetParent', {
+        get: () => document.body,
+        configurable: true,
       });
 
       // getComputedStyle mock for visibility test
