@@ -4,6 +4,8 @@
  * @version 1.0.0 - TDD Phase 1
  */
 
+import { unifiedDOMService } from '@shared/dom/unified-dom-service';
+
 export interface PageTypeDetectionResult {
   type: 'POST' | 'PROFILE' | 'HOME' | 'SEARCH' | 'UNKNOWN';
   confidence: number;
@@ -164,12 +166,12 @@ export class PagePatternDetector {
    */
   private detectPageTypeFromDOM(): PageTypeDetectionResult {
     // 미디어 뷰어가 열려있으면 POST 페이지
-    if (document.querySelector('[data-testid="photoViewerLayer"]')) {
+    if (unifiedDOMService.querySelector('[data-testid="photoViewerLayer"]')) {
       return { type: 'POST', confidence: 0.95 };
     }
 
     // 트윗 스레드 뷰 감지
-    if (document.querySelector('[data-testid="primaryColumn"] [data-testid="tweet"]')) {
+    if (unifiedDOMService.querySelector('[data-testid="primaryColumn"] [data-testid="tweet"]')) {
       return { type: 'POST', confidence: 0.85 };
     }
 

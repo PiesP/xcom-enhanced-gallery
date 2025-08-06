@@ -7,6 +7,8 @@
  * - 반응형 최적화
  */
 
+import { unifiedDOMService } from '@shared/dom/unified-dom-service';
+
 /**
  * 성능 메트릭 인터페이스
  */
@@ -99,7 +101,9 @@ export class UIOptimizer {
   enableLazyLoading(container: HTMLElement): void {
     if (!this.config.enableLazyLoading || !window.IntersectionObserver) return;
 
-    const images = container.querySelectorAll('img[data-src], [data-lazy]');
+    const images = container.querySelectorAll(
+      'img[data-src], [data-lazy]'
+    ) as NodeListOf<HTMLImageElement>;
 
     this.intersectionObserver = new IntersectionObserver(
       entries => {
@@ -199,11 +203,13 @@ export class UIOptimizer {
       }
     };
 
-    container.addEventListener('scroll', scrollHandler, { passive: true });
+    const scrollCleanup = unifiedDOMService.addEventListener(container, 'scroll', scrollHandler, {
+      passive: true,
+    } as AddEventListenerOptions);
 
     // 정리 함수 등록
     this.memoryCleanupTasks.add(() => {
-      container.removeEventListener('scroll', scrollHandler);
+      scrollCleanup();
     });
   }
 
@@ -307,7 +313,7 @@ export class UIOptimizer {
    */
   private runMemoryCleanup(): void {
     // 미사용 이미지 정리
-    const images = document.querySelectorAll('img[data-cleanup]');
+    const images = unifiedDOMService.querySelectorAll<HTMLImageElement>('img[data-cleanup]');
     images.forEach(img => {
       const imgElement = img as HTMLImageElement;
       if (imgElement.offsetParent === null) {

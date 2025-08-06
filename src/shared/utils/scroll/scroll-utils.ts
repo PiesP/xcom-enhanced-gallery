@@ -4,6 +4,7 @@
 
 import { logger } from '@shared/logging';
 import { Debouncer } from '@shared/utils/timer-management';
+import { unifiedDOMService } from '@shared/dom/unified-dom-service';
 
 /** Twitter 스크롤 컨테이너 찾기 */
 export { findTwitterScrollContainer } from '../core-utils';
@@ -47,11 +48,11 @@ export function preventScrollPropagation(element: HTMLElement): () => void {
     e.stopPropagation();
   };
 
-  element.addEventListener('wheel', handleWheel, { passive: false });
+  const cleanup = unifiedDOMService.addEventListener(element, 'wheel', handleWheel, {
+    passive: false,
+  } as AddEventListenerOptions);
 
-  return () => {
-    element.removeEventListener('wheel', handleWheel);
-  };
+  return cleanup;
 }
 
 // Re-export throttleScroll from performance utils (RAF-based, more efficient)
@@ -81,10 +82,12 @@ export function createScrollHandler(
     }
   };
 
-  const targetElement = captureOnDocument ? document : element;
+  const targetElement = captureOnDocument ? (document as unknown as Element) : element;
 
   try {
-    targetElement.addEventListener('wheel', wheelHandler, { passive: false });
+    const cleanup = unifiedDOMService.addEventListener(targetElement, 'wheel', wheelHandler, {
+      passive: false,
+    } as AddEventListenerOptions);
     logger.debug('Wheel event listener registered', {
       target: captureOnDocument ? 'document' : 'element',
       threshold,
@@ -92,7 +95,7 @@ export function createScrollHandler(
 
     return () => {
       try {
-        targetElement.removeEventListener('wheel', wheelHandler);
+        cleanup();
         logger.debug('Wheel event listener removed');
       } catch (error) {
         logger.warn('Event listener removal failed', error);

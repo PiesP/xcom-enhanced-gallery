@@ -12,7 +12,6 @@ export const APP_CONFIG = {
 
 // 타이밍 및 성능 상수
 export const TIMING = {
-  DEBOUNCE_DELAY: 100,
   CLICK_TIMEOUT: 5000,
   LOAD_TIMEOUT: 30000,
   URL_CLEANUP_DELAY: 100,
