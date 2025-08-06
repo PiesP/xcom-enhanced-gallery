@@ -340,7 +340,6 @@ export class UIOptimizer {
     const updateLayout = () => {
       // PC 전용 - 데스크탑 중심 최적화만 적용
       container.classList.add('xeg-desktop');
-      container.classList.remove('xeg-mobile', 'xeg-tablet');
       this.applyDesktopOptimizations(container);
     };
 

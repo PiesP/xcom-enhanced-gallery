@@ -421,12 +421,3 @@
     -webkit-backdrop-filter: none;
   }
 }
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .lg {
-    padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-    font-size: var(--xeg-font-size-md);
-    min-height: 2.5rem;
-  }
-}

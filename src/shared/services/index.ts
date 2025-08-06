@@ -61,7 +61,7 @@ export type {
 export { ThemeService } from './theme-service';
 export type { Theme } from './theme-service';
 
-// 4. 토스트 서비스 (통합됨 - ToastController 제거됨)
+// 4. 토스트 서비스
 export { ToastService } from './toast-service';
 export type { ToastOptions } from './toast-service';
 

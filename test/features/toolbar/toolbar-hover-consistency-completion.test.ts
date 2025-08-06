@@ -12,7 +12,6 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
   let toolbarCSSContent;
 
   beforeEach(() => {
-    // eslint-disable-next-line no-undef
     const cssPath = join(process.cwd(), 'src/shared/components/ui/Toolbar/Toolbar.module.css');
     toolbarCSSContent = readFileSync(cssPath, 'utf-8');
   });
@@ -144,9 +143,14 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
       expect(highContrastMatch).toBeTruthy('고대비 모드 지원 유지');
     });
 
-    it('모바일 반응형 지원이 유지되었다', () => {
+    it('PC 전용 최적화가 완료되었다', () => {
+      // Phase 3: 모바일 코드가 제거되었는지 확인
       const mobileMatch = toolbarCSSContent.match(/@media.*max-width.*768px/g);
-      expect(mobileMatch).toBeTruthy('모바일 반응형 지원 유지');
+      expect(mobileMatch).toBeFalsy('모바일 미디어 쿼리가 제거되어야 함');
+
+      // PC 전용 호버 스타일이 유지되는지 확인
+      const hoverMatch = toolbarCSSContent.match(/:hover/g);
+      expect(hoverMatch).toBeTruthy('PC 호버 스타일 유지');
     });
   });
 

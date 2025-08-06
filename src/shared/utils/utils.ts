@@ -48,7 +48,7 @@ export {
 } from './accessibility';
 
 // Performance utilities (re-export from performance module, createDebouncer 제거)
-export { createDebouncer } from '@shared/services/timer-service';
+export { Debouncer } from '@shared/utils/timer-management';
 
 export {
   rafThrottle,

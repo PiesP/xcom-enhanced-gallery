@@ -68,7 +68,6 @@
 
     /* 스페이싱 - CSS Logical Properties 활용 */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
-    --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
     --xeg-spacing-compact: clamp(4px, 1.5vw, var(--xeg-spacing-sm));
 
     /* 레이아웃 */
@@ -357,43 +356,6 @@
   font-size: clamp(14px, 2.5vw, 16px);
   line-height: 1.5;
   color: var(--xeg-color-text-tertiary);
-}
-/* 컨테이너 쿼리 기반 반응형 디자인 */
-@container gallery-container (max-width: 768px) {
-  .itemsList {
-    padding: var(--xeg-spacing-mobile);
-    gap: var(--xeg-spacing-mobile);
-  }
-
-  .toolbarWrapper {
-    padding-block-end: var(--xeg-spacing-mobile);
-  }
-}
-
-@container gallery-container (max-width: 480px) {
-  .itemsList {
-    padding: var(--xeg-spacing-compact);
-    gap: var(--xeg-spacing-compact);
-  }
-}
-
-/* 기존 미디어 쿼리는 컨테이너 쿼리 지원이 없는 브라우저를 위한 폴백 */
-@media (max-width: 768px) {
-  .itemsList {
-    padding: var(--xeg-spacing-mobile);
-    gap: var(--xeg-spacing-mobile);
-  }
-
-  .toolbarWrapper {
-    padding-block-end: var(--xeg-spacing-mobile);
-  }
-}
-
-@media (max-width: 480px) {
-  .itemsList {
-    padding: var(--xeg-spacing-compact);
-    gap: var(--xeg-spacing-compact);
-  }
 }
 /* 접근성 - 고대비 모드 지원 */
 @media (prefers-contrast: high) {

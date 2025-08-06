@@ -80,20 +80,26 @@ export class InteractionService {
    * 마우스 이벤트 리스너 추가
    */
   private addMouseListeners(): void {
+    const click = (event: Event) => this.handleClick(event as MouseEvent);
     const mouseDown = (event: Event) => this.handleMouseDown(event as MouseEvent);
     const mouseUp = (event: Event) => this.handleMouseUp(event as MouseEvent);
+    const mouseMove = (event: Event) => this.handleMouseMove(event as MouseEvent);
     const mouseEnter = (event: Event) => this.handleMouseEnter(event as MouseEvent);
     const mouseLeave = (event: Event) => this.handleMouseLeave(event as MouseEvent);
     const contextMenu = (event: Event) => this.handleContextMenu(event as MouseEvent);
 
+    this.element.addEventListener('click', click);
     this.element.addEventListener('mousedown', mouseDown);
     this.element.addEventListener('mouseup', mouseUp);
+    this.element.addEventListener('mousemove', mouseMove);
     this.element.addEventListener('mouseenter', mouseEnter);
     this.element.addEventListener('mouseleave', mouseLeave);
     this.element.addEventListener('contextmenu', contextMenu);
 
+    this.eventListeners.set('click', click);
     this.eventListeners.set('mousedown', mouseDown);
     this.eventListeners.set('mouseup', mouseUp);
+    this.eventListeners.set('mousemove', mouseMove);
     this.eventListeners.set('mouseenter', mouseEnter);
     this.eventListeners.set('mouseleave', mouseLeave);
     this.eventListeners.set('contextmenu', contextMenu);
@@ -107,6 +113,27 @@ export class InteractionService {
 
     this.element.addEventListener('keydown', keyDown);
     this.eventListeners.set('keydown', keyDown);
+  }
+
+  /**
+   * 클릭 처리
+   */
+  private handleClick(event: MouseEvent): void {
+    const eventInfo: MouseEventInfo = {
+      type: 'click',
+      x: event.clientX,
+      y: event.clientY,
+      button: event.button,
+      duration: 0,
+    };
+    this.triggerGesture('click', eventInfo);
+  }
+
+  /**
+   * 마우스 무브 처리
+   */
+  private handleMouseMove(_event: MouseEvent): void {
+    // 마우스 이동 처리 로직 (필요시 구현)
   }
 
   /**

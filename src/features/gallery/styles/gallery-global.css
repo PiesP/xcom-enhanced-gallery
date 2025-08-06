@@ -399,66 +399,6 @@
   /* 갤러리 내부에서는 정상적인 스크롤 동작 허용 */
 }
 
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .xeg-gallery-toolbar {
-    height: 50px;
-    padding: 0 12px;
-  }
-
-  .xeg-toolbar-section-left,
-  .xeg-toolbar-section-center,
-  .xeg-toolbar-section-right {
-    gap: 8px;
-  }
-
-  .xeg-toolbar-button {
-    min-width: 32px;
-    height: 32px;
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-
-  .xeg-gallery-counter {
-    font-size: 12px;
-    margin-left: 8px;
-  }
-
-  .xeg-gallery-viewer {
-    padding: 50px 12px 12px;
-  }
-
-  .xeg-gallery-nav-left,
-  .xeg-gallery-nav-right {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
-  }
-
-  .xeg-gallery-nav-left {
-    left: 12px;
-  }
-
-  .xeg-gallery-nav-right {
-    right: 12px;
-  }
-
-  .xeg-gallery-thumbnails {
-    bottom: 12px;
-    max-width: calc(100vw - 24px);
-  }
-
-  .xeg-thumbnails-container {
-    padding: 8px;
-    gap: 6px;
-  }
-
-  .xeg-thumbnail-image {
-    width: 60px;
-    height: 60px;
-  }
-}
-
 /* 다크 테마 지원 */
 @media (prefers-color-scheme: light) {
   .xeg-gallery-overlay {

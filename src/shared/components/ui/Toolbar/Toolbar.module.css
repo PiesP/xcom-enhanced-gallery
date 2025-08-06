@@ -435,55 +435,6 @@
   color: var(--xeg-color-error);
   /* transform 효과 제거 */
 }
-
-/* 감소된 모션 */
-
-@media (max-width: 480px) {
-  .galleryToolbar {
-    padding: 10px 12px;
-  }
-
-  .toolbarContent {
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .toolbarSection {
-    gap: 4px;
-  }
-
-  .toolbarButton {
-    padding: 5px 8px;
-    min-width: 32px;
-    min-height: 32px;
-  }
-
-  .mediaCounterWrapper {
-    min-width: 70px;
-  }
-
-  .mediaCounter {
-    font-size: 13px;
-  }
-
-  .progressBar {
-    width: 40px;
-    height: 2px;
-  }
-
-  .fitModeGroup {
-    border-radius: 6px;
-  }
-
-  .fitButton {
-    min-width: 28px;
-    min-height: 28px;
-    padding: 3px 6px;
-  }
-
-  /* 작은 화면에서도 separator 표시 유지 */
-}
 /* 고대비 모드 - 시인성 개선 */
 @media (prefers-contrast: high) {
   .galleryToolbar {
@@ -562,21 +513,6 @@
 
   [data-theme='dark'] .galleryToolbar {
     background: rgb(30, 41, 59);
-  }
-}
-
-/* 모바일 환경에서 시인성 강화 */
-@media (max-width: 768px) {
-  .galleryToolbar {
-    background: rgba(255, 255, 255, 0.99); /* 모바일에서 더 불투명 */
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    padding: 8px 12px;
-    min-height: 48px; /* 터치 타겟 크기 증가 */
-  }
-
-  [data-theme='dark'] .galleryToolbar {
-    background: rgba(15, 23, 42, 0.99);
   }
 }
 
