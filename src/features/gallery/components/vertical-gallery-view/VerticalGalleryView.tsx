@@ -26,14 +26,14 @@ import {
 import { useToolbar } from '@shared/hooks/useToolbar';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
-import { useGalleryScroll } from '../../hooks/useGalleryScroll';
+import { useGalleryScroll } from '../../hooks/use-gallery-scroll';
 
 // 타입 정의
 type MouseEvent<T = Element> = Event & {
   currentTarget: T;
   target: EventTarget | null;
 };
-import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
+import { useGalleryItemScroll } from '../../hooks/use-gallery-item-scroll';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';

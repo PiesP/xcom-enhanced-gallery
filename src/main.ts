@@ -104,12 +104,12 @@ async function registerFeatureServicesLazy(): Promise<void> {
     logger.debug('Features 서비스 지연 등록 시작');
 
     // Settings Manager - Features 레이어
-    const { SettingsService } = await import('@features/settings/services/SettingsService');
+    const { SettingsService } = await import('@features/settings/services/settings-service');
     serviceManager!.register(SERVICE_KEYS.SETTINGS_MANAGER, new SettingsService());
 
     // Twitter Token Extractor - Features 레이어
     const { TwitterTokenExtractor } = await import(
-      '@features/settings/services/TwitterTokenExtractor'
+      '@features/settings/services/twitter-token-extractor'
     );
     serviceManager!.register(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, new TwitterTokenExtractor());
 
@@ -280,11 +280,11 @@ async function initializeGalleryApp(): Promise<void> {
     logger.info('🎨 갤러리 앱 지연 초기화 시작');
 
     // Gallery Renderer 서비스 등록 (갤러리 앱에만 필요)
-    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
+    const { GalleryRenderer } = await import('@features/gallery/gallery-renderer');
     serviceManager!.register(SERVICE_KEYS.GALLERY_RENDERER, new GalleryRenderer());
 
     // 갤러리 앱 인스턴스 생성
-    const { GalleryApp } = await import('@features/gallery/GalleryApp');
+    const { GalleryApp } = await import('@features/gallery/gallery-app');
     galleryApp = new GalleryApp();
 
     // 갤러리 앱 초기화

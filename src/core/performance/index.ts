@@ -7,15 +7,15 @@
  */
 
 // 메인 클래스들
-export { PerformanceMonitor } from './PerformanceMonitor';
-// export { EnhancedPerformanceMonitor } from './EnhancedPerformanceMonitor';
-export { MetricsCollector } from './MetricsCollector';
-export { AlertSystem } from './AlertSystem';
+export { PerformanceMonitor } from './performance-monitor';
+// export { EnhancedPerformanceMonitor } from './enhanced-performance-monitor';
+export { MetricsCollector } from './metrics-collector';
+export { AlertSystem } from './alert-system';
 export {
   PerformanceIntegration,
   getPerformanceIntegration,
   destroyPerformanceIntegration,
-} from './PerformanceIntegration';
+} from './performance-integration';
 
 // 타입 정의들
 export type {
@@ -36,4 +36,4 @@ export type {
 } from './types';
 
 // 성능 모니터링 시스템 팩토리는 별도 파일로 분리
-export { PerformanceMonitoringSystem } from './PerformanceMonitoringSystem';
+export { PerformanceMonitoringSystem } from './performance-monitoring-system';

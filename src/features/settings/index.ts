@@ -5,8 +5,8 @@
  */
 
 // 핵심 설정 서비스들
-export { SettingsService } from './services/SettingsService';
-export { TwitterTokenExtractor } from './services/TwitterTokenExtractor';
+export { SettingsService } from './services/settings-service';
+export { TwitterTokenExtractor } from './services/twitter-token-extractor';
 
 // 설정 타입들
 export * from './types/settings.types';

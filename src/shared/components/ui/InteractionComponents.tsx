@@ -9,7 +9,7 @@
 
 import type { ComponentChildren, Ref } from 'preact';
 import { getPreactHooks } from '@shared/external/vendors';
-import { getAccessibilityManager } from '@shared/utils/accessibility/accessibility-manager';
+import { getAccessibilityManager } from '@shared/utils/accessibility/accessibility-service';
 
 const { useState, useEffect, useRef, useCallback } = getPreactHooks();
 

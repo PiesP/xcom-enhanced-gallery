@@ -5,11 +5,11 @@
  */
 
 // 통합된 갤러리 렌더러 (기본)
-export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
+export { GalleryRenderer, galleryRenderer } from './gallery-renderer';
 
 // 갤러리 앱 (App 레이어에서 이동)
-export { GalleryApp } from './GalleryApp';
-export type { GalleryConfig } from './GalleryApp';
+export { GalleryApp } from './gallery-app';
+export type { GalleryConfig } from './gallery-app';
 
 // 핵심 갤러리 컴포넌트들
 export { VerticalGalleryView } from './components/vertical-gallery-view';

@@ -6,9 +6,9 @@
  * @version 1.0.0
  */
 
-import { PerformanceMonitor } from './PerformanceMonitor';
-import { MetricsCollector } from './MetricsCollector';
-import { AlertSystem } from './AlertSystem';
+import { PerformanceMonitor } from './performance-monitor';
+import { MetricsCollector } from './metrics-collector';
+import { AlertSystem } from './alert-system';
 import type {
   MonitoringConfig,
   DashboardData,

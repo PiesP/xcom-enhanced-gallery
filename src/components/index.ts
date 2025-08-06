@@ -20,8 +20,8 @@ export * from '../features/gallery/components';
 // ================================
 
 // 갤러리 앱 진입점
-export { GalleryApp } from '../features/gallery/GalleryApp';
-export { GalleryRenderer } from '../features/gallery/GalleryRenderer';
+export { GalleryApp } from '../features/gallery/gallery-app';
+export { GalleryRenderer } from '../features/gallery/gallery-renderer';
 
 // 설정 관련
 export * from '../features/settings';

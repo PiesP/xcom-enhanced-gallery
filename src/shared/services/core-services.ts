@@ -120,8 +120,8 @@ export class ServiceDiagnostics {
 
       // 5. 메모리 사용량 (간소화된 ResourceManager 사용)
       try {
-        const { ResourceManager } = await import('../utils/memory/resource-manager');
-        const resourceManager = new ResourceManager();
+        const { ResourceService } = await import('../utils/memory/resource-service');
+        const resourceManager = new ResourceService();
         const resourceCount = resourceManager.getResourceCount();
         if (resourceCount > 0) {
           logger.info('💾 리소스 사용량:', { activeResources: resourceCount });

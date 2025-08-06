@@ -21,7 +21,25 @@ import {
  */
 export interface AccessibilityConfig {
   enableKeyboardNavigation: boolean;
-  enableScreenReader: boolean;
+  let globalAccessibilityManager: AccessibilityService | null = null;
+
+/**
+ * 전역 접근성 서비스 인스턴스 반환
+ */
+export function getAccessibilityManager(): AccessibilityService {
+  if (!globalAccessibilityManager) {
+    globalAccessibilityManager = new AccessibilityService();
+  }
+  return globalAccessibilityManager;
+}
+
+/**
+ * 접근성 서비스 초기화
+ */
+export function initializeAccessibilityManager(
+  config?: Partial<AccessibilityConfig>
+): AccessibilityService {
+  globalAccessibilityManager = new AccessibilityService(config); boolean;
   enableHighContrast: boolean;
   enableFocusTrap: boolean;
   announceChanges: boolean;
@@ -40,10 +58,10 @@ export interface GalleryAccessibilityState {
 }
 
 /**
- * WCAG 2.1 준수 접근성 관리자
+ * WCAG 2.1 준수 접근성 서비스
  * TDD 기반으로 구현된 통합 접근성 솔루션
  */
-export class AccessibilityManager {
+export class AccessibilityService {
   private config: AccessibilityConfig;
   private readonly state: GalleryAccessibilityState;
   private readonly focusTrapsActive: Set<HTMLElement>;
