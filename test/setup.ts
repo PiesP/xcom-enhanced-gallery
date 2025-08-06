@@ -25,22 +25,61 @@ import {
 } from './utils/mocks/ultimate-preact-environment';
 
 // ================================
-// 🔧 Console API 안전 모킹 (최우선)
+// 🔧 Console API 안전 모킹 (최우선) - Enhanced for UnifiedLogger
 // ================================
 
-if (typeof global !== 'undefined') {
-  // console 객체가 없거나 불완전한 경우 보완
-  if (!global.console) {
-    global.console = {} as Console;
+// 브라우저 환경에서 globalThis와 global 모두 지원
+const globalTarget =
+  typeof globalThis !== 'undefined'
+    ? globalThis
+    : typeof global !== 'undefined'
+      ? global
+      : typeof window !== 'undefined'
+        ? window
+        : {};
+
+if (globalTarget) {
+  // console 객체가 없거나 불완전한 경우 완전 재생성
+  if (!globalTarget.console || typeof globalTarget.console.info !== 'function') {
+    globalTarget.console = {} as Console;
   }
 
-  // 누락된 console 메서드들 추가
-  const consoleMethods = ['debug', 'info', 'warn', 'error', 'log', 'trace', 'table'];
+  // 모든 console 메서드를 vi.fn()으로 완전 모킹
+  const consoleMethods = [
+    'debug',
+    'info',
+    'warn',
+    'error',
+    'log',
+    'trace',
+    'table',
+    'assert',
+    'clear',
+    'count',
+    'dir',
+    'group',
+    'groupCollapsed',
+    'groupEnd',
+    'time',
+    'timeEnd',
+  ];
+
   consoleMethods.forEach(method => {
-    if (!global.console[method as keyof Console]) {
-      (global.console as any)[method] = () => {}; // no-op
-    }
+    Object.defineProperty(globalTarget.console, method, {
+      value: vi.fn().mockImplementation((...args) => {
+        // 실제 콘솔 출력은 비활성화하고 모킹만 수행
+        return undefined;
+      }),
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
   });
+
+  // 추가 보장: global, globalThis, window 모두에 동일한 console 할당
+  if (typeof global !== 'undefined') global.console = globalTarget.console;
+  if (typeof globalThis !== 'undefined') globalThis.console = globalTarget.console;
+  if (typeof window !== 'undefined') window.console = globalTarget.console;
 }
 
 // ================================

@@ -445,10 +445,9 @@ export class MediaService {
         return;
       }
 
-      const canvas = createElement('canvas', {
-        width: '1',
-        height: '1',
-      }) as HTMLCanvasElement;
+      const canvas = createElement('canvas') as HTMLCanvasElement;
+      canvas.width = 1;
+      canvas.height = 1;
 
       // canvas.toDataURL이 구현되지 않은 경우 (예: jsdom)
       if (typeof canvas.toDataURL !== 'function') {

@@ -1,11 +1,16 @@
 /**
  * Core Logging System
  *
- * Centralized logging infrastructure for the X.com Enhanced Gallery application.
- * Provides consistent logging interface with different log levels and formatting.
+ * 🔄 UPDATED: UnifiedLogger 기반 통합 로깅 시스템
+ * - console.error/warn 직접 사용 제거
+ * - 성능 최적화 및 메모리 효율성 개선
+ * - 로그 레벨 관리 및 필터링
  *
- * @fileoverview Core logging barrel export
- * @version 1.0.0
+ * @fileoverview Core logging barrel export with UnifiedLogger
+ * @version 2.0.0
  */
 
-export * from './logger';
+export * from './unified-logger';
+
+// 기존 logger는 legacy로 export
+export { logger as legacyLogger } from './logger';

@@ -111,6 +111,60 @@ export class GalleryApp {
   }
 
   /**
+   * 미디어 클릭 이벤트 핸들러 - 화살표 함수로 this 바인딩 보장
+   */
+  public onMediaClick = async (
+    _mediaInfo: unknown,
+    element: HTMLElement,
+    _event: Event
+  ): Promise<void> => {
+    try {
+      const mediaService = await this.getMediaService();
+      const result = await mediaService.extractFromClickedElement(element);
+
+      if (result.success && result.mediaItems.length > 0) {
+        await this.openGallery(result.mediaItems, result.clickedIndex);
+      } else {
+        // 미디어 추출 실패 시 사용자에게 알림
+        logger.warn('미디어 추출 실패:', {
+          success: result.success,
+          mediaCount: result.mediaItems.length,
+          errors: result.errors,
+        });
+
+        // 직접 토스트 서비스를 통해 알림 표시
+        if (this.toastService) {
+          this.toastService.show({
+            title: '미디어 로드 실패',
+            message: '이미지나 비디오를 찾을 수 없습니다.',
+            type: 'error',
+          });
+        }
+      }
+    } catch (error) {
+      logger.error('미디어 추출 중 오류:', error);
+
+      // 직접 토스트 서비스를 통해 에러 알림 표시
+      if (this.toastService) {
+        this.toastService.show({
+          title: '오류 발생',
+          message: `미디어 추출 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+          type: 'error',
+        });
+      }
+    }
+  };
+
+  /**
+   * 키보드 이벤트 핸들러 - 화살표 함수로 this 바인딩 보장
+   */
+  public onKeyboardEvent = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' && galleryState.value.isOpen) {
+      this.closeGallery();
+    }
+  };
+
+  /**
    * 이벤트 핸들러 설정
    */
   private async setupEventHandlers(): Promise<void> {
@@ -119,51 +173,11 @@ export class GalleryApp {
       const { initializeGalleryEvents } = await import('@shared/utils/events');
 
       await initializeGalleryEvents({
-        onMediaClick: async (_mediaInfo, element, _event) => {
-          try {
-            const mediaService = await this.getMediaService();
-            const result = await mediaService.extractFromClickedElement(element);
-
-            if (result.success && result.mediaItems.length > 0) {
-              await this.openGallery(result.mediaItems, result.clickedIndex);
-            } else {
-              // 미디어 추출 실패 시 사용자에게 알림
-              logger.warn('미디어 추출 실패:', {
-                success: result.success,
-                mediaCount: result.mediaItems.length,
-                errors: result.errors,
-              });
-
-              // 직접 토스트 서비스를 통해 알림 표시
-              if (this.toastService) {
-                this.toastService.show({
-                  title: '미디어 로드 실패',
-                  message: '이미지나 비디오를 찾을 수 없습니다.',
-                  type: 'error',
-                });
-              }
-            }
-          } catch (error) {
-            logger.error('미디어 추출 중 오류:', error);
-
-            // 직접 토스트 서비스를 통해 에러 알림 표시
-            if (this.toastService) {
-              this.toastService.show({
-                title: '오류 발생',
-                message: `미디어 추출 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
-                type: 'error',
-              });
-            }
-          }
-        },
+        onMediaClick: this.onMediaClick,
         onGalleryClose: () => {
           this.closeGallery();
         },
-        onKeyboardEvent: event => {
-          if (event.key === 'Escape' && galleryState.value.isOpen) {
-            this.closeGallery();
-          }
-        },
+        onKeyboardEvent: this.onKeyboardEvent,
       });
 
       logger.info('✅ 이벤트 핸들러 설정 완료');
@@ -174,9 +188,9 @@ export class GalleryApp {
   }
 
   /**
-   * 갤러리 닫기 핸들러
+   * 갤러리 닫기 핸들러 - 화살표 함수로 this 바인딩 보장
    */
-  private async handleGalleryClose(): Promise<void> {
+  private readonly handleGalleryClose = async (): Promise<void> => {
     try {
       // 배경 비디오 상태 복원
       const mediaService = await this.getMediaService();
@@ -186,12 +200,12 @@ export class GalleryApp {
     } catch (error) {
       logger.error('갤러리 닫기 처리 실패:', error);
     }
-  }
+  };
 
   /**
-   * 갤러리 열기
+   * 갤러리 열기 - 화살표 함수로 this 바인딩 보장
    */
-  public async openGallery(mediaItems: MediaInfo[], startIndex: number = 0): Promise<void> {
+  public openGallery = async (mediaItems: MediaInfo[], startIndex: number = 0): Promise<void> => {
     if (!mediaItems || mediaItems.length === 0) {
       logger.warn('갤러리 열기 실패: 미디어 아이템이 없음');
       return;
@@ -222,12 +236,12 @@ export class GalleryApp {
       });
       throw error;
     }
-  }
+  };
 
   /**
-   * 갤러리 닫기
+   * 갤러리 닫기 - 화살표 함수로 this 바인딩 보장
    */
-  public async closeGallery(): Promise<void> {
+  public closeGallery = async (): Promise<void> => {
     try {
       if (galleryState.value.isOpen) {
         closeGallery();
@@ -238,7 +252,7 @@ export class GalleryApp {
     } catch (error) {
       logger.error('갤러리 닫기 실패:', error);
     }
-  }
+  };
 
   /**
    * 갤러리 컨테이너 확인 및 생성

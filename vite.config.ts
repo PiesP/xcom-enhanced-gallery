@@ -87,7 +87,6 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
 // @description  ${packageJson.description}
 // @author       PiesP
 // @license      MIT
-// @match        https://x.com/*
 // @match        https://*.x.com/*
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue

@@ -151,7 +151,7 @@ export class UsernameParser {
       ];
 
       for (const selector of metaSelectors) {
-        const metaElement = querySelector(selector, document) as HTMLMetaElement;
+        const metaElement = querySelector(selector) as HTMLMetaElement;
         if (metaElement?.content) {
           const username = this.cleanUsername(metaElement.content);
           if (username && !this.isSystemPage(username)) {

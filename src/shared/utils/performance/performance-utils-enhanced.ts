@@ -67,7 +67,7 @@ export class PerformanceUtils {
     delay: number
   ): (...args: Parameters<T>) => void {
     let lastCall = 0;
-    let timeoutId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     return (...args: Parameters<T>): void => {
       const now = Date.now();
@@ -80,7 +80,7 @@ export class PerformanceUtils {
           logger.warn('Throttle function error:', error);
         }
       } else if (!timeoutId) {
-        timeoutId = window.setTimeout(
+        timeoutId = setTimeout(
           () => {
             lastCall = Date.now();
             timeoutId = null;
@@ -104,14 +104,14 @@ export class PerformanceUtils {
     fn: T,
     delay: number
   ): (...args: Parameters<T>) => void {
-    let timeoutId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     return (...args: Parameters<T>): void => {
       if (timeoutId !== null) {
         clearTimeout(timeoutId);
       }
 
-      timeoutId = window.setTimeout(() => {
+      timeoutId = setTimeout(() => {
         timeoutId = null;
         try {
           fn(...args);
@@ -134,7 +134,7 @@ export class PerformanceUtils {
     cancel: () => void;
     isPending: () => boolean;
   } {
-    let timeoutId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     return {
       execute: (...args: T): void => {
@@ -142,7 +142,7 @@ export class PerformanceUtils {
           clearTimeout(timeoutId);
         }
 
-        timeoutId = window.setTimeout(() => {
+        timeoutId = setTimeout(() => {
           timeoutId = null;
           callback(...args);
         }, delay);

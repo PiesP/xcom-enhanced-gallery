@@ -11,7 +11,6 @@
 import { logger } from '@shared/logging/logger';
 import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { MediaInfo } from '@shared/types/media.types';
-import { querySelector, querySelectorAll } from '@shared/dom';
 
 /**
  * 트윗 document에서 미디어 URL들을 추출
@@ -29,7 +28,7 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     const rootElement = doc instanceof Document ? doc.documentElement : doc;
 
     // 이미지 미디어 추출
-    const images = querySelectorAll('img[src*="pbs.twimg.com"]', rootElement);
+    const images = rootElement.querySelectorAll('img[src*="pbs.twimg.com"]');
     if (images && images.length > 0) {
       Array.from(images).forEach(img => {
         const imgElement = img as HTMLImageElement;
@@ -47,7 +46,7 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     }
 
     // 비디오 미디어 추출
-    const videos = querySelectorAll('video', rootElement);
+    const videos = rootElement.querySelectorAll('video');
     if (videos && videos.length > 0) {
       Array.from(videos).forEach(video => {
         const mediaInfo = createMediaInfoFromVideo(video as HTMLVideoElement, tweetId, mediaIndex);
@@ -59,10 +58,10 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     }
 
     // 추가: data-testid="tweetPhoto"와 data-testid="videoPlayer" 요소들도 확인
-    const tweetPhotos = querySelectorAll('[data-testid="tweetPhoto"]', rootElement);
+    const tweetPhotos = rootElement.querySelectorAll('[data-testid="tweetPhoto"]');
     if (tweetPhotos && tweetPhotos.length > 0) {
       Array.from(tweetPhotos).forEach(photo => {
-        const imgElement = querySelector('img', photo as Element) as HTMLImageElement;
+        const imgElement = (photo as Element).querySelector('img') as HTMLImageElement;
         if (imgElement?.src?.includes('pbs.twimg.com')) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
           if (mediaInfo && !mediaItems.some(item => item.url === mediaInfo.url)) {

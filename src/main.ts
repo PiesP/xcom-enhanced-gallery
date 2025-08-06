@@ -180,7 +180,7 @@ async function initializeToastContainer(): Promise<void> {
 
     const { h, render } = getPreact();
 
-    let toastContainer = querySelector('#xeg-toast-container', document) as HTMLElement | null;
+    let toastContainer = querySelector('#xeg-toast-container') as HTMLElement | null;
     if (!toastContainer) {
       const newContainer = createElement('div', {
         id: 'xeg-toast-container',

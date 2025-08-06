@@ -1,18 +1,22 @@
 /**
  * Logger utility for X.com Enhanced Gallery
  *
- * Provides consistent logging interface with different log levels and formatting.
- * All logs are prefixed with [XEG] for easy identification in browser console.
+ * 🔄 UPDATED: UnifiedLogger 기반으로 리팩토링됨
+ * - console.error/warn 직접 사용 제거
+ * - 통합 로깅 시스템 적용
+ * - 성능 최적화 및 메모리 효율성 개선
  *
- * @fileoverview Centralized logging utility
- * @version 1.0.0
+ * @fileoverview Centralized logging utility powered by UnifiedLogger
+ * @version 2.0.0
  */
 
+import { UnifiedLogger, LogLevel } from './unified-logger';
+
 /**
- * Log levels for filtering and controlling output.
+ * Log levels for backward compatibility
  */
 export const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
-export type LogLevel = (typeof LOG_LEVELS)[number];
+export type LogLevelCompat = (typeof LOG_LEVELS)[number];
 
 /**
  * Loggable data types - supports any serializable data including unknown types
@@ -47,226 +51,165 @@ export interface Logger {
 }
 
 /**
- * Logger configuration options.
+ * UnifiedLogger 기반 Logger 구현
  */
-interface LoggerConfig {
-  /** Minimum log level to output */
-  readonly level: LogLevel;
-  /** Application prefix for log messages */
-  readonly prefix: string;
-  /** Whether to include timestamps */
-  readonly includeTimestamp: boolean;
-  /** Whether to include stack traces for errors */
-  readonly includeStackTrace: boolean;
-}
+class UnifiedLoggerAdapter implements Logger {
+  private readonly unifiedLogger = UnifiedLogger.getInstance();
+  private readonly timers: Map<string, number> = new Map();
 
-/**
- * Determine environment-based log level
- * Production builds should use 'info' to reduce console noise
- * Development builds can use 'debug' for detailed logging
- */
-function getEnvironmentLogLevel(): LogLevel {
-  // Check if we're in a userscript environment (production)
-  try {
-    if (typeof window !== 'undefined') {
-      const gmInfo = (window as unknown as Record<string, unknown>).GM_info;
-      const unsafeWin = (window as unknown as Record<string, unknown>).unsafeWindow;
-      if (gmInfo !== undefined || unsafeWin !== undefined) {
-        return 'info';
-      }
-    }
-  } catch {
-    // Ignore access errors
+  info(...args: LoggableData[]): void {
+    const message = this.formatArgs(args);
+    this.unifiedLogger.info(message, { module: 'XEG' });
   }
 
-  // Check for Vite development mode
-  try {
-    if (import.meta?.env?.DEV) {
-      return 'debug';
-    }
-  } catch {
-    // Ignore if import.meta is not available
+  warn(...args: LoggableData[]): void {
+    const message = this.formatArgs(args);
+    this.unifiedLogger.warn(message, { module: 'XEG' });
   }
 
-  // Check for production build indicators
-  try {
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
-      return 'info';
-    }
-  } catch {
-    // Ignore if process is not available
+  error(...args: LoggableData[]): void {
+    const message = this.formatArgs(args);
+    this.unifiedLogger.error(message, { module: 'XEG' });
   }
 
-  // Default to info for safety
-  return 'info';
-}
+  debug(...args: LoggableData[]): void {
+    const message = this.formatArgs(args);
+    this.unifiedLogger.debug(message, { module: 'XEG' });
+  }
 
-/**
- * Default logger configuration.
- */
-const DEFAULT_CONFIG = {
-  level: getEnvironmentLogLevel(),
-  prefix: '[XEG]',
-  includeTimestamp: true,
-  includeStackTrace: true,
-} as const satisfies LoggerConfig;
+  time(label: string): void {
+    this.timers.set(label, performance.now());
+    this.debug(`Timer started: ${label}`);
+  }
 
-/**
- * Log level priority mapping for filtering.
- */
-const LOG_LEVEL_PRIORITY = {
-  debug: 0,
-  info: 1,
-  warn: 2,
-  error: 3,
-} as const satisfies Record<LogLevel, number>;
+  timeEnd(label: string): void {
+    const startTime = this.timers.get(label);
+    if (startTime !== undefined) {
+      const duration = performance.now() - startTime;
+      this.info(`Timer ${label}: ${duration.toFixed(2)}ms`);
+      this.timers.delete(label);
+    } else {
+      this.warn(`Timer ${label} was not started`);
+    }
+  }
 
-/**
- * Creates a formatted log message with prefix and optional timestamp.
- */
-function formatMessage(
-  level: LogLevel,
-  config: LoggerConfig,
-  ...args: LoggableData[]
-): LoggableData[] {
-  const prefix = config.prefix;
-  const timestamp = config.includeTimestamp ? `[${new Date().toISOString()}]` : '';
-  const levelTag = `[${level.toUpperCase()}]`;
-
-  const prefixParts = [prefix, timestamp, levelTag].filter(Boolean);
-  return [prefixParts.join(' '), ...args];
-}
-
-/**
- * Checks if a log level should be output based on current configuration.
- */
-function shouldLog(level: LogLevel, config: LoggerConfig): boolean {
-  return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[config.level];
-}
-
-/**
- * Timer storage interface for fallback timer implementation.
- */
-interface TimerStorage {
-  [key: string]: number;
-}
-
-/**
- * Global timer storage for browsers without console.time support.
- */
-const timerStorage: TimerStorage = {};
-
-/**
- * Creates a logger instance with the specified configuration.
- */
-function createLogger(config: Partial<LoggerConfig> = {}): Logger {
-  const finalConfig: LoggerConfig = { ...DEFAULT_CONFIG, ...config };
-
-  return {
-    info: (...args: LoggableData[]): void => {
-      if (shouldLog('info', finalConfig)) {
-        // Use console.warn for info level (ESLint compliance)
-        console.warn(...formatMessage('info', finalConfig, ...args));
-      }
-    },
-
-    warn: (...args: LoggableData[]): void => {
-      if (shouldLog('warn', finalConfig)) {
-        console.warn(...formatMessage('warn', finalConfig, ...args));
-      }
-    },
-
-    error: (...args: LoggableData[]): void => {
-      if (shouldLog('error', finalConfig)) {
-        console.error(...formatMessage('error', finalConfig, ...args));
-
-        // Add stack trace for errors if enabled
-        if (finalConfig.includeStackTrace && args.length > 0) {
-          const firstArg = args[0];
-          if (firstArg instanceof Error && firstArg.stack) {
-            console.error('Stack trace:', firstArg.stack);
+  private formatArgs(args: LoggableData[]): string {
+    return args
+      .map(arg => {
+        if (typeof arg === 'string') return arg;
+        if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
+        if (typeof arg === 'object' && arg !== null) {
+          try {
+            return JSON.stringify(arg);
+          } catch {
+            return String(arg);
           }
         }
-      }
-    },
-
-    debug: (...args: LoggableData[]): void => {
-      if (shouldLog('debug', finalConfig)) {
-        // Use console.warn for debug level (ESLint compliance)
-        console.warn(...formatMessage('debug', finalConfig, ...args));
-      }
-    },
-
-    time: (label: string): void => {
-      if (shouldLog('debug', finalConfig)) {
-        const timerKey = `__timer_${label}`;
-        timerStorage[timerKey] = Date.now();
-        console.warn(...formatMessage('debug', finalConfig, `Timer started: ${label}`));
-      }
-    },
-
-    timeEnd: (label: string): void => {
-      if (shouldLog('debug', finalConfig)) {
-        const timerKey = `__timer_${label}`;
-        const startTime = timerStorage[timerKey];
-
-        if (typeof startTime === 'number') {
-          const duration = Date.now() - startTime;
-          const durationMessage = `${label}: ${duration}ms`;
-          console.warn(...formatMessage('debug', finalConfig, durationMessage));
-          delete timerStorage[timerKey];
-        } else {
-          const errorMessage = `Timer '${label}' was not started`;
-          console.warn(...formatMessage('debug', finalConfig, errorMessage));
-        }
-      }
-    },
-  };
+        return String(arg);
+      })
+      .join(' ');
+  }
 }
 
 /**
- * Default logger instance for the application.
+ * 기본 logger 인스턴스 - UnifiedLogger 기반
  */
-export const logger: Logger = createLogger({
-  level: import.meta.env.MODE === 'development' ? 'debug' : 'warn', // 프로덕션에서는 경고 이상만 표시
-  includeTimestamp: import.meta.env.MODE === 'development',
-  includeStackTrace: import.meta.env.MODE === 'development',
-});
+export const logger: Logger = new UnifiedLoggerAdapter();
+
+/**
+ * 직접 UnifiedLogger 인스턴스 접근
+ */
+export const unifiedLogger = UnifiedLogger.getInstance();
+
+/**
+ * 호환성을 위한 개별 로깅 함수들
+ */
+export const logError = (...args: LoggableData[]): void => logger.error(...args);
+export const logWarning = (...args: LoggableData[]): void => logger.warn(...args);
+export const logInfo = (...args: LoggableData[]): void => logger.info(...args);
+export const logDebug = (...args: LoggableData[]): void => logger.debug(...args);
+
+/**
+ * 로그 레벨 설정 (UnifiedLogger 기반)
+ */
+export const setLogLevel = (level: LogLevelCompat): void => {
+  const unifiedLevel = {
+    debug: LogLevel.DEBUG,
+    info: LogLevel.INFO,
+    warn: LogLevel.WARN,
+    error: LogLevel.ERROR,
+  }[level];
+
+  UnifiedLogger.getInstance().setLevel(unifiedLevel);
+};
 
 /**
  * Creates a scoped logger with a specific prefix.
- *
- * @param scope - Scope identifier to append to the main prefix
- * @param config - Additional logger configuration
- * @returns A new logger instance with the scoped prefix
- *
- * @example
- * ```typescript
- * const galleryLogger = createScopedLogger('Gallery');
- * galleryLogger.info('Gallery opened'); // Output: [XEG] [Gallery] Gallery opened
- * ```
  */
-export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
-  return createLogger({
-    ...config,
-    prefix: `${DEFAULT_CONFIG.prefix} [${scope}]`,
-  });
+export function createScopedLogger(scope: string): Logger {
+  class ScopedLoggerAdapter implements Logger {
+    private readonly unifiedLogger = UnifiedLogger.getInstance();
+    private readonly timers: Map<string, number> = new Map();
+
+    info(...args: LoggableData[]): void {
+      const message = this.formatArgs(args);
+      this.unifiedLogger.info(message, { module: 'XEG', scope });
+    }
+
+    warn(...args: LoggableData[]): void {
+      const message = this.formatArgs(args);
+      this.unifiedLogger.warn(message, { module: 'XEG', scope });
+    }
+
+    error(...args: LoggableData[]): void {
+      const message = this.formatArgs(args);
+      this.unifiedLogger.error(message, { module: 'XEG', scope });
+    }
+
+    debug(...args: LoggableData[]): void {
+      const message = this.formatArgs(args);
+      this.unifiedLogger.debug(message, { module: 'XEG', scope });
+    }
+
+    time(label: string): void {
+      this.timers.set(label, performance.now());
+      this.debug(`Timer started: ${label}`);
+    }
+
+    timeEnd(label: string): void {
+      const startTime = this.timers.get(label);
+      if (startTime !== undefined) {
+        const duration = performance.now() - startTime;
+        this.info(`Timer ${label}: ${duration.toFixed(2)}ms`);
+        this.timers.delete(label);
+      } else {
+        this.warn(`Timer ${label} was not started`);
+      }
+    }
+
+    private formatArgs(args: LoggableData[]): string {
+      return args
+        .map(arg => {
+          if (typeof arg === 'string') return arg;
+          if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
+          if (typeof arg === 'object' && arg !== null) {
+            try {
+              return JSON.stringify(arg);
+            } catch {
+              return String(arg);
+            }
+          }
+          return String(arg);
+        })
+        .join(' ');
+    }
+  }
+
+  return new ScopedLoggerAdapter();
 }
 
 /**
  * Performance measurement with logging
- * Measures the execution time of a function and logs it
- *
- * @param label - Label for the measurement
- * @param fn - Function to measure
- * @returns The result of the function execution
- *
- * @example
- * ```typescript
- * const result = await measurePerformanceWithLog('API Call', async () => {
- *   return await fetchData();
- * });
- * ```
  */
 export async function measurePerformanceWithLog<T>(
   label: string,
@@ -282,38 +225,6 @@ export async function measurePerformanceWithLog<T>(
 }
 
 /**
- * Error logging utility with structured error information.
- *
- * @param error - Error object or message
- * @param context - Additional context information
- * @param source - Source component or module where error occurred
- *
- * @example
- * ```typescript
- * try {
- *   await downloadFile(url);
- * } catch (error) {
- *   logError(error, { url, attempt: 1 }, 'DownloadService');
- * }
- * ```
+ * 하위 호환성을 위한 기본 export
  */
-export function logError(
-  error: Error | string,
-  context: Record<string, string | number | boolean> = {},
-  source?: string
-): void {
-  const errorMessage = error instanceof Error ? error.message : error;
-  const errorContext = {
-    source,
-    context,
-    timestamp: new Date().toISOString(),
-  };
-
-  logger.error(`Error${source ? ` in ${source}` : ''}: ${errorMessage}`, errorContext);
-
-  if (error instanceof Error && error.stack) {
-    logger.debug('Error stack:', error.stack);
-  }
-}
-
 export default logger;

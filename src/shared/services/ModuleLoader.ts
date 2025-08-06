@@ -27,7 +27,7 @@ export async function loadServiceModule(serviceName: string) {
         throw new Error(`알 수 없는 서비스: ${serviceName}`);
     }
   } catch (error) {
-    logger.warn('서비스 모듈 로딩 실패:', error, { serviceName });
+    logger.warn('서비스 모듈 로딩 실패:', { error, serviceName });
     throw error;
   }
 }
@@ -51,7 +51,7 @@ export async function loadUtilityModule(utilityName: string) {
         throw new Error(`알 수 없는 유틸리티: ${utilityName}`);
     }
   } catch (error) {
-    logger.warn('유틸리티 모듈 로딩 실패:', error, { utilityName });
+    logger.warn('유틸리티 모듈 로딩 실패:', { error, utilityName });
     throw error;
   }
 }
@@ -92,7 +92,7 @@ export async function loadHookModule(hookName: string) {
         );
     }
   } catch (error) {
-    logger.warn('훅 모듈 로딩 실패:', error, { hookName });
+    logger.warn('훅 모듈 로딩 실패:', { error, hookName });
     throw error;
   }
 }
@@ -107,7 +107,7 @@ export async function loadSettingsModule(moduleName: string) {
         throw new Error(`알 수 없는 설정 모듈: ${moduleName}`);
     }
   } catch (error) {
-    logger.warn('설정 모듈 로딩 실패:', error, { moduleName });
+    logger.warn('설정 모듈 로딩 실패:', { error, moduleName });
     throw error;
   }
 }
@@ -139,7 +139,7 @@ export async function loadModulesParallel(
           throw new Error(`알 수 없는 모듈 타입: ${type}`);
       }
     } catch (error) {
-      logger.warn('모듈 로딩 실패:', error, { type, name });
+      logger.warn('모듈 로딩 실패:', { error, type, name });
       return { type, name, module: null, success: false, error };
     }
   });
