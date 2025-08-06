@@ -6,9 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PerformanceMonitor } from '../../../src/core/performance/PerformanceMonitor';
-import { MetricsCollector } from '../../../src/core/performance/MetricsCollector';
-import { AlertSystem } from '../../../src/core/performance/AlertSystem';
+import { PerformanceMonitor } from '../../../src/core/performance/performance-monitor';
+import { MetricsCollector } from '../../../src/core/performance/metrics-collector';
+import { AlertSystem } from '../../../src/core/performance/alert-system';
 import type { PerformanceMetrics, AlertThreshold } from '../../../src/core/performance/types';
 
 describe('🔴 RED: 성능 모니터링 시스템', () => {

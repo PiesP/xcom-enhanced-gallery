@@ -63,7 +63,7 @@ describe('갤러리 앱 활성화', () => {
     serviceManager.register(SERVICE_KEYS.GALLERY_RENDERER, mockGalleryRenderer);
 
     // GalleryApp 인스턴스 생성
-    const { GalleryApp } = await import('@features/gallery/GalleryApp');
+    const { GalleryApp } = await import('@features/gallery/gallery-app');
     galleryApp = new GalleryApp({
       autoTheme: true,
       keyboardShortcuts: true,
@@ -235,7 +235,7 @@ describe('갤러리 앱 활성화', () => {
       };
       newServiceManager.register(SERVICE_KEYS.UI_SERVICE, mockUIService);
 
-      const { GalleryApp } = await import('@features/gallery/GalleryApp');
+      const { GalleryApp } = await import('@features/gallery/gallery-app');
       const newGalleryApp = new GalleryApp();
 
       await expect(newGalleryApp.initialize()).rejects.toThrow();

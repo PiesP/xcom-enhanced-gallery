@@ -100,7 +100,7 @@ describe('🔴 RED: 성능 모니터링 애플리케이션 통합', () => {
       try {
         // 실제 구현이 없으므로 import 에러 발생 예상
         const PerformanceIntegration = await import(
-          '../../../src/core/performance/PerformanceIntegration'
+          '../../../src/core/performance/performance-integration'
         );
         expect(PerformanceIntegration).toBeDefined();
       } catch (error) {

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GalleryApp } from '@features/gallery/GalleryApp';
+import { GalleryApp } from '@features/gallery/gallery-app';
 import type { MediaInfo } from '@shared/types/core/media.types';
 
 describe('GalleryApp this binding 수정', () => {

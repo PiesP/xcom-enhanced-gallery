@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 describe('useToolbar - TDD 구현', () => {
   describe('🟢 GREEN: 기본 구조 검증', () => {
     it('useToolbar 훅이 정상적으로 import되어야 한다', async () => {
-      const { useToolbar } = await import('../../../src/features/gallery/hooks/useToolbar');
+      const { useToolbar } = await import('../../../src/features/gallery/hooks/use-toolbar');
       expect(useToolbar).toBeDefined();
       expect(typeof useToolbar).toBe('function');
     });
