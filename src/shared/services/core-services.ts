@@ -172,7 +172,7 @@ export { registerCoreServices } from './service-initialization';
 // ================================
 
 import { GalleryService } from './gallery/GalleryService';
-import { MediaService } from './MediaService';
+import { MediaService } from './media-service';
 
 /**
  * 갤러리 서비스 인스턴스 반환

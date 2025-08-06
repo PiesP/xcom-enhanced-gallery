@@ -14,8 +14,8 @@ import { getService } from '@shared/services/service-manager';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging';
-import { MediaService } from '@shared/services/MediaService';
-import { ToastService } from '@shared/services/ToastService';
+import { MediaService } from '@shared/services/media-service';
+import { ToastService } from '@shared/services/toast-service';
 import { unmountGallery } from '@shared/components/isolation';
 import { injectZIndexStyles } from '@shared/styles/z-index-system';
 

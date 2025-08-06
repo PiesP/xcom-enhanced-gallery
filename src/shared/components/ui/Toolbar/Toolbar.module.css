@@ -435,43 +435,8 @@
   color: var(--xeg-color-error);
   /* transform 효과 제거 */
 }
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .galleryToolbar {
-    padding: 12px 16px;
-  }
 
-  .toolbarContent {
-    gap: 12px;
-  }
-
-  .toolbarSection {
-    gap: 6px;
-  }
-
-  .toolbarButton {
-    padding: 6px 10px;
-    min-width: 36px;
-    min-height: 36px;
-    font-size: 13px;
-  }
-
-  .mediaCounter {
-    font-size: 14px;
-  }
-
-  .progressBar {
-    width: 50px;
-  }
-
-  .fitButton {
-    min-width: 32px;
-    min-height: 32px;
-    padding: 4px 8px;
-  }
-
-  /* 반응형에서도 separator 표시 유지 */
-}
+/* 감소된 모션 */
 
 @media (max-width: 480px) {
   .galleryToolbar {
@@ -612,17 +577,6 @@
 
   [data-theme='dark'] .galleryToolbar {
     background: rgba(15, 23, 42, 0.99);
-  }
-}
-
-/* 작은 모바일 화면 */
-@media (max-width: 480px) {
-  .galleryToolbar {
-    width: calc(100vw - 20px);
-    max-width: none;
-    left: 10px;
-    transform: none;
-    border-radius: 8px;
   }
 }
 

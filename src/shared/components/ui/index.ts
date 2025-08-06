@@ -18,7 +18,7 @@ export { ToastContainer } from './Toast/ToastContainer';
 export type { ToastProps } from './Toast/Toast';
 export type { ToastContainerProps } from './Toast/ToastContainer';
 // ToastItem은 이제 services에서 export
-export type { ToastItem } from '@shared/services/ToastService';
+export type { ToastItem } from '@shared/services/toast-service';
 
 // Toolbar 컴포넌트
 export { Toolbar } from './Toolbar/Toolbar';

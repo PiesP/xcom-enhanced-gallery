@@ -19,7 +19,7 @@ export async function registerCoreServices(): Promise<void> {
   // ====================================
 
   // 통합 미디어 서비스
-  const { MediaService } = await import('./MediaService');
+  const { MediaService } = await import('./media-service');
   const mediaService = new MediaService();
   serviceManager.register(SERVICE_KEYS.MEDIA_SERVICE, mediaService);
 
@@ -29,8 +29,8 @@ export async function registerCoreServices(): Promise<void> {
   serviceManager.register(SERVICE_KEYS.VIDEO_STATE, mediaService);
 
   // 개별 UI 서비스들
-  const { ThemeService } = await import('./ThemeService');
-  const { ToastService } = await import('./ToastService');
+  const { ThemeService } = await import('./theme-service');
+  const { ToastService } = await import('./toast-service');
 
   const themeService = new ThemeService();
   const toastService = new ToastService();

@@ -13,7 +13,7 @@ import {
   ANIMATION_CLASSES,
   ANIMATION_CONSTANTS,
   type AnimationConfig as CSSAnimationOptions,
-} from '../services/AnimationService';
+} from '../services/animation-service';
 
 const animationService = AnimationService.getInstance();
 

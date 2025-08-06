@@ -248,31 +248,3 @@
     scroll-behavior: auto !important;
   }
 }
-
-/* 모바일 최적화 (PC 전용 프로젝트) */
-@media (max-width: 768px) {
-  .xeg-root {
-    /* 모바일에서 주소창 숨김 대응 */
-    height: 100dvh !important;
-  }
-
-  .xeg-root .toolbar {
-    margin: var(--xeg-isolated-spacing-sm) !important;
-    padding: var(--xeg-isolated-spacing-sm) !important;
-  }
-}
-
-/* 작은 화면에서 성능 최적화 */
-@media (max-width: 480px) {
-  .xeg-root {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: rgba(0, 0, 0, 0.98) !important;
-  }
-
-  .xeg-root .toolbar {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: var(--xeg-isolated-gray-400) !important;
-  }
-}

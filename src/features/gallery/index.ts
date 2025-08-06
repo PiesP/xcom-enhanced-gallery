@@ -16,7 +16,7 @@ export { VerticalGalleryView } from './components/vertical-gallery-view';
 
 // 갤러리 서비스들 (Core로 통합됨)
 export { GalleryService, galleryService } from '@shared/services/gallery/GalleryService';
-export { MediaService as BulkDownloadService } from '@shared/services/MediaService';
+export { MediaService as BulkDownloadService } from '@shared/services/media-service';
 export type {
   OpenGalleryOptions,
   NavigationResult,

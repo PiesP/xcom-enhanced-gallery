@@ -41,11 +41,11 @@ export {
 // ====================================
 
 // 1. 애니메이션 서비스
-export { AnimationService } from './AnimationService';
+export { AnimationService } from './animation-service';
 
 // 2. 통합 미디어 서비스 (BulkDownload 완전 통합)
-export { MediaService } from './MediaService';
-export { extractUsername, parseUsernameFast } from './MediaService';
+export { MediaService } from './media-service';
+export { extractUsername, parseUsernameFast } from './media-service';
 export type {
   UsernameExtractionResult,
   MediaLoadingState,
@@ -55,15 +55,15 @@ export type {
   BulkDownloadOptions,
   DownloadResult,
   SingleDownloadResult,
-} from './MediaService';
+} from './media-service';
 
 // 3. 테마 서비스
-export { ThemeService } from './ThemeService';
-export type { Theme } from './ThemeService';
+export { ThemeService } from './theme-service';
+export type { Theme } from './theme-service';
 
 // 4. 토스트 서비스 (통합됨 - ToastController 제거됨)
-export { ToastService } from './ToastService';
-export type { ToastOptions } from './ToastService';
+export { ToastService } from './toast-service';
+export type { ToastOptions } from './toast-service';
 
 // 토스트 통합 유틸리티
 export {

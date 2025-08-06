@@ -756,16 +756,6 @@
   }
 }
 
-/* 모바일 최적화 - 블러 강도 조정 */
-@media (max-width: 768px) {
-  :root {
-    --xeg-toolbar-glass-blur: blur(12px);
-    --xeg-toast-glass-blur: blur(16px);
-    --xeg-gallery-glass-blur: blur(20px);
-    --xeg-media-glass-blur: blur(6px);
-  }
-}
-
 /* ===========================================
    OKLCH 미지원 브라우저를 위한 Fallback
    =========================================== */

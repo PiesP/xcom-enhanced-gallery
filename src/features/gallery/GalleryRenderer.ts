@@ -190,7 +190,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       setLoading(true);
 
       // 다운로드 서비스 - MediaService 사용 (BulkDownloadService 통합됨)
-      const { MediaService } = await import('@shared/services/MediaService');
+      const { MediaService } = await import('@shared/services/media-service');
 
       const downloadService = new MediaService();
       const state = galleryState.value;

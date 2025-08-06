@@ -143,7 +143,6 @@ export class CoreAnalyzer {
 
     const unusedConstants = [
       'LEGACY_ANIMATION_DURATION', // 더 이상 사용되지 않는 애니메이션 시간
-      'OLD_BREAKPOINT_MOBILE', // 구버전 브레이크포인트
     ];
 
     logger.debug(`[CoreAnalyzer] ${unusedConstants.length}개의 미사용 상수 발견`);

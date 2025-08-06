@@ -10,4 +10,4 @@ export {
   isValidZipFilename,
   type FilenameOptions,
   type ZipFilenameOptions,
-} from './FilenameService';
+} from './filename-service';

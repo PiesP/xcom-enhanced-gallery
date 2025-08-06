@@ -3,7 +3,7 @@ import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
 import { ComponentStandards } from '../standard-props';
 import type { StandardToastProps } from '../standard-props';
-import type { ToastItem } from '@shared/services/ToastService';
+import type { ToastItem } from '@shared/services/toast-service';
 
 // Constants - 사용하지 않는 상수 제거
 // const DEFAULT_TOAST_DURATION = 5000; // ToastService에서 관리
