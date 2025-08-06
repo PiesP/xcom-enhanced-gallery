@@ -7,7 +7,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * DOM 렌더링 완료를 감지하는 훅

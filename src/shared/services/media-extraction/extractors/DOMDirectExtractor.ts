@@ -4,7 +4,7 @@
  * @version 3.0.0 - Clean Architecture
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
 import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
 

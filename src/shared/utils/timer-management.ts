@@ -146,7 +146,7 @@ export function createDebouncer<T extends unknown[] = []>(
   return new Debouncer(callback, delay);
 }
 
-// Performance utilities re-export
+// Performance utilities re-export - 호환성을 위해 직접 경로 사용
 export {
   measureAsyncPerformance,
   rafThrottle,

@@ -55,13 +55,22 @@ export type GalleryEvents = {
 // Preact Signals lazy initialization
 let galleryStateSignal: Signal<GalleryState> | null = null;
 
-// Logger instance (default fallback)
+// Logger instance - 안전한 접근
 const logger: ILogger = defaultLogger;
 
 function getGalleryStateSignal(): Signal<GalleryState> {
   if (!galleryStateSignal) {
-    const { signal } = getPreactSignals();
-    galleryStateSignal = signal<GalleryState>(INITIAL_STATE);
+    try {
+      const signals = getPreactSignals();
+      galleryStateSignal = signals.signal(INITIAL_STATE);
+    } catch {
+      // Fallback to simple state management if signals are not available
+      logger.warn('[Gallery] Preact signals not available, using fallback state');
+      galleryStateSignal = {
+        value: INITIAL_STATE,
+        subscribe: () => () => {}, // no-op unsubscribe
+      };
+    }
   }
   return galleryStateSignal;
 }

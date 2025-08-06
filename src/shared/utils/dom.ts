@@ -54,7 +54,10 @@ export function shouldBlockGalleryEvent(event: Event): boolean {
 // DOM 조작 함수들은 @shared/dom/DOMService로 완전 통합됨
 // 하위 호환성을 위한 re-export만 유지
 
-import { querySelector, querySelectorAll } from '@shared/dom/DOMService';
+import { querySelector, querySelectorAll } from '@shared/dom/unified-dom-service';
+
+// 기본 DOM 선택 함수들 - UnifiedDOMService로 위임
+export { querySelector, querySelectorAll } from '@shared/dom/unified-dom-service';
 
 // 기본 DOM 선택 함수들 - DOMService로 위임
 export function safeQuerySelector<T extends Element = Element>(
@@ -83,7 +86,7 @@ export function safeQuerySelectorAll<T extends Element = Element>(
   try {
     // 1개 파라미터: document에서 검색
     if (typeof selectorOrRoot === 'string') {
-      return querySelectorAll<T>(selectorOrRoot);
+      return Array.from(querySelectorAll<T>(selectorOrRoot));
     }
     // 2개 파라미터: 지정된 root에서 검색
     if (selector) {
@@ -287,15 +290,12 @@ export function compareSelectorSpecificity(selector1: string, selector2: string)
 // ================================
 
 // ================================
-// DOM Service 통합 함수들 re-export
+// DOM Service 통합 함수들 re-export (UnifiedDOMService로 변경)
 // ================================
 export {
   addClass as safeAddClass,
   removeClass as safeRemoveClass,
   setStyle as safeSetStyle,
-  removeElement as safeRemoveElement,
   addEventListener as safeAddEventListener,
   removeEventListener as safeRemoveEventListener,
-  isVisible as safeIsVisible,
-  isInViewport as safeIsInViewport,
-} from '@shared/dom/DOMService';
+} from '@shared/dom/unified-dom-service';

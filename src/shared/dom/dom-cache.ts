@@ -3,7 +3,7 @@
  * @description 반복적인 DOM 쿼리 최적화를 위한 캐싱 시스템
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * DOM 캐시 엔트리 타입

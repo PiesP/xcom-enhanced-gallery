@@ -11,7 +11,7 @@
  * - 일관된 사용자 경험 제공
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types';

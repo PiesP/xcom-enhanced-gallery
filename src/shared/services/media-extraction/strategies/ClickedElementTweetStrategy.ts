@@ -3,7 +3,7 @@
  * @description 클릭된 요소에서 직접 트윗 정보를 추출하는 최우선 전략
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 /**

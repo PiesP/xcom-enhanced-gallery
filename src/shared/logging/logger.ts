@@ -112,9 +112,105 @@ class UnifiedLoggerAdapter implements Logger {
 }
 
 /**
- * 기본 logger 인스턴스 - UnifiedLogger 기반
+ * 안전한 Logger 인스턴스 생성 - 강화된 안전장치
  */
-export const logger: Logger = new UnifiedLoggerAdapter();
+const createSafeLogger = (): Logger => {
+  let loggerInstance: UnifiedLoggerAdapter | null = null;
+  let isInitializing = false;
+
+  // Lazy initialization으로 초기화 타이밍 문제 해결
+  const getLoggerInstance = (): UnifiedLoggerAdapter => {
+    if (isInitializing) {
+      // 순환 초기화 방지
+      return createFallbackLogger();
+    }
+
+    if (!loggerInstance) {
+      try {
+        isInitializing = true;
+        loggerInstance = new UnifiedLoggerAdapter();
+      } catch {
+        // UnifiedLogger 초기화 실패 시 fallback 로거 사용
+        loggerInstance = createFallbackLogger();
+      } finally {
+        isInitializing = false;
+      }
+    }
+    return loggerInstance;
+  };
+
+  // 강화된 Proxy - 모든 실패 시나리오에 대한 fallback
+  return new Proxy({} as Logger, {
+    get(_, prop) {
+      // 로깅 메서드들에 대한 안전한 wrapper
+      if (prop === 'debug' || prop === 'info' || prop === 'warn' || prop === 'error') {
+        return (...args: LoggableData[]) => {
+          try {
+            const instance = getLoggerInstance();
+            const method = instance[prop as keyof Logger] as (...args: LoggableData[]) => void;
+            if (typeof method === 'function') {
+              return method.call(instance, ...args);
+            }
+          } catch {
+            // 모든 로깅 실패 시 조용히 무시 (프로덕션에서는 로깅 실패가 앱을 망가뜨리면 안됨)
+            // 개발 환경에서만 console로 fallback
+            if (
+              typeof window !== 'undefined' &&
+              (window.location?.hostname === 'localhost' ||
+                window.location?.hostname?.includes('127.0.0.1'))
+            ) {
+              if (prop === 'error' || prop === 'warn' || prop === 'info') {
+                // eslint-disable-next-line no-console
+                console[prop]?.(...args);
+              }
+            }
+          }
+        };
+      }
+
+      // time/timeEnd 메서드들에 대한 안전한 wrapper
+      if (prop === 'time' || prop === 'timeEnd') {
+        return (label: string) => {
+          try {
+            const instance = getLoggerInstance();
+            const method = instance[prop as keyof Logger] as (label: string) => void;
+            if (typeof method === 'function') {
+              return method.call(instance, label);
+            }
+          } catch {
+            // 타이머 실패는 조용히 무시
+          }
+        };
+      }
+
+      // 존재하지 않는 속성에 대한 noop 반환
+      return () => {};
+    },
+  });
+};
+
+/**
+ * UnifiedLogger 실패 시 사용할 Fallback Logger
+ */
+const createFallbackLogger = (): UnifiedLoggerAdapter => {
+  // UnifiedLoggerAdapter와 호환되는 최소 구현
+  const fallbackLogger = new UnifiedLoggerAdapter();
+
+  // 기본 메서드들을 안전한 noop으로 오버라이드
+  fallbackLogger.info = () => {};
+  fallbackLogger.warn = () => {};
+  fallbackLogger.error = () => {};
+  fallbackLogger.debug = () => {};
+  fallbackLogger.time = () => {};
+  fallbackLogger.timeEnd = () => {};
+
+  return fallbackLogger;
+};
+
+/**
+ * 기본 logger 인스턴스 - UnifiedLogger 기반 + Proxy 안전장치
+ */
+export const logger: Logger = createSafeLogger();
 
 /**
  * 직접 UnifiedLogger 인스턴스 접근

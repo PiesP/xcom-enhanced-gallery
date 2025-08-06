@@ -1,5 +1,5 @@
 /**
- * @fileoverview 통합 유틸리티 모듈 - Week 2 TDD 구현
+ * @fileoverview Week 2 TDD 구현
  * @description 스타일과 성능 유틸리티의 단일 진입점 제공
  * @version 1.0.0 - TDD GREEN Phase
  */
@@ -16,7 +16,7 @@ import {
 
 import { memo } from './optimization/memo';
 
-// 스타일 유틸리티 통합
+// 스타일 유틸리티 통합 (StyleManager에서 직접 import)
 import {
   setCSSVariable,
   getCSSVariable,
@@ -24,12 +24,7 @@ import {
   createThemedClassName,
   updateComponentState,
   applyTheme,
-  getXEGVariable,
-  setGalleryTheme,
-  safeAddClass,
-  safeRemoveClass,
-  safeSetStyle,
-} from './styles';
+} from '@shared/styles/style-manager';
 
 // 성능 유틸리티 re-export
 export {
@@ -50,11 +45,6 @@ export {
   createThemedClassName,
   updateComponentState,
   applyTheme,
-  getXEGVariable,
-  setGalleryTheme,
-  safeAddClass,
-  safeRemoveClass,
-  safeSetStyle,
 };
 
 /**
@@ -81,11 +71,6 @@ export const IntegratedUtils = {
     createThemedClassName,
     updateComponentState,
     applyTheme,
-    getXEGVariable,
-    setGalleryTheme,
-    safeAddClass,
-    safeRemoveClass,
-    safeSetStyle,
   },
 } as const;
 

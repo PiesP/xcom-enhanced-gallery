@@ -3,7 +3,7 @@
  * @description 중복 제거를 위한 유틸리티 함수들
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 범용 중복 제거 함수 (오버로드)

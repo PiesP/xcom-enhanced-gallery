@@ -4,7 +4,7 @@
  * @version 3.0.0 - TDD GREEN: 완전 통합 및 단순화
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 // 🟢 GREEN: CoreStyleManager와 StyleManager 타입 통합
 export type GlassmorphismIntensity = 'light' | 'medium' | 'strong' | 'ultra' | 'subtle';
@@ -333,5 +333,13 @@ class StyleManager {
   static getCSSVariable = StyleManager.getTokenValue;
   static setCSSVariables = StyleManager.setMultipleTokens;
 }
+
+// Named exports for backward compatibility
+export const setCSSVariable = StyleManager.setTokenValue.bind(StyleManager);
+export const getCSSVariable = StyleManager.getTokenValue.bind(StyleManager);
+export const setCSSVariables = StyleManager.setMultipleTokens.bind(StyleManager);
+export const updateComponentState = StyleManager.updateComponentState.bind(StyleManager);
+export const createThemedClassName = StyleManager.combineClasses.bind(StyleManager);
+export const applyTheme = StyleManager.setTheme.bind(StyleManager);
 
 export default StyleManager;

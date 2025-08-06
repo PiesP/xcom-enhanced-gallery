@@ -125,8 +125,7 @@ export async function loadModulesParallel(
     try {
       switch (type) {
         case 'component':
-          logger.warn(`갤러리 컴포넌트는 features 레이어에서 직접 로딩하세요: ${name}`);
-          return { type, name, module: null, success: false, error: 'deprecated' };
+          return { type, name, module: await loadComponent(name), success: true };
         case 'service':
           return { type, name, module: await loadServiceModule(name), success: true };
         case 'utility':
@@ -145,4 +144,44 @@ export async function loadModulesParallel(
   });
 
   return Promise.all(loadPromises);
+}
+
+/**
+ * 컴포넌트 로딩 (deprecated component-manager 기능 통합)
+ */
+export async function loadComponent(componentName: string) {
+  const startTime = performance.now();
+
+  try {
+    switch (componentName) {
+      case 'Gallery':
+      case 'MediaViewer': {
+        const module = await import('@features/gallery');
+        const loadTime = performance.now() - startTime;
+        logger.debug(`${componentName} 컴포넌트 로딩 완료:`, { loadTime });
+        return module;
+      }
+
+      case 'ToastNotification': {
+        const module = await import('@shared/components');
+        const loadTime = performance.now() - startTime;
+        logger.debug('ToastNotification 컴포넌트 로딩 완료:', { loadTime });
+        return module;
+      }
+
+      default:
+        throw new Error(`알 수 없는 컴포넌트: ${componentName}`);
+    }
+  } catch (error) {
+    logger.warn('컴포넌트 로딩 실패:', { error, componentName });
+    throw error;
+  }
+}
+
+/**
+ * 컴포넌트 정리 (deprecated component-manager 기능 통합)
+ */
+export function cleanupComponent(componentName: string): void {
+  logger.debug(`${componentName} 컴포넌트 정리 완료`);
+  // 실제 정리 로직은 각 컴포넌트에서 처리
 }

@@ -7,7 +7,7 @@
  * @version 2.0.0 - Core layer migration
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 type EventCleanup = () => void;
 
@@ -144,4 +144,29 @@ export class DOMEventManager {
  */
 export function createEventManager(): DOMEventManager {
   return new DOMEventManager();
+}
+
+// 전역 이벤트 매니저 인스턴스
+const globalEventManager = new DOMEventManager();
+
+/**
+ * 전역 이벤트 리스너 추가
+ */
+export function addGlobalEventListener<K extends keyof HTMLElementEventMap>(
+  element: HTMLElement | Document | Window | null,
+  eventType: K,
+  handler: (event: HTMLElementEventMap[K]) => void,
+  options?: EventOptions
+): () => void {
+  globalEventManager.addEventListener(element, eventType, handler, options);
+  return () => {
+    // 개별 해제는 매니저가 내부적으로 처리
+  };
+}
+
+/**
+ * 전역 이벤트 매니저 정리
+ */
+export function cleanupGlobalEvents(): void {
+  globalEventManager.cleanup();
 }

@@ -6,7 +6,7 @@
  * @version 4.1.0
  */
 
-import { coreLogger as logger } from '@/core/logger';
+import { logger } from '@shared/logging';
 import type { AppConfig } from '@/types';
 import { CoreService } from '@shared/services/service-manager';
 import { SERVICE_KEYS } from './constants';
@@ -121,16 +121,10 @@ async function registerFeatureServicesLazy(): Promise<void> {
 }
 
 /**
- * 갤러리 앱 시작
+ * 메인 애플리케이션 entry point - 제거하여 중복 호출 방지
  */
-// 메인 애플리케이션 entry point
-(async () => {
-  try {
-    await startApplication();
-  } catch (error) {
-    logger.error('Main initialization failed', error);
-  }
-})();
+// 기존의 즉시 실행 함수를 제거하여 중복 초기화 방지
+// DOM 준비 상태에 따른 단일 초기화만 사용
 
 /**
  * Non-Critical 시스템 백그라운드 초기화
@@ -306,13 +300,16 @@ async function initializeGalleryApp(): Promise<void> {
 }
 
 /**
- * 애플리케이션 메인 진입점
+ * 애플리케이션 메인 진입점 - 중복 실행 방지
  */
 async function startApplication(): Promise<void> {
   if (isStarted) {
-    logger.debug('Application: Already started');
+    logger.debug('Application: Already started, skipping duplicate initialization');
     return;
   }
+
+  // 초기화 시작 즉시 플래그 설정으로 중복 실행 방지
+  isStarted = true;
 
   try {
     logger.info('🚀 X.com Enhanced Gallery 시작 중...');
@@ -340,8 +337,6 @@ async function startApplication(): Promise<void> {
     // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
     initializeNonCriticalSystems();
 
-    isStarted = true;
-
     const endTime = performance.now();
     const duration = endTime - startTime;
 
@@ -359,6 +354,8 @@ async function startApplication(): Promise<void> {
       };
     }
   } catch (error) {
+    // 초기화 실패 시 플래그 리셋
+    isStarted = false;
     logger.error('❌ 애플리케이션 초기화 실패:', error);
 
     // 에러 복구 시도
@@ -388,10 +385,12 @@ async function initializeGalleryImmediately(): Promise<void> {
   }
 }
 
-// DOM 준비 시 애플리케이션 시작
+// DOM 준비 상태에 관계없이 안전하게 애플리케이션 시작
+// 중복 실행은 startApplication 내부에서 방지됨
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', startApplication);
 } else {
+  // DOM이 이미 준비된 경우 즉시 실행
   startApplication();
 }
 
@@ -402,11 +401,15 @@ export default {
   cleanup,
 };
 
+// named export for initialize
+export { startApplication as initialize };
+
 // 개발 환경에서 전역 접근 허용
 if (import.meta.env.DEV) {
   (globalThis as Record<string, unknown>).__XEG_MAIN__ = {
     start: startApplication,
     createConfig: createAppConfig,
     cleanup,
+    initialize: startApplication,
   };
 }

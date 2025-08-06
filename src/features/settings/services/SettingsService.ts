@@ -3,7 +3,7 @@
  * @description 애플리케이션 설정의 영구 저장, 로드, 검증을 담당
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type {
   AppSettings,
   NestedSettingKey,

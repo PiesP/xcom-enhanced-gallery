@@ -5,7 +5,7 @@
  */
 
 import { serviceManager } from './service-manager';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * Core 레이어 통합 서비스들을 등록합니다

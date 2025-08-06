@@ -11,7 +11,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 간소화된 키보드 네비게이션 훅 (Esc 키만 지원)

@@ -6,7 +6,7 @@
  * @description 이미지의 점진적 로딩과 품질 향상을 제공하는 훅
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { ComponentManager } from '@shared/components/component-manager';
 
 export interface ProgressiveImageState {

@@ -4,7 +4,7 @@
  * @version 2.0.0
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 리소스 타입

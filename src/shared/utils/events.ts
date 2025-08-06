@@ -2,7 +2,7 @@
  * @fileoverview 통합 이벤트 관리 시스템
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { isGalleryInternalElement } from '@shared/utils/utils';
 import { MediaClickDetector } from '@shared/utils/media/media-click-detector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';

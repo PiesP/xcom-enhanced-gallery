@@ -14,3 +14,19 @@ export * from './unified-logger';
 
 // 기존 logger는 legacy로 export
 export { logger as legacyLogger } from './logger';
+
+// 주요 logger 인스턴스 및 유틸리티 함수들 export
+export {
+  logger,
+  unifiedLogger,
+  logError,
+  logWarning,
+  logInfo,
+  logDebug,
+  setLogLevel,
+  createScopedLogger,
+  measurePerformanceWithLog,
+  type Logger,
+  type LogLevelCompat,
+  type LoggableData,
+} from './logger';

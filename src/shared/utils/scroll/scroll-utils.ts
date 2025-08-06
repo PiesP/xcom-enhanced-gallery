@@ -2,7 +2,7 @@
  * @fileoverview Scroll Utilities
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { Debouncer } from '@shared/utils/timer-management';
 
 /** Twitter 스크롤 컨테이너 찾기 */

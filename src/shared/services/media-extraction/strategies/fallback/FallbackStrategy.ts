@@ -4,7 +4,7 @@
  * @version 1.0.0 - 단순화 작업
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, FallbackExtractionStrategy } from '@shared/types/media.types';

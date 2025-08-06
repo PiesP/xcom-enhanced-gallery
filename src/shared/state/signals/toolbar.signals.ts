@@ -8,7 +8,7 @@
  * - 타입 안전성 보장
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 간소화된 툴바 상태 인터페이스

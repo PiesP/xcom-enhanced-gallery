@@ -4,7 +4,7 @@
  * @version 2.1.0 - Core 서비스로 이동
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import { FallbackStrategy } from '@shared/services/media-extraction/strategies/fallback/FallbackStrategy';

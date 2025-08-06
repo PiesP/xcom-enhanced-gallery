@@ -88,24 +88,56 @@ describe('GalleryApp this binding 수정', () => {
   });
 
   describe('이벤트 핸들러 모든 메서드 검증', () => {
-    it('🔴 모든 이벤트 핸들러 메서드가 this 바인딩을 유지해야 한다', () => {
+    it('✅ 모든 이벤트 핸들러 메서드가 화살표 함수로 안전하게 구현되어 있어야 한다', () => {
       const eventHandlerMethods = [
         'openGallery',
         'closeGallery',
         'onMediaClick',
-        'handleGalleryClose',
+        'onKeyboardEvent',
       ];
 
       eventHandlerMethods.forEach(methodName => {
         const method = (galleryApp as any)[methodName];
         if (typeof method === 'function') {
-          // 현재는 일반 메서드이므로 this 바인딩이 유실됨
-          // 이 테스트는 실패해야 함
+          // 화살표 함수로 구현되어 있어서 this 바인딩이 안전함
+          // 분리된 컨텍스트에서도 오류가 발생하지 않아야 함
           expect(() => {
-            // 메서드를 분리해서 호출하면 this가 undefined가 됨
-            const detachedMethod = method.bind(undefined);
-            detachedMethod();
-          }).toThrow();
+            // 메서드를 분리해서 호출해도 안전해야 함
+            const detachedMethod = method;
+            try {
+              // 메서드 호출 시도 (빈 배열로 테스트)
+              if (methodName === 'openGallery') {
+                detachedMethod([]);
+              } else if (methodName === 'onMediaClick') {
+                // 가짜 이벤트 객체 생성
+                const mockEvent = {
+                  currentTarget: document.createElement('div'),
+                  preventDefault: () => {},
+                  stopPropagation: () => {},
+                };
+                detachedMethod(mockEvent);
+              } else if (methodName === 'onKeyboardEvent') {
+                // 가짜 키보드 이벤트 생성
+                const mockKeyEvent = {
+                  key: 'Escape',
+                  preventDefault: () => {},
+                };
+                detachedMethod(mockKeyEvent);
+              } else {
+                detachedMethod();
+              }
+            } catch (error) {
+              // 비즈니스 로직 오류는 허용 (this 바인딩 오류가 아닌 경우)
+              if (
+                error instanceof Error &&
+                !error.message.includes('Cannot read properties of undefined')
+              ) {
+                // 정상적인 비즈니스 로직 오류는 괜찮음
+                return;
+              }
+              throw error;
+            }
+          }).not.toThrow(/Cannot read properties of undefined/);
         }
       });
     });

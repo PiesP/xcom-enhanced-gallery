@@ -4,7 +4,7 @@
  */
 
 import type { MediaMapping, MediaPageType } from '@shared/types/media.types';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { MediaTabUrlDirectStrategy } from './MediaTabUrlDirectStrategy';
 
 /**

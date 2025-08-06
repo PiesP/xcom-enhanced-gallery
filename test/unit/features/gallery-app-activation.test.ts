@@ -205,11 +205,12 @@ describe('갤러리 앱 활성화', () => {
       serviceManager.register('test.service', { name: 'first' });
       serviceManager.register('test.service', { name: 'second' });
 
-      // 중복 등록 경고가 한 번만 발생해야 함
+      // 중복 등록 차단 경고가 한 번만 발생해야 함
       expect(logSpy).toHaveBeenCalledTimes(1);
+      // UnifiedLogger 포맷: 타임스탬프와 컨텍스트 포함
       expect(logSpy).toHaveBeenCalledWith(
-        '[XEG] [WARN]',
-        expect.stringContaining('[CoreService] 서비스 덮어쓰기: test.service')
+        expect.stringContaining('[CoreService] 서비스 중복 등록 시도 차단: test.service'),
+        expect.objectContaining({ module: 'XEG' })
       );
 
       logSpy.mockRestore();

@@ -5,7 +5,7 @@
  * @moved-from shared/utils/media/username-extraction.ts
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { SYSTEM_PAGES } from '@/constants';
 import { querySelector } from '@shared/dom';
 

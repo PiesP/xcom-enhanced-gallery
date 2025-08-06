@@ -5,7 +5,7 @@
  * 유저스크립트에 적합한 간단한 CSS 토큰 관리자입니다.
  */
 
-import { createScopedLogger } from '@shared/logging/logger';
+import { createScopedLogger } from '@shared/logging';
 
 const logger = createScopedLogger('SimpleTokenManager');
 

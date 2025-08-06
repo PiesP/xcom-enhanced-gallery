@@ -2,7 +2,7 @@
  * @fileoverview 데이터 속성 기반 트윗 정보 추출 전략
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 export class DataAttributeTweetStrategy implements TweetInfoExtractionStrategy {

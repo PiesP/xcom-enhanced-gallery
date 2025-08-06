@@ -4,7 +4,7 @@
  * @version 1.0.0 - Simplification Phase 1
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { isInsideGallery } from './dom';
 
 // DOM 유틸리티는 dom.ts에서 재export

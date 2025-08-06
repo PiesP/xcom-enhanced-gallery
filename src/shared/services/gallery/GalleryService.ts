@@ -22,7 +22,7 @@ import { getErrorMessage } from '@shared/utils/error-handling';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ViewMode } from '@shared/types/core/core-types';
 import { isVendorsInitialized } from '@shared/external/vendors';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 갤러리 초기화 설정 (GalleryInitializer에서 통합)

@@ -12,7 +12,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 interface useToolbarOptions {
   /** 호버 존 높이 (기본: 100px) */

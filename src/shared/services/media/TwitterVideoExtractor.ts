@@ -5,7 +5,7 @@
  * 동영상 썸네일에서 실제 동영상 URL을 추출합니다.
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { undefinedToNull } from '@shared/utils/type-safety-helpers';
 
 import { TWITTER_API_CONFIG } from '@/constants';

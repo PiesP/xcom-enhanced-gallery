@@ -31,20 +31,40 @@ interface LogEntry {
 }
 
 export class UnifiedLogger {
-  private static instance: UnifiedLogger;
+  private static instance: UnifiedLogger | null = null;
+  private static isInitializing = false;
   private currentLevel: LogLevel = LogLevel.INFO;
   private buffer: LogEntry[] = [];
   private readonly maxBufferSize: number = 1000;
   private readonly isProduction: boolean = false;
 
   private constructor() {
-    this.isProduction = process.env.NODE_ENV === 'production';
+    try {
+      this.isProduction = typeof process !== 'undefined' && process.env?.NODE_ENV === 'production';
+    } catch {
+      // 브라우저 환경에서 process가 없을 수 있음
+      this.isProduction = false;
+    }
   }
 
   static getInstance(): UnifiedLogger {
-    if (!UnifiedLogger.instance) {
-      UnifiedLogger.instance = new UnifiedLogger();
+    // 이미 초기화 중이라면 기본 인스턴스 반환
+    if (UnifiedLogger.isInitializing && !UnifiedLogger.instance) {
+      return new UnifiedLogger(); // 임시 인스턴스
     }
+
+    if (!UnifiedLogger.instance) {
+      try {
+        UnifiedLogger.isInitializing = true;
+        UnifiedLogger.instance = new UnifiedLogger();
+      } catch {
+        // 초기화 실패 시 기본 인스턴스 생성
+        UnifiedLogger.instance = new UnifiedLogger();
+      } finally {
+        UnifiedLogger.isInitializing = false;
+      }
+    }
+
     return UnifiedLogger.instance;
   }
 
@@ -161,20 +181,31 @@ export class UnifiedLogger {
     const { level, message, context } = entry;
     const formattedMessage = this.formatMessage(message, context);
 
+    // Console API 안전성 검사
+    const safeConsole = {
+      // eslint-disable-next-line no-console
+      error: console.error?.bind(console) || console.log?.bind(console) || (() => {}),
+      // eslint-disable-next-line no-console
+      warn: console.warn?.bind(console) || console.log?.bind(console) || (() => {}),
+      // eslint-disable-next-line no-console
+      info: console.info?.bind(console) || console.log?.bind(console) || (() => {}),
+      // eslint-disable-next-line no-console
+      log: console.log?.bind(console) || (() => {}),
+    };
+
     switch (level) {
       case LogLevel.ERROR:
-        console.error(formattedMessage, context || {});
+        safeConsole.error(formattedMessage, context || {});
         break;
       case LogLevel.WARN:
-        console.warn(formattedMessage, context || {});
+        safeConsole.warn(formattedMessage, context || {});
         break;
       case LogLevel.INFO:
-        console.info(formattedMessage, context || {});
+        safeConsole.info(formattedMessage, context || {});
         break;
       case LogLevel.DEBUG:
         if (!this.isProduction) {
-          // eslint-disable-next-line no-console
-          console.log(formattedMessage, context || {});
+          safeConsole.log(formattedMessage, context || {});
         }
         break;
     }

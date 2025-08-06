@@ -4,7 +4,7 @@
  */
 
 import { SELECTORS } from '@/constants';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { querySelector } from '@shared/dom';
 
 /**

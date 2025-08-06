@@ -4,7 +4,7 @@
  * @version 1.0.0 - Phase 5: 서비스 레이어 단순화
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 단순화된 서비스 저장소
@@ -33,11 +33,12 @@ export class CoreService {
   }
 
   /**
-   * 서비스 등록 (직접 인스턴스)
+   * 서비스 등록 (직접 인스턴스) - 중복 등록 방지
    */
   public register<T>(key: string, instance: T): void {
     if (this.services.has(key)) {
-      logger.warn(`[CoreService] 서비스 덮어쓰기: ${key}`);
+      logger.warn(`[CoreService] 서비스 중복 등록 시도 차단: ${key}`);
+      return; // 중복 등록 차단
     }
 
     this.services.set(key, instance);

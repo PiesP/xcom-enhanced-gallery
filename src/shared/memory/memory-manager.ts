@@ -5,7 +5,7 @@
  * 일관된 메모리 관리 인터페이스를 제공합니다.
  */
 
-import { createScopedLogger } from '@shared/logging/logger';
+import { createScopedLogger } from '@shared/logging';
 import type { ResourceType } from '@core/types/index';
 
 const logger = createScopedLogger('MemoryService');

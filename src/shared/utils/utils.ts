@@ -4,7 +4,7 @@
  * @version 2.0.0 - Complexity Reduction & Modularization
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
 // ================================
@@ -25,11 +25,10 @@ export { ensureGalleryScrollAvailable } from './core-utils';
 
 // CSS utilities (통합됨 - 중복 제거)
 export { default as StyleManagerClass } from '../styles/style-manager';
-import StyleManager from '@shared/styles/style-manager';
 /**
- * @deprecated StyleManager.setCSSVariable() 직접 사용 권장
+ * @deprecated Use StyleManager.setCSSVariable() directly from '@shared/styles/style-manager'
  */
-export const setCSSVariable = StyleManager.setCSSVariable;
+export { setCSSVariable } from '@shared/styles/style-manager';
 
 // Deduplication utilities
 export { removeDuplicates } from './deduplication';

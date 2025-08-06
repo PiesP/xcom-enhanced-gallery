@@ -4,8 +4,8 @@
  * @version 3.0.0 - Phase 2: 중복 제거 완료, PerformanceUtils 통합
  */
 
-// throttle/debounce 함수는 PerformanceUtils로 통합됨
-export { throttle, debounce } from '../performance/performance-utils-enhanced';
+// throttle/debounce 함수는 PerformanceUtils로 통합됨 - 호환성을 위해 re-export
+export { throttle, debounce } from '@shared/utils/performance/performance-utils-enhanced';
 
 /**
  * 타입 검증 함수들 - 중복 구현 통합

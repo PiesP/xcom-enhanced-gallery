@@ -17,7 +17,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 interface ToolbarOptions {
   /** 초기 표시 시간 (기본: 1000ms) */

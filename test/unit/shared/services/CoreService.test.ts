@@ -51,16 +51,16 @@ describe('CoreService (ServiceManager)', () => {
       expect(coreService.get(serviceKey)).toBe(testService);
     });
 
-    it('동일한 키로 서비스를 덮어쓸 수 있어야 함', () => {
-      // 행위 중심 테스트: 덮어쓰기 동작 검증
+    it('동일한 키로 서비스 중복 등록을 방지해야 함', () => {
+      // 행위 중심 테스트: 중복 등록 방지 동작 검증
       const service1 = { name: 'service1' };
       const service2 = { name: 'service2' };
       const serviceKey = 'test-service';
 
       coreService.register(serviceKey, service1);
-      coreService.register(serviceKey, service2);
+      coreService.register(serviceKey, service2); // 두 번째 등록은 무시됨
 
-      expect(coreService.get(serviceKey)).toBe(service2);
+      expect(coreService.get(serviceKey)).toBe(service1); // 첫 번째 서비스가 유지됨
     });
   });
 

@@ -6,7 +6,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 스크롤 방향 타입

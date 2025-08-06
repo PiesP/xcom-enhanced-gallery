@@ -4,7 +4,7 @@
  * @version 1.0.0 - TDD Phase GREEN
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 통합 성능 유틸리티 클래스

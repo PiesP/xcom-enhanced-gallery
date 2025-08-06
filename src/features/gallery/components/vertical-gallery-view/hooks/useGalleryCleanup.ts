@@ -7,7 +7,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
 interface UseGalleryCleanupOptions {

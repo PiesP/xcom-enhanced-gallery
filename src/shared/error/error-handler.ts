@@ -6,7 +6,7 @@
  * Provides consistent error handling patterns across all layers
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 // ================================
 // Core Error Types

@@ -3,7 +3,7 @@
  * @description 간단하고 직접적인 토스트 알림 서비스 - Phase 4 간소화
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 // Toast 관련 타입 정의
 export interface ToastItem {

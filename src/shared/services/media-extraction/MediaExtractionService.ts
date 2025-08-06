@@ -4,7 +4,7 @@
  * @version 3.0.0 - Core 서비스로 이동 - Clean Architecture
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type { MediaExtractor, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import { ExtractionError, ExtractionErrorCode } from '@shared/types/media.types';

@@ -4,7 +4,7 @@
  * @version 1.0.0 - TDD GREEN Phase
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { rafThrottle } from '@shared/utils/performance';
 
 /**
@@ -90,9 +90,20 @@ export interface DOMOperation {
  * - src/shared/dom/dom-event-manager.ts (이벤트 관리)
  */
 export class UnifiedDOMService implements UnifiedDOMInterface {
+  private static instance: UnifiedDOMService;
   private readonly cache = new Map<string, Element>();
   private readonly eventListeners = new WeakMap<Element, Map<string, EventListener[]>>();
   private readonly performanceMetrics = new Map<string, number[]>();
+
+  /**
+   * 싱글톤 인스턴스 가져오기
+   */
+  static getInstance(): UnifiedDOMService {
+    if (!UnifiedDOMService.instance) {
+      UnifiedDOMService.instance = new UnifiedDOMService();
+    }
+    return UnifiedDOMService.instance;
+  }
 
   /**
    * DOM 엘리먼트 생성
@@ -127,7 +138,14 @@ export class UnifiedDOMService implements UnifiedDOMInterface {
 
     if (options.styles) {
       Object.entries(options.styles).forEach(([property, value]) => {
-        element.style.setProperty(property, value);
+        // DOM API 안전성 검사
+        if (element.style && typeof element.style.setProperty === 'function') {
+          element.style.setProperty(property, value);
+        } else if (element.style) {
+          // 테스트 환경 등에서 setProperty가 없는 경우 직접 할당
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (element.style as any)[property] = value;
+        }
       });
     }
 
@@ -374,7 +392,7 @@ export class UnifiedDOMService implements UnifiedDOMInterface {
 }
 
 // 싱글톤 인스턴스
-export const unifiedDOMService = new UnifiedDOMService();
+export const unifiedDOMService = UnifiedDOMService.getInstance();
 
 // 편의성을 위한 개별 export (기존 코드 호환성)
 export const createElement = unifiedDOMService.createElement.bind(unifiedDOMService);

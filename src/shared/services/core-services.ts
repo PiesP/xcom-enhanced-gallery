@@ -25,7 +25,7 @@ export { getService } from './service-manager';
 // ================================
 
 import { SERVICE_KEYS } from '@/constants';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { registerCoreServices } from './service-initialization';
 
 // ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
