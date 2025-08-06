@@ -77,13 +77,6 @@ export const setCSSVariables = StyleManager.setCSSVariables;
 // ================================
 
 // ================================
-// Performance utilities re-export
-// ================================
-
-// RAF throttle and scroll throttle from performance module
-export { throttleScroll } from '@shared/utils/performance/unified-performance-utils';
-
-// ================================
 // 스크롤 유틸리티
 // ================================
 

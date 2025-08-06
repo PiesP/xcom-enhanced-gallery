@@ -1,11 +1,8 @@
 /**
  * @fileoverview 타입 유틸리티 함수들 - TDD Phase 2
- * @description 타입 검증 관련 함수들만 포함 (throttle은 PerformanceUtils로 이동)
+ * @description 타입 검증 관련 함수들만 포함
  * @version 3.0.0 - Phase 2: 중복 제거 완료, PerformanceUtils 통합
  */
-
-// throttle/debounce 함수는 PerformanceUtils로 통합됨 - 호환성을 위해 re-export
-export { throttle, debounce } from '@shared/utils/performance/unified-performance-utils';
 
 /**
  * 타입 검증 함수들 - 중복 구현 통합

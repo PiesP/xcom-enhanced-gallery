@@ -18,9 +18,8 @@ export {
   findTwitterScrollContainer,
 } from './utils';
 
-// === 성능 관련 (2개) ===
-export { rafThrottle } from '@shared/utils/performance/unified-performance-utils';
-export { createDebouncer } from '@shared/utils/performance/unified-performance-utils';
+// === 성능 관련 (1개) ===
+export * from './performance';
 
 // === 최적화 유틸리티 ===
 export * from './optimization/optimization-utils';

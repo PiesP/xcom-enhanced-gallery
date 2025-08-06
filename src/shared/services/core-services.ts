@@ -93,37 +93,13 @@ export function isProduction(): boolean {
 }
 
 // ================================
-// 하위 호환성을 위한 ServiceDiagnostics
+// 전역 진단 기능 (CoreService 위임)
 // ================================
 
-/**
- * @deprecated ServiceDiagnostics는 CoreService로 통합되었습니다.
- * CoreService.diagnoseServiceManager()를 사용하세요.
- */
-export class ServiceDiagnostics {
-  /**
-   * @deprecated CoreService.diagnoseServiceManager() 사용 권장
-   */
-  static async diagnoseServiceManager(): Promise<void> {
-    const { CoreService } = await import('./service-manager');
-    return CoreService.diagnoseServiceManager();
-  }
-
-  /**
-   * @deprecated CoreService에서 자동으로 처리됩니다.
-   */
-  static async registerGlobalDiagnostic(): Promise<void> {
-    // CoreService에서 자동으로 처리됨
-    if (import.meta.env.DEV) {
-      const { CoreService } = await import('./service-manager');
-      (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ =
-        CoreService.getInstance().diagnoseServiceManager;
-    }
-  }
-}
-
 // 개발 환경에서 전역 진단 함수 등록 (CoreService로 위임)
-// ServiceDiagnostics.registerGlobalDiagnostic(); // NOTE: 필요 시 main.ts에서 호출
+if (import.meta.env.DEV) {
+  // CoreService에서 자동으로 처리됨 - main.ts에서 필요 시 호출
+}
 
 // ================================
 // 핵심 서비스 re-export
