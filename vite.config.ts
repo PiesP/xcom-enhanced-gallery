@@ -8,8 +8,29 @@ import preact from '@preact/preset-vite';
 import * as fs from 'fs';
 import * as path from 'path';
 import { defineConfig, Plugin } from 'vite';
+import { cpus } from 'os';
 
-// 번들 분석 플러그인
+// 환경 감지
+const isCI = !!(process.env.CI || process.env.GITHUB_ACTIONS);
+const isGitHubActions = !!process.env.GITHUB_ACTIONS;
+const cpuCount = cpus().length;
+
+// 환경별 최적화 설정 로그
+if (process.env.NODE_ENV !== 'test') {
+  console.log(`🏗️  Vite 빌드 환경 설정:`);
+  console.log(`   환경: ${isCI ? 'CI' : '로컬'} ${isGitHubActions ? '(GitHub Actions)' : ''}`);
+  console.log(`   CPU 코어: ${cpuCount}개`);
+  console.log(`   최적화: ${isCI ? '메모리 효율성 우선' : '성능 우선'}`);
+}
+
+// Build mode configuration - optimized
+interface BuildMode {
+  readonly isDevelopment: boolean;
+  readonly isProduction: boolean;
+  readonly minify: boolean;
+  readonly sourcemap: boolean;
+  readonly dropConsole: boolean;
+}
 function createBundleAnalysisPlugin(): Plugin {
   return {
     name: 'bundle-analysis',
@@ -61,15 +82,20 @@ interface BuildMode {
   readonly dropConsole: boolean;
 }
 
+// 번들 분석 플러그인
+
 function getBuildMode(mode?: string): BuildMode {
   const isDevelopment = mode === 'development';
+
+  // GitHub Actions에서는 메모리 효율성을 위해 소스맵 비활성화
+  const sourcemap = isDevelopment && !isGitHubActions;
 
   return {
     isDevelopment,
     isProduction: !isDevelopment,
     minify: !isDevelopment,
-    sourcemap: isDevelopment,
-    dropConsole: !isDevelopment,
+    sourcemap,
+    dropConsole: !isDevelopment || isCI, // CI에서는 항상 console 제거
   };
 }
 
@@ -262,7 +288,7 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: false,
       cssCodeSplit: false,
       assetsInlineLimit: 0,
-      reportCompressedSize: !buildMode.isDevelopment,
+      reportCompressedSize: !buildMode.isDevelopment && !isCI, // CI에서는 리포트 비활성화
       rollupOptions: {
         input: 'src/main.ts',
         external: [],
@@ -275,14 +301,17 @@ export default defineConfig(({ mode }) => {
           name: 'XG',
           inlineDynamicImports: true,
           manualChunks: undefined as any,
-          // Phase 5: 추가적인 최적화 설정
+          // 환경별 최적화 설정 - compact 제거
+          ...(isCI && {
+            generatedCode: 'es2015', // compact 대신 사용
+          }),
         },
         treeshake: {
           moduleSideEffects: false,
           unknownGlobalSideEffects: false,
-          // Phase 5: 더 적극적인 tree-shaking
-          propertyReadSideEffects: false,
-          tryCatchDeoptimization: false,
+          // GitHub Actions에서 더 적극적인 tree-shaking
+          propertyReadSideEffects: isCI ? false : 'always',
+          tryCatchDeoptimization: !isCI,
           annotations: true,
         },
         // Phase 5: 번들 분석을 위한 onwarn 핸들러
@@ -299,19 +328,19 @@ export default defineConfig(({ mode }) => {
         },
       },
 
-      // 최적화된 minification 설정
+      // 환경별 최적화된 minification 설정
       minify: buildMode.minify ? 'terser' : false,
       ...(buildMode.isProduction && {
         terserOptions: {
           compress: {
             drop_console: buildMode.dropConsole,
             drop_debugger: true,
-            passes: 2,
+            passes: isCI ? 1 : 2, // CI에서는 빠른 빌드 우선
             pure_funcs: buildMode.dropConsole ? ['console.log', 'console.debug'] : [],
             dead_code: true,
             unused: true,
-            collapse_vars: true,
-            reduce_vars: true,
+            collapse_vars: !isCI, // CI에서는 메모리 절약
+            reduce_vars: !isCI,
             unsafe_regexp: false,
             unsafe_undefined: false,
           },
@@ -370,22 +399,24 @@ export default defineConfig(({ mode }) => {
       },
     },
 
-    // 의존성 최적화
+    // 환경별 의존성 최적화
     optimizeDeps: {
       include: ['preact', 'preact/hooks', '@preact/signals'],
       force: buildMode.isDevelopment,
+      // CI에서는 의존성 스캔 최적화
+      ...(isCI && { entries: ['src/main.ts'] }),
     },
 
-    // 개발 서버
+    // 환경별 개발 서버 설정
     server: {
       port: 3000,
       open: false,
       cors: true,
-      hmr: buildMode.isDevelopment,
+      hmr: buildMode.isDevelopment && !isCI, // CI에서는 HMR 비활성화
     },
 
-    // 로깅
-    logLevel: buildMode.isDevelopment ? 'info' : 'warn',
+    // 환경별 로깅 설정
+    logLevel: isCI ? 'warn' : buildMode.isDevelopment ? 'info' : 'warn',
     clearScreen: false,
   };
 });

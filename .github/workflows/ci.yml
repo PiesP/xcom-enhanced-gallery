@@ -9,6 +9,13 @@ on:
 
 env:
   NODE_VERSION: "20"
+  CI: true
+  GITHUB_ACTIONS: true
+  # Vitest 환경별 최적화
+  VITEST_MODE: "default"
+  NODE_ENV: "test"
+  # 메모리 최적화
+  NODE_OPTIONS: "--max-old-space-size=4096"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -38,6 +45,16 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
+      - name: 🔧 Environment Info
+        run: |
+          echo "🏗️ Environment Information:"
+          echo "Node.js: $(node --version)"
+          echo "NPM: $(npm --version)"
+          echo "CPU Cores: $(nproc)"
+          echo "Memory: $(free -h | awk '/^Mem:/ {print $2}')"
+          echo "CI: $CI"
+          echo "GITHUB_ACTIONS: $GITHUB_ACTIONS"
+
       - name: � Cache test results
         uses: actions/cache@v4
         with:
@@ -63,18 +80,30 @@ jobs:
 
       - name: 🧪 Optimized Tests with Coverage
         if: matrix.task == 'test'
+        env:
+          # GitHub Actions 전용 최적화
+          VITEST_MIN_THREADS: 1
+          VITEST_MAX_THREADS: 2
+          VITEST_ISOLATE: true
+          VITEST_TIMEOUT: 30000
         run: |
           echo "🧪 Running optimized tests..."
           npm run test:ci
 
       - name: 🏗️ Build Tests
         if: matrix.task == 'build'
+        env:
+          # 빌드 최적화 환경변수
+          NODE_ENV: "production"
         run: |
           echo "🔨 Testing development build..."
           npm run build:dev
 
           echo "🚀 Testing production build..."
           npm run build:prod
+
+          echo "📊 Build size analysis..."
+          ls -lah dist/
 
       - name: 📊 Upload coverage reports
         if: matrix.task == 'test' && success()
