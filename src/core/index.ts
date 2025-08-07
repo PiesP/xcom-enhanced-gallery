@@ -9,8 +9,6 @@
 
 // ===== 스타일 관리 =====
 export {
-  coreStyleManager,
-  CoreStyleManager,
   combineClasses,
   setCSSVariable,
   getCSSVariable,

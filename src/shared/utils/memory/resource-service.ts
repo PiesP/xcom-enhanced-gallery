@@ -1,106 +1,35 @@
 /**
- * @fileoverview 간단한 리소스 관리 유틸리티
- * @description 유저스크립트에 적합한 기본적인 리소스 관리
- * @version 1.0.0 - Phase C2: 단순화
+ * @fileoverview 🟢 GREEN: 리소스 서비스 - UnifiedMemoryManager로 통합됨
+ * @description TDD Phase 2: 중복 제거 완료, 통합 메모리 관리자 사용
+ * @version 2.0.0 - 통합 완료
  */
 
-import { logger } from '@shared/logging';
+// 🟢 GREEN: UnifiedMemoryManager로 완전 통합
+export { UnifiedMemoryManager as ResourceService } from '@shared/memory/unified-memory-manager';
+export { memoryManager as globalResourceManager } from '@shared/memory/unified-memory-manager';
+export type { ResourceType } from '@shared/memory/unified-memory-manager';
 
-/**
- * 리소스 타입
- */
-export type ResourceType = 'image' | 'audio' | 'video' | 'data' | 'cache';
-
-/**
- * 리소스 서비스
- */
-export class ResourceService {
-  private readonly resources = new Map<string, () => void>();
-
-  /**
-   * 리소스 등록
-   */
-  register(id: string, cleanup: () => void): void {
-    this.resources.set(id, cleanup);
-  }
-
-  /**
-   * 리소스 해제
-   */
-  release(id: string): boolean {
-    const cleanup = this.resources.get(id);
-    if (cleanup) {
-      try {
-        cleanup();
-        this.resources.delete(id);
-        return true;
-      } catch (error) {
-        logger.error(`Failed to release resource ${id}:`, error);
-        return false;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * 모든 리소스 해제
-   */
-  releaseAll(): void {
-    const errors: Error[] = [];
-
-    this.resources.forEach((cleanup, id) => {
-      try {
-        cleanup();
-      } catch (error) {
-        errors.push(error instanceof Error ? error : new Error(String(error)));
-        logger.error(`Failed to release resource ${id}:`, error);
-      }
-    });
-
-    this.resources.clear();
-
-    if (errors.length > 0) {
-      logger.warn(`Failed to release ${errors.length} resources`);
-    }
-  }
-
-  /**
-   * 등록된 리소스 수
-   */
-  getResourceCount(): number {
-    return this.resources.size;
-  }
-
-  /**
-   * 리소스가 등록되어 있는지 확인
-   */
-  hasResource(id: string): boolean {
-    return this.resources.has(id);
-  }
-}
-
-/**
- * 글로벌 리소스 매니저
- */
-export const globalResourceManager = new ResourceService();
+// 편의 함수들 - UnifiedMemoryManager API로 위임
+import { memoryManager } from '@shared/memory/unified-memory-manager';
 
 /**
  * 편의 함수: 리소스 등록
  */
 export function registerResource(id: string, cleanup: () => void): void {
-  globalResourceManager.register(id, cleanup);
+  memoryManager.register(id, 'memory', cleanup);
 }
 
 /**
  * 편의 함수: 리소스 해제
  */
 export function releaseResource(id: string): boolean {
-  return globalResourceManager.release(id);
+  return memoryManager.release(id);
 }
 
 /**
  * 편의 함수: 모든 리소스 해제
  */
 export function releaseAllResources(): void {
-  globalResourceManager.releaseAll();
+  // UnifiedMemoryManager는 타입별 해제 지원
+  memoryManager.releaseByType('memory');
 }

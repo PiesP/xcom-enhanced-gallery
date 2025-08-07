@@ -1,12 +1,12 @@
 /**
- * @fileoverview TDD Phase 1 - Performance Utils 통합 테스트 (RED)
- * @description 통합된 성능 유틸리티가 모든 기존 기능을 제공하는지 검증
- * @version 1.0.0 - TDD RED Phase
+ * @fileoverview 🔵 REFACTOR Phase - 성능 시스템 통합 완료 검증
+ * @description 통합되고 개선된 성능 유틸리티 시스템 검증
+ * @version 2.0.0 - REFACTOR Phase
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-describe('TDD: Performance Utils 통합 검증 (RED Phase)', () => {
+describe('🔵 REFACTOR: 성능 시스템 통합 및 개선 검증', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -15,29 +15,33 @@ describe('TDD: Performance Utils 통합 검증 (RED Phase)', () => {
     vi.useRealTimers();
   });
 
-  describe('통합된 PerformanceUtils 클래스', () => {
-    it('모든 성능 관련 정적 메서드를 제공해야 함', async () => {
-      // RED: 아직 존재하지 않는 통합된 클래스를 테스트
-      const { UnifiedPerformanceUtils } = await import(
+  describe('✅ 통합된 PerformanceUtils 클래스 (REFACTOR)', () => {
+    it('단일 PerformanceUtils 클래스가 모든 기능을 제공해야 함', async () => {
+      const { PerformanceUtils } = await import(
         '@shared/utils/performance/unified-performance-utils'
       );
 
-      // 필수 메서드들이 존재하는지 검증
-      expect(UnifiedPerformanceUtils.throttle).toBeDefined();
-      expect(UnifiedPerformanceUtils.debounce).toBeDefined();
-      expect(UnifiedPerformanceUtils.rafThrottle).toBeDefined();
-      expect(UnifiedPerformanceUtils.measurePerformance).toBeDefined();
-      expect(UnifiedPerformanceUtils.createDebouncer).toBeDefined();
-      expect(UnifiedPerformanceUtils.delay).toBeDefined();
+      // 핵심 기능들
+      expect(PerformanceUtils.throttle).toBeDefined();
+      expect(PerformanceUtils.debounce).toBeDefined();
+      expect(PerformanceUtils.rafThrottle).toBeDefined();
+      expect(PerformanceUtils.measurePerformance).toBeDefined();
+      expect(PerformanceUtils.createDebouncer).toBeDefined();
+      expect(PerformanceUtils.delay).toBeDefined();
+
+      // REFACTOR: 새로 추가된 기능들
+      expect(PerformanceUtils.createTimerService).toBeDefined();
+      expect(PerformanceUtils.getGlobalTimerService).toBeDefined();
+      expect(PerformanceUtils.optimizeForUserScript).toBeDefined();
 
       // 타입 검증
-      expect(typeof UnifiedPerformanceUtils.throttle).toBe('function');
-      expect(typeof UnifiedPerformanceUtils.debounce).toBe('function');
-      expect(typeof UnifiedPerformanceUtils.rafThrottle).toBe('function');
-      expect(typeof UnifiedPerformanceUtils.measurePerformance).toBe('function');
+      expect(typeof PerformanceUtils.throttle).toBe('function');
+      expect(typeof PerformanceUtils.debounce).toBe('function');
+      expect(typeof PerformanceUtils.rafThrottle).toBe('function');
+      expect(typeof PerformanceUtils.measurePerformance).toBe('function');
     });
 
-    it('TimerService 인스턴스 관리 기능을 제공해야 함', async () => {
+    it('UI 최적화 기능이 통합되어 제공되어야 함', async () => {
       const { UnifiedPerformanceUtils } = await import(
         '@shared/utils/performance/unified-performance-utils'
       );

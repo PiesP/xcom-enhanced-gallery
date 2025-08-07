@@ -85,40 +85,5 @@ export function setGlassmorphism(
   element.style.willChange = 'backdrop-filter, transform';
 }
 
-/**
- * @deprecated CoreStyleManager는 제거 예정입니다.
- * 대신 개별 함수들을 직접 사용하거나 infrastructure 계층의 스타일 관리자를 사용하세요.
- *
- * Migration guide:
- * - CoreStyleManager.getInstance().setCSSVariable() → setCSSVariable() from infrastructure layer
- * - CoreStyleManager.getInstance().combineClasses() → combineClasses() from this module
- */
-export class CoreStyleManager {
-  private static instance: CoreStyleManager | null = null;
-
-  public static getInstance(): CoreStyleManager {
-    if (!CoreStyleManager.instance) {
-      CoreStyleManager.instance = new CoreStyleManager();
-    }
-    return CoreStyleManager.instance;
-  }
-
-  static combineClasses = combineClasses;
-  static setCSSVariable = setCSSVariable;
-  static getCSSVariable = getCSSVariable;
-  static setGlassmorphism = setGlassmorphism;
-  static applyGlassmorphism = applyGlassmorphism;
-  static updateComponentState = updateComponentState;
-
-  public combineClasses = combineClasses;
-  public setCSSVariable = setCSSVariable;
-  public getCSSVariable = getCSSVariable;
-  public setGlassmorphism = setGlassmorphism;
-  public applyGlassmorphism = applyGlassmorphism;
-  public updateComponentState = updateComponentState;
-}
-
-/**
- * Legacy exports for backward compatibility
- */
-export const coreStyleManager = new CoreStyleManager();
+// 🟢 GREEN: CoreStyleManager 제거 완료 (TDD Phase 2)
+// 모든 기능이 개별 함수로 마이그레이션됨

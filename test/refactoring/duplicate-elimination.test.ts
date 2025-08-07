@@ -13,6 +13,36 @@ describe('🟢 TDD GREEN: 중복 제거 및 통합 완료 검증', () => {
     vi.clearAllMocks();
   });
 
+  describe('✅ 메모리 관리자 통합 완료 검증', () => {
+    it('단일 UnifiedMemoryManager가 모든 메모리 기능을 제공해야 함', async () => {
+      const { UnifiedMemoryManager } = await import('@shared/memory/unified-memory-manager');
+
+      expect(UnifiedMemoryManager).toBeDefined();
+      expect(typeof UnifiedMemoryManager.getInstance).toBe('function');
+
+      const manager = UnifiedMemoryManager.getInstance();
+      expect(typeof manager.register).toBe('function');
+      expect(typeof manager.release).toBe('function');
+      expect(typeof manager.releaseByType).toBe('function');
+      expect(typeof manager.getMemoryStatus).toBe('function');
+    });
+
+    it('중복된 메모리 관리자들이 UnifiedMemoryManager로 통합되었어야 함', async () => {
+      // ResourceService가 UnifiedMemoryManager의 별칭으로 작동해야 함
+      const { ResourceService, globalResourceManager } = await import(
+        '@shared/utils/memory/resource-service'
+      );
+
+      expect(ResourceService).toBeDefined();
+      expect(globalResourceManager).toBeDefined();
+
+      // Core 메모리 관리자도 UnifiedMemoryManager 기반이어야 함
+      const { coreMemoryManager, CoreMemoryManager } = await import('@core/memory');
+      expect(coreMemoryManager).toBeDefined();
+      expect(CoreMemoryManager).toBeDefined();
+    });
+  });
+
   describe('MediaExtractor 인터페이스 통합', () => {
     it('단일 MediaExtractor 인터페이스만 존재해야 한다', async () => {
       // 타입 레벨 검증: MediaExtractionService가 정상 작동하면 타입 통합 성공

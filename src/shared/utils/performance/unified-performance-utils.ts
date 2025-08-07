@@ -6,9 +6,27 @@
 
 import { logger } from '@shared/logging';
 
+// UI Optimization interfaces (moved from ui-optimizer.ts)
+export interface UIPerformanceMetrics {
+  renderTime: number;
+  memoryUsage: number;
+  interactionLatency: number;
+  scrollPerformance: number;
+  imageLoadTime: number;
+}
+
+export interface UIOptimizationConfig {
+  enableLazyLoading: boolean;
+  enableImageOptimization: boolean;
+  enableVirtualScrolling: boolean;
+  enableMemoryOptimization: boolean;
+  enableAnimationOptimization: boolean;
+  performanceTarget: 'performance' | 'quality' | 'balanced';
+}
+
 /**
- * 호환성을 위한 PerformanceUtils 클래스
- * 이전 코드와의 호환성을 유지하면서 통합된 유틸리티 제공
+ * REFACTOR: 통합된 성능 유틸리티 클래스 (네이밍 일관성 개선)
+ * 모든 성능 관련 기능을 제공하는 단일 진입점
  */
 export class PerformanceUtils {
   static throttle = throttle;
@@ -18,6 +36,97 @@ export class PerformanceUtils {
   static measurePerformance = measurePerformance;
   static measurePerformanceAsync = measurePerformanceAsync;
   static createDebouncer = createDebouncer;
+
+  // Timer & Resource 관리 (통합)
+  static createTimerService = () => new TimerServiceImpl();
+  static getGlobalTimerService = () => globalTimerService;
+  static createResourceService = () => new ResourceService();
+  static getGlobalResourceService = () => globalResourceService;
+
+  // 유저스크립트 최적화
+  static optimizeForUserScript = (
+    options: {
+      maxFunctionCalls?: number;
+      memoryThreshold?: number;
+      enableGC?: boolean;
+    } = {}
+  ): {
+    throttle: <T extends (...args: unknown[]) => void>(
+      fn: T,
+      delay: number
+    ) => (...args: unknown[]) => void;
+    debounce: <T extends (...args: unknown[]) => void>(
+      fn: T,
+      delay: number
+    ) => (...args: unknown[]) => void;
+    cleanup: () => void;
+    getFunctionCallCount: () => number;
+    getMemoryUsage: () => {
+      usedJSHeapSize: number;
+      totalJSHeapSize: number;
+      jsHeapSizeLimit: number;
+    } | null;
+  } => {
+    const { maxFunctionCalls = 1000, enableGC = true } = options;
+
+    let functionCallCount = 0;
+
+    // 최적화된 throttle (호출 수 제한)
+    const optimizedThrottle = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
+      return throttle((...args: unknown[]) => {
+        if (functionCallCount < maxFunctionCalls) {
+          functionCallCount++;
+          (fn as (...args: unknown[]) => void)(...args);
+        }
+      }, delay);
+    };
+
+    // 최적화된 debounce (호출 수 제한)
+    const optimizedDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
+      return debounce((...args: unknown[]) => {
+        if (functionCallCount < maxFunctionCalls) {
+          functionCallCount++;
+          (fn as (...args: unknown[]) => void)(...args);
+        }
+      }, delay);
+    };
+
+    // 정리 함수
+    const cleanup = () => {
+      functionCallCount = 0;
+      globalResourceService.releaseAll();
+
+      if (enableGC && typeof window !== 'undefined' && 'gc' in window) {
+        try {
+          (window as { gc?: () => void }).gc?.();
+        } catch (error) {
+          logger.debug('Manual GC not available:', error);
+        }
+      }
+    };
+
+    return {
+      throttle: optimizedThrottle,
+      debounce: optimizedDebounce,
+      cleanup,
+      getFunctionCallCount: () => functionCallCount,
+      getMemoryUsage: () => {
+        // performance.memory는 비표준 API이므로 타입 단언 사용
+        const perf = performance as typeof performance & {
+          memory?: {
+            usedJSHeapSize: number;
+            totalJSHeapSize: number;
+            jsHeapSizeLimit: number;
+          };
+        };
+
+        if (typeof performance !== 'undefined' && perf.memory) {
+          return perf.memory;
+        }
+        return null;
+      },
+    };
+  };
 }
 
 /**
@@ -357,116 +466,96 @@ export function releaseAllResources(): void {
   globalResourceService.releaseAll();
 }
 
+// TDD Phase 2: GREEN 클래스는 REFACTOR 단계에서 제거됨
+
+// =================================
+// UI 최적화 시스템 (ui-optimizer.ts 통합)
+// =================================
+
 /**
- * TDD Phase 2: GREEN - 통합된 성능 유틸리티 클래스
- * 모든 성능 관련 기능을 하나의 클래스로 통합
+ * 간소화된 UI 최적화 관리자
+ * 유저스크립트 환경에 최적화됨
  */
-export class UnifiedPerformanceUtils {
-  // 기존 유틸리티 함수들 통합
-  static throttle = throttle;
-  static debounce = debounce;
-  static rafThrottle = rafThrottle;
-  static measurePerformance = measurePerformance;
-  static measurePerformanceAsync = measurePerformanceAsync;
-  static createDebouncer = createDebouncer;
-  static delay = delay;
+export class UIOptimizer {
+  private readonly metrics: UIPerformanceMetrics = {
+    renderTime: 0,
+    memoryUsage: 0,
+    interactionLatency: 0,
+    scrollPerformance: 0,
+    imageLoadTime: 0,
+  };
 
-  // TimerService 관리
-  static createTimerService() {
-    return new TimerServiceImpl();
-  }
+  private readonly config: UIOptimizationConfig;
 
-  static getGlobalTimerService() {
-    return globalTimerService;
-  }
-
-  // ResourceService 관리
-  static createResourceService() {
-    return new ResourceService();
-  }
-
-  static getGlobalResourceService() {
-    return globalResourceService;
-  }
-
-  // 성능 관리자 (통합된 기능)
-  static getPerformanceManager() {
-    return {
-      timer: globalTimerService,
-      resource: globalResourceService,
-      throttle,
-      debounce,
-      rafThrottle,
-      measurePerformance,
+  constructor(config: Partial<UIOptimizationConfig> = {}) {
+    this.config = {
+      enableLazyLoading: true,
+      enableImageOptimization: true,
+      enableVirtualScrolling: false,
+      enableMemoryOptimization: true,
+      enableAnimationOptimization: true,
+      performanceTarget: 'balanced',
+      ...config,
     };
   }
 
-  // 유저스크립트 최적화 기능
-  static optimizeForUserScript(
-    options: {
-      maxFunctionCalls?: number;
-      memoryThreshold?: number;
-      enableGC?: boolean;
-    } = {}
-  ) {
-    const { maxFunctionCalls = 1000, enableGC = true } = options;
+  /**
+   * 기본 최적화 적용
+   */
+  optimize(container?: HTMLElement): void {
+    if (this.config.enableMemoryOptimization) {
+      this.optimizeMemory();
+    }
+    if (container && this.config.enableAnimationOptimization) {
+      this.optimizeAnimations(container);
+    }
+  }
 
-    let functionCallCount = 0;
+  /**
+   * 메모리 최적화
+   */
+  private optimizeMemory(): void {
+    globalResourceService.releaseAll();
+  }
 
-    // 최적화된 throttle (호출 수 제한)
-    const optimizedThrottle = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
-      return throttle((...args: unknown[]) => {
-        if (functionCallCount < maxFunctionCalls) {
-          functionCallCount++;
-          (fn as (...args: unknown[]) => void)(...args);
-        }
-      }, delay);
-    };
+  /**
+   * 애니메이션 최적화 (간소화)
+   */
+  private optimizeAnimations(container: HTMLElement): void {
+    // CSS will-change 속성 최적화
+    container.style.willChange = 'transform';
 
-    // 최적화된 debounce (호출 수 제한)
-    const optimizedDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
-      return debounce((...args: unknown[]) => {
-        if (functionCallCount < maxFunctionCalls) {
-          functionCallCount++;
-          (fn as (...args: unknown[]) => void)(...args);
-        }
-      }, delay);
-    };
-
-    // 정리 함수
+    // 애니메이션 완료 후 정리
     const cleanup = () => {
-      functionCallCount = 0;
-      globalResourceService.releaseAll();
-
-      if (enableGC && typeof window !== 'undefined' && 'gc' in window) {
-        try {
-          (window as { gc?: () => void }).gc?.();
-        } catch (error) {
-          logger.debug('Manual GC not available:', error);
-        }
-      }
+      container.style.willChange = 'auto';
     };
 
-    return {
-      throttle: optimizedThrottle,
-      debounce: optimizedDebounce,
-      cleanup,
-      getFunctionCallCount: () => functionCallCount,
-      getMemoryUsage: () => {
-        // performance.memory는 비표준 API이므로 타입 단언 사용
-        const perf = performance as typeof performance & {
-          memory?: {
-            usedJSHeapSize: number;
-            totalJSHeapSize: number;
-            jsHeapSizeLimit: number;
-          };
-        };
+    globalResourceService.register(`animation-${Date.now()}`, cleanup);
+  }
 
-        if (typeof performance !== 'undefined' && perf.memory) {
-          return perf.memory;
-        }
-        return null;
-      },
-    };
+  /**
+   * 현재 메트릭 반환
+   */
+  getMetrics(): UIPerformanceMetrics {
+    return { ...this.metrics };
   }
 }
+
+// =================================
+// REFACTOR: 통합된 성능 시스템 Export
+// =================================
+
+// 글로벌 UI 최적화 인스턴스
+export const globalUIOptimizer = new UIOptimizer();
+
+// 편의 함수들
+export function optimizeUI(container?: HTMLElement): void {
+  globalUIOptimizer.optimize(container);
+}
+
+export function getUIMetrics(): UIPerformanceMetrics {
+  return globalUIOptimizer.getMetrics();
+}
+
+// 레거시 호환성 유지 (하위 호환성)
+export const UnifiedPerformanceUtils = PerformanceUtils;
