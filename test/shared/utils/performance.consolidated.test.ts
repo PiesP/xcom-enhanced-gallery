@@ -53,7 +53,9 @@ describe('성능 유틸리티 통합 테스트 - TDD 검증', () => {
           if (!isThrottled) {
             fn(...args);
             isThrottled = true;
-            setTimeout(() => { isThrottled = false; }, 16);
+            setTimeout(() => {
+              isThrottled = false;
+            }, 16);
           }
         };
       };
@@ -67,14 +69,18 @@ describe('성능 유틸리티 통합 테스트 - TDD 검증', () => {
     it('연속 호출 시 throttle이 적용되어야 함', () => {
       const mockFn = vi.fn();
       let isThrottled = false;
-      
-      const throttled = (fn: any) => (...args: any[]) => {
-        if (!isThrottled) {
-          fn(...args);
-          isThrottled = true;
-          setTimeout(() => { isThrottled = false; }, 16);
-        }
-      };
+
+      const throttled =
+        (fn: any) =>
+        (...args: any[]) => {
+          if (!isThrottled) {
+            fn(...args);
+            isThrottled = true;
+            setTimeout(() => {
+              isThrottled = false;
+            }, 16);
+          }
+        };
 
       const throttledFn = throttled(mockFn);
       throttledFn('call1');
@@ -112,7 +118,7 @@ describe('성능 유틸리티 통합 테스트 - TDD 검증', () => {
       }
 
       expect(functions.length).toBe(100);
-      
+
       // 가비지 컬렉션 시뮬레이션
       functions.length = 0;
       expect(functions.length).toBe(0);
