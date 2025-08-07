@@ -8,7 +8,7 @@ import {
   ultimateContext,
   ensurePreactHookContext,
   resetPreactHookState,
-} from '../utils/mocks/ultimate-preact-environment.js';
+} from '../utils/mocks/ultimate-preact-environment';
 
 // ================================
 // TanStack Query Mock - Enhanced
