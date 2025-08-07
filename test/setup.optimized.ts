@@ -45,13 +45,21 @@ beforeAll(() => {
     disconnect: vi.fn(),
   }));
 
-  // requestAnimationFrame 모킹
-  global.requestAnimationFrame = vi.fn(callback => {
-    return setTimeout(callback, 16);
+  // requestAnimationFrame 모킹 (configurable로 설정하여 teardown 시 삭제 가능)
+  Object.defineProperty(global, 'requestAnimationFrame', {
+    value: vi.fn(callback => {
+      return setTimeout(callback, 16);
+    }),
+    writable: true,
+    configurable: true,
   });
 
-  global.cancelAnimationFrame = vi.fn(id => {
-    clearTimeout(id);
+  Object.defineProperty(global, 'cancelAnimationFrame', {
+    value: vi.fn(id => {
+      clearTimeout(id);
+    }),
+    writable: true,
+    configurable: true,
   });
 
   // Performance API 모킹 (더 완전한 버전)

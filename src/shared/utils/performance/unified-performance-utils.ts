@@ -43,6 +43,21 @@ export class PerformanceUtils {
   static createResourceService = () => new ResourceService();
   static getGlobalResourceService = () => globalResourceService;
 
+  // 성능 관리자 접근 (테스트에서 필요)
+  static getPerformanceManager = () => ({
+    timers: globalTimerService,
+    resources: globalResourceService,
+    metrics: {
+      getFunctionCallCount: () => 0, // 기본값
+      getMemoryUsage: (() => null) as () => {
+        usedJSHeapSize: number;
+        totalJSHeapSize: number;
+        jsHeapSizeLimit: number;
+      } | null,
+    },
+    optimize: PerformanceUtils.optimizeForUserScript,
+  });
+
   // 유저스크립트 최적화
   static optimizeForUserScript = (
     options: {

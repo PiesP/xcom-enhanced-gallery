@@ -15,11 +15,13 @@ const mockCancelAnimationFrame = vi.fn();
 Object.defineProperty(global, 'requestAnimationFrame', {
   value: mockRequestAnimationFrame,
   writable: true,
+  configurable: true,
 });
 
 Object.defineProperty(global, 'cancelAnimationFrame', {
   value: mockCancelAnimationFrame,
   writable: true,
+  configurable: true,
 });
 
 describe('성능 유틸리티 통합 테스트 - TDD 검증', () => {

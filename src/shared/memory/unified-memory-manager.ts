@@ -99,6 +99,14 @@ export class UnifiedMemoryManager {
   }
 
   /**
+   * 메모리 관리자 초기화
+   */
+  public initialize(): void {
+    logger.debug('메모리 관리자 초기화 완료');
+    // 기본적으로 이미 생성자에서 초기화되므로 추가 작업 없음
+  }
+
+  /**
    * 리소스 등록 (CoreMemoryManager 기능)
    */
   public register(

@@ -21,10 +21,18 @@ describe('🟢 TDD Phase 2: 통합 Core 모듈 검증 (GREEN)', () => {
     global.document = dom.window.document;
     global.window = dom.window as unknown as Window & typeof globalThis;
     global.HTMLElement = dom.window.HTMLElement;
-    global.requestAnimationFrame = (callback: FrameRequestCallback) => {
-      setTimeout(callback, 16);
-      return 1;
-    };
+
+    // requestAnimationFrame 모킹 (configurable로 설정하여 teardown 시 삭제 가능)
+    if (!Object.hasOwnProperty.call(global, 'requestAnimationFrame')) {
+      Object.defineProperty(global, 'requestAnimationFrame', {
+        value: (callback: FrameRequestCallback) => {
+          setTimeout(callback, 16);
+          return 1;
+        },
+        writable: true,
+        configurable: true,
+      });
+    }
   });
 
   describe('통합 DOM 관리자', () => {
