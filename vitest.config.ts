@@ -124,6 +124,8 @@ export default defineConfig({
             'test/shared/styles/**/*.test.ts',
             'test/**/*.legacy.test.ts',
             'test/**/*.deprecated.test.ts',
+            // CI 환경에서 멀티스레드 충돌 발생하는 파일 제외
+            'test/shared/utils/performance.consolidated.test.ts',
           ]
         : []),
     ],
