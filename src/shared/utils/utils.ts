@@ -47,7 +47,7 @@ export {
   detectLightBackground,
 } from './accessibility';
 
-// Performance utilities (통합됨 - timer-management.ts에서 이동)
+// Performance utilities (통합된 성능 유틸리티)
 export {
   Debouncer,
   TimerService,

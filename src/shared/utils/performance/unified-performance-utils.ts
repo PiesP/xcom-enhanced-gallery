@@ -384,3 +384,117 @@ export function releaseResource(id: string): boolean {
 export function releaseAllResources(): void {
   globalResourceService.releaseAll();
 }
+
+/**
+ * TDD Phase 2: GREEN - 통합된 성능 유틸리티 클래스
+ * 모든 성능 관련 기능을 하나의 클래스로 통합
+ */
+export class UnifiedPerformanceUtils {
+  // 기존 유틸리티 함수들 통합
+  static throttle = throttle;
+  static debounce = debounce;
+  static rafThrottle = rafThrottle;
+  static measurePerformance = measurePerformance;
+  static measurePerformanceAsync = measurePerformanceAsync;
+  static createDebouncer = createDebouncer;
+  static delay = delay;
+
+  // TimerService 관리
+  static createTimerService() {
+    return new TimerServiceImpl();
+  }
+
+  static getGlobalTimerService() {
+    return globalTimerService;
+  }
+
+  // ResourceService 관리
+  static createResourceService() {
+    return new ResourceService();
+  }
+
+  static getGlobalResourceService() {
+    return globalResourceService;
+  }
+
+  // 성능 관리자 (통합된 기능)
+  static getPerformanceManager() {
+    return {
+      timer: globalTimerService,
+      resource: globalResourceService,
+      throttle,
+      debounce,
+      rafThrottle,
+      measurePerformance,
+    };
+  }
+
+  // 유저스크립트 최적화 기능
+  static optimizeForUserScript(
+    options: {
+      maxFunctionCalls?: number;
+      memoryThreshold?: number;
+      enableGC?: boolean;
+    } = {}
+  ) {
+    const { maxFunctionCalls = 1000, enableGC = true } = options;
+
+    let functionCallCount = 0;
+
+    // 최적화된 throttle (호출 수 제한)
+    const optimizedThrottle = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
+      return throttle((...args: unknown[]) => {
+        if (functionCallCount < maxFunctionCalls) {
+          functionCallCount++;
+          (fn as (...args: unknown[]) => void)(...args);
+        }
+      }, delay);
+    };
+
+    // 최적화된 debounce (호출 수 제한)
+    const optimizedDebounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
+      return debounce((...args: unknown[]) => {
+        if (functionCallCount < maxFunctionCalls) {
+          functionCallCount++;
+          (fn as (...args: unknown[]) => void)(...args);
+        }
+      }, delay);
+    };
+
+    // 정리 함수
+    const cleanup = () => {
+      functionCallCount = 0;
+      globalResourceService.releaseAll();
+
+      if (enableGC && typeof window !== 'undefined' && 'gc' in window) {
+        try {
+          (window as { gc?: () => void }).gc?.();
+        } catch (error) {
+          logger.debug('Manual GC not available:', error);
+        }
+      }
+    };
+
+    return {
+      throttle: optimizedThrottle,
+      debounce: optimizedDebounce,
+      cleanup,
+      getFunctionCallCount: () => functionCallCount,
+      getMemoryUsage: () => {
+        // performance.memory는 비표준 API이므로 타입 단언 사용
+        const perf = performance as typeof performance & {
+          memory?: {
+            usedJSHeapSize: number;
+            totalJSHeapSize: number;
+            jsHeapSizeLimit: number;
+          };
+        };
+
+        if (typeof performance !== 'undefined' && perf.memory) {
+          return perf.memory;
+        }
+        return null;
+      },
+    };
+  }
+}

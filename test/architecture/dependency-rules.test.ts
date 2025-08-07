@@ -366,9 +366,13 @@ describe('Architecture Dependency Rules', () => {
             trimmedLine.startsWith('const ') ||
             trimmedLine.startsWith('interface ') ||
             trimmedLine.startsWith('type ') ||
+            trimmedLine.startsWith('readonly ') || // readonly 속성 허용
             trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*,?$/) || // 단순 식별자 (named export 목록)
             trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*:/) || // 객체 속성
-            trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*\?\?:/) || // 옵션 속성
+            trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*\?:/) || // 옵션 속성 (?:)
+            trimmedLine.match(/^readonly\s+[a-zA-Z_][a-zA-Z0-9_]*:/) || // readonly 객체 속성
+            trimmedLine.match(/^readonly\s+[a-zA-Z_][a-zA-Z0-9_]*\?:/) || // readonly 옵션 속성
+            trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*\(.*\):\s*[^{]+;$/) || // 인터페이스 메소드 정의
             trimmedLine === '}' ||
             trimmedLine === '};' ||
             trimmedLine === '{' ||
@@ -408,7 +412,6 @@ describe('Architecture Dependency Rules', () => {
           console.log(`  ${file}: ${reason}`);
           problematicLines.forEach(line => console.log(`    ${line}`));
         });
-        console.log('Failed files object:', JSON.stringify(failedFiles, null, 2));
       }
 
       expect(failedFiles).toHaveLength(0);

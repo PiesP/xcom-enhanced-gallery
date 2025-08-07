@@ -106,8 +106,6 @@ export default defineConfig({
             'test/unit/shared/services/ServiceManager.test.ts',
             'test/optimization/memo-optimization.test.ts',
             'test/shared/styles/**/*.test.ts',
-            'test/unit/shared/utils/performance-timer.test.ts',
-            'test/shared/utils/performance/throttle.test.ts',
             'test/**/*.legacy.test.ts',
             'test/**/*.deprecated.test.ts',
           ]

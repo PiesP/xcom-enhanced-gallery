@@ -8,13 +8,6 @@
  * - extraction.types.ts (추출 관련)
  */
 
-// Import core types for re-export
-import type { MediaExtractionResult } from '@shared/types/core/media.types';
-import type { MediaExtractor as CoreMediaExtractor } from '@shared/types/core/extraction.types';
-
-// Re-export MediaExtractor from core
-export type MediaExtractor = CoreMediaExtractor;
-
 // ================================
 // 기본 미디어 타입들
 // ================================
@@ -24,6 +17,14 @@ import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } fro
 
 export type MediaType = BaseMediaType;
 export type MediaQuality = BaseMediaQuality;
+
+// Core 타입들 import 및 re-export
+import type { MediaExtractionResult } from '@shared/types/core/media.types';
+import type { MediaExtractor as CoreMediaExtractor } from '@shared/types/core/extraction.types';
+
+// Re-export core types
+export type MediaExtractor = CoreMediaExtractor;
+export type { MediaExtractionResult };
 
 /**
  * 브랜드 타입 기본 구조
@@ -107,10 +108,8 @@ export const ExtractionErrorCode = CoreExtractionErrorCode;
 export const ExtractionError = CoreExtractionError;
 
 // ================================
-// 미디어 추출 결과 - Core에서 re-export
+// 미디어 추출 결과 - 이미 상단에서 re-export됨
 // ================================
-
-export type { MediaExtractionResult };
 
 /**
  * 트윗 정보 추출 전략 인터페이스

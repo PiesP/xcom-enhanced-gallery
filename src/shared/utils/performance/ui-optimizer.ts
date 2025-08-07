@@ -8,6 +8,7 @@
  */
 
 import { unifiedDOMService } from '@shared/dom/unified-dom-service';
+import { rafThrottle } from './unified-performance-utils';
 
 /**
  * 성능 메트릭 인터페이스
@@ -185,23 +186,16 @@ export class UIOptimizer {
    * 스크롤 성능 최적화
    */
   optimizeScrollPerformance(container: HTMLElement): void {
-    let ticking = false;
     let lastScrollTime = 0;
 
-    const scrollHandler = () => {
+    const scrollHandler = rafThrottle(() => {
       const currentTime = performance.now();
       this.metrics.scrollPerformance = currentTime - lastScrollTime;
       lastScrollTime = currentTime;
 
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          // 스크롤 관련 업데이트 처리
-          this.updateVisibleElements(container);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
+      // 스크롤 관련 업데이트 처리
+      this.updateVisibleElements(container);
+    });
 
     const scrollCleanup = unifiedDOMService.addEventListener(container, 'scroll', scrollHandler, {
       passive: true,
