@@ -38,7 +38,7 @@ case "$BRANCH" in
   *)
     # 메인 브랜치에서는 빠른 타입체크와 빠른 테스트
     echo "📋 빠른 타입체크 실행 중..."
-    if ! npx tsc --noOut --skipLibCheck; then
+    if ! npx tsc --noEmit --skipLibCheck; then
       echo "❌ 타입 오류가 있습니다"
       echo "💡 전체 타입체크: npm run typecheck"
       exit 1
