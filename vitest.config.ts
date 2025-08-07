@@ -175,7 +175,7 @@ export default defineConfig({
       threads: {
         singleThread: isFixMode,
         minThreads: isFixMode ? 1 : isOptimized ? 2 : 2,
-        maxThreads: isFixMode ? 1 : isOptimized ? 2 : 22,
+        maxThreads: isFixMode ? 1 : isOptimized ? 2 : 2,
         isolate: isFixMode,
       },
     },
