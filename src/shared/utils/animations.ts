@@ -124,11 +124,18 @@ export const setupInViewAnimation = (
   options?: IntersectionObserverInit
 ): (() => void) => {
   // 브라우저 환경이 아니거나 IntersectionObserver가 없으면 빈 함수 반환
-  if (typeof window === 'undefined' || !window.IntersectionObserver) {
+  // 테스트 환경을 위해 global과 window 둘 다 체크
+  const IntersectionObserverClass =
+    (typeof globalThis !== 'undefined' && globalThis.IntersectionObserver) ||
+    (typeof window !== 'undefined' && window.IntersectionObserver) ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (typeof globalThis !== 'undefined' && (globalThis as any).IntersectionObserver);
+
+  if (!IntersectionObserverClass) {
     return () => {};
   }
 
-  const observer = new IntersectionObserver(entries => {
+  const observer = new IntersectionObserverClass((entries: IntersectionObserverEntry[]) => {
     entries.forEach(onInView);
   }, options);
 

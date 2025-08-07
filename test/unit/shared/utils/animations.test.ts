@@ -195,8 +195,12 @@ describe('애니메이션 유틸리티', () => {
         disconnect: vi.fn(),
       };
 
-      // 전역 IntersectionObserver 모킹
+      // 전역 IntersectionObserver 모킹 (global, globalThis, window 모두)
       global.IntersectionObserver = vi.fn().mockImplementation(() => mockObserver);
+      globalThis.IntersectionObserver = vi.fn().mockImplementation(() => mockObserver);
+      if (typeof window !== 'undefined') {
+        window.IntersectionObserver = vi.fn().mockImplementation(() => mockObserver);
+      }
 
       const mockCallback = vi.fn();
       const cleanup = setupInViewAnimation(realElement, mockCallback);
@@ -204,6 +208,23 @@ describe('애니메이션 유틸리티', () => {
       expect(typeof cleanup).toBe('function');
       expect(mockObserver.observe).toHaveBeenCalledWith(realElement);
       cleanup();
+    });
+
+    it('IntersectionObserver가 지원되지 않을 때 에러를 우아하게 처리해야 한다', () => {
+      // IntersectionObserver를 undefined로 설정
+      global.IntersectionObserver = undefined as any;
+      globalThis.IntersectionObserver = undefined as any;
+      if (typeof window !== 'undefined') {
+        (window as any).IntersectionObserver = undefined;
+      }
+
+      const realElement = document.createElement('div');
+      const mockCallback = vi.fn();
+
+      const cleanup = setupInViewAnimation(realElement, mockCallback);
+
+      expect(typeof cleanup).toBe('function');
+      expect(() => cleanup()).not.toThrow();
     });
   });
 
