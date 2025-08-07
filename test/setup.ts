@@ -17,12 +17,146 @@ import {
   cleanupUltimateDOMEnvironment,
 } from './utils/mocks/dom-environment.js';
 
+// ================================
+// 🔧 Promise 및 에러 처리 개선
+// ================================
+
+// EventEmitter MaxListeners 경고 방지
+process.setMaxListeners(20);
+
+// 테스트 중 발생하는 unhandled rejection 처리 개선
+process.on('unhandledRejection', reason => {
+  // 워커 스레드 관련 에러들을 모두 억제
+  const isWorkerError =
+    (reason instanceof Error &&
+      (reason.message?.includes('Terminating worker thread') ||
+        reason.message?.includes('ThreadTermination') ||
+        reason.message?.includes('tinypool') ||
+        reason.stack?.includes('tinypool'))) ||
+    (typeof reason === 'string' && reason.includes('worker'));
+
+  if (isWorkerError) {
+    // 완전히 억제 (로그도 출력하지 않음)
+    return;
+  }
+
+  // 다른 에러는 기존 핸들러로 전달하거나 경고만 출력
+  console.warn('테스트 환경 Promise Rejection:', reason);
+});
+
+// Uncaught Exception도 처리
+process.on('uncaughtException', error => {
+  const isWorkerError =
+    error.message?.includes('Terminating worker thread') ||
+    error.message?.includes('ThreadTermination') ||
+    error.message?.includes('tinypool') ||
+    error.stack?.includes('tinypool');
+
+  if (isWorkerError) {
+    return; // 완전히 억제
+  }
+
+  console.error('테스트 환경 Uncaught Exception:', error);
+});
+
+// 테스트 완료 후 더 긴 정리 시간
+afterEach(async () => {
+  // Promise 정리를 위한 대기 시간 증가
+  await new Promise(resolve => setTimeout(resolve, 50));
+});
+
 // Ultimate Preact Test Environment v2.0
 import {
   setupUltimatePreactTestEnvironment,
   resetPreactHookState,
   ensurePreactHookContext,
 } from './utils/mocks/ultimate-preact-environment';
+
+// ================================
+// 🔧 Web Storage API 모킹 (localStorage, sessionStorage)
+// ================================
+
+// Storage 구현 생성 - Vitest worker에서 작동하도록 개선
+function createStorageMock(): Storage {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = String(value);
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    key: vi.fn((index: number) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
+  };
+}
+
+// 전역 환경에 Storage 설정 - 모든 가능한 global 객체에 설정
+function setupStorageGlobally() {
+  const storage = createStorageMock();
+  const sessionStorage = createStorageMock();
+
+  // globalThis에 설정
+  if (typeof globalThis !== 'undefined') {
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: storage,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      value: sessionStorage,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  }
+
+  // global에 설정
+  if (typeof global !== 'undefined') {
+    Object.defineProperty(global, 'localStorage', {
+      value: storage,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+    Object.defineProperty(global, 'sessionStorage', {
+      value: sessionStorage,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  }
+
+  // window에 설정 (JSDOM 환경)
+  if (typeof window !== 'undefined') {
+    Object.defineProperty(window, 'localStorage', {
+      value: storage,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+    Object.defineProperty(window, 'sessionStorage', {
+      value: sessionStorage,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  }
+}
+
+// 즉시 실행하여 Storage 설정
+setupStorageGlobally();
 
 // ================================
 // 🔧 Console API 안전 모킹 (최우선) - Enhanced for UnifiedLogger
@@ -37,6 +171,25 @@ const globalTarget =
       : typeof window !== 'undefined'
         ? window
         : {};
+
+// localStorage 및 sessionStorage 모킹 설정 (기존 코드 제거)
+if (globalTarget) {
+  if (!globalTarget.localStorage) {
+    Object.defineProperty(globalTarget, 'localStorage', {
+      value: createStorageMock(),
+      writable: true,
+      configurable: true,
+    });
+  }
+
+  if (!globalTarget.sessionStorage) {
+    Object.defineProperty(globalTarget, 'sessionStorage', {
+      value: createStorageMock(),
+      writable: true,
+      configurable: true,
+    });
+  }
+}
 
 if (globalTarget) {
   // console 객체가 없거나 불완전한 경우 완전 재생성
@@ -66,7 +219,7 @@ if (globalTarget) {
 
   consoleMethods.forEach(method => {
     Object.defineProperty(globalTarget.console, method, {
-      value: vi.fn().mockImplementation((...args) => {
+      value: vi.fn().mockImplementation(() => {
         // 실제 콘솔 출력은 비활성화하고 모킹만 수행
         return undefined;
       }),

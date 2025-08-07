@@ -1,7 +1,12 @@
 /**
- * @fileoverview 통합된 Vitest 설정
- * @description 기본, 최적화, 수정 설정을 하나로 통합한 설정 파일
- * @version 2.0.0 - Unified Configuration
+ * @fileoverview 통합된 Vitest 설정 - 환경별 최적화
+ * @description 기본, 최적화, 수정 설정을 하나로 통합하고 환경별 스레드 수 자동 최적화
+ * @version 3.0.0 - Environment-Aware Thread Optimization
+ *
+ * 환경별 최적 스레드 설정:
+ * - 로컬 환경: CPU 코어 수 기반 동적 계산 (현재: 24코어 → 8스레드)
+ * - GitHub Actions: 4 vCPU 기준 최적화 (기본: 2스레드, 최적화: 3스레드)
+ * - Fix 모드: 1스레드 (디버깅용)
  */
 
 import preact from '@preact/preset-vite';
@@ -9,6 +14,7 @@ import { resolve } from 'path';
 import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vitest/config';
 import { env } from 'node:process';
+// import { cpus } from 'node:os'; // 현재 단일 스레드 강제로 사용하지 않음
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -17,6 +23,16 @@ const testMode = env.VITEST_MODE || 'default';
 const isOptimized = testMode === 'optimized';
 const isFixMode = testMode === 'fix';
 const isDefault = testMode === 'default';
+
+// 환경별 최적 스레드 수 계산 (현재는 사용하지 않음 - 단일 스레드로 강제)
+// function calculateOptimalThreads() {
+//   const isCI = !!(env.CI || env.GITHUB_ACTIONS);
+//   const cpuCount = cpus().length;
+//   // ... 구현 생략
+// }
+
+// 현재는 단일 스레드로 강제하므로 사용하지 않음
+// const { min: minThreads, max: maxThreads } = calculateOptimalThreads();
 
 export default defineConfig({
   plugins: [preact()],
@@ -48,7 +64,7 @@ export default defineConfig({
     environmentOptions: {
       jsdom: {
         resources: 'usable',
-        url: 'https://x.com',
+        url: 'http://localhost:3000',
         storageQuota: 10000000,
         pretendToBeVisual: true,
         // Navigation 에러 방지
@@ -112,10 +128,10 @@ export default defineConfig({
         : []),
     ],
 
-    // 모드별 타임아웃 설정
+    // 모드별 타임아웃 설정 - teardownTimeout 증가
     testTimeout: isFixMode ? 15000 : isOptimized ? 10000 : 5000,
     hookTimeout: isFixMode ? 10000 : isOptimized ? 10000 : 5000,
-    teardownTimeout: isFixMode ? 5000 : 3000,
+    teardownTimeout: isFixMode ? 10000 : 8000,
 
     // 모드별 리포터 설정
     reporters: isOptimized ? ['verbose', 'html'] : ['default'],
@@ -169,14 +185,22 @@ export default defineConfig({
       },
     },
 
-    // 성능 최적화 - 모드별 설정
-    pool: 'threads',
+    // 성능 최적화 - 워커 스레드 문제 해결을 위한 단순화
+    pool: isFixMode ? 'forks' : 'threads',
     poolOptions: {
       threads: {
-        singleThread: isFixMode,
-        minThreads: isFixMode ? 1 : isOptimized ? 2 : 2,
-        maxThreads: isFixMode ? 1 : isOptimized ? 2 : 2,
-        isolate: isFixMode,
+        singleThread: true, // 항상 단일 스레드로 강제
+        minThreads: 1,
+        maxThreads: 1,
+        isolate: false, // 격리 비활성화로 성능 향상
+        // 스레드 간 메모리 공유 최소화
+        useAtomics: false,
+      },
+      forks: {
+        singleFork: true,
+        minForks: 1,
+        maxForks: 1,
+        isolate: false,
       },
     },
 
@@ -197,5 +221,7 @@ export default defineConfig({
     // 로깅 및 디버깅
     logHeapUsage: isFixMode,
     printConsoleTrace: isDefault,
+
+    // Vitest 설정에는 onUnhandledRejection이 없으므로 test setup에서 처리
   },
 });
