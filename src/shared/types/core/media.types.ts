@@ -14,11 +14,11 @@ export type MediaQuality = BaseMediaQuality;
  * 기본 미디어 정보 (main/shared/types/media.types.ts와 통합)
  */
 export interface MediaInfo {
-  id: string;
+  id?: string; // optional for backward compatibility
   url: string;
-  originalUrl?: string;
+  originalUrl?: string; // optional for backward compatibility
   type: 'image' | 'video' | 'gif';
-  filename: string;
+  filename?: string; // optional for backward compatibility
   fileSize?: number;
   width?: number;
   height?: number;
@@ -298,11 +298,12 @@ export interface ExtractionMetadata {
 export interface MediaExtractionResult {
   readonly success: boolean;
   readonly mediaItems: MediaInfo[];
-  readonly clickedIndex: number;
+  readonly clickedIndex?: number | undefined; // Make optional for backward compatibility
   readonly source?: ExtractionSource; // Make optional for backward compatibility
   readonly sourceType?: string; // backward compatibility
-  readonly metadata: ExtractionMetadata;
+  readonly metadata?: ExtractionMetadata; // Make optional for backward compatibility
   readonly error?: ExtractionError | string; // Allow string for backward compatibility
+  readonly errors?: ExtractionError[]; // backward compatibility - array of errors
   readonly tweetInfo?: unknown; // Allow any tweet info structure for backward compatibility
 }
 
@@ -325,10 +326,14 @@ export enum ExtractionErrorCode {
   PARSING_ERROR = 'PARSING_ERROR',
   PARSE_ERROR = 'PARSE_ERROR', // 호환성을 위한 별칭
   TIMEOUT_ERROR = 'TIMEOUT_ERROR',
+  TIMEOUT = 'TIMEOUT', // media.types.ts 호환성
   NOT_FOUND_ERROR = 'NOT_FOUND_ERROR',
   NO_MEDIA_FOUND = 'NO_MEDIA_FOUND',
+  ELEMENT_NOT_FOUND = 'ELEMENT_NOT_FOUND', // media.types.ts 호환성
+  INVALID_ELEMENT = 'INVALID_ELEMENT', // media.types.ts 호환성
   INVALID_URL_ERROR = 'INVALID_URL_ERROR',
   INVALID_URL = 'INVALID_URL', // 호환성을 위한 별칭
+  PERMISSION_DENIED = 'PERMISSION_DENIED', // media.types.ts 호환성
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 

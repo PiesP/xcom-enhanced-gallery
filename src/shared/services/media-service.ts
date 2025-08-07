@@ -844,7 +844,7 @@ export class MediaService {
           current: i + 1,
           total: mediaItems.length,
           percentage: Math.round(((i + 1) / mediaItems.length) * 100),
-          filename: media.filename,
+          filename: media.filename || 'unknown',
         });
 
         try {

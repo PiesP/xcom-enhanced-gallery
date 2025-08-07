@@ -79,8 +79,8 @@ export class MediaExtractionService implements MediaExtractor {
             tweetInfo: domResult.tweetInfo,
             errors: [
               new ExtractionError(
-                ExtractionErrorCode.NO_MEDIA_FOUND,
-                '트윗에서 미디어를 찾을 수 없습니다.'
+                '트윗에서 미디어를 찾을 수 없습니다.',
+                ExtractionErrorCode.NO_MEDIA_FOUND
               ),
             ],
           };
@@ -90,7 +90,7 @@ export class MediaExtractionService implements MediaExtractor {
         return {
           success: domResult.success,
           mediaItems: domResult.mediaItems,
-          clickedIndex: domResult.clickedIndex,
+          clickedIndex: domResult.clickedIndex ?? undefined,
           metadata: {
             extractedAt: Date.now(),
             sourceType: 'dom-fallback',
@@ -113,7 +113,7 @@ export class MediaExtractionService implements MediaExtractor {
         return {
           success: apiResult.success,
           mediaItems: apiResult.mediaItems,
-          clickedIndex: apiResult.clickedIndex,
+          clickedIndex: apiResult.clickedIndex ?? undefined,
           metadata: {
             extractedAt: Date.now(),
             sourceType: 'api-first',
@@ -159,8 +159,8 @@ export class MediaExtractionService implements MediaExtractor {
           tweetInfo: domResult.tweetInfo,
           errors: [
             new ExtractionError(
-              ExtractionErrorCode.NO_MEDIA_FOUND,
-              'API 및 DOM 추출 모두 실패하였습니다.'
+              'API 및 DOM 추출 모두 실패하였습니다.',
+              ExtractionErrorCode.NO_MEDIA_FOUND
             ),
           ],
         };
@@ -170,7 +170,7 @@ export class MediaExtractionService implements MediaExtractor {
       return {
         success: domResult.success,
         mediaItems: domResult.mediaItems,
-        clickedIndex: domResult.clickedIndex,
+        clickedIndex: domResult.clickedIndex ?? undefined,
         metadata: {
           extractedAt: Date.now(),
           sourceType: 'dom-fallback',
@@ -264,8 +264,9 @@ export class MediaExtractionService implements MediaExtractor {
       tweetInfo: null,
       errors: [
         new ExtractionError(
-          ExtractionErrorCode.UNKNOWN_ERROR,
           `미디어 추출 중 오류가 발생했습니다: ${errorMessage}`,
+          ExtractionErrorCode.UNKNOWN_ERROR,
+          undefined,
           error instanceof Error ? error : undefined
         ),
       ],

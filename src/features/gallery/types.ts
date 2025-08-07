@@ -30,26 +30,11 @@ export interface GalleryApp extends BaseComponentProps {
   updateConfig(config: Partial<GalleryAppConfig>): void;
 }
 
-/**
- * 미디어 추출 결과
- */
-export interface MediaExtractionResult {
-  /** 추출된 미디어 아이템 */
-  mediaItems: unknown[];
-  /** 추출 성공 여부 */
-  success: boolean;
-  /** 오류 메시지 */
-  error?: string;
-  /** 추출 시간 (ms) */
-  extractionTime: number;
-  /** 클릭된 미디어의 인덱스 */
-  clickedIndex?: number;
-  /** 추출 메타데이터 */
-  metadata?: {
-    strategy?: string;
-    sourceType?: string;
-  };
-}
+// ================================
+// 미디어 추출 결과 - Core에서 re-export
+// ================================
+
+export type { MediaExtractionResult } from '@shared/types/media.types';
 
 // 하위 호환성을 위한 별칭
 export type IGalleryApp = GalleryApp;

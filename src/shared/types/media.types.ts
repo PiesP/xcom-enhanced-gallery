@@ -8,6 +8,13 @@
  * - extraction.types.ts (추출 관련)
  */
 
+// Import core types for re-export
+import type { MediaExtractionResult } from '@shared/types/core/media.types';
+import type { MediaExtractor as CoreMediaExtractor } from '@shared/types/core/extraction.types';
+
+// Re-export MediaExtractor from core
+export type MediaExtractor = CoreMediaExtractor;
+
 // ================================
 // 기본 미디어 타입들
 // ================================
@@ -28,25 +35,9 @@ type Brand<T, B> = T & { readonly __brand: B };
  */
 export type MediaId = Brand<string, 'MediaId'>;
 
-/**
- * 기본 미디어 정보
- */
-export interface MediaInfo {
-  id: string;
-  url: string;
-  originalUrl?: string | undefined;
-  type: 'image' | 'video' | 'gif';
-  filename: string;
-  fileSize?: number;
-  width?: number;
-  height?: number;
-  thumbnailUrl?: string;
-  alt?: string;
-  tweetUsername?: string | undefined;
-  tweetId?: string | undefined;
-  tweetUrl?: string;
-  metadata?: Record<string, unknown>;
-}
+// Import and re-export MediaInfo from core
+import type { MediaInfo as CoreMediaInfo } from '@shared/types/core/media.types';
+export type MediaInfo = CoreMediaInfo;
 
 /**
  * 미디어 엔티티 (시간 정보 포함)
@@ -107,54 +98,19 @@ export interface MediaExtractionOptions {
   maxRetries?: number;
 }
 
-/**
- * 추출 에러 코드
- */
-export enum ExtractionErrorCode {
-  ELEMENT_NOT_FOUND = 'ELEMENT_NOT_FOUND',
-  INVALID_ELEMENT = 'INVALID_ELEMENT',
-  NO_MEDIA_FOUND = 'NO_MEDIA_FOUND',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  TIMEOUT = 'TIMEOUT',
-  INVALID_URL = 'INVALID_URL',
-  PERMISSION_DENIED = 'PERMISSION_DENIED',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
-}
+// Import and re-export error types from core
+import {
+  ExtractionErrorCode as CoreExtractionErrorCode,
+  ExtractionError as CoreExtractionError,
+} from '@shared/types/core/media.types';
+export const ExtractionErrorCode = CoreExtractionErrorCode;
+export const ExtractionError = CoreExtractionError;
 
-/**
- * 추출 에러 클래스
- */
-export class ExtractionError extends Error {
-  constructor(
-    public readonly code: ExtractionErrorCode,
-    message: string,
-    public readonly originalError?: Error
-  ) {
-    super(message);
-    this.name = 'ExtractionError';
-  }
-}
+// ================================
+// 미디어 추출 결과 - Core에서 re-export
+// ================================
 
-/**
- * 미디어 추출 결과
- */
-export interface MediaExtractionResult {
-  mediaItems: MediaInfo[];
-  success: boolean;
-  errors?: ExtractionError[];
-  clickedIndex?: number | undefined; // 갤러리에서 사용되는 클릭된 인덱스
-  tweetInfo?: TweetInfo | null | undefined; // 추출된 트윗 정보
-  metadata?: {
-    extractionMethod?: string;
-    extractionTime?: number;
-    source?: string;
-    extractionId?: string;
-    extractedAt?: number; // 추출 시간
-    sourceType?: string; // 소스 타입
-    error?: string; // 에러 메시지
-    [key: string]: unknown; // 추가 메타데이터 허용
-  };
-}
+export type { MediaExtractionResult };
 
 /**
  * 트윗 정보 추출 전략 인터페이스
@@ -200,26 +156,11 @@ export interface FallbackExtractionStrategy {
   ): Promise<MediaExtractionResult>;
 }
 
-/**
- * 미디어 추출기 인터페이스
- */
-export interface MediaExtractor {
-  /**
-   * 클릭된 요소에서 미디어 추출
-   */
-  extractFromClickedElement(
-    element: HTMLElement,
-    options?: MediaExtractionOptions
-  ): Promise<MediaExtractionResult>;
+// ================================
+// 미디어 추출기 인터페이스 - Core에서 re-export (상단에서 이미 정의됨)
+// ================================
 
-  /**
-   * 컨테이너에서 모든 미디어 추출
-   */
-  extractAllFromContainer(
-    container: HTMLElement,
-    options?: MediaExtractionOptions
-  ): Promise<MediaExtractionResult>;
-}
+// Already re-exported at the top of file
 
 // ================================
 // 다운로드 관련 타입들
