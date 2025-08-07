@@ -8,7 +8,7 @@
 
 import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging';
-import { createEventManager } from '@shared/dom';
+import { unifiedDOMService } from '@shared/dom';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
 const { useEffect, useRef, useCallback } = ComponentManager.getHookManager();
@@ -54,7 +54,6 @@ export function useGalleryScroll({
   enableScrollDirection = false,
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
-  const eventManagerRef = useRef(createEventManager());
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
   const scrollTimeoutRef = useRef<number | null>(null);
@@ -168,13 +167,16 @@ export function useGalleryScroll({
       return;
     }
 
-    const eventManager = eventManagerRef.current;
-
     // 갤러리 컨테이너에만 휠 이벤트 처리 (갤러리 내부 스크롤)
     if (container) {
-      eventManager.addEventListener(container, 'wheel', handleGalleryWheel as EventListener, {
-        passive: false,
-      });
+      unifiedDOMService.addEventListener(
+        container,
+        'wheel',
+        handleGalleryWheel as EventListener,
+        {
+          passive: false,
+        } as AddEventListenerOptions
+      );
     }
 
     logger.debug('useGalleryScroll: 이벤트 리스너 등록 완료', {
@@ -182,7 +184,14 @@ export function useGalleryScroll({
     });
 
     return () => {
-      eventManager.cleanup();
+      // unified DOM service cleanup (자동으로 해당 요소의 리스너 정리)
+      if (container) {
+        unifiedDOMService.removeEventListener(
+          container,
+          'wheel',
+          handleGalleryWheel as EventListener
+        );
+      }
 
       // 타이머 정리
       if (scrollTimeoutRef.current) {
@@ -201,7 +210,6 @@ export function useGalleryScroll({
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
     return () => {
-      eventManagerRef.current.cleanup();
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }

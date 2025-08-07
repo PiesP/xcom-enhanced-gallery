@@ -49,7 +49,7 @@ export {
 
 // Performance utilities (통합된 성능 유틸리티)
 export {
-  Debouncer,
+  debounce,
   TimerService,
   globalTimerService,
   delay,
@@ -63,7 +63,6 @@ export {
 export {
   rafThrottle,
   throttle,
-  debounce,
   measurePerformance,
 } from '@shared/utils/performance/unified-performance-utils';
 

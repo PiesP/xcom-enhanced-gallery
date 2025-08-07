@@ -125,7 +125,7 @@ export async function loadModulesParallel(
     try {
       switch (type) {
         case 'component':
-          return { type, name, module: await loadComponent(name), success: true };
+          throw new Error(`컴포넌트 로딩은 features 계층에서 직접 관리하세요: ${name}`);
         case 'service':
           return { type, name, module: await loadServiceModule(name), success: true };
         case 'utility':
@@ -147,35 +147,11 @@ export async function loadModulesParallel(
 }
 
 /**
- * 컴포넌트 로딩 (deprecated component-manager 기능 통합)
- * @deprecated 의존성 규칙 위반으로 인해 제거 예정입니다.
- * Gallery 컴포넌트는 features 계층에서 직접 관리하세요.
+ * 모듈 의존성 정보 (dependency-cruiser 통합)
  */
-export async function loadComponent(componentName: string) {
-  const startTime = performance.now();
-
-  try {
-    switch (componentName) {
-      case 'Gallery':
-      case 'MediaViewer': {
-        // TODO: 의존성 규칙 위반 - features 계층으로 이동 필요
-        throw new Error(`${componentName} 컴포넌트는 features 계층에서 직접 로딩하세요`);
-      }
-
-      case 'ToastNotification': {
-        const module = await import('@shared/components');
-        const loadTime = performance.now() - startTime;
-        logger.debug('ToastNotification 컴포넌트 로딩 완료:', { loadTime });
-        return module;
-      }
-
-      default:
-        throw new Error(`알 수 없는 컴포넌트: ${componentName}`);
-    }
-  } catch (error) {
-    logger.warn('컴포넌트 로딩 실패:', { error, componentName });
-    throw error;
-  }
+export function getModuleDependencies(moduleName: string): string[] {
+  logger.debug(`모듈 의존성 조회: ${moduleName}`);
+  return []; // 단순화된 구현
 }
 
 /**

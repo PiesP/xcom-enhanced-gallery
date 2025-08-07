@@ -209,29 +209,6 @@ export function delay(ms: number): Promise<void> {
  */
 export const raf = rafThrottle;
 
-/**
- * @deprecated createDebouncer를 사용하세요
- */
-export class Debouncer<T extends unknown[] = []> {
-  private readonly debouncer: ReturnType<typeof createDebouncer<T>>;
-
-  constructor(callback: (...args: T) => void, delay: number) {
-    this.debouncer = createDebouncer(callback, delay);
-  }
-
-  execute(...args: T): void {
-    this.debouncer.execute(...args);
-  }
-
-  cancel(): void {
-    this.debouncer.cancel();
-  }
-
-  isPending(): boolean {
-    return this.debouncer.isPending();
-  }
-}
-
 // =================================
 // 추가 호환성 함수들
 // =================================
@@ -239,11 +216,6 @@ export class Debouncer<T extends unknown[] = []> {
 /**
  * 별칭 함수들 (기존 코드 호환성)
  */
-export const createTimerDebouncer = <T extends unknown[]>(
-  callback: (...args: T) => void,
-  delay: number
-): Debouncer<T> => new Debouncer(callback, delay);
-
 export const measureAsyncPerformance = measurePerformanceAsync;
 export const throttleScroll = rafThrottle;
 

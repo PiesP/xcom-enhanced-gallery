@@ -3,7 +3,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { Debouncer } from '@shared/utils/performance/unified-performance-utils';
+import { debounce } from '@shared/utils/performance/unified-performance-utils';
 import { unifiedDOMService } from '@shared/dom/unified-dom-service';
 
 /** Twitter 스크롤 컨테이너 찾기 */
@@ -36,8 +36,8 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
 }
 
 /** 스크롤 디바운서 생성 */
-export function createScrollDebouncer(callback: () => void, delay: number = 150): Debouncer<[]> {
-  return new Debouncer(callback, delay);
+export function createScrollDebouncer(callback: () => void, delay: number = 150) {
+  return debounce(callback, delay);
 }
 
 /**

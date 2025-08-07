@@ -67,9 +67,8 @@ export {
   removeAttribute as safeRemoveAttribute,
 } from './unified-dom-service';
 
-// DOM 캐시 및 이벤트 관리
+// DOM 캐시 (이벤트 관리는 unified-dom-service로 통합됨)
 export { DOMCache, globalDOMCache } from './dom-cache';
-export { DOMEventManager, createEventManager } from './dom-event-manager';
 
 // 기존 DOMService 호환성 (이제 unified-dom-service의 별칭)
 export { DOMService as LegacyDOMService } from './unified-dom-service';

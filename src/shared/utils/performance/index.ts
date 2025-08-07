@@ -13,5 +13,4 @@ export {
   measurePerformance,
   measurePerformanceAsync,
   delay,
-  Debouncer,
 } from './unified-performance-utils';
