@@ -38,7 +38,7 @@
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
     "deps:all": "npm run deps:json && npm run deps:graph:dot && npm run deps:graph && npm run deps:check",
     "prepare": "husky",
-    "postinstall": "npm run prepare",
+    "postinstall": "node -e \"if(!process.env.CI && !process.env.NODE_ENV?.includes('production')) { require('child_process').execSync('npm run prepare', {stdio:'inherit'}); }\"",
     "test:audit": "node scripts/audit-tests.cjs"
   },
   "dependencies": {
