@@ -36,6 +36,10 @@ function createBundleAnalysisPlugin(): Plugin {
     name: 'bundle-analysis',
     apply: 'build',
     writeBundle(options, bundle) {
+      if (isCI) {
+        // CI에서는 속도 위해 분석 생략 가능 (필요시 환경변수로 재활성화)
+        if (!process.env.ENABLE_BUNDLE_ANALYSIS) return;
+      }
       const bundleObj = bundle as Record<string, any>;
       let totalSize = 0;
       const chunks: Array<{ name: string; size: number }> = [];
@@ -72,15 +76,6 @@ function createBundleAnalysisPlugin(): Plugin {
 
 // Package information
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
-
-// Build mode configuration - optimized
-interface BuildMode {
-  readonly isDevelopment: boolean;
-  readonly isProduction: boolean;
-  readonly minify: boolean;
-  readonly sourcemap: boolean;
-  readonly dropConsole: boolean;
-}
 
 // 번들 분석 플러그인
 
@@ -247,10 +242,11 @@ export default defineConfig(({ mode }) => {
     plugins: [
       preact({
         devToolsEnabled: buildMode.isDevelopment,
-        prefreshEnabled: buildMode.isDevelopment,
+        prefreshEnabled: buildMode.isDevelopment && !isCI,
       }),
       createUserscriptBundlerPlugin(buildMode),
-      createBundleAnalysisPlugin(),
+      // CI 성능 최적화를 위해 기본 비활성 (필요시 ENABLE_BUNDLE_ANALYSIS=1)
+      ...(isCI && !process.env.ENABLE_BUNDLE_ANALYSIS ? [] : [createBundleAnalysisPlugin()]),
     ],
 
     // 환경 변수 정의
@@ -416,7 +412,7 @@ export default defineConfig(({ mode }) => {
     },
 
     // 환경별 로깅 설정
-    logLevel: isCI ? 'warn' : buildMode.isDevelopment ? 'info' : 'warn',
+    logLevel: isCI ? 'error' : buildMode.isDevelopment ? 'info' : 'warn',
     clearScreen: false,
   };
 });

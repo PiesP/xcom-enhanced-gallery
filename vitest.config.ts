@@ -18,44 +18,50 @@ import { cpus } from 'node:os';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-// 환경변수로 테스트 모드 결정
+// 환경변수로 테스트 모드 결정 (ci / optimized / fix / default)
 const testMode = env.VITEST_MODE || 'default';
 const isOptimized = testMode === 'optimized';
 const isFixMode = testMode === 'fix';
 const isDefault = testMode === 'default';
+const isCiMode = testMode === 'ci';
 
 // 환경 감지
 const isCI = !!(env.CI || env.GITHUB_ACTIONS);
 const isGitHubActions = !!env.GITHUB_ACTIONS;
 const cpuCount = cpus().length;
 
-// 환경별 최적 스레드 수 계산
+// 환경별 최적 스레드 수 계산 (threads 풀 사용 시)
 function calculateOptimalThreads() {
-  // Fix 모드는 항상 단일 스레드
-  if (isFixMode) {
-    return { min: 1, max: 1, singleThread: true };
+  // 명시적 환경변수 우선 (CI에서 미세조정 가능)
+  const envMin = env.VITEST_MIN_THREADS ? parseInt(env.VITEST_MIN_THREADS, 10) : undefined;
+  const envMax = env.VITEST_MAX_THREADS ? parseInt(env.VITEST_MAX_THREADS, 10) : undefined;
+
+  // Fix 모드는 항상 단일 스레드 (forks)
+  if (isFixMode) return { min: 1, max: 1, strategy: 'forks', single: true };
+
+  // CI 모드 / GitHub Actions → 낮은 동시성 + threads 풀 (sandbox 격리 속도 확보)
+  if (isGitHubActions || isCiMode) {
+    const max = envMax || Math.min(Math.max(cpuCount - 1, 1), 2);
+    const min = envMin || 1;
+    return { min, max, strategy: 'threads', single: max === 1 };
   }
 
-  // GitHub Actions 환경 (2-4 vCPU, 7GB RAM 제한)
-  if (isGitHubActions) {
-    const threads = Math.min(Math.max(cpuCount - 1, 1), 2); // 최대 2스레드로 제한
-    return {
-      min: 1,
-      max: threads,
-      singleThread: threads === 1,
-    };
-  }
-
-  // 로컬 환경 - CPU 코어 수의 50% 활용 (최소 2, 최대 6)
-  const threads = Math.min(Math.max(Math.floor(cpuCount * 0.5), 2), 6);
+  // 로컬: threads 풀로 병렬성 극대화 (70% 사용, 범위 제한)
+  const computed = Math.min(Math.max(Math.floor(cpuCount * 0.7), 2), 8);
   return {
-    min: Math.max(threads - 1, 1),
-    max: threads,
-    singleThread: false,
+    min: Math.max(computed - 1, 1),
+    max: computed,
+    strategy: 'threads',
+    single: false,
   };
 }
 
-const { min: minThreads, max: maxThreads, singleThread } = calculateOptimalThreads();
+const {
+  min: minThreads,
+  max: maxThreads,
+  strategy: poolStrategy,
+  single: singleThread,
+} = calculateOptimalThreads();
 
 // 환경별 설정 로그
 if (env.NODE_ENV !== 'test' && typeof globalThis.console !== 'undefined') {
@@ -63,7 +69,8 @@ if (env.NODE_ENV !== 'test' && typeof globalThis.console !== 'undefined') {
   log(`🧪 Vitest 환경 설정:`);
   log(`   모드: ${testMode} ${isCI ? '(CI)' : '(로컬)'}`);
   log(`   CPU 코어: ${cpuCount}개`);
-  log(`   스레드: ${singleThread ? '1개 (단일)' : `${minThreads}-${maxThreads}개`}`);
+  log(`   실행 풀: ${poolStrategy}`);
+  log(`   동시성: ${singleThread ? '1 (단일)' : `${minThreads}-${maxThreads}`}`);
 }
 
 export default defineConfig({
@@ -109,10 +116,9 @@ export default defineConfig({
       include: ['**/*.{test,spec}.{ts,tsx}'],
     },
 
-    // 모드별 파일 패턴 설정
+    // 모드별 파일 패턴 설정 (ci 모드는 기본 + 가장 비용 큰 refactoring / integration 제외)
     include: isOptimized
       ? [
-          // 최적화 모드: 통합 테스트 위주
           'test/consolidated/**/*.consolidated.test.ts',
           'test/unit/main/**/*.test.ts',
           'test/unit/features/gallery-app-activation.test.ts',
@@ -125,11 +131,7 @@ export default defineConfig({
           'test/unit/shared/utils/**/*.test.ts',
           'test/behavioral/**/*.test.ts',
         ]
-      : [
-          // 기본 모드: 모든 테스트
-          './test/**/*.{test,spec}.{ts,tsx}',
-          './src/**/*.{test,spec}.{ts,tsx}',
-        ],
+      : ['./test/**/*.{test,spec}.{ts,tsx}', './src/**/*.{test,spec}.{ts,tsx}'],
 
     // 모드별 제외 패턴
     exclude: [
@@ -163,9 +165,9 @@ export default defineConfig({
     ],
 
     // 환경별 타임아웃 설정 - Worker Thread 안정적 종료를 위해 teardownTimeout 증가
-    testTimeout: isFixMode ? 15000 : isCI ? 30000 : isOptimized ? 10000 : 5000,
-    hookTimeout: isFixMode ? 10000 : isCI ? 15000 : isOptimized ? 10000 : 5000,
-    teardownTimeout: isFixMode ? 15000 : isCI ? 20000 : 12000,
+    testTimeout: isFixMode ? 15000 : isCI || isCiMode ? 28000 : isOptimized ? 10000 : 6000,
+    hookTimeout: isFixMode ? 10000 : isCI || isCiMode ? 14000 : isOptimized ? 10000 : 6000,
+    teardownTimeout: isFixMode ? 15000 : isCI || isCiMode ? 18000 : 12000,
 
     // 모드별 리포터 설정
     reporters: isOptimized ? ['verbose', 'html'] : ['default'],
@@ -177,7 +179,7 @@ export default defineConfig({
 
     // 환경별 커버리지 설정 - GitHub Actions에서는 더 엄격하게
     coverage: {
-      provider: isOptimized ? 'v8' : 'istanbul',
+      provider: isOptimized || isCiMode ? 'v8' : 'istanbul',
       reporter: ['text', 'json-summary', 'html', ...(isOptimized ? ['lcov'] : [])],
       reportsDirectory: './coverage',
       include: ['src/**/*.ts', 'src/**/*.tsx'],
@@ -191,53 +193,44 @@ export default defineConfig({
       ],
       thresholds: {
         global: isOptimized
-          ? {
-              branches: 85,
-              functions: 85,
-              lines: 85,
-              statements: 85,
-            }
-          : isCI
-            ? {
-                // GitHub Actions에서는 조금 더 관대하게
-                branches: 12,
-                functions: 12,
-                lines: 12,
-                statements: 12,
-              }
-            : {
-                // 로컬 환경
-                branches: 15,
-                functions: 15,
-                lines: 15,
-                statements: 15,
-              },
+          ? { branches: 85, functions: 85, lines: 85, statements: 85 }
+          : isCI || isCiMode
+            ? { branches: 15, functions: 15, lines: 15, statements: 15 }
+            : { branches: 15, functions: 15, lines: 15, statements: 15 },
         // 핵심 모듈은 점진적으로 커버리지 향상
         'src/core/**/*.ts': {
           branches: 5,
-          functions: isCI ? 20 : 25,
-          lines: isCI ? 20 : 25,
-          statements: isCI ? 20 : 25,
+          functions: isCI || isCiMode ? 20 : 25,
+          lines: isCI || isCiMode ? 20 : 25,
+          statements: isCI || isCiMode ? 20 : 25,
         },
         'src/shared/**/*.ts': {
           branches: 5,
-          functions: isCI ? 12 : 15,
-          lines: isCI ? 12 : 15,
-          statements: isCI ? 12 : 15,
+          functions: isCI || isCiMode ? 12 : 15,
+          lines: isCI || isCiMode ? 12 : 15,
+          statements: isCI || isCiMode ? 12 : 15,
         },
       },
     },
-
-    // 모든 환경에서 단일 스레드로 안정성 우선
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-        minForks: 1,
-        maxForks: 1,
-        isolate: true,
-      },
-    },
+    // 실행 풀 전략 (fix: forks 단일 / 나머지: threads 가변)
+    pool: poolStrategy,
+    poolOptions:
+      poolStrategy === 'forks'
+        ? {
+            forks: {
+              singleFork: true,
+              minForks: 1,
+              maxForks: 1,
+              isolate: true,
+            },
+          }
+        : {
+            threads: {
+              minThreads,
+              maxThreads,
+              isolate: true,
+            },
+          },
 
     // 메모리 관리 (Fix 모드)
     ...(isFixMode && {
@@ -255,7 +248,7 @@ export default defineConfig({
 
     // 로깅 및 디버깅
     logHeapUsage: isFixMode,
-    printConsoleTrace: isDefault,
+    printConsoleTrace: isDefault || isCiMode,
 
     // Vitest 설정에는 onUnhandledRejection이 없으므로 test setup에서 처리
   },

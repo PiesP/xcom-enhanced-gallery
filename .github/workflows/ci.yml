@@ -13,6 +13,8 @@ env:
   GITHUB_ACTIONS: true
   # Vitest 환경별 최적화
   VITEST_MODE: "default"
+  # CI 테스트 모드 (config가 동적으로 처리)
+  VITEST_MODE_CI: "ci"
   NODE_ENV: "test"
   # 메모리 최적화
   NODE_OPTIONS: "--max-old-space-size=4096"
@@ -80,15 +82,9 @@ jobs:
 
       - name: 🧪 Optimized Tests with Coverage
         if: matrix.task == 'test'
-        env:
-          # GitHub Actions 전용 최적화
-          VITEST_MIN_THREADS: 1
-          VITEST_MAX_THREADS: 2
-          VITEST_ISOLATE: true
-          VITEST_TIMEOUT: 30000
         run: |
-          echo "🧪 Running optimized tests..."
-          npm run test:ci
+          echo "🧪 Running ci mode tests..."
+          cross-env VITEST_MODE=ci npm run test:optimized
 
       - name: 🏗️ Build Tests
         if: matrix.task == 'build'

@@ -21,6 +21,9 @@ on:
 
 env:
   NODE_VERSION: "20"
+  VITEST_MODE: "ci"
+  NODE_ENV: "production"
+  ENABLE_BUNDLE_ANALYSIS: "1"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -93,8 +96,16 @@ jobs:
       - name: 🎨 Format check
         run: npm run format:check
 
-      - name: 🧪 Run optimized tests
-        run: npm run test:optimized
+      - name: 🧪 Run CI mode tests (v8 coverage)
+        run: npm run test:ci
+
+      - name: 📊 Upload coverage (optional)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage/
+          retention-days: 14
 
       - name: 📈 Bump version (if manual)
         if: github.event_name == 'workflow_dispatch'
@@ -119,10 +130,24 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
-      - name: 🏗️ Build production
+      - name: 🏗️ Build production (with bundle analysis)
         run: |
-          echo "🚀 Building production version..."
+          echo "🚀 Building production version (bundle analysis enabled)..."
           npm run build:prod
+          echo "📦 Dist contents:"
+          ls -lah dist/ || dir dist
+          if [ -f dist/bundle-analysis.json ]; then
+            echo "📊 Bundle analysis:" && cat dist/bundle-analysis.json
+            TOTAL_SIZE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('dist/bundle-analysis.json','utf8')).totalSize)")
+            MAX=$((500*1024))
+            if [ "$TOTAL_SIZE" -gt "$MAX" ]; then
+              echo "⚠️ Bundle size exceeds 500KB budget: $TOTAL_SIZE bytes";
+            else
+              echo "✅ Bundle size within budget: $TOTAL_SIZE bytes";
+            fi
+          else
+            echo "⚠️ bundle-analysis.json not found";
+          fi
 
       - name: 📦 Create release package
         run: |
@@ -144,7 +169,8 @@ jobs:
             "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
             "commit": "${{ github.sha }}",
             "node_version": "${{ env.NODE_VERSION }}",
-            "build_type": "production"
+            "build_type": "production",
+            "vitest_mode": "${{ env.VITEST_MODE }}"
           }
           EOF
 
@@ -179,6 +205,7 @@ jobs:
             release/xcom-enhanced-gallery.user.js
             release/checksums.txt
             release/metadata.json
+            dist/bundle-analysis.json
           draft: false
           prerelease: false
         env:

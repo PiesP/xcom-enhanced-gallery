@@ -20,7 +20,7 @@
     "test:local:watch": "cross-env VITEST_MODE=optimized vitest",
     "test:threads": "node -e \"console.log('🖥️  로컬 환경 CPU 정보:'); const os = require('os'); console.log('   논리 프로세서:', os.cpus().length, '개'); const isCI = !!(process.env.CI || process.env.GITHUB_ACTIONS); console.log('   CI 환경:', isCI ? 'Yes (2-4 vCPU)' : 'No'); const mode = process.env.VITEST_MODE || 'default'; console.log('   테스트 모드:', mode); const threads = isCI ? (mode === 'optimized' ? 3 : 2) : (mode === 'optimized' ? Math.max(2, Math.floor(os.cpus().length / 3)) : Math.max(2, Math.floor(os.cpus().length / 4))); console.log('   최적 스레드 수:', threads, '개');\"",
     "test:optimized": "vitest run --coverage",
-    "test:ci": "cross-env VITEST_MODE=default NODE_ENV=test vitest run --coverage --reporter=verbose --pool=threads --poolOptions.threads.minThreads=1 --poolOptions.threads.maxThreads=2 --testTimeout=30000 --hookTimeout=15000 --teardownTimeout=15000",
+    "test:ci": "cross-env VITEST_MODE=ci NODE_ENV=test vitest run --coverage --reporter=verbose",
     "test:fix": "vitest run --reporter=verbose",
     "test:fix:watch": "vitest --reporter=verbose",
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
