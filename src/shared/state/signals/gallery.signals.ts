@@ -111,6 +111,24 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   // 현재 스크롤 위치 저장
   saveScrollPosition();
 
+  // 갤러리 오픈 시 재생 중인 모든 비디오 일시정지 (PC 전용 환경 가정)
+  try {
+    const videos = document.querySelectorAll('video');
+    videos.forEach(videoEl => {
+      // 안전 호출 (테스트 환경에서 mock됨)
+      try {
+        if (!videoEl.paused) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (videoEl as any).pause?.();
+        }
+      } catch {
+        /* ignore 개별 비디오 오류 */
+      }
+    });
+  } catch {
+    // DOM 접근 실패는 무시 (비브라우저/테스트 환경 안전성)
+  }
+
   // 배경 페이지 스크롤 방지
   document.body.style.overflow = 'hidden';
 
