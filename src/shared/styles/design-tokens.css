@@ -2,6 +2,11 @@
  * @fileoverview 통합 디자인 토큰 CSS (OKLCH 색상 시스템)
  * 총 35개의 색상이 OKLCH로 변환되었습니다.
  * 생성일: 2025-07-31T13:51:46.194Z
+ *
+ * MIGRATION NOTICE (Phase 1):
+ *  - 단계적 레이어 구조(`design-tokens.layered.css`) 도입 중.
+ *  - 본 파일은 점진적으로 슬림화되며 중복/재정의 영역은 제거 혹은 주석 처리됩니다.
+ *  - 테스트/레거시 호환을 위해 즉시 제거가 위험한 토큰은 DEPRECATED 태그로 표시 후 후속 단계에서 제거 예정.
  */
 
 :root {
@@ -141,6 +146,7 @@
 
   /* ===========================================
      ANIMATION SYSTEM - 표준화된 지속시간과 이징
+     (Primary / Unique 정의 유지, 중복 Second Block 제거 예정)
      =========================================== */
 
   /* Duration Scale */
@@ -157,6 +163,8 @@
   --xeg-easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
   --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --xeg-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  /* Added to unify duplicate later definition */
+  --xeg-easing-spring: cubic-bezier(0.22, 1, 0.36, 1); /* migrated */
 
   /* Common Transitions */
   --xeg-transition-fast: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
@@ -228,31 +236,17 @@
   --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
-  /* Z-Index Scale - 명확한 간격으로 재정의 */
-  --xeg-z-base: 1;
-  --xeg-z-dropdown: 1000;
-  --xeg-z-gallery: 2000; /* 갤러리 뷰 (변경: 4000 → 2000) */
-  --xeg-z-toolbar: 2500; /* 툴바 (기존 유지) */
-  --xeg-z-modal: 3000; /* 모달 (변경: 2000 → 3000) */
-  --xeg-z-overlay: 3500; /* 오버레이 (변경: 3000 → 3500) */
-  --xeg-z-toast: 4000; /* 토스트 (변경: 5000 → 4000) */
+  /* Z-Index Scale (DUPLICATE REDEFINITION REMOVED PHASE 1)
+    NOTE: 초기 상단 정의와 충돌하던 재정의 블록. 하위 계층 서비스(ZIndexService) 마이그레이션 후 완전 제거 예정.
+    유지해야 하는 실제 사용치는 아래 주석 참고. */
+  /* DEPRECATED: z-index 재정의는 layered 토큰으로 이동 예정. */
 
   /* ===========================================
-     ANIMATION SYSTEM
-     =========================================== */
-
-  /* Duration */
-  --xeg-duration-fast: 150ms;
-  --xeg-duration-normal: 300ms;
-  --xeg-duration-slow: 500ms;
-
-  /* Easing */
-  --xeg-easing-linear: linear;
-  --xeg-easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --xeg-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --xeg-easing-spring: cubic-bezier(0.22, 1, 0.36, 1);
+    ANIMATION SYSTEM (DUPLICATE BLOCK REMOVED)
+    이전 블록과 중복되던 지속시간/이징 재정의 제거.
+    spring easing 은 상단 블록으로 이동.
+    =========================================== */
+  /* DEPRECATED: 중복 정의 제거 완료 (참조 유지 필요 시 상단 블록 사용) */
 
   /* ===========================================
      SEMANTIC TOKEN ALIASES
@@ -269,16 +263,18 @@
   /* Text aliases */
   --xeg-color-text-primary: var(--xeg-color-neutral-900);
   --xeg-color-text-secondary: var(--xeg-color-neutral-600);
+  /* Added tertiary alias (previously referenced but undefined) */
+  --xeg-color-text-tertiary: var(
+    --xeg-color-neutral-500
+  ); /* NEW: was missing, used by --xeg-gallery-text-muted */
   --xeg-color-text-inverse: var(--xeg-color-neutral-50);
 
   /* Border aliases */
   --xeg-color-border-primary: var(--xeg-color-neutral-300);
   --xeg-color-border-secondary: var(--xeg-color-neutral-200);
 
-  /* Transition aliases */
-  --xeg-transition-fast: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  --xeg-transition-normal: all var(--xeg-duration-normal) var(--xeg-easing-ease-out);
-  --xeg-transition-slow: all var(--xeg-duration-slow) var(--xeg-easing-ease-out);
+  /* Transition aliases (DUPLICATE with earlier definitions; keep single source above) */
+  /* DEPRECATED: --xeg-transition-* redefined earlier; remove in Phase 2 */
 
   /* ===========================================
      COMPONENT-SPECIFIC TOKENS
@@ -287,7 +283,8 @@
   /* Gallery specific */
   --xeg-gallery-backdrop: rgba(21, 32, 43, 0.85);
   --xeg-gallery-backdrop-filter: blur(16px);
-  --xeg-gallery-z-index: var(--xeg-z-gallery);
+  /* DEPRECATED: --xeg-z-gallery (aggregated) 사용 대신 세분화된 --xeg-z-gallery-* 토큰 사용 권장 */
+  --xeg-gallery-z-index: var(--xeg-z-gallery-backdrop); /* Updated: fallback to backdrop layer */
 
   /* Button specific */
   --xeg-button-height-sm: 32px;
@@ -312,9 +309,9 @@
   --xeg-gallery-glass-blur: var(--xeg-glass-blur-ultra);
   --xeg-gallery-glass-shadow: var(--xeg-glass-shadow-ultra);
 
-  /* 미디어 아이템 글래스모피즘 */
+  /* 미디어 아이템 글래스모피즘 (DEPRECATED: blur-subtle 토큰 미존재 → medium으로 통일 예정) */
   --xeg-media-glass-bg: rgba(255, 255, 255, 0.1);
-  --xeg-media-glass-blur: var(--xeg-glass-blur-subtle);
+  --xeg-media-glass-blur: var(--xeg-glass-blur-medium); /* fixed subtle→medium */
   --xeg-media-glass-border: rgba(255, 255, 255, 0.15);
   --xeg-media-glass-shadow: var(--xeg-glass-shadow-medium);
 

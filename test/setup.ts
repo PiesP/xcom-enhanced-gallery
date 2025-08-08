@@ -21,43 +21,57 @@ import {
 // 🔧 Promise 및 에러 처리 개선
 // ================================
 
-// EventEmitter MaxListeners 경고 방지
-process.setMaxListeners(20);
+// EventEmitter MaxListeners 경고 방지 (테스트 폭이 넓어 동적 증가)
+try {
+  const currentMax = (process as any).getMaxListeners?.() ?? 10;
+  if (currentMax < 50) {
+    process.setMaxListeners(50);
+  }
+} catch {
+  // ignore
+}
 
 // 테스트 중 발생하는 unhandled rejection 처리 개선
-process.on('unhandledRejection', reason => {
-  // 워커 스레드 관련 에러들을 모두 억제
-  const isWorkerError =
-    (reason instanceof Error &&
-      (reason.message?.includes('Terminating worker thread') ||
-        reason.message?.includes('ThreadTermination') ||
-        reason.message?.includes('tinypool') ||
-        reason.stack?.includes('tinypool'))) ||
-    (typeof reason === 'string' && reason.includes('worker'));
+// 중복 등록 방지: vitest 워커 재사용 시 이미 등록된 경우 skip
+if (!(process as any).__xeg_unhandled_rejection_registered) {
+  (process as any).__xeg_unhandled_rejection_registered = true;
+  process.on('unhandledRejection', reason => {
+    // 워커 스레드 관련 에러들을 모두 억제
+    const isWorkerError =
+      (reason instanceof Error &&
+        (reason.message?.includes('Terminating worker thread') ||
+          reason.message?.includes('ThreadTermination') ||
+          reason.message?.includes('tinypool') ||
+          reason.stack?.includes('tinypool'))) ||
+      (typeof reason === 'string' && reason.includes('worker'));
 
-  if (isWorkerError) {
-    // 완전히 억제 (로그도 출력하지 않음)
-    return;
-  }
+    if (isWorkerError) {
+      // 완전히 억제 (로그도 출력하지 않음)
+      return;
+    }
 
-  // 다른 에러는 기존 핸들러로 전달하거나 경고만 출력
-  console.warn('테스트 환경 Promise Rejection:', reason);
-});
+    // 다른 에러는 기존 핸들러로 전달하거나 경고만 출력
+    console.warn('테스트 환경 Promise Rejection:', reason);
+  });
+}
 
 // Uncaught Exception도 처리
-process.on('uncaughtException', error => {
-  const isWorkerError =
-    error.message?.includes('Terminating worker thread') ||
-    error.message?.includes('ThreadTermination') ||
-    error.message?.includes('tinypool') ||
-    error.stack?.includes('tinypool');
+if (!(process as any).__xeg_uncaught_exception_registered) {
+  (process as any).__xeg_uncaught_exception_registered = true;
+  process.on('uncaughtException', error => {
+    const isWorkerError =
+      error.message?.includes('Terminating worker thread') ||
+      error.message?.includes('ThreadTermination') ||
+      error.message?.includes('tinypool') ||
+      error.stack?.includes('tinypool');
 
-  if (isWorkerError) {
-    return; // 완전히 억제
-  }
+    if (isWorkerError) {
+      return; // 완전히 억제
+    }
 
-  console.error('테스트 환경 Uncaught Exception:', error);
-});
+    console.error('테스트 환경 Uncaught Exception:', error);
+  });
+}
 
 // 테스트 완료 후 더 긴 정리 시간
 afterEach(async () => {

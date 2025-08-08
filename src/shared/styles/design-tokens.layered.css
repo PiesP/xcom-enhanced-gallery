@@ -1,0 +1,137 @@
+/* Layered Design Tokens (Incremental Refactor)
+   목적: 기존 design-tokens.css를 단계적으로 레이어 기반 구조로 이전
+   적용 전략: 병행 존재 → 점진적 마이그레이션 후 기존 파일 축소/삭제
+
+   LAYERS: base → theme → components → utilities
+*/
+@layer xeg.base, xeg.theme, xeg.components, xeg.utilities;
+
+/* =========================
+   Base Tokens
+   - 코어 색상 / 중립 / 표면 / 타이포 / 간격 / 애니메이션
+   - 파생 색상은 relative OKLCH 사용
+========================= */
+@layer xeg.base {
+  :root {
+    /* Core Primary */
+    --xeg-color-primary-base: oklch(0.678 0.182 252.2);
+    --xeg-color-primary-hover: oklch(from var(--xeg-color-primary-base) calc(l - 0.05) c h);
+    --xeg-color-primary-active: oklch(
+      from var(--xeg-color-primary-base) calc(l - 0.11) calc(c + 0.02) h
+    );
+
+    /* Semantic */
+    --xeg-color-success-base: oklch(0.725 0.17 142.5);
+    --xeg-color-warning-base: oklch(0.761 0.16 70.7);
+    --xeg-color-error-base: oklch(0.628 0.257 27.3);
+    --xeg-color-info-base: oklch(0.75 0.08 230);
+
+    /* Derived strong (used for badges / emphasis) */
+    --xeg-color-success-strong: oklch(from var(--xeg-color-success-base) calc(l - 0.18) c h);
+    --xeg-color-warning-strong: oklch(from var(--xeg-color-warning-base) calc(l - 0.22) c h);
+    --xeg-color-error-strong: oklch(from var(--xeg-color-error-base) calc(l - 0.18) c h);
+    --xeg-color-info-strong: oklch(from var(--xeg-color-info-base) calc(l - 0.2) c h);
+
+    /* Neutral scale (reduced) */
+    --xeg-color-neutral-50: oklch(0.98 0.001 206.2);
+    --xeg-color-neutral-100: oklch(0.97 0.002 206.2);
+    --xeg-color-neutral-500: oklch(0.598 0.006 286.3);
+    --xeg-color-neutral-700: oklch(0.378 0.005 286.3);
+    --xeg-color-neutral-900: oklch(0.234 0.006 277.8);
+
+    /* Surface depth */
+    --xeg-surface-subtle: oklch(0.97 0.002 206.2);
+    --xeg-surface-raised: oklch(0.94 0.004 206.2);
+    --xeg-surface-intense: oklch(0.9 0.006 206.2);
+
+    /* Alias mapping */
+    --xeg-color-primary: var(--xeg-color-primary-base);
+    --xeg-color-success: var(--xeg-color-success-base);
+    --xeg-color-warning: var(--xeg-color-warning-base);
+    --xeg-color-error: var(--xeg-color-error-base);
+    --xeg-color-info: var(--xeg-color-info-base);
+
+    --xeg-color-text-primary: var(--xeg-color-neutral-900);
+    --xeg-color-text-inverse: var(--xeg-color-neutral-50);
+
+    /* Precomputed alpha (hot path) */
+    --xeg-color-primary-alpha-10: color-mix(in oklch, var(--xeg-color-primary) 10%, transparent);
+    --xeg-color-primary-alpha-20: color-mix(in oklch, var(--xeg-color-primary) 20%, transparent);
+    --xeg-color-primary-alpha-40: color-mix(in oklch, var(--xeg-color-primary) 40%, transparent);
+
+    /* Focus system */
+    --xeg-focus-ring-color: var(--xeg-color-primary);
+    --xeg-active-ring-color: var(--xeg-color-primary-active);
+
+    /* Core typography (reuse existing tokens if loaded later) */
+    --xeg-font-size-base: 16px;
+    --xeg-font-weight-medium: 500;
+  }
+}
+
+/* =========================
+   Theme Layer
+========================= */
+@layer xeg.theme {
+  [data-theme='dark'] {
+    --xeg-color-text-primary: var(--xeg-color-neutral-50);
+    --xeg-color-text-inverse: var(--xeg-color-neutral-900);
+    --xeg-surface-subtle: oklch(0.19 0.01 277.8);
+    --xeg-surface-raised: oklch(0.24 0.012 277.8);
+    --xeg-surface-intense: oklch(0.28 0.014 277.8);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --xeg-color-text-primary: var(--xeg-color-neutral-50);
+      --xeg-surface-subtle: oklch(0.19 0.01 277.8);
+      --xeg-surface-raised: oklch(0.24 0.012 277.8);
+      --xeg-surface-intense: oklch(0.28 0.014 277.8);
+    }
+  }
+}
+
+/* =========================
+   Components Layer (semantic mapping)
+========================= */
+@layer xeg.components {
+  :root {
+    --xeg-toolbar-bg: var(--xeg-surface-raised);
+    --xeg-panel-bg: var(--xeg-surface-subtle);
+    --xeg-overlay-bg: color-mix(in oklch, var(--xeg-color-neutral-900) 80%, transparent);
+    --xeg-badge-info-bg: var(--xeg-color-info);
+  }
+}
+
+/* =========================
+   Utilities Layer
+========================= */
+@layer xeg.utilities {
+  @media (prefers-contrast: high) {
+    :root {
+      --xeg-color-primary: oklch(
+        from var(--xeg-color-primary-base) calc(l - 0.08) calc(c + 0.03) h
+      );
+      --xeg-focus-ring-color: currentColor;
+    }
+  }
+}
+
+/* =========================
+   Single fallback (progressive enhancement)
+========================= */
+@supports not (color: oklch(0 0 0)) {
+  @layer xeg.base {
+    :root {
+      --xeg-color-primary: #1d9bf0;
+      --xeg-color-success: #16a34a;
+      --xeg-color-warning: #f59e0b;
+      --xeg-color-error: #dc2626;
+      --xeg-color-info: #3b82f6;
+      --xeg-surface-subtle: #f5f5f5;
+      --xeg-surface-raised: #e5e5e5;
+      --xeg-surface-intense: #d4d4d4;
+    }
+  }
+}
+
+/* End layered tokens */
