@@ -56,8 +56,7 @@ jobs:
           echo "Memory: $(free -h | awk '/^Mem:/ {print $2}')"
           echo "CI: $CI"
           echo "GITHUB_ACTIONS: $GITHUB_ACTIONS"
-
-      - name: � Cache test results
+      - name: 📦 Cache test results
         uses: actions/cache@v4
         with:
           path: |
@@ -68,7 +67,7 @@ jobs:
           restore-keys: |
             test-cache-${{ runner.os }}-
 
-      - name: �🔍 Quality Checks
+      - name: 🔍 Quality Checks
         if: matrix.task == 'quality'
         run: |
           echo "🔍 Type checking..."
@@ -84,7 +83,7 @@ jobs:
         if: matrix.task == 'test'
         run: |
           echo "🧪 Running ci mode tests..."
-          cross-env VITEST_MODE=ci npm run test:optimized
+          npm run test:ci
 
       - name: 🏗️ Build Tests
         if: matrix.task == 'build'
