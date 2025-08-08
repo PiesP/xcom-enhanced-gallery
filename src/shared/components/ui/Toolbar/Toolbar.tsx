@@ -537,7 +537,7 @@ function ToolbarCore({
                 onClick: (e: Event) => handleButtonClick(e, 'download-current', onDownloadCurrent),
                 disabled: disabled || isDownloading,
                 'aria-label': '현재 파일 다운로드',
-                title: '현재 파일 다운로드 (Ctrl+D)',
+                title: '현재 파일 다운로드',
                 'data-gallery-element': 'download-current',
                 'data-disabled': disabled || isDownloading,
                 'data-loading': isDownloading,
