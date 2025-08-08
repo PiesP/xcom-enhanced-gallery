@@ -109,17 +109,22 @@
   --xeg-color-overlay-medium: color-mix(in oklch, black 30%, transparent);
   --xeg-color-overlay-strong: color-mix(in oklch, black 80%, transparent);
 
-  /* Glass Effect Colors - 글래스모피즘 강화 */
-  --xeg-color-glass-light: rgba(255, 255, 255, 0.85);
-  --xeg-color-glass-medium: rgba(255, 255, 255, 0.65);
-  --xeg-color-glass-dark: rgba(0, 0, 0, 0.85);
+  /* Glass Effect Alias Colors removed (Phase 2) */
 
   /* 글래스모피즘 전용 색상 시스템 */
   --xeg-glass-bg-light: rgba(255, 255, 255, 0.85);
   --xeg-glass-bg-medium: rgba(255, 255, 255, 0.65);
   --xeg-glass-bg-dark: rgba(0, 0, 0, 0.85);
-  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.95);
-  --xeg-glass-bg-ultra-dark: rgba(0, 0, 0, 0.95);
+  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.95); /* toast uses */
+
+  /* Translucent Glass Background Scale (NEW Phase 1 - for media item layering) */
+  /* RATIONALE: 기존 --xeg-media-glass-bg 다단계 rgba 직접 정의를 토큰화하여 재사용 및 접근성 미세조정 용이성 확보 */
+  --xeg-glass-bg-translucent-10: rgba(255, 255, 255, 0.1); /* base light translucency */
+  --xeg-glass-bg-translucent-20: rgba(255, 255, 255, 0.2); /* reduced-transparency override */
+  --xeg-glass-bg-translucent-30: rgba(255, 255, 255, 0.3); /* high-contrast override */
+  --xeg-glass-bg-translucent-dark-30: rgba(0, 0, 0, 0.3); /* dark base */
+  --xeg-glass-bg-translucent-dark-50: rgba(0, 0, 0, 0.5); /* dark reduced-transparency */
+  --xeg-glass-bg-translucent-dark-70: rgba(0, 0, 0, 0.7); /* dark high-contrast */
 
   /* 글래스 테두리 색상 */
   --xeg-glass-border-light: rgba(255, 255, 255, 0.2);
@@ -309,10 +314,15 @@
   --xeg-gallery-glass-blur: var(--xeg-glass-blur-ultra);
   --xeg-gallery-glass-shadow: var(--xeg-glass-shadow-ultra);
 
-  /* 미디어 아이템 글래스모피즘 (DEPRECATED: blur-subtle 토큰 미존재 → medium으로 통일 예정) */
-  --xeg-media-glass-bg: rgba(255, 255, 255, 0.1);
+  /* 미디어 아이템 글래스모피즘 (정규화: rgba 직접 사용 → translucent scale 토큰) */
+  --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-10);
   --xeg-media-glass-blur: var(--xeg-glass-blur-medium); /* fixed subtle→medium */
-  --xeg-media-glass-border: rgba(255, 255, 255, 0.15);
+  --xeg-media-glass-border: rgba(
+    255,
+    255,
+    255,
+    0.15
+  ); /* TODO Phase 2: border translucency scale화 검토 */
   --xeg-media-glass-shadow: var(--xeg-glass-shadow-medium);
 
   /* Focus ring - 통합된 포커스 시스템 */
@@ -378,7 +388,7 @@
 
   --xeg-gallery-glass-bg: rgba(0, 0, 0, 0.9);
 
-  --xeg-media-glass-bg: rgba(0, 0, 0, 0.3);
+  --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-dark-30);
   --xeg-media-glass-border: rgba(255, 255, 255, 0.1);
 
   /* Dark theme shadows (stronger) */
@@ -651,10 +661,10 @@
   }
 }
 
-/* 브라우저 호환성을 위한 OKLCH 지원 감지 */
+/* 브라우저 호환성을 위한 OKLCH 지원 감지 (CONSOLIDATED FALLBACK BLOCK) */
 @supports not (color: oklch(0 0 0)) {
   :root {
-    /* OKLCH를 지원하지 않는 브라우저용 RGB 폴백 */
+    /* === Hue Scale / Tailwind-esque numeric steps (existing) === */
     --xeg-color-primary-500: #3b82f6;
     --xeg-color-primary-600: #2563eb;
     --xeg-color-primary-700: #1d4ed8;
@@ -671,7 +681,7 @@
     --xeg-color-error-500: #ef4444;
     --xeg-color-warning-500: #f59e0b;
 
-    /* Warning Orange 폴백 */
+    /* Warning Orange 폴백 (scale) */
     --xeg-color-warning-50: #fffbeb;
     --xeg-color-warning-100: #fef3c7;
     --xeg-color-warning-200: #fde68a;
@@ -683,7 +693,7 @@
     --xeg-color-warning-900: #78350f;
     --xeg-color-warning-950: #451a03;
 
-    /* Error Red 폴백 */
+    /* Error Red 폴백 (scale) */
     --xeg-color-error-50: #fef2f2;
     --xeg-color-error-100: #fee2e2;
     --xeg-color-error-200: #fecaca;
@@ -694,89 +704,22 @@
     --xeg-color-error-800: #991b1b;
     --xeg-color-error-900: #7f1d1d;
     --xeg-color-error-950: #450a0a;
-  }
-}
 
-/* ===========================================
-   글래스모피즘 접근성 지원
-   =========================================== */
-
-/* 투명도 감소를 선호하는 사용자 지원 */
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --xeg-toolbar-glass-bg: rgba(255, 255, 255, 0.95);
-    --xeg-toolbar-glass-blur: blur(4px);
-
-    --xeg-toast-glass-bg: rgba(255, 255, 255, 0.98);
-    --xeg-toast-glass-blur: blur(2px);
-
-    --xeg-gallery-glass-bg: rgba(0, 0, 0, 0.95);
-    --xeg-gallery-glass-blur: blur(4px);
-
-    --xeg-media-glass-bg: rgba(255, 255, 255, 0.2);
-    --xeg-media-glass-blur: blur(2px);
-  }
-
-  [data-theme='dark'] {
-    --xeg-toolbar-glass-bg: rgba(0, 0, 0, 0.95);
-    --xeg-toast-glass-bg: rgba(0, 0, 0, 0.98);
-    --xeg-media-glass-bg: rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* 고대비 모드 지원 */
-@media (prefers-contrast: high) {
-  :root {
-    --xeg-toolbar-glass-bg: rgba(255, 255, 255, 0.98);
-    --xeg-toolbar-glass-border: rgba(0, 0, 0, 0.8);
-    --xeg-toolbar-glass-blur: none;
-
-    --xeg-toast-glass-bg: rgba(255, 255, 255, 0.99);
-    --xeg-toast-glass-border: rgba(0, 0, 0, 0.9);
-    --xeg-toast-glass-blur: none;
-
-    --xeg-gallery-glass-bg: rgba(0, 0, 0, 0.98);
-    --xeg-gallery-glass-blur: none;
-
-    --xeg-media-glass-bg: rgba(255, 255, 255, 0.3);
-    --xeg-media-glass-border: rgba(0, 0, 0, 0.7);
-    --xeg-media-glass-blur: none;
-  }
-
-  [data-theme='dark'] {
-    --xeg-toolbar-glass-bg: rgba(0, 0, 0, 0.98);
-    --xeg-toolbar-glass-border: rgba(255, 255, 255, 0.8);
-    --xeg-toast-glass-bg: rgba(0, 0, 0, 0.99);
-    --xeg-toast-glass-border: rgba(255, 255, 255, 0.9);
-    --xeg-media-glass-bg: rgba(0, 0, 0, 0.7);
-    --xeg-media-glass-border: rgba(255, 255, 255, 0.7);
-  }
-}
-
-/* ===========================================
-   OKLCH 미지원 브라우저를 위한 Fallback
-   =========================================== */
-
-@supports not (color: oklch(0 0 0)) {
-  :root {
-    /* Primary Colors Fallback */
-    --xeg-color-primary: #1d9bf0;
+    /* === Consolidated composite semantic tokens (from duplicate block) === */
+    --xeg-color-primary: #1d9bf0; /* matches brand blue */
     --xeg-color-primary-hover: #1a8cd8;
     --xeg-color-primary-active: #1570a6;
-
-    /* Semantic Colors Fallback */
     --xeg-color-success: #10b981;
     --xeg-color-error: #ef4444;
     --xeg-color-warning: #f59e0b;
 
-    /* Neutral Colors Fallback */
+    /* Neutral additions */
     --xeg-color-neutral-50: #f8fafc;
-    --xeg-color-neutral-100: #f1f5f9;
-    --xeg-color-neutral-500: #64748b;
-    --xeg-color-neutral-700: #334155;
-    --xeg-color-neutral-900: #0f172a;
+    /* neutral-100 already defined above; keep single value */
+    --xeg-color-neutral-700: #334155; /* override to align with semantic block if different */
+    --xeg-color-neutral-900: #0f172a; /* override to align with semantic block if different */
 
-    /* Alpha Variants Fallback */
+    /* Alpha Variants Fallback (composite) */
     --xeg-color-primary-alpha-10: rgba(29, 155, 240, 0.1);
     --xeg-color-primary-alpha-20: rgba(29, 155, 240, 0.2);
     --xeg-color-success-alpha-08: rgba(16, 185, 129, 0.08);
@@ -793,3 +736,62 @@
     --xeg-color-overlay-strong: rgba(0, 0, 0, 0.8);
   }
 }
+
+/* ===========================================
+   글래스모피즘 접근성 지원
+   =========================================== */
+
+/* 투명도 감소를 선호하는 사용자 지원
+   Simplification: Blur 강도를 전역 토큰에 위임하고 불필요한 세분화 제거.
+   RATIONALE: Reduced transparency 선호 시 blur를 더 낮추거나 제거하는 것이 목적.
+   ACTION: gallery/media 별 개별 blur 재정의 제거 → 공통 medium 수준 유지 후 필요시 후속 단계에서 none 전환 가능.
+*/
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    /* 유지: 약간 더 불투명한 배경만 조정 (blur는 전역 토큰 단계에서 조정) */
+    --xeg-toolbar-glass-bg: rgba(255, 255, 255, 0.95); /* 기존 유지 */
+    --xeg-toast-glass-bg: rgba(255, 255, 255, 0.98); /* 기존 유지 */
+    --xeg-gallery-glass-bg: rgba(0, 0, 0, 0.95); /* 기존 유지 */
+    --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-20); /* normalized */
+    /* DEPRECATED: 세분화된 blur 재정의 (toolbar/toast/gallery/media) 제거됨 */
+  }
+
+  [data-theme='dark'] {
+    --xeg-toolbar-glass-bg: rgba(0, 0, 0, 0.95);
+    --xeg-toast-glass-bg: rgba(0, 0, 0, 0.98);
+    --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-dark-50);
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  :root {
+    /* 목표: 윤곽선/경계 대비 강화, blur 최소화.
+       Simplification: blur none 재정의 유지하되 gallery/media 중복 border 없음 유지. */
+    --xeg-toolbar-glass-bg: rgba(255, 255, 255, 0.98);
+    --xeg-toolbar-glass-border: rgba(0, 0, 0, 0.8);
+    --xeg-toolbar-glass-blur: none;
+
+    --xeg-toast-glass-bg: rgba(255, 255, 255, 0.99);
+    --xeg-toast-glass-border: rgba(0, 0, 0, 0.9);
+    --xeg-toast-glass-blur: none;
+
+    --xeg-gallery-glass-bg: rgba(0, 0, 0, 0.98); /* border/blur 최소화 */
+    --xeg-gallery-glass-blur: none;
+
+    --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-30);
+    --xeg-media-glass-border: rgba(0, 0, 0, 0.7);
+    --xeg-media-glass-blur: none;
+  }
+
+  [data-theme='dark'] {
+    --xeg-toolbar-glass-bg: rgba(0, 0, 0, 0.98);
+    --xeg-toolbar-glass-border: rgba(255, 255, 255, 0.8);
+    --xeg-toast-glass-bg: rgba(0, 0, 0, 0.99);
+    --xeg-toast-glass-border: rgba(255, 255, 255, 0.9);
+    --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-dark-70);
+    --xeg-media-glass-border: rgba(255, 255, 255, 0.7);
+  }
+}
+
+/* (DEPRECATED) 이전에 중복되었던 OKLCH Fallback 블록은 위 CONSOLIDATED FALLBACK BLOCK으로 통합되었습니다. */
