@@ -38,7 +38,8 @@
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
     "deps:all": "npm run deps:json && npm run deps:graph:dot && npm run deps:graph && npm run deps:check",
     "prepare": "husky",
-    "postinstall": "npm run prepare"
+    "postinstall": "npm run prepare",
+    "test:audit": "node scripts/audit-tests.cjs"
   },
   "dependencies": {
     "@preact/signals": "^2.2.1",
@@ -80,7 +81,8 @@
     "terser": "5.43.1",
     "typescript": "5.9.2",
     "vite": "npm:rolldown-vite@latest",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "ts-node": "^10.9.2"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

@@ -28,6 +28,38 @@ export class MediaExtractionService implements MediaExtractor {
   }
 
   /**
+   * (Behavior 테스트 지원) 루트 DOM에서 이미지/비디오 src URL을 단순 추출
+   * - 내부 통합 추출 로직을 사용하지 않고 빠른 시나리오 검증용 최소 구현
+   * - 향후 통합 파이프라인 연동 시 리팩토링 대상
+   */
+  public async extractFromRoot(root: HTMLElement): Promise<ReadonlyArray<{ url: string }>> {
+    if (!root) return [];
+    try {
+      const urls = new Set<string>();
+      // 이미지
+      root.querySelectorAll('img[src]')?.forEach(img => {
+        const src = (img as HTMLImageElement).src?.trim();
+        if (src) urls.add(src);
+      });
+      // 비디오 <video src="..."> 또는 <source src>
+      root.querySelectorAll('video, source[src]')?.forEach(node => {
+        const el = node as HTMLVideoElement | HTMLSourceElement;
+        let src: string | undefined;
+        if ('src' in el && typeof el.src === 'string') {
+          src = el.src.trim();
+        }
+        if (src && /video\./.test(src)) {
+          urls.add(src);
+        }
+      });
+      return [...urls].map(u => ({ url: u }));
+    } catch (err) {
+      logger.error('[MediaExtractionService] extractFromRoot 실패', err);
+      return [];
+    }
+  }
+
+  /**
    * 간소화된 2단계 추출
    * 1. 트윗 정보 추출
    * 2. API 우선 추출 또는 DOM 직접 추출
