@@ -18,6 +18,9 @@ env:
   NODE_ENV: "test"
   # 메모리 최적화
   NODE_OPTIONS: "--max-old-space-size=4096"
+  # Hard-disable Husky in CI (belt & suspenders)
+  SKIP_HUSKY: "1"
+  HUSKY: "0"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
