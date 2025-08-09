@@ -11,7 +11,7 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
-import { saveScrollPosition, restoreScrollPosition } from '@shared/browser/utils/browser-utils';
+import { saveScrollPosition, restoreScrollPosition } from '@shared/browser';
 
 // Signal type
 type Signal<T> = {

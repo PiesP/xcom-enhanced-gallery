@@ -6,19 +6,12 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import {
   isBrowserEnvironment,
   safeWindow,
-  safeLocation,
-  safeNavigator,
-  isTwitterSite,
-  getCurrentUrlInfo,
-  setScrollPosition,
-  safeSetTimeout,
-  safeClearTimeout,
-  getViewportSize,
-  getDevicePixelRatio,
-  matchesMediaQuery,
-  isDarkMode,
-  prefersReducedMotion,
-} from '@shared/browser/utils/browser-utils';
+  isExtensionEnvironment,
+  saveScrollPosition,
+  restoreScrollPosition,
+  clearScrollPosition,
+  getPageInfo,
+} from '@shared/browser';
 
 describe('Browser Utilities', () => {
   let mockWindow: any;

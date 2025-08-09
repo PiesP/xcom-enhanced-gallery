@@ -6,9 +6,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useScrollPositionManager } from '@features/gallery/hooks/useScrollPositionManager';
 import {
-  clearSavedScrollPosition,
-  getSavedScrollPosition,
-} from '@shared/browser/utils/browser-utils';
+  clearScrollPosition as clearSavedScrollPosition,
+  getPageInfo as getSavedScrollPosition,
+} from '@shared/browser';
 
 // 테스트 헬퍼: 훅을 간단하게 실행하는 함수
 function runHook<T>(hookFn: () => T): T {

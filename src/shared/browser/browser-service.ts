@@ -1,138 +1,130 @@
 /**
- * @fileoverview Browser Service
- * @version 2.0.0 - Core layer migration
- *
- * 브라우저 관련 유틸리티를 관리하는 Core 레이어 서비스
- * DOM 조작, CSS 주입, 브라우저 API 래핑 등 브라우저 기능 제공
+ * @fileoverview Browser 서비스 - CSS와 환경 기능을 통합하는 고수준 서비스
+ * Phase 1.3 GREEN: 통합된 브라우저 서비스 인터페이스 제공
+ * @version 3.0.0 - Browser 유틸리티 통합 완료
  */
 
+import { BrowserCSSUtils } from './browser-css-utils';
+import {
+  isBrowserEnvironment,
+  safeWindow,
+  isExtensionEnvironment,
+  saveScrollPosition,
+  restoreScrollPosition,
+  clearScrollPosition,
+  getPageInfo,
+} from './browser-environment';
 import { logger } from '@shared/logging';
 
 /**
- * 브라우저 서비스
- * Core 레이어의 브라우저 API 래핑 서비스
- * AnimationService 기능 통합됨
- * Phase 4 Step 4: 싱글톤에서 직접 클래스로 변환
+ * 통합된 브라우저 서비스 클래스
+ * CSS 관리와 환경 체크 기능을 하나의 인터페이스로 제공
  */
 export class BrowserService {
-  private readonly injectedStyles = new Set<string>();
+  // CSS 관련 기능 위임
+  static readonly css = BrowserCSSUtils;
 
-  constructor() {
-    logger.debug('[BrowserService] Initialized');
-  }
+  // 환경 체크 기능들
+  static readonly environment = {
+    isBrowser: isBrowserEnvironment,
+    getWindow: safeWindow,
+    isExtension: isExtensionEnvironment,
+    getPageInfo,
+  } as const;
 
-  /**
-   * CSS 주입
-   */
-  public injectCSS(id: string, css: string): void {
-    // 기존 스타일이 있으면 제거
-    this.removeCSS(id);
-
-    const style = document.createElement('style');
-    style.id = id;
-    style.textContent = css;
-    document.head.appendChild(style);
-
-    this.injectedStyles.add(id);
-    logger.debug(`[BrowserService] CSS injected: ${id}`);
-  }
+  // 스크롤 관련 기능들
+  static readonly scroll = {
+    save: saveScrollPosition,
+    restore: restoreScrollPosition,
+    clear: clearScrollPosition,
+  } as const;
 
   /**
-   * CSS 제거
+   * 초기화 및 환경 검사
+   * @returns 브라우저 서비스 사용 가능 여부
    */
-  public removeCSS(id: string): void {
-    const existingStyle = document.getElementById(id);
-    if (existingStyle) {
-      existingStyle.remove();
-      this.injectedStyles.delete(id);
-      logger.debug(`[BrowserService] CSS removed: ${id}`);
-    }
-  }
-
-  /**
-   * 파일 다운로드
-   */
-  public downloadFile(url: string, filename?: string): void {
+  static initialize(): boolean {
     try {
-      const link = document.createElement('a');
-      link.href = url;
-      if (filename) {
-        link.download = filename;
+      if (!isBrowserEnvironment()) {
+        logger.warn('Browser service initialized in non-browser environment');
+        return false;
       }
-      link.target = '_blank';
 
-      // 임시로 DOM에 추가하여 클릭 이벤트 트리거
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      logger.debug('Browser service initialized successfully', {
+        isExtension: isExtensionEnvironment(),
+        pageInfo: getPageInfo(),
+      });
 
-      logger.debug('[BrowserService] File download initiated', { url, filename });
+      return true;
     } catch (error) {
-      logger.error('[BrowserService] File download failed', error);
-      throw error;
+      logger.error('Failed to initialize browser service', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return false;
     }
   }
 
   /**
-   * 페이지 가시성 확인
+   * 서비스 정리 및 리소스 해제
+   * @returns 정리 완료 여부
    */
-  public isPageVisible(): boolean {
-    return document.visibilityState === 'visible';
+  static cleanup(): boolean {
+    try {
+      // 모든 주입된 CSS 제거
+      const removedStyles = BrowserCSSUtils.removeAllInjectedCSS();
+
+      // 저장된 스크롤 위치 정리
+      clearScrollPosition();
+
+      logger.debug('Browser service cleanup completed', {
+        removedStyles,
+      });
+
+      return true;
+    } catch (error) {
+      logger.error('Failed to cleanup browser service', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    }
   }
 
   /**
-   * DOM 준비 상태 확인
+   * 서비스 상태 정보 반환
+   * @returns 서비스 상태 객체
    */
-  public isDOMReady(): boolean {
-    return document.readyState === 'complete';
-  }
-
-  /**
-   * 진단 정보 조회
-   */
-  public getDiagnostics(): {
-    injectedStylesCount: number;
-    isPageVisible: boolean;
-    isDOMReady: boolean;
-  } {
-    return {
-      injectedStylesCount: this.injectedStyles.size,
-      isPageVisible: this.isPageVisible(),
-      isDOMReady: this.isDOMReady(),
-    };
-  }
-
-  /**
-   * 모든 관리 중인 리소스 정리
-   */
-  public cleanup(): void {
-    this.injectedStyles.clear();
-    logger.debug('[BrowserService] Cleanup complete');
-  }
-
-  // ====================================
-  // 브라우저 정보 API
-  // ====================================
-
-  /**
-   * 사용자 에이전트 정보 반환
-   */
-  public getUserAgent(): string {
-    return navigator.userAgent;
+  static getStatus() {
+    try {
+      return {
+        initialized: isBrowserEnvironment(),
+        environment: {
+          isBrowser: isBrowserEnvironment(),
+          isExtension: isExtensionEnvironment(),
+          hasWindow: safeWindow() !== undefined,
+        },
+        css: {
+          injectedStyles: BrowserCSSUtils.getInjectedStyles(),
+          styleCount: BrowserCSSUtils.getInjectedStyles().length,
+        },
+        page: getPageInfo(),
+      };
+    } catch (error) {
+      logger.error('Failed to get browser service status', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
   }
 }
 
-// 편의 함수들
-// Export utility functions - Phase 4 Step 4: 직접 인스턴스 사용
-const defaultBrowserService = new BrowserService();
-
-export const browserAPI = {
-  injectCSS: (id: string, css: string) => defaultBrowserService.injectCSS(id, css),
-  removeCSS: (id: string) => defaultBrowserService.removeCSS(id),
-  downloadFile: (url: string, filename: string) =>
-    defaultBrowserService.downloadFile(url, filename),
-  isPageVisible: () => defaultBrowserService.isPageVisible(),
-  isDOMReady: () => defaultBrowserService.isDOMReady(),
-  getDiagnostics: () => defaultBrowserService.getDiagnostics(),
-  cleanup: () => defaultBrowserService.cleanup(),
-};
+// 기존 코드와의 호환성을 위한 re-exports
+export { BrowserCSSUtils } from './browser-css-utils';
+export {
+  isBrowserEnvironment,
+  safeWindow,
+  isExtensionEnvironment,
+  saveScrollPosition,
+  restoreScrollPosition,
+  clearScrollPosition,
+  getPageInfo,
+} from './browser-environment';

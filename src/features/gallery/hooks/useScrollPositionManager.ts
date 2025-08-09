@@ -7,8 +7,8 @@ import { ComponentManager } from '@shared/components/component-manager';
 import {
   saveScrollPosition,
   restoreScrollPosition,
-  clearSavedScrollPosition,
-} from '@shared/browser/utils/browser-utils';
+  clearScrollPosition as clearSavedScrollPosition,
+} from '@shared/browser';
 import { logger } from '@shared/logging';
 
 const { useEffect, useCallback } = ComponentManager.getHookManager();
