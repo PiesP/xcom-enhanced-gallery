@@ -10,7 +10,7 @@ import { EnhancedTestEnvironment } from '../utils/helpers/page-test-environment'
 // Mock 환경 설정
 import '../setup.optimized';
 
-describe.skip('시스템 통합 테스트 - Consolidated', () => {
+describe.skip('시스템 통합 테스트 - Consolidated (구현 대기 중)', () => {
   beforeEach(() => {
     // 기본적인 브라우저 환경 설정
     if (!document.body) {
@@ -123,7 +123,7 @@ describe.skip('시스템 통합 테스트 - Consolidated', () => {
       expect(videos.length).toBeGreaterThan(0);
 
       // 각 미디어 요소 클릭 시뮬레이션
-      images.forEach((img, index) => {
+      images.forEach(img => {
         expect(() => {
           const clickEvent = new MouseEvent('click', { bubbles: true });
           img.dispatchEvent(clickEvent);

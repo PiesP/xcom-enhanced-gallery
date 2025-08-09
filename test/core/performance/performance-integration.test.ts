@@ -288,14 +288,36 @@ describe('🔴 RED: 성능 모니터링 애플리케이션 통합', () => {
 
 describe('🟢 GREEN: 성능 모니터링 통합 구현', () => {
   // GREEN 단계는 다음에 구현 예정
-  it.todo('실제 PerformanceIntegration 클래스 구현');
-  it.todo('메인 앱과의 생명주기 통합');
-  it.todo('실시간 알림 시스템 구현');
+  it.skip('실제 PerformanceIntegration 클래스 구현', () => {
+    // TODO: PerformanceIntegration 클래스 구현 후 활성화
+    expect.fail('구현 대기 중');
+  });
+
+  it.skip('메인 앱과의 생명주기 통합', () => {
+    // TODO: 앱 생명주기 통합 후 활성화
+    expect.fail('구현 대기 중');
+  });
+
+  it.skip('실시간 알림 시스템 구현', () => {
+    // TODO: 알림 시스템 구현 후 활성화
+    expect.fail('구현 대기 중');
+  });
 });
 
 describe('🔵 REFACTOR: 성능 모니터링 최적화', () => {
   // REFACTOR 단계는 GREEN 후 구현 예정
-  it.todo('모니터링 오버헤드 최소화');
-  it.todo('대시보드 렌더링 최적화');
-  it.todo('메모리 누수 방지');
+  it.skip('모니터링 오버헤드 최소화', () => {
+    // TODO: 성능 최적화 후 활성화
+    expect.fail('구현 대기 중');
+  });
+
+  it.skip('대시보드 렌더링 최적화', () => {
+    // TODO: 대시보드 최적화 후 활성화
+    expect.fail('구현 대기 중');
+  });
+
+  it.skip('메모리 누수 방지', () => {
+    // TODO: 메모리 최적화 후 활성화
+    expect.fail('구현 대기 중');
+  });
 });
