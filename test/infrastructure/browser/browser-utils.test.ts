@@ -11,6 +11,20 @@ import {
   restoreScrollPosition,
   clearScrollPosition,
   getPageInfo,
+  // 새로 추가된 browser utils 함수들
+  safeLocation,
+  safeNavigator,
+  isTwitterSite,
+  getCurrentUrlInfo,
+  setScrollPosition,
+  safeSetTimeout,
+  safeClearTimeout,
+  getViewportSize,
+  getDevicePixelRatio,
+  matchesMediaQuery,
+  isDarkMode,
+  prefersReducedMotion,
+  getSavedScrollPosition,
 } from '@shared/browser';
 
 describe('Browser Utilities', () => {

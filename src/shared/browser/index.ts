@@ -20,6 +20,20 @@ export {
   restoreScrollPosition,
   clearScrollPosition,
   getPageInfo,
+  // 🟢 GREEN: 새로 추가된 browser utils 함수들
+  safeLocation,
+  safeNavigator,
+  isTwitterSite,
+  getCurrentUrlInfo,
+  setScrollPosition,
+  safeSetTimeout,
+  safeClearTimeout,
+  getViewportSize,
+  getDevicePixelRatio,
+  matchesMediaQuery,
+  isDarkMode,
+  prefersReducedMotion,
+  getSavedScrollPosition,
 } from './browser-environment';
 
 // === 통합 서비스 ===

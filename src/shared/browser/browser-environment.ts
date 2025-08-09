@@ -19,16 +19,16 @@ export const isBrowserEnvironment = (): boolean => {
 
 /**
  * 안전한 window 객체 접근
- * @returns window 객체 또는 undefined
+ * @returns window 객체 또는 null
  */
-export const safeWindow = (): Window | undefined => {
+export const safeWindow = (): Window | null => {
   try {
-    return isBrowserEnvironment() ? window : undefined;
+    return isBrowserEnvironment() ? window : null;
   } catch (error) {
     logger.debug('Failed to access window object', {
       error: error instanceof Error ? error.message : String(error),
     });
-    return undefined;
+    return null;
   }
 };
 
@@ -84,9 +84,18 @@ export const saveScrollPosition = (key: string = 'scrollPosition'): boolean => {
     const win = safeWindow();
     if (!win) return false;
 
+    const x = win.scrollX || win.pageXOffset || 0;
+    const y = win.scrollY || win.pageYOffset || 0;
+
+    // NaN이나 음수 값은 저장하지 않음
+    if (isNaN(x) || isNaN(y) || x < 0 || y < 0) {
+      logger.debug('Invalid scroll position values, not saving', { x, y });
+      return false;
+    }
+
     const scrollData = {
-      x: win.scrollX || win.pageXOffset,
-      y: win.scrollY || win.pageYOffset,
+      x,
+      y,
       timestamp: Date.now(),
     };
 
@@ -136,12 +145,12 @@ export const restoreScrollPosition = (
 
     if (smooth) {
       win.scrollTo({
-        left: scrollData.x,
-        top: scrollData.y,
+        left: scrollData.x || 0,
+        top: scrollData.y || 0,
         behavior: 'smooth',
       });
     } else {
-      win.scrollTo(scrollData.x, scrollData.y);
+      win.scrollTo(scrollData.x || 0, scrollData.y || 0);
     }
 
     logger.debug('Scroll position restored', { key, scrollData });
@@ -209,6 +218,280 @@ export const getPageInfo = () => {
   } catch (error) {
     logger.error('Failed to get page info', {
       error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+};
+
+/**
+ * 🔴 RED: 안전한 location 객체 접근
+ * @returns location 객체 또는 null
+ */
+export const safeLocation = (): Location | null => {
+  try {
+    const win = safeWindow();
+    return win?.location || null;
+  } catch (error) {
+    logger.debug('Failed to access location object', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+};
+
+/**
+ * 🔴 RED: 안전한 navigator 객체 접근
+ * @returns navigator 객체 또는 null
+ */
+export const safeNavigator = (): Navigator | null => {
+  try {
+    const win = safeWindow();
+    return win?.navigator || null;
+  } catch (error) {
+    logger.debug('Failed to access navigator object', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+};
+
+/**
+ * 🔴 RED: Twitter 사이트 여부 확인
+ * @returns Twitter 사이트 여부
+ */
+export const isTwitterSite = (): boolean => {
+  try {
+    const location = safeLocation();
+    if (!location) return false;
+
+    const hostname = location.hostname.toLowerCase();
+    return (
+      hostname === 'x.com' ||
+      hostname === 'www.x.com' ||
+      hostname === 'mobile.x.com' ||
+      hostname === 'twitter.com' ||
+      hostname === 'www.twitter.com' ||
+      hostname === 'mobile.twitter.com'
+    );
+  } catch (error) {
+    logger.debug('Failed to check Twitter site', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+};
+
+/**
+ * 🔴 RED: 현재 URL 정보 반환
+ * @returns URL 정보 객체
+ */
+export const getCurrentUrlInfo = (): {
+  href: string;
+  pathname: string;
+  hostname: string;
+  search: string;
+} => {
+  try {
+    const location = safeLocation();
+    if (!location) {
+      return {
+        href: '',
+        pathname: '',
+        hostname: '',
+        search: '',
+      };
+    }
+
+    return {
+      href: location.href,
+      pathname: location.pathname,
+      hostname: location.hostname,
+      search: location.search,
+    };
+  } catch (error) {
+    logger.debug('Failed to get current URL info', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      href: '',
+      pathname: '',
+      hostname: '',
+      search: '',
+    };
+  }
+};
+
+/**
+ * 🔴 RED: 스크롤 위치 설정
+ * @param x - X 좌표
+ * @param y - Y 좌표
+ */
+export const setScrollPosition = (x: number, y: number): void => {
+  try {
+    const win = safeWindow();
+    if (win?.scrollTo) {
+      win.scrollTo(x, y);
+    }
+  } catch (error) {
+    logger.debug('Failed to set scroll position', {
+      error: error instanceof Error ? error.message : String(error),
+      x,
+      y,
+    });
+  }
+};
+
+/**
+ * 🔴 RED: 안전한 setTimeout
+ * @param callback - 실행할 콜백
+ * @param delay - 지연 시간
+ * @returns 타이머 ID 또는 null
+ */
+export const safeSetTimeout = (callback: () => void, delay: number): number | null => {
+  try {
+    const win = safeWindow();
+    if (win?.setTimeout) {
+      return win.setTimeout(callback, delay);
+    }
+    return null;
+  } catch (error) {
+    logger.debug('Failed to set timeout', {
+      error: error instanceof Error ? error.message : String(error),
+      delay,
+    });
+    return null;
+  }
+};
+
+/**
+ * 🔴 RED: 안전한 clearTimeout
+ * @param timerId - 타이머 ID
+ */
+export const safeClearTimeout = (timerId: number | null): void => {
+  try {
+    if (timerId === null) return;
+
+    const win = safeWindow();
+    if (win?.clearTimeout) {
+      win.clearTimeout(timerId);
+    }
+  } catch (error) {
+    logger.debug('Failed to clear timeout', {
+      error: error instanceof Error ? error.message : String(error),
+      timerId,
+    });
+  }
+};
+
+/**
+ * 🔴 RED: 뷰포트 크기 반환
+ * @returns 뷰포트 크기 객체
+ */
+export const getViewportSize = (): { width: number; height: number } => {
+  try {
+    const win = safeWindow();
+    if (!win) {
+      return { width: 0, height: 0 };
+    }
+
+    return {
+      width: win.innerWidth || 0,
+      height: win.innerHeight || 0,
+    };
+  } catch (error) {
+    logger.debug('Failed to get viewport size', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { width: 0, height: 0 };
+  }
+};
+
+/**
+ * 🔴 RED: 디바이스 픽셀 비율 반환
+ * @returns 디바이스 픽셀 비율
+ */
+export const getDevicePixelRatio = (): number => {
+  try {
+    const win = safeWindow();
+    return win?.devicePixelRatio || 1;
+  } catch (error) {
+    logger.debug('Failed to get device pixel ratio', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return 1;
+  }
+};
+
+/**
+ * 🔴 RED: 미디어 쿼리 매칭
+ * @param query - 미디어 쿼리 문자열
+ * @returns 매칭 결과
+ */
+export const matchesMediaQuery = (query: string): boolean => {
+  try {
+    const win = safeWindow();
+    if (!win?.matchMedia) {
+      return false;
+    }
+
+    return win.matchMedia(query).matches;
+  } catch (error) {
+    logger.debug('Failed to match media query', {
+      error: error instanceof Error ? error.message : String(error),
+      query,
+    });
+    return false;
+  }
+};
+
+/**
+ * 🔴 RED: 다크 모드 감지
+ * @returns 다크 모드 여부
+ */
+export const isDarkMode = (): boolean => {
+  return matchesMediaQuery('(prefers-color-scheme: dark)');
+};
+
+/**
+ * 🔴 RED: 애니메이션 감소 선호도 감지
+ * @returns 애니메이션 감소 선호 여부
+ */
+export const prefersReducedMotion = (): boolean => {
+  return matchesMediaQuery('(prefers-reduced-motion: reduce)');
+};
+
+/**
+ * 🟢 GREEN: 저장된 스크롤 Y 위치 반환
+ * @param key - 조회할 키 이름 (기본값: 'scrollPosition')
+ * @returns 저장된 스크롤 Y 위치 또는 null
+ */
+export const getSavedScrollPosition = (key: string = 'scrollPosition'): number | null => {
+  if (!isBrowserEnvironment()) {
+    return null;
+  }
+
+  try {
+    const savedData = sessionStorage.getItem(key);
+    if (!savedData) {
+      return null;
+    }
+
+    const scrollData = JSON.parse(savedData) as {
+      x: number;
+      y: number;
+      timestamp: number;
+    };
+
+    // NaN이나 음수 값은 null로 처리
+    if (typeof scrollData.y !== 'number' || isNaN(scrollData.y) || scrollData.y < 0) {
+      return null;
+    }
+
+    return scrollData.y;
+  } catch (error) {
+    logger.debug('Failed to get saved scroll position', {
+      error: error instanceof Error ? error.message : String(error),
+      key,
     });
     return null;
   }
