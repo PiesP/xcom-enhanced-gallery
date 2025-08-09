@@ -69,7 +69,6 @@ export type { GlassmorphismIntensity, ComponentState } from '@shared/styles/styl
 export {
   rafThrottle,
   throttle,
-  createDebouncer,
   // 성능 유틸리티는 별도 모듈에서 제공
 } from '@shared/utils/performance';
 

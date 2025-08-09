@@ -23,12 +23,13 @@ export {
 // Core utilities (from core-utils)
 export { ensureGalleryScrollAvailable } from './core-utils';
 
-// CSS utilities (통합됨 - 중복 제거)
+// CSS utilities (통합됨 - 중복 제거 완료, Phase 1.2)
 export { default as StyleManagerClass } from '../styles/style-service';
+
 /**
- * @deprecated Use StyleManager.setCSSVariable() directly from '@shared/styles/style-service'
+ * @deprecated Use consolidated styles module: import { setCSSVariable } from '@shared/utils/styles'
  */
-export { setCSSVariable } from '@shared/styles/style-service';
+export { setCSSVariable, getCSSVariable, setCSSVariables } from './styles';
 
 // Deduplication utilities
 export { removeDuplicates } from './deduplication';
@@ -50,21 +51,19 @@ export {
 // Performance utilities (통합된 성능 유틸리티)
 export {
   debounce,
+  throttle,
+  rafThrottle,
+  delay,
+  measurePerformance,
   TimerService,
   globalTimerService,
-  delay,
   ResourceService,
   globalResourceService,
   registerResource,
   releaseResource,
   releaseAllResources,
-} from '@shared/utils/performance/unified-performance-utils';
-
-export {
-  rafThrottle,
-  throttle,
-  measurePerformance,
-} from '@shared/utils/performance/unified-performance-utils';
+  Performance,
+} from './performance';
 
 // ================================
 // Gallery utilities (simplified functions)

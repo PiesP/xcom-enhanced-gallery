@@ -18,8 +18,18 @@ export {
   findTwitterScrollContainer,
 } from './utils';
 
-// === 성능 관련 (1개) ===
-export * from './performance';
+// === 성능 관련 (1개) - 중복 방지를 위해 개별 export ===
+export {
+  Performance,
+  TimerService,
+  ResourceService,
+  globalTimerService,
+  globalResourceService,
+  registerResource,
+  releaseResource,
+  releaseAllResources,
+  delay,
+} from './performance';
 
 // === 최적화 유틸리티 ===
 export * from './optimization/optimization-utils';

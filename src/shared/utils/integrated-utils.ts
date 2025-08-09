@@ -1,50 +1,30 @@
 /**
- * @fileoverview Week 2 TDD 구현
- * @description 스타일과 성능 유틸리티의 단일 진입점 제공
- * @version 1.0.0 - TDD GREEN Phase
+ * @fileoverview 🟢 GREEN: 통합 유틸리티 네임스페이스 (Phase 1.2 업데이트)
+ * @description 스타일과 성능 유틸리티의 단일 진입점 제공, 중복 제거 완료
+ * @version 2.0.0 - TDD 기반 스타일 통합 완료
  */
 
-// 성능 유틸리티 통합
-import {
-  PerformanceUtils,
-  throttle,
-  debounce,
-  rafThrottle,
-  createDebouncer,
-  measurePerformance,
-} from './performance/unified-performance-utils';
-
+// 🟢 GREEN: 성능 유틸리티 통합 (Phase 1.1 완료)
+import { Performance, throttle, debounce, rafThrottle, measurePerformance } from './performance';
 import { memo } from './optimization/memo';
 
-// 스타일 유틸리티 통합 (StyleManager에서 직접 import)
-import {
-  setCSSVariable,
-  getCSSVariable,
-  setCSSVariables,
-  createThemedClassName,
-  updateComponentState,
-  applyTheme,
-} from '@shared/styles/style-service';
+// 🟢 GREEN: 스타일 유틸리티 통합 (Phase 1.2 완료) - 새로운 통합 모듈 사용
+import { setCSSVariable, getCSSVariable, setCSSVariables, toggleClass, applyTheme } from './styles';
 
-// 성능 유틸리티 re-export
-export {
-  PerformanceUtils,
-  throttle,
-  debounce,
-  rafThrottle,
-  createDebouncer,
-  measurePerformance,
-  memo,
-};
+// 🟢 GREEN: 추가 스타일 기능들은 원본에서 직접 import
+import { createThemedClassName, updateComponentState } from '@shared/styles/style-service';
 
-// 스타일 유틸리티 re-export
+export { Performance, throttle, debounce, rafThrottle, measurePerformance, memo };
+
+// 🟢 GREEN: 통합된 스타일 유틸리티 re-export
 export {
   setCSSVariable,
   getCSSVariable,
   setCSSVariables,
+  toggleClass,
+  applyTheme,
   createThemedClassName,
   updateComponentState,
-  applyTheme,
 };
 
 /**
@@ -57,10 +37,9 @@ export const IntegratedUtils = {
     throttle,
     debounce,
     rafThrottle,
-    createDebouncer,
     measurePerformance,
     memo,
-    PerformanceUtils,
+    Performance,
   },
 
   // 스타일 관련 유틸리티
