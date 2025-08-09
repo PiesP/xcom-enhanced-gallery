@@ -7,7 +7,7 @@
  * - 반응형 디자인
  */
 
-import type { ComponentChildren, Ref } from 'preact';
+import type { ComponentChildren, Ref } from '@shared/external/vendors';
 import { getPreactHooks } from '@shared/external/vendors';
 import { getAccessibilityManager } from '@shared/utils/accessibility/accessibility-service';
 

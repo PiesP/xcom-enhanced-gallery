@@ -38,6 +38,7 @@ export interface PreactAPI {
 }
 
 export type VNode = import('preact').VNode;
+export type Ref<T = unknown> = import('preact').Ref<T>;
 
 export interface PreactHooksAPI {
   useState: typeof import('preact/hooks').useState;

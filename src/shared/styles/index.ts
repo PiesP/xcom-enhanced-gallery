@@ -22,8 +22,7 @@ import '@assets/styles/components/animations.css';
 // 접근성 지원
 import '@assets/styles/utilities/accessibility.css';
 
-// 스타일 유틸리티 함수 export (레거시 호환성)
-export * from '@shared/utils';
+// 스타일 유틸리티 함수 re-export는 금지 (배럴 위생 규칙)
 
 // 테마 유틸리티 함수들 export
 export { getXEGVariable, setGalleryTheme } from './theme-utils';

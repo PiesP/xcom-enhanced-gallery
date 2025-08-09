@@ -20,8 +20,44 @@
 // 🆕 TDD 기반 통합 서비스들 (NEW)
 // ====================================
 
-// DOM 관련 통합 서비스 - @shared/dom 사용
-export * from '@shared/dom';
+// DOM 관련 통합 서비스 - @shared/dom 사용 (와일드카드 금지: 명시적 re-export)
+export {
+  UnifiedDOMService,
+  unifiedDOMService,
+  querySelector,
+  querySelectorAll,
+  createElement,
+  addEventListener,
+  removeEventListener,
+  setStyle,
+  setStyles,
+  addClass,
+  removeClass,
+  toggleClass,
+  setAttribute,
+  removeAttribute,
+  getAttribute,
+  batch,
+  cleanup,
+  DOMService,
+  componentManager,
+  // 호환성 별칭
+  safeQuerySelector,
+  safeQuerySelectorAll,
+  safeCreateElement,
+  safeAddClass,
+  safeRemoveClass,
+  safeSetStyle,
+  safeSetAttribute,
+  safeRemoveAttribute,
+  // 유틸리티/캐시
+  DOMCache,
+  globalDOMCache,
+  // 레거시 별칭
+  LegacyDOMService,
+  // 성능 계측
+  measureDOMPerformance,
+} from '@shared/dom';
 
 // 스타일 관련 통합 서비스 (기존 StyleService 대체)
 // 🟢 GREEN: StyleManager 직접 사용 (style-service.ts 제거 완료)

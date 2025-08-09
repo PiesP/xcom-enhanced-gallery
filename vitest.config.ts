@@ -13,17 +13,41 @@ import preact from '@preact/preset-vite';
 import { resolve } from 'path';
 import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vitest/config';
-import { env } from 'node:process';
+import { env, argv as nodeArgv } from 'node:process';
 import { cpus } from 'node:os';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-// 환경변수로 테스트 모드 결정 (ci / optimized / fix / default)
+// 환경변수로 테스트 모드 결정 (ci / optimized / fix / refactoring / default)
 const testMode = env.VITEST_MODE || 'default';
 const isOptimized = testMode === 'optimized';
 const isFixMode = testMode === 'fix';
 const isDefault = testMode === 'default';
 const isCiMode = testMode === 'ci';
+// "npm run test -- ... test/refactoring" 또는 스크립트에 직접 디렉터리 인자가 포함될 때 자동 감지
+const argv = ` ${nodeArgv.join(' ')} `; // 앞뒤 공백으로 경계 매칭 안정화
+const lifecycle = env.npm_lifecycle_script || '';
+const refPattern = /test[\\\/]refactoring/;
+// npm이 전달한 원본 인자까지 확인 (npm_config_argv는 JSON 문자열)
+let npmArgvMatches = false;
+try {
+  const npmArgvRaw = env.npm_config_argv;
+  if (npmArgvRaw) {
+    const parsed = JSON.parse(npmArgvRaw) as { original?: string[]; cooked?: string[] };
+    const combined = [...(parsed.original ?? []), ...(parsed.cooked ?? [])].join(' ');
+    npmArgvMatches = refPattern.test(combined);
+  }
+} catch {
+  // 파싱 실패는 무시
+}
+// 환경 힌트(VITEST_WORKSPACE_DIR, VITEST_DIR 등)도 보조로 확인
+const envHints = `${env.VITEST_WORKSPACE_DIR || ''} ${env.VITEST_DIR || ''}`;
+const isRefactoring =
+  testMode === 'refactoring' ||
+  refPattern.test(argv) ||
+  refPattern.test(lifecycle) ||
+  refPattern.test(envHints) ||
+  npmArgvMatches;
 
 // 환경 감지
 const isCI = !!(env.CI || env.GITHUB_ACTIONS);
@@ -71,6 +95,7 @@ if (env.NODE_ENV !== 'test' && typeof globalThis.console !== 'undefined') {
   log(`   CPU 코어: ${cpuCount}개`);
   log(`   실행 풀: ${poolStrategy}`);
   log(`   동시성: ${singleThread ? '1 (단일)' : `${minThreads}-${maxThreads}`}`);
+  if (isRefactoring) log('   감지: refactoring 모드 (coverage 임계값 완화)');
 }
 
 export default defineConfig({
@@ -116,22 +141,24 @@ export default defineConfig({
       include: ['**/*.{test,spec}.{ts,tsx}'],
     },
 
-    // 모드별 파일 패턴 설정 (ci 모드는 기본 + 가장 비용 큰 refactoring / integration 제외)
-    include: isOptimized
-      ? [
-          'test/consolidated/**/*.consolidated.test.ts',
-          'test/unit/main/**/*.test.ts',
-          'test/unit/features/gallery-app-activation.test.ts',
-          'test/features/gallery/**/*.test.ts',
-          'test/unit/shared/external/**/*.test.ts',
-          'test/architecture/**/*.test.ts',
-          'test/infrastructure/**/*.test.ts',
-          'test/core/**/*.test.ts',
-          'test/shared/utils/**/*.test.ts',
-          'test/unit/shared/utils/**/*.test.ts',
-          'test/behavioral/**/*.test.ts',
-        ]
-      : ['./test/**/*.{test,spec}.{ts,tsx}', './src/**/*.{test,spec}.{ts,tsx}'],
+    // 모드별 파일 패턴 설정 (refactoring 전용 실행 시 해당 디렉터리만 한정)
+    include: isRefactoring
+      ? ['test/refactoring/*.{test,spec}.{ts,tsx}', 'test/refactoring/**/*.{test,spec}.{ts,tsx}']
+      : isOptimized
+        ? [
+            'test/consolidated/**/*.consolidated.test.ts',
+            'test/unit/main/**/*.test.ts',
+            'test/unit/features/gallery-app-activation.test.ts',
+            'test/features/gallery/**/*.test.ts',
+            'test/unit/shared/external/**/*.test.ts',
+            'test/architecture/**/*.test.ts',
+            'test/infrastructure/**/*.test.ts',
+            'test/core/**/*.test.ts',
+            'test/shared/utils/**/*.test.ts',
+            'test/unit/shared/utils/**/*.test.ts',
+            'test/behavioral/**/*.test.ts',
+          ]
+        : ['./test/**/*.{test,spec}.{ts,tsx}', './src/**/*.{test,spec}.{ts,tsx}'],
 
     // 모드별 제외 패턴
     exclude: [
@@ -191,26 +218,36 @@ export default defineConfig({
         '**/types.ts',
         '**/index.ts',
       ],
-      thresholds: {
-        global: isOptimized
-          ? { branches: 85, functions: 85, lines: 85, statements: 85 }
-          : isCI || isCiMode
-            ? { branches: 15, functions: 15, lines: 15, statements: 15 }
-            : { branches: 15, functions: 15, lines: 15, statements: 15 },
-        // 핵심 모듈은 점진적으로 커버리지 향상
-        'src/core/**/*.ts': {
-          branches: 5,
-          functions: isCI || isCiMode ? 20 : 25,
-          lines: isCI || isCiMode ? 20 : 25,
-          statements: isCI || isCiMode ? 20 : 25,
-        },
-        'src/shared/**/*.ts': {
-          branches: 5,
-          functions: isCI || isCiMode ? 12 : 15,
-          lines: isCI || isCiMode ? 12 : 15,
-          statements: isCI || isCiMode ? 12 : 15,
-        },
-      },
+      thresholds: (() => {
+        // refactoring 전용 실행에서는 부분 테스트로 인한 거짓 실패를 방지하기 위해 임계치를 완화
+        if (isRefactoring) {
+          return {
+            global: { branches: 0, functions: 0, lines: 0, statements: 0 },
+            'src/core/**/*.ts': { branches: 0, functions: 0, lines: 0, statements: 0 },
+            'src/shared/**/*.ts': { branches: 0, functions: 0, lines: 0, statements: 0 },
+          };
+        }
+        return {
+          global: isOptimized
+            ? { branches: 85, functions: 85, lines: 85, statements: 85 }
+            : isCI || isCiMode
+              ? { branches: 15, functions: 15, lines: 15, statements: 15 }
+              : { branches: 15, functions: 15, lines: 15, statements: 15 },
+          // 핵심 모듈은 점진적으로 커버리지 향상
+          'src/core/**/*.ts': {
+            branches: 5,
+            functions: isCI || isCiMode ? 20 : 25,
+            lines: isCI || isCiMode ? 20 : 25,
+            statements: isCI || isCiMode ? 20 : 25,
+          },
+          'src/shared/**/*.ts': {
+            branches: 5,
+            functions: isCI || isCiMode ? 12 : 15,
+            lines: isCI || isCiMode ? 12 : 15,
+            statements: isCI || isCiMode ? 12 : 15,
+          },
+        };
+      })(),
     },
     // 실행 풀 전략 (fix: forks 단일 / 나머지: threads 가변)
     pool: poolStrategy,

@@ -17,6 +17,7 @@ export {
 // 타입들도 re-export
 export type {
   VNode,
+  Ref,
   ComponentChildren,
   FflateAPI,
   PreactAPI,
