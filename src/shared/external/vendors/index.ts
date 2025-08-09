@@ -1,8 +1,8 @@
 /**
  * Core External Vendor Library Access - Barrel Export
  *
- * @version 8.0.0 - Clean Architecture 완전 적용
- * @description 외부 라이브러리 통합 접근점 - Core 레이어로 이동 완료
+ * @version 9.0.0 - TDZ 문제 해결 완료
+ * @description 외부 라이브러리 통합 접근점 - 단일 초기화 패턴 적용
  */
 
 // 타입 정의 exports
@@ -14,6 +14,7 @@ export type {
   PreactCompatAPI,
   NativeDownloadAPI,
   VNode,
+  Ref,
   ComponentChildren,
 } from './vendor-service';
 
@@ -25,19 +26,15 @@ export type {
   PreactCompat,
 } from './vendor-types';
 
-// 공개 API exports
+// 공개 API 함수 exports
 export {
-  getFflate,
+  initializeVendors,
+  isVendorsInitialized,
   getPreact,
   getPreactHooks,
   getPreactSignals,
   getPreactCompat,
+  getFflate,
   getNativeDownload,
-  initializeVendors,
-  cleanupVendors,
-  getVendorVersions,
-  isVendorsInitialized,
-  getVendorInitializationReport,
-  getVendorStatuses,
-  isVendorInitialized,
+  resetVendorCache,
 } from './vendor-api';

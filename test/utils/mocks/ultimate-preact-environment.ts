@@ -229,6 +229,10 @@ export function setupUltimatePreactTestEnvironment() {
     useRef: globalThis.useRef,
     useCallback: globalThis.useCallback,
     useMemo: globalThis.useMemo,
+    // 추가된 훅들 (정적 번들 래퍼 호환)
+    useContext: vi.fn(),
+    useReducer: vi.fn(),
+    useLayoutEffect: vi.fn(),
   }));
 
   console.log('[Ultimate Preact Test Environment v2.0] ✅ "__k" 에러 완전 차단 완료!');

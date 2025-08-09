@@ -3,7 +3,8 @@
  * @version 3.0.0 - Phase 3 StandardProps 시스템 적용
  */
 
-import { getPreact, getPreactHooks, getPreactCompat } from '@shared/external/vendors';
+import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import { memo } from '@shared/utils/optimization/memo';
 import { toasts, removeToast } from '@shared/services/toast-integration';
 import { Toast } from './Toast';
 import { ComponentStandards } from '../standard-props';
@@ -130,7 +131,6 @@ const areToastContainerPropsEqual = (
 };
 
 // memo로 최적화된 ToastContainer
-const { memo } = getPreactCompat();
 const MemoizedToastContainer = memo(ToastContainerCore, areToastContainerPropsEqual);
 
 // displayName 설정

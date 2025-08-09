@@ -8,6 +8,7 @@
 
 import type { ViewMode } from '@shared/types';
 import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
+import { memo } from '@shared/utils/optimization/memo';
 import {
   useToolbarState,
   getToolbarDataState,
@@ -712,8 +713,6 @@ export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarP
 };
 
 // memo 적용
-import { getPreactCompat } from '@shared/external/vendors';
-const { memo } = getPreactCompat();
 const MemoizedToolbar = memo(ToolbarCore, compareToolbarProps);
 
 // displayName 설정

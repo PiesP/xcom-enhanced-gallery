@@ -83,13 +83,13 @@ export interface SharedState<T> {
  * 통합 컴포넌트 관리자 구현
  */
 class UnifiedComponentManagerImpl implements ComponentManagerInterface {
-  private readonly hookManager: HookManager;
+  private hookManager?: HookManager; // lazy
   private readonly stateManager: StateManager;
   private readonly eventManager: EventManager;
   private readonly sharedStates = new Map<string, SharedState<unknown>>();
 
   constructor() {
-    this.hookManager = this.createHookManager();
+    // 훅 매니저는 벤더 초기화 완료 후 접근 시점에 생성 (lazy)
     this.stateManager = this.createStateManager();
     this.eventManager = this.createEventManager();
 
@@ -114,7 +114,7 @@ class UnifiedComponentManagerImpl implements ComponentManagerInterface {
    * 훅 매니저 반환
    */
   getHookManager(): HookManager {
-    return this.hookManager;
+    return this.getOrCreateHookManager();
   }
 
   /**
@@ -137,7 +137,7 @@ class UnifiedComponentManagerImpl implements ComponentManagerInterface {
   withHooks<T>(component: T): T & WithHooksInterface {
     return {
       ...component,
-      hooks: this.hookManager,
+      hooks: this.getOrCreateHookManager(),
     };
   }
 
@@ -180,6 +180,16 @@ class UnifiedComponentManagerImpl implements ComponentManagerInterface {
   }
 
   /**
+   * 훅 매니저 지연 생성 및 캐시
+   */
+  private getOrCreateHookManager(): HookManager {
+    if (!this.hookManager) {
+      this.hookManager = this.createHookManager();
+    }
+    return this.hookManager;
+  }
+
+  /**
    * 상태 매니저 생성
    */
   private createStateManager(): StateManager {
@@ -218,7 +228,7 @@ class UnifiedComponentManagerImpl implements ComponentManagerInterface {
           throw new Error(`공유 상태를 찾을 수 없습니다: ${key}`);
         }
 
-        const { useState, useEffect } = this.hookManager;
+        const { useState, useEffect } = this.getOrCreateHookManager();
         const [state, setState] = useState(sharedState.value);
 
         useEffect(() => {

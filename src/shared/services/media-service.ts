@@ -1037,10 +1037,8 @@ export class MediaService {
   }
 }
 
-/**
- * 전역 미디어 서비스 인스턴스
- */
-export const mediaService = MediaService.getInstance();
+// 모듈 최상위 싱글톤 인스턴스 export는 TDZ/순환 참조 리스크가 있어 금지합니다.
+// 필요한 곳에서는 ServiceManager를 통해 인스턴스를 획득하세요.
 
 // ====================================
 // 편의 함수들 (기존 코드 호환성)

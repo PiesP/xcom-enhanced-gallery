@@ -4,9 +4,15 @@
  */
 
 import { getPreactCompat } from '@shared/external/vendors';
+export { forwardRef } from './compat';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function memo(component: any): any {
-  const preactCompat = getPreactCompat();
-  return preactCompat.memo ? preactCompat.memo(component) : component;
+export function memo(component: any, compare?: (prev: any, next: any) => boolean): any {
+  try {
+    const preactCompat = getPreactCompat();
+    return preactCompat.memo ? preactCompat.memo(component, compare as never) : component;
+  } catch {
+    // Vendors not initialized yet; return component as-is
+    return component;
+  }
 }

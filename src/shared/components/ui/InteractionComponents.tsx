@@ -11,7 +11,8 @@ import type { ComponentChildren, Ref } from '@shared/external/vendors';
 import { getPreactHooks } from '@shared/external/vendors';
 import { getAccessibilityManager } from '@shared/utils/accessibility/accessibility-service';
 
-const { useState, useEffect, useRef, useCallback } = getPreactHooks();
+// 지연 훅 접근 래퍼: 모듈 로드 시점에 getPreactHooks() 호출을 피함
+const useHooks = () => getPreactHooks();
 
 /**
  * 버튼 Props 인터페이스
@@ -51,6 +52,8 @@ export function AccessibleButton(props: AccessibleButtonProps) {
     testId,
   } = props;
 
+  // 필요한 훅만 지연 획득 (불필요한 선언 제거)
+  const { useState, useRef, useCallback } = useHooks();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -181,6 +184,7 @@ export function Tooltip(props: TooltipProps) {
     className = '',
   } = props;
 
+  const { useState, useEffect, useRef, useCallback } = useHooks();
   const [isVisible, setIsVisible] = useState(false);
   const [shouldShow, setShouldShow] = useState(false);
   const timeoutRef = useRef<number | null>(null);
@@ -312,6 +316,7 @@ export function Modal(props: ModalProps) {
     testId,
   } = props;
 
+  const { useEffect, useRef, useCallback } = useHooks();
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const accessibilityManager = getAccessibilityManager();
@@ -462,6 +467,7 @@ export function ProgressBar(props: ProgressBarProps) {
     animated = false,
   } = props;
 
+  const { useEffect } = useHooks();
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
   const accessibilityManager = getAccessibilityManager();
 

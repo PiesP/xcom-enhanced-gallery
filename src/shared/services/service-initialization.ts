@@ -4,7 +4,7 @@
  * @version 2.0.0 - Service Consolidation
  */
 
-import { serviceManager } from './service-manager';
+import { CoreService } from './service-manager';
 import { logger } from '@shared/logging';
 
 /**
@@ -13,6 +13,7 @@ import { logger } from '@shared/logging';
  */
 export async function registerCoreServices(): Promise<void> {
   const { SERVICE_KEYS } = await import('../../constants');
+  const serviceManager = CoreService.getInstance();
 
   // ====================================
   // 통합된 핵심 서비스들

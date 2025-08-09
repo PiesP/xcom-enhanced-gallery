@@ -13,7 +13,8 @@ import { ComponentStandards } from '@shared/components/ui/standard-props';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
-import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
+import { getPreactHooks } from '@shared/external/vendors';
+import { memo } from '@shared/utils/optimization/memo';
 import styles from './VerticalImageItem.module.css';
 
 /**
@@ -461,7 +462,6 @@ export const compareVerticalImageItemProps = (
 };
 
 // memo를 적용한 최적화된 컴포넌트
-const { memo } = getPreactCompat();
 const BaseVerticalImageItem = memo(BaseVerticalImageItemCore, compareVerticalImageItemProps);
 
 // displayName 설정
@@ -472,19 +472,22 @@ Object.defineProperty(BaseVerticalImageItem, 'displayName', {
 });
 
 // Gallery Marker HOC를 적용한 VerticalImageItem
-export const VerticalImageItem = withGallery(BaseVerticalImageItem, {
-  type: 'item',
-  className: 'vertical-item',
-  events: {
-    preventClick: false, // 클릭 이벤트는 허용 (갤러리 아이템 선택을 위해)
-    preventKeyboard: false,
-    blockTwitterNative: true,
-  },
-  customData: {
-    component: 'vertical-image-item',
-    role: 'gallery-item',
-  },
-});
+export const VerticalImageItem: (props: VerticalImageItemProps) => VNode | null = withGallery(
+  BaseVerticalImageItem,
+  {
+    type: 'item',
+    className: 'vertical-item',
+    events: {
+      preventClick: false, // 클릭 이벤트는 허용 (갤러리 아이템 선택을 위해)
+      preventKeyboard: false,
+      blockTwitterNative: true,
+    },
+    customData: {
+      component: 'vertical-image-item',
+      role: 'gallery-item',
+    },
+  }
+);
 
 // VerticalImageItem displayName 설정
 Object.defineProperty(VerticalImageItem, 'displayName', {

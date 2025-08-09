@@ -397,7 +397,7 @@ export default defineConfig(({ mode }) => {
 
     // 환경별 의존성 최적화
     optimizeDeps: {
-      include: ['preact', 'preact/hooks', '@preact/signals'],
+      include: ['preact', 'preact/hooks', 'preact/compat', '@preact/signals'],
       force: buildMode.isDevelopment,
       // CI에서는 의존성 스캔 최적화
       ...(isCI && { entries: ['src/main.ts'] }),

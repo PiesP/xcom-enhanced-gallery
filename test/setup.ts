@@ -445,6 +445,10 @@ vi.mock('@shared/external/vendors/vendor-api', () => {
   };
 
   let mockIsInitialized = false;
+  function resetVendorCache() {
+    mockIsInitialized = false;
+    resetHookContext();
+  }
 
   return {
     async initializeVendors() {
@@ -452,6 +456,7 @@ vi.mock('@shared/external/vendors/vendor-api', () => {
       resetHookContext(); // Hook 컨텍스트 초기화
       console.log('[Mock] Enhanced Vendor API 초기화 완료');
     },
+    resetVendorCache,
     getPreactHooks() {
       if (!mockIsInitialized) {
         mockIsInitialized = true;

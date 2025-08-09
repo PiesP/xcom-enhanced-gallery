@@ -3,7 +3,7 @@
  * @version 4.0.0 - Phase 2 표준화된 Button Component
  */
 
-import { getPreactCompat } from '@shared/external/vendors';
+import { memo, forwardRef } from '@shared/utils/optimization/memo';
 import styles from './Button.module.css';
 import { ComponentStandards } from '../standard-props';
 import type { StandardButtonProps } from '../standard-props';
@@ -16,9 +16,7 @@ export interface ButtonProps extends StandardButtonProps {
 }
 
 export const Button = (() => {
-  const { forwardRef, memo } = getPreactCompat();
-
-  const ButtonComponent = forwardRef<HTMLButtonElement, ButtonProps>(
+  const ButtonComponent = forwardRef<ButtonProps>(
     (
       {
         children,
@@ -69,7 +67,7 @@ export const Button = (() => {
 
       return (
         <button
-          ref={ref}
+          ref={ref as unknown as never}
           type={type}
           form={form}
           autoFocus={autoFocus}

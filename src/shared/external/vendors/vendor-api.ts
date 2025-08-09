@@ -1,355 +1,318 @@
 /**
  * Core External Vendor Public API
  *
- * @version 8.0.0 - Clean Architecture 완전 적용
- * @description 외부 라이브러리 공개 API 함수들 - Core 레이어로 이동 완료
+ * @version 9.0.0 - TDZ 문제 해결 및 단일 초기화 보장
+ * @description 외부 라이브러리 공개 API 함수들 - 안전한 초기화 패턴 적용
  */
 
 import { logger } from '@shared/logging';
 import {
-  VendorManager,
   type FflateAPI,
   type PreactAPI,
   type PreactHooksAPI,
   type PreactSignalsAPI,
   type PreactCompatAPI,
-  type NativeDownloadAPI,
 } from './vendor-service';
+// 정적 import로 TDZ/inlineDynamicImports 레이스를 방지
+import { preactCompat as bundledCompat } from '../compat-bundled';
+import { preactHooks as bundledHooks } from '../hooks-bundled';
+import { preactSignals as bundledSignals } from '../signals-bundled';
+import { fflateBundled } from '../fflate-bundled';
 
 // ================================
-// 공개 API
+// 안전한 벤더 로더 시스템
 // ================================
 
-const vendorManager = VendorManager.getInstance();
+interface VendorCache {
+  preact?: PreactAPI;
+  compat?: PreactCompatAPI;
+  hooks?: PreactHooksAPI;
+  signals?: PreactSignalsAPI;
+  fflate?: FflateAPI;
+}
 
-// 동기 접근을 위한 캐시된 API들
-let cachedFflate: FflateAPI | null = null;
-let cachedPreact: PreactAPI | null = null;
-let cachedPreactHooks: PreactHooksAPI | null = null;
-let cachedPreactSignals: PreactSignalsAPI | null = null;
-let cachedPreactCompat: PreactCompatAPI | null = null;
-let isInitialized = false;
+const cache: VendorCache = {};
+let initPromise: Promise<void> | null = null;
+let initialized = false;
+
+// CSP 안전성을 위해 외부 스크립트 로딩 제거
 
 /**
- * 모든 vendor 초기화 (앱 시작 시 한 번 호출)
+ * Preact 안전한 로드 - CSP 호환
  */
-export async function initializeVendors(): Promise<void> {
-  if (isInitialized) return;
+async function ensurePreact(): Promise<void> {
+  if (cache.preact) return;
+
+  const globalPreact = (window as unknown as { preact?: PreactAPI }).preact;
+  if (globalPreact) {
+    cache.preact = globalPreact;
+    return;
+  }
 
   try {
-    const [fflate, preact, hooks, signals, compat] = await Promise.all([
-      vendorManager.getFflate(),
-      vendorManager.getPreact(),
-      vendorManager.getPreactHooks(),
-      vendorManager.getPreactSignals(),
-      vendorManager.getPreactCompat(),
-    ]);
-
-    cachedFflate = fflate;
-    cachedPreact = preact;
-    cachedPreactHooks = hooks;
-    cachedPreactSignals = signals;
-    cachedPreactCompat = compat;
-    isInitialized = true;
-
-    logger.info('모든 vendor 라이브러리 초기화 완료');
+    const importedPreact = await import('preact');
+    cache.preact = importedPreact.default ?? importedPreact;
+    return;
   } catch (error) {
-    logger.error('Vendor 초기화 실패:', error);
-    throw error;
+    logger.error('[CSP Safe] Preact must be bundled, external loading disabled:', error);
+    throw new Error('Preact 로드를 실패했습니다 - 번들에 포함되어야 합니다');
   }
 }
 
 /**
- * fflate 라이브러리 접근 (동기)
+ * Preact Compat 안전한 로드 - CSP 호환
  */
-export function getFflate(): FflateAPI {
-  if (!cachedFflate) {
-    // 자동 초기화 시도
-    initializeVendors().catch(error => {
-      logger.error('fflate 자동 초기화 실패:', error);
-    });
+async function ensureCompat(): Promise<void> {
+  if (cache.compat) return;
 
-    // 기본 구현 제공 - FflateAPI 호환성 (타입 안전 변환)
-    const fallbackFflate = {
-      zip: () => new Uint8Array(),
-      unzip: () => ({}),
-      strToU8: (str: string) => new TextEncoder().encode(str),
-      strFromU8: (data: Uint8Array) => new TextDecoder().decode(data),
-      zipSync: () => new Uint8Array(),
-      unzipSync: () => ({}),
-      deflate: (data: Uint8Array, callback: (err: Error | null, data: Uint8Array) => void) => {
-        callback(null, new Uint8Array(Math.floor(data.length * 0.7)));
-      },
-      inflate: (data: Uint8Array, callback: (err: Error | null, data: Uint8Array) => void) => {
-        callback(null, new Uint8Array(Math.floor(data.length * 1.3)));
-      },
-    };
-
-    logger.debug('임시 fflate 구현 반환');
-    return fallbackFflate as unknown as FflateAPI;
+  const globalCompat = (window as unknown as { preactCompat?: PreactCompatAPI }).preactCompat;
+  if (globalCompat) {
+    cache.compat = globalCompat;
+    return;
   }
-  return cachedFflate;
+
+  try {
+    // 정적 번들 포함된 compat을 사용 (동적 import 제거)
+    if (bundledCompat && typeof bundledCompat.memo === 'function') {
+      cache.compat = bundledCompat as unknown as PreactCompatAPI;
+      return;
+    }
+    throw new Error('Bundled compat 모듈이 유효하지 않습니다');
+  } catch (error) {
+    logger.error('[CSP Safe] Preact Compat must be bundled, external loading disabled:', error);
+    throw new Error('Preact Compat 로드를 실패했습니다 - 번들에 포함되어야 합니다');
+  }
+}
+
+/**
+ * Preact Hooks 안전한 로드 - CSP 호환
+ */
+async function ensureHooks(): Promise<void> {
+  if (cache.hooks) return;
+
+  const globalHooks = (window as unknown as { preactHooks?: PreactHooksAPI }).preactHooks;
+  if (globalHooks) {
+    cache.hooks = globalHooks;
+    return;
+  }
+
+  try {
+    // 정적 번들 포함된 hooks 사용
+    if (bundledHooks && typeof bundledHooks.useState === 'function') {
+      cache.hooks = bundledHooks;
+      return;
+    }
+    throw new Error('Bundled hooks 모듈이 유효하지 않습니다');
+  } catch (error) {
+    logger.error('[CSP Safe] Preact Hooks must be bundled, external loading disabled:', error);
+    throw new Error('Preact Hooks 로드를 실패했습니다 - 번들에 포함되어야 합니다');
+  }
+}
+
+/**
+ * Preact Signals 안전한 로드 - CSP 호환
+ */
+async function ensureSignals(): Promise<void> {
+  if (cache.signals) return;
+
+  const globalSignals = (window as unknown as { preactSignals?: PreactSignalsAPI }).preactSignals;
+  if (globalSignals) {
+    cache.signals = globalSignals;
+    return;
+  }
+
+  try {
+    // 정적 번들 포함된 signals 사용
+    if (bundledSignals && typeof bundledSignals.signal === 'function') {
+      cache.signals = bundledSignals;
+      return;
+    }
+    throw new Error('Bundled signals 모듈이 유효하지 않습니다');
+  } catch (error) {
+    logger.error('[CSP Safe] Preact Signals must be bundled, external loading disabled:', error);
+    throw new Error('Preact Signals 로드를 실패했습니다 - 번들에 포함되어야 합니다');
+  }
+}
+
+/**
+ * fflate 안전한 로드 - CSP 호환
+ */
+async function ensureFflate(): Promise<void> {
+  if (cache.fflate) return;
+
+  const globalFflate = (window as unknown as { fflate?: FflateAPI }).fflate;
+  if (globalFflate) {
+    cache.fflate = globalFflate;
+    return;
+  }
+
+  try {
+    // 정적 번들 포함된 fflate 사용 (동적 import 제거)
+    if (fflateBundled && typeof fflateBundled.zip === 'function') {
+      cache.fflate = fflateBundled as unknown as FflateAPI;
+      return;
+    }
+    throw new Error('Bundled fflate 모듈이 유효하지 않습니다');
+  } catch (error) {
+    logger.error('[CSP Safe] fflate must be bundled, external loading disabled:', error);
+    throw new Error('fflate 로드를 실패했습니다 - 번들에 포함되어야 합니다');
+  }
+}
+
+/**
+ * 모든 vendor 초기화 (앱 시작 시 한 번 호출)
+ * 단일 실행을 보장하고 TDZ 문제를 방지
+ */
+export async function initializeVendors(): Promise<void> {
+  if (initialized) return;
+
+  if (initPromise) {
+    await initPromise;
+    return;
+  }
+
+  initPromise = (async () => {
+    try {
+      // 순서 중요: preact → compat → hooks → signals → fflate
+      await ensurePreact();
+      await ensureCompat();
+      await ensureHooks();
+      await ensureSignals();
+      await ensureFflate();
+
+      initialized = true;
+      logger.info('모든 vendor 라이브러리 초기화 완료');
+    } catch (error) {
+      logger.error('Vendor 초기화 실패:', error);
+      throw error;
+    }
+  })().finally(() => {
+    initPromise = null;
+  });
+
+  await initPromise;
+}
+
+/**
+ * 초기화 상태 확인
+ */
+export function isVendorsInitialized(): boolean {
+  return initialized;
 }
 
 /**
  * Preact 라이브러리 접근 (동기)
  */
 export function getPreact(): PreactAPI {
-  if (!cachedPreact) {
+  if (!cache.preact) {
     throw new Error('Preact가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
   }
-  return cachedPreact;
+  return cache.preact;
 }
 
 /**
  * Preact Hooks 접근 (동기)
  */
 export function getPreactHooks(): PreactHooksAPI {
-  if (!cachedPreactHooks) {
-    throw new Error('Preact Hooks가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
+  if (cache.hooks) {
+    return cache.hooks;
   }
-  return cachedPreactHooks;
+  // Fallback: allow safe access before initializeVendors by using bundled hooks
+  try {
+    if (bundledHooks && typeof bundledHooks.useState === 'function') {
+      cache.hooks = bundledHooks;
+      logger.warn('[Vendor] getPreactHooks: vendors not initialized; using bundled hooks fallback');
+      return cache.hooks;
+    }
+  } catch {
+    // ignore and throw below
+  }
+  throw new Error('Preact Hooks가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
 }
 
 /**
  * Preact Signals 접근 (동기)
  */
 export function getPreactSignals(): PreactSignalsAPI {
-  if (!cachedPreactSignals) {
-    // 자동 초기화 시도
-    initializeVendors().catch(error => {
-      logger.error('Preact Signals 자동 초기화 실패:', error);
-    });
-
-    // 기본 구현 제공
-    const fallbackSignals = {
-      signal: <T>(value: T) => ({ value, valueOf: () => value }),
-      computed: <T>(compute: () => T) => ({ value: compute(), valueOf: () => compute() }),
-      effect: (fn: () => void) => {
-        fn();
-        return () => {};
-      },
-      batch: (fn: () => void) => fn(),
-    };
-
-    logger.debug('임시 Preact Signals 구현 반환');
-    return fallbackSignals as PreactSignalsAPI;
+  if (cache.signals) {
+    return cache.signals;
   }
-  return cachedPreactSignals;
+  // Fallback: allow safe access before initializeVendors by using bundled signals
+  try {
+    if (bundledSignals && typeof bundledSignals.signal === 'function') {
+      cache.signals = bundledSignals;
+      logger.warn(
+        '[Vendor] getPreactSignals: vendors not initialized; using bundled signals fallback'
+      );
+      return cache.signals;
+    }
+  } catch {
+    // ignore and throw below
+  }
+  throw new Error('Preact Signals가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
 }
 
 /**
  * Preact Compat 접근 (동기)
  */
 export function getPreactCompat(): PreactCompatAPI {
-  if (!cachedPreactCompat) {
-    // 환경과 상관없이 자동 초기화 시도
-    logger.warn('Preact Compat이 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+  if (!cache.compat) {
+    throw new Error(
+      'Preact Compat이 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.'
+    );
+  }
+  return cache.compat;
+}
 
-    // 개발 환경에서 모듈 캐시 복구 시도
-    if (import.meta.env.DEV) {
+/**
+ * fflate 라이브러리 접근 (동기)
+ */
+export function getFflate(): FflateAPI {
+  if (!cache.fflate) {
+    throw new Error('fflate가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
+  }
+  return cache.fflate;
+}
+
+/**
+ * 네이티브 다운로드 API
+ */
+export function getNativeDownload() {
+  return {
+    downloadBlob: (blob: Blob, filename: string): void => {
+      const url = URL.createObjectURL(blob);
       try {
-        // 이미 로드된 모듈이 있는지 확인
-        const moduleCache = (globalThis as Record<string, unknown>).__vite__moduleCache;
-        if (moduleCache) {
-          // Vite의 모듈 캐시에서 preact/compat을 찾아서 사용
-          for (const [path, mod] of Object.entries(moduleCache)) {
-            if (
-              typeof path === 'string' &&
-              path.includes('preact/compat') &&
-              mod &&
-              typeof mod === 'object'
-            ) {
-              const compatMod = mod as Record<string, unknown>;
-              if (compatMod.memo && compatMod.forwardRef) {
-                cachedPreactCompat = {
-                  memo: compatMod.memo as PreactCompatAPI['memo'],
-                  forwardRef: compatMod.forwardRef as PreactCompatAPI['forwardRef'],
-                };
-                logger.debug('Preact Compat 캐시에서 복구 성공');
-                return cachedPreactCompat;
-              }
-            }
-          }
-        }
-      } catch (error) {
-        logger.debug('Preact Compat 캐시 복구 실패:', error);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } finally {
+        URL.revokeObjectURL(url);
       }
-    }
+    },
 
-    // 자동 초기화 시도
-    try {
-      // initializeVendors를 비동기로 호출하고 결과를 캐시
-      initializeVendors().catch(error => {
-        logger.error('자동 초기화 실패:', error);
-      });
+    createDownloadUrl: (blob: Blob): string => {
+      return URL.createObjectURL(blob);
+    },
 
-      // 임시 호환성을 위한 기본 구현 반환
-      if (!cachedPreactCompat) {
-        /* eslint-disable @typescript-eslint/no-explicit-any */
-        const preactCompat = {
-          memo: (Component: any, _compare?: any) => {
-            const MemoComponent = (props: any) => {
-              // memo가 초기화되지 않은 경우 원본 컴포넌트 반환
-              return Component(props);
-            };
-            MemoComponent.displayName = Component.displayName || Component.name || 'Component';
-            return MemoComponent;
-          },
-          forwardRef: (Component: any) => {
-            const ForwardedComponent = (props: any) => Component(props);
-            ForwardedComponent.displayName = Component.displayName || Component.name || 'Component';
-            return ForwardedComponent;
-          },
-        };
-        /* eslint-enable @typescript-eslint/no-explicit-any */
-
-        logger.debug('임시 Preact Compat 구현 반환');
-        return preactCompat as PreactCompatAPI;
-      }
-    } catch (error) {
-      logger.error('자동 초기화 실패:', error);
-
-      // 초기화 실패 시에도 기본 구현 제공
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      const fallbackPreactCompat = {
-        memo: (Component: any, _compare?: any) => {
-          const MemoComponent = (props: any) => {
-            return Component(props);
-          };
-          MemoComponent.displayName = Component.displayName || Component.name || 'Component';
-          return MemoComponent;
-        },
-        forwardRef: (Component: any) => {
-          const ForwardedComponent = (props: any) => Component(props);
-          ForwardedComponent.displayName = Component.displayName || Component.name || 'Component';
-          return ForwardedComponent;
-        },
-      };
-      /* eslint-enable @typescript-eslint/no-explicit-any */
-
-      logger.debug('Fallback Preact Compat 구현 반환');
-      return fallbackPreactCompat as PreactCompatAPI;
-    }
-
-    // 여전히 초기화되지 않은 경우 에러 대신 기본 구현 반환
-    if (!cachedPreactCompat) {
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      const defaultPreactCompat = {
-        memo: (Component: any, _compare?: any) => {
-          const MemoComponent = (props: any) => {
-            return Component(props);
-          };
-          MemoComponent.displayName = Component.displayName || Component.name || 'Component';
-          return MemoComponent;
-        },
-        forwardRef: (Component: any) => {
-          const ForwardedComponent = (props: any) => Component(props);
-          ForwardedComponent.displayName = Component.displayName || Component.name || 'Component';
-          return ForwardedComponent;
-        },
-      };
-      /* eslint-enable @typescript-eslint/no-explicit-any */
-
-      logger.debug('기본 Preact Compat 구현 반환');
-      return defaultPreactCompat as PreactCompatAPI;
-    }
-  }
-  return cachedPreactCompat;
-}
-
-/**
- * 네이티브 다운로드 접근
- */
-export const getNativeDownload = (): NativeDownloadAPI => vendorManager.getNativeDownload();
-
-/**
- * 모든 라이브러리 검증
- */
-export const validateVendors = () => vendorManager.validateAll();
-
-/**
- * 버전 정보 조회
- */
-export const getVendorVersions = () => vendorManager.getVersionInfo();
-
-/**
- * 메모리 정리
- */
-export const cleanupVendors = (): void => {
-  vendorManager.cleanup();
-  cachedFflate = null;
-  cachedPreact = null;
-  cachedPreactHooks = null;
-  cachedPreactSignals = null;
-  isInitialized = false;
-};
-
-/**
- * 초기화 상태 확인
- */
-export function isVendorsInitialized(): boolean {
-  return isInitialized;
-}
-
-/**
- * vendor 초기화 보고서 생성
- */
-export function getVendorInitializationReport() {
-  const statuses = {
-    fflate: { initialized: !!cachedFflate },
-    preact: { initialized: !!cachedPreact },
-    preactHooks: { initialized: !!cachedPreactHooks },
-    preactSignals: { initialized: !!cachedPreactSignals },
-  };
-
-  const initializedCount = Object.values(statuses).filter(status => status.initialized).length;
-  const totalCount = Object.keys(statuses).length;
-  const initializationRate = (initializedCount / totalCount) * 100;
-
-  return {
-    isInitialized,
-    statuses,
-    versions: getVendorVersions(),
-    initializationRate,
-    initializedCount,
-    totalCount,
+    revokeDownloadUrl: (url: string): void => {
+      URL.revokeObjectURL(url);
+    },
   };
 }
 
 /**
- * vendor 상태 확인
+ * 테스트용 캐시 리셋
  */
-export function getVendorStatuses() {
-  return {
-    fflate: !!cachedFflate,
-    preact: !!cachedPreact,
-    preactHooks: !!cachedPreactHooks,
-    preactSignals: !!cachedPreactSignals,
-  };
-}
-
-/**
- * 개별 vendor 초기화 확인
- */
-export function isVendorInitialized(vendorName: string): boolean {
-  switch (vendorName) {
-    case 'fflate':
-      return !!cachedFflate;
-    case 'preact':
-      return !!cachedPreact;
-    case 'preactHooks':
-      return !!cachedPreactHooks;
-    case 'preactSignals':
-      return !!cachedPreactSignals;
-    default:
-      return false;
-  }
-}
-
-// 정리 핸들러 등록
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
-    cleanupVendors();
+export function resetVendorCache(): void {
+  Object.keys(cache).forEach(key => {
+    delete (cache as Record<string, unknown>)[key];
   });
+  initialized = false;
+  initPromise = null;
+  // CSP 안전성을 위해 외부 스크립트 관련 상태 제거
+  logger.debug('Vendor 캐시가 리셋되었습니다');
 }

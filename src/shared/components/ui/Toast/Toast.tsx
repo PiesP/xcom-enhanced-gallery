@@ -1,5 +1,6 @@
 import styles from './Toast.module.css';
-import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
+import { getPreactHooks } from '@shared/external/vendors';
+import { memo } from '@shared/utils/optimization/memo';
 import type { VNode } from '@shared/external/vendors';
 import { ComponentStandards } from '../standard-props';
 import type { StandardToastProps } from '../standard-props';
@@ -120,7 +121,6 @@ const areToastPropsEqual = (prevProps: ToastProps, nextProps: ToastProps): boole
 };
 
 // memo를 적용한 최적화된 Toast 컴포넌트
-const { memo } = getPreactCompat();
 const MemoizedToast = memo(ToastComponent, areToastPropsEqual);
 
 // displayName 설정
