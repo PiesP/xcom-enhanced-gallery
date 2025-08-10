@@ -206,8 +206,29 @@ export const STABLE_SELECTORS = {
 // ================================
 
 export const SERVICE_KEYS = {
-  // Phase 2: 통합된 서비스들
+  // ================================
+  // Phase 4: 표준화된 서비스 키들
+  // ================================
+
+  // 새로운 표준 키들 (.service 접미사 통일)
+  ANIMATION_SERVICE: 'animation.service',
   MEDIA_SERVICE: 'media.service', // 통합 미디어 서비스
+  THEME_SERVICE: 'theme.service',
+  TOAST_SERVICE: 'toast.service',
+  BROWSER_SERVICE: 'browser.service',
+  GALLERY_SERVICE: 'gallery.service',
+  STYLE_SERVICE: 'style.service',
+  TIMER_SERVICE: 'timer.service',
+  DOM_SERVICE: 'dom.service',
+  RESOURCE_SERVICE: 'resource.service',
+  ACCESSIBILITY_SERVICE: 'accessibility.service',
+  ZINDEX_SERVICE: 'zindex.service',
+  SETTINGS_SERVICE: 'settings.service',
+  FILENAME_SERVICE: 'filename.service',
+
+  // ================================
+  // 하위 호환성 키들 (레거시)
+  // ================================
 
   // 기존 서비스들 (호환성 유지)
   BULK_DOWNLOAD: 'core.bulkDownload',

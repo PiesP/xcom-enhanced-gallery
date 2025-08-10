@@ -4,11 +4,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
-import {
-  saveScrollPosition,
-  restoreScrollPosition,
-  clearScrollPosition as clearSavedScrollPosition,
-} from '@shared/browser';
+import { BrowserService } from '@shared/browser';
 import { logger } from '@shared/logging';
 
 const { useEffect, useCallback } = ComponentManager.getHookManager();
@@ -62,7 +58,7 @@ export function useScrollPositionManager({
     if (!enabled) return;
 
     try {
-      saveScrollPosition();
+      BrowserService.scroll.save();
       logger.debug('[ScrollPositionManager] 스크롤 위치 저장 완료');
     } catch (error) {
       logger.warn('[ScrollPositionManager] 스크롤 위치 저장 실패:', error);
@@ -74,7 +70,7 @@ export function useScrollPositionManager({
     if (!enabled) return;
 
     try {
-      restoreScrollPosition();
+      BrowserService.scroll.restore();
       logger.debug('[ScrollPositionManager] 스크롤 위치 복원 완료');
     } catch (error) {
       logger.warn('[ScrollPositionManager] 스크롤 위치 복원 실패:', error);
@@ -84,7 +80,7 @@ export function useScrollPositionManager({
   // 저장된 위치 초기화
   const clearPosition = useCallback(() => {
     try {
-      clearSavedScrollPosition();
+      BrowserService.scroll.clear();
       logger.debug('[ScrollPositionManager] 저장된 스크롤 위치 초기화 완료');
     } catch (error) {
       logger.warn('[ScrollPositionManager] 스크롤 위치 초기화 실패:', error);

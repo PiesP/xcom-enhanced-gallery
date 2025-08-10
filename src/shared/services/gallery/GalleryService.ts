@@ -758,3 +758,8 @@ export class GalleryService {
  * 전역 갤러리 서비스 인스턴스
  */
 export const galleryService = GalleryService.getInstance();
+
+/**
+ * Default export (표준 패턴) - Phase 4: Service Naming Standardization
+ */
+export default galleryService;

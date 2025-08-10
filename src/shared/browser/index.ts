@@ -65,3 +65,6 @@ export const browserUtils = {
   clearScrollPosition,
   getPageInfo,
 };
+
+// Phase 4: Service Naming Standardization - browserService export 추가
+export { browserService } from './browser-service';

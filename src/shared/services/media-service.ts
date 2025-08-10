@@ -1058,3 +1058,17 @@ export { parseUsernameFast };
  * 편의 함수: 사용자명 추출 결과 타입
  */
 export type { UsernameExtractionResult };
+
+// ================================
+// Phase 4: 표준화된 인스턴스 export
+// ================================
+
+/**
+ * 표준화된 MediaService 인스턴스
+ */
+export const mediaService = new MediaService();
+
+/**
+ * Default export (표준 패턴)
+ */
+export default mediaService;

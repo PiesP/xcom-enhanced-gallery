@@ -434,6 +434,193 @@ export class AnimationService {
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
+  // === Static Animation Utilities (Phase 3 TDD) ===
+
+  /**
+   * 커스텀 CSS 트랜지션 애니메이션
+   */
+  public static async animateCustom(
+    element: Element,
+    keyframes: Record<string, string | number>,
+    options?: { duration?: number; easing?: string; delay?: number }
+  ): Promise<void> {
+    const htmlElement = element as HTMLElement;
+    const duration = options?.duration || 300;
+    const easing = options?.easing || 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+    return new Promise<void>(resolve => {
+      const transition = Object.keys(keyframes)
+        .map(prop => `${prop} ${duration}ms ${easing}`)
+        .join(', ');
+
+      htmlElement.style.transition = transition;
+
+      Object.entries(keyframes).forEach(([prop, value]) => {
+        // 브라우저 환경에서만 스타일 설정
+        if (typeof htmlElement.style.setProperty === 'function') {
+          htmlElement.style.setProperty(prop, String(value));
+        } else {
+          // 폴백: 직접 할당
+          (htmlElement.style as CSSStyleDeclaration & Record<string, string>)[prop] = String(value);
+        }
+      });
+
+      setTimeout(
+        () => {
+          resolve();
+        },
+        duration + (options?.delay || 0)
+      );
+    });
+  }
+
+  /**
+   * 병렬 애니메이션 실행
+   */
+  public static async animateParallel(
+    animations: Array<{
+      element: Element;
+      keyframes: Record<string, string | number>;
+      options?: { duration?: number; easing?: string; delay?: number };
+    }>
+  ): Promise<void> {
+    const promises = animations.map(({ element, keyframes, options }) =>
+      AnimationService.animateCustom(element, keyframes, options)
+    );
+    await Promise.all(promises);
+  }
+
+  /**
+   * 스크롤 기반 애니메이션 설정
+   */
+  public static setupScrollAnimation(
+    onScroll: (info: { scrollY: number; progress: number }) => void,
+    container?: Element | null
+  ): () => void {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = Math.min(scrollY / maxScroll, 1);
+      onScroll({ scrollY, progress });
+    };
+
+    const target = container || window;
+    target.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      target.removeEventListener('scroll', handleScroll);
+    };
+  }
+
+  /**
+   * IntersectionObserver 기반 애니메이션 설정
+   */
+  public static setupInViewAnimation(
+    element: Element,
+    onInView: (entry: IntersectionObserverEntry) => void,
+    options?: IntersectionObserverInit
+  ): () => void {
+    // 브라우저 환경이 아니거나 IntersectionObserver가 없으면 빈 함수 반환
+    const IntersectionObserverClass =
+      (typeof globalThis !== 'undefined' && globalThis.IntersectionObserver) ||
+      (typeof window !== 'undefined' && window.IntersectionObserver);
+
+    if (!IntersectionObserverClass) {
+      return () => {};
+    }
+
+    const observer = new IntersectionObserverClass((entries: IntersectionObserverEntry[]) => {
+      entries.forEach(onInView);
+    }, options);
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }
+
+  /**
+   * 값 범위 변환 유틸리티
+   */
+  public static transformValue(
+    value: number,
+    fromRange: [number, number],
+    toRange: [number, number]
+  ): number {
+    const [fromMin, fromMax] = fromRange;
+    const [toMin, toMax] = toRange;
+    const progress = (value - fromMin) / (fromMax - fromMin);
+    return toMin + progress * (toMax - toMin);
+  }
+
+  /**
+   * 애니메이션 프리셋 상수
+   */
+  public static readonly ANIMATION_PRESETS = {
+    fadeIn: {
+      keyframes: { opacity: [0, 1] } as PropertyIndexedKeyframes,
+      options: { duration: 300, easing: 'ease-out' },
+    },
+    fadeOut: {
+      keyframes: { opacity: [1, 0] } as PropertyIndexedKeyframes,
+      options: { duration: 200, easing: 'ease-in' },
+    },
+    slideInFromBottom: {
+      keyframes: {
+        opacity: [0, 1],
+        transform: ['translateY(20px)', 'translateY(0px)'],
+      } as PropertyIndexedKeyframes,
+      options: { duration: 300, easing: 'ease-out' },
+    },
+    slideOutToTop: {
+      keyframes: {
+        opacity: [1, 0],
+        transform: ['translateY(0px)', 'translateY(-20px)'],
+      } as PropertyIndexedKeyframes,
+      options: { duration: 200, easing: 'ease-in' },
+    },
+    scaleIn: {
+      keyframes: {
+        opacity: [0, 1],
+        transform: ['scale(0.95)', 'scale(1)'],
+      } as PropertyIndexedKeyframes,
+      options: { duration: 250, easing: 'ease-out' },
+    },
+    scaleOut: {
+      keyframes: {
+        opacity: [1, 0],
+        transform: ['scale(1)', 'scale(0.95)'],
+      } as PropertyIndexedKeyframes,
+      options: { duration: 200, easing: 'ease-in' },
+    },
+    toolbarSlideDown: {
+      keyframes: {
+        opacity: [0, 1],
+        transform: ['translateY(-100%)', 'translateY(0)'],
+      } as PropertyIndexedKeyframes,
+      options: { duration: 200, easing: 'ease-out' },
+    },
+    toolbarSlideUp: {
+      keyframes: {
+        opacity: [1, 0],
+        transform: ['translateY(0)', 'translateY(-100%)'],
+      } as PropertyIndexedKeyframes,
+      options: { duration: 200, easing: 'ease-in' },
+    },
+    imageLoad: {
+      keyframes: {
+        opacity: [0, 1],
+        filter: ['blur(4px)', 'blur(0px)'],
+      } as PropertyIndexedKeyframes,
+      options: { duration: 400, easing: 'ease-out' },
+    },
+    smooth: {
+      keyframes: {} as PropertyIndexedKeyframes,
+      options: { duration: 300, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+    },
+  } as const;
 }
 
 // 편의 함수들
@@ -475,3 +662,17 @@ export function closeGalleryWithAnimation(
   const service = AnimationService.getInstance();
   return service.closeGallery(element, config);
 }
+
+// ================================
+// Phase 4: 표준화된 인스턴스 export
+// ================================
+
+/**
+ * 표준화된 AnimationService 인스턴스
+ */
+export const animationService = AnimationService.getInstance();
+
+/**
+ * Default export (표준 패턴)
+ */
+export default animationService;

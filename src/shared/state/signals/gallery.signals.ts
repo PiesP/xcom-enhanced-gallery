@@ -11,7 +11,7 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
-import { saveScrollPosition, restoreScrollPosition } from '@shared/browser';
+import { BrowserService } from '@shared/browser';
 
 // Signal type
 type Signal<T> = {
@@ -109,7 +109,7 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = Math.max(0, Math.min(startIndex, items.length - 1));
 
   // 현재 스크롤 위치 저장
-  saveScrollPosition();
+  BrowserService.scroll.save();
 
   // 갤러리 오픈 시 재생 중인 모든 비디오 일시정지 (PC 전용 환경 가정)
   try {
@@ -159,7 +159,7 @@ export function closeGallery(): void {
   document.body.style.overflow = '';
 
   // 저장된 스크롤 위치로 복원
-  restoreScrollPosition();
+  BrowserService.scroll.restore();
 
   // 상태 완전 초기화 - mediaItems도 함께 초기화
   galleryState.value = {

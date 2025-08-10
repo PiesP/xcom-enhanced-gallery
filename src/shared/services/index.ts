@@ -77,10 +77,10 @@ export {
 // ====================================
 
 // 1. 애니메이션 서비스
-export { AnimationService } from './animation-service';
+export { AnimationService, animationService } from './animation-service';
 
 // 2. 통합 미디어 서비스 (BulkDownload 완전 통합)
-export { MediaService } from './media-service';
+export { MediaService, mediaService } from './media-service';
 export { extractUsername, parseUsernameFast } from './media-service';
 export type {
   UsernameExtractionResult,
@@ -94,11 +94,11 @@ export type {
 } from './media-service';
 
 // 3. 테마 서비스
-export { ThemeService } from './theme-service';
+export { ThemeService, themeService } from './theme-service';
 export type { Theme } from './theme-service';
 
 // 4. 토스트 서비스
-export { ToastService } from './toast-service';
+export { ToastService, toastService } from './toast-service';
 export type { ToastOptions } from './toast-service';
 
 // 토스트 통합 유틸리티
@@ -114,11 +114,14 @@ export {
 } from './toast-integration';
 
 // 5. 브라우저 서비스
-export { BrowserService } from '@shared/browser';
+export { BrowserService, browserService } from '@shared/browser';
 
 // 6. 갤러리 서비스
-export { GalleryService } from './gallery';
+export { GalleryService, galleryService } from './gallery';
 export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './gallery';
+
+// 7. 타이머 서비스 (Phase 4: 신규 추가)
+export { TimerService, timerService } from './timer-service';
 
 // 8. 서비스 관리 (ServiceRegistry 통합)
 export { CoreService } from './service-manager';

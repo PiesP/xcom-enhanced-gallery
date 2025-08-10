@@ -389,6 +389,79 @@ export class UnifiedDOMService implements UnifiedDOMInterface {
 
     return stats;
   }
+
+  // === 정적 메소드들 (TDD 테스트 지원) ===
+
+  /**
+   * 정적 DOM 셀렉터
+   */
+  static querySelector<T extends Element = Element>(selector: string): T | null {
+    return UnifiedDOMService.getInstance().querySelector<T>(selector);
+  }
+
+  /**
+   * 정적 다중 DOM 셀렉터
+   */
+  static querySelectorAll<T extends Element = Element>(selector: string): NodeListOf<T> {
+    return UnifiedDOMService.getInstance().querySelectorAll<T>(selector);
+  }
+
+  /**
+   * 정적 이벤트 리스너 추가
+   */
+  static addEventListener(
+    element: Element,
+    event: string,
+    handler: EventListener,
+    options?: EventListenerOptions
+  ): () => void {
+    return UnifiedDOMService.getInstance().addEventListener(element, event, handler, options);
+  }
+
+  /**
+   * 정적 이벤트 리스너 제거
+   */
+  static removeEventListener(element: Element, event: string, handler: EventListener): void {
+    return UnifiedDOMService.getInstance().removeEventListener(element, event, handler);
+  }
+
+  /**
+   * 정적 엘리먼트 생성
+   */
+  static createElement<K extends keyof HTMLElementTagNameMap>(
+    tagName: K,
+    options?: ElementCreationOptions
+  ): HTMLElementTagNameMap[K] {
+    return UnifiedDOMService.getInstance().createElement(tagName, options);
+  }
+
+  /**
+   * 정적 속성 설정
+   */
+  static setAttribute(element: Element, name: string, value: string): void {
+    return UnifiedDOMService.getInstance().setAttribute(element, name, value);
+  }
+
+  /**
+   * 정적 속성 가져오기
+   */
+  static getAttribute(element: Element, name: string): string | null {
+    return UnifiedDOMService.getInstance().getAttribute(element, name);
+  }
+
+  /**
+   * 정적 자식 요소 추가
+   */
+  static appendChild(parent: Element, child: Element): void {
+    parent.appendChild(child);
+  }
+
+  /**
+   * 정적 자식 요소 제거
+   */
+  static removeChild(parent: Element, child: Element): void {
+    parent.removeChild(child);
+  }
 }
 
 // 싱글톤 인스턴스

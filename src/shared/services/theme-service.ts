@@ -83,7 +83,16 @@ export class ThemeService {
   }
 }
 
+// ================================
+// Phase 4: 표준화된 인스턴스 export
+// ================================
+
 /**
- * 전역 테마 서비스 인스턴스 - 간단한 인스턴스 export
+ * 표준화된 ThemeService 인스턴스
  */
 export const themeService = new ThemeService();
+
+/**
+ * Default export (표준 패턴)
+ */
+export default themeService;

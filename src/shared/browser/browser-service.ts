@@ -128,3 +128,17 @@ export {
   clearScrollPosition,
   getPageInfo,
 } from './browser-environment';
+
+// ================================
+// Phase 4: 표준화된 인스턴스 export
+// ================================
+
+/**
+ * 표준화된 BrowserService 인스턴스 (정적 메서드 클래스이므로 클래스 자체를 export)
+ */
+export const browserService = BrowserService;
+
+/**
+ * Default export (표준 패턴)
+ */
+export default browserService;
