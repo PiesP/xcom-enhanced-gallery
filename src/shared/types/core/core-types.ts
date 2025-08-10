@@ -42,24 +42,7 @@ export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' 
  * 통합된 타입들을 re-export하여 기존 코드와의 호환성 보장
  * 모든 공통 타입들은 @shared/types/unified에서 관리됩니다.
  */
-export type {
-  AppConfig,
-  ServiceConfig,
-  Cleanupable,
-  Disposable,
-  Destroyable,
-  Lifecycle,
-  BaseService,
-  BaseConfig,
-  AnimationConfig,
-  GalleryConfig,
-  ThemeConfig,
-  Point,
-  Size,
-  EventHandler,
-  AsyncEventHandler,
-  LifecycleConfig,
-} from '../unified';
+export type { AppConfig, ServiceConfig, Cleanupable, Disposable, Destroyable } from '../unified';
 
 // ========================================
 // CORE-SPECIFIC LEGACY TYPES

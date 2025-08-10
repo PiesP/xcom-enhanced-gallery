@@ -25,7 +25,7 @@ export interface MockState {
   domain: string;
   isActive: boolean;
   callCount: number;
-  lastCalled?: Date;
+  lastCalled?: Date | undefined;
   config: Record<string, unknown>;
   performanceMetrics?: {
     avgResponseTime: number;

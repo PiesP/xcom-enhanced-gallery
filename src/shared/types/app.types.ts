@@ -37,6 +37,8 @@ export type {
   BaseService,
   BaseConfig,
   AnimationConfig,
+  GalleryConfig,
+  ThemeConfig,
   Point,
   Size,
   EventHandler,
@@ -225,15 +227,18 @@ export type GalleryEvents = {
 /**
  * 위치/크기 타입
  */
+import type { Size, EventHandler } from './unified';
+
 export interface Position {
   x: number;
   y: number;
 }
 
-export interface Size {
-  width: number;
-  height: number;
-}
+// Size interface is exported from unified.ts
+// export interface Size {
+//   width: number;
+//   height: number;
+// }
 
 export interface Rect extends Position, Size {}
 
@@ -249,12 +254,12 @@ export interface IdentifiableEntity {
 }
 
 /**
- * 라이프사이클 관리
+ * 라이프사이클 관리 - unified.ts에서 import
  */
-export interface Lifecycle {
-  cleanup(): void;
-  destroy(): void;
-}
+// export interface Lifecycle {
+//   cleanup(): void;
+//   destroy(): void;
+// }
 
 /**
  * 상태 관련 타입
@@ -276,12 +281,12 @@ export interface BaseEvent {
 }
 
 /**
- * 설정 관련 타입
+ * 설정 관련 타입 - unified.ts에서 import
  */
-export interface BaseConfig {
-  enabled: boolean;
-  version?: string;
-}
+// export interface BaseConfig {
+//   enabled: boolean;
+//   version?: string;
+// }
 
 // ================================
 // Preact/React 타입들
@@ -319,7 +324,8 @@ export interface BaseComponentProps {
 // 이벤트 핸들러 타입들
 // ================================
 
-export type EventHandler<T = Event> = (event: T) => void;
+// EventHandler is exported from unified.ts
+// export type EventHandler<T = Event> = (event: T) => void;
 export type MouseEventHandler = EventHandler<MouseEvent>;
 export type KeyboardEventHandler = EventHandler<KeyboardEvent>;
 export type AsyncFunction<T = void> = () => Promise<T>;
@@ -402,11 +408,12 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
 
-export interface AnimationConfig {
-  duration?: number;
-  easing?: string;
-  delay?: number;
-}
+// AnimationConfig is exported from unified.ts
+// export interface AnimationConfig {
+//   duration?: number;
+//   easing?: string;
+//   delay?: number;
+// }
 
 export type ImageFitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
