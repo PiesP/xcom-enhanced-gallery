@@ -4,9 +4,11 @@
  */
 
 import { ZIndexManager } from '@shared/utils/z-index-service';
+import { createScopedLogger } from '@shared/logging';
 
 // 전역 Z-Index 매니저 인스턴스
 const zIndexManager = ZIndexManager.getInstance();
+const logger = createScopedLogger('Styles/ZIndex');
 
 /**
  * Z-Index 값 반환 함수
@@ -100,7 +102,7 @@ export function injectZIndexStyles(): void {
     document.head?.appendChild(styleElement);
   } catch (error) {
     // 테스트 환경에서 DOM 접근 실패 시 조용히 무시
-    console.warn('Z-Index 스타일 주입 실패 (테스트 환경):', error);
+    logger.warn('Z-Index 스타일 주입 실패 (테스트 환경):', error);
   }
 }
 

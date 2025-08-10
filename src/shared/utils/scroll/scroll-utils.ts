@@ -3,6 +3,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { anyMatchOrClosest } from '@shared/dom/predicates';
 import { debounce } from '@shared/utils/performance/unified-performance-utils';
 import { unifiedDOMService } from '@shared/dom/dom-service';
 
@@ -26,13 +27,7 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
     '[data-gallery]',
   ];
 
-  return gallerySelectors.some(selector => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch {
-      return false;
-    }
-  });
+  return anyMatchOrClosest(element, gallerySelectors);
 }
 
 /** 스크롤 디바운서 생성 */

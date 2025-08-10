@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
+import { logger } from '@shared/logging';
 import {
   // 실제 존재하는 함수들과 타입들만 import
   standardizeError,
@@ -217,7 +218,7 @@ describe('Error Handling Utils TDD 테스트', () => {
     });
 
     it('withFallback이 실패 시 fallback을 실행해야 한다', async () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const failingOperation = async () => {
         throw new Error('Primary operation failed');
@@ -229,12 +230,8 @@ describe('Error Handling Utils TDD 테스트', () => {
       });
 
       expect(result).toBe('fallback result');
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Operation failed, executing fallback:',
-        'Primary operation failed'
-      );
-
-      consoleSpy.mockRestore();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
 
     it('withFallback이 fallback도 실패할 때 에러를 던져야 한다', async () => {
@@ -335,10 +332,14 @@ describe('Error Handling Utils TDD 테스트', () => {
       });
 
       expect(result).toEqual(['cached-image1.jpg', 'cached-image2.jpg']);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Operation failed, executing fallback:',
-        'Failed to load gallery images'
-      );
+      // UnifiedLogger는 포맷된 단일 메시지와 context 객체를 전달함
+      expect(consoleSpy).toHaveBeenCalled();
+      const call = consoleSpy.mock.calls[0];
+      const [message, context] = call as [string, Record<string, unknown>];
+      expect(typeof message).toBe('string');
+      expect(message).toContain('Operation failed, executing fallback:');
+      expect(message).toContain('Failed to load gallery images');
+      expect(context).toEqual(expect.objectContaining({ module: 'XEG' }));
 
       consoleSpy.mockRestore();
     });

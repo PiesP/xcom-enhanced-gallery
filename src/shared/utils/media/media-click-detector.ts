@@ -5,6 +5,7 @@
 
 import { SELECTORS } from '@/constants';
 import { logger } from '@shared/logging';
+import { findClosest, hasClosest, anyClosest } from '@shared/dom/predicates';
 // (Removed direct DOM gallery container check; using state instead)
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
@@ -83,7 +84,7 @@ export class MediaClickDetector {
       '.media-entity img',
     ];
     for (const selector of imageSelectors) {
-      if (target.closest(selector)) {
+      if (hasClosest(target, selector)) {
         logger.info(`✅ MediaClickDetector: 이미지 컨테이너 감지 - ${selector}`);
         return true;
       }
@@ -102,7 +103,7 @@ export class MediaClickDetector {
       '.media-video',
     ];
     for (const selector of videoSelectors) {
-      if (target.closest(selector)) {
+      if (hasClosest(target, selector)) {
         logger.info(`✅ MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
         return true;
       }
@@ -126,14 +127,17 @@ export class MediaClickDetector {
       'a[href*="pbs.twimg.com"]',
     ];
     for (const selector of linkSelectors) {
-      if (target.closest(selector)) {
+      if (hasClosest(target, selector)) {
         logger.info(`✅ MediaClickDetector: 미디어 링크 감지 - ${selector}`);
         return true;
       }
     }
 
     // 5. 트윗 내부의 미디어 영역 확인 (가장 넓은 범위)
-    const tweetContainer = target.closest('article[data-testid="tweet"], [data-testid="tweet"]');
+    const tweetContainer = findClosest(
+      target,
+      'article[data-testid="tweet"], [data-testid="tweet"]'
+    );
     if (tweetContainer) {
       // 트윗 내부에서 이미지나 비디오가 포함된 영역 클릭 확인
       const hasMediaInTweet = tweetContainer.querySelector(
@@ -169,7 +173,7 @@ export class MediaClickDetector {
    */
   public static shouldBlockGalleryTrigger(target: HTMLElement): boolean {
     // 1. 플레이 버튼은 기본 동작 유지
-    if (target.closest('[data-testid="playButton"]')) {
+    if (hasClosest(target, '[data-testid="playButton"]')) {
       logger.debug('MediaClickDetector: 플레이 버튼 클릭 - 기본 동작 허용');
       return true;
     }
@@ -191,7 +195,7 @@ export class MediaClickDetector {
     ];
 
     for (const selector of videoControlSelectors) {
-      if (target.closest(selector)) {
+      if (hasClosest(target, selector)) {
         logger.debug('MediaClickDetector: 비디오 제어 요소 클릭 - 기본 동작 허용');
         return true;
       }
@@ -209,14 +213,14 @@ export class MediaClickDetector {
     ];
 
     for (const selector of galleryInternalSelectors) {
-      if (target.closest(selector)) {
+      if (hasClosest(target, selector)) {
         logger.debug('MediaClickDetector: 갤러리 내부 요소 클릭 - 차단');
         return true;
       }
     }
 
     // 4. 플레이 버튼 내부의 SVG 아이콘들은 기본 동작 유지
-    const playButton = target.closest('[data-testid="playButton"]');
+    const playButton = findClosest(target, '[data-testid="playButton"]');
     if (
       playButton &&
       (target.tagName === 'svg' || target.tagName === 'circle' || target.tagName === 'path')
@@ -236,17 +240,18 @@ export class MediaClickDetector {
     ];
 
     for (const selector of uiButtonSelectors) {
-      if (target.closest(selector)) {
+      if (hasClosest(target, selector)) {
         logger.debug(`MediaClickDetector: UI 버튼 클릭 차단 - ${selector}`);
         return true;
       }
     }
 
     // 5. 순수 텍스트 링크만 차단 (미디어가 없는 링크)
-    const statusLink = target.closest('a[href*="/status/"]') as HTMLAnchorElement;
+    const statusLink = findClosest(target, 'a[href*="/status/"]') as HTMLAnchorElement;
     if (statusLink) {
       // 미디어 컨테이너 내부에 있으면 허용
-      const isInMediaContainer = target.closest(
+      const isInMediaContainer = findClosest(
+        target,
         '[data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
       );
       if (isInMediaContainer) {
@@ -285,9 +290,10 @@ export class MediaClickDetector {
 
     if (tag === 'VIDEO') {
       // 표준 트위터 컨테이너 우선 검사
-      const inTwitterContainer = !!element.closest(
-        '[data-testid="videoPlayer"], [data-testid="tweetVideo"]'
-      );
+      const inTwitterContainer = anyClosest(element, [
+        '[data-testid="videoPlayer"]',
+        '[data-testid="tweetVideo"]',
+      ]);
       if (inTwitterContainer) return true;
       // 테스트/폴백 환경: src 없거나 컨테이너 없더라도 video 자체를 허용 (갤러리 트리거 목적)
       return true;
@@ -330,7 +336,7 @@ export class MediaClickDetector {
       // 안정적인 선택자를 통한 미디어 컨테이너 검색
       const imageSelectors = [SELECTORS.TWEET_PHOTO, 'img[src*="pbs.twimg.com"]'];
       for (const selector of imageSelectors) {
-        const container = target.closest(selector) as HTMLElement;
+        const container = findClosest(target, selector) as HTMLElement;
         if (container) {
           // 이미지 찾기
           const img = container.querySelector('img[src*="twimg.com"]') as HTMLImageElement;
@@ -349,7 +355,7 @@ export class MediaClickDetector {
       // 미디어 플레이어 검색
       const videoSelectors = [SELECTORS.VIDEO_PLAYER, 'video'];
       for (const selector of videoSelectors) {
-        const container = target.closest(selector) as HTMLElement;
+        const container = findClosest(target, selector) as HTMLElement;
         if (container) {
           // 비디오 찾기
           const video = container.querySelector('video') as HTMLVideoElement;

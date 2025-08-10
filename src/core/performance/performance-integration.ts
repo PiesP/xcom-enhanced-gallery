@@ -9,6 +9,7 @@
 import { PerformanceMonitor } from './performance-monitor';
 import { MetricsCollector } from './metrics-collector';
 import { AlertSystem } from './alert-system';
+import { coreLogger } from '@core/logger';
 import type {
   MonitoringConfig,
   DashboardData,
@@ -54,6 +55,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
   private readonly eventListeners = new Map<string, AbortController>();
   private readonly timers = new Set<number>();
   private readonly rafIds = new Set<number>();
+  private readonly logger = coreLogger;
 
   constructor() {
     this.performanceMonitor = new PerformanceMonitor();
@@ -88,7 +90,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
       // 초기화 완료
       this.isInitialized = true;
     } catch (error) {
-      console.error('성능 모니터링 초기화 실패:', error);
+      this.logger.error('성능 모니터링 초기화 실패:', error);
       throw error;
     }
   }
@@ -110,7 +112,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
         alerts: currentAlerts,
       };
     } catch (error) {
-      console.error('대시보드 데이터 조회 실패:', error);
+      this.logger.error('대시보드 데이터 조회 실패:', error);
 
       // Fallback 데이터 제공
       return {
@@ -146,7 +148,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
 
       this.isMonitoring = true;
     } catch (error) {
-      console.error('성능 모니터링 시작 실패:', error);
+      this.logger.error('성능 모니터링 시작 실패:', error);
     }
   }
 
@@ -166,7 +168,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
       this.performanceMonitor.stop();
       this.isMonitoring = false;
     } catch (error) {
-      console.error('성능 모니터링 중지 실패:', error);
+      this.logger.error('성능 모니터링 중지 실패:', error);
     }
   }
 
@@ -251,7 +253,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
         this.metricsCollector.collect();
       }
     } catch (error) {
-      console.warn('메트릭 수집 중 오류 발생:', error);
+      this.logger.warn('메트릭 수집 중 오류 발생:', error);
     }
   }
 
@@ -285,7 +287,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
 
       return 'healthy';
     } catch (error) {
-      console.error('건강 상태 확인 실패:', error);
+      this.logger.error('건강 상태 확인 실패:', error);
       return 'warning';
     }
   }

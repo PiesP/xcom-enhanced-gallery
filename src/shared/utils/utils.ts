@@ -4,7 +4,7 @@
  * @version 2.0.0 - Complexity Reduction & Modularization
  */
 
-import { logger } from '@shared/logging';
+import { anyMatchOrClosest, isMatching } from '@shared/dom/predicates';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
 // ================================
@@ -122,15 +122,7 @@ export function shouldBlockGalleryTrigger(target: HTMLElement | null): boolean {
  */
 export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   if (!element) return false;
-
-  return GALLERY_SELECTORS.some(selector => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch (error) {
-      logger.warn('Invalid selector:', selector, error);
-      return false;
-    }
-  });
+  return anyMatchOrClosest(element, GALLERY_SELECTORS);
 }
 
 /**
@@ -138,12 +130,7 @@ export function isGalleryInternalElement(element: HTMLElement | null): boolean {
  */
 export function isGalleryContainer(element: HTMLElement | null): boolean {
   if (!element) return false;
-
-  try {
-    return element.matches('.xeg-gallery-container, #xeg-gallery-root');
-  } catch {
-    return false;
-  }
+  return isMatching(element, '.xeg-gallery-container, #xeg-gallery-root');
 }
 
 /**
@@ -151,15 +138,7 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
  */
 export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!element) return false;
-
-  return VIDEO_CONTROL_SELECTORS.some(selector => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch (error) {
-      logger.warn('Invalid video control selector:', selector, error);
-      return false;
-    }
-  });
+  return anyMatchOrClosest(element, VIDEO_CONTROL_SELECTORS);
 }
 
 /**

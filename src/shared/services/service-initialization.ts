@@ -5,7 +5,8 @@
  */
 
 import { CoreService } from './service-manager';
-import { logger } from '@shared/logging';
+import { logger, createScopedLogger } from '@shared/logging';
+import { setCoreLogger } from '@core/logger';
 
 /**
  * Core 레이어 통합 서비스들을 등록합니다
@@ -60,4 +61,17 @@ export async function registerCoreServices(): Promise<void> {
   serviceManager.register(SERVICE_KEYS.MEDIA_FILENAME, new FilenameService());
 
   logger.info('Core services registered successfully');
+
+  // Core 레이어 로거 DI: Shared의 스코프드 로거를 주입
+  try {
+    setCoreLogger({
+      debug: (msg: string, ...args: unknown[]) => createScopedLogger('Core').debug(msg, ...args),
+      info: (msg: string, ...args: unknown[]) => createScopedLogger('Core').info(msg, ...args),
+      warn: (msg: string, ...args: unknown[]) => createScopedLogger('Core').warn(msg, ...args),
+      error: (msg: string, err?: unknown) => createScopedLogger('Core').error(msg, err),
+      setLevel: () => {},
+    });
+  } catch {
+    // DI 실패는 앱 동작에 치명적이지 않으므로 무시
+  }
 }

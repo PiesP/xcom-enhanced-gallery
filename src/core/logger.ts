@@ -1,51 +1,51 @@
 /**
- * @fileoverview Core 모듈 전용 간단한 로거
- * @description 의존성 없는 독립적인 로거
- * @version 1.0.0
+ * @fileoverview Core 전용 로거 인터페이스 + DI 훅
+ * @description Core 레이어가 Shared 레이어에 직접 의존하지 않도록 분리
  */
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-/**
- * 간단한 로거 클래스
- */
-class CoreLogger {
-  private level: LogLevel = 'info';
-
-  setLevel(level: LogLevel): void {
-    this.level = level;
-  }
-
-  debug(message: string, ...args: unknown[]): void {
-    if (this.shouldLog('debug')) {
-      console.info(`[DEBUG] ${message}`, ...args);
-    }
-  }
-
-  info(message: string, ...args: unknown[]): void {
-    if (this.shouldLog('info')) {
-      console.info(`[INFO] ${message}`, ...args);
-    }
-  }
-
-  warn(message: string, ...args: unknown[]): void {
-    if (this.shouldLog('warn')) {
-      console.warn(`[WARN] ${message}`, ...args);
-    }
-  }
-
-  error(message: string, error?: unknown): void {
-    if (this.shouldLog('error')) {
-      console.error(`[ERROR] ${message}`, error);
-    }
-  }
-
-  private shouldLog(level: LogLevel): boolean {
-    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
-    const currentIndex = levels.indexOf(this.level);
-    const messageIndex = levels.indexOf(level);
-    return messageIndex >= currentIndex;
-  }
+export interface ILogger {
+  debug: (message: string, ...args: unknown[]) => void;
+  info: (message: string, ...args: unknown[]) => void;
+  warn: (message: string, ...args: unknown[]) => void;
+  error: (message: string, error?: unknown) => void;
+  setLevel?: (level: LogLevel) => void;
 }
 
-export const coreLogger = new CoreLogger();
+// 내부 위임 인스턴스 (주입 대상)
+let injectedLogger: ILogger | null = null;
+let currentLevel: LogLevel = 'info';
+
+export function setCoreLogger(impl: ILogger): void {
+  injectedLogger = impl;
+  if (impl.setLevel) impl.setLevel(currentLevel);
+}
+
+function shouldLog(level: LogLevel): boolean {
+  const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+  return levels.indexOf(level) >= levels.indexOf(currentLevel);
+}
+
+export const coreLogger: ILogger = {
+  setLevel(level: LogLevel) {
+    currentLevel = level;
+    injectedLogger?.setLevel?.(level);
+  },
+  debug(message: string, ...args: unknown[]) {
+    if (!shouldLog('debug')) return;
+    injectedLogger?.debug?.(`[DEBUG] ${message}`, ...args);
+  },
+  info(message: string, ...args: unknown[]) {
+    if (!shouldLog('info')) return;
+    injectedLogger?.info?.(`[INFO] ${message}`, ...args);
+  },
+  warn(message: string, ...args: unknown[]) {
+    if (!shouldLog('warn')) return;
+    injectedLogger?.warn?.(`[WARN] ${message}`, ...args);
+  },
+  error(message: string, error?: unknown) {
+    if (!shouldLog('error')) return;
+    injectedLogger?.error?.(`[ERROR] ${message}`, error);
+  },
+};

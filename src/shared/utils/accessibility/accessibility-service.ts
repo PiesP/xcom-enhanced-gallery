@@ -8,6 +8,7 @@ import {
   createFocusTrap,
   enableKeyboardNavigation,
 } from './accessibility-utils';
+import { logger } from '@shared/logging';
 
 export interface AccessibilityConfig {
   enableKeyboardNavigation: boolean;
@@ -99,8 +100,8 @@ export class AccessibilityService {
         break;
     }
 
-    // Simple console announcement for now
-    console.info('[Accessibility]', message);
+    // Unified logger announcement
+    logger.info('[Accessibility]', message);
   }
 }
 

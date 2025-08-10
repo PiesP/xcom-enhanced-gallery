@@ -7,6 +7,7 @@
 // ================================
 // 갤러리 요소 감지 (dom-utils)
 // ================================
+import { anyClosest, isMatching } from '@shared/dom/predicates';
 
 const GALLERY_SELECTORS = [
   '[data-gallery-container]',
@@ -30,12 +31,15 @@ const GALLERY_SELECTORS = [
 
 export function isInsideGallery(element: HTMLElement | null): boolean {
   if (!element) return false;
-  return GALLERY_SELECTORS.some(sel => element.closest(sel));
+  return anyClosest(element, GALLERY_SELECTORS);
 }
 
 export function isGalleryContainer(element: HTMLElement | null): boolean {
   if (!element) return false;
-  return GALLERY_SELECTORS.some(sel => element.matches(sel));
+  for (const sel of GALLERY_SELECTORS) {
+    if (isMatching(element, sel)) return true;
+  }
+  return false;
 }
 
 export function isGalleryInternalEvent(event: Event): boolean {
@@ -193,7 +197,7 @@ export function findFirstMatchingSelector(
 ): string | null {
   for (const selector of selectors) {
     try {
-      if (testElement.matches(selector)) {
+      if (isMatching(testElement, selector)) {
         return selector;
       }
     } catch {
