@@ -18,6 +18,7 @@ import { MediaService } from '@shared/services/media-service';
 import { ToastService } from '@shared/services/toast-service';
 import { unmountGallery } from '@shared/components/isolation';
 import { injectZIndexStyles } from '@shared/styles/z-index-system';
+import type { GalleryConfig } from '@shared/types/core/core-types';
 
 /**
  * 갤러리 앱 설정
