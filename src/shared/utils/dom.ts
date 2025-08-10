@@ -54,10 +54,10 @@ export function shouldBlockGalleryEvent(event: Event): boolean {
 // DOM 조작 함수들은 @shared/dom/DOMService로 완전 통합됨
 // 하위 호환성을 위한 re-export만 유지
 
-import { querySelector, querySelectorAll } from '@shared/dom/unified-dom-service';
+import { querySelector, querySelectorAll } from '@shared/dom/dom-service';
 
 // 기본 DOM 선택 함수들 - UnifiedDOMService로 위임
-export { querySelector, querySelectorAll } from '@shared/dom/unified-dom-service';
+export { querySelector, querySelectorAll } from '@shared/dom/dom-service';
 
 // 기본 DOM 선택 함수들 - DOMService로 위임
 export function safeQuerySelector<T extends Element = Element>(
@@ -298,4 +298,4 @@ export {
   setStyle as safeSetStyle,
   addEventListener as safeAddEventListener,
   removeEventListener as safeRemoveEventListener,
-} from '@shared/dom/unified-dom-service';
+} from '@shared/dom/dom-service';

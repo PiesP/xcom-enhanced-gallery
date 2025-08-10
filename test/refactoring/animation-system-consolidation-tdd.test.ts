@@ -150,6 +150,7 @@ describe('TDD Phase 3: Animation System Consolidation', () => {
 
       global.document.documentElement = {
         scrollHeight: 2000,
+        setAttribute: vi.fn(),
       } as unknown as HTMLElement;
 
       const cleanup = AnimationService.setupScrollAnimation(onScroll);

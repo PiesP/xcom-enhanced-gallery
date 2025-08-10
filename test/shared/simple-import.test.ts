@@ -53,7 +53,7 @@ describe('Shared Module Import Tests', () => {
   describe('Services Import', () => {
     it('DOM service를 import할 수 있어야 한다', async () => {
       try {
-        const module = await import('@shared/dom/unified-dom-service');
+        const module = await import('@shared/dom/dom-service');
         expect(module).toBeDefined();
       } catch (error) {
         // 파일이 존재하지 않으면 패스

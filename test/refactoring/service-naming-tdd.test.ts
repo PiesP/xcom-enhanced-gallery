@@ -223,7 +223,7 @@ describe('TDD Phase 4: Service Naming Standardization (RED)', () => {
         'gallery-service.ts', // ❓ 확인 필요 (features/gallery/에 위치)
         'style-service.ts', // ✅ 올바름
         'timer-service.ts', // ✅ 올바름
-        'unified-dom-service.ts', // ✅ 올바름
+        'dom-service.ts', // ✅ 올바름
         'resource-service.ts', // ✅ 올바름
         'accessibility-service.ts', // ✅ 올바름
         'z-index-service.ts', // ✅ 올바름

@@ -23,7 +23,33 @@ export const isBrowserEnvironment = (): boolean => {
  */
 export const safeWindow = (): Window | null => {
   try {
-    return isBrowserEnvironment() ? window : null;
+    if (!isBrowserEnvironment()) return null;
+
+    const win = window as unknown as Record<string | symbol, unknown>;
+
+    // jsdom 일부 버전에서 window.location getter가 내부 _location 상태에 따라 throw 할 수 있음
+    // 이를 방어하기 위해 Proxy로 감싸 location 접근을 안전하게 처리
+    const proxy = new Proxy(win, {
+      get(target, prop, receiver) {
+        if (prop === 'location') {
+          try {
+            const loc = Reflect.get(target, prop, receiver);
+            // jsdom의 Null 객체 접근 방지: falsy면 null 반환
+            return loc ?? null;
+          } catch {
+            // 접근 중 오류 발생 시 null 반환
+            return null;
+          }
+        }
+        try {
+          return Reflect.get(target, prop, receiver);
+        } catch {
+          return undefined;
+        }
+      },
+    });
+
+    return proxy as unknown as Window;
   } catch (error) {
     logger.debug('Failed to access window object', {
       error: error instanceof Error ? error.message : String(error),

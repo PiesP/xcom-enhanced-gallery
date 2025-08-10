@@ -84,7 +84,7 @@
 # 통합 대상
 - test/utils/mocks/preact-test-environment.ts
 - test/utils/mocks/preact-test-environment-enhanced.ts
-- test/utils/mocks/ultimate-preact-environment.ts
+- test/utils/mocks/preact-environment.ts
 ↓
 - test/utils/mocks/preact-environment.unified.ts
 ```

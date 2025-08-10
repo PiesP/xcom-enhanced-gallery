@@ -23,8 +23,8 @@ describe('� TDD Phase 2: GREEN - 중복 제거 구현 완료', () => {
 
   describe('DOM 서비스 통합 검증', () => {
     it('🟢 GREEN: 단일 DOM 서비스 통합 완료', async () => {
-      // unified-dom-service.ts만 사용되고, 중복 서비스들이 제거됨
-      const { unifiedDOMService } = await import('@shared/dom/unified-dom-service');
+      // dom-service.ts만 사용되고, 중복 서비스들이 제거됨
+      const { unifiedDOMService } = await import('@shared/dom/dom-service');
 
       expect(unifiedDOMService).toBeDefined();
       expect(typeof unifiedDOMService.querySelector).toBe('function');

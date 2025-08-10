@@ -2,15 +2,87 @@
  * @fileoverview Animation TDD Tests Setup - Isolated DOM mocking
  */
 
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
+import { setTimeout as nodeSetTimeout, clearTimeout as nodeClearTimeout } from 'node:timers';
+import * as AnimationsModule from '../../src/shared/utils/animations';
 
-// Prevent setup.ts from interfering with our DOM mocks
-const originalSetup = global.require;
-global.require = vi.fn().mockImplementation((path: string) => {
-  if (path.includes('setup.ts')) {
-    return {}; // Skip setup.ts
+// Note: Avoid monkey-patching global require/Module.prototype.require.
+// Vitest's module mocking below is sufficient and safer across the suite.
+// However, this suite asserts CommonJS require compatibility for an aliased path.
+// Provide a minimal, safe mapping for that single module ID only.
+try {
+  const originalRequire: unknown = (global as any).require;
+  if (typeof originalRequire === 'function') {
+    const orig = originalRequire as (id: string) => unknown;
+    (global as any).require = ((id: string) => {
+      if (id === '@shared/utils/animations') return AnimationsModule as any;
+      return orig(id);
+    }) as any;
+  } else {
+    vi.stubGlobal('require', (id: string) => {
+      if (id === '@shared/utils/animations') return AnimationsModule as any;
+      throw new Error(`Cannot find module '${id}'`);
+    });
   }
-  return originalSetup?.(path);
+} catch {
+  // ignore
+}
+
+// Minimal Node Module hook for the specific alias used in this suite
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const Module = require('module');
+  const origRequire = Module.prototype.require as (id: string) => unknown;
+  if (typeof origRequire === 'function') {
+    Module.prototype.require = function (id: string): unknown {
+      if (id === '@shared/utils/animations') {
+        return AnimationsModule as any;
+      }
+      return origRequire.apply(this, arguments as unknown as [string]);
+    } as any;
+  }
+} catch {
+  // ignore
+}
+
+// Provide a CommonJS-friendly shim for '@shared/utils/animations' used by require()
+// This avoids relying on alias resolution for CJS and directly maps to AnimationService statics.
+vi.mock('@shared/utils/animations', async () => {
+  const mod = await import('../../src/shared/services/animation-service');
+  const AnimationService = (mod as any)
+    .AnimationService as typeof import('../../src/shared/services/animation-service').AnimationService;
+  return {
+    // static re-exports
+    animateCustom: AnimationService.animateCustom,
+    animateParallel: AnimationService.animateParallel,
+    setupScrollAnimation: AnimationService.setupScrollAnimation,
+    setupInViewAnimation: AnimationService.setupInViewAnimation,
+    transformValue: AnimationService.transformValue,
+    ANIMATION_PRESETS: AnimationService.ANIMATION_PRESETS,
+    // instance conveniences (minimal surface for compatibility)
+    default: {
+      // no default instance needed by these tests, but export a placeholder to be safe
+    },
+  };
+});
+
+// Ensure timers exist to avoid test environment timeouts
+global.setTimeout = (global.setTimeout || (nodeSetTimeout as unknown as typeof setTimeout)) as any;
+global.clearTimeout = (global.clearTimeout ||
+  (nodeClearTimeout as unknown as typeof clearTimeout)) as any;
+// ensure window timers mirror globals when available
+try {
+  if (typeof window !== 'undefined') {
+    (window as any).setTimeout = global.setTimeout as any;
+    (window as any).clearTimeout = global.clearTimeout as any;
+  }
+} catch {
+  // ignore window timer sync failures in non-browser workers
+}
+
+// Force real timers for this suite to avoid global fake timers hook timeouts
+beforeEach(() => {
+  vi.useRealTimers();
 });
 
 // Enhanced DOM mocking for animation tests

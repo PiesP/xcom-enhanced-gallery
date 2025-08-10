@@ -80,12 +80,20 @@ function calculateOptimalThreads() {
   };
 }
 
-const {
+let {
   min: minThreads,
   max: maxThreads,
   strategy: poolStrategy,
   single: singleThread,
 } = calculateOptimalThreads();
+
+// Refactoring 모드: forks 대신 threads 단일 스레드로 강제 (내부 상태 오류 회피)
+if (isRefactoring) {
+  poolStrategy = 'threads' as const;
+  minThreads = 1;
+  maxThreads = 1;
+  singleThread = true;
+}
 
 // 환경별 설정 로그
 if (env.NODE_ENV !== 'test' && typeof globalThis.console !== 'undefined') {

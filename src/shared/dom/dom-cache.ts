@@ -2,7 +2,7 @@
  * @fileoverview DOM 캐시 관리
  */
 
-import { querySelector, querySelectorAll, cleanup, unifiedDOMService } from './unified-dom-service';
+import { querySelector, querySelectorAll, cleanup, unifiedDOMService } from './dom-service';
 
 export class DOMCache {
   static querySelector = querySelector;

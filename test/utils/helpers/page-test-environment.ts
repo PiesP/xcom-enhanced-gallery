@@ -623,43 +623,72 @@ export class PageTestEnvironment {
 
   // Private helper methods for page-specific mocking
   private static mockBookmarkPageAPIs(): void {
-    // 북마크 페이지 특화 API 모킹
-    Object.defineProperty(window, 'location', {
-      value: { href: 'https://x.com/i/bookmarks' },
-      writable: true,
-    });
+    // 북마크 페이지 특화 API 모킹 - window.location 재정의 대신 history.replaceState 사용
+    try {
+      window.history?.replaceState?.({}, '', 'https://x.com/i/bookmarks');
+    } catch {
+      try {
+        // 일부 환경에서 허용되는 경우에만 직접 할당
+        (window as any).location && ((window as any).location.href = 'https://x.com/i/bookmarks');
+      } catch {
+        // 마지막 폴백: 테스트 힌트 값 설정
+        (window as any).__TEST_URL__ = 'https://x.com/i/bookmarks';
+      }
+    }
   }
 
   private static mockMediaPageAPIs(): void {
-    // 미디어 페이지 특화 API 모킹
-    Object.defineProperty(window, 'location', {
-      value: { href: 'https://x.com/user/status/123/photo/1' },
-      writable: true,
-    });
+    // 미디어 페이지 특화 API 모킹 - 안전한 URL 업데이트
+    try {
+      window.history?.replaceState?.({}, '', 'https://x.com/user/status/123/photo/1');
+    } catch {
+      try {
+        (window as any).location &&
+          ((window as any).location.href = 'https://x.com/user/status/123/photo/1');
+      } catch {
+        (window as any).__TEST_URL__ = 'https://x.com/user/status/123/photo/1';
+      }
+    }
   }
 
   private static mockTimelineAPIs(): void {
-    // 타임라인 특화 API 모킹
-    Object.defineProperty(window, 'location', {
-      value: { href: 'https://x.com/home' },
-      writable: true,
-    });
+    // 타임라인 특화 API 모킹 - 안전한 URL 업데이트
+    try {
+      window.history?.replaceState?.({}, '', 'https://x.com/home');
+    } catch {
+      try {
+        (window as any).location && ((window as any).location.href = 'https://x.com/home');
+      } catch {
+        (window as any).__TEST_URL__ = 'https://x.com/home';
+      }
+    }
   }
 
   private static mockPostPageAPIs(): void {
-    // 포스트 페이지 특화 API 모킹
-    Object.defineProperty(window, 'location', {
-      value: { href: 'https://x.com/user/status/123' },
-      writable: true,
-    });
+    // 포스트 페이지 특화 API 모킹 - 안전한 URL 업데이트
+    try {
+      window.history?.replaceState?.({}, '', 'https://x.com/user/status/123');
+    } catch {
+      try {
+        (window as any).location &&
+          ((window as any).location.href = 'https://x.com/user/status/123');
+      } catch {
+        (window as any).__TEST_URL__ = 'https://x.com/user/status/123';
+      }
+    }
   }
 
   private static mockUserTimelineAPIs(): void {
-    // 사용자 타임라인 특화 API 모킹
-    Object.defineProperty(window, 'location', {
-      value: { href: 'https://x.com/username' },
-      writable: true,
-    });
+    // 사용자 타임라인 특화 API 모킹 - 안전한 URL 업데이트
+    try {
+      window.history?.replaceState?.({}, '', 'https://x.com/username');
+    } catch {
+      try {
+        (window as any).location && ((window as any).location.href = 'https://x.com/username');
+      } catch {
+        (window as any).__TEST_URL__ = 'https://x.com/username';
+      }
+    }
   }
 }
 

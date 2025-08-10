@@ -23,7 +23,7 @@ import {
   cleanup,
   DOMService,
   componentManager,
-} from './unified-dom-service';
+} from './dom-service';
 
 // ===== 개별 named exports - 충돌 방지 =====
 export {
@@ -49,7 +49,7 @@ export {
 };
 
 // measurePerformance는 DOM 전용 이름으로 export
-export { measurePerformance as measureDOMPerformance } from './unified-dom-service';
+export { measurePerformance as measureDOMPerformance } from './dom-service';
 
 // ===== Type exports =====
 export type { ElementOptions, EventOptions } from './types';
@@ -65,13 +65,13 @@ export {
   setStyle as safeSetStyle,
   setAttribute as safeSetAttribute,
   removeAttribute as safeRemoveAttribute,
-} from './unified-dom-service';
+} from './dom-service';
 
-// DOM 캐시 (이벤트 관리는 unified-dom-service로 통합됨)
+// DOM 캐시 (이벤트 관리는 dom-service로 통합됨)
 export { DOMCache, globalDOMCache } from './dom-cache';
 
-// 기존 DOMService 호환성 (이제 unified-dom-service의 별칭)
-export { DOMService as LegacyDOMService } from './unified-dom-service';
+// 기존 DOMService 호환성 (이제 dom-service의 별칭)
+export { DOMService as LegacyDOMService } from './dom-service';
 
 // ===== 주요 default export =====
 export { unifiedDOMService as default };

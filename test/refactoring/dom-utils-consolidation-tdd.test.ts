@@ -4,7 +4,7 @@
  * 목표: DOM 관련 중복 기능들을 UnifiedDOMService로 통합
  *
  * 중복 대상:
- * - src/shared/dom/unified-dom-service.ts (통합 서비스)
+ * - src/shared/dom/dom-service.ts (통합 서비스)
  * - src/shared/utils/dom.ts (개별 함수들)
  *
  * TDD 사이클: RED → GREEN → REFACTOR
@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { JSDOM } from 'jsdom';
 
 // 현재 구현들
-import { UnifiedDOMService } from '@shared/dom/unified-dom-service';
+import { UnifiedDOMService } from '@shared/dom/dom-service';
 import { querySelector, querySelectorAll } from '@shared/utils/dom';
 
 describe('🔴 RED: DOM Utils Consolidation - 중복 기능 식별', () => {

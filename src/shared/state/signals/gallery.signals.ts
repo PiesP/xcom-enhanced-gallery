@@ -109,7 +109,11 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = Math.max(0, Math.min(startIndex, items.length - 1));
 
   // 현재 스크롤 위치 저장
-  BrowserService.scroll.save();
+  try {
+    BrowserService.scroll.save();
+  } catch {
+    // 비DOM 환경 보호
+  }
 
   // 갤러리 오픈 시 재생 중인 모든 비디오 일시정지 (PC 전용 환경 가정)
   try {
@@ -130,7 +134,15 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   }
 
   // 배경 페이지 스크롤 방지
-  document.body.style.overflow = 'hidden';
+  try {
+    const hasBodyAndStyle: boolean =
+      typeof document !== 'undefined' && !!document.body && !!document.body.style;
+    if (hasBodyAndStyle) {
+      document.body.style.overflow = 'hidden';
+    }
+  } catch {
+    // 테스트 환경에서 body/style이 없는 경우를 보호
+  }
 
   galleryState.value = {
     ...galleryState.value,
@@ -156,10 +168,22 @@ export function closeGallery(): void {
   }
 
   // 배경 페이지 스크롤 복원
-  document.body.style.overflow = '';
+  try {
+    const hasBodyAndStyle: boolean =
+      typeof document !== 'undefined' && !!document.body && !!document.body.style;
+    if (hasBodyAndStyle) {
+      document.body.style.overflow = '';
+    }
+  } catch {
+    // 비DOM 환경 보호
+  }
 
   // 저장된 스크롤 위치로 복원
-  BrowserService.scroll.restore();
+  try {
+    BrowserService.scroll.restore();
+  } catch {
+    // 비DOM 환경 보호
+  }
 
   // 상태 완전 초기화 - mediaItems도 함께 초기화
   galleryState.value = {

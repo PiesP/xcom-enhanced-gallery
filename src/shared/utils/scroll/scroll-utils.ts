@@ -4,7 +4,7 @@
 
 import { logger } from '@shared/logging';
 import { debounce } from '@shared/utils/performance/unified-performance-utils';
-import { unifiedDOMService } from '@shared/dom/unified-dom-service';
+import { unifiedDOMService } from '@shared/dom/dom-service';
 
 /** Twitter 스크롤 컨테이너 찾기 */
 export { findTwitterScrollContainer } from '../core-utils';

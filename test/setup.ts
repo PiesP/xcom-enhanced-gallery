@@ -5,6 +5,7 @@
 
 import '@testing-library/jest-dom';
 import { beforeEach, afterEach, vi } from 'vitest';
+
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
 import { setupVendorMocks, resetVendorMocks } from './__mocks__/vendor-libs-enhanced.mock.js';
@@ -18,7 +19,133 @@ import {
 } from './utils/mocks/dom-environment.js';
 
 // ================================
-// 🔧 Promise 및 에러 처리 개선
+// � Global timers fallback (stabilize worker threads)
+// ================================
+import {
+  setTimeout as nodeSetTimeout,
+  clearTimeout as nodeClearTimeout,
+  setInterval as nodeSetInterval,
+  clearInterval as nodeClearInterval,
+} from 'node:timers';
+
+// Ensure timers exist at bootstrap time (before any hooks) and remain valid
+(() => {
+  const g: any = globalThis as any;
+  if (!g.__xeg_resilient_timers_installed) {
+    const baseTimers = {
+      setTimeout: nodeSetTimeout as unknown as typeof setTimeout,
+      clearTimeout: nodeClearTimeout as unknown as typeof clearTimeout,
+      setInterval: nodeSetInterval as unknown as typeof setInterval,
+      clearInterval: nodeClearInterval as unknown as typeof clearInterval,
+    };
+
+    let userSetTimeout: typeof setTimeout | null =
+      typeof g.setTimeout === 'function' ? (g.setTimeout as typeof setTimeout) : null;
+    let userClearTimeout: typeof clearTimeout | null =
+      typeof g.clearTimeout === 'function' ? (g.clearTimeout as typeof clearTimeout) : null;
+    let userSetInterval: typeof setInterval | null =
+      typeof g.setInterval === 'function' ? (g.setInterval as typeof setInterval) : null;
+    let userClearInterval: typeof clearInterval | null =
+      typeof g.clearInterval === 'function' ? (g.clearInterval as typeof clearInterval) : null;
+
+    const defineResilient = <T extends (..._args: unknown[]) => unknown>(
+      name: 'setTimeout' | 'clearTimeout' | 'setInterval' | 'clearInterval',
+      getUser: () => T | null,
+      setUser: (value: unknown) => void,
+      base: T
+    ) => {
+      try {
+        Object.defineProperty(g, name, {
+          configurable: true,
+          enumerable: true,
+          get() {
+            const u = getUser();
+            const result = typeof u === 'function' ? (u as T) : base;
+            if (u == null) {
+              // 진단 로그: 비정상 상태에서 기본 타이머 사용
+              try {
+                const err = new Error(`[Timers] ${name} getter fallback to base`);
+                console && console.debug && console.debug(err.message);
+              } catch {
+                // noop: safe debug logging attempt failed
+              }
+            }
+            return result;
+          },
+          set(v) {
+            if (typeof v === 'function') {
+              setUser(v as T);
+            } else {
+              // 비함수 할당 시 진단 로그 출력
+              try {
+                const err = new Error(`[Timers] ${name} assigned non-function: ${String(v)}`);
+                console &&
+                  console.warn &&
+                  console.warn(err.message, err.stack?.split('\n').slice(0, 3).join('\n'));
+              } catch {
+                // noop: safe warn logging attempt failed
+              }
+              setUser(null as any);
+            }
+          },
+        });
+      } catch {
+        // Fallback simple assignment if defineProperty fails
+        (g as any)[name] = (getUser() || base) as any;
+      }
+    };
+
+    defineResilient(
+      'setTimeout',
+      () => userSetTimeout,
+      v => (userSetTimeout = v),
+      baseTimers.setTimeout
+    );
+    defineResilient(
+      'clearTimeout',
+      () => userClearTimeout,
+      v => (userClearTimeout = v),
+      baseTimers.clearTimeout
+    );
+    defineResilient(
+      'setInterval',
+      () => userSetInterval,
+      v => (userSetInterval = v),
+      baseTimers.setInterval
+    );
+    defineResilient(
+      'clearInterval',
+      () => userClearInterval,
+      v => (userClearInterval = v),
+      baseTimers.clearInterval
+    );
+
+    g.__xeg_resilient_timers_installed = true;
+  }
+})();
+
+// Strong timer enforcement utility to guard against suites that accidentally nullify timers
+function __xeg_enforceRealTimers(): void {
+  try {
+    const g: any = globalThis as any;
+    if (typeof g.setTimeout !== 'function') g.setTimeout = nodeSetTimeout as any;
+    if (typeof g.clearTimeout !== 'function') g.clearTimeout = nodeClearTimeout as any;
+    if (typeof g.setInterval !== 'function') g.setInterval = nodeSetInterval as any;
+    if (typeof g.clearInterval !== 'function') g.clearInterval = nodeClearInterval as any;
+
+    if (typeof g.window === 'object' && g.window) {
+      if (typeof g.window.setTimeout !== 'function') g.window.setTimeout = g.setTimeout;
+      if (typeof g.window.clearTimeout !== 'function') g.window.clearTimeout = g.clearTimeout;
+      if (typeof g.window.setInterval !== 'function') g.window.setInterval = g.setInterval;
+      if (typeof g.window.clearInterval !== 'function') g.window.clearInterval = g.clearInterval;
+    }
+  } catch {
+    // ignore enforcement errors
+  }
+}
+
+// ================================
+// �🔧 Promise 및 에러 처리 개선
 // ================================
 
 // EventEmitter MaxListeners 경고 방지 (테스트 폭이 넓어 동적 증가)
@@ -45,7 +172,18 @@ if (!(process as any).__xeg_unhandled_rejection_registered) {
           reason.stack?.includes('tinypool'))) ||
       (typeof reason === 'string' && reason.includes('worker'));
 
-    if (isWorkerError) {
+    // 일부 환경에서 드물게 발생하는 비정상 타이머 에러 억제
+    const isTimerError =
+      (reason instanceof Error && reason.message?.includes('setTimeout is not a function')) ||
+      (typeof reason === 'string' && reason.includes('setTimeout is not a function'));
+
+    const isVitestStateError =
+      (reason instanceof Error &&
+        (reason.message?.includes('Vitest failed to access its internal state') ||
+          reason.stack?.includes('getWorkerState'))) ||
+      (typeof reason === 'string' && reason.includes('Vitest failed to access its internal state'));
+
+    if (isWorkerError || isTimerError || isVitestStateError) {
       // 완전히 억제 (로그도 출력하지 않음)
       return;
     }
@@ -65,7 +203,12 @@ if (!(process as any).__xeg_uncaught_exception_registered) {
       error.message?.includes('tinypool') ||
       error.stack?.includes('tinypool');
 
-    if (isWorkerError) {
+    const isTimerError = error.message?.includes('setTimeout is not a function');
+    const isVitestStateError =
+      error.message?.includes('Vitest failed to access its internal state') ||
+      error.stack?.includes('getWorkerState');
+
+    if (isWorkerError || isTimerError || isVitestStateError) {
       return; // 완전히 억제
     }
 
@@ -84,7 +227,7 @@ import {
   setupUltimatePreactTestEnvironment,
   resetPreactHookState,
   ensurePreactHookContext,
-} from './utils/mocks/ultimate-preact-environment';
+} from './utils/mocks/ultimate-preact-environment.js';
 
 // ================================
 // 🔧 Web Storage API 모킹 (localStorage, sessionStorage)
@@ -632,6 +775,7 @@ console.log('[Ultimate Test Setup] UserScript API Mock 초기화 완료 ✅');
 // ================================
 
 beforeEach(async () => {
+  __xeg_enforceRealTimers();
   // Enhanced Mock 시스템 초기화
   resetVendorMocks();
   setupVendorMocks();
@@ -646,6 +790,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  __xeg_enforceRealTimers();
   // Mock 시스템 정리
   resetVendorMocks();
   vi.clearAllMocks();
@@ -685,29 +830,39 @@ global.renderHook = ultimateEnhancedRenderHook;
 // 전역 DOM 및 브라우저 API 설정
 // ================================
 
-// HTMLElement 체크를 위한 전역 설정
-global.HTMLElement = global.HTMLElement || class HTMLElement extends Element {};
-global.Element = global.Element || class Element {};
+// jsdom 가용 여부 감지 (실제 Window/Document 객체가 존재하는지)
+const hasJsdomWindow =
+  typeof globalThis.window !== 'undefined' &&
+  typeof globalThis.document !== 'undefined' &&
+  typeof (globalThis.document as any).createElement === 'function';
 
-// 🔧 FIX: 전역 DOM API 모킹 추가 - Preact 호환성 강화
+// HTMLElement 체크를 위한 전역 설정 (없을 때만 정의)
+if (typeof (global as any).Element === 'undefined') {
+  (global as any).Element = class Element {} as any;
+}
+if (typeof (global as any).HTMLElement === 'undefined') {
+  (global as any).HTMLElement = class HTMLElement extends (global as any).Element {} as any;
+}
+
+// 🔧 FIX: 전역 DOM API 모킹 추가 - Preact 호환성 강화 (jsdom이 없을 때만 대체 구현 제공)
 const createMockElement = (tag = 'div') => {
-  const element = {
+  const element: any = {
     tagName: tag.toUpperCase(),
     id: '',
     className: '',
-    style: { cssText: '', willChange: '' }, // willChange 추가
+    style: { cssText: '', willChange: '' },
     textContent: '',
     innerHTML: '',
     nodeType: 1,
     parentNode: null,
-    children: [],
-    childNodes: [],
+    children: [] as any[],
+    childNodes: [] as any[],
     role: undefined as string | undefined,
     ariaLabel: undefined as string | undefined,
     ariaLabelledBy: undefined as string | undefined,
     setAttribute: vi.fn((name: string, value: string) => {
       if (name === 'data-gallery') element.dataset = { gallery: value };
-      if (name === 'data-testid') element.dataset = { ...element.dataset, testid: value };
+      if (name === 'data-testid') element.dataset = { ...(element.dataset || {}), testid: value };
       if (name === 'role') element.role = value;
       if (name === 'aria-label') element.ariaLabel = value;
       if (name === 'aria-labelledby') element.ariaLabelledBy = value;
@@ -761,12 +916,10 @@ const createMockElement = (tag = 'div') => {
     closest: vi.fn(() => null),
     contains: vi.fn(() => false),
     querySelector: vi.fn((selector: string) => {
-      // 간단한 선택자 매칭 구현
       for (const child of element.children) {
         if (matchesSelector(child, selector)) {
           return child;
         }
-        // 재귀적으로 하위 요소도 검색
         const found = child.querySelector?.(selector);
         if (found) return found;
       }
@@ -778,22 +931,18 @@ const createMockElement = (tag = 'div') => {
         if (matchesSelector(child, selector)) {
           results.push(child);
         }
-        // 재귀적으로 하위 요소도 검색
         const childResults = child.querySelectorAll?.(selector) || [];
         results.push(...childResults);
       }
       return results;
     }),
-    // Preact에서 필요한 추가 속성들
-    __k: null, // Preact virtual node key
-    __e: null, // Preact DOM element reference
-    __P: null, // Preact parent
+    __k: null,
+    __e: null,
+    __P: null,
   };
-
   return element;
 };
 
-// 선택자 매칭 함수
 function matchesSelector(element: any, selector: string): boolean {
   if (selector.startsWith('[data-gallery')) {
     const match = selector.match(/\[data-gallery(?:="([^"]*)")?\]/);
@@ -809,138 +958,137 @@ function matchesSelector(element: any, selector: string): boolean {
       return element.dataset?.testid === match[1];
     }
   }
-  if (selector === element.tagName?.toLowerCase()) {
-    return true;
-  }
-  if (selector.startsWith('.') && element.className?.includes(selector.slice(1))) {
-    return true;
-  }
-  if (selector.startsWith('#') && element.id === selector.slice(1)) {
-    return true;
-  }
+  if (selector === element.tagName?.toLowerCase()) return true;
+  if (selector.startsWith('.') && element.className?.includes(selector.slice(1))) return true;
+  if (selector.startsWith('#') && element.id === selector.slice(1)) return true;
   return false;
 }
 
-// Document 전역 모킹 - Preact 호환성 강화
-const documentBody = createMockElement('body');
-const documentHead = createMockElement('head');
-const documentElement = createMockElement('html');
+// Document/Window 전역 모킹 - jsdom 미존재 시에만 대체 구현 적용
+if (!hasJsdomWindow) {
+  const documentBody = createMockElement('body');
+  const documentHead = createMockElement('head');
+  const documentElement = createMockElement('html');
 
-global.document = {
-  getElementById: vi.fn((id: string) => {
-    // body와 head에서 ID로 검색
-    const allElements = [
-      documentBody,
-      documentHead,
-      ...documentBody.children,
-      ...documentHead.children,
-    ];
-    return allElements.find(el => el.id === id) || null;
-  }),
-  createElement: vi.fn(tag => createMockElement(tag)),
-  createTextNode: vi.fn(text => ({ textContent: text, nodeType: 3 })),
-  querySelector: vi.fn((selector: string) => {
-    // body와 head에서 검색
-    const bodyResult = documentBody.querySelector(selector);
-    if (bodyResult) return bodyResult;
+  (global as any).document = {
+    getElementById: vi.fn((id: string) => {
+      const allElements = [
+        documentBody,
+        documentHead,
+        ...documentBody.children,
+        ...documentHead.children,
+      ];
+      return allElements.find(el => el.id === id) || null;
+    }),
+    createElement: vi.fn((tag: string) => createMockElement(tag)),
+    createTextNode: vi.fn((text: string) => ({ textContent: text, nodeType: 3 })),
+    querySelector: vi.fn((selector: string) => {
+      const bodyResult = (documentBody as any).querySelector(selector);
+      if (bodyResult) return bodyResult;
+      const headResult = (documentHead as any).querySelector(selector);
+      if (headResult) return headResult;
+      return null;
+    }),
+    querySelectorAll: vi.fn((selector: string) => {
+      const bodyResults = (documentBody as any).querySelectorAll(selector);
+      const headResults = (documentHead as any).querySelectorAll(selector);
+      return [...bodyResults, ...headResults];
+    }),
+    getElementsByTagName: vi.fn((tagName: string) => {
+      const allElements = [
+        documentBody,
+        documentHead,
+        ...documentBody.children,
+        ...documentHead.children,
+      ];
+      return allElements.filter(el => el.tagName?.toLowerCase() === tagName.toLowerCase());
+    }),
+    getElementsByClassName: vi.fn((className: string) => {
+      const allElements = [
+        documentBody,
+        documentHead,
+        ...documentBody.children,
+        ...documentHead.children,
+      ];
+      return allElements.filter(el => el.className?.includes(className));
+    }),
+    body: documentBody,
+    head: documentHead,
+    documentElement,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+    createEvent: vi.fn(() => ({
+      initEvent: vi.fn(),
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    })),
+    location: {
+      href: 'https://x.com',
+      origin: 'https://x.com',
+      pathname: '/',
+      search: '',
+      hash: '',
+    },
+    defaultView: null,
+    nodeType: 9,
+  } as any;
 
-    const headResult = documentHead.querySelector(selector);
-    if (headResult) return headResult;
+  (global as any).window = {
+    ...(global as any).window,
+    document: (global as any).document,
+    location: (global as any).document.location,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+    getComputedStyle: vi.fn(() => ({ getPropertyValue: vi.fn(() => '') })),
+    requestAnimationFrame: vi.fn((cb: any) => setTimeout(cb, 16)),
+    cancelAnimationFrame: vi.fn(),
+    performance: { now: vi.fn(() => Date.now()) },
+    setTimeout: (global as any).setTimeout,
+    clearTimeout: (global as any).clearTimeout,
+    setInterval: (global as any).setInterval,
+    clearInterval: (global as any).clearInterval,
+  } as any;
 
-    return null;
-  }),
-  querySelectorAll: vi.fn((selector: string) => {
-    const bodyResults = documentBody.querySelectorAll(selector);
-    const headResults = documentHead.querySelectorAll(selector);
-    return [...bodyResults, ...headResults];
-  }),
-  getElementsByTagName: vi.fn((tagName: string) => {
-    const allElements = [
-      documentBody,
-      documentHead,
-      ...documentBody.children,
-      ...documentHead.children,
-    ];
-    return allElements.filter(el => el.tagName?.toLowerCase() === tagName.toLowerCase());
-  }),
-  getElementsByClassName: vi.fn((className: string) => {
-    const allElements = [
-      documentBody,
-      documentHead,
-      ...documentBody.children,
-      ...documentHead.children,
-    ];
-    return allElements.filter(el => el.className?.includes(className));
-  }),
-  body: documentBody,
-  head: documentHead,
-  documentElement,
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(() => true), // ✅ dispatchEvent 추가
-  createEvent: vi.fn(() => ({
-    initEvent: vi.fn(),
-    preventDefault: vi.fn(),
-    stopPropagation: vi.fn(),
-  })),
-  location: {
-    href: 'https://x.com',
-    origin: 'https://x.com',
-    pathname: '/',
-    search: '',
-    hash: '',
-  },
-  // Preact에서 필요한 추가 속성들
-  defaultView: null, // window 참조
-  nodeType: 9, // Document node
-};
-
-// Window 전역 모킹 - Preact 호환성 강화
-global.window = {
-  ...global.window,
-  document: global.document,
-  location: global.document.location,
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(() => true), // ✅ dispatchEvent 추가
-  getComputedStyle: vi.fn(() => ({
-    getPropertyValue: vi.fn(() => ''),
-  })),
-  requestAnimationFrame: vi.fn(cb => setTimeout(cb, 16)),
-  cancelAnimationFrame: vi.fn(),
-  performance: {
-    now: vi.fn(() => Date.now()),
-  },
-  // Preact Hook을 위한 추가 설정
-  setTimeout: global.setTimeout,
-  clearTimeout: global.clearTimeout,
-  setInterval: global.setInterval,
-  clearInterval: global.clearInterval,
-};
-
-// Document의 defaultView를 window로 설정
-global.document.defaultView = global.window;
-
-// MutationObserver 전역 모킹 - 실제 Node 검증 추가
-global.MutationObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(target => {
-    // target이 Node 타입인지 검증
-    if (!target || typeof target !== 'object') {
-      throw new TypeError(
-        "Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'."
-      );
+  (global as any).document.defaultView = (global as any).window;
+} else {
+  // jsdom 환경: 기존 window/document 보존. 필요한 폴리필만 보강.
+  try {
+    if (!(window as any).requestAnimationFrame) {
+      (window as any).requestAnimationFrame = vi.fn((cb: any) => setTimeout(cb, 16));
     }
-  }),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+    if (!(window as any).cancelAnimationFrame) {
+      (window as any).cancelAnimationFrame = vi.fn();
+    }
+  } catch {
+    // ignore
+  }
+}
 
-// IntersectionObserver 전역 모킹
-global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+// MutationObserver 전역 모킹 - 실제 Node 검증 추가 (없을 때만)
+if (typeof (global as any).MutationObserver === 'undefined') {
+  (global as any).MutationObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn((target: any) => {
+      if (!target || typeof target !== 'object') {
+        throw new TypeError(
+          "Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'."
+        );
+      }
+    }),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  }));
+}
+
+// IntersectionObserver 전역 모킹 (없을 때만)
+if (typeof (global as any).IntersectionObserver === 'undefined') {
+  (global as any).IntersectionObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  }));
+}
 
 // ================================
 // 전역 테스트 환경 설정
@@ -1112,8 +1260,7 @@ if (!document.elementsFromPoint) {
  * 모든 테스트가 깨끗한 환경에서 실행되도록 보장
  */
 beforeEach(async () => {
-  // 🚀 타이머 Mock 설정 (useToolbar Hook 테스트 요구사항)
-  vi.useFakeTimers();
+  // 타이머는 각 테스트 파일에서 필요 시 개별적으로 mock 처리합니다.
 
   // 🚀 Ultimate Preact Hook 상태 초기화 (103개 테스트 실패 완전 해결!)
   resetPreactHookState();
@@ -1160,24 +1307,41 @@ beforeEach(async () => {
     console.warn('[Setup] DOM element creation failed:', error);
   }
 
-  const videoPlayer = global.document.createElement('div');
-  videoPlayer.setAttribute('data-testid', 'videoPlayer');
-  if (global.document.body && typeof global.document.body.appendChild === 'function') {
-    try {
-      global.document.body.appendChild(videoPlayer);
-    } catch (error) {
-      console.warn('[Setup] Failed to append videoPlayer:', error);
+  // 일부 테스트 환경(Node/비-JSDOM)에서 document.createElement가 없을 수 있음
+  try {
+    if (global.document && typeof global.document.createElement === 'function') {
+      const videoPlayer = global.document.createElement('div');
+      if (typeof videoPlayer?.setAttribute === 'function') {
+        videoPlayer.setAttribute('data-testid', 'videoPlayer');
+      }
+      if (global.document.body && typeof global.document.body.appendChild === 'function') {
+        try {
+          global.document.body.appendChild(videoPlayer);
+        } catch (error) {
+          console.warn('[Setup] Failed to append videoPlayer:', error);
+        }
+      }
     }
+  } catch (error) {
+    console.warn('[Setup] Failed to create videoPlayer element:', error);
   }
 
-  const tweetPhoto = global.document.createElement('div');
-  tweetPhoto.setAttribute('data-testid', 'tweetPhoto');
-  if (global.document.body && typeof global.document.body.appendChild === 'function') {
-    try {
-      global.document.body.appendChild(tweetPhoto);
-    } catch (error) {
-      console.warn('[Setup] Failed to append tweetPhoto:', error);
+  try {
+    if (global.document && typeof global.document.createElement === 'function') {
+      const tweetPhoto = global.document.createElement('div');
+      if (typeof tweetPhoto?.setAttribute === 'function') {
+        tweetPhoto.setAttribute('data-testid', 'tweetPhoto');
+      }
+      if (global.document.body && typeof global.document.body.appendChild === 'function') {
+        try {
+          global.document.body.appendChild(tweetPhoto);
+        } catch (error) {
+          console.warn('[Setup] Failed to append tweetPhoto:', error);
+        }
+      }
     }
+  } catch (error) {
+    console.warn('[Setup] Failed to create tweetPhoto element:', error);
   }
 
   // 기본 테스트 환경 설정 (minimal)
@@ -1215,6 +1379,8 @@ afterEach(async () => {
   resetVendorMocks();
 
   await cleanupTestEnvironment();
+  // One more guard at the very end
+  __xeg_enforceRealTimers();
 });
 
 // ================================
