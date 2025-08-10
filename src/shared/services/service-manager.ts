@@ -1,25 +1,21 @@
 /**
- * @fileoverview 단순화된 서비스 관리자
- * @description 유저스크립트에 적합한 간단한 서비스 저장소
- * @version 1.0.0 - Phase 5: 서비스 레이어 단순화
+ * @fileoverview REFACTOR: 단순화된 서비스 관리자 - 통합 서비스 사용
+ * @description 유저스크립트에 적합한 간단한 서비스 저장소 + 통합 서비스 마이그레이션
+ * @version 1.1.0 - TDD REFACTOR Phase - 통합 서비스 사용
  */
 
 import { logger } from '@shared/logging';
+import { unifiedServiceManager } from '@shared/services/unified-services';
 
 /**
- * 단순화된 서비스 저장소
- *
- * 복잡한 팩토리 패턴을 제거하고 단순한 인스턴스 저장소로 변경
- * - 직접 인스턴스 저장/조회만 지원
- * - 팩토리 패턴 제거
- * - 생명주기 관리 제거
+ * 하위 호환성을 위한 CoreService 래퍼
+ * @deprecated 새로운 코드에서는 unifiedServiceManager를 직접 사용하세요
  */
 export class CoreService {
   private static instance: CoreService | null = null;
-  private readonly services = new Map<string, unknown>();
 
   private constructor() {
-    logger.debug('[CoreService] 초기화됨');
+    logger.debug('[CoreService] 초기화됨 (통합 서비스 래퍼)');
   }
 
   /**
@@ -33,27 +29,23 @@ export class CoreService {
   }
 
   /**
-   * 서비스 등록 (직접 인스턴스) - 중복 등록 방지
+   * 서비스 등록 (통합 서비스 사용) - 중복 등록 방지
    */
   public register<T>(key: string, instance: T): void {
-    if (this.services.has(key)) {
+    if (unifiedServiceManager.has(key)) {
       logger.warn(`[CoreService] 서비스 중복 등록 시도 차단: ${key}`);
       return; // 중복 등록 차단
     }
 
-    this.services.set(key, instance);
-    logger.debug(`[CoreService] 서비스 등록: ${key}`);
+    unifiedServiceManager.register(key, instance);
+    logger.debug(`[CoreService] 서비스 등록 (via unified): ${key}`);
   }
 
   /**
-   * 서비스 조회
+   * 서비스 조회 (통합 서비스 사용)
    */
   public get<T>(key: string): T {
-    const instance = this.services.get(key);
-    if (!instance) {
-      throw new Error(`서비스를 찾을 수 없습니다: ${key}`);
-    }
-    return instance as T;
+    return unifiedServiceManager.get<T>(key);
   }
 
   /**
@@ -69,21 +61,21 @@ export class CoreService {
   }
 
   /**
-   * 서비스 존재 여부 확인
+   * 서비스 존재 여부 확인 (통합 서비스 사용)
    */
   public has(key: string): boolean {
-    return this.services.has(key);
+    return unifiedServiceManager.has(key);
   }
 
   /**
-   * 등록된 서비스 목록
+   * 등록된 서비스 목록 (통합 서비스 사용)
    */
   public getRegisteredServices(): string[] {
-    return Array.from(this.services.keys());
+    return unifiedServiceManager.getRegisteredServices();
   }
 
   /**
-   * 진단 정보 조회
+   * 진단 정보 조회 (통합 서비스 사용)
    */
   public getDiagnostics(): {
     registeredServices: number;
@@ -91,11 +83,11 @@ export class CoreService {
     services: string[];
     instances: Record<string, boolean>;
   } {
-    const services = Array.from(this.services.keys());
+    const services = unifiedServiceManager.getRegisteredServices();
     const instances: Record<string, boolean> = {};
 
     for (const key of services) {
-      instances[key] = this.services.get(key) !== null;
+      instances[key] = unifiedServiceManager.has(key);
     }
 
     return {
@@ -107,32 +99,20 @@ export class CoreService {
   }
 
   /**
-   * 리소스 정리 및 cleanup
+   * 리소스 정리 및 cleanup (통합 서비스 사용)
    */
   public cleanup(): void {
     logger.debug('[ServiceManager] cleanup 시작');
-
-    // 인스턴스들 중 cleanup 메서드가 있으면 호출
-    for (const [key, instance] of this.services) {
-      if (instance && typeof instance === 'object' && 'cleanup' in instance) {
-        try {
-          (instance as { cleanup(): void }).cleanup();
-          logger.debug(`[ServiceManager] ${key} cleanup 완료`);
-        } catch (error) {
-          logger.warn(`[ServiceManager] ${key} cleanup 실패:`, error);
-        }
-      }
-    }
-
+    unifiedServiceManager.cleanup();
     logger.debug('[ServiceManager] cleanup 완료');
   }
 
   /**
-   * 모든 서비스 초기화 (테스트용)
+   * 모든 서비스 초기화 (통합 서비스 사용)
    */
   public reset(): void {
-    this.services.clear();
-    logger.debug('[ServiceManager] 모든 서비스 초기화됨');
+    unifiedServiceManager.reset();
+    logger.debug('[ServiceManager] 모든 서비스 초기화됨 (via unified)');
   }
 
   // ====================================

@@ -1,10 +1,11 @@
 /**
- * @fileoverview 🟢 GREEN: 통합된 성능 유틸리티 - 단일 진실 공급원
- * @description 모든 throttle, debounce, performance utils를 통합한 단일 파일
- * @version 1.0.0 - TDD GREEN Phase
+ * @fileoverview � REFACTOR: 통합된 성능 유틸리티 - 통합 서비스 사용
+ * @description 모든 throttle, debounce, performance utils를 통합한 단일 파일 + 통합 서비스 마이그레이션
+ * @version 1.1.0 - TDD REFACTOR Phase - 통합 서비스 사용
  */
 
 import { logger } from '@shared/logging';
+import { unifiedTimerService, unifiedResourceService } from '@shared/services/unified-services';
 
 // UI Optimization interfaces (moved from ui-optimizer.ts)
 export interface UIPerformanceMetrics {
@@ -37,16 +38,16 @@ export class PerformanceUtils {
   static measurePerformanceAsync = measurePerformanceAsync;
   static createDebouncer = createDebouncer;
 
-  // Timer & Resource 관리 (통합)
-  static createTimerService = () => new TimerServiceImpl();
-  static getGlobalTimerService = () => globalTimerService;
-  static createResourceService = () => new ResourceService();
-  static getGlobalResourceService = () => globalResourceService;
+  // Timer & Resource 관리 (통합 서비스 사용)
+  static createTimerService = () => unifiedTimerService;
+  static getGlobalTimerService = () => unifiedTimerService;
+  static createResourceService = () => unifiedResourceService;
+  static getGlobalResourceService = () => unifiedResourceService;
 
   // 성능 관리자 접근 (테스트에서 필요)
   static getPerformanceManager = () => ({
-    timers: globalTimerService,
-    resources: globalResourceService,
+    timers: unifiedTimerService,
+    resources: unifiedResourceService,
     metrics: {
       getFunctionCallCount: () => 0, // 기본값
       getMemoryUsage: (() => null) as () => {

@@ -1,71 +1,61 @@
 /**
- * @fileoverview Timer Service - 타이머 관리 서비스
- * @description Phase 4: Service Naming Standardization에서 추가된 기본 타이머 서비스
- * @version 1.0.0
+ * @fileoverview Timer Service - REFACTOR: 통합 서비스 사용
+ * @description 통합된 타이머 서비스를 사용하는 하위 호환성 래퍼
+ * @version 1.1.0 - TDD REFACTOR Phase - 통합 서비스 마이그레이션
  */
 
 import { logger } from '@shared/logging';
+import { unifiedTimerService } from '@shared/services/unified-services';
 
 /**
- * 간단한 타이머 관리 서비스
+ * 하위 호환성을 위한 타이머 서비스 래퍼
+ * @deprecated 새로운 코드에서는 unifiedTimerService를 직접 사용하세요
  */
 export class TimerService {
-  private readonly timers = new Map<string, number>();
-
   /**
    * 타이머 설정
    */
   public setTimeout(key: string, callback: () => void, delay: number): void {
-    this.clearTimeout(key); // 기존 타이머 정리
-    const timerId = window.setTimeout(() => {
-      this.timers.delete(key);
-      callback();
-    }, delay);
-    this.timers.set(key, timerId);
-    logger.debug(`Timer set: ${key} (${delay}ms)`);
+    unifiedTimerService.setTimeout(key, callback, delay);
+    logger.debug(`Timer set via legacy API: ${key} (${delay}ms)`);
   }
 
   /**
    * 타이머 해제
    */
   public clearTimeout(key: string): void {
-    const timerId = this.timers.get(key);
-    if (timerId !== undefined) {
-      window.clearTimeout(timerId);
-      this.timers.delete(key);
-      logger.debug(`Timer cleared: ${key}`);
-    }
+    unifiedTimerService.clearTimeout(key);
+    logger.debug(`Timer cleared via legacy API: ${key}`);
   }
 
   /**
    * 모든 타이머 해제
    */
   public clearAllTimers(): void {
-    for (const [_key, timerId] of this.timers) {
-      window.clearTimeout(timerId);
-    }
-    this.timers.clear();
-    logger.debug('All timers cleared');
+    unifiedTimerService.clearAllTimers();
+    logger.debug('All timers cleared via legacy API');
   }
 
   /**
    * 활성 타이머 수
    */
   public getActiveTimerCount(): number {
-    return this.timers.size;
+    return unifiedTimerService.getActiveTimerCount();
   }
 }
 
 // ================================
-// Phase 4: 표준화된 인스턴스 export
+// REFACTOR: 통합 서비스 사용한 표준화된 인스턴스 export
 // ================================
 
 /**
  * 표준화된 TimerService 인스턴스
+ * @deprecated 새로운 코드에서는 unifiedTimerService를 직접 사용하세요
  */
 export const timerService = new TimerService();
 
 /**
  * Default export (표준 패턴)
+ * @deprecated 새로운 코드에서는 unifiedTimerService를 직접 사용하세요
  */
 export default timerService;

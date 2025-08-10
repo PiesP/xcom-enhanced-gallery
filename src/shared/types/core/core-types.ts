@@ -29,17 +29,44 @@ import type { BaseService } from '@shared/types/app.types';
 export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'destroyed';
 
 /**
- * 서비스 설정
+ * @fileoverview Core 타입 정의
+ * @description Phase 1: 통합 타입 사용으로 전환 완료
+ * @version 2.0.0 - 타입 통합 완료
  */
-export interface ServiceConfig<T = unknown> {
-  factory: () => T | Promise<T>;
-  singleton?: boolean;
-  dependencies?: string[];
-  lazy?: boolean;
-}
+
+// ========================================
+// UNIFIED TYPES RE-EXPORTS
+// ========================================
 
 /**
- * 서비스 의존성 타입
+ * 통합된 타입들을 re-export하여 기존 코드와의 호환성 보장
+ * 모든 공통 타입들은 @shared/types/unified에서 관리됩니다.
+ */
+export type {
+  AppConfig,
+  ServiceConfig,
+  Cleanupable,
+  Disposable,
+  Destroyable,
+  Lifecycle,
+  BaseService,
+  BaseConfig,
+  AnimationConfig,
+  GalleryConfig,
+  ThemeConfig,
+  Point,
+  Size,
+  EventHandler,
+  AsyncEventHandler,
+  LifecycleConfig,
+} from '../unified';
+
+// ========================================
+// CORE-SPECIFIC LEGACY TYPES
+// ========================================
+
+/**
+ * 서비스 의존성 및 팩토리 타입들
  */
 export type ServiceDependency = string;
 export type ServiceFactory<T> = () => T | Promise<T>;
@@ -317,24 +344,13 @@ export interface ErrorInfo {
 }
 
 // ========================================
-// APPLICATION TYPES (from app.types.ts)
+// APPLICATION TYPES - Re-exported from unified
 // ========================================
 
 /**
  * 애플리케이션 설정 (통합된 버전)
  */
-export interface AppConfig {
-  /** 애플리케이션 버전 */
-  version: string;
-  /** 개발 모드 여부 */
-  isDevelopment: boolean;
-  /** 디버그 모드 여부 */
-  debug: boolean;
-  /** 자동 시작 여부 */
-  autoStart: boolean;
-  /** 성능 모니터링 활성화 여부 */
-  performanceMonitoring?: boolean;
-}
+// export interface AppConfig - unified.ts에서 가져옴
 
 /**
  * 애플리케이션 인스턴스 인터페이스
@@ -422,48 +438,28 @@ export interface LifecycleConfig {
 }
 
 // ========================================
-// LIFECYCLE TYPES (from lifecycle.types.ts)
+// LIFECYCLE TYPES - Re-exported from unified
 // ========================================
 
 /**
  * 동기적 정리 인터페이스
  */
-export interface Cleanupable {
-  /**
-   * 동기적 정리 (메모리, 타이머, 이벤트 리스너 등)
-   */
-  cleanup(): void;
-}
+// export interface Cleanupable - unified.ts에서 가져옴
 
 /**
  * 비동기적 정리 인터페이스
  */
-export interface Disposable {
-  /**
-   * 비동기적 정리 (파일, 네트워크, 스트림 등)
-   */
-  dispose(): Promise<void>;
-}
+// export interface Disposable - unified.ts에서 가져옴
 
 /**
  * 완전한 소멸 인터페이스
  */
-export interface Destroyable {
-  /**
-   * 완전한 소멸 (상태 초기화 포함)
-   */
-  destroy(): void;
-}
+// export interface Destroyable - unified.ts에서 가져옴
 
 /**
  * 통합 생명주기 인터페이스
  */
-export interface Lifecycle extends Cleanupable, Disposable, Destroyable {
-  /**
-   * 리소스 상태 확인
-   */
-  isActive(): boolean;
-}
+// export interface Lifecycle - unified.ts에서 가져옴
 
 // ========================================
 // RESULT TYPES (from result.ts)

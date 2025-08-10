@@ -1,5 +1,13 @@
 /**
- * @fileoverview Gallery 타입 정의
+ * @fiexport interface GalleryState {
+  readonly isOpen: boolean;
+  readonly currentIndex: number;
+  readonly medias: readonly unknown[];
+  readonly theme: GalleryTheme;
+}
+
+// Re-export unified GalleryConfig
+export type { GalleryConfig } from '@shared/types/unified';llery 타입 정의
  * @description 갤러리 기능 관련 타입들
  * @version 1.0.0
  */

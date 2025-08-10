@@ -22,13 +22,8 @@ import { injectZIndexStyles } from '@shared/styles/z-index-system';
 /**
  * 갤러리 앱 설정
  */
-export interface GalleryConfig {
-  autoTheme?: boolean;
-  keyboardShortcuts?: boolean;
-  performanceMonitoring?: boolean;
-  extractionTimeout?: number;
-  clickDebounceMs?: number;
-}
+// Re-export unified GalleryConfig with legacy compatibility
+export type { GalleryConfig } from '@shared/types/unified';
 
 /**
  * 갤러리 애플리케이션 - 격리된 시스템

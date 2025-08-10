@@ -14,39 +14,39 @@
 // ================================
 
 /**
- * 기본 서비스 인터페이스
+ * @fileoverview 애플리케이션 타입 정의
+ * @description Phase 1: 통합 타입 사용으로 전환 완료
+ * @version 2.0.0 - 타입 통합 완료
  */
-export interface BaseService {
-  destroy?(): void;
-  initialize?(): Promise<void> | void;
-  isInitialized?(): boolean;
-}
+
+// ========================================
+// UNIFIED TYPES RE-EXPORTS
+// ========================================
 
 /**
- * 정리 가능한 리소스 인터페이스
+ * 통합된 타입들을 re-export하여 기존 코드와의 호환성 보장
+ * 모든 공통 타입들은 @shared/types/unified에서 관리됩니다.
  */
-export interface Cleanupable {
-  /**
-   * 동기적 정리 (메모리, 타이머, 이벤트 리스너 등)
-   */
-  cleanup(): void;
-}
-
-/**
- * 애플리케이션 설정
- */
-export interface AppConfig {
-  /** 애플리케이션 버전 */
-  version: string;
-  /** 개발 모드 여부 */
-  isDevelopment: boolean;
-  /** 디버그 모드 여부 */
-  debug: boolean;
-  /** 자동 시작 여부 */
-  autoStart: boolean;
-  /** 성능 모니터링 활성화 여부 */
-  performanceMonitoring?: boolean;
-}
+export type {
+  AppConfig,
+  ServiceConfig,
+  Cleanupable,
+  Disposable,
+  Destroyable,
+  Lifecycle,
+  BaseService,
+  BaseConfig,
+  AnimationConfig,
+  Point,
+  Size,
+  EventHandler,
+  AsyncEventHandler,
+  LifecycleConfig,
+  RequiredFields,
+  PartialFields,
+  StringRecord,
+  TypeGuard,
+} from './unified';
 
 // ================================
 // Result 패턴 타입들
@@ -128,20 +128,18 @@ export function safe<T>(operation: () => T): Result<T, Error> {
 // 서비스 관련 타입들
 // ================================
 
+// ========================================
+// LEGACY APPLICATION-SPECIFIC TYPES
+// ========================================
+
 /**
  * 서비스 생명주기 상태
  */
 export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'destroyed';
 
 /**
- * 서비스 설정
+ * 서비스 의존성 및 팩토리 타입들
  */
-export interface ServiceConfig<T = unknown> {
-  enabled: boolean;
-  options?: T;
-  dependencies?: ServiceDependency[];
-}
-
 export type ServiceDependency = string;
 export type ServiceFactory<T> = () => T | Promise<T>;
 

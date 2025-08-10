@@ -1,10 +1,11 @@
 /**
- * @fileoverview 통합 성능 유틸리티 - TDD GREEN Phase
- * @description 중복된 debounce/throttle 함수들을 통합한 단일 모듈
- * @version 1.0.0 - TDD GREEN Phase
+ * @fileoverview 통합 성능 유틸리티 - TDD REFACTOR Phase
+ * @description 중복된 debounce/throttle 함수들을 통합한 단일 모듈 + 통합 서비스 사용
+ * @version 1.1.0 - TDD REFACTOR Phase - 통합 서비스 마이그레이션
  */
 
 import { logger } from '@shared/logging';
+import { unifiedTimerService, unifiedResourceService } from '@shared/services/unified-services';
 
 // ================================
 // Core Performance Utilities
@@ -114,69 +115,39 @@ export function measurePerformance<T>(fn: () => T, label?: string): T {
 }
 
 // ================================
-// Timer Service (단순화)
+// MIGRATED: Timer & Resource Services (통합 서비스 사용)
 // ================================
 
-class SimpleTimerService {
-  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+// 통합 서비스를 기존 API로 export (하위 호환성)
+export const TimerService = {
+  set: (id: string, callback: () => void, delay: number) => {
+    unifiedTimerService.set(id, callback, delay);
+  },
+  clear: (id: string) => {
+    unifiedTimerService.clear(id);
+  },
+  clearAll: () => {
+    unifiedTimerService.clearAllTimers();
+  },
+};
 
-  set(id: string, callback: () => void, delay: number): void {
-    this.clear(id);
-    const timerId = setTimeout(() => {
-      this.timers.delete(id);
-      callback();
-    }, delay);
-    this.timers.set(id, timerId);
-  }
-
-  clear(id: string): void {
-    const timerId = this.timers.get(id);
-    if (timerId) {
-      clearTimeout(timerId);
-      this.timers.delete(id);
-    }
-  }
-
-  clearAll(): void {
-    this.timers.forEach(timerId => clearTimeout(timerId));
-    this.timers.clear();
-  }
-}
-
-export const TimerService = new SimpleTimerService();
 export const globalTimerService = TimerService; // Backward compatibility
 
-// ================================
-// Resource Management (단순화)
-// ================================
+export const ResourceService = {
+  register: (cleanup: () => void) => {
+    unifiedResourceService.registerSimple(cleanup);
+  },
+  release: (cleanup: () => void) => {
+    unifiedResourceService.releaseSimple(cleanup);
+  },
+  releaseAll: () => {
+    unifiedResourceService.releaseAll();
+  },
+};
 
-class SimpleResourceService {
-  private readonly resources = new Set<() => void>();
-
-  register(cleanup: () => void): void {
-    this.resources.add(cleanup);
-  }
-
-  release(cleanup: () => void): void {
-    this.resources.delete(cleanup);
-  }
-
-  releaseAll(): void {
-    this.resources.forEach(cleanup => {
-      try {
-        cleanup();
-      } catch (error) {
-        logger.warn('Resource cleanup error:', error);
-      }
-    });
-    this.resources.clear();
-  }
-}
-
-export const ResourceService = new SimpleResourceService();
 export const globalResourceService = ResourceService; // Backward compatibility
 
-// Convenience functions
+// Convenience functions (통합 서비스 사용)
 export const registerResource = (cleanup: () => void) => ResourceService.register(cleanup);
 export const releaseResource = (cleanup: () => void) => ResourceService.release(cleanup);
 export const releaseAllResources = () => ResourceService.releaseAll();
@@ -239,8 +210,8 @@ export class Performance {
 
       cleanup: () => {
         functionCallCount = 0;
-        ResourceService.releaseAll();
-        TimerService.clearAll();
+        unifiedResourceService.releaseAll();
+        unifiedTimerService.clearAllTimers();
 
         if (enableGC && typeof window !== 'undefined' && 'gc' in window) {
           try {
