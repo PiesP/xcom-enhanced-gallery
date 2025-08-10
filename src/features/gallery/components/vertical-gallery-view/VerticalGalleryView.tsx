@@ -35,6 +35,7 @@ type MouseEvent<T = Element> = Event & {
 };
 import { useGalleryItemScroll } from '../../hooks/use-gallery-item-scroll';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
+import { getKeyValueStore } from '@shared/storage/provider';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 
@@ -175,7 +176,8 @@ function VerticalGalleryViewCore({
   // 초기 설정 최적화
   const getInitialFitMode = (): ImageFitMode => {
     try {
-      const saved = localStorage.getItem('xeg-image-fit-mode');
+      const store = getKeyValueStore();
+      const saved = store.getItem<ImageFitMode>('xeg-image-fit-mode', 'fitWidth');
       return (saved as ImageFitMode) || 'fitWidth';
     } catch (error) {
       logger.warn('ImageFitMode 복원 실패:', error);
@@ -389,7 +391,7 @@ function VerticalGalleryViewCore({
 
     updateImageFitMode('original');
     try {
-      localStorage.setItem('xeg-image-fit-mode', 'original');
+      getKeyValueStore().setItem('xeg-image-fit-mode', 'original');
       logger.debug('VerticalGalleryView: 이미지 크기를 원본으로 설정');
     } catch (error) {
       logger.debug('Failed to save image fit mode:', error);
@@ -404,7 +406,7 @@ function VerticalGalleryViewCore({
 
     updateImageFitMode('fitWidth');
     try {
-      localStorage.setItem('xeg-image-fit-mode', 'fitWidth');
+      getKeyValueStore().setItem('xeg-image-fit-mode', 'fitWidth');
       logger.debug('VerticalGalleryView: 이미지 크기를 가로 맞춤으로 설정');
     } catch (error) {
       logger.debug('Failed to save image fit mode:', error);
@@ -419,7 +421,7 @@ function VerticalGalleryViewCore({
 
     updateImageFitMode('fitHeight');
     try {
-      localStorage.setItem('xeg-image-fit-mode', 'fitHeight');
+      getKeyValueStore().setItem('xeg-image-fit-mode', 'fitHeight');
       logger.debug('VerticalGalleryView: 이미지 크기를 세로 맞춤으로 설정');
     } catch (error) {
       logger.debug('Failed to save image fit mode:', error);
@@ -434,7 +436,7 @@ function VerticalGalleryViewCore({
 
     updateImageFitMode('fitContainer');
     try {
-      localStorage.setItem('xeg-image-fit-mode', 'fitContainer');
+      getKeyValueStore().setItem('xeg-image-fit-mode', 'fitContainer');
       logger.debug('VerticalGalleryView: 이미지 크기를 창 맞춤으로 설정');
     } catch (error) {
       logger.debug('Failed to save image fit mode:', error);

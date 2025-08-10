@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { getKeyValueStore } from '@shared/storage/provider';
 import type {
   AppSettings,
   NestedSettingKey,
@@ -325,7 +326,8 @@ export class SettingsService {
    */
   private async loadSettings(): Promise<void> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const store = getKeyValueStore();
+      const stored = store.getItem<string>(STORAGE_KEY);
       if (!stored) {
         logger.debug('저장된 설정이 없음, 기본값 사용');
         return;
@@ -353,7 +355,8 @@ export class SettingsService {
    */
   private async saveSettings(): Promise<void> {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.settings));
+      const store = getKeyValueStore();
+      store.setItem(STORAGE_KEY, JSON.stringify(this.settings));
       logger.debug('설정 저장 완료');
     } catch (error) {
       logger.error('설정 저장 실패:', error);

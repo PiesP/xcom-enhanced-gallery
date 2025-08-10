@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { getKeyValueStore } from '@shared/storage/provider';
 
 /**
  * 토큰 추출 결과
@@ -310,10 +311,10 @@ export class TwitterTokenExtractor {
   private async extractFromConfig(): Promise<TokenExtractionResult> {
     try {
       // SettingsService에서 설정된 토큰 확인
-      // 현재는 순환 의존성을 피하기 위해 localStorage에서 직접 확인
-      const settings = localStorage.getItem('xeg-app-settings');
-      if (settings) {
-        const parsed = JSON.parse(settings);
+      // 순환 의존성을 피하기 위해 Storage Provider를 통해 직접 확인
+      const raw = getKeyValueStore().getItem<string>('xeg-app-settings');
+      if (raw) {
+        const parsed = JSON.parse(raw);
         const token = parsed?.tokens?.bearerToken;
 
         if (token && this.isValidTokenFormat(token)) {
