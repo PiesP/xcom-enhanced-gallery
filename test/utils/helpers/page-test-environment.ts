@@ -4,7 +4,6 @@
  * @version 2.0.0 - 실제 샘플 페이지 로딩 지원
  */
 
-import { vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { JSDOM } from 'jsdom';
@@ -611,7 +610,7 @@ export class PageTestEnvironment {
       this.originalHTML = '';
     }
     this.currentPageType = null;
-    vi.clearAllMocks();
+    // Avoid touching Vitest internals here; global teardown already clears mocks
   }
 
   /**

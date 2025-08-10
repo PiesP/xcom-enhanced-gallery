@@ -108,7 +108,10 @@ function createEnhancedElement(tagName: string): any {
         for (const child of root.children || []) dfs(child);
       };
       dfs(element);
-      return results;
+      // NodeList 유사 객체로 반환 (index 접근, length, item 지원)
+      const nodeListLike: any = { length: results.length, item: (i: number) => results[i] || null };
+      results.forEach((el, i) => (nodeListLike[i] = el));
+      return nodeListLike;
     }),
 
     // 클래스 관리
@@ -219,8 +222,33 @@ export function setupUltimateDOMEnvironment(): void {
         }
         return null;
       }),
-      querySelectorAll: vi.fn(() => []),
-      getElementById: vi.fn(() => null),
+      querySelectorAll: vi.fn((selector?: string) => {
+        const results: any[] = [];
+        const roots = [global.document.body, global.document.documentElement];
+        const collect = (root: any) => {
+          if (!root || typeof root.querySelectorAll !== 'function') return;
+          const arr: any = root.querySelectorAll(selector as any) || [];
+          // arr가 NodeList-like일 수도 있으므로 안전하게 수집
+          const len = typeof arr.length === 'number' ? arr.length : 0;
+          for (let i = 0; i < len; i++) {
+            results.push(arr[i]);
+          }
+        };
+        for (const r of roots) collect(r);
+        return results;
+      }),
+      getElementById: vi.fn((id: string) => {
+        const search = (root: any): any => {
+          if (!root) return null;
+          if (root.id === id) return root;
+          for (const child of root.children || []) {
+            const found = search(child);
+            if (found) return found;
+          }
+          return null;
+        };
+        return search(global.document.body) || search(global.document.documentElement) || null;
+      }),
       getElementsByTagName: vi.fn(() => []),
       getElementsByClassName: vi.fn(() => []),
 
@@ -265,14 +293,27 @@ export function setupUltimateDOMEnvironment(): void {
       doc.createElement = vi.fn((tagName: string) => createEnhancedElement(tagName));
     }
     if (!doc.documentElement) {
-      doc.documentElement = createEnhancedElement('html');
+      // Prefer native createElement to satisfy jsdom type checks
+      const htmlEl =
+        typeof doc.createElement === 'function'
+          ? doc.createElement('html')
+          : (createEnhancedElement('html') as any);
+      doc.documentElement = htmlEl as any;
     }
     if (!doc.head) {
-      doc.head = createEnhancedElement('head');
+      const headEl =
+        typeof doc.createElement === 'function'
+          ? doc.createElement('head')
+          : (createEnhancedElement('head') as any);
+      doc.head = headEl as any;
       doc.documentElement.appendChild(doc.head);
     }
     if (!doc.body) {
-      doc.body = createEnhancedElement('body');
+      const bodyEl =
+        typeof doc.createElement === 'function'
+          ? doc.createElement('body')
+          : (createEnhancedElement('body') as any);
+      doc.body = bodyEl as any;
       doc.documentElement.appendChild(doc.body);
     }
     if (typeof doc.getElementById !== 'function') {
@@ -304,8 +345,9 @@ export function setupUltimateDOMEnvironment(): void {
         const results: any[] = [];
         const roots = [doc.head, doc.body, doc.documentElement];
         for (const r of roots) {
-          const arr = r?.querySelectorAll?.(selector as any) || [];
-          results.push(...arr);
+          const arr: any = r?.querySelectorAll?.(selector as any) || [];
+          const len = typeof arr.length === 'number' ? arr.length : 0;
+          for (let i = 0; i < len; i++) results.push(arr[i]);
         }
         return results;
       });
@@ -398,6 +440,44 @@ export function setupUltimateDOMEnvironment(): void {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     };
+  }
+
+  // 기본 Element에 matches/closest 폴리필 보강
+  try {
+    const E: any = global.Element as any;
+    if (E && E.prototype) {
+      if (typeof E.prototype.matches !== 'function') {
+        E.prototype.matches = function (this: any, selector: string): boolean {
+          try {
+            const list = (this.ownerDocument || global.document).querySelectorAll(selector);
+            const len = typeof list.length === 'number' ? list.length : 0;
+            for (let i = 0; i < len; i++) if (list[i] === this) return true;
+          } catch {
+            // ignore
+            void 0;
+          }
+          return false;
+        };
+      }
+      if (typeof E.prototype.closest !== 'function') {
+        E.prototype.closest = function (this: any, selector: string): any | null {
+          let el: any = this;
+          while (el) {
+            try {
+              if (el.matches(selector)) return el;
+            } catch {
+              // ignore
+              void 0;
+            }
+            el = el.parentElement || el.parentNode || null;
+          }
+          return null;
+        };
+      }
+    }
+  } catch {
+    // ignore
+    void 0;
   }
 
   // HTMLElement 기본 클래스 설정

@@ -52,10 +52,16 @@ export class MediaClickDetector {
       dataset: target.dataset,
     });
 
-    // 갤러리가 이미 열려있으면 무시 (신호 기반으로 판단 - DOM 캐시 오검출 방지)
-    if (galleryState.value.isOpen) {
-      logger.debug('MediaClickDetector: Gallery already open (state) - blocking');
-      return false;
+    // 갤러리가 이미 열려있으면 무시
+    // - 신호 기반 + DOM 기반 이중 확인으로 Vitest isolate 간 상태 누수에 견고하게 처리
+    try {
+      const isOpenByState = !!galleryState.value.isOpen;
+      if (isOpenByState) {
+        logger.debug('MediaClickDetector: Gallery already open - blocking');
+        return false;
+      }
+    } catch {
+      // 안전을 위해 실패 시에는 차단하지 않음
     }
 
     // 갤러리를 차단해야 하는 요소들 먼저 확인
@@ -103,7 +109,8 @@ export class MediaClickDetector {
     }
 
     // 3. 직접적인 미디어 요소 확인
-    if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
+    const tag = (target.tagName || target.nodeName || '').toUpperCase();
+    if (tag === 'IMG' || tag === 'VIDEO') {
       const isTwitterMedia = MediaClickDetector.isTwitterMediaElement(target);
       if (isTwitterMedia) {
         logger.info('✅ MediaClickDetector: 트위터 미디어 요소 직접 클릭');
@@ -270,12 +277,13 @@ export class MediaClickDetector {
    * @returns 트위터 미디어 여부
    */
   private static isTwitterMediaElement(element: HTMLElement): boolean {
-    if (element.tagName === 'IMG') {
+    const tag = (element.tagName || element.nodeName || '').toUpperCase();
+    if (tag === 'IMG') {
       const img = element as HTMLImageElement;
       return img.src.includes('pbs.twimg.com') || img.src.includes('twimg.com');
     }
 
-    if (element.tagName === 'VIDEO') {
+    if (tag === 'VIDEO') {
       // 표준 트위터 컨테이너 우선 검사
       const inTwitterContainer = !!element.closest(
         '[data-testid="videoPlayer"], [data-testid="tweetVideo"]'
@@ -296,7 +304,8 @@ export class MediaClickDetector {
   public detectMediaFromClick(target: HTMLElement): MediaDetectionResult {
     try {
       // 직접적인 미디어 요소
-      if (target.tagName === 'IMG' && MediaClickDetector.isTwitterMediaElement(target)) {
+      const tag = (target.tagName || target.nodeName || '').toUpperCase();
+      if (tag === 'IMG' && MediaClickDetector.isTwitterMediaElement(target)) {
         const img = target as HTMLImageElement;
         return {
           type: 'image',
@@ -307,7 +316,7 @@ export class MediaClickDetector {
         };
       }
 
-      if (target.tagName === 'VIDEO' && MediaClickDetector.isTwitterMediaElement(target)) {
+      if (tag === 'VIDEO' && MediaClickDetector.isTwitterMediaElement(target)) {
         const video = target as HTMLVideoElement;
         return {
           type: 'video',

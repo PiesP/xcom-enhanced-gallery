@@ -117,18 +117,68 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
 
   // 갤러리 오픈 시 재생 중인 모든 비디오 일시정지 (PC 전용 환경 가정)
   try {
-    const videos = document.querySelectorAll('video');
-    videos.forEach(videoEl => {
-      // 안전 호출 (테스트 환경에서 mock됨)
+    const collected: HTMLVideoElement[] = [];
+
+    // 1) 표준 querySelectorAll → 배열로 안전 변환
+    try {
+      const nodeList = document.querySelectorAll('video');
+      const arr = Array.from ? Array.from(nodeList) : Array.prototype.slice.call(nodeList);
+      for (const el of arr) {
+        if (el && el.tagName === 'VIDEO') {
+          collected.push(el as HTMLVideoElement);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 2) getElementsByTagName 보조
+    try {
+      const byTag = document.getElementsByTagName?.('video');
+      if (byTag && typeof byTag.length === 'number') {
+        for (let i = 0; i < byTag.length; i++) collected.push(byTag[i] as HTMLVideoElement);
+      }
+    } catch {
+      // ignore
+    }
+
+    // 3) 구조 순회 폴백 (최후의 보루)
+    try {
+      const docAny: unknown = document;
+      const root =
+        (docAny as { body?: unknown; documentElement?: unknown }).body ||
+        (docAny as { body?: unknown; documentElement?: unknown }).documentElement;
+      const visit = (node: unknown) => {
+        if (!node || typeof node !== 'object') return;
+        const n = node as { tagName?: string; nodeName?: string; children?: unknown };
+        const tn = (n.tagName || n.nodeName || '') as string;
+        if (tn && tn.toUpperCase() === 'VIDEO') collected.push(node as HTMLVideoElement);
+        const kids = n.children as unknown as { length?: number; [index: number]: unknown };
+        const len = kids && typeof kids.length === 'number' ? kids.length : 0;
+        for (let i = 0; i < len; i++) visit((kids as { [index: number]: unknown })[i]);
+      };
+      visit(root as unknown);
+    } catch {
+      // ignore
+    }
+
+    // 중복 제거
+    const unique = Array.from(new Set(collected));
+    for (const videoEl of unique) {
       try {
-        if (!videoEl.paused) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (videoEl as any).pause?.();
+        // paused 속성이 없으면 일단 호출 시도
+        const vUnknown: unknown = videoEl as unknown;
+        const pausedProp = (vUnknown as { paused?: boolean }).paused;
+        const isPaused = typeof pausedProp === 'boolean' ? pausedProp : false;
+        if (!isPaused) {
+          // pause가 존재하면 호출
+          const maybePause = (vUnknown as { pause?: () => void }).pause;
+          if (typeof maybePause === 'function') maybePause();
         }
       } catch {
         /* ignore 개별 비디오 오류 */
       }
-    });
+    }
   } catch {
     // DOM 접근 실패는 무시 (비브라우저/테스트 환경 안전성)
   }

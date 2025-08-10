@@ -12,55 +12,26 @@ import {
   setupBrowserEnvironment,
   clearBrowserEnvironment,
 } from './__mocks__/browser-environment.mock';
+// Preact 훅 환경 안정화 (turbo 모드에서 __H/"Cannot read properties of undefined" 문제 방지)
+import { setupUltimatePreactTestEnvironment } from './utils/mocks/ultimate-preact-environment.js';
+import { ensureScrollAPIs, ensureNavigationAPI } from './utils/mocks/browser-polyfills.js';
+import { setupCommonDOMMocks } from './utils/mocks/common-dom-mocks.js';
+
+// 중요: hooks-bundled 등 모듈이 로드되기 전에 Preact 모듈을 mock 해야 합니다.
+// setupFiles는 테스트 파일 로딩 전에 실행되므로, 여기서 즉시 호출하여 vi.mock을 등록합니다.
+setupUltimatePreactTestEnvironment();
 
 // DOM API 전역 설정
 beforeAll(() => {
   // 브라우저 환경 설정
   setupBrowserEnvironment();
 
-  // JSDOM 환경 설정
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: vi.fn().mockImplementation(query => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  });
+  // 공용 폴리필 적용
+  ensureScrollAPIs(window as any);
+  ensureNavigationAPI(window as any);
 
-  // ResizeObserver 모킹
-  global.ResizeObserver = vi.fn().mockImplementation(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  }));
-
-  // IntersectionObserver 모킹
-  global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  }));
-
-  // requestAnimationFrame 모킹 (configurable로 설정하여 teardown 시 삭제 가능)
-  Object.defineProperty(global, 'requestAnimationFrame', {
-    value: vi.fn(callback => {
-      return setTimeout(callback, 16);
-    }),
-    writable: true,
-    configurable: true,
-  });
-
-  Object.defineProperty(global, 'cancelAnimationFrame', {
-    value: vi.fn(id => {
-      clearTimeout(id);
-    }),
-    writable: true,
-    configurable: true,
-  });
+  // 공통 DOM 모킹 적용 (matchMedia/Observers/RAF/CSS.supports 등)
+  setupCommonDOMMocks(window as any);
 
   // Performance API 모킹 (더 완전한 버전)
   if (!global.performance) {
@@ -75,35 +46,9 @@ beforeAll(() => {
     } as any;
   }
 
-  // CSS.supports 모킹
-  if (!global.CSS) {
-    global.CSS = {
-      supports: vi.fn((property: string) => {
-        // 기본적인 CSS 기능들은 지원하는 것으로 가정
-        const supportedFeatures = [
-          'container-type',
-          'color',
-          'margin-inline-start',
-          'contain',
-          'grid-template-rows',
-          'layer',
-        ];
-        return supportedFeatures.includes(property);
-      }),
-    } as any;
-  }
+  // CSS.supports는 setupCommonDOMMocks에서 처리됨
 
-  // URL 모킹
-  Object.defineProperty(window, 'location', {
-    value: {
-      href: 'https://x.com/home',
-      hostname: 'x.com',
-      pathname: '/home',
-      search: '',
-      hash: '',
-    },
-    writable: true,
-  });
+  // URL 설정은 browser-environment.mock에서 안전하게 처리합니다 (재정의 금지)
 
   // 사용자 스크립트 API 모킹
   global.GM_setValue = vi.fn();

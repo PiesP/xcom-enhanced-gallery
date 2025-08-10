@@ -147,8 +147,22 @@ export function safeGetBoundingClientRect(el: Element | null): DOMRect | null {
 export function isValidCSSSelector(selector: string): boolean {
   if (!selector || typeof selector !== 'string') return false;
   try {
-    const testElement = document.createElement('div');
-    testElement.querySelector(selector);
+    // 1) 빠른 경로: CSS.supports('selector(...)') 사용 가능 시 정확한 문법 검증
+    // 일부 환경에서는 미구현일 수 있으므로 try/catch
+    const cssApi: unknown = (globalThis as unknown as { CSS?: { supports?: unknown } }).CSS;
+    if (cssApi && typeof (cssApi as { supports?: unknown }).supports === 'function') {
+      const supportsSelector = (cssApi as { supports: (decl: string) => boolean }).supports(
+        `selector(${selector})`
+      );
+      if (supportsSelector) return true;
+      // supports가 false여도 브라우저별 차이 가능하므로 후속 경로로 재확인
+    }
+    // 2) querySelector로 검증 (jsdom에서도 동작). invalid면 예외 발생
+    const probe = document.createElement('div');
+    // 루트에서 실행해야 문법 오류를 확실히 잡음
+    document.documentElement?.appendChild?.(probe);
+    probe.querySelector(selector);
+    probe.remove?.();
     return true;
   } catch {
     return false;

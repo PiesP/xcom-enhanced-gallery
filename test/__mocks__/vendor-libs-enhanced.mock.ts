@@ -409,7 +409,8 @@ export function setupVendorMocks() {
 
 export function resetVendorMocks() {
   // 모든 mock 함수 초기화
-  vi.clearAllMocks();
+  // Intentionally avoid calling Vitest APIs (e.g., vi.clearAllMocks) here to
+  // prevent late access to Vitest worker state during runner teardown.
 
   // TanStack Query 상태 초기화
   if (typeof globalThis !== 'undefined') {

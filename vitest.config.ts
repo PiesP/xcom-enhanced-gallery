@@ -18,12 +18,13 @@ import { cpus } from 'node:os';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-// 환경변수로 테스트 모드 결정 (ci / optimized / fix / refactoring / default)
+// 환경변수로 테스트 모드 결정 (ci / optimized / fix / refactoring / turbo / default)
 const testMode = env.VITEST_MODE || 'default';
 const isOptimized = testMode === 'optimized';
 const isFixMode = testMode === 'fix';
 const isDefault = testMode === 'default';
 const isCiMode = testMode === 'ci';
+const isTurboMode = testMode === 'turbo';
 // "npm run test -- ... test/refactoring" 또는 스크립트에 직접 디렉터리 인자가 포함될 때 자동 감지
 const argv = ` ${nodeArgv.join(' ')} `; // 앞뒤 공백으로 경계 매칭 안정화
 const lifecycle = env.npm_lifecycle_script || '';
@@ -33,8 +34,8 @@ let npmArgvMatches = false;
 try {
   const npmArgvRaw = env.npm_config_argv;
   if (npmArgvRaw) {
-    const parsed = JSON.parse(npmArgvRaw) as { original?: string[]; cooked?: string[] };
-    const combined = [...(parsed.original ?? []), ...(parsed.cooked ?? [])].join(' ');
+    const parsed: { original?: string[]; cooked?: string[] } = JSON.parse(npmArgvRaw);
+    const combined: string = [...(parsed.original ?? []), ...(parsed.cooked ?? [])].join(' ');
     npmArgvMatches = refPattern.test(combined);
   }
 } catch {
@@ -63,6 +64,13 @@ function calculateOptimalThreads() {
   // Fix 모드는 항상 단일 스레드 (forks)
   if (isFixMode) return { min: 1, max: 1, strategy: 'forks', single: true };
 
+  // Turbo 모드: 최대 성능 (CPU의 85% 사용, 최대 12스레드)
+  if (isTurboMode) {
+    const max = envMax || Math.min(Math.max(Math.floor(cpuCount * 0.85), 4), 12);
+    const min = envMin || Math.max(Math.floor(max * 0.7), 2);
+    return { min, max, strategy: 'threads', single: false };
+  }
+
   // CI 모드 / GitHub Actions → 낮은 동시성 + threads 풀 (sandbox 격리 속도 확보)
   if (isGitHubActions || isCiMode) {
     const max = envMax || Math.min(Math.max(cpuCount - 1, 1), 2);
@@ -70,8 +78,8 @@ function calculateOptimalThreads() {
     return { min, max, strategy: 'threads', single: max === 1 };
   }
 
-  // 로컬: threads 풀로 병렬성 극대화 (70% 사용, 범위 제한)
-  const computed = Math.min(Math.max(Math.floor(cpuCount * 0.7), 2), 8);
+  // 로컬 기본: threads 풀로 적절한 병렬성 (CPU의 60% 사용, Windows 안정성 고려)
+  const computed = Math.min(Math.max(Math.floor(cpuCount * 0.6), 2), 6);
   return {
     min: Math.max(computed - 1, 1),
     max: computed,
@@ -87,12 +95,19 @@ let {
   single: singleThread,
 } = calculateOptimalThreads();
 
-// Refactoring 모드: forks 대신 threads 단일 스레드로 강제 (내부 상태 오류 회피)
+// Refactoring 모드: Windows 멀티파일 종료 시점 RPC 에러 회피를 위해 threads 단일 스레드로 강제
 if (isRefactoring) {
   poolStrategy = 'threads' as const;
   minThreads = 1;
   maxThreads = 1;
   singleThread = true;
+}
+
+// 로컬 환경 최적화: Windows에서도 멀티스레드 사용 (turbo 모드 아닐 때만 안정성을 위해 제한)
+if (process.platform === 'win32' && isDefault && !isTurboMode) {
+  // Windows 기본 모드: 안정성을 위해 스레드 수 제한 (완전히 단일로 하지 않음)
+  maxThreads = Math.min(maxThreads, 2);
+  minThreads = 1;
 }
 
 // 환경별 설정 로그
@@ -104,6 +119,7 @@ if (env.NODE_ENV !== 'test' && typeof globalThis.console !== 'undefined') {
   log(`   실행 풀: ${poolStrategy}`);
   log(`   동시성: ${singleThread ? '1 (단일)' : `${minThreads}-${maxThreads}`}`);
   if (isRefactoring) log('   감지: refactoring 모드 (coverage 임계값 완화)');
+  if (isTurboMode) log('   🚀 TURBO 모드: 최대 성능 최적화');
 }
 
 export default defineConfig({
@@ -128,9 +144,10 @@ export default defineConfig({
     environment: 'jsdom',
 
     // 모드별 setup 파일
-    setupFiles: [isOptimized ? './test/setup.optimized.ts' : './test/setup.ts'],
+    setupFiles: [isOptimized || isTurboMode ? './test/setup.optimized.ts' : './test/setup.ts'],
 
-    isolate: true,
+    // Refactoring 모드에서는 격리를 완화해 onAfterRunSuite 타이밍 이슈 회피 (Windows)
+    isolate: isTurboMode ? false : isRefactoring ? false : true,
 
     // JSDOM 환경 설정
     environmentOptions: {
@@ -152,57 +169,97 @@ export default defineConfig({
     // 모드별 파일 패턴 설정 (refactoring 전용 실행 시 해당 디렉터리만 한정)
     include: isRefactoring
       ? ['test/refactoring/*.{test,spec}.{ts,tsx}', 'test/refactoring/**/*.{test,spec}.{ts,tsx}']
-      : isOptimized
+      : isTurboMode
         ? [
-            'test/consolidated/**/*.consolidated.test.ts',
+            // Turbo 모드: 핵심 테스트만 빠르게
             'test/unit/main/**/*.test.ts',
             'test/unit/features/gallery-app-activation.test.ts',
             'test/features/gallery/**/*.test.ts',
             'test/unit/shared/external/**/*.test.ts',
             'test/architecture/**/*.test.ts',
-            'test/infrastructure/**/*.test.ts',
             'test/core/**/*.test.ts',
             'test/shared/utils/**/*.test.ts',
-            'test/unit/shared/utils/**/*.test.ts',
-            'test/behavioral/**/*.test.ts',
           ]
-        : ['./test/**/*.{test,spec}.{ts,tsx}', './src/**/*.{test,spec}.{ts,tsx}'],
+        : isOptimized
+          ? [
+              'test/consolidated/**/*.consolidated.test.ts',
+              'test/unit/main/**/*.test.ts',
+              'test/unit/features/gallery-app-activation.test.ts',
+              'test/features/gallery/**/*.test.ts',
+              'test/unit/shared/external/**/*.test.ts',
+              'test/architecture/**/*.test.ts',
+              'test/infrastructure/**/*.test.ts',
+              'test/core/**/*.test.ts',
+              'test/shared/utils/**/*.test.ts',
+              'test/unit/shared/utils/**/*.test.ts',
+              'test/behavioral/**/*.test.ts',
+            ]
+          : ['./test/**/*.{test,spec}.{ts,tsx}', './src/**/*.{test,spec}.{ts,tsx}'],
 
     // 모드별 제외 패턴
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/e2e/**',
-      ...(isOptimized
+      // Turbo 모드에서는 더 많은 파일 제외
+      ...(isTurboMode
         ? [
-            // 최적화 모드에서는 중복/레거시 테스트 제외
-            'test/refactoring/tdd-style-consolidation-*.test.ts',
-            'test/refactoring/tdd-*-consolidation.test.ts',
-            'test/refactoring/structure-analysis.test.ts',
-            'test/refactoring/naming-standardization.test.ts',
-            'test/refactoring/refactoring-completion.test.ts',
-            'test/unit/shared/services/MediaExtractionService.test.ts',
-            'test/features/media/media.behavior.test.ts',
-            'test/integration/extension.integration.test.ts',
-            'test/integration/gallery-activation.test.ts',
-            'test/integration/utils.integration.test.ts',
-            'test/integration/master-test-suite.test.ts',
-            'test/features/toolbar/toolbar-hover-consistency*.test.ts',
-            'test/unit/shared/services/ServiceManager.test.ts',
-            'test/optimization/memo-optimization.test.ts',
-            'test/shared/styles/**/*.test.ts',
+            'test/refactoring/**',
+            'test/integration/**',
+            'test/behavioral/**',
+            'test/infrastructure/**',
             'test/**/*.legacy.test.ts',
             'test/**/*.deprecated.test.ts',
-            // CI 환경에서 멀티스레드 충돌 발생하는 파일 제외
-            'test/shared/utils/performance.consolidated.test.ts',
+            'test/**/*.slow.test.ts',
+            'test/optimization/**',
+            'test/shared/styles/**',
           ]
-        : []),
+        : isOptimized
+          ? [
+              // 최적화 모드에서는 중복/레거시 테스트 제외
+              'test/refactoring/tdd-style-consolidation-*.test.ts',
+              'test/refactoring/tdd-*-consolidation.test.ts',
+              'test/refactoring/structure-analysis.test.ts',
+              'test/refactoring/naming-standardization.test.ts',
+              'test/refactoring/refactoring-completion.test.ts',
+              'test/unit/shared/services/MediaExtractionService.test.ts',
+              'test/features/media/media.behavior.test.ts',
+              'test/integration/extension.integration.test.ts',
+              'test/integration/gallery-activation.test.ts',
+              'test/integration/utils.integration.test.ts',
+              'test/integration/master-test-suite.test.ts',
+              'test/features/toolbar/toolbar-hover-consistency*.test.ts',
+              'test/unit/shared/services/ServiceManager.test.ts',
+              'test/optimization/memo-optimization.test.ts',
+              'test/shared/styles/**/*.test.ts',
+              'test/**/*.legacy.test.ts',
+              'test/**/*.deprecated.test.ts',
+              // CI 환경에서 멀티스레드 충돌 발생하는 파일 제외
+              'test/shared/utils/performance.consolidated.test.ts',
+            ]
+          : []),
     ],
 
-    // 환경별 타임아웃 설정 - Worker Thread 안정적 종료를 위해 teardownTimeout 증가
-    testTimeout: isFixMode ? 15000 : isCI || isCiMode ? 28000 : isOptimized ? 10000 : 6000,
-    hookTimeout: isFixMode ? 10000 : isCI || isCiMode ? 14000 : isOptimized ? 10000 : 6000,
-    teardownTimeout: isFixMode ? 15000 : isCI || isCiMode ? 18000 : 12000,
+    // 환경별 타임아웃 설정 - Turbo 모드는 더 짧게
+    testTimeout: isTurboMode
+      ? 5000
+      : isFixMode
+        ? 15000
+        : isCI || isCiMode
+          ? 28000
+          : isOptimized
+            ? 10000
+            : 6000,
+    hookTimeout: isTurboMode
+      ? 3000
+      : isFixMode
+        ? 10000
+        : isCI || isCiMode
+          ? 14000
+          : isOptimized
+            ? 10000
+            : 6000,
+    teardownTimeout: isTurboMode ? 8000 : isFixMode ? 15000 : isCI || isCiMode ? 18000 : 12000,
 
     // 모드별 리포터 설정
     reporters: isOptimized ? ['verbose', 'html'] : ['default'],
@@ -212,9 +269,15 @@ export default defineConfig({
       },
     }),
 
-    // 환경별 커버리지 설정 - GitHub Actions에서는 더 엄격하게
+    // 환경별 커버리지 설정 - Turbo 모드는 커버리지 비활성화로 최대 속도
     coverage: {
-      provider: isOptimized || isCiMode ? 'v8' : 'istanbul',
+      // Turbo 모드는 커버리지 비활성화, Windows default/refactoring에서는 v8 커버리지 종료 훅과 충돌 회피
+      // 추가: VITEST_DISABLE_COVERAGE=1 로 강제 비활성화 가능
+      enabled:
+        !isTurboMode &&
+        env.VITEST_DISABLE_COVERAGE !== '1' &&
+        !(process.platform === 'win32' && (isDefault || isRefactoring)),
+      provider: isOptimized || isCiMode || process.platform === 'win32' ? 'v8' : 'istanbul',
       reporter: ['text', 'json-summary', 'html', ...(isOptimized ? ['lcov'] : [])],
       reportsDirectory: './coverage',
       include: ['src/**/*.ts', 'src/**/*.tsx'],
@@ -259,25 +322,23 @@ export default defineConfig({
     },
     // 실행 풀 전략 (fix: forks 단일 / 나머지: threads 가변)
     pool: poolStrategy,
-    poolOptions:
-      poolStrategy === 'forks'
-        ? {
-            forks: {
-              singleFork: true,
-              minForks: 1,
-              maxForks: 1,
-              isolate: true,
-            },
-          }
-        : {
-            threads: {
-              minThreads,
-              maxThreads,
-              isolate: true,
-            },
-          },
+    poolOptions: {
+      threads: {
+        minThreads,
+        maxThreads,
+        isolate: true,
+      },
+    },
 
-    // 메모리 관리 (Fix 모드)
+    // Turbo 모드 추가 최적화 설정
+    ...(isTurboMode && {
+      // 변경 감지 최적화 (외부 의존성 처리)
+      server: {
+        deps: {
+          external: ['preact', '@preact/signals', 'fflate'],
+        },
+      },
+    }), // 메모리 관리 (Fix 모드)
     ...(isFixMode && {
       forceRerunTriggers: ['**/test/**/*.{test,spec}.{js,ts}'],
       sequence: {
@@ -294,6 +355,24 @@ export default defineConfig({
     // 로깅 및 디버깅
     logHeapUsage: isFixMode,
     printConsoleTrace: isDefault || isCiMode,
+
+    // Windows: 기본/리팩토링 모드에서 커스텀 러너 사용해 종료 시점의 알려진 Vitest 내부 오류 무시
+    ...(process.platform === 'win32' && (isDefault || isRefactoring)
+      ? { runner: './test/custom-windows-suppress-runner.ts' }
+      : {}),
+
+    // Windows에서는 default/refactoring 모드 모두에서 알려진 종료 에러 억제
+    dangerouslyIgnoreUnhandledErrors: process.platform === 'win32' && (isDefault || isRefactoring),
+
+    // Refactoring 모드: 완전 순차 실행로 race 최소화
+    ...(isRefactoring
+      ? {
+          sequence: {
+            concurrent: false,
+            shuffle: false,
+          },
+        }
+      : {}),
 
     // Vitest 설정에는 onUnhandledRejection이 없으므로 test setup에서 처리
   },

@@ -67,11 +67,33 @@ export function injectZIndexStyles(): void {
 
   const existingStyle = document.getElementById('xeg-zindex-styles');
   if (existingStyle) {
-    existingStyle.remove();
+    // 일부 테스트/모킹 환경에서는 Element.remove가 없을 수 있음
+    try {
+      type Removable = Element & { remove?: () => void };
+      const el = existingStyle as Removable;
+      if (typeof el.remove === 'function') {
+        el.remove();
+      } else {
+        existingStyle.parentNode?.removeChild(existingStyle);
+      }
+    } catch {
+      existingStyle.parentNode?.removeChild(existingStyle);
+    }
   }
 
   const styleElement = document.createElement('style');
   styleElement.id = 'xeg-zindex-styles';
+
+  // 일부 테스트/모킹 환경에서 tagName이 누락될 수 있으므로 안전하게 설정
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyStyle = styleElement as any;
+    if (typeof anyStyle.tagName === 'undefined') {
+      anyStyle.tagName = 'STYLE';
+    }
+  } catch {
+    // ignore: 실제 DOM에서는 읽기 전용일 수 있음
+  }
 
   try {
     styleElement.textContent = generateZIndexCSS();

@@ -63,13 +63,79 @@ export function safeArrayGet<T>(array: T[] | undefined | null, index: number): T
  * NodeList 안전 접근
  */
 export function safeNodeListAccess<T extends Node>(
-  nodeList: NodeListOf<T> | T[] | undefined | null,
+  nodeList:
+    | { length: number; [n: number]: T; item?: (index: number) => T | null }
+    | NodeListOf<T>
+    | ArrayLike<T>
+    | undefined
+    | null,
   index: number
 ): T | undefined {
-  if (!nodeList || index < 0 || index >= nodeList.length) {
-    return undefined;
+  type ArrayLikeWithItem = ArrayLike<T> & { item?: (i: number) => T | null };
+  const list = nodeList as ArrayLikeWithItem;
+  if (!list || typeof list.length !== 'number') return undefined;
+  if (index < 0 || index >= list.length) return undefined;
+
+  // 1) NodeList/HTMLCollection 우선: item(index)
+  try {
+    const itemFn = list.item as ((i: number) => T | null) | undefined;
+    if (typeof itemFn === 'function') {
+      const item = itemFn.call(list, index);
+      if (item != null) return item as T;
+    }
+  } catch {
+    // ignore
   }
-  return nodeList[index];
+
+  // 2) 직접 인덱스 접근 (배열/유사배열)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const byIndex = (list as any)[index] as T | undefined;
+    if (byIndex !== undefined) return byIndex;
+  } catch {
+    // ignore
+  }
+
+  // 3) 이터러블이면 Array.from으로 접근
+  try {
+    const iteratorFn = (list as unknown as { [Symbol.iterator]?: () => Iterator<T> })[
+      Symbol.iterator
+    ];
+    if (typeof iteratorFn === 'function') {
+      const arr = Array.from(list as unknown as Iterable<T>) as T[];
+      if (index < arr.length) return arr[index];
+    }
+  } catch {
+    // ignore
+  }
+
+  // 4) array-like을 강제 슬라이스로 변환하여 접근
+  try {
+    const asArray = Array.prototype.slice.call(list as unknown as { length: number }) as T[];
+    if (index < asArray.length) return asArray[index];
+  } catch {
+    // ignore
+  }
+
+  // 5) 최후: length 기반 수동 순회 (item 또는 인덱스)
+  try {
+    const len = list.length;
+    if (index < len) {
+      // 재시도: item → 인덱스
+      const itemFn = list.item as ((i: number) => T | null) | undefined;
+      if (typeof itemFn === 'function') {
+        const v = itemFn.call(list, index);
+        if (v != null) return v as T;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const v2 = (list as any)[index] as T | undefined;
+      if (v2 !== undefined) return v2;
+    }
+  } catch {
+    // ignore
+  }
+
+  return undefined;
 }
 
 // ========== 정규식 매치 유틸리티 ==========

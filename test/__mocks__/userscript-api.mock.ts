@@ -144,9 +144,8 @@ export function resetMockApiState() {
   mockApiState.notifications.length = 0;
   mockApiState.isAutoDownloadEnabled = false;
   mockApiState.lastDownloadCall = null;
-
-  // Mock 함수 호출 카운터 초기화
-  vi.clearAllMocks();
+  // Vitest 내부 상태 접근을 피하기 위해 teardown 단계에서는 Vitest API를 호출하지 않습니다.
+  // 각 테스트 내부에서 필요한 경우 개별적으로 vi.clearAllMocks 등을 호출하도록 합니다.
 }
 
 /**

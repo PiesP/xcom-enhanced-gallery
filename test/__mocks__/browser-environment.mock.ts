@@ -240,17 +240,16 @@ export function setupBrowserEnvironment() {
     writable: true,
   });
 
-  // Location & History
-  Object.defineProperty(globalThis, 'location', {
-    value: mockBrowserExtensionAPI.location,
-    writable: true,
-  });
-
-  // window.location도 설정
-  Object.defineProperty(window, 'location', {
-    value: mockBrowserExtensionAPI.location,
-    writable: true,
-  });
+  // Location: jsdom의 window.location은 재정의가 불가하므로 안전하게 URL만 업데이트
+  try {
+    const targetUrl = 'https://x.com/home';
+    if (typeof globalThis.location !== 'undefined' && globalThis.location.href !== targetUrl) {
+      // 히스토리를 사용하여 URL을 업데이트 (권장 방법)
+      globalThis.history?.replaceState?.(null, '', targetUrl);
+    }
+  } catch {
+    // noop: 환경에 따라 location 변경이 불가할 수 있음
+  }
 
   Object.defineProperty(globalThis, 'history', {
     value: mockHistory,
@@ -277,11 +276,12 @@ export function setupBrowserEnvironment() {
   });
 
   // URL API
-  globalThis.URL = {
-    ...globalThis.URL,
-    createObjectURL: mockBrowserExtensionAPI.URL.createObjectURL,
-    revokeObjectURL: mockBrowserExtensionAPI.URL.revokeObjectURL,
-  };
+  // - 기존 URL 생성자를 대체하지 않고 정적 메서드만 보강합니다.
+  const NativeURL = globalThis.URL as any;
+  if (typeof NativeURL === 'function') {
+    NativeURL.createObjectURL = mockBrowserExtensionAPI.URL.createObjectURL;
+    NativeURL.revokeObjectURL = mockBrowserExtensionAPI.URL.revokeObjectURL;
+  }
 }
 
 /**
