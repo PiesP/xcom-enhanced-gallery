@@ -10,7 +10,7 @@ import { setupCommonDOMMocks } from './utils/mocks/common-dom-mocks.js';
 
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
-import { setupVendorMocks, resetVendorMocks } from './__mocks__/vendor-libs-enhanced.mock.js';
+import { setupVendorMocks, resetVendorMocks } from './__mocks__/vendor-libs.mock.js';
 import {
   setupUltimateConsoleEnvironment,
   cleanupUltimateConsoleEnvironment,
