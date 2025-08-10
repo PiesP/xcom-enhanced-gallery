@@ -274,14 +274,22 @@ const errorHandler = ErrorHandler.getInstance();
  */
 export async function safeAsync<T>(
   operation: () => Promise<T>,
-  context: string,
+  context?: string,
   defaultValue?: T
-): Promise<T | undefined> {
+): Promise<{ success: boolean; data?: T; error?: Error }> {
   try {
-    return await operation();
+    const result = await operation();
+    return { success: true, data: result };
   } catch (error) {
-    await errorHandler.handleAsync(error as Error, context);
-    return defaultValue;
+    const err = error instanceof Error ? error : new Error(String(error));
+    if (context) {
+      await errorHandler.handleAsync(err, context);
+    }
+    return {
+      success: false,
+      error: err,
+      ...(defaultValue !== undefined && { data: defaultValue }),
+    };
   }
 }
 
@@ -351,6 +359,13 @@ export class AppErrorHandler {
    */
   public destroy(): void {
     this.errorHandler.destroyGlobalHandlers();
+  }
+
+  /**
+   * 에러 처리
+   */
+  public handleError(error: Error, context?: string): void {
+    this.errorHandler.handle(error, context);
   }
 }
 

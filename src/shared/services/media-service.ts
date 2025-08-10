@@ -1064,11 +1064,6 @@ export type { UsernameExtractionResult };
 // ================================
 
 /**
- * 표준화된 MediaService 인스턴스
+ * Default export (표준 패턴) - 클래스만 export
  */
-export const mediaService = new MediaService();
-
-/**
- * Default export (표준 패턴)
- */
-export default mediaService;
+export default MediaService;

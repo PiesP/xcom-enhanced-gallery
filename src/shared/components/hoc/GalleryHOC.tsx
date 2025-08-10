@@ -222,7 +222,8 @@ function createEventHandlers<P extends GalleryComponentProps>(
   props: P,
   options: Required<GalleryOptions>
 ): Partial<GalleryComponentProps> {
-  const handlers: Partial<GalleryComponentProps> = {};
+  // 타입 단언을 통해 readonly 제약 우회
+  const handlers = {} as Record<string, unknown>;
 
   // 클릭 이벤트 핸들러
   if (options.events.preventClick || options.events.blockTwitterNative) {
@@ -268,7 +269,7 @@ function createEventHandlers<P extends GalleryComponentProps>(
     };
   }
 
-  return handlers;
+  return handlers as Partial<GalleryComponentProps>;
 }
 
 /**

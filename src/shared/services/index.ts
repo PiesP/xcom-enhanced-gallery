@@ -80,7 +80,7 @@ export {
 export { AnimationService, animationService } from './animation-service';
 
 // 2. 통합 미디어 서비스 (BulkDownload 완전 통합)
-export { MediaService, mediaService } from './media-service';
+export { MediaService } from './media-service';
 export { extractUsername, parseUsernameFast } from './media-service';
 export type {
   UsernameExtractionResult,

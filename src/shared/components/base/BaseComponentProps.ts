@@ -1,36 +1,53 @@
 /**
- * @fileoverview 기본 컴포넌트 Props 통합
- * @description Phase 2-3A: 모든 컴포넌트의 공통 Props 기반 클래스
- * @version 1.0.0
+ * @fileoverview 표준화된 기본 컴포넌트 Props
+ * @description TDD Phase 5a: 모든 컴포넌트의 공통 Props 표준화
+ * @version 2.0.0 - Component Props Standardization
  */
 
 import type { ComponentChildren } from '@shared/external/vendors';
 
 /**
  * 모든 컴포넌트의 최상위 기본 Props
- * GalleryComponentProps + BaseUIComponentProps 통합
+ * TDD Phase 5a: Props 표준화
  */
 export interface BaseComponentProps {
   /** 자식 컴포넌트 */
   children?: ComponentChildren;
   /** 추가 클래스명 */
   className?: string;
-  /** 테스트 ID */
+  /** 컴포넌트 ID */
+  id?: string;
+  /** 테스트 ID - 표준화된 camelCase */
+  testId?: string;
+  /** 테스트 ID - data 속성 호환성 */
   'data-testid'?: string;
-  /** 접근성 레이블 */
+
+  /* === 접근성 Props 표준화 === */
+  /** 접근성 레이블 - 표준화된 camelCase */
+  ariaLabel?: string;
+  /** 접근성 레이블 - kebab-case 호환성 */
   'aria-label'?: string;
-  /** ARIA 속성들 */
+  /** ARIA describedby - 표준화된 camelCase */
+  ariaDescribedBy?: string;
+  /** ARIA describedby - kebab-case 호환성 */
   'aria-describedby'?: string;
+  /** ARIA 확장 상태 */
   'aria-expanded'?: boolean;
+  /** ARIA 숨김 상태 */
   'aria-hidden'?: boolean;
   /** 접근성 역할 */
   role?: string;
   /** 탭 인덱스 */
   tabIndex?: number;
-  /** 기본 이벤트 핸들러들 */
+
+  /* === 이벤트 핸들러 표준화 === */
+  /** 클릭 이벤트 - 표준화된 네이밍 */
   onClick?: (event: MouseEvent) => void;
+  /** 키보드 다운 이벤트 */
   onKeyDown?: (event: KeyboardEvent) => void;
+  /** 포커스 이벤트 */
   onFocus?: (event: FocusEvent) => void;
+  /** 블러 이벤트 */
   onBlur?: (event: FocusEvent) => void;
 }
 

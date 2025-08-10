@@ -55,16 +55,18 @@ function ToastContainerCore({
 
   // 표준화된 ARIA 속성 생성
   const ariaPropsData: Partial<BaseComponentProps> = {
-    'aria-label': ariaLabel || 'Toast 알림 컨테이너',
+    ariaLabel: ariaLabel || 'Toast 알림 컨테이너',
     role: role || 'region',
   };
 
   if (ariaDescribedBy) {
-    ariaPropsData['aria-describedby'] = ariaDescribedBy;
+    ariaPropsData.ariaDescribedBy = ariaDescribedBy;
   }
 
   if (typeof tabIndex === 'number') {
-    ariaPropsData.tabIndex = tabIndex;
+    // tabIndex를 별도 변수로 처리 (readonly 문제 해결)
+    const tabIndexValue = tabIndex;
+    ariaPropsData.tabIndex = tabIndexValue;
   }
 
   const ariaProps = ComponentStandards.createAriaProps(ariaPropsData);

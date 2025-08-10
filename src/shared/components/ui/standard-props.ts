@@ -1,6 +1,6 @@
 /**
  * @fileoverview 표준화된 컴포넌트 Props 인터페이스
- * @description Phase 2-3A: BaseComponentProps 기반으로 리팩토링
+ * @description TDD Phase 5a: Component Props Standardization
  * @version 2.1.0 - 표준화된 컴포넌트 속성
  */
 
@@ -95,8 +95,44 @@ export interface StandardToolbarProps extends BaseComponentProps {
 
 /**
  * 컴포넌트 표준화 유틸리티
+ * TDD Phase 5a: Props Standardization
  */
 export const ComponentStandards = {
+  /**
+   * 표준화된 이벤트 핸들러 네이밍 패턴
+   */
+  eventHandlers: {
+    onClick: 'onClick',
+    onKeyDown: 'onKeyDown',
+    onFocus: 'onFocus',
+    onBlur: 'onBlur',
+    onMouseEnter: 'onMouseEnter',
+    onMouseLeave: 'onMouseLeave',
+    onSubmit: 'onSubmit',
+    onChange: 'onChange',
+  } as const,
+
+  /**
+   * 표준화된 접근성 Props
+   */
+  accessibilityProps: {
+    ariaLabel: 'ariaLabel',
+    ariaDescribedBy: 'ariaDescribedBy',
+    role: 'role',
+    tabIndex: 'tabIndex',
+  } as const,
+
+  /**
+   * Props 구조 분리 - 공통 vs 전용
+   */
+  propsStructure: {
+    // 모든 컴포넌트 공통 Props
+    common: ['className', 'id', 'testId', 'ariaLabel'],
+    // 컴포넌트별 전용 Props
+    button: ['variant', 'size', 'disabled', 'loading'],
+    toast: ['type', 'title', 'message', 'duration', 'autoClose'],
+    toolbar: ['currentIndex', 'totalCount', 'isDownloading', 'position'],
+  } as const,
   /**
    * 표준 클래스명 생성
    */
@@ -206,8 +242,11 @@ export const ComponentStandards = {
       }
     });
 
-    // ARIA 속성 검증
-    if (props['aria-label'] && typeof props['aria-label'] !== 'string') {
+    // ARIA 속성 검증 (kebab-case와 camelCase 모두 지원)
+    if (
+      (props['aria-label'] || props.ariaLabel) &&
+      typeof (props['aria-label'] || props.ariaLabel) !== 'string'
+    ) {
       errors.push('aria-label must be a string');
     }
 
@@ -251,3 +290,9 @@ export const DEFAULT_TOAST_TYPES = {
   error: 'error',
   success: 'success',
 } as const;
+
+/**
+ * TDD Phase 5a: 표준화된 컴포넌트 구조 export
+ * 테스트에서 사용할 표준화 정보
+ */
+export const standard = ComponentStandards;
