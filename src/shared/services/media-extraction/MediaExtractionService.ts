@@ -52,9 +52,24 @@ export class MediaExtractionService implements MediaExtractor {
           urls.add(src);
         }
       });
-      return [...urls].map(u => ({ url: u }));
+      const result = [...urls].map(u => ({ url: u }));
+      if (result.length === 0) {
+        try {
+          const { showError } = await import('@shared/services/toast-integration');
+          showError('미디어를 불러오는 데 실패했습니다', '화면에서 미디어를 찾지 못했습니다.');
+        } catch {
+          // ignore in tests
+        }
+      }
+      return result;
     } catch (err) {
       logger.error('[MediaExtractionService] extractFromRoot 실패', err);
+      try {
+        const { showError } = await import('@shared/services/toast-integration');
+        showError('미디어를 불러오는 데 실패했습니다', '예기치 못한 오류가 발생했습니다.');
+      } catch {
+        // ignore
+      }
       return [];
     }
   }

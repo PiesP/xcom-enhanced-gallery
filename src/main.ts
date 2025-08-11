@@ -337,6 +337,14 @@ async function startApplication(): Promise<void> {
     // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
     initializeNonCriticalSystems();
 
+    // 7단계: Userscript 메뉴 등록 (설정)
+    try {
+      const { registerSettingsMenu } = await import('@features/settings/settings-menu');
+      registerSettingsMenu();
+    } catch (e) {
+      logger.warn('설정 메뉴 등록 실패 (무시 가능):', e);
+    }
+
     const endTime = performance.now();
     const duration = endTime - startTime;
 

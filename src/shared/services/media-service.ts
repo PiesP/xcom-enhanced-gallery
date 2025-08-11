@@ -893,6 +893,13 @@ export class MediaService {
     } catch (error) {
       const message = getErrorMessage(error);
       logger.error(`ZIP download failed: ${message}`);
+      try {
+        const { showError } = await import('@shared/services/toast-integration');
+        showError('다운로드에 실패했습니다', message || '네트워크 오류가 발생했습니다.');
+      } catch (e) {
+        // ignore toast integration failure in tests
+        logger.debug('Toast integration not available for error reporting', e);
+      }
       return {
         success: false,
         filesProcessed: mediaItems.length,
