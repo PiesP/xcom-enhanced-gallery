@@ -263,7 +263,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !canGoPrevious,
                 key: 'previous-button',
               },
-              h(Icon, { icon: ChevronLeft, size: 18 })
+              h(Icon, { icon: ChevronLeft, size: 36 })
             ),
             h(
               'button',
@@ -278,7 +278,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !canGoNext,
                 key: 'next-button',
               },
-              h(Icon, { icon: ChevronRight, size: 18 })
+              h(Icon, { icon: ChevronRight, size: 36 })
             ),
           ]
         ),
@@ -361,7 +361,7 @@ function ToolbarCore({
                     'data-disabled': disabled || !onFitOriginal,
                     key: 'fit-original',
                   },
-                  h(Icon, { icon: Maximize2, size: 16 })
+                  h(Icon, { icon: Maximize2, size: 32 })
                 ),
                 h(
                   'button',
@@ -377,7 +377,7 @@ function ToolbarCore({
                     'data-disabled': disabled || !onFitWidth,
                     key: 'fit-width',
                   },
-                  h(Icon, { icon: ArrowLeftRight, size: 16 })
+                  h(Icon, { icon: ArrowLeftRight, size: 32 })
                 ),
                 h(
                   'button',
@@ -393,7 +393,7 @@ function ToolbarCore({
                     'data-disabled': disabled || !onFitHeight,
                     key: 'fit-height',
                   },
-                  h(Icon, { icon: ArrowUpDown, size: 16 })
+                  h(Icon, { icon: ArrowUpDown, size: 32 })
                 ),
                 h(
                   'button',
@@ -409,7 +409,7 @@ function ToolbarCore({
                     'data-disabled': disabled || !onFitContainer,
                     key: 'fit-container',
                   },
-                  h(Icon, { icon: Minimize2, size: 16 })
+                  h(Icon, { icon: Minimize2, size: 32 })
                 ),
               ]
             ),
@@ -430,7 +430,7 @@ function ToolbarCore({
                 key: 'download-current',
               },
               [
-                h(Icon, { icon: Download, size: 16, key: 'download-icon' }),
+                h(Icon, { icon: Download, size: 32, key: 'download-icon' }),
                 isDownloading &&
                   h(
                     'span',
@@ -460,7 +460,7 @@ function ToolbarCore({
                   'data-loading': isDownloading,
                   key: 'download-all',
                 },
-                h(Icon, { icon: Maximize, size: 16, key: 'download-all-icon' })
+                h(Icon, { icon: Maximize, size: 32, key: 'download-all-icon' })
               ),
 
             // 설정 버튼
@@ -478,7 +478,7 @@ function ToolbarCore({
                   'data-disabled': disabled,
                   key: 'settings',
                 },
-                h(Icon, { icon: Settings, size: 16 })
+                h(Icon, { icon: Settings, size: 32 })
               ),
 
             // 닫기 버튼
@@ -495,7 +495,7 @@ function ToolbarCore({
                 'data-disabled': disabled,
                 key: 'close',
               },
-              h(Icon, { icon: X, size: 16 })
+              h(Icon, { icon: X, size: 32 })
             ),
           ]
         ),

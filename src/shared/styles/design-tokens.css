@@ -139,14 +139,14 @@
   --xeg-glass-shadow-ultra: 0 12px 48px rgba(0, 0, 0, 0.25);
 
   /* ===========================================
-     SPACING SYSTEM (8px base)
+     SPACING SYSTEM (8px base) - UX 최적화된 값
      =========================================== */
 
   --xeg-spacing-xs: 4px; /* 0.25rem */
   --xeg-spacing-sm: 8px; /* 0.5rem */
-  --xeg-spacing-md: 16px; /* 1rem */
-  --xeg-spacing-lg: 24px; /* 1.5rem */
-  --xeg-spacing-xl: 32px; /* 2rem */
+  --xeg-spacing-md: 12px; /* 0.75rem - 더 조밀한 느낌 */
+  --xeg-spacing-lg: 16px; /* 1rem - 기존 24px에서 조정 */
+  --xeg-spacing-xl: 24px; /* 1.5rem - 기존 32px에서 조정 */
   --xeg-spacing-2xl: 48px; /* 3rem */
   --xeg-spacing-3xl: 64px; /* 4rem */
 
@@ -297,7 +297,9 @@
   --xeg-button-height-md: 44px; /* 모바일 친화적 44px */
   --xeg-button-height-lg: 52px; /* 접근성 고려 큰 버튼 */
   --xeg-button-size: var(--xeg-button-height-md); /* 통합 버튼 사이즈 토큰 */
-  --xeg-toolbar-height: 64px; /* 터치 친화적으로 증가 */
+  --xeg-button-size-sm: var(--xeg-button-height-sm); /* 작은 버튼 */
+  --xeg-button-size-lg: var(--xeg-button-height-lg); /* 큰 버튼 */
+  --xeg-toolbar-height: 72px; /* UX 개선을 위해 64px에서 증가 */
 
   /* UX 중심 추가 토큰 */
   --xeg-touch-target-min: 44px; /* 터치 타겟 최소 크기 (WCAG 기준) */
@@ -307,11 +309,19 @@
   --xeg-input-height: 44px; /* 입력 요소 편안한 높이 */
 
   /* 글래스모피즘 컴포넌트별 토큰 */
-  /* 툴바 글래스모피즘 */
+  /* 툴바 글래스모피즘 - UX 개선된 설정 */
   --xeg-toolbar-glass-bg: var(--xeg-glass-bg-light);
   --xeg-toolbar-glass-blur: var(--xeg-glass-blur-medium);
   --xeg-toolbar-glass-border: var(--xeg-glass-border-light);
   --xeg-toolbar-glass-shadow: var(--xeg-glass-shadow-medium);
+  --xeg-toolbar-padding-y: var(--xeg-spacing-sm); /* 툴바 상하 패딩 */
+  --xeg-toolbar-padding-x: var(--xeg-spacing-md); /* 툴바 좌우 패딩 */
+  --xeg-toolbar-border-radius: var(--xeg-radius-xl); /* 툴바 모서리 둥글기 */
+
+  /* 개선된 글래스모피즘 효과 */
+  --xeg-glass-bg-toolbar: oklch(15% 0.02 240 / 0.6); /* 툴바 배경 (더 투명하게) */
+  --xeg-glass-blur-toolbar: blur(12px);
+  --xeg-glass-shadow-toolbar: 0 8px 32px oklch(0% 0 0 / 0.25);
 
   /* 토스트 글래스모피즘 */
   --xeg-toast-glass-bg: var(--xeg-glass-bg-ultra-light);
@@ -400,6 +410,109 @@
     transform: translateY(0);
     box-shadow: var(--xeg-glass-shadow-light);
   }
+
+  /* ===========================================
+     PC-FRIENDLY DESIGN TOKENS
+     =========================================== */
+
+  /* PC 친화적 버튼 크기 토큰 */
+  --xeg-button-size-pc-small: 48px;
+  --xeg-button-size-pc-medium: 64px;
+  --xeg-button-size-pc-large: 88px;
+
+  /* PC 친화적 간격 토큰 */
+  --xeg-spacing-pc-tight: 20px;
+  --xeg-spacing-pc-normal: 24px;
+  --xeg-spacing-pc-loose: 32px;
+  --xeg-spacing-pc-very-loose: 40px;
+
+  /* PC 친화적 스크롤바 토큰 */
+  --xeg-scrollbar-width: 8px;
+  --xeg-scrollbar-color: rgba(255, 255, 255, 0.3);
+  --xeg-scrollbar-color-hover: rgba(255, 255, 255, 0.5);
+  --xeg-scrollbar-radius: 4px;
+
+  /* PC 친화적 호버 효과 토큰 */
+  --xeg-hover-scale: 1.05;
+  --xeg-active-scale: 0.98;
+  --xeg-focus-outline-width: 2px;
+  --xeg-focus-outline-offset: 2px;
+
+  /* PC 친화적 애니메이션 토큰 */
+  --xeg-animation-hover-duration: 0.15s;
+  --xeg-animation-focus-duration: 0.1s;
+  --xeg-animation-scale-easing: cubic-bezier(0.2, 0, 0.38, 0.9);
+
+  /* PC 친화적 컨테이너 최소 크기 */
+  --xeg-container-min-width: 320px;
+  --xeg-container-max-width: 1400px;
+  --xeg-modal-min-width: 480px;
+  --xeg-modal-max-width: 640px;
+
+  /* ===========================================
+     TYPOGRAPHY TOKENS
+     =========================================== */
+
+  /* 폰트 크기 체계 */
+  --xeg-font-size-xs: 12px;
+  --xeg-font-size-sm: 14px;
+  --xeg-font-size-md: 16px;
+  --xeg-font-size-lg: 18px;
+  --xeg-font-size-xl: 20px;
+  --xeg-font-size-2xl: 24px;
+
+  /* 라인 높이 */
+  --xeg-line-height-tight: 1.25;
+  --xeg-line-height-normal: 1.5;
+  --xeg-line-height-relaxed: 1.75;
+
+  /* ===========================================
+     SPACING TOKENS (일관된 패딩/마진 시스템)
+     =========================================== */
+
+  /* 패딩 체계 */
+  --xeg-padding-xs: 4px;
+  --xeg-padding-sm: 8px;
+  --xeg-padding-md: 12px;
+  --xeg-padding-lg: 16px;
+  --xeg-padding-xl: 20px;
+  --xeg-padding-2xl: 24px;
+  --xeg-padding-3xl: 32px;
+
+  /* 컴포넌트별 전용 패딩 */
+  --xeg-modal-header-padding: var(--xeg-padding-lg) var(--xeg-padding-2xl);
+  --xeg-modal-body-padding: var(--xeg-padding-2xl);
+  --xeg-form-control-padding: var(--xeg-padding-md) var(--xeg-padding-lg);
+  --xeg-button-padding: var(--xeg-padding-sm);
+
+  /* 간격 체계 (gap 용도) */
+  --xeg-gap-xs: 4px;
+  --xeg-gap-sm: 8px;
+  --xeg-gap-md: 12px;
+  --xeg-gap-lg: 16px;
+  --xeg-gap-xl: 20px;
+  --xeg-gap-2xl: 24px;
+  --xeg-gap-3xl: 32px;
+
+  /* ===========================================
+     DIMENSION TOKENS (크기 시스템)
+     =========================================== */
+
+  /* 아이콘 크기 */
+  --xeg-icon-size-xs: 16px;
+  --xeg-icon-size-sm: 20px;
+  --xeg-icon-size-md: 24px;
+  --xeg-icon-size-lg: 32px;
+  --xeg-icon-size-xl: 36px;
+
+  /* 최소 너비 */
+  --xeg-min-width-label: 120px;
+  --xeg-min-width-button: 48px;
+  --xeg-min-width-input: 200px;
+
+  /* 슬라이더/범위 입력 */
+  --xeg-slider-height: 6px;
+  --xeg-slider-thumb-size: 16px;
 
   /* Focus ring - 통합된 포커스 시스템 */
   --xeg-focus-ring-width: 2px;

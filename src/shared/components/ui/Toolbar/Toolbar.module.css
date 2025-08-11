@@ -7,17 +7,17 @@
 .galleryToolbar {
   /* 레이아웃 - 더 접근하기 쉬운 위치 */
   position: fixed;
-  top: var(--xeg-spacing-lg); /* 더 넉넉한 상단 여백 */
+  top: var(--xeg-spacing-lg); /* 토큰 사용 */
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-gallery-toolbar);
 
-  /* 크기 및 간격 - UX 최적화 */
-  height: var(--xeg-toolbar-height);
-  min-height: var(--xeg-touch-target-min); /* 최소 터치 타겟 보장 */
-  padding: var(--xeg-spacing-md) var(--xeg-spacing-xl); /* 더 넉넉한 패딩 */
-  gap: var(--xeg-spacing-md); /* 버튼 간 충분한 간격 */
-  min-width: 280px; /* 최소 너비로 사용성 보장 */
+  /* 크기 및 간격 - 토큰 기반 조정 */
+  height: var(--xeg-toolbar-height); /* 72px */
+  min-height: var(--xeg-toolbar-height); /* 최소 높이도 토큰 사용 */
+  padding: var(--xeg-toolbar-padding-y) var(--xeg-toolbar-padding-x); /* 8px 12px */
+  gap: var(--xeg-spacing-lg); /* 16px */
+  min-width: 400px; /* 최소 너비 유지 */
   max-width: 90vw;
 
   /* 플렉스 레이아웃 */
@@ -31,13 +31,13 @@
     transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
     box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
-  /* 글래스모피즘 스타일링 - 더 선명한 배경 */
-  background: var(--xeg-toolbar-glass-bg);
+  /* 글래스모피즘 스타일링 - 개선된 배경 */
+  background: var(--xeg-glass-bg-toolbar);
   border: 2px solid var(--xeg-toolbar-border); /* 더 명확한 경계 */
-  border-radius: var(--xeg-radius-2xl); /* 더 둥근 모서리 */
-  box-shadow: var(--xeg-toolbar-glass-shadow);
-  backdrop-filter: var(--xeg-glass-blur-medium) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-medium) saturate(120%);
+  border-radius: var(--xeg-toolbar-border-radius); /* 16px */
+  box-shadow: var(--xeg-glass-shadow-toolbar);
+  backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
   color: var(--xeg-toolbar-text);
 
   /* 최적화 */
@@ -120,7 +120,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: var(--xeg-spacing-md); /* 더 넉넉한 간격 */
+  gap: var(--xeg-spacing-md); /* 버튼 그룹 간의 간격 조정 */
   max-width: 100%;
   overflow: visible; /* 호버 효과가 잘릴 수 있으므로 변경 */
   min-height: var(--xeg-touch-target-min); /* 최소 터치 영역 보장 */
@@ -129,7 +129,7 @@
 .toolbarSection {
   display: flex;
   align-items: center;
-  gap: var(--xeg-spacing-sm); /* 일관된 간격 */
+  gap: var(--xeg-spacing-sm); /* 버튼 그룹 내 버튼 간의 간격 */
   position: relative;
   min-height: var(--xeg-touch-target-min); /* 터치 친화적 */
 }
@@ -172,22 +172,21 @@
   display: none; /* 모든 구분선 제거 - 간격으로 충분 */
 }
 
+/* [변경] 카운터 구분 기호 스타일 */
 .separator {
-  display: none; /* 텍스트 구분선도 제거 */
+  color: var(--xeg-text-tertiary);
+  margin: 0 4px;
+  font-weight: 400;
 }
 
-/* 🎨 버튼 기본 스타일 - UX 최적화 */
+/* 🎨 버튼 기본 스타일 - UIBase 통합 및 토큰 사용 */
 .toolbarButton {
-  /* 크기 - 터치 친화적 */
-  width: var(--xeg-button-size); /* 44px 최소 크기 */
+  /* [변경] 버튼 크기 및 패딩 조정 */
+  width: var(--xeg-button-size);
   height: var(--xeg-button-size);
-  min-width: var(--xeg-touch-target-min);
-  min-height: var(--xeg-touch-target-min);
-
-  /* 간격 및 정렬 */
-  padding: var(--xeg-spacing-xs);
-  margin: 0;
-  gap: var(--xeg-spacing-xs);
+  min-width: var(--xeg-button-size);
+  min-height: var(--xeg-button-size);
+  padding: 0; /* 내부 아이콘이 중앙에 오도록 패딩 제거 */
 
   /* 레이아웃 */
   display: flex;
@@ -195,31 +194,49 @@
   justify-content: center;
   position: relative;
 
-  /* 글래스모피즘 스타일 - 향상된 버전 */
+  /* UIBase 통합 - Interactive Button 패턴 */
   background: var(--xeg-button-bg);
   color: var(--xeg-button-text);
   border: 2px solid var(--xeg-button-border);
   border-radius: var(--xeg-radius-lg);
+  cursor: pointer;
 
-  /* 트랜지션 - 부드러운 상호작용 */
+  /* 트랜지션 */
   transition:
-    all var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-spring);
+    background-color var(--xeg-animation-hover-duration) ease,
+    color var(--xeg-animation-hover-duration) ease,
+    transform var(--xeg-animation-focus-duration) ease,
+    box-shadow var(--xeg-animation-hover-duration) ease;
 
   /* 그림자 */
   box-shadow: var(--xeg-glass-shadow-subtle);
 
   /* 상호작용 최적화 */
-  cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   outline: none;
 
-  /* 접근성 */
-  position: relative;
-
   /* 텍스트 및 아이콘 스타일 */
   font-size: 14px;
+}
+
+/* [변경] 네비게이션 버튼 아이콘 크기 조정 */
+.navButton svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* [변경] 기능 버튼 아이콘 크기 조정 */
+.fitButton svg,
+.downloadButton svg,
+.settingsButton svg,
+.closeButton svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* 버튼 추가 스타일 */
+.toolbarButton {
   font-weight: 500;
   overflow: hidden;
 
@@ -227,16 +244,18 @@
   backdrop-filter: var(--xeg-glass-blur-medium) saturate(180%);
   -webkit-backdrop-filter: var(--xeg-glass-blur-medium) saturate(180%);
 
-  /* Lucide 아이콘 최적화 */
-  svg {
-    flex-shrink: 0;
-    transition: transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  }
-
   /* 성능 최적화 */
   will-change: backdrop-filter, transform;
   transform: translateZ(0);
   contain: layout style paint;
+}
+
+/* Lucide 아이콘 최적화 - PC 친화적 크기 (토큰 사용) */
+.toolbarButton svg {
+  flex-shrink: 0;
+  width: var(--xeg-icon-size-xl); /* 토큰 사용 */
+  height: var(--xeg-icon-size-xl); /* 토큰 사용 */
+  transition: transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
 /* 🎯 버튼 상태별 스타일 - 데이터 속성 기반 */
@@ -259,7 +278,7 @@
 
 .toolbarButton[data-loading='true'] {
   opacity: 0.8;
-  transform: scale(0.98);
+  transform: scale(var(--xeg-active-scale)); /* 토큰 사용 */
 
   /* 로딩 애니메이션 효과 */
   background: linear-gradient(135deg, var(--xeg-button-bg) 0%, rgba(59, 130, 246, 0.1) 100%);
@@ -275,16 +294,16 @@
   box-shadow: none;
 }
 
-/* 🖱️ 호버 상태 - 향상된 UX */
+/* 🖱️ 호버 상태 - UIBase 통합 PC 친화적 효과 */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
     background: var(--xeg-button-bg-hover);
     border-color: var(--xeg-color-primary-alpha-40);
     color: var(--xeg-color-neutral-800);
 
-    /* 부드러운 떠있는 효과 */
+    /* UIBase 표준 호버 효과 (토큰 사용) */
     box-shadow: var(--xeg-glass-shadow-medium);
-    transform: translateY(-1px) scale(1.02);
+    transform: translateY(-1px) scale(var(--xeg-hover-scale)); /* 토큰 사용 */
 
     /* 백드롭 필터 강화 */
     backdrop-filter: var(--xeg-glass-blur-medium) saturate(150%);
@@ -294,15 +313,23 @@
     box-shadow:
       0 0 0 3px var(--xeg-color-primary-alpha-40),
       var(--xeg-glass-shadow-strong);
-    transform: translateY(-2px) scale(1.02);
   }
 }
 
-/* 🖱️ 클릭 상태 - 명확한 피드백 */
+/* 활성화/포커스 상태 - 키보드 접근성 개선 (토큰 사용) */
 .toolbarButton:active:not([data-disabled='true']) {
-  transform: translateY(0) scale(0.98);
+  transform: scale(var(--xeg-active-scale)); /* 토큰 사용 */
+}
+
+.toolbarButton:focus-visible {
+  outline: var(--xeg-focus-outline-width) solid var(--xeg-color-primary); /* 토큰 사용 */
+  outline-offset: var(--xeg-focus-outline-offset); /* 토큰 사용 */
+}
+
+/* 🖱️ 클릭 상태 - 명확한 피드백 (토큰 사용) */
+.toolbarButton:active:not([data-disabled='true']) {
+  transform: translateY(0) scale(var(--xeg-active-scale)); /* 토큰 사용 */
   box-shadow: var(--xeg-glass-shadow-subtle);
-  transition-duration: 0.1s; /* 빠른 피드백 */
 }
 
 /* ♿ 접근성 개선 - 포커스 상태 */
@@ -415,8 +442,9 @@
 }
 
 .separator {
-  color: var(--xeg-text-secondary);
-  margin: 0 var(--xeg-spacing-xs);
+  color: var(--xeg-text-tertiary);
+  margin: 0 4px;
+  font-weight: 400;
 }
 
 .totalCount {
@@ -466,9 +494,15 @@
   box-shadow: var(--xeg-glass-shadow-subtle);
 }
 
+/* [변경] Fit 모드 버튼 그룹 패딩 조정 */
+.fitModeGroup {
+  gap: var(--xeg-spacing-xs);
+  padding: var(--xeg-spacing-xs);
+}
+
 .fitButton {
-  width: var(--xeg-clickable-area-comfortable);
-  height: var(--xeg-clickable-area-comfortable);
+  width: var(--xeg-button-size); /* 통일된 버튼 크기 */
+  height: var(--xeg-button-size);
   min-width: var(--xeg-touch-target-min);
   min-height: var(--xeg-touch-target-min);
 
@@ -603,6 +637,10 @@
 }
 /* 설정 및 닫기 버튼 */
 .settingsButton {
+  width: var(--xeg-button-size); /* 통일된 버튼 크기 */
+  height: var(--xeg-button-size);
+  min-width: var(--xeg-touch-target-min);
+  min-height: var(--xeg-touch-target-min);
   background: var(--xeg-bg-button-settings);
   border-color: var(--xeg-color-neutral-300);
   color: var(--xeg-text-button-settings);
@@ -616,6 +654,10 @@
 }
 
 .closeButton {
+  width: var(--xeg-button-size); /* 통일된 버튼 크기 */
+  height: var(--xeg-button-size);
+  min-width: var(--xeg-touch-target-min);
+  min-height: var(--xeg-touch-target-min);
   background: var(--xeg-bg-button-close);
   border-color: var(--xeg-color-neutral-300);
   color: var(--xeg-text-button-close);

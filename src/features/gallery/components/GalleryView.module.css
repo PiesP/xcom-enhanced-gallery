@@ -121,15 +121,15 @@
   }
 }
 
-/* 메인 콘텐츠 */
+/* 메인 콘텐츠 - PC 친화적 간격 조정 */
 .content {
   flex: 1;
   overflow: auto;
   display: flex;
   flex-direction: var(--item-direction, column);
   align-items: var(--item-align, center);
-  gap: var(--xeg-spacing-md);
-  padding: 80px var(--xeg-spacing-md) var(--xeg-spacing-md);
+  gap: calc(var(--xeg-spacing-lg) * 1.5); /* PC 친화적 간격 증가: 16px → 24px */
+  padding: 100px calc(var(--xeg-spacing-lg) * 1.5) calc(var(--xeg-spacing-lg) * 1.5); /* PC 친화적 패딩 */
 }
 
 /* Vertical 레이아웃 */
@@ -139,13 +139,34 @@
   justify-content: flex-start;
 }
 
-/* Horizontal 레이아웃 */
+/* Horizontal 레이아웃 - PC 친화적 스크롤 개선 */
 .horizontalLayout .content {
   flex-direction: row;
   align-items: flex-start;
   justify-content: flex-start;
   overflow-x: auto;
   overflow-y: hidden;
+
+  /* PC 친화적 스크롤 바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.horizontalLayout .content::-webkit-scrollbar {
+  height: 8px;
+}
+
+.horizontalLayout .content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.horizontalLayout .content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.horizontalLayout .content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* 빈 상태 */

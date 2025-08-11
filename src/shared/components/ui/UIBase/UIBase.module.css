@@ -1,0 +1,285 @@
+/**
+ * @fileoverview 통합 UI 베이스 컴포넌트 스타일
+ * @description 설정 모달, 갤러리 뷰, 툴바에서 공통으로 사용되는 디자인 패턴
+ */
+
+/* ============================================
+   Glass Morphism 카드 컴포넌트
+   ============================================ */
+
+.glassCard {
+  background: var(--xeg-glass-bg-dark);
+  backdrop-filter: var(--xeg-glass-blur-strong);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
+  border: 1px solid var(--xeg-glass-border-light);
+  box-shadow: var(--xeg-glass-shadow-strong);
+  transform: translateZ(0); /* 성능 최적화 */
+}
+
+.glassCardLight {
+  background: var(--xeg-glass-bg-light);
+  backdrop-filter: var(--xeg-glass-blur-medium);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-medium);
+  border: 1px solid var(--xeg-glass-border-light);
+  box-shadow: var(--xeg-glass-shadow-medium);
+  transform: translateZ(0);
+}
+
+/* ============================================
+   Interactive 버튼 시스템
+   ============================================ */
+
+.interactiveButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+
+  /* 기본 색상 */
+  color: var(--xeg-color-text-secondary);
+}
+
+.interactiveButton:hover {
+  background-color: var(--xeg-color-surface-hover);
+  color: var(--xeg-color-text-primary);
+  transform: scale(1.05); /* PC 친화적 호버 효과 */
+}
+
+.interactiveButton:active {
+  transform: scale(0.98);
+}
+
+.interactiveButton:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+/* PC 친화적 버튼 크기 체계 */
+.buttonSmall {
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+}
+
+.buttonSmall svg {
+  width: 20px;
+  height: 20px;
+}
+
+.buttonMedium {
+  width: 64px;
+  height: 64px;
+  font-size: 24px;
+}
+
+.buttonMedium svg {
+  width: 24px;
+  height: 24px;
+}
+
+.buttonLarge {
+  width: 88px;
+  height: 88px;
+  font-size: 36px;
+}
+
+.buttonLarge svg {
+  width: 36px;
+  height: 36px;
+}
+
+/* ============================================
+   Layout 시스템
+   ============================================ */
+
+.layoutFixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.layoutCentered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layoutModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--xeg-z-modal);
+  background: var(--xeg-color-overlay-strong);
+  backdrop-filter: var(--xeg-blur-light);
+  -webkit-backdrop-filter: var(--xeg-blur-light);
+}
+
+.layoutGallery {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--xeg-z-gallery-backdrop);
+  background: rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+}
+
+/* ============================================
+   애니메이션 시스템
+   ============================================ */
+
+.fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.scaleIn {
+  animation: scaleIn 0.25s ease-out;
+}
+
+.slideInFromTop {
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   간격 시스템 (PC 친화적)
+   ============================================ */
+
+.spacingTight {
+  gap: var(--xeg-spacing-sm);
+}
+
+.spacingNormal {
+  gap: var(--xeg-spacing-md);
+}
+
+.spacingLoose {
+  gap: var(--xeg-spacing-lg);
+}
+
+.spacingVeryLoose {
+  gap: calc(var(--xeg-spacing-lg) * 1.5); /* 24px */
+}
+
+.paddingTight {
+  padding: var(--xeg-spacing-sm);
+}
+
+.paddingNormal {
+  padding: var(--xeg-spacing-md);
+}
+
+.paddingLoose {
+  padding: var(--xeg-spacing-lg);
+}
+
+.paddingVeryLoose {
+  padding: calc(var(--xeg-spacing-lg) * 1.5);
+}
+
+/* ============================================
+   텍스트 스타일링
+   ============================================ */
+
+.textPrimary {
+  color: var(--xeg-color-text-primary);
+}
+
+.textSecondary {
+  color: var(--xeg-color-text-secondary);
+}
+
+.textTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.textSection {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--xeg-color-text-secondary);
+  margin: 0 0 8px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--xeg-glass-border-light);
+}
+
+/* ============================================
+   Form 컨트롤 스타일링
+   ============================================ */
+
+.formControl {
+  background-color: var(--xeg-color-surface-light);
+  color: var(--xeg-color-text-primary);
+  border: 1px solid var(--xeg-glass-border-light);
+  border-radius: 8px;
+  padding: 12px 16px; /* PC 친화적 패딩 증가 */
+  font-size: 14px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.formControl:focus {
+  outline: none;
+  border-color: var(--xeg-color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--xeg-color-primary) 20%, transparent);
+}
+
+.formRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--xeg-spacing-lg); /* PC 친화적 간격 증가 */
+}
+
+.formRow label {
+  font-size: 14px;
+  flex-shrink: 0;
+  min-width: 120px; /* 라벨 최소 너비 보장 */
+}

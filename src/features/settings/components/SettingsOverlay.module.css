@@ -2,12 +2,15 @@
 
 .modalOverlay {
   position: fixed;
-  inset: 0;
-  z-index: var(--xeg-z-modal);
-  background: var(--xeg-color-overlay-strong);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: var(--xeg-z-modal);
+  background: var(--xeg-color-overlay-strong);
   backdrop-filter: var(--xeg-blur-light);
   -webkit-backdrop-filter: var(--xeg-blur-light);
   animation: fadeIn 0.2s ease-out;
@@ -19,9 +22,9 @@
   -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
   border: 1px solid var(--xeg-glass-border-light);
   box-shadow: var(--xeg-glass-shadow-strong);
-  border-radius: 16px;
+  border-radius: var(--xeg-radius-lg);
   width: 90vw;
-  max-width: 520px;
+  max-width: var(--xeg-modal-max-width); /* 토큰 사용 */
   color: var(--xeg-color-text-primary);
   transform: translateZ(0);
   animation: scaleIn 0.25s ease-out;
@@ -31,102 +34,135 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
+  padding: var(--xeg-modal-header-padding); /* 토큰 사용 */
   border-bottom: 1px solid var(--xeg-glass-border-light);
 }
 
 .modalTitle {
-  font-size: 18px;
+  font-size: var(--xeg-font-size-lg); /* 토큰 사용 */
   font-weight: 600;
   margin: 0;
 }
 
+/* PC 친화적 닫기 버튼 - UIBase 통합 및 토큰 사용 */
 .closeButton {
   background: none;
   border: none;
-  color: var(--xeg-color-text-secondary);
-  font-size: 24px;
-  line-height: 1;
-  padding: 4px;
   cursor: pointer;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
   transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+    background-color var(--xeg-animation-hover-duration) ease,
+    color var(--xeg-animation-hover-duration) ease,
+    transform var(--xeg-animation-focus-duration) ease;
+
+  /* PC 친화적 크기 - 토큰 사용 */
+  width: var(--xeg-button-size-pc-small);
+  height: var(--xeg-button-size-pc-small);
+
+  /* 기본 색상 */
+  color: var(--xeg-color-text-secondary);
 }
 
 .closeButton:hover {
   background-color: var(--xeg-color-surface-hover);
   color: var(--xeg-color-text-primary);
+  transform: scale(var(--xeg-hover-scale)); /* 토큰 사용 */
 }
 
+.closeButton:active {
+  transform: scale(var(--xeg-active-scale)); /* 토큰 사용 */
+}
+
+.closeButton:focus-visible {
+  outline: var(--xeg-focus-outline-width) solid var(--xeg-color-primary); /* 토큰 사용 */
+  outline-offset: var(--xeg-focus-outline-offset); /* 토큰 사용 */
+}
+
+/* PC 친화적 아이콘 크기 - 토큰 사용 */
+.closeButton svg {
+  width: var(--xeg-icon-size-sm); /* 토큰 사용 */
+  height: var(--xeg-icon-size-sm); /* 토큰 사용 */
+}
+
+/* PC 친화적 모달 바디 패딩 증가 - 토큰 사용 */
 .modalBody {
-  padding: 24px;
+  padding: var(--xeg-modal-body-padding); /* 토큰 사용 */
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--xeg-gap-2xl); /* 토큰 사용 */
 }
-
 .sectionTitle {
-  font-size: 14px;
+  font-size: var(--xeg-font-size-sm); /* 토큰 사용 */
   font-weight: 500;
   color: var(--xeg-color-text-secondary);
-  margin: 0 0 8px 0;
-  padding-bottom: 8px;
+  margin: 0 0 var(--xeg-padding-sm) 0; /* 토큰 사용 */
+  padding-bottom: var(--xeg-padding-sm); /* 토큰 사용 */
   border-bottom: 1px solid var(--xeg-glass-border-light);
 }
 
+/* PC 친화적 설정 행 간격 증가 - 토큰 사용 */
 .settingRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: var(--xeg-gap-lg); /* 토큰 사용 */
 }
 
 .settingRow label {
-  font-size: 14px;
+  font-size: var(--xeg-font-size-sm); /* 토큰 사용 */
   flex-shrink: 0;
+  min-width: var(--xeg-min-width-label); /* 토큰 사용 */
 }
 
+/* PC 친화적 form 컨트롤 패딩 증가 - 토큰 사용 */
 .settingRow select,
 .settingRow input[type='number'] {
   background-color: var(--xeg-color-surface-light);
   color: var(--xeg-color-text-primary);
   border: 1px solid var(--xeg-glass-border-light);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 14px;
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-form-control-padding); /* 토큰 사용 */
+  font-size: var(--xeg-font-size-sm); /* 토큰 사용 */
   flex-grow: 1;
+  min-width: var(--xeg-min-width-input); /* 토큰 사용 */
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
+/* 포커스 접근성 개선 - 토큰 사용 */
+.settingRow select:focus,
+.settingRow input[type='number']:focus {
+  outline: none;
+  border-color: var(--xeg-color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--xeg-color-primary) 20%, transparent);
+}
+
+/* 범위 슬라이더 - 토큰 사용 */
 .settingRow input[type='range'] {
   flex-grow: 1;
   -webkit-appearance: none;
   appearance: none;
   background: var(--xeg-color-surface-light);
-  height: 6px;
-  border-radius: 3px;
+  height: var(--xeg-slider-height); /* 토큰 사용 */
+  border-radius: calc(var(--xeg-slider-height) / 2); /* 토큰 기반 계산 */
   outline: none;
 }
 
 .settingRow input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: var(--xeg-slider-thumb-size); /* 토큰 사용 */
+  height: var(--xeg-slider-thumb-size); /* 토큰 사용 */
   background: var(--xeg-color-text-primary);
   border-radius: 50%;
   cursor: pointer;
 }
 
+/* 체크박스 - 토큰 및 접근성 개선 */
 .settingRow input[type='checkbox'] {
   -webkit-appearance: none;
   appearance: none;
@@ -135,10 +171,16 @@
   width: 1.15em;
   height: 1.15em;
   border: 1px solid var(--xeg-glass-border-light);
-  border-radius: 4px;
+  border-radius: var(--xeg-radius-sm);
   transform: translateY(-0.075em);
   display: grid;
   place-content: center;
+  transition: all var(--xeg-animation-hover-duration) ease; /* 토큰 사용 */
+}
+
+.settingRow input[type='checkbox']:focus-visible {
+  outline: var(--xeg-focus-outline-width) solid var(--xeg-color-primary); /* 토큰 사용 */
+  outline-offset: var(--xeg-focus-outline-offset); /* 토큰 사용 */
 }
 
 .settingRow input[type='checkbox']::before {
