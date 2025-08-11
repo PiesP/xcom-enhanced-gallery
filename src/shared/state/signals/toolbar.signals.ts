@@ -9,6 +9,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { getPreactSignals } from '@shared/external/vendors';
 
 /**
  * 간소화된 툴바 상태 인터페이스
@@ -46,8 +47,7 @@ function getToolbarStateSignal(): Signal<ToolbarState> {
   if (!toolbarStateSignal) {
     try {
       // Preact Signals 동적 로딩
-      const signalsModule = require('@preact/signals');
-      const { signal } = signalsModule;
+      const { signal } = getPreactSignals();
       toolbarStateSignal = signal(INITIAL_TOOLBAR_STATE);
       logger.debug('Toolbar state signal initialized');
     } catch (error) {

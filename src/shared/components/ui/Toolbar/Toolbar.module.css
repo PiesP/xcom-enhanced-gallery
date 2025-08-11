@@ -50,7 +50,44 @@
 
 .galleryToolbar:hover {
   box-shadow: var(--xeg-glass-shadow-strong);
-  transform: translateX(-50%) translateY(-2px);
+  transform: translateX(-50%) translateY(-1px); /* 복잡한 transform 효과 제거 */
+  border-color: var(--xeg-color-primary-alpha-40);
+}
+
+/* ===== 개선된 네이티브 스타일 - X.com 일관성 (기본 테마로 통합) ===== */
+
+/* 기본 툴바 스타일 - X.com 네이티브 스타일을 기본으로 적용 */
+.galleryToolbar {
+  /* 기존 글래스모피즘 스타일 유지하되, 네이티브 스타일 요소 통합 */
+  backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
+  border: 2px solid var(--xeg-toolbar-border);
+  box-shadow: var(--xeg-glass-shadow-toolbar);
+  border-radius: var(--xeg-toolbar-border-radius); /* 16px */
+}
+
+/* 라이트 모드 - 네이티브 스타일 통합 */
+[data-theme='light'] .galleryToolbar {
+  background: var(--xeg-glass-bg-toolbar);
+  color: var(--xeg-toolbar-text);
+
+  /* X.com 스타일 요소 통합 */
+  border-color: var(--xeg-color-border-primary);
+}
+
+/* 다크 모드 - 네이티브 스타일 통합 */
+[data-theme='dark'] .galleryToolbar {
+  background: var(--xeg-glass-bg-toolbar);
+  color: var(--xeg-toolbar-text);
+
+  /* X.com 스타일 요소 통합 */
+  border-color: var(--xeg-color-border-primary);
+}
+
+/* 툴바 호버 효과 - 네이티브와 글래스모피즘 통합 */
+.galleryToolbar:hover {
+  box-shadow: var(--xeg-glass-shadow-strong);
+  transform: translateX(-50%) translateY(-1px);
   border-color: var(--xeg-color-primary-alpha-40);
 } /* 감소된 모션 지원 강화 */
 @media (prefers-reduced-motion: reduce) {
@@ -530,7 +567,8 @@
   background: var(--xeg-button-bg-hover);
   color: var(--xeg-text-primary);
   border-color: var(--xeg-color-primary-alpha-30);
-  transform: scale(1.05);
+  /* 복잡한 transform 효과 제거 - scale 대신 미묘한 효과 */
+  transform: translateY(-1px);
 }
 
 .fitButton.selected {
@@ -814,3 +852,102 @@
 /* ===== 접근성 개선 ===== */
 
 /* 고대비 모드 - 시인성 개선 */
+
+/* ========================================
+   통합된 X.com 스타일 버튼 (네이티브 스타일 기본 적용)
+   ======================================== */
+
+/* 기본 버튼 스타일 - X.com 네이티브 요소 통합 */
+.toolbarButton {
+  /* 기존 스타일 유지하되 네이티브 요소 통합 */
+  background: var(--xeg-button-bg);
+  color: var(--xeg-button-text);
+  border: 1px solid var(--xeg-glass-border-light);
+  border-radius: var(--xeg-radius-md);
+
+  /* X.com 스타일 트랜지션 */
+  transition:
+    background-color var(--xeg-duration-fast) ease,
+    color var(--xeg-duration-fast) ease,
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+/* 라이트 모드 버튼 호버 */
+[data-theme='light'] .toolbarButton:hover:not([data-disabled='true']) {
+  background: rgba(15, 20, 25, 0.1);
+  color: var(--xeg-color-text-primary);
+  transform: translateY(-1px) scale(var(--xeg-hover-scale));
+}
+
+/* 다크 모드 버튼 호버 */
+[data-theme='dark'] .toolbarButton:hover:not([data-disabled='true']) {
+  background: rgba(231, 233, 234, 0.1);
+  color: var(--xeg-color-text-primary);
+  transform: translateY(-1px) scale(var(--xeg-hover-scale));
+}
+
+/* 활성 상태 - 모든 테마 공통 */
+.toolbarButton[data-active='true'],
+.toolbarButton[data-selected='true'] {
+  background: var(--xeg-color-primary);
+  color: white;
+  border-color: var(--xeg-color-primary);
+}
+
+.toolbarButton[data-active='true']:hover,
+.toolbarButton[data-selected='true']:hover {
+  background: var(--xeg-color-primary-hover);
+  color: white;
+}
+
+/* 포커스 스타일 - 접근성 개선 */
+.toolbarButton:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+  background: var(--xeg-color-primary-alpha-10);
+}
+
+/* 비활성화 상태 */
+.toolbarButton[data-disabled='true'] {
+  background: transparent;
+  color: var(--xeg-color-text-secondary);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 로딩 상태 */
+.toolbarButton[data-loading='true'] {
+  background: var(--xeg-color-primary-alpha-10);
+  color: var(--xeg-color-primary);
+  cursor: wait;
+}
+
+/* 특수 버튼들 - 네이티브 스타일 통합 */
+.settingsButton,
+.closeButton {
+  border-radius: var(--xeg-radius-full); /* 50% → CSS 변수 */
+  padding: var(--xeg-spacing-xs);
+}
+
+.fitButton {
+  border-radius: var(--xeg-radius-pill); /* X.com의 pill 스타일 */
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-md);
+  font-weight: 500;
+}
+
+/* 감소된 모션 지원 - 모든 테마 적용 */
+@media (prefers-reduced-motion: reduce) {
+  .toolbarButton {
+    transition:
+      background-color 0.1s ease,
+      color 0.1s ease;
+
+    /* transform 효과 제거 */
+    transform: none !important;
+  }
+
+  .toolbarButton:hover:not([data-disabled='true']) {
+    transform: none !important;
+  }
+}

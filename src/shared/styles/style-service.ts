@@ -8,7 +8,7 @@ import { logger } from '@shared/logging';
 
 // 🟢 GREEN: CoreStyleManager와 StyleManager 타입 통합
 export type GlassmorphismIntensity = 'light' | 'medium' | 'strong' | 'ultra' | 'subtle';
-export type Theme = 'light' | 'dark' | 'auto';
+import { type Theme } from '@shared/services/theme-service';
 
 export interface GlassmorphismConfig {
   intensity: GlassmorphismIntensity;

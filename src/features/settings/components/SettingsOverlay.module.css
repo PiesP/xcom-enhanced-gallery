@@ -17,7 +17,8 @@
 }
 
 .modalContent {
-  background: var(--xeg-glass-bg-dark);
+  /* 테마별 동적 배경 - CSS 변수 기반 */
+  background: var(--xeg-glass-bg-modal);
   backdrop-filter: var(--xeg-glass-blur-strong);
   -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
   border: 1px solid var(--xeg-glass-border-light);
@@ -64,6 +65,55 @@
 
   /* 기본 색상 */
   color: var(--xeg-color-text-secondary);
+}
+
+/* 개선된 닫기 버튼 - fallback DOM에서 사용 */
+:global(.xeg-enhanced-close-button) {
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: var(--xeg-button-size-pc-small, 32px) !important;
+  height: var(--xeg-button-size-pc-small, 32px) !important;
+  border-radius: var(--xeg-radius-sm, 4px) !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  transition: var(--xeg-transition-fast, all 0.15s ease-out) !important;
+  z-index: 1 !important;
+}
+
+/* 테마별 색상 */
+:global(.xeg-enhanced-close-button[data-theme='dark']) {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+:global(.xeg-enhanced-close-button[data-theme='light']) {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* 호버 및 포커스 상태 */
+:global(.xeg-enhanced-close-button:hover) {
+  background-color: var(--xeg-color-surface-hover, rgba(0, 0, 0, 0.1)) !important;
+  transform: scale(var(--xeg-hover-scale, 1.05)) !important;
+}
+
+[data-theme='dark'] :global(.xeg-enhanced-close-button:hover) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+:global(.xeg-enhanced-close-button:active) {
+  transform: scale(var(--xeg-active-scale, 0.95)) !important;
+}
+
+:global(.xeg-enhanced-close-button:focus-visible) {
+  outline: var(--xeg-focus-outline-width, 2px) solid var(--xeg-color-primary) !important;
+  outline-offset: var(--xeg-focus-outline-offset, 2px) !important;
 }
 
 .closeButton:hover {

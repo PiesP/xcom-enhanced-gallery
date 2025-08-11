@@ -124,7 +124,7 @@ export type AsyncResult<T, E = Error> = Promise<Result<T, E>>;
 export type Option<T> = T | null;
 
 // ===== 스타일 타입들 =====
-export type Theme = 'light' | 'dark' | 'auto';
+export type Theme = 'auto' | 'light' | 'dark';
 export type GlassmorphismIntensity = 'light' | 'medium' | 'strong' | 'ultra';
 
 export interface GlassmorphismConfig {

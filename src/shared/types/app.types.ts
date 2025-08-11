@@ -401,8 +401,8 @@ export type FileExtension = Brand<string, 'FileExtension'>;
 // UI/UX 관련 타입들
 // ================================
 
-export type Theme = 'light' | 'dark' | 'auto';
-export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
+export type Theme = 'auto' | 'light' | 'dark';
+export type GalleryTheme = 'auto' | 'light' | 'dark';
 export type ToastType = 'info' | 'warning' | 'error' | 'success';
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';

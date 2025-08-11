@@ -112,11 +112,15 @@
 
   /* Glass Effect Alias Colors removed (Phase 2) */
 
-  /* 글래스모피즘 전용 색상 시스템 */
-  --xeg-glass-bg-light: rgba(255, 255, 255, 0.85);
+  /* 글래스모피즘 전용 색상 시스템 - 개선된 불투명도 */
+  --xeg-glass-bg-light: rgba(255, 255, 255, 0.98); /* 라이트 모드 불투명도 증가: 85% → 98% */
   --xeg-glass-bg-medium: rgba(255, 255, 255, 0.65);
   --xeg-glass-bg-dark: rgba(0, 0, 0, 0.85);
-  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.95); /* toast uses */
+  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.99); /* toast uses - 더 불투명 */
+
+  /* 완전 불투명 배경 옵션 추가 */
+  --xeg-glass-bg-solid-light: rgba(255, 255, 255, 1); /* 완전 불투명 라이트 */
+  --xeg-glass-bg-solid-dark: rgba(0, 0, 0, 1); /* 완전 불투명 다크 */
 
   /* Translucent Glass Background Scale (NEW Phase 1 - for media item layering) */
   /* RATIONALE: 기존 --xeg-media-glass-bg 다단계 rgba 직접 정의를 토큰화하여 재사용 및 접근성 미세조정 용이성 확보 */
@@ -298,6 +302,49 @@
   --xeg-button-height-lg: 52px; /* 접근성 고려 큰 버튼 */
   --xeg-button-size: var(--xeg-button-height-md); /* 통합 버튼 사이즈 토큰 */
   --xeg-button-size-sm: var(--xeg-button-height-sm); /* 작은 버튼 */
+  --xeg-button-size-pc-small: 32px; /* PC용 작은 버튼 (설정 모달 닫기 버튼) */
+
+  /* Interactive States - 호버 및 액티브 스케일 */
+  --xeg-hover-scale: 1.05; /* 호버시 확대 비율 */
+  --xeg-active-scale: 0.95; /* 클릭시 축소 비율 */
+
+  /* Form Controls - 폼 요소 패딩 */
+  --xeg-form-control-padding: 8px 12px; /* input, select 내부 패딩 */
+  --xeg-min-width-label: 120px; /* 레이블 최소 너비 */
+  --xeg-min-width-input: 120px; /* 입력 요소 최소 너비 */
+
+  /* Focus Outline - 접근성 개선 */
+  --xeg-focus-outline-width: 2px; /* 포커스 아웃라인 두께 */
+  --xeg-focus-outline-offset: 2px; /* 포커스 아웃라인 간격 */
+
+  /* Slider Components */
+  --xeg-slider-height: 6px; /* 범위 슬라이더 높이 */
+  --xeg-slider-thumb-size: 18px; /* 슬라이더 썸 크기 */
+
+  /* Gap System - 요소 간 간격 */
+  --xeg-gap-lg: 16px; /* 큰 간격 */
+  --xeg-gap-2xl: 32px; /* 매우 큰 간격 */
+
+  /* Modal System - 모달 관련 토큰 */
+  --xeg-modal-max-width: 520px; /* 모달 최대 너비 */
+  --xeg-modal-header-padding: 20px; /* 모달 헤더 패딩 */
+  --xeg-modal-body-padding: 20px; /* 모달 바디 패딩 */
+
+  /* Animation Durations - 애니메이션 지속시간 */
+  --xeg-animation-hover-duration: 0.2s; /* 호버 애니메이션 */
+  --xeg-animation-focus-duration: 0.15s; /* 포커스 애니메이션 */
+
+  /* Icon Sizes */
+  --xeg-icon-size-sm: 16px; /* 작은 아이콘 */
+  --xeg-icon-size-md: 20px; /* 중간 아이콘 */
+  --xeg-icon-size-lg: 24px; /* 큰 아이콘 */
+
+  /* Surface Colors - 표면 색상 확장 */
+  --xeg-color-surface-hover: color-mix(in oklch, var(--xeg-color-neutral-100) 50%, transparent);
+  --xeg-color-surface-inset: var(--xeg-color-neutral-50);
+
+  /* Padding System - 패딩 토큰 */
+  --xeg-padding-sm: 8px; /* 작은 패딩 */
   --xeg-button-size-lg: var(--xeg-button-height-lg); /* 큰 버튼 */
   --xeg-toolbar-height: 72px; /* UX 개선을 위해 64px에서 증가 */
 
@@ -541,6 +588,11 @@
   --xeg-toolbar-button-hover: var(--xeg-glass-bg-light);
   --xeg-toolbar-button-active: var(--xeg-glass-bg-medium);
 
+  /* 모달 색상 시스템 - 테마별 동적 스타일링 */
+  --xeg-modal-bg: var(--xeg-glass-bg-light);
+  --xeg-modal-bg-solid: var(--xeg-glass-bg-solid-light); /* 완전 불투명 옵션 */
+  --xeg-glass-bg-modal: var(--xeg-modal-bg);
+
   /* 갤러리 색상 시스템 */
   --xeg-gallery-bg: var(--xeg-color-overlay-strong);
   --xeg-gallery-surface: var(--xeg-glass-bg-dark);
@@ -570,6 +622,11 @@
   --xeg-toolbar-glass-bg: rgba(0, 0, 0, 0.8);
   --xeg-toolbar-glass-border: rgba(255, 255, 255, 0.1);
   --xeg-toolbar-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  /* 모달 다크모드 오버라이드 */
+  --xeg-modal-bg: var(--xeg-glass-bg-dark);
+  --xeg-modal-bg-solid: var(--xeg-glass-bg-solid-dark); /* 완전 불투명 다크 옵션 */
+  --xeg-glass-bg-modal: var(--xeg-modal-bg);
 
   --xeg-toast-glass-bg: rgba(0, 0, 0, 0.9);
   --xeg-toast-glass-border: rgba(255, 255, 255, 0.15);

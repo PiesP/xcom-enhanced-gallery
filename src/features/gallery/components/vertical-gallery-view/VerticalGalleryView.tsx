@@ -148,12 +148,25 @@ function VerticalGalleryViewCore({
     }
   }, [mediaItems.length, isVisible]);
 
-  // 갤러리 진입/종료 애니메이션
+  // 갤러리 진입/종료 애니메이션 및 코치 마크
   useEffect(() => {
     if (containerRef.current) {
       if (isVisible) {
         animateGalleryEnter(containerRef.current);
         logger.debug('갤러리 진입 애니메이션 실행');
+
+        // 코치 마크 초기화 및 표시 (최초 실행 시에만)
+        const initializeCoachMarks = async () => {
+          try {
+            const { coachMarkService } = await import('@shared/services/coach-mark-service');
+            coachMarkService.injectStyles();
+            await coachMarkService.showFitModeGuide();
+          } catch (error) {
+            logger.warn('코치 마크 초기화 실패:', error);
+          }
+        };
+
+        void initializeCoachMarks();
       } else {
         animateGalleryExit(containerRef.current);
         logger.debug('갤러리 종료 애니메이션 실행');

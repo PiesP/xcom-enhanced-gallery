@@ -143,7 +143,7 @@ export type {
 // 스타일 서비스 타입들 (통합된 타입들)
 export type {
   GlassmorphismIntensity as UnifiedGlassmorphismIntensity,
-  Theme as UnifiedTheme,
+  // Theme as UnifiedTheme은 theme-service에서 직접 import하도록 변경
   GlassmorphismConfig,
   ComponentState as UnifiedComponentState,
 } from '@shared/styles/style-service';

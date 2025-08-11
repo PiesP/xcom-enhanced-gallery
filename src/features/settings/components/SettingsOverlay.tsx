@@ -2,6 +2,7 @@ import { getPreact, getPreactHooks } from '@shared/external/vendors';
 import { wireSettingsModal } from '@/features/settings/settings-menu';
 import { X } from 'lucide-preact'; // [추가] X 아이콘 import
 import { Icon } from '@shared/components/ui/Icon/Icon'; // [추가] Icon 컴포넌트 import
+import { themeService, type Theme } from '@shared/services/theme-service'; // [추가] ThemeService import
 import styles from './SettingsOverlay.module.css';
 
 export interface SettingsOverlayProps {
@@ -10,14 +11,21 @@ export interface SettingsOverlayProps {
 
 export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
   const { h } = getPreact();
-  const { useEffect, useRef } = getPreactHooks();
+  const { useEffect, useRef, useState } = getPreactHooks();
   const ref = useRef<HTMLDivElement | null>(null);
+
+  // [추가] 테마 상태 추적
+  const [currentTheme, setCurrentTheme] = useState<Theme>(themeService.getCurrentTheme());
 
   useEffect(() => {
     const node = ref.current;
     if (node) {
       // CSS 모듈 사용: 스타일은 클래스에서 관리
       wireSettingsModal(node);
+
+      // [추가] 테마 변경 시 data-theme 속성 업데이트
+      node.setAttribute('data-theme', currentTheme);
+
       // Initial focus
       setTimeout(() => {
         const focusables = getFocusableElements(node);
@@ -51,15 +59,27 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
         }
       };
       node.addEventListener('keydown', onKeyDown);
+
+      // [추가] 테마 변경 감지 및 업데이트
+      const themeObserver = (theme: Theme) => {
+        setCurrentTheme(theme);
+        if (node) {
+          node.setAttribute('data-theme', theme);
+        }
+      };
+
+      themeService.addObserver(themeObserver);
+
       return () => {
         node.removeEventListener('keydown', onKeyDown);
+        themeService.removeObserver(themeObserver);
       };
     }
     return () => {
       // nothing specific; host unmount will remove element
       if (onClose) onClose();
     };
-  }, []);
+  }, [currentTheme]); // [수정] currentTheme을 의존성으로 추가
 
   return h(
     'div',
@@ -67,6 +87,7 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
       ref,
       'data-testid': 'xeg-settings-modal',
       className: styles.modalOverlay,
+      'data-theme': currentTheme, // [추가] 테마 속성 추가
       tabindex: -1,
       onClick: (e: MouseEvent) => {
         if (e.target === e.currentTarget) onClose?.();
@@ -151,6 +172,15 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
         ]),
         // 갤러리 섹션
         h('h4', { className: styles.sectionTitle }, '갤러리 설정'),
+        // [추가] 테마 설정
+        h('div', { className: styles.settingRow }, [
+          h('label', { for: 'xeg-theme' }, '테마'),
+          h('select', { id: 'xeg-theme', 'data-testid': 'theme' }, [
+            h('option', { value: 'light' }, '라이트'),
+            h('option', { value: 'dark' }, '다크'),
+            h('option', { value: 'auto' }, '자동'),
+          ]),
+        ]),
         h('div', { className: styles.settingRow }, [
           h('label', { for: 'xeg-auto-scroll-speed' }, '자동 스크롤 속도'),
           h('input', {

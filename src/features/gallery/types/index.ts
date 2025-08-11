@@ -14,7 +14,7 @@ export type { GalleryConfig } from '@shared/types/unified';llery 타입 정의
 
 // 갤러리 상태 관련 타입들
 export type GalleryMode = 'grid' | 'list' | 'slideshow';
-export type GalleryTheme = 'dark' | 'light' | 'auto';
+export type GalleryTheme = 'auto' | 'light' | 'dark';
 
 export interface GalleryState {
   readonly isOpen: boolean;

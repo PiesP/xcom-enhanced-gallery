@@ -42,7 +42,7 @@ export {
 // 타입 export
 export type {
   GlassmorphismIntensity,
-  Theme,
+  // Theme은 theme-service에서 import하도록 변경
   ComponentState,
   GlassmorphismConfig,
 } from './style-service';

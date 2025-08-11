@@ -4,6 +4,7 @@
  */
 
 import { toastService, type ToastItem, type ToastOptions } from './toast-service';
+import { getPreactSignals } from '@shared/external/vendors';
 
 // 전역 토스트 상태 관리
 let _toastsSignal: {
@@ -17,7 +18,6 @@ let _toastsSignal: {
 function getToastsSignal() {
   if (!_toastsSignal) {
     try {
-      const { getPreactSignals } = require('@shared/external/vendors');
       const { signal } = getPreactSignals();
       _toastsSignal = signal([]);
     } catch {

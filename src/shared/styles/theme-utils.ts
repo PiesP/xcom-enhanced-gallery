@@ -18,9 +18,9 @@ export function getXEGVariable(variableName: string): string {
 
 /**
  * 갤러리 테마 설정 유틸리티
- * @param theme - 설정할 테마 ('light' | 'dark' | 'auto')
+ * @param theme - 설정할 테마 ('auto' | 'light' | 'dark')
  */
-export function setGalleryTheme(theme: 'light' | 'dark' | 'auto'): void {
+export function setGalleryTheme(theme: 'auto' | 'light' | 'dark'): void {
   if (typeof document === 'undefined') return;
 
   const galleryRoot = document.querySelector('.xeg-root');
@@ -44,7 +44,7 @@ export const STYLE_CONSTANTS = {
   ROOT_CLASS: 'xeg-root',
   GALLERY_CLASS: 'xeg-gallery-container',
   OVERLAY_CLASS: 'xeg-gallery-overlay',
-  THEMES: ['light', 'dark', 'auto'] as const,
+  THEMES: ['auto', 'light', 'dark'] as const,
 } as const;
 
 export type Theme = (typeof STYLE_CONSTANTS.THEMES)[number];
