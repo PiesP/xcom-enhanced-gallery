@@ -16,6 +16,32 @@ export const TIMING = {
   LOAD_TIMEOUT: 30000,
   URL_CLEANUP_DELAY: 100,
   CACHE_CLEANUP_INTERVAL: 60 * 1000,
+
+  // UI 인터랙션 타이밍
+  TOOLBAR_HIDE_DELAY: 300,
+  DEBOUNCED_SAVE_DELAY: 600,
+  DOUBLE_CLICK_DELAY: 300,
+  HOVER_DELAY: 500,
+  SCROLL_DEBOUNCE_DELAY: 150,
+
+  // 애니메이션 지속시간
+  ANIMATION_INSTANT: 0,
+  ANIMATION_FAST: 150,
+  ANIMATION_NORMAL: 250,
+  ANIMATION_SLOW: 400,
+  ANIMATION_SLOWER: 600,
+
+  // 성능 관련 타이밍
+  CACHE_TIMESTAMP_THRESHOLD: 16,
+  PERFORMANCE_INTERVAL: 15000,
+  TOAST_REMOVAL_DELAY: 1000,
+  ACCESSIBILITY_ANNOUNCEMENT_DELAY: 2000,
+
+  // 테스트 환경 타임아웃
+  TEST_TIMEOUT_SHORT: 5000,
+  TEST_TIMEOUT_MEDIUM: 10000,
+  TEST_TIMEOUT_LONG: 15000,
+  TEST_TIMEOUT_EXTRA_LONG: 28000,
 } as const;
 
 // DOM 선택자
@@ -101,10 +127,17 @@ export const CSS = {
 
   /** Z-index 값 */
   Z_INDEX: {
+    BASE: 1000,
     GALLERY: 9999,
     MODAL: 10000,
     TOOLBAR: 10001,
     TOAST: 10080,
+    // 세밀한 Z-index 관리
+    GALLERY_OVERLAY: 2000,
+    GALLERY_CONTAINER: 2500,
+    SETTINGS_MODAL: 3000,
+    NOTIFICATION_TOAST: 4000,
+    GLOBAL_OVERLAY: 5000,
   } as const,
 
   /** 스페이싱 (8px 기반) */
@@ -117,6 +150,106 @@ export const CSS = {
     XXL: 40,
   } as const,
 } as const;
+
+// ================================
+// 성능 및 제한값 상수
+// ================================
+
+export const PERFORMANCE = {
+  /** 성능 임계값 */
+  MAX_FUNCTION_CALLS: 1000,
+  STYLE_UPDATE_THRESHOLD: 200,
+  PERFORMANCE_MONITORING_KEYS_THRESHOLD: 200,
+
+  /** CPU 사용률 (백분율 소수) */
+  CPU_USAGE_TURBO: 0.85,
+  CPU_USAGE_NORMAL: 0.6,
+  CPU_USAGE_CONSERVATIVE: 0.4,
+
+  /** 스레드 풀 설정 */
+  MAX_THREADS: 12,
+  MIN_THREADS: 2,
+  DEFAULT_THREADS: 6,
+
+  /** 메모리 임계값 */
+  MEMORY_WARNING_THRESHOLD: 50 * 1024 * 1024, // 50MB
+  MEMORY_CRITICAL_THRESHOLD: 100 * 1024 * 1024, // 100MB
+
+  /** 성능 테스트 반복 횟수 */
+  PERFORMANCE_TEST_ITERATIONS: 100,
+} as const;
+
+// ================================
+// 크기 및 제한값 상수
+// ================================
+
+export const SIZE_LIMITS = {
+  /** URL 및 텍스트 길이 제한 */
+  URL_MAX_LENGTH: 2048,
+  FILENAME_MAX_LENGTH: 200,
+  ALT_TEXT_MAX_LENGTH: 125,
+  FILESYSTEM_PATH_LIMIT: 255,
+
+  /** 이미지 기본 크기 */
+  DEFAULT_IMAGE_WIDTH: 1200,
+  DEFAULT_IMAGE_HEIGHT: 800,
+  DEFAULT_VIDEO_WIDTH: 1920,
+  DEFAULT_VIDEO_HEIGHT: 1080,
+
+  /** 아이템 제한 */
+  MAX_CONCURRENT_DOWNLOADS: 4,
+  MAX_PRELOAD_COUNT: 10,
+  MAX_CACHED_ITEMS: 50,
+} as const;
+
+// ================================
+// 색상 토큰 시스템
+// ================================
+
+export const COLOR_TOKENS = {
+  /** 투명도 값 */
+  OPACITY: {
+    TRANSPARENT: 0,
+    SUBTLE: 0.1,
+    LIGHT: 0.3,
+    MEDIUM: 0.5,
+    STRONG: 0.8,
+    OPAQUE: 0.95,
+    SOLID: 1,
+  } as const,
+
+  /** 글래스모피즘 배경 투명도 */
+  GLASS: {
+    ULTRA_LIGHT: 0.95,
+    LIGHT: 0.85,
+    MEDIUM: 0.65,
+    DARK: 0.85,
+  } as const,
+
+  /** 오버레이 투명도 */
+  OVERLAY: {
+    LIGHT: 0.1,
+    MEDIUM: 0.3,
+    STRONG: 0.8,
+  } as const,
+} as const;
+
+// ================================
+// 애니메이션 이징 함수
+// ================================
+
+export const EASING = {
+  LINEAR: 'linear',
+  EASE: 'ease',
+  EASE_IN: 'cubic-bezier(0.4, 0, 1, 1)',
+  EASE_OUT: 'cubic-bezier(0, 0, 0.2, 1)',
+  EASE_IN_OUT: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  // 커스텀 이징
+  BOUNCE_OUT: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+  SMOOTH_OUT: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+} as const;
+
+// ================================
 
 // ================================
 // 키보드 단축키

@@ -4,7 +4,7 @@ import { getPreact } from '@shared/external/vendors';
 import type { VNode, PreactAPI } from '@shared/external/vendors';
 import { getService } from '@shared/services/service-manager';
 import { showSuccess } from '@shared/services/toast-integration';
-import { SERVICE_KEYS } from '@/constants';
+import { SERVICE_KEYS, TIMING } from '@/constants';
 import type { SettingsService } from './services/settings-service';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
@@ -450,7 +450,7 @@ function getInitialGalleryOpenState(): boolean {
 }
 
 // 저장 성공 토스트: 과도한 알림 방지를 위해 디바운스
-function createDebouncedSaveNotifier(delay = 600): () => void {
+function createDebouncedSaveNotifier(delay = TIMING.DEBOUNCED_SAVE_DELAY): () => void {
   let t: ReturnType<typeof setTimeout> | null = null;
   return () => {
     if (t) {

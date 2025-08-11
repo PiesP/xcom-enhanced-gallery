@@ -12,11 +12,12 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
+import { TIMING } from '../../constants';
 
 interface ToolbarVisibilityOptions {
   /** 초기 표시 시간 (기본: 1000ms) */
   readonly initialShowDuration?: number;
-  /** 호버 이탈 후 숨김 지연 시간 (기본: 300ms) */
+  /** 호버 이탈 후 숨김 지연 시간 (기본: TIMING.TOOLBAR_HIDE_DELAY) */
   readonly hideDelay?: number;
 }
 
@@ -39,7 +40,7 @@ interface ToolbarVisibilityReturn {
  */
 export function useToolbarVisibility({
   initialShowDuration = 1000,
-  hideDelay = 300,
+  hideDelay = TIMING.TOOLBAR_HIDE_DELAY,
 }: ToolbarVisibilityOptions = {}): ToolbarVisibilityReturn {
   const { useState, useRef, useEffect, useCallback } = ComponentManager.getHookManager();
 
