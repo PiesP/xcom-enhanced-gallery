@@ -38,6 +38,9 @@ import { ensureGalleryScrollAvailable } from '@shared/utils';
 import { getKeyValueStore } from '@shared/storage/provider';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
+import { SettingsOverlay } from '@/features/settings/components/SettingsOverlay';
+import { toggleSettings } from '@shared/state/signals/gallery.signals';
+import { openSettingsModal } from '@/features/settings/settings-menu';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -51,8 +54,8 @@ export interface VerticalGalleryViewProps {
 function VerticalGalleryViewCore({
   onClose,
   className = '',
-  onPrevious,
-  onNext,
+  onPrevious: _onPrevious,
+  onNext: _onNext,
   onDownloadCurrent,
   onDownloadAll,
 }: VerticalGalleryViewProps) {
@@ -368,14 +371,14 @@ function VerticalGalleryViewCore({
   });
 
   // 다운로드 핸들러들
-  const handleDownloadCurrent = useCallback(() => {
+  const _handleDownloadCurrent = useCallback(() => {
     if (onDownloadCurrent) {
       onDownloadCurrent();
       logger.debug('VerticalGalleryView: 현재 아이템 다운로드 시작');
     }
   }, [onDownloadCurrent]);
 
-  const handleDownloadAll = useCallback(() => {
+  const _handleDownloadAll = useCallback(() => {
     if (onDownloadAll) {
       onDownloadAll();
       logger.debug('VerticalGalleryView: 전체 다운로드 시작');
@@ -383,7 +386,7 @@ function VerticalGalleryViewCore({
   }, [onDownloadAll]);
 
   // 이미지 핏 모드 핸들러들 - 이벤트 전파 차단 추가
-  const handleFitOriginal = useCallback((event?: Event) => {
+  const _handleFitOriginal = useCallback((event?: Event) => {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -398,7 +401,7 @@ function VerticalGalleryViewCore({
     }
   }, []);
 
-  const handleFitWidth = useCallback((event?: Event) => {
+  const _handleFitWidth = useCallback((event?: Event) => {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -413,7 +416,7 @@ function VerticalGalleryViewCore({
     }
   }, []);
 
-  const handleFitHeight = useCallback((event?: Event) => {
+  const _handleFitHeight = useCallback((event?: Event) => {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -428,7 +431,7 @@ function VerticalGalleryViewCore({
     }
   }, []);
 
-  const handleFitContainer = useCallback((event?: Event) => {
+  const _handleFitContainer = useCallback((event?: Event) => {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -483,19 +486,19 @@ function VerticalGalleryViewCore({
         {/* 조건부 렌더링으로 툴바 표시 */}
         {toolbarVisible && (
           <Toolbar
-            onClose={onClose || (() => {})}
-            onPrevious={onPrevious || (() => {})}
-            onNext={onNext || (() => {})}
             currentIndex={currentIndex}
             totalCount={mediaItems.length}
             isDownloading={isDownloading}
-            onDownloadCurrent={handleDownloadCurrent}
-            onDownloadAll={handleDownloadAll}
-            onFitOriginal={handleFitOriginal}
-            onFitWidth={handleFitWidth}
-            onFitHeight={handleFitHeight}
-            onFitContainer={handleFitContainer}
-            className={styles.toolbar || ''}
+            onPrevious={() => navigateToItem(Math.max(0, currentIndex - 1))}
+            onNext={() => navigateToItem(Math.min(mediaItems.length - 1, currentIndex + 1))}
+            onDownloadCurrent={_handleDownloadCurrent}
+            onDownloadAll={_handleDownloadAll}
+            onClose={onClose || (() => {})}
+            onOpenSettings={() => openSettingsModal()}
+            onFitOriginal={_handleFitOriginal}
+            onFitWidth={_handleFitWidth}
+            onFitHeight={_handleFitHeight}
+            onFitContainer={_handleFitContainer}
           />
         )}
       </div>
@@ -535,6 +538,9 @@ function VerticalGalleryViewCore({
           <Toast key={toast.id} toast={toast} onRemove={() => removeToast(toast.id)} />
         ))}
       </div>
+
+      {/* Settings Modal integrated into Preact tree */}
+      {state.isSettingsOpen && <SettingsOverlay onClose={() => toggleSettings(false)} />}
 
       {/* 툴바 호버 핸들러 - 프로덕션 빌드 호환성을 위한 JavaScript 백업 */}
     </div>

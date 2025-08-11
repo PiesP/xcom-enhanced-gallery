@@ -1,128 +1,147 @@
 /**
- * Gallery Toolbar Styles - Modern State-Based Architecture
- * @version 5.0.0 - 상태 기반 CSS 아키텍처 및 CSS 커스텀 프로퍼티 활용
+ * Gallery Toolbar Styles - UX 최적화 버전
+ * @version 6.0.0 - 사용자 친화적이고 접근성 좋은 툴바
  */
 
-/* 통합 디자인 토큰 사용 - 로컬 CSS 변수 제거됨 */
-
-/* ===== 상태 기반 CSS ===== */
-
-/* 클릭 상태 - 단순화된 피드백 */
-.toolbarButton:active:not([data-disabled='true']) {
-  box-shadow:
-    0 1px 4px rgba(15, 23, 42, 0.08),
-    0 0px 2px rgba(15, 23, 42, 0.04);
-  /* 단순한 클릭 효과 - transform 제거 */
-}
-
-/* 🎯 툴바 기본 스타일 - Design Token 값 직접 사용 */
+/* 🎯 툴바 기본 스타일 - UX 중심 디자인 */
 .galleryToolbar {
-  /* 기본 레이아웃 및 시각적 속성만 */
+  /* 레이아웃 - 더 접근하기 쉬운 위치 */
   position: fixed;
-  top: 20px;
+  top: var(--xeg-spacing-lg); /* 더 넉넉한 상단 여백 */
   left: 50%;
   transform: translateX(-50%);
-  /* Design Token 값 직접 사용 */
-  z-index: var(--xeg-z-toolbar); /* 2500 */
+  z-index: var(--xeg-z-gallery-toolbar);
 
-  display: inline-flex;
+  /* 크기 및 간격 - UX 최적화 */
+  height: var(--xeg-toolbar-height);
+  min-height: var(--xeg-touch-target-min); /* 최소 터치 타겟 보장 */
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-xl); /* 더 넉넉한 패딩 */
+  gap: var(--xeg-spacing-md); /* 버튼 간 충분한 간격 */
+  min-width: 280px; /* 최소 너비로 사용성 보장 */
+  max-width: 90vw;
+
+  /* 플렉스 레이아웃 */
+  display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 48px;
-  padding: 8px 16px;
-  gap: 12px;
+  justify-content: center;
 
-  /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
-  background: var(--xeg-toolbar-glass-bg);
-  opacity: var(--toolbar-opacity, 1);
-  pointer-events: var(--toolbar-pointer-events, auto);
+  /* 트랜지션 - 부드러운 상호작용 */
   transition:
-    opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
-    transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+    opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
-  /* 글래스모피즘 스타일링 - 통합 토큰 사용 */
-  border-radius: 16px;
-  border: 1px solid var(--xeg-toolbar-border);
+  /* 글래스모피즘 스타일링 - 더 선명한 배경 */
+  background: var(--xeg-toolbar-glass-bg);
+  border: 2px solid var(--xeg-toolbar-border); /* 더 명확한 경계 */
+  border-radius: var(--xeg-radius-2xl); /* 더 둥근 모서리 */
   box-shadow: var(--xeg-toolbar-glass-shadow);
-  backdrop-filter: var(--xeg-blur-medium) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-blur-medium) saturate(120%);
-  background: var(--xeg-toolbar-bg);
+  backdrop-filter: var(--xeg-glass-blur-medium) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-medium) saturate(120%);
   color: var(--xeg-toolbar-text);
+
+  /* 최적화 */
   user-select: none;
   isolation: isolate;
+
+  /* 호버 시 더 명확한 표시 */
+  cursor: default;
 }
 
-/* 감소된 모션 지원 강화 */
+.galleryToolbar:hover {
+  box-shadow: var(--xeg-glass-shadow-strong);
+  transform: translateX(-50%) translateY(-2px);
+  border-color: var(--xeg-color-primary-alpha-40);
+} /* 감소된 모션 지원 강화 */
 @media (prefers-reduced-motion: reduce) {
   .galleryToolbar {
     transition: none;
   }
 }
 
-/* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
+/* 🎨 상태별 CSS 프로퍼티 - UX 중심 개선 */
 .galleryToolbar[data-state='idle'],
 .galleryToolbar:not([data-state]) {
   --toolbar-opacity: 1 !important;
   --toolbar-pointer-events: auto !important;
-  /* 명시적 가시성 보장 */
+
+  /* 완전한 가시성과 상호작용 보장 */
   opacity: 1 !important;
   visibility: visible !important;
   display: flex !important;
   pointer-events: auto !important;
+
+  /* 기본 상태에서 부드러운 그림자 */
+  box-shadow: var(--xeg-toolbar-glass-shadow);
 }
 
 .galleryToolbar[data-state='loading'] {
-  --toolbar-opacity: 0.7 !important;
+  --toolbar-opacity: 0.9 !important; /* 약간 더 선명하게 */
   --toolbar-pointer-events: auto !important;
-  --toolbar-bg: var(--toolbar-bg-loading);
-  /* 로딩 상태에서도 가시성 보장 */
-  opacity: 0.7 !important;
+
+  opacity: 0.9 !important;
   pointer-events: auto !important;
+
+  /* 로딩 상태 시각적 피드백 */
+  background: linear-gradient(135deg, var(--xeg-toolbar-glass-bg) 0%, rgba(59, 130, 246, 0.1) 100%);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .galleryToolbar[data-state='downloading'] {
   --toolbar-opacity: 1 !important;
   --toolbar-pointer-events: auto !important;
-  --toolbar-bg: var(--toolbar-bg-downloading);
-  /* 다운로드 상태에서도 가시성 보장 */
+
   opacity: 1 !important;
   pointer-events: auto !important;
+
+  /* 다운로드 상태 시각적 피드백 - 성공적인 녹색 톤 */
+  background: linear-gradient(135deg, var(--xeg-toolbar-glass-bg) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: var(--xeg-glass-shadow-strong);
 }
 
 .galleryToolbar[data-state='error'] {
   --toolbar-opacity: 1 !important;
   --toolbar-pointer-events: auto !important;
-  --toolbar-bg: var(--toolbar-bg-error);
-  --toolbar-offset-y: -4px;
-  /* 에러 상태에서도 가시성 보장 */
+
   opacity: 1 !important;
   pointer-events: auto !important;
+
+  /* 에러 상태 시각적 피드백 - 경고적인 빨간색 톤 */
+  background: linear-gradient(135deg, var(--xeg-toolbar-glass-bg) 0%, rgba(239, 68, 68, 0.1) 100%);
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: var(--xeg-glass-shadow-strong);
+  transform: translateX(-50%) translateY(-1px); /* 미세한 떠있는 효과 */
 }
 
+/* 💼 툴바 콘텐츠 레이아웃 - UX 최적화 */
 .toolbarContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 8px;
+  gap: var(--xeg-spacing-md); /* 더 넉넉한 간격 */
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible; /* 호버 효과가 잘릴 수 있으므로 변경 */
+  min-height: var(--xeg-touch-target-min); /* 최소 터치 영역 보장 */
 }
 
 .toolbarSection {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--xeg-spacing-sm); /* 일관된 간격 */
   position: relative;
+  min-height: var(--xeg-touch-target-min); /* 터치 친화적 */
 }
 
-/* 좌측, 우측 섹션을 같은 크기로 균등 배치 */
+/* 좌측, 우측 섹션을 균등하게 배치하되 더 사용자 친화적으로 */
 .toolbarLeft,
 .toolbarRight {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--xeg-spacing-sm); /* 통일된 간격 */
+  min-height: var(--xeg-touch-target-min);
 }
 
 .toolbarLeft {
@@ -133,51 +152,86 @@
   justify-content: flex-end;
 }
 
-/* 중앙 섹션 */
+.toolbarRight {
+  justify-content: flex-end;
+}
+
+/* 🎯 중앙 섹션 - 핵심 컨트롤 영역 */
 .toolbarCenter {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: var(--xeg-spacing-sm);
+  min-height: var(--xeg-touch-target-min);
+  padding: 0 var(--xeg-spacing-sm); /* 양옆에 여백 추가 */
 }
 
-/* 구분선 제거 */
+/* 📏 구분선 - 깔끔하게 제거하고 간격으로 대체 */
 .toolbarSection::after {
-  display: none; /* 모든 구분선 제거 */
+  display: none; /* 모든 구분선 제거 - 간격으로 충분 */
 }
 
 .separator {
-  color: var(--xeg-color-neutral-500);
-  margin: 0 2px;
+  display: none; /* 텍스트 구분선도 제거 */
 }
 
-/* 버튼 상태 관리 */
+/* 🎨 버튼 기본 스타일 - UX 최적화 */
 .toolbarButton {
-  /* 글래스모피즘 버튼 스타일 - 통합 색상 토큰 활용 */
-  background: var(--xeg-toolbar-bg);
-  color: var(--xeg-toolbar-text);
-  opacity: var(--button-opacity, 1);
-  transform: var(--button-transform, none);
-  transition: var(--xeg-transition-fast);
+  /* 크기 - 터치 친화적 */
+  width: var(--xeg-button-size); /* 44px 최소 크기 */
+  height: var(--xeg-button-size);
+  min-width: var(--xeg-touch-target-min);
+  min-height: var(--xeg-touch-target-min);
+
+  /* 간격 및 정렬 */
+  padding: var(--xeg-spacing-xs);
+  margin: 0;
+  gap: var(--xeg-spacing-xs);
 
   /* 레이아웃 */
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+
+  /* 글래스모피즘 스타일 - 향상된 버전 */
+  background: var(--xeg-button-bg);
+  color: var(--xeg-button-text);
+  border: 2px solid var(--xeg-button-border);
+  border-radius: var(--xeg-radius-lg);
+
+  /* 트랜지션 - 부드러운 상호작용 */
+  transition:
+    all var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-spring);
+
+  /* 그림자 */
+  box-shadow: var(--xeg-glass-shadow-subtle);
+
+  /* 상호작용 최적화 */
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+
+  /* 접근성 */
+  position: relative;
+
+  /* 텍스트 및 아이콘 스타일 */
   font-size: 14px;
   font-weight: 500;
-  position: relative;
   overflow: hidden;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid var(--xeg-glass-border-light);
-  cursor: pointer;
 
-  /* 글래스모피즘 스타일링 - 디자인 토큰 활용 */
+  /* 글래스모피즘 향상된 스타일링 */
   backdrop-filter: var(--xeg-glass-blur-medium) saturate(180%);
   -webkit-backdrop-filter: var(--xeg-glass-blur-medium) saturate(180%);
-  box-shadow: var(--xeg-glass-shadow-medium);
+
+  /* Lucide 아이콘 최적화 */
+  svg {
+    flex-shrink: 0;
+    transition: transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  }
 
   /* 성능 최적화 */
   will-change: backdrop-filter, transform;
@@ -185,181 +239,320 @@
   contain: layout style paint;
 }
 
-/* 데이터 속성 기반 상태 관리 */
+/* 🎯 버튼 상태별 스타일 - 데이터 속성 기반 */
 .toolbarButton[data-active='true'] {
   background: var(--xeg-color-primary);
-  --button-color: white;
+  color: white;
+  border-color: var(--xeg-color-primary);
   box-shadow:
-    0 0 0 2px var(--xeg-color-primary-alpha-30),
-    0 4px 16px rgba(71, 133, 163, 0.25);
+    0 0 0 3px var(--xeg-color-primary-alpha-30),
+    var(--xeg-glass-shadow-strong);
+  transform: translateY(-1px);
 }
 
 .toolbarButton[data-selected='true'] {
-  --button-bg: var(--xeg-color-primary);
-  --button-color: white;
+  background: var(--xeg-color-primary);
+  color: white;
   border-color: var(--xeg-color-primary);
+  box-shadow: var(--xeg-glass-shadow-strong);
 }
 
 .toolbarButton[data-loading='true'] {
-  --button-opacity: 0.7;
-  --button-transform: scale(0.95);
+  opacity: 0.8;
+  transform: scale(0.98);
+
+  /* 로딩 애니메이션 효과 */
+  background: linear-gradient(135deg, var(--xeg-button-bg) 0%, rgba(59, 130, 246, 0.1) 100%);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .toolbarButton[data-disabled='true'] {
-  --button-opacity: 0.5;
+  opacity: 0.5;
   background: var(--xeg-surface-disabled);
-  --button-color: var(--xeg-color-neutral-400);
+  color: var(--xeg-color-neutral-400);
   cursor: not-allowed;
+  pointer-events: none; /* 완전히 상호작용 차단 */
+  box-shadow: none;
 }
 
-/* 호버 상태는 CSS에서만 관리 - fitButton 기준으로 통일 */
+/* 🖱️ 호버 상태 - 향상된 UX */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
-    /* fitButton과 동일한 단순한 호버 효과 - 통합 색상 토큰 사용 */
-    background: var(--xeg-toolbar-button-hover);
-    border-color: var(--xeg-toolbar-border);
+    background: var(--xeg-button-bg-hover);
+    border-color: var(--xeg-color-primary-alpha-40);
     color: var(--xeg-color-neutral-800);
-    /* 복잡한 transform 효과 제거 */
+
+    /* 부드러운 떠있는 효과 */
+    box-shadow: var(--xeg-glass-shadow-medium);
+    transform: translateY(-1px) scale(1.02);
+
+    /* 백드롭 필터 강화 */
+    backdrop-filter: var(--xeg-glass-blur-medium) saturate(150%);
+  }
+
+  .toolbarButton[data-active='true']:hover {
+    box-shadow:
+      0 0 0 3px var(--xeg-color-primary-alpha-40),
+      var(--xeg-glass-shadow-strong);
+    transform: translateY(-2px) scale(1.02);
   }
 }
 
-/* 클릭 상태 */
+/* 🖱️ 클릭 상태 - 명확한 피드백 */
 .toolbarButton:active:not([data-disabled='true']) {
-  box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.08),
-    0 1px 4px rgba(15, 23, 42, 0.05);
-  /* 단순한 클릭 효과만 */
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--xeg-glass-shadow-subtle);
+  transition-duration: 0.1s; /* 빠른 피드백 */
 }
 
-/* 접근성 개선 - 포커스 상태 */
+/* ♿ 접근성 개선 - 포커스 상태 */
 .toolbarButton:focus-visible,
 .navButton:focus-visible,
 .downloadButton:focus-visible,
 .settingsButton:focus-visible,
 .closeButton:focus-visible,
 .fitButton:focus-visible {
-  outline: 2px solid var(--xeg-color-primary);
+  outline: 3px solid var(--xeg-color-primary-alpha-50);
   outline-offset: 2px;
-}
-/* 네비게이션 섹션 */
-.toolbarNavigation {
-  gap: 8px;
+  border-color: var(--xeg-color-primary);
+  box-shadow:
+    0 0 0 2px white,
+    0 0 0 5px var(--xeg-color-primary-alpha-30);
 }
 
+/* 🧭 네비게이션 섹션 - UX 최적화 */
+.toolbarNavigation {
+  display: flex;
+  align-items: center;
+  gap: var(--xeg-spacing-sm);
+}
+
+/* 🧭 네비게이션 버튼 - 향상된 사용성 */
 .navButton {
-  /* toolbarButton 기본 스타일 상속 */
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-neutral-300);
-  color: var(--xeg-text-button-navigation);
+  /* 기본 버튼 스타일 확장 */
+  background: var(--xeg-button-bg);
+  border: 2px solid var(--xeg-button-border);
+  color: var(--xeg-button-text);
+
+  /* 네비게이션 특화 스타일 */
+  width: var(--xeg-button-size);
+  height: var(--xeg-button-size);
+  min-width: var(--xeg-touch-target-min);
+  min-height: var(--xeg-touch-target-min);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--xeg-radius-lg);
+
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  cursor: pointer;
+
+  /* 글래스모피즘 효과 */
+  backdrop-filter: var(--xeg-glass-blur-medium) saturate(150%);
+  box-shadow: var(--xeg-glass-shadow-subtle);
 }
 
 .navButton:hover:not(:disabled) {
-  /* fitButton과 동일한 단순한 호버 효과 */
-  background: var(--xeg-color-neutral-200);
-  border-color: var(--xeg-color-neutral-400);
+  background: var(--xeg-button-bg-hover);
+  border-color: var(--xeg-color-primary-alpha-40);
   color: var(--xeg-color-neutral-800);
-  /* transform 효과 제거 */
+
+  /* 부드러운 상승 효과 */
+  box-shadow: var(--xeg-glass-shadow-medium);
+  transform: translateY(-1px) scale(1.02);
 }
 
 .navButton:active:not(:disabled),
 .navButton.active {
   background: var(--xeg-color-primary);
   color: white;
+  border-color: var(--xeg-color-primary);
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--xeg-glass-shadow-strong);
 }
 
-/* 미디어 카운터 */
+.navButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: var(--xeg-surface-disabled);
+  color: var(--xeg-color-neutral-400);
+  box-shadow: none;
+}
+
+/* 📊 미디어 카운터 래퍼 - 향상된 레이아웃 */
 .mediaCounterWrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-width: 80px;
+  gap: var(--xeg-spacing-xs);
+  min-width: 100px; /* 더 넉넉한 공간 */
+  padding: 0 var(--xeg-spacing-sm);
 }
 
 .mediaCounter {
-  color: var(--xeg-text-counter);
+  color: var(--xeg-text-primary);
   font-size: var(--xeg-font-size-md);
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
-  background: var(--xeg-bg-counter);
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--xeg-border-counter);
+
+  /* 향상된 배경 스타일 */
+  background: var(--xeg-surface-glass);
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  border-radius: var(--xeg-radius-md);
+  border: 1px solid var(--xeg-border-light);
+
+  /* 글래스 효과 */
+  backdrop-filter: var(--xeg-glass-blur-light);
+  box-shadow: var(--xeg-glass-shadow-subtle);
 }
 
 .currentIndex {
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-color-primary);
   font-weight: 700;
 }
 
 .separator {
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0 2px;
+  color: var(--xeg-text-secondary);
+  margin: 0 var(--xeg-spacing-xs);
 }
 
 .totalCount {
-  color: var(--xeg-color-neutral-600);
+  color: var(--xeg-text-secondary);
 }
-/* 진행률 바 */
+
+/* 📈 진행률 바 - UX 향상 */
 .progressBar {
-  width: 60px;
-  height: 2px;
-  background: var(--xeg-color-neutral-200);
-  border-radius: 1px;
+  width: 80px; /* 더 넉넉한 크기 */
+  height: 3px; /* 살짝 두꺼워진 바 */
+  background: var(--xeg-surface-subtle);
+  border-radius: var(--xeg-radius-full);
   overflow: hidden;
-  margin: 4px 0;
+  margin: var(--xeg-spacing-xs) 0;
+
+  /* 미세한 그림자 효과 */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .progressFill {
   width: 100%;
   height: 100%;
   background: linear-gradient(
-    to right,
+    135deg,
     var(--xeg-color-primary) 0%,
     var(--xeg-color-primary-light) 100%
   );
-  border-radius: 1px;
-  transition: width 0.3s ease;
+  border-radius: var(--xeg-radius-full);
+  transition: width var(--xeg-duration-normal) var(--xeg-easing-ease-out);
   transform-origin: left;
+
+  /* 미세한 광택 효과 */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* 크기 조절 섹션 */
+/* 🔧 크기 조절 섹션 - 향상된 UX */
 .fitModeGroup {
   display: flex;
-  gap: 2px;
-  background: var(--xeg-color-neutral-100);
-  border-radius: 8px;
-  padding: 2px;
-  border: 1px solid var(--xeg-color-neutral-200);
+  gap: var(--xeg-spacing-xs);
+  background: var(--xeg-surface-glass);
+  border-radius: var(--xeg-radius-lg);
+  padding: var(--xeg-spacing-xs);
+  border: 2px solid var(--xeg-border-light);
+
+  /* 글래스모피즘 효과 */
+  backdrop-filter: var(--xeg-glass-blur-light);
+  box-shadow: var(--xeg-glass-shadow-subtle);
 }
 
 .fitButton {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
+  width: var(--xeg-clickable-area-comfortable);
+  height: var(--xeg-clickable-area-comfortable);
+  min-width: var(--xeg-touch-target-min);
+  min-height: var(--xeg-touch-target-min);
+
+  border-radius: var(--xeg-radius-md);
   background: transparent;
-  border: none;
-  color: var(--xeg-color-neutral-600);
-  transition: var(--xeg-transition-normal);
+  border: 2px solid transparent;
+  color: var(--xeg-text-secondary);
+
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  cursor: pointer;
+
+  /* 레이아웃 중앙 정렬 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   /* 이벤트 전파 방지 및 안정성 */
   position: relative;
   z-index: 10;
   pointer-events: auto;
+  user-select: none;
+}
+
+.fitButton:hover:not(.selected) {
+  background: var(--xeg-button-bg-hover);
+  color: var(--xeg-text-primary);
+  border-color: var(--xeg-color-primary-alpha-30);
+  transform: scale(1.05);
 }
 
 .fitButton.selected {
   background: var(--xeg-color-primary);
   color: white;
+  border-color: var(--xeg-color-primary);
+  box-shadow: var(--xeg-glass-shadow-medium);
+  transform: scale(1.02);
 }
-/* 다운로드 버튼 */
+
+.fitButton:active {
+  transform: scale(0.95);
+  transition-duration: 0.1s;
+}
+
+/* 📥 다운로드 버튼 - 향상된 시각적 피드백 */
 .downloadButton {
   position: relative;
+  background: var(--xeg-button-bg);
+  border: 2px solid var(--xeg-button-border);
+  color: var(--xeg-button-text);
+
+  width: var(--xeg-button-size);
+  height: var(--xeg-button-size);
+  min-width: var(--xeg-touch-target-min);
+  min-height: var(--xeg-touch-target-min);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--xeg-radius-lg);
+
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  cursor: pointer;
+
+  /* 글래스모피즘 */
+  backdrop-filter: var(--xeg-glass-blur-medium);
+  box-shadow: var(--xeg-glass-shadow-subtle);
+}
+
+.downloadButton:hover {
+  background: var(--xeg-button-bg-hover);
+  border-color: var(--xeg-color-success-alpha-40);
+  color: var(--xeg-color-success-600);
+
+  box-shadow: var(--xeg-glass-shadow-medium);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.downloadButton:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--xeg-glass-shadow-subtle);
 }
 
 .downloadCurrent {
-  background: var(--xeg-bg-button-download);
+  background: var(--xeg-color-success-50);
   border-color: var(--xeg-color-primary);
   color: var(--xeg-text-button-download);
 }

@@ -460,9 +460,12 @@ export const DEFAULT_SETTINGS = {
     animations: true,
   },
   download: {
-    filenamePattern: 'original' as const,
+    filenamePattern: 'tweet-id' as const,
+    // 사용자 지정 파일명 템플릿 (filenamePattern이 'custom'일 때 사용)
+    // 확장자를 포함하지 않으면 자동으로 .{ext}가 덧붙습니다
+    customTemplate: '{user}_{tweetId}_{index}',
     imageQuality: 'original' as const,
-    maxConcurrentDownloads: 3,
+    maxConcurrentDownloads: 4,
     autoZip: false,
     folderStructure: 'flat' as const,
   },

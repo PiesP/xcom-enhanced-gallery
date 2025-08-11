@@ -1,0 +1,245 @@
+/**
+ * ToolbarIconButton Component Styles
+ * lucide-preact 아이콘을 사용한 툴바 버튼 스타일링
+ */
+
+.toolbarIconButton {
+  /* 기본 레이아웃 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  gap: var(--xeg-spacing-xs);
+
+  /* 크기 및 간격 - 접근성 고려 */
+  min-width: var(--xeg-touch-target-min);
+  min-height: var(--xeg-touch-target-min);
+  padding: var(--xeg-spacing-xs);
+
+  /* 타이포그래피 */
+  font-family: inherit;
+  font-size: var(--xeg-text-sm);
+  font-weight: 500;
+  line-height: 1;
+
+  /* 기본 스타일 */
+  background: var(--xeg-button-bg);
+  color: var(--xeg-button-text);
+  border: 1px solid var(--xeg-glass-border-light);
+  border-radius: var(--xeg-radius-md);
+
+  /* 글래스모피즘 효과 */
+  backdrop-filter: var(--xeg-glass-blur-light);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-light);
+  box-shadow: var(--xeg-glass-shadow-light);
+
+  /* 인터랙션 */
+  cursor: pointer;
+  transition: all var(--xeg-transition-fast) ease;
+  transform: translateZ(0);
+  will-change: transform, box-shadow, background;
+
+  /* 기본 상태 */
+  outline: none;
+}
+
+/* 호버 상태 */
+.toolbarIconButton:hover:not(:disabled) {
+  background: var(--xeg-button-bg-hover);
+  border-color: var(--xeg-color-primary-alpha-40);
+  box-shadow: var(--xeg-glass-shadow-medium);
+  transform: translateY(-1px) translateZ(0);
+}
+
+/* 포커스 상태 */
+.toolbarIconButton:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+  border-color: var(--xeg-color-primary);
+}
+
+/* 활성 상태 */
+.toolbarIconButton:active:not(:disabled) {
+  transform: translateY(0) scale(0.98) translateZ(0);
+  box-shadow: var(--xeg-glass-shadow-light);
+}
+
+/* 비활성 상태 */
+.toolbarIconButton:disabled {
+  opacity: var(--xeg-opacity-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+/* 아이콘 컨테이너 */
+.iconContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 아이콘 스타일 */
+.icon {
+  display: block;
+  color: inherit;
+}
+
+/* 라벨 (시각적으로 숨김, 스크린 리더용) */
+.label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 로딩 플레이스홀더 */
+.loadingPlaceholder {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background: var(--xeg-color-surface-light);
+  border-radius: var(--xeg-radius-sm);
+  opacity: 0.6;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 폴백 아이콘 */
+.fallbackIcon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background: var(--xeg-color-surface-medium);
+  border-radius: var(--xeg-radius-sm);
+  opacity: 0.8;
+  position: relative;
+}
+
+.fallbackIcon::after {
+  content: '?';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: var(--xeg-color-text-secondary);
+}
+
+/* 크기 변형 */
+.sm {
+  min-width: 32px;
+  min-height: 32px;
+  padding: var(--xeg-spacing-xs);
+  font-size: var(--xeg-text-xs);
+}
+
+.sm .icon,
+.sm .loadingPlaceholder,
+.sm .fallbackIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.md {
+  min-width: var(--xeg-touch-target-min);
+  min-height: var(--xeg-touch-target-min);
+  padding: var(--xeg-spacing-sm);
+  font-size: var(--xeg-text-sm);
+}
+
+.md .icon,
+.md .loadingPlaceholder,
+.md .fallbackIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.lg {
+  min-width: 48px;
+  min-height: 48px;
+  padding: var(--xeg-spacing-md);
+  font-size: var(--xeg-text-base);
+}
+
+.lg .icon,
+.lg .loadingPlaceholder,
+.lg .fallbackIcon {
+  width: 24px;
+  height: 24px;
+}
+
+/* 스타일 변형 */
+.primary {
+  background: var(--xeg-color-primary);
+  color: var(--xeg-color-white);
+  border-color: var(--xeg-color-primary);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--xeg-color-primary-dark);
+  border-color: var(--xeg-color-primary-dark);
+  box-shadow: var(--xeg-glass-shadow-strong);
+}
+
+.secondary {
+  /* 기본 스타일을 사용하므로 추가 스타일링 불필요 */
+}
+
+.danger {
+  background: var(--xeg-color-error-alpha-10);
+  color: var(--xeg-color-error);
+  border-color: var(--xeg-color-error-alpha-30);
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--xeg-color-error-alpha-20);
+  border-color: var(--xeg-color-error);
+  box-shadow: var(--xeg-glass-shadow-medium);
+}
+
+/* 애니메이션 */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .toolbarIconButton {
+    border-width: 2px;
+  }
+
+  .toolbarIconButton:focus-visible {
+    outline-width: 3px;
+  }
+}
+
+/* 애니메이션 감소 모드 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .toolbarIconButton {
+    transition: none;
+  }
+
+  .toolbarIconButton:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .toolbarIconButton:active:not(:disabled) {
+    transform: none;
+  }
+
+  .loadingPlaceholder {
+    animation: none;
+  }
+}

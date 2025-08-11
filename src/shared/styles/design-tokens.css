@@ -27,6 +27,7 @@
   /* Modal Layers */
   --xeg-z-modal-backdrop: 2000; /* 모달 배경 */
   --xeg-z-modal-content: 2100; /* 모달 콘텐츠 */
+  --xeg-z-modal: var(--xeg-z-modal-content); /* 통합 모달 z-index 토큰 */
 
   /* Notification Layers */
   --xeg-z-toast-container: 3000; /* 토스트 컨테이너 */
@@ -291,10 +292,19 @@
   /* DEPRECATED: --xeg-z-gallery (aggregated) 사용 대신 세분화된 --xeg-z-gallery-* 토큰 사용 권장 */
   --xeg-gallery-z-index: var(--xeg-z-gallery-backdrop); /* Updated: fallback to backdrop layer */
 
-  /* Button specific */
-  --xeg-button-height-sm: 32px;
-  --xeg-button-height-md: 40px;
-  --xeg-button-height-lg: 48px;
+  /* Button specific - UX 최적화 */
+  --xeg-button-height-sm: 36px; /* 터치하기 쉽게 최소 36px */
+  --xeg-button-height-md: 44px; /* 모바일 친화적 44px */
+  --xeg-button-height-lg: 52px; /* 접근성 고려 큰 버튼 */
+  --xeg-button-size: var(--xeg-button-height-md); /* 통합 버튼 사이즈 토큰 */
+  --xeg-toolbar-height: 64px; /* 터치 친화적으로 증가 */
+
+  /* UX 중심 추가 토큰 */
+  --xeg-touch-target-min: 44px; /* 터치 타겟 최소 크기 (WCAG 기준) */
+  --xeg-clickable-area-comfortable: 48px; /* 편안한 클릭 영역 */
+  --xeg-modal-min-width: 320px; /* 모달 최소 너비 */
+  --xeg-modal-max-width: 640px; /* 모달 최대 너비 (가독성) */
+  --xeg-input-height: 44px; /* 입력 요소 편안한 높이 */
 
   /* 글래스모피즘 컴포넌트별 토큰 */
   /* 툴바 글래스모피즘 */
@@ -324,6 +334,72 @@
     0.15
   ); /* TODO Phase 2: border translucency scale화 검토 */
   --xeg-media-glass-shadow: var(--xeg-glass-shadow-medium);
+
+  /* ===========================================
+     COMPONENT BASE CLASSES (Reusable Mixins)
+     =========================================== */
+
+  /* 글래스모피즘 공통 기본 클래스 */
+  .xeg-glass-base {
+    backdrop-filter: var(--xeg-glass-blur-medium) saturate(180%);
+    -webkit-backdrop-filter: var(--xeg-glass-blur-medium) saturate(180%);
+    box-shadow: var(--xeg-glass-shadow-medium);
+  }
+
+  /* 모달 공통 기본 클래스 */
+  .xeg-modal-base {
+    background: var(--xeg-glass-bg-dark);
+    border: 1px solid var(--xeg-glass-border-light);
+    box-shadow: var(--xeg-glass-shadow-strong);
+    border-radius: var(--xeg-radius-lg);
+    backdrop-filter: var(--xeg-glass-blur-strong);
+    -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
+    padding: var(--xeg-spacing-md);
+    color: var(--xeg-color-text-primary);
+  }
+
+  /* 툴바 공통 기본 클래스 */
+  .xeg-toolbar-base {
+    height: var(--xeg-toolbar-height);
+    padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+    gap: var(--xeg-spacing-sm);
+    background: var(--xeg-toolbar-glass-bg);
+    border: 1px solid var(--xeg-toolbar-border);
+    border-radius: 16px;
+    backdrop-filter: var(--xeg-glass-blur-medium) saturate(120%);
+    -webkit-backdrop-filter: var(--xeg-glass-blur-medium) saturate(120%);
+    box-shadow: var(--xeg-toolbar-glass-shadow);
+    color: var(--xeg-toolbar-text);
+    display: flex;
+    align-items: center;
+  }
+
+  /* 버튼 공통 기본 클래스 */
+  .xeg-button-base {
+    width: var(--xeg-button-size);
+    height: var(--xeg-button-size);
+    border-radius: var(--xeg-radius-md);
+    padding: var(--xeg-spacing-sm);
+    border: 1px solid var(--xeg-glass-border-light);
+    background: var(--xeg-toolbar-glass-bg);
+    color: var(--xeg-color-text-primary);
+    cursor: pointer;
+    transition: var(--xeg-transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .xeg-button-base:hover:not(:disabled) {
+    background: var(--xeg-glass-bg-light);
+    transform: translateY(-1px);
+    box-shadow: var(--xeg-glass-shadow-medium);
+  }
+
+  .xeg-button-base:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--xeg-glass-shadow-light);
+  }
 
   /* Focus ring - 통합된 포커스 시스템 */
   --xeg-focus-ring-width: 2px;

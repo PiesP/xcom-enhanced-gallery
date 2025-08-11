@@ -3,9 +3,7 @@
  * TDD Phase 5c: Testing Strategy Unification - Main Exports
  */
 
-import { TestHarness } from './TestHarness';
-import { StandardMockFactory } from './StandardMockFactory';
-import { TestReporter } from './TestReporter';
+// 순수 배럴 유지: 구현/초기화 로직은 init.ts로 이동
 
 // 핵심 클래스들
 export { TestHarness } from './TestHarness';
@@ -49,24 +47,4 @@ export type {
 export type { TestReport } from './TestReporter';
 
 // 기본 설정
-export const DEFAULT_TEST_CONFIG = {
-  timeout: 30000,
-  retries: 2,
-  isolation: true,
-  parallel: true,
-} as const;
-
-// 테스트 환경 초기화 헬퍼
-export async function initializeTestingFramework(): Promise<{
-  harness: TestHarness;
-  mockFactory: StandardMockFactory;
-  reporter: TestReporter;
-}> {
-  const harness = new TestHarness();
-  const mockFactory = new StandardMockFactory();
-  const reporter = new TestReporter();
-
-  await harness.setup();
-
-  return { harness, mockFactory, reporter };
-}
+export { DEFAULT_TEST_CONFIG, initializeTestingFramework } from './init';

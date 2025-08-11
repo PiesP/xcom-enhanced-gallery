@@ -131,11 +131,18 @@ export class DeadCodeRemovalSystem {
    * Dead Code 제거 실행 (에러 처리 강화)
    */
   public async removeDeadCode(
-    analysisResult: IDeadCodeAnalysisResult
+    projectRootOrAnalysis: string | IDeadCodeAnalysisResult,
+    maybeAnalysis?: IDeadCodeAnalysisResult
   ): Promise<IDeadCodeRemovalStats> {
     const timer = this.performanceMonitor.startTimer('removeDeadCode');
 
     try {
+      // 인자 유연성 처리: (projectRoot, analysisResult) 또는 (analysisResult) 모두 허용
+      const analysisResult: IDeadCodeAnalysisResult =
+        typeof projectRootOrAnalysis === 'string' && maybeAnalysis
+          ? maybeAnalysis
+          : (projectRootOrAnalysis as IDeadCodeAnalysisResult);
+
       // 간단한 구현으로 통계만 업데이트
       this.stats.filesAnalyzed =
         analysisResult.duplicateMocks.length +

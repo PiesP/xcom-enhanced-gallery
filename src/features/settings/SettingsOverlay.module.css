@@ -1,0 +1,282 @@
+/**
+ * SettingsOverlay Module CSS - UX 최적화 버전
+ * @description 사용자 친화적이고 접근성 좋은 설정 모달 스타일
+ */
+
+/* 설정 모달 - 사용자 중심 디자인 */
+.modal {
+  /* 위치 및 크기 - UX 최적화 */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* 정중앙 위치로 변경 */
+  min-width: var(--xeg-modal-min-width);
+  max-width: var(--xeg-modal-max-width);
+  width: clamp(320px, 85vw, 640px); /* 반응형 너비 */
+  max-height: 85vh; /* 높이 제한으로 스크롤 방지 */
+  z-index: var(--xeg-z-modal-content);
+
+  /* 가시성 */
+  display: block;
+  visibility: visible;
+  pointer-events: auto;
+
+  /* 스크롤 지원 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  /* 통합 디자인 토큰 기반 스타일 */
+  background: var(--xeg-glass-bg-dark);
+  border: 1px solid var(--xeg-glass-border-light);
+  box-shadow: var(--xeg-glass-shadow-strong);
+  border-radius: var(--xeg-radius-xl); /* 더 둥근 모서리 */
+  backdrop-filter: var(--xeg-glass-blur-strong);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
+  padding: var(--xeg-spacing-xl); /* 더 넉넉한 패딩 */
+  color: var(--xeg-color-text-primary);
+
+  /* 애니메이션 */
+  animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--xeg-spacing-xl); /* 더 넓은 간격 */
+  border-bottom: 1px solid var(--xeg-glass-border-light);
+  padding-bottom: var(--xeg-spacing-lg);
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: var(--xeg-font-size-2xl); /* 더 큰 제목 */
+  font-weight: var(--xeg-font-weight-bold);
+  color: var(--xeg-color-text-primary);
+  line-height: 1.2;
+}
+
+/* 닫기 버튼 - 접근성 향상 */
+.closeButton {
+  width: var(--xeg-touch-target-min);
+  height: var(--xeg-touch-target-min);
+  border-radius: var(--xeg-radius-full);
+  border: none;
+  background: var(--xeg-glass-bg-medium);
+  color: var(--xeg-color-text-secondary);
+  cursor: pointer;
+  transition: var(--xeg-transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0; /* 축소되지 않도록 */
+}
+
+.closeButton:hover {
+  background: var(--xeg-color-error);
+  color: var(--xeg-color-text-inverse);
+  transform: scale(1.05);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+.modalBody {
+  /* 추가 스타일이 필요한 경우를 위한 예약된 클래스 */
+  position: relative;
+}
+
+/* 섹션 스타일 - UX 개선 */
+.section {
+  margin-bottom: var(--xeg-spacing-2xl); /* 섹션 간 명확한 구분 */
+  padding: var(--xeg-spacing-lg);
+  border-radius: var(--xeg-radius-lg);
+  background: var(--xeg-glass-bg-translucent-10);
+  border: 1px solid var(--xeg-glass-border-light);
+}
+
+.sectionTitle {
+  font-size: var(--xeg-font-size-lg);
+  font-weight: var(--xeg-font-weight-semibold);
+  color: var(--xeg-color-text-primary);
+  margin: 0 0 var(--xeg-spacing-md) 0;
+  border-bottom: 1px solid var(--xeg-glass-border-light);
+  padding-bottom: var(--xeg-spacing-sm);
+}
+
+.section label {
+  display: block;
+  margin-bottom: var(--xeg-spacing-sm);
+  font-weight: var(--xeg-font-weight-medium);
+  color: var(--xeg-color-text-primary);
+  font-size: var(--xeg-font-size-md);
+  line-height: 1.4;
+}
+
+/* 폼 요소 - 터치 친화적 크기 */
+.section select,
+.section input {
+  width: 100%;
+  height: var(--xeg-input-height); /* 터치하기 좋은 높이 */
+  padding: var(--xeg-spacing-md); /* 더 넉넉한 패딩 */
+  border: 2px solid var(--xeg-glass-border-light); /* 더 명확한 경계 */
+  border-radius: var(--xeg-radius-lg);
+  background: var(--xeg-glass-bg-medium);
+  color: var(--xeg-color-text-primary);
+  font-size: var(--xeg-font-size-md);
+  transition: var(--xeg-transition-fast);
+  box-sizing: border-box;
+}
+
+.section select:focus,
+.section input:focus {
+  outline: none;
+  border-color: var(--xeg-color-primary);
+  box-shadow: 0 0 0 3px var(--xeg-color-primary-alpha-20);
+  background: var(--xeg-glass-bg-light);
+}
+
+.section select:hover,
+.section input:hover {
+  border-color: var(--xeg-color-primary-hover);
+}
+
+/* 버튼 스타일 - 접근성과 사용성 개선 */
+.button {
+  min-width: var(--xeg-clickable-area-comfortable);
+  height: var(--xeg-touch-target-min);
+  border-radius: var(--xeg-radius-lg);
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+  border: 2px solid var(--xeg-glass-border-light);
+  background: var(--xeg-color-primary);
+  color: var(--xeg-color-text-inverse);
+  cursor: pointer;
+  transition: var(--xeg-transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--xeg-font-size-md);
+  font-weight: var(--xeg-font-weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--xeg-color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-glass-shadow-medium);
+  border-color: var(--xeg-color-primary-hover);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-glass-shadow-light);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 보조 버튼 스타일 */
+.buttonSecondary {
+  background: var(--xeg-glass-bg-medium);
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-glass-border-light);
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background: var(--xeg-glass-bg-light);
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-primary);
+}
+
+/* 위험한 작업 버튼 */
+.buttonDanger {
+  background: var(--xeg-color-error);
+  color: var(--xeg-color-text-inverse);
+  border-color: var(--xeg-color-error);
+}
+
+.buttonDanger:hover:not(:disabled) {
+  background: var(--xeg-color-error-hover);
+  border-color: var(--xeg-color-error-hover);
+}
+
+/* 반응형 및 접근성 */
+@media (max-width: 480px) {
+  .modal {
+    top: 5%;
+    transform: translateX(-50%);
+    max-width: 95vw;
+    width: 95vw;
+    max-height: 90vh;
+    padding: var(--xeg-spacing-lg);
+  }
+
+  .section {
+    padding: var(--xeg-spacing-md);
+    margin-bottom: var(--xeg-spacing-lg);
+  }
+
+  .modalTitle {
+    font-size: var(--xeg-font-size-xl);
+  }
+}
+
+/* 애니메이션 */
+@keyframes modalFadeIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* 모션 감소 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .modal {
+    animation: none;
+  }
+
+  .button,
+  .closeButton {
+    transition: none;
+  }
+
+  .button:hover:not(:disabled),
+  .closeButton:hover {
+    transform: none;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .modal {
+    background: rgba(255, 255, 255, 0.95);
+    border: 3px solid rgba(0, 0, 0, 0.8);
+    backdrop-filter: none;
+  }
+
+  .section {
+    background: rgba(240, 240, 240, 0.9);
+    border: 2px solid rgba(0, 0, 0, 0.5);
+  }
+
+  .button {
+    border-width: 3px;
+  }
+}

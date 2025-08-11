@@ -1,0 +1,248 @@
+/* src/features/settings/components/SettingsOverlay.module.css */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--xeg-z-modal);
+  background: var(--xeg-color-overlay-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: var(--xeg-blur-light);
+  -webkit-backdrop-filter: var(--xeg-blur-light);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modalContent {
+  background: var(--xeg-glass-bg-dark);
+  backdrop-filter: var(--xeg-glass-blur-strong);
+  -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
+  border: 1px solid var(--xeg-glass-border-light);
+  box-shadow: var(--xeg-glass-shadow-strong);
+  border-radius: 16px;
+  width: 90vw;
+  max-width: 520px;
+  color: var(--xeg-color-text-primary);
+  transform: translateZ(0);
+  animation: scaleIn 0.25s ease-out;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--xeg-glass-border-light);
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--xeg-color-text-secondary);
+  font-size: 24px;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.closeButton:hover {
+  background-color: var(--xeg-color-surface-hover);
+  color: var(--xeg-color-text-primary);
+}
+
+.modalBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--xeg-color-text-secondary);
+  margin: 0 0 8px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--xeg-glass-border-light);
+}
+
+.settingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.settingRow label {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.settingRow select,
+.settingRow input[type='number'] {
+  background-color: var(--xeg-color-surface-light);
+  color: var(--xeg-color-text-primary);
+  border: 1px solid var(--xeg-glass-border-light);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  flex-grow: 1;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.settingRow input[type='range'] {
+  flex-grow: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--xeg-color-surface-light);
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+
+.settingRow input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--xeg-color-text-primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.settingRow input[type='checkbox'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--xeg-color-surface-light);
+  margin: 0;
+  width: 1.15em;
+  height: 1.15em;
+  border: 1px solid var(--xeg-glass-border-light);
+  border-radius: 4px;
+  transform: translateY(-0.075em);
+  display: grid;
+  place-content: center;
+}
+
+.settingRow input[type='checkbox']::before {
+  content: '';
+  width: 0.65em;
+  height: 0.65em;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 1em 1em var(--xeg-color-primary);
+  transform-origin: bottom left;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+.settingRow input[type='checkbox']:checked::before {
+  transform: scale(1);
+}
+
+.settingRow select:focus-visible,
+.settingRow input:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+  border-color: var(--xeg-color-primary);
+}
+
+/* [추가] 사용자 지정 입력 필드 스타일 */
+.customTemplateRow {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.customTemplateInputWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.customTemplateInputWrapper input {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: var(--xeg-color-surface-inset);
+  color: var(--xeg-color-text-primary);
+  border: 1px solid var(--xeg-glass-border-light);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.customTemplateInputWrapper input:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+  border-color: var(--xeg-color-primary);
+}
+
+.tokenHelpers {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tokenHelpers button {
+  background: var(--xeg-color-surface-light);
+  border: 1px solid var(--xeg-glass-border-light);
+  color: var(--xeg-color-text-secondary);
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tokenHelpers button:hover {
+  background: var(--xeg-color-primary-alpha-10);
+  color: var(--xeg-color-primary);
+  border-color: var(--xeg-color-primary-alpha-30);
+  transform: translateY(-1px);
+}
+
+.tokenHelpers button:focus-visible {
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+}
+
+/* 키프레임 애니메이션 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

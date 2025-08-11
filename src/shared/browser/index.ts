@@ -39,32 +39,7 @@ export {
 // === 통합 서비스 ===
 export { BrowserService } from './browser-service';
 
-// === 기존 호환성 레이어 ===
-// 기존 browserUtils, browserAPI exports는 deprecated이지만 호환성을 위해 유지
-import { BrowserService } from './browser-service';
-import {
-  isBrowserEnvironment,
-  safeWindow,
-  isExtensionEnvironment,
-  saveScrollPosition,
-  restoreScrollPosition,
-  clearScrollPosition,
-  getPageInfo,
-} from './browser-environment';
-
-// @deprecated - BrowserService를 직접 사용하세요
-export const browserAPI = BrowserService;
-
-// @deprecated - browser-environment.ts 함수들을 직접 사용하세요
-export const browserUtils = {
-  isBrowserEnvironment,
-  safeWindow,
-  isExtensionEnvironment,
-  saveScrollPosition,
-  restoreScrollPosition,
-  clearScrollPosition,
-  getPageInfo,
-};
-
+// === 기존 호환성 레이어 (분리된 모듈로 이동) ===
+export { browserAPI, browserUtils } from './browser-compat';
 // Phase 4: Service Naming Standardization - browserService export 추가
 export { browserService } from './browser-service';

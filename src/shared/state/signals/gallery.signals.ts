@@ -29,6 +29,7 @@ export interface GalleryState {
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly viewMode: 'horizontal' | 'vertical';
+  readonly isSettingsOpen?: boolean;
 }
 
 /**
@@ -41,6 +42,7 @@ const INITIAL_STATE: GalleryState = {
   isLoading: false,
   error: null,
   viewMode: 'vertical',
+  isSettingsOpen: false,
 };
 
 /**
@@ -253,9 +255,27 @@ export function closeGallery(): void {
     mediaItems: [], // 🔑 핵심: mediaItems 초기화로 상태 동기화 보장
     currentIndex: 0,
     error: null,
+    isSettingsOpen: false,
   };
 
   logger.debug('[Gallery] 갤러리 종료 및 상태 완전 초기화 완료');
+}
+
+// Settings modal visibility controls
+export function openSettings(): void {
+  const s = galleryState.value;
+  galleryState.value = { ...s, isSettingsOpen: true };
+}
+
+export function closeSettings(): void {
+  const s = galleryState.value;
+  galleryState.value = { ...s, isSettingsOpen: false };
+}
+
+export function toggleSettings(force?: boolean): void {
+  const s = galleryState.value;
+  const next = typeof force === 'boolean' ? force : !s.isSettingsOpen;
+  galleryState.value = { ...s, isSettingsOpen: next };
 }
 
 /**

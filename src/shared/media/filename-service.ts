@@ -8,6 +8,13 @@
 import { logger } from '@shared/logging';
 import { safeParseInt, undefinedToNull } from '@shared/utils';
 import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
+import { getService } from '@shared/services/service-manager';
+import { SERVICE_KEYS } from '@/constants';
+// 의존성 격리: shared 레이어에서 features 레이어로의 직접 import를 금지합니다.
+// 필요한 최소한의 인터페이스만 로컬로 정의하여 서비스 접근 형태를 제한합니다.
+type SettingsReader = {
+  get: <T = unknown>(key: string) => T;
+};
 
 /**
  * 파일명 생성 옵션
@@ -61,6 +68,49 @@ export class FilenameService {
     options: FilenameOptions = {}
   ): string {
     try {
+      // 사용자 지정 템플릿 우선 처리 (settings 사용 가능 시)
+      try {
+        const settings = getService<SettingsReader>(SERVICE_KEYS.SETTINGS_MANAGER);
+        const pattern = settings.get<'original' | 'tweet-id' | 'timestamp' | 'custom'>(
+          'download.filenamePattern'
+        );
+        if (pattern === 'custom') {
+          const rawTemplate = settings.get<string | undefined>('download.customTemplate') || '';
+          if (rawTemplate) {
+            const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
+            const index =
+              this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
+            const tweetId = (media.tweetId ?? '').toString() || 'unknown';
+            const username =
+              media.tweetUsername && media.tweetUsername !== 'unknown'
+                ? media.tweetUsername
+                : this.extractUsernameFromUrl(
+                    ('originalUrl' in media ? media.originalUrl : null) || media.url
+                  ) ||
+                  options.fallbackUsername ||
+                  'unknown';
+
+            // 확장자가 포함되지 않은 템플릿이면 자동으로 .{ext} 추가
+            const template =
+              /\{ext\}/.test(rawTemplate) || /\.[a-zA-Z0-9]+$/.test(rawTemplate)
+                ? rawTemplate
+                : `${rawTemplate}.{ext}`;
+
+            const rendered = template
+              .replace(/\{user\}/g, username)
+              .replace(/\{tweetId\}/g, tweetId)
+              .replace(/\{index\}/g, index)
+              .replace(/\{ext\}/g, extension)
+              .replace(/\{mediaId\}/g, media.id ?? '');
+
+            const safe = this.sanitizeFilename(rendered, extension);
+            if (safe) return safe;
+          }
+        }
+      } catch {
+        // settings 서비스가 아직 준비되지 않았거나 테스트 환경인 경우 무시하고 기본 로직으로 진행
+      }
+
       // 기존 파일명이 유효하면 그대로 사용
       if (media.filename && this.isValidMediaFilename(media.filename)) {
         return media.filename;
@@ -97,6 +147,25 @@ export class FilenameService {
     } catch (error) {
       logger.warn('Failed to generate media filename:', error);
       return this.generateFallbackFilename(media, options);
+    }
+  }
+
+  /** 파일명에 금지 문자가 포함되면 안전하게 치환 */
+  private sanitizeFilename(name: string, extension: string): string {
+    try {
+      // Windows 금지 문자 제거 및 공백 정리
+      const cleaned = name
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .replace(/\s+/g, ' ')
+        .trim();
+      // 확장자 강제 부착 보정
+      const hasExt = new RegExp(String.raw`\.\b${extension}$`, 'i').test(cleaned);
+      if (!hasExt) {
+        return `${cleaned}.${extension}`;
+      }
+      return cleaned;
+    } catch {
+      return `media_${Date.now()}.${extension}`;
     }
   }
 

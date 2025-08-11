@@ -145,10 +145,6 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @grant        GM_download
-// @grant        GM_openInTab
-// @grant        GM_notification
-// @grant        GM_xmlhttpRequest
 // @connect      pbs.twimg.com
 // @connect      video.twimg.com
 // @run-at       document-idle
@@ -158,20 +154,6 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
 // @noframes
 ${requireLines ? `${requireLines}\n` : ''}
 // ==/UserScript==
-
-/*
- * X.com Enhanced Gallery
- *
- * This userscript loads the following third-party libraries via CDN using @require:
- * - Preact (MIT License) - https://github.com/preactjs/preact
- * - @preact/signals-core (MIT License) - https://github.com/preactjs/signals
- * - @preact/signals (MIT License) - https://github.com/preactjs/signals
- * - fflate (MIT License) - https://github.com/101arrowz/fflate
- *
- * All libraries are used under their respective MIT licenses and are not bundled into this script.
- * Full license texts are available at:
- * https://github.com/piesp/xcom-enhanced-gallery/tree/main/LICENSES
- */
 `;
 }
 
@@ -397,6 +379,8 @@ export default defineConfig(({ mode }) => {
           propertyReadSideEffects: isCI ? false : 'always',
           tryCatchDeoptimization: !isCI,
           annotations: true,
+          // lucide-preact 트리쉐이킹 최적화
+          preset: 'smallest',
         },
         // Phase 5: 번들 분석을 위한 onwarn 핸들러
         onwarn(warning, warn) {
@@ -485,7 +469,42 @@ export default defineConfig(({ mode }) => {
 
     // 환경별 의존성 최적화
     optimizeDeps: {
-      include: ['preact', 'preact/hooks', 'preact/compat', '@preact/signals'],
+      include: [
+        'preact',
+        'preact/hooks',
+        'preact/compat',
+        '@preact/signals',
+        // lucide-preact 트리쉐이킹 최적화: 개별 아이콘만 pre-bundle
+        'lucide-preact/icons/download',
+        'lucide-preact/icons/settings',
+        'lucide-preact/icons/close',
+        'lucide-preact/icons/x',
+        'lucide-preact/icons/chevron-left',
+        'lucide-preact/icons/chevron-right',
+        'lucide-preact/icons/zoom-in',
+        'lucide-preact/icons/zoom-out',
+        'lucide-preact/icons/maximize',
+        'lucide-preact/icons/minimize',
+        'lucide-preact/icons/rotate-cw',
+        'lucide-preact/icons/play',
+        'lucide-preact/icons/pause',
+        'lucide-preact/icons/volume-2',
+        'lucide-preact/icons/volume-x',
+        'lucide-preact/icons/grid',
+        'lucide-preact/icons/list',
+        'lucide-preact/icons/eye',
+        'lucide-preact/icons/eye-off',
+        'lucide-preact/icons/trash-2',
+        'lucide-preact/icons/copy',
+        'lucide-preact/icons/check',
+        'lucide-preact/icons/user',
+        'lucide-preact/icons/hash',
+        'lucide-preact/icons/image',
+        'lucide-preact/icons/file-text',
+        'lucide-preact/icons/save',
+        'lucide-preact/icons/info',
+        'lucide-preact/icons/refresh-cw',
+      ],
       force: buildMode.isDevelopment,
       // CI에서는 의존성 스캔 최적화
       ...(isCI && { entries: ['src/main.ts'] }),
