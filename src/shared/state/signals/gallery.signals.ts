@@ -13,10 +13,10 @@ import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
 import { BrowserService } from '@shared/browser';
 
-// Signal type
+// Signal type (align with Preact signals: subscribe returns unsubscribe)
 type Signal<T> = {
   value: T;
-  subscribe?: (callback: (value: T) => void) => void;
+  subscribe?: (callback: (value: T) => void) => () => void;
 };
 
 /**
@@ -92,10 +92,21 @@ export const galleryState = {
    * Subscribe to state changes
    */
   subscribe(callback: (state: GalleryState) => void): () => void {
-    const { effect } = getPreactSignals();
-    return effect(() => {
-      callback(getGalleryStateSignal().value);
-    });
+    const s = getGalleryStateSignal();
+    if (typeof s.subscribe === 'function') {
+      try {
+        return s.subscribe(value => callback(value));
+      } catch {
+        // fall through to no-op below
+      }
+    }
+    // Fallback: push current value once, return no-op
+    try {
+      callback(s.value);
+    } catch {
+      // ignore
+    }
+    return () => {};
   },
 };
 

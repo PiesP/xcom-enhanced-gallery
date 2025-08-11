@@ -95,11 +95,44 @@ function getBuildMode(mode?: string): BuildMode {
 }
 
 // Generate userscript header
+function normalizeVersion(range: string | undefined): string {
+  if (!range) return '';
+  return range.replace(/^\^|~/, '');
+}
+
+function getCdnRequireUrls(): string[] {
+  // Prefer pinned versions from package.json dependencies
+  const preactVer = normalizeVersion(packageJson.dependencies?.preact);
+  const signalsVer = normalizeVersion(packageJson.dependencies?.['@preact/signals']);
+  const signalsCoreVer = normalizeVersion(packageJson.dependencies?.['@preact/signals-core']);
+  const fflateVer = normalizeVersion(packageJson.dependencies?.fflate);
+
+  // jsDelivr UMD endpoints (match window globals used by vendor-api)
+  const urls: string[] = [
+    // Preact core + hooks + compat (compat UMD는 preactHooks 글로벌에 의존하므로 hooks를 먼저 로드)
+    `https://cdn.jsdelivr.net/npm/preact@${preactVer}/dist/preact.umd.js`,
+    `https://cdn.jsdelivr.net/npm/preact@${preactVer}/hooks/dist/hooks.umd.js`,
+    `https://cdn.jsdelivr.net/npm/preact@${preactVer}/compat/dist/compat.umd.js`,
+    // @preact/signals-core (signals.min.js의 UMD 의존성)
+    `https://cdn.jsdelivr.net/npm/@preact/signals-core@${signalsCoreVer}/dist/signals-core.min.js`,
+    // @preact/signals (minified UMD)
+    `https://cdn.jsdelivr.net/npm/@preact/signals@${signalsVer}/dist/signals.min.js`,
+    // fflate (UMD exposes window.fflate)
+    `https://cdn.jsdelivr.net/npm/fflate@${fflateVer}/umd/index.js`,
+  ];
+
+  return urls;
+}
+
 function generateUserscriptHeader(buildMode: BuildMode): string {
   const devSuffix = buildMode.isDevelopment ? ' (Dev)' : '';
   const version = buildMode.isDevelopment
     ? `${packageJson.version}-dev.${Date.now()}`
     : packageJson.version;
+
+  const requireLines = getCdnRequireUrls()
+    .map(url => `// @require     ${url}`)
+    .join('\n');
 
   return `// ==UserScript==
 // @name         X.com Enhanced Gallery${devSuffix}
@@ -123,17 +156,19 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
 // @downloadURL  https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
 // @updateURL    https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js
 // @noframes
+${requireLines ? `${requireLines}\n` : ''}
 // ==/UserScript==
 
 /*
  * X.com Enhanced Gallery
  *
- * This userscript includes the following third-party libraries:
+ * This userscript loads the following third-party libraries via CDN using @require:
  * - Preact (MIT License) - https://github.com/preactjs/preact
+ * - @preact/signals-core (MIT License) - https://github.com/preactjs/signals
  * - @preact/signals (MIT License) - https://github.com/preactjs/signals
  * - fflate (MIT License) - https://github.com/101arrowz/fflate
  *
- * All libraries are used under their respective MIT licenses.
+ * All libraries are used under their respective MIT licenses and are not bundled into this script.
  * Full license texts are available at:
  * https://github.com/piesp/xcom-enhanced-gallery/tree/main/LICENSES
  */
@@ -203,11 +238,54 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
             : '';
 
         // 최종 유저스크립트 생성
+        // 참고: Rollup IIFE는 externals를 전역 식별자(preact, preactHooks 등)로 참조합니다.
+        // 일부 유저스크립트 샌드박스에서는 window의 속성만 존재하고 식별자 바인딩이 없어
+        // Reference/undefined 이슈가 발생할 수 있습니다. 안전한 별칭을 먼저 바인딩합니다.
+        const vendorAlias = `
+  // Bind UMD globals from the userscript sandbox first; fallback to page (unsafeWindow) if needed
+  var __g = (typeof window !== 'undefined' ? window : globalThis);
+  var __page = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : __g);
+  var preact = __g.preact || __page.preact;
+  var preactHooks = __g.preactHooks || __page.preactHooks;
+  var preactCompat = __g.preactCompat || __page.preactCompat;
+  var preactSignalsCore = __g.preactSignalsCore || __page.preactSignalsCore;
+  var signals = (__g.preactSignals || __g.signals || __page.preactSignals || __page.signals);
+  var fflate = __g.fflate || __page.fflate;
+`;
+
         const wrappedCode = `${generateUserscriptHeader(buildMode)}
 (function() {
   'use strict';
   ${cssInjectionCode}
+  ${
+    buildMode.isDevelopment
+      ? `
+  // Vendor readiness diagnostics (Dev only)
+  (function(){
+    try {
+      const g = (typeof window !== 'undefined' ? window : globalThis);
+      // @ts-ignore - runtime diagnostic only
+      const anyG = /** @type {any} */ (g);
+      const diag = {
+        // @ts-ignore - accessing UMD globals provided via @require
+        preact: !!anyG.preact,
+        // @ts-ignore
+        preactHooks: !!anyG.preactHooks,
+        // @ts-ignore
+        preactCompat: !!anyG.preactCompat,
+        // @ts-ignore
+        signals: !!(anyG.preactSignals || anyG.signals),
+      };
+      console.log('[XEG][Dev] Vendor readiness:', diag);
+    } catch (e) {
+      console.warn('[XEG][Dev] Vendor diagnostics failed:', e);
+    }
+  })();
+  `
+      : ''
+  }
   try {
+    ${vendorAlias}
     ${jsContent}
   } catch (error) {
     console.error('[XEG] 초기화 실패:', error);
@@ -287,7 +365,8 @@ export default defineConfig(({ mode }) => {
       reportCompressedSize: !buildMode.isDevelopment && !isCI, // CI에서는 리포트 비활성화
       rollupOptions: {
         input: 'src/main.ts',
-        external: [],
+        // Externalize vendor libraries; they will be provided via @require (UMD globals)
+        external: ['preact', 'preact/hooks', 'preact/compat', '@preact/signals', 'fflate'],
         output: {
           entryFileNames: buildMode.isDevelopment
             ? 'xcom-enhanced-gallery.dev.user.js'
@@ -295,6 +374,15 @@ export default defineConfig(({ mode }) => {
           assetFileNames: '[name][extname]',
           format: 'iife',
           name: 'XG',
+          // Map externals to their UMD global names
+          globals: {
+            preact: 'preact',
+            'preact/hooks': 'preactHooks',
+            'preact/compat': 'preactCompat',
+            // @preact/signals UMD(global) name is `signals` (signals.min.js)
+            '@preact/signals': 'signals',
+            fflate: 'fflate',
+          },
           inlineDynamicImports: true,
           manualChunks: undefined as any,
           // 환경별 최적화 설정 - compact 제거

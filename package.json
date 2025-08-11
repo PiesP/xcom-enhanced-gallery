@@ -54,6 +54,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@preact/signals-core": "^1.11.0",
     "@preact/signals": "^2.2.1",
     "fflate": "^0.8.2",
     "preact": "^10.27.0"

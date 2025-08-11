@@ -1,3 +1,4 @@
+import { getPreactCompat } from './vendors/vendor-api';
 /**
  * @fileoverview Vendors Re-export Module
  * @description vendor-api의 함수들을 vendors 경로로 re-export
@@ -32,7 +33,6 @@ export async function memo<P = Record<string, unknown>>(
   Component: (props: P) => import('./vendors/vendor-service').VNode | null,
   compare?: (prevProps: P, nextProps: P) => boolean
 ) {
-  const { getPreactCompat } = await import('./vendors/vendor-api');
   const preactCompat = await getPreactCompat();
   return preactCompat.memo(Component, compare);
 }

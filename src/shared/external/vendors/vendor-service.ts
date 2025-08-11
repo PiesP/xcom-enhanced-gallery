@@ -3,6 +3,13 @@
  */
 
 import { logger } from '@shared/logging';
+import {
+  getFflate as apiGetFflate,
+  getPreact as apiGetPreact,
+  getPreactHooks as apiGetPreactHooks,
+  getPreactSignals as apiGetPreactSignals,
+  getPreactCompat as apiGetPreactCompat,
+} from './vendor-api';
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {
@@ -99,36 +106,10 @@ export class VendorManager {
    */
   public async getFflate(): Promise<FflateAPI> {
     const cacheKey = 'fflate';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as FflateAPI;
-    }
-
-    try {
-      const fflate = await import('fflate');
-
-      if (!fflate.deflate || typeof fflate.deflate !== 'function') {
-        throw new Error('fflate 라이브러리 검증 실패');
-      }
-
-      const api: FflateAPI = {
-        zip: fflate.zip,
-        unzip: fflate.unzip,
-        strToU8: fflate.strToU8,
-        strFromU8: fflate.strFromU8,
-        zipSync: fflate.zipSync,
-        unzipSync: fflate.unzipSync,
-        deflate: fflate.deflate,
-        inflate: fflate.inflate,
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('fflate 로드 성공');
-      return api;
-    } catch (error) {
-      logger.error('fflate 로드 실패:', error);
-      throw new Error('fflate 라이브러리를 사용할 수 없습니다');
-    }
+    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as FflateAPI;
+    const api = apiGetFflate();
+    this.cache.set(cacheKey, api);
+    return api;
   }
 
   /**
@@ -136,38 +117,10 @@ export class VendorManager {
    */
   public async getPreact(): Promise<PreactAPI> {
     const cacheKey = 'preact';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as PreactAPI;
-    }
-
-    try {
-      const preact = await import('preact');
-
-      if (!preact.render || typeof preact.render !== 'function') {
-        throw new Error('Preact 라이브러리 검증 실패');
-      }
-
-      const api: PreactAPI = {
-        h: preact.h,
-        render: preact.render,
-        Component: preact.Component,
-        Fragment: preact.Fragment,
-        createContext: preact.createContext,
-        cloneElement: preact.cloneElement,
-        createRef: preact.createRef,
-        isValidElement: preact.isValidElement,
-        options: preact.options,
-        createElement: preact.createElement,
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('Preact 로드 성공');
-      return api;
-    } catch (error) {
-      logger.error('Preact 로드 실패:', error);
-      throw new Error('Preact 라이브러리를 사용할 수 없습니다');
-    }
+    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as PreactAPI;
+    const api = apiGetPreact();
+    this.cache.set(cacheKey, api);
+    return api;
   }
 
   /**
@@ -175,36 +128,10 @@ export class VendorManager {
    */
   public async getPreactHooks(): Promise<PreactHooksAPI> {
     const cacheKey = 'preact-hooks';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as PreactHooksAPI;
-    }
-
-    try {
-      const hooks = await import('preact/hooks');
-
-      if (!hooks.useState || typeof hooks.useState !== 'function') {
-        throw new Error('Preact Hooks 라이브러리 검증 실패');
-      }
-
-      const api: PreactHooksAPI = {
-        useState: hooks.useState,
-        useEffect: hooks.useEffect,
-        useMemo: hooks.useMemo,
-        useCallback: hooks.useCallback,
-        useRef: hooks.useRef,
-        useContext: hooks.useContext,
-        useReducer: hooks.useReducer,
-        useLayoutEffect: hooks.useLayoutEffect,
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('Preact Hooks 로드 성공');
-      return api;
-    } catch (error) {
-      logger.error('Preact Hooks 로드 실패:', error);
-      throw new Error('Preact Hooks 라이브러리를 사용할 수 없습니다');
-    }
+    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as PreactHooksAPI;
+    const api = apiGetPreactHooks();
+    this.cache.set(cacheKey, api);
+    return api;
   }
 
   /**
@@ -212,32 +139,10 @@ export class VendorManager {
    */
   public async getPreactSignals(): Promise<PreactSignalsAPI> {
     const cacheKey = 'preact-signals';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as PreactSignalsAPI;
-    }
-
-    try {
-      const signals = await import('@preact/signals');
-
-      if (!signals.signal || typeof signals.signal !== 'function') {
-        throw new Error('Preact Signals 라이브러리 검증 실패');
-      }
-
-      const api: PreactSignalsAPI = {
-        signal: signals.signal,
-        computed: signals.computed,
-        effect: signals.effect,
-        batch: signals.batch,
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('Preact Signals 로드 성공');
-      return api;
-    } catch (error) {
-      logger.error('Preact Signals 로드 실패:', error);
-      throw new Error('Preact Signals 라이브러리를 사용할 수 없습니다');
-    }
+    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as PreactSignalsAPI;
+    const api = apiGetPreactSignals();
+    this.cache.set(cacheKey, api);
+    return api;
   }
 
   /**
@@ -245,35 +150,10 @@ export class VendorManager {
    */
   public async getPreactCompat(): Promise<PreactCompatAPI> {
     const cacheKey = 'preact-compat';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as PreactCompatAPI;
-    }
-
-    try {
-      const compat = await import('preact/compat');
-
-      if (
-        !compat.forwardRef ||
-        typeof compat.forwardRef !== 'function' ||
-        !compat.memo ||
-        typeof compat.memo !== 'function'
-      ) {
-        throw new Error('Preact Compat 라이브러리 검증 실패');
-      }
-
-      const api: PreactCompatAPI = {
-        forwardRef: compat.forwardRef,
-        memo: compat.memo,
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('Preact Compat 로드 성공');
-      return api;
-    } catch (error) {
-      logger.error('Preact Compat 로드 실패:', error);
-      throw new Error('Preact Compat 라이브러리를 사용할 수 없습니다');
-    }
+    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as PreactCompatAPI;
+    const api = apiGetPreactCompat();
+    this.cache.set(cacheKey, api);
+    return api;
   }
 
   /**

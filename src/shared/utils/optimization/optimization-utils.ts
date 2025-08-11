@@ -45,10 +45,12 @@ export function createLazyLoader<T>(importFn: () => Promise<T>): () => Promise<T
 }
 
 /**
- * 동적 import 래퍼
+ * 동적 import 래퍼 (Userscript 번들에서는 미지원)
+ * Note: CSP 및 번들 검증 정책상 dynamic import 표현식을 금지합니다.
+ * 해당 유틸이 필요하다면 앱 외부 환경에서만 사용하세요.
  */
-export function dynamicImport<T>(modulePath: string): Promise<T> {
-  return import(modulePath) as Promise<T>;
+export function dynamicImport<T>(_modulePath: string): Promise<T> {
+  return Promise.reject(new Error('dynamicImport is not supported in the userscript build'));
 }
 
 /**

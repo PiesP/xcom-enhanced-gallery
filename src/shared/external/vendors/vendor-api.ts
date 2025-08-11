@@ -48,15 +48,9 @@ async function ensurePreact(): Promise<void> {
     cache.preact = globalPreact;
     return;
   }
-
-  try {
-    const importedPreact = await import('preact');
-    cache.preact = importedPreact.default ?? importedPreact;
-    return;
-  } catch (error) {
-    logger.error('[CSP Safe] Preact must be bundled, external loading disabled:', error);
-    throw new Error('Preact 로드를 실패했습니다 - 번들에 포함되어야 합니다');
-  }
+  // 동적 import 금지: userscript는 CDN @require를 통해 전역 주입을 사용합니다.
+  logger.error('[CSP Safe] window.preact 가 필요합니다 (@require 누락)');
+  throw new Error('Preact 전역이 없습니다. Userscript 헤더의 @require를 확인하세요.');
 }
 
 /**
@@ -115,7 +109,9 @@ async function ensureHooks(): Promise<void> {
 async function ensureSignals(): Promise<void> {
   if (cache.signals) return;
 
-  const globalSignals = (window as unknown as { preactSignals?: PreactSignalsAPI }).preactSignals;
+  const globalSignals =
+    (window as unknown as { preactSignals?: PreactSignalsAPI }).preactSignals ||
+    (window as unknown as { signals?: PreactSignalsAPI }).signals;
   if (globalSignals) {
     cache.signals = globalSignals;
     return;

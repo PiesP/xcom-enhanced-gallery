@@ -75,8 +75,16 @@ const logger: ILogger = defaultLogger;
 
 function getDownloadState(): Signal<DownloadState> {
   if (!downloadStateSignal) {
-    const { signal } = getPreactSignals();
-    downloadStateSignal = signal<DownloadState>(INITIAL_STATE);
+    try {
+      const { signal } = getPreactSignals();
+      downloadStateSignal = signal<DownloadState>(INITIAL_STATE);
+    } catch {
+      // Fallback to simple state when signals not yet ready (e.g., early access before vendors init)
+      downloadStateSignal = {
+        value: INITIAL_STATE,
+        subscribe: () => () => {},
+      };
+    }
   }
   return downloadStateSignal!;
 }
@@ -97,10 +105,20 @@ export const downloadState = {
    * 상태 변경 구독
    */
   subscribe(callback: (state: DownloadState) => void): () => void {
-    const { effect } = getPreactSignals();
-    return effect(() => {
-      callback(this.value);
-    });
+    const s = getDownloadState();
+    if (typeof s.subscribe === 'function') {
+      try {
+        return s.subscribe(value => callback(value));
+      } catch {
+        // fall through
+      }
+    }
+    try {
+      callback(s.value);
+    } catch {
+      // ignore
+    }
+    return () => {};
   },
 };
 
