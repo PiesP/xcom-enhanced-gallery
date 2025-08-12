@@ -66,7 +66,6 @@
   --xeg-color-warning: oklch(0.761 0.16 70.7);
   --xeg-color-success-500: var(--xeg-color-success);
   --xeg-color-error-500: var(--xeg-color-error);
-  --xeg-color-warning-500: var(--xeg-color-warning);
   --xeg-color-success-800: oklch(0.456 0.133 145.2);
   --xeg-color-success-900: oklch(0.398 0.118 146.8);
   --xeg-color-success-950: oklch(0.241 0.077 150);
@@ -77,7 +76,6 @@
   --xeg-color-warning-200: oklch(0.928 0.108 85.4);
   --xeg-color-warning-300: oklch(0.878 0.142 82.8);
   --xeg-color-warning-400: oklch(0.825 0.151 78.2);
-  --xeg-color-warning-500: oklch(0.761 0.16 70.7); /* base */
   --xeg-color-warning-600: oklch(0.685 0.156 65.8);
   --xeg-color-warning-700: oklch(0.576 0.149 58.8);
   --xeg-color-warning-800: oklch(0.489 0.142 52.4);
@@ -90,7 +88,6 @@
   --xeg-color-error-200: oklch(0.905 0.055 13.6);
   --xeg-color-error-300: oklch(0.852 0.089 12);
   --xeg-color-error-400: oklch(0.787 0.15 17);
-  --xeg-color-error-500: oklch(0.628 0.257 27.3); /* base */
   --xeg-color-error-600: oklch(0.568 0.228 25.3);
   --xeg-color-error-700: oklch(0.498 0.208 25.9);
   --xeg-color-error-800: oklch(0.447 0.19 26.2);
@@ -112,11 +109,11 @@
 
   /* Glass Effect Alias Colors removed (Phase 2) */
 
-  /* 글래스모피즘 전용 색상 시스템 - 개선된 불투명도 */
-  --xeg-glass-bg-light: rgba(255, 255, 255, 0.98); /* 라이트 모드 불투명도 증가: 85% → 98% */
+  /* 글래스모피즘 전용 색상 시스템 - 라이트/다크 반전 기준으로 정규화 */
+  --xeg-glass-bg-light: rgba(255, 255, 255, 0.85); /* 라이트 ↔ 다크 반전 기준: 0.85 */
   --xeg-glass-bg-medium: rgba(255, 255, 255, 0.65);
   --xeg-glass-bg-dark: rgba(0, 0, 0, 0.85);
-  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.99); /* toast uses - 더 불투명 */
+  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.95); /* 스냅샷 기준 */
 
   /* 완전 불투명 배경 옵션 추가 */
   --xeg-glass-bg-solid-light: rgba(255, 255, 255, 1); /* 완전 불투명 라이트 */
@@ -130,6 +127,16 @@
   --xeg-glass-bg-translucent-dark-30: rgba(0, 0, 0, 0.3); /* dark base */
   --xeg-glass-bg-translucent-dark-50: rgba(0, 0, 0, 0.5); /* dark reduced-transparency */
   --xeg-glass-bg-translucent-dark-70: rgba(0, 0, 0, 0.7); /* dark high-contrast */
+
+  /* ===========================================
+     BREAKPOINTS
+     =========================================== */
+
+  --xeg-breakpoint-sm: 640px;
+  --xeg-breakpoint-md: 768px;
+  --xeg-breakpoint-lg: 1024px;
+  --xeg-breakpoint-xl: 1280px;
+  --xeg-breakpoint-2xl: 1536px;
 
   /* 글래스 테두리 색상 */
   --xeg-glass-border-light: rgba(255, 255, 255, 0.2);
@@ -262,10 +269,6 @@
      SEMANTIC TOKEN ALIASES
      =========================================== */
 
-  /* Primary aliases */
-  --xeg-color-primary: var(--xeg-color-primary-500);
-  --xeg-color-primary-hover: var(--xeg-color-primary-600);
-
   /* Surface aliases */
   --xeg-color-surface: var(--xeg-color-surface-light);
   --xeg-color-background: var(--xeg-color-neutral-50);
@@ -326,7 +329,7 @@
   --xeg-gap-2xl: 32px; /* 매우 큰 간격 */
 
   /* Modal System - 모달 관련 토큰 */
-  --xeg-modal-max-width: 520px; /* 모달 최대 너비 */
+  --xeg-modal-max-width: 640px; /* 모달 최대 너비 (가독성) */
   --xeg-modal-header-padding: 20px; /* 모달 헤더 패딩 */
   --xeg-modal-body-padding: 20px; /* 모달 바디 패딩 */
 
@@ -352,16 +355,13 @@
   --xeg-touch-target-min: 44px; /* 터치 타겟 최소 크기 (WCAG 기준) */
   --xeg-clickable-area-comfortable: 48px; /* 편안한 클릭 영역 */
   --xeg-modal-min-width: 320px; /* 모달 최소 너비 */
-  --xeg-modal-max-width: 640px; /* 모달 최대 너비 (가독성) */
   --xeg-input-height: 44px; /* 입력 요소 편안한 높이 */
 
-  /* 글래스모피즘 컴포넌트별 토큰 */
   /* 툴바 글래스모피즘 - UX 개선된 설정 */
   --xeg-toolbar-glass-bg: var(--xeg-glass-bg-light);
   --xeg-toolbar-glass-blur: var(--xeg-glass-blur-medium);
   --xeg-toolbar-glass-border: var(--xeg-glass-border-light);
   --xeg-toolbar-glass-shadow: var(--xeg-glass-shadow-medium);
-  --xeg-toolbar-padding-y: var(--xeg-spacing-sm); /* 툴바 상하 패딩 */
   --xeg-toolbar-padding-x: var(--xeg-spacing-md); /* 툴바 좌우 패딩 */
   --xeg-toolbar-border-radius: var(--xeg-radius-xl); /* 툴바 모서리 둥글기 */
 
@@ -370,7 +370,6 @@
   --xeg-toolbar-edge-padding: clamp(var(--xeg-spacing-xl), 2.5vw, var(--xeg-spacing-3xl));
   /* 하위 호환: 기존 X/Y 개별 토큰이 남아 있는 경우를 대비해 동일 값으로 간접 정의 */
   --xeg-toolbar-edge-padding-x: var(--xeg-toolbar-edge-padding);
-  --xeg-toolbar-padding-y: var(--xeg-toolbar-edge-padding);
   /* 툴바 내 버튼 그룹(섹션/그룹박스) 간 간격 - 화면 크기에 따라 유연 조정 */
   --xeg-toolbar-group-gap: clamp(var(--xeg-spacing-md), 1.5vw, var(--xeg-spacing-xl));
   /* 동일 그룹 내부 버튼 간 간격 */
@@ -408,6 +407,17 @@
 
   /* ===========================================
      COMPONENT BASE CLASSES (Reusable Mixins)
+
+     🚨 중요: 옵션/레거시 베이스 클래스
+
+     현재 권위 있는 소스:
+     - Toolbar: src/shared/components/ui/Toolbar/Toolbar.module.css + 디자인 토큰
+     - Settings: src/features/settings/components/SettingsOverlay.module.css + 디자인 토큰
+
+     아래 베이스 클래스들(.xeg-modal-base, .xeg-toolbar-base)은:
+     - 하위 호환성을 위한 옵션/레거시 클래스입니다
+     - 새 컴포넌트는 컴포넌트 CSS + 토큰 조합을 사용하세요
+     - 기존 코드에서만 선택적으로 사용하세요
      =========================================== */
 
   /* 글래스모피즘 공통 기본 클래스 */
@@ -417,7 +427,11 @@
     box-shadow: var(--xeg-glass-shadow-medium);
   }
 
-  /* 모달 공통 기본 클래스 */
+  /* 모달 공통 기본 클래스 - 옵션/레거시 */
+  /*
+   * 권위 있는 소스: SettingsOverlay.module.css + 디자인 토큰
+   * 이 클래스는 하위 호환/유틸 용도로만 선택적으로 사용하세요
+   */
   .xeg-modal-base {
     background: var(--xeg-glass-bg-dark);
     border: 1px solid var(--xeg-glass-border-light);
@@ -429,7 +443,11 @@
     color: var(--xeg-color-text-primary);
   }
 
-  /* 툴바 공통 기본 클래스 */
+  /* 툴바 공통 기본 클래스 - 옵션/레거시 */
+  /*
+   * 권위 있는 소스: Toolbar.module.css + 디자인 토큰
+   * 이 클래스는 하위 호환/유틸 용도로만 선택적으로 사용하세요
+   */
   .xeg-toolbar-base {
     height: var(--xeg-toolbar-height);
     padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
@@ -476,8 +494,7 @@
      PC-FRIENDLY DESIGN TOKENS
      =========================================== */
 
-  /* PC 친화적 버튼 크기 토큰 */
-  --xeg-button-size-pc-small: 48px;
+  /* PC 친화적 버튼 크기 토큰 - 중복 제거된 버전 */
   --xeg-button-size-pc-medium: 64px;
   --xeg-button-size-pc-large: 88px;
 
@@ -493,87 +510,30 @@
   --xeg-scrollbar-color-hover: rgba(255, 255, 255, 0.5);
   --xeg-scrollbar-radius: 4px;
 
-  /* PC 친화적 호버 효과 토큰 */
-  --xeg-hover-scale: 1.05;
-  --xeg-active-scale: 0.98;
-  --xeg-focus-outline-width: 2px;
-  --xeg-focus-outline-offset: 2px;
-
   /* PC 친화적 애니메이션 토큰 */
-  --xeg-animation-hover-duration: 0.15s;
-  --xeg-animation-focus-duration: 0.1s;
   --xeg-animation-scale-easing: cubic-bezier(0.2, 0, 0.38, 0.9);
 
   /* PC 친화적 컨테이너 최소 크기 */
   --xeg-container-min-width: 320px;
   --xeg-container-max-width: 1400px;
-  --xeg-modal-min-width: 480px;
-  --xeg-modal-max-width: 640px;
 
   /* ===========================================
      TYPOGRAPHY TOKENS
      =========================================== */
 
-  /* 폰트 크기 체계 */
-  --xeg-font-size-xs: 12px;
-  --xeg-font-size-sm: 14px;
-  --xeg-font-size-md: 16px;
-  --xeg-font-size-lg: 18px;
-  --xeg-font-size-xl: 20px;
-  --xeg-font-size-2xl: 24px;
-
-  /* 라인 높이 */
-  --xeg-line-height-tight: 1.25;
-  --xeg-line-height-normal: 1.5;
-  --xeg-line-height-relaxed: 1.75;
+  /* Typography tokens moved to :root block above to avoid duplication */
 
   /* ===========================================
      SPACING TOKENS (일관된 패딩/마진 시스템)
      =========================================== */
 
-  /* 패딩 체계 */
-  --xeg-padding-xs: 4px;
-  --xeg-padding-sm: 8px;
-  --xeg-padding-md: 12px;
-  --xeg-padding-lg: 16px;
-  --xeg-padding-xl: 20px;
-  --xeg-padding-2xl: 24px;
-  --xeg-padding-3xl: 32px;
-
-  /* 컴포넌트별 전용 패딩 */
-  --xeg-modal-header-padding: var(--xeg-padding-lg) var(--xeg-padding-2xl);
-  --xeg-modal-body-padding: var(--xeg-padding-2xl);
-  --xeg-form-control-padding: var(--xeg-padding-md) var(--xeg-padding-lg);
-  --xeg-button-padding: var(--xeg-padding-sm);
-
-  /* 간격 체계 (gap 용도) */
-  --xeg-gap-xs: 4px;
-  --xeg-gap-sm: 8px;
-  --xeg-gap-md: 12px;
-  --xeg-gap-lg: 16px;
-  --xeg-gap-xl: 20px;
-  --xeg-gap-2xl: 24px;
-  --xeg-gap-3xl: 32px;
+  /* Spacing tokens moved to :root block above to avoid duplication */
 
   /* ===========================================
      DIMENSION TOKENS (크기 시스템)
      =========================================== */
 
-  /* 아이콘 크기 */
-  --xeg-icon-size-xs: 16px;
-  --xeg-icon-size-sm: 20px;
-  --xeg-icon-size-md: 24px;
-  --xeg-icon-size-lg: 28px;
-  --xeg-icon-size-xl: 32px;
-
-  /* 최소 너비 */
-  --xeg-min-width-label: 120px;
-  --xeg-min-width-button: 48px;
-  --xeg-min-width-input: 200px;
-
-  /* 슬라이더/범위 입력 */
-  --xeg-slider-height: 6px;
-  --xeg-slider-thumb-size: 16px;
+  /* Dimension tokens moved to :root block above to avoid duplication */
 
   /* Focus ring - 통합된 포커스 시스템 */
   --xeg-focus-ring-width: 2px;
@@ -590,9 +550,7 @@
   --xeg-focus-shadow: 0 0 0 var(--xeg-focus-ring-width) var(--xeg-focus-ring-color);
   --xeg-active-shadow: 0 0 0 var(--xeg-active-ring-width) var(--xeg-active-ring-color);
 
-  /* ===========================================
-     컴포넌트별 색상 토큰 시스템
-     =========================================== */
+  /* 컴포넌트별 색상 토큰 시스템 */
 
   /* 툴바 색상 시스템 */
   --xeg-toolbar-bg: var(--xeg-glass-bg-medium);
@@ -657,6 +615,46 @@
 }
 
 /* ===========================================
+   LIGHT THEME OVERRIDES (inverted from dark)
+   =========================================== */
+
+[data-theme='light'] {
+  /* Dark ↔ Light 반전: 배경/텍스트/보더 */
+  --xeg-color-surface: var(--xeg-color-surface-light);
+  --xeg-color-background: var(--xeg-color-neutral-50);
+  --xeg-color-text-primary: var(--xeg-color-neutral-900);
+  --xeg-color-text-secondary: var(--xeg-color-neutral-600);
+  --xeg-color-border-primary: var(--xeg-color-neutral-300);
+  --xeg-color-border-secondary: var(--xeg-color-neutral-200);
+
+  /* 툴바 글래스: 다크의 알파/톤을 반전한 라이트 값 적용 */
+  --xeg-toolbar-glass-bg: var(--xeg-glass-bg-light);
+  --xeg-toolbar-glass-border: var(--xeg-glass-border-light);
+  --xeg-toolbar-glass-shadow: var(--xeg-glass-shadow-medium);
+
+  /* 모달 라이트 모드 */
+  --xeg-modal-bg: var(--xeg-glass-bg-light);
+  --xeg-modal-bg-solid: var(--xeg-glass-bg-solid-light);
+  --xeg-glass-bg-modal: var(--xeg-modal-bg);
+
+  /* 토스트/갤러리/미디어 라이트 반전 값 */
+  --xeg-toast-glass-bg: var(--xeg-glass-bg-ultra-light);
+  --xeg-toast-glass-border: var(--xeg-glass-border-medium);
+  --xeg-toast-glass-shadow: var(--xeg-glass-shadow-light);
+
+  --xeg-gallery-glass-bg: var(--xeg-glass-bg-light);
+
+  --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-20);
+  --xeg-media-glass-border: var(--xeg-glass-border-light);
+
+  /* Light theme shadows (lighter) */
+  --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.12);
+  --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.14);
+  --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.16);
+}
+
+/* ===========================================
    SYSTEM THEME DETECTION
    =========================================== */
 
@@ -688,18 +686,6 @@
     --xeg-focus-ring: 3px solid currentColor;
     --xeg-color-border-primary: var(--xeg-color-neutral-800);
   }
-}
-
-/* ===========================================
-   BREAKPOINTS
-   =========================================== */
-
-:root {
-  --xeg-breakpoint-sm: 640px;
-  --xeg-breakpoint-md: 768px;
-  --xeg-breakpoint-lg: 1024px;
-  --xeg-breakpoint-xl: 1280px;
-  --xeg-breakpoint-2xl: 1536px;
 }
 
 /* ===========================================
@@ -919,7 +905,7 @@
   }
 }
 
-/* 브라우저 호환성을 위한 OKLCH 지원 감지 (CONSOLIDATED FALLBACK BLOCK) */
+/* 브라우저 호환성을 위한 OKLCH 지원 감지 */
 @supports not (color: oklch(0 0 0)) {
   :root {
     /* === Hue Scale / Tailwind-esque numeric steps (existing) === */
@@ -929,8 +915,8 @@
 
     --xeg-color-neutral-100: #f5f5f5;
     --xeg-color-neutral-500: #737373;
-    --xeg-color-neutral-700: #404040;
-    --xeg-color-neutral-900: #171717;
+    --xeg-color-neutral-700: #334155;
+    --xeg-color-neutral-900: #0f172a;
 
     --xeg-color-success-500: #22c55e;
     --xeg-color-success-800: #166534;
@@ -963,7 +949,7 @@
     --xeg-color-error-900: #7f1d1d;
     --xeg-color-error-950: #450a0a;
 
-    /* === Consolidated composite semantic tokens (from duplicate block) === */
+    /* === Consolidated composite semantic tokens === */
     --xeg-color-primary: #1d9bf0; /* matches brand blue */
     --xeg-color-primary-hover: #1a8cd8;
     --xeg-color-primary-active: #1570a6;
@@ -973,9 +959,6 @@
 
     /* Neutral additions */
     --xeg-color-neutral-50: #f8fafc;
-    /* neutral-100 already defined above; keep single value */
-    --xeg-color-neutral-700: #334155; /* override to align with semantic block if different */
-    --xeg-color-neutral-900: #0f172a; /* override to align with semantic block if different */
 
     /* Alpha Variants Fallback (composite) */
     --xeg-color-primary-alpha-10: rgba(29, 155, 240, 0.1);

@@ -311,7 +311,7 @@ function ToolbarCore({
           [
             h('div', { className: styles.groupBox, key: 'left-group-box' }, [
               h(ToolbarButton, {
-                icon: 'step-back',
+                icon: 'arrow-left',
                 variant: 'secondary',
                 size: 'lg',
                 disabled: disabled || !canGoPrevious,
@@ -358,7 +358,7 @@ function ToolbarCore({
                 ]
               ),
               h(ToolbarButton, {
-                icon: 'step-forward',
+                icon: 'arrow-right',
                 variant: 'secondary',
                 size: 'lg',
                 disabled: disabled || !canGoNext,
@@ -382,7 +382,7 @@ function ToolbarCore({
           },
           h('div', { className: styles.fitModeGroup, key: 'fit-mode-group-center' }, [
             h(ToolbarButton, {
-              icon: 'maximize',
+              icon: 'maximize-2',
               variant: toolbarState.currentFitMode === 'original' ? 'primary' : 'secondary',
               size: 'lg',
               disabled: disabled || !onFitOriginal,
@@ -418,7 +418,7 @@ function ToolbarCore({
               key: 'fit-height-center',
             }),
             h(ToolbarButton, {
-              icon: 'move',
+              icon: 'minimize-2',
               variant: toolbarState.currentFitMode === 'fitContainer' ? 'primary' : 'secondary',
               size: 'lg',
               disabled: disabled || !onFitContainer,

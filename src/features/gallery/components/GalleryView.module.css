@@ -81,16 +81,15 @@
   opacity: var(--toolbar-opacity);
   visibility: var(--toolbar-visibility);
   pointer-events: var(--toolbar-pointer-events);
-  transform: translateY(var(--toolbar-transform-y));
 
   transition:
     opacity 100ms var(--xeg-easing-ease-out),
     transform 100ms var(--xeg-easing-ease-out),
     visibility 0ms;
 
-  /* 성능 최적화 */
+  /* 성능 최적화 - transform을 통합 */
   will-change: transform, opacity, visibility;
-  transform: translateZ(0);
+  transform: translateY(var(--toolbar-transform-y)) translateZ(0);
   backface-visibility: hidden;
 
   /* 그라디언트 배경 */

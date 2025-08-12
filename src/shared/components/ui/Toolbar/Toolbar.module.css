@@ -59,16 +59,6 @@
 
 /* ===== 개선된 네이티브 스타일 - X.com 일관성 (기본 테마로 통합) ===== */
 
-/* 기본 툴바 스타일 - X.com 네이티브 스타일을 기본으로 적용 */
-.galleryToolbar {
-  /* 기존 글래스모피즘 스타일 유지하되, 네이티브 스타일 요소 통합 */
-  backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
-  border: 2px solid var(--xeg-toolbar-border);
-  box-shadow: var(--xeg-glass-shadow-toolbar);
-  border-radius: var(--xeg-toolbar-border-radius); /* 16px */
-}
-
 /* 라이트 모드 - 네이티브 스타일 통합 */
 [data-theme='light'] .galleryToolbar {
   background: var(--xeg-glass-bg-toolbar);
@@ -87,12 +77,7 @@
   border-color: var(--xeg-color-border-primary);
 }
 
-/* 툴바 호버 효과 - 네이티브와 글래스모피즘 통합 */
-.galleryToolbar:hover {
-  box-shadow: var(--xeg-glass-shadow-strong);
-  transform: translateX(-50%) translateY(-1px);
-  border-color: var(--xeg-color-primary-alpha-40);
-} /* 감소된 모션 지원 강화 */
+/* 감소된 모션 지원 강화 */
 @media (prefers-reduced-motion: reduce) {
   .galleryToolbar {
     transition: none;
@@ -191,10 +176,6 @@
 
 .toolbarLeft {
   justify-content: flex-start;
-}
-
-.toolbarRight {
-  justify-content: flex-end;
 }
 
 .toolbarRight {
@@ -316,12 +297,6 @@
 .currentIndex {
   color: var(--xeg-color-primary);
   font-weight: 700;
-}
-
-.separator {
-  color: var(--xeg-text-tertiary);
-  margin: 0 4px;
-  font-weight: 400;
 }
 
 /* 제거됨: 핏 모드 버튼 전용 클래스 */
@@ -452,12 +427,12 @@
 
   /* 버튼 고대비 스타일은 공통 Button.module.css에서 처리됩니다 */
   /* 제거됨: 전용 버튼 클래스 고대비 스타일 */
-}
 
-/* 다크 테마에서 고대비 모드 */
-[data-theme='dark'] .galleryToolbar {
-  background: rgb(0, 0, 0);
-  border: 2px solid rgb(255, 255, 255);
+  /* 다크 테마에서 고대비 모드 */
+  [data-theme='dark'] .galleryToolbar {
+    background: rgb(0, 0, 0);
+    border: 2px solid rgb(255, 255, 255);
+  }
 }
 
 /* 버튼 고대비(다크) 스타일은 공통 Button.module.css에서 처리됩니다 */

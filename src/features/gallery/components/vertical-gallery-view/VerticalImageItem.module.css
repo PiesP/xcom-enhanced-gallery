@@ -260,6 +260,8 @@
   opacity: 0;
   transition: var(--xeg-transition-opacity);
   font-size: var(--xeg-font-size-md);
+  /* 다운로드 버튼만 클릭 가능 */
+  pointer-events: auto;
 }
 
 .container:hover .downloadButton {
@@ -349,12 +351,6 @@
 
 .container.fitOriginal .image:active {
   cursor: grabbing;
-}
-
-/* 다운로드 버튼만 클릭 가능 */
-.downloadButton {
-  /* 다운로드 버튼만 클릭 가능 */
-  pointer-events: auto;
 }
 
 /* 이벤트 전파 차단을 위한 CSS 클래스 */

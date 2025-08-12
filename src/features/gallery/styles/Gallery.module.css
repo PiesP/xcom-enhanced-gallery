@@ -112,6 +112,24 @@
   -webkit-backdrop-filter: var(--xeg-gallery-glass-blur);
 }
 
+/* 테마별 변형 */
+.xegGalleryViewer.xegThemeLight {
+  background: var(--xeg-gallery-bg-light-oklch, oklch(0.98 0.01 220 / 0.9));
+}
+
+.xegGalleryViewer.xegThemeDark {
+  background: var(--xeg-gallery-bg-dark-oklch, oklch(0.15 0.02 220 / 0.95));
+}
+
+.xegGalleryViewer.xegThemeAuto {
+  background: var(--xeg-gallery-bg-auto-oklch, oklch(0.15 0.02 220 / 0.95));
+
+  /* 시스템 라이트 모드 감지 */
+  @media (prefers-color-scheme: light) {
+    background: var(--xeg-gallery-bg-light-oklch, oklch(0.98 0.01 220 / 0.9));
+  }
+}
+
 /* 갤러리가 활성화된 상태 - :has() 선택자 활용 */
 .xegGalleryContainer:has(.xegGalleryViewer.xegVisible) {
   --gallery-active: 1;
@@ -151,31 +169,6 @@
   .xegGalleryViewer {
     /* 높이가 낮은 화면에서의 최적화 */
     padding-block: var(--xeg-spacing-sm);
-  }
-}
-
-/**
- * 테마 변형 스타일 - OKLCH 색상으로 최적화
- * 사용자의 테마 설정에 따라 다른 배경색을 적용합니다.
- * Features: OKLCH 색상 공간, 고급 CSS 선택자, CSS Nesting
- */
-.xegGalleryViewer {
-  /* CSS Nesting - 테마별 변형 */
-  &.xegThemeLight {
-    background: var(--xeg-gallery-bg-light-oklch, oklch(0.98 0.01 220 / 0.9));
-  }
-
-  &.xegThemeDark {
-    background: var(--xeg-gallery-bg-dark-oklch, oklch(0.15 0.02 220 / 0.95));
-  }
-
-  &.xegThemeAuto {
-    background: var(--xeg-gallery-bg-auto-oklch, oklch(0.15 0.02 220 / 0.95));
-
-    /* 시스템 라이트 모드 감지 */
-    @media (prefers-color-scheme: light) {
-      background: var(--xeg-gallery-bg-light-oklch, oklch(0.98 0.01 220 / 0.9));
-    }
   }
 }
 

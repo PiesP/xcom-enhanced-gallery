@@ -9,6 +9,8 @@ export type IconName =
   | 'download'
   | 'settings'
   | 'close'
+  | 'arrow-left'
+  | 'arrow-right'
   | 'chevron-left'
   | 'chevron-right'
   | 'step-back'
@@ -16,7 +18,9 @@ export type IconName =
   | 'zoom-in'
   | 'zoom-out'
   | 'maximize'
+  | 'maximize-2'
   | 'minimize'
+  | 'minimize-2'
   | 'square'
   | 'move'
   | 'move-horizontal'
@@ -79,6 +83,8 @@ import {
   Download,
   Settings,
   X,
+  ArrowLeft,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
   StepBack,
@@ -86,7 +92,9 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize,
+  Maximize2,
   Minimize,
+  Minimize2,
   Square,
   Move,
   MoveHorizontal,
@@ -126,6 +134,8 @@ const iconComponentMap: Record<IconName, IconComponent> = {
   settings: Settings,
   close: X,
   x: X,
+  'arrow-left': ArrowLeft,
+  'arrow-right': ArrowRight,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
   'step-back': StepBack,
@@ -133,7 +143,9 @@ const iconComponentMap: Record<IconName, IconComponent> = {
   'zoom-in': ZoomIn,
   'zoom-out': ZoomOut,
   maximize: Maximize,
+  'maximize-2': Maximize2,
   minimize: Minimize,
+  'minimize-2': Minimize2,
   square: Square,
   move: Move,
   'move-horizontal': MoveHorizontal,

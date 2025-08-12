@@ -168,14 +168,10 @@
  * 레이아웃 최적화
  */
 .xeg-layout-optimized {
-  /* Flexbox 최적화 */
-  display: flex;
-  flex-direction: column;
-  min-height: 0; /* Firefox 버그 방지 */
-
-  /* Grid 최적화 */
+  /* Grid 최적화 - flexbox보다 우선 */
   display: grid;
   grid-template-rows: min-content 1fr min-content;
+  min-height: 0; /* Firefox 버그 방지 */
 
   /* 오버플로우 최적화 */
   overflow: hidden;

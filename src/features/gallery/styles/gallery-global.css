@@ -40,6 +40,9 @@
   max-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* 갤러리 내부 스크롤만 허용 */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* 갤러리 툴바 - 현대적 glassmorphism 디자인 */
@@ -322,13 +325,6 @@
   bottom: 0;
   z-index: 1000;
   cursor: pointer;
-}
-
-/* 갤러리 컨테이너 - 내부 스크롤만 관리 */
-.xeg-gallery-container {
-  /* 갤러리 내부 스크롤만 허용 */
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 /* 격리된 갤러리 컨테이너 */

@@ -154,12 +154,39 @@ export default [
           ],
         },
       ],
+      // 특정 경로 외 useToolbar 정의 금지 (Function/ArrowFunction 모두 포함)
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'FunctionDeclaration[id.name="useToolbar"]',
+          message:
+            'useToolbar 정의는 금지되어 있습니다. 반드시 "src/shared/hooks/useToolbar.ts"만 사용하세요.',
+        },
+        {
+          selector: 'VariableDeclarator[id.name="useToolbar"][init.type="FunctionExpression"]',
+          message:
+            'useToolbar 정의는 금지되어 있습니다. 반드시 "src/shared/hooks/useToolbar.ts"만 사용하세요.',
+        },
+        {
+          selector: 'VariableDeclarator[id.name="useToolbar"][init.type="ArrowFunctionExpression"]',
+          message:
+            'useToolbar 정의는 금지되어 있습니다. 반드시 "src/shared/hooks/useToolbar.ts"만 사용하세요.',
+        },
+      ],
     },
     settings: {
       react: {
         version: 'detect',
         pragma: 'h',
       },
+    },
+  },
+
+  // useToolbar 허용 예외 파일 (정의 허용)
+  {
+    files: ['src/shared/hooks/useToolbar.ts'],
+    rules: {
+      'no-restricted-syntax': 'off',
     },
   },
 

@@ -121,7 +121,6 @@
   z-index: var(--xeg-z-toast, 10000);
   top: calc(100% + 12px);
   left: 50%;
-  transform: translateX(-50%);
   min-width: 200px;
   max-width: 300px;
 
