@@ -10,14 +10,25 @@
   align-items: center;
   justify-content: center;
   z-index: var(--xeg-z-modal);
-  /* 솔리드 배경 적용 */
-  background: var(--xeg-color-overlay-medium);
-  animation: fadeIn 0.2s ease-out;
+  /* 🔥 툴바와 일관된 그라디언트 오버레이 적용 */
+  background: var(--xeg-modal-overlay-gradient);
+  backdrop-filter: var(--xeg-blur-light);
+  animation: fadeIn var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  
+  /* 하드웨어 가속 최적화 */
+  transform: translateZ(0);
+  will-change: opacity, backdrop-filter;
+}
+
+/* 모달 오버레이 강화된 호버 효과 - 툴바와 일관성 */
+.modalOverlay:hover {
+  background: var(--xeg-modal-overlay-gradient-strong);
+  transition: background var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
 .modalContent {
-  /* 솔리드 배경 적용 */
-  background: var(--xeg-bg-solid-light);
+  /* 🔥 툴바와 일관된 콘텐츠 배경 */
+  background: var(--xeg-modal-content-bg);
   border: 2px solid var(--xeg-toolbar-border);
   box-shadow: var(--xeg-shadow-simple-strong);
   border-radius: var(--xeg-toolbar-border-radius);
@@ -96,7 +107,7 @@
 
 /* 호버 및 포커스 상태 */
 :global(.xeg-enhanced-close-button:hover) {
-  background-color: var(--xeg-color-surface-hover, rgba(0, 0, 0, 0.1)) !important;
+  background-color: var(--xeg-modal-content-bg-hover, rgba(0, 0, 0, 0.1)) !important;
   transform: scale(var(--xeg-hover-scale, 1.05)) !important;
 }
 
@@ -337,4 +348,58 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* ===========================================
+   접근성 및 사용성 향상 - 툴바와 일관된 지원
+   =========================================== */
+
+/* 감소된 모션 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .modalOverlay {
+    animation: none;
+    transition: none;
+  }
+  
+  .modalContent {
+    animation: none;
+    transition: none;
+  }
+  
+  :global(.xeg-enhanced-close-button) {
+    transition: none !important;
+  }
+  
+  :global(.xeg-enhanced-close-button:hover),
+  :global(.xeg-enhanced-close-button:active) {
+    transform: none !important;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .modalOverlay {
+    background: var(--xeg-bg-solid-light);
+    backdrop-filter: none;
+  }
+  
+  .modalContent {
+    border: 3px solid currentColor;
+    background: var(--xeg-bg-solid-light);
+  }
+  
+  [data-theme='dark'] .modalOverlay {
+    background: var(--xeg-bg-solid-dark);
+  }
+  
+  [data-theme='dark'] .modalContent {
+    background: var(--xeg-bg-solid-dark);
+    color: var(--xeg-color-solid-light);
+  }
+}
+
+/* 포커스 상태 명확화 */
+.modalContent:focus-visible {
+  outline: var(--xeg-focus-outline-width) solid var(--xeg-color-primary);
+  outline-offset: var(--xeg-focus-outline-offset);
 }

@@ -427,6 +427,23 @@
   --xeg-media-border: var(--xeg-border-light);
   --xeg-media-shadow: var(--xeg-shadow-simple-medium);
 
+  /* 🔥 모달 시스템 - 툴바와 일관된 디자인 */
+  --xeg-modal-overlay-gradient: linear-gradient(
+    to bottom,
+    var(--xeg-overlay-light-primary) 0%,
+    var(--xeg-white-alpha-80) 70%,
+    transparent 100%
+  );
+  --xeg-modal-overlay-gradient-strong: linear-gradient(
+    to bottom,
+    var(--xeg-white-alpha-95) 0%,
+    var(--xeg-white-alpha-90) 60%,
+    var(--xeg-white-alpha-50) 100%
+  );
+  --xeg-modal-content-bg: var(--xeg-bg-light);
+  --xeg-modal-content-bg-hover: var(--xeg-color-surface-hover);
+  --xeg-modal-shadow: var(--xeg-shadow-simple-strong);
+
   /* ===========================================
      COMPONENT BASE CLASSES (Reusable Mixins)
 
@@ -644,6 +661,22 @@
     var(--xeg-black-alpha-60) 100%
   );
 
+  /* 🔥 다크 테마용 모달 그라디언트 - 툴바와 일관성 */
+  --xeg-modal-overlay-gradient: linear-gradient(
+    to bottom,
+    var(--xeg-overlay-dark-primary) 0%,
+    var(--xeg-black-alpha-80) 70%,
+    transparent 100%
+  );
+  --xeg-modal-overlay-gradient-strong: linear-gradient(
+    to bottom,
+    var(--xeg-black-alpha-95) 0%,
+    var(--xeg-black-alpha-90) 60%,
+    var(--xeg-black-alpha-60) 100%
+  );
+  --xeg-modal-content-bg: var(--xeg-bg-dark);
+  --xeg-modal-content-bg-hover: var(--xeg-bg-medium);
+
   /* 다크 테마용 color-mix 오버라이드 */
   --xeg-overlay-mix-primary: var(--xeg-overlay-mix-dark-80);
   --xeg-overlay-mix-secondary: var(--xeg-overlay-mix-dark-40);
@@ -707,6 +740,22 @@
     var(--xeg-white-alpha-50) 100%
   );
 
+  /* 🔥 라이트 테마용 모달 그라디언트 - 툴바와 일관성 */
+  --xeg-modal-overlay-gradient: linear-gradient(
+    to bottom,
+    var(--xeg-overlay-light-primary) 0%,
+    var(--xeg-white-alpha-80) 70%,
+    transparent 100%
+  );
+  --xeg-modal-overlay-gradient-strong: linear-gradient(
+    to bottom,
+    var(--xeg-white-alpha-95) 0%,
+    var(--xeg-white-alpha-90) 60%,
+    var(--xeg-white-alpha-50) 100%
+  );
+  --xeg-modal-content-bg: var(--xeg-bg-light);
+  --xeg-modal-content-bg-hover: var(--xeg-color-surface-hover);
+
   /* 라이트 테마용 color-mix 오버라이드 */
   --xeg-overlay-mix-primary: var(--xeg-overlay-mix-light-80);
   --xeg-overlay-mix-secondary: var(--xeg-overlay-mix-light-40);
@@ -767,6 +816,22 @@
     rgba(21, 32, 43, 0.9) 60%,
     rgba(21, 32, 43, 0.6) 100%
   );
+
+  /* 🔥 Dim 테마용 모달 그라디언트 - 툴바와 일관성 */
+  --xeg-modal-overlay-gradient: linear-gradient(
+    to bottom,
+    rgba(21, 32, 43, 0.95) 0%,
+    rgba(21, 32, 43, 0.8) 70%,
+    transparent 100%
+  );
+  --xeg-modal-overlay-gradient-strong: linear-gradient(
+    to bottom,
+    rgba(21, 32, 43, 0.98) 0%,
+    rgba(21, 32, 43, 0.9) 60%,
+    rgba(21, 32, 43, 0.6) 100%
+  );
+  --xeg-modal-content-bg: #15202b;
+  --xeg-modal-content-bg-hover: #192734;
 
   /* Dim 테마용 color-mix 오버라이드 */
   --xeg-overlay-mix-primary: color-mix(in srgb, #15202b 80%, transparent);

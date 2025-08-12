@@ -7,6 +7,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/preact';
 import { VerticalGalleryView } from '@features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { galleryState } from '@shared/state/signals/gallery.signals';
+import { getPreact } from '@shared/external/vendors';
+
+// JSX를 위한 React import
+const { h } = getPreact();
 
 describe('VerticalGalleryView - 툴바 배경 가시성', () => {
   beforeEach(() => {
@@ -97,6 +101,10 @@ describe('VerticalGalleryView - 툴바 배경 가시성', () => {
       render(<VerticalGalleryView />);
 
       const toolbarContainer = screen.getByTestId('toolbar-container');
+
+      // 기본 상태의 스타일
+      const initialStyle = window.getComputedStyle(toolbarContainer);
+      const initialBackground = initialStyle.background;
 
       // 호버
       fireEvent.mouseEnter(toolbarContainer);
