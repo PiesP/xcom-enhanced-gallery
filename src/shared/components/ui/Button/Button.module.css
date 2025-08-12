@@ -1,26 +1,6 @@
 /**
  * Button Component Styles
  * @version 3.0.0 - Design System Implementation
- *
- * 새로운 디자인 시스템을 기반으.sm {
-  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
-  font-size: var(--xeg-font-size-sm);
-  line-height: var(--xeg-line-height-tight);
-  border-radius: var(--xeg-radius-sm);
-}
-
-.md {
-  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-  font-size: var(--xeg-font-size-base);
-  line-height: var(--xeg-line-height-normal);
-}
-
-.lg {
-  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
-  font-size: var(--xeg-font-size-lg);
-  line-height: var(--xeg-line-height-normal);
-  border-radius: var(--xeg-radius-lg);
-}
  * - CSS Custom Properties 활용
  * - 다크 모드 지원
  * - 접근성 중심 설계
@@ -119,23 +99,29 @@
 
 /* Button Sizes */
 .sm {
-  padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
-  font-size: var(--font-size-sm, 0.875rem);
-  min-height: 2rem;
-  border-radius: var(--radius-sm, 0.25rem);
+  /* Height tokens ensure consistent tap target */
+  min-height: var(--xeg-button-height-sm);
+  /* Spacing tokens for compact small buttons */
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  font-size: var(--xeg-font-size-sm);
+  line-height: var(--xeg-line-height-tight);
+  border-radius: var(--xeg-radius-sm);
 }
 
 .md {
-  padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
-  font-size: var(--font-size-base, 1rem);
-  min-height: 2.5rem;
+  min-height: var(--xeg-button-height-md);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-font-size-base);
+  line-height: var(--xeg-line-height-normal);
+  border-radius: var(--xeg-radius-md);
 }
 
 .lg {
-  padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
-  font-size: var(--font-size-lg, 1.125rem);
-  min-height: 3rem;
-  border-radius: var(--radius-lg, 1rem);
+  min-height: var(--xeg-button-height-lg);
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+  font-size: var(--xeg-font-size-lg);
+  line-height: var(--xeg-line-height-normal);
+  border-radius: var(--xeg-radius-lg);
 }
 
 /* Loading Spinner */
@@ -185,24 +171,51 @@
   .spinner {
     animation: none;
   }
+
+  /* Hover/active transform 효과 제거 (모션 감소 시) */
+  .button:hover:not(:disabled),
+  .button:active:not(:disabled) {
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
+  /* 고대비 모드에서 버튼 가시성 강화 */
   .button {
     border-width: 2px;
+    background: rgb(240, 240, 240);
+    border-color: rgb(0, 0, 0);
+    color: rgb(0, 0, 0);
   }
 
-  .primary {
-    border-color: currentColor;
+  .button:hover:not(:disabled) {
+    background: rgb(220, 220, 220);
+    border-color: rgb(0, 0, 0);
   }
 
+  /* 변형별 테두리는 currentColor 기준 유지 */
+  .primary,
   .secondary {
     border-color: currentColor;
   }
 
   .ghost {
     border: 1px solid currentColor;
+  }
+}
+
+@media (prefers-color-scheme: dark) and (prefers-contrast: high) {
+  .button {
+    background: rgb(40, 40, 40);
+    border: 1px solid rgb(255, 255, 255);
+    color: rgb(255, 255, 255);
+  }
+
+  .button:hover:not(:disabled) {
+    background: rgb(60, 60, 60);
+    border-color: rgb(255, 255, 255);
   }
 }
 

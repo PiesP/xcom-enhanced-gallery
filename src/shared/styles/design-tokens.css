@@ -365,6 +365,14 @@
   --xeg-toolbar-padding-x: var(--xeg-spacing-md); /* 툴바 좌우 패딩 */
   --xeg-toolbar-border-radius: var(--xeg-radius-xl); /* 툴바 모서리 둥글기 */
 
+  /* Toolbar Spacing Tokens (NEW) - 전역 재사용을 위한 간격 표준화 */
+  /* 툴바 좌우 엣지 패딩 (버튼과 툴바 외곽 경계 사이 여백) */
+  --xeg-toolbar-edge-padding-x: clamp(var(--xeg-spacing-xl), 2.5vw, var(--xeg-spacing-3xl));
+  /* 툴바 내 버튼 그룹(섹션/그룹박스) 간 간격 - 화면 크기에 따라 유연 조정 */
+  --xeg-toolbar-group-gap: clamp(var(--xeg-spacing-md), 1.5vw, var(--xeg-spacing-xl));
+  /* 동일 그룹 내부 버튼 간 간격 */
+  --xeg-toolbar-button-gap: var(--xeg-spacing-sm);
+
   /* 개선된 글래스모피즘 효과 */
   --xeg-glass-bg-toolbar: oklch(15% 0.02 240 / 0.6); /* 툴바 배경 (더 투명하게) */
   --xeg-glass-blur-toolbar: blur(12px);
@@ -549,8 +557,8 @@
   --xeg-icon-size-xs: 16px;
   --xeg-icon-size-sm: 20px;
   --xeg-icon-size-md: 24px;
-  --xeg-icon-size-lg: 32px;
-  --xeg-icon-size-xl: 36px;
+  --xeg-icon-size-lg: 28px;
+  --xeg-icon-size-xl: 32px;
 
   /* 최소 너비 */
   --xeg-min-width-label: 120px;
