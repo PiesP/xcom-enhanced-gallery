@@ -7,24 +7,24 @@ describe('IconService TDD - RED Phase', () => {
   });
 
   describe('기본 아이콘 로딩', () => {
-    it('should load required icons dynamically', async () => {
+    it('should load required icons dynamically', () => {
       // Given: IconService가 존재한다
-      const iconService = await import('@/shared/services/icon-service');
+      const iconService = import('@/shared/services/icon-service') as any;
 
       // When: 다운로드 아이콘을 요청한다
-      const downloadIcon = await iconService.getIcon('download');
+      const downloadIcon = iconService.getIcon('download');
 
       // Then: 유효한 컴포넌트를 반환한다
       expect(downloadIcon).toBeDefined();
       expect(typeof downloadIcon).toBe('function');
     });
 
-    it('should provide fallback for missing icons', async () => {
+    it('should provide fallback for missing icons', () => {
       // Given: IconService가 존재한다
-      const iconService = await import('@/shared/services/icon-service');
+      const iconService = import('@/shared/services/icon-service') as any;
 
       // When: 존재하지 않는 아이콘을 요청한다
-      const fallback = await iconService.getIcon('non-existent-icon' as any);
+      const fallback = iconService.getIcon('non-existent-icon' as any);
 
       // Then: 폴백 아이콘을 반환한다
       expect(fallback).toBeDefined();
@@ -32,12 +32,12 @@ describe('IconService TDD - RED Phase', () => {
     });
   });
 
-  describe('아이콘 타입 안전성', () => {
-    it('should provide strongly typed icon names', async () => {
+  describe('아이콘 매핑', () => {
+    it('should provide all required icons', () => {
       // Given: IconService가 존재한다
-      const iconService = await import('@/shared/services/icon-service');
+      const iconService = import('@/shared/services/icon-service') as any;
 
-      // When: 정의된 아이콘 타입들을 확인한다
+      // When: 필요한 모든 아이콘을 확인한다
       const validIcons = [
         'download',
         'settings',
@@ -65,34 +65,34 @@ describe('IconService TDD - RED Phase', () => {
 
       // Then: 모든 아이콘이 로드 가능해야 한다
       for (const iconName of validIcons) {
-        const icon = await iconService.getIcon(iconName);
+        const icon = iconService.getIcon(iconName);
         expect(icon).toBeDefined();
       }
     });
   });
 
   describe('성능 최적화', () => {
-    it('should cache loaded icons', async () => {
+    it('should cache loaded icons', () => {
       // Given: IconService가 존재한다
-      const iconService = await import('@/shared/services/icon-service');
+      const iconService = import('@/shared/services/icon-service') as any;
 
       // When: 같은 아이콘을 두 번 요청한다
-      const icon1 = await iconService.getIcon('download');
-      const icon2 = await iconService.getIcon('download');
+      const icon1 = iconService.getIcon('download');
+      const icon2 = iconService.getIcon('download');
 
       // Then: 같은 참조를 반환한다 (캐싱됨)
       expect(icon1).toBe(icon2);
     });
 
-    it('should support icon preloading', async () => {
+    it('should support icon preloading', () => {
       // Given: IconService가 존재한다
-      const iconService = await import('@/shared/services/icon-service');
+      const iconService = import('@/shared/services/icon-service') as any;
 
       // When: 여러 아이콘을 프리로드한다
-      const preloadPromise = iconService.preloadIcons(['download', 'settings', 'close']);
+      const preloadResult = iconService.preloadIcons(['download', 'settings', 'close']);
 
-      // Then: 프리로드가 성공적으로 완료된다
-      await expect(preloadPromise).resolves.toBeUndefined();
+      // Then: 프리로드가 성공적으로 완료된다 (동기)
+      expect(preloadResult).toBeUndefined(); // void 함수
     });
   });
 });

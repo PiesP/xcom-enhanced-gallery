@@ -193,6 +193,27 @@
   justify-content: flex-end;
 }
 
+/* 🔲 그룹 컨테이너 - 네비게이션/다운로드 등을 시각적으로 묶기 위한 가벼운 박스 */
+.groupBox {
+  display: flex;
+  align-items: center;
+  gap: var(--xeg-spacing-sm);
+  padding: calc(var(--xeg-spacing-2xs) + 2px) calc(var(--xeg-spacing-xs) + 2px);
+  border-radius: var(--xeg-radius-lg);
+  background: var(--xeg-surface-glass);
+  border: 1px solid var(--xeg-border-light);
+  backdrop-filter: var(--xeg-glass-blur-light);
+}
+
+/* 그룹 내 명료한 디바이더 */
+.groupDivider {
+  width: 1px;
+  height: 28px;
+  background: var(--xeg-border-light);
+  opacity: 0.7;
+  border-radius: 1px;
+}
+
 /* 🎯 중앙 섹션 - 핵심 컨트롤 영역 */
 .toolbarCenter {
   flex: 0 0 auto;
@@ -340,7 +361,7 @@
 
     /* UIBase 표준 호버 효과 (토큰 사용) */
     box-shadow: var(--xeg-glass-shadow-medium);
-    transform: translateY(-1px) scale(var(--xeg-hover-scale)); /* 토큰 사용 */
+    transform: translateY(-1px) scale(1.06); /* 미세 스케일 업 */
 
     /* 백드롭 필터 강화 */
     backdrop-filter: var(--xeg-glass-blur-medium) saturate(150%);
@@ -359,8 +380,11 @@
 }
 
 .toolbarButton:focus-visible {
-  outline: var(--xeg-focus-outline-width) solid var(--xeg-color-primary); /* 토큰 사용 */
-  outline-offset: var(--xeg-focus-outline-offset); /* 토큰 사용 */
+  outline: 2px solid var(--xeg-color-primary);
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--xeg-color-primary) 30%, transparent),
+    0 0 0 4px color-mix(in oklab, var(--xeg-color-primary) 15%, transparent);
 }
 
 /* 🖱️ 클릭 상태 - 명확한 피드백 (토큰 사용) */

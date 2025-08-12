@@ -585,8 +585,6 @@
   --xeg-toolbar-text: var(--xeg-color-text-primary);
   --xeg-toolbar-text-secondary: var(--xeg-color-text-secondary);
   --xeg-toolbar-border: var(--xeg-glass-border-light);
-  --xeg-toolbar-button-hover: var(--xeg-glass-bg-light);
-  --xeg-toolbar-button-active: var(--xeg-glass-bg-medium);
 
   /* 모달 색상 시스템 - 테마별 동적 스타일링 */
   --xeg-modal-bg: var(--xeg-glass-bg-light);

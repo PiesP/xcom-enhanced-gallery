@@ -75,50 +75,7 @@
   justify-content: center;
 }
 
-/* 툴바 버튼 - 현대적 glassmorphism 디자인 */
-.xeg-toolbar-button {
-  background: var(--xeg-color-surface-light);
-  border: 1px solid var(--xeg-color-neutral-100);
-  border-radius: var(--xeg-radius-lg);
-  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-  color: var(--xeg-color-neutral-700);
-  font-size: var(--xeg-font-size-sm);
-  font-weight: var(--xeg-font-weight-medium);
-  cursor: pointer;
-  transition: var(--xeg-transition-fast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  backdrop-filter: var(--xeg-blur-light);
-  -webkit-backdrop-filter: var(--xeg-blur-light);
-  box-shadow: var(--xeg-glass-shadow-light);
-}
-
-.xeg-toolbar-button:hover {
-  background: var(--xeg-color-primary-alpha-10);
-  color: var(--xeg-color-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--xeg-glass-shadow-medium);
-}
-
-.xeg-toolbar-button:active {
-  transform: translateY(0);
-  transition: var(--xeg-transition-fast);
-}
-
-.xeg-toolbar-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.xeg-toolbar-button.active {
-  background: var(--xeg-color-primary);
-  color: white;
-  border-color: var(--xeg-color-primary);
-}
+/* 레거시 툴바 버튼 스타일 제거됨 - Toolbar.module.css로 통합 */
 
 /* 갤러리 카운터 - 현대적 디자인 */
 .xeg-gallery-counter {
@@ -395,11 +352,12 @@
 }
 
 /* 갤러리 내부 요소들은 정상 스크롤 허용 */
-.xeg-gallery-isolated * {
+.xeg-gallery-isolated .xeg-gallery-viewer {
   /* 갤러리 내부에서는 정상적인 스크롤 동작 허용 */
+  overflow: auto;
 }
 
-/* 다크 테마 지원 */
+/* 다크 테마 지원 - 레거시 toolbar-button 참조 제거 */
 @media (prefers-color-scheme: light) {
   .xeg-gallery-overlay {
     background: rgba(255, 255, 255, 0.95);
@@ -408,15 +366,6 @@
   .xeg-gallery-toolbar {
     background: rgba(255, 255, 255, 0.9);
     color: #1f2937;
-  }
-
-  .xeg-toolbar-button {
-    background: rgba(0, 0, 0, 0.1);
-    color: #1f2937;
-  }
-
-  .xeg-toolbar-button:hover {
-    background: rgba(0, 0, 0, 0.2);
   }
 
   .xeg-gallery-counter {
@@ -447,10 +396,9 @@
   }
 }
 
-/* 접근성 개선 */
+/* 접근성 개선 - 레거시 toolbar-button 참조 제거 */
 @media (prefers-reduced-motion: reduce) {
   .xeg-gallery-overlay,
-  .xeg-toolbar-button,
   .xeg-gallery-nav-left,
   .xeg-gallery-nav-right,
   .xeg-thumbnail,
@@ -459,7 +407,7 @@
   }
 }
 
-/* 고대비 모드 지원 */
+/* 고대비 모드 지원 - 레거시 toolbar-button 참조 제거 */
 @media (prefers-contrast: high) {
   .xeg-gallery-overlay {
     background: black;
@@ -468,12 +416,6 @@
   .xeg-gallery-toolbar {
     background: black;
     border-bottom: 2px solid white;
-  }
-
-  .xeg-toolbar-button {
-    background: white;
-    color: black;
-    border: 2px solid black;
   }
 
   .xeg-gallery-nav-left,

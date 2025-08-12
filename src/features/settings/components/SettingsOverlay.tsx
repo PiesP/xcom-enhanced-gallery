@@ -1,8 +1,7 @@
 import { getPreact, getPreactHooks } from '@shared/external/vendors';
 import { wireSettingsModal } from '@/features/settings/settings-menu';
-import { X } from 'lucide-preact'; // [추가] X 아이콘 import
-import { Icon } from '@shared/components/ui/Icon/Icon'; // [추가] Icon 컴포넌트 import
-import { themeService, type Theme } from '@shared/services/theme-service'; // [추가] ThemeService import
+import { themeService, type Theme } from '@shared/services/theme-service';
+import { ToolbarButton } from '@shared/components/ui/Toolbar/components/ToolbarButton';
 import styles from './SettingsOverlay.module.css';
 
 export interface SettingsOverlayProps {
@@ -96,17 +95,16 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
     h('div', { className: styles.modalContent, role: 'dialog', 'aria-modal': 'true' }, [
       h('div', { className: styles.modalHeader }, [
         h('h3', { className: styles.modalTitle }, 'XEG 설정'),
-        h(
-          'button',
-          {
-            type: 'button',
-            className: styles.closeButton,
-            'aria-label': '닫기',
-            onClick: () => onClose?.(),
-            'data-testid': 'close-button-with-icon',
-          },
-          h(Icon, { icon: X, size: 22 })
-        ),
+        h(ToolbarButton, {
+          icon: 'x',
+          variant: 'ghost',
+          size: 'sm',
+          'aria-label': '닫기',
+          onClick: () => onClose?.(),
+          'data-testid': 'settings-close-button',
+          iconSize: 22,
+          context: 'settings-close',
+        }),
       ]),
       h('div', { className: styles.modalBody }, [
         // 다운로드 섹션

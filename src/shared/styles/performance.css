@@ -31,8 +31,8 @@
   contain-intrinsic-size: 100vw 100vh;
 }
 
-.xeg-toolbar {
-  /* 툴바는 레이아웃에만 영향 */
+.xeg-performance-optimized {
+  /* 성능 최적화된 요소는 레이아웃에만 영향 */
   contain: layout;
 }
 
@@ -107,9 +107,8 @@
  * 이미지 최적화
  */
 .xeg-optimized-image {
-  /* 이미지 로딩 최적화 */
-  loading: lazy;
-  decoding: async;
+  /* CSS에서 이미지 속성은 HTML 속성으로 처리 */
+  /* loading="lazy"와 decoding="async"는 HTML 속성 */
 
   /* 레이아웃 시프트 방지 */
   aspect-ratio: 16 / 9; /* 기본 비율 */

@@ -58,26 +58,14 @@ export function ToolbarIconButton({
 
   // 아이콘 로딩
   useEffect(() => {
-    let mounted = true;
     setIsLoading(true);
 
-    getIcon(icon)
-      .then(Component => {
-        if (mounted) {
-          setIconComponent(() => Component);
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (mounted) {
-          // 로딩 실패 시에도 상태 업데이트
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
+    try {
+      const Component = getIcon(icon);
+      setIconComponent(() => Component);
+    } finally {
+      setIsLoading(false);
+    }
   }, [icon]);
 
   // 아이콘 크기 매핑

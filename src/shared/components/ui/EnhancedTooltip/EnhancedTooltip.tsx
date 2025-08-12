@@ -3,8 +3,7 @@
  * 핏 모드 버튼들의 직관성 개선을 위한 향상된 툴팁
  */
 
-import { h, VNode } from 'preact';
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import styles from './EnhancedTooltip.module.css';
 
 export interface EnhancedTooltipProps {
@@ -33,6 +32,8 @@ export function EnhancedTooltip({
   showCoachMark = false,
   coachMarkText,
 }: EnhancedTooltipProps): VNode {
+  const { h } = getPreact();
+  const { useState, useEffect, useRef } = getPreactHooks();
   const [isVisible, setIsVisible] = useState(false);
   const [showCoach, setShowCoach] = useState(showCoachMark);
   const timeoutRef = useRef<number | null>(null);

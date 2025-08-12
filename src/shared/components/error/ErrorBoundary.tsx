@@ -3,8 +3,7 @@
  * React 스타일 에러 경계 (Preact 호환)
  */
 
-import { Component } from 'preact';
-import type { ComponentChild, ComponentChildren } from 'preact';
+import { getPreact, type ComponentChildren } from '@shared/external/vendors';
 import { ErrorLogger } from '../../error/ErrorLogger';
 
 /**
@@ -14,7 +13,7 @@ export interface ErrorBoundaryProps {
   /** 에러 발생 시 콜백 */
   onError?: (error: Error, errorInfo: { componentStack: string }) => void;
   /** Fallback UI */
-  fallback?: ComponentChild;
+  fallback?: unknown;
   /** 자식 컴포넌트 */
   children: ComponentChildren;
 }
@@ -31,6 +30,8 @@ export interface ErrorBoundaryState {
  * ErrorBoundary 컴포넌트
  * React componentDidCatch 패턴을 Preact에서 구현
  */
+const { Component } = getPreact();
+
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);

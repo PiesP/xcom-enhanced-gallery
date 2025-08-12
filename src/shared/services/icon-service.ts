@@ -1,4 +1,4 @@
-import type { ComponentType } from 'preact';
+import type { LucideIcon } from 'lucide-preact';
 import { logger } from '@shared/logging';
 
 /**
@@ -11,10 +11,15 @@ export type IconName =
   | 'close'
   | 'chevron-left'
   | 'chevron-right'
+  | 'step-back'
+  | 'step-forward'
   | 'zoom-in'
   | 'zoom-out'
   | 'maximize'
   | 'minimize'
+  | 'square'
+  | 'move-horizontal'
+  | 'move-vertical'
   | 'rotate-cw'
   | 'play'
   | 'pause'
@@ -32,6 +37,8 @@ export type IconName =
   | 'hash'
   | 'image'
   | 'file-text'
+  | 'file-down'
+  | 'folder-down'
   | 'save'
   | 'info'
   | 'refresh-cw'
@@ -41,19 +48,22 @@ export type IconName =
 
 /**
  * 아이콘 컴포넌트 속성 인터페이스
+ * lucide-preact의 LucideProps와 호환
  */
 export interface IconProps {
   size?: number | string;
   color?: string;
-  strokeWidth?: number;
+  strokeWidth?: string | number;
+  fill?: string;
   className?: string;
   'aria-hidden'?: boolean;
 }
 
 /**
  * 아이콘 컴포넌트 타입
+ * lucide-preact의 LucideIcon과 호환
  */
-export type IconComponent = ComponentType<IconProps>;
+export type IconComponent = LucideIcon;
 
 /**
  * 아이콘 캐시 - 성능 최적화를 위한 메모리 캐시
@@ -61,72 +71,109 @@ export type IconComponent = ComponentType<IconProps>;
 const iconCache = new Map<IconName, IconComponent>();
 
 /**
- * lucide-preact 아이콘명과 실제 export명 매핑
- * 트리쉐이킹을 위해 필요한 아이콘만 명시적으로 매핑
+ * getter 함수를 통한 lucide-preact 개별 아이콘 import
+ * 트리 쉐이킹을 위해 각 아이콘을 개별적으로 import
  */
-const iconImportMap: Record<IconName, string> = {
-  download: 'Download',
-  settings: 'Settings',
-  close: 'X',
-  x: 'X',
-  'chevron-left': 'ChevronLeft',
-  'chevron-right': 'ChevronRight',
-  'zoom-in': 'ZoomIn',
-  'zoom-out': 'ZoomOut',
-  maximize: 'Maximize',
-  minimize: 'Minimize',
-  'rotate-cw': 'RotateCw',
-  play: 'Play',
-  pause: 'Pause',
-  'volume-2': 'Volume2',
-  'volume-x': 'VolumeX',
-  grid: 'Grid',
-  list: 'List',
-  eye: 'Eye',
-  'eye-off': 'EyeOff',
-  'trash-2': 'Trash2',
-  copy: 'Copy',
-  check: 'Check',
-  user: 'User',
-  hash: 'Hash',
-  image: 'Image',
-  'file-text': 'FileText',
-  save: 'Save',
-  info: 'Info',
-  'refresh-cw': 'RefreshCw',
-  calendar: 'Calendar',
-  file: 'File',
-  'help-circle': 'HelpCircle',
+import {
+  Download,
+  Settings,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  StepBack,
+  StepForward,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  Minimize,
+  Square,
+  MoveHorizontal,
+  MoveVertical,
+  RotateCw,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Grid,
+  List,
+  Eye,
+  EyeOff,
+  Trash2,
+  Copy,
+  Check,
+  User,
+  Hash,
+  Image,
+  FileText,
+  FileDown,
+  FolderDown,
+  Save,
+  Info,
+  RefreshCw,
+  Calendar,
+  File,
+  HelpCircle,
+} from 'lucide-preact';
+
+/**
+ * 트리 쉐이킹 최적화된 아이콘 매핑
+ * 개별 import된 아이콘들을 매핑
+ */
+const iconComponentMap: Record<IconName, IconComponent> = {
+  download: Download,
+  settings: Settings,
+  close: X,
+  x: X,
+  'chevron-left': ChevronLeft,
+  'chevron-right': ChevronRight,
+  'step-back': StepBack,
+  'step-forward': StepForward,
+  'zoom-in': ZoomIn,
+  'zoom-out': ZoomOut,
+  maximize: Maximize,
+  minimize: Minimize,
+  square: Square,
+  'move-horizontal': MoveHorizontal,
+  'move-vertical': MoveVertical,
+  'rotate-cw': RotateCw,
+  play: Play,
+  pause: Pause,
+  'volume-2': Volume2,
+  'volume-x': VolumeX,
+  grid: Grid,
+  list: List,
+  eye: Eye,
+  'eye-off': EyeOff,
+  'trash-2': Trash2,
+  copy: Copy,
+  check: Check,
+  user: User,
+  hash: Hash,
+  image: Image,
+  'file-text': FileText,
+  'file-down': FileDown,
+  'folder-down': FolderDown,
+  save: Save,
+  info: Info,
+  'refresh-cw': RefreshCw,
+  calendar: Calendar,
+  file: File,
+  'help-circle': HelpCircle,
 };
 
 /**
- * getter 함수를 통한 lucide-preact 동적 import
- * 외부 의존성 격리 및 모킹 가능한 구조
+ * getter 함수를 통한 lucide-preact 아이콘 접근
+ * 외부 의존성 격리 및 모킹 가능한 구조 유지
  */
-const getLucideIcon = async (iconName: IconName): Promise<IconComponent | null> => {
-  try {
-    const lucideExportName = iconImportMap[iconName];
-    if (!lucideExportName) {
-      logger.warn(`Unknown icon mapping: ${iconName}`);
-      return null;
-    }
+const getLucideIcon = (iconName: IconName): IconComponent | null => {
+  const IconComponent = iconComponentMap[iconName];
 
-    // 트리쉐이킹을 위한 개별 아이콘 import
-    const lucideModule = await import('lucide-preact');
-    const IconComponent = (lucideModule as unknown as Record<string, IconComponent>)[
-      lucideExportName
-    ];
-
-    if (!IconComponent) {
-      logger.warn(`Icon not found in lucide-preact: ${lucideExportName}`);
-      return null;
-    }
-
-    return IconComponent;
-  } catch (error) {
-    logger.warn('Failed to load lucide icon:', error);
+  if (!IconComponent) {
+    logger.warn(`Icon not found: ${iconName}`);
     return null;
   }
+
+  return IconComponent;
 };
 
 /**
@@ -173,19 +220,20 @@ const DefaultIcon: IconComponent = ({
 
 /**
  * 아이콘 로딩 함수 - 캐싱 및 폴백 지원
+ * 동기 방식으로 변경하여 트리 쉐이킹 최적화
  *
  * @param name 아이콘 이름
- * @returns Promise<IconComponent> 아이콘 컴포넌트
+ * @returns IconComponent 아이콘 컴포넌트
  */
-export async function getIcon(name: IconName): Promise<IconComponent> {
+export function getIcon(name: IconName): IconComponent {
   // 캐시 확인
   if (iconCache.has(name)) {
     return iconCache.get(name)!;
   }
 
   try {
-    // lucide 아이콘 로딩 시도
-    const icon = await getLucideIcon(name);
+    // lucide 아이콘 로딩 시도 (동기 방식)
+    const icon = getLucideIcon(name);
     const finalIcon = icon || DefaultIcon;
 
     // 캐시에 저장
@@ -204,12 +252,13 @@ export async function getIcon(name: IconName): Promise<IconComponent> {
 /**
  * 여러 아이콘을 미리 로딩하는 함수
  * 성능 최적화를 위한 프리로딩 지원
+ * 동기 방식으로 변경
  *
  * @param icons 프리로드할 아이콘 목록
  */
-export async function preloadIcons(icons: IconName[]): Promise<void> {
+export function preloadIcons(icons: IconName[]): void {
   try {
-    await Promise.all(icons.map(name => getIcon(name)));
+    icons.forEach(name => getIcon(name));
     logger.debug(`Preloaded ${icons.length} icons:`, icons);
   } catch (error) {
     logger.warn('Failed to preload some icons:', error);
@@ -223,16 +272,18 @@ export async function preloadIcons(icons: IconName[]): Promise<void> {
 export class IconCache {
   /**
    * 캐시에서 아이콘 가져오기 (캐시 우선)
+   * 동기 방식으로 변경
    */
-  static async get(name: IconName): Promise<IconComponent> {
+  static get(name: IconName): IconComponent {
     return getIcon(name);
   }
 
   /**
    * 여러 아이콘 프리로드
+   * 동기 방식으로 변경
    */
-  static async preload(icons: IconName[]): Promise<void> {
-    await preloadIcons(icons);
+  static preload(icons: IconName[]): void {
+    preloadIcons(icons);
   }
 
   /**

@@ -89,15 +89,15 @@
 }
 
 /**
- * CSS Nesting 활용
+ * CSS Nesting 활용 - 레거시 toolbar 스타일 제거
  */
-.xeg-toolbar {
+.xeg-modern-container {
   background: var(--xeg-color-surface);
   border-radius: var(--xeg-radius-lg);
   padding: var(--xeg-spacing-md);
 
-  /* Nesting으로 가독성 향상 */
-  & .toolbar-button {
+  /* Modern CSS Features 예시용 - 실제 사용되지 않음 */
+  & .example-button {
     background: transparent;
     border: 1px solid var(--xeg-color-border-primary);
     border-radius: var(--xeg-radius-md);
@@ -120,7 +120,7 @@
     }
   }
 
-  & .toolbar-separator {
+  & .example-separator {
     width: 1px;
     height: 24px;
     background: var(--xeg-color-border-secondary);
@@ -139,11 +139,11 @@
 }
 
 /**
- * 고급 CSS 선택자 활용
+ * 고급 CSS 선택자 활용 - 레거시 참조 제거
  */
 /* :has() 선택자 */
-.xeg-gallery-container:has(.xeg-toolbar:hover) {
-  --toolbar-interaction: 1;
+.xeg-gallery-container:has(.xeg-modern-element:hover) {
+  --modern-interaction: 1;
 }
 
 .xeg-gallery-container:has(.xeg-item:focus-visible) {
@@ -212,7 +212,7 @@
 .xeg-tooltip {
   position: absolute;
   position-anchor: --tooltip-anchor;
-  inset-area: top;
+  /* inset-area: top; /* 미지원 속성 제거 */
   margin-bottom: 8px;
 }
 
@@ -228,8 +228,11 @@
 }
 
 @supports not (container-type: size) {
-  .xeg-gallery-grid {
+  .xeg-gallery-grid-fallback {
     /* 미디어 쿼리 폴백 */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--xeg-spacing-md);
   }
 }
 

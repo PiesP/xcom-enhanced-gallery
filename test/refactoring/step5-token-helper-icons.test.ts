@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { VNode } from 'preact';
+import type {} from 'preact';
 
 // Mock dependencies
 vi.mock('@shared/services/icon-service', () => ({
@@ -51,13 +51,14 @@ describe('Step 5: 토큰 헬퍼 아이콘 통합', () => {
     });
 
     it('should show user icon for {user} token', async () => {
-      const { getIcon } = await import('@shared/services/icon-service');
-      const mockGetIcon = getIcon as any;
-      mockGetIcon.mockResolvedValue(() => ({ type: 'svg' }));
+      const iconSvc = await import('@shared/services/icon-service');
+      type MockFn = { mockReturnValue: Function };
+      const mockGetIcon = iconSvc.getIcon as unknown as MockFn;
+      (mockGetIcon as any).mockReturnValue(() => ({ type: 'svg' }));
 
-      const { createTokenHelper } = await import('@features/settings/components/TokenHelper');
+      const mod = await import('@features/settings/components/TokenHelper');
 
-      const helper = createTokenHelper({
+      mod.createTokenHelper({
         onInsertToken: vi.fn(),
       });
 
@@ -66,13 +67,14 @@ describe('Step 5: 토큰 헬퍼 아이콘 통합', () => {
     });
 
     it('should show calendar icon for {timestamp} token', async () => {
-      const { getIcon } = await import('@shared/services/icon-service');
-      const mockGetIcon = getIcon as any;
-      mockGetIcon.mockResolvedValue(() => ({ type: 'svg' }));
+      const iconSvc = await import('@shared/services/icon-service');
+      type MockFn = { mockReturnValue: Function };
+      const mockGetIcon = iconSvc.getIcon as unknown as MockFn;
+      (mockGetIcon as any).mockReturnValue(() => ({ type: 'svg' }));
 
-      const { createTokenHelper } = await import('@features/settings/components/TokenHelper');
+      const mod = await import('@features/settings/components/TokenHelper');
 
-      const helper = createTokenHelper({
+      mod.createTokenHelper({
         onInsertToken: vi.fn(),
       });
 
@@ -80,13 +82,14 @@ describe('Step 5: 토큰 헬퍼 아이콘 통합', () => {
     });
 
     it('should show file-text icon for {tweetId} token', async () => {
-      const { getIcon } = await import('@shared/services/icon-service');
-      const mockGetIcon = getIcon as any;
-      mockGetIcon.mockResolvedValue(() => ({ type: 'svg' }));
+      const iconSvc = await import('@shared/services/icon-service');
+      type MockFn = { mockReturnValue: Function };
+      const mockGetIcon = iconSvc.getIcon as unknown as MockFn;
+      (mockGetIcon as any).mockReturnValue(() => ({ type: 'svg' }));
 
-      const { createTokenHelper } = await import('@features/settings/components/TokenHelper');
+      const mod = await import('@features/settings/components/TokenHelper');
 
-      const helper = createTokenHelper({
+      mod.createTokenHelper({
         onInsertToken: vi.fn(),
       });
 
@@ -122,9 +125,8 @@ describe('Step 5: 토큰 헬퍼 아이콘 통합', () => {
     });
 
     it('should provide fallback icon for unknown tokens', async () => {
-      const { getIconForToken } = await import('@features/settings/components/TokenHelper');
-
-      const icon = await getIconForToken('unknownToken');
+      const mod = await import('@features/settings/components/TokenHelper');
+      const icon = mod.getIconForToken('unknownToken');
 
       expect(icon).toBe('help-circle');
     });
