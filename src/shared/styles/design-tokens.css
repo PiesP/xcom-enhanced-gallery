@@ -366,12 +366,18 @@
   --xeg-toolbar-border-radius: var(--xeg-radius-xl); /* 툴바 모서리 둥글기 */
 
   /* Toolbar Spacing Tokens (NEW) - 전역 재사용을 위한 간격 표준화 */
-  /* 툴바 좌우 엣지 패딩 (버튼과 툴바 외곽 경계 사이 여백) */
-  --xeg-toolbar-edge-padding-x: clamp(var(--xeg-spacing-xl), 2.5vw, var(--xeg-spacing-3xl));
+  /* 툴바 엣지 패딩 (버튼/아이콘과 툴바 외곽 경계 사이 여백 - 상하/좌우 동일 적용) */
+  --xeg-toolbar-edge-padding: clamp(var(--xeg-spacing-xl), 2.5vw, var(--xeg-spacing-3xl));
+  /* 하위 호환: 기존 X/Y 개별 토큰이 남아 있는 경우를 대비해 동일 값으로 간접 정의 */
+  --xeg-toolbar-edge-padding-x: var(--xeg-toolbar-edge-padding);
+  --xeg-toolbar-padding-y: var(--xeg-toolbar-edge-padding);
   /* 툴바 내 버튼 그룹(섹션/그룹박스) 간 간격 - 화면 크기에 따라 유연 조정 */
   --xeg-toolbar-group-gap: clamp(var(--xeg-spacing-md), 1.5vw, var(--xeg-spacing-xl));
   /* 동일 그룹 내부 버튼 간 간격 */
   --xeg-toolbar-button-gap: var(--xeg-spacing-sm);
+
+  /* 그룹 박스(네비/다운로드 묶음) 내부 패딩 - 상하/좌우 동일 적용 */
+  --xeg-toolbar-group-padding: calc(var(--xeg-spacing-xs) + 2px);
 
   /* 개선된 글래스모피즘 효과 */
   --xeg-glass-bg-toolbar: oklch(15% 0.02 240 / 0.6); /* 툴바 배경 (더 투명하게) */

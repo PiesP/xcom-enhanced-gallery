@@ -13,10 +13,11 @@
   z-index: var(--xeg-z-gallery-toolbar);
 
   /* 크기 및 간격 - 토큰 기반 조정 */
-  height: var(--xeg-toolbar-height); /* 72px */
-  min-height: var(--xeg-toolbar-height); /* 최소 높이도 토큰 사용 */
-  /* 외곽 여백(버튼과 툴바 경계 사이) */
-  padding: var(--xeg-toolbar-padding-y) var(--xeg-toolbar-edge-padding-x);
+  /* 고정 높이 대신 콘텐츠에 맞춘 자동 높이, 최소 터치 영역 보장 */
+  height: auto;
+  min-height: var(--xeg-touch-target-min);
+  /* 외곽 여백(버튼/아이콘과 툴바 경계 사이) - 상하/좌우 동일 값 적용 */
+  padding: var(--xeg-toolbar-edge-padding);
   /* 툴바 내부 섹션 간 기본 간격 */
   gap: var(--xeg-toolbar-group-gap);
   min-width: 400px; /* 최소 너비 유지 */
@@ -183,8 +184,8 @@
   align-items: center;
   /* 좌/우 섹션 내 하위 그룹 간격 확대 */
   gap: var(--xeg-toolbar-group-gap);
-  /* 좌/우 섹션의 가장자리와 버튼 사이 여백 보강 */
-  padding-inline: var(--xeg-spacing-xs);
+  /* 좌/우 섹션은 툴바의 edge padding과 겹치지 않도록 내부 추가 패딩 제거 */
+  padding-inline: 0;
   min-height: var(--xeg-touch-target-min);
 }
 
@@ -205,7 +206,8 @@
   display: flex;
   align-items: center;
   gap: var(--xeg-toolbar-button-gap);
-  padding: calc(var(--xeg-spacing-2xs) + 2px) calc(var(--xeg-spacing-xs) + 2px);
+  /* 그룹 내부 패딩은 상하/좌우 동일 값 적용 */
+  padding: var(--xeg-toolbar-group-padding);
   border-radius: var(--xeg-radius-lg);
   background: var(--xeg-surface-glass);
   border: 1px solid var(--xeg-border-light);
@@ -234,7 +236,8 @@
   justify-content: center;
   gap: var(--xeg-spacing-sm);
   min-height: var(--xeg-touch-target-min);
-  padding: 0 var(--xeg-spacing-sm); /* 양옆에 여백 추가 */
+  /* 중앙 섹션도 별도 내부 패딩 없이 아이콘 배치로 크기 결정 */
+  padding: 0;
 }
 
 /* 📏 구분선 - 깔끔하게 제거하고 간격으로 대체 */

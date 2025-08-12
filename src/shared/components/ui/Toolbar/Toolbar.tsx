@@ -318,7 +318,7 @@ function ToolbarCore({
                 onClick: () => onPrevious(),
                 'aria-label': '이전 미디어',
                 'data-testid': 'nav-previous',
-                title: '이전 미디어 (← / PageUp)',
+                title: '이전 미디어',
                 context: 'previous',
               }),
               h(
@@ -365,7 +365,7 @@ function ToolbarCore({
                 onClick: () => onNext(),
                 'aria-label': '다음 미디어',
                 'data-testid': 'nav-next',
-                title: '다음 미디어 (→ / PageDown)',
+                title: '다음 미디어',
                 context: 'next',
               }),
             ]),
@@ -382,7 +382,7 @@ function ToolbarCore({
           },
           h('div', { className: styles.fitModeGroup, key: 'fit-mode-group-center' }, [
             h(ToolbarButton, {
-              icon: 'square',
+              icon: 'maximize',
               variant: toolbarState.currentFitMode === 'original' ? 'primary' : 'secondary',
               size: 'lg',
               disabled: disabled || !onFitOriginal,
@@ -418,7 +418,7 @@ function ToolbarCore({
               key: 'fit-height-center',
             }),
             h(ToolbarButton, {
-              icon: 'move-horizontal',
+              icon: 'move',
               variant: toolbarState.currentFitMode === 'fitContainer' ? 'primary' : 'secondary',
               size: 'lg',
               disabled: disabled || !onFitContainer,

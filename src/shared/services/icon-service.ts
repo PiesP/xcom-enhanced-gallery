@@ -18,6 +18,7 @@ export type IconName =
   | 'maximize'
   | 'minimize'
   | 'square'
+  | 'move'
   | 'move-horizontal'
   | 'move-vertical'
   | 'rotate-cw'
@@ -87,6 +88,7 @@ import {
   Maximize,
   Minimize,
   Square,
+  Move,
   MoveHorizontal,
   MoveVertical,
   RotateCw,
@@ -133,6 +135,7 @@ const iconComponentMap: Record<IconName, IconComponent> = {
   maximize: Maximize,
   minimize: Minimize,
   square: Square,
+  move: Move,
   'move-horizontal': MoveHorizontal,
   'move-vertical': MoveVertical,
   'rotate-cw': RotateCw,
