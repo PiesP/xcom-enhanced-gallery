@@ -4,6 +4,7 @@
  */
 
 import type { MediaMapping, MediaPageType } from '@shared/types/media.types';
+import { SIZE_CONSTANTS } from '@/constants';
 import { logger } from '@shared/logging';
 import { safeParseInt } from '@shared/utils/type-safety-helpers';
 import type { MediaMappingStrategy } from '@shared/types/media.types';
@@ -79,7 +80,7 @@ export class MediaTabUrlDirectStrategy implements MediaMappingStrategy {
 
     // URL에서 미디어 인덱스 추출 시도
     const indexMatch = url.match(/\/media\/(\d+)/);
-    const index = indexMatch ? safeParseInt(indexMatch[1], 10) - 1 : 0;
+    const index = indexMatch ? safeParseInt(indexMatch[1], SIZE_CONSTANTS.TEN) - 1 : 0;
 
     return { url, index };
   }

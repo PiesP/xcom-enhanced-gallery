@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import { getKeyValueStore } from '@shared/storage/provider';
 import type {
   AppSettings,
@@ -369,22 +370,22 @@ export class SettingsService {
   private validateSetting(key: NestedSettingKey, value: unknown): SettingValidationResult {
     // 속도 관련 설정 검증
     if (key.includes('Speed') && typeof value === 'number') {
-      if (value < 1 || value > 10) {
+      if (value < 1 || value > SIZE_CONSTANTS.TEN) {
         return {
           valid: false,
-          error: '속도는 1-10 사이여야 합니다',
-          suggestion: '1에서 10 사이의 값을 입력하세요',
+          error: '속도는 1-SIZE_CONSTANTS.TEN 사이여야 합니다',
+          suggestion: '1에서 SIZE_CONSTANTS.TEN 사이의 값을 입력하세요',
         };
       }
     }
 
     // 개수 관련 설정 검증
     if (key.includes('Count') && typeof value === 'number') {
-      if (value < 0 || value > 20) {
+      if (value < 0 || value > SIZE_CONSTANTS.TWENTY) {
         return {
           valid: false,
-          error: '개수는 0-20 사이여야 합니다',
-          suggestion: '0에서 20 사이의 값을 입력하세요',
+          error: '개수는 0-SIZE_CONSTANTS.TWENTY 사이여야 합니다',
+          suggestion: '0에서 SIZE_CONSTANTS.TWENTY 사이의 값을 입력하세요',
         };
       }
     }

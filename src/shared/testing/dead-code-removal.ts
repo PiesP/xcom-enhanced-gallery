@@ -7,6 +7,7 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { PerformanceMonitor, DeadCodeError, globalPerformanceMonitor } from './testing-utils';
+import { TESTING_CONSTANTS } from '../constants/magic-numbers';
 
 /**
  * Dead Code 분석 결과 타입
@@ -153,11 +154,16 @@ export class DeadCodeRemovalSystem {
 
       if (!this.options.dryRun) {
         // TODO: 실제 구현
-        this.stats.filesModified = Math.floor(this.stats.filesAnalyzed * 0.3);
-        this.stats.linesRemoved = Math.floor(this.stats.filesAnalyzed * 10);
+        this.stats.filesModified = Math.floor(
+          this.stats.filesAnalyzed * TESTING_CONSTANTS.CONFIDENCE_THRESHOLD_HIGH
+        );
+        this.stats.linesRemoved = Math.floor(
+          this.stats.filesAnalyzed * TESTING_CONSTANTS.DEFAULT_ITEMS_COUNT
+        );
         this.stats.importsRemoved = analysisResult.unusedImports.length;
         this.stats.functionsRemoved = analysisResult.unusedFunctions.length;
-        this.stats.performanceGains = this.stats.linesRemoved * 0.1;
+        this.stats.performanceGains =
+          this.stats.linesRemoved * TESTING_CONSTANTS.CONFIDENCE_THRESHOLD_LOW;
       }
 
       timer.end();
@@ -638,7 +644,7 @@ export class DeadCodeRemovalUtils {
     try {
       const recommendations: string[] = [];
 
-      if (mockFiles.length > 5) {
+      if (mockFiles.length > TESTING_CONSTANTS.CACHE_SIZE_LIMIT) {
         recommendations.push('Consider consolidating multiple mock files into unified system');
       }
 
@@ -677,7 +683,7 @@ export class DeadCodeRemovalUtils {
         recommendations.push('Use performance monitoring for continuous optimization');
       }
 
-      if (analysisResult.unusedImports.length > 3) {
+      if (analysisResult.unusedImports.length > TESTING_CONSTANTS.BATCH_SIZE) {
         recommendations.push('Remove unused imports to improve bundle size');
       }
 

@@ -29,6 +29,7 @@ export const TIMING = {
   CACHE_CLEANUP_INTERVAL: TIME_UNITS.SECONDS_PER_MINUTE * TIME_UNITS.MILLISECONDS_PER_SECOND,
 
   // UI 인터랙션 타이밍
+  TOOLBAR_INITIAL_SHOW_DURATION: 1000,
   TOOLBAR_HIDE_DELAY: 300,
   DEBOUNCED_SAVE_DELAY: 600,
   DOUBLE_CLICK_DELAY: 300,
@@ -77,6 +78,14 @@ export const MEMORY_UNITS = {
 export const PERCENTAGE = {
   MULTIPLIER: 100,
   FULL: 100,
+  HALF: 50,
+  FORTY: 40,
+  THIRTY: 30,
+  TWENTY: 20,
+  TEN: 10,
+  SEVEN_TENTHS: 0.7,
+  THREE_TENTHS: 0.3,
+  ONE_TENTH: 0.1,
 } as const;
 
 /** 분수 계산 상수 */
@@ -84,6 +93,20 @@ export const FRACTIONS = {
   QUARTER: 0.25,
   HALF: 0.5,
   THREE_QUARTERS: 0.75,
+} as const;
+
+/** 숫자 진법 및 파싱 관련 상수 */
+export const NUMBER_BASES = {
+  DECIMAL: 10,
+  HEX: 16,
+  BASE36: 36,
+} as const;
+
+/** 식별자(ID) 생성 관련 상수 */
+export const IDENTIFIER_CONSTANTS = {
+  RANDOM_SUBSTR_START_INDEX: 2,
+  RANDOM_ID_LENGTH_SHORT: 6,
+  RANDOM_ID_LENGTH_MEDIUM: 9,
 } as const;
 
 /** 메모리 임계값 MB 단위 */
@@ -684,19 +707,25 @@ export type ViewMode = (typeof VIEW_MODES)[number];
 /** 크기 및 길이 관련 상수 */
 export const SIZE_CONSTANTS = {
   // 가장 많이 사용되는 크기 값들
+  HUNDRED_TWENTY: 120,
   HUNDRED: 100,
   TEN: 10,
   FIFTY: 50,
   TWENTY: 20,
   SIXTEEN: 16,
+  TWELVE: 12,
   FIVE: 5,
 
   // 특수 크기 값들
   THIRTY_SIX: 36,
+  TWENTY_FOUR: 24,
+  NINETEEN: 19,
   NINE: 9,
+  NEGATIVE_FIFTY: -50,
   NEGATIVE_FIVE: -5,
   FORTY: 40,
   EIGHT: 8,
+  SIX: 6,
   FOUR: 4,
   THREE: 3,
   TWO: 2,
@@ -796,6 +825,11 @@ export const ACCESSIBILITY_CONSTANTS = {
 
   // 기타 접근성 값
   FOCUS_RING_OFFSET: 125,
+  HEADING_MAX_LEVEL: 6,
+  // 대비 계산 보정값 및 임계치
+  LUMINANCE_EPSILON: 0.05,
+  LUMINANCE_THRESHOLD: 0.5,
+  OPACITY_FADE: 0.05,
 } as const;
 
 /** 성능 관련 상수 */
@@ -819,4 +853,15 @@ export const PERFORMANCE_CONSTANTS = {
   SCORE_THRESHOLD_30: 30,
   SCORE_THRESHOLD_20: 20,
   SCORE_THRESHOLD_10: 10,
+  // 성능 점수 기준 (모니터링 내부 로직용)
+  PERFORMANCE_SCORE_GOOD: 80,
+  PERFORMANCE_SCORE_AVERAGE: 60,
+} as const;
+
+/** Web Vitals 관련 상수 */
+export const WEB_VITALS = {
+  CLS_WARNING: 0.25,
+  // 시간 임계값은 TIME_CONSTANTS 사용 권장
+  // 예: FID_WARNING_MS: TIME_CONSTANTS.MILLISECONDS_200,
+  //     LCP_WARNING_MS: TIME_CONSTANTS.MILLISECONDS_4000,
 } as const;

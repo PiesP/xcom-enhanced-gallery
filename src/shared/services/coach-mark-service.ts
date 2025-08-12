@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { COACH_MARK_CONSTANTS } from '../constants/magic-numbers';
 
 export interface CoachMarkConfig {
   /** 고유 식별자 */
@@ -118,7 +119,7 @@ class CoachMarkService {
           if (galleryContainer) {
             resolve();
           } else {
-            setTimeout(checkGallery, 100);
+            setTimeout(checkGallery, COACH_MARK_CONSTANTS.PROGRESS_COMPLETE);
           }
         };
         checkGallery();
@@ -135,7 +136,7 @@ class CoachMarkService {
           content: '이미지를 원본 크기, 가로 맞춤, 세로 맞춤, 창에 맞춤으로 볼 수 있습니다.',
           autoClose: 5000,
         });
-      }, 3000);
+      }, COACH_MARK_CONSTANTS.AUTO_HIDE_DELAY);
 
       this.markAsShown(coachMarkId);
     } catch (error) {
@@ -189,7 +190,7 @@ class CoachMarkService {
     // 애니메이션으로 표시
     setTimeout(() => {
       coachMark.classList.add('xeg-coach-mark--visible');
-    }, 100);
+    }, COACH_MARK_CONSTANTS.PROGRESS_COMPLETE);
 
     // 자동 닫기
     if (config.autoClose && config.autoClose > 0) {
@@ -209,7 +210,7 @@ class CoachMarkService {
 
     // 화면 상단에 표시 (툴바 아래)
     coachMark.style.position = 'fixed';
-    coachMark.style.top = `${targetRect.bottom + 12}px`;
+    coachMark.style.top = `${targetRect.bottom + COACH_MARK_CONSTANTS.TOOLTIP_OFFSET}px`;
     coachMark.style.left = `${targetRect.left + targetRect.width / 2}px`;
     coachMark.style.transform = 'translateX(-50%)';
     coachMark.style.zIndex = '10001';
@@ -226,7 +227,7 @@ class CoachMarkService {
       if (coachMark.parentNode) {
         coachMark.parentNode.removeChild(coachMark);
       }
-    }, 300);
+    }, COACH_MARK_CONSTANTS.FADE_DELAY);
   }
 
   /**

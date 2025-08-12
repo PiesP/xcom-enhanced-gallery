@@ -9,8 +9,10 @@
  */
 
 import { logger } from '@shared/logging';
+import { TIME_CONSTANTS } from '@/constants';
 import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { MediaInfo } from '@shared/types/media.types';
+import { SIZE_LIMITS } from '../../../constants';
 
 /**
  * 트윗 document에서 미디어 URL들을 추출
@@ -122,8 +124,8 @@ export function createMediaInfoFromImage(
       tweetUsername: parseUsernameFast() || undefined,
       tweetUrl: `https://twitter.com/i/status/${tweetId}`,
       alt,
-      width: imgElement.width || 1200,
-      height: imgElement.height || 800,
+      width: imgElement.width || SIZE_LIMITS.DEFAULT_IMAGE_WIDTH,
+      height: imgElement.height || SIZE_LIMITS.DEFAULT_IMAGE_HEIGHT,
     };
   } catch (error) {
     logger.error('createMediaInfoFromImage: 이미지 정보 생성 실패:', error);
@@ -167,8 +169,8 @@ export function createMediaInfoFromVideo(
       tweetUsername: parseUsernameFast() || undefined,
       tweetUrl: `https://twitter.com/i/status/${tweetId}`,
       alt: `Video ${index + 1} from tweet`,
-      width: videoElement.videoWidth || 1920,
-      height: videoElement.videoHeight || 1080,
+      width: videoElement.videoWidth || SIZE_LIMITS.DEFAULT_VIDEO_WIDTH,
+      height: videoElement.videoHeight || SIZE_LIMITS.DEFAULT_VIDEO_HEIGHT,
     };
   } catch (error) {
     logger.error('createMediaInfoFromVideo: 비디오 정보 생성 실패:', error);
@@ -216,8 +218,8 @@ export function isValidMediaUrl(url: string): boolean {
     return false;
   }
 
-  // URL 길이 제한 (일반적인 브라우저 제한인 2048자)
-  if (url.length > 2048) {
+  // URL 길이 제한
+  if (url.length > SIZE_LIMITS.URL_MAX_LENGTH) {
     return false;
   }
 
@@ -424,8 +426,8 @@ export function cleanFilename(filename: string): string {
   cleaned = cleaned.replace(/[<>:"/\\|?*]/g, '_');
 
   // 길이 제한 (255자는 대부분 파일시스템의 제한)
-  if (cleaned.length > 200) {
-    cleaned = cleaned.substring(0, 200);
+  if (cleaned.length > TIME_CONSTANTS.MILLISECONDS_200) {
+    cleaned = cleaned.substring(0, SIZE_LIMITS.FILENAME_MAX_LENGTH);
   }
 
   return cleaned;

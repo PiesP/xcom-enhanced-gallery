@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { TIME_CONSTANTS } from '@/constants';
 
 // Toast 관련 타입 정의
 export interface ToastItem {
@@ -46,7 +47,7 @@ export class ToastService {
       type: options.type || 'info',
       title: options.title,
       message: options.message,
-      duration: options.duration || 3000,
+      duration: options.duration || TIME_CONSTANTS.THREE_SECONDS,
       dismissible: options.dismissible !== false,
     };
 
@@ -66,7 +67,7 @@ export class ToastService {
   /**
    * 성공 토스트 표시
    */
-  success(title: string, message: string, duration = 3000): string {
+  success(title: string, message: string, duration: number = TIME_CONSTANTS.THREE_SECONDS): string {
     return this.show({ title, message, type: 'success', duration });
   }
 
@@ -87,7 +88,7 @@ export class ToastService {
   /**
    * 정보 토스트 표시
    */
-  info(title: string, message: string, duration = 3000): string {
+  info(title: string, message: string, duration: number = TIME_CONSTANTS.THREE_SECONDS): string {
     return this.show({ title, message, type: 'info', duration });
   }
 

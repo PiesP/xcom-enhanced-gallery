@@ -7,6 +7,7 @@ import { Button } from '@shared/components/ui/Button/Button';
 import { getIcon, type IconName, type IconComponent } from '@shared/services/icon-service';
 import { useStandardEventHandling } from '@shared/hooks/useStandardEventHandling';
 import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import { SIZE_CONSTANTS } from '@/constants';
 
 /**
  * 툴바 버튼 Props
@@ -77,9 +78,13 @@ export function ToolbarButton({
     } catch {
       // 비브라우저 환경(테스트) 대비 폴백 사용
     }
-    // 최종 폴백 기본 매핑: sm 20 / md 24 / lg 28
-    const defaultMap: Record<'sm' | 'md' | 'lg', number> = { sm: 20, md: 24, lg: 28 };
-    return defaultMap[size] ?? 24;
+    // 최종 폴백 기본 매핑: sm 20 / md SIZE_CONSTANTS.TWENTY_FOUR / lg 28
+    const defaultMap: Record<'sm' | 'md' | 'lg', number> = {
+      sm: 20,
+      md: SIZE_CONSTANTS.TWENTY_FOUR,
+      lg: 28,
+    };
+    return defaultMap[size] ?? SIZE_CONSTANTS.TWENTY_FOUR;
   })();
 
   // 아이콘 동기 로딩

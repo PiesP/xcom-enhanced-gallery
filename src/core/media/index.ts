@@ -5,6 +5,7 @@
  */
 
 import { coreLogger as logger } from '../logger';
+import { SIZE_CONSTANTS } from '@/constants';
 
 export type MediaType = 'image' | 'video' | 'gif';
 export type MediaQuality = 'small' | 'medium' | 'large' | 'orig';
@@ -181,7 +182,10 @@ export class CoreMediaManager {
     tweetInfo?: { username?: string; tweetId?: string }
   ): string {
     const { url, type } = mediaInfo;
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+    const timestamp = new Date()
+      .toISOString()
+      .slice(0, SIZE_CONSTANTS.NINETEEN)
+      .replace(/[:.]/g, '-');
 
     // URL에서 파일 확장자 추출
     const urlObj = new URL(url);

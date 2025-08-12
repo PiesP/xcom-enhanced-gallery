@@ -10,6 +10,14 @@ import { PerformanceMonitor } from './performance-monitor';
 import { MetricsCollector } from './metrics-collector';
 import { AlertSystem } from './alert-system';
 import { coreLogger } from '@core/logger';
+import {
+  TIME_CONSTANTS,
+  PERFORMANCE,
+  PERCENTAGE,
+  SIZE_CONSTANTS,
+  WEB_VITALS,
+  PERFORMANCE_CONSTANTS,
+} from '@/constants';
 import type {
   MonitoringConfig,
   DashboardData,
@@ -43,8 +51,8 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
   private isMonitoring = false;
   private dashboardUpdateInterval: number | null = null;
   private config: MonitoringConfig = {
-    collectionInterval: 5000,
-    historyRetention: 300000,
+    collectionInterval: TIME_CONSTANTS.FIVE_SECONDS,
+    historyRetention: TIME_CONSTANTS.FIVE_MINUTES,
     enableAlerts: true,
     enableSuggestions: true,
     enableDetailedLogging: false,
@@ -79,11 +87,36 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
 
       // AlertSystem 임계값 설정 - 기본값으로 설정
       const defaultThresholds: AlertThreshold[] = [
-        { metric: 'memory' as MetricType, value: 50000000, unit: 'bytes', severity: 'warning' },
-        { metric: 'performance' as MetricType, value: 200, unit: 'ms', severity: 'warning' },
-        { metric: 'cls' as MetricType, value: 0.25, unit: 'score', severity: 'warning' },
-        { metric: 'fid' as MetricType, value: 200, unit: 'ms', severity: 'warning' },
-        { metric: 'lcp' as MetricType, value: 4000, unit: 'ms', severity: 'warning' },
+        {
+          metric: 'memory' as MetricType,
+          value: PERFORMANCE.MEMORY_WARNING_THRESHOLD,
+          unit: 'bytes',
+          severity: 'warning',
+        },
+        {
+          metric: 'performance' as MetricType,
+          value: TIME_CONSTANTS.MILLISECONDS_200,
+          unit: 'ms',
+          severity: 'warning',
+        },
+        {
+          metric: 'cls' as MetricType,
+          value: WEB_VITALS.CLS_WARNING,
+          unit: 'score',
+          severity: 'warning',
+        },
+        {
+          metric: 'fid' as MetricType,
+          value: TIME_CONSTANTS.MILLISECONDS_200,
+          unit: 'ms',
+          severity: 'warning',
+        },
+        {
+          metric: 'lcp' as MetricType,
+          value: TIME_CONSTANTS.MILLISECONDS_4000,
+          unit: 'ms',
+          severity: 'warning',
+        },
       ];
       this.alertSystem.setThresholds(defaultThresholds);
 
@@ -124,7 +157,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
           recommendations: ['모니터링 데이터를 수집하는 중입니다...'],
           analysisWindow: 0,
         },
-        healthScore: 50,
+        healthScore: SIZE_CONSTANTS.FIFTY,
       };
     }
   } /**
@@ -199,19 +232,19 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
    * 적응형 수집 간격을 사용한 최적화된 메트릭 수집
    */
   private startAdaptiveMetricsCollection(): void {
-    let collectionInterval = 1000; // 기본 1초
-    const performanceScore = 100;
+    let collectionInterval: number = TIME_CONSTANTS.ONE_SECOND; // 기본 1초
+    const performanceScore = PERCENTAGE.FULL; // 초기 점수 100
 
     const collect = () => {
       if (!this.isMonitoring) return;
 
       // 성능 점수에 따른 적응형 간격 조정
-      if (performanceScore > 80) {
-        collectionInterval = 2000; // 성능 좋음: 2초 간격
-      } else if (performanceScore > 60) {
-        collectionInterval = 1000; // 보통: 1초 간격
+      if (performanceScore > PERFORMANCE_CONSTANTS.PERFORMANCE_SCORE_GOOD) {
+        collectionInterval = TIME_CONSTANTS.TWO_SECONDS; // 성능 좋음: 2초 간격
+      } else if (performanceScore > PERFORMANCE_CONSTANTS.PERFORMANCE_SCORE_AVERAGE) {
+        collectionInterval = TIME_CONSTANTS.ONE_SECOND; // 보통: 1초 간격
       } else {
-        collectionInterval = 500; // 성능 나쁨: 0.5초 간격
+        collectionInterval = TIME_CONSTANTS.MILLISECONDS_500; // 성능 나쁨: 0.5초 간격
       }
 
       // 배치처리를 위한 RAF 사용
@@ -246,7 +279,7 @@ export class PerformanceIntegration implements PerformanceIntegrationInterface {
           () => {
             this.metricsCollector?.collect();
           },
-          { timeout: 100 }
+          { timeout: TIME_CONSTANTS.MILLISECONDS_100 }
         );
       } else {
         // fallback: 일반 수집

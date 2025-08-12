@@ -6,6 +6,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import { undefinedToNull } from '@shared/utils/type-safety-helpers';
 
 import { TWITTER_API_CONFIG } from '@/constants';
@@ -205,7 +206,7 @@ export class TwitterAPI {
    * 캐시 정리 (16개 이상일 때)
    */
   private static vacuumCache(): void {
-    if (this.requestCache.size > 16) {
+    if (this.requestCache.size > SIZE_CONSTANTS.SIXTEEN) {
       const firstKey = this.requestCache.keys().next().value;
       if (firstKey) {
         this.requestCache.delete(firstKey);

@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import { TwitterAPI, type TweetMediaEntry } from '@shared/services/media/TwitterVideoExtractor';
 import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/types/media.types';
@@ -163,7 +164,7 @@ export class TwitterAPIExtractor implements APIExtractor {
 
     // 부모 요소에서 미디어 찾기
     let current = element.parentElement;
-    for (let i = 0; i < 5 && current; i++) {
+    for (let i = 0; i < SIZE_CONSTANTS.FIVE && current; i++) {
       const parentMedia = current.querySelector('img, video');
       if (parentMedia) {
         return parentMedia as HTMLElement;

@@ -9,6 +9,7 @@
 
 import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging';
+import { GALLERY_CONSTANTS } from '../../../shared/constants/magic-numbers';
 
 const { useCallback, useEffect, useRef } = ComponentManager.getHookManager();
 
@@ -139,7 +140,9 @@ export function useGalleryItemScroll(
 
         // smooth scroll의 경우 애니메이션 완료 대기
         if (actualBehavior === 'smooth') {
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise(resolve =>
+            setTimeout(resolve, GALLERY_CONSTANTS.SCROLL_DEBOUNCE_DELAY)
+          );
         }
       } catch (error) {
         logger.error('useGalleryItemScroll: 스크롤 실패', { index, error });
@@ -157,7 +160,7 @@ export function useGalleryItemScroll(
             entries.forEach(entry => {
               if (entry.isIntersecting) {
                 observer.disconnect();
-                setTimeout(() => scrollToItem(index), 50);
+                setTimeout(() => scrollToItem(index), GALLERY_CONSTANTS.SCROLL_OFFSET);
               }
             });
           });
@@ -166,7 +169,7 @@ export function useGalleryItemScroll(
             ?.children[index] as HTMLElement;
           if (targetElement) {
             observer.observe(targetElement);
-            setTimeout(() => observer.disconnect(), 1000); // 1초 후 정리
+            setTimeout(() => observer.disconnect(), GALLERY_CONSTANTS.ANIMATION_DURATION); // 1초 후 정리
           }
         }
       }

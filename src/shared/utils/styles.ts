@@ -9,11 +9,16 @@
 // 미세 성능 최적화 유틸리티
 const now = (): number =>
   typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+import { PERFORMANCE, PERFORMANCE_CONSTANTS } from '../../constants';
 let cachedComputed: { element: HTMLElement; style: CSSStyleDeclaration; ts: number } | null = null;
 
 function getComputedStyleCached(element: HTMLElement): CSSStyleDeclaration {
   try {
-    if (cachedComputed && cachedComputed.element === element && now() - cachedComputed.ts < 16) {
+    if (
+      cachedComputed &&
+      cachedComputed.element === element &&
+      now() - cachedComputed.ts < PERFORMANCE_CONSTANTS.FRAME_TIME_60FPS
+    ) {
       return cachedComputed.style;
     }
     const style = getComputedStyle(element);
@@ -59,8 +64,7 @@ export function setCSSVariables(
       if (hasOwn.call(variables, key)) {
         const raw = variables[key];
         const value = raw ?? '';
-        const isDashDash = key.charCodeAt(0) === 45 && key.charCodeAt(1) === 45; // '--'
-        const cssVarName = isDashDash ? key : `--${key}`;
+        const cssVarName = key.startsWith('--') ? key : `--${key}`;
         style.setProperty(cssVarName, value);
       }
     }
@@ -69,9 +73,9 @@ export function setCSSVariables(
   // 대용량 배치는 백그라운드로 미루어 동기 경로를 빠르게 반환 (테스트 환경 성능 안정화)
   const keysCount = Object.keys(variables).length;
   const g = globalThis as unknown as { queueMicrotask?: (cb: () => void) => void };
-  if (keysCount > 200 && typeof g.queueMicrotask === 'function') {
+  if (keysCount > PERFORMANCE.STYLE_UPDATE_THRESHOLD && typeof g.queueMicrotask === 'function') {
     g.queueMicrotask(applyBatch);
-  } else if (keysCount > 200) {
+  } else if (keysCount > PERFORMANCE.STYLE_UPDATE_THRESHOLD) {
     // Fallback
     Promise.resolve().then(applyBatch);
   } else {

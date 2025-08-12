@@ -5,7 +5,13 @@
 import { logger } from '@shared/logging';
 import { isGalleryInternalElement } from '@shared/utils/utils';
 import { MediaClickDetector } from '@shared/utils/media/media-click-detector';
-import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
+import {
+  IDENTIFIER_CONSTANTS,
+  NUMBER_BASES,
+  TIME_CONSTANTS,
+  isVideoControlElement,
+  isTwitterNativeGalleryElement,
+} from '@/constants';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 
@@ -30,7 +36,12 @@ let listenerIdCounter = 0;
 function generateListenerId(context?: string): string {
   const timestamp = Date.now();
   const counter = ++listenerIdCounter;
-  const random = Math.random().toString(36).substr(2, 6);
+  const random = Math.random()
+    .toString(NUMBER_BASES.BASE36)
+    .substr(
+      IDENTIFIER_CONSTANTS.RANDOM_SUBSTR_START_INDEX,
+      IDENTIFIER_CONSTANTS.RANDOM_ID_LENGTH_SHORT
+    );
 
   return context
     ? `${context}:${timestamp}_${counter}_${random}`
@@ -239,7 +250,12 @@ async function detectMediaFromClick(event: MouseEvent): Promise<MediaInfo | null
 
     if (result && result.type !== 'none' && result.mediaUrl) {
       const mediaInfo: MediaInfo = {
-        id: `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `media_${Date.now()}_${Math.random()
+          .toString(NUMBER_BASES.BASE36)
+          .substr(
+            IDENTIFIER_CONSTANTS.RANDOM_SUBSTR_START_INDEX,
+            IDENTIFIER_CONSTANTS.RANDOM_ID_LENGTH_MEDIUM
+          )}`,
         url: result.mediaUrl,
         originalUrl: result.mediaUrl,
         type: result.type === 'video' ? 'video' : result.type === 'image' ? 'image' : 'image',
@@ -494,7 +510,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
     } catch (error) {
       logger.warn('Failed to reinforce gallery event priority:', error);
     }
-  }, 15000);
+  }, TIME_CONSTANTS.FIFTEEN_SECONDS);
 }
 
 /**

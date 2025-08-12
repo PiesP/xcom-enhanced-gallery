@@ -7,6 +7,13 @@
  */
 
 import type { PerformanceMetrics, MonitoringConfig } from './types';
+import {
+  MEMORY_UNITS,
+  TIME_CONSTANTS,
+  SIZE_CONSTANTS,
+  PERCENTAGE,
+  COLOR_CONSTANTS,
+} from '../../constants';
 
 /**
  * 메모리 정보를 포함한 Performance 인터페이스
@@ -151,9 +158,9 @@ export class MetricsCollector {
 
     // 기본값 반환
     return {
-      heapUsed: Math.random() * 100 * 1024 * 1024, // 0-100MB 랜덤
-      heapTotal: 150 * 1024 * 1024, // 150MB
-      heapLimit: 500 * 1024 * 1024, // 500MB
+      heapUsed: Math.random() * PERCENTAGE.FULL * MEMORY_UNITS.BYTES_PER_MEGABYTE, // 0-100MB 랜덤
+      heapTotal: (SIZE_CONSTANTS.HUNDRED + SIZE_CONSTANTS.FIFTY) * MEMORY_UNITS.BYTES_PER_MEGABYTE, // 150MB
+      heapLimit: SIZE_CONSTANTS.FIVE * SIZE_CONSTANTS.HUNDRED * MEMORY_UNITS.BYTES_PER_MEGABYTE, // 500MB
     };
   }
 
@@ -185,9 +192,9 @@ export class MetricsCollector {
     }
 
     return {
-      paintTime: paintTime || Math.random() * 20, // 0-20ms
-      layoutTime: layoutTime || Math.random() * 15, // 0-15ms
-      scriptTime: scriptTime || Math.random() * 25, // 0-25ms
+      paintTime: paintTime || Math.random() * SIZE_CONSTANTS.TWENTY, // 0-20ms
+      layoutTime: layoutTime || Math.random() * (SIZE_CONSTANTS.TWENTY - SIZE_CONSTANTS.FIVE), // 0-15ms
+      scriptTime: scriptTime || Math.random() * (SIZE_CONSTANTS.TWENTY + SIZE_CONSTANTS.FIVE), // 0-25ms
     };
   }
 
@@ -219,10 +226,10 @@ export class MetricsCollector {
     }
 
     return {
-      fcp: fcp || 800 + Math.random() * 1000, // 800-1800ms
-      lcp: lcp || 1500 + Math.random() * 2000, // 1500-3500ms
-      fid: fid || Math.random() * 100, // 0-100ms
-      cls: cls || Math.random() * 0.2, // 0-0.2
+      fcp: fcp || TIME_CONSTANTS.MILLISECONDS_800 + Math.random() * TIME_CONSTANTS.ONE_SECOND, // 800-1800ms
+      lcp: lcp || TIME_CONSTANTS.MILLISECONDS_1500 + Math.random() * TIME_CONSTANTS.TWO_SECONDS, // 1500-3500ms
+      fid: fid || Math.random() * PERCENTAGE.FULL, // 0-100ms
+      cls: cls || Math.random() * COLOR_CONSTANTS.OPACITY_FADE, // 0-0.2
     };
   }
 

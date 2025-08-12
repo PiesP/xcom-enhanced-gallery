@@ -4,9 +4,8 @@
  * @version 1.0.0 - Priority 1 통합 완료
  */
 
-import { createScopedLogger } from '@shared/logging';
-
-const logger = createScopedLogger('UnifiedMemoryManager');
+import { logger } from '@shared/logging';
+import { MEMORY_SIZE_CONSTANTS, PERCENTAGE } from '@/constants';
 
 /**
  * 리소스 타입 정의
@@ -208,7 +207,14 @@ export class UnifiedMemoryManager {
     const memoryInfo = this.getMemoryInfo();
     if (!memoryInfo) return null;
 
-    return Math.round((memoryInfo.heap / 1024 / 1024) * 100) / 100;
+    return (
+      Math.round(
+        (memoryInfo.heap /
+          MEMORY_SIZE_CONSTANTS.BYTES_PER_KB /
+          MEMORY_SIZE_CONSTANTS.BYTES_PER_KB) *
+          PERCENTAGE.FULL
+      ) / PERCENTAGE.FULL
+    );
   }
 
   /**

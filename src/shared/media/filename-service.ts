@@ -6,6 +6,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import { safeParseInt, undefinedToNull } from '@shared/utils';
 import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
 import { getService } from '@shared/services/service-manager';
@@ -246,7 +247,7 @@ export class FilenameService {
       // {tweetId}_media_{index} 형식에서 마지막 인덱스 추출
       const match = mediaId.match(/_media_(\d+)$/);
       if (match) {
-        const zeroBasedIndex = safeParseInt(match[1], 10);
+        const zeroBasedIndex = safeParseInt(match[1], SIZE_CONSTANTS.TEN);
         // 0-based를 1-based로 변환
         return (zeroBasedIndex + 1).toString();
       }
@@ -313,7 +314,7 @@ export class FilenameService {
       return '1';
     }
 
-    const numIndex = typeof index === 'string' ? safeParseInt(index, 10) : index;
+    const numIndex = typeof index === 'string' ? safeParseInt(index, SIZE_CONSTANTS.TEN) : index;
 
     // 유효하지 않은 숫자인 경우 기본값 반환
     if (isNaN(numIndex)) {

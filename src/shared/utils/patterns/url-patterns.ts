@@ -6,6 +6,7 @@
 
 import { logger } from '@shared/logging';
 import { safeParseInt } from '@shared/utils/type-safety-helpers';
+import { NUMBER_BASES, SIZE_CONSTANTS } from '@/constants';
 
 /**
  * URL 패턴 매칭 및 추출을 위한 유틸리티 클래스
@@ -185,7 +186,7 @@ export const URLPatterns = {
       }
 
       const [fullMatch, username, tweetId, photoIndexStr] = match;
-      const photoIndex = safeParseInt(photoIndexStr, 10);
+      const photoIndex = safeParseInt(photoIndexStr, NUMBER_BASES.DECIMAL);
 
       if (!username || !tweetId || username === 'i' || isNaN(photoIndex)) {
         return null;
@@ -405,7 +406,7 @@ export const URLPatterns = {
 
       if (!URLConstructor) {
         // Fallback: 기본적인 검증만 수행
-        return url.includes('://') && url.length > 10;
+        return url.includes('://') && url.length > SIZE_CONSTANTS.TEN;
       }
 
       const urlObj = new URLConstructor(url);

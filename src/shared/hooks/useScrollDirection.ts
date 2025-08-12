@@ -6,6 +6,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
+import { TIME_CONSTANTS } from '@/constants';
 import { logger } from '@shared/logging';
 
 /**
@@ -100,7 +101,7 @@ export function useScrollDirection({
       scrollTimeoutRef.current = window.setTimeout(() => {
         setIsScrolling(false);
         setScrollDirection('idle');
-      }, 150);
+      }, TIME_CONSTANTS.MILLISECONDS_150);
 
       logger.debug('Scroll direction updated', {
         direction: deltaY > 0 ? 'down' : 'up',

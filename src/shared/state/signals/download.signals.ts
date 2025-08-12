@@ -6,6 +6,7 @@
  */
 
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
+import { SIZE_CONSTANTS, PERCENTAGE } from '@/constants';
 import type { Result } from '@shared/types/core/core-types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
@@ -143,9 +144,11 @@ function dispatchEvent<K extends keyof DownloadEvents>(event: K, data: DownloadE
 export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string, Error> {
   try {
     // MediaInfo의 id가 없는 경우 임시 ID 생성
-    const mediaId = mediaInfo.id ?? `auto_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const mediaId =
+      mediaInfo.id ??
+      `auto_${Date.now()}_${Math.random().toString(SIZE_CONSTANTS.THIRTY_SIX).substr(2, SIZE_CONSTANTS.NINE)}`;
 
-    const taskId = `dl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const taskId = `dl_${Date.now()}_${Math.random().toString(SIZE_CONSTANTS.THIRTY_SIX).substr(2, SIZE_CONSTANTS.NINE)}`;
     const task: DownloadTask = {
       id: taskId,
       mediaId: mediaId as MediaId,
@@ -229,7 +232,7 @@ export function updateDownloadProgress(taskId: string, progress: number): Result
     return { success: false, error };
   }
 
-  const clampedProgress = Math.max(0, Math.min(100, progress));
+  const clampedProgress = Math.max(0, Math.min(PERCENTAGE.FULL, progress));
   const updatedTask: DownloadTask = {
     ...task,
     progress: clampedProgress,
@@ -268,7 +271,7 @@ export function completeDownload(taskId: string): Result<void, Error> {
   const updatedTask: DownloadTask = {
     ...task,
     status: 'completed',
-    progress: 100,
+    progress: PERCENTAGE.FULL,
     completedAt: Date.now(),
   };
 

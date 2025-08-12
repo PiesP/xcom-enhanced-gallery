@@ -11,6 +11,7 @@ import { ExtractionError, ExtractionErrorCode } from '@shared/types/media.types'
 import { TweetInfoExtractor } from './extractors/TweetInfoExtractor';
 import { TwitterAPIExtractor } from './extractors/TwitterAPIExtractor';
 import { DOMDirectExtractor } from './extractors/DOMDirectExtractor';
+import { MEDIA_CONSTANTS } from '../../constants/magic-numbers';
 
 /**
  * 미디어 추출기
@@ -275,8 +276,12 @@ export class MediaExtractionService implements MediaExtractor {
 
     // 폴백: 강화된 랜덤 생성
     const timestamp = Date.now();
-    const random1 = Math.random().toString(36).substring(2, 9);
-    const random2 = Math.random().toString(36).substring(2, 9);
+    const random1 = Math.random()
+      .toString(MEDIA_CONSTANTS.URL_SEGMENT_START)
+      .substring(2, MEDIA_CONSTANTS.URL_SEGMENT_LENGTH);
+    const random2 = Math.random()
+      .toString(MEDIA_CONSTANTS.URL_SEGMENT_START)
+      .substring(2, MEDIA_CONSTANTS.URL_SEGMENT_LENGTH);
 
     return `simp_${timestamp}_${random1}_${random2}`;
   }

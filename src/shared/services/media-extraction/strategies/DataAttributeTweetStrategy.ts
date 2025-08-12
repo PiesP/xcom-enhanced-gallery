@@ -3,6 +3,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 export class DataAttributeTweetStrategy implements TweetInfoExtractionStrategy {
@@ -13,7 +14,7 @@ export class DataAttributeTweetStrategy implements TweetInfoExtractionStrategy {
     try {
       let current: HTMLElement | null = element;
 
-      for (let i = 0; i < 5 && current; i++) {
+      for (let i = 0; i < SIZE_CONSTANTS.FIVE && current; i++) {
         const tweetId = this.extractTweetIdFromElement(current);
         if (tweetId) {
           const username = this.extractUsernameFromElement(current) || 'unknown';

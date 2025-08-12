@@ -5,6 +5,7 @@
 
 import { logger } from '@shared/logging';
 import { getKeyValueStore } from '@shared/storage/provider';
+import { SIZE_CONSTANTS, PERCENTAGE, TIME_CONSTANTS } from '@/constants';
 
 /**
  * 토큰 추출 결과
@@ -207,8 +208,8 @@ export class TwitterTokenExtractor {
       // Performance API를 사용하여 최근 네트워크 요청 확인
       const entries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
 
-      for (const entry of entries.slice(-50)) {
-        // 최근 50개 요청만 확인
+      for (const entry of entries.slice(SIZE_CONSTANTS.NEGATIVE_FIFTY)) {
+        // 최근 PERCENTAGE.HALF개 요청만 확인
         if (entry.name.includes('api.twitter.com') || entry.name.includes('x.com/i/api')) {
           // 실제 요청의 Authorization 헤더는 보안상 접근 불가
           // 대신 URL 패턴으로 토큰 추출 가능한 요청인지 확인
@@ -376,7 +377,7 @@ export class TwitterTokenExtractor {
     // Twitter Bearer 토큰의 기본적인 형식 검증
     return (
       typeof token === 'string' &&
-      token.length > 50 &&
+      token.length > PERCENTAGE.HALF &&
       token.includes('AA') && // Twitter 토큰은 보통 AA로 시작
       token.includes('%') // URL 인코딩된 문자 포함
     );
@@ -418,7 +419,7 @@ export class TwitterTokenExtractor {
           }
         }
       }
-    }, 5000); // 5초마다 확인
+    }, TIME_CONSTANTS.FIVE_SECONDS); // 5초마다 확인
 
     logger.debug('주기적 토큰 추출 시작');
   }

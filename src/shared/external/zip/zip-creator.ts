@@ -9,6 +9,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import { getFflate } from '@shared/external/vendors';
 import { safeParseInt } from '@shared/utils';
 
@@ -169,7 +170,7 @@ async function downloadMediaForZip(
     contentLengthValue !== undefined &&
     contentLengthValue !== ''
   ) {
-    const fileSizeBytes = safeParseInt(contentLengthValue, 10);
+    const fileSizeBytes = safeParseInt(contentLengthValue, SIZE_CONSTANTS.TEN);
     if (!isNaN(fileSizeBytes) && fileSizeBytes > config.maxFileSize) {
       throw new Error(`File too large: ${fileSizeBytes} bytes`);
     }

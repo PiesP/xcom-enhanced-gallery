@@ -10,6 +10,7 @@
  * - CSS 변수 자동 생성
  * - 동적 계층 등록
  */
+import { CSS } from '../../constants';
 
 type ZIndexLayer = 'gallery' | 'toolbar' | 'modal' | 'toast';
 
@@ -29,10 +30,10 @@ export class ZIndexService {
 
   // 기본 계층 정의 (낮음 → 높음)
   private readonly defaultLayers: Record<ZIndexLayer, number> = {
-    gallery: 2000,
-    toolbar: 2500,
-    modal: 3000,
-    toast: 4000,
+    gallery: CSS.Z_INDEX.GALLERY_OVERLAY,
+    toolbar: CSS.Z_INDEX.GALLERY_CONTAINER,
+    modal: CSS.Z_INDEX.SETTINGS_MODAL,
+    toast: CSS.Z_INDEX.NOTIFICATION_TOAST,
   };
 
   // 동적으로 등록된 계층들

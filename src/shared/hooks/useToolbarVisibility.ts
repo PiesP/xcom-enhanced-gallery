@@ -39,7 +39,7 @@ interface ToolbarVisibilityReturn {
  * @returns 툴바 가시성 상태 및 제어 함수들
  */
 export function useToolbarVisibility({
-  initialShowDuration = 1000,
+  initialShowDuration = TIMING.TOOLBAR_INITIAL_SHOW_DURATION,
   hideDelay = TIMING.TOOLBAR_HIDE_DELAY,
 }: ToolbarVisibilityOptions = {}): ToolbarVisibilityReturn {
   const { useState, useRef, useEffect, useCallback } = ComponentManager.getHookManager();

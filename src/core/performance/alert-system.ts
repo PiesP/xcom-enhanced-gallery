@@ -7,6 +7,13 @@
  */
 
 import type { PerformanceMetrics, AlertThreshold, PerformanceAlert, MetricType } from './types';
+import {
+  MEMORY_UNITS,
+  PERCENTAGE,
+  PERFORMANCE_CONSTANTS,
+  TIME_UNITS,
+  SIZE_CONSTANTS,
+} from '../../constants';
 
 /**
  * 성능 알림을 관리하는 클래스
@@ -117,7 +124,7 @@ export class AlertSystem {
   private extractMetricValue(metrics: PerformanceMetrics, metricType: MetricType): number {
     switch (metricType) {
       case 'memoryUsage':
-        return metrics.memory.heapUsed / (1024 * 1024); // MB 단위로 변환
+        return metrics.memory.heapUsed / MEMORY_UNITS.BYTES_PER_MEGABYTE; // MB 단위로 변환
       case 'renderTime':
         return metrics.performance.paintTime;
       case 'userExperience':
@@ -146,7 +153,9 @@ export class AlertSystem {
   }
 
   private generateAlertId(): string {
-    return `alert_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `alert_${Date.now()}_${Math.random()
+      .toString(SIZE_CONSTANTS.THIRTY_SIX)
+      .substring(SIZE_CONSTANTS.TWO, SIZE_CONSTANTS.NINE)}`;
   }
 
   private generateAlertMessage(threshold: AlertThreshold, currentValue: number): string {
@@ -168,19 +177,24 @@ export class AlertSystem {
   }
 
   private formatValue(value: number, unit: string): string {
-    const roundedValue = Math.round(value * 100) / 100;
+    const roundedValue = Math.round(value * PERCENTAGE.FULL) / PERCENTAGE.FULL;
     return `${roundedValue}${unit}`;
   }
 
   private cleanupHistory(): void {
     // 최대 100개의 알림만 보관
-    const maxHistorySize = 100;
+    const maxHistorySize = PERCENTAGE.FULL;
     if (this.alertHistory.length > maxHistorySize) {
       this.alertHistory = this.alertHistory.slice(-maxHistorySize);
     }
 
     // 24시간 이상 된 알림 제거
-    const cutoffTime = Date.now() - 24 * 60 * 60 * 1000;
+    const cutoffTime =
+      Date.now() -
+      PERFORMANCE_CONSTANTS.HOURS_PER_DAY *
+        TIME_UNITS.MINUTES_PER_HOUR *
+        TIME_UNITS.SECONDS_PER_MINUTE *
+        TIME_UNITS.MILLISECONDS_PER_SECOND;
     this.alertHistory = this.alertHistory.filter(alert => alert.timestamp > cutoffTime);
   }
 }

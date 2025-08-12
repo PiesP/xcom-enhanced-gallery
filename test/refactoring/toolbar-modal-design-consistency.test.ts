@@ -8,10 +8,16 @@ import { readFileSync } from 'fs';
 import path from 'path';
 
 describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
-  const toolbarCSSPath = path.resolve(__dirname, '../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css');
-  const settingsCSSPath = path.resolve(__dirname, '../../src/features/settings/components/SettingsOverlay.module.css');
+  const toolbarCSSPath = path.resolve(
+    __dirname,
+    '../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css'
+  );
+  const settingsCSSPath = path.resolve(
+    __dirname,
+    '../../src/features/settings/components/SettingsOverlay.module.css'
+  );
   const tokensPath = path.resolve(__dirname, '../../src/shared/styles/design-tokens.css');
-  
+
   let toolbarCSS: string;
   let settingsCSS: string;
   let tokensCSS: string;
@@ -26,7 +32,7 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
     it('툴바와 설정 모달이 동일한 배경 토큰을 사용해야 함', () => {
       // 툴바는 그라디언트 사용
       expect(toolbarCSS).toContain('--xeg-toolbar-overlay-gradient');
-      
+
       // 설정 모달도 일관된 배경 토큰 사용해야 함 (현재는 다른 토큰 사용 중)
       expect(settingsCSS).toContain('--xeg-modal-overlay-gradient');
       expect(settingsCSS).toContain('--xeg-modal-content-bg');
@@ -36,16 +42,16 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
       // 모달 배경 토큰이 있어야 함
       expect(tokensCSS).toContain('--xeg-modal-overlay-gradient');
       expect(tokensCSS).toContain('--xeg-modal-content-bg');
-      
+
       // 테마별 오버라이드가 있어야 함
-      expect(tokensCSS).toContain('[data-theme=\'light\']');
-      expect(tokensCSS).toContain('[data-theme=\'dark\']');
+      expect(tokensCSS).toContain("[data-theme='light']");
+      expect(tokensCSS).toContain("[data-theme='dark']");
     });
 
     it('블러 효과가 툴바와 모달에서 일관되게 적용되어야 함', () => {
       // 툴바는 블러 효과 사용
       expect(toolbarCSS).toContain('backdrop-filter: var(--xeg-blur-medium)');
-      
+
       // 설정 모달도 블러 효과 사용해야 함
       expect(settingsCSS).toContain('backdrop-filter: var(--xeg-blur-light)');
     });
@@ -53,7 +59,7 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
     it('호버 효과가 일관된 패턴을 따라야 함', () => {
       // 툴바 호버 효과
       expect(toolbarCSS).toContain('--xeg-toolbar-overlay-gradient-strong');
-      
+
       // 설정 모달 요소들도 일관된 호버 효과 사용해야 함 (실제 구현된 패턴 확인)
       expect(settingsCSS).toContain('--xeg-modal-content-bg-hover');
     });
@@ -62,7 +68,7 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
       // 툴바 트랜지션
       expect(toolbarCSS).toContain('var(--xeg-duration-fast)');
       expect(toolbarCSS).toContain('var(--xeg-easing-ease-out)');
-      
+
       // 설정 모달도 동일한 트랜지션 토큰 사용해야 함
       expect(settingsCSS).toContain('var(--xeg-duration-fast)');
       expect(settingsCSS).toContain('var(--xeg-easing-ease-out)');
@@ -79,11 +85,15 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
 
     it('테마별 모달 토큰 오버라이드가 있어야 함', () => {
       // 라이트 테마 섹션에서 모달 토큰 오버라이드
-      const lightThemeSection = tokensCSS.match(/\[data-theme='light'\][^}]*\{[^}]*--xeg-modal-overlay-gradient[^}]*\}/s);
+      const lightThemeSection = tokensCSS.match(
+        /\[data-theme='light'\][^}]*\{[^}]*--xeg-modal-overlay-gradient[^}]*\}/s
+      );
       expect(lightThemeSection).toBeTruthy();
-      
+
       // 다크 테마 섹션에서 모달 토큰 오버라이드
-      const darkThemeSection = tokensCSS.match(/\[data-theme='dark'\][^}]*\{[^}]*--xeg-modal-overlay-gradient[^}]*\}/s);
+      const darkThemeSection = tokensCSS.match(
+        /\[data-theme='dark'\][^}]*\{[^}]*--xeg-modal-overlay-gradient[^}]*\}/s
+      );
       expect(darkThemeSection).toBeTruthy();
     });
 
@@ -104,7 +114,7 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
     it('감소된 모션 지원이 일관되게 적용되어야 함', () => {
       // 툴바의 감소된 모션 지원
       expect(toolbarCSS).toContain('@media (prefers-reduced-motion: reduce)');
-      
+
       // 설정 모달도 감소된 모션 지원해야 함
       expect(settingsCSS).toContain('@media (prefers-reduced-motion: reduce)');
     });
@@ -130,10 +140,8 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
 
     it('중복된 스타일 정의가 없어야 함', () => {
       // background 정의가 중복되지 않아야 함
-      const uniqueBackgroundDeclarations = new Set(
-        settingsCSS.match(/background:[^;]+;/g) || []
-      );
-      
+      const uniqueBackgroundDeclarations = new Set(settingsCSS.match(/background:[^;]+;/g) || []);
+
       // 중복 제거된 선언의 수가 합리적인 범위 내에 있어야 함 (모달은 더 복잡할 수 있음)
       expect(uniqueBackgroundDeclarations.size).toBeLessThan(15);
     });
@@ -145,7 +153,7 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
         '--xeg-modal-overlay-gradient-strong',
         '--xeg-blur-light',
         '--xeg-duration-fast',
-        '--xeg-easing-ease-out'
+        '--xeg-easing-ease-out',
       ];
 
       requiredVariables.forEach(variable => {

@@ -5,6 +5,7 @@
  */
 
 import { safeParseInt } from './type-safety-helpers';
+import { ACCESSIBILITY_CONSTANTS, COLOR_CONSTANTS, NUMBER_BASES } from '@/constants';
 
 /**
  * 접근성 유틸리티 함수들
@@ -28,9 +29,9 @@ export function parseColor(color: string): [number, number, number] | null {
   const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (rgbMatch) {
     return [
-      safeParseInt(rgbMatch[1], 10),
-      safeParseInt(rgbMatch[2], 10),
-      safeParseInt(rgbMatch[3], 10),
+      safeParseInt(rgbMatch[1], NUMBER_BASES.DECIMAL),
+      safeParseInt(rgbMatch[2], NUMBER_BASES.DECIMAL),
+      safeParseInt(rgbMatch[3], NUMBER_BASES.DECIMAL),
     ];
   }
 
@@ -38,9 +39,9 @@ export function parseColor(color: string): [number, number, number] | null {
   const hexMatch = color.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
   if (hexMatch) {
     return [
-      safeParseInt(hexMatch[1], 16),
-      safeParseInt(hexMatch[2], 16),
-      safeParseInt(hexMatch[3], 16),
+      safeParseInt(hexMatch[1], NUMBER_BASES.HEX),
+      safeParseInt(hexMatch[2], NUMBER_BASES.HEX),
+      safeParseInt(hexMatch[3], NUMBER_BASES.HEX),
     ];
   }
 
@@ -48,20 +49,20 @@ export function parseColor(color: string): [number, number, number] | null {
   const shortHexMatch = color.match(/^#([a-f\d])([a-f\d])([a-f\d])$/i);
   if (shortHexMatch) {
     return [
-      safeParseInt((shortHexMatch[1] ?? '') + (shortHexMatch[1] ?? ''), 16),
-      safeParseInt((shortHexMatch[2] ?? '') + (shortHexMatch[2] ?? ''), 16),
-      safeParseInt((shortHexMatch[3] ?? '') + (shortHexMatch[3] ?? ''), 16),
+      safeParseInt((shortHexMatch[1] ?? '') + (shortHexMatch[1] ?? ''), NUMBER_BASES.HEX),
+      safeParseInt((shortHexMatch[2] ?? '') + (shortHexMatch[2] ?? ''), NUMBER_BASES.HEX),
+      safeParseInt((shortHexMatch[3] ?? '') + (shortHexMatch[3] ?? ''), NUMBER_BASES.HEX),
     ];
   }
 
   // 기본 색상명
   const namedColors: Record<string, [number, number, number]> = {
-    white: [255, 255, 255],
+    white: [COLOR_CONSTANTS.RGB_MAX, COLOR_CONSTANTS.RGB_MAX, COLOR_CONSTANTS.RGB_MAX],
     black: [0, 0, 0],
-    red: [255, 0, 0],
-    green: [0, 128, 0],
-    blue: [0, 0, 255],
-    transparent: [255, 255, 255], // 투명은 흰색으로 처리
+    red: [COLOR_CONSTANTS.RGB_MAX, 0, 0],
+    green: [0, COLOR_CONSTANTS.RGB_HALF, 0],
+    blue: [0, 0, COLOR_CONSTANTS.RGB_MAX],
+    transparent: [COLOR_CONSTANTS.RGB_MAX, COLOR_CONSTANTS.RGB_MAX, COLOR_CONSTANTS.RGB_MAX], // 투명은 흰색으로 처리
   };
 
   const lowerColor = color.toLowerCase();
@@ -86,21 +87,28 @@ export function calculateContrastRatio(foreground: string, background: string): 
   const lighter = Math.max(fgLuminance, bgLuminance);
   const darker = Math.min(fgLuminance, bgLuminance);
 
-  return (lighter + 0.05) / (darker + 0.05);
+  return (
+    (lighter + ACCESSIBILITY_CONSTANTS.LUMINANCE_EPSILON) /
+    (darker + ACCESSIBILITY_CONSTANTS.LUMINANCE_EPSILON)
+  );
 }
 
 /**
  * WCAG AA 기준 (4.5:1)을 만족하는지 확인합니다.
  */
 export function meetsWCAGAA(foreground: string, background: string): boolean {
-  return calculateContrastRatio(foreground, background) >= 4.5;
+  return (
+    calculateContrastRatio(foreground, background) >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_AA
+  );
 }
 
 /**
  * WCAG AAA 기준 (7:1)을 만족하는지 확인합니다.
  */
 export function meetsWCAGAAA(foreground: string, background: string): boolean {
-  return calculateContrastRatio(foreground, background) >= 7;
+  return (
+    calculateContrastRatio(foreground, background) >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_AAA
+  );
 }
 
 /**
@@ -153,7 +161,7 @@ export function detectLightBackground(element: Element): boolean {
     if (rgb) {
       const luminance = getRelativeLuminance(rgb[0], rgb[1], rgb[2]);
       // 휘도가 0.5 이상이면 밝은 배경으로 판단
-      if (luminance > 0.5) {
+      if (luminance > ACCESSIBILITY_CONSTANTS.LUMINANCE_THRESHOLD) {
         return true;
       }
     }

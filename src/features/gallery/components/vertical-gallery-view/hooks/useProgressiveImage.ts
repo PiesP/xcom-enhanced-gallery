@@ -8,6 +8,7 @@
 
 import { logger } from '@shared/logging';
 import { ComponentManager } from '@shared/components/component-manager';
+import { IMAGE_CONSTANTS } from '../../../../../shared/constants/magic-numbers';
 
 export interface ProgressiveImageState {
   isLoading: boolean;
@@ -128,7 +129,9 @@ export function useProgressiveImage({
                     if (done) return;
 
                     loaded += value?.length || 0;
-                    const progress = Math.round((loaded / total) * 100);
+                    const progress = Math.round(
+                      (loaded / total) * IMAGE_CONSTANTS.PROGRESS_COMPLETE
+                    );
                     updateState({ progress });
 
                     readChunk();
@@ -234,7 +237,7 @@ export function useProgressiveImage({
       if (lowQualitySrc && !state.isLoaded) {
         loadImage(lowQualitySrc);
         // 고품질 이미지는 잠시 후 로드
-        setTimeout(() => loadImage(src), 100);
+        setTimeout(() => loadImage(src), IMAGE_CONSTANTS.PROGRESS_COMPLETE);
       } else {
         loadImage(src);
       }
@@ -267,7 +270,7 @@ export function useProgressiveImage({
     },
     onError: () => handleError(new Error('Image element error')),
     style: {
-      opacity: state.isLoaded ? 1 : 0.7,
+      opacity: state.isLoaded ? 1 : IMAGE_CONSTANTS.QUALITY_THRESHOLD,
       transition: 'opacity 0.3s ease',
       filter: state.loadedSrc === lowQualitySrc ? 'blur(2px)' : 'none',
     },

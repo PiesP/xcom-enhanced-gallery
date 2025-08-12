@@ -12,6 +12,7 @@
 
 import { ComponentManager } from '@shared/components/component-manager';
 import { logger } from '@shared/logging';
+import { PERCENTAGE } from '@/constants';
 
 /**
  * 간소화된 키보드 네비게이션 훅 (Esc 키만 지원)
@@ -139,8 +140,8 @@ export function useLiveRegion(politeness: 'polite' | 'assertive' = 'polite') {
           if (document.body.contains(liveRegion)) {
             document.body.removeChild(liveRegion);
           }
-        }, 1000);
-      }, 100);
+        }, PERCENTAGE.FULL);
+      }, PERCENTAGE.FULL);
     },
     [politeness]
   );

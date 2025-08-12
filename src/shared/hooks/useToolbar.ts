@@ -17,6 +17,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
+import { TIMING } from '../../constants';
 import { logger } from '@shared/logging';
 
 interface ToolbarOptions {
@@ -59,7 +60,9 @@ interface ToolbarState {
  * );
  * ```
  */
-export function useToolbar({ initialShowDuration = 1000 }: ToolbarOptions = {}): ToolbarState {
+export function useToolbar({
+  initialShowDuration = TIMING.TOOLBAR_INITIAL_SHOW_DURATION,
+}: ToolbarOptions = {}): ToolbarState {
   const { useState, useRef, useEffect, useCallback } = ComponentManager.getHookManager();
 
   // 🎯 단일 상태만 관리

@@ -2,6 +2,7 @@
  * @fileoverview InteractionService - PC 전용 사용자 상호작용 관리
  * @description 키보드와 마우스 입력 방식의 사용자 경험 최적화
  */
+import { TIMING } from '../../../constants';
 
 /**
  * PC 제스처 타입 (터치 제거됨)
@@ -60,8 +61,8 @@ export class InteractionService {
   constructor(element: HTMLElement, options: Partial<GestureOptions> = {}) {
     this.element = element;
     this.options = {
-      doubleClickDelay: 300,
-      hoverDelay: 500,
+      doubleClickDelay: TIMING.DOUBLE_CLICK_DELAY,
+      hoverDelay: TIMING.HOVER_DELAY,
       ...options,
     };
 

@@ -14,7 +14,7 @@
   background: var(--xeg-modal-overlay-gradient);
   backdrop-filter: var(--xeg-blur-light);
   animation: fadeIn var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  
+
   /* 하드웨어 가속 최적화 */
   transform: translateZ(0);
   will-change: opacity, backdrop-filter;
@@ -360,16 +360,16 @@
     animation: none;
     transition: none;
   }
-  
+
   .modalContent {
     animation: none;
     transition: none;
   }
-  
+
   :global(.xeg-enhanced-close-button) {
     transition: none !important;
   }
-  
+
   :global(.xeg-enhanced-close-button:hover),
   :global(.xeg-enhanced-close-button:active) {
     transform: none !important;
@@ -382,16 +382,16 @@
     background: var(--xeg-bg-solid-light);
     backdrop-filter: none;
   }
-  
+
   .modalContent {
     border: 3px solid currentColor;
     background: var(--xeg-bg-solid-light);
   }
-  
+
   [data-theme='dark'] .modalOverlay {
     background: var(--xeg-bg-solid-dark);
   }
-  
+
   [data-theme='dark'] .modalContent {
     background: var(--xeg-bg-solid-dark);
     color: var(--xeg-color-solid-light);

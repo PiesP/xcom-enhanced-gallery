@@ -16,6 +16,7 @@ import type { VNode } from '@shared/types/app.types';
 import { getPreactHooks } from '@shared/external/vendors';
 import { memo } from '@shared/utils/optimization/memo';
 import styles from './VerticalImageItem.module.css';
+import { GALLERY_CONSTANTS } from '../../../../shared/constants/magic-numbers';
 
 /**
  * Clean up filename by removing verbose path information
@@ -33,7 +34,7 @@ function cleanFilename(filename?: string): string {
     .replace(/[/\\]/g, '_'); // Replace path separators with underscore
 
   // If still too long or empty, show just the image ID
-  if (cleaned.length > 40 || !cleaned) {
+  if (cleaned.length > GALLERY_CONSTANTS.ITEM_HEIGHT || !cleaned) {
     const match = filename.match(/([a-zA-Z0-9_-]+)$/);
     cleaned = match?.[1] ?? 'Image';
   }

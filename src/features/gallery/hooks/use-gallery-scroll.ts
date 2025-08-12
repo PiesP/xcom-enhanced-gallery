@@ -7,6 +7,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
+import { TIME_CONSTANTS } from '@/constants';
 import { logger } from '@shared/logging';
 import { unifiedDOMService } from '@shared/dom';
 import { galleryState } from '@shared/state/signals/gallery.signals';
@@ -97,7 +98,7 @@ export function useGalleryScroll({
           scrollDirectionRef.current = 'idle';
           onScrollDirectionChange?.('idle');
         }
-      }, 150);
+      }, TIME_CONSTANTS.MILLISECONDS_150);
     },
     [enableScrollDirection, onScrollDirectionChange]
   );
@@ -111,7 +112,7 @@ export function useGalleryScroll({
     scrollTimeoutRef.current = window.setTimeout(() => {
       updateScrollState(false);
       logger.debug('useGalleryScroll: 스크롤 종료');
-    }, 150);
+    }, TIME_CONSTANTS.MILLISECONDS_150);
   }, [updateScrollState]);
 
   // 갤러리 휠 이벤트 처리 - 단순화된 버전

@@ -6,6 +6,7 @@ import { logger } from '@shared/logging';
 import { anyMatchOrClosest } from '@shared/dom/predicates';
 import { debounce } from '@shared/utils/performance/unified-performance-utils';
 import { unifiedDOMService } from '@shared/dom/dom-service';
+import { TIMING } from '../../../constants';
 
 /** Twitter 스크롤 컨테이너 찾기 */
 export { findTwitterScrollContainer } from '../core-utils';
@@ -31,7 +32,10 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
 }
 
 /** 스크롤 디바운서 생성 */
-export function createScrollDebouncer(callback: () => void, delay: number = 150) {
+export function createScrollDebouncer(
+  callback: () => void,
+  delay: number = TIMING.SCROLL_DEBOUNCE_DELAY
+) {
   return debounce(callback, delay);
 }
 

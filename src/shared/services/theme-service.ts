@@ -19,6 +19,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { TIME_CONSTANTS, SIZE_CONSTANTS } from '@/constants';
 
 /**
  * 지원되는 테마 타입 (단순화됨)
@@ -88,7 +89,7 @@ export class ThemeService {
   private reducedMotionQuery: MediaQueryList | null = null;
 
   /** 테마 전환 애니메이션 지속시간 (ms) */
-  private transitionDuration = 200;
+  private transitionDuration: number = TIME_CONSTANTS.MILLISECONDS_200;
 
   // 변경 감지 핸들러를 인스턴스 필드로 유지하여 removeEventListener에서 동일 참조 사용
   private readonly onSystemThemeChange = () => this.applyTheme();
@@ -515,7 +516,7 @@ export class ThemeService {
     this.batchUpdateTimer = window.setTimeout(() => {
       this.executeBatchUpdate();
       this.batchUpdateTimer = null;
-    }, 16); // ~60fps에 맞춰 16ms 지연
+    }, SIZE_CONSTANTS.SIXTEEN); // ~60fps에 맞춰 16ms 지연
   }
 
   /**

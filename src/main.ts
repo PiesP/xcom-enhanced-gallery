@@ -9,7 +9,7 @@
 import { logger } from '@shared/logging';
 import type { AppConfig } from '@/types';
 import { CoreService } from '@shared/services/service-manager';
-import { SERVICE_KEYS } from './constants';
+import { SERVICE_KEYS, TIME_CONSTANTS } from './constants';
 import { createElement, querySelector } from '@shared/dom';
 
 // 전역 스타일
@@ -372,7 +372,7 @@ async function startApplication(): Promise<void> {
       startApplication().catch(retryError => {
         logger.error('❌ 재시작 실패:', retryError);
       });
-    }, 2000);
+    }, TIME_CONSTANTS.TWO_SECONDS);
   }
 }
 

@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import { rafThrottle } from '@shared/utils/performance';
 
 /**
@@ -302,7 +303,7 @@ export class UnifiedDOMService implements UnifiedDOMInterface {
     }
     this.performanceMetrics.get(label)!.push(duration);
 
-    if (duration > 10) {
+    if (duration > SIZE_CONSTANTS.TEN) {
       logger.debug(`DOM Performance: ${label} took ${duration.toFixed(2)}ms`);
     }
 

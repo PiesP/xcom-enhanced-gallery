@@ -4,6 +4,7 @@
  */
 
 import type { TestSuiteResult, TestResult } from './types';
+import { TESTING_CONSTANTS } from '../constants/magic-numbers';
 
 export interface TestReport {
   suites: number;
@@ -22,8 +23,9 @@ export class TestReporter {
    */
   generateReport(stats: TestReport): string {
     const { suites, tests, passed, failed, duration } = stats;
-    const successRate = tests > 0 ? ((passed / tests) * 100).toFixed(1) : '0.0';
-    const durationInSeconds = (duration / 1000).toFixed(2);
+    const successRate =
+      tests > 0 ? ((passed / tests) * TESTING_CONSTANTS.PERCENTAGE_MULTIPLIER).toFixed(1) : '0.0';
+    const durationInSeconds = (duration / TESTING_CONSTANTS.MILLISECONDS_PER_SECOND).toFixed(2);
 
     return [
       '📊 Test Report',
@@ -46,7 +48,7 @@ export class TestReporter {
     const lines: string[] = [
       `📋 Suite: ${name}`,
       `Tests: ${total}, Passed: ${passed}, Failed: ${failed}`,
-      `Duration: ${(duration / 1000).toFixed(2)}s`,
+      `Duration: ${(duration / TESTING_CONSTANTS.MILLISECONDS_PER_SECOND).toFixed(2)}s`,
       '',
     ];
 

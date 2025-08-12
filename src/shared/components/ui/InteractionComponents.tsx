@@ -8,6 +8,7 @@
  */
 
 import type { ComponentChildren, Ref } from '@shared/external/vendors';
+import { PERCENTAGE } from '@/constants';
 import { getPreactHooks } from '@shared/external/vendors';
 import { getAccessibilityManager } from '@shared/utils/accessibility/accessibility-service';
 
@@ -468,7 +469,7 @@ export function ProgressBar(props: ProgressBarProps) {
   } = props;
 
   const { useEffect } = useHooks();
-  const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
+  const percentage = Math.min(Math.max((value / max) * PERCENTAGE.FULL, 0), PERCENTAGE.FULL);
   const accessibilityManager = getAccessibilityManager();
 
   useEffect(() => {

@@ -4,6 +4,7 @@
  */
 
 import type { PerformanceTestResult } from './types';
+import { TESTING_CONSTANTS } from '../constants/magic-numbers';
 
 /**
  * 성능 테스트 실행
@@ -119,7 +120,7 @@ export async function throughputTest(
   const endMemory = getMemoryUsage();
 
   const duration = endTime - startTime;
-  const throughput = processedCount / (duration / 1000); // items per second
+  const throughput = processedCount / (duration / TESTING_CONSTANTS.MILLISECONDS_PER_SECOND); // items per second
 
   return {
     duration,

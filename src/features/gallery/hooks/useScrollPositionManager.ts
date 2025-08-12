@@ -4,6 +4,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
+import { SIZE_CONSTANTS } from '@/constants';
 import { BrowserService } from '@shared/browser';
 import { logger } from '@shared/logging';
 
@@ -103,7 +104,7 @@ export function useScrollPositionManager({
       timeoutId = setTimeout(() => {
         restorePosition();
         onGalleryClose?.();
-      }, 10);
+      }, SIZE_CONSTANTS.TEN);
     }
 
     return () => {

@@ -12,6 +12,7 @@ import {
   MockError,
   globalPerformanceMonitor,
 } from './testing-utils';
+import { TESTING_CONSTANTS } from '../constants/magic-numbers';
 
 // ========================================
 // 통합 Mock 인터페이스
@@ -90,7 +91,11 @@ export class UnifiedMockFactory {
   private readonly mocks = new Map<string, IUnifiedMock>();
   private readonly states = new Map<string, MockState>();
   private readonly performanceMonitor = new PerformanceMonitor();
-  private readonly resultCache = new MemoizationCache<unknown>(5 * 60 * 1000); // 5분 TTL
+  private readonly resultCache = new MemoizationCache<unknown>(
+    TESTING_CONSTANTS.CACHE_SIZE_LIMIT *
+      TESTING_CONSTANTS.MOCK_TIMEOUT *
+      TESTING_CONSTANTS.MILLISECONDS_PER_SECOND
+  ); // 5분 TTL
   private debugMode = false;
   private readonly errorHandlers = new Map<string, (error: unknown) => void>();
 

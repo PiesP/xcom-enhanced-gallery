@@ -1,5 +1,6 @@
 import { getPreactHooks } from '@shared/external/vendors';
 import { MediaItem } from '@shared/types';
+import { SIZE_CONSTANTS, PERCENTAGE } from '@/constants';
 import styles from './GalleryView.module.css';
 
 export type GalleryLayout = 'vertical' | 'horizontal';
@@ -29,13 +30,13 @@ export function GalleryView({
 
   // 가상화 로직
   const visibleItems = useMemo(() => {
-    if (!enableVirtualization || mediaItems.length <= 50) {
+    if (!enableVirtualization || mediaItems.length <= PERCENTAGE.HALF) {
       return mediaItems;
     }
 
     // 현재 인덱스 주변의 아이템들만 렌더링
-    const start = Math.max(0, currentIndex - 5);
-    const end = Math.min(mediaItems.length, currentIndex + 6);
+    const start = Math.max(0, currentIndex - SIZE_CONSTANTS.FIVE);
+    const end = Math.min(mediaItems.length, currentIndex + SIZE_CONSTANTS.SIX);
     return mediaItems.slice(start, end);
   }, [mediaItems, currentIndex, enableVirtualization]);
 
@@ -61,8 +62,8 @@ export function GalleryView({
       <div className={styles.mediaContainer}>
         {visibleItems.map((item, index) => {
           const actualIndex =
-            enableVirtualization && mediaItems.length > 50
-              ? Math.max(0, currentIndex - 5) + index
+            enableVirtualization && mediaItems.length > PERCENTAGE.HALF
+              ? Math.max(0, currentIndex - SIZE_CONSTANTS.FIVE) + index
               : index;
 
           return (

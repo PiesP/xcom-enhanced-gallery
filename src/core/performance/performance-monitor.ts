@@ -17,6 +17,14 @@ import type {
   DashboardData,
   MonitoringConfig,
 } from './types';
+import {
+  MEMORY_UNITS,
+  TIME_CONSTANTS,
+  PERCENTAGE,
+  SIZE_CONSTANTS,
+  PERFORMANCE_CONSTANTS,
+  COLOR_CONSTANTS,
+} from '../../constants';
 
 /**
  * 성능 모니터링 시스템의 메인 클래스
@@ -29,8 +37,8 @@ export class PerformanceMonitor {
 
   constructor(config?: Partial<MonitoringConfig>) {
     this.config = {
-      collectionInterval: 5000,
-      historyRetention: 300000, // 5분
+      collectionInterval: TIME_CONSTANTS.FIVE_SECONDS,
+      historyRetention: TIME_CONSTANTS.FIVE_MINUTES, // 5분
       enableAlerts: true,
       enableSuggestions: true,
       enableDetailedLogging: false,
@@ -75,9 +83,9 @@ export class PerformanceMonitor {
   async getMemoryMetrics(): Promise<MemoryMetrics> {
     // 기본 메모리 정보 (실제 구현에서는 performance.memory API 사용)
     const memoryInfo = {
-      heapUsed: 50 * 1024 * 1024, // 50MB
-      heapTotal: 100 * 1024 * 1024, // 100MB
-      heapLimit: 500 * 1024 * 1024, // 500MB
+      heapUsed: SIZE_CONSTANTS.FIFTY * MEMORY_UNITS.BYTES_PER_MEGABYTE, // 50MB
+      heapTotal: SIZE_CONSTANTS.HUNDRED * MEMORY_UNITS.BYTES_PER_MEGABYTE, // 100MB
+      heapLimit: SIZE_CONSTANTS.FIVE * SIZE_CONSTANTS.HUNDRED * MEMORY_UNITS.BYTES_PER_MEGABYTE, // 500MB
     };
 
     return memoryInfo;
@@ -145,7 +153,7 @@ export class PerformanceMonitor {
     const suggestions: OptimizationSuggestion[] = [];
 
     // 메모리 사용량 체크
-    if (metrics.memory.heapUsed > 100 * 1024 * 1024) {
+    if (metrics.memory.heapUsed > SIZE_CONSTANTS.HUNDRED * MEMORY_UNITS.BYTES_PER_MEGABYTE) {
       // 100MB 초과
       suggestions.push({
         id: 'memory-optimization-1',
@@ -158,7 +166,7 @@ export class PerformanceMonitor {
     }
 
     // 렌더링 성능 체크
-    if (metrics.performance.paintTime > 16) {
+    if (metrics.performance.paintTime > PERFORMANCE_CONSTANTS.FRAME_TIME_60FPS) {
       // 16ms 초과 (60fps 기준)
       suggestions.push({
         id: 'render-optimization-1',
@@ -186,7 +194,7 @@ export class PerformanceMonitor {
       };
     }
 
-    const recent = this.metricsHistory.slice(-5);
+    const recent = this.metricsHistory.slice(SIZE_CONSTANTS.NEGATIVE_FIVE);
     const memoryTrend = this.calculateMemoryTrend(recent);
     const performanceTrend = this.calculatePerformanceTrend(recent);
 
@@ -253,8 +261,8 @@ export class PerformanceMonitor {
     const last = metrics[metrics.length - 1]?.memory.heapUsed || 0;
     const change = first > 0 ? (last - first) / first : 0;
 
-    if (change > 0.1) return 'degrading';
-    if (change < -0.1) return 'improving';
+    if (change > COLOR_CONSTANTS.OPACITY_LOW) return 'degrading';
+    if (change < -COLOR_CONSTANTS.OPACITY_LOW) return 'improving';
     return 'stable';
   }
 
@@ -267,8 +275,8 @@ export class PerformanceMonitor {
     const last = metrics[metrics.length - 1]?.performance.paintTime || 0;
     const change = first > 0 ? (last - first) / first : 0;
 
-    if (change > 0.1) return 'degrading';
-    if (change < -0.1) return 'improving';
+    if (change > COLOR_CONSTANTS.OPACITY_LOW) return 'degrading';
+    if (change < -COLOR_CONSTANTS.OPACITY_LOW) return 'improving';
     return 'stable';
   }
 
@@ -316,29 +324,38 @@ export class PerformanceMonitor {
   }
 
   private calculateHealthScore(metrics: PerformanceMetrics): number {
-    let score = 100;
+    let score = PERCENTAGE.FULL;
 
     // 메모리 사용량 평가 (0-30점)
     const memoryUsageRatio = metrics.memory.heapUsed / metrics.memory.heapLimit;
-    if (memoryUsageRatio > 0.8) score -= 30;
-    else if (memoryUsageRatio > 0.6) score -= 20;
-    else if (memoryUsageRatio > 0.4) score -= 10;
+    if (memoryUsageRatio > COLOR_CONSTANTS.OPACITY_HIGH)
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_30;
+    else if (memoryUsageRatio > COLOR_CONSTANTS.OPACITY_MEDIUM)
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_20;
+    else if (memoryUsageRatio > COLOR_CONSTANTS.OPACITY_LOW_MEDIUM)
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_10;
 
     // 렌더링 성능 평가 (0-40점)
-    if (metrics.performance.paintTime > 32) {
-      score -= 40; // 30fps 미만
-    } else if (metrics.performance.paintTime > 16) {
-      score -= 20; // 60fps 미만
-    } else if (metrics.performance.paintTime > 8) score -= 10; // 120fps 미만
+    if (metrics.performance.paintTime > PERFORMANCE_CONSTANTS.SCORE_MULTIPLIER) {
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_40; // 30fps 미만
+    } else if (metrics.performance.paintTime > PERFORMANCE_CONSTANTS.FRAME_TIME_60FPS) {
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_20; // 60fps 미만
+    } else if (
+      metrics.performance.paintTime >
+      PERFORMANCE_CONSTANTS.FRAME_TIME_60FPS / SIZE_CONSTANTS.TWO
+    ) {
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_10; // 120fps 미만
+    }
 
     // 사용자 경험 평가 (0-30점)
-    if (metrics.userExperience.lcp > 4000) {
-      score -= 30; // Poor LCP
-    } else if (metrics.userExperience.lcp > 2500) {
-      score -= 20; // Needs Improvement
-    } else if (metrics.userExperience.lcp > 1200) score -= 10; // Good
+    if (metrics.userExperience.lcp > TIME_CONSTANTS.MILLISECONDS_4000) {
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_30; // Poor LCP
+    } else if (metrics.userExperience.lcp > TIME_CONSTANTS.MILLISECONDS_2500) {
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_20; // Needs Improvement
+    } else if (metrics.userExperience.lcp > TIME_CONSTANTS.MILLISECONDS_1200)
+      score -= PERFORMANCE_CONSTANTS.SCORE_THRESHOLD_10; // Good
 
-    return Math.max(0, Math.min(100, score));
+    return Math.max(0, Math.min(PERCENTAGE.FULL, score));
   }
 
   private createEmptyMetrics(): PerformanceMetrics {

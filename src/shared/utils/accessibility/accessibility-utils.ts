@@ -27,13 +27,30 @@ function safeParseInt(value: string | undefined, radix: number): number {
  * const darkLuminance = getRelativeLuminance(0, 0, 0);   // 0 (검정색)
  * ```
  */
+import {
+  ACCESSIBILITY_CONSTANTS,
+  COLOR_CONSTANTS,
+  SIZE_CONSTANTS,
+  TIME_CONSTANTS,
+  SIZE_LIMITS,
+} from '../../../constants';
+
 export function getRelativeLuminance(r: number, g: number, b: number): number {
   const [rNorm, gNorm, bNorm] = [r, g, b].map(c => {
-    c = c / 255;
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    c = c / COLOR_CONSTANTS.RGB_MAX;
+    return c <= ACCESSIBILITY_CONSTANTS.GAMMA_THRESHOLD
+      ? c / ACCESSIBILITY_CONSTANTS.GAMMA_DIVISOR
+      : Math.pow(
+          (c + ACCESSIBILITY_CONSTANTS.GAMMA_ADDITIVE) / ACCESSIBILITY_CONSTANTS.GAMMA_BASE,
+          ACCESSIBILITY_CONSTANTS.GAMMA_EXPONENT
+        );
   });
 
-  return 0.2126 * (rNorm ?? 0) + 0.7152 * (gNorm ?? 0) + 0.0722 * (bNorm ?? 0);
+  return (
+    ACCESSIBILITY_CONSTANTS.RED_WEIGHT * (rNorm ?? 0) +
+    ACCESSIBILITY_CONSTANTS.GREEN_WEIGHT * (gNorm ?? 0) +
+    ACCESSIBILITY_CONSTANTS.BLUE_WEIGHT * (bNorm ?? 0)
+  );
 }
 
 /**
@@ -54,9 +71,9 @@ export function parseColor(color: string): [number, number, number] | null {
   const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (rgbMatch) {
     return [
-      safeParseInt(rgbMatch[1], 10),
-      safeParseInt(rgbMatch[2], 10),
-      safeParseInt(rgbMatch[3], 10),
+      safeParseInt(rgbMatch[1], SIZE_CONSTANTS.TEN),
+      safeParseInt(rgbMatch[2], SIZE_CONSTANTS.TEN),
+      safeParseInt(rgbMatch[3], SIZE_CONSTANTS.TEN),
     ];
   }
 
@@ -64,9 +81,9 @@ export function parseColor(color: string): [number, number, number] | null {
   const hexMatch = color.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
   if (hexMatch) {
     return [
-      safeParseInt(hexMatch[1], 16),
-      safeParseInt(hexMatch[2], 16),
-      safeParseInt(hexMatch[3], 16),
+      safeParseInt(hexMatch[1], SIZE_CONSTANTS.SIXTEEN),
+      safeParseInt(hexMatch[2], SIZE_CONSTANTS.SIXTEEN),
+      safeParseInt(hexMatch[3], SIZE_CONSTANTS.SIXTEEN),
     ];
   }
 
@@ -74,20 +91,20 @@ export function parseColor(color: string): [number, number, number] | null {
   const shortHexMatch = color.match(/^#([a-f\d])([a-f\d])([a-f\d])$/i);
   if (shortHexMatch) {
     return [
-      safeParseInt((shortHexMatch[1] ?? '') + (shortHexMatch[1] ?? ''), 16),
-      safeParseInt((shortHexMatch[2] ?? '') + (shortHexMatch[2] ?? ''), 16),
-      safeParseInt((shortHexMatch[3] ?? '') + (shortHexMatch[3] ?? ''), 16),
+      safeParseInt((shortHexMatch[1] ?? '') + (shortHexMatch[1] ?? ''), SIZE_CONSTANTS.SIXTEEN),
+      safeParseInt((shortHexMatch[2] ?? '') + (shortHexMatch[2] ?? ''), SIZE_CONSTANTS.SIXTEEN),
+      safeParseInt((shortHexMatch[3] ?? '') + (shortHexMatch[3] ?? ''), SIZE_CONSTANTS.SIXTEEN),
     ];
   }
 
   // 기본 색상명
   const namedColors: Record<string, [number, number, number]> = {
-    white: [255, 255, 255],
+    white: [COLOR_CONSTANTS.RGB_MAX, COLOR_CONSTANTS.RGB_MAX, COLOR_CONSTANTS.RGB_MAX],
     black: [0, 0, 0],
-    red: [255, 0, 0],
-    green: [0, 128, 0],
-    blue: [0, 0, 255],
-    transparent: [255, 255, 255], // 투명은 흰색으로 처리
+    red: [COLOR_CONSTANTS.RGB_MAX, 0, 0],
+    green: [0, COLOR_CONSTANTS.RGB_HALF, 0],
+    blue: [0, 0, COLOR_CONSTANTS.RGB_MAX],
+    transparent: [COLOR_CONSTANTS.RGB_MAX, COLOR_CONSTANTS.RGB_MAX, COLOR_CONSTANTS.RGB_MAX], // 투명은 흰색으로 처리
   };
 
   const lowerColor = color.toLowerCase();
@@ -123,7 +140,10 @@ export function calculateContrastRatio(foreground: string, background: string): 
   const lighter = Math.max(fgLuminance, bgLuminance);
   const darker = Math.min(fgLuminance, bgLuminance);
 
-  return (lighter + 0.05) / (darker + 0.05);
+  return (
+    (lighter + ACCESSIBILITY_CONSTANTS.OPACITY_FADE) /
+    (darker + ACCESSIBILITY_CONSTANTS.OPACITY_FADE)
+  );
 }
 
 /**
@@ -140,7 +160,9 @@ export function calculateContrastRatio(foreground: string, background: string): 
  * ```
  */
 export function meetsWCAGAA(foreground: string, background: string): boolean {
-  return calculateContrastRatio(foreground, background) >= 4.5;
+  return (
+    calculateContrastRatio(foreground, background) >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_AA
+  );
 }
 
 /**
@@ -157,7 +179,9 @@ export function meetsWCAGAA(foreground: string, background: string): boolean {
  * ```
  */
 export function meetsWCAGAAA(foreground: string, background: string): boolean {
-  return calculateContrastRatio(foreground, background) >= 7;
+  return (
+    calculateContrastRatio(foreground, background) >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_AAA
+  );
 }
 
 /**
@@ -197,7 +221,7 @@ export function detectLightBackground(element: HTMLElement): boolean {
   if (!rgb) return true; // 기본값: 밝은 배경
 
   const luminance = getRelativeLuminance(rgb[0], rgb[1], rgb[2]);
-  return luminance > 0.5;
+  return luminance > COLOR_CONSTANTS.OPACITY_HALF;
 }
 
 /**
@@ -289,7 +313,7 @@ export function setAriaLive(
  */
 export function validateContrast(foreground: string, background: string): boolean {
   const contrastRatio = calculateContrastRatio(foreground, background);
-  return contrastRatio >= 4.5; // WCAG AA 기준
+  return contrastRatio >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_AA; // WCAG AA 기준
 }
 
 /**
@@ -337,7 +361,7 @@ export function announceLiveMessage(message: string, politeness = 'polite'): voi
 
   setTimeout(() => {
     document.body.removeChild(liveRegion);
-  }, 1000);
+  }, TIME_CONSTANTS.ONE_SECOND);
 }
 
 /**
@@ -349,7 +373,7 @@ export function validateAltTextQuality(altText: string, imageType = 'informative
     return altText === '';
   }
 
-  return altText.length > 0 && altText.length <= 125;
+  return altText.length > 0 && altText.length <= SIZE_LIMITS.ALT_TEXT_MAX_LENGTH;
 }
 
 /**
@@ -486,19 +510,19 @@ export function testContrastRatio(foreground: string, background: string): boole
  * WCAG Level 검증 함수들
  */
 export function isWCAGAACompliant(ratio: number): boolean {
-  return ratio >= 4.5;
+  return ratio >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_AA;
 }
 
 export function isWCAGAAACompliant(ratio: number): boolean {
-  return ratio >= 7;
+  return ratio >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_AAA;
 }
 
 export function isWCAGLargeTextAACompliant(ratio: number): boolean {
-  return ratio >= 3;
+  return ratio >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_LARGE;
 }
 
 export function isWCAGLargeTextAAACompliant(ratio: number): boolean {
-  return ratio >= 4.5;
+  return ratio >= ACCESSIBILITY_CONSTANTS.CONTRAST_RATIO_AA;
 }
 
 /**
@@ -608,7 +632,7 @@ export function setLandmarkRole(element: HTMLElement, role: string): void {
 }
 
 export function setHeadingLevel(element: HTMLElement, level: number): void {
-  if (level >= 1 && level <= 6) {
+  if (level >= 1 && level <= ACCESSIBILITY_CONSTANTS.HEADING_MAX_LEVEL) {
     element.setAttribute('aria-level', level.toString());
     if (element.tagName.toLowerCase() !== `h${level}`) {
       element.setAttribute('role', 'heading');
@@ -645,7 +669,7 @@ export function announceToScreenReader(message: string): void {
   announcement.textContent = message;
 
   document.body.appendChild(announcement);
-  setTimeout(() => document.body.removeChild(announcement), 1000);
+  setTimeout(() => document.body.removeChild(announcement), TIME_CONSTANTS.ONE_SECOND);
 }
 
 export function announceUrgentToScreenReader(message: string): void {
@@ -656,7 +680,7 @@ export function announceUrgentToScreenReader(message: string): void {
   announcement.textContent = message;
 
   document.body.appendChild(announcement);
-  setTimeout(() => document.body.removeChild(announcement), 1000);
+  setTimeout(() => document.body.removeChild(announcement), TIME_CONSTANTS.ONE_SECOND);
 }
 
 export function setARIALabel(element: HTMLElement, label: string): void {

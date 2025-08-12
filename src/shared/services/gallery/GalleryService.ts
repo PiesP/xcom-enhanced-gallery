@@ -19,6 +19,7 @@ import {
   openGallery,
 } from '@shared/state/signals/gallery.signals';
 import { getErrorMessage } from '@shared/utils/error-handling';
+import { PERCENTAGE } from '@/constants';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ViewMode } from '@shared/types/core/core-types';
 import { isVendorsInitialized } from '@shared/external/vendors';
@@ -157,7 +158,7 @@ export class GalleryService {
       if (!isVendorsInitialized()) {
         logger.warn('GalleryService: Vendors가 아직 초기화되지 않았습니다. 잠시 후 재시도합니다.');
         // 즉시 재시도 (initialization race condition 해결)
-        setTimeout(() => this.retryInitialization(), 100);
+        setTimeout(() => this.retryInitialization(), PERCENTAGE.FULL);
         return; // 초기화하지 않고 안전 모드 유지
       }
 

@@ -4,7 +4,7 @@ import { getPreact } from '@shared/external/vendors';
 import type { VNode, PreactAPI } from '@shared/external/vendors';
 import { getService } from '@shared/services/service-manager';
 import { showSuccess } from '@shared/services/toast-integration';
-import { SERVICE_KEYS, TIMING } from '@/constants';
+import { SERVICE_KEYS, TIMING, SIZE_CONSTANTS, PERCENTAGE, TIME_CONSTANTS } from '@/constants';
 import type { SettingsService } from './services/settings-service';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { themeService } from '@shared/services/theme-service';
@@ -279,8 +279,12 @@ export function wireSettingsModal(container: HTMLElement): void {
 
     if (quality) quality.value = String(svc.get('download.imageQuality' as const) ?? 'original');
     if (autoZip) autoZip.checked = Boolean(svc.get('download.autoZip' as const));
-    if (conc) conc.value = String(svc.get('download.maxConcurrentDownloads' as const) ?? 4);
-    if (speed) speed.value = String(svc.get('gallery.autoScrollSpeed' as const) ?? 5);
+    if (conc)
+      conc.value = String(
+        svc.get('download.maxConcurrentDownloads' as const) ?? SIZE_CONSTANTS.FOUR
+      );
+    if (speed)
+      speed.value = String(svc.get('gallery.autoScrollSpeed' as const) ?? SIZE_CONSTANTS.FIVE);
     if (anim) anim.checked = Boolean(svc.get('gallery.animations' as const));
 
     // [추가] 테마 설정 초기 값 로드
@@ -616,18 +620,18 @@ function createDebouncedSaveNotifier(delay = TIMING.DEBOUNCED_SAVE_DELAY): () =>
     }
 
     // 연속된 변경에 대해서는 더 짧은 딜레이로 피드백
-    const actualDelay = isShowing ? 100 : delay;
+    const actualDelay = isShowing ? PERCENTAGE.FULL : delay;
 
     t = setTimeout(() => {
       // 더 간결하고 비침습적인 피드백
-      showSuccess('저장됨', '설정이 자동 저장되었습니다', 1200);
+      showSuccess('저장됨', '설정이 자동 저장되었습니다', TIME_CONSTANTS.MILLISECONDS_1200);
       isShowing = true;
       t = null;
 
       // 3초 후 피드백 상태 리셋 (다음 저장시 일반 딜레이 사용)
       setTimeout(() => {
         isShowing = false;
-      }, 3000);
+      }, TIME_CONSTANTS.THREE_SECONDS);
     }, actualDelay);
   };
 }
@@ -636,7 +640,7 @@ function createDebouncedSaveNotifier(delay = TIMING.DEBOUNCED_SAVE_DELAY): () =>
 function isValidCustomTemplate(tpl: string): boolean {
   if (!tpl || typeof tpl !== 'string') return false;
   const s = tpl.trim();
-  if (s.length < 3 || s.length > 120) return false;
+  if (s.length < SIZE_CONSTANTS.THREE || s.length > SIZE_CONSTANTS.HUNDRED_TWENTY) return false;
   // 허용 토큰: {user}, {tweetId}, {index}, {ext}, {mediaId}
   const hasToken = /\{(user|tweetId|index|ext|mediaId)\}/.test(s);
   if (!hasToken) return false;

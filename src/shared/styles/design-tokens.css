@@ -38,11 +38,35 @@
   --xeg-z-emergency: 9999; /* 긴급 상황용 */
 
   /* ========================================
-     COLOR SYSTEM - OKLCH 기반 통합 색상
+     HSL 기반 향상된 테마 시스템 - UI 일관성 및 시인성 개선
      ======================================== */
 
-  /* Primary Colors - OKLCH로 통일 */
-  --xeg-color-primary: oklch(0.678 0.182 252.2);
+  /* 🎨 라이트 테마용 HSL 색상 시스템 */
+  /* Base Colors */
+  --xeg-color-primary: hsl(210, 90%, 55%);
+  --xeg-color-success: hsl(140, 65%, 45%);
+  --xeg-color-error: hsl(0, 75%, 50%);
+
+  /* Text Colors */
+  --xeg-color-text-primary: hsl(210, 15%, 20%);
+  --xeg-color-text-secondary: hsl(210, 15%, 45%);
+
+  /* Background Colors */
+  --xeg-bg-toolbar: hsl(210, 20%, 98%);
+  --xeg-bg-surface: hsl(210, 20%, 95%);
+
+  /* Border Colors */
+  --xeg-toolbar-border: hsl(210, 15%, 90%);
+  --xeg-border-light: hsl(210, 15%, 85%);
+
+  /* Shadows */
+  --xeg-toolbar-shadow: 0 4px 12px hsl(210 20% 50% / 0.15);
+
+  /* ========================================
+     COLOR SYSTEM - OKLCH 기반 통합 색상 (레거시)
+     ======================================== */
+
+  /* Primary Colors - HSL로 오버라이드됨 */
   --xeg-color-primary-hover: oklch(0.623 0.21 252.8);
   --xeg-color-primary-active: oklch(0.567 0.243 253.4);
   --xeg-color-primary-500: var(--xeg-color-primary);
@@ -60,9 +84,10 @@
   --xeg-color-neutral-700: oklch(0.378 0.005 286.3);
   --xeg-color-neutral-900: oklch(0.234 0.006 277.8);
 
-  /* Semantic Colors - OKLCH로 통일 */
-  --xeg-color-success: oklch(0.725 0.17 142.5);
-  --xeg-color-error: oklch(0.628 0.257 27.3);
+  /* Semantic Colors - OKLCH로 통일 (HSL 오버라이드를 위해 주석 처리) */
+  /* DEPRECATED: HSL 색상으로 대체됨 */
+  /* --xeg-color-success: oklch(0.725 0.17 142.5); */
+  /* --xeg-color-error: oklch(0.628 0.257 27.3); */
   --xeg-color-warning: oklch(0.761 0.16 70.7);
   --xeg-color-success-500: var(--xeg-color-success);
   --xeg-color-error-500: var(--xeg-color-error);
@@ -197,8 +222,7 @@
   --xeg-breakpoint-xl: 1280px;
   --xeg-breakpoint-2xl: 1536px;
 
-  /* 단순한 테두리 색상 */
-  --xeg-border-light: #e5e7eb;
+  /* 단순한 테두리 색상 - 중복 제거됨 */
   --xeg-border-medium: #d1d5db;
   --xeg-border-dark: #374151;
 
@@ -317,9 +341,7 @@
   --xeg-color-surface: var(--xeg-color-surface-light);
   --xeg-color-background: var(--xeg-color-neutral-50);
 
-  /* Text aliases */
-  --xeg-color-text-primary: var(--xeg-color-neutral-900);
-  --xeg-color-text-secondary: var(--xeg-color-neutral-600);
+  /* Text aliases - 중복 제거됨 */
   /* Added tertiary alias (previously referenced but undefined) */
   --xeg-color-text-tertiary: var(
     --xeg-color-neutral-500
@@ -411,7 +433,8 @@
   /* 단순한 배경 시스템 - solid 디자인 */
   --xeg-bg-toolbar-dark: var(--xeg-bg-solid-dark); /* 다크 모드: 완전 불투명 검은색 */
   --xeg-bg-toolbar-light: var(--xeg-bg-solid-light); /* 라이트 모드: 완전 불투명 흰색 */
-  --xeg-bg-toolbar: var(--xeg-bg-toolbar-light); /* 기본값: 라이트 모드 */
+  /* DEPRECATED: HSL 색상으로 대체됨 */
+  /* --xeg-bg-toolbar: var(--xeg-bg-toolbar-light); */ /* 기본값: 라이트 모드 */
   --xeg-shadow-toolbar: var(--xeg-shadow-simple-medium);
 
   /* 토스트 단순화 */
@@ -586,11 +609,10 @@
 
   /* 컴포넌트별 색상 토큰 시스템 */
 
-  /* 툴바 색상 시스템 */
+  /* 툴바 색상 시스템 - 중복 제거됨 */
   --xeg-toolbar-bg: var(--xeg-bg-toolbar);
   --xeg-toolbar-text: var(--xeg-color-text-primary);
   --xeg-toolbar-text-secondary: var(--xeg-color-text-secondary);
-  --xeg-toolbar-border: var(--xeg-color-border-light);
 
   /* 모달 색상 시스템 - 테마별 동적 스타일링 */
   --xeg-modal-bg: var(--xeg-bg-light);
@@ -615,18 +637,33 @@
    =========================================== */
 
 [data-theme='dark'] {
-  /* Dark ↔ Light 반전: 배경/텍스트/보더 */
+  /* 🌑 다크 테마용 HSL 색상 시스템 - UI 일관성 및 시인성 개선 */
+  /* Base Colors */
+  --xeg-color-primary: hsl(210, 95%, 65%);
+  --xeg-color-success: hsl(140, 60%, 55%);
+  --xeg-color-error: hsl(0, 85%, 60%);
+
+  /* Text Colors */
+  --xeg-color-text-primary: hsl(210, 20%, 95%);
+  --xeg-color-text-secondary: hsl(210, 15%, 65%);
+
+  /* Background Colors */
+  /* DEPRECATED: HSL 색상으로 대체됨 */
+  /* --xeg-bg-toolbar: hsl(210, 15%, 18%); */
+  --xeg-bg-surface: hsl(210, 15%, 22%);
+
+  /* Border Colors */
+  --xeg-toolbar-border: hsl(210, 15%, 25%);
+  --xeg-border-light: hsl(210, 15%, 30%);
+
+  /* Shadows */
+  --xeg-toolbar-shadow: 0 0 0 1px hsl(210 15% 50% / 0.2), 0 4px 12px hsl(0 0% 0% / 0.4);
+
+  /* Dark ↔ Light 반전: 배경/텍스트/보더 (레거시) */
   --xeg-color-surface: var(--xeg-color-surface-dark);
   --xeg-color-background: var(--xeg-color-neutral-950);
-  --xeg-color-text-primary: var(--xeg-color-neutral-50);
-  --xeg-color-text-secondary: var(--xeg-color-neutral-300);
   --xeg-color-border-primary: var(--xeg-color-neutral-700);
   --xeg-color-border-secondary: var(--xeg-color-neutral-800);
-
-  /* 다크모드 툴바 단순화 - 불투명 검은색 */
-  --xeg-bg-toolbar: var(--xeg-bg-toolbar-dark);
-  --xeg-toolbar-border: var(--xeg-border-dark);
-  --xeg-toolbar-shadow: var(--xeg-shadow-simple-medium);
 
   /* 모달 다크모드 오버라이드 */
   --xeg-modal-bg: var(--xeg-bg-dark);
@@ -693,18 +730,33 @@
    =========================================== */
 
 [data-theme='light'] {
-  /* Dark ↔ Light 반전: 배경/텍스트/보더 */
+  /* 🎨 라이트 테마용 HSL 색상 시스템 명시적 설정 */
+  /* Base Colors */
+  --xeg-color-primary: hsl(210, 90%, 55%);
+  --xeg-color-success: hsl(140, 65%, 45%);
+  --xeg-color-error: hsl(0, 75%, 50%);
+
+  /* Text Colors */
+  --xeg-color-text-primary: hsl(210, 15%, 20%);
+  --xeg-color-text-secondary: hsl(210, 15%, 45%);
+
+  /* Background Colors */
+  /* DEPRECATED: HSL 색상으로 대체됨 */
+  /* --xeg-bg-toolbar: hsl(210, 20%, 98%); */
+  --xeg-bg-surface: hsl(210, 20%, 95%);
+
+  /* Border Colors */
+  --xeg-toolbar-border: hsl(210, 15%, 90%);
+  --xeg-border-light: hsl(210, 15%, 85%);
+
+  /* Shadows */
+  --xeg-toolbar-shadow: 0 4px 12px hsl(210 20% 50% / 0.15);
+
+  /* Dark ↔ Light 반전: 배경/텍스트/보더 (레거시) */
   --xeg-color-surface: var(--xeg-color-surface-light);
   --xeg-color-background: var(--xeg-color-neutral-50);
-  --xeg-color-text-primary: var(--xeg-color-neutral-900);
-  --xeg-color-text-secondary: var(--xeg-color-neutral-600);
   --xeg-color-border-primary: var(--xeg-color-neutral-300);
   --xeg-color-border-secondary: var(--xeg-color-neutral-200);
-
-  /* 라이트모드 툴바 단순화 - 불투명 흰색 */
-  --xeg-bg-toolbar: var(--xeg-bg-toolbar-light);
-  --xeg-toolbar-border: var(--xeg-border-light);
-  --xeg-toolbar-shadow: var(--xeg-shadow-simple-medium);
 
   /* 모달 라이트 모드 */
   --xeg-modal-bg: var(--xeg-bg-light);
@@ -781,7 +833,8 @@
   --xeg-color-border-secondary: #2f3336;
 
   /* Dim 모드 툴바 */
-  --xeg-bg-toolbar: #15202b;
+  /* DEPRECATED: HSL 색상으로 대체됨 */
+  /* --xeg-bg-toolbar: #15202b; */
   --xeg-toolbar-border: #38444d;
   --xeg-toolbar-shadow: var(--xeg-shadow-simple-medium);
 

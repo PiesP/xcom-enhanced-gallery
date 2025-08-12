@@ -3,6 +3,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 export class ParentTraversalTweetStrategy implements TweetInfoExtractionStrategy {
@@ -13,7 +14,7 @@ export class ParentTraversalTweetStrategy implements TweetInfoExtractionStrategy
     try {
       let current: HTMLElement | null = element;
 
-      for (let i = 0; i < 10 && current; i++) {
+      for (let i = 0; i < SIZE_CONSTANTS.TEN && current; i++) {
         const tweetId = this.findTweetIdInElement(current);
         if (tweetId) {
           const username = this.findUsernameInElement(current) || 'unknown';

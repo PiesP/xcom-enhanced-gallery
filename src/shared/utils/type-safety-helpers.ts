@@ -222,6 +222,8 @@ export function safeProp<T, K extends keyof T>(
 /**
  * 안전한 트윗 ID 생성 - crypto.randomUUID() 우선 사용
  */
+import { IDENTIFIER_CONSTANTS, NUMBER_BASES } from '@/constants';
+
 export function safeTweetId(value: string | undefined): string {
   if (!value || value.trim() === '') {
     try {
@@ -235,7 +237,12 @@ export function safeTweetId(value: string | undefined): string {
 
     // 폴백: 강화된 랜덤 생성
     const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 9);
+    const random = Math.random()
+      .toString(NUMBER_BASES.BASE36)
+      .substring(
+        IDENTIFIER_CONSTANTS.RANDOM_SUBSTR_START_INDEX,
+        IDENTIFIER_CONSTANTS.RANDOM_ID_LENGTH_MEDIUM
+      );
     return `generated_${timestamp}_${random}`;
   }
   return value;

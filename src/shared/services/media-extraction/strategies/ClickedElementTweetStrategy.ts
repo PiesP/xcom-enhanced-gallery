@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { SIZE_CONSTANTS } from '@/constants';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 /**
@@ -131,7 +132,7 @@ export class ClickedElementTweetStrategy implements TweetInfoExtractionStrategy 
   private extractUsername(element: HTMLElement): string | null {
     // 1. 부모 요소에서 사용자명 찾기
     let current: HTMLElement | null = element;
-    for (let i = 0; i < 10 && current; i++) {
+    for (let i = 0; i < SIZE_CONSTANTS.TEN && current; i++) {
       const usernameElement = current.querySelector(
         '[href^="/"]:not([href*="/status/"]):not([href*="/photo/"]):not([href*="/video/"])'
       );
