@@ -117,11 +117,6 @@ export function initializeDefaultTokens(): void {
     'border-radius': '8px',
     'box-shadow': '0 2px 8px rgba(0, 0, 0, 0.1)',
     'transition-duration': '0.2s',
-
-    // Glassmorphism 토큰
-    'glass-bg': 'rgba(255, 255, 255, 0.1)',
-    'glass-border': 'rgba(255, 255, 255, 0.2)',
-    'glass-backdrop': 'blur(10px)',
   };
 
   Object.entries(defaultTokens).forEach(([name, value]) => {

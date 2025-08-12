@@ -26,12 +26,10 @@
   overscroll-behavior: contain;
 
   /* 통합 디자인 토큰 기반 스타일 */
-  background: var(--xeg-glass-bg-dark);
-  border: 1px solid var(--xeg-glass-border-light);
-  box-shadow: var(--xeg-glass-shadow-strong);
+  background: var(--xeg-bg-dark);
+  border: 1px solid var(--xeg-color-border-light);
+  box-shadow: var(--xeg-shadow-simple-strong);
   border-radius: var(--xeg-radius-xl); /* 더 둥근 모서리 */
-  backdrop-filter: var(--xeg-glass-blur-strong);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
   padding: var(--xeg-spacing-xl); /* 더 넉넉한 패딩 */
   color: var(--xeg-color-text-primary);
 
@@ -44,7 +42,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--xeg-spacing-xl); /* 더 넓은 간격 */
-  border-bottom: 1px solid var(--xeg-glass-border-light);
+  border-bottom: 1px solid var(--xeg-color-border-light);
   padding-bottom: var(--xeg-spacing-lg);
 }
 
@@ -62,7 +60,7 @@
   height: var(--xeg-touch-target-min);
   border-radius: var(--xeg-radius-full);
   border: none;
-  background: var(--xeg-glass-bg-medium);
+  background: var(--xeg-bg-medium);
   color: var(--xeg-color-text-secondary);
   cursor: pointer;
   transition: var(--xeg-transition-fast);
@@ -94,8 +92,8 @@
   margin-bottom: var(--xeg-spacing-2xl); /* 섹션 간 명확한 구분 */
   padding: var(--xeg-spacing-lg);
   border-radius: var(--xeg-radius-lg);
-  background: var(--xeg-glass-bg-translucent-10);
-  border: 1px solid var(--xeg-glass-border-light);
+  background: var(--xeg-bg-light-translucent);
+  border: 1px solid var(--xeg-color-border-light);
 }
 
 .sectionTitle {
@@ -103,7 +101,7 @@
   font-weight: var(--xeg-font-weight-semibold);
   color: var(--xeg-color-text-primary);
   margin: 0 0 var(--xeg-spacing-md) 0;
-  border-bottom: 1px solid var(--xeg-glass-border-light);
+  border-bottom: 1px solid var(--xeg-color-border-light);
   padding-bottom: var(--xeg-spacing-sm);
 }
 
@@ -122,9 +120,9 @@
   width: 100%;
   height: var(--xeg-input-height); /* 터치하기 좋은 높이 */
   padding: var(--xeg-spacing-md); /* 더 넉넉한 패딩 */
-  border: 2px solid var(--xeg-glass-border-light); /* 더 명확한 경계 */
+  border: 2px solid var(--xeg-color-border-light); /* 더 명확한 경계 */
   border-radius: var(--xeg-radius-lg);
-  background: var(--xeg-glass-bg-medium);
+  background: var(--xeg-bg-medium);
   color: var(--xeg-color-text-primary);
   font-size: var(--xeg-font-size-md);
   transition: var(--xeg-transition-fast);
@@ -136,7 +134,7 @@
   outline: none;
   border-color: var(--xeg-color-primary);
   box-shadow: 0 0 0 3px var(--xeg-color-primary-alpha-20);
-  background: var(--xeg-glass-bg-light);
+  background: var(--xeg-bg-light);
 }
 
 .section select:hover,
@@ -150,7 +148,7 @@
   height: var(--xeg-touch-target-min);
   border-radius: var(--xeg-radius-lg);
   padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
-  border: 2px solid var(--xeg-glass-border-light);
+  border: 2px solid var(--xeg-color-border-light);
   background: var(--xeg-color-primary);
   color: var(--xeg-color-text-inverse);
   cursor: pointer;
@@ -168,13 +166,13 @@
 .button:hover:not(:disabled) {
   background: var(--xeg-color-primary-hover);
   transform: translateY(-1px);
-  box-shadow: var(--xeg-glass-shadow-medium);
+  box-shadow: var(--xeg-shadow-simple-medium);
   border-color: var(--xeg-color-primary-hover);
 }
 
 .button:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: var(--xeg-glass-shadow-light);
+  box-shadow: var(--xeg-shadow-simple-light);
 }
 
 .button:focus-visible {
@@ -190,13 +188,13 @@
 
 /* 보조 버튼 스타일 */
 .buttonSecondary {
-  background: var(--xeg-glass-bg-medium);
+  background: var(--xeg-bg-medium);
   color: var(--xeg-color-text-primary);
-  border-color: var(--xeg-glass-border-light);
+  border-color: var(--xeg-color-border-light);
 }
 
 .buttonSecondary:hover:not(:disabled) {
-  background: var(--xeg-glass-bg-light);
+  background: var(--xeg-bg-light);
   color: var(--xeg-color-text-primary);
   border-color: var(--xeg-color-primary);
 }
@@ -268,7 +266,6 @@
   .modal {
     background: rgba(255, 255, 255, 0.95);
     border: 3px solid rgba(0, 0, 0, 0.8);
-    backdrop-filter: none;
   }
 
   .section {

@@ -125,15 +125,7 @@ export type Option<T> = T | null;
 
 // ===== 스타일 타입들 =====
 export type Theme = 'auto' | 'light' | 'dark';
-export type GlassmorphismIntensity = 'light' | 'medium' | 'strong' | 'ultra';
-
-export interface GlassmorphismConfig {
-  intensity: GlassmorphismIntensity;
-  background?: string;
-  blur?: string;
-  border?: string;
-  shadow?: string;
-}
+// GlassmorphismIntensity, GlassmorphismConfig 타입 제거됨 (deprecated)
 
 export interface ComponentState {
   [key: string]: boolean;
@@ -188,7 +180,7 @@ export interface AppSettings {
   ui: {
     showToolbar: boolean;
     enableAnimations: boolean;
-    glassmorphism: GlassmorphismIntensity;
+    // glassmorphism 속성 제거됨 (deprecated)
   };
 }
 

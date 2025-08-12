@@ -4,24 +4,20 @@
  */
 
 /* ============================================
-   Glass Morphism 카드 컴포넌트
+   Solid Card 컴포넌트 (solid 디자인)
    ============================================ */
 
-.glassCard {
-  background: var(--xeg-glass-bg-dark);
-  backdrop-filter: var(--xeg-glass-blur-strong);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-strong);
-  border: 1px solid var(--xeg-glass-border-light);
-  box-shadow: var(--xeg-glass-shadow-strong);
+.solidCard {
+  background: var(--xeg-bg-solid-light);
+  border: 1px solid var(--xeg-border-light);
+  box-shadow: var(--xeg-shadow-lg);
   transform: translateZ(0); /* 성능 최적화 */
 }
 
-.glassCardLight {
-  background: var(--xeg-glass-bg-light);
-  backdrop-filter: var(--xeg-glass-blur-medium);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-medium);
-  border: 1px solid var(--xeg-glass-border-light);
-  box-shadow: var(--xeg-glass-shadow-medium);
+.solidCardLight {
+  background: var(--xeg-bg-solid-light);
+  border: 1px solid var(--xeg-border-light);
+  box-shadow: var(--xeg-shadow-md);
   transform: translateZ(0);
 }
 
@@ -124,8 +120,6 @@
   justify-content: center;
   z-index: var(--xeg-z-modal);
   background: var(--xeg-color-overlay-strong);
-  backdrop-filter: var(--xeg-blur-light);
-  -webkit-backdrop-filter: var(--xeg-blur-light);
 }
 
 .layoutGallery {
@@ -135,7 +129,7 @@
   right: 0;
   bottom: 0;
   z-index: var(--xeg-z-gallery-backdrop);
-  background: rgba(0, 0, 0, 0.95);
+  background: var(--xeg-bg-solid-dark);
   overflow: hidden;
 }
 
@@ -246,7 +240,7 @@
   color: var(--xeg-color-text-secondary);
   margin: 0 0 8px 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--xeg-glass-border-light);
+  border-bottom: 1px solid var(--xeg-border-light);
 }
 
 /* ============================================
@@ -256,7 +250,7 @@
 .formControl {
   background-color: var(--xeg-color-surface-light);
   color: var(--xeg-color-text-primary);
-  border: 1px solid var(--xeg-glass-border-light);
+  border: 1px solid var(--xeg-border-light);
   border-radius: 8px;
   padding: 12px 16px; /* PC 친화적 패딩 증가 */
   font-size: 14px;

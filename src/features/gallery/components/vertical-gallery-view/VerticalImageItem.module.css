@@ -10,8 +10,8 @@
   --xeg-item-spacing: var(--xeg-spacing-md);
   --xeg-item-transition: var(--xeg-transition-normal);
   --xeg-item-hover-transform: translateY(-2px) translateZ(0);
-  --xeg-item-focus-shadow: var(--xeg-glass-shadow-medium);
-  --xeg-item-active-shadow: var(--xeg-glass-shadow-strong);
+  --xeg-item-focus-shadow: var(--xeg-shadow-md);
+  --xeg-item-active-shadow: var(--xeg-shadow-lg);
 }
 
 .container {
@@ -21,8 +21,8 @@
   overflow: visible;
   transition: var(--xeg-item-transition);
   cursor: pointer;
-  border: 1px solid var(--xeg-glass-border-light);
-  background: var(--xeg-glass-bg-medium);
+  border: 1px solid var(--xeg-border-light);
+  background: var(--xeg-bg-card);
   padding: var(--xeg-spacing-sm);
   width: 100%;
   text-align: center;
@@ -31,15 +31,11 @@
   align-items: center;
   pointer-events: auto;
 
-  /* 글래스모피즘 효과 */
-  backdrop-filter: var(--xeg-glass-blur-medium);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-medium);
-  box-shadow: var(--xeg-glass-shadow-light);
-
   /* 성능 최적화 */
   transform: translateZ(0);
   will-change: transform, box-shadow;
   contain: layout style;
+  box-shadow: var(--xeg-shadow-sm);
 
   /* 통합된 포커스/활성 상태 처리 - 기본 outline 제거 */
   outline: none;
@@ -47,9 +43,9 @@
 
 .container:hover {
   transform: var(--xeg-item-hover-transform);
-  background: var(--xeg-glass-bg-light);
-  border-color: var(--xeg-glass-border-medium);
-  box-shadow: var(--xeg-glass-shadow-strong);
+  background: var(--xeg-bg-card-hover);
+  border-color: var(--xeg-border-medium);
+  box-shadow: var(--xeg-shadow-lg);
 }
 
 /* 포커스 상태 - outline 대신 box-shadow 사용 */

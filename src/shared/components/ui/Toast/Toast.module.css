@@ -13,23 +13,21 @@
  */
 
 /**
- * Base toast container styles - 현대적 glassmorphism 디자인
+ * Base toast container styles - 현대적 solid 디자인
  *
  * @styles
  * - 둥근 모서리 (12px border-radius)
- * - 향상된 그림자와 백드롭 필터
+ * - 향상된 그림자 효과 (no backdrop filter)
  * - 왼쪽 4px 테두리로 타입 표시
  * - 부드러운 슬라이드인 애니메이션 (0.4s cubic-bezier)
  * - 크기: 최소 320px, 최대 480px
- * - glassmorphism 배경 효과
+ * - solid 배경 효과
  */
 .toast {
-  background: var(--xeg-glass-bg-ultra-light);
-  border: 1px solid var(--xeg-glass-border-light);
+  background: var(--xeg-bg-toast-solid);
+  border: 1px solid var(--xeg-border-light);
   border-radius: 16px;
-  box-shadow: var(--xeg-glass-shadow-strong);
-  backdrop-filter: var(--xeg-glass-blur-strong) saturate(180%);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-strong) saturate(180%);
+  box-shadow: var(--xeg-shadow-xl);
   margin-bottom: 12px;
   padding: 18px;
   min-width: 320px;
@@ -50,7 +48,7 @@
 .toast.info {
   border-left-color: var(--xeg-color-primary);
   background: var(--xeg-color-primary-alpha-10);
-  border-color: var(--xeg-glass-border-light);
+  border-color: var(--xeg-border-light);
 }
 
 /**
@@ -63,7 +61,7 @@
 .toast.success {
   border-left-color: var(--xeg-color-success);
   background: color-mix(in oklch, var(--xeg-color-success) 10%, transparent);
-  border-color: var(--xeg-glass-border-light);
+  border-color: var(--xeg-border-light);
 }
 
 /**
@@ -76,7 +74,7 @@
 .toast.warning {
   border-left-color: var(--xeg-color-warning);
   background: color-mix(in oklch, var(--xeg-color-warning) 10%, transparent);
-  border-color: var(--xeg-glass-border-light);
+  border-color: var(--xeg-border-light);
 }
 
 /**
@@ -89,7 +87,7 @@
 .toast.error {
   border-left-color: var(--xeg-color-error);
   background: color-mix(in oklch, var(--xeg-color-error) 10%, transparent);
-  border-color: var(--xeg-glass-border-light);
+  border-color: var(--xeg-border-light);
 }
 
 /**
@@ -200,11 +198,11 @@
 }
 
 /**
- * Action button styling - 현대적 glassmorphism
+ * Action button styling - 현대적 solid design
  *
  * @appearance
  * - 차분한 프라이머리 색상 배경
- * - 반투명 효과와 백드롭 필터
+ * - solid 효과 (no backdrop filter)
  * - 둥근 모서리 (8px)
  * - 적절한 크기 (13px 폰트, 8x16px 패딩)
  *
@@ -222,8 +220,6 @@
   font-weight: 600;
   padding: 8px 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   box-shadow: 0 2px 8px rgba(71, 133, 163, 0.15);
 }
 
@@ -286,8 +282,6 @@
   .toast {
     background: rgba(255, 255, 255, 0.95);
     border: 2px solid rgba(0, 0, 0, 0.8);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
   .info {
@@ -315,8 +309,6 @@
 @media (prefers-reduced-transparency: reduce) {
   .toast {
     background: var(--xeg-color-surface-solid);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 }
 

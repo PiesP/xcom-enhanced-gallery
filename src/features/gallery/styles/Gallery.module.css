@@ -71,7 +71,7 @@
 }
 
 /**
- * 갤러리 뷰어 오버레이 - 현대적 glassmorphism 디자인
+ * 갤러리 뷰어 오버레이 - 현대적 solid 디자인
  * 전체 화면을 덮는 모달 배경으로 사용됩니다.
  *
  * Features:
@@ -87,8 +87,8 @@
   inset: 0;
   z-index: var(--xeg-z-gallery-overlay);
 
-  /* OKLCH 배경 색상 + 글래스모피즘 */
-  background: var(--xeg-gallery-glass-bg);
+  /* Solid 배경 색상 */
+  background: var(--xeg-bg-solid-dark);
 
   /* 플렉스 레이아웃 - :has() 선택자로 상태 관리 */
   display: flex;
@@ -106,10 +106,6 @@
   contain: layout style;
   will-change: opacity, transform;
   transform: var(--xeg-gallery-gpu-acceleration);
-
-  /* 글래스모피즘 블러 효과 */
-  backdrop-filter: var(--xeg-gallery-glass-blur);
-  -webkit-backdrop-filter: var(--xeg-gallery-glass-blur);
 }
 
 /* 테마별 변형 */
@@ -173,7 +169,7 @@
 }
 
 /**
- * 갤러리 닫기 버튼 - 현대적 glassmorphism 디자인
+ * 갤러리 닫기 버튼 - 현대적 solid 디자인
  * Features: OKLCH 색상, CSS Nesting, CSS Logical Properties, GPU 가속
  */
 .xegCloseButton {
@@ -182,9 +178,9 @@
   inset-block-start: var(--xeg-spacing-lg);
   inset-inline-end: var(--xeg-spacing-lg);
 
-  /* OKLCH 색상 */
-  background: var(--xeg-gallery-surface-oklch);
-  border: 1px solid oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.2);
+  /* Solid 색상 */
+  background: var(--xeg-bg-solid-light);
+  border: 1px solid var(--xeg-border-light);
   border-radius: var(--xeg-radius-full);
 
   /* 크기 */
@@ -211,12 +207,8 @@
   will-change: transform, background-color;
   transform: var(--xeg-gallery-gpu-acceleration);
 
-  /* 블러 효과 */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-
-  /* 그림자 */
-  box-shadow: var(--xeg-shadow-button);
+  /* 그림자 - solid 디자인 */
+  box-shadow: var(--xeg-shadow-simple-medium);
 
   /* 트랜지션 */
   transition:
@@ -253,9 +245,9 @@
   inset-block-start: 50%;
   transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
 
-  /* OKLCH 색상 */
-  background: var(--xeg-gallery-surface-oklch);
-  border: 1px solid oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.2);
+  /* Solid 색상 */
+  background: var(--xeg-bg-solid-light);
+  border: 1px solid var(--xeg-border-light);
   border-radius: var(--xeg-radius-full);
 
   /* 크기 */
@@ -285,8 +277,8 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 
-  /* 그림자 */
-  box-shadow: var(--xeg-toolbar-shadow);
+  /* 그림자 - solid 디자인 */
+  box-shadow: var(--xeg-shadow-simple-medium);
 
   /* 트랜지션 */
   transition:
@@ -498,13 +490,13 @@
 }
 
 /**
- * 컨트롤 툴바 - 현대적 glassmorphism 디자인
+ * 컨트롤 툴바 - 현대적 solid 디자인
  * 갤러리 하단에 위치하는 컨트롤 버튼들의 컨테이너입니다.
  *
  * Features:
  * - 절대 위치로 하단 중앙 고정
  * - flexbox로 버튼들 배열
- * - 현대적 glassmorphism 배경과 블러 효과
+ * - 현대적 solid 배경
  * - 부드러운 표시/숨김 트랜지션
  * - 향상된 그림자와 테두리 효과
  */
@@ -516,13 +508,11 @@
   display: flex;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--xeg-toolbar-bg);
-  border: 1px solid var(--xeg-toolbar-border);
+  background: var(--xeg-bg-solid-light);
+  border: 1px solid var(--xeg-border-light);
   border-radius: 28px;
   z-index: var(--xeg-z-gallery-toolbar);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: var(--xeg-toolbar-shadow);
+  box-shadow: var(--xeg-shadow-simple-medium);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

@@ -45,24 +45,22 @@
   overflow-x: hidden;
 }
 
-/* 갤러리 툴바 - 현대적 glassmorphism 디자인 */
+/* 갤러리 툴바 - 현대적 solid 디자인 */
 .xeg-gallery-toolbar {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 60px;
-  background: var(--xeg-color-surface-light);
+  background: var(--xeg-bg-solid-light);
   border-bottom: 1px solid var(--xeg-color-neutral-100);
-  backdrop-filter: var(--xeg-blur-medium);
-  -webkit-backdrop-filter: var(--xeg-blur-medium);
   z-index: var(--xeg-z-gallery-toolbar);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
   color: var(--xeg-color-neutral-900);
-  box-shadow: var(--xeg-glass-shadow-light);
+  box-shadow: var(--xeg-shadow-simple-light);
 }
 
 .xeg-toolbar-section-left,
@@ -90,8 +88,6 @@
   border-radius: 8px;
   border: 1px solid var(--xeg-border-counter);
   margin-left: 16px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
@@ -103,8 +99,6 @@
   border: 1px solid var(--xeg-neutral-200);
   border-radius: 8px;
   padding: 4px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 /* 다운로드 진행률 - 통합 색상 시스템 적용 */
@@ -120,8 +114,6 @@
   min-width: 200px;
   text-align: center;
   box-shadow: 0 4px 12px var(--xeg-shadow-toolbar);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .xeg-progress-bar {
@@ -184,13 +176,13 @@
   font-size: 16px;
 }
 
-/* 네비게이션 버튼 - 현대적 glassmorphism 디자인 */
+/* 네비게이션 버튼 - 현대적 solid 디자인 */
 .xeg-gallery-nav-left,
 .xeg-gallery-nav-right {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--xeg-color-neutral-100);
+  background: var(--xeg-bg-solid-light);
   border: 1px solid var(--xeg-border-button);
   border-radius: 50%;
   width: 50px;
@@ -203,11 +195,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow:
-    0 4px 16px rgba(15, 23, 42, 0.1),
-    0 2px 8px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--xeg-shadow-simple-medium);
 }
 
 .xeg-gallery-nav-left {
@@ -253,12 +241,10 @@
   display: flex;
   gap: 8px;
   padding: 14px;
-  background: var(--xeg-bg-toolbar);
+  background: var(--xeg-bg-solid-light);
   border: 1px solid var(--xeg-color-border-primary);
   border-radius: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--xeg-shadow-toolbar);
+  box-shadow: var(--xeg-shadow-simple-medium);
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -353,14 +339,14 @@
   overflow: auto;
 }
 
-/* 다크 테마 지원 - 레거시 toolbar-button 참조 제거 */
+/* 다크 테마 지원 */
 @media (prefers-color-scheme: light) {
   .xeg-gallery-overlay {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--xeg-bg-solid-light);
   }
 
   .xeg-gallery-toolbar {
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--xeg-bg-solid-light);
     color: #1f2937;
   }
 
@@ -388,7 +374,7 @@
   }
 
   .xeg-thumbnails-container {
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--xeg-bg-solid-light);
   }
 }
 
@@ -420,4 +406,23 @@
     color: black;
     border: 2px solid black;
   }
+}
+
+/**
+ * 오류 상태 스타일
+ * 미디어 로드 실패 시 표시되는 오류 메시지 스타일입니다.
+ *
+ * Features:
+ * - 에러 색상 텍스트
+ * - solid 배경
+ * - 둥근 모서리
+ */
+.error {
+  color: var(--xeg-color-error);
+  font-size: 18px;
+  text-align: center;
+  padding: 20px;
+  background: var(--xeg-bg-solid-light);
+  border-radius: 8px;
+  box-shadow: var(--xeg-shadow-simple-medium);
 }

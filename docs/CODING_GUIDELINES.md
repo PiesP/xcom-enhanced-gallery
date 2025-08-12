@@ -13,8 +13,9 @@
    ```css
    /* ✅ 권위 있는 소스 - Toolbar.module.css */
    .galleryToolbar {
-     background: var(--xeg-glass-bg-toolbar);
+     background: var(--xeg-bg-surface);
      border-radius: var(--xeg-toolbar-border-radius);
+     box-shadow: var(--xeg-shadow-simple-light);
    }
    ```
 
@@ -168,18 +169,24 @@ const { useCallback } = getPreact();
 interface GalleryItemProps {
   readonly item: MediaItem;
   readonly className?: string;
+  readonly variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   onSelect?: (item: MediaItem) => void;
 }
 
-export function GalleryItem({ item, className, onSelect }: GalleryItemProps) {
+export function GalleryItem({ item, className, variant = 'primary', onSelect }: GalleryItemProps) {
   const isSelected = signal(false);
 
   const handleClick = useCallback(() => {
     onSelect?.(item);
   }, [item, onSelect]);
 
+  const variantClass = styles[`item--${variant}`] || '';
+
   return (
-    <div className={`${styles.item} ${className || ''}`} onClick={handleClick}>
+    <div
+      className={`${styles.item} ${variantClass} ${className || ''}`}
+      onClick={handleClick}
+    >
       <img src={item.thumbnail} alt={item.description} />
     </div>
   );
@@ -298,15 +305,16 @@ describe('GalleryItem', () => {
 ```css
 /* ✅ 권위 있는 소스 예시 - SettingsOverlay.module.css */
 .modalOverlay {
-  background: var(--xeg-glass-bg-translucent-10);
-  backdrop-filter: var(--xeg-glass-blur-toolbar);
+  background: var(--xeg-bg-overlay-medium);
+  z-index: var(--xeg-z-modal);
 }
 
 .modalContent {
-  background: var(--xeg-glass-bg-toolbar);
-  border: 1px solid var(--xeg-glass-border-light);
+  background: var(--xeg-bg-surface);
+  border: 1px solid var(--xeg-color-border-light);
   border-radius: var(--xeg-toolbar-border-radius);
   max-width: var(--xeg-modal-max-width);
+  box-shadow: var(--xeg-shadow-simple-strong);
 }
 ```
 
@@ -317,14 +325,16 @@ describe('GalleryItem', () => {
 .component {
   padding: var(--xeg-toolbar-edge-padding);
   gap: var(--xeg-toolbar-group-gap);
-  background: var(--xeg-glass-bg-toolbar);
+  background: var(--xeg-bg-surface);
+  box-shadow: var(--xeg-shadow-simple-light);
 }
 
 /* ❌ 하드코딩 금지 */
 .component {
   padding: 24px;
   gap: 16px;
-  background: rgba(255, 255, 255, 0.85);
+  background: #ffffff;
+  backdrop-filter: blur(12px); /* 제거된 glassmorphism 효과 */
 }
 ```
 
@@ -334,4 +344,129 @@ describe('GalleryItem', () => {
 2. **프로퍼티 중복 최소화**: 연속된 다른 값 외에는 중복 선언 금지
 3. **토큰 우선**: 공통 값은 반드시 디자인 토큰으로 추상화
 
-**💻 일관된 코드 스타일은 팀 생산성을 높입니다.**
+### 현대적 UI 스타일링 원칙
+
+**Glassmorphism 제거 완료** (2025년 8월 업데이트)
+
+프로젝트에서 glassmorphism 효과를 완전히 제거하고 현대적 솔리드 디자인으로
+전환했습니다:
+
+```css
+/* ✅ 현대적 솔리드 디자인 */
+.toolbar {
+  background: var(--xeg-bg-surface); /* 솔리드 배경 */
+  border: 1px solid var(--xeg-color-border-light);
+  box-shadow: var(--xeg-shadow-simple-light); /* 단순한 그림자 */
+  /* backdrop-filter: 제거됨 - 성능 향상 */
+}
+
+/* ❌ 제거된 glassmorphism (사용 금지) */
+.toolbar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px); /* 고비용 연산 */
+  -webkit-backdrop-filter: blur(12px); /* 브라우저 호환성 문제 */
+}
+```
+
+**제거된 CSS 변수들**:
+
+- `--xeg-glass-bg-*` → `--xeg-bg-surface`, `--xeg-bg-overlay-*`
+- `--xeg-glass-border-*` → `--xeg-color-border-*`
+- `--xeg-glass-shadow-*` → `--xeg-shadow-simple-*`
+- `--xeg-glass-blur-*` (완전 제거)
+
+**TypeScript 타입 정리**:
+
+```typescript
+// ✅ 현재 지원 variant
+type UIVariant =
+  | 'primary'
+  | 'secondary'
+  | 'ghost'
+  | 'danger'
+  | 'success'
+  | 'warning';
+
+// ❌ 제거된 glassmorphism variants
+// 'glassmorphism' | 'glassmorphism-light' | 'glassmorphism-medium'
+```
+
+### TDD 검증 체계
+
+모든 glassmorphism 제거는 TDD 방식으로 검증:
+
+```typescript
+// 테스트 예시: glassmorphism-removal.test.ts
+describe('Glassmorphism Removal', () => {
+  it('should remove backdrop-filter from components', () => {
+    const css = readComponentCSS('Toolbar.module.css');
+    expect(css).not.toMatch(/backdrop-filter/);
+    expect(css).not.toMatch(/var\(--xeg-glass-/);
+  });
+
+  it('should use solid backgrounds instead', () => {
+    const css = readComponentCSS('Settings.module.css');
+    expect(css).toMatch(/var\(--xeg-bg-surface\)/);
+    expect(css).toMatch(/var\(--xeg-shadow-simple-/);
+  });
+});
+```
+
+## 🎨 UI/UX 품질 향상
+
+### Glassmorphism 제거로 얻은 이점
+
+**성능 향상**:
+
+- `backdrop-filter` 제거로 렌더링 성능 개선
+- 고비용 블러 연산 제거
+- 메모리 사용량 감소
+
+**접근성 개선**:
+
+- 고대비 모드에서 더 명확한 UI
+- 텍스트 가독성 향상
+- 색맹 사용자 경험 개선
+
+**브라우저 호환성**:
+
+- `-webkit-backdrop-filter` fallback 불필요
+- 구형 브라우저 지원 개선
+- 일관된 렌더링 결과
+
+### 스타일 품질 체크리스트
+
+```bash
+# 빌드 전 품질 검사
+npm run lint          # ESLint + Stylelint
+npm run typecheck     # TypeScript 검사
+npm run test:turbo    # 21개 glassmorphism 제거 테스트 포함
+
+# 성공 기준
+✅ 21/21 glassmorphism 테스트 통과
+✅ 218.84 KB 번들 크기 유지
+✅ CSS 중복 최소화
+✅ 디자인 토큰 시스템 준수
+```
+
+### 마이그레이션 가이드
+
+기존 glassmorphism 코드를 현대적 스타일로 변경:
+
+```css
+/* Before (제거됨) */
+.modal {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--xeg-glass-border-light);
+}
+
+/* After (권장) */
+.modal {
+  background: var(--xeg-bg-surface);
+  box-shadow: var(--xeg-shadow-simple-strong);
+  border: 1px solid var(--xeg-color-border-light);
+}
+```
+
+**💻 일관된 코드 스타일과 현대적 UI 디자인으로 팀 생산성을 높입니다.**

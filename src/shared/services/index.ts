@@ -63,7 +63,7 @@ export {
 // 🟢 GREEN: StyleManager 직접 사용 (style-service.ts 제거 완료)
 export { default as StyleService, default as styleService } from '@shared/styles/style-service';
 export { setCSSVariable, getCSSVariable, setCSSVariables } from '@shared/styles/style-service';
-export type { GlassmorphismIntensity, ComponentState } from '@shared/styles/style-service';
+export type { ComponentState } from '@shared/styles/style-service';
 
 // 성능 관련 통합 서비스
 export {
@@ -142,9 +142,7 @@ export type {
 
 // 스타일 서비스 타입들 (통합된 타입들)
 export type {
-  GlassmorphismIntensity as UnifiedGlassmorphismIntensity,
   // Theme as UnifiedTheme은 theme-service에서 직접 import하도록 변경
-  GlassmorphismConfig,
   ComponentState as UnifiedComponentState,
 } from '@shared/styles/style-service';
 

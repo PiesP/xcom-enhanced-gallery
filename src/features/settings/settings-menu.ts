@@ -382,10 +382,10 @@ function getCurrentTheme(): Theme {
 // 테마에 따른 동적 스타일 적용
 function applyThemeBasedStyles(style: CSSStyleDeclaration, theme: Theme, modal: HTMLElement): void {
   if (theme === 'dark') {
-    style.background = 'var(--xeg-glass-bg-dark, rgba(21, 32, 43, 0.95))';
+    style.background = 'var(--xeg-bg-dark, rgba(21, 32, 43, 0.95))';
     style.color = 'var(--xeg-color-text-primary, rgba(255, 255, 255, 0.9))';
   } else {
-    style.background = 'var(--xeg-glass-bg-light, rgba(255, 255, 255, 0.95))';
+    style.background = 'var(--xeg-bg-light, rgba(255, 255, 255, 0.95))';
     style.color = 'var(--xeg-color-text-primary, rgba(0, 0, 0, 0.9))';
   }
 
@@ -459,8 +459,7 @@ export function applyBasicModalStyles(modal: HTMLElement): void {
 
     // 모달 컨테이너 기본 스타일
     style.borderRadius = 'var(--xeg-radius-lg, 8px)';
-    style.boxShadow = 'var(--xeg-glass-shadow-strong, 0 10px 30px rgba(0,0,0,.35))';
-    style.backdropFilter = 'var(--xeg-glass-blur-medium, blur(16px))';
+    style.boxShadow = 'var(--xeg-shadow-simple-strong, 0 10px 30px rgba(0,0,0,.35))';
     style.border = '1px solid var(--xeg-border-light, rgba(255, 255, 255, 0.1))';
 
     // 포커스 가능

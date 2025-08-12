@@ -213,7 +213,6 @@ export class ThemeService {
 
       // 기존 테마 클래스 제거 (native 클래스도 제거)
       documentElement.classList.remove('xeg-theme-light', 'xeg-theme-dark');
-      documentElement.classList.remove('xeg-theme-glassmorphism'); // 스타일 클래스도 제거
 
       // 새 테마 클래스 추가
       documentElement.classList.add(`xeg-theme-${theme}`);

@@ -10,20 +10,16 @@
   align-items: center;
   justify-content: center;
   z-index: var(--xeg-z-modal);
-  /* 툴바 글래스 계열과 조화되는 오버레이 */
-  background: var(--xeg-glass-bg-translucent-10);
-  backdrop-filter: var(--xeg-glass-blur-toolbar);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-toolbar);
+  /* 솔리드 배경 적용 */
+  background: var(--xeg-color-overlay-medium);
   animation: fadeIn 0.2s ease-out;
 }
 
 .modalContent {
-  /* 툴바와 동일한 글래스모피즘 시스템 적용 */
-  background: var(--xeg-glass-bg-toolbar);
-  backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
+  /* 솔리드 배경 적용 */
+  background: var(--xeg-bg-solid-light);
   border: 2px solid var(--xeg-toolbar-border);
-  box-shadow: var(--xeg-glass-shadow-toolbar);
+  box-shadow: var(--xeg-shadow-simple-strong);
   border-radius: var(--xeg-toolbar-border-radius);
   width: 90vw;
   max-width: var(--xeg-modal-max-width); /* 토큰 사용 */
@@ -38,7 +34,7 @@
   align-items: center;
   /* 툴바 엣지 패딩 토큰 재사용 */
   padding: var(--xeg-toolbar-edge-padding);
-  border-bottom: 1px solid var(--xeg-glass-border-light);
+  border-bottom: 1px solid var(--xeg-color-border-light);
 }
 
 .modalTitle {
@@ -153,7 +149,7 @@
   color: var(--xeg-color-text-secondary);
   margin: 0 0 var(--xeg-spacing-sm) 0;
   padding-bottom: var(--xeg-spacing-sm);
-  border-bottom: 1px solid var(--xeg-glass-border-light);
+  border-bottom: 1px solid var(--xeg-color-border-light);
 }
 
 /* PC 친화적 설정 행 간격 증가 - 토큰 사용 */
@@ -176,7 +172,7 @@
 .settingRow input[type='number'] {
   background-color: var(--xeg-color-surface-light);
   color: var(--xeg-color-text-primary);
-  border: 1px solid var(--xeg-glass-border-light);
+  border: 1px solid var(--xeg-color-border-light);
   border-radius: var(--xeg-radius-md);
   padding: var(--xeg-form-control-padding, 12px 16px);
   font-size: var(--xeg-font-size-sm);
@@ -224,7 +220,7 @@
   margin: 0;
   width: 1.15em;
   height: 1.15em;
-  border: 1px solid var(--xeg-glass-border-light);
+  border: 1px solid var(--xeg-color-border-light);
   border-radius: var(--xeg-radius-sm);
   transform: translateY(-0.075em);
   display: grid;
@@ -276,7 +272,7 @@
   font-family: 'Courier New', Courier, monospace;
   background-color: var(--xeg-color-surface-inset);
   color: var(--xeg-color-text-primary);
-  border: 1px solid var(--xeg-glass-border-light);
+  border: 1px solid var(--xeg-color-border-light);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 14px;
@@ -301,7 +297,7 @@
 
 .tokenHelpers button {
   background: var(--xeg-color-surface-light);
-  border: 1px solid var(--xeg-glass-border-light);
+  border: 1px solid var(--xeg-color-border-light);
   color: var(--xeg-color-text-secondary);
   font-size: 12px;
   padding: 4px 8px;

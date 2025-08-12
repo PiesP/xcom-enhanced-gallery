@@ -203,7 +203,7 @@ export const SIZE_LIMITS = {
 } as const;
 
 // ================================
-// 색상 토큰 시스템
+// 색상 토큰 시스템 (글래스모피즘 제거)
 // ================================
 
 export const COLOR_TOKENS = {
@@ -216,14 +216,6 @@ export const COLOR_TOKENS = {
     STRONG: 0.8,
     OPAQUE: 0.95,
     SOLID: 1,
-  } as const,
-
-  /** 글래스모피즘 배경 투명도 */
-  GLASS: {
-    ULTRA_LIGHT: 0.95,
-    LIGHT: 0.85,
-    MEDIUM: 0.65,
-    DARK: 0.85,
   } as const,
 
   /** 오버레이 투명도 */
@@ -595,7 +587,7 @@ export const DEFAULT_SETTINGS = {
   download: {
     filenamePattern: 'tweet-id' as const,
     // 사용자 지정 파일명 템플릿 (filenamePattern이 'custom'일 때 사용)
-    // 확장자를 포함하지 않으면 자동으로 .{ext}가 덧붙습니다
+    // 확장자를 포함하지 않으면 자동으로 .{ext}가 덧붙입니다
     customTemplate: '{user}_{tweetId}_{index}',
     imageQuality: 'original' as const,
     maxConcurrentDownloads: 4,

@@ -85,16 +85,7 @@ export interface SizedComponentProps extends BaseComponentProps {
  */
 export interface VariantComponentProps extends BaseComponentProps {
   /** 색상/스타일 변형 */
-  variant?:
-    | 'primary'
-    | 'secondary'
-    | 'ghost'
-    | 'danger'
-    | 'success'
-    | 'warning'
-    | 'glassmorphism'
-    | 'glassmorphism-light'
-    | 'glassmorphism-medium';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning';
 }
 
 /**

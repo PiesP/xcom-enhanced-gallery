@@ -5,7 +5,7 @@
  */
 
 // 아키텍처 호환성: Core는 infrastructure만 의존
-export type GlassmorphismIntensity = 'none' | 'subtle' | 'medium' | 'high';
+// GlassmorphismIntensity 타입 제거됨 (deprecated)
 
 /**
  * Core 레이어용 기본 CSS 유틸리티 (infrastructure 레벨)
@@ -52,38 +52,8 @@ export function updateComponentState(
   });
 }
 
-/**
- * Core 레이어용 글래스모피즘 적용 (setGlassmorphism의 별칭)
- */
-export function applyGlassmorphism(
-  element: HTMLElement,
-  intensity: GlassmorphismIntensity = 'medium'
-): void {
-  setGlassmorphism(element, intensity);
-}
-export function setGlassmorphism(
-  element: HTMLElement,
-  intensity: GlassmorphismIntensity = 'medium'
-): void {
-  if (intensity === 'none') {
-    element.style.background = '';
-    element.style.backdropFilter = '';
-    element.style.willChange = '';
-    return;
-  }
-
-  // 인텐시티별 설정
-  const configs = {
-    subtle: { blur: '4px', opacity: '0.05' },
-    medium: { blur: '8px', opacity: '0.1' },
-    high: { blur: '16px', opacity: '0.2' },
-  };
-
-  const config = configs[intensity];
-  element.style.background = `rgba(255, 255, 255, ${config.opacity})`;
-  element.style.backdropFilter = `blur(${config.blur})`;
-  element.style.willChange = 'backdrop-filter, transform';
-}
+// 🟢 GREEN: glassmorphism 함수들 제거 완료 (TDD Phase 3)
+// setGlassmorphism, applyGlassmorphism 함수들이 더 이상 필요하지 않음
 
 // 🟢 GREEN: CoreStyleManager 제거 완료 (TDD Phase 2)
 // 모든 기능이 개별 함수로 마이그레이션됨

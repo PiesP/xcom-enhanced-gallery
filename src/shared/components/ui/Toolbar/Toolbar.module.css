@@ -34,13 +34,11 @@
     transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
     box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
-  /* 글래스모피즘 스타일링 - 개선된 배경 */
-  background: var(--xeg-glass-bg-toolbar);
-  border: 2px solid var(--xeg-toolbar-border); /* 더 명확한 경계 */
+  /* 단순화된 스타일링 - 글래스모피즘 효과 제거 */
+  background: var(--xeg-bg-toolbar);
+  border: 2px solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-toolbar-border-radius); /* 16px */
-  box-shadow: var(--xeg-glass-shadow-toolbar);
-  backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-toolbar) saturate(120%);
+  box-shadow: var(--xeg-toolbar-shadow);
   color: var(--xeg-toolbar-text);
 
   /* 최적화 */
@@ -52,7 +50,7 @@
 }
 
 .galleryToolbar:hover {
-  box-shadow: var(--xeg-glass-shadow-strong);
+  box-shadow: var(--xeg-shadow-simple-strong);
   transform: translateX(-50%) translateY(-1px); /* 복잡한 transform 효과 제거 */
   border-color: var(--xeg-color-primary-alpha-40);
 }
@@ -61,7 +59,7 @@
 
 /* 라이트 모드 - 네이티브 스타일 통합 */
 [data-theme='light'] .galleryToolbar {
-  background: var(--xeg-glass-bg-toolbar);
+  background: var(--xeg-bg-toolbar);
   color: var(--xeg-toolbar-text);
 
   /* X.com 스타일 요소 통합 */
@@ -70,7 +68,7 @@
 
 /* 다크 모드 - 네이티브 스타일 통합 */
 [data-theme='dark'] .galleryToolbar {
-  background: var(--xeg-glass-bg-toolbar);
+  background: var(--xeg-bg-toolbar);
   color: var(--xeg-toolbar-text);
 
   /* X.com 스타일 요소 통합 */
@@ -97,7 +95,7 @@
   pointer-events: auto !important;
 
   /* 기본 상태에서 부드러운 그림자 */
-  box-shadow: var(--xeg-toolbar-glass-shadow);
+  box-shadow: var(--xeg-toolbar-shadow);
 }
 
 .galleryToolbar[data-state='loading'] {
@@ -108,7 +106,7 @@
   pointer-events: auto !important;
 
   /* 로딩 상태 시각적 피드백 */
-  background: linear-gradient(135deg, var(--xeg-toolbar-glass-bg) 0%, rgba(59, 130, 246, 0.1) 100%);
+  background: linear-gradient(135deg, var(--xeg-bg-toolbar) 0%, rgba(59, 130, 246, 0.1) 100%);
   border-color: rgba(59, 130, 246, 0.3);
 }
 
@@ -120,9 +118,9 @@
   pointer-events: auto !important;
 
   /* 다운로드 상태 시각적 피드백 - 성공적인 녹색 톤 */
-  background: linear-gradient(135deg, var(--xeg-toolbar-glass-bg) 0%, rgba(16, 185, 129, 0.1) 100%);
+  background: linear-gradient(135deg, var(--xeg-bg-toolbar) 0%, rgba(16, 185, 129, 0.1) 100%);
   border-color: rgba(16, 185, 129, 0.3);
-  box-shadow: var(--xeg-glass-shadow-strong);
+  box-shadow: var(--xeg-shadow-simple-strong);
 }
 
 .galleryToolbar[data-state='error'] {
@@ -133,9 +131,9 @@
   pointer-events: auto !important;
 
   /* 에러 상태 시각적 피드백 - 경고적인 빨간색 톤 */
-  background: linear-gradient(135deg, var(--xeg-toolbar-glass-bg) 0%, rgba(239, 68, 68, 0.1) 100%);
+  background: linear-gradient(135deg, var(--xeg-bg-toolbar) 0%, rgba(239, 68, 68, 0.1) 100%);
   border-color: rgba(239, 68, 68, 0.4);
-  box-shadow: var(--xeg-glass-shadow-strong);
+  box-shadow: var(--xeg-shadow-simple-strong);
   transform: translateX(-50%) translateY(-1px); /* 미세한 떠있는 효과 */
 }
 
@@ -190,9 +188,8 @@
   /* 그룹 내부 패딩은 상하/좌우 동일 값 적용 */
   padding: var(--xeg-toolbar-group-padding);
   border-radius: var(--xeg-radius-lg);
-  background: var(--xeg-surface-glass);
+  background: var(--xeg-bg-surface);
   border: 1px solid var(--xeg-border-light);
-  backdrop-filter: var(--xeg-glass-blur-light);
 }
 
 /* 인접한 그룹 박스 사이에 명확한 간격 제공 */
@@ -259,41 +256,6 @@
 /* ♿ 접근성 개선 - 포커스 상태 */
 /* Focus ring unified by shared Button. */
 
-/* 🧭 네비게이션 섹션 - UX 최적화 */
-.toolbarNavigation {
-  display: flex;
-  align-items: center;
-  gap: var(--xeg-spacing-sm);
-}
-
-/* 🧭 네비게이션 버튼 - 향상된 사용성 */
-.navButton {
-  /* 기본 버튼 스타일 확장 */
-  background: var(--xeg-button-bg);
-  border: 2px solid var(--xeg-button-border);
-  color: var(--xeg-button-text);
-
-  /* 네비게이션 특화 스타일 */
-  width: var(--xeg-button-size);
-  height: var(--xeg-button-size);
-  min-width: var(--xeg-touch-target-min);
-  min-height: var(--xeg-touch-target-min);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--xeg-radius-lg);
-
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  cursor: pointer;
-
-  /* 글래스모피즘 효과 */
-  backdrop-filter: var(--xeg-glass-blur-medium) saturate(150%);
-  box-shadow: var(--xeg-glass-shadow-subtle);
-}
-
-/* 제거됨: 네비게이션 버튼 전용 클래스 */
-
 .currentIndex {
   color: var(--xeg-color-primary);
   font-weight: 700;
@@ -305,14 +267,13 @@
 .fitModeGroup {
   display: flex;
   gap: var(--xeg-toolbar-button-gap);
-  background: var(--xeg-surface-glass);
+  background: var(--xeg-bg-surface);
   border-radius: var(--xeg-radius-lg);
   padding: var(--xeg-spacing-xs);
   border: 2px solid var(--xeg-border-light);
 
-  /* 글래스모피즘 효과 */
-  backdrop-filter: var(--xeg-glass-blur-light);
-  box-shadow: var(--xeg-glass-shadow-subtle);
+  /* 단순화된 배경 효과 */
+  box-shadow: var(--xeg-shadow-simple-subtle);
 }
 
 .fitButton {
@@ -353,7 +314,7 @@
   background: var(--xeg-color-primary);
   color: white;
   border-color: var(--xeg-color-primary);
-  box-shadow: var(--xeg-glass-shadow-medium);
+  box-shadow: var(--xeg-shadow-simple-medium);
   transform: scale(1.02);
 }
 
@@ -386,6 +347,8 @@
   border-color: var(--xeg-color-success-light);
   /* transform 효과 제거 */
 }
+
+/* 고대비 접근성 지원 */
 
 .downloadSpinner {
   position: absolute;
@@ -420,8 +383,6 @@
   .galleryToolbar {
     background: rgb(255, 255, 255);
     border: 2px solid rgb(0, 0, 0);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   }
 
@@ -463,8 +424,7 @@
 
 /* 감소된 모션 */
 @media (prefers-reduced-motion: reduce) {
-  .progressFill,
-  .downloadSpinner {
+  .progressFill {
     transition: none;
     animation: none;
   }

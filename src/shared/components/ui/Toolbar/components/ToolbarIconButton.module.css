@@ -11,10 +11,10 @@
   position: relative;
   gap: var(--xeg-spacing-xs);
 
-  /* 크기 및 간격 - 접근성 고려 */
+  /* 크기 및 간격 - 개선된 패딩으로 접근성 향상 */
   min-width: var(--xeg-touch-target-min);
   min-height: var(--xeg-touch-target-min);
-  padding: var(--xeg-spacing-xs);
+  padding: var(--xeg-toolbar-button-padding); /* 12px 16px - 개선된 패딩 */
 
   /* 타이포그래피 */
   font-family: inherit;
@@ -22,16 +22,12 @@
   font-weight: 500;
   line-height: 1;
 
-  /* 기본 스타일 */
+  /* 기본 스타일 - 글래스모피즘 효과 제거 */
   background: var(--xeg-button-bg);
   color: var(--xeg-button-text);
-  border: 1px solid var(--xeg-glass-border-light);
+  border: 1px solid var(--xeg-border-light);
   border-radius: var(--xeg-radius-md);
-
-  /* 글래스모피즘 효과 */
-  backdrop-filter: var(--xeg-glass-blur-light);
-  -webkit-backdrop-filter: var(--xeg-glass-blur-light);
-  box-shadow: var(--xeg-glass-shadow-light);
+  box-shadow: var(--xeg-shadow-simple-light);
 
   /* 인터랙션 */
   cursor: pointer;
@@ -47,8 +43,8 @@
 .toolbarIconButton:hover:not(:disabled) {
   background: var(--xeg-button-bg-hover);
   border-color: var(--xeg-color-primary-alpha-40);
-  box-shadow: var(--xeg-glass-shadow-medium);
-  transform: translateY(-1px) translateZ(0);
+  box-shadow: var(--xeg-shadow-simple-medium);
+  transform: translateY(-1px);
 }
 
 /* 포커스 상태 */
@@ -61,7 +57,7 @@
 /* 활성 상태 */
 .toolbarIconButton:active:not(:disabled) {
   transform: translateY(0) scale(0.98) translateZ(0);
-  box-shadow: var(--xeg-glass-shadow-light);
+  box-shadow: var(--xeg-shadow-simple-light);
 }
 
 /* 비활성 상태 */
@@ -184,11 +180,7 @@
 .primary:hover:not(:disabled) {
   background: var(--xeg-color-primary-dark);
   border-color: var(--xeg-color-primary-dark);
-  box-shadow: var(--xeg-glass-shadow-strong);
-}
-
-.secondary {
-  /* 기본 스타일을 사용하므로 추가 스타일링 불필요 */
+  box-shadow: var(--xeg-shadow-simple-strong);
 }
 
 .danger {
@@ -200,7 +192,7 @@
 .danger:hover:not(:disabled) {
   background: var(--xeg-color-error-alpha-20);
   border-color: var(--xeg-color-error);
-  box-shadow: var(--xeg-glass-shadow-medium);
+  box-shadow: var(--xeg-shadow-simple-medium);
 }
 
 /* 애니메이션 */
