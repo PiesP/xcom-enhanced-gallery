@@ -7,6 +7,7 @@
  */
 
 import type { ViewMode } from '@shared/types';
+import { PERCENTAGE, FRACTIONS } from '../../../../constants';
 import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import { memo } from '@shared/utils/optimization/memo';
 import {
@@ -130,15 +131,15 @@ function ToolbarCore({
       // 더 정확한 배경 감지를 위한 다중 포인트 샘플링
       const samplePoints = [
         {
-          x: rect.left + rect.width * 0.25,
+          x: rect.left + rect.width * FRACTIONS.QUARTER,
           y: rect.top + rect.height / 2,
         },
         {
-          x: rect.left + rect.width * 0.5,
+          x: rect.left + rect.width * FRACTIONS.HALF,
           y: rect.top + rect.height / 2,
         },
         {
-          x: rect.left + rect.width * 0.75,
+          x: rect.left + rect.width * FRACTIONS.THREE_QUARTERS,
           y: rect.top + rect.height / 2,
         },
       ];
@@ -331,7 +332,7 @@ function ToolbarCore({
                       className: styles.mediaCounter,
                       'aria-live': 'polite',
                       'data-gallery-element': 'counter',
-                      title: `${totalCount > 0 ? Math.round(((currentIndex + 1) / totalCount) * 100) : 0}%`,
+                      title: `${totalCount > 0 ? Math.round(((currentIndex + 1) / totalCount) * PERCENTAGE.MULTIPLIER) : 0}%`,
                       key: 'counter-text-left',
                     },
                     [
@@ -350,7 +351,7 @@ function ToolbarCore({
                     h('div', {
                       className: styles.progressFill,
                       style: {
-                        width: `${totalCount > 0 ? ((currentIndex + 1) / totalCount) * 100 : 0}%`,
+                        width: `${totalCount > 0 ? ((currentIndex + 1) / totalCount) * PERCENTAGE.MULTIPLIER : 0}%`,
                       },
                       key: 'progress-fill-left',
                     })

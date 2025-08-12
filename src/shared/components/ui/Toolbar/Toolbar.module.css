@@ -35,11 +35,11 @@
     box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
   /* 단순화된 스타일링 - 글래스모피즘 효과 제거 */
-  background: var(--xeg-bg-toolbar);
-  border: 2px solid var(--xeg-toolbar-border);
-  border-radius: var(--xeg-toolbar-border-radius); /* 16px */
-  box-shadow: var(--xeg-toolbar-shadow);
-  color: var(--xeg-toolbar-text);
+  background: var(--xeg-bg-toolbar, #ffffff); /* fallback: 불투명 흰색 */
+  border: 2px solid var(--xeg-toolbar-border, #e5e7eb);
+  border-radius: var(--xeg-toolbar-border-radius, 16px);
+  box-shadow: var(--xeg-toolbar-shadow, 0 4px 6px rgba(0, 0, 0, 0.1));
+  color: var(--xeg-toolbar-text, #111827);
 
   /* 최적화 */
   user-select: none;
@@ -381,9 +381,9 @@
 /* 고대비 모드 - 시인성 개선 */
 @media (prefers-contrast: high) {
   .galleryToolbar {
-    background: rgb(255, 255, 255);
-    border: 2px solid rgb(0, 0, 0);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    background: var(--xeg-color-solid-light);
+    border: 2px solid var(--xeg-color-solid-dark);
+    box-shadow: 0 4px 20px var(--xeg-black-alpha-50);
   }
 
   /* 버튼 고대비 스타일은 공통 Button.module.css에서 처리됩니다 */
@@ -391,8 +391,8 @@
 
   /* 다크 테마에서 고대비 모드 */
   [data-theme='dark'] .galleryToolbar {
-    background: rgb(0, 0, 0);
-    border: 2px solid rgb(255, 255, 255);
+    background: var(--xeg-color-solid-dark);
+    border: 2px solid var(--xeg-color-solid-light);
   }
 }
 
@@ -400,8 +400,8 @@
 
 @media (prefers-color-scheme: dark) and (prefers-contrast: high) {
   .galleryToolbar {
-    background: rgb(0, 0, 0);
-    border: 2px solid rgb(255, 255, 255);
+    background: var(--xeg-color-solid-dark);
+    border: 2px solid var(--xeg-color-solid-light);
   }
   /* 버튼 고대비(다크) 스타일은 공통 Button.module.css에서 처리됩니다 */
 }
@@ -409,16 +409,16 @@
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
-    background: rgb(255, 255, 255);
+    background: var(--xeg-bg-solid-light);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.15),
-      0 2px 8px rgba(0, 0, 0, 0.1);
+      0 4px 16px var(--xeg-black-alpha-15),
+      0 2px 8px var(--xeg-black-alpha-10);
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: rgb(30, 41, 59);
+    background: var(--xeg-bg-solid-dark);
   }
 }
 
@@ -437,21 +437,21 @@
 
 /* 동적 고대비 모드 - 완전 불투명 배경 */
 .galleryToolbar.highContrast {
-  background: rgba(255, 255, 255, 1) !important; /* 완전 불투명 */
-  border: 2px solid rgba(0, 0, 0, 0.3) !important;
+  background: var(--xeg-bg-solid-light) !important; /* 완전 불투명 */
+  border: 2px solid var(--xeg-black-alpha-30) !important;
   backdrop-filter: none !important; /* 블러 효과 제거 */
   -webkit-backdrop-filter: none !important;
   box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    0 4px 20px var(--xeg-black-alpha-40),
+    0 2px 8px var(--xeg-black-alpha-20) !important;
 }
 
 [data-theme='dark'] .galleryToolbar.highContrast {
-  background: rgba(15, 23, 42, 1) !important; /* 완전 불투명 */
-  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  background: var(--xeg-bg-solid-dark) !important; /* 완전 불투명 */
+  border: 2px solid var(--xeg-white-alpha-30) !important;
   box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.6),
-    0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    0 4px 20px var(--xeg-black-alpha-60),
+    0 2px 8px var(--xeg-black-alpha-40) !important;
 }
 
 /* 고대비 모드에서 버튼 시인성 개선 */

@@ -200,27 +200,34 @@
   transform: translateZ(0);
   backface-visibility: hidden;
 
-  /* 그라디언트 배경 (호버 시에만 표시) */
-  background: transparent;
-}
-
-/* 툴바 표시 시 배경 그라디언트 */
-.toolbarContainer:hover {
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, black 80%, transparent) 0%,
-    color-mix(in srgb, black 40%, transparent) 70%,
-    transparent 100%
-  );
+  /* 🔥 수정: 기본적으로 배경 표시 (호버 시에만 표시하는 방식 제거) */
+  background: var(--xeg-toolbar-overlay-gradient);
   backdrop-filter: var(--xeg-blur-medium);
   -webkit-backdrop-filter: var(--xeg-blur-medium);
+
+  /* 부드러운 트랜지션 추가 */
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    backdrop-filter var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+/* 🔥 수정: 호버 시 더 강한 배경 효과 (기본 배경에서 강화) */
+.toolbarContainer:hover {
+  background: var(--xeg-toolbar-overlay-gradient-strong, var(--xeg-toolbar-overlay-gradient));
+  backdrop-filter: var(--xeg-blur-strong, var(--xeg-blur-medium));
+  -webkit-backdrop-filter: var(--xeg-blur-strong, var(--xeg-blur-medium));
   padding-block-end: var(--xeg-spacing-gallery);
+
+  /* 호버 시 더 명확한 경계선 추가 */
+  border-bottom: 1px solid var(--xeg-color-border-subtle, rgba(255, 255, 255, 0.1));
 }
 
 /* 감소된 모션 지원 */
 @media (prefers-reduced-motion: reduce) {
   .toolbarContainer {
-    transition: background 0.1s ease;
+    transition:
+      background-color 0.1s ease,
+      backdrop-filter 0.1s ease;
   }
 }
 
@@ -442,15 +449,15 @@
 /* 고대비 모드 지원 - 향상된 가시성 */
 @media (prefers-contrast: high) {
   .toolbarWrapper {
-    background: rgba(0, 0, 0, 0.95);
-    border: 2px solid white;
+    background: var(--xeg-overlay-dark-primary);
+    border: 2px solid var(--xeg-color-solid-light);
     border-radius: 4px;
     margin: 4px;
   }
 
   /* 고대비 모드에서 호버 영역 시각화 */
   .toolbarHoverZone:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--xeg-white-alpha-10);
   }
 }
 

@@ -2,6 +2,17 @@
  * @fileoverview 통합 상수 파일
  */
 
+// ================================
+// 단위 변환 기본 상수 (매직 넘버 제거용) - 먼저 선언
+// ================================
+
+/** 시간 단위 변환 */
+export const TIME_UNITS = {
+  MILLISECONDS_PER_SECOND: 1000,
+  SECONDS_PER_MINUTE: 60,
+  MINUTES_PER_HOUR: 60,
+} as const;
+
 // 애플리케이션 기본 설정
 export const APP_CONFIG = {
   VERSION: '3.1.0',
@@ -15,7 +26,7 @@ export const TIMING = {
   CLICK_TIMEOUT: 5000,
   LOAD_TIMEOUT: 30000,
   URL_CLEANUP_DELAY: 100,
-  CACHE_CLEANUP_INTERVAL: 60 * 1000,
+  CACHE_CLEANUP_INTERVAL: TIME_UNITS.SECONDS_PER_MINUTE * TIME_UNITS.MILLISECONDS_PER_SECOND,
 
   // UI 인터랙션 타이밍
   TOOLBAR_HIDE_DELAY: 300,
@@ -54,8 +65,35 @@ export const SELECTORS = {
   GALLERY_CONTAINER: '.xeg-gallery-container',
 } as const;
 
+/** 메모리 단위 변환 */
+export const MEMORY_UNITS = {
+  BYTES_PER_KILOBYTE: 1024,
+  get BYTES_PER_MEGABYTE() {
+    return this.BYTES_PER_KILOBYTE * this.BYTES_PER_KILOBYTE;
+  },
+} as const;
+
+/** 백분율 계산 */
+export const PERCENTAGE = {
+  MULTIPLIER: 100,
+  FULL: 100,
+} as const;
+
+/** 분수 계산 상수 */
+export const FRACTIONS = {
+  QUARTER: 0.25,
+  HALF: 0.5,
+  THREE_QUARTERS: 0.75,
+} as const;
+
+/** 메모리 임계값 MB 단위 */
+export const MEMORY_THRESHOLDS_MB = {
+  WARNING: 50,
+  CRITICAL: 100,
+} as const;
+
 // ================================
-// 미디어 관련 상수
+// 플랫폼 상수
 // ================================
 
 export const MEDIA = {
@@ -172,8 +210,8 @@ export const PERFORMANCE = {
   DEFAULT_THREADS: 6,
 
   /** 메모리 임계값 */
-  MEMORY_WARNING_THRESHOLD: 50 * 1024 * 1024, // 50MB
-  MEMORY_CRITICAL_THRESHOLD: 100 * 1024 * 1024, // 100MB
+  MEMORY_WARNING_THRESHOLD: MEMORY_THRESHOLDS_MB.WARNING * MEMORY_UNITS.BYTES_PER_MEGABYTE, // 50MB
+  MEMORY_CRITICAL_THRESHOLD: MEMORY_THRESHOLDS_MB.CRITICAL * MEMORY_UNITS.BYTES_PER_MEGABYTE, // 100MB
 
   /** 성능 테스트 반복 횟수 */
   PERFORMANCE_TEST_ITERATIONS: 100,
@@ -638,3 +676,147 @@ export type FileExtension = (typeof MEDIA.EXTENSIONS)[keyof typeof MEDIA.EXTENSI
 export type AppServiceKey = (typeof SERVICE_KEYS)[keyof typeof SERVICE_KEYS];
 export type EventType = (typeof EVENTS)[keyof typeof EVENTS];
 export type ViewMode = (typeof VIEW_MODES)[number];
+
+// ================================
+// 매직 넘버 상수 (리팩토링)
+// ================================
+
+/** 크기 및 길이 관련 상수 */
+export const SIZE_CONSTANTS = {
+  // 가장 많이 사용되는 크기 값들
+  HUNDRED: 100,
+  TEN: 10,
+  FIFTY: 50,
+  TWENTY: 20,
+  SIXTEEN: 16,
+  FIVE: 5,
+
+  // 특수 크기 값들
+  THIRTY_SIX: 36,
+  NINE: 9,
+  NEGATIVE_FIVE: -5,
+  FORTY: 40,
+  EIGHT: 8,
+  FOUR: 4,
+  THREE: 3,
+  TWO: 2,
+} as const;
+
+/** 메모리 관련 상수 */
+export const MEMORY_SIZE_CONSTANTS = {
+  BYTES_PER_KB: 1024,
+  MEGABYTES_50: 50,
+  MEGABYTES_100: 100,
+  MEGABYTES_500: 500,
+  KILOBYTES_100: 100,
+  KILOBYTES_150: 150,
+  KILOBYTES_500: 500,
+} as const;
+
+/** 시간 관련 상수 (밀리초) */
+export const TIME_CONSTANTS = {
+  ONE_SECOND: 1000,
+  TWO_SECONDS: 2000,
+  THREE_SECONDS: 3000,
+  FIVE_SECONDS: 5000,
+  TEN_SECONDS: 10000,
+  FIFTEEN_SECONDS: 15000,
+  THIRTY_SECONDS: 30000,
+
+  // 분 단위 (밀리초 변환)
+  FIVE_MINUTES:
+    SIZE_CONSTANTS.FIVE * TIME_UNITS.SECONDS_PER_MINUTE * TIME_UNITS.MILLISECONDS_PER_SECOND,
+  TEN_MINUTES:
+    SIZE_CONSTANTS.TEN * TIME_UNITS.SECONDS_PER_MINUTE * TIME_UNITS.MILLISECONDS_PER_SECOND,
+
+  // 특수 타이밍
+  MILLISECONDS_100: 100,
+  MILLISECONDS_150: 150,
+  MILLISECONDS_200: 200,
+  MILLISECONDS_300: 300,
+  MILLISECONDS_400: 400,
+  MILLISECONDS_500: 500,
+  MILLISECONDS_600: 600,
+  MILLISECONDS_800: 800,
+  MILLISECONDS_1200: 1200,
+  MILLISECONDS_1500: 1500,
+  MILLISECONDS_2500: 2500,
+  MILLISECONDS_4000: 4000,
+} as const;
+
+/** 화면 해상도 및 크기 상수 */
+export const DISPLAY_CONSTANTS = {
+  // 해상도
+  WIDTH_1920: 1920,
+  HEIGHT_1080: 1080,
+  WIDTH_1200: 1200,
+  HEIGHT_800: 800,
+  WIDTH_2048: 2048,
+
+  // 썸네일 크기
+  THUMBNAIL_200: 200,
+  THUMBNAIL_SIZE: 200,
+} as const;
+
+/** 색상 관련 상수 (RGB 값) */
+export const COLOR_CONSTANTS = {
+  RGB_MAX: 255,
+  RGB_HALF: 128,
+
+  // 투명도 관련
+  OPACITY_HALF: 0.5,
+  OPACITY_LOW: 0.1,
+  OPACITY_VERY_LOW: 0.05,
+  OPACITY_HIGH: 0.8,
+  OPACITY_MEDIUM: 0.6,
+  OPACITY_LOW_MEDIUM: 0.4,
+  OPACITY_PROGRESSIVE: 0.7,
+  OPACITY_FADE: 0.2,
+  OPACITY_FRACTION: 0.3,
+} as const;
+
+/** 접근성 관련 상수 */
+export const ACCESSIBILITY_CONSTANTS = {
+  // 명암비 기준값
+  CONTRAST_RATIO_AA: 4.5,
+  CONTRAST_RATIO_AAA: 7,
+  CONTRAST_RATIO_LARGE: 3,
+
+  // 색상 변환 상수
+  GAMMA_THRESHOLD: 0.03928,
+  GAMMA_DIVISOR: 12.92,
+  GAMMA_ADDITIVE: 0.055,
+  GAMMA_BASE: 1.055,
+  GAMMA_EXPONENT: 2.4,
+
+  // RGB 휘도 가중치
+  RED_WEIGHT: 0.2126,
+  GREEN_WEIGHT: 0.7152,
+  BLUE_WEIGHT: 0.0722,
+
+  // 기타 접근성 값
+  FOCUS_RING_OFFSET: 125,
+} as const;
+
+/** 성능 관련 상수 */
+export const PERFORMANCE_CONSTANTS = {
+  // CPU 사용률 임계값 (%)
+  CPU_THRESHOLD_HIGH: 80,
+  CPU_THRESHOLD_MEDIUM: 30,
+  CPU_THRESHOLD_LOW: 20,
+  CPU_THRESHOLD_MINIMAL: 10,
+
+  // 메모리 사용률 관련
+  MEMORY_CLEANUP_PERCENTAGE: 60,
+
+  // 성능 측정 관련
+  FRAME_TIME_60FPS: 16,
+  HOURS_PER_DAY: 24,
+
+  // 점수 관련
+  SCORE_MULTIPLIER: 32,
+  SCORE_THRESHOLD_40: 40,
+  SCORE_THRESHOLD_30: 30,
+  SCORE_THRESHOLD_20: 20,
+  SCORE_THRESHOLD_10: 10,
+} as const;

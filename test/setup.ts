@@ -7,6 +7,10 @@ import '@testing-library/jest-dom';
 import { beforeEach, afterEach, vi } from 'vitest';
 import { ensureScrollAPIs, ensureNavigationAPI } from './utils/mocks/browser-polyfills.js';
 import { setupCommonDOMMocks } from './utils/mocks/common-dom-mocks.js';
+import {
+  resetTestTheme,
+  ensureCSSVariablesForTesting,
+} from './utils/helpers/theme-test-helpers.js';
 
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
@@ -719,6 +723,10 @@ beforeEach(async () => {
 
   // 테스트 환경 설정
   await setupTestEnvironment();
+
+  // 테마 관련 설정 초기화
+  resetTestTheme();
+  ensureCSSVariablesForTesting();
 
   console.log('[Test Lifecycle] ✅ Enhanced beforeEach 완료');
 });

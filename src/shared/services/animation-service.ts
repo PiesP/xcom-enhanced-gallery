@@ -4,7 +4,8 @@
  * @version 4.0.0 - Phase 3: 통합
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../logging/index.js';
+import { TIMING } from '../../constants.js';
 
 // CSS 애니메이션 상수들 (css-animations에서 통합)
 export const ANIMATION_CONSTANTS = {
@@ -196,7 +197,8 @@ export class AnimationService {
     return new Promise<void>(resolve => {
       try {
         // 애니메이션 이벤트가 발생하지 않는 환경 대비 타임아웃 폴백
-        const timeoutMs = typeof config.duration === 'number' ? config.duration : 300;
+        const timeoutMs =
+          typeof config.duration === 'number' ? config.duration : TIMING.ANIMATION_NORMAL;
         const timeoutId = setTimeout(
           () => {
             try {
@@ -249,7 +251,8 @@ export class AnimationService {
   public async animateGalleryExit(element: Element, config: AnimationConfig = {}): Promise<void> {
     return new Promise<void>(resolve => {
       try {
-        const timeoutMs = typeof config.duration === 'number' ? config.duration : 150;
+        const timeoutMs =
+          typeof config.duration === 'number' ? config.duration : TIMING.ANIMATION_FAST;
         const timeoutId = setTimeout(
           () => {
             try {
@@ -367,7 +370,7 @@ export class AnimationService {
   public async fadeIn(element: Element, config: AnimationConfig = {}): Promise<void> {
     this.ensureStylesInjected();
 
-    const duration = config.duration || 300;
+    const duration = config.duration || TIMING.ANIMATION_NORMAL;
 
     element.classList.add('xcom-fade-in');
 
@@ -386,7 +389,7 @@ export class AnimationService {
   public async fadeOut(element: Element, config: AnimationConfig = {}): Promise<void> {
     this.ensureStylesInjected();
 
-    const duration = config.duration || 300;
+    const duration = config.duration || TIMING.ANIMATION_NORMAL;
 
     element.classList.add('xcom-fade-out');
 
@@ -405,7 +408,7 @@ export class AnimationService {
   public async slideIn(element: Element, config: AnimationConfig = {}): Promise<void> {
     this.ensureStylesInjected();
 
-    const duration = config.duration || 300;
+    const duration = config.duration || TIMING.ANIMATION_NORMAL;
 
     element.classList.add('xcom-slide-in');
 
@@ -507,7 +510,7 @@ export class AnimationService {
     options?: { duration?: number; easing?: string; delay?: number }
   ): Promise<void> {
     const htmlElement = element as HTMLElement;
-    const duration = options?.duration || 300;
+    const duration = options?.duration || TIMING.ANIMATION_NORMAL;
     const easing = options?.easing || 'cubic-bezier(0.4, 0, 0.2, 1)';
 
     return new Promise<void>(resolve => {

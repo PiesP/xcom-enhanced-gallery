@@ -27,7 +27,7 @@
   right: 0;
   bottom: 0;
   z-index: var(--xeg-z-gallery);
-  background: rgba(0, 0, 0, 0.95);
+  background: var(--xeg-overlay-dark-primary);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -93,12 +93,7 @@
   backface-visibility: hidden;
 
   /* 그라디언트 배경 */
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, black 80%, transparent) 0%,
-    color-mix(in srgb, black 40%, transparent) 70%,
-    transparent 100%
-  );
+  background: var(--xeg-toolbar-overlay-gradient);
   padding-bottom: var(--xeg-spacing-lg);
 }
 
@@ -207,11 +202,11 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .container {
-    background: black;
+    background: var(--xeg-bg-solid-dark);
   }
 
   .toolbarWrapper {
-    background: linear-gradient(to bottom, black 0%, rgba(0, 0, 0, 0.8) 70%, transparent 100%);
+    background: var(--xeg-toolbar-overlay-gradient);
   }
 }
 

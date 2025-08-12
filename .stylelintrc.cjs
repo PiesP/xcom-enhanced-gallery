@@ -15,6 +15,23 @@ module.exports = {
     // 커스텀 프로퍼티 중복도 경고
     'declaration-block-no-duplicate-custom-properties': true,
 
+    // 매직 넘버 줄이기: CSS 변수 사용 권장
+    'custom-property-pattern': [
+      '^[a-z][a-z0-9]*(-[a-z0-9]+)*$',
+      {
+        message: 'CSS 변수는 kebab-case로 작성하세요 (예: --primary-color)',
+        severity: 'warning',
+      },
+    ],
+    'length-zero-no-unit': true, // 0값에 단위 금지 (0px -> 0)
+    'number-max-precision': [
+      3,
+      {
+        message: '소수점은 3자리까지만 사용하세요',
+        severity: 'warning',
+      },
+    ],
+
     // 잡음 줄이기: 나머지 규칙은 비활성화
     'property-no-vendor-prefix': null,
     'selector-pseudo-class-no-unknown': null,

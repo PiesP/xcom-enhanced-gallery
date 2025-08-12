@@ -7,6 +7,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, extname } from 'path';
 import { logger } from '@shared/logging';
+import { MEMORY_SIZE_CONSTANTS, TIME_CONSTANTS } from '../../constants';
 
 // ========================================
 // 타입 정의
@@ -355,7 +356,13 @@ export class PerformanceMonitor {
     for (const [operationId, metric] of entries) {
       const duration = metric.duration?.toFixed(2) || 'N/A';
       const operations = metric.operationsCount || 0;
-      const memoryMB = metric.memoryUsed ? (metric.memoryUsed / 1024 / 1024).toFixed(2) : 'N/A';
+      const memoryMB = metric.memoryUsed
+        ? (
+            metric.memoryUsed /
+            MEMORY_SIZE_CONSTANTS.BYTES_PER_KB /
+            MEMORY_SIZE_CONSTANTS.BYTES_PER_KB
+          ).toFixed(2)
+        : 'N/A';
 
       report += `\n${operationId}:\n`;
       report += `  Duration: ${duration}ms\n`;
@@ -468,7 +475,7 @@ export class ErrorHandler {
 export class MemoizationCache<T> {
   private readonly cache = new Map<string, { value: T; timestamp: number }>();
 
-  constructor(private readonly ttl: number = 5 * 60 * 1000) {} // 5분 기본 TTL
+  constructor(private readonly ttl: number = TIME_CONSTANTS.FIVE_MINUTES) {} // 5분 기본 TTL
 
   /**
    * 캐시에서 값 조회
@@ -535,4 +542,4 @@ export class MemoizationCache<T> {
 // ========================================
 
 export const globalPerformanceMonitor = new PerformanceMonitor();
-export const fileSystemCache = new MemoizationCache<IFileInfo[]>(10 * 60 * 1000); // 10분 TTL
+export const fileSystemCache = new MemoizationCache<IFileInfo[]>(TIME_CONSTANTS.TEN_MINUTES); // 10분 TTL

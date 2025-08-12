@@ -12,6 +12,7 @@ import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
 import { createElement } from '@shared/dom';
+import { SIZE_CONSTANTS, TIME_CONSTANTS } from '../../constants';
 
 // 통합된 서비스 타입들
 /**
@@ -759,7 +760,8 @@ export class MediaService {
   getPrefetchMetrics() {
     const hitRate =
       this.prefetchCacheHits + this.prefetchCacheMisses > 0
-        ? (this.prefetchCacheHits / (this.prefetchCacheHits + this.prefetchCacheMisses)) * 100
+        ? (this.prefetchCacheHits / (this.prefetchCacheHits + this.prefetchCacheMisses)) *
+          SIZE_CONSTANTS.HUNDRED
         : 0;
 
     return {
@@ -781,7 +783,9 @@ export class MediaService {
   private ensureMediaItem(media: MediaInfo | MediaItem): MediaItem & { id: string } {
     return {
       ...media,
-      id: media.id || `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id:
+        media.id ||
+        `media_${Date.now()}_${Math.random().toString(SIZE_CONSTANTS.THIRTY_SIX).substr(2, SIZE_CONSTANTS.NINE)}`,
     };
   }
 
@@ -843,7 +847,7 @@ export class MediaService {
           phase: 'downloading',
           current: i + 1,
           total: mediaItems.length,
-          percentage: Math.round(((i + 1) / mediaItems.length) * 100),
+          percentage: Math.round(((i + 1) / mediaItems.length) * SIZE_CONSTANTS.HUNDRED),
           filename: media.filename || 'unknown',
         });
 
@@ -1011,7 +1015,7 @@ export class MediaService {
     try {
       const src = video.src || video.currentSrc || 'unknown';
       const duration = video.duration || 0;
-      return `${src.substring(0, 50)}... (${duration.toFixed(1)}s)`;
+      return `${src.substring(0, SIZE_CONSTANTS.FIFTY)}... (${duration.toFixed(1)}s)`;
     } catch {
       return 'unknown video';
     }
@@ -1039,7 +1043,7 @@ export class MediaService {
         if (invalidVideos.length > 0) {
           logger.debug(`[MediaService] 무효한 비디오 참조 ${invalidVideos.length}개 정리`);
         }
-      }, 30000); // 30초마다 정리
+      }, TIME_CONSTANTS.THIRTY_SECONDS); // 30초마다 정리
     }
   }
 }

@@ -117,10 +117,13 @@ export class ThemeService {
         this.loadSavedTheme();
       } else {
         logger.warn('브라우저 환경이 아니거나 matchMedia를 지원하지 않음 - 기본값 사용');
+        // 테스트 환경이나 지원되지 않는 환경에서 기본 테마 적용
+        this.ensureFallbackTheme();
       }
     } catch (error) {
       logger.error('ThemeService 초기화 실패:', error);
       // 환경이 지원되지 않으면 기본값으로 동작
+      this.ensureFallbackTheme();
     }
   }
 
@@ -149,6 +152,26 @@ export class ThemeService {
       }
     } catch (error) {
       logger.error('테마 불러오기 실패:', error);
+    }
+  }
+
+  /**
+   * 테스트 환경이나 지원되지 않는 환경에서 기본 테마 적용
+   */
+  private ensureFallbackTheme(): void {
+    try {
+      this.currentTheme = 'light'; // 기본값으로 라이트 테마 사용
+      this.userSelectedTheme = 'auto';
+
+      // DOM에 기본 테마 적용 (가능한 경우)
+      if (typeof document !== 'undefined' && document.documentElement) {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('xeg-theme-dark');
+        document.documentElement.classList.add('xeg-theme-light');
+        logger.debug('테스트 환경: 기본 라이트 테마 적용');
+      }
+    } catch (error) {
+      logger.error('Fallback 테마 적용 실패:', error);
     }
   }
 

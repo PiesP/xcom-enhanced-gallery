@@ -117,6 +117,68 @@
   --xeg-bg-solid-light: #ffffff;
   --xeg-bg-solid-dark: #000000;
 
+  /* =========================================
+     HARDCODED COLOR REPLACEMENT TOKENS
+     Phase 2: GREEN - 하드코딩된 색상을 대체하는 토큰들
+     ========================================= */
+
+  /* 순수 색상 토큰 */
+  --xeg-color-solid-dark: rgb(0, 0, 0);
+  --xeg-color-solid-light: rgb(255, 255, 255);
+
+  /* 오버레이 전용 토큰 - 툴바 및 모달 배경용 */
+  --xeg-overlay-dark-primary: rgba(0, 0, 0, 0.95);
+  --xeg-overlay-dark-secondary: rgba(0, 0, 0, 0.8);
+  --xeg-overlay-light-primary: rgba(255, 255, 255, 0.95);
+  --xeg-overlay-light-secondary: rgba(255, 255, 255, 0.8);
+
+  /* 투명도별 흰색 토큰 */
+  --xeg-white-alpha-10: rgba(255, 255, 255, 0.1);
+  --xeg-white-alpha-20: rgba(255, 255, 255, 0.2);
+  --xeg-white-alpha-30: rgba(255, 255, 255, 0.3);
+  --xeg-white-alpha-40: rgba(255, 255, 255, 0.4);
+  --xeg-white-alpha-50: rgba(255, 255, 255, 0.5);
+  --xeg-white-alpha-60: rgba(255, 255, 255, 0.6);
+  --xeg-white-alpha-70: rgba(255, 255, 255, 0.7);
+  --xeg-white-alpha-80: rgba(255, 255, 255, 0.8);
+  --xeg-white-alpha-90: rgba(255, 255, 255, 0.9);
+  --xeg-white-alpha-95: rgba(255, 255, 255, 0.95);
+
+  /* 투명도별 검정 토큰 */
+  --xeg-black-alpha-10: rgba(0, 0, 0, 0.1);
+  --xeg-black-alpha-15: rgba(0, 0, 0, 0.15);
+  --xeg-black-alpha-20: rgba(0, 0, 0, 0.2);
+  --xeg-black-alpha-30: rgba(0, 0, 0, 0.3);
+  --xeg-black-alpha-40: rgba(0, 0, 0, 0.4);
+  --xeg-black-alpha-50: rgba(0, 0, 0, 0.5);
+  --xeg-black-alpha-60: rgba(0, 0, 0, 0.6);
+  --xeg-black-alpha-70: rgba(0, 0, 0, 0.7);
+  --xeg-black-alpha-80: rgba(0, 0, 0, 0.8);
+  --xeg-black-alpha-90: rgba(0, 0, 0, 0.9);
+  --xeg-black-alpha-95: rgba(0, 0, 0, 0.95);
+
+  /* 툴바 전용 그라디언트 토큰 */
+  --xeg-toolbar-overlay-gradient: linear-gradient(
+    to bottom,
+    var(--xeg-overlay-dark-primary) 0%,
+    var(--xeg-black-alpha-80) 70%,
+    transparent 100%
+  );
+
+  /* 🔥 호버 시 강화된 툴바 그라디언트 */
+  --xeg-toolbar-overlay-gradient-strong: linear-gradient(
+    to bottom,
+    var(--xeg-black-alpha-95) 0%,
+    var(--xeg-black-alpha-90) 60%,
+    var(--xeg-black-alpha-40) 100%
+  );
+
+  /* color-mix 기반 오버레이 토큰 */
+  --xeg-overlay-mix-dark-80: color-mix(in srgb, black 80%, transparent);
+  --xeg-overlay-mix-dark-40: color-mix(in srgb, black 40%, transparent);
+  --xeg-overlay-mix-light-80: color-mix(in srgb, white 80%, transparent);
+  --xeg-overlay-mix-light-40: color-mix(in srgb, white 40%, transparent);
+
   /* 단순한 배경 변형 */
   --xeg-bg-surface-10: #f9fafb; /* 밝은 표면 */
   --xeg-bg-surface-20: #f3f4f6; /* 중간 표면 */
@@ -278,6 +340,13 @@
   /* Gallery specific */
   --xeg-gallery-backdrop: rgba(21, 32, 43, 0.85);
   --xeg-gallery-backdrop-filter: blur(16px);
+
+  /* 🔥 블러 효과 토큰 시스템 */
+  --xeg-blur-light: blur(4px);
+  --xeg-blur-medium: blur(8px);
+  --xeg-blur-strong: blur(12px);
+  --xeg-blur-extra-strong: blur(16px);
+
   /* DEPRECATED: --xeg-z-gallery (aggregated) 사용 대신 세분화된 --xeg-z-gallery-* 토큰 사용 권장 */
   --xeg-gallery-z-index: var(--xeg-z-gallery-backdrop); /* Updated: fallback to backdrop layer */
 
@@ -340,8 +409,8 @@
   --xeg-input-height: 44px; /* 입력 요소 편안한 높이 */
 
   /* 단순한 배경 시스템 - solid 디자인 */
-  --xeg-bg-toolbar-dark: var(--xeg-bg-dark); /* 다크 모드: 불투명 검은색 */
-  --xeg-bg-toolbar-light: var(--xeg-bg-light); /* 라이트 모드: 불투명 흰색 */
+  --xeg-bg-toolbar-dark: var(--xeg-bg-solid-dark); /* 다크 모드: 완전 불투명 검은색 */
+  --xeg-bg-toolbar-light: var(--xeg-bg-solid-light); /* 라이트 모드: 완전 불투명 흰색 */
   --xeg-bg-toolbar: var(--xeg-bg-toolbar-light); /* 기본값: 라이트 모드 */
   --xeg-shadow-toolbar: var(--xeg-shadow-simple-medium);
 
@@ -529,6 +598,7 @@
    =========================================== */
 
 [data-theme='dark'] {
+  /* Dark ↔ Light 반전: 배경/텍스트/보더 */
   --xeg-color-surface: var(--xeg-color-surface-dark);
   --xeg-color-background: var(--xeg-color-neutral-950);
   --xeg-color-text-primary: var(--xeg-color-neutral-50);
@@ -553,6 +623,30 @@
 
   --xeg-media-bg: var(--xeg-bg-surface-dark-30);
   --xeg-media-border: var(--xeg-border-dark);
+
+  /* =========================================
+     DARK THEME - HARDCODED COLOR OVERRIDES
+     ========================================= */
+
+  /* 다크 테마용 툴바 그라디언트 */
+  --xeg-toolbar-overlay-gradient: linear-gradient(
+    to bottom,
+    var(--xeg-overlay-dark-primary) 0%,
+    var(--xeg-black-alpha-80) 70%,
+    transparent 100%
+  );
+
+  /* 🔥 다크 테마 호버 시 강화된 툴바 그라디언트 */
+  --xeg-toolbar-overlay-gradient-strong: linear-gradient(
+    to bottom,
+    var(--xeg-black-alpha-95) 0%,
+    var(--xeg-black-alpha-90) 50%,
+    var(--xeg-black-alpha-60) 100%
+  );
+
+  /* 다크 테마용 color-mix 오버라이드 */
+  --xeg-overlay-mix-primary: var(--xeg-overlay-mix-dark-80);
+  --xeg-overlay-mix-secondary: var(--xeg-overlay-mix-dark-40);
 
   /* Dark theme shadows (stronger) */
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -593,11 +687,100 @@
   --xeg-media-bg: var(--xeg-bg-surface-20);
   --xeg-media-border: var(--xeg-border-light);
 
+  /* =========================================
+     LIGHT THEME - HARDCODED COLOR OVERRIDES
+     ========================================= */
+
+  /* 라이트 테마용 툴바 그라디언트 */
+  --xeg-toolbar-overlay-gradient: linear-gradient(
+    to bottom,
+    var(--xeg-overlay-light-primary) 0%,
+    var(--xeg-white-alpha-80) 70%,
+    transparent 100%
+  );
+
+  /* 🔥 라이트 테마 호버 시 강화된 툴바 그라디언트 */
+  --xeg-toolbar-overlay-gradient-strong: linear-gradient(
+    to bottom,
+    var(--xeg-white-alpha-95) 0%,
+    var(--xeg-white-alpha-90) 60%,
+    var(--xeg-white-alpha-50) 100%
+  );
+
+  /* 라이트 테마용 color-mix 오버라이드 */
+  --xeg-overlay-mix-primary: var(--xeg-overlay-mix-light-80);
+  --xeg-overlay-mix-secondary: var(--xeg-overlay-mix-light-40);
+
   /* Light theme shadows (lighter) */
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
   --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.12);
   --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.14);
   --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.16);
+}
+
+/* ===========================================
+   DIM THEME (Twitter-like)
+   =========================================== */
+
+[data-theme='dim'] {
+  /* Dim 테마: 다크와 라이트의 중간 */
+  --xeg-color-surface: #15202b;
+  --xeg-color-background: #192734;
+  --xeg-color-text-primary: #f7f9fa;
+  --xeg-color-text-secondary: #8b98a5;
+  --xeg-color-border-primary: #38444d;
+  --xeg-color-border-secondary: #2f3336;
+
+  /* Dim 모드 툴바 */
+  --xeg-bg-toolbar: #15202b;
+  --xeg-toolbar-border: #38444d;
+  --xeg-toolbar-shadow: var(--xeg-shadow-simple-medium);
+
+  /* Dim 모드 모달 */
+  --xeg-modal-bg: #15202b;
+  --xeg-modal-bg-solid: #15202b;
+
+  --xeg-toast-bg: #1d2734;
+  --xeg-toast-border: #38444d;
+  --xeg-toast-shadow: var(--xeg-shadow-simple-strong);
+
+  --xeg-gallery-bg: #0f1419;
+  --xeg-media-bg: #192734;
+  --xeg-media-border: #38444d;
+
+  /* =========================================
+     DIM THEME - HARDCODED COLOR OVERRIDES
+     ========================================= */
+
+  /* Dim 테마용 툴바 그라디언트 */
+  --xeg-toolbar-overlay-gradient: linear-gradient(
+    to bottom,
+    rgba(21, 32, 43, 0.95) 0%,
+    rgba(21, 32, 43, 0.8) 70%,
+    transparent 100%
+  );
+
+  /* 🔥 Dim 테마 호버 시 강화된 툴바 그라디언트 */
+  --xeg-toolbar-overlay-gradient-strong: linear-gradient(
+    to bottom,
+    rgba(21, 32, 43, 0.98) 0%,
+    rgba(21, 32, 43, 0.9) 60%,
+    rgba(21, 32, 43, 0.6) 100%
+  );
+
+  /* Dim 테마용 color-mix 오버라이드 */
+  --xeg-overlay-mix-primary: color-mix(in srgb, #15202b 80%, transparent);
+  --xeg-overlay-mix-secondary: color-mix(in srgb, #15202b 40%, transparent);
+
+  /* Dim 테마용 오버레이 토큰 */
+  --xeg-overlay-dark-primary: rgba(21, 32, 43, 0.95);
+  --xeg-overlay-dark-secondary: rgba(21, 32, 43, 0.8);
+
+  /* Dim theme shadows */
+  --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.6);
+  --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.6);
+  --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
 }
 
 /* ===========================================
@@ -947,6 +1130,19 @@
 /* 고대비 모드 지원 - solid 배경 강화 */
 @media (prefers-contrast: high) {
   :root {
+    /* 고대비 모드용 하드코딩 색상 대체 토큰 */
+    --xeg-bg-solid-dark: #000000;
+    --xeg-bg-solid-light: #ffffff;
+    --xeg-color-solid-dark: #000000;
+    --xeg-color-solid-light: #ffffff;
+
+    /* 고대비 모드용 오버레이 (완전 불투명) */
+    --xeg-overlay-dark-primary: rgba(0, 0, 0, 1);
+    --xeg-overlay-light-primary: rgba(255, 255, 255, 1);
+
+    /* 고대비 모드용 툴바 그라디언트 (단색으로 변경) */
+    --xeg-toolbar-overlay-gradient: var(--xeg-bg-solid-light);
+
     --xeg-toolbar-bg: rgba(255, 255, 255, 0.98);
     --xeg-toolbar-border: rgba(0, 0, 0, 0.8);
 
@@ -960,12 +1156,20 @@
   }
 
   [data-theme='dark'] {
+    --xeg-toolbar-overlay-gradient: var(--xeg-bg-solid-dark);
     --xeg-toolbar-bg: rgba(0, 0, 0, 0.98);
     --xeg-toolbar-border: rgba(255, 255, 255, 0.8);
     --xeg-toast-bg: rgba(0, 0, 0, 0.99);
     --xeg-toast-border: rgba(255, 255, 255, 0.9);
     --xeg-media-bg: var(--xeg-bg-surface-dark-70);
     --xeg-media-border: rgba(255, 255, 255, 0.7);
+  }
+
+  [data-theme='dim'] {
+    --xeg-toolbar-overlay-gradient: #15202b;
+    --xeg-overlay-dark-primary: rgba(21, 32, 43, 1);
+    --xeg-toolbar-bg: rgba(21, 32, 43, 0.98);
+    --xeg-toolbar-border: rgba(247, 249, 250, 0.8);
   }
 }
 

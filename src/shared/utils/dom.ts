@@ -4,6 +4,8 @@
  * @version 1.0.0 - Phase 1 Consolidation
  */
 
+import { SIZE_CONSTANTS } from '../../constants';
+
 // ================================
 // 갤러리 요소 감지 (dom-utils)
 // ================================
@@ -219,11 +221,11 @@ export function calculateSelectorComplexity(selector: string): number {
 
   // ID 선택자
   const idMatches = selector.match(/#[a-zA-Z0-9-_]+/g);
-  if (idMatches) complexity += idMatches.length * 10;
+  if (idMatches) complexity += idMatches.length * SIZE_CONSTANTS.TEN;
 
   // 클래스 선택자
   const classMatches = selector.match(/\.[a-zA-Z0-9-_]+/g);
-  if (classMatches) complexity += classMatches.length * 5;
+  if (classMatches) complexity += classMatches.length * SIZE_CONSTANTS.FIVE;
 
   // 속성 선택자
   const attributeMatches = selector.match(/\[[^\]]+\]/g);
@@ -235,7 +237,7 @@ export function calculateSelectorComplexity(selector: string): number {
 
   // 전체 선택자
   const universalMatches = selector.match(/(?<!\[[^*]*)\*(?![^[]*\])/g);
-  if (universalMatches) complexity += universalMatches.length * 100;
+  if (universalMatches) complexity += universalMatches.length * SIZE_CONSTANTS.HUNDRED;
 
   return complexity;
 }
@@ -244,7 +246,7 @@ export function calculateSelectorComplexity(selector: string): number {
  * 선택자가 성능상 문제가 될 수 있는지 검사합니다
  */
 export function hasPerformanceIssues(selector: string): boolean {
-  if (calculateSelectorComplexity(selector) > 100) {
+  if (calculateSelectorComplexity(selector) > SIZE_CONSTANTS.HUNDRED) {
     return true;
   }
 
@@ -253,7 +255,7 @@ export function hasPerformanceIssues(selector: string): boolean {
   }
 
   const nestingLevel = (selector.match(/[>\s]/g) || []).length;
-  if (nestingLevel > 4) {
+  if (nestingLevel > SIZE_CONSTANTS.FOUR) {
     return true;
   }
 
@@ -293,7 +295,7 @@ export function compareSelectorSpecificity(selector1: string, selector2: string)
   const spec1 = calculateSelectorSpecificity(selector1);
   const spec2 = calculateSelectorSpecificity(selector2);
 
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < SIZE_CONSTANTS.FOUR; i++) {
     const val1 = spec1[i] ?? 0;
     const val2 = spec2[i] ?? 0;
     if (val1 > val2) return 1;

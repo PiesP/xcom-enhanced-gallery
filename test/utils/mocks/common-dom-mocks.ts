@@ -12,10 +12,10 @@ export function setupCommonDOMMocks(win?: AnyWindow): void {
   const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
   if (!w && !g) return;
 
-  // matchMedia
+  // matchMedia - 기본적으로 라이트 모드를 반환하도록 개선
   if (w && typeof w.matchMedia !== 'function') {
     w.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: false,
+      matches: query.includes('prefers-color-scheme: dark') ? false : true, // 라이트 모드 기본값
       media: query,
       onchange: null,
       addEventListener: vi.fn(),
@@ -89,5 +89,12 @@ export function setupCommonDOMMocks(win?: AnyWindow): void {
       if (property === 'color' && value && /oklch\(/i.test(value)) return true;
       return false;
     });
+  }
+
+  // 테스트 환경에서 기본 테마 설정
+  if (typeof document !== 'undefined' && document.documentElement) {
+    // 기본 테마 속성 설정 (라이트 모드)
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.add('xeg-theme-light');
   }
 }

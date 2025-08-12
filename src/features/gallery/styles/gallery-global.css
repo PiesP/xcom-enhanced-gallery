@@ -351,26 +351,26 @@
   }
 
   .xeg-gallery-counter {
-    color: rgba(0, 0, 0, 0.8);
+    color: var(--xeg-black-alpha-80);
   }
 
   .xeg-progress-text {
-    color: rgba(0, 0, 0, 0.8);
+    color: var(--xeg-black-alpha-80);
   }
 
   .xeg-gallery-error {
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--xeg-black-alpha-70);
   }
 
   .xeg-gallery-nav-left,
   .xeg-gallery-nav-right {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--xeg-black-alpha-10);
     color: #1f2937;
   }
 
   .xeg-gallery-nav-left:hover,
   .xeg-gallery-nav-right:hover {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--xeg-black-alpha-20);
   }
 
   .xeg-thumbnails-container {
@@ -392,19 +392,19 @@
 /* 고대비 모드 지원 - 레거시 toolbar-button 참조 제거 */
 @media (prefers-contrast: high) {
   .xeg-gallery-overlay {
-    background: black;
+    background: var(--xeg-bg-solid-dark);
   }
 
   .xeg-gallery-toolbar {
-    background: black;
-    border-bottom: 2px solid white;
+    background: var(--xeg-bg-solid-dark);
+    border-bottom: 2px solid var(--xeg-color-solid-light);
   }
 
   .xeg-gallery-nav-left,
   .xeg-gallery-nav-right {
-    background: white;
-    color: black;
-    border: 2px solid black;
+    background: var(--xeg-bg-solid-light);
+    color: var(--xeg-color-solid-dark);
+    border: 2px solid var(--xeg-color-solid-dark);
   }
 }
 

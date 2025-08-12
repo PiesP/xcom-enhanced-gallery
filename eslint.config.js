@@ -138,6 +138,21 @@ export default [
       // === 코드 스타일 ===
       'prettier/prettier': 'error',
 
+      // === 매직 넘버 검출 ===
+      '@typescript-eslint/no-magic-numbers': [
+        'warn',
+        {
+          ignore: [-1, 0, 1, 2], // 일반적인 숫자는 허용
+          ignoreArrayIndexes: true, // 배열 인덱스 허용
+          ignoreDefaultValues: true, // 함수 기본값 허용
+          enforceConst: true, // const로 선언된 숫자는 허용
+          ignoreNumericLiteralTypes: true, // 타입 정의에서 사용된 숫자 허용
+          ignoreReadonlyClassProperties: true, // readonly 클래스 속성 허용
+          ignoreTypeIndexes: true, // 타입 인덱스 허용
+          ignoreEnums: true, // enum 값 허용
+        },
+      ],
+
       // === Clean Architecture 의존성 규칙 ===
       'no-restricted-imports': [
         'error',

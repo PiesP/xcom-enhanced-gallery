@@ -4,6 +4,8 @@
  * @version 2.0.0
  */
 
+import { MEMORY_SIZE_CONSTANTS, SIZE_CONSTANTS } from '../../../constants';
+
 /**
  * 번들 크기가 목표 범위 내인지 확인
  *
@@ -22,10 +24,10 @@ export function isWithinSizeTarget(sizeKB: number, targetKB = 400): boolean {
  * @returns 크기 정보
  */
 export function createBundleInfo(sizeBytes: number) {
-  const sizeKB = sizeBytes / 1024;
+  const sizeKB = sizeBytes / MEMORY_SIZE_CONSTANTS.BYTES_PER_KB;
   return {
     size: sizeBytes,
-    sizeKB: Math.round(sizeKB * 100) / 100,
+    sizeKB: Math.round(sizeKB * SIZE_CONSTANTS.HUNDRED) / SIZE_CONSTANTS.HUNDRED,
     isWithinTarget: isWithinSizeTarget(sizeKB),
   };
 }
