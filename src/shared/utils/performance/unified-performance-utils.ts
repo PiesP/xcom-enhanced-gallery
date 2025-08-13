@@ -326,15 +326,6 @@ export function delay(ms: number): Promise<void> {
 }
 
 // =================================
-// 이전 버전과의 호환성을 위한 별칭들
-// =================================
-
-/**
- * @deprecated rafThrottle을 직접 사용하세요
- */
-export const raf = rafThrottle;
-
-// =================================
 // 추가 호환성 함수들
 // =================================
 
@@ -342,7 +333,6 @@ export const raf = rafThrottle;
  * 별칭 함수들 (기존 코드 호환성)
  */
 export const measureAsyncPerformance = measurePerformanceAsync;
-export const throttleScroll = rafThrottle;
 
 // =================================
 // Timer 관리 시스템 (timer-management.ts 호환)

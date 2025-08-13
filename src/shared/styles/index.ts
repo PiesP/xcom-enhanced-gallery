@@ -1,21 +1,33 @@
 /**
- * @fileoverview 통합된 스타일 시스템 엔트리포인트 (v3.0.0)
- * @description StyleManager를 중심으로 한 스타일 관리 시스템
- * @version 3.0.0
+ * @fileoverview 통합 스타일 시스템 진입점 (v4.0.0)
+ * @description 새로운 통합 스타일 관리자 기반 시스템
+ * @version 4.0.0
  */
 
-// 통합 스타일 매니저 (최우선)
+// === 새로운 통합 스타일 시스템 ===
+// 핵심 관리자
+export { UnifiedStyleManager, unifiedStyleManager, StylePriority } from './unified-style-manager';
+
+// 부트스트래퍼
+export {
+  initializeStyleSystem,
+  updateDynamicStyles,
+  updateTheme,
+  cleanupStyleSystem,
+} from './style-bootstrapper';
+
+// === 레거시 호환성 (점진적 제거 예정) ===
+// 기존 스타일 매니저 (deprecated)
 export { default as StyleManager } from './style-service';
 
-// CSS 사이드이펙트 로드는 globals.ts에서 단일 진입으로 관리합니다.
-// 중복 로드를 방지하기 위해 본 파일에서는 CSS를 import하지 않습니다.
+// 기존 시스템과의 호환성
+export { generateZIndexCSS, getZIndex } from './z-index-system';
+export { getToken as getDesignToken } from './token-manager';
 
-// 스타일 유틸리티 함수 re-export는 금지 (배럴 위생 규칙)
+// 테마 유틸리티 함수들 (deprecated - 새 시스템에서는 updateTheme 사용)
+export { getXEGVariable, setGalleryTheme, STYLE_CONSTANTS as themeDetector } from './theme-utils';
 
-// 테마 유틸리티 함수들 export
-export { getXEGVariable, setGalleryTheme } from './theme-utils';
-
-// 네임스페이스된 스타일 시스템 (단순화됨)
+// 네임스페이스된 스타일 시스템 (deprecated)
 export {
   initializeNamespacedStyles,
   cleanupNamespacedStyles,
@@ -23,12 +35,5 @@ export {
   createNamespacedSelector,
 } from './namespaced-styles';
 
-// StyleManager를 직접 사용하도록 권장 (v3.1.0)
-// styleUtils 래퍼는 제거됨 - StyleManager를 직접 import하세요
-// import { StyleManager } from '@shared/styles';
-
 // 타입 export
-export type {
-  // Theme은 theme-service에서 import하도록 변경
-  ComponentState,
-} from './style-service';
+export type { ComponentState } from './style-service';

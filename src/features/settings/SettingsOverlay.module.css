@@ -54,34 +54,6 @@
   line-height: 1.2;
 }
 
-/* 닫기 버튼 - 접근성 향상 */
-.closeButton {
-  width: var(--xeg-touch-target-min);
-  height: var(--xeg-touch-target-min);
-  border-radius: var(--xeg-radius-full);
-  border: none;
-  background: var(--xeg-bg-medium);
-  color: var(--xeg-color-text-secondary);
-  cursor: pointer;
-  transition: var(--xeg-transition-fast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0; /* 축소되지 않도록 */
-}
-
-.closeButton:hover {
-  background: var(--xeg-color-error);
-  color: var(--xeg-color-text-inverse);
-  transform: scale(1.05);
-}
-
-.closeButton:focus-visible {
-  outline: 2px solid var(--xeg-color-primary);
-  outline-offset: 2px;
-}
-
 .modalBody {
   /* 추가 스타일이 필요한 경우를 위한 예약된 클래스 */
   position: relative;
@@ -142,75 +114,6 @@
   border-color: var(--xeg-color-primary-hover);
 }
 
-/* 버튼 스타일 - 접근성과 사용성 개선 */
-.button {
-  min-width: var(--xeg-clickable-area-comfortable);
-  height: var(--xeg-touch-target-min);
-  border-radius: var(--xeg-radius-lg);
-  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
-  border: 2px solid var(--xeg-color-border-light);
-  background: var(--xeg-color-primary);
-  color: var(--xeg-color-text-inverse);
-  cursor: pointer;
-  transition: var(--xeg-transition-fast);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--xeg-font-size-md);
-  font-weight: var(--xeg-font-weight-semibold);
-  text-decoration: none;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.button:hover:not(:disabled) {
-  background: var(--xeg-color-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--xeg-shadow-simple-medium);
-  border-color: var(--xeg-color-primary-hover);
-}
-
-.button:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--xeg-shadow-simple-light);
-}
-
-.button:focus-visible {
-  outline: 2px solid var(--xeg-color-primary);
-  outline-offset: 2px;
-}
-
-.button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* 보조 버튼 스타일 */
-.buttonSecondary {
-  background: var(--xeg-bg-medium);
-  color: var(--xeg-color-text-primary);
-  border-color: var(--xeg-color-border-light);
-}
-
-.buttonSecondary:hover:not(:disabled) {
-  background: var(--xeg-bg-light);
-  color: var(--xeg-color-text-primary);
-  border-color: var(--xeg-color-primary);
-}
-
-/* 위험한 작업 버튼 */
-.buttonDanger {
-  background: var(--xeg-color-error);
-  color: var(--xeg-color-text-inverse);
-  border-color: var(--xeg-color-error);
-}
-
-.buttonDanger:hover:not(:disabled) {
-  background: var(--xeg-color-error-hover);
-  border-color: var(--xeg-color-error-hover);
-}
-
 /* 반응형 및 접근성 */
 @media (max-width: 480px) {
   .modal {
@@ -250,15 +153,7 @@
     animation: none;
   }
 
-  .button,
-  .closeButton {
-    transition: none;
-  }
-
-  .button:hover:not(:disabled),
-  .closeButton:hover {
-    transform: none;
-  }
+  /* 버튼 관련 트랜지션/모션은 공통 Button 스타일에서 제어함 */
 }
 
 /* 고대비 모드 지원 */
@@ -273,7 +168,5 @@
     border: 2px solid rgba(0, 0, 0, 0.5);
   }
 
-  .button {
-    border-width: 3px;
-  }
+  /* 버튼 관련 스타일은 공통 Button 모듈을 사용 */
 }

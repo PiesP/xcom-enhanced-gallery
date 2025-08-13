@@ -1,10 +1,11 @@
 /**
- * TDD(RED): 툴바에 설정 버튼이 표시되고 클릭 시 settings-modal이 열린다
+ * TDD(RED): 툴바에 설정 버튼이 표시되고 클릭 시 toggleSettings가 호출된다
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/preact';
 
 // 갤러리 상태를 최소로 모킹해 컴포넌트가 렌더링되도록 한다
+const toggleSettingsSpy = vi.fn();
 vi.mock('@shared/state/signals/gallery.signals', async () => {
   const mod = await vi.importActual<any>('@shared/state/signals/gallery.signals');
   return {
@@ -17,6 +18,7 @@ vi.mock('@shared/state/signals/gallery.signals', async () => {
       },
     },
     navigateToItem: () => {},
+    toggleSettings: toggleSettingsSpy,
   };
 });
 
@@ -33,14 +35,8 @@ vi.mock('@shared/external/vendors', async () => {
   };
 });
 
-// settings-menu를 모キング하여 openSettingsModal 호출을 검증한다
-const openSettingsModalSpy = vi.fn();
-vi.mock('@/features/settings/settings-menu', () => ({
-  openSettingsModal: openSettingsModalSpy,
-}));
-
 describe('[TDD][RED] Toolbar Settings Button opens Settings Modal', () => {
-  it('툴바에 설정 버튼이 있고, 클릭 시 openSettingsModal이 호출된다', async () => {
+  it('툴바에 설정 버튼이 있고, 클릭 시 toggleSettings(true)가 호출된다', async () => {
     const { VerticalGalleryView } = await import(
       '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
@@ -60,6 +56,7 @@ describe('[TDD][RED] Toolbar Settings Button opens Settings Modal', () => {
     const settingsButton = getByRole('button', { name: '설정 열기' });
     fireEvent.click(settingsButton);
 
-    expect(openSettingsModalSpy).toHaveBeenCalledTimes(1);
+    expect(toggleSettingsSpy).toHaveBeenCalledTimes(1);
+    expect(toggleSettingsSpy).toHaveBeenCalledWith(true);
   });
 });

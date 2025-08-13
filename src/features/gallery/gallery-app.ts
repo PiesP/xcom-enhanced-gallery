@@ -17,7 +17,7 @@ import { logger } from '@shared/logging';
 import { MediaService } from '@shared/services/media-service';
 import { ToastService } from '@shared/services/toast-service';
 import { unmountGallery } from '@shared/components/isolation';
-import { injectZIndexStyles } from '@shared/styles/z-index-system';
+import { initializeStyleSystem } from '@shared/styles/style-bootstrapper';
 import type { GalleryConfig } from '@shared/types/app.types';
 
 /**
@@ -68,8 +68,8 @@ export class GalleryApp {
     try {
       logger.info('GalleryApp: 격리된 시스템으로 초기화 시작');
 
-      // Z-Index 스타일 시스템 초기화
-      injectZIndexStyles();
+      // 통합 스타일 시스템 초기화 (Z-index 포함)
+      await initializeStyleSystem();
 
       // 토스트 서비스는 간단하므로 초기화 불필요
 

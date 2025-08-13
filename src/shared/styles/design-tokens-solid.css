@@ -1,0 +1,294 @@
+/**
+ * Copyright (c) 2024 X.com Enhanced Gallery - MIT License
+ *
+ * @fileoverview 통합 디자인 토큰 - Solid Design 시스템
+ * @description 툴바와 설정 모달의 일관된 시각적 경험을 위한 CSS 변수 시스템
+ * @version 2.0.0 - TDD 기반 리팩토링 적용
+ */
+
+/* ===========================================
+   SOLID DESIGN 시스템 - 통합 디자인 토큰
+   =========================================== */
+
+/* 루트 테마 (라이트 모드) */
+:root {
+  /* ========================================
+     핵심 테마 색상 (Solid Design)
+     ======================================== */
+  --solid-primary: hsl(210, 90%, 55%);
+  --solid-primary-hover: hsl(210, 90%, 50%);
+  --solid-primary-active: hsl(210, 90%, 45%);
+  --solid-primary-alpha-10: hsl(210, 90%, 55%, 0.1);
+  --solid-primary-alpha-20: hsl(210, 90%, 55%, 0.2);
+  --solid-primary-alpha-30: hsl(210, 90%, 55%, 0.3);
+  --solid-primary-alpha-40: hsl(210, 90%, 55%, 0.4);
+
+  --surface-bg: hsl(210, 20%, 98%);
+  --surface-bg-hover: hsl(210, 20%, 96%);
+  --surface-bg-active: hsl(210, 20%, 94%);
+  --surface-text: hsl(210, 15%, 20%);
+  --surface-text-secondary: hsl(210, 10%, 40%);
+  --surface-text-tertiary: hsl(210, 8%, 60%);
+  --surface-border: hsl(210, 15%, 90%);
+  --surface-border-hover: hsl(210, 15%, 85%);
+
+  /* ========================================
+     컴포넌트별 토큰 (Solid Design)
+     ======================================== */
+
+  /* --- 툴바 스타일 --- */
+  --xeg-toolbar-bg: var(--surface-bg);
+  --xeg-toolbar-bg-hover: var(--surface-bg-hover);
+  --xeg-toolbar-text: var(--surface-text);
+  --xeg-toolbar-text-secondary: var(--surface-text-secondary);
+  --xeg-toolbar-border: var(--surface-border);
+  --xeg-toolbar-border-hover: var(--surface-border-hover);
+  --xeg-toolbar-shadow: 0 4px 12px hsl(210, 20%, 50%, 0.1);
+  --xeg-toolbar-shadow-strong: 0 8px 24px hsl(210, 20%, 50%, 0.15);
+
+  /* --- 설정 모달 스타일 (툴바와 동일한 토큰 사용) --- */
+  --xeg-modal-bg: var(--xeg-toolbar-bg);
+  --xeg-modal-bg-hover: var(--xeg-toolbar-bg-hover);
+  --xeg-modal-text: var(--xeg-toolbar-text);
+  --xeg-modal-text-secondary: var(--xeg-toolbar-text-secondary);
+  --xeg-modal-border: var(--xeg-toolbar-border);
+  --xeg-modal-border-hover: var(--xeg-toolbar-border-hover);
+  --xeg-modal-shadow: var(--xeg-toolbar-shadow);
+  --xeg-modal-shadow-strong: var(--xeg-toolbar-shadow-strong);
+
+  /* --- 공통 오버레이 시스템 --- */
+  --xeg-modal-overlay-bg: hsl(210, 15%, 8%, 0.75);
+  --xeg-modal-overlay-backdrop: blur(12px);
+
+  /* --- 버튼 스타일 (통합) --- */
+  --xeg-button-primary-bg: var(--solid-primary);
+  --xeg-button-primary-bg-hover: var(--solid-primary-hover);
+  --xeg-button-primary-bg-active: var(--solid-primary-active);
+  --xeg-button-primary-text: hsl(0, 0%, 100%);
+
+  --xeg-button-secondary-bg: hsl(210, 15%, 92%);
+  --xeg-button-secondary-bg-hover: hsl(210, 15%, 88%);
+  --xeg-button-secondary-bg-active: hsl(210, 15%, 84%);
+  --xeg-button-secondary-text: var(--surface-text);
+
+  /* --- 공통 레이아웃 --- */
+  --xeg-radius-sm: 6px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 12px;
+  --xeg-radius-xl: 16px;
+
+  /* --- 공통 간격 --- */
+  --xeg-spacing-xs: 4px;
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 12px;
+  --xeg-spacing-lg: 16px;
+  --xeg-spacing-xl: 24px;
+
+  /* --- 공통 애니메이션 --- */
+  --xeg-duration-fast: 0.15s;
+  --xeg-duration-normal: 0.25s;
+  --xeg-duration-slow: 0.4s;
+  --xeg-easing-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* --- 접근성 및 인터랙션 --- */
+  --xeg-focus-outline-width: 2px;
+  --xeg-focus-outline-offset: 2px;
+  --xeg-focus-outline-color: var(--solid-primary);
+  --xeg-touch-target-min: 44px;
+
+  /* --- 타이포그래피 --- */
+  --xeg-font-size-xs: 0.75rem;
+  --xeg-font-size-sm: 0.875rem;
+  --xeg-font-size-base: 1rem;
+  --xeg-font-size-lg: 1.125rem;
+  --xeg-font-size-xl: 1.25rem;
+  --xeg-font-weight-normal: 400;
+  --xeg-font-weight-medium: 500;
+  --xeg-font-weight-semibold: 600;
+  --xeg-font-weight-bold: 700;
+
+  /* --- Z-Index 시스템 --- */
+  --xeg-z-modal-backdrop: 1000;
+  --xeg-z-modal-content: 1001;
+  --xeg-z-modal-controls: 1002;
+}
+
+/* 다크 테마 오버라이드 */
+[data-theme='dark'] {
+  /* ========================================
+     핵심 테마 색상 (Solid Design - Dark)
+     ======================================== */
+  --solid-primary: hsl(210, 95%, 65%);
+  --solid-primary-hover: hsl(210, 95%, 60%);
+  --solid-primary-active: hsl(210, 95%, 55%);
+
+  --surface-bg: hsl(210, 15%, 18%);
+  --surface-bg-hover: hsl(210, 15%, 22%);
+  --surface-bg-active: hsl(210, 15%, 26%);
+  --surface-text: hsl(210, 20%, 95%);
+  --surface-text-secondary: hsl(210, 15%, 75%);
+  --surface-text-tertiary: hsl(210, 10%, 55%);
+  --surface-border: hsl(210, 15%, 25%);
+  --surface-border-hover: hsl(210, 15%, 30%);
+
+  /* --- 공통 오버레이 시스템 (다크) --- */
+  --xeg-modal-overlay-bg: hsl(210, 15%, 8%, 0.85);
+
+  /* --- 버튼 스타일 (다크) --- */
+  --xeg-button-secondary-bg: hsl(210, 15%, 22%);
+  --xeg-button-secondary-bg-hover: hsl(210, 15%, 26%);
+  --xeg-button-secondary-bg-active: hsl(210, 15%, 30%);
+}
+
+/* ===========================================
+   컴포넌트별 특화 스타일
+   =========================================== */
+
+/* 툴바 컴포넌트 개선 */
+.xeg-toolbar-enhanced {
+  background: var(--xeg-toolbar-bg);
+  border: 1px solid var(--xeg-toolbar-border);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--xeg-toolbar-shadow);
+  color: var(--xeg-toolbar-text);
+  backdrop-filter: var(--xeg-modal-overlay-backdrop);
+  -webkit-backdrop-filter: var(--xeg-modal-overlay-backdrop);
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+.xeg-toolbar-enhanced:hover {
+  box-shadow: var(--xeg-toolbar-shadow-strong);
+  border-color: var(--solid-primary-alpha-40);
+  transform: translateY(-1px);
+}
+
+/* 설정 모달 컴포넌트 (툴바와 완전 일치) */
+.xeg-settings-modal-enhanced {
+  background: var(--xeg-modal-bg);
+  border: 1px solid var(--xeg-modal-border);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--xeg-modal-shadow);
+  color: var(--xeg-modal-text);
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+.xeg-settings-modal-enhanced:hover {
+  box-shadow: var(--xeg-modal-shadow-strong);
+  border-color: var(--solid-primary-alpha-40);
+  transform: translateY(-1px);
+}
+
+/* 모달 오버레이 (일관된 블러 효과) */
+.xeg-modal-overlay-enhanced {
+  background: var(--xeg-modal-overlay-bg);
+  backdrop-filter: var(--xeg-modal-overlay-backdrop);
+  -webkit-backdrop-filter: var(--xeg-modal-overlay-backdrop);
+}
+
+/* 공통 버튼 스타일 (툴바와 모달에서 공통 사용) */
+.xeg-button-primary-enhanced {
+  background: var(--xeg-button-primary-bg);
+  color: var(--xeg-button-primary-text);
+  border: 1px solid transparent;
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-weight: var(--xeg-font-weight-medium);
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  cursor: pointer;
+  min-height: var(--xeg-touch-target-min);
+}
+
+.xeg-button-primary-enhanced:hover {
+  background: var(--xeg-button-primary-bg-hover);
+  transform: translateY(-1px);
+}
+
+.xeg-button-primary-enhanced:active {
+  background: var(--xeg-button-primary-bg-active);
+  transform: translateY(0);
+}
+
+.xeg-button-secondary-enhanced {
+  background: var(--xeg-button-secondary-bg);
+  color: var(--xeg-button-secondary-text);
+  border: 1px solid var(--xeg-modal-border);
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-weight: var(--xeg-font-weight-medium);
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  cursor: pointer;
+  min-height: var(--xeg-touch-target-min);
+}
+
+.xeg-button-secondary-enhanced:hover {
+  background: var(--xeg-button-secondary-bg-hover);
+  border-color: var(--solid-primary-alpha-30);
+  transform: translateY(-1px);
+}
+
+.xeg-button-secondary-enhanced:active {
+  background: var(--xeg-button-secondary-bg-active);
+  transform: translateY(0);
+}
+
+/* 포커스 상태 (모든 컴포넌트 공통) */
+.xeg-toolbar-enhanced:focus-visible,
+.xeg-settings-modal-enhanced:focus-visible,
+.xeg-button-primary-enhanced:focus-visible,
+.xeg-button-secondary-enhanced:focus-visible {
+  outline: var(--xeg-focus-outline-width) solid var(--xeg-focus-outline-color);
+  outline-offset: var(--xeg-focus-outline-offset);
+}
+
+/* ===========================================
+   접근성 및 사용성 향상
+   =========================================== */
+
+/* 감소된 모션 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-toolbar-enhanced,
+  .xeg-settings-modal-enhanced,
+  .xeg-button-primary-enhanced,
+  .xeg-button-secondary-enhanced {
+    transition: none !important;
+  }
+
+  .xeg-toolbar-enhanced:hover,
+  .xeg-settings-modal-enhanced:hover,
+  .xeg-button-primary-enhanced:hover,
+  .xeg-button-secondary-enhanced:hover,
+  .xeg-button-primary-enhanced:active,
+  .xeg-button-secondary-enhanced:active {
+    transform: none !important;
+  }
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .xeg-toolbar-enhanced,
+  .xeg-settings-modal-enhanced {
+    border-width: 2px;
+    border-color: var(--xeg-modal-text);
+  }
+
+  .xeg-button-primary-enhanced,
+  .xeg-button-secondary-enhanced {
+    border-width: 2px;
+  }
+}
+
+/* 투명도 감소 선호도 지원 */
+@media (prefers-reduced-transparency: reduce) {
+  .xeg-toolbar-enhanced,
+  .xeg-settings-modal-enhanced {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .xeg-modal-overlay-enhanced {
+    background: var(--surface-bg) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}

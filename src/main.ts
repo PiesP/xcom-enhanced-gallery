@@ -2,8 +2,9 @@
  * X.com Enhanced Gallery - 메인 진입점
  *
  * 간소화된 구조 - Core 모듈 기반
+ * 통합 스타일 시스템 적용
  *
- * @version 4.1.0
+ * @version 4.2.0
  */
 
 import { logger } from '@shared/logging';
@@ -12,8 +13,9 @@ import { CoreService } from '@shared/services/service-manager';
 import { SERVICE_KEYS, TIME_CONSTANTS } from './constants';
 import { createElement, querySelector } from '@shared/dom';
 
-// 전역 스타일
-import './styles/globals';
+// 통합 스타일 시스템 (우선 로드)
+import { initializeStyleSystem } from '@shared/styles/style-bootstrapper';
+import '@shared/styles/unified-dark-mode-initializer'; // 다크모드 CSS 변수 자동 초기화
 
 // Core 모듈들은 필요할 때 lazy import
 
@@ -41,14 +43,16 @@ function createAppConfig(): AppConfig {
  */
 async function initializeInfrastructure(): Promise<void> {
   try {
-    // Vendor 라이브러리 초기화
+    // 1. 스타일 시스템 우선 초기화
+    await initializeStyleSystem();
+    logger.debug('✅ 통합 스타일 시스템 초기화 완료');
+
+    // 2. Vendor 라이브러리 초기화
     const { initializeVendors } = await import('@shared/external/vendors');
     await initializeVendors();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
 
-    // 통합 디자인 시스템 초기화
-    // TODO: 스타일 서비스 초기화 로직 추가 예정
-    logger.debug('✅ 디자인 시스템 초기화 완료');
+    logger.debug('✅ 인프라 초기화 완료');
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);
     throw error;

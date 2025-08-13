@@ -31,7 +31,10 @@ interface BuildMode {
   readonly sourcemap: boolean;
   readonly dropConsole: boolean;
 }
-function createBundleAnalysisPlugin(): Plugin {
+function createBundleAnalysisPlugin(pluginOpts?: {
+  warnBudgetKB?: number;
+  warnInDev?: boolean;
+}): Plugin {
   return {
     name: 'bundle-analysis',
     apply: 'build',
@@ -53,11 +56,12 @@ function createBundleAnalysisPlugin(): Plugin {
       }
 
       // 간단한 분석 보고서
+      const warnBudgetBytes = Math.max(0, (pluginOpts?.warnBudgetKB ?? 500) * 1024);
       const analysis = {
         timestamp: new Date().toISOString(),
         totalSize,
         chunks,
-        isWithinBudget: totalSize <= 500 * 1024, // 500KB 제한
+        isWithinBudget: totalSize <= warnBudgetBytes, // 제한
       };
 
       const outDir = (options as { dir?: string })?.dir || 'dist';
@@ -67,8 +71,12 @@ function createBundleAnalysisPlugin(): Plugin {
       );
 
       console.log(`\n📊 번들 크기: ${(totalSize / 1024).toFixed(2)} KB`);
-      if (totalSize > 500 * 1024) {
-        console.warn('⚠️  번들 크기가 500KB를 초과했습니다.');
+      // 개발 빌드에서는 경고 소음 줄이기 (옵션으로 제어)
+      const isDevRuntime = process.env.NODE_ENV !== 'production';
+      const allowDevWarn = pluginOpts?.warnInDev ?? false;
+      if (totalSize > warnBudgetBytes && (!isDevRuntime || allowDevWarn)) {
+        const budgetKB = (warnBudgetBytes / 1024) | 0;
+        console.warn(`⚠️  번들 크기가 ${budgetKB}KB를 초과했습니다.`);
       }
     },
   };
@@ -169,7 +177,9 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
         const outDir = (options as { dir?: string })?.dir || 'dist';
 
         // CSS와 JS 파일 찾기
-        const cssFiles = Object.keys(bundleObj).filter(fileName => fileName.endsWith('.css'));
+        const emittedCssFiles = Object.keys(bundleObj).filter(fileName =>
+          fileName.endsWith('.css')
+        );
         const jsFiles = Object.keys(bundleObj).filter(fileName => fileName.endsWith('.js'));
 
         if (jsFiles.length === 0) {
@@ -180,9 +190,32 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
         const mainJsFile = jsFiles[0]!;
         const jsFilePath = path.resolve(outDir, mainJsFile);
 
-        // CSS 내용 수집
+        // CSS 내용 수집 (누락 방지: emitted CSS + importedCss 모두 병합)
         let allCss = '';
-        for (const cssFile of cssFiles) {
+        const cssToInclude = new Set<string>(emittedCssFiles);
+
+        // vite/rollup이 chunk.viteMetadata.importedCss에 기록한 항목도 포함
+        for (const [, fileInfo] of Object.entries(bundleObj)) {
+          // @ts-ignore - viteMetadata는 vite가 주입
+          const meta = (fileInfo as any)?.viteMetadata;
+          const importedCss: string[] | undefined = meta?.importedCss;
+          if (Array.isArray(importedCss)) {
+            for (const cssRef of importedCss) {
+              if (typeof cssRef === 'string' && cssRef.endsWith('.css')) {
+                cssToInclude.add(cssRef);
+              }
+            }
+          }
+        }
+
+        // 디버그: 어떤 CSS 파일이 포함되는지 출력 (개발 시 유용)
+        if (process.env.NODE_ENV !== 'test') {
+          const list = Array.from(cssToInclude.values());
+          console.log(`[userscript-bundler] 포함된 CSS 자산(${list.length}):`, list.join(', '));
+        }
+
+        // 디스크에서 CSS 읽어와 병합 후 자산 삭제
+        for (const cssFile of cssToInclude) {
           const cssFilePath = path.resolve(outDir, cssFile);
           if (fs.existsSync(cssFilePath)) {
             const cssContent = fs.readFileSync(cssFilePath, 'utf8');
@@ -193,7 +226,11 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
               .trim();
 
             allCss += processedCss;
-            fs.unlinkSync(cssFilePath);
+            try {
+              fs.unlinkSync(cssFilePath);
+            } catch {
+              // 일부 환경에서 삭제 실패해도 치명적이지 않음
+            }
           }
         }
 
@@ -306,7 +343,15 @@ export default defineConfig(({ mode }) => {
       }),
       createUserscriptBundlerPlugin(buildMode),
       // CI 성능 최적화를 위해 기본 비활성 (필요시 ENABLE_BUNDLE_ANALYSIS=1)
-      ...(isCI && !process.env.ENABLE_BUNDLE_ANALYSIS ? [] : [createBundleAnalysisPlugin()]),
+      ...(isCI && !process.env.ENABLE_BUNDLE_ANALYSIS
+        ? []
+        : [
+            createBundleAnalysisPlugin({
+              // 개발 빌드는 가독성 때문에 크기가 커질 수 있으므로 여유를 둠, 경고는 비활성화
+              warnBudgetKB: buildMode.isDevelopment ? 650 : 500,
+              warnInDev: false,
+            }),
+          ]),
     ],
 
     // 환경 변수 정의
@@ -335,7 +380,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       // PostCSS 설정
-      postcss: './postcss.config.js',
+      postcss: './postcss.config.cjs',
     },
 
     build: {
@@ -373,7 +418,16 @@ export default defineConfig(({ mode }) => {
           }),
         },
         treeshake: {
-          moduleSideEffects: false,
+          // Always treat CSS as having side-effects so global tokens (:root --xeg-*) are preserved
+          // This prevents Rollup from dropping design-tokens.css and other global styles
+          moduleSideEffects: (id?: string) => {
+            // Keep default behavior for non-CSS unless otherwise pruned by other options
+            if (typeof id === 'string') {
+              // Handle query-suffixed virtual ids as well (e.g., ?inline)
+              if (/\.(css|scss)(\?|$)/i.test(id)) return true;
+            }
+            return false;
+          },
           unknownGlobalSideEffects: false,
           // GitHub Actions에서 더 적극적인 tree-shaking
           propertyReadSideEffects: isCI ? false : 'always',

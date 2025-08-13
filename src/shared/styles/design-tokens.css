@@ -1,7 +1,11 @@
 /**
- * @fileoverview 통합 디자인 토큰 CSS (OKLCH 색상 시스템)
+ * @fileoverview 통합 디자인 토큰 CSS (OKLCH 색상 시스템 + Solid Design)
  * 총 35개의 색상이 OKLCH로 변환되었습니다.
  * 생성일: 2025-07-31T13:51:46.194Z
+ *
+ * TDD 리팩토링 업데이트: 2025-08-13
+ * - 툴바와 설정 모달 간의 통합 디자인 토큰 추가
+ * - Solid Design 시스템 통합
  *
  * MIGRATION NOTICE (Phase 1):
  *  - 단계적 레이어 구조(`design-tokens.layered.css`) 도입 중.
@@ -10,6 +14,42 @@
  */
 
 :root {
+  /* ========================================
+     SOLID DESIGN 시스템 - 통합 툴바/모달 토큰 (TDD 추가)
+     ======================================== */
+
+  /* 핵심 테마 색상 */
+  --solid-primary: hsl(210, 90%, 55%);
+  --solid-primary-hover: hsl(210, 90%, 50%);
+  --solid-primary-alpha-20: hsl(210, 90%, 55%, 0.2);
+  --solid-primary-alpha-30: hsl(210, 90%, 55%, 0.3);
+  --solid-primary-alpha-40: hsl(210, 90%, 55%, 0.4);
+
+  --surface-bg: hsl(210, 20%, 98%);
+  --surface-bg-hover: hsl(210, 20%, 96%);
+  --surface-text: hsl(210, 15%, 20%);
+  --surface-text-secondary: hsl(210, 10%, 40%);
+  --surface-border: hsl(210, 15%, 90%);
+
+  /* 툴바 스타일 (Solid Design) */
+  --xeg-toolbar-bg: var(--surface-bg);
+  --xeg-toolbar-bg-hover: var(--surface-bg-hover);
+  --xeg-toolbar-text: var(--surface-text);
+  --xeg-toolbar-text-secondary: var(--surface-text-secondary);
+  --xeg-toolbar-border: var(--surface-border);
+  --xeg-toolbar-shadow: 0 4px 12px hsl(210, 20%, 50%, 0.1);
+
+  /* 설정 모달 스타일 (툴바와 통일) */
+  --xeg-modal-bg: var(--xeg-toolbar-bg);
+  --xeg-modal-text: var(--xeg-toolbar-text);
+  --xeg-modal-text-secondary: var(--xeg-toolbar-text-secondary);
+  --xeg-modal-border: var(--xeg-toolbar-border);
+  --xeg-modal-shadow: var(--xeg-toolbar-shadow);
+  --xeg-modal-overlay-bg: hsl(210, 15%, 8%, 0.75);
+
+  /* 공통 배경 표면 (surface 시스템) */
+  --xeg-bg-surface: var(--surface-bg);
+
   /* ========================================
      Z-INDEX SYSTEM - 표준화된 레이어링 시스템
      ======================================== */
@@ -43,31 +83,29 @@
 
   /* 🎨 라이트 테마용 HSL 색상 시스템 */
   /* Base Colors */
-  --xeg-color-primary: hsl(210, 90%, 55%);
+  --xeg-color-primary: var(--solid-primary); /* Solid Design 통합 */
+  --xeg-color-primary-hover: var(--solid-primary-hover); /* Solid Design 통합 */
+  --xeg-color-primary-alpha-20: var(--solid-primary-alpha-20); /* Solid Design 통합 */
   --xeg-color-success: hsl(140, 65%, 45%);
   --xeg-color-error: hsl(0, 75%, 50%);
 
   /* Text Colors */
-  --xeg-color-text-primary: hsl(210, 15%, 20%);
+  --xeg-color-text-primary: var(--surface-text); /* Solid Design 통합 */
   --xeg-color-text-secondary: hsl(210, 15%, 45%);
 
   /* Background Colors */
   --xeg-bg-toolbar: hsl(210, 20%, 98%);
-  --xeg-bg-surface: hsl(210, 20%, 95%);
 
   /* Border Colors */
-  --xeg-toolbar-border: hsl(210, 15%, 90%);
   --xeg-border-light: hsl(210, 15%, 85%);
 
   /* Shadows */
-  --xeg-toolbar-shadow: 0 4px 12px hsl(210 20% 50% / 0.15);
 
   /* ========================================
      COLOR SYSTEM - OKLCH 기반 통합 색상 (레거시)
      ======================================== */
 
   /* Primary Colors - HSL로 오버라이드됨 */
-  --xeg-color-primary-hover: oklch(0.623 0.21 252.8);
   --xeg-color-primary-active: oklch(0.567 0.243 253.4);
   --xeg-color-primary-500: var(--xeg-color-primary);
   --xeg-color-primary-600: var(--xeg-color-primary-hover);
@@ -75,7 +113,6 @@
 
   /* Alpha Variants - color-mix로 하드코딩 제거 */
   --xeg-color-primary-alpha-10: color-mix(in oklch, var(--xeg-color-primary) 10%, transparent);
-  --xeg-color-primary-alpha-20: color-mix(in oklch, var(--xeg-color-primary) 20%, transparent);
 
   /* Neutral Colors - OKLCH로 통일 */
   --xeg-color-neutral-50: oklch(0.98 0.001 206.2);
@@ -430,6 +467,11 @@
   --xeg-modal-min-width: 320px; /* 모달 최소 너비 */
   --xeg-input-height: 44px; /* 입력 요소 편안한 높이 */
 
+  /* 통합 스타일 시스템 - 알파 투명도 변수 */
+  --xeg-bg-surface-alpha-20: color-mix(in srgb, var(--xeg-bg-surface) 20%, transparent);
+  --xeg-bg-surface-alpha-30: color-mix(in srgb, var(--xeg-bg-surface) 30%, transparent);
+  --xeg-bg-surface-alpha-40: color-mix(in srgb, var(--xeg-bg-surface) 40%, transparent);
+
   /* 단순한 배경 시스템 - solid 디자인 */
   --xeg-bg-toolbar-dark: var(--xeg-bg-solid-dark); /* 다크 모드: 완전 불투명 검은색 */
   --xeg-bg-toolbar-light: var(--xeg-bg-solid-light); /* 라이트 모드: 완전 불투명 흰색 */
@@ -465,7 +507,6 @@
   );
   --xeg-modal-content-bg: var(--xeg-bg-light);
   --xeg-modal-content-bg-hover: var(--xeg-color-surface-hover);
-  --xeg-modal-shadow: var(--xeg-shadow-simple-strong);
 
   /* ===========================================
      COMPONENT BASE CLASSES (Reusable Mixins)
@@ -548,12 +589,127 @@
   }
 
   /* ===========================================
+     UNIFIED TOOLBAR BUTTON UTILITY CLASSES
+     =========================================== */
+
+  /* 툴바 버튼 크기 유틸리티 클래스 */
+  .xeg-toolbar-button-sm {
+    width: var(--xeg-toolbar-button-width-sm);
+    height: var(--xeg-toolbar-button-height-sm);
+    padding: var(--xeg-toolbar-button-padding-sm);
+  }
+
+  .xeg-toolbar-button-sm .icon {
+    width: var(--xeg-toolbar-button-icon-sm);
+    height: var(--xeg-toolbar-button-icon-sm);
+  }
+
+  .xeg-toolbar-button-md {
+    width: var(--xeg-toolbar-button-width-md);
+    height: var(--xeg-toolbar-button-height-md);
+    padding: var(--xeg-toolbar-button-padding-md);
+    min-width: var(--xeg-toolbar-button-min-touch-target);
+    min-height: var(--xeg-toolbar-button-min-touch-target);
+  }
+
+  .xeg-toolbar-button-md .icon {
+    width: var(--xeg-toolbar-button-icon-md);
+    height: var(--xeg-toolbar-button-icon-md);
+  }
+
+  .xeg-toolbar-button-lg {
+    width: var(--xeg-toolbar-button-width-lg);
+    height: var(--xeg-toolbar-button-height-lg);
+    padding: var(--xeg-toolbar-button-padding-lg);
+  }
+
+  .xeg-toolbar-button-lg .icon {
+    width: var(--xeg-toolbar-button-icon-lg);
+    height: var(--xeg-toolbar-button-icon-lg);
+  }
+
+  /* 툴바 버튼 변형 유틸리티 클래스 */
+  .xeg-toolbar-button-primary {
+    background: var(--xeg-toolbar-button-bg-primary);
+    color: var(--xeg-toolbar-button-color-primary);
+    border-color: var(--xeg-toolbar-button-border-primary);
+  }
+
+  .xeg-toolbar-button-secondary {
+    background: var(--xeg-toolbar-button-bg-secondary);
+    color: var(--xeg-toolbar-button-color-secondary);
+    border-color: var(--xeg-toolbar-button-border-secondary);
+  }
+
+  .xeg-toolbar-button-danger {
+    background: var(--xeg-toolbar-button-bg-danger);
+    color: var(--xeg-toolbar-button-color-danger);
+    border-color: var(--xeg-toolbar-button-border-danger);
+  }
+
+  /* 툴바 버튼 공통 기본 스타일 */
+  .xeg-toolbar-button-base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--xeg-radius-md);
+    font-family: inherit;
+    font-size: var(--xeg-text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--xeg-transition-fast) ease;
+    border: 1px solid transparent;
+    user-select: none;
+    outline: none;
+  }
+
+  .xeg-toolbar-button-base:focus-visible {
+    outline: var(--xeg-toolbar-button-focus-ring-width) solid
+      var(--xeg-toolbar-button-focus-ring-color);
+    outline-offset: 2px;
+  }
+
+  /* ===========================================
      PC-FRIENDLY DESIGN TOKENS
      =========================================== */
 
   /* PC 친화적 버튼 크기 토큰 - 중복 제거된 버전 */
   --xeg-button-size-pc-medium: 64px;
   --xeg-button-size-pc-large: 88px;
+
+  /* ===========================================
+     UNIFIED TOOLBAR BUTTON TOKENS
+     =========================================== */
+
+  /* 툴바 버튼 크기 토큰 - 통합 관리 */
+  --xeg-toolbar-button-width-sm: 32px;
+  --xeg-toolbar-button-width-md: 44px;
+  --xeg-toolbar-button-width-lg: 48px;
+  --xeg-toolbar-button-height-sm: 32px;
+  --xeg-toolbar-button-height-md: 44px;
+  --xeg-toolbar-button-height-lg: 48px;
+  --xeg-toolbar-button-icon-sm: 16px;
+  --xeg-toolbar-button-icon-md: 20px;
+  --xeg-toolbar-button-icon-lg: 24px;
+  --xeg-toolbar-button-padding-sm: var(--xeg-spacing-xs);
+  --xeg-toolbar-button-padding-md: var(--xeg-spacing-sm);
+  --xeg-toolbar-button-padding-lg: var(--xeg-spacing-md);
+
+  /* 툴바 버튼 변형 색상 토큰 - 통합 관리 */
+  --xeg-toolbar-button-bg-primary: var(--xeg-color-primary);
+  --xeg-toolbar-button-color-primary: var(--xeg-color-white);
+  --xeg-toolbar-button-border-primary: var(--xeg-color-primary);
+  --xeg-toolbar-button-bg-secondary: var(--xeg-button-bg);
+  --xeg-toolbar-button-color-secondary: var(--xeg-button-text);
+  --xeg-toolbar-button-border-secondary: var(--xeg-border-light);
+  --xeg-toolbar-button-bg-danger: var(--xeg-color-error-alpha-10);
+  --xeg-toolbar-button-color-danger: var(--xeg-color-error);
+  --xeg-toolbar-button-border-danger: var(--xeg-color-error-alpha-30);
+
+  /* 툴바 버튼 접근성 토큰 - 통합 관리 */
+  --xeg-toolbar-button-min-touch-target: 44px;
+  --xeg-toolbar-button-focus-ring-width: var(--xeg-focus-ring-width);
+  --xeg-toolbar-button-focus-ring-color: var(--xeg-color-primary);
 
   /* PC 친화적 간격 토큰 */
   --xeg-spacing-pc-tight: 20px;
@@ -609,16 +765,6 @@
 
   /* 컴포넌트별 색상 토큰 시스템 */
 
-  /* 툴바 색상 시스템 - 중복 제거됨 */
-  --xeg-toolbar-bg: var(--xeg-bg-toolbar);
-  --xeg-toolbar-text: var(--xeg-color-text-primary);
-  --xeg-toolbar-text-secondary: var(--xeg-color-text-secondary);
-
-  /* 모달 색상 시스템 - 테마별 동적 스타일링 */
-  --xeg-modal-bg: var(--xeg-bg-light);
-  --xeg-modal-bg-solid: var(--xeg-bg-solid-light); /* 완전 불투명 옵션 */
-  --xeg-bg-modal: var(--xeg-modal-bg);
-
   /* 갤러리 색상 시스템 */
   --xeg-gallery-bg: var(--xeg-color-overlay-strong);
   --xeg-gallery-surface: var(--xeg-bg-dark);
@@ -637,23 +783,41 @@
    =========================================== */
 
 [data-theme='dark'] {
+  /* ========================================
+     SOLID DESIGN 다크 테마 오버라이드 (TDD 추가)
+     ======================================== */
+
+  /* 핵심 테마 색상 (다크) */
+  --solid-primary: hsl(210, 95%, 65%);
+  --solid-primary-hover: hsl(210, 95%, 60%);
+
+  --surface-bg: hsl(210, 15%, 18%);
+  --surface-bg-hover: hsl(210, 15%, 22%);
+  --surface-text: hsl(210, 20%, 95%);
+  --surface-text-secondary: hsl(210, 15%, 75%);
+  --surface-border: hsl(210, 15%, 25%);
+
+  /* 툴바/모달 다크 테마 (통일) */
+  --xeg-modal-overlay-bg: hsl(210, 15%, 8%, 0.85);
+
   /* 🌑 다크 테마용 HSL 색상 시스템 - UI 일관성 및 시인성 개선 */
   /* Base Colors */
-  --xeg-color-primary: hsl(210, 95%, 65%);
+  --xeg-color-primary: var(--solid-primary); /* Solid Design 통합 */
+  --xeg-color-primary-hover: var(--solid-primary-hover); /* Solid Design 통합 */
   --xeg-color-success: hsl(140, 60%, 55%);
   --xeg-color-error: hsl(0, 85%, 60%);
 
   /* Text Colors */
-  --xeg-color-text-primary: hsl(210, 20%, 95%);
+  --xeg-color-text-primary: var(--surface-text); /* Solid Design 통합 */
   --xeg-color-text-secondary: hsl(210, 15%, 65%);
 
   /* Background Colors */
   /* DEPRECATED: HSL 색상으로 대체됨 */
   /* --xeg-bg-toolbar: hsl(210, 15%, 18%); */
-  --xeg-bg-surface: hsl(210, 15%, 22%);
+  --xeg-bg-surface: var(--surface-bg); /* Solid Design 통합 */
 
   /* Border Colors */
-  --xeg-toolbar-border: hsl(210, 15%, 25%);
+  --xeg-toolbar-border: var(--surface-border); /* Solid Design 통합 */
   --xeg-border-light: hsl(210, 15%, 30%);
 
   /* Shadows */

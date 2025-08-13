@@ -1,173 +1,181 @@
 /**
- * Gallery Toolbar Styles - UX 최적화 버전
- * @version 6.0.0 - 사용자 친화적이고 접근성 좋은 툴바
+ * 통합 갤러리 툴바 스타일
+ * @version 7.1.0 - Simplified와 UX 최적화 버전 통합
+ * - 통합 스타일 시스템 연동
+ * - 사용자 친화적 UX 최적화
+ * - 향상된 접근성 지원
  */
 
-/* 🎯 툴바 기본 스타일 - UX 중심 디자인 */
+/* ========================================
+   툴바 기본 레이아웃 - 통합 스타일
+   ======================================== */
+
+.toolbar,
 .galleryToolbar {
-  /* 레이아웃 - 더 접근하기 쉬운 위치 */
+  /* 위치 및 레이아웃 */
   position: fixed;
-  top: var(--xeg-spacing-lg); /* 토큰 사용 */
+  top: var(--xeg-spacing-lg);
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--xeg-z-gallery-toolbar);
+  z-index: var(--xeg-z-toolbar, var(--xeg-z-gallery-toolbar));
 
-  /* 크기 및 간격 - 토큰 기반 조정 */
-  /* 고정 높이 대신 콘텐츠에 맞춘 자동 높이, 최소 터치 영역 보장 */
+  /* 크기 */
   height: auto;
   min-height: var(--xeg-touch-target-min);
-  /* 외곽 여백(버튼/아이콘과 툴바 경계 사이) - 상하/좌우 동일 값 적용 */
-  padding: var(--xeg-toolbar-edge-padding);
-  /* 툴바 내부 섹션 간 기본 간격 */
-  gap: var(--xeg-toolbar-group-gap);
-  min-width: 400px; /* 최소 너비 유지 */
+  min-width: 400px;
   max-width: 90vw;
+  padding: var(--xeg-spacing-sm, var(--xeg-toolbar-edge-padding));
 
   /* 플렉스 레이아웃 */
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: var(--xeg-spacing-md, var(--xeg-toolbar-group-gap));
 
-  /* 트랜지션 - 부드러운 상호작용 */
-  transition:
-    opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-
-  /* 단순화된 스타일링 - 글래스모피즘 효과 제거 */
-  background: var(--xeg-bg-toolbar, #ffffff); /* fallback: 불투명 흰색 */
+  /* 기본 스타일 - CSS 변수 기반 */
+  background: var(--xeg-toolbar-bg, var(--xeg-bg-toolbar, #ffffff));
   border: 2px solid var(--xeg-toolbar-border, #e5e7eb);
-  border-radius: var(--xeg-toolbar-border-radius, 16px);
+  border-radius: var(--xeg-radius-lg, var(--xeg-toolbar-border-radius, 16px));
   box-shadow: var(--xeg-toolbar-shadow, 0 4px 6px rgba(0, 0, 0, 0.1));
   color: var(--xeg-toolbar-text, #111827);
+
+  /* 전환 효과 */
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
   /* 최적화 */
   user-select: none;
   isolation: isolate;
-
-  /* 호버 시 더 명확한 표시 */
+  contain: layout style paint;
   cursor: default;
 }
 
+/* 호버 상태 - 통합 효과 */
+.toolbar:hover,
 .galleryToolbar:hover {
+  transform: translateX(-50%) translateY(-1px);
   box-shadow: var(--xeg-shadow-simple-strong);
-  transform: translateX(-50%) translateY(-1px); /* 복잡한 transform 효과 제거 */
   border-color: var(--xeg-color-primary-alpha-40);
 }
 
-/* ===== 개선된 네이티브 스타일 - X.com 일관성 (기본 테마로 통합) ===== */
+/* ========================================
+   테마별 스타일 - 네이티브 일관성
+   ======================================== */
 
 /* 라이트 모드 - 네이티브 스타일 통합 */
+[data-theme='light'] .toolbar,
 [data-theme='light'] .galleryToolbar {
-  background: var(--xeg-bg-toolbar);
+  background: var(--xeg-toolbar-bg);
   color: var(--xeg-toolbar-text);
-
-  /* X.com 스타일 요소 통합 */
   border-color: var(--xeg-color-border-primary);
 }
 
 /* 다크 모드 - 네이티브 스타일 통합 */
+[data-theme='dark'] .toolbar,
 [data-theme='dark'] .galleryToolbar {
-  background: var(--xeg-bg-toolbar);
+  background: var(--xeg-toolbar-bg);
   color: var(--xeg-toolbar-text);
-
-  /* X.com 스타일 요소 통합 */
   border-color: var(--xeg-color-border-primary);
 }
 
-/* 감소된 모션 지원 강화 */
-@media (prefers-reduced-motion: reduce) {
-  .galleryToolbar {
-    transition: none;
-  }
-}
+/* ========================================
+   툴바 상태별 스타일 - 통합 상태 관리
+   ======================================== */
 
-/* 🎨 상태별 CSS 프로퍼티 - UX 중심 개선 */
+/* 기본 상태 */
+.toolbar[data-state='idle'],
+.toolbar:not([data-state]),
 .galleryToolbar[data-state='idle'],
 .galleryToolbar:not([data-state]) {
   --toolbar-opacity: 1 !important;
   --toolbar-pointer-events: auto !important;
 
-  /* 완전한 가시성과 상호작용 보장 */
   opacity: 1 !important;
   visibility: visible !important;
   display: flex !important;
   pointer-events: auto !important;
-
-  /* 기본 상태에서 부드러운 그림자 */
   box-shadow: var(--xeg-toolbar-shadow);
 }
 
+/* 로딩 상태 */
+.toolbar[data-state='loading'],
 .galleryToolbar[data-state='loading'] {
-  --toolbar-opacity: 0.9 !important; /* 약간 더 선명하게 */
+  --toolbar-opacity: 0.9 !important;
   --toolbar-pointer-events: auto !important;
 
   opacity: 0.9 !important;
   pointer-events: auto !important;
-
-  /* 로딩 상태 시각적 피드백 */
-  background: linear-gradient(135deg, var(--xeg-bg-toolbar) 0%, rgba(59, 130, 246, 0.1) 100%);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: linear-gradient(
+    135deg,
+    var(--xeg-toolbar-bg) 0%,
+    var(--xeg-color-primary-alpha-10, rgba(59, 130, 246, 0.1)) 100%
+  );
+  border-color: var(--xeg-color-primary-alpha-30, rgba(59, 130, 246, 0.3));
 }
 
+/* 다운로드 상태 */
+.toolbar[data-state='downloading'],
 .galleryToolbar[data-state='downloading'] {
   --toolbar-opacity: 1 !important;
   --toolbar-pointer-events: auto !important;
 
   opacity: 1 !important;
   pointer-events: auto !important;
-
-  /* 다운로드 상태 시각적 피드백 - 성공적인 녹색 톤 */
-  background: linear-gradient(135deg, var(--xeg-bg-toolbar) 0%, rgba(16, 185, 129, 0.1) 100%);
-  border-color: rgba(16, 185, 129, 0.3);
+  background: linear-gradient(
+    135deg,
+    var(--xeg-toolbar-bg) 0%,
+    var(--xeg-color-success-alpha-10, rgba(16, 185, 129, 0.1)) 100%
+  );
+  border-color: var(--xeg-color-success-alpha-30, rgba(16, 185, 129, 0.3));
   box-shadow: var(--xeg-shadow-simple-strong);
 }
 
+/* 에러 상태 */
+.toolbar[data-state='error'],
 .galleryToolbar[data-state='error'] {
   --toolbar-opacity: 1 !important;
   --toolbar-pointer-events: auto !important;
 
   opacity: 1 !important;
   pointer-events: auto !important;
-
-  /* 에러 상태 시각적 피드백 - 경고적인 빨간색 톤 */
-  background: linear-gradient(135deg, var(--xeg-bg-toolbar) 0%, rgba(239, 68, 68, 0.1) 100%);
-  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(
+    135deg,
+    var(--xeg-toolbar-bg) 0%,
+    var(--xeg-color-error-alpha-10, rgba(239, 68, 68, 0.1)) 100%
+  );
+  border-color: var(--xeg-color-error-alpha-40, rgba(239, 68, 68, 0.4));
   box-shadow: var(--xeg-shadow-simple-strong);
-  transform: translateX(-50%) translateY(-1px); /* 미세한 떠있는 효과 */
+  transform: translateX(-50%) translateY(-1px);
 }
 
-/* 💼 툴바 콘텐츠 레이아웃 - UX 최적화 */
+/* ========================================
+   툴바 콘텐츠 레이아웃 - 통합 UX 최적화
+   ======================================== */
+
 .toolbarContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  /* 그룹(섹션) 간 간격은 툴바 전용 그룹 간격 사용 */
-  gap: var(--xeg-toolbar-group-gap);
+  gap: var(--xeg-spacing-md, var(--xeg-toolbar-group-gap));
   max-width: 100%;
-  overflow: visible; /* 호버 효과가 잘릴 수 있으므로 변경 */
-  min-height: var(--xeg-touch-target-min); /* 최소 터치 영역 보장 */
+  overflow: visible;
+  min-height: var(--xeg-touch-target-min);
 }
 
 .toolbarSection {
   display: flex;
   align-items: center;
-  /* 섹션 내부 버튼 간 간격은 버튼 전용 간격 사용 */
-  gap: var(--xeg-toolbar-button-gap);
+  gap: var(--xeg-spacing-sm, var(--xeg-toolbar-button-gap));
   position: relative;
-  min-height: var(--xeg-touch-target-min); /* 터치 친화적 */
+  min-height: var(--xeg-touch-target-min);
 }
 
-/* 좌측, 우측 섹션을 균등하게 배치하되 더 사용자 친화적으로 */
 .toolbarLeft,
 .toolbarRight {
   flex: 1;
   display: flex;
   align-items: center;
-  /* 좌/우 섹션 내 하위 그룹 간격 확대 */
-  gap: var(--xeg-toolbar-group-gap);
-  /* 좌/우 섹션은 툴바의 edge padding과 겹치지 않도록 내부 추가 패딩 제거 */
+  gap: var(--xeg-spacing-md, var(--xeg-toolbar-group-gap));
   padding-inline: 0;
   min-height: var(--xeg-touch-target-min);
 }
@@ -176,37 +184,6 @@
   justify-content: flex-start;
 }
 
-.toolbarRight {
-  justify-content: flex-end;
-}
-
-/* 🔲 그룹 컨테이너 - 네비게이션/다운로드 등을 시각적으로 묶기 위한 가벼운 박스 */
-.groupBox {
-  display: flex;
-  align-items: center;
-  gap: var(--xeg-toolbar-button-gap);
-  /* 그룹 내부 패딩은 상하/좌우 동일 값 적용 */
-  padding: var(--xeg-toolbar-group-padding);
-  border-radius: var(--xeg-radius-lg);
-  background: var(--xeg-bg-surface);
-  border: 1px solid var(--xeg-border-light);
-}
-
-/* 인접한 그룹 박스 사이에 명확한 간격 제공 */
-.groupBox + .groupBox {
-  margin-inline-start: var(--xeg-toolbar-group-gap);
-}
-
-/* 그룹 내 명료한 디바이더 */
-.groupDivider {
-  width: 1px;
-  height: 28px;
-  background: var(--xeg-border-light);
-  opacity: 0.7;
-  border-radius: 1px;
-}
-
-/* 🎯 중앙 섹션 - 핵심 컨트롤 영역 */
 .toolbarCenter {
   flex: 0 0 auto;
   display: flex;
@@ -214,202 +191,141 @@
   justify-content: center;
   gap: var(--xeg-spacing-sm);
   min-height: var(--xeg-touch-target-min);
-  /* 중앙 섹션도 별도 내부 패딩 없이 아이콘 배치로 크기 결정 */
   padding: 0;
 }
 
-/* 📏 구분선 - 깔끔하게 제거하고 간격으로 대체 */
-.toolbarSection::after {
-  display: none; /* 모든 구분선 제거 - 간격으로 충분 */
+.toolbarRight {
+  justify-content: flex-end;
 }
 
-/* [변경] 카운터 구분 기호 스타일 */
-.separator {
-  color: var(--xeg-text-tertiary);
-  margin: 0 4px;
-  font-weight: 400;
+/* ========================================
+   그룹 컨테이너 - 통합 스타일
+   ======================================== */
+
+.groupBox {
+  display: flex;
+  align-items: center;
+  gap: var(--xeg-spacing-xs, var(--xeg-toolbar-button-gap));
+  padding: var(--xeg-spacing-xs, var(--xeg-toolbar-group-padding));
+  border-radius: var(--xeg-radius-md, var(--xeg-radius-lg));
+  background: var(--xeg-bg-surface-alpha-20, var(--xeg-bg-surface));
+  border: 1px solid var(--xeg-border-light);
 }
 
-/* Toolbar buttons now use shared Button component styles. */
-
-/* [변경] 네비게이션 버튼 아이콘 크기 조정 */
-/* 제거됨: 아이콘 크기는 ToolbarButton에서 일관 매핑됨 */
-
-/* Additional toolbar-specific flourishes removed to avoid conflicts. */
-
-/* Icon sizing is governed by Button children (ToolbarButton passes size). */
-
-/* 🎯 버튼 상태별 스타일 - 데이터 속성 기반 */
-/* Active/selected/loading/disabled handled by shared Button props/styles. */
-
-/* 🖱️ 호버 상태 - UIBase 통합 PC 친화적 효과 */
-@media (hover: hover) {
-  /* Hover interactions centralized in Button.module.css */
+.groupBox + .groupBox {
+  margin-inline-start: var(--xeg-spacing-md, var(--xeg-toolbar-group-gap));
 }
 
-/* 활성화/포커스 상태 - 키보드 접근성 개선 (토큰 사용) */
-/* Active/focus handled by shared Button styles. */
-
-/* 🖱️ 클릭 상태 - 명확한 피드백 (토큰 사용) */
-/* Click feedback handled centrally. */
-
-/* ♿ 접근성 개선 - 포커스 상태 */
-/* Focus ring unified by shared Button. */
-
-.currentIndex {
-  color: var(--xeg-color-primary);
-  font-weight: 700;
+.groupDivider {
+  width: 1px;
+  height: 24px;
+  background: var(--xeg-border-light);
+  opacity: 0.6;
+  border-radius: 1px;
 }
 
-/* 제거됨: 핏 모드 버튼 전용 클래스 */
+/* ========================================
+   핏 모드 그룹 - 통합 스타일
+   ======================================== */
 
-/* 🔧 크기 조절 섹션 - 향상된 UX */
 .fitModeGroup {
   display: flex;
-  gap: var(--xeg-toolbar-button-gap);
-  background: var(--xeg-bg-surface);
-  border-radius: var(--xeg-radius-lg);
+  gap: var(--xeg-spacing-xs, var(--xeg-toolbar-button-gap));
+  background: var(--xeg-bg-surface-alpha-30, var(--xeg-bg-surface));
+  border-radius: var(--xeg-radius-md, var(--xeg-radius-lg));
   padding: var(--xeg-spacing-xs);
-  border: 2px solid var(--xeg-border-light);
-
-  /* 단순화된 배경 효과 */
+  border: 1px solid var(--xeg-border-light);
   box-shadow: var(--xeg-shadow-simple-subtle);
 }
 
-.fitButton {
-  width: var(--xeg-button-size); /* 통일된 버튼 크기 */
-  height: var(--xeg-button-size);
-  min-width: var(--xeg-touch-target-min);
-  min-height: var(--xeg-touch-target-min);
+/* ========================================
+   미디어 카운터 - Simplified 버전 추가
+   ======================================== */
 
-  border-radius: var(--xeg-radius-md);
-  background: transparent;
-  border: 2px solid transparent;
-  color: var(--xeg-text-secondary);
+.mediaCounterWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--xeg-spacing-xs);
+}
 
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  cursor: pointer;
-
-  /* 레이아웃 중앙 정렬 */
+.mediaCounter {
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  /* 이벤트 전파 방지 및 안정성 */
-  position: relative;
-  z-index: 10;
-  pointer-events: auto;
-  user-select: none;
+  font-size: var(--xeg-font-size-sm);
+  font-weight: var(--xeg-font-weight-medium);
+  color: var(--xeg-toolbar-text);
 }
 
-.fitButton:hover:not(.selected) {
-  background: var(--xeg-button-bg-hover);
-  color: var(--xeg-text-primary);
-  border-color: var(--xeg-color-primary-alpha-30);
-  /* 복잡한 transform 효과 제거 - scale 대신 미묘한 효과 */
-  transform: translateY(-1px);
+.currentIndex {
+  color: var(--xeg-color-primary);
+  font-weight: var(--xeg-font-weight-bold, 700);
 }
 
-.fitButton.selected {
+.separator {
+  color: var(--xeg-toolbar-text-secondary, var(--xeg-text-tertiary));
+  margin: 0 var(--xeg-spacing-xs, 4px);
+  font-weight: 400;
+}
+
+.totalCount {
+  color: var(--xeg-toolbar-text-secondary);
+}
+
+.progressBar {
+  width: 60px;
+  height: 3px;
+  background: var(--xeg-bg-surface-alpha-40);
+  border-radius: var(--xeg-radius-sm);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
   background: var(--xeg-color-primary);
-  color: white;
-  border-color: var(--xeg-color-primary);
-  box-shadow: var(--xeg-shadow-simple-medium);
-  transform: scale(1.02);
+  border-radius: var(--xeg-radius-sm);
+  transition: width var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
 
-.fitButton:active {
-  transform: scale(0.95);
-  transition-duration: 0.1s;
-}
+/* ========================================
+   접근성 지원 - 통합 및 강화
+   ======================================== */
 
-/* 📥 다운로드 버튼 - 향상된 시각적 피드백 */
-/* 제거됨: 다운로드 버튼 전용 클래스 */
-
-/* 제거됨: 다운로드 버튼 전용 클래스 */
-
-.downloadCurrent:hover:not(:disabled) {
-  /* fitButton과 동일한 단순한 호버 효과 */
-  background: var(--xeg-bg-button-download-hover);
-  border-color: var(--xeg-color-primary-hover);
-  /* transform 효과 제거 */
-}
-
-.downloadAll {
-  background: var(--xeg-color-success);
-  border-color: var(--xeg-color-success);
-  color: white;
-}
-
-.downloadAll:hover:not(:disabled) {
-  /* fitButton과 동일한 단순한 호버 효과 */
-  background: var(--xeg-color-success-light);
-  border-color: var(--xeg-color-success-light);
-  /* transform 효과 제거 */
-}
-
-/* 고대비 접근성 지원 */
-
-.downloadSpinner {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 12px;
-  height: 12px;
-  background: rgba(76, 175, 80, 0.9);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 8px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-/* 설정 및 닫기 버튼 */
-/* 제거됨: 설정 버튼 전용 클래스 */
-
-/* 제거됨: 닫기 버튼 전용 클래스 */
 /* 고대비 모드 - 시인성 개선 */
 @media (prefers-contrast: high) {
+  .toolbar,
   .galleryToolbar {
-    background: var(--xeg-color-solid-light);
-    border: 2px solid var(--xeg-color-solid-dark);
-    box-shadow: 0 4px 20px var(--xeg-black-alpha-50);
+    background: var(--xeg-bg-solid, var(--xeg-color-solid-light));
+    border: 3px solid var(--xeg-toolbar-text, var(--xeg-color-solid-dark));
+    box-shadow: none;
   }
-
-  /* 버튼 고대비 스타일은 공통 Button.module.css에서 처리됩니다 */
-  /* 제거됨: 전용 버튼 클래스 고대비 스타일 */
 
   /* 다크 테마에서 고대비 모드 */
+  [data-theme='dark'] .toolbar,
   [data-theme='dark'] .galleryToolbar {
-    background: var(--xeg-color-solid-dark);
-    border: 2px solid var(--xeg-color-solid-light);
+    background: var(--xeg-bg-solid, var(--xeg-color-solid-dark));
+    border: 3px solid var(--xeg-color-solid-light);
   }
 }
 
-/* 버튼 고대비(다크) 스타일은 공통 Button.module.css에서 처리됩니다 */
-
-@media (prefers-color-scheme: dark) and (prefers-contrast: high) {
+/* 모션 감소 */
+@media (prefers-reduced-motion: reduce) {
+  .toolbar,
   .galleryToolbar {
-    background: var(--xeg-color-solid-dark);
-    border: 2px solid var(--xeg-color-solid-light);
+    transition: none;
   }
-  /* 버튼 고대비(다크) 스타일은 공통 Button.module.css에서 처리됩니다 */
+
+  .progressFill {
+    transition: none;
+    animation: none;
+  }
 }
 
-/* 투명도 감소 선호 사용자를 위한 대체 스타일 */
+/* 투명도 감소 */
 @media (prefers-reduced-transparency: reduce) {
+  .toolbar,
   .galleryToolbar {
-    background: var(--xeg-bg-solid-light);
+    background: var(--xeg-bg-solid, var(--xeg-bg-solid-light));
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
@@ -417,44 +333,37 @@
       0 2px 8px var(--xeg-black-alpha-10);
   }
 
+  [data-theme='dark'] .toolbar,
   [data-theme='dark'] .galleryToolbar {
-    background: var(--xeg-bg-solid-dark);
+    background: var(--xeg-bg-solid, var(--xeg-bg-solid-dark));
+  }
+
+  .groupBox,
+  .fitModeGroup {
+    background: var(--xeg-bg-surface);
   }
 }
 
-/* 감소된 모션 */
-@media (prefers-reduced-motion: reduce) {
-  .progressFill {
-    transition: none;
-    animation: none;
-  }
+/* ========================================
+   동적 시인성 조정 - 고대비 모드
+   ======================================== */
 
-  /* 모든 버튼에서 transform 효과 제거 */
-  /* 버튼 관련 모션 제거는 공통 Button.module.css에서 처리됩니다 */
-}
-
-/* ===== 동적 시인성 조정 ===== */
-
-/* 동적 고대비 모드 - 완전 불투명 배경 */
+.toolbar.highContrast,
 .galleryToolbar.highContrast {
-  background: var(--xeg-bg-solid-light) !important; /* 완전 불투명 */
+  background: var(--xeg-bg-solid-light) !important;
   border: 2px solid var(--xeg-black-alpha-30) !important;
-  backdrop-filter: none !important; /* 블러 효과 제거 */
+  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow:
     0 4px 20px var(--xeg-black-alpha-40),
     0 2px 8px var(--xeg-black-alpha-20) !important;
 }
 
+[data-theme='dark'] .toolbar.highContrast,
 [data-theme='dark'] .galleryToolbar.highContrast {
-  background: var(--xeg-bg-solid-dark) !important; /* 완전 불투명 */
+  background: var(--xeg-bg-solid-dark) !important;
   border: 2px solid var(--xeg-white-alpha-30) !important;
   box-shadow:
     0 4px 20px var(--xeg-black-alpha-60),
     0 2px 8px var(--xeg-black-alpha-40) !important;
 }
-
-/* 고대비 모드에서 버튼 시인성 개선 */
-/* 동적 고대비 상태에서의 버튼 스타일은 공통 Button.module.css에서 처리됩니다 */
-
-/* ===== 접근성 개선 ===== */

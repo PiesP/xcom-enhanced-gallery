@@ -152,15 +152,7 @@ export const registerResource = (cleanup: () => void) => ResourceService.registe
 export const releaseResource = (cleanup: () => void) => ResourceService.release(cleanup);
 export const releaseAllResources = () => ResourceService.releaseAll();
 
-// ================================
-// Legacy Aliases (제거 예정)
-// ================================
-
-/** @deprecated Use throttle directly */
-export const raf = rafThrottle;
-
-/** @deprecated Use rafThrottle directly */
-export const throttleScroll = rafThrottle;
+// (Legacy aliases removed) Use rafThrottle directly
 
 // ================================
 // Unified Performance Class

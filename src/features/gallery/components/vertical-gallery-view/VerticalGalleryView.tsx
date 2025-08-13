@@ -15,7 +15,11 @@ import { logger } from '@shared/logging';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types';
-import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
+import {
+  galleryState,
+  navigateToItem,
+  toggleSettings,
+} from '@shared/state/signals/gallery.signals';
 import { getPreactHooks } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import {
@@ -39,8 +43,6 @@ import { getKeyValueStore } from '@shared/storage/provider';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { SettingsOverlay } from '@/features/settings/components/SettingsOverlay';
-import { toggleSettings } from '@shared/state/signals/gallery.signals';
-import { openSettingsModal } from '@/features/settings/settings-menu';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -507,7 +509,7 @@ function VerticalGalleryViewCore({
             onDownloadCurrent={_handleDownloadCurrent}
             onDownloadAll={_handleDownloadAll}
             onClose={onClose || (() => {})}
-            onOpenSettings={() => openSettingsModal()}
+            onOpenSettings={() => toggleSettings(true)}
             onFitOriginal={_handleFitOriginal}
             onFitWidth={_handleFitWidth}
             onFitHeight={_handleFitHeight}

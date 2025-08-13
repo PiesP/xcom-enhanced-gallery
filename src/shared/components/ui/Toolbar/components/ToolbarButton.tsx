@@ -7,7 +7,7 @@ import { Button } from '@shared/components/ui/Button/Button';
 import { getIcon, type IconName, type IconComponent } from '@shared/services/icon-service';
 import { useStandardEventHandling } from '@shared/hooks/useStandardEventHandling';
 import { getPreact, getPreactHooks } from '@shared/external/vendors';
-import { SIZE_CONSTANTS } from '@/constants';
+import { UnifiedDarkModeStyleSystem } from '@shared/styles/unified-dark-mode-style-system';
 
 /**
  * 툴바 버튼 Props
@@ -58,33 +58,16 @@ export function ToolbarButton({
   const { useState, useEffect } = getPreactHooks();
   const [IconComponent, setIconComponent] = useState<IconComponent | null>(null);
 
-  // 아이콘 크기 매핑: 버튼 size -> 아이콘 크기 (디자인 토큰과 정합)
+  // 통합 다크모드 시스템 인스턴스 (CSS 변수 관리용)
+  UnifiedDarkModeStyleSystem.getInstance();
+
+  // 아이콘 크기 매핑: 통합 스타일 시스템 사용
   const resolvedIconSize = (() => {
     if (typeof iconSize === 'number' && !Number.isNaN(iconSize)) return iconSize;
-    // CSS 변수 기반 우선 읽기(토큰 오버라이드 대응)
-    try {
-      const root = document.documentElement;
-      const styles = getComputedStyle(root);
-      const tokenKey: Record<'sm' | 'md' | 'lg', string> = {
-        sm: '--xeg-icon-size-sm',
-        md: '--xeg-icon-size-md',
-        lg: '--xeg-icon-size-xl', // 툴바 용도: 크게
-      };
-      const raw = styles.getPropertyValue(tokenKey[size] as string).trim();
-      if (raw) {
-        const parsed = parseInt(raw, 10);
-        if (!Number.isNaN(parsed)) return parsed;
-      }
-    } catch {
-      // 비브라우저 환경(테스트) 대비 폴백 사용
-    }
-    // 최종 폴백 기본 매핑: sm 20 / md SIZE_CONSTANTS.TWENTY_FOUR / lg 28
-    const defaultMap: Record<'sm' | 'md' | 'lg', number> = {
-      sm: 20,
-      md: SIZE_CONSTANTS.TWENTY_FOUR,
-      lg: 28,
-    };
-    return defaultMap[size] ?? SIZE_CONSTANTS.TWENTY_FOUR;
+
+    // 통합 스타일 시스템에서 크기 가져오기
+    const sizeMap = { sm: 16, md: 20, lg: 24 };
+    return sizeMap[size];
   })();
 
   // 아이콘 동기 로딩
@@ -102,8 +85,9 @@ export function ToolbarButton({
     'aria-label': ariaLabel,
     'data-testid': testId,
     title,
-    className: '', // CSS Modules 사용으로 글로벌 클래스 제거
-    // 아이콘 크기는 size와 매핑된 기본 값을 사용하되, iconSize prop으로 오버라이드 가능
+    // 통합 툴바 스타일 시스템 클래스 적용
+    className: `xeg-unified-toolbar-button xeg-unified-button-${size} xeg-unified-button-${variant}`,
+    // 아이콘 크기는 통합 시스템에서 계산된 값 사용
     children: IconComponent ? h(IconComponent, { size: resolvedIconSize }) : h('span', {}, '⟳'), // 로딩 표시
   });
 }

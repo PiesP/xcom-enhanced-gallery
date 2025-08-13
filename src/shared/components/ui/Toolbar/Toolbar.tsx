@@ -15,9 +15,10 @@ import {
   getToolbarDataState,
   getToolbarClassName,
 } from '@shared/hooks/useToolbarState';
-import { throttleScroll } from '@shared/utils/performance/unified-performance-utils';
+import { rafThrottle } from '@shared/utils/performance/unified-performance-utils';
 import { ComponentStandards } from '../standard-props';
 import { ToolbarButton } from './components/ToolbarButton';
+import { UnifiedDarkModeStyleSystem } from '@shared/styles/unified-dark-mode-style-system';
 import styles from './Toolbar.module.css';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
@@ -102,13 +103,17 @@ function ToolbarCore({
   const { h } = getPreact();
   const { useMemo, useCallback, useEffect, useRef } = getPreactHooks();
 
+  // 통합 다크모드 스타일 시스템 인스턴스 (CSS 변수 관리용)
+  UnifiedDarkModeStyleSystem.getInstance();
+
   // 새로운 상태 관리 훅 사용
   const [toolbarState, toolbarActions] = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
 
-  // 표준화된 클래스명 생성
+  // 표준화된 클래스명 생성 - 통합 클래스 추가
   const toolbarClass = ComponentStandards.createClassName(
     styles.toolbar,
+    'xeg-unified-toolbar', // 통합 시스템 클래스 추가
     getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
     className
   );
@@ -168,7 +173,7 @@ function ToolbarCore({
     detectBackgroundBrightness();
 
     // 스크롤 시 재감지 - RAF throttle로 성능 최적화
-    const throttledDetect = throttleScroll(() => {
+    const throttledDetect = rafThrottle(() => {
       requestAnimationFrame(detectBackgroundBrightness);
     }); // RAF 기반으로 최적화된 스크롤 감지
 

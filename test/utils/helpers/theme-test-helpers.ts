@@ -15,11 +15,23 @@ export function setTestTheme(theme: 'light' | 'dark'): void {
 
   // 기존 테마 클래스/속성 제거
   documentElement.classList.remove('xeg-theme-light', 'xeg-theme-dark');
-  documentElement.removeAttribute('data-theme');
+
+  // JSDOM 환경에서 안전하게 removeAttribute 수행
+  try {
+    if (documentElement.removeAttribute) {
+      documentElement.removeAttribute('data-theme');
+    } else if (documentElement.setAttribute) {
+      documentElement.setAttribute('data-theme', '');
+    }
+  } catch {
+    // JSDOM 환경에서 removeAttribute가 실패하는 경우 무시
+  }
 
   // 새 테마 적용
   documentElement.classList.add(`xeg-theme-${theme}`);
-  documentElement.setAttribute('data-theme', theme);
+  if (documentElement.setAttribute) {
+    documentElement.setAttribute('data-theme', theme);
+  }
 }
 
 /**
@@ -56,12 +68,22 @@ export function resetTestTheme(): void {
  * 테스트에서 CSS 변수가 제대로 설정되어 있는지 확인
  */
 export function ensureCSSVariablesForTesting(): void {
-  if (typeof document === 'undefined') {
+  if (typeof document === 'undefined' || !document.head) {
     return;
   }
 
-  // 기본 CSS 변수들을 스타일 태그로 삽입
-  const existingStyle = document.getElementById('test-theme-variables');
+  // JSDOM 환경에서 안전하게 getElementById 수행
+  let existingStyle: Element | null = null;
+  try {
+    if (document.getElementById) {
+      existingStyle = document.getElementById('test-theme-variables');
+    } else if (document.querySelector) {
+      existingStyle = document.querySelector('#test-theme-variables');
+    }
+  } catch {
+    // JSDOM 환경에서 실패하는 경우 무시
+  }
+
   if (existingStyle) {
     return; // 이미 삽입됨
   }
