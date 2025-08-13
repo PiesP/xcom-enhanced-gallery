@@ -18,6 +18,7 @@ import { preactCompat as bundledCompat } from '../compat-bundled';
 import { preactHooks as bundledHooks } from '../hooks-bundled';
 import { preactSignals as bundledSignals } from '../signals-bundled';
 import { fflateBundled } from '../fflate-bundled';
+import type { NativeDownloadAPI } from './vendor-service';
 
 // ================================
 // 안전한 벤더 로더 시스템
@@ -271,11 +272,29 @@ export function getFflate(): FflateAPI {
 }
 
 /**
- * 네이티브 다운로드 API
+ * 네이티브 다운로드 API (싱글톤)
  */
+let nativeDownloadInstance: NativeDownloadAPI | null = null;
+
 export function getNativeDownload() {
-  return {
+  if (nativeDownloadInstance) return nativeDownloadInstance;
+
+  nativeDownloadInstance = {
     downloadBlob: (blob: Blob, filename: string): void => {
+      // 테스트/서버 환경 안전 가드: URL.createObjectURL 미구현 또는 document 미존재 시 no-op
+      const hasCreateObjectURL =
+        typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function';
+      const hasRevokeObjectURL =
+        typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function';
+      const hasDocument = typeof document !== 'undefined' && !!document.body;
+
+      if (!hasCreateObjectURL || !hasRevokeObjectURL || !hasDocument) {
+        logger.debug(
+          '[Vendor] downloadBlob: environment lacks DOM/ObjectURL, skipping actual download'
+        );
+        return;
+      }
+
       const url = URL.createObjectURL(blob);
       try {
         const link = document.createElement('a');
@@ -283,7 +302,12 @@ export function getNativeDownload() {
         link.download = filename;
         link.style.display = 'none';
         document.body.appendChild(link);
-        link.click();
+        // 일부 테스트 환경에서 click이 구현되지 않았을 수 있으므로 방어적 호출
+        try {
+          link.click();
+        } catch {
+          link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        }
         document.body.removeChild(link);
       } finally {
         URL.revokeObjectURL(url);
@@ -291,13 +315,24 @@ export function getNativeDownload() {
     },
 
     createDownloadUrl: (blob: Blob): string => {
+      const hasCreateObjectURL =
+        typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function';
+      if (!hasCreateObjectURL) {
+        logger.debug('[Vendor] createDownloadUrl: URL.createObjectURL unavailable');
+        return '';
+      }
       return URL.createObjectURL(blob);
     },
 
     revokeDownloadUrl: (url: string): void => {
+      const hasRevokeObjectURL =
+        typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function';
+      if (!hasRevokeObjectURL) return;
       URL.revokeObjectURL(url);
     },
   };
+
+  return nativeDownloadInstance;
 }
 
 /**

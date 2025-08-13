@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render } from '@testing-library/preact';
 import { GalleryView } from '@features/gallery/components/GalleryView';
 import { ThemeService } from '@shared/services/ThemeService';
 

@@ -10,9 +10,17 @@ import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
-import { generateMediaFilename } from '@shared/media';
+import { generateMediaFilename, generateZipFilename } from '@shared/media';
 import { createElement } from '@shared/dom';
-import { SIZE_CONSTANTS, TIME_CONSTANTS } from '../../constants';
+import { SIZE_CONSTANTS, TIME_CONSTANTS, SERVICE_KEYS } from '../../constants';
+import { getService } from '@shared/services/service-manager';
+import { createZipFromItems, type MediaItemForZip } from '@shared/external/zip';
+import { getHighQualityMediaUrl } from '@shared/utils/media';
+
+// 의존성 격리: SettingsService 타입 직접 import 대신 최소 인터페이스만 사용
+type SettingsReader = {
+  get: <T = unknown>(key: string) => T;
+};
 
 // 통합된 서비스 타입들
 /**
@@ -820,9 +828,42 @@ export class MediaService {
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
     try {
-      const { getFflate } = await import('@shared/external/vendors');
-      const fflate = getFflate();
       const download = getNativeDownload();
+
+      // Read settings safely via service-manager (optional in tests)
+      let imageQuality: 'original' | 'large' | 'medium' | 'small' = 'original';
+      let maxConcurrentDownloads: number = SIZE_CONSTANTS.FOUR as number;
+      let autoZip = false;
+      try {
+        const settings = getService<SettingsReader>(SERVICE_KEYS.SETTINGS_MANAGER);
+        imageQuality =
+          (settings?.get?.('download.imageQuality') as typeof imageQuality) ?? 'original';
+        maxConcurrentDownloads =
+          (settings?.get?.('download.maxConcurrentDownloads') as number) ?? SIZE_CONSTANTS.FOUR;
+        autoZip = Boolean(settings?.get?.('download.autoZip'));
+      } catch {
+        // ignore if settings not available
+      }
+
+      // Map 'original' -> 'orig' for URL param
+      type MappedQuality = 'orig' | 'large' | 'medium' | 'small';
+      const mappedQuality: MappedQuality = imageQuality === 'original' ? 'orig' : imageQuality;
+
+      // name 파라미터를 주입하여 품질을 지정하는 URL 생성기 ('orig' 포함)
+      const withNameParam = (url: string, name: MappedQuality): string => {
+        try {
+          const u = new URL(url);
+          u.searchParams.set('name', name);
+          if (!u.searchParams.has('format')) {
+            u.searchParams.set('format', 'jpg');
+          }
+          return u.toString();
+        } catch {
+          // URL 생성 실패 시 쿼리 문자열로 폴백
+          const sep = url.includes('?') ? '&' : '?';
+          return `${url}${sep}name=${name}&format=jpg`;
+        }
+      };
 
       const files: Record<string, Uint8Array> = {};
       let successful = 0;
@@ -834,7 +875,39 @@ export class MediaService {
         percentage: 0,
       });
 
-      // 파일들을 다운로드하여 ZIP에 추가
+      // If autoZip enabled or multiple items, download and zip with concurrency
+      if (autoZip || mediaItems.length > 1) {
+        const itemsForZip: MediaItemForZip[] = mediaItems.map((m, idx) => {
+          const urlWithQuality =
+            m.type === 'image'
+              ? mappedQuality === 'orig'
+                ? withNameParam(m.url, 'orig')
+                : getHighQualityMediaUrl(m.url, mappedQuality)
+              : m.url;
+          const converted = this.ensureMediaItem(m);
+          const filename = generateMediaFilename(converted, { index: idx + 1 });
+          return {
+            url: urlWithQuality,
+            ...(mappedQuality === 'orig' ? { originalUrl: withNameParam(m.url, 'orig') } : {}),
+            filename,
+          };
+        });
+
+        const zipFilename = generateZipFilename(mediaItems as readonly MediaInfo[]);
+        const blob = await createZipFromItems(itemsForZip, zipFilename, undefined, {
+          maxConcurrent: maxConcurrentDownloads,
+        });
+        download.downloadBlob(blob, zipFilename);
+
+        return {
+          success: true,
+          filesProcessed: mediaItems.length,
+          filesSuccessful: mediaItems.length,
+          filename: zipFilename,
+        };
+      }
+
+      // 파일들을 다운로드하여 단건 저장 (ZIP 아님)
       for (let i = 0; i < mediaItems.length; i++) {
         if (this.currentAbortController?.signal.aborted) {
           throw new Error('Download cancelled by user');
@@ -852,7 +925,13 @@ export class MediaService {
         });
 
         try {
-          const response = await fetch(media.url);
+          const requestUrl =
+            media.type === 'image'
+              ? mappedQuality === 'orig'
+                ? withNameParam(media.url, 'orig')
+                : getHighQualityMediaUrl(media.url, mappedQuality)
+              : media.url;
+          const response = await fetch(requestUrl);
           const arrayBuffer = await response.arrayBuffer();
           const uint8Array = new Uint8Array(arrayBuffer);
 
@@ -869,30 +948,19 @@ export class MediaService {
         throw new Error('All downloads failed');
       }
 
-      // ZIP 생성
-      const zipData = fflate.zipSync(files);
-      const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
+      // ZIP 생성은 상단 분기에서 처리됨 (autoZip 또는 다중 항목)
 
-      // ZIP 다운로드
-      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
-      download.downloadBlob(blob, zipFilename);
-
+      // 단건 다운로드 완료 시 성공 반환
       options.onProgress?.({
         phase: 'complete',
         current: mediaItems.length,
         total: mediaItems.length,
         percentage: 100,
       });
-
-      logger.debug(
-        `ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`
-      );
-
       return {
         success: true,
         filesProcessed: mediaItems.length,
         filesSuccessful: successful,
-        filename: zipFilename,
       };
     } catch (error) {
       const message = getErrorMessage(error);

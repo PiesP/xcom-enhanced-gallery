@@ -9,6 +9,7 @@
  */
 
 import { logger } from '@shared/logging';
+import type { AsyncZipOptions } from 'fflate';
 import { SIZE_CONSTANTS } from '@/constants';
 import { getFflate } from '@shared/external/vendors';
 import { safeParseInt } from '@shared/utils';
@@ -51,6 +52,8 @@ const MAX_FILE_SIZE_MB = 100;
 const REQUEST_TIMEOUT_MS = 30000;
 const DEFAULT_CONCURRENT_DOWNLOADS = 4;
 const NO_COMPRESSION_LEVEL = 0;
+const MIN_ZIP_LEVEL = 0;
+const MAX_ZIP_LEVEL = 9;
 
 /**
  * Default ZIP creation configuration
@@ -150,12 +153,27 @@ async function downloadMediaForZip(
 ): Promise<Uint8Array> {
   const url = item.originalUrl ?? item.url;
 
+  // AbortSignal.timeout 폴백 처리 (Node/Vitest 환경 호환)
+  const supportsTimeout: boolean =
+    typeof (AbortSignal as unknown as { timeout?: unknown }).timeout === 'function';
+  let controller: AbortController | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const signal: AbortSignal = supportsTimeout
+    ? (AbortSignal as unknown as { timeout: (ms: number) => AbortSignal }).timeout(
+        config.requestTimeout
+      )
+    : (() => {
+        controller = new AbortController();
+        timer = setTimeout(() => controller!.abort(), config.requestTimeout);
+        return controller.signal;
+      })();
+
   const response = await fetch(url, {
     method: 'GET',
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; XEG/1.0)',
     },
-    signal: AbortSignal.timeout(config.requestTimeout),
+    signal,
   });
 
   if (!response.ok) {
@@ -177,6 +195,9 @@ async function downloadMediaForZip(
   }
 
   const arrayBuffer = await response.arrayBuffer();
+  if (timer) {
+    clearTimeout(timer);
+  }
   return new Uint8Array(arrayBuffer);
 }
 
@@ -188,7 +209,14 @@ async function createZipBlob(
   _zipFileName: string,
   config: ZipCreationConfig
 ): Promise<Blob> {
-  const fflate = await getFflate();
+  let fflate: Awaited<ReturnType<typeof getFflate>>;
+  try {
+    fflate = await getFflate();
+  } catch {
+    // 테스트/초기화 전 환경 폴백: 정적으로 번들된 fflate 사용
+    const { fflateBundled } = await import('@shared/external/fflate-bundled');
+    fflate = fflateBundled as unknown as Awaited<ReturnType<typeof getFflate>>;
+  }
 
   if (!fflate) {
     throw new Error('fflate library not available');
@@ -208,7 +236,13 @@ async function createZipBlob(
         zipFiles[filename] = data;
       }
 
-      fflate.zip(zipFiles, { level: 6 }, (error: Error | null, data: Uint8Array) => {
+      // fflate 수준 값 보정 후 타입 안전하게 옵션 구성
+      const rounded = Math.round(config.compressionLevel);
+      const clamped = Math.max(MIN_ZIP_LEVEL, Math.min(MAX_ZIP_LEVEL, rounded));
+      const zipOptions: AsyncZipOptions = {
+        level: clamped as NonNullable<AsyncZipOptions['level']>,
+      };
+      fflate.zip(zipFiles, zipOptions, (error: Error | null, data: Uint8Array) => {
         if (error) {
           logger.error('[ZipCreator] fflate.zip failed:', error.message);
           reject(new Error(`ZIP creation failed: ${error.message}`));

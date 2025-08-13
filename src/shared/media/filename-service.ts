@@ -75,6 +75,11 @@ export class FilenameService {
         const pattern = settings.get<'original' | 'tweet-id' | 'timestamp' | 'custom'>(
           'download.filenamePattern'
         );
+        // 1) original 패턴: 제공된 원본 파일명이 있다면 그대로 사용
+        if (pattern === 'original' && media.filename) {
+          // 원본 파일명 그대로 사용 (대소문자, 확장자 포함 유지)
+          return media.filename;
+        }
         if (pattern === 'custom') {
           const rawTemplate = settings.get<string | undefined>('download.customTemplate') || '';
           if (rawTemplate) {
@@ -107,6 +112,13 @@ export class FilenameService {
             const safe = this.sanitizeFilename(rendered, extension);
             if (safe) return safe;
           }
+        } else if (pattern === 'timestamp') {
+          // 2) timestamp 패턴: {timestamp}_{index}.{ext}
+          const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
+          // TDD 요구: 호출자가 전달한 index 우선 사용
+          const index = this.normalizeIndex(options.index);
+          const ts = Date.now();
+          return `${ts}_${index}.${extension}`;
         }
       } catch {
         // settings 서비스가 아직 준비되지 않았거나 테스트 환경인 경우 무시하고 기본 로직으로 진행
