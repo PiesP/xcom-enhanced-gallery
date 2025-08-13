@@ -20,7 +20,7 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
     const node = ref.current;
     if (node) {
       // CSS 모듈 사용: 스타일은 클래스에서 관리
-      wireSettingsModal(node);
+      void wireSettingsModal(node);
 
       // [추가] 테마 변경 시 data-theme 속성 업데이트
       node.setAttribute('data-theme', currentTheme);

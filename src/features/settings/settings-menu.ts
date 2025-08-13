@@ -9,6 +9,26 @@ import type { SettingsService } from './services/settings-service';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { themeService } from '@shared/services/theme-service';
 import type { Theme } from '@shared/services/theme-service';
+import type { AnimationController } from '@shared/services/animation-controller';
+
+// 지연 로딩을 위한 AnimationController 캐시
+let animationController: AnimationController | null = null;
+
+/**
+ * AnimationController 지연 로딩
+ */
+async function getAnimationController(): Promise<AnimationController> {
+  if (!animationController) {
+    try {
+      const { AnimationController } = await import('@shared/services/animation-controller');
+      animationController = new AnimationController();
+    } catch (error) {
+      logger.warn('AnimationController 초기화 실패:', error);
+      throw error;
+    }
+  }
+  return animationController;
+}
 
 // Lightweight modal for settings using Preact via getters
 export function registerSettingsMenu(): void {
@@ -59,7 +79,7 @@ export function openSettingsModal(): void {
         }
       });
       setupModalUX(modal, root, render, () => unsubscribe?.());
-      wireSettingsModal(modal);
+      void wireSettingsModal(modal);
     }
     return;
   } catch (error) {
@@ -138,7 +158,7 @@ export function openSettingsModal(): void {
     });
 
     setupModalUX(modal, root, undefined, () => unsubscribe?.());
-    wireSettingsModal(modal);
+    void wireSettingsModal(modal);
   }
 }
 
@@ -243,7 +263,7 @@ export function __getLastRegisteredCallback(): (() => void) | null {
 export default { registerSettingsMenu, openSettingsModal };
 
 // Internal: wire inputs to SettingsService
-export function wireSettingsModal(container: HTMLElement): void {
+export async function wireSettingsModal(container: HTMLElement): Promise<void> {
   try {
     const svc = getService<SettingsService>(SERVICE_KEYS.SETTINGS_MANAGER);
 
@@ -269,6 +289,7 @@ export function wireSettingsModal(container: HTMLElement): void {
       '[data-testid="auto-scroll-speed"]'
     ) as HTMLInputElement | null;
     const anim = container.querySelector('[data-testid="animations"]') as HTMLInputElement | null;
+    const theme = container.querySelector('[data-testid="theme"]') as HTMLSelectElement | null;
 
     // 초기 값 로드
     if (filename)
@@ -285,14 +306,27 @@ export function wireSettingsModal(container: HTMLElement): void {
       );
     if (speed)
       speed.value = String(svc.get('gallery.autoScrollSpeed' as const) ?? SIZE_CONSTANTS.FIVE);
-    if (anim) anim.checked = Boolean(svc.get('gallery.animations' as const));
+    if (anim) {
+      anim.checked = Boolean(svc.get('gallery.animations' as const));
+      // 현재 애니메이션 설정을 즉시 적용 (지연 로딩)
+      try {
+        const controller = await getAnimationController();
+        await controller.setEnabled(anim.checked);
+      } catch (error) {
+        logger.warn('초기 애니메이션 설정 적용 실패:', error);
+      }
+    }
 
     // [추가] 테마 설정 초기 값 로드
-    const theme = container.querySelector('[data-testid="theme"]') as HTMLSelectElement | null;
     if (theme) {
       theme.value = String(svc.get('gallery.theme' as const) ?? 'auto');
-      // 현재 테마 스타일도 적용
-      applyThemeStyle(theme.value);
+      // 현재 테마를 ThemeService와 동기화
+      try {
+        const savedTheme = svc.get('gallery.theme' as const) ?? 'auto';
+        themeService.setTheme(savedTheme as 'auto' | 'light' | 'dark');
+      } catch (error) {
+        logger.warn('저장된 테마 적용 실패:', error);
+      }
     }
 
     // 변경 핸들러 바인딩
@@ -328,8 +362,12 @@ export function wireSettingsModal(container: HTMLElement): void {
       const v = (e.currentTarget as HTMLSelectElement).value;
       void svc.set('gallery.theme' as const, v).then(() => {
         notifySaved();
-        // 테마 변경 즉시 적용
-        applyThemeStyle(v);
+        // 테마 변경 즉시 적용 - ThemeService 연동
+        try {
+          themeService.setTheme(v as 'auto' | 'light' | 'dark');
+        } catch (error) {
+          logger.warn('테마 적용 실패:', error);
+        }
       });
     });
 
@@ -366,7 +404,16 @@ export function wireSettingsModal(container: HTMLElement): void {
     });
     anim?.addEventListener('change', e => {
       const v = (e.currentTarget as HTMLInputElement).checked;
-      void svc.set('gallery.animations' as const, v).then(() => notifySaved());
+      void svc.set('gallery.animations' as const, v).then(async () => {
+        notifySaved();
+        // 애니메이션 설정 즉시 적용 (지연 로딩)
+        try {
+          const controller = await getAnimationController();
+          await controller.setEnabled(v);
+        } catch (error) {
+          logger.warn('애니메이션 설정 적용 실패:', error);
+        }
+      });
     });
   } catch (error) {
     logger.warn('Settings modal wiring 실패:', error);
@@ -688,44 +735,4 @@ function updateTemplatePreview(template: string, isValid: boolean): void {
 
   previewOutput.textContent = preview;
   previewOutput.style.color = 'var(--xeg-color-success)';
-}
-
-// 테마 스타일 적용 함수 - ThemeService와 연동
-function applyThemeStyle(theme: string): void {
-  try {
-    // 유효한 테마 값 검증 (native 테마 제거)
-    const validThemes = ['auto', 'light', 'dark'];
-    if (!validThemes.includes(theme)) {
-      logger.warn(`잘못된 테마 값: ${theme}, 기본값(auto) 사용`);
-      theme = 'auto';
-    }
-
-    // ThemeService에 테마 설정
-    themeService.setTheme(theme as Theme);
-
-    logger.debug(`테마 변경 완료: ${theme} (현재 적용된 테마: ${themeService.getCurrentTheme()})`);
-  } catch (error) {
-    logger.error('테마 적용 실패:', error);
-
-    // Fallback: 직접 DOM 조작
-    const documentElement = document.documentElement;
-
-    // 기존 테마 스타일 속성 제거 (네이티브 스타일 속성도 제거)
-    documentElement.removeAttribute('data-theme-style');
-    documentElement.removeAttribute('data-theme');
-
-    // 네이티브 테마 fallback 제거, auto/light/dark만 지원
-    if (theme === 'dark') {
-      documentElement.setAttribute('data-theme', 'dark');
-      logger.debug('다크 테마 fallback 적용됨');
-    } else if (theme === 'auto') {
-      // auto 모드는 시스템 테마에 따라 결정
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-      logger.debug(`자동 테마 fallback 적용됨: ${prefersDark ? 'dark' : 'light'}`);
-    } else {
-      documentElement.setAttribute('data-theme', 'light');
-      logger.debug('라이트 테마 fallback 적용됨');
-    }
-  }
 }
