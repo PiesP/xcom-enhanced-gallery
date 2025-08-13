@@ -200,10 +200,7 @@
   transform: translateZ(0);
   backface-visibility: hidden;
 
-  /* 🔥 수정: 기본 상태에서 불투명한 오버레이 그라디언트와 중간 블러 적용 (가시성 향상) */
-  background: var(--xeg-toolbar-overlay-gradient);
-  backdrop-filter: var(--xeg-blur-medium);
-  -webkit-backdrop-filter: var(--xeg-blur-medium);
+  /* 상단 호버 영역은 사용자 컨텐츠 시야를 가리지 않도록 배경/블러 선언을 사용하지 않음 */
 
   /* 부드러운 트랜지션 추가 */
   transition:
@@ -211,11 +208,24 @@
     backdrop-filter var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
-/* 🔥 수정: 호버 시 더 강한 배경 효과 (기본 배경에서 강화) */
-.toolbarContainer:hover {
+/* 실제 툴바 래퍼에만 배경 그라디언트 적용 - 호버 존은 투명 유지 */
+.toolbarWrapper {
+  background: var(--xeg-toolbar-overlay-gradient);
+  backdrop-filter: var(--xeg-blur-medium);
+  -webkit-backdrop-filter: var(--xeg-blur-medium);
+}
+
+.toolbarWrapper:hover,
+.toolbarWrapper:focus-within {
   background: var(--xeg-toolbar-overlay-gradient-strong, var(--xeg-toolbar-overlay-gradient));
   backdrop-filter: var(--xeg-blur-strong, var(--xeg-blur-medium));
   -webkit-backdrop-filter: var(--xeg-blur-strong, var(--xeg-blur-medium));
+}
+
+/* 호버 시에도 배경색은 추가하지 않음(투명 유지) */
+.toolbarContainer:hover {
+  /* 배경 유지: transparent */
+  /* blur 제거: 호버 존은 항상 비가시적 */
   padding-block-end: var(--xeg-spacing-gallery);
 
   /* 호버 시 더 명확한 경계선 추가 */
@@ -230,7 +240,7 @@
       backdrop-filter 0.1s ease;
     /* 테스트 기대: 감소된 모션에서도 명시적으로 배경색/블러 속성 존재 */
     background-color: transparent; /* gradient 유지하되 명시적 프로퍼티 제공 */
-    backdrop-filter: var(--xeg-blur-medium);
+    /* blur 제거 유지 */
   }
 }
 

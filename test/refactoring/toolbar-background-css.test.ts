@@ -15,19 +15,22 @@ describe('툴바 배경 가시성 - CSS 수정 검증', () => {
   const cssContent = readFileSync(cssFilePath, 'utf-8');
 
   describe('CSS 파일 수정사항 검증', () => {
-    it('toolbarContainer가 기본적으로 투명하지 않은 배경을 가져야 함', () => {
-      // toolbarContainer 클래스를 찾기
-      const toolbarContainerMatch = cssContent.match(/\.toolbarContainer\s*\{[^}]*\}/s);
+    it('toolbarWrapper가 배경 그라디언트를 가져야 함(호버 존은 투명)', () => {
+      // toolbarWrapper 클래스를 찾기 (실제 툴바 컨테이너)
+      const toolbarWrapperMatch = cssContent.match(/(^|\n)\.toolbarWrapper\s*\{[^}]*\}/s);
 
+      expect(toolbarWrapperMatch).not.toBeNull();
+
+      const toolbarWrapperStyles = toolbarWrapperMatch![0];
+
+      // 툴바 래퍼는 그라디언트 사용
+      expect(toolbarWrapperStyles).toContain('--xeg-toolbar-overlay-gradient');
+
+      // 호버 존인 toolbarContainer는 배경을 강제하지 않음(투명 유지)
+      const toolbarContainerMatch = cssContent.match(/(^|\n)\.toolbarContainer\s*\{[^}]*\}/s);
       expect(toolbarContainerMatch).not.toBeNull();
-
       const toolbarContainerStyles = toolbarContainerMatch![0];
-
-      // 기존의 'background: transparent;' 가 제거되었는지 확인
-      expect(toolbarContainerStyles).not.toContain('background: transparent');
-
-      // 새로운 배경 그라디언트가 적용되었는지 확인
-      expect(toolbarContainerStyles).toContain('--xeg-toolbar-overlay-gradient');
+      expect(toolbarContainerStyles).not.toContain('--xeg-toolbar-overlay-gradient');
     });
 
     it('기본 상태에서 backdrop-filter가 적용되어야 함', () => {
@@ -35,20 +38,28 @@ describe('툴바 배경 가시성 - CSS 수정 검증', () => {
       const toolbarContainerStyles = toolbarContainerMatch![0];
 
       // backdrop-filter가 기본 상태에서 적용되는지 확인
-      expect(toolbarContainerStyles).toContain('backdrop-filter: var(--xeg-blur-medium)');
-      expect(toolbarContainerStyles).toContain('-webkit-backdrop-filter: var(--xeg-blur-medium)');
+      expect(toolbarContainerStyles).not.toMatch(/backdrop-filter\s*:/);
+      expect(toolbarContainerStyles).not.toMatch(/-webkit-backdrop-filter\s*:/);
     });
 
     it('호버 스타일이 더 강한 효과를 제공해야 함', () => {
-      const hoverMatch = cssContent.match(/\.toolbarContainer:hover\s*\{[^}]*\}/s);
+      // 툴바 래퍼 호버는 강한 그라디언트를 사용
+      const wrapperHoverMatch = cssContent.match(
+        /(^|\n)\.toolbarWrapper:(?:hover|focus-within)[^{]*\{[^}]*\}/s
+      );
+      expect(wrapperHoverMatch).not.toBeNull();
+      const wrapperHoverStyles = wrapperHoverMatch![0];
+      // Hover/focus-within should apply stronger blur
+      expect(wrapperHoverStyles).toMatch(/backdrop-filter:\s*var\(--xeg-blur-strong/);
+      expect(wrapperHoverStyles).toMatch(/-webkit-backdrop-filter:\s*var\(--xeg-blur-strong/);
 
-      expect(hoverMatch).not.toBeNull();
-
-      const hoverStyles = hoverMatch![0];
-
-      // 호버 시 더 강한 배경 효과 확인
-      expect(hoverStyles).toContain('--xeg-toolbar-overlay-gradient-strong');
-      expect(hoverStyles).toContain('--xeg-blur-strong');
+      // 호버 존 컨테이너의 호버는 강한 블러만 적용되고 배경 그라디언트는 없음
+      const containerHoverMatch = cssContent.match(/(^|\n)\.toolbarContainer:hover\s*\{[^}]*\}/s);
+      expect(containerHoverMatch).not.toBeNull();
+      const containerHoverStyles = containerHoverMatch![0];
+      expect(containerHoverStyles).not.toMatch(/backdrop-filter\s*:/);
+      expect(containerHoverStyles).not.toMatch(/-webkit-backdrop-filter\s*:/);
+      expect(containerHoverStyles).not.toContain('--xeg-toolbar-overlay-gradient-strong');
     });
 
     it('적절한 트랜지션이 설정되어야 함', () => {
