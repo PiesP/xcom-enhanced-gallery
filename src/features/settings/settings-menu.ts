@@ -308,10 +308,13 @@ export async function wireSettingsModal(container: HTMLElement): Promise<void> {
       speed.value = String(svc.get('gallery.autoScrollSpeed' as const) ?? SIZE_CONSTANTS.FIVE);
     if (anim) {
       anim.checked = Boolean(svc.get('gallery.animations' as const));
-      // 현재 애니메이션 설정을 즉시 적용 (지연 로딩)
+      // 현재 애니메이션 설정을 즉시 적용 (지연 로딩) - 비차단 방식으로 처리하여 이벤트 바인딩 선행
       try {
-        const controller = await getAnimationController();
-        await controller.setEnabled(anim.checked);
+        void getAnimationController()
+          .then(controller => controller.setEnabled(anim.checked))
+          .catch(error => {
+            logger.warn('초기 애니메이션 설정 적용 실패:', error);
+          });
       } catch (error) {
         logger.warn('초기 애니메이션 설정 적용 실패:', error);
       }
@@ -404,15 +407,14 @@ export async function wireSettingsModal(container: HTMLElement): Promise<void> {
     });
     anim?.addEventListener('change', e => {
       const v = (e.currentTarget as HTMLInputElement).checked;
-      void svc.set('gallery.animations' as const, v).then(async () => {
+      void svc.set('gallery.animations' as const, v).then(() => {
         notifySaved();
-        // 애니메이션 설정 즉시 적용 (지연 로딩)
-        try {
-          const controller = await getAnimationController();
-          await controller.setEnabled(v);
-        } catch (error) {
-          logger.warn('애니메이션 설정 적용 실패:', error);
-        }
+        // 애니메이션 설정 즉시 적용 (지연 로딩) - 비차단 방식
+        void getAnimationController()
+          .then(controller => controller.setEnabled(v))
+          .catch(error => {
+            logger.warn('애니메이션 설정 적용 실패:', error);
+          });
       });
     });
   } catch (error) {

@@ -137,7 +137,7 @@
 
 .xeg-progress-text {
   font-size: 12px;
-  color: var(--xeg-button-text);
+  color: var(--xeg-color-text-primary);
   font-weight: 500;
 }
 

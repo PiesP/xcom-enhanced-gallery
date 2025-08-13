@@ -536,11 +536,11 @@
  * - 비활성화 상태 지원
  */
 .controlButton {
-  background: var(--xeg-button-bg);
-  border: 1px solid var(--xeg-button-border);
+  background: var(--xeg-bg-toolbar);
+  border: 1px solid var(--xeg-border-light);
   border-radius: 15px;
   padding: 8px 12px;
-  color: var(--xeg-button-text);
+  color: var(--xeg-color-text-primary);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -552,8 +552,8 @@
  * 마우스를 올렸을 때 위로 이동하는 효과를 제공합니다.
  */
 .controlButton:hover {
-  background: var(--xeg-button-bg-hover);
-  border-color: var(--xeg-button-border-hover);
+  background: var(--xeg-color-primary-alpha-20);
+  border-color: var(--xeg-border-light);
   transform: translateY(-1px);
 }
 

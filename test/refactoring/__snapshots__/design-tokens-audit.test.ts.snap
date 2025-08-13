@@ -1,0 +1,1646 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+// Obsolete snapshot entries removed intentionally. This file is kept empty to avoid Vitest obsolete warnings.
+    "line": 0,
+    "name": "--xeg-overlay-dark-secondary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-overlay-light-primary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-overlay-light-secondary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-10",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-20",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-30",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-40",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-50",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-60",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-70",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-80",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-90",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-white-alpha-95",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-10",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-15",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-20",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-30",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-40",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-50",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-60",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-70",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-80",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-90",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-black-alpha-95",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-overlay-gradient",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-overlay-gradient-strong",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-overlay-mix-dark-80",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-overlay-mix-dark-40",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-overlay-mix-light-80",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-overlay-mix-light-40",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-10",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-20",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-30",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-dark-30",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-dark-50",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-dark-70",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-breakpoint-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-breakpoint-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-breakpoint-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-breakpoint-xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-breakpoint-2xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-border-medium",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-border-dark",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-simple-light",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-simple-medium",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-simple-strong",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-simple-ultra",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-xs",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-2xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-3xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-duration-instant",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-duration-fast",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-duration-normal",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-duration-slow",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-duration-slower",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-easing-linear",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-easing-ease",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-easing-ease-in",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-easing-ease-out",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-easing-ease-in-out",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-easing-bounce",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-easing-spring",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-transition-fast",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-transition-normal",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-transition-slow",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-transition-opacity",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-transition-transform",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-transition-color",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-family-sans",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-family-mono",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-size-xs",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-size-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-size-base",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-size-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-size-xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-size-2xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-size-3xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-weight-normal",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-weight-medium",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-weight-semibold",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-font-weight-bold",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-line-height-tight",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-line-height-normal",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-line-height-relaxed",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-radius-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-radius-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-radius-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-radius-xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-radius-full",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-surface",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-background",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-text-tertiary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-text-inverse",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-border-primary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-border-secondary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gallery-backdrop",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gallery-backdrop-filter",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-blur-light",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-blur-medium",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-blur-strong",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-blur-extra-strong",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gallery-z-index",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-height-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-height-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-height-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-size",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-size-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-size-pc-small",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-hover-scale",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-active-scale",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-form-control-padding",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-min-width-label",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-min-width-input",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-focus-outline-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-focus-outline-offset",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-slider-height",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-slider-thumb-size",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gap-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gap-2xl",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-max-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-header-padding",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-body-padding",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-animation-hover-duration",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-animation-focus-duration",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-icon-size-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-icon-size-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-icon-size-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-surface-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-surface-inset",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-padding-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-size-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-height",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-touch-target-min",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-clickable-area-comfortable",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-min-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-input-height",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-alpha-20",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-alpha-30",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-surface-alpha-40",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-toolbar-dark",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-bg-toolbar-light",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-shadow-toolbar",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toast-bg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toast-border",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toast-shadow",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gallery-shadow",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-media-bg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-media-border",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-media-shadow",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-overlay-gradient",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-overlay-gradient-strong",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-content-bg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-content-bg-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-size-pc-medium",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-button-size-pc-large",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-width-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-width-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-width-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-height-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-height-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-height-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-icon-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-icon-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-icon-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-padding-sm",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-padding-md",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-padding-lg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-bg-primary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-color-primary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-border-primary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-bg-secondary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-color-secondary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-border-secondary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-bg-danger",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-color-danger",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-border-danger",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-min-touch-target",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-focus-ring-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-toolbar-button-focus-ring-color",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-pc-tight",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-pc-normal",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-pc-loose",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-spacing-pc-very-loose",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-scrollbar-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-scrollbar-color",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-scrollbar-color-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-scrollbar-radius",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-animation-scale-easing",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-container-min-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-container-max-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-focus-ring-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-focus-ring-color",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-focus-ring",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-focus-ring-offset",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-active-ring-width",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-active-ring-color",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-active-ring",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-focus-shadow",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-active-shadow",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gallery-bg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gallery-surface",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gallery-text",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-gallery-text-muted",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-media-item-bg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-media-item-border",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-media-item-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-media-item-active",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-modal-bg-solid",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-overlay-mix-primary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-overlay-mix-secondary",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-warning-500",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-success-alpha-08",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-warning-alpha-08",
+  },
+  {
+    "file": "src/shared/styles/design-tokens.css",
+    "line": 0,
+    "name": "--xeg-color-error-alpha-08",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-toolbar-border-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-toolbar-shadow-strong",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-modal-bg-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-modal-border-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-modal-shadow-strong",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-modal-overlay-backdrop",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-button-primary-bg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-button-primary-bg-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-button-primary-bg-active",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-button-primary-text",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-button-secondary-bg",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-button-secondary-bg-hover",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-button-secondary-bg-active",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-button-secondary-text",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-focus-outline-color",
+  },
+  {
+    "file": "src/shared/styles/design-tokens-solid.css",
+    "line": 0,
+    "name": "--xeg-z-modal-controls",
+  },
+  {
+    "file": "src/shared/styles/modern-features.css",
+    "line": 0,
+    "name": "--xeg-color-primary-oklch",
+  },
+  {
+    "file": "src/shared/styles/modern-features.css",
+    "line": 0,
+    "name": "--xeg-color-primary-hover-oklch",
+  },
+  {
+    "file": "src/shared/styles/modern-features.css",
+    "line": 0,
+    "name": "--xeg-color-accent-oklch",
+  },
+  {
+    "file": "src/shared/styles/modern-features.css",
+    "line": 0,
+    "name": "--xeg-color-primary-gradient",
+  },
+  {
+    "file": "src/shared/styles/modern-features.css",
+    "line": 0,
+    "name": "--xeg-color-primary-light",
+  },
+  {
+    "file": "src/shared/styles/modern-features.css",
+    "line": 0,
+    "name": "--xeg-color-primary-dark",
+  },
+]
+`;
+
+exports[`Design Token Audit > Token Inventory > should identify duplicate tokens 1`] = `
+[
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-toolbar-bg",
+    "values": [
+      "rgba(0, 0, 0, 0.98)",
+      "var(--surface-bg)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-toolbar-bg-hover",
+    "values": [
+      "var(--surface-bg-hover)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-toolbar-text",
+    "values": [
+      "var(--surface-text)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-toolbar-text-secondary",
+    "values": [
+      "var(--surface-text-secondary)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-toolbar-border",
+    "values": [
+      "rgba(255, 255, 255, 0.8)",
+      "var(--surface-border)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-toolbar-shadow",
+    "values": [
+      "var(--xeg-shadow-simple-medium)",
+      "0 4px 12px hsl(210, 20%, 50%, 0.1)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-modal-bg",
+    "values": [
+      "#15202b",
+      "var(--xeg-toolbar-bg)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-modal-text",
+    "values": [
+      "var(--xeg-toolbar-text)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-modal-text-secondary",
+    "values": [
+      "var(--xeg-toolbar-text-secondary)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-modal-border",
+    "values": [
+      "var(--xeg-toolbar-border)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-modal-shadow",
+    "values": [
+      "var(--xeg-toolbar-shadow)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-modal-overlay-bg",
+    "values": [
+      "hsl(210, 15%, 8%, 0.85)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-radius-sm",
+    "values": [
+      "4px",
+      "6px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-radius-md",
+    "values": [
+      "8px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-radius-lg",
+    "values": [
+      "12px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-radius-xl",
+    "values": [
+      "16px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-spacing-xs",
+    "values": [
+      "4px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-spacing-sm",
+    "values": [
+      "8px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-spacing-md",
+    "values": [
+      "12px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-spacing-lg",
+    "values": [
+      "16px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-spacing-xl",
+    "values": [
+      "24px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-duration-fast",
+    "values": [
+      "0ms",
+      "0.15s",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-duration-normal",
+    "values": [
+      "0ms",
+      "0.25s",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-duration-slow",
+    "values": [
+      "0ms",
+      "0.4s",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-easing-ease-out",
+    "values": [
+      "cubic-bezier(0, 0, 0.2, 1)",
+      "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-easing-ease-in-out",
+    "values": [
+      "cubic-bezier(0.4, 0, 0.2, 1)",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-focus-outline-width",
+    "values": [
+      "2px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-focus-outline-offset",
+    "values": [
+      "2px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-touch-target-min",
+    "values": [
+      "44px",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-size-xs",
+    "values": [
+      "12px",
+      "0.75rem",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-size-sm",
+    "values": [
+      "14px",
+      "0.875rem",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-size-base",
+    "values": [
+      "16px",
+      "1rem",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-size-lg",
+    "values": [
+      "18px",
+      "1.125rem",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-size-xl",
+    "values": [
+      "20px",
+      "1.25rem",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-weight-normal",
+    "values": [
+      "400",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-weight-medium",
+    "values": [
+      "500",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-weight-semibold",
+    "values": [
+      "600",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-font-weight-bold",
+    "values": [
+      "700",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-z-modal-backdrop",
+    "values": [
+      "2000",
+      "1000",
+    ],
+  },
+  {
+    "files": [
+      "src/shared/styles/design-tokens.css",
+      "src/shared/styles/design-tokens-solid.css",
+    ],
+    "name": "--xeg-z-modal-content",
+    "values": [
+      "2100",
+      "1001",
+    ],
+  },
+]
+`;
+
+exports[`Design Token Audit > Token Inventory > should identify inconsistent naming 1`] = `[]`;

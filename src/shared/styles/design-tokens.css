@@ -95,9 +95,13 @@
 
   /* Background Colors */
   --xeg-bg-toolbar: hsl(210, 20%, 98%);
+  /* Compatibility alias for legacy usages */
+  --xeg-bg-primary: var(--xeg-bg-toolbar);
 
   /* Border Colors */
   --xeg-border-light: hsl(210, 15%, 85%);
+  /* Compatibility alias for legacy usages */
+  --xeg-color-border-light: var(--xeg-border-light);
 
   /* Shadows */
 
@@ -110,16 +114,26 @@
   --xeg-color-primary-500: var(--xeg-color-primary);
   --xeg-color-primary-600: var(--xeg-color-primary-hover);
   --xeg-color-primary-700: var(--xeg-color-primary-active);
+  /* Light step for soft active states */
+  --xeg-color-primary-100: color-mix(in oklch, var(--xeg-color-primary) 15%, white);
 
   /* Alpha Variants - color-mix로 하드코딩 제거 */
   --xeg-color-primary-alpha-10: color-mix(in oklch, var(--xeg-color-primary) 10%, transparent);
+  /* Additional alpha variants used in components */
+  --xeg-color-error-alpha-10: color-mix(in oklch, var(--xeg-color-error) 10%, transparent);
+  --xeg-color-error-alpha-30: color-mix(in oklch, var(--xeg-color-error) 30%, transparent);
 
   /* Neutral Colors - OKLCH로 통일 */
   --xeg-color-neutral-50: oklch(0.98 0.001 206.2);
   --xeg-color-neutral-100: oklch(0.97 0.002 206.2);
+  --xeg-color-neutral-200: oklch(0.9 0.003 206.2);
+  --xeg-color-neutral-300: oklch(0.82 0.004 206.2);
   --xeg-color-neutral-500: oklch(0.598 0.006 286.3);
   --xeg-color-neutral-700: oklch(0.378 0.005 286.3);
   --xeg-color-neutral-900: oklch(0.234 0.006 277.8);
+  /* Additional steps used by dark theme references */
+  --xeg-color-neutral-800: oklch(0.3 0.006 280);
+  --xeg-color-neutral-950: oklch(0.15 0.005 280);
 
   /* Semantic Colors - OKLCH로 통일 (HSL 오버라이드를 위해 주석 처리) */
   /* DEPRECATED: HSL 색상으로 대체됨 */
@@ -525,7 +539,7 @@
 
   /* 공통 기본 배경 클래스 */
   .xeg-solid-base {
-    background: var(--xeg-bg-primary);
+    background: var(--xeg-bg-toolbar);
     box-shadow: var(--xeg-shadow-simple-medium);
   }
 
@@ -536,7 +550,7 @@
    */
   .xeg-modal-base {
     background: var(--xeg-bg-dark);
-    border: 1px solid var(--xeg-color-border-light);
+    border: 1px solid var(--xeg-border-light);
     box-shadow: var(--xeg-shadow-simple-strong);
     border-radius: var(--xeg-radius-lg);
     padding: var(--xeg-spacing-md);
@@ -567,7 +581,7 @@
     height: var(--xeg-button-size);
     border-radius: var(--xeg-radius-md);
     padding: var(--xeg-spacing-sm);
-    border: 1px solid var(--xeg-color-border-light);
+    border: 1px solid var(--xeg-border-light);
     background: var(--xeg-bg-toolbar);
     color: var(--xeg-color-text-primary);
     cursor: pointer;
@@ -587,6 +601,19 @@
     transform: translateY(0);
     box-shadow: var(--xeg-shadow-simple-light);
   }
+
+  /* ===========================================
+    BUTTON TOKENS (compatibility aliases)
+    =========================================== */
+  --xeg-button-bg: var(--xeg-bg-toolbar);
+  --xeg-button-text: var(--xeg-color-text-primary);
+  --xeg-button-bg-hover: var(--xeg-color-primary-alpha-20);
+
+  /* Typography alias for legacy variable name */
+  --xeg-text-sm: var(--xeg-font-size-sm);
+
+  /* Basic color alias */
+  --xeg-color-white: #ffffff;
 
   /* ===========================================
      UNIFIED TOOLBAR BUTTON UTILITY CLASSES
@@ -773,7 +800,7 @@
 
   /* 미디어 아이템 색상 시스템 */
   --xeg-media-item-bg: var(--xeg-bg-light);
-  --xeg-media-item-border: var(--xeg-color-border-light);
+  --xeg-media-item-border: var(--xeg-border-light);
   --xeg-media-item-hover: var(--xeg-bg-medium);
   --xeg-media-item-active: var(--xeg-color-primary-100);
 }
@@ -1258,13 +1285,13 @@
 
 /* Visual Utilities */
 .xeg-rounded {
-  border-radius: var(--xeg-border-radius-sm);
+  border-radius: var(--xeg-radius-sm);
 }
 .xeg-rounded-md {
-  border-radius: var(--xeg-border-radius-md);
+  border-radius: var(--xeg-radius-md);
 }
 .xeg-rounded-lg {
-  border-radius: var(--xeg-border-radius-lg);
+  border-radius: var(--xeg-radius-lg);
 }
 .xeg-rounded-full {
   border-radius: 50%;

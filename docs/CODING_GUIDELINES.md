@@ -348,6 +348,10 @@ describe('GalleryItem', () => {
 
 **Glassmorphism 제거 완료** (2025년 8월 업데이트)
 
+추가로, 디자인 토큰 마이그레이션 가이드는 docs/DESIGN_TOKENS_MIGRATION.md를
+참고하세요. 컴포넌트 CSS에서는 정규 토큰만 사용하고, 레거시 버튼 별칭은
+금지됩니다(TDD 가드 적용).
+
 프로젝트에서 glassmorphism 효과를 완전히 제거하고 현대적 솔리드 디자인으로
 전환했습니다:
 

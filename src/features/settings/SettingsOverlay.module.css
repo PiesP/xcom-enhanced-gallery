@@ -27,7 +27,7 @@
 
   /* 통합 디자인 토큰 기반 스타일 */
   background: var(--xeg-bg-dark);
-  border: 1px solid var(--xeg-color-border-light);
+  border: 1px solid var(--xeg-border-light);
   box-shadow: var(--xeg-shadow-simple-strong);
   border-radius: var(--xeg-radius-xl); /* 더 둥근 모서리 */
   padding: var(--xeg-spacing-xl); /* 더 넉넉한 패딩 */
@@ -42,7 +42,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--xeg-spacing-xl); /* 더 넓은 간격 */
-  border-bottom: 1px solid var(--xeg-color-border-light);
+  border-bottom: 1px solid var(--xeg-border-light);
   padding-bottom: var(--xeg-spacing-lg);
 }
 
@@ -65,7 +65,7 @@
   padding: var(--xeg-spacing-lg);
   border-radius: var(--xeg-radius-lg);
   background: var(--xeg-bg-light-translucent);
-  border: 1px solid var(--xeg-color-border-light);
+  border: 1px solid var(--xeg-border-light);
 }
 
 .sectionTitle {
@@ -73,7 +73,7 @@
   font-weight: var(--xeg-font-weight-semibold);
   color: var(--xeg-color-text-primary);
   margin: 0 0 var(--xeg-spacing-md) 0;
-  border-bottom: 1px solid var(--xeg-color-border-light);
+  border-bottom: 1px solid var(--xeg-border-light);
   padding-bottom: var(--xeg-spacing-sm);
 }
 
@@ -92,7 +92,7 @@
   width: 100%;
   height: var(--xeg-input-height); /* 터치하기 좋은 높이 */
   padding: var(--xeg-spacing-md); /* 더 넉넉한 패딩 */
-  border: 2px solid var(--xeg-color-border-light); /* 더 명확한 경계 */
+  border: 2px solid var(--xeg-border-light); /* 더 명확한 경계 */
   border-radius: var(--xeg-radius-lg);
   background: var(--xeg-bg-medium);
   color: var(--xeg-color-text-primary);
