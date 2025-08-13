@@ -200,10 +200,10 @@
   transform: translateZ(0);
   backface-visibility: hidden;
 
-  /* 🔥 수정: 기본적으로 배경 표시 (호버 시에만 표시하는 방식 제거) */
-  background: var(--xeg-toolbar-overlay-gradient);
-  backdrop-filter: var(--xeg-blur-medium);
-  -webkit-backdrop-filter: var(--xeg-blur-medium);
+  /* 🔥 수정: 기본 상태는 투명 배경으로 미디어 감상 방해 방지 */
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 
   /* 부드러운 트랜지션 추가 */
   transition:
