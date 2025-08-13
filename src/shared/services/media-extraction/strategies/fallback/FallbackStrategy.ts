@@ -39,14 +39,21 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       }
       mediaItems.push(...videoResult.items);
 
-      // 3. 데이터 속성에서 추출
+      // 3. 앵커 href에서 추출 (직접 미디어 링크)
+      const anchorResult = this.extractFromAnchors(tweetContainer, clickedElement, tweetInfo);
+      if (anchorResult.clickedIndex >= 0 && clickedIndex === 0) {
+        clickedIndex = mediaItems.length + anchorResult.clickedIndex;
+      }
+      mediaItems.push(...anchorResult.items);
+
+      // 4. 데이터 속성에서 추출
       const dataResult = this.extractFromDataAttributes(tweetContainer, clickedElement, tweetInfo);
       if (dataResult.clickedIndex >= 0 && clickedIndex === 0) {
         clickedIndex = mediaItems.length + dataResult.clickedIndex;
       }
       mediaItems.push(...dataResult.items);
 
-      // 4. 배경 이미지에서 추출
+      // 5. 배경 이미지에서 추출
       const backgroundResult = this.extractFromBackgroundImages(
         tweetContainer,
         clickedElement,
@@ -57,7 +64,18 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       }
       mediaItems.push(...backgroundResult.items);
 
-      return this.createSuccessResult(mediaItems, clickedIndex, tweetInfo);
+      // 6. 중복 제거 및 URL 정규화 (pbs.twimg.com -> name=orig)
+      const deduped: MediaInfo[] = [];
+      const seen = new Set<string>();
+      for (const item of mediaItems) {
+        const normalized = this.upgradeTwitterImageUrl(item.url);
+        if (!seen.has(normalized)) {
+          seen.add(normalized);
+          deduped.push({ ...item, url: normalized });
+        }
+      }
+
+      return this.createSuccessResult(deduped, clickedIndex, tweetInfo);
     } catch (error) {
       logger.error('[FallbackStrategy] 추출 오류:', error);
       return this.createFailureResult(
@@ -83,7 +101,14 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       const img = images[i];
       if (!img) continue;
 
-      const src = img.getAttribute('src');
+      // srcset이 있으면 가장 큰 width 선택
+      const srcset = img.getAttribute('srcset') || '';
+      let chosen: string | null = null;
+      if (srcset) {
+        const largest = this.pickLargestFromSrcset(srcset);
+        if (largest) chosen = largest;
+      }
+      const src = chosen || img.getAttribute('src');
       if (!src || !this.isValidMediaUrl(src)) continue;
 
       // 클릭된 요소 확인
@@ -118,6 +143,29 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       const video = videos[i];
       if (!video) continue;
 
+      // <source> 요소들 우선 수집 (mp4 타입 우선)
+      const sources = Array.from(video.querySelectorAll('source')) as HTMLSourceElement[];
+      const mp4Sources = sources.filter(s => (s.getAttribute('type') || '').includes('mp4'));
+      for (const s of mp4Sources) {
+        const sUrl = s.getAttribute('src');
+        if (sUrl && this.isValidMediaUrl(sUrl)) {
+          if (
+            video === clickedElement ||
+            clickedElement.contains(video) ||
+            video.contains(clickedElement)
+          ) {
+            if (clickedIndex < 0) clickedIndex = items.length;
+          }
+          items.push(
+            this.createMediaInfo(`video_${i}_source`, sUrl, 'video', tweetInfo, {
+              thumbnailUrl: video.getAttribute('poster') || sUrl,
+              alt: `Video ${i + 1}`,
+              fallbackSource: 'video-source',
+            })
+          );
+        }
+      }
+
       const src = video.getAttribute('src') || video.getAttribute('poster');
       if (!src) continue;
 
@@ -137,6 +185,38 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       });
 
       items.push(mediaInfo);
+    }
+
+    return { items, clickedIndex };
+  }
+
+  /**
+   * 앵커 요소에서 미디어 추출 (href 직접 링크)
+   */
+  private extractFromAnchors(
+    tweetContainer: HTMLElement,
+    clickedElement: HTMLElement,
+    tweetInfo?: TweetInfo
+  ): { items: MediaInfo[]; clickedIndex: number } {
+    const anchors = tweetContainer.querySelectorAll('a[href]');
+    const items: MediaInfo[] = [];
+    let clickedIndex = -1;
+
+    for (let i = 0; i < anchors.length; i++) {
+      const a = anchors[i] as HTMLAnchorElement;
+      const href = a.getAttribute('href');
+      if (!href || !this.isValidMediaUrl(href)) continue;
+
+      if (a === clickedElement || a.contains(clickedElement) || clickedElement.contains(a)) {
+        clickedIndex = items.length;
+      }
+
+      items.push(
+        this.createMediaInfo(`a_${i}`, href, this.detectMediaType(href), tweetInfo, {
+          alt: `Link Media ${i + 1}`,
+          fallbackSource: 'anchor-href',
+        })
+      );
     }
 
     return { items, clickedIndex };
@@ -197,16 +277,18 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
     clickedElement: HTMLElement,
     tweetInfo?: TweetInfo
   ): { items: MediaInfo[]; clickedIndex: number } {
-    const elements = tweetContainer.querySelectorAll('*');
+    // 성능을 위해 inline style로 background-image가 지정된 요소만 탐색
+    const elements = tweetContainer.querySelectorAll('[style*="background-image"]');
     const items: MediaInfo[] = [];
     let clickedIndex = -1;
 
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i] as HTMLElement;
       if (!element) continue;
-
-      const style = window.getComputedStyle(element);
-      const backgroundImage = style.backgroundImage;
+      // inline style만 확인 (대규모 DOM에서의 성능 이슈 방지)
+      const inlineStyle = element.getAttribute('style') || '';
+      const inlineMatch = inlineStyle.match(/background-image\s*:\s*([^;]+)/i);
+      const backgroundImage = inlineMatch ? (inlineMatch[1] ?? '') : '';
 
       if (!backgroundImage || backgroundImage === 'none') continue;
 
@@ -264,7 +346,12 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
    * URL 검증
    */
   private isValidMediaUrl(url: string): boolean {
-    return url.startsWith('http') && !url.includes('profile_images');
+    if (!url || typeof url !== 'string') return false;
+    if (!/^https?:\/\//i.test(url)) return false;
+    if (url.includes('profile_images')) return false;
+    const isTwimg = /(?:^|\.)twimg\.com\//i.test(url);
+    const hasExt = /(\.(jpg|jpeg|png|webp|gif|mp4|mov|m4v|webm|m3u8))(\?|#|$)/i.test(url);
+    return isTwimg || hasExt;
   }
 
   /**
@@ -280,8 +367,48 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
    * 배경 이미지에서 URL 추출
    */
   private extractUrlFromBackgroundImage(backgroundImage: string): string | null {
-    const match = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/);
+    const match = backgroundImage.match(/url\(['"]?([^"']+)['"]?\)/);
     return match ? (match[1] ?? null) : null;
+  }
+
+  /** srcset에서 가장 큰 width 선택 */
+  private pickLargestFromSrcset(srcset: string): string | null {
+    const parts = srcset
+      .split(',')
+      .map(s => s.trim())
+      .map(entry => {
+        const m = entry.match(/^(\S+)\s+(\d+)w$/);
+        if (!m) return null;
+        return { url: m[1] as string, w: Number(m[2]) };
+      })
+      .filter(Boolean) as Array<{ url: string; w: number }>;
+    if (parts.length === 0) return null;
+    parts.sort((a, b) => b.w - a.w);
+    return parts[0]!.url;
+  }
+
+  /** pbs.twimg.com 이미지 name 파라미터를 orig로 승격 */
+  private upgradeTwitterImageUrl(url: string): string {
+    try {
+      const u = new URL(
+        url,
+        typeof window !== 'undefined' ? window.location.href : 'https://x.com/'
+      );
+      if (/pbs\.twimg\.com$/i.test(u.hostname)) {
+        u.searchParams.set('name', 'orig');
+        return u.toString();
+      }
+      return u.toString();
+    } catch {
+      if (url.includes('pbs.twimg.com')) {
+        // Fallback: try to use a basic URL pattern manipulation safely
+        const hasQuery = url.includes('?');
+        const replaced = url.replace(/([?&])name=[^&]*/i, '$1name=orig');
+        if (replaced !== url) return replaced;
+        return `${url}${hasQuery ? '&' : '?'}name=orig`;
+      }
+      return url;
+    }
   }
 
   /**
