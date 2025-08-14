@@ -35,7 +35,7 @@ echo "🌿 현재 브랜치: $BRANCH"
 case "$BRANCH" in
   dev*|feature*|experiment*|refactor*|hotfix*)
     echo "🔧 개발 브랜치: 최적화된 빠른 테스트 실행"
-    
+
     # 변경 파일이 적을 경우 더 빠른 검증
     if [ "$STAGED_FILES" -lt 5 ]; then
       echo "⚡ 적은 변경 파일($STAGED_FILES개): 초고속 검증 모드"
