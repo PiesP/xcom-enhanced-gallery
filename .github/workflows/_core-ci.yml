@@ -1,0 +1,55 @@
+name: core-ci (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      node_matrix:
+        description: "JSON array of Node versions"
+        required: false
+        type: string
+        default: '["20"]'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  quality-and-test:
+    name: Quality & Tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJson(inputs.node_matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Tests with coverage
+        run: npm run test:ci
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ github.sha }}-node${{ matrix.node }}
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 7

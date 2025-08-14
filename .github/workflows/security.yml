@@ -6,9 +6,12 @@ on:
   pull_request:
     branches: [master, develop]
   schedule:
-    # 매주 월요일 새벽 2시 (UTC)
     - cron: "0 2 * * 1"
   workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
 
 env:
   NODE_VERSION: "20"
@@ -154,3 +157,17 @@ jobs:
           echo "- Review uploaded security reports" >> $GITHUB_STEP_SUMMARY
           echo "- Address any critical vulnerabilities" >> $GITHUB_STEP_SUMMARY
           echo "- Update dependencies if needed" >> $GITHUB_STEP_SUMMARY
+
+  dependency-review:
+    name: 🔎 Dependency Review (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      security-events: write
+    steps:
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: critical
