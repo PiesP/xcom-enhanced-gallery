@@ -33,9 +33,10 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
       // 툴바는 그라디언트 사용
       expect(toolbarCSS).toContain('--xeg-toolbar-overlay-gradient');
 
-      // 설정 모달도 일관된 배경 토큰 사용해야 함 (개선된 토큰 사용)
-      expect(settingsCSS).toContain('--xeg-modal-overlay-bg');
-      expect(settingsCSS).toContain('--xeg-modal-bg');
+      // 설정 모달이 툴바와 동일한 토큰을 직접 사용해야 함 (완전한 통합)
+      expect(settingsCSS).toContain('--xeg-toolbar-bg');
+      expect(settingsCSS).toContain('--xeg-toolbar-border');
+      expect(settingsCSS).toContain('--xeg-toolbar-shadow');
     });
 
     it('테마별 배경 일관성이 보장되어야 함', () => {
@@ -97,10 +98,10 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
       expect(darkThemeSection).toBeTruthy();
     });
 
-    it('설정 모달 CSS가 새로운 토큰을 사용해야 함', () => {
-      expect(settingsCSS).toContain('var(--xeg-modal-overlay-bg)');
-      expect(settingsCSS).toContain('var(--xeg-modal-bg)');
-      expect(settingsCSS).toContain('var(--xeg-modal-overlay-backdrop)');
+    it('설정 모달 CSS가 통합된 툴바 토큰을 사용해야 함', () => {
+      expect(settingsCSS).toContain('var(--xeg-toolbar-bg)');
+      expect(settingsCSS).toContain('var(--xeg-toolbar-text)');
+      expect(settingsCSS).toContain('var(--xeg-toolbar-border)');
     });
 
     it('테마 전환 시 일관된 시각적 경험을 제공해야 함', () => {

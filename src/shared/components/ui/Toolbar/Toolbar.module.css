@@ -291,6 +291,14 @@
    접근성 지원 - 통합 및 강화
    ======================================== */
 
+/* 포커스 가시성 - 통합 포커스 링 */
+.toolbar:focus-visible,
+.galleryToolbar:focus-visible {
+  outline: var(--xeg-focus-outline-width, 2px) solid var(--xeg-color-primary);
+  outline-offset: var(--xeg-focus-outline-offset, 2px);
+  box-shadow: var(--xeg-focus-shadow, 0 0 0 2px var(--xeg-color-primary));
+}
+
 /* 고대비 모드 - 시인성 개선 */
 @media (prefers-contrast: high) {
   .toolbar,

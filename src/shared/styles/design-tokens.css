@@ -51,22 +51,27 @@
   --xeg-bg-surface: var(--surface-bg);
 
   /* ========================================
-     Z-INDEX SYSTEM - 표준화된 레이어링 시스템
+     Z-INDEX SYSTEM - 표준화된 레이어링 시스템 (강화 버전)
      ======================================== */
 
   /* Base Layers */
   --xeg-z-base: 1;
   --xeg-z-dropdown: 100;
 
-  /* Gallery Layers - 계층적 구조 */
+  /* Gallery Layers - 충돌 방지 강화 */
   --xeg-z-gallery-backdrop: 1000; /* 갤러리 배경 */
   --xeg-z-gallery-content: 1100; /* 갤러리 콘텐츠 */
-  --xeg-z-gallery-toolbar: 1200; /* 툴바 */
+  --xeg-z-gallery-toolbar: 1200; /* 툴바 - 강화된 우선순위 */
   --xeg-z-gallery-controls: 1300; /* 컨트롤 버튼 */
 
-  /* Modal Layers */
+  /* Button Layers - 새로 추가 */
+  --xeg-z-button-base: 50; /* 기본 버튼 */
+  --xeg-z-button-hover: 60; /* 호버 상태 버튼 */
+
+  /* Modal Layers - 충돌 방지 강화 */
   --xeg-z-modal-backdrop: 2000; /* 모달 배경 */
   --xeg-z-modal-content: 2100; /* 모달 콘텐츠 */
+  --xeg-z-modal-close: 2200; /* 모달 닫기 버튼 - 새로 추가 */
   --xeg-z-modal: var(--xeg-z-modal-content); /* 통합 모달 z-index 토큰 */
 
   /* Notification Layers */
@@ -335,10 +340,10 @@
      (Primary / Unique 정의 유지, 중복 Second Block 제거 예정)
      =========================================== */
 
-  /* Duration Scale */
+  /* Duration Scale - 통합된 애니메이션 지속시간 */
   --xeg-duration-instant: 0ms;
-  --xeg-duration-fast: 150ms; /* 빠른 전환 */
-  --xeg-duration-normal: 250ms; /* 일반적인 전환 */
+  --xeg-duration-fast: 200ms; /* 통합: 150ms → 200ms */
+  --xeg-duration-normal: 300ms; /* 통합: 250ms → 300ms */
   --xeg-duration-slow: 400ms; /* 느린 전환 */
   --xeg-duration-slower: 600ms; /* 매우 느린 전환 */
 
@@ -466,9 +471,19 @@
   --xeg-button-size-sm: var(--xeg-button-height-sm); /* 작은 버튼 */
   --xeg-button-size-pc-small: 32px; /* PC용 작은 버튼 (설정 모달 닫기 버튼) */
 
-  /* Interactive States - 호버 및 액티브 스케일 */
+  /* ========================================
+     INTERACTION SYSTEM - 통합된 호버/활성 상태
+     ======================================== */
+
+  /* Interactive States - 호버 및 액티브 스케일 통합 */
   --xeg-hover-scale: 1.05; /* 호버시 확대 비율 */
   --xeg-active-scale: 0.95; /* 클릭시 축소 비율 */
+  --xeg-hover-lift: -2px; /* 호버시 Y축 이동 거리 */
+  --xeg-hover-shadow: var(--xeg-shadow-md); /* 호버시 그림자 */
+
+  /* Hover Transitions - 통합된 호버 전환 */
+  --xeg-hover-transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  --xeg-hover-transform: translateY(var(--xeg-hover-lift)) scale(var(--xeg-hover-scale));
 
   /* Form Controls - 폼 요소 패딩 */
   --xeg-form-control-padding: 8px 12px; /* input, select 내부 패딩 */
