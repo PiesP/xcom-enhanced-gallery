@@ -18,6 +18,7 @@ import {
 import { rafThrottle } from '@shared/utils/performance/unified-performance-utils';
 import { ComponentStandards } from '../standard-props';
 import { ToolbarButton } from './components/ToolbarButton';
+import { ToolbarGroup } from './components/ToolbarGroup';
 import { UnifiedDarkModeStyleSystem } from '@shared/styles/unified-dark-mode-style-system';
 import styles from './Toolbar.module.css';
 
@@ -43,6 +44,8 @@ export interface ToolbarProps {
   onDownloadCurrent: () => void;
   /** 전체 다운로드 콜백 */
   onDownloadAll: () => void;
+  /** 미디어 다시 불러오기 콜백 (제공 시 새로고침 버튼 표시) */
+  onReload?: () => void;
   /** 닫기 콜백 */
   onClose: () => void;
   /** 설정 열기 콜백 */
@@ -66,6 +69,10 @@ export interface ToolbarProps {
   onFitWidth?: (event?: Event) => void;
   onFitHeight?: (event?: Event) => void;
   onFitContainer?: (event?: Event) => void;
+  /** 수동 새로고침 로딩 상태 */
+  isReloading?: boolean;
+  /** 새로고침 가능 여부 */
+  canReload?: boolean;
   // 표준 이벤트 핸들러들
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;
@@ -85,12 +92,15 @@ function ToolbarCore({
   onNext,
   onDownloadCurrent,
   onDownloadAll,
+  onReload,
   onClose,
   onOpenSettings,
   onFitOriginal,
   onFitHeight,
   onFitWidth,
   onFitContainer,
+  isReloading = false,
+  canReload = true,
   'data-testid': testId,
   'aria-label': ariaLabel,
   'aria-describedby': ariaDescribedBy,
@@ -280,6 +290,8 @@ function ToolbarCore({
     ]
   );
 
+  // NOTE: 직관적인 마크업 유지 (과도한 제네릭 헬퍼로 인한 TS VNode 호환성 이슈 제거)
+
   return h(
     'div',
     {
@@ -448,60 +460,119 @@ function ToolbarCore({
             key: 'toolbar-right',
           },
           [
-            h('div', { className: styles.groupBox, key: 'download-group' }, [
-              h(ToolbarButton, {
-                icon: 'file-down',
-                variant: 'secondary',
-                size: 'lg',
-                disabled: disabled || isDownloading,
-                loading: isDownloading,
-                onClick: () => onDownloadCurrent(),
-                'aria-label': '현재 파일 다운로드',
-                'data-testid': 'download-current',
-                title: '현재 파일 다운로드',
-                context: 'download-current',
-              }),
-              totalCount > 1 &&
-                h('div', { className: styles.groupDivider, 'aria-hidden': 'true', key: 'dl-div' }),
-              totalCount > 1 &&
+            // 새로고침 그룹 (있을 경우)
+            onReload
+              ? h(
+                  ToolbarGroup,
+                  { label: '데이터 동기화', key: 'reload-group' },
+                  h(ToolbarButton, {
+                    icon: 'reload',
+                    variant: 'secondary',
+                    size: 'lg',
+                    disabled: disabled || isReloading || !canReload,
+                    loading: isReloading,
+                    onClick: () => !disabled && !isReloading && canReload && onReload(),
+                    'aria-label': '미디어 다시 불러오기',
+                    'aria-busy': isReloading || undefined,
+                    'data-testid': 'toolbar-reload-button',
+                    title: '미디어 다시 불러오기',
+                    context: 'reload',
+                  })
+                )
+              : null,
+            // 다운로드 그룹
+            h(
+              'div',
+              {
+                className: styles.groupBox,
+                role: 'group',
+                'aria-label': '다운로드',
+                key: 'download-group',
+              },
+              [
                 h(ToolbarButton, {
-                  icon: 'folder-down',
+                  icon: 'file-down',
                   variant: 'secondary',
                   size: 'lg',
                   disabled: disabled || isDownloading,
                   loading: isDownloading,
-                  onClick: () => onDownloadAll(),
-                  'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
-                  'data-testid': 'download-all',
-                  title: `전체 ${totalCount}개 파일 ZIP 다운로드`,
-                  context: 'download-all',
+                  onClick: () => onDownloadCurrent(),
+                  'aria-label': '현재 파일 다운로드',
+                  'data-testid': 'download-current',
+                  title: '현재 파일 다운로드',
+                  context: 'download-current',
                 }),
-            ]),
-
-            onOpenSettings &&
-              h(ToolbarButton, {
-                icon: 'settings',
-                variant: 'secondary',
-                size: 'lg',
-                disabled,
-                onClick: () => onOpenSettings(),
-                'aria-label': '설정 열기',
-                'data-testid': 'settings',
-                title: '설정',
-                context: 'settings',
-              }),
-
-            h(ToolbarButton, {
-              icon: 'x',
-              variant: 'secondary',
-              size: 'lg',
-              disabled,
-              onClick: () => onClose(),
-              'aria-label': '갤러리 닫기',
-              'data-testid': 'close',
-              title: '갤러리 닫기 (Esc)',
-              context: 'close',
-            }),
+                totalCount > 1
+                  ? h('div', {
+                      className: styles.groupDivider,
+                      'aria-hidden': 'true',
+                      key: 'dl-div',
+                    })
+                  : null,
+                totalCount > 1
+                  ? h(ToolbarButton, {
+                      icon: 'folder-down',
+                      variant: 'secondary',
+                      size: 'lg',
+                      disabled: disabled || isDownloading,
+                      loading: isDownloading,
+                      onClick: () => onDownloadAll(),
+                      'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
+                      'data-testid': 'download-all',
+                      title: `전체 ${totalCount}개 파일 ZIP 다운로드`,
+                      context: 'download-all',
+                    })
+                  : null,
+              ]
+            ),
+            // 설정 그룹 (옵션)
+            onOpenSettings
+              ? h(
+                  'div',
+                  {
+                    className: styles.groupBox,
+                    role: 'group',
+                    'aria-label': '설정',
+                    key: 'settings-group',
+                  },
+                  [
+                    h(ToolbarButton, {
+                      icon: 'settings',
+                      variant: 'secondary',
+                      size: 'lg',
+                      disabled,
+                      onClick: () => onOpenSettings(),
+                      'aria-label': '설정 열기',
+                      'data-testid': 'settings',
+                      title: '설정',
+                      context: 'settings',
+                    }),
+                  ]
+                )
+              : null,
+            // 닫기 그룹
+            h(
+              'div',
+              {
+                className: styles.groupBox,
+                role: 'group',
+                'aria-label': '닫기',
+                key: 'close-group',
+              },
+              [
+                h(ToolbarButton, {
+                  icon: 'x',
+                  variant: 'secondary',
+                  size: 'lg',
+                  disabled,
+                  onClick: () => onClose(),
+                  'aria-label': '갤러리 닫기',
+                  'data-testid': 'close',
+                  title: '갤러리 닫기 (Esc)',
+                  context: 'close',
+                }),
+              ]
+            ),
           ]
         ),
       ]
@@ -528,6 +599,7 @@ export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarP
   if (prevProps.onNext !== nextProps.onNext) return false;
   if (prevProps.onDownloadCurrent !== nextProps.onDownloadCurrent) return false;
   if (prevProps.onDownloadAll !== nextProps.onDownloadAll) return false;
+  if (prevProps.onReload !== nextProps.onReload) return false;
   if (prevProps.onClose !== nextProps.onClose) return false;
   if (prevProps.onViewModeChange !== nextProps.onViewModeChange) return false;
 
@@ -536,6 +608,8 @@ export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarP
   if (prevProps.onFitWidth !== nextProps.onFitWidth) return false;
   if (prevProps.onFitHeight !== nextProps.onFitHeight) return false;
   if (prevProps.onFitContainer !== nextProps.onFitContainer) return false;
+  if (prevProps.isReloading !== nextProps.isReloading) return false;
+  if (prevProps.canReload !== nextProps.canReload) return false;
 
   // 이벤트 핸들러들
   if (prevProps.onFocus !== nextProps.onFocus) return false;

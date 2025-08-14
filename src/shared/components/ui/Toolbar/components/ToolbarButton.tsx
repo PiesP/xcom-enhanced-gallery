@@ -27,6 +27,8 @@ export interface ToolbarButtonProps {
   onClick: () => void;
   /** 접근성 라벨 */
   'aria-label': string;
+  /** 접근성 busy 상태 (로딩과 별개로 표기 필요 시) */
+  'aria-busy'?: boolean | undefined;
   /** 테스트 ID */
   'data-testid'?: string;
   /** 툴팁 제목 */
@@ -48,6 +50,7 @@ export function ToolbarButton({
   loading,
   onClick,
   'aria-label': ariaLabel,
+  'aria-busy': ariaBusy,
   'data-testid': testId,
   title,
   iconSize,
@@ -83,6 +86,7 @@ export function ToolbarButton({
     loading,
     onClick: handleButtonClick(onClick, context),
     'aria-label': ariaLabel,
+    'aria-busy': ariaBusy,
     'data-testid': testId,
     title,
     // 통합 툴바 스타일 시스템 클래스 적용

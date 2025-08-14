@@ -25,6 +25,8 @@ export type IconName =
   | 'move'
   | 'move-horizontal'
   | 'move-vertical'
+  /** 새로고침 별칭 (rotate-cw 아이콘 사용) */
+  | 'reload'
   | 'rotate-cw'
   | 'play'
   | 'pause'
@@ -150,6 +152,8 @@ const iconComponentMap: Record<IconName, IconComponent> = {
   move: Move,
   'move-horizontal': MoveHorizontal,
   'move-vertical': MoveVertical,
+  // alias: reload -> rotate-cw
+  reload: RotateCw,
   'rotate-cw': RotateCw,
   play: Play,
   pause: Pause,
