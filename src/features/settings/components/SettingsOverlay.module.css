@@ -1,5 +1,28 @@
 /* src/features/settings/components/SettingsOverlay.module.css */
-/* 통합 스타일 시스템 기반 설정 모달 - 툴바와 일관된 디자인 (TDD 업데이트) */
+/* 🎨 TDD 기반 UI 일관성 개선: 툴바와 완전히 통일된 디자인 토큰 사용 */
+
+/* ===========================================
+   통합 UI 컴포넌트 클래스 (툴바와 완전 일관성)
+   =========================================== */
+
+:global(.xeg-ui-component) {
+  /* 🎯 툴바와 동일한 기본 스타일 토큰 사용 */
+  background: var(--xeg-toolbar-bg);
+  color: var(--xeg-toolbar-text);
+  border: 2px solid var(--xeg-toolbar-border);
+  box-shadow: var(--xeg-toolbar-shadow);
+
+  /* 🎯 툴바와 동일한 전환 효과 */
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+
+  /* 🎯 툴바와 동일한 호버 효과 */
+}
+
+:global(.xeg-ui-component:hover) {
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-toolbar-shadow-strong, var(--xeg-shadow-simple-strong));
+  border-color: var(--xeg-color-primary-alpha-40);
+}
 
 .modalOverlay {
   position: fixed;
@@ -24,12 +47,12 @@
 }
 
 .modalContent {
-  /* 툴바와 완전히 통일된 스타일 (Solid Design) */
-  background: var(--xeg-modal-bg);
-  border: 2px solid var(--xeg-modal-border);
+  /* 🎨 TDD: 툴바와 완전히 동일한 CSS 변수 직접 사용 */
+  background: var(--xeg-toolbar-bg);
+  border: 2px solid var(--xeg-toolbar-border);
+  box-shadow: var(--xeg-toolbar-shadow);
+  color: var(--xeg-toolbar-text);
   border-radius: var(--xeg-radius-lg);
-  box-shadow: var(--xeg-modal-shadow);
-  color: var(--xeg-modal-text);
 
   /* 크기 및 레이아웃 */
   width: 90vw;
@@ -37,11 +60,11 @@
   max-height: 80vh;
   overflow: hidden;
 
-  /* 애니메이션 */
+  /* 🎨 TDD: 툴바와 동일한 애니메이션 */
   transform: translateZ(0);
   animation: scaleIn 0.25s ease-out;
 
-  /* 일관된 전환 효과 */
+  /* 🎨 TDD: 툴바와 동일한 전환 효과 */
   transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
   /* 최적화 */
@@ -49,10 +72,10 @@
   contain: layout style paint;
 }
 
-/* 툴바와 동일한 호버 효과 (Solid Design) */
+/* 🎨 TDD: 툴바와 완전히 동일한 호버 효과 */
 .modalContent:hover {
   transform: translateY(-1px);
-  box-shadow: var(--xeg-modal-shadow-strong);
+  box-shadow: var(--xeg-toolbar-shadow-strong, var(--xeg-shadow-simple-strong));
   border-color: var(--xeg-color-primary-alpha-40);
 }
 
@@ -60,9 +83,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /* 툴바와 동일한 패딩 시스템 (Solid Design) */
+  /* 🎨 TDD: 툴바와 동일한 패딩 시스템 */
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-  border-bottom: 1px solid var(--xeg-modal-border);
+  border-bottom: 1px solid var(--xeg-toolbar-border);
   min-height: var(--xeg-touch-target-min);
 }
 
@@ -70,7 +93,8 @@
   font-size: var(--xeg-font-size-lg);
   font-weight: var(--xeg-font-weight-semibold);
   margin: 0;
-  color: var(--xeg-modal-text);
+  /* 🎨 TDD: 툴바와 동일한 텍스트 색상 */
+  color: var(--xeg-toolbar-text);
 }
 
 /* 닫기 버튼은 ToolbarButton 컴포넌트 사용 - 로컬 중복 스타일 제거 */
@@ -137,10 +161,12 @@
 .sectionTitle {
   font-size: var(--xeg-font-size-md);
   font-weight: var(--xeg-font-weight-medium);
-  color: var(--xeg-modal-text-secondary);
+  /* 🎨 TDD: 툴바와 동일한 보조 텍스트 색상 */
+  color: var(--xeg-toolbar-text-secondary);
   margin: 0 0 var(--xeg-spacing-sm) 0;
   padding-bottom: var(--xeg-spacing-sm);
-  border-bottom: 1px solid var(--xeg-modal-border);
+  /* 🎨 TDD: 툴바와 동일한 테두리 색상 */
+  border-bottom: 1px solid var(--xeg-toolbar-border);
 }
 
 .settingRow {
@@ -150,32 +176,35 @@
   gap: var(--xeg-spacing-md);
   padding: var(--xeg-spacing-xs);
   border-radius: var(--xeg-radius-md);
-  background: var(--xeg-modal-bg-hover);
+  /* 🎨 TDD: 툴바와 동일한 배경 호버 색상 */
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-20));
   border: 1px solid transparent;
   transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
   min-height: var(--xeg-touch-target-min);
 }
 
 .settingRow:hover {
-  background: var(--xeg-modal-bg-hover);
+  /* 🎨 TDD: 툴바와 동일한 호버 색상 */
+  background: var(--xeg-toolbar-bg-hover);
   border-color: var(--xeg-color-primary-alpha-30);
 }
 
 .settingRow label {
   font-size: var(--xeg-font-size-sm);
   font-weight: var(--xeg-font-weight-medium);
-  color: var(--xeg-modal-text);
+  /* 🎨 TDD: 툴바와 동일한 텍스트 색상 */
+  color: var(--xeg-toolbar-text);
   flex-shrink: 0;
   min-width: 120px;
 }
 
-/* 툴바 버튼 스타일을 따르는 폼 컨트롤 */
+/* 🎨 TDD: 툴바 버튼 스타일을 따르는 폼 컨트롤 */
 .settingRow select,
 .settingRow input[type='number'] {
-  /* 기본 스타일링 */
-  background: var(--xeg-modal-bg);
-  color: var(--xeg-modal-text);
-  border: 1px solid var(--xeg-modal-border);
+  /* 🎨 TDD: 툴바와 동일한 배경/텍스트/테두리 색상 */
+  background: var(--xeg-toolbar-bg);
+  color: var(--xeg-toolbar-text);
+  border: 1px solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
   font-size: var(--xeg-font-size-sm);
@@ -186,24 +215,24 @@
   min-width: 120px;
   min-height: var(--xeg-touch-target-min);
 
-  /* 전환 효과 */
+  /* 🎨 TDD: 툴바와 동일한 전환 효과 */
   transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
   cursor: pointer;
 }
 
-/* 포커스 상태 - 툴바 버튼과 동일 */
+/* 🎨 TDD: 툴바 버튼과 동일한 포커스 상태 */
 .settingRow select:focus,
 .settingRow input[type='number']:focus {
   outline: none;
-  background: var(--xeg-modal-bg-hover);
+  background: var(--xeg-toolbar-bg-hover);
   border-color: var(--xeg-color-primary);
   box-shadow: 0 0 0 3px var(--xeg-color-primary-alpha-20);
 }
 
-/* 호버 상태 */
+/* 🎨 TDD: 툴바 버튼과 동일한 호버 상태 */
 .settingRow select:hover,
 .settingRow input[type='number']:hover {
-  background: var(--xeg-bg-surface-alpha-40);
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-40));
   border-color: var(--xeg-color-primary-alpha-30);
   transform: translateY(-1px);
 }
@@ -303,8 +332,9 @@
   align-items: stretch;
   gap: var(--xeg-spacing-sm);
   padding: var(--xeg-spacing-md);
-  background: var(--xeg-bg-surface-alpha-20);
-  border: 1px solid var(--xeg-modal-border);
+  /* 🎨 TDD: 툴바와 동일한 배경/테두리 색상 */
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-20));
+  border: 1px solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-lg);
 }
 
@@ -315,11 +345,11 @@
 }
 
 .customTemplateInputWrapper input {
-  /* 툴바와 동일한 스타일 기반 */
+  /* 🎨 TDD: 툴바와 완전히 동일한 스타일 기반 */
   font-family: 'Courier New', Courier, monospace;
-  background: var(--xeg-bg-surface-alpha-30);
-  color: var(--xeg-modal-text);
-  border: 1px solid var(--xeg-modal-border);
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-30));
+  color: var(--xeg-toolbar-text);
+  border: 1px solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
   font-size: var(--xeg-font-size-sm);
@@ -329,7 +359,7 @@
 }
 
 .customTemplateInputWrapper input:hover {
-  background: var(--xeg-bg-surface-alpha-40);
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-40));
   border-color: var(--xeg-color-primary-alpha-30);
   transform: translateY(-1px);
 }
@@ -349,15 +379,15 @@
 }
 
 .tokenHelpers button {
-  /* 툴바 버튼과 동일한 스타일 */
+  /* 🎨 TDD: 툴바 버튼과 완전히 동일한 스타일 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
-  background: var(--xeg-modal-bg-hover);
-  border: 1px solid var(--xeg-modal-border);
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-20));
+  border: 1px solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-sm);
-  color: var(--xeg-modal-text-secondary);
+  color: var(--xeg-toolbar-text-secondary);
   font-size: var(--xeg-font-size-xs);
   font-weight: var(--xeg-font-weight-medium);
   cursor: pointer;
@@ -437,14 +467,16 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .modalOverlay {
+    /* 🎨 TDD: 툴바와 동일한 오버레이 색상 */
     background: var(--xeg-modal-overlay-bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
   .modalContent {
-    border: 3px solid var(--xeg-modal-text);
-    background: var(--xeg-modal-bg);
+    /* 🎨 TDD: 툴바와 동일한 고대비 스타일 */
+    border: 3px solid var(--xeg-toolbar-text);
+    background: var(--xeg-toolbar-bg);
     box-shadow: none;
   }
 
@@ -459,8 +491,9 @@
   }
 
   [data-theme='dark'] .modalContent {
-    background: var(--xeg-modal-bg);
-    color: var(--xeg-modal-text);
+    /* 🎨 TDD: 다크 테마에서도 툴바와 동일한 색상 */
+    background: var(--xeg-toolbar-bg);
+    color: var(--xeg-toolbar-text);
   }
 }
 
@@ -475,20 +508,23 @@
   .modalContent,
   .settingRow,
   .customTemplateRow {
-    background: var(--xeg-modal-bg);
+    /* 🎨 TDD: 툴바와 동일한 불투명 배경 */
+    background: var(--xeg-toolbar-bg);
   }
 
   .settingRow select,
   .settingRow input,
   .tokenHelpers button {
-    background: var(--xeg-modal-bg-hover);
+    /* 🎨 TDD: 툴바와 동일한 호버 배경 */
+    background: var(--xeg-toolbar-bg-hover);
   }
 
   [data-theme='dark'] .modalOverlay,
   [data-theme='dark'] .modalContent,
   [data-theme='dark'] .settingRow,
   [data-theme='dark'] .customTemplateRow {
-    background: var(--xeg-modal-bg);
+    /* 🎨 TDD: 다크 테마에서도 툴바와 일관된 배경 */
+    background: var(--xeg-toolbar-bg);
   }
 }
 
@@ -539,14 +575,16 @@
   }
 }
 
-/* 고대비 모드 지원 */
+/* 고대비 모드 지원 (하위 호환성) */
 @media (prefers-contrast: high) {
   .modalOverlay {
+    /* 🎨 TDD: 툴바와 동일한 견고한 배경 */
     background: var(--xeg-bg-solid-light);
     backdrop-filter: none;
   }
 
   .modalContent {
+    /* 🎨 TDD: 툴바와 동일한 고대비 테두리 */
     border: 3px solid currentColor;
     background: var(--xeg-bg-solid-light);
   }

@@ -434,15 +434,15 @@ function getCurrentTheme(): Theme {
 
 // 테마에 따른 동적 스타일 적용 (CSS 변수 기반으로 단순화)
 function applyThemeBasedStyles(theme: Theme, modal: HTMLElement): void {
+  // 🎨 TDD 기반 UI 일관성 개선: 툴바와 동일한 테마 적용 방식 사용
   // CSS 모듈과 디자인 토큰을 통해 테마 스타일이 자동 적용됨
-  // JavaScript 동적 스타일링 제거
+  // JavaScript 동적 스타일링 완전 제거로 일관성 보장
 
-  // 내부 요소들에도 테마 속성 적용
   if (modal) {
+    // 1. 모달에 테마 속성 적용 (툴바와 동일한 방식)
     modal.setAttribute('data-theme', theme);
 
-    // CSS 변수 기반 테마 변경으로 대체
-    // 더 이상 직접 스타일 조작하지 않음
+    // 2. 내부 요소들에도 테마 속성 전파 (툴바와 일관된 방식)
     const header = modal.querySelector('.xeg-modal-header') as HTMLElement;
     const body = modal.querySelector('.xeg-modal-body') as HTMLElement;
     const closeButton = modal.querySelector('.xeg-modal-close-button') as HTMLElement;
@@ -455,9 +455,16 @@ function applyThemeBasedStyles(theme: Theme, modal: HTMLElement): void {
     }
     if (closeButton) {
       closeButton.setAttribute('data-theme', theme);
-      // CSS 클래스 기반 스타일링으로 변경 - inline 스타일 최소화
+      // 3. CSS 클래스 기반 스타일링으로 통일 (툴바 버튼과 동일한 방식)
       closeButton.classList.add('xeg-enhanced-close-button');
     }
+
+    // 4. 🚫 JavaScript 스타일 조작 제거 - CSS 변수만으로 테마 적용
+    // 이전: modal.style.background = `var(--theme-bg-${theme})`
+    // 현재: CSS에서 [data-theme='${theme}'] 선택자로 자동 적용
+
+    // 5. 툴바와 동일한 CSS 클래스 적용으로 완전한 일관성 보장
+    modal.classList.add('xeg-ui-component'); // 통합 UI 컴포넌트 클래스
   }
 }
 
