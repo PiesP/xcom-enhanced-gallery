@@ -10,6 +10,7 @@ import type { ViewMode } from '@shared/types';
 import { PERCENTAGE, FRACTIONS } from '../../../../constants';
 import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import { memo } from '@shared/utils/optimization/memo';
+import { unifiedLogger } from '@shared/logging/unified-logger';
 import {
   useToolbarState,
   getToolbarDataState,
@@ -92,9 +93,17 @@ function ToolbarCore({
   onNext,
   onDownloadCurrent,
   onDownloadAll,
-  onReload = () => console.warn('새로고침 기능이 제공되지 않음'),
+  onReload = () =>
+    unifiedLogger.warn('새로고침 기능이 제공되지 않음', {
+      module: 'Toolbar',
+      action: 'reload',
+    }),
   onClose,
-  onOpenSettings = () => console.warn('설정 기능이 제공되지 않음'),
+  onOpenSettings = () =>
+    unifiedLogger.warn('설정 기능이 제공되지 않음', {
+      module: 'Toolbar',
+      action: 'openSettings',
+    }),
   onFitOriginal,
   onFitHeight,
   onFitWidth,

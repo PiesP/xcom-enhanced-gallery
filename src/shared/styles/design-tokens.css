@@ -119,9 +119,27 @@
 
   /* Alpha Variants - color-mix로 하드코딩 제거 */
   --xeg-color-primary-alpha-10: color-mix(in oklch, var(--xeg-color-primary) 10%, transparent);
+  /* Supplemental (TDD merged): extended alpha variants */
+  --xeg-color-primary-alpha-30: color-mix(in oklch, var(--xeg-color-primary) 30%, transparent);
+  --xeg-color-primary-alpha-40: color-mix(in oklch, var(--xeg-color-primary) 40%, transparent);
   /* Additional alpha variants used in components */
   --xeg-color-error-alpha-10: color-mix(in oklch, var(--xeg-color-error) 10%, transparent);
   --xeg-color-error-alpha-30: color-mix(in oklch, var(--xeg-color-error) 30%, transparent);
+  --xeg-color-error-alpha-40: color-mix(
+    in oklch,
+    var(--xeg-color-error) 40%,
+    transparent
+  ); /* Supplemental */
+  --xeg-color-success-alpha-10: color-mix(
+    in oklch,
+    var(--xeg-color-success) 10%,
+    transparent
+  ); /* Supplemental */
+  --xeg-color-success-alpha-30: color-mix(
+    in oklch,
+    var(--xeg-color-success) 30%,
+    transparent
+  ); /* Supplemental */
 
   /* Neutral Colors - OKLCH로 통일 */
   --xeg-color-neutral-50: oklch(0.98 0.001 206.2);
@@ -491,6 +509,13 @@
   --xeg-padding-sm: 8px; /* 작은 패딩 */
   --xeg-button-size-lg: var(--xeg-button-height-lg); /* 큰 버튼 */
   --xeg-toolbar-height: 72px; /* UX 개선을 위해 64px에서 증가 */
+  /* Supplemental toolbar layout compatibility tokens (TDD merged) */
+  --xeg-toolbar-edge-padding: var(--xeg-spacing-sm);
+  --xeg-toolbar-group-gap: var(--xeg-spacing-md);
+  --xeg-toolbar-button-gap: var(--xeg-spacing-xs);
+  --xeg-toolbar-group-padding: var(--xeg-spacing-xs);
+  --xeg-toolbar-border-radius: var(--xeg-radius-lg);
+  --xeg-z-toolbar: var(--xeg-z-gallery-toolbar);
 
   /* UX 중심 추가 토큰 */
   --xeg-touch-target-min: 44px; /* 터치 타겟 최소 크기 (WCAG 기준) */
@@ -820,6 +845,153 @@
   --xeg-media-item-border: var(--xeg-border-light);
   --xeg-media-item-hover: var(--xeg-bg-medium);
   --xeg-media-item-active: var(--xeg-color-primary-100);
+
+  /* Supplemental subtle shadow & legacy aliases (TDD merged) */
+  --xeg-shadow-simple-subtle: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --xeg-text-tertiary: var(--xeg-color-text-tertiary);
+  --xeg-bg-solid: var(--xeg-bg-solid-light);
+  --xeg-font-size-md: var(--xeg-font-size-base);
+}
+
+/* ===========================================
+   DEPRECATED TOKENS (Phase 1 Slimming - UNUSED)
+   - 아래 토큰들은 현재 컴포넌트 CSS에서 직접 참조되지 않거나 대체 토큰 존재
+   - 테스트 통과 후 Phase 2에서 완전 제거 예정
+   - 유지 사유 있는 경우 주석 옆에 NOTE 추가
+   =========================================== */
+:root {
+  /* Legacy active ring system (unused externally) */
+  --xeg-active-ring-width: var(--xeg-focus-ring-width); /* DEPRECATED */
+  --xeg-active-ring-color: var(--xeg-color-primary); /* DEPRECATED */
+  --xeg-active-ring: var(--xeg-active-ring-width) solid var(--xeg-active-ring-color); /* DEPRECATED */
+  --xeg-active-shadow: 0 0 0 var(--xeg-active-ring-width) var(--xeg-active-ring-color); /* DEPRECATED */
+
+  /* Legacy animation fine-grain durations (consolidated) */
+  --xeg-animation-hover-duration: 0.2s; /* DEPRECATED */
+  --xeg-animation-focus-duration: 0.15s; /* DEPRECATED */
+
+  /* Overspecific blur level */
+  --xeg-blur-extra-strong: blur(16px); /* DEPRECATED */
+
+  /* Obsolete surface inset alias */
+  --xeg-color-surface-inset: var(--xeg-color-neutral-50); /* DEPRECATED */
+
+  /* Unused button sizing aliases (replaced by toolbar button system) */
+  --xeg-button-size: var(--xeg-button-height-md); /* DEPRECATED */
+  --xeg-button-size-sm: var(--xeg-button-height-sm); /* DEPRECATED */
+
+  /* Legacy container constraints (not applied) */
+  --xeg-container-min-width: 320px; /* DEPRECATED */
+  --xeg-container-max-width: 1400px; /* DEPRECATED */
+
+  /* Redundant gallery shadow (simplified system) */
+  --xeg-gallery-shadow: var(--xeg-shadow-simple-ultra); /* DEPRECATED */
+
+  /* Unused overlay mix variants (replaced by gradient tokens) */
+  --xeg-overlay-mix-primary: var(--xeg-overlay-mix-dark-80); /* DEPRECATED */
+  --xeg-overlay-mix-secondary: var(--xeg-overlay-mix-dark-40); /* DEPRECATED */
+
+  /* Redundant spacing/gap variants */
+  --xeg-gap-lg: 16px; /* DEPRECATED */
+  --xeg-gap-2xl: 32px; /* DEPRECATED */
+
+  /* Legacy success/error low alpha tokens (rarely used) */
+  --xeg-color-success-alpha-08: rgba(16, 185, 129, 0.08); /* DEPRECATED */
+  --xeg-color-error-alpha-08: rgba(239, 68, 68, 0.08); /* DEPRECATED */
+
+  /* =============================
+    Phase 2 추가 DEPRECATED 후보
+    ============================= */
+  /* Unused responsive breakpoints (no media query var() usage) */
+  --xeg-breakpoint-sm: 640px; /* DEPRECATED: not referenced */
+  --xeg-breakpoint-md: 768px; /* DEPRECATED */
+  --xeg-breakpoint-lg: 1024px; /* DEPRECATED */
+  --xeg-breakpoint-xl: 1280px; /* DEPRECATED */
+  --xeg-breakpoint-2xl: 1536px; /* DEPRECATED */
+
+  /* Unused large spacing scale (≥4xl not referenced) */
+  --xeg-spacing-4xl: 80px; /* DEPRECATED */
+  --xeg-spacing-5xl: 96px; /* DEPRECATED */
+  --xeg-spacing-6xl: 128px; /* DEPRECATED */
+
+  /* Oversized typography not referenced */
+  --xeg-font-size-3xl: 30px; /* DEPRECATED */
+
+  /* Glass background + media glass (no component-level var() usage outside tokens file) */
+  --xeg-glass-bg-light: rgba(255, 255, 255, 0.85); /* DEPRECATED */
+  --xeg-glass-bg-medium: rgba(255, 255, 255, 0.65); /* DEPRECATED */
+  --xeg-glass-bg-dark: rgba(0, 0, 0, 0.85); /* DEPRECATED */
+  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.95); /* DEPRECATED */
+  --xeg-glass-bg-translucent-light: var(--xeg-glass-bg-light); /* DEPRECATED */
+  --xeg-glass-bg-translucent-medium: var(--xeg-glass-bg-medium); /* DEPRECATED */
+  --xeg-glass-bg-translucent-dark: var(--xeg-glass-bg-dark); /* DEPRECATED */
+  --xeg-glass-bg-translucent-ultra-light: var(--xeg-glass-bg-ultra-light); /* DEPRECATED */
+  --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-dark); /* DEPRECATED */
+  --xeg-media-glass-bg-light: var(--xeg-glass-bg-translucent-light); /* DEPRECATED */
+  --xeg-media-glass-bg-medium: var(--xeg-glass-bg-translucent-medium); /* DEPRECATED */
+
+  /* Gallery backdrop legacy (unused) */
+  --xeg-gallery-backdrop: rgba(21, 32, 43, 0.85); /* DEPRECATED */
+  --xeg-gallery-backdrop-filter: blur(16px); /* DEPRECATED */
+
+  /* Toolbar button variant backgrounds (legacy utility block only) */
+  --xeg-toolbar-button-bg-primary: var(--xeg-color-primary); /* DEPRECATED */
+  --xeg-toolbar-button-bg-secondary: var(--xeg-color-neutral-200); /* DEPRECATED */
+  --xeg-toolbar-button-bg-danger: var(--xeg-color-error); /* DEPRECATED */
+  --xeg-toolbar-button-border-primary: var(--xeg-color-primary-alpha-20); /* DEPRECATED */
+  --xeg-toolbar-button-border-secondary: var(--xeg-color-neutral-300); /* DEPRECATED */
+  --xeg-toolbar-button-border-danger: var(--xeg-color-error-alpha-30); /* DEPRECATED */
+
+  /* Color scale steps (unused granular shades) */
+  --xeg-color-warning-50: oklch(0.988 0.029 86.7); /* DEPRECATED */
+  --xeg-color-warning-100: oklch(0.967 0.069 86); /* DEPRECATED */
+  --xeg-color-warning-200: oklch(0.928 0.108 85.4); /* DEPRECATED */
+  --xeg-color-warning-300: oklch(0.878 0.142 82.8); /* DEPRECATED */
+  --xeg-color-warning-400: oklch(0.825 0.151 78.2); /* DEPRECATED */
+  --xeg-color-warning-600: oklch(0.685 0.156 65.8); /* DEPRECATED */
+  --xeg-color-warning-700: oklch(0.576 0.149 58.8); /* DEPRECATED */
+  --xeg-color-warning-800: oklch(0.489 0.142 52.4); /* DEPRECATED */
+  --xeg-color-warning-900: oklch(0.427 0.133 47.7); /* DEPRECATED */
+  --xeg-color-warning-950: oklch(0.273 0.104 40.9); /* DEPRECATED */
+  --xeg-color-warning-alpha-08: rgba(245, 158, 11, 0.08); /* DEPRECATED */
+
+  --xeg-color-error-50: oklch(0.971 0.013 17.4); /* DEPRECATED */
+  --xeg-color-error-100: oklch(0.943 0.031 15.6); /* DEPRECATED */
+  --xeg-color-error-200: oklch(0.905 0.055 13.6); /* DEPRECATED */
+  --xeg-color-error-300: oklch(0.852 0.089 12); /* DEPRECATED */
+  --xeg-color-error-400: oklch(0.787 0.15 17); /* DEPRECATED */
+  --xeg-color-error-600: oklch(0.568 0.228 25.3); /* DEPRECATED */
+  --xeg-color-error-700: oklch(0.498 0.208 25.9); /* DEPRECATED */
+  --xeg-color-error-800: oklch(0.447 0.19 26.2); /* DEPRECATED */
+  --xeg-color-error-900: oklch(0.402 0.172 26.5); /* DEPRECATED */
+  --xeg-color-error-950: oklch(0.261 0.119 26.8); /* DEPRECATED */
+  --xeg-color-error-alpha-30: color-mix(
+    in oklch,
+    var(--xeg-color-error) 30%,
+    transparent
+  ); /* DEPRECATED */
+
+  --xeg-color-success-500: var(--xeg-color-success); /* DEPRECATED */
+  --xeg-color-success-800: oklch(0.456 0.133 145.2); /* DEPRECATED */
+  --xeg-color-success-900: oklch(0.398 0.118 146.8); /* DEPRECATED */
+  --xeg-color-success-950: oklch(0.241 0.077 150); /* DEPRECATED */
+
+  /* Toolbar button sizing / icon scale tokens (utility-only) */
+  --xeg-toolbar-button-width-sm: 40px; /* DEPRECATED */
+  --xeg-toolbar-button-height-sm: 40px; /* DEPRECATED */
+  --xeg-toolbar-button-padding-sm: 4px; /* DEPRECATED */
+  --xeg-toolbar-button-icon-sm: 18px; /* DEPRECATED */
+
+  --xeg-toolbar-button-width-md: 44px; /* DEPRECATED */
+  --xeg-toolbar-button-height-md: 44px; /* DEPRECATED */
+  --xeg-toolbar-button-padding-md: 6px; /* DEPRECATED */
+  --xeg-toolbar-button-icon-md: 20px; /* DEPRECATED */
+  --xeg-toolbar-button-min-touch-target: 44px; /* DEPRECATED */
+
+  --xeg-toolbar-button-width-lg: 52px; /* DEPRECATED */
+  --xeg-toolbar-button-height-lg: 52px; /* DEPRECATED */
+  --xeg-toolbar-button-padding-lg: 8px; /* DEPRECATED */
+  --xeg-toolbar-button-icon-lg: 24px; /* DEPRECATED */
 }
 
 /* ===========================================
@@ -1525,3 +1697,9 @@
 }
 
 /* (DEPRECATED) 이전에 중복되었던 OKLCH Fallback 블록은 위 CONSOLIDATED FALLBACK BLOCK으로 통합되었습니다. */
+
+/* ===========================================
+   SUPPLEMENTAL TOKENS (TDD Added for Consistency)
+   - Added via style token inventory TDD to resolve missing references
+   - Phase: GREEN (will be merged upstream into structured sections later)
+   =========================================== */
