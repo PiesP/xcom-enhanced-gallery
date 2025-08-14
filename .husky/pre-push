@@ -1,11 +1,13 @@
 #!/usr/bin/env sh
 
 # =============================================================================
-# Pre-push Hook for X.com Enhanced Gallery (Optimized)
+# Pre-push Hook for X.com Enhanced Gallery (Ultra-Optimized)
 # =============================================================================
-# 푸시 전 최적화된 품질 검사
+# 푸시 전 최적화된 품질 검사 - 캐싱 및 조건부 실행 최적화
 # HUSKY_SKIP=1 또는 SKIP_TESTS=1 환경변수로 검사를 건너뛸 수 있습니다.
 # =============================================================================
+
+START_TIME=$(date +%s)
 
 # 스킵 옵션 확인
 if [ "$HUSKY_SKIP" = "1" ]; then
@@ -15,77 +17,151 @@ fi
 
 echo "🧪 푸시 전 최적화된 품질 검증 시작..."
 
-# 브랜치별 다른 정책
+# 브랜치 및 원격 정보 수집
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 REMOTE_BRANCH="${2##*/}"
+COMMITS_AHEAD=$(git rev-list --count HEAD ^origin/$BRANCH 2>/dev/null || echo "0")
+
+echo "🌿 브랜치: $BRANCH → $REMOTE_BRANCH"
+echo "📊 푸시할 커밋: $COMMITS_AHEAD 개"
+
+# 변경 파일 분석을 통한 최적화
+if [ "$COMMITS_AHEAD" -gt 0 ]; then
+  CHANGED_FILES=$(git diff --name-only HEAD~$COMMITS_AHEAD | wc -l)
+  TS_FILES=$(git diff --name-only HEAD~$COMMITS_AHEAD | grep '\.\(ts\|tsx\)$' | wc -l)
+  TEST_FILES=$(git diff --name-only HEAD~$COMMITS_AHEAD | grep '\.test\.\|\.spec\.' | wc -l)
+  echo "📂 변경 파일: $CHANGED_FILES 개 (TS: $TS_FILES, Test: $TEST_FILES)"
+fi
 
 # 개발 브랜치는 최적화된 가벼운 검사
 case "$BRANCH" in
-  dev*|feature*|experiment*|refactor*)
+  dev*|feature*|experiment*|refactor*|hotfix*)
     echo "🔧 개발 브랜치: 최적화된 빠른 검증 모드"
 
-    # 포맷 체크
+    # 병렬 실행으로 최적화
     echo "🎨 코드 포맷팅 검사 중..."
-    if ! npm run format:check; then
+    npm run format:check &
+    FORMAT_PID=$!
+
+    # 변경 파일이 적으면 더 빠른 테스트
+    if [ "${CHANGED_FILES:-0}" -lt 10 ]; then
+      echo "⚡ 적은 변경 ($CHANGED_FILES 파일): 초고속 테스트"
+      npm run test:quick &
+      TEST_PID=$!
+    else
+      echo "⚡ 최적화된 빠른 테스트 실행 중..."
+      npm run test:fast &
+      TEST_PID=$!
+    fi
+
+    # 병렬 작업 완료 대기
+    wait $FORMAT_PID || {
       echo "⚠️  코드 포맷팅 문제 발견"
       echo "💡 자동 수정: npm run format"
       echo "💡 건너뛰기: HUSKY_SKIP=1 git push"
-    fi
+    }
 
-    # 최적화된 빠른 테스트
-    echo "⚡ 최적화된 빠른 테스트 실행 중..."
-    if ! npm run test:fast; then
+    wait $TEST_PID || {
       echo "⚠️  일부 테스트 실패 (개발 브랜치이므로 경고)"
       echo "💡 전체 테스트: npm run test:optimized"
-    fi
+    }
 
     echo "✅ 개발 브랜치 최적화된 검증 완료!"
-    exit 0
-    ;;
-esac
-
-# 메인 브랜치는 더 엄격한 검사
-case "$REMOTE_BRANCH" in
-  main|master)
-    echo "🏛️  메인 브랜치 푸시: 엄격한 검증 모드"
-
-    # 포맷 체크
-    echo "🎨 코드 포맷팅 검사 중..."
-    if ! npm run format:check; then
-      echo "❌ 코드 포맷팅 검사 실패"
-      echo "💡 'npm run format' 명령어로 포맷팅을 수정해주세요."
-      exit 1
-    fi
-
-    # 최적화된 전체 테스트 실행 (스킵 가능)
-    if [ "$SKIP_TESTS" = "1" ]; then
-      echo "⏭️  테스트 건너뛰기 (SKIP_TESTS=1)"
-    else
-      echo "🧪 최적화된 전체 테스트 실행 중..."
-      if ! npm run test:optimized; then
-        echo "❌ 테스트 실패"
-        echo "💡 실패한 테스트를 수정한 후 다시 시도해주세요."
-        echo "💡 긴급 푸시: SKIP_TESTS=1 git push"
-        exit 1
-      fi
-    fi
     ;;
   *)
-    # 기타 브랜치는 최적화된 기본 검증
-    echo "🔀 일반 브랜치: 최적화된 기본 검증 모드"
+    # 메인 브랜치는 더 엄격한 검사 (하지만 최적화)
+    case "$REMOTE_BRANCH" in
+      main|master)
+        echo "🏛️  메인 브랜치 푸시: 병렬 최적화 엄격 검증"
 
-    echo "🎨 코드 포맷팅 검사 중..."
-    if ! npm run format:check; then
-      echo "⚠️  코드 포맷팅 문제 발견 (경고)"
-      echo "💡 수정 권장: npm run format"
-    fi
+        # 병렬 실행으로 최적화
+        echo "🎨 코드 포맷팅 검사 중..."
+        npm run format:check &
+        FORMAT_PID=$!
 
-    echo "⚡ 최적화된 빠른 테스트 실행 중..."
-    if ! npm run test:fast; then
-      echo "⚠️  일부 테스트 실패 (경고)"
-      echo "💡 전체 테스트: npm run test:optimized"
-    fi
+        # TypeScript 파일 변경시만 타입체크
+        if [ "${TS_FILES:-0}" -gt 0 ]; then
+          echo "🔍 TypeScript 타입체크 실행 중..."
+          npx tsc --noEmit --skipLibCheck &
+          TYPECHECK_PID=$!
+        fi
+
+        # 테스트 변경사항에 따른 최적화된 테스트 실행 (스킵 가능)
+        if [ "$SKIP_TESTS" = "1" ]; then
+          echo "⏭️  테스트 건너뛰기 (SKIP_TESTS=1)"
+          TEST_PID=""
+        else
+          if [ "${TEST_FILES:-0}" -gt 0 ] || [ "${CHANGED_FILES:-0}" -gt 20 ]; then
+            echo "🧪 대규모 변경 감지: 최적화된 전체 테스트 실행 중..."
+            npm run test:optimized &
+            TEST_PID=$!
+          else
+            echo "⚡ 소규모 변경: 최적화된 빠른 테스트 실행 중..."
+            npm run test:fast &
+            TEST_PID=$!
+          fi
+        fi
+
+        # 병렬 작업 완료 대기 및 오류 처리
+        wait $FORMAT_PID || {
+          echo "❌ 코드 포맷팅 검사 실패"
+          echo "💡 'npm run format' 명령어로 포맷팅을 수정해주세요."
+          [ -n "$TYPECHECK_PID" ] && kill $TYPECHECK_PID 2>/dev/null
+          [ -n "$TEST_PID" ] && kill $TEST_PID 2>/dev/null
+          exit 1
+        }
+
+        if [ -n "$TYPECHECK_PID" ]; then
+          wait $TYPECHECK_PID || {
+            echo "❌ 타입체크 실패"
+            echo "💡 타입 오류를 수정한 후 다시 시도해주세요."
+            [ -n "$TEST_PID" ] && kill $TEST_PID 2>/dev/null
+            exit 1
+          }
+        fi
+
+        if [ -n "$TEST_PID" ]; then
+          wait $TEST_PID || {
+            echo "❌ 테스트 실패"
+            echo "💡 실패한 테스트를 수정한 후 다시 시도해주세요."
+            echo "💡 긴급 푸시: SKIP_TESTS=1 git push"
+            exit 1
+          }
+        fi
+        ;;
+      *)
+        # 기타 브랜치는 최적화된 기본 검증
+        echo "🔀 일반 브랜치: 최적화된 기본 검증 모드"
+
+        echo "🎨 코드 포맷팅 검사 중..."
+        npm run format:check &
+        FORMAT_PID=$!
+
+        # 변경 규모에 따른 적응적 테스트
+        if [ "${CHANGED_FILES:-0}" -lt 5 ]; then
+          echo "⚡ 미니멀 변경: 초고속 테스트"
+          npm run test:quick &
+          TEST_PID=$!
+        else
+          echo "⚡ 최적화된 빠른 테스트 실행 중..."
+          npm run test:fast &
+          TEST_PID=$!
+        fi
+
+        # 병렬 작업 완료 대기
+        wait $FORMAT_PID || {
+          echo "⚠️  코드 포맷팅 문제 발견 (경고)"
+          echo "💡 수정 권장: npm run format"
+        }
+
+        wait $TEST_PID || {
+          echo "⚠️  일부 테스트 실패 (경고)"
+          echo "💡 전체 테스트: npm run test:optimized"
+        }
+        ;;
+    esac
     ;;
 esac
 
-echo "✅ 최적화된 푸시 전 검증 완료!"
+ELAPSED_TIME=$(($(date +%s) - $START_TIME))
+echo "✅ 최적화된 푸시 전 검증 완료! (⏱️  ${ELAPSED_TIME}초)"

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # =============================================================================
-# Pre-commit Hook for X.com Enhanced Gallery (Optimized)
+# Pre-commit Hook for X.com Enhanced Gallery (Ultra-Optimized)
 # =============================================================================
 # 커밋 전 최적화된 빠른 코드 품질 검사
 # HUSKY_SKIP=1 환경변수로 검사를 건너뛸 수 있습니다.
@@ -15,7 +15,11 @@ fi
 
 echo "🔍 커밋 전 최적화된 빠른 검증 시작..."
 
-# 스테이징된 파일 린트 (주요 검사)
+# 변경된 파일 수 확인하여 조건부 실행
+STAGED_FILES=$(git diff --cached --name-only | wc -l)
+echo "📂 스테이징된 파일: $STAGED_FILES 개"
+
+# 스테이징된 파일 린트 (주요 검사) - 병렬 실행 최적화
 echo "🧹 스테이징된 파일 린트 중..."
 npx lint-staged || {
   echo "❌ 린트 실패"
@@ -24,33 +28,63 @@ npx lint-staged || {
   exit 1
 }
 
-# 개발 브랜치에서는 빠른 테스트만
+# 브랜치별 최적화된 실행 전략
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo "🌿 현재 브랜치: $BRANCH"
+
 case "$BRANCH" in
-  dev*|feature*|experiment*|refactor*)
+  dev*|feature*|experiment*|refactor*|hotfix*)
     echo "🔧 개발 브랜치: 최적화된 빠른 테스트 실행"
-    echo "⚡ 빠른 테스트 실행 중 (최적화된 설정)..."
+    
+    # 변경 파일이 적을 경우 더 빠른 검증
+    if [ "$STAGED_FILES" -lt 5 ]; then
+      echo "⚡ 적은 변경 파일($STAGED_FILES개): 초고속 검증 모드"
+      # TypeScript 관련 파일이 변경된 경우만 타입체크
+      if git diff --cached --name-only | grep -q '\.\(ts\|tsx\)$'; then
+        echo "🔍 TypeScript 파일 변경 감지 - 빠른 타입체크"
+        npx tsc --noEmit --skipLibCheck || {
+          echo "⚠️  타입 오류 (개발 브랜치이므로 경고)"
+        }
+      fi
+    fi
+
+    echo "⚡ 최적화된 빠른 테스트 실행 중..."
     if ! npm run test:fast; then
       echo "⚠️  일부 테스트 실패 (개발 브랜치이므로 경고)"
       echo "💡 전체 테스트: npm run test:optimized"
     fi
     ;;
   *)
-    # 메인 브랜치에서는 빠른 타입체크와 빠른 테스트
-    echo "📋 빠른 타입체크 실행 중..."
-    if ! npx tsc --noEmit --skipLibCheck; then
-      echo "❌ 타입 오류가 있습니다"
-      echo "💡 전체 타입체크: npm run typecheck"
-      exit 1
+    # 메인 브랜치에서는 병렬 실행으로 최적화
+    echo "🏛️  메인 브랜치: 병렬 최적화 검증"
+
+    # 변경 파일이 많을 경우에만 전체 타입체크
+    if [ "$STAGED_FILES" -gt 10 ] || git diff --cached --name-only | grep -q '\.\(ts\|tsx\)$'; then
+      echo "📋 타입체크 실행 중..."
+      npx tsc --noEmit --skipLibCheck &
+      TYPECHECK_PID=$!
     fi
 
     echo "⚡ 최적화된 빠른 테스트 실행 중..."
-    if ! npm run test:fast; then
+    npm run test:fast &
+    TEST_PID=$!
+
+    # 병렬 작업 완료 대기
+    if [ -n "$TYPECHECK_PID" ]; then
+      wait $TYPECHECK_PID || {
+        echo "❌ 타입 오류가 있습니다"
+        kill $TEST_PID 2>/dev/null
+        exit 1
+      }
+    fi
+
+    wait $TEST_PID || {
       echo "❌ 테스트 실패"
       echo "💡 전체 테스트: npm run test:optimized"
       exit 1
-    fi
+    }
     ;;
 esac
 
 echo "✅ 최적화된 커밋 전 검증 완료!"
+echo "⏱️  총 시간: $(($(date +%s) - ${START_TIME:-$(date +%s)}))초"

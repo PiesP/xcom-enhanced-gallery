@@ -25,6 +25,7 @@
     "test:single:watch": "cross-env VITEST_MODE=fix vitest --reporter=verbose",
     "test:quick": "vitest run --exclude='**/refactoring/**' --exclude='**/integration/**' --exclude='**/slow/**' --reporter=basic",
     "test:fast": "vitest run --exclude='**/refactoring/**' --exclude='**/tdd-*' --exclude='**/integration/**'",
+    "test:ultra-fast": "vitest run --exclude='**/refactoring/**' --exclude='**/tdd-*' --exclude='**/integration/**' --exclude='**/consolidated/**' --reporter=basic --run",
     "test:local": "cross-env VITEST_MODE=optimized vitest run --coverage",
     "test:local:watch": "cross-env VITEST_MODE=optimized vitest",
     "test:threads": "node -e \"console.log('🖥️  Vitest 성능 설정 정보:'); const os = require('os'); const cpus = os.cpus().length; console.log('   논리 프로세서:', cpus, '개'); const isCI = !!(process.env.CI || process.env.GITHUB_ACTIONS); console.log('   CI 환경:', isCI ? 'Yes' : 'No'); const mode = process.env.VITEST_MODE || 'default'; console.log('   테스트 모드:', mode); const calcThreads = (mode) => { if (mode === 'fix') return 1; if (mode === 'turbo') return Math.min(Math.max(Math.floor(cpus * 0.85), 4), 12); if (isCI) return Math.min(Math.max(cpus - 1, 1), 2); return Math.min(Math.max(Math.floor(cpus * 0.6), 2), 6); }; console.log('   계산된 스레드 수:', calcThreads(mode), '개'); console.log('\\n🚀 빠른 테스트 실행: npm run test:turbo'); console.log('🐛 디버깅용 단일 스레드: npm run test:single');\"",
@@ -109,17 +110,18 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --max-warnings 0",
       "prettier --write"
     ],
     "*.{js,jsx}": [
-      "eslint --fix",
+      "eslint --fix --max-warnings 0",
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [
       "prettier --write"
     ],
     "*.{css,scss}": [
+      "stylelint --fix",
       "prettier --write"
     ]
   }
