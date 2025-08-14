@@ -346,6 +346,29 @@ let galleryEventState = {
   priorityInterval: null as ReturnType<typeof setTimeout> | null,
 };
 
+// 글로벌 훅 등록: 갤러리 signals 에서 순환 의존성 없이 정리 호출 가능하도록 브리지 제공
+// (signals -> global hook -> cleanupGalleryEvents)
+try {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g: any = globalThis as any;
+  if (!g.__XEG_cleanupGalleryEvents) {
+    Object.defineProperty(g, '__XEG_cleanupGalleryEvents', {
+      configurable: true,
+      enumerable: false,
+      writable: true,
+      value: () => {
+        try {
+          cleanupGalleryEvents();
+        } catch (err) {
+          logger.warn('Global cleanup hook execution failed', err);
+        }
+      },
+    });
+  }
+} catch {
+  // ignore env without globalThis
+}
+
 /**
  * 갤러리 이벤트 시스템 초기화
  */

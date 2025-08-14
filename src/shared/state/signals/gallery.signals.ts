@@ -259,6 +259,15 @@ export function closeGallery(): void {
   };
 
   logger.debug('[Gallery] 갤러리 종료 및 상태 완전 초기화 완료');
+  // 추가: 이벤트 시스템 자동 정리 (동기) - 글로벌 훅 접근
+  try {
+    const g: any = globalThis as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (typeof g.__XEG_cleanupGalleryEvents === 'function') {
+      g.__XEG_cleanupGalleryEvents();
+    }
+  } catch (error) {
+    logger.warn('[Gallery] 글로벌 이벤트 정리 실패:', error);
+  }
 }
 
 // Settings modal visibility controls
