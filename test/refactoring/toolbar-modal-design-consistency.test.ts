@@ -33,9 +33,9 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
       // 툴바는 그라디언트 사용
       expect(toolbarCSS).toContain('--xeg-toolbar-overlay-gradient');
 
-      // 설정 모달도 일관된 배경 토큰 사용해야 함 (현재는 다른 토큰 사용 중)
-      expect(settingsCSS).toContain('--xeg-modal-overlay-gradient');
-      expect(settingsCSS).toContain('--xeg-modal-content-bg');
+      // 설정 모달도 일관된 배경 토큰 사용해야 함 (개선된 토큰 사용)
+      expect(settingsCSS).toContain('--xeg-modal-overlay-bg');
+      expect(settingsCSS).toContain('--xeg-modal-bg');
     });
 
     it('테마별 배경 일관성이 보장되어야 함', () => {
@@ -53,7 +53,7 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
       expect(toolbarCSS).toContain('backdrop-filter: var(--xeg-blur-medium)');
 
       // 설정 모달도 블러 효과 사용해야 함
-      expect(settingsCSS).toContain('backdrop-filter: var(--xeg-blur-light)');
+      expect(settingsCSS).toContain('backdrop-filter: var(--xeg-modal-overlay-backdrop)');
     });
 
     it('호버 효과가 일관된 패턴을 따라야 함', () => {
@@ -98,9 +98,9 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
     });
 
     it('설정 모달 CSS가 새로운 토큰을 사용해야 함', () => {
-      expect(settingsCSS).toContain('var(--xeg-modal-overlay-gradient)');
-      expect(settingsCSS).toContain('var(--xeg-modal-content-bg)');
-      expect(settingsCSS).toContain('var(--xeg-blur-light)');
+      expect(settingsCSS).toContain('var(--xeg-modal-overlay-bg)');
+      expect(settingsCSS).toContain('var(--xeg-modal-bg)');
+      expect(settingsCSS).toContain('var(--xeg-modal-overlay-backdrop)');
     });
 
     it('테마 전환 시 일관된 시각적 경험을 제공해야 함', () => {

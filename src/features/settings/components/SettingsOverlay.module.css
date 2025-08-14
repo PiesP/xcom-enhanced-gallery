@@ -13,9 +13,9 @@
   z-index: var(--xeg-z-modal);
 
   /* 통합 오버레이 시스템 (Solid Design) - 토큰화 */
-  background: var(--xeg-modal-overlay-gradient);
-  backdrop-filter: var(--xeg-blur-light);
-  -webkit-backdrop-filter: var(--xeg-blur-light);
+  background: var(--xeg-modal-overlay-bg);
+  backdrop-filter: var(--xeg-modal-overlay-backdrop);
+  -webkit-backdrop-filter: var(--xeg-modal-overlay-backdrop);
   animation: fadeIn var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 
   /* 하드웨어 가속 최적화 */
@@ -25,7 +25,7 @@
 
 .modalContent {
   /* 툴바와 완전히 통일된 스타일 (Solid Design) */
-  background: var(--xeg-modal-content-bg);
+  background: var(--xeg-modal-bg);
   border: 2px solid var(--xeg-modal-border);
   border-radius: var(--xeg-radius-lg);
   box-shadow: var(--xeg-modal-shadow);
@@ -51,9 +51,9 @@
 
 /* 툴바와 동일한 호버 효과 (Solid Design) */
 .modalContent:hover {
-  transform: translateZ(0) translateY(-1px);
-  box-shadow: var(--xeg-toolbar-shadow-strong);
-  border-color: var(--solid-primary-alpha-40);
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-modal-shadow-strong);
+  border-color: var(--xeg-color-primary-alpha-40);
 }
 
 .modalHeader {
@@ -143,7 +143,6 @@
   border-bottom: 1px solid var(--xeg-modal-border);
 }
 
-/* 툴바 그룹과 동일한 설정 행 스타일 */
 .settingRow {
   display: flex;
   justify-content: space-between;
@@ -151,14 +150,14 @@
   gap: var(--xeg-spacing-md);
   padding: var(--xeg-spacing-xs);
   border-radius: var(--xeg-radius-md);
-  background: var(--xeg-bg-surface-alpha-20);
+  background: var(--xeg-modal-bg-hover);
   border: 1px solid transparent;
   transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
   min-height: var(--xeg-touch-target-min);
 }
 
 .settingRow:hover {
-  background: var(--xeg-bg-surface-alpha-30);
+  background: var(--xeg-modal-bg-hover);
   border-color: var(--xeg-color-primary-alpha-30);
 }
 
@@ -174,7 +173,7 @@
 .settingRow select,
 .settingRow input[type='number'] {
   /* 기본 스타일링 */
-  background: var(--xeg-bg-surface-alpha-30);
+  background: var(--xeg-modal-bg);
   color: var(--xeg-modal-text);
   border: 1px solid var(--xeg-modal-border);
   border-radius: var(--xeg-radius-md);
@@ -196,7 +195,7 @@
 .settingRow select:focus,
 .settingRow input[type='number']:focus {
   outline: none;
-  background: var(--xeg-bg-surface-alpha-40);
+  background: var(--xeg-modal-bg-hover);
   border-color: var(--xeg-color-primary);
   box-shadow: 0 0 0 3px var(--xeg-color-primary-alpha-20);
 }
@@ -355,7 +354,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
-  background: var(--xeg-bg-surface-alpha-30);
+  background: var(--xeg-modal-bg-hover);
   border: 1px solid var(--xeg-modal-border);
   border-radius: var(--xeg-radius-sm);
   color: var(--xeg-modal-text-secondary);
@@ -418,7 +417,6 @@
     transition: none;
   }
 
-  .closeButton,
   .settingRow select,
   .settingRow input,
   .tokenHelpers button,
@@ -426,8 +424,6 @@
     transition: none !important;
   }
 
-  .closeButton:hover,
-  .closeButton:active,
   .settingRow select:hover,
   .settingRow input:hover,
   .tokenHelpers button:hover,
@@ -441,14 +437,14 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .modalOverlay {
-    background: var(--xeg-bg-solid-light);
+    background: var(--xeg-modal-overlay-bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
   .modalContent {
     border: 3px solid var(--xeg-modal-text);
-    background: var(--xeg-bg-solid-light);
+    background: var(--xeg-modal-bg);
     box-shadow: none;
   }
 
@@ -459,19 +455,19 @@
   }
 
   [data-theme='dark'] .modalOverlay {
-    background: var(--xeg-bg-solid-dark);
+    background: var(--xeg-modal-overlay-bg);
   }
 
   [data-theme='dark'] .modalContent {
-    background: var(--xeg-bg-solid-dark);
-    color: var(--xeg-color-text-inverse);
+    background: var(--xeg-modal-bg);
+    color: var(--xeg-modal-text);
   }
 }
 
 /* 투명도 감소 선호도 지원 */
 @media (prefers-reduced-transparency: reduce) {
   .modalOverlay {
-    background: var(--xeg-bg-solid-light);
+    background: var(--xeg-modal-overlay-bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -479,20 +475,20 @@
   .modalContent,
   .settingRow,
   .customTemplateRow {
-    background: var(--xeg-bg-solid-light);
+    background: var(--xeg-modal-bg);
   }
 
   .settingRow select,
   .settingRow input,
   .tokenHelpers button {
-    background: var(--xeg-bg-surface);
+    background: var(--xeg-modal-bg-hover);
   }
 
   [data-theme='dark'] .modalOverlay,
   [data-theme='dark'] .modalContent,
   [data-theme='dark'] .settingRow,
   [data-theme='dark'] .customTemplateRow {
-    background: var(--xeg-bg-solid-dark);
+    background: var(--xeg-modal-bg);
   }
 }
 

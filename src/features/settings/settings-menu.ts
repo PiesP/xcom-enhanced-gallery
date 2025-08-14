@@ -432,21 +432,17 @@ function getCurrentTheme(): Theme {
   }
 }
 
-// 테마에 따른 동적 스타일 적용
-function applyThemeBasedStyles(style: CSSStyleDeclaration, theme: Theme, modal: HTMLElement): void {
-  if (theme === 'dark') {
-    style.background = 'var(--xeg-bg-dark, rgba(21, 32, 43, 0.95))';
-    style.color = 'var(--xeg-color-text-primary, rgba(255, 255, 255, 0.9))';
-  } else {
-    style.background = 'var(--xeg-bg-light, rgba(255, 255, 255, 0.95))';
-    style.color = 'var(--xeg-color-text-primary, rgba(0, 0, 0, 0.9))';
-  }
+// 테마에 따른 동적 스타일 적용 (CSS 변수 기반으로 단순화)
+function applyThemeBasedStyles(theme: Theme, modal: HTMLElement): void {
+  // CSS 모듈과 디자인 토큰을 통해 테마 스타일이 자동 적용됨
+  // JavaScript 동적 스타일링 제거
 
   // 내부 요소들에도 테마 속성 적용
   if (modal) {
     modal.setAttribute('data-theme', theme);
 
-    // 헤더와 바디에도 테마 클래스 적용
+    // CSS 변수 기반 테마 변경으로 대체
+    // 더 이상 직접 스타일 조작하지 않음
     const header = modal.querySelector('.xeg-modal-header') as HTMLElement;
     const body = modal.querySelector('.xeg-modal-body') as HTMLElement;
     const closeButton = modal.querySelector('.xeg-modal-close-button') as HTMLElement;
@@ -469,7 +465,7 @@ function applyThemeBasedStyles(style: CSSStyleDeclaration, theme: Theme, modal: 
 function setupThemeChangeListener(modal: HTMLElement): void {
   // ThemeService 관찰자 등록
   const onThemeChange = (newTheme: Theme) => {
-    applyThemeBasedStyles(modal.style, newTheme, modal);
+    applyThemeBasedStyles(newTheme, modal);
   };
 
   try {
@@ -508,7 +504,7 @@ export function applyBasicModalStyles(modal: HTMLElement): void {
 
     // 테마 시스템 연동: 현재 테마에 따른 동적 스타일 적용
     const currentTheme = getCurrentTheme();
-    applyThemeBasedStyles(style, currentTheme, modal);
+    applyThemeBasedStyles(currentTheme, modal);
 
     // 모달 컨테이너 기본 스타일
     style.borderRadius = 'var(--xeg-radius-lg, 8px)';

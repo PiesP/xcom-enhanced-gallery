@@ -35,7 +35,10 @@ describe('Refactor: Toolbar/Settings style cleanup (TDD)', () => {
   });
 
   it('cleans SettingsOverlay.module.css of local button duplicates', () => {
-    const modalCss = path.resolve(root, 'src/features/settings/SettingsOverlay.module.css');
+    const modalCss = path.resolve(
+      root,
+      'src/features/settings/components/SettingsOverlay.module.css'
+    );
     const content = read(modalCss);
 
     expect(content).not.toMatch(/\.(?:button|buttonSecondary|buttonDanger|closeButton)\b/);
