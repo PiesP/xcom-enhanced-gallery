@@ -461,6 +461,14 @@ function VerticalGalleryViewCore({
     }
   }, []);
 
+  // 새로고침 핸들러 (미디어 다시 불러오기)
+  const _handleReload = useCallback(() => {
+    logger.debug('VerticalGalleryView: 미디어 다시 불러오기');
+    // 갤러리 상태 새로고침 또는 데이터 재요청 로직
+    // 구체적인 구현은 상위 컴포넌트나 상태 관리 시스템에서 결정
+    logger.info('미디어 다시 불러오기 기능이 요청됨');
+  }, []);
+
   // 이미지 핏 모드가 변경될 때 로그 출력
   useEffect(() => {
     logger.debug('VerticalGalleryView: 이미지 핏 모드 변경됨', {
@@ -508,6 +516,7 @@ function VerticalGalleryViewCore({
             onNext={() => navigateToItem(Math.min(mediaItems.length - 1, currentIndex + 1))}
             onDownloadCurrent={_handleDownloadCurrent}
             onDownloadAll={_handleDownloadAll}
+            onReload={_handleReload}
             onClose={onClose || (() => {})}
             onOpenSettings={() => toggleSettings(true)}
             onFitOriginal={_handleFitOriginal}

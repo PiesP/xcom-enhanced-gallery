@@ -193,6 +193,23 @@
   --xeg-bg-solid-light: #ffffff;
   --xeg-bg-solid-dark: #000000;
 
+  /* Glass Background Tokens - 투명도가 있는 글래스 배경 */
+  --xeg-glass-bg-light: rgba(255, 255, 255, 0.85);
+  --xeg-glass-bg-medium: rgba(255, 255, 255, 0.65);
+  --xeg-glass-bg-dark: rgba(0, 0, 0, 0.85);
+  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.95);
+
+  /* 투명도가 있는 글래스 배경 토큰들 - 표준화된 참조 */
+  --xeg-glass-bg-translucent-light: var(--xeg-glass-bg-light);
+  --xeg-glass-bg-translucent-medium: var(--xeg-glass-bg-medium);
+  --xeg-glass-bg-translucent-dark: var(--xeg-glass-bg-dark);
+  --xeg-glass-bg-translucent-ultra-light: var(--xeg-glass-bg-ultra-light);
+
+  /* Media Glass Background - 미디어 오버레이용 글래스 배경 */
+  --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-dark);
+  --xeg-media-glass-bg-light: var(--xeg-glass-bg-translucent-light);
+  --xeg-media-glass-bg-medium: var(--xeg-glass-bg-translucent-medium);
+
   /* =========================================
      HARDCODED COLOR REPLACEMENT TOKENS
      Phase 2: GREEN - 하드코딩된 색상을 대체하는 토큰들

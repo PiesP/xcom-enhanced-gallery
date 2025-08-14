@@ -44,12 +44,12 @@ export interface ToolbarProps {
   onDownloadCurrent: () => void;
   /** 전체 다운로드 콜백 */
   onDownloadAll: () => void;
-  /** 미디어 다시 불러오기 콜백 (제공 시 새로고침 버튼 표시) */
-  onReload?: () => void;
+  /** 미디어 다시 불러오기 콜백 */
+  onReload: () => void;
   /** 닫기 콜백 */
   onClose: () => void;
   /** 설정 열기 콜백 */
-  onOpenSettings?: () => void;
+  onOpenSettings: () => void;
   /** 툴바 위치 */
   position?: 'top' | 'bottom' | 'left' | 'right';
   /** 추가 클래스명 */
@@ -92,9 +92,9 @@ function ToolbarCore({
   onNext,
   onDownloadCurrent,
   onDownloadAll,
-  onReload,
+  onReload = () => console.warn('새로고침 기능이 제공되지 않음'),
   onClose,
-  onOpenSettings,
+  onOpenSettings = () => console.warn('설정 기능이 제공되지 않음'),
   onFitOriginal,
   onFitHeight,
   onFitWidth,
@@ -460,26 +460,24 @@ function ToolbarCore({
             key: 'toolbar-right',
           },
           [
-            // 새로고침 그룹 (있을 경우)
-            onReload
-              ? h(
-                  ToolbarGroup,
-                  { label: '데이터 동기화', key: 'reload-group' },
-                  h(ToolbarButton, {
-                    icon: 'reload',
-                    variant: 'secondary',
-                    size: 'lg',
-                    disabled: disabled || isReloading || !canReload,
-                    loading: isReloading,
-                    onClick: () => !disabled && !isReloading && canReload && onReload(),
-                    'aria-label': '미디어 다시 불러오기',
-                    'aria-busy': isReloading || undefined,
-                    'data-testid': 'toolbar-reload-button',
-                    title: '미디어 다시 불러오기',
-                    context: 'reload',
-                  })
-                )
-              : null,
+            // 새로고침 그룹 (항상 표시)
+            h(
+              ToolbarGroup,
+              { label: '데이터 동기화', key: 'reload-group' },
+              h(ToolbarButton, {
+                icon: 'reload',
+                variant: 'secondary',
+                size: 'lg',
+                disabled: disabled || isReloading || !canReload,
+                loading: isReloading,
+                onClick: () => !disabled && !isReloading && canReload && onReload(),
+                'aria-label': '미디어 다시 불러오기',
+                'aria-busy': isReloading || undefined,
+                'data-testid': 'toolbar-reload-button',
+                title: '미디어 다시 불러오기',
+                context: 'reload',
+              })
+            ),
             // 다운로드 그룹
             h(
               'div',
@@ -502,54 +500,56 @@ function ToolbarCore({
                   title: '현재 파일 다운로드',
                   context: 'download-current',
                 }),
-                totalCount > 1
-                  ? h('div', {
-                      className: styles.groupDivider,
-                      'aria-hidden': 'true',
-                      key: 'dl-div',
-                    })
-                  : null,
-                totalCount > 1
-                  ? h(ToolbarButton, {
-                      icon: 'folder-down',
-                      variant: 'secondary',
-                      size: 'lg',
-                      disabled: disabled || isDownloading,
-                      loading: isDownloading,
-                      onClick: () => onDownloadAll(),
-                      'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
-                      'data-testid': 'download-all',
-                      title: `전체 ${totalCount}개 파일 ZIP 다운로드`,
-                      context: 'download-all',
-                    })
-                  : null,
+                // 항상 구분선 표시
+                h('div', {
+                  className: styles.groupDivider,
+                  'aria-hidden': 'true',
+                  key: 'dl-div',
+                }),
+                // 전체 다운로드 버튼 항상 표시
+                h(ToolbarButton, {
+                  icon: 'folder-down',
+                  variant: 'secondary',
+                  size: 'lg',
+                  disabled: disabled || isDownloading || totalCount <= 1,
+                  loading: isDownloading,
+                  onClick: () => onDownloadAll(),
+                  'aria-label':
+                    totalCount > 1
+                      ? `전체 ${totalCount}개 파일 ZIP 다운로드`
+                      : '전체 다운로드 (단일 파일)',
+                  'data-testid': 'download-all',
+                  title:
+                    totalCount > 1
+                      ? `전체 ${totalCount}개 파일 ZIP 다운로드`
+                      : '전체 다운로드 (단일 파일)',
+                  context: 'download-all',
+                }),
               ]
             ),
-            // 설정 그룹 (옵션)
-            onOpenSettings
-              ? h(
-                  'div',
-                  {
-                    className: styles.groupBox,
-                    role: 'group',
-                    'aria-label': '설정',
-                    key: 'settings-group',
-                  },
-                  [
-                    h(ToolbarButton, {
-                      icon: 'settings',
-                      variant: 'secondary',
-                      size: 'lg',
-                      disabled,
-                      onClick: () => onOpenSettings(),
-                      'aria-label': '설정 열기',
-                      'data-testid': 'settings',
-                      title: '설정',
-                      context: 'settings',
-                    }),
-                  ]
-                )
-              : null,
+            // 설정 그룹 (항상 표시)
+            h(
+              'div',
+              {
+                className: styles.groupBox,
+                role: 'group',
+                'aria-label': '설정',
+                key: 'settings-group',
+              },
+              [
+                h(ToolbarButton, {
+                  icon: 'settings',
+                  variant: 'secondary',
+                  size: 'lg',
+                  disabled,
+                  onClick: () => onOpenSettings(),
+                  'aria-label': '설정 열기',
+                  'data-testid': 'settings',
+                  title: '설정',
+                  context: 'settings',
+                }),
+              ]
+            ),
             // 닫기 그룹
             h(
               'div',

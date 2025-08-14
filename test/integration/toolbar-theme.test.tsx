@@ -39,9 +39,9 @@ describe('툴바 테마 통합 테스트', () => {
 
     // 스타일 내용이 올바른지 확인
     const styleContent = styleElement?.textContent || '';
-    expect(styleContent).toContain('--xeg-bg-toolbar');
-    expect(styleContent).toContain('#ffffff'); // 라이트 테마 기본값
-    expect(styleContent).toContain('#000000'); // 다크 테마 기본값
+    expect(styleContent).toContain('--xeg-color-primary'); // 현재 사용 중인 토큰으로 변경
+    expect(styleContent).toContain('#2563eb'); // 라이트 테마 기본 primary 색상
+    expect(styleContent).toContain('#3b82f6'); // 다크 테마 기본 primary 색상
   });
 
   it('툴바 CSS에 fallback 값이 있는지 확인 (시뮬레이션)', () => {

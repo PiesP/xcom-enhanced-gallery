@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { IconComponent } from '@/shared/services/icon-service';
+import iconService, { getIcon, preloadIcons } from '@/shared/services/icon-service';
 
 describe('IconService TDD - RED Phase', () => {
   beforeEach(() => {
@@ -7,12 +7,9 @@ describe('IconService TDD - RED Phase', () => {
   });
 
   describe('기본 아이콘 로딩', () => {
-    it('should load required icons dynamically', () => {
-      // Given: IconService가 존재한다
-      const iconService = import('@/shared/services/icon-service') as any;
-
+    it('should load required icons synchronously', () => {
       // When: 다운로드 아이콘을 요청한다
-      const downloadIcon = iconService.getIcon('download');
+      const downloadIcon = getIcon('download');
 
       // Then: 유효한 컴포넌트를 반환한다
       expect(downloadIcon).toBeDefined();
@@ -20,11 +17,8 @@ describe('IconService TDD - RED Phase', () => {
     });
 
     it('should provide fallback for missing icons', () => {
-      // Given: IconService가 존재한다
-      const iconService = import('@/shared/services/icon-service') as any;
-
       // When: 존재하지 않는 아이콘을 요청한다
-      const fallback = iconService.getIcon('non-existent-icon' as any);
+      const fallback = (iconService as any).getIcon('non-existent-icon');
 
       // Then: 폴백 아이콘을 반환한다
       expect(fallback).toBeDefined();
@@ -34,9 +28,6 @@ describe('IconService TDD - RED Phase', () => {
 
   describe('아이콘 매핑', () => {
     it('should provide all required icons', () => {
-      // Given: IconService가 존재한다
-      const iconService = import('@/shared/services/icon-service') as any;
-
       // When: 필요한 모든 아이콘을 확인한다
       const validIcons = [
         'download',
@@ -65,7 +56,7 @@ describe('IconService TDD - RED Phase', () => {
 
       // Then: 모든 아이콘이 로드 가능해야 한다
       for (const iconName of validIcons) {
-        const icon = iconService.getIcon(iconName);
+        const icon = getIcon(iconName as any);
         expect(icon).toBeDefined();
       }
     });
@@ -73,23 +64,17 @@ describe('IconService TDD - RED Phase', () => {
 
   describe('성능 최적화', () => {
     it('should cache loaded icons', () => {
-      // Given: IconService가 존재한다
-      const iconService = import('@/shared/services/icon-service') as any;
-
       // When: 같은 아이콘을 두 번 요청한다
-      const icon1 = iconService.getIcon('download');
-      const icon2 = iconService.getIcon('download');
+      const icon1 = getIcon('download');
+      const icon2 = getIcon('download');
 
       // Then: 같은 참조를 반환한다 (캐싱됨)
       expect(icon1).toBe(icon2);
     });
 
     it('should support icon preloading', () => {
-      // Given: IconService가 존재한다
-      const iconService = import('@/shared/services/icon-service') as any;
-
       // When: 여러 아이콘을 프리로드한다
-      const preloadResult = iconService.preloadIcons(['download', 'settings', 'close']);
+      const preloadResult = preloadIcons(['download', 'settings', 'close']);
 
       // Then: 프리로드가 성공적으로 완료된다 (동기)
       expect(preloadResult).toBeUndefined(); // void 함수
