@@ -61,9 +61,18 @@ describe('video control & gallery trigger utils', () => {
 
   it('canTriggerGallery: 갤러리 오픈 상태면 어떤 요소도 false', () => {
     openGallery([createMedia('m1')], 0);
+
+    // DOM에 갤러리 컨테이너 생성
+    const galleryContainer = document.createElement('div');
+    galleryContainer.className = 'xeg-gallery-container';
+    document.body.appendChild(galleryContainer);
+
     const el = document.createElement('div');
     document.body.appendChild(el);
     expect(canTriggerGallery(el)).toBe(false);
+
+    // 정리
+    document.body.removeChild(galleryContainer);
   });
 
   it('isGalleryInternalEvent: target null 이면 false', () => {

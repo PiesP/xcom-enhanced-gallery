@@ -56,12 +56,10 @@
     --xeg-toolbar-z-index: var(--xeg-z-gallery-toolbar);
 
     /* 트랜지션 - 최신 easing 함수 사용 */
-    --xeg-transition-fast:
-      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-      opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    --xeg-transition-fast: var(--xeg-transition-fast);
     --xeg-transition-normal:
       transform 250ms var(--xeg-easing-ease-in-out), opacity 250ms var(--xeg-easing-ease-in-out);
-    --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-ease-out);
+    --xeg-transition-smooth: var(--xeg-transition-slow);
     --xeg-transition-toolbar:
       opacity 100ms var(--xeg-easing-ease-out), transform 100ms var(--xeg-easing-ease-out),
       visibility 0ms;
@@ -203,9 +201,7 @@
   /* 상단 호버 영역은 사용자 컨텐츠 시야를 가리지 않도록 배경/블러 선언을 사용하지 않음 */
 
   /* 부드러운 트랜지션 추가 */
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    backdrop-filter var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 }
 
 /* 실제 툴바 래퍼에만 배경 그라디언트 적용 - 호버 존은 투명 유지 */

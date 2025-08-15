@@ -66,13 +66,11 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
     });
 
     it('트랜지션 토큰이 일관되게 사용되어야 함', () => {
-      // 툴바 트랜지션
-      expect(toolbarCSS).toContain('var(--xeg-duration-fast)');
-      expect(toolbarCSS).toContain('var(--xeg-easing-ease-out)');
+      // 툴바 트랜지션 - semantic 토큰 사용
+      expect(toolbarCSS).toContain('var(--xeg-transition-fast)');
 
-      // 설정 모달도 동일한 트랜지션 토큰 사용해야 함
-      expect(settingsCSS).toContain('var(--xeg-duration-fast)');
-      expect(settingsCSS).toContain('var(--xeg-easing-ease-out)');
+      // 설정 모달도 동일한 트랜지션 토큰 사용해야 함 - semantic 토큰에 easing이 포함됨
+      expect(settingsCSS).toContain('var(--xeg-transition-fast)');
     });
   });
 
@@ -153,7 +151,7 @@ describe('툴바와 설정 모달 디자인 일관성 - TDD', () => {
         '--xeg-modal-content-bg',
         '--xeg-modal-overlay-gradient-strong',
         '--xeg-blur-light',
-        '--xeg-duration-fast',
+        '--xeg-transition-fast',
         '--xeg-easing-ease-out',
       ];
 

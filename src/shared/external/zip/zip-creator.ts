@@ -12,7 +12,7 @@ import { logger } from '@shared/logging';
 import type { AsyncZipOptions } from 'fflate';
 import { SIZE_CONSTANTS } from '@/constants';
 import { getFflate } from '@shared/external/vendors';
-import { safeParseInt } from '@shared/utils';
+import { safeParseInt } from '@shared/utils/type-safety-helpers';
 
 /**
  * Media item interface for ZIP creation

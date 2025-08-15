@@ -32,7 +32,7 @@ describe('추가 UI 비일관성 감지 테스트', () => {
               --xeg-toast-shadow: 0 8px 16px rgba(0,0,0,0.15); /* 또 다른 그림자! */
 
               /* 🔥 문제점 3: 애니메이션 지속시간 불일치 */
-              --xeg-duration-fast: 150ms;
+              --xeg-transition-fast: 150ms ease-out;
               --xeg-animation-duration-modal: 250ms; /* 다른 지속시간! */
               --xeg-animation-duration-toast: 300ms; /* 또 다른 지속시간! */
 
@@ -46,7 +46,7 @@ describe('추가 UI 비일관성 감지 테스트', () => {
             .toolbar {
               background: var(--xeg-toolbar-bg);
               box-shadow: var(--xeg-toolbar-shadow);
-              transition: all var(--xeg-duration-fast) ease-out;
+              transition: var(--xeg-transition-fast);
             }
 
             .toolbar:hover {
@@ -64,7 +64,7 @@ describe('추가 UI 비일관성 감지 테스트', () => {
             .button {
               background: var(--xeg-button-bg);
               box-shadow: var(--xeg-button-shadow);
-              transition: all var(--xeg-duration-fast) ease-out;
+              transition: var(--xeg-transition-fast);
             }
 
             .button:hover {

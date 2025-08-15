@@ -57,6 +57,20 @@ describe('[TDD][GREEN] UNUSED 디자인 토큰 1차 감축', () => {
     // 실사용 가능한 unused = analyzer unused - deprecated set
     const effectiveUnused = [...result.unusedTokens].filter(t => !deprecatedTokens.has(t));
 
+    // 디버그 정보
+    console.log('=== TOKEN ANALYSIS DEBUG ===');
+    console.log('Total defined tokens:', result.definedTokens.size);
+    console.log('Total referenced tokens:', result.referencedTokens.size);
+    console.log('Total unused tokens:', result.unusedTokens.size);
+    console.log('Deprecated tokens count:', deprecatedTokens.size);
+    console.log('Effective unused count:', effectiveUnused.length);
+    console.log('Need to remove:', Math.max(0, effectiveUnused.length - 200));
+
+    console.log('\nFirst 20 unused tokens:');
+    effectiveUnused.slice(0, 20).forEach((token, i) => {
+      console.log(`  ${(i + 1).toString().padStart(2)}: ${token}`);
+    });
+
     // 1차 목표: 200 이하
     expect(effectiveUnused.length).toBeLessThanOrEqual(200);
   });

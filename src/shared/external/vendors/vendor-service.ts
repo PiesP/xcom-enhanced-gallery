@@ -3,13 +3,28 @@
  */
 
 import { logger } from '@shared/logging';
-import {
-  getFflate as apiGetFflate,
-  getPreact as apiGetPreact,
-  getPreactHooks as apiGetPreactHooks,
-  getPreactSignals as apiGetPreactSignals,
-  getPreactCompat as apiGetPreactCompat,
-} from './vendor-api';
+// 순환 의존성 방지: bundled 모듈들을 직접 import하지 않고 dynamic getter 사용
+import type {
+  FflateAPI,
+  PreactAPI,
+  PreactHooksAPI,
+  PreactSignalsAPI,
+  PreactCompatAPI,
+  NativeDownloadAPI,
+} from './types';
+
+// Re-export types for compatibility
+export type {
+  FflateAPI,
+  PreactAPI,
+  PreactHooksAPI,
+  PreactSignalsAPI,
+  PreactCompatAPI,
+  NativeDownloadAPI,
+  VNode,
+  Ref,
+  ComponentChildren,
+} from './types';
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {
@@ -18,65 +33,6 @@ const MEMORY_CONSTANTS = {
   INSTANCE_TIMEOUT: 300000,
   URL_CLEANUP_TIMEOUT: 60000,
 } as const;
-
-// 타입 정의들
-export interface FflateAPI {
-  zip: typeof import('fflate').zip;
-  unzip: typeof import('fflate').unzip;
-  strToU8: typeof import('fflate').strToU8;
-  strFromU8: typeof import('fflate').strFromU8;
-  zipSync: typeof import('fflate').zipSync;
-  unzipSync: typeof import('fflate').unzipSync;
-  deflate: typeof import('fflate').deflate;
-  inflate: typeof import('fflate').inflate;
-}
-
-export interface PreactAPI {
-  h: typeof import('preact').h;
-  render: typeof import('preact').render;
-  Component: typeof import('preact').Component;
-  Fragment: typeof import('preact').Fragment;
-  createContext: typeof import('preact').createContext;
-  cloneElement: typeof import('preact').cloneElement;
-  createRef: typeof import('preact').createRef;
-  isValidElement: typeof import('preact').isValidElement;
-  options: typeof import('preact').options;
-  createElement: typeof import('preact').createElement;
-}
-
-export type VNode = import('preact').VNode;
-export type Ref<T = unknown> = import('preact').Ref<T>;
-
-export interface PreactHooksAPI {
-  useState: typeof import('preact/hooks').useState;
-  useEffect: typeof import('preact/hooks').useEffect;
-  useMemo: typeof import('preact/hooks').useMemo;
-  useCallback: typeof import('preact/hooks').useCallback;
-  useRef: typeof import('preact/hooks').useRef;
-  useContext: typeof import('preact/hooks').useContext;
-  useReducer: typeof import('preact/hooks').useReducer;
-  useLayoutEffect: typeof import('preact/hooks').useLayoutEffect;
-}
-
-export interface PreactSignalsAPI {
-  signal: typeof import('@preact/signals').signal;
-  computed: typeof import('@preact/signals').computed;
-  effect: typeof import('@preact/signals').effect;
-  batch: typeof import('@preact/signals').batch;
-}
-
-export interface PreactCompatAPI {
-  forwardRef: typeof import('preact/compat').forwardRef;
-  memo: typeof import('preact/compat').memo;
-}
-
-export type ComponentChildren = import('preact').ComponentChildren;
-
-export interface NativeDownloadAPI {
-  downloadBlob: (blob: Blob, filename: string) => void;
-  createDownloadUrl: (blob: Blob) => string;
-  revokeDownloadUrl: (url: string) => void;
-}
 
 // ================================
 // 벤더 매니저 싱글톤
@@ -107,9 +63,27 @@ export class VendorManager {
   public async getFflate(): Promise<FflateAPI> {
     const cacheKey = 'fflate';
     if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as FflateAPI;
-    const api = apiGetFflate();
-    this.cache.set(cacheKey, api);
-    return api;
+
+    // 직접 구현하여 순환 의존성 제거
+    const globalFflate = (window as unknown as { fflate?: FflateAPI }).fflate;
+    if (globalFflate) {
+      this.cache.set(cacheKey, globalFflate);
+      return globalFflate;
+    }
+
+    try {
+      // Dynamic import to avoid circular dependency
+      const { fflateBundled } = await import('../fflate-bundled');
+      if (fflateBundled && typeof fflateBundled.zip === 'function') {
+        const api = fflateBundled as unknown as FflateAPI;
+        this.cache.set(cacheKey, api);
+        return api;
+      }
+      throw new Error('Bundled fflate 모듈이 유효하지 않습니다');
+    } catch (error) {
+      logger.error('[CSP Safe] fflate must be bundled, external loading disabled:', error);
+      throw new Error('fflate 로드를 실패했습니다 - 번들에 포함되어야 합니다');
+    }
   }
 
   /**
@@ -118,9 +92,15 @@ export class VendorManager {
   public async getPreact(): Promise<PreactAPI> {
     const cacheKey = 'preact';
     if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as PreactAPI;
-    const api = apiGetPreact();
-    this.cache.set(cacheKey, api);
-    return api;
+
+    const globalPreact = (window as unknown as { preact?: PreactAPI }).preact;
+    if (globalPreact) {
+      this.cache.set(cacheKey, globalPreact);
+      return globalPreact;
+    }
+
+    logger.error('[CSP Safe] window.preact 가 필요합니다 (@require 누락)');
+    throw new Error('Preact 전역이 없습니다. Userscript 헤더의 @require를 확인하세요.');
   }
 
   /**
@@ -129,9 +109,25 @@ export class VendorManager {
   public async getPreactHooks(): Promise<PreactHooksAPI> {
     const cacheKey = 'preact-hooks';
     if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as PreactHooksAPI;
-    const api = apiGetPreactHooks();
-    this.cache.set(cacheKey, api);
-    return api;
+
+    const globalHooks = (window as unknown as { preactHooks?: PreactHooksAPI }).preactHooks;
+    if (globalHooks) {
+      this.cache.set(cacheKey, globalHooks);
+      return globalHooks;
+    }
+
+    try {
+      // Dynamic import to avoid circular dependency
+      const { preactHooks: bundledHooks } = await import('../hooks-bundled');
+      if (bundledHooks && typeof bundledHooks.useState === 'function') {
+        this.cache.set(cacheKey, bundledHooks);
+        return bundledHooks;
+      }
+      throw new Error('Bundled hooks 모듈이 유효하지 않습니다');
+    } catch (error) {
+      logger.error('[CSP Safe] Preact Hooks must be bundled, external loading disabled:', error);
+      throw new Error('Preact Hooks 로드를 실패했습니다 - 번들에 포함되어야 합니다');
+    }
   }
 
   /**
@@ -140,9 +136,27 @@ export class VendorManager {
   public async getPreactSignals(): Promise<PreactSignalsAPI> {
     const cacheKey = 'preact-signals';
     if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as PreactSignalsAPI;
-    const api = apiGetPreactSignals();
-    this.cache.set(cacheKey, api);
-    return api;
+
+    const globalSignals =
+      (window as unknown as { preactSignals?: PreactSignalsAPI }).preactSignals ||
+      (window as unknown as { signals?: PreactSignalsAPI }).signals;
+    if (globalSignals) {
+      this.cache.set(cacheKey, globalSignals);
+      return globalSignals;
+    }
+
+    try {
+      // Dynamic import to avoid circular dependency
+      const { preactSignals: bundledSignals } = await import('../signals-bundled');
+      if (bundledSignals && typeof bundledSignals.signal === 'function') {
+        this.cache.set(cacheKey, bundledSignals);
+        return bundledSignals;
+      }
+      throw new Error('Bundled signals 모듈이 유효하지 않습니다');
+    } catch (error) {
+      logger.error('[CSP Safe] Preact Signals must be bundled, external loading disabled:', error);
+      throw new Error('Preact Signals 로드를 실패했습니다 - 번들에 포함되어야 합니다');
+    }
   }
 
   /**
@@ -151,9 +165,26 @@ export class VendorManager {
   public async getPreactCompat(): Promise<PreactCompatAPI> {
     const cacheKey = 'preact-compat';
     if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) as PreactCompatAPI;
-    const api = apiGetPreactCompat();
-    this.cache.set(cacheKey, api);
-    return api;
+
+    const globalCompat = (window as unknown as { preactCompat?: PreactCompatAPI }).preactCompat;
+    if (globalCompat) {
+      this.cache.set(cacheKey, globalCompat);
+      return globalCompat;
+    }
+
+    try {
+      // Dynamic import to avoid circular dependency
+      const { preactCompat: bundledCompat } = await import('../compat-bundled');
+      if (bundledCompat && typeof bundledCompat.memo === 'function') {
+        const api = bundledCompat as unknown as PreactCompatAPI;
+        this.cache.set(cacheKey, api);
+        return api;
+      }
+      throw new Error('Bundled compat 모듈이 유효하지 않습니다');
+    } catch (error) {
+      logger.error('[CSP Safe] Preact Compat must be bundled, external loading disabled:', error);
+      throw new Error('Preact Compat 로드를 실패했습니다 - 번들에 포함되어야 합니다');
+    }
   }
 
   /**

@@ -88,6 +88,8 @@ module.exports = {
           '^src/core/state/base/.*[.]ts$', // 상태 관리 기반 클래스들
           '^src/.*[.]interface[.]ts$', // 인터페이스 정의
           '^src/.*[.]abstract[.]ts$', // 추상 클래스들
+          '^src/dev-scripts/.*[.](ts|mjs)$', // 개발 스크립트 도구들
+          '^src/shared/styles/unified-toolbar-style-manager[.]ts$', // TDD 테스트 전용 모듈
         ],
       },
       to: {},
@@ -100,6 +102,13 @@ module.exports = {
     },
     includeOnly: '^src',
     tsPreCompilationDeps: true,
+    tsConfig: {
+      fileName: 'tsconfig.json',
+    },
+    enhancedResolveOptions: {
+      exportsFields: ['exports'],
+      conditionNames: ['import', 'require', 'node', 'default'],
+    },
 
     reporterOptions: {
       dot: {

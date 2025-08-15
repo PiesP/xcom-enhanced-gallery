@@ -12,8 +12,22 @@ import {
   isVideoControlElement,
   isTwitterNativeGalleryElement,
 } from '@/constants';
-import { galleryState } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
+
+// 순환 의존성 방지를 위한 갤러리 상태 체크 인터페이스
+interface GalleryStateChecker {
+  isOpen(): boolean;
+}
+
+// 글로벌 갤러리 상태 체커 (런타임에 주입됨)
+let galleryStateChecker: GalleryStateChecker | null = null;
+
+/**
+ * 갤러리 상태 체커 주입 (순환 의존성 방지)
+ */
+export function setGalleryStateChecker(checker: GalleryStateChecker): void {
+  galleryStateChecker = checker;
+}
 
 // 기본 이벤트 관리
 interface EventContext {
@@ -225,7 +239,8 @@ export function cleanupEventDispatcher(): void {
 // Helper 함수들
 function checkGalleryOpen(): boolean {
   try {
-    return galleryState.value.isOpen;
+    // 주입된 상태 체커 사용 (순환 의존성 방지)
+    return galleryStateChecker?.isOpen() ?? false;
   } catch {
     return false;
   }

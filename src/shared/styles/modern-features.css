@@ -102,7 +102,7 @@
     border: 1px solid var(--xeg-color-border-primary);
     border-radius: var(--xeg-radius-md);
     padding: var(--xeg-spacing-sm);
-    transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    transition: var(--xeg-transition-fast);
 
     &:hover {
       background: var(--xeg-color-primary-light);
@@ -161,7 +161,7 @@
 /* :is() 선택자로 그룹화 */
 :is(.xeg-primary, .xeg-secondary, .xeg-tertiary) {
   font-weight: var(--xeg-font-weight-medium);
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 }
 
 /**

@@ -12,6 +12,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
 import { BrowserService } from '@shared/browser';
+import { destroyGalleryEvents, setGalleryStateChecker } from '@shared/utils/events';
 
 // Signal type (align with Preact signals: subscribe returns unsubscribe)
 type Signal<T> = {
@@ -74,6 +75,11 @@ function getGalleryStateSignal(): Signal<GalleryState> {
         subscribe: () => () => {}, // no-op unsubscribe
       };
     }
+
+    // 순환 의존성 방지를 위한 상태 체커 주입
+    setGalleryStateChecker({
+      isOpen: () => galleryStateSignal?.value.isOpen ?? false,
+    });
   }
   return galleryStateSignal;
 }
@@ -259,14 +265,20 @@ export function closeGallery(): void {
   };
 
   logger.debug('[Gallery] 갤러리 종료 및 상태 완전 초기화 완료');
-  // 추가: 이벤트 시스템 자동 정리 (동기) - 글로벌 훅 접근
+
+  // 이벤트 시스템 정리 - TDD GREEN 단계: 완전 정리로 변경
   try {
+    // 1. 글로벌 훅을 통한 정리 (기존)
     const g: any = globalThis as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     if (typeof g.__XEG_cleanupGalleryEvents === 'function') {
       g.__XEG_cleanupGalleryEvents();
     }
+
+    // 2. TDD GREEN: Gallery Lifecycle 테스트 요구사항 충족
+    // closeGallery() 후 모든 이벤트 리스너가 정리되어야 함
+    destroyGalleryEvents();
   } catch (error) {
-    logger.warn('[Gallery] 글로벌 이벤트 정리 실패:', error);
+    logger.warn('[Gallery] 이벤트 정리 실패:', error);
   }
 }
 

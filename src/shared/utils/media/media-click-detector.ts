@@ -6,8 +6,6 @@
 import { SELECTORS } from '@/constants';
 import { logger } from '@shared/logging';
 import { findClosest, hasClosest, anyClosest } from '@shared/dom/predicates';
-// (Removed direct DOM gallery container check; using state instead)
-import { galleryState } from '@shared/state/signals/gallery.signals';
 
 /**
  * 미디어 감지 결과
@@ -54,10 +52,11 @@ export class MediaClickDetector {
     });
 
     // 갤러리가 이미 열려있으면 무시
-    // - 신호 기반 + DOM 기반 이중 확인으로 Vitest isolate 간 상태 누수에 견고하게 처리
+    // DOM 기반으로 갤러리가 열려있는지 확인
     try {
-      const isOpenByState = !!galleryState.value.isOpen;
-      if (isOpenByState) {
+      const galleryContainer = document.querySelector(SELECTORS.GALLERY_CONTAINER);
+      const isOpenByDOM = galleryContainer && !galleryContainer.classList.contains('hidden');
+      if (isOpenByDOM) {
         logger.debug('MediaClickDetector: Gallery already open - blocking');
         return false;
       }

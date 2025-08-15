@@ -129,35 +129,35 @@
 
 /* 애니메이션 클래스 */
 .xeg-animate-fade-in {
-  animation: xeg-fade-in var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: xeg-fade-in var(--xeg-transition-normal);
 }
 
 .xeg-animate-fade-out {
-  animation: xeg-fade-out var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: xeg-fade-out var(--xeg-transition-normal);
 }
 
 .xeg-animate-scale-in {
-  animation: xeg-scale-in var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: xeg-scale-in var(--xeg-transition-normal);
 }
 
 .xeg-animate-scale-out {
-  animation: xeg-scale-out var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: xeg-scale-out var(--xeg-transition-normal);
 }
 
 .xeg-animate-slide-in-up {
-  animation: xeg-slide-in-up var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: xeg-slide-in-up var(--xeg-transition-normal);
 }
 
 .xeg-animate-slide-in-down {
-  animation: xeg-slide-in-down var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: xeg-slide-in-down var(--xeg-transition-normal);
 }
 
 .xeg-animate-slide-in-left {
-  animation: xeg-slide-in-left var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: xeg-slide-in-left var(--xeg-transition-normal);
 }
 
 .xeg-animate-slide-in-right {
-  animation: xeg-slide-in-right var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: xeg-slide-in-right var(--xeg-transition-normal);
 }
 
 .xeg-animate-bounce {

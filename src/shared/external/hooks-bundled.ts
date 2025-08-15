@@ -15,7 +15,7 @@ import {
   useReducer,
   useLayoutEffect,
 } from 'preact/hooks';
-import type { PreactHooksAPI } from './vendors/vendor-service';
+import type { PreactHooksAPI } from './vendors/types';
 
 export const preactHooks: PreactHooksAPI = {
   useState,

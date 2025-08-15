@@ -66,9 +66,9 @@ describe('툴바 배경 가시성 - CSS 수정 검증', () => {
       const toolbarContainerMatch = cssContent.match(/\.toolbarContainer\s*\{[^}]*\}/s);
       const toolbarContainerStyles = toolbarContainerMatch![0];
 
-      // 트랜지션이 설정되었는지 확인
+      // toolbarContainer에는 기본적인 트랜지션이 있어야 함
       expect(toolbarContainerStyles).toContain('transition:');
-      expect(toolbarContainerStyles).toMatch(/(background-color|backdrop-filter)/);
+      expect(toolbarContainerStyles).toContain('var(--xeg-transition-fast)');
     });
   });
 
@@ -77,7 +77,7 @@ describe('툴바 배경 가시성 - CSS 수정 검증', () => {
       const requiredVariables = [
         '--xeg-toolbar-overlay-gradient',
         '--xeg-blur-medium',
-        '--xeg-duration-fast',
+        '--xeg-transition-fast',
         '--xeg-easing-ease-out',
       ];
 

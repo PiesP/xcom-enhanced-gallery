@@ -6,19 +6,33 @@
  */
 
 import { logger } from '@shared/logging';
-import {
-  type FflateAPI,
-  type PreactAPI,
-  type PreactHooksAPI,
-  type PreactSignalsAPI,
-  type PreactCompatAPI,
-} from './vendor-service';
+// 순환 의존성 제거: 직접 타입 정의
 // 정적 import로 TDZ/inlineDynamicImports 레이스를 방지
 import { preactCompat as bundledCompat } from '../compat-bundled';
 import { preactHooks as bundledHooks } from '../hooks-bundled';
 import { preactSignals as bundledSignals } from '../signals-bundled';
 import { fflateBundled } from '../fflate-bundled';
-import type { NativeDownloadAPI } from './vendor-service';
+import type {
+  FflateAPI,
+  PreactAPI,
+  PreactHooksAPI,
+  PreactSignalsAPI,
+  PreactCompatAPI,
+  NativeDownloadAPI,
+} from './types';
+
+// Re-export types for compatibility
+export type {
+  FflateAPI,
+  PreactAPI,
+  PreactHooksAPI,
+  PreactSignalsAPI,
+  PreactCompatAPI,
+  NativeDownloadAPI,
+  VNode,
+  Ref,
+  ComponentChildren,
+} from './types';
 
 // ================================
 // 안전한 벤더 로더 시스템

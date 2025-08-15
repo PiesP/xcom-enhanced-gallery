@@ -40,7 +40,7 @@
   color: var(--xeg-toolbar-text, #111827);
 
   /* 전환 효과 */
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 
   /* 최적화 */
   user-select: none;
@@ -284,7 +284,7 @@
   height: 100%;
   background: var(--xeg-color-primary);
   border-radius: var(--xeg-radius-sm);
-  transition: width var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  transition: width var(--xeg-transition-normal);
 }
 
 /* ========================================

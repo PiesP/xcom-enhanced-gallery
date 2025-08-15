@@ -6,7 +6,7 @@
  */
 
 import { signal, computed, effect, batch } from '@preact/signals';
-import type { PreactSignalsAPI } from './vendors/vendor-service';
+import type { PreactSignalsAPI } from './vendors/types';
 
 export const preactSignals: PreactSignalsAPI = {
   signal,

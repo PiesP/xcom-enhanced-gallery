@@ -6,10 +6,20 @@
 
 // 필수 타입 임포트
 import type { MediaExtractionResult } from './media.types';
-import type { MediaExtractionOptions } from '@shared/types/media.types';
 
-// Re-export for external usage
-export type { MediaExtractionOptions };
+/**
+ * 미디어 추출 옵션
+ */
+export interface MediaExtractionOptions {
+  /** 최대 추출할 미디어 개수 */
+  maxItems?: number;
+  /** 추출할 미디어 타입 필터 */
+  mediaTypes?: ('image' | 'video')[];
+  /** 고화질 우선 여부 */
+  preferHighQuality?: boolean;
+  /** 중복 제거 여부 */
+  removeDuplicates?: boolean;
+}
 
 /**
  * 트윗 정보 인터페이스

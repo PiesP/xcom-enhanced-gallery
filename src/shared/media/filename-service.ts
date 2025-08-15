@@ -7,7 +7,7 @@
 
 import { logger } from '@shared/logging';
 import { SIZE_CONSTANTS } from '@/constants';
-import { safeParseInt, undefinedToNull } from '@shared/utils';
+import { safeParseInt, undefinedToNull } from '@shared/utils/type-safety-helpers';
 import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
 import { getService } from '@shared/services/service-manager';
 import { SERVICE_KEYS } from '@/constants';

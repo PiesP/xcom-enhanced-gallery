@@ -101,7 +101,7 @@ async function registerBaseComponentStyles(): Promise<void> {
       font-size: var(--xeg-font-size-sm);
       font-weight: var(--xeg-font-weight-medium);
       cursor: pointer;
-      transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+      transition: var(--xeg-transition-fast);
       user-select: none;
       outline: none;
     }
@@ -257,7 +257,7 @@ async function registerButtonStyles(): Promise<void> {
         font-size: var(--xeg-font-size-sm);
         font-weight: var(--xeg-font-weight-medium);
         cursor: pointer;
-        transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+        transition: var(--xeg-transition-fast);
         user-select: none;
         outline: none;
       }
@@ -367,7 +367,7 @@ async function registerCommonUIStyles(): Promise<void> {
         border-radius: var(--xeg-radius-md);
         padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
         font-size: var(--xeg-font-size-sm);
-        transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+        transition: var(--xeg-transition-fast);
         outline: none;
       }
 

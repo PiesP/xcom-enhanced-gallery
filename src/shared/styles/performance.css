@@ -89,8 +89,8 @@
 
   /* 하드웨어 가속 트랜지션 */
   transition:
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    transform var(--xeg-transition-fast),
+    opacity var(--xeg-transition-fast);
 }
 
 .xeg-gpu-accelerated:hover {
@@ -121,7 +121,7 @@
 
 .xeg-optimized-image[data-loaded='true'] {
   /* 로딩 완료 후 애니메이션 */
-  animation: fadeIn var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  animation: fadeIn var(--xeg-transition-normal);
 }
 
 @keyframes fadeIn {

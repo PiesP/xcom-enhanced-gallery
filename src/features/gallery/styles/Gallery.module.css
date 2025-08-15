@@ -98,8 +98,8 @@
   /* 초기 상태 */
   opacity: 0;
   transition:
-    opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+    opacity var(--xeg-transition-normal),
+    transform var(--xeg-transition-normal);
   pointer-events: none;
 
   /* 성능 최적화 */
@@ -211,11 +211,7 @@
   box-shadow: var(--xeg-shadow-simple-medium);
 
   /* 트랜지션 */
-  transition:
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 
   /* CSS Nesting - 상호작용 상태 */
   &:hover {
@@ -281,10 +277,7 @@
   box-shadow: var(--xeg-shadow-simple-medium);
 
   /* 트랜지션 */
-  transition:
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 
   /* CSS Nesting - 상호작용 상태 */
   &:hover {

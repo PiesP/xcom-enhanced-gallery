@@ -6,7 +6,7 @@
  */
 
 import { memo, forwardRef } from 'preact/compat';
-import type { PreactCompatAPI } from './vendors/vendor-service';
+import type { PreactCompatAPI } from './vendors/types';
 
 // 단순한 래퍼 객체로 내보내 안정적인 참조를 보장 (정적 번들 포함 보장)
 export const preactCompat: PreactCompatAPI = {

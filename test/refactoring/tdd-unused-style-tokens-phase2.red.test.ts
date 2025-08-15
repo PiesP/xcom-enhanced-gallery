@@ -53,6 +53,19 @@ describe('[TDD][RED][Phase2] UNUSED 디자인 토큰 2차 감축', () => {
 
     const effectiveUnused = [...result.unusedTokens].filter(t => !deprecatedTokens.has(t));
 
+    // 디버그 정보 추가
+    console.log('=== PHASE 2 DEBUG ===');
+    console.log('Total defined tokens:', result.definedTokens.size);
+    console.log('Total unused tokens:', result.unusedTokens.size);
+    console.log('Deprecated tokens:', deprecatedTokens.size);
+    console.log('Effective unused:', effectiveUnused.length);
+    console.log('Need to remove for Phase 2:', Math.max(0, effectiveUnused.length - 150));
+
+    console.log('\nFirst 30 unused tokens:');
+    effectiveUnused.slice(0, 30).forEach((token, i) => {
+      console.log(`  ${(i + 1).toString().padStart(2)}: ${token}`);
+    });
+
     expect(effectiveUnused.length).toBeLessThanOrEqual(150);
   });
 });

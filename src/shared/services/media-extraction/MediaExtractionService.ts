@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
-import type { MediaExtractor, MediaExtractionOptions } from '@shared/types/media.types';
+import type { MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import { ExtractionError, ExtractionErrorCode } from '@shared/types/media.types';
 import { TweetInfoExtractor } from './extractors/TweetInfoExtractor';
@@ -17,7 +17,7 @@ import { MEDIA_CONSTANTS } from '../../constants/magic-numbers';
  * 미디어 추출기
  * API 우선 + DOM 백업 2단계 전략 사용
  */
-export class MediaExtractionService implements MediaExtractor {
+export class MediaExtractionService {
   private readonly tweetInfoExtractor: TweetInfoExtractor;
   private readonly apiExtractor: TwitterAPIExtractor;
   private readonly domExtractor: DOMDirectExtractor;

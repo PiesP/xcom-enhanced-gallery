@@ -154,7 +154,7 @@
   color: var(--xeg-toolbar-text);
   backdrop-filter: var(--xeg-modal-overlay-backdrop);
   -webkit-backdrop-filter: var(--xeg-modal-overlay-backdrop);
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 }
 
 .xeg-toolbar-enhanced:hover {
@@ -170,7 +170,7 @@
   border-radius: var(--xeg-radius-lg);
   box-shadow: var(--xeg-modal-shadow);
   color: var(--xeg-modal-text);
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 }
 
 .xeg-settings-modal-enhanced:hover {
@@ -194,7 +194,7 @@
   border-radius: var(--xeg-radius-md);
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
   font-weight: var(--xeg-font-weight-medium);
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
   cursor: pointer;
   min-height: var(--xeg-touch-target-min);
 }
@@ -216,7 +216,7 @@
   border-radius: var(--xeg-radius-md);
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
   font-weight: var(--xeg-font-weight-medium);
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
   cursor: pointer;
   min-height: var(--xeg-touch-target-min);
 }

@@ -36,7 +36,7 @@
     "verify:bundle": "node ./scripts/verify-bundle.mjs",
     "quality": "npm run check:coverage",
     "validate": "npm run typecheck && npm run lint:fix && npm run format",
-    "prebuild": "npm run check:fix",
+    "prebuild": " npm run deps:all && npm run check:fix",
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "deps:graph": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | dot -T svg > docs/dependency-graph.svg || dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | sfdp -T svg > docs/dependency-graph.svg",
     "deps:graph:dot": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src > docs/dependency-graph.dot",

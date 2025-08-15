@@ -20,10 +20,13 @@ export type MediaQuality = BaseMediaQuality;
 
 // Core 타입들 import 및 re-export
 import type { MediaExtractionResult } from '@shared/types/core/media.types';
-import type { MediaExtractor as CoreMediaExtractor } from '@shared/types/core/extraction.types';
 
-// Re-export core types
-export type MediaExtractor = CoreMediaExtractor;
+// MediaExtractor 타입 정의 (순환 의존성 피하기)
+export interface MediaExtractor {
+  extract(element: HTMLElement, options?: MediaExtractionOptions): Promise<MediaExtractionResult>;
+  canHandle(element: HTMLElement): boolean;
+  priority: number;
+}
 export type { MediaExtractionResult };
 
 /**

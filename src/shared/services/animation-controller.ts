@@ -6,7 +6,16 @@
 import { logger } from '@shared/logging';
 import { getService } from '@shared/services/service-manager';
 import { SERVICE_KEYS } from '@/constants';
-import type { SettingsService } from '@/features/settings/services/settings-service';
+
+/**
+ * 설정 서비스 인터페이스 (추상화)
+ */
+interface ISettingsService {
+  getAnimationEnabled(): boolean;
+  subscribeToSettings(callback: (settings: Record<string, unknown>) => void): () => void;
+  get<T = unknown>(key: string): T | null;
+  set(key: string, value: unknown): Promise<void>;
+}
 
 /**
  * 애니메이션 제어 서비스
@@ -17,7 +26,7 @@ import type { SettingsService } from '@/features/settings/services/settings-serv
  * - 접근성 고려 (prefers-reduced-motion 감지)
  */
 export class AnimationController {
-  private readonly settingsService: SettingsService | null;
+  private readonly settingsService: ISettingsService | null;
   private initialized = false;
 
   /** 애니메이션 비활성화 CSS 클래스 */
@@ -25,7 +34,7 @@ export class AnimationController {
 
   constructor() {
     try {
-      this.settingsService = getService<SettingsService>(SERVICE_KEYS.SETTINGS_MANAGER);
+      this.settingsService = getService<ISettingsService>(SERVICE_KEYS.SETTINGS_MANAGER);
       this.initialize();
     } catch (error) {
       logger.warn('[AnimationController] 초기화 실패, 설정 서비스 없음:', error);

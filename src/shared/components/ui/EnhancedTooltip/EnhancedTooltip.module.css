@@ -169,7 +169,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 }
 
 .coachMarkClose:hover {

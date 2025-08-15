@@ -11,7 +11,7 @@
   --xeg-spacing-sm: var(--xeg-spacing-sm);
   --xeg-spacing-md: var(--xeg-spacing-md);
   --xeg-spacing-lg: var(--xeg-spacing-lg);
-  --xeg-duration-fast: var(--xeg-duration-fast);
+  --xeg-transition-fast: var(--xeg-transition-fast);
   --xeg-easing-ease-out: var(--xeg-easing-ease-out);
 
   /* 툴바 관련 CSS 변수 */
@@ -35,7 +35,7 @@
   /* 초기 상태는 숨김 */
   opacity: 0;
   visibility: hidden;
-  transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-fast);
 }
 
 /* 가시성 상태 */

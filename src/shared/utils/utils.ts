@@ -5,7 +5,7 @@
  */
 
 import { anyMatchOrClosest, isMatching } from '@shared/dom/predicates';
-import { galleryState } from '@shared/state/signals/gallery.signals';
+import { SELECTORS } from '@/constants';
 
 // ================================
 // Re-exports from focused modules
@@ -93,8 +93,13 @@ export function canTriggerGallery(target: HTMLElement | null): boolean {
   if (!target) return false;
 
   // 갤러리가 이미 열려있으면 트리거하지 않음
-  if (galleryState.value.isOpen) {
-    return false;
+  try {
+    const galleryContainer = document.querySelector(SELECTORS.GALLERY_CONTAINER);
+    if (galleryContainer && !galleryContainer.classList.contains('hidden')) {
+      return false;
+    }
+  } catch {
+    // DOM 확인 실패 시 안전하게 처리
   }
 
   // 비디오 컨트롤 요소인지 확인
