@@ -344,6 +344,9 @@ let galleryEventState = {
   options: null as GalleryEventOptions | null,
   handlers: null as EventHandlers | null,
   priorityInterval: null as ReturnType<typeof setTimeout> | null,
+  // 새로운 상태: 영구 리스너 관리
+  persistentListeners: [] as string[],
+  isGalleryClosing: false,
 };
 
 // 글로벌 훅 등록: 갤러리 signals 에서 순환 의존성 없이 정리 호출 가능하도록 브리지 제공
@@ -358,9 +361,41 @@ try {
       writable: true,
       value: () => {
         try {
-          cleanupGalleryEvents();
+          cleanupGalleryEvents(); // 갤러리 닫기 시에는 부분 정리만
         } catch (err) {
           logger.warn('Global cleanup hook execution failed', err);
+        }
+      },
+    });
+  }
+
+  // 완전한 정리용 훅도 추가
+  if (!g.__XEG_destroyGalleryEvents) {
+    Object.defineProperty(g, '__XEG_destroyGalleryEvents', {
+      configurable: true,
+      enumerable: false,
+      writable: true,
+      value: () => {
+        try {
+          destroyGalleryEvents(); // 앱 종료 시에는 완전 정리
+        } catch (err) {
+          logger.warn('Global destroy hook execution failed', err);
+        }
+      },
+    });
+  }
+
+  // 재초기화용 훅도 추가
+  if (!g.__XEG_reinitializeGalleryEvents) {
+    Object.defineProperty(g, '__XEG_reinitializeGalleryEvents', {
+      configurable: true,
+      enumerable: false,
+      writable: true,
+      value: () => {
+        try {
+          reinitializeGalleryEvents(); // 갤러리 다시 열기 시 재초기화
+        } catch (err) {
+          logger.warn('Global reinitialize hook execution failed', err);
         }
       },
     });
@@ -545,6 +580,12 @@ async function handleMediaClick(
   options: GalleryEventOptions
 ): Promise<EventHandlingResult> {
   try {
+    // 갤러리 닫기 상태에서 클릭이 발생했다면 재초기화
+    if (galleryEventState.isGalleryClosing) {
+      logger.debug('[EventSystem] 갤러리 닫기 후 첫 클릭 - 재초기화 시작');
+      reinitializeGalleryEvents();
+    }
+
     const target = event.target as HTMLElement;
 
     // 갤러리 내부 클릭인지 확인
@@ -630,12 +671,44 @@ function handleKeyboardEvent(
 }
 
 /**
- * 갤러리 이벤트 정리
+ * 갤러리 이벤트 정리 (갤러리 닫기용 - 부분 정리)
  */
 export function cleanupGalleryEvents(): void {
   try {
+    logger.debug('[EventSystem] 갤러리 닫기 - 부분 정리 시작');
+
+    // 우선순위 강화 인터벌만 정리 (이벤트 리스너는 유지)
+    if (galleryEventState.priorityInterval) {
+      clearInterval(galleryEventState.priorityInterval);
+      galleryEventState.priorityInterval = null;
+    }
+
+    // 갤러리 닫기 상태로 설정
+    galleryEventState.isGalleryClosing = true;
+
+    logger.debug('[EventSystem] 갤러리 닫기 - 부분 정리 완료 (이벤트 리스너 유지됨)');
+  } catch (error) {
+    logger.error('[EventSystem] 갤러리 닫기 정리 중 오류:', error);
+  }
+}
+
+/**
+ * 갤러리 이벤트 완전 정리 (앱 종료용)
+ */
+export function destroyGalleryEvents(): void {
+  try {
+    logger.debug('[EventSystem] 갤러리 앱 종료 - 완전 정리 시작');
+
+    // 모든 이벤트 리스너 제거
     if (galleryEventState.listenerIds.length > 0) {
       galleryEventState.listenerIds.forEach(id => {
+        removeEventListenerManaged(id);
+      });
+    }
+
+    // 영구 리스너도 제거
+    if (galleryEventState.persistentListeners.length > 0) {
+      galleryEventState.persistentListeners.forEach(id => {
         removeEventListenerManaged(id);
       });
     }
@@ -650,17 +723,20 @@ export function cleanupGalleryEvents(): void {
       clearInterval(galleryEventState.priorityInterval);
     }
 
+    // 상태 완전 초기화
     galleryEventState = {
       initialized: false,
       listenerIds: [],
       options: null,
       handlers: null,
       priorityInterval: null,
+      persistentListeners: [],
+      isGalleryClosing: false,
     };
 
-    logger.debug('Gallery events cleaned up');
+    logger.debug('[EventSystem] 갤러리 앱 종료 - 완전 정리 완료');
   } catch (error) {
-    logger.error('Error cleaning up gallery events:', error);
+    logger.error('[EventSystem] 갤러리 완전 정리 중 오류:', error);
   }
 }
 
@@ -684,6 +760,36 @@ export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOption
   if (galleryEventState.options) {
     galleryEventState.options = { ...galleryEventState.options, ...newOptions };
     logger.debug('Gallery event options updated', newOptions);
+  }
+}
+
+/**
+ * 갤러리 재초기화 (갤러리 열기 시 호출)
+ */
+export function reinitializeGalleryEvents(): void {
+  try {
+    if (
+      !galleryEventState.initialized ||
+      !galleryEventState.handlers ||
+      !galleryEventState.options
+    ) {
+      logger.warn('[EventSystem] 갤러리 재초기화 시도했지만 초기 설정이 없음');
+      return;
+    }
+
+    logger.debug('[EventSystem] 갤러리 재초기화 시작');
+
+    // 갤러리 닫기 상태 해제
+    galleryEventState.isGalleryClosing = false;
+
+    // 우선순위 강화 메커니즘 재시작
+    if (galleryEventState.options && galleryEventState.handlers) {
+      startPriorityEnforcement(galleryEventState.handlers, galleryEventState.options);
+    }
+
+    logger.debug('[EventSystem] 갤러리 재초기화 완료');
+  } catch (error) {
+    logger.error('[EventSystem] 갤러리 재초기화 중 오류:', error);
   }
 }
 

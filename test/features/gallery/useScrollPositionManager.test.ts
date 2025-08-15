@@ -102,7 +102,11 @@ describe('🟢 GREEN: useScrollPositionManager 훅 테스트', () => {
       result.saveCurrentPosition();
       result.restorePosition();
 
-      expect(mockScrollTo).toHaveBeenCalledWith(0, 300);
+      expect(mockScrollTo).toHaveBeenCalledWith({
+        left: 0,
+        top: 300,
+        behavior: 'auto',
+      });
     });
 
     it('clearPosition으로 저장된 위치를 초기화할 수 있어야 함', () => {

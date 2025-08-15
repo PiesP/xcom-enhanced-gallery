@@ -52,6 +52,13 @@ async function initializeInfrastructure(): Promise<void> {
     await initializeVendors();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
 
+    // 3. 페이지 언로드 정리 로직 초기화 (예방적 조치)
+    const { initializePageUnloadCleanup } = await import(
+      '@shared/browser-environment/page-unload-cleanup'
+    );
+    initializePageUnloadCleanup();
+    logger.debug('✅ 페이지 언로드 정리 로직 초기화 완료');
+
     logger.debug('✅ 인프라 초기화 완료');
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);

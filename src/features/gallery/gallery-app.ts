@@ -336,8 +336,8 @@ export class GalleryApp {
 
       // 이벤트 핸들러 정리
       try {
-        const { cleanupGalleryEvents } = await import('@shared/utils/events');
-        cleanupGalleryEvents();
+        const { destroyGalleryEvents } = await import('@shared/utils/events');
+        destroyGalleryEvents();
       } catch (error) {
         logger.warn('이벤트 코디네이터 정리 실패:', error);
       }

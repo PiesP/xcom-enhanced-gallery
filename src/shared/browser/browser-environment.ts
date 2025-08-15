@@ -4,6 +4,34 @@
  */
 
 import { logger } from '@shared/logging';
+import { TIME_CONSTANTS } from '@/constants';
+
+// ----------------------------------------------------------------------------
+// Scroll Position Management Enhancements (Phase: Hardening)
+// - Path 기반 네임스페이스 키
+// - 만료 시간 적용 (기본 5분)
+// - 복원 성공 시 자동 제거
+// - 테스트 용 헬퍼 노출 (__test_only_*)
+// ----------------------------------------------------------------------------
+
+/** 스크롤 위치 저장 항목 만료 시간 (ms) */
+export const SCROLL_POSITION_MAX_AGE_MS = TIME_CONSTANTS.FIVE_MINUTES;
+
+/** 내부: 현재 pathname 기반 키 생성 */
+function buildScrollStorageKey(baseKey: string): string {
+  try {
+    const win = safeWindow();
+    const pathname = win?.location?.pathname || '';
+    if (!pathname || pathname === '/' || baseKey !== 'scrollPosition') return baseKey;
+    return `${baseKey}:${pathname}`;
+  } catch {
+    return baseKey;
+  }
+}
+
+/** 테스트 용도로 key 생성 로직 노출 */
+export const __test_only_buildScrollKey = (baseKey = 'scrollPosition'): string =>
+  buildScrollStorageKey(baseKey);
 
 /**
  * 브라우저 환경인지 확인
@@ -110,6 +138,9 @@ export const saveScrollPosition = (key: string = 'scrollPosition'): boolean => {
     const win = safeWindow();
     if (!win) return false;
 
+    // 네임스페이스 적용
+    const storageKey = buildScrollStorageKey(key);
+
     const x = win.scrollX || win.pageXOffset || 0;
     const y = win.scrollY || win.pageYOffset || 0;
 
@@ -125,9 +156,8 @@ export const saveScrollPosition = (key: string = 'scrollPosition'): boolean => {
       timestamp: Date.now(),
     };
 
-    sessionStorage.setItem(key, JSON.stringify(scrollData));
-
-    logger.debug('Scroll position saved', { key, scrollData });
+    sessionStorage.setItem(storageKey, JSON.stringify(scrollData));
+    logger.debug('Scroll position saved', { key: storageKey, scrollData });
 
     return true;
   } catch (error) {
@@ -157,9 +187,10 @@ export const restoreScrollPosition = (
     const win = safeWindow();
     if (!win) return false;
 
-    const savedData = sessionStorage.getItem(key);
+    const storageKey = buildScrollStorageKey(key);
+    const savedData = sessionStorage.getItem(storageKey);
     if (!savedData) {
-      logger.debug('No saved scroll position found', { key });
+      logger.debug('No saved scroll position found', { key: storageKey });
       return false;
     }
 
@@ -169,17 +200,67 @@ export const restoreScrollPosition = (
       timestamp: number;
     };
 
+    // 만료 체크
+    const age = Date.now() - (scrollData.timestamp || 0);
+    if (age > SCROLL_POSITION_MAX_AGE_MS) {
+      sessionStorage.removeItem(storageKey);
+      logger.debug('Expired scroll position discarded', { key: storageKey, age });
+      return false;
+    }
+
     if (smooth) {
+      // 명시적 smooth
       win.scrollTo({
         left: scrollData.x || 0,
         top: scrollData.y || 0,
         behavior: 'smooth',
       });
     } else {
-      win.scrollTo(scrollData.x || 0, scrollData.y || 0);
+      // 즉시 복원 전략
+      try {
+        const docEl = win.document?.documentElement as HTMLElement | undefined;
+        const originalInline = docEl ? docEl.style.scrollBehavior : '';
+        if (docEl) {
+          // 전역 CSS의 smooth 영향을 일시 무력화
+          docEl.style.scrollBehavior = 'auto';
+        }
+
+        win.scrollTo({
+          left: scrollData.x || 0,
+          top: scrollData.y || 0,
+          behavior: 'auto',
+        });
+
+        // 2차 보정: 레이아웃/콘텐츠 지연으로 목표와 차이 발생 시 재적용
+        const targetY = scrollData.y || 0;
+        const correctionDelay = TIME_CONSTANTS.MILLISECONDS_150; // 기존 상수 재사용
+        win.setTimeout?.(() => {
+          try {
+            const currentY = win.scrollY || win.pageYOffset || 0;
+            const POSITION_THRESHOLD = 4; // 허용 오차(px)
+            if (Math.abs(currentY - targetY) > POSITION_THRESHOLD) {
+              win.scrollTo({ left: scrollData.x || 0, top: targetY, behavior: 'auto' });
+            }
+          } finally {
+            if (docEl) {
+              docEl.style.scrollBehavior = originalInline;
+            }
+          }
+        }, correctionDelay);
+      } catch {
+        // 폴백: 기존 동작 유지
+        win.scrollTo(scrollData.x || 0, scrollData.y || 0);
+      }
     }
 
-    logger.debug('Scroll position restored', { key, scrollData });
+    // 성공 시 자동 제거 (재적용 방지)
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch {
+      /* ignore */
+    }
+
+    logger.debug('Scroll position restored', { key: storageKey, scrollData });
 
     return true;
   } catch (error) {
@@ -202,8 +283,9 @@ export const clearScrollPosition = (key: string = 'scrollPosition'): boolean => 
   }
 
   try {
-    sessionStorage.removeItem(key);
-    logger.debug('Scroll position cleared', { key });
+    const storageKey = buildScrollStorageKey(key);
+    sessionStorage.removeItem(storageKey);
+    logger.debug('Scroll position cleared', { key: storageKey });
     return true;
   } catch (error) {
     logger.error('Failed to clear scroll position', {
