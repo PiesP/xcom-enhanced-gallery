@@ -164,6 +164,10 @@ strict digraph "dependency-cruiser output"{
     "src/features/gallery/hooks/use-simple-toolbar.ts" -> "src/shared/hooks/useToolbar.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/hooks" {label="hooks" "src/features/gallery/hooks/use-toolbar.ts" [label=<use-toolbar.ts> tooltip="use-toolbar.ts" URL="src/features/gallery/hooks/use-toolbar.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     "src/features/gallery/hooks/use-toolbar.ts" -> "src/shared/hooks/useToolbar.ts" [arrowhead="inv"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/hooks" {label="hooks" "src/features/gallery/hooks/use-unified-gallery-scroll.ts" [label=<use-unified-gallery-scroll.ts> tooltip="use-unified-gallery-scroll.ts" URL="src/features/gallery/hooks/use-unified-gallery-scroll.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
+    "src/features/gallery/hooks/use-unified-gallery-scroll.ts" -> "src/features/gallery/hooks/use-gallery-item-scroll.ts"
+    "src/features/gallery/hooks/use-unified-gallery-scroll.ts" -> "src/features/gallery/hooks/use-gallery-scroll.ts"
+    "src/features/gallery/hooks/use-unified-gallery-scroll.ts" -> "src/shared/components/component-manager.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     "src/features/gallery/index.ts" -> "src/features/gallery/components/vertical-gallery-view/index.ts" [arrowhead="inv"]
     "src/features/gallery/index.ts" -> "src/features/gallery/gallery-app.ts" [arrowhead="inv"]
@@ -436,12 +440,12 @@ strict digraph "dependency-cruiser output"{
     "src/shared/external/signals-bundled.ts" -> "src/shared/external/vendors/types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/external" {label="external" "src/shared/external/userscript-api.ts" [label=<userscript-api.ts> tooltip="userscript-api.ts" URL="src/shared/external/userscript-api.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/external" {label="external" "src/shared/external/vendors.ts" [label=<vendors.ts> tooltip="vendors.ts" URL="src/shared/external/vendors.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/external/vendors.ts" -> "src/shared/external/vendors/types.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/external/vendors.ts" -> "src/shared/external/vendors/types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/external/vendors.ts" -> "src/shared/external/vendors/vendor-api.ts"
-    "src/shared/external/vendors.ts" -> "src/shared/external/vendors/vendor-service.ts" [arrowhead="onormal" penwidth="1.0"]
-    "src/shared/external/vendors.ts" -> "src/shared/external/vendors/vendor-service.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/external" {label="external" subgraph "cluster_src/shared/external/vendors" {label="vendors" "src/shared/external/vendors/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/external/vendors/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
+    "src/shared/external/vendors/index.ts" -> "src/shared/external/vendors/types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/external/vendors/index.ts" -> "src/shared/external/vendors/vendor-api.ts" [arrowhead="inv"]
-    "src/shared/external/vendors/index.ts" -> "src/shared/external/vendors/vendor-service.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/external/vendors/index.ts" -> "src/shared/external/vendors/vendor-types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/external" {label="external" subgraph "cluster_src/shared/external/vendors" {label="vendors" "src/shared/external/vendors/types.ts" [label=<types.ts> tooltip="types.ts" URL="src/shared/external/vendors/types.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/external" {label="external" subgraph "cluster_src/shared/external/vendors" {label="vendors" "src/shared/external/vendors/vendor-api.ts" [label=<vendor-api.ts> tooltip="vendor-api.ts" URL="src/shared/external/vendors/vendor-api.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
@@ -538,6 +542,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/constants.ts"
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/shared/browser/index.ts"
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/shared/logging/index.ts"
+    "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/shared/scroll/scroll-position-controller.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/key-builder.ts" [label=<key-builder.ts> tooltip="key-builder.ts" URL="src/shared/scroll/key-builder.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/scroll/key-builder.ts" -> "src/shared/scroll/route-scroll-key-builder.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/route-scroll-key-builder.ts" [label=<route-scroll-key-builder.ts> tooltip="route-scroll-key-builder.ts" URL="src/shared/scroll/route-scroll-key-builder.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
@@ -553,8 +558,11 @@ strict digraph "dependency-cruiser output"{
     "src/shared/scroll/scroll-position-controller.ts" -> "src/shared/browser/index.ts"
     "src/shared/scroll/scroll-position-controller.ts" -> "src/shared/logging/index.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/scroll-restoration-config.ts" [label=<scroll-restoration-config.ts> tooltip="scroll-restoration-config.ts" URL="src/shared/scroll/scroll-restoration-config.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/scroll-restoration-presets.ts" [label=<scroll-restoration-presets.ts> tooltip="scroll-restoration-presets.ts" URL="src/shared/scroll/scroll-restoration-presets.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/scroll/scroll-restoration-presets.ts" -> "src/shared/scroll/scroll-restoration-config.ts"
+    "src/shared/scroll/scroll-restoration-presets.ts" -> "src/shared/logging/index.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/timeline-drift-quickfix.ts" [label=<timeline-drift-quickfix.ts> tooltip="timeline-drift-quickfix.ts" URL="src/shared/scroll/timeline-drift-quickfix.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
-    "src/shared/scroll/timeline-drift-quickfix.ts" -> "src/shared/scroll/scroll-restoration-config.ts"
+    "src/shared/scroll/timeline-drift-quickfix.ts" -> "src/shared/scroll/scroll-restoration-presets.ts"
     "src/shared/scroll/timeline-drift-quickfix.ts" -> "src/shared/logging/index.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/timeline-position-stabilizer.ts" [label=<timeline-position-stabilizer.ts> tooltip="timeline-position-stabilizer.ts" URL="src/shared/scroll/timeline-position-stabilizer.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/scroll/timeline-position-stabilizer.ts" -> "src/constants.ts"

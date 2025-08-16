@@ -386,6 +386,41 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./vendors/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-import"
+          ],
+          "resolved": "src/shared/external/vendors/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendors/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./vendors/vendor-api",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -394,41 +429,6 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors/vendor-api.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendors/vendor-service",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-import"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-service.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendors/vendor-service",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -472,6 +472,22 @@
         "src/shared/external/index.ts",
         "src/shared/state/signals/download.signals.ts",
         "src/shared/state/signals/toolbar.signals.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/vendors.ts",
+        "src/shared/external/vendors/vendor-api.ts",
+        "src/shared/external/compat-bundled.ts",
+        "src/shared/external/vendors/vendor-providers.ts",
+        "src/shared/external/hooks-bundled.ts",
+        "src/shared/external/signals-bundled.ts",
+        "src/shared/external/vendors/index.ts",
+        "src/shared/external/vendors/vendor-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -606,26 +622,12 @@
       "valid": true
     },
     {
-      "source": "src/shared/external/vendors/types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/external/vendors/vendor-api.ts",
-        "src/shared/external/compat-bundled.ts",
-        "src/shared/external/vendors/vendor-providers.ts",
-        "src/shared/external/hooks-bundled.ts",
-        "src/shared/external/signals-bundled.ts",
-        "src/shared/external/vendors/vendor-service.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/external/fflate-bundled.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/external/vendors/vendor-api.ts",
-        "src/shared/external/vendors/vendor-service.ts",
-        "src/shared/external/zip/zip-creator.ts"
+        "src/shared/external/zip/zip-creator.ts",
+        "src/shared/external/vendors/vendor-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -790,7 +792,6 @@
       ],
       "dependents": [
         "src/shared/external/vendors/vendor-api.ts",
-        "src/shared/external/vendors/vendor-service.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
         "src/shared/scroll/anchor-scroll-position-controller.ts",
         "src/shared/browser/browser-environment.ts",
@@ -858,9 +859,11 @@
         "src/shared/browser-environment/page-unload-cleanup.ts",
         "src/shared/scroll/route-scroll-restorer.ts",
         "src/shared/scroll/timeline-drift-quickfix.ts",
+        "src/shared/scroll/scroll-restoration-presets.ts",
         "src/shared/utils/accessibility/accessibility-service.ts",
         "src/shared/dom/unified-dom-service.ts",
         "src/shared/error/error-handler.ts",
+        "src/shared/external/vendors/vendor-service.ts",
         "src/shared/hooks/useAccessibility.ts",
         "src/shared/hooks/useDOMReady.ts",
         "src/shared/hooks/useScrollDirection.ts",
@@ -915,123 +918,6 @@
         "src/shared/logging/index.ts",
         "src/shared/logging/logger.ts",
         "src/shared/components/ui/Toolbar/Toolbar.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-service.ts",
-      "dependencies": [
-        {
-          "dynamic": true,
-          "module": "../compat-bundled",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/external/compat-bundled.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../fflate-bundled",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/external/fflate-bundled.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../hooks-bundled",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/external/hooks-bundled.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../signals-bundled",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/external/signals-bundled.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/external/vendors.ts",
-        "src/shared/external/vendors/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1524,6 +1410,7 @@
         "src/shared/hooks/useToolbarState.ts",
         "src/shared/hooks/useToolbar.ts",
         "src/shared/components/index.ts",
+        "src/features/gallery/hooks/use-unified-gallery-scroll.ts",
         "src/shared/hooks/useAccessibility.ts",
         "src/shared/hooks/useDOMReady.ts",
         "src/shared/hooks/useScrollDirection.ts",
@@ -1844,6 +1731,26 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/scroll/scroll-position-controller",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-position-controller.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -1897,7 +1804,7 @@
         "src/shared/state/signals/gallery.signals.ts",
         "src/shared/scroll/anchor-scroll-position-controller.ts",
         "src/shared/scroll/route-scroll-restorer.ts",
-        "src/shared/scroll/timeline-drift-quickfix.ts"
+        "src/shared/scroll/scroll-restoration-presets.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2294,6 +2201,7 @@
       ],
       "dependents": [
         "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/scroll/anchor-scroll-position-controller.ts",
         "src/shared/scroll/route-scroll-restorer.ts"
       ],
       "orphan": false,
@@ -6821,7 +6729,8 @@
       ],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/hooks/index.ts"
+        "src/features/gallery/hooks/index.ts",
+        "src/features/gallery/hooks/use-unified-gallery-scroll.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6932,7 +6841,8 @@
       ],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/hooks/index.ts"
+        "src/features/gallery/hooks/index.ts",
+        "src/features/gallery/hooks/use-unified-gallery-scroll.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12301,6 +12211,68 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/hooks/use-unified-gallery-scroll.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./use-gallery-item-scroll",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/hooks/use-gallery-item-scroll.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./use-gallery-scroll",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/hooks/use-gallery-scroll.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/components/component-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/component-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/index.ts",
       "dependencies": [
         {
@@ -13687,6 +13659,53 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./scroll-restoration-presets",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-restoration-presets.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/main.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/scroll/scroll-restoration-presets.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
           "module": "./scroll-restoration-config",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13724,7 +13743,7 @@
         }
       ],
       "dependents": [
-        "src/main.ts"
+        "src/shared/scroll/timeline-drift-quickfix.ts"
       ],
       "orphan": false,
       "valid": true
@@ -14454,14 +14473,15 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./vendor-api",
+          "module": "./types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "export"
           ],
-          "resolved": "src/shared/external/vendors/vendor-api.ts",
+          "resolved": "src/shared/external/vendors/types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14471,15 +14491,14 @@
         },
         {
           "dynamic": false,
-          "module": "./vendor-service",
+          "module": "./vendor-api",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "type-only",
             "export"
           ],
-          "resolved": "src/shared/external/vendors/vendor-service.ts",
+          "resolved": "src/shared/external/vendors/vendor-api.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14516,6 +14535,120 @@
       "dependents": [
         "src/shared/external/vendors/index.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-service.ts",
+      "dependencies": [
+        {
+          "dynamic": true,
+          "module": "../compat-bundled",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/external/compat-bundled.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../fflate-bundled",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/external/fflate-bundled.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../hooks-bundled",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/external/hooks-bundled.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../signals-bundled",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/external/signals-bundled.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -17900,8 +18033,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 270,
-    "totalDependenciesCruised": 787,
+    "totalCruised": 272,
+    "totalDependenciesCruised": 793,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

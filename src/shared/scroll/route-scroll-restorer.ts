@@ -30,6 +30,51 @@ export function initializeRouteScrollRestorer(options: RouteScrollRestorerOption
 
     const buildKey = (path: string) => (keyBuilder ? keyBuilder(path) : buildRouteScrollKey(path)); // formatted
 
+    /** 공통 전략 실행 (restore/save) */
+    function executeStrategy(
+      phase: 'restore' | 'save',
+      name: string,
+      ctx: { key: string; pathname: string }
+    ): boolean {
+      try {
+        logger.info(`${LOG.restorer} ${phase} 전략 시도:`, name);
+        if (name === 'anchor') {
+          if (phase === 'restore') {
+            const cfg = getScrollRestorationConfig();
+            return AnchorScrollPositionController.restore({
+              pathname: ctx.pathname,
+              observe: cfg.enableAnchorObserver !== false,
+              timeoutMs: cfg.stabilizationTimeoutMs as number,
+            });
+          }
+          // save
+          const saved = AnchorScrollPositionController.save({ pathname: ctx.pathname });
+          // 앵커 저장 실패한 경우에만 절대 좌표 백업 (이전: 항상 백업 → 불필요한 중복)
+          if (!saved) {
+            try {
+              const abs = ScrollPositionController.save({ key: ctx.key });
+              return saved || abs;
+            } catch {
+              return saved;
+            }
+          }
+          return saved;
+        } else if (name === 'absolute') {
+          if (phase === 'restore') {
+            return ScrollPositionController.restore({
+              key: ctx.key,
+              smooth: false,
+              mode: 'immediate',
+            });
+          }
+          return ScrollPositionController.save({ key: ctx.key });
+        }
+      } catch (e) {
+        logger.info(`${LOG.restorer} ${phase} 전략 실패:`, { name, e });
+      }
+      return false;
+    }
+
     const restoreCurrent = () => {
       try {
         // 브라우저 기본 스크롤 복원 강제 차단
@@ -41,41 +86,17 @@ export function initializeRouteScrollRestorer(options: RouteScrollRestorerOption
           // ignore
         }
 
-        const key = buildKey(window.location.pathname);
-        logger.info(`${LOG.restorer} 복원 시작:`, { pathname: window.location.pathname, key });
+        const pathname = window.location.pathname;
+        const key = buildKey(pathname);
+        logger.info(`${LOG.restorer} 복원 시작:`, { pathname, key });
 
         // 강화된 앵커 우선 즉시 복원 정책
         const order = getScrollRestorationConfig().strategyOrder || ['anchor', 'absolute'];
         logger.info(`${LOG.restorer} 복원 전략 순서:`, order);
 
         const cfg = getScrollRestorationConfig();
-        let restored = false;
-        for (const strategyName of order) {
-          try {
-            logger.info(`${LOG.restorer} ${strategyName} 전략 시도`);
-            if (strategyName === 'anchor') {
-              const result = AnchorScrollPositionController.restore({
-                pathname: window.location.pathname,
-                observe: cfg.enableAnchorObserver !== false,
-                timeoutMs: cfg.stabilizationTimeoutMs as number, // 설정에서 관리 (config 초기값 보장)
-              });
-              logger.info(`${LOG.restorer} ${strategyName} 전략 결과:`, result);
-              restored = restored || result;
-              if (restored) break;
-            } else if (strategyName === 'absolute') {
-              const result = ScrollPositionController.restore({
-                key,
-                smooth: false,
-                mode: 'immediate',
-              });
-              logger.info(`${LOG.restorer} ${strategyName} 전략 결과:`, result);
-              restored = restored || result;
-              if (restored) break;
-            }
-          } catch (err) {
-            logger.info(`${LOG.restorer} ${strategyName} 전략 실패:`, err);
-          }
-        }
+        const ctx = { key, pathname };
+        const restored = order.some(name => executeStrategy('restore', name, ctx));
 
         // 후처리 드리프트 안정화 (단일 통합 stabilizer 사용)
         if (restored && cfg.enableDriftStabilization !== false) {
@@ -135,44 +156,23 @@ export function initializeRouteScrollRestorer(options: RouteScrollRestorerOption
           logger.info(`${LOG.restorer} 이전 경로 스크롤 저장 시작:`, { prevPath, newPath });
 
           // 등록된 전략에게 저장 요청 (anchor 우선, 실패 시 absolute 등 나머지 수행)
-          let saved = false;
           const order = getScrollRestorationConfig().strategyOrder || ['anchor', 'absolute'];
           logger.info(`${LOG.restorer} 저장 전략 순서:`, order);
-
-          for (const strategyName of order) {
-            try {
-              logger.info(`${LOG.restorer} ${strategyName} 저장 전략 시도`);
-              if (strategyName === 'anchor') {
-                const anchorSaved = AnchorScrollPositionController.save({ pathname: prevPath });
-                logger.info(`${LOG.restorer} ${strategyName} 저장 결과:`, anchorSaved);
-                saved = anchorSaved || saved;
-                // 절대 좌표 백업 무조건 수행 (안전망)
-                try {
-                  const absoluteBackup = ScrollPositionController.save({ key: buildKey(prevPath) });
-                  logger.info(`${LOG.restorer} absolute 백업 저장 결과:`, absoluteBackup);
-                  saved = absoluteBackup || saved;
-                } catch {
-                  /* ignore */
-                }
-              } else if (strategyName === 'absolute') {
-                const absoluteSaved = ScrollPositionController.save({ key: buildKey(prevPath) });
-                logger.info(`${LOG.restorer} ${strategyName} 저장 결과:`, absoluteSaved);
-                saved = absoluteSaved || saved;
-              }
-            } catch (err) {
-              logger.info(`${LOG.restorer} ${strategyName} 저장 전략 실패:`, err);
+          const ctx = { key: buildKey(prevPath), pathname: prevPath };
+          const saved = order.some(name => {
+            if (name === 'anchor') {
+              // dualAbsolute 활성화로 앵커 실패 시 자동 절대 백업
+              return AnchorScrollPositionController.save({
+                pathname: ctx.pathname,
+                dualAbsolute: true,
+              });
             }
-          }
-
+            return executeStrategy('save', name, ctx);
+          });
           if (!saved) {
-            logger.info(`${LOG.restorer} 모든 전략 실패, 폴백 저장 시도`);
-            // 최종 폴백: 기존 로직 유지
-            if (!AnchorScrollPositionController.save()) {
-              const fallbackSaved = ScrollPositionController.save({ key: buildKey(prevPath) });
-              logger.info(`${LOG.restorer} 폴백 절대 좌표 저장 결과:`, fallbackSaved);
-            } else {
-              logger.info(`${LOG.restorer} 폴백 앵커 저장 성공`);
-            }
+            logger.info(
+              `${LOG.restorer} 모든 전략 실패 (폴백 없음 - anchor 실패시 absolute 백업 이미 시도됨)`
+            );
           } else {
             logger.info(`${LOG.restorer} 전략 기반 저장 완료`);
           }

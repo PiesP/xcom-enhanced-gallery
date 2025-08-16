@@ -11,6 +11,7 @@ import { buildAnchorScrollKey, buildLegacyAnchorScrollKey } from './key-builder'
 import { SIZE_CONSTANTS } from '@/constants';
 import { waitForMutationUntil, now } from './timing-utils';
 import { getScrollRestorationConfig } from './scroll-restoration-config';
+import { ScrollPositionController } from '@shared/scroll/scroll-position-controller';
 
 export interface AnchorScrollData {
   readonly tweetId: string;
@@ -351,12 +352,17 @@ export const AnchorScrollPositionController = {
       // 방어적 이중 저장 (absolute) 옵션 처리
       if (options.dualAbsolute) {
         try {
-          // absolute 컨트롤러 지연 import (순환 회피용 dynamic): require 패턴 회피 위해 조건부 inline
-          const absKey = newKey.replace('scroll:anchor:', 'scroll:timeline:');
-          // 위치 y 추출 후 sessionStorage 직접 기록 (ScrollPositionController.save는 현재 window.scrollY 사용 → anchor offset 과 다름)
+          // ScrollPositionController.save 는 현재 scrollY 를 저장 → anchor offset 기반 보정값 반영 위해 임시 스크롤 적용 후 복원 방식은 과함.
+          // 대신 anchor 오프셋 기반 절대 위치 스냅샷을 직접 기록 (기존 구현과 동일) + 표준 키 스킴 사용
+          const absKey = newKey.replace('scroll:anchor:', 'scroll:absolute:');
           const y = (win.scrollY || win.pageYOffset || 0) + offset;
-          const absData = { y, ts: Date.now() };
-          sessionStorage.setItem(absKey, JSON.stringify(absData));
+          sessionStorage.setItem(absKey, JSON.stringify({ y, ts: Date.now() }));
+          // 추가: ScrollPositionController 중복 호출 (현재 위치) 백업 (best-effort)
+          try {
+            ScrollPositionController.save();
+          } catch {
+            /* ignore controller dual save */
+          }
         } catch {
           /* ignore absolute dual failure */
         }

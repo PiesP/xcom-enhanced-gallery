@@ -3,13 +3,14 @@
  * 타임라인 위치 드리프트 문제에 대한 즉시 적용 가능한 해결책
  */
 
-import {
-  getScrollRestorationConfig,
-  setScrollRestorationConfig,
-} from './scroll-restoration-config';
 import { logger } from '@shared/logging';
+import {
+  applyQuickFixPreset,
+  applyAdvancedDriftPreset,
+  applyAllScrollPresetsForDev,
+} from './scroll-restoration-presets';
 
-const LOG = { quickfix: '[scroll/quickfix]' };
+const LOG = { quickfix: '[scroll/quickfix-deprecated]' };
 
 // 드리프트 모니터링 상수
 const DRIFT_THRESHOLD_PX = 10; // 10px 이상 변화 시 로깅
@@ -24,26 +25,8 @@ const MONITOR_DEBOUNCE_MS = 100; // 100ms 디바운싱
  * 3. 레거시 키 지원 강화
  */
 export function applyTimelineDriftQuickFix(): void {
-  logger.info(`${LOG.quickfix} 타임라인 드리프트 Quick Fix 적용 시작`);
-
-  const currentConfig = getScrollRestorationConfig();
-
-  // Quick Fix 설정 적용
-  setScrollRestorationConfig({
-    ...currentConfig,
-    // 더 충분한 DOM 안정화 시간 확보
-    disableMultiPassScrollCorrection: false, // 다중 패스 보정 활성화
-    // 앵커 우선, 실패 시 절대 좌표 + 레거시 키 시도
-    strategyOrder: ['anchor', 'absolute'],
-    // 레거시 키 지원 강화 (하위 호환성)
-    enableLegacyAnchorKey: true,
-  });
-
-  logger.info(`${LOG.quickfix} Quick Fix 설정 완료:`, {
-    multiPassCorrection: true,
-    strategyOrder: ['anchor', 'absolute'],
-    legacyKeySupport: true,
-  });
+  logger.info(`${LOG.quickfix} (deprecated wrapper) applyQuickFixPreset 호출`);
+  applyQuickFixPreset();
 }
 
 /**
@@ -55,16 +38,8 @@ export function applyTimelineDriftQuickFix(): void {
  * 3. 적응형 보정
  */
 export function applyAdvancedDriftPrevention(): void {
-  logger.info(`${LOG.quickfix} 고급 드리프트 방지 설정 적용`);
-
-  setScrollRestorationConfig({
-    enableSignalBasedGalleryScroll: true,
-    disableMultiPassScrollCorrection: false, // 다중 패스 보정 활성화
-    strategyOrder: ['anchor', 'absolute'], // 앵커 우선 전략
-    enableLegacyAnchorKey: true, // 레거시 키 지원
-  });
-
-  logger.info(`${LOG.quickfix} 고급 드리프트 방지 설정 완료`);
+  logger.info(`${LOG.quickfix} (deprecated wrapper) applyAdvancedDriftPreset 호출`);
+  applyAdvancedDriftPreset();
 }
 
 /**
@@ -115,21 +90,8 @@ export function enableDriftMonitoring(): void {
  * 모든 즉시 개선 사항을 한 번에 적용
  */
 export function applyAllQuickFixes(): void {
-  logger.info(`${LOG.quickfix} 모든 Quick Fix 적용 시작`);
-
-  try {
-    applyTimelineDriftQuickFix();
-    applyAdvancedDriftPrevention();
-
-    // 개발 환경에서만 모니터링 활성화
-    if (process.env.NODE_ENV === 'development') {
-      enableDriftMonitoring();
-    }
-
-    logger.info(`${LOG.quickfix} 모든 Quick Fix 적용 완료`);
-  } catch (error) {
-    logger.error(`${LOG.quickfix} Quick Fix 적용 중 오류:`, error);
-  }
+  logger.info(`${LOG.quickfix} (deprecated wrapper) applyAllScrollPresetsForDev 호출`);
+  applyAllScrollPresetsForDev();
 }
 
 // 자동 적용 (개발 환경)

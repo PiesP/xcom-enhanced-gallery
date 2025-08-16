@@ -16,7 +16,7 @@ export type {
   VNode,
   Ref,
   ComponentChildren,
-} from './vendor-service';
+} from './types';
 
 // Vendor-specific types
 export type {
