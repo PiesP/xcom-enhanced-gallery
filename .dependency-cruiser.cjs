@@ -78,9 +78,10 @@ module.exports = {
           '(^|/)tsconfig[.]json$', // TypeScript config
           '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // configs
           '^src/main[.]ts$', // 메인 진입점
-          '^src/.*/index[.]ts$', // 배럴 export 파일들
+          '^src/dev-scripts/.*[.]ts$', // 개발 스크립트 도구들 (TS 전용 - mjs 제거됨)
           'REFACTORING_PLAN[.]ts$', // 리팩토링 계획 문서
           '^src/core/constants/STABLE_SELECTORS[.]ts$', // 실제 사용되는 상수
+          '^src/dev-scripts/styleTokenAnalyzer[.]ts$', // dev 전용 스타일 토큰 분석기 (TS 단일 소스)
           '^src/features/.*/types[.]ts$', // 기능별 타입 정의
           '^src/shared/types/.*[.]ts$', // 공유 타입 정의
           '^src/.*[.]module[.]css$', // CSS 모듈
@@ -88,10 +89,7 @@ module.exports = {
           '^src/core/state/base/.*[.]ts$', // 상태 관리 기반 클래스들
           '^src/.*[.]interface[.]ts$', // 인터페이스 정의
           '^src/.*[.]abstract[.]ts$', // 추상 클래스들
-          '^src/dev-scripts/.*[.](ts|mjs)$', // 개발 스크립트 도구들
           '^src/shared/styles/unified-toolbar-style-manager[.]ts$', // TDD 테스트 전용 모듈
-          '^src/dev-scripts/styleTokenAnalyzer[.](?:ts|mjs)$', // dev 전용 스타일 토큰 분석기 (테스트/스크립트 사용)
-          '^src/features/gallery/types[.]ts$', // 갤러리 공개 타입 (런타임 의존 낮음, 테스트/타입 재사용)
           '^src/shared/types/core/test-categories[.]ts$', // 테스트 카테고리 타입 (테스트만 사용)
           '^src/shared/utils/memory/index[.]ts$', // 메모리 유틸 export 인덱스 (간접 참조)
         ],

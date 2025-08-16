@@ -88,17 +88,9 @@
      HSL 기반 향상된 테마 시스템 - UI 일관성 및 시인성 개선
      ======================================== */
 
-  /* Phase1 legacy glass tokens (kept as compatibility placeholders; slated for removal in Phase3) */
-  --xeg-glass-bg-light: rgba(255, 255, 255, 0.85);
-  --xeg-glass-bg-medium: rgba(255, 255, 255, 0.65);
-  --xeg-glass-bg-dark: rgba(0, 0, 0, 0.85);
-  --xeg-glass-bg-ultra-light: rgba(255, 255, 255, 0.95);
-  /* Normalized translucent alias tokens for media glass normalization test */
-  --xeg-glass-bg-translucent-light: var(--xeg-glass-bg-light);
-  --xeg-glass-bg-translucent-medium: var(--xeg-glass-bg-medium);
-  --xeg-glass-bg-translucent-dark: var(--xeg-glass-bg-dark);
-  /* Media glass token mapped to normalized translucent variant */
-  --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-medium);
+  /* Phase3: Legacy glass tokens removed. Provide stable no-op fallbacks for references */
+  /* Phase1 normalization: media glass token references standardized translucent glass background */
+  --xeg-media-glass-bg: var(--xeg-glass-bg-translucent-primary);
 
   /* 🎨 라이트 테마용 HSL 색상 시스템 */
   /* Base Colors */

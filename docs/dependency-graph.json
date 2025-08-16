@@ -12135,13 +12135,6 @@
       "valid": true
     },
     {
-      "source": "src/dev-scripts/styleTokenAnalyzer.mjs",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/dev-scripts/styleTokenAnalyzer.ts",
       "dependencies": [],
       "dependents": [],
@@ -12823,13 +12816,6 @@
         "src/shared/state/signals/download.signals.ts"
       ],
       "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/types/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
       "valid": true
     },
     {
@@ -17914,7 +17900,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 272,
+    "totalCruised": 270,
     "totalDependenciesCruised": 787,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
@@ -18229,7 +18215,7 @@
           "severity": "info",
           "from": {
             "orphan": true,
-            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$|^src/dev-scripts/.*[.](ts|mjs)$|^src/shared/styles/unified-toolbar-style-manager[.]ts$|^src/dev-scripts/styleTokenAnalyzer[.](?:ts|mjs)$|^src/features/gallery/types[.]ts$|^src/shared/types/core/test-categories[.]ts$|^src/shared/utils/memory/index[.]ts$"
+            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/dev-scripts/.*[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/dev-scripts/styleTokenAnalyzer[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$|^src/shared/styles/unified-toolbar-style-manager[.]ts$|^src/shared/types/core/test-categories[.]ts$|^src/shared/utils/memory/index[.]ts$"
           },
           "to": {},
           "scope": "module"

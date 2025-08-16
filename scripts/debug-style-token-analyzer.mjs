@@ -1,4 +1,5 @@
-import { analyzeStyleTokens } from '../src/dev-scripts/styleTokenAnalyzer.mjs';
+/* global console */
+import { analyzeStyleTokens } from '../src/dev-scripts/styleTokenAnalyzer.ts';
 
 const result = await analyzeStyleTokens({
   definitionRoots: [

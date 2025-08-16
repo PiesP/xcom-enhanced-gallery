@@ -41,6 +41,10 @@ export class UnifiedLogger {
   private constructor() {
     try {
       this.isProduction = typeof process !== 'undefined' && process.env?.NODE_ENV === 'production';
+      // 프로덕션에서는 기본 레벨 WARN 이상으로 승격하여 DEBUG/INFO 억제
+      if (this.isProduction) {
+        this.currentLevel = LogLevel.WARN;
+      }
     } catch {
       // 브라우저 환경에서 process가 없을 수 있음
       this.isProduction = false;
@@ -74,6 +78,24 @@ export class UnifiedLogger {
 
   getLevel(): LogLevel {
     return this.currentLevel;
+  }
+
+  /** 환경 변수 기반 레벨 설정 (테스트/빌드 시 사용) */
+  setLevelFromEnv(env?: { LOG_LEVEL?: string }): void {
+    const levelStr =
+      env?.LOG_LEVEL || (typeof process !== 'undefined' ? process.env?.LOG_LEVEL : undefined);
+    if (!levelStr) return;
+    const map: Record<string, LogLevel> = {
+      debug: LogLevel.DEBUG,
+      info: LogLevel.INFO,
+      warn: LogLevel.WARN,
+      error: LogLevel.ERROR,
+      silent: LogLevel.SILENT,
+    };
+    const next = map[levelStr.toLowerCase()];
+    if (next !== undefined) {
+      this.currentLevel = next;
+    }
   }
 
   error(message: string, contextOrError?: unknown): void {
@@ -230,6 +252,13 @@ export class UnifiedLogger {
 
   clearBuffer(): void {
     this.buffer = [];
+  }
+
+  /** 버퍼 플러시: 현재 로그 항목 배열을 반환하고 내부 버퍼 비움 */
+  flush(): LogEntry[] {
+    const out = this.getBuffer();
+    this.buffer = [];
+    return out;
   }
 }
 

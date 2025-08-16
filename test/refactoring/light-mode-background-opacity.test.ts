@@ -24,12 +24,9 @@ describe('라이트 모드 배경 불투명도 개선', () => {
 
     // 테스트용 CSS 변수 설정 (실제 design-tokens.css 값 반영)
     const root = document.documentElement;
-    root.style.setProperty('--xeg-glass-bg-light', 'rgba(255, 255, 255, 0.98)');
-    root.style.setProperty('--xeg-glass-bg-dark', 'rgba(0, 0, 0, 0.85)');
-    root.style.setProperty('--xeg-glass-bg-solid-light', 'rgba(255, 255, 255, 1.0)');
-    root.style.setProperty('--xeg-glass-bg-solid-dark', 'rgba(0, 0, 0, 1.0)');
-    root.style.setProperty('--xeg-modal-bg', 'var(--xeg-glass-bg-light)');
-    root.style.setProperty('--xeg-modal-bg-solid', 'var(--xeg-glass-bg-solid-light)');
+    // Phase3: glass tokens removed; fallback to direct rgba values on modal tokens
+    root.style.setProperty('--xeg-modal-bg', 'rgba(255, 255, 255, 0.98)');
+    root.style.setProperty('--xeg-modal-bg-solid', 'rgba(255, 255, 255, 1.0)');
     root.style.setProperty('--xeg-glass-blur-strong', 'blur(16px)');
   });
 
@@ -40,16 +37,11 @@ describe('라이트 모드 배경 불투명도 개선', () => {
 
       // When: CSS 변수 값 확인
       const computedStyle = getComputedStyle(document.documentElement);
-      const glassBgLight = computedStyle.getPropertyValue('--xeg-glass-bg-light').trim();
-
-      // Then: rgba 값에서 alpha 값이 0.98 이상이어야 함
-      const alphaMatch = glassBgLight.match(/rgba\([\d\s,]+,\s*([\d.]+)\)/);
+      const modalBg = computedStyle.getPropertyValue('--xeg-modal-bg').trim();
+      const alphaMatch = modalBg.match(/rgba\([\d\s,]+,\s*([\d.]+)\)/);
       if (alphaMatch) {
         const alpha = parseFloat(alphaMatch[1]);
         expect(alpha).toBeGreaterThanOrEqual(0.98);
-      } else {
-        // rgb() 형태라면 완전 불투명으로 간주
-        expect(glassBgLight).toMatch(/rgb\(/);
       }
     });
 
@@ -60,10 +52,7 @@ describe('라이트 모드 배경 불투명도 개선', () => {
       // When: solid 배경 CSS 변수 존재 확인
       const computedStyle = getComputedStyle(document.documentElement);
       const modalBgSolid = computedStyle.getPropertyValue('--xeg-modal-bg-solid').trim();
-
-      // Then: solid 변수가 정의되어 있어야 함
-      expect(modalBgSolid).toBeTruthy();
-      expect(modalBgSolid).toContain('--xeg-glass-bg-solid-light');
+      expect(modalBgSolid).toBe('rgba(255, 255, 255, 1.0)');
     });
   });
 
@@ -73,23 +62,17 @@ describe('라이트 모드 배경 불투명도 개선', () => {
       themeService.setTheme('light');
 
       // 테스트 환경용 CSS 변수 수동 설정
-      document.documentElement.style.setProperty(
-        '--xeg-glass-bg-light',
-        'rgba(255, 255, 255, 0.98)'
-      );
-      document.documentElement.style.setProperty('--xeg-modal-bg', 'var(--xeg-glass-bg-light)');
+      document.documentElement.style.setProperty('--xeg-modal-bg', 'rgba(255, 255, 255, 0.98)');
       document.documentElement.style.setProperty('--xeg-glass-bg-modal', 'var(--xeg-modal-bg)');
 
       // When: 모달 관련 CSS 변수들 확인
       const computedStyle = getComputedStyle(document.documentElement);
-      const glassBgLight = computedStyle.getPropertyValue('--xeg-glass-bg-light').trim();
       const modalBg = computedStyle.getPropertyValue('--xeg-modal-bg').trim();
       const glassBgModal = computedStyle.getPropertyValue('--xeg-glass-bg-modal').trim();
 
       // Then: CSS 변수들이 올바르게 정의되어야 함
-      expect(glassBgLight).toBe('rgba(255, 255, 255, 0.98)');
-      expect(modalBg).toBeTruthy(); // CSS var() 함수로 설정됨
-      expect(glassBgModal).toBeTruthy(); // CSS var() 함수로 설정됨
+      expect(modalBg).toBe('rgba(255, 255, 255, 0.98)');
+      expect(glassBgModal).toBeTruthy();
     });
   });
 
@@ -99,8 +82,8 @@ describe('라이트 모드 배경 불투명도 개선', () => {
       themeService.setTheme('dark');
       const root = document.documentElement;
       root.setAttribute('data-theme', 'dark');
-      root.style.setProperty('--xeg-modal-bg', 'var(--xeg-glass-bg-dark)');
-      root.style.setProperty('--xeg-modal-bg-solid', 'var(--xeg-glass-bg-solid-dark)');
+      root.style.setProperty('--xeg-modal-bg', 'rgba(0, 0, 0, 0.85)');
+      root.style.setProperty('--xeg-modal-bg-solid', 'rgba(0, 0, 0, 1.0)');
 
       // When: CSS 변수 값 확인
       const computedStyle = getComputedStyle(document.documentElement);

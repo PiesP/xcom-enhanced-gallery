@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist-dev-scripts",
+    "module": "ESNext",
+    "declaration": true,
+    "emitDeclarationOnly": true
+  },
+  "include": ["src/dev-scripts/styleTokenAnalyzer.ts"],
+  "exclude": []
+}

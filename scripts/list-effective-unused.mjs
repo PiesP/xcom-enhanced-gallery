@@ -3,7 +3,8 @@
 /*
  * List effective unused design tokens (excluding deprecated block)
  */
-import { analyzeStyleTokens } from '../src/dev-scripts/styleTokenAnalyzer.mjs';
+/* global console, process */
+import { analyzeStyleTokens } from '../src/dev-scripts/styleTokenAnalyzer.ts';
 import fs from 'fs/promises';
 import path from 'path';
 

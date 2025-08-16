@@ -13,6 +13,7 @@ import { join } from 'path';
  */
 
 const TOKEN_LIST = [
+  // Phase3: legacy glass tokens expected REMOVED; verify absence
   '--xeg-glass-bg-light',
   '--xeg-glass-bg-medium',
   '--xeg-glass-bg-dark',
@@ -36,22 +37,12 @@ function extractTokenValues(css: string): Record<string, string | null> {
 }
 
 describe('design-tokens snapshot (Phase 1)', () => {
-  it('should keep critical glass tokens stable', () => {
+  it('Phase3: legacy glass tokens should be removed (all null)', () => {
     const cssPath = join(process.cwd(), 'src', 'shared', 'styles', 'design-tokens.css');
     const css = readFileSync(cssPath, 'utf8');
     const extracted = extractTokenValues(css);
 
-    // 존재 여부 보증
-    expect(Object.values(extracted).filter(v => v === null).length).toBe(0);
-
-    // 값 스냅샷
-    expect(extracted).toMatchInlineSnapshot(`
-      {
-        "--xeg-glass-bg-dark": "rgba(0, 0, 0, 0.85)",
-        "--xeg-glass-bg-light": "rgba(255, 255, 255, 0.85)",
-        "--xeg-glass-bg-medium": "rgba(255, 255, 255, 0.65)",
-        "--xeg-glass-bg-ultra-light": "rgba(255, 255, 255, 0.95)",
-      }
-    `);
+    // 모든 값이 제거(null) 되었는지 확인
+    expect(Object.values(extracted).every(v => v === null)).toBe(true);
   });
 });
