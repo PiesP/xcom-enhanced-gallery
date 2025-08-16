@@ -6,6 +6,7 @@ import { ScrollPositionController } from '@shared/scroll/scroll-position-control
 import { AnchorScrollPositionController } from '@shared/scroll/anchor-scroll-position-controller';
 import { buildRouteScrollKey } from '@shared/scroll/route-scroll-key-builder';
 import { getScrollRestorationConfig } from './scroll-restoration-config';
+import { timelineStabilizer } from './timeline-position-stabilizer';
 import { logger } from '@shared/logging';
 const LOG = { restorer: '[scroll/restorer]' };
 
@@ -47,32 +48,70 @@ export function initializeRouteScrollRestorer(options: RouteScrollRestorerOption
         const order = getScrollRestorationConfig().strategyOrder || ['anchor', 'absolute'];
         logger.info(`${LOG.restorer} 복원 전략 순서:`, order);
 
+        const cfg = getScrollRestorationConfig();
+        let restored = false;
         for (const strategyName of order) {
           try {
             logger.info(`${LOG.restorer} ${strategyName} 전략 시도`);
             if (strategyName === 'anchor') {
-              // anchor 전략: 즉시 복원 (최소 타임아웃으로 DOM 안정화 고려)
               const result = AnchorScrollPositionController.restore({
                 pathname: window.location.pathname,
-                observe: false,
-                timeoutMs: 50, // DOM 안정화를 위한 최소 여유
+                observe: cfg.enableAnchorObserver !== false,
+                timeoutMs: cfg.stabilizationTimeoutMs, // 설정에서 관리
               });
               logger.info(`${LOG.restorer} ${strategyName} 전략 결과:`, result);
-              if (result) break;
+              restored = restored || result;
+              if (restored) break;
             } else if (strategyName === 'absolute') {
-              // absolute 전략: 항상 즉시 복원 (smooth=false, immediate mode)
               const result = ScrollPositionController.restore({
                 key,
                 smooth: false,
                 mode: 'immediate',
               });
               logger.info(`${LOG.restorer} ${strategyName} 전략 결과:`, result);
-              if (result) break;
+              restored = restored || result;
+              if (restored) break;
             }
           } catch (err) {
             logger.info(`${LOG.restorer} ${strategyName} 전략 실패:`, err);
-            // 전략 개별 실패 무시 후 다음 전략 시도
           }
+        }
+
+        // 후처리 드리프트 안정화 (anchor 성공 또는 absolute 복원 후 적용)
+        try {
+          if (restored && cfg.enableDriftStabilization !== false) {
+            // 소규모 비동기: 레이아웃 settle 후 측정
+            requestAnimationFrame(() => {
+              requestAnimationFrame(async () => {
+                try {
+                  // 대표 앵커 후보: viewport 상단 근처 tweet
+                  const articles = document.querySelectorAll('article[data-testid="tweet"]');
+                  let anchorEl: Element | undefined;
+                  let minDelta = Number.POSITIVE_INFINITY;
+                  articles.forEach(a => {
+                    const rect = a.getBoundingClientRect();
+                    const delta = Math.abs(rect.top);
+                    if (delta < minDelta) {
+                      minDelta = delta;
+                      anchorEl = a;
+                    }
+                  });
+                  if (anchorEl) {
+                    const drift = timelineStabilizer.detectPositionDrift(anchorEl, 0);
+                    const threshold = cfg.driftThresholdPx; // 설정에서 관리
+                    if (Math.abs(drift) > threshold) {
+                      logger.info(`${LOG.restorer} 초기 드리프트 감지:`, { drift, threshold });
+                      await timelineStabilizer.applyDriftCorrection(drift);
+                    }
+                  }
+                } catch (e) {
+                  logger.debug(`${LOG.restorer} 후처리 드리프트 안정화 실패`, e);
+                }
+              });
+            });
+          }
+        } catch {
+          /* ignore stabilization errors */
         }
       } catch (e) {
         logger.info(`${LOG.restorer} restore 실패`, e);
@@ -104,18 +143,21 @@ export function initializeRouteScrollRestorer(options: RouteScrollRestorerOption
                 const anchorSaved = AnchorScrollPositionController.save({ pathname: prevPath });
                 logger.info(`${LOG.restorer} ${strategyName} 저장 결과:`, anchorSaved);
                 saved = anchorSaved || saved;
-              } else if (strategyName === 'absolute') {
-                if (!saved) {
-                  const absoluteSaved = ScrollPositionController.save({ key: buildKey(prevPath) });
-                  logger.info(`${LOG.restorer} ${strategyName} 저장 결과:`, absoluteSaved);
-                  saved = absoluteSaved || saved;
-                } else {
-                  logger.info(`${LOG.restorer} ${strategyName} 저장 건너뜀 (이미 저장됨)`);
+                // 절대 좌표 백업 무조건 수행 (안전망)
+                try {
+                  const absoluteBackup = ScrollPositionController.save({ key: buildKey(prevPath) });
+                  logger.info(`${LOG.restorer} absolute 백업 저장 결과:`, absoluteBackup);
+                  saved = absoluteBackup || saved;
+                } catch {
+                  /* ignore */
                 }
+              } else if (strategyName === 'absolute') {
+                const absoluteSaved = ScrollPositionController.save({ key: buildKey(prevPath) });
+                logger.info(`${LOG.restorer} ${strategyName} 저장 결과:`, absoluteSaved);
+                saved = absoluteSaved || saved;
               }
             } catch (err) {
               logger.info(`${LOG.restorer} ${strategyName} 저장 전략 실패:`, err);
-              /* ignore individual strategy save error */
             }
           }
 

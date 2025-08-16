@@ -11,6 +11,16 @@ export interface ScrollRestorationConfig {
   strategyOrder?: string[];
   /** legacy anchor key (scrollAnchor:...) dual-write & restore fallback 활성화 여부 (기본 true -> 단계적 제거) */
   enableLegacyAnchorKey?: boolean;
+  /** 앵커 복원 시 observe 모드 활성화 (DOM 지연 로드를 기다림) */
+  enableAnchorObserver?: boolean;
+  /** 드리프트 안정화 로직 활성화 */
+  enableDriftStabilization?: boolean;
+  /** 드리프트 허용 임계값(px) - 초과 시 보정 */
+  driftThresholdPx?: number;
+  /** 안정화 타임아웃(ms) (observe + 보정 총 한도) */
+  stabilizationTimeoutMs?: number;
+  /** 최대 보정 패스 수 */
+  maxCorrectionPasses?: number;
 }
 
 // 타임라인 위치 복원 강화: 모든 경우에 앵커 기반 즉시 복원 보장
@@ -24,6 +34,12 @@ const defaultConfig: ScrollRestorationConfig = {
   strategyOrder: ['anchor', 'absolute'],
   // Legacy 키 지원 유지 (하위 호환성)
   enableLegacyAnchorKey: true,
+  // 새 옵션 기본값
+  enableAnchorObserver: true,
+  enableDriftStabilization: true,
+  driftThresholdPx: 4,
+  stabilizationTimeoutMs: 800,
+  maxCorrectionPasses: 3,
 };
 
 let activeConfig: ScrollRestorationConfig = { ...defaultConfig };

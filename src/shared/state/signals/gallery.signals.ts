@@ -9,11 +9,13 @@
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
+import { TIME_CONSTANTS } from '@/constants';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
 import { ScrollPositionController } from '@shared/scroll/scroll-position-controller';
 import { AnchorScrollPositionController } from '@shared/scroll/anchor-scroll-position-controller';
 import { getScrollRestorationConfig } from '@shared/scroll/scroll-restoration-config';
+import { stabilizeTimelinePosition } from '@shared/scroll/timeline-position-stabilizer';
 import { setGalleryStateChecker } from '@shared/utils/events';
 
 // Signal type (align with Preact signals: subscribe returns unsubscribe)
@@ -288,6 +290,26 @@ export function closeGallery(): void {
         logger.info('[Gallery] 절대 좌표 복원 결과:', absoluteRestored);
       } else {
         logger.info('[Gallery] 앵커 기반 즉시 복원 성공');
+      }
+
+      // 3차: 타임라인 위치 안정화 (드리프트 보정)
+      try {
+        logger.info('[Gallery] 타임라인 위치 안정화 시작');
+
+        // 기본 복원 후 100ms 대기하여 DOM 안정화
+        setTimeout(async () => {
+          try {
+            const stabilized = await stabilizeTimelinePosition(undefined, undefined, {
+              stabilityTimeoutMs: 300, // 충분한 안정화 시간
+              maxCorrectionAttempts: 2, // 최대 2회 보정 시도
+            });
+            logger.info('[Gallery] 타임라인 위치 안정화 결과:', stabilized);
+          } catch (error) {
+            logger.warn('[Gallery] 타임라인 안정화 중 오류:', error);
+          }
+        }, TIME_CONSTANTS.TIMELINE_STABILIZATION_DELAY_MS); // 안정화 시작 지연
+      } catch (error) {
+        logger.warn('[Gallery] 타임라인 안정화 설정 오류:', error);
       }
     } else {
       logger.info('[Gallery] Signal 기반 복원 비활성화됨');

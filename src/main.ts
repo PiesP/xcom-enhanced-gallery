@@ -17,6 +17,9 @@ import { createElement, querySelector } from '@shared/dom';
 import { initializeStyleSystem } from '@shared/styles/style-bootstrapper';
 import '@shared/styles/unified-dark-mode-initializer'; // 다크모드 CSS 변수 자동 초기화
 
+// 타임라인 위치 드리프트 Quick Fix (자동 적용)
+import '@shared/scroll/timeline-drift-quickfix';
+
 // Core 모듈들은 필요할 때 lazy import
 
 // 애플리케이션 상태 관리

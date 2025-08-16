@@ -238,6 +238,7 @@ strict digraph "dependency-cruiser output"{
     "src/main.ts" -> "src/shared/external/vendors.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/main.ts" -> "src/shared/logging/index.ts"
     "src/main.ts" -> "src/shared/scroll/route-scroll-restorer.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
+    "src/main.ts" -> "src/shared/scroll/timeline-drift-quickfix.ts"
     "src/main.ts" -> "src/shared/services/core-services.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/main.ts" -> "src/shared/services/service-manager.ts"
     "src/main.ts" -> "src/shared/styles/style-bootstrapper.ts"
@@ -536,11 +537,15 @@ strict digraph "dependency-cruiser output"{
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/constants.ts"
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/shared/browser/index.ts"
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/shared/logging/index.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/drift-correction-config.ts" [label=<drift-correction-config.ts> tooltip="no-orphans" URL="src/shared/scroll/drift-correction-config.ts" fillcolor="#FFFBEB" fontcolor="#B45309" color="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/enhanced-timeline-recovery.ts" [label=<enhanced-timeline-recovery.ts> tooltip="no-orphans" URL="src/shared/scroll/enhanced-timeline-recovery.ts" fillcolor="#FFFBEB" fontcolor="#B45309" color="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/key-builder.ts" [label=<key-builder.ts> tooltip="key-builder.ts" URL="src/shared/scroll/key-builder.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/scroll/key-builder.ts" -> "src/shared/scroll/route-scroll-key-builder.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/position-drift-correction.ts" [label=<position-drift-correction.ts> tooltip="no-orphans" URL="src/shared/scroll/position-drift-correction.ts" fillcolor="#FFFBEB" fontcolor="#B45309" color="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/route-scroll-key-builder.ts" [label=<route-scroll-key-builder.ts> tooltip="route-scroll-key-builder.ts" URL="src/shared/scroll/route-scroll-key-builder.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/route-scroll-restorer.ts" [label=<route-scroll-restorer.ts> tooltip="route-scroll-restorer.ts" URL="src/shared/scroll/route-scroll-restorer.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/scroll/scroll-restoration-config.ts"
+    "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/scroll/timeline-position-stabilizer.ts"
     "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/logging/index.ts"
     "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/scroll/anchor-scroll-position-controller.ts"
     "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/scroll/route-scroll-key-builder.ts"
@@ -550,6 +555,14 @@ strict digraph "dependency-cruiser output"{
     "src/shared/scroll/scroll-position-controller.ts" -> "src/shared/browser/index.ts"
     "src/shared/scroll/scroll-position-controller.ts" -> "src/shared/logging/index.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/scroll-restoration-config.ts" [label=<scroll-restoration-config.ts> tooltip="scroll-restoration-config.ts" URL="src/shared/scroll/scroll-restoration-config.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/timeline-drift-quickfix.ts" [label=<timeline-drift-quickfix.ts> tooltip="timeline-drift-quickfix.ts" URL="src/shared/scroll/timeline-drift-quickfix.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/scroll/timeline-drift-quickfix.ts" -> "src/shared/scroll/scroll-restoration-config.ts"
+    "src/shared/scroll/timeline-drift-quickfix.ts" -> "src/shared/logging/index.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/timeline-position-stabilizer.ts" [label=<timeline-position-stabilizer.ts> tooltip="timeline-position-stabilizer.ts" URL="src/shared/scroll/timeline-position-stabilizer.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/scroll/timeline-position-stabilizer.ts" -> "src/constants.ts"
+    "src/shared/scroll/timeline-position-stabilizer.ts" -> "src/shared/browser/index.ts"
+    "src/shared/scroll/timeline-position-stabilizer.ts" -> "src/shared/logging/index.ts"
+    "src/shared/scroll/timeline-position-stabilizer.ts" -> "src/shared/scroll/timing-utils.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/timing-utils.ts" [label=<timing-utils.ts> tooltip="timing-utils.ts" URL="src/shared/scroll/timing-utils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/ThemeService.ts" [label=<ThemeService.ts> tooltip="ThemeService.ts" URL="src/shared/services/ThemeService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/services/ThemeService.ts" -> "src/shared/services/theme-service.ts"
@@ -758,10 +771,12 @@ strict digraph "dependency-cruiser output"{
     "src/shared/state/signals/download.signals.ts" -> "src/shared/types/core/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/state/signals/download.signals.ts" -> "src/shared/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/state" {label="state" subgraph "cluster_src/shared/state/signals" {label="signals" "src/shared/state/signals/gallery.signals.ts" [label=<gallery.signals.ts> tooltip="gallery.signals.ts" URL="src/shared/state/signals/gallery.signals.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
+    "src/shared/state/signals/gallery.signals.ts" -> "src/constants.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/external/vendors.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/scroll/anchor-scroll-position-controller.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/scroll/scroll-position-controller.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/scroll/scroll-restoration-config.ts"
+    "src/shared/state/signals/gallery.signals.ts" -> "src/shared/scroll/timeline-position-stabilizer.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/services/core-services.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/utils/events.ts"
