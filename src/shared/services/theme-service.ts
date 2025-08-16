@@ -58,7 +58,7 @@ export type ThemeObserver = (theme: Theme) => void;
  *
  * // 관찰자 등록
  * themeService.addObserver((theme) => {
- *   console.log(`Theme changed to ${theme}`);
+ *   logger.info(`Theme changed to ${theme}`);
  * });
  * ```
  */

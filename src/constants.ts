@@ -721,6 +721,8 @@ export const SIZE_CONSTANTS = {
   TWENTY_FOUR: 24,
   NINETEEN: 19,
   NINE: 9,
+  ELEVEN: 11,
+  SEVENTEEN: 17,
   NEGATIVE_FIFTY: -50,
   NEGATIVE_FIVE: -5,
   FORTY: 40,
@@ -729,6 +731,10 @@ export const SIZE_CONSTANTS = {
   FOUR: 4,
   THREE: 3,
   TWO: 2,
+  // 트윗 관련 평균/경계치 (스크롤 복원 예측용)
+  TWEET_AVERAGE_HEIGHT: 600,
+  TWEET_MIN_HEIGHT: 180,
+  TWEET_MAX_HEIGHT: 1400,
 } as const;
 
 /** 메모리 관련 상수 */

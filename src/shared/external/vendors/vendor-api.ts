@@ -9,8 +9,8 @@ import { logger } from '@shared/logging';
 // 순환 의존성 제거: 직접 타입 정의
 // 정적 import로 TDZ/inlineDynamicImports 레이스를 방지
 import { preactCompat as bundledCompat } from '../compat-bundled';
-import { preactHooks as bundledHooks } from '../hooks-bundled';
-import { preactSignals as bundledSignals } from '../signals-bundled';
+// hooks/signals는 provider를 통해 접근 (테스트 주입 가능)
+import { getBundledHooks, getBundledSignals } from './vendor-providers';
 import { fflateBundled } from '../fflate-bundled';
 import type {
   FflateAPI,
@@ -49,6 +49,7 @@ interface VendorCache {
 const cache: VendorCache = {};
 let initPromise: Promise<void> | null = null;
 let initialized = false;
+let diagnosticsLogged = false; // lazy diagnostic 1회만 출력
 
 // CSP 안전성을 위해 외부 스크립트 로딩 제거
 
@@ -107,8 +108,9 @@ async function ensureHooks(): Promise<void> {
 
   try {
     // 정적 번들 포함된 hooks 사용
-    if (bundledHooks && typeof bundledHooks.useState === 'function') {
-      cache.hooks = bundledHooks;
+    const localHooks = getBundledHooks();
+    if (localHooks && typeof localHooks.useState === 'function') {
+      cache.hooks = localHooks;
       return;
     }
     throw new Error('Bundled hooks 모듈이 유효하지 않습니다');
@@ -134,8 +136,9 @@ async function ensureSignals(): Promise<void> {
 
   try {
     // 정적 번들 포함된 signals 사용
-    if (bundledSignals && typeof bundledSignals.signal === 'function') {
-      cache.signals = bundledSignals;
+    const localSignals = getBundledSignals();
+    if (localSignals && typeof localSignals.signal === 'function') {
+      cache.signals = localSignals;
       return;
     }
     throw new Error('Bundled signals 모듈이 유효하지 않습니다');
@@ -228,15 +231,20 @@ export function getPreactHooks(): PreactHooksAPI {
   if (cache.hooks) {
     return cache.hooks;
   }
+  if (!diagnosticsLogged) {
+    diagnosticsLogged = true;
+    logger.debug('[Vendor] hooks/signals accessed before initializeVendors - using fallback path');
+  }
   // Fallback: allow safe access before initializeVendors by using bundled hooks
   try {
-    if (bundledHooks && typeof bundledHooks.useState === 'function') {
-      cache.hooks = bundledHooks;
+    const localHooks = getBundledHooks();
+    if (localHooks && typeof localHooks.useState === 'function') {
+      cache.hooks = localHooks;
       logger.warn('[Vendor] getPreactHooks: vendors not initialized; using bundled hooks fallback');
       return cache.hooks;
     }
   } catch {
-    // ignore and throw below
+    // ignore
   }
   throw new Error('Preact Hooks가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
 }
@@ -248,17 +256,22 @@ export function getPreactSignals(): PreactSignalsAPI {
   if (cache.signals) {
     return cache.signals;
   }
+  if (!diagnosticsLogged) {
+    diagnosticsLogged = true;
+    logger.debug('[Vendor] hooks/signals accessed before initializeVendors - using fallback path');
+  }
   // Fallback: allow safe access before initializeVendors by using bundled signals
   try {
-    if (bundledSignals && typeof bundledSignals.signal === 'function') {
-      cache.signals = bundledSignals;
+    const localSignals = getBundledSignals();
+    if (localSignals && typeof localSignals.signal === 'function') {
+      cache.signals = localSignals;
       logger.warn(
         '[Vendor] getPreactSignals: vendors not initialized; using bundled signals fallback'
       );
       return cache.signals;
     }
   } catch {
-    // ignore and throw below
+    // ignore
   }
   throw new Error('Preact Signals가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
 }

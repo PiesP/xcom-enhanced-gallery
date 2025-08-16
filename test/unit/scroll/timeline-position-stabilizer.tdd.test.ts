@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
-import { timelineStabilizer, __test_only } from '@shared/scroll/timeline-position-stabilizer';
+import { __test_only } from '@shared/scroll/timeline-position-stabilizer';
 import type { TimelineStabilizer } from '@shared/scroll/timeline-position-stabilizer';
 
 const { TimelineStabilizerImpl } = __test_only;
@@ -144,7 +144,7 @@ describe('Timeline Position Stabilizer (TDD)', () => {
   describe('드리프트 보정 적용 (applyDriftCorrection)', () => {
     it('양수 드리프트에 대해 위로 스크롤 보정을 수행해야 함', async () => {
       const driftOffset = 20;
-      Object.defineProperty(mockWindow, 'scrollY', { value: 800, configurable: true });
+      Object.defineProperty(window as any, 'scrollY', { value: 800, configurable: true });
 
       const result = await stabilizer.applyDriftCorrection(driftOffset);
       expect(result).toBe(true);
@@ -161,7 +161,7 @@ describe('Timeline Position Stabilizer (TDD)', () => {
 
     it('음수 드리프트에 대해 아래로 스크롤 보정을 수행해야 함', async () => {
       const driftOffset = -15;
-      Object.defineProperty(mockWindow, 'scrollY', { value: 500, configurable: true });
+      Object.defineProperty(window as any, 'scrollY', { value: 500, configurable: true });
 
       const result = await stabilizer.applyDriftCorrection(driftOffset);
       expect(result).toBe(true);

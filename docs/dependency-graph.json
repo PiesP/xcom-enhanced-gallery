@@ -515,40 +515,6 @@
         },
         {
           "dynamic": false,
-          "module": "../hooks-bundled",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/hooks-bundled.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../signals-bundled",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/signals-bundled.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -558,6 +524,23 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-providers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-providers.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -628,6 +611,7 @@
       "dependents": [
         "src/shared/external/vendors/vendor-api.ts",
         "src/shared/external/compat-bundled.ts",
+        "src/shared/external/vendors/vendor-providers.ts",
         "src/shared/external/hooks-bundled.ts",
         "src/shared/external/signals-bundled.ts",
         "src/shared/external/vendors/vendor-service.ts"
@@ -642,6 +626,68 @@
         "src/shared/external/vendors/vendor-api.ts",
         "src/shared/external/vendors/vendor-service.ts",
         "src/shared/external/zip/zip-creator.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-providers.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../hooks-bundled",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/hooks-bundled.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../signals-bundled",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/signals-bundled.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/external/vendors/vendor-api.ts"
       ],
       "orphan": false,
       "valid": true
@@ -669,7 +715,7 @@
         }
       ],
       "dependents": [
-        "src/shared/external/vendors/vendor-api.ts",
+        "src/shared/external/vendors/vendor-providers.ts",
         "src/shared/external/vendors/vendor-service.ts"
       ],
       "orphan": false,
@@ -698,7 +744,7 @@
         }
       ],
       "dependents": [
-        "src/shared/external/vendors/vendor-api.ts",
+        "src/shared/external/vendors/vendor-providers.ts",
         "src/shared/external/vendors/vendor-service.ts"
       ],
       "orphan": false,
@@ -15045,45 +15091,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/scroll/drift-correction-config.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/scroll/enhanced-timeline-recovery.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/scroll/position-drift-correction.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/services/ThemeService.ts",
       "dependencies": [
         {
@@ -16726,6 +16733,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/styles/unified-toolbar-style-manager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/testing/StandardMockFactory.ts",
       "dependencies": [
         {
@@ -17895,41 +17909,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/scroll/drift-correction-config.ts",
-        "to": "src/shared/scroll/drift-correction-config.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/scroll/enhanced-timeline-recovery.ts",
-        "to": "src/shared/scroll/enhanced-timeline-recovery.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/scroll/position-drift-correction.ts",
-        "to": "src/shared/scroll/position-drift-correction.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 3,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 273,
-    "totalDependenciesCruised": 785,
+    "totalCruised": 272,
+    "totalDependenciesCruised": 787,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

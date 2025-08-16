@@ -21,6 +21,8 @@ export interface ScrollRestorationConfig {
   stabilizationTimeoutMs?: number;
   /** 최대 보정 패스 수 */
   maxCorrectionPasses?: number;
+  /** 앵커 복원 시 메타데이터 기반 예측 보정 활성화 */
+  enablePredictiveAnchorAdjustment?: boolean;
 }
 
 // 타임라인 위치 복원 강화: 모든 경우에 앵커 기반 즉시 복원 보장
@@ -40,6 +42,7 @@ const defaultConfig: ScrollRestorationConfig = {
   driftThresholdPx: 4,
   stabilizationTimeoutMs: 800,
   maxCorrectionPasses: 3,
+  enablePredictiveAnchorAdjustment: true,
 };
 
 let activeConfig: ScrollRestorationConfig = { ...defaultConfig };

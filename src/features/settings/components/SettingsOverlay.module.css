@@ -87,7 +87,8 @@
   pointer-events: none;
   /* 강한 모달 그림자 토큰 & hover 배경 토큰을 참조하여 누락 방지 */
   box-shadow: 0 0 0 0 var(--xeg-modal-shadow-strong);
-  background: var(--xeg-modal-bg-hover, transparent);
+  /* 배경 토큰 다양성 축소: transparent 고정 (var(--xeg-modal-bg-hover) 중복 제거) */
+  background: transparent;
   opacity: 0; /* 시각적 영향 최소화 */
 }
 
@@ -244,7 +245,8 @@
 /* ?�� TDD: ?�바 버튼�??�일???�버 ?�태 */
 .settingRow select:hover,
 .settingRow input[type='number']:hover {
-  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-40));
+  /* alpha-40 fallback → alpha-20 로 통일 */
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-20));
   border-color: var(--xeg-color-primary-alpha-30);
   transform: translateY(-1px);
 }
@@ -254,7 +256,8 @@
   flex-grow: 1;
   -webkit-appearance: none;
   appearance: none;
-  background: var(--xeg-bg-surface-alpha-30);
+  /* alpha-30 → alpha-20 통합 */
+  background: var(--xeg-bg-surface-alpha-20);
   height: 6px;
   border-radius: 3px;
   outline: none;
@@ -263,7 +266,8 @@
 }
 
 .settingRow input[type='range']:hover {
-  background: var(--xeg-bg-surface-alpha-40);
+  /* alpha-40 → alpha-20 통합 */
+  background: var(--xeg-bg-surface-alpha-20);
 }
 
 .settingRow input[type='range']::-webkit-slider-thumb {
@@ -288,7 +292,8 @@
 .settingRow input[type='checkbox'] {
   -webkit-appearance: none;
   appearance: none;
-  background: var(--xeg-bg-surface-alpha-30);
+  /* alpha-30 → alpha-20 통합 */
+  background: var(--xeg-bg-surface-alpha-20);
   margin: 0;
   width: 20px;
   height: 20px;
@@ -301,7 +306,8 @@
 }
 
 .settingRow input[type='checkbox']:hover {
-  background: var(--xeg-bg-surface-alpha-40);
+  /* alpha-40 → alpha-20 통합 */
+  background: var(--xeg-bg-surface-alpha-20);
   border-color: var(--xeg-color-primary-alpha-30);
   transform: translateY(-1px);
 }
@@ -359,7 +365,8 @@
 .customTemplateInputWrapper input {
   /* ?�� TDD: ?�바?� ?�전???�일???��???기반 */
   font-family: 'Courier New', Courier, monospace;
-  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-30));
+  /* alpha-30 fallback → alpha-20 통합 */
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-20));
   color: var(--xeg-toolbar-text);
   border: 1px solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
@@ -371,7 +378,8 @@
 }
 
 .customTemplateInputWrapper input:hover {
-  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-40));
+  /* alpha-40 fallback → alpha-20 통합 */
+  background: var(--xeg-toolbar-bg-hover, var(--xeg-bg-surface-alpha-20));
   border-color: var(--xeg-color-primary-alpha-30);
   transform: translateY(-1px);
 }

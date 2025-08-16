@@ -8,6 +8,7 @@ const LOG = { base: '[scroll]', anchor: '[scroll/anchor]' };
 import { isBrowserEnvironment, safeWindow } from '@shared/browser';
 import { TIME_CONSTANTS } from '@/constants';
 import { buildAnchorScrollKey, buildLegacyAnchorScrollKey } from './key-builder';
+import { SIZE_CONSTANTS } from '@/constants';
 import { waitForMutationUntil, now } from './timing-utils';
 import { getScrollRestorationConfig } from './scroll-restoration-config';
 
@@ -15,6 +16,14 @@ export interface AnchorScrollData {
   readonly tweetId: string;
   readonly offset: number; // element.getBoundingClientRect().top 값 (viewport 기준)
   readonly ts: number; // 저장 시점
+  /** 저장 시 article 높이 */
+  readonly articleHeight?: number;
+  /** 이전 형제 요소 개수 (tweet articles) */
+  readonly prevSiblingsCount?: number;
+  /** 직전 N개 트윗 높이 합 (상대적 위치 보정 힌트) */
+  readonly prevClusterHeight?: number;
+  /** 현재 트윗 내 미디어 개수 (높이 변동 예측 가중치) */
+  readonly mediaCount?: number;
 }
 
 export interface AnchorSaveOptions {
@@ -288,8 +297,45 @@ export const AnchorScrollPositionController = {
         });
         return false;
       }
-      const offset = article.getBoundingClientRect().top;
-      const data: AnchorScrollData = { tweetId, offset, ts: Date.now() };
+      const rect = article.getBoundingClientRect();
+      const offset = rect.top;
+      // 메타데이터 수집
+      let prevSiblingsCount = 0;
+      let prevClusterHeight = 0;
+      try {
+        const all = Array.from(
+          document.querySelectorAll('article[data-testid="tweet"]')
+        ) as HTMLElement[];
+        const idx = all.indexOf(article);
+        if (idx > 0) {
+          prevSiblingsCount = idx;
+          const maxCluster = SIZE_CONSTANTS.TEN; // 직전 최대 10개
+          const cluster = all.slice(Math.max(0, idx - maxCluster), idx);
+          for (const el of cluster) {
+            const r = el.getBoundingClientRect();
+            prevClusterHeight += r.height || 0;
+          }
+        }
+      } catch {
+        /* ignore meta calc */
+      }
+      let mediaCount = 0;
+      try {
+        mediaCount = article.querySelectorAll(
+          '[data-testid="tweetPhoto"], [data-testid="videoPlayer"], img[src*="twimg"], video'
+        ).length;
+      } catch {
+        /* ignore */
+      }
+      const data: AnchorScrollData = {
+        tweetId,
+        offset,
+        ts: Date.now(),
+        articleHeight: rect.height,
+        prevSiblingsCount,
+        prevClusterHeight,
+        mediaCount,
+      };
 
       logger.info(`${LOG.anchor} 앵커 데이터 생성:`, data);
 
@@ -416,8 +462,44 @@ export const AnchorScrollPositionController = {
             return false;
           }
 
-          const rect = article.getBoundingClientRect(); // viewport top -> article top 거리 = rect.top
-          const targetY = (win.scrollY || win.pageYOffset || 0) + rect.top - parsed.offset;
+          const rect = article.getBoundingClientRect();
+          let rawTargetY = (win.scrollY || win.pageYOffset || 0) + rect.top - parsed.offset;
+          if (cfg.enablePredictiveAnchorAdjustment !== false) {
+            try {
+              if (
+                parsed.articleHeight &&
+                rect.height &&
+                Math.abs(rect.height - parsed.articleHeight) > 1
+              ) {
+                const heightDelta = rect.height - parsed.articleHeight;
+                const HEIGHT_GROWTH_CORRECTION_FACTOR = -(
+                  SIZE_CONSTANTS.THREE / SIZE_CONSTANTS.FIVE
+                );
+                rawTargetY += heightDelta * HEIGHT_GROWTH_CORRECTION_FACTOR;
+              }
+              if (typeof parsed.prevSiblingsCount === 'number' && parsed.prevSiblingsCount > 0) {
+                const currentAll = Array.from(
+                  document.querySelectorAll('article[data-testid="tweet"]')
+                );
+                const curIdx = currentAll.indexOf(article);
+                if (curIdx >= 0 && curIdx !== parsed.prevSiblingsCount) {
+                  const inserted = curIdx - parsed.prevSiblingsCount;
+                  if (inserted !== 0) {
+                    const avg =
+                      parsed.prevSiblingsCount > 0 && parsed.prevClusterHeight
+                        ? parsed.prevClusterHeight /
+                          Math.min(parsed.prevSiblingsCount, SIZE_CONSTANTS.TEN)
+                        : SIZE_CONSTANTS.TWEET_AVERAGE_HEIGHT;
+                    const WEIGHT_B = SIZE_CONSTANTS.NINE / SIZE_CONSTANTS.TEN; // 0.9
+                    rawTargetY += inserted * avg * WEIGHT_B * -1;
+                  }
+                }
+              }
+            } catch {
+              /* predictive adjust ignore */
+            }
+          }
+          const targetY = rawTargetY;
           const finalY = targetY < 0 ? 0 : targetY;
 
           logger.info(`${LOG.anchor} 앵커 스크롤 실행:`, {
@@ -452,6 +534,49 @@ export const AnchorScrollPositionController = {
 
       if (attempt()) {
         logger.info(`${LOG.anchor} 첫 번째 시도 성공`);
+        // Phase C: 멀티 패스 감쇠형 드리프트 보정 (옵션)
+        try {
+          if (cfg.enableDriftStabilization !== false && cfg.maxCorrectionPasses) {
+            const maxPass = cfg.maxCorrectionPasses;
+            const threshold = cfg.driftThresholdPx || SIZE_CONSTANTS.FOUR; // 기본 허용 드리프트 (px)
+            let pass = 0;
+            let lastTop: number | null = null;
+            const anchorQuery = `a[href*="/status/${parsed.tweetId}"]`;
+            const step = () => {
+              try {
+                const linkEl = document.querySelector(anchorQuery);
+                const anchorArticle = linkEl?.closest?.('article[data-testid="tweet"]');
+                if (!anchorArticle) return; // anchor 사라짐
+                const r = anchorArticle.getBoundingClientRect();
+                const drift = r.top - parsed.offset;
+                if (Math.abs(drift) <= threshold) return; // 수렴
+                // overshoot 부호 반전 감지 (이전 top과 현재 top 부호 다르면 중단)
+                if (lastTop !== null && lastTop > 0 !== r.top > 0) return;
+                const DAMPING_FIRST_NUMERATOR = SIZE_CONSTANTS.SEVENTEEN; // 17/20 = 0.85
+                const DAMPING_FIRST_DENOMINATOR = SIZE_CONSTANTS.TWENTY;
+                const DAMPING_SECOND_NUMERATOR = SIZE_CONSTANTS.ELEVEN; // 11/20 = 0.55
+                const DAMPING_SECOND_DENOMINATOR = SIZE_CONSTANTS.TWENTY;
+                const factor =
+                  pass === 0
+                    ? DAMPING_FIRST_NUMERATOR / DAMPING_FIRST_DENOMINATOR
+                    : DAMPING_SECOND_NUMERATOR / DAMPING_SECOND_DENOMINATOR; // 감쇠 계수 (0.85 -> 0.55)
+                const currentY = window.scrollY || window.pageYOffset || 0;
+                window.scrollTo({
+                  top: Math.max(0, currentY - drift * factor),
+                  behavior: 'auto',
+                });
+                lastTop = r.top;
+                pass++;
+                if (pass < maxPass) requestAnimationFrame(step);
+              } catch {
+                /* ignore drift step */
+              }
+            };
+            requestAnimationFrame(step);
+          }
+        } catch {
+          /* ignore phase C errors */
+        }
         return true;
       }
 

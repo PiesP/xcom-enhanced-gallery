@@ -35,8 +35,24 @@ class TimelineStabilizerImpl implements TimelineStabilizer {
     return new Promise(resolve => {
       const checkStability = () => {
         try {
-          // 1. 이미지 로딩 완료 체크
-          if (!this.isImageLoadingComplete()) {
+          // 0. 빠른 종료: 이미지/트윗 모두 없는 경우 즉시 안정화 간주
+          const tweetsQuick = document.querySelectorAll('article[data-testid="tweet"]');
+          const imgsQuick = document.querySelectorAll('img');
+          if (tweetsQuick.length === 0) {
+            // 트윗이 전혀 없으면 이미지 여부만 판단: 없음 => 즉시 안정화, 있으면 모두 로딩 완료 시 안정화
+            if (imgsQuick.length === 0) {
+              resolve(true);
+              return;
+            }
+            if (this.isImageLoadingComplete()) {
+              resolve(true);
+              return;
+            }
+            // 이미지가 아직 로딩 중이면 아래 이미지 로딩 분기에서 처리
+          }
+
+          // 1. 이미지 로딩 완료 체크 (이미지가 하나라도 있고 미완료면 대기)
+          if (imgsQuick.length > 0 && !this.isImageLoadingComplete()) {
             if (Date.now() - startTime > timeoutMs) {
               logger.debug(`${LOG.stabilizer} 타임아웃: 이미지 로딩 미완료`);
               resolve(false);
@@ -130,6 +146,7 @@ class TimelineStabilizerImpl implements TimelineStabilizer {
       if (!win) return false;
 
       const currentScrollY = win.scrollY || win.pageYOffset || 0;
+      // 테스트 기대치: 양수 drift(아래로 내려감) → 위로(scrollY - drift), 음수 drift(위로 올라감) → 아래로(scrollY - drift)
       const correctedScrollY = Math.max(0, currentScrollY - driftOffset);
 
       logger.info(`${LOG.stabilizer} 드리프트 보정 적용:`, {

@@ -6,7 +6,7 @@ import { ScrollPositionController } from '@shared/scroll/scroll-position-control
 import { AnchorScrollPositionController } from '@shared/scroll/anchor-scroll-position-controller';
 import { buildRouteScrollKey } from '@shared/scroll/route-scroll-key-builder';
 import { getScrollRestorationConfig } from './scroll-restoration-config';
-import { timelineStabilizer } from './timeline-position-stabilizer';
+import { stabilizeTimelinePosition } from './timeline-position-stabilizer';
 import { logger } from '@shared/logging';
 const LOG = { restorer: '[scroll/restorer]' };
 
@@ -57,7 +57,7 @@ export function initializeRouteScrollRestorer(options: RouteScrollRestorerOption
               const result = AnchorScrollPositionController.restore({
                 pathname: window.location.pathname,
                 observe: cfg.enableAnchorObserver !== false,
-                timeoutMs: cfg.stabilizationTimeoutMs, // 설정에서 관리
+                timeoutMs: cfg.stabilizationTimeoutMs as number, // 설정에서 관리 (config 초기값 보장)
               });
               logger.info(`${LOG.restorer} ${strategyName} 전략 결과:`, result);
               restored = restored || result;
@@ -77,41 +77,44 @@ export function initializeRouteScrollRestorer(options: RouteScrollRestorerOption
           }
         }
 
-        // 후처리 드리프트 안정화 (anchor 성공 또는 absolute 복원 후 적용)
-        try {
-          if (restored && cfg.enableDriftStabilization !== false) {
-            // 소규모 비동기: 레이아웃 settle 후 측정
+        // 후처리 드리프트 안정화 (단일 통합 stabilizer 사용)
+        if (restored && cfg.enableDriftStabilization !== false) {
+          try {
             requestAnimationFrame(() => {
               requestAnimationFrame(async () => {
                 try {
-                  // 대표 앵커 후보: viewport 상단 근처 tweet
                   const articles = document.querySelectorAll('article[data-testid="tweet"]');
                   let anchorEl: Element | undefined;
                   let minDelta = Number.POSITIVE_INFINITY;
-                  articles.forEach(a => {
+                  for (const a of Array.from(articles)) {
                     const rect = a.getBoundingClientRect();
                     const delta = Math.abs(rect.top);
                     if (delta < minDelta) {
                       minDelta = delta;
                       anchorEl = a;
                     }
-                  });
+                  }
                   if (anchorEl) {
-                    const drift = timelineStabilizer.detectPositionDrift(anchorEl, 0);
-                    const threshold = cfg.driftThresholdPx; // 설정에서 관리
-                    if (Math.abs(drift) > threshold) {
-                      logger.info(`${LOG.restorer} 초기 드리프트 감지:`, { drift, threshold });
-                      await timelineStabilizer.applyDriftCorrection(drift);
-                    }
+                    logger.info(`${LOG.restorer} 통합 안정화 수행 시작`);
+                    // 매직 넘버(300ms) 제거: 안정화 기본 타임아웃 상수 사용
+                    const FALLBACK_STABILIZATION_TIMEOUT_MS = 300;
+                    const timeoutMs =
+                      typeof cfg.stabilizationTimeoutMs === 'number'
+                        ? cfg.stabilizationTimeoutMs
+                        : FALLBACK_STABILIZATION_TIMEOUT_MS; // fallback 안전값
+                    await stabilizeTimelinePosition(anchorEl, 0, {
+                      stabilityTimeoutMs: timeoutMs,
+                      maxCorrectionAttempts: 2,
+                    });
                   }
                 } catch (e) {
-                  logger.debug(`${LOG.restorer} 후처리 드리프트 안정화 실패`, e);
+                  logger.debug(`${LOG.restorer} 통합 안정화 중 오류`, e);
                 }
               });
             });
+          } catch {
+            /* ignore stabilization errors */
           }
-        } catch {
-          /* ignore stabilization errors */
         }
       } catch (e) {
         logger.info(`${LOG.restorer} restore 실패`, e);

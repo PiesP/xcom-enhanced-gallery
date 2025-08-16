@@ -449,10 +449,13 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/external" {label="external" subgraph "cluster_src/shared/external/vendors" {label="vendors" "src/shared/external/vendors/vendor-api.ts" [label=<vendor-api.ts> tooltip="vendor-api.ts" URL="src/shared/external/vendors/vendor-api.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/external/vendors/vendor-api.ts" -> "src/shared/external/compat-bundled.ts"
     "src/shared/external/vendors/vendor-api.ts" -> "src/shared/external/fflate-bundled.ts"
-    "src/shared/external/vendors/vendor-api.ts" -> "src/shared/external/hooks-bundled.ts"
-    "src/shared/external/vendors/vendor-api.ts" -> "src/shared/external/signals-bundled.ts"
     "src/shared/external/vendors/vendor-api.ts" -> "src/shared/external/vendors/types.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/external/vendors/vendor-api.ts" -> "src/shared/external/vendors/vendor-providers.ts"
     "src/shared/external/vendors/vendor-api.ts" -> "src/shared/logging/index.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/external" {label="external" subgraph "cluster_src/shared/external/vendors" {label="vendors" "src/shared/external/vendors/vendor-providers.ts" [label=<vendor-providers.ts> tooltip="vendor-providers.ts" URL="src/shared/external/vendors/vendor-providers.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
+    "src/shared/external/vendors/vendor-providers.ts" -> "src/shared/external/hooks-bundled.ts"
+    "src/shared/external/vendors/vendor-providers.ts" -> "src/shared/external/signals-bundled.ts"
+    "src/shared/external/vendors/vendor-providers.ts" -> "src/shared/external/vendors/types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/external" {label="external" subgraph "cluster_src/shared/external/vendors" {label="vendors" "src/shared/external/vendors/vendor-service.ts" [label=<vendor-service.ts> tooltip="vendor-service.ts" URL="src/shared/external/vendors/vendor-service.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/external/vendors/vendor-service.ts" -> "src/shared/external/compat-bundled.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/shared/external/vendors/vendor-service.ts" -> "src/shared/external/fflate-bundled.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
@@ -537,11 +540,8 @@ strict digraph "dependency-cruiser output"{
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/constants.ts"
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/shared/browser/index.ts"
     "src/shared/scroll/anchor-scroll-position-controller.ts" -> "src/shared/logging/index.ts"
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/drift-correction-config.ts" [label=<drift-correction-config.ts> tooltip="no-orphans" URL="src/shared/scroll/drift-correction-config.ts" fillcolor="#FFFBEB" fontcolor="#B45309" color="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/enhanced-timeline-recovery.ts" [label=<enhanced-timeline-recovery.ts> tooltip="no-orphans" URL="src/shared/scroll/enhanced-timeline-recovery.ts" fillcolor="#FFFBEB" fontcolor="#B45309" color="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/key-builder.ts" [label=<key-builder.ts> tooltip="key-builder.ts" URL="src/shared/scroll/key-builder.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/scroll/key-builder.ts" -> "src/shared/scroll/route-scroll-key-builder.ts"
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/position-drift-correction.ts" [label=<position-drift-correction.ts> tooltip="no-orphans" URL="src/shared/scroll/position-drift-correction.ts" fillcolor="#FFFBEB" fontcolor="#B45309" color="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/route-scroll-key-builder.ts" [label=<route-scroll-key-builder.ts> tooltip="route-scroll-key-builder.ts" URL="src/shared/scroll/route-scroll-key-builder.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/route-scroll-restorer.ts" [label=<route-scroll-restorer.ts> tooltip="route-scroll-restorer.ts" URL="src/shared/scroll/route-scroll-restorer.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/scroll/scroll-restoration-config.ts"
@@ -830,6 +830,7 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/styles" {label="styles" "src/shared/styles/unified-style-manager.ts" [label=<unified-style-manager.ts> tooltip="unified-style-manager.ts" URL="src/shared/styles/unified-style-manager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/styles/unified-style-manager.ts" -> "src/shared/browser/browser-css-utils.ts"
     "src/shared/styles/unified-style-manager.ts" -> "src/shared/logging/index.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/styles" {label="styles" "src/shared/styles/unified-toolbar-style-manager.ts" [label=<unified-toolbar-style-manager.ts> tooltip="unified-toolbar-style-manager.ts" URL="src/shared/styles/unified-toolbar-style-manager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/styles" {label="styles" "src/shared/styles/z-index-system.ts" [label=<z-index-system.ts> tooltip="z-index-system.ts" URL="src/shared/styles/z-index-system.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/styles/z-index-system.ts" -> "src/shared/logging/index.ts"
     "src/shared/styles/z-index-system.ts" -> "src/shared/utils/z-index-service.ts"
