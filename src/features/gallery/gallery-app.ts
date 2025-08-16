@@ -19,7 +19,6 @@ import { ToastService } from '@shared/services/toast-service';
 import { unmountGallery } from '@shared/components/isolation';
 import { initializeStyleSystem } from '@shared/styles/style-bootstrapper';
 import type { GalleryConfig } from '@shared/types/app.types';
-import { setScrollRestorationConfig } from '@shared/scroll/scroll-restoration-config';
 
 /**
  * 갤러리 앱 설정
@@ -80,9 +79,11 @@ export class GalleryApp {
       // 이벤트 핸들러 설정
       await this.setupEventHandlers();
 
-      // 실환경 스크롤 복원 보장: 신호 기반 저장/복원 활성화 (훅 미사용 환경 대비)
-      // 중복 저장을 피하기 위해 한 번만 설정
-      setScrollRestorationConfig({ enableSignalBasedGalleryScroll: true });
+      // 스크롤 복원 전략 설정
+      // 2025-08-16: 스크롤 복원 설정이 기본값으로 최적화되어 명시적 설정 불필요
+      // - enableSignalBasedGalleryScroll: true (기본값)
+      // - disableMultiPassScrollCorrection: true (기본값)
+      // - strategyOrder: ['anchor', 'absolute'] (기본값)
 
       this.isInitialized = true;
       logger.info('✅ GalleryApp 격리된 시스템으로 초기화 완료');

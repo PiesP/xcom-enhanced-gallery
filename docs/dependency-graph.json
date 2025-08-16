@@ -318,6 +318,7 @@
         "src/features/gallery/components/GalleryView.tsx",
         "src/shared/types/media.types.ts",
         "src/shared/types/core/media.types.ts",
+        "src/shared/scroll/anchor-scroll-position-controller.ts",
         "src/shared/browser/browser-environment.ts",
         "src/shared/services/service-initialization.ts",
         "src/shared/media/filename-service.ts",
@@ -743,10 +744,11 @@
         "src/shared/external/vendors/vendor-api.ts",
         "src/shared/external/vendors/vendor-service.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
-        "src/shared/scroll/scroll-position-controller.ts",
+        "src/shared/scroll/anchor-scroll-position-controller.ts",
         "src/shared/browser/browser-environment.ts",
         "src/shared/browser/browser-service.ts",
         "src/shared/browser/browser-css-utils.ts",
+        "src/shared/scroll/scroll-position-controller.ts",
         "src/shared/services/core-services.ts",
         "src/shared/services/service-initialization.ts",
         "src/shared/media/filename-service.ts",
@@ -802,7 +804,6 @@
         "src/shared/styles/z-index-system.ts",
         "src/features/gallery/gallery-renderer.ts",
         "src/features/settings/services/twitter-token-extractor.ts",
-        "src/features/gallery/hooks/useScrollPositionManager.ts",
         "src/shared/services/gallery/GalleryService.ts",
         "src/main.ts",
         "src/shared/browser-environment/page-unload-cleanup.ts",
@@ -1473,7 +1474,6 @@
         "src/shared/hooks/useToolbarState.ts",
         "src/shared/hooks/useToolbar.ts",
         "src/shared/components/index.ts",
-        "src/features/gallery/hooks/useScrollPositionManager.ts",
         "src/shared/hooks/useAccessibility.ts",
         "src/shared/hooks/useDOMReady.ts",
         "src/shared/hooks/useScrollDirection.ts",
@@ -1498,6 +1498,26 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/scroll/anchor-scroll-position-controller",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/anchor-scroll-position-controller.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1622,8 +1642,79 @@
       "valid": true
     },
     {
-      "source": "src/shared/scroll/scroll-position-controller.ts",
+      "source": "src/shared/scroll/anchor-scroll-position-controller.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./key-builder",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/key-builder.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./scroll-restoration-config",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-restoration-config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timing-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/timing-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@/constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "@shared/browser",
@@ -1667,8 +1758,65 @@
       ],
       "dependents": [
         "src/shared/state/signals/gallery.signals.ts",
-        "src/features/gallery/hooks/useScrollPositionManager.ts",
         "src/shared/scroll/route-scroll-restorer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/scroll/key-builder.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./route-scroll-key-builder",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/route-scroll-key-builder.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/scroll/anchor-scroll-position-controller.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/scroll/route-scroll-key-builder.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/scroll/key-builder.ts",
+        "src/shared/scroll/route-scroll-restorer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/scroll/scroll-restoration-config.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/scroll/anchor-scroll-position-controller.ts",
+        "src/shared/scroll/route-scroll-restorer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/scroll/timing-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/scroll/anchor-scroll-position-controller.ts",
+        "src/shared/scroll/scroll-position-controller.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1743,9 +1891,27 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timeline-path-config",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/browser/timeline-path-config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
+        "src/shared/scroll/anchor-scroll-position-controller.ts",
         "src/shared/scroll/scroll-position-controller.ts",
         "src/shared/services/index.ts"
       ],
@@ -1801,6 +1967,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./timeline-path-config",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/browser/timeline-path-config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@/constants",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1844,6 +2027,16 @@
         "src/shared/browser/index.ts",
         "src/shared/browser/browser-compat.ts",
         "src/shared/browser/browser-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/browser/timeline-path-config.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/browser/index.ts",
+        "src/shared/browser/browser-environment.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1946,11 +2139,69 @@
       "valid": true
     },
     {
-      "source": "src/shared/scroll/scroll-restoration-config.ts",
-      "dependencies": [],
+      "source": "src/shared/scroll/scroll-position-controller.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./timing-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/timing-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/browser",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/browser/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/state/signals/gallery.signals.ts",
-        "src/features/gallery/gallery-app.ts"
+        "src/shared/scroll/route-scroll-restorer.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9151,26 +9402,6 @@
         },
         {
           "dynamic": false,
-          "module": "@shared/scroll/scroll-restoration-config",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/scroll/scroll-restoration-config.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "@shared/services/media-service",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11893,74 +12124,6 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/hooks/useScrollPositionManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@shared/components/component-manager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/component-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/scroll/scroll-position-controller",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/scroll/scroll-position-controller.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/features/gallery/index.ts",
       "dependencies": [
         {
@@ -13210,6 +13373,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./scroll-restoration-config",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-restoration-config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@shared/logging",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13221,6 +13401,26 @@
             "import"
           ],
           "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/scroll/anchor-scroll-position-controller",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/anchor-scroll-position-controller.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -13271,15 +13471,6 @@
       ],
       "dependents": [
         "src/main.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/scroll/route-scroll-key-builder.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/scroll/route-scroll-restorer.ts"
       ],
       "orphan": false,
       "valid": true
@@ -16274,13 +16465,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/styles/unified-toolbar-style-manager.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/testing/StandardMockFactory.ts",
       "dependencies": [
         {
@@ -16993,13 +17177,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/types/core/test-categories.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/accessibility/barrel.ts",
       "dependencies": [
         {
@@ -17114,13 +17291,6 @@
       ],
       "dependents": [],
       "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/dom/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
       "valid": true
     },
     {
@@ -17456,13 +17626,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/types/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/types/cssmodule.d.ts",
       "dependencies": [],
       "dependents": [],
@@ -17476,8 +17639,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 269,
-    "totalDependenciesCruised": 766,
+    "totalCruised": 268,
+    "totalDependenciesCruised": 775,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
@@ -17791,7 +17954,7 @@
           "severity": "info",
           "from": {
             "orphan": true,
-            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$|^src/dev-scripts/.*[.](ts|mjs)$|^src/shared/styles/unified-toolbar-style-manager[.]ts$"
+            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$|^src/dev-scripts/.*[.](ts|mjs)$|^src/shared/styles/unified-toolbar-style-manager[.]ts$|^src/dev-scripts/styleTokenAnalyzer[.](?:ts|mjs)$|^src/features/gallery/types[.]ts$|^src/shared/types/core/test-categories[.]ts$|^src/shared/utils/memory/index[.]ts$"
           },
           "to": {},
           "scope": "module"

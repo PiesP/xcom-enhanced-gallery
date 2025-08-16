@@ -368,7 +368,18 @@ async function startApplication(): Promise<void> {
       const { initializeRouteScrollRestorer } = await import(
         '@shared/scroll/route-scroll-restorer'
       );
-      initializeRouteScrollRestorer({ enable: true, smooth: false, immediate: true });
+
+      // 브라우저 기본 스크롤 복원 강제 차단
+      try {
+        if (typeof window !== 'undefined' && window.history) {
+          window.history.scrollRestoration = 'manual';
+          logger.info('✅ 브라우저 기본 스크롤 복원 차단');
+        }
+      } catch (e) {
+        logger.warn('브라우저 스크롤 복원 차단 실패:', e);
+      }
+
+      initializeRouteScrollRestorer({ enable: true });
       logger.debug('✅ RouteScrollRestorer 초기화 완료');
     } catch (e) {
       logger.warn('RouteScrollRestorer 초기화 실패 (무시 가능):', e);

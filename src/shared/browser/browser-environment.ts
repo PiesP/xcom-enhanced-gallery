@@ -5,6 +5,7 @@
 
 import { logger } from '@shared/logging';
 import { TIME_CONSTANTS } from '@/constants';
+import { matchTimelinePath } from './timeline-path-config';
 
 // ----------------------------------------------------------------------------
 // Scroll Position Management Enhancements (Phase: Hardening)
@@ -187,10 +188,29 @@ export const restoreScrollPosition = (
     const win = safeWindow();
     if (!win) return false;
 
+    // 타임라인(홈/사용자) 경로 감지: 즉시 복원 강제 (smooth 무시)
+    let effectiveSmooth = smooth;
+    try {
+      const loc = win.location;
+      const pathname = loc?.pathname || '';
+      const { isTimeline } = matchTimelinePath(pathname);
+      logger.info('[restoreScrollPosition] 경로 분석:', {
+        pathname,
+        isTimeline,
+        originalSmooth: smooth,
+      });
+      if (isTimeline) {
+        effectiveSmooth = false; // 타임라인은 항상 즉시 복원
+        logger.info('[restoreScrollPosition] 타임라인 감지 - 즉시 복원 강제');
+      }
+    } catch {
+      // 위치 접근 실패 시 무시 (테스트/비브라우저 환경)
+    }
+
     const storageKey = buildScrollStorageKey(key);
     const savedData = sessionStorage.getItem(storageKey);
     if (!savedData) {
-      logger.debug('No saved scroll position found', { key: storageKey });
+      logger.info('[restoreScrollPosition] 저장된 스크롤 위치 없음', { key: storageKey });
       return false;
     }
 
@@ -200,6 +220,8 @@ export const restoreScrollPosition = (
       timestamp: number;
     };
 
+    logger.info('[restoreScrollPosition] 저장된 스크롤 데이터:', scrollData);
+
     // 만료 체크
     const age = Date.now() - (scrollData.timestamp || 0);
     if (age > SCROLL_POSITION_MAX_AGE_MS) {
@@ -208,8 +230,12 @@ export const restoreScrollPosition = (
       return false;
     }
 
-    if (smooth) {
+    if (effectiveSmooth) {
       // 명시적 smooth
+      logger.info('[restoreScrollPosition] smooth 스크롤 실행:', {
+        x: scrollData.x,
+        y: scrollData.y,
+      });
       win.scrollTo({
         left: scrollData.x || 0,
         top: scrollData.y || 0,
@@ -217,6 +243,10 @@ export const restoreScrollPosition = (
       });
     } else {
       // 즉시 복원 전략
+      logger.info('[restoreScrollPosition] 즉시 스크롤 실행:', {
+        x: scrollData.x,
+        y: scrollData.y,
+      });
       try {
         const docEl = win.document?.documentElement as HTMLElement | undefined;
         const originalInline = docEl ? docEl.style.scrollBehavior : '';
@@ -230,25 +260,12 @@ export const restoreScrollPosition = (
           top: scrollData.y || 0,
           behavior: 'auto',
         });
-
-        // 2차 보정: 레이아웃/콘텐츠 지연으로 목표와 차이 발생 시 재적용
-        const targetY = scrollData.y || 0;
-        const correctionDelay = TIME_CONSTANTS.MILLISECONDS_150; // 기존 상수 재사용
-        win.setTimeout?.(() => {
-          try {
-            const currentY = win.scrollY || win.pageYOffset || 0;
-            const POSITION_THRESHOLD = 4; // 허용 오차(px)
-            if (Math.abs(currentY - targetY) > POSITION_THRESHOLD) {
-              win.scrollTo({ left: scrollData.x || 0, top: targetY, behavior: 'auto' });
-            }
-          } finally {
-            if (docEl) {
-              docEl.style.scrollBehavior = originalInline;
-            }
-          }
-        }, correctionDelay);
+        // 2차 보정 로직 제거 (Anchor 기반 복원 도입으로 진동 방지)
+        if (docEl) docEl.style.scrollBehavior = originalInline;
+        logger.info('[restoreScrollPosition] 즉시 스크롤 완료');
       } catch {
         // 폴백: 기존 동작 유지
+        logger.info('[restoreScrollPosition] 폴백 스크롤 실행');
         win.scrollTo(scrollData.x || 0, scrollData.y || 0);
       }
     }

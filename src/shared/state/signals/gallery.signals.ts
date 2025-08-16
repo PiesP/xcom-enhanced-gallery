@@ -12,6 +12,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
 import { ScrollPositionController } from '@shared/scroll/scroll-position-controller';
+import { AnchorScrollPositionController } from '@shared/scroll/anchor-scroll-position-controller';
 import { getScrollRestorationConfig } from '@shared/scroll/scroll-restoration-config';
 import { setGalleryStateChecker } from '@shared/utils/events';
 
@@ -59,6 +60,8 @@ export type GalleryEvents = {
 
 // Preact Signals lazy initialization
 let galleryStateSignal: Signal<GalleryState> | null = null;
+
+// (Removed jitter multi-pass variables) - 단일 restore 로 단순화
 
 // Logger instance - 안전한 접근
 const logger: ILogger = defaultLogger;
@@ -132,10 +135,22 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   // (Phase1) Scroll position 저장: Controller 사용 (중복 방지를 위해 훅에서 또 저장한다면 향후 flag로 조정)
   try {
     if (getScrollRestorationConfig().enableSignalBasedGalleryScroll) {
-      ScrollPositionController.save();
+      logger.info('[Gallery] Signal 기반 스크롤 저장 시작');
+
+      // 이중 저장: 앵커 + 절대 좌표 모두 저장으로 안전장치 마련
+      // key 옵션 생략 시 자동으로 새로운 키 시스템 사용 (buildAnchorScrollKey 기반)
+      const anchorSaved = AnchorScrollPositionController.save();
+      logger.info('[Gallery] 앵커 저장 결과:', anchorSaved);
+
+      // 앵커 저장 성공 여부와 관계없이 절대 좌표도 항상 저장 (백업용)
+      const absoluteSaved = ScrollPositionController.save();
+      logger.info('[Gallery] 절대 좌표 백업 저장 결과:', absoluteSaved);
+    } else {
+      logger.info('[Gallery] Signal 기반 저장 비활성화됨');
     }
   } catch {
     // 비DOM 환경 보호
+    logger.warn('[Gallery] 스크롤 저장 중 예외 발생');
   }
 
   // 갤러리 오픈 시 재생 중인 모든 비디오 일시정지 (PC 전용 환경 가정)
@@ -251,14 +266,40 @@ export function closeGallery(): void {
     // 비DOM 환경 보호
   }
 
-  // 저장된 스크롤 위치로 복원
+  // 저장된 스크롤 위치로 복원 (강화된 앵커 우선 정책)
   try {
     if (getScrollRestorationConfig().enableSignalBasedGalleryScroll) {
-      // 즉시 복원 (애니메이션 제거). 훅이 이미 복원했으면 sessionStorage 항목이 없어 noop.
-      ScrollPositionController.restore({ smooth: false, mode: 'immediate' });
+      logger.info('[Gallery] Signal 기반 스크롤 복원 시작');
+
+      // 1차: 앵커 기반 즉시 복원 시도 (DOM 안정화를 위해 최소 타임아웃 허용)
+      // key 옵션 생략 시 자동으로 새로운 키 시스템 사용 (buildAnchorScrollKey 기반)
+      const anchorRestored = AnchorScrollPositionController.restore({
+        observe: false, // MutationObserver 대기 없이 즉시 시도
+        timeoutMs: 50, // DOM 안정화를 위한 최소 여유 (50ms)
+      });
+
+      if (!anchorRestored) {
+        // 2차: 앵커 실패 시 절대 좌표 즉시 복원 폴백
+        logger.info('[Gallery] 앵커 복원 실패 - 절대 좌표 복원 시도');
+        const absoluteRestored = ScrollPositionController.restore({
+          smooth: false, // 스크롤 애니메이션 완전 차단
+          mode: 'immediate', // 지연 없는 즉시 복원
+        });
+        logger.info('[Gallery] 절대 좌표 복원 결과:', absoluteRestored);
+      } else {
+        logger.info('[Gallery] 앵커 기반 즉시 복원 성공');
+      }
+    } else {
+      logger.info('[Gallery] Signal 기반 복원 비활성화됨');
     }
-  } catch {
-    // 비DOM 환경 보호
+  } catch (error) {
+    logger.warn('[Gallery] 스크롤 위치 복원 실패:', error);
+    // 예외 발생 시 최후 수단으로 절대 좌표 복원 시도
+    try {
+      ScrollPositionController.restore({ smooth: false, mode: 'immediate' });
+    } catch {
+      // 비DOM 환경 보호
+    }
   }
 
   // 상태 완전 초기화 - mediaItems도 함께 초기화

@@ -14,6 +14,13 @@
  * - 모바일 우선 터치 인터페이스
  */
 
+/* 전역 스크롤 동작 강제 차단 - X.com smooth scrolling 무력화 */
+html,
+body,
+* {
+  scroll-behavior: auto !important;
+}
+
 /* 갤러리 오버레이 - 통합 색상 시스템 적용 */
 .xeg-gallery-overlay {
   position: fixed;

@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
+  setScrollRestorationConfig,
+  resetScrollRestorationConfig,
+} from '@shared/scroll/scroll-restoration-config';
+import {
   saveScrollPosition,
   restoreScrollPosition,
   clearScrollPosition,
@@ -18,6 +22,7 @@ describe('Scroll Position Enhancements', () => {
   beforeEach(() => {
     sessionStorage.clear();
     vi.restoreAllMocks();
+    resetScrollRestorationConfig();
     Object.defineProperty(window, 'location', {
       value: new URL('https://x.com/example/path'),
       writable: true,
@@ -55,17 +60,22 @@ describe('Scroll Position Enhancements', () => {
     expect(sessionStorage.getItem(namespacedKey)).toBeNull();
   });
 
-  it('performs secondary correction when initial offset remains', () => {
-    // Save at Y=345
+  it('no longer performs secondary correction (multi-pass removed)', () => {
+    // 이전에는 멀티 패스 활성화 시 2차 호출이 존재했으나 Anchor 기반 전략으로 제거됨
+    setScrollRestorationConfig({ disableMultiPassScrollCorrection: false });
     expect(saveScrollPosition()).toBe(true);
-    // 사용자 스크롤이 위로 이동했다고 가정 (0)
     setWindowScroll(0, 0);
     expect(restoreScrollPosition()).toBe(true);
-    // 첫 즉시 호출
-    expect((window.scrollTo as unknown as vi.Mock).mock.calls[0][0]).toMatchObject({ top: 345 });
-    // jsdom에서는 scrollY 자동 업데이트가 안 되므로 차이 남아서 2차 보정 예정
-    vi.advanceTimersByTime(200);
-    expect((window.scrollTo as unknown as vi.Mock).mock.calls.length).toBeGreaterThanOrEqual(2);
+    vi.advanceTimersByTime(300);
+    expect((window.scrollTo as unknown as vi.Mock).mock.calls.length).toBe(1);
+  });
+
+  it('still performs only one restore call with default config', () => {
+    expect(saveScrollPosition()).toBe(true);
+    setWindowScroll(0, 0);
+    expect(restoreScrollPosition()).toBe(true);
+    vi.advanceTimersByTime(300);
+    expect((window.scrollTo as unknown as vi.Mock).mock.calls.length).toBe(1);
   });
 
   it('clearScrollPosition removes namespaced entry', () => {

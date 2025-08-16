@@ -43,3 +43,11 @@ export { BrowserService } from './browser-service';
 export { browserAPI, browserUtils } from './browser-compat';
 // Phase 4: Service Naming Standardization - browserService export 추가
 export { browserService } from './browser-service';
+export {
+  HOME_TIMELINE_PATHS,
+  USER_HANDLE_ALLOWED_CHARS,
+  USER_HANDLE_MIN_LENGTH,
+  USER_HANDLE_MAX_LENGTH,
+  USER_TIMELINE_REGEX,
+  matchTimelinePath,
+} from './timeline-path-config';

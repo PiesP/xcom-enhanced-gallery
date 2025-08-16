@@ -20,7 +20,7 @@ function expectedKey(base = 'scrollPosition') {
 }
 
 describe('ScrollPositionController / browser-environment integration', () => {
-  const KEY = expectedKey();
+  const dynamicKey = () => expectedKey();
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -40,7 +40,7 @@ describe('ScrollPositionController / browser-environment integration', () => {
     (window as any).scrollY = 250;
     const ok = saveScrollPosition();
     expect(ok).toBe(true);
-    const raw = readRaw(KEY);
+    const raw = readRaw(dynamicKey());
     expect(raw).toBeTruthy();
     const parsed = JSON.parse(raw!);
     expect(parsed.y).toBe(250);
@@ -79,10 +79,10 @@ describe('ScrollPositionController / browser-environment integration', () => {
   it('discards expired saved position based on timestamp', () => {
     // 인위적으로 만료된 항목 저장
     const expired = { x: 0, y: 400, timestamp: Date.now() - (SCROLL_POSITION_MAX_AGE_MS + 10) };
-    sessionStorage.setItem(KEY, JSON.stringify(expired));
+    sessionStorage.setItem(dynamicKey(), JSON.stringify(expired));
     const ok = restoreScrollPosition();
     expect(ok).toBe(false);
-    expect(readRaw(KEY)).toBeNull();
+    expect(readRaw(dynamicKey())).toBeNull();
   });
 
   it('controller delayed mode schedules restore (returns true even before execution)', () => {
@@ -98,6 +98,11 @@ describe('ScrollPositionController / browser-environment integration', () => {
   });
 
   it('smooth option triggers smooth behavior parameter', () => {
+    // 비-타임라인 경로 설정 (타임라인은 강제 auto)
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/i/notifications' },
+      configurable: true,
+    });
     (window as any).scrollX = 0;
     (window as any).scrollY = 555;
     saveScrollPosition();
@@ -108,11 +113,16 @@ describe('ScrollPositionController / browser-environment integration', () => {
   });
 
   it('clear removes existing saved position explicitly', () => {
+    // 비-타임라인 경로로 설정하여 키 네임스페이스 케이스도 커버
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/i/test' },
+      configurable: true,
+    });
     (window as any).scrollX = 0;
     (window as any).scrollY = 42;
-    saveScrollPosition();
-    expect(readRaw(KEY)).toBeTruthy();
+    expect(saveScrollPosition()).toBe(true);
+    expect(readRaw(dynamicKey())).toBeTruthy();
     clearScrollPosition();
-    expect(readRaw(KEY)).toBeNull();
+    expect(readRaw(dynamicKey())).toBeNull();
   });
 });
