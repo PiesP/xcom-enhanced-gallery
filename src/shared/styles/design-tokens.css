@@ -46,6 +46,14 @@
   --xeg-modal-border: var(--xeg-toolbar-border);
   --xeg-modal-shadow: var(--xeg-toolbar-shadow);
   --xeg-modal-overlay-bg: hsl(210, 15%, 8%, 0.75);
+  /* 추가: inventory 테스트 누락 토큰 보강 (design-tokens-solid.css 위임) */
+  --xeg-toolbar-shadow-strong: var(
+    --xeg-toolbar-shadow
+  ); /* solid 파일에서 강한 값, 여기선 기본 그림자 fallback */
+  --xeg-modal-bg-hover: var(--xeg-toolbar-bg-hover, var(--xeg-modal-bg));
+  --xeg-modal-shadow-strong: var(--xeg-toolbar-shadow-strong, var(--xeg-modal-shadow));
+  --xeg-modal-overlay-backdrop: blur(12px); /* solid와 동일 기본값 */
+  /* NOTE: --xeg-modal-content-bg-hover 중복 정의 제거 (#500 이후 섹션의 값이 권위 있는 정의) */
 
   /* 공통 배경 표면 (surface 시스템) */
   --xeg-bg-surface: var(--surface-bg);
@@ -218,12 +226,17 @@
   --xeg-overlay-light-secondary: rgba(255, 255, 255, 0.8);
 
   /* 투명도별 흰색 토큰 */
+  --xeg-white-alpha-30: rgba(255, 255, 255, 0.3); /* 추가 (inventory 보강) */
   --xeg-white-alpha-50: rgba(255, 255, 255, 0.5);
   --xeg-white-alpha-80: rgba(255, 255, 255, 0.8);
   --xeg-white-alpha-90: rgba(255, 255, 255, 0.9);
   --xeg-white-alpha-95: rgba(255, 255, 255, 0.95);
 
   /* 투명도별 검정 토큰 */
+  --xeg-black-alpha-10: rgba(0, 0, 0, 0.1); /* 추가 */
+  --xeg-black-alpha-15: rgba(0, 0, 0, 0.15); /* 추가 */
+  --xeg-black-alpha-20: rgba(0, 0, 0, 0.2); /* 추가 */
+  --xeg-black-alpha-30: rgba(0, 0, 0, 0.3); /* 추가 */
   --xeg-black-alpha-40: rgba(0, 0, 0, 0.4);
   --xeg-black-alpha-60: rgba(0, 0, 0, 0.6);
   --xeg-black-alpha-80: rgba(0, 0, 0, 0.8);

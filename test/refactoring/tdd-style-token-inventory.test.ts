@@ -24,6 +24,7 @@ describe('Style Token Inventory (Toolbar vs Settings Modal)', () => {
     });
 
     // 최소 누락 토큰 집합 (테스트 기준)
+    // 진단 출력 (추후 제거)
     expect(result.missingTokens.size).toBe(0);
   });
 });

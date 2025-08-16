@@ -11,8 +11,9 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
-import { BrowserService } from '@shared/browser';
-import { destroyGalleryEvents, setGalleryStateChecker } from '@shared/utils/events';
+import { ScrollPositionController } from '@shared/scroll/scroll-position-controller';
+import { getScrollRestorationConfig } from '@shared/scroll/scroll-restoration-config';
+import { setGalleryStateChecker } from '@shared/utils/events';
 
 // Signal type (align with Preact signals: subscribe returns unsubscribe)
 type Signal<T> = {
@@ -128,8 +129,11 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = Math.max(0, Math.min(startIndex, items.length - 1));
 
   // 현재 스크롤 위치 저장
+  // (Phase1) Scroll position 저장: Controller 사용 (중복 방지를 위해 훅에서 또 저장한다면 향후 flag로 조정)
   try {
-    BrowserService.scroll.save();
+    if (getScrollRestorationConfig().enableSignalBasedGalleryScroll) {
+      ScrollPositionController.save();
+    }
   } catch {
     // 비DOM 환경 보호
   }
@@ -249,7 +253,10 @@ export function closeGallery(): void {
 
   // 저장된 스크롤 위치로 복원
   try {
-    BrowserService.scroll.restore();
+    if (getScrollRestorationConfig().enableSignalBasedGalleryScroll) {
+      // 즉시 복원 (애니메이션 제거). 훅이 이미 복원했으면 sessionStorage 항목이 없어 noop.
+      ScrollPositionController.restore({ smooth: false, mode: 'immediate' });
+    }
   } catch {
     // 비DOM 환경 보호
   }
@@ -268,15 +275,15 @@ export function closeGallery(): void {
 
   // 이벤트 시스템 정리 - TDD GREEN 단계: 완전 정리로 변경
   try {
-    // 1. 글로벌 훅을 통한 정리 (기존)
+    // 설계 변경(2025-08-16): closeGallery 는 "부분 정리"만 수행하여
+    // 캡처 단계 리스너를 유지하고 다음 미디어 클릭에서 재초기화(reinitialize)되도록 한다.
+    // 실환경 문제: 완전 정리(destroy) 시 두 번째 클릭에서 트위터 네이티브 갤러리가 가로채는 이슈.
+    // 해결: cleanupGalleryEvents() 만 호출 -> listener 유지 + isGalleryClosing=true 설정.
     const g: any = globalThis as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     if (typeof g.__XEG_cleanupGalleryEvents === 'function') {
-      g.__XEG_cleanupGalleryEvents();
+      g.__XEG_cleanupGalleryEvents(); // 내부적으로 cleanupGalleryEvents() 호출
     }
-
-    // 2. TDD GREEN: Gallery Lifecycle 테스트 요구사항 충족
-    // closeGallery() 후 모든 이벤트 리스너가 정리되어야 함
-    destroyGalleryEvents();
+    // destroyGalleryEvents() 는 GalleryApp.cleanup() 시점에만 수행.
   } catch (error) {
     logger.warn('[Gallery] 이벤트 정리 실패:', error);
   }

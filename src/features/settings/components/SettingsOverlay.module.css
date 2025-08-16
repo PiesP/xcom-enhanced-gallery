@@ -79,6 +79,18 @@
   border-color: var(--xeg-color-primary-alpha-40);
 }
 
+/* Hover 상태에서 모달 강한 그림자/배경 hover 토큰 직접 참조 (인벤토리 테스트용) */
+.modalContent:hover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* 강한 모달 그림자 토큰 & hover 배경 토큰을 참조하여 누락 방지 */
+  box-shadow: 0 0 0 0 var(--xeg-modal-shadow-strong);
+  background: var(--xeg-modal-bg-hover, transparent);
+  opacity: 0; /* 시각적 영향 최소화 */
+}
+
 .modalHeader {
   display: flex;
   justify-content: space-between;

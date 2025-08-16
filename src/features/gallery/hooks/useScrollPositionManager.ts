@@ -4,8 +4,7 @@
  */
 
 import { ComponentManager } from '@shared/components/component-manager';
-import { SIZE_CONSTANTS } from '@/constants';
-import { BrowserService } from '@shared/browser';
+import { ScrollPositionController } from '@shared/scroll/scroll-position-controller';
 import { logger } from '@shared/logging';
 
 const { useEffect, useCallback } = ComponentManager.getHookManager();
@@ -59,7 +58,7 @@ export function useScrollPositionManager({
     if (!enabled) return;
 
     try {
-      BrowserService.scroll.save();
+      ScrollPositionController.save();
       logger.debug('[ScrollPositionManager] 스크롤 위치 저장 완료');
     } catch (error) {
       logger.warn('[ScrollPositionManager] 스크롤 위치 저장 실패:', error);
@@ -71,7 +70,7 @@ export function useScrollPositionManager({
     if (!enabled) return;
 
     try {
-      BrowserService.scroll.restore();
+      ScrollPositionController.restore({ smooth: false, mode: 'immediate' });
       logger.debug('[ScrollPositionManager] 스크롤 위치 복원 완료');
     } catch (error) {
       logger.warn('[ScrollPositionManager] 스크롤 위치 복원 실패:', error);
@@ -81,7 +80,7 @@ export function useScrollPositionManager({
   // 저장된 위치 초기화
   const clearPosition = useCallback(() => {
     try {
-      BrowserService.scroll.clear();
+      ScrollPositionController.clear();
       logger.debug('[ScrollPositionManager] 저장된 스크롤 위치 초기화 완료');
     } catch (error) {
       logger.warn('[ScrollPositionManager] 스크롤 위치 초기화 실패:', error);
@@ -92,26 +91,42 @@ export function useScrollPositionManager({
   useEffect(() => {
     if (!enabled) return;
 
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
     if (isGalleryOpen) {
-      // 갤러리가 열렸을 때 스크롤 위치 저장
+      // 갤러리가 열렸을 때 스크롤 위치 저장 (즉시)
       saveCurrentPosition();
       onGalleryOpen?.();
-    } else {
-      // 갤러리가 닫혔을 때 스크롤 위치 복원
-      // 약간의 지연을 두어 DOM 변경이 완료된 후 복원
-      timeoutId = setTimeout(() => {
-        restorePosition();
-        onGalleryClose?.();
-      }, SIZE_CONSTANTS.TEN);
+      return;
     }
 
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+    // 갤러리가 닫힐 때: 언마운트 직전이라도 즉시 복원하여 timeout 취소 문제 제거
+    // 1) 즉시 복원 (가장 신뢰도 높음)
+    try {
+      restorePosition();
+    } catch (e) {
+      logger.warn('[ScrollPositionManager] 즉시 복원 중 오류:', e);
+    }
+
+    // 2) 레이아웃/스타일 적용이 늦게 완료되는 경우를 대비한 1~2프레임 후 보정 복원 (선택적)
+    // requestAnimationFrame 이 존재하는 환경에서만 실행하며 실패해도 무시
+    const raf = (cb: () => void) => {
+      try {
+        if (typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(() => {
+            try {
+              cb();
+            } catch (err) {
+              logger.debug('[ScrollPositionManager] rAF 보정 실패:', err);
+            }
+          });
+        }
+      } catch {
+        // ignore
       }
     };
+    raf(() => restorePosition());
+    raf(() => restorePosition()); // 2프레임 보정 (갤러리 오버레이 제거 후 스크롤바 reflow 대비)
+
+    onGalleryClose?.();
   }, [isGalleryOpen, enabled, saveCurrentPosition, restorePosition, onGalleryOpen, onGalleryClose]);
 
   return {

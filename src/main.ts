@@ -363,6 +363,17 @@ async function startApplication(): Promise<void> {
       startupTime: `${duration.toFixed(2)}ms`,
     });
 
+    // Route 기반 스크롤 자동 복원 초기화 (즉시 / smooth X)
+    try {
+      const { initializeRouteScrollRestorer } = await import(
+        '@shared/scroll/route-scroll-restorer'
+      );
+      initializeRouteScrollRestorer({ enable: true, smooth: false, immediate: true });
+      logger.debug('✅ RouteScrollRestorer 초기화 완료');
+    } catch (e) {
+      logger.warn('RouteScrollRestorer 초기화 실패 (무시 가능):', e);
+    }
+
     // 개발 환경에서 전역 접근 제공
     if (import.meta.env.DEV) {
       (globalThis as Record<string, unknown>).__XEG_MAIN__ = {

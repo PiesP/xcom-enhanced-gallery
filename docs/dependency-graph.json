@@ -358,7 +358,6 @@
         "src/core/performance/metrics-collector.ts",
         "src/core/performance/performance-integration.ts",
         "src/core/performance/performance-monitor.ts",
-        "src/features/gallery/hooks/useScrollPositionManager.ts",
         "src/shared/services/gallery/GalleryService.ts",
         "src/shared/types/core/core-types.ts",
         "src/main.ts",
@@ -744,6 +743,7 @@
         "src/shared/external/vendors/vendor-api.ts",
         "src/shared/external/vendors/vendor-service.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
+        "src/shared/scroll/scroll-position-controller.ts",
         "src/shared/browser/browser-environment.ts",
         "src/shared/browser/browser-service.ts",
         "src/shared/browser/browser-css-utils.ts",
@@ -806,6 +806,7 @@
         "src/shared/services/gallery/GalleryService.ts",
         "src/main.ts",
         "src/shared/browser-environment/page-unload-cleanup.ts",
+        "src/shared/scroll/route-scroll-restorer.ts",
         "src/shared/utils/accessibility/accessibility-service.ts",
         "src/shared/dom/unified-dom-service.ts",
         "src/shared/error/error-handler.ts",
@@ -1486,26 +1487,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "@shared/browser",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/browser/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "@shared/external/vendors",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1517,6 +1498,46 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/scroll/scroll-position-controller",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-position-controller.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/scroll/scroll-restoration-config",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-restoration-config.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1601,6 +1622,58 @@
       "valid": true
     },
     {
+      "source": "src/shared/scroll/scroll-position-controller.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/browser",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/browser/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/state/signals/gallery.signals.ts",
+        "src/features/gallery/hooks/useScrollPositionManager.ts",
+        "src/shared/scroll/route-scroll-restorer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/browser/index.ts",
       "dependencies": [
         {
@@ -1673,8 +1746,7 @@
         }
       ],
       "dependents": [
-        "src/shared/state/signals/gallery.signals.ts",
-        "src/features/gallery/hooks/useScrollPositionManager.ts",
+        "src/shared/scroll/scroll-position-controller.ts",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -1869,6 +1941,16 @@
         "src/shared/browser/index.ts",
         "src/shared/browser/browser-service.ts",
         "src/shared/styles/unified-style-manager.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/scroll/scroll-restoration-config.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/state/signals/gallery.signals.ts",
+        "src/features/gallery/gallery-app.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9069,6 +9151,26 @@
         },
         {
           "dynamic": false,
+          "module": "@shared/scroll/scroll-restoration-config",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-restoration-config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@shared/services/media-service",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11795,46 +11897,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "@/constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/browser",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/browser/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "@shared/components/component-manager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11866,6 +11928,26 @@
             "import"
           ],
           "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/scroll/scroll-position-controller",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-position-controller.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12801,6 +12883,26 @@
         },
         {
           "dynamic": true,
+          "module": "@shared/scroll/route-scroll-restorer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/scroll/route-scroll-restorer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
           "module": "@shared/services/core-services",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13099,6 +13201,85 @@
       ],
       "dependents": [
         "src/main.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/scroll/route-scroll-restorer.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/scroll/route-scroll-key-builder",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/route-scroll-key-builder.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/scroll/scroll-position-controller",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/scroll/scroll-position-controller.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/main.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/scroll/route-scroll-key-builder.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/scroll/route-scroll-restorer.ts"
       ],
       "orphan": false,
       "valid": true
@@ -17295,8 +17476,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 265,
-    "totalDependenciesCruised": 759,
+    "totalCruised": 269,
+    "totalDependenciesCruised": 766,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

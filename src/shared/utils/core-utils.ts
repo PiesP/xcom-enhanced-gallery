@@ -124,10 +124,42 @@ export function findTwitterScrollContainer(): HTMLElement | null {
 /**
  * 스크롤 위치 안전 설정
  */
-export function safeSetScrollTop(element: HTMLElement | Window, top: number): void {
+export interface SafeSetScrollTopOptions {
+  /** 부드러운 스크롤 여부 (기본: false - 즉시 이동) */
+  smooth?: boolean;
+  /** scroll-behavior 전역 CSS를 무력화하기 위한 임시 강제 (기본: true) */
+  forceImmediateBehaviorReset?: boolean;
+}
+
+/**
+ * 스크롤 위치 안전 설정 (기본: 즉시 이동 - 애니메이션 제거)
+ * - 전역 html/body { scroll-behavior: smooth } 규칙이 있을 때도 즉시 이동 보장
+ * - 필요 시 smooth 옵션을 true 로 전달하여 부드러운 이동 허용
+ */
+export function safeSetScrollTop(
+  element: HTMLElement | Window,
+  top: number,
+  options: SafeSetScrollTopOptions = {}
+): void {
+  const { smooth = false, forceImmediateBehaviorReset = true } = options;
   try {
     if (element === window) {
-      window.scrollTo({ top, behavior: 'smooth' });
+      // 전역 smooth CSS 무력화를 위해 html 요소 scroll-behavior 임시 수정
+      const docEl = document.documentElement as HTMLElement | undefined;
+      let previous: string | undefined;
+      let changed = false;
+      if (!smooth && forceImmediateBehaviorReset && docEl) {
+        previous = docEl.style.scrollBehavior;
+        docEl.style.scrollBehavior = 'auto';
+        changed = true;
+      }
+      try {
+        window.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
+      } finally {
+        if (changed && docEl) {
+          docEl.style.scrollBehavior = previous ?? '';
+        }
+      }
     } else {
       (element as HTMLElement).scrollTop = top;
     }

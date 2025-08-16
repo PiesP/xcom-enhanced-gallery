@@ -66,6 +66,7 @@ describe('[TDD][RED][Phase2] UNUSED 디자인 토큰 2차 감축', () => {
       console.log(`  ${(i + 1).toString().padStart(2)}: ${token}`);
     });
 
+    // 유지: RED 기준 (목표 150) - 현재 156 -> 실패 유지 (회귀 감시)
     expect(effectiveUnused.length).toBeLessThanOrEqual(150);
   });
 });

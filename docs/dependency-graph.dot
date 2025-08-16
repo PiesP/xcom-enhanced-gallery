@@ -128,6 +128,7 @@ strict digraph "dependency-cruiser output"{
     "src/features/gallery/gallery-app.ts" -> "src/shared/dom/index.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/features/gallery/gallery-app.ts" -> "src/shared/interfaces/gallery.interfaces.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/features/gallery/gallery-app.ts" -> "src/shared/logging/index.ts"
+    "src/features/gallery/gallery-app.ts" -> "src/shared/scroll/scroll-restoration-config.ts"
     "src/features/gallery/gallery-app.ts" -> "src/shared/services/media-service.ts"
     "src/features/gallery/gallery-app.ts" -> "src/shared/services/service-manager.ts"
     "src/features/gallery/gallery-app.ts" -> "src/shared/services/toast-service.ts"
@@ -166,10 +167,9 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/hooks" {label="hooks" "src/features/gallery/hooks/use-toolbar.ts" [label=<use-toolbar.ts> tooltip="use-toolbar.ts" URL="src/features/gallery/hooks/use-toolbar.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     "src/features/gallery/hooks/use-toolbar.ts" -> "src/shared/hooks/useToolbar.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/hooks" {label="hooks" "src/features/gallery/hooks/useScrollPositionManager.ts" [label=<useScrollPositionManager.ts> tooltip="useScrollPositionManager.ts" URL="src/features/gallery/hooks/useScrollPositionManager.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
-    "src/features/gallery/hooks/useScrollPositionManager.ts" -> "src/constants.ts"
-    "src/features/gallery/hooks/useScrollPositionManager.ts" -> "src/shared/browser/index.ts"
     "src/features/gallery/hooks/useScrollPositionManager.ts" -> "src/shared/components/component-manager.ts"
     "src/features/gallery/hooks/useScrollPositionManager.ts" -> "src/shared/logging/index.ts"
+    "src/features/gallery/hooks/useScrollPositionManager.ts" -> "src/shared/scroll/scroll-position-controller.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/features/gallery/index.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     "src/features/gallery/index.ts" -> "src/features/gallery/components/vertical-gallery-view/index.ts" [arrowhead="inv"]
     "src/features/gallery/index.ts" -> "src/features/gallery/gallery-app.ts" [arrowhead="inv"]
@@ -242,6 +242,7 @@ strict digraph "dependency-cruiser output"{
     "src/main.ts" -> "src/shared/dom/index.ts"
     "src/main.ts" -> "src/shared/external/vendors.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/main.ts" -> "src/shared/logging/index.ts"
+    "src/main.ts" -> "src/shared/scroll/route-scroll-restorer.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/main.ts" -> "src/shared/services/core-services.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/main.ts" -> "src/shared/services/service-manager.ts"
     "src/main.ts" -> "src/shared/styles/style-bootstrapper.ts"
@@ -530,6 +531,15 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/memory" {label="memory" "src/shared/memory/unified-memory-manager.ts" [label=<unified-memory-manager.ts> tooltip="unified-memory-manager.ts" URL="src/shared/memory/unified-memory-manager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/memory/unified-memory-manager.ts" -> "src/constants.ts"
     "src/shared/memory/unified-memory-manager.ts" -> "src/shared/logging/index.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/route-scroll-key-builder.ts" [label=<route-scroll-key-builder.ts> tooltip="route-scroll-key-builder.ts" URL="src/shared/scroll/route-scroll-key-builder.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/route-scroll-restorer.ts" [label=<route-scroll-restorer.ts> tooltip="route-scroll-restorer.ts" URL="src/shared/scroll/route-scroll-restorer.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/logging/index.ts"
+    "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/scroll/route-scroll-key-builder.ts"
+    "src/shared/scroll/route-scroll-restorer.ts" -> "src/shared/scroll/scroll-position-controller.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/scroll-position-controller.ts" [label=<scroll-position-controller.ts> tooltip="scroll-position-controller.ts" URL="src/shared/scroll/scroll-position-controller.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/scroll/scroll-position-controller.ts" -> "src/shared/browser/index.ts"
+    "src/shared/scroll/scroll-position-controller.ts" -> "src/shared/logging/index.ts"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/scroll" {label="scroll" "src/shared/scroll/scroll-restoration-config.ts" [label=<scroll-restoration-config.ts> tooltip="scroll-restoration-config.ts" URL="src/shared/scroll/scroll-restoration-config.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/ThemeService.ts" [label=<ThemeService.ts> tooltip="ThemeService.ts" URL="src/shared/services/ThemeService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/services/ThemeService.ts" -> "src/shared/services/theme-service.ts"
     "src/shared/services/ThemeService.ts" -> "src/shared/services/theme-service.ts" [arrowhead="onormal" penwidth="1.0"]
@@ -737,8 +747,9 @@ strict digraph "dependency-cruiser output"{
     "src/shared/state/signals/download.signals.ts" -> "src/shared/types/core/core-types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/state/signals/download.signals.ts" -> "src/shared/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/state" {label="state" subgraph "cluster_src/shared/state/signals" {label="signals" "src/shared/state/signals/gallery.signals.ts" [label=<gallery.signals.ts> tooltip="gallery.signals.ts" URL="src/shared/state/signals/gallery.signals.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
-    "src/shared/state/signals/gallery.signals.ts" -> "src/shared/browser/index.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/external/vendors.ts"
+    "src/shared/state/signals/gallery.signals.ts" -> "src/shared/scroll/scroll-position-controller.ts"
+    "src/shared/state/signals/gallery.signals.ts" -> "src/shared/scroll/scroll-restoration-config.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/services/core-services.ts"
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/types/media.types.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/state/signals/gallery.signals.ts" -> "src/shared/utils/events.ts"
