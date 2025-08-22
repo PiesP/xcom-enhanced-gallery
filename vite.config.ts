@@ -89,12 +89,9 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
 // @license      MIT
 // @match        https://x.com/*
 // @match        https://*.x.com/*
-// @grant        GM_registerMenuCommand
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_download
-// @grant        GM_openInTab
-// @grant        GM_notification
 // @grant        GM_xmlhttpRequest
 // @connect      pbs.twimg.com
 // @connect      video.twimg.com

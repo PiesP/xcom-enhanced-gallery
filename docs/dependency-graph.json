@@ -975,41 +975,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./virtual/VirtualGallery",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/virtual/VirtualGallery.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./virtual/VirtualGallery",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/virtual/VirtualGallery.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -1453,15 +1418,6 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Toolbar/Toolbar.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/virtual/VirtualGallery.tsx",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6464,8 +6420,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 181,
-    "totalDependenciesCruised": 271,
+    "totalCruised": 180,
+    "totalDependenciesCruised": 269,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
