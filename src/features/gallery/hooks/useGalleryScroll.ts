@@ -8,7 +8,7 @@
 
 import { getPreactHooks } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
-import { createEventManager } from '@shared/dom/DOMEventManager';
+import { UnifiedEventManager } from '@shared/services/UnifiedEventManager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { findTwitterScrollContainer } from '@shared/utils';
 
@@ -58,7 +58,7 @@ export function useGalleryScroll({
   enableScrollDirection = false,
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
-  const eventManagerRef = useRef(createEventManager());
+  const eventManagerRef = useRef(new UnifiedEventManager());
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
   const scrollTimeoutRef = useRef<number | null>(null);

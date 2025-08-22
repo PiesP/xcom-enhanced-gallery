@@ -83,6 +83,7 @@ export class CoreService {
 
   /**
    * 진단 정보 조회
+   * @deprecated v1.1.0 - UnifiedServiceDiagnostics.getServiceStatus()를 사용하세요
    */
   public getDiagnostics(): {
     registeredServices: number;

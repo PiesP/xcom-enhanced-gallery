@@ -93,6 +93,7 @@ export class BrowserService {
 
   /**
    * 진단 정보 조회
+   * @deprecated v1.1.0 - UnifiedServiceDiagnostics.getBrowserDiagnostics()를 사용하세요
    */
   public getDiagnostics(): {
     injectedStylesCount: number;

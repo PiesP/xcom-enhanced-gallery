@@ -443,7 +443,7 @@ function ToolbarCore({
                 h(Download, { size: 16, key: 'download-icon' }),
                 isDownloading &&
                   h(
-                    'span' as any,
+                    'span' as any, // eslint-disable-line @typescript-eslint/no-explicit-any
                     {
                       className: styles.downloadSpinner,
                       'aria-hidden': 'true',

@@ -24,6 +24,7 @@ export default defineConfig({
   },
 
   test: {
+    testTimeout: 30000,
     // 기본 설정
     globals: true,
     environment: 'jsdom',

@@ -652,6 +652,10 @@ export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOption
 // 통합 이벤트 관리자 클래스
 // ================================
 
+/**
+ * 통합 이벤트 관리자 클래스
+ * @deprecated UnifiedEventManager를 사용하세요
+ */
 export class GalleryEventManager {
   private static instance: GalleryEventManager | null = null;
 
@@ -841,5 +845,6 @@ export function handleTwitterEvent(
 
 /**
  * TwitterEventManager 클래스 (GalleryEventManager의 별칭)
+ * @deprecated UnifiedEventManager를 사용하세요
  */
 export const TwitterEventManager = GalleryEventManager;
