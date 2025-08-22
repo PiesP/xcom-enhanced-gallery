@@ -462,7 +462,8 @@ export const compareVerticalImageItemProps = (
 
 // memo를 적용한 최적화된 컴포넌트
 const { memo } = getPreactCompat();
-const BaseVerticalImageItem = memo(BaseVerticalImageItemCore, compareVerticalImageItemProps);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const BaseVerticalImageItem = memo(BaseVerticalImageItemCore as any, compareVerticalImageItemProps);
 
 // displayName 설정
 Object.defineProperty(BaseVerticalImageItem, 'displayName', {
@@ -472,7 +473,8 @@ Object.defineProperty(BaseVerticalImageItem, 'displayName', {
 });
 
 // Gallery Marker HOC를 적용한 VerticalImageItem
-export const VerticalImageItem = withGallery(BaseVerticalImageItem, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const VerticalImageItem = withGallery(BaseVerticalImageItem as any, {
   type: 'item',
   className: 'vertical-item',
   events: {

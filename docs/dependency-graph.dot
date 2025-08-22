@@ -178,8 +178,6 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/useDOMReady.ts" [label=<useDOMReady.ts> tooltip="useDOMReady.ts" URL="src/shared/hooks/useDOMReady.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/useScrollDirection.ts" [label=<useScrollDirection.ts> tooltip="useScrollDirection.ts" URL="src/shared/hooks/useScrollDirection.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/useToolbarState.ts" [label=<useToolbarState.ts> tooltip="useToolbarState.ts" URL="src/shared/hooks/useToolbarState.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/hooks" {label="hooks" "src/shared/hooks/useVirtualScroll.ts" [label=<useVirtualScroll.ts> tooltip="useVirtualScroll.ts" URL="src/shared/hooks/useVirtualScroll.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
-    "src/shared/hooks/useVirtualScroll.ts" -> "src/shared/utils/virtual-scroll/index.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" "src/shared/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } }
     "src/shared/index.ts" -> "src/shared/components/hoc/index.ts" [arrowhead="inv"]
     "src/shared/index.ts" -> "src/shared/components/isolation/index.ts" [arrowhead="inv"]
@@ -435,10 +433,6 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/utils.ts" -> "src/shared/utils/performance/performance-utils.ts" [arrowhead="inv"]
     "src/shared/utils/utils.ts" -> "src/shared/utils/scroll/index.ts" [arrowhead="inv"]
     "src/shared/utils/utils.ts" -> "src/shared/utils/styles/css-utilities.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/virtual-scroll" {label="virtual-scroll" "src/shared/utils/virtual-scroll/ScrollHelper.ts" [label=<ScrollHelper.ts> tooltip="ScrollHelper.ts" URL="src/shared/utils/virtual-scroll/ScrollHelper.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/virtual-scroll" {label="virtual-scroll" "src/shared/utils/virtual-scroll/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/utils/virtual-scroll/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
-    "src/shared/utils/virtual-scroll/index.ts" -> "src/shared/utils/virtual-scroll/ScrollHelper.ts" [arrowhead="inv"]
-    "src/shared/utils/virtual-scroll/index.ts" -> "src/shared/utils/virtual-scroll/ScrollHelper.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/styles" {label="styles" "src/styles/globals.ts" [label=<globals.ts> tooltip="globals.ts" URL="src/styles/globals.ts" fillcolor="#ddfeff"] } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/types" {label="types" "src/types/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/types/index.ts" fillcolor="#ddfeff"] } }
     "src/types/index.ts" -> "src/shared/types/core/index.ts" [arrowhead="inv"]

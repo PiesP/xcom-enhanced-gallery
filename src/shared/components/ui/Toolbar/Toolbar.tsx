@@ -302,7 +302,8 @@ function ToolbarCore({
             },
             [
               h(
-                'span',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                'span' as any,
                 {
                   className: styles.mediaCounter,
                   'aria-live': 'polite',
@@ -562,7 +563,8 @@ function ToolbarCore({
                 ),
                 isDownloading &&
                   h(
-                    'span',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    'span' as any,
                     {
                       className: styles.downloadSpinner,
                       'aria-hidden': 'true',

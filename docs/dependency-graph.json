@@ -2582,85 +2582,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/hooks/useVirtualScroll.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../utils/virtual-scroll",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/virtual-scroll/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/virtual-scroll/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./ScrollHelper",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/virtual-scroll/ScrollHelper.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ScrollHelper",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/utils/virtual-scroll/ScrollHelper.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/hooks/useVirtualScroll.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/virtual-scroll/ScrollHelper.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/virtual-scroll/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/index.ts",
       "dependencies": [
         {
@@ -6420,8 +6341,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 180,
-    "totalDependenciesCruised": 269,
+    "totalCruised": 177,
+    "totalDependenciesCruised": 266,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

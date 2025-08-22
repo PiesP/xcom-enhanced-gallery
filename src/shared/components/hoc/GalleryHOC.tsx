@@ -133,7 +133,8 @@ export function withGallery<P extends GalleryComponentProps>(
       events: mergedOptions.events,
     });
 
-    return createElement(Component, finalProps) as unknown as VNode;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return createElement(Component as any, finalProps) as unknown as VNode;
   };
 
   // 컴포넌트 이름 설정

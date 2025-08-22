@@ -13,8 +13,6 @@ export interface GallerySettings {
   infiniteScroll: boolean;
   /** 이미지 사전 로딩 개수 */
   preloadCount: number;
-  /** 가상 스크롤링 활성화 */
-  virtualScrolling: boolean;
   /** 갤러리 테마 */
   theme: 'auto' | 'light' | 'dark';
   /** 애니메이션 활성화 */
