@@ -101,6 +101,14 @@ function setupJsdomPolyfills() {
     };
   }
 
+  // document.elementsFromPoint polyfill (jsdom limitation)
+  if (typeof globalThis.document !== 'undefined' && !globalThis.document.elementsFromPoint) {
+    globalThis.document.elementsFromPoint = function (x, y) {
+      // 테스트 환경에서는 빈 배열 반환
+      return [];
+    };
+  }
+
   // matchMedia polyfill 강화
   if (typeof globalThis.window !== 'undefined' && !globalThis.window.matchMedia) {
     globalThis.window.matchMedia = function (query) {

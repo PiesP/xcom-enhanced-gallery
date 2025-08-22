@@ -1,5 +1,10 @@
 import styles from './Toast.module.css';
-import { getPreactHooks, getPreactSignals, getPreactCompat } from '@shared/external/vendors';
+import {
+  getPreact,
+  getPreactHooks,
+  getPreactSignals,
+  getPreactCompat,
+} from '@shared/external/vendors';
 import type { VNode } from '@shared/external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastProps } from '../StandardProps';
@@ -73,6 +78,12 @@ function ToastComponent({
     onRemove(toast.id);
   };
 
+  // Toast 타입에 따른 아이콘 선택
+  const getToastIcon = () => {
+    // 임시로 간단한 아이콘 반환
+    return '🔔';
+  };
+
   // 표준화된 클래스명 생성
   const toastClass = ComponentStandards.createClassName(
     styles.toast,
@@ -83,30 +94,40 @@ function ToastComponent({
   // 표준화된 테스트 속성 생성
   const testProps = ComponentStandards.createTestProps(testId);
 
-  return (
-    <div
-      className={toastClass}
-      role={role as 'alert' | 'status' | 'log'}
-      aria-label={ariaLabel || `${toast.type} 알림: ${toast.title}`}
-      {...testProps}
-    >
-      <div className={styles.content}>
-        <div className={styles.header}>
-          <h4 className={styles.title}>{toast.title}</h4>
-          <button className={styles.closeButton} onClick={handleClose} aria-label='알림 닫기'>
-            ×
-          </button>
-        </div>
-        <p className={styles.message}>{toast.message}</p>
-        {toast.actionText && toast.onAction && (
-          <div className={styles.actions}>
-            <button className={styles.actionButton} onClick={handleAction}>
-              {toast.actionText}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+  const { h } = getPreact();
+
+  return h(
+    'div',
+    {
+      className: toastClass,
+      role: role as 'alert' | 'status' | 'log',
+      'aria-label': ariaLabel || `${toast.type} 알림: ${toast.title}`,
+      ...testProps,
+    } as Record<string, unknown>,
+    h('div', { className: styles.content }, [
+      h('div', { className: styles.header, key: 'header' }, [
+        getToastIcon(),
+        h('h4', { className: styles.title, key: 'title' }, toast.title),
+        h(
+          'button',
+          {
+            className: styles.closeButton,
+            onClick: handleClose,
+            'aria-label': '알림 닫기',
+            key: 'close',
+          },
+          '×'
+        ),
+      ]),
+      h('p', { className: styles.message, key: 'message' }, toast.message),
+      toast.actionText &&
+        toast.onAction &&
+        h(
+          'div',
+          { className: styles.actions, key: 'actions' },
+          h('button', { className: styles.actionButton, onClick: handleAction }, toast.actionText)
+        ),
+    ])
   );
 }
 

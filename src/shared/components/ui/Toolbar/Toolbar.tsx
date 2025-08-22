@@ -1,5 +1,17 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery
+ * Copyright import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileZip,
+  Settings,
+  X,
+  ZoomIn,
+  ArrowAutofitWidth,
+  ArrowAutofitHeight,
+  ArrowsMaximize,
+  Loader2,
+} from '../Icon';om Enhanced Gallery
  * Licensed under the MIT License
  *
  * @fileoverview Gallery Toolbar Component
@@ -15,6 +27,18 @@ import {
 } from '@shared/hooks/useToolbarState';
 import { throttleScroll } from '@shared/utils';
 import { ComponentStandards } from '../StandardProps';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileZip,
+  Settings,
+  X,
+  ZoomIn,
+  ArrowAutofitWidth,
+  ArrowAutofitHeight,
+  ArrowsMaximize,
+} from '../Icon';
 import styles from './Toolbar.module.css';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
@@ -248,16 +272,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !canGoPrevious,
                 key: 'previous-button',
               },
-              h(
-                'svg',
-                {
-                  width: '18',
-                  height: '18',
-                  viewBox: '0 0 16 16',
-                  fill: 'currentColor',
-                },
-                h('path', { d: 'M10 2L4 8l6 6V2z' })
-              )
+              h(ChevronLeft, { size: 18 })
             ),
             h(
               'button',
@@ -272,16 +287,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !canGoNext,
                 key: 'next-button',
               },
-              h(
-                'svg',
-                {
-                  width: '18',
-                  height: '18',
-                  viewBox: '0 0 16 16',
-                  fill: 'currentColor',
-                },
-                h('path', { d: 'M6 2l6 6-6 6V2z' })
-              )
+              h(ChevronRight, { size: 18 })
             ),
           ]
         ),
@@ -365,37 +371,7 @@ function ToolbarCore({
                     'data-disabled': disabled || !onFitOriginal,
                     key: 'fit-original',
                   },
-                  h(
-                    'svg',
-                    {
-                      width: '16',
-                      height: '16',
-                      viewBox: '0 0 16 16',
-                      fill: 'currentColor',
-                    },
-                    [
-                      h('rect', {
-                        x: '2',
-                        y: '2',
-                        width: '12',
-                        height: '12',
-                        fill: 'none',
-                        stroke: 'currentColor',
-                        'stroke-width': '1.5',
-                      }),
-                      h(
-                        'text',
-                        {
-                          x: '8',
-                          y: '9',
-                          'text-anchor': 'middle',
-                          'font-size': '5',
-                          fill: 'currentColor',
-                        },
-                        '1:1'
-                      ),
-                    ]
-                  )
+                  h(ZoomIn, { size: 16 })
                 ),
                 h(
                   'button',
@@ -411,31 +387,7 @@ function ToolbarCore({
                     'data-disabled': disabled || !onFitWidth,
                     key: 'fit-width',
                   },
-                  h(
-                    'svg',
-                    {
-                      width: '16',
-                      height: '16',
-                      viewBox: '0 0 16 16',
-                      fill: 'currentColor',
-                    },
-                    [
-                      h('rect', {
-                        x: '2',
-                        y: '5',
-                        width: '12',
-                        height: '6',
-                        fill: 'none',
-                        stroke: 'currentColor',
-                        'stroke-width': '1.5',
-                      }),
-                      h('path', {
-                        d: 'M1 2v2M15 2v2M1 12v2M15 12v2',
-                        stroke: 'currentColor',
-                        'stroke-width': '1.5',
-                      }),
-                    ]
-                  )
+                  h(ArrowAutofitWidth, { size: 16 })
                 ),
                 h(
                   'button',
@@ -451,31 +403,7 @@ function ToolbarCore({
                     'data-disabled': disabled || !onFitHeight,
                     key: 'fit-height',
                   },
-                  h(
-                    'svg',
-                    {
-                      width: '16',
-                      height: '16',
-                      viewBox: '0 0 16 16',
-                      fill: 'currentColor',
-                    },
-                    [
-                      h('rect', {
-                        x: '5',
-                        y: '2',
-                        width: '6',
-                        height: '12',
-                        fill: 'none',
-                        stroke: 'currentColor',
-                        'stroke-width': '1.5',
-                      }),
-                      h('path', {
-                        d: 'M2 1h2M12 1h2M2 15h2M12 15h2',
-                        stroke: 'currentColor',
-                        'stroke-width': '1.5',
-                      }),
-                    ]
-                  )
+                  h(ArrowAutofitHeight, { size: 16 })
                 ),
                 h(
                   'button',
@@ -491,40 +419,7 @@ function ToolbarCore({
                     'data-disabled': disabled || !onFitContainer,
                     key: 'fit-container',
                   },
-                  h(
-                    'svg',
-                    {
-                      width: '16',
-                      height: '16',
-                      viewBox: '0 0 16 16',
-                      fill: 'currentColor',
-                    },
-                    [
-                      h('rect', {
-                        x: '1',
-                        y: '1',
-                        width: '14',
-                        height: '14',
-                        fill: 'none',
-                        stroke: 'currentColor',
-                        'stroke-width': '1.5',
-                      }),
-                      h('rect', {
-                        x: '4',
-                        y: '4',
-                        width: '8',
-                        height: '8',
-                        fill: 'none',
-                        stroke: 'currentColor',
-                        'stroke-width': '1',
-                      }),
-                      h('path', {
-                        d: 'M2 2l2 2M12 2l2 2M2 14l2-2M14 14l-2-2',
-                        stroke: 'currentColor',
-                        'stroke-width': '1',
-                      }),
-                    ]
-                  )
+                  h(ArrowsMaximize, { size: 16 })
                 ),
               ]
             ),
@@ -545,25 +440,9 @@ function ToolbarCore({
                 key: 'download-current',
               },
               [
-                h(
-                  'svg',
-                  {
-                    width: '16',
-                    height: '16',
-                    viewBox: '0 0 16 16',
-                    fill: 'currentColor',
-                    key: 'download-icon',
-                  },
-                  [
-                    h('path', {
-                      d: 'M8 1v10.5L5.5 9 4 10.5 8 14.5l4-4L10.5 9 8 11.5V1z',
-                    }),
-                    h('path', { d: 'M2 13h12v2H2z' }),
-                  ]
-                ),
+                h(Download, { size: 16, key: 'download-icon' }),
                 isDownloading &&
                   h(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     'span' as any,
                     {
                       className: styles.downloadSpinner,
@@ -591,19 +470,7 @@ function ToolbarCore({
                   'data-loading': isDownloading,
                   key: 'download-all',
                 },
-                h(
-                  'svg',
-                  {
-                    width: '16',
-                    height: '16',
-                    viewBox: '0 0 16 16',
-                    fill: 'currentColor',
-                    key: 'download-all-icon',
-                  },
-                  h('path', {
-                    d: 'M2 3h12v1H2V3zm0 3h12v1H2V6zm0 3h12v1H2V9zm6 2v2.5L5.5 11 4 12.5 8 16.5l4-4L10.5 11 8 13.5V11z',
-                  })
-                )
+                h(FileZip, { size: 16, key: 'download-all-icon' })
               ),
 
             // 설정 버튼
@@ -621,23 +488,7 @@ function ToolbarCore({
                   'data-disabled': disabled,
                   key: 'settings',
                 },
-                h(
-                  'svg',
-                  {
-                    width: '16',
-                    height: '16',
-                    viewBox: '0 0 16 16',
-                    fill: 'currentColor',
-                  },
-                  [
-                    h('path', {
-                      d: 'M8 4.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM6.5 8a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z',
-                    }),
-                    h('path', {
-                      d: 'M8.5 1a.5.5 0 00-1 0v1.5a6.5 6.5 0 000 11V15a.5.5 0 001 0v-1.5a6.5 6.5 0 000-11V1z',
-                    }),
-                  ]
-                )
+                h(Settings, { size: 16 })
               ),
 
             // 닫기 버튼
@@ -654,21 +505,7 @@ function ToolbarCore({
                 'data-disabled': disabled,
                 key: 'close',
               },
-              h(
-                'svg',
-                {
-                  width: '16',
-                  height: '16',
-                  viewBox: '0 0 16 16',
-                  fill: 'currentColor',
-                },
-                h('path', {
-                  d: 'M2.5 2.5L13.5 13.5M13.5 2.5L2.5 13.5',
-                  stroke: 'currentColor',
-                  'stroke-width': '2',
-                  'stroke-linecap': 'round',
-                })
-              )
+              h(X, { size: 16 })
             ),
           ]
         ),

@@ -109,6 +109,7 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
  * - Preact (MIT License) - https://github.com/preactjs/preact
  * - @preact/signals (MIT License) - https://github.com/preactjs/signals
  * - fflate (MIT License) - https://github.com/101arrowz/fflate
+ * - Tabler Icons (MIT License) - https://github.com/tabler/tabler-icons
  *
  * All libraries are used under their respective MIT licenses.
  * Full license texts are available at:
