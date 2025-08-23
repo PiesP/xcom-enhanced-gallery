@@ -242,10 +242,15 @@ export const toastManager = ToastManager.getInstance();
  * 기존 코드와의 호환성을 위한 별칭
  * 점진적 마이그레이션을 위해 제공
  */
+/**
+ * 주요 exports (표준화된 이름)
+ */
+export const ToastService = toastManager;
+export const toastService = toastManager;
 export const toastController = toastManager;
 
 /**
- * UnifiedToastManager 별칭 (테스트 호환성 유지)
+ * @deprecated 이전 이름들 (하위 호환성 유지)
  */
 export const UnifiedToastManager = ToastManager;
 

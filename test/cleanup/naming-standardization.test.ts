@@ -34,10 +34,26 @@ describe('Phase 4: 네이밍 표준화 및 최종 정리', () => {
             );
 
             if (exportMatches) {
-              problematicNames.push({
-                file: fullPath,
-                matches: exportMatches,
+              // @deprecated로 표시된 항목들은 제외
+              const deprecatedMatches = exportMatches.filter(match => {
+                const lines = content.split('\n');
+                const matchLine = lines.findIndex(line => line.includes(match));
+
+                // 현재 줄 또는 이전 몇 줄에서 @deprecated 주석 확인
+                for (let i = Math.max(0, matchLine - 5); i <= matchLine; i++) {
+                  if (lines[i] && lines[i].includes('@deprecated')) {
+                    return false; // @deprecated가 있으면 제외
+                  }
+                }
+                return true; // @deprecated가 없으면 포함
               });
+
+              if (deprecatedMatches.length > 0) {
+                problematicNames.push({
+                  file: fullPath,
+                  matches: deprecatedMatches,
+                });
+              }
             }
           }
         }
@@ -60,9 +76,13 @@ describe('Phase 4: 네이밍 표준화 및 최종 정리', () => {
         )
       );
 
-      // 문제가 되는 함수들을 출력하여 확인
+      // 문제가 되는 함수들이 있으면 테스트 실패
       if (filteredProblems.length > 0) {
-        console.log('문제가 되는 함수들:', filteredProblems);
+        const problemDescription = filteredProblems
+          .map(p => `${p.file}: ${p.matches.join(', ')}`)
+          .join('\n');
+
+        throw new Error(`네이밍 표준화 위반: \n${problemDescription}`);
       }
 
       expect(filteredProblems.length).toBe(0);

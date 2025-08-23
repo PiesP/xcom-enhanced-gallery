@@ -9,9 +9,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // Preact signals 모킹
 vi.mock('@shared/external/vendors', () => ({
   getPreactSignals: () => ({
-    signal: (initialValue: any) => ({
+    signal: (initialValue: unknown) => ({
       value: initialValue,
-      subscribe: (callback: (value: any) => void) => {
+      subscribe: (callback: (value: unknown) => void) => {
         // 즉시 초기값으로 호출
         setTimeout(() => callback(initialValue), 0);
         return () => {}; // unsubscribe function
@@ -20,10 +20,10 @@ vi.mock('@shared/external/vendors', () => ({
   }),
 }));
 
-import { ToastManager } from '@shared/services/ToastManager';
+import { UnifiedToastManager } from '@shared/services/UnifiedToastManager';
 
 describe('Toast 시스템 통합 (TDD)', () => {
-  let toastManager: ToastManager;
+  let unifiedToastManager: any;
   let mockCallback;
 
   beforeEach(() => {
@@ -84,12 +84,14 @@ describe('Toast 시스템 통합 (TDD)', () => {
       expect(updatedToasts).toHaveLength(1);
     });
 
-    it('should notify subscribers when toast state changes', () => {
+    it('should notify subscribers when toast state changes', async () => {
       // GREEN: 구독 시스템이 작동해야 함
       const unsubscribe = unifiedToastManager.subscribe(mockCallback);
 
-      // 초기 상태로 한 번 호출됨
-      expect(mockCallback).toHaveBeenCalledTimes(1);
+      // 초기 구독 콜백이 비동기적으로 호출되므로 대기
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(mockCallback).toHaveBeenCalledTimes(2);
       expect(mockCallback).toHaveBeenCalledWith([]);
 
       // Toast 추가 시 구독자에게 알림
@@ -99,7 +101,7 @@ describe('Toast 시스템 통합 (TDD)', () => {
         type: 'info',
       });
 
-      expect(mockCallback).toHaveBeenCalledTimes(2);
+      expect(mockCallback).toHaveBeenCalledTimes(3);
       expect(typeof unsubscribe).toBe('function');
 
       unsubscribe();

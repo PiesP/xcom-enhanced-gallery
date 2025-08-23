@@ -290,10 +290,16 @@ export class ServiceDiagnostics {
 }
 
 // ================================
-// 백워드 호환성을 위한 별칭
+// 표준화된 exports
 // ================================
 
 /**
- * UnifiedServiceDiagnostics 별칭 (테스트 호환성 유지)
+ * 주요 export (표준화된 이름)
+ */
+export const ServiceDiagnosticsManager = ServiceDiagnostics;
+export const serviceDiagnosticsManager = ServiceDiagnostics;
+
+/**
+ * @deprecated 이전 이름 (하위 호환성 유지)
  */
 export const UnifiedServiceDiagnostics = ServiceDiagnostics;

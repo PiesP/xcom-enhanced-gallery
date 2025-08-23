@@ -195,15 +195,21 @@ export class EventManager {
 }
 
 // ================================
-// 백워드 호환성을 위한 별칭
+// 표준화된 exports
 // ================================
 
 /**
- * UnifiedEventManager 별칭 (테스트 호환성 유지)
+ * 주요 export (표준화된 이름)
+ */
+export const EventService = EventManager;
+export const eventService = EventManager;
+
+/**
+ * @deprecated 이전 이름들 (하위 호환성 유지)
  */
 export const UnifiedEventManager = EventManager;
 
 /**
- * TwitterEventManager 별칭 (기존 호환성 유지)
+ * @deprecated TwitterEventManager 별칭 (기존 호환성 유지)
  */
 export const TwitterEventManager = EventManager;
