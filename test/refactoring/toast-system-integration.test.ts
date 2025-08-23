@@ -20,10 +20,10 @@ vi.mock('@shared/external/vendors', () => ({
   }),
 }));
 
-import { UnifiedToastManager } from '@shared/services/UnifiedToastManager';
+import { ToastManager } from '@shared/services/ToastManager';
 
 describe('Toast 시스템 통합 (TDD)', () => {
-  let unifiedToastManager: UnifiedToastManager;
+  let toastManager: ToastManager;
   let mockCallback;
 
   beforeEach(() => {

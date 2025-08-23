@@ -25,10 +25,13 @@ describe('Phase 2: 네이밍 정리 및 파일 구조 개선', () => {
       expect(typeof ResourceManager).toBe('function');
     });
 
-    it('SimpleScrollHelper가 ScrollHelper로 이름이 변경되어야 한다', async () => {
-      const { ScrollHelper } = await import('@shared/utils/virtual-scroll');
-      expect(ScrollHelper).toBeDefined();
-      expect(typeof ScrollHelper).toBe('function');
+    it('ScrollHelper 유틸리티가 scroll-utils에서 제공되어야 한다', async () => {
+      // virtual-scroll 모듈은 제거되었고, 실제 스크롤 기능은 scroll-utils에 있음
+      const { createScrollHandler, isGalleryElement } = await import('@shared/utils/scroll');
+      expect(createScrollHandler).toBeDefined();
+      expect(typeof createScrollHandler).toBe('function');
+      expect(isGalleryElement).toBeDefined();
+      expect(typeof isGalleryElement).toBe('function');
     });
   });
 

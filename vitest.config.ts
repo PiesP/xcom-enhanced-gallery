@@ -6,6 +6,9 @@
 import preact from '@preact/preset-vite';
 import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath, URL } from 'node:url';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [preact()],
@@ -24,7 +27,7 @@ export default defineConfig({
   },
 
   test: {
-    testTimeout: 30000,
+    testTimeout: 5000, // 타임아웃을 5초로 단축
     // 기본 설정
     globals: true,
     environment: 'jsdom',

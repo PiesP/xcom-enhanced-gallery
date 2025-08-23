@@ -60,6 +60,11 @@ describe('Phase 4: 네이밍 표준화 및 최종 정리', () => {
         )
       );
 
+      // 문제가 되는 함수들을 출력하여 확인
+      if (filteredProblems.length > 0) {
+        console.log('문제가 되는 함수들:', filteredProblems);
+      }
+
       expect(filteredProblems.length).toBe(0);
     });
 

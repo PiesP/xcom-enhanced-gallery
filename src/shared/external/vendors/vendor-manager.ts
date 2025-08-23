@@ -397,6 +397,7 @@ export class VendorManager {
       fflate: '0.8.2',
       preact: '10.26.9',
       signals: '2.2.0',
+      motion: 'removed', // Motion One 완전 제거
     });
   }
 

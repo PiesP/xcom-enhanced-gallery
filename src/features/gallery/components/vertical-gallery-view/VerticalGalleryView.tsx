@@ -16,10 +16,9 @@ import { Toast } from '@shared/components/ui/Toast/Toast';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
-import { getPreactHooks } from '@shared/external/vendors';
+import { getPreactHooks, getPreact } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import type { MouseEvent } from 'preact/compat';
-import { createElement } from 'preact';
 import {
   animateGalleryEnter,
   animateGalleryExit,
@@ -52,6 +51,7 @@ function VerticalGalleryViewCore({
   onDownloadAll,
 }: VerticalGalleryViewProps) {
   const { useCallback, useEffect, useRef, useState, useMemo } = getPreactHooks();
+  const { createElement } = getPreact();
 
   // Signal에서 상태 구독
   const [state, setState] = useState(galleryState.value);

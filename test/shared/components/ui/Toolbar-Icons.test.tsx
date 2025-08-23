@@ -3,9 +3,99 @@
  * @version 1.0.0 - 툴바 아이콘 교체 테스트
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/preact';
 import { h } from 'preact';
+
+// Vendor mocks 먼저 설정
+vi.mock('@shared/external/vendors', () => ({
+  getFflate: vi.fn(() => ({})),
+  getPreact: vi.fn(() => ({ h })),
+  getPreactHooks: vi.fn(() => ({
+    useMemo: vi.fn(factory => factory()),
+    useCallback: vi.fn(callback => callback),
+    useEffect: vi.fn(),
+    useRef: vi.fn(() => ({ current: null })),
+  })),
+  getPreactSignals: vi.fn(() => ({})),
+  getPreactCompat: vi.fn(() => ({
+    memo: vi.fn(Component => Component),
+    forwardRef: vi.fn(Component => Component),
+  })),
+  getNativeDownload: vi.fn(() => ({})),
+  initializeVendors: vi.fn(() => Promise.resolve()),
+  cleanupVendors: vi.fn(() => Promise.resolve()),
+  getVendorVersions: vi.fn(() => ({})),
+  isVendorsInitialized: vi.fn(() => true),
+  getVendorInitializationReport: vi.fn(() => ({})),
+  getVendorStatuses: vi.fn(() => ({})),
+  isVendorInitialized: vi.fn(() => true),
+}));
+
+// Hooks mock
+vi.mock('@shared/hooks/useToolbarState', () => ({
+  useToolbarState: vi.fn(() => [
+    {
+      isDownloading: false,
+      isLoading: false,
+      hasError: false,
+      currentFitMode: 'fitWidth',
+      needsHighContrast: false,
+    },
+    {
+      setDownloading: vi.fn(),
+      setLoading: vi.fn(),
+      setError: vi.fn(),
+      setCurrentFitMode: vi.fn(),
+      setNeedsHighContrast: vi.fn(),
+      resetState: vi.fn(),
+    },
+  ]),
+  getToolbarDataState: vi.fn(() => 'idle'),
+  getToolbarClassName: vi.fn(() => 'toolbar'),
+}));
+
+// Utils mock
+vi.mock('@shared/utils', () => ({
+  throttleScroll: vi.fn(fn => fn),
+}));
+
+// StandardProps mock
+vi.mock('@shared/components/ui/StandardProps', () => ({
+  ComponentStandards: {
+    createClassName: vi.fn((...classes) => classes.filter(Boolean).join(' ')),
+  },
+}));
+
+// CSS 모듈 mock
+vi.mock('@shared/components/ui/Toolbar/Toolbar.module.css', () => ({
+  default: {
+    toolbar: 'toolbar',
+    toolbarContent: 'toolbarContent',
+    toolbarSection: 'toolbarSection',
+    toolbarLeft: 'toolbarLeft',
+    toolbarCenter: 'toolbarCenter',
+    toolbarRight: 'toolbarRight',
+    toolbarButton: 'toolbarButton',
+    navButton: 'navButton',
+    downloadButton: 'downloadButton',
+    downloadCurrent: 'downloadCurrent',
+    downloadAll: 'downloadAll',
+    closeButton: 'closeButton',
+    settingsButton: 'settingsButton',
+    fitButton: 'fitButton',
+    fitModeGroup: 'fitModeGroup',
+    mediaCounterWrapper: 'mediaCounterWrapper',
+    mediaCounter: 'mediaCounter',
+    currentIndex: 'currentIndex',
+    separator: 'separator',
+    totalCount: 'totalCount',
+    progressBar: 'progressBar',
+    progressFill: 'progressFill',
+    downloadSpinner: 'downloadSpinner',
+  },
+}));
+
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 
 describe('Toolbar Icons Integration', () => {

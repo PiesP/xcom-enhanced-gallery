@@ -48,9 +48,6 @@ export class ToastManager {
     const { signal } = getPreactSignals();
     this.toastsSignal = signal<ToastItem[]>([]);
 
-    // signals의 변화를 감지하여 구독자들에게 알림
-    this.toastsSignal.subscribe(this.notifySubscribers.bind(this));
-
     logger.debug('[ToastManager] 초기화됨');
   }
 
@@ -82,6 +79,9 @@ export class ToastManager {
     // signals를 통한 상태 업데이트
     const currentToasts = this.toastsSignal.value || [];
     this.toastsSignal.value = [...currentToasts, toast];
+
+    // 수동으로 구독자들에게 알림
+    this.notifySubscribers(this.toastsSignal.value);
 
     logger.debug(`[ToastManager] Toast 표시: ${options.title} - ${options.message}`);
     return id;
@@ -144,6 +144,8 @@ export class ToastManager {
 
     if (filteredToasts.length !== currentToasts.length) {
       this.toastsSignal.value = filteredToasts;
+      // 수동으로 구독자들에게 알림
+      this.notifySubscribers(filteredToasts);
       logger.debug(`[ToastManager] Toast 제거: ${id}`);
     }
   }
@@ -153,6 +155,8 @@ export class ToastManager {
    */
   public clear(): void {
     this.toastsSignal.value = [];
+    // 수동으로 구독자들에게 알림
+    this.notifySubscribers([]);
     logger.debug('[ToastManager] 모든 Toast 제거');
   }
 
