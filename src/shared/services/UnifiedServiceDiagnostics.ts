@@ -288,3 +288,12 @@ export class ServiceDiagnostics {
     logger.debug('ServiceDiagnostics 정리 완료');
   }
 }
+
+// ================================
+// 백워드 호환성을 위한 별칭
+// ================================
+
+/**
+ * UnifiedServiceDiagnostics 별칭 (테스트 호환성 유지)
+ */
+export const UnifiedServiceDiagnostics = ServiceDiagnostics;

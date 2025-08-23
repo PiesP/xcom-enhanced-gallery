@@ -2957,41 +2957,6 @@
         },
         {
           "dynamic": false,
-          "module": "./useScrollDirection",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/useScrollDirection.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./useScrollDirection",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/useScrollDirection.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./useToolbarState",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3023,15 +2988,6 @@
     },
     {
       "source": "src/shared/hooks/useDOMReady.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/useScrollDirection.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/hooks/index.ts"
@@ -3356,41 +3312,6 @@
             "export"
           ],
           "resolved": "src/shared/services/core-services.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./gallery",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/gallery/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./gallery",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/services/gallery/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4240,60 +4161,6 @@
         "src/shared/services/index.ts",
         "src/shared/services/service-initialization.ts",
         "src/shared/types/core/core-types.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/gallery/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./GalleryService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/gallery/GalleryService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/services/gallery/GalleryService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/gallery/GalleryService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/gallery/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5693,6 +5560,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/gallery/index.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/media-extraction/index.ts",
       "dependencies": [
         {
@@ -6961,8 +6835,8 @@
     "warn": 0,
     "info": 3,
     "ignore": 0,
-    "totalCruised": 192,
-    "totalDependenciesCruised": 291,
+    "totalCruised": 190,
+    "totalDependenciesCruised": 285,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

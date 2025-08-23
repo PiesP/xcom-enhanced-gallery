@@ -51,9 +51,9 @@ export type { ToastOptions } from './ToastService';
 // 5. 브라우저 서비스
 export { BrowserService } from '@shared/browser';
 
-// 6. 갤러리 서비스
-export { GalleryService } from './gallery';
-export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './gallery';
+// 6. 갤러리 서비스 - GalleryService 제거됨
+// export { GalleryService } from './gallery';
+// export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './gallery';
 
 // 7. 지연 로딩 서비스
 export { LazyLoadingService } from './LazyLoadingService';

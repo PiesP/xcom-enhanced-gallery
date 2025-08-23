@@ -5,12 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  initializeVendors,
-  getPreact,
-  getPreactSignals,
-  getMotionOne,
-} from '@shared/external/vendors';
+import { initializeVendors, getPreact, getPreactSignals } from '@shared/external/vendors';
 
 describe('외부 라이브러리 통합 테스트', () => {
   beforeEach(async () => {
@@ -23,17 +18,9 @@ describe('외부 라이브러리 통합 테스트', () => {
   });
 
   describe('Motion One 통합', () => {
-    it('Motion One이 올바르게 로드되어야 한다 (폴백 포함)', async () => {
-      const motionOne = getMotionOne();
-
-      expect(motionOne.animate).toBeDefined();
-      expect(motionOne.scroll).toBeDefined();
-      expect(motionOne.timeline).toBeDefined();
-      expect(motionOne.stagger).toBeDefined();
-      expect(motionOne.inView).toBeDefined();
-      expect(motionOne.transform).toBeDefined();
-      expect(typeof motionOne.animate).toBe('function');
-      expect(typeof motionOne.scroll).toBe('function');
+    it.skip('Motion One이 제거되었다 (CSS 애니메이션으로 대체)', async () => {
+      // Motion One 라이브러리가 제거되었으므로 테스트 스킵
+      expect(true).toBe(true);
     });
   });
 
@@ -99,11 +86,10 @@ describe('외부 라이브러리 통합 테스트', () => {
 
       const preact = getPreact();
       const signals = getPreactSignals();
-      const motionOne = getMotionOne();
 
       expect(preact).toBeDefined();
       expect(signals).toBeDefined();
-      expect(motionOne).toBeDefined();
+      // Motion One은 제거되었으므로 더 이상 검증하지 않음
     });
 
     it('메모리 정리가 올바르게 작동해야 한다', async () => {

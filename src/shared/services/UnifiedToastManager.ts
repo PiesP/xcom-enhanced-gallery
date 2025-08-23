@@ -245,6 +245,11 @@ export const toastManager = ToastManager.getInstance();
 export const toastController = toastManager;
 
 /**
+ * UnifiedToastManager 별칭 (테스트 호환성 유지)
+ */
+export const UnifiedToastManager = ToastManager;
+
+/**
  * 편의 함수들 (기존 Toast.tsx의 함수들을 대체)
  */
 export function addToast(toast: Omit<ToastItem, 'id'>): string {

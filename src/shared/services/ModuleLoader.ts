@@ -95,12 +95,13 @@ export async function loadHookModule(hookName: string) {
         return module.useDOMReady;
       }
 
-      case 'useScrollDirection': {
-        const module = await import('@shared/hooks/useScrollDirection');
-        const loadTime = performance.now() - startTime;
-        logger.debug('useScrollDirection 로딩 완료:', { loadTime });
-        return module.useScrollDirection;
-      }
+      // useScrollDirection은 제거되었으므로 주석 처리
+      // case 'useScrollDirection': {
+      //   const module = await import('@shared/hooks/useScrollDirection');
+      //   const loadTime = performance.now() - startTime;
+      //   logger.debug('useScrollDirection 로딩 완료:', { loadTime });
+      //   return module.useScrollDirection;
+      // }
 
       default:
         throw new Error(

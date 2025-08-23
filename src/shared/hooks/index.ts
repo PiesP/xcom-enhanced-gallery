@@ -14,14 +14,15 @@ export {
   type ToolbarDataState,
 } from './useToolbarState';
 
-export {
-  useScrollDirection,
-  type UseScrollDirectionOptions,
-  type UseScrollDirectionReturn,
-} from './useScrollDirection';
+// useScrollDirection이 제거되었으므로 주석 처리
+// export {
+//   useScrollDirection,
+//   type UseScrollDirectionOptions,
+//   type UseScrollDirectionReturn,
+// } from './useScrollDirection';
 
 export { useDOMReady } from './useDOMReady';
 export { useKeyboardNavigation } from './useAccessibility';
 
-// Related scroll types (moved to individual hook files)
-export type { ScrollDirection } from './useScrollDirection';
+// Related scroll types (moved to individual hook files) - useScrollDirection 제거됨
+// export type { ScrollDirection } from './useScrollDirection';

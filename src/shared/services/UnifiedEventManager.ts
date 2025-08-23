@@ -199,6 +199,11 @@ export class EventManager {
 // ================================
 
 /**
+ * UnifiedEventManager 별칭 (테스트 호환성 유지)
+ */
+export const UnifiedEventManager = EventManager;
+
+/**
  * TwitterEventManager 별칭 (기존 호환성 유지)
  */
 export const TwitterEventManager = EventManager;
