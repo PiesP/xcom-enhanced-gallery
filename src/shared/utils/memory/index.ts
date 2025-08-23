@@ -4,23 +4,31 @@
  * @version 4.0.0 - Phase H: Final cleanup
  */
 
-// Phase G Week 2: Use direct function imports from resource-manager
+// ResourceManager 클래스와 편의 함수들
 export {
-  createTimer,
-  createManagedInterval,
-  addManagedEventListener,
-  createManagedObserver,
-  createManagedController,
-  createManagedObjectURL,
-  registerManagedMemoryResource,
+  ResourceManager,
+  globalResourceManager,
+  registerResource,
   releaseResource,
-  releaseResourcesByContext,
-  releaseResourcesByType,
-  cleanupAllResources,
-  getResourceCount,
-  hasResource,
+  releaseAllResources,
   type ResourceType,
-} from '../resource-manager';
+} from './ResourceManager';
 
-// Backward compatibility - use ResourceManager class from ResourceManager.ts
-export { ResourceManager } from './ResourceManager';
+// 하위 호환성을 위한 별칭들
+export {
+  releaseAllResources as cleanupAllResources,
+  globalResourceManager as createManagedController,
+  registerResource as registerManagedMemoryResource,
+  releaseResource as releaseResourcesByContext,
+  releaseResource as releaseResourcesByType,
+  globalResourceManager as createTimer,
+  globalResourceManager as createManagedInterval,
+  globalResourceManager as addManagedEventListener,
+  globalResourceManager as createManagedObserver,
+  globalResourceManager as createManagedObjectURL,
+} from './ResourceManager';
+
+// 편의 함수들
+import { globalResourceManager } from './ResourceManager';
+export const getResourceCount = () => globalResourceManager.getResourceCount();
+export const hasResource = (id: string) => globalResourceManager.hasResource(id);

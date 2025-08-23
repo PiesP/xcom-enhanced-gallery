@@ -43,10 +43,10 @@ export type {
 export { ThemeService } from './ThemeService';
 export type { Theme } from './ThemeService';
 
-// 4. 토스트 서비스
-export { ToastService } from './ToastService';
+// 4. 토스트 서비스 - UnifiedToastManager 사용
+export { UnifiedToastManager } from './UnifiedToastManager';
 export { ToastController } from './ToastController';
-export type { ToastOptions } from './ToastService';
+export type { ToastOptions } from './UnifiedToastManager';
 
 // 5. 브라우저 서비스
 export { BrowserService } from '@shared/browser';
@@ -55,8 +55,8 @@ export { BrowserService } from '@shared/browser';
 // export { GalleryService } from './gallery';
 // export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './gallery';
 
-// 7. 지연 로딩 서비스
-export { LazyLoadingService } from './LazyLoadingService';
+// 7. 지연 로딩 서비스 - 제거됨 (현재 구현되지 않음)
+// export { LazyLoadingService } from './LazyLoadingService';
 
 // 8. 서비스 관리 (ServiceRegistry 통합)
 export { CoreService } from './ServiceManager';
