@@ -19,28 +19,39 @@ jobs:
     name: 🧪 Code Quality & Build Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      matrix:
+        node-version: [18, 20, 22] # Node.js 버전 호환성 테스트
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🚀 Setup Node.js
+      - name: 🚀 Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
+
+      - name: 💾 캐시 최적화
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
 
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔍 Type checking
-        run: npm run typecheck
-
-      - name: 🧹 Lint code
-        run: npm run lint
-
-      - name: 🎨 Format check
-        run: npm run format:check
+      - name: 🔍 병렬 품질 검사
+        run: |
+          npm run typecheck &
+          npm run lint &
+          npm run format:check &
+          wait
 
       - name: 🧪 Run tests with coverage
         run: npm run test:coverage

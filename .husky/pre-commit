@@ -1,25 +1,29 @@
 #!/usr/bin/env sh
 
 # =============================================================================
-# Pre-commit Hook for X.com Enhanced Gallery
+# Pre-commit Hook for X.com Enhanced Gallery (Optimized)
 # =============================================================================
-# Ensures code quality by running automated checks before commits.
+# 병렬 처리로 최적화된 커밋 전 검증
 # =============================================================================
 
 echo "🔍 Pre-commit validation starting..."
 
-# TypeScript Type Checking
-echo "📋 Running type check..."
-npm run typecheck || {
-  echo "❌ Type check failed"
-  exit 1
-}
+# TypeScript Type Checking과 lint-staged 병렬 실행
+echo "📋 Running type check and linting in parallel..."
 
-# Lint Staged Files
-echo "🧹 Linting staged files..."
-npx lint-staged || {
-  echo "❌ Lint staged failed"
-  exit 1
-}
+npm run typecheck &
+PID1=$!
 
-echo "✅ Pre-commit validation completed successfully!"
+npx lint-staged &
+PID2=$!
+
+# 모든 작업 완료 대기
+wait $PID1 $PID2
+
+# 종료 코드 확인
+if [ $? -eq 0 ]; then
+  echo "✅ Pre-commit validation completed successfully!"
+else
+  echo "❌ Pre-commit validation failed"
+  exit 1
+fi

@@ -277,6 +277,7 @@ export default defineConfig(({ mode }) => {
           // Phase 5: 추가적인 최적화 설정
         },
         treeshake: {
+          preset: 'smallest', // 더 적극적인 tree-shaking
           moduleSideEffects: false,
           unknownGlobalSideEffects: false,
           // Phase 5: 더 적극적인 tree-shaking
@@ -305,8 +306,10 @@ export default defineConfig(({ mode }) => {
           compress: {
             drop_console: buildMode.dropConsole,
             drop_debugger: true,
-            passes: 2,
-            pure_funcs: buildMode.dropConsole ? ['console.log', 'console.debug'] : [],
+            passes: 3, // 압축 패스 증가
+            pure_funcs: buildMode.dropConsole
+              ? ['console.log', 'console.debug', 'console.info']
+              : [],
             dead_code: true,
             unused: true,
             collapse_vars: true,
