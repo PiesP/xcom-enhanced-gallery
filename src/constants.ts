@@ -210,19 +210,16 @@ export const SERVICE_KEYS = {
   // Phase 2: 통합된 서비스들
   MEDIA_SERVICE: 'media.service', // 통합 미디어 서비스
 
-  // 기존 서비스들 (호환성 유지)
+  // 기존 서비스들 (중복 제거)
   BULK_DOWNLOAD: 'core.bulkDownload',
   GALLERY: 'gallery',
   GALLERY_RENDERER: 'gallery.renderer',
   GALLERY_DOWNLOAD: 'gallery.download',
   MEDIA_EXTRACTION: 'media.extraction',
   MEDIA_FILENAME: 'media.filename',
-  AUTO_THEME: 'theme.auto',
-  THEME: 'theme.auto',
-  TOAST_CONTROLLER: 'toast.controller',
-  TOAST: 'toast.controller',
-  SETTINGS_MANAGER: 'settings.manager',
-  SETTINGS: 'settings.manager',
+  THEME: 'theme.auto', // AUTO_THEME 별칭 제거
+  TOAST: 'toast.controller', // TOAST_CONTROLLER 별칭 제거
+  SETTINGS: 'settings.manager', // SETTINGS_MANAGER 별칭 제거
   TWITTER_TOKEN_EXTRACTOR: 'settings.tokenExtractor',
   VIDEO_STATE: 'video.state',
   VIDEO_CONTROL: 'video.control',
@@ -416,14 +413,6 @@ export const VIEW_MODES = ['verticalList'] as const;
  */
 export function isValidViewMode(mode: string): mode is ViewMode {
   return VIEW_MODES.includes(mode as ViewMode);
-}
-
-/**
- * ViewMode 변환 함수 (하위 호환성)
- */
-export function normalizeViewMode(_mode: unknown): ViewMode {
-  // 모든 모드를 수직 갤러리로 통일
-  return 'verticalList';
 }
 
 // ================================

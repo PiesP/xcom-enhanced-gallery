@@ -113,7 +113,7 @@ export class ServiceDiagnostics {
 
       // 4. 필수 서비스 초기화 테스트
       logger.info('🧪 필수 서비스 초기화 테스트 중...');
-      const autoTheme = await serviceManager.tryGet(SERVICE_KEYS.AUTO_THEME);
+      const autoTheme = await serviceManager.tryGet(SERVICE_KEYS.THEME);
 
       logger.info('✅ 서비스 초기화 결과:', {
         autoTheme: autoTheme ? '성공' : '실패',

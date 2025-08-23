@@ -159,14 +159,14 @@ const timerStorage: TimerStorage = {};
 /**
  * Creates a logger instance with the specified configuration.
  */
-function createLogger(config: Partial<LoggerConfig> = {}): Logger {
+export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   const finalConfig: LoggerConfig = { ...DEFAULT_CONFIG, ...config };
 
   return {
     info: (...args: LoggableData[]): void => {
       if (shouldLog('info', finalConfig)) {
-        // Use console.warn for info level (ESLint compliance)
-        console.warn(...formatMessage('info', finalConfig, ...args));
+        // Use console.info for info level
+        console.info(...formatMessage('info', finalConfig, ...args));
       }
     },
 
@@ -192,8 +192,8 @@ function createLogger(config: Partial<LoggerConfig> = {}): Logger {
 
     debug: (...args: LoggableData[]): void => {
       if (shouldLog('debug', finalConfig)) {
-        // Use console.warn for debug level (ESLint compliance)
-        console.warn(...formatMessage('debug', finalConfig, ...args));
+        // Use console.info for debug level (ESLint compliance)
+        console.info(...formatMessage('debug', finalConfig, ...args));
       }
     },
 
@@ -201,7 +201,7 @@ function createLogger(config: Partial<LoggerConfig> = {}): Logger {
       if (shouldLog('debug', finalConfig)) {
         const timerKey = `__timer_${label}`;
         timerStorage[timerKey] = Date.now();
-        console.warn(...formatMessage('debug', finalConfig, `Timer started: ${label}`));
+        console.info(...formatMessage('debug', finalConfig, `Timer started: ${label}`));
       }
     },
 
@@ -213,11 +213,11 @@ function createLogger(config: Partial<LoggerConfig> = {}): Logger {
         if (typeof startTime === 'number') {
           const duration = Date.now() - startTime;
           const durationMessage = `${label}: ${duration}ms`;
-          console.warn(...formatMessage('debug', finalConfig, durationMessage));
+          console.info(...formatMessage('debug', finalConfig, durationMessage));
           delete timerStorage[timerKey];
         } else {
           const errorMessage = `Timer '${label}' was not started`;
-          console.warn(...formatMessage('debug', finalConfig, errorMessage));
+          console.info(...formatMessage('debug', finalConfig, errorMessage));
         }
       }
     },

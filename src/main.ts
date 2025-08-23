@@ -67,7 +67,7 @@ async function initializeCriticalSystems(): Promise<void> {
     const criticalServices = [
       SERVICE_KEYS.VIDEO_CONTROL,
       SERVICE_KEYS.MEDIA_EXTRACTION,
-      SERVICE_KEYS.TOAST_CONTROLLER,
+      SERVICE_KEYS.TOAST,
     ];
 
     for (const serviceKey of criticalServices) {
@@ -100,7 +100,7 @@ async function registerFeatureServicesLazy(): Promise<void> {
 
     // Settings Manager - Features 레이어
     const { SettingsService } = await import('@features/settings/services/SettingsService');
-    serviceManager!.register(SERVICE_KEYS.SETTINGS_MANAGER, new SettingsService());
+    serviceManager!.register(SERVICE_KEYS.SETTINGS, new SettingsService());
 
     // Twitter Token Extractor - Features 레이어
     const { TwitterTokenExtractor } = await import(

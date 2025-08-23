@@ -10,11 +10,11 @@ import * as path from 'path';
 import { defineConfig, Plugin } from 'vite';
 
 // 번들 분석 플러그인
-function createBundleAnalysisPlugin(): Plugin {
+function createBundleAnalysisPlugin() {
   return {
     name: 'bundle-analysis',
-    apply: 'build',
-    writeBundle(options, bundle) {
+    apply: 'build' as const,
+    writeBundle(options: any, bundle: any) {
       const bundleObj = bundle as Record<string, any>;
       let totalSize = 0;
       const chunks: Array<{ name: string; size: number }> = [];
@@ -68,7 +68,7 @@ function getBuildMode(mode?: string): BuildMode {
     isDevelopment,
     isProduction: !isDevelopment,
     minify: !isDevelopment,
-    sourcemap: isDevelopment,
+    sourcemap: true, // 모든 빌드에서 source map 활성화
     dropConsole: !isDevelopment,
   };
 }
