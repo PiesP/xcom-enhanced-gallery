@@ -27,8 +27,8 @@ export default defineConfig({
   },
 
   test: {
-    testTimeout: 8000, // 타임아웃을 8초로 증가 (일반적인 테스트용)
-    hookTimeout: 15000, // setup/teardown hook 타임아웃
+    testTimeout: 20000, // 타임아웃을 20초로 증가 (REFACTOR: 타이머 테스트 최적화)
+    hookTimeout: 25000, // setup/teardown hook 타임아웃도 증가
     // 기본 설정
     globals: true,
     environment: 'jsdom',

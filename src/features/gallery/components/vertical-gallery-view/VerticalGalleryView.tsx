@@ -108,6 +108,7 @@ function VerticalGalleryViewCore({
     toolbarElement: domReady ? toolbarWrapperRef.current : null,
     hoverZoneElement: domReady ? toolbarHoverZoneRef.current : null,
     enabled: isVisible && mediaItems.length > 0 && domReady,
+    initialAutoHideDelay: 1000, // 1초 후 자동 숨김
   });
 
   // 간소화된 위치 기반 시스템으로 교체:
