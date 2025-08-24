@@ -13,7 +13,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { Toast } from '@shared/components/ui/Toast/Toast';
-import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
+import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import { getPreactHooks, getPreact } from '@shared/external/vendors';
@@ -497,7 +497,7 @@ function VerticalGalleryViewCore({
 
       {/* 툴바 래퍼 - 순수 CSS 호버로 제어됨 */}
       <div className={styles.toolbarWrapper} ref={toolbarWrapperRef}>
-        <Toolbar
+        <ToolbarWithSettings
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
           onNext={onNext || (() => {})}

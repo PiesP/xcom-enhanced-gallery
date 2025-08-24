@@ -133,6 +133,17 @@ strict digraph "dependency-cruiser output"{
     "src/shared/components/ui/Icon/index.ts" -> "src/shared/components/ui/Icon/Icon.tsx" [arrowhead="inv"]
     "src/shared/components/ui/Icon/index.ts" -> "src/shared/components/ui/Icon/Icon.tsx" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/components/ui/Icon/index.ts" -> "src/shared/components/ui/Icon/icons/index.ts" [arrowhead="inv"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/ui" {label="ui" subgraph "cluster_src/shared/components/ui/SettingsModal" {label="SettingsModal" "src/shared/components/ui/SettingsModal/SettingsModal.module.css" [label=<SettingsModal.module.css> tooltip="SettingsModal.module.css" URL="src/shared/components/ui/SettingsModal/SettingsModal.module.css" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/ui" {label="ui" subgraph "cluster_src/shared/components/ui/SettingsModal" {label="SettingsModal" "src/shared/components/ui/SettingsModal/SettingsModal.tsx" [label=<SettingsModal.tsx> tooltip="SettingsModal.tsx" URL="src/shared/components/ui/SettingsModal/SettingsModal.tsx" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } } }
+    "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/external/vendors/index.ts"
+    "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/services/LanguageService.ts"
+    "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/services/ThemeService.ts"
+    "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/components/ui/Icon/index.ts"
+    "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/components/ui/StandardProps.ts"
+    "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/components/ui/SettingsModal/SettingsModal.module.css"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/ui" {label="ui" subgraph "cluster_src/shared/components/ui/SettingsModal" {label="SettingsModal" "src/shared/components/ui/SettingsModal/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/components/ui/SettingsModal/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } } }
+    "src/shared/components/ui/SettingsModal/index.ts" -> "src/shared/components/ui/SettingsModal/SettingsModal.tsx" [arrowhead="inv"]
+    "src/shared/components/ui/SettingsModal/index.ts" -> "src/shared/components/ui/SettingsModal/SettingsModal.tsx" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/ui" {label="ui" "src/shared/components/ui/StandardProps.ts" [label=<StandardProps.ts> tooltip="StandardProps.ts" URL="src/shared/components/ui/StandardProps.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/components/ui/StandardProps.ts" -> "src/shared/components/base/BaseComponentProps.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/ui" {label="ui" subgraph "cluster_src/shared/components/ui/Toast" {label="Toast" "src/shared/components/ui/Toast/Toast.module.css" [label=<Toast.module.css> tooltip="Toast.module.css" URL="src/shared/components/ui/Toast/Toast.module.css" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } } }
@@ -152,12 +163,17 @@ strict digraph "dependency-cruiser output"{
     "src/shared/components/ui/Toolbar/Toolbar.tsx" -> "src/shared/components/ui/Icon/index.ts"
     "src/shared/components/ui/Toolbar/Toolbar.tsx" -> "src/shared/components/ui/StandardProps.ts"
     "src/shared/components/ui/Toolbar/Toolbar.tsx" -> "src/shared/components/ui/Toolbar/Toolbar.module.css"
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/ui" {label="ui" subgraph "cluster_src/shared/components/ui/ToolbarWithSettings" {label="ToolbarWithSettings" "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx" [label=<ToolbarWithSettings.tsx> tooltip="ToolbarWithSettings.tsx" URL="src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } } }
+    "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx" -> "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+    "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx" -> "src/shared/components/ui/Toolbar/Toolbar.tsx"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/ui" {label="ui" "src/shared/components/ui/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/components/ui/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Button/Button.tsx" [arrowhead="inv"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Button/Button.tsx" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Icon/Icon.tsx" [arrowhead="inv"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Icon/Icon.tsx" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Icon/icons/index.ts" [arrowhead="inv"]
+    "src/shared/components/ui/index.ts" -> "src/shared/components/ui/SettingsModal/index.ts" [arrowhead="inv"]
+    "src/shared/components/ui/index.ts" -> "src/shared/components/ui/SettingsModal/index.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/StandardProps.ts" [arrowhead="inv"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Toast/Toast.tsx" [arrowhead="inv"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Toast/Toast.tsx" [arrowhead="onormal" penwidth="1.0"]
@@ -165,6 +181,8 @@ strict digraph "dependency-cruiser output"{
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Toast/ToastContainer.tsx" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Toolbar/Toolbar.tsx" [arrowhead="inv"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Toolbar/Toolbar.tsx" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/components/ui/index.ts" -> "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx" [arrowhead="inv"]
+    "src/shared/components/ui/index.ts" -> "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/dom" {label="dom" "src/shared/dom/DOMCache.ts" [label=<DOMCache.ts> tooltip="DOMCache.ts" URL="src/shared/dom/DOMCache.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/dom" {label="dom" "src/shared/dom/DOMEventManager.ts" [label=<DOMEventManager.ts> tooltip="DOMEventManager.ts" URL="src/shared/dom/DOMEventManager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/dom" {label="dom" "src/shared/dom/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/dom/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
@@ -226,6 +244,8 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/BaseServiceImpl.ts" [label=<BaseServiceImpl.ts> tooltip="BaseServiceImpl.ts" URL="src/shared/services/BaseServiceImpl.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/BulkDownloadService.ts" [label=<BulkDownloadService.ts> tooltip="BulkDownloadService.ts" URL="src/shared/services/BulkDownloadService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/EventManager.ts" [label=<EventManager.ts> tooltip="EventManager.ts" URL="src/shared/services/EventManager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/LanguageService.ts" [label=<LanguageService.ts> tooltip="LanguageService.ts" URL="src/shared/services/LanguageService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/services/LanguageService.ts" -> "src/shared/logging/logger.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/MediaService.ts" [label=<MediaService.ts> tooltip="MediaService.ts" URL="src/shared/services/MediaService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/services/MediaService.ts" -> "src/shared/services/media-extraction/MediaExtractionService.ts"
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/FallbackExtractor.ts"
@@ -248,6 +268,8 @@ strict digraph "dependency-cruiser output"{
     "src/shared/services/index.ts" -> "src/shared/services/AnimationService.ts" [arrowhead="inv"]
     "src/shared/services/index.ts" -> "src/shared/services/BaseServiceImpl.ts" [arrowhead="inv"]
     "src/shared/services/index.ts" -> "src/shared/services/core-services.ts" [arrowhead="inv"]
+    "src/shared/services/index.ts" -> "src/shared/services/LanguageService.ts" [arrowhead="inv"]
+    "src/shared/services/index.ts" -> "src/shared/services/LanguageService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/services/index.ts" -> "src/shared/services/MediaService.ts" [arrowhead="inv"]
     "src/shared/services/index.ts" -> "src/shared/services/MediaService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/services/index.ts" -> "src/shared/services/ServiceManager.ts" [arrowhead="inv"]

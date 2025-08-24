@@ -43,6 +43,10 @@ export type {
 export { ThemeService } from './ThemeService';
 export type { Theme } from './ThemeService';
 
+// 4. 언어 서비스
+export { LanguageService } from './LanguageService';
+export type { SupportedLanguage, LanguageStrings } from './LanguageService';
+
 // 4. 토스트 서비스 - UnifiedToastManager 사용
 export { UnifiedToastManager } from './UnifiedToastManager';
 export { ToastController } from './ToastController';
