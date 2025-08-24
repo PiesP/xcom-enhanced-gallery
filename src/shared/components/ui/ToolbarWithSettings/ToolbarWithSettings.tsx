@@ -35,6 +35,7 @@ export function ToolbarWithSettings(props: ToolbarWithSettingsProps): VNode {
       h(SettingsModal, {
         isOpen: isSettingsOpen,
         onClose: handleCloseSettings,
+        position: 'toolbar-below', // 툴바 아래 위치 (모바일에서는 자동으로 하단 시트)
         key: 'settings-modal',
       }),
   ]);

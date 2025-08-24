@@ -13,6 +13,7 @@ import styles from './SettingsModal.module.css';
 export interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  position?: 'center' | 'toolbar-below' | 'bottom-sheet' | 'top-right';
   className?: string;
   'data-testid'?: string;
 }
@@ -20,6 +21,7 @@ export interface SettingsModalProps {
 export function SettingsModal({
   isOpen,
   onClose,
+  position = 'center',
   className = '',
   'data-testid': testId,
 }: SettingsModalProps): VNode | null {
@@ -96,7 +98,19 @@ export function SettingsModal({
 
   if (!isOpen) return null;
 
-  const modalClass = ComponentStandards.createClassName(styles.backdrop, className);
+  // Position에 따른 CSS 클래스 선택
+  const positionClass =
+    position === 'center'
+      ? styles.center
+      : position === 'toolbar-below'
+        ? styles.toolbarBelow
+        : position === 'bottom-sheet'
+          ? styles.bottomSheet
+          : position === 'top-right'
+            ? styles.topRight
+            : styles.center;
+
+  const modalClass = ComponentStandards.createClassName(styles.backdrop, positionClass, className);
 
   const testProps = ComponentStandards.createTestProps(testId);
 

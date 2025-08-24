@@ -9,9 +9,79 @@
   -webkit-backdrop-filter: blur(4px);
   z-index: var(--xeg-z-modal, 10000);
   display: flex;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Position variants */
+.center {
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.2s ease-out;
+}
+
+.toolbarBelow {
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 80px;
+}
+
+.bottomSheet {
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0;
+}
+
+.topRight {
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 20px;
+}
+
+/* Bottom sheet specific modal styling */
+.bottomSheet .modal {
+  width: 100%;
+  max-width: none;
+  border-radius: 16px 16px 0 0;
+  margin: 0;
+  animation: slideUpIn 0.3s ease-out;
+}
+
+/* Top-right position specific styling */
+.topRight .modal {
+  margin-top: 60px; /* 툴바 간섭 방지 */
+  margin-right: 20px;
+}
+
+/* 반응형 디자인: 모바일에서 하단 시트로 자동 전환 */
+@media (max-width: 767px) {
+  .center,
+  .toolbarBelow,
+  .topRight {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .center .modal,
+  .toolbarBelow .modal,
+  .topRight .modal {
+    width: 100%;
+    max-width: none;
+    border-radius: 16px 16px 0 0;
+    margin: 0;
+    animation: slideUpIn 0.3s ease-out;
+  }
+}
+
+/* 새로운 애니메이션: 하단에서 올라오는 효과 */
+@keyframes slideUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal {

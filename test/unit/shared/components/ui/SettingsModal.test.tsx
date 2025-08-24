@@ -215,4 +215,34 @@ describe('SettingsModal', () => {
       expect(modal).toBeDefined();
     });
   });
+
+  describe('TDD: 모달 위치 설정', () => {
+    it('기본 위치는 center여야 함', () => {
+      render(<SettingsModal {...mockProps} />);
+
+      const backdrop = screen.getByRole('dialog');
+      expect(backdrop.className).toContain('center');
+    });
+
+    it('position="toolbar-below"일 때 툴바 아래 위치 스타일이 적용되어야 함', () => {
+      render(<SettingsModal {...mockProps} position='toolbar-below' />);
+
+      const backdrop = screen.getByRole('dialog');
+      expect(backdrop.className).toContain('toolbarBelow');
+    });
+
+    it('position="bottom-sheet"일 때 하단 시트 스타일이 적용되어야 함', () => {
+      render(<SettingsModal {...mockProps} position='bottom-sheet' />);
+
+      const backdrop = screen.getByRole('dialog');
+      expect(backdrop.className).toContain('bottomSheet');
+    });
+
+    it('position="top-right"일 때 우측 상단 위치 스타일이 적용되어야 함', () => {
+      render(<SettingsModal {...mockProps} position='top-right' />);
+
+      const backdrop = screen.getByRole('dialog');
+      expect(backdrop.className).toContain('topRight');
+    });
+  });
 });

@@ -126,6 +126,98 @@ function setupJsdomPolyfills() {
       };
     };
   }
+
+  // IntersectionObserver polyfill (jsdom limitation)
+  if (typeof globalThis.window !== 'undefined' && !globalThis.window.IntersectionObserver) {
+    globalThis.window.IntersectionObserver = class MockIntersectionObserver {
+      constructor(callback, options) {
+        this.callback = callback;
+        this.options = options;
+        this.root = options?.root || null;
+        this.rootMargin = options?.rootMargin || '0px';
+        this.thresholds = Array.isArray(options?.threshold)
+          ? options.threshold
+          : [options?.threshold || 0];
+        this._observing = new Set();
+        this._isDisconnected = false;
+      }
+
+      observe(element) {
+        if (element && typeof element === 'object' && !this._isDisconnected) {
+          this._observing.add(element);
+
+          // 안전한 비동기 콜백 실행 - 무한 루프 방지
+          if (this.callback && !this._isDisconnected) {
+            // 다음 틱에서 실행하여 동기적 무한 루프 방지
+            setTimeout(() => {
+              if (!this._isDisconnected && this._observing.has(element)) {
+                try {
+                  this.callback(
+                    [
+                      {
+                        target: element,
+                        isIntersecting: true,
+                        intersectionRatio: 1,
+                        boundingClientRect: {
+                          top: 0,
+                          left: 0,
+                          right: 100,
+                          bottom: 100,
+                          width: 100,
+                          height: 100,
+                        },
+                        intersectionRect: {
+                          top: 0,
+                          left: 0,
+                          right: 100,
+                          bottom: 100,
+                          width: 100,
+                          height: 100,
+                        },
+                        rootBounds: {
+                          top: 0,
+                          left: 0,
+                          right: 1000,
+                          bottom: 1000,
+                          width: 1000,
+                          height: 1000,
+                        },
+                        time: Date.now(),
+                      },
+                    ],
+                    this
+                  );
+                } catch (error) {
+                  // 콜백 에러를 무시하여 테스트 안정성 확보
+                  console.warn('IntersectionObserver 콜백 에러 (무시됨):', error);
+                }
+              }
+            }, 0);
+          }
+        }
+      }
+
+      unobserve(element) {
+        if (element && this._observing.has(element)) {
+          this._observing.delete(element);
+        }
+      }
+
+      disconnect() {
+        this._isDisconnected = true;
+        this._observing.clear();
+      }
+
+      takeRecords() {
+        return [];
+      }
+    };
+  }
+
+  // 전역 범위에서도 IntersectionObserver 사용 가능하도록 설정
+  if (typeof globalThis.IntersectionObserver === 'undefined') {
+    globalThis.IntersectionObserver = globalThis.window?.IntersectionObserver;
+  }
 }
 
 // 기본적인 브라우저 환경 설정 강화
