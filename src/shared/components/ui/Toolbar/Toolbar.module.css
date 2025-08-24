@@ -148,16 +148,31 @@
   margin: 0 2px;
 }
 
-/* 버튼 상태 관리 */
+/* 🎨 REFACTOR: 통일된 툴바 버튼 스타일 - !important 제거 */
 .toolbarButton {
-  /* 글래스모피즘 버튼 스타일 */
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--button-color, var(--xeg-text-button));
-  opacity: var(--button-opacity, 1);
-  transform: var(--button-transform, none);
+  /* 📏 통일된 크기 - 기본 40px */
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px;
+
+  /* 🎨 글래스모피즘 디자인 시스템 */
+  background: var(--xeg-toolbar-glass-bg);
+  border: 1px solid var(--xeg-toolbar-glass-border);
+  border-radius: var(--xeg-radius-md);
+  backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
+  box-shadow: var(--xeg-toolbar-glass-shadow);
+
+  /* 🎯 텍스트 및 커서 */
+  color: var(--xeg-color-text-primary);
+  cursor: pointer;
+
+  /* ⚡ 애니메이션 */
   transition: var(--xeg-transition-fast);
 
-  /* 레이아웃 */
+  /* 📐 레이아웃 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -165,19 +180,7 @@
   font-weight: 500;
   position: relative;
   overflow: hidden;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
-
-  /* 글래스모피즘 스타일링 */
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* 데이터 속성 기반 상태 관리 */
@@ -207,15 +210,44 @@
   cursor: not-allowed;
 }
 
-/* 호버 상태는 CSS에서만 관리 - fitButton 기준으로 통일 */
+/* 호버 상태는 CSS에서만 관리 - 통일된 호버 효과 */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
-    /* fitButton과 동일한 단순한 호버 효과 */
-    background: var(--xeg-color-neutral-100);
-    border-color: var(--xeg-color-neutral-400);
-    color: var(--xeg-color-neutral-800);
     /* 복잡한 transform 효과 제거 */
+    background: var(--xeg-color-neutral-100);
+    border-color: var(--xeg-color-neutral-300);
+    transform: translateY(-1px);
+    box-shadow: var(--xeg-shadow-md);
   }
+}
+
+/* 의미론적 버튼 변형 */
+.toolbarButton.primary {
+  border-color: var(--xeg-color-primary);
+}
+
+.toolbarButton.primary:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-primary-50);
+  border-color: var(--xeg-color-primary-hover);
+}
+
+.toolbarButton.success {
+  border-color: var(--xeg-color-success);
+}
+
+.toolbarButton.success:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-success-50);
+  border-color: var(--xeg-color-success-hover);
+}
+
+.toolbarButton.danger {
+  border-color: var(--xeg-color-error);
+}
+
+.toolbarButton.danger:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-error-50);
+  border-color: var(--xeg-color-error-hover);
+  color: var(--xeg-color-error);
 }
 
 /* 클릭 상태 */
@@ -241,21 +273,7 @@
   gap: 8px;
 }
 
-.navButton {
-  /* toolbarButton 기본 스타일 상속 */
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-neutral-300);
-  color: var(--xeg-text-button-navigation);
-}
-
-.navButton:hover:not(:disabled) {
-  /* fitButton과 동일한 단순한 호버 효과 */
-  background: var(--xeg-color-neutral-200);
-  border-color: var(--xeg-color-neutral-400);
-  color: var(--xeg-color-neutral-800);
-  /* transform 효과 제거 */
-}
-
+/* 네비게이션 버튼 - 기본 스타일 상속 */
 .navButton:active:not(:disabled),
 .navButton.active {
   background: var(--xeg-color-primary);
@@ -330,8 +348,7 @@
 }
 
 .fitButton {
-  width: 40px;
-  height: 40px;
+  /* toolbarButton 기본 스타일 상속하면서 그룹 내 스타일 적용 */
   border-radius: 6px;
   background: transparent;
   border: none;
@@ -348,35 +365,19 @@
   background: var(--xeg-color-primary);
   color: white;
 }
-/* 다운로드 버튼 */
+/* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {
   position: relative;
 }
 
 .downloadCurrent {
-  background: var(--xeg-bg-button-download);
+  /* primary 변형 적용 */
   border-color: var(--xeg-color-primary);
-  color: var(--xeg-text-button-download);
-}
-
-.downloadCurrent:hover:not(:disabled) {
-  /* fitButton과 동일한 단순한 호버 효과 */
-  background: var(--xeg-bg-button-download-hover);
-  border-color: var(--xeg-color-primary-hover);
-  /* transform 효과 제거 */
 }
 
 .downloadAll {
-  background: var(--xeg-color-success);
+  /* success 변형 적용 */
   border-color: var(--xeg-color-success);
-  color: white;
-}
-
-.downloadAll:hover:not(:disabled) {
-  /* fitButton과 동일한 단순한 호버 효과 */
-  background: var(--xeg-color-success-light);
-  border-color: var(--xeg-color-success-light);
-  /* transform 효과 제거 */
 }
 
 .downloadSpinner {
@@ -403,32 +404,10 @@
     transform: rotate(360deg);
   }
 }
-/* 설정 및 닫기 버튼 */
-.settingsButton {
-  background: var(--xeg-bg-button-settings);
-  border-color: var(--xeg-color-neutral-300);
-  color: var(--xeg-text-button-settings);
-}
-
-.settingsButton:hover:not(:disabled) {
-  /* fitButton과 동일한 단순한 호버 효과 */
-  background: var(--xeg-bg-button-settings-hover);
-  border-color: var(--xeg-color-neutral-400);
-  /* transform 효과 제거 */
-}
-
+/* 설정 및 닫기 버튼 - 기본 스타일 상속 */
 .closeButton {
-  background: var(--xeg-bg-button-close);
+  /* danger 변형을 위한 기본 설정 */
   border-color: var(--xeg-color-neutral-300);
-  color: var(--xeg-text-button-close);
-}
-
-.closeButton:hover:not(:disabled) {
-  /* fitButton과 동일한 단순한 호버 효과 */
-  background: var(--xeg-bg-button-close-hover);
-  border-color: var(--xeg-color-error);
-  color: var(--xeg-color-error);
-  /* transform 효과 제거 */
 }
 /* 반응형 디자인 */
 @media (max-width: 768px) {
@@ -444,11 +423,21 @@
     gap: 6px;
   }
 
-  .toolbarButton {
-    padding: 6px 10px;
-    min-width: 36px;
-    min-height: 36px;
+  .toolbarButton,
+  .toolbarButton.fitButton,
+  .toolbarButton.downloadButton,
+  .toolbarButton.settingsButton,
+  .toolbarButton.closeButton {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 6px;
     font-size: 13px;
+  }
+
+  .fitButton {
+    padding: 4px;
   }
 
   .mediaCounter {
@@ -457,12 +446,6 @@
 
   .progressBar {
     width: 50px;
-  }
-
-  .fitButton {
-    min-width: 36px;
-    min-height: 36px;
-    padding: 4px 8px;
   }
 
   /* 반응형에서도 separator 표시 유지 */
@@ -507,8 +490,6 @@
   }
 
   .fitButton {
-    min-width: 32px;
-    min-height: 32px;
     padding: 3px 6px;
   }
 

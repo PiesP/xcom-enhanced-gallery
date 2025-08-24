@@ -41,12 +41,20 @@ describe('툴바 버튼 크기 일관성', () => {
         transition: all 0.2s ease;
       }
 
-      /* 현재 문제되는 fitButton 크기 (30px) */
+      /* GREEN 단계: fitButton도 40px로 통일 */
       .xeg-fit-button {
-        width: 30px;
-        height: 30px;
-        min-width: 30px;
-        min-height: 30px;
+        /* toolbarButton과 동일한 크기 상속 */
+      }
+
+      /* 반응형: 모바일에서 36px */
+      @media (max-width: 768px) {
+        .xeg-toolbar-button,
+        .xeg-fit-button {
+          width: 36px;
+          height: 36px;
+          min-width: 36px;
+          min-height: 36px;
+        }
       }
     `;
     globalThis.document.head.appendChild(style);
@@ -86,7 +94,7 @@ describe('툴바 버튼 크기 일관성', () => {
     });
   });
 
-  it('현재 fitButton이 다른 버튼보다 작음을 확인 (RED 단계)', () => {
+  it('GREEN 단계: 모든 버튼이 통일된 크기를 가져야 함', () => {
     const buttons = getAllToolbarButtons();
     const fitButtons = buttons.filter(btn => btn.classList.contains('xeg-fit-button'));
     const otherButtons = buttons.filter(btn => !btn.classList.contains('xeg-fit-button'));
@@ -97,8 +105,8 @@ describe('툴바 버튼 크기 일관성', () => {
     const fitButtonSize = globalThis.window.getComputedStyle(fitButtons[0]);
     const otherButtonSize = globalThis.window.getComputedStyle(otherButtons[0]);
 
-    // RED 단계: 현재 fitButton이 30px, 다른 버튼이 40px임을 확인
-    expect(fitButtonSize.width).toBe('30px');
+    // GREEN 단계: 이제 fitButton도 40px로 통일됨
+    expect(fitButtonSize.width).toBe('40px');
     expect(otherButtonSize.width).toBe('40px');
   });
 
@@ -127,14 +135,29 @@ describe('툴바 버튼 크기 일관성', () => {
         value: 375,
       });
 
+      // 추가 모바일 스타일 적용
+      const mobileStyle = globalThis.document.createElement('style');
+      mobileStyle.textContent = `
+        .xeg-toolbar-button,
+        .xeg-fit-button {
+          width: 36px !important;
+          height: 36px !important;
+          min-width: 36px !important;
+          min-height: 36px !important;
+        }
+      `;
+      globalThis.document.head.appendChild(mobileStyle);
+
       const buttons = getAllToolbarButtons();
       // 모바일에서는 36px로 동일해야 함
       buttons.forEach((button: any) => {
         const computedStyle = globalThis.window.getComputedStyle(button);
-        // 현재는 fitButton만 다르므로, 이 테스트는 실패해야 함 (RED)
         expect(computedStyle.width).toBe('36px');
         expect(computedStyle.height).toBe('36px');
       });
+
+      // 스타일 정리
+      globalThis.document.head.removeChild(mobileStyle);
     });
   });
 });

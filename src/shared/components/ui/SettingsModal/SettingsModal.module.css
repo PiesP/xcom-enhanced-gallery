@@ -114,12 +114,19 @@
 }
 
 .closeButton {
-  background: transparent;
-  border: none;
+  /* 툴바 버튼과 동일한 glassmorphism 스타일 */
+  background: var(--xeg-toolbar-glass-bg);
+  border: 1px solid var(--xeg-toolbar-glass-border);
+  border-radius: var(--xeg-radius-md);
+  backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
+  box-shadow: var(--xeg-toolbar-glass-shadow);
+
   color: var(--xeg-color-text-secondary);
   cursor: pointer;
   padding: 8px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,8 +134,11 @@
 }
 
 .closeButton:hover {
-  background: var(--xeg-color-neutral-100);
-  color: var(--xeg-color-text-primary);
+  background: var(--xeg-color-error-50);
+  border-color: var(--xeg-color-error);
+  color: var(--xeg-color-error);
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-shadow-md);
 }
 
 .content {
@@ -151,9 +161,13 @@
 }
 
 .select {
-  background: var(--xeg-color-bg-secondary);
-  border: 1px solid var(--xeg-color-border-primary);
-  border-radius: 8px;
+  /* glassmorphism 효과 추가 */
+  background: var(--xeg-toolbar-glass-bg);
+  border: 1px solid var(--xeg-toolbar-glass-border);
+  border-radius: var(--xeg-radius-md);
+  backdrop-filter: var(--xeg-toolbar-glass-blur);
+  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur);
+
   padding: 10px 12px;
   font-size: 14px;
   color: var(--xeg-color-text-primary);
@@ -162,7 +176,9 @@
 }
 
 .select:hover {
-  border-color: var(--xeg-color-border-hover);
+  border-color: var(--xeg-color-primary);
+  box-shadow: var(--xeg-shadow-sm);
+  transform: translateY(-1px);
 }
 
 .select:focus {
