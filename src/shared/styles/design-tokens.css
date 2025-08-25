@@ -161,6 +161,7 @@
   --xeg-z-overlay: 3000;
   --xeg-z-gallery: 4000;
   --xeg-z-toast: 5000;
+  --xeg-z-tooltip: 9999; /* 최상위 툴팁 레이어 */
 
   /* ===========================================
      ANIMATION SYSTEM
@@ -227,9 +228,21 @@
   --xeg-gallery-z-index: var(--xeg-z-gallery);
 
   /* Button specific */
-  --xeg-button-height-sm: 32px;
+  --xeg-button-height-sm: var(--xeg-spacing-2xl); /* 32px */
   --xeg-button-height-md: 40px;
   --xeg-button-height-lg: 48px;
+  --xeg-button-lift: -1px; /* 호버 시 transform translateY 값 */
+
+  /* VerticalImageItem specific */
+  /* Dark mode specific variables */
+  --xeg-color-bg-secondary-dark: var(--xeg-color-neutral-800);
+  --xeg-color-bg-tertiary-dark: var(--xeg-color-neutral-700);
+  --xeg-color-bg-error-dark: var(--xeg-color-error-900);
+  --xeg-color-text-error-dark: var(--xeg-color-error-200);
+
+  /* Hover and Focus Effects */
+  --xeg-hover-lift: translateY(-2px);
+  --xeg-viewport-height-constrained: 80vh;
 
   /* 글래스모피즘 컴포넌트별 토큰 */
   /* 툴바 글래스모피즘 */
@@ -279,6 +292,27 @@
   /* 상태별 box-shadow */
   --xeg-focus-shadow: 0 0 0 var(--xeg-focus-ring-width) var(--xeg-focus-ring-color);
   --xeg-active-shadow: 0 0 0 var(--xeg-active-ring-width) var(--xeg-active-ring-color);
+
+  /* ===========================================
+     ICON SYSTEM TOKENS
+     =========================================== */
+
+  /* Icon 기본 설정 */
+  --xeg-icon-size: 1.5em; /* 24px equivalent in em */
+  --xeg-icon-stroke-width: 2;
+  --xeg-icon-line-height: 1;
+
+  /* Icon 크기 변형 */
+  --xeg-icon-size-xs: 1em; /* 16px */
+  --xeg-icon-size-sm: 1.25em; /* 20px */
+  --xeg-icon-size-md: 1.5em; /* 24px - 기본값 */
+  --xeg-icon-size-lg: 2em; /* 32px */
+  --xeg-icon-size-xl: 2.5em; /* 40px */
+
+  /* Icon 시각적 속성 */
+  --xeg-icon-color: currentColor;
+  --xeg-icon-opacity: 1;
+  --xeg-icon-transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
 /* ===========================================

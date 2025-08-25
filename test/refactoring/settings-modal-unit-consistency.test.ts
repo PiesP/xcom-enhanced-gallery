@@ -79,6 +79,18 @@ describe('SettingsModal Unit Consistency', () => {
       const transitionPattern = /var\(--xeg-transition-fast\)/;
       expect(settingsModalCSS).toMatch(transitionPattern);
     });
+
+    it('border-radius가 하드코딩되지 않고 CSS 변수를 사용해야 함', () => {
+      // 하드코딩된 border-radius 검출
+      const hardcodedBorderRadiusPattern = /border-radius:\s*\d+px/g;
+      const hardcodedMatches = settingsModalCSS.match(hardcodedBorderRadiusPattern);
+
+      expect(hardcodedMatches, '하드코딩된 border-radius가 발견됨').toBeNull();
+
+      // CSS 변수 사용 확인
+      const cssVariableBorderRadiusPattern = /border-radius:\s*var\(--xeg-radius/;
+      expect(settingsModalCSS).toMatch(cssVariableBorderRadiusPattern);
+    });
   });
 
   describe('컴파일된 CSS 검증', () => {

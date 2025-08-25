@@ -15,9 +15,10 @@ import type { VNode, ComponentChildren } from '@shared/external/vendors';
 export interface IconProps {
   /**
    * 아이콘 크기 (width, height)
-   * @default 24
+   * CSS 변수 또는 em 단위를 사용하여 상대적 크기 지원
+   * @default CSS 변수 --xeg-icon-size (1.5em)
    */
-  size?: number;
+  size?: number | string;
 
   /**
    * CSS 클래스명
@@ -43,24 +44,30 @@ export interface IconProps {
 
 /**
  * Tabler Icons 스타일의 아이콘 컴포넌트
+ * CSS 변수 기반으로 일관된 디자인 시스템 지원
  *
  * @example
  * ```tsx
- * // 닫기 아이콘
+ * // 기본 아이콘 (CSS 변수 크기 사용)
  * <Icon aria-label="닫기">
  *   <path stroke="none" d="M0 0h24v24H0z" fill="none" />
  *   <path d="M18 6l-12 12" />
  *   <path d="M6 6l12 12" />
  * </Icon>
  *
- * // 커스텀 크기
+ * // 커스텀 크기 (숫자 또는 CSS 값)
  * <Icon size={16}>
+ *   <path d="M7 4v16l13-8z" />
+ * </Icon>
+ *
+ * // CSS 변수를 통한 크기 조정
+ * <Icon size="var(--xeg-icon-size-lg)">
  *   <path d="M7 4v16l13-8z" />
  * </Icon>
  * ```
  */
 export function Icon({
-  size = 24,
+  size = 'var(--xeg-icon-size)', // CSS 변수를 기본값으로 사용
   className = '',
   children,
   'aria-label': ariaLabel,
@@ -77,16 +84,19 @@ export function Icon({
     accessibilityProps['aria-hidden'] = 'true';
   }
 
+  // 크기 값 처리 - 숫자인 경우 픽셀로, 문자열인 경우 그대로 사용
+  const sizeValue = typeof size === 'number' ? `${size}px` : size;
+
   return h(
     'svg',
     {
       xmlns: 'http://www.w3.org/2000/svg',
-      width: size,
-      height: size,
+      width: sizeValue,
+      height: sizeValue,
       viewBox: '0 0 24 24',
       fill: 'none',
-      stroke: 'currentColor',
-      'stroke-width': '2',
+      stroke: 'var(--xeg-icon-color, currentColor)',
+      'stroke-width': 'var(--xeg-icon-stroke-width)',
       'stroke-linecap': 'round' as const,
       'stroke-linejoin': 'round' as const,
       className,

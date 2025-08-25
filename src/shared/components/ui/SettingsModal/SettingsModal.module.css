@@ -40,7 +40,7 @@
 .bottomSheet .modal {
   width: 100%;
   max-width: none;
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--xeg-radius-xl) var(--xeg-radius-xl) 0 0;
   margin: 0;
   animation: slideUpIn 0.3s ease-out;
 }
@@ -67,7 +67,7 @@
   .topRight .modal {
     width: 100%;
     max-width: none;
-    border-radius: 16px 16px 0 0;
+    border-radius: var(--xeg-radius-xl) var(--xeg-radius-xl) 0 0;
     margin: 0;
     animation: slideUpIn 0.3s ease-out;
   }
@@ -88,7 +88,7 @@
 .modal {
   background: var(--xeg-toolbar-glass-bg);
   border: 1px solid var(--xeg-toolbar-glass-border);
-  border-radius: 16px;
+  border-radius: var(--xeg-radius-xl);
   box-shadow: var(--xeg-toolbar-glass-shadow);
   backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
   -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);

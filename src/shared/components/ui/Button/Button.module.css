@@ -7,6 +7,10 @@
  * - 다크 모드 지원
  * - 접근성 중심 설계
  * - 현대적인 UI/UX
+ *
+ * Button-specific CSS 변수들:
+ * - --xeg-button-height-sm/md/lg: 버튼 높이
+ * - --xeg-button-lift: 호버 시 변환 값
  */
 
 .button {
@@ -14,7 +18,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm, 0.5rem);
+  gap: var(--xeg-spacing-sm);
   border: 1px solid transparent;
   border-radius: var(--xeg-radius-md);
   font-family: var(
@@ -62,7 +66,7 @@
   &:hover:not(:disabled) {
     background-color: var(--xeg-color-primary-600);
     border-color: var(--xeg-color-primary-600);
-    transform: translateY(-1px);
+    transform: translateY(var(--xeg-button-lift));
     box-shadow: var(--xeg-shadow-md);
   }
 
@@ -80,7 +84,7 @@
   &:hover:not(:disabled) {
     background-color: var(--xeg-color-border-primary);
     border-color: var(--xeg-color-neutral-400);
-    transform: translateY(-1px);
+    transform: translateY(var(--xeg-button-lift));
     box-shadow: var(--xeg-shadow-sm);
   }
 
@@ -108,22 +112,22 @@
 
 /* Button Sizes */
 .sm {
-  padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
-  font-size: var(--font-size-sm, 0.875rem);
-  min-height: 2rem;
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  font-size: var(--xeg-font-size-sm);
+  min-height: var(--xeg-button-height-sm);
   border-radius: var(--xeg-radius-sm);
 }
 
 .md {
-  padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
-  font-size: var(--font-size-base, 1rem);
-  min-height: 2.5rem;
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-font-size-base);
+  min-height: var(--xeg-button-height-md);
 }
 
 .lg {
-  padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
-  font-size: var(--font-size-lg, 1.125rem);
-  min-height: 3rem;
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+  font-size: var(--xeg-font-size-lg);
+  min-height: var(--xeg-button-height-lg);
   border-radius: var(--xeg-radius-lg);
 }
 
@@ -179,7 +183,7 @@
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .button {
-    border-width: 2px;
+    border: 1px solid currentColor;
   }
 
   .primary {
@@ -205,7 +209,7 @@
 @media (max-width: 768px) {
   .lg {
     padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-    font-size: var(--xeg-font-size-md);
-    min-height: 2.5rem;
+    font-size: var(--xeg-font-size-base);
+    min-height: var(--xeg-button-height-md);
   }
 }
