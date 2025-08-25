@@ -152,7 +152,9 @@ describe('Toolbar Button Hover Consistency', () => {
         ),
         fitButton: toolbarCSSContent.includes('.fitButton'),
         navButton: toolbarCSSContent.includes('.navButton:hover:not(:disabled)'),
-        downloadButton: toolbarCSSContent.includes('.downloadCurrent:hover:not(:disabled)'),
+        downloadButton: toolbarCSSContent.includes(
+          ".downloadButton:hover:not([data-disabled='true'])"
+        ),
       };
 
       // 모든 버튼에 호버 효과가 있는지 확인

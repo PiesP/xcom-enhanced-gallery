@@ -24,22 +24,31 @@ describe('Vitest 타임아웃 vs 무한 루프', () => {
   it('비동기 무한 루프 - 타임아웃 정상 작동', async () => {
     console.log('비동기 테스트 시작');
 
-    // 비동기 무한 루프 - 이벤트 루프가 계속 실행됨
-    const infiniteAsync = async () => {
-      while (true) {
-        await new Promise(resolve => setTimeout(resolve, 1)); // 1ms 대기
-        // 각 루프마다 이벤트 루프에 제어권 반환
-        // Vitest가 타임아웃을 체크할 수 있음
-      }
-    };
+    // Promise 기반으로 타임아웃 테스트 구현
+    const timeoutPromise = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        reject(new Error('Test timed out as expected'));
+      }, 2000); // 2초 후 타임아웃
+    });
 
-    // 이 테스트는 타임아웃(20초)에 걸려서 실패함
+    // 무한 루프 Promise (실제로는 타임아웃에 걸림)
+    const infinitePromise = new Promise(resolve => {
+      const loop = async () => {
+        while (true) {
+          await new Promise(r => setTimeout(r, 10)); // 10ms 대기
+        }
+      };
+      loop();
+    });
+
+    // 타임아웃이 먼저 발생해야 함
     try {
-      await infiniteAsync();
+      await Promise.race([infinitePromise, timeoutPromise]);
+      throw new Error('Should not reach here');
     } catch (error) {
-      console.log('타임아웃으로 인한 에러:', error.message);
+      expect(error.message).toBe('Test timed out as expected');
     }
-  }, 5000); // 5초 타임아웃으로 테스트
+  }, 10000); // 10초 타임아웃
 
   // 🔍 IntersectionObserver 무한 루프 시뮬레이션
   it('IntersectionObserver 즉시 콜백의 문제', () => {
@@ -90,7 +99,7 @@ describe('Vitest 타임아웃 vs 무한 루프', () => {
   });
 
   // ✅ 개선된 IntersectionObserver 모킹
-  it('개선된 IntersectionObserver - 안전한 비동기 콜백', done => {
+  it('개선된 IntersectionObserver - 안전한 비동기 콜백', async () => {
     let renderCount = 0;
 
     // 개선된 모킹 패턴
@@ -121,27 +130,30 @@ describe('Vitest 타임아웃 vs 무한 루프', () => {
       }
     };
 
-    // 컴포넌트 렌더링 시뮬레이션
-    const simulateComponentRender = () => {
-      renderCount++;
-      console.log(`안전한 렌더링 #${renderCount}`);
+    // Promise 기반으로 변경
+    return new Promise(resolve => {
+      // 컴포넌트 렌더링 시뮬레이션
+      const simulateComponentRender = () => {
+        renderCount++;
+        console.log(`안전한 렌더링 #${renderCount}`);
 
-      // useEffect 시뮬레이션
-      const observer = new SafeIntersectionObserver(() => {
-        if (renderCount < 3) {
-          // 제한된 리렌더링만 허용
-          simulateComponentRender();
-        } else {
-          // 테스트 완료
-          expect(renderCount).toBe(3);
-          done();
-        }
-      });
+        // useEffect 시뮬레이션
+        const observer = new SafeIntersectionObserver(() => {
+          if (renderCount < 3) {
+            // 제한된 리렌더링만 허용
+            simulateComponentRender();
+          } else {
+            // 테스트 완료
+            expect(renderCount).toBe(3);
+            resolve();
+          }
+        });
 
-      // DOM 요소 관찰 시작
-      observer.observe(document.createElement('div'));
-    };
+        // DOM 요소 관찰 시작
+        observer.observe(document.createElement('div'));
+      };
 
-    simulateComponentRender();
+      simulateComponentRender();
+    });
   });
 });

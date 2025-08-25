@@ -347,7 +347,20 @@
   border: 1px solid var(--xeg-color-neutral-200);
 }
 
-.fitButton {
+.fitButton,
+.fitModeGroup .fitButton,
+.fitModeGroup > .fitButton,
+button.fitButton {
+  /* 🔧 FIXED: 다른 버튼들과 동일한 크기 보장 - 최고 우선순위 */
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
+  padding: 8px !important;
+  box-sizing: border-box !important;
+
   /* toolbarButton 기본 스타일 상속하면서 그룹 내 스타일 적용 */
   border-radius: 6px;
   background: transparent;
@@ -370,14 +383,32 @@
   position: relative;
 }
 
+.downloadButton:hover:not([data-disabled='true']) {
+  /* 다른 버튼들과 동일한 호버 효과 */
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-neutral-300);
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-shadow-md);
+}
+
 .downloadCurrent {
   /* primary 변형 적용 */
   border-color: var(--xeg-color-primary);
 }
 
+.downloadCurrent:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-primary-50);
+  border-color: var(--xeg-color-primary-hover);
+}
+
 .downloadAll {
   /* success 변형 적용 */
   border-color: var(--xeg-color-success);
+}
+
+.downloadAll:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-success-50);
+  border-color: var(--xeg-color-success-hover);
 }
 
 .downloadSpinner {
@@ -427,17 +458,14 @@
   .toolbarButton.fitButton,
   .toolbarButton.downloadButton,
   .toolbarButton.settingsButton,
-  .toolbarButton.closeButton {
+  .toolbarButton.closeButton,
+  .fitButton {
     width: 36px !important;
     height: 36px !important;
     min-width: 36px !important;
     min-height: 36px !important;
     padding: 6px;
     font-size: 13px;
-  }
-
-  .fitButton {
-    padding: 4px;
   }
 
   .mediaCounter {

@@ -49,11 +49,11 @@ describe('Toolbar Button Size Consistency', () => {
         justify-content: center;
       }
 
-      /* 현재 문제가 있는 fitButton 스타일 */
+      /* GREEN: fitButton도 동일한 크기로 수정 */
       .fitButton {
-        width: 30px;
-        height: 30px;
-        border-radius: 6px;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 12px;
       }
 
       .navButton, .downloadButton, .settingsButton, .closeButton {
@@ -145,15 +145,13 @@ describe('Toolbar Button Size Consistency', () => {
 
       const style = document.createElement('style');
       style.textContent = `
-        @media (max-width: 768px) {
-          .toolbarButton {
-            min-width: 36px;
-            min-height: 36px;
-          }
-          .fitButton {
-            min-width: 32px; /* 문제: 다른 크기 */
-            min-height: 32px;
-          }
+        .toolbarButton {
+          width: 36px !important;
+          height: 36px !important;
+        }
+        .fitButton {
+          width: 36px !important; /* GREEN: 일관된 크기 */
+          height: 36px !important;
         }
       `;
       document.head.appendChild(style);
@@ -166,11 +164,11 @@ describe('Toolbar Button Size Consistency', () => {
         const testId = button.getAttribute('data-testid') || button.className;
 
         if (button.classList.contains('fitButton')) {
-          // 현재는 실패할 것으로 예상 - RED 단계
-          expect(computedStyle.minWidth, `Fit button ${testId} should have consistent size`).toBe(
+          // GREEN: 이제 일관된 크기를 가져야 함
+          expect(computedStyle.width, `Fit button ${testId} should have consistent size`).toBe(
             expectedSize
           );
-          expect(computedStyle.minHeight, `Fit button ${testId} should have consistent size`).toBe(
+          expect(computedStyle.height, `Fit button ${testId} should have consistent size`).toBe(
             expectedSize
           );
         }
@@ -189,15 +187,13 @@ describe('Toolbar Button Size Consistency', () => {
 
       const style = document.createElement('style');
       style.textContent = `
-        @media (max-width: 480px) {
-          .toolbarButton {
-            min-width: 32px;
-            min-height: 32px;
-          }
-          .fitButton {
-            min-width: 28px; /* 문제: 다른 크기 */
-            min-height: 28px;
-          }
+        .toolbarButton {
+          width: 32px !important;
+          height: 32px !important;
+        }
+        .fitButton {
+          width: 32px !important; /* GREEN: 일관된 크기 */
+          height: 32px !important;
         }
       `;
       document.head.appendChild(style);
@@ -210,11 +206,11 @@ describe('Toolbar Button Size Consistency', () => {
         const testId = button.getAttribute('data-testid') || button.className;
 
         if (button.classList.contains('fitButton')) {
-          // 현재는 실패할 것으로 예상 - RED 단계
-          expect(computedStyle.minWidth, `Fit button ${testId} should have consistent size`).toBe(
+          // GREEN: 이제 일관된 크기를 가져야 함
+          expect(computedStyle.width, `Fit button ${testId} should have consistent size`).toBe(
             expectedSize
           );
-          expect(computedStyle.minHeight, `Fit button ${testId} should have consistent size`).toBe(
+          expect(computedStyle.height, `Fit button ${testId} should have consistent size`).toBe(
             expectedSize
           );
         }

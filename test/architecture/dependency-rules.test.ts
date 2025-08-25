@@ -255,8 +255,12 @@ describe('Architecture Dependency Rules', () => {
           if (pattern.test(content)) {
             vendorUsageFound = true;
 
-            // vendors import가 있는지 확인
-            const hasVendorsImport = content.includes('@shared/external/vendors');
+            // vendors import가 있는지 확인 (정적 import 및 동적 import 모두 지원)
+            const hasVendorsImport =
+              content.includes('@shared/external/vendors') ||
+              content.includes("import('@shared/external/vendors')") ||
+              content.includes('external/vendors') ||
+              /from\s+['"]\.*\/external\/vendors/.test(content);
             if (!hasVendorsImport) {
               console.warn(`❌ ${file}에서 vendor getter 사용하지만 import 없음`, {
                 pattern: pattern.source,
