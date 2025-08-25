@@ -40,7 +40,7 @@
     transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
 
   /* 글래스모피즘 스타일링 */
-  border-radius: 16px;
+  border-radius: var(--xeg-radius-xl);
   border: 1px solid var(--xeg-toolbar-glass-border);
   box-shadow: var(--xeg-toolbar-glass-shadow);
   backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
@@ -297,7 +297,7 @@
   white-space: nowrap;
   background: var(--xeg-bg-counter);
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--xeg-radius-md);
   border: 1px solid var(--xeg-border-counter);
 }
 
@@ -342,7 +342,7 @@
   display: flex;
   gap: 2px;
   background: var(--xeg-color-neutral-100);
-  border-radius: 8px;
+  border-radius: var(--xeg-radius-md);
   padding: 2px;
   border: 1px solid var(--xeg-color-neutral-200);
 }
@@ -362,7 +362,7 @@ button.fitButton {
   box-sizing: border-box !important;
 
   /* toolbarButton 기본 스타일 상속하면서 그룹 내 스타일 적용 */
-  border-radius: 6px;
+  border-radius: var(--xeg-radius-md);
   background: transparent;
   border: none;
   color: var(--xeg-color-neutral-600);
@@ -514,7 +514,7 @@ button.fitButton {
   }
 
   .fitModeGroup {
-    border-radius: 6px;
+    border-radius: var(--xeg-radius-md);
   }
 
   .fitButton {
@@ -626,7 +626,7 @@ button.fitButton {
     max-width: none;
     left: 10px;
     transform: none;
-    border-radius: 8px;
+    border-radius: var(--xeg-radius-md);
   }
 }
 

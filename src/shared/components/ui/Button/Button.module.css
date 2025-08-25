@@ -16,7 +16,7 @@
   justify-content: center;
   gap: var(--spacing-sm, 0.5rem);
   border: 1px solid transparent;
-  border-radius: var(--radius-md, 0.5rem);
+  border-radius: var(--xeg-radius-md);
   font-family: var(
     --font-family,
     -apple-system,
@@ -111,7 +111,7 @@
   padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
   font-size: var(--font-size-sm, 0.875rem);
   min-height: 2rem;
-  border-radius: var(--radius-sm, 0.25rem);
+  border-radius: var(--xeg-radius-sm);
 }
 
 .md {
@@ -124,7 +124,7 @@
   padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
   font-size: var(--font-size-lg, 1.125rem);
   min-height: 3rem;
-  border-radius: var(--radius-lg, 1rem);
+  border-radius: var(--xeg-radius-lg);
 }
 
 /* Loading Spinner */
