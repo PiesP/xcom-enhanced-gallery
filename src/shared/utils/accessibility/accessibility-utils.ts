@@ -476,8 +476,9 @@ export function enhanceFocusVisibility(element: HTMLElement): void {
 
   // CSS 변수가 없는 경우를 위한 폴백
   if (!element.style.outline.includes('var(')) {
-    element.style.outline = '2px solid #005fcc';
-    element.style.outlineOffset = '2px';
+    element.style.outline =
+      'var(--xeg-focus-outline-width) var(--xeg-focus-outline-style) var(--xeg-focus-outline-color)';
+    element.style.outlineOffset = 'var(--xeg-focus-ring-offset)';
   }
 }
 

@@ -28,9 +28,11 @@ function generateNamespacedCSS(): string {
   --xeg-color-secondary: var(--xeg-color-neutral-500);
   --xeg-color-background: var(--xeg-color-surface-dark);
   --xeg-color-surface: var(--xeg-color-surface-elevated);
+  --xeg-color-surface-primary: var(--xeg-color-surface-light);
   --xeg-color-text-primary: var(--xeg-color-text-primary);
   --xeg-color-text-secondary: var(--xeg-color-text-secondary);
   --xeg-color-border: var(--xeg-color-border-primary);
+  --xeg-color-border-primary: var(--xeg-color-border-primary);
   --xeg-color-hover: var(--xeg-color-overlay-light);
   --xeg-color-active: var(--xeg-color-overlay-medium);
 
