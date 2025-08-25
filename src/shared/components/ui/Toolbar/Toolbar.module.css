@@ -17,7 +17,7 @@
 .galleryToolbar {
   /* 기본 레이아웃 및 시각적 속성만 */
   position: fixed;
-  top: 20px;
+  top: 1.25em; /* 20px → 1.25em */
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar);
@@ -25,9 +25,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 48px;
-  padding: 8px 16px;
-  gap: 12px;
+  min-height: 3em; /* 48px → 3em */
+  padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
+  gap: 0.75em; /* 12px → 0.75em */
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
   background: var(--xeg-toolbar-glass-bg);
@@ -88,7 +88,7 @@
   --toolbar-opacity: 1 !important;
   --toolbar-pointer-events: auto !important;
   --toolbar-bg: var(--toolbar-bg-error);
-  --toolbar-offset-y: -4px;
+  --toolbar-offset-y: -0.25em; /* -4px → -0.25em */
   /* 에러 상태에서도 가시성 보장 */
   opacity: 1 !important;
   pointer-events: auto !important;
@@ -99,7 +99,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 8px;
+  gap: 0.5em; /* 8px → 0.5em */
   max-width: 100%;
   overflow: hidden;
 }
@@ -107,7 +107,7 @@
 .toolbarSection {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0.125em; /* 2px → 0.125em */
   position: relative;
 }
 
@@ -117,7 +117,7 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0.125em; /* 2px → 0.125em */
 }
 
 .toolbarLeft {
@@ -143,17 +143,17 @@
 
 .separator {
   color: var(--xeg-color-neutral-500);
-  margin: 0 2px;
+  margin: 0 0.125em; /* 0 2px → 0 0.125em */
 }
 
 /* 🎨 REFACTOR: 통일된 툴바 버튼 스타일 - !important 제거 */
 .toolbarButton {
   /* 📏 통일된 크기 - 기본 40px */
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
-  padding: 8px;
+  width: 2.5em; /* 40px → 2.5em */
+  height: 2.5em; /* 40px → 2.5em */
+  min-width: 2.5em; /* 40px → 2.5em */
+  min-height: 2.5em; /* 40px → 2.5em */
+  padding: 0.5em; /* 8px → 0.5em */
 
   /* 🎨 글래스모피즘 디자인 시스템 */
   background: var(--xeg-toolbar-glass-bg);
@@ -174,7 +174,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 0.875em; /* 14px → 0.875em */
   font-weight: 500;
   position: relative;
   overflow: hidden;
@@ -186,8 +186,8 @@
   background: var(--xeg-color-primary);
   --button-color: white;
   box-shadow:
-    0 0 0 2px var(--xeg-color-primary-alpha-30),
-    0 4px 16px rgba(71, 133, 163, 0.25);
+    0 0 0 0.125em var(--xeg-color-primary-alpha-30),
+    /* 2px → 0.125em */ 0 0.25em 1em rgba(71, 133, 163, 0.25); /* 4px 16px → 0.25em 1em */
 }
 
 .toolbarButton[data-selected='true'] {
@@ -214,7 +214,7 @@
     /* 복잡한 transform 효과 제거 */
     background: var(--xeg-color-neutral-100);
     border-color: var(--xeg-color-neutral-300);
-    transform: translateY(-1px);
+    transform: translateY(-0.0625em); /* -1px → -0.0625em */
     box-shadow: var(--xeg-shadow-md);
   }
 }
@@ -261,12 +261,12 @@
 .settingsButton:focus-visible,
 .closeButton:focus-visible,
 .fitButton:focus-visible {
-  outline: 2px solid var(--xeg-color-primary);
-  outline-offset: 2px;
+  outline: 0.125em solid var(--xeg-color-primary); /* 2px → 0.125em */
+  outline-offset: 0.125em; /* 2px → 0.125em */
 }
 /* 네비게이션 섹션 */
 .toolbarNavigation {
-  gap: 8px;
+  gap: 0.5em; /* 8px → 0.5em */
 }
 
 /* 네비게이션 버튼 - 기본 스타일 상속 */
@@ -281,8 +281,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-width: 80px;
+  gap: 0.25em; /* 4px → 0.25em */
+  min-width: 5em; /* 80px → 5em */
 }
 
 .mediaCounter {
@@ -292,7 +292,7 @@
   text-align: center;
   white-space: nowrap;
   background: var(--xeg-bg-counter);
-  padding: 4px 8px;
+  padding: 0.25em 0.5em; /* 4px 8px → 0.25em 0.5em */
   border-radius: var(--xeg-radius-md);
   border: 1px solid var(--xeg-border-counter);
 }
@@ -304,7 +304,7 @@
 
 .separator {
   color: rgba(255, 255, 255, 0.7);
-  margin: 0 2px;
+  margin: 0 0.125em; /* 0 2px → 0 0.125em */
 }
 
 .totalCount {
@@ -312,12 +312,12 @@
 }
 /* 진행률 바 */
 .progressBar {
-  width: 60px;
-  height: 2px;
+  width: 3.75em; /* 60px → 3.75em */
+  height: 0.125em; /* 2px → 0.125em */
   background: var(--xeg-color-neutral-200);
   border-radius: var(--xeg-radius-sm);
   overflow: hidden;
-  margin: 4px 0;
+  margin: 0.25em 0; /* 4px 0 → 0.25em 0 */
 }
 
 .progressFill {
@@ -336,10 +336,10 @@
 /* 크기 조절 섹션 */
 .fitModeGroup {
   display: flex;
-  gap: 2px;
+  gap: 0.125em; /* 2px → 0.125em */
   background: var(--xeg-color-neutral-100);
   border-radius: var(--xeg-radius-md);
-  padding: 2px;
+  padding: 0.125em; /* 2px → 0.125em */
   border: 1px solid var(--xeg-color-neutral-200);
 }
 
@@ -348,13 +348,13 @@
 .fitModeGroup > .fitButton,
 button.fitButton {
   /* 🔧 FIXED: 다른 버튼들과 동일한 크기 보장 - 최고 우선순위 */
-  width: 40px !important;
-  height: 40px !important;
-  min-width: 40px !important;
-  min-height: 40px !important;
-  max-width: 40px !important;
-  max-height: 40px !important;
-  padding: 8px !important;
+  width: 2.5em !important; /* 40px → 2.5em */
+  height: 2.5em !important; /* 40px → 2.5em */
+  min-width: 2.5em !important; /* 40px → 2.5em */
+  min-height: 2.5em !important; /* 40px → 2.5em */
+  max-width: 2.5em !important; /* 40px → 2.5em */
+  max-height: 2.5em !important; /* 40px → 2.5em */
+  padding: 0.5em !important; /* 8px → 0.5em */
   box-sizing: border-box !important;
 
   /* toolbarButton 기본 스타일 상속하면서 그룹 내 스타일 적용 */
@@ -383,7 +383,7 @@ button.fitButton {
   /* 다른 버튼들과 동일한 호버 효과 */
   background: var(--xeg-color-neutral-100);
   border-color: var(--xeg-color-neutral-300);
-  transform: translateY(-1px);
+  transform: translateY(-0.0625em); /* -1px → -0.0625em */
   box-shadow: var(--xeg-shadow-md);
 }
 
@@ -409,17 +409,17 @@ button.fitButton {
 
 .downloadSpinner {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 12px;
-  height: 12px;
+  top: -0.375em; /* -6px → -0.375em */
+  right: -0.375em; /* -6px → -0.375em */
+  width: 0.75em; /* 12px → 0.75em */
+  height: 0.75em; /* 12px → 0.75em */
   background: rgba(76, 175, 80, 0.9);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8px;
+  font-size: 0.5em; /* 8px → 0.5em */
   animation: spin 1s linear infinite;
 }
 
@@ -437,13 +437,14 @@ button.fitButton {
   border-color: var(--xeg-color-neutral-300);
 }
 /* 반응형 디자인 */
-@media (max-width: 768px) {
+@media (max-width: 48em) {
+  /* 768px → 48em */
   .galleryToolbar {
-    padding: 12px 16px;
+    padding: 0.75em 1em; /* 12px 16px → 0.75em 1em */
   }
 
   .toolbarContent {
-    gap: 12px;
+    gap: 0.75em; /* 12px → 0.75em */
   }
 
   .toolbarSection {
@@ -475,38 +476,39 @@ button.fitButton {
   /* 반응형에서도 separator 표시 유지 */
 }
 
-@media (max-width: 480px) {
+@media (max-width: 30em) {
+  /* 480px → 30em */
   .galleryToolbar {
-    padding: 10px 12px;
+    padding: 0.625em 0.75em; /* 10px 12px → 0.625em 0.75em */
   }
 
   .toolbarContent {
-    gap: 8px;
+    gap: 0.5em; /* 8px → 0.5em */
     flex-wrap: wrap;
     justify-content: center;
   }
 
   .toolbarSection {
-    gap: 4px;
+    gap: 0.25em; /* 4px → 0.25em */
   }
 
   .toolbarButton {
-    padding: 5px 8px;
-    min-width: 32px;
-    min-height: 32px;
+    padding: 0.3125em 0.5em; /* 5px 8px → 0.3125em 0.5em */
+    min-width: 2em; /* 32px → 2em */
+    min-height: 2em; /* 32px → 2em */
   }
 
   .mediaCounterWrapper {
-    min-width: 70px;
+    min-width: 4.375em; /* 70px → 4.375em */
   }
 
   .mediaCounter {
-    font-size: 13px;
+    font-size: 0.8125em; /* 13px → 0.8125em */
   }
 
   .progressBar {
-    width: 40px;
-    height: 2px;
+    width: 2.5em; /* 40px → 2.5em */
+    height: 0.125em; /* 2px → 0.125em */
   }
 
   .fitModeGroup {
@@ -514,7 +516,7 @@ button.fitButton {
   }
 
   .fitButton {
-    padding: 3px 6px;
+    padding: 0.1875em 0.375em; /* 3px 6px → 0.1875em 0.375em */
   }
 
   /* 작은 화면에서도 separator 표시 유지 */
@@ -601,13 +603,14 @@ button.fitButton {
 }
 
 /* 모바일 환경에서 시인성 강화 */
-@media (max-width: 768px) {
+@media (max-width: 48em) {
+  /* 768px → 48em */
   .galleryToolbar {
     background: rgba(255, 255, 255, 0.99); /* 모바일에서 더 불투명 */
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
-    padding: 8px 12px;
-    min-height: 48px; /* 터치 타겟 크기 증가 */
+    padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
+    min-height: 3em; /* 48px → 3em */
   }
 
   [data-theme='dark'] .galleryToolbar {
@@ -616,11 +619,12 @@ button.fitButton {
 }
 
 /* 작은 모바일 화면 */
-@media (max-width: 480px) {
+@media (max-width: 30em) {
+  /* 480px → 30em */
   .galleryToolbar {
-    width: calc(100vw - 20px);
+    width: calc(100vw - 1.25em); /* 20px → 1.25em */
     max-width: none;
-    left: 10px;
+    left: 0.625em; /* 10px → 0.625em */
     transform: none;
     border-radius: var(--xeg-radius-md);
   }
@@ -677,7 +681,7 @@ button.fitButton {
 .highContrast .toolbarButton:hover:not(:disabled) {
   background: rgba(245, 245, 245, 0.98);
   border-color: rgba(0, 0, 0, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.15); /* 2px 8px → 0.125em 0.5em */
 }
 
 [data-theme='dark'] .highContrast .toolbarButton {

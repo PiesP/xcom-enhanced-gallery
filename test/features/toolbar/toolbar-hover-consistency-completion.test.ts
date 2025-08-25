@@ -145,7 +145,7 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
     });
 
     it('모바일 반응형 지원이 유지되었다', () => {
-      const mobileMatch = toolbarCSSContent.match(/@media.*max-width.*768px/g);
+      const mobileMatch = toolbarCSSContent.match(/@media.*max-width.*(768px|48em)/g);
       expect(mobileMatch).toBeTruthy('모바일 반응형 지원 유지');
     });
   });
