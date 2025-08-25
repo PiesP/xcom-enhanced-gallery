@@ -9,9 +9,7 @@
 
 /* 클릭 상태 - 단순화된 피드백 */
 .toolbarButton:active:not([data-disabled='true']) {
-  box-shadow:
-    0 1px 4px rgba(15, 23, 42, 0.08),
-    0 0px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--xeg-shadow-sm);
   /* 단순한 클릭 효과 - transform 제거 */
 }
 
@@ -252,9 +250,7 @@
 
 /* 클릭 상태 */
 .toolbarButton:active:not([data-disabled='true']) {
-  box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.08),
-    0 1px 4px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--xeg-shadow-sm);
   /* 단순한 클릭 효과만 */
 }
 
@@ -319,7 +315,7 @@
   width: 60px;
   height: 2px;
   background: var(--xeg-color-neutral-200);
-  border-radius: 1px;
+  border-radius: var(--xeg-radius-sm);
   overflow: hidden;
   margin: 4px 0;
 }
@@ -332,7 +328,7 @@
     var(--xeg-color-primary) 0%,
     var(--xeg-color-primary-light) 100%
   );
-  border-radius: 1px;
+  border-radius: var(--xeg-radius-sm);
   transition: width 0.3s ease;
   transform-origin: left;
 }

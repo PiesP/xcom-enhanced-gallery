@@ -470,8 +470,15 @@ export function associateLabel(inputElement: HTMLElement, labelElement: HTMLElem
  * WCAG 2.4.7 Focus Visible Enhancement
  */
 export function enhanceFocusVisibility(element: HTMLElement): void {
-  element.style.outline = '2px solid #005fcc';
-  element.style.outlineOffset = '2px';
+  // CSS 변수를 통한 동적 스타일 적용
+  element.style.outline = 'var(--xeg-focus-outline)';
+  element.style.outlineOffset = 'var(--xeg-focus-ring-offset)';
+
+  // CSS 변수가 없는 경우를 위한 폴백
+  if (!element.style.outline.includes('var(')) {
+    element.style.outline = '2px solid #005fcc';
+    element.style.outlineOffset = '2px';
+  }
 }
 
 /**

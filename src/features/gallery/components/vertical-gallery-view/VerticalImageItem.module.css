@@ -47,11 +47,9 @@
 
 .container:hover {
   transform: var(--xeg-item-hover-transform);
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.2),
-    0 4px 16px rgba(0, 0, 0, 0.1);
+  background: var(--xeg-color-surface-elevated);
+  border-color: var(--xeg-glass-border-medium);
+  box-shadow: var(--xeg-glass-shadow-medium), var(--xeg-shadow-md);
 }
 
 /* 포커스 상태 - outline 대신 box-shadow 사용 */
@@ -336,7 +334,7 @@
 
 .container.fitOriginal .imageWrapper::-webkit-scrollbar-thumb {
   background: var(--xeg-bg-overlay-light);
-  border-radius: 4px;
+  border-radius: var(--xeg-radius-sm);
   transition: background 0.2s ease;
 }
 
@@ -377,7 +375,7 @@
 .video {
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: var(--xeg-radius-md);
   overflow: hidden;
 }
 

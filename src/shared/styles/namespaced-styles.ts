@@ -22,17 +22,17 @@ function generateNamespacedCSS(): string {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1.4;
 
-  /* Color Tokens */
-  --xeg-color-primary: #1d9bf0;
-  --xeg-color-primary-hover: #1a8cd8;
-  --xeg-color-secondary: #657786;
-  --xeg-color-background: #000000;
-  --xeg-color-surface: #16181c;
-  --xeg-color-text-primary: #ffffff;
-  --xeg-color-text-secondary: #8b98a5;
-  --xeg-color-border: #2f3336;
-  --xeg-color-hover: rgba(255, 255, 255, 0.03);
-  --xeg-color-active: rgba(255, 255, 255, 0.06);
+  /* Color Tokens - Design Token 시스템 사용 */
+  --xeg-color-primary: var(--xeg-color-primary-500);
+  --xeg-color-primary-hover: var(--xeg-color-primary-600);
+  --xeg-color-secondary: var(--xeg-color-neutral-500);
+  --xeg-color-background: var(--xeg-color-surface-dark);
+  --xeg-color-surface: var(--xeg-color-surface-elevated);
+  --xeg-color-text-primary: var(--xeg-color-text-primary);
+  --xeg-color-text-secondary: var(--xeg-color-text-secondary);
+  --xeg-color-border: var(--xeg-color-border-primary);
+  --xeg-color-hover: var(--xeg-color-overlay-light);
+  --xeg-color-active: var(--xeg-color-overlay-medium);
 
   /* Spacing */
   --xeg-spacing-xs: 4px;
@@ -108,8 +108,8 @@ function generateNamespacedCSS(): string {
 }
 
 .${NAMESPACE} .focus-visible {
-  outline: 2px solid var(--xeg-color-primary);
-  outline-offset: 2px;
+  outline: var(--xeg-focus-outline);
+  outline-offset: var(--xeg-focus-ring-offset);
 }
 `;
 }

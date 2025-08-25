@@ -261,6 +261,16 @@
   --xeg-focus-ring: var(--xeg-focus-ring-width) solid var(--xeg-focus-ring-color);
   --xeg-focus-ring-offset: 2px;
 
+  /* 새롭게 추가된 접근성 관련 토큰들 */
+  --xeg-focus-outline: 2px solid var(--xeg-color-primary-500);
+  --xeg-focus-outline-color: var(--xeg-color-primary-500);
+  --xeg-focus-outline-width: 2px;
+  --xeg-focus-outline-style: solid;
+
+  /* 표면 색상 시스템 */
+  --xeg-color-surface-elevated: rgba(255, 255, 255, 0.1);
+  --xeg-color-backdrop: rgba(0, 0, 0, 0.8);
+
   /* 활성 상태 강조 */
   --xeg-active-ring-width: 3px;
   --xeg-active-ring-color: var(--xeg-color-primary);
@@ -269,6 +279,33 @@
   /* 상태별 box-shadow */
   --xeg-focus-shadow: 0 0 0 var(--xeg-focus-ring-width) var(--xeg-focus-ring-color);
   --xeg-active-shadow: 0 0 0 var(--xeg-active-ring-width) var(--xeg-active-ring-color);
+}
+
+/* ===========================================
+   LIGHT THEME OVERRIDES
+   =========================================== */
+
+[data-theme='light'] {
+  --xeg-color-surface: var(--xeg-color-surface-light);
+  --xeg-color-background: var(--xeg-color-neutral-100);
+  --xeg-color-text-primary: var(--xeg-color-neutral-900);
+  --xeg-color-text-secondary: var(--xeg-color-neutral-600);
+  --xeg-color-border-primary: var(--xeg-color-neutral-300);
+  --xeg-color-border-secondary: var(--xeg-color-neutral-200);
+
+  /* 라이트모드 글래스모피즘 오버라이드 */
+  --xeg-toolbar-glass-bg: rgba(255, 255, 255, 0.85);
+  --xeg-toolbar-glass-border: rgba(0, 0, 0, 0.1);
+  --xeg-toolbar-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+  --xeg-toast-glass-bg: rgba(255, 255, 255, 0.95);
+  --xeg-toast-glass-border: rgba(0, 0, 0, 0.15);
+  --xeg-toast-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+  --xeg-gallery-glass-bg: rgba(255, 255, 255, 0.9);
+
+  --xeg-media-glass-bg: rgba(255, 255, 255, 0.3);
+  --xeg-media-glass-border: rgba(0, 0, 0, 0.1);
 }
 
 /* ===========================================
