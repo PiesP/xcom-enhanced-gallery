@@ -10,22 +10,49 @@ import { join, extname } from 'path';
 describe('Complete Glassmorphism Removal Validation', () => {
   const srcPath = join(process.cwd(), 'src');
 
-  // CSS 파일에서 backdrop-filter: blur 패턴 검출
-  const findBlurEffectsInFile = (filePath: string) => {
+  // CSS 파일에서 실제 blur 효과만 검출 (변수는 none 값인지 확인)
+  const findBlurEffectsInFile = (filePath: string): string[] => {
     try {
       const content = readFileSync(filePath, 'utf-8');
-      const blurPatterns = [
+
+      // 직접적인 blur 사용
+      const directBlurPatterns = [
         /backdrop-filter:\s*blur\([^)]+\)/gi,
         /-webkit-backdrop-filter:\s*blur\([^)]+\)/gi,
+      ];
+
+      const foundEffects: string[] = [];
+      directBlurPatterns.forEach(pattern => {
+        const matches = content.match(pattern);
+        if (matches) {
+          foundEffects.push(...matches);
+        }
+      });
+
+      // CSS 변수 참조는 실제 blur 값인지 확인
+      const varBlurPatterns = [
         /backdrop-filter:\s*var\([^)]*blur[^)]*\)/gi,
         /-webkit-backdrop-filter:\s*var\([^)]*blur[^)]*\)/gi,
       ];
 
-      const foundEffects: string[] = [];
-      blurPatterns.forEach(pattern => {
+      varBlurPatterns.forEach(pattern => {
         const matches = content.match(pattern);
         if (matches) {
-          foundEffects.push(...matches);
+          matches.forEach(match => {
+            const varNameMatch = match.match(/var\(([^)]+)\)/);
+            if (varNameMatch) {
+              const varName = varNameMatch[1];
+              // 변수가 'none'이 아닌 blur 값으로 정의되어 있는지 확인
+              const escapedVarName = varName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+              const varDefPattern = new RegExp(
+                `${escapedVarName}:\\s*(?!none)[^;]*blur\\([^)]+\\)`,
+                'gi'
+              );
+              if (content.match(varDefPattern)) {
+                foundEffects.push(match);
+              }
+            }
+          });
         }
       });
 

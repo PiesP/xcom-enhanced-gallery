@@ -22,8 +22,8 @@
   pointer-events: auto;
 
   /* 글래스모피즘 효과 */
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  backdrop-filter: var(--xeg-media-glass-blur);
+  -webkit-backdrop-filter: var(--xeg-media-glass-blur);
   box-shadow: var(--xeg-media-glass-shadow);
 
   /* 성능 최적화 */
@@ -128,7 +128,6 @@
   -khtml-user-drag: none;
   -moz-user-drag: none;
   -o-user-drag: none;
-  user-drag: none;
   /* GPU 가속을 위한 3D 변환 */
   transform: translateZ(0);
   will-change: opacity;
