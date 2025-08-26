@@ -142,6 +142,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/services/ThemeService.ts"
     "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/components/ui/Icon/index.ts"
     "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/components/ui/StandardProps.ts"
+    "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/components/ui/Toolbar/Toolbar.module.css"
     "src/shared/components/ui/SettingsModal/SettingsModal.tsx" -> "src/shared/components/ui/SettingsModal/SettingsModal.module.css"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/components" {label="components" subgraph "cluster_src/shared/components/ui" {label="ui" subgraph "cluster_src/shared/components/ui/SettingsModal" {label="SettingsModal" "src/shared/components/ui/SettingsModal/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/components/ui/SettingsModal/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } } }
     "src/shared/components/ui/SettingsModal/index.ts" -> "src/shared/components/ui/SettingsModal/SettingsModal.tsx" [arrowhead="inv"]

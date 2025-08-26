@@ -125,18 +125,18 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
   });
 
   describe('분리된 glassmorphism 클래스 사용 요구사항', () => {
-    it('Toolbar 컴포넌트 TSX 파일이 glass-surface-dark 클래스를 사용해야 함', () => {
+    it('Toolbar 컴포넌트 TSX 파일이 glass-surface 클래스를 사용해야 함', () => {
       const toolbarTSX = readFile('src/shared/components/ui/Toolbar/Toolbar.tsx');
 
-      // Toolbar TSX 파일에서 glass-surface-dark 클래스 사용 여부 확인
-      expect(toolbarTSX.includes("'glass-surface-dark'")).toBe(true);
+      // Toolbar TSX 파일에서 통합 glass-surface 클래스 사용 여부 확인
+      expect(toolbarTSX.includes("'glass-surface'")).toBe(true);
     });
 
-    it('SettingsModal 컴포넌트 TSX 파일이 glass-surface-light 클래스를 사용해야 함', () => {
+    it('SettingsModal 컴포넌트 TSX 파일이 glass-surface 클래스를 사용해야 함', () => {
       const modalTSX = readFile('src/shared/components/ui/SettingsModal/SettingsModal.tsx');
 
-      // SettingsModal TSX 파일에서 glass-surface-light 클래스 사용 여부 확인
-      expect(modalTSX.includes('glass-surface-light')).toBe(true);
+      // SettingsModal TSX 파일에서 통합 glass-surface 클래스 사용 여부 확인
+      expect(modalTSX.includes('glass-surface')).toBe(true);
     });
   });
 });

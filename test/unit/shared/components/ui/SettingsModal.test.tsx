@@ -248,13 +248,16 @@ describe('SettingsModal', () => {
   });
 
   describe('TDD: 툴바와 디자인 일관성', () => {
-    it('설정 모달이 툴바와 동일한 어두운 glassmorphism 클래스를 사용해야 함', () => {
+    it('설정 모달이 툴바와 동일한 통합 glassmorphism 클래스를 사용해야 함', () => {
       render(<SettingsModal {...mockProps} />);
 
-      const modal = screen.getByRole('dialog').children[0] as HTMLElement;
+      const modal = screen.getByRole('dialog').firstElementChild;
+      expect(modal).toBeDefined();
 
-      // 어두운 glassmorphism 클래스 사용 확인
-      expect(modal.className).toContain('glass-surface-dark');
+      // 통합된 glassmorphism 클래스 사용 확인
+      expect(modal.className).toContain('glass-surface');
+      // 개별 테마별 클래스는 사용하지 않음
+      expect(modal.className).not.toContain('glass-surface-dark');
       expect(modal.className).not.toContain('glass-surface-light');
     });
 

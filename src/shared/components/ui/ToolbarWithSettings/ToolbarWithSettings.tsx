@@ -47,7 +47,8 @@ export function ToolbarWithSettings({
       h(SettingsModal, {
         isOpen: isSettingsOpen,
         onClose: handleCloseSettings,
-        position: settingsPosition,
+        // SettingsModal은 'toolbar-below' | 'top-right'만 지원
+        position: settingsPosition === 'top-right' ? 'top-right' : 'toolbar-below',
         'data-testid': settingsTestId,
         key: 'unified-settings-modal',
       }),

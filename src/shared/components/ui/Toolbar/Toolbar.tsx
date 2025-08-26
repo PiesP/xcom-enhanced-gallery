@@ -127,11 +127,11 @@ function ToolbarCore({
   const [toolbarState, toolbarActions] = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
 
-  // 표준화된 클래스명 생성 - glass-surface-dark 클래스 적용
+  // 표준화된 클래스명 생성 - 통합 glass-surface 클래스 적용
   const toolbarClass = ComponentStandards.createClassName(
     styles.toolbar,
     getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
-    'glass-surface-dark', // 어두운 glassmorphism 스타일 적용
+    'glass-surface', // 통합된 glassmorphism 스타일 적용
     className
   );
 
