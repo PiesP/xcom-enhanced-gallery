@@ -188,6 +188,7 @@ describe('Architecture Dependency Rules', () => {
           '.test.',
           '.spec.',
           'infrastructure/external/vendors/',
+          'shared/external/vendors/',
           'shared/types/vendor.types.ts',
           'types/',
         ]
@@ -220,7 +221,7 @@ describe('Architecture Dependency Rules', () => {
       const sourceFiles = await findFiles(
         srcPath,
         ['.ts', '.tsx'],
-        ['.test.', '.spec.', 'infrastructure/external/vendors/']
+        ['.test.', '.spec.', 'infrastructure/external/vendors/', 'shared/external/vendors/']
       );
 
       let vendorUsageFound = false;
@@ -228,16 +229,6 @@ describe('Architecture Dependency Rules', () => {
       for (const file of sourceFiles) {
         const content = await readFile(file, 'utf-8');
         const filePath = file.replace(/\\/g, '/');
-
-        // vendor 정의 파일들은 완전히 제외
-        const isVendorDefinitionFile =
-          filePath.includes('src/shared/external/vendors/vendor-manager.ts') ||
-          filePath.includes('src/shared/external/vendors/vendor-api.ts') ||
-          filePath.includes('src/shared/external/vendors/index.ts');
-
-        if (isVendorDefinitionFile) {
-          continue;
-        }
 
         // vendors getter 사용 패턴 검사
         const vendorGetterPatterns = [

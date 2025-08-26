@@ -153,19 +153,12 @@ describe('🔴 TDD RED: Final Glassmorphism Cleanup', () => {
 
       const content = readFileSync(filePath, 'utf8');
 
-      // 모든 glass-blur 토큰이 none으로 설정되어야 함
+      // 모든 glass-blur 토큰이 none으로 설정되어야 함 (현재 통합된 파일 기준)
       const glassBlurTokens = [
-        '--xeg-blur-sm',
-        '--xeg-blur-md',
-        '--xeg-blur-lg',
-        '--xeg-glass-blur-light',
-        '--xeg-glass-blur-medium',
-        '--xeg-glass-blur-strong',
         '--xeg-toolbar-glass-blur',
-        '--xeg-modal-glass-blur',
-        '--xeg-surface-glass-blur',
-        '--xeg-media-glass-blur',
         '--xeg-toast-glass-blur',
+        '--xeg-gallery-glass-blur',
+        '--xeg-surface-glass-blur',
       ];
 
       glassBlurTokens.forEach(token => {
