@@ -1,0 +1,233 @@
+/**
+ * @fileoverview 미니멀 디자인 토큰 - 글래스모피즘 대체
+ * @description 간결한 UI를 위한 새로운 디자인 시스템
+ */
+
+:root {
+  /* ===== 기본 색상 시스템 ===== */
+
+  /* 배경 색상 */
+  --xeg-bg-primary: #ffffff;
+  --xeg-bg-secondary: #f8f9fa;
+  --xeg-bg-tertiary: #e9ecef;
+
+  /* 텍스트 색상 */
+  --xeg-text-primary: #111827;
+  --xeg-text-secondary: #6b7280;
+  --xeg-text-tertiary: #9ca3af;
+  --xeg-text-inverse: #ffffff;
+
+  /* 경계선 */
+  --xeg-border-light: #e5e7eb;
+  --xeg-border-medium: #d1d5db;
+  --xeg-border-strong: #9ca3af;
+
+  /* 액센트 색상 */
+  --xeg-primary: #1d4ed8;
+  --xeg-primary-hover: #1e40af;
+  --xeg-primary-active: #1e3a8a;
+
+  /* 상태 색상 */
+  --xeg-success: #059669;
+  --xeg-warning: #d97706;
+  --xeg-error: #dc2626;
+  --xeg-info: #0284c7;
+
+  /* ===== 그림자 (최소화) ===== */
+  --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --xeg-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --xeg-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  /* ===== 간격 ===== */
+  --xeg-spacing-xs: 4px;
+  --xeg-spacing-sm: 8px;
+  --xeg-spacing-md: 16px;
+  --xeg-spacing-lg: 24px;
+  --xeg-spacing-xl: 32px;
+
+  /* ===== 모서리 ===== */
+  --xeg-radius-sm: 4px;
+  --xeg-radius-md: 8px;
+  --xeg-radius-lg: 12px;
+  --xeg-radius-xl: 16px;
+
+  /* ===== 전환 ===== */
+  --xeg-transition-fast: 0.15s ease;
+  --xeg-transition-normal: 0.2s ease;
+  --xeg-transition-slow: 0.3s ease;
+
+  /* ===== 글래스모피즘 제거 토큰 ===== */
+  /* 기존 글래스 효과를 none으로 오버라이드 */
+  --xeg-glass-blur: none;
+  --xeg-glass-bg: var(--xeg-bg-primary);
+  --xeg-glass-border: var(--xeg-border-light);
+  --xeg-glass-shadow: var(--xeg-shadow-sm);
+
+  /* backdrop-filter 완전 제거 */
+  --xeg-backdrop-filter: none;
+  --xeg-webkit-backdrop-filter: none;
+}
+
+/* ===== 다크 테마 ===== */
+[data-theme='dark'] {
+  /* 배경 색상 */
+  --xeg-bg-primary: #1a1a1a;
+  --xeg-bg-secondary: #2d2d2d;
+  --xeg-bg-tertiary: #404040;
+
+  /* 텍스트 색상 */
+  --xeg-text-primary: #ffffff;
+  --xeg-text-secondary: #d1d5db;
+  --xeg-text-tertiary: #9ca3af;
+  --xeg-text-inverse: #111827;
+
+  /* 경계선 */
+  --xeg-border-light: #404040;
+  --xeg-border-medium: #525252;
+  --xeg-border-strong: #737373;
+
+  /* 액센트 색상 */
+  --xeg-primary: #3b82f6;
+  --xeg-primary-hover: #2563eb;
+  --xeg-primary-active: #1d4ed8;
+
+  /* 상태 색상 */
+  --xeg-success: #10b981;
+  --xeg-warning: #f59e0b;
+  --xeg-error: #ef4444;
+  --xeg-info: #06b6d4;
+
+  /* 글래스모피즘 제거 (다크 테마) */
+  --xeg-glass-bg: var(--xeg-bg-primary);
+  --xeg-glass-border: var(--xeg-border-light);
+}
+
+/* ===== 컴포넌트별 미니멀 스타일 ===== */
+
+/* 툴바 */
+.xeg-minimal-toolbar {
+  background: var(--xeg-bg-primary);
+  border: 1px solid var(--xeg-border-light);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--xeg-shadow-sm);
+  padding: var(--xeg-spacing-md);
+
+  /* 글래스모피즘 제거 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 버튼 */
+.xeg-minimal-button {
+  background: var(--xeg-bg-secondary);
+  border: 1px solid var(--xeg-border-light);
+  border-radius: var(--xeg-radius-md);
+  color: var(--xeg-text-primary);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  transition: var(--xeg-transition-fast);
+
+  /* 글래스모피즘 제거 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.xeg-minimal-button:hover {
+  background: var(--xeg-bg-tertiary);
+  border-color: var(--xeg-border-medium);
+  /* 미세한 애니메이션 제거 */
+  transform: none;
+}
+
+.xeg-minimal-button.active {
+  background: var(--xeg-primary);
+  color: var(--xeg-text-inverse);
+  border-color: var(--xeg-primary);
+}
+
+/* 토스트 */
+.xeg-minimal-toast {
+  background: var(--xeg-bg-primary);
+  border: 1px solid var(--xeg-border-light);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--xeg-shadow-md);
+  padding: var(--xeg-spacing-md);
+  border-left: 4px solid var(--xeg-primary);
+
+  /* 글래스모피즘 제거 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.xeg-minimal-toast.success {
+  border-left-color: var(--xeg-success);
+}
+
+.xeg-minimal-toast.warning {
+  border-left-color: var(--xeg-warning);
+}
+
+.xeg-minimal-toast.error {
+  border-left-color: var(--xeg-error);
+}
+
+/* 갤러리 컨테이너 */
+.xeg-minimal-gallery {
+  background: var(--xeg-bg-primary);
+  border: none;
+  box-shadow: none;
+
+  /* 글래스모피즘 제거 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 미디어 아이템 */
+.xeg-minimal-media-item {
+  background: var(--xeg-bg-primary);
+  border: 1px solid var(--xeg-border-light);
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm);
+  transition: var(--xeg-transition-fast);
+
+  /* 글래스모피즘 제거 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.xeg-minimal-media-item:hover {
+  border-color: var(--xeg-border-medium);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.xeg-minimal-media-item.active {
+  border-color: var(--xeg-primary);
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.1);
+}
+
+/* ===== 접근성 지원 ===== */
+
+/* 고대비 모드 */
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-bg-primary: #ffffff;
+    --xeg-bg-secondary: #f0f0f0;
+    --xeg-border-light: #000000;
+    --xeg-text-primary: #000000;
+  }
+
+  [data-theme='dark'] {
+    --xeg-bg-primary: #000000;
+    --xeg-bg-secondary: #1a1a1a;
+    --xeg-border-light: #ffffff;
+    --xeg-text-primary: #ffffff;
+  }
+}
+
+/* 모션 감소 모드 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -183,7 +183,7 @@ export const ANIMATION_PRESETS = {
   imageLoad: {
     keyframes: {
       opacity: [0, 1],
-      filter: ['blur(4px)', 'blur(0px)'],
+      transform: ['scale(0.98)', 'scale(1)'],
     } as PropertyIndexedKeyframes,
     options: { duration: 400, easing: 'ease-out' },
   },

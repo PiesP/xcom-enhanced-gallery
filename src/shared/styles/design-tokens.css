@@ -218,17 +218,17 @@
   --xeg-transform-translate-y-sm: translateY(-10px);
   --xeg-transform-translate-y-none: translateY(0);
 
-  /* Backdrop Filter - 글래스모피즘 강화 */
-  --xeg-blur-light: blur(12px);
-  --xeg-blur-medium: blur(16px);
-  --xeg-blur-strong: blur(20px);
+  /* Backdrop Filter - 미니멀 디자인 (블러 제거) */
+  --xeg-blur-light: none;
+  --xeg-blur-medium: none;
+  --xeg-blur-strong: none;
 
-  /* 글래스모피즘 전용 블러 */
-  --xeg-glass-blur-subtle: blur(8px);
-  --xeg-glass-blur-light: blur(12px);
-  --xeg-glass-blur-medium: blur(16px);
-  --xeg-glass-blur-strong: blur(20px);
-  --xeg-glass-blur-ultra: blur(24px);
+  /* 미니멀 디자인 전용 (블러 제거) */
+  --xeg-glass-blur-subtle: none;
+  --xeg-glass-blur-light: none;
+  --xeg-glass-blur-medium: none;
+  --xeg-glass-blur-strong: none;
+  --xeg-glass-blur-ultra: none;
 
   /* ===========================================
      SEMANTIC TOKEN ALIASES
@@ -273,11 +273,11 @@
   --xeg-surface-glass-bg: rgba(255, 255, 255, 0.85); /* 반투명 라이트 글래스 */
   --xeg-surface-glass-border: rgba(255, 255, 255, 0.2); /* 부드러운 글래스 테두리 */
   --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); /* 글래스 그림자 */
-  --xeg-surface-glass-blur: blur(12px); /* 글래스 블러 효과 */
+  --xeg-surface-glass-blur: none; /* 블러 제거 */
 
   /* Gallery specific */
   --xeg-gallery-backdrop: rgba(21, 32, 43, 0.85);
-  --xeg-gallery-backdrop-filter: blur(16px);
+  --xeg-gallery-backdrop-filter: none;
   --xeg-gallery-z-index: var(--xeg-z-gallery);
 
   /* Button specific */
@@ -370,11 +370,11 @@
   --xeg-color-border-primary: var(--xeg-color-neutral-300);
   --xeg-color-border-secondary: var(--xeg-color-neutral-200);
 
-  /* 라이트 테마 glassmorphism 오버라이드 - 순환 참조 제거 */
+  /* 라이트 테마 미니멀 오버라이드 - 블러 제거 */
   --xeg-surface-glass-bg: rgba(255, 255, 255, 0.85);
   --xeg-surface-glass-border: rgba(0, 0, 0, 0.1);
   --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  --xeg-surface-glass-blur: blur(12px);
+  --xeg-surface-glass-blur: none;
 }
 
 /* ===========================================
@@ -389,11 +389,11 @@
   --xeg-color-border-primary: var(--xeg-color-neutral-700);
   --xeg-color-border-secondary: var(--xeg-color-neutral-800);
 
-  /* 다크모드 glassmorphism 오버라이드 - 순환 참조 제거 */
+  /* 다크모드 미니멀 오버라이드 - 블러 제거 */
   --xeg-surface-glass-bg: rgba(0, 0, 0, 0.85);
   --xeg-surface-glass-border: rgba(255, 255, 255, 0.15);
   --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --xeg-surface-glass-blur: blur(12px);
+  --xeg-surface-glass-blur: none;
 
   /* Dark theme shadows (stronger) */
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -722,14 +722,14 @@
     --xeg-surface-glass-bg: rgba(255, 255, 255, 0.95);
     --xeg-surface-glass-border: rgba(0, 0, 0, 0.2);
     --xeg-surface-glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    --xeg-surface-glass-blur: blur(4px);
+    --xeg-surface-glass-blur: none;
   }
 
   [data-theme='dark'] {
     --xeg-surface-glass-bg: rgba(0, 0, 0, 0.95);
     --xeg-surface-glass-border: rgba(255, 255, 255, 0.2);
     --xeg-surface-glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-    --xeg-surface-glass-blur: blur(4px);
+    --xeg-surface-glass-blur: none;
   }
 }
 
@@ -752,13 +752,13 @@
   }
 }
 
-/* 모바일 최적화 - 블러 강도 조정 */
+/* 모바일 최적화 - 블러 제거 */
 @media (max-width: 768px) {
   :root {
-    --xeg-toolbar-glass-blur: blur(12px);
-    --xeg-toast-glass-blur: blur(16px);
-    --xeg-gallery-glass-blur: blur(20px);
-    --xeg-media-glass-blur: blur(6px);
+    --xeg-toolbar-glass-blur: none;
+    --xeg-toast-glass-blur: none;
+    --xeg-gallery-glass-blur: none;
+    --xeg-media-glass-blur: none;
   }
 }
 

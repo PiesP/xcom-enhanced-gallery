@@ -269,7 +269,7 @@ export function useProgressiveImage({
     style: {
       opacity: state.isLoaded ? 1 : 0.7,
       transition: 'opacity 0.3s ease',
-      filter: state.loadedSrc === lowQualitySrc ? 'blur(2px)' : 'none',
+      transform: state.loadedSrc === lowQualitySrc ? 'scale(0.98)' : 'scale(1)',
     },
   };
 

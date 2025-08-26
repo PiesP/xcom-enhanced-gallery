@@ -1,39 +1,39 @@
 /**
- * @fileoverview 통합 Glassmorphism 스타일 시스템
- * @description 툴바와 설정 모달이 공유하는 glassmorphism 디자인 시스템
+ * @fileoverview 통합 미니멀 스타일 시스템 (글래스모피즘 제거)
+ * @description 툴바와 설정 모달이 공유하는 간결한 디자인 시스템
  */
 
 /* ===========================================
-   통합 GLASSMORPHISM 클래스 시스템
+   통합 미니멀 클래스 시스템
    =========================================== */
 
 /**
- * 공통 glassmorphism 베이스 클래스
- * @description 툴바, 설정 모달, 기타 글래스 UI 컴포넌트에서 공통 사용
+ * 공통 미니멀 베이스 클래스
+ * @description 툴바, 설정 모달, 기타 UI 컴포넌트에서 공통 사용
  */
 .xeg-glassmorphism {
-  /* 기본 glassmorphism 효과 */
-  background: var(--xeg-surface-glass-bg);
-  border: 1px solid var(--xeg-surface-glass-border);
-  border-radius: var(--xeg-radius-xl);
-  box-shadow: var(--xeg-surface-glass-shadow);
-  backdrop-filter: var(--xeg-surface-glass-blur) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-surface-glass-blur) saturate(120%);
+  /* 기본 미니멀 효과 (글래스모피즘 제거) */
+  background: var(--xeg-glass-bg, #ffffff);
+  border: 1px solid var(--xeg-glass-border, #e5e7eb);
+  border-radius: var(--xeg-radius-xl, 16px);
+  box-shadow: var(--xeg-glass-shadow, 0 1px 2px rgba(0, 0, 0, 0.05));
+  backdrop-filter: none; /* 블러 제거 */
+  -webkit-backdrop-filter: none; /* 블러 제거 */
 
   /* 레이아웃 및 위치 */
   isolation: isolate;
   position: relative;
 
-  /* 부드러운 애니메이션 */
+  /* 부드러운 애니메이션 (단순화) */
   transition:
-    background var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    background var(--xeg-duration-fast, 0.15s) ease,
+    border-color var(--xeg-duration-fast, 0.15s) ease,
+    box-shadow var(--xeg-duration-fast, 0.15s) ease;
 }
 
 /**
- * 툴바 전용 glassmorphism 변형
- * @description 툴바의 기존 스타일과 호환성 보장
+ * 툴바 전용 미니멀 변형
+ * @description 툴바의 간결한 스타일
  */
 .xeg-glassmorphism.toolbar-variant {
   /* 툴바 특화 스타일 */
@@ -56,8 +56,8 @@
 }
 
 /**
- * 모달 전용 glassmorphism 변형
- * @description 설정 모달의 기존 스타일과 호환성 보장
+ * 모달 전용 미니멀 변형
+ * @description 설정 모달의 간결한 스타일
  */
 .xeg-glassmorphism.modal-variant {
   /* 모달 특화 스타일 */
@@ -66,12 +66,12 @@
   max-height: 80vh;
   overflow: hidden;
 
-  /* 모달 애니메이션 */
-  animation: xeg-fade-scale-in var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+  /* 모달 애니메이션 (단순화) */
+  animation: xeg-fade-scale-in var(--xeg-duration-normal, 0.2s) ease;
 }
 
 /**
- * 버튼 전용 glassmorphism 변형
+ * 버튼 전용 미니멀 변형
  * @description 툴바 버튼과 모달 버튼의 일관된 스타일
  */
 .xeg-glassmorphism.button-variant {

@@ -39,11 +39,13 @@
 }
 
 /* 레거시 위치 클래스 (테스트 기대) */
-.center { /* legacy alias -> no extra styles */
+.center {
+  /* legacy alias -> no extra styles */
   display: contents;
 }
 
-.bottomSheet { /* legacy alias -> handled by responsive rules */
+.bottomSheet {
+  /* legacy alias -> handled by responsive rules */
   display: contents;
 }
 
@@ -55,7 +57,8 @@
 }
 
 .toolbarBelow.panel,
-[data-position='toolbar-below'].panel { /* default layout already defined in .panel */
+[data-position='toolbar-below'].panel {
+  /* default layout already defined in .panel */
   /* ensure rule non-empty for lint */
   transform: translateX(-50%);
 }

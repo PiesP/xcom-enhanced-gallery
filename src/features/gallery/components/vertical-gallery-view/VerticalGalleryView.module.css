@@ -95,8 +95,8 @@
   flex-direction: column;
 
   /* 블러 효과 */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 
   /* 하드웨어 가속 최적화 */
   transform: translateZ(0);

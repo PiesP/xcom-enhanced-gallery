@@ -63,7 +63,7 @@
 
   /* 배경 - OKLCH 색상 사용 */
   background: var(--xeg-gallery-bg-oklch);
-  backdrop-filter: blur(var(--xeg-backdrop-blur, 16px));
+  backdrop-filter: none;
 
   /* Logical Properties */
   padding-block: var(--xeg-spacing-md);
@@ -107,9 +107,9 @@
   will-change: opacity, transform;
   transform: var(--xeg-gallery-gpu-acceleration);
 
-  /* 글래스모피즘 블러 효과 */
-  backdrop-filter: var(--xeg-gallery-glass-blur);
-  -webkit-backdrop-filter: var(--xeg-gallery-glass-blur);
+  /* 미니멀 디자인 (블러 제거) */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* 갤러리가 활성화된 상태 - :has() 선택자 활용 */
@@ -218,9 +218,9 @@
   will-change: transform, background-color;
   transform: var(--xeg-gallery-gpu-acceleration);
 
-  /* 블러 효과 */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* 미니멀 디자인 (블러 제거) */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 
   /* 그림자 */
   box-shadow: var(--xeg-shadow-button);
@@ -288,9 +288,9 @@
   contain: layout style;
   will-change: transform, background-color;
 
-  /* 블러 효과 */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* 미니멀 디자인 (블러 제거) */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 
   /* 그림자 */
   box-shadow: var(--xeg-toolbar-shadow);
@@ -500,7 +500,7 @@
   padding: 20px;
   background: var(--xeg-toolbar-bg);
   border-radius: 8px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
   box-shadow: var(--xeg-toolbar-shadow);
 }
 
@@ -527,8 +527,8 @@
   border: 1px solid var(--xeg-toolbar-border);
   border-radius: 28px;
   z-index: var(--xeg-z-gallery-toolbar);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow: var(--xeg-toolbar-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

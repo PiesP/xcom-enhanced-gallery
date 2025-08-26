@@ -191,8 +191,9 @@ export function SettingsModal({
   })();
   const positionClass = normalizedPosition === 'top-right' ? styles.topRight : styles.toolbarBelow;
   const legacyPositionClasses: string[] = [];
-  if (position === 'center') legacyPositionClasses.push(styles.center);
-  if (position === 'bottom-sheet') legacyPositionClasses.push(styles.bottomSheet);
+  if (position === 'center' && styles.center) legacyPositionClasses.push(styles.center);
+  if (position === 'bottom-sheet' && styles.bottomSheet)
+    legacyPositionClasses.push(styles.bottomSheet);
   const panelClass = ComponentStandards.createClassName(
     styles.panel,
     positionClass,

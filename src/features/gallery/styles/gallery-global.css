@@ -14,24 +14,24 @@
  * - 모바일 우선 터치 인터페이스
  */
 
-/* ===== Glass Surface 클래스 분리 ===== */
-/* 설정 모달용 - 밝은 glassmorphism */
+/* ===== 미니멀 Surface 클래스 (글래스모피즘 제거) ===== */
+/* 설정 모달용 - 밝은 미니멀 스타일 */
 .glass-surface-light {
-  background: var(--xeg-surface-glass-bg) !important;
-  border: 1px solid var(--xeg-surface-glass-border) !important;
-  backdrop-filter: var(--xeg-surface-glass-blur) !important;
-  -webkit-backdrop-filter: var(--xeg-surface-glass-blur) !important;
-  box-shadow: var(--xeg-surface-glass-shadow) !important;
+  background: var(--xeg-bg-primary, #ffffff) !important;
+  border: 1px solid var(--xeg-border-light, #e5e7eb) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: var(--xeg-shadow-md, 0 2px 4px rgba(0, 0, 0, 0.08)) !important;
   isolation: isolate;
 }
 
-/* 툴바용 - 어두운 glassmorphism */
+/* 툴바용 - 어두운 미니멀 스타일 */
 .glass-surface-dark {
-  background: rgba(0, 0, 0, 0.85) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  background: var(--xeg-bg-primary, #1a1a1a) !important;
+  border: 1px solid var(--xeg-border-light, #404040) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: var(--xeg-shadow-md, 0 2px 4px rgba(0, 0, 0, 0.3)) !important;
   isolation: isolate;
 }
 
@@ -72,8 +72,8 @@
   height: 60px;
   background: var(--xeg-bg-toolbar);
   border-bottom: 1px solid var(--xeg-color-border-primary);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   z-index: 1005;
   display: flex;
   align-items: center;
@@ -112,8 +112,8 @@
   justify-content: center;
   min-width: 36px;
   height: 36px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
     0 2px 8px rgba(15, 23, 42, 0.08),
     0 1px 4px rgba(15, 23, 42, 0.05);
@@ -154,8 +154,8 @@
   border-radius: 8px;
   border: 1px solid var(--xeg-border-counter);
   margin-left: 16px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
@@ -167,8 +167,8 @@
   border: 1px solid var(--xeg-neutral-200);
   border-radius: 8px;
   padding: 4px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* 다운로드 진행률 - 통합 색상 시스템 적용 */
@@ -184,8 +184,8 @@
   min-width: 200px;
   text-align: center;
   box-shadow: 0 4px 12px var(--xeg-shadow-toolbar);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .xeg-progress-bar {
@@ -267,8 +267,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
     0 4px 16px rgba(15, 23, 42, 0.1),
     0 2px 8px rgba(15, 23, 42, 0.06);
@@ -320,8 +320,8 @@
   background: var(--xeg-bg-toolbar);
   border: 1px solid var(--xeg-color-border-primary);
   border-radius: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow: var(--xeg-shadow-toolbar);
   overflow-x: auto;
   scrollbar-width: none;
@@ -581,7 +581,7 @@
   border: 1px solid var(--xeg-surface-glass-border);
   border-radius: var(--xeg-radius-xl);
   box-shadow: var(--xeg-surface-glass-shadow);
-  backdrop-filter: var(--xeg-surface-glass-blur) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-surface-glass-blur) saturate(120%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   isolation: isolate;
 }
