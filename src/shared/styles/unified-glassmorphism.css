@@ -1,0 +1,218 @@
+/**
+ * @fileoverview 통합 Glassmorphism 스타일 시스템
+ * @description 툴바와 설정 모달이 공유하는 glassmorphism 디자인 시스템
+ */
+
+/* ===========================================
+   통합 GLASSMORPHISM 클래스 시스템
+   =========================================== */
+
+/**
+ * 공통 glassmorphism 베이스 클래스
+ * @description 툴바, 설정 모달, 기타 글래스 UI 컴포넌트에서 공통 사용
+ */
+.xeg-glassmorphism {
+  /* 기본 glassmorphism 효과 */
+  background: var(--xeg-surface-glass-bg);
+  border: 1px solid var(--xeg-surface-glass-border);
+  border-radius: var(--xeg-radius-xl);
+  box-shadow: var(--xeg-surface-glass-shadow);
+  backdrop-filter: var(--xeg-surface-glass-blur) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-surface-glass-blur) saturate(120%);
+
+  /* 레이아웃 및 위치 */
+  isolation: isolate;
+  position: relative;
+
+  /* 부드러운 애니메이션 */
+  transition:
+    background var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+/**
+ * 툴바 전용 glassmorphism 변형
+ * @description 툴바의 기존 스타일과 호환성 보장
+ */
+.xeg-glassmorphism.toolbar-variant {
+  /* 툴바 특화 스타일 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3em; /* 48px → 3em */
+  padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
+  gap: 0.75em; /* 12px → 0.75em */
+
+  /* 툴바 위치 및 z-index */
+  position: fixed;
+  top: 1.25em; /* 20px → 1.25em */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--xeg-z-toolbar);
+
+  /* 사용자 선택 방지 */
+  user-select: none;
+}
+
+/**
+ * 모달 전용 glassmorphism 변형
+ * @description 설정 모달의 기존 스타일과 호환성 보장
+ */
+.xeg-glassmorphism.modal-variant {
+  /* 모달 특화 스타일 */
+  min-width: 20em; /* 320px → 20em */
+  max-width: 30em; /* 480px → 30em */
+  max-height: 80vh;
+  overflow: hidden;
+
+  /* 모달 애니메이션 */
+  animation: xeg-fade-scale-in var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+}
+
+/**
+ * 버튼 전용 glassmorphism 변형
+ * @description 툴바 버튼과 모달 버튼의 일관된 스타일
+ */
+.xeg-glassmorphism.button-variant {
+  /* 버튼 크기 통일 */
+  width: 2.5em; /* 40px → 2.5em */
+  height: 2.5em; /* 40px → 2.5em */
+  min-width: 2.5em;
+  min-height: 2.5em;
+  padding: 0.5em; /* 8px → 0.5em */
+
+  /* 버튼 레이아웃 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 텍스트 및 커서 */
+  color: var(--xeg-color-text-primary);
+  cursor: pointer;
+  font-size: 0.875em; /* 14px → 0.875em */
+  font-weight: 500;
+
+  /* 호버 효과 */
+  transition: var(--xeg-transition-fast);
+}
+
+/* 호버 상태 - 일관된 인터랙션 */
+@media (hover: hover) {
+  .xeg-glassmorphism.button-variant:hover:not([data-disabled='true']) {
+    background: var(--xeg-color-neutral-100);
+    border-color: var(--xeg-color-neutral-300);
+    transform: translateY(-0.0625em); /* -1px → -0.0625em */
+    box-shadow: var(--xeg-shadow-md);
+  }
+}
+
+/* 클릭 상태 */
+.xeg-glassmorphism.button-variant:active:not([data-disabled='true']) {
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+/* 비활성화 상태 */
+.xeg-glassmorphism.button-variant[data-disabled='true'] {
+  opacity: 0.5;
+  background: var(--xeg-surface-disabled);
+  color: var(--xeg-color-neutral-400);
+  cursor: not-allowed;
+}
+
+/* ===========================================
+   테마별 glassmorphism 오버라이드
+   =========================================== */
+
+/* 다크 테마 glassmorphism */
+[data-theme='dark'] .xeg-glassmorphism {
+  background: var(--xeg-surface-glass-bg); /* design-tokens.css에서 다크 값 자동 적용 */
+  border-color: var(--xeg-surface-glass-border);
+  box-shadow: var(--xeg-surface-glass-shadow);
+}
+
+[data-theme='dark'] .xeg-glassmorphism.button-variant:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-neutral-300);
+}
+
+/* ===========================================
+   접근성 및 미디어 쿼리
+   =========================================== */
+
+/* 고대비 모드 - glassmorphism 효과 제거 */
+@media (prefers-contrast: high) {
+  .xeg-glassmorphism {
+    background: Canvas;
+    border: 2px solid CanvasText;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  [data-theme='dark'] .xeg-glassmorphism {
+    background: rgb(15, 23, 42);
+    border: 2px solid rgb(255, 255, 255);
+  }
+}
+
+/* 투명도 감소 선호 */
+@media (prefers-reduced-transparency: reduce) {
+  .xeg-glassmorphism {
+    background: rgb(255, 255, 255);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  [data-theme='dark'] .xeg-glassmorphism {
+    background: rgb(30, 41, 59);
+  }
+}
+
+/* 모션 감소 선호 */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-glassmorphism,
+  .xeg-glassmorphism.button-variant {
+    transition: none;
+    animation: none;
+  }
+
+  .xeg-glassmorphism.button-variant:hover {
+    transform: none !important;
+  }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 48em) {
+  /* 768px → 48em */
+  .xeg-glassmorphism.toolbar-variant {
+    padding: 0.75em 1em; /* 12px 16px → 0.75em 1em */
+  }
+
+  .xeg-glassmorphism.button-variant {
+    width: 2.25em; /* 36px → 2.25em */
+    height: 2.25em;
+    min-width: 2.25em;
+    min-height: 2.25em;
+    padding: 0.375em; /* 6px → 0.375em */
+    font-size: 0.8125em; /* 13px → 0.8125em */
+  }
+}
+
+@media (max-width: 30em) {
+  /* 480px → 30em */
+  .xeg-glassmorphism.toolbar-variant {
+    width: calc(100vw - 1.25em); /* 20px → 1.25em */
+    max-width: none;
+    left: 0.625em; /* 10px → 0.625em */
+    transform: none;
+  }
+
+  .xeg-glassmorphism.button-variant {
+    width: 2em; /* 32px → 2em */
+    height: 2em;
+    min-width: 2em;
+    min-height: 2em;
+    padding: 0.3125em; /* 5px → 0.3125em */
+  }
+}

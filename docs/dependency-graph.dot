@@ -3,6 +3,8 @@ strict digraph "dependency-cruiser output"{
     node [shape="box" style="rounded,filled" height="0.2" color="#333333" fillcolor="#FAFAFA" fontcolor="#333333" fontname="Arial" fontsize="10" penwidth="1" margin="0.1"]
     edge [arrowhead="normal" arrowsize="0.8" penwidth="1" color="#666666" fontname="Arial" fontsize="8" fontcolor="#333333"]
 
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/build" {label="build" "src/build/critical-css.js" [label=<critical-css.js> tooltip="no-orphans" URL="src/build/critical-css.js" fillcolor="#FEF2F2" fontcolor="#DC2626" color="#DC2626" style="rounded,filled,dashed" penwidth="1.5"] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/build" {label="build" "src/build/critical-css.ts" [label=<critical-css.ts> tooltip="no-orphans" URL="src/build/critical-css.ts" fillcolor="#FEF2F2" fontcolor="#DC2626" color="#DC2626" style="rounded,filled,dashed" penwidth="1.5"] } }
     subgraph "cluster_src" {label="src" "src/constants.ts" [label=<constants.ts> tooltip="constants.ts" URL="src/constants.ts" fillcolor="#ddfeff"] }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryApp.ts" [label=<GalleryApp.ts> tooltip="GalleryApp.ts" URL="src/features/gallery/GalleryApp.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryRenderer.ts" [label=<GalleryRenderer.ts> tooltip="GalleryRenderer.ts" URL="src/features/gallery/GalleryRenderer.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }

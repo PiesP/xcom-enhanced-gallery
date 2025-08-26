@@ -8,8 +8,8 @@
  */
 .container {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: var(--xeg-toast-offset);
+  right: var(--xeg-toast-offset);
   z-index: var(--xeg-z-toast);
   pointer-events: none;
 }

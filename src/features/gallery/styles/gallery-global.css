@@ -14,6 +14,27 @@
  * - 모바일 우선 터치 인터페이스
  */
 
+/* ===== Glass Surface 클래스 분리 ===== */
+/* 설정 모달용 - 밝은 glassmorphism */
+.glass-surface-light {
+  background: var(--xeg-surface-glass-bg) !important;
+  border: 1px solid var(--xeg-surface-glass-border) !important;
+  backdrop-filter: var(--xeg-surface-glass-blur) !important;
+  -webkit-backdrop-filter: var(--xeg-surface-glass-blur) !important;
+  box-shadow: var(--xeg-surface-glass-shadow) !important;
+  isolation: isolate;
+}
+
+/* 툴바용 - 어두운 glassmorphism */
+.glass-surface-dark {
+  background: rgba(0, 0, 0, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  isolation: isolate;
+}
+
 /* 갤러리 오버레이 - 통합 색상 시스템 적용 */
 .xeg-gallery-overlay {
   position: fixed;
@@ -545,4 +566,22 @@
     color: black;
     border: 2px solid black;
   }
+}
+
+/* ================================ */
+/* UI 유틸리티 클래스                 */
+/* ================================ */
+
+/**
+ * 공통 Glass Surface 클래스
+ * @description Toolbar와 SettingsModal 등에서 사용하는 통일된 glassmorphism 스타일
+ */
+.glass-surface {
+  background: var(--xeg-surface-glass-bg);
+  border: 1px solid var(--xeg-surface-glass-border);
+  border-radius: var(--xeg-radius-xl);
+  box-shadow: var(--xeg-surface-glass-shadow);
+  backdrop-filter: var(--xeg-surface-glass-blur) saturate(120%);
+  -webkit-backdrop-filter: var(--xeg-surface-glass-blur) saturate(120%);
+  isolation: isolate;
 }

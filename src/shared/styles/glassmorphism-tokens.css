@@ -1,0 +1,120 @@
+/**
+ * @fileoverview Glassmorphism 통합 디자인 토큰
+ * @description 툴바와 모달이 공유하는 glassmorphism 스타일 정의
+ */
+
+:root {
+  /* ===== 통합 Glassmorphism 토큰 ===== */
+
+  /* 기본 glass 효과 */
+  --xeg-glass-bg: rgba(255, 255, 255, 0.85);
+  --xeg-glass-bg-dark: rgba(30, 41, 59, 0.85);
+  --xeg-glass-border: rgba(255, 255, 255, 0.2);
+  --xeg-glass-border-dark: rgba(255, 255, 255, 0.1);
+  --xeg-glass-blur: blur(12px);
+  --xeg-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --xeg-glass-shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  /* 버튼용 glass 효과 */
+  --xeg-glass-button-bg: rgba(255, 255, 255, 0.7);
+  --xeg-glass-button-bg-dark: rgba(51, 65, 85, 0.7);
+  --xeg-glass-button-border: rgba(255, 255, 255, 0.3);
+  --xeg-glass-button-border-dark: rgba(255, 255, 255, 0.15);
+  --xeg-glass-button-hover-bg: rgba(255, 255, 255, 0.9);
+  --xeg-glass-button-hover-bg-dark: rgba(71, 85, 105, 0.9);
+
+  /* 호버 효과 */
+  --xeg-glass-hover-transform: translateY(-1px);
+  --xeg-glass-hover-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  --xeg-glass-hover-shadow-dark: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== 다크 테마 오버라이드 ===== */
+[data-theme='dark'] {
+  --xeg-glass-bg: var(--xeg-glass-bg-dark);
+  --xeg-glass-border: var(--xeg-glass-border-dark);
+  --xeg-glass-shadow: var(--xeg-glass-shadow-dark);
+  --xeg-glass-button-bg: var(--xeg-glass-button-bg-dark);
+  --xeg-glass-button-border: var(--xeg-glass-button-border-dark);
+  --xeg-glass-button-hover-bg: var(--xeg-glass-button-hover-bg-dark);
+  --xeg-glass-hover-shadow: var(--xeg-glass-hover-shadow-dark);
+}
+
+/* ===== 글로벌 Glassmorphism 클래스 ===== */
+
+/* 기본 glassmorphism 컨테이너 */
+.xeg-glassmorphism {
+  background: var(--xeg-glass-bg);
+  border: 1px solid var(--xeg-glass-border);
+  backdrop-filter: var(--xeg-glass-blur);
+  -webkit-backdrop-filter: var(--xeg-glass-blur);
+  box-shadow: var(--xeg-glass-shadow);
+  border-radius: var(--xeg-radius-lg, 12px);
+  transition: var(--xeg-transition-normal, all 0.2s ease);
+}
+
+/* 모달 전용 변형 */
+.xeg-glassmorphism.modal-variant {
+  background: var(--xeg-glass-bg);
+  border: 1px solid var(--xeg-glass-border);
+  backdrop-filter: var(--xeg-glass-blur);
+  -webkit-backdrop-filter: var(--xeg-glass-blur);
+  box-shadow: var(--xeg-glass-shadow);
+  border-radius: var(--xeg-radius-xl, 16px);
+}
+
+/* 버튼 전용 변형 */
+.xeg-glassmorphism.button-variant {
+  background: var(--xeg-glass-button-bg);
+  border: 1px solid var(--xeg-glass-button-border);
+  backdrop-filter: var(--xeg-glass-blur);
+  -webkit-backdrop-filter: var(--xeg-glass-blur);
+  box-shadow: var(--xeg-shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.1));
+  border-radius: var(--xeg-radius-md, 8px);
+  transition: var(--xeg-transition-fast, all 0.15s ease);
+}
+
+.xeg-glassmorphism.button-variant:hover:not([disabled]) {
+  background: var(--xeg-glass-button-hover-bg);
+  transform: var(--xeg-glass-hover-transform);
+  box-shadow: var(--xeg-glass-hover-shadow);
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-transparency: reduce) {
+  .xeg-glassmorphism {
+    background: var(--xeg-color-surface-primary, white);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  [data-theme='dark'] .xeg-glassmorphism {
+    background: var(--xeg-color-surface-primary-dark, #1e293b);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xeg-glassmorphism,
+  .xeg-glassmorphism.button-variant {
+    transition: none;
+  }
+
+  .xeg-glassmorphism.button-variant:hover:not([disabled]) {
+    transform: none;
+  }
+}
+
+/* 고대비 모드 */
+@media (prefers-contrast: high) {
+  .xeg-glassmorphism {
+    background: white;
+    border: 2px solid black;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  [data-theme='dark'] .xeg-glassmorphism {
+    background: black;
+    border: 2px solid white;
+  }
+}

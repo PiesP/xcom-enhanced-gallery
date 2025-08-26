@@ -13,9 +13,12 @@
   /* 단순한 클릭 효과 - transform 제거 */
 }
 
-/* 기본 툴바 - CSS 변수 기반 가시성 제어 */
+/* 기본 툴바 - glass-surface 클래스 사용 */
 .galleryToolbar {
-  /* 기본 레이아웃 및 시각적 속성만 */
+  /* 레이아웃 속성만 정의 - glassmorphism은 glass-surface 클래스로 */
+  border-radius: var(--xeg-radius-lg);
+
+  /* 레이아웃 속성 */
   position: fixed;
   top: 1.25em; /* 20px → 1.25em */
   left: 50%;
@@ -30,21 +33,13 @@
   gap: 0.75em; /* 12px → 0.75em */
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
-  background: var(--xeg-toolbar-glass-bg);
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
     transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
 
-  /* 글래스모피즘 스타일링 */
-  border-radius: var(--xeg-radius-xl);
-  border: 1px solid var(--xeg-toolbar-glass-border);
-  box-shadow: var(--xeg-toolbar-glass-shadow);
-  backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
   user-select: none;
-  isolation: isolate;
 }
 
 /* 감소된 모션 지원 강화 */
@@ -146,31 +141,20 @@
   margin: 0 0.125em; /* 0 2px → 0 0.125em */
 }
 
-/* 🎨 REFACTOR: 통일된 툴바 버튼 스타일 - !important 제거 */
+/* 🎨 REFACTOR: 통일된 툴바 버튼 스타일 - glassmorphism 클래스 기반 */
 .toolbarButton {
-  /* 📏 통일된 크기 - 기본 40px */
+  /* 기본 크기와 레이아웃만 정의, glassmorphism은 클래스로 */
   width: 2.5em; /* 40px → 2.5em */
   height: 2.5em; /* 40px → 2.5em */
   min-width: 2.5em; /* 40px → 2.5em */
   min-height: 2.5em; /* 40px → 2.5em */
   padding: 0.5em; /* 8px → 0.5em */
 
-  /* 🎨 글래스모피즘 디자인 시스템 */
-  background: var(--xeg-toolbar-glass-bg);
-  border: 1px solid var(--xeg-toolbar-glass-border);
-  border-radius: var(--xeg-radius-md);
-  backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
-  box-shadow: var(--xeg-toolbar-glass-shadow);
-
-  /* 🎯 텍스트 및 커서 */
+  /* 텍스트 및 커서 */
   color: var(--xeg-color-text-primary);
   cursor: pointer;
 
-  /* ⚡ 애니메이션 */
-  transition: var(--xeg-transition-fast);
-
-  /* 📐 레이아웃 */
+  /* 레이아웃 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -178,7 +162,6 @@
   font-weight: 500;
   position: relative;
   overflow: hidden;
-  cursor: pointer;
 }
 
 /* 데이터 속성 기반 상태 관리 */
@@ -208,14 +191,13 @@
   cursor: not-allowed;
 }
 
-/* 호버 상태는 CSS에서만 관리 - 통일된 호버 효과 */
+/* 호버 상태는 glassmorphism 클래스에서 처리 */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
+    /* glassmorphism 클래스의 호버 효과 사용 */
     /* 복잡한 transform 효과 제거 */
-    background: var(--xeg-color-neutral-100);
-    border-color: var(--xeg-color-neutral-300);
-    transform: translateY(-0.0625em); /* -1px → -0.0625em */
-    box-shadow: var(--xeg-shadow-md);
+    background: var(--xeg-glass-bg-hover, rgba(255, 255, 255, 0.15));
+    transform: translateY(-1px);
   }
 }
 
@@ -329,7 +311,7 @@
     var(--xeg-color-primary-light) 100%
   );
   border-radius: var(--xeg-radius-sm);
-  transition: width 0.3s ease;
+  transition: var(--xeg-transition-normal);
   transform-origin: left;
 }
 
@@ -420,17 +402,9 @@ button.fitButton {
   align-items: center;
   justify-content: center;
   font-size: 0.5em; /* 8px → 0.5em */
-  animation: spin 1s linear infinite;
+  animation: xeg-spin 1s linear infinite;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 /* 설정 및 닫기 버튼 - 기본 스타일 상속 */
 .closeButton {
   /* danger 변형을 위한 기본 설정 */

@@ -20,7 +20,7 @@
  * - 둥근 모서리 (12px border-radius)
  * - 향상된 그림자와 백드롭 필터
  * - 왼쪽 4px 테두리로 타입 표시
- * - 부드러운 슬라이드인 애니메이션 (0.4s cubic-bezier)
+ * - 부드러운 슬라이드인 애니메이션 (CSS 변수 기반)
  * - 크기: 최소 320px, 최대 480px
  * - glassmorphism 배경 효과
  */
@@ -36,7 +36,7 @@
   min-width: 320px;
   max-width: 480px;
   border-left: 4px solid;
-  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: xeg-slide-in var(--xeg-duration-normal) var(--xeg-easing-easeOut);
   position: relative;
   isolation: isolate;
 }
@@ -160,7 +160,7 @@
  * - Size: 20x20px clickable area
  * - Transparent background, hover state available
  * - Rounded corners (4px)
- * - 0.15s hover transition
+ * - CSS 변수 기반 hover transition
  */
 .closeButton {
   background: none;
@@ -170,14 +170,14 @@
   font-size: 18px;
   line-height: 1;
   padding: 0;
-  width: 20px;
-  height: 20px;
+  width: var(--xeg-icon-size-md);
+  height: var(--xeg-icon-size-md);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   border-radius: 4px;
-  transition: background-color 0.15s ease;
+  transition: background-color var(--xeg-duration-fast) ease;
 }
 
 /**
@@ -211,7 +211,7 @@
  *
  * @interaction
  * - 호버 시 더 진한 색상과 상승 효과
- * - 0.3s cubic-bezier 전환
+ * - CSS 변수 기반 전환
  */
 .actionButton {
   background: var(--xeg-color-primary);
@@ -222,7 +222,7 @@
   font-size: 13px;
   font-weight: 600;
   padding: 8px 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--xeg-duration-normal) var(--xeg-easing-easeOut);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   box-shadow: 0 2px 8px rgba(71, 133, 163, 0.15);
@@ -240,29 +240,6 @@
   background: var(--xeg-color-primary-hover);
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(71, 133, 163, 0.25);
-}
-
-/**
- * Slide-in animation keyframes - 현대적 이징
- *
- * @animation
- * - From: 오른쪽에서 슬라이드 (100% translateX)
- * - To: 최종 위치와 완전한 불투명도
- * - 지속 시간: 0.4s
- * - 이징: cubic-bezier(0.4, 0, 0.2, 1) (부드러운 감속)
- *
- * @accessibility
- * - prefers-reduced-motion 사용자 환경설정 반영
- */
-@keyframes slideIn {
-  from {
-    transform: translateX(100%) scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0) scale(1);
-    opacity: 1;
-  }
 }
 
 /**

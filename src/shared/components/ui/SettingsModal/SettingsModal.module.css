@@ -9,7 +9,7 @@
   -webkit-backdrop-filter: blur(4px);
   z-index: var(--xeg-z-modal, 10000);
   display: flex;
-  animation: fadeIn 0.2s ease-out;
+  animation: xeg-fade-in var(--xeg-duration-fast) var(--xeg-easing-easeOut);
 }
 
 /* Position variants */
@@ -86,17 +86,13 @@
 }
 
 .modal {
-  background: var(--xeg-toolbar-glass-bg);
-  border: 1px solid var(--xeg-toolbar-glass-border);
-  border-radius: var(--xeg-radius-xl);
-  box-shadow: var(--xeg-toolbar-glass-shadow);
-  backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
+  /* 레이아웃 속성만 정의 - glassmorphism은 glass-surface 클래스로 */
+  border-radius: var(--xeg-radius-lg);
   min-width: 20em; /* 320px → 20em */
   max-width: 30em; /* 480px → 30em */
   max-height: 80vh;
   overflow: hidden;
-  animation: slideIn 0.3s ease-out;
+  animation: xeg-fade-scale-in var(--xeg-duration-normal) var(--xeg-easing-easeOut);
 }
 
 .header {
@@ -115,14 +111,8 @@
 }
 
 .closeButton {
-  /* 툴바 버튼과 동일한 glassmorphism 스타일 */
-  background: var(--xeg-toolbar-glass-bg);
-  border: 1px solid var(--xeg-toolbar-glass-border);
+  /* 레이아웃 속성만 정의 - glassmorphism은 glass-surface 클래스로 */
   border-radius: var(--xeg-radius-md);
-  backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
-  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur) saturate(120%);
-  box-shadow: var(--xeg-toolbar-glass-shadow);
-
   color: var(--xeg-color-text-secondary);
   cursor: pointer;
   padding: 0.5em; /* 8px → 0.5em */
@@ -135,9 +125,9 @@
 }
 
 .closeButton:hover {
-  background: var(--xeg-color-error-50);
-  border-color: var(--xeg-color-error);
-  color: var(--xeg-color-error);
+  background: var(--xeg-color-neutral-100); /* 🔄 툴바와 일관된 중립색으로 변경 */
+  border-color: var(--xeg-color-neutral-300);
+  color: var(--xeg-color-text-primary); /* 🔄 에러 색상 제거 */
   transform: translateY(-0.0625em); /* -1px → -0.0625em */
   box-shadow: var(--xeg-shadow-md);
 }
@@ -156,19 +146,19 @@
 }
 
 .label {
+  /* 레이아웃 속성만 정의 - glassmorphism은 glass-surface 클래스로 */
+  border-radius: var(--xeg-radius-sm);
+  padding: 0.375em 0.75em;
   font-size: 0.875em; /* 14px → 0.875em */
   font-weight: 500;
   color: var(--xeg-color-text-primary);
+  display: inline-block;
+  margin-bottom: 0.5em;
 }
 
 .select {
-  /* glassmorphism 효과 추가 */
-  background: var(--xeg-toolbar-glass-bg);
-  border: 1px solid var(--xeg-toolbar-glass-border);
+  /* 레이아웃 속성만 정의 - glassmorphism은 glass-surface 클래스로 */
   border-radius: var(--xeg-radius-md);
-  backdrop-filter: var(--xeg-toolbar-glass-blur);
-  -webkit-backdrop-filter: var(--xeg-toolbar-glass-blur);
-
   padding: 0.625em 0.75em; /* 10px 12px → 0.625em 0.75em */
   font-size: 0.875em; /* 14px → 0.875em */
   color: var(--xeg-color-text-primary);
@@ -177,9 +167,10 @@
 }
 
 .select:hover {
-  border-color: var(--xeg-color-primary);
-  box-shadow: var(--xeg-shadow-sm);
-  transform: translateY(-0.0625em); /* -1px → -0.0625em */
+  background: var(--xeg-color-neutral-100); /* 🔄 툴바와 동일한 호버 색상 */
+  border-color: var(--xeg-color-neutral-300);
+  transform: translateY(-0.0625em);
+  box-shadow: var(--xeg-shadow-md);
 }
 
 .select:focus {
@@ -188,39 +179,9 @@
   box-shadow: 0 0 0 2px var(--xeg-color-primary-alpha-30);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-0.625em); /* -10px → -0.625em */
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
 /* 다크 테마 지원 */
-[data-theme='dark'] .modal {
-  background: rgba(15, 23, 42, 0.95);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
 [data-theme='dark'] .closeButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme='dark'] .select {
-  background: rgba(51, 65, 85, 0.8);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--xeg-color-neutral-100);
 }
 
 /* 접근성 - 애니메이션 감소 */

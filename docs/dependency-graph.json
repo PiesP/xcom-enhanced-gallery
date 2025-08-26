@@ -1,6 +1,32 @@
 {
   "modules": [
     {
+      "source": "src/build/critical-css.js",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/build/critical-css.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/constants.ts",
       "dependencies": [],
       "dependents": [
@@ -6701,12 +6727,31 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/build/critical-css.js",
+        "to": "src/build/critical-css.js",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/build/critical-css.ts",
+        "to": "src/build/critical-css.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 2,
     "ignore": 0,
-    "totalCruised": 183,
+    "totalCruised": 185,
     "totalDependenciesCruised": 283,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

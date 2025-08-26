@@ -59,11 +59,12 @@
       transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
       opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
     --xeg-transition-normal:
-      transform 250ms var(--xeg-easing-ease-in-out), opacity 250ms var(--xeg-easing-ease-in-out);
+      transform var(--xeg-duration-fade) var(--xeg-easing-ease-in-out),
+      opacity var(--xeg-duration-fade) var(--xeg-easing-ease-in-out);
     --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-ease-out);
     --xeg-transition-toolbar:
-      opacity 100ms var(--xeg-easing-ease-out), transform 100ms var(--xeg-easing-ease-out),
-      visibility 0ms;
+      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
+      transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
 
     /* 스페이싱 - CSS Logical Properties 활용 */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
@@ -186,7 +187,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 120px; /* 상단 120px로 확장하여 사용성 향상 */
+  height: var(--xeg-hover-zone-height); /* 120px를 토큰으로 교체 */
   z-index: calc(var(--xeg-toolbar-z-index) - 1); /* 툴바보다 낮은 z-index */
   background: transparent;
   pointer-events: auto; /* 호버 감지를 위해 이벤트 허용 */
@@ -224,7 +225,7 @@
   opacity: var(--toolbar-opacity, 0);
   visibility: var(--toolbar-visibility, hidden);
   pointer-events: var(--toolbar-pointer-events, none);
-  transform: translateY(var(--toolbar-transform-y, -10px));
+  transform: translateY(var(--toolbar-transform-y, var(--xeg-transform-translate-y-sm)));
   display: block;
 
   transition: var(--xeg-transition-toolbar);
@@ -413,7 +414,7 @@
 
 /* 웹킷 스크롤바 스타일 */
 .itemsList::-webkit-scrollbar {
-  width: 8px;
+  width: var(--xeg-scrollbar-width); /* 8px를 토큰으로 교체 */
 }
 
 .itemsList::-webkit-scrollbar-track {
@@ -422,7 +423,7 @@
 
 .itemsList::-webkit-scrollbar-thumb {
   background: var(--xeg-neutral-300);
-  border-radius: 4px;
+  border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
   transition: background-color 0.2s ease;
 }
 
@@ -432,17 +433,17 @@
 
 /* 애니메이션 - GPU 가속 */
 .fadeInOut {
-  animation: fadeInOut 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInOut var(--xeg-duration-normal) cubic-bezier(0.16, 1, 0.3, 1); /* 0.3s를 토큰으로 교체 */
 }
 
 @keyframes fadeInOut {
   0% {
     opacity: 0;
-    transform: translate3d(-50%, 10px, 0) scale3d(0.95, 0.95, 1);
+    transform: var(--xeg-transform-translate-up) var(--xeg-transform-scale-down);
   }
   100% {
     opacity: 1;
-    transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1);
+    transform: var(--xeg-transform-translate-center) var(--xeg-transform-scale-normal);
   }
 }
 
@@ -554,12 +555,12 @@
 /* Toast 컨테이너 */
 .toastContainer {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: var(--xeg-toast-offset); /* 20px를 토큰으로 교체 */
+  right: var(--xeg-toast-offset); /* 20px를 토큰으로 교체 */
   z-index: calc(var(--xeg-gallery-z-index) + 2);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--xeg-gap-sm); /* 10px를 토큰으로 교체 */
   pointer-events: none;
 }
 
@@ -570,19 +571,19 @@
 /* 감소된 모션 사용자를 위한 지원 - 개선된 접근성 */
 @media (prefers-reduced-motion: reduce) {
   .toolbarWrapper {
-    transition: opacity 150ms ease;
+    transition: opacity var(--xeg-duration-fast) ease; /* 150ms를 토큰으로 교체 */
     transform: translateY(-100%); /* Y축 이동만 제거 */
   }
 
   .toolbarWrapper:hover,
   .toolbarWrapper:focus-within {
     transform: translateY(0); /* 단순한 Y축 이동만 */
-    transition: opacity 100ms ease; /* 더 빠른 응답 */
+    transition: opacity var(--xeg-duration-toolbar) ease; /* 100ms를 토큰으로 교체 */
   }
 
   /* 컨테이너 레벨에서도 모션 감소 */
   .container {
-    transition: opacity 200ms ease;
+    transition: opacity var(--xeg-duration-normal) ease; /* 200ms를 토큰으로 교체 */
   }
 
   /* 모든 애니메이션 제거 */
@@ -594,15 +595,15 @@
 /* 고대비 모드 지원 - 향상된 가시성 */
 @media (prefers-contrast: high) {
   .toolbarWrapper {
-    background: rgba(0, 0, 0, 0.95);
+    background: var(--xeg-color-overlay-dark); /* rgba(0, 0, 0, 0.95)를 토큰으로 교체 */
     border: 2px solid white;
-    border-radius: 4px;
-    margin: 4px;
+    border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
+    margin: var(--xeg-gap-xs); /* 4px를 토큰으로 교체 */
   }
 
   /* 고대비 모드에서 호버 영역 시각화 */
   .toolbarHoverZone:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--xeg-color-overlay-subtle); /* rgba(255, 255, 255, 0.1)를 토큰으로 교체 */
   }
 }
 
@@ -618,7 +619,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 120px; /* 확장된 호버 영역 */
+  height: var(--xeg-hover-zone-height); /* 확장된 호버 영역 */
   z-index: calc(var(--xeg-toolbar-z-index) - 1);
   pointer-events: auto;
   background: transparent;

@@ -32,7 +32,7 @@
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--xeg-transition-fast);
   position: relative;
   box-sizing: border-box;
   user-select: none;
@@ -138,13 +138,7 @@
   border: 2px solid transparent;
   border-top: 2px solid currentColor;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  animation: xeg-spin 1s linear infinite;
 }
 
 /* Dark Mode Support */

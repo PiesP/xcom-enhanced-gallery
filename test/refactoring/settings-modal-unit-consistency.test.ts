@@ -62,16 +62,39 @@ describe('SettingsModal Unit Consistency', () => {
   });
 
   describe('Toolbar와의 일관성', () => {
-    it('동일한 glassmorphism 디자인 토큰을 사용해야 함', () => {
-      const glassTokens = [
+    it('glass-surface 클래스 방식을 사용하며 CSS에서 개별 glassmorphism 속성이 제거되어야 함', () => {
+      // 개별 glassmorphism 속성이 CSS에서 제거되어야 함
+      const removedTokens = [
+        'var(--xeg-surface-glass-bg)',
+        'var(--xeg-surface-glass-border)',
+        'var(--xeg-surface-glass-blur)',
+        'var(--xeg-surface-glass-shadow)',
+      ];
+
+      // CSS 파일에서는 이 속성들이 제거되어야 함
+      removedTokens.forEach(token => {
+        expect(settingsModalCSS.includes(token), `${token} 토큰이 여전히 CSS에 존재함`).toBe(false);
+      });
+
+      // TSX 파일에서 glass-surface 클래스 사용 확인
+      const settingsModalTSX = readFileSync(
+        './src/shared/components/ui/SettingsModal/SettingsModal.tsx',
+        'utf-8'
+      );
+      expect(
+        settingsModalTSX.includes('glass-surface'),
+        'TSX에서 glass-surface 클래스를 사용해야 함'
+      ).toBe(true);
+
+      // 레거시 toolbar 토큰 직접 사용 금지
+      const legacyTokens = [
         'var(--xeg-toolbar-glass-bg)',
         'var(--xeg-toolbar-glass-border)',
         'var(--xeg-toolbar-glass-blur)',
         'var(--xeg-toolbar-glass-shadow)',
       ];
-
-      glassTokens.forEach(token => {
-        expect(settingsModalCSS.includes(token), `${token} 토큰 누락`).toBe(true);
+      legacyTokens.forEach(token => {
+        expect(settingsModalCSS.includes(token), `레거시 토큰(${token})이 남아 있음`).toBe(false);
       });
     });
 

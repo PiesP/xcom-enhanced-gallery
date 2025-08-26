@@ -127,10 +127,11 @@ function ToolbarCore({
   const [toolbarState, toolbarActions] = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
 
-  // 표준화된 클래스명 생성
+  // 표준화된 클래스명 생성 - glass-surface-dark 클래스 적용
   const toolbarClass = ComponentStandards.createClassName(
     styles.toolbar,
     getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
+    'glass-surface-dark', // 어두운 glassmorphism 스타일 적용
     className
   );
 
@@ -263,7 +264,7 @@ function ToolbarCore({
               'button',
               {
                 type: 'button',
-                className: `${styles.toolbarButton} ${styles.navButton}`,
+                className: `${styles.toolbarButton} ${styles.navButton} xeg-glassmorphism button-variant`,
                 onClick: (e: Event) => handleButtonClick(e, 'previous', onPrevious),
                 disabled: disabled || !canGoPrevious,
                 'aria-label': '이전 미디어',
@@ -278,7 +279,7 @@ function ToolbarCore({
               'button',
               {
                 type: 'button',
-                className: `${styles.toolbarButton} ${styles.navButton}`,
+                className: `${styles.toolbarButton} ${styles.navButton} xeg-glassmorphism button-variant`,
                 onClick: (e: Event) => handleButtonClick(e, 'next', onNext),
                 disabled: disabled || !canGoNext,
                 'aria-label': '다음 미디어',

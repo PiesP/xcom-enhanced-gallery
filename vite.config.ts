@@ -1,26 +1,39 @@
+// @ts-nocheck
 /**
  * Vite Configuration for X.com Enhanced Gallery (UserScript Build)
  *
  * 유저스크립트 형식으로 빌드하기 위한 완전한 설정
  */
+/* eslint-env node */
+/* global Buffer, console, process */
 
 import preact from '@preact/preset-vite';
 import * as fs from 'fs';
 import * as path from 'path';
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig } from 'vite';
+// Critical CSS 집계 & 중복 제거 (surface glass 토큰 단일 선언 보장)
+import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/build/critical-css';
 
 // 번들 분석 플러그인
+/**
+ * @returns {import('vite').Plugin}
+ */
 function createBundleAnalysisPlugin() {
   return {
     name: 'bundle-analysis',
-    apply: 'build' as const,
-    writeBundle(options: any, bundle: any) {
-      const bundleObj = bundle as Record<string, any>;
+    apply: 'build',
+    writeBundle(options, bundle) {
+      const bundleObj = bundle;
       let totalSize = 0;
       const chunks: Array<{ name: string; size: number }> = [];
 
       for (const [fileName, fileInfo] of Object.entries(bundleObj)) {
-        if (fileInfo.type === 'chunk' && fileInfo.code) {
+        if (
+          fileInfo &&
+          fileInfo.type === 'chunk' &&
+          'code' in fileInfo &&
+          typeof fileInfo.code === 'string'
+        ) {
           const size = Buffer.byteLength(fileInfo.code, 'utf8');
           totalSize += size;
           chunks.push({ name: fileName, size });
@@ -35,7 +48,7 @@ function createBundleAnalysisPlugin() {
         isWithinBudget: totalSize <= 500 * 1024, // 500KB 제한
       };
 
-      const outDir = (options as { dir?: string })?.dir || 'dist';
+      const outDir = options && 'dir' in options && options.dir ? options.dir! : 'dist';
       fs.writeFileSync(
         path.resolve(outDir, 'bundle-analysis.json'),
         JSON.stringify(analysis, null, 2)
@@ -53,15 +66,20 @@ function createBundleAnalysisPlugin() {
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
 // Build mode configuration - optimized
-interface BuildMode {
-  readonly isDevelopment: boolean;
-  readonly isProduction: boolean;
-  readonly minify: boolean;
-  readonly sourcemap: boolean;
-  readonly dropConsole: boolean;
-}
+/**
+ * @typedef {Object} BuildMode
+ * @property {boolean} isDevelopment
+ * @property {boolean} isProduction
+ * @property {boolean} minify
+ * @property {boolean} sourcemap
+ * @property {boolean} dropConsole
+ */
 
-function getBuildMode(mode?: string): BuildMode {
+/**
+ * @param {string} mode
+ * @returns {BuildMode}
+ */
+function getBuildMode(mode) {
   const isDevelopment = mode === 'development';
 
   return {
@@ -74,7 +92,11 @@ function getBuildMode(mode?: string): BuildMode {
 }
 
 // Generate userscript header
-function generateUserscriptHeader(buildMode: BuildMode): string {
+/**
+ * @param {BuildMode} buildMode
+ * @returns {string}
+ */
+function generateUserscriptHeader(buildMode) {
   const devSuffix = buildMode.isDevelopment ? ' (Dev)' : '';
   const version = buildMode.isDevelopment
     ? `${packageJson.version}-dev.${Date.now()}`
@@ -119,15 +141,19 @@ function generateUserscriptHeader(buildMode: BuildMode): string {
 }
 
 // 유저스크립트 번들링 플러그인
-function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
+/**
+ * @param {BuildMode} buildMode
+ * @returns {import('vite').Plugin}
+ */
+function createUserscriptBundlerPlugin(buildMode) {
   return {
     name: 'userscript-bundler',
     apply: 'build',
 
-    async writeBundle(options: unknown, bundle: unknown) {
+    async writeBundle(options, bundle) {
       try {
-        const bundleObj = bundle as Record<string, { type: string; fileName: string }>;
-        const outDir = (options as { dir?: string })?.dir || 'dist';
+        const bundleObj = bundle; // rollup bundle object
+        const outDir = options && 'dir' in options && options.dir ? options.dir! : 'dist';
 
         // CSS와 JS 파일 찾기
         const cssFiles = Object.keys(bundleObj).filter(fileName => fileName.endsWith('.css'));
@@ -138,7 +164,7 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
           return;
         }
 
-        const mainJsFile = jsFiles[0]!;
+        const mainJsFile = jsFiles[0]; // 존재 보장 (위 length 체크)
         const jsFilePath = path.resolve(outDir, mainJsFile);
 
         // CSS 내용 수집
@@ -165,9 +191,24 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
 
         const jsContent = fs.readFileSync(jsFilePath, 'utf8');
 
-        // CSS 주입 코드 생성
+        // Critical CSS 변수(:root) 집계 및 중복 제거
+        let finalCss = allCss;
+        try {
+          if (finalCss.length > 0) {
+            const criticalRoot = aggregateCriticalCssSync(); // :root{...}
+            if (criticalRoot && criticalRoot.startsWith(':root')) {
+              // 집계된 :root 블록을 선두에 두고 중복 변수 선언 제거
+              const combined = `${criticalRoot}${finalCss}`;
+              finalCss = sanitizeCssWithCriticalRoot(combined, criticalRoot);
+            }
+          }
+        } catch (e) {
+          console.warn('[userscript-bundler] Critical CSS 집계 실패 – fallback 사용:', e);
+        }
+
+        // CSS 주입 코드 생성 (finalCss 사용)
         const cssInjectionCode =
-          allCss.length > 0
+          finalCss.length > 0
             ? `
 (function() {
   if (typeof document === 'undefined') return;
@@ -175,7 +216,7 @@ function createUserscriptBundlerPlugin(buildMode: BuildMode): Plugin {
   if (existingStyle) existingStyle.remove();
   const style = document.createElement('style');
   style.id = 'xeg-styles';
-  style.textContent = ${JSON.stringify(allCss)};
+  style.textContent = ${JSON.stringify(finalCss)};
   (document.head || document.documentElement).appendChild(style);
 })();`
             : '';
@@ -273,7 +314,6 @@ export default defineConfig(({ mode }) => {
           format: 'iife',
           name: 'XG',
           inlineDynamicImports: true,
-          manualChunks: undefined as any,
           // Phase 5: 추가적인 최적화 설정
         },
         treeshake: {
@@ -358,16 +398,16 @@ export default defineConfig(({ mode }) => {
     // 경로 해결
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src'),
-        '@/components': path.resolve(__dirname, 'src/components'),
-        '@/utils': path.resolve(__dirname, 'src/utils'),
-        '@/types': path.resolve(__dirname, 'src/types'),
-        '@/external': path.resolve(__dirname, 'src/external'),
-        '@/assets': path.resolve(__dirname, 'src/assets'),
+        '@': path.resolve(process.cwd(), 'src'),
+        '@/components': path.resolve(process.cwd(), 'src/components'),
+        '@/utils': path.resolve(process.cwd(), 'src/utils'),
+        '@/types': path.resolve(process.cwd(), 'src/types'),
+        '@/external': path.resolve(process.cwd(), 'src/external'),
+        '@/assets': path.resolve(process.cwd(), 'src/assets'),
         // 기존 alias들도 호환성을 위해 유지
-        '@features': path.resolve(__dirname, 'src/features'),
-        '@shared': path.resolve(__dirname, 'src/shared'),
-        '@assets': path.resolve(__dirname, 'src/assets'),
+        '@features': path.resolve(process.cwd(), 'src/features'),
+        '@shared': path.resolve(process.cwd(), 'src/shared'),
+        '@assets': path.resolve(process.cwd(), 'src/assets'),
       },
     },
 

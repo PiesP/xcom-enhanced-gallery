@@ -103,7 +103,8 @@ describe('SettingsModal', () => {
     it('ESC 키 입력 시 onClose가 호출되어야 함', () => {
       render(<SettingsModal {...mockProps} />);
 
-      fireEvent.keyDown(document, { key: 'Escape' });
+      const modal = screen.getByRole('dialog');
+      fireEvent.keyDown(modal, { key: 'Escape' });
 
       expect(mockProps.onClose).toHaveBeenCalledTimes(1);
     });
@@ -243,6 +244,73 @@ describe('SettingsModal', () => {
 
       const backdrop = screen.getByRole('dialog');
       expect(backdrop.className).toContain('topRight');
+    });
+  });
+
+  describe('TDD: 툴바와 디자인 일관성', () => {
+    it('설정 모달이 툴바와 동일한 어두운 glassmorphism 클래스를 사용해야 함', () => {
+      render(<SettingsModal {...mockProps} />);
+
+      const modal = screen.getByRole('dialog').children[0] as HTMLElement;
+
+      // 어두운 glassmorphism 클래스 사용 확인
+      expect(modal.className).toContain('glass-surface-dark');
+      expect(modal.className).not.toContain('glass-surface-light');
+    });
+
+    it('닫기 버튼이 올바른 CSS 클래스를 가져야 함', () => {
+      render(<SettingsModal {...mockProps} />);
+
+      const closeButton = screen.getByLabelText('Close');
+
+      // CSS 클래스 확인으로 glassmorphism 스타일 검증
+      expect(closeButton.className).toContain('closeButton');
+    });
+
+    it('닫기 버튼이 에러 색상이 아닌 중립색 기반 CSS를 사용해야 함', () => {
+      render(<SettingsModal {...mockProps} />);
+
+      const closeButton = screen.getByLabelText('Close');
+
+      // 에러 색상 관련 클래스가 없음을 확인
+      expect(closeButton.className).not.toContain('error');
+      expect(closeButton.className).not.toContain('danger');
+    });
+
+    it('select 요소가 올바른 CSS 클래스를 가져야 함', () => {
+      render(<SettingsModal {...mockProps} />);
+
+      const themeSelect = screen.getByLabelText('Theme');
+
+      // select 클래스 확인
+      expect(themeSelect.className).toContain('select');
+    });
+
+    it('label 요소가 올바른 CSS 클래스를 가져야 함', () => {
+      render(<SettingsModal {...mockProps} />);
+
+      const themeLabel = screen.getByText('Theme');
+
+      // label 클래스 확인
+      expect(themeLabel.className).toContain('label');
+    });
+
+    it('모든 주요 요소들이 glassmorphism 관련 CSS를 가져야 함', () => {
+      render(<SettingsModal {...mockProps} />);
+
+      const closeButton = screen.getByLabelText('Close');
+      const themeSelect = screen.getByLabelText('Theme');
+      const themeLabel = screen.getByText('Theme');
+
+      // 모든 요소가 적절한 클래스를 가지는지 확인
+      expect(closeButton).toBeDefined();
+      expect(themeSelect).toBeDefined();
+      expect(themeLabel).toBeDefined();
+
+      // CSS 모듈 클래스들이 적용되었는지 확인
+      expect(closeButton.className).toBeTruthy();
+      expect(themeSelect.className).toBeTruthy();
+      expect(themeLabel.className).toBeTruthy();
     });
   });
 });

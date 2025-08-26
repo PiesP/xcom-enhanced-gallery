@@ -26,13 +26,18 @@ export function SettingsModal({
   'data-testid': testId,
 }: SettingsModalProps): VNode | null {
   const { h } = getPreact();
-  const { useState, useEffect, useCallback } = getPreactHooks();
+  const { useState, useEffect, useCallback, useRef } = getPreactHooks();
 
   const [currentTheme, setCurrentTheme] = useState<'auto' | 'light' | 'dark'>('auto');
   const [currentLanguage, setCurrentLanguage] = useState<'auto' | 'ko' | 'en' | 'ja'>('auto');
   const [languageService] = useState(() => new LanguageService());
   const [_themeService] = useState(() => new ThemeService());
   const [_forceUpdate, setForceUpdate] = useState(0);
+
+  // 접근성 개선을 위한 refs
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const backgroundElementsRef = useRef<HTMLElement[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -51,13 +56,84 @@ export function SettingsModal({
     return unsubscribe;
   }, [languageService]);
 
-  const handleThemeChange = useCallback((event: Event) => {
-    const target = event.target as HTMLSelectElement;
-    const newTheme = target.value as 'auto' | 'light' | 'dark';
+  // 접근성 개선: 스크롤 잠금, 포커스 관리, 배경 요소 비활성화
+  useEffect(() => {
+    if (!isOpen) return;
 
-    setCurrentTheme(newTheme);
-    // themeService.setTheme(newTheme); // ThemeService 확장 후 활성화
-  }, []);
+    // 이전 포커스 요소 저장
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+
+    // 스크롤 잠금
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    // 배경 요소 비활성화
+    const focusableElements = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    );
+
+    backgroundElementsRef.current = focusableElements.filter(
+      el => !dialogRef.current?.contains(el)
+    );
+
+    backgroundElementsRef.current.forEach(el => {
+      el.setAttribute('tabindex', '-1');
+    });
+
+    // 초기 포커스 설정
+    const timer = setTimeout(() => {
+      if (dialogRef.current) {
+        const firstFocusable = dialogRef.current.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        firstFocusable?.focus();
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      // 스크롤 잠금 해제
+      document.body.style.overflow = originalOverflow;
+
+      // 배경 요소 활성화
+      backgroundElementsRef.current.forEach(el => {
+        el.removeAttribute('tabindex');
+      });
+
+      // 포커스 복원
+      if (previouslyFocusedRef.current) {
+        previouslyFocusedRef.current.focus();
+      }
+    };
+  }, [isOpen]);
+
+  const handleThemeChange = useCallback(
+    (event: Event) => {
+      const target = event.target as HTMLSelectElement;
+      const newTheme = target.value as 'auto' | 'light' | 'dark';
+
+      setCurrentTheme(newTheme);
+
+      // ThemeService와 연동하여 실제 테마 적용
+      if (_themeService) {
+        _themeService.setTheme(newTheme);
+
+        // documentElement에 data-theme 속성 설정
+        if (typeof document !== 'undefined') {
+          if (newTheme === 'auto') {
+            // 시스템 테마 확인
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+          } else {
+            document.documentElement.setAttribute('data-theme', newTheme);
+          }
+        }
+      }
+    },
+    [_themeService]
+  );
 
   const handleLanguageChange = useCallback(
     (event: Event) => {
@@ -83,17 +159,66 @@ export function SettingsModal({
     (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      // 포커스 트랩 구현
+      if (event.key === 'Tab' && dialogRef.current) {
+        const focusableElements = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        const activeElement = document.activeElement as HTMLElement;
+
+        if (event.shiftKey) {
+          // Shift+Tab: 첫 번째 요소에서 마지막 요소로
+          if (activeElement === firstElement && lastElement) {
+            lastElement.focus();
+            event.preventDefault();
+          }
+        } else {
+          // Tab: 마지막 요소에서 첫 번째 요소로
+          if (activeElement === lastElement && firstElement) {
+            firstElement.focus();
+            event.preventDefault();
+          }
+        }
       }
     },
     [onClose]
   );
 
+  // 키보드 이벤트 처리 (전역으로 수정)
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-    return undefined;
+    if (!isOpen) return;
+
+    const keyDownHandler = (event: KeyboardEvent) => {
+      // ESC 키는 항상 처리
+      if (event.key === 'Escape') {
+        handleKeyDown(event);
+        return;
+      }
+
+      // Tab 키는 모달 내부에 포커스가 있을 때만 처리
+      if (event.key === 'Tab' && dialogRef.current) {
+        const activeElement = document.activeElement as HTMLElement;
+        if (dialogRef.current.contains(activeElement)) {
+          handleKeyDown(event);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', keyDownHandler);
+
+    return () => {
+      document.removeEventListener('keydown', keyDownHandler);
+    };
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
@@ -122,13 +247,15 @@ export function SettingsModal({
       role: 'dialog',
       'aria-modal': 'true',
       'aria-labelledby': 'settings-title',
+      'aria-describedby': 'settings-content',
       ...testProps,
     },
     [
       h(
         'div',
         {
-          className: styles.modal,
+          ref: dialogRef,
+          className: `${styles.modal} glass-surface-dark`, // 툴바와 동일한 어두운 glassmorphism 클래스 사용
           onClick: (e: Event) => e.stopPropagation(),
         },
         [
@@ -152,7 +279,7 @@ export function SettingsModal({
                 'button',
                 {
                   type: 'button',
-                  className: styles.closeButton,
+                  className: `${styles.closeButton} glass-surface-light`,
                   onClick: onClose,
                   'aria-label': languageService.getString('settings.close'),
                   key: 'close',
@@ -164,6 +291,7 @@ export function SettingsModal({
           h(
             'div',
             {
+              id: 'settings-content',
               className: styles.content,
               key: 'content',
             },
@@ -179,7 +307,7 @@ export function SettingsModal({
                     'label',
                     {
                       htmlFor: 'theme-select',
-                      className: styles.label,
+                      className: `${styles.label} glass-surface-light`,
                     },
                     languageService.getString('settings.theme')
                   ),
@@ -187,7 +315,7 @@ export function SettingsModal({
                     'select',
                     {
                       id: 'theme-select',
-                      className: styles.select,
+                      className: `${styles.select} glass-surface-light`,
                       value: currentTheme,
                       onChange: handleThemeChange,
                       'aria-label': languageService.getString('settings.theme'),
@@ -223,7 +351,7 @@ export function SettingsModal({
                     'label',
                     {
                       htmlFor: 'language-select',
-                      className: styles.label,
+                      className: `${styles.label} glass-surface-light`,
                     },
                     languageService.getString('settings.language')
                   ),
@@ -231,7 +359,7 @@ export function SettingsModal({
                     'select',
                     {
                       id: 'language-select',
-                      className: styles.select,
+                      className: `${styles.select} glass-surface-light`,
                       value: currentLanguage,
                       onChange: handleLanguageChange,
                       'aria-label': languageService.getString('settings.language'),
