@@ -118,7 +118,7 @@
 
   /* 스크롤 최적화 */
   scroll-behavior: smooth;
-  overscroll-behavior: contain; /* 스크롤 체이닝 방지 */
+  /* overscroll-behavior 제거: 실제 스크롤은 .itemsList에서 발생 */
 
   /* 갤러리 내부 스크롤만 허용 */
 
@@ -406,6 +406,9 @@
   pointer-events: auto;
 
   /* 갤러리 내부 스크롤만 허용 */
+
+  /* 스크롤 체이닝 방지 - 실제 스크롤 되는 요소에 적용 */
+  overscroll-behavior: contain;
 
   /* 컨테이너 쿼리 */
   container-type: size;
