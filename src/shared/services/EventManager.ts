@@ -14,7 +14,8 @@ import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events';
  */
 export class EventManager {
   private static instance: EventManager | null = null;
-  private readonly domManager: DOMEventManager;
+  private static autoReinitialize = false;
+  private domManager: DOMEventManager;
   private readonly galleryManager: GalleryEventManager;
   private isDestroyed = false;
 
@@ -28,11 +29,37 @@ export class EventManager {
   /**
    * 싱글톤 인스턴스 반환
    */
-  public static getInstance(): EventManager {
-    if (!EventManager.instance) {
+  public static getInstance(forceReinitialize = false): EventManager {
+    if (!EventManager.instance || forceReinitialize) {
       EventManager.instance = new EventManager();
     }
     return EventManager.instance;
+  }
+
+  /**
+   * 싱글톤 인스턴스 초기화 (테스트용)
+   */
+  public static resetInstance(): void {
+    if (EventManager.instance) {
+      EventManager.instance.cleanupAll();
+      EventManager.instance = null;
+      logger.debug('EventManager 싱글톤 인스턴스 초기화됨');
+    }
+  }
+
+  /**
+   * 자동 재초기화 모드 설정
+   */
+  public static enableAutoReinitialize(enabled: boolean): void {
+    EventManager.autoReinitialize = enabled;
+    logger.debug(`EventManager 자동 재초기화 모드: ${enabled ? '활성화' : '비활성화'}`);
+  }
+
+  /**
+   * 자동 재초기화 모드 상태 확인
+   */
+  public static isAutoReinitializeEnabled(): boolean {
+    return EventManager.autoReinitialize;
   }
 
   // ================================
@@ -49,8 +76,12 @@ export class EventManager {
     options?: AddEventListenerOptions
   ): EventManager {
     if (this.isDestroyed) {
-      logger.warn('EventManager가 파괴된 상태에서 addEventListener 호출');
-      return this;
+      if (EventManager.autoReinitialize) {
+        this.reinitialize();
+      } else {
+        logger.warn('EventManager가 파괴된 상태에서 addEventListener 호출');
+        return this;
+      }
     }
 
     this.domManager.addEventListener(element, eventType, handler, options);
@@ -67,8 +98,12 @@ export class EventManager {
     options?: AddEventListenerOptions
   ): EventManager {
     if (this.isDestroyed) {
-      logger.warn('EventManager가 파괴된 상태에서 addCustomEventListener 호출');
-      return this;
+      if (EventManager.autoReinitialize) {
+        this.reinitialize();
+      } else {
+        logger.warn('EventManager가 파괴된 상태에서 addCustomEventListener 호출');
+        return this;
+      }
     }
 
     this.domManager.addCustomEventListener(element, eventType, handler, options);
@@ -96,6 +131,23 @@ export class EventManager {
     this.domManager.cleanup();
     this.isDestroyed = true;
     logger.debug('EventManager DOM 이벤트 정리 완료');
+  }
+
+  /**
+   * 수동 재초기화
+   */
+  public reinitialize(): void {
+    // 기존 리스너들 정리
+    this.domManager.cleanup();
+    this.galleryManager.cleanupGallery();
+
+    // 상태 초기화
+    this.isDestroyed = false;
+
+    // DOMEventManager를 새로 생성하여 재초기화
+    this.domManager = createEventManager();
+
+    logger.debug('EventManager 재초기화 완료');
   }
 
   // ================================

@@ -6,3 +6,6 @@ export { useGalleryItemScroll } from './useGalleryItemScroll';
 
 // 위치 기반 툴바 제어 훅
 export { useToolbarPositionBased } from './useToolbarPositionBased';
+
+// 스마트 이미지 핏 훅
+export { useSmartImageFit } from './useSmartImageFit';

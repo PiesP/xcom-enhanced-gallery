@@ -17,6 +17,7 @@ import { logger } from '@shared/logging/logger';
 export class CoreService {
   private static instance: CoreService | null = null;
   private readonly services = new Map<string, unknown>();
+  private readonly aliases = new Map<string, string>(); // 별칭 -> 원본 키 매핑
 
   private constructor() {
     logger.debug('[CoreService] 초기화됨');
@@ -35,8 +36,8 @@ export class CoreService {
   /**
    * 서비스 등록 (직접 인스턴스)
    */
-  public register<T>(key: string, instance: T): void {
-    if (this.services.has(key)) {
+  public register<T>(key: string, instance: T, allowOverwrite = false): void {
+    if (this.services.has(key) && !allowOverwrite) {
       logger.warn(`[CoreService] 서비스 덮어쓰기: ${key}`);
     }
 
@@ -48,7 +49,9 @@ export class CoreService {
    * 서비스 조회
    */
   public get<T>(key: string): T {
-    const instance = this.services.get(key);
+    // 별칭인지 확인하고 원본 키로 변환
+    const resolvedKey = this.aliases.get(key) || key;
+    const instance = this.services.get(resolvedKey);
     if (!instance) {
       throw new Error(`서비스를 찾을 수 없습니다: ${key}`);
     }
@@ -71,7 +74,56 @@ export class CoreService {
    * 서비스 존재 여부 확인
    */
   public has(key: string): boolean {
-    return this.services.has(key);
+    // 별칭인지 확인하고 원본 키로 변환
+    const resolvedKey = this.aliases.get(key) || key;
+    return this.services.has(resolvedKey);
+  }
+
+  /**
+   * 서비스 별칭 등록
+   */
+  public registerAlias(aliasKey: string, originalKey: string): void {
+    // 별칭 체인 방지 - 원본 키가 별칭인지 먼저 확인
+    if (this.aliases.has(originalKey)) {
+      throw new Error(`별칭 체인은 지원하지 않습니다: ${originalKey}`);
+    }
+
+    // 원본 서비스가 존재하는지 확인
+    if (!this.services.has(originalKey)) {
+      throw new Error(`별칭 등록 실패: 원본 서비스를 찾을 수 없습니다: ${originalKey}`);
+    }
+
+    // 기존 별칭 덮어쓰기 경고
+    if (this.aliases.has(aliasKey)) {
+      logger.warn(`[CoreService] 별칭 덮어쓰기: ${aliasKey}`);
+    }
+
+    this.aliases.set(aliasKey, originalKey);
+    logger.debug(`[CoreService] 별칭 등록: ${aliasKey} -> ${originalKey}`);
+  }
+
+  /**
+   * 특정 서비스의 모든 별칭 조회
+   */
+  public getAliases(serviceKey: string): string[] {
+    const aliases: string[] = [];
+    for (const [alias, original] of this.aliases) {
+      if (original === serviceKey) {
+        aliases.push(alias);
+      }
+    }
+    return aliases;
+  }
+
+  /**
+   * 별칭 제거
+   */
+  public removeAlias(aliasKey: string): boolean {
+    const removed = this.aliases.delete(aliasKey);
+    if (removed) {
+      logger.debug(`[CoreService] 별칭 제거: ${aliasKey}`);
+    }
+    return removed;
   }
 
   /**
@@ -132,6 +184,7 @@ export class CoreService {
    */
   public reset(): void {
     this.services.clear();
+    this.aliases.clear();
     logger.debug('[ServiceManager] 모든 서비스 초기화됨');
   }
 

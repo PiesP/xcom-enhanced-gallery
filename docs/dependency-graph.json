@@ -331,6 +331,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../../hooks/useSmartImageFit",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/hooks/useSmartImageFit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./VerticalImageItem.module.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -368,6 +385,16 @@
       "dependencies": [],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/hooks/useSmartImageFit.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/features/gallery/hooks/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -628,6 +655,23 @@
             "export"
           ],
           "resolved": "src/features/gallery/hooks/useGalleryScroll.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./useSmartImageFit",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/features/gallery/hooks/useSmartImageFit.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6575,6 +6619,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/media/smart-image-fit.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/utils/memory/index.ts",
       "dependencies": [
         {
@@ -6822,14 +6879,23 @@
           "severity": "info",
           "name": "no-orphans"
         }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/media/smart-image-fit.ts",
+        "to": "src/shared/utils/media/smart-image-fit.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
       }
     ],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 2,
     "ignore": 0,
-    "totalCruised": 185,
-    "totalDependenciesCruised": 288,
+    "totalCruised": 187,
+    "totalDependenciesCruised": 290,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

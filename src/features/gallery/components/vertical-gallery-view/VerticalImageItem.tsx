@@ -14,6 +14,7 @@ import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
 import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
+import { useSmartImageFit } from '../../hooks/useSmartImageFit';
 import styles from './VerticalImageItem.module.css';
 
 /**
@@ -168,10 +169,19 @@ function BaseVerticalImageItemCore({
   const [isError, setIsError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 비디오 타입 확인
   const isVideo = isVideoMedia(media);
+
+  // 스마트 이미지 핏 적용
+  const mediaElement = isVideo ? videoRef.current : imgRef.current;
+  const smartImageFit = useSmartImageFit({
+    imageElement: mediaElement,
+    fitMode: fitMode || 'original',
+    watchViewportResize: true,
+  });
 
   // 클릭 핸들러 - 포커스 이동 포함
   const handleClick = useCallback(
@@ -320,6 +330,19 @@ function BaseVerticalImageItemCore({
 
   const imageClasses = ComponentStandards.createClassName(styles.image, getFitModeClass(fitMode));
 
+  // 스마트 이미지 핏 스타일 적용
+  const combinedImageStyle = {
+    opacity: isLoaded ? 1 : 0,
+    transition: 'opacity 0.3s ease',
+    ...smartImageFit.imageStyle,
+  };
+
+  const combinedVideoStyle = {
+    opacity: isLoaded ? 1 : 0,
+    transition: 'opacity 0.2s ease-in-out',
+    ...smartImageFit.imageStyle,
+  };
+
   // 표준화된 ARIA 속성 생성
   const ariaProps = ComponentStandards.createAriaProps({
     'aria-label': ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
@@ -355,6 +378,7 @@ function BaseVerticalImageItemCore({
             {/* 비디오 렌더링 */}
             {isVideo ? (
               <video
+                ref={videoRef}
                 src={media.url}
                 autoPlay={false}
                 controls={true}
@@ -366,10 +390,7 @@ function BaseVerticalImageItemCore({
                 onError={handleVideoError}
                 onContextMenu={handleImageContextMenu}
                 onDragStart={handleImageDragStart}
-                style={{
-                  opacity: isLoaded ? 1 : 0,
-                  transition: 'opacity 0.2s ease-in-out',
-                }}
+                style={combinedVideoStyle}
               />
             ) : (
               /* 이미지 렌더링 */
@@ -382,10 +403,7 @@ function BaseVerticalImageItemCore({
                 onError={handleImageError}
                 onContextMenu={handleImageContextMenu}
                 onDragStart={handleImageDragStart}
-                style={{
-                  opacity: isLoaded ? 1 : 0,
-                  transition: 'opacity 0.3s ease',
-                }}
+                style={combinedImageStyle}
               />
             )}
 
