@@ -135,6 +135,29 @@
   outline-offset: 0.125em;
 }
 
+/* 접근성 향상을 위한 추가 스타일 */
+.panel:global(.accessibility-enhanced) {
+  /* 향상된 포커스 관리를 위한 스타일 */
+  contain: layout style paint;
+}
+
+.panel:global(.accessibility-enhanced) *:focus-visible {
+  outline: 0.125em solid var(--xeg-color-primary);
+  outline-offset: 0.125em;
+  border-radius: var(--xeg-radius-sm);
+  transition: outline-color var(--xeg-transition-fast);
+}
+
+.panel:global(.accessibility-enhanced) button:focus-visible {
+  transform: scale(1.02);
+  background-color: var(--xeg-color-surface-hover);
+}
+
+.panel:global(.accessibility-enhanced) select:focus-visible {
+  background-color: var(--xeg-color-surface-hover);
+  border-color: var(--xeg-color-primary);
+}
+
 @media (max-width: 48em) {
   .panel {
     top: auto;

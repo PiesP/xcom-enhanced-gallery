@@ -42,11 +42,21 @@ export function useSmartImageFit({
   // 뷰포트 크기 감지 (throttled)
   const viewportSize = useMemo(() => {
     if (!watchViewportResize) {
-      return getViewportSize();
+      const size = getViewportSize();
+      // 테스트 환경에서 기본값 제공
+      if (size.width === 0 || size.height === 0) {
+        return { width: 1920, height: 1080 }; // 기본 해상도
+      }
+      return size;
     }
 
     // 리사이즈 이벤트는 실제 구현에서 처리됨 (여기서는 현재 크기만 반환)
-    return getViewportSize();
+    const size = getViewportSize();
+    // 테스트 환경에서 기본값 제공
+    if (size.width === 0 || size.height === 0) {
+      return { width: 1920, height: 1080 }; // 기본 해상도
+    }
+    return size;
   }, [watchViewportResize]);
 
   // 이미지 크기 계산

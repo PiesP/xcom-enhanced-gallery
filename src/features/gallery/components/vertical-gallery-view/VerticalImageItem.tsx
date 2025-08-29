@@ -176,10 +176,9 @@ function BaseVerticalImageItemCore({
   const isVideo = isVideoMedia(media);
 
   // 스마트 이미지 핏 적용
-  const mediaElement = isVideo ? videoRef.current : imgRef.current;
   const smartImageFit = useSmartImageFit({
-    imageElement: mediaElement,
-    fitMode: fitMode || 'original',
+    imageElement: isVideo ? videoRef.current : imgRef.current,
+    fitMode: fitMode || 'fitWidth',
     watchViewportResize: true,
   });
 
@@ -334,13 +333,13 @@ function BaseVerticalImageItemCore({
   const combinedImageStyle = {
     opacity: isLoaded ? 1 : 0,
     transition: 'opacity 0.3s ease',
-    ...smartImageFit.imageStyle,
+    ...(smartImageFit?.imageStyle || {}),
   };
 
   const combinedVideoStyle = {
     opacity: isLoaded ? 1 : 0,
     transition: 'opacity 0.2s ease-in-out',
-    ...smartImageFit.imageStyle,
+    ...(smartImageFit?.imageStyle || {}),
   };
 
   // 표준화된 ARIA 속성 생성

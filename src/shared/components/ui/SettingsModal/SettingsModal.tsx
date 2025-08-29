@@ -197,6 +197,7 @@ export function SettingsModal({
   const panelClass = ComponentStandards.createClassName(
     styles.panel,
     positionClass,
+    'accessibility-enhanced', // 접근성 개선을 위한 CSS 클래스 추가
     ...legacyPositionClasses,
     className
   );

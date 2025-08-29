@@ -26,10 +26,21 @@ export interface ViewportDimensions {
  */
 export function calculateSmartImageFit(
   imageDimensions: ImageDimensions,
-  viewportDimensions: ViewportDimensions,
+  viewportDimensions: ViewportDimensions | undefined,
   mode: 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer'
 ): SmartImageFitResult {
   const { naturalWidth, naturalHeight } = imageDimensions;
+
+  // 뷰포트 크기가 정의되지 않은 경우 처리
+  if (!viewportDimensions) {
+    return {
+      width: naturalWidth,
+      height: naturalHeight,
+      shouldApply: false,
+      mode,
+    };
+  }
+
   const { width: viewportWidth, height: viewportHeight } = viewportDimensions;
 
   // 엣지 케이스 처리
