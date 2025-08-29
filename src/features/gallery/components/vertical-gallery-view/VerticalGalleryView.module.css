@@ -405,10 +405,12 @@
   /* 이벤트 처리 */
   pointer-events: auto;
 
-  /* 갤러리 내부 스크롤만 허용 */
-
   /* 스크롤 체이닝 방지 - 실제 스크롤 되는 요소에 적용 */
   overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
+
+  /* 터치 액션 최적화 */
+  touch-action: pan-y;
 
   /* 컨테이너 쿼리 */
   container-type: size;
@@ -535,6 +537,7 @@
 @media (prefers-reduced-motion: reduce) {
   .itemsList {
     scroll-behavior: auto;
+    overscroll-behavior: contain; /* 모션 감소 시에도 스크롤 체이닝 방지 유지 */
   }
 
   .itemsList {
@@ -648,5 +651,25 @@
   .container:hover [class*='galleryToolbar'] {
     --toolbar-opacity: 1;
     --toolbar-pointer-events: auto;
+  }
+}
+
+/* 스크롤 체이닝 방지 브라우저 호환성 */
+@supports (overscroll-behavior: contain) {
+  .itemsList {
+    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
+  }
+
+  .container {
+    overscroll-behavior: contain;
+  }
+}
+
+/* overscroll-behavior 미지원 브라우저를 위한 폴백 */
+@supports not (overscroll-behavior: contain) {
+  .itemsList {
+    /* 폴백: 스크롤 이벤트로 체이닝 방지 구현 필요 */
+    scroll-behavior: auto;
   }
 }
