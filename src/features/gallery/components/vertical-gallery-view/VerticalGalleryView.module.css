@@ -405,10 +405,6 @@
   /* 이벤트 처리 */
   pointer-events: auto;
 
-  /* 스크롤 체이닝 방지 - 실제 스크롤 되는 요소에 적용 */
-  overscroll-behavior: contain;
-  overscroll-behavior-y: contain;
-
   /* 터치 액션 최적화 */
   touch-action: pan-y;
 
@@ -537,7 +533,7 @@
 @media (prefers-reduced-motion: reduce) {
   .itemsList {
     scroll-behavior: auto;
-    overscroll-behavior: contain; /* 모션 감소 시에도 스크롤 체이닝 방지 유지 */
+    /* overscroll-behavior는 기본 itemsList 스타일에서 처리 */
   }
 
   .itemsList {
@@ -613,11 +609,7 @@
   }
 }
 
-/* 페이지 스크롤 방지 - 갤러리 내에서만 스크롤 */
-.container {
-  /* ...existing code... */
-  overscroll-behavior: contain;
-}
+/* @supports 쿼리에서만 overscroll-behavior 정의 - 중복 제거 */
 
 /* 툴바 호버 트리거 영역 */
 .toolbarHoverTrigger {
@@ -660,13 +652,7 @@
     overscroll-behavior: contain;
     overscroll-behavior-y: contain;
   }
-
-  .container {
-    overscroll-behavior: contain;
-  }
-}
-
-/* overscroll-behavior 미지원 브라우저를 위한 폴백 */
+} /* overscroll-behavior 미지원 브라우저를 위한 폴백 */
 @supports not (overscroll-behavior: contain) {
   .itemsList {
     /* 폴백: 스크롤 이벤트로 체이닝 방지 구현 필요 */

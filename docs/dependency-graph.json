@@ -24,6 +24,40 @@
       "valid": true
     },
     {
+      "source": "src/features/download/services/DownloadRecovery.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../shared/services/RetryManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/RetryManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/RetryManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/download/services/DownloadRecovery.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/GalleryApp.ts",
       "dependencies": [],
       "dependents": [
@@ -1166,6 +1200,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ErrorBoundary.tsx",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/components/base/BaseComponentProps.ts",
       "dependencies": [],
       "dependents": [
@@ -2303,6 +2350,19 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/FallbackUI.tsx",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
@@ -5749,6 +5809,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/ErrorLogger.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/EventManager.ts",
       "dependencies": [],
       "dependents": [
@@ -6869,6 +6942,33 @@
       },
       {
         "type": "module",
+        "from": "src/shared/components/ErrorBoundary.tsx",
+        "to": "src/shared/components/ErrorBoundary.tsx",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/components/ui/FallbackUI.tsx",
+        "to": "src/shared/components/ui/FallbackUI.tsx",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/services/ErrorLogger.ts",
+        "to": "src/shared/services/ErrorLogger.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/services/UnifiedEventManager.ts",
         "to": "src/shared/services/UnifiedEventManager.ts",
         "rule": {
@@ -6888,10 +6988,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 3,
+    "info": 6,
     "ignore": 0,
-    "totalCruised": 187,
-    "totalDependenciesCruised": 289,
+    "totalCruised": 192,
+    "totalDependenciesCruised": 290,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
