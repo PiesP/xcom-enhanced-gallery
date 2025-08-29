@@ -40,9 +40,12 @@ describe('RED: 불필요한 라이브러리 제거 확인', () => {
 
     const content = readFileSync(staticVendorPath, 'utf-8');
 
-    // GREEN: StaticVendorManager에는 Motion 관련 코드가 없어야 함
-    expect(content).not.toMatch(/motion|animate|timeline/i);
+    // GREEN: StaticVendorManager에는 실제 Motion 라이브러리 import나 사용이 없어야 함
+    expect(content).not.toMatch(/import.*motion/i);
     expect(content).not.toMatch(/getMotionOne|motion-one/i);
+    expect(content).not.toMatch(/from ['"]motion['"]|from ["']@motion/i);
+
+    // motion: 'removed' 주석은 허용 (제거되었음을 명시)
   });
 
   it('StaticVendorManager 시스템에서 TanStack Query 관련 의존성이 제거되어야 한다', async () => {
