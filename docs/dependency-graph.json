@@ -5784,6 +5784,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/UnifiedEventManager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/event-managers.ts",
       "dependencies": [
         {
@@ -6882,6 +6895,15 @@
       },
       {
         "type": "module",
+        "from": "src/shared/services/UnifiedEventManager.ts",
+        "to": "src/shared/services/UnifiedEventManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/utils/media/smart-image-fit.ts",
         "to": "src/shared/utils/media/smart-image-fit.ts",
         "rule": {
@@ -6892,9 +6914,9 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 2,
+    "info": 3,
     "ignore": 0,
-    "totalCruised": 187,
+    "totalCruised": 188,
     "totalDependenciesCruised": 290,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

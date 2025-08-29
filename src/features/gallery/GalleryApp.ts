@@ -114,11 +114,17 @@ export class GalleryApp {
    */
   private async setupEventHandlers(): Promise<void> {
     try {
-      // 새로운 갤러리 이벤트 시스템 사용
-      const { initializeGalleryEvents } = await import('@shared/utils/events');
+      // 통합된 EventManager 사용
+      const { EventManager } = await import('@shared/services/EventManager');
+      const eventManager = EventManager.getInstance();
 
-      await initializeGalleryEvents({
-        onMediaClick: async (_mediaInfo, element, _event) => {
+      // 갤러리 이벤트 초기화
+      await eventManager.initializeGallery({
+        onMediaClick: async (
+          _mediaInfo: import('@shared/types/media.types').MediaInfo,
+          element: HTMLElement,
+          _event: MouseEvent
+        ) => {
           try {
             const mediaService = await this.getMediaService();
             const result = await mediaService.extractFromClickedElement(element);
@@ -158,7 +164,7 @@ export class GalleryApp {
         onGalleryClose: () => {
           this.closeGallery();
         },
-        onKeyboardEvent: event => {
+        onKeyboardEvent: (event: KeyboardEvent) => {
           if (event.key === 'Escape' && galleryState.value.isOpen) {
             this.closeGallery();
           }
@@ -319,10 +325,11 @@ export class GalleryApp {
 
       // 이벤트 핸들러 정리
       try {
-        const { cleanupGalleryEvents } = await import('@shared/utils/events');
-        cleanupGalleryEvents();
+        const { EventManager } = await import('@shared/services/EventManager');
+        const eventManager = EventManager.getInstance();
+        eventManager.cleanupGallery();
       } catch (error) {
-        logger.warn('이벤트 코디네이터 정리 실패:', error);
+        logger.warn('통합 이벤트 매니저 정리 실패:', error);
       }
 
       // 통합된 갤러리 컨테이너 제거
