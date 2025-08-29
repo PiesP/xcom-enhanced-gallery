@@ -49,40 +49,56 @@ export class EventManager {
       return;
     }
 
-    this.mutationObserver = new MutationObserver(mutations => {
-      let shouldReinforce = false;
+    try {
+      this.mutationObserver = new MutationObserver(mutations => {
+        let shouldReinforce = false;
 
-      for (const mutation of mutations) {
-        // DOM 구조 변경 감지 (Twitter의 동적 콘텐츠 로딩)
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-          // Twitter 갤러리 관련 요소가 추가되었는지 확인
-          for (const node of Array.from(mutation.addedNodes)) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              const element = node as Element;
-              if (this.isTwitterGalleryElement(element)) {
-                shouldReinforce = true;
-                break;
+        for (const mutation of mutations) {
+          // DOM 구조 변경 감지 (Twitter의 동적 콘텐츠 로딩)
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            // Twitter 갤러리 관련 요소가 추가되었는지 확인
+            for (const node of Array.from(mutation.addedNodes)) {
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                const element = node as Element;
+                if (this.isTwitterGalleryElement(element)) {
+                  shouldReinforce = true;
+                  break;
+                }
               }
             }
           }
         }
+
+        if (shouldReinforce && this.safeEventOptions) {
+          logger.debug('MutationObserver: Twitter 갤러리 요소 감지, 이벤트 재설정');
+          this.reinforceEventPriority();
+        }
+      });
+
+      // Twitter 메인 컨테이너 관찰 (JSDOM 호환성 확보)
+      const observeTarget =
+        document.getElementById('react-root') || document.body || document.documentElement;
+
+      if (observeTarget) {
+        this.mutationObserver.observe(observeTarget, {
+          childList: true,
+          subtree: true,
+          attributes: false,
+        });
+
+        logger.debug('MutationObserver 초기화 완료 (setInterval 대체)');
+      } else {
+        logger.warn('MutationObserver: 관찰 대상을 찾을 수 없음');
+        this.mutationObserver.disconnect();
+        this.mutationObserver = null;
       }
-
-      if (shouldReinforce && this.safeEventOptions) {
-        logger.debug('MutationObserver: Twitter 갤러리 요소 감지, 이벤트 재설정');
-        this.reinforceEventPriority();
+    } catch (error) {
+      logger.warn('MutationObserver 초기화 실패:', error);
+      if (this.mutationObserver) {
+        this.mutationObserver.disconnect();
+        this.mutationObserver = null;
       }
-    });
-
-    // Twitter 메인 컨테이너 관찰
-    const observeTarget = document.body || document.documentElement;
-    this.mutationObserver.observe(observeTarget, {
-      childList: true,
-      subtree: true,
-      attributes: false,
-    });
-
-    logger.debug('MutationObserver 초기화 완료 (setInterval 대체)');
+    }
   }
 
   /**

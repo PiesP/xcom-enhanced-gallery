@@ -21,6 +21,7 @@ describe('TDD Phase 7: 미디어 추출 시스템 통합', () => {
   describe('RED: 중복 폴백 시스템 검증', () => {
     test('MediaExtractionService와 MediaService가 각각 다른 폴백을 사용함', async () => {
       // RED: 현재는 두 시스템이 병렬로 동작하여 예측 불가능
+      // eslint-disable-next-line no-unused-vars
       const { MediaExtractionService } = await import(
         '@shared/services/media-extraction/MediaExtractionService'
       );
@@ -55,7 +56,7 @@ describe('TDD Phase 7: 미디어 추출 시스템 통합', () => {
 
     test('동일한 미디어 요소에 대해 중복 추출이 시도될 수 있음', async () => {
       // RED: 두 시스템이 동시에 같은 요소를 처리할 가능성
-      
+
       // 첫 번째 추출 시도 (MediaExtractionService)
       let firstExtractionAttempt = false;
       try {
@@ -78,7 +79,8 @@ describe('TDD Phase 7: 미디어 추출 시스템 통합', () => {
       if (firstExtractionAttempt && secondExtractionAttempt) {
         expect(true).toBe(true); // 중복 가능성 존재
       }
-    });    test('폴백 실행 순서가 예측 불가능함', () => {
+    });
+    test('폴백 실행 순서가 예측 불가능함', () => {
       // RED: 어떤 폴백이 언제 실행될지 명확하지 않음
       const fallbackOrder = [];
 
