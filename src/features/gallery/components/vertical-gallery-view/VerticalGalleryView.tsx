@@ -14,9 +14,14 @@
 import { logger } from '@shared/logging/logger';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
-import type { ImageFitMode } from '@shared/types';
+import type { ImageFitMode, MediaInfo } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
-import { getPreactHooks, getPreact, getPreactCompat } from '@shared/external/vendors';
+import {
+  getPreactHooks,
+  getPreact,
+  getPreactCompat,
+  getPreactSignals,
+} from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import type { MouseEvent } from 'preact/compat';
 import {
@@ -51,29 +56,23 @@ function VerticalGalleryViewCore({
   onDownloadAll,
 }: VerticalGalleryViewProps) {
   const { useCallback, useEffect, useRef, useState, useMemo } = getPreactHooks();
+  const { signal } = getPreactSignals();
   const { createElement } = getPreact();
 
-  // Signal에서 상태 구독
-  const [state, setState] = useState(galleryState.value);
+  // Phase 8 GREEN: galleryState를 직접 사용 - Preact가 자동으로 신호 변경을 감지
+  // Preact에서는 컴포넌트 내에서 signal.value 접근 시 자동으로 구독됨
+  const currentState = galleryState.value;
 
-  useEffect(() => {
-    const unsubscribe = galleryState.subscribe(newState => {
-      setState(newState);
-    });
+  logger.info('🚀 VerticalGalleryView: Preact Signal 직접 사용', {
+    mediaCount: currentState.mediaItems.length,
+    currentIndex: currentState.currentIndex,
+    isDownloading: currentState.isLoading,
+  });
 
-    logger.info('🚀 VerticalGalleryView: Signal 구독 시작', {
-      mediaCount: state.mediaItems.length,
-      currentIndex: state.currentIndex,
-      isDownloading: state.isLoading,
-    });
-
-    return unsubscribe;
-  }, []);
-
-  // 구독된 상태에서 값 추출
-  const mediaItems = state.mediaItems;
-  const currentIndex = state.currentIndex;
-  const isDownloading = state.isLoading;
+  // 구독된 상태에서 값 추출 - Preact Signal 직접 접근으로 자동 구독
+  const mediaItems = currentState.mediaItems;
+  const currentIndex = currentState.currentIndex;
+  const isDownloading = currentState.isLoading;
 
   logger.debug('VerticalGalleryView: Rendering with state', {
     mediaCount: mediaItems.length,
@@ -86,18 +85,20 @@ function VerticalGalleryViewCore({
   const toolbarHoverZoneRef = useRef<HTMLDivElement>(null);
   const toolbarWrapperRef = useRef<HTMLDivElement>(null);
 
-  // 단순화된 가시성 상태 관리
-  const [isVisible, setIsVisible] = useState(mediaItems.length > 0);
+  // Phase 8 GREEN: signal로 가시성 상태 관리 현대화
+  const isVisibleSignal = signal(mediaItems.length > 0);
+  const isVisible = isVisibleSignal.value;
 
-  // DOM 요소 준비 상태 추적
-  const [domReady, setDomReady] = useState(false);
+  // Phase 8 GREEN: signal로 DOM 준비 상태 추적 현대화
+  const domReadySignal = signal(false);
+  const domReady = domReadySignal.value;
 
-  // DOM 요소 준비 확인
+  // DOM 요소 준비 확인 - signal과 함께 사용
   useEffect(() => {
     if (toolbarWrapperRef.current && toolbarHoverZoneRef.current) {
-      setDomReady(true);
+      domReadySignal.value = true;
     }
-  }, [isVisible]); // isVisible이 변경될 때마다 DOM 요소 확인
+  }, [isVisible, domReadySignal]); // isVisible이 변경될 때마다 DOM 요소 확인
 
   // useToolbarPositionBased 훅을 사용하여 간소화된 위치 기반 툴바 제어
   const {
@@ -116,25 +117,27 @@ function VerticalGalleryViewCore({
   // - 마우스 위치에 따른 즉시 반응형 제어
   // - 기존 CSS 호버 존 시스템 활용
 
-  // 포커스 상태 관리
-  const [focusedIndex, setFocusedIndex] = useState<number>(currentIndex);
+  // Phase 8 GREEN: signal로 포커스 상태 관리 현대화
+  const focusedIndexSignal = signal<number>(currentIndex);
+  const focusedIndex = focusedIndexSignal.value;
 
-  // 자동 스크롤 상태 관리 - 중복 스크롤 방지
-  const [lastAutoScrolledIndex, setLastAutoScrolledIndex] = useState<number>(-1);
+  // Phase 8 GREEN: signal로 자동 스크롤 상태 관리 현대화 - 중복 스크롤 방지
+  const lastAutoScrolledIndexSignal = signal<number>(-1);
+  const lastAutoScrolledIndex = lastAutoScrolledIndexSignal.value;
 
   // 강제 렌더링 상태 관리 (더 이상 사용하지 않음)
   const [forceVisibleItems] = useState<Set<number>>(new Set());
 
-  // 포커스된 인덱스와 현재 인덱스 동기화
+  // 포커스된 인덱스와 현재 인덱스 동기화 - signal 방식
   useEffect(() => {
-    setFocusedIndex(currentIndex);
+    focusedIndexSignal.value = currentIndex;
     // 인덱스가 변경되면 자동 스크롤 상태 초기화
-    setLastAutoScrolledIndex(-1);
-  }, [currentIndex]);
+    lastAutoScrolledIndexSignal.value = -1;
+  }, [currentIndex, focusedIndexSignal, lastAutoScrolledIndexSignal]);
 
   // 메모이제이션 최적화
   const memoizedMediaItems = useMemo(() => {
-    const itemsWithKeys = mediaItems.map((item, index) => ({
+    const itemsWithKeys = mediaItems.map((item: MediaInfo, index: number) => ({
       ...item,
       _galleryKey: `${item.id || item.url}-${index}`,
       _index: index,
@@ -150,11 +153,11 @@ function VerticalGalleryViewCore({
   // 렌더링할 아이템들 (가상 스크롤링 제거 - 항상 모든 아이템 렌더링)
   const itemsToRender = memoizedMediaItems;
 
-  // 최적화: 미디어 개수 변경 시에만 가시성 업데이트
+  // Phase 8 GREEN: useSignal로 가시성 업데이트 최적화
   useEffect(() => {
     const shouldBeVisible = mediaItems.length > 0;
     if (isVisible !== shouldBeVisible) {
-      setIsVisible(shouldBeVisible);
+      isVisibleSignal.value = shouldBeVisible;
       logger.debug('VerticalGalleryView: 가시성 상태 변경', {
         wasVisible: isVisible,
         nowVisible: shouldBeVisible,
@@ -335,8 +338,8 @@ function VerticalGalleryViewCore({
               behavior: 'smooth',
             });
 
-            // 스크롤 완료 상태 업데이트
-            setLastAutoScrolledIndex(index);
+            // 스크롤 완료 상태 업데이트 - useSignal 방식
+            lastAutoScrolledIndexSignal.value = index;
 
             logger.debug('VerticalGalleryView: 자동 스크롤 실행', {
               index,
@@ -350,7 +353,7 @@ function VerticalGalleryViewCore({
                   block: 'start',
                   behavior: 'smooth',
                 });
-                setLastAutoScrolledIndex(index);
+                lastAutoScrolledIndexSignal.value = index;
                 logger.debug('VerticalGalleryView: 지연된 자동 스크롤 실행', { index });
               };
 
@@ -371,8 +374,8 @@ function VerticalGalleryViewCore({
   const handleMediaItemClick = useCallback(
     (index: number) => {
       if (index >= 0 && index < mediaItems.length && index !== currentIndex) {
-        // 새로운 아이템으로 네비게이션 시 자동 스크롤 상태 초기화
-        setLastAutoScrolledIndex(-1);
+        // 새로운 아이템으로 네비게이션 시 자동 스크롤 상태 초기화 - useSignal 방식
+        lastAutoScrolledIndexSignal.value = -1;
         navigateToItem(index);
         logger.debug('VerticalGalleryView: 미디어 아이템 클릭으로 네비게이션', { index });
       }
@@ -517,7 +520,7 @@ function VerticalGalleryViewCore({
       {/* 콘텐츠 영역 */}
       <div ref={contentRef} className={styles.content} onClick={handleContentClick}>
         <div className={styles.itemsList} data-xeg-role='items-list'>
-          {itemsToRender.map((item, index) => {
+          {itemsToRender.map((item: any, index: number) => {
             // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일
             const actualIndex = index;
 

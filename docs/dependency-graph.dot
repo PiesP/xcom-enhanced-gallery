@@ -262,9 +262,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/services/LanguageService.ts" -> "src/shared/logging/logger.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/MediaService.ts" [label=<MediaService.ts> tooltip="MediaService.ts" URL="src/shared/services/MediaService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/services/MediaService.ts" -> "src/shared/services/media-extraction/MediaExtractionOrchestrator.ts"
-    "src/shared/services/MediaService.ts" -> "src/shared/services/media-extraction/MediaExtractionService.ts"
     "src/shared/services/MediaService.ts" -> "src/shared/services/media-extraction/strategies.ts"
-    "src/shared/services/MediaService.ts" -> "src/shared/services/media/FallbackExtractor.ts"
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/TwitterVideoExtractor.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/UsernameExtractionService.ts"
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/UsernameExtractionService.ts" [arrowhead="onormal" penwidth="1.0"]
@@ -311,6 +309,7 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" subgraph "cluster_src/shared/services/media-extraction" {label="media-extraction" "src/shared/services/media-extraction/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/services/media-extraction/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     "src/shared/services/media-extraction/index.ts" -> "src/shared/services/media-extraction/MediaExtractionService.ts" [arrowhead="inv"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" subgraph "cluster_src/shared/services/media-extraction" {label="media-extraction" "src/shared/services/media-extraction/strategies.ts" [label=<strategies.ts> tooltip="strategies.ts" URL="src/shared/services/media-extraction/strategies.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
+    "src/shared/services/media-extraction/strategies.ts" -> "src/shared/services/media/FallbackExtractor.ts"
     "src/shared/services/media-extraction/strategies.ts" -> "src/shared/services/media-extraction/MediaExtractionOrchestrator.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/services/media-extraction/strategies.ts" -> "src/shared/services/media-extraction/MediaExtractionService.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" subgraph "cluster_src/shared/services/media-extraction" {label="media-extraction" subgraph "cluster_src/shared/services/media-extraction/strategies" {label="strategies" "src/shared/services/media-extraction/strategies/ClickedElementTweetStrategy.ts" [label=<ClickedElementTweetStrategy.ts> tooltip="ClickedElementTweetStrategy.ts" URL="src/shared/services/media-extraction/strategies/ClickedElementTweetStrategy.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } } }

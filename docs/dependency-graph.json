@@ -4168,23 +4168,6 @@
         },
         {
           "dynamic": false,
-          "module": "./media-extraction/MediaExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/media-extraction/MediaExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./media-extraction/strategies",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4193,23 +4176,6 @@
             "import"
           ],
           "resolved": "src/shared/services/media-extraction/strategies.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./media/FallbackExtractor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/media/FallbackExtractor.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4305,6 +4271,78 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/media-extraction/strategies.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../media/FallbackExtractor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/media/FallbackExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaExtractionOrchestrator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/media-extraction/MediaExtractionOrchestrator.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaExtractionService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/media-extraction/MediaExtractionService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/MediaService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/media/FallbackExtractor.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/media-extraction/strategies.ts",
+        "src/shared/services/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/media-extraction/MediaExtractionService.ts",
       "dependencies": [
         {
@@ -4360,7 +4398,6 @@
         }
       ],
       "dependents": [
-        "src/shared/services/MediaService.ts",
         "src/shared/services/media-extraction/strategies.ts",
         "src/shared/services/media-extraction/index.ts"
       ],
@@ -4526,61 +4563,6 @@
       "dependencies": [],
       "dependents": [
         "src/shared/services/media-extraction/MediaExtractionService.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/media-extraction/strategies.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./MediaExtractionOrchestrator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/services/media-extraction/MediaExtractionOrchestrator.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./MediaExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/media-extraction/MediaExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/MediaService.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/media/FallbackExtractor.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/MediaService.ts",
-        "src/shared/services/media/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7081,7 +7063,7 @@
     "info": 6,
     "ignore": 0,
     "totalCruised": 194,
-    "totalDependenciesCruised": 294,
+    "totalDependenciesCruised": 293,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
