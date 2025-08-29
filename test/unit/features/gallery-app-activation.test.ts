@@ -122,16 +122,20 @@ describe('갤러리 앱 활성화', () => {
 
     it('이벤트 핸들러가 올바르게 설정되어야 함', async () => {
       // 행위 중심 테스트: 이벤트 핸들러 설정 동작 검증
-      const mockInitializeGalleryEvents = vi.fn().mockResolvedValue(undefined);
+      const mockInitializeGallery = vi.fn().mockResolvedValue(undefined);
+      const mockEventManager = {
+        initializeGallery: mockInitializeGallery,
+        getInstance: vi.fn().mockReturnThis(),
+      };
 
-      // 모듈 모킹
-      vi.doMock('@shared/utils/events', () => ({
-        initializeGalleryEvents: mockInitializeGalleryEvents,
+      // EventManager 모킹
+      vi.doMock('@shared/services/EventManager', () => ({
+        EventManager: mockEventManager,
       }));
 
       await galleryApp.initialize();
 
-      expect(mockInitializeGalleryEvents).toHaveBeenCalledWith(
+      expect(mockInitializeGallery).toHaveBeenCalledWith(
         expect.objectContaining({
           onMediaClick: expect.any(Function),
           onGalleryClose: expect.any(Function),

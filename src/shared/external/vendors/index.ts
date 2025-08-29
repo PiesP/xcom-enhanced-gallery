@@ -67,4 +67,5 @@ export {
 // 🔧 고급 사용자용 직접 접근
 export { StaticVendorManager } from './vendor-manager-static';
 
-export { VendorManager } from './vendor-manager';
+// 하위 호환성을 위한 VendorManager alias
+export { StaticVendorManager as VendorManager } from './vendor-manager-static';

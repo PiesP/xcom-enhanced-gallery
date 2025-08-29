@@ -7,20 +7,20 @@
 
 import { logger } from '@shared/logging';
 import {
-  VendorManager,
+  StaticVendorManager,
   type FflateAPI,
   type PreactAPI,
   type PreactHooksAPI,
   type PreactSignalsAPI,
   type PreactCompatAPI,
   type NativeDownloadAPI,
-} from './vendor-manager';
+} from './vendor-manager-static';
 
 // ================================
 // 공개 API
 // ================================
 
-const vendorManager = VendorManager.getInstance();
+const vendorManager = StaticVendorManager.getInstance();
 
 // 동기 접근을 위한 캐시된 API들
 let cachedFflate: FflateAPI | null = null;
