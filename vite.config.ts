@@ -25,7 +25,7 @@ function createBundleAnalysisPlugin() {
     writeBundle(options, bundle) {
       const bundleObj = bundle;
       let totalSize = 0;
-      const chunks: Array<{ name: string; size: number }> = [];
+      const chunks = [];
 
       for (const [fileName, fileInfo] of Object.entries(bundleObj)) {
         if (
@@ -48,7 +48,7 @@ function createBundleAnalysisPlugin() {
         isWithinBudget: totalSize <= 500 * 1024, // 500KB 제한
       };
 
-      const outDir = options && 'dir' in options && options.dir ? options.dir! : 'dist';
+      const outDir = options && 'dir' in options && options.dir ? options.dir : 'dist';
       fs.writeFileSync(
         path.resolve(outDir, 'bundle-analysis.json'),
         JSON.stringify(analysis, null, 2)
@@ -109,7 +109,6 @@ function generateUserscriptHeader(buildMode) {
 // @description  ${packageJson.description}
 // @author       PiesP
 // @license      MIT
-// @match        https://x.com/*
 // @match        https://*.x.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -153,7 +152,7 @@ function createUserscriptBundlerPlugin(buildMode) {
     async writeBundle(options, bundle) {
       try {
         const bundleObj = bundle; // rollup bundle object
-        const outDir = options && 'dir' in options && options.dir ? options.dir! : 'dist';
+        const outDir = options && 'dir' in options && options.dir ? options.dir : 'dist';
 
         // CSS와 JS 파일 찾기
         const cssFiles = Object.keys(bundleObj).filter(fileName => fileName.endsWith('.css'));

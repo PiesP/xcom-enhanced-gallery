@@ -71,9 +71,9 @@ export interface SingleDownloadResult {
 }
 
 // 기존 서비스들 import
-import { MediaExtractionService } from './media-extraction/MediaExtractionService';
-import { FallbackExtractor } from './media/FallbackExtractor';
 import { VideoControlService } from './media/VideoControlService';
+import { MediaExtractionOrchestrator } from './media-extraction/MediaExtractionOrchestrator';
+import { ExtractionStrategyFactory } from './media-extraction/strategies';
 import {
   UsernameParser,
   extractUsername,
@@ -96,8 +96,7 @@ export class MediaService {
   private static instance: MediaService | null = null;
 
   // 통합된 서비스 컴포넌트들
-  private readonly mediaExtraction: MediaExtractionService;
-  private readonly fallbackExtractor: FallbackExtractor;
+  private readonly mediaExtractionOrchestrator: MediaExtractionOrchestrator;
   private readonly videoControl: VideoControlService;
   private readonly usernameParser: UsernameParser;
 
@@ -118,8 +117,11 @@ export class MediaService {
   private readonly currentAbortController?: AbortController;
 
   constructor() {
-    this.mediaExtraction = new MediaExtractionService();
-    this.fallbackExtractor = new FallbackExtractor();
+    // Phase 7: MediaExtractionOrchestrator 통합
+    this.mediaExtractionOrchestrator = new MediaExtractionOrchestrator();
+    const strategies = ExtractionStrategyFactory.createDefaultStrategies();
+    strategies.forEach(strategy => this.mediaExtractionOrchestrator.addStrategy(strategy));
+
     this.videoControl = new VideoControlService(); // Phase 4 간소화: 직접 인스턴스화
     this.usernameParser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
 
@@ -147,27 +149,29 @@ export class MediaService {
   // ====================================
 
   /**
-   * 클릭된 요소에서 미디어 추출
+   * 클릭된 요소에서 미디어 추출 (Phase 7: Orchestrator 사용)
    */
   async extractFromClickedElement(
     element: HTMLElement,
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
-    return this.mediaExtraction.extractFromClickedElement(element, options);
+    logger.debug('[MediaService] Phase 7: Orchestrator 사용하여 미디어 추출 시작');
+    return this.mediaExtractionOrchestrator.extract(element, options);
   }
 
   /**
-   * 컨테이너에서 모든 미디어 추출
+   * 컨테이너에서 모든 미디어 추출 (Phase 7: Orchestrator 사용)
    */
   async extractAllFromContainer(
     container: HTMLElement,
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
-    return this.mediaExtraction.extractAllFromContainer(container, options);
+    logger.debug('[MediaService] Phase 7: Orchestrator 사용하여 컨테이너 미디어 추출 시작');
+    return this.mediaExtractionOrchestrator.extract(container, options);
   }
 
   /**
-   * 백업 추출 (API 실패 시)
+   * 백업 추출 (API 실패 시) - 레거시 호환성 유지
    */
   async extractWithFallback(
     element: HTMLElement,
@@ -175,7 +179,10 @@ export class MediaService {
     extractionId: string,
     tweetInfo?: TweetInfo
   ): Promise<MediaExtractionResult> {
-    return this.fallbackExtractor.extract(element, options, extractionId, tweetInfo);
+    // Phase 7: Orchestrator가 자동으로 폴백 체인을 관리하므로
+    // 이 메서드는 레거시 호환성을 위해 유지
+    logger.debug('[MediaService] 레거시 폴백 메서드 호출 - Orchestrator로 리다이렉트');
+    return this.mediaExtractionOrchestrator.extract(element, options, extractionId, tweetInfo);
   }
 
   // ====================================
@@ -285,7 +292,7 @@ export class MediaService {
   // ====================================
 
   /**
-   * 미디어 추출 (단순화된 인터페이스)
+   * 미디어 추출 (단순화된 인터페이스) - Phase 7: Orchestrator 사용
    */
   async extractMedia(
     element: HTMLElement,
@@ -827,6 +834,31 @@ export class MediaService {
    */
   public isDownloading(): boolean {
     return this.currentAbortController !== undefined;
+  }
+
+  // ====================================
+  // Phase 7: Orchestrator 관련 메서드
+  // ====================================
+
+  /**
+   * 미디어 추출 오케스트레이터 성능 메트릭 조회
+   */
+  public getExtractionMetrics() {
+    return this.mediaExtractionOrchestrator.getMetrics();
+  }
+
+  /**
+   * 오케스트레이터 캐시 및 실패 목록 초기화
+   */
+  public clearExtractionCache(): void {
+    this.mediaExtractionOrchestrator.clearCache();
+  }
+
+  /**
+   * 특정 추출 전략 상태 초기화
+   */
+  public resetExtractionStrategy(strategyName: string): void {
+    this.mediaExtractionOrchestrator.resetStrategy(strategyName);
   }
 }
 
