@@ -328,6 +328,8 @@ let galleryEventState = {
   options: null as GalleryEventOptions | null,
   handlers: null as EventHandlers | null,
   priorityInterval: null as ReturnType<typeof setTimeout> | null,
+  mutationObserver: null as MutationObserver | null, // Phase 6: MutationObserver 추가
+  priorityReinforcementPending: false, // Phase 6: 디바운스를 위한 플래그
 };
 
 /**
@@ -413,88 +415,127 @@ export async function initializeGalleryEvents(
 }
 
 /**
- * 우선순위 강화 메커니즘 - Phase 4: 런타임 성능 최적화
- * 트위터가 동적으로 이벤트 리스너를 추가하는 경우를 대비해 주기적으로 우리의 리스너를 재등록
+ * Phase 6: MutationObserver 기반 우선순위 강화 메커니즘
+ * setInterval 대신 MutationObserver를 사용하여 성능 최적화
  *
- * 성능 최적화 사항:
- * - 인터벌 빈도를 15초로 제한하여 CPU 오버헤드 최소화
- * - 갤러리 열린 상태에서는 우선순위 강화 중단으로 메모리 절약
- * - 불필요한 리스너 재등록 방지로 성능 향상
+ * 성능 개선 사항:
+ * - setInterval 제거로 CPU 오버헤드 최소화
+ * - DOM 변경 감지 기반으로 필요할 때만 실행
+ * - 메모리 효율성 향상
  */
 function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEventOptions): void {
-  // 기존 인터벌 정리
+  // 기존 인터벌 정리 (Phase 6: setInterval 제거)
   if (galleryEventState.priorityInterval) {
     clearInterval(galleryEventState.priorityInterval);
+    galleryEventState.priorityInterval = null;
   }
 
-  // 15초마다 우선순위 재설정 (성능 최적화: 적응형 스케줄링)
-  galleryEventState.priorityInterval = setInterval(() => {
-    try {
-      if (!galleryEventState.initialized) return;
+  // MutationObserver로 DOM 변경 감지 (Phase 6: 성능 최적화)
+  const documentElement =
+    (typeof document !== 'undefined' && document) ||
+    (typeof globalThis !== 'undefined' && globalThis.document) ||
+    null;
 
+  if (!documentElement) {
+    logger.warn('Document not available, skipping MutationObserver setup');
+    return;
+  }
+
+  try {
+    const observer = new MutationObserver(mutations => {
       // 갤러리가 열린 상태에서는 우선순위 강화 중단 (메모리 최적화)
       if (checkGalleryOpen()) {
-        logger.debug('Gallery is open, skipping priority enforcement');
         return;
       }
 
-      // Document 안전성 검사
-      const documentElement =
-        (typeof document !== 'undefined' && document) ||
-        (typeof globalThis !== 'undefined' && globalThis.document) ||
-        null;
-
-      if (!documentElement) {
-        logger.debug('Document not available, skipping priority enforcement');
-        return;
-      }
-
-      // 페이지가 비활성 상태일 때는 스케줄링 중단 (CPU 절약)
-      if (documentElement.hidden) {
-        logger.debug('Page is hidden, skipping priority enforcement');
-        return;
-      }
-
-      // 기존 리스너 제거
-      galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
-
-      // 새로운 리스너 등록 (최신 우선순위로)
-      const clickHandler: EventListener = async (evt: Event) => {
-        const event = evt as MouseEvent;
-        const result = await handleMediaClick(event, handlers, options);
-        if (result.handled && options.preventBubbling) {
-          event.stopPropagation();
-          event.preventDefault();
+      // 이벤트 리스너가 추가/제거될 가능성이 있는 변경만 처리
+      const relevantChanges = mutations.some(mutation => {
+        if (mutation.type === 'childList') {
+          // 새로운 이벤트 리스너를 가질 수 있는 요소가 추가되었는지 확인
+          return Array.from(mutation.addedNodes).some(node => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              return (
+                element.tagName === 'DIV' ||
+                element.tagName === 'ARTICLE' ||
+                element.className.includes('tweet') ||
+                element.className.includes('media')
+              );
+            }
+            return false;
+          });
         }
-      };
+        return false;
+      });
 
-      const keyHandler: EventListener = (evt: Event) => {
-        const event = evt as KeyboardEvent;
-        handleKeyboardEvent(event, handlers, options);
-      };
+      if (relevantChanges && !galleryEventState.priorityReinforcementPending) {
+        // 디바운스: 연속적인 DOM 변경에 대해 한 번만 실행
+        galleryEventState.priorityReinforcementPending = true;
 
-      const clickId = addListener(
-        documentElement,
-        'click',
-        clickHandler,
-        { passive: false, capture: true },
-        options.context
-      );
+        setTimeout(() => {
+          if (!galleryEventState.initialized || checkGalleryOpen()) {
+            galleryEventState.priorityReinforcementPending = false;
+            return;
+          }
 
-      const keyId = addListener(
-        documentElement,
-        'keydown',
-        keyHandler,
-        { passive: false, capture: true },
-        options.context
-      );
+          // 기존 리스너 제거 및 재등록
+          galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
 
-      galleryEventState.listenerIds = [clickId, keyId];
-      logger.debug('Gallery event priority reinforced');
-    } catch (error) {
-      logger.warn('Failed to reinforce gallery event priority:', error);
-    }
-  }, 15000);
+          // 새로운 리스너 등록
+          const clickHandler: EventListener = async (evt: Event) => {
+            const event = evt as MouseEvent;
+            const result = await handleMediaClick(event, handlers, options);
+            if (result.handled && options.preventBubbling) {
+              event.stopPropagation();
+              event.preventDefault();
+            }
+          };
+
+          const keyHandler: EventListener = (evt: Event) => {
+            const event = evt as KeyboardEvent;
+            handleKeyboardEvent(event, handlers, options);
+          };
+
+          const clickId = addListener(
+            documentElement,
+            'click',
+            clickHandler,
+            { passive: false, capture: true },
+            options.context
+          );
+
+          const keyId = addListener(
+            documentElement,
+            'keydown',
+            keyHandler,
+            { passive: false, capture: true },
+            options.context
+          );
+
+          galleryEventState.listenerIds = [clickId, keyId];
+          galleryEventState.priorityReinforcementPending = false;
+          logger.debug('Gallery event priority reinforced via MutationObserver');
+        }, 100); // 100ms 디바운스
+      }
+    });
+
+    // Twitter 메인 컨테이너 감시
+    const targetNode = documentElement.getElementById('react-root') || documentElement.body;
+    observer.observe(targetNode, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+    });
+
+    // 정리를 위해 observer 저장
+    galleryEventState.mutationObserver = observer;
+    logger.debug('MutationObserver-based priority enforcement started');
+  } catch (error) {
+    logger.warn(
+      'Failed to setup MutationObserver, falling back to no priority enforcement:',
+      error
+    );
+  }
 }
 
 /**
@@ -591,7 +632,7 @@ function handleKeyboardEvent(
 }
 
 /**
- * 갤러리 이벤트 정리
+ * 갤러리 이벤트 정리 (Phase 6: MutationObserver 정리 포함)
  */
 export function cleanupGalleryEvents(): void {
   try {
@@ -606,9 +647,15 @@ export function cleanupGalleryEvents(): void {
       removeEventListenersByContext(galleryEventState.options.context);
     }
 
-    // 우선순위 강화 인터벌 정리
+    // 우선순위 강화 인터벌 정리 (레거시)
     if (galleryEventState.priorityInterval) {
       clearInterval(galleryEventState.priorityInterval);
+    }
+
+    // Phase 6: MutationObserver 정리
+    if (galleryEventState.mutationObserver) {
+      galleryEventState.mutationObserver.disconnect();
+      galleryEventState.mutationObserver = null;
     }
 
     galleryEventState = {
@@ -617,9 +664,11 @@ export function cleanupGalleryEvents(): void {
       options: null,
       handlers: null,
       priorityInterval: null,
+      mutationObserver: null,
+      priorityReinforcementPending: false,
     };
 
-    logger.debug('Gallery events cleaned up');
+    logger.debug('Gallery events cleaned up (Phase 6: MutationObserver included)');
   } catch (error) {
     logger.error('Error cleaning up gallery events:', error);
   }
