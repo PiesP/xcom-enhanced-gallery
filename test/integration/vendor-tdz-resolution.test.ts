@@ -25,14 +25,14 @@ describe('TDZ 문제 해결 검증', () => {
   });
 
   describe('정적 import 기반 시스템', () => {
-    it('정적 import로 TDZ 문제 없이 vendor 초기화가 성공한다', async () => {
-      // 정적 import 기반 vendor 시스템 테스트
+    it('StaticVendorManager로 TDZ 문제 없이 vendor 초기화가 성공한다', async () => {
+      // StaticVendorManager 기반 vendor 시스템 테스트
       const { initializeVendorsSafe, isVendorsInitializedSafe } = await import(
         '@shared/external/vendors/vendor-api-safe'
       );
 
-      // 초기화 전 상태 확인
-      expect(isVendorsInitializedSafe()).toBe(false);
+      // StaticVendorManager는 자동 초기화되므로 이미 초기화된 상태
+      expect(isVendorsInitializedSafe()).toBe(true);
 
       // 초기화 실행 - TDZ 에러 없이 성공해야 함
       await expect(initializeVendorsSafe()).resolves.not.toThrow();

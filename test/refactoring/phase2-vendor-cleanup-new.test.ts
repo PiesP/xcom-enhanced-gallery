@@ -20,8 +20,8 @@ describe('Phase 2: Vendor 시스템 정리 - 새로운 TDD 접근법', () => {
     // 테스트 후 정리
   });
 
-  describe('TDD RED: 현재 Vendor 시스템 분석', () => {
-    test('현재 Vendor 시스템 중복 상태 확인', async () => {
+  describe('TDD REFACTOR: Phase 2 완료 검증', () => {
+    test('현재 Vendor 시스템 정리 완료 확인', async () => {
       const fs = await import('fs');
 
       // 현재 vendor 관련 파일들 존재 확인
@@ -30,12 +30,12 @@ describe('Phase 2: Vendor 시스템 정리 - 새로운 TDD 접근법', () => {
       try {
         const files = fs.readdirSync(vendorDir);
 
-        // vendor-manager.ts와 vendor-manager-static.ts가 모두 존재하는지 확인
+        // legacy vendor-manager.ts는 제거되고 vendor-manager-static.ts만 존재해야 함
         const hasLegacyManager = files.includes('vendor-manager.ts');
         const hasStaticManager = files.includes('vendor-manager-static.ts');
 
-        // RED: 중복 시스템이 존재함을 확인
-        expect(hasLegacyManager).toBe(true);
+        // REFACTOR 완료: legacy 시스템 제거됨
+        expect(hasLegacyManager).toBe(false);
         expect(hasStaticManager).toBe(true);
       } catch (error) {
         // 디렉토리가 없는 경우 테스트 실패
@@ -115,7 +115,7 @@ describe('Phase 2: Vendor 시스템 정리 - 새로운 TDD 접근법', () => {
               }
             }
           }
-        } catch (error) {
+        } catch {
           // 디렉토리 접근 오류 무시
         }
         return legacyImports;

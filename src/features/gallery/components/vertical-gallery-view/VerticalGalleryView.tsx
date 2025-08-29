@@ -16,7 +16,7 @@ import { Toast } from '@shared/components/ui/Toast/Toast';
 import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
-import { getPreactHooks, getPreact } from '@shared/external/vendors';
+import { getPreactHooks, getPreact, getPreactCompat } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import type { MouseEvent } from 'preact/compat';
 import {
@@ -563,11 +563,11 @@ const VerticalGalleryView = (() => {
       writable: false,
       configurable: true,
     });
-    return VerticalGalleryViewCore;
   }
 
-  // 프로덕션에서는 지연 로딩으로 memo 적용
-  return VerticalGalleryViewCore;
+  // memo 적용으로 성능 최적화
+  const { memo } = getPreactCompat();
+  return memo(VerticalGalleryViewCore);
 })();
 
 export { VerticalGalleryView };
