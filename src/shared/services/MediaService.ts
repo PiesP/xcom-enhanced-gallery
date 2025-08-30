@@ -5,8 +5,7 @@
  */
 
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
-import type { MediaInfo, MediaItem } from '@shared/types/media.types';
+import type { MediaExtractionOptions } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 
 // 통합된 서비스 타입들
@@ -176,21 +175,6 @@ export class MediaService {
     return this.mediaExtractionOrchestrator.extract(container, options);
   }
 
-  /**
-   * 백업 추출 (API 실패 시) - 레거시 호환성 유지
-   */
-  async extractWithFallback(
-    element: HTMLElement,
-    options: MediaExtractionOptions,
-    extractionId: string,
-    tweetInfo?: TweetInfo
-  ): Promise<MediaExtractionResult> {
-    // Phase 7: Orchestrator가 자동으로 폴백 체인을 관리하므로
-    // 이 메서드는 레거시 호환성을 위해 유지
-    logger.debug('[MediaService] 레거시 폴백 메서드 호출 - Orchestrator로 리다이렉트');
-    return this.mediaExtractionOrchestrator.extract(element, options, extractionId, tweetInfo);
-  }
-
   // ====================================
   // Video Control API
   // ====================================
@@ -299,20 +283,13 @@ export class MediaService {
 
   /**
    * 미디어 추출 (단순화된 인터페이스) - Phase 7: Orchestrator 사용
+   * @deprecated extractFromClickedElement() 사용 권장
    */
   async extractMedia(
     element: HTMLElement,
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     return this.extractFromClickedElement(element, options);
-  }
-
-  /**
-   * 미디어 다운로드 (단순화된 인터페이스) - 호환성 유지
-   * @deprecated getDownloadService().downloadSingle() 사용 권장
-   */
-  async downloadMedia(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    return this.getDownloadService().downloadSingle(media);
   }
 
   // ====================================
@@ -764,50 +741,4 @@ export type { UsernameExtractionResult };
  */
 export const optimizeWebP = (originalUrl: string): string => {
   return MediaService.getInstance().getOptimizedImageUrl(originalUrl);
-};
-
-/**
- * 트위터 이미지 URL 최적화 (호환성 유지를 위한 별칭)
- * @deprecated 직접 MediaService.getInstance().getOptimizedImageUrl() 사용 권장
- */
-export const optimizeTwitterImageUrl = (originalUrl: string): string => {
-  return MediaService.getInstance().getOptimizedImageUrl(originalUrl);
-};
-
-// ====================================
-// 다운로드 함수들 (중복 제거됨)
-// ====================================
-
-/**
- * 단일 미디어 다운로드 (호환성 유지를 위한 별칭)
- * @deprecated 직접 MediaService.getInstance().getDownloadService().downloadSingle() 사용 권장
- */
-export const downloadSingle = async (
-  media: MediaInfo | MediaItem
-): Promise<SingleDownloadResult> => {
-  return MediaService.getInstance().getDownloadService().downloadSingle(media);
-};
-
-/**
- * 여러 미디어 다운로드 (호환성 유지를 위한 별칭)
- * @deprecated 직접 MediaService.getInstance().getDownloadService().downloadMultiple() 사용 권장
- */
-export const downloadMultiple = async (
-  mediaItems: Array<MediaInfo | MediaItem>,
-  options: BulkDownloadOptions
-): Promise<DownloadResult> => {
-  return MediaService.getInstance().getDownloadService().downloadMultiple(mediaItems, options);
-};
-
-/**
- * 대량 다운로드 (호환성 유지를 위한 별칭)
- * @deprecated 직접 MediaService.getInstance().getDownloadService().downloadBulk() 사용 권장
- */
-export const downloadBulk = async (
-  mediaItems: readonly (MediaItem | MediaInfo)[],
-  options: BulkDownloadOptions = {}
-): Promise<DownloadResult> => {
-  return MediaService.getInstance()
-    .getDownloadService()
-    .downloadBulk(Array.from(mediaItems), options);
 };
