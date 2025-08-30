@@ -5021,6 +5021,23 @@
         },
         {
           "dynamic": false,
+          "module": "./environment",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/environment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./error-handling",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5132,6 +5149,23 @@
             "export"
           ],
           "resolved": "src/shared/utils/utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./WebPUtils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/WebPUtils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5408,6 +5442,16 @@
       "dependents": [
         "src/shared/utils/dom/index.ts",
         "src/shared/utils/dom/BatchDOMUpdateManager.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/environment.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts",
+        "src/shared/utils/WebPUtils.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5777,6 +5821,33 @@
       ],
       "dependents": [
         "src/shared/utils/scroll/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/WebPUtils.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./environment",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/environment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7164,8 +7235,8 @@
     "warn": 0,
     "info": 9,
     "ignore": 0,
-    "totalCruised": 197,
-    "totalDependenciesCruised": 295,
+    "totalCruised": 199,
+    "totalDependenciesCruised": 298,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

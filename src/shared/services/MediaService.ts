@@ -6,6 +6,8 @@
 
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { MediaExtractionOptions } from '@shared/types/media.types';
+import { WebPUtils } from '@shared/utils/WebPUtils';
+import { isTestEnvironment } from '@shared/utils/environment';
 import { logger } from '@shared/logging/logger';
 
 // 통합된 서비스 타입들
@@ -98,9 +100,6 @@ export class MediaService {
   private readonly usernameParser: UsernameParser;
   private readonly bulkDownloadService: BulkDownloadService;
 
-  // WebP 최적화 관련 상태
-  private webpSupported: boolean | null = null;
-
   // 미디어 로딩 관련 상태 (MediaLoadingService 통합)
   private readonly mediaLoadingStates = new Map<string, MediaLoadingState>();
 
@@ -125,12 +124,12 @@ export class MediaService {
     this.bulkDownloadService = new BulkDownloadService(); // Phase 2: 다운로드 서비스 위임
 
     // 테스트 환경에서는 WebP를 즉시 활성화
-    if (this.isTestEnvironment()) {
-      this.webpSupported = true;
+    if (isTestEnvironment()) {
+      // WebPUtils 캐시 초기화는 필요하지 않음 (자동으로 테스트 환경 감지)
       logger.debug('[MediaService] WebP enabled for test environment');
     } else {
-      // WebP 지원 감지 초기화 (async 메서드이므로 await 없이 호출)
-      this.detectWebPSupport().catch(error => {
+      // WebP 지원 감지 초기화 (WebPUtils가 자동으로 캐싱 처리)
+      WebPUtils.detectSupport().catch(error => {
         logger.warn('[MediaService] WebP detection initialization failed:', error);
       });
     }
@@ -141,12 +140,13 @@ export class MediaService {
     return MediaService.instance;
   }
 
-  protected async onInitialize(): Promise<void> {
-    // MediaService는 특별한 초기화 로직이 없음
-  }
-
-  protected onDestroy(): void {
+  /**
+   * 서비스 정리
+   */
+  cleanup(): void {
     this.videoControl.destroy();
+    this.clearPrefetchCache();
+    this.clearExtractionCache();
   }
 
   // ====================================
@@ -278,21 +278,6 @@ export class MediaService {
   }
 
   // ====================================
-  // 간단한 래퍼 메서드들 (Step 4 호환성)
-  // ====================================
-
-  /**
-   * 미디어 추출 (단순화된 인터페이스) - Phase 7: Orchestrator 사용
-   * @deprecated extractFromClickedElement() 사용 권장
-   */
-  async extractMedia(
-    element: HTMLElement,
-    options: MediaExtractionOptions = {}
-  ): Promise<MediaExtractionResult> {
-    return this.extractFromClickedElement(element, options);
-  }
-
-  // ====================================
   // 편의 메서드들
   // ====================================
 
@@ -329,82 +314,21 @@ export class MediaService {
   }
 
   // ====================================
-  // WebP Optimization API (통합됨)
+  // WebP Optimization API (WebPUtils 위임)
   // ====================================
 
   /**
-   * 테스트 환경인지 확인
-   */
-  private isTestEnvironment(): boolean {
-    return (
-      typeof window === 'undefined' ||
-      typeof global !== 'undefined' ||
-      process?.env?.NODE_ENV === 'test' ||
-      process?.env?.VITEST === 'true'
-    );
-  }
-
-  /**
-   * WebP 지원 여부 감지
-   */
-  private async detectWebPSupport(): Promise<void> {
-    try {
-      // 테스트 환경에서는 기본값 false 사용
-      if (typeof document === 'undefined' || typeof window === 'undefined') {
-        this.webpSupported = false;
-        return;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 1;
-      canvas.height = 1;
-
-      // canvas.toDataURL이 구현되지 않은 경우 (예: jsdom)
-      if (typeof canvas.toDataURL !== 'function') {
-        this.webpSupported = false;
-        logger.debug('[MediaService] WebP detection skipped (canvas.toDataURL not available)');
-        return;
-      }
-
-      const dataURL = canvas.toDataURL('image/webp');
-
-      // dataURL이 null이나 유효하지 않은 경우 처리
-      if (!dataURL || typeof dataURL !== 'string') {
-        this.webpSupported = false;
-        logger.debug('[MediaService] WebP detection failed (invalid dataURL)');
-        return;
-      }
-
-      this.webpSupported = dataURL.indexOf('data:image/webp') === 0;
-      logger.debug('[MediaService] WebP support detected:', this.webpSupported);
-    } catch (error) {
-      this.webpSupported = false;
-      logger.warn('[MediaService] WebP detection failed:', error);
-    }
-  }
-
-  /**
-   * WebP 지원 여부 반환
+   * WebP 지원 여부 반환 (WebPUtils 위임)
    */
   isWebPSupported(): boolean {
-    return this.webpSupported ?? false;
+    return WebPUtils.isSupportedSync();
   }
 
   /**
-   * 최적 이미지 URL 생성 (WebP 최적화)
+   * 최적 이미지 URL 생성 (WebP 최적화, WebPUtils 위임)
    */
   getOptimizedImageUrl(originalUrl: string): string {
-    if (!this.isWebPSupported()) {
-      return originalUrl;
-    }
-
-    // Twitter 이미지 URL에서 WebP 변환
-    if (originalUrl.includes('pbs.twimg.com') && !originalUrl.includes('format=webp')) {
-      const separator = originalUrl.includes('?') ? '&' : '?';
-      return `${originalUrl}${separator}format=webp`;
-    }
-
-    return originalUrl;
+    return WebPUtils.optimizeUrl(originalUrl);
   }
 
   // NOTE: optimizeWebP와 optimizeTwitterImageUrl은 중복 제거됨
@@ -737,8 +661,8 @@ export type { UsernameExtractionResult };
 
 /**
  * WebP 최적화 (호환성 유지를 위한 별칭)
- * @deprecated 직접 MediaService.getInstance().getOptimizedImageUrl() 사용 권장
+ * @deprecated 직접 WebPUtils.optimizeUrl() 사용 권장
  */
 export const optimizeWebP = (originalUrl: string): string => {
-  return MediaService.getInstance().getOptimizedImageUrl(originalUrl);
+  return WebPUtils.optimizeUrl(originalUrl);
 };

@@ -1,5 +1,5 @@
 /**
- * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (44개)
+ * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (47개)
  */
 
 // === 기본 유틸리티 (13개) ===
@@ -18,6 +18,18 @@ export {
   galleryDebugUtils,
   parseColor,
 } from './utils';
+
+// === 환경 감지 (5개) ===
+export {
+  isTestEnvironment,
+  isBrowserEnvironment,
+  isDevelopmentEnvironment,
+  isProductionEnvironment,
+  isUserScriptEnvironment,
+} from './environment';
+
+// === WebP 최적화 (3개) ===
+export { WebPUtils, optimizeWebP, optimizeTwitterImageUrl } from './WebPUtils';
 
 // === 타이머 관리 (4개) ===
 export {

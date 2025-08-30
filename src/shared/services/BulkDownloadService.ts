@@ -265,16 +265,6 @@ export class BulkDownloadService {
   }
 
   /**
-   * 대량 다운로드 (테스트 호환성을 위한 별칭)
-   */
-  async downloadBulk(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: BulkDownloadOptions = {}
-  ): Promise<DownloadResult> {
-    return this.downloadMultiple(Array.from(mediaItems), options);
-  }
-
-  /**
    * 현재 다운로드 중단
    */
   public cancelDownload(): void {

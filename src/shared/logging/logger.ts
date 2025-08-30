@@ -65,7 +65,7 @@ interface LoggerConfig {
  * Production builds should use 'info' to reduce console noise
  * Development builds can use 'debug' for detailed logging
  */
-function getEnvironmentLogLevel(): LogLevel {
+export function getEnvironmentLogLevel(): LogLevel {
   // Check if we're in a userscript environment (production)
   try {
     if (typeof window !== 'undefined') {

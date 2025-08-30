@@ -313,18 +313,22 @@ export default defineConfig(({ mode }) => {
           format: 'iife',
           name: 'XG',
           inlineDynamicImports: true,
-          // Phase 5: 추가적인 최적화 설정
+          // 개발 환경에서도 기본적인 최적화 적용
+          ...(buildMode.isDevelopment && {
+            manualChunks: undefined,
+            compact: true,
+          }),
         },
         treeshake: {
           preset: 'smallest', // 더 적극적인 tree-shaking
           moduleSideEffects: false,
           unknownGlobalSideEffects: false,
-          // Phase 5: 더 적극적인 tree-shaking
+          // 개발 환경에서도 더 적극적인 tree-shaking
           propertyReadSideEffects: false,
           tryCatchDeoptimization: false,
           annotations: true,
         },
-        // Phase 5: 번들 분석을 위한 onwarn 핸들러
+        // 번들 분석을 위한 onwarn 핸들러
         onwarn(warning, warn) {
           // 순환 의존성 경고 억제 (vendor 라이브러리에서 발생)
           if (warning.code === 'CIRCULAR_DEPENDENCY') {
@@ -338,8 +342,8 @@ export default defineConfig(({ mode }) => {
         },
       },
 
-      // 최적화된 minification 설정
-      minify: buildMode.minify ? 'terser' : false,
+      // 개발 환경에서도 기본적인 minification 적용 (더 나은 크기 최적화)
+      minify: buildMode.isProduction ? 'terser' : 'esbuild',
       ...(buildMode.isProduction && {
         terserOptions: {
           compress: {
@@ -347,7 +351,7 @@ export default defineConfig(({ mode }) => {
             drop_debugger: true,
             passes: 3, // 압축 패스 증가
             pure_funcs: buildMode.dropConsole
-              ? ['console.log', 'console.debug', 'console.info']
+              ? ['console.log', 'console.debug', 'console.info', 'console.warn']
               : [],
             dead_code: true,
             unused: true,
@@ -355,6 +359,17 @@ export default defineConfig(({ mode }) => {
             reduce_vars: true,
             unsafe_regexp: false,
             unsafe_undefined: false,
+            // 추가 최적화
+            join_vars: true,
+            sequences: true,
+            properties: true,
+            conditionals: true,
+            if_return: true,
+            evaluate: true,
+            booleans: true,
+            loops: true,
+            hoist_funs: true,
+            hoist_vars: false,
           },
           mangle: {
             toplevel: true,
@@ -390,7 +405,7 @@ export default defineConfig(({ mode }) => {
         },
       }),
 
-      sourcemap: buildMode.sourcemap,
+      sourcemap: buildMode.isDevelopment ? 'cheap-module-source-map' : buildMode.sourcemap,
       chunkSizeWarningLimit: 2000,
     },
 
