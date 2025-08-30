@@ -5,16 +5,15 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-describe('RED Phase: 미디어 추출 로직 중복 문제', () => {
-  describe('현재 중복 구현 확인', () => {
-    it('FallbackStrategy와 DOMDirectStrategy의 isValidMediaUrl 로직이 다름', async () => {
+describe('GREEN Phase: 미디어 추출 로직 통합 완료', () => {
+  describe('통합 완료 상태 확인', () => {
+    it('FallbackStrategy가 MediaValidationUtils를 사용함', async () => {
       const { FallbackStrategy } = await import(
         '@shared/services/media-extraction/strategies/fallback/FallbackStrategy'
       );
-      const { DOMDirectStrategy } = await import('@shared/services/media-extraction/strategies');
+      const { MediaValidationUtils } = await import('@shared/utils/media/MediaValidationUtils');
 
       const fallbackStrategy = new FallbackStrategy();
-      const domStrategy = new DOMDirectStrategy();
 
       // 테스트 URL들
       const testUrls = [
@@ -25,26 +24,50 @@ describe('RED Phase: 미디어 추출 로직 중복 문제', () => {
         'http://invalid-url', // HTTP (not HTTPS)
       ];
 
-      // RED: 현재 두 전략의 검증 결과가 다를 수 있음
-      const fallbackResults = testUrls.map(url => (fallbackStrategy as any).isValidMediaUrl(url));
-      const domResults = testUrls.map(url => (domStrategy as any).isValidMediaUrl(url));
+      // GREEN: 통합된 유틸리티를 사용하므로 일관된 검증 결과
+      const validationResults = testUrls.map(url => MediaValidationUtils.isValidMediaUrl(url));
 
-      // 현재는 다른 결과가 나올 수 있음 (문제 상황)
-      expect(fallbackResults).not.toEqual(domResults);
+      // private 메서드가 제거되었는지 확인
+      expect((fallbackStrategy as any).isValidMediaUrl).toBeUndefined();
+
+      // 통합된 유틸리티가 일관된 결과를 제공함
+      expect(validationResults).toEqual([true, true, false, false, false]);
     });
 
-    it('createMediaInfo 로직이 여러 곳에서 중복됨', async () => {
+    it('createMediaInfo 로직이 MediaInfoBuilder로 통합됨', async () => {
+      const { FallbackStrategy } = await import(
+        '@shared/services/media-extraction/strategies/fallback/FallbackStrategy'
+      );
+      const { MediaInfoBuilder } = await import('@shared/utils/media/MediaInfoBuilder');
+
+      const strategy = new FallbackStrategy();
+
+      // GREEN: private createMediaInfo 메서드가 제거되고 MediaInfoBuilder 사용
+      const hasPrivateMethod = 'createMediaInfo' in strategy;
+      const hasBuilderMethod = typeof MediaInfoBuilder.createMediaInfo === 'function';
+
+      expect(hasPrivateMethod).toBe(false); // private 메서드 제거됨
+      expect(hasBuilderMethod).toBe(true); // 통합된 빌더 사용
+
+      // MediaInfoBuilder가 올바른 타입의 객체를 생성하는지 확인
+      const testMediaInfo = MediaInfoBuilder.createMediaInfo(
+        'test-id',
+        'https://pbs.twimg.com/media/test.jpg',
+        'image'
+      );
+      expect(testMediaInfo).toHaveProperty('id');
+      expect(testMediaInfo).toHaveProperty('url');
+      expect(testMediaInfo).toHaveProperty('type');
+    });
+
+    it('private 메서드들이 제거되고 추출 로직이 통합되어야 함', async () => {
       const { FallbackStrategy } = await import(
         '@shared/services/media-extraction/strategies/fallback/FallbackStrategy'
       );
 
       const strategy = new FallbackStrategy();
 
-      // RED: createMediaInfo 메서드가 private이므로 직접 접근 불가
-      // 중복 제거 후에는 공통 유틸리티로 추출되어야 함
-      expect((strategy as any).createMediaInfo).toBeDefined();
-
-      // 현재는 각 추출 메서드마다 유사한 로직이 반복됨
+      // GREEN: private 중복 메서드들이 제거되고 공통 로직으로 통합됨
       const methods = [
         'extractFromImages',
         'extractFromVideos',

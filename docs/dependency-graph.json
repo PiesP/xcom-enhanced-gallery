@@ -5629,16 +5629,42 @@
     },
     {
       "source": "src/shared/utils/media/media-url.util.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/media/index.ts"
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./MediaInfoBuilder",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/media/MediaInfoBuilder.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaValidationUtils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/media/MediaValidationUtils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/media/MediaClickDetector.ts",
-      "dependencies": [],
       "dependents": [
         "src/shared/utils/media/index.ts"
       ],
@@ -5667,7 +5693,8 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/media/index.ts"
+        "src/shared/utils/media/index.ts",
+        "src/shared/utils/media/media-url.util.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5677,7 +5704,17 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/media/index.ts",
+        "src/shared/utils/media/media-url.util.ts",
         "src/shared/utils/media/MediaInfoBuilder.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/media/MediaClickDetector.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/media/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7365,7 +7402,7 @@
     "info": 10,
     "ignore": 0,
     "totalCruised": 202,
-    "totalDependenciesCruised": 303,
+    "totalDependenciesCruised": 305,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

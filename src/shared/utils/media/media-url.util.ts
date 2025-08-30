@@ -9,7 +9,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
+import { MediaValidationUtils } from './MediaValidationUtils';
+import { MediaInfoBuilder } from './MediaInfoBuilder';
 import type { MediaInfo } from '@shared/types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '@shared/dom';
 
@@ -94,38 +95,28 @@ export function createMediaInfoFromImage(
     const alt = imgElement.alt || `Media ${index + 1} from tweet`;
 
     // URL 유효성 검증
-    if (!isValidMediaUrl(src)) {
+    if (!MediaValidationUtils.isValidMediaUrl(src)) {
       return null;
     }
-
-    // 원본 URL 추출 (orig 버전으로 변경)
-    const originalUrl = extractOriginalImageUrl(src);
 
     // 썸네일 URL (small 버전)
     const thumbnailUrl = `${src.replace(/[?&]name=[^&]*/, '').replace(/[?&]format=[^&]*/, '')}?format=jpg&name=small`;
 
-    // 파일명 추출 (URL에서 실제 미디어 ID 부분)
-    const urlMatch = src.match(/\/media\/([^?]+)/);
-    const mediaId = urlMatch?.[1] ?? `media_${tweetId}_${index}`;
-
-    // 안전한 파일명 생성 - 중복 확장자 제거 및 유효성 검증
-    const cleanMediaId = cleanFilename(mediaId);
-    const filename = `${cleanMediaId}.jpg`;
-
-    return {
-      id: `${tweetId}-${index}`,
-      type: 'image',
-      url: originalUrl,
-      thumbnailUrl,
-      originalUrl: `https://twitter.com/i/status/${tweetId}/photo/${index + 1}`,
-      tweetId,
-      filename,
-      tweetUsername: parseUsernameFast() || undefined,
-      tweetUrl: `https://twitter.com/i/status/${tweetId}`,
-      alt,
-      width: imgElement.width || 1200,
-      height: imgElement.height || 800,
-    };
+    // MediaInfoBuilder 사용 - 통합된 유틸리티
+    return MediaInfoBuilder.createMediaInfo(
+      `${tweetId}-image-${index}`,
+      src,
+      'image',
+      undefined, // tweetInfo 파라미터
+      {
+        dimensions: {
+          ...(imgElement.width && { width: imgElement.width }),
+          ...(imgElement.height && { height: imgElement.height }),
+        },
+        thumbnailUrl,
+        alt,
+      }
+    );
   } catch (error) {
     logger.error('createMediaInfoFromImage: 이미지 정보 생성 실패:', error);
     return null;
@@ -149,28 +140,21 @@ export function createMediaInfoFromVideo(
       return null;
     }
 
-    // 비디오 썸네일 (poster)에서 미디어 ID 추출
-    const posterMatch = poster.match(/\/media\/([^?]+)/);
-    const mediaId = posterMatch ? posterMatch[1] : `video_${tweetId}_${index}`;
-
-    // 안전한 파일명 생성
-    const cleanMediaId = cleanFilename(mediaId ?? `fallback_${tweetId}_${index}`);
-    const filename = `${cleanMediaId}.mp4`;
-
-    return {
-      id: `${tweetId}-video-${index}`,
-      type: 'video',
-      url: src || poster, // 실제 비디오 URL이 없으면 poster 사용
-      thumbnailUrl: poster,
-      originalUrl: `https://twitter.com/i/status/${tweetId}/video/${index + 1}`,
-      tweetId,
-      filename,
-      tweetUsername: parseUsernameFast() || undefined,
-      tweetUrl: `https://twitter.com/i/status/${tweetId}`,
-      alt: `Video ${index + 1} from tweet`,
-      width: videoElement.videoWidth || 1920,
-      height: videoElement.videoHeight || 1080,
-    };
+    // MediaInfoBuilder 사용 - 통합된 유틸리티
+    return MediaInfoBuilder.createMediaInfo(
+      `${tweetId}-video-${index}`,
+      src || poster,
+      'video',
+      undefined, // tweetInfo 파라미터
+      {
+        dimensions: {
+          ...(videoElement.videoWidth && { width: videoElement.videoWidth }),
+          ...(videoElement.videoHeight && { height: videoElement.videoHeight }),
+        },
+        ...(poster && { thumbnailUrl: poster }),
+        alt: `Video ${index + 1} from tweet`,
+      }
+    );
   } catch (error) {
     logger.error('createMediaInfoFromVideo: 비디오 정보 생성 실패:', error);
     return null;
@@ -204,102 +188,6 @@ export function extractOriginalImageUrl(url: string): string {
       return `${url}?name=orig`;
     }
   }
-}
-
-/**
- * 미디어 URL이 유효한지 검증
- *
- * @param url - 검증할 URL
- * @returns 유효성 여부
- */
-export function isValidMediaUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') {
-    return false;
-  }
-
-  // URL 길이 제한 (일반적인 브라우저 제한인 2048자)
-  if (url.length > 2048) {
-    return false;
-  }
-
-  try {
-    // 테스트 환경에서 URL 생성자 확인
-    let URLConstructor: typeof URL | undefined;
-
-    if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
-      URLConstructor = globalThis.URL;
-    } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
-      URLConstructor = window.URL;
-    } else {
-      // 테스트 환경에서만 필요한 경우, fallback 사용
-      // 브라우저 환경에서는 globalThis.URL 또는 window.URL이 항상 사용 가능
-      return isValidMediaUrlFallback(url);
-    }
-
-    if (!URLConstructor) {
-      return isValidMediaUrlFallback(url);
-    }
-
-    const urlObj = new URLConstructor(url);
-
-    // 프로토콜 검증 - https 또는 http만 허용
-    if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
-      return false;
-    }
-
-    // 도메인별 경로 검증
-    if (urlObj.hostname === 'pbs.twimg.com') {
-      // pbs.twimg.com은 /media/ 경로를 포함해야 하고, profile_images는 제외
-      return urlObj.pathname.includes('/media/') && !urlObj.pathname.includes('/profile_images/');
-    }
-
-    if (urlObj.hostname === 'video.twimg.com') {
-      // video.twimg.com은 모든 경로 허용
-      return true;
-    }
-
-    // 기타 도메인은 허용하지 않음 (Twitter 미디어만)
-    return false;
-  } catch (error) {
-    // URL 생성이 실패하면 fallback 사용
-    console.warn('URL parsing failed, using fallback:', error);
-    return isValidMediaUrlFallback(url);
-  }
-}
-
-/**
- * URL 생성자를 사용할 수 없는 환경에서의 fallback 검증 함수
- */
-function isValidMediaUrlFallback(url: string): boolean {
-  // 기본적인 프로토콜 검사
-  if (!url.startsWith('https://') && !url.startsWith('http://')) {
-    return false;
-  }
-
-  // 지원하지 않는 트위터 서브도메인 명시적 거부
-  if (url.includes('ton.twimg.com')) {
-    return false;
-  }
-
-  // 도메인 스푸핑 방지: 정확한 호스트명 매칭
-  const protocolRegex = /^https?:\/\/([^/]+)/;
-  const match = url.match(protocolRegex);
-  if (!match) {
-    return false;
-  }
-
-  const hostname = match[1];
-
-  // 트위터 미디어 도메인 정확한 검사
-  if (hostname === 'pbs.twimg.com') {
-    return url.includes('/media/') && !url.includes('/profile_images/');
-  }
-
-  if (hostname === 'video.twimg.com') {
-    return true;
-  }
-
-  return false;
 }
 
 /**

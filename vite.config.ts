@@ -18,7 +18,7 @@ import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/bui
 /**
  * @returns {import('vite').Plugin}
  */
-function createBundleAnalysisPlugin() {
+function createBundleAnalysisPlugin(buildMode) {
   return {
     name: 'bundle-analysis',
     apply: 'build',
@@ -53,6 +53,11 @@ function createBundleAnalysisPlugin() {
         path.resolve(outDir, 'bundle-analysis.json'),
         JSON.stringify(analysis, null, 2)
       );
+
+      // 개발 모드에서는 터미널 출력을 생략하여 빌드 로그를 깔끔하게 유지
+      if (buildMode && buildMode.isDevelopment) {
+        return;
+      }
 
       console.log(`\n📊 번들 크기: ${(totalSize / 1024).toFixed(2)} KB`);
       if (totalSize > 500 * 1024) {
@@ -263,7 +268,7 @@ export default defineConfig(({ mode }) => {
         prefreshEnabled: buildMode.isDevelopment,
       }),
       createUserscriptBundlerPlugin(buildMode),
-      createBundleAnalysisPlugin(),
+      createBundleAnalysisPlugin(buildMode),
     ],
 
     // 환경 변수 정의
@@ -342,8 +347,8 @@ export default defineConfig(({ mode }) => {
         },
       },
 
-      // 개발 환경에서도 기본적인 minification 적용 (더 나은 크기 최적화)
-      minify: buildMode.isProduction ? 'terser' : 'esbuild',
+      // 개발 환경에서는 압축을 끄고, 프로덕션에서만 terser를 사용
+      minify: buildMode.isProduction ? 'terser' : false,
       ...(buildMode.isProduction && {
         terserOptions: {
           compress: {

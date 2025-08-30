@@ -5,7 +5,7 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 
-describe('TDD RED: 미디어 추출 메서드 통합', () => {
+describe('TDD GREEN: 미디어 추출 메서드 통합 완료', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -29,25 +29,20 @@ describe('TDD RED: 미디어 추출 메서드 통합', () => {
     vi.restoreAllMocks();
   });
 
-  describe('RED: 현재 중복 문제 검증', () => {
-    test('extractMedia()가 deprecated되었지만 여전히 구현되어 있음', async () => {
+  describe('GREEN: 통합 완료 검증', () => {
+    test('extractMedia() 메서드가 제거되었음', async () => {
       const { MediaService } = await import('@shared/services/MediaService');
 
       const mediaService = MediaService.getInstance();
 
-      // RED: deprecated 메서드가 아직 존재함
-      expect(typeof mediaService.extractMedia).toBe('function');
+      // GREEN: deprecated 메서드가 제거됨
+      expect(typeof (mediaService as any).extractMedia).toBe('undefined');
 
-      const mockElement = document.createElement('div');
-
-      try {
-        // RED: deprecated 메서드가 여전히 동작함
-        const result = await mediaService.extractMedia(mockElement);
-        expect(result).toBeDefined();
-        expect(typeof result.mediaItems).toBe('object');
-      } catch {
-        // 추출 실패는 정상 (구조만 확인)
-      }
+      // 현재 공개 API 확인
+      const hasValidAPI =
+        typeof mediaService.extractFromElement === 'function' ||
+        typeof mediaService.getMediaFromElement === 'function';
+      expect(hasValidAPI).toBe(true);
     });
 
     test('extractMedia()와 extractFromClickedElement()가 동일한 기능을 중복 구현', async () => {

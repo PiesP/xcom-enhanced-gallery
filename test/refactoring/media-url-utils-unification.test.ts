@@ -10,19 +10,20 @@ describe('미디어 URL 처리 함수 통합', () => {
     vi.clearAllMocks();
   });
 
-  describe('🔴 RED: 현재 중복 문제 검증', () => {
-    it('isValidMediaUrl이 두 곳에 정의되어 있음', async () => {
-      // Given: 두 모듈에서 같은 함수 import
-      const constantsModule = await import('@/constants');
+  describe('� GREEN: 통합 완료 검증', () => {
+    it('isValidMediaUrl이 MediaValidationUtils로 통합되었음', async () => {
+      // Given: 통합된 모듈과 제거된 모듈
       const mediaUtilModule = await import('@shared/utils/media/media-url.util');
+      const mediaValidationModule = await import('@shared/utils/media/MediaValidationUtils');
 
       // When: 함수 존재 여부 확인
-      const constantsHasFunction = typeof constantsModule.isValidMediaUrl === 'function';
       const mediaUtilHasFunction = typeof mediaUtilModule.isValidMediaUrl === 'function';
+      const validationHasFunction =
+        typeof mediaValidationModule.MediaValidationUtils.isValidMediaUrl === 'function';
 
-      // Then: 두 곳 모두 존재 (중복 상태)
-      expect(constantsHasFunction).toBe(true);
-      expect(mediaUtilHasFunction).toBe(true);
+      // Then: media-url.util에서는 제거되고 MediaValidationUtils에서만 존재
+      expect(mediaUtilHasFunction).toBe(false); // 중복 제거됨
+      expect(validationHasFunction).toBe(true); // 통합된 위치에 존재
     });
 
     it('extractMediaId가 중복 구현되어 있음', async () => {
@@ -36,22 +37,17 @@ describe('미디어 URL 처리 함수 통합', () => {
       expect(hasExtractMediaId).toBe(true);
     });
 
-    it('동일한 URL에 대해 다른 결과를 반환할 수 있음', async () => {
+    it('MediaValidationUtils가 올바른 결과를 반환함', async () => {
       // Given: 테스트 URL
       const testUrl = 'https://pbs.twimg.com/media/test123.jpg';
+      const mediaValidationModule = await import('@shared/utils/media/MediaValidationUtils');
 
-      const constantsModule = await import('@/constants');
-      const mediaUtilModule = await import('@shared/utils/media/media-url.util');
+      // When: 통합된 함수 호출
+      const result = mediaValidationModule.MediaValidationUtils.isValidMediaUrl(testUrl);
 
-      // When: 두 구현 모두 호출
-      const constantsResult = constantsModule.isValidMediaUrl(testUrl);
-      const mediaUtilResult = mediaUtilModule.isValidMediaUrl(testUrl);
-
-      // Then: 결과가 다를 수 있음 (일관성 문제)
-      expect(typeof constantsResult).toBe('boolean');
-      expect(typeof mediaUtilResult).toBe('boolean');
-
-      // 이상적으로는 같아야 하지만, 현재는 다를 수 있음
+      // Then: 일관된 결과 반환
+      expect(typeof result).toBe('boolean');
+      expect(result).toBe(true); // 유효한 Twitter 미디어 URL
     });
 
     it('정규식 패턴이 여러 곳에 중복 정의됨', async () => {
@@ -71,7 +67,7 @@ describe('미디어 URL 처리 함수 통합', () => {
   describe('🟢 GREEN: 통합된 미디어 URL 유틸리티', () => {
     it('단일 validateMediaUrl 함수로 모든 검증 처리', () => {
       // Given: 통합된 검증 함수 (추상적 구현)
-      const validateMediaUrl = (url: string, pattern?: RegExp) => {
+      const validateMediaUrl = (url: string, pattern?: RegExp): boolean => {
         if (!url || typeof url !== 'string') return false;
         const defaultPattern = /https:\/\/pbs\.twimg\.com\/media\/[A-Za-z0-9_-]+/;
         const targetPattern = pattern || defaultPattern;

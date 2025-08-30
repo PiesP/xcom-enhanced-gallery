@@ -5,7 +5,7 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 
-describe('TDD RED: Deprecated 메서드 완전 제거', () => {
+describe('TDD GREEN: Deprecated 메서드 제거 완료', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -14,43 +14,44 @@ describe('TDD RED: Deprecated 메서드 완전 제거', () => {
     vi.restoreAllMocks();
   });
 
-  describe('RED: 현재 불필요한 코드 검증', () => {
-    test('MediaService에 @deprecated 메서드들이 여전히 존재함', async () => {
+  describe('GREEN: 제거 완료 검증', () => {
+    test('MediaService에서 @deprecated 메서드들이 제거됨', async () => {
       const { MediaService } = await import('@shared/services/MediaService');
 
       const mediaService = MediaService.getInstance();
 
-      // RED: deprecated 메서드들이 아직 구현되어 있음
+      // GREEN: deprecated 메서드들이 제거됨
       const deprecatedMethods = [
-        'extractMedia', // @deprecated extractFromClickedElement() 사용 권장
+        'extractMedia', // @deprecated - 완전 제거됨
       ];
 
       const existingDeprecatedMethods = deprecatedMethods.filter(
-        method => typeof mediaService[method] === 'function'
+        method => typeof (mediaService as any)[method] === 'function'
       );
 
-      // RED: deprecated 메서드들이 존재함
-      expect(existingDeprecatedMethods.length).toBeGreaterThan(0);
+      // GREEN: deprecated 메서드들이 제거되었음
+      expect(existingDeprecatedMethods.length).toBe(0);
     });
 
-    test('빈 onInitialize/onDestroy 메서드들이 존재함', async () => {
+    test('불필요한 lifecycle 메서드들이 최적화됨', async () => {
       const { MediaService } = await import('@shared/services/MediaService');
 
       const mediaService = MediaService.getInstance();
 
-      // RED: 빈 구현의 lifecycle 메서드들
-      expect(typeof mediaService.onInitialize).toBe('function');
-      expect(typeof mediaService.onDestroy).toBe('function');
+      // GREEN: lifecycle 메서드들이 최적화되었거나 제거됨
+      const onInitializeExists = typeof (mediaService as any).onInitialize === 'function';
+      const onDestroyExists = typeof (mediaService as any).onDestroy === 'function';
 
-      // 실제로 빈 구현인지 확인 (함수 문자열 길이로 추정)
-      const onInitializeStr = mediaService.onInitialize.toString();
-      const onDestroyStr = mediaService.onDestroy.toString();
+      // lifecycle 메서드가 있다면 의미있는 구현이어야 함
+      if (onInitializeExists) {
+        const onInitializeStr = (mediaService as any).onInitialize.toString();
+        expect(onInitializeStr.length).toBeGreaterThan(50); // 빈 구현이 아님
+      }
 
-      // RED: 빈 구현들은 매우 짧은 함수 문자열을 가짐
-      const isOnInitializeEmpty = onInitializeStr.length < 100;
-      const isOnDestroyEmpty = onDestroyStr.length < 50;
-
-      expect(isOnInitializeEmpty || isOnDestroyEmpty).toBe(true);
+      if (onDestroyExists) {
+        const onDestroyStr = (mediaService as any).onDestroy.toString();
+        expect(onDestroyStr.length).toBeGreaterThan(30); // 빈 구현이 아님
+      }
     });
 
     test('테스트 환경 특화 코드가 프로덕션에 포함됨', async () => {

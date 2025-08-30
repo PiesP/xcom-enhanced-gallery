@@ -5,7 +5,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
+import { MediaValidationUtils } from '@shared/utils/media/MediaValidationUtils';
+import { MediaInfoBuilder } from '@shared/utils/media/MediaInfoBuilder';
 import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, FallbackExtractionStrategy } from '@shared/types/media.types';
 
@@ -84,14 +85,14 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       if (!img) continue;
 
       const src = img.getAttribute('src');
-      if (!src || !this.isValidMediaUrl(src)) continue;
+      if (!src || !MediaValidationUtils.isValidMediaUrl(src)) continue;
 
       // 클릭된 요소 확인
       if (img === clickedElement || clickedElement.contains(img) || img.contains(clickedElement)) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`img_${i}`, src, 'image', tweetInfo, {
+      const mediaInfo = MediaInfoBuilder.createMediaInfo(`img_${i}`, src, 'image', tweetInfo, {
         alt: img.getAttribute('alt') || `Image ${i + 1}`,
         fallbackSource: 'img-element',
       });
@@ -130,7 +131,7 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`video_${i}`, src, 'video', tweetInfo, {
+      const mediaInfo = MediaInfoBuilder.createMediaInfo(`video_${i}`, src, 'video', tweetInfo, {
         thumbnailUrl: video.getAttribute('poster') || src,
         alt: `Video ${i + 1}`,
         fallbackSource: 'video-element',
@@ -165,17 +166,17 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       const dataUrl = element.getAttribute('data-url');
       const url = dataSrc || dataBg || dataUrl;
 
-      if (!url || !this.isValidMediaUrl(url)) continue;
+      if (!url || !MediaValidationUtils.isValidMediaUrl(url)) continue;
 
       // 클릭된 요소 확인
       if (element === clickedElement || element.contains(clickedElement)) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(
+      const mediaInfo = MediaInfoBuilder.createMediaInfo(
         `data_${i}`,
         url,
-        this.detectMediaType(url),
+        MediaValidationUtils.detectMediaType(url),
         tweetInfo,
         {
           alt: `Data Media ${i + 1}`,
@@ -211,14 +212,14 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       if (!backgroundImage || backgroundImage === 'none') continue;
 
       const url = this.extractUrlFromBackgroundImage(backgroundImage);
-      if (!url || !this.isValidMediaUrl(url)) continue;
+      if (!url || !MediaValidationUtils.isValidMediaUrl(url)) continue;
 
       // 클릭된 요소 확인
       if (element === clickedElement || element.contains(clickedElement)) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`bg_${i}`, url, 'image', tweetInfo, {
+      const mediaInfo = MediaInfoBuilder.createMediaInfo(`bg_${i}`, url, 'image', tweetInfo, {
         alt: `Background Image ${i + 1}`,
         fallbackSource: 'background-image',
       });
@@ -227,53 +228,6 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
     }
 
     return { items, clickedIndex };
-  }
-
-  /**
-   * MediaInfo 객체 생성
-   */
-  private createMediaInfo(
-    id: string,
-    url: string,
-    type: 'image' | 'video',
-    tweetInfo?: TweetInfo,
-    options: {
-      thumbnailUrl?: string;
-      alt?: string;
-      fallbackSource?: string;
-    } = {}
-  ): MediaInfo {
-    return {
-      id,
-      url,
-      type,
-      filename: '',
-      tweetUsername: tweetInfo?.username || parseUsernameFast() || '',
-      tweetId: tweetInfo?.tweetId || '',
-      tweetUrl: tweetInfo?.tweetUrl || '',
-      originalUrl: url,
-      thumbnailUrl: options.thumbnailUrl || url,
-      alt: options.alt || `${type} item`,
-      metadata: {
-        fallbackSource: options.fallbackSource || this.name,
-      },
-    };
-  }
-
-  /**
-   * URL 검증
-   */
-  private isValidMediaUrl(url: string): boolean {
-    return url.startsWith('http') && !url.includes('profile_images');
-  }
-
-  /**
-   * 미디어 타입 감지
-   */
-  private detectMediaType(url: string): 'image' | 'video' {
-    return url.includes('video') || url.includes('.mp4') || url.includes('.webm')
-      ? 'video'
-      : 'image';
   }
 
   /**
