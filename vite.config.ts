@@ -15,11 +15,10 @@ import { defineConfig } from 'vite';
 // Critical CSS 집계 & 중복 제거 (surface glass 토큰 단일 선언 보장)
 import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/build/critical-css';
 
-// 번들 분석 플러그인
 /**
  * @returns {import('vite').Plugin}
  */
-function createBundleAnalysisPlugin(buildMode: any) {
+function createBundleAnalysisPlugin(buildMode: any): any {
   return {
     name: 'bundle-analysis',
     apply: 'build' as const,
@@ -94,7 +93,7 @@ function getBuildMode(mode: string): any {
     isDevelopment,
     isProduction: !isDevelopment,
     minify: !isDevelopment,
-    sourcemap: isDevelopment, // Boolean으로 변경
+    sourcemap: true, // 항상 소스맵 생성
     dropConsole: !isDevelopment,
   };
 }
@@ -162,6 +161,9 @@ function createUserscriptBundlerPlugin(buildMode: any) {
         const bundleObj = bundle; // rollup bundle object
         const outDir = options && 'dir' in options && options.dir ? options.dir : 'dist';
 
+        // 소스맵 파일이 생성될 때까지 잠시 대기
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // CSS와 JS 파일 찾기
         const cssFiles = Object.keys(bundleObj).filter(fileName => fileName.endsWith('.css'));
         const jsFiles = Object.keys(bundleObj).filter(fileName => fileName.endsWith('.js'));
@@ -170,6 +172,18 @@ function createUserscriptBundlerPlugin(buildMode: any) {
           console.warn('JS 파일을 찾을 수 없습니다.');
           return;
         }
+
+        // 소스맵 파일 확인 (파일시스템에서)
+        const checkForSourceMaps = () => {
+          return jsFiles
+            .map(jsFile => {
+              const mapPath = path.resolve(outDir, `${jsFile}.map`);
+              return fs.existsSync(mapPath) ? `${jsFile}.map` : null;
+            })
+            .filter(Boolean);
+        };
+
+        const mapFiles = checkForSourceMaps();
 
         // 엔트리 파일 찾기 (isEntry 속성 우선, fallback으로 첫 번째 파일)
         const entryFile = Object.entries(bundleObj).find(
@@ -263,6 +277,30 @@ function createUserscriptBundlerPlugin(buildMode: any) {
         const outputFilePath = path.resolve(outDir, outputFileName);
         fs.writeFileSync(outputFilePath, wrappedCode, 'utf8');
 
+        // 소스맵 파일 처리 (개발환경에서만)
+        if (buildMode.isDevelopment && mapFiles.length > 0) {
+          const mainMapFile = mapFiles.find(f => f === `${mainJsFile}.map`) || mapFiles[0];
+          if (mainMapFile) {
+            const sourceMapPath = path.resolve(outDir, mainMapFile);
+            const targetMapPath = path.resolve(outDir, `${outputFileName}.map`);
+
+            if (fs.existsSync(sourceMapPath)) {
+              // 소스맵 파일을 올바른 이름으로 복사
+              fs.copyFileSync(sourceMapPath, targetMapPath);
+
+              // 유저스크립트에 소스맵 참조 추가
+              const wrappedCodeWithMap =
+                wrappedCode + `\n//# sourceMappingURL=${outputFileName}.map`;
+              fs.writeFileSync(outputFilePath, wrappedCodeWithMap, 'utf8');
+
+              console.log(
+                `✅ ${outputFileName} 생성 완료 (CSS: ${allCss.length}자, 소스맵: ${targetMapPath})`
+              );
+              return; // 성공 메시지 중복 방지
+            }
+          }
+        }
+
         // 원본 JS 파일 제거
         if (mainJsFile !== outputFileName) {
           fs.unlinkSync(jsFilePath);
@@ -320,8 +358,8 @@ export default defineConfig(({ mode }: { mode: string }) => {
 
     build: {
       target: 'es2020',
-      outDir: 'dist',
-      emptyOutDir: true,
+      outDir: buildMode.isDevelopment ? 'dist/dev' : 'dist/prod',
+      emptyOutDir: false, // 개발/프로덕션 빌드가 서로 지우지 않도록
       cssCodeSplit: false,
       assetsInlineLimit: 0,
       reportCompressedSize: !buildMode.isDevelopment,
@@ -428,7 +466,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
         },
       }),
 
-      sourcemap: buildMode.sourcemap,
+      sourcemap: buildMode.isDevelopment ? true : false, // 개발환경에선 별도 파일, 프로덕션에선 비활성화
       chunkSizeWarningLimit: 2000,
     },
 

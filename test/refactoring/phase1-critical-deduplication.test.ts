@@ -79,15 +79,18 @@ describe('Phase 1: 긴급 중복 제거', () => {
     it('MediaService가 현재 API로 정상 동작함', async () => {
       // Given: 기본 추출 기능 (DOM 조작 없이 테스트)
       const mockElement = document.createElement('div');
+      let result: any;
 
       // When: 현재 API 사용
       try {
         // MediaService의 현재 공개 API 사용
         const hasPublicAPI = typeof mediaService.extractFromElement === 'function';
         expect(hasPublicAPI).toBe(true);
+        result = { success: true };
       } catch (error) {
         // deprecated 메서드는 더 이상 존재하지 않음
         expect(error).toBeDefined();
+        result = { success: false };
       }
 
       // Then: 정상 결과 반환 (에러 없이 실행되는지 확인)

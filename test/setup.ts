@@ -5,7 +5,6 @@
 
 import '@testing-library/jest-dom';
 import { beforeEach, afterEach } from 'vitest';
-import { setupDOMEnvironment } from './utils/mocks/dom-mocks';
 
 // 타입 에러 방지를 위한 임시 함수들
 const setupTestEnvironment = () => {};
@@ -184,11 +183,9 @@ function setupJsdomPolyfills() {
   }
 }
 
-// 기본적인 브라우저 환경 설정 강화: 중앙화된 DOM mock 초기화 사용
+// 기본적인 브라우저 환경 설정 강화: JSDOM 환경이므로 DOM mocking 대신 polyfill만 적용
 if (typeof globalThis !== 'undefined') {
-  // setupDOMEnvironment는 test/utils/mocks/dom-mocks.ts에서 전역 document/window를 안전하게 설정합니다
-  setupDOMEnvironment();
-  // 이후 polyfills를 적용하여 추가 호환성 보장
+  // JSDOM 환경에서는 실제 DOM을 사용하고 부족한 부분만 polyfill로 보강
   setupJsdomPolyfills();
 }
 

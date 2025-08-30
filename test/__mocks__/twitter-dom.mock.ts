@@ -1,8 +1,9 @@
 /**
-// @ts-nocheck
  * @fileoverview Twitter(X.com) DOM 구조 모의 구현
  * @description 실제 X.com 페이지의 HTML 구조를 모방하여 테스트 환경에서 사용
  */
+
+// @ts-nocheck
 
 import { vi } from 'vitest';
 import { isImageElement, getSrcIfPresent } from '../../src/shared/utils/dom-guards';

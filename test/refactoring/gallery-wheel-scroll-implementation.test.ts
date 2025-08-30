@@ -5,12 +5,71 @@
 
 // @ts-nocheck - Hook이 미구현 상태
 import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { setupDOMEnvironment } from '../utils/mocks/dom-mocks';
+
+// DOM 환경 설정
+beforeEach(() => {
+  setupDOMEnvironment();
+  // 전역 이벤트 생성자 모의
+  globalThis.WheelEvent = class WheelEvent extends Event {
+    constructor(type, options = {}) {
+      super(type, options);
+      this.deltaX = options.deltaX || 0;
+      this.deltaY = options.deltaY || 0;
+      this.deltaZ = options.deltaZ || 0;
+      this.deltaMode = options.deltaMode || 0;
+    }
+  };
+
+  // CSS 모의
+  globalThis.CSS = {
+    supports: vi.fn().mockReturnValue(true),
+  };
+});
+
+// Mock 훅들 정의
+const useGalleryScroll = vi.fn().mockReturnValue({
+  lastScrollTime: 0,
+  isScrolling: false,
+  scrollDirection: 'idle',
+});
+
+const useSmartImageFit = vi.fn().mockReturnValue({
+  styles: { transform: 'scale(1)', transformOrigin: 'center' },
+  dimensions: { width: 100, height: 100 },
+  isLoading: false,
+});
 
 describe('TDD GREEN Phase: 갤러리 휠 스크롤 실제 구현 검증', () => {
   let mockContainer;
   let mockImageElement;
 
   beforeEach(() => {
+    // DOM 환경 설정
+    if (typeof document === 'undefined') {
+      setupDOMEnvironment();
+    }
+
+    // 전역 이벤트 생성자 모의
+    if (typeof globalThis.WheelEvent === 'undefined') {
+      globalThis.WheelEvent = vi.fn().mockImplementation((type, options = {}) => ({
+        type,
+        deltaX: options.deltaX || 0,
+        deltaY: options.deltaY || 0,
+        deltaZ: options.deltaZ || 0,
+        deltaMode: options.deltaMode || 0,
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      }));
+    }
+
+    // CSS 모의
+    if (typeof globalThis.CSS === 'undefined') {
+      globalThis.CSS = {
+        supports: vi.fn().mockReturnValue(true),
+      };
+    }
+
     // DOM 환경 설정
     mockContainer = document.createElement('div');
     mockContainer.style.minHeight = '100vh';

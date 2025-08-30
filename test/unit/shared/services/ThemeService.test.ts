@@ -135,7 +135,9 @@ describe('ThemeService Extended', () => {
       themeService.onThemeChange(mockListener1);
       themeService.onThemeChange(mockListener2);
 
-      // 현재와 다른 테마로 변경하여 실제 변경 발생시킴
+      // 먼저 light로 설정
+      themeService.setTheme('light');
+      // 그 다음 dark로 변경하여 실제 변경 발생시킴
       themeService.setTheme('dark');
 
       expect(mockListener1).toHaveBeenCalledWith('dark', 'dark');
