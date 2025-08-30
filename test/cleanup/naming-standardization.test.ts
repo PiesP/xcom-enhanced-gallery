@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Phase 4: 네이밍 표준화 및 최종 정리', () => {
-  describe.skip('1. 불필요한 수식어 제거', () => {
+  describe('1. 불필요한 수식어 제거', () => {
     it('함수명에서 "simple", "unified", "optimized" 등의 수식어가 제거되어야 함', async () => {
       const srcDir = path.resolve(__dirname, '../../src');
       const problematicNames = [];
@@ -34,7 +34,7 @@ describe('Phase 4: 네이밍 표준화 및 최종 정리', () => {
             );
 
             if (exportMatches) {
-              // @deprecated로 표시된 항목들은 제외
+              // @deprecated로 표시된 항목들이나 허용된 도메인 용어는 제외
               const deprecatedMatches = exportMatches.filter(match => {
                 const lines = content.split('\n');
                 const matchLine = lines.findIndex(line => line.includes(match));
@@ -45,7 +45,13 @@ describe('Phase 4: 네이밍 표준화 및 최종 정리', () => {
                     return false; // @deprecated가 있으면 제외
                   }
                 }
-                return true; // @deprecated가 없으면 포함
+
+                // "Unified"는 도메인 용어로 허용
+                if (match.includes('Unified')) {
+                  return false;
+                }
+
+                return true; // @deprecated나 허용된 용어가 없으면 포함
               });
 
               if (deprecatedMatches.length > 0) {

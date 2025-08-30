@@ -18,9 +18,11 @@ describe('외부 라이브러리 통합 테스트', () => {
   });
 
   describe('Motion One 통합', () => {
-    it.skip('Motion One이 제거되었다 (CSS 애니메이션으로 대체)', async () => {
-      // Motion One 라이브러리가 제거되었으므로 테스트 스킵
-      expect(true).toBe(true);
+    it('Motion One이 제거되었다 (CSS 애니메이션으로 대체)', async () => {
+      const { AnimationService } = await import('@shared/services/AnimationService');
+
+      // CSS 애니메이션으로 대체됨을 확인
+      expect(AnimationService).toBeDefined();
     });
   });
 
@@ -80,9 +82,7 @@ describe('외부 라이브러리 통합 테스트', () => {
 
     it('라이브러리들이 기존 시스템과 호환되어야 한다', async () => {
       // 기존 vendor 시스템과의 호환성 확인
-      const { getPreact, getPreactSignals, getMotionOne } = await import(
-        '@shared/external/vendors'
-      );
+      const { getPreact, getPreactSignals } = await import('@shared/external/vendors');
 
       const preact = getPreact();
       const signals = getPreactSignals();
