@@ -28,6 +28,18 @@ export interface UseSmartImageFitResult {
     width: number;
     height: number;
   };
+  /** 이미지가 뷰포트보다 작은지 여부 */
+  isImageSmallerThanViewport: boolean;
+  /** 이미지 크기 정보 */
+  imageSize: {
+    width: number;
+    height: number;
+  };
+  /** 뷰포트 크기 정보 */
+  viewportSize: {
+    width: number;
+    height: number;
+  };
 }
 
 /**
@@ -58,6 +70,37 @@ export function useSmartImageFit({
     }
     return size;
   }, [watchViewportResize]);
+
+  // 이미지 크기 정보 추출
+  const imageSize = useMemo(() => {
+    if (!imageElement) {
+      return { width: 0, height: 0 };
+    }
+
+    if (imageElement instanceof HTMLImageElement) {
+      return {
+        width: imageElement.naturalWidth || 0,
+        height: imageElement.naturalHeight || 0,
+      };
+    } else if (imageElement instanceof HTMLVideoElement) {
+      return {
+        width: imageElement.videoWidth || 0,
+        height: imageElement.videoHeight || 0,
+      };
+    }
+
+    return { width: 0, height: 0 };
+  }, [imageElement]);
+
+  // 이미지가 뷰포트보다 작은지 판단
+  const isImageSmallerThanViewport = useMemo(() => {
+    if (!imageSize.width || !imageSize.height) {
+      return false;
+    }
+
+    // 이미지의 실제 크기가 뷰포트보다 작은지 확인
+    return imageSize.width <= viewportSize.width && imageSize.height <= viewportSize.height;
+  }, [imageSize, viewportSize]);
 
   // 이미지 크기 계산
   const calculatedFit = useMemo(() => {
@@ -202,6 +245,9 @@ export function useSmartImageFit({
       width: calculatedFit.width,
       height: calculatedFit.height,
     },
+    isImageSmallerThanViewport,
+    imageSize,
+    viewportSize,
   };
 }
 

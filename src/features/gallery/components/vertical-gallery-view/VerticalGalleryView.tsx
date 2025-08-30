@@ -35,6 +35,7 @@ import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
+import { useSmartImageFit } from '../../hooks/useSmartImageFit';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
@@ -129,12 +130,38 @@ function VerticalGalleryViewCore({
   // 강제 렌더링 상태 관리 (더 이상 사용하지 않음)
   const [forceVisibleItems] = useState<Set<number>>(new Set());
 
+  // 현재 이미지 요소 추적을 위한 ref
+  const currentImageElementRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null);
+
+  // 현재 이미지 요소 업데이트 (VerticalImageItem에서 호출됨)
+  const updateCurrentImageElement = useCallback(
+    (element: HTMLImageElement | HTMLVideoElement | null) => {
+      currentImageElementRef.current = element;
+    },
+    []
+  );
+
   // 포커스된 인덱스와 현재 인덱스 동기화 - signal 방식
   useEffect(() => {
     focusedIndexSignal.value = currentIndex;
     // 인덱스가 변경되면 자동 스크롤 상태 초기화
     lastAutoScrolledIndexSignal.value = -1;
-  }, [currentIndex, focusedIndexSignal, lastAutoScrolledIndexSignal]);
+
+    // 현재 활성 이미지 요소 업데이트
+    if (containerRef.current) {
+      const itemsList = containerRef.current.querySelector('[data-xeg-role="items-list"]');
+      if (itemsList) {
+        const currentItem = itemsList.children[currentIndex] as HTMLElement;
+        if (currentItem) {
+          const imageElement = currentItem.querySelector('img, video') as
+            | HTMLImageElement
+            | HTMLVideoElement
+            | null;
+          updateCurrentImageElement(imageElement);
+        }
+      }
+    }
+  }, [currentIndex, focusedIndexSignal, lastAutoScrolledIndexSignal, updateCurrentImageElement]);
 
   // 메모이제이션 최적화
   const memoizedMediaItems = useMemo(() => {
@@ -208,6 +235,13 @@ function VerticalGalleryViewCore({
 
   const [imageFitMode, updateImageFitMode] = useState<ImageFitMode>(() => getInitialFitMode());
 
+  // 현재 이미지의 스마트 핏 정보 계산
+  const smartImageFit = useSmartImageFit({
+    imageElement: currentImageElementRef.current,
+    fitMode: imageFitMode,
+    watchViewportResize: true,
+  });
+
   // UI 상태와 독립적으로 스크롤 가용성 보장
   useEffect(() => {
     if (containerRef.current) {
@@ -215,14 +249,39 @@ function VerticalGalleryViewCore({
     }
   }, []); // showToolbar 의존성 제거 - 순수 CSS로 관리됨
 
-  // 개선된 갤러리 스크롤 처리 - UI 상태와 독립적으로 동작
+  // 개선된 갤러리 스크롤 처리 - 조건적 wheel 이벤트 처리 포함
   useGalleryScroll({
     container: containerRef.current,
     onScroll: delta => {
-      // 스크롤이 발생할 때마다 호출되는 콜백
-      logger.debug('VerticalGalleryView: 스크롤 감지', { delta, timestamp: Date.now() });
-      // 순수 CSS 호버 시스템으로 인해 별도의 UI 타이머 재설정 불필요
+      // 큰 이미지에서의 스크롤 처리
+      logger.debug('VerticalGalleryView: 큰 이미지 스크롤 감지', {
+        delta,
+        imageSize: smartImageFit.imageSize,
+        viewportSize: smartImageFit.viewportSize,
+        isSmallImage: smartImageFit.isImageSmallerThanViewport,
+        timestamp: Date.now(),
+      });
     },
+    onImageNavigation: direction => {
+      // 작은 이미지에서의 wheel 네비게이션 처리
+      const nextIndex =
+        direction === 'next'
+          ? Math.min(currentIndex + 1, mediaItems.length - 1)
+          : Math.max(currentIndex - 1, 0);
+
+      if (nextIndex !== currentIndex) {
+        logger.debug('VerticalGalleryView: 휠 네비게이션', {
+          direction,
+          currentIndex,
+          nextIndex,
+          imageSize: smartImageFit.imageSize,
+          isSmallImage: smartImageFit.isImageSmallerThanViewport,
+        });
+        navigateToItem(nextIndex);
+      }
+    },
+    imageSize: smartImageFit.imageSize,
+    viewportSize: smartImageFit.viewportSize,
     enabled: isVisible,
     blockTwitterScroll: true,
   });
@@ -495,6 +554,13 @@ function VerticalGalleryViewCore({
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'
+      // 루트에 전체 높이와 스크롤 보장, 내부 레이아웃이 늘어나도록 flex 적용
+      style={{
+        minHeight: '100vh',
+        overflowY: 'scroll',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
       {/* 툴바 호버 트리거 영역 (브라우저 상단 100px) */}
       <div className={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
@@ -519,8 +585,24 @@ function VerticalGalleryViewCore({
       </div>
 
       {/* 콘텐츠 영역 */}
-      <div ref={contentRef} className={styles.content} onClick={handleContentClick}>
-        <div className={styles.itemsList} data-xeg-role='items-list'>
+      <div
+        ref={contentRef}
+        className={styles.content}
+        onClick={handleContentClick}
+        // 콘텐츠가 루트의 남는 공간을 채우도록 flex-grow 적용 및 기본 패딩 추가
+        style={{
+          flex: 1,
+          padding: '16px 0',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div
+          className={styles.itemsList}
+          data-xeg-role='items-list'
+          // 작은 이미지가 있을 때 하단 여백으로 시각적 빈 공간 완화 및 리스트가 늘어나도록 설정
+          style={{ flexGrow: 1, paddingBottom: '48px' }}
+        >
           {itemsToRender.map((item: MediaItem, index: number) => {
             // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일
             const actualIndex = index;

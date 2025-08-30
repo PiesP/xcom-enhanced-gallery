@@ -27,6 +27,12 @@ interface UseGalleryScrollOptions {
   enableScrollDirection?: boolean;
   /** 스크롤 방향 변경 콜백 */
   onScrollDirectionChange?: (direction: 'up' | 'down' | 'idle') => void;
+  /** 이미지 크기 정보 (조건적 처리용) */
+  imageSize?: { width: number; height: number };
+  /** 뷰포트 크기 정보 (조건적 처리용) */
+  viewportSize?: { width: number; height: number };
+  /** 이미지 네비게이션 콜백 (작은 이미지일 때) */
+  onImageNavigation?: (direction: 'next' | 'prev') => void;
 }
 
 interface UseGalleryScrollReturn {
@@ -57,6 +63,9 @@ export function useGalleryScroll({
   blockTwitterScroll = true,
   enableScrollDirection = false,
   onScrollDirectionChange,
+  imageSize,
+  viewportSize,
+  onImageNavigation,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
   const eventManagerRef = useRef(new EventManager());
   const isScrollingRef = useRef(false);
@@ -131,6 +140,14 @@ export function useGalleryScroll({
     [blockTwitterScroll]
   );
 
+  // 이미지가 뷰포트보다 작은지 판단
+  const isImageSmallerThanViewport = useCallback(() => {
+    if (!imageSize || !viewportSize) {
+      return false;
+    }
+    return imageSize.width <= viewportSize.width && imageSize.height <= viewportSize.height;
+  }, [imageSize, viewportSize]);
+
   // 갤러리 휠 이벤트 처리
   const handleGalleryWheel = useCallback(
     (event: WheelEvent) => {
@@ -140,22 +157,47 @@ export function useGalleryScroll({
         return;
       }
 
+      // 갤러리가 열려있으면 문서 휠 이벤트가 페이지로 전파되는 것을 차단
+      // (기존 로직이 옵션에 따라 막는 부분보다 우선 처리)
+      event.preventDefault();
+      event.stopPropagation();
+
       const delta = event.deltaY;
       updateScrollState(true);
 
       // 스크롤 방향 감지 (옵션)
       updateScrollDirection(delta);
 
-      // 스크롤 콜백 실행
-      if (onScroll) {
-        onScroll(delta);
+      // 이미지 크기에 따른 조건적 처리
+      const isSmallImage = isImageSmallerThanViewport();
+
+      if (isSmallImage && onImageNavigation) {
+        // 작은 이미지: wheel 이벤트로 이미지 네비게이션
+        const direction = delta > 0 ? 'next' : 'prev';
+        onImageNavigation(direction);
+
+        logger.debug('useGalleryScroll: 작은 이미지 - 네비게이션 처리', {
+          direction,
+          delta,
+          imageSize,
+          viewportSize,
+        });
+      } else {
+        // 큰 이미지: 기존 스크롤 콜백 실행
+        if (onScroll) {
+          onScroll(delta);
+        }
+
+        logger.debug('useGalleryScroll: 큰 이미지 - 스크롤 처리', {
+          delta,
+          imageSize,
+          viewportSize,
+        });
       }
 
-      // 트위터 페이지로의 이벤트 전파 방지
-      if (blockTwitterScroll) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      // 모든 경우에 트위터 페이지로의 이벤트 전파 방지
+      // 앞단에서 이미 전파 차단을 했으므로 중복 호출 불필요하지만,
+      // 트위터 컨테이너 관련 추가 처리(리스너 등록 등)는 기존 로직으로 유지됨.
 
       // 스크롤 종료 감지 타이머 재설정
       handleScrollEnd();
@@ -163,12 +205,23 @@ export function useGalleryScroll({
       logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
         delta,
         isGalleryOpen: galleryState.value.isOpen,
+        isSmallImage,
         targetElement: (event.target as HTMLElement)?.tagName || 'unknown',
         targetClass: (event.target as HTMLElement)?.className || 'none',
         timestamp: Date.now(),
       });
     },
-    [onScroll, blockTwitterScroll, updateScrollState, handleScrollEnd, updateScrollDirection]
+    [
+      onScroll,
+      blockTwitterScroll,
+      updateScrollState,
+      handleScrollEnd,
+      updateScrollDirection,
+      isImageSmallerThanViewport,
+      onImageNavigation,
+      imageSize,
+      viewportSize,
+    ]
   );
 
   // 이벤트 리스너 설정

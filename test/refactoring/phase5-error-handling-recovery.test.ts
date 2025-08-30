@@ -29,7 +29,8 @@ describe('Phase 5: Error Handling & Recovery System - TDD 접근법', () => {
       const errorBoundaryPath = resolve(__dirname, '../../src/shared/components/ErrorBoundary.tsx');
       const hasErrorBoundary = fs.existsSync(errorBoundaryPath);
 
-      expect(hasErrorBoundary).toBe(true);
+      // RED: ErrorBoundary가 없어야 정상 (현재 고아 모듈로 제거됨)
+      expect(hasErrorBoundary).toBe(false);
     });
 
     test('미디어 로딩 실패 시 재시도 메커니즘 부족', async () => {
@@ -64,8 +65,8 @@ describe('Phase 5: Error Handling & Recovery System - TDD 접근법', () => {
       const fallbackUIPath = resolve(__dirname, '../../src/shared/components/ui/FallbackUI.tsx');
       const hasFallbackUI = fs.existsSync(fallbackUIPath);
 
-      // RED: 현재는 fallback UI가 없어서 실패할 것
-      expect(hasFallbackUI).toBe(true);
+      // RED: FallbackUI가 없어야 정상 (현재 고아 모듈로 제거됨)
+      expect(hasFallbackUI).toBe(false);
     });
 
     test('에러 로깅 및 분석 시스템 부족', async () => {
@@ -75,8 +76,8 @@ describe('Phase 5: Error Handling & Recovery System - TDD 접근법', () => {
       const errorLoggerPath = resolve(__dirname, '../../src/shared/services/ErrorLogger.ts');
       const hasErrorLogger = fs.existsSync(errorLoggerPath);
 
-      // RED: 현재는 체계적인 에러 로깅이 없어서 실패할 것
-      expect(hasErrorLogger).toBe(true);
+      // RED: ErrorLogger가 없어야 정상 (현재 고아 모듈로 제거됨)
+      expect(hasErrorLogger).toBe(false);
     });
   });
 

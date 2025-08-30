@@ -229,6 +229,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../hooks/useSmartImageFit",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/hooks/useSmartImageFit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./hooks/useGalleryCleanup",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -341,6 +358,17 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/hooks/useSmartImageFit.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/features/gallery/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
       "dependencies": [],
       "dependents": [
@@ -419,16 +447,6 @@
       "dependencies": [],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/hooks/useSmartImageFit.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-        "src/features/gallery/hooks/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1198,19 +1216,6 @@
       ],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/components/ErrorBoundary.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "src/shared/components/base/BaseComponentProps.ts",
@@ -2350,19 +2355,6 @@
       ],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/FallbackUI.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
@@ -5912,19 +5904,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/ErrorLogger.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/services/EventManager.ts",
       "dependencies": [],
       "dependents": [
@@ -7110,35 +7089,8 @@
       },
       {
         "type": "module",
-        "from": "src/shared/components/ErrorBoundary.tsx",
-        "to": "src/shared/components/ErrorBoundary.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/ui/FallbackUI.tsx",
-        "to": "src/shared/components/ui/FallbackUI.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "src/shared/hooks/useUnifiedState.ts",
         "to": "src/shared/hooks/useUnifiedState.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/services/ErrorLogger.ts",
-        "to": "src/shared/services/ErrorLogger.ts",
         "rule": {
           "severity": "info",
           "name": "no-orphans"
@@ -7210,10 +7162,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 12,
+    "info": 9,
     "ignore": 0,
-    "totalCruised": 200,
-    "totalDependenciesCruised": 294,
+    "totalCruised": 197,
+    "totalDependenciesCruised": 295,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
