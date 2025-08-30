@@ -168,9 +168,9 @@ export class CoreService {
   // ====================================
 
   /**
-   * 진단 정보 반환 (동기적 메서드)
+   * 진단 정보 반환 (통합된 진단 메서드)
    */
-  public getDiagnostics(): {
+  public getDiagnostics(options?: { log?: boolean }): {
     registeredServices: number;
     activeInstances: number;
     services: string[];
@@ -183,58 +183,54 @@ export class CoreService {
       instances[key] = this.services.get(key) !== null;
     }
 
-    return {
+    const diagnostics = {
       registeredServices: services.length,
       activeInstances: services.filter(key => instances[key]).length,
       services,
       instances,
     };
+
+    // 로깅 옵션이 활성화된 경우 진단 정보 출력
+    if (options?.log) {
+      try {
+        logger.info('🔍 ServiceManager 진단 시작');
+
+        logger.info('📊 진단 결과:', {
+          registeredCount: diagnostics.registeredServices,
+          activeInstances: diagnostics.activeInstances,
+          services: diagnostics.services,
+          instances: diagnostics.instances,
+        });
+
+        logger.debug('🗂️ 등록된 서비스:', diagnostics.services);
+        logger.info('✅ CoreService 진단 완료');
+      } catch (error) {
+        logger.error('❌ CoreService 진단 실패:', error);
+      }
+    }
+
+    return diagnostics;
   }
 
   /**
-   * ServiceManager 상태 진단
+   * 비동기 진단 (호환성을 위한 래퍼)
+   * @deprecated getDiagnostics({ log: true })를 사용하세요
    */
   public async diagnoseServiceManager(): Promise<void> {
-    try {
-      logger.info('🔍 ServiceManager 진단 시작');
-
-      // 등록 상태 확인 - UnifiedServiceDiagnostics로 마이그레이션
-      const services = Array.from(this.services.keys());
-      const instances: Record<string, boolean> = {};
-
-      for (const key of services) {
-        instances[key] = this.services.get(key) !== null;
-      }
-
-      const diagnostics = {
-        registeredServices: services.length,
-        activeInstances: services.filter(key => instances[key]).length,
-        services,
-        instances,
-      };
-
-      logger.info('📊 진단 결과:', {
-        registeredCount: diagnostics.registeredServices,
-        activeInstances: diagnostics.activeInstances,
-        services: diagnostics.services,
-        instances: diagnostics.instances,
-      });
-
-      // 등록된 서비스 목록
-      logger.debug('🗂️ 등록된 서비스:', diagnostics.services);
-
-      logger.info('✅ CoreService 진단 완료');
-    } catch (error) {
-      logger.error('❌ CoreService 진단 실패:', error);
-    }
+    logger.warn(
+      '[CoreService] diagnoseServiceManager()는 deprecated입니다. getDiagnostics({ log: true })를 사용하세요.'
+    );
+    this.getDiagnostics({ log: true });
   }
 
   /**
    * 서비스 상태 진단 (정적 메서드)
+   * @deprecated CoreService.getInstance().getDiagnostics({ log: true })를 사용하세요
    */
   public static async diagnoseServiceManager(): Promise<void> {
+    logger.warn('[CoreService] static diagnoseServiceManager()는 deprecated입니다.');
     const instance = CoreService.getInstance();
-    return instance.diagnoseServiceManager();
+    instance.getDiagnostics({ log: true });
   }
 
   /**

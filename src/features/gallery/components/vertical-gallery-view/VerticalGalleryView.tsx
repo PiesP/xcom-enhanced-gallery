@@ -554,13 +554,6 @@ function VerticalGalleryViewCore({
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'
-      // 루트에 전체 높이와 스크롤 보장, 내부 레이아웃이 늘어나도록 flex 적용
-      style={{
-        minHeight: '100vh',
-        overflowY: 'scroll',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
     >
       {/* 툴바 호버 트리거 영역 (브라우저 상단 100px) */}
       <div className={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
@@ -585,23 +578,11 @@ function VerticalGalleryViewCore({
       </div>
 
       {/* 콘텐츠 영역 */}
-      <div
-        ref={contentRef}
-        className={styles.content}
-        onClick={handleContentClick}
-        // 콘텐츠가 루트의 남는 공간을 채우도록 flex-grow 적용 및 기본 패딩 추가
-        style={{
-          flex: 1,
-          padding: '16px 0',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <div ref={contentRef} className={styles.content} onClick={handleContentClick}>
         <div
           className={styles.itemsList}
           data-xeg-role='items-list'
-          // 작은 이미지가 있을 때 하단 여백으로 시각적 빈 공간 완화 및 리스트가 늘어나도록 설정
-          style={{ flexGrow: 1, paddingBottom: '48px' }}
+          // 스타일은 VerticalGalleryView.module.css에 정의됨
         >
           {itemsToRender.map((item: MediaItem, index: number) => {
             // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일

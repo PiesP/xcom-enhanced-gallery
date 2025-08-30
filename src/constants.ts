@@ -293,14 +293,26 @@ export function isValidGalleryUrl(url: string): boolean {
 }
 
 /**
- * 미디어 ID 추출
+ * 미디어 ID 추출 - 통합된 추출 로직
+ * TDD Phase 1.2: 여러 패턴을 지원하는 통합 함수
  */
 export function extractMediaId(url: string): string | null {
-  const match = url.match(URL_PATTERNS.MEDIA_ID);
-  if (match?.[1]) return match[1];
+  if (!url || typeof url !== 'string') {
+    return null;
+  }
 
-  const videoMatch = url.match(URL_PATTERNS.VIDEO_THUMB_ID);
-  if (videoMatch?.[3]) return videoMatch[3];
+  // 패턴 1: 일반 미디어 URL - /media/ABC123
+  const mediaMatch = url.match(/\/media\/([A-Za-z0-9_-]+)/);
+  if (mediaMatch?.[1]) {
+    return mediaMatch[1];
+  }
+
+  // 패턴 2: 비디오 썸네일 URL - /ext_tw_video_thumb/123/pu/img/DEF456
+  // 여기서 DEF456이 실제 미디어 ID
+  const videoMatch = url.match(/\/ext_tw_video_thumb\/(\d+)\/pu\/img\/([A-Za-z0-9_-]+)/);
+  if (videoMatch?.[2]) {
+    return videoMatch[2]; // 두 번째 캡처 그룹이 실제 ID
+  }
 
   return null;
 }

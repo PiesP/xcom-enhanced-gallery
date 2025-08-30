@@ -763,6 +763,19 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/hooks/useGalleryScrollEnhanced.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/features/gallery/index.ts",
       "dependencies": [
         {
@@ -7160,6 +7173,15 @@
       },
       {
         "type": "module",
+        "from": "src/features/gallery/hooks/useGalleryScrollEnhanced.ts",
+        "to": "src/features/gallery/hooks/useGalleryScrollEnhanced.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/hooks/useUnifiedState.ts",
         "to": "src/shared/hooks/useUnifiedState.ts",
         "rule": {
@@ -7233,9 +7255,9 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 9,
+    "info": 10,
     "ignore": 0,
-    "totalCruised": 199,
+    "totalCruised": 200,
     "totalDependenciesCruised": 298,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

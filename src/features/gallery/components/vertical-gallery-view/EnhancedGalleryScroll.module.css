@@ -1,0 +1,211 @@
+/**
+ * Enhanced Gallery Scroll Prevention Styles
+ * @description wheel 이벤트 누출 방지를 위한 개선된 CSS
+ */
+
+/* 갤러리 컨테이너 - wheel 이벤트 누출 방지 강화 */
+.galleryContainer {
+  /* 기본 레이아웃 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--xeg-gallery-z-index, 10000);
+
+  /* wheel 이벤트 차단을 위한 필수 스타일 */
+  min-height: 100vh;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+
+  /* 배경 및 시각적 요소 */
+  background: var(--xeg-color-overlay-strong);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  /* 성능 최적화 */
+  transform: translateZ(0);
+  will-change: opacity, transform;
+  contain: layout style paint;
+
+  /* 이벤트 처리 */
+  pointer-events: auto;
+  cursor: default;
+
+  /* 스크롤 최적화 */
+  scroll-behavior: smooth;
+
+  /* 컨테이너 쿼리 활성화 */
+  container-type: size;
+  container-name: gallery-container;
+}
+
+/* 아이템 리스트 - 스크롤 체이닝 방지 */
+.itemsList {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+
+  /* 성능 최적화 */
+  contain: layout style paint;
+  transform: translateZ(0);
+  will-change: scroll-position;
+  content-visibility: auto;
+
+  /* 스크롤바 스타일링 */
+  scrollbar-gutter: stable;
+
+  /* 스크롤 스냅 (선택적) */
+  scroll-snap-type: y proximity;
+
+  /* 이벤트 처리 */
+  pointer-events: auto;
+
+  /* 터치 액션 최적화 */
+  touch-action: pan-y;
+
+  /* 컨테이너 쿼리 */
+  container-type: size;
+  container-name: items-list;
+}
+
+/* CSS overscroll-behavior 지원하는 브라우저 */
+@supports (overscroll-behavior: contain) {
+  .itemsList {
+    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
+  }
+
+  .galleryContainer {
+    overscroll-behavior: contain;
+  }
+}
+
+/* overscroll-behavior 미지원 브라우저를 위한 대안 */
+@supports not (overscroll-behavior: contain) {
+  .itemsList {
+    /* JavaScript 대안으로 스크롤 체이닝 방지가 적용됨 */
+    scroll-behavior: auto;
+  }
+
+  .galleryContainer {
+    /* 더 강력한 이벤트 차단 */
+    overscroll-behavior: auto;
+  }
+}
+
+/* 작은 이미지 컨테이너 - 추가 여백으로 wheel 이벤트 차단 강화 */
+.galleryContainer.smallImageMode {
+  /* 작은 이미지일 때도 충분한 스크롤 영역 확보 */
+  padding-bottom: 50vh;
+}
+
+.galleryContainer.smallImageMode .itemsList {
+  /* 작은 이미지 모드에서 더 확실한 스크롤 영역 */
+  min-height: calc(100vh + 50vh);
+  padding-bottom: 50vh;
+}
+
+/* 브라우저별 스크롤바 스타일 */
+.itemsList::-webkit-scrollbar {
+  width: var(--xeg-scrollbar-width, 8px);
+}
+
+.itemsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.itemsList::-webkit-scrollbar-thumb {
+  background: var(--xeg-neutral-300);
+  border-radius: var(--xeg-scrollbar-border-radius, 4px);
+  transition: background-color 0.2s ease;
+}
+
+.itemsList::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-neutral-400);
+}
+
+/* Firefox 스크롤바 스타일 */
+.itemsList {
+  scrollbar-width: thin;
+  scrollbar-color: var(--xeg-neutral-300) transparent;
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .galleryContainer {
+    background: Canvas;
+    color: CanvasText;
+    border: 2px solid CanvasText;
+  }
+
+  .itemsList::-webkit-scrollbar-thumb {
+    background: CanvasText;
+  }
+}
+
+/* 모션 감소 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .galleryContainer {
+    scroll-behavior: auto;
+  }
+
+  .itemsList {
+    scroll-behavior: auto;
+    will-change: auto;
+    transform: none;
+  }
+}
+
+/* 터치 디바이스 최적화 */
+@media (pointer: coarse) {
+  .itemsList {
+    /* 터치 스크롤 최적화 */
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .galleryContainer {
+    /* 터치에서 더 확실한 이벤트 차단 */
+    touch-action: none;
+  }
+}
+
+/* 데스크톱 최적화 */
+@media (pointer: fine) {
+  .itemsList:hover::-webkit-scrollbar-thumb {
+    background: var(--xeg-neutral-400);
+  }
+}
+
+/* 컨테이너 쿼리 기반 반응형 디자인 */
+@container gallery-container (max-width: 768px) {
+  .itemsList {
+    padding: var(--xeg-spacing-mobile, 16px);
+    gap: var(--xeg-spacing-mobile, 16px);
+  }
+}
+
+@container gallery-container (max-width: 480px) {
+  .itemsList {
+    padding: var(--xeg-spacing-compact, 12px);
+    gap: var(--xeg-spacing-compact, 12px);
+  }
+}
+
+/* 백업을 위한 미디어 쿼리 (컨테이너 쿼리 미지원 브라우저) */
+@media (max-width: 768px) {
+  .itemsList {
+    padding: var(--xeg-spacing-mobile, 16px);
+    gap: var(--xeg-spacing-mobile, 16px);
+  }
+}
+
+@media (max-width: 480px) {
+  .itemsList {
+    padding: var(--xeg-spacing-compact, 12px);
+    gap: var(--xeg-spacing-compact, 12px);
+  }
+}
