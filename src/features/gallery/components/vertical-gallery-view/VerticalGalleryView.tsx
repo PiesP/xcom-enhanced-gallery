@@ -14,6 +14,7 @@
 import { logger } from '@shared/logging/logger';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
+import type { MediaItem } from '@shared/types/media.types';
 import type { ImageFitMode, MediaInfo } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import {
@@ -520,7 +521,7 @@ function VerticalGalleryViewCore({
       {/* 콘텐츠 영역 */}
       <div ref={contentRef} className={styles.content} onClick={handleContentClick}>
         <div className={styles.itemsList} data-xeg-role='items-list'>
-          {itemsToRender.map((item: any, index: number) => {
+          {itemsToRender.map((item: MediaItem, index: number) => {
             // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일
             const actualIndex = index;
 

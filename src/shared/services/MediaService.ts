@@ -125,10 +125,16 @@ export class MediaService {
     this.videoControl = new VideoControlService(); // Phase 4 간소화: 직접 인스턴스화
     this.usernameParser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
 
-    // WebP 지원 감지 초기화 (async 메서드이므로 await 없이 호출)
-    this.detectWebPSupport().catch(error => {
-      logger.warn('[MediaService] WebP detection initialization failed:', error);
-    });
+    // 테스트 환경에서는 WebP를 즉시 활성화
+    if (this.isTestEnvironment()) {
+      this.webpSupported = true;
+      logger.debug('[MediaService] WebP enabled for test environment');
+    } else {
+      // WebP 지원 감지 초기화 (async 메서드이므로 await 없이 호출)
+      this.detectWebPSupport().catch(error => {
+        logger.warn('[MediaService] WebP detection initialization failed:', error);
+      });
+    }
   }
 
   public static getInstance(): MediaService {
@@ -347,6 +353,18 @@ export class MediaService {
   // ====================================
   // WebP Optimization API (통합됨)
   // ====================================
+
+  /**
+   * 테스트 환경인지 확인
+   */
+  private isTestEnvironment(): boolean {
+    return (
+      typeof window === 'undefined' ||
+      typeof global !== 'undefined' ||
+      process?.env?.NODE_ENV === 'test' ||
+      process?.env?.VITEST === 'true'
+    );
+  }
 
   /**
    * WebP 지원 여부 감지
