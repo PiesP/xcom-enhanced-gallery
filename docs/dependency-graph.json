@@ -3386,6 +3386,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/hooks/useUnifiedState.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/index.ts",
       "dependencies": [
         {
@@ -5921,6 +5934,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/StateManager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/UnifiedEventManager.ts",
       "dependencies": [],
       "dependents": [],
@@ -6660,6 +6686,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/analysis/DependencyAnalyzer.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/utils/animations.ts",
       "dependencies": [
         {
@@ -6692,6 +6731,45 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/shared/utils/backup/BackupManager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/utils/cleanup/CleanupValidator.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/utils/cleanup/OrphanFileCleanup.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/utils/core/index.ts",
@@ -7050,6 +7128,15 @@
       },
       {
         "type": "module",
+        "from": "src/shared/hooks/useUnifiedState.ts",
+        "to": "src/shared/hooks/useUnifiedState.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/services/ErrorLogger.ts",
         "to": "src/shared/services/ErrorLogger.ts",
         "rule": {
@@ -7059,8 +7146,53 @@
       },
       {
         "type": "module",
+        "from": "src/shared/services/StateManager.ts",
+        "to": "src/shared/services/StateManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/services/UnifiedEventManager.ts",
         "to": "src/shared/services/UnifiedEventManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/analysis/DependencyAnalyzer.ts",
+        "to": "src/shared/utils/analysis/DependencyAnalyzer.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/backup/BackupManager.ts",
+        "to": "src/shared/utils/backup/BackupManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/cleanup/CleanupValidator.ts",
+        "to": "src/shared/utils/cleanup/CleanupValidator.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/cleanup/OrphanFileCleanup.ts",
+        "to": "src/shared/utils/cleanup/OrphanFileCleanup.ts",
         "rule": {
           "severity": "info",
           "name": "no-orphans"
@@ -7078,9 +7210,9 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 6,
+    "info": 12,
     "ignore": 0,
-    "totalCruised": 194,
+    "totalCruised": 200,
     "totalDependenciesCruised": 294,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
