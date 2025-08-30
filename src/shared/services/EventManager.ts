@@ -224,6 +224,24 @@ export class EventManager {
   }
 
   /**
+   * Phase 2.1: DOM 이벤트 리스너 제거 메서드 추가
+   */
+  public removeEventListener<K extends keyof HTMLElementEventMap>(
+    element: HTMLElement | Document | Window | null,
+    eventType: K,
+    handler: (event: HTMLElementEventMap[K]) => void,
+    options?: EventListenerOptions
+  ): EventManager {
+    if (this.isDestroyed) {
+      logger.warn('EventManager가 파괴된 상태에서 removeEventListener 호출');
+      return this;
+    }
+
+    this.domManager.removeEventListener(element, eventType, handler, options);
+    return this;
+  }
+
+  /**
    * 커스텀 이벤트 리스너 등록
    */
   public addCustomEventListener(
@@ -405,6 +423,21 @@ export class EventManager {
       galleryEvents: this.galleryManager.getGalleryStatus(),
       totalListeners: this.getListenerCount(),
       isDestroyed: this.getIsDestroyed(),
+    };
+  }
+
+  /**
+   * Phase 2.1: 성능 메트릭 제공
+   */
+  public getPerformanceMetrics(): {
+    usesMutationObserver: boolean;
+    eventListenerCount: number;
+    hasActiveObserver: boolean;
+  } {
+    return {
+      usesMutationObserver: this.mutationObserver !== null,
+      eventListenerCount: this.domManager.getListenerCount(),
+      hasActiveObserver: this.mutationObserver !== null,
     };
   }
 

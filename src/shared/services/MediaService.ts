@@ -112,8 +112,8 @@ export class MediaService {
   private prefetchCacheHits = 0;
   private prefetchCacheMisses = 0;
 
-  // 대량 다운로드 관련 상태 (BulkDownloadService 통합)
-  private readonly currentAbortController?: AbortController;
+  // 대량 다운로드 관련 상태 (BulkDownloadService로 이동됨)
+  // private readonly currentAbortController?: AbortController;
 
   constructor() {
     // Phase 7: MediaExtractionOrchestrator 통합
@@ -308,10 +308,11 @@ export class MediaService {
   }
 
   /**
-   * 미디어 다운로드 (단순화된 인터페이스)
+   * 미디어 다운로드 (단순화된 인터페이스) - 호환성 유지
+   * @deprecated getDownloadService().downloadSingle() 사용 권장
    */
   async downloadMedia(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    return this.downloadSingle(media);
+    return this.getDownloadService().downloadSingle(media);
   }
 
   // ====================================
@@ -688,50 +689,20 @@ export class MediaService {
   }
 
   // ====================================
-  // 대량 다운로드 기능 (BulkDownloadService 통합)
+  // 대량 다운로드 서비스 접근 (중복 제거됨)
   // ====================================
 
   /**
-   * 단일 미디어 다운로드 - BulkDownloadService로 위임
+   * 다운로드 서비스 인스턴스 반환 (권장 방법)
+   * @description 직접 BulkDownloadService 인스턴스에 접근
    */
-  async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    return this.bulkDownloadService.downloadSingle(media);
+  getDownloadService(): BulkDownloadService {
+    return this.bulkDownloadService;
   }
 
-  /**
-   * 여러 미디어를 ZIP으로 다운로드 - BulkDownloadService로 위임
-   */
-  async downloadMultiple(
-    mediaItems: Array<MediaInfo | MediaItem>,
-    options: BulkDownloadOptions
-  ): Promise<DownloadResult> {
-    return this.bulkDownloadService.downloadMultiple(mediaItems, options);
-  }
-
-  /**
-   * 대량 다운로드 (테스트 호환성을 위한 별칭)
-   */
-  async downloadBulk(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
-    options: BulkDownloadOptions = {}
-  ): Promise<DownloadResult> {
-    return this.downloadMultiple(Array.from(mediaItems), options);
-  }
-
-  /**
-   * 현재 다운로드 중단
-   */
-  public cancelDownload(): void {
-    this.currentAbortController?.abort();
-    logger.debug('Current download cancelled');
-  }
-
-  /**
-   * 현재 다운로드 중인지 확인
-   */
-  public isDownloading(): boolean {
-    return this.currentAbortController !== undefined;
-  }
+  // NOTE: downloadSingle, downloadMultiple, downloadBulk 메서드는 중복 제거됨
+  // 대신 getDownloadService()를 통해 BulkDownloadService에 직접 접근하세요
+  // 예: mediaService.getDownloadService().downloadSingle(media)
 
   // ====================================
   // Phase 7: Orchestrator 관련 메서드
@@ -801,4 +772,42 @@ export const optimizeWebP = (originalUrl: string): string => {
  */
 export const optimizeTwitterImageUrl = (originalUrl: string): string => {
   return MediaService.getInstance().getOptimizedImageUrl(originalUrl);
+};
+
+// ====================================
+// 다운로드 함수들 (중복 제거됨)
+// ====================================
+
+/**
+ * 단일 미디어 다운로드 (호환성 유지를 위한 별칭)
+ * @deprecated 직접 MediaService.getInstance().getDownloadService().downloadSingle() 사용 권장
+ */
+export const downloadSingle = async (
+  media: MediaInfo | MediaItem
+): Promise<SingleDownloadResult> => {
+  return MediaService.getInstance().getDownloadService().downloadSingle(media);
+};
+
+/**
+ * 여러 미디어 다운로드 (호환성 유지를 위한 별칭)
+ * @deprecated 직접 MediaService.getInstance().getDownloadService().downloadMultiple() 사용 권장
+ */
+export const downloadMultiple = async (
+  mediaItems: Array<MediaInfo | MediaItem>,
+  options: BulkDownloadOptions
+): Promise<DownloadResult> => {
+  return MediaService.getInstance().getDownloadService().downloadMultiple(mediaItems, options);
+};
+
+/**
+ * 대량 다운로드 (호환성 유지를 위한 별칭)
+ * @deprecated 직접 MediaService.getInstance().getDownloadService().downloadBulk() 사용 권장
+ */
+export const downloadBulk = async (
+  mediaItems: readonly (MediaItem | MediaInfo)[],
+  options: BulkDownloadOptions = {}
+): Promise<DownloadResult> => {
+  return MediaService.getInstance()
+    .getDownloadService()
+    .downloadBulk(Array.from(mediaItems), options);
 };

@@ -62,6 +62,28 @@ export class DOMEventManager {
   }
 
   /**
+   * Phase 2.1: 이벤트 리스너 제거 메서드 추가
+   */
+  public removeEventListener<K extends keyof HTMLElementEventMap>(
+    element: HTMLElement | Document | Window | null,
+    eventType: K,
+    handler: (event: HTMLElementEventMap[K]) => void,
+    options?: EventOptions
+  ): DOMEventManager {
+    if (!element || this.isDestroyed) {
+      return this;
+    }
+
+    try {
+      element.removeEventListener(eventType, handler as EventListener, options);
+    } catch (error) {
+      logger.warn('DOMEventManager: 이벤트 리스너 제거 실패', { eventType, error });
+    }
+
+    return this;
+  }
+
+  /**
    * 커스텀 이벤트 리스너 등록
    *
    * @param element - 이벤트를 등록할 요소
