@@ -27,13 +27,18 @@ export class UsernameParser {
   constructor() {} // public constructor
 
   /**
-   * 페이지에서 사용자명을 추출합니다
+   * 페이지나 URL에서 사용자명을 추출합니다
    *
-   * @param element - 검색 시작점 (기본값: document)
+   * @param elementOrUrl - 검색 시작점 (HTMLElement, Document) 또는 URL 문자열
    * @returns 사용자명 추출 결과
    */
-  public extractUsername(element?: HTMLElement | Document): UsernameExtractionResult {
-    const root = element || document;
+  public extractUsername(elementOrUrl?: HTMLElement | Document | string): UsernameExtractionResult {
+    // URL이 전달된 경우
+    if (typeof elementOrUrl === 'string') {
+      return this.extractUsernameFromUrl(elementOrUrl);
+    }
+
+    const root = elementOrUrl || document;
 
     // 1. DOM 요소에서 추출 시도
     const domResult = this.extractFromDOM(root);
@@ -104,16 +109,22 @@ export class UsernameParser {
   }
 
   /**
-   * URL에서 사용자명 추출
+   * 특정 URL에서 사용자명 추출 (URLPatterns 호환성)
    */
-  private extractFromURL(): UsernameExtractionResult {
+  private extractUsernameFromUrl(url: string): UsernameExtractionResult {
     try {
-      const url = window.location.href;
+      if (!url || typeof url !== 'string') {
+        return { username: null, method: 'url', confidence: 0 };
+      }
+
+      // URLPatterns와 동일한 패턴들
       const patterns = [
-        // 프로필 페이지: https://x.com/username
-        /\/([a-zA-Z0-9_]+)(?:\/status\/\d+)?(?:\?|$)/,
-        // 구 트위터 도메인
-        /twitter\.com\/([a-zA-Z0-9_]+)/,
+        // 트윗 URL: https://x.com/username/status/123456
+        /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
+        // 트윗 사진 URL: https://x.com/username/status/123456/photo/1
+        /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)\/photo\/(\d+)/,
+        // 미디어 페이지 URL: https://x.com/username/media
+        /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/media/,
       ];
 
       for (const pattern of patterns) {
@@ -121,7 +132,47 @@ export class UsernameParser {
         if (match?.[1]) {
           const username = match[1];
           // 시스템 페이지 제외
-          if (!this.isSystemPage(username)) {
+          if (!this.isSystemPage(username) && username !== 'i') {
+            return {
+              username,
+              method: 'url',
+              confidence: 0.9, // 명시적 URL 전달시 높은 신뢰도
+            };
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn('[UsernameParser] URL 추출 실패:', error);
+    }
+
+    return { username: null, method: 'url', confidence: 0 };
+  }
+
+  /**
+   * URL에서 사용자명 추출 (현재 페이지 URL 사용)
+   */
+  private extractFromURL(): UsernameExtractionResult {
+    try {
+      const url = window.location.href;
+
+      // URLPatterns와 동일한 패턴들 통합
+      const patterns = [
+        // 트윗 URL: https://x.com/username/status/123456
+        /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
+        // 트윗 사진 URL: https://x.com/username/status/123456/photo/1
+        /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)\/photo\/(\d+)/,
+        // 미디어 페이지 URL: https://x.com/username/media
+        /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([^/]+)\/media/,
+        // 프로필 페이지: https://x.com/username
+        /https?:\/\/(?:(?:mobile\.|www\.)?twitter\.com|x\.com)\/([a-zA-Z0-9_]+)(?:\/)?(?:\?|$)/,
+      ];
+
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match?.[1]) {
+          const username = match[1];
+          // 시스템 페이지 제외
+          if (!this.isSystemPage(username) && username !== 'i') {
             return {
               username,
               method: 'url',
@@ -227,15 +278,17 @@ export class UsernameParser {
 /**
  * 편의 함수: 사용자명 추출
  */
-export function extractUsername(element?: HTMLElement | Document): UsernameExtractionResult {
+export function extractUsername(
+  elementOrUrl?: HTMLElement | Document | string
+): UsernameExtractionResult {
   const parser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
-  return parser.extractUsername(element);
+  return parser.extractUsername(elementOrUrl);
 }
 
 /**
  * 편의 함수: 빠른 사용자명 추출 (문자열만 반환)
  */
-export function parseUsernameFast(element?: HTMLElement | Document): string | null {
+export function parseUsernameFast(elementOrUrl?: HTMLElement | Document | string): string | null {
   const parser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
-  return parser.extractUsername(element).username;
+  return parser.extractUsername(elementOrUrl).username;
 }

@@ -8,9 +8,6 @@ import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-import { getNativeDownload } from '@shared/external/vendors';
-import { getErrorMessage } from '@shared/utils/error-handling';
-import { generateMediaFilename } from '@shared/media';
 
 // 통합된 서비스 타입들
 /**
@@ -80,6 +77,7 @@ import {
   parseUsernameFast,
 } from './media/UsernameExtractionService';
 import type { UsernameExtractionResult } from './media/UsernameExtractionService';
+import { BulkDownloadService } from './BulkDownloadService';
 
 /**
  * 통합 미디어 서비스 - Phase 4 간소화
@@ -99,6 +97,7 @@ export class MediaService {
   private readonly mediaExtractionOrchestrator: MediaExtractionOrchestrator;
   private readonly videoControl: VideoControlService;
   private readonly usernameParser: UsernameParser;
+  private readonly bulkDownloadService: BulkDownloadService;
 
   // WebP 최적화 관련 상태
   private webpSupported: boolean | null = null;
@@ -124,6 +123,7 @@ export class MediaService {
 
     this.videoControl = new VideoControlService(); // Phase 4 간소화: 직접 인스턴스화
     this.usernameParser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
+    this.bulkDownloadService = new BulkDownloadService(); // Phase 2: 다운로드 서비스 위임
 
     // 테스트 환경에서는 WebP를 즉시 활성화
     if (this.isTestEnvironment()) {
@@ -703,130 +703,20 @@ export class MediaService {
   // ====================================
 
   /**
-   * MediaInfo를 FilenameService와 호환되는 타입으로 변환
-   */
-  private ensureMediaItem(media: MediaInfo | MediaItem): MediaItem & { id: string } {
-    return {
-      ...media,
-      id: media.id || `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    };
-  }
-
-  /**
-   * 단일 미디어 다운로드
+   * 단일 미디어 다운로드 - BulkDownloadService로 위임
    */
   async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    try {
-      const download = getNativeDownload();
-      const converted = this.ensureMediaItem(media);
-      const filename = generateMediaFilename(converted);
-
-      // URL에서 fetch하여 Blob으로 다운로드
-      const response = await fetch(media.url);
-      const blob = await response.blob();
-      download.downloadBlob(blob, filename);
-
-      logger.debug(`Single download initiated: ${filename}`);
-      return { success: true, filename };
-    } catch (error) {
-      const message = getErrorMessage(error);
-      logger.error(`Single download failed: ${message}`);
-      return { success: false, error: message };
-    }
+    return this.bulkDownloadService.downloadSingle(media);
   }
 
   /**
-   * 여러 미디어를 ZIP으로 다운로드
+   * 여러 미디어를 ZIP으로 다운로드 - BulkDownloadService로 위임
    */
   async downloadMultiple(
     mediaItems: Array<MediaInfo | MediaItem>,
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
-    try {
-      const { getFflate } = await import('@shared/external/vendors');
-      const fflate = getFflate();
-      const download = getNativeDownload();
-
-      const files: Record<string, Uint8Array> = {};
-      let successful = 0;
-
-      options.onProgress?.({
-        phase: 'preparing',
-        current: 0,
-        total: mediaItems.length,
-        percentage: 0,
-      });
-
-      // 파일들을 다운로드하여 ZIP에 추가
-      for (let i = 0; i < mediaItems.length; i++) {
-        if (this.currentAbortController?.signal.aborted) {
-          throw new Error('Download cancelled by user');
-        }
-
-        const media = mediaItems[i];
-        if (!media) continue;
-
-        options.onProgress?.({
-          phase: 'downloading',
-          current: i + 1,
-          total: mediaItems.length,
-          percentage: Math.round(((i + 1) / mediaItems.length) * 100),
-          filename: media.filename,
-        });
-
-        try {
-          const response = await fetch(media.url);
-          const arrayBuffer = await response.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-
-          const converted = this.ensureMediaItem(media);
-          const filename = generateMediaFilename(converted);
-          files[filename] = uint8Array;
-          successful++;
-        } catch (error) {
-          logger.warn(`Failed to download ${media.filename}: ${getErrorMessage(error)}`);
-        }
-      }
-
-      if (successful === 0) {
-        throw new Error('All downloads failed');
-      }
-
-      // ZIP 생성
-      const zipData = fflate.zipSync(files);
-      const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
-
-      // ZIP 다운로드
-      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
-      download.downloadBlob(blob, zipFilename);
-
-      options.onProgress?.({
-        phase: 'complete',
-        current: mediaItems.length,
-        total: mediaItems.length,
-        percentage: 100,
-      });
-
-      logger.debug(
-        `ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`
-      );
-
-      return {
-        success: true,
-        filesProcessed: mediaItems.length,
-        filesSuccessful: successful,
-        filename: zipFilename,
-      };
-    } catch (error) {
-      const message = getErrorMessage(error);
-      logger.error(`ZIP download failed: ${message}`);
-      return {
-        success: false,
-        filesProcessed: mediaItems.length,
-        filesSuccessful: 0,
-        error: message,
-      };
-    }
+    return this.bulkDownloadService.downloadMultiple(mediaItems, options);
   }
 
   /**

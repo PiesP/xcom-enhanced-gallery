@@ -4141,6 +4141,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/services/service-initialization.ts",
+        "src/shared/services/MediaService.ts",
         "src/shared/types/core/core-types.ts"
       ],
       "orphan": false,
@@ -4149,6 +4150,23 @@
     {
       "source": "src/shared/services/MediaService.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./BulkDownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/BulkDownloadService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./media-extraction/MediaExtractionOrchestrator",
@@ -7063,7 +7081,7 @@
     "info": 6,
     "ignore": 0,
     "totalCruised": 194,
-    "totalDependenciesCruised": 293,
+    "totalDependenciesCruised": 294,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

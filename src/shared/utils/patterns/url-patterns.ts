@@ -124,46 +124,6 @@ export const URLPatterns = {
   },
 
   /**
-   * URL에서 사용자명을 추출합니다 (트윗 URL 또는 미디어 페이지 URL)
-   *
-   * @param url - 트윗 URL 또는 미디어 페이지 URL
-   * @returns 사용자명 또는 null
-   */
-  extractUsername(url: string): string | null {
-    try {
-      if (!url || typeof url !== 'string') {
-        return null;
-      }
-
-      // 트윗 URL에서 사용자명 추출 시도
-      let match = url.match(this.TWEET_URL_PATTERN);
-      if (match) {
-        const [, username] = match;
-        return username && username !== 'i' ? username : null;
-      }
-
-      // 트윗 사진 URL에서 사용자명 추출 시도
-      match = url.match(this.TWEET_PHOTO_URL_PATTERN);
-      if (match) {
-        const [, username] = match;
-        return username && username !== 'i' ? username : null;
-      }
-
-      // 미디어 페이지 URL에서 사용자명 추출 시도
-      match = url.match(this.MEDIA_PAGE_PATTERN);
-      if (match) {
-        const [, username] = match;
-        return username && username !== 'i' ? username : null;
-      }
-
-      return null;
-    } catch (error) {
-      logger.error('Failed to extract username:', error);
-      return null;
-    }
-  },
-
-  /**
    * 트윗 사진 URL에서 정보를 추출합니다
    *
    * @param url - 트윗 사진 URL
@@ -219,31 +179,6 @@ export const URLPatterns = {
     } catch (error) {
       logger.error('Failed to check media page URL:', error);
       return false;
-    }
-  },
-
-  /**
-   * 미디어 페이지 URL에서 사용자명을 추출합니다
-   *
-   * @param url - 미디어 페이지 URL
-   * @returns 사용자명 또는 null
-   */
-  extractUsernameFromMediaPage(url: string): string | null {
-    try {
-      if (!url || typeof url !== 'string') {
-        return null;
-      }
-
-      const match = url.match(this.MEDIA_PAGE_PATTERN);
-      if (!match) {
-        return null;
-      }
-
-      const [, username] = match;
-      return username && username !== 'i' ? username : null;
-    } catch (error) {
-      logger.error('Failed to extract username from media page:', error);
-      return null;
     }
   },
 

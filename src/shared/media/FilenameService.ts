@@ -7,6 +7,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { safeParseInt, undefinedToNull } from '@shared/utils';
+import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
 
 /**
@@ -77,7 +78,7 @@ export class FilenameService {
       // URL에서 사용자명 추출 시도
       const urlToCheck = ('originalUrl' in media ? media.originalUrl : null) || media.url;
       const extractedUsername =
-        typeof urlToCheck === 'string' ? this.extractUsernameFromUrl(urlToCheck) : null;
+        typeof urlToCheck === 'string' ? parseUsernameFast(urlToCheck) : null;
       if (extractedUsername && media.tweetId) {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
@@ -269,56 +270,6 @@ export class FilenameService {
     const timestamp = Date.now();
     const index = this.normalizeIndex(options.index);
     return `${prefix}_${timestamp}_${index}.${extension}`;
-  }
-
-  /**
-   * URL에서 사용자명 추출
-   */
-  private extractUsernameFromUrl(url: string): string | null {
-    try {
-      const match = url.match(/(?:twitter\.com|x\.com)\/([^/?#]+)/);
-      if (match?.[1]) {
-        const username = match[1];
-
-        // 예약된 경로들 제외
-        const reservedPaths = [
-          'i',
-          'home',
-          'explore',
-          'notifications',
-          'messages',
-          'bookmarks',
-          'lists',
-          'profile',
-          'more',
-          'compose',
-          'search',
-          'settings',
-          'help',
-          'display',
-          'moments',
-          'topics',
-          'login',
-          'logout',
-          'signup',
-          'account',
-          'privacy',
-          'tos',
-        ];
-
-        if (reservedPaths.includes(username.toLowerCase())) {
-          return null;
-        }
-
-        // 유효한 사용자명 패턴 확인
-        if (/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
-          return username;
-        }
-      }
-      return null;
-    } catch {
-      return null;
-    }
   }
 }
 

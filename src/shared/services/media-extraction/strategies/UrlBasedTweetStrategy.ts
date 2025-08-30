@@ -23,7 +23,7 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
         return null;
       }
 
-      const username = this.extractUsernameFromUrl(currentUrl) || parseUsernameFast() || 'fallback';
+      const username = parseUsernameFast(currentUrl) || parseUsernameFast() || 'fallback';
 
       if (!username || username === 'fallback') {
         logger.debug('UrlBasedTweetStrategy: 사용자명 추출 실패');
@@ -48,11 +48,6 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
 
   private extractTweetIdFromUrl(url: string): string | null {
     const match = url.match(/\/status\/(\d+)/);
-    return match ? (match[1] ?? null) : null;
-  }
-
-  private extractUsernameFromUrl(url: string): string | null {
-    const match = url.match(/twitter\.com\/([^/]+)\//);
     return match ? (match[1] ?? null) : null;
   }
 }

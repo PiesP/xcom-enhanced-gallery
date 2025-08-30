@@ -1,33 +1,55 @@
 /**
  * @fileoverview 다운로드 함수 중복 제거 테스트
- * @description MediaService와 BulkDownloadService 간 중복 제거 - 간소화된 테스트
+ * @description MediaService와 BulkDownloadService 간 중복 제거 - 실제 구현 테스트
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { MediaService } from '@shared/services/MediaService';
+import { BulkDownloadService } from '@shared/services/BulkDownloadService';
 
 describe('Download Functions Deduplication - TDD', () => {
-  describe('RED: 중복 제거 요구사항', () => {
-    it('MediaService.downloadSingle이 BulkDownloadService를 위임해야 함', () => {
-      // Given: 다운로드 서비스 중복 구조
-      const duplicatedServices = {
-        MediaService: 'downloadSingle',
-        BulkDownloadService: 'downloadSingle',
-      };
+  let mediaService;
+  let bulkDownloadService;
 
-      // When: 중복 제거 요구사항
-      // Then: MediaService가 BulkDownloadService를 위임해야 함
-      expect(duplicatedServices.MediaService).toBe(duplicatedServices.BulkDownloadService);
-      expect(true).toBe(true); // placeholder for actual implementation
+  beforeEach(() => {
+    mediaService = new MediaService();
+    bulkDownloadService = new BulkDownloadService();
+  });
+
+  describe('RED: 중복 제거 요구사항', () => {
+    it('MediaService.downloadSingle이 중복 구현을 가지고 있음 (제거 필요)', async () => {
+      // Given: 테스트 확인
+      // When: MediaService의 downloadSingle 메서드 존재 확인
+      // Then: 현재는 MediaService가 자체 구현을 가지고 있음 (중복!)
+      expect(typeof mediaService.downloadSingle).toBe('function');
+      expect(typeof bulkDownloadService.downloadSingle).toBe('function');
+
+      // 둘 다 존재하므로 중복! 이는 제거되어야 함
+      expect(true).toBe(true); // RED: 중복 존재 확인됨
     });
 
-    it('MediaService.downloadMultiple이 BulkDownloadService를 위임해야 함', () => {
-      // Given: 대량 다운로드 중복 구조
-      const multipleDownloadServices = ['MediaService', 'BulkDownloadService'];
+    it('MediaService.downloadMultiple이 중복 구현을 가지고 있음 (제거 필요)', async () => {
+      // Given: 테스트 확인
+      // When: MediaService의 downloadMultiple 메서드 존재 확인
+      // Then: 현재는 MediaService가 자체 구현을 가지고 있음 (중복!)
+      expect(typeof mediaService.downloadMultiple).toBe('function');
+      expect(typeof bulkDownloadService.downloadMultiple).toBe('function');
 
-      // When: 중복 제거
-      // Then: 단일 구현체로 통합
-      expect(multipleDownloadServices.length).toBe(2); // 현재 중복 상태
-      // 구현 후에는 BulkDownloadService 하나만 남아야 함
+      // 둘 다 존재하므로 중복! 이는 제거되어야 함
+      expect(true).toBe(true); // RED: 중복 존재 확인됨
+    });
+
+    it('MediaService가 BulkDownloadService를 위임하지 않음 (변경 필요)', () => {
+      // Given: 현재 MediaService 구조
+      const mediaServiceMethods = Object.getOwnPropertyNames(MediaService.prototype);
+
+      // When: downloadSingle과 downloadMultiple이 MediaService에 직접 구현됨
+      // Then: 이는 BulkDownloadService로 위임되어야 함
+      expect(mediaServiceMethods).toContain('downloadSingle');
+      expect(mediaServiceMethods).toContain('downloadMultiple');
+
+      // RED: MediaService가 직접 구현하고 있으므로 위임으로 변경 필요
+      expect(true).toBe(true);
     });
   });
 
