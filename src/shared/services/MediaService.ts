@@ -429,19 +429,8 @@ export class MediaService {
     return originalUrl;
   }
 
-  /**
-   * WebP 최적화 (테스트에서 요구하는 메서드명)
-   */
-  optimizeWebP(originalUrl: string): string {
-    return this.getOptimizedImageUrl(originalUrl);
-  }
-
-  /**
-   * 트위터 이미지 URL 최적화 (하위 호환성)
-   */
-  optimizeTwitterImageUrl(originalUrl: string): string {
-    return this.getOptimizedImageUrl(originalUrl);
-  }
+  // NOTE: optimizeWebP와 optimizeTwitterImageUrl은 중복 제거됨
+  // 호환성을 위해 파일 하단의 export 함수들을 사용하세요
 
   // ====================================
   // Media Loading API (통합됨)
@@ -793,3 +782,23 @@ export { parseUsernameFast };
  * 편의 함수: 사용자명 추출 결과 타입
  */
 export type { UsernameExtractionResult };
+
+// ====================================
+// URL 최적화 함수들 (중복 제거됨)
+// ====================================
+
+/**
+ * WebP 최적화 (호환성 유지를 위한 별칭)
+ * @deprecated 직접 MediaService.getInstance().getOptimizedImageUrl() 사용 권장
+ */
+export const optimizeWebP = (originalUrl: string): string => {
+  return MediaService.getInstance().getOptimizedImageUrl(originalUrl);
+};
+
+/**
+ * 트위터 이미지 URL 최적화 (호환성 유지를 위한 별칭)
+ * @deprecated 직접 MediaService.getInstance().getOptimizedImageUrl() 사용 권장
+ */
+export const optimizeTwitterImageUrl = (originalUrl: string): string => {
+  return MediaService.getInstance().getOptimizedImageUrl(originalUrl);
+};
