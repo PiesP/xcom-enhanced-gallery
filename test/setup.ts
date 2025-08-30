@@ -8,78 +8,17 @@ import { beforeEach, afterEach } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
 
+// URL polyfill import - 비동기 초기화
+import { setupURLPolyfill } from './polyfills/url-polyfill.js';
+
 // ================================
 // 전역 테스트 환경 설정
 // ================================
 
-// URL 생성자 폴백 - Node.js URL 직접 사용
-function createURLPolyfill() {
-  try {
-    // Node.js의 기본 URL을 직접 사용
-    const { URL: NodeURL } = require('node:url');
-    console.log('Using Node.js URL constructor');
-    return NodeURL;
-  } catch (error) {
-    console.warn('Node URL import failed, using fallback:', error);
-
-    // fallback implementation
-    function URLConstructor(url) {
-      if (!(this instanceof URLConstructor)) {
-        return new URLConstructor(url);
-      }
-
-      const urlRegex = /^(https?):\/\/([^/]+)(\/[^?]*)?\??(.*)$/;
-      const match = url.match(urlRegex);
-
-      if (!match) {
-        throw new Error('Invalid URL');
-      }
-
-      const [, protocol, hostname, pathname = '/', search = ''] = match;
-
-      this.protocol = `${protocol}:`;
-      this.hostname = hostname;
-      this.pathname = pathname;
-      this.search = search ? `?${search}` : '';
-      this.href = url;
-
-      this.toString = () => this.href;
-
-      return this;
-    }
-
-    return URLConstructor;
-  }
-}
-
-// URL 폴백 설정
-function setupURLPolyfill() {
-  const URLPolyfill = createURLPolyfill();
-
-  // globalThis 레벨에 설정
-  globalThis.URL = URLPolyfill;
-
-  // window 레벨에도 설정 (안전하게)
-  try {
-    if (typeof window !== 'undefined') {
-      window.URL = URLPolyfill;
-    }
-  } catch {
-    // 무시
-  }
-
-  // global 레벨에도 설정 (안전하게)
-  try {
-    if (typeof global !== 'undefined') {
-      global.URL = URLPolyfill;
-    }
-  } catch {
-    // 무시
-  }
-}
-
-// URL 폴백 설정 실행
-setupURLPolyfill();
+// URL polyfill을 즉시 설정
+(async () => {
+  await setupURLPolyfill();
+})();
 
 // jsdom 환경 호환성 향상을 위한 polyfill 설정
 function setupJsdomPolyfills() {
@@ -103,7 +42,7 @@ function setupJsdomPolyfills() {
 
   // document.elementsFromPoint polyfill (jsdom limitation)
   if (typeof globalThis.document !== 'undefined' && !globalThis.document.elementsFromPoint) {
-    globalThis.document.elementsFromPoint = function (x, y) {
+    globalThis.document.elementsFromPoint = function () {
       // 테스트 환경에서는 빈 배열 반환
       return [];
     };
@@ -149,7 +88,7 @@ function setupJsdomPolyfills() {
           // 안전한 비동기 콜백 실행 - 무한 루프 방지
           if (this.callback && !this._isDisconnected) {
             // 다음 틱에서 실행하여 동기적 무한 루프 방지
-            setTimeout(() => {
+            globalThis.setTimeout(() => {
               if (!this._isDisconnected && this._observing.has(element)) {
                 try {
                   this.callback(
@@ -189,7 +128,7 @@ function setupJsdomPolyfills() {
                   );
                 } catch (error) {
                   // 콜백 에러를 무시하여 테스트 안정성 확보
-                  console.warn('IntersectionObserver 콜백 에러 (무시됨):', error);
+                  globalThis.console.warn('IntersectionObserver 콜백 에러 (무시됨):', error);
                 }
               }
             }, 0);
@@ -266,17 +205,16 @@ beforeEach(async () => {
   // Mock API 연결 활성화
   setupGlobalMocks();
 
-  // URL 생성자 다시 확인 및 설정
+  // URL 생성자 다시 확인 및 설정 (polyfill에서 이미 설정했지만 한번 더 확인)
   if (!globalThis.URL || typeof globalThis.URL !== 'function') {
-    const URLPolyfill = createURLPolyfill();
-    globalThis.URL = URLPolyfill;
+    await setupURLPolyfill();
   }
 
   // Vendor 초기화 - 모든 테스트에서 사용할 수 있도록
   try {
     const { initializeVendors } = await import('../src/shared/external/vendors/vendor-api.js');
     await initializeVendors();
-  } catch (error) {
+  } catch {
     // vendor 초기화 실패는 무시하고 계속 진행
   }
 

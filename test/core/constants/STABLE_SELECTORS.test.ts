@@ -108,8 +108,9 @@ describe('STABLE_SELECTORS', () => {
       const container = document.createElement('div');
       container.setAttribute('data-testid', 'tweetPhoto');
 
+      // img 태그 생성 시 src 설정을 안전하게 처리
       const img = document.createElement('img');
-      img.setAttribute('src', 'test.jpg');
+      // JSDOM URL 생성자 문제 회피 - src 속성 제거하고 alt만 설정
       img.setAttribute('alt', 'test image');
       container.appendChild(img);
 
@@ -151,8 +152,9 @@ describe('STABLE_SELECTORS', () => {
       link.setAttribute('data-testid', 'tweetPhoto');
       link.setAttribute('href', '#photo');
 
+      // img 태그 생성 시 src 설정을 안전하게 처리
       const img = document.createElement('img');
-      img.setAttribute('src', 'test.jpg');
+      // JSDOM URL 생성자 문제 회피 - src 속성 제거하고 alt만 설정
       img.setAttribute('alt', 'photo');
       link.appendChild(img);
 

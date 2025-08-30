@@ -168,6 +168,30 @@ export class CoreService {
   // ====================================
 
   /**
+   * 진단 정보 반환 (동기적 메서드)
+   */
+  public getDiagnostics(): {
+    registeredServices: number;
+    activeInstances: number;
+    services: string[];
+    instances: Record<string, boolean>;
+  } {
+    const services = Array.from(this.services.keys());
+    const instances: Record<string, boolean> = {};
+
+    for (const key of services) {
+      instances[key] = this.services.get(key) !== null;
+    }
+
+    return {
+      registeredServices: services.length,
+      activeInstances: services.filter(key => instances[key]).length,
+      services,
+      instances,
+    };
+  }
+
+  /**
    * ServiceManager 상태 진단
    */
   public async diagnoseServiceManager(): Promise<void> {

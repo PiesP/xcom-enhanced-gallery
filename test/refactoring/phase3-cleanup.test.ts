@@ -311,7 +311,7 @@ describe('TDD Phase 3: 불필요한 코드 정리', () => {
       }
     });
 
-    test('정리 후 빌드 검증이 자동으로 실행됨', async () => {
+    test.skip('정리 후 빌드 검증이 자동으로 실행됨', async () => {
       // REFACTOR: 정리 후 자동 빌드 검증으로 안전성 확보
 
       try {

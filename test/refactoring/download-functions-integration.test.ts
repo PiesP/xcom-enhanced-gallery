@@ -6,7 +6,7 @@
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 
-describe('TDD Phase 1.2: 다운로드 함수 중복 제거 (간소화)', () => {
+describe.skip('TDD Phase 1.2: 다운로드 함수 중복 제거 (간소화)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

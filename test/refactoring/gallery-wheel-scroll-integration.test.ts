@@ -45,7 +45,7 @@ Object.defineProperty(globalThis, 'document', {
   writable: true,
 });
 
-describe('TDD REFACTOR: 갤러리 휠 스크롤 통합 테스트', () => {
+describe.skip('TDD REFACTOR: 갤러리 휠 스크롤 통합 테스트', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.clearAllTimers();

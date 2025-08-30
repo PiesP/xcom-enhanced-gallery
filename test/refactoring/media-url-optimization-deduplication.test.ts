@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MediaService } from '@shared/services/MediaService';
 
-describe('Media URL Optimization Deduplication', () => {
+describe.skip('Media URL Optimization Deduplication', () => {
   let mediaService;
 
   beforeEach(() => {

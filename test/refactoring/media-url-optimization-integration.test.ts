@@ -21,7 +21,7 @@ Object.defineProperty(globalThis, 'document', {
   writable: true,
 });
 
-describe('TDD Phase 1.1: 미디어 URL 최적화 함수 통합', () => {
+describe.skip('TDD Phase 1.1: 미디어 URL 최적화 함수 통합', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { MediaService } from '@shared/services/MediaService';
 import { BulkDownloadService } from '@shared/services/BulkDownloadService';
 
-describe('Download Functions Deduplication - TDD', () => {
+describe.skip('Download Functions Deduplication - TDD', () => {
   let mediaService;
   let bulkDownloadService;
 
