@@ -13,3 +13,9 @@ export { getHighQualityMediaUrl, getMediaUrlsFromTweet, isValidMediaUrl } from '
 
 // Media Click Detection utilities
 export { MediaClickDetector } from './MediaClickDetector';
+
+// NEW: TDD 리팩토링 - 중복 제거 유틸리티들
+export { MediaValidationUtils } from './MediaValidationUtils';
+export { MediaInfoBuilder } from './MediaInfoBuilder';
+export type { MediaValidationOptions } from './MediaValidationUtils';
+export type { MediaInfoBuilderOptions } from './MediaInfoBuilder';
