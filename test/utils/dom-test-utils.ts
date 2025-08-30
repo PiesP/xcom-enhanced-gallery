@@ -3,8 +3,6 @@
  * @description DOM 조작 및 이벤트 시뮬레이션을 위한 테스트 유틸리티
  */
 
-import { vi } from 'vitest';
-
 /**
  * DOM 이벤트 시뮬레이션
  */

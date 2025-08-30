@@ -1,3 +1,4 @@
+// @ts-nocheck - 상태 관리 통합 테스트
 /**
  * @fileoverview TDD Phase 2.2: 상태 관리 충돌 해결 테스트
  * @description Signal과 React 상태 관리 간 충돌 해결

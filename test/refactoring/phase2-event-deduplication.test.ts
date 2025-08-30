@@ -4,7 +4,8 @@
  * @version 1.0.0 - Phase 2.1 중복 제거
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+// @ts-nocheck - 리팩토링 완료 후 정리된 테스트
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock 환경 설정
 const mockDocument = {

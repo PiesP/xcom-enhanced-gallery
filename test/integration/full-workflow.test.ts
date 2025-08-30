@@ -3,6 +3,7 @@
  * 사용자의 완전한 사용 시나리오를 검증
  */
 
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from '../utils/helpers/test-environment.js';
 import {
@@ -49,13 +50,16 @@ describe('전체 워크플로우 통합 테스트', () => {
       const container = setupTwitterDOM();
       const tweet = addTweetWithImages(container);
       const imageElement = tweet.querySelector('img[src*="pbs.twimg.com"]');
+      if (!imageElement) throw new Error('Image not found');
 
       // When: 사용자가 이미지를 클릭하면
-      simulateClick(imageElement);
+      const htmlElement = imageElement;
+      const imgElement = imageElement;
+      simulateClick(htmlElement);
       await wait(100);
 
       // 클릭으로 인해 갤러리 모달이 생성됨
-      const galleryModal = createGalleryModal(imageElement.src);
+      const galleryModal = createGalleryModal(imgElement.src);
 
       // Then: 갤러리가 열려야 한다
       expect(galleryModal).toBeTruthy();

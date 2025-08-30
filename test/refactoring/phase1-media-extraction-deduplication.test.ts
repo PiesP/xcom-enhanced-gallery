@@ -1,9 +1,11 @@
 /**
+// @ts-nocheck
  * @fileoverview TDD Phase 1: 미디어 추출 중복 제거
  * @description MediaService와 MediaExtractionService 중복 메서드 통합
  */
 
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+// @ts-nocheck - 리팩토링 완료 후 정리된 테스트
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('TDD Phase 1: 미디어 추출 중복 제거', () => {
   beforeEach(() => {

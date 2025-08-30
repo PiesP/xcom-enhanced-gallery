@@ -3,7 +3,8 @@
  * @description 모든 툴바 버튼이 통일된 크기를 갖도록 하는 테스트
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// @ts-nocheck - 툴바 버튼 일관성 테스트
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('툴바 버튼 크기 일관성', () => {
   let testContainer;

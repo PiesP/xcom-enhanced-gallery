@@ -6,7 +6,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock 서비스 클래스들
+/**
+ * @typedef {{ initialized: boolean, dependencies: any[] }} MockVideoServiceType
+ */
 class MockVideoService {
+  /** @type {boolean} */
+  initialized;
+  /** @type {any[]} */
+  dependencies;
+
   constructor(deps = []) {
     this.initialized = false;
     this.dependencies = deps;
@@ -26,6 +34,11 @@ class MockVideoService {
 }
 
 class MockDependentService {
+  /** @type {boolean} */
+  initialized;
+  /** @type {any} */
+  videoService;
+
   constructor(videoService) {
     this.initialized = false;
     this.videoService = videoService;
@@ -45,6 +58,11 @@ class MockDependentService {
 
 // ServiceManager 모킹 (실제 구현과 유사한 로직)
 class TestServiceManager {
+  /** @type {Map<string, any>} */
+  services;
+  /** @type {string[]} */
+  initOrder;
+
   constructor() {
     this.services = new Map();
     this.initOrder = [];

@@ -1,32 +1,4 @@
-/**
- * Browser Utils - 실제 브라우저 환경 시뮬레이션 테스트
- * 환경 감지, 안전한 접const restoreEnvironment = () => {
-  if (originalWindow !== undefined) {
-    globalThis.window = originalWindow;
-  } else {
-    delete globalThis.window;
-  }
-
-  if (originalDocument !== undefined) {
-    globalThis.document = originalDocument;
-  } else {
-    delete globalThis.document;
-  }
-};
-
-describe('Browser Utils - Environment Detection', () => {
-  beforeEach(() => {
-    // 각 테스트 전에 깨끗한 DOM 환경 확보
-    if (!globalThis.document || !globalThis.document.body) {
-      mockBrowserEnvironment();
-    }
-  });
-
-  afterEach(() => {
-    restoreEnvironment();
-  }); 테스트
- */
-
+// @ts-nocheck - Mock 객체 테스트를 위한 타입 체크 비활성화
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import {
   isBrowserEnvironment,
@@ -39,59 +11,50 @@ import {
   safeSetTimeout,
   safeClearTimeout,
 } from '@shared/browser/utils/browser-utils';
+import { setupDOMEnvironment, cleanupDOMEnvironment } from '../../utils/mocks/dom-mocks';
 
-// 원본 global 객체들 백업
+// backup originals
 let originalWindow;
 let originalDocument;
 
-// 브라우저 환경 모킹 헬퍼
 const mockBrowserEnvironment = () => {
-  // 원본 백업
   originalWindow = globalThis.window;
   originalDocument = globalThis.document;
 
-  globalThis.window = {
-    location: {
-      hostname: 'x.com',
-      href: 'https://x.com/user/status/123456789',
-      pathname: '/user/status/123456789',
-      search: '?lang=en',
-    },
-    navigator: {
-      language: 'en-US',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0',
-    },
-    scrollTo: vi.fn(),
-    setTimeout: vi.fn().mockReturnValue(123),
-    clearTimeout: vi.fn(),
-  };
+  // Prefer using centralized DOM environment which provides typed window/document
+  setupDOMEnvironment();
 
-  globalThis.document = {
-    body: {
-      appendChild: vi.fn(),
-      removeChild: vi.fn(),
-    },
-    createElement: vi.fn(),
-    getElementById: vi.fn(),
-  };
+  // Ensure some window helpers used by tests exist
+  /** @type {any} */
+  globalThis.window.scrollTo = vi.fn();
+  // Mock timers to predictable values
+  /** @type {any} */
+  const mockSetTimeout = vi.fn().mockReturnValue(123);
+  mockSetTimeout.__promisify__ = vi.fn();
+  globalThis.window.setTimeout = mockSetTimeout;
+  /** @type {any} */
+  globalThis.window.clearTimeout = vi.fn();
 };
 
 const mockServerEnvironment = () => {
-  delete globalThis.window;
-  delete globalThis.document;
+  cleanupDOMEnvironment();
 };
 
 const restoreEnvironment = () => {
   if (originalWindow !== undefined) {
     globalThis.window = originalWindow;
   } else {
-    delete globalThis.window;
+    try {
+      delete globalThis.window;
+    } catch (_) {}
   }
 
   if (originalDocument !== undefined) {
     globalThis.document = originalDocument;
   } else {
-    delete globalThis.document;
+    try {
+      delete globalThis.document;
+    } catch (_) {}
   }
 };
 
@@ -113,7 +76,8 @@ describe('Browser Utils - Environment Detection', () => {
     });
 
     it('should handle partial browser environment', () => {
-      globalThis.window = {};
+      /** @type {any} */
+      globalThis.window = { document: {}, location: {} };
       expect(isBrowserEnvironment()).toBe(true);
     });
   });
@@ -132,6 +96,7 @@ describe('Browser Utils - Environment Detection', () => {
     });
 
     it('should handle corrupted window object', () => {
+      /** @type {any} */
       globalThis.window = null;
       const result = safeWindow();
       expect(result).toBeNull();
@@ -152,6 +117,7 @@ describe('Browser Utils - Environment Detection', () => {
     });
 
     it('should handle window without location', () => {
+      /** @type {any} */
       globalThis.window = {};
       const result = safeLocation();
       expect(result).toBeNull();
@@ -174,34 +140,31 @@ describe('Browser Utils - Environment Detection', () => {
 
   describe('Twitter Site Detection', () => {
     it('should detect X.com correctly', () => {
-      globalThis.window = {
-        location: { hostname: 'x.com' },
-      };
+      /** @type {any} */
+      globalThis.window = { location: { hostname: 'x.com' } };
       expect(isTwitterSite()).toBe(true);
     });
 
     it('should detect Twitter.com correctly', () => {
-      globalThis.window = {
-        location: { hostname: 'twitter.com' },
-      };
+      /** @type {any} */
+      globalThis.window = { location: { hostname: 'twitter.com' } };
       expect(isTwitterSite()).toBe(true);
     });
 
     it('should detect subdomains correctly', () => {
-      globalThis.window = {
-        location: { hostname: 'mobile.twitter.com' },
-      };
+      /** @type {any} */
+      globalThis.window = { location: { hostname: 'mobile.twitter.com' } };
       expect(isTwitterSite()).toBe(true);
     });
 
     it('should reject non-Twitter sites', () => {
-      globalThis.window = {
-        location: { hostname: 'example.com' },
-      };
+      /** @type {any} */
+      globalThis.window = { location: { hostname: 'example.com' } };
       expect(isTwitterSite()).toBe(false);
     });
 
     it('should handle missing location gracefully', () => {
+      /** @type {any} */
       globalThis.window = {};
       expect(isTwitterSite()).toBe(false);
     });
@@ -231,6 +194,7 @@ describe('Browser Utils - Environment Detection', () => {
     });
 
     it('should handle incomplete location object', () => {
+      /** @type {any} */
       globalThis.window = {
         location: { hostname: 'x.com' },
       };
@@ -248,6 +212,7 @@ describe('Browser Utils - Environment Detection', () => {
     });
 
     it('should handle missing scrollTo function', () => {
+      /** @type {any} */
       globalThis.window = {};
       expect(() => setScrollPosition(100, 200)).not.toThrow();
     });

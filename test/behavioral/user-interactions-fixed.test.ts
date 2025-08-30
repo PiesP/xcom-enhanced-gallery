@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * 사용자 상호작용 행위 중심 테스트 (Mock API 연결 버전)
  * 사용자가 스크립트와 상호작용하는 방식을 검증
@@ -34,7 +35,7 @@ describe('사용자 상호작용 행위 테스트', () => {
       const imageElement = tweet.querySelector('img[src*="pbs.twimg.com"]');
 
       // When: 사용자가 이미지를 클릭하면
-      simulateClick(imageElement);
+      simulateClick(/** @type {HTMLElement} */ imageElement);
 
       // 갤러리 모달 생성 시뮬레이션 (실제 동작 대신)
       const galleryModal = doc.createElement('div');
@@ -97,12 +98,15 @@ describe('사용자 상호작용 행위 테스트', () => {
       const imageElement = tweet.querySelector('img[src*="pbs.twimg.com"]');
 
       // When: 사용자가 이미지를 클릭하면
-      simulateClick(imageElement);
+      simulateClick(/** @type {HTMLElement} */ imageElement);
 
       // 자동 다운로드 시뮬레이션
       globalThis.setTimeout(() => {
         if (globalThis.GM_download) {
-          globalThis.GM_download(imageElement.src, 'auto-download.jpg');
+          globalThis.GM_download(
+            /** @type {HTMLImageElement} */ imageElement.src,
+            'auto-download.jpg'
+          );
         }
       }, 50);
 
@@ -125,7 +129,7 @@ describe('사용자 상호작용 행위 테스트', () => {
       const imageElement = tweet.querySelector('img[src*="pbs.twimg.com"]');
 
       // When: 사용자가 이미지를 클릭하면
-      simulateClick(imageElement);
+      simulateClick(/** @type {HTMLElement} */ imageElement);
 
       // 오류 상황 시뮬레이션
       globalThis.setTimeout(() => {

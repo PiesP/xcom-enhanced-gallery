@@ -4,6 +4,7 @@
  * @version 1.0.0 - Vendor Initialization Error Fix
  */
 
+// @ts-nocheck - 벤더 초기화 에러 테스트
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('벤더 초기화 순서 에러 해결', () => {

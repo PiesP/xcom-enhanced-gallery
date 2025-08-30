@@ -1,3 +1,4 @@
+// @ts-nocheck - 갤러리 앱 활성화 테스트
 /**
  * @fileoverview 갤러리 앱 활성화 테스트
  * @description 핵심 사상 기반 테스트: 환경 격리, 로직 분리, 행위 중심 테스트

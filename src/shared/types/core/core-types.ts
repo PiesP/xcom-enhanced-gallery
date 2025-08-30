@@ -560,12 +560,12 @@ export function isFailure<T, E>(result: Result<T, E>): result is { success: fals
  * Result 체이닝 (flatMap)
  */
 export function chain<T, U, E>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E> {
-  return result.success ? fn(result.data) : result;
+  return result.success ? fn(result.data) : (result as Result<U, E>);
 }
 
 /**
  * Result 매핑 (map)
  */
 export function map<T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> {
-  return result.success ? success(fn(result.data)) : result;
+  return result.success ? success(fn(result.data)) : (result as Result<U, E>);
 }

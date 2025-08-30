@@ -88,6 +88,17 @@ module.exports = {
           '^src/core/state/base/.*[.]ts$', // 상태 관리 기반 클래스들
           '^src/.*[.]interface[.]ts$', // 인터페이스 정의
           '^src/.*[.]abstract[.]ts$', // 추상 클래스들
+          '^src/build/.*[.]ts$', // 빌드 관련 파일들 (vite.config.ts에서 사용됨)
+          '^src/.*/test[.]ts$', // 테스트 전용 파일들
+          '^src/shared/utils/cleanup/.*[.]ts$', // 테스트에서 동적 import로 사용되는 cleanup 유틸리티들
+          '^src/shared/utils/backup/.*[.]ts$', // 테스트에서 동적 import로 사용되는 backup 유틸리티들
+          '^src/shared/utils/analysis/.*[.]ts$', // 테스트에서 동적 import로 사용되는 analysis 유틸리티들
+          '^src/shared/services/StateManager[.]ts$', // 테스트에서 동적 import로 사용됨
+          '^src/shared/hooks/useUnifiedState[.]ts$', // 테스트에서 동적 import로 사용됨
+          '^src/shared/utils/media/smart-image-fit[.]ts$', // useSmartImageFit에서 사용됨
+          '^src/shared/hooks/useSmartImageFit[.]ts$', // 갤러리 컴포넌트에서 사용됨
+          '^src/shared/hooks/useGalleryScroll[.]ts$', // 갤러리에서 사용됨
+          '^src/features/gallery/hooks/useGalleryScrollEnhanced[.]ts$', // 갤러리에서 사용됨
         ],
       },
       to: {},

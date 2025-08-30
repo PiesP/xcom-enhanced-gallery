@@ -17,6 +17,8 @@ export interface GalleryContainerProps {
   onClose?: () => void;
   /** CSS 클래스명 */
   className?: string;
+  /** Shadow DOM 사용 여부 */
+  useShadowDOM?: boolean;
 }
 
 /**

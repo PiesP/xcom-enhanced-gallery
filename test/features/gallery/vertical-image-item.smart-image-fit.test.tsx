@@ -7,6 +7,7 @@
  * - 기존 기능과의 완벽한 호환성 보장
  */
 
+// @ts-nocheck - 테스트용 확장 props 사용
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor } from '@testing-library/preact';
 import { VerticalImageItem } from '../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem';
@@ -101,7 +102,7 @@ describe('VerticalImageItem Smart Image Fit 통합 검증', () => {
         '../../../src/features/gallery/hooks/useSmartImageFit'
       );
 
-      render(VerticalImageItem({ ...defaultProps, fitMode: 'fitWidth' }));
+      render(VerticalImageItem(/** @type {any} */ { ...defaultProps, fitMode: 'fitWidth' }));
 
       // useSmartImageFit 훅이 호출되었는지 확인
       expect(useSmartImageFit).toHaveBeenCalledWith(
@@ -113,7 +114,7 @@ describe('VerticalImageItem Smart Image Fit 통합 검증', () => {
     });
 
     it('스마트 이미지 스타일이 컴포넌트에 적용됨', async () => {
-      render(VerticalImageItem({ ...defaultProps, fitMode: 'fitContainer' }));
+      render(VerticalImageItem(/** @type {any} */ { ...defaultProps, fitMode: 'fitContainer' }));
 
       // 컨테이너가 렌더링되기를 기다림
       await waitFor(() => {
@@ -138,7 +139,7 @@ describe('VerticalImageItem Smart Image Fit 통합 검증', () => {
         '../../../src/features/gallery/hooks/useSmartImageFit'
       );
 
-      render(VerticalImageItem({ ...videoProps, fitMode: 'fitContainer' }));
+      render(VerticalImageItem(/** @type {any} */ { ...videoProps, fitMode: 'fitContainer' }));
 
       // 비디오에도 훅이 적용되었는지 확인
       expect(useSmartImageFit).toHaveBeenCalledWith(
@@ -154,7 +155,7 @@ describe('VerticalImageItem Smart Image Fit 통합 검증', () => {
         '../../../src/features/gallery/hooks/useSmartImageFit'
       );
 
-      render(VerticalImageItem({ ...defaultProps, fitMode: 'fitWidth' }));
+      render(VerticalImageItem(/** @type {any} */ { ...defaultProps, fitMode: 'fitWidth' }));
 
       // watchViewportResize가 true로 설정되었는지 확인
       expect(useSmartImageFit).toHaveBeenCalledWith(
@@ -171,14 +172,16 @@ describe('VerticalImageItem Smart Image Fit 통합 검증', () => {
         '../../../src/features/gallery/hooks/useSmartImageFit'
       );
 
-      const { rerender } = render(VerticalImageItem({ ...defaultProps, fitMode: 'fitWidth' }));
+      const { rerender } = render(
+        VerticalImageItem(/** @type {any} */ { ...defaultProps, fitMode: 'fitWidth' })
+      );
 
       expect(useSmartImageFit).toHaveBeenCalledWith(
         expect.objectContaining({ fitMode: 'fitWidth' })
       );
 
       // fitMode 변경
-      rerender(VerticalImageItem({ ...defaultProps, fitMode: 'fitContainer' }));
+      rerender(VerticalImageItem(/** @type {any} */ { ...defaultProps, fitMode: 'fitContainer' }));
 
       expect(useSmartImageFit).toHaveBeenCalledWith(
         expect.objectContaining({ fitMode: 'fitContainer' })

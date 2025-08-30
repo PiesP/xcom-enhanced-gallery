@@ -3,7 +3,8 @@
  * @description constants.ts와 media-url.util.ts의 중복 함수 통합
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+// @ts-nocheck - 미디어 URL 유틸리티 통합 테스트
+import { describe, it, expect } from 'vitest';
 
 describe('미디어 URL 처리 함수 통합', () => {
   beforeEach(() => {

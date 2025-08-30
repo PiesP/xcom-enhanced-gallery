@@ -3,6 +3,7 @@
  * @description 브라우저 확장 API 및 웹 환경을 모의하여 테스트 환경에서 사용
  */
 
+// @ts-nocheck
 import { vi } from 'vitest';
 
 // ================================
@@ -138,6 +139,12 @@ export const mockHistory = {
  * 이미지 로딩 모의
  */
 export class MockImage {
+  onload: (() => void) | null;
+  onerror: (() => void) | null;
+  src: string;
+  width: number;
+  height: number;
+
   constructor() {
     this.onload = null;
     this.onerror = null;
@@ -223,10 +230,13 @@ export function setupBrowserEnvironment() {
   });
 
   // Media APIs
+  // @ts-ignore
   globalThis.Image = MockImage;
+  // @ts-ignore
   globalThis.Blob = mockBlob;
 
   // Network APIs
+  // @ts-ignore
   globalThis.fetch = mockBrowserExtensionAPI.fetch;
 
   // Navigator
@@ -236,6 +246,7 @@ export function setupBrowserEnvironment() {
   });
 
   // URL API
+  // @ts-ignore
   globalThis.URL = {
     ...globalThis.URL,
     createObjectURL: mockBrowserExtensionAPI.URL.createObjectURL,

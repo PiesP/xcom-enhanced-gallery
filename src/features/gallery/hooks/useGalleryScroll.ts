@@ -7,6 +7,7 @@
  */
 
 import { getPreactHooks } from '@shared/external/vendors';
+import { isHTMLElement } from '@shared/utils/dom-guards';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/EventManager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
@@ -202,12 +203,16 @@ export function useGalleryScroll({
       // 스크롤 종료 감지 타이머 재설정
       handleScrollEnd();
 
+      const rawTarget = event.target;
+      const targetTag = isHTMLElement(rawTarget) ? rawTarget.tagName : 'unknown';
+      const targetClass = isHTMLElement(rawTarget) ? rawTarget.className : 'none';
+
       logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
         delta,
         isGalleryOpen: galleryState.value.isOpen,
         isSmallImage,
-        targetElement: (event.target as HTMLElement)?.tagName || 'unknown',
-        targetClass: (event.target as HTMLElement)?.className || 'none',
+        targetElement: targetTag,
+        targetClass,
         timestamp: Date.now(),
       });
     },

@@ -1,15 +1,16 @@
-// @ts-nocheck
 /**
  * Vite Configuration for X.com Enhanced Gallery (UserScript Build)
  *
  * 유저스크립트 형식으로 빌드하기 위한 완전한 설정
  */
 /* eslint-env node */
-/* global Buffer, console, process */
 
 import preact from '@preact/preset-vite';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Buffer } from 'buffer';
+import process from 'process';
+import console from 'console';
 import { defineConfig } from 'vite';
 // Critical CSS 집계 & 중복 제거 (surface glass 토큰 단일 선언 보장)
 import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/build/critical-css';
@@ -18,11 +19,11 @@ import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/bui
 /**
  * @returns {import('vite').Plugin}
  */
-function createBundleAnalysisPlugin(buildMode) {
+function createBundleAnalysisPlugin(buildMode: any) {
   return {
     name: 'bundle-analysis',
-    apply: 'build',
-    writeBundle(options, bundle) {
+    apply: 'build' as const,
+    writeBundle(options: any, bundle: any) {
       const bundleObj = bundle;
       let totalSize = 0;
       const chunks = [];
@@ -30,6 +31,8 @@ function createBundleAnalysisPlugin(buildMode) {
       for (const [fileName, fileInfo] of Object.entries(bundleObj)) {
         if (
           fileInfo &&
+          typeof fileInfo === 'object' &&
+          'type' in fileInfo &&
           fileInfo.type === 'chunk' &&
           'code' in fileInfo &&
           typeof fileInfo.code === 'string'
@@ -84,14 +87,14 @@ const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
  * @param {string} mode
  * @returns {BuildMode}
  */
-function getBuildMode(mode) {
+function getBuildMode(mode: string): any {
   const isDevelopment = mode === 'development';
 
   return {
     isDevelopment,
     isProduction: !isDevelopment,
     minify: !isDevelopment,
-    sourcemap: true, // 모든 빌드에서 source map 활성화
+    sourcemap: isDevelopment, // Boolean으로 변경
     dropConsole: !isDevelopment,
   };
 }
@@ -101,7 +104,7 @@ function getBuildMode(mode) {
  * @param {BuildMode} buildMode
  * @returns {string}
  */
-function generateUserscriptHeader(buildMode) {
+function generateUserscriptHeader(buildMode: any): string {
   const devSuffix = buildMode.isDevelopment ? ' (Dev)' : '';
   const version = buildMode.isDevelopment
     ? `${packageJson.version}-dev.${Date.now()}`
@@ -149,12 +152,12 @@ function generateUserscriptHeader(buildMode) {
  * @param {BuildMode} buildMode
  * @returns {import('vite').Plugin}
  */
-function createUserscriptBundlerPlugin(buildMode) {
+function createUserscriptBundlerPlugin(buildMode: any) {
   return {
     name: 'userscript-bundler',
-    apply: 'build',
+    apply: 'build' as const,
 
-    async writeBundle(options, bundle) {
+    async writeBundle(options: any, bundle: any) {
       try {
         const bundleObj = bundle; // rollup bundle object
         const outDir = options && 'dir' in options && options.dir ? options.dir : 'dist';
@@ -168,7 +171,23 @@ function createUserscriptBundlerPlugin(buildMode) {
           return;
         }
 
-        const mainJsFile = jsFiles[0]; // 존재 보장 (위 length 체크)
+        // 엔트리 파일 찾기 (isEntry 속성 우선, fallback으로 첫 번째 파일)
+        const entryFile = Object.entries(bundleObj).find(
+          ([, info]) =>
+            info &&
+            typeof info === 'object' &&
+            'type' in info &&
+            info.type === 'chunk' &&
+            'isEntry' in info &&
+            info.isEntry
+        );
+        const mainJsFile = entryFile ? entryFile[0] : jsFiles[0];
+
+        if (!mainJsFile) {
+          console.warn('메인 JS 파일을 찾을 수 없습니다.');
+          return;
+        }
+
         const jsFilePath = path.resolve(outDir, mainJsFile);
 
         // CSS 내용 수집
@@ -257,7 +276,7 @@ function createUserscriptBundlerPlugin(buildMode) {
   };
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode }: { mode: string }) => {
   const buildMode = getBuildMode(mode);
 
   return {
@@ -274,7 +293,6 @@ export default defineConfig(({ mode }) => {
     // 환경 변수 정의
     define: {
       'process.env.NODE_ENV': JSON.stringify(buildMode.isProduction ? 'production' : 'development'),
-      'process.env': '{}',
       global: 'globalThis',
       __DEV__: buildMode.isDevelopment,
       __PROD__: buildMode.isProduction,
@@ -303,7 +321,7 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'es2020',
       outDir: 'dist',
-      emptyOutDir: false,
+      emptyOutDir: true,
       cssCodeSplit: false,
       assetsInlineLimit: 0,
       reportCompressedSize: !buildMode.isDevelopment,
@@ -410,7 +428,7 @@ export default defineConfig(({ mode }) => {
         },
       }),
 
-      sourcemap: buildMode.isDevelopment ? 'cheap-module-source-map' : buildMode.sourcemap,
+      sourcemap: buildMode.sourcemap,
       chunkSizeWarningLimit: 2000,
     },
 
@@ -423,10 +441,9 @@ export default defineConfig(({ mode }) => {
         '@/types': path.resolve(process.cwd(), 'src/types'),
         '@/external': path.resolve(process.cwd(), 'src/external'),
         '@/assets': path.resolve(process.cwd(), 'src/assets'),
-        // 기존 alias들도 호환성을 위해 유지
+        // Clean Architecture 기반 alias들
         '@features': path.resolve(process.cwd(), 'src/features'),
         '@shared': path.resolve(process.cwd(), 'src/shared'),
-        '@assets': path.resolve(process.cwd(), 'src/assets'),
       },
     },
 

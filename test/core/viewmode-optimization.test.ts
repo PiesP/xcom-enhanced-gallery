@@ -3,6 +3,7 @@
  * 불필요한 함수 제거 및 상수 단순화 검증
  */
 
+// @ts-nocheck - 리팩토링된 기능 테스트
 import { describe, it, expect } from 'vitest';
 import { VIEW_MODES, isValidViewMode } from '@/constants';
 

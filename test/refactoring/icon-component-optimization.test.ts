@@ -11,6 +11,7 @@
  * 3. REFACTOR: 성능 최적화 및 코드 개선
  */
 
+// @ts-nocheck - 아이콘 컴포넌트 최적화 테스트
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
 import fs from 'fs';

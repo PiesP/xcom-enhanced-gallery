@@ -3,6 +3,7 @@
  * @description Critical Path 초기화 오류 수정 검증
  */
 
+// @ts-nocheck - 메인 초기화 테스트
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CoreService } from '@shared/services/ServiceManager';
 

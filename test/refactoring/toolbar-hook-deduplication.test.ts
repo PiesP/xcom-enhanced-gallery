@@ -1,9 +1,10 @@
+// @ts-nocheck - 툴바 훅 중복 제거 테스트
 /**
  * @fileoverview TDD RED: 이벤트 시스템 중복 및 성능 문제 검증
  * @description events.ts와 EventManager.ts 간 중복 제거 테스트
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock 환경 설정
 const mockDocument = {

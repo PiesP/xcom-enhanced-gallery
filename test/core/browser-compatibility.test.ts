@@ -34,7 +34,7 @@ describe('Browser Environment Compatibility', () => {
       };
 
       // 브라우저 확장 환경 감지 로직
-      const isExtension = !!global.window.chrome?.runtime?.id;
+      const isExtension = !!(global.window as any).chrome?.runtime?.id;
       expect(isExtension).toBe(true);
     });
 
@@ -50,7 +50,7 @@ describe('Browser Environment Compatibility', () => {
         },
       };
 
-      const isExtension = !!global.window.browser?.runtime?.id;
+      const isExtension = !!(global.window as any).browser?.runtime?.id;
       expect(isExtension).toBe(true);
     });
 
@@ -63,7 +63,7 @@ describe('Browser Environment Compatibility', () => {
 
       expect(() => {
         const isExtension = !!(
-          global.window.chrome?.runtime?.id || global.window.browser?.runtime?.id
+          (global.window as any).chrome?.runtime?.id || (global.window as any).browser?.runtime?.id
         );
         expect(isExtension).toBe(false);
       }).not.toThrow();

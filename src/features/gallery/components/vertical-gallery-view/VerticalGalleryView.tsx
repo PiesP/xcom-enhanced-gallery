@@ -31,6 +31,7 @@ import {
   setupScrollAnimation,
 } from '@shared/utils/animations';
 import { useToolbarPositionBased } from '@features/gallery/hooks';
+import { isHTMLElement } from '@shared/utils/dom-guards';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
@@ -301,7 +302,9 @@ function VerticalGalleryViewCore({
   const handleBackgroundClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       // 툴바나 툴바 영역 클릭은 무시
-      const target = event.target as HTMLElement;
+      const rawTarget = event.target;
+      if (!isHTMLElement(rawTarget)) return;
+      const target = rawTarget;
       if (
         target.closest('.toolbarWrapper') ||
         target.closest('.toolbarHoverZone') ||

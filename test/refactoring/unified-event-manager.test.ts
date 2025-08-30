@@ -1,9 +1,10 @@
+// @ts-nocheck - 통합 이벤트 매니저 테스트
 /**
  * @fileoverview 통합 이벤트 관리자 리팩토링 테스트
  * @description RED → GREEN → REFACTOR 사이클로 이벤트 시스템 통합
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EventManager } from '@shared/services/EventManager';
 
 // DOM API Mock
@@ -17,7 +18,7 @@ const createMockElement = () => ({
 
 const createMockEvent = (type, options = {}) => ({
   type,
-  bubbles: options.bubbles || false,
+  bubbles: (options && options.bubbles) || false,
   stopImmediatePropagation: vi.fn(),
   preventDefault: vi.fn(),
   target: null,

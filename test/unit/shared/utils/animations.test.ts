@@ -3,7 +3,8 @@
  * @version 1.0.0 - Phase 1: 기본 애니메이션 시스템 테스트
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// @ts-nocheck - 애니메이션 유틸리티 테스트
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   ANIMATION_PRESETS,
   animateGalleryEnter,

@@ -61,7 +61,7 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
 
     it('focus-visible 지원이 추가되었다', () => {
       const focusVisibleMatch = toolbarCSSContent.match(/:focus-visible/g);
-      expect(focusVisibleMatch).toBeTruthy('focus-visible 지원이 추가됨');
+      expect(focusVisibleMatch, 'focus-visible 지원이 추가됨').toBeTruthy();
 
       // 모든 버튼 타입에 focus-visible이 적용되었는지 확인
       const buttonTypes = [
@@ -136,17 +136,17 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
   describe('접근성 및 호환성 검증', () => {
     it('reduced-motion 지원이 유지되었다', () => {
       const reducedMotionMatch = toolbarCSSContent.match(/@media.*prefers-reduced-motion.*reduce/g);
-      expect(reducedMotionMatch).toBeTruthy('reduced-motion 지원 유지');
+      expect(reducedMotionMatch, 'reduced-motion 지원 유지').toBeTruthy();
     });
 
     it('고대비 모드 지원이 유지되었다', () => {
       const highContrastMatch = toolbarCSSContent.match(/@media.*prefers-contrast.*high/g);
-      expect(highContrastMatch).toBeTruthy('고대비 모드 지원 유지');
+      expect(highContrastMatch, '고대비 모드 지원 유지').toBeTruthy();
     });
 
     it('모바일 반응형 지원이 유지되었다', () => {
       const mobileMatch = toolbarCSSContent.match(/@media.*max-width.*(768px|48em)/g);
-      expect(mobileMatch).toBeTruthy('모바일 반응형 지원 유지');
+      expect(mobileMatch, '모바일 반응형 지원 유지').toBeTruthy();
     });
   });
 

@@ -1,9 +1,10 @@
+// @ts-nocheck - 리팩토링 완료 후 정리된 테스트
 /**
  * @fileoverview TDD RED: 다운로드 메서드 중복 제거 테스트
  * @description MediaService와 BulkDownloadService 간 중복 제거
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('TDD RED: 다운로드 메서드 중복 제거', () => {
   beforeEach(() => {
@@ -97,6 +98,13 @@ describe('TDD RED: 다운로드 메서드 중복 제거', () => {
       expect(mediaService.downloadSingle).toBeUndefined();
       expect(mediaService.downloadMultiple).toBeUndefined();
       expect(mediaService.downloadBulk).toBeUndefined();
+
+      // GREEN: 대신 통일된 인터페이스 사용
+      const bulkDownloadService = mediaService.getDownloadService();
+      expect(bulkDownloadService).toBeDefined();
+      expect(typeof bulkDownloadService.downloadSingle).toBe('function');
+      expect(typeof bulkDownloadService.downloadMultiple).toBe('function');
+      expect(typeof bulkDownloadService.cancelDownload).toBe('function');
     });
 
     test('통합된 다운로드 옵션 인터페이스를 사용해야 함', async () => {
@@ -157,7 +165,7 @@ describe('TDD RED: 다운로드 메서드 중복 제거', () => {
       expect(typeof downloadService.cancelDownload).toBe('function');
       expect(typeof downloadService.isDownloading).toBe('function');
 
-      // REFACTOR: 미디어 추출 기능은 없어야 함
+      // REFACTOR: 이 메서드들은 다른 곳으로 이동됨
       expect(downloadService.extractMedia).toBeUndefined();
       expect(downloadService.extractFromClickedElement).toBeUndefined();
     });

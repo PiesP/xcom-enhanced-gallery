@@ -161,7 +161,16 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
  * 갤러리 내부 이벤트인지 확인
  */
 export function isGalleryInternalEvent(event: Event): boolean {
-  return isGalleryInternalElement(event.target as HTMLElement);
+  const target = event.target;
+  // avoid importing dom-guards in this barrel file to prevent cycles; use a lightweight check
+  try {
+    // tagName presence check
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!target || typeof (target as any).tagName !== 'string') return false;
+    return isGalleryInternalElement(target as HTMLElement);
+  } catch {
+    return false;
+  }
 }
 
 /**

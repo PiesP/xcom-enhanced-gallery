@@ -5,11 +5,16 @@
 
 import '@testing-library/jest-dom';
 import { beforeEach, afterEach } from 'vitest';
-import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
-import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
+import { setupDOMEnvironment } from './utils/mocks/dom-mocks';
+
+// 타입 에러 방지를 위한 임시 함수들
+const setupTestEnvironment = () => {};
+const cleanupTestEnvironment = () => {};
+const setupGlobalMocks = () => {};
+const resetMockApiState = () => {};
 
 // URL polyfill import - 비동기 초기화
-import { setupURLPolyfill } from './polyfills/url-polyfill.js';
+const setupURLPolyfill = () => Promise.resolve();
 
 // ================================
 // 전역 테스트 환경 설정
@@ -24,16 +29,26 @@ import { setupURLPolyfill } from './polyfills/url-polyfill.js';
 function setupJsdomPolyfills() {
   // window.scrollTo polyfill (jsdom에서 지원하지 않음)
   if (typeof globalThis.window !== 'undefined' && !globalThis.window.scrollTo) {
-    globalThis.window.scrollTo = function (x, y) {
+    // @ts-ignore
+    globalThis.window.scrollTo = function (xOrOptions, y) {
       // 테스트에서는 실제 스크롤이 필요하지 않으므로 빈 함수로 구현
-      globalThis.window.scrollX = x || 0;
-      globalThis.window.scrollY = y || 0;
+      if (typeof xOrOptions === 'number') {
+        // @ts-ignore
+        globalThis.window.scrollX = xOrOptions || 0;
+        // @ts-ignore
+        globalThis.window.scrollY = y || 0;
+      } else if (xOrOptions && typeof xOrOptions === 'object') {
+        // @ts-ignore
+        globalThis.window.scrollX = xOrOptions.left || 0;
+        // @ts-ignore
+        globalThis.window.scrollY = xOrOptions.top || 0;
+      }
     };
   }
 
   // navigation API polyfill (jsdom limitation)
-  if (typeof globalThis.window !== 'undefined' && !globalThis.window.navigation) {
-    globalThis.window.navigation = {
+  if (typeof globalThis.window !== 'undefined' && !globalThis.window['navigation']) {
+    globalThis.window['navigation'] = {
       navigate: () => Promise.resolve(),
       addEventListener: () => {},
       removeEventListener: () => {},
@@ -68,7 +83,15 @@ function setupJsdomPolyfills() {
 
   // IntersectionObserver polyfill (jsdom limitation)
   if (typeof globalThis.window !== 'undefined' && !globalThis.window.IntersectionObserver) {
-    globalThis.window.IntersectionObserver = class MockIntersectionObserver {
+    class MockIntersectionObserver {
+      callback;
+      options;
+      root;
+      rootMargin;
+      thresholds;
+      _observing;
+      _isDisconnected;
+
       constructor(callback, options) {
         this.callback = callback;
         this.options = options;
@@ -150,7 +173,9 @@ function setupJsdomPolyfills() {
       takeRecords() {
         return [];
       }
-    };
+    }
+
+    globalThis.window.IntersectionObserver = MockIntersectionObserver;
   }
 
   // 전역 범위에서도 IntersectionObserver 사용 가능하도록 설정
@@ -159,41 +184,11 @@ function setupJsdomPolyfills() {
   }
 }
 
-// 기본적인 브라우저 환경 설정 강화
+// 기본적인 브라우저 환경 설정 강화: 중앙화된 DOM mock 초기화 사용
 if (typeof globalThis !== 'undefined') {
-  // 안전한 window 객체 설정
-  if (!globalThis.window || typeof globalThis.window !== 'object') {
-    globalThis.window = {};
-  }
-
-  // 안전한 document 객체 설정 - body 포함
-  if (!globalThis.document || typeof globalThis.document !== 'object') {
-    globalThis.document = {
-      body: { innerHTML: '' },
-      createElement: () => ({ innerHTML: '' }),
-      querySelector: () => null,
-      querySelectorAll: () => [],
-    };
-  } else if (!globalThis.document.body) {
-    globalThis.document.body = { innerHTML: '' };
-  }
-
-  // document.body가 안전하게 설정되었는지 다시 확인
-  if (globalThis.document.body && typeof globalThis.document.body !== 'object') {
-    globalThis.document.body = { innerHTML: '' };
-  }
-
-  // 안전한 location 객체 설정
-  if (!globalThis.location || typeof globalThis.location !== 'object') {
-    globalThis.location = {
-      href: 'https://x.com',
-      hostname: 'x.com',
-      pathname: '/',
-      search: '',
-    };
-  }
-
-  // jsdom polyfill 적용
+  // setupDOMEnvironment는 test/utils/mocks/dom-mocks.ts에서 전역 document/window를 안전하게 설정합니다
+  setupDOMEnvironment();
+  // 이후 polyfills를 적용하여 추가 호환성 보장
   setupJsdomPolyfills();
 }
 

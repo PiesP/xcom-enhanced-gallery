@@ -14,6 +14,7 @@ import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
 import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
+import { isHTMLElement } from '@shared/utils/dom-guards';
 import { useSmartImageFit } from '../../hooks/useSmartImageFit';
 import styles from './VerticalImageItem.module.css';
 
@@ -186,8 +187,12 @@ function BaseVerticalImageItemCore({
   const handleClick = useCallback(
     (event: MouseEvent) => {
       // 다운로드 버튼 클릭은 제외
-      if ((event.target as HTMLElement).closest(`.${styles.downloadButton}`)) {
-        return;
+      const rawTarget = event.target;
+      if (isHTMLElement(rawTarget)) {
+        const targ = rawTarget as HTMLElement;
+        if (targ.closest(`.${styles.downloadButton}`)) {
+          return;
+        }
       }
 
       // 컨테이너에 포커스 설정

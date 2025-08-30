@@ -5,13 +5,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/constants.ts",
@@ -767,13 +761,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/features/gallery/index.ts",
@@ -1107,9 +1095,44 @@
     },
     {
       "source": "src/styles/globals.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../assets/styles/base/reset.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/assets/styles/base/reset.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/main.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/assets/styles/base/reset.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/styles/globals.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3391,17 +3414,25 @@
       "valid": true
     },
     {
+      "source": "src/shared/hooks/useGalleryScroll.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useSmartImageFit.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/hooks/useUnifiedState.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/index.ts",
@@ -5282,6 +5313,23 @@
         },
         {
           "dynamic": false,
+          "module": "./dom-guards",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/dom-guards.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./performance/performance-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5331,6 +5379,15 @@
         "src/shared/utils/core-utils.ts",
         "src/shared/utils/utils.ts",
         "src/shared/utils/debug/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/dom-guards.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/core-utils.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6145,26 +6202,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/services/UnifiedEventManager.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/services/event-managers.ts",
@@ -6897,13 +6935,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/utils/animations.ts",
@@ -6944,39 +6976,21 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/utils/cleanup/CleanupValidator.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/utils/cleanup/OrphanFileCleanup.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/utils/core/index.ts",
@@ -7058,13 +7072,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/utils/memory/index.ts",
@@ -7305,104 +7313,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/build/critical-css.ts",
-        "to": "src/build/critical-css.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/features/gallery/hooks/useGalleryScrollEnhanced.ts",
-        "to": "src/features/gallery/hooks/useGalleryScrollEnhanced.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/hooks/useUnifiedState.ts",
-        "to": "src/shared/hooks/useUnifiedState.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/services/StateManager.ts",
-        "to": "src/shared/services/StateManager.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/services/UnifiedEventManager.ts",
-        "to": "src/shared/services/UnifiedEventManager.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/utils/analysis/DependencyAnalyzer.ts",
-        "to": "src/shared/utils/analysis/DependencyAnalyzer.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/utils/backup/BackupManager.ts",
-        "to": "src/shared/utils/backup/BackupManager.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/utils/cleanup/CleanupValidator.ts",
-        "to": "src/shared/utils/cleanup/CleanupValidator.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/utils/cleanup/OrphanFileCleanup.ts",
-        "to": "src/shared/utils/cleanup/OrphanFileCleanup.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/utils/media/smart-image-fit.ts",
-        "to": "src/shared/utils/media/smart-image-fit.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 10,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 202,
-    "totalDependenciesCruised": 305,
+    "totalCruised": 205,
+    "totalDependenciesCruised": 307,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
@@ -7702,7 +7619,7 @@
           "severity": "info",
           "from": {
             "orphan": true,
-            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$"
+            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$|^src/build/.*[.]ts$|^src/.*/test[.]ts$|^src/shared/utils/cleanup/.*[.]ts$|^src/shared/utils/backup/.*[.]ts$|^src/shared/utils/analysis/.*[.]ts$|^src/shared/services/StateManager[.]ts$|^src/shared/hooks/useUnifiedState[.]ts$|^src/shared/utils/media/smart-image-fit[.]ts$|^src/shared/hooks/useSmartImageFit[.]ts$|^src/shared/hooks/useGalleryScroll[.]ts$|^src/features/gallery/hooks/useGalleryScrollEnhanced[.]ts$"
           },
           "to": {},
           "scope": "module"

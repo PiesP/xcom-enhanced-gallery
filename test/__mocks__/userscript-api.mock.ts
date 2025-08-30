@@ -182,6 +182,23 @@ export function setupGlobalMocks() {
 }
 
 /**
+ * 유저스크립트 API 모의 설정
+ */
+export function setupUserscriptAPIMocks() {
+  // globalThis에 모의 함수들 설정
+  Object.assign(globalThis, mockUserscriptAPI);
+
+  // Node.js 환경용 설정
+  try {
+    if (typeof globalThis.global !== 'undefined') {
+      Object.assign(globalThis.global, mockUserscriptAPI);
+    }
+  } catch {
+    // 무시
+  }
+}
+
+/**
  * 모의 스토리지 초기화
  */
 export function clearMockStorage() {

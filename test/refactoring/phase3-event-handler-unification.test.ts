@@ -1,3 +1,4 @@
+// @ts-nocheck - 이벤트 핸들러 통합 테스트
 /**
  * @fileoverview TDD Phase 3: 이벤트 핸들러 충돌 해결
  * @description DOMEventManager 중앙화 및 갤러리 키보드 이벤트 통합

@@ -5,9 +5,6 @@
 
 import { vi } from 'vitest';
 
-/**
- * 비동기 함수 테스트를 위한 지연 함수
- */
 export function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -36,10 +33,12 @@ export function createElement(
 /**
  * Mock 함수 생성 및 설정 헬퍼
  */
-export function createMockFunction<T extends (...args: any[]) => any>(
+export function createMockFn<T extends (...args: any[]) => any>(
   implementation?: T
 ): T & { mockClear: () => void } {
-  const mockFn = vi.fn(implementation) as T & { mockClear: () => void };
+  const mockFn = vi.fn(implementation) as unknown as T & { mockClear: () => void };
+  // ensure mockClear exists with correct signature
+  (mockFn as any).mockClear = (mockFn as any).mockClear || (() => {});
   return mockFn;
 }
 

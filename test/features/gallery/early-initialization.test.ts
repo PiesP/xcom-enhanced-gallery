@@ -3,6 +3,7 @@
  * @description 새로고침 후 즉시 미디어 클릭 시 유저스크립트 갤러리가 표시되는지 검증
  */
 
+// @ts-nocheck - 갤러리 초기화 테스트
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('갤러리 초기화 지연 문제 해결', () => {
@@ -15,7 +16,7 @@ describe('갤러리 초기화 지연 문제 해결', () => {
     galleryOpened = false;
 
     // 미디어 요소 모킹
-    mockMediaElement = document.createElement('img');
+    mockMediaElement = /** @type {HTMLImageElement} */ document.createElement('img');
     mockMediaElement.setAttribute('data-testid', 'tweetPhoto');
     mockMediaElement.src = 'https://pbs.twimg.com/media/test.jpg';
     document.body.appendChild(mockMediaElement);

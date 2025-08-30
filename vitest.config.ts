@@ -7,6 +7,7 @@ import preact from '@preact/preset-vite';
 import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath, URL } from 'node:url';
+import os from 'os';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -16,13 +17,17 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      '@/components': resolve(__dirname, './src/components'),
+      '@/utils': resolve(__dirname, './src/utils'),
+      '@/types': resolve(__dirname, './src/types'),
+      '@/external': resolve(__dirname, './src/external'),
+      '@/assets': resolve(__dirname, './src/assets'),
+      // Clean Architecture 기반 alias들
       '@app': resolve(__dirname, './src/app'),
       '@features': resolve(__dirname, './src/features'),
       '@shared': resolve(__dirname, './src/shared'),
       '@core': resolve(__dirname, './src/core'),
       '@infrastructure': resolve(__dirname, './src/infrastructure'),
-      '@utils': resolve(__dirname, './src/utils'),
-      '@assets': resolve(__dirname, './src/assets'),
     },
   },
 
@@ -109,7 +114,7 @@ export default defineConfig({
       threads: {
         singleThread: false,
         minThreads: 1,
-        maxThreads: 4,
+        maxThreads: Math.min(4, os.cpus().length),
       },
     },
   },

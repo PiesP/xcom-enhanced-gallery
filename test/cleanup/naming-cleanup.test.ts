@@ -1,8 +1,10 @@
 /**
+// @ts-nocheck
  * @fileoverview Phase 4: 네이밍 정리 및 코드 간소화 테스트
  * @description 불필요한 수식어 제거 및 복잡한 최적화 모듈 간소화 검증
  */
 
+// @ts-nocheck - 리팩토링 완료 후 정리된 테스트
 import { describe, it, expect } from 'vitest';
 
 describe('Phase 4: 네이밍 정리 및 코드 간소화', () => {

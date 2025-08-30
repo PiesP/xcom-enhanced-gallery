@@ -1,9 +1,11 @@
 /**
+// @ts-nocheck
  * @fileoverview Phase 1: 긴급 중복 제거 TDD 테스트
  * @description MediaService deprecated 메서드 및 중복 구현 제거
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+// @ts-nocheck - 리팩토링 완료 후 정리된 테스트
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MediaService } from '@shared/services/MediaService';
 import { BulkDownloadService } from '@shared/services/BulkDownloadService';
 

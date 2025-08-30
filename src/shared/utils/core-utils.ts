@@ -74,8 +74,11 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
 /**
  * 이벤트가 갤러리 내부 이벤트인지 확인
  */
+import { isHTMLElement } from './dom-guards';
+
 export function isGalleryInternalEvent(event: Event): boolean {
-  const target = event.target as HTMLElement;
+  const target = event.target;
+  if (!isHTMLElement(target)) return false;
   return isInsideGallery(target);
 }
 

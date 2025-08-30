@@ -119,13 +119,13 @@ class MockStorage {
     // 간단한 바이트 계산 시뮬레이션
     if (!keys) {
       return Array.from(this.data.values()).reduce(
-        (total, value) => total + JSON.stringify(value).length,
+        (total, value) => (total as number) + JSON.stringify(value).length,
         0
       );
     }
 
     const keysArray = Array.isArray(keys) ? keys : [keys];
-    return keysArray.reduce((total, key) => {
+    return keysArray.reduce((total: number, key) => {
       const value = this.data.get(key);
       return total + (value ? JSON.stringify(value).length : 0);
     }, 0);

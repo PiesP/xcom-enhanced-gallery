@@ -11,4 +11,4 @@ import '@shared/styles/isolated-gallery.css';
 import '@shared/styles/design-tokens.css';
 
 // 브라우저 스타일 초기화 (갤러리 컨테이너 내부에만 적용)
-import '@assets/styles/base/reset.css';
+import '../assets/styles/base/reset.css';

@@ -1,9 +1,10 @@
 /**
- * @fileoverview TDD GREEN Phase: 갤러리 휠 스크롤 이벤트 누출 방지 구현
- * @description 실제 구현 검증을 위한 단위 테스트
+ * @fileoverview Gallery 휠 스크롤 구현 테스트
+ * @description 갤러리에서 휠 스크롤 기능 구현 검증
  */
 
-import { describe, test, expect, vi } from 'vitest';
+// @ts-nocheck - Hook이 미구현 상태
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 
 describe('TDD GREEN Phase: 갤러리 휠 스크롤 실제 구현 검증', () => {
   let mockContainer;

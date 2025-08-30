@@ -159,6 +159,15 @@ export default [
       react: {
         version: 'detect',
         pragma: 'h',
+        pragmaFrag: 'Fragment',
+      },
+      'import/resolver': {
+        alias: {
+          '@': './src',
+          '@features': './src/features',
+          '@shared': './src/shared',
+          '@assets': './src/assets',
+        },
       },
     },
   },

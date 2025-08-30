@@ -1,3 +1,4 @@
+// @ts-nocheck - 툴바 자동 숨김 훅 테스트
 import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
 
 // vendor 시스템 목업

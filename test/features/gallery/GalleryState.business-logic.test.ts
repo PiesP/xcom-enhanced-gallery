@@ -7,6 +7,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // 갤러리 상태 모킹
 class MockGalleryState {
+  currentIndex: number;
+  mediaItems: any[];
+  isVisible: boolean;
+  isLoading: boolean;
+  viewMode: 'grid' | 'list' | 'fullscreen';
+  settings: { autoPlay: boolean; showThumbnails: boolean; keyboardNavigation?: boolean };
+
   constructor() {
     this.currentIndex = 0;
     this.mediaItems = [];
@@ -20,12 +27,12 @@ class MockGalleryState {
     };
   }
 
-  setMediaItems(items) {
+  setMediaItems(items: any[]) {
     this.mediaItems = items;
     this.currentIndex = 0;
   }
 
-  setCurrentIndex(index) {
+  setCurrentIndex(index: number) {
     if (index >= 0 && index < this.mediaItems.length) {
       this.currentIndex = index;
       return true;
@@ -51,15 +58,15 @@ class MockGalleryState {
     return this.mediaItems.length;
   }
 
-  setVisible(visible) {
+  setVisible(visible: boolean) {
     this.isVisible = visible;
   }
 
-  setLoading(loading) {
+  setLoading(loading: boolean) {
     this.isLoading = loading;
   }
 
-  setViewMode(mode) {
+  setViewMode(mode: 'grid' | 'list' | 'fullscreen') {
     if (['grid', 'list', 'fullscreen'].includes(mode)) {
       this.viewMode = mode;
       return true;
@@ -67,7 +74,13 @@ class MockGalleryState {
     return false;
   }
 
-  updateSettings(newSettings) {
+  updateSettings(
+    newSettings: Partial<{
+      autoPlay: boolean;
+      showThumbnails: boolean;
+      keyboardNavigation?: boolean;
+    }>
+  ) {
     this.settings = { ...this.settings, ...newSettings };
   }
 
@@ -82,12 +95,15 @@ class MockGalleryState {
 
 // 갤러리 서비스 모킹
 class MockGalleryService {
+  state: MockGalleryState;
+  eventListeners: Map<string, Function[]>;
+
   constructor() {
     this.state = new MockGalleryState();
     this.eventListeners = new Map();
   }
 
-  async loadMediaFromTweet(tweetId) {
+  async loadMediaFromTweet(tweetId: string) {
     this.state.setLoading(true);
 
     try {
@@ -177,22 +193,22 @@ class MockGalleryService {
 
     const mediaItems = this.state.mediaItems;
     this.emit('download:bulk:started', { count: mediaItems.length });
-    return mediaItems.map(media => ({
+    return mediaItems.map((media: any) => ({
       url: media.url,
       filename: media.filename,
     }));
   }
 
-  on(event, callback) {
+  on(event: string, callback: Function) {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
-    this.eventListeners.get(event).push(callback);
+    this.eventListeners.get(event)!.push(callback);
   }
 
-  off(event, callback) {
+  off(event: string, callback: Function) {
     if (this.eventListeners.has(event)) {
-      const listeners = this.eventListeners.get(event);
+      const listeners = this.eventListeners.get(event)!;
       const index = listeners.indexOf(callback);
       if (index > -1) {
         listeners.splice(index, 1);
@@ -200,17 +216,21 @@ class MockGalleryService {
     }
   }
 
-  emit(event, data) {
+  emit(event: string, data?: any) {
     if (this.eventListeners.has(event)) {
-      this.eventListeners.get(event).forEach(callback => {
-        callback(data);
+      this.eventListeners.get(event)!.forEach(callback => {
+        try {
+          callback(data);
+        } catch (e) {
+          // swallow errors from test listeners
+        }
       });
     }
   }
 }
 
 describe('Gallery State Management - Business Logic', () => {
-  let galleryState;
+  let galleryState: MockGalleryState;
 
   beforeEach(() => {
     galleryState = new MockGalleryState();
@@ -314,7 +334,7 @@ describe('Gallery State Management - Business Logic', () => {
     it('should reject invalid view modes', () => {
       const originalMode = galleryState.viewMode;
 
-      expect(galleryState.setViewMode('invalid')).toBe(false);
+      expect(galleryState.setViewMode('invalid' as any)).toBe(false);
       expect(galleryState.viewMode).toBe(originalMode);
     });
   });
@@ -344,7 +364,7 @@ describe('Gallery State Management - Business Logic', () => {
 });
 
 describe('Gallery Service - Integration Tests', () => {
-  let galleryService;
+  let galleryService: MockGalleryService;
 
   beforeEach(() => {
     galleryService = new MockGalleryService();

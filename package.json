@@ -4,12 +4,16 @@
   "description": "Media viewer and download functionality for X.com",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "vite --mode development",
     "build": "npm run build:prod",
     "build:dev": "vite build --mode development",
     "build:prod": "vite build --mode production",
-    "build:all": "npm run clean &&npm run build:dev && npm run build:prod",
+    "build:all": "npm run clean && npm run build:dev && npm run build:prod",
     "clean": "rimraf dist",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
@@ -23,7 +27,8 @@
     "format:check": "prettier --check .",
     "quality": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "validate": "npm run typecheck && npm run lint:fix && npm run format",
-    "prebuild": "npm run deps:all && npm run validate && npm run test",
+    "prebuild": "npm run typecheck && npm run lint:fix",
+    "prebuild:full": "npm run deps:all && npm run validate && npm run test",
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "deps:graph": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | dot -T svg > docs/dependency-graph.svg || dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | sfdp -T svg > docs/dependency-graph.svg",
     "deps:graph:dot": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src > docs/dependency-graph.dot",

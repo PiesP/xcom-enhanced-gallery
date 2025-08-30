@@ -3,7 +3,8 @@
  * @version 1.0.0 - RED Phase
  */
 
-import { describe, it, expect, vi } from 'vitest';
+// @ts-nocheck - 로깅 시스템 통합 테스트
+import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('RED Phase: 로깅 시스템 분산 문제', () => {
   describe('현재 분산된 로깅 패턴 확인', () => {

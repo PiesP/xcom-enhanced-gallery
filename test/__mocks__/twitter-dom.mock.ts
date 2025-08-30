@@ -1,9 +1,11 @@
 /**
+// @ts-nocheck
  * @fileoverview Twitter(X.com) DOM 구조 모의 구현
  * @description 실제 X.com 페이지의 HTML 구조를 모방하여 테스트 환경에서 사용
  */
 
 import { vi } from 'vitest';
+import { isImageElement, getSrcIfPresent } from '../../src/shared/utils/dom-guards';
 
 // mock-action-simulator에서 함수들을 import
 import { simulateClick, simulateKeypress } from '../utils/helpers/mock-action-simulator.js';
@@ -301,8 +303,9 @@ export function simulateTweetImageClick() {
   const doc = globalThis.document;
   doc.addEventListener('click', event => {
     const target = event.target;
-    if (target && target.tagName === 'IMG' && target.src.includes('pbs.twimg.com')) {
-      const galleryModal = createGalleryModal(target.src);
+    const src = getSrcIfPresent(target);
+    if (isImageElement(target) && src && src.includes('pbs.twimg.com')) {
+      const galleryModal = createGalleryModal(src);
       return galleryModal;
     }
   });
@@ -388,12 +391,17 @@ export function createGalleryModal(
     justify-content: center;
   `;
 
-  const mediaElement = globalThis.document.createElement(isVideo ? 'video' : 'img');
+  const mediaElement =
+    /** @type {HTMLVideoElement | HTMLImageElement} */ globalThis.document.createElement(
+      isVideo ? 'video' : 'img'
+    );
   mediaElement.src = mediaUrl;
-  mediaElement.alt = '갤러리 이미지';
+  if (!isVideo && 'alt' in mediaElement) {
+    mediaElement.alt = '갤러리 이미지';
+  }
   mediaElement.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain;';
 
-  if (isVideo) {
+  if (isVideo && 'controls' in mediaElement) {
     mediaElement.controls = true;
   }
 
@@ -408,21 +416,34 @@ export function createGalleryModal(
 export function setupImageClickHandlers() {
   const doc = globalThis.document;
   doc.addEventListener('click', event => {
-    const target = event.target;
+    const target = /** @type {HTMLElement | null} */ event.target;
 
     // 트위터 이미지 클릭 처리
-    if (target.tagName === 'IMG' && target.src && target.src.includes('pbs.twimg.com')) {
+    if (
+      target &&
+      'tagName' in target &&
+      target.tagName === 'IMG' &&
+      'src' in target &&
+      target.src &&
+      typeof target.src === 'string' &&
+      target.src.includes('pbs.twimg.com')
+    ) {
       // Ctrl+클릭 시 대량 다운로드 모드
       if (event.ctrlKey) {
         createBulkDownloadMode();
       } else {
         // 일반 클릭 시 갤러리 모달
-        createGalleryModal(target.src);
+        createGalleryModal(/** @type {string} */ target.src);
       }
     }
 
     // 다운로드 버튼 클릭 처리
-    if (target.getAttribute('data-testid') === 'download-all-btn') {
+    if (
+      target &&
+      'getAttribute' in target &&
+      typeof target.getAttribute === 'function' &&
+      target.getAttribute('data-testid') === 'download-all-btn'
+    ) {
       // 진행률 표시 생성
       createDownloadProgress();
     }

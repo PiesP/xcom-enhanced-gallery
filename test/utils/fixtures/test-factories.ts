@@ -376,5 +376,7 @@ export function parseFileSize(size: string): number {
   if (!match) return 0;
 
   const [, num, unit] = match;
+  if (!num || !unit) return 0;
+
   return parseFloat(num) * (units[unit.toUpperCase() as keyof typeof units] || 1);
 }

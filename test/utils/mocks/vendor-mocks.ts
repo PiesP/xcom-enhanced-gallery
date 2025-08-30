@@ -242,7 +242,9 @@ export function createMockPreactCompat() {
       const wrappedComponent = vi.fn().mockImplementation((props, ref) => {
         return component(props, ref);
       });
-      wrappedComponent.displayName = `forwardRef(${component.name || 'Component'})`;
+      Object.assign(wrappedComponent, {
+        displayName: `forwardRef(${component.name || 'Component'})`,
+      });
       return wrappedComponent;
     }),
 
@@ -251,9 +253,11 @@ export function createMockPreactCompat() {
       const memoizedComponent = vi.fn().mockImplementation(props => {
         return component(props);
       });
-      memoizedComponent.displayName = `memo(${component.name || 'Component'})`;
-      memoizedComponent._isMemoized = true;
-      memoizedComponent.compare = areEqual;
+      Object.assign(memoizedComponent, {
+        displayName: `memo(${component.name || 'Component'})`,
+        _isMemoized: true,
+        compare: areEqual,
+      });
       return memoizedComponent;
     }),
   };

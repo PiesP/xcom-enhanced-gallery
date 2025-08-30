@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { isImageElement, getSrcIfPresent } from '../../src/shared/utils/dom-guards';
 import '../setup';
 
 // 전역 변수 안전 접근
@@ -48,7 +49,7 @@ function setupImageClickHandlers() {
   // Mock 함수 - 테스트용 갤러리 모달 생성
   doc.addEventListener('click', event => {
     const target = event.target;
-    if (target && target.tagName === 'IMG' && target.src && target.src.includes('pbs.twimg.com')) {
+    if (isImageElement(target) && getSrcIfPresent(target)?.includes('pbs.twimg.com')) {
       // 갤러리 모달 생성 모킹
       const modal = doc.createElement('div');
       modal.setAttribute('data-testid', 'photoModal');

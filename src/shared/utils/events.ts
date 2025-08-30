@@ -8,6 +8,7 @@ import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
+import { isHTMLElement } from '@shared/utils/dom-guards';
 
 // 기본 이벤트 관리
 interface EventContext {
@@ -231,8 +232,9 @@ function checkInsideGallery(element: HTMLElement | null): boolean {
 
 async function detectMediaFromClick(event: MouseEvent): Promise<MediaInfo | null> {
   try {
-    const target = event.target as HTMLElement;
-    if (!target) return null;
+    const rawTarget = event.target;
+    if (!isHTMLElement(rawTarget)) return null;
+    const target = rawTarget;
 
     const detector = MediaClickDetector.getInstance();
     const result = detector.detectMediaFromClick(target);
@@ -547,7 +549,9 @@ async function handleMediaClick(
   options: GalleryEventOptions
 ): Promise<EventHandlingResult> {
   try {
-    const target = event.target as HTMLElement;
+    const rawTarget = event.target;
+    if (!isHTMLElement(rawTarget)) return { handled: false, reason: 'Invalid target' };
+    const target = rawTarget;
 
     // 갤러리 내부 클릭인지 확인
     if (checkGalleryOpen() && checkInsideGallery(target)) {

@@ -5,6 +5,49 @@
 
 import { expect } from 'vitest';
 
+// 필요한 타입들을 직접 정의합니다
+type MediaItem = {
+  id: string;
+  type: 'image' | 'video' | 'gif';
+  url: string;
+  filename: string;
+  downloadStatus: 'idle' | 'downloading' | 'completed' | 'failed';
+  info: MediaInfo;
+};
+
+type MediaInfo = {
+  id: string;
+  url: string;
+  type: 'image' | 'video' | 'gif';
+  filename: string;
+  width?: number;
+  height?: number;
+};
+
+type ImageInfo = MediaInfo & {
+  type: 'image';
+  format: string;
+  size: number;
+};
+
+type VideoInfo = MediaInfo & {
+  type: 'video';
+  duration: number;
+  format: string;
+  size: number;
+  bitrate: number;
+  thumbnailUrl: string;
+};
+
+type GalleryState = {
+  currentIndex: number;
+  mediaItems: MediaItem[];
+  isVisible: boolean;
+  isLoading: boolean;
+  viewMode: 'grid' | 'list' | 'fullscreen';
+  error: { message: string } | null;
+};
+
 // ================================
 // DOM Assertion Helpers
 // ================================

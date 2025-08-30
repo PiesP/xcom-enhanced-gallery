@@ -8,6 +8,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { getPreactHooks } from '@shared/external/vendors';
+import { isHTMLElement } from '@shared/utils/dom-guards';
 
 interface UseGalleryKeyboardOptions {
   onClose: () => void;
@@ -19,15 +20,18 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions) {
   // 갤러리 키보드 이벤트 핸들러 (확장된 버전)
   const handleKeyDown = useCallback(
     async (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
+      const rawTarget = event.target;
+      if (isHTMLElement(rawTarget)) {
+        const target = rawTarget as HTMLElement;
 
-      // 입력 필드에서는 키보드 이벤트 무시
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.contentEditable === 'true'
-      ) {
-        return;
+        // 입력 필드에서는 키보드 이벤트 무시
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.contentEditable === 'true'
+        ) {
+          return;
+        }
       }
 
       // 키보드 이벤트 처리

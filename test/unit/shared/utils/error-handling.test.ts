@@ -3,7 +3,8 @@
  * @description Phase C: 일관된 에러 처리 패턴 검증
  */
 
-import { describe, it, expect } from 'vitest';
+// @ts-nocheck - 에러 핸들링 유틸리티 테스트
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('에러 핸들링 통합', () => {
   describe('에러 메시지 표준화', () => {

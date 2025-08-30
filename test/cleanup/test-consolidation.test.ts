@@ -3,6 +3,7 @@
  * @description TDD 방식으로 테스트 코드 정리를 검증
  */
 
+// @ts-nocheck - 테스트 정리 관련 검증
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';

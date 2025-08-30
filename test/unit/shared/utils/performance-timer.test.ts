@@ -1,3 +1,4 @@
+// @ts-nocheck - 성능 타이머 유틸리티 테스트
 /**
  * @fileoverview 타이머 관리 테스트 (단순화)
  * @description Phase C: 타이머 관리 유틸리티 검증

@@ -1,3 +1,4 @@
+// @ts-nocheck - 라이브러리 통합 테스트
 /**
  * 외부 라이브러리 통합 테스트
  *
@@ -5,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { initializeVendors, getPreact, getPreactSignals } from '@shared/external/vendors';
+import { initializeVendors } from '@shared/external/vendors';
 
 describe('외부 라이브러리 통합 테스트', () => {
   beforeEach(async () => {
