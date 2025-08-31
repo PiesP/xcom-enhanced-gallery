@@ -221,6 +221,10 @@ export function getHighQualityMediaUrl(
     }
 
     const urlObj = new URLConstructor(url);
+    // Preserve non-http(s) protocols (data:, blob:, etc.) - don't attempt to add search params
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+      return url;
+    }
     urlObj.searchParams.set('name', quality);
     if (!urlObj.searchParams.has('format')) {
       urlObj.searchParams.set('format', 'jpg');

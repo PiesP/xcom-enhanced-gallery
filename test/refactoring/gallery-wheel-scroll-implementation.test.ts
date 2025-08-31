@@ -3,7 +3,8 @@
  * @description 갤러리에서 휠 스크롤 기능 구현 검증
  */
 
-// @ts-nocheck - Hook이 미구현 상태
+/* eslint-disable no-undef */
+/* @ts-nocheck - Hook이 미구현 상태 */
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { setupDOMEnvironment } from '../utils/mocks/dom-mocks';
 
@@ -11,20 +12,20 @@ import { setupDOMEnvironment } from '../utils/mocks/dom-mocks';
 beforeEach(() => {
   setupDOMEnvironment();
   // 전역 이벤트 생성자 모의
-  globalThis.WheelEvent = class WheelEvent extends Event {
-    constructor(type, options = {}) {
+  (globalThis as any).WheelEvent = class WheelEvent extends Event {
+    constructor(type: any, options: any = {}) {
       super(type, options);
-      this.deltaX = options.deltaX || 0;
-      this.deltaY = options.deltaY || 0;
-      this.deltaZ = options.deltaZ || 0;
-      this.deltaMode = options.deltaMode || 0;
+      (this as any).deltaX = options.deltaX || 0;
+      (this as any).deltaY = options.deltaY || 0;
+      (this as any).deltaZ = options.deltaZ || 0;
+      (this as any).deltaMode = options.deltaMode || 0;
     }
-  };
+  } as any;
 
   // CSS 모의
-  globalThis.CSS = {
+  (globalThis as any).CSS = {
     supports: vi.fn().mockReturnValue(true),
-  };
+  } as any;
 });
 
 // Mock 훅들 정의
@@ -38,6 +39,10 @@ const useSmartImageFit = vi.fn().mockReturnValue({
   styles: { transform: 'scale(1)', transformOrigin: 'center' },
   dimensions: { width: 100, height: 100 },
   isLoading: false,
+  // 테스트에서 기대하는 호환성 속성 추가
+  imageSize: { width: 100, height: 100 },
+  viewportSize: { width: 1920, height: 1080 },
+  isImageSmallerThanViewport: true,
 });
 
 describe('TDD GREEN Phase: 갤러리 휠 스크롤 실제 구현 검증', () => {
@@ -51,23 +56,25 @@ describe('TDD GREEN Phase: 갤러리 휠 스크롤 실제 구현 검증', () => 
     }
 
     // 전역 이벤트 생성자 모의
-    if (typeof globalThis.WheelEvent === 'undefined') {
-      globalThis.WheelEvent = vi.fn().mockImplementation((type, options = {}) => ({
-        type,
-        deltaX: options.deltaX || 0,
-        deltaY: options.deltaY || 0,
-        deltaZ: options.deltaZ || 0,
-        deltaMode: options.deltaMode || 0,
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
-      }));
+    if (typeof (globalThis as any).WheelEvent === 'undefined') {
+      (globalThis as any).WheelEvent = vi
+        .fn()
+        .mockImplementation((type: any, options: any = {}) => ({
+          type,
+          deltaX: options.deltaX || 0,
+          deltaY: options.deltaY || 0,
+          deltaZ: options.deltaZ || 0,
+          deltaMode: options.deltaMode || 0,
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+        })) as any;
     }
 
     // CSS 모의
-    if (typeof globalThis.CSS === 'undefined') {
-      globalThis.CSS = {
+    if (typeof (globalThis as any).CSS === 'undefined') {
+      (globalThis as any).CSS = {
         supports: vi.fn().mockReturnValue(true),
-      };
+      } as any;
     }
 
     // DOM 환경 설정
@@ -193,7 +200,7 @@ describe('TDD GREEN Phase: 갤러리 휠 스크롤 실제 구현 검증', () => 
       },
     ];
 
-    scenarios.forEach(({ name, imageSize, viewportSize, expectedSmaller }) => {
+    scenarios.forEach(({ imageSize, viewportSize, expectedSmaller }) => {
       // Act: 크기 비교 로직 (useGalleryScroll에서 사용하는 방식)
       const isSmaller =
         imageSize.width <= viewportSize.width && imageSize.height <= viewportSize.height;

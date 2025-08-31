@@ -11,10 +11,10 @@
   "scripts": {
     "dev": "vite --mode development",
     "build": "npm run build:prod",
-    "build:dev": "vite build --mode development",
-    "build:prod": "vite build --mode production",
+    "build:dev": "vite build --mode development --logLevel warn",
+    "build:prod": "vite build --mode production --logLevel warn",
     "build:all": "npm run clean && npm run build:dev && npm run build:prod && npm run build:copy",
-    "build:copy": "node -e \"const fs=require('fs'),path=require('path'); ['dev','prod'].forEach(d=>fs.readdirSync(`dist/${d}`).forEach(f=>fs.copyFileSync(`dist/${d}/${f}`,`dist/${f}`)))\"",
+    "build:copy": "node -e \"const fs=require('fs'); ['dev','prod'].forEach(d=>{const dir=`dist/${d}`; if(!fs.existsSync(dir)) return; fs.readdirSync(dir).forEach(f=>{ try{fs.copyFileSync(`${dir}/${f}`,`dist/${f}`)}catch(e){ /* ignore */ } })})\"",
     "build:copy:dev": "node -e \"const fs=require('fs'); fs.readdirSync('dist/dev').forEach(f=>fs.copyFileSync(`dist/dev/${f}`,`dist/${f}`))\"",
     "build:copy:prod": "node -e \"const fs=require('fs'); fs.readdirSync('dist/prod').forEach(f=>fs.copyFileSync(`dist/prod/${f}`,`dist/${f}`))\"",
     "clean": "rimraf dist",

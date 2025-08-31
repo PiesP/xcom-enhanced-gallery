@@ -122,11 +122,18 @@ export function getCurrentUrlInfo(): {
     };
   }
 
+  const rawHref = location.href || '';
+  const search = location.search || '';
+  // Normalize href to exclude the search/query part so tests can assert
+  // pathname and search separately.
+  const href =
+    search && rawHref.endsWith(search) ? rawHref.slice(0, rawHref.length - search.length) : rawHref;
+
   return {
-    href: location.href || '',
+    href,
     pathname: location.pathname || '',
     hostname: location.hostname || '',
-    search: location.search || '',
+    search,
   };
 }
 

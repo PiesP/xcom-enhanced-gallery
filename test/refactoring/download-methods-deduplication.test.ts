@@ -6,6 +6,46 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
+// 테스트가 네이티브 다운로드 API와 외부 네트워크에 의존하므로 테스트 환경에서 안전한 모킹을 제공합니다.
+// 모킹은 파일 내 최상단에 선언되어야 동적 import 전에 적용됩니다.
+vi.mock('@shared/external/vendors', () => {
+  return {
+    getNativeDownload: function () {
+      return {
+        // downloadBlob은 테스트에서 부작용 없이 호출되기만 하면 됨
+        downloadBlob: function (_blob, _filename) {
+          /* noop for tests */
+        },
+      };
+    },
+    // ZIP 생성은 간단한 빈 바이트 배열을 반환하도록 함
+    getFflate: function () {
+      return {
+        zipSync: function (_files) {
+          return new Uint8Array([]);
+        },
+      };
+    },
+  };
+});
+
+// 전역 fetch가 없는 환경을 대비해 간단한 스텁을 설정합니다. Blob/arrayBuffer를 요구하는 구현을 충족합니다.
+const _mockFetch = async _url => {
+  const data = new Uint8Array([0]);
+  return {
+    ok: true,
+    status: 200,
+    async blob() {
+      return new Blob([data]);
+    },
+    async arrayBuffer() {
+      return data.buffer;
+    },
+  };
+};
+// 전역 fetch 스텁 적용
+globalThis.fetch = _mockFetch;
+
 describe('TDD RED: 다운로드 메서드 중복 제거', () => {
   beforeEach(() => {
     vi.clearAllMocks();
