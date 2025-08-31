@@ -11,6 +11,7 @@ import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
 import { AbortManager } from './AbortManager';
+import { fetchWrapper } from '../../utils/fetchWrapper';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'complete';
@@ -102,7 +103,7 @@ export class BulkDownloadService {
       }
 
       // URL로부터 Blob 생성 후 다운로드
-      const response = await fetch(media.url);
+      const response = await fetchWrapper(media.url);
       const blob = await response.blob();
       download.downloadBlob(blob, filename);
 
@@ -212,7 +213,7 @@ export class BulkDownloadService {
         });
 
         try {
-          const response = await fetch(media.url);
+          const response = await fetchWrapper(media.url);
           const arrayBuffer = await response.arrayBuffer();
           const uint8Array = new Uint8Array(arrayBuffer);
 

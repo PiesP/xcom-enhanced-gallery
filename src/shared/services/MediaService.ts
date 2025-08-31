@@ -8,8 +8,9 @@ import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { MediaExtractionOptions } from '@shared/types/media.types';
 import { WebPUtils } from '@shared/utils/WebPUtils';
 import { isTestEnvironment } from '@shared/utils/environment';
-import { logger } from '@shared/logging/logger';
+import { logger } from '../logging/logger';
 import { AbortManager } from './AbortManager';
+import { fetchWrapper } from '../../utils/fetchWrapper';
 
 // 통합된 서비스 타입들
 /**
@@ -493,15 +494,11 @@ export class MediaService {
     const abortController = this.abortManager.createController(url);
 
     try {
-      const response = await fetch(url, {
+      const response = await fetchWrapper(url, {
         signal: abortController.signal,
         mode: 'cors',
         cache: 'force-cache',
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
 
       const blob = await response.blob();
 
