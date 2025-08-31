@@ -14,60 +14,11 @@ import console from 'console';
 import { defineConfig } from 'vite';
 // Critical CSS 집계 & 중복 제거 (surface glass 토큰 단일 선언 보장)
 import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/build/critical-css';
-
-/**
- * @returns {import('vite').Plugin}
- */
-function createBundleAnalysisPlugin(buildMode: any): any {
-  return {
-    name: 'bundle-analysis',
-    apply: 'build' as const,
-    writeBundle(options: any, bundle: any) {
-      const bundleObj = bundle;
-      let totalSize = 0;
-      const chunks = [];
-
-      for (const [fileName, fileInfo] of Object.entries(bundleObj)) {
-        if (
-          fileInfo &&
-          typeof fileInfo === 'object' &&
-          'type' in fileInfo &&
-          fileInfo.type === 'chunk' &&
-          'code' in fileInfo &&
-          typeof fileInfo.code === 'string'
-        ) {
-          const size = Buffer.byteLength(fileInfo.code, 'utf8');
-          totalSize += size;
-          chunks.push({ name: fileName, size });
-        }
-      }
-
-      // 간단한 분석 보고서
-      const analysis = {
-        timestamp: new Date().toISOString(),
-        totalSize,
-        chunks,
-        isWithinBudget: totalSize <= 500 * 1024, // 500KB 제한
-      };
-
-      const outDir = options && 'dir' in options && options.dir ? options.dir : 'dist';
-      fs.writeFileSync(
-        path.resolve(outDir, 'bundle-analysis.json'),
-        JSON.stringify(analysis, null, 2)
-      );
-
-      // 개발 모드에서는 터미널 출력을 생략하여 빌드 로그를 깔끔하게 유지
-      if (buildMode && buildMode.isDevelopment) {
-        return;
-      }
-
-      console.log(`\n📊 번들 크기: ${(totalSize / 1024).toFixed(2)} KB`);
-      if (totalSize > 500 * 1024) {
-        console.warn('⚠️  번들 크기가 500KB를 초과했습니다.');
-      }
-    },
-  };
-}
+// 개선된 빌드 진행상황 플러그인
+import {
+  createBuildStartPlugin,
+  createEnhancedBundleAnalysisPlugin,
+} from './src/build/build-progress-plugin';
 
 // Package information
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
@@ -324,8 +275,9 @@ export default defineConfig(({ mode }: { mode: string }) => {
         devToolsEnabled: buildMode.isDevelopment,
         prefreshEnabled: buildMode.isDevelopment,
       }),
+      createBuildStartPlugin(buildMode.isDevelopment ? 'development' : 'production'),
       createUserscriptBundlerPlugin(buildMode),
-      createBundleAnalysisPlugin(buildMode),
+      createEnhancedBundleAnalysisPlugin(buildMode.isDevelopment ? 'development' : 'production'),
     ],
 
     // 환경 변수 정의

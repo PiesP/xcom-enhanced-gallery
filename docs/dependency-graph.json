@@ -1,6 +1,13 @@
 {
   "modules": [
     {
+      "source": "src/build/build-progress-plugin.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/build/critical-css.ts",
       "dependencies": [],
       "dependents": [],
@@ -4187,7 +4194,25 @@
     },
     {
       "source": "src/shared/services/BulkDownloadService.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AbortManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/AbortManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/services/service-initialization.ts",
         "src/shared/services/MediaService.ts",
@@ -4197,8 +4222,35 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/AbortManager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/BulkDownloadService.ts",
+        "src/shared/services/MediaService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/MediaService.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AbortManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/AbortManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./BulkDownloadService",
@@ -7318,8 +7370,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 205,
-    "totalDependenciesCruised": 307,
+    "totalCruised": 207,
+    "totalDependenciesCruised": 309,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

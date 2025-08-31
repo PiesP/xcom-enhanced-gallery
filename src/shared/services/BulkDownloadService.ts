@@ -10,6 +10,7 @@ import { logger } from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
+import { AbortManager } from './AbortManager';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'complete';
@@ -74,7 +75,8 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
  * - 간단한 진행률 추적
  */
 export class BulkDownloadService {
-  private currentAbortController: AbortController | undefined;
+  private readonly abortManager = new AbortManager();
+  private static readonly DOWNLOAD_KEY = 'bulk-download';
 
   /**
    * 서비스 상태 확인 (테스트 호환성을 위해)
@@ -132,10 +134,10 @@ export class BulkDownloadService {
     }
 
     try {
-      this.currentAbortController = new AbortController();
+      const abortController = this.abortManager.createController(BulkDownloadService.DOWNLOAD_KEY);
       if (options.signal) {
         options.signal.addEventListener('abort', () => {
-          this.currentAbortController?.abort();
+          this.abortManager.abort(BulkDownloadService.DOWNLOAD_KEY);
         });
       }
 
@@ -152,7 +154,7 @@ export class BulkDownloadService {
         }
 
         const result = await this.downloadSingle(firstItem, {
-          signal: this.currentAbortController.signal,
+          signal: abortController.signal,
         });
         return {
           success: result.success,
@@ -166,7 +168,7 @@ export class BulkDownloadService {
       // 여러 파일인 경우 ZIP 다운로드
       return await this.downloadAsZip(items, options);
     } finally {
-      this.currentAbortController = undefined;
+      this.abortManager.cleanup(BulkDownloadService.DOWNLOAD_KEY);
     }
   }
 
@@ -194,7 +196,7 @@ export class BulkDownloadService {
 
       // 파일들을 다운로드하여 ZIP에 추가
       for (let i = 0; i < mediaItems.length; i++) {
-        if (this.currentAbortController?.signal.aborted) {
+        if (this.abortManager.isAborted(BulkDownloadService.DOWNLOAD_KEY)) {
           throw new Error('Download cancelled by user');
         }
 
@@ -268,7 +270,7 @@ export class BulkDownloadService {
    * 현재 다운로드 중단
    */
   public cancelDownload(): void {
-    this.currentAbortController?.abort();
+    this.abortManager.abort(BulkDownloadService.DOWNLOAD_KEY);
     logger.debug('Current download cancelled');
   }
 
@@ -276,7 +278,7 @@ export class BulkDownloadService {
    * 현재 다운로드 중인지 확인
    */
   public isDownloading(): boolean {
-    return this.currentAbortController !== undefined;
+    return this.abortManager.hasController(BulkDownloadService.DOWNLOAD_KEY);
   }
 }
 

@@ -9,6 +9,7 @@ import type { MediaExtractionOptions } from '@shared/types/media.types';
 import { WebPUtils } from '@shared/utils/WebPUtils';
 import { isTestEnvironment } from '@shared/utils/environment';
 import { logger } from '@shared/logging/logger';
+import { AbortManager } from './AbortManager';
 
 // 통합된 서비스 타입들
 /**
@@ -105,7 +106,7 @@ export class MediaService {
 
   // 미디어 프리페칭 관련 상태 (MediaPrefetchingService 통합)
   private readonly prefetchCache = new Map<string, Blob>();
-  private readonly activePrefetchRequests = new Map<string, AbortController>();
+  private readonly abortManager = new AbortManager();
   private readonly maxCacheEntries = 20;
   private prefetchCacheHits = 0;
   private prefetchCacheMisses = 0;
@@ -456,7 +457,7 @@ export class MediaService {
 
     // 동시 프리페치 수 제한
     for (const url of prefetchUrls) {
-      if (this.activePrefetchRequests.size >= maxConcurrent) {
+      if (this.abortManager.getActiveControllerCount() >= maxConcurrent) {
         break;
       }
 
@@ -469,12 +470,11 @@ export class MediaService {
    */
   private async prefetchSingle(url: string): Promise<void> {
     // 이미 캐시되어 있거나 프리페치 중인 경우 스킵
-    if (this.prefetchCache.has(url) || this.activePrefetchRequests.has(url)) {
+    if (this.prefetchCache.has(url) || this.abortManager.hasController(url)) {
       return;
     }
 
-    const abortController = new AbortController();
-    this.activePrefetchRequests.set(url, abortController);
+    const abortController = this.abortManager.createController(url);
 
     try {
       const response = await fetch(url, {
@@ -501,7 +501,7 @@ export class MediaService {
         logger.warn('[MediaService] 프리페치 실패:', error, { url });
       }
     } finally {
-      this.activePrefetchRequests.delete(url);
+      this.abortManager.cleanup(url);
     }
   }
 
@@ -556,10 +556,7 @@ export class MediaService {
    * 모든 프리페치 요청 취소
    */
   cancelAllPrefetch(): void {
-    for (const controller of this.activePrefetchRequests.values()) {
-      controller.abort();
-    }
-    this.activePrefetchRequests.clear();
+    this.abortManager.abortAll();
     logger.debug('[MediaService] 모든 프리페치 요청이 취소되었습니다.');
   }
 
@@ -585,7 +582,7 @@ export class MediaService {
       cacheMisses: this.prefetchCacheMisses,
       cacheEntries: this.prefetchCache.size,
       hitRate,
-      activePrefetches: this.activePrefetchRequests.size,
+      activePrefetches: this.abortManager.getActiveControllerCount(),
     };
   }
 
