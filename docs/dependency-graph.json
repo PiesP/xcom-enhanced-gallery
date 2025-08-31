@@ -714,6 +714,58 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/core/GalleryCore.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/core/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/core/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./GalleryCore",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/features/gallery/core/GalleryCore.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./GalleryCore",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/features/gallery/core/GalleryCore.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/hooks/index.ts",
       "dependencies": [
         {
@@ -7659,8 +7711,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 215,
-    "totalDependenciesCruised": 318,
+    "totalCruised": 217,
+    "totalDependenciesCruised": 320,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
