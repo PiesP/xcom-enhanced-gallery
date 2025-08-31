@@ -74,12 +74,17 @@ export const galleryState = {
   },
 
   /**
-   * Subscribe to state changes
+   * Subscribe to state changes with error handling
    */
   subscribe(callback: (state: GalleryState) => void): () => void {
     const { effect } = getPreactSignals();
     return effect(() => {
-      callback(getGalleryStateSignal().value);
+      try {
+        callback(getGalleryStateSignal().value);
+      } catch (error) {
+        logger.error('[Gallery] Error in subscription callback:', error);
+        // 에러가 발생해도 시스템을 중단시키지 않음
+      }
     });
   },
 };
@@ -92,14 +97,17 @@ export const galleryState = {
  */
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = Math.max(0, Math.min(startIndex, items.length - 1));
+  const { batch } = getPreactSignals();
 
-  galleryState.value = {
-    ...galleryState.value,
-    isOpen: true,
-    mediaItems: items,
-    currentIndex: validIndex,
-    error: null,
-  };
+  batch(() => {
+    galleryState.value = {
+      ...galleryState.value,
+      isOpen: true,
+      mediaItems: items,
+      currentIndex: validIndex,
+      error: null,
+    };
+  });
 
   logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
 }
@@ -108,12 +116,16 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
  * Close gallery
  */
 export function closeGallery(): void {
-  galleryState.value = {
-    ...galleryState.value,
-    isOpen: false,
-    currentIndex: 0,
-    error: null,
-  };
+  const { batch } = getPreactSignals();
+
+  batch(() => {
+    galleryState.value = {
+      ...galleryState.value,
+      isOpen: false,
+      currentIndex: 0,
+      error: null,
+    };
+  });
 
   logger.debug('[Gallery] 갤러리 종료 완료');
 }
@@ -170,11 +182,15 @@ export function setLoading(isLoading: boolean): void {
  * Set error state
  */
 export function setError(error: string | null): void {
-  galleryState.value = {
-    ...galleryState.value,
-    error,
-    isLoading: false,
-  };
+  const { batch } = getPreactSignals();
+
+  batch(() => {
+    galleryState.value = {
+      ...galleryState.value,
+      error,
+      isLoading: false,
+    };
+  });
 
   if (error) {
     logger.error(`[Gallery] Error: ${error}`);

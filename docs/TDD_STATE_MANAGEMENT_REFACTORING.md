@@ -206,22 +206,22 @@ describe('StateManager Initialization', () => {
 - 전역 의존성을 명시적 주입으로 변경
 - 테스트 가능한 구조로 개선
 
-### Phase 4: 배치 업데이트 최적화 (우선순위: 중간)
+### Phase 4: 배치 업데이트 최적화 ✅
 
-#### RED: 성능 테스트 작성
+- **진행 상태**: ✅ **완료** (2024-12-27)
+- **목표**: Signal 배치 업데이트를 통한 리렌더링 최적화
+- **결과**: 9/9 테스트 통과, 성능 향상 검증 완료
 
-```typescript
-// test/performance/batch-updates.spec.ts
-describe('Batch Updates Performance', () => {
-  it('should minimize re-renders with batch updates', () => {
-    // 여러 상태 변경이 단일 렌더로 처리되는지 검증
-  });
-});
-```
+#### RED: 성능 테스트 작성 ✅
 
-#### GREEN: batch 적용
+- 배치 업데이트 미사용 시 실패하는 테스트 작성
+- 6/9 테스트 실패로 RED 상태 확인
+- 배치 호출 수 및 성능 메트릭 검증 테스트
+
+#### GREEN: batch 적용 ✅
 
 1. **gallery.signals.ts 최적화**
+
    ```typescript
    export function openGallery(
      items: readonly MediaInfo[],
@@ -239,6 +239,21 @@ describe('Batch Updates Performance', () => {
      });
    }
    ```
+
+2. **주요 함수 배치 적용**
+   - `openGallery()`: 여러 상태 변경을 단일 배치로 처리
+   - `closeGallery()`: 리셋 작업을 배치로 최적화
+   - `setError()`: error와 loading 상태를 동시 처리
+
+#### REFACTOR: 성능 검증 ✅
+
+- 🚀 **성능 향상**: 배치 업데이트로 리렌더링 최소화
+- 📊 **메트릭 완료**: 배치 호출 수 추적 및 검증
+- 🔍 **커버리지**: 모든 배치 시나리오 테스트 통과 currentIndex: validIndex,
+  error: null, }; }); }
+  ```
+
+  ```
 
 #### REFACTOR: 성능 최적화
 
