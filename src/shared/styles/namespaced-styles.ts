@@ -5,65 +5,68 @@
  */
 
 import { logger } from '@shared/logging';
+import { STYLE_ID, NAMESPACE } from './constants';
 
-const NAMESPACE = 'xeg-gallery';
-const STYLE_ID = 'xeg-namespaced-styles';
+/**
+ * CSS 생성 관련 타입 정의
+ */
+type CSSString = string;
+type CSSSelector = string;
+type ClassName = string;
 
 let isInitialized = false;
 
 /**
- * 네임스페이스된 CSS 생성
+ * 기본 CSS 스타일 생성
  */
-function generateNamespacedCSS(): string {
+function generateBaseStyles(): CSSString {
   return `
 .${NAMESPACE} {
   /* Reset and Base Styles */
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1.4;
+}`;
+}
 
-  /* Color Tokens - Design Token 시스템 사용 */
+/**
+ * 컴포넌트별 CSS 변수 생성 (design-tokens.css 글로벌 변수 참조)
+ */
+function generateComponentVariables(): CSSString {
+  return `
+.${NAMESPACE} {
+  /* Component-level Custom Properties */
+  /* 참고: 이 변수들은 design-tokens.css의 글로벌 변수를 참조합니다 */
+
+  /* Primary Colors */
   --xeg-color-primary: var(--xeg-color-primary-500);
   --xeg-color-primary-hover: var(--xeg-color-primary-600);
   --xeg-color-secondary: var(--xeg-color-neutral-500);
+
+  /* Surface Colors */
   --xeg-color-background: var(--xeg-color-surface-dark);
   --xeg-color-surface: var(--xeg-color-surface-elevated);
   --xeg-color-surface-primary: var(--xeg-color-surface-light);
-  --xeg-color-text-primary: var(--xeg-color-text-primary);
-  --xeg-color-text-secondary: var(--xeg-color-text-secondary);
+
+  /* Text Colors */
+  --xeg-color-text-primary: var(--xeg-color-neutral-900);
+  --xeg-color-text-secondary: var(--xeg-color-neutral-600);
+
+  /* Interactive Colors */
   --xeg-color-border: var(--xeg-color-border-primary);
-  --xeg-color-border-primary: var(--xeg-color-border-primary);
   --xeg-color-hover: var(--xeg-color-overlay-light);
   --xeg-color-active: var(--xeg-color-overlay-medium);
-
-  /* Spacing */
-  --xeg-spacing-xs: 4px;
-  --xeg-spacing-sm: 8px;
-  --xeg-spacing-md: 16px;
-  --xeg-spacing-lg: 24px;
-  --xeg-spacing-xl: 32px;
-
-  /* Border Radius */
-  --xeg-radius-sm: 4px;
-  --xeg-radius-md: 8px;
-  --xeg-radius-lg: 16px;
-
-  /* Shadows */
-  --xeg-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
-
-  /* Z-index Scale */
-  --xeg-z-dropdown: 1000;
-  --xeg-z-sticky: 1020;
-  --xeg-z-fixed: 1030;
-  --xeg-z-modal-backdrop: 1040;
-  --xeg-z-modal: 1050;
-  --xeg-z-popover: 1060;
-  --xeg-z-tooltip: 1070;
-  --xeg-z-toast: 1080;
+}`;
 }
 
+/**
+ * 네임스페이스된 CSS 생성
+ */
+export function generateNamespacedCSS(): CSSString {
+  const baseStyles = generateBaseStyles();
+  const componentVars = generateComponentVariables();
+
+  const globalStyles = `
 /* Global styles within namespace */
 .${NAMESPACE} *,
 .${NAMESPACE} *::before,
@@ -94,8 +97,9 @@ function generateNamespacedCSS(): string {
 .${NAMESPACE} img {
   max-width: 100%;
   height: auto;
-}
+}`;
 
+  const utilityClasses = `
 /* Utility Classes */
 .${NAMESPACE} .sr-only {
   position: absolute;
@@ -112,8 +116,9 @@ function generateNamespacedCSS(): string {
 .${NAMESPACE} .focus-visible {
   outline: var(--xeg-focus-outline);
   outline-offset: var(--xeg-focus-ring-offset);
-}
-`;
+}`;
+
+  return `${baseStyles}${componentVars}${globalStyles}${utilityClasses}`;
 }
 
 /**
@@ -125,17 +130,24 @@ export function initializeNamespacedStyles(): void {
     return;
   }
 
-  const existingStyle = document.getElementById(STYLE_ID);
+  // 테스트 환경에서 document 안전하게 접근
+  const doc = globalThis.document;
+  if (!doc) {
+    logger.warn('[NamespacedStyles] Document not available');
+    return;
+  }
+
+  const existingStyle = doc.getElementById(STYLE_ID);
   if (existingStyle) {
     logger.debug('[NamespacedStyles] Style already exists, removing old');
     existingStyle.remove();
   }
 
-  const styleElement = document.createElement('style');
+  const styleElement = doc.createElement('style');
   styleElement.id = STYLE_ID;
   styleElement.textContent = generateNamespacedCSS();
 
-  document.head.appendChild(styleElement);
+  doc.head.appendChild(styleElement);
   isInitialized = true;
 
   logger.debug('[NamespacedStyles] Initialized successfully');
@@ -145,7 +157,12 @@ export function initializeNamespacedStyles(): void {
  * 스타일 시스템 정리
  */
 export function cleanupNamespacedStyles(): void {
-  const styleElement = document.getElementById(STYLE_ID);
+  const doc = globalThis.document;
+  if (!doc) {
+    return;
+  }
+
+  const styleElement = doc.getElementById(STYLE_ID);
   if (styleElement) {
     styleElement.remove();
     logger.debug('[NamespacedStyles] Cleaned up');
@@ -156,13 +173,13 @@ export function cleanupNamespacedStyles(): void {
 /**
  * 네임스페이스 클래스명 생성
  */
-export function createNamespacedClass(className: string): string {
+export function createNamespacedClass(className: string): ClassName {
   return `${NAMESPACE}-${className}`;
 }
 
 /**
  * 네임스페이스 셀렉터 생성
  */
-export function createNamespacedSelector(selector: string): string {
+export function createNamespacedSelector(selector: string): CSSSelector {
   return `.${NAMESPACE} ${selector}`;
 }

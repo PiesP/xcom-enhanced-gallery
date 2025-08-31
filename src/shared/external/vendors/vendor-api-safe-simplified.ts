@@ -73,7 +73,6 @@ export interface NativeDownloadAPI {
   revokeObjectURL: (url: string) => void;
   createElement: (tagName: string) => HTMLElement;
   createAnchor: () => HTMLAnchorElement;
-  downloadBlob: (blob: Blob, filename: string) => void;
 }
 
 // ================================
@@ -169,27 +168,11 @@ export function getNativeDownloadAPISafe(): NativeDownloadAPI {
     revokeObjectURL: URL.revokeObjectURL.bind(URL),
     createElement: (tagName: string) => document.createElement(tagName),
     createAnchor: () => document.createElement('a'),
-    downloadBlob: (blob: Blob, filename: string) => {
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = filename;
-      anchor.style.display = 'none';
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-    },
   };
 }
 
-/**
- * @deprecated 호환성을 위한 별칭
- */
-export const getNativeDownloadSafe = getNativeDownloadAPISafe;
-
 // ================================
-// 레거시 호환성 함수들
+// 레거시 호환성 (기존 코드용)
 // ================================
 
 /**
@@ -203,91 +186,15 @@ export async function initializeVendorsSafe(): Promise<void> {
 
 /**
  * @deprecated Use direct getter functions instead
- * 레거시 호환성을 위한 검증 함수
+ * 레거시 호환성을 위한 vendor 접근 (간소화됨)
  */
-export function validateVendorsSafe(): {
-  success: boolean;
-  loadedLibraries: string[];
-  errors: string[];
-} {
-  return {
-    success: true,
-    loadedLibraries: ['fflate', 'Preact', 'PreactHooks', 'PreactSignals', 'PreactCompat'],
-    errors: [],
-  };
-}
+export const VendorAPI = {
+  getFflateSafe,
+  getPreactSafe,
+  getPreactHooksSafe,
+  getPreactSignalsSafe,
+  getPreactCompatSafe,
+  getNativeDownloadAPISafe,
+};
 
-/**
- * @deprecated Use direct getter functions instead
- * 레거시 호환성을 위한 버전 정보
- */
-export function getVendorVersionsSafe(): Record<string, string> {
-  return {
-    fflate: 'static-import',
-    preact: 'static-import',
-    preactHooks: 'static-import',
-    preactSignals: 'static-import',
-    preactCompat: 'static-import',
-  };
-}
-
-/**
- * @deprecated Use direct getter functions instead
- * 레거시 호환성을 위한 정리 함수
- */
-export function cleanupVendorsSafe(): Promise<void> {
-  // 정적 import 방식에서는 정리가 필요하지 않음
-  return Promise.resolve();
-}
-
-/**
- * @deprecated Use direct getter functions instead
- * 레거시 호환성을 위한 초기화 상태 확인
- */
-export function isVendorsInitializedSafe(): boolean {
-  return true; // 정적 import로 항상 초기화됨
-}
-
-/**
- * @deprecated Use direct getter functions instead
- * 레거시 호환성을 위한 초기화 리포트
- */
-export function getVendorInitializationReportSafe(): Record<string, Record<string, unknown>> {
-  return {
-    fflate: { initialized: true, method: 'static-import' },
-    preact: { initialized: true, method: 'static-import' },
-    preactHooks: { initialized: true, method: 'static-import' },
-    preactSignals: { initialized: true, method: 'static-import' },
-    preactCompat: { initialized: true, method: 'static-import' },
-  };
-}
-
-/**
- * @deprecated Use direct getter functions instead
- * 레거시 호환성을 위한 상태 확인
- */
-export function getVendorStatusesSafe(): Record<string, boolean> {
-  return {
-    fflate: true,
-    preact: true,
-    preactHooks: true,
-    preactSignals: true,
-    preactCompat: true,
-  };
-}
-
-/**
- * @deprecated Use direct getter functions instead
- * 레거시 호환성을 위한 개별 vendor 초기화 확인
- */
-export function isVendorInitializedSafe(_vendorName: string): boolean {
-  return true; // 정적 import로 모든 vendor가 초기화됨
-}
-
-/**
- * @deprecated Use direct getter functions instead
- * 레거시 호환성을 위한 매니저 인스턴스 리셋
- */
-export function resetVendorManagerInstance(): void {
-  // GREEN 구현: 정적 import에서는 리셋이 불필요
-}
+export default VendorAPI;

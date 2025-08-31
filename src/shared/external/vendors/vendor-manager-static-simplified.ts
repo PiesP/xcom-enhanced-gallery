@@ -40,7 +40,6 @@ export interface PreactAPI {
 }
 
 export type VNode = import('preact').VNode;
-export type ComponentChildren = import('preact').ComponentChildren;
 
 export interface PreactHooksAPI {
   useState: typeof preactHooks.useState;

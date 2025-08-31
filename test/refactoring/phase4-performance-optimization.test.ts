@@ -124,23 +124,13 @@ describe('Phase 4: 성능 최적화 및 메모리 관리', () => {
         expect(true).toBe(true);
       }
 
-      // 가상 스크롤링 구현 확인
-      try {
-        const virtualScroll = await import('@shared/components/VirtualScroll');
-        expect(virtualScroll.VirtualScroll).toBeDefined();
-      } catch {
-        // 가상 스크롤링 생성 필요
-        expect(true).toBe(true);
-      }
+      // Phase 3.1에서 삭제된 orphan 모듈들 확인
+      // 모듈들이 orphan으로 제거되었으므로 테스트 간소화
+      expect(true).toBe(true);
 
-      // 이미지 지연 로딩 확인
-      try {
-        const lazyImage = await import('@shared/components/LazyImage');
-        expect(lazyImage.LazyImage).toBeDefined();
-      } catch {
-        // 지연 로딩 컴포넌트 생성 필요
-        expect(true).toBe(true);
-      }
+      // 이미지 지연 로딩 확인 (orphan 모듈 제거됨)
+      // 모듈들이 orphan으로 제거되었으므로 테스트 간소화
+      expect(true).toBe(true);
     });
 
     it('should optimize Preact Signals usage', async () => {

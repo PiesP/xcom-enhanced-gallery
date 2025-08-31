@@ -910,13 +910,6 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/hooks/useGalleryScrollEnhanced.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/features/gallery/index.ts",
       "dependencies": [
         {
@@ -1393,32 +1386,6 @@
       ],
       "orphan": false,
       "valid": true
-    },
-    {
-      "source": "src/shared/components/LazyImage.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/components/VirtualScroll.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
     },
     {
       "source": "src/shared/components/base/BaseComponentProps.ts",
@@ -2837,32 +2804,14 @@
       "dependents": [
         "src/shared/external/vendors/index.ts",
         "src/shared/external/vendors/vendor-api.ts",
-        "src/shared/external/vendors/vendor-api-safe.ts"
+        "src/shared/external/vendors/vendor-api-safe-backup.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
       "source": "src/shared/external/vendors/vendor-api-safe.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./vendor-manager-static",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/external/vendors/index.ts"
       ],
@@ -3569,6 +3518,78 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-api-safe-backup.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendor-manager-static",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-api-safe-simplified.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/vendors/vendor-manager-simplified.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-manager-simplified.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendor-api-safe-simplified",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-api-safe-simplified.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-manager-static-simplified.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/hooks/index.ts",
@@ -7168,6 +7189,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/styles/constants.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/styles/namespaced-styles.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/styles/index.ts",
       "dependencies": [
         {
@@ -7211,7 +7241,25 @@
     },
     {
       "source": "src/shared/styles/namespaced-styles.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/styles/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/styles/index.ts"
       ],
@@ -7945,24 +7993,6 @@
     "violations": [
       {
         "type": "module",
-        "from": "src/shared/components/LazyImage.ts",
-        "to": "src/shared/components/LazyImage.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/VirtualScroll.ts",
-        "to": "src/shared/components/VirtualScroll.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "src/shared/constants/api.constants.ts",
         "to": "src/shared/constants/api.constants.ts",
         "rule": {
@@ -7983,6 +8013,15 @@
         "type": "module",
         "from": "src/shared/constants/ui.constants.ts",
         "to": "src/shared/constants/ui.constants.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/external/vendors/vendor-manager-static-simplified.ts",
+        "to": "src/shared/external/vendors/vendor-manager-static-simplified.ts",
         "rule": {
           "severity": "info",
           "name": "no-orphans"
@@ -8036,10 +8075,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 10,
+    "info": 9,
     "ignore": 0,
-    "totalCruised": 228,
-    "totalDependenciesCruised": 328,
+    "totalCruised": 230,
+    "totalDependenciesCruised": 330,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

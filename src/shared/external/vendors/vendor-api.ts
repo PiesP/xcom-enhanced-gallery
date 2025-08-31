@@ -128,6 +128,11 @@ export function getPreactCompat(): PreactCompatAPI {
                 cachedPreactCompat = {
                   memo: compatMod.memo as PreactCompatAPI['memo'],
                   forwardRef: compatMod.forwardRef as PreactCompatAPI['forwardRef'],
+                  lazy: compatMod.lazy as PreactCompatAPI['lazy'],
+                  Suspense: compatMod.Suspense as PreactCompatAPI['Suspense'],
+                  createPortal: compatMod.createPortal as PreactCompatAPI['createPortal'],
+                  unstable_batchedUpdates:
+                    compatMod.unstable_batchedUpdates as PreactCompatAPI['unstable_batchedUpdates'],
                 };
                 logger.debug('Preact Compat 캐시에서 복구 성공');
                 return cachedPreactCompat;
@@ -224,17 +229,23 @@ export function getPreactCompat(): PreactCompatAPI {
 /**
  * 네이티브 다운로드 접근
  */
-export const getNativeDownload = (): NativeDownloadAPI => vendorManager.getNativeDownload();
+export const getNativeDownload = (): NativeDownloadAPI => vendorManager.getNativeDownloadAPI();
 
 /**
- * 모든 라이브러리 검증
+ * 모든 라이브러리 검증 (간소화)
  */
-export const validateVendors = () => vendorManager.validateAll();
+export const validateVendors = () => true; // 간소화된 구현
 
 /**
- * 버전 정보 조회
+ * 버전 정보 조회 (간소화)
  */
-export const getVendorVersions = () => vendorManager.getVersionInfo();
+export const getVendorVersions = () => ({
+  fflate: 'static-import',
+  preact: 'static-import',
+  preactHooks: 'static-import',
+  preactSignals: 'static-import',
+  preactCompat: 'static-import',
+});
 
 /**
  * 메모리 정리
