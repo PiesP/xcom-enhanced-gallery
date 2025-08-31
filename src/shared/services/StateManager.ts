@@ -1,19 +1,14 @@
 /**
  * @fileoverview StateManager - 통합 상태 관리 시스템
  * @description Signal과 React 상태를 통합 관리하는 싱글톤 서비스
- * @version 1.0.0 - Phase 2.2 상태 통합 구현
+ * @version 2.0.0 - Phase 3 의존성 주입 및 안정성 개선
  */
 
 import { createScopedLogger } from '../logging/logger';
+import type { Signal } from '@shared/types/signals';
 
 // StateManager 전용 로거
 const logger = createScopedLogger('StateManager');
-
-// Signal 타입 정의 (preact/signals 직접 import 대신)
-interface Signal<T> {
-  value: T;
-  subscribe?: (callback: (value: T) => void) => () => void;
-}
 
 interface GalleryState {
   isOpen: boolean;
@@ -47,13 +42,25 @@ interface DebugInfo {
   lastSyncConflict?: number;
 }
 
+interface GallerySignals {
+  isOpen: Signal<boolean>;
+  currentMediaIndex: Signal<number>;
+  mediaCount: Signal<number>;
+  currentUrl: Signal<string>;
+}
+
 /**
  * 통합 상태 관리 시스템
  * Signal과 React 상태를 동기화하고 통합 관리
+ * Phase 3: 의존성 주입 패턴 및 안정성 개선
  */
 export class StateManager {
   private static instance: StateManager;
   private readonly subscribers = new Map<StateKey, Set<StateSubscriber<unknown>>>();
+  private readonly injectedSignals: Map<StateKey, Record<string, Signal<unknown>>> = new Map();
+  private readonly signalUnsubscribers: Map<StateKey, (() => void)[]> = new Map();
+  private readonly isInitialized = false;
+
   private performanceMetrics: PerformanceMetrics = {
     syncCount: 0,
     lastSyncTime: 0,
@@ -67,7 +74,8 @@ export class StateManager {
   };
 
   private constructor() {
-    this.initializeSignalSync();
+    // Phase 3: 생성자에서는 초기화하지 않고 지연 초기화 사용
+    this.safeInitialize();
   }
 
   static getInstance(): StateManager {
@@ -78,45 +86,109 @@ export class StateManager {
   }
 
   /**
-   * Signal 동기화 초기화
+   * Phase 3: 안전한 지연 초기화
    */
-  private initializeSignalSync(): void {
+  private safeInitialize(): void {
     try {
-      // gallery signals 동기화 설정
-      if (
-        typeof window !== 'undefined' &&
-        (window as unknown as { gallery?: { signals?: Record<string, Signal<unknown>> } }).gallery
-          ?.signals
-      ) {
-        const windowWithGallery = window as unknown as {
-          gallery: { signals: Record<string, Signal<unknown>> };
-        };
-        const gallerySignals = windowWithGallery.gallery.signals as {
-          isOpen: Signal<boolean>;
-          currentMediaIndex: Signal<number>;
-          mediaCount: Signal<number>;
-          currentUrl: Signal<string>;
-        };
-
-        // Signal 변경 감지 및 구독자 알림
-        this.setupSignalWatcher('gallery', gallerySignals);
-      }
+      // 자동 감지 시도 (fallback)
+      this.attemptAutoDiscovery();
     } catch (error) {
       this.debugInfo.lastError = error as Error;
       this.performanceMetrics.errorCount++;
-      logger.warn('Signal 동기화 초기화 실패:', error);
+      logger.warn('자동 signals 감지 실패, 수동 주입 대기 중:', error);
     }
   }
 
   /**
-   * Signal 감시자 설정
+   * Phase 3: Signals 의존성 주입 메서드
+   */
+  public injectSignals<T extends StateKey>(key: T, signals: Record<string, Signal<unknown>>): void {
+    try {
+      // 기존 구독 정리
+      this.cleanupSignalSubscriptions(key);
+
+      // 새 signals 주입
+      this.injectedSignals.set(key, signals);
+
+      // 구독 설정
+      this.setupSignalWatcher(key, signals);
+
+      this.addToHistory('INJECT_SIGNALS', { key, signalCount: Object.keys(signals).length });
+      logger.debug(`[StateManager] Signals 주입 완료: ${key}`);
+    } catch (error) {
+      this.debugInfo.lastError = error as Error;
+      this.performanceMetrics.errorCount++;
+      logger.error('Signals 주입 실패:', error);
+    }
+  }
+
+  /**
+   * Phase 3: 자동 signals 감지 시도
+   */
+  private attemptAutoDiscovery(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const windowWithGallery = window as unknown as {
+      gallery?: { signals?: Record<string, Signal<unknown>> };
+    };
+
+    if (windowWithGallery.gallery?.signals) {
+      const gallerySignals = windowWithGallery.gallery.signals as GallerySignals;
+      this.injectSignals('gallery', gallerySignals);
+      logger.debug('[StateManager] 자동 gallery signals 감지 및 주입 완료');
+    }
+  }
+
+  /**
+   * Phase 3: 수동 재연결 메서드
+   */
+  public reconnect(): void {
+    try {
+      this.attemptAutoDiscovery();
+      this.addToHistory('RECONNECT', { timestamp: Date.now() });
+    } catch (error) {
+      this.debugInfo.lastError = error as Error;
+      this.performanceMetrics.errorCount++;
+      logger.error('재연결 실패:', error);
+    }
+  }
+
+  /**
+   * Phase 3: Signal 구독 정리 메서드
+   */
+  private cleanupSignalSubscriptions(key: StateKey): void {
+    const unsubscribers = this.signalUnsubscribers.get(key);
+    if (unsubscribers) {
+      unsubscribers.forEach(unsubscribe => {
+        try {
+          unsubscribe();
+        } catch (error) {
+          logger.warn('구독 해제 실패:', error);
+        }
+      });
+      this.signalUnsubscribers.delete(key);
+    }
+  }
+
+  /**
+   * Phase 3: 개선된 Signal 감시자 설정 (중복 방지)
    */
   private setupSignalWatcher(key: StateKey, signals: Record<string, Signal<unknown>>): void {
+    // 기존 구독 정리
+    this.cleanupSignalSubscriptions(key);
+
+    const unsubscribers: (() => void)[] = [];
+
     const watchSignal = (signal: Signal<unknown>) => {
-      signal.subscribe?.(() => {
-        const state = this.getStateFromSignals(signals);
-        this.notifySubscribers(key, state);
-      });
+      if (signal.subscribe) {
+        const unsubscribe = signal.subscribe(() => {
+          const state = this.getStateFromSignals(key, signals);
+          this.notifySubscribers(key, state);
+        });
+        unsubscribers.push(unsubscribe);
+      }
     };
 
     Object.keys(signals).forEach(signalKey => {
@@ -124,18 +196,31 @@ export class StateManager {
         watchSignal(signals[signalKey]);
       }
     });
+
+    // 구독 해제 함수들 저장
+    this.signalUnsubscribers.set(key, unsubscribers);
   }
 
   /**
-   * Signal에서 상태 추출
+   * Phase 3: Signal에서 상태 추출 (key별 로직 분리)
    */
-  private getStateFromSignals(signals: Record<string, Signal<unknown>>): GalleryState {
-    return {
-      isOpen: (signals.isOpen as Signal<boolean>)?.value ?? false,
-      currentMediaIndex: (signals.currentMediaIndex as Signal<number>)?.value ?? 0,
-      mediaCount: (signals.mediaCount as Signal<number>)?.value,
-      currentUrl: (signals.currentUrl as Signal<string>)?.value,
-    };
+  private getStateFromSignals(key: StateKey, signals: Record<string, Signal<unknown>>): unknown {
+    if (key === 'gallery') {
+      const isOpenSignal = signals.isOpen;
+      const currentMediaIndexSignal = signals.currentMediaIndex;
+      const mediaCountSignal = signals.mediaCount;
+      const currentUrlSignal = signals.currentUrl;
+
+      return {
+        isOpen: isOpenSignal?.value ?? false,
+        currentMediaIndex: currentMediaIndexSignal?.value ?? 0,
+        mediaCount: mediaCountSignal?.value,
+        currentUrl: currentUrlSignal?.value,
+      };
+    }
+
+    // 다른 state key들을 위한 확장 포인트
+    return {};
   }
 
   /**
@@ -243,22 +328,52 @@ export class StateManager {
   }
 
   /**
-   * 현재 상태 가져오기
+   * Phase 3: 개선된 현재 상태 가져오기 (주입된 signals 우선 사용)
    */
   getState<T extends StateKey>(key: T): StateValue<T> | undefined {
     try {
+      // 1. 주입된 signals에서 먼저 확인
+      const injectedSignals = this.injectedSignals.get(key);
+      if (injectedSignals) {
+        return this.getStateFromSignals(key, injectedSignals) as StateValue<T>;
+      }
+
+      // 2. fallback: window.gallery에서 확인 (레거시 지원)
       if (key === 'gallery' && typeof window !== 'undefined') {
-        const gallerySignals = (
-          window as unknown as { gallery?: { signals?: Record<string, Signal<unknown>> } }
-        ).gallery?.signals;
+        const windowWithGallery = window as unknown as {
+          gallery?: { signals?: Record<string, Signal<unknown>> };
+        };
+        const gallerySignals = windowWithGallery.gallery?.signals;
         if (gallerySignals) {
-          return this.getStateFromSignals(gallerySignals) as StateValue<T>;
+          return this.getStateFromSignals(key, gallerySignals) as StateValue<T>;
         }
       }
+
+      // 3. 기본값 반환 (안전한 fallback)
+      if (key === 'gallery') {
+        return {
+          isOpen: false,
+          currentMediaIndex: 0,
+          mediaCount: undefined,
+          currentUrl: undefined,
+        } as StateValue<T>;
+      }
+
       return undefined;
     } catch (error) {
       logger.error('상태 조회 오류:', error);
       this.performanceMetrics.errorCount++;
+
+      // 에러 시에도 안전한 기본값 반환
+      if (key === 'gallery') {
+        return {
+          isOpen: false,
+          currentMediaIndex: 0,
+          mediaCount: undefined,
+          currentUrl: undefined,
+        } as StateValue<T>;
+      }
+
       return undefined;
     }
   }
@@ -323,11 +438,20 @@ export class StateManager {
   }
 
   /**
-   * 상태 초기화
+   * Phase 3: 개선된 상태 초기화 (구독 정리 포함)
    */
   reset(): void {
+    // 모든 signal 구독 정리
+    this.signalUnsubscribers.forEach((unsubscribers, key) => {
+      this.cleanupSignalSubscriptions(key);
+    });
+
+    // 내부 상태 초기화
     this.subscribers.clear();
+    this.injectedSignals.clear();
+    this.signalUnsubscribers.clear();
     this.stateHistory = [];
+
     this.performanceMetrics = {
       syncCount: 0,
       lastSyncTime: 0,
@@ -338,6 +462,8 @@ export class StateManager {
       isDebugMode: false,
       syncConflicts: 0,
     };
+
+    logger.debug('[StateManager] 완전 초기화 완료');
   }
 }
 

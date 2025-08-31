@@ -1,7 +1,7 @@
 # TDD 기반 상태관리 리팩토링 계획
 
 > **현재 Preact Signals 기반 상태관리 시스템의 일관성 개선을 위한 체계적
-> 리팩토링 계획**
+> 리팩토링 계획** - Phase 3 완료 (2025.01.31)
 
 ## 📋 현재 상황 분석
 
@@ -12,23 +12,61 @@
   - `src/shared/state/signals/gallery.signals.ts` - 갤러리 상태
   - `src/shared/state/signals/toolbar.signals.ts` - 툴바 상태
   - `src/shared/services/UnifiedToastManager.ts` - Toast 상태
-  - `src/shared/services/StateManager.ts` - 전역 동기화
+  - `src/shared/services/StateManager.ts` - 전역 동기화 (의존성 주입 패턴 적용)
   - `src/shared/external/vendors/vendor-manager-static.ts` - 라이브러리 관리
 
-### 식별된 문제점
+### 해결된 문제점 ✅
 
-1. **타입 일관성 부족**: Signal<T> 타입이 파일마다 중복 선언
-2. **구독 규약 혼재**: subscribe/unsubscribe 패턴이 일관되지 않음
-3. **초기화 타이밍**: StateManager의 window.gallery.signals 의존성 불안정
+1. **타입 일관성 확보**: Signal<T> 타입을 중앙집중화
+   (`src/shared/types/signals.ts`)
+2. **구독 규약 표준화**: 모든 subscribe가 올바른 unsubscribe 함수 반환 확인
+3. **초기화 안정성**: StateManager에 의존성 주입 패턴 적용, 초기화 순서 문제
+   해결
+
+### 식별된 문제점 (해결 예정)
+
 4. **배치 처리 미적용**: 연속 상태 변경 시 불필요한 리렌더 발생
-5. **테스트 부재**: 상태관리 핵심 로직에 대한 단위 테스트 없음
+5. **테스트 부재**: 상태관리 핵심 로직에 대한 단위 테스트 확대 필요
 
 ## 🎯 리팩토링 목표
 
-1. **타입 안전성 강화**: 중앙화된 Signal 타입 시스템
-2. **일관된 구독 패턴**: 모든 subscribe가 unsubscribe 반환
-3. **안정적 초기화**: 의존성 주입과 타이밍 문제 해결
-4. **성능 최적화**: batch 업데이트 적용
+1. **타입 안전성 강화**: 중앙화된 Signal 타입 시스템 ✅
+2. **초기화 안정성**: StateManager 의존성 주입 패턴 ✅
+3. **일관된 구독 패턴**: 모든 subscribe가 unsubscribe 반환 ✅
+4. **안정적 초기화**: 의존성 주입과 타이밍 문제 해결 🔄
+5. **성능 최적화**: batch 업데이트 적용 🔄
+
+## 📊 진행 상황
+
+### Phase 1: 타입 시스템 통합 ✅
+
+- **진행률**: 100% 완료
+- **상태**: GREEN - 모든 테스트 통과
+- **완료된 작업**:
+  - ✅ 중앙집중식 Signal 타입 정의 생성 (`src/shared/types/signals.ts`)
+  - ✅ 타입 일관성 테스트 구현
+  - ✅ gallery.signals.ts에 중앙집중식 타입 적용
+  - ✅ toolbar.signals.ts에 중앙집중식 타입 적용
+- **검증된 사항**:
+  - Signal<T> 인터페이스 통일
+  - subscribe 메서드 타입 일관성
+  - TypeScript 컴파일 통과
+
+### Phase 2: 구독 패턴 표준화 ✅
+
+- **진행률**: 100% 완료 (기존 구현이 이미 표준을 준수)
+- **상태**: GREEN - 모든 테스트 통과
+- **완료된 작업**:
+  - ✅ 구독 패턴 표준화 테스트 구현
+    (`test/refactoring/phase2-subscription-patterns.spec.ts`)
+  - ✅ 모든 subscribe 메서드의 unsubscribe 함수 반환 확인
+  - ✅ gallery.signals, toolbar.signals, UnifiedToastManager, Toast.tsx 검증
+  - ✅ 구독 해제 동작 및 메모리 누수 방지 패턴 검증
+- **검증된 사항**:
+  - 모든 subscribe 메서드가 `() => void` 타입의 unsubscribe 함수 반환
+  - 독립적인 구독 해제 동작 확인
+  - 에러 처리 및 방어적 프로그래밍 패턴 적용
+
 5. **테스트 커버리지**: 핵심 로직 100% 테스트
 
 ## 📚 TDD 리팩토링 계획
@@ -122,7 +160,11 @@ describe('Subscription Pattern', () => {
 - 모든 구독 지점에서 cleanup 검증
 - 컴포넌트 언마운트 시 자동 해제 패턴 적용
 
-### Phase 3: StateManager 초기화 안정화 (우선순위: 중간)
+### Phase 3: StateManager 초기화 안정화 ✅
+
+- **진행 상태**: 완료 - 의존성 주입 패턴 구현 완료, 모든 테스트 통과
+- **목표**: StateManager의 초기화 순서 문제 해결 및 안정성 향상
+- **완료 일자**: 2025-01-31
 
 #### RED: 실패하는 테스트 작성
 

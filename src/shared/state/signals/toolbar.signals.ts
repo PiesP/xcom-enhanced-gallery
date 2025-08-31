@@ -9,6 +9,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import type { Signal } from '@shared/types/signals';
 
 /**
  * 간소화된 툴바 상태 인터페이스
@@ -31,12 +32,6 @@ const INITIAL_TOOLBAR_STATE: ToolbarState = {
  */
 export type ToolbarEvents = {
   'toolbar:mode-change': { mode: ToolbarState['currentMode'] };
-};
-
-// Signal 타입 정의 (Preact Signals 지연 로딩 대응)
-type Signal<T> = {
-  value: T;
-  subscribe?: (callback: (value: T) => void) => () => void;
 };
 
 // Preact Signals 지연 초기화

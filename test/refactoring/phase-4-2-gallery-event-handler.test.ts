@@ -12,11 +12,13 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Mocks
+const mockEventManagerInstance = {
+  initializeGallery: vi.fn(),
+  cleanupGallery: vi.fn(),
+};
+
 const mockEventManager = {
-  getInstance: vi.fn(() => ({
-    initializeGallery: vi.fn(),
-    cleanupGallery: vi.fn(),
-  })),
+  getInstance: vi.fn(() => mockEventManagerInstance),
 };
 
 const mockToastController = {
@@ -57,6 +59,11 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Mock 함수들 초기화
+    mockEventManagerInstance.initializeGallery.mockClear();
+    mockEventManagerInstance.cleanupGallery.mockClear();
+    mockEventManager.getInstance.mockClear();
+
     // 기본 상태 설정
     mockGalleryState.value = {
       isOpen: false,
@@ -72,7 +79,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   describe('RED Phase: GalleryEventHandler 클래스 존재성', () => {
     it('should import GalleryEventHandler class', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
         expect(GalleryEventHandler).toBeDefined();
       } catch {
@@ -84,7 +91,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   describe('GREEN Phase: 기본 구조', () => {
     it('should create GalleryEventHandler instance', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const handler = new GalleryEventHandler({
@@ -105,7 +112,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
 
     it('should have required dependencies in constructor', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         expect(() => {
@@ -124,7 +131,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   describe('GREEN Phase: 이벤트 핸들러 설정', () => {
     it('should have setupEventHandlers method', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const handler = new GalleryEventHandler({
@@ -141,7 +148,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
 
     it('should setup event handlers with gallery actions', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const mockGalleryActions = {
@@ -153,7 +160,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
           toastController: mockToastController,
           videoControl: mockVideoControl,
           galleryState: mockGalleryState,
-          eventManager: mockEventManager.getInstance(),
+          eventManager: mockEventManagerInstance,
           mediaService: {
             extractFromClickedElement: vi.fn(),
           },
@@ -161,7 +168,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
 
         await handler.setupEventHandlers(mockGalleryActions);
 
-        expect(mockEventManager.getInstance().initializeGallery).toHaveBeenCalled();
+        expect(mockEventManagerInstance.initializeGallery).toHaveBeenCalled();
       } catch {
         expect.fail('이벤트 핸들러 설정 실패');
       }
@@ -171,7 +178,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   describe('GREEN Phase: 미디어 클릭 핸들링', () => {
     it('should handle media click events', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const mockMediaService = {
@@ -220,7 +227,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
 
     it('should handle media extraction failure', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const mockMediaService = {
@@ -267,7 +274,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
 
     it('should handle media extraction error', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const mockError = new Error('Network error');
@@ -311,7 +318,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   describe('GREEN Phase: 갤러리 닫기 핸들링', () => {
     it('should handle gallery close events', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const mockGalleryActions = {
@@ -342,7 +349,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   describe('GREEN Phase: 키보드 이벤트 핸들링', () => {
     it('should handle keyboard events', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const mockGalleryActions = {
@@ -374,7 +381,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
 
     it('should not close gallery on Escape when gallery is closed', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const mockGalleryActions = {
@@ -406,21 +413,21 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   describe('GREEN Phase: 정리 기능', () => {
     it('should have cleanup method', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         const handler = new GalleryEventHandler({
           toastController: mockToastController,
           videoControl: mockVideoControl,
           galleryState: mockGalleryState,
-          eventManager: mockEventManager.getInstance(),
+          eventManager: mockEventManagerInstance,
         });
 
         expect(typeof handler.cleanup).toBe('function');
 
         await handler.cleanup();
 
-        expect(mockEventManager.getInstance().cleanupGallery).toHaveBeenCalled();
+        expect(mockEventManagerInstance.cleanupGallery).toHaveBeenCalled();
       } catch {
         expect.fail('cleanup 메서드 실행 실패');
       }
@@ -430,7 +437,7 @@ describe('Phase 4.2: GalleryEventHandler 분리', () => {
   describe('GREEN Phase: 타입 안전성', () => {
     it('should have proper TypeScript types', async () => {
       try {
-        const module = await import('@features/gallery/GalleryEventHandler');
+        const module = await import('../../src/features/gallery/GalleryEventHandler');
         GalleryEventHandler = module.GalleryEventHandler;
 
         // 타입 체크: constructor 매개변수

@@ -9,14 +9,9 @@
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
+import type { Signal } from '@shared/types/signals';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
-
-// Signal type
-type Signal<T> = {
-  value: T;
-  subscribe?: (callback: (value: T) => void) => void;
-};
 
 /**
  * Gallery state interface

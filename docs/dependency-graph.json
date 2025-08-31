@@ -7263,6 +7263,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/types/signals.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/accessibility/barrel.ts",
       "dependencies": [
         {
@@ -7737,7 +7744,7 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 218,
+    "totalCruised": 219,
     "totalDependenciesCruised": 321,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
