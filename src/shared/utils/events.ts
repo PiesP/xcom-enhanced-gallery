@@ -171,6 +171,68 @@ export function removeAllEventListeners(): void {
 }
 
 /**
+ * 관리형 이벤트 리스너 추가 (표준화된 이름)
+ */
+export function addEventListenerManaged(
+  element: HTMLElement,
+  type: string,
+  listener: EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions
+): () => void {
+  // boolean을 AddEventListenerOptions로 변환
+  const normalizedOptions: AddEventListenerOptions | undefined =
+    typeof options === 'boolean' ? { capture: options } : options;
+
+  const id = addListener(element, type, listener as EventListener, normalizedOptions);
+  return () => removeEventListenerManaged(id);
+}
+
+/**
+ * 이벤트 리스너 관리자 생성 (독립적인 컨텍스트용)
+ */
+export function createEventListenerManager() {
+  const managerContext = `manager_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+  const localListeners = new Set<string>();
+
+  return {
+    add(
+      element: HTMLElement,
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions
+    ): () => void {
+      // boolean을 AddEventListenerOptions로 변환
+      const normalizedOptions: AddEventListenerOptions | undefined =
+        typeof options === 'boolean' ? { capture: options } : options;
+
+      const id = addListener(
+        element,
+        type,
+        listener as EventListener,
+        normalizedOptions,
+        managerContext
+      );
+      localListeners.add(id);
+      return () => {
+        removeEventListenerManaged(id);
+        localListeners.delete(id);
+      };
+    },
+
+    removeAll(): void {
+      for (const id of localListeners) {
+        removeEventListenerManaged(id);
+      }
+      localListeners.clear();
+    },
+
+    getListenerCount(): number {
+      return localListeners.size;
+    },
+  };
+}
+
+/**
  * 이벤트 리스너 상태 조회
  */
 export function getEventListenerStatus() {

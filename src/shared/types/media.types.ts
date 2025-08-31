@@ -95,6 +95,8 @@ export interface TweetInfo {
 export interface MediaExtractionOptions {
   /** 비디오 포함 여부 */
   includeVideos?: boolean;
+  /** 사용자명 포함 여부 */
+  includeUsername?: boolean;
   /** 타임아웃 (밀리초) */
   timeoutMs?: number;
   /** API 폴백 사용 */

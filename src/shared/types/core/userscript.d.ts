@@ -6,11 +6,16 @@
  */
 
 /**
+ * UserScript 저장소 값 타입 - 직렬화 가능한 모든 값
+ */
+export type GMStorageValue = string | number | boolean | object | null;
+
+/**
  * UserScript API 함수들
  */
 declare function GM_download(url: string, filename: string): void;
-declare function GM_getValue(name: string, defaultValue?: any): any;
-declare function GM_setValue(name: string, value: any): void;
+declare function GM_getValue(name: string, defaultValue?: GMStorageValue): GMStorageValue;
+declare function GM_setValue(name: string, value: GMStorageValue): void;
 declare function GM_deleteValue(name: string): void;
 declare function GM_listValues(): string[];
 declare function GM_getResourceText(name: string): string;
@@ -42,7 +47,7 @@ export interface GMXmlHttpRequestResponse {
   readonly status: number;
   readonly statusText: string;
   readonly finalUrl: string;
-  readonly response?: any;
+  readonly response?: string | object | ArrayBuffer | Blob | Document;
 }
 
 /**
@@ -55,7 +60,7 @@ export interface GMXmlHttpRequestOptions {
   data?: string | FormData | Blob;
   binary?: boolean;
   timeout?: number;
-  context?: any;
+  context?: Record<string, unknown>;
   responseType?: 'text' | 'json' | 'blob' | 'arraybuffer' | 'document';
   overrideMimeType?: string;
   anonymous?: boolean;
@@ -86,8 +91,8 @@ declare global {
   function GM_xmlhttpRequest(options: GMXmlHttpRequestOptions): void;
 
   // 기타 GM API
-  function GM_setValue(key: string, value: any): void;
-  function GM_getValue(key: string, defaultValue?: any): any;
+  function GM_setValue(key: string, value: GMStorageValue): void;
+  function GM_getValue(key: string, defaultValue?: GMStorageValue): GMStorageValue;
   function GM_deleteValue(key: string): void;
   function GM_listValues(): string[];
 

@@ -1,5 +1,6 @@
 /**
- * Phase 4.2: GalleryEventHandler 분리 테스트
+ * @fileoverview Phase 4.2: GalleryEventHandler 분리 테스트
+ * @description GalleryApp의 이벤트 처리 로직을 독립적인 GalleryEventHandler로 분리
  *
  * 목표: GalleryApp의 이벤트 처리 로직을 독립적인 GalleryEventHandler로 분리
  *

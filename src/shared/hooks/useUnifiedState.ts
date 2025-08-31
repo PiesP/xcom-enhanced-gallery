@@ -103,11 +103,14 @@ export function useUnifiedState<T extends StateKey>(
     (newState: Partial<StateValue<T>>): void => {
       try {
         const currentState = stateManager.getState(stateKey);
-        const updatedState = { ...currentState, ...newState };
+        const updatedState = {
+          ...((currentState as object) || {}),
+          ...(newState as object),
+        } as StateValue<T>;
 
         // StateManager를 통해 Signal과 동기화
-        stateManager.syncState(stateKey, updatedState as StateValue<T>, 'react');
-        setState(updatedState as StateValue<T>);
+        stateManager.syncState(stateKey, updatedState, 'react');
+        setState(updatedState);
       } catch (error) {
         logger.error('상태 업데이트 오류:', error);
       }
@@ -120,7 +123,7 @@ export function useUnifiedState<T extends StateKey>(
     try {
       const currentState = stateManager.getState(stateKey);
       if (currentState) {
-        setState(currentState);
+        setState(currentState as StateValue<T>);
       }
     } catch (error) {
       logger.error('Signal 동기화 오류:', error);

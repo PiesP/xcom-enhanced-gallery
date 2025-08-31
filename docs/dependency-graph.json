@@ -68,6 +68,24 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -90,6 +108,21 @@
         "src/shared/utils/error-handling.ts",
         "src/shared/services/StateManager.ts",
         "src/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/interfaces.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/RetryManager.ts",
+        "src/shared/services/LanguageService.ts",
+        "src/shared/services/ThemeService.ts",
+        "src/shared/services/AnimationService.ts",
+        "src/shared/services/ToastController.ts",
+        "src/shared/services/StateManager.ts",
+        "src/shared/services/di-implementations.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1360,6 +1393,32 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/shared/components/LazyImage.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/components/VirtualScroll.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/components/base/BaseComponentProps.ts",
@@ -2838,6 +2897,24 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -2849,7 +2926,26 @@
     },
     {
       "source": "src/shared/services/ThemeService.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/services/index.ts",
@@ -4097,7 +4193,26 @@
     },
     {
       "source": "src/shared/services/AnimationService.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/services/index.ts"
       ],
@@ -4920,6 +5035,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/services/MediaService.ts",
+        "src/shared/services/media/MediaExtractionService.ts",
         "src/shared/services/media/index.ts"
       ],
       "orphan": false,
@@ -4950,7 +5066,26 @@
     },
     {
       "source": "src/shared/services/ToastController.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/service-initialization.ts",
@@ -6580,6 +6715,50 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/di-implementations.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./interfaces",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/interfaces.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [],
@@ -6843,6 +7022,58 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/media/MediaExtractionService.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./UsernameExtractionService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/media/UsernameExtractionService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/media/MediaLoadingService.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/services/media/MediaPrefetchService.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/media/index.ts",
       "dependencies": [
         {
@@ -7092,7 +7323,7 @@
           "dependencyTypes": [
             "local",
             "type-only",
-            "import"
+            "export"
           ],
           "resolved": "src/shared/types/core/media.types.ts",
           "coreModule": false,
@@ -7196,23 +7427,6 @@
             "export"
           ],
           "resolved": "src/shared/types/core/extraction.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/types/core/media.types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7368,6 +7582,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/cache/LRUCache.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/utils/cleanup/CleanupValidator.ts",
       "dependencies": [],
       "dependents": [],
@@ -7521,6 +7748,19 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/shared/utils/performance/PerformanceMonitor.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/utils/performance/index.ts",
@@ -7705,6 +7945,24 @@
     "violations": [
       {
         "type": "module",
+        "from": "src/shared/components/LazyImage.ts",
+        "to": "src/shared/components/LazyImage.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/components/VirtualScroll.ts",
+        "to": "src/shared/components/VirtualScroll.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/constants/api.constants.ts",
         "to": "src/shared/constants/api.constants.ts",
         "rule": {
@@ -7738,14 +7996,50 @@
           "severity": "info",
           "name": "no-orphans"
         }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/services/media/MediaLoadingService.ts",
+        "to": "src/shared/services/media/MediaLoadingService.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/services/media/MediaPrefetchService.ts",
+        "to": "src/shared/services/media/MediaPrefetchService.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/cache/LRUCache.ts",
+        "to": "src/shared/utils/cache/LRUCache.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/performance/PerformanceMonitor.ts",
+        "to": "src/shared/utils/performance/PerformanceMonitor.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
       }
     ],
     "error": 0,
     "warn": 0,
-    "info": 4,
+    "info": 10,
     "ignore": 0,
-    "totalCruised": 219,
-    "totalDependenciesCruised": 321,
+    "totalCruised": 228,
+    "totalDependenciesCruised": 328,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

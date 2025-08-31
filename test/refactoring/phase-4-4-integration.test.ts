@@ -1,5 +1,6 @@
 /**
- * Phase 4.4: 갤러리 컴포넌트 통합 테스트
+ * @fileoverview Phase 4.4: 갤러리 컴포넌트 통합 테스트
+ * @description 분리된 GalleryCore, GalleryEventHandler, GalleryRenderer가 함께 올바르게 동작하는지 검증
  *
  * 목표: 분리된 GalleryCore, GalleryEventHandler, GalleryRenderer가
  *       함께 올바르게 동작하는지 검증

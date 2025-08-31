@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Phase 2.1: 로깅 시스템 통합 - TDD 테스트
+ * @description 모든 모듈이 createScopedLogger를 일관되게 사용하도록 통합하는 TDD 테스트
+ */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 /**

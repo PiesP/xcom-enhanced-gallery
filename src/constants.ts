@@ -2,6 +2,18 @@
  * @fileoverview 통합 상수 파일
  */
 
+// extractMediaId, URL_PATTERNS 등은 @shared/constants/media.constants에서 import하여 사용
+import {
+  extractMediaId,
+  URL_PATTERNS,
+  isValidMediaUrl,
+  isValidGalleryUrl,
+  extractTweetId,
+} from '@shared/constants/media.constants';
+
+// re-export for backward compatibility
+export { extractMediaId, URL_PATTERNS, isValidMediaUrl, isValidGalleryUrl, extractTweetId };
+
 // 애플리케이션 기본 설정
 export const APP_CONFIG = {
   VERSION: '3.1.0',
@@ -61,29 +73,6 @@ export const MEDIA = {
     MEDIUM: 'medium',
     SMALL: 'small',
   } as const,
-} as const;
-
-// ================================
-// URL 패턴
-// ================================
-
-export const URL_PATTERNS = {
-  /** 미디어 URL 패턴 */
-  MEDIA:
-    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=(?:[a-z]+|\d{2,4}x\d{2,4})|[\w-]+_video_thumb\/\d+\/img\/[\w-]+(?:\?.*)?)/,
-
-  /** 갤러리용 미디어 패턴 */
-  GALLERY_MEDIA:
-    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=orig|[\w-]+_video_thumb\/\d+\/img\/[\w-]+(?:\?.*)?)/,
-
-  /** 미디어 ID 추출 */
-  MEDIA_ID: /\/media\/([\w-]+)\?/,
-
-  /** 동영상 썸네일 ID 추출 */
-  VIDEO_THUMB_ID: /\/([\w-]+_video_thumb)\/(\d+)\/img\/([\w-]+)/,
-
-  /** 트윗 ID 추출 */
-  TWEET_ID: /https?:\/\/(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
 } as const;
 
 // ================================
@@ -282,42 +271,6 @@ export const SYSTEM_PAGES = [
 /**
  * 미디어 URL이 유효한지 확인
  */
-export function isValidMediaUrl(url: string): boolean {
-  return URL_PATTERNS.MEDIA.test(url);
-}
-
-/**
- * 갤러리용 미디어 URL인지 확인
- */
-export function isValidGalleryUrl(url: string): boolean {
-  return URL_PATTERNS.GALLERY_MEDIA.test(url);
-}
-
-/**
- * 미디어 ID 추출 - 통합된 추출 로직
- * TDD Phase 1.2: 여러 패턴을 지원하는 통합 함수
- */
-export function extractMediaId(url: string): string | null {
-  if (!url || typeof url !== 'string') {
-    return null;
-  }
-
-  // 패턴 1: 일반 미디어 URL - /media/ABC123
-  const mediaMatch = url.match(/\/media\/([A-Za-z0-9_-]+)/);
-  if (mediaMatch?.[1]) {
-    return mediaMatch[1];
-  }
-
-  // 패턴 2: 비디오 썸네일 URL - /ext_tw_video_thumb/123/pu/img/DEF456
-  // 여기서 DEF456이 실제 미디어 ID
-  const videoMatch = url.match(/\/ext_tw_video_thumb\/(\d+)\/pu\/img\/([A-Za-z0-9_-]+)/);
-  if (videoMatch?.[2]) {
-    return videoMatch[2]; // 두 번째 캡처 그룹이 실제 ID
-  }
-
-  return null;
-}
-
 /**
  * 원본 URL 생성
  */
@@ -404,14 +357,6 @@ export function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
       return false;
     }
   });
-}
-
-/**
- * 트윗 ID 추출
- */
-export function extractTweetId(url: string): string | null {
-  const match = url.match(URL_PATTERNS.TWEET_ID);
-  return match?.[2] ?? null;
 }
 
 // ================================

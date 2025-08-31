@@ -4,6 +4,7 @@
  */
 
 import { createScopedLogger } from '../logging/logger';
+import type { IRetryManager, ILogger } from './interfaces';
 
 // RetryManager 전용 로거
 const logger = createScopedLogger('RetryManager');
@@ -50,13 +51,17 @@ export type RetryStrategy = 'linear' | 'exponential' | 'fibonacci';
  * });
  * ```
  */
-export class RetryManager {
+export class RetryManager implements IRetryManager {
   private readonly options: Required<RetryOptions>;
   private readonly strategy: RetryStrategy;
   private networkStatusListeners: Array<() => void> = [];
   private isOnline: boolean = navigator.onLine;
 
-  constructor(options: RetryOptions, strategy: RetryStrategy = 'exponential') {
+  constructor(
+    options: RetryOptions,
+    strategy: RetryStrategy = 'exponential',
+    private readonly loggerService: ILogger = logger
+  ) {
     this.options = {
       maxRetries: options.maxRetries,
       delay: options.delay,

@@ -184,10 +184,12 @@ describe('Phase 3: StateManager 초기화 안정화', () => {
 
       // GREEN: 수동 재연결 후 정상 동작
       stateManager.reconnect();
-      const state = stateManager.getState('gallery');
+      const state = stateManager.getState('gallery') as
+        | { isOpen: boolean; currentMediaIndex: number }
+        | undefined;
       expect(state).toBeDefined();
-      expect(state.isOpen).toBe(false);
-      expect(state.currentMediaIndex).toBe(0);
+      expect(state?.isOpen).toBe(false);
+      expect(state?.currentMediaIndex).toBe(0);
     });
 
     it('performance metrics가 에러 상황을 추적해야 함', async () => {

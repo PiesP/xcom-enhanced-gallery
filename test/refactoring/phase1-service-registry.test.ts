@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Phase 1.1: 서비스 매니저 단순화 - ServiceRegistry TDD 테스트
+ * @description ServiceManager의 핵심 기능을 단순한 ServiceRegistry로 분리
+ *
  * Phase 1.1: 서비스 매니저 단순화 - ServiceRegistry TDD 테스트
  *
  * 목표: ServiceManager의 핵심 기능을 단순한 ServiceRegistry로 분리

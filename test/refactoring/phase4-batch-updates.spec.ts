@@ -80,7 +80,7 @@ describe('Phase 4: 배치 업데이트 최적화', () => {
     {
       id: '1',
       url: 'https://example.com/image1.jpg',
-      type: 'image',
+      type: 'image' as 'image',
       width: 1920,
       height: 1080,
       filename: 'image1.jpg',
@@ -88,7 +88,7 @@ describe('Phase 4: 배치 업데이트 최적화', () => {
     {
       id: '2',
       url: 'https://example.com/image2.jpg',
-      type: 'image',
+      type: 'image' as 'image',
       width: 1920,
       height: 1080,
       filename: 'image2.jpg',
@@ -114,6 +114,7 @@ describe('Phase 4: 배치 업데이트 최적화', () => {
       // RED: 현재는 batch를 사용하지 않으므로 이 테스트는 실패해야 함
       const initialBatchCount = getBatchCallCount();
 
+      // 타입 안전성을 위한 모킹된 함수 호출
       openGallery(mockMediaItems, 1);
 
       // batch가 호출되어야 함

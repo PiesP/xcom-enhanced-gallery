@@ -5,6 +5,7 @@
 
 import { logger } from '@shared/logging/logger';
 import type { BaseService } from '@shared/types/app.types';
+import type { IToastController, ILogger } from './interfaces';
 
 // Toast 관련 타입 정의
 export interface ToastItem {
@@ -60,15 +61,17 @@ export interface ToastOptions {
  * 애플리케이션 전체의 토스트 알림을 중앙에서 관리합니다.
  * 기존 showNotification 함수들을 대체하여 일관된 UX를 제공합니다.
  */
-export class ToastController implements BaseService {
+export class ToastController implements BaseService, IToastController {
   private initialized = false;
+
+  constructor(private readonly loggerService: ILogger = logger) {}
 
   /**
    * 서비스 초기화
    */
   async initialize(): Promise<void> {
     this.initialized = true;
-    logger.debug('ToastController 초기화 완료');
+    this.loggerService.debug('ToastController 초기화 완료');
   }
 
   /**
@@ -126,7 +129,36 @@ export class ToastController implements BaseService {
    * });
    * ```
    */
-  show(options: ToastOptions): string {
+  /**
+   * 토스트 표시 (인터페이스 호환)
+   */
+  show(message: string, type?: 'info' | 'success' | 'warning' | 'error'): void;
+  /**
+   * 토스트 표시 (고급 옵션)
+   */
+  show(options: ToastOptions): string;
+  show(
+    messageOrOptions: string | ToastOptions,
+    type?: 'info' | 'success' | 'warning' | 'error'
+  ): string | void {
+    if (typeof messageOrOptions === 'string') {
+      // 인터페이스 호환 메서드
+      this.showAdvanced({
+        title: '', // 기본 타이틀
+        message: messageOrOptions,
+        type: type ?? 'info',
+      });
+      return;
+    }
+
+    // 고급 옵션 메서드
+    return this.showAdvanced(messageOrOptions);
+  }
+
+  /**
+   * 내부 토스트 표시 메서드
+   */
+  private showAdvanced(options: ToastOptions): string {
     const toastItem: Omit<ToastItem, 'id'> = {
       type: options.type ?? 'info',
       title: options.title,
@@ -188,6 +220,17 @@ export class ToastController implements BaseService {
       type: 'error',
       ...options,
     });
+  }
+
+  /**
+   * 특정 토스트 숨기기 (인터페이스 호환)
+   */
+  hide(id?: string): void {
+    if (id) {
+      this.remove(id);
+    } else {
+      this.clear();
+    }
   }
 
   /**

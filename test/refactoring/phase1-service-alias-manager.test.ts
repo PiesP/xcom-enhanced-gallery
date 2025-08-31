@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Phase 1.2: 서비스 별칭 관리자 - ServiceAliasManager TDD 테스트
+ * @description ServiceManager의 별칭 관리 기능을 분리
+ *
  * Phase 1.2: 서비스 별칭 관리자 - ServiceAliasManager TDD 테스트
  *
  * 목표: ServiceManager의 별칭 관리 기능을 분리

@@ -1,4 +1,7 @@
 /**
+ * @fileoverview Phase 1.3: 서비스 진단 도구 - ServiceDiagnostics TDD 테스트
+ * @description ServiceManager의 진단 기능을 분리
+ *
  * Phase 1.3: 서비스 진단 도구 - ServiceDiagnostics TDD 테스트
  *
  * 목표: ServiceManager의 진단 기능을 분리

@@ -1,8 +1,6 @@
 /**
  * @fileoverview 미디어 관련 상수
- * @description TDD Phase 3.1 - GREEN 단계: 최소 구현
- *
- * constants.ts에서 미디어 관련 상수들을 분리
+ * @description 통합된 미디어 상수 정의
  */
 
 /**
@@ -46,18 +44,25 @@ export const MEDIA_DOMAINS = Object.freeze([
 ] as const);
 
 /**
- * 미디어 URL 패턴
+ * URL 패턴 상수들 (통합됨)
  */
-const MEDIA_URL_PATTERNS = {
+export const URL_PATTERNS = {
   /** 일반 미디어 URL 패턴 */
   MEDIA:
     /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=(?:[a-z]+|\d{2,4}x\d{2,4})|ext_tw_video_thumb\/\d+\/pu\/img\/[\w-]+(?:\?.*)?)/,
 
+  /** 갤러리용 미디어 패턴 */
+  GALLERY_MEDIA:
+    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=orig|ext_tw_video_thumb\/\d+\/pu\/img\/[\w-]+(?:\?.*)?)/,
+
   /** 미디어 ID 추출 패턴 */
-  MEDIA_ID: /\/media\/([\w-]+)\?/,
+  MEDIA_ID: /\/media\/([\w-]+)(?:\?|\.)/,
 
   /** 비디오 썸네일 ID 추출 패턴 */
   VIDEO_THUMB_ID: /\/ext_tw_video_thumb\/(\d+)\/pu\/img\/([\w-]+)/,
+
+  /** 트윗 ID 추출 패턴 */
+  TWEET_ID: /https?:\/\/(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
 } as const;
 
 /**
@@ -70,7 +75,22 @@ export function isValidMediaUrl(url: string): boolean {
   if (!url || typeof url !== 'string') {
     return false;
   }
-  return MEDIA_URL_PATTERNS.MEDIA.test(url);
+  return URL_PATTERNS.MEDIA.test(url);
+}
+
+/**
+ * 갤러리용 미디어 URL인지 확인
+ */
+export function isValidGalleryUrl(url: string): boolean {
+  return URL_PATTERNS.GALLERY_MEDIA.test(url);
+}
+
+/**
+ * 트윗 ID 추출
+ */
+export function extractTweetId(url: string): string | null {
+  const match = url.match(URL_PATTERNS.TWEET_ID);
+  return match?.[2] ?? null;
 }
 
 /**
@@ -85,14 +105,14 @@ export function extractMediaId(url: string | null | undefined): string | null {
   }
 
   // 패턴 1: 일반 미디어 URL - /media/ABC123
-  const mediaMatch = url.match(MEDIA_URL_PATTERNS.MEDIA_ID);
+  const mediaMatch = url.match(URL_PATTERNS.MEDIA_ID);
   if (mediaMatch?.[1]) {
     return mediaMatch[1];
   }
 
   // 패턴 2: 비디오 썸네일 URL - /ext_tw_video_thumb/123/pu/img/DEF456
   // 여기서 DEF456이 실제 미디어 ID
-  const videoMatch = url.match(MEDIA_URL_PATTERNS.VIDEO_THUMB_ID);
+  const videoMatch = url.match(URL_PATTERNS.VIDEO_THUMB_ID);
   if (videoMatch?.[2]) {
     return videoMatch[2]; // 두 번째 캡처 그룹이 실제 ID
   }

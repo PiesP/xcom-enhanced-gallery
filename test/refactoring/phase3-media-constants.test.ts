@@ -1,4 +1,9 @@
 /**
+ * @fileoverview Phase 3: 상수 파일 분해 - 미디어 상수 TDD 테스트
+ * @description constants.ts의 미디어 관련 상수를 분리하는 TDD 테스트
+ */
+
+/**
  * Phase 3: 상수 파일 분해 - 미디어 상수 TDD 테스트
  *
  * 목표: constants.ts의 미디어 관련 상수를 분리

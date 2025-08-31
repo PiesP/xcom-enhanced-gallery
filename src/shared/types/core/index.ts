@@ -7,8 +7,8 @@
 // Primary consolidated core types
 export * from './core-types';
 
-// Essential business types
-export * from './media.types';
+// Essential business types (excluding duplicates)
+export type * from './media.types';
 
 // Extraction types (selective export to avoid conflicts)
 export type {

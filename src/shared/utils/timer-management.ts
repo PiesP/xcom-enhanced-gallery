@@ -80,6 +80,13 @@ export class TimerManager {
 export const globalTimerManager = new TimerManager();
 
 /**
+ * 모든 전역 타이머 정리 (테스트용)
+ */
+export function clearAllTimers(): void {
+  globalTimerManager.cleanup();
+}
+
+/**
  * 안전한 performance.now() 호출
  *
  * @returns 현재 시간 또는 Date.now() fallback

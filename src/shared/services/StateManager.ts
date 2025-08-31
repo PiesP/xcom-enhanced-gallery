@@ -6,6 +6,7 @@
 
 import { createScopedLogger } from '../logging/logger';
 import type { Signal } from '@shared/types/signals';
+import type { IStateManager, ILogger } from './interfaces';
 
 // StateManager 전용 로거
 const logger = createScopedLogger('StateManager');
@@ -42,24 +43,16 @@ interface DebugInfo {
   lastSyncConflict?: number;
 }
 
-interface GallerySignals {
-  isOpen: Signal<boolean>;
-  currentMediaIndex: Signal<number>;
-  mediaCount: Signal<number>;
-  currentUrl: Signal<string>;
-}
-
 /**
  * 통합 상태 관리 시스템
  * Signal과 React 상태를 동기화하고 통합 관리
  * Phase 3: 의존성 주입 패턴 및 안정성 개선
  */
-export class StateManager {
+export class StateManager implements IStateManager {
   private static instance: StateManager;
   private readonly subscribers = new Map<StateKey, Set<StateSubscriber<unknown>>>();
   private readonly injectedSignals: Map<StateKey, Record<string, Signal<unknown>>> = new Map();
   private readonly signalUnsubscribers: Map<StateKey, (() => void)[]> = new Map();
-  private readonly isInitialized = false;
 
   private performanceMetrics: PerformanceMetrics = {
     syncCount: 0,
@@ -73,7 +66,7 @@ export class StateManager {
     syncConflicts: 0,
   };
 
-  private constructor() {
+  private constructor(private readonly loggerService: ILogger = logger) {
     // Phase 3: 생성자에서는 초기화하지 않고 지연 초기화 사용
     this.safeInitialize();
   }
@@ -135,7 +128,10 @@ export class StateManager {
     };
 
     if (windowWithGallery.gallery?.signals) {
-      const gallerySignals = windowWithGallery.gallery.signals as GallerySignals;
+      const gallerySignals = windowWithGallery.gallery.signals as unknown as Record<
+        string,
+        Signal<unknown>
+      >;
       this.injectSignals('gallery', gallerySignals);
       logger.debug('[StateManager] 자동 gallery signals 감지 및 주입 완료');
     }
@@ -185,7 +181,7 @@ export class StateManager {
       if (signal.subscribe) {
         const unsubscribe = signal.subscribe(() => {
           const state = this.getStateFromSignals(key, signals);
-          this.notifySubscribers(key, state);
+          this.notifySubscribers(key, state as StateValue<typeof key>);
         });
         unsubscribers.push(unsubscribe);
       }
@@ -236,12 +232,13 @@ export class StateManager {
   /**
    * 상태 구독자 추가
    */
-  subscribe<T extends StateKey>(key: T, subscriber: StateSubscriber<StateValue<T>>): () => void {
-    const subscriberSet = this.ensureSubscriberSet(key);
-    subscriberSet.add(subscriber as StateSubscriber<unknown>);
+  subscribe<T>(key: string, subscriber: (value: T) => void): () => void {
+    const subscriberSet = this.ensureSubscriberSet(key as StateKey);
+    const typedSubscriber = subscriber as StateSubscriber<unknown>;
+    subscriberSet.add(typedSubscriber);
 
     return () => {
-      subscriberSet.delete(subscriber as StateSubscriber<unknown>);
+      subscriberSet.delete(typedSubscriber);
     };
   }
 
@@ -260,7 +257,7 @@ export class StateManager {
       if (subscriberSet) {
         subscriberSet.forEach(subscriber => {
           try {
-            subscriber(newValue, oldValue);
+            subscriber(newValue as unknown, oldValue as unknown);
           } catch (error) {
             logger.error('구독자 알림 오류:', error);
             this.performanceMetrics.errorCount++;
@@ -330,12 +327,12 @@ export class StateManager {
   /**
    * Phase 3: 개선된 현재 상태 가져오기 (주입된 signals 우선 사용)
    */
-  getState<T extends StateKey>(key: T): StateValue<T> | undefined {
+  getState<T>(key: string): T | undefined {
     try {
       // 1. 주입된 signals에서 먼저 확인
-      const injectedSignals = this.injectedSignals.get(key);
+      const injectedSignals = this.injectedSignals.get(key as StateKey);
       if (injectedSignals) {
-        return this.getStateFromSignals(key, injectedSignals) as StateValue<T>;
+        return this.getStateFromSignals(key as StateKey, injectedSignals) as T;
       }
 
       // 2. fallback: window.gallery에서 확인 (레거시 지원)
@@ -345,7 +342,7 @@ export class StateManager {
         };
         const gallerySignals = windowWithGallery.gallery?.signals;
         if (gallerySignals) {
-          return this.getStateFromSignals(key, gallerySignals) as StateValue<T>;
+          return this.getStateFromSignals(key as StateKey, gallerySignals) as T;
         }
       }
 
@@ -356,7 +353,7 @@ export class StateManager {
           currentMediaIndex: 0,
           mediaCount: undefined,
           currentUrl: undefined,
-        } as StateValue<T>;
+        } as T;
       }
 
       return undefined;
@@ -371,10 +368,57 @@ export class StateManager {
           currentMediaIndex: 0,
           mediaCount: undefined,
           currentUrl: undefined,
-        } as StateValue<T>;
+        } as T;
       }
 
       return undefined;
+    }
+  }
+
+  /**
+   * 상태 설정 (인터페이스 호환성)
+   */
+  setState<T>(key: string, value: T): void {
+    try {
+      // 주입된 signals에 상태 설정
+      const injectedSignals = this.injectedSignals.get(key as StateKey);
+      if (injectedSignals) {
+        this.setStateToSignals(key as StateKey, injectedSignals, value);
+        this.notifySubscribers(key as StateKey, value as StateValue<StateKey>);
+        return;
+      }
+
+      // fallback: 내부 상태 관리 (향후 확장용)
+      this.addToHistory('SET_STATE', { key, value });
+    } catch (error) {
+      logger.error('[StateManager] setState 실패:', error);
+    }
+  }
+
+  /**
+   * Signals에 상태 설정하는 헬퍼 메서드
+   */
+  private setStateToSignals<T extends StateKey>(
+    key: T,
+    signals: Record<string, Signal<unknown>>,
+    value: unknown
+  ): void {
+    if (key === 'gallery' && typeof value === 'object' && value !== null) {
+      const galleryValue = value as Partial<GalleryState>;
+
+      // 각 gallery 상태 속성을 해당 signal에 설정
+      if ('isOpen' in galleryValue && signals.isOpen) {
+        signals.isOpen.value = galleryValue.isOpen;
+      }
+      if ('currentMediaIndex' in galleryValue && signals.currentMediaIndex) {
+        signals.currentMediaIndex.value = galleryValue.currentMediaIndex;
+      }
+      if ('mediaCount' in galleryValue && signals.mediaCount) {
+        signals.mediaCount.value = galleryValue.mediaCount;
+      }
+      if ('currentUrl' in galleryValue && signals.currentUrl) {
+        signals.currentUrl.value = galleryValue.currentUrl;
+      }
     }
   }
 

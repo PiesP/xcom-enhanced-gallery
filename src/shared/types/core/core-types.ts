@@ -12,7 +12,7 @@
  * - app.types.ts (애플리케이션 타입들)
  */
 
-import type { MediaInfo } from './media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 // ========================================
 // SERVICE TYPES (from services.types.ts)
@@ -195,26 +195,7 @@ export type { MediaItem } from './media.types';
 // MEDIA MAPPING TYPES (from media-mapping/types.ts)
 // ========================================
 
-import type { MediaMapping, MediaPageType } from './media.types';
-
-/**
- * 미디어 매핑 전략 인터페이스
- */
-export interface MediaMappingStrategy {
-  /** 전략의 고유 이름 */
-  readonly name: string;
-
-  /** 우선순위 (낮을수록 먼저 실행) */
-  readonly priority: number;
-
-  /**
-   * 미디어 매핑 실행
-   * @param clickedElement 클릭된 요소
-   * @param pageType 페이지 타입
-   * @returns 매핑 결과 또는 null
-   */
-  execute(clickedElement: HTMLElement, pageType: MediaPageType): Promise<MediaMapping | null>;
-}
+import type { MediaMapping } from '@shared/types/media.types';
 
 /**
  * 전략 메트릭스

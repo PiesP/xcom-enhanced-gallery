@@ -4,6 +4,7 @@
  */
 
 import { logger } from '../logging/logger';
+import type { ILanguageService, ILogger } from './interfaces';
 
 export type SupportedLanguage = 'auto' | 'ko' | 'en' | 'ja';
 
@@ -87,9 +88,11 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
   },
 };
 
-export class LanguageService {
+export class LanguageService implements ILanguageService {
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
+
+  constructor(private readonly loggerService: ILogger = logger) {}
 
   detectLanguage(): Exclude<SupportedLanguage, 'auto'> {
     // 안전한 navigator.language 접근
@@ -121,19 +124,27 @@ export class LanguageService {
     logger.debug(`Language changed to: ${language}`);
   }
 
+  translate(path: string): string {
+    return this.getString(path);
+  }
+
   getString(path: string): string {
     const effectiveLanguage =
       this.currentLanguage === 'auto' ? this.detectLanguage() : this.currentLanguage;
 
     const keys = path.split('.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let value: any = LANGUAGE_STRINGS[effectiveLanguage];
+    let value: LanguageStrings | string | undefined = LANGUAGE_STRINGS[effectiveLanguage];
 
     for (const key of keys) {
-      value = value?.[key];
+      if (typeof value === 'object' && value !== null) {
+        value = (value as LanguageStrings)[key] as LanguageStrings | string | undefined;
+      } else {
+        value = undefined;
+        break;
+      }
     }
 
-    return value || path;
+    return typeof value === 'string' ? value : path;
   }
 
   onLanguageChange(callback: (language: SupportedLanguage) => void): () => void {

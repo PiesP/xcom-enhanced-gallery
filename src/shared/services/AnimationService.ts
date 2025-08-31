@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
+import type { IAnimationService, ILogger } from './interfaces';
 
 export interface AnimationConfig {
   duration?: number;
@@ -20,11 +21,11 @@ export interface AnimationConfig {
  * - 간단한 페이드 인/아웃
  * - 유저스크립트 최적화
  */
-export class AnimationService {
+export class AnimationService implements IAnimationService {
   private static instance: AnimationService | null = null;
   private stylesInjected = false;
 
-  private constructor() {
+  private constructor(private readonly loggerService: ILogger = logger) {
     this.ensureStylesInjected();
   }
 
@@ -81,16 +82,10 @@ export class AnimationService {
   /**
    * 요소 페이드인 애니메이션
    */
-  public async fadeIn(element: Element, config: AnimationConfig = {}): Promise<void> {
+  public async fadeIn(element: HTMLElement, duration: number = 300): Promise<void> {
     this.ensureStylesInjected();
 
-    const duration = config.duration || 300;
-
     element.classList.add('xcom-fade-in');
-
-    if (config.delay) {
-      await this.delay(config.delay);
-    }
 
     element.classList.add('active');
 
@@ -100,17 +95,35 @@ export class AnimationService {
   /**
    * 요소 페이드아웃 애니메이션
    */
-  public async fadeOut(element: Element, config: AnimationConfig = {}): Promise<void> {
+  public async fadeOut(element: HTMLElement, duration: number = 300): Promise<void> {
     this.ensureStylesInjected();
-
-    const duration = config.duration || 300;
 
     element.classList.add('xcom-fade-out');
 
-    if (config.delay) {
-      await this.delay(config.delay);
-    }
+    element.classList.add('active');
 
+    await this.delay(duration);
+  }
+
+  /**
+   * 슬라이드 업 애니메이션
+   */
+  public async slideUp(element: HTMLElement, duration: number = 300): Promise<void> {
+    this.ensureStylesInjected();
+
+    element.classList.add('xcom-slide-out');
+    element.classList.add('active');
+
+    await this.delay(duration);
+  }
+
+  /**
+   * 슬라이드 다운 애니메이션
+   */
+  public async slideDown(element: HTMLElement, duration: number = 300): Promise<void> {
+    this.ensureStylesInjected();
+
+    element.classList.add('xcom-slide-in');
     element.classList.add('active');
 
     await this.delay(duration);
@@ -139,21 +152,21 @@ export class AnimationService {
    * 갤러리 열기 애니메이션
    */
   public async openGallery(element: Element, config: AnimationConfig = {}): Promise<void> {
-    await this.fadeIn(element, config);
+    await this.fadeIn(element as HTMLElement, config.duration || 300);
   }
 
   /**
    * 갤러리 닫기 애니메이션
    */
   public async closeGallery(element: Element, config: AnimationConfig = {}): Promise<void> {
-    await this.fadeOut(element, config);
+    await this.fadeOut(element as HTMLElement, config.duration || 300);
   }
 
   /**
    * 기본 요소 애니메이션
    */
   public animateElement(element: Element, config: AnimationConfig = {}): void {
-    this.fadeIn(element, config).catch(error => {
+    this.fadeIn(element as HTMLElement, config.duration || 300).catch(error => {
       logger.warn('Animation failed:', error);
     });
   }
@@ -189,9 +202,9 @@ export function animateElement(element: Element, config?: AnimationConfig): void
 /**
  * 페이드아웃 편의 함수
  */
-export function fadeOut(element: Element, config?: AnimationConfig): Promise<void> {
+export function fadeOut(element: HTMLElement, config?: AnimationConfig): Promise<void> {
   const service = AnimationService.getInstance();
-  return service.fadeOut(element, config);
+  return service.fadeOut(element, config?.duration || 300);
 }
 
 /**

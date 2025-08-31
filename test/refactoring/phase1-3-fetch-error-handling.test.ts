@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 /**
+ * @fileoverview Phase 1.3: Fetch Error Handling Enhancement Tests
+ * @description TDD 접근 방식으로 fetch 에러 처리 기능을 구현합니다.
+ *
  * Phase 1.3: Fetch Error Handling Enhancement Tests
  *
  * TDD 접근 방식으로 fetch 에러 처리 기능을 구현합니다.

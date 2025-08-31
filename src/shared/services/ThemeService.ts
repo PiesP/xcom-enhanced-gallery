@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import type { IThemeService, ILogger } from './interfaces';
 
 /**
  * 테마 타입
@@ -24,7 +25,7 @@ export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
 /**
  * 시스템 테마 서비스 - Phase 4 간소화 + 수동 설정 지원
  */
-export class ThemeService {
+export class ThemeService implements IThemeService {
   private static readonly STORAGE_KEY = 'xeg-theme';
 
   private mediaQueryList: MediaQueryList | null = null;
@@ -33,7 +34,7 @@ export class ThemeService {
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private isInitialized = false;
 
-  constructor() {
+  constructor(private readonly loggerService: ILogger = logger) {
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
       this.initialize();
@@ -56,7 +57,7 @@ export class ThemeService {
     this.applyCurrentTheme();
 
     this.isInitialized = true;
-    logger.info('ThemeService initialized');
+    this.loggerService.info('ThemeService initialized');
   }
 
   /**

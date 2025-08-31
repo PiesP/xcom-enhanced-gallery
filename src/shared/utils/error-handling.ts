@@ -256,3 +256,75 @@ export async function withRetry<T>(
     metadata: { maxRetries, finalAttempt: true },
   });
 }
+
+/**
+ * 서비스 에러 처리 (MediaService 등에서 사용)
+ */
+export function handleServiceError(
+  error: unknown,
+  context: {
+    service: string;
+    operation: string;
+    params?: Record<string, unknown>;
+  }
+): StandardError {
+  return standardizeError(error, {
+    operation: `${context.service}.${context.operation}`,
+    timestamp: Date.now(),
+    metadata: {
+      service: context.service,
+      params: context.params,
+    },
+    retryable: isRetryableError(error),
+    fatal: isFatalError(error),
+  });
+}
+
+/**
+ * 에러 핸들러 생성 팩토리
+ */
+export function createErrorHandler(
+  defaultService: string
+): (error: unknown, operation: string, params?: Record<string, unknown>) => StandardError {
+  return (error: unknown, operation: string, params?: Record<string, unknown>): StandardError => {
+    return handleServiceError(error, {
+      service: defaultService,
+      operation,
+      params,
+    });
+  };
+}
+
+/**
+ * 로깅과 함께 에러 재발생 (중요한 에러용)
+ */
+export function logAndThrow(
+  error: unknown,
+  context: {
+    location: string;
+    operation: string;
+    severity?: 'warning' | 'error' | 'critical';
+    additionalInfo?: Record<string, unknown>;
+  }
+): never {
+  const standardError = standardizeError(error, {
+    operation: `${context.location}.${context.operation}`,
+    timestamp: Date.now(),
+    metadata: context.additionalInfo,
+    fatal: context.severity === 'critical',
+  });
+
+  const severity = context.severity || 'error';
+  if (severity === 'critical') {
+    logger.error(
+      `Critical error in ${context.location}.${context.operation}:`,
+      standardError.message
+    );
+  } else if (severity === 'error') {
+    logger.error(`Error in ${context.location}.${context.operation}:`, standardError.message);
+  } else {
+    logger.warn(`Warning in ${context.location}.${context.operation}:`, standardError.message);
+  }
+
+  throw standardError;
+}

@@ -1,4 +1,9 @@
 /**
+ * @fileoverview Phase 2: 초기화 프로세스 단순화 - ApplicationLifecycle TDD 테스트
+ * @description main.ts의 복잡한 초기화 로직을 체계화하는 ApplicationLifecycle TDD 테스트
+ */
+
+/**
  * Phase 2: 초기화 프로세스 단순화 - ApplicationLifecycle TDD 테스트
  *
  * 목표: main.ts의 복잡한 초기화 로직을 체계화
