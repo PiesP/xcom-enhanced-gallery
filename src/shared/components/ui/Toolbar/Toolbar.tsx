@@ -1,17 +1,5 @@
 /**
- * Copyright import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  FileZip,
-  Settings,
-  X,
-  ZoomIn,
-  ArrowAutofitWidth,
-  ArrowAutofitHeight,
-  ArrowsMaximize,
-  Loader2,
-} from '../Icon';om Enhanced Gallery
+ * Copyright © X.com Enhanced Gallery
  * Licensed under the MIT License
  *
  * @fileoverview Gallery Toolbar Component

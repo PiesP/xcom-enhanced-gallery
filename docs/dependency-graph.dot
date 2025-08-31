@@ -281,6 +281,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/services/BulkDownloadService.ts" -> "src/utils/fetchWrapper.ts"
     "src/shared/services/BulkDownloadService.ts" -> "src/shared/services/AbortManager.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/EventManager.ts" [label=<EventManager.ts> tooltip="EventManager.ts" URL="src/shared/services/EventManager.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/InitializationManager.ts" [label=<InitializationManager.ts> tooltip="no-orphans" URL="src/shared/services/InitializationManager.ts" fillcolor="#FFFBEB" fontcolor="#B45309" color="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/LanguageService.ts" [label=<LanguageService.ts> tooltip="LanguageService.ts" URL="src/shared/services/LanguageService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/services/LanguageService.ts" -> "src/shared/logging/logger.ts"
     "src/shared/services/LanguageService.ts" -> "src/shared/services/interfaces.ts" [arrowhead="onormal" penwidth="1.0"]

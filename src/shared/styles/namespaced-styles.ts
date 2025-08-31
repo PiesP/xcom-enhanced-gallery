@@ -138,8 +138,21 @@ export function initializeNamespacedStyles(): void {
   }
 
   const existingStyle = doc.getElementById(STYLE_ID);
+
+  // 빌드된 완전한 CSS가 이미 존재하는 경우 추가 초기화 생략
   if (existingStyle) {
-    logger.debug('[NamespacedStyles] Style already exists, removing old');
+    const existingContent = existingStyle.textContent || '';
+    // 빌드된 CSS는 일반적으로 64KB 이상, 네임스페이스 CSS는 1KB 미만
+    // CSS 모듈 클래스명이 포함되어 있으면 빌드된 완전한 스타일로 판단
+    if (existingContent.length > 10000 || existingContent.includes('-module__')) {
+      logger.debug(
+        '[NamespacedStyles] Complete built styles already exist, skipping initialization'
+      );
+      isInitialized = true;
+      return;
+    }
+
+    logger.debug('[NamespacedStyles] Incomplete style exists, replacing with namespaced version');
     existingStyle.remove();
   }
 

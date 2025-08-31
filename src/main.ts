@@ -9,6 +9,7 @@
 import { logger } from '@/shared/logging';
 import type { AppConfig } from '@/types';
 import { CoreService } from '@shared/services/ServiceManager';
+import { InitializationManager } from '@shared/services/InitializationManager';
 import { SERVICE_KEYS } from './constants';
 
 // 전역 스타일
@@ -33,21 +34,6 @@ function createAppConfig(): AppConfig {
     autoStart: true,
     performanceMonitoring: import.meta.env.DEV,
   };
-}
-
-/**
- * 기본 인프라 초기화
- */
-async function initializeInfrastructure(): Promise<void> {
-  try {
-    // Vendor 라이브러리 초기화
-    const { initializeVendors } = await import('@shared/external/vendors');
-    await initializeVendors();
-    logger.debug('✅ Vendor 라이브러리 초기화 완료');
-  } catch (error) {
-    logger.error('❌ 인프라 초기화 실패:', error);
-    throw error;
-  }
 }
 
 /**
@@ -295,7 +281,7 @@ async function initializeGalleryApp(): Promise<void> {
 }
 
 /**
- * 애플리케이션 메인 진입점
+ * 애플리케이션 메인 진입점 (Phase 4.1 GREEN - 초기화 순서 개선)
  */
 async function startApplication(): Promise<void> {
   if (isStarted) {
@@ -308,25 +294,34 @@ async function startApplication(): Promise<void> {
 
     const startTime = performance.now();
 
-    // 개발 도구 초기화 (개발 환경만)
-    await initializeDevTools();
+    // Phase 4.1: InitializationManager 사용
+    const initManager = new InitializationManager(import.meta.env.DEV);
 
-    // 1단계: 기본 인프라 초기화
-    await initializeInfrastructure();
+    // 순차적 초기화 실행 (vendor → styles → app)
+    const initSuccess = await initManager.initializeSequentially();
 
-    // 2단계: 핵심 시스템만 초기화 (갤러리 제외)
+    if (!initSuccess) {
+      throw new Error('Critical initialization failed');
+    }
+
+    // 개발 환경 디버깅 도구
+    if (import.meta.env.DEV) {
+      await initializeDevTools();
+    }
+
+    // 핵심 시스템 초기화
     await initializeCriticalSystems();
 
-    // 3단계: Feature Services 지연 등록
+    // Feature Services 지연 등록
     await registerFeatureServicesLazy();
 
-    // 4단계: 전역 이벤트 핸들러 설정
+    // 전역 이벤트 핸들러 설정
     setupGlobalEventHandlers();
 
-    // 5단계: 갤러리 앱을 즉시 초기화 (지연 없음)
+    // 갤러리 앱을 즉시 초기화
     await initializeGalleryImmediately();
 
-    // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
+    // 백그라운드에서 Non-Critical 시스템 초기화
     initializeNonCriticalSystems();
 
     isStarted = true;
@@ -336,6 +331,7 @@ async function startApplication(): Promise<void> {
 
     logger.info('✅ 애플리케이션 초기화 완료', {
       startupTime: `${duration.toFixed(2)}ms`,
+      initReport: initManager.getStatusReport(),
     });
 
     // 개발 환경에서 전역 접근 제공
@@ -345,6 +341,7 @@ async function startApplication(): Promise<void> {
         createConfig: createAppConfig,
         cleanup,
         galleryApp,
+        initManager,
       };
     }
   } catch (error) {

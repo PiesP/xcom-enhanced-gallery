@@ -6656,6 +6656,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/InitializationManager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/ServiceAliasManager.ts",
       "dependencies": [],
       "dependents": [
@@ -8038,6 +8051,15 @@
       },
       {
         "type": "module",
+        "from": "src/shared/services/InitializationManager.ts",
+        "to": "src/shared/services/InitializationManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/services/media/MediaLoadingService.ts",
         "to": "src/shared/services/media/MediaLoadingService.ts",
         "rule": {
@@ -8075,9 +8097,9 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 9,
+    "info": 10,
     "ignore": 0,
-    "totalCruised": 230,
+    "totalCruised": 231,
     "totalDependenciesCruised": 330,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
