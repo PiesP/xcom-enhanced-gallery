@@ -81,6 +81,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/services/RetryManager.ts",
+        "src/features/gallery/GalleryEventHandler.ts",
         "src/shared/browser/BrowserUtils.ts",
         "src/shared/services/LanguageService.ts",
         "src/shared/hooks/useUnifiedState.ts",
@@ -99,6 +100,31 @@
       "dependents": [
         "src/features/gallery/index.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/GalleryEventHandler.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -7711,8 +7737,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 217,
-    "totalDependenciesCruised": 320,
+    "totalCruised": 218,
+    "totalDependenciesCruised": 321,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
