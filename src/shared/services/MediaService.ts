@@ -255,42 +255,62 @@ export class MediaService {
   // ====================================
 
   /**
-   * Twitter Video 관련 유틸리티들을 재export
-   * 기존 코드 호환성을 위해 유지
+   * Twitter Video 관련 유틸리티들 (최적화됨)
+   * 지연 로딩으로 번들 크기 감소
+   * @deprecated 직접 TwitterVideoExtractor import 권장
    */
   get TwitterVideoUtils() {
+    // Phase 1 최적화: 캐싱된 지연 로딩
+    if (!this._twitterVideoUtilsCache) {
+      this._twitterVideoUtilsCache = this._createTwitterVideoUtils();
+    }
+    return this._twitterVideoUtilsCache;
+  }
+
+  private _twitterVideoUtilsCache?: ReturnType<typeof this._createTwitterVideoUtils>;
+
+  private _createTwitterVideoUtils() {
+    let extractorModule: typeof import('./media/TwitterVideoExtractor') | null = null;
+
+    const getExtractor = async () => {
+      if (!extractorModule) {
+        extractorModule = await import('./media/TwitterVideoExtractor');
+      }
+      return extractorModule;
+    };
+
     return {
-      // TwitterVideoExtractor에서 가져온 유틸리티들
+      // 통합된 지연 로딩 인터페이스
       isVideoThumbnail: async (imgElement: HTMLImageElement) => {
-        const { isVideoThumbnail } = await import('./media/TwitterVideoExtractor');
-        return isVideoThumbnail(imgElement);
+        const extractor = await getExtractor();
+        return extractor.isVideoThumbnail(imgElement);
       },
       isVideoPlayer: async (element: HTMLElement) => {
-        const { isVideoPlayer } = await import('./media/TwitterVideoExtractor');
-        return isVideoPlayer(element);
+        const extractor = await getExtractor();
+        return extractor.isVideoPlayer(element);
       },
       isVideoElement: async (element: HTMLElement) => {
-        const { isVideoElement } = await import('./media/TwitterVideoExtractor');
-        return isVideoElement(element);
+        const extractor = await getExtractor();
+        return extractor.isVideoElement(element);
       },
       extractTweetId: async (url: string) => {
-        const { extractTweetId } = await import('./media/TwitterVideoExtractor');
-        return extractTweetId(url);
+        const extractor = await getExtractor();
+        return extractor.extractTweetId(url);
       },
       getTweetIdFromContainer: async (container: HTMLElement) => {
-        const { getTweetIdFromContainer } = await import('./media/TwitterVideoExtractor');
-        return getTweetIdFromContainer(container);
+        const extractor = await getExtractor();
+        return extractor.getTweetIdFromContainer(container);
       },
       getVideoMediaEntry: async (tweetId: string, thumbnailUrl?: string) => {
-        const { getVideoMediaEntry } = await import('./media/TwitterVideoExtractor');
-        return getVideoMediaEntry(tweetId, thumbnailUrl);
+        const extractor = await getExtractor();
+        return extractor.getVideoMediaEntry(tweetId, thumbnailUrl);
       },
       getVideoUrlFromThumbnail: async (
         imgElement: HTMLImageElement,
         tweetContainer: HTMLElement
       ) => {
-        const { getVideoUrlFromThumbnail } = await import('./media/TwitterVideoExtractor');
-        return getVideoUrlFromThumbnail(imgElement, tweetContainer);
+        const extractor = await getExtractor();
+        return extractor.getVideoUrlFromThumbnail(imgElement, tweetContainer);
       },
     };
   }
@@ -454,11 +474,12 @@ export class MediaService {
   }
 
   // ====================================
-  // Media Prefetching API (통합됨)
+  // Media Prefetching API (통합됨) - Phase 3 메모리 최적화
   // ====================================
 
   /**
    * 미디어 배열에서 현재 인덱스 기준으로 다음 이미지들을 프리페치
+   * Phase 3: 메모리 누수 방지 및 성능 최적화
    */
   async prefetchNextMedia(
     mediaItems: readonly string[],
@@ -467,6 +488,13 @@ export class MediaService {
   ): Promise<void> {
     const maxConcurrent = options.maxConcurrent || 2;
     const prefetchRange = options.prefetchRange || 2;
+
+    // Phase 3: 메모리 압박 상황 체크
+    if (this.isMemoryPressureHigh()) {
+      logger.warn('[MediaService] 메모리 압박으로 프리페치 제한');
+      this.enforceMemoryLimits();
+      return;
+    }
 
     const prefetchUrls = this.calculatePrefetchUrls(mediaItems, currentIndex, prefetchRange);
 
@@ -625,6 +653,23 @@ export class MediaService {
         });
       }
     }
+  }
+
+  /**
+   * Phase 3: 메모리 압박 상황 감지
+   */
+  private isMemoryPressureHigh(): boolean {
+    const totalCacheSize = Array.from(this.prefetchCache.values()).reduce(
+      (sum, entry) => sum + entry.size,
+      0
+    );
+
+    // 메모리 제한의 90% 이상 사용 시 압박 상황으로 판단
+    const memoryUsageRatio = totalCacheSize / this.maxCacheSizeBytes;
+    const isCacheFull = this.prefetchCache.size >= this.maxCacheEntries * 0.9;
+    const hasHighEvictionRate = this.totalEvictions > this.prefetchCache.size * 2;
+
+    return memoryUsageRatio > 0.9 || isCacheFull || hasHighEvictionRate;
   }
 
   /**

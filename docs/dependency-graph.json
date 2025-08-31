@@ -51,9 +51,44 @@
     },
     {
       "source": "src/shared/services/RetryManager.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/features/download/services/DownloadRecovery.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/logging/logger.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/RetryManager.ts",
+        "src/shared/browser/BrowserUtils.ts",
+        "src/shared/services/LanguageService.ts",
+        "src/shared/hooks/useUnifiedState.ts",
+        "src/shared/logging/index.ts",
+        "src/shared/services/MediaService.ts",
+        "src/shared/utils/error-handling.ts",
+        "src/shared/services/StateManager.ts",
+        "src/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1176,18 +1211,6 @@
       ],
       "dependents": [
         "src/shared/browser/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/logging/logger.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/browser/BrowserUtils.ts",
-        "src/shared/services/LanguageService.ts",
-        "src/shared/logging/index.ts",
-        "src/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3137,6 +3160,45 @@
       "valid": true
     },
     {
+      "source": "src/shared/constants/api.constants.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/constants/media.constants.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/constants/ui.constants.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/dom/DOMCache.ts",
       "dependencies": [],
       "dependents": [
@@ -3436,9 +3498,27 @@
     },
     {
       "source": "src/shared/hooks/useUnifiedState.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
-      "orphan": true,
+      "orphan": false,
       "valid": true
     },
     {
@@ -4197,6 +4277,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../../utils/fetchWrapper",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/utils/fetchWrapper.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./AbortManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4222,6 +4319,16 @@
       "valid": true
     },
     {
+      "source": "src/utils/fetchWrapper.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/BulkDownloadService.ts",
+        "src/shared/services/MediaService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/AbortManager.ts",
       "dependencies": [],
       "dependents": [
@@ -4234,6 +4341,40 @@
     {
       "source": "src/shared/services/MediaService.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../utils/fetchWrapper",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/utils/fetchWrapper.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./AbortManager",
@@ -4303,13 +4444,13 @@
           "valid": true
         },
         {
-          "dynamic": true,
+          "dynamic": false,
           "module": "./media/TwitterVideoExtractor",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "dynamic-import"
+            "type-import"
           ],
           "resolved": "src/shared/services/media/TwitterVideoExtractor.ts",
           "coreModule": false,
@@ -5580,7 +5721,25 @@
     },
     {
       "source": "src/shared/utils/error-handling.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/index.ts"
       ],
@@ -6241,6 +6400,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/ApplicationLifecycle.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/EventManager.ts",
       "dependencies": [],
       "dependents": [
@@ -6250,10 +6422,90 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/StateManager.ts",
+      "source": "src/shared/services/ServiceAliasManager.ts",
       "dependencies": [],
+      "dependents": [
+        "src/shared/services/ServiceDiagnostics.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/ServiceDiagnostics.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ServiceAliasManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/ServiceAliasManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ServiceRegistry",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/ServiceRegistry.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
-      "orphan": true,
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/ServiceRegistry.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/ServiceDiagnostics.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/StateManager.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
       "valid": true
     },
     {
@@ -7365,13 +7617,50 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/constants/api.constants.ts",
+        "to": "src/shared/constants/api.constants.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/constants/media.constants.ts",
+        "to": "src/shared/constants/media.constants.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/constants/ui.constants.ts",
+        "to": "src/shared/constants/ui.constants.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/services/ApplicationLifecycle.ts",
+        "to": "src/shared/services/ApplicationLifecycle.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 4,
     "ignore": 0,
-    "totalCruised": 207,
-    "totalDependenciesCruised": 309,
+    "totalCruised": 215,
+    "totalDependenciesCruised": 318,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
