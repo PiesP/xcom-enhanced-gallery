@@ -105,11 +105,27 @@ export class MediaService {
   private readonly mediaLoadingStates = new Map<string, MediaLoadingState>();
 
   // 미디어 프리페칭 관련 상태 (MediaPrefetchingService 통합)
-  private readonly prefetchCache = new Map<string, Blob>();
+  private readonly prefetchCache = new Map<
+    string,
+    {
+      blob: Blob;
+      blobUrl?: string;
+      lastAccessed: number;
+      size: number;
+    }
+  >();
   private readonly abortManager = new AbortManager();
-  private readonly maxCacheEntries = 20;
+
+  // 🔧 REFACTOR: 최적화된 캐시 설정
+  private readonly maxCacheEntries = 20; // 기본 캐시 크기
+  private readonly maxCacheSizeBytes = 50 * 1024 * 1024; // 50MB 제한
+  private readonly cleanupBatchSize = 5; // 배치 정리 크기
+  private readonly accessTimeThreshold = 5 * 60 * 1000; // 5분 임계값
+
+  // 캐시 통계 (성능 모니터링용)
   private prefetchCacheHits = 0;
   private prefetchCacheMisses = 0;
+  private totalEvictions = 0;
 
   // 대량 다운로드 관련 상태 (BulkDownloadService로 이동됨)
   // private readonly currentAbortController?: AbortController;
@@ -489,12 +505,24 @@ export class MediaService {
 
       const blob = await response.blob();
 
-      // 간단한 캐시 관리
+      // 🔧 REFACTOR: 스마트 캐시 관리
       if (this.prefetchCache.size >= this.maxCacheEntries) {
         this.evictOldestPrefetchEntry();
       }
 
-      this.prefetchCache.set(url, blob);
+      // 🔧 REFACTOR: 메모리 사용량 기반 정리
+      this.enforceMemoryLimits();
+
+      // Blob URL 생성 (필요시)
+      const blobUrl =
+        typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(blob) : undefined;
+
+      this.prefetchCache.set(url, {
+        blob,
+        blobUrl,
+        lastAccessed: Date.now(),
+        size: blob.size,
+      });
       logger.debug('[MediaService] 프리페치 성공:', { url, size: blob.size });
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
@@ -527,13 +555,78 @@ export class MediaService {
   }
 
   /**
-   * 가장 오래된 프리페치 캐시 엔트리 제거
+   * 🔧 REFACTOR: 최적화된 프리페치 캐시 엔트리 제거 (배치 LRU 방식)
    */
   private evictOldestPrefetchEntry(): void {
-    const firstKey = this.prefetchCache.keys().next().value;
-    if (firstKey) {
-      this.prefetchCache.delete(firstKey);
-      logger.debug('[MediaService] 프리페치 캐시 엔트리 제거:', firstKey);
+    if (this.prefetchCache.size === 0) {
+      return;
+    }
+
+    // 🔧 REFACTOR: 배치 정리로 성능 개선
+    const targetEvictions = Math.min(this.cleanupBatchSize, this.prefetchCache.size);
+
+    // LRU 정렬을 위한 엔트리 배열 생성
+    const entries = Array.from(this.prefetchCache.entries()).sort(
+      ([, a], [, b]) => a.lastAccessed - b.lastAccessed
+    );
+
+    // 가장 오래된 항목들부터 제거
+    for (let i = 0; i < targetEvictions; i++) {
+      const [key, entry] = entries[i];
+
+      // Blob URL 해제로 메모리 누수 방지
+      if (entry.blobUrl && typeof URL !== 'undefined' && URL.revokeObjectURL) {
+        URL.revokeObjectURL(entry.blobUrl);
+      }
+
+      this.prefetchCache.delete(key);
+      this.totalEvictions++;
+
+      logger.debug('[MediaService] 배치 캐시 정리:', {
+        url: key,
+        size: entry.size,
+        lastAccessed: new Date(entry.lastAccessed).toISOString(),
+        totalEvictions: this.totalEvictions,
+      });
+    }
+  }
+
+  /**
+   * 🔧 REFACTOR: 메모리 사용량 기반 캐시 정리
+   */
+  private enforceMemoryLimits(): void {
+    const totalSize = Array.from(this.prefetchCache.values()).reduce(
+      (sum, entry) => sum + entry.size,
+      0
+    );
+
+    if (totalSize > this.maxCacheSizeBytes) {
+      // 크기 초과 시 더 적극적으로 정리
+      const targetReduction = totalSize - this.maxCacheSizeBytes * 0.8; // 80%까지 줄이기
+      let currentReduction = 0;
+
+      const entries = Array.from(this.prefetchCache.entries()).sort(
+        ([, a], [, b]) => a.lastAccessed - b.lastAccessed
+      );
+
+      for (const [key, entry] of entries) {
+        if (currentReduction >= targetReduction) break;
+
+        if (entry.blobUrl && typeof URL !== 'undefined' && URL.revokeObjectURL) {
+          URL.revokeObjectURL(entry.blobUrl);
+        }
+
+        this.prefetchCache.delete(key);
+        this.totalEvictions++;
+        currentReduction += entry.size;
+
+        logger.debug('[MediaService] 메모리 제한 기반 캐시 정리:', {
+          url: key,
+          size: entry.size,
+          currentReduction,
+          targetReduction,
+        });
+      }
     }
   }
 
@@ -541,11 +634,13 @@ export class MediaService {
    * 캐시에서 미디어 조회
    */
   getCachedMedia(url: string): Blob | null {
-    const blob = this.prefetchCache.get(url);
-    if (blob) {
+    const entry = this.prefetchCache.get(url);
+    if (entry) {
+      // LRU 업데이트: 접근 시간 갱신
+      entry.lastAccessed = Date.now();
       this.prefetchCacheHits++;
       logger.debug('[MediaService] 프리페치 캐시 히트:', { url });
-      return blob;
+      return entry.blob;
     }
 
     this.prefetchCacheMisses++;
@@ -564,12 +659,19 @@ export class MediaService {
    * 프리페치 캐시 정리
    */
   clearPrefetchCache(): void {
+    // 모든 Blob URL 해제
+    for (const entry of this.prefetchCache.values()) {
+      if (entry.blobUrl && typeof URL !== 'undefined' && URL.revokeObjectURL) {
+        URL.revokeObjectURL(entry.blobUrl);
+      }
+    }
+
     this.prefetchCache.clear();
     logger.debug('[MediaService] 프리페치 캐시가 정리되었습니다.');
   }
 
   /**
-   * 프리페치 메트릭 조회
+   * 🔧 REFACTOR: 개선된 프리페치 메트릭 조회 (추가 통계 포함)
    */
   getPrefetchMetrics() {
     const hitRate =
@@ -577,13 +679,36 @@ export class MediaService {
         ? (this.prefetchCacheHits / (this.prefetchCacheHits + this.prefetchCacheMisses)) * 100
         : 0;
 
+    // 🔧 REFACTOR: 총 메모리 사용량 계산
+    const totalMemoryUsage = Array.from(this.prefetchCache.values()).reduce(
+      (sum, entry) => sum + entry.size,
+      0
+    );
+
+    // 🔧 REFACTOR: 캐시 효율성 지표
+    const memoryEfficiency =
+      this.maxCacheSizeBytes > 0 ? (totalMemoryUsage / this.maxCacheSizeBytes) * 100 : 0;
+
     return {
       cacheHits: this.prefetchCacheHits,
       cacheMisses: this.prefetchCacheMisses,
       cacheEntries: this.prefetchCache.size,
-      hitRate,
+      hitRate: Number(hitRate.toFixed(2)),
       activePrefetches: this.abortManager.getActiveControllerCount(),
+      totalEvictions: this.totalEvictions,
+      totalMemoryUsage,
+      maxMemoryUsage: this.maxCacheSizeBytes,
+      memoryEfficiency: Number(memoryEfficiency.toFixed(2)),
+      cacheUtilization:
+        this.maxCacheEntries > 0 ? (this.prefetchCache.size / this.maxCacheEntries) * 100 : 0,
     };
+  }
+
+  /**
+   * 프리페치 통계 조회 (테스트 호환성을 위한 별칭)
+   */
+  getPrefetchStats() {
+    return this.getPrefetchMetrics();
   }
 
   // ====================================
