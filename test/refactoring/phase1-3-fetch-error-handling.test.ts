@@ -48,6 +48,7 @@ describe('Phase 1.3: Fetch Error Handling Enhancement', () => {
           statusText: 'Not Found',
         };
 
+        // @ts-ignore - 테스트용 Response 모킹
         vi.mocked(globalThis.fetch).mockResolvedValueOnce(mockResponse);
 
         try {

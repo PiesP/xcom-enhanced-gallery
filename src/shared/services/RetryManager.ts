@@ -3,6 +3,11 @@
  * @description Smart retry mechanism with offline detection and network status monitoring
  */
 
+import { createScopedLogger } from '../logging/logger';
+
+// RetryManager 전용 로거
+const logger = createScopedLogger('RetryManager');
+
 export interface RetryOptions {
   maxRetries: number;
   delay: number;
@@ -74,12 +79,12 @@ export class RetryManager {
   private setupNetworkMonitoring(): void {
     const handleOnline = () => {
       this.isOnline = true;
-      console.info('[XEG] [RetryManager] Network connection restored');
+      logger.info('Network connection restored');
     };
 
     const handleOffline = () => {
       this.isOnline = false;
-      console.warn('[XEG] [RetryManager] Network connection lost - pausing retries');
+      logger.warn('Network connection lost - pausing retries');
     };
 
     window.addEventListener('online', handleOnline);
@@ -137,7 +142,7 @@ export class RetryManager {
 
         // Log successful recovery if this wasn't the first attempt
         if (attempt > 0) {
-          console.info(`[XEG] [RetryManager] Operation succeeded after ${attempt} retries`);
+          logger.info(`Operation succeeded after ${attempt} retries`);
         }
 
         return result;
@@ -147,8 +152,8 @@ export class RetryManager {
 
         // Check if we should retry
         if (attempt === this.options.maxRetries || !this.options.retryCondition(lastError)) {
-          console.error(
-            `[XEG] [RetryManager] Operation failed after ${attempt + 1} attempts (network: ${networkStatus}):`,
+          logger.error(
+            `Operation failed after ${attempt + 1} attempts (network: ${networkStatus}):`,
             lastError
           );
           throw lastError;
@@ -156,17 +161,15 @@ export class RetryManager {
 
         // If offline, don't retry network errors immediately
         if (networkStatus === 'offline' && this.isNetworkError(lastError)) {
-          console.warn(
-            `[XEG] [RetryManager] Network error while offline, waiting for connection...`
-          );
+          logger.warn('Network error while offline, waiting for connection...');
           await this.waitForConnection();
         }
 
         // Calculate delay for next attempt
         const delay = this.calculateDelay(attempt);
 
-        console.warn(
-          `[XEG] [RetryManager] Attempt ${attempt + 1} failed (network: ${networkStatus}), retrying in ${delay}ms:`,
+        logger.warn(
+          `Attempt ${attempt + 1} failed (network: ${networkStatus}), retrying in ${delay}ms:`,
           lastError.message
         );
 

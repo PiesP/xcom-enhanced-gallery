@@ -4,6 +4,11 @@
  * @version 1.0.0 - Phase 2.2 상태 통합 구현
  */
 
+import { createScopedLogger } from '../logging/logger';
+
+// StateManager 전용 로거
+const logger = createScopedLogger('StateManager');
+
 // Signal 타입 정의 (preact/signals 직접 import 대신)
 interface Signal<T> {
   value: T;
@@ -99,7 +104,7 @@ export class StateManager {
     } catch (error) {
       this.debugInfo.lastError = error as Error;
       this.performanceMetrics.errorCount++;
-      console.warn('[StateManager] Signal 동기화 초기화 실패:', error);
+      logger.warn('Signal 동기화 초기화 실패:', error);
     }
   }
 
@@ -172,7 +177,7 @@ export class StateManager {
           try {
             subscriber(newValue, oldValue);
           } catch (error) {
-            console.error('[StateManager] 구독자 알림 오류:', error);
+            logger.error('구독자 알림 오류:', error);
             this.performanceMetrics.errorCount++;
           }
         });
@@ -185,7 +190,7 @@ export class StateManager {
       // 히스토리 기록
       this.addToHistory('NOTIFY_SUBSCRIBERS', { key, newValue });
     } catch (error) {
-      console.error('[StateManager] 구독자 알림 처리 오류:', error);
+      logger.error('구독자 알림 처리 오류:', error);
       this.performanceMetrics.errorCount++;
       this.debugInfo.lastError = error as Error;
     }
@@ -229,7 +234,7 @@ export class StateManager {
       // 히스토리 기록
       this.addToHistory('SYNC_STATE', { key, newValue, source });
     } catch (error) {
-      console.error('[StateManager] 상태 동기화 오류:', error);
+      logger.error('상태 동기화 오류:', error);
       this.performanceMetrics.errorCount++;
       this.debugInfo.lastError = error as Error;
       this.debugInfo.syncConflicts++;
@@ -252,7 +257,7 @@ export class StateManager {
       }
       return undefined;
     } catch (error) {
-      console.error('[StateManager] 상태 조회 오류:', error);
+      logger.error('상태 조회 오류:', error);
       this.performanceMetrics.errorCount++;
       return undefined;
     }

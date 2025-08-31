@@ -6,6 +6,10 @@
 
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { StateManager } from '@shared/services/StateManager';
+import { createScopedLogger } from '../logging/logger';
+
+// useUnifiedState 전용 로거
+const logger = createScopedLogger('useUnifiedState');
 
 interface StateHistory {
   timestamp: number;
@@ -46,7 +50,7 @@ export function useGalleryState(): {
         stateManager.syncState('gallery', updatedState, 'react');
         setState(updatedState);
       } catch (error) {
-        console.error('[useGalleryState] 상태 업데이트 오류:', error);
+        logger.error('상태 업데이트 오류:', error);
       }
     },
     [stateManager]
@@ -58,7 +62,7 @@ export function useGalleryState(): {
       const currentState = stateManager.getState('gallery') as GalleryState;
       setState(currentState);
     } catch (error) {
-      console.error('[useGalleryState] Signal 동기화 오류:', error);
+      logger.error('Signal 동기화 오류:', error);
     }
   }, [stateManager]);
 
@@ -105,7 +109,7 @@ export function useUnifiedState<T extends StateKey>(
         stateManager.syncState(stateKey, updatedState as StateValue<T>, 'react');
         setState(updatedState as StateValue<T>);
       } catch (error) {
-        console.error('[useUnifiedState] 상태 업데이트 오류:', error);
+        logger.error('상태 업데이트 오류:', error);
       }
     },
     [stateManager, stateKey]
@@ -119,7 +123,7 @@ export function useUnifiedState<T extends StateKey>(
         setState(currentState);
       }
     } catch (error) {
-      console.error('[useUnifiedState] Signal 동기화 오류:', error);
+      logger.error('Signal 동기화 오류:', error);
     }
   }, [stateManager, stateKey]);
 
