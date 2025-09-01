@@ -73,7 +73,7 @@ function isVideoMedia(media: MediaInfo): boolean {
 /**
  * Props for the VerticalImageItem component - StandardProps 통합
  */
-interface VerticalImageItemProps extends GalleryComponentProps {
+export interface VerticalImageItemProps extends GalleryComponentProps {
   /** Media information for the image */
   media: MediaInfo;
   /** Index of the item in the list */
@@ -484,8 +484,7 @@ export const compareVerticalImageItemProps = (
 
 // memo를 적용한 최적화된 컴포넌트
 const { memo } = getPreactCompat();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const BaseVerticalImageItem = memo(BaseVerticalImageItemCore as any, compareVerticalImageItemProps);
+const BaseVerticalImageItem = memo(BaseVerticalImageItemCore, compareVerticalImageItemProps);
 
 // displayName 설정
 Object.defineProperty(BaseVerticalImageItem, 'displayName', {
@@ -494,9 +493,8 @@ Object.defineProperty(BaseVerticalImageItem, 'displayName', {
   configurable: true,
 });
 
-// Gallery Marker HOC를 적용한 VerticalImageItem
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const VerticalImageItem = withGallery(BaseVerticalImageItem as any, {
+// Gallery Marker HOC를 적용한 VerticalImageItem (정확한 타입 유지)
+export const VerticalImageItem = withGallery<VerticalImageItemProps>(BaseVerticalImageItem, {
   type: 'item',
   className: 'vertical-item',
   events: {

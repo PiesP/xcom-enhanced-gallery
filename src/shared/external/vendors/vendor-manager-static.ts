@@ -8,69 +8,98 @@
 import { logger } from '@shared/logging';
 
 // 정적 import로 모든 라이브러리를 안전하게 로드
-import * as fflate from 'fflate';
-import * as preact from 'preact';
-import * as preactHooks from 'preact/hooks';
-import * as preactSignals from '@preact/signals';
-import * as preactCompat from 'preact/compat';
+import { zip, unzip, strToU8, strFromU8, zipSync, unzipSync, deflate, inflate } from 'fflate'; // vendor
+import {
+  h,
+  render,
+  Component,
+  Fragment,
+  createContext,
+  cloneElement,
+  createRef,
+  isValidElement,
+  options,
+  createElement,
+} from 'preact'; // vendor
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useContext,
+  useReducer,
+  useLayoutEffect,
+  useImperativeHandle,
+  useDebugValue,
+} from 'preact/hooks'; // vendor
+import { signal, computed, effect, batch, Signal } from '@preact/signals'; // vendor
+import {
+  forwardRef,
+  memo,
+  lazy,
+  Suspense,
+  createPortal,
+  unstable_batchedUpdates,
+} from 'preact/compat'; // vendor
 
 // 간단한 타입 정의들
 export interface FflateAPI {
-  zip: typeof fflate.zip;
-  unzip: typeof fflate.unzip;
-  strToU8: typeof fflate.strToU8;
-  strFromU8: typeof fflate.strFromU8;
-  zipSync: typeof fflate.zipSync;
-  unzipSync: typeof fflate.unzipSync;
-  deflate: typeof fflate.deflate;
-  inflate: typeof fflate.inflate;
+  zip: typeof zip;
+  unzip: typeof unzip;
+  strToU8: typeof strToU8;
+  strFromU8: typeof strFromU8;
+  zipSync: typeof zipSync;
+  unzipSync: typeof unzipSync;
+  deflate: typeof deflate;
+  inflate: typeof inflate;
 }
 
 export interface PreactAPI {
-  h: typeof preact.h;
-  render: typeof preact.render;
-  Component: typeof preact.Component;
-  Fragment: typeof preact.Fragment;
-  createContext: typeof preact.createContext;
-  cloneElement: typeof preact.cloneElement;
-  createRef: typeof preact.createRef;
-  isValidElement: typeof preact.isValidElement;
-  options: typeof preact.options;
-  createElement: typeof preact.createElement;
+  h: typeof h;
+  render: typeof render;
+  Component: typeof Component;
+  Fragment: typeof Fragment;
+  createContext: typeof createContext;
+  cloneElement: typeof cloneElement;
+  createRef: typeof createRef;
+  isValidElement: typeof isValidElement;
+  options: typeof options;
+  createElement: typeof createElement;
 }
 
 export type VNode = import('preact').VNode;
 export type ComponentChildren = import('preact').ComponentChildren;
 
 export interface PreactHooksAPI {
-  useState: typeof preactHooks.useState;
-  useEffect: typeof preactHooks.useEffect;
-  useRef: typeof preactHooks.useRef;
-  useCallback: typeof preactHooks.useCallback;
-  useMemo: typeof preactHooks.useMemo;
-  useContext: typeof preactHooks.useContext;
-  useReducer: typeof preactHooks.useReducer;
-  useLayoutEffect: typeof preactHooks.useLayoutEffect;
-  useImperativeHandle: typeof preactHooks.useImperativeHandle;
-  useDebugValue: typeof preactHooks.useDebugValue;
+  useState: typeof useState;
+  useEffect: typeof useEffect;
+  useRef: typeof useRef;
+  useCallback: typeof useCallback;
+  useMemo: typeof useMemo;
+  useContext: typeof useContext;
+  useReducer: typeof useReducer;
+  useLayoutEffect: typeof useLayoutEffect;
+  useImperativeHandle: typeof useImperativeHandle;
+  useDebugValue: typeof useDebugValue;
 }
 
 export interface PreactSignalsAPI {
-  signal: typeof preactSignals.signal;
-  computed: typeof preactSignals.computed;
-  effect: typeof preactSignals.effect;
-  batch: typeof preactSignals.batch;
-  Signal: typeof preactSignals.Signal;
+  signal: typeof signal;
+  computed: typeof computed;
+  effect: typeof effect;
+  batch: typeof batch;
+  Signal: typeof Signal;
   // ReadonlySignal은 type으로만 export되므로 제외
 }
 
 export interface PreactCompatAPI {
-  forwardRef: typeof preactCompat.forwardRef;
-  memo: typeof preactCompat.memo;
-  lazy: typeof preactCompat.lazy;
-  Suspense: typeof preactCompat.Suspense;
-  createPortal: typeof preactCompat.createPortal;
-  unstable_batchedUpdates: typeof preactCompat.unstable_batchedUpdates;
+  forwardRef: typeof forwardRef;
+  memo: typeof memo;
+  lazy: typeof lazy;
+  Suspense: typeof Suspense;
+  createPortal: typeof createPortal;
+  unstable_batchedUpdates: typeof unstable_batchedUpdates;
 }
 
 export interface NativeDownloadAPI {
@@ -127,66 +156,66 @@ export class StaticVendorManager {
    */
   public getFflate(): FflateAPI {
     return {
-      zip: fflate.zip,
-      unzip: fflate.unzip,
-      strToU8: fflate.strToU8,
-      strFromU8: fflate.strFromU8,
-      zipSync: fflate.zipSync,
-      unzipSync: fflate.unzipSync,
-      deflate: fflate.deflate,
-      inflate: fflate.inflate,
+      zip,
+      unzip,
+      strToU8,
+      strFromU8,
+      zipSync,
+      unzipSync,
+      deflate,
+      inflate,
     };
   }
 
   public getPreact(): PreactAPI {
     return {
-      h: preact.h,
-      render: preact.render,
-      Component: preact.Component,
-      Fragment: preact.Fragment,
-      createContext: preact.createContext,
-      cloneElement: preact.cloneElement,
-      createRef: preact.createRef,
-      isValidElement: preact.isValidElement,
-      options: preact.options,
-      createElement: preact.createElement,
+      h,
+      render,
+      Component,
+      Fragment,
+      createContext,
+      cloneElement,
+      createRef,
+      isValidElement,
+      options,
+      createElement,
     };
   }
 
   public getPreactHooks(): PreactHooksAPI {
     return {
-      useState: preactHooks.useState,
-      useEffect: preactHooks.useEffect,
-      useRef: preactHooks.useRef,
-      useCallback: preactHooks.useCallback,
-      useMemo: preactHooks.useMemo,
-      useContext: preactHooks.useContext,
-      useReducer: preactHooks.useReducer,
-      useLayoutEffect: preactHooks.useLayoutEffect,
-      useImperativeHandle: preactHooks.useImperativeHandle,
-      useDebugValue: preactHooks.useDebugValue,
+      useState,
+      useEffect,
+      useRef,
+      useCallback,
+      useMemo,
+      useContext,
+      useReducer,
+      useLayoutEffect,
+      useImperativeHandle,
+      useDebugValue,
     };
   }
 
   public getPreactSignals(): PreactSignalsAPI {
     return {
-      signal: preactSignals.signal,
-      computed: preactSignals.computed,
-      effect: preactSignals.effect,
-      batch: preactSignals.batch,
-      Signal: preactSignals.Signal,
+      signal,
+      computed,
+      effect,
+      batch,
+      Signal,
       // ReadonlySignal은 type으로만 export되므로 제외
     };
   }
 
   public getPreactCompat(): PreactCompatAPI {
     return {
-      forwardRef: preactCompat.forwardRef,
-      memo: preactCompat.memo,
-      lazy: preactCompat.lazy,
-      Suspense: preactCompat.Suspense,
-      createPortal: preactCompat.createPortal,
-      unstable_batchedUpdates: preactCompat.unstable_batchedUpdates,
+      forwardRef,
+      memo,
+      lazy,
+      Suspense,
+      createPortal,
+      unstable_batchedUpdates,
     };
   }
 

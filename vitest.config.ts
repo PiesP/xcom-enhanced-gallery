@@ -55,7 +55,11 @@ export default defineConfig({
     },
 
     // 글로브 패턴
-    include: ['test/**/*.{test,spec}.{ts,tsx}'],
+    // NOTE: --dir test/refactoring 와 같이 하위 디렉터리를 지정하면
+    // 기존 'test/**/*' 패턴은 매칭되지 않아(No test files found) 테스트가 누락됨.
+    // '**/*' 패턴을 추가하여 --dir 기반 실행에서도 발견되도록 확장.
+    // --dir 로 루트를 하위 폴더로 바꿀 때도 매칭되도록 절대 'test/' prefix 제거
+    include: ['**/*.{test,spec}.{ts,tsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

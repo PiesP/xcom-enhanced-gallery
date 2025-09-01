@@ -119,6 +119,10 @@
   /* 스크롤 최적화 */
   scroll-behavior: smooth;
   /* overscroll-behavior 제거: 실제 스크롤은 .itemsList에서 발생 */
+  /* Scroll bleed 방지: 작은 콘텐츠(이미지 높이 < viewport)에서도 휠/터치 delta가 body로 체이닝되지 않도록 */
+  overscroll-behavior: contain;
+  /* 수직 스크롤만 허용하여 가로 제스처가 다른 기본 동작(예: 브라우저 탐색 제스처)과 충돌하지 않게 함 */
+  touch-action: pan-y;
 
   /* 갤러리 내부 스크롤만 허용 */
 

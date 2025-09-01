@@ -437,3 +437,34 @@ export type FileExtension = (typeof MEDIA.EXTENSIONS)[keyof typeof MEDIA.EXTENSI
 export type AppServiceKey = (typeof SERVICE_KEYS)[keyof typeof SERVICE_KEYS];
 export type EventType = (typeof EVENTS)[keyof typeof EVENTS];
 export type ViewMode = (typeof VIEW_MODES)[number];
+
+// ================================
+// Feature Flags
+// ================================
+
+export const FEATURE_BODY_SCROLL_LOCK: boolean = (() => {
+  try {
+    // vite define 로 주입된 process.env.FEATURE_BODY_SCROLL_LOCK 사용
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = (process as any)?.env?.FEATURE_BODY_SCROLL_LOCK;
+    if (raw === 'false') return false;
+    return true;
+  } catch {
+    return true; // 안전 기본값
+  }
+})();
+
+// iOS Safari 감지
+export function isIOSSafari(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  // iPad (iOS 13+)는 MacIntel + 터치포인트 조합으로 노출될 수 있음
+  const platform: unknown = (navigator as unknown as { platform?: string }).platform;
+  const maxTouchPoints: unknown = (navigator as unknown as { maxTouchPoints?: number })
+    .maxTouchPoints;
+  const iOS =
+    /iPhone|iPad|iPod/i.test(ua) ||
+    (platform === 'MacIntel' && typeof maxTouchPoints === 'number' && maxTouchPoints > 1);
+  const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|Firefox|FxiOS|EdgiOS|OPiOS|OPR/i.test(ua);
+  return !!(iOS && isSafari);
+}

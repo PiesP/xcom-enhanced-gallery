@@ -22,6 +22,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
+    "test:no-cover": "vitest run --reporter=default",
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint ./src --report-unused-disable-directives --max-warnings 0 --fix",
     "lint:staged": "lint-staged",

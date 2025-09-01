@@ -26,6 +26,18 @@ function generateBaseStyles(): CSSString {
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1.4;
+  /* Note: overscroll-behavior removed from global namespace to prevent unintended effects.
+     Specific overscroll containment is now handled by individual gallery components. */
+}
+
+/* Gallery container: contain overscroll to avoid page bounce when interacting with gallery.
+   Use the namespaced utility class .xeg-gallery-container (or create via createNamespacedClass('gallery-container')).
+   Note: IE / 오래된 Safari 등에서는 동작하지 않을 수 있으며 폴백이 필요할 수 있습니다. */
+.${NAMESPACE} .xeg-gallery-container {
+  overscroll-behavior: contain;  // 추가: 오버스크롤 차단 (스크롤이 컨테이너 밖으로 넘기지 않음)
+  /* 권장 touch-action: allow natural vertical panning while preventing undesirable propagation.
+     조정이 필요하면 pan-x / pan-y 등으로 변경하세요. */
+  touch-action: pan-y;
 }`;
 }
 

@@ -8,11 +8,11 @@
 import { logger } from '@shared/logging';
 
 // 정적 import로 모든 라이브러리를 안전하게 로드
-import * as fflate from 'fflate';
-import * as preact from 'preact';
-import * as preactHooks from 'preact/hooks';
-import * as preactSignals from '@preact/signals';
-import * as preactCompat from 'preact/compat';
+import * as fflate from 'fflate'; // vendor
+import * as preact from 'preact'; // vendor
+import * as preactHooks from 'preact/hooks'; // vendor
+import * as preactSignals from '@preact/signals'; // vendor
+import * as preactCompat from 'preact/compat'; // vendor
 
 // 간단한 타입 정의들
 export interface FflateAPI {

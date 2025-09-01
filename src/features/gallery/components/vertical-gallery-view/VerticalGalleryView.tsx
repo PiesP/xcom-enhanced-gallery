@@ -14,7 +14,6 @@
 import { logger } from '@shared/logging/logger';
 import { Toast } from '@shared/components/ui/Toast/Toast';
 import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
-import type { MediaItem } from '@shared/types/media.types';
 import type { ImageFitMode, MediaInfo } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import {
@@ -24,7 +23,6 @@ import {
   getPreactSignals,
 } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
-import type { MouseEvent } from 'preact/compat';
 import {
   animateGalleryEnter,
   animateGalleryExit,
@@ -40,6 +38,28 @@ import { useSmartImageFit } from '../../hooks/useSmartImageFit';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
+import { FEATURE_BODY_SCROLL_LOCK, isIOSSafari } from '@/constants';
+import { useBodyScrollLock } from '@shared/hooks/useBodyScrollLock';
+
+// 내부 경량 타입 정의 (vendor 직접 import 회피)
+interface GalleryMouseEvent {
+  target: EventTarget | null;
+  currentTarget?: EventTarget | null;
+  stopPropagation: () => void;
+  preventDefault: () => void;
+}
+
+interface GalleryStyle {
+  [key: string]: string | number | undefined; // CSSProperties 구조 호환을 위한 인덱스 시그니처
+  position: string;
+  top: number | string;
+  left: number | string;
+  width: string;
+  minHeight: string;
+  overflowY: 'auto' | 'scroll' | 'hidden' | 'visible';
+  zIndex: number;
+  backgroundColor: string;
+}
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -60,7 +80,8 @@ function VerticalGalleryViewCore({
 }: VerticalGalleryViewProps) {
   const { useCallback, useEffect, useRef, useState, useMemo } = getPreactHooks();
   const { signal } = getPreactSignals();
-  const { createElement } = getPreact();
+  // Preact core (createElement 제거: JSX 사용으로 대체)
+  getPreact();
 
   // Phase 8 GREEN: galleryState를 직접 사용 - Preact가 자동으로 신호 변경을 감지
   // Preact에서는 컴포넌트 내에서 signal.value 접근 시 자동으로 구독됨
@@ -300,7 +321,7 @@ function VerticalGalleryViewCore({
     return () => {}; // cleanup 함수가 없는 경우 빈 함수 반환
   }, [isVisible]); // 백그라운드 클릭 핸들러 (갤러리 닫기만 처리)
   const handleBackgroundClick = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+    (event: GalleryMouseEvent) => {
       // 툴바나 툴바 영역 클릭은 무시
       const rawTarget = event.target;
       if (!isHTMLElement(rawTarget)) return;
@@ -324,7 +345,7 @@ function VerticalGalleryViewCore({
   );
 
   // 콘텐츠 클릭 핸들러 (이벤트 전파 방지)
-  const handleContentClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+  const handleContentClick = useCallback((event: GalleryMouseEvent) => {
     event.stopPropagation();
   }, []);
 
@@ -538,6 +559,18 @@ function VerticalGalleryViewCore({
   // useToolbarPositionBased 훅이 모든 툴바 이벤트 처리를 담당
   // 중복된 이벤트 핸들러 제거 완료
 
+  // 인라인 갤러리 스타일 (뷰포트 전체, 내부 스크롤 허용)
+  const galleryStyle: GalleryStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    minHeight: '100vh',
+    overflowY: 'auto',
+    zIndex: 9999,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+  };
+
   // 빈 상태 처리
   if (!isVisible || mediaItems.length === 0) {
     return (
@@ -550,9 +583,41 @@ function VerticalGalleryViewCore({
     );
   }
 
+  // 조건부 Body Scroll Lock:
+  // 1) iOS Safari 에서만 기본 적용 (overscroll-behavior 한계 보완)
+  // 2) 콘텐츠 높이가 뷰포트보다 작은 경우(스크롤 델타 누수 가능) 적용
+  // 3) 기능 플래그가 비활성화되면 전역 비활성
+  const shouldLockBody = (() => {
+    if (!FEATURE_BODY_SCROLL_LOCK) return false;
+    const iOS = isIOSSafari();
+    const isTestEnv =
+      typeof import.meta !== 'undefined' &&
+      typeof (import.meta as unknown as { env?: { MODE?: string } }).env?.MODE === 'string' &&
+      (import.meta as unknown as { env?: { MODE?: string } }).env?.MODE === 'test';
+    // 콘텐츠가 작아 배경 스크롤 누수 위험이 있는지 검사
+    const containerEl = containerRef.current;
+    const contentTooSmall = (() => {
+      if (!containerEl) return false;
+      try {
+        const scrollHeight = containerEl.scrollHeight;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        return scrollHeight <= viewportHeight + 8; // 여유 8px
+      } catch {
+        return false;
+      }
+    })();
+    return iOS || contentTooSmall || isTestEnv;
+  })();
+
+  useBodyScrollLock({
+    enabled: shouldLockBody,
+    debugLabel: 'vertical-gallery',
+  });
+
   return (
     <div
       ref={containerRef}
+      style={galleryStyle}
       className={`${styles.container} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
@@ -587,27 +652,28 @@ function VerticalGalleryViewCore({
           data-xeg-role='items-list'
           // 스타일은 VerticalGalleryView.module.css에 정의됨
         >
-          {itemsToRender.map((item: MediaItem, index: number) => {
+          {itemsToRender.map((item: MediaInfo, index: number) => {
             // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일
             const actualIndex = index;
 
             // 키 생성 (memoizedMediaItems와 동일한 방식)
             const itemKey = `${item.id || item.url}-${actualIndex}`;
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return createElement(VerticalImageItem as any, {
-              key: itemKey,
-              media: item,
-              index: actualIndex,
-              isActive: actualIndex === currentIndex,
-              isFocused: actualIndex === focusedIndex,
-              forceVisible: forceVisibleItems.has(actualIndex),
-              fitMode: imageFitMode,
-              onClick: () => handleMediaItemClick(actualIndex),
-              onMediaLoad: handleMediaLoad,
-              className: `${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`,
-              'data-index': actualIndex,
-            });
+            return (
+              <VerticalImageItem
+                key={itemKey}
+                media={item}
+                index={actualIndex}
+                isActive={actualIndex === currentIndex}
+                isFocused={actualIndex === focusedIndex}
+                forceVisible={forceVisibleItems.has(actualIndex)}
+                fitMode={imageFitMode}
+                onClick={() => handleMediaItemClick(actualIndex)}
+                onMediaLoad={handleMediaLoad}
+                className={`${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`}
+                data-index={actualIndex}
+              />
+            );
           })}
         </div>
       </div>

@@ -8,10 +8,11 @@
 import preact from '@preact/preset-vite';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Buffer } from 'buffer';
 import process from 'process';
 import console from 'console';
 import { defineConfig } from 'vite';
+const FEATURE_BODY_SCROLL_LOCK =
+  process.env.FEATURE_BODY_SCROLL_LOCK === 'false' ? 'false' : 'true';
 // Critical CSS 집계 & 중복 제거 (surface glass 토큰 단일 선언 보장)
 import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/build/critical-css';
 // 개선된 빌드 진행상황 플러그인
@@ -37,7 +38,7 @@ const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
  * @param {string} mode
  * @returns {BuildMode}
  */
-function getBuildMode(mode: string): any {
+function getBuildMode(mode) {
   const isDevelopment = mode === 'development';
 
   return {
@@ -54,7 +55,7 @@ function getBuildMode(mode: string): any {
  * @param {BuildMode} buildMode
  * @returns {string}
  */
-function generateUserscriptHeader(buildMode: any): string {
+function generateUserscriptHeader(buildMode) {
   const devSuffix = buildMode.isDevelopment ? ' (Dev)' : '';
   const version = buildMode.isDevelopment
     ? `${packageJson.version}-dev.${Date.now()}`
@@ -102,18 +103,20 @@ function generateUserscriptHeader(buildMode: any): string {
  * @param {BuildMode} buildMode
  * @returns {import('vite').Plugin}
  */
-function createUserscriptBundlerPlugin(buildMode: any) {
+function createUserscriptBundlerPlugin(buildMode) {
   return {
     name: 'userscript-bundler',
-    apply: 'build' as const,
+    apply(config, env) {
+      return env.command === 'build';
+    },
 
-    async writeBundle(options: any, bundle: any) {
+    async writeBundle(options, bundle) {
       try {
         const bundleObj = bundle; // rollup bundle object
         const outDir = options && 'dir' in options && options.dir ? options.dir : 'dist';
 
         // 소스맵 파일이 생성될 때까지 잠시 대기
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => globalThis.setTimeout(resolve, 100));
 
         // CSS와 JS 파일 찾기
         const cssFiles = Object.keys(bundleObj).filter(fileName => fileName.endsWith('.css'));
@@ -265,7 +268,7 @@ function createUserscriptBundlerPlugin(buildMode: any) {
   };
 }
 
-export default defineConfig(({ mode }: { mode: string }) => {
+export default defineConfig(({ mode }) => {
   const buildMode = getBuildMode(mode);
 
   return {
@@ -287,6 +290,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
       __DEV__: buildMode.isDevelopment,
       __PROD__: buildMode.isProduction,
       __VERSION__: JSON.stringify(packageJson.version),
+      'process.env.FEATURE_BODY_SCROLL_LOCK': JSON.stringify(FEATURE_BODY_SCROLL_LOCK),
     },
 
     // CSS 최적화

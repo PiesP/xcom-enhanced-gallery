@@ -15,7 +15,7 @@ import {
   getPreactSignalsSafe,
   getPreactCompatSafe,
   getNativeDownloadAPISafe,
-} from './vendor-api-safe-simplified';
+} from './vendor-api-safe-simplified'; // vendor
 
 /**
  * 간소화된 Static Vendor Manager

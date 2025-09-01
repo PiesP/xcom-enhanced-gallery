@@ -21,6 +21,7 @@ export {
 //   type UseScrollDirectionReturn,
 // } from './useScrollDirection';
 
+export { useBodyScrollLock } from './useBodyScrollLock';
 export { useDOMReady } from './useDOMReady';
 export { useKeyboardNavigation } from './useAccessibility';
 
