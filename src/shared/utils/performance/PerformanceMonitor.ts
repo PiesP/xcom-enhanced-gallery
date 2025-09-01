@@ -1,6 +1,7 @@
 /**
  * 성능 모니터링 유틸리티
  * 애플리케이션 성능 지표 수집 및 분석
+ * Phase 8: 통합 회귀 + 성능 가드용 확장
  */
 
 // 타입 확장
@@ -46,6 +47,14 @@ export interface PerformanceMetrics {
   thumbnailLoadTime: number;
   filterPerformance: number;
   scrollPerformance: number;
+
+  // Phase 8: 갤러리 특화 성능 지표
+  galleryRenderTime: number;
+  virtualScrollPerformance: number;
+  memoryUsage: number;
+  domNodeCount: number;
+  activeVideoCount: number;
+  scrollResponseTime: number;
 }
 
 export interface PerformanceThresholds {
@@ -425,6 +434,13 @@ export class PerformanceMonitor {
       observer.disconnect();
     });
     this.observers.length = 0;
+  }
+
+  /**
+   * 메모리 정리 (dispose의 별칭)
+   */
+  cleanup(): void {
+    this.dispose();
   }
 }
 

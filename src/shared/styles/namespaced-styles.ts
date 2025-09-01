@@ -208,3 +208,33 @@ export function createNamespacedClass(className: string): ClassName {
 export function createNamespacedSelector(selector: string): CSSSelector {
   return `.${NAMESPACE} ${selector}`;
 }
+
+/**
+ * Shadow DOM용 스타일 주입 (Phase 4)
+ * Shadow DOM 내부에 갤러리 전용 스타일을 주입합니다.
+ */
+export function injectShadowDOMStyles(shadowRoot: ShadowRoot): void {
+  if (!shadowRoot) {
+    logger.warn('[NamespacedStyles] Invalid shadow root provided');
+    return;
+  }
+
+  // 기존에 주입된 스타일이 있는지 확인
+  const existingStyle = shadowRoot.querySelector(`#${STYLE_ID}`);
+  if (existingStyle) {
+    logger.debug('[NamespacedStyles] Shadow DOM styles already injected');
+    return;
+  }
+
+  const styleElement = globalThis.document?.createElement('style');
+  if (!styleElement) {
+    logger.warn('[NamespacedStyles] Cannot create style element');
+    return;
+  }
+
+  styleElement.id = STYLE_ID;
+  styleElement.textContent = generateNamespacedCSS();
+
+  shadowRoot.appendChild(styleElement);
+  logger.debug('[NamespacedStyles] Shadow DOM styles injected successfully');
+}

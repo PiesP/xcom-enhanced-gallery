@@ -17,8 +17,9 @@ const FEATURE_BODY_SCROLL_LOCK =
 import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/build/critical-css';
 // 개선된 빌드 진행상황 플러그인
 import {
-  createBuildStartPlugin,
-  createEnhancedBundleAnalysisPlugin,
+  buildProgressPlugin,
+  memoryUsagePlugin,
+  modulePreloadAnalyticsPlugin,
 } from './src/build/build-progress-plugin';
 
 // Package information
@@ -190,7 +191,7 @@ function createUserscriptBundlerPlugin(buildMode) {
             if (criticalRoot && criticalRoot.startsWith(':root')) {
               // 집계된 :root 블록을 선두에 두고 중복 변수 선언 제거
               const combined = `${criticalRoot}${finalCss}`;
-              finalCss = sanitizeCssWithCriticalRoot(combined, criticalRoot);
+              finalCss = sanitizeCssWithCriticalRoot(combined);
             }
           }
         } catch (e) {
@@ -278,9 +279,10 @@ export default defineConfig(({ mode }) => {
         devToolsEnabled: buildMode.isDevelopment,
         prefreshEnabled: buildMode.isDevelopment,
       }),
-      createBuildStartPlugin(buildMode.isDevelopment ? 'development' : 'production'),
+      buildProgressPlugin(),
       createUserscriptBundlerPlugin(buildMode),
-      createEnhancedBundleAnalysisPlugin(buildMode.isDevelopment ? 'development' : 'production'),
+      memoryUsagePlugin(),
+      modulePreloadAnalyticsPlugin(),
     ],
 
     // 환경 변수 정의

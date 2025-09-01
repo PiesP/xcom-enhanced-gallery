@@ -1,0 +1,111 @@
+{
+  "description": "X.com Enhanced Gallery 성능 예산 정의",
+  "version": "1.0.0",
+  "budgets": {
+    "rendering": {
+      "initialRender": {
+        "value": 120,
+        "unit": "ms",
+        "description": "1000개 아이템 초기 렌더링 시간",
+        "threshold": "error"
+      },
+      "scrollResponse": {
+        "value": 16,
+        "unit": "ms",
+        "description": "스크롤 응답 시간 (60fps 기준)",
+        "threshold": "error"
+      },
+      "rerenderTime": {
+        "value": 50,
+        "unit": "ms",
+        "description": "아이템 재렌더링 시간",
+        "threshold": "warning"
+      }
+    },
+    "memory": {
+      "totalUsage": {
+        "value": 50,
+        "unit": "MB",
+        "description": "총 메모리 사용량 한계",
+        "threshold": "error"
+      },
+      "activeVideos": {
+        "value": 3,
+        "unit": "count",
+        "description": "동시 활성 비디오 수",
+        "threshold": "warning"
+      },
+      "memoryLeakTolerance": {
+        "value": 5,
+        "unit": "MB",
+        "description": "허용 가능한 메모리 누수량",
+        "threshold": "error"
+      }
+    },
+    "dom": {
+      "maxNodes": {
+        "value": 1000,
+        "unit": "count",
+        "description": "최대 DOM 노드 수",
+        "threshold": "error"
+      },
+      "maxDepth": {
+        "value": 4,
+        "unit": "levels",
+        "description": "최대 DOM 깊이",
+        "threshold": "error"
+      },
+      "renderedItems": {
+        "value": 50,
+        "unit": "count",
+        "description": "가상 스크롤링 시 실제 렌더된 아이템 수",
+        "threshold": "warning"
+      }
+    },
+    "network": {
+      "prefetchLimit": {
+        "value": 3,
+        "unit": "count",
+        "description": "동시 프리페치 요청 수",
+        "threshold": "warning"
+      },
+      "imageOptimization": {
+        "value": 25,
+        "unit": "percent",
+        "description": "이미지 포맷 최적화로 인한 대역폭 절약",
+        "threshold": "warning"
+      }
+    }
+  },
+  "regression": {
+    "baseline": {
+      "description": "Phase 1에서 측정된 베이스라인 성능",
+      "renderTime": 200,
+      "memoryUsage": 100,
+      "domNodes": 2000
+    },
+    "targets": {
+      "renderTimeImprovement": {
+        "value": 40,
+        "unit": "percent",
+        "description": "렌더링 시간 개선 목표"
+      },
+      "memoryReduction": {
+        "value": 60,
+        "unit": "percent",
+        "description": "메모리 사용량 감소 목표"
+      },
+      "domReduction": {
+        "value": 60,
+        "unit": "percent",
+        "description": "DOM 노드 수 감소 목표"
+      }
+    }
+  },
+  "ci": {
+    "failOnError": true,
+    "failOnWarning": false,
+    "reportFormat": "json",
+    "outputFile": "performance-report.json"
+  }
+}

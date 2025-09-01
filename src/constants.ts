@@ -454,6 +454,31 @@ export const FEATURE_BODY_SCROLL_LOCK: boolean = (() => {
   }
 })();
 
+// ================================
+// Planned Feature Flags (Phase 2+)
+// ================================
+// TDD Plan Phase 2~7에서 사용할 플래그 (기본값 안전 OFF/ON 정의)
+export const FEATURE_VIRTUAL_SCROLL: boolean = (() => {
+  try {
+    // 테스트 및 런타임 강제 오버라이드 지원
+    // (Vitest 또는 사용자 스크립트 재주입 환경에서 동적 토글 필요)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const forced = (globalThis as any)?.__XEG_FORCE_FLAGS__?.FEATURE_VIRTUAL_SCROLL;
+    if (typeof forced === 'boolean') return forced;
+    // vite define 또는 test 환경 process.env.FEATURE_VIRTUAL_SCROLL 사용
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = (process as any)?.env?.FEATURE_VIRTUAL_SCROLL;
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return true; // Phase 2 완료로 기본값 ON 변경
+  } catch {
+    return true; // Phase 2 완료로 기본값 ON 변경
+  }
+})(); // Phase 2 완료됨
+export const FEATURE_GALLERY_SHADOW: boolean = true; // Phase 4 완료됨
+export const FEATURE_MEDIA_PRELOAD: boolean = true; // Phase 6 - 사전 로딩 기본 활성
+export const FEATURE_MEDIA_UNLOAD: boolean = true; // Phase 7 - 오프스크린 언로딩
+
 // iOS Safari 감지
 export function isIOSSafari(): boolean {
   if (typeof navigator === 'undefined') return false;

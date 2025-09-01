@@ -214,17 +214,40 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
     });
 
     it('아이콘 컴포넌트들이 일관된 스타일을 사용해야 한다', async () => {
-      const iconsDir = path.resolve(currentDir, '../../src/shared/components/ui/Icon/icons');
-      const iconFiles = fs.readdirSync(iconsDir).filter(file => file.endsWith('.tsx'));
+      const iconsFilePath = path.resolve(
+        currentDir,
+        '../../src/shared/components/ui/Icon/icons.ts'
+      );
 
-      for (const file of iconFiles) {
-        const filePath = path.join(iconsDir, file);
-        const content = fs.readFileSync(filePath, 'utf-8');
+      // icons.ts 파일이 존재하는지 확인
+      expect(fs.existsSync(iconsFilePath)).toBe(true);
 
-        // 모든 아이콘 파일이 기본 Icon 컴포넌트를 사용해야 함
-        expect(content).toMatch(/import.*Icon.*from.*Icon/);
-        expect(content).toMatch(/h\(Icon,/);
-      }
+      const content = fs.readFileSync(iconsFilePath, 'utf-8');
+
+      // 모든 아이콘 함수가 기본 Icon 컴포넌트를 사용해야 함
+      expect(content).toMatch(/import.*Icon.*from.*Icon/);
+      expect(content).toMatch(/h\(Icon,/);
+
+      // 실제 SVG 경로가 구현되어 있는지 확인
+      expect(content).toMatch(/h\('path'/);
+
+      // 주요 아이콘들이 export되어 있는지 확인
+      const requiredIcons = [
+        'ChevronLeft',
+        'ChevronRight',
+        'Download',
+        'FileZip',
+        'Settings',
+        'X',
+        'ZoomIn',
+        'ArrowAutofitWidth',
+        'ArrowAutofitHeight',
+        'ArrowsMaximize',
+      ];
+
+      requiredIcons.forEach(iconName => {
+        expect(content).toMatch(new RegExp(`export function ${iconName}`));
+      });
     });
 
     it('빌드된 CSS에서 Icon 관련 하드코딩된 값이 제거되어야 한다', async () => {

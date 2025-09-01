@@ -60,4 +60,6 @@ export interface GalleryRenderOptions {
   className?: string | undefined;
   /** 트윗 ID */
   tweetId?: string | undefined;
+  /** Shadow DOM 사용 여부 (Phase 4) */
+  useShadowDOM?: boolean | undefined;
 }

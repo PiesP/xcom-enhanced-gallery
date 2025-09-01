@@ -910,6 +910,19 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/hooks/useVirtualWindow.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/features/gallery/index.ts",
       "dependencies": [
         {
@@ -2147,7 +2160,7 @@
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/index.ts",
+          "resolved": "src/shared/components/ui/Icon/icons.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2168,97 +2181,25 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Icon/index.ts",
-        "src/shared/components/ui/Icon/icons/actions.tsx",
-        "src/shared/components/ui/Icon/icons/alerts.tsx",
-        "src/shared/components/ui/Icon/icons/fit-modes.tsx",
-        "src/shared/components/ui/Icon/icons/misc.tsx",
-        "src/shared/components/ui/Icon/icons/navigation.tsx",
+        "src/shared/components/ui/Icon/icons.ts",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/index.ts",
+      "source": "src/shared/components/ui/Icon/icons.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./actions",
+          "module": "./Icon",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "export"
+            "import"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/actions.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./alerts",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/alerts.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./fit-modes",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/fit-modes.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./misc",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/misc.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./navigation",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/navigation.tsx",
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2270,231 +2211,6 @@
       "dependents": [
         "src/shared/components/ui/Icon/index.ts",
         "src/shared/components/ui/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/actions.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/alerts.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/fit-modes.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/misc.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/navigation.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3075,7 +2791,7 @@
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/index.ts",
+          "resolved": "src/shared/components/ui/Icon/icons.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3613,6 +3329,23 @@
         },
         {
           "dynamic": false,
+          "module": "./useBodyScrollLock",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useBodyScrollLock.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./useDOMReady",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3660,6 +3393,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/hooks/useBodyScrollLock.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/hooks/useDOMReady.ts",
       "dependencies": [],
       "dependents": [
@@ -3678,11 +3420,37 @@
       "valid": true
     },
     {
+      "source": "src/shared/hooks/useAdjacentPreload.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/hooks/useGalleryScroll.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
       "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useOffscreenMemoryManager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/hooks/useSmartImageFit.ts",
@@ -7636,13 +7404,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/backup/BackupManager.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/cache/LRUCache.ts",
       "dependencies": [],
       "dependents": [],
@@ -7745,11 +7506,97 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/format-detection.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/format-selection-clean.ts",
+        "src/shared/utils/format-selection.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/format-selection-clean.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./format-detection",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/format-detection.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/format-selection.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./format-detection",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/format-detection.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/image-unload.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/utils/media/smart-image-fit.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
       "valid": true
+    },
+    {
+      "source": "src/shared/utils/memory/MediaMemoryManager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/utils/memory/index.ts",
@@ -7918,6 +7765,32 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/video-unload.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/utils/viewport-detection.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/types/index.ts",
       "dependencies": [
         {
@@ -8006,6 +7879,15 @@
     "violations": [
       {
         "type": "module",
+        "from": "src/features/gallery/hooks/useVirtualWindow.ts",
+        "to": "src/features/gallery/hooks/useVirtualWindow.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/constants/api.constants.ts",
         "to": "src/shared/constants/api.constants.ts",
         "rule": {
@@ -8035,6 +7917,24 @@
         "type": "module",
         "from": "src/shared/external/vendors/vendor-manager-static-simplified.ts",
         "to": "src/shared/external/vendors/vendor-manager-static-simplified.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/hooks/useAdjacentPreload.ts",
+        "to": "src/shared/hooks/useAdjacentPreload.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/hooks/useOffscreenMemoryManager.ts",
+        "to": "src/shared/hooks/useOffscreenMemoryManager.ts",
         "rule": {
           "severity": "info",
           "name": "no-orphans"
@@ -8087,8 +7987,44 @@
       },
       {
         "type": "module",
+        "from": "src/shared/utils/image-unload.ts",
+        "to": "src/shared/utils/image-unload.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/memory/MediaMemoryManager.ts",
+        "to": "src/shared/utils/memory/MediaMemoryManager.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/utils/performance/PerformanceMonitor.ts",
         "to": "src/shared/utils/performance/PerformanceMonitor.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/video-unload.ts",
+        "to": "src/shared/utils/video-unload.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/utils/viewport-detection.ts",
+        "to": "src/shared/utils/viewport-detection.ts",
         "rule": {
           "severity": "info",
           "name": "no-orphans"
@@ -8097,10 +8033,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 10,
+    "info": 17,
     "ignore": 0,
-    "totalCruised": 231,
-    "totalDependenciesCruised": 330,
+    "totalCruised": 236,
+    "totalDependenciesCruised": 319,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

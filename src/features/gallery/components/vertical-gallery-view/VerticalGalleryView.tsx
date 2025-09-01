@@ -645,37 +645,38 @@ function VerticalGalleryViewCore({
         />
       </div>
 
-      {/* 콘텐츠 영역 */}
-      <div ref={contentRef} className={styles.content} onClick={handleContentClick}>
-        <div
-          className={styles.itemsList}
-          data-xeg-role='items-list'
-          // 스타일은 VerticalGalleryView.module.css에 정의됨
-        >
-          {itemsToRender.map((item: MediaInfo, index: number) => {
-            // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일
-            const actualIndex = index;
+      {/* 콘텐츠 영역 - styles.content 래퍼 제거하여 DOM depth 감소 (Phase 3 GREEN) */}
+      <div
+        ref={contentRef}
+        className={`${styles.itemsList} ${styles.content || ''}`}
+        data-xeg-role='items-list'
+        onClick={handleContentClick}
+        // REFACTOR: deprecated 'content' 클래스 alias 추가 (legacy 호환성)
+        // 스타일은 VerticalGalleryView.module.css에 정의됨
+      >
+        {itemsToRender.map((item: MediaInfo, index: number) => {
+          // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일
+          const actualIndex = index;
 
-            // 키 생성 (memoizedMediaItems와 동일한 방식)
-            const itemKey = `${item.id || item.url}-${actualIndex}`;
+          // 키 생성 (memoizedMediaItems와 동일한 방식)
+          const itemKey = `${item.id || item.url}-${actualIndex}`;
 
-            return (
-              <VerticalImageItem
-                key={itemKey}
-                media={item}
-                index={actualIndex}
-                isActive={actualIndex === currentIndex}
-                isFocused={actualIndex === focusedIndex}
-                forceVisible={forceVisibleItems.has(actualIndex)}
-                fitMode={imageFitMode}
-                onClick={() => handleMediaItemClick(actualIndex)}
-                onMediaLoad={handleMediaLoad}
-                className={`${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`}
-                data-index={actualIndex}
-              />
-            );
-          })}
-        </div>
+          return (
+            <VerticalImageItem
+              key={itemKey}
+              media={item}
+              index={actualIndex}
+              isActive={actualIndex === currentIndex}
+              isFocused={actualIndex === focusedIndex}
+              forceVisible={forceVisibleItems.has(actualIndex)}
+              fitMode={imageFitMode}
+              onClick={() => handleMediaItemClick(actualIndex)}
+              onMediaLoad={handleMediaLoad}
+              className={`${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`}
+              data-index={actualIndex}
+            />
+          );
+        })}
       </div>
 
       {/* Toast 메시지 */}

@@ -22,9 +22,9 @@ import {
   navigatePrevious,
   navigateNext,
 } from '@shared/state/signals/gallery.signals';
+import { injectShadowDOMStyles } from '@shared/styles/namespaced-styles';
 import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
-import { GalleryContainer } from '@shared/components/isolation';
 import './styles/gallery-global.css';
 import { logger } from '@shared/logging/logger';
 import { getPreact } from '@shared/external/vendors';
@@ -60,6 +60,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private readonly cleanupManager = new GalleryCleanupManager();
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
+  private shadowRoot: ShadowRoot | null = null; // Phase 4: Shadow DOM 지원
+  private useShadowDOM = false; // Phase 4: Shadow DOM 사용 여부
 
   constructor() {
     this.setupStateSubscription();
@@ -116,7 +118,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   /**
-   * 컨테이너 생성 - 갤러리 컨테이너 생성
+   * 컨테이너 생성 - 갤러리 컨테이너 생성 (Phase 4: Shadow DOM 지원)
    */
   private createContainer(): void {
     this.cleanupContainer();
@@ -125,11 +127,25 @@ export class GalleryRenderer implements GalleryRendererInterface {
     this.container.className = 'xeg-gallery-renderer';
     this.container.setAttribute('data-renderer', 'gallery');
 
+    // Phase 4: Shadow DOM 지원
+    if (this.useShadowDOM) {
+      try {
+        this.shadowRoot = this.container.attachShadow({ mode: 'open' });
+        // Shadow DOM에 스타일 주입
+        injectShadowDOMStyles(this.shadowRoot);
+        logger.info('[GalleryRenderer] Shadow DOM 생성 및 스타일 주입 완료');
+      } catch (error) {
+        logger.warn('[GalleryRenderer] Shadow DOM 생성 실패, 일반 DOM으로 fallback:', error);
+        this.shadowRoot = null;
+      }
+    }
+
     document.body.appendChild(this.container);
 
     // 정리 작업 등록
     this.cleanupManager.addTask(() => {
       // 컨테이너 정리는 cleanupContainer에서 처리
+      this.shadowRoot = null;
     });
   }
 
@@ -141,34 +157,52 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     const { render, createElement } = getPreact();
 
-    // GalleryContainer로 VerticalGalleryView를 래핑
-    const galleryElement = createElement(GalleryContainer, {
+    // DOM depth 단순화를 위해 GalleryContainer 래퍼 제거 (Phase 3 GREEN)
+    // 필요한 오버레이/레이아웃 스타일은 루트 컨테이너(this.container) 자체에 적용
+    this.applyRootStyles();
+
+    const galleryElement = createElement(VerticalGalleryView, {
       onClose: () => {
         closeGallery();
         if (this.onCloseCallback) {
           this.onCloseCallback();
         }
       },
-      className: 'xeg-gallery-renderer',
-      useShadowDOM: false, // 기본적으로 Shadow DOM 비사용
-      children: createElement(VerticalGalleryView, {
-        // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
-        onClose: () => {
-          closeGallery();
-          if (this.onCloseCallback) {
-            this.onCloseCallback();
-          }
-        },
-        onPrevious: () => this.handleNavigation('previous'),
-        onNext: () => this.handleNavigation('next'),
-        onDownloadCurrent: () => this.handleDownload('current'),
-        onDownloadAll: () => this.handleDownload('all'),
-        className: 'xeg-vertical-gallery',
-      }),
+      onPrevious: () => this.handleNavigation('previous'),
+      onNext: () => this.handleNavigation('next'),
+      onDownloadCurrent: () => this.handleDownload('current'),
+      onDownloadAll: () => this.handleDownload('all'),
+      className: 'xeg-vertical-gallery',
     });
 
-    render(galleryElement, this.container);
-    logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료');
+    // Phase 4: Shadow DOM 격리 지원 - shadowRoot가 있으면 shadowRoot에 렌더링
+    const renderTarget = this.shadowRoot || this.container;
+    render(galleryElement, renderTarget);
+    logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료', { shadowDOM: !!this.shadowRoot });
+  }
+
+  /**
+   * Phase 3: GalleryContainer 제거 후 루트 컨테이너에 직접 스타일 부여
+   * (기존 GalleryContainer overlay 역할 대체)
+   */
+  private applyRootStyles(): void {
+    if (!this.container) return;
+    Object.assign(this.container.style, {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100%',
+      height: '100%',
+      minHeight: '100vh',
+      overflowY: 'scroll',
+      boxSizing: 'border-box',
+      padding: '2rem',
+      background: 'rgba(0, 0, 0, 0.9)',
+      zIndex: '9999',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    });
   }
 
   /**
@@ -251,6 +285,15 @@ export class GalleryRenderer implements GalleryRendererInterface {
     mediaItems: readonly MediaInfo[],
     renderOptions?: GalleryRenderOptions
   ): Promise<void> {
+    // Phase 4: Shadow DOM 옵션 설정
+    if (renderOptions?.useShadowDOM !== undefined) {
+      this.useShadowDOM = renderOptions.useShadowDOM;
+      // Shadow DOM 설정이 변경되면 기존 컨테이너 정리하여 재생성 유도
+      if (this.container) {
+        this.cleanupGallery();
+      }
+    }
+
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
 
     if (renderOptions?.viewMode) {
@@ -259,7 +302,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
       setViewMode(mode);
     }
 
-    logger.info(`[GalleryRenderer] ${mediaItems.length}개 미디어로 갤러리 렌더링`);
+    logger.info(`[GalleryRenderer] ${mediaItems.length}개 미디어로 갤러리 렌더링`, {
+      shadowDOM: this.useShadowDOM,
+    });
   }
 
   close(): void {
