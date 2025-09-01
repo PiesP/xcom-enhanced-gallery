@@ -14,6 +14,12 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 export default defineConfig({
   plugins: [preact()],
 
+  // TypeScript 파싱 개선
+  esbuild: {
+    target: 'node14',
+    keepNames: true,
+  },
+
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

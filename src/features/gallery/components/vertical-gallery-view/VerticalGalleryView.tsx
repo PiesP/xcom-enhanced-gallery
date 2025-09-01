@@ -35,8 +35,10 @@ import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
 import { useSmartImageFit } from '../../hooks/useSmartImageFit';
+import { useGalleryClassNames } from '../../hooks/useGalleryClassNames';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
+import enhancedStyles from './EnhancedGalleryScroll.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { FEATURE_BODY_SCROLL_LOCK, isIOSSafari } from '@/constants';
 import { useBodyScrollLock } from '@shared/hooks/useBodyScrollLock';
@@ -263,6 +265,14 @@ function VerticalGalleryViewCore({
     fitMode: imageFitMode,
     watchViewportResize: true,
   });
+
+  // Phase 9.3 REFACTOR: 갤러리 클래스 이름 최적화된 생성
+  const galleryClassName = useGalleryClassNames(
+    styles,
+    enhancedStyles,
+    smartImageFit.isImageSmallerThanViewport,
+    [stringWithDefault(className, '')]
+  );
 
   // UI 상태와 독립적으로 스크롤 가용성 보장
   useEffect(() => {
@@ -618,7 +628,7 @@ function VerticalGalleryViewCore({
     <div
       ref={containerRef}
       style={galleryStyle}
-      className={`${styles.container} ${stringWithDefault(className, '')}`}
+      className={galleryClassName}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'

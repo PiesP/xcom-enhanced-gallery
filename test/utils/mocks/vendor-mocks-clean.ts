@@ -25,19 +25,19 @@ export function createMockFflate() {
       callback(null, { 'test.txt': new Uint8Array([116, 101, 115, 116]) });
     }),
 
-    strToU8: vi.fn().mockImplementation(str => {
-      return new TextEncoder().encode(str);
+    strToU8: vi.fn().mockImplementation(() => {
+      return new Uint8Array([116, 101, 115, 116]); // "test" 문자열 시뮬레이션
     }),
 
-    strFromU8: vi.fn().mockImplementation(data => {
-      return new TextDecoder().decode(data);
+    strFromU8: vi.fn().mockImplementation(() => {
+      return 'test'; // 간단한 문자열 반환
     }),
 
-    zipSync: vi.fn().mockImplementation(files => {
+    zipSync: vi.fn().mockImplementation(() => {
       return new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
     }),
 
-    unzipSync: vi.fn().mockImplementation(data => {
+    unzipSync: vi.fn().mockImplementation(() => {
       return { 'test.txt': new Uint8Array([116, 101, 115, 116]) };
     }),
 
@@ -76,8 +76,7 @@ export function createMockPreact() {
     render: vi.fn().mockImplementation((vnode, container) => {
       // 간단한 렌더링 시뮬레이션
       if (container && typeof container.appendChild === 'function') {
-        const mockElement = document.createElement('div');
-        mockElement.textContent = JSON.stringify(vnode);
+        const mockElement = { textContent: JSON.stringify(vnode) };
         container.appendChild(mockElement);
       }
     }),
@@ -112,6 +111,10 @@ export function createMockPreact() {
         ref: props?.ref || null,
       };
     }),
+
+    memo: vi.fn().mockImplementation(component => {
+      return component; // 간단히 원본 컴포넌트 반환
+    }),
   };
 }
 
@@ -125,17 +128,17 @@ export function createMockPreactHooks() {
       return [initialValue, setValue];
     }),
 
-    useEffect: vi.fn().mockImplementation((effect, deps) => {
+    useEffect: vi.fn().mockImplementation(effect => {
       // 동기적으로 effect 실행 (테스트 환경)
       const cleanup = effect();
       return cleanup;
     }),
 
-    useMemo: vi.fn().mockImplementation((factory, deps) => {
+    useMemo: vi.fn().mockImplementation(factory => {
       return factory();
     }),
 
-    useCallback: vi.fn().mockImplementation((callback, deps) => {
+    useCallback: vi.fn().mockImplementation(callback => {
       return callback;
     }),
 
@@ -152,7 +155,7 @@ export function createMockPreactHooks() {
       return [initialState, dispatch];
     }),
 
-    useLayoutEffect: vi.fn().mockImplementation((effect, deps) => {
+    useLayoutEffect: vi.fn().mockImplementation(effect => {
       // useEffect와 동일하게 처리 (테스트 환경)
       const cleanup = effect();
       return cleanup;
@@ -202,7 +205,7 @@ export function createMockPreactSignals() {
  */
 export function createMockMotion() {
   return {
-    animate: vi.fn().mockImplementation(async (element, keyframes, options) => {
+    animate: vi.fn().mockImplementation(async (element, keyframes) => {
       // 즉시 완료되는 애니메이션 시뮬레이션
       if (element && typeof element === 'object' && 'style' in element) {
         Object.assign(element.style, keyframes);
@@ -210,18 +213,18 @@ export function createMockMotion() {
       return Promise.resolve();
     }),
 
-    scroll: vi.fn().mockImplementation((onScroll, options) => {
+    scroll: vi.fn().mockImplementation(onScroll => {
       // 스크롤 이벤트 시뮬레이션
-      const handler = () => onScroll({ scrollY: 0, scrollX: 0 });
+      onScroll({ scrollY: 0, scrollX: 0 });
       return vi.fn(); // cleanup function
     }),
 
-    timeline: vi.fn().mockImplementation(async (keyframes, options) => {
+    timeline: vi.fn().mockImplementation(async () => {
       // 타임라인 애니메이션 즉시 완료
       return Promise.resolve();
     }),
 
-    stagger: vi.fn().mockImplementation((duration = 0.1, options) => {
+    stagger: vi.fn().mockImplementation((duration = 0.1) => {
       return vi.fn().mockImplementation(index => index * duration);
     }),
   };
@@ -260,6 +263,16 @@ export class MockVendorManager {
       this.cache.set('preact', createMockPreact());
     }
     return this.cache.get('preact');
+  }
+
+  async getPreactCompat() {
+    if (!this.cache.has('preact-compat')) {
+      this.cache.set('preact-compat', {
+        ...createMockPreact(),
+        memo: vi.fn().mockImplementation(component => component),
+      });
+    }
+    return this.cache.get('preact-compat');
   }
 
   async getPreactHooks() {
@@ -305,7 +318,21 @@ export function setupVendorMocks() {
     getPreact: () => mockManager.getPreact(),
     getPreactHooks: () => mockManager.getPreactHooks(),
     getPreactSignals: () => mockManager.getPreactSignals(),
+    getPreactCompat: () => mockManager.getPreactCompat(),
     getMotion: () => mockManager.getMotion(),
+    // 새로운 Safe API들도 추가
+    getFflateSafe: () => mockManager.getFflate(),
+    getPreactSafe: () => mockManager.getPreact(),
+    getPreactHooksSafe: () => mockManager.getPreactHooks(),
+    getPreactSignalsSafe: () => mockManager.getPreactSignals(),
+    getPreactCompatSafe: () => mockManager.getPreactCompat(),
+    getNativeDownloadSafe: () => ({
+      createObjectURL: vi.fn(),
+      revokeObjectURL: vi.fn(),
+      createElement: vi.fn(),
+      createAnchor: vi.fn(),
+      downloadBlob: vi.fn(),
+    }),
   }));
 
   return mockManager;

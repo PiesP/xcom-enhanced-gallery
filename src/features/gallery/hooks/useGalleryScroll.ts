@@ -149,7 +149,49 @@ export function useGalleryScroll({
     return imageSize.width <= viewportSize.width && imageSize.height <= viewportSize.height;
   }, [imageSize, viewportSize]);
 
-  // 갤러리 휠 이벤트 처리
+  // Phase 9.3 REFACTOR: 작은 이미지 휠 이벤트 처리 (분리된 함수)
+  const handleSmallImageWheel = useCallback(
+    (event: WheelEvent, delta: number) => {
+      if (!onImageNavigation) return false;
+
+      // Phase 9.2: 작은 이미지에서 완전한 이벤트 차단 후 네비게이션만 처리
+      const direction = delta > 0 ? 'next' : 'prev';
+      onImageNavigation(direction);
+
+      logger.debug('useGalleryScroll: 작은 이미지 - 휠 네비게이션 처리 (배경 스크롤 차단)', {
+        direction,
+        delta,
+        imageSize,
+        viewportSize,
+        eventBlocked: true,
+      });
+
+      // 작은 이미지에서는 추가 처리 없이 완전히 차단
+      return true;
+    },
+    [onImageNavigation, imageSize, viewportSize]
+  );
+
+  // Phase 9.3 REFACTOR: 큰 이미지 휠 이벤트 처리 (분리된 함수)
+  const handleLargeImageWheel = useCallback(
+    (event: WheelEvent, delta: number) => {
+      // 큰 이미지: 기존 스크롤 콜백 실행
+      if (onScroll) {
+        onScroll(delta);
+      }
+
+      logger.debug('useGalleryScroll: 큰 이미지 - 스크롤 처리', {
+        delta,
+        imageSize,
+        viewportSize,
+      });
+
+      return true;
+    },
+    [onScroll, imageSize, viewportSize]
+  );
+
+  // 갤러리 휠 이벤트 처리 (메인 함수)
   const handleGalleryWheel = useCallback(
     (event: WheelEvent) => {
       // 갤러리가 열려있지 않으면 무시
@@ -158,10 +200,11 @@ export function useGalleryScroll({
         return;
       }
 
-      // 갤러리가 열려있으면 문서 휠 이벤트가 페이지로 전파되는 것을 차단
-      // (기존 로직이 옵션에 따라 막는 부분보다 우선 처리)
+      // 갤러리가 열려있으면 문서 휠 이벤트가 페이지로 전파되는 것을 강력히 차단
+      // Phase 9.2: 더 강력한 이벤트 차단으로 작은 이미지 스크롤 문제 해결
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation();
 
       const delta = event.deltaY;
       updateScrollState(true);
@@ -169,31 +212,13 @@ export function useGalleryScroll({
       // 스크롤 방향 감지 (옵션)
       updateScrollDirection(delta);
 
-      // 이미지 크기에 따른 조건적 처리
+      // 이미지 크기에 따른 조건적 처리 (Phase 9.3: 분리된 함수 사용)
       const isSmallImage = isImageSmallerThanViewport();
 
-      if (isSmallImage && onImageNavigation) {
-        // 작은 이미지: wheel 이벤트로 이미지 네비게이션
-        const direction = delta > 0 ? 'next' : 'prev';
-        onImageNavigation(direction);
-
-        logger.debug('useGalleryScroll: 작은 이미지 - 네비게이션 처리', {
-          direction,
-          delta,
-          imageSize,
-          viewportSize,
-        });
+      if (isSmallImage) {
+        handleSmallImageWheel(event, delta);
       } else {
-        // 큰 이미지: 기존 스크롤 콜백 실행
-        if (onScroll) {
-          onScroll(delta);
-        }
-
-        logger.debug('useGalleryScroll: 큰 이미지 - 스크롤 처리', {
-          delta,
-          imageSize,
-          viewportSize,
-        });
+        handleLargeImageWheel(event, delta);
       }
 
       // 모든 경우에 트위터 페이지로의 이벤트 전파 방지
@@ -217,15 +242,13 @@ export function useGalleryScroll({
       });
     },
     [
-      onScroll,
       blockTwitterScroll,
       updateScrollState,
       handleScrollEnd,
       updateScrollDirection,
       isImageSmallerThanViewport,
-      onImageNavigation,
-      imageSize,
-      viewportSize,
+      handleSmallImageWheel,
+      handleLargeImageWheel,
     ]
   );
 
