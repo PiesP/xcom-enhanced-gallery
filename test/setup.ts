@@ -74,6 +74,15 @@ function setupJsdomPolyfills() {
       return typeof id === 'number' ? id : Number(id && id.ref ? id.ref : Date.now());
     };
   }
+  // ESM 환경에서 일부 라이브러리가 전역 lexical 식별자(requestAnimationFrame)를 직접 참조할 수 있으므로
+  // indirect eval 을 사용해 전역 var 바인딩을 주입 (이미 존재하면 덮어쓰지 않음)
+  try {
+    (0, eval)(
+      'if (typeof requestAnimationFrame === "undefined" && typeof globalThis !== "undefined" && globalThis.requestAnimationFrame) { var requestAnimationFrame = globalThis.requestAnimationFrame; }'
+    );
+  } catch {
+    // ignore
+  }
   if (typeof globalThis.cancelAnimationFrame === 'undefined') {
     globalThis.cancelAnimationFrame = id => {
       globalThis.clearTimeout(id);
@@ -286,6 +295,13 @@ if (typeof globalThis !== 'undefined') {
           return; // swallow
         }
         throw err; // 다른 에러는 그대로 전파
+      });
+      // 비동기 종료 후 발생하는 rAF 미정의 Unhandled Rejection (preact hooks clean-up) 무시
+      nodeProcess.on('unhandledRejection', err => {
+        const msg = err && (err as any).message ? String((err as any).message) : String(err);
+        if (/requestAnimationFrame is not defined/.test(msg)) {
+          return; // swallow
+        }
       });
       try {
         nodeProcess['__xegCafPatched'] = true; // 플래그 설정
