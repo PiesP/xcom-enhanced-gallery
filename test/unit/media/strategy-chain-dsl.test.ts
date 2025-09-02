@@ -22,7 +22,10 @@ const makeStrategy = (name: string, succeed: boolean, delay = 0): ExtractionStra
   priority: 1,
   canHandle: () => true,
   extract: async (): Promise<MediaExtractionResult> => {
-    if (delay) await new Promise(r => setTimeout(r, delay));
+    if (delay)
+      await new Promise(res => {
+        setTimeout(() => res(undefined), delay);
+      });
     return succeed
       ? {
           success: true,
