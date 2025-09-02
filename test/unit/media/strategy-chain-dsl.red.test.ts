@@ -5,12 +5,19 @@
 //       mw.before / mw.after 훅이 호출되어 metric 에 기록되는 것을 검증
 
 import { describe, it, expect } from 'vitest';
-import { StrategyChainBuilder, type StrategyChainMiddleware } from '@/shared/services/media-extraction/StrategyChain';
+import {
+  StrategyChainBuilder,
+  type StrategyChainMiddleware,
+} from '@/shared/services/media-extraction/StrategyChain';
 import type { MediaExtractionOptions, MediaExtractionResult } from '@/shared/types/media.types';
 import type { ExtractionStrategy } from '@/shared/services/media-extraction/MediaExtractionOrchestrator';
 
 // 테스트용 간단 전략
-const makeStrategy = (name: string, succeed: boolean, delay = 0): ExtractionStrategy => ({
+const makeStrategy = (
+  name: string,
+  succeed: boolean,
+  delay = 0
+): ExtractionStrategy => ({
   name,
   priority: 1,
   canHandle: () => true,
