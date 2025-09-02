@@ -23,6 +23,10 @@ export interface UseToolbarPositionBasedOptions {
   enabled: boolean;
   /** 초기 자동 숨김 지연 시간 (ms) - 0이면 자동 숨김 비활성화 */
   initialAutoHideDelay?: number;
+  /** 상단 edge fallback 활성화 여부 (호버 존 이벤트 누락/레이어 충돌 대비) */
+  enableTopEdgeFallback?: boolean;
+  /** top-edge fallback 감지 임계값 (px) */
+  topEdgeThresholdPx?: number;
 }
 
 export interface UseToolbarPositionBasedReturn {
@@ -45,6 +49,8 @@ export function useToolbarPositionBased({
   hoverZoneElement,
   enabled,
   initialAutoHideDelay = 1000, // 기본값 1초
+  enableTopEdgeFallback = true,
+  topEdgeThresholdPx = 4,
 }: UseToolbarPositionBasedOptions): UseToolbarPositionBasedReturn {
   const { useState, useEffect, useCallback, useRef } = getPreactHooks();
 
@@ -54,6 +60,10 @@ export function useToolbarPositionBased({
   // 자동 숨김 타이머 관리
   const autoHideTimerRef = useRef<number | null>(null);
   const isHoveredRef = useRef(false);
+  // top-edge fallback 활성 감지
+  const topEdgeActiveRef = useRef(false);
+  // 첫 mousemove 즉시 처리되도록 음수 초기화
+  const lastTopEdgeTriggerTsRef = useRef<number>(-1e9);
 
   /**
    * 툴바 스타일 직접 업데이트 (빠른 반응을 위해)
@@ -149,6 +159,33 @@ export function useToolbarPositionBased({
   }, [enabled, hide]);
 
   /**
+   * 상단 edge mousemove fallback
+   * - hoverZoneElement 이벤트가 브라우저 / 레이아웃 변형 / transform stacking 문제로 누락될 가능성에 대비
+   * - clientY <= threshold 영역에서 mousemove 발생 시 툴바 표시
+   * - 과도한 reflow 방지를 위해 최소 50ms 간격 throttle
+   */
+  const handleGlobalMouseMove = useCallback(
+    (ev: MouseEvent) => {
+      if (!enableTopEdgeFallback || !enabled || !toolbarElement) return;
+      const now = performance.now();
+      // 50ms throttle
+      if (now - lastTopEdgeTriggerTsRef.current < 50) return;
+      const y = ev.clientY;
+      if (y <= topEdgeThresholdPx) {
+        lastTopEdgeTriggerTsRef.current = now;
+        // top-edge 활성
+        topEdgeActiveRef.current = true;
+        show();
+      } else if (topEdgeActiveRef.current && y > topEdgeThresholdPx + 24 && !isHoveredRef.current) {
+        // edge 영역 벗어난 뒤 충분히 내려갔고 hover 상태 아님 → 숨김
+        topEdgeActiveRef.current = false;
+        hide();
+      }
+    },
+    [enableTopEdgeFallback, enabled, toolbarElement, topEdgeThresholdPx, show, hide]
+  );
+
+  /**
    * 활성화 상태 변경 시 초기 가시성 설정 및 자동 숨김 타이머 시작
    */
   useEffect(() => {
@@ -167,29 +204,31 @@ export function useToolbarPositionBased({
    * 이벤트 리스너 등록/해제
    */
   useEffect(() => {
-    if (!enabled || !hoverZoneElement || !toolbarElement) {
-      return;
+    if (!enabled) return;
+    if (!toolbarElement) return;
+
+    // hoverZoneElement 가 존재할 때만 호버 이벤트 등록
+    if (hoverZoneElement) {
+      hoverZoneElement.addEventListener('mouseenter', handleMouseEnter);
+      hoverZoneElement.addEventListener('mouseleave', handleMouseLeave);
     }
 
-    // 호버 존 이벤트
-    hoverZoneElement.addEventListener('mouseenter', handleMouseEnter);
-    hoverZoneElement.addEventListener('mouseleave', handleMouseLeave);
-
-    // 툴바 자체 이벤트 (툴바 위에서는 표시 유지)
     toolbarElement.addEventListener('mouseenter', handleMouseEnter);
     toolbarElement.addEventListener('mouseleave', handleMouseLeave);
 
-    logger.debug('Position-based toolbar events registered');
+    logger.debug('Position-based toolbar events registered', {
+      hoverZoneBound: Boolean(hoverZoneElement),
+      topEdgeFallback: enableTopEdgeFallback,
+    });
 
     return () => {
-      hoverZoneElement.removeEventListener('mouseenter', handleMouseEnter);
-      hoverZoneElement.removeEventListener('mouseleave', handleMouseLeave);
+      if (hoverZoneElement) {
+        hoverZoneElement.removeEventListener('mouseenter', handleMouseEnter);
+        hoverZoneElement.removeEventListener('mouseleave', handleMouseLeave);
+      }
       toolbarElement.removeEventListener('mouseenter', handleMouseEnter);
       toolbarElement.removeEventListener('mouseleave', handleMouseLeave);
-
-      // 타이머 정리
       clearAutoHideTimer();
-
       logger.debug('Position-based toolbar events removed');
     };
   }, [
@@ -199,7 +238,17 @@ export function useToolbarPositionBased({
     handleMouseEnter,
     handleMouseLeave,
     clearAutoHideTimer,
+    enableTopEdgeFallback,
   ]);
+
+  // 전역 top-edge fallback 리스너
+  useEffect(() => {
+    if (!enabled || !enableTopEdgeFallback) return;
+    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+    };
+  }, [enabled, enableTopEdgeFallback, handleGlobalMouseMove]);
 
   // 컴포넌트 언마운트 시 타이머 정리
   useEffect(() => {

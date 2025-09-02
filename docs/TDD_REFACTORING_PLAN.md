@@ -123,11 +123,13 @@ DoD 요약:
 
 ## 7. 즉시 Next Actions
 
-1. Phase 11: heuristic v3.1 → RED 테스트 설계 & GREEN
-2. Phase 11: duplicate guard / retry decorator → RED → GREEN
-3. Cache race/TTL 스트레스 → 안정화 (metrics 검증)
-4. (선택) Phase 14 inertial 실험 → 결과 기반 옵션 확정
-5. Phase 13 착수 전 API 표면 측정 스냅샷 생성
+1. (완료) Toolbar hover 복구: container transform 제거로 fixed hover zone 오프셋
+   버그 해결 (behavioral 테스트 추가)
+2. Phase 11: heuristic v3.1 → RED 테스트 설계 & GREEN
+3. Phase 11: duplicate guard / retry decorator → RED → GREEN
+4. Cache race/TTL 스트레스 → 안정화 (metrics 검증)
+5. (선택) Phase 14 inertial 실험 → 결과 기반 옵션 확정
+6. Phase 13 착수 전 API 표면 측정 스냅샷 생성
 
 ---
 
@@ -241,6 +243,86 @@ middleware before/after + custom metrics), background-image heuristic v2 (저품
   2. background-image heuristic v3.1: perceptual (aspect ratio, DPR) + 추가
      패턴(`_(\\d+)x(\\d+)`) 처리
   3. Cache stress: 대량 TTL 경계 & purge interval race 조건 안정성
+
+#### 2025-09-02 Toolbar Hover Bugfix (간결판)
+
+- 증상: 하단 스크롤 후 상단 edge 접근 시 툴바 재등장 실패
+- 1차 원인: `.container` GPU 레이어 강제(`translateZ(0)`)로 fixed hover zone
+  히트 왜곡 + 과도 pointer-events 규칙
+- 1차 조치: transform 제거 및 전역 pointer-events 강제 해제 (CSS 회귀 테스트
+  추가)
+- 2차 강화: hover zone 이벤트 누락/레이어 충돌 대비 top-edge(mousemove
+  clientY<=4px) fallback 추가 (`useToolbarPositionBased`) → 전역 mousemove 경량
+  throttle (50ms)
+- 회귀 가드:
+  - `test/behavioral/gallery/toolbar-visibility-on-scroll.spec.ts` (CSS 구조)
+  - `test/unit/gallery/toolbar-top-edge-fallback.test.tsx` (top-edge fallback)
+
+#### 2025-09-02~03 Toolbar Scroll-Out 현상 추가 분석 & 구조 리팩토링 진행
+
+- 추가 관측: 툴바가 표시된 상태에서 내부 스크롤 시 툴바 자체가 상단 뷰포트
+  밖으로 사라지는 사례 발생 (사용자 환경 재현).
+- 근본 원인 추론 단계:
+  1. 현재 스크롤 가능 요소(`overflow-y: scroll`)가 툴바/호버존을 포함하는 동일
+     `.container` 요소.
+  2. 고정 기대 요소(`.toolbarWrapper`, `.toolbarHoverZone`)가 동일 스크롤
+     컨테이너 하위이면서, 복합 레이어(`will-change`,
+     `contain: layout style paint`)와 사용자 환경(브라우저/확장) 조합으로 일부
+     렌더링 경로에서 fixed 동작이 viewport 대신 스크롤 컨테이너 기준으로
+     강등(absolute 유사)되는 간헐적 현상 발생 가능.
+  3. 스크롤 이벤트 중 hover 상태 해제 + top-edge fallback 트리거 전 포인터
+     재진입 실패 시 툴바 복귀 경로 미실행.
+  4. display: contents / container 쿼리 / paint containment 조합이 브라우저별
+     최적화 분기 유발 → 안정성 저하.
+- 대안 비교: | 옵션 | 설명 | 장점 | 단점 | | ---- | ---- | ---- | ---- | | A |
+  현 상태 + 추가 디버그 로깅 | 빠름 | 근본 해결 없음 | | B | 툴바를 별도 고정
+  레이어(overlay)로 분리, 콘텐츠 전용 내부 스크롤 영역 신설 | 구조적 해결,
+  브라우저 일관성 ↑ | 리팩토링/훅 참조 수정 필요 | | C | 툴바 position: sticky
+  전환 + 상단 스페이서 | 구현 단순 | item 목록 최상단 여백 소모, hover zone
+  재구성 필요 | | D | wheel 중 강제 show/위치 보정 JS 패치 | 변경량 적음 |
+  깜빡임·layout thrash 위험 | | E | body 스크롤로 회귀(컨테이너 overflow 제거) |
+  최상위 fixed 신뢰성 ↑ | 배경 페이지 스크롤 간섭 처리 재도입 필요 | | F |
+  IntersectionObserver sentinel + sticky 혼합 | 정확한 표시/숨김 | 과도 복잡도,
+  성능 오버헤드 |
+- 선택(계획): B (Overlay 분리 + 내부 전용 scrollArea) → 2025-09-03 RED 확보 완료
+  - 새 구조:
+    `#xeg-gallery-root > .xegGalleryOverlay( fixed ) > .xegToolbarLayer( fixed/absolute ) + .xegScrollArea( overflow-y:auto )`
+  - 변경 요점:
+    1. `.container` 의 `overflow-y` 제거, `.scrollArea` 신설
+    2. 기존 hooks 중 스크롤 참조(useGalleryScroll, useGalleryItemScroll) 대상
+       ref를 scrollArea 로 대체
+    3. hover zone & top-edge fallback 그대로 유지 (scroll 영역과 분리되어 hit
+       안정성 향상)
+    4. 회귀 테스트 추가: 스크롤 후 toolbar DOM boundingClientRect().top == 0
+       보장
+  - TDD 순서 (업데이트):
+    1. RED 확보: `toolbar-fixed-overlay-structure-red.test.ts` (현재
+       overlay.scrollTop > 0 기대로 실패 강제)
+    2. GREEN: overlay/scrollArea 구조 도입 후 해당 테스트를
+       overlay.scrollTop===0 + scrollArea.scrollTop>0 로 갱신 및 통과
+    3. 추가 회귀: scrollArea wheel delta 적용 테스트 신규
+       (`toolbar-fixed-overlay-structure-green.test.ts`) 계획
+    4. REFACTOR: `useGalleryScroll` scroll 대상 선택 옵션화
+       (container→scrollArea)
+  - 리스크 완화: 기존 CSS 변수/transition 재사용, public API 불변
+
+진행 현황(2025-09-03 1차):
+
+1. RED 테스트 생성 및 실패 조건 확보 (wheel 후 overlay.scrollTop 그대로 0 →
+   의도적 실패) ✔
+2. 중복 legacy 테스트 중립화 (.tsx duplicate skip 처리) ✔
+3. 다음 실행 예정: 구조 분리 + GREEN 변환
+
+남은 TODO (구조 리팩토링 스코프):
+
+- [ ] VerticalGalleryView: overlay(fixed) + scrollArea(overflow-y:auto) 분리
+- [ ] 기존 wheel/아이템 auto-scroll 훅 대상 scrollArea 로 전환
+- [ ] RED 테스트 GREEN 전환 (assert overlay===0, scrollArea>0)
+- [ ] 추가 GREEN 회귀 테스트 추가 (선택)
+- [ ] 문서 이 섹션 완료 상태로 축약
+
+- `test/unit/gallery/toolbar-top-edge-fallback.test.tsx` (top-edge fallback
+  RED→GREEN)
 
 #### 2025-09-02 Selector Consolidation (Option 2)
 

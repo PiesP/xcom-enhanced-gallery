@@ -123,7 +123,8 @@ function VerticalGalleryViewCore({
     isDownloading,
   });
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); // overlay
+  const scrollAreaRef = useRef<HTMLDivElement>(null); // 내부 스크롤 영역
   const contentRef = useRef<HTMLDivElement>(null);
   const toolbarHoverZoneRef = useRef<HTMLDivElement>(null);
   const toolbarWrapperRef = useRef<HTMLDivElement>(null);
@@ -605,7 +606,7 @@ function VerticalGalleryViewCore({
       typeof (import.meta as unknown as { env?: { MODE?: string } }).env?.MODE === 'string' &&
       (import.meta as unknown as { env?: { MODE?: string } }).env?.MODE === 'test';
     // 콘텐츠가 작아 배경 스크롤 누수 위험이 있는지 검사
-    const containerEl = containerRef.current;
+    const containerEl = scrollAreaRef.current || containerRef.current;
     const contentTooSmall = (() => {
       if (!containerEl) return false;
       try {
@@ -637,6 +638,7 @@ function VerticalGalleryViewCore({
       data-xeg-gallery='true'
       data-xeg-role='gallery'
       data-xeg-depth-phase='ch2'
+      data-xeg-structure='overlay-split'
     >
       {/* 툴바 호버 트리거 영역 (브라우저 상단 100px) */}
       <div className={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
@@ -660,36 +662,37 @@ function VerticalGalleryViewCore({
         />
       </div>
 
-      {/* CH2: items-list wrapper 제거 → items 를 gallery 컨테이너에 직접 렌더 */}
-      <div
-        ref={contentRef}
-        className={`${styles.itemsList} ${styles.content || ''}`}
-        onClick={handleContentClick}
-        // 레거시 테스트들은 data-xeg-role="items-list" 를 정확 매칭하므로 그대로 유지
-        data-xeg-role='items-list'
-        data-xeg-role-phase='gallery-items-container'
-        style={{ display: 'contents' }}
-      >
-        {itemsToRender.map((item: MediaInfo, index: number) => {
-          const actualIndex = index;
-          const itemKey = `${item.id || item.url}-${actualIndex}`;
-          return (
-            <VerticalImageItem
-              key={itemKey}
-              media={item}
-              index={actualIndex}
-              isActive={actualIndex === currentIndex}
-              isFocused={actualIndex === focusedIndex}
-              forceVisible={forceVisibleItems.has(actualIndex)}
-              fitMode={imageFitMode}
-              onClick={() => handleMediaItemClick(actualIndex)}
-              onMediaLoad={handleMediaLoad}
-              className={`${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`}
-              data-index={actualIndex}
-              data-xeg-role='gallery-item'
-            />
-          );
-        })}
+      {/* Scroll Area (내부 스크롤 전용) */}
+      <div ref={scrollAreaRef} className={styles.scrollArea} data-xeg-role='scroll-area'>
+        <div
+          ref={contentRef}
+          className={`${styles.itemsList} ${styles.content || ''}`}
+          onClick={handleContentClick}
+          data-xeg-role='items-list'
+          data-xeg-role-phase='gallery-items-container'
+          style={{ display: 'contents' }}
+        >
+          {itemsToRender.map((item: MediaInfo, index: number) => {
+            const actualIndex = index;
+            const itemKey = `${item.id || item.url}-${actualIndex}`;
+            return (
+              <VerticalImageItem
+                key={itemKey}
+                media={item}
+                index={actualIndex}
+                isActive={actualIndex === currentIndex}
+                isFocused={actualIndex === focusedIndex}
+                forceVisible={forceVisibleItems.has(actualIndex)}
+                fitMode={imageFitMode}
+                onClick={() => handleMediaItemClick(actualIndex)}
+                onMediaLoad={handleMediaLoad}
+                className={`${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`}
+                data-index={actualIndex}
+                data-xeg-role='gallery-item'
+              />
+            );
+          })}
+        </div>
       </div>
 
       {/* Toast 메시지 */}
