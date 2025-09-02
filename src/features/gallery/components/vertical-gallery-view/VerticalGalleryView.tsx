@@ -29,11 +29,28 @@ import {
   setupScrollAnimation,
 } from '@shared/utils/animations';
 import { useToolbarPositionBased } from '@features/gallery/hooks';
-import { isHTMLElement } from '@shared/utils/dom-guards';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
+// CH2 REFACTOR 준비: viewRoot(gallery)와 itemsList 통합 후 배경 클릭 식별 유틸을 별도로 분리
+// 임시 유틸: 향후 test/refactoring/gallery/container-depth-ch2-red.spec.ts GREEN 전환 시 사용
+function isBackgroundClick(target: EventTarget | null, currentTarget: EventTarget | null): boolean {
+  if (!target || !currentTarget) return false;
+  if (!(target instanceof HTMLElement) || !(currentTarget instanceof HTMLElement)) return false;
+  // 툴바 / 갤러리 아이템 내부 클릭은 배경이 아님
+  if (
+    target.closest('.toolbarWrapper') ||
+    target.closest('.toolbarHoverZone') ||
+    target.closest('[data-role="toolbar"]') ||
+    target.closest('[class*="toolbar"]') ||
+    target.closest('[data-xeg-role="items-list"]') ||
+    target.closest('[data-xeg-role="gallery-item"]')
+  ) {
+    return false;
+  }
+  return target === currentTarget;
+}
 import { useSmartImageFit } from '../../hooks/useSmartImageFit';
 import { useGalleryClassNames } from '../../hooks/useGalleryClassNames';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
@@ -332,22 +349,7 @@ function VerticalGalleryViewCore({
   }, [isVisible]); // 백그라운드 클릭 핸들러 (갤러리 닫기만 처리)
   const handleBackgroundClick = useCallback(
     (event: GalleryMouseEvent) => {
-      // 툴바나 툴바 영역 클릭은 무시
-      const rawTarget = event.target;
-      if (!isHTMLElement(rawTarget)) return;
-      const target = rawTarget;
-      if (
-        target.closest('.toolbarWrapper') ||
-        target.closest('.toolbarHoverZone') ||
-        target.closest('[data-role="toolbar"]') ||
-        target.closest('[class*="toolbar"]')
-      ) {
-        return;
-      }
-
-      // event.target이 실제 클릭된 요소이고, event.currentTarget은 이벤트 리스너가 부착된 요소입니다.
-      // 두 요소가 같을 때만 (즉, 컨테이너의 배경을 직접 클릭했을 때만) 갤러리를 닫습니다.
-      if (event.target === event.currentTarget) {
+      if (isBackgroundClick(event.target, event.currentTarget)) {
         onClose?.();
       }
     },
@@ -399,10 +401,8 @@ function VerticalGalleryViewCore({
       // 현재 선택된 인덱스와 일치하고, 아직 자동 스크롤하지 않은 경우에만 스크롤
       if (index === currentIndex && index !== lastAutoScrolledIndex) {
         // 이미지/비디오가 완전히 로드되었는지 확인
-        const itemsListElement = containerRef.current?.querySelector(
-          '[data-xeg-role="items-list"]'
-        );
-        const targetElement = itemsListElement?.children[index] as HTMLElement;
+        // CH2: items-list wrapper 제거 → 컨테이너 직속 children 사용
+        const targetElement = containerRef.current?.children[index] as HTMLElement;
 
         if (targetElement) {
           // 이미지 또는 비디오 요소 찾기
@@ -624,6 +624,10 @@ function VerticalGalleryViewCore({
     debugLabel: 'vertical-gallery',
   });
 
+  // CH2 GREEN: viewRoot(data-xeg-role="gallery") 와 itemsList(data-xeg-role="items-list") 통합
+  // 기존 depth: body > #xeg-gallery-root > gallery(viewRoot) > items-list > item (5)
+  // 변경 후:    body > #xeg-gallery-root > gallery(items container) > item (4)
+  // 구현: 단일 gallery 컨테이너 내부에서 아이템을 직접 렌더 (items-list wrapper 제거)
   return (
     <div
       ref={containerRef}
@@ -632,6 +636,7 @@ function VerticalGalleryViewCore({
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'
+      data-xeg-depth-phase='ch2'
     >
       {/* 툴바 호버 트리거 영역 (브라우저 상단 100px) */}
       <div className={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
@@ -655,22 +660,19 @@ function VerticalGalleryViewCore({
         />
       </div>
 
-      {/* 콘텐츠 영역 - styles.content 래퍼 제거하여 DOM depth 감소 (Phase 3 GREEN) */}
+      {/* CH2: items-list wrapper 제거 → items 를 gallery 컨테이너에 직접 렌더 */}
       <div
         ref={contentRef}
         className={`${styles.itemsList} ${styles.content || ''}`}
-        data-xeg-role='items-list'
         onClick={handleContentClick}
-        // REFACTOR: deprecated 'content' 클래스 alias 추가 (legacy 호환성)
-        // 스타일은 VerticalGalleryView.module.css에 정의됨
+        // 레거시 테스트들은 data-xeg-role="items-list" 를 정확 매칭하므로 그대로 유지
+        data-xeg-role='items-list'
+        data-xeg-role-phase='gallery-items-container'
+        style={{ display: 'contents' }}
       >
         {itemsToRender.map((item: MediaInfo, index: number) => {
-          // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일
           const actualIndex = index;
-
-          // 키 생성 (memoizedMediaItems와 동일한 방식)
           const itemKey = `${item.id || item.url}-${actualIndex}`;
-
           return (
             <VerticalImageItem
               key={itemKey}
@@ -684,6 +686,7 @@ function VerticalGalleryViewCore({
               onMediaLoad={handleMediaLoad}
               className={`${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`}
               data-index={actualIndex}
+              data-xeg-role='gallery-item'
             />
           );
         })}

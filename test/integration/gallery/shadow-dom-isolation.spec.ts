@@ -26,9 +26,10 @@ function injectConflictingStyles() {
   style.id = 'external-conflicting-styles';
   style.textContent = `
     /* 외부에서 갤러리 요소를 강제로 숨기려는 악의적 스타일 */
-    .xeg-gallery-renderer,
-    div.xeg-gallery-renderer,
-    body .xeg-gallery-renderer {
+  /* CH 구조 단순화: .xeg-gallery-renderer 클래스 제거 → #xeg-gallery-root id 기반 셀렉터로 전환 */
+  #xeg-gallery-root,
+  div#xeg-gallery-root,
+  body #xeg-gallery-root {
       display: none !important;
       visibility: hidden !important;
       opacity: 0 !important;
@@ -70,7 +71,7 @@ describe('Phase 4 RED: Shadow DOM 격리', () => {
     await galleryRenderer.render(media, { viewMode: 'vertical' });
     await Promise.resolve();
 
-    const galleryRoot = document.querySelector('.xeg-gallery-renderer');
+    const galleryRoot = document.querySelector('#xeg-gallery-root'); // CH: 클래스 제거로 id 기반
     expect(galleryRoot).not.toBeNull();
 
     // Shadow DOM이 없어야 함
@@ -92,7 +93,7 @@ describe('Phase 4 RED: Shadow DOM 격리', () => {
     });
     await Promise.resolve();
 
-    const galleryRoot = document.querySelector('.xeg-gallery-renderer');
+    const galleryRoot = document.querySelector('#xeg-gallery-root'); // CH: 클래스 제거로 id 기반
     expect(galleryRoot).not.toBeNull();
 
     // Phase 4 GREEN: Shadow DOM이 성공적으로 구현되었으므로 shadowRoot가 존재해야 함
@@ -121,7 +122,7 @@ describe('Phase 4 RED: Shadow DOM 격리', () => {
     });
     await Promise.resolve();
 
-    const galleryRoot = document.querySelector('.xeg-gallery-renderer');
+    const galleryRoot = document.querySelector('#xeg-gallery-root'); // CH: 클래스 제거로 id 기반
     expect(galleryRoot).not.toBeNull();
 
     // Phase 4 GREEN: Shadow DOM이 성공적으로 구현되었으므로 shadowRoot가 존재해야 함

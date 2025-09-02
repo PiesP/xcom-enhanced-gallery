@@ -1,35 +1,255 @@
-# X.com Enhanced Gallery - 갤러리 컨테이너 구조/성능 개선 TDD 리팩터링 계획
+# X.com Enhanced Gallery - TDD 리팩토링 간략 계획
 
-> 목적: 대량 미디어(수백~수천)에서도 부드러운 스크롤·낮은 메모리·일관된 스타일을
-> 유지하도록 컨테이너/렌더링 파이프라인을 단계적 TDD
-> 사이클(RED→GREEN→REFACTOR)로 개선.
+본 문서는 원래의 상세 리팩토링 계획(방대한 히스토리, 휴리스틱 세부, 테스트
+케이스 전개)을 압축한 **요약판**입니다. 세부 변경 내역은 Git History / PR / 커밋
+메시지를 참조하세요. (기존 장문 버전은 저장소 히스토리에서 복원 가능)
+
+목표 핵심:
+
+1. 대량 미디어에서도 120ms 내 초기 렌더 & 낮은 메모리
+2. 재실행·중복 초기화/스타일/이벤트 안전성
+3. 자연스러운 휠/트랙패드 UX (작은 이미지 네비 ↔ 큰 이미지 스크롤 공존)
+4. 미디어 추출 신뢰성 (변이 DOM, background-image, lazy src, 재열기)
+5. Clean Architecture + Vendor 안전 getter + 네임스페이스 스타일
+
+현재 집중 (2025-09-02):
+
+- Phase 11 HARDEN (추출 휴리스틱 v3.1, duplicate guard / retry decorator)
+- Phase 14 (관성/조건부 preventDefault 실험 여부 결정)
 
 ---
 
-## 현재 진행 상태 (2025-09 업데이트)
+## 1. Phase 진행 현황 (요약 표)
 
-| Phase | 항목                      | 상태            | 비고                                                                                                                                                                                                                                                                                                                         |
-| ----- | ------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | 안정성 보호용 회귀 테스트 | ✅ GREEN완료    | 베이스라인 측정 완료                                                                                                                                                                                                                                                                                                         |
-| 2     | 가상 스크롤링 기본 커널   | ✅ GREEN완료    | useVirtualWindow 훅 구현 완료                                                                                                                                                                                                                                                                                                |
-| 3     | Container 계층 단순화     | ✅ GREEN완료    | GalleryRenderer 통합 완료                                                                                                                                                                                                                                                                                                    |
-| 4     | Shadow DOM 격리           | ✅ GREEN완료    | Shadow DOM 스타일 격리 완료                                                                                                                                                                                                                                                                                                  |
-| 5     | WebP/AVIF 자동 감지       | ✅ GREEN완료    | 브라우저 포맷 지원 감지 완료                                                                                                                                                                                                                                                                                                 |
-| 6     | 인접 프리로딩             | ✅ GREEN완료    | 다음/이전 미디어 프리로딩 완료                                                                                                                                                                                                                                                                                               |
-| 7     | 뷰포트 밖 언로딩          | ✅ GREEN완료    | 오프스크린 메모리 관리 완료                                                                                                                                                                                                                                                                                                  |
-| 8     | 통합 회귀 + 성능 가드     | ✅ GREEN완료    | CI 성능 예산 시스템 구현 완료                                                                                                                                                                                                                                                                                                |
-| 9     | 작은 이미지 스크롤 차단   | ✅ GREEN완료    | 이벤트 차단 & CSS/휠 처리 분리 완료                                                                                                                                                                                                                                                                                          |
-| 10    | 중복 초기화 방지          | ✅ GREEN완료    | 갤러리 재실행 안정성 확보 (single execution)                                                                                                                                                                                                                                                                                 |
-| 11    | 미디어 추출 신뢰성 강화   | ✅ 부분 GREEN++ | micro-retry, 캐시, 다중 BG 휴리스틱, reopen, stale-evict metrics, BG 품질(우선순위 orig>large>medium>small) + successResultCache LRU/TTL eviction 타입 분리 + StrategyChain DSL 1차 미들웨어 훅/metrics 스캐폴드 + background-image heuristic v2(저품질 토큰 패널티) (잔여: DSL 고도화/추가 middleware & 고급 heuristic 3차) |
+| Phase       | 주제                  | 상태         | 핵심 성과 / 잔여                                |
+| ----------- | --------------------- | ------------ | ----------------------------------------------- |
+| 1           | 회귀 베이스라인       | 완료         | 성능/행동 기준선 확립                           |
+| 2           | 가상 스크롤 커널      | 완료         | 1000개 <120ms, DOM 대폭 감소                    |
+| 3/3.1       | 컨테이너 단순화       | 완료         | DOM depth 7→4, selector 통일                    |
+| 4           | Shadow DOM 옵트인     | 완료         | 격리 주입, 테스트 한계 일부 존재                |
+| 5           | WebP/AVIF 포맷        | 완료         | 전송량 절감(WebP ~25%, AVIF ~50%)               |
+| 6           | 인접 프리로딩         | 완료         | 전환 지연 <50ms                                 |
+| 7           | 오프스크린 언로딩     | 완료         | 비디오 버퍼 해제 >90%                           |
+| 8           | 성능/회귀 가드        | 완료         | perf-budget, 통합 테스트                        |
+| 9           | 작은 이미지 휠 차단   | 완료         | 배경 스크롤 누수 0                              |
+| 9.4/14 일부 | 큰 이미지 자연 스크롤 | 완료(기본)   | scrollBy 적용, delta 누적                       |
+| 10          | 중복 초기화 방지      | 완료         | single execution, 재열기 안정                   |
+| 11          | 추출 신뢰성 강화      | 진행(HARDEN) | heuristic v3 완료 / v3.1 & duplicate guard 남음 |
+| 12          | 이벤트 재바인딩 탄력  | 예정         | Priority Auditor                                |
+| 13          | Core 책임 통합        | 예정         | GalleryController                               |
+| 14 (잔여)   | 관성 향상 옵션        | 선택         | 조건부 preventDefault 실험                      |
+| 15–20       | Modernization 세트    | 예정         | 스타일 Layer, A11y, StrategyChain 고도화 등     |
+
+---
+
+## 2. 완료된 Phase 핵심 요약
+
+Phase 1–3: 테스트 베이스라인 + 가상 스크롤 + DOM 평탄화(7→4) Phase 4: Shadow DOM
+옵트인 (스타일 중복/외부 충돌 감소) Phase 5: 포맷 전략 (Canvas 감지 + URL 변환)
+Phase 6: 인접 프리로딩 큐 (중복 제거, 메모리 인식) Phase 7: Intersection 기반
+언로딩 (비디오/이미지 메모리 절감) Phase 8: 성능 버짓 + 회귀 가드 체계화 Phase 9
+& 9.4(14 선행): 작은 이미지 네비/배경 차단 + 큰 이미지 자연 휠 스크롤 Phase 10:
+ensureSingleExecution / Service 중복 차단 / 재열기 100%
+
+---
+
+## 3. Phase 11 (진행) – Media Extraction HARDEN
+
+이미 달성:
+
+- Micro-retry (rAF 대기) & lazy data-src 허용
+- background-image 다중 URL 파싱 + 품질 휴리스틱 v3 (면적 & 명명 패널티)
+- MediaExtractionCache (LRU+TTL) 분리 메트릭(hit/miss/lruEvictions/ttlEvictions)
+- Success result cache + eviction 타입 분리
+- StrategyChain DSL v2 (short-circuit middleware) & 중앙 metrics(avg/max)
+- Orchestrator metricsVersion / hit ratios / duration 집계
+
+잔여(HARDEN):
+
+- Heuristic v3.1 (aspect ratio + DPR + 추가 패턴)
+- Duplicate guard + retry decorator 정식화 (독립 RED→GREEN)
+- Cache 스트레스 (TTL 경계 & purge 레이스)
+
+DoD 요약:
+
+1. heuristic v3.1 GREEN
+2. duplicate guard / retry decorator GREEN + metrics 반영
+3. 캐시 경계 스트레스 테스트 모두 통과
+
+---
+
+## 4. Phase 14 (휠 UX) – 현 상태 & 선택 과제
+
+완료 사항:
+
+- 큰 이미지/리스트: scrollBy 통한 자연 스크롤 (fractional delta 누적)
+- 작은 이미지: 네비게이션 전용, 배경 누수 0
+- 성능: 핸들 평균 <1ms, 100+ 이벤트 스트레스 안정
+
+선택 과제:
+
+- 관성 자연감 개선 (조건부 preventDefault 해제 A/B)
+
+---
+
+## 5. Modernization (Phases 12–20) 간략 로드맵
+
+| Phase    | 요약 목표                       | KPI 스냅샷                  |
+| -------- | ------------------------------- | --------------------------- |
+| 12       | Event Priority Auditor          | 재바인딩 실패 0             |
+| 13       | GalleryController 통합          | Public API ≤ 25 메서드      |
+| 14(추가) | Scroll inertial 개선            | 사용자 피드백 긍정          |
+| 15       | CSS Layer & Container Query     | 주입 1회 / CLS 0            |
+| 16       | A11y (Focus trap, roving tab)   | Lighthouse A11y ≥ 90        |
+| 17       | Extraction StrategyChain 고도화 | 재열기 지연 <5ms            |
+| 18       | State/Metrics 단일 Store        | Store 단위 테스트 100%      |
+| 19       | 코드 스플리팅                   | 초기 gallery 코드 -15% gzip |
+| 20       | DX & 문서/ADR                   | Onboarding 파일 축소        |
+
+---
+
+## 6. 현재 KPI 스냅샷
+
+| 지표                  | 현재      | 목표             | 상태 |
+| --------------------- | --------- | ---------------- | ---- |
+| 초기 렌더(1000)       | <120ms    | <120ms           | ✅   |
+| DOM depth             | 4         | ≤4               | ✅   |
+| 작은 이미지 배경 누수 | 0         | 0                | ✅   |
+| 재열기 실패율         | ≈0        | 0                | ✅   |
+| Wheel UX 자연감       | 기본 관성 | 자연 (강화 선택) | 🔄   |
+| 추출 휴리스틱 v3.1    | 미구현    | 구현             | 🔄   |
+
+---
+
+## 7. 즉시 Next Actions
+
+1. Phase 11: heuristic v3.1 → RED 테스트 설계 & GREEN
+2. Phase 11: duplicate guard / retry decorator → RED → GREEN
+3. Cache race/TTL 스트레스 → 안정화 (metrics 검증)
+4. (선택) Phase 14 inertial 실험 → 결과 기반 옵션 확정
+5. Phase 13 착수 전 API 표면 측정 스냅샷 생성
+
+---
+
+## 8. 테스트/품질 정책 (압축)
+
+- TDD: RED → GREEN → REFACTOR, RED 파일명 사용 안 함 (설명 문자열 활용)
+- Strict TS, 외부 라이브러리 vendor getter 사용
+- 스타일: 네임스페이스(xeg-), Shadow DOM 옵션, 중복 주입 방지
+- Metrics: Orchestrator + Cache 중앙화, versioned schema
+
+---
+
+## 9. 리스크 & 현재 대응 (요약)
+
+| 리스크                    | 대응                                             |
+| ------------------------- | ------------------------------------------------ |
+| 추출 휴리스틱 과적합      | v3.1 DPR/AR 추가 시 점수 함수 분리 & 테스트 고립 |
+| duplicate guard 과도 차단 | TTL + session reset + 성공 캐시 fallback         |
+| wheel inertial 실험 회귀  | A/B flag + 성능/UX 측정 로그                     |
+| Event 우선순위 상실       | Phase 12 Auditor (fingerprint diff) 예정         |
+| 스타일 중복               | single injection guard + idempotent init         |
+
+---
+
+## 10. 용어 / 메트릭 짧은 표
+
+| 키                          | 의미                                          |
+| --------------------------- | --------------------------------------------- |
+| chainDurationAvgMs / MaxMs  | StrategyChain 실행 시간 집계                  |
+| extractionCache\_\*         | LRU/TTL 캐시 메트릭 (hit/miss/evictions/size) |
+| successResultCacheEvictions | 성공 결과 캐시 TTL/LRU 제거 수                |
+| heuristicScore              | background-image 품질 점수 (면적+토큰 패널티) |
+
+---
+
+## 11. 완료 정의(현행)
+
+1. Phase 11 DoD 충족 & KPI 유지
+2. 모든 성능/회귀 테스트 GREEN (perf-budget 통과)
+3. 재실행/중복 초기화/스타일/이벤트 안전성 회귀 없음
+4. 문서 요약(본 파일) 최신 상태 반영
+
+---
+
+## 12. 변경 이력(요약판)
+
+- 2025-09-02: 장문 계획 → 간략판 전환, Phase 11 HARDEN 상태 반영
+
+| Phase | 항목                         | 상태         | 비고                                                                                                                                                                                                                                                                          |
+| ----- | ---------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | 안정성 보호용 회귀 테스트    | ✅ GREEN완료 | 베이스라인 측정 완료                                                                                                                                                                                                                                                          |
+| 2     | 가상 스크롤링 기본 커널      | ✅ GREEN완료 | useVirtualWindow 훅 구현 완료                                                                                                                                                                                                                                                 |
+| 3     | Container 계층 단순화        | ✅ GREEN완료 | GalleryRenderer 통합 완료 (CH1)                                                                                                                                                                                                                                               |
+| 3.1   | viewRoot+itemsList 통합(CH2) | ✅ GREEN완료 | depth 5→4 달성 (#xeg-gallery-root > gallery > item). CH1 잔존 테스트 호환성 유지(4 또는 5 허용), Phase3 baseline 테스트는 CH2 구조 감지 시 skip. EventManager 파괴 후 경고 소음 억제 플래그(`__XEG_SILENCE_EVENT_MANAGER_WARN`) 도입. 중복 placeholder 테스트 파일 제거 정리. |
+
+> 2025-09-02 Selector Decision (Option 2): `.xeg-gallery-renderer` 래퍼 클래스
+> 제거 및 모든 테스트/구현 기준을 `#xeg-gallery-root` id 단일 셀렉터로 통일.
+> 이유: container-depth-after-ch1 vs shadow-dom-isolation 테스트 간 selector
+> 충돌 해소 & CHUS(CH Container Simplification) 후속 단계 정렬. Shadow DOM 경로
+> 역시 동일 id 기준 유지.
+
+> 2025-09-02 추가: jsdom 외부 이미지 404 로그 노이즈 제거를 위해 `test/setup.ts`
+> 에 Image 클래스 및 `HTMLImageElement.prototype.src` setter mock을 주입하여
+> 네트워크 요청 차단 & onload 비동기 트리거. 일부 레거시 placeholder 테스트 실제
+> 파일 삭제는 도구 제약으로 제외 글롭(`**/container-depth-after-ch1.*.test.ts`)
+> 처리 후 향후 수동 삭제 예정. | 4 | Shadow DOM 격리 | ✅ GREEN완료 | Shadow DOM
+> 스타일 격리 완료 | | 5 | WebP/AVIF 자동 감지 | ✅ GREEN완료 | 브라우저 포맷
+> 지원 감지 완료 | | 6 | 인접 프리로딩 | ✅ GREEN완료 | 다음/이전 미디어
+> 프리로딩 완료 | | 7 | 뷰포트 밖 언로딩 | ✅ GREEN완료 | 오프스크린 메모리 관리
+> 완료 | | 8 | 통합 회귀 + 성능 가드 | ✅ GREEN완료 | CI 성능 예산 시스템 구현
+> 완료 | | 9 | 작은 이미지 스크롤 차단 | ✅ GREEN완료 | 이벤트 차단 & CSS/휠
+> 처리 분리 완료 | | 10 | 중복 초기화 방지 | ✅ GREEN완료 | 갤러리 재실행 안정성
+> 확보 (single execution) | | 11 | 미디어 추출 신뢰성 강화 | ✅ 부분 GREEN+++ |
+> micro-retry, 캐시, 다중 BG 휴리스틱, reopen, stale-evict metrics, BG
+> 품질(우선순위 orig>large>medium>small) + successResultCache LRU/TTL eviction
+> 타입 분리 + StrategyChain DSL 1차 미들웨어 훅/metrics 스캐폴드 +
+> background-image heuristic v2(저품질 토큰 패널티) (잔여: DSL 고도화/추가
+> middleware & 고급 heuristic 3차) |
 
 duration 중앙 통합 및 legacy 메타 필드 제거) 완료 / 남은 HARDEN: StrategyChain
-**현재 위치**: **Phase 11 부분 GREEN++ - 핵심 추출 안정화(micro-retry, 캐시,
+**현재 위치**: **Phase 11 부분 GREEN+++ - 핵심 추출 안정화(micro-retry, 캐시,
 background-image 다중 URL/품질, lazy data-src, reopen 변이 DOM, LRU/TTL 분리
 메트릭, BG 품질 휴리스틱, successResultCache eviction 타입 분리, StrategyChain
 duration 중앙 통합 및 legacy 메타 필드 제거, StrategyChain DSL 1차(builder +
 middleware before/after + custom metrics), background-image heuristic v2 (저품질
 토큰 패널티: small|thumb|tiny|crop|fit|medium -15점) 완료 / 남은 HARDEN: DSL
 미들웨어 확장(duplicate guard, retry decorator) & BG heuristic 3차(치수 추론)**
+
+#### 2025-09-02 Phase 11 HARDEN 추가
+
+- Advanced background-image heuristic HARDEN 테스트 추가:
+  - 동점(score) → 픽셀 면적 tie-break (800x600 vs 1600x1200)
+  - penalty(small) 적용 초대형 URL보다 score 높은 large 선택 우선 순위 검증
+- Orchestrator.getMetrics() ↔ MediaExtractionCache 브리지 검증:
+  extractionCache_ttlEvictions TTL 만료 반영 확인
+- 추가 브리지: extractionCache_lruEvictions LRU 제거 반영 테스트 추가
+- orig vs orig 해상도 동점 tie-break 픽셀 면적 검증
+- Remaining: heuristic 3차 (추가 해상도 패턴, perceptual dimension 추론)
+
+#### 2025-09-02 Phase 11 HARDEN 확장 (업데이트)
+
+- ✅ StrategyChain DSL v2: cache short-circuit middleware
+  (`{ skip:true, shortCircuit:true, result }`)
+- ✅ MediaExtractionCache TTL 경계: 직전 hit / 직후 miss(+ttlEvictions) with
+  purgeIntervalMs=0
+- ✅ Background-image heuristic v3: w/h query param 면적 tie-break + 불완전 치수
+  패턴 패널티
+- ⏭ Next HARDEN targets:
+  1. StrategyChain duplicate guard / retry decorator 정식화 및 독립 RED → GREEN
+     사이클
+  2. background-image heuristic v3.1: perceptual (aspect ratio, DPR) + 추가
+     패턴(`_(\\d+)x(\\d+)`) 처리
+  3. Cache stress: 대량 TTL 경계 & purge interval race 조건 안정성
+
+#### 2025-09-02 Selector Consolidation (Option 2)
+
+- 결정: `.xeg-gallery-renderer` 제거, `#xeg-gallery-root` 로 테스트 통합
+- 적용 테스트: `test/integration/gallery/shadow-dom-isolation.spec.ts` (selector
+  교체 및 주석 추가)
+- 이유: wrapper 클래스 존재 여부를 둘러싼 상충 테스트 제거, DOM depth 단순화
+  유지
+- 후속: 잔존 문서/코드 내 `.xeg-gallery-renderer` 언급은 CHUS 역사 섹션으로 한정
 
 ### 테스트 네이밍 정책 업데이트 (2025-09)
 
@@ -62,12 +282,12 @@ middleware before/after + custom metrics), background-image heuristic v2 (저품
 
 ### 남은 HARDEN 잔여 작업 (우선순위 업데이트)
 
-1. StrategyChain DSL 고도화: duplicate guard / retry decorator / cache
-   middleware 체인화 (현재 1차 before/after 훅 + metrics 만 구현)
-2. background-image heuristic 3차: perceptual dimension 추정 또는 추가 해상도
-   패턴(예: `_(\d+)x(\d+)` 다중 후보 비교) + progressive enhancement
-3. Orchestrator centralMetrics 확장 재평가: cache purge/eviction 추가 요약 필드
-   투영 여부
+1. StrategyChain DSL v2 고도화: duplicate guard / retry decorator (short-circuit
+   완료)
+2. background-image heuristic v3.1: perceptual dimension 추정 + 추가 해상도 패턴
+   & DPR 고려
+3. Orchestrator centralMetrics 확장 재평가: purge/eviction 추가 요약 필드 투영
+   여부
 
 #### ✅ 완료된 항목 (2025-09-02 업데이트)
 
@@ -147,17 +367,10 @@ middleware before/after + custom metrics), background-image heuristic v2 (저품
 - 테스트:
   - `test/refactoring/gallery/dom-depth-reduction.spec.ts`
 
-### Phase 4: Shadow DOM 옵트인
+### Phase 4: Shadow DOM 옵트인 (요약)
 
-- RED: flag ON 시 루트 shadowRoot 존재 + 외부 임의 클래스 충돌 CSS (fixture)
-  미적용 검증
-- GREEN: `GalleryRenderer` 컨테이너 생성 시 옵션적으로
-  `attachShadow({mode:'open'})` + 스타일 단일 주입(`namespaced-styles`
-  재사용/또는 isolated bundle)
-- REFACTOR: 스타일 캐싱 및 재마운트 교체 시 누수 확인
-- 테스트:
-  - `test/integration/gallery/shadow-dom-isolation.spec.ts`
-  - `test/unit/shared/style-injection-dedup.test.ts`
+세부 테스트/옵션 설명은 HISTORY 요약으로 이관 (옵트인 격리 + 스타일 단일 주입
+완료).
 
 ### Phase 5: 이미지 포맷(WebP/AVIF) 확장 ✅
 
@@ -176,46 +389,17 @@ middleware before/after + custom metrics), background-image heuristic v2 (저품
   - `test/unit/media/format-selection.test.ts` (18 tests) ✅
 - **결과**: WebP 25% / AVIF 50% 대역폭 절약 목표 달성, 레거시 브라우저 안전 폴백
 
-### Phase 6: 프리로딩(전후 아이템)
+### Phase 6: 인접 프리로딩 (요약)
 
-- ✅ **GREEN 완료**: `useAdjacentPreload` 훅 구현 완료
-- **주요 기능**:
-  - 현재 인덱스 기준 ±distance 범위 스마트 프리로딩
-  - 전역 중복 방지: `GlobalPreloadManager` Set/Map 관리
-  - 비디오 메타데이터 프리로딩: `preload='metadata'` 전략
-  - 메모리 인식 프리로딩: `MemoryAwarePreloader` 임계값 관리
-  - 진행률 추적 및 Signal 기반 상태 관리
-- ✅ REFACTOR: 프리로드 큐 & 중복 제거 전역 관리자 분리
-- ✅ 테스트:
-  - `test/refactoring/phase6-adjacent-preload.test.ts` (8 tests) ✅
-- **결과**: 인접 미디어 사전 로딩으로 네비게이션 지연 최소화, 메모리 효율적 관리
+전역 중복 제거 + 메모리 인식 큐 / 상세 테스트 히스토리 제거.
 
-### Phase 7: 뷰포트 밖 언로딩 (메모리 관리)
+### Phase 7: 오프스크린 언로딩 (요약)
 
-- ✅ **GREEN 완료**: 오프스크린 메모리 관리 시스템 구축 완료
-- **주요 기능**:
-  - `useOffscreenMemoryManager` 훅: Intersection Observer 기반 뷰포트 감지
-  - 비디오 언로딩: `pause() → src='' → load()` 시퀀스로 완전한 버퍼 해제
-  - 이미지 언로딩: 단순 언마운트 + Blob URL 해제
-  - `MediaMemoryManager`: 통합 메모리 관리 정책 및 상태 추적
-  - `ViewportDetector`: 뷰포트 감지 및 스크롤 idle 감지
-  - 성능 모니터링: 메모리 사용량 추정 및 해제량 추적
-- ✅ REFACTOR: 유틸리티 모듈 분리 - `video-unload.ts`, `image-unload.ts`,
-  `viewport-detection.ts`
-- ✅ 테스트:
-  - `test/performance/gallery/offscreen-unload.spec.ts` (11 tests) ✅
-  - `test/unit/gallery/video-unload-cycle.test.ts` (9 tests) ✅
-- **결과**: 오프스크린 비디오 언로딩으로 메모리 효율성 대폭 향상, 재진입 시
-  안전한 상태 복원
+IO 기반 비디오/이미지 언로딩 + >90% 버퍼 해제.
 
-### Phase 8: 통합 회귀 + 성능 가드
+### Phase 8: 통합 회귀 + 성능 가드 (요약)
 
-- Lighthouse/가상 측정 대체: 커스텀 perf harness (`performance.now()` 구간 래핑)
-- RED: 성능 한계 초과 조건(렌더 시간, DOM 노드 수) 실패 케이스 추가
-- GREEN: 최종 최적화 후 통과
-- REFACTOR: CI에서 `--perf-budget.json` 로 한계 정의
-- 테스트:
-  - `test/performance/gallery/perf-budget.spec.ts`
+CI 성능 예산 시스템 구축 (`perf-budget.json`).
 
 ---
 
@@ -346,18 +530,182 @@ refactor(gallery-virtual): extract range calc util & add edge tests
 
 ## 12. 진행 현황 (Progress Log)
 
-| Phase | 항목                               | 상태                                                   | 비고                                                                                                                             |
-| ----- | ---------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Baseline 성능/행동 테스트 추가     | ✅ GREEN 완료                                          | `virtualization-baseline`, `close-background-click` 작성 완료                                                                    |
-| 2     | Virtual Window 훅 설계 & RED/GREEN | ✅ GREEN 완료                                          | 훅 구현, VerticalGalleryView 통합, flag on/off 테스트 통과                                                                       |
-| 3     | Container 계층 단순화              | ✅ GREEN 완료 + REFACTOR 완료                          | `dom-depth-reduction.spec.ts` 통과, content 래퍼 제거로 DOM depth 7→4 달성, deprecated 클래스 alias 추가                         |
-| 4     | Shadow DOM 격리                    | ✅ **GREEN 완료** (핵심 기능 완성, 일부 제한사항 있음) | shadowRoot 생성, useShadowDOM 옵션, 스타일 주입 기능 완성. **제한**: 완전한 외부 스타일 차단과 내부 스타일 격리는 향후 개선 예정 |
-| 5     | 포맷 전략(WebP/AVIF)               | ✅ **GREEN 완료**                                      | 이미지 포맷 최적화 완료: Canvas 기반 감지, URL 변환, 배치 처리, 대역폭 절약 추정                                                 |
-| 6     | 인접 프리로딩                      | ✅ **GREEN 완료**                                      | 인접 프리로딩 완료: useAdjacentPreload 훅, 전역 중복 방지, 비디오 메타데이터 지원, 메모리 인식 관리                              |
-| 7     | 오프스크린 언로딩                  | ✅ **GREEN 완료**                                      | 메모리 관리 완료: useOffscreenMemoryManager 훅, 비디오/이미지 언로딩, 뷰포트 감지, 메모리 추적                                   |
-| 8     | 성능 버짓 테스트                   | ✅ GREEN 완료                                          | perf-budget 통합 테스트 & 성능 예산 시스템 구축 완료                                                                             |
-| 9     | 작은 이미지 스크롤 차단            | ✅ GREEN 완료                                          | 이벤트 차단 강화, CSS 클래스 동적 적용, 성능 최적화 훅 구현 완료                                                                 |
-| 10    | 중복 초기화 방지                   | 🚨 **긴급 진행 중**                                    | 갤러리 재실행 실패 및 콘솔 로그 중복 경고 해결 작업                                                                              |
+| Phase | 항목 | 상태 | 비고 |
+
+---
+
+## 13. 갤러리 닫힘 후 반투명 오버레이 잔존 이슈 (2025-09-02 분석 & 계획)
+
+### 13.1 증상 (Symptom)
+
+- 갤러리를 닫은 뒤(`closeGallery()` 호출, ESC, 배경 클릭 등) 화면 상단에 어두운
+  반투명층이 그대로 남아 트위터(X.com) 본문 인터랙션(클릭/스크롤)을 차단하거나
+  시각적으로 가림.
+- 콘솔 로그 상 갤러리 상태는 `galleryState.isOpen = false` 로 정상 종료됨.
+- 재오픈은 가능하나 UX 저하.
+
+### 13.2 재현 절차 (Repro Steps)
+
+1. 타임라인에서 이미지를 클릭 → 갤러리 오픈.
+2. ESC 또는 닫기 버튼 / 배경 클릭으로 갤러리 종료.
+3. 화면에 어두운 배경(`rgba(0,0,0,0.9~0.95)`)이 계속 남으며 트윗 요소 클릭이
+   불가하거나 지연.
+
+### 13.3 관찰된 DOM 상태
+
+- `#xeg-gallery-root` 엘리먼트가 DOM 에 남아 있고 인라인 스타일:
+  - `background: rgba(0, 0, 0, 0.9)` (또는 0.95)
+  - `pointer-events: auto`
+  - `position: fixed; top:0; left:0; width:100%; height:100%` 등 오버레이 속성
+    유지.
+- 내부 Preact 렌더링된 갤러리 콘텐츠는 언마운트되었으나 루트 컨테이너 자체는
+  제거/리셋되지 않음.
+- `design-tokens.css` 에 정의된 기본
+  `#xeg-gallery-root { pointer-events: none; background: (없음) }` 와 달리
+  인라인 스타일이 우선 적용되어 계속 상호작용을 가로막음.
+
+### 13.4 근본 원인 (Root Cause)
+
+| 요소                       | 설명                                                                                                                                                                          |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 구조적 변화 (CH1 / CH2)    | Phase 3/CH1에서 오버레이/레이아웃 책임을 별도 wrapper(.xeg-gallery-renderer) → `#xeg-gallery-root` 로 승격. 이후 갤러리 닫힘 시 wrapper 제거 로직이 사라짐.                   |
+| `ensureGalleryContainer()` | 갤러리 열릴 때만 존재/미존재 검사 후 (없을 경우) 인라인 스타일(overlay + pointerEvents:auto) 적용. 이미 존재하면 스타일 재적용 안 함.                                         |
+| 종료 경로                  | `GalleryApp.closeGallery()`는 signal 상태만 false 로 전환 후 Video 복원, EventManager soft reset. `GalleryRenderer.cleanupGallery()` 는 root 자체 제거하지 않음(재사용 전략). |
+| 제거 조건 편차             | `GalleryRenderer` 에서 자동 생성(`autoCreatedRoot=true`) 된 경우만 제거. 일반 경로(앱이 미리 root 보장)는 해당 안 됨.                                                         |
+| 스타일 역전                | 기본 CSS 는 pointer-events:none 으로 안전하지만 인라인이 이를 덮어쓰며 닫힘 후에도 활성 상태 유지.                                                                            |
+
+### 13.5 영향 (Impact)
+
+- 사용 불가(z-index 9999+ overlay) → 본문 상호작용 차단 (기능적 장애).
+- 시각적 잔상 (UX 품질 저하).
+- 접근성 악화 (포커스 이동 제한 가능성).
+- 다중 오픈/닫힘 사이클 누적 시 불필요한 repaint 영역 유지로 경미한 성능 비용.
+
+### 13.6 해결 옵션 비교 (Options)
+
+| 옵션 | 설명                                                                                       | 장점                              | 단점                                  | 복잡도 | 재오픈 성능      | 회귀 위험                    |
+| ---- | ------------------------------------------------------------------------------------------ | --------------------------------- | ------------------------------------- | ------ | ---------------- | ---------------------------- |
+| A    | 닫힐 때 root 엘리먼트 완전 제거                                                            | 확실한 제거, 직관                 | 재생성 비용(appendChild)              | 낮음   | 경미한 추가 비용 | 낮음                         |
+| B    | root 유지, 닫힘 시 인라인 스타일 비활성(배경/포인터 제거), 열릴 때 항상 활성 스타일 재적용 | 재사용으로 재오픈 빠름, 변화 최소 | 스타일 드리프트 시 재적용 누락 가능성 | 낮음   | 우수             | 중 (재적용 누락 테스트 필요) |
+| C    | 별도 overlay 자식 div 복원 (pre-CH1 구조 일부 재도입)                                      | 책임 분리 명확                    | 구조 복잡도 증가, 기존 단순화 역행    | 중     | 보통             | 중~높음                      |
+| D    | CSS 클래스/데이터 속성 토글(`data-active`) + CSS 로만 오버레이 표현                        | 선언적, 테스트 용이               | 기존 인라인 제거/마이그레이션 필요    | 중     | 우수             | 중                           |
+| E    | Portal/Shadow DOM wrapper 재분리                                                           | 스타일 격리 추가                  | 과도한 구조 변경                      | 높음   | 보통             | 높음                         |
+
+### 13.7 선택된 전략: B (+ 부분 D 요소)
+
+- 근거: 최소 침습 / 현재 CH1 단순화 유지 / 재사용 성능 유지.
+- 개선 확장: 활성/비활성 상태를 데이터 속성(`data-xeg-active="true|false"`)으로
+  표시하여 테스트 가시성 ↑ (D의 가시성 장점 차용). 인라인 스타일은 활성화 시
+  적용, 비활성화 시 core 속성만 남기고 배경, padding, pointerEvents 제거(or
+  투명) 처리.
+
+### 13.8 구현 개요
+
+1. 유틸 추가: `src/features/gallery/core/galleryRootStyles.ts`
+   - `activateGalleryRoot(root: HTMLElement)` : overlay 스타일 +
+     `data-xeg-active="true"` 적용.
+   - `deactivateGalleryRoot(root: HTMLElement)` : 배경
+     제거(`background: 'transparent'`), `pointerEvents:'none'`, padding 최소화,
+     `data-xeg-active="false"`.
+2. `GalleryApp.ensureGalleryContainer()` 수정: root 존재해도 항상
+   `activateGalleryRoot` 호출 (스타일 드리프트 방지 idempotent).
+3. `GalleryApp.handleGalleryClose()` 혹은 `closeGallery()` 경로에서 state false
+   이후 `deactivateGalleryRoot` 호출 (존재 시).
+4. `GalleryRenderer.createContainer()` 의 중복 인라인 스타일 설정 로직 → util
+   재사용 (DRY).
+5. 안전장치: close 직후 빠른 재오픈 race 대비 Promise microtask 뒤에서도 활성화
+   보장 (open 시 다시 적용하기 때문에 자연 복구, 별도 딜레이 불필요).
+6. Shadow DOM 사용 시에도 동일(컨테이너 동일 id) 동작.
+
+### 13.9 TDD 계획 (RED → GREEN → REFACTOR)
+
+| 단계 | 테스트 목적               | RED 시나리오                                 | GREEN 조치                           | REFACTOR         |
+| ---- | ------------------------- | -------------------------------------------- | ------------------------------------ | ---------------- |
+| 1    | 닫힘 후 overlay 차단 제거 | close 후 root `pointer-events:auto` → 실패   | deactivate 적용                      | 스타일 util 분리 |
+| 2    | 재오픈 스타일 재적용      | 닫힘→열기 후 배경/포인터 복원 안 됨 → 실패   | ensureGalleryContainer 활성화 재적용 | 공용 상수화      |
+| 3    | 연속 빠른 토글 안정성     | open/close 5회 후 누락/누수 검사             | idempotent util                      | 로깅 최소화      |
+| 4    | 데이터 속성 상태 노출     | `data-xeg-active` 미변경 → 실패              | 속성 토글 구현                       | 타입 안전 강화   |
+| 5    | 하위 요소 이벤트 패스스루 | 닫힘 후 임의 본문 요소 click mock 호출 안 됨 | pointer-events none                  | e2e helper 추출  |
+
+테스트 파일 (신규):
+
+```
+test/behavioral/gallery/gallery-root-overlay-close.spec.ts
+  - open → assert active styles
+  - close → assert inactive styles & simulated click passes through
+  - reopen → styles restored
+
+test/integration/gallery/gallery-multi-toggle.spec.ts
+  - loop open/close N times (N=5~10) → no residual inline style fields except expected
+```
+
+### 13.10 성공 기준 (Success Criteria)
+
+- 닫힘 직후 `#xeg-gallery-root`:
+  - `data-xeg-active="false"`
+  - `pointer-events: none` (inline 또는 미존재로 CSS fallback none)
+  - `background` 없음 또는 `transparent`
+  - 문서 기본 스크롤/클릭 정상.
+- 재오픈 시 위 값 반대로 복구 (`data-xeg-active="true"`, pointer-events:auto,
+  배경 반투명).
+- 기존 성능/회귀 테스트 영향 없음.
+
+### 13.11 Edge Cases & 완화
+
+| 케이스                              | 리스크                | 완화                                              |
+| ----------------------------------- | --------------------- | ------------------------------------------------- |
+| GalleryRenderer 자체 호출 (앱 없이) | util 미사용 시 불일치 | createContainer에서 util 사용 강제                |
+| autoCreatedRoot 제거 후 reopen      | 스타일 잔존 없음      | ensure 메서드가 항상 활성화 스타일 재적용         |
+| 빠른 ESC 스팸                       | race 로 상태 뒤섞임   | 상태 플래그(getState) 기반 no-op, idempotent util |
+| 테스트 환경(jsdom) 스타일 diff      | 없는 CSS 계산         | inline 값만 단정(contains) 검사                   |
+
+### 13.12 추적 & 메트릭 (선택적)
+
+- (선택) root 활성/비활성 전환 카운터 debug 로그 → 과다 토글 감지.
+- (선택) 재오픈 평균 시간(perf mark) 비교: 변경 전/후 유의미 성능 저하 없음을
+  확인.
+
+### 13.13 커밋 예시
+
+```
+test(gallery-close): add failing test for overlay persistence (RED)
+feat(gallery-root): add galleryRootStyles util & deactivate on close (GREEN)
+refactor(gallery-root): unify root style activation across app & renderer
+```
+
+### 13.14 롤백 전략
+
+- 문제가 발생하면 `deactivateGalleryRoot` 호출을 feature flag
+  (`FEATURE_GALLERY_ROOT_DEACTIVATE`) 뒤에 잠시 숨기고 기본 동작을 기존 방식으로
+  회귀 (Flag 기본 ON → 긴급 시 OFF).
+
+---
+
+// End of Section 13
+
+| ----- | ---------------------------------- |
+| ----- | ---------------------------------- |
+
+---
+
+| | 1 | Baseline 성능/행동 테스트 추가 | ✅ GREEN 완료 |
+`virtualization-baseline`, `close-background-click` 작성 완료 | | 2 | Virtual
+Window 훅 설계 & RED/GREEN | ✅ GREEN 완료 | 훅 구현, VerticalGalleryView 통합,
+flag on/off 테스트 통과 | | 3 | Container 계층 단순화 | ✅ GREEN 완료 + REFACTOR
+완료 | `dom-depth-reduction.spec.ts` 통과, content 래퍼 제거로 DOM depth 7→4
+달성, deprecated 클래스 alias 추가 | | 4 | Shadow DOM 격리 | ✅ **GREEN 완료**
+(핵심 기능 완성, 일부 제한사항 있음) | shadowRoot 생성, useShadowDOM 옵션,
+스타일 주입 기능 완성. **제한**: 완전한 외부 스타일 차단과 내부 스타일 격리는
+향후 개선 예정 | | 5 | 포맷 전략(WebP/AVIF) | ✅ **GREEN 완료** | 이미지 포맷
+최적화 완료: Canvas 기반 감지, URL 변환, 배치 처리, 대역폭 절약 추정 | | 6 |
+인접 프리로딩 | ✅ **GREEN 완료** | 인접 프리로딩 완료: useAdjacentPreload 훅,
+전역 중복 방지, 비디오 메타데이터 지원, 메모리 인식 관리 | | 7 | 오프스크린
+언로딩 | ✅ **GREEN 완료** | 메모리 관리 완료: useOffscreenMemoryManager 훅,
+비디오/이미지 언로딩, 뷰포트 감지, 메모리 추적 | | 8 | 성능 버짓 테스트 | ✅
+GREEN 완료 | perf-budget 통합 테스트 & 성능 예산 시스템 구축 완료 | | 9 | 작은
+이미지 스크롤 차단 | ✅ GREEN 완료 | 이벤트 차단 강화, CSS 클래스 동적 적용,
+성능 최적화 훅 구현 완료 | | 10 | 중복 초기화 방지 | 🚨 **긴급 진행 중** |
+갤러리 재실행 실패 및 콘솔 로그 중복 경고 해결 작업 |
 
 ### ✅ Phase 4 완료 요약
 
@@ -845,163 +1193,119 @@ test/performance/userscript-reexecution.test.ts            # 스크립트 재실
 
 ---
 
-## 추가 개선 계획: 작은 이미지 스크롤 차단 문제 해결
+## Phase 9 (요약) & 신규 9.4 확장: 휠 스크롤 개선
 
-### 문제 정의
+Phase 9 기존 목표(작은 이미지 휠 배경 누수 차단)는 완료되었습니다. 구현은 다음
+핵심 포인트로 요약됩니다:
 
-**현상**: 갤러리에서 이미지 높이가 브라우저 윈도우 높이보다 작을 때, wheel
-이벤트가 배경의 트위터 페이지로 전파되어 의도하지 않은 스크롤이 발생
+- 작은 이미지에서 wheel → 배경 페이지 스크롤 0 / 내부 네비게이션 전용 처리
+- 이벤트 처리: 문서 capture 단계에서 `preventDefault + stopImmediatePropagation`
+- 분리된 처리 함수: `handleSmallImageWheel` / `handleLargeImageWheel`
+- CSS + 클래스 조합(`smallImageMode`)으로 스크롤 영역 확보 및 사용자 체감 無
 
-**근본 원인 분석**:
+추가로, 큰(스크롤 가능한) 이미지/여러 미디어 목록 상황에서 실제 컨테이너 내부
+스크롤(overflowY:auto)이 OS 기본 관성/가속을 활용해 자연스럽게 동작하도록 휠
+차단 범위를 축소/재설계하는 **Phase 9.4** 를 도입합니다.
 
-1. **CSS 클래스 적용 누락**: `EnhancedGalleryScroll.module.css`에
-   `smallImageMode` 해결책이 정의되어 있으나, JavaScript에서 동적 적용 로직 누락
-2. **스크롤 영역 부족**: 작은 이미지일 때 실제 스크롤 가능한 콘텐츠가 없어서
-   wheel 이벤트가 상위 요소로 버블링
-3. **이벤트 차단 불완전**: `preventDefault()`/`stopPropagation()` 호출하지만
-   일부 경우 완전히 차단되지 않음
+### 9.4 문제 재정의
 
-### Phase 9: 작은 이미지 스크롤 차단 강화
+현재 모든 휠 이벤트를 전역(capture)에서 차단 → 큰 이미지 목록에서도 사용자
+기대(휠로 자연 스크롤) 대신 _수동 네비게이션/고정 상태_ 로 제한됨.
 
-#### 목표 KPI
+### 9.4 목표
 
-- 작은 이미지에서 wheel 이벤트 차단율: 100%
-- 배경 페이지 스크롤 발생률: 0%
-- 이미지 네비게이션 반응성: < 16ms
-- 구현 복잡도: 최소 (기존 CSS 활용)
+| 항목                             | 목표                                      |
+| -------------------------------- | ----------------------------------------- |
+| 큰 이미지/목록 휠 스크롤         | 자연 스크롤 가능 (기본 스크롤바 구동)     |
+| 작은 이미지(뷰포트보다 작음) 휠  | 기존처럼 배경 차단 + 이전/다음 네비게이션 |
+| 배경 트위터 타임라인 스크롤 누수 | 0                                         |
+| 추가 지연/성능 영향              | < 1ms per wheel 핸들                      |
 
-#### Step 9.1: 문제 재현 테스트 (RED)
+### 9.4 구현 옵션 비교
 
-```typescript
-// test/refactoring/small-image-scroll-prevention.test.ts
-describe('작은 이미지 스크롤 차단 리팩토링', () => {
-  it('[RED] 작은 이미지에서 wheel 이벤트가 배경으로 전파됨', () => {
-    // 작은 이미지 mock (500x300, viewport: 1920x1080)
-    // wheel 이벤트 시뮬레이션
-    // 배경 스크롤 발생 검증 (현재는 실패)
-  });
+| 옵션 | 개요                                                                                  | 장점                           | 단점                                                        | 리스크 | 선택 |
+| ---- | ------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------- | ------ | ---- |
+| A    | 전역 wheel 차단 유지 + 큰 이미지일 때 container.scrollBy(delta) 수동 적용             | 배경 누수 완전 차단, 구현 단순 | 인위적 스크롤(브라우저 기본 inertial 세분화 일부 손실 가능) | 낮음   | ✅   |
+| B    | 전역 wheel 리스너 제거, 컨테이너에만 listener 부착 (작은 이미지만 차단)               | 브라우저 기본 물리감 100%      | 배경 body 스크롤 레이스 가능 (락 실패 시)                   | 중     | ✗    |
+| C    | 전역 listener 유지, preventDefault 조건 분기 (작은 이미지만) + BodyScrollLock 항상 ON | 자연 스크롤 + 단일 로직        | iOS/특정 브라우저 body lock edge case                       | 중     | 보류 |
+| D    | Intersection 기반 다단계 스크롤 허용 정책 (상태 머신)                                 | 과도 스로틀/정밀 제어          | 복잡도 과다                                                 | 높음   | ✗    |
 
-  it('[RED] smallImageMode 클래스가 적용되지 않음', () => {
-    // smallImageMode 클래스 존재 확인 (현재는 실패)
-  });
-});
+선택: **옵션 A (수동 scrollBy)** — 최소 침습 / 배경 누수 제로 / 테스트 용이.
+
+### 9.4 TDD 계획 (RED → GREEN → REFACTOR)
+
+| 단계 | 목적                       | RED 조건                                            | GREEN 수정                                      | REFACTOR                       | 테스트 파일                                                 |
+| ---- | -------------------------- | --------------------------------------------------- | ----------------------------------------------- | ------------------------------ | ----------------------------------------------------------- |
+| 1    | 큰 이미지 스크롤 불가 검출 | 렌더 후 wheel dispatch → container.scrollTop 변화 0 | handleLargeImageWheel 내 scrollBy 적용          | delta 보정(고가속) & 안전 가드 | `test/refactoring/gallery/large-image-wheel-scroll.spec.ts` |
+| 2    | 작은 이미지 네비 유지      | 작은 이미지에서 scrollTop 증가 → 실패               | small mode 에서 scrollBy skip + 네비게이션 유지 | util 함수 추출                 | 위 동일 (case 구분)                                         |
+| 3    | 배경 누수 방지             | 큰 이미지 스크롤 시 body scrollTop 변동 발생        | 여전히 preventDefault 유지                      | body lock 조건 통합/정리       | `test/behavioral/gallery/wheel-background-leak.spec.ts`     |
+| 4    | 성능/연속 이벤트           | 20 연속 wheel 이벤트 처리 중 dropped frame (>16ms)  | throttle 적용 (필요 시)                         | micro-profiler hook            | `test/performance/gallery/wheel-scroll-throughput.spec.ts`  |
+| 5    | 회귀 가드                  | 기존 작은 이미지 차단/네비 테스트 실패              | 없음 (동시 GREEN 보장)                          | 공용 assertion util            | 기존 Phase9 테스트 재사용                                   |
+
+### 9.4 구현 개요
+
+1. `useGalleryScroll` 내 `handleLargeImageWheel` 에서:
+
+```ts
+if (containerRef.current) {
+  containerRef.current.scrollBy({ top: delta, behavior: 'auto' });
+}
 ```
 
-#### Step 9.2: 핵심 해결책 구현 (GREEN)
+(onScroll 콜백은 metrics 용도로 유지) 2. 작은 이미지
+분기(`isImageSmallerThanViewport`)는 기존 네비 전용 패스 유지. 3. 전역 capture
+listener 여전히 `preventDefault()` 호출 → 트위터 페이지/문서 스크롤 누수
+차단. 4. 옵션(후속): 고속 휠(트랙패드) 경우 delta scale (e.g. clamp /
+multiplier) 테스트 후 조정. 5. 안전 가드: container null / detached 시 no-op.
 
-**1순위 해결책**: CSS 클래스 동적 적용
+### 9.4 위험 & 완화
 
-```tsx
-// src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx
-const containerClassNames = [
-  styles.container,
-  smartImageFit.isImageSmallerThanViewport ? styles.smallImageMode : '',
-  // 기존 조건부 클래스들...
-]
-  .filter(Boolean)
-  .join(' ');
-```
+| 위험                                      | 설명                                      | 완화                                                             |
+| ----------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| 휠 delta 장치 편차                        | 트랙패드/마우스 간 delta 상이             | 헬퍼 `normalizeWheelDelta(delta)` 추가 (평균 절대값 목표 100±20) |
+| preventDefault 유지로 네이티브 관성 감소  | 일부 브라우저에서 inertial physics 줄어듦 | 필요 시 옵션 C 재평가 (조건적 prevent)                           |
+| 작은 ↔ 큰 경계 전환 시 마지막 delta 잔여 | 경계에서 의도치 않은 스크롤 or 네비       | 직전 모드 + 타임스탬프 기록 후 첫 전환 delta 무시                |
 
-**장점**:
+### 9.4 완료 정의 (DoD)
 
-- 기존 CSS 해결책 활용 (`padding-bottom: 50vh`,
-  `min-height: calc(100vh + 50vh)`)
-- 최소한의 코드 변경
-- 브라우저 호환성 우수
-- 성능 영향 없음
+- [ ] 큰 이미지(또는 아이템 리스트)에서 wheel → container.scrollTop 증가 검증
+- [ ] 작은 이미지에서 wheel → scrollTop 변화 없음 + index 변경
+- [ ] body/page scrollTop 변화 0
+- [ ] 100 연속 wheel 이벤트 처리 평균 핸들러 실행 < 1ms (측정 로그 기반)
+- [ ] 기존 Phase 9 작은 이미지 차단 테스트 모두 GREEN 지속
 
-**2순위 보완책**: 이벤트 처리 강화
+현재 상태 (2025-09-02 업데이트):
 
-```typescript
-// src/features/gallery/hooks/useGalleryScroll.ts
-const handleGalleryWheel = useCallback((event: WheelEvent) => {
-  if (!galleryState.value.isOpen) return;
+- 큰 이미지 스크롤 증가 테스트 GREEN (scrollBy 적용) ✅
+- 작은 이미지 네비게이션 wheel 테스트 GREEN (scrollTop 변화 0 + index 이동) ✅
+- 배경 누수 방지 테스트 GREEN (body scrollTop 변화 없음) ✅
+- 연속 wheel 처리 성능 테스트 GREEN (avg <1ms) ✅
+- 120 이벤트 스트레스 + delta 정규화 테스트 GREEN (avg <1.2ms, 누수 0) ✅
+- delta 정규화 헬퍼(normalizeWheelDelta) 도입 및 훅 통합 ✅
+- 남은 항목: inertial 자연감 개선 위한 preventDefault 조건부 해제 옵션 C 실험
+  (선택) ⏳
 
-  // 더 강력한 차단
-  event.preventDefault();
-  event.stopImmediatePropagation();
+### 9.4 후속 (선택)
 
-  // 작은 이미지일 때 완전 차단 후 네비게이션만 처리
-  if (isImageSmallerThanViewport()) {
-    handleImageNavigation(event.deltaY > 0 ? 'next' : 'prev');
-    return false;
-  }
+- 옵션 C 실험: large 모드 시 preventDefault 해제 + 강제 BodyScrollLock 로 비교
+  (inertial 개선 여부 측정)
+- `prefers-reduced-motion` 사용자에 대해 부드러운 스크롤/추가 delta scale
+  비활성.
 
-  // 큰 이미지는 기존 로직
-  handleLargeImageScroll(event.deltaY);
-}, [...]);
-```
+#### 9.4 테스트 유틸 리팩터 (2025-09-02 추가)
 
-#### Step 9.3: 리팩토링 및 최적화 (REFACTOR) ✅
+- 중복되던 wheel 관련 테스트(large-image, small-image navigation, background
+  leak, throughput, stress)의 공통 로직(polling, scrollable 스타일 지정, wheel
+  이벤트 생성, small 이미지 naturalSize mock)을
+  `test/utils/gallery-wheel-utils.ts` 로 추출.
+- 이로 인해 각 테스트 파일 내 보일러플레이트 25~40줄 감소, 유지보수 용이성 향상.
+- 잔존했던 역사적 RED 테스트 파일 3종(`large-image-wheel-scroll.red.test.ts`,
+  `wheel-scroll-stress.red.test.ts`, `normalize-wheel-delta.red.test.ts`) 제거 →
+  RED/GREEN 의도는 설명 문자열로만 표현 정책 일관화.
+- 추후 추가 wheel 시나리오는 util 확장(예: inertial 옵션 측정 helper) 후 적용
+  예정.
 
-**구현 개선사항** (완료):
-
-1. **이벤트 처리 로직 분리** ✅:
-   - `handleSmallImageWheel()` 함수 독립 → `useGalleryScroll.ts`
-   - `handleLargeImageWheel()` 함수 독립 → `useGalleryScroll.ts`
-   - 메인 `handleGalleryWheel()` 함수에서 분리된 함수 호출
-
-2. **CSS 조건부 적용 훅 생성** ✅:
-
-   ```typescript
-   // src/features/gallery/hooks/useGalleryClassNames.ts
-   export function useGalleryClassNames(
-     baseStyles: Record<string, string>,
-     enhancedStyles?: Record<string, string>,
-     isSmallImage?: boolean,
-     additionalClasses?: (string | undefined | null | false)[]
-   ): string;
-   ```
-
-   **적용**:
-
-   ```typescript
-   // VerticalGalleryView.tsx에서 사용
-   const galleryClassName = useGalleryClassNames(
-     styles,
-     enhancedStyles,
-     smartImageFit.isImageSmallerThanViewport,
-     [stringWithDefault(className, '')]
-   );
-   ```
-
-3. **성능 최적화** ✅:
-   - `src/shared/utils/performance-helpers.ts` 생성
-   - `throttle()`, `debounce()`, `rafThrottle()` 유틸리티 추가
-   - 클래스 적용 useMemo 최적화
-
-**Phase 9 전체 요약** ✅:
-
-- **Phase 9.1 RED**: 테스트 생성 완료 (vendor mock 이슈 있음)
-- **Phase 9.2 GREEN**: 핵심 해결책 구현 완료 (빌드 성공)
-- **Phase 9.3 REFACTOR**: 코드 최적화 및 분리 완료 (빌드 성공)
-
-#### 테스트 파일
-
-- `test/refactoring/small-image-scroll-prevention.test.ts` (핵심 기능)
-- `test/unit/gallery/scroll-event-blocking.test.ts` (이벤트 차단)
-- `test/integration/gallery-small-image-navigation.test.ts` (통합 테스트)
-
-#### 위험 및 완화 전략
-
-| 위험                    | 완화 전략                                      |
-| ----------------------- | ---------------------------------------------- |
-| 시각적 스크롤 영역 추가 | CSS로 투명한 패딩 처리, 사용자에게 보이지 않음 |
-| 모바일 터치 스크롤 영향 | `touch-action: pan-y` 유지, 터치 제스처 보존   |
-| 이벤트 처리 순서 이슈   | `capture: true` 설정으로 우선순위 확보         |
-
-#### 완료 정의 (DoD)
-
-- [x] 작은 이미지에서 wheel 이벤트 100% 차단 → `stopImmediatePropagation()` 추가
-- [x] `smallImageMode` 클래스 동적 적용 확인 → `useGalleryClassNames` 훅으로
-      최적화
-- [x] 배경 스크롤 발생 0건 달성 → 강화된 이벤트 차단으로 해결
-- [x] 기존 큰 이미지 스크롤 기능 무영향 → 분리된 `handleLargeImageWheel()`
-      함수로 보장
-- [x] 모든 브라우저에서 일관된 동작 → 표준 이벤트 API 사용
-- [x] 성능 회귀 없음 (< 1ms 오버헤드) → `useMemo` 최적화 및 함수 분리
-
-**Phase 9 최종 상태**: ✅ **완료** - 모든 목표 달성, 빌드 성공, 리팩토링 완료
+---
 
 **Phase 10 현재 상태**: 🚨 **긴급 진행 중** - 중복 초기화 및 갤러리 재실행 실패
 해결
@@ -1196,16 +1500,11 @@ URL 추출 regex: [ ] /background-image:\s*url\(["']?(.*?)["']?\)/ [ ]
 
 #### 현재 발견된 신규 갭 (업데이트)
 
-1. 고급 background-image 품질(해상도 suffix 비교, size 파싱) 추가 고도화 (기본
-   WxH + name 패턴 적용 상태)
-2. (완료) successResultCache eviction 타입(TTL vs LRU) 분리 →
-   `successResultCacheEvictionTypes { lru, ttl }` + backward compat 합계 필드
-   유지
-3. (완료) StrategyChain duration 중앙화 및 평균/최대 집계 (legacy 필드 제거)
-4. (완료) successResultCacheMaxEntries LRU 회귀 테스트 추가 (max=1, 중복 push 큐
-   stale 엔트리 skip 및 최소 eviction 검증).
-5. MediaExtractionCache missCount 의미 재조정(검토) - 현 구현은 get 미스/만료
-   시에만 증가로 개선 완료, 추가 문서 반영 필요.
+1. background-image heuristic v3.1: aspect ratio / DPR 고려 추가
+2. (완료) successResultCache eviction 타입(TTL vs LRU) 분리 유지
+3. (완료) StrategyChain duration 중앙화 및 avg/max 집계
+4. (완료) successResultCacheMaxEntries LRU 회귀 테스트 (max=1) GREEN
+5. MediaExtractionCache missCount 재정의 문서 반영 (만료/미스 시 증가)
 
 #### 다음 HARDEN 테스트 계획 (우선순위)
 
@@ -1898,3 +2197,268 @@ Stable API 문서(자동 생성), Architecture Decision Records(ADR), 테스트 
 추가 Modernization 계획은 상기 Phase 순으로 TDD 사이클을 적용하며, 각 Phase 착수
 시 본 문서에 세부 진행 로그(Progress Log 섹션 추가)와 테스트 경로를
 동기화합니다.
+
+---
+
+## 🧪 추가 심화 리팩터링 이니셔티브: 갤러리 컨테이너 계층 초단순화 (Container Hierarchy Ultra Simplification, CHUS)
+
+> 목적: 현재 갤러리 오버레이가 가지는 중간 래퍼(.xeg-gallery-renderer) 및
+> 불필요한 중첩을 단계적 TDD로 제거/합치어 DOM depth, 재렌더 코스트, 이벤트 전파
+> 지연을 추가 감소. Shadow DOM 옵션 유지하면서 비 Shadow 경로에서 최소 1~2 레벨
+> 축소 목표.
+
+### 1. 현행 컨테이너 구조 세부 스냅샷 (비 Shadow DOM 기준)
+
+현재 구현 코드를 재검증한 결과(`GalleryApp.ensureGalleryContainer`와
+`GalleryRenderer.createContainer`) `#xeg-gallery-root` 는
+**.xeg-gallery-renderer의 상위가 아니라 형제(sibling)** 로 존재합니다. 문서 초기
+작성 시 가정했던 `root > renderer` 중첩은 실제 코드와 달랐으므로 아래와 같이
+수정합니다.
+
+```
+body
+├─ #xeg-gallery-root (pointer-events:none placeholder / future overlay host)
+└─ .xeg-gallery-renderer (inline overlay style, optional shadowRoot)
+  └─ <div.verticalGalleryViewRoot class="{styles.container} xegVerticalGalleryContainer ...">
+    ├─ .toolbarHoverZone
+    ├─ .toolbarWrapper
+    └─ .itemsList (content 래퍼 겸용)
+      └─ <itemN>
+```
+
+Shadow DOM ON 시 `.xeg-gallery-renderer` 아래:
+
+```
+.xeg-gallery-renderer
+└─ #shadow-root (open)
+  └─ <div.verticalGalleryViewRoot ...>
+```
+
+실제 미디어 아이템까지 depth (비 Shadow):
+`body → .xeg-gallery-renderer → viewRoot → itemsList → item` = 5 단계 (아이템
+포함). Shadow DOM 경로는 `+1` (shadowRoot) → 6 단계. (이전 문서 표기 6/7 은
+잘못된 가정이었음)
+
+### 2. 목표 상태 타겟 (단계적)
+
+| 단계       | Target 구조 (비 Shadow)                                             | Depth(아이템 포함) | 설명                                                |
+| ---------- | ------------------------------------------------------------------- | ------------------ | --------------------------------------------------- |
+| Baseline   | body > .xeg-gallery-renderer > viewRoot > itemsList > item          | 5                  | 현재 (root는 형제, depth 미포함)                    |
+| CH1        | body > #xeg-gallery-root.overlayRoot > viewRoot > itemsList > item  | 5                  | renderer 제거 & root로 승격 (depth 유지, 구조 단순) |
+| CH2        | body > #xeg-gallery-root.galleryView (itemsList 역할 겸) > item     | 4                  | viewRoot & itemsList 통합 (스크롤/role 부여)        |
+| CH3 (선택) | body > #xeg-gallery-root (shadowRoot) > viewRoot(=itemsList) > item | 4 (Shadow)         | Shadow direct mount 경로 동일 depth 유지            |
+| CH4 (실험) | body > #xeg-gallery-root (shadowRoot) > item (virtual list wrapper) | 3                  | 고급: viewRoot 제거, virtual list가 스크롤 컨테이너 |
+
+최소 달성 목표: CH2 (비 Shadow) / CH3 (Shadow) → 비 Shadow depth 4, Shadow depth
+4~5.
+
+### 3. 기대 효과 & 정량 KPI
+
+| 지표                                                        | Baseline                          | 목표(CH2)               | 측정 방법                                        |
+| ----------------------------------------------------------- | --------------------------------- | ----------------------- | ------------------------------------------------ |
+| 평균 초기 렌더 DOM 노드 수 (1000 items 가상 스크롤 ON 가정) | N(Base)                           | N-2 (컨테이너 2개 감소) | 테스트: querySelectorAll('\*').length 비교       |
+| Viewport Reflow 횟수 (open animation 구간)                  | 3~4                               | ≤ 2                     | PerformanceObserver(Mock) + layout thrash 카운트 |
+| Overlay Mount 시간(ms)                                      | baseline                          | -5% 이상                | perf harness mark (open start→first paint)       |
+| Background click hit 테스트 복잡도                          | 현재 target vs currentTarget 비교 | 단일 root hit           | 단위 테스트 이벤트 시뮬레이션                    |
+| 메모리 (힙 snapshot 상대)                                   | 100%                              | -0.5~1% (상징적)        | jsdom heap diff (근사)                           |
+
+### 4. 리스크 & 완화
+
+| 리스크                 | 설명                                     | 완화 전략                                                 |
+| ---------------------- | ---------------------------------------- | --------------------------------------------------------- |
+| 스타일 누락            | inline style 이동 누락 시 레이아웃 깨짐  | CH1 GREEN 직후 style parity 테스트 (snapshot)             |
+| 배경 클릭 감지 실패    | 중간 래퍼 제거로 이벤트 target 구조 변화 | 전용 util `isBackgroundClick(event, root)` 도입 후 테스트 |
+| Shadow DOM 분기 복잡화 | renderer 제거 시 스타일 주입 순서 변경   | Shadow 스타일 주입 유닛 테스트 + fallback 경로 유지       |
+| 포커스 트랩 회귀       | root 변경 시 focusable query 영향        | a11y 테스트에서 focus cycle 검증 (향후 Phase 16 연계)     |
+| 스크롤 동작 회귀       | containerRef 대상 변경                   | useGalleryScroll 대상 추상화: `getScrollContainer()`      |
+
+### 5. 단계별 TDD 계획 (CH1 ~ CH3)
+
+#### CH0 – Baseline RED (계측 스냅샷)
+
+1. 테스트 추가 `test/refactoring/gallery/container-depth-baseline.spec.ts`
+
+- DOM depth 측정 util (`measurePathDepth(from, selector)`) 작성
+- 기대: depth === 5 (비 Shadow) / === 6 (Shadow ON)
+
+2. 스타일/레이아웃 스냅샷: 루트 overlay style 존재 여부 (현재
+   `.xeg-gallery-renderer` 인라인)
+
+GREEN 조건: 현 구조 그대로 통과 (Baseline 확정)
+
+#### CH1 – Renderer 병합 (root 승격)
+
+1. RED: 새 테스트 `container-depth-after-ch1.spec.ts` 에서 허용 최대 depth 5
+   선언 (renderer 제거 후 depth 변화 없으므로 구조 Equality + renderer 미존재
+   검증이 RED 조건이 됨)
+2. 구현(GREEN):
+
+- `GalleryApp.ensureGalleryContainer()` 에서 생성되는 `#xeg-gallery-root` 에
+  overlay style 부여 (pointer-events 조정: 기존 none 제거 → 내부 클릭 허용)
+- `GalleryRenderer.createContainer()` 의 `.xeg-gallery-renderer` 생성 제거, 대신
+  render target = `#xeg-gallery-root`.
+- Shadow DOM 옵션: root.attachShadow 직접 적용.
+- background click 로직 수정: VerticalGalleryView 내부 root 대신 직접 root 기반
+  판단 (이벤트 타겟 경로 변경 대응)
+
+3. 결과(CH1 완료 요약):
+
+- ✅ `.xeg-gallery-renderer` 완전 제거 (DOM depth 유지, 불필요 래퍼 삭제)
+- ✅ 기존 테스트(`container-depth-baseline.spec.ts`) 유지 + 신규 테스트
+  (`container-depth-after-ch1.spec.ts`) GREEN (renderer 미존재 검증)
+- ✅ Phase 진행 중 발생했던 테스트 루트 부족/중복 파일 이슈 해결 → 현재 3개
+  refactoring 테스트 모두 통과
+- ⚠ 커버리지 임계( shared 15% )는 gallery 단일 테스트 실행 시 실패 가능 → 전용
+  스크립트(`npm run test:gallery:refactor`)로 커버리지 비활성화 실행 지원
+
+4. 추가 실행 가이드:
+
+```bash
+# 갤러리 컨테이너 리팩토링 관련 테스트만 (커버리지 없이) 실행
+npm run test:gallery:refactor
+```
+
+5. 다음 단계(예정 CH2 RED 준비):
+
+- viewRoot + itemsList 통합을 위한 baseline 캡처 로직 단순화
+- background click hit 영역 변경에 따른 util 도입 (`isBackgroundClick`)
+- depth 목표 5→4 전환 RED 작성 (`dom-depth-reduction.spec.ts` 업데이트 예정)
+
+### CH2 진행 (RED 단계 착수)
+
+- 신규 테스트 `test/refactoring/gallery/container-depth-ch2-red.spec.ts` 추가
+  (현재 depth 5 상태에서 `depth <= 4` 단언으로 실패하도록 RED 고정)
+- GREEN 목표: `VerticalGalleryView` 내부에서 `data-xeg-role="gallery"` 와
+  `data-xeg-role="items-list"` 레이어 통합 →
+  `#xeg-gallery-root > .xeg-items (단일)` → `item` 구조 확립 (비 Shadow depth 4)
+- REFACTOR 목표: background click 판별 로직 `isBackgroundClick(event, root)`
+  유틸 도입 및 테스트 업데이트, 기존 selector 호환 alias (deprecated) 유지
+- 성능/안정성 가드: 기존 CH1 테스트 유지로 회귀 방지 (renderer 재도입 차단)
+  `#xeg-gallery-root` 비교.
+
+3. REFACTOR:
+
+- 인라인 스타일 → CSS 모듈/글로벌 namespaced (`xeg-gallery-overlay`) 추출로
+  테스트에서 style diff 안정화.
+
+4. 테스트 업데이트: baseline 테스트는 Phase 태그로 보존, 새 depth 테스트 GREEN.
+
+#### CH2 – ViewRoot + itemsList 통합
+
+1. RED: `container-depth-after-ch2.spec.ts` 기대 depth ≤ 4 (비 Shadow), 현재
+   실패.
+2. 구현(GREEN):
+
+- VerticalGalleryView에서 최상위 div(현재 containerRef) 자체를 scroll 컨테이너로
+  사용 (itemsList 역할 포함).
+- 기존 itemsList div 제거; 아이템 직접 map 렌더.
+- 스타일: `.itemsList` 핵심 속성(scroll, overscroll, snap 등)을 root 클래스로
+  이동.
+- useGalleryItemScroll / useGalleryScroll 훅에 container injection 업데이트.
+
+3. REFACTOR:
+
+- 테스트 util `getGalleryScrollContainer()` 통일.
+- 작은 이미지 wheel 차단 로직 경계 재검증.
+
+4. GREEN 검증: depth 감소 + 스크롤/네비게이션/다운로드 회귀 테스트 통과.
+
+#### CH3 – Shadow Direct Mount (옵션)
+
+1. RED: Shadow ON 상태 depth 기대 ≤ 5 (root + shadow + view(root=itemsList) +
+   item) – 기존 6/7.
+2. 구현(GREEN): root.attachShadow + Preact render target shadowRoot, 중간
+   renderer 없음 (이미 CH1에서 제거됨) → 추가 조치 불필요, 단 style 주입 순서
+   보장.
+3. REFACTOR: style injection idempotent 검증, Shadow/NonShadow parity 테스트.
+
+#### CH4 – 실험: Virtual List Root (추후 가상 스크롤 재도입 시)
+
+1. RED: depth 기대 ≤ 3.
+2. 구현: root(scroll 컨테이너) + virtualized inner sentinel wrapper(optional) +
+   item (가상 스크롤 placeholder).
+3. 위험: focus / accessibility 격리. (Phase 17 또는 추후 분리 결정)
+
+### 6. 테스트 상세 목록
+
+| 파일                                                        | 목적                                |
+| ----------------------------------------------------------- | ----------------------------------- |
+| test/refactoring/gallery/container-depth-baseline.spec.ts   | Baseline depth 계측 스냅샷          |
+| test/refactoring/gallery/container-depth-after-ch1.spec.ts  | Renderer 병합 후 depth 감소 검증    |
+| test/refactoring/gallery/container-depth-after-ch2.spec.ts  | itemsList 통합 이후 depth 감소 검증 |
+| test/behavioral/gallery/background-click-simplified.spec.ts | 배경 클릭 닫기 동작 유지            |
+| test/behavioral/gallery/scroll-container-refactor.spec.ts   | 스크롤/휠 네비 동작 회귀 방지       |
+| test/integration/gallery/shadow-direct-mount.spec.ts        | Shadow 경로 depth/스타일 동등성     |
+| test/performance/gallery/open-render-depth-impact.spec.ts   | 렌더 성능 영향 수치화               |
+
+### 7. 유틸 설계 (테스트 전용)
+
+```ts
+// test/utils/dom/measureDepth.ts
+export function measureDepth(root: Element, target: Element): number {
+  let depth = 0;
+  let cur: Element | null = target;
+  while (cur && cur !== root) {
+    depth++;
+    cur = cur.parentElement;
+  }
+  return cur === root ? depth + 1 : -1; // +1 root 포함
+}
+```
+
+### 8. 변경 요구 요약 (구현 TODO)
+
+| 컴포넌트/파일                             | CH1                      | CH2               | CH3                      |
+| ----------------------------------------- | ------------------------ | ----------------- | ------------------------ |
+| GalleryApp.ensureGalleryContainer         | overlay style 승격       | 유지              | 유지                     |
+| GalleryRenderer.createContainer           | renderer 제거            | 영향 없음         | Shadow direct mount 확인 |
+| VerticalGalleryView                       | containerRef 유지        | itemsList 병합    | Shadow parity            |
+| useGalleryScroll / useGalleryItemScroll   | root 스크롤 영향 없음    | 대상 ref 업데이트 | 영향 없음                |
+| namespaced-styles / injectShadowDOMStyles | root 스타일 이동 후 주입 | 동일              | Shadow direct 주입       |
+
+### 9. Pros / Cons 매트릭스 (의사결정 근거)
+
+| 제거 대상             | Pros                                          | Cons                                    | 결론          |
+| --------------------- | --------------------------------------------- | --------------------------------------- | ------------- |
+| .xeg-gallery-renderer | 노드 -1, 스타일 책임 단일화, Shadow 경로 단순 | GalleryRenderer 역할 축소 (추상화 희석) | 제거 (CH1)    |
+| itemsList wrapper     | depth 감소, 스크롤 컨테이너 중복 해소         | root 역할 증가 (책임 집중)              | 제거 (CH2)    |
+| viewRoot (실험 CH4)   | depth 추가 감소, virtual list 직접 mount      | focus/style/animation 결합 ↑            | 보류 (조건부) |
+
+### 10. Done 정의 (CHUS)
+
+| 항목           | DoD                                                     |
+| -------------- | ------------------------------------------------------- |
+| Depth 감소     | 비 Shadow: 5→4 (최소), Shadow: 6→5 (최소)               |
+| 기능 회귀 없음 | 기존 행동/통합/성능 테스트 GREEN                        |
+| 성능           | Open overlay 렌더 경과 시간 -5% 이상 (허용 오차 ±2ms)   |
+| 스타일 패리티  | 스크린샷 스냅샷 or style snapshot diff 무변 (주요 속성) |
+| 접근성         | 포커스 트랩 / ESC / 키 이동 테스트 유지 (Phase 16 병행) |
+
+### 11. 추진 일정 (제안)
+
+| Sprint Slot | 작업                  | 산출물                           |
+| ----------- | --------------------- | -------------------------------- |
+| Day 1 AM    | CH0 / CH1 RED         | baseline & failing depth test    |
+| Day 1 PM    | CH1 GREEN/REFACTOR    | renderer 병합 구현 + 회귀 테스트 |
+| Day 2 AM    | CH2 RED/GREEN         | itemsList 통합 + 훅 업데이트     |
+| Day 2 PM    | 안정화 & Shadow CH3   | shadow direct mount 검증         |
+| Day 3       | Perf 측정 & 문서 갱신 | 성능 diff 기록 / DoD 체크        |
+
+### 12. 후속 (Optional Explorations)
+
+1. Virtualized sentinel root (CH4) 시나리오: 고정 높이 placeholder + windowing
+   적용 → focus restoration / scroll anchoring 추가 검토.
+2. CSS Container Query 활용 root 단일화 후: 미디어별 layout adaptive (예:
+   viewport 너비 < X 시 toolbar compact) 코드 단순화.
+3. 이벤트 캡처 전략: 단일 root 에서 capture 등록 → reinforce 로직 간소화
+   (EventManager 내부 priority rebinding 감소) → Phase 12 시너지.
+
+### 13. 결정 기록 (ADR 링크 예정)
+
+추가 ADR: `docs/adr/2025-09-CHUS-container-flattening.md` (생성 예정) – 설계
+선택 및 trade-off 영구 보관.
+
+---
+
+위 CHUS 계획은 Modernization Phases 와 병렬 진행 가능 (위험 낮음). 첫
+적용(CH1/CH2) 후 성능/안정성 데이터 기반으로 CH3/CH4 여부 판단.

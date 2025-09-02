@@ -186,8 +186,11 @@ export class DOMDirectExtractor {
       score: number;
       pixels: number;
       index: number;
+      incomplete: boolean; // v3: 불완전 치수 패턴 여부
     }
     const sizeRegex = /(?:^|_|\b)(\d{2,5})x(\d{2,5})(?:\b|_|\.|$)/i;
+    // 불완전 치수 (예: 1600x??? 또는 ???x1200 또는 2048x??) 검출
+    const incompleteSizeRegex = /(?:^|_|\b)(?:\?{2,5}|\d{2,5})x(?:\?{2,5}|\d{2,5})(?:\b|_|\.|$)/i;
     // v2: 저해상도/축소 힌트 단어 패널티 (small, thumb, tiny, crop, fit, medium)
     const downgradeRegex = /(^|[._-])(small|thumb|tiny|crop|fit|medium)([._-]|\.|$)/i;
     const baseScore = (u: string): number => {
@@ -202,18 +205,42 @@ export class DOMDirectExtractor {
     };
     const candidates: Candidate[] = urls.map((u, idx) => {
       let pixels = 0;
-      const m = sizeRegex.exec(u);
-      if (m) {
-        const w = parseInt(m[1]!, 10);
-        const h = parseInt(m[2]!, 10);
-        if (!isNaN(w) && !isNaN(h)) {
-          pixels = w * h;
+      let incomplete = false;
+      const sizeMatch = sizeRegex.exec(u);
+      if (sizeMatch) {
+        const w = parseInt(sizeMatch[1]!, 10);
+        const h = parseInt(sizeMatch[2]!, 10);
+        if (!isNaN(w) && !isNaN(h)) pixels = w * h;
+      } else {
+        // 파일명에 정규 WxH 패턴이 없을 때 w/h 쿼리 파라미터 기반 추론 (v3)
+        try {
+          const parsed = new URL(u);
+          const wParam = parsed.searchParams.get('w');
+          const hParam = parsed.searchParams.get('h');
+          const w = wParam ? parseInt(wParam, 10) : NaN;
+          const h = hParam ? parseInt(hParam, 10) : NaN;
+          if (!isNaN(w) && !isNaN(h) && w > 1 && h > 1) {
+            pixels = w * h;
+          }
+        } catch {
+          // ignore parse error
         }
       }
-      return { url: u, score: baseScore(u), pixels, index: idx };
+      // 불완전 치수 패턴 (??? 또는 ?? 포함) 이면서 완전한 sizeRegex 매칭이 없는 경우 incomplete 표시
+      if (!sizeMatch && /\?{2,5}x|x\?{2,5}/.test(u) && incompleteSizeRegex.test(u)) {
+        incomplete = true;
+      }
+      let score = baseScore(u);
+      if (incomplete) {
+        // v3 패널티: 불완전 치수 - 충분히 큰 패널티로 complete 우선
+        score -= 25;
+      }
+      return { url: u, score, pixels, index: idx, incomplete };
     });
     candidates.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
+      // v3: 불완전 치수는 동일 점수에서도 뒤로
+      if (a.incomplete !== b.incomplete) return a.incomplete ? 1 : -1;
       if (b.pixels !== a.pixels) return b.pixels - a.pixels; // 더 큰 해상도 우선
       return a.index - b.index; // 안정성
     });

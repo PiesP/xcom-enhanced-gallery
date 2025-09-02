@@ -5,6 +5,16 @@
  */
 
 import { logger } from '@shared/logging/logger';
+
+// 테스트 환경 전역 플래그 타입 선언 (경고 소음 억제)
+declare global {
+  interface Global {
+    __XEG_SILENCE_EVENT_MANAGER_WARN?: boolean;
+  }
+  interface GlobalThis {
+    __XEG_SILENCE_EVENT_MANAGER_WARN?: boolean;
+  }
+}
 import { DOMEventManager, createEventManager } from '@shared/dom/DOMEventManager';
 import { GalleryEventManager } from '@shared/utils/events';
 import { galleryState } from '@shared/state/signals/gallery.signals';
@@ -220,7 +230,10 @@ export class EventManager {
       if (EventManager.autoReinitialize) {
         this.reinitialize();
       } else {
-        logger.warn('EventManager가 파괴된 상태에서 addEventListener 호출');
+        // 테스트(갤러리 구조/깊이) 환경에서 파괴 후 호출되는 패턴이 다수 발생 → 노이즈 감소용 무음 플래그
+        if (!globalThis.__XEG_SILENCE_EVENT_MANAGER_WARN) {
+          logger.warn('EventManager가 파괴된 상태에서 addEventListener 호출');
+        }
         return this;
       }
     }

@@ -20,6 +20,19 @@ describe('Phase 11 GREEN: MediaExtractionService 재시도 & 캐시 구현', () 
     article.appendChild(img);
     document.body.appendChild(article);
 
+    // TweetInfoExtractor 를 mock 해서 유효한 tweetId 를 반환하도록 하여
+    // API extractor 경로가 활성화되도록 강제 (기존 실패 원인: tweetId 추출 실패로 API 경로 비실행)
+    const tweetInfoModule = await import(
+      '@shared/services/media-extraction/extractors/TweetInfoExtractor'
+    );
+    vi.spyOn(tweetInfoModule.TweetInfoExtractor.prototype, 'extract').mockResolvedValue({
+      tweetId: '123',
+      username: 'u',
+      tweetUrl: '',
+      extractionMethod: 'mock',
+      confidence: 1,
+    });
+
     // TweetInfoExtractor mock → 정상 tweetId 부여해 API 추출 단계로 이동시키고 API extractor 강제 실패
     const apiModule = await import(
       '@shared/services/media-extraction/extractors/TwitterAPIExtractor'

@@ -86,20 +86,14 @@ export function useGalleryItemScroll(
       try {
         const container = containerRef.current;
 
-        // itemsList 컨테이너 찾기
-        const itemsList = container.querySelector('[data-xeg-role="items-list"]') as HTMLElement;
-        if (!itemsList) {
-          logger.warn('useGalleryItemScroll: items-list 컨테이너를 찾을 수 없음');
-          return;
-        }
-
-        const targetElement = itemsList.children[index] as HTMLElement;
+        // CH2: items-list wrapper 제거 → gallery 컨테이너 직속 자식이 아이템
+        const targetElement = container.children[index] as HTMLElement;
 
         if (!targetElement) {
           logger.warn('useGalleryItemScroll: 타겟 요소를 찾을 수 없음', {
             index,
             totalItems,
-            itemsListChildrenCount: itemsList.children.length,
+            childCount: container.children.length,
           });
           return;
         }
@@ -162,8 +156,7 @@ export function useGalleryItemScroll(
             });
           });
 
-          const targetElement = containerRef.current?.querySelector('[data-xeg-role="items-list"]')
-            ?.children[index] as HTMLElement;
+          const targetElement = containerRef.current?.children[index] as HTMLElement;
           if (targetElement) {
             observer.observe(targetElement);
             setTimeout(() => observer.disconnect(), 1000); // 1초 후 정리

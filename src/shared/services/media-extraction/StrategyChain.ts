@@ -128,6 +128,13 @@ export interface StrategyChainMiddleware {
 export interface StrategyChainBeforeResult {
   skip?: boolean;
   reason?: string;
+  /**
+   * shortCircuit: true 인 경우 전략 실행 루프를 즉시 중단하고 result 를 그대로 반환한다.
+   * cache hit 등의 시나리오에서 사용. skip 과 동시에 제공되며 attemptedStrategies 는 비어있어야 한다.
+   */
+  shortCircuit?: boolean;
+  /** shortCircuit 시 반환할 최종 결과 */
+  result?: MediaExtractionResult;
 }
 
 export class StrategyChainBuilder {
@@ -218,6 +225,7 @@ class StrategyChainProxyWrapper extends StrategyChain {
       if (!strategy.canHandle(element, options)) continue;
       try {
         let skip = false;
+        let shortCircuitResult: MediaExtractionResult | undefined;
         for (const mw of this.mws) {
           if (mw.before) {
             const r = (await mw.before(
@@ -225,8 +233,48 @@ class StrategyChainProxyWrapper extends StrategyChain {
               strategy
             )) as void | StrategyChainBeforeResult;
             this.counters.before++;
-            if (r && typeof r === 'object' && (r as StrategyChainBeforeResult).skip) {
-              skip = true;
+            if (r && typeof r === 'object') {
+              if ((r as StrategyChainBeforeResult).skip) {
+                skip = true;
+              }
+              if ((r as StrategyChainBeforeResult).shortCircuit && r.result) {
+                // short-circuit: 즉시 결과 반환 (전략 시도 없이)
+                shortCircuitResult = r.result;
+                // 결과 메타데이터에 attemptedStrategies 가 없으면 빈 배열 주입 (일관성)
+                type Meta = NonNullable<typeof shortCircuitResult>['metadata'] & {
+                  attemptedStrategies?: string[];
+                  successStrategy?: string;
+                };
+                if (!shortCircuitResult.metadata) {
+                  shortCircuitResult.metadata = { attemptedStrategies: [] } as Meta;
+                } else if (!Array.isArray(shortCircuitResult.metadata.attemptedStrategies)) {
+                  (shortCircuitResult.metadata as Meta).attemptedStrategies = [];
+                }
+                const durationMs = (performance.now ? performance.now() : Date.now()) - start;
+                (
+                  this as unknown as { _customMiddlewareCounters?: Record<string, unknown> }
+                )._customMiddlewareCounters = {
+                  customMiddlewareCalls: { ...this.counters },
+                };
+                return {
+                  result: shortCircuitResult,
+                  metrics: {
+                    attemptedStrategies: [],
+                    successStrategy: shortCircuitResult.metadata?.successStrategy as
+                      | string
+                      | undefined,
+                    failedStrategies: [],
+                    totalTried: 0,
+                    durationMs,
+                    customMiddlewareCalls: { ...this.counters },
+                    duplicateSkipped: this._duplicateSkipped || undefined,
+                    strategyRetries:
+                      Object.keys(this._strategyRetries).length > 0
+                        ? { ...this._strategyRetries }
+                        : undefined,
+                  },
+                };
+              }
             }
           }
         }

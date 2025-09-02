@@ -18,6 +18,10 @@ import { logger } from '@shared/logging/logger';
 import { MediaService } from '@shared/services/MediaService';
 import { ToastController } from '@shared/services/ToastController';
 import { unmountGallery } from '@shared/components/isolation';
+import {
+  activateGalleryRoot,
+  deactivateGalleryRoot,
+} from '@features/gallery/core/galleryRootStyles';
 
 /**
  * 갤러리 앱 설정
@@ -185,6 +189,15 @@ export class GalleryApp {
     try {
       // 배경 비디오 상태 복원
       this.videoControl.restoreBackgroundVideos();
+      // overlay 비활성화 (root 재사용 전략)
+      try {
+        const root = document.querySelector('#xeg-gallery-root') as HTMLElement | null;
+        if (root) {
+          deactivateGalleryRoot(root);
+        }
+      } catch (e) {
+        logger.debug('overlay 비활성화 중 무시 가능한 오류:', e);
+      }
 
       logger.debug('갤러리 닫기 처리 완료');
     } catch (error) {
@@ -266,22 +279,15 @@ export class GalleryApp {
    */
   private async ensureGalleryContainer(): Promise<void> {
     let container = document.querySelector('#xeg-gallery-root') as HTMLDivElement | null;
-
     if (!container) {
       container = document.createElement('div');
       container.id = 'xeg-gallery-root';
-      container.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 999999;
-        pointer-events: none;
-      `;
       document.body.appendChild(container);
-      logger.debug('갤러리 컨테이너 생성됨');
+      logger.debug('갤러리 컨테이너 생성 (CH13 util)');
     }
+    // 항상 활성화 (스타일 드리프트 / 이전 deactivate 이후 상태 복구)
+    activateGalleryRoot(container);
+    this.galleryContainer = container;
   }
 
   /**

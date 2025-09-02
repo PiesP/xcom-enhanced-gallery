@@ -276,6 +276,101 @@ if (typeof globalThis !== 'undefined') {
   // JSDOM 환경에서는 실제 DOM을 사용하고 부족한 부분만 polyfill로 보강
   setupJsdomPolyfills();
 
+  // ======================================
+  // Image mock (suppress external 404 logs)
+  // ======================================
+  if (!(globalThis as any).__XEG_IMAGE_MOCK_INSTALLED) {
+    const OriginalImage = (globalThis as any).Image;
+    class MockImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      src = '';
+      width = 100;
+      height = 100;
+      naturalWidth = 100;
+      naturalHeight = 100;
+      decoding: 'auto' | 'sync' | 'async' = 'auto';
+      loading: 'eager' | 'lazy' = 'eager';
+      constructor() {
+        // 지연 onload 트리거로 갤러리 로직 안정화
+        globalThis.setTimeout(() => {
+          if (this.onload) {
+            try {
+              this.onload();
+            } catch {
+              /* ignore */
+            }
+          }
+        }, 0);
+      }
+      set crossOrigin(_value: string | null) {}
+      get crossOrigin() {
+        return null;
+      }
+      set referrerPolicy(_value: string) {}
+      get referrerPolicy() {
+        return '';
+      }
+      // src 설정 시 즉시(또는 짧은 지연 후) onload 호출
+      setSrc(url: string) {
+        this.src = url;
+        globalThis.setTimeout(() => {
+          if (this.onload) this.onload();
+        }, 0);
+      }
+      set srcSetter(url: string) {
+        this.setSrc(url);
+      }
+    }
+    Object.defineProperty(MockImage.prototype, 'src', {
+      set(this: any, url: string) {
+        this.setSrc(url);
+      },
+      get() {
+        return this._src || '';
+      },
+      configurable: true,
+    });
+    try {
+      (globalThis as any).Image = MockImage;
+      (globalThis as any).__XEG_IMAGE_MOCK_ORIGINAL = OriginalImage;
+      (globalThis as any).__XEG_IMAGE_MOCK_INSTALLED = true;
+    } catch {
+      // ignore if assignment blocked
+    }
+  }
+
+  // Patch existing <img> elements created via document.createElement('img') to avoid network
+  try {
+    const imgProto = (globalThis as any).window?.HTMLImageElement?.prototype;
+    if (imgProto && !(imgProto as any).__xegPatched) {
+      const originalDescriptor = Object.getOwnPropertyDescriptor(imgProto, 'src');
+      Object.defineProperty(imgProto, 'src', {
+        configurable: true,
+        enumerable: originalDescriptor ? originalDescriptor.enumerable : true,
+        get: function () {
+          return (this as any)._xegSrc || '';
+        },
+        set: function (url: string) {
+          (this as any)._xegSrc = url;
+          // onload 비동기 트리거
+          globalThis.setTimeout(() => {
+            try {
+              if (typeof (this as any).onload === 'function') {
+                (this as any).onload();
+              }
+            } catch {
+              /* ignore */
+            }
+          }, 0);
+        },
+      });
+      (imgProto as any).__xegPatched = true;
+    }
+  } catch {
+    // ignore
+  }
+
   // teardown 이후 지연된 타이머에서 발생하는 cancelAnimationFrame ReferenceError 무시
   // Vitest isolation + preact hooks 타이머 조합에서 드물게 발생 (환경 dispose 후)
   // Node 환경 전역 process 안전 접근 (브라우저 번들 영향 없음)

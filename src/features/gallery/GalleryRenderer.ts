@@ -27,6 +27,10 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
 import './styles/gallery-global.css';
 import { logger } from '@shared/logging/logger';
+import {
+  activateGalleryRoot,
+  deactivateGalleryRoot,
+} from '@features/gallery/core/galleryRootStyles';
 import { getPreact } from '@shared/external/vendors';
 
 /**
@@ -62,6 +66,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private onCloseCallback?: () => void;
   private shadowRoot: ShadowRoot | null = null; // Phase 4: Shadow DOM 지원
   private useShadowDOM = false; // Phase 4: Shadow DOM 사용 여부
+  private autoCreatedRoot = false; // 테스트 환경 자동 생성 여부
 
   constructor() {
     this.setupStateSubscription();
@@ -123,28 +128,37 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private createContainer(): void {
     this.cleanupContainer();
 
-    this.container = document.createElement('div');
-    this.container.className = 'xeg-gallery-renderer';
-    this.container.setAttribute('data-renderer', 'gallery');
+    // CH1: 기존 .xeg-gallery-renderer 제거 → #xeg-gallery-root 재사용
+    let existingRoot = document.querySelector('#xeg-gallery-root') as HTMLDivElement | null;
+    if (!existingRoot) {
+      // 테스트 및 독립 렌더링 환경 호환: GalleryApp 없이 직접 render 호출 시 루트 자동 생성
+      existingRoot = document.createElement('div');
+      existingRoot.id = 'xeg-gallery-root';
+      activateGalleryRoot(existingRoot);
+      document.body.appendChild(existingRoot);
+      this.autoCreatedRoot = true;
+      logger.debug('[GalleryRenderer] 테스트/독립 환경 자동 루트 생성 (#xeg-gallery-root)');
+    } else {
+      // 기존 루트 재활성화
+      activateGalleryRoot(existingRoot);
+    }
+    // 과거 일부 테스트는 .xeg-gallery-renderer 제거를 기대하므로 기본적으로 클래스 미부여
+    // 필요 시 향후 플래그 기반으로 재도입 가능
+    this.container = existingRoot;
 
-    // Phase 4: Shadow DOM 지원
     if (this.useShadowDOM) {
       try {
-        this.shadowRoot = this.container.attachShadow({ mode: 'open' });
-        // Shadow DOM에 스타일 주입
+        this.shadowRoot =
+          this.container.shadowRoot || this.container.attachShadow({ mode: 'open' });
         injectShadowDOMStyles(this.shadowRoot);
-        logger.info('[GalleryRenderer] Shadow DOM 생성 및 스타일 주입 완료');
+        logger.info('[GalleryRenderer] Shadow DOM (root direct) 준비 완료 (CH1)');
       } catch (error) {
-        logger.warn('[GalleryRenderer] Shadow DOM 생성 실패, 일반 DOM으로 fallback:', error);
+        logger.warn('[GalleryRenderer] Shadow DOM 준비 실패 (CH1):', error);
         this.shadowRoot = null;
       }
     }
 
-    document.body.appendChild(this.container);
-
-    // 정리 작업 등록
     this.cleanupManager.addTask(() => {
-      // 컨테이너 정리는 cleanupContainer에서 처리
       this.shadowRoot = null;
     });
   }
@@ -159,7 +173,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     // DOM depth 단순화를 위해 GalleryContainer 래퍼 제거 (Phase 3 GREEN)
     // 필요한 오버레이/레이아웃 스타일은 루트 컨테이너(this.container) 자체에 적용
-    this.applyRootStyles();
+    // CH1: 스타일은 GalleryApp.ensureGalleryContainer 에서 root 에 이미 적용
 
     const galleryElement = createElement(VerticalGalleryView, {
       onClose: () => {
@@ -186,23 +200,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * (기존 GalleryContainer overlay 역할 대체)
    */
   private applyRootStyles(): void {
-    if (!this.container) return;
-    Object.assign(this.container.style, {
-      position: 'fixed',
-      top: '0',
-      left: '0',
-      width: '100%',
-      height: '100%',
-      minHeight: '100vh',
-      overflowY: 'scroll',
-      boxSizing: 'border-box',
-      padding: '2rem',
-      background: 'rgba(0, 0, 0, 0.9)',
-      zIndex: '9999',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    });
+    /* deprecated in CH1 - retained for backward compatibility noop */
   }
 
   /**
@@ -265,13 +263,21 @@ export class GalleryRenderer implements GalleryRendererInterface {
     if (this.container) {
       try {
         const { render } = getPreact();
-        render(null, this.container);
-
-        if (document.contains(this.container)) {
-          this.container.remove();
-        }
+        render(null, this.shadowRoot || this.container);
       } catch (error) {
         logger.warn('[GalleryRenderer] 컨테이너 정리 실패:', error);
+      }
+      // CH1: root 자체는 제거하지 않음 (재사용)
+      if (this.autoCreatedRoot) {
+        try {
+          this.container.remove();
+        } catch {
+          /* ignore */
+        }
+        this.autoCreatedRoot = false;
+      } else {
+        // overlay 비활성화
+        deactivateGalleryRoot(this.container);
       }
       this.container = null;
     }
