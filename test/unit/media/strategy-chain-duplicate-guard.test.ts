@@ -34,14 +34,12 @@ describe('StrategyChain DSL duplicate guard 미들웨어', () => {
     const s1 = makeStrategy('SAME', true);
     const s2 = makeStrategy('SAME', true); // 이름 중복
 
-    // (추후 GREEN 단계) .enableDuplicateGuard() 같은 API 사용할 예정
-    const chain = new StrategyChainBuilder().add(s1).add(s2).build();
+    const chain = new StrategyChainBuilder().enableDuplicateGuard().add(s1).add(s2).build();
 
     const element = (globalThis.document as Document).createElement('div');
     const { metrics, result } = await chain.run(element, { mode: 'single' } as any, 'dup-test');
 
     expect(result.success).toBe(true);
-    // RED: 아직 duplicateSkipped 메트릭이 존재하지 않거나 0일 것이므로 실패 유도
     expect(metrics.duplicateSkipped).toBe(1);
     expect(metrics.attemptedStrategies).toEqual(['SAME']); // 두 번째는 시도 목록에 없어야 함
   });
