@@ -18,6 +18,9 @@ export interface StrategyChainMetrics {
   durationMs: number;
   // DSL 확장: 커스텀 미들웨어 호출 횟수 (존재 시에만)
   customMiddlewareCalls?: { before: number; after: number };
+  // DSL 확장 v2: duplicate guard / retry decorator (존재 시에만)
+  duplicateSkipped?: number;
+  strategyRetries?: Record<string, number>;
 }
 
 export interface StrategyChainResult {
@@ -121,6 +124,12 @@ export interface StrategyChainMiddleware {
   ): Promise<void> | void;
 }
 
+// before 훅이 skip 신호를 반환할 수 있도록 하는 유틸 타입 (미들웨어 구현 선택적)
+export interface StrategyChainBeforeResult {
+  skip?: boolean;
+  reason?: string;
+}
+
 export class StrategyChainBuilder {
   private readonly strategies: ExtractionStrategy[] = [];
   private readonly middlewares: StrategyChainMiddleware[] = [];
@@ -155,6 +164,28 @@ class StrategyChainProxyWrapper extends StrategyChain {
   ) {
     super(strategies);
   }
+  private readonly _executedNames = new Set<string>();
+  private _duplicateSkipped = 0;
+  private readonly _strategyRetries: Record<string, number> = {};
+
+  private async executeWithRetry(
+    strategy: ExtractionStrategy,
+    element: HTMLElement,
+    options: MediaExtractionOptions,
+    extractionId: string,
+    tweetInfo?: TweetInfo
+  ): Promise<MediaExtractionResult> {
+    const maxRetries = (strategy as unknown as { __retryMax?: number }).__retryMax ?? 0;
+    let attempt = 0;
+    while (true) {
+      const result = await strategy.extract(element, options, extractionId, tweetInfo);
+      if (result.success || attempt >= maxRetries) {
+        return result;
+      }
+      attempt++;
+      this._strategyRetries[strategy.name] = attempt;
+    }
+  }
   override async run(
     element: HTMLElement,
     options: MediaExtractionOptions,
@@ -167,15 +198,36 @@ class StrategyChainProxyWrapper extends StrategyChain {
     const start = performance.now ? performance.now() : Date.now();
     for (const strategy of this.strategies) {
       if (!strategy.canHandle(element, options)) continue;
-      attempted.push(strategy.name);
+      if ((this as unknown as { __enableDuplicateGuard?: boolean }).__enableDuplicateGuard) {
+        if (this._executedNames.has(strategy.name)) {
+          this._duplicateSkipped++;
+          continue;
+        }
+      }
       try {
+        let skip = false;
         for (const mw of this.mws) {
           if (mw.before) {
-            await mw.before({ element, options, extractionId }, strategy);
+            const r = (await mw.before(
+              { element, options, extractionId },
+              strategy
+            )) as void | StrategyChainBeforeResult;
             this.counters.before++;
+            if (r && typeof r === 'object' && (r as StrategyChainBeforeResult).skip) {
+              skip = true;
+            }
           }
         }
-        const result = await strategy.extract(element, options, extractionId, tweetInfo);
+        if (skip) continue;
+        attempted.push(strategy.name);
+        this._executedNames.add(strategy.name);
+        const result = await this.executeWithRetry(
+          strategy,
+          element,
+          options,
+          extractionId,
+          tweetInfo
+        );
         for (const mw of this.mws) {
           if (mw.after) {
             await mw.after({ element, options, extractionId }, strategy, result);
@@ -203,6 +255,11 @@ class StrategyChainProxyWrapper extends StrategyChain {
               totalTried: attempted.length,
               durationMs,
               customMiddlewareCalls: { ...this.counters },
+              duplicateSkipped: this._duplicateSkipped || undefined,
+              strategyRetries:
+                Object.keys(this._strategyRetries).length > 0
+                  ? { ...this._strategyRetries }
+                  : undefined,
             },
           };
         }
@@ -244,7 +301,35 @@ class StrategyChainProxyWrapper extends StrategyChain {
         totalTried: attempted.length,
         durationMs,
         customMiddlewareCalls: { ...this.counters },
+        duplicateSkipped: this._duplicateSkipped || undefined,
+        strategyRetries:
+          Object.keys(this._strategyRetries).length > 0 ? { ...this._strategyRetries } : undefined,
       },
     };
   }
 }
+
+export function withRetry(strategy: ExtractionStrategy, maxRetries = 1): ExtractionStrategy {
+  return Object.assign({}, strategy, { __retryMax: maxRetries });
+}
+
+declare module './StrategyChain' {
+  interface StrategyChainBuilder {
+    enableDuplicateGuard(): this;
+  }
+}
+
+interface StrategyChainBuilderInternal extends StrategyChainBuilder {
+  __enableDuplicateGuard?: boolean;
+}
+
+(
+  StrategyChainBuilder as unknown as {
+    prototype: StrategyChainBuilderInternal;
+  }
+).prototype.enableDuplicateGuard = function (
+  this: StrategyChainBuilderInternal
+): StrategyChainBuilder {
+  this.__enableDuplicateGuard = true;
+  return this;
+};
