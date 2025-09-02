@@ -302,6 +302,7 @@ function VerticalGalleryViewCore({
   // 개선된 갤러리 스크롤 처리 - 조건적 wheel 이벤트 처리 포함
   useGalleryScroll({
     container: containerRef.current,
+    scrollElement: scrollAreaRef.current,
     onScroll: delta => {
       // 큰 이미지에서의 스크롤 처리
       logger.debug('VerticalGalleryView: 큰 이미지 스크롤 감지', {

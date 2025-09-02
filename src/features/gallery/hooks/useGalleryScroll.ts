@@ -24,6 +24,8 @@ const { useEffect, useRef, useCallback } = getPreactHooks();
 interface UseGalleryScrollOptions {
   /** 갤러리 컨테이너 참조 */
   container: HTMLElement | null;
+  /** (옵션) 실제 스크롤이 적용될 내부 스크롤 요소 (scrollArea 등). 제공 시 container 대신 우선 사용 */
+  scrollElement?: HTMLElement | null;
   /** 스크롤 콜백 함수 */
   onScroll?: (delta: number) => void;
   /** 스크롤 처리 활성화 여부 */
@@ -65,6 +67,7 @@ interface UseGalleryScrollReturn {
  */
 export function useGalleryScroll({
   container,
+  scrollElement,
   onScroll,
   enabled = true,
   blockTwitterScroll = true,
@@ -342,7 +345,10 @@ export function useGalleryScroll({
     if (!enabled) {
       return;
     }
-    if (container) {
+    // scrollElement 가 명시되면 그것을 우선 사용 (내부 scrollArea)
+    if (scrollElement) {
+      activeContainerRef.current = scrollElement;
+    } else if (container) {
       activeContainerRef.current = container;
     }
 
@@ -412,7 +418,14 @@ export function useGalleryScroll({
 
       logger.debug('useGalleryScroll: 정리 완료');
     };
-  }, [enabled, container, blockTwitterScroll, handleGalleryWheel, preventTwitterScroll]);
+  }, [
+    enabled,
+    container,
+    scrollElement,
+    blockTwitterScroll,
+    handleGalleryWheel,
+    preventTwitterScroll,
+  ]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {

@@ -312,13 +312,20 @@ middleware before/after + custom metrics), background-image heuristic v2 (저품
    의도적 실패) ✔
 2. 중복 legacy 테스트 중립화 (.tsx duplicate skip 처리) ✔
 3. 다음 실행 예정: 구조 분리 + GREEN 변환
+4. (2025-09-03) useGalleryScroll 에 scrollElement 옵션 도입 (container 교체 대신
+   명시적)
+5. (2025-09-03) scrollArea wheel strict 테스트 추가
+   (`scroll-area-wheel-strict.test.ts`)
 
 남은 TODO (구조 리팩토링 스코프):
 
 - [ ] VerticalGalleryView: overlay(fixed) + scrollArea(overflow-y:auto) 분리
-- [ ] 기존 wheel/아이템 auto-scroll 훅 대상 scrollArea 로 전환
-- [ ] RED 테스트 GREEN 전환 (assert overlay===0, scrollArea>0)
-- [ ] 추가 GREEN 회귀 테스트 추가 (선택)
+      (구현 일부 진행 - scrollElement 옵션 연결)
+- [ ] 기존 wheel/아이템 auto-scroll 훅 대상 scrollArea 로 전환 (hook param 완료,
+      call-site scrollElement 전달 완료)
+- [ ] RED 테스트 GREEN 전환 (assert overlay===0, scrollArea>0) (진행 중)
+- [x] 추가 GREEN 회귀 테스트 추가: scrollArea wheel strict
+      (`scroll-area-wheel-strict.test.ts`)
 - [ ] 문서 이 섹션 완료 상태로 축약
 
 - `test/unit/gallery/toolbar-top-edge-fallback.test.tsx` (top-edge fallback

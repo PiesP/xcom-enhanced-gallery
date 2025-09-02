@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * @fileoverview CSS 색상을 OKLCH로 변환하는 스크립트
  */
@@ -125,7 +126,9 @@ function main() {
       console.log('🔄 백업에서 원본 파일 복원');
     }
 
-    process.exit(1);
+    if (!(globalThis as any).vitest) {
+      process.exit(1);
+    }
   }
 }
 

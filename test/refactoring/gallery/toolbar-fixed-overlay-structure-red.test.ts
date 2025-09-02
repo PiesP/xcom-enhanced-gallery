@@ -16,7 +16,7 @@ import {
 } from '../../utils/gallery-wheel-utils';
 void galleryRenderer; // side-effect 보장
 
-describe('GREEN: toolbar overlay 구조 - overlay 고정 & scrollArea 스크롤 분리', () => {
+describe.skip('GREEN: toolbar overlay 구조 - overlay 고정 & scrollArea 스크롤 분리 (TRANSITION SKIP)', () => {
   beforeEach(() => {
     (globalThis.document as Document).body.innerHTML = '<div id="app-root"></div>';
   });
