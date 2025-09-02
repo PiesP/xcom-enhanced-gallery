@@ -8,6 +8,7 @@
 
 import { getPreactHooks } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
+import { raf, caf } from '@shared/utils/raf';
 
 /**
  * DOM 렌더링 완료를 감지하는 훅
@@ -42,14 +43,14 @@ export function useDOMReady(dependencies: unknown[] = []): boolean {
 
     // 기존 애니메이션 프레임 취소
     if (frameRef.current) {
-      cancelAnimationFrame(frameRef.current);
+      caf(frameRef.current);
     }
 
     logger.debug('useDOMReady: DOM 준비 상태 체크 시작');
 
     // 이중 requestAnimationFrame으로 확실한 렌더링 완료 보장
-    frameRef.current = requestAnimationFrame(() => {
-      frameRef.current = requestAnimationFrame(() => {
+    frameRef.current = raf(() => {
+      frameRef.current = raf(() => {
         logger.debug('useDOMReady: DOM 렌더링 완료 감지');
         setIsReady(true);
       });
@@ -58,7 +59,7 @@ export function useDOMReady(dependencies: unknown[] = []): boolean {
     // 클린업 함수
     return () => {
       if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
+        caf(frameRef.current);
       }
     };
   }, dependencies);

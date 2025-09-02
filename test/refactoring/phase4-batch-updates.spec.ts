@@ -2,53 +2,9 @@
  * @fileoverview Phase 4: 배치 업데이트 최적화 테스트
  * TDD RED 단계 - 배치 업데이트 성능 검증
  */
+import { buildMediaInfo } from '../utils/buildMediaInfo.js';
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-
-// 배치 업데이트 테스트를 위한 모킹
-vi.mock('@shared/external/vendors', () => {
-  let batchCallCount = 0;
-  let signalUpdateCount = 0;
-
-  const mockSignal = vi.fn(initialValue => {
-    let currentValue = initialValue;
-
-    return {
-      get value() {
-        return currentValue;
-      },
-      set value(newValue) {
-        signalUpdateCount++;
-        currentValue = newValue;
-      },
-    };
-  });
-
-  const mockBatch = vi.fn(callback => {
-    batchCallCount++;
-    callback();
-  });
-
-  const mockEffect = vi.fn(callback => {
-    callback(); // 초기 실행
-    return () => {}; // unsubscribe 함수
-  });
-
-  return {
-    getPreactSignals: () => ({
-      signal: mockSignal,
-      batch: mockBatch,
-      effect: mockEffect,
-    }),
-    // 테스트용 카운터 접근
-    getBatchCallCount: () => batchCallCount,
-    getSignalUpdateCount: () => signalUpdateCount,
-    resetCounters: () => {
-      batchCallCount = 0;
-      signalUpdateCount = 0;
-    },
-  };
-});
 
 // Core services 모킹
 vi.mock('@shared/services/core-services', () => ({
@@ -69,31 +25,30 @@ import {
   setViewMode,
 } from '@shared/state/signals/gallery.signals';
 
-// 모킹된 함수들에 대한 접근
-// @ts-ignore
-const { getBatchCallCount, getSignalUpdateCount, resetCounters } = await import(
-  '@shared/external/vendors'
-);
+// Top-level await 제거 (Node14 타겟 호환)
+// (lazy assigned after dynamic import)
+let getBatchCallCount;
+let getSignalUpdateCount;
+let resetCounters;
+
+beforeAll(async () => {
+  // 테스트 카운터 활성화 플래그 설정
+  globalThis.__XEG_ENABLE_VENDOR_COUNTERS__ = true;
+  const mod = await import('@shared/external/vendors');
+  const counters = mod.getVendorTestCounters ? mod.getVendorTestCounters() : mod.vendorTestCounters;
+  if (counters) {
+    getBatchCallCount = () => counters.getBatchCallCount();
+    getSignalUpdateCount = () => counters.getSignalUpdateCount();
+    resetCounters = () => counters.resetCounters();
+  } else {
+    getBatchCallCount = () => 0;
+    getSignalUpdateCount = () => 0;
+    resetCounters = () => {};
+  }
+});
 
 describe('Phase 4: 배치 업데이트 최적화', () => {
-  const mockMediaItems = [
-    {
-      id: '1',
-      url: 'https://example.com/image1.jpg',
-      type: 'image' as 'image',
-      width: 1920,
-      height: 1080,
-      filename: 'image1.jpg',
-    },
-    {
-      id: '2',
-      url: 'https://example.com/image2.jpg',
-      type: 'image' as 'image',
-      width: 1920,
-      height: 1080,
-      filename: 'image2.jpg',
-    },
-  ];
+  const mockMediaItems = buildMediaInfo(2, 'batch');
 
   beforeEach(() => {
     resetCounters();

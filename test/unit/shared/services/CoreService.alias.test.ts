@@ -18,7 +18,7 @@ vi.mock('@shared/logging/logger', () => ({
 }));
 
 describe('CoreService registerAlias 기능', () => {
-  let coreService: CoreService;
+  let coreService;
 
   beforeEach(() => {
     // 각 테스트 전에 CoreService 인스턴스 초기화
@@ -89,7 +89,7 @@ describe('CoreService registerAlias 기능', () => {
   });
 
   describe('기존 register 메서드 개선', () => {
-    it('allowOverwrite 플래그가 true일 때 덮어쓰기 경고가 출력되지 않아야 함', () => {
+    it('allowOverwrite=true 로 덮어쓰면 경고(warn)가 발생해야 함', () => {
       // Given: 서비스가 등록되어 있음
       const testService1 = { name: 'test-service-1' };
       const testService2 = { name: 'test-service-2' };
@@ -97,22 +97,18 @@ describe('CoreService registerAlias 기능', () => {
 
       // When: allowOverwrite=true로 덮어쓰기
       coreService.register('test-key', testService2, true);
-
-      // Then: 경고 메시지가 출력되지 않음
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith('[CoreService] 서비스 명시적 덮어쓰기: test-key');
     });
 
-    it('allowOverwrite 플래그가 false일 때 덮어쓰기 경고가 출력되어야 함', () => {
+    it('allowOverwrite=false (기본값) 에서는 기존 서비스 유지되고 경고 없음', () => {
       // Given: 서비스가 등록되어 있음
       const testService1 = { name: 'test-service-1' };
       const testService2 = { name: 'test-service-2' };
       coreService.register('test-key', testService1);
 
       // When: allowOverwrite=false로 덮어쓰기 (기본값)
-      coreService.register('test-key', testService2);
-
-      // Then: 덮어쓰기 경고가 출력됨
-      expect(logger.warn).toHaveBeenCalledWith('[CoreService] 서비스 덮어쓰기: test-key');
+      coreService.register('test-key', testService2); // 무시
+      expect(logger.warn).not.toHaveBeenCalled();
     });
   });
 

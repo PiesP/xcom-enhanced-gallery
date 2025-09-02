@@ -13,6 +13,10 @@ import { EventManager } from '@shared/services/EventManager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { findTwitterScrollContainer } from '@shared/utils';
 
+// NOTE: document 존재 여부는 정적으로 캐시하지 않고, 매 접근 시 동적으로 확인한다.
+// JSDOM 테스트 환경 teardown 이후 지연된 타이머/이펙트가 실행될 수 있으므로
+// typeof document === 'undefined' 검사 또는 try/catch 로 안전하게 보호한다.
+
 const { useEffect, useRef, useCallback } = getPreactHooks();
 
 interface UseGalleryScrollOptions {
@@ -258,21 +262,48 @@ export function useGalleryScroll({
       return;
     }
 
+    // document 접근 시점에서 안전 확인
+    let localDocument: Document | undefined;
+    try {
+      if (typeof document !== 'undefined') {
+        localDocument = document;
+      }
+    } catch {
+      localDocument = undefined;
+    }
+
+    if (!localDocument) {
+      logger.debug('useGalleryScroll: document 없음 - 리스너 미등록 (teardown race)');
+      return;
+    }
+
     const eventManager = eventManagerRef.current;
 
-    // 문서 레벨에서 휠 이벤트 처리 (갤러리 열림 상태에 따라 동작)
-    eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
-      capture: true,
-      passive: false,
-    });
+    try {
+      eventManager.addEventListener(localDocument, 'wheel', handleGalleryWheel, {
+        capture: true,
+        passive: false,
+      });
+    } catch (err) {
+      logger.debug('useGalleryScroll: 문서 리스너 등록 실패 - 중단', {
+        error: (err as Error).message,
+      });
+      return;
+    }
 
-    // 트위터 페이지 스크롤 차단 (옵션)
+    // 트위터 페이지 스크롤 차단 (옵션) - document 존재가 확인된 경우에만 시도
     if (blockTwitterScroll) {
-      const twitterContainer = findTwitterScrollContainer();
-      if (twitterContainer) {
-        eventManager.addEventListener(twitterContainer, 'wheel', preventTwitterScroll, {
-          capture: true,
-          passive: false,
+      try {
+        const twitterContainer = findTwitterScrollContainer();
+        if (twitterContainer) {
+          eventManager.addEventListener(twitterContainer, 'wheel', preventTwitterScroll, {
+            capture: true,
+            passive: false,
+          });
+        }
+      } catch (err) {
+        logger.debug('useGalleryScroll: 트위터 컨테이너 리스너 등록 실패', {
+          error: (err as Error).message,
         });
       }
     }

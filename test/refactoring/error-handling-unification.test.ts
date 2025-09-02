@@ -191,7 +191,7 @@ describe('Phase 4.2: 에러 처리 통일', () => {
       // REFACTOR: 에러 메시지와 타임스탬프 포함
       expect(report).toContain('vendor: failed');
       expect(report).toContain('Detailed error');
-      expect(report).toMatch(/\[\d{1,2}:\d{2}:\d{2}\]|\[오후\s+\d{1,2}:\d{2}:\d{2}\]/); // 시간 형식 확인 (한국어 포함)
+      expect(report).toMatch(/\[\d{1,2}:\d{2}:\d{2}\]|\[(오전|오후)\s+\d{1,2}:\d{2}:\d{2}\]/); // 시간 형식 확인 (한국어 AM/PM 포함)
     });
 
     it('개발 환경에서 에러 디버깅 정보 제공', async () => {

@@ -31,7 +31,13 @@ import {
   useImperativeHandle,
   useDebugValue,
 } from 'preact/hooks'; // vendor
-import { signal, computed, effect, batch, Signal } from '@preact/signals'; // vendor
+import {
+  signal as rawSignal,
+  computed,
+  effect as rawEffect,
+  batch as rawBatch,
+  Signal,
+} from '@preact/signals'; // vendor
 import {
   forwardRef,
   memo,
@@ -80,12 +86,11 @@ export interface PreactHooksAPI {
 }
 
 export interface PreactSignalsAPI {
-  signal: typeof signal;
+  signal: typeof rawSignal;
   computed: typeof computed;
-  effect: typeof effect;
-  batch: typeof batch;
+  effect: typeof rawEffect;
+  batch: typeof rawBatch;
   Signal: typeof Signal;
-  // ReadonlySignal은 type으로만 export되므로 제외
 }
 
 export interface PreactCompatAPI {
@@ -165,13 +170,52 @@ export function getPreactHooksSafe(): PreactHooksAPI {
  * Preact Signals 라이브러리 안전 접근
  */
 export function getPreactSignalsSafe(): PreactSignalsAPI {
+  // 테스트 카운터 활성 시 래핑 (성능 영향 최소화를 위해 분기 가벼움)
+  const g = globalThis as Record<string, unknown> & {
+    __XEG_VENDOR_COUNTERS__?: {
+      incrementBatch?: () => void;
+      incrementSignal?: () => void;
+      incrementEffect?: () => void;
+    };
+  };
+  const counters = g.__XEG_VENDOR_COUNTERS__;
+
+  const wrappedBatch: typeof rawBatch = counters
+    ? <T>(fn: () => T): T => {
+        counters.incrementBatch?.();
+        return rawBatch(fn);
+      }
+    : rawBatch;
+
+  const wrappedSignal: typeof rawSignal = counters
+    ? (function wrapped(value?: unknown) {
+        // rawSignal 오버로드 대응: 인자 없을 수도 있음
+        // @ts-ignore - 그대로 전달 (오버로드 유지)
+        const s = rawSignal(value);
+        return new Proxy(s, {
+          set(target, prop, val) {
+            if (prop === 'value') counters.incrementSignal?.();
+            // @ts-ignore forward
+            target[prop] = val;
+            return true;
+          },
+        });
+      } as typeof rawSignal)
+    : rawSignal;
+
+  const wrappedEffect: typeof rawEffect = counters
+    ? <T>(fn: () => T) =>
+        rawEffect(() => {
+          counters.incrementEffect?.();
+          fn();
+        })
+    : rawEffect;
   return {
-    signal,
+    signal: wrappedSignal,
     computed,
-    effect,
-    batch,
+    effect: wrappedEffect,
+    batch: wrappedBatch,
     Signal,
-    // ReadonlySignal은 type으로만 export되므로 제외
   };
 }
 

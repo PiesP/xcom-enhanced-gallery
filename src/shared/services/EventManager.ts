@@ -7,6 +7,7 @@
 import { logger } from '@shared/logging/logger';
 import { DOMEventManager, createEventManager } from '@shared/dom/DOMEventManager';
 import { GalleryEventManager } from '@shared/utils/events';
+import { galleryState } from '@shared/state/signals/gallery.signals';
 import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events';
 
 // Phase 6: 안전한 이벤트 처리를 위한 새로운 인터페이스
@@ -132,10 +133,15 @@ export class EventManager {
     }
 
     try {
-      // 갤러리가 열린 상태에서는 실행하지 않음 (성능 최적화)
-      const galleryStatus = this.galleryManager.getGalleryStatus();
-      if (galleryStatus.initialized) {
-        logger.debug('갤러리 활성 상태, 우선순위 강화 스킵');
+      // Phase 11 GREEN: initialized 여부가 아니라 실제 갤러리가 열려(isOpen) 있는지 여부로 스킵 결정
+      let isOpen = false;
+      try {
+        isOpen = !!galleryState.value.isOpen;
+      } catch {
+        isOpen = false;
+      }
+      if (isOpen) {
+        logger.debug('갤러리 열림 상태, 우선순위 강화 스킵');
         return;
       }
 
@@ -155,7 +161,7 @@ export class EventManager {
         );
       }
 
-      logger.debug('이벤트 우선순위 안전하게 강화됨 (MutationObserver 기반)');
+      logger.debug('이벤트 우선순위 안전하게 강화됨 (MutationObserver 기반, isOpen 기준)');
     } catch (error) {
       logger.error('이벤트 우선순위 강화 실패:', error);
     }
@@ -389,6 +395,25 @@ export class EventManager {
   }
 
   /**
+   * Phase 11: 갤러리 닫기 후 재우선순위 재설정을 위한 soft reset
+   * - listener 들 제거하고 initialized 플래그만 false 로 전환하여
+   *   향후 reinforce 또는 명시적 initialize 호출 시 재바인딩 허용
+   */
+  public softResetGallery(): void {
+    try {
+      // GalleryEventManager soft reset 사용
+      // (handlers / options 유지, listenerIds 제거, initialized=false)
+      if (this.galleryManager && 'softReset' in this.galleryManager) {
+        // @ts-ignore - 런타임 존재 여부 체크 후 호출
+        this.galleryManager.softReset();
+        logger.debug('EventManager: gallery soft reset 수행 (Phase 11)');
+      }
+    } catch (error) {
+      logger.warn('EventManager: gallery soft reset 실패:', error);
+    }
+  }
+
+  /**
    * 갤러리 상태 조회
    */
   public getGalleryStatus() {
@@ -439,6 +464,27 @@ export class EventManager {
       eventListenerCount: this.domManager.getListenerCount(),
       hasActiveObserver: this.mutationObserver !== null,
     };
+  }
+
+  /**
+   * Phase 11: soft reset 후 갤러리 재열기 시 자동 재초기화 보장
+   * - softResetGallery() 는 handlers/options 는 유지하되 listenerIds 제거 & initialized=false 설정
+   * - reopen 시 initialized=false && handlers 존재하면 재등록 수행
+   */
+  public ensureGalleryAutoReinitialized(): void {
+    try {
+      const status = this.galleryManager.getGalleryStatus();
+      if (!status.initialized && this.safeEventOptions?.handlers) {
+        // 기존 handlers/options 재사용하여 재등록
+        this.galleryManager.initializeGallery(this.safeEventOptions.handlers, {
+          ...this.safeEventOptions,
+          preventBubbling: false,
+        });
+        logger.debug('EventManager: soft reset 이후 자동 재초기화 수행 (Phase 11)');
+      }
+    } catch (error) {
+      logger.warn('EventManager: 자동 재초기화 실패', error);
+    }
   }
 
   /**

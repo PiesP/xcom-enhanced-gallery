@@ -69,3 +69,10 @@ export { StaticVendorManager } from './vendor-manager-static';
 
 // 하위 호환성을 위한 VendorManager alias
 export { StaticVendorManager as VendorManager } from './vendor-manager-static';
+
+// 테스트 전용 카운터 (분리된 파일에서 선언) - 선택적 import
+export {
+  vendorTestCounters,
+  getVendorTestCounters,
+  resetVendorTestCounters,
+} from './vendor-test-counters';

@@ -51,15 +51,21 @@ describe('CoreService (ServiceManager)', () => {
       expect(coreService.get(serviceKey)).toBe(testService);
     });
 
-    it('동일한 키로 서비스를 덮어쓸 수 있어야 함', () => {
-      // 행위 중심 테스트: 덮어쓰기 동작 검증
+    it('allowOverwrite=false 기본 동작에서는 기존 서비스가 유지되어야 함', () => {
       const service1 = { name: 'service1' };
       const service2 = { name: 'service2' };
       const serviceKey = 'test-service';
-
       coreService.register(serviceKey, service1);
-      coreService.register(serviceKey, service2);
+      coreService.register(serviceKey, service2); // 무시
+      expect(coreService.get(serviceKey)).toBe(service1);
+    });
 
+    it('allowOverwrite=true 일 때에만 교체되어야 함', () => {
+      const service1 = { name: 'service1' };
+      const service2 = { name: 'service2' };
+      const serviceKey = 'overwrite-service';
+      coreService.register(serviceKey, service1);
+      coreService.register(serviceKey, service2, true);
       expect(coreService.get(serviceKey)).toBe(service2);
     });
   });

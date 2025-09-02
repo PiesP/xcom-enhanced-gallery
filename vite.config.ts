@@ -15,6 +15,8 @@ const FEATURE_BODY_SCROLL_LOCK =
   process.env.FEATURE_BODY_SCROLL_LOCK === 'false' ? 'false' : 'true';
 // Critical CSS 집계 & 중복 제거 (surface glass 토큰 단일 선언 보장)
 import { aggregateCriticalCssSync, sanitizeCssWithCriticalRoot } from './src/build/critical-css';
+import { generateCssInjectionCode } from './src/build/css-injection';
+import { STYLE_ID } from './src/shared/styles/constants';
 // 개선된 빌드 진행상황 플러그인
 import {
   buildProgressPlugin,
@@ -51,17 +53,23 @@ function getBuildMode(mode) {
   };
 }
 
-// Generate userscript header
+// 통일된 빌드 버전 계산 (헤더, CSS 주입 모두 동일 사용)
 /**
  * @param {BuildMode} buildMode
  * @returns {string}
  */
-function generateUserscriptHeader(buildMode) {
-  const devSuffix = buildMode.isDevelopment ? ' (Dev)' : '';
-  const version = buildMode.isDevelopment
-    ? `${packageJson.version}-dev.${Date.now()}`
-    : packageJson.version;
+function computeBuildVersion(buildMode) {
+  return buildMode.isDevelopment ? `${packageJson.version}-dev.${Date.now()}` : packageJson.version;
+}
 
+// Userscript 헤더 생성 (버전 외부 주입)
+/**
+ * @param {BuildMode} buildMode
+ * @param {string} version
+ * @returns {string}
+ */
+function generateUserscriptHeader(buildMode, version) {
+  const devSuffix = buildMode.isDevelopment ? ' (Dev)' : '';
   return `// ==UserScript==
 // @name         X.com Enhanced Gallery${devSuffix}
 // @namespace    https://github.com/piesp/xcom-enhanced-gallery
@@ -181,7 +189,9 @@ function createUserscriptBundlerPlugin(buildMode) {
           return;
         }
 
-        const jsContent = fs.readFileSync(jsFilePath, 'utf8');
+        const jsContentRaw = fs.readFileSync(jsFilePath, 'utf8');
+        // 기존 sourceMappingURL 주석 제거 (중복 방지)
+        const jsContent = jsContentRaw.replace(/\n?\/\/\s*# sourceMappingURL=.*?\n?$/, '\n');
 
         // Critical CSS 변수(:root) 집계 및 중복 제거
         let finalCss = allCss;
@@ -198,23 +208,15 @@ function createUserscriptBundlerPlugin(buildMode) {
           console.warn('[userscript-bundler] Critical CSS 집계 실패 – fallback 사용:', e);
         }
 
-        // CSS 주입 코드 생성 (finalCss 사용)
-        const cssInjectionCode =
-          finalCss.length > 0
-            ? `
-(function() {
-  if (typeof document === 'undefined') return;
-  const existingStyle = document.getElementById('xeg-styles');
-  if (existingStyle) existingStyle.remove();
-  const style = document.createElement('style');
-  style.id = 'xeg-styles';
-  style.textContent = ${JSON.stringify(finalCss)};
-  (document.head || document.documentElement).appendChild(style);
-})();`
-            : '';
+        // 단일화된 빌드 버전 (타임스탬프 포함 dev)
+        const buildVersion = computeBuildVersion(buildMode);
+        const cssInjectionCode = generateCssInjectionCode(finalCss, {
+          version: buildVersion,
+          styleId: STYLE_ID,
+        });
 
         // 최종 유저스크립트 생성
-        const wrappedCode = `${generateUserscriptHeader(buildMode)}
+        const wrappedCodeBase = `${generateUserscriptHeader(buildMode, buildVersion)}
 (function() {
   'use strict';
   ${cssInjectionCode}
@@ -230,28 +232,70 @@ function createUserscriptBundlerPlugin(buildMode) {
           : 'xcom-enhanced-gallery.user.js';
 
         const outputFilePath = path.resolve(outDir, outputFileName);
-        fs.writeFileSync(outputFilePath, wrappedCode, 'utf8');
+        fs.writeFileSync(outputFilePath, wrappedCodeBase, 'utf8');
 
-        // 소스맵 파일 처리 (개발환경에서만)
+        // 소스맵 파일 처리 (개발환경에서만) - 유효성 검사 & 재시도
         if (buildMode.isDevelopment && mapFiles.length > 0) {
           const mainMapFile = mapFiles.find(f => f === `${mainJsFile}.map`) || mapFiles[0];
+
+          async function waitForValidSourceMap(
+            filePath,
+            maxAttempts = 12,
+            initialDelayMs = 100,
+            factor = 1.5
+          ) {
+            let delay = initialDelayMs;
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              if (fs.existsSync(filePath)) {
+                try {
+                  const stat = fs.statSync(filePath);
+                  if (stat.size > 20) {
+                    const raw = fs.readFileSync(filePath, 'utf8');
+                    const json = JSON.parse(raw);
+                    if (json && json.version && json.mappings) {
+                      if (process.env.XEG_DEBUG_SOURCEMAP === 'true') {
+                        console.log(`[sourcemap] valid after attempt ${attempt}`);
+                      }
+                      return true;
+                    }
+                  }
+                } catch (e) {
+                  if (process.env.XEG_DEBUG_SOURCEMAP === 'true') {
+                    console.warn(`[sourcemap] parse/stat error attempt ${attempt}:`, e.message);
+                  }
+                }
+              }
+              if (attempt < maxAttempts) {
+                if (process.env.XEG_DEBUG_SOURCEMAP === 'true') {
+                  console.log(`[sourcemap] retry ${attempt}/${maxAttempts} waiting ${delay}ms`);
+                }
+                await new Promise(r => globalThis.setTimeout(r, delay));
+                delay = Math.round(delay * factor);
+              }
+            }
+            return false;
+          }
+
           if (mainMapFile) {
             const sourceMapPath = path.resolve(outDir, mainMapFile);
             const targetMapPath = path.resolve(outDir, `${outputFileName}.map`);
-
-            if (fs.existsSync(sourceMapPath)) {
-              // 소스맵 파일을 올바른 이름으로 복사
-              fs.copyFileSync(sourceMapPath, targetMapPath);
-
-              // 유저스크립트에 소스맵 참조 추가
+            const valid = await waitForValidSourceMap(sourceMapPath);
+            if (valid) {
+              // 동일 파일명인 경우 copy 생략 가능하지만 일관성 유지
+              if (sourceMapPath !== targetMapPath) {
+                fs.copyFileSync(sourceMapPath, targetMapPath);
+              } else if (!fs.existsSync(targetMapPath)) {
+                fs.copyFileSync(sourceMapPath, targetMapPath);
+              }
               const wrappedCodeWithMap =
-                wrappedCode + `\n//# sourceMappingURL=${outputFileName}.map`;
+                wrappedCodeBase + `\n//# sourceMappingURL=${outputFileName}.map`;
               fs.writeFileSync(outputFilePath, wrappedCodeWithMap, 'utf8');
-
               console.log(
                 `✅ ${outputFileName} 생성 완료 (CSS: ${allCss.length}자, 소스맵: ${targetMapPath})`
               );
-              return; // 성공 메시지 중복 방지
+              return;
+            } else {
+              console.warn(`⚠️ 소스맵 유효성 확인 실패 (빈 파일 또는 파싱 오류) - ${mainMapFile}`);
             }
           }
         }

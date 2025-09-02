@@ -21,10 +21,14 @@ describe('Build artifact: early style injection IIFE shape', () => {
     const content = fs.readFileSync(distPath, 'utf8').slice(0, 20000); // 초반부 검사 확대
 
     // 핵심 패턴들 (약간 느슨한 정규식 사용)
-    expect(content).toMatch(/\(function\(\)\s*{[\s\S]*?['\"]use strict['\"]/);
+    expect(content).toMatch(/\(function\(\)\s*{[\s\S]*?['"]use strict['"]/);
     expect(content).toMatch(/typeof document === 'undefined'/);
-    expect(content).toMatch(/getElementById\('xeg-styles'\)/);
-    expect(content).toMatch(/createElement\('style'\)/);
-    expect(content).toMatch(/style\.id = 'xeg-styles'/);
+
+    // 빌드 최적화로 STYLE_ID 상수를 사용하거나 직접 literal을 사용할 수 있으므로 두 경우 모두 허용
+    expect(content).toMatch(/var\s+STYLE_ID\s*=\s*["']xeg-styles["']/);
+    expect(content).toMatch(/getElementById\(\s*(?:['"]xeg-styles['"]|STYLE_ID)\s*\)/);
+    expect(content).toMatch(/createElement\(['"]style['"]\)/);
+    // style 또는 styleEl 변수명 모두 수용 (번들러 난독화/리네이밍 대비)
+    expect(content).toMatch(/style(?:El)?\.id\s*=\s*(?:['"]xeg-styles['"]|STYLE_ID)/);
   });
 });

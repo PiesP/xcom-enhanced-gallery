@@ -11,6 +11,7 @@ import { ExtractionError, ExtractionErrorCode } from '@shared/types/media.types'
 import { TweetInfoExtractor } from './extractors/TweetInfoExtractor';
 import { TwitterAPIExtractor } from './extractors/TwitterAPIExtractor';
 import { DOMDirectExtractor } from './extractors/DOMDirectExtractor';
+import { MediaExtractionCache } from './MediaExtractionCache';
 
 /**
  * 미디어 추출기
@@ -20,11 +21,14 @@ export class MediaExtractionService implements MediaExtractor {
   private readonly tweetInfoExtractor: TweetInfoExtractor;
   private readonly apiExtractor: TwitterAPIExtractor;
   private readonly domExtractor: DOMDirectExtractor;
+  private readonly cache: MediaExtractionCache;
+  private readonly MAX_RETRIES = 1; // Phase 11: 단일 재시도
 
-  constructor() {
+  constructor(cache?: MediaExtractionCache) {
     this.tweetInfoExtractor = new TweetInfoExtractor();
     this.apiExtractor = new TwitterAPIExtractor();
     this.domExtractor = new DOMDirectExtractor();
+    this.cache = cache ?? new MediaExtractionCache();
   }
 
   /**
@@ -38,6 +42,34 @@ export class MediaExtractionService implements MediaExtractor {
   ): Promise<MediaExtractionResult> {
     const extractionId = this.generateExtractionId();
     logger.info(`[MediaExtractor] ${extractionId}: 추출 시작`);
+    const logMetrics = (
+      stage: string,
+      data: {
+        tweetId?: string | null;
+        attempts?: number;
+        retries?: number;
+        cacheHit?: boolean;
+        sourceType?: string;
+        mediaCount?: number;
+        staleEvicted?: boolean;
+      }
+    ): void => {
+      try {
+        logger.info(`[MediaExtractor] ${extractionId}: metrics(${stage})`, {
+          metrics: {
+            tweetId: data.tweetId ?? null,
+            attempts: data.attempts ?? 0,
+            retries: data.retries ?? 0,
+            cacheHit: data.cacheHit ?? false,
+            sourceType: data.sourceType ?? 'unknown',
+            mediaCount: data.mediaCount ?? 0,
+            staleEvicted: data.staleEvicted ?? false,
+          },
+        });
+      } catch {
+        // 메트릭스 로깅 실패는 추출에 영향 주지 않음
+      }
+    };
 
     try {
       // 1단계: 트윗 정보 추출
@@ -66,6 +98,8 @@ export class MediaExtractionService implements MediaExtractor {
               sourceType: 'dom-direct-failed',
               strategy: 'media-extraction',
               error: '트윗 정보 없음 및 DOM 직접 추출 실패',
+              attempts: 1,
+              retries: 0,
               debug: {
                 element: element.tagName,
                 elementClass: element.className,
@@ -95,6 +129,9 @@ export class MediaExtractionService implements MediaExtractor {
             extractedAt: Date.now(),
             sourceType: 'dom-fallback',
             strategy: 'media-extraction',
+            cacheHit: false,
+            attempts: 1,
+            retries: 0,
           },
           tweetInfo: domResult.tweetInfo,
         };
@@ -102,29 +139,122 @@ export class MediaExtractionService implements MediaExtractor {
 
       logger.debug(`[MediaExtractor] ${extractionId}: 트윗 정보 확보 - ${tweetInfo.tweetId}`);
 
-      // 2단계: API 우선 추출
-      const apiResult = await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
+      // 캐시 조회 (상태 포함)
+      type CacheWithStatus = typeof this.cache & {
+        getStatus?: (key: string) => {
+          hit: boolean;
+          expired: boolean;
+          value?: MediaExtractionResult;
+        };
+      };
+      const cacheWithStatus = this.cache as CacheWithStatus;
+      const cacheStatus = cacheWithStatus.getStatus
+        ? cacheWithStatus.getStatus(tweetInfo.tweetId)
+        : { hit: false, expired: false };
 
-      if (apiResult.success && apiResult.mediaItems.length > 0) {
+      if (cacheStatus.expired) {
+        // stale eviction 관측 메트릭
+        logMetrics('cache-stale-evict', {
+          tweetId: tweetInfo.tweetId,
+          attempts: 0,
+          retries: 0,
+          cacheHit: false,
+          sourceType: 'cache-stale',
+          mediaCount: 0,
+          staleEvicted: true,
+        });
+      }
+
+      if (cacheStatus.hit && cacheStatus.value) {
+        const cached = cacheStatus.value;
         logger.info(
-          `[MediaExtractor] ${extractionId}: ✅ API 추출 성공 - ${apiResult.mediaItems.length}개 미디어`
+          `[MediaExtractor] ${extractionId}: ✅ 캐시 히트 (tweetId=${tweetInfo.tweetId}) - ${cached.mediaItems.length}개`
         );
-        // core 인터페이스 형식으로 변환
+        logMetrics('cache-hit', {
+          tweetId: tweetInfo.tweetId,
+          attempts: (cached.metadata?.attempts as number | undefined) ?? 0,
+          retries: (cached.metadata?.retries as number | undefined) ?? 0,
+          cacheHit: true,
+          sourceType: 'cache',
+          mediaCount: cached.mediaItems.length,
+        });
         return {
-          success: apiResult.success,
-          mediaItems: apiResult.mediaItems,
-          clickedIndex: apiResult.clickedIndex,
+          ...cached,
+          metadata: {
+            ...(cached.metadata || {}),
+            cacheHit: true,
+            attempts: (cached.metadata?.attempts as number | undefined) ?? 0,
+            retries: (cached.metadata?.retries as number | undefined) ?? 0,
+            extractedAt: cached.metadata?.extractedAt ?? Date.now(),
+            sourceType: (cached.metadata?.sourceType as string | undefined) ?? 'cache',
+            strategy: 'media-extraction',
+          },
+        };
+      }
+
+      // 2단계: API 우선 추출
+      let attempts = 0;
+      let retries = 0;
+      const apiResult = await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
+      attempts += 1;
+
+      let primaryResult = apiResult;
+
+      if (!(apiResult.success && apiResult.mediaItems.length > 0)) {
+        // 재시도 (단 1회)
+        const shouldRetry = this.MAX_RETRIES > 0;
+        if (shouldRetry) {
+          retries += 1;
+          logger.warn(
+            `[MediaExtractor] ${extractionId}: API 추출 실패 → 재시도 1회 수행 (tweetId=${tweetInfo.tweetId})`
+          );
+          const retryResult = await this.apiExtractor.extract(
+            tweetInfo,
+            element,
+            options,
+            `${extractionId}_retry`
+          );
+          attempts += 1;
+          if (retryResult.success && retryResult.mediaItems.length > 0) {
+            primaryResult = retryResult;
+          }
+        }
+      }
+
+      if (primaryResult.success && primaryResult.mediaItems.length > 0) {
+        logger.info(
+          `[MediaExtractor] ${extractionId}: ✅ API 추출 성공 - ${primaryResult.mediaItems.length}개 미디어 (attempts=${attempts}, retries=${retries})`
+        );
+        logMetrics('api-success', {
+          tweetId: tweetInfo.tweetId,
+          attempts,
+          retries,
+          cacheHit: false,
+          sourceType: 'api-first',
+          mediaCount: primaryResult.mediaItems.length,
+        });
+        const successResult = {
+          success: primaryResult.success,
+          mediaItems: primaryResult.mediaItems,
+          clickedIndex: primaryResult.clickedIndex,
           metadata: {
             extractedAt: Date.now(),
             sourceType: 'api-first',
             strategy: 'media-extraction',
+            attempts,
+            retries,
+            cacheHit: false,
           },
-          tweetInfo: apiResult.tweetInfo,
-        };
+          tweetInfo: primaryResult.tweetInfo,
+        } as const;
+        this.cache.set(tweetInfo.tweetId, successResult);
+        return successResult;
       }
 
       // 3단계: DOM 백업 추출
-      logger.warn(`[MediaExtractor] ${extractionId}: API 추출 실패 - DOM 백업 전략 실행`);
+      logger.warn(
+        `[MediaExtractor] ${extractionId}: API 추출 실패 (attempts=${attempts}, retries=${retries}) - DOM 백업 전략 실행`
+      );
       const domResult = await this.domExtractor.extract(element, options, extractionId, tweetInfo);
 
       // DOM 추출도 실패한 경우 자세한 오류 정보 포함
@@ -155,6 +285,7 @@ export class MediaExtractionService implements MediaExtractor {
                 mediaCount: domResult.mediaItems.length,
               },
             },
+            cacheHit: false,
           },
           tweetInfo: domResult.tweetInfo,
           errors: [
@@ -167,7 +298,7 @@ export class MediaExtractionService implements MediaExtractor {
       }
 
       // core 인터페이스 형식으로 변환
-      return {
+      const fallbackResult = {
         success: domResult.success,
         mediaItems: domResult.mediaItems,
         clickedIndex: domResult.clickedIndex,
@@ -175,9 +306,24 @@ export class MediaExtractionService implements MediaExtractor {
           extractedAt: Date.now(),
           sourceType: 'dom-fallback',
           strategy: 'extraction',
+          attempts,
+          retries,
+          cacheHit: false,
         },
         tweetInfo: domResult.tweetInfo,
-      };
+      } as const;
+      logMetrics('dom-fallback', {
+        tweetId: tweetInfo.tweetId,
+        attempts,
+        retries,
+        cacheHit: false,
+        sourceType: 'dom-fallback',
+        mediaCount: domResult.mediaItems.length,
+      });
+      if (tweetInfo?.tweetId && domResult.success && domResult.mediaItems.length > 0) {
+        this.cache.set(tweetInfo.tweetId, fallbackResult);
+      }
+      return fallbackResult;
     } catch (error) {
       logger.error(`[MediaExtractor] ${extractionId}: 추출 실패:`, error);
       return this.createErrorResult(error);

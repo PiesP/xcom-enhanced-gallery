@@ -104,14 +104,8 @@ async function registerFeatureServicesLazy(): Promise<void> {
 /**
  * 갤러리 앱 시작
  */
-// 메인 애플리케이션 entry point
-(async () => {
-  try {
-    await startApplication();
-  } catch (error) {
-    logger.error('Main initialization failed', error);
-  }
-})();
+// Phase 10.2.A: IIFE 제거 - 중복 실행 방지
+// 단일 시작점으로 통합 (DOM ready 패턴만 사용)
 
 /**
  * Non-Critical 시스템 백그라운드 초기화
@@ -374,12 +368,36 @@ async function initializeGalleryImmediately(): Promise<void> {
   }
 }
 
-// DOM 준비 시 애플리케이션 시작
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', startApplication);
-} else {
-  startApplication();
+/**
+ * Phase 10.2.A: 유저스크립트 중복 실행 방지
+ */
+const GLOBAL_EXECUTION_KEY = '__XEG_EXECUTION_STATE__';
+
+function ensureSingleExecution(): boolean {
+  if (globalThis[GLOBAL_EXECUTION_KEY as keyof typeof globalThis]) {
+    logger.debug('Application already running, skipping duplicate execution');
+    return false;
+  }
+  (globalThis as Record<string, unknown>)[GLOBAL_EXECUTION_KEY] = {
+    started: true,
+    timestamp: Date.now(),
+    instanceId: `xeg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // 인스턴스 식별
+  };
+  return true;
 }
+
+// Phase 10.2.A: 중복 시작점 제거 - 하나의 시작점만 유지
+if (ensureSingleExecution()) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApplication, { once: true });
+  } else {
+    // 스택 정리 후 실행 (동기 실행으로 인한 문제 방지)
+    setTimeout(startApplication, 0);
+  }
+}
+
+// NOTE: 중복 시작 방지 - ensureSingleExecution 블록 내 로직만 사용
+// (기존 이중 DOMContentLoaded 등록 제거)
 
 // 모듈 기본 export (외부에서 수동 시작 가능)
 export default {

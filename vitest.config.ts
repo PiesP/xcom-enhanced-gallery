@@ -3,6 +3,39 @@
  * 간결하고 효율적인 테스트 환경 구성
  */
 
+// preact/hooks 가 import 되는 시점 이전에 requestAnimationFrame / cancelAnimationFrame 이 정의되어 있지 않으면
+// 내부 타이머 cleanup 경로에서 ReferenceError 가 발생하는 문제가 있어 Node(global) 레벨에서 선 폴리필.
+// jsdom 환경 생성 전이라 window 는 없지만, 전역 식별자 바인딩을 만들어 둠.
+if (typeof globalThis.requestAnimationFrame === 'undefined') {
+  let __xegRafId = 0;
+  globalThis.requestAnimationFrame = cb => {
+    const id = ++__xegRafId; // 보장: number 반환 (Timeout 객체 사용 안 함)
+    globalThis.setTimeout?.(() => cb(Date.now()), 16);
+    return id;
+  };
+}
+if (typeof globalThis.cancelAnimationFrame === 'undefined') {
+  globalThis.cancelAnimationFrame = id =>
+    globalThis.clearTimeout ? globalThis.clearTimeout(id) : undefined;
+}
+
+// 비동기 teardown 이후에도 preact hooks 내부 타이머 클린업에서 free identifier
+// `cancelAnimationFrame` 참조가 ReferenceError를 발생시키지 않도록 비구성(non-configurable)
+// 전역 프로퍼티로 고정. jsdom 환경 재생성 과정에서 delete 시도되어도 유지.
+try {
+  const desc = Object.getOwnPropertyDescriptor(globalThis, 'cancelAnimationFrame');
+  if (!desc || desc.configurable) {
+    Object.defineProperty(globalThis, 'cancelAnimationFrame', {
+      value: globalThis.cancelAnimationFrame,
+      writable: true,
+      enumerable: false,
+      configurable: false,
+    });
+  }
+} catch {
+  // ignore
+}
+
 import preact from '@preact/preset-vite';
 import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';

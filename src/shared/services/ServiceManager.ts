@@ -35,10 +35,15 @@ export class CoreService {
 
   /**
    * 서비스 등록 (직접 인스턴스)
+   * Phase 10.2.B: 중복 등록 완전 차단
    */
   public register<T>(key: string, instance: T, allowOverwrite = false): void {
-    if (this.services.has(key) && !allowOverwrite) {
-      logger.warn(`[CoreService] 서비스 덮어쓰기: ${key}`);
+    if (this.services.has(key)) {
+      if (!allowOverwrite) {
+        logger.debug(`[CoreService] 서비스 이미 등록됨, 중복 무시: ${key}`);
+        return; // 중복 등록 완전 차단
+      }
+      logger.warn(`[CoreService] 서비스 명시적 덮어쓰기: ${key}`);
     }
 
     this.services.set(key, instance);

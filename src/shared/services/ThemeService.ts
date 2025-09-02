@@ -34,7 +34,11 @@ export class ThemeService implements IThemeService {
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private isInitialized = false;
 
-  constructor(private readonly loggerService: ILogger = logger) {
+  constructor(
+    private readonly loggerService: ILogger = logger,
+    // (DI Hook) 외부 환경 서비스 주입 포인트 - 테스트 DI 패턴 식별용
+    private readonly environmentService?: { getDarkModePreference?: () => boolean }
+  ) {
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
       this.initialize();

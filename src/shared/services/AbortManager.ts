@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import type { ILogger } from './interfaces';
 
 /**
  * 중앙 AbortController 관리자
@@ -17,6 +18,9 @@ import { logger } from '@shared/logging/logger';
 export class AbortManager {
   private readonly controllers = new Map<string, AbortController>();
   private readonly completedControllers = new Set<string>();
+
+  // (DI Hook) 외부 로깅/메트릭 서비스 주입 가능 (테스트 DI 패턴 식별용)
+  constructor(private readonly loggingService: ILogger = logger) {}
 
   /**
    * 새로운 AbortController 생성
@@ -35,10 +39,16 @@ export class AbortManager {
     // abort 시 자동 정리를 위한 리스너 등록
     controller.signal.addEventListener('abort', () => {
       this.completedControllers.add(id);
-      logger.debug(`[AbortManager] Controller ${id} aborted`);
+      (this.loggingService.debug || logger.debug).call(
+        this.loggingService,
+        `[AbortManager] Controller ${id} aborted`
+      );
     });
 
-    logger.debug(`[AbortManager] Created controller: ${id}`);
+    (this.loggingService.debug || logger.debug).call(
+      this.loggingService,
+      `[AbortManager] Created controller: ${id}`
+    );
     return controller;
   }
 
@@ -50,7 +60,10 @@ export class AbortManager {
     const controller = this.controllers.get(id);
     if (controller && !controller.signal.aborted) {
       controller.abort();
-      logger.debug(`[AbortManager] Aborted controller: ${id}`);
+      (this.loggingService.debug || logger.debug).call(
+        this.loggingService,
+        `[AbortManager] Aborted controller: ${id}`
+      );
     }
     this.controllers.delete(id);
   }
@@ -61,7 +74,10 @@ export class AbortManager {
   abortAll(): void {
     const activeIds = Array.from(this.controllers.keys());
 
-    logger.debug(`[AbortManager] Aborting all controllers: ${activeIds.length}`);
+    (this.loggingService.debug || logger.debug).call(
+      this.loggingService,
+      `[AbortManager] Aborting all controllers: ${activeIds.length}`
+    );
 
     for (const id of activeIds) {
       this.abort(id);
@@ -77,7 +93,10 @@ export class AbortManager {
       if (this.completedControllers.has(id)) {
         this.controllers.delete(id);
         this.completedControllers.delete(id);
-        logger.debug(`[AbortManager] Cleaned up controller: ${id}`);
+        (this.loggingService.debug || logger.debug).call(
+          this.loggingService,
+          `[AbortManager] Cleaned up controller: ${id}`
+        );
       }
       return;
     }
@@ -90,7 +109,10 @@ export class AbortManager {
     }
     this.completedControllers.clear();
 
-    logger.debug(`[AbortManager] Cleaned up ${cleanupCount} completed controllers`);
+    (this.loggingService.debug || logger.debug).call(
+      this.loggingService,
+      `[AbortManager] Cleaned up ${cleanupCount} completed controllers`
+    );
   }
 
   /**

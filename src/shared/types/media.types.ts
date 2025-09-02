@@ -155,6 +155,9 @@ export interface MediaExtractionResult {
     extractedAt?: number; // 추출 시간
     sourceType?: string; // 소스 타입
     error?: string; // 에러 메시지
+    attempts?: number; // 총 시도 횟수 (초기 + 재시도)
+    retries?: number; // 재시도 횟수
+    cacheHit?: boolean; // 캐시 조회 여부
     [key: string]: unknown; // 추가 메타데이터 허용
   };
 }

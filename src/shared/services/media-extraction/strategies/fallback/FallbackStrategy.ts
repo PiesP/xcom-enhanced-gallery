@@ -211,18 +211,30 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
 
       if (!backgroundImage || backgroundImage === 'none') continue;
 
-      const url = this.extractUrlFromBackgroundImage(backgroundImage);
-      if (!url || !MediaValidationUtils.isValidMediaUrl(url)) continue;
+      const selected = this.selectBestBackgroundImageUrl(backgroundImage);
+      if (!selected || !MediaValidationUtils.isValidMediaUrl(selected.url)) continue;
 
-      // 클릭된 요소 확인
       if (element === clickedElement || element.contains(clickedElement)) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = MediaInfoBuilder.createMediaInfo(`bg_${i}`, url, 'image', tweetInfo, {
-        alt: `Background Image ${i + 1}`,
-        fallbackSource: 'background-image',
-      });
+      const mediaInfo = MediaInfoBuilder.createMediaInfo(
+        `bg_${i}`,
+        selected.url,
+        'image',
+        tweetInfo,
+        {
+          alt: `Background Image ${i + 1}`,
+          fallbackSource: 'background-image',
+          additionalMetadata: {
+            qualityRank: selected.qualityRank,
+            qualityLabel: selected.qualityLabel,
+            originalIndex: selected.index,
+            candidateCount: selected.total,
+            heuristic: 'bg-quality-v1',
+          },
+        }
+      );
 
       items.push(mediaInfo);
     }
@@ -233,9 +245,99 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
   /**
    * 배경 이미지에서 URL 추출
    */
-  private extractUrlFromBackgroundImage(backgroundImage: string): string | null {
-    const match = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/);
-    return match ? (match[1] ?? null) : null;
+  private extractUrls(backgroundImage: string): string[] {
+    // url("...") 패턴 모두 추출 (data: 포함 가능) - 큰따옴표/작은따옴표 혼용 지원
+    const regex = /url\((?:"([^"]+)"|'([^']+)'|([^'"()]+))\)/g;
+    const urls: string[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(backgroundImage)) !== null) {
+      const url = match[1] || match[2] || match[3];
+      if (url) urls.push(url.trim());
+    }
+    return urls;
+  }
+
+  private selectBestBackgroundImageUrl(backgroundImage: string): {
+    url: string;
+    index: number;
+    qualityRank: number;
+    qualityLabel: string;
+    total: number;
+  } | null {
+    const urls = this.extractUrls(backgroundImage);
+    if (!urls.length) return null;
+
+    // 품질 레이블 우선순위 맵
+    const QUALITY_ORDER = ['orig', 'large', 'medium', 'small'];
+    const QUALITY_SCORE: Record<string, number> = QUALITY_ORDER.reduce(
+      (acc, q, idx) => {
+        acc[q] = QUALITY_ORDER.length - idx; // orig 가장 높은 점수
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    // 파일명에서 치수 추정 (예: IMG_1200x800, 1200x800, 2400x1600)
+    const sizeRegex = /(\b|_)(\d{2,5})x(\d{2,5})(\b|_)/i;
+
+    interface Candidate {
+      url: string;
+      index: number;
+      qualityLabel: string;
+      qualityRank: number; // 높은 값이 더 좋은 품질
+      inferredPixels: number; // 크기 추정값 (w*h)
+    }
+
+    const candidates: Candidate[] = urls.map((u, idx) => {
+      // name= 파라미터 추출
+      let qualityLabel = 'unknown';
+      try {
+        const urlObj = new URL(u, 'https://dummy.base'); // 상대 방지용 base
+        const nameParam = urlObj.searchParams.get('name');
+        if (nameParam) qualityLabel = nameParam;
+      } catch {
+        // 상대 또는 이상한 URL - 그대로 진행
+        const nameMatch = /[?&]name=([a-zA-Z0-9_-]+)/.exec(u);
+        if (nameMatch) qualityLabel = nameMatch[1];
+      }
+
+      const qRank = QUALITY_SCORE[qualityLabel] ?? 0;
+
+      // 사이즈 추정
+      let inferredPixels = 0;
+      const sizeMatch = sizeRegex.exec(u);
+      if (sizeMatch) {
+        const w = parseInt(sizeMatch[2], 10);
+        const h = parseInt(sizeMatch[3], 10);
+        if (!isNaN(w) && !isNaN(h)) {
+          inferredPixels = w * h;
+        }
+      }
+
+      return {
+        url: u,
+        index: idx,
+        qualityLabel,
+        qualityRank: qRank,
+        inferredPixels,
+      };
+    });
+
+    // 정렬: 1) qualityRank desc 2) inferredPixels desc 3) origIndex asc (안정성)
+    candidates.sort((a, b) => {
+      if (b.qualityRank !== a.qualityRank) return b.qualityRank - a.qualityRank;
+      if (b.inferredPixels !== a.inferredPixels) return b.inferredPixels - a.inferredPixels;
+      return a.index - b.index;
+    });
+
+    const best = candidates[0];
+    return {
+      url: best.url,
+      index: best.index,
+      qualityRank: best.qualityRank,
+      qualityLabel: best.qualityLabel,
+      total: candidates.length,
+    };
   }
 
   /**

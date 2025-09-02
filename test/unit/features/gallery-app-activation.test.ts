@@ -217,22 +217,12 @@ describe('갤러리 앱 활성화', () => {
       expect(expectedActions.length).toBeGreaterThan(0);
     });
 
-    it('서비스 중복 등록 문제가 해결되어야 함', () => {
-      // 로직 분리: 서비스 등록 중복 방지 로직 테스트
-      const logSpy = vi.spyOn(mockConsole, 'warn').mockImplementation(() => {});
-
-      // 동일한 서비스를 두 번 등록
+    it('서비스 중복 등록 시 기본 동작은 무시되고 경고가 없어야 함', () => {
+      const warnSpy = vi.spyOn(mockConsole, 'warn').mockImplementation(() => {});
       serviceManager.register('test.service', { name: 'first' });
-      serviceManager.register('test.service', { name: 'second' });
-
-      // 중복 등록 경고가 한 번만 발생해야 함
-      expect(logSpy).toHaveBeenCalledTimes(1);
-      expect(logSpy).toHaveBeenCalledWith(
-        '[XEG] [WARN]',
-        expect.stringContaining('[CoreService] 서비스 덮어쓰기: test.service')
-      );
-
-      logSpy.mockRestore();
+      serviceManager.register('test.service', { name: 'second' }); // 무시됨
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
   });
 

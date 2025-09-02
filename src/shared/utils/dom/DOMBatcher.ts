@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { raf, caf } from '@shared/utils/raf';
 
 /**
  * DOM 업데이트 작업
@@ -45,7 +46,7 @@ export class DOMBatcher {
    */
   flush(): void {
     if (this.rafId) {
-      cancelAnimationFrame(this.rafId);
+      caf(this.rafId);
       this.rafId = null;
     }
 
@@ -65,7 +66,7 @@ export class DOMBatcher {
    */
   clear(): void {
     if (this.rafId) {
-      cancelAnimationFrame(this.rafId);
+      caf(this.rafId);
       this.rafId = null;
     }
     this.updates.length = 0;
@@ -74,7 +75,7 @@ export class DOMBatcher {
   private scheduleFlush(): void {
     if (this.rafId) return;
 
-    this.rafId = requestAnimationFrame(() => {
+    this.rafId = raf(() => {
       this.rafId = null;
       this.flush();
     });

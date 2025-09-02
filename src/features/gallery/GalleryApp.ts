@@ -213,6 +213,14 @@ export class GalleryApp {
       // 갤러리 컨테이너 확인
       await this.ensureGalleryContainer();
 
+      // Phase 11: soft reset 이후 첫 open 시 이벤트 자동 재초기화 보장
+      try {
+        const { EventManager } = await import('@shared/services/EventManager');
+        EventManager.getInstance().ensureGalleryAutoReinitialized();
+      } catch (e) {
+        logger.debug('자동 재초기화 보장 과정에서 오류(무시 가능):', e);
+      }
+
       // 갤러리 상태 업데이트
       openGallery(mediaItems, validIndex);
 
@@ -238,6 +246,15 @@ export class GalleryApp {
       }
 
       this.handleGalleryClose();
+      // Phase 11: 이벤트 시스템 soft reset (재우선순위 재설정 준비)
+      (async () => {
+        try {
+          const { EventManager } = await import('@shared/services/EventManager');
+          EventManager.getInstance().softResetGallery();
+        } catch {
+          // soft reset 실패는 치명적 아님
+        }
+      })();
       logger.info('갤러리 닫기 완료');
     } catch (error) {
       logger.error('갤러리 닫기 실패:', error);

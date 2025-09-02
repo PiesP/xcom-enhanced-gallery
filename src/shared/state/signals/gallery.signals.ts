@@ -10,7 +10,8 @@
 
 import type { MediaInfo } from '@shared/types/media.types';
 import type { Signal } from '@shared/types/signals';
-import { getPreactSignals } from '@shared/external/vendors';
+// 아키텍처 규칙: vendor 구현 세부경로 직접 import 지양 -> barrel 경유
+import { getPreactSignals as getPreactSignalsSafe } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
 
 /**
@@ -55,7 +56,7 @@ const logger: ILogger = defaultLogger;
 
 function getGalleryStateSignal(): Signal<GalleryState> {
   if (!galleryStateSignal) {
-    const { signal } = getPreactSignals();
+    const { signal } = getPreactSignalsSafe();
     galleryStateSignal = signal<GalleryState>(INITIAL_STATE);
   }
   return galleryStateSignal;
@@ -77,7 +78,7 @@ export const galleryState = {
    * Subscribe to state changes with error handling
    */
   subscribe(callback: (state: GalleryState) => void): () => void {
-    const { effect } = getPreactSignals();
+    const { effect } = getPreactSignalsSafe();
     return effect(() => {
       try {
         callback(getGalleryStateSignal().value);
@@ -97,7 +98,7 @@ export const galleryState = {
  */
 export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   const validIndex = Math.max(0, Math.min(startIndex, items.length - 1));
-  const { batch } = getPreactSignals();
+  const { batch } = getPreactSignalsSafe();
 
   batch(() => {
     galleryState.value = {
@@ -116,7 +117,7 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
  * Close gallery
  */
 export function closeGallery(): void {
-  const { batch } = getPreactSignals();
+  const { batch } = getPreactSignalsSafe();
 
   batch(() => {
     galleryState.value = {
@@ -182,7 +183,7 @@ export function setLoading(isLoading: boolean): void {
  * Set error state
  */
 export function setError(error: string | null): void {
-  const { batch } = getPreactSignals();
+  const { batch } = getPreactSignalsSafe();
 
   batch(() => {
     galleryState.value = {

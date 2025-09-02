@@ -741,6 +741,35 @@ export function cleanupGalleryEvents(): void {
 }
 
 /**
+ * 갤러리 이벤트 soft reset
+ * - handlers / options 유지
+ * - listenerIds 제거하여 reinforcement 또는 재초기화를 허용
+ * - initialized 플래그만 false 로 변경
+ * Phase 11 GREEN: 갤러리 닫기 후 재우선순위 재설정 준비 상태 확보
+ */
+export function softResetGalleryEvents(): void {
+  try {
+    if (!galleryEventState.initialized) return; // 이미 reset 상태
+
+    // 기존 리스너 제거 (안전)
+    if (galleryEventState.listenerIds.length > 0) {
+      galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
+    }
+
+    // MutationObserver 는 유지 (우선순위 강화 감지 위해) - 단, events.ts 의 observer 는
+    // galleryEventState.mutationObserver 에 저장되어 있으며 cleanup 하지 않음.
+
+    galleryEventState.listenerIds = [];
+    galleryEventState.initialized = false;
+    galleryEventState.priorityReinforcementPending = false;
+
+    logger.debug('Gallery events soft reset 완료 (Phase 11)');
+  } catch (error) {
+    logger.warn('Gallery events soft reset 실패:', error);
+  }
+}
+
+/**
  * 갤러리 이벤트 상태 조회
  */
 export function getGalleryEventStatus() {
@@ -836,6 +865,13 @@ export class GalleryEventManager {
 
   public cleanupGallery(): void {
     cleanupGalleryEvents();
+  }
+
+  /**
+   * 갤러리 이벤트 soft reset (Phase 11)
+   */
+  public softReset(): void {
+    softResetGalleryEvents();
   }
 
   public getGalleryStatus() {
