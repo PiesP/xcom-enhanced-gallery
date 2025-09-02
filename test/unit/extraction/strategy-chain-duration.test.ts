@@ -49,7 +49,8 @@ describe('StrategyChain durationMs', () => {
     expect(metrics.successStrategy).toBe('B');
     expect(metrics.attemptedStrategies).toEqual(['A', 'B']);
     expect(metrics.durationMs).toBeGreaterThanOrEqual(70);
-    expect(result.metadata.strategyChainDuration).toBeGreaterThanOrEqual(70);
+    // legacy strategyChainDuration 메타 필드는 제거되었음 (centralMetrics.durationMs 로 대체)
+    expect(result.metadata.strategyChainDuration).toBeUndefined();
     vi.useRealTimers();
   });
 });

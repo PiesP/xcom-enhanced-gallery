@@ -8,31 +8,36 @@
 
 ## 현재 진행 상태 (2025-09 업데이트)
 
-| Phase | 항목                      | 상태          | 비고                                                                                                                                           |
-| ----- | ------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | 안정성 보호용 회귀 테스트 | ✅ GREEN완료  | 베이스라인 측정 완료                                                                                                                           |
-| 2     | 가상 스크롤링 기본 커널   | ✅ GREEN완료  | useVirtualWindow 훅 구현 완료                                                                                                                  |
-| 3     | Container 계층 단순화     | ✅ GREEN완료  | GalleryRenderer 통합 완료                                                                                                                      |
-| 4     | Shadow DOM 격리           | ✅ GREEN완료  | Shadow DOM 스타일 격리 완료                                                                                                                    |
-| 5     | WebP/AVIF 자동 감지       | ✅ GREEN완료  | 브라우저 포맷 지원 감지 완료                                                                                                                   |
-| 6     | 인접 프리로딩             | ✅ GREEN완료  | 다음/이전 미디어 프리로딩 완료                                                                                                                 |
-| 7     | 뷰포트 밖 언로딩          | ✅ GREEN완료  | 오프스크린 메모리 관리 완료                                                                                                                    |
-| 8     | 통합 회귀 + 성능 가드     | ✅ GREEN완료  | CI 성능 예산 시스템 구현 완료                                                                                                                  |
-| 9     | 작은 이미지 스크롤 차단   | ✅ GREEN완료  | 이벤트 차단 & CSS/휠 처리 분리 완료                                                                                                            |
-| 10    | 중복 초기화 방지          | ✅ GREEN완료  | 갤러리 재실행 안정성 확보 (single execution)                                                                                                   |
-| 11    | 미디어 추출 신뢰성 강화   | ✅ 부분 GREEN | micro-retry, 캐시, 다중 BG 휴리스틱, reopen, stale-evict metrics, BG 품질(우선순위 orig>large>medium>small) GREEN (잔여: StrategyChain 리팩터) |
+| Phase | 항목                      | 상태            | 비고                                                                                                                                                                                                                                                                                                                         |
+| ----- | ------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | 안정성 보호용 회귀 테스트 | ✅ GREEN완료    | 베이스라인 측정 완료                                                                                                                                                                                                                                                                                                         |
+| 2     | 가상 스크롤링 기본 커널   | ✅ GREEN완료    | useVirtualWindow 훅 구현 완료                                                                                                                                                                                                                                                                                                |
+| 3     | Container 계층 단순화     | ✅ GREEN완료    | GalleryRenderer 통합 완료                                                                                                                                                                                                                                                                                                    |
+| 4     | Shadow DOM 격리           | ✅ GREEN완료    | Shadow DOM 스타일 격리 완료                                                                                                                                                                                                                                                                                                  |
+| 5     | WebP/AVIF 자동 감지       | ✅ GREEN완료    | 브라우저 포맷 지원 감지 완료                                                                                                                                                                                                                                                                                                 |
+| 6     | 인접 프리로딩             | ✅ GREEN완료    | 다음/이전 미디어 프리로딩 완료                                                                                                                                                                                                                                                                                               |
+| 7     | 뷰포트 밖 언로딩          | ✅ GREEN완료    | 오프스크린 메모리 관리 완료                                                                                                                                                                                                                                                                                                  |
+| 8     | 통합 회귀 + 성능 가드     | ✅ GREEN완료    | CI 성능 예산 시스템 구현 완료                                                                                                                                                                                                                                                                                                |
+| 9     | 작은 이미지 스크롤 차단   | ✅ GREEN완료    | 이벤트 차단 & CSS/휠 처리 분리 완료                                                                                                                                                                                                                                                                                          |
+| 10    | 중복 초기화 방지          | ✅ GREEN완료    | 갤러리 재실행 안정성 확보 (single execution)                                                                                                                                                                                                                                                                                 |
+| 11    | 미디어 추출 신뢰성 강화   | ✅ 부분 GREEN++ | micro-retry, 캐시, 다중 BG 휴리스틱, reopen, stale-evict metrics, BG 품질(우선순위 orig>large>medium>small) + successResultCache LRU/TTL eviction 타입 분리 + StrategyChain DSL 1차 미들웨어 훅/metrics 스캐폴드 + background-image heuristic v2(저품질 토큰 패널티) (잔여: DSL 고도화/추가 middleware & 고급 heuristic 3차) |
 
-**현재 위치**: **Phase 11 부분 GREEN - 핵심 추출 안정화(micro-retry, 캐시,
+duration 중앙 통합 및 legacy 메타 필드 제거) 완료 / 남은 HARDEN: StrategyChain
+**현재 위치**: **Phase 11 부분 GREEN++ - 핵심 추출 안정화(micro-retry, 캐시,
 background-image 다중 URL/품질, lazy data-src, reopen 변이 DOM, LRU/TTL 분리
-메트릭, BG 품질 휴리스틱) 완료 / HARDEN(StrategyChain 리팩터링) 잔여**
+메트릭, BG 품질 휴리스틱, successResultCache eviction 타입 분리, StrategyChain
+duration 중앙 통합 및 legacy 메타 필드 제거, StrategyChain DSL 1차(builder +
+middleware before/after + custom metrics), background-image heuristic v2 (저품질
+토큰 패널티: small|thumb|tiny|crop|fit|medium -15점) 완료 / 남은 HARDEN: DSL
+미들웨어 확장(duplicate guard, retry decorator) & BG heuristic 3차(치수 추론)**
 
 ### 테스트 네이밍 정책 업데이트 (2025-09)
 
 - 파일명 기반 \*.red.test.ts 방식 폐지 → RED/GREEN 의도는 `describe/it` 설명
   문자열로 표현
-- 사유: TS 파서/타입체커 중복 파일 관리 혼선 및 린트 파이프라인 마찰 최소화
-- 기존 RED 파일: 통합/삭제 완료 (`*.red.test.ts` 제거). 히스토리는 Git 로그로
-  추적
+- 기존 남아있던 실험적 RED 파일 모두 표준 `.test.ts` 로 전환 (StrategyChain DSL,
+  background-image heuristic v2 포함)
+- 히스토리는 Git 로그로 추적 (파일명에서 red 제거)
 
 ### Phase 11 메트릭 확장 변경점
 
@@ -55,21 +60,27 @@ background-image 다중 URL/품질, lazy data-src, reopen 변이 DOM, LRU/TTL �
 - centralMetrics 파생 비율: strategyCacheHitRatio, successResultCacheHitRatio
   투영
 
-### 남은 HARDEN 잔여 작업 (우선순위)
+### 남은 HARDEN 잔여 작업 (우선순위 업데이트)
 
-1. StrategyChain 리팩터링: Orchestrator for-loop 위임 제거 & 체인 객체 추상화
-   (성능/추적 단일화)
-2. 추가 메트릭: StrategyChain duration 고해상도 측정 (`performance.now`() 기반)
-   → centralMetrics.durationMs 채우기
-3. Cache stale purge 주기적 스캔 (현재 lazy eviction) + purge count 메트릭
+1. StrategyChain DSL 고도화: duplicate guard / retry decorator / cache
+   middleware 체인화 (현재 1차 before/after 훅 + metrics 만 구현)
+2. background-image heuristic 3차: perceptual dimension 추정 또는 추가 해상도
+   패턴(예: `_(\d+)x(\d+)` 다중 후보 비교) + progressive enhancement
+3. Orchestrator centralMetrics 확장 재평가: cache purge/eviction 추가 요약 필드
+   투영 여부
 
-- ✅ 구현: purgeIntervalMs 옵션 + purgeCount / purgeIntervalActive 메트릭, 동적
-  재설정 API (set/stop)
-- 남은 개선: Orchestrator에서 cache 메트릭 일부를 centralMetrics에도 선택적 투영
-  (필요 시)
+#### ✅ 완료된 항목 (2025-09-02 업데이트)
 
-4. (선택) background-image additional heuristic v2: perceptual dimension
-   추정(요청 HEAD 차단 방지) → 향후 필요 시
+- StrategyChain duration 고해상도 측정 및 중앙 집중
+  (`centralMetrics.durationMs`) 구현
+- legacy `metadata.strategyChainDuration` 필드 제거 및 관련 테스트 업데이트
+- 누적 집계 메트릭: `centralMetrics.chainDurationAvgMs`,
+  `centralMetrics.chainDurationMaxMs` 추가
+- Orchestrator duration 전달 경로(logMetricsSummary 호출) 누락 수정
+- StrategyChain DSL 1차 스캐폴드(Builder + Middleware before/after 훅 +
+  customMiddlewareCalls metrics) GREEN
+- background-image heuristic v2: 저품질 토큰(small|thumb|tiny|crop|fit|medium)
+  패널티(-15) 적용 테스트 GREEN
 
 ---
 
@@ -1185,12 +1196,16 @@ URL 추출 regex: [ ] /background-image:\s*url\(["']?(.*?)["']?\)/ [ ]
 
 #### 현재 발견된 신규 갭 (업데이트)
 
-1. 고급 background-image 품질(해상도 suffix 비교, size 파싱) 미적용.
-2. cache stale purge 관측 미구현 (metricsSummary 1차 구현 완료, stale purge 세부
-   지표 후속).
-3. successResultCache eviction 타입(TTL vs LRU) 분리 필요 (현재 단일 카운터).
-4. MediaExtractionCache missCount 정의 재조정 필요 (현재 set 시 증가 → 실제 get
-   miss 기반으로 전환 예정).
+1. 고급 background-image 품질(해상도 suffix 비교, size 파싱) 추가 고도화 (기본
+   WxH + name 패턴 적용 상태)
+2. (완료) successResultCache eviction 타입(TTL vs LRU) 분리 →
+   `successResultCacheEvictionTypes { lru, ttl }` + backward compat 합계 필드
+   유지
+3. (완료) StrategyChain duration 중앙화 및 평균/최대 집계 (legacy 필드 제거)
+4. (완료) successResultCacheMaxEntries LRU 회귀 테스트 추가 (max=1, 중복 push 큐
+   stale 엔트리 skip 및 최소 eviction 검증).
+5. MediaExtractionCache missCount 의미 재조정(검토) - 현 구현은 get 미스/만료
+   시에만 증가로 개선 완료, 추가 문서 반영 필요.
 
 #### 다음 HARDEN 테스트 계획 (우선순위)
 
@@ -1198,8 +1213,16 @@ URL 추출 regex: [ ] /background-image:\s*url\(["']?(.*?)["']?\)/ [ ]
    `orchestrator-metrics-logging.test.ts`: metrics 로깅 포맷 1차 검증.
 2. orchestrator metricsSummary 확장 (cooldownShortCircuits, sessionResets 등
    추가 필드 활용) HARDEN 시 재검증.
-3. `cache-stale-purge.test.ts`: TTL 경과 후 purge 및 재추출 경로.
-4. `background-image-quality-advanced.test.ts`: orig 부재 시 largest name 선택.
+3. (완료) 캐시 만료/정책 테스트: `media-extraction-cache-stale-metrics.test.ts`,
+   `cache-purge-config.test.ts`, `cache-auto-purge-interval.test.ts` (자동
+   interval purge 포함)
+4. (완료) StrategyChain duration 중앙화/집계 테스트:
+   `orchestrator-chain-duration-aggregate-metrics.test.ts` (avg/max),
+   `orchestrator-strategy-chain-duration-centralization.test.ts`,
+   `strategy-chain-metadata-cleanup.test.ts`, `strategy-chain-duration.test.ts`
+   (legacy 제거 확인)
+5. `background-image-quality-advanced.test.ts`: orig 부재 시 largest name 선택
+   (추가 edge).
 
 #### 커버리지 전략
 
@@ -1589,3 +1612,289 @@ diff → 재바인딩 후 성공 REFACTOR: audit 모듈 분리 (`EventPriorityAu
 위 Phase 11 보강 및 Phase 12 제안은 실제 구현 전 RED 테스트 추가 후 순차 적용.
 (본 섹션 추가로 기존 계획 대비 이벤트 재우선순위 & 추출 신뢰성 위험을 명시적으로
 관리)
+
+---
+
+# ✅ 신규 Modernization / Simplification 리팩터링 확장 계획 (Phases 13–20)
+
+> 목표: 누적된 복잡도와 중복 책임을 줄이고(lean core), 현대 브라우저/Preact 기능
+> (signals, CSS 컨테이너 쿼리, CSS Layer, 지연 청크) 를 활용하여 **더 간결하고
+> 접근성 높으며 유지보수 용이한 갤러리**로 재구성.
+
+## 🔍 현 구조 간략 분석 (문맥: GalleryCore vs GalleryApp)
+
+| 영역         | 현 상태 관찰                                                                  | 문제점(중복/복잡도)                           | 개선 방향                                                          |
+| ------------ | ----------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------ |
+| Core 로직    | `GalleryCore` + `GalleryApp` 이 모두 open/close, index, diagnostics 일부 책임 | 이중 책임, API 표면 확대                      | 단일 Facade (`GalleryController`) 로 축소 + 내부 모듈 경량화       |
+| State        | signals 다수 (galleryState + media extraction metrics 개별)                   | 메트릭 산재, 테스트 setup 비용 증가           | Signal Store(정규화) + selector util                               |
+| Extraction   | Orchestrator + StrategyChain 예정 + Duplicate Guard 분산                      | life-cycle 산재 / duplicate / cache 경계 모호 | 명시적 파이프(steps 배열 + middleware) 구성                        |
+| Events       | EventManager reinforce + soft reset + reopen 보강                             | 재우선순위 조건 다양, 가독성 저하             | Priority Auditor (Phase 12) 이후 단일 정책 테이블                  |
+| Styles       | 모듈 CSS + 글로벌 주입 + 네임스페이스 + (선택) Shadow DOM                     | 스타일 경로 다변, FOUC 완화 필요              | CSS Layer + design tokens mapping + single injection               |
+| Focus/접근성 | ESC, Arrow 약간 지원, ARIA labeling 미흡                                      | 스크린리더 탐색 한정                          | Roving tabindex / aria-live updates / focus ring 통일              |
+| 빌드         | 단일 번들 (vendor 포함)                                                       | 초기 로드 비용 증가                           | Dynamic feature chunk (virtual scroll, heavy extraction) 지연 로드 |
+
+## 🎯 Modernization KPI (추가)
+
+| 분류        | KPI                              | 현재(추정) | 목표   |
+| ----------- | -------------------------------- | ---------- | ------ |
+| 코드 복잡도 | 갤러리 관련 public 메서드 수     | ~45        | ≤ 25   |
+| 번들 크기   | gallery 관련 초기 payload (gzip) | 기준 100%  | -15%   |
+| A11y        | Lighthouse A11y score (e2e 측정) | ~70        | ≥ 90   |
+| 테스트 비용 | 단일 통합 테스트 setup 시간      | 1.0x       | ≤ 0.8x |
+| 유지보수    | 평균 갤러리 변경 PR 수정 파일 수 | ≥ 12       | ≤ 7    |
+
+## 🗂 Phase 개요
+
+| Phase | 주제                            | 핵심 산출물                                              | 플래그/실험                  | KPI 타겟                       |
+| ----- | ------------------------------- | -------------------------------------------------------- | ---------------------------- | ------------------------------ |
+| 13    | Core 책임 통합                  | `GalleryController` / deprecated adapter                 | `FEATURE_GALLERY_CONTROLLER` | public API 감소                |
+| 14    | Component 구조 현대화           | Islands + Suspense lazy media pane                       | `FEATURE_GALLERY_ISLANDS`    | 초기 렌더 node count 유지/감소 |
+| 15    | 스타일 시스템 현대화            | CSS Layers + container queries + token sync 스크립트     | `FEATURE_STYLE_LAYERS`       | 스타일 주입 1회, CLS 0         |
+| 16    | 접근성/포커스                   | Focus trap service + roving tabindex + aria-label 일관성 | `FEATURE_A11Y_ENHANCED`      | Lighthouse A11y ≥ 90           |
+| 17    | Extraction StrategyChain 리팩터 | 체인 DSL + middleware metrics                            | `FEATURE_EXTRACTION_CHAIN`   | 성공률, 재열기 지연 < 5ms      |
+| 18    | State & Metrics 단일화          | `gallery.store.ts` (signals) + selectors                 | -                            | store 단위 테스트 100%         |
+| 19    | 빌드/번들 최적화                | code splitting manifest + prefetch hints                 | `FEATURE_GALLERY_SPLIT`      | 초기 gallery 코드 15%↓         |
+| 20    | DX & 문서                       | API stability spec + ADRs + typed test utils             | -                            | Onboarding 시간 단축 (정성)    |
+
+## 🧪 Phase 13: Core 책임 통합
+
+### 문제
+
+`GalleryCore` / `GalleryApp` 간 open/close 및 diagnostics 중복 → 유지보수 비용.
+
+### RED
+
+1. `test/refactoring/phase13-core-duplication.test.ts` : 두 클래스 간 중복
+   public 메서드 이름 목록 스냅샷 → 실패 (중복 ≥ N)
+2. `test/unit/gallery/controller-adapter-compat.test.ts` : 새로운 Controller
+   미구현 상태에서 legacy API 기대치 실패.
+
+### GREEN
+
+- `GalleryController` 구현: 내부에 (a) state module, (b) navigation module, (c)
+  lifecycle module.
+- Adapter: `GalleryApp` 표면만 유지 → 내부 위임 (deprecation notice 로그 1회).
+
+### REFACTOR
+
+- `GalleryCore` 제거/폴더 이동 (`legacy/`) 후 테스트 전면 `GalleryController`
+  사용 전환.
+
+### KPI
+
+- Public method count diff test: 감소 ≥ 30%.
+
+### 장단점
+
+| 대안 | 설명                              | 장점   | 단점         | 선택 |
+| ---- | --------------------------------- | ------ | ------------ | ---- |
+| A    | 완전 통합 (단일 클래스)           | 단순   | 초기 diff 큼 | ✅   |
+| B    | Facade + 내부 모듈 (Service-like) | 확장성 | 약간 복잡    | 보류 |
+
+## 🧩 Phase 14: Component Architecture (Islands)
+
+### 목표
+
+갤러리 UI 중 무거운 영역(썸네일 리스트, 메타패널)을 지연 마운트. 초기 상호작용
+영역(메인 미디어, 툴바) 우선 렌더.
+
+### RED
+
+- `test/performance/gallery/islands-baseline.test.ts`: 기존 구현에서 main
+  interactive paint 시간 측정 (baseline snapshot) → threshold 초과로 RED.
+
+### GREEN
+
+- `GalleryRoot` → `MediaViewportIsland`, `ThumbRailIsland`, `MetaPanelIsland`
+  분리, Suspense + dynamic import.
+- Feature flag OFF 기본.
+
+### REFACTOR
+
+- Idle callback 후 사전 프리로드 (preload link 삽입) util 추가.
+
+### KPI
+
+- Interactive (primary controls enabled) 시간 10~15% 개선.
+
+## 🎨 Phase 15: Style Modernization
+
+### 목표
+
+CSS Layer (`@layer reset, tokens, components, overrides`), container queries로
+반응형 단순화, design tokens 자동 동기화 스크립트.
+
+### RED
+
+- `test/unit/styles/layer-order.test.ts`: layer 순서 미존재 → 실패.
+- `test/integration/gallery/container-query-resize.test.ts`: container width
+  변화 시 적응 실패.
+
+### GREEN
+
+- `styles/gallery-layers.css` 주입 1회, token build script
+  (`scripts/build-design-tokens.ts`).
+
+### REFACTOR
+
+- legacy module CSS 점진 마이그레이션.
+
+### KPI
+
+- Style injection count test: 1.
+- CLS (synthetic) 0.
+
+## ♿ Phase 16: Accessibility & Focus
+
+### 목표
+
+포커스 순환, 키보드 탐색(← →, Home/End), aria-live updates, role semantics.
+
+### RED
+
+- `test/a11y/gallery-keyboard-nav.red.test.ts`: Arrow/Home/End 동작 실패.
+- `test/a11y/gallery-aria-roles.red.test.ts`: landmark/role 누락.
+
+### GREEN
+
+- `FocusRingManager` + `RovingTabindexController` 구현.
+- `gallery-root` aria-label / role=dialog + `aria-modal` 조건부.
+
+### KPI
+
+- Keyboard navigation success 100%.
+- Lighthouse A11y ≥ 90 (e2e harness 시뮬레이션 또는 axe-core).
+
+## 🔗 Phase 17: Extraction StrategyChain Refactor
+
+### 목표
+
+Phase 11 HARDEN 후 남은 StrategyChain 구조 정식 도입 (중간 metrics hook, retry
+decorator, duplicate guard middleware).
+
+### RED
+
+- `test/unit/media/strategy-chain-order.red.test.ts`: 정의된 order 와 실제 실행
+  order mismatch.
+- `test/unit/media/duplicate-guard-middleware.red.test.ts`: guard 미적용.
+
+### GREEN
+
+- Chain DSL:
+  `createChain([strategyA(), retry(strategyB()), cache(strategyC())])`.
+- Metrics tap: 각 step result accumulate.
+
+### REFACTOR
+
+- Orchestrator lean: chain 실행 + metrics export.
+
+### KPI
+
+- Reopen latency 회귀 없음 (< +5ms).
+- Duplicate prevented 합법 시나리오 0.
+
+## 📦 Phase 18: State & Metrics Simplification
+
+### 목표
+
+Signals store 단일 소스: `{ gallery: {...}, extraction: {...}, perf: {...} }` +
+selector helpers.
+
+### RED
+
+- `test/unit/state/store-shape.red.test.ts`: store shape 불일치.
+- 기존 분산 signals 커버리지 harness 실패.
+
+### GREEN
+
+- `src/shared/state/gallery.store.ts` 작성 + migration adapter
+  (`getLegacyGalleryState()`).
+
+### REFACTOR
+
+- 모든 사용처 incremental replace (codemod 스크립트 선택).
+
+### KPI
+
+- Store unit test 커버리지 100% (line 기준).
+
+## 🚀 Phase 19: Build & Bundle Optimization
+
+### 목표
+
+Lazy chunking (islands / extraction chain), prefetch hints, vendor safe getter
+tree-shake 검증.
+
+### RED
+
+- `test/performance/bundle/bundle-size-budget.red.test.ts`: 기존 크기 > budget.
+
+### GREEN
+
+- Vite dynamic imports + `perf-budget.json` 업데이트.
+
+### KPI
+
+- Initial gallery chunk gzip -15% 이상.
+
+## 📚 Phase 20: Documentation & DX Quality
+
+### 목표
+
+Stable API 문서(자동 생성), Architecture Decision Records(ADR), 테스트 util
+표준화.
+
+### RED
+
+- `test/unit/dx/api-doc-regression.red.test.ts`: generated docs snapshot
+  mismatch.
+
+### GREEN
+
+- `scripts/gen-api-docs.ts` + `docs/adr/` 폴더.
+
+### KPI
+
+- 신규 기여자(Onboarding 문서 기반) 세팅 단계(가이드 상) 30% 단축 (정성 평가).
+
+## 🔐 위험 & 완화 (Modernization 전용)
+
+| 위험                      | 설명                              | 완화                                              |
+| ------------------------- | --------------------------------- | ------------------------------------------------- |
+| 대규모 통합 리팩터로 회귀 | Core/API 급변                     | Feature flag + Adapter layer + 단계적 codemod     |
+| 번들 split 로드 순서 race | 이벤트/상태 의존 초기화 시점 문제 | lightweight bootstrap + dynamic import 후 hydrate |
+| A11y 개선으로 스타일 변형 | 포커스 outline 시각 흔들림        | 커스텀 focus ring + transition-minimize           |
+| Chain DSL 복잡도          | 학습 비용                         | README + 예제 + 타입 주석 강화                    |
+
+## 🧪 공통 TDD 패턴 (신규 Phases 13–20 적용)
+
+1. RED: 스냅샷/계약/성능 가드 → 실패 확인
+2. GREEN: 최소 구현 (flag OFF default)
+3. REFACTOR: Adapter 제거 / 문서 & 타입 정비 / 커버리지 보강
+4. VALIDATE: perf-budget, a11y harness, type-check strict
+
+## 🧭 우선순위 & 일정 (초안)
+
+| Sprint | 포함 Phase      | 비고                                 |
+| ------ | --------------- | ------------------------------------ |
+| S1     | 13, 17 (부분)   | Core 통합 + 체인 기반 뼈대 선 구축   |
+| S2     | 14, 15          | Islands + Style Layers (가시적 성과) |
+| S3     | 16, 17 (HARDEN) | A11y + StrategyChain 안정화          |
+| S4     | 18, 19          | State/Bundle 최적화                  |
+| S5     | 20 + 잔여       | 문서 / DX / 마무리                   |
+
+## ✅ Modernization DoD (종합)
+
+- [ ] Public API 축소 테스트 통과 (≥30% 감소)
+- [ ] A11y test suite GREEN + Score ≥ 90
+- [ ] Initial chunk size 감소 ≥ 15%
+- [ ] Style injection 1회 & CLS 0
+- [ ] Extraction 재열기 latency 회귀 없음 (<5ms 증가)
+- [ ] Store 커버리지 100%
+- [ ] 문서(ADR + API) 자동 생성 파이프라인 CI 통과
+
+---
+
+추가 Modernization 계획은 상기 Phase 순으로 TDD 사이클을 적용하며, 각 Phase 착수
+시 본 문서에 세부 진행 로그(Progress Log 섹션 추가)와 테스트 경로를
+동기화합니다.

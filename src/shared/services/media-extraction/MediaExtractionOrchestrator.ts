@@ -72,6 +72,12 @@ export class MediaExtractionOrchestrator {
   /** 성공 결과 캐시 TTL (ms) - 0 이면 무제한 */
   private successCacheTTLMs = 0;
   private successResultCacheEvictions = 0;
+  /** 세분화된 eviction 타입 (backward compat: successResultCacheEvictions = lru + ttl) */
+  private successResultCacheEvictionTypes: { lru: number; ttl: number } = { lru: 0, ttl: 0 };
+  /** 성공 결과 캐시 최대 엔트리 (0==무제한) */
+  private successResultCacheMaxEntries = 0;
+  /** LRU 순서 추적 큐 (가장 오래된 항목 앞쪽) */
+  private readonly successCacheQueue: HTMLElement[] = [];
 
   // 성능 메트릭
   private cacheHits = 0;
@@ -86,6 +92,10 @@ export class MediaExtractionOrchestrator {
   private totalExtractions = 0;
   private totalExtractionFailures = 0;
   private cooldownShortCircuits = 0;
+  // StrategyChain duration 집계
+  private chainDurationTotalMs = 0;
+  private chainDurationCount = 0;
+  private chainDurationMaxMs = 0;
 
   /**
    * (DI Hook) 외부 세션/메트릭 서비스 주입용 생성자
@@ -236,8 +246,9 @@ export class MediaExtractionOrchestrator {
         });
         return augmented;
       } else {
-        // 만료된 캐시 제거
+        // TTL 만료된 캐시 제거
         this.successResultCacheEvictions++;
+        this.successResultCacheEvictionTypes.ttl++;
         this.successResultCacheHits = Math.max(0, this.successResultCacheHits); // 안정성용
         this.successResultCache.delete(element);
         this.successResultTimestamps.delete(element);
@@ -280,10 +291,8 @@ export class MediaExtractionOrchestrator {
             tweetInfo
           );
           if (result.success) {
-            // 성공 결과 캐시 저장
-            this.successResultCache.set(element, result);
-            this.successCacheElements.add(element);
-            this.successResultTimestamps.set(element, Date.now());
+            // 성공 결과 캐시 저장 (LRU 지원)
+            this.storeSuccessResultCacheEntry(element, result);
             this.lastExtractionTimes.set(element, Date.now());
             // 메트릭 요약 로깅 (캐시된 전략 경로)
             this.logMetricsSummary(result, {
@@ -314,10 +323,8 @@ export class MediaExtractionOrchestrator {
       if (chainResult.metrics.successStrategy) {
         this.strategyCache.set(elementSignature, chainResult.metrics.successStrategy);
       }
-      // 성공 결과 캐시 저장
-      this.successResultCache.set(element, chainResult.result);
-      this.successCacheElements.add(element);
-      this.successResultTimestamps.set(element, Date.now());
+      // 성공 결과 캐시 저장 (LRU 지원)
+      this.storeSuccessResultCacheEntry(element, chainResult.result);
       this.lastExtractionTimes.set(element, Date.now());
       logger.info('[MediaExtractionOrchestrator] 추출 성공 (StrategyChain):', {
         strategyName: chainResult.metrics.successStrategy,
@@ -325,11 +332,16 @@ export class MediaExtractionOrchestrator {
         attempted: chainResult.metrics.attemptedStrategies,
       });
       // 메트릭 요약 로깅 (StrategyChain 성공 경로)
-      this.logMetricsSummary(chainResult.result, {
-        source: 'strategy-chain',
-        cacheHit: false,
-        strategiesTried: chainResult.metrics.attemptedStrategies,
-      });
+      // StrategyChain 실행 duration 을 central metrics 로 전달 (avg/max 집계 포함)
+      this.logMetricsSummary(
+        chainResult.result,
+        {
+          source: 'strategy-chain',
+          cacheHit: false,
+          strategiesTried: chainResult.metrics.attemptedStrategies,
+        },
+        chainResult.metrics.durationMs
+      );
       return chainResult.result;
     }
 
@@ -352,11 +364,12 @@ export class MediaExtractionOrchestrator {
       cacheHit: boolean;
       strategiesTried: string[];
       cooldownApplied?: boolean;
-    }
+    },
+    chainDurationMs?: number
   ): void {
     try {
       // 중앙 메트릭 주입 (중복 경로 통합)
-      this.annotateCentralMetrics(result, context);
+      this.annotateCentralMetrics(result, context, chainDurationMs);
       this.totalExtractions += result.success ? 1 : 0;
       this.totalExtractionFailures += result.success ? 0 : 1;
       const metricsSummary = {
@@ -367,6 +380,7 @@ export class MediaExtractionOrchestrator {
         strategiesTried: context.strategiesTried,
         successResultCacheHits: this.successResultCacheHits,
         successResultCacheEvictions: this.successResultCacheEvictions,
+        successResultCacheEvictionTypes: { ...this.successResultCacheEvictionTypes },
         successResultCacheSize: this.successCacheElements.size,
         sessionId: this.sessionId,
         sessionResets: this.sessionResets,
@@ -374,6 +388,11 @@ export class MediaExtractionOrchestrator {
         cooldownShortCircuits: this.cooldownShortCircuits,
         totalExtractions: this.totalExtractions,
         totalExtractionFailures: this.totalExtractionFailures,
+        chainDurationAvgMs:
+          this.chainDurationCount > 0
+            ? this.chainDurationTotalMs / this.chainDurationCount
+            : undefined,
+        chainDurationMaxMs: this.chainDurationCount > 0 ? this.chainDurationMaxMs : undefined,
       };
       logger.info('[MediaExtractionOrchestrator] metrics summary', { metricsSummary });
     } catch (e) {
@@ -386,14 +405,14 @@ export class MediaExtractionOrchestrator {
   /** 중앙 메트릭 주입 - 모든 경로 공통 구조 제공 */
   private annotateCentralMetrics(
     result: MediaExtractionResult,
-    context: { source: string; cacheHit: boolean; strategiesTried: string[] }
+    context: { source: string; cacheHit: boolean; strategiesTried: string[] },
+    chainDurationMs?: number
   ): void {
     try {
       type CentralMeta = {
         attemptedStrategies?: string[];
         successStrategy?: string;
         strategy?: string;
-        strategyChainDuration?: number;
         centralMetrics?: unknown;
         [k: string]: unknown;
       };
@@ -403,17 +422,27 @@ export class MediaExtractionOrchestrator {
         ? meta.attemptedStrategies
         : context.strategiesTried;
       const successStrategy = meta.successStrategy || (result.success ? meta.strategy : undefined);
-      const chainDuration =
-        typeof meta.strategyChainDuration === 'number' ? meta.strategyChainDuration : undefined;
+      const chainDuration = typeof chainDurationMs === 'number' ? chainDurationMs : undefined;
+      if (typeof chainDuration === 'number') {
+        this.chainDurationTotalMs += chainDuration;
+        this.chainDurationCount++;
+        if (chainDuration > this.chainDurationMaxMs) this.chainDurationMaxMs = chainDuration;
+      }
       const cacheMetrics = this.extractionCache?.getMetrics?.();
       (meta as CentralMeta).centralMetrics = {
         attemptedStrategies: attempted,
         successStrategy,
         durationMs: typeof chainDuration === 'number' ? chainDuration : undefined,
+        chainDurationAvgMs:
+          this.chainDurationCount > 0
+            ? this.chainDurationTotalMs / this.chainDurationCount
+            : undefined,
+        chainDurationMaxMs: this.chainDurationCount > 0 ? this.chainDurationMaxMs : undefined,
         cacheHit: context.cacheHit,
         source: context.source,
         successResultCacheHits: this.successResultCacheHits,
         successResultCacheEvictions: this.successResultCacheEvictions,
+        successResultCacheEvictionTypes: { ...this.successResultCacheEvictionTypes },
         successResultCacheSize: this.successCacheElements.size,
         strategyCacheHitRatio: computeStrategyCacheHitRatio(this.cacheHits, this.cacheMisses),
         successResultCacheHitRatio: computeSuccessResultCacheHitRatio(
@@ -432,8 +461,76 @@ export class MediaExtractionOrchestrator {
             }
           : undefined,
       };
+      // 중앙 통합 후 legacy 필드 제거 (중복 방지)
+      if ('strategyChainDuration' in meta) {
+        try {
+          delete (meta as unknown as { strategyChainDuration?: number }).strategyChainDuration;
+        } catch {
+          /* noop */
+        }
+      }
     } catch {
       // silent
+    }
+  }
+
+  /** 성공 결과 캐시 저장 + LRU 용량 관리 */
+  private storeSuccessResultCacheEntry(element: HTMLElement, result: MediaExtractionResult): void {
+    try {
+      // 기존 항목이 다시 저장되는 경우(갱신) 큐 재정렬 (간단 구현: 새 push 후 이전 잔존은 무시 - eviction 시 skip)
+      this.successResultCache.set(element, result);
+      this.successCacheElements.add(element);
+      this.successResultTimestamps.set(element, Date.now());
+      this.successCacheQueue.push(element);
+      // 용량 초과 처리
+      if (this.successResultCacheMaxEntries > 0) {
+        while (this.successCacheElements.size > this.successResultCacheMaxEntries) {
+          const candidate = this.successCacheQueue.shift();
+          if (!candidate) break;
+          if (!this.successCacheElements.has(candidate)) continue; // 이미 제거된 중복 큐 항목 skip
+          // LRU eviction
+          this.successCacheElements.delete(candidate);
+          this.successResultCache.delete(candidate);
+          this.successResultTimestamps.delete(candidate);
+          this.lastExtractionTimes.delete(candidate);
+          this.successResultCacheEvictions++;
+          this.successResultCacheEvictionTypes.lru++;
+          logger.debug('[MediaExtractionOrchestrator] 성공 결과 캐시 LRU eviction', {
+            max: this.successResultCacheMaxEntries,
+            size: this.successCacheElements.size,
+          });
+        }
+      }
+    } catch {
+      // silent
+    }
+  }
+
+  /** 성공 결과 캐시 최대 엔트리 설정 (0 또는 음수면 무제한) */
+  setSuccessResultCacheMaxEntries(max: number): void {
+    if (typeof max !== 'number') return;
+    const normalized = max > 0 ? Math.floor(max) : 0;
+    this.successResultCacheMaxEntries = normalized;
+    logger.debug('[MediaExtractionOrchestrator] 성공 결과 캐시 최대 엔트리 설정', {
+      max: normalized,
+    });
+    // 즉시 초과분 정리
+    if (normalized > 0 && this.successCacheElements.size > normalized) {
+      while (this.successCacheElements.size > normalized) {
+        const candidate = this.successCacheQueue.shift();
+        if (!candidate) break;
+        if (!this.successCacheElements.has(candidate)) continue;
+        this.successCacheElements.delete(candidate);
+        this.successResultCache.delete(candidate);
+        this.successResultTimestamps.delete(candidate);
+        this.lastExtractionTimes.delete(candidate);
+        this.successResultCacheEvictions++;
+        this.successResultCacheEvictionTypes.lru++;
+        logger.debug('[MediaExtractionOrchestrator] 성공 결과 캐시 LRU eviction (resize)', {
+          max: normalized,
+          size: this.successCacheElements.size,
+        });
+      }
     }
   }
 
@@ -563,6 +660,7 @@ export class MediaExtractionOrchestrator {
     this.duplicatePreventions = 0;
     this.successResultCacheHits = 0;
     this.successResultCacheEvictions = 0;
+    this.successResultCacheEvictionTypes = { lru: 0, ttl: 0 };
     this.sessionId = 0;
     this.sessionResets = 0;
     this.clickCooldownMs = 0;
@@ -611,6 +709,7 @@ export class MediaExtractionOrchestrator {
       }
     }
     this.successCacheElements.clear();
+    this.successResultCacheEvictionTypes = { lru: 0, ttl: 0 };
     logger.debug('[MediaExtractionOrchestrator] 새 세션 시작', { sessionId: this.sessionId });
   }
 

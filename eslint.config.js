@@ -250,6 +250,10 @@ export default [
   {
     files: ['**/*.{test,spec}.{ts,tsx}', 'test/**/*.{ts,tsx}'],
     languageOptions: {
+      parser: tsParser,
+      sourceType: 'module',
+      ecmaVersion: 2022,
+      parserOptions: { project: './tsconfig.json', ecmaFeatures: { jsx: true } },
       globals: {
         vi: 'readonly',
         describe: 'readonly',

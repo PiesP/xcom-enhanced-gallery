@@ -188,6 +188,8 @@ export class DOMDirectExtractor {
       index: number;
     }
     const sizeRegex = /(?:^|_|\b)(\d{2,5})x(\d{2,5})(?:\b|_|\.|$)/i;
+    // v2: 저해상도/축소 힌트 단어 패널티 (small, thumb, tiny, crop, fit, medium)
+    const downgradeRegex = /(^|[._-])(small|thumb|tiny|crop|fit|medium)([._-]|\.|$)/i;
     const baseScore = (u: string): number => {
       let s = 0;
       if (/name=orig/.test(u)) s += 50; // 원본 가중치 강화
@@ -195,6 +197,7 @@ export class DOMDirectExtractor {
       if (/name=large/.test(u)) s += 20;
       if (/(^|[._-])(large|big)([._-]|\.|$)/.test(u)) s += 10;
       if (/\b(2048|4096)\b/.test(u)) s += 5;
+      if (downgradeRegex.test(u)) s -= 15; // v2 패널티
       return s;
     };
     const candidates: Candidate[] = urls.map((u, idx) => {
