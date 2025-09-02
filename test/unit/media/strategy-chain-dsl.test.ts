@@ -11,22 +11,13 @@ import {
 import type { MediaExtractionOptions, MediaExtractionResult } from '@/shared/types/media.types';
 import type { ExtractionStrategy } from '@/shared/services/media-extraction/MediaExtractionOrchestrator';
 
-// globals (jsdom 테스트 환경에서 제공되지만 ESLint no-undef 회피)
-
-declare const document: Document;
-declare function setTimeout(): any;
-
-// 테스트용 간단 전략 팩토리
-const makeStrategy = (name: string, succeed: boolean, delay = 0): ExtractionStrategy => ({
+// 테스트용 간단 전략 팩토리 (지연 제거)
+const makeStrategy = (name: string, succeed: boolean): ExtractionStrategy => ({
   name,
   priority: 1,
   canHandle: () => true,
-  extract: async (): Promise<MediaExtractionResult> => {
-    if (delay)
-      await new Promise(res => {
-        setTimeout(() => res(undefined), delay);
-      });
-    return succeed
+  extract: async (): Promise<MediaExtractionResult> =>
+    succeed
       ? {
           success: true,
           mediaItems: [],
@@ -40,8 +31,7 @@ const makeStrategy = (name: string, succeed: boolean, delay = 0): ExtractionStra
           clickedIndex: 0,
           metadata: { strategy: name },
           tweetInfo: null,
-        };
-  },
+        },
 });
 
 describe('StrategyChain DSL middleware 훅', () => {
@@ -58,7 +48,7 @@ describe('StrategyChain DSL middleware 훅', () => {
     };
     const chain = new StrategyChainBuilder().use(mw).add(s1).build();
 
-    const element = document.createElement('div');
+    const element = (globalThis.document as Document).createElement('div');
     const options = { mode: 'single' } as unknown as MediaExtractionOptions; // 최소 속성
 
     const { metrics, result } = await chain.run(element, options, 'test');
