@@ -13,11 +13,7 @@ import type { MediaExtractionOptions, MediaExtractionResult } from '@/shared/typ
 import type { ExtractionStrategy } from '@/shared/services/media-extraction/MediaExtractionOrchestrator';
 
 // 테스트용 간단 전략
-const makeStrategy = (
-  name: string,
-  succeed: boolean,
-  delay = 0
-): ExtractionStrategy => ({
+const makeStrategy = (name: string, succeed: boolean, delay = 0): ExtractionStrategy => ({
   name,
   priority: 1,
   canHandle: () => true,
@@ -55,7 +51,7 @@ describe('[RED] StrategyChain DSL middleware 훅', () => {
     };
     const chain = new StrategyChainBuilder().use(mw).add(s1).build();
 
-  const element = globalThis.document!.createElement('div');
+    const element = globalThis.document!.createElement('div');
     const options = { mode: 'single' } as unknown as MediaExtractionOptions; // 최소 속성
 
     const { metrics, result } = await chain.run(element, options, 'test');
