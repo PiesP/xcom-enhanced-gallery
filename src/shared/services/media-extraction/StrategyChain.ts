@@ -134,9 +134,20 @@ export class StrategyChainBuilder {
   private readonly strategies: ExtractionStrategy[] = [];
   private readonly middlewares: StrategyChainMiddleware[] = [];
   private readonly counters = { before: 0, after: 0 };
+  // duplicate guard 집계 (빌더 단계에서 스킵된 전략 수)
+  private readonly _addedNames = new Set<string>();
+  private _duplicateSkipped = 0;
 
   add(strategy: ExtractionStrategy): this {
+    // enableDuplicateGuard() 호출된 뒤에는 동일 이름 전략은 추가하지 않고 카운터만 증가
+    if ((this as unknown as { __enableDuplicateGuard?: boolean }).__enableDuplicateGuard) {
+      if (this._addedNames.has(strategy.name)) {
+        this._duplicateSkipped++;
+        return this; // skip push
+      }
+    }
     this.strategies.push(strategy);
+    this._addedNames.add(strategy.name);
     return this;
   }
 
@@ -149,8 +160,13 @@ export class StrategyChainBuilder {
     const chain = new StrategyChainProxyWrapper(
       this.strategies,
       this.middlewares,
-      this.counters
-    ) as unknown as StrategyChain;
+      this.counters,
+      this._duplicateSkipped
+    ) as unknown as StrategyChain & { __enableDuplicateGuard?: boolean };
+    // 빌더 단계에서 설정된 duplicate guard 플래그를 프록시 인스턴스로 전달
+    if ((this as unknown as { __enableDuplicateGuard?: boolean }).__enableDuplicateGuard) {
+      chain.__enableDuplicateGuard = true;
+    }
     return chain;
   }
 }
@@ -160,12 +176,14 @@ class StrategyChainProxyWrapper extends StrategyChain {
   constructor(
     strategies: ExtractionStrategy[],
     private readonly mws: StrategyChainMiddleware[],
-    private readonly counters: { before: number; after: number }
+    private readonly counters: { before: number; after: number },
+    prefilledDuplicateSkipped = 0
   ) {
     super(strategies);
+    this._duplicateSkipped = prefilledDuplicateSkipped;
   }
   private readonly _executedNames = new Set<string>();
-  private _duplicateSkipped = 0;
+  private readonly _duplicateSkipped: number = 0; // 초기값은 ctor에서 prefill 가능
   private readonly _strategyRetries: Record<string, number> = {};
 
   private async executeWithRetry(
@@ -198,12 +216,6 @@ class StrategyChainProxyWrapper extends StrategyChain {
     const start = performance.now ? performance.now() : Date.now();
     for (const strategy of this.strategies) {
       if (!strategy.canHandle(element, options)) continue;
-      if ((this as unknown as { __enableDuplicateGuard?: boolean }).__enableDuplicateGuard) {
-        if (this._executedNames.has(strategy.name)) {
-          this._duplicateSkipped++;
-          continue;
-        }
-      }
       try {
         let skip = false;
         for (const mw of this.mws) {
