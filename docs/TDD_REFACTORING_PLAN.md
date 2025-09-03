@@ -1,6 +1,6 @@
 # X.com Enhanced Gallery - TDD 리팩토링 진행 현황 (초경량 관리판)
 
-본 문서는 2025-09-03 기준 장문 히스토리를 정리/축약한 최신 운영판입니다. 세부
+본 문서는 최신 커밋 시점을 기준으로 장문 히스토리를 축약한 운영판입니다. 세부
 구현 과 과거 Phase 별 RED→GREEN 로그는 Git 커밋/PR 을 참조하세요. 여기서는
 **유지해야 할 가드 / 남은 소규모 작업 / 핵심 KPI** 만 추적합니다.
 
@@ -27,27 +27,25 @@ Reporter(JSON), 추가 병렬 메트릭 세분화.
 
 ---
 
-## 2. 완료 기능 (압축)
+## 2. 완료 기능 (요약 유지)
 
-가상 스크롤·DOM 평탄화·Shadow DOM 옵트인·WebP/AVIF·인접 프리로딩·오프스크린
-언로딩·성능/회귀 버짓·휠 UX(소형 차단/대형 자연 스크롤)·중복 초기화 방지·미디어
-추출 HARDEN v3.1(DPR/AR, duplicate guard, retry, LRU+TTL)·Inertia 기본
-메트릭·Readability Guard v2/v3 요소·Unified Surface System.
-
----
-
-## 3. Media Extraction (Phase 11) 요약
-
-Heuristic v3.1 (AR+DPR), duplicate/retry middleware, parallel winnerLatency,
-LRU+TTL metrics, metricsVersion 도입. 추가 세분화(추가 parallel breakdown)는
-Backlog.
+가상 스크롤 · DOM 평탄화 · Shadow DOM · WebP/AVIF · 인접 프리로딩 · 오프스크린
+언로딩 · 성능/회귀 버짓 · 휠 UX 분리 · 중복 초기화 방지 · Media Extraction
+HARDEN v3.1 · Inertia 기본 메트릭 · Readability Guard v2/v3 · Unified Surface
+System (추가 상세는 Git 히스토리).
 
 ---
 
-## 4. Scroll Inertia (Phase 14)
+## 3. Media Extraction (Phase 11) 요약 (고정)
 
-Variant A 안정 (fractional delta, 누수 0). Variant B 조건부 preventDefault 완화
-실험은 사용자 피드백 발생 시 재개.
+Heuristic v3.1 (AR+DPR) + duplicate/retry middleware + parallel winnerLatency +
+LRU+TTL metrics + metricsVersion. 추가 parallel breakdown → Backlog.
+
+---
+
+## 4. Scroll Inertia (Phase 14) 요약
+
+Variant A 안정(fractional delta, 누수 0). Variant B 실험 보류(피드백 시 재개).
 
 ---
 
@@ -173,8 +171,9 @@ P19 Code Splitting (초기 gzip -15%), P20 DX & Docs Modernization (Onboarding
 
 ## 7. Modal Readability Guard v1/v2 요약
 
-contrast ladder + noise(hysteresis) + cross-session persistence + escalation
-trace. 한계: 표본 부족 / blended contrast 미반영 → v3에서 해결.
+contrast ladder + noise hysteresis + cross-session persistence + escalation
+trace. (blended contrast → v3에서 tier escalation로 보완, 추가 ladder 공식
+Backlog)
 
 ---
 
@@ -214,9 +213,8 @@ trace. 한계: 표본 부족 / blended contrast 미반영 → v3에서 해결.
 
 ## 13. 완료 정의(Phase 범주 요약)
 
-• Media Extraction v3.1 안정 • Readability v2/v3 요소 안정 (대비 ≥4.5 유지) •
-Event Priority Auditor 동작 (diff=0) • Controller API freeze 유지 • Store 스냅샷
-불변 & 캐시 가드 통과
+• Media Extraction v3.1 • Readability v2/v3(≥4.5) • Event Priority Auditor
+준비(Phase12 예정) • Controller API 축소 • Store 스냅샷/캐시 가드
 
 ---
 
@@ -239,35 +237,30 @@ Event Priority Auditor 동작 (diff=0) • Controller API freeze 유지 • Stor
 본 문서는 더 이상 과거 세부 로그를 포함하지 않습니다. 필요 시 Git 히스토리를
 조회하세요.
 
-| Phase | 주제                         | 상태       | 핵심 성과 / 잔여 (축약)                                                         |
-| ----- | ---------------------------- | ---------- | ------------------------------------------------------------------------------- |
-| 1     | 회귀 베이스라인              | 완료       | 성능/행동 기준선 확립                                                           |
-| 2     | 가상 스크롤 커널             | 완료       | 1000개 <120ms, DOM 축소                                                         |
-| 3/3.1 | 컨테이너 단순화              | 완료       | DOM depth 7→4, selector 통일                                                    |
-| 4     | Shadow DOM 옵트인            | 완료       | 스타일 격리                                                                     |
-| 5     | WebP/AVIF                    | 완료       | 전송량 절감                                                                     |
-| 6     | 인접 프리로딩                | 완료       | 전환 지연 <50ms                                                                 |
-| 7     | 오프스크린 언로딩            | 완료       | 비디오 버퍼 해제 >90%                                                           |
-| 8     | 성능/회귀 가드               | 완료       | perf-budget & 회귀 테스트                                                       |
-| 9     | 휠 이벤트 분리(작은 이미지)  | 완료       | 배경 스크롤 누수 0                                                              |
-| 9.4   | 큰 이미지 자연 스크롤        | 완료(기본) | scrollBy + delta 누적                                                           |
-| 10    | 중복 초기화 방지             | 완료       | single execution 안정                                                           |
-| 11    | 추출 신뢰성 HARDEN           | 완료       | v3+v3.1(aspect/DPR) + duplicate guard/retry + TTL 스트레스/극단 비율 회귀 GREEN |
-| 12    | 이벤트 재바인딩 탄력         | 예정       | Priority Auditor (Phase12)                                                      |
-| 13    | Core 책임 통합               | 진행중     | GalleryController API 7→4 (42.86% 감소 GREEN) / 추가 위임 검토                  |
-| 14    | 관성 향상 옵션               | 선택       | Variant B 정책 정의 예정                                                        |
-| 15–20 | Modernization 묶음           | 예정       | Layer, A11y, StrategyChain 고도화 등                                            |
-| 21    | 설정 모달 가독성 & 테마 정렬 | 진행중     | Adaptive Guard v2 대부분 GREEN, contrast rationale 보강 중                      |
+| Phase   | 요약                                                           | 상태                     |
+| ------- | -------------------------------------------------------------- | ------------------------ |
+| 1–3     | Baseline+VirtualScroll+DOM 평탄화                              | 완료                     |
+| 4       | Shadow DOM                                                     | 완료                     |
+| 5–7     | 포맷/프리로딩/언로딩                                           | 완료                     |
+| 8       | 성능/회귀 가드                                                 | 완료                     |
+| 9 / 9.4 | Wheel UX 분리 / 자연 스크롤                                    | 완료                     |
+| 10      | 중복 초기화 방지                                               | 완료                     |
+| 11      | Extraction HARDEN v3.1                                         | 완료                     |
+| 12      | Event Priority Auditor                                         | 예정                     |
+| 13      | Controller 통합 축소                                           | 진행                     |
+| 14      | Inertia 향상 옵션                                              | 선택                     |
+| 15–20   | Modernization 묶음                                             | 예정                     |
+| 21      | Modal Readability & Surface                                    | 완료 (21.5 Hotfix GREEN) |
+| 22      | Surface System Phase22 (Glass Token 제거 & Contrast Util 통합) | 완료 (Phase22 GREEN)     |
 
 ---
 
-## 2. 완료된 Phase 핵심 요약 (압축)
+## 2b. Phase 핵심 요약 (고정)
 
-1–3 베이스라인/가상 스크롤/DOM 평탄화(7→4) · 4 Shadow DOM 옵트인 · 5 포맷
-전략(WebP/AVIF) · 6 인접 프리로딩 · 7 오프스크린 언로딩(>90% 버퍼 해제) · 8
-성능/회귀 가드(perf-budget) · 9 & 9.4 작은/큰 이미지 휠 UX 분리 · 10 중복 초기화
-방지(single execution) · 11 추출 HARDEN(v3.1, DSL v2, 캐시/메트릭) · 14(부분)
-관성 메트릭 확장 · 21 Adaptive Readability Guard v2.
+1–3 Baseline/VirtualScroll/DOM 7→4 · 4 ShadowDOM · 5 포맷(WebP/AVIF) · 6 인접
+프리로딩 · 7 오프스크린 언로딩 · 8 Perf Guard · 9/9.4 Wheel UX 분리/자연 스크롤
+· 10 Single Execution · 11 Extraction HARDEN · 14 Inertia Metrics(부분) · 21
+Readability Guard v2.
 
 ## 6. 완료(과거) 축약 메모
 
@@ -374,28 +367,79 @@ flushInertiaMetricsWithStats 신설 예정)
 
 ---
 
-## 7. Next Actions (Finalized)
+## 7. Next Actions (Updated 2025-09-03 – Modal Surface Readability Hotfix Plan 완료 반영)
 
-모든 즉시 실행 과제 완료 (Dead Token, Heuristic v3.1 DPR tie-break,
-centralMetrics projection, Phase21 contrast ladder 문서 반영). 추가 실행 항목
-없음.
+Phase21.5 Hotfix & Phase22: SettingsModal 대비/테마 초기화 문제 해결 + scrim
+intensity 클래스 누락 보정 + contrast ladder 안정화 + glass/blur dead 토큰 제거
+및 util 통합 완료 (GREEN). 이하 세부 원인/옵션 표는 Git 히스토리 참조.
 
-Optional Backlog:
+### Phase22 요약
 
-1. Inertia Variant B (조건부 preventDefault 해제 실험) – 현재 UX/성능 KPI
-   만족으로 보류 (사용자 피드백 필요 시 재평가)
-2. Dead Token 감사 스크립트 경량화(JSON 리포트) – 필요 시 Phase22.1
-3. Modal Readability 추가 지표(퍼셉츄얼 블렌드 추정) – 필요 시 Phase21 확장
+완료: legacy glass/blur 토큰 제거 · contrast util(`computeMinContrast`,
+`blendColorFast`) 도입 · SettingsModal/Toolbar 통합 클래스 적용 · Dead Token
+Reporter(add script) 결과 deadCount=0 · 최종 cleanup/consistency 테스트 GREEN
+유지. Backlog(선택): blended contrast 고도화(APCA 실험), Dead Token Reporter CI
+diff, ladder noise 추가 지표(optional). 현재 즉시 실행 항목 없음.
 
-결정: 위 항목들은 핵심 KPI(성능/안정성/가독성) 충족으로 인해 당장 수행하지 않고
-Backlog 로 유지.
+### Phase21.5 상세 기록
 
-### Phase 21 진행 요약 (2025-09-03 업데이트)
+세부 원인/옵션/RED→GREEN 플로우는 압축: Theme resolved API 추가 · 구독 기반
+theme 반응성 · 초기 data-theme 적용 · scrim 클래스 누락 수정 · contrast ladder &
+escalation 파이프 재정렬. (풀 테이블/작업 단계: Git 커밋 참조)
+`computeMinContrast(samples,textColor)`.
+
+- 문서화: 본 섹션 추가, 완료 후 Phase21.5 → Phase22 전환 메모.
+
+4. 회귀 가드
+
+- Contrast utility 공유 테스트 2~3개.
+- FOUC 조기 theme attribute guard
+  테스트(`document.documentElement.getAttribute('data-theme') !== null`).
+
+### 7.6 Done 조건 (Phase21.5) – 달성
+
+1. 신규 테스트 모두 GREEN (Theme toggle / Reduced transparency + High contrast /
+   Resolved theme API)
+2. 초기 렌더 data-theme 즉시 설정 (FOUC 재현 불가)
+3. scrim stage 시 intensity class (low|med|high) 항상 부착 (med 추가 완료)
+4. 복합 조건 대비 ≥7 (테스트 기준 충족)
+
+### 7.7 추적 KPI (추가)
+
+| KPI                  | 목표               | 비고                            |
+| -------------------- | ------------------ | ------------------------------- |
+| Modal 첫 프레임 대비 | ≥4.5               | 라이트/다크/auto 전환 모두      |
+| Scrim 적용 누락율    | 0                  | stage= scrim-\* 시 클래스 존재  |
+| Theme toggle latency | <1 animation frame | requestAnimationFrame 내 재렌더 |
+
+### 7.8 Backlog 조정
+
+기존 Backlog 항목 유지. 본 Hotfix 완료 후 Phase22 Dead Token 정리 시 glass 관련
+잔존 토큰 제거 계획에 병합.
+
+---
+
+### 7.9 요약 (완료)
+
+API(getResolvedTheme) + 구독(onThemeChange) + 조기 data-theme 설정 + scrim
+intensity med 규칙 추가로 문제 해결. 추가 성능/메모리 영향 무시 수준(O(n)≤16
+샘플, 구독 1개).
+
+Optional Backlog (변경 없음):
+
+1. Inertia Variant B A/B 실험
+2. Dead Token 감사 스크립트(JSON)
+3. Modal Readability 추가 지표 (퍼셉츄얼 블렌드) – Phase21 확장시 착수
+
+결정: 위 Backlog 는 KPI 충족 시 연기.
+
+### Phase 21 진행 요약 (2025-09-03 업데이트 + 21.5 Hotfix 계획 반영)
 
 Adaptive Readability Guard v1/v2 완료 (contrast ladder + hysteresis +
-cross-session persistence + escalation trace + perf bench). Contrast ladder
-공식(밝기 ΔL/채도 ΔC 계단 + 히스테리시스 경계) 요약 표 삽입 예정. Glass 기반
-임시 토큰은 Phase 22 Dead Token 정리에서 제거.
+cross-session persistence + escalation trace + perf bench). 새로 식별된
+SettingsModal 테마/표면 초기 적용 타이밍 문제는 Phase21.5 Hotfix 로 문서화(상기
+7.1~7.9). Contrast ladder 공식 요약 표는 Hotfix 완료 후 삽입 예정. Glass 임시
+토큰은 Phase22 Dead Token 정리 단계에서 제거 예정.
 
 ---
 

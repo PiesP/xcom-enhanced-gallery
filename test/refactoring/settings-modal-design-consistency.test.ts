@@ -239,28 +239,31 @@ describe('SettingsModal-Toolbar Design Consistency', () => {
   });
 
   describe('Cross-Component Token Validation', () => {
-    it('design-tokens.css에 unified surface glass 토큰이 정의되어 있어야 한다', () => {
+    it('design-tokens.css에서 legacy surface-glass 토큰이 완전히 제거되었어야 한다 (Phase22)', () => {
       // Given: design-tokens 내용
-      // Then: unified surface glass 토큰 존재 확인
-      expect(designTokensCssContent).toMatch(/--xeg-surface-glass-bg:/);
-      expect(designTokensCssContent).toMatch(/--xeg-surface-glass-border:/);
-      expect(designTokensCssContent).toMatch(/--xeg-surface-glass-shadow:/);
-      expect(designTokensCssContent).toMatch(/--xeg-surface-glass-blur:/);
+      // Then: legacy glass 토큰 존재하지 않아야 함
+      expect(designTokensCssContent).not.toMatch(/--xeg-surface-glass-bg:/);
+      expect(designTokensCssContent).not.toMatch(/--xeg-surface-glass-border:/);
+      expect(designTokensCssContent).not.toMatch(/--xeg-surface-glass-shadow:/);
+      expect(designTokensCssContent).not.toMatch(/--xeg-surface-glass-blur:/);
+      // 대신 semantic modal / elevated 표면 토큰이 존재해야 함
+      expect(designTokensCssContent).toMatch(/--xeg-surface-modal-bg:/);
+      expect(designTokensCssContent).toMatch(/--xeg-surface-elevated-bg/);
     });
 
-    it('Toolbar도 glass-surface 클래스 방식을 사용해야 한다', () => {
+    it('Toolbar는 Phase22 통합 클래스(.xeg-glassmorphism) 또는 glass-surface 레거시 매핑을 사용한다', () => {
       // Given: Toolbar CSS 내용
-      // Then: glassmorphism 속성이 개별 클래스에서 제거되어야 함
-      expect(toolbarCssContent).not.toMatch(/\.galleryToolbar.*var\(--xeg-surface-glass-bg\)/s);
-      expect(toolbarCssContent).not.toMatch(/\.toolbarButton.*var\(--xeg-surface-glass-bg\)/s);
-
-      // TSX 파일에서 glass-surface 클래스 사용 확인
+      // Then: legacy surface-glass 직접 토큰 사용 없음
+      expect(toolbarCssContent).not.toMatch(/--xeg-surface-glass-bg/);
+      // 통합 glassmorphism 클래스 존재
+      expect(designTokensCssContent).toMatch(/\.xeg-glassmorphism\s*\{/);
+      // TSX 파일에서 통합 클래스 또는 호환 glass-surface 클래스 사용 확인
       const toolbarTsxPath = resolve(
         __dirname,
         '../../src/shared/components/ui/Toolbar/Toolbar.tsx'
       );
       const toolbarTsxContent = readFileSync(toolbarTsxPath, 'utf-8');
-      expect(toolbarTsxContent).toMatch(/glass-surface/);
+      expect(toolbarTsxContent).toMatch(/xeg-glassmorphism|glass-surface/);
     });
   });
 });

@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2025-09-03T06:29:23.308Z",
+  "totalTokens": 228,
+  "deadCount": 0,
+  "deadTokens": [],
+  "sample": [
+    "--xeg-active-ring",
+    "--xeg-active-ring-color",
+    "--xeg-active-ring-width",
+    "--xeg-active-shadow",
+    "--xeg-breakpoint-2xl"
+  ]
+}

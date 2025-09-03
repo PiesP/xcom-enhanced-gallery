@@ -197,6 +197,15 @@ export class ThemeService implements IThemeService {
   }
 
   /**
+   * Phase21.5 추가: 실제 적용(해결된) 테마 반환 (always 'light' | 'dark').
+   * 향후 컴포넌트는 getCurrentTheme() 대신 이 메서드를 사용하도록 점진 전환.
+   */
+
+  public getResolvedTheme(): Theme {
+    return this.getEffectiveTheme();
+  }
+
+  /**
    * 다크 모드 여부 확인
    */
   public isDarkMode(): boolean {

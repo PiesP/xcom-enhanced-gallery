@@ -4,6 +4,7 @@
  * NOTE: Lightweight – keeps execution <1ms for <=16 samples.
  */
 import { parseColor, computeContrastRatio } from './modal-surface-evaluator';
+import { blendColorFast } from './contrast-utils';
 
 export interface NoiseMetrics {
   luminanceVariance: number; // 0..~
@@ -201,27 +202,21 @@ export function estimateBlendedContrast(
   alpha: number
 ): number {
   // Simple darkest-case approximation: blend each sample & take min contrast.
+  if (!bgColors || bgColors.length === 0) return 0;
   let min = Infinity;
   for (const c of bgColors) {
     try {
-      const blended = blendColorOver(c, overlay, alpha);
+      const blended = blendColorFast(c, overlay, alpha, parseColor);
       const ratio = computeContrastRatio(textColor, blended);
       if (ratio < min) min = ratio;
     } catch {
       /* ignore */
     }
   }
-  return min === Infinity ? 0 : min;
+  return min === Infinity ? 0 : +min.toFixed(3);
 }
 
-function blendColorOver(bg: string, overlay: string, alpha: number): string {
-  const bgRGB = parseColor(bg);
-  const ovRGB = parseColor(overlay);
-  const r = Math.round((1 - alpha) * bgRGB.r + alpha * ovRGB.r);
-  const g = Math.round((1 - alpha) * bgRGB.g + alpha * ovRGB.g);
-  const b = Math.round((1 - alpha) * bgRGB.b + alpha * ovRGB.b);
-  return `rgb(${r}, ${g}, ${b})`;
-}
+// NOTE: direct blendColorOver removed in favor of shared blendColorFast util.
 
 // Export types for tests
 export type { LadderParams };

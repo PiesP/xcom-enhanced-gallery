@@ -86,12 +86,34 @@ Dark 모드에서 glass 유지 가시성 강화를 위해:
 3. Noise 를 contrast 와 별개 차원으로 도입해 단색/패턴 상황 양립
 4. Cross-session persistence 로 재방문 UX 안정
 
+## 8.1 Phase22 업데이트 (Dead Glass Token & Contrast Util)
+
+- contrast 최소값 계산 루프를 `computeMinContrast` 유틸로 통합하여 evaluator /
+  escalation / readability 보조 계산 간 중복 제거
+- blended contrast 추정 헬퍼(`estimateBlendedContrast`)는 overlay 알파 단계
+  테스트 대비 간단 경로만 유지 (Phase22 목표: solid 전환 결정은 tier escalation
+  우선)
+- legacy glass 전용 토큰(`--xeg-surface-glass-*`, `--xeg-glass-blur-*`) 제거 →
+  semantic modal / elevated 토큰과 단일 `.xeg-glassmorphism` 클래스 사용으로
+  유지비 감소 및 Dead Token Reporter 에서 0 dead 상태 확인
+
+## 8.2 Dead Token Reporter 개요
+
+`scripts/dead-token-reporter.js`:
+
+1. `design-tokens.css` 내 `--xeg-` 변수 수집
+2. `src/`의 ts/tsx/js/css 에서 최초 참조 여부 검색 (0회 사용 토큰만 dead 분류)
+3. `reports/dead-tokens.json` 생성 (generatedAt, totalTokens, deadCount 등)
+
+현재 실행 결과: deadCount=0 (Phase22 후 불필요 토큰 정리 완료 상태 유지).
+
 ## 9. 향후 확장 (Backlog)
 
 - Blended contrast (alpha compositing 추정) 추가
 - Perceptual contrast (APCA) 실험적 비교 값 기록
 - 사용자 지정 대비 상한/하한 옵션
 - Telemetry: stage 전환 비율, 평균 유지 시간
+- Dead Token Reporter CI 통합 & historical diff 저장
 
 ---
 

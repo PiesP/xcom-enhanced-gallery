@@ -617,6 +617,7 @@
   mix-blend-mode: normal;
 }
 .modal-surface.xeg-scrim.xeg-scrim-intensity-low::before { opacity: var(--xeg-modal-scrim-opacity-low, 0.18); }
+.modal-surface.xeg-scrim.xeg-scrim-intensity-med::before { opacity: var(--xeg-modal-scrim-opacity-med, 0.28); }
 .modal-surface.xeg-scrim.xeg-scrim-intensity-high::before { opacity: var(--xeg-modal-scrim-opacity-high, 0.38); }
 
 /* Optional subtle text shadow to boost readability in glass mode when contrast borderline */

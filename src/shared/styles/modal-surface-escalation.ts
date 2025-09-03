@@ -5,6 +5,7 @@
 // - Fail-safe conditions
 
 import { computeContrastRatio, parseColor } from '@shared/styles/modal-surface-evaluator';
+import { computeMinContrast, blendColorFast } from './contrast-utils';
 
 export type ModalSurfaceStage = 'glass' | 'scrim-low' | 'scrim-med' | 'scrim-high' | 'solid';
 
@@ -32,14 +33,8 @@ const TIERS: Array<{ stage: ModalSurfaceStage; alpha: number }> = [
 ];
 
 // Blend one color over another (overlay over sample) with alpha
-function blendColor(bg: string, overlay: string, alpha: number): string {
-  const b = parseColorSafe(bg);
-  const o = parseColorSafe(overlay);
-  const r = Math.round((1 - alpha) * b.r + alpha * o.r);
-  const g = Math.round((1 - alpha) * b.g + alpha * o.g);
-  const l = Math.round((1 - alpha) * b.b + alpha * o.b);
-  return `rgb(${r}, ${g}, ${l})`;
-}
+const blendColor = (bg: string, overlay: string, alpha: number): string =>
+  blendColorFast(bg, overlay, alpha, parseColorSafe);
 
 function parseColorSafe(c: string): { r: number; g: number; b: number } {
   try {
@@ -57,9 +52,11 @@ export function estimateBlendedContrastTier(opts: {
   overlayColor: string; // typically '#000000'
 }): number {
   if (!opts.samples.length) return 0;
+  // Fast path: alpha 0 just compute direct min contrast
+  if (opts.alpha === 0) return computeMinContrast(opts.samples, opts.textColor);
   let min = Infinity;
   for (const s of opts.samples) {
-    const blended = opts.alpha === 0 ? s : blendColor(s, opts.overlayColor, opts.alpha);
+    const blended = blendColor(s, opts.overlayColor, opts.alpha);
     try {
       const ratio = computeContrastRatio(opts.textColor, blended);
       if (ratio < min) min = ratio;

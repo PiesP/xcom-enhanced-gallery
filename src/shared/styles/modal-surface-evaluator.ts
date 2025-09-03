@@ -60,17 +60,9 @@ export function evaluateModalSurfaceMode(opts: EvaluateModalSurfaceModeOptions):
     solidHoldMargin = 0.2, // δ 근사 (target-δ 구간 유지)
   } = opts;
   if (!sampleColors || sampleColors.length === 0) return 'glass';
-  // Compute min contrast across samples
-  let min = Infinity;
-  for (const c of sampleColors) {
-    try {
-      const ratio = computeContrastRatio(textColor, c);
-      if (ratio < min) min = ratio;
-    } catch {
-      // ignore parse errors
-    }
-  }
-  if (min === Infinity) return 'glass';
+  // Compute min contrast across samples (shared util)
+  const min = computeMinContrast(sampleColors, textColor);
+  if (min === 0) return 'glass';
   // Hysteresis (original lower-bound)
   if (previousMode === 'solid' && min < minContrast && min > hysteresisLower) {
     return 'solid';
@@ -85,6 +77,7 @@ export function evaluateModalSurfaceMode(opts: EvaluateModalSurfaceModeOptions):
 // Detailed evaluator (non-breaking): returns extra metadata including text-shadow hint
 import { evaluateScrim } from './modal-surface-scrim';
 import { computeNoiseMetrics, adaptReadabilityLadderWithTrace } from './modal-surface-readability';
+import { computeMinContrast } from './contrast-utils';
 
 // Cross-session hysteresis persistence (Phase21): store last stage & noise
 const READABILITY_STORAGE_KEY = 'xeg-modal-readability-stage-v1';
@@ -132,16 +125,8 @@ export function evaluateModalSurfaceModeDetailed(
   const baseMode = evaluateModalSurfaceMode(opts);
   const { sampleColors, textColor = '#000000', minContrast = 4.5 } = opts;
   const textShadowMargin = typeof opts.textShadowMargin === 'number' ? opts.textShadowMargin : 0.15;
-  let min = Infinity;
-  for (const c of sampleColors) {
-    try {
-      const ratio = computeContrastRatio(textColor, c);
-      if (ratio < min) min = ratio;
-    } catch {
-      /* ignore */
-    }
-  }
-  if (min === Infinity) {
+  const min = computeMinContrast(sampleColors, textColor);
+  if (min === 0) {
     return { mode: baseMode, minContrastObserved: null, applyTextShadow: false };
   }
   const applyTextShadow = (() => {

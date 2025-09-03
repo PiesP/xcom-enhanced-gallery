@@ -143,6 +143,17 @@ export function SettingsModal({
 
     // Sync theme & language
     setCurrentLanguage(languageService.getCurrentLanguage());
+    // 초기 렌더에서 resolved theme 보장 (FOUC 방지)
+    try {
+      const resolved = (
+        themeService as unknown as { getResolvedTheme?: () => 'light' | 'dark' }
+      ).getResolvedTheme?.();
+      if (resolved && typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-theme', resolved);
+      }
+    } catch {
+      /* ignore */
+    }
     setCurrentTheme(
       themeService.getCurrentTheme
         ? (themeService.getCurrentTheme() as typeof currentTheme)
@@ -181,6 +192,18 @@ export function SettingsModal({
       prefRestoredRef.current = false;
     };
   }, [isOpen, surfacePref, themeService, languageService]);
+
+  // Theme change subscription (Phase21.5)
+  useEffect(() => {
+    const off = themeService.onThemeChange?.(theme => {
+      if (currentTheme === 'auto' && typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+    });
+    return () => {
+      off?.();
+    };
+  }, [themeService, currentTheme]);
 
   // Escape & outside click
   useEffect(() => {
@@ -249,8 +272,13 @@ export function SettingsModal({
       themeService.setTheme(newTheme);
       if (typeof document !== 'undefined') {
         if (newTheme === 'auto') {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+          // ThemeService 가 시스템 감지 → resolved theme 적용
+          const resolved = (
+            themeService as unknown as { getResolvedTheme?: () => 'light' | 'dark' }
+          ).getResolvedTheme?.();
+          if (resolved) {
+            document.documentElement.setAttribute('data-theme', resolved);
+          }
         } else {
           document.documentElement.setAttribute('data-theme', newTheme);
         }
