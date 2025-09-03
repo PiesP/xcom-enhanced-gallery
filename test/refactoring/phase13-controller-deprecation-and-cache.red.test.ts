@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Phase13 RED: GalleryController - legacy GalleryApp deprecation 로그 & state snapshot 캐싱 요구
+ * @fileoverview Phase13 RED: GalleryController - legacy GalleryApp deprecation 로그 & state snapshot 캐싱 요구
  * 기대 사항 (GREEN 목표):
  * 1) FEATURE_GALLERY_CONTROLLER 강제 ON 상태에서 GalleryApp 직접 사용 시 logger.warn 1회만 출력 (중복 호출 억제)
  * 2) GalleryController.getState() 호출은 상태 변화 없으면 동일 객체(reference) 재사용 (GC churn 감소)

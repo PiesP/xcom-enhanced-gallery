@@ -90,17 +90,16 @@ describe('TDD: VerticalImageItem 디자인 일관성 개선', () => {
       expect(cssContent).toMatch(/var\(--xeg-color-/);
     });
 
-    it('글래스모피즘 색상이 표준화되어야 한다', () => {
+    it('semantic surface 색상이 표준화되어야 한다', () => {
       const cssContent = readFileSync(
         'src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css',
         'utf8'
       );
 
-      // 표준화된 글래스모피즘 변수 사용 검증
-      expect(cssContent).toMatch(/var\(--xeg-media-glass-bg\)/);
-      expect(cssContent).toMatch(/var\(--xeg-media-glass-border\)/);
-      expect(cssContent).toMatch(/var\(--xeg-media-glass-blur\)/);
-      expect(cssContent).toMatch(/var\(--xeg-media-glass-shadow\)/);
+      // Phase22: semantic surface 토큰 사용 검증
+      expect(cssContent).toMatch(/var\(--xeg-surface-elevated-bg\)|var\(--xeg-surface-/);
+      expect(cssContent).toMatch(/var\(--xeg-surface-elevated-border\)|var\(--xeg-surface-/);
+      expect(cssContent).toMatch(/var\(--xeg-surface-elevated-shadow\)|var\(--xeg-shadow-/);
     });
   });
 

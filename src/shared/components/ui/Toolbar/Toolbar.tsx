@@ -131,7 +131,7 @@ function ToolbarCore({
   // 배경 밝기 감지 및 자동 대비 조정 - 개선된 다중 포인트 샘플링
   useEffect(() => {
     const detectBackgroundBrightness = (): void => {
-      if (!toolbarRef.current) {
+      if (!toolbarRef.current || typeof document === 'undefined' || typeof window === 'undefined') {
         return;
       }
 
@@ -182,10 +182,13 @@ function ToolbarCore({
       requestAnimationFrame(detectBackgroundBrightness);
     }); // RAF 기반으로 최적화된 스크롤 감지
 
-    window.addEventListener('scroll', throttledDetect, { passive: true });
-    return (): void => {
-      window.removeEventListener('scroll', throttledDetect);
-    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', throttledDetect, { passive: true });
+      return (): void => {
+        window.removeEventListener('scroll', throttledDetect);
+      };
+    }
+    return (): void => {}; // cleanup 함수 반환
   }, []);
 
   // 네비게이션 가능 여부 계산

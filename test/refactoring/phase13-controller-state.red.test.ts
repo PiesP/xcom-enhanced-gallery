@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Phase13 RED: GalleryController 확장 상태/메트릭 일원화 요구사항
+ * @fileoverview Phase13 RED: GalleryController 확장 상태/메트릭 일원화 요구사항
  * 목표 (이 테스트가 GREEN 되려면):
  * 1) GalleryController.getState() 신규 API 제공 (diagnostics 축약 형태)
  *    - { open: boolean, count: number, index: number, initialized: boolean }

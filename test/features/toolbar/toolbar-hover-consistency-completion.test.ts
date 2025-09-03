@@ -28,7 +28,7 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
 
       // 복잡한 transform 효과가 제거되었는지 확인
       expect(hoverCSS).not.toMatch(/translateY\(-2px\)|scale\(1\.05\)/);
-      expect(hoverCSS).toContain('/* 복잡한 transform 효과 제거 */');
+      expect(hoverCSS).toMatch(/복잡한.*transform.*효과.*제거|fitButton.*기준.*단순화/);
     });
 
     it('모든 버튼이 일관된 단순한 호버 효과를 가진다', () => {

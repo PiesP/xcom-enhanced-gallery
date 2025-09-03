@@ -33,6 +33,12 @@ import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
+import { useVisibleCenterItem } from '../../hooks/useVisibleCenterItem';
+import {
+  navigationIntentState,
+  setToolbarIntent,
+  resetIntent,
+} from '@shared/state/signals/navigation-intent.signals';
 // CH2 REFACTOR 준비: viewRoot(gallery)와 itemsList 통합 후 배경 클릭 식별 유틸을 별도로 분리
 // 임시 유틸: 향후 test/refactoring/gallery/container-depth-ch2-red.spec.ts GREEN 전환 시 사용
 function isBackgroundClick(target: EventTarget | null, currentTarget: EventTarget | null): boolean {
@@ -337,6 +343,44 @@ function VerticalGalleryViewCore({
     blockTwitterScroll: true,
   });
 
+  // 중심 아이템 계산 훅 (containerRef 기준)
+  const { centerIndex, recompute } = useVisibleCenterItem({
+    containerRef,
+    enabled: isVisible,
+  });
+
+  // FocusSync v2: polling 제거 → scroll/wheel 이벤트 기반 rAF + idle window(150ms)
+  const { useRef: _useRef2 } = getPreactHooks();
+  const idleTimerRef = _useRef2<number | null>(null);
+  const lastUserScrollSyncRef = _useRef2(0);
+  useEffect(() => {
+    const el = scrollAreaRef.current || containerRef.current;
+    if (!el) return;
+    const handleActivity = () => {
+      if (navigationIntentState.value.intent !== 'user-scroll') return;
+      recompute();
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = window.setTimeout(() => {
+        if (navigationIntentState.value.intent === 'user-scroll') {
+          if (centerIndex >= 0 && centerIndex !== currentIndex) {
+            navigateToItem(centerIndex);
+          }
+          if (Date.now() - navigationIntentState.value.lastUserScrollAt > 300) {
+            resetIntent();
+          }
+        }
+      }, 150);
+      lastUserScrollSyncRef.current = Date.now();
+    };
+    el.addEventListener('scroll', handleActivity, { passive: true });
+    el.addEventListener('wheel', handleActivity, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', handleActivity);
+      el.removeEventListener('wheel', handleActivity);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [centerIndex, currentIndex, recompute]);
+
   // 부드러운 스크롤 애니메이션 설정
   useEffect(() => {
     if (containerRef.current) {
@@ -415,10 +459,16 @@ function VerticalGalleryViewCore({
           let isFullyLoaded = false;
 
           if (mediaElement) {
-            if (mediaElement instanceof HTMLImageElement) {
+            if (
+              typeof HTMLImageElement !== 'undefined' &&
+              mediaElement instanceof HTMLImageElement
+            ) {
               // 이미지의 경우 complete 속성 확인
               isFullyLoaded = mediaElement.complete;
-            } else if (mediaElement instanceof HTMLVideoElement) {
+            } else if (
+              typeof HTMLVideoElement !== 'undefined' &&
+              mediaElement instanceof HTMLVideoElement
+            ) {
               // 비디오의 경우 readyState 확인 (1 이상이면 메타데이터 로드 완료)
               isFullyLoaded = mediaElement.readyState >= 1;
             }
@@ -648,8 +698,18 @@ function VerticalGalleryViewCore({
       <div className={styles.toolbarWrapper} ref={toolbarWrapperRef}>
         <ToolbarWithSettings
           onClose={onClose || (() => {})}
-          onPrevious={onPrevious || (() => {})}
-          onNext={onNext || (() => {})}
+          onPrevious={() => {
+            setToolbarIntent('prev');
+            const nextIndex = Math.max(0, currentIndex - 1);
+            navigateToItem(nextIndex);
+            onPrevious?.();
+          }}
+          onNext={() => {
+            setToolbarIntent('next');
+            const nextIndex = Math.min(mediaItems.length - 1, currentIndex + 1);
+            navigateToItem(nextIndex);
+            onNext?.();
+          }}
           currentIndex={currentIndex}
           totalCount={mediaItems.length}
           isDownloading={isDownloading}

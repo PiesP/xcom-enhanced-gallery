@@ -11,23 +11,16 @@
     =========================================== */
   --xeg-surface-base-bg: var(--xeg-color-neutral-100, #f5f5f5);
   --xeg-surface-base-border: var(--xeg-color-border-primary, rgba(0,0,0,0.08));
-  --xeg-surface-base-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
 
   --xeg-surface-muted-bg: var(--xeg-color-neutral-200, #eceff1);
-  --xeg-surface-muted-border: var(--xeg-color-border-secondary, rgba(0,0,0,0.1));
-  --xeg-surface-muted-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0,0,0,0.08));
 
   --xeg-surface-elevated-bg: var(--xeg-color-surface-modal-bg, rgba(255,255,255,0.97));
   --xeg-surface-elevated-border: var(--xeg-color-surface-modal-border, rgba(0,0,0,0.12));
   --xeg-surface-elevated-shadow: var(--xeg-shadow-md, 0 4px 16px rgba(0,0,0,0.12));
 
   --xeg-surface-overlay-bg: var(--xeg-color-surface-modal-solid-bg, #ffffff);
-  --xeg-surface-overlay-border: var(--xeg-color-surface-modal-solid-border, rgba(0,0,0,0.14));
-  --xeg-surface-overlay-shadow: var(--xeg-shadow-lg, 0 8px 32px rgba(0,0,0,0.18));
 
   /* Foreground semantic (Phase22 initial pass) */
-  --xeg-surface-fg-primary: var(--xeg-color-text-primary, #171717);
-  --xeg-surface-fg-secondary: var(--xeg-color-text-secondary, #444444);
 
   /* DEPRECATION: 다음 릴리스에서 --xeg-glass* / *glass-shadow* / *glass-border* 제거 예정 */
   /* Primary Colors */
@@ -42,12 +35,7 @@
   --xeg-color-neutral-900: oklch(0.234 0.006 277.8);
 
   /* Semantic Colors */
-  --xeg-color-success-500: oklch(0.725 0.17 142.5);
-  --xeg-color-error-500: oklch(0.628 0.257 27.3);
-  --xeg-color-warning-500: oklch(0.761 0.16 70.7);
-  --xeg-color-success-800: oklch(0.456 0.133 145.2);
-  --xeg-color-success-900: oklch(0.398 0.118 146.8);
-  --xeg-color-success-950: oklch(0.241 0.077 150);
+  --xeg-color-error-400: oklch(0.694 0.257 28.4);
 
   /* Warning Orange */
   --xeg-color-warning-50: oklch(0.988 0.029 86.7);
@@ -55,7 +43,6 @@
   --xeg-color-warning-200: oklch(0.926 0.096 84.5);
   --xeg-color-warning-300: oklch(0.877 0.144 82.4);
   --xeg-color-warning-400: oklch(0.834 0.173 79.3);
-  --xeg-color-warning-500: oklch(0.761 0.16 70.7);
   --xeg-color-warning-600: oklch(0.699 0.148 64.9);
   --xeg-color-warning-700: oklch(0.554 0.121 58);
   --xeg-color-warning-800: oklch(0.447 0.099 52.7);
@@ -77,7 +64,8 @@
   --xeg-color-error-200: oklch(0.905 0.055 13.6);
   --xeg-color-error-300: oklch(0.852 0.089 12);
   --xeg-color-error-400: oklch(0.787 0.15 17);
-  --xeg-color-error-500: oklch(0.628 0.257 27.3); /* base */
+    /* Error Red */
+  --xeg-color-error-400: oklch(0.694 0.257 28.4); /* base */
   --xeg-color-error-600: oklch(0.568 0.228 25.3);
   --xeg-color-error-700: oklch(0.498 0.208 25.9);
   --xeg-color-error-800: oklch(0.447 0.19 26.2);
@@ -100,18 +88,8 @@
   --xeg-surface-elevated: var(--xeg-surface-elevated-bg);
 
   /* Optimized Overlay Colors - 성능을 위한 간소화 */
-  --xeg-overlay-light: rgba(0, 0, 0, 0.1);
-  --xeg-overlay-medium: rgba(0, 0, 0, 0.3);
-  --xeg-overlay-strong: rgba(0, 0, 0, 0.8);
-  --xeg-overlay-backdrop: rgba(0, 0, 0, 0.85);
-
-  /* Legacy overlay aliases - 호환성 보장 */
-  --xeg-color-overlay-light: var(--xeg-overlay-light);
-  --xeg-color-overlay-medium: var(--xeg-overlay-medium);
-  --xeg-color-overlay-strong: var(--xeg-overlay-strong);
-  --xeg-color-overlay-dark: rgba(0, 0, 0, 0.95);
-  --xeg-color-overlay-backdrop: var(--xeg-overlay-backdrop);
-  --xeg-color-overlay-subtle: rgba(255, 255, 255, 0.1);
+  --xeg-color-overlay: rgba(0, 0, 0, 0.5);
+  --xeg-color-backdrop: rgba(0, 0, 0, 0.5);
 
   /* Removed: color_glass_* and surface_glass_* variables */
 
@@ -121,48 +99,18 @@
 
   /* 색상 대비 최적화 - WCAG 2.1 AA 준수 */
   :root {
-    /* High Contrast Colors - 4.5:1 이상의 대비비 보장 */
-    --xeg-color-text-high-contrast: #000000; /* 21:1 대비비 */
-    --xeg-color-bg-high-contrast: #ffffff;
-    --xeg-color-text-dark-high-contrast: #ffffff; /* 21:1 대비비 */
-    --xeg-color-bg-dark-high-contrast: #000000;
-
     /* Interactive Element Colors - 접근성 강화 */
-    --xeg-color-focus-indicator: #005fcc; /* 7:1 대비비 */
-    --xeg-color-error-accessible: #cc0000; /* 7.3:1 대비비 */
-    --xeg-color-success-accessible: #006600; /* 6.4:1 대비비 */
-    --xeg-color-warning-accessible: #cc6600; /* 4.6:1 대비비 */
-
-    /* Button State Colors - 접근성 고려 */
-    --xeg-button-focus-ring: 0 0 0 3px rgba(0, 95, 204, 0.3);
-    --xeg-button-active-bg: #e6f3ff;
-    --xeg-button-disabled-bg: #f5f5f5;
-    --xeg-button-disabled-text: #999999; /* 3.4:1 대비비 - 최소 기준 */
+    --xeg-color-focus: #005fcc; /* 7:1 대비비 */
   }
 
   /* 고대비 모드 개선 */
   @media (prefers-contrast: high) {
     :root {
-      --xeg-color-primary-500: var(--xeg-color-focus-indicator);
-      --xeg-color-error-500: var(--xeg-color-error-accessible);
-      --xeg-color-success-500: var(--xeg-color-success-accessible);
-      --xeg-color-warning-500: var(--xeg-color-warning-accessible);
-
-      /* 테두리 강화 */
-  --xeg-focus-ring-width: 3px;
-    }
-
-  }
-
-  /* 컬러 블라인드 지원 */
-  @media (prefers-color-scheme: no-preference) {
-    :root {
-      /* 색상 외 구별 요소 추가 */
-      --xeg-error-indicator: '⚠️';
-      --xeg-success-indicator: '✓';
-      --xeg-warning-indicator: '!';
+      --xeg-color-primary-500: var(--xeg-color-focus);
     }
   }
+
+  /* 컬러 블라인드 지원 제거 - 미사용 토큰 정리 */
 
   /* ===========================================
    SPACING SYSTEM (8px base)
@@ -188,11 +136,9 @@
   /* 토스트 컨테이너 위치 */
   --xeg-toast-offset: 20px; /* 토스트 컨테이너 여백 */
 
-  /* 컴포넌트 간 간격 */
+  /* 컴포넌트 간 간격 - 미사용 토큰 제거 */
   --xeg-gap-xs: 4px; /* 최소 간격 */
   --xeg-gap-sm: 8px; /* 작은 간격 */
-  --xeg-gap-md: 12px; /* 중간 간격 */
-  --xeg-gap-lg: 16px; /* 큰 간격 */
 
   /* ===========================================
      TYPOGRAPHY SYSTEM
@@ -200,27 +146,20 @@
 
   /* Font Families */
   --xeg-font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --xeg-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, monospace;
 
   /* Font Sizes */
   --xeg-font-size-xs: 12px; /* 0.75rem */
   --xeg-font-size-sm: 14px; /* 0.875rem */
   --xeg-font-size-base: 16px; /* 1rem */
   --xeg-font-size-lg: 18px; /* 1.125rem */
-  --xeg-font-size-xl: 20px; /* 1.25rem */
   --xeg-font-size-2xl: 24px; /* 1.5rem */
-  --xeg-font-size-3xl: 30px; /* 1.875rem */
 
   /* Font Weights */
-  --xeg-font-weight-normal: 400;
   --xeg-font-weight-medium: 500;
   --xeg-font-weight-semibold: 600;
-  --xeg-font-weight-bold: 700;
 
   /* Line Heights */
-  --xeg-line-height-tight: 1.25;
   --xeg-line-height-normal: 1.5;
-  --xeg-line-height-relaxed: 1.75;
 
   /* ===========================================
      LAYOUT SYSTEM
@@ -237,14 +176,10 @@
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
   /* Z-Index Scale */
-  --xeg-z-base: 1;
-  --xeg-z-dropdown: 1000;
   --xeg-z-modal: 2000;
   --xeg-z-toolbar: 2500; /* 툴바 전용 Z-index 추가 */
-  --xeg-z-overlay: 3000;
   --xeg-z-gallery: 4000;
   --xeg-z-toast: 5000;
   --xeg-z-tooltip: 9999; /* 최상위 툴팁 레이어 */
@@ -256,20 +191,15 @@
   /* Duration */
   --xeg-duration-fast: 150ms;
   --xeg-duration-normal: 300ms;
-  --xeg-duration-slow: 500ms;
 
   /* 갤러리 전용 애니메이션 지속시간 */
   --xeg-duration-toolbar: 100ms; /* 툴바 표시/숨김 */
   --xeg-duration-fade: 250ms; /* 페이드 인/아웃 */
-  --xeg-duration-ultra-fast: 100ms; /* 매우 빠른 피드백 */
 
   /* Easing */
-  --xeg-easing-linear: linear;
   --xeg-easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
   --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
   --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --xeg-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --xeg-easing-spring: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Transform Values - 애니메이션 변환 */
   --xeg-transform-scale-down: scale3d(0.95, 0.95, 1);
@@ -277,7 +207,6 @@
   --xeg-transform-translate-up: translate3d(-50%, 10px, 0);
   --xeg-transform-translate-center: translate3d(-50%, 0, 0);
   --xeg-transform-translate-y-sm: translateY(-10px);
-  --xeg-transform-translate-y-none: translateY(0);
 
   /* Phase22: 제거된 legacy blur/glass 토큰 정리 (ratio guard) */
   /* (모든 --xeg-blur-*, --xeg-glass-blur-* 토큰 삭제) */
@@ -293,6 +222,8 @@
   /* Surface aliases */
   --xeg-color-surface: var(--xeg-color-surface-light);
   --xeg-color-background: var(--xeg-color-neutral-50);
+  --xeg-surface-primary: var(--xeg-surface-base-bg);
+  --xeg-surface-secondary: var(--xeg-surface-muted-bg);
 
   /* Text aliases */
   --xeg-color-text-primary: var(--xeg-color-neutral-900);
@@ -308,12 +239,23 @@
   --xeg-transition-normal: all var(--xeg-duration-normal) var(--xeg-easing-ease-out);
   --xeg-transition-slow: all var(--xeg-duration-slow) var(--xeg-easing-ease-out);
 
+  /* Common transition patterns */
+  --xeg-transition-button:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+
   /* 갤러리 전용 transition */
   --xeg-transition-toolbar:
     opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
     transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
-  --xeg-transition-fade: opacity var(--xeg-duration-fade) var(--xeg-easing-ease-in-out);
-  --xeg-transition-backdrop: backdrop-filter var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+
+  /* Legacy glass tokens (Phase22 호환성) - 실제 surface 토큰으로 매핑 */
+  --xeg-surface-glass-bg: var(--xeg-surface-elevated-bg);
+  --xeg-surface-glass-border: var(--xeg-surface-elevated-border);
+  --xeg-surface-glass-shadow: var(--xeg-surface-elevated-shadow);
+  --xeg-surface-glass-blur: none;
 
   /* ===========================================
      COMPONENT-SPECIFIC TOKENS
@@ -325,21 +267,18 @@
   --xeg-surface-modal-bg: rgba(255, 255, 255, 0.95);
   --xeg-surface-modal-border: rgba(0, 0, 0, 0.12);
   --xeg-surface-modal-shadow: 0 8px 40px rgba(0, 0, 0, 0.28);
-  --xeg-surface-modal-blur: 4px;
-  --xeg-surface-modal-backdrop: blur(var(--xeg-surface-modal-blur));
   /* Solid variant (adaptive) */
   --xeg-surface-modal-solid-bg: rgba(255,255,255,1);
   --xeg-surface-modal-solid-border: rgba(0,0,0,0.15);
   /* Dark counterparts (Phase21 v2 / Phase22 step1) */
   --xeg-surface-modal-bg-dark: rgba(0,0,0,0.90);
   --xeg-surface-modal-border-dark: rgba(255,255,255,0.22);
-  --xeg-surface-modal-shadow-dark: 0 8px 44px rgba(0,0,0,0.70);
+  --xeg-surface-modal-shadow-dark: 0 8px 44px rgba(0, 0, 0, 0.55);
   --xeg-surface-modal-solid-bg-dark: rgba(0,0,0,1);
   --xeg-surface-modal-solid-border-dark: rgba(255,255,255,0.28);
   /* Semantic modal aliases (theme-resolved) */
   --xeg-color-surface-modal-bg: var(--xeg-surface-modal-bg);
   --xeg-color-surface-modal-border: var(--xeg-surface-modal-border);
-  --xeg-color-surface-modal-shadow: var(--xeg-surface-modal-shadow);
   --xeg-color-surface-modal-solid-bg: var(--xeg-surface-modal-solid-bg);
   --xeg-color-surface-modal-solid-border: var(--xeg-surface-modal-solid-border);
   /* NEW (Phase21.4→21.5): Adaptive borderline readability text-shadow token */
@@ -350,8 +289,6 @@
   --xeg-modal-scrim-opacity-high: 0.38;
 
   /* Gallery specific */
-  --xeg-gallery-backdrop: rgba(21, 32, 43, 0.85);
-  --xeg-gallery-backdrop-filter: none;
   --xeg-gallery-z-index: var(--xeg-z-gallery);
 
   /* Button specific */
@@ -360,16 +297,9 @@
   --xeg-button-height-lg: 48px;
   --xeg-button-lift: -1px; /* 호버 시 transform translateY 값 */
 
-  /* Toast specific */
-  --xeg-toast-icon-size: 20px;
-  --xeg-toast-width: 20px;
-  --xeg-toast-height: 20px;
-
   /* Icon sizes */
-  --xeg-icon-size-sm: 16px;
   --xeg-icon-size-md: 20px;
   --xeg-icon-size-lg: 24px;
-  --xeg-icon-size-xl: 32px;
 
   /* VerticalImageItem specific */
   /* Dark mode specific variables */
@@ -386,9 +316,6 @@
   /* 툴바와 설정 모달은 통합된 surface glass 토큰 사용 */
 
   /* Focus ring - 통합된 포커스 시스템 */
-  --xeg-focus-ring-width: 2px;
-  --xeg-focus-ring-color: var(--xeg-color-primary);
-  --xeg-focus-ring: var(--xeg-focus-ring-width) solid var(--xeg-focus-ring-color);
   --xeg-focus-ring-offset: 2px;
 
   /* 새롭게 추가된 접근성 관련 토큰들 */
@@ -399,16 +326,6 @@
 
   /* 표면 색상 시스템 */
   --xeg-color-surface-elevated: rgba(255, 255, 255, 0.1);
-  --xeg-color-backdrop: rgba(0, 0, 0, 0.8);
-
-  /* 활성 상태 강조 */
-  --xeg-active-ring-width: 3px;
-  --xeg-active-ring-color: var(--xeg-color-primary);
-  --xeg-active-ring: var(--xeg-active-ring-width) solid var(--xeg-active-ring-color);
-
-  /* 상태별 box-shadow */
-  --xeg-focus-shadow: 0 0 0 var(--xeg-focus-ring-width) var(--xeg-focus-ring-color);
-  --xeg-active-shadow: 0 0 0 var(--xeg-active-ring-width) var(--xeg-active-ring-color);
 
   /* ===========================================
      ICON SYSTEM TOKENS
@@ -417,19 +334,12 @@
   /* Icon 기본 설정 */
   --xeg-icon-size: 1.5em; /* 24px equivalent in em */
   --xeg-icon-stroke-width: 2;
-  --xeg-icon-line-height: 1;
-
-  /* Icon 크기 변형 */
-  --xeg-icon-size-xs: 1em; /* 16px */
-  --xeg-icon-size-sm: 1.25em; /* 20px */
+  --xeg-icon-line-height: 1; /* 아이콘 정렬을 위한 라인 높이 */
   --xeg-icon-size-md: 1.5em; /* 24px - 기본값 */
   --xeg-icon-size-lg: 2em; /* 32px */
-  --xeg-icon-size-xl: 2.5em; /* 40px */
 
   /* Icon 시각적 속성 */
   --xeg-icon-color: currentColor;
-  --xeg-icon-opacity: 1;
-  --xeg-icon-transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
 /* ===========================================
@@ -462,6 +372,7 @@
   --xeg-color-text-secondary: var(--xeg-color-neutral-300);
   --xeg-color-border-primary: var(--xeg-color-neutral-700);
   --xeg-color-border-secondary: var(--xeg-color-neutral-800);
+  --xeg-color-backdrop: rgba(0, 0, 0, 0.8);
 
   /* (Phase22) surface-glass-* 다크 오버라이드 삭제 */
   --xeg-surface-modal-solid-bg: rgba(0,0,0,1);
@@ -474,7 +385,6 @@
   --xeg-surface-modal-solid-border: var(--xeg-surface-modal-solid-border-dark);
   --xeg-color-surface-modal-bg: var(--xeg-surface-modal-bg-dark);
   --xeg-color-surface-modal-border: var(--xeg-surface-modal-border-dark);
-  --xeg-color-surface-modal-shadow: var(--xeg-surface-modal-shadow-dark);
   --xeg-color-surface-modal-solid-bg: var(--xeg-surface-modal-solid-bg-dark);
   --xeg-color-surface-modal-solid-border: var(--xeg-surface-modal-solid-border-dark);
 
@@ -482,7 +392,6 @@
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
-  --xeg-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4);
 }
 
 /* ===========================================
@@ -517,18 +426,6 @@
     --xeg-focus-ring: 3px solid currentColor;
     --xeg-color-border-primary: var(--xeg-color-neutral-800);
   }
-}
-
-/* ===========================================
-   BREAKPOINTS
-   =========================================== */
-
-:root {
-  --xeg-breakpoint-sm: 640px;
-  --xeg-breakpoint-md: 768px;
-  --xeg-breakpoint-lg: 1024px;
-  --xeg-breakpoint-xl: 1280px;
-  --xeg-breakpoint-2xl: 1536px;
 }
 
 /* ===========================================
@@ -760,13 +657,6 @@
     --xeg-color-neutral-500: #737373;
     --xeg-color-neutral-700: #404040;
     --xeg-color-neutral-900: #171717;
-
-    --xeg-color-success-500: #22c55e;
-    --xeg-color-success-800: #166534;
-    --xeg-color-success-900: #14532d;
-    --xeg-color-success-950: #052e16;
-    --xeg-color-error-500: #ef4444;
-    --xeg-color-warning-500: #f59e0b;
 
     /* Warning Orange 폴백 */
     --xeg-color-warning-50: #fffbeb;

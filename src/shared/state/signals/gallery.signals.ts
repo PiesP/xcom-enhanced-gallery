@@ -8,11 +8,12 @@
  * - Immutable state
  */
 
+import { logger } from '@shared/logging/logger';
 import type { MediaInfo } from '@shared/types/media.types';
+import { navigationIntentState } from './navigation-intent.signals';
 import type { Signal } from '@shared/types/signals';
 // 아키텍처 규칙: vendor 구현 세부경로 직접 import 지양 -> barrel 경유
 import { getPreactSignals as getPreactSignalsSafe } from '@shared/external/vendors';
-import { defaultLogger, type ILogger } from '@shared/services/core-services';
 
 /**
  * Gallery state interface
@@ -50,9 +51,6 @@ export type GalleryEvents = {
 
 // Preact Signals lazy initialization
 let galleryStateSignal: Signal<GalleryState> | null = null;
-
-// Logger instance (default fallback)
-const logger: ILogger = defaultLogger;
 
 function getGalleryStateSignal(): Signal<GalleryState> {
   if (!galleryStateSignal) {
@@ -147,6 +145,15 @@ export function navigateToItem(index: number): void {
     ...state,
     currentIndex: validIndex,
   };
+
+  // P14.FOCUS_SYNC v3: intent 상태를 toolbar로 리셋 (auto scroll 후)
+  // 다음 마이크로태스크에서 실행하여 다른 로직이 intent를 읽을 수 있도록 함
+  Promise.resolve().then(() => {
+    const currentIntent = navigationIntentState.value.intent;
+    if (currentIntent.startsWith('toolbar-')) {
+      navigationIntentState.setIntent('toolbar');
+    }
+  });
 
   logger.debug(`[Gallery] Navigated to item: ${index}`);
 }

@@ -239,13 +239,19 @@ describe('SettingsModal-Toolbar Design Consistency', () => {
   });
 
   describe('Cross-Component Token Validation', () => {
-    it('design-tokens.css에서 legacy surface-glass 토큰이 완전히 제거되었어야 한다 (Phase22)', () => {
+    it('design-tokens.css에서 legacy surface-glass 토큰이 호환성 alias로 유지되어야 한다 (Phase22)', () => {
       // Given: design-tokens 내용
-      // Then: legacy glass 토큰 존재하지 않아야 함
-      expect(designTokensCssContent).not.toMatch(/--xeg-surface-glass-bg:/);
-      expect(designTokensCssContent).not.toMatch(/--xeg-surface-glass-border:/);
-      expect(designTokensCssContent).not.toMatch(/--xeg-surface-glass-shadow:/);
-      expect(designTokensCssContent).not.toMatch(/--xeg-surface-glass-blur:/);
+      // Then: legacy glass 토큰이 elevated 토큰으로 매핑되어야 함
+      expect(designTokensCssContent).toMatch(
+        /--xeg-surface-glass-bg:\s*var\(--xeg-surface-elevated-bg\)/
+      );
+      expect(designTokensCssContent).toMatch(
+        /--xeg-surface-glass-border:\s*var\(--xeg-surface-elevated-border\)/
+      );
+      expect(designTokensCssContent).toMatch(
+        /--xeg-surface-glass-shadow:\s*var\(--xeg-surface-elevated-shadow\)/
+      );
+      expect(designTokensCssContent).toMatch(/--xeg-surface-glass-blur:\s*none/); // Phase22: blur 제거
       // 대신 semantic modal / elevated 표면 토큰이 존재해야 함
       expect(designTokensCssContent).toMatch(/--xeg-surface-modal-bg:/);
       expect(designTokensCssContent).toMatch(/--xeg-surface-elevated-bg/);

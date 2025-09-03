@@ -87,6 +87,15 @@ export function setupVendorMocks() {
     getVendorStatuses: vi.fn(() => ({})),
     isVendorInitialized: vi.fn(() => true),
   }));
+
+  vi.doMock('@shared/external/vendors/vendor-api-safe', () => ({
+    getFflateSafe: vi.fn(() => mockFflateAPI),
+    getPreactSafe: vi.fn(() => mockPreactAPI),
+    getPreactHooksSafe: vi.fn(() => mockPreactHooksAPI),
+    getPreactSignalsSafe: vi.fn(() => mockPreactSignalsAPI),
+    getPreactCompatSafe: vi.fn(() => mockPreactCompatAPI),
+    getNativeDownloadSafe: vi.fn(() => mockNativeDownloadAPI),
+  }));
 }
 
 /**

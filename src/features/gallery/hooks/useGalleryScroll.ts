@@ -17,6 +17,7 @@ import { findTwitterScrollContainer } from '@shared/utils';
 import { FEATURE_INERTIA_CONDITIONAL_PREVENT } from '@/constants';
 import { getInertiaExperimentVariant } from '@shared/experiments/inertia-experiment';
 import { decideInertiaPrevent } from './inertia-prevent-decision';
+import { markUserScroll } from '@shared/state/signals/navigation-intent.signals';
 
 // NOTE: document 존재 여부는 정적으로 캐시하지 않고, 매 접근 시 동적으로 확인한다.
 // JSDOM 테스트 환경 teardown 이후 지연된 타이머/이펙트가 실행될 수 있으므로
@@ -256,6 +257,16 @@ export function useGalleryScroll({
       if (!galleryState.value.isOpen) {
         logger.debug('useGalleryScroll: 갤러리가 열려있지 않음 - 휠 이벤트 무시');
         return;
+      }
+
+      // v2 FocusSync (부분 적용): wheel 최초 진입 시 즉시 user-scroll intent 마킹하여
+      // 디바운스 auto-scroll 예약이 race 로 먼저 실행되는 문제 완화.
+      try {
+        if (Math.abs(event.deltaY) > 0) {
+          markUserScroll();
+        }
+      } catch {
+        /* noop */
       }
 
       // Phase 14: activeContainerRef 가 아직 설정되지 않았다면 lazy 탐색 (렌더 후 ref 할당 이전 wheel 케이스 대응)

@@ -13,6 +13,7 @@
 }
 
 .panel {
+  --xeg-surface-level: overlay;
   position: fixed;
   top: calc(1.25em + 3.25em); /* 기존 toolbar 아래 여유 */
   left: 50%;

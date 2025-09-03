@@ -26,6 +26,22 @@ vi.mock('@shared/external/vendors', () => {
         },
       };
     },
+    // Preact Signals mock 추가
+    getPreactSignals: function () {
+      return {
+        signal: function (initialValue) {
+          let value = initialValue;
+          return {
+            value,
+            subscribe: vi.fn(),
+            peek: () => value,
+          };
+        },
+        computed: vi.fn(),
+        effect: vi.fn(),
+        batch: vi.fn(fn => fn()),
+      };
+    },
   };
 });
 

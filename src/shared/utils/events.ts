@@ -519,11 +519,12 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
           return Array.from(mutation.addedNodes).some(node => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node as Element;
+              const className = element.className || '';
               return (
                 element.tagName === 'DIV' ||
                 element.tagName === 'ARTICLE' ||
-                element.className.includes('tweet') ||
-                element.className.includes('media')
+                (typeof className === 'string' && className.includes('tweet')) ||
+                (typeof className === 'string' && className.includes('media'))
               );
             }
             return false;

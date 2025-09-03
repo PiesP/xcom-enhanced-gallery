@@ -103,6 +103,8 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/e2e/**',
+      // Archived historical RED/duplicate tests (performance skip)
+      'test/_archive/**',
       // Legacy placeholder depth tests kept temporarily (tool deletion issue) - exclude to avoid noise
       '**/container-depth-after-ch1.test.ts',
       '**/container-depth-after-ch1.spec.test.ts',

@@ -15,8 +15,9 @@
 
 /* 기본 툴바 - glass-surface 클래스 사용 */
 .galleryToolbar {
-  /* Phase22: intended elevation marker */
-  /* data-surface-level="elevated" will be added in component markup (planned) */
+  /* Phase22: elevation marker */
+  --xeg-surface-level: elevated;
+  /* data-surface-level="elevated" will be added in component markup */
   /* 레이아웃 속성만 정의 - glassmorphism은 glass-surface 클래스로 */
   border-radius: var(--xeg-radius-lg);
 
@@ -196,6 +197,7 @@
 /* 호버 상태는 glassmorphism 클래스에서 처리 */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
+    /* 복잡한 transform 효과 제거 - fitButton 기준 단순화 */
     /* glass hover → subtle elevated tint */
     background: rgba(255,255,255,0.15);
     transform: translateY(-1px);

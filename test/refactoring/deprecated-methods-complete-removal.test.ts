@@ -2,10 +2,11 @@
  * @fileoverview TDD RED: Deprecated 메서드 완전 제거 테스트
  * @description MediaService의 deprecated 메서드들과 불필요한 코드 제거
  */
+/* eslint-disable no-undef */
 
 // @ts-nocheck
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-
+// WHY SKIPPED: Deprecated 제거 GREEN 검증 완료. 증빙 보존 목적.
 describe.skip('TDD GREEN: Deprecated 메서드 제거 완료', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -132,7 +133,7 @@ describe.skip('TDD GREEN: Deprecated 메서드 제거 완료', () => {
 
       if (isProduction) {
         // GREEN: WebP 감지가 브라우저 기반으로만 동작
-        expect(mediaService.isWebPSupported()).toBe(false || true); // boolean 값
+        expect(typeof mediaService.isWebPSupported()).toBe('boolean');
       } else {
         // 개발/테스트 환경에서는 허용
         expect(true).toBe(true);

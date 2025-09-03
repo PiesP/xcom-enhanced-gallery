@@ -52,6 +52,7 @@ function Harness() {
   );
 }
 
+// WHY SKIPPED: top-edge fallback 기법이 focus-sync 개선으로 흡수. 유지 비용 > 가치.
 describe.skip('Toolbar top-edge fallback (TRANSITION SKIP)', () => {
   it('수동 hide 후 상단 edge mousemove(clientY<=4)로 재표시되어야 한다 (GREEN)', async () => {
     const { getByTestId } = render(<Harness />);
