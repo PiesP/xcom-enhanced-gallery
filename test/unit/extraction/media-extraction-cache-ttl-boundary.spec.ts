@@ -14,7 +14,7 @@ const makeResult = (id: string): MediaExtractionResult => ({
   tweetInfo: null,
 });
 
-describe('[RED] MediaExtractionCache TTL 경계 & purge 비활성', () => {
+describe('MediaExtractionCache TTL 경계 & purge 비활성 (GREEN)', () => {
   it('TTL 직전 hit, 직후 miss + ttlEvictions=1, purgeInterval 비활성', () => {
     vi.useFakeTimers();
     const cache = new MediaExtractionCache({ ttlMs: 20, maxEntries: 5, purgeIntervalMs: 0 });

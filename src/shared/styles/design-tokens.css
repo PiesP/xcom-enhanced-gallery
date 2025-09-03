@@ -5,6 +5,31 @@
  */
 
 :root {
+  /* ===========================================
+    Phase22 Semantic Surface System (WIP)
+    NOTE: glass 변수 제거 전 단계. 컴포넌트 CSS 점진 치환 후 glass 블록 삭제 예정.
+    =========================================== */
+  --xeg-surface-base-bg: var(--xeg-color-neutral-100, #f5f5f5);
+  --xeg-surface-base-border: var(--xeg-color-border-primary, rgba(0,0,0,0.08));
+  --xeg-surface-base-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
+
+  --xeg-surface-muted-bg: var(--xeg-color-neutral-200, #eceff1);
+  --xeg-surface-muted-border: var(--xeg-color-border-secondary, rgba(0,0,0,0.1));
+  --xeg-surface-muted-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0,0,0,0.08));
+
+  --xeg-surface-elevated-bg: var(--xeg-color-surface-modal-bg, rgba(255,255,255,0.97));
+  --xeg-surface-elevated-border: var(--xeg-color-surface-modal-border, rgba(0,0,0,0.12));
+  --xeg-surface-elevated-shadow: var(--xeg-shadow-md, 0 4px 16px rgba(0,0,0,0.12));
+
+  --xeg-surface-overlay-bg: var(--xeg-color-surface-modal-solid-bg, #ffffff);
+  --xeg-surface-overlay-border: var(--xeg-color-surface-modal-solid-border, rgba(0,0,0,0.14));
+  --xeg-surface-overlay-shadow: var(--xeg-shadow-lg, 0 8px 32px rgba(0,0,0,0.18));
+
+  /* Foreground semantic (Phase22 initial pass) */
+  --xeg-surface-fg-primary: var(--xeg-color-text-primary, #171717);
+  --xeg-surface-fg-secondary: var(--xeg-color-text-secondary, #444444);
+
+  /* DEPRECATION: 다음 릴리스에서 --xeg-glass* / *glass-shadow* / *glass-border* 제거 예정 */
   /* Primary Colors */
   --xeg-color-primary-500: oklch(0.678 0.182 252.2);
   --xeg-color-primary-600: oklch(0.623 0.21 252.8);
@@ -69,20 +94,10 @@
 /* 통합된 표면 색상 시스템 - 중복 제거 및 성능 최적화 */
 :root {
   /* Primary Surface System */
-  --xeg-surface-primary: rgba(255, 255, 255, 0.95);
-  --xeg-surface-secondary: rgba(248, 250, 252, 0.9);
-  --xeg-surface-glass: rgba(255, 255, 255, 0.85);
-
-  /* Legacy 호환성을 위한 alias - 점진적 제거 예정 */
-  --xeg-color-surface-light: var(--xeg-surface-primary);
-  --xeg-color-surface-dark: rgba(0, 0, 0, 0.95);
-  --xeg-surface-elevated: var(--xeg-surface-glass);
-
-  /* Glass Effect - 통합된 시스템 */
-  --xeg-glass-bg: var(--xeg-surface-glass);
-  --xeg-glass-border: rgba(255, 255, 255, 0.2);
-  --xeg-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  --xeg-glass-blur: none; /* 미니멀 디자인 - 블러 제거 */
+  /* (Removed glassmorphism tokens Phase22) */
+  --xeg-color-surface-light: var(--xeg-surface-elevated-bg);
+  --xeg-color-surface-dark: rgba(0, 0, 0, 0.92);
+  --xeg-surface-elevated: var(--xeg-surface-elevated-bg);
 
   /* Optimized Overlay Colors - 성능을 위한 간소화 */
   --xeg-overlay-light: rgba(0, 0, 0, 0.1);
@@ -98,13 +113,7 @@
   --xeg-color-overlay-backdrop: var(--xeg-overlay-backdrop);
   --xeg-color-overlay-subtle: rgba(255, 255, 255, 0.1);
 
-  /* 중복 제거된 글래스 색상들 - alias 통합 */
-  --xeg-color-glass-light: var(--xeg-glass-bg);
-  --xeg-glass-bg-light: var(--xeg-glass-bg);
-  --xeg-surface-glass-bg: var(--xeg-glass-bg);
-  --xeg-surface-glass-border: var(--xeg-glass-border);
-  --xeg-surface-glass-shadow: var(--xeg-glass-shadow);
-  --xeg-surface-glass-blur: none; /* 미니멀 디자인 - 블러 제거 */
+  /* Removed: color_glass_* and surface_glass_* variables */
 
   /* ===========================================
    ACCESSIBILITY ENHANCEMENTS
@@ -140,17 +149,9 @@
       --xeg-color-warning-500: var(--xeg-color-warning-accessible);
 
       /* 테두리 강화 */
-      --xeg-glass-border: rgba(0, 0, 0, 0.8);
-      --xeg-focus-ring-width: 3px;
-
-      /* 배경 불투명도 증가 */
-      --xeg-surface-glass: rgba(255, 255, 255, 0.98);
+  --xeg-focus-ring-width: 3px;
     }
 
-    [data-theme='dark'] {
-      --xeg-glass-border: rgba(255, 255, 255, 0.8);
-      --xeg-surface-glass: rgba(0, 0, 0, 0.98);
-    }
   }
 
   /* 컬러 블라인드 지원 */
@@ -278,17 +279,8 @@
   --xeg-transform-translate-y-sm: translateY(-10px);
   --xeg-transform-translate-y-none: translateY(0);
 
-  /* Backdrop Filter - 미니멀 디자인 (블러 제거) */
-  --xeg-blur-light: none;
-  --xeg-blur-medium: none;
-  --xeg-blur-strong: none;
-
-  /* 미니멀 디자인 전용 (블러 제거) */
-  --xeg-glass-blur-subtle: none;
-  --xeg-glass-blur-light: none;
-  --xeg-glass-blur-medium: none;
-  --xeg-glass-blur-strong: none;
-  --xeg-glass-blur-ultra: none;
+  /* Phase22: 제거된 legacy blur/glass 토큰 정리 (ratio guard) */
+  /* (모든 --xeg-blur-*, --xeg-glass-blur-* 토큰 삭제) */
 
   /* ===========================================
      SEMANTIC TOKEN ALIASES
@@ -327,13 +319,35 @@
      COMPONENT-SPECIFIC TOKENS
      =========================================== */
 
-  /* Unified Surface Glass Tokens (NEW) */
-  /* 모든 반투명 글래스 UI 공통 표면: Toolbar / SettingsModal / (향후) Toast 등 */
-  /* 기본 라이트 테마 glassmorphism 값들 - 순환 참조 방지 */
-  --xeg-surface-glass-bg: rgba(255, 255, 255, 0.85); /* 반투명 라이트 글래스 */
-  --xeg-surface-glass-border: rgba(255, 255, 255, 0.2); /* 부드러운 글래스 테두리 */
-  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); /* 글래스 그림자 */
-  --xeg-surface-glass-blur: none; /* 블러 제거 */
+  /* (Phase22) surface-glass-* 토큰 제거됨: elevated / modal 토큰으로 통합 */
+
+  /* Phase21: Modal 전용 표면 토큰 (기본값 - light 기준) */
+  --xeg-surface-modal-bg: rgba(255, 255, 255, 0.95);
+  --xeg-surface-modal-border: rgba(0, 0, 0, 0.12);
+  --xeg-surface-modal-shadow: 0 8px 40px rgba(0, 0, 0, 0.28);
+  --xeg-surface-modal-blur: 4px;
+  --xeg-surface-modal-backdrop: blur(var(--xeg-surface-modal-blur));
+  /* Solid variant (adaptive) */
+  --xeg-surface-modal-solid-bg: rgba(255,255,255,1);
+  --xeg-surface-modal-solid-border: rgba(0,0,0,0.15);
+  /* Dark counterparts (Phase21 v2 / Phase22 step1) */
+  --xeg-surface-modal-bg-dark: rgba(0,0,0,0.90);
+  --xeg-surface-modal-border-dark: rgba(255,255,255,0.22);
+  --xeg-surface-modal-shadow-dark: 0 8px 44px rgba(0,0,0,0.70);
+  --xeg-surface-modal-solid-bg-dark: rgba(0,0,0,1);
+  --xeg-surface-modal-solid-border-dark: rgba(255,255,255,0.28);
+  /* Semantic modal aliases (theme-resolved) */
+  --xeg-color-surface-modal-bg: var(--xeg-surface-modal-bg);
+  --xeg-color-surface-modal-border: var(--xeg-surface-modal-border);
+  --xeg-color-surface-modal-shadow: var(--xeg-surface-modal-shadow);
+  --xeg-color-surface-modal-solid-bg: var(--xeg-surface-modal-solid-bg);
+  --xeg-color-surface-modal-solid-border: var(--xeg-surface-modal-solid-border);
+  /* NEW (Phase21.4→21.5): Adaptive borderline readability text-shadow token */
+  --xeg-modal-text-shadow-color: rgba(0,0,0,0.4);
+  --xeg-modal-scrim-color: rgba(0,0,0,0.6);
+  --xeg-modal-scrim-opacity-low: 0.18;
+  --xeg-modal-scrim-opacity-med: 0.28;
+  --xeg-modal-scrim-opacity-high: 0.38;
 
   /* Gallery specific */
   --xeg-gallery-backdrop: rgba(21, 32, 43, 0.85);
@@ -430,11 +444,11 @@
   --xeg-color-border-primary: var(--xeg-color-neutral-300);
   --xeg-color-border-secondary: var(--xeg-color-neutral-200);
 
-  /* 라이트 테마 미니멀 오버라이드 - 블러 제거 */
-  --xeg-surface-glass-bg: rgba(255, 255, 255, 0.85);
-  --xeg-surface-glass-border: rgba(0, 0, 0, 0.1);
-  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  --xeg-surface-glass-blur: none;
+  /* (Phase22) surface-glass-* 오버라이드 삭제 */
+  /* Modal override (light) */
+  --xeg-surface-modal-bg: rgba(255, 255, 255, 0.95);
+  --xeg-surface-modal-border: rgba(0, 0, 0, 0.12);
+  --xeg-surface-modal-shadow: 0 8px 40px rgba(0, 0, 0, 0.28);
 }
 
 /* ===========================================
@@ -449,11 +463,20 @@
   --xeg-color-border-primary: var(--xeg-color-neutral-700);
   --xeg-color-border-secondary: var(--xeg-color-neutral-800);
 
-  /* 다크모드 미니멀 오버라이드 - 블러 제거 */
-  --xeg-surface-glass-bg: rgba(0, 0, 0, 0.85);
-  --xeg-surface-glass-border: rgba(255, 255, 255, 0.15);
-  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --xeg-surface-glass-blur: none;
+  /* (Phase22) surface-glass-* 다크 오버라이드 삭제 */
+  --xeg-surface-modal-solid-bg: rgba(0,0,0,1);
+  --xeg-surface-modal-solid-border: rgba(255,255,255,0.25);
+  /* Map dark semantic aliases */
+  --xeg-surface-modal-bg: var(--xeg-surface-modal-bg-dark);
+  --xeg-surface-modal-border: var(--xeg-surface-modal-border-dark);
+  --xeg-surface-modal-shadow: var(--xeg-surface-modal-shadow-dark);
+  --xeg-surface-modal-solid-bg: var(--xeg-surface-modal-solid-bg-dark);
+  --xeg-surface-modal-solid-border: var(--xeg-surface-modal-solid-border-dark);
+  --xeg-color-surface-modal-bg: var(--xeg-surface-modal-bg-dark);
+  --xeg-color-surface-modal-border: var(--xeg-surface-modal-border-dark);
+  --xeg-color-surface-modal-shadow: var(--xeg-surface-modal-shadow-dark);
+  --xeg-color-surface-modal-solid-bg: var(--xeg-surface-modal-solid-bg-dark);
+  --xeg-color-surface-modal-solid-border: var(--xeg-surface-modal-solid-border-dark);
 
   /* Dark theme shadows (stronger) */
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -778,49 +801,20 @@
 /* 투명도 감소를 선호하는 사용자 지원 */
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    /* 투명도 감소 시 글래스 효과 조정 - 순환 참조 제거 */
-    --xeg-surface-glass-bg: rgba(255, 255, 255, 0.95);
-    --xeg-surface-glass-border: rgba(0, 0, 0, 0.2);
-    --xeg-surface-glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    --xeg-surface-glass-blur: none;
-  }
-
-  [data-theme='dark'] {
-    --xeg-surface-glass-bg: rgba(0, 0, 0, 0.95);
-    --xeg-surface-glass-border: rgba(255, 255, 255, 0.2);
-    --xeg-surface-glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-    --xeg-surface-glass-blur: none;
+    /* 글래스 제거 후 모달 대비 강화 */
+    --xeg-surface-modal-bg: rgba(0, 0, 0, 0.92);
+    --xeg-surface-modal-border: rgba(255, 255, 255, 0.18);
+    --xeg-surface-modal-shadow: 0 8px 44px rgba(0, 0, 0, 0.55);
   }
 }
 
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
-  :root {
-    /* 고대비 모드에서는 블러 제거 및 불투명도 증가 - 순환 참조 제거 */
-    --xeg-surface-glass-bg: rgba(255, 255, 255, 0.98);
-    --xeg-surface-glass-border: rgba(0, 0, 0, 0.8);
-    --xeg-surface-glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    --xeg-surface-glass-blur: none;
-  }
-
-  [data-theme='dark'] {
-    /* 다크 테마 고대비 모드 - 순환 참조 제거 */
-    --xeg-surface-glass-bg: rgba(0, 0, 0, 0.98);
-    --xeg-surface-glass-border: rgba(255, 255, 255, 0.8);
-    --xeg-surface-glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
-    --xeg-surface-glass-blur: none;
-  }
+  /* surface-glass-* 제거로 별도 처리 불필요 */
 }
 
 /* 모바일 최적화 - 블러 제거 */
-@media (max-width: 768px) {
-  :root {
-    --xeg-toolbar-glass-blur: none;
-    --xeg-toast-glass-blur: none;
-    --xeg-gallery-glass-blur: none;
-    --xeg-media-glass-blur: none;
-  }
-}
+/* (Phase22) 모바일 glass-blur 토큰 제거 */
 
 /* ===========================================
    SHARED ANIMATION KEYFRAMES
@@ -936,14 +930,15 @@
  * @description 모든 컴포넌트에서 공통 사용하는 통합된 스타일
  * @performance GPU 가속 및 레이어 최적화 적용
  */
+
 .xeg-glassmorphism {
-  /* 미니멀 디자인 - 글래스모피즘 제거 */
-  background: var(--xeg-surface-glass);
-  border: 1px solid var(--xeg-glass-border-light);
+  /* Phase22: glass 토큰 제거 후 elevated 표면 사용 */
+  background: var(--xeg-surface-elevated-bg);
+  border: 1px solid var(--xeg-surface-elevated-border);
   border-radius: var(--xeg-radius-lg);
-  box-shadow: var(--xeg-glass-shadow-light);
-  backdrop-filter: none; /* 블러 제거 */
-  -webkit-backdrop-filter: none; /* 블러 제거 */
+  box-shadow: var(--xeg-surface-elevated-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 
   /* 레이아웃 및 위치 */
   isolation: isolate;
@@ -1030,9 +1025,9 @@
 
 /* 다크 테마 지원 */
 [data-theme='dark'] .xeg-glassmorphism {
-  background: var(--xeg-surface-glass-bg);
-  border-color: var(--xeg-surface-glass-border);
-  box-shadow: var(--xeg-surface-glass-shadow);
+  background: var(--xeg-surface-modal-bg-dark);
+  border-color: var(--xeg-surface-modal-border-dark);
+  box-shadow: var(--xeg-surface-modal-shadow-dark);
 }
 
 /* 접근성 지원 */
@@ -1068,4 +1063,39 @@
   .xeg-glassmorphism.button-variant:hover {
     transform: none !important;
   }
+}
+
+/* ===========================================
+   PHASE22 ELEVATION ATTRIBUTE MAPPING
+   data-surface="base|muted|elevated|overlay|modal"
+   =========================================== */
+
+[data-surface='base'] {
+  background: var(--xeg-surface-base-bg);
+  border: 1px solid var(--xeg-surface-base-border);
+  box-shadow: var(--xeg-surface-base-shadow);
+}
+
+[data-surface='muted'] {
+  background: var(--xeg-surface-muted-bg);
+  border: 1px solid var(--xeg-surface-muted-border);
+  box-shadow: var(--xeg-surface-muted-shadow);
+}
+
+[data-surface='elevated'] {
+  background: var(--xeg-surface-elevated-bg);
+  border: 1px solid var(--xeg-surface-elevated-border);
+  box-shadow: var(--xeg-surface-elevated-shadow);
+}
+
+[data-surface='overlay'] {
+  background: var(--xeg-surface-overlay-bg);
+  border: 1px solid var(--xeg-surface-overlay-border);
+  box-shadow: var(--xeg-surface-overlay-shadow);
+}
+
+[data-surface='modal'] {
+  background: var(--xeg-surface-modal-bg);
+  border: 1px solid var(--xeg-surface-modal-border);
+  box-shadow: var(--xeg-surface-modal-shadow);
 }

@@ -112,7 +112,8 @@ describe('SettingsModal', () => {
     it('다른 키 입력 시 onClose가 호출되지 않아야 함', () => {
       render(<SettingsModal {...mockProps} />);
 
-      fireEvent.keyDown(document, { key: 'Enter' });
+      const doc = (globalThis as unknown as { document?: Document }).document;
+      if (doc) fireEvent.keyDown(doc, { key: 'Enter' });
 
       expect(mockProps.onClose).not.toHaveBeenCalled();
     });
@@ -131,14 +132,11 @@ describe('SettingsModal', () => {
 
     it('테마 옵션들이 올바르게 표시되어야 함', () => {
       render(<SettingsModal {...mockProps} />);
-
-      const autoOption = screen.getByText('Auto');
-      const lightOption = screen.getByText('Light');
-      const darkOption = screen.getByText('Dark');
-
-      expect(autoOption).toBeDefined();
-      expect(lightOption).toBeDefined();
-      expect(darkOption).toBeDefined();
+      const themeSelect = screen.getByLabelText('Theme') as HTMLSelectElement;
+      const optionTexts = Array.from(themeSelect.options).map(o => o.textContent?.trim());
+      expect(optionTexts).toContain('Auto');
+      expect(optionTexts).toContain('Light');
+      expect(optionTexts).toContain('Dark');
     });
   });
 

@@ -63,7 +63,7 @@
   flex-direction: column;
 }
 
-/* 갤러리 툴바 - 현대적 glassmorphism 디자인 */
+/* 갤러리 툴바 - semantic elevated surface */
 .xeg-gallery-toolbar {
   position: absolute;
   top: 0;
@@ -96,7 +96,7 @@
   justify-content: center;
 }
 
-/* 툴바 버튼 - 현대적 glassmorphism 디자인 */
+/* 툴바 버튼 - semantic elevated surface */
 .xeg-toolbar-button {
   background: var(--xeg-bg-button);
   border: 1px solid var(--xeg-border-button);
@@ -248,7 +248,7 @@
   font-size: 16px;
 }
 
-/* 네비게이션 버튼 - 현대적 glassmorphism 디자인 */
+/* 네비게이션 버튼 - semantic elevated surface */
 .xeg-gallery-nav-left,
 .xeg-gallery-nav-right {
   position: absolute;
@@ -420,7 +420,8 @@
 
 /* 갤러리 내부 요소들은 정상 스크롤 허용 */
 .xeg-gallery-isolated * {
-  /* 갤러리 내부에서는 정상적인 스크롤 동작 허용 */
+  /* noop: ensure rule non-empty for linter; maintain default behavior */
+  scroll-behavior: auto;
 }
 
 /* 반응형 디자인 */
@@ -574,14 +575,53 @@
 
 /**
  * 공통 Glass Surface 클래스
- * @description Toolbar와 SettingsModal 등에서 사용하는 통일된 glassmorphism 스타일
+ * @description Toolbar와 SettingsModal 등에서 사용하는 통일된 semantic surface 스타일
  */
-.glass-surface {
-  background: var(--xeg-surface-glass-bg);
-  border: 1px solid var(--xeg-surface-glass-border);
+ .glass-surface {
+  /* Deprecated class name retained for compatibility; now maps to elevated surface */
+  background: var(--xeg-surface-elevated-bg);
+  border: 1px solid var(--xeg-surface-elevated-border);
   border-radius: var(--xeg-radius-xl);
-  box-shadow: var(--xeg-surface-glass-shadow);
+  box-shadow: var(--xeg-surface-elevated-shadow, var(--xeg-shadow-md));
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   isolation: isolate;
+ }
+
+/* Phase21: SettingsModal 전용 표면 (가독성 강화) */
+.modal-surface {
+  background: var(--xeg-surface-modal-bg, var(--xeg-surface-elevated-bg));
+  border: 1px solid var(--xeg-surface-modal-border, var(--xeg-surface-elevated-border));
+  box-shadow: var(--xeg-surface-modal-shadow, var(--xeg-surface-elevated-shadow));
+  backdrop-filter: var(--xeg-surface-modal-backdrop, none);
+  -webkit-backdrop-filter: var(--xeg-surface-modal-backdrop, none);
+}
+
+/* Solid variant (adaptive) */
+.modal-surface-solid {
+  background: var(--xeg-surface-modal-solid-bg, var(--xeg-surface-modal-bg, #ffffff));
+  border: 1px solid var(--xeg-surface-modal-solid-border, var(--xeg-surface-modal-border));
+  box-shadow: var(--xeg-surface-modal-shadow, var(--xeg-surface-elevated-shadow));
+}
+
+/* Scrim pseudo-element for adaptive readability (Phase21 scrim) */
+.modal-surface.xeg-scrim { position: relative; }
+.modal-surface.xeg-scrim::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--xeg-modal-scrim-color, rgba(0,0,0,0.6));
+  opacity: var(--xeg-modal-scrim-opacity-med, 0.28);
+  pointer-events: none;
+  mix-blend-mode: normal;
+}
+.modal-surface.xeg-scrim.xeg-scrim-intensity-low::before { opacity: var(--xeg-modal-scrim-opacity-low, 0.18); }
+.modal-surface.xeg-scrim.xeg-scrim-intensity-high::before { opacity: var(--xeg-modal-scrim-opacity-high, 0.38); }
+
+/* Optional subtle text shadow to boost readability in glass mode when contrast borderline */
+.xeg-modal-text-shadow {
+  /* Use design token for color; fallback ensures backward compat */
+  text-shadow: 0 0 2px var(--xeg-modal-text-shadow-color, rgba(0,0,0,0.4)),
+    0 1px 2px var(--xeg-modal-text-shadow-color, rgba(0,0,0,0.25));
 }

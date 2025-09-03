@@ -23,6 +23,16 @@ interface EventOptions {
 export class DOMEventManager {
   private cleanups: EventCleanup[] = [];
   private isDestroyed = false;
+  private auditRecords: {
+    id: number;
+    event: string;
+    target: string;
+    capture: boolean;
+    passive: boolean;
+    once: boolean;
+    order: number;
+  }[] = [];
+  private nextId = 1;
 
   /**
    * 이벤트 리스너 등록
@@ -45,6 +55,18 @@ export class DOMEventManager {
 
     try {
       element.addEventListener(eventType, handler as EventListener, options);
+      // 감사 레코드 저장 (오버헤드 낮음)
+      const targetLabel =
+        element === window ? 'window' : element === document ? 'document' : 'element';
+      this.auditRecords.push({
+        id: this.nextId++,
+        event: String(eventType),
+        target: targetLabel,
+        capture: !!options?.capture,
+        passive: !!options?.passive,
+        once: !!options?.once,
+        order: this.auditRecords.length,
+      });
       this.cleanups.push(() => {
         try {
           element.removeEventListener(eventType, handler as EventListener, options);
@@ -140,6 +162,8 @@ export class DOMEventManager {
 
     this.cleanups = [];
     this.isDestroyed = true;
+    this.auditRecords = [];
+    this.nextId = 1;
 
     logger.debug('DOMEventManager: 모든 이벤트 리스너 정리 완료', { cleanupCount });
   }
@@ -156,6 +180,21 @@ export class DOMEventManager {
    */
   public getIsDestroyed(): boolean {
     return this.isDestroyed;
+  }
+
+  /**
+   * 등록된 DOM 이벤트 감사 레코드 (우선순위 스냅샷용)
+   */
+  public getAuditRecords(): ReadonlyArray<{
+    id: number;
+    event: string;
+    target: string;
+    capture: boolean;
+    passive: boolean;
+    once: boolean;
+    order: number;
+  }> {
+    return this.auditRecords;
   }
 }
 

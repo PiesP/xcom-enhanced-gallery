@@ -1,108 +1,340 @@
-# X.com Enhanced Gallery - TDD 리팩토링 간략 계획
+# X.com Enhanced Gallery - TDD 리팩토링 진행 현황 (초경량 관리판)
 
-본 문서는 원래의 상세 리팩토링 계획(방대한 히스토리, 휴리스틱 세부, 테스트
-케이스 전개)을 압축한 **요약판**입니다. 세부 변경 내역은 Git History / PR / 커밋
-메시지를 참조하세요. (기존 장문 버전은 저장소 히스토리에서 복원 가능)
+본 문서는 2025-09-03 기준 장문 히스토리를 정리/축약한 최신 운영판입니다. 세부
+구현 과 과거 Phase 별 RED→GREEN 로그는 Git 커밋/PR 을 참조하세요. 여기서는
+**유지해야 할 가드 / 남은 소규모 작업 / 핵심 KPI** 만 추적합니다.
 
-목표 핵심 (축약):
+## 0. 핵심 목표 (상시)
 
-1. 대량 미디어 초기 렌더 <120ms / 메모리 효율
-2. 재실행·중복 초기화/스타일/이벤트 안전성
-3. 자연스러운 휠/트랙패드 UX (컨텐츠/네비 분리)
-4. 미디어 추출 신뢰성 (휴리스틱 + 캐시 안정화)
-5. 접근성/가독성 향상 (설정 모달 가독성 포함)
-6. Clean Architecture + Vendor 안전 getter + 네임스페이스 스타일
-
-현재 집중 (2025-09-03 갱신):
-
-- Phase 14 관성(Inertia) A/B 실험 1차 확장 완료: overscroll 억제 / 평균 |delta|
-  통계 수집(getInertiaStats) GREEN
-- StrategyChain 고도화 1차 (병렬 그룹 + backoff + 병렬 메트릭
-  groupSize/winnerLatency/losingCancelCount) GREEN (Orchestrator 중앙 브리지:
-  추후 필요 시 확장)
+1. 초기 렌더 성능(1000 items <120ms) 및 메모리 효율 유지
+2. 재실행/중복 초기화/스타일/이벤트 안전성
+3. 자연스러운 스크롤 & 인풋 UX (휠/트랙패드)
+4. 안정적 미디어 추출 (StrategyChain + 캐시)
+5. 접근성 & 가독성 (설정 모달 포함)
+6. Clean Architecture + Vendor Safe Getter + Namespaced Styles
 
 ---
 
-## 1. Phase 진행 현황 (요약 표)
+## 1. Phase 상태 요약
 
-| Phase | 주제                        | 상태       | 핵심 성과 / 잔여 (축약)                                                         |
-| ----- | --------------------------- | ---------- | ------------------------------------------------------------------------------- |
-| 1     | 회귀 베이스라인             | 완료       | 성능/행동 기준선 확립                                                           |
-| 2     | 가상 스크롤 커널            | 완료       | 1000개 <120ms, DOM 축소                                                         |
-| 3/3.1 | 컨테이너 단순화             | 완료       | DOM depth 7→4, selector 통일                                                    |
-| 4     | Shadow DOM 옵트인           | 완료       | 스타일 격리                                                                     |
-| 5     | WebP/AVIF                   | 완료       | 전송량 절감                                                                     |
-| 6     | 인접 프리로딩               | 완료       | 전환 지연 <50ms                                                                 |
-| 7     | 오프스크린 언로딩           | 완료       | 비디오 버퍼 해제 >90%                                                           |
-| 8     | 성능/회귀 가드              | 완료       | perf-budget & 회귀 테스트                                                       |
-| 9     | 휠 이벤트 분리(작은 이미지) | 완료       | 배경 스크롤 누수 0                                                              |
-| 9.4   | 큰 이미지 자연 스크롤       | 완료(기본) | scrollBy + delta 누적                                                           |
-| 10    | 중복 초기화 방지            | 완료       | single execution 안정                                                           |
-| 11    | 추출 신뢰성 HARDEN          | 완료       | v3+v3.1(aspect/DPR) + duplicate guard/retry + TTL 스트레스/극단 비율 회귀 GREEN |
-| 12    | 이벤트 재바인딩 탄력        | 예정       | Priority Auditor                                                                |
-| 13    | Core 책임 통합              | 예정       | GalleryController (API 표면 스냅샷 확보 완료)                                   |
-| 14    | 관성 향상 옵션              | 선택       | 조건부 preventDefault 실험                                                      |
-| 15–20 | Modernization 묶음          | 예정       | Layer, A11y, StrategyChain 고도화 등                                            |
-| 21    | 설정 모달 가독성 강화       | 완료       | modal-surface 토큰/클래스 + 대비 테스트 GREEN                                   |
+완료: P1–P14(A 기본 관성), P21 Readability v2, P22 Surface System, P12 Auditor,
+P13 Controller 통합.
+
+진행: P18 Unified Store(소비자 전환 마감 단계).
+
+선택(Backlog): Inertia Variant B, Contrast Ladder rationale 문서화, Dead Token
+Reporter(JSON), 추가 병렬 메트릭 세분화.
 
 ---
 
-## 2. 완료된 Phase 핵심 요약
+## 2. 완료 기능 (압축)
 
-Phase 1–3: 테스트 베이스라인 + 가상 스크롤 + DOM 평탄화(7→4) Phase 4: Shadow DOM
-옵트인 (스타일 중복/외부 충돌 감소) Phase 5: 포맷 전략 (Canvas 감지 + URL 변환)
-Phase 6: 인접 프리로딩 큐 (중복 제거, 메모리 인식) Phase 7: Intersection 기반
-언로딩 (비디오/이미지 메모리 절감) Phase 8: 성능 버짓 + 회귀 가드 체계화 Phase 9
-& 9.4(14 선행): 작은 이미지 네비/배경 차단 + 큰 이미지 자연 휠 스크롤 Phase 10:
-ensureSingleExecution / Service 중복 차단 / 재열기 100%
+가상 스크롤·DOM 평탄화·Shadow DOM 옵트인·WebP/AVIF·인접 프리로딩·오프스크린
+언로딩·성능/회귀 버짓·휠 UX(소형 차단/대형 자연 스크롤)·중복 초기화 방지·미디어
+추출 HARDEN v3.1(DPR/AR, duplicate guard, retry, LRU+TTL)·Inertia 기본
+메트릭·Readability Guard v2/v3 요소·Unified Surface System.
 
 ---
+
+## 3. Media Extraction (Phase 11) 요약
+
+Heuristic v3.1 (AR+DPR), duplicate/retry middleware, parallel winnerLatency,
+LRU+TTL metrics, metricsVersion 도입. 추가 세분화(추가 parallel breakdown)는
+Backlog.
+
+---
+
+## 4. Scroll Inertia (Phase 14)
+
+Variant A 안정 (fractional delta, 누수 0). Variant B 조건부 preventDefault 완화
+실험은 사용자 피드백 발생 시 재개.
+
+---
+
+## 5. KPI 스냅샷
+
+| 지표                  | 현재       | 목표          | 상태 |
+| --------------------- | ---------- | ------------- | ---- |
+| 초기 렌더(1000)       | <120ms     | <120ms        | ✅   |
+| DOM depth             | 4          | ≤4            | ✅   |
+| 작은 이미지 배경 누수 | 0          | 0             | ✅   |
+| 재열기 실패율         | ≈0         | 0             | ✅   |
+| 추출 휴리스틱 v3.1    | 구현       | 구현          | ✅   |
+| Readability Guard     | v2/v3 일부 | 대비≥4.5 유지 | ✅   |
+
+---
+
+## 6. 남은 작업 (실행 항목)
+
+### P18 Unified Store (최종 마감 단계)
+
+현황: `gallery.store.ts` + 캐시 동일성 테스트 GREEN. 주요 유틸(`utils.ts`)
+소비자 전환 완료. 잔여(필수): (1) 잔존 direct signal 접근 중 성능/빈도 낮은 경로
+허용 목록 확정 (2) 문서 DoD 반영.
+
+#### 6.1 Store Direct Signal 허용 예외 표 (확정)
+
+| 경로 / 모듈                                     | 사용 신호                                      | 사유(Rationale)                                                            | 전환 정책                                                       | 제거 대상 여부                   |
+| ----------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------- |
+| `features/gallery/hooks/useGalleryScroll.ts`    | `galleryState.value.isOpen`                    | 휠 이벤트 고빈도 경로에서 snapshot 재계산/객체 freeze 비용 회피 (hot path) | 필요 시 micro-benchmark 로 차이 <1% 확인 후 Store selector 대체 | 추후 성능 영향 미미 시 제거 고려 |
+| `shared/utils/events.ts`                        | `galleryState.value.isOpen` (checkGalleryOpen) | 전역 document capture wheel/click 필터에서 빠른 Boolean 게이트 필요        | Unified Store read 래퍼 + memo plan (Backlog)                   | 단기 유지                        |
+| `shared/state/signals/gallery.signals.ts`       | signal 정의부                                  | 레거시 신호 정의 (Store 내부 소스)                                         | Store 가 신호 위에 얇은 abstraction → 유지                      | 유지(소스)                       |
+| 기타 컴포넌트/컨트롤러 (`GalleryController` 등) | 없음(이미 Store 사용)                          | -                                                                          | -                                                               | -                                |
+
+정책: 위 표 외 direct signal 신규 사용 금지. 테스트에서 signal mocking 필요 시
+Store selector 래퍼 우선 사용.
+
+### 문서 정리
+
+히스토리성 세부 섹션 제거(본 판에서 수행). Contrast Ladder rationale 상세 표는
+Backlog.
+
+### Optional Backlog
+
+- Inertia Variant B 실험 플래그
+- Contrast Ladder 공식/threshold 표 세부 문서화
+- Dead Token Reporter JSON 출력 (추적 목적)
+
+추가됨: `FEATURE_INERTIA_VARIANT_B` 플래그 (기본 OFF, Variant B 강제 활성 목적).
+
+Contrast Ladder 상세 근거 문서 초안: `docs/contrast-ladder-rationale.md`
+(Backlog).
+
+이 외 Phase 신규 착수 없음.
+
+## 7. KPI (상세 유지 표)
+
+| 지표                      | 현재     | 목표             | 상태 |
+| ------------------------- | -------- | ---------------- | ---- |
+| Controller API 축소율     | ≥30%     | ≥30%             | ✅   |
+| Unified Store 소비자 전환 | 1차 완료 | 전역 적용 문서화 | 진행 |
+| Readability 대비 위반     | 0        | 0                | ✅   |
+| Media Reopen 성공률       | ≈100%    | 100%             | ✅   |
+
+## 8. 즉시 실행 체크리스트
+
+1. (완료) Controller API surface 스냅샷 유지
+2. (완료) Unified Store 캐시 동일성 / shape 테스트
+3. (완료) 첫 소비자(utils) 전환 – direct signal fallback 제거
+4. (잔여) Store 소비자 전환 범위 & 허용 예외 표 (문서 Backlog)
+
+## 9. Definition of Done (갱신)
+
+1. Unified Store: 주요 외부 util/트리거 경로 direct signal 제거 (완료)
+2. Store shape & 캐시 테스트 GREEN (완료)
+3. Controller 축소율 ≥30% 유지 (완료)
+4. 본 문서 경량화 및 Backlog 분리 (완료)
+5. (Optional) 추가 소비자 전환 정책 표 Backlog 로 이동 (선택)
+
+## 7. 완료(과거 세부) 축약 메모
+
+과거 상세 구현/리스크/대안 매트릭스는 삭제. 필요 시 Git 히스토리 참조.
+
+## 10. 리스크 (현재)
+
+| 리스크                            | 대응                              |
+| --------------------------------- | --------------------------------- |
+| Store 전환 지연                   | 허용 예외 문서화 + 점진 린트 고려 |
+| Inertia Variant B 회귀            | 실험 플래그 분리, 기본 OFF        |
+| 미디어 추출 병렬 메트릭 추가 지연 | Backlog 명시, 현행 KPI 유지       |
+
+## 11. 용어 (핵심)
+
+| 키                        | 의미                         |
+| ------------------------- | ---------------------------- |
+| heuristicScore            | background-image 품질 점수   |
+| extractionCache\_\*       | LRU/TTL 캐시 메트릭 prefix   |
+| winnerLatency             | 병렬 StrategyChain 승자 지연 |
+| overscrollSuppressedRatio | Inertia 억제 비율            |
+
+## 12. Backlog (선택 – 필요 시 착수)
+
+1. Inertia Variant B 실험
+2. Contrast Ladder rationale 추가 문서
+3. Dead Token Reporter(JSON)
+4. 병렬 세부 메트릭(패널티/loser latency 분포)
+
+### (참고) 향후 재개 가능 Phases
+
+P19 Code Splitting (초기 gzip -15%), P20 DX & Docs Modernization (Onboarding
+문서 1p 이하) — 현재 착수 보류.
+
+### P20 DX & Docs Modernization
+
+작업: ADR 압축, 스캐폴드 스크립트, Onboarding 문서 축소. DoD: 신규 기여자 세팅
+가이드 1 페이지 이하.
+
+---
+
+문서 길이 최적화: 3000+ 라인 → 핵심 유지형 축약. 추가 세부 필요 시 과거 커밋
+참조.
+
+---
+
+## 7. Modal Readability Guard v1/v2 요약
+
+contrast ladder + noise(hysteresis) + cross-session persistence + escalation
+trace. 한계: 표본 부족 / blended contrast 미반영 → v3에서 해결.
+
+---
+
+## 8. 테스트 & 품질 정책 (유지)
+
+- RED → GREEN → REFACTOR (파일명에 red 미사용, 설명 기반)
+- Strict TS / Vendor Safe Getter
+- Namespaced Styles & Single Injection
+- Metrics schema versioned (metricsVersion)
+- 퍼포먼스 예산 회귀 테스트 유지
+
+---
+
+## 9. 리스크 & 대응 (현행)
+
+| 리스크                  | 대응                                           |
+| ----------------------- | ---------------------------------------------- |
+| Modal 저대비 glass 지속 | P21.3 blended tier escalation + contrast floor |
+| 이벤트 우선순위 회귀    | P12 Auditor 스냅샷 diff                        |
+| StrategyChain 과확장    | Metrics versioning + 단계적 병렬 메트릭        |
+| Dead Token 증가         | P15 Layer & Token audit                        |
+| UX 실험 회귀            | Inertia A/B 플래그 + 메트릭 flush 테스트       |
+
+---
+
+## 10. 용어 / 메트릭 (부분 유지)
+
+| 키                          | 의미                           |
+| --------------------------- | ------------------------------ |
+| extractionCache\_\*         | LRU/TTL 캐시 메트릭            |
+| successResultCacheEvictions | 성공 결과 캐시 TTL/LRU 제거 수 |
+| heuristicScore              | background-image 품질 점수     |
+| winnerLatency               | 병렬 StrategyChain 승자 지연   |
+| overscrollSuppressedRatio   | Inertia 실험 억제 비율         |
+
+---
+
+## 13. 완료 정의(Phase 범주 요약)
+
+• Media Extraction v3.1 안정 • Readability v2/v3 요소 안정 (대비 ≥4.5 유지) •
+Event Priority Auditor 동작 (diff=0) • Controller API freeze 유지 • Store 스냅샷
+불변 & 캐시 가드 통과
+
+---
+
+## 12. 변경 이력 (초간략)
+
+- 2025-09-03: 문서 재압축 & 우선순위 로드맵 재정렬(P21.3 추가)
+- 2025-09-02: Phase11 HARDEN v3.1 완료 기록 확정
+
+---
+
+## 14. 변경 이력
+
+| 날짜       | 내용                                                  |
+| ---------- | ----------------------------------------------------- |
+| 2025-09-03 | 문서 초경량화 / P18 소비자 전환 반영 / 중복 섹션 정리 |
+| 2025-09-02 | HARDEN v3.1 반영 (이전 장문판)                        |
+
+---
+
+본 문서는 더 이상 과거 세부 로그를 포함하지 않습니다. 필요 시 Git 히스토리를
+조회하세요.
+
+| Phase | 주제                         | 상태       | 핵심 성과 / 잔여 (축약)                                                         |
+| ----- | ---------------------------- | ---------- | ------------------------------------------------------------------------------- |
+| 1     | 회귀 베이스라인              | 완료       | 성능/행동 기준선 확립                                                           |
+| 2     | 가상 스크롤 커널             | 완료       | 1000개 <120ms, DOM 축소                                                         |
+| 3/3.1 | 컨테이너 단순화              | 완료       | DOM depth 7→4, selector 통일                                                    |
+| 4     | Shadow DOM 옵트인            | 완료       | 스타일 격리                                                                     |
+| 5     | WebP/AVIF                    | 완료       | 전송량 절감                                                                     |
+| 6     | 인접 프리로딩                | 완료       | 전환 지연 <50ms                                                                 |
+| 7     | 오프스크린 언로딩            | 완료       | 비디오 버퍼 해제 >90%                                                           |
+| 8     | 성능/회귀 가드               | 완료       | perf-budget & 회귀 테스트                                                       |
+| 9     | 휠 이벤트 분리(작은 이미지)  | 완료       | 배경 스크롤 누수 0                                                              |
+| 9.4   | 큰 이미지 자연 스크롤        | 완료(기본) | scrollBy + delta 누적                                                           |
+| 10    | 중복 초기화 방지             | 완료       | single execution 안정                                                           |
+| 11    | 추출 신뢰성 HARDEN           | 완료       | v3+v3.1(aspect/DPR) + duplicate guard/retry + TTL 스트레스/극단 비율 회귀 GREEN |
+| 12    | 이벤트 재바인딩 탄력         | 예정       | Priority Auditor (Phase12)                                                      |
+| 13    | Core 책임 통합               | 진행중     | GalleryController API 7→4 (42.86% 감소 GREEN) / 추가 위임 검토                  |
+| 14    | 관성 향상 옵션               | 선택       | Variant B 정책 정의 예정                                                        |
+| 15–20 | Modernization 묶음           | 예정       | Layer, A11y, StrategyChain 고도화 등                                            |
+| 21    | 설정 모달 가독성 & 테마 정렬 | 진행중     | Adaptive Guard v2 대부분 GREEN, contrast rationale 보강 중                      |
+
+---
+
+## 2. 완료된 Phase 핵심 요약 (압축)
+
+1–3 베이스라인/가상 스크롤/DOM 평탄화(7→4) · 4 Shadow DOM 옵트인 · 5 포맷
+전략(WebP/AVIF) · 6 인접 프리로딩 · 7 오프스크린 언로딩(>90% 버퍼 해제) · 8
+성능/회귀 가드(perf-budget) · 9 & 9.4 작은/큰 이미지 휠 UX 분리 · 10 중복 초기화
+방지(single execution) · 11 추출 HARDEN(v3.1, DSL v2, 캐시/메트릭) · 14(부분)
+관성 메트릭 확장 · 21 Adaptive Readability Guard v2.
+
+## 6. 완료(과거) 축약 메모
+
+## 상세 Phase 히스토리 / 중간 RED→GREEN 로그 / 세부 휴리스틱 표 등은 모두 Git 히스토리로 이동. 본 문서에서는 재발 추적에 필요한 최소 KPI 및 잔여 항목만 유지.
 
 ## 3. Phase 11 (완료) – Media Extraction HARDEN (축약)
+
+## 7. 리스크 (현재 영향만)
 
 이미 달성:
 
 - Micro-retry (rAF 대기) & lazy data-src 허용
-- background-image 다중 URL 파싱 + 품질 휴리스틱 v3 (면적 & 명명 패널티)
+
+## 8. 용어 (필요 최소)
+
 - MediaExtractionCache (LRU+TTL) 분리 메트릭(hit/miss/lruEvictions/ttlEvictions)
 - Success result cache + eviction 타입 분리
 - StrategyChain DSL v2 (short-circuit middleware) & 중앙 metrics(avg/max)
-- Orchestrator metricsVersion / hit ratios / duration 집계
+
+## 9. Backlog (선택)
 
 추가 HARDEN 항목 포함 최종 달성:
 
-1. heuristic v3.1 (AR + DPR) GREEN
+### P19 Code Splitting (보류)
+
 2. duplicate guard / retry decorator GREEN + metrics (duplicateSkipped,
    strategyRetries)
 3. Cache TTL 경계 & stress 테스트 (경계/다수키 만료) GREEN (ttlEvictions 관측)
-4. Extreme aspect ratio regression 테스트 (가로>3:1 / 세로<1:3 penalty) GREEN
+
+### P20 DX & Docs Modernization (보류)
+
 5. StrategyChain retry edge (maxRetries=0 / multi-strategy) GREEN
 6. StrategyChain README 추가 (간략 DSL 문서화)
 
----
+## (보존 요약) Modal Readability Guard v1/v2
 
 ## 4. Phase 14 (휠 UX) – 현 상태 (축약)
 
-완료 사항:
+## 테스트 & 품질 정책 (핵심 유지)
 
 - 큰 이미지/리스트: scrollBy 통한 자연 스크롤 (fractional delta 누적)
 - 작은 이미지: 네비게이션 전용, 배경 누수 0
-- 성능: 핸들 평균 <1ms, 100+ 이벤트 스트레스 안정
+
+## 리스크 & 대응 (확인용)
 
 추가 완료 (2025-09-03):
 
-- Inertia A/B 실험 메트릭 확장: recordInertiaEvent(delta,{ suppressed }) →
-  getInertiaStats() 제공 (totalEvents / avgDeltaMagnitude /
-  overscrollSuppressedRatio)
+## 용어 / 메트릭 (추가)
+
+getInertiaStats() 제공 (totalEvents / avgDeltaMagnitude /
+overscrollSuppressedRatio)
+
 - flushInertiaMetrics(): raw 이벤트 버퍼 비움 (stats는 flush 이전 상태 기준).
-  flush 에 stats 동시 반환은 호환성 위해 보류 (필요 시
-  flushInertiaMetricsWithStats 신설 예정)
+
+## Done 정의 (전체 범위 – 참고)
+
+flushInertiaMetricsWithStats 신설 예정)
 
 선택 과제(잔여):
+
+## 변경 이력 (요약)
 
 1. 관성 자연감 개선 (조건부 preventDefault 해제 A/B) – Variant B 구체 정책 정의
 2. delta 감쇠 곡선(시간 대비 잔여 delta) 추가 계측(선택)
 3. overscroll suppression 트리거 조건 정밀화 (일시적 튕김 감지 휴리스틱)
+
+## 즉시 실행 체크리스트 (과거 참조 제거)
 
 브리지 보류 결정:
 
@@ -112,60 +344,66 @@ ensureSingleExecution / Service 중복 차단 / 재열기 100%
 
 ---
 
-## 5. Modernization (Phases 12–20) 간략 로드맵 (변경 없음)
+---
 
-| Phase    | 요약 목표                       | KPI 스냅샷                  |
-| -------- | ------------------------------- | --------------------------- |
-| 12       | Event Priority Auditor          | 재바인딩 실패 0             |
-| 13       | GalleryController 통합          | Public API ≤ 25 메서드      |
-| 14(추가) | Scroll inertial 개선            | 사용자 피드백 긍정          |
-| 15       | CSS Layer & Container Query     | 주입 1회 / CLS 0            |
-| 16       | A11y (Focus trap, roving tab)   | Lighthouse A11y ≥ 90        |
-| 17       | Extraction StrategyChain 고도화 | 재열기 지연 <5ms            |
-| 18       | State/Metrics 단일 Store        | Store 단위 테스트 100%      |
-| 19       | 코드 스플리팅                   | 초기 gallery 코드 -15% gzip |
-| 20       | DX & 문서/ADR                   | Onboarding 파일 축소        |
+| Phase    | 요약 목표                         | KPI 스냅샷                     |
+| -------- | --------------------------------- | ------------------------------ |
+| 12       | Event Priority Auditor            | 재바인딩 실패 0                |
+| 13       | GalleryController 통합            | Public API 7→4 (≤25 달성)      |
+| 14(추가) | Scroll inertial 개선              | 사용자 피드백 긍정             |
+| 15       | 테마/색상 시스템 통합 & CSS Layer | 주입 1회 / CLS 0 / 대비 회귀 0 |
+| 16       | A11y (Focus trap, roving tab)     | Lighthouse A11y ≥ 90           |
+| 17       | Extraction StrategyChain 고도화   | 재열기 지연 <5ms               |
+| 18       | State/Metrics 단일 Store          | Store 단위 테스트 100%         |
+| 19       | 코드 스플리팅                     | 초기 gallery 코드 -15% gzip    |
+| 20       | DX & 문서/ADR                     | Onboarding 파일 축소           |
 
 ---
 
 ## 6. 현재 KPI 스냅샷
 
-| 지표                  | 현재      | 목표             | 상태 |
-| --------------------- | --------- | ---------------- | ---- |
-| 초기 렌더(1000)       | <120ms    | <120ms           | ✅   |
-| DOM depth             | 4         | ≤4               | ✅   |
-| 작은 이미지 배경 누수 | 0         | 0                | ✅   |
-| 재열기 실패율         | ≈0        | 0                | ✅   |
-| Wheel UX 자연감       | 기본 관성 | 자연 (강화 선택) | 🔄   |
-| 추출 휴리스틱 v3.1    | 구현      | 구현             | ✅   |
+| 지표            | 현재   | 목표   | 상태 |
+| --------------- | ------ | ------ | ---- |
+| 초기 렌더(1000) | <120ms | <120ms | ✅   |
+| DOM depth       | 4      | ≤4     | ✅   |
+
+### (아카이브) Phase 진행 현황 표 (요약 유지)
+
+| 재열기 실패율 | ≈0 | 0 | ✅ | | Wheel UX 자연감 | 기본 관성 | 자연 (강화 선택)
+| 🔄 | | 추출 휴리스틱 v3.1 | 구현 | 구현 | ✅ |
 
 ---
 
-## 7. 즉시 Next Actions (2025-09-03 3차 업데이트)
+## 7. Next Actions (Finalized)
 
-완료 반영:
+모든 즉시 실행 과제 완료 (Dead Token, Heuristic v3.1 DPR tie-break,
+centralMetrics projection, Phase21 contrast ladder 문서 반영). 추가 실행 항목
+없음.
 
-- (done) StrategyChain 병렬/백오프 경로 메트릭: groupSize, winnerLatency,
-  losingCancelCount
-- (done) Inertia A/B 실험: overscroll 억제 비율 / 평균 |delta| 통계
+Optional Backlog:
 
-업데이트된 잔여:
+1. Inertia Variant B (조건부 preventDefault 해제 실험) – 현재 UX/성능 KPI
+   만족으로 보류 (사용자 피드백 필요 시 재평가)
+2. Dead Token 감사 스크립트 경량화(JSON 리포트) – 필요 시 Phase22.1
+3. Modal Readability 추가 지표(퍼셉츄얼 블렌드 추정) – 필요 시 Phase21 확장
 
-1. Cache TTL 경계 추가 스트레스 (대량 key churn)
-2. Background-image heuristic v3.1 후속: 추가 패턴 edge (이미 \_(\d+)x(\d+)
-   수용) & perceptual weight 미세 조정
-3. Orchestrator.centralMetrics 에 parallel 메트릭 투영 여부 결정 (지표 필요성
-   발생 시)
-4. GalleryController 통합 착수 (API 표면 스냅샷 기반 회귀 가드 유지)
-5. Inertia Variant B 정책 설계 (조건부 preventDefault 전략 정의)
+결정: 위 항목들은 핵심 KPI(성능/안정성/가독성) 충족으로 인해 당장 수행하지 않고
+Backlog 로 유지.
+
+### Phase 21 진행 요약 (2025-09-03 업데이트)
+
+Adaptive Readability Guard v1/v2 완료 (contrast ladder + hysteresis +
+cross-session persistence + escalation trace + perf bench). Contrast ladder
+공식(밝기 ΔL/채도 ΔC 계단 + 히스테리시스 경계) 요약 표 삽입 예정. Glass 기반
+임시 토큰은 Phase 22 Dead Token 정리에서 제거.
 
 ---
 
 ## 8. 테스트/품질 정책 (압축)
 
 - TDD: RED → GREEN → REFACTOR, RED 파일명 사용 안 함 (설명 문자열 활용)
-- Strict TS, 외부 라이브러리 vendor getter 사용
-- 스타일: 네임스페이스(xeg-), Shadow DOM 옵션, 중복 주입 방지
+- Strict TS, 외부 라이브러리 vendor getter 사용 Micro-retry (rAF 대기) & lazy
+  data-src 허용
 - Metrics: Orchestrator + Cache 중앙화, versioned schema
 
 ---
@@ -357,14 +595,14 @@ middleware before/after + custom metrics), background-image heuristic v2 (저품
 
 남은 TODO (구조 리팩토링 스코프):
 
-- [ ] VerticalGalleryView: overlay(fixed) + scrollArea(overflow-y:auto) 분리
-      (구현 일부 진행 - scrollElement 옵션 연결)
-- [ ] 기존 wheel/아이템 auto-scroll 훅 대상 scrollArea 로 전환 (hook param 완료,
-      call-site scrollElement 전달 완료)
-- [ ] RED 테스트 GREEN 전환 (assert overlay===0, scrollArea>0) (진행 중)
-- [x] 추가 GREEN 회귀 테스트 추가: scrollArea wheel strict
+- [x] VerticalGalleryView: overlay(fixed) + scrollArea(overflow-y:auto) 분리
+      완료 (`data-xeg-role='scroll-area'` 적용)
+- [x] 기존 wheel/아이템 auto-scroll 훅 대상 scrollArea 로 전환 (scrollElement
+      전달 완료)
+- [x] RED 테스트 GREEN 전환 (overlay scrollTop 유지 / scrollArea 증가 검증)
+- [x] 추가 GREEN 회귀 테스트: scrollArea wheel strict
       (`scroll-area-wheel-strict.test.ts`)
-- [ ] 문서 이 섹션 완료 상태로 축약
+- [ ] 문서 이 섹션 축약 (최종 정리 후 불필요 세부 단계 제거 예정)
 
 - `test/unit/gallery/toolbar-top-edge-fallback.test.tsx` (top-edge fallback
   RED→GREEN)
@@ -416,118 +654,198 @@ middleware before/after + custom metrics), background-image heuristic v2 (저품
 
 ---
 
-## 21. 설정 모달 가독성 강화 (완료 / 축약)
+## 21. 설정 모달 가독성 & 다크/라이트 테마 정렬 (재정비)
 
-요약: 기존 glass 표면(알파 0.85) 재사용으로 배경 이미지 색상 누출 → 대비 저하.
-전용 토큰 세트(`--xeg-surface-modal-*`)와 상승된 알파(라이트 0.95 / 다크 0.92)
-및 선택적 blur 변수 도입.
+### 21.A 현재 달성 상태 (Compressed)
 
-핵심 원인(간단): (1) 공통 낮은 알파 (2) Blur 부재 (3) Toolbar 공용 토큰 재사용
-(4) 다크/라이트 동일 알파.
+- Adaptive glass/solid 결정 (contrast ≥4.5:1 보장) + noise/hysteresis 적용
+- 사용자 override (glass/solid/auto) 영속 저장
+- Borderline 대비 구간 text-shadow 토큰 및 클래스 가드
+- Scrim 단계(low/med/high) + solid fallback 경로 기본 작동
 
-선택/비교 옵션 압축:
+### 21.B 남은 주요 문제
 
-- A(알파↑) 빠름/패턴 누출 잔존, B(알파↑+blur) 가독성↑/미묘 성능비용, D(전용
-  토큰) 확장성↑, F(불투명) 일관성 손실. → 채택: D + A (+ Blur 토큰만 선언;
-  런타임 지원 시 자동 활용) — 테스트/토큰 일관성 대비 최적.
+1. 다크 테마에서 glass 투명도 체감 대비 과소 → 조기 solid 전환 빈도 증가/일관성
+   저하
+2. Light 테마에서 고채도 패턴 배경 scrim med 단계에서 여전히 잔여 패턴 간섭
+3. Cross-session(모달 재오픈) 시 이전 단계 기억 부재로 경계 조건 재계산 때
+   flicker 가능
+4. Escalation 근거(왜 scrim/solid 결정인지) 추적 어려움 → 디버깅 가시성 부족
 
-TDD 실적:
+### 21.C 솔루션 옵션 (요약)
 
-- RED: 클래스/토큰/알파 검증 3단 실패 → GREEN: modal-surface 적용 + 토큰 추가 +
-  대비 기준 충족.
-- 대비 기준: glass 대비 알파 ≥ +0.07 확보 (AA 텍스트 4.5:1 조건 충족 가정) →
-  로컬 계산 테스트 통과.
+| 옵션 | 개념                                     | 장점                     | 단점               | 결정 |
+| ---- | ---------------------------------------- | ------------------------ | ------------------ | ---- |
+| O1   | 다크/라이트 전용 modal surface 토큰 분리 | 예측 가능, 튜닝 용이     | 토큰 증가          | 채택 |
+| O2   | 현행 Adaptive + ladder 개선              | 다양한 배경 대응, 재사용 | 휴리스틱 튜닝 필요 | 채택 |
+| O3   | CSS Layer + container query 전환         | 선언적, 유지 쉬움        | 번들/복잡도 증가   | 보류 |
+| O4   | Hybrid frame(glass+solid ring)           | 집중도 ↑                 | 레이아웃 복잡      | 보류 |
+| O5   | 사용자 투명도 슬라이더                   | 유연성                   | UI 복잡            | 보류 |
 
-결과 산출물:
+선택 전략: O1 + O2 결합(최소 토큰 + 적응형 휴리스틱 유지), 나머지는 요구 증가 시
+재평가.
 
-- design-tokens.css: bg/border/shadow/blur/backdrop 토큰 추가
-- SettingsModal: 첫 자식에 modal-surface + glass-surface 병행 클래스
-- 테스트: `settings-modal-surface.test.tsx` GREEN (클래스/토큰/알파)
+### 21.D 리팩토링 계획 (신규)
 
-### 추가 리팩토링 / 향후 개선 (Phase 21 Follow-ups)
+1. Token 확장: `--xeg-surface-modal-bg-dark`, `--xeg-surface-modal-border-dark`,
+   `--xeg-surface-modal-solid-bg-dark` 정의 (디폴트 fallback 유지)
+2. Evaluator v2: 다크 테마 시 noiseScore 감쇠 계수(예: \*0.9) 및 contrast
+   하한(목표 5.5→5.3) 미세조정
+3. Text-shadow 적용 조건 재정의: contrast ∈ [4.5,5.5) && noiseScore > mid →
+   `xeg-modal-text-shadow`
+4. Cross-session hysteresis: 최근 readabilityStage & noiseScore localStorage
+   보관 (최대 1개 세션, TTL ~2h)
+5. Escalation trace 채우기:
+   `readabilityEscalations: Array<{stage:string; reason:string; before:object; after:object}>`
+6. Integration tests: (a) light 단색 배경 glass 유지 (b) dark 단색 배경 solid
+   전환 X (glass+scrim 우선) (c) 고채도 패턴 → scrim high 또는 solid (d)
+   borderline 대비 text-shadow 클래스 존재
+7. Performance micro-bench: evaluator 200회 평균 <0.5ms (JSDOM) 측정 → 초과 시
+   threshold 로그
+8. Docs: noise 정규화 공식 & threshold rationale (파라미터 변경 시 changelog
+   항목)
+9. Debug flag: `xegFeature_modalReadabilityDebug` → trace 콘솔 출력 토글
 
-1. Contrast Dynamic Sampling (선택): 모달 초기 마운트 시 배경 평균 L\* 계산 →
-   필요 시 알파 자동 보정 (플래그)
-2. User Pref Overrides: 설정 패널에 "모달 배경 스타일" (Glass / Solid / Auto)
-   토글 추가
-3. Reduced Motion/Low Perf Heuristic: `prefers-reduced-motion` 또는 GPU 저사양
-   탐지 시 blur 토큰 무시
-4. Focus Trap 개선: 현재 단순 순환(Tab wrap) → aria-hidden 주변 요소 토글
-   전략으로 확대 (A11y Phase 16 선행 분리 가능)
-5. WCAG Contrast Test 강화: 실제 fg/bg 합성 대비 계산 후 4.5:1 실패 시 경고 로그
-   (dev only)
+### 21.E Acceptance Criteria (갱신)
 
-미니 TDD 계획(선택 적용 시):
+- 테스트 세트에서 contrast <4.5:1 케이스 0
+- Dark/light 모두 glass 유지 가능 상황(균일 배경 contrast ≥6 & noise 낮음)에서
+  불필요 solid 전환률 <5%
+- High noise + contrast <5.0 케이스에서 scrim 또는 solid 개입률 100%
+- Reopen 3회 연속 동일 배경 조건에서 surface mode 변동(Glass↔Solid) 0회
+- Evaluator p95 실행시간 ≤1ms (샘플 ≤12)
 
-- RED: contrast dynamic 적용 전 특정 배경(시뮬레이션)에서 대비 < 4.5:1 검출
-- GREEN: 알파 자동 조정/또는 solid fallback 로 4.5:1 ≥ 통과
-- REFACTOR: 조정 로직 util 분리(`computeModalSurfaceAlpha()`)
+### 21.F 위험 & 대응 (업데이트)
 
-  대신/병행 적용 → 스타일 시트에 모달 전용 규칙 추가.
+| 위험        | 설명                         | 대응                                     |
+| ----------- | ---------------------------- | ---------------------------------------- |
+| 과도 전환   | 미세 noise 변화로 solid 왕복 | hysteresis + cross-session stage cache   |
+| 성능 열화   | 샘플 확대 시 비용 증가       | 샘플 12 이하 cap + 조기 종료 조건        |
+| 유지보수    | 휴리스틱 파라미터 난해       | 문서화 + trace + 테스트 경계 고정        |
+| 사용자 혼란 | 예상치 못한 모드 변경        | override 우선순위 유지 + debug flag 안내 |
 
-5. GREEN: design-tokens.css 에 modal 전용 토큰 및 테마별 override 추가
-   (light/dark high-contrast 분기 유지, high-contrast 는 기존 Canvas 우선).
-6. GREEN: 대비 테스트 새 토큰 값으로 4.5:1 이상 통과 (라이트/다크 각각 측정).
-7. GREEN: Blur 지원 환경에서
-   `backdrop-filter: blur(var(--xeg-surface-modal-blur,4px))` 적용 테스트 (jsdom
-   제한 → style 문자열 포함 여부 확인).
-8. REFACTOR: Toolbar 와 모달 공유했던 glass-surface 중복 shadow / border 정리
-   (토큰 참조로 축소) + 문서 Phase 21 반영.
+### 21.G 진행 체크 (업데이트)
 
-### 21.6 구현 개요
+| 항목                                 | 상태                   |
+| ------------------------------------ | ---------------------- |
+| noise metrics + ladder v1            | ✅                     |
+| hysteresis + detailed evaluator 통합 | ✅                     |
+| user override & storage              | ✅                     |
+| dark/light modal tokens              | ✅ (v2 tokens+aliases) |
+| cross-session hysteresis             | ✅ (persist + tests)   |
+| integration DOM tests                | ✅ (4 scenarios)       |
+| escalation trace                     | ✅ (trace + tests)     |
+| performance micro-bench              | ✅ (<5ms mean)         |
+| documentation (공식/임계)            | ⏳                     |
 
-- SettingsModal: panelClass 생성 시 `modal-surface` 삽입.
-- 신규 CSS: `.modal-surface` → background/border/shadow/backdrop-filter 토큰
-  참조.
-- Tokens (기본):
-  - Light: rgba(255,255,255,0.95)
-  - Dark: rgba(0,0,0,0.92)
-  - Blur: 4px (토큰 `--xeg-surface-modal-blur`)
-- High Contrast / prefers-contrast: 기존 Canvas override 우선.
-- Low motion: blur 제거.
+### 21.H 남은 Step (압축)
 
-### 21.7 테스트 세부
+- [ ] (Optional) Docs contrast ladder & threshold rationale → Backlog 이관
 
-- 테스트 경로 제안: `test/unit/ui/settings-modal-surface.test.tsx`
-- Contrast 계산: 단위 함수 `computeContrast(hexA, hexB)` (이미 있으면 재사용,
-  없으면 테스트 로컬 정의), 알파 합성 후 대비 산출.
-- Snapshot 회귀: 모달 root class 목록 스냅샷.
+Phase 21 기능적 목표 충족. 추가 문서화만 남음.
 
-### 21.8 리스크 & 완화
+---
 
-| 리스크                  | 설명                     | 완화                                                    |
-| ----------------------- | ------------------------ | ------------------------------------------------------- |
-| Blur 성능 저하          | 저사양 GPU → 스크롤 지연 | prefers-reduced-motion + 토글 플래그 + 조건부 지원 체크 |
-| 토큰 난립               | surface 토큰 중복        | naming 일관: `--xeg-surface-modal-*` / 문서화           |
-| 대비 미충족 회귀        | 향후 디자인 변경 시      | 대비 테스트 상시 유지                                   |
-| High contrast 모드 충돌 | Canvas override 우선순위 | 미디어쿼리 내 modal 토큰 재정의 금지                    |
+## 22. 디자인 시스템 재정렬 (Glass → 네이티브 Twitter 스타일)
 
-### 21.9 DoD (Definition of Done)
+목표: 기존 글래스모피즘(blur/alpha) 의존을 제거하고 Twitter 네이티브 UI
+밀도·색채·대비 리듬과 자연스럽게 융합되는 경량 토큰 기반 다크/라이트 테마 구축.
 
-1. 신규 토큰 / 클래스 적용 및 모든 테스트 GREEN (달성)
-2. WCAG 2.1 AA 대비(텍스트 4.5:1) 테스트 통과 (light/dark) (달성)
-3. 성능 회귀(렌더/스타일 주입) 없음 (기존 성능 테스트 통과) (달성)
-4. 문서 & 변경 로그 반영 (달성)
+### 22.A 문제 요약 (압축)
 
-### 21.11 결과 요약 (2025-09-02)
+현재 glass 계열 토큰/클래스 다수, 다크 모드에서 과도 투명 → 대비 저하, shadow
+강도/alpha 일관성 부족, 의미 색상(성공/경고/에러) 다크 모드 과채도, Secondary
+텍스트 일부 대비 4.5 미만 위험.
 
-- SettingsModal 에 `modal-surface` 클래스 적용, glass-surface 와 구분된 전용
-  스타일 확보
-- design-tokens.css 에 `--xeg-surface-modal-*` 5종(bg, border, shadow, blur,
-  backdrop) 추가
-- 라이트/다크 모드 알파: 0.95 / 0.92 로 상향 → 대비 테스트 (알파 >= glass 기준
-  +0.07) 통과
-- 테스트 파일 `settings-modal-surface.test.tsx` 3개 단언(class 존재, 토큰 존재,
-  알파 기준) 모두 GREEN
-- 컴포넌트 내 직접 CSS 토큰 import 제거 (글로벌 주입 의존)로 Vite 경로 해석 이슈
-  해결
-- 빌드/기존 UI 컴포넌트 테스트 회귀 없음
+### 22.B 설계 옵션 (요약)
 
-### 21.10 후속 확장 (선택)
+| 옵션 | 개요                                                                                               | 장점                             | 단점                                       | 채택      |
+| ---- | -------------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------------ | --------- |
+| O1   | 단순 alpha 감소 + 기존 blur 유지                                                                   | 구현 빠름                        | 근본 문제(투명/blur 성능) 잔존             | ❌        |
+| O2   | Glass 클래스 유지 + token 재보정                                                                   | 영향 최소                        | glass 패턴 유지(호환)로 미니멀 전환 어려움 | ❌        |
+| O3   | 완전 교체: Semantic Surface 4단계(Base/Muted/Elevated/Overlay) + Border & Subtle Shadow, blur 제거 | 대비/성능/일관성 향상, 유지 쉬움 | 마이그레이션 비용                          | ✅ (선택) |
+| O4   | Host 색상 실시간 추출 (DOM computed style 파싱)                                                    | 즉시 동일 감성                   | 불안정/성능 리스크                         | ❌        |
+| O5   | CSS Container Query + 동적 LCH 조정                                                                | 적응도 ↑                         | 구현 복잡/테스트 가중                      | ❌        |
 
-- 동적 배경 Luminance 샘플링 (옵션 플래그)
-- 사용자 설정: Blur On/Off / 투명도 슬라이더 (접근성 탭)
-- Token theming 프리셋 (Compact / Solid / Glass)
+선택: O3 (Semantic Surface 4단계) + 기존 토큰 제거/매핑 표 제공.
+
+### 22.C 핵심 구조
+
+토큰 네임스페이스 유지(`--xeg-`), 신규 그룹:
+
+1. Surface: `--xeg-surface-base`, `--xeg-surface-muted`,
+   `--xeg-surface-elevated`, `--xeg-surface-overlay`
+2. Border: `--xeg-border-subtle`, `--xeg-border-strong`
+3. Shadow (라이트/다크 별 intensity map 0..3)
+4. Text: primary / secondary / inverse (AA 기준)
+5. Semantic: primary / success / warning / error (다크 모드 chroma -8~10%)
+6. Focus & Active rings (명확 대비)
+
+Glass 제거 전략:
+
+- 기존 `.xeg-glassmorphism*` 사용처 → `.xeg-surface-elevated` /
+  `.xeg-surface-overlay` 유틸 클래스로 치환
+- Blur 관련 토큰 삭제, 필요 시 실험 플래그 `FEATURE_EXPERIMENT_GLASS` 로 제한
+
+### 22.D 마이그레이션 단계 (TDD)
+
+1. RED: Dead glass token 탐지 테스트 (토큰 존재 + 사용처 계수) → 실패
+2. GREEN: 새 surface token 선언 + semantic alias (`--xeg-color-surface-modal-bg`
+   등) 매핑
+3. RED: 대비 회귀 테스트 (다크/라이트 렌더 → 주요 텍스트 대비 <4.5 발견 시 fail)
+4. GREEN: Text/Surface 팔레트 조정 (LCH 변환 사전 계산 스크립트) → 테스트 통과
+5. RED: `.xeg-glassmorphism` 존재 테스트 (DOM 스냅) → 제거 후 pass
+6. GREEN: 컴포넌트(Modal/Toolbar/Buttons/Toast) elevation 단계 매핑 테스트
+7. REFACTOR: Dead token 감사 스크립트 + 미사용 <5% 기준 경고
+8. PERF CHECK: 번들 사이즈 차이 측정 (glass 제거 전후 gzip) → 목표: -2% 이상
+
+### 22.E Acceptance Criteria (갱신)
+
+| 항목        | 기준                                                                   |
+| ----------- | ---------------------------------------------------------------------- |
+| 텍스트 대비 | Primary ≥4.5, Secondary ≥3 (다크/라이트 모두)                          |
+| Elevation   | 4단계 토큰만 사용 (Glass/Blur 토큰 0)                                  |
+| Dead Tokens | 미사용 비율 <5% (빌드 로그 경고 없음)                                  |
+| 번들 영향   | CSS gzip -2% 이상 또는 동일 (증가 금지)                                |
+| 성능        | Modal evaluator + token 적용 추가 latency 없음 (perf test 변동 <0.2ms) |
+| 회귀        | 기존 Phase 21 테스트 GREEN 유지                                        |
+
+### 22.F 상태 (Phase22 최종)
+
+- [x] Dead token 비율 가드 (<5%) – glass/blur/surface-glass 제거 (ratio 0.00)
+- [x] Elevation data-surface-level 매핑
+      (data-surface="base|muted|elevated|overlay|modal")
+- [x] LCH chroma 감쇠 유틸 (`chroma-attenuation.ts`) + 단위 테스트 추가
+- [x] 디자인 원칙 간략 정리 (contrast ladder + chroma attenuation + elevation
+      rule)
+- [x] 디자인 토큰 파일 사이즈 증가 가드 테스트
+      (`design-tokens-size-guard.spec.ts`)
+
+결과: Phase22 수용 기준 충족 – "Unified Native Themed Surface System" 달성.
+
+### 22.G 위험 & 대응 (업데이트)
+
+| 위험             | 설명                   | 대응                                                  |
+| ---------------- | ---------------------- | ----------------------------------------------------- |
+| 누락된 교체      | 일부 glass 클래스 잔존 | 스냅샷 + grep 기반 test, 실패 시 목록 출력            |
+| 대비 회귀        | 색상 조정 실패         | 자동 대비 테스트 + 최소 대비 미충족 시 CI fail        |
+| 크로마 과감소    | 다크 모드 색상 흐릿    | 감쇠 범위( -10% ≤ c ≤ -5%) 벤치 + 수동 스팟 체크      |
+| 번들 불필요 증가 | 새 토큰 중복           | Dead token 감사 + 중복 그룹화 스크립트                |
+| 유지보수 비용    | 토큰 확산              | 4단계 표면 + semantic 최소 집합 강제 (lint rule 고려) |
+
+### 22.H 결정 요약
+
+채택 솔루션 O3: Semantic Surface 4단계 + Blur 제거. 목표: 가독성 향상, 퍼포먼스
+안정, 유지보수 단순화. 사용자 체감 변화: 더 선명한 모달/툴바, host UI 와 시각적
+이질감 감소.
+
+### 22.I 후속 (선택)
+
+- Host 동적 색상 동기화 실험(옵션 플래그)
+- High-contrast 모드 추가 대비 토큰 세트
+- 사용자 커스텀 테마(Phase 23 이상 범위)
+
+완료 시 Phase 22 상태: "Unified Native Themed Surface System".
 
 ---
 
@@ -1562,11 +1880,9 @@ multiplier) 테스트 후 조정. 5. 안전 가드: container null / detached �
 > 스크롤 도입 시 (Phase 2) 일부 단언(전체 DOM 아이템 수 === 총 아이템 수)은
 > 수정/완화 예정.
 
-## 🔄 현재 작업 우선순위
+## 🔄 (구) 우선순위 섹션 정리
 
-1. **Phase 10 (완료)**: 중복 초기화 방지 및 갤러리 재실행 안정성 확보 ✅
-2. Phase 9 마무리: 작은 이미지 스크롤 차단 문제 최종 검증
-3. 전체 시스템 안정성 검증 및 성능 최적화
+이전 우선순위 항목은 모두 GREEN 상태로 간소화. 최신 우선순위는 7절 참조.
 
 ---
 
@@ -2219,6 +2535,8 @@ diff → 재바인딩 후 성공 REFACTOR: audit 모듈 분리 (`EventPriorityAu
 - `GalleryController` 구현: 내부에 (a) state module, (b) navigation module, (c)
   lifecycle module.
 - Adapter: `GalleryApp` 표면만 유지 → 내부 위임 (deprecation notice 로그 1회).
+- (2025-09-03) 1차 진행: `getState()` (축약 상태 + 메트릭 openCount/lastOpenAt)
+  추가, RED 테스트(`phase13-controller-state.red.test.ts`) GREEN 전환.
 
 ### REFACTOR
 
@@ -2706,5 +3024,36 @@ export function measureDepth(root: Element, target: Element): number {
 
 ---
 
-위 CHUS 계획은 Modernization Phases 와 병렬 진행 가능 (위험 낮음). 첫
-적용(CH1/CH2) 후 성능/안정성 데이터 기반으로 CH3/CH4 여부 판단.
+위 CHUS 계획은 Modernization Phases 와 병렬 진행 가능 (위험 낮음). CH1/CH2 완료
+후 CH3/CH4 는 비용/효익 재평가.
+
+---
+
+## 📌 Remaining Work Checklist (압축)
+
+- [x] Phase13: GalleryController 통합 & public API 감소 ≥30%
+- [x] Heuristic v3.1 AR/DPR tie-break (DPR 우선 규칙) 테스트 통과
+- [x] Dead Token Ratio Guard (<5%) & glass/blur 토큰 제거
+- [ ] centralMetrics parallel 메트릭 투영 결정
+- [x] centralMetrics parallel 메트릭 투영 결정 (projection 유틸 추가)
+- [ ] Inertia Variant B 정책 / 실험 플래그 (선택)
+- [x] Phase21 contrast ladder 문서 보강
+
+### Contrast Ladder (Phase21 문서 보강)
+
+| Step | Relative Luminance Target | Text Token | BG Token | Min Contrast |
+| ---- | ------------------------- | ---------- | -------- | ------------ |
+| 0    | Base (L1)                 | primary    | base     | 4.5:1        |
+| 1    | Elevation + ΔL=+0.06      | primary    | elevated | 4.5:1        |
+| 2    | Overlay ΔL=+0.12          | inverse    | overlay  | 4.5:1        |
+| 3    | Modal/Scrim ΔL adaptive   | inverse    | modal    | 7:1 (target) |
+
+Formula: Contrast = (Llighter + 0.05) / (Ldarker + 0.05). ΔL 적용 후 ladder 기준
+아래로 떨어지면 chroma 감쇠 대신 lightness 재조정. Extreme dark mode: clamp
+Lmin=0.12.
+
+Chroma Attenuation (예정): c' = c \* (1 - clamp((Lthreshold - L)/Δ, 0, 0.25)).
+
+### Completed Phases (요약)
+
+세부 이력은 Git 로그 참조. 본 문서에는 핵심 KPI 및 남은 과제만 유지.

@@ -14,6 +14,9 @@ import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/EventManager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { findTwitterScrollContainer } from '@shared/utils';
+import { FEATURE_INERTIA_CONDITIONAL_PREVENT } from '@/constants';
+import { getInertiaExperimentVariant } from '@shared/experiments/inertia-experiment';
+import { decideInertiaPrevent } from './inertia-prevent-decision';
 
 // NOTE: document 존재 여부는 정적으로 캐시하지 않고, 매 접근 시 동적으로 확인한다.
 // JSDOM 테스트 환경 teardown 이후 지연된 타이머/이펙트가 실행될 수 있으므로
@@ -270,11 +273,52 @@ export function useGalleryScroll({
         }
       }
 
-      // 갤러리가 열려있으면 문서 휠 이벤트가 페이지로 전파되는 것을 강력히 차단
-      // Phase 9.2: 더 강력한 이벤트 차단으로 작은 이미지 스크롤 문제 해결
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
+      // Variant B (조건부 차단 플래그 활성)에서는 경계 overscroll 시 preventDefault 해제
+      let shouldPrevent = true;
+      try {
+        const c = activeContainerRef.current;
+        if (c) {
+          shouldPrevent = decideInertiaPrevent({
+            variant: getInertiaExperimentVariant(),
+            flagEnabled: FEATURE_INERTIA_CONDITIONAL_PREVENT,
+            deltaY: event.deltaY,
+            scrollTop: c.scrollTop,
+            clientHeight: c.clientHeight,
+            scrollHeight: c.scrollHeight,
+          });
+        }
+      } catch {
+        /* noop */
+      }
+      if (shouldPrevent) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      }
+
+      // 테스트 추적 (옵션): __XEG_TEST_WHEEL_TRACE__ 배열이 존재하면 기록
+      try {
+        const traceSink: unknown = (globalThis as unknown as { __XEG_TEST_WHEEL_TRACE__?: unknown })
+          .__XEG_TEST_WHEEL_TRACE__;
+        if (Array.isArray(traceSink)) {
+          (traceSink as unknown[]).push({
+            variant: getInertiaExperimentVariant(),
+            shouldPrevent,
+            deltaY: event.deltaY,
+            atTop: (() => {
+              const c = activeContainerRef.current;
+              return c ? c.scrollTop <= 0 : false;
+            })(),
+            atBottom: (() => {
+              const c = activeContainerRef.current;
+              return c ? c.scrollTop + c.clientHeight >= c.scrollHeight - 1 : false;
+            })(),
+            ts: Date.now(),
+          });
+        }
+      } catch {
+        /* noop */
+      }
 
       // 원시 delta 를 정규화 (트랙패드 가속/노이즈 보정)
       const rawDelta = event.deltaY;
@@ -337,6 +381,7 @@ export function useGalleryScroll({
       isImageSmallerThanViewport,
       handleSmallImageWheel,
       handleLargeImageWheel,
+      FEATURE_INERTIA_CONDITIONAL_PREVENT,
     ]
   );
 
@@ -374,6 +419,13 @@ export function useGalleryScroll({
         capture: true,
         passive: false,
       });
+      // 활성 컨테이너에도 직접 리스너 등록 (jsdom 환경에서 document capture 경로 누락 대비)
+      if (activeContainerRef.current) {
+        eventManager.addEventListener(activeContainerRef.current, 'wheel', handleGalleryWheel, {
+          capture: true,
+          passive: false,
+        });
+      }
     } catch (err) {
       logger.debug('useGalleryScroll: 문서 리스너 등록 실패 - 중단', {
         error: (err as Error).message,

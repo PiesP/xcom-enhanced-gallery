@@ -8,7 +8,7 @@
  * - 상태 관리는 기존 signals 활용
  */
 
-import { SERVICE_KEYS } from '@/constants';
+import { SERVICE_KEYS, FEATURE_GALLERY_CONTROLLER } from '@/constants';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import { getService } from '@shared/services/ServiceManager';
 import { VideoControlService } from '@shared/services/media/VideoControlService';
@@ -58,6 +58,20 @@ export class GalleryApp {
   constructor() {
     logger.info('[GalleryApp] 생성자 호출');
     this.toastController = new ToastController();
+  }
+
+  // Phase13: Controller 마이그레이션 안내 (1회 경고)
+  private static deprecationWarned = false;
+  private legacyDeprecationCheck(): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const forced = (globalThis as any)?.__XEG_FORCE_FLAGS__?.FEATURE_GALLERY_CONTROLLER;
+    const enabled = typeof forced === 'boolean' ? forced : FEATURE_GALLERY_CONTROLLER;
+    if (enabled && !GalleryApp.deprecationWarned) {
+      GalleryApp.deprecationWarned = true;
+      logger.warn(
+        '[GalleryApp][Deprecation] GalleryController 사용 권장: 향후 GalleryApp 직접 사용 API는 축소 예정.'
+      );
+    }
   }
 
   /**
@@ -209,6 +223,7 @@ export class GalleryApp {
    * 갤러리 열기
    */
   public async openGallery(mediaItems: MediaInfo[], startIndex: number = 0): Promise<void> {
+    this.legacyDeprecationCheck();
     if (!mediaItems || mediaItems.length === 0) {
       logger.warn('갤러리 열기 실패: 미디어 아이템이 없음');
       return;
@@ -253,6 +268,7 @@ export class GalleryApp {
    * 갤러리 닫기
    */
   public closeGallery(): void {
+    this.legacyDeprecationCheck();
     try {
       if (galleryState.value.isOpen) {
         closeGallery();
@@ -294,6 +310,7 @@ export class GalleryApp {
    * 설정 업데이트
    */
   public updateConfig(newConfig: Partial<GalleryConfig>): void {
+    this.legacyDeprecationCheck();
     this.config = { ...this.config, ...newConfig };
     logger.debug('갤러리 앱 설정 업데이트됨');
   }
@@ -309,6 +326,7 @@ export class GalleryApp {
    * 진단 정보
    */
   public getDiagnostics() {
+    this.legacyDeprecationCheck();
     return {
       isInitialized: this.isInitialized,
       config: this.config,

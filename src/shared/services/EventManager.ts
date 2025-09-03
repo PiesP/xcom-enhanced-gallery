@@ -464,6 +464,23 @@ export class EventManager {
     };
   }
 
+  /** Auditor: DOM 이벤트 감사 레코드 제공 */
+  public getRegisteredDomEventRecords(): ReadonlyArray<{
+    id: number;
+    event: string;
+    target: string;
+    capture: boolean;
+    passive: boolean;
+    once: boolean;
+    order: number;
+  }> {
+    // @ts-ignore - domManager internal method exists after augmentation
+    return typeof this.domManager.getAuditRecords === 'function'
+      ? // @ts-ignore
+        this.domManager.getAuditRecords()
+      : [];
+  }
+
   /**
    * Phase 2.1: 성능 메트릭 제공
    */

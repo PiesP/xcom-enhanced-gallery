@@ -1,2 +1,7 @@
-// Duplicate legacy test file intentionally neutralized.
-// (Left in repo due to tooling constraints; skipped by absence of any test definitions.)
+// Duplicate legacy RED-phase test file intentionally neutralized.
+// Added skipped suite to prevent Vitest from flagging as error (no test suite found).
+describe.skip('legacy: toolbar-fixed-overlay-structure red duplicate placeholder', () => {
+  it.skip('placeholder', () => {
+    /* no-op */
+  });
+});

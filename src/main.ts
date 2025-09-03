@@ -11,6 +11,8 @@ import type { AppConfig } from '@/types';
 import { CoreService } from '@shared/services/ServiceManager';
 import { InitializationManager } from '@shared/services/InitializationManager';
 import { SERVICE_KEYS } from './constants';
+import { FEATURE_INERTIA_VARIANT_B } from './constants';
+import { setInertiaExperimentVariant } from '@shared/experiments/inertia-experiment';
 
 // 전역 스타일
 import './styles/globals';
@@ -317,6 +319,16 @@ async function startApplication(): Promise<void> {
 
     // 백그라운드에서 Non-Critical 시스템 초기화
     initializeNonCriticalSystems();
+
+    // Phase 14: Inertia Variant B 플래그 활성 시 실험 Variant 자동 전환
+    try {
+      if (FEATURE_INERTIA_VARIANT_B) {
+        setInertiaExperimentVariant('B');
+        logger.info('Inertia Experiment: Variant B 활성화됨 (auto orchestration)');
+      }
+    } catch (err) {
+      logger.warn('Inertia Variant 설정 실패 (무시):', err);
+    }
 
     isStarted = true;
 

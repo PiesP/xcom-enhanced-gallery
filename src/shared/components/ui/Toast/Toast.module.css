@@ -25,10 +25,11 @@
  * - glassmorphism 배경 효과
  */
 .toast {
-  background: var(--xeg-toast-glass-bg);
-  border: 1px solid var(--xeg-toast-glass-border);
+  /* Phase22: glass → semantic elevated surface */
+  background: var(--xeg-surface-elevated-bg);
+  border: 1px solid var(--xeg-surface-elevated-border);
   border-radius: 16px;
-  box-shadow: var(--xeg-toast-glass-shadow);
+  box-shadow: var(--xeg-surface-elevated-shadow, var(--xeg-shadow-md));
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   margin-bottom: 12px;

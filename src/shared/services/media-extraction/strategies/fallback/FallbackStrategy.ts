@@ -286,6 +286,7 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       qualityLabel: string;
       qualityRank: number; // 높은 값이 더 좋은 품질
       inferredPixels: number; // 크기 추정값 (w*h)
+      dpr: number; // 추론된 디스플레이 배율 (1|2|3)
     }
 
     const candidates: Candidate[] = urls.map((u, idx) => {
@@ -314,18 +315,32 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
         }
       }
 
+      // DPR 추론 (@2x, 2x, dpr=2 / 동일 3x 패턴)
+      let dpr = 1;
+      if (/([?&])dpr=2\b/.test(u) || /(^|[._-])2x([._-]|\.|$)/i.test(u) || /@2x\b/i.test(u)) {
+        dpr = 2;
+      } else if (
+        /([?&])dpr=3\b/.test(u) ||
+        /(^|[._-])3x([._-]|\.|$)/i.test(u) ||
+        /@3x\b/i.test(u)
+      ) {
+        dpr = 3;
+      }
+
       return {
         url: u,
         index: idx,
         qualityLabel,
         qualityRank: qRank,
         inferredPixels,
+        dpr,
       };
     });
 
-    // 정렬: 1) qualityRank desc 2) inferredPixels desc 3) origIndex asc (안정성)
+    // 정렬: 1) qualityRank desc 2) dpr desc 3) inferredPixels desc 4) origIndex asc (안정성)
     candidates.sort((a, b) => {
       if (b.qualityRank !== a.qualityRank) return b.qualityRank - a.qualityRank;
+      if (b.dpr !== a.dpr) return b.dpr - a.dpr;
       if (b.inferredPixels !== a.inferredPixels) return b.inferredPixels - a.inferredPixels;
       return a.index - b.index;
     });

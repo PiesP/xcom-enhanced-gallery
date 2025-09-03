@@ -11,8 +11,9 @@
   overflow: visible;
   transition: var(--xeg-transition-normal);
   cursor: pointer;
-  border: 1px solid var(--xeg-media-glass-border);
-  background: var(--xeg-media-glass-bg);
+  /* Phase22: semantic surface mapping (elevated) */
+  border: 1px solid var(--xeg-surface-elevated-border);
+  background: var(--xeg-surface-elevated-bg);
   padding: var(--xeg-spacing-sm);
   width: 100%;
   text-align: center;
@@ -22,9 +23,10 @@
   pointer-events: auto;
 
   /* 글래스모피즘 효과 */
-  backdrop-filter: var(--xeg-media-glass-blur);
-  -webkit-backdrop-filter: var(--xeg-media-glass-blur);
-  box-shadow: var(--xeg-media-glass-shadow);
+  /* glass blur/shadow 제거 → semantic shadow 사용 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--xeg-surface-elevated-shadow, var(--xeg-shadow-md));
 
   /* 성능 최적화 */
   transform: translateZ(0);
@@ -37,9 +39,9 @@
 
 .container:hover {
   transform: var(--xeg-hover-lift);
-  background: var(--xeg-color-surface-elevated);
-  border-color: var(--xeg-glass-border-medium);
-  box-shadow: var(--xeg-glass-shadow-medium), var(--xeg-shadow-md);
+  background: var(--xeg-surface-elevated-bg);
+  border-color: var(--xeg-surface-elevated-border);
+  box-shadow: var(--xeg-surface-elevated-shadow, var(--xeg-shadow-md));
 }
 
 /* 포커스 상태 - outline 대신 box-shadow 사용 */

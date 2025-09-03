@@ -25,6 +25,10 @@ export interface LanguageStrings {
     themeLight: string;
     themeDark: string;
     close: string;
+    surfaceMode?: string; // Phase21.3 추가: 표면 모드 레이블
+    surfaceModeAuto?: string;
+    surfaceModeGlass?: string;
+    surfaceModeSolid?: string;
   };
 }
 
@@ -46,6 +50,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: '라이트',
       themeDark: '다크',
       close: '닫기',
+      surfaceMode: '표면',
+      surfaceModeAuto: '자동',
+      surfaceModeGlass: 'Glass',
+      surfaceModeSolid: 'Solid',
     },
   },
   en: {
@@ -65,6 +73,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: 'Light',
       themeDark: 'Dark',
       close: 'Close',
+      surfaceMode: 'Surface',
+      surfaceModeAuto: 'Auto',
+      surfaceModeGlass: 'Glass',
+      surfaceModeSolid: 'Solid',
     },
   },
   ja: {
@@ -84,6 +96,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: 'ライト',
       themeDark: 'ダーク',
       close: '閉じる',
+      surfaceMode: 'サーフェス',
+      surfaceModeAuto: '自動',
+      surfaceModeGlass: 'Glass',
+      surfaceModeSolid: 'Solid',
     },
   },
 };

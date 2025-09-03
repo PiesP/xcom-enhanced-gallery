@@ -181,6 +181,22 @@ export class DOMDirectExtractor {
     if (urls.length === 0) return undefined;
     // Phase 11 advanced: WxH 해상도 패턴 및 name 파라미터/파일명 기반 종합 스코어
     // 추가 목표: 기존 점수 동률 시 더 큰 면적(W*H) 우선, 그래도 동률이면 원본 인덱스 안정성
+    // ================= Heuristic Tunable Constants (v3.1) =================
+    const BONUS = {
+      NAME_ORIG: 50,
+      FILENAME_ORIG: 30,
+      NAME_LARGE: 20,
+      FILENAME_LARGE_OR_BIG: 10,
+      EXTREME_DIM: 5, // 2048 / 4096 힌트
+    } as const;
+    const PENALTY = {
+      DOWNGRADE_WORD: 15,
+      INCOMPLETE_DIMENSION: 25,
+      ASPECT_EXTREME: 20,
+      ASPECT_SEVERE: 10,
+    } as const;
+    const DPR_WEIGHT = 5; // base * dpr (2x => +10, 3x => +15)
+    // ======================================================================
     interface Candidate {
       url: string;
       score: number;
@@ -188,6 +204,7 @@ export class DOMDirectExtractor {
       index: number;
       incomplete: boolean; // v3: 불완전 치수 패턴 여부
     }
+    // v3.1: 언더스코어 경계 패턴 AAA_2400x1600.jpg 지원 (기존 정규식이 이미 _ 경계를 포함하나 주석 명시)
     const sizeRegex = /(?:^|_|\b)(\d{2,5})x(\d{2,5})(?:\b|_|\.|$)/i;
     // 불완전 치수 (예: 1600x??? 또는 ???x1200 또는 2048x??) 검출
     const incompleteSizeRegex = /(?:^|_|\b)(?:\?{2,5}|\d{2,5})x(?:\?{2,5}|\d{2,5})(?:\b|_|\.|$)/i;
@@ -195,32 +212,34 @@ export class DOMDirectExtractor {
     const downgradeRegex = /(^|[._-])(small|thumb|tiny|crop|fit|medium)([._-]|\.|$)/i;
     const baseScore = (u: string): number => {
       let s = 0;
-      if (/name=orig/.test(u)) s += 50; // 원본 가중치 강화
-      if (/(^|[._-])(orig)([._-]|\.|$)/.test(u)) s += 30;
-      if (/name=large/.test(u)) s += 20;
-      if (/(^|[._-])(large|big)([._-]|\.|$)/.test(u)) s += 10;
-      if (/\b(2048|4096)\b/.test(u)) s += 5;
-      if (downgradeRegex.test(u)) s -= 15; // v2 패널티
+      if (/name=orig/.test(u)) s += BONUS.NAME_ORIG; // 원본 가중치 강화
+      if (/(^|[._-])(orig)([._-]|\. |$)/.test(u)) s += BONUS.FILENAME_ORIG;
+      if (/name=large/.test(u)) s += BONUS.NAME_LARGE;
+      if (/(^|[._-])(large|big)([._-]|\. |$)/.test(u)) s += BONUS.FILENAME_LARGE_OR_BIG;
+      if (/\b(2048|4096)\b/.test(u)) s += BONUS.EXTREME_DIM;
+      if (downgradeRegex.test(u)) s -= PENALTY.DOWNGRADE_WORD; // v2 패널티
       return s;
     };
     const candidates: Candidate[] = urls.map((u, idx) => {
       let pixels = 0;
       let incomplete = false;
+      let width = 0;
+      let height = 0;
       const sizeMatch = sizeRegex.exec(u);
       if (sizeMatch) {
-        const w = parseInt(sizeMatch[1]!, 10);
-        const h = parseInt(sizeMatch[2]!, 10);
-        if (!isNaN(w) && !isNaN(h)) pixels = w * h;
+        width = parseInt(sizeMatch[1]!, 10);
+        height = parseInt(sizeMatch[2]!, 10);
+        if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) pixels = width * height;
       } else {
         // 파일명에 정규 WxH 패턴이 없을 때 w/h 쿼리 파라미터 기반 추론 (v3)
         try {
           const parsed = new URL(u);
           const wParam = parsed.searchParams.get('w');
           const hParam = parsed.searchParams.get('h');
-          const w = wParam ? parseInt(wParam, 10) : NaN;
-          const h = hParam ? parseInt(hParam, 10) : NaN;
-          if (!isNaN(w) && !isNaN(h) && w > 1 && h > 1) {
-            pixels = w * h;
+          width = wParam ? parseInt(wParam, 10) : 0;
+          height = hParam ? parseInt(hParam, 10) : 0;
+          if (width > 1 && height > 1) {
+            pixels = width * height;
           }
         } catch {
           // ignore parse error
@@ -233,7 +252,30 @@ export class DOMDirectExtractor {
       let score = baseScore(u);
       if (incomplete) {
         // v3 패널티: 불완전 치수 - 충분히 큰 패널티로 complete 우선
-        score -= 25;
+        score -= PENALTY.INCOMPLETE_DIMENSION;
+      }
+      // v3.1: Aspect Ratio 패널티 (극단적 비율 억제)
+      if (width > 0 && height > 0) {
+        const ratio = width / height;
+        if (ratio > 3 || ratio < 1 / 3) {
+          score -= PENALTY.ASPECT_EXTREME; // 극단 비율 크게 패널티
+        } else if (ratio > 2.5 || ratio < 1 / 2.5) {
+          score -= PENALTY.ASPECT_SEVERE; // 다소 극단
+        }
+      }
+      // v3.1: DPR (배수) 가중 - URL 내 dpr=2 | @2x | 2x (파일명) 패턴 → base 해상도 가중
+      let dpr = 1;
+      if (/([?&])dpr=2\b/.test(u) || /(^|[._-])2x([._-]|\.|$)/i.test(u) || /@2x\b/i.test(u)) {
+        dpr = 2;
+      } else if (
+        /([?&])dpr=3\b/.test(u) ||
+        /(^|[._-])3x([._-]|\.|$)/i.test(u) ||
+        /@3x\b/i.test(u)
+      ) {
+        dpr = 3;
+      }
+      if (dpr > 1) {
+        score += dpr * DPR_WEIGHT; // DPR 별 가중치 (2x=+10, 3x=+15)
       }
       return { url: u, score, pixels, index: idx, incomplete };
     });

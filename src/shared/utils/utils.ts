@@ -5,7 +5,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { galleryState } from '@shared/state/signals/gallery.signals';
+// Phase18: 점진적 unified store 전환 – 직접 signal 접근 최소화
+import { getState as getGallerySnapshot } from '@shared/state/gallery.store';
 
 // ================================
 // Re-exports from focused modules
@@ -88,7 +89,9 @@ export function canTriggerGallery(target: HTMLElement | null): boolean {
   if (!target) return false;
 
   // 갤러리가 이미 열려있으면 트리거하지 않음
-  if (galleryState.value.isOpen) {
+  // unified store 스냅샷 (direct signal 접근 제거)
+  const snapshot = getGallerySnapshot();
+  if (snapshot.isOpen) {
     return false;
   }
 

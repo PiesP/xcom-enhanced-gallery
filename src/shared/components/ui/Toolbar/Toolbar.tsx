@@ -119,7 +119,7 @@ function ToolbarCore({
   const toolbarClass = ComponentStandards.createClassName(
     styles.toolbar,
     getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
-    'glass-surface', // 통합된 glassmorphism 스타일 적용
+    'glass-surface', // legacy class name mapped to semantic elevated surface (Phase22)
     className
   );
 

@@ -6,6 +6,9 @@
  */
 
 import { getPreact, getPreactHooks, type VNode } from '../../../external/vendors';
+// Phase21: 디자인 토큰 직접 포함 (테스트 환경 단독 렌더 시 변수 누락 방지)
+// NOTE: design-tokens.css 는 글로벌 진입점(main.ts)에서 1회 주입됨. 테스트 안정성을 위해
+// 별도 import 를 제거 (Vite 경로 해석 이슈 방지) - Phase21.
 import { ComponentStandards } from '../StandardProps';
 import { X } from '../Icon';
 import { LanguageService } from '../../../services/LanguageService';
@@ -13,6 +16,20 @@ import { ThemeService } from '../../../services/ThemeService';
 // Toolbar 스타일 재사용 (버튼 등)
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
 import styles from './SettingsModal.module.css';
+import {
+  evaluateModalSurfaceModeDetailed,
+  getTestSampleColors,
+  getTestForcedMode,
+  type ModalSurfaceMode,
+} from '@shared/styles/modal-surface-evaluator';
+import {
+  collectBackgroundSamplesV2,
+  escalateTiersUntilContrast,
+} from '@shared/styles/modal-surface-escalation';
+
+// Surface mode preference key
+const SURFACE_MODE_STORAGE_KEY = 'xeg-surface-mode';
+type SurfaceModePreference = 'auto' | 'glass' | 'solid';
 
 export interface SettingsModalProps {
   isOpen: boolean;
@@ -26,7 +43,6 @@ export interface SettingsModalProps {
 export function SettingsModal({
   isOpen,
   onClose,
-  // 레거시 테스트 호환: 기본 position 은 'center' 로 간주 (실제 레이아웃은 toolbar-below 와 동일 처리)
   position = 'center',
   className = '',
   'data-testid': testId,
@@ -34,48 +50,122 @@ export function SettingsModal({
   const { h } = getPreact();
   const { useState, useEffect, useRef, useCallback } = getPreactHooks();
 
+  // Theme / Language
   const [currentTheme, setCurrentTheme] = useState<'auto' | 'light' | 'dark'>('auto');
   const [currentLanguage, setCurrentLanguage] = useState<'auto' | 'ko' | 'en' | 'ja'>('auto');
   const [languageService] = useState(() => new LanguageService());
   const [themeService] = useState(() => new ThemeService());
 
+  // Surface adaptive + preference
+  const [surfaceMode, setSurfaceMode] = useState<ModalSurfaceMode>('glass'); // last evaluated adaptive result
+  const [applyTextShadow, setApplyTextShadow] = useState(false);
+  const [scrimClasses, setScrimClasses] = useState('');
+  const [surfacePref, setSurfacePref] = useState<SurfaceModePreference>('auto'); // user override
+  const prefRestoredRef = useRef(false);
+
+  // Refs
   const panelRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<Element | null>(null);
-  const originalBodyOverflowRef = useRef<string>('');
+  const originalBodyOverflowRef = useRef('');
   const backgroundElementsRef = useRef<HTMLElement[]>([]);
 
-  // 열릴 때 현재 상태 동기화 (언어/테마) 및 포커스 저장
+  // Restore preference & evaluate mode when opening
   useEffect(() => {
     if (!isOpen) return;
     previouslyFocusedRef.current = typeof document !== 'undefined' ? document.activeElement : null;
+
+    // Restore surface preference once per open cycle
+    if (!prefRestoredRef.current) {
+      try {
+        const saved = localStorage.getItem(
+          SURFACE_MODE_STORAGE_KEY
+        ) as SurfaceModePreference | null;
+        if (saved && ['auto', 'glass', 'solid'].includes(saved)) {
+          setSurfacePref(saved);
+        }
+      } catch {
+        /* ignore */
+      }
+      prefRestoredRef.current = true;
+    }
+
+    // Decide surface mode (forced > user override > adaptive)
+    const forced = getTestForcedMode();
+    if (forced) {
+      setSurfaceMode(forced);
+      setApplyTextShadow(false);
+      setScrimClasses('');
+    } else if (surfacePref === 'glass' || surfacePref === 'solid') {
+      setSurfaceMode(surfacePref);
+      setApplyTextShadow(false);
+      setScrimClasses('');
+    } else {
+      const samples = getTestSampleColors() || collectBackgroundSamplesV2();
+      const textColor = themeService.isDarkMode() ? '#ffffff' : '#000000';
+      // Phase21.3 escalation first (tiered scrim/solid) then legacy detailed evaluator for auxiliary metadata
+      const esc = escalateTiersUntilContrast({
+        samples: samples.length ? samples : [],
+        textColor,
+        threshold: 4.5,
+        solidBg: themeService.isDarkMode() ? '#000000' : '#ffffff',
+        previousStage: surfaceMode as unknown as
+          | 'glass'
+          | 'scrim-low'
+          | 'scrim-med'
+          | 'scrim-high'
+          | 'solid',
+      });
+      // Map escalation stage to surface mode + scrim classes
+      const nextMode: ModalSurfaceMode = esc.finalStage === 'solid' ? 'solid' : 'glass';
+      let scrimCls = '';
+      if (nextMode === 'glass' && esc.finalStage.startsWith('scrim')) {
+        const intensity = esc.finalStage.replace('scrim-', '') || 'med';
+        scrimCls = `xeg-scrim xeg-scrim-intensity-${intensity}`;
+      }
+      const detailed = evaluateModalSurfaceModeDetailed({
+        sampleColors: samples,
+        textColor,
+        previousMode: surfaceMode,
+        textShadowMargin: 0.6,
+      });
+      // Preserve escalation solid if detailed disagrees (safety)
+      if (nextMode === 'solid' && detailed.mode !== 'solid') {
+        // force override
+        setSurfaceMode('solid');
+        setApplyTextShadow(false);
+      } else {
+        setSurfaceMode(nextMode);
+        setApplyTextShadow(detailed.applyTextShadow && nextMode === 'glass');
+      }
+      setScrimClasses(scrimCls);
+    }
+
+    // Sync theme & language
     setCurrentLanguage(languageService.getCurrentLanguage());
     setCurrentTheme(
       themeService.getCurrentTheme
         ? (themeService.getCurrentTheme() as typeof currentTheme)
         : 'auto'
     );
-    // Scroll lock
+
+    // Scroll lock & background focus shield
     if (typeof document !== 'undefined') {
       originalBodyOverflowRef.current = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      // Background inert/tabindex 관리 (간단: body 직속 자식)
       backgroundElementsRef.current = [];
       const children = Array.from(document.body.children) as HTMLElement[];
       children.forEach(el => {
         if (!panelRef.current || panelRef.current === el || panelRef.current.contains(el)) return;
         if (!el.hasAttribute('data-xeg-prev-tabindex')) {
           const prev = el.getAttribute('tabindex');
-          if (prev !== null) {
-            el.setAttribute('data-xeg-prev-tabindex', prev);
-          }
+          if (prev !== null) el.setAttribute('data-xeg-prev-tabindex', prev);
           el.setAttribute('tabindex', '-1');
           backgroundElementsRef.current.push(el);
         }
       });
     }
     return () => {
-      // cleanup when dialog unmounts while open
       if (typeof document !== 'undefined') {
         document.body.style.overflow = originalBodyOverflowRef.current;
         backgroundElementsRef.current.forEach(el => {
@@ -88,20 +178,19 @@ export function SettingsModal({
           }
         });
       }
+      prefRestoredRef.current = false;
     };
-  }, [isOpen, languageService, themeService, currentTheme]);
+  }, [isOpen, surfacePref, themeService, languageService]);
 
-  // Esc / 바깥 클릭 닫기 (간단 처리, 백드롭 없음)
+  // Escape & outside click
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
-        // ESC는 이벤트 target 이 패널 내부일 때만 처리 (포커스만 내부인 경우는 무시)
         const target = e.target as Node | null;
         if (panelRef.current && target && panelRef.current.contains(target)) {
           e.stopPropagation();
           onClose();
-          return;
         }
       }
       if (e.key === 'Tab' && panelRef.current) {
@@ -124,7 +213,6 @@ export function SettingsModal({
     const handleClick = (e: MouseEvent): void => {
       if (!panelRef.current) return;
       const target = e.target as Node;
-      // 패널 외부 클릭 또는 패널 자체 클릭 (배경 역할) 시 닫기
       if (!panelRef.current.contains(target) || target === panelRef.current) {
         onClose();
       }
@@ -137,24 +225,23 @@ export function SettingsModal({
     };
   }, [isOpen, onClose]);
 
-  // 초기 포커스 이동 (닫기 버튼 - 테스트 기대)
+  // Initial focus
   useEffect(() => {
     if (!isOpen) return;
     const closeBtn = panelRef.current?.querySelector(
       'button[aria-label="Close"]'
     ) as HTMLButtonElement | null;
-    if (closeBtn) closeBtn.focus();
+    closeBtn?.focus();
   }, [isOpen]);
 
-  // 닫힐 때 포커스 복귀
+  // Focus return
   useEffect(() => {
     if (isOpen) return;
     const prev = previouslyFocusedRef.current as HTMLElement | null;
-    if (prev && typeof prev.focus === 'function') {
-      prev.focus();
-    }
+    prev?.focus?.();
   }, [isOpen]);
 
+  // Handlers
   const handleThemeChange = useCallback(
     (event: Event) => {
       const newTheme = (event.target as HTMLSelectElement).value as 'auto' | 'light' | 'dark';
@@ -181,6 +268,41 @@ export function SettingsModal({
     [languageService]
   );
 
+  const handleSurfaceModeChange = useCallback(
+    (event: Event) => {
+      const newPref = (event.target as HTMLSelectElement).value as SurfaceModePreference;
+      setSurfacePref(newPref);
+      try {
+        localStorage.setItem(SURFACE_MODE_STORAGE_KEY, newPref);
+      } catch {
+        /* ignore */
+      }
+      if (newPref === 'auto') {
+        const samples = getTestSampleColors() || collectBackgroundSamplesV2();
+        const textColor = themeService.isDarkMode() ? '#ffffff' : '#000000';
+        const esc = escalateTiersUntilContrast({
+          samples: samples.length ? samples : [],
+          textColor,
+          threshold: 4.5,
+          solidBg: themeService.isDarkMode() ? '#000000' : '#ffffff',
+          previousStage: surfaceMode as unknown as
+            | 'glass'
+            | 'scrim-low'
+            | 'scrim-med'
+            | 'scrim-high'
+            | 'solid',
+        });
+        const nextMode: ModalSurfaceMode = esc.finalStage === 'solid' ? 'solid' : 'glass';
+        setSurfaceMode(nextMode);
+        setApplyTextShadow(false);
+      } else {
+        setSurfaceMode(newPref); // immediate visual feedback
+        setApplyTextShadow(false);
+      }
+    },
+    [themeService, surfaceMode]
+  );
+
   if (!isOpen) return null;
 
   const testProps = ComponentStandards.createTestProps(testId);
@@ -197,13 +319,19 @@ export function SettingsModal({
   const panelClass = ComponentStandards.createClassName(
     styles.panel,
     positionClass,
-    'accessibility-enhanced', // 접근성 개선을 위한 CSS 클래스 추가
+    'accessibility-enhanced', // 접근성 개선
     ...legacyPositionClasses,
     className
   );
+  const effectiveSurfaceMode: ModalSurfaceMode =
+    surfacePref === 'glass' || surfacePref === 'solid' ? surfacePref : surfaceMode;
   const innerClass = ComponentStandards.createClassName(
-    styles.modal, // alias for legacy tests
+    styles.modal,
     'glass-surface',
+    'modal-surface',
+    effectiveSurfaceMode === 'solid' ? 'modal-surface-solid' : '',
+    applyTextShadow && effectiveSurfaceMode === 'glass' ? 'xeg-modal-text-shadow' : '',
+    scrimClasses,
     styles.inner
   );
 
@@ -257,6 +385,35 @@ export function SettingsModal({
     ]
   );
 
+  const surfaceModeSelect = h(
+    'select',
+    {
+      id: 'surface-mode-select',
+      className: `${toolbarStyles.toolbarButton} ${styles.select}`,
+      value: surfacePref,
+      onChange: handleSurfaceModeChange,
+      onInput: handleSurfaceModeChange,
+      'aria-label': languageService.getString('settings.surfaceMode') || 'Surface',
+    },
+    [
+      h(
+        'option',
+        { value: 'auto' },
+        languageService.getString('settings.surfaceModeAuto') || 'Auto'
+      ),
+      h(
+        'option',
+        { value: 'glass' },
+        languageService.getString('settings.surfaceModeGlass') || 'Glass'
+      ),
+      h(
+        'option',
+        { value: 'solid' },
+        languageService.getString('settings.surfaceModeSolid') || 'Solid'
+      ),
+    ]
+  );
+
   const body = h('div', { className: styles.body, key: 'body' }, [
     h('div', { className: styles.setting, key: 'theme-setting' }, [
       h(
@@ -273,6 +430,14 @@ export function SettingsModal({
         languageService.getString('settings.language')
       ),
       languageSelect,
+    ]),
+    h('div', { className: styles.setting, key: 'surface-mode-setting' }, [
+      h(
+        'label',
+        { htmlFor: 'surface-mode-select', className: styles.label },
+        languageService.getString('settings.surfaceMode') || 'Surface'
+      ),
+      surfaceModeSelect,
     ]),
   ]);
 
@@ -302,3 +467,6 @@ export function SettingsModal({
   );
   return node as unknown as VNode;
 }
+
+// Collect a small set of background colors around the intended modal area.
+// legacy collectBackgroundSamples removed (replaced by collectBackgroundSamplesV2 from escalation module)

@@ -9,7 +9,7 @@ import type {
   TweetInfo,
 } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-import { StrategyChain } from './StrategyChain';
+import { StrategyChain, type StrategyChainMetrics } from './StrategyChain';
 import {
   METRICS_VERSION,
   computeStrategyCacheHitRatio,
@@ -316,8 +316,8 @@ export class MediaExtractionOrchestrator {
       this.cacheMisses++;
     }
 
-    // StrategyChain 사용
-    const chain = new StrategyChain(this.strategies);
+    // StrategyChain 사용 (Phase 11: createStrategyChain 훅 경유 - 병렬 그룹 커스터마이징 대비)
+    const chain = this.createStrategyChain();
     const chainResult = await chain.run(element, options, finalExtractionId, tweetInfo);
     if (chainResult.result.success) {
       if (chainResult.metrics.successStrategy) {
@@ -340,7 +340,7 @@ export class MediaExtractionOrchestrator {
           cacheHit: false,
           strategiesTried: chainResult.metrics.attemptedStrategies,
         },
-        chainResult.metrics.durationMs
+        chainResult.metrics
       );
       return chainResult.result;
     }
@@ -356,6 +356,17 @@ export class MediaExtractionOrchestrator {
     return this.createFailureResult(finalExtractionId);
   }
 
+  /**
+   * (확장 포인트) StrategyChain 생성 훅
+   * 기본 구현은 등록된 단일 전략 리스트로 구성된 순차 체인을 반환한다.
+   * 테스트/향후 확장에서 병렬 그룹 삽입을 위해 서브클래싱하여 재정의 가능.
+   */
+  protected createStrategyChain(): StrategyChain {
+    // 기본체인: 등록된 전략 배열을 그대로 사용 (순차 실행)
+    const baseStrategies = [...this.strategies];
+    return new StrategyChain(baseStrategies);
+  }
+
   /** 메트릭 요약 로깅 (단일 info 호출 요구 테스트 대응) */
   private logMetricsSummary(
     result: MediaExtractionResult,
@@ -365,11 +376,11 @@ export class MediaExtractionOrchestrator {
       strategiesTried: string[];
       cooldownApplied?: boolean;
     },
-    chainDurationMs?: number
+    chainMetrics?: StrategyChainMetrics
   ): void {
     try {
       // 중앙 메트릭 주입 (중복 경로 통합)
-      this.annotateCentralMetrics(result, context, chainDurationMs);
+      this.annotateCentralMetrics(result, context, chainMetrics);
       this.totalExtractions += result.success ? 1 : 0;
       this.totalExtractionFailures += result.success ? 0 : 1;
       const metricsSummary = {
@@ -406,7 +417,7 @@ export class MediaExtractionOrchestrator {
   private annotateCentralMetrics(
     result: MediaExtractionResult,
     context: { source: string; cacheHit: boolean; strategiesTried: string[] },
-    chainDurationMs?: number
+    chainMetrics?: StrategyChainMetrics
   ): void {
     try {
       type CentralMeta = {
@@ -422,7 +433,8 @@ export class MediaExtractionOrchestrator {
         ? meta.attemptedStrategies
         : context.strategiesTried;
       const successStrategy = meta.successStrategy || (result.success ? meta.strategy : undefined);
-      const chainDuration = typeof chainDurationMs === 'number' ? chainDurationMs : undefined;
+      const chainDuration =
+        typeof chainMetrics?.durationMs === 'number' ? chainMetrics.durationMs : undefined;
       if (typeof chainDuration === 'number') {
         this.chainDurationTotalMs += chainDuration;
         this.chainDurationCount++;
@@ -438,6 +450,14 @@ export class MediaExtractionOrchestrator {
             ? this.chainDurationTotalMs / this.chainDurationCount
             : undefined,
         chainDurationMaxMs: this.chainDurationCount > 0 ? this.chainDurationMaxMs : undefined,
+        // 병렬 그룹 메트릭 (존재 시)
+        groupSize: typeof chainMetrics?.groupSize === 'number' ? chainMetrics.groupSize : undefined,
+        winnerLatency:
+          typeof chainMetrics?.winnerLatency === 'number' ? chainMetrics.winnerLatency : undefined,
+        losingCancelCount:
+          typeof chainMetrics?.losingCancelCount === 'number'
+            ? chainMetrics.losingCancelCount
+            : undefined,
         cacheHit: context.cacheHit,
         source: context.source,
         successResultCacheHits: this.successResultCacheHits,

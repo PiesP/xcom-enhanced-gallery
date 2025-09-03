@@ -1,7 +1,7 @@
 /**
- * @fileoverview ToolbarWithSettings 컴포넌트 (일관된 glassmorphism 디자인)
+ * @fileoverview ToolbarWithSettings 컴포넌트 (Phase22 semantic surface 스타일)
  * @description TDD로 개선된 툴바와 설정 모달 통합 컴포넌트
- * @version 6.0.0 - Glassmorphism 일관성 적용
+ * @version 6.0.0 - semantic surface 적용
  */
 
 import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
@@ -17,7 +17,7 @@ export interface ToolbarWithSettingsProps extends Omit<ToolbarProps, 'onOpenSett
 
 /**
  * 툴바와 설정 모달을 통합한 컴포넌트
- * @description 동일한 glassmorphism 디자인 시스템 적용으로 시각적 일관성 보장
+ * @description 동일한 semantic surface 디자인 시스템 적용으로 시각적 일관성 보장
  */
 export function ToolbarWithSettings({
   settingsPosition = 'toolbar-below',

@@ -478,6 +478,93 @@ export const FEATURE_VIRTUAL_SCROLL: boolean = (() => {
 export const FEATURE_GALLERY_SHADOW: boolean = true; // Phase 4 완료됨
 export const FEATURE_MEDIA_PRELOAD: boolean = true; // Phase 6 - 사전 로딩 기본 활성
 export const FEATURE_MEDIA_UNLOAD: boolean = true; // Phase 7 - 오프스크린 언로딩
+// Phase 13: GalleryController 통합 (초기 OFF - 통합 진행 중)
+// Phase 13: GalleryController 통합 (기본값 ON – 안정화 완료)
+export const FEATURE_GALLERY_CONTROLLER: boolean = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const forced = (globalThis as any)?.__XEG_FORCE_FLAGS__?.FEATURE_GALLERY_CONTROLLER;
+    if (typeof forced === 'boolean') return forced;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = (process as any)?.env?.FEATURE_GALLERY_CONTROLLER;
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return true; // 기본 ON (점진적 마이그레이션 1단계 완료)
+  } catch {
+    return true;
+  }
+})();
+// Phase 14 Variant B: 조건부 preventDefault 전략 실험 (기본 OFF)
+export const FEATURE_INERTIA_CONDITIONAL_PREVENT: boolean = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const forced = (globalThis as any)?.__XEG_FORCE_FLAGS__?.FEATURE_INERTIA_CONDITIONAL_PREVENT;
+    if (typeof forced === 'boolean') return forced;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = (process as any)?.env?.FEATURE_INERTIA_CONDITIONAL_PREVENT;
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return false;
+  } catch {
+    return false;
+  }
+})();
+
+/**
+ * Phase 14 Inertia Variant B 실험 플래그
+ * 목적: 경계(Top/Bottom) overscroll 방향 delta 에 대해 preventDefault 를 해제하여
+ *  트위터 기본 스크롤(배경)과의 관성 자연감을 비교 측정.
+ * 차이점:
+ *  - FEATURE_INERTIA_CONDITIONAL_PREVENT 는 조건부 차단 자체의 온/오프
+ *  - 본 플래그는 Variant B 실험 자체 활성화 (실험 중 로깅/메트릭 분리 목적)
+ * 동작:
+ *  - OFF (기본): Variant A 유지 (항상 차단) 혹은 기존 conditional flag 만 영향
+ *  - ON: inertia-experiment 모듈이 setInertiaExperimentVariant('B') 로 전환하도록 상위 오케스트레이션에서 사용
+ * 강제 오버라이드: globalThis.__XEG_FORCE_FLAGS__.FEATURE_INERTIA_VARIANT_B = true/false
+ * 환경변수: process.env.FEATURE_INERTIA_VARIANT_B = 'true' | 'false'
+ */
+export const FEATURE_INERTIA_VARIANT_B: boolean = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const forced = (globalThis as any)?.__XEG_FORCE_FLAGS__?.FEATURE_INERTIA_VARIANT_B;
+    if (typeof forced === 'boolean') return forced;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = (process as any)?.env?.FEATURE_INERTIA_VARIANT_B;
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return false; // 실험 기본 OFF
+  } catch {
+    return false;
+  }
+})();
+
+/**
+ * Store Selector Fast Path 플래그
+ * 목적: selectors.isOpen() 호출을 직접 signal getter(isGalleryOpen) 로 alias 하여 호출 depth 감소
+ * 사용처: 고빈도 wheel/event 게이트 경로에서 selector 경량화 실험
+ * 강제 오버라이드: globalThis.__XEG_FORCE_FLAGS__.FEATURE_STORE_SIGNAL_FASTPATH
+ * 환경변수: process.env.FEATURE_STORE_SIGNAL_FASTPATH
+ */
+export const FEATURE_STORE_SIGNAL_FASTPATH: boolean = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const forced = (globalThis as any)?.__XEG_FORCE_FLAGS__?.FEATURE_STORE_SIGNAL_FASTPATH;
+    if (typeof forced === 'boolean') return forced;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = (process as any)?.env?.FEATURE_STORE_SIGNAL_FASTPATH;
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return false; // 기본 OFF (벤치 opt-in)
+  } catch {
+    return false;
+  }
+})();
+
+/**
+ * (요청 명명) USE_SIGNAL_FASTPATH – selector 최적화 실험용 별칭.
+ * 내부적으로 FEATURE_STORE_SIGNAL_FASTPATH 와 동일.
+ */
+export const USE_SIGNAL_FASTPATH = FEATURE_STORE_SIGNAL_FASTPATH;
 
 // iOS Safari 감지
 export function isIOSSafari(): boolean {
