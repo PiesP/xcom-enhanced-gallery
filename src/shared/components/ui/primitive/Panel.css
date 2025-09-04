@@ -1,0 +1,29 @@
+/**
+ * @fileoverview Panel Primitive Styles
+ */
+
+.xeg-panel {
+  /* 기본 패널 스타일 */
+  background-color: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+}
+
+.xeg-panel--padded {
+  padding: var(--panel-padding);
+}
+
+/* 변형: Elevated */
+.xeg-panel--elevated {
+  background-color: var(--color-bg-elevated);
+  box-shadow: var(--shadow-md);
+}
+
+/* 변형: Glass */
+.xeg-panel--glass {
+  background-color: var(--glass-bg);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-backdrop-filter);
+}

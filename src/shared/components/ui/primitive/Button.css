@@ -1,0 +1,89 @@
+/**
+ * @fileoverview Button Primitive Styles
+ * @description 새로운 3단 계층 디자인 토큰 사용
+ */
+
+.xeg-button {
+  /* Component 토큰 사용 */
+  background-color: var(--button-bg-primary);
+  color: var(--button-text-primary);
+  border: 1px solid var(--button-border);
+  border-radius: var(--button-radius);
+  padding: var(--button-padding-y) var(--button-padding-x);
+  height: var(--button-height);
+
+  /* 애니메이션 */
+  transition: var(--button-transition);
+
+  /* 레이아웃 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-item-gap);
+
+  /* 기본 스타일 */
+  font-family: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+
+  /* 접근성 */
+  outline: none;
+
+  /* 호버 상태 */
+  &:hover:not(:disabled) {
+    background-color: var(--button-bg-primary-hover);
+    transform: translateY(-1px);
+  }
+
+  /* 활성 상태 */
+  &:active:not(:disabled) {
+    background-color: var(--button-bg-primary-active);
+    transform: translateY(0);
+  }
+
+  /* 포커스 상태 */
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* 비활성 상태 */
+  &:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+/* 변형: Secondary */
+.xeg-button--secondary {
+  background-color: var(--color-bg-primary);
+  color: var(--button-text-secondary);
+  border-color: var(--button-border);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-secondary);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-border-default);
+  }
+}
+
+/* 크기: Small */
+.xeg-button--sm {
+  height: 32px;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--font-size-sm);
+}
+
+/* 크기: Large */
+.xeg-button--lg {
+  height: 48px;
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--font-size-lg);
+}

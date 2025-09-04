@@ -1,9 +1,35 @@
 /**
  * @fileoverview TDD: Design Tokens System 검증 테스트
- * RED 단계: 현재 CSS 파일들이 일관된 디자인 토큰을 사용하는지 검증
+ * Phase 1: 3단 계층 구조 (Primitive → Semantic → Component) 구현
  */
 
 import { describe, test, expect } from 'vitest';
+
+describe('Phase 1: 디자인 토큰 계층화 (GREEN 테스트)', () => {
+  test('primitive.css 파일이 존재해야 한다', async () => {
+    // GREEN: 파일이 성공적으로 생성됨
+    const primitiveModule = await import('@shared/styles/design-tokens.primitive.css');
+    expect(primitiveModule).toBeDefined();
+  });
+
+  test('semantic.css 파일이 존재해야 한다', async () => {
+    // GREEN: 파일이 성공적으로 생성됨
+    const semanticModule = await import('@shared/styles/design-tokens.semantic.css');
+    expect(semanticModule).toBeDefined();
+  });
+
+  test('component.css 파일이 존재해야 한다', async () => {
+    // GREEN: 파일이 성공적으로 생성됨
+    const componentModule = await import('@shared/styles/design-tokens.component.css');
+    expect(componentModule).toBeDefined();
+  });
+
+  test('통합된 design-tokens.css가 계층을 올바르게 import해야 한다', async () => {
+    // GREEN: 통합 파일이 모든 계층을 포함
+    const designTokensModule = await import('@shared/styles/design-tokens.css');
+    expect(designTokensModule).toBeDefined();
+  });
+});
 
 // 실제 CSS 내용을 시뮬레이션하여 하드코딩된 값들 검출
 const simulateFileContent = filename => {

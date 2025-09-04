@@ -1,0 +1,88 @@
+/**
+ * @fileoverview Component Design Tokens
+ * @description 컴포넌트별 전용 토큰들 - semantic 값들을 참조
+ */
+
+:root {
+  /* Gallery Component */
+  --gallery-bg: var(--color-bg-primary);
+  --gallery-border: var(--color-border-default);
+  --gallery-shadow: var(--shadow-lg);
+
+  /* Toolbar Component */
+  --toolbar-bg: var(--color-overlay-strong);
+  --toolbar-text: var(--color-text-inverse);
+  --toolbar-border: var(--color-glass-border);
+  --toolbar-shadow: var(--shadow-md);
+  --toolbar-height: 60px;
+  --toolbar-padding: var(--spacing-component-padding);
+  --toolbar-gap: var(--spacing-item-gap);
+
+  /* Button Component */
+  --button-bg-primary: var(--color-primary);
+  --button-bg-primary-hover: var(--color-primary-hover);
+  --button-bg-primary-active: var(--color-primary-active);
+  --button-text-primary: var(--color-text-inverse);
+  --button-text-secondary: var(--color-text-primary);
+  --button-border: var(--color-border-default);
+  --button-radius: var(--radius-md);
+  --button-padding-x: var(--space-md);
+  --button-padding-y: var(--space-sm);
+  --button-height: var(--size-button-height);
+  --button-transition: var(--transition-fast);
+
+  /* Toast Component */
+  --toast-bg-success: var(--color-success-bg);
+  --toast-bg-error: var(--color-error-bg);
+  --toast-bg-warning: var(--color-warning-bg);
+  --toast-bg-info: var(--color-info-bg);
+  --toast-text-success: var(--color-success);
+  --toast-text-error: var(--color-error);
+  --toast-text-warning: var(--color-warning);
+  --toast-text-info: var(--color-info);
+  --toast-border-success: var(--color-success);
+  --toast-border-error: var(--color-error);
+  --toast-border-warning: var(--color-warning);
+  --toast-border-info: var(--color-info);
+  --toast-radius: var(--radius-lg);
+  --toast-padding: var(--spacing-component-padding);
+  --toast-shadow: var(--shadow-md);
+  --toast-offset: 20px;
+
+  /* Panel/Surface Component */
+  --panel-bg: var(--color-bg-elevated);
+  --panel-border: var(--color-border-default);
+  --panel-radius: var(--radius-lg);
+  --panel-padding: var(--spacing-component-padding);
+  --panel-shadow: var(--shadow-sm);
+
+  /* Glass Surface Component */
+  --glass-bg: var(--color-glass-bg);
+  --glass-border: var(--color-glass-border);
+  --glass-backdrop-filter: blur(12px);
+  --glass-shadow: var(--shadow-lg);
+
+  /* Media/Image Component */
+  --media-border-radius: var(--radius-md);
+  --media-loading-bg: var(--color-bg-secondary);
+  --media-placeholder-text: var(--color-text-muted);
+
+  /* Scrollbar Component */
+  --scrollbar-width: 8px;
+  --scrollbar-track-bg: var(--color-bg-secondary);
+  --scrollbar-thumb-bg: var(--color-border-emphasis);
+  --scrollbar-thumb-hover-bg: var(--color-text-secondary);
+
+  /* Hover Zone Component */
+  --hover-zone-height: 120px;
+  --hover-zone-bg: transparent;
+  --hover-zone-transition: var(--transition-fast);
+
+  /* Animation Presets - Component Specific */
+  --animation-fade-in: fade-in var(--duration-normal) var(--transition-normal);
+  --animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+  --animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
+  --animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+  --animation-toolbar-show: toolbar-slide-down var(--duration-fast) var(--transition-fast);
+  --animation-toolbar-hide: toolbar-slide-up var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+}

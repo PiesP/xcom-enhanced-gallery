@@ -1,0 +1,59 @@
+/**
+ * @fileoverview IconButton Primitive Styles
+ */
+
+.xeg-icon-button {
+  /* 기본 스타일 */
+  background-color: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+
+  /* 레이아웃 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 상호작용 */
+  cursor: pointer;
+  transition: var(--transition-fast);
+
+  /* 접근성 */
+  outline: none;
+
+  /* 호버 상태 */
+  &:hover:not(:disabled) {
+    background-color: var(--color-overlay-light);
+  }
+
+  /* 포커스 상태 */
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* 비활성 상태 */
+  &:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+  }
+}
+
+/* 크기 변형 */
+.xeg-icon-button--sm {
+  padding: var(--space-xs);
+  width: 28px;
+  height: 28px;
+}
+
+.xeg-icon-button--md {
+  padding: var(--space-sm);
+  width: 36px;
+  height: 36px;
+}
+
+.xeg-icon-button--lg {
+  padding: var(--space-md);
+  width: 44px;
+  height: 44px;
+}

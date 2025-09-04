@@ -1,0 +1,71 @@
+/**
+ * @fileoverview Semantic Design Tokens
+ * @description 역할 기반 토큰들 - primitive 값들을 참조
+ */
+
+:root {
+  /* Background Colors - Semantic Roles */
+  --color-bg-primary: var(--color-base-white);
+  --color-bg-secondary: var(--color-gray-50);
+  --color-bg-surface: var(--color-base-white);
+  --color-bg-elevated: var(--color-base-white);
+
+  /* Text Colors - Semantic Roles */
+  --color-text-primary: var(--color-base-black);
+  --color-text-secondary: var(--color-gray-700);
+  --color-text-muted: var(--color-gray-500);
+  --color-text-inverse: var(--color-base-white);
+
+  /* Border Colors - Semantic Roles */
+  --color-border-default: var(--color-gray-200);
+  --color-border-muted: var(--color-gray-100);
+  --color-border-emphasis: var(--color-gray-500);
+
+  /* State Colors - Semantic Roles */
+  --color-success: var(--color-green-500);
+  --color-success-bg: var(--color-green-50);
+  --color-error: var(--color-red-500);
+  --color-error-bg: var(--color-red-50);
+  --color-warning: var(--color-yellow-500);
+  --color-warning-bg: var(--color-yellow-50);
+  --color-info: var(--color-blue-500);
+  --color-info-bg: var(--color-blue-50);
+
+  /* Interactive Colors - Semantic Roles */
+  --color-primary: var(--color-blue-500);
+  --color-primary-hover: var(--color-blue-600);
+  --color-primary-active: var(--color-blue-700);
+
+  /* Overlay Colors - Semantic Roles */
+  --color-overlay-light: rgba(0, 0, 0, var(--opacity-overlay-light));
+  --color-overlay-medium: rgba(0, 0, 0, var(--opacity-overlay-medium));
+  --color-overlay-strong: rgba(0, 0, 0, var(--opacity-overlay-strong));
+  --color-overlay-backdrop: rgba(0, 0, 0, var(--opacity-overlay-backdrop));
+
+  /* Glass Effect - Semantic Roles */
+  --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
+  --color-glass-border: rgba(255, 255, 255, 0.2);
+
+  /* Spacing - Semantic Roles */
+  --spacing-component-padding: var(--space-md);
+  --spacing-component-margin: var(--space-sm);
+  --spacing-section-gap: var(--space-lg);
+  --spacing-item-gap: var(--space-sm);
+
+  /* Component Sizing - Semantic Roles */
+  --size-button-height: 40px;
+  --size-input-height: 40px;
+  --size-icon-sm: 16px;
+  --size-icon-md: 20px;
+  --size-icon-lg: 24px;
+
+  /* Animation - Semantic Roles */
+  --transition-fast: var(--duration-fast) cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Shadows - Semantic Roles */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
