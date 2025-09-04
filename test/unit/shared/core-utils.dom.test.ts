@@ -6,7 +6,7 @@ import {
   safeSetScrollTop,
   getCurrentScrollTop,
   ensureGalleryScrollAvailable,
-} from '../../../src/shared/utils/core-utils';
+} from '@shared/utils/core-utils';
 
 describe('core-utils DOM helpers', () => {
   beforeEach(() => {

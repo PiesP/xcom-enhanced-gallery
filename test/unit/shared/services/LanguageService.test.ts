@@ -5,7 +5,7 @@
 
 // @ts-nocheck - 언어 서비스 테스트
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LanguageService } from '../../../../src/shared/services/LanguageService';
+import { LanguageService } from '@shared/services/LanguageService';
 
 describe('LanguageService', () => {
   let languageService: LanguageService;

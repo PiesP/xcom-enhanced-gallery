@@ -6,7 +6,7 @@ import {
   isDevelopmentEnvironment,
   isProductionEnvironment,
   isUserScriptEnvironment,
-} from '../../../src/shared/utils/environment';
+} from '@shared/utils/environment';
 
 describe('environment utils', () => {
   it('detects test environment (process env)', () => {

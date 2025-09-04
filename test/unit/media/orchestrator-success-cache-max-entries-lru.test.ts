@@ -8,8 +8,8 @@
  *  4. 새로운 element C extract → LRU eviction 2회 (B 제거) / 중간 stale 큐 항목(A) skip 되어 추가 eviction 없음
  */
 import { describe, it, expect } from 'vitest';
-import { MediaExtractionOrchestrator } from '../../../src/shared/services/media-extraction/MediaExtractionOrchestrator';
-import type { MediaExtractionResult } from '../../../src/shared/types/media.types';
+import { MediaExtractionOrchestrator } from '@shared/services/media-extraction/MediaExtractionOrchestrator';
+import type { MediaExtractionResult } from '@shared/types/media.types';
 
 function makeStrategy() {
   return {

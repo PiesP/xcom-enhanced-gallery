@@ -31,7 +31,7 @@ describe('Phase 1.3: Fetch Error Handling Enhancement', () => {
 
         try {
           // 아직 구현되지 않은 fetchWrapper 함수 호출
-          const module = await import('../../src/utils/fetchWrapper');
+          const module = await import('@/utils/fetchWrapper');
           const fetchWrapper = module.fetchWrapper;
           await fetchWrapper('https://example.com/api');
           expect.fail('Should have thrown an error');
@@ -55,7 +55,7 @@ describe('Phase 1.3: Fetch Error Handling Enhancement', () => {
         vi.mocked(globalThis.fetch).mockResolvedValueOnce(mockResponse);
 
         try {
-          const module = await import('../../src/utils/fetchWrapper');
+          const module = await import('@/utils/fetchWrapper');
           const fetchWrapper = module.fetchWrapper;
           await fetchWrapper('https://example.com/api');
           expect.fail('Should have thrown an error');
@@ -78,7 +78,7 @@ describe('Phase 1.3: Fetch Error Handling Enhancement', () => {
         expect(service).toBeInstanceOf(MediaService);
 
         // fetchWrapper 모듈이 올바르게 로드되는지 확인
-        const module = await import('../../src/utils/fetchWrapper');
+        const module = await import('@/utils/fetchWrapper');
         expect(module.fetchWrapper).toBeDefined();
         expect(typeof module.fetchWrapper).toBe('function');
       });
@@ -96,7 +96,7 @@ describe('Phase 1.3: Fetch Error Handling Enhancement', () => {
         expect(service).toBeInstanceOf(BulkDownloadService);
 
         // fetchWrapper 모듈이 올바르게 로드되는지 확인
-        const module = await import('../../src/utils/fetchWrapper');
+        const module = await import('@/utils/fetchWrapper');
         expect(module.fetchWrapper).toBeDefined();
         expect(typeof module.fetchWrapper).toBe('function');
       });

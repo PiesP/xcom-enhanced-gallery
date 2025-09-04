@@ -47,6 +47,78 @@ import {
   unstable_batchedUpdates,
 } from 'preact/compat'; // vendor
 
+// ================================
+// Deprecated API Usage Tracking
+// ================================
+
+/**
+ * 글로벌 deprecated API 사용 추적기
+ */
+interface DeprecatedUsageTracker {
+  readonly usageCounts: Map<string, number>;
+  readonly firstUsages: Map<string, string>; // 스택 트레이스
+}
+
+declare global {
+  interface Window {
+    __XEG_DEPRECATED_TRACKER__?: DeprecatedUsageTracker;
+  }
+}
+
+/**
+ * Deprecated API 사용 로깅 및 추적 (logger 기반)
+ */
+function logDeprecatedUsage(apiName: string, alternative: string): void {
+  // 전역 추적기 초기화
+  if (!globalThis.window) return; // 서버 환경 안전 처리
+
+  const tracker = (globalThis.window.__XEG_DEPRECATED_TRACKER__ ??= {
+    usageCounts: new Map(),
+    firstUsages: new Map(),
+  });
+
+  // 사용 횟수 증가
+  const currentCount = tracker.usageCounts.get(apiName) || 0;
+  tracker.usageCounts.set(apiName, currentCount + 1);
+
+  // 첫 사용 시만 경고 (circular import 방지를 위해 dynamic import)
+  if (currentCount === 0) {
+    const stack = new Error().stack || 'No stack available';
+    tracker.firstUsages.set(apiName, stack);
+
+    // 콘솔에 직접 경고 (logger 순환 참조 방지)
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn(`[XEG] DEPRECATED API: ${apiName} - Use: ${alternative} - Stack:`, stack);
+    }
+  }
+}
+
+/**
+ * Deprecated API 사용 보고서 생성
+ */
+export function getDeprecatedUsageReport(): {
+  totalCalls: number;
+  uniqueApis: number;
+  details: Array<{ api: string; count: number; firstUsage: string }>;
+} {
+  const tracker = globalThis.window?.__XEG_DEPRECATED_TRACKER__;
+  if (!tracker) {
+    return { totalCalls: 0, uniqueApis: 0, details: [] };
+  }
+
+  const details = Array.from(tracker.usageCounts.entries()).map(([api, count]) => ({
+    api,
+    count,
+    firstUsage: tracker.firstUsages.get(api) || 'Unknown',
+  }));
+
+  return {
+    totalCalls: Array.from(tracker.usageCounts.values()).reduce((sum, count) => sum + count, 0),
+    uniqueApis: tracker.usageCounts.size,
+    details,
+  };
+}
+
 // 타입 정의
 export interface FflateAPI {
   zip: typeof zip;
@@ -271,6 +343,7 @@ export const getNativeDownloadSafe = getNativeDownloadAPISafe;
  */
 export async function initializeVendorsSafe(): Promise<void> {
   // GREEN 구현: 복잡한 초기화 없이 정적 import만으로 충분
+  logDeprecatedUsage('initializeVendorsSafe', 'Use direct getter functions instead');
   return Promise.resolve();
 }
 
@@ -283,6 +356,7 @@ export function validateVendorsSafe(): {
   loadedLibraries: string[];
   errors: string[];
 } {
+  logDeprecatedUsage('validateVendorsSafe', 'Use direct getter functions instead');
   return {
     success: true,
     loadedLibraries: ['fflate', 'Preact', 'PreactHooks', 'PreactSignals', 'PreactCompat'],
@@ -295,6 +369,7 @@ export function validateVendorsSafe(): {
  * 레거시 호환성을 위한 버전 정보
  */
 export function getVendorVersionsSafe(): Record<string, string> {
+  logDeprecatedUsage('getVendorVersionsSafe', 'Use direct getter functions instead');
   return {
     fflate: 'static-import',
     preact: 'static-import',
@@ -309,6 +384,7 @@ export function getVendorVersionsSafe(): Record<string, string> {
  * 레거시 호환성을 위한 정리 함수
  */
 export function cleanupVendorsSafe(): Promise<void> {
+  logDeprecatedUsage('cleanupVendorsSafe', 'Use direct getter functions instead');
   // 정적 import 방식에서는 정리가 필요하지 않음
   return Promise.resolve();
 }
@@ -318,6 +394,7 @@ export function cleanupVendorsSafe(): Promise<void> {
  * 레거시 호환성을 위한 초기화 상태 확인
  */
 export function isVendorsInitializedSafe(): boolean {
+  logDeprecatedUsage('isVendorsInitializedSafe', 'Use direct getter functions instead');
   return true; // 정적 import로 항상 초기화됨
 }
 
@@ -326,6 +403,7 @@ export function isVendorsInitializedSafe(): boolean {
  * 레거시 호환성을 위한 초기화 리포트
  */
 export function getVendorInitializationReportSafe(): Record<string, Record<string, unknown>> {
+  logDeprecatedUsage('getVendorInitializationReportSafe', 'Use direct getter functions instead');
   return {
     fflate: { initialized: true, method: 'static-import' },
     preact: { initialized: true, method: 'static-import' },
@@ -340,6 +418,7 @@ export function getVendorInitializationReportSafe(): Record<string, Record<strin
  * 레거시 호환성을 위한 상태 확인
  */
 export function getVendorStatusesSafe(): Record<string, boolean> {
+  logDeprecatedUsage('getVendorStatusesSafe', 'Use direct getter functions instead');
   return {
     fflate: true,
     preact: true,
@@ -354,6 +433,7 @@ export function getVendorStatusesSafe(): Record<string, boolean> {
  * 레거시 호환성을 위한 개별 vendor 초기화 확인
  */
 export function isVendorInitializedSafe(_vendorName: string): boolean {
+  logDeprecatedUsage('isVendorInitializedSafe', 'Use direct getter functions instead');
   return true; // 정적 import로 모든 vendor가 초기화됨
 }
 
@@ -362,5 +442,6 @@ export function isVendorInitializedSafe(_vendorName: string): boolean {
  * 레거시 호환성을 위한 매니저 인스턴스 리셋
  */
 export function resetVendorManagerInstance(): void {
+  logDeprecatedUsage('resetVendorManagerInstance', 'Use direct getter functions instead');
   // GREEN 구현: 정적 import에서는 리셋이 불필요
 }

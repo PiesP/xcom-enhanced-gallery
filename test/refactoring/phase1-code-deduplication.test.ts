@@ -3,7 +3,7 @@
  * @description 중복된 코드 제거, 일관된 import/타입 정의 확립을 위한 테스트
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
   describe('1.1 extractMediaId 함수 중복 제거', () => {
@@ -15,16 +15,16 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
       let mediaConstantsExtractMediaId: unknown;
 
       try {
-        const constantsModule = await import('../../src/constants');
+        const constantsModule = await import('@/constants');
         constantsExtractMediaId = constantsModule.extractMediaId;
-      } catch (error) {
+      } catch {
         constantsExtractMediaId = null;
       }
 
       try {
         const mediaConstantsModule = await import('../../src/shared/constants/media.constants');
         mediaConstantsExtractMediaId = mediaConstantsModule.extractMediaId;
-      } catch (error) {
+      } catch {
         mediaConstantsExtractMediaId = null;
       }
 
@@ -42,30 +42,36 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
 
     it('should use consistent extractMediaId function signature', async () => {
       // RED: 함수 시그니처 일관성 확인
-      let extractMediaId: (url: string | null | undefined) => string | null;
+      let extractMediaId: ((input: string | null | undefined) => string | null) | undefined; // eslint-disable-line no-unused-vars
 
       try {
         // 권위 있는 버전은 media.constants.ts의 함수 (null/undefined 지원)
         const mediaConstantsModule = await import('../../src/shared/constants/media.constants');
         extractMediaId = mediaConstantsModule.extractMediaId;
-      } catch (error) {
+      } catch {
         // fallback to constants.ts
-        const constantsModule = await import('../../src/constants');
-        extractMediaId = constantsModule.extractMediaId;
+        try {
+          const constantsModule = await import('@/constants');
+          extractMediaId = constantsModule.extractMediaId;
+        } catch {
+          extractMediaId = undefined;
+        }
       }
 
       // 함수가 존재하고 호출 가능해야 함
       expect(typeof extractMediaId).toBe('function');
 
-      // null/undefined 입력 처리 테스트
-      expect(extractMediaId(null)).toBeNull();
-      expect(extractMediaId(undefined)).toBeNull();
-      expect(extractMediaId('')).toBeNull();
+      if (extractMediaId) {
+        // null/undefined 입력 처리 테스트
+        expect(extractMediaId(null)).toBeNull();
+        expect(extractMediaId(undefined)).toBeNull();
+        expect(extractMediaId('')).toBeNull();
 
-      // 유효한 URL 테스트
-      const validUrl = 'https://pbs.twimg.com/media/ABC123?format=jpg&name=orig';
-      const result = extractMediaId(validUrl);
-      expect(result).toBe('ABC123');
+        // 유효한 URL 테스트
+        const validUrl = 'https://pbs.twimg.com/media/ABC123?format=jpg&name=orig';
+        const result = extractMediaId(validUrl);
+        expect(result).toBe('ABC123');
+      }
     });
   });
 
@@ -77,9 +83,9 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
       let mediaUrlPatterns: unknown;
 
       try {
-        const constantsModule = await import('../../src/constants');
+        const constantsModule = await import('@/constants');
         constantsUrlPatterns = constantsModule.URL_PATTERNS;
-      } catch (error) {
+      } catch {
         constantsUrlPatterns = null;
       }
 
@@ -90,14 +96,14 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
         mediaUrlPatterns = {
           hasValidation: typeof mediaConstantsModule.isValidMediaUrl === 'function',
         };
-      } catch (error) {
+      } catch {
         mediaUrlPatterns = null;
       }
 
       // 두 곳 모두에 URL 패턴이 존재하면 통합 필요
       if (constantsUrlPatterns && mediaUrlPatterns) {
         // 이는 현재 상태를 확인하는 테스트이므로 통합 후에는 통과할 것
-        console.warn('URL 패턴이 여러 곳에 분산되어 있습니다. 통합이 필요합니다.');
+        // 테스트 환경에서는 의도적으로 console 사용 허용
       }
 
       // 최소 하나는 존재해야 함
@@ -106,35 +112,41 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
 
     it('should have unified URL pattern validation', async () => {
       // GREEN을 위한 통합된 URL 패턴 검증 함수 테스트
-      let isValidMediaUrl: (url: string) => boolean;
+      let isValidMediaUrl: ((input: string) => boolean) | undefined; // eslint-disable-line no-unused-vars
 
       try {
         // 권위 있는 버전은 media.constants.ts
         const mediaConstantsModule = await import('../../src/shared/constants/media.constants');
         isValidMediaUrl = mediaConstantsModule.isValidMediaUrl;
-      } catch (error) {
+      } catch {
         // fallback to constants.ts
-        const constantsModule = await import('../../src/constants');
-        isValidMediaUrl = constantsModule.isValidMediaUrl;
+        try {
+          const constantsModule = await import('@/constants');
+          isValidMediaUrl = constantsModule.isValidMediaUrl;
+        } catch {
+          isValidMediaUrl = undefined;
+        }
       }
 
       expect(typeof isValidMediaUrl).toBe('function');
 
-      // 유효한 미디어 URL 테스트
-      const validUrls = [
-        'https://pbs.twimg.com/media/ABC123?format=jpg&name=orig',
-        'https://pbs.twimg.com/media/DEF456?format=png&name=large',
-      ];
+      if (isValidMediaUrl) {
+        // 유효한 미디어 URL 테스트
+        const validUrls = [
+          'https://pbs.twimg.com/media/ABC123?format=jpg&name=orig',
+          'https://pbs.twimg.com/media/DEF456?format=png&name=large',
+        ];
 
-      const invalidUrls = ['https://example.com/image.jpg', 'not-a-url', ''];
+        const invalidUrls = ['https://example.com/image.jpg', 'not-a-url', ''];
 
-      validUrls.forEach(url => {
-        expect(isValidMediaUrl(url)).toBe(true);
-      });
+        validUrls.forEach(url => {
+          expect(isValidMediaUrl!(url)).toBe(true);
+        });
 
-      invalidUrls.forEach(url => {
-        expect(isValidMediaUrl(url)).toBe(false);
-      });
+        invalidUrls.forEach(url => {
+          expect(isValidMediaUrl!(url)).toBe(false);
+        });
+      }
     });
   });
 
@@ -148,21 +160,21 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
       try {
         const mediaTypesModule = await import('../../src/shared/types/media.types');
         mediaTypesInterface = mediaTypesModule;
-      } catch (error) {
+      } catch {
         mediaTypesInterface = null;
       }
 
       try {
         const coreMediaTypesModule = await import('../../src/shared/types/core/media.types');
         coreMediaTypesInterface = coreMediaTypesModule;
-      } catch (error) {
+      } catch {
         coreMediaTypesInterface = null;
       }
 
       // 두 곳 모두에 MediaInfo가 있으면 중복
       if (mediaTypesInterface && coreMediaTypesInterface) {
         // 이는 현재 상태 확인용이므로 통합 후에는 하나만 남을 것
-        console.warn('MediaInfo 인터페이스가 두 곳에 중복 정의되어 있습니다.');
+        // 테스트 환경에서는 의도적으로 console 사용 허용
       }
 
       // 최소 하나는 존재해야 함
@@ -177,10 +189,14 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
         // 권위 있는 버전은 shared/types/media.types.ts
         const mediaTypesModule = await import('../../src/shared/types/media.types');
         MediaInfoType = mediaTypesModule;
-      } catch (error) {
+      } catch {
         // fallback
-        const coreMediaTypesModule = await import('../../src/shared/types/core/media.types');
-        MediaInfoType = coreMediaTypesModule;
+        try {
+          const coreMediaTypesModule = await import('../../src/shared/types/core/media.types');
+          MediaInfoType = coreMediaTypesModule;
+        } catch {
+          MediaInfoType = null;
+        }
       }
 
       expect(MediaInfoType).toBeTruthy();
@@ -200,14 +216,14 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
       try {
         const sharedLoggingModule = await import('../../src/shared/logging');
         loggerFromSharedLogging = sharedLoggingModule.logger;
-      } catch (error) {
+      } catch {
         loggerFromSharedLogging = null;
       }
 
       try {
         const sharedLoggingLoggerModule = await import('../../src/shared/logging/logger');
         loggerFromSharedLoggingLogger = sharedLoggingLoggerModule.logger;
-      } catch (error) {
+      } catch {
         loggerFromSharedLoggingLogger = null;
       }
 
@@ -228,7 +244,7 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
       try {
         const mediaTypes = await import('../../src/shared/types/media.types');
         expect(mediaTypes).toBeTruthy();
-      } catch (error) {
+      } catch {
         expect.fail('미디어 타입이 표준 경로에서 로드되지 않습니다.');
       }
 
@@ -236,7 +252,7 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
       try {
         const mediaConstants = await import('../../src/shared/constants/media.constants');
         expect(mediaConstants).toBeTruthy();
-      } catch (error) {
+      } catch {
         expect.fail('미디어 상수가 표준 경로에서 로드되지 않습니다.');
       }
 
@@ -244,7 +260,7 @@ describe('Phase 1: 코드 중복 제거 및 일관성 확보', () => {
       try {
         const loggerModule = await import('../../src/shared/logging/logger');
         expect(loggerModule.logger).toBeTruthy();
-      } catch (error) {
+      } catch {
         expect.fail('Logger가 표준 경로에서 로드되지 않습니다.');
       }
     });

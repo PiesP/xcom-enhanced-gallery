@@ -4,7 +4,7 @@
  */
 
 // @ts-nocheck - 애니메이션 유틸리티 테스트
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   ANIMATION_PRESETS,
   animateGalleryEnter,
@@ -15,7 +15,7 @@ import {
   setupInViewAnimation,
   transformValue,
   animateCustom,
-} from '../../../../src/shared/utils/animations';
+} from '@shared/utils/animations';
 
 // 모킹
 vi.mock('@shared/external/vendors', () => ({

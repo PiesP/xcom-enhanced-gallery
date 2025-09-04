@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ThemeService } from '../../../../src/shared/services/ThemeService';
+import { ThemeService } from '@shared/services/ThemeService';
 
 describe('ThemeService Extended', () => {
   let themeService: ThemeService;

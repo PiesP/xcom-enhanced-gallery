@@ -4,7 +4,7 @@
  * 목표: centralMetrics.chainDurationAvgMs / chainDurationMaxMs 제공
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MediaExtractionOrchestrator } from '../../../src/shared/services/media-extraction/MediaExtractionOrchestrator';
+import { MediaExtractionOrchestrator } from '@shared/services/media-extraction/MediaExtractionOrchestrator';
 
 interface TestStrategyConfig {
   name: string;

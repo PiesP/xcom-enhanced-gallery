@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { calculateSmartImageFit } from '../../../src/shared/utils/media/smart-image-fit';
+import { calculateSmartImageFit } from '@shared/utils/media/smart-image-fit';
 
 // 테스트 대상 타입 정의 (실제 구현에서 가져옴)
 type SmartImageFitResult = {
@@ -26,9 +26,9 @@ type ViewportDimensions = {
 
 // 테스트할 함수 타입 정의
 type CalculateSmartImageFit = (
-  imageDimensions: ImageDimensions,
-  viewportDimensions: ViewportDimensions,
-  mode: 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer'
+  imageDimensions: ImageDimensions, // eslint-disable-line no-unused-vars
+  viewportDimensions: ViewportDimensions, // eslint-disable-line no-unused-vars
+  mode: 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer' // eslint-disable-line no-unused-vars
 ) => SmartImageFitResult;
 
 // Mock 함수를 실제 구현으로 교체

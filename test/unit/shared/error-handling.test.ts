@@ -8,7 +8,7 @@ import {
   serializeError,
   withFallback,
   withRetry,
-} from '../../../src/shared/utils/error-handling';
+} from '@shared/utils/error-handling';
 
 describe('error-handling utils', () => {
   it('standardizeError wraps Error and preserves message', () => {

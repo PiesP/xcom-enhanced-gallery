@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { WebPUtils, optimizeWebP } from '../../../src/shared/utils/WebPUtils';
+import { WebPUtils, optimizeWebP } from '@shared/utils/WebPUtils';
 
 describe('WebPUtils', () => {
   beforeEach(() => {

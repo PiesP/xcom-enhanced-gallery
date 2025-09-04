@@ -4,7 +4,7 @@
  * 목표: duration 노출은 중앙 centralMetrics(durationMs) 집계로만 유지.
  */
 import { describe, it, expect } from 'vitest';
-import { StrategyChain } from '../../../src/shared/services/media-extraction/StrategyChain';
+import { StrategyChain } from '@shared/services/media-extraction/StrategyChain';
 
 function makeSuccessStrategy(name: string, mediaId: string) {
   return {

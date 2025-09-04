@@ -6,7 +6,7 @@ import {
   safeGetAttribute,
   safeSetAttribute,
   isGalleryContainer,
-} from '../../../src/shared/utils/core-utils';
+} from '@shared/utils/core-utils';
 
 describe('core-utils extra', () => {
   it('combineClasses joins only truthy strings', () => {
