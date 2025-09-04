@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2025-09-03T06:29:23.308Z",
-  "totalTokens": 228,
+  "generatedAt": "2025-09-04T02:21:34.524Z",
+  "totalTokens": 154,
   "deadCount": 0,
   "deadTokens": [],
   "sample": [
-    "--xeg-active-ring",
-    "--xeg-active-ring-color",
-    "--xeg-active-ring-width",
-    "--xeg-active-shadow",
-    "--xeg-breakpoint-2xl"
+    "--xeg-button-height-lg",
+    "--xeg-button-height-md",
+    "--xeg-button-height-sm",
+    "--xeg-button-lift",
+    "--xeg-color-backdrop"
   ]
 }

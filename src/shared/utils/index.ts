@@ -87,6 +87,14 @@ export { imageFilter, getHighQualityMediaUrl, MediaClickDetector } from './media
 // === DOM 배처 (2개) ===
 export { DOMBatcher, globalDOMBatcher } from './dom/index';
 
+// === Effect boundaries (Phase 5) (4개) ===
+export {
+  createIsolatedEffect,
+  createDerivedSignal,
+  createEffect,
+  createAbortableEffect,
+} from './effect-boundaries';
+
 // === 핵심 타입 (총 44개 export) ===
 export type { DOMUpdate as DOMUpdateTask } from './dom/index';
 export type { StandardError, ErrorContext } from './error-handling';

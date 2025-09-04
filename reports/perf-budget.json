@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-09-04T02:27:26.423Z",
+  "budgets": {
+    "maxGzipSize": 153600,
+    "maxRawSize": 512000,
+    "maxModules": 50
+  },
+  "analysis": {},
+  "violations": [],
+  "summary": {
+    "totalFiles": 0,
+    "totalRawSize": 0,
+    "totalGzipSize": 0,
+    "passed": true
+  }
+}

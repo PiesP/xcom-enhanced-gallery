@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-09-04T02:27:22.125Z",
+  "environment": {
+    "node": {
+      "version": "v22.18.0",
+      "platform": "win32",
+      "arch": "x64"
+    },
+    "npm": {
+      "version": "10.9.3"
+    },
+    "git": {
+      "commit": "863f89987194496aa3a31fc7bf38ae89b9713135",
+      "branch": "master",
+      "dirty": true
+    },
+    "dependencies": {
+      "dependencies": {
+        "@preact/signals": "2.3.1",
+        "fflate": "0.8.2",
+        "preact": "10.27.1"
+      },
+      "devDependencies": {
+        "@commitlint/cli": "^19.8.1",
+        "@commitlint/config-conventional": "^19.8.1",
+        "@eslint/js": "^9.34.0",
+        "@preact/preset-vite": "^2.10.2",
+        "@testing-library/jest-dom": "^6.8.0",
+        "@testing-library/preact": "^3.2.4",
+        "@types/node": "^24.3.0",
+        "@types/tampermonkey": "^5.0.4",
+        "@typescript-eslint/eslint-plugin": "^8.42.0",
+        "@typescript-eslint/parser": "^8.42.0",
+        "@vitest/coverage-istanbul": "^3.2.4",
+        "@vitest/coverage-v8": "^3.2.4",
+        "@vitest/ui": "^3.2.4",
+        "autoprefixer": "^10.4.21",
+        "canvas": "^3.2.0",
+        "cssnano": "^7.1.1",
+        "dependency-cruiser": "^17.0.1",
+        "eslint": "^9.34.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-jsx-a11y": "^6.10.2",
+        "eslint-plugin-prettier": "^5.5.4",
+        "eslint-plugin-react": "^7.37.5",
+        "husky": "^9.1.7",
+        "jsdom": "^26.1.0",
+        "lint-staged": "^16.1.6",
+        "postcss": "^8.5.6",
+        "postcss-cli": "^11.0.1",
+        "postcss-custom-properties": "^14.0.6",
+        "prettier": "^3.6.2",
+        "rimraf": "^6.0.1",
+        "terser": "^5.44.0",
+        "typescript": "^5.9.2",
+        "vite": "^7.1.4",
+        "vitest": "^3.2.4",
+        "whatwg-url": "^14.2.0"
+      }
+    },
+    "buildTime": "2025-09-04T02:27:22.103Z",
+    "timezone": "Asia/Tokyo",
+    "envHash": "1a13c8d843e4322f"
+  },
+  "artifacts": {
+    "files": [],
+    "totalSize": 0,
+    "hashes": {}
+  },
+  "reproducibility": {
+    "deterministic": false,
+    "notes": "Git working directory is dirty"
+  },
+  "buildHash": "c0c5ff30d41fcfaa"
+}

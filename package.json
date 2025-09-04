@@ -41,6 +41,9 @@
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
     "deps:all": "npm run deps:json && npm run deps:graph:dot && npm run deps:graph && npm run deps:check",
     "report:dead-tokens": "node scripts/dead-token-reporter.js",
+    "report:size-budget": "node scripts/size-budget.js",
+    "report:build-fingerprint": "node scripts/build-fingerprint.js",
+    "validate:budgets": "npm run report:size-budget && npm run report:dead-tokens",
     "prepare": "husky",
     "postinstall": "npm run prepare"
   },

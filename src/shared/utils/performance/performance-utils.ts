@@ -10,6 +10,7 @@ import { logger } from '@shared/logging/logger';
 
 /**
  * 디바운서 클래스 - 중복 실행 방지
+ * @internal - 내부 구현, createDebouncer() 사용 권장
  */
 export class Debouncer<T extends unknown[] = unknown[]> {
   private timerId: number | null = null;

@@ -7,6 +7,7 @@
  */
 
 export * from './ErrorHandler';
+export * from './XegErrorBoundary';
 
 // Infrastructure 호환성 re-exports
 export { AppErrorHandler, ErrorHandler as CoreErrorHandler } from './ErrorHandler';
