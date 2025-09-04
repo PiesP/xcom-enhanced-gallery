@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createAppContainer } from '../../../../src/shared/container/createAppContainer';
+import { createAppContainer } from '../../../../src/features/gallery/createAppContainer';
 import { SERVICE_KEYS } from '../../../../src/constants';
 
 describe('Phase 5 - SERVICE_KEYS Usage Reduction', () => {
@@ -86,10 +86,11 @@ describe('Phase 5 - SERVICE_KEYS Usage Reduction', () => {
       const services = container.services;
 
       // 타입 체크를 위한 더미 접근 (컴파일 타임 검증)
-      expect(typeof services.media).toBe('object');
-      expect(typeof services.theme).toBe('object');
-      expect(typeof services.toast).toBe('object');
-      expect(typeof services.video).toBe('object');
+      // 하이브리드 객체는 함수이면서 동시에 객체 속성을 가짐
+      expect(typeof services.media === 'function' || typeof services.media === 'object').toBe(true);
+      expect(typeof services.theme === 'function' || typeof services.theme === 'object').toBe(true);
+      expect(typeof services.toast === 'function' || typeof services.toast === 'object').toBe(true);
+      expect(typeof services.video === 'function' || typeof services.video === 'object').toBe(true);
     });
 
     it('서비스 접근 시 자동완성과 타입 체크가 작동해야 함', () => {

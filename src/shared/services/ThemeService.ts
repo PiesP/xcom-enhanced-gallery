@@ -216,6 +216,13 @@ export class ThemeService {
 
     logger.info('ThemeService destroyed');
   }
+
+  /**
+   * 서비스 정리 (cleanup과 destroy 호환성)
+   */
+  public async cleanup(): Promise<void> {
+    this.destroy();
+  }
 }
 
 /**

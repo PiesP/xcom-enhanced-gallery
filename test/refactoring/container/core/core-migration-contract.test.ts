@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { createAppContainer } from '../../../../src/shared/container/createAppContainer';
+import { createAppContainer } from '../../../../src/features/gallery/createAppContainer';
 
 describe('Phase 3 - Core Migration Contract', () => {
   let container;

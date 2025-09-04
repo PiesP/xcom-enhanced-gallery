@@ -236,3 +236,27 @@ export const resetVendorManagerInstance = (): void => {
   isInitializing = false;
   initializationPromise = null;
 };
+
+// ================================
+// Preact 함수들 직접 export (UI 컴포넌트용)
+// ================================
+
+/**
+ * Preact h 함수 (JSX createElement)
+ */
+export const h = getPreactSafe().h;
+
+/**
+ * Preact render 함수
+ */
+export const render = getPreactSafe().render;
+
+/**
+ * Preact Component 클래스
+ */
+export const Component = getPreactSafe().Component;
+
+/**
+ * Preact Fragment 컴포넌트
+ */
+export const Fragment = getPreactSafe().Fragment;

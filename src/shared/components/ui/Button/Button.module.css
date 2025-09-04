@@ -32,7 +32,12 @@
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: var(--xeg-transition-fast);
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-easeOut);
   position: relative;
   box-sizing: border-box;
   user-select: none;

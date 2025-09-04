@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { createAppContainer } from '@shared/container/createAppContainer';
+import { createAppContainer } from '@features/gallery/createAppContainer';
 import { SERVICE_KEYS } from '@/constants';
 
 describe('Phase 2 - Legacy Adapter Contract', () => {

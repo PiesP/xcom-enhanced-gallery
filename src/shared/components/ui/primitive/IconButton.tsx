@@ -3,7 +3,7 @@
  * @description 아이콘 전용 버튼 - 접근성 필수 aria-label
  */
 
-import type { ComponentChildren } from 'preact';
+import type { ComponentChildren } from '@shared/external/vendors';
 import './IconButton.css';
 
 export interface IconButtonProps {

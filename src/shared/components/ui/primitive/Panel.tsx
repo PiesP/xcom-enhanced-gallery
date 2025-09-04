@@ -3,7 +3,7 @@
  * @description 기본 패널/표면 컴포넌트
  */
 
-import type { ComponentChildren } from 'preact';
+import type { ComponentChildren } from '@shared/external/vendors';
 import './Panel.css';
 
 export interface PanelProps {

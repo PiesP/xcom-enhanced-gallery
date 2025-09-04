@@ -14,8 +14,8 @@
       "source": "src/features/gallery/GalleryApp.ts",
       "dependencies": [],
       "dependents": [
-        "src/features/gallery/index.ts",
-        "src/shared/container/createAppContainer.ts"
+        "src/features/gallery/createAppContainer.ts",
+        "src/features/gallery/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -59,8 +59,8 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/index.ts",
-        "src/shared/container/createAppContainer.ts"
+        "src/features/gallery/createAppContainer.ts",
+        "src/features/gallery/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -583,6 +583,75 @@
       "dependencies": [],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/createAppContainer.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../shared/container/AppContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/container/AppContainer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./GalleryApp",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/gallery/GalleryApp.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./GalleryRenderer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/gallery/GalleryRenderer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/container/AppContainer.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/createAppContainer.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2385,6 +2454,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
       "dependencies": [
         {
@@ -2810,6 +2892,58 @@
       ],
       "dependents": [
         "src/shared/components/ui/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./toolbarConfig",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Toolbar/toolbarConfig.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./toolbarConfig",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Toolbar/toolbarConfig.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Toolbar/toolbarConfig.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -3339,75 +3473,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/container/AppContainer.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/container/createAppContainer.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/container/createAppContainer.ts",
-      "dependencies": [
-        {
-          "dynamic": true,
-          "module": "../../features/gallery/GalleryApp",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/gallery/GalleryApp.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../../features/gallery/GalleryRenderer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/gallery/GalleryRenderer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./AppContainer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/container/AppContainer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/dom/DOMCache.ts",
       "dependencies": [],
       "dependents": [
@@ -3690,6 +3755,45 @@
       ],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useFocusTrap.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/hooks/useGalleryToolbarLogic.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/hooks/useScrollLock.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
     },
     {
       "source": "src/shared/index.ts",
@@ -7334,13 +7438,50 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
+        "to": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/hooks/useFocusTrap.ts",
+        "to": "src/shared/hooks/useFocusTrap.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/hooks/useGalleryToolbarLogic.ts",
+        "to": "src/shared/hooks/useGalleryToolbarLogic.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/hooks/useScrollLock.ts",
+        "to": "src/shared/hooks/useScrollLock.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 4,
     "ignore": 0,
-    "totalCruised": 201,
-    "totalDependenciesCruised": 308,
+    "totalCruised": 207,
+    "totalDependenciesCruised": 310,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

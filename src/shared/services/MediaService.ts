@@ -828,6 +828,25 @@ export class MediaService {
   public isDownloading(): boolean {
     return this.currentAbortController !== undefined;
   }
+
+  /**
+   * 서비스 정리 (메모리 누수 방지)
+   */
+  async cleanup(): Promise<void> {
+    // 모든 프리페치 요청 취소
+    this.cancelAllPrefetch();
+
+    // 프리페치 캐시 정리
+    this.clearPrefetchCache();
+
+    // 미디어 로딩 상태 정리
+    this.mediaLoadingStates.clear();
+
+    // 비디오 제어 정리
+    this.onDestroy();
+
+    logger.debug('[MediaService] 서비스가 정리되었습니다.');
+  }
 }
 
 /**

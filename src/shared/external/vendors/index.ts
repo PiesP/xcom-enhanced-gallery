@@ -38,6 +38,9 @@ export type {
   ComponentChildren,
 } from './vendor-manager-static';
 
+// Preact 함수들의 직접 export 추가 (UI 컴포넌트에서 사용)
+export { h, render, Component, Fragment } from './vendor-api-safe';
+
 // Vendor-specific types (기존 유지)
 export type {
   PreactComponent,

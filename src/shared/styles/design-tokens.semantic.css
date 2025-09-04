@@ -68,4 +68,78 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+  /* Legacy Shadow Tokens - 호환성 보장 */
+  --xeg-shadow-sm: var(--shadow-sm);
+  --xeg-shadow-md: var(--shadow-md);
+  --xeg-shadow-lg: var(--shadow-lg);
+
+  /* Focus & Accessibility */
+  --xeg-focus-outline: 2px solid var(--color-primary);
+  --xeg-focus-offset: 2px;
+
+  /* Z-Index Management */
+  --xeg-z-modal: 10000;
+  --xeg-z-toolbar: 10001;
+  --xeg-z-overlay: 9999;
+  --xeg-z-toast: 10080;
+
+  /* Animation Timing - Semantic Roles */
+  --xeg-anim-duration: var(--duration-normal);
+  --xeg-duration: var(--duration-normal);
+  --xeg-duration-fast: var(--duration-fast);
+  --xeg-duration-slow: var(--duration-slow);
+
+  /* Animation Easing */
+  --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Surface Glass - Unified Tokens */
+  --xeg-surface-glass-bg: var(--color-glass-bg);
+  --xeg-surface-glass-border: var(--color-glass-border);
+  --xeg-surface-glass-shadow: var(--shadow-lg);
+
+  /* Border Radius - Extended Scale */
+  --xeg-radius-sm: var(--radius-sm);
+  --xeg-radius-md: var(--radius-md);
+  --xeg-radius-lg: var(--radius-lg);
+  --xeg-radius-xl: var(--radius-xl);
+}
+
+/* Theme Support - Dark/Light Mode */
+[data-theme='light'] {
+  --color-bg-primary: var(--color-base-white);
+  --color-text-primary: var(--color-base-black);
+  --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
+}
+
+[data-theme='dark'] {
+  --color-bg-primary: var(--color-gray-900);
+  --color-text-primary: var(--color-base-white);
+  --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg-primary: var(--color-gray-900);
+    --color-text-primary: var(--color-base-white);
+    --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-focus-outline: 3px solid var(--color-primary);
+    --color-border-emphasis: var(--color-base-black);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --xeg-duration: 0ms;
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+    --transition-slow: 0ms;
+  }
 }
