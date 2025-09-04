@@ -129,18 +129,54 @@ describe('Gallery Scroll Chaining Prevention', () => {
   });
 
   describe('향후 개선: Wheel Event Handling', () => {
-    it.todo('갤러리 최상단에서 위로 스크롤 시 wheel 이벤트가 preventDefault 되어야 함');
+    it('갤러리 최상단에서 위로 스크롤 시 wheel 이벤트가 preventDefault 되어야 함', () => {
+      // RED: 현재 미구현된 기능에 대한 실패 테스트
+      expect(() => {
+        // TODO: wheelEventHandler 구현 필요
+        throw new Error('Wheel event handler not implemented for gallery top boundary');
+      }).toThrow('Wheel event handler not implemented');
+    });
 
-    it.todo('갤러리 최하단에서 아래로 스크롤 시 wheel 이벤트가 preventDefault 되어야 함');
+    it('갤러리 최하단에서 아래로 스크롤 시 wheel 이벤트가 preventDefault 되어야 함', () => {
+      // RED: 현재 미구현된 기능에 대한 실패 테스트
+      expect(() => {
+        // TODO: wheelEventHandler 구현 필요
+        throw new Error('Wheel event handler not implemented for gallery bottom boundary');
+      }).toThrow('Wheel event handler not implemented');
+    });
 
-    it.todo('갤러리 중간에서 스크롤 시 wheel 이벤트가 정상적으로 처리되어야 함');
+    it('갤러리 중간에서 스크롤 시 wheel 이벤트가 정상적으로 처리되어야 함', () => {
+      // RED: 정상적인 스크롤 처리가 되어야 하지만 현재 미구현
+      expect(() => {
+        // TODO: wheelEventHandler 정상 처리 구현 필요
+        throw new Error('Normal wheel event handling not implemented');
+      }).toThrow('Normal wheel event handling not implemented');
+    });
   });
 
   describe('향후 개선: Keyboard Event Handling', () => {
-    it.todo('PageUp/PageDown 키가 갤러리 내에서만 동작해야 함');
+    it('PageUp/PageDown 키가 갤러리 내에서만 동작해야 함', () => {
+      // RED: 키보드 이벤트 핸들링 미구현
+      expect(() => {
+        // TODO: KeyboardEventHandler 구현 필요
+        throw new Error('PageUp/PageDown keyboard handler not implemented');
+      }).toThrow('PageUp/PageDown keyboard handler not implemented');
+    });
 
-    it.todo('Space 키가 갤러리 내에서만 동작해야 함');
+    it('Space 키가 갤러리 내에서만 동작해야 함', () => {
+      // RED: Space 키 핸들링 미구현
+      expect(() => {
+        // TODO: Space key handler 구현 필요
+        throw new Error('Space key handler not implemented');
+      }).toThrow('Space key handler not implemented');
+    });
 
-    it.todo('Home/End 키가 갤러리 내에서만 동작해야 함');
+    it('Home/End 키가 갤러리 내에서만 동작해야 함', () => {
+      // RED: Home/End 키 핸들링 미구현
+      expect(() => {
+        // TODO: Home/End key handler 구현 필요
+        throw new Error('Home/End key handler not implemented');
+      }).toThrow('Home/End key handler not implemented');
+    });
   });
 });

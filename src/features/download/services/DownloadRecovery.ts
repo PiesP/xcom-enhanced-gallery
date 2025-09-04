@@ -4,6 +4,7 @@
  */
 
 import { RetryManager, createRetryManager } from '../../../shared/services/RetryManager';
+import { logger } from '@shared/logging/logger';
 
 export interface DownloadProgress {
   url: string;
@@ -97,8 +98,8 @@ export class DownloadRecovery {
 
       const activeCount = this.activeDownloads.size;
       if (activeCount > 10) {
-        console.warn(
-          `[XEG] [DownloadRecovery] High number of active downloads: ${activeCount}. Potential memory leak.`
+        logger.warn(
+          `[XEG] [DownloadRecovery] High resource usage: ${activeCount} active downloads`
         );
       }
 
@@ -178,7 +179,7 @@ export class DownloadRecovery {
       // Clean up on error
       this.cleanupDownload(downloadId);
 
-      console.error('[XEG] [DownloadRecovery] Download failed:', error);
+      logger.error('[XEG] [DownloadRecovery] Download failed:', error);
       throw error;
     }
   }
@@ -234,7 +235,7 @@ export class DownloadRecovery {
       // Remove from active downloads
       this.activeDownloads.delete(downloadId);
 
-      console.info(`[XEG] [DownloadRecovery] Cleaned up download: ${downloadId}`);
+      logger.info(`[XEG] [DownloadRecovery] Cleaned up download: ${downloadId}`);
     }
   }
 
@@ -256,7 +257,7 @@ export class DownloadRecovery {
       try {
         cleanup();
       } catch (error) {
-        console.error('[XEG] [DownloadRecovery] Cleanup error:', error);
+        logger.error('[XEG] [DownloadRecovery] Cleanup error:', error);
       }
     }
 
@@ -267,7 +268,7 @@ export class DownloadRecovery {
       this.retryManager.dispose();
     }
 
-    console.info('[XEG] [DownloadRecovery] Disposed all resources');
+    logger.info('[XEG] [DownloadRecovery] Disposed all resources');
   }
 
   /**
@@ -288,7 +289,7 @@ export class DownloadRecovery {
       return this.downloadWithRecovery(progress.url, progress.filename, onProgress);
     }
 
-    console.info(
+    logger.info(
       `[XEG] [DownloadRecovery] Resuming download from ${progress.downloadedBytes} bytes`
     );
 
@@ -387,7 +388,7 @@ export class DownloadRecovery {
         chunk.status = 'failed';
         chunk.retryCount++;
 
-        console.error(`[XEG] [DownloadRecovery] Chunk ${chunk.id} failed:`, error);
+        logger.error(`[XEG] [DownloadRecovery] Chunk ${chunk.id} failed:`, error);
       }
       throw error;
     } finally {

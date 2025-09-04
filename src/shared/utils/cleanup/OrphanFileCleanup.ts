@@ -4,8 +4,9 @@
  * @version 1.0.0 - Phase 3 코드 정리 구현
  */
 
-import { readFileSync, existsSync, unlinkSync, statSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync, statSync } from 'fs';
 import { join } from 'path';
+import { logger } from '@shared/logging/logger';
 
 interface OrphanAnalysisResult {
   safeToRemove: string[];
@@ -294,7 +295,7 @@ export class OrphanFileCleanup {
    */
   public static async updateDependencyGraph(): Promise<void> {
     // 의존성 그래프 재생성 (실제로는 외부 도구를 호출해야 함)
-    console.info('의존성 그래프 업데이트는 별도 스크립트로 수행하세요: npm run analyze:deps');
+    logger.info('의존성 그래프 업데이트는 별도 스크립트로 수행하세요: npm run analyze:deps');
   }
 }
 

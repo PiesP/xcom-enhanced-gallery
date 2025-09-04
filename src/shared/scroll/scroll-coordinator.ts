@@ -6,9 +6,12 @@
  *  - snapshot signal 업데이트 (throttle: rAF)
  *  - 파생 상태는 후속 Phase 에서 추가
  */
-import { signal, computed } from '@preact/signals';
+import { getPreactSignalsSafe } from '@shared/external/vendors/vendor-api-safe';
 import type { ScrollCoordinatorAPI, ScrollSnapshot, ScrollDirection } from './types';
 import { logger } from '@shared/logging/logger';
+
+// Vendor signals API
+const { signal, computed } = getPreactSignalsSafe();
 
 // 내부 전역 (재실행 안전)
 const coordinatorSingleton: { api: ScrollCoordinatorAPI | null } = { api: null };

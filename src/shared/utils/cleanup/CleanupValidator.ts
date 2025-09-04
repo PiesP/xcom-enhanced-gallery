@@ -7,6 +7,7 @@
 import { spawn } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { logger } from '@shared/logging/logger';
 
 interface ValidationResult {
   buildSuccess: boolean;
@@ -31,7 +32,7 @@ export class CleanupValidator {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    console.info('🔍 정리 후 검증 시작...');
+    logger.info('🔍 정리 후 검증 시작...');
 
     // 1. 빌드 검증
     const buildSuccess = await this.runBuildTest();
@@ -73,27 +74,27 @@ export class CleanupValidator {
    * 빌드 테스트 실행
    */
   public static async runBuildTest(): Promise<boolean> {
-    console.info('🔨 빌드 테스트 실행 중...');
+    logger.info('🔨 빌드 테스트 실행 중...');
 
     try {
       // TypeScript 컴파일 확인
       const tscResult = await this.runCommand('npx', ['tsc', '--noEmit']);
       if (!tscResult.success) {
-        console.error('TypeScript 컴파일 실패:', tscResult.error);
+        logger.error('TypeScript 컴파일 실패:', tscResult.error);
         return false;
       }
 
       // 개발 빌드 테스트
       const buildResult = await this.runCommand('npm', ['run', 'prebuild']);
       if (!buildResult.success) {
-        console.error('Prebuild 실패:', buildResult.error);
+        logger.error('Prebuild 실패:', buildResult.error);
         return false;
       }
 
-      console.info('✅ 빌드 테스트 성공');
+      logger.info('✅ 빌드 테스트 성공');
       return true;
     } catch (error) {
-      console.error('빌드 테스트 중 오류:', error);
+      logger.error('빌드 테스트 중 오류:', error);
       return false;
     }
   }
@@ -102,20 +103,20 @@ export class CleanupValidator {
    * 의존성 검증
    */
   public static async validateDependencies(): Promise<boolean> {
-    console.info('📦 의존성 검증 중...');
+    logger.info('📦 의존성 검증 중...');
 
     try {
       // package.json 존재 확인
       const packageJsonPath = join(this.PROJECT_ROOT, 'package.json');
       if (!existsSync(packageJsonPath)) {
-        console.error('package.json이 존재하지 않습니다');
+        logger.error('package.json이 존재하지 않습니다');
         return false;
       }
 
       // npm 의존성 확인
       const npmResult = await this.runCommand('npm', ['ls', '--depth=0']);
       if (!npmResult.success) {
-        console.warn('일부 의존성 문제 발견:', npmResult.error);
+        logger.warn('일부 의존성 문제 발견:', npmResult.error);
         // 의존성 문제는 경고로 처리
       }
 
@@ -130,15 +131,15 @@ export class CleanupValidator {
       for (const module of criticalModules) {
         const modulePath = join(this.PROJECT_ROOT, module);
         if (!existsSync(modulePath)) {
-          console.error(`중요한 모듈이 누락됨: ${module}`);
+          logger.error(`중요한 모듈이 누락됨: ${module}`);
           return false;
         }
       }
 
-      console.info('✅ 의존성 검증 완료');
+      logger.info('✅ 의존성 검증 완료');
       return true;
     } catch (error) {
-      console.error('의존성 검증 중 오류:', error);
+      logger.error('의존성 검증 중 오류:', error);
       return false;
     }
   }
@@ -147,26 +148,26 @@ export class CleanupValidator {
    * 기본 테스트 실행
    */
   public static async runBasicTests(): Promise<boolean> {
-    console.info('🧪 기본 테스트 실행 중...');
+    logger.info('🧪 기본 테스트 실행 중...');
 
     try {
       // lint 검사
       const lintResult = await this.runCommand('npm', ['run', 'lint:check']);
       if (!lintResult.success) {
-        console.warn('Lint 검사에서 문제 발견:', lintResult.error);
+        logger.warn('Lint 검사에서 문제 발견:', lintResult.error);
       }
 
       // 간단한 컴파일 테스트
       const compileResult = await this.runCommand('npx', ['tsc', '--noEmit', '--skipLibCheck']);
       if (!compileResult.success) {
-        console.error('컴파일 테스트 실패:', compileResult.error);
+        logger.error('컴파일 테스트 실패:', compileResult.error);
         return false;
       }
 
-      console.info('✅ 기본 테스트 완료');
+      logger.info('✅ 기본 테스트 완료');
       return true;
     } catch (error) {
-      console.error('기본 테스트 중 오류:', error);
+      logger.error('기본 테스트 중 오류:', error);
       return false;
     }
   }

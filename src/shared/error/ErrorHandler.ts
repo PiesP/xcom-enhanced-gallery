@@ -249,7 +249,7 @@ export class ErrorHandler implements ErrorHandlerInterface {
   private reportError(error: AppError, context: string): void {
     // 향후 에러 리포팅 서비스 연동 시 구현
     if (error.severity === ErrorSeverity.CRITICAL) {
-      console.error(`🚨 Critical Error in ${context}:`, error);
+      logger.error(`🚨 Critical Error in ${context}:`, error);
     }
   }
 

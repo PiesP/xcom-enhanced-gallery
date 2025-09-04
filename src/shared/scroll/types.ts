@@ -1,6 +1,7 @@
 /**
  * Scroll Coordinator 타입 정의 (초안)
  */
+
 import type { Signal } from '@preact/signals';
 
 export interface ScrollSnapshot {
