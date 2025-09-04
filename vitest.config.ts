@@ -16,13 +16,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@app': resolve(__dirname, './src/app'),
       '@features': resolve(__dirname, './src/features'),
       '@shared': resolve(__dirname, './src/shared'),
-      '@core': resolve(__dirname, './src/core'),
-      '@infrastructure': resolve(__dirname, './src/infrastructure'),
-      '@utils': resolve(__dirname, './src/utils'),
-      '@assets': resolve(__dirname, './src/assets'),
     },
   },
 

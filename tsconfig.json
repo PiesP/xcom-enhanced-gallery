@@ -1,26 +1,17 @@
 {
-  // X.com Enhanced Gallery - TypeScript 설정 (Clean Architecture 최적화)
   "compilerOptions": {
-    // 컴파일 타겟 및 모듈 설정
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "skipLibCheck": true,
     "useDefineForClassFields": true,
-
-    // 모듈 해석 설정
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "verbatimModuleSyntax": false,
-
-    // JSX 설정 (Preact)
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-
-    // 엄격한 타입 검사 (Clean Architecture 원칙)
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
@@ -29,33 +20,19 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
-
-    // 호환성 설정
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-
-    // Clean Architecture 경로 별칭
     "baseUrl": "src",
     "paths": {
       "@/*": ["./*"],
-      "@app/*": ["app/*"],
       "@features/*": ["features/*"],
-      "@shared/*": ["shared/*"],
-      "@infrastructure/*": ["infrastructure/*"],
-      "@assets/*": ["assets/*"]
+      "@shared/*": ["shared/*"]
     },
-
-    // 타입 정의
     "types": ["vite/client", "vitest/globals"],
-
-    // 개발 생산성
-    "sourceMap": true,
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo"
   },
-
   "include": ["src/**/*", "types/**/*", "vite.config.ts", "vitest.config.ts"],
-
-  "exclude": ["node_modules", "dist", "build", "coverage", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "build", "coverage"]
 }

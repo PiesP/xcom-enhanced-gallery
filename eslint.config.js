@@ -14,7 +14,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-plugin-prettier';
-import react from 'eslint-plugin-react';
+// Preact 사용: react 전용 플러그인 의존 제거
 
 export default [
   eslint.configs.recommended,
@@ -95,7 +95,6 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      react,
       'jsx-a11y': jsxA11y,
       prettier,
     },
@@ -124,12 +123,8 @@ export default [
       '@typescript-eslint/prefer-optional-chain': 'warn',
       '@typescript-eslint/prefer-readonly': 'warn',
 
-      // === React/Preact 규칙 ===
-      'react/jsx-uses-react': 'error',
-      'react/jsx-uses-vars': 'error',
-      'react/prop-types': 'off', // TypeScript 사용
-      'react/jsx-no-useless-fragment': 'warn',
-      'react/jsx-key': 'error',
+      // === JSX 관련 (Preact) ===
+      // Preact 10+: 자동 JSX 변환, react/* 규칙 불필요
 
       // === 접근성 - 기본적인 것만 ===
       'jsx-a11y/alt-text': 'warn',
@@ -143,13 +138,10 @@ export default [
         'error',
         {
           patterns: [
+            { group: ['../../../*', '../../../../*'], message: '절대 경로 alias 사용 권장' },
             {
-              group: ['../../../*', '../../../../*'],
-              message: '3단계 이상의 상대 경로는 절대 경로를 사용하세요',
-            },
-            {
-              group: ['preact', 'preact/hooks', '@preact/signals', 'fflate', 'motion'],
-              message: '외부 라이브러리는 vendors getter를 통해 접근하세요',
+              group: ['preact', 'preact/hooks', '@preact/signals', 'fflate'],
+              message: 'vendors getter를 통해 접근',
             },
           ],
         },
