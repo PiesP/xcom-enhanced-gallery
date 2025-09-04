@@ -9,7 +9,7 @@
 /**
  * NOTE: This is a Wave 0 draft script.
  * Console logging and full implementation will be completed in Wave 1.
- * 
+ *
  * Basic functionality:
  * - Transform relative imports (../shared/) to aliases (@shared/)
  * - Process TypeScript files in src/ and test/
@@ -26,18 +26,18 @@ function transformImportPath(importPath) {
   if (importPath.startsWith('@')) {
     return importPath;
   }
-  
+
   // Skip external modules
   if (!importPath.startsWith('.')) {
     return importPath;
   }
-  
+
   // Transform all shared/ imports - more aggressive pattern
   if (importPath.includes('/shared/')) {
     return importPath.replace(/^\.\.\/\.\.\/.*?\/src\/shared\//, '@shared/');
   }
-  
-  // Transform all features/ imports  
+
+  // Transform all features/ imports
   if (importPath.includes('/features/')) {
     return importPath.replace(/^\.\.\/\.\.\/.*?\/src\/features\//, '@features/');
   }
@@ -56,7 +56,7 @@ function transformImportPath(importPath) {
       return `@/${srcPath}`;
     }
   }
-  
+
   return importPath;
 }
 
@@ -68,40 +68,40 @@ function processFile(filePath) {
     const content = readFileSync(filePath, 'utf-8');
     const lines = content.split('\n');
     let modified = false;
-    
-    const transformedLines = lines.map((line) => {
+
+    const transformedLines = lines.map(line => {
       // Match import/export statements
       const importMatch = line.match(/^(\s*(?:import|export).*from\s+['"`])([^'"`]+)(['"`])/);
       if (importMatch) {
         const [, prefix, importPath, suffix] = importMatch;
         const transformed = transformImportPath(importPath);
-        
+
         if (transformed !== importPath) {
           modified = true;
           return `${prefix}${transformed}${suffix}`;
         }
       }
-      
+
       // Match dynamic imports
       const dynamicMatch = line.match(/(import\s*\(\s*['"`])([^'"`]+)(['"`]\s*\))/);
       if (dynamicMatch) {
         const [, prefix, importPath, suffix] = dynamicMatch;
         const transformed = transformImportPath(importPath);
-        
+
         if (transformed !== importPath) {
           modified = true;
           return line.replace(dynamicMatch[0], `${prefix}${transformed}${suffix}`);
         }
       }
-      
+
       return line;
     });
-    
+
     if (modified) {
       writeFileSync(filePath, transformedLines.join('\n'));
       return true;
     }
-    
+
     return false;
   } catch {
     return false;
