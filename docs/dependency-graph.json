@@ -1,19 +1,6 @@
 {
   "modules": [
     {
-      "source": "src/build/critical-css.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/constants.ts",
       "dependencies": [],
       "dependents": [
@@ -27,7 +14,8 @@
       "source": "src/features/gallery/GalleryApp.ts",
       "dependencies": [],
       "dependents": [
-        "src/features/gallery/index.ts"
+        "src/features/gallery/index.ts",
+        "src/shared/container/createAppContainer.ts"
       ],
       "orphan": false,
       "valid": true
@@ -71,7 +59,8 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/index.ts"
+        "src/features/gallery/index.ts",
+        "src/shared/container/createAppContainer.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1902,11 +1891,16 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Icon/index.ts",
-        "src/shared/components/ui/Icon/icons/actions.tsx",
-        "src/shared/components/ui/Icon/icons/alerts.tsx",
-        "src/shared/components/ui/Icon/icons/fit-modes.tsx",
-        "src/shared/components/ui/Icon/icons/misc.tsx",
-        "src/shared/components/ui/Icon/icons/navigation.tsx",
+        "src/shared/components/ui/Icon/icons/ArrowAutofitHeight.tsx",
+        "src/shared/components/ui/Icon/icons/ArrowAutofitWidth.tsx",
+        "src/shared/components/ui/Icon/icons/ArrowsMaximize.tsx",
+        "src/shared/components/ui/Icon/icons/ChevronLeft.tsx",
+        "src/shared/components/ui/Icon/icons/ChevronRight.tsx",
+        "src/shared/components/ui/Icon/icons/Download.tsx",
+        "src/shared/components/ui/Icon/icons/FileZip.tsx",
+        "src/shared/components/ui/Icon/icons/Settings.tsx",
+        "src/shared/components/ui/Icon/icons/X.tsx",
+        "src/shared/components/ui/Icon/icons/ZoomIn.tsx",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
@@ -1917,14 +1911,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./actions",
+          "module": "./ArrowAutofitHeight",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/actions.tsx",
+          "resolved": "src/shared/components/ui/Icon/icons/ArrowAutofitHeight.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1934,14 +1928,14 @@
         },
         {
           "dynamic": false,
-          "module": "./alerts",
+          "module": "./ArrowAutofitWidth",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/alerts.tsx",
+          "resolved": "src/shared/components/ui/Icon/icons/ArrowAutofitWidth.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1951,14 +1945,14 @@
         },
         {
           "dynamic": false,
-          "module": "./fit-modes",
+          "module": "./ArrowsMaximize",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/fit-modes.tsx",
+          "resolved": "src/shared/components/ui/Icon/icons/ArrowsMaximize.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1968,14 +1962,14 @@
         },
         {
           "dynamic": false,
-          "module": "./misc",
+          "module": "./ChevronLeft",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/misc.tsx",
+          "resolved": "src/shared/components/ui/Icon/icons/ChevronLeft.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1985,14 +1979,99 @@
         },
         {
           "dynamic": false,
-          "module": "./navigation",
+          "module": "./ChevronRight",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/navigation.tsx",
+          "resolved": "src/shared/components/ui/Icon/icons/ChevronRight.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Download",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/Download.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./FileZip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/FileZip.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Settings",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/Settings.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./X",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/X.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ZoomIn",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/ZoomIn.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2009,7 +2088,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/actions.tsx",
+      "source": "src/shared/components/ui/Icon/icons/ArrowAutofitHeight.tsx",
       "dependencies": [
         {
           "dynamic": false,
@@ -2018,24 +2097,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
             "import"
           ],
           "resolved": "src/shared/components/ui/Icon/Icon.tsx",
@@ -2054,7 +2115,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/alerts.tsx",
+      "source": "src/shared/components/ui/Icon/icons/ArrowAutofitWidth.tsx",
       "dependencies": [
         {
           "dynamic": false,
@@ -2063,24 +2124,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
             "import"
           ],
           "resolved": "src/shared/components/ui/Icon/Icon.tsx",
@@ -2099,7 +2142,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/fit-modes.tsx",
+      "source": "src/shared/components/ui/Icon/icons/ArrowsMaximize.tsx",
       "dependencies": [
         {
           "dynamic": false,
@@ -2108,24 +2151,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
             "import"
           ],
           "resolved": "src/shared/components/ui/Icon/Icon.tsx",
@@ -2144,7 +2169,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/misc.tsx",
+      "source": "src/shared/components/ui/Icon/icons/ChevronLeft.tsx",
       "dependencies": [
         {
           "dynamic": false,
@@ -2153,24 +2178,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
             "import"
           ],
           "resolved": "src/shared/components/ui/Icon/Icon.tsx",
@@ -2189,7 +2196,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/navigation.tsx",
+      "source": "src/shared/components/ui/Icon/icons/ChevronRight.tsx",
       "dependencies": [
         {
           "dynamic": false,
@@ -2207,7 +2214,17 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/icons/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/icons/Download.tsx",
+      "dependencies": [
         {
           "dynamic": false,
           "module": "../Icon",
@@ -2215,7 +2232,114 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/icons/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/icons/FileZip.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/icons/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/icons/Settings.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/icons/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/icons/X.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/icons/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/icons/ZoomIn.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
             "import"
           ],
           "resolved": "src/shared/components/ui/Icon/Icon.tsx",
@@ -3020,6 +3144,75 @@
       "dependents": [
         "src/shared/index.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/container/AppContainer.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/container/createAppContainer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/container/createAppContainer.ts",
+      "dependencies": [
+        {
+          "dynamic": true,
+          "module": "../../features/gallery/GalleryApp",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/gallery/GalleryApp.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../../features/gallery/GalleryRenderer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/features/gallery/GalleryRenderer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./AppContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/container/AppContainer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -6813,23 +7006,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/build/critical-css.ts",
-        "to": "src/build/critical-css.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 185,
-    "totalDependenciesCruised": 288,
+    "totalCruised": 191,
+    "totalDependenciesCruised": 296,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
@@ -7093,7 +7276,8 @@
           "comment": "Shared는 core, infrastructure에만 의존 가능",
           "severity": "error",
           "from": {
-            "path": "^src/shared"
+            "path": "^src/shared",
+            "pathNot": "^src/shared/container/createAppContainer.ts"
           },
           "to": {
             "path": "^src/(features|app)"

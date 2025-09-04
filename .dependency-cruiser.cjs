@@ -36,7 +36,12 @@ module.exports = {
       name: 'no-shared-upward-deps',
       comment: 'Shared는 core, infrastructure에만 의존 가능',
       severity: 'error',
-      from: { path: '^src/shared' },
+      from: {
+        path: '^src/shared',
+        pathNot: [
+          '^src/shared/container/createAppContainer.ts', // 컨테이너는 갤러리 앱 로딩을 위해 예외
+        ],
+      },
       to: { path: '^src/(features|app)' },
     },
 
