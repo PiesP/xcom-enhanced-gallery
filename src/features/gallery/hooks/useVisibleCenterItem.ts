@@ -156,7 +156,7 @@ export function useVisibleCenterItem({
     // centerIndex 변화 시 user-scroll intent인 경우 galleryState.currentIndex 동기화
     const intent = navigationIntentState.value.intent;
     if (intent === 'user-scroll' && centerIndex >= 0) {
-      // P14R4: 적응형 타이머 - 마지막 wheel 간격 기반 동적 지연
+      // Rule: 적응형 타이머 - 마지막 wheel 간격 기반 동적 지연
       const lastUserScrollAt = navigationIntentState.value.lastUserScrollAt;
       const timeSinceLastScroll = Date.now() - lastUserScrollAt;
 

@@ -80,7 +80,7 @@
   }
 }
 
-/* 메인 컨테이너 - 단순화된 갤러리 컨테이너 */
+/* 메인 컨테이너 - 스크롤은 내부 scrollArea에서 담당 */
 .container {
   position: fixed;
   top: 0;
@@ -108,7 +108,7 @@
   visibility: visible;
   transition: var(--xeg-transition-normal);
 
-  /* 이벤트 처리 - 스크롤 이벤트는 항상 허용 */
+  /* 이벤트 처리 - 스크롤 이벤트는 scrollArea에서 처리 */
   cursor: default;
   pointer-events: auto;
 
@@ -116,25 +116,15 @@
   container-type: size;
   container-name: gallery-container;
 
-  /* 스크롤 최적화 */
-  scroll-behavior: smooth;
-  /* overscroll-behavior 제거: 실제 스크롤은 .itemsList에서 발생 */
+  /* 스크롤 차단 - 내부 scrollArea에서만 스크롤 허용 */
+  overflow: hidden;
   /* Scroll bleed 방지: 작은 콘텐츠(이미지 높이 < viewport)에서도 휠/터치 delta가 body로 체이닝되지 않도록 */
   overscroll-behavior: contain;
   /* 수직 스크롤만 허용하여 가로 제스처가 다른 기본 동작(예: 브라우저 탐색 제스처)과 충돌하지 않게 함 */
   touch-action: pan-y;
 
-  /* 갤러리 내부 스크롤만 허용 */
-
-  /* 프로덕션 빌드 호환성을 위해 CSS 커스텀 프로퍼티 제거 */
-
-  /* 최소한의 레이아웃 규칙 — 필요한 경우 기존 모듈에 병합하세요 */
+  /* 최소한의 레이아웃 규칙 */
   min-height: 100vh;
-  overflow-y: scroll;
-  display: flex;
-  flex-direction: column;
-  /* 모바일/데스크톱에서 일관된 렌더링을 위해 기본 축소방지 */
-  -webkit-overflow-scrolling: touch;
 }
 
 /* 초기 툴바 표시 상태 (3초간) - 가시성 강화 */
@@ -374,7 +364,7 @@
   box-sizing: border-box;
 }
 
-/* 내부 스크롤 영역 (overlay 분리 구조) */
+/* 내부 스크롤 영역 - 실제 스크롤 담당 */
 .scrollArea {
   position: relative;
   overflow-y: auto;
@@ -383,8 +373,33 @@
   width: 100%;
   flex: 1 1 auto;
   display: block;
-  /* 휠 이벤트 자연 처리 보조 */
+
+  /* 스크롤 동작 최적화 */
+  scroll-behavior: smooth;
   overscroll-behavior: contain;
+  touch-action: pan-y;
+
+  /* 스크롤바 스타일링 */
+  scrollbar-gutter: stable;
+}
+
+/* 웹킷 스크롤바 스타일 - scrollArea에서 담당 */
+.scrollArea::-webkit-scrollbar {
+  width: var(--xeg-scrollbar-width); /* 8px를 토큰으로 교체 */
+}
+
+.scrollArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+  background: var(--xeg-neutral-300);
+  border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
+  transition: background-color 0.2s ease;
+}
+
+.scrollArea::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-neutral-400);
 }
 
 /* 갤러리 아이템 기본 스타일 - 포커스 스크롤에 최적화 */
@@ -413,58 +428,25 @@
 
 /* focusGlow 애니메이션 제거 - 2중 테두리 방지 */
 
-/* 아이템 리스트 - 네이티브 스크롤만 사용 */
+/* 아이템 리스트 - display:contents로 논리적 평탄화 */
 .itemsList {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-
   /* 성능 최적화 */
   contain: layout style paint;
   transform: translateZ(0);
   will-change: scroll-position;
   content-visibility: auto;
 
-  /* 스크롤바 스타일링 */
-  scrollbar-gutter: stable;
-
-  /* 스크롤 스냅 (선택적) */
-  scroll-snap-type: y proximity;
-
   /* 이벤트 처리 */
   pointer-events: auto;
-
-  /* 터치 액션 최적화 */
-  touch-action: pan-y;
 
   /* 컨테이너 쿼리 */
   container-type: size;
   container-name: items-list;
 
-  /* 리스트가 늘어나도록 해서 작은 이미지의 빈 공간을 채우게 함 */
+  /* 레이아웃 */
   flex: 1 1 auto;
   padding-bottom: 48px;
   box-sizing: border-box;
-}
-
-/* 웹킷 스크롤바 스타일 */
-.itemsList::-webkit-scrollbar {
-  width: var(--xeg-scrollbar-width); /* 8px를 토큰으로 교체 */
-}
-
-.itemsList::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.itemsList::-webkit-scrollbar-thumb {
-  background: var(--xeg-neutral-300);
-  border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
-  transition: background-color 0.2s ease;
-}
-
-.itemsList::-webkit-scrollbar-thumb:hover {
-  background: var(--xeg-neutral-400);
 }
 
 /* 애니메이션 - GPU 가속 */
@@ -566,12 +548,11 @@
 
 /* 접근성 - 모션 감소 지원 */
 @media (prefers-reduced-motion: reduce) {
-  .itemsList {
+  .scrollArea {
     scroll-behavior: auto;
-    /* overscroll-behavior는 기본 itemsList 스타일에서 처리 */
   }
 
-  .itemsList {
+  .scrollArea {
     will-change: auto;
     transform: none;
   }

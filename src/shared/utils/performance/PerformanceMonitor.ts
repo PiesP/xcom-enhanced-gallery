@@ -300,6 +300,38 @@ export class PerformanceMonitor {
    * 스크롤 성능 측정
    */
   measureScrollPerformance(): void {
+    // SR 리팩토링 플래그 활성 시 ScrollCoordinator 기반으로 전환
+    try {
+      const { FEATURE_SCROLL_REFACTORED } = require('@/constants');
+      if (FEATURE_SCROLL_REFACTORED) {
+        const { getScrollCoordinator } = require('@shared/scroll');
+        const coord = getScrollCoordinator();
+        coord.attach();
+        let lastY = coord.position.value.y;
+        let lastTime = performance.now();
+        let samples = 0;
+        let accum = 0;
+        const unsubscribe = coord.subscribe(snap => {
+          const now = performance.now();
+          const dy = Math.abs(snap.y - lastY);
+          if (dy > 0) {
+            accum += now - lastTime; // 프레임 간격 누적
+            samples++;
+            lastY = snap.y;
+            lastTime = now;
+          }
+        });
+        setTimeout(() => {
+          unsubscribe();
+          if (samples > 0) {
+            this.metrics.scrollPerformance = accum / samples;
+          }
+        }, 10000);
+        return;
+      }
+    } catch {
+      // require 실패 시 레거시 경로 진행
+    }
     let lastScrollTime = 0;
     let frameCount = 0;
     let totalTime = 0;

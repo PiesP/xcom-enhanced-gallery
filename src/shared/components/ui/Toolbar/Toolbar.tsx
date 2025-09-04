@@ -14,6 +14,8 @@ import {
   getToolbarClassName,
 } from '@shared/hooks/useToolbarState';
 import { throttleScroll } from '@shared/utils';
+import { FEATURE_SCROLL_REFACTORED } from '@/constants';
+import { getScrollCoordinator } from '@shared/scroll';
 import { ComponentStandards } from '../StandardProps';
 import {
   ChevronLeft,
@@ -177,18 +179,37 @@ function ToolbarCore({
     // 초기 감지
     detectBackgroundBrightness();
 
-    // 스크롤 시 재감지 - RAF throttle로 성능 최적화
+    // ScrollCoordinator 기반 경로 (FEATURE_SCROLL_REFACTORED)
+    if (FEATURE_SCROLL_REFACTORED) {
+      try {
+        const coord = getScrollCoordinator();
+        coord.attach();
+        // Coordinator 는 rAF batching 내장 → 직접 throttle 불필요
+        const unsubscribe = coord.subscribe(() => {
+          // 렌더 비용 감소: rAF 안에서 brightness 재평가
+          requestAnimationFrame(detectBackgroundBrightness);
+        });
+        // 초기 호출 (attach 직후 snapshot 기준)
+        requestAnimationFrame(detectBackgroundBrightness);
+        return (): void => {
+          unsubscribe();
+          // detach 는 전역 singleton 공유 고려로 여기서 호출하지 않음
+        };
+      } catch {
+        // 실패 시 레거시 경로 fallback
+      }
+    }
+    // 레거시 window scroll 경로 (플래그 OFF)
     const throttledDetect = throttleScroll(() => {
       requestAnimationFrame(detectBackgroundBrightness);
-    }); // RAF 기반으로 최적화된 스크롤 감지
-
+    });
     if (typeof window !== 'undefined') {
       window.addEventListener('scroll', throttledDetect, { passive: true });
       return (): void => {
         window.removeEventListener('scroll', throttledDetect);
       };
     }
-    return (): void => {}; // cleanup 함수 반환
+    return (): void => {};
   }, []);
 
   // 네비게이션 가능 여부 계산

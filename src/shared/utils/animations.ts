@@ -77,20 +77,34 @@ export const animateParallel = async (
 };
 
 // Motion One 특수 기능들을 간소화된 버전으로 교체
+import { FEATURE_SCROLL_REFACTORED } from '@/constants';
+import { getScrollCoordinator } from '@shared/scroll';
+
 export const setupScrollAnimation = (
   onScroll: (info: { scrollY: number; progress: number }) => void,
   container?: Element | null
 ): (() => void) => {
+  if (FEATURE_SCROLL_REFACTORED) {
+    const coord = getScrollCoordinator();
+    coord.attach();
+    const unsubscribe = coord.subscribe(snap => {
+      onScroll({ scrollY: snap.y, progress: coord.progress.value });
+    });
+    // 초기 호출
+    onScroll({ scrollY: coord.position.value.y, progress: coord.progress.value });
+    return () => {
+      unsubscribe();
+      // detach 는 전역 singleton 공유 고려 → 여기서 호출하지 않음
+    };
+  }
   const handleScroll = () => {
     const scrollY = window.scrollY;
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
     const progress = Math.min(scrollY / maxScroll, 1);
     onScroll({ scrollY, progress });
   };
-
   const target = container || window;
   target.addEventListener('scroll', handleScroll, { passive: true });
-
   return () => {
     target.removeEventListener('scroll', handleScroll);
   };

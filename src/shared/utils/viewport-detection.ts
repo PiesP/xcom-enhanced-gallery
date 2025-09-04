@@ -8,6 +8,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { FEATURE_SCROLL_REFACTORED } from '@/constants';
+import { getScrollCoordinator } from '@shared/scroll';
 
 export interface ViewportDetectorOptions {
   rootMargin?: string;
@@ -182,10 +184,17 @@ export function isElementInViewport(element: HTMLElement, rootMargin = '0px'): P
 /**
  * 스크롤 idle 감지
  */
+/**
+ * @deprecated Scroll 시스템 리팩토링(SR)으로 ScrollCoordinator.idle 신호를 사용하세요.
+ * Feature Flag (FEATURE_SCROLL_REFACTORED) 활성 시 Coordinator 기반 구현으로 대체됩니다.
+ * 기존 구현은 플래그 OFF 환경(레거시)에서만 scroll 이벤트+timeout 전략을 유지합니다.
+ */
 export class ScrollIdleDetector {
   private scrollTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly idleDelay: number;
   private readonly callback: () => void;
+  private coordUnsub: (() => void) | null = null;
+  private coordAttached = false;
 
   constructor(callback: () => void, idleDelay = 150) {
     this.callback = callback;
@@ -194,35 +203,66 @@ export class ScrollIdleDetector {
   }
 
   start(): void {
+    if (FEATURE_SCROLL_REFACTORED) {
+      if (this.coordUnsub) return; // already active
+      const coord = getScrollCoordinator({ idleDelay: this.idleDelay });
+      if (!this.coordAttached) {
+        coord.attach();
+        this.coordAttached = true;
+      }
+      let prev = coord.idle.value;
+      this.coordUnsub = coord.idle.subscribe(v => {
+        // transition (false -> true) 시점에만 콜백
+        if (!prev && v) {
+          try {
+            this.callback();
+          } catch (e) {
+            logger.warn('ScrollIdleDetector (coordinator) callback error', e);
+          }
+        }
+        prev = v;
+      });
+      logger.debug('ScrollIdleDetector(신규/Coordinator) 시작:', `${this.idleDelay}ms`);
+      return;
+    }
     if (typeof globalThis.addEventListener === 'function') {
-      globalThis.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
-      logger.debug('ScrollIdleDetector 시작:', `${this.idleDelay}ms`);
+      globalThis.addEventListener('scroll', this.handleScroll, { passive: true });
+      logger.debug('ScrollIdleDetector(legacy) 시작:', `${this.idleDelay}ms`);
     }
   }
 
   stop(): void {
-    if (typeof globalThis.removeEventListener === 'function') {
-      globalThis.removeEventListener('scroll', this.handleScroll.bind(this));
+    if (FEATURE_SCROLL_REFACTORED) {
+      if (this.coordUnsub) {
+        this.coordUnsub();
+        this.coordUnsub = null;
+      }
+      logger.debug('ScrollIdleDetector(신규/Coordinator) 중단');
+      return;
     }
-
+    if (typeof globalThis.removeEventListener === 'function') {
+      globalThis.removeEventListener('scroll', this.handleScroll as EventListener);
+    }
     if (this.scrollTimer) {
       clearTimeout(this.scrollTimer);
       this.scrollTimer = null;
     }
-
-    logger.debug('ScrollIdleDetector 중단');
+    logger.debug('ScrollIdleDetector(legacy) 중단');
   }
 
-  private handleScroll(): void {
+  private readonly handleScroll = (): void => {
     if (this.scrollTimer) {
       clearTimeout(this.scrollTimer);
     }
-
     this.scrollTimer = setTimeout(() => {
-      this.callback();
+      try {
+        this.callback();
+      } catch (e) {
+        logger.warn('ScrollIdleDetector legacy callback error', e);
+      }
       this.scrollTimer = null;
     }, this.idleDelay);
-  }
+  };
 }
 
 /**

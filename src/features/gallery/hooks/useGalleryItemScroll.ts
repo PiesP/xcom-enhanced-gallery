@@ -139,7 +139,7 @@ export function useGalleryItemScroll(
         // v2: itemsRootRef 가 전달되었다면 해당 요소의 children 을 우선 사용
         const root = itemsRootRef?.current ?? container;
 
-        // P14R1: 안정적인 요소 탐색 - children index 방식 + querySelector fallback
+        // Rule: 안정적인 요소 탐색 - children index 방식 + querySelector fallback
         let targetElement: HTMLElement | null = null;
 
         // 1차: children[index] 방식 (기존)
@@ -242,14 +242,14 @@ export function useGalleryItemScroll(
               'FocusSync.ItemScroll: smooth auto-scroll cancelled by user intent',
               { index }
             );
-            // P14R3: 취소 시에는 resetIntent 하지 않음 (user-scroll 유지)
+            // Rule: 취소 시에는 resetIntent 하지 않음 (user-scroll 유지)
           } else {
-            // P14R3: 정상 완료 시에만 resetIntent
+            // Rule: 정상 완료 시에만 resetIntent
             resetIntent();
           }
           activeSmoothRef.current = null;
         } else {
-          // P14R3: auto behavior 완료 시에도 resetIntent
+          // Rule: auto behavior 완료 시에도 resetIntent
           resetIntent();
         }
       } catch (error) {
@@ -352,7 +352,7 @@ export function useGalleryItemScroll(
       return;
     }
 
-    // P14R2: toolbar intent는 즉시 실행, 기타는 debounce 적용
+    // Rule: toolbar intent는 즉시 실행, 기타는 debounce 적용
     const isToolbarIntent = intent === 'toolbar-prev' || intent === 'toolbar-next';
     const delay = isToolbarIntent ? 0 : debounceDelay;
 
@@ -386,7 +386,7 @@ export function useGalleryItemScroll(
         return;
       }
 
-      // P14R3: user-scroll만 auto-scroll 취소 (기타 intent 전이는 허용)
+      // Rule: user-scroll만 auto-scroll 취소 (기타 intent 전이는 허용)
       if (execIntent === 'user-scroll') {
         dedupLog(
           'debug',

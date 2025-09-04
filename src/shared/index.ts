@@ -61,3 +61,7 @@ export type {
   ToastType,
   ViewMode,
 } from './types';
+
+// Scroll Refactor (SR-2 Skeleton)
+export { getScrollCoordinator } from './scroll';
+export type { ScrollCoordinatorAPI, ScrollSnapshot, ScrollDirection } from './scroll';

@@ -161,7 +161,7 @@ describe('Phase 4.2: 에러 처리 통일', () => {
 
       const mockFailingInit = vi.fn().mockRejectedValueOnce(new Error('Tracked error'));
 
-      await initManager.safeInit(mockFailingInit, InitializationPhase.APP);
+      await initManager.safeInit(mockFailingInit, InitializationPhase.STYLES);
 
       // GREEN: 에러가 상태 리포트에 추적됨
       const report = initManager.getStatusReport();

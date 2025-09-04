@@ -39,8 +39,8 @@ import {
   setToolbarIntent,
   resetIntent,
 } from '@shared/state/signals/navigation-intent.signals';
-// CH2 REFACTOR 준비: viewRoot(gallery)와 itemsList 통합 후 배경 클릭 식별 유틸을 별도로 분리
-// 임시 유틸: 향후 test/refactoring/gallery/container-depth-ch2-red.spec.ts GREEN 전환 시 사용
+// DOM 구조: containerRef > [hoverZone, toolbarWrapper, scrollArea > itemsList(display:contents) > items]
+// 논리적 평탄화(display:contents) 전략을 사용하여 레이아웃 depth를 최소화
 function isBackgroundClick(target: EventTarget | null, currentTarget: EventTarget | null): boolean {
   if (!target || !currentTarget) return false;
   if (!(target instanceof HTMLElement) || !(currentTarget instanceof HTMLElement)) return false;
@@ -151,11 +151,7 @@ function VerticalGalleryViewCore({
   }, [isVisible, domReadySignal]); // isVisible이 변경될 때마다 DOM 요소 확인
 
   // useToolbarPositionBased 훅을 사용하여 간소화된 위치 기반 툴바 제어
-  const {
-    isVisible: _toolbarVisible,
-    show: _showToolbar,
-    hide: _hideToolbar,
-  } = useToolbarPositionBased({
+  useToolbarPositionBased({
     toolbarElement: domReady ? toolbarWrapperRef.current : null,
     hoverZoneElement: domReady ? toolbarHoverZoneRef.current : null,
     enabled: isVisible && mediaItems.length > 0 && domReady,
@@ -171,12 +167,7 @@ function VerticalGalleryViewCore({
   const focusedIndexSignal = signal<number>(currentIndex);
   const focusedIndex = focusedIndexSignal.value;
 
-  // Phase 8 GREEN: signal로 자동 스크롤 상태 관리 현대화 - 중복 스크롤 방지
-  const lastAutoScrolledIndexSignal = signal<number>(-1);
-  const lastAutoScrolledIndex = lastAutoScrolledIndexSignal.value;
-
-  // 강제 렌더링 상태 관리 (더 이상 사용하지 않음)
-  const [forceVisibleItems] = useState<Set<number>>(new Set());
+  // 자동 스크롤 상태는 useGalleryItemScroll 훅 내부에서 추적 → 로컬 시그널 제거
 
   // 현재 이미지 요소 추적을 위한 ref
   const currentImageElementRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null);
@@ -192,8 +183,7 @@ function VerticalGalleryViewCore({
   // 포커스된 인덱스와 현재 인덱스 동기화 - signal 방식
   useEffect(() => {
     focusedIndexSignal.value = currentIndex;
-    // 인덱스가 변경되면 자동 스크롤 상태 초기화
-    lastAutoScrolledIndexSignal.value = -1;
+    // auto-scroll 상태 초기화 로직 제거: 훅 내부에서 중복 방지 처리
 
     // 현재 활성 이미지 요소 업데이트
     if (containerRef.current) {
@@ -209,7 +199,7 @@ function VerticalGalleryViewCore({
         }
       }
     }
-  }, [currentIndex, focusedIndexSignal, lastAutoScrolledIndexSignal, updateCurrentImageElement]);
+  }, [currentIndex, focusedIndexSignal, updateCurrentImageElement]);
 
   // 메모이제이션 최적화
   const memoizedMediaItems = useMemo(() => {
@@ -418,12 +408,18 @@ function VerticalGalleryViewCore({
   >([]);
 
   // 갤러리 아이템 스크롤 (자동 스크롤 처리)
-  useGalleryItemScroll(containerRef, currentIndex, mediaItems.length, {
-    enabled: true,
-    behavior: 'smooth',
-    block: 'start',
-    debounceDelay: 100,
-  });
+  useGalleryItemScroll(
+    scrollAreaRef as unknown as { current: HTMLElement | null },
+    currentIndex,
+    mediaItems.length,
+    {
+      enabled: true,
+      behavior: 'smooth',
+      block: 'start',
+      debounceDelay: 100,
+      itemsRootRef: contentRef as unknown as { current: HTMLElement | null },
+    }
+  );
 
   // 갤러리 정리
   useGalleryCleanup({
@@ -442,78 +438,14 @@ function VerticalGalleryViewCore({
   // 미디어 로드 완료 핸들러 - 자동 스크롤 로직 적용
   const handleMediaLoad = useCallback(
     (mediaId: string, index: number) => {
-      logger.debug('VerticalGalleryView: 미디어 로드 완료', { mediaId, index });
-
-      // 현재 선택된 인덱스와 일치하고, 아직 자동 스크롤하지 않은 경우에만 스크롤
-      if (index === currentIndex && index !== lastAutoScrolledIndex) {
-        // 이미지/비디오가 완전히 로드되었는지 확인
-        // CH2: items-list wrapper 제거 → 컨테이너 직속 children 사용
-        const targetElement = containerRef.current?.children[index] as HTMLElement;
-
-        if (targetElement) {
-          // 이미지 또는 비디오 요소 찾기
-          const mediaElement = targetElement.querySelector('img, video') as
-            | HTMLImageElement
-            | HTMLVideoElement;
-
-          let isFullyLoaded = false;
-
-          if (mediaElement) {
-            if (
-              typeof HTMLImageElement !== 'undefined' &&
-              mediaElement instanceof HTMLImageElement
-            ) {
-              // 이미지의 경우 complete 속성 확인
-              isFullyLoaded = mediaElement.complete;
-            } else if (
-              typeof HTMLVideoElement !== 'undefined' &&
-              mediaElement instanceof HTMLVideoElement
-            ) {
-              // 비디오의 경우 readyState 확인 (1 이상이면 메타데이터 로드 완료)
-              isFullyLoaded = mediaElement.readyState >= 1;
-            }
-          } else {
-            // 미디어 요소를 찾을 수 없는 경우 즉시 스크롤
-            isFullyLoaded = true;
-          }
-
-          if (isFullyLoaded) {
-            // 상단 정렬로 부드럽게 스크롤
-            targetElement.scrollIntoView({
-              block: 'start',
-              behavior: 'smooth',
-            });
-
-            // 스크롤 완료 상태 업데이트 - useSignal 방식
-            lastAutoScrolledIndexSignal.value = index;
-
-            logger.debug('VerticalGalleryView: 자동 스크롤 실행', {
-              index,
-              mediaType: mediaElement instanceof HTMLImageElement ? 'image' : 'video',
-            });
-          } else {
-            // 아직 완전히 로드되지 않은 경우, 일회성 로드 이벤트 리스너 연결
-            if (mediaElement) {
-              const handleLoadComplete = () => {
-                targetElement.scrollIntoView({
-                  block: 'start',
-                  behavior: 'smooth',
-                });
-                lastAutoScrolledIndexSignal.value = index;
-                logger.debug('VerticalGalleryView: 지연된 자동 스크롤 실행', { index });
-              };
-
-              if (mediaElement instanceof HTMLImageElement) {
-                mediaElement.addEventListener('load', handleLoadComplete, { once: true });
-              } else if (mediaElement instanceof HTMLVideoElement) {
-                mediaElement.addEventListener('loadeddata', handleLoadComplete, { once: true });
-              }
-            }
-          }
-        }
-      }
+      // 로드 로그만 남기고 자동 스크롤은 useGalleryItemScroll 로 위임
+      logger.debug('VerticalGalleryView: 미디어 로드 완료 (auto-scroll 훅 위임)', {
+        mediaId,
+        index,
+        currentIndex,
+      });
     },
-    [currentIndex, lastAutoScrolledIndex, containerRef]
+    [currentIndex]
   );
 
   // 미디어 아이템 클릭 핸들러 - 자동 스크롤 상태 초기화 추가
@@ -521,7 +453,6 @@ function VerticalGalleryViewCore({
     (index: number) => {
       if (index >= 0 && index < mediaItems.length && index !== currentIndex) {
         // 새로운 아이템으로 네비게이션 시 자동 스크롤 상태 초기화 - useSignal 방식
-        lastAutoScrolledIndexSignal.value = -1;
         navigateToItem(index);
         logger.debug('VerticalGalleryView: 미디어 아이템 클릭으로 네비게이션', { index });
       }
@@ -621,14 +552,14 @@ function VerticalGalleryViewCore({
   // useToolbarPositionBased 훅이 모든 툴바 이벤트 처리를 담당
   // 중복된 이벤트 핸들러 제거 완료
 
-  // 인라인 갤러리 스타일 (뷰포트 전체, 내부 스크롤 허용)
+  // 인라인 갤러리 스타일 (뷰포트 전체, 스크롤은 내부 scrollArea에서 담당)
   const galleryStyle: GalleryStyle = {
     position: 'fixed',
     top: 0,
     left: 0,
     width: '100vw',
     minHeight: '100vh',
-    overflowY: 'auto',
+    overflowY: 'hidden', // 스크롤은 scrollArea에서만 담당
     zIndex: 9999,
     backgroundColor: 'rgba(0,0,0,0.95)',
   };
@@ -676,10 +607,9 @@ function VerticalGalleryViewCore({
     debugLabel: 'vertical-gallery',
   });
 
-  // CH2 GREEN: viewRoot(data-xeg-role="gallery") 와 itemsList(data-xeg-role="items-list") 통합
-  // 기존 depth: body > #xeg-gallery-root > gallery(viewRoot) > items-list > item (5)
-  // 변경 후:    body > #xeg-gallery-root > gallery(items container) > item (4)
-  // 구현: 단일 gallery 컨테이너 내부에서 아이템을 직접 렌더 (items-list wrapper 제거)
+  // CH2 구조: scrollArea 내부에 itemsList(display:contents)로 논리적 평탄화 적용
+  // 실제 DOM: gallery(container) > scrollArea > itemsList(display:contents) > items
+  // 이 구조는 완전 평탄화가 아닌 display:contents를 활용한 논리적 평탄화 전략임
   return (
     <div
       ref={containerRef}
@@ -743,7 +673,6 @@ function VerticalGalleryViewCore({
                 index={actualIndex}
                 isActive={actualIndex === currentIndex}
                 isFocused={actualIndex === focusedIndex}
-                forceVisible={forceVisibleItems.has(actualIndex)}
                 fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
                 onMediaLoad={handleMediaLoad}

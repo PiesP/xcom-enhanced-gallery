@@ -424,7 +424,7 @@ beforeEach(async () => {
 
   // Vendor 초기화 - 모든 테스트에서 사용할 수 있도록
   try {
-    const { initializeVendors } = await import('../src/shared/external/vendors/vendor-api.js');
+    const { initializeVendors } = await import('../src/shared/external/vendors/index.js');
     await initializeVendors();
   } catch {
     // vendor 초기화 실패는 무시하고 계속 진행

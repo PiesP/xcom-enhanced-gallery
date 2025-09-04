@@ -6,12 +6,11 @@
 import { logger } from '@shared/logging';
 
 /**
- * 초기화 단계 정의
+ * 초기화 단계 정의 (APP 단계 제거)
  */
 export enum InitializationPhase {
   VENDOR = 'vendor',
   STYLES = 'styles',
-  APP = 'app',
 }
 
 /**
@@ -72,7 +71,7 @@ export class InitializationManager {
   }
 
   /**
-   * 의존성 기반 초기화 시퀀스
+   * 의존성 기반 초기화 시퀀스 (APP 단계 제거)
    */
   async initializeSequentially(): Promise<boolean> {
     const sequence = [
@@ -85,11 +84,6 @@ export class InitializationManager {
         phase: InitializationPhase.STYLES,
         init: this.initializeStyles.bind(this),
         dependencies: [InitializationPhase.VENDOR],
-      },
-      {
-        phase: InitializationPhase.APP,
-        init: this.initializeApp.bind(this),
-        dependencies: [InitializationPhase.VENDOR, InitializationPhase.STYLES],
       },
     ];
 
@@ -188,17 +182,5 @@ export class InitializationManager {
   private async initializeStyles(): Promise<void> {
     const { initializeNamespacedStyles } = await import('@shared/styles/namespaced-styles');
     initializeNamespacedStyles();
-  }
-
-  /**
-   * 앱 초기화
-   */
-  private async initializeApp(): Promise<void> {
-    // 서비스 초기화
-    const { registerCoreServices } = await import('@shared/services/service-initialization');
-    await registerCoreServices();
-
-    // 기본 설정
-    logger.info('App initialization completed');
   }
 }

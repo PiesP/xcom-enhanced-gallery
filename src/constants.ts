@@ -561,6 +561,27 @@ export const FEATURE_STORE_SIGNAL_FASTPATH: boolean = (() => {
 })();
 
 /**
+ * Scroll System Refactor 플래그 (SR 단계 진행용)
+ * 기본값: true (SR-6 완료로 활성화)
+ * 강제 오버라이드: globalThis.__XEG_FORCE_FLAGS__.FEATURE_SCROLL_REFACTORED
+ * env: process.env.FEATURE_SCROLL_REFACTORED
+ */
+export const FEATURE_SCROLL_REFACTORED: boolean = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const forced = (globalThis as any)?.__XEG_FORCE_FLAGS__?.FEATURE_SCROLL_REFACTORED;
+    if (typeof forced === 'boolean') return forced;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = (process as any)?.env?.FEATURE_SCROLL_REFACTORED;
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return true; // SR-6 완료: 기본값 ON
+  } catch {
+    return true;
+  }
+})();
+
+/**
  * (요청 명명) USE_SIGNAL_FASTPATH – selector 최적화 실험용 별칭.
  * 내부적으로 FEATURE_STORE_SIGNAL_FASTPATH 와 동일.
  */

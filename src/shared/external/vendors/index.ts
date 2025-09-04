@@ -46,23 +46,7 @@ export type {
   PreactCompat,
 } from './vendor-types';
 
-// 🔄 기존 동적 import API 호환성 (deprecated, 점진적 마이그레이션용)
-export {
-  initializeVendors as initializeVendorsLegacy,
-  getFflate as getFflateLegacy,
-  getPreact as getPreactLegacy,
-  getPreactHooks as getPreactHooksLegacy,
-  getPreactSignals as getPreactSignalsLegacy,
-  getPreactCompat as getPreactCompatLegacy,
-  getNativeDownload as getNativeDownloadLegacy,
-  validateVendors as validateVendorsLegacy,
-  getVendorVersions as getVendorVersionsLegacy,
-  cleanupVendors as cleanupVendorsLegacy,
-  isVendorsInitialized as isVendorsInitializedLegacy,
-  getVendorInitializationReport as getVendorInitializationReportLegacy,
-  getVendorStatuses as getVendorStatusesLegacy,
-  isVendorInitialized as isVendorInitializedLegacy,
-} from './vendor-api';
+// Legacy API removed - use safe API functions directly
 
 // 🔧 고급 사용자용 직접 접근
 export { StaticVendorManager } from './vendor-manager-static';
