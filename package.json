@@ -19,6 +19,7 @@
     "build:copy:prod": "node -e \"const fs=require('fs'); fs.readdirSync('dist/prod').forEach(f=>fs.copyFileSync(`dist/prod/${f}`,`dist/${f}`))\"",
     "clean": "rimraf dist",
     "test": "vitest run",
+    "test:ci": "vitest run --coverage --reporter=verbose",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest run --ui",

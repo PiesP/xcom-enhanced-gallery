@@ -5,17 +5,32 @@
 코드를 **간결 / 현대적 / 일관 / 재실행 안전** 상태로 진화시키되, 기능 회귀 없이
 TDD 사이클(RED→GREEN→REFACTOR)로 점진 적용.
 
-## 2. ✅ 완료 항목 (Wave 0 + Wave 1)
+## Wave 진행 상황
 
-- **Vendor Safe Getter**: 정적 import + deprecated API 경고 추적 시스템 구현
-- **Error 시스템**: `AppError` 클래스 + 표준화된 에러 코드/심각도 분류 완료
-- **서비스 별칭**: `CoreService.registerAlias()` + 중복 등록을 alias로 변환 완료
-- **Import 경로 일관화**: 80% 이상 상대경로를 alias로 변환 완료 (src/↔test 간)
-- **Codemod 스크립트**: `scripts/codemod-import-alias.mjs` 동적 변환 로직 완료
-- **빌드 검증**: prebuild + build:all 성공 확인
-- **TDD 가드 테스트**: console 사용/path alias 검증 테스트 추가
+### Wave 0: 기반 시스템 구축 ✅ 완료
 
-## 3. 🚀 Wave 2 목표 (Quality & DX)
+- **vendor API 추적 시스템**: deprecated API 사용 로깅 및 추적 완료
+- **에러 처리 표준화**: logger 기반 에러 처리 시스템 완료
+- **서비스 별칭 시스템**: 중복 서비스 키 문제 해결을 위한 alias 시스템 완료
+- **코드 변환 도구**: import path 변환을 위한 codemod 스크립트 완료
+
+### Wave 1: 아키텍처 기반 구축 ✅ 완료 (2024년 12월)
+
+- **Import Path 정규화**: 상대 경로를 @shared/@features alias로 변환 완료
+- **서비스 키 정리**: 중복 서비스 등록을 alias 시스템으로 변환 완료
+- **빌드 검증**: prebuild + build:all 전체 파이프라인 검증 완료
+- **테스트 환경 개선**: ESLint 설정 및 테스트 파일 호환성 개선 완료
+- **Git 커밋**: "refactor: complete Wave 1 architecture foundation" (4639405)
+
+**완료 검증**:
+
+- ✅ 타입스크립트 컴파일: 에러 없음
+- ✅ ESLint 검사: 모든 규칙 통과
+- ✅ 빌드 파이프라인: dev/prod 빌드 성공
+- ✅ 테스트 실행: 핵심 테스트 통과
+- ✅ 커밋 완료: 모든 변경사항 커밋됨
+
+### Wave 2: 품질 & DX 향상 🔄 진행 예정
 
 | 작업                     | 상태     | 우선순위 |
 | ------------------------ | -------- | -------- |

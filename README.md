@@ -185,7 +185,66 @@ npm test
 
 더 자세한 개발 가이드는 [`docs/`](docs/) 디렉토리의 문서를 참고하세요.
 
-## 📞 지원 및 피드백
+## � API 및 사용법
+
+### 🔌 Core API
+
+**X.com Enhanced Gallery**는 모듈화된 API를 제공합니다:
+
+#### Gallery API
+
+```javascript
+// 갤러리 초기화
+import { GalleryManager } from '@features/gallery';
+const gallery = new GalleryManager();
+await gallery.initialize();
+
+// 미디어 로딩
+import { MediaLoader } from '@shared/media';
+const loader = new MediaLoader();
+const mediaInfo = await loader.loadMediaInfo(tweetElement);
+```
+
+#### Download API
+
+```javascript
+// 단일 다운로드
+import { DownloadManager } from '@features/download';
+const downloader = new DownloadManager();
+await downloader.downloadSingle(mediaUrl, filename);
+
+// 일괄 다운로드
+await downloader.downloadBatch(mediaList, 'archive.zip');
+```
+
+#### 설정 API
+
+```javascript
+// 설정 관리
+import { SettingsManager } from '@features/settings';
+const settings = new SettingsManager();
+
+// 설정 조회
+const autoDownload = settings.get('autoDownload');
+const theme = settings.get('theme');
+
+// 설정 변경
+settings.set('autoDownload', true);
+settings.set('theme', 'dark');
+```
+
+### 🛠️ 확장 가능한 아키텍처
+
+프로젝트는 Clean Architecture 원칙에 따라 구성되어 있습니다:
+
+- **`@features/`**: 비즈니스 로직 (Gallery, Download, Settings)
+- **`@shared/`**: 공통 유틸리티 (Media, DOM, Services)
+- **Vendor System**: 외부 라이브러리 안전한 래핑
+
+자세한 아키텍처 가이드는
+[`docs/CODING_GUIDELINES.md`](docs/CODING_GUIDELINES.md)를 참조하세요.
+
+## �📞 지원 및 피드백
 
 - **🐛 버그 신고**:
   [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)

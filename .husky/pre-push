@@ -1,18 +1,55 @@
 #!/usr/bin/env sh
 
 # =============================================================================
-# Pre-push Hook for X.com Enhanced Gallery
+# Pre-push Hook for X.com Enhanced Gallery (Wave 2 Enhanced)
 # =============================================================================
 # Ensures code quality and stability before pushing to remote repositories.
+# Wave 2: Enhanced with comprehensive validation pipeline
 # =============================================================================
 
 echo "🧪 Pre-push validation starting..."
 
-# Run comprehensive quality check
-echo "🔍 Running quality checks..."
-npm run quality || {
-  echo "❌ Quality check failed"
+# 1. 전체 테스트 스위트 실행
+echo "🧪 Running full test suite..."
+npm run test:ci || {
+  echo "❌ Tests failed. Push aborted."
   exit 1
 }
 
+# 2. 타입 체크
+echo "📋 Running type check..."
+npm run typecheck || {
+  echo "❌ Type check failed. Push aborted."
+  exit 1
+}
+
+# 3. 린트 검사
+echo "� Running lint check..."
+npm run lint || {
+  echo "❌ Lint check failed. Push aborted."
+  exit 1
+}
+
+# 4. 빌드 검증
+echo "🏗️ Running build validation..."
+npm run build:all || {
+  echo "❌ Build failed. Push aborted."
+  exit 1
+}
+
+# 5. 번들 크기 검증 (Wave 2 추가)
+echo "📊 Checking bundle size..."
+if command -v node >/dev/null 2>&1; then
+  node scripts/build-metrics.js --check-size || {
+    echo "⚠️ Bundle size warning (not blocking)"
+  }
+fi
+
+# 6. Coverage 검증 (Wave 2 추가)
+echo "📈 Checking test coverage..."
+npm run test:coverage || {
+  echo "⚠️ Coverage check warning (not blocking)"
+}
+
 echo "✅ Pre-push validation completed successfully!"
+echo "🚀 Ready to push!"

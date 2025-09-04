@@ -1,7 +1,7 @@
 /**
- * @fileoverview 단순화된 네임스페이스 스타일 시스템
- * @description 복잡한 클래스 기반 NamespacedDesignSystem을 단순 함수로 대체
- * @version 2.0.0 - Phase 1 단순화
+ * @fileoverview 네임스페이스 스타일 시스템 (Wave 2: CSS 레이어 지원)
+ * @description CSS @layer 지시문을 활용한 스타일 우선순위 관리
+ * @version 2.1.0 - Wave 2 CSS 레이어 시스템
  */
 
 import { logger } from '@shared/logging';
@@ -11,126 +11,144 @@ import { STYLE_ID, NAMESPACE } from './constants';
  * CSS 생성 관련 타입 정의
  */
 type CSSString = string;
-type CSSSelector = string;
-type ClassName = string;
 
 let isInitialized = false;
 
 /**
- * 기본 CSS 스타일 생성
+ * CSS 레이어 순서 정의 (Wave 2 추가)
+ */
+const CSS_LAYERS = [
+  'reset', // 0. 브라우저 기본 스타일 재설정
+  'base', // 1. 기본 타이포그래피, 컬러 등
+  'components', // 2. 컴포넌트별 스타일
+  'utilities', // 3. 유틸리티 클래스
+  'overrides', // 4. 특수 상황 오버라이드
+] as const;
+
+/**
+ * CSS 레이어 선언 생성 (Wave 2 추가)
+ */
+function generateLayerDeclaration(): CSSString {
+  return `@layer ${CSS_LAYERS.join(', ')};`;
+}
+
+/**
+ * 기본 CSS 스타일 생성 (Wave 2: 레이어 적용)
  */
 function generateBaseStyles(): CSSString {
   return `
-.${NAMESPACE} {
-  /* Reset and Base Styles */
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.4;
-  /* Note: overscroll-behavior removed from global namespace to prevent unintended effects.
-     Specific overscroll containment is now handled by individual gallery components. */
+@layer reset {
+  .${NAMESPACE} {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .${NAMESPACE} *,
+  .${NAMESPACE} *::before,
+  .${NAMESPACE} *::after {
+    box-sizing: inherit;
+  }
 }
 
-/* Gallery container: contain overscroll to avoid page bounce when interacting with gallery.
-   Use the namespaced utility class .xeg-gallery-container (or create via createNamespacedClass('gallery-container')).
-   Note: IE / 오래된 Safari 등에서는 동작하지 않을 수 있으며 폴백이 필요할 수 있습니다. */
-.${NAMESPACE} .xeg-gallery-container {
-  overscroll-behavior: contain;  // 추가: 오버스크롤 차단 (스크롤이 컨테이너 밖으로 넘기지 않음)
-  /* 권장 touch-action: allow natural vertical panning while preventing undesirable propagation.
-     조정이 필요하면 pan-x / pan-y 등으로 변경하세요. */
-  touch-action: pan-y;
+@layer base {
+  .${NAMESPACE} {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.4;
+    color: var(--xeg-color-text-primary, #0f1419);
+    background: var(--xeg-color-bg-primary, #ffffff);
+  }
+}
+
+@layer components {
+  .${NAMESPACE} .xeg-gallery-container {
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
 }`;
 }
 
 /**
- * 컴포넌트별 CSS 변수 생성 (design-tokens.css 글로벌 변수 참조)
+ * 컴포넌트별 CSS 변수 생성
  */
 function generateComponentVariables(): CSSString {
   return `
-.${NAMESPACE} {
-  /* Component-level Custom Properties */
-  /* 참고: 이 변수들은 design-tokens.css의 글로벌 변수를 참조합니다 */
-
-  /* Primary Colors */
-  --xeg-color-primary: var(--xeg-color-primary-500);
-  --xeg-color-primary-hover: var(--xeg-color-primary-600);
-  --xeg-color-secondary: var(--xeg-color-neutral-500);
-
-  /* Surface Colors */
-  --xeg-color-background: var(--xeg-color-surface-dark);
-  --xeg-color-surface: var(--xeg-color-surface-elevated);
-  --xeg-color-surface-primary: var(--xeg-color-surface-light);
-
-  /* Text Colors */
-  --xeg-color-text-primary: var(--xeg-color-neutral-900);
-  --xeg-color-text-secondary: var(--xeg-color-neutral-600);
-
-  /* Interactive Colors */
-  --xeg-color-border: var(--xeg-color-border-primary);
-  --xeg-color-hover: var(--xeg-color-overlay-light);
-  --xeg-color-active: var(--xeg-color-overlay-medium);
+@layer base {
+  .${NAMESPACE} {
+    --xeg-z-gallery: 1000;
+    --xeg-z-modal: 1100;
+    --xeg-z-tooltip: 1200;
+    --xeg-z-notification: 1300;
+    
+    --xeg-transition-fast: 150ms ease-out;
+    --xeg-transition-medium: 250ms ease-out;
+    --xeg-transition-slow: 350ms ease-out;
+  }
 }`;
 }
 
 /**
- * 네임스페이스된 CSS 생성
+ * 유틸리티 클래스 생성
+ */
+function generateUtilityStyles(): CSSString {
+  return `
+@layer utilities {
+  .${NAMESPACE} .xeg-visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+  
+  .${NAMESPACE} .xeg-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}`;
+}
+
+/**
+ * 네임스페이스된 CSS 생성 (Wave 2: 레이어 지원)
  */
 export function generateNamespacedCSS(): CSSString {
+  const layerDeclaration = generateLayerDeclaration();
   const baseStyles = generateBaseStyles();
   const componentVars = generateComponentVariables();
+  const utilityStyles = generateUtilityStyles();
 
-  const globalStyles = `
-/* Global styles within namespace */
-.${NAMESPACE} *,
-.${NAMESPACE} *::before,
-.${NAMESPACE} *::after {
-  box-sizing: inherit;
+  return `${layerDeclaration}\n${baseStyles}\n${componentVars}\n${utilityStyles}`;
 }
 
-.${NAMESPACE} button {
-  border: none;
-  background: none;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
+/**
+ * 네임스페이스된 클래스명 생성
+ */
+export function createNamespacedClass(className: string): string {
+  return `${NAMESPACE}-${className}`;
 }
 
-.${NAMESPACE} input,
-.${NAMESPACE} textarea {
-  font: inherit;
-  border: none;
-  outline: none;
-  background: none;
-  padding: 0;
-  margin: 0;
+/**
+ * 네임스페이스된 CSS 셀렉터 생성 (Wave 2 추가)
+ */
+export function createNamespacedSelector(selector: string): string {
+  return `.${NAMESPACE} ${selector}`;
 }
 
-.${NAMESPACE} img {
-  max-width: 100%;
-  height: auto;
-}`;
-
-  const utilityClasses = `
-/* Utility Classes */
-.${NAMESPACE} .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.${NAMESPACE} .focus-visible {
-  outline: var(--xeg-focus-outline);
-  outline-offset: var(--xeg-focus-ring-offset);
-}`;
-
-  return `${baseStyles}${componentVars}${globalStyles}${utilityClasses}`;
+/**
+ * Shadow DOM에 스타일 주입 (Wave 2 추가)
+ */
+export function injectShadowDOMStyles(shadowRoot: ShadowRoot): void {
+  const styleElement = shadowRoot.ownerDocument.createElement('style');
+  styleElement.textContent = generateNamespacedCSS();
+  shadowRoot.appendChild(styleElement);
 }
 
 /**
@@ -142,7 +160,6 @@ export function initializeNamespacedStyles(): void {
     return;
   }
 
-  // 테스트 환경에서 document 안전하게 접근
   const doc = globalThis.document;
   if (!doc) {
     logger.warn('[NamespacedStyles] Document not available');
@@ -150,21 +167,13 @@ export function initializeNamespacedStyles(): void {
   }
 
   const existingStyle = doc.getElementById(STYLE_ID);
-
-  // 빌드된 완전한 CSS가 이미 존재하는 경우 추가 초기화 생략
   if (existingStyle) {
     const existingContent = existingStyle.textContent || '';
-    // 빌드된 CSS는 일반적으로 64KB 이상, 네임스페이스 CSS는 1KB 미만
-    // CSS 모듈 클래스명이 포함되어 있으면 빌드된 완전한 스타일로 판단
     if (existingContent.length > 10000 || existingContent.includes('-module__')) {
-      logger.debug(
-        '[NamespacedStyles] Complete built styles already exist, skipping initialization'
-      );
+      logger.debug('[NamespacedStyles] Complete built styles already exist, skipping');
       isInitialized = true;
       return;
     }
-
-    logger.debug('[NamespacedStyles] Incomplete style exists, replacing with namespaced version');
     existingStyle.remove();
   }
 
@@ -175,7 +184,7 @@ export function initializeNamespacedStyles(): void {
   doc.head.appendChild(styleElement);
   isInitialized = true;
 
-  logger.debug('[NamespacedStyles] Initialized successfully');
+  logger.debug('[NamespacedStyles] Initialized successfully with CSS layers');
 }
 
 /**
@@ -183,58 +192,19 @@ export function initializeNamespacedStyles(): void {
  */
 export function cleanupNamespacedStyles(): void {
   const doc = globalThis.document;
-  if (!doc) {
-    return;
-  }
+  if (!doc) return;
 
   const styleElement = doc.getElementById(STYLE_ID);
   if (styleElement) {
     styleElement.remove();
+    isInitialized = false;
     logger.debug('[NamespacedStyles] Cleaned up');
   }
-  isInitialized = false;
 }
 
 /**
- * 네임스페이스 클래스명 생성
+ * 초기화 상태 확인
  */
-export function createNamespacedClass(className: string): ClassName {
-  return `${NAMESPACE}-${className}`;
-}
-
-/**
- * 네임스페이스 셀렉터 생성
- */
-export function createNamespacedSelector(selector: string): CSSSelector {
-  return `.${NAMESPACE} ${selector}`;
-}
-
-/**
- * Shadow DOM용 스타일 주입 (Phase 4)
- * Shadow DOM 내부에 갤러리 전용 스타일을 주입합니다.
- */
-export function injectShadowDOMStyles(shadowRoot: ShadowRoot): void {
-  if (!shadowRoot) {
-    logger.warn('[NamespacedStyles] Invalid shadow root provided');
-    return;
-  }
-
-  // 기존에 주입된 스타일이 있는지 확인
-  const existingStyle = shadowRoot.querySelector(`#${STYLE_ID}`);
-  if (existingStyle) {
-    logger.debug('[NamespacedStyles] Shadow DOM styles already injected');
-    return;
-  }
-
-  const styleElement = globalThis.document?.createElement('style');
-  if (!styleElement) {
-    logger.warn('[NamespacedStyles] Cannot create style element');
-    return;
-  }
-
-  styleElement.id = STYLE_ID;
-  styleElement.textContent = generateNamespacedCSS();
-
-  shadowRoot.appendChild(styleElement);
-  logger.debug('[NamespacedStyles] Shadow DOM styles injected successfully');
+export function isStylesInitialized(): boolean {
+  return isInitialized;
 }
