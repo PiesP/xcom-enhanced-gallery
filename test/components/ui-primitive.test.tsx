@@ -51,17 +51,25 @@ describe('Phase 2: UI Primitive 컴포넌트 (GREEN 테스트)', () => {
 
     it('IconButton에 aria-label이 필수여야 한다', () => {
       // GREEN: aria-label 필수 속성 구현됨
-      const { getByRole } = render(<Button iconOnly aria-label='Close dialog'>×</Button>);
+      const { getByRole } = render(
+        <Button iconOnly aria-label='Close dialog'>
+          ×
+        </Button>
+      );
       const button = getByRole('button');
       expect(button).toHaveAttribute('aria-label', 'Close dialog');
     });
 
-    it('IconButton이 xeg- 네임스페이스 클래스를 가져야 한다', () => {
+    it('Button iconOnly이 xeg- 네임스페이스 클래스를 가져야 한다', () => {
       // GREEN: 클래스 네이밍 규칙 구현됨
-      const { getByRole } = render(<Button iconOnly aria-label='Test'>×</Button>);
+      const { getByRole } = render(
+        <Button iconOnly aria-label='Test'>
+          ×
+        </Button>
+      );
       const button = getByRole('button');
-      // CSS Module 클래스명으로 변경된 것으로 테스트 수정
-      expect(button.className).toContain('unifiedButton');
+      // Button 컴포넌트의 실제 클래스명 확인
+      expect(button.className).toContain('xeg-button');
     });
   });
 
@@ -92,7 +100,6 @@ describe('Phase 2: UI Primitive 컴포넌트 (GREEN 테스트)', () => {
       // GREEN: 인덱스 파일 구현됨
       const primitiveModule = await import('@shared/components/ui/primitive');
       expect(primitiveModule.Button).toBeDefined();
-      expect(primitiveModule.IconButton).toBeDefined();
       expect(primitiveModule.Panel).toBeDefined();
     });
   });

@@ -10,11 +10,21 @@
  * 3. Button-legacy → Button
  */
 
-const fs = require('fs');
-const path = require('path');
-const { glob } = require('glob');
+import fs from 'fs';
+import path from 'path';
+import { glob } from 'glob';
 
-const importReplacements = [
+interface ImportReplacement {
+  oldImport: RegExp;
+  newImport: string;
+}
+
+interface ComponentReplacement {
+  oldPattern: RegExp;
+  newPattern: string;
+}
+
+const importReplacements: ImportReplacement[] = [
   // ToolbarButton imports
   {
     oldImport:
@@ -47,7 +57,7 @@ const importReplacements = [
   },
 ];
 
-const componentReplacements = [
+const componentReplacements: ComponentReplacement[] = [
   // ToolbarButton → Button (props 그대로 유지)
   {
     oldPattern: /<ToolbarButton(\s[^>]*)?>/g,
@@ -69,7 +79,7 @@ const componentReplacements = [
   },
 ];
 
-async function findAllTSXFiles() {
+async function findAllTSXFiles(): Promise<string[]> {
   return glob('**/*.{ts,tsx}', {
     cwd: process.cwd(),
     ignore: ['node_modules/**', 'dist/**', '*.d.ts'],
@@ -77,7 +87,7 @@ async function findAllTSXFiles() {
   });
 }
 
-function transformImports(content) {
+function transformImports(content: string): string {
   let transformed = content;
 
   for (const { oldImport, newImport } of importReplacements) {
@@ -87,7 +97,7 @@ function transformImports(content) {
   return transformed;
 }
 
-function transformComponents(content) {
+function transformComponents(content: string): string {
   let transformed = content;
 
   for (const { oldPattern, newPattern } of componentReplacements) {
@@ -97,7 +107,7 @@ function transformComponents(content) {
   return transformed;
 }
 
-function analyzeFile(filePath) {
+function analyzeFile(filePath: string): { hasChanges: boolean; preview: string } {
   const content = fs.readFileSync(filePath, 'utf-8');
   const withImports = transformImports(content);
   const withComponents = transformComponents(withImports);
@@ -122,11 +132,11 @@ function analyzeFile(filePath) {
   return { hasChanges: false, preview: '' };
 }
 
-async function runCodemod(dryRun = true) {
+async function runCodemod(dryRun: boolean = true): Promise<void> {
   console.log('🔍 Scanning for files to transform...');
 
   const files = await findAllTSXFiles();
-  const filesToChange = [];
+  const filesToChange: string[] = [];
   let previewOutput = '';
 
   for (const file of files) {

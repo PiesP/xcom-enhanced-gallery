@@ -2409,33 +2409,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Button-legacy/Button.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../Button",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Button/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Button-legacy/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/ui/Button/index.ts",
       "dependencies": [
         {
@@ -2448,53 +2421,6 @@
             "export"
           ],
           "resolved": "src/shared/components/ui/Button/Button.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Button-legacy/Button.tsx",
-        "src/shared/components/ui/Toolbar/ToolbarButton.tsx",
-        "src/shared/components/ui/primitive/IconButton.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Button-legacy/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Button",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Button-legacy/Button.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Button",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Button-legacy/Button.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2876,33 +2802,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Toolbar/ToolbarButton.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../Button",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Button/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Toolbar/ToolbarView.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/ui/Toolbar/ToolbarHeadless.tsx",
       "dependencies": [
         {
@@ -2932,23 +2831,6 @@
     {
       "source": "src/shared/components/ui/Toolbar/ToolbarView.tsx",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./ToolbarButton",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toolbar/ToolbarButton.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./ToolbarHeadless",
@@ -3471,33 +3353,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/primitive/IconButton.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../Button",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Button/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/primitive/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/ui/primitive/Panel.tsx",
       "dependencies": [
         {
@@ -3554,23 +3409,6 @@
             "export"
           ],
           "resolved": "src/shared/components/ui/primitive/Button.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./IconButton",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/primitive/IconButton.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8134,8 +7972,8 @@
     "warn": 0,
     "info": 5,
     "ignore": 0,
-    "totalCruised": 230,
-    "totalDependenciesCruised": 335,
+    "totalCruised": 226,
+    "totalDependenciesCruised": 328,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -8,16 +8,16 @@ import { render } from '@testing-library/preact';
 import { h } from 'preact';
 
 // 현재 구현들
-import { Button } from '../../../../../src/shared/components/ui/Button/Button';
 import { Button } from '@shared/components/ui/Button';
 
 describe('Icon-Only Accessibility (v4.1 - RED)', () => {
   describe('Current Implementation Baseline', () => {
-    it('IconButton should accept aria-label', () => {
+    it('Button iconOnly should accept aria-label', () => {
       const { container } = render(
         h(
-          IconButton,
+          Button,
           {
+            iconOnly: true,
             'aria-label': 'Settings',
             'data-testid': 'good-icon-button',
           },
@@ -52,8 +52,9 @@ describe('Icon-Only Accessibility (v4.1 - RED)', () => {
       // 현재는 aria-label 없이도 렌더링됨 - 향후 개선 필요
       const { container } = render(
         h(
-          IconButton,
+          Button,
           {
+            iconOnly: true,
             'data-testid': 'bad-icon-button',
           },
           '⚙'
@@ -202,8 +203,9 @@ describe('Icon-Only Accessibility (v4.1 - RED)', () => {
       Object.entries(iconLabels).forEach(([icon, expectedLabel]) => {
         const { container } = render(
           h(
-            IconButton,
+            Button,
             {
+              iconOnly: true,
               'aria-label': expectedLabel,
               'data-testid': `labeled-${icon}`,
             },
@@ -219,8 +221,9 @@ describe('Icon-Only Accessibility (v4.1 - RED)', () => {
     it('should support role and aria-describedby for complex icons', () => {
       const { container } = render(
         h(
-          IconButton,
+          Button,
           {
+            iconOnly: true,
             'aria-label': 'Advanced Search',
             'aria-describedby': 'search-help',
             role: 'button',

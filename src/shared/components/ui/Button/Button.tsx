@@ -21,8 +21,17 @@ function classnames(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-type ButtonVariant = 'primary' | 'secondary' | 'icon' | 'danger' | 'ghost';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'icon'
+  | 'danger'
+  | 'ghost'
+  | 'toolbar' // 툴바 전용 버튼
+  | 'navigation' // 네비게이션 버튼 (이전/다음)
+  | 'action'; // 액션 버튼 (다운로드 등)
+
+type ButtonSize = 'sm' | 'md' | 'lg' | 'toolbar'; // toolbar 크기 추가
 type ButtonIntent = 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
 
 // Base HTML Button Attributes
@@ -43,6 +52,11 @@ interface ButtonHTMLAttributes {
   readonly 'aria-haspopup'?: boolean | 'true' | 'false';
   readonly 'aria-busy'?: boolean | 'true' | 'false';
   readonly 'data-testid'?: string;
+  readonly 'data-gallery-element'?: string;
+  readonly 'data-disabled'?: boolean | string;
+  readonly 'data-selected'?: boolean | string;
+  readonly 'data-loading'?: boolean | string;
+  readonly key?: string;
   readonly title?: string;
   readonly role?: string;
   readonly onClick?: (event: MouseEvent) => void;
@@ -93,6 +107,10 @@ function ButtonComponent(props: ButtonProps): VNode {
     'aria-haspopup': ariaHaspopup,
     'aria-busy': ariaBusy,
     'data-testid': dataTestId,
+    'data-gallery-element': dataGalleryElement,
+    'data-disabled': dataDisabled,
+    'data-selected': dataSelected,
+    'data-loading': dataLoading,
     title,
     role,
     onClick,
@@ -194,6 +212,10 @@ function ButtonComponent(props: ButtonProps): VNode {
       'aria-disabled': disabled || loading, // 명시적 aria-disabled 설정
       tabIndex: resolvedTabIndex,
       'data-testid': dataTestId,
+      'data-gallery-element': dataGalleryElement,
+      'data-disabled': dataDisabled,
+      'data-selected': dataSelected,
+      'data-loading': dataLoading,
       onClick: handleClick,
       onFocus,
       onBlur,

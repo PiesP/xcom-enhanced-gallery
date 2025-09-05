@@ -34,11 +34,7 @@ describe('Interaction State Standards', () => {
   }
 
   it('should have consistent hover transform effects across interactive elements', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-      'shared/components/ui/Button/Button.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     const transformEffects: string[] = [];
 
@@ -64,7 +60,7 @@ describe('Interaction State Standards', () => {
   });
 
   it('should use semantic tokens for hover background colors', () => {
-    const toolbarButtonCSS = readCSSFile('shared/components/ui/Toolbar/ToolbarButton.module.css');
+    const toolbarButtonCSS = readCSSFile('shared/components/ui/Button/Button.module.css');
 
     // 하드코딩된 rgba 값 대신 CSS 변수 사용 권장
     const hoverBackgrounds =
@@ -77,10 +73,7 @@ describe('Interaction State Standards', () => {
   });
 
   it('should have consistent box-shadow patterns for elevated states', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     const shadowEffects: string[] = [];
 
@@ -100,11 +93,7 @@ describe('Interaction State Standards', () => {
   });
 
   it('should have proper focus-visible styles for accessibility', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-      'shared/components/ui/Button/Button.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     cssFiles.forEach(fileName => {
       const css = readCSSFile(fileName);
@@ -124,10 +113,7 @@ describe('Interaction State Standards', () => {
   });
 
   it('should disable interactions properly for disabled states', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     cssFiles.forEach(fileName => {
       const css = readCSSFile(fileName);

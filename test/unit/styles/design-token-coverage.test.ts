@@ -28,8 +28,6 @@ describe('Design Token Coverage', () => {
 
   it('should use semantic tokens for all border-radius values', () => {
     const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
       'shared/components/ui/Button/Button.module.css',
       'shared/components/ui/Toast/Toast.module.css',
       'shared/components/ui/SettingsModal/SettingsModal.module.css',
@@ -48,11 +46,7 @@ describe('Design Token Coverage', () => {
   });
 
   it('should prefer semantic tokens over primitive tokens', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-      'shared/components/ui/Button/Button.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     cssFiles.forEach(fileName => {
       const css = readCSSFile(fileName);
@@ -64,10 +58,7 @@ describe('Design Token Coverage', () => {
   });
 
   it('should use semantic color tokens consistently', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     cssFiles.forEach(fileName => {
       const css = readCSSFile(fileName);
@@ -90,11 +81,7 @@ describe('Design Token Coverage', () => {
   });
 
   it('should achieve high token usage rate in component files', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-      'shared/components/ui/Button/Button.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     cssFiles.forEach(fileName => {
       const css = readCSSFile(fileName);
@@ -113,10 +100,7 @@ describe('Design Token Coverage', () => {
   });
 
   it('should have proper CSS variable fallbacks', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     cssFiles.forEach(fileName => {
       const css = readCSSFile(fileName);

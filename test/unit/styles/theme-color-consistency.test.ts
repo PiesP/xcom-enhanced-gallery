@@ -25,7 +25,7 @@ describe('Theme Color Consistency', () => {
   }
 
   it('should use appropriate fallback colors for light mode hover states', () => {
-    const iconButtonCSS = readCSSFile('shared/components/ui/primitive/IconButton.css');
+    const iconButtonCSS = readCSSFile('shared/components/ui/Button/Button.module.css');
     const lightModeHoverSelectors = extractHoverSelectors(iconButtonCSS).filter(
       selector => !selector.includes("[data-theme='dark']")
     );
@@ -40,7 +40,7 @@ describe('Theme Color Consistency', () => {
   });
 
   it('should use appropriate fallback colors for dark mode hover states', () => {
-    const iconButtonCSS = readCSSFile('shared/components/ui/primitive/IconButton.css');
+    const iconButtonCSS = readCSSFile('shared/components/ui/Button/Button.module.css');
     const darkModeSelectors = extractDarkModeSelectors(iconButtonCSS);
 
     darkModeSelectors.forEach(selector => {
@@ -53,11 +53,7 @@ describe('Theme Color Consistency', () => {
   });
 
   it('should not mix light and dark color tokens inappropriately', () => {
-    const cssFiles = [
-      'shared/components/ui/primitive/IconButton.css',
-      'shared/components/ui/Toolbar/ToolbarButton.module.css',
-      'shared/components/ui/Button/Button.module.css',
-    ];
+    const cssFiles = ['shared/components/ui/Button/Button.module.css'];
 
     cssFiles.forEach(fileName => {
       const css = readCSSFile(fileName);
@@ -77,7 +73,7 @@ describe('Theme Color Consistency', () => {
   });
 
   it('should use semantic tokens rather than raw rgba values', () => {
-    const iconButtonCSS = readCSSFile('shared/components/ui/primitive/IconButton.css');
+    const iconButtonCSS = readCSSFile('shared/components/ui/Button/Button.module.css');
 
     // CSS 변수 사용을 권장하고, rgba 폴백은 최소한으로
     const rawRgbaUsage = iconButtonCSS.match(/rgba\([^)]+\)/g) || [];

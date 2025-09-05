@@ -192,6 +192,89 @@
   background: var(--xeg-color-neutral-200);
 }
 
+/* ===== 툴바 전용 변형 ===== */
+.variant-toolbar {
+  background: transparent;
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-primary);
+  width: 2.5em;
+  height: 2.5em;
+  min-width: 2.5em;
+  min-height: 2.5em;
+  padding: 0.5em;
+  aspect-ratio: 1;
+}
+
+.variant-toolbar:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-border-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-toolbar:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--xeg-color-neutral-200);
+}
+
+.variant-navigation {
+  background: var(--xeg-color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--xeg-color-primary);
+  width: 2.5em;
+  height: 2.5em;
+  min-width: 2.5em;
+  min-height: 2.5em;
+  padding: 0.5em;
+  aspect-ratio: 1;
+}
+
+.variant-navigation:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.variant-navigation:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-action {
+  background: var(--xeg-color-success);
+  color: var(--color-text-inverse);
+  border-color: var(--xeg-color-success);
+  width: 2.5em;
+  height: 2.5em;
+  min-width: 2.5em;
+  min-height: 2.5em;
+  padding: 0.5em;
+  aspect-ratio: 1;
+}
+
+.variant-action:hover:not(:disabled) {
+  background: var(--color-success-hover);
+  border-color: var(--color-success-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.variant-action:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+/* ===== 툴바 전용 크기 ===== */
+.size-toolbar {
+  width: 2.5em;
+  height: 2.5em;
+  min-width: 2.5em;
+  min-height: 2.5em;
+  padding: 0.5em;
+  font-size: 0.875em;
+}
+
 /* ===== 아이콘 전용 모드 ===== */
 .iconOnly {
   aspect-ratio: 1;

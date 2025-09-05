@@ -264,12 +264,13 @@ function ToolbarCore({
             h(
               Button,
               {
+                variant: 'navigation',
+                size: 'toolbar',
                 iconOnly: true,
                 'aria-label': '이전 미디어',
                 title: '이전 미디어 (←)',
                 disabled: disabled || !canGoPrevious,
                 onClick: (e: Event) => handleButtonClick(e, 'previous', onPrevious),
-                className: `${styles.navButton} button-variant`,
                 'data-gallery-element': 'nav-previous',
                 'data-disabled': disabled || !canGoPrevious,
                 key: 'previous-button',
@@ -279,12 +280,13 @@ function ToolbarCore({
             h(
               Button,
               {
+                variant: 'navigation',
+                size: 'toolbar',
                 iconOnly: true,
                 'aria-label': '다음 미디어',
                 title: '다음 미디어 (→)',
                 disabled: disabled || !canGoNext,
                 onClick: (e: Event) => handleButtonClick(e, 'next', onNext),
-                className: `${styles.navButton} button-variant`,
                 'data-gallery-element': 'nav-next',
                 'data-disabled': disabled || !canGoNext,
                 key: 'next-button',
@@ -360,10 +362,11 @@ function ToolbarCore({
               },
               [
                 h(
-                  'button',
+                  Button,
                   {
-                    type: 'button',
-                    className: `${styles.toolbarButton} ${styles.fitButton}`,
+                    variant: 'toolbar',
+                    size: 'toolbar',
+                    iconOnly: true,
                     onClick: (e: Event) => handleFitMode(e, 'original', onFitOriginal),
                     disabled: disabled || !onFitOriginal,
                     'aria-label': '원본 크기',
@@ -376,10 +379,11 @@ function ToolbarCore({
                   h(ZoomIn, { size: 16 })
                 ),
                 h(
-                  'button',
+                  Button,
                   {
-                    type: 'button',
-                    className: `${styles.toolbarButton} ${styles.fitButton}`,
+                    variant: 'toolbar',
+                    size: 'toolbar',
+                    iconOnly: true,
                     onClick: (e: Event) => handleFitMode(e, 'fitWidth', onFitWidth),
                     disabled: disabled || !onFitWidth,
                     'aria-label': '가로에 맞춤',
@@ -392,10 +396,11 @@ function ToolbarCore({
                   h(ArrowAutofitWidth, { size: 16 })
                 ),
                 h(
-                  'button',
+                  Button,
                   {
-                    type: 'button',
-                    className: `${styles.toolbarButton} ${styles.fitButton}`,
+                    variant: 'toolbar',
+                    size: 'toolbar',
+                    iconOnly: true,
                     onClick: (e: Event) => handleFitMode(e, 'fitHeight', onFitHeight),
                     disabled: disabled || !onFitHeight,
                     'aria-label': '세로에 맞춤',
@@ -408,10 +413,11 @@ function ToolbarCore({
                   h(ArrowAutofitHeight, { size: 16 })
                 ),
                 h(
-                  'button',
+                  Button,
                   {
-                    type: 'button',
-                    className: `${styles.toolbarButton} ${styles.fitButton}`,
+                    variant: 'toolbar',
+                    size: 'toolbar',
+                    iconOnly: true,
                     onClick: (e: Event) => handleFitMode(e, 'fitContainer', onFitContainer),
                     disabled: disabled || !onFitContainer,
                     'aria-label': '창에 맞춤',
@@ -428,10 +434,12 @@ function ToolbarCore({
 
             // 다운로드 버튼들
             h(
-              'button',
+              Button,
               {
-                type: 'button',
-                className: `${styles.toolbarButton} ${styles.downloadButton} ${styles.downloadCurrent} downloadButton downloadCurrent`,
+                variant: 'action',
+                size: 'toolbar',
+                iconOnly: true,
+                loading: isDownloading,
                 onClick: (e: Event) => handleButtonClick(e, 'download-current', onDownloadCurrent),
                 disabled: disabled || isDownloading,
                 'aria-label': '현재 파일 다운로드',
@@ -441,28 +449,16 @@ function ToolbarCore({
                 'data-loading': isDownloading,
                 key: 'download-current',
               },
-              [
-                h(Download, { size: 16, key: 'download-icon' }),
-                isDownloading &&
-                  h(
-                    'span' as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-                    {
-                      className: styles.downloadSpinner,
-                      'aria-hidden': 'true',
-                      'data-gallery-element': 'spinner',
-                      key: 'spinner',
-                    },
-                    '⟳'
-                  ),
-              ]
+              h(Download, { size: 16, key: 'download-icon' })
             ),
 
             totalCount > 1 &&
               h(
-                'button',
+                Button,
                 {
-                  type: 'button',
-                  className: `${styles.toolbarButton} ${styles.downloadButton} ${styles.downloadAll}`,
+                  variant: 'action',
+                  size: 'toolbar',
+                  iconOnly: true,
                   onClick: (e: Event) => handleButtonClick(e, 'download-all', onDownloadAll),
                   disabled: disabled || isDownloading,
                   'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
@@ -480,16 +476,16 @@ function ToolbarCore({
               h(
                 Button,
                 {
+                  variant: 'toolbar',
+                  size: 'toolbar',
                   iconOnly: true,
                   'aria-label': '설정 열기',
                   title: '설정',
                   disabled,
                   onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
-                  className: styles.settingsButton,
                   'data-gallery-element': 'settings',
                   'data-disabled': disabled,
                   key: 'settings',
-                  size: 'md',
                 },
                 h(Settings, { size: 16 })
               ),
@@ -498,16 +494,16 @@ function ToolbarCore({
             h(
               Button,
               {
+                variant: 'danger',
+                size: 'toolbar',
                 iconOnly: true,
                 'aria-label': '갤러리 닫기',
                 title: '갤러리 닫기 (Esc)',
                 disabled,
                 onClick: (e: Event) => handleButtonClick(e, 'close', onClose),
-                className: styles.closeButton,
                 'data-gallery-element': 'close',
                 'data-disabled': disabled,
                 key: 'close',
-                size: 'md',
               },
               h(X, { size: 16 })
             ),
