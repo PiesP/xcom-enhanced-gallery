@@ -127,8 +127,9 @@ Phase 7 (Cleanup & 계약 고정):
 
 ---
 
-Phase 1 RED 테스트 완료 → 통합 가드 확보.
-Phase 2 Semantic Token Layer 완료 (`button.ts`).
-Phase 3 CSS Consolidation 완료 (중복 스타일 통합, 원본 파일 placeholder 축소 처리).
+Phase 1 RED 테스트 완료 → 통합 가드 확보. Phase 2 Semantic Token Layer 완료
+(`button.ts`). Phase 3 CSS Consolidation 완료 (중복 스타일 통합, 원본 파일
+placeholder 축소 처리).
 
-Next Action: Phase 4 Wrapper 제거 & Codemod (ToolbarButton/IconButton/legacy → Button).
+Next Action: Phase 4 Wrapper 제거 & Codemod (ToolbarButton/IconButton/legacy →
+Button).

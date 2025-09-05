@@ -15,7 +15,6 @@ const __dirname = path.dirname(__filename);
 // test/unit/styles → 프로젝트 루트 상위 3단계
 const root = path.normalize(path.join(__dirname, '..', '..', '..'));
 
-
 describe('Phase 3: Button Consolidation (Transition to GREEN)', () => {
   test('Wrapper 컴포넌트 현재 존재 (Baseline) - Phase 4에서 제거 예정', () => {
     const toolbarButton = existsSync(
@@ -31,10 +30,7 @@ describe('Phase 3: Button Consolidation (Transition to GREEN)', () => {
   });
 
   test('중복 CSS 변형 제거 확인 (ToolbarButton.styles 축소 placeholder)', () => {
-    const toolbarCssPath = join(
-      root,
-      'src/shared/components/ui/Toolbar/ToolbarButton.module.css'
-    );
+    const toolbarCssPath = join(root, 'src/shared/components/ui/Toolbar/ToolbarButton.module.css');
     const toolbarCssExists = existsSync(toolbarCssPath);
     expect(toolbarCssExists).toBe(true);
   });

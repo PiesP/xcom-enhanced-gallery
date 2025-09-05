@@ -268,95 +268,100 @@
 </g>
 <g id="clust52" class="cluster">
 <title>cluster_src/shared/styles</title>
-<path fill="#ffffff" stroke="black" stroke-width="2" d="M12884,-826.8C12884,-826.8 13103,-826.8 13103,-826.8 13109,-826.8 13115,-832.8 13115,-838.8 13115,-838.8 13115,-1104.25 13115,-1104.25 13115,-1110.25 13109,-1116.25 13103,-1116.25 13103,-1116.25 12884,-1116.25 12884,-1116.25 12878,-1116.25 12872,-1110.25 12872,-1104.25 12872,-1104.25 12872,-838.8 12872,-838.8 12872,-832.8 12878,-826.8 12884,-826.8"/>
-<text xml:space="preserve" text-anchor="middle" x="12993.5" y="-1100.85" font-family="Arial" font-size="12.00">styles</text>
+<path fill="#ffffff" stroke="black" stroke-width="2" d="M12884,-826.8C12884,-826.8 13103,-826.8 13103,-826.8 13109,-826.8 13115,-832.8 13115,-838.8 13115,-838.8 13115,-1134.5 13115,-1134.5 13115,-1140.5 13109,-1146.5 13103,-1146.5 13103,-1146.5 12884,-1146.5 12884,-1146.5 12878,-1146.5 12872,-1140.5 12872,-1134.5 12872,-1134.5 12872,-838.8 12872,-838.8 12872,-832.8 12878,-826.8 12884,-826.8"/>
+<text xml:space="preserve" text-anchor="middle" x="12993.5" y="-1131.1" font-family="Arial" font-size="12.00">styles</text>
 </g>
 <g id="clust53" class="cluster">
+<title>cluster_src/shared/styles/tokens</title>
+<path fill="#ffffff" stroke="black" stroke-width="2" d="M12921,-1051.6C12921,-1051.6 12967,-1051.6 12967,-1051.6 12973,-1051.6 12979,-1057.6 12979,-1063.6 12979,-1063.6 12979,-1104.25 12979,-1104.25 12979,-1110.25 12973,-1116.25 12967,-1116.25 12967,-1116.25 12921,-1116.25 12921,-1116.25 12915,-1116.25 12909,-1110.25 12909,-1104.25 12909,-1104.25 12909,-1063.6 12909,-1063.6 12909,-1057.6 12915,-1051.6 12921,-1051.6"/>
+<text xml:space="preserve" text-anchor="middle" x="12944" y="-1100.85" font-family="Arial" font-size="12.00">tokens</text>
+</g>
+<g id="clust54" class="cluster">
 <title>cluster_src/shared/types</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M12872,-481.6C12872,-481.6 13481,-481.6 13481,-481.6 13487,-481.6 13493,-487.6 13493,-493.6 13493,-493.6 13493,-797.3 13493,-797.3 13493,-803.3 13487,-809.3 13481,-809.3 13481,-809.3 12872,-809.3 12872,-809.3 12866,-809.3 12860,-803.3 12860,-797.3 12860,-797.3 12860,-493.6 12860,-493.6 12860,-487.6 12866,-481.6 12872,-481.6"/>
 <text xml:space="preserve" text-anchor="middle" x="13176.5" y="-793.9" font-family="Arial" font-size="12.00">types</text>
 </g>
-<g id="clust54" class="cluster">
+<g id="clust55" class="cluster">
 <title>cluster_src/shared/types/core</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M13106,-489.6C13106,-489.6 13473,-489.6 13473,-489.6 13479,-489.6 13485,-495.6 13485,-501.6 13485,-501.6 13485,-767.05 13485,-767.05 13485,-773.05 13479,-779.05 13473,-779.05 13473,-779.05 13106,-779.05 13106,-779.05 13100,-779.05 13094,-773.05 13094,-767.05 13094,-767.05 13094,-501.6 13094,-501.6 13094,-495.6 13100,-489.6 13106,-489.6"/>
 <text xml:space="preserve" text-anchor="middle" x="13289.5" y="-763.65" font-family="Arial" font-size="12.00">core</text>
 </g>
-<g id="clust55" class="cluster">
+<g id="clust56" class="cluster">
 <title>cluster_src/shared/utils</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M10166,-256.8C10166,-256.8 12308,-256.8 12308,-256.8 12314,-256.8 12320,-262.8 12320,-268.8 12320,-268.8 12320,-1134.5 12320,-1134.5 12320,-1140.5 12314,-1146.5 12308,-1146.5 12308,-1146.5 10166,-1146.5 10166,-1146.5 10160,-1146.5 10154,-1140.5 10154,-1134.5 10154,-1134.5 10154,-268.8 10154,-268.8 10154,-262.8 10160,-256.8 10166,-256.8"/>
 <text xml:space="preserve" text-anchor="middle" x="11237" y="-1131.1" font-family="Arial" font-size="12.00">utils</text>
 </g>
-<g id="clust56" class="cluster">
+<g id="clust57" class="cluster">
 <title>cluster_src/shared/utils/accessibility</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M10966,-489.6C10966,-489.6 11058,-489.6 11058,-489.6 11064,-489.6 11070,-495.6 11070,-501.6 11070,-501.6 11070,-767.05 11070,-767.05 11070,-773.05 11064,-779.05 11058,-779.05 11058,-779.05 10966,-779.05 10966,-779.05 10960,-779.05 10954,-773.05 10954,-767.05 10954,-767.05 10954,-501.6 10954,-501.6 10954,-495.6 10960,-489.6 10966,-489.6"/>
 <text xml:space="preserve" text-anchor="middle" x="11012" y="-763.65" font-family="Arial" font-size="12.00">accessibility</text>
 </g>
-<g id="clust57" class="cluster">
+<g id="clust58" class="cluster">
 <title>cluster_src/shared/utils/core</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M11652,-602C11652,-602 11698,-602 11698,-602 11704,-602 11710,-608 11710,-614 11710,-614 11710,-654.65 11710,-654.65 11710,-660.65 11704,-666.65 11698,-666.65 11698,-666.65 11652,-666.65 11652,-666.65 11646,-666.65 11640,-660.65 11640,-654.65 11640,-654.65 11640,-614 11640,-614 11640,-608 11646,-602 11652,-602"/>
 <text xml:space="preserve" text-anchor="middle" x="11675" y="-651.25" font-family="Arial" font-size="12.00">core</text>
 </g>
-<g id="clust58" class="cluster">
+<g id="clust59" class="cluster">
 <title>cluster_src/shared/utils/debug</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M12224,-264.8C12224,-264.8 12300,-264.8 12300,-264.8 12306,-264.8 12312,-270.8 12312,-276.8 12312,-276.8 12312,-429.85 12312,-429.85 12312,-435.85 12306,-441.85 12300,-441.85 12300,-441.85 12224,-441.85 12224,-441.85 12218,-441.85 12212,-435.85 12212,-429.85 12212,-429.85 12212,-276.8 12212,-276.8 12212,-270.8 12218,-264.8 12224,-264.8"/>
 <text xml:space="preserve" text-anchor="middle" x="12262" y="-426.45" font-family="Arial" font-size="12.00">debug</text>
 </g>
-<g id="clust59" class="cluster">
+<g id="clust60" class="cluster">
 <title>cluster_src/shared/utils/deduplication</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M11812,-489.6C11812,-489.6 11908,-489.6 11908,-489.6 11914,-489.6 11920,-495.6 11920,-501.6 11920,-501.6 11920,-654.65 11920,-654.65 11920,-660.65 11914,-666.65 11908,-666.65 11908,-666.65 11812,-666.65 11812,-666.65 11806,-666.65 11800,-660.65 11800,-654.65 11800,-654.65 11800,-501.6 11800,-501.6 11800,-495.6 11806,-489.6 11812,-489.6"/>
 <text xml:space="preserve" text-anchor="middle" x="11860" y="-651.25" font-family="Arial" font-size="12.00">deduplication</text>
 </g>
-<g id="clust60" class="cluster">
+<g id="clust61" class="cluster">
 <title>cluster_src/shared/utils/dom</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M10612,-602C10612,-602 10845,-602 10845,-602 10851,-602 10857,-608 10857,-614 10857,-614 10857,-767.05 10857,-767.05 10857,-773.05 10851,-779.05 10845,-779.05 10845,-779.05 10612,-779.05 10612,-779.05 10606,-779.05 10600,-773.05 10600,-767.05 10600,-767.05 10600,-614 10600,-614 10600,-608 10606,-602 10612,-602"/>
 <text xml:space="preserve" text-anchor="middle" x="10728.5" y="-763.65" font-family="Arial" font-size="12.00">dom</text>
 </g>
-<g id="clust61" class="cluster">
+<g id="clust62" class="cluster">
 <title>cluster_src/shared/utils/media</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M11090,-602C11090,-602 11435,-602 11435,-602 11441,-602 11447,-608 11447,-614 11447,-614 11447,-767.05 11447,-767.05 11447,-773.05 11441,-779.05 11435,-779.05 11435,-779.05 11090,-779.05 11090,-779.05 11084,-779.05 11078,-773.05 11078,-767.05 11078,-767.05 11078,-614 11078,-614 11078,-608 11084,-602 11090,-602"/>
 <text xml:space="preserve" text-anchor="middle" x="11262.5" y="-763.65" font-family="Arial" font-size="12.00">media</text>
 </g>
-<g id="clust62" class="cluster">
+<g id="clust63" class="cluster">
 <title>cluster_src/shared/utils/memory</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M10288,-602C10288,-602 10386,-602 10386,-602 10392,-602 10398,-608 10398,-614 10398,-614 10398,-767.05 10398,-767.05 10398,-773.05 10392,-779.05 10386,-779.05 10386,-779.05 10288,-779.05 10288,-779.05 10282,-779.05 10276,-773.05 10276,-767.05 10276,-767.05 10276,-614 10276,-614 10276,-608 10282,-602 10288,-602"/>
 <text xml:space="preserve" text-anchor="middle" x="10337" y="-763.65" font-family="Arial" font-size="12.00">memory</text>
 </g>
-<g id="clust63" class="cluster">
+<g id="clust64" class="cluster">
 <title>cluster_src/shared/utils/optimization</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M10418,-714.4C10418,-714.4 10561,-714.4 10561,-714.4 10567,-714.4 10573,-720.4 10573,-726.4 10573,-726.4 10573,-879.45 10573,-879.45 10573,-885.45 10567,-891.45 10561,-891.45 10561,-891.45 10418,-891.45 10418,-891.45 10412,-891.45 10406,-885.45 10406,-879.45 10406,-879.45 10406,-726.4 10406,-726.4 10406,-720.4 10412,-714.4 10418,-714.4"/>
 <text xml:space="preserve" text-anchor="middle" x="10489.5" y="-876.05" font-family="Arial" font-size="12.00">optimization</text>
 </g>
-<g id="clust64" class="cluster">
+<g id="clust65" class="cluster">
 <title>cluster_src/shared/utils/patterns</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M11150,-939.2C11150,-939.2 11216,-939.2 11216,-939.2 11222,-939.2 11228,-945.2 11228,-951.2 11228,-951.2 11228,-1104.25 11228,-1104.25 11228,-1110.25 11222,-1116.25 11216,-1116.25 11216,-1116.25 11150,-1116.25 11150,-1116.25 11144,-1116.25 11138,-1110.25 11138,-1104.25 11138,-1104.25 11138,-951.2 11138,-951.2 11138,-945.2 11144,-939.2 11150,-939.2"/>
 <text xml:space="preserve" text-anchor="middle" x="11183" y="-1100.85" font-family="Arial" font-size="12.00">patterns</text>
 </g>
-<g id="clust65" class="cluster">
+<g id="clust66" class="cluster">
 <title>cluster_src/shared/utils/performance</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M11390,-264.8C11390,-264.8 11756,-264.8 11756,-264.8 11762,-264.8 11768,-270.8 11768,-276.8 11768,-276.8 11768,-429.85 11768,-429.85 11768,-435.85 11762,-441.85 11756,-441.85 11756,-441.85 11390,-441.85 11390,-441.85 11384,-441.85 11378,-435.85 11378,-429.85 11378,-429.85 11378,-276.8 11378,-276.8 11378,-270.8 11384,-264.8 11390,-264.8"/>
 <text xml:space="preserve" text-anchor="middle" x="11573" y="-426.45" font-family="Arial" font-size="12.00">performance</text>
 </g>
-<g id="clust66" class="cluster">
+<g id="clust67" class="cluster">
 <title>cluster_src/shared/utils/scroll</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M11959,-489.6C11959,-489.6 12021,-489.6 12021,-489.6 12027,-489.6 12033,-495.6 12033,-501.6 12033,-501.6 12033,-654.65 12033,-654.65 12033,-660.65 12027,-666.65 12021,-666.65 12021,-666.65 11959,-666.65 11959,-666.65 11953,-666.65 11947,-660.65 11947,-654.65 11947,-654.65 11947,-501.6 11947,-501.6 11947,-495.6 11953,-489.6 11959,-489.6"/>
 <text xml:space="preserve" text-anchor="middle" x="11990" y="-651.25" font-family="Arial" font-size="12.00">scroll</text>
 </g>
-<g id="clust67" class="cluster">
+<g id="clust68" class="cluster">
 <title>cluster_src/shared/utils/styles</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M12053,-264.8C12053,-264.8 12163,-264.8 12163,-264.8 12169,-264.8 12175,-270.8 12175,-276.8 12175,-276.8 12175,-542.25 12175,-542.25 12175,-548.25 12169,-554.25 12163,-554.25 12163,-554.25 12053,-554.25 12053,-554.25 12047,-554.25 12041,-548.25 12041,-542.25 12041,-542.25 12041,-276.8 12041,-276.8 12041,-270.8 12047,-264.8 12053,-264.8"/>
 <text xml:space="preserve" text-anchor="middle" x="12108" y="-538.85" font-family="Arial" font-size="12.00">styles</text>
 </g>
-<g id="clust68" class="cluster">
+<g id="clust69" class="cluster">
 <title>cluster_src/styles</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M13624,-489.6C13624,-489.6 13672,-489.6 13672,-489.6 13678,-489.6 13684,-495.6 13684,-501.6 13684,-501.6 13684,-542.25 13684,-542.25 13684,-548.25 13678,-554.25 13672,-554.25 13672,-554.25 13624,-554.25 13624,-554.25 13618,-554.25 13612,-548.25 13612,-542.25 13612,-542.25 13612,-501.6 13612,-501.6 13612,-495.6 13618,-489.6 13624,-489.6"/>
 <text xml:space="preserve" text-anchor="middle" x="13648" y="-538.85" font-family="Arial" font-size="12.00">styles</text>
 </g>
-<g id="clust69" class="cluster">
+<g id="clust70" class="cluster">
 <title>cluster_src/types</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M13521,-826.8C13521,-826.8 13567,-826.8 13567,-826.8 13573,-826.8 13579,-832.8 13579,-838.8 13579,-838.8 13579,-879.45 13579,-879.45 13579,-885.45 13573,-891.45 13567,-891.45 13567,-891.45 13521,-891.45 13521,-891.45 13515,-891.45 13509,-885.45 13509,-879.45 13509,-879.45 13509,-838.8 13509,-838.8 13509,-832.8 13515,-826.8 13521,-826.8"/>
 <text xml:space="preserve" text-anchor="middle" x="13544" y="-876.05" font-family="Arial" font-size="12.00">types</text>
 </g>
-<g id="clust70" class="cluster">
+<g id="clust71" class="cluster">
 <title>cluster_src/utils</title>
 <path fill="#ffffff" stroke="black" stroke-width="2" d="M13557,-1051.6C13557,-1051.6 13603,-1051.6 13603,-1051.6 13609,-1051.6 13615,-1057.6 13615,-1063.6 13615,-1063.6 13615,-1104.25 13615,-1104.25 13615,-1110.25 13609,-1116.25 13603,-1116.25 13603,-1116.25 13557,-1116.25 13557,-1116.25 13551,-1116.25 13545,-1110.25 13545,-1104.25 13545,-1104.25 13545,-1063.6 13545,-1063.6 13545,-1057.6 13551,-1051.6 13557,-1051.6"/>
 <text xml:space="preserve" text-anchor="middle" x="13580" y="-1100.85" font-family="Arial" font-size="12.00">utils</text>
@@ -2094,31 +2099,31 @@
 <g id="node105" class="node">
 <title>src/shared/external/vendors/vendor&#45;manager.ts</title>
 <g id="a_node105"><a xlink:href="src/shared/external/vendors/vendor-manager.ts" xlink:title="vendor&#45;manager.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M6256.9,-748.8C6256.9,-748.8 6179.1,-748.8 6179.1,-748.8 6174.7,-748.8 6170.3,-744.4 6170.3,-740 6170.3,-740 6170.3,-731.2 6170.3,-731.2 6170.3,-726.8 6174.7,-722.4 6179.1,-722.4 6179.1,-722.4 6256.9,-722.4 6256.9,-722.4 6261.3,-722.4 6265.7,-726.8 6265.7,-731.2 6265.7,-731.2 6265.7,-740 6265.7,-740 6265.7,-744.4 6261.3,-748.8 6256.9,-748.8"/>
-<text xml:space="preserve" text-anchor="start" x="6177.5" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">vendor&#45;manager.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M6288.9,-748.8C6288.9,-748.8 6211.1,-748.8 6211.1,-748.8 6206.7,-748.8 6202.3,-744.4 6202.3,-740 6202.3,-740 6202.3,-731.2 6202.3,-731.2 6202.3,-726.8 6206.7,-722.4 6211.1,-722.4 6211.1,-722.4 6288.9,-722.4 6288.9,-722.4 6293.3,-722.4 6297.7,-726.8 6297.7,-731.2 6297.7,-731.2 6297.7,-740 6297.7,-740 6297.7,-744.4 6293.3,-748.8 6288.9,-748.8"/>
+<text xml:space="preserve" text-anchor="start" x="6209.5" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">vendor&#45;manager.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/external/vendors/index.ts&#45;&gt;src/shared/external/vendors/vendor&#45;manager.ts -->
 <g id="edge132" class="edge">
 <title>src/shared/external/vendors/index.ts&#45;&gt;src/shared/external/vendors/vendor&#45;manager.ts</title>
-<path fill="none" stroke="#666666" d="M6405.73,-946.78C6372.41,-909.48 6274.25,-799.58 6234.75,-755.35"/>
-<polygon fill="#666666" stroke="#666666" points="6231.57,-747.59 6234.81,-755.42 6227.39,-751.32 6231.57,-747.59"/>
+<path fill="none" stroke="#666666" d="M6407.54,-946.78C6379.7,-909.64 6297.88,-800.48 6264.47,-755.9"/>
+<polygon fill="#666666" stroke="#666666" points="6261.89,-747.8 6264.45,-755.88 6257.41,-751.16 6261.89,-747.8"/>
 </g>
 <!-- src/shared/external/vendors/vendor&#45;manager&#45;static.ts -->
 <g id="node106" class="node">
 <title>src/shared/external/vendors/vendor&#45;manager&#45;static.ts</title>
 <g id="a_node106"><a xlink:href="src/shared/external/vendors/vendor-manager-static.ts" xlink:title="vendor&#45;manager&#45;static.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M6469.4,-748.8C6469.4,-748.8 6364.6,-748.8 6364.6,-748.8 6360.2,-748.8 6355.8,-744.4 6355.8,-740 6355.8,-740 6355.8,-731.2 6355.8,-731.2 6355.8,-726.8 6360.2,-722.4 6364.6,-722.4 6364.6,-722.4 6469.4,-722.4 6469.4,-722.4 6473.8,-722.4 6478.2,-726.8 6478.2,-731.2 6478.2,-731.2 6478.2,-740 6478.2,-740 6478.2,-744.4 6473.8,-748.8 6469.4,-748.8"/>
-<text xml:space="preserve" text-anchor="start" x="6363" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">vendor&#45;manager&#45;static.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M6456.4,-748.8C6456.4,-748.8 6351.6,-748.8 6351.6,-748.8 6347.2,-748.8 6342.8,-744.4 6342.8,-740 6342.8,-740 6342.8,-731.2 6342.8,-731.2 6342.8,-726.8 6347.2,-722.4 6351.6,-722.4 6351.6,-722.4 6456.4,-722.4 6456.4,-722.4 6460.8,-722.4 6465.2,-726.8 6465.2,-731.2 6465.2,-731.2 6465.2,-740 6465.2,-740 6465.2,-744.4 6460.8,-748.8 6456.4,-748.8"/>
+<text xml:space="preserve" text-anchor="start" x="6350" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">vendor&#45;manager&#45;static.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/external/vendors/index.ts&#45;&gt;src/shared/external/vendors/vendor&#45;manager&#45;static.ts -->
 <g id="edge133" class="edge">
 <title>src/shared/external/vendors/index.ts&#45;&gt;src/shared/external/vendors/vendor&#45;manager&#45;static.ts</title>
-<path fill="none" stroke="#666666" d="M6430.1,-947.06C6441.76,-936.06 6457,-921.7 6457,-921.7 6457,-921.7 6457,-818.8 6457,-818.8 6457,-818.8 6438.97,-781.74 6427.12,-757.39"/>
-<polygon fill="none" stroke="#666666" points="6429.76,-756.41 6423.74,-750.45 6424.72,-758.86 6429.76,-756.41"/>
+<path fill="none" stroke="#666666" d="M6430.1,-947.06C6441.76,-936.06 6457,-921.7 6457,-921.7 6457,-921.7 6457,-818.8 6457,-818.8 6457,-818.8 6432.9,-781.41 6417.2,-757.07"/>
+<polygon fill="none" stroke="#666666" points="6419.56,-755.56 6412.87,-750.36 6414.85,-758.6 6419.56,-755.56"/>
 </g>
 <!-- src/shared/external/vendors/vendor&#45;types.ts -->
 <g id="node107" class="node">
@@ -2153,14 +2158,14 @@
 <!-- src/shared/external/vendors/vendor&#45;api.ts&#45;&gt;src/shared/external/vendors/vendor&#45;manager.ts -->
 <g id="edge136" class="edge">
 <title>src/shared/external/vendors/vendor&#45;api.ts&#45;&gt;src/shared/external/vendors/vendor&#45;manager.ts</title>
-<path fill="none" stroke="#666666" d="M6204.72,-834.34C6207.24,-815.79 6211.97,-780.97 6215.05,-758.29"/>
-<polygon fill="#666666" stroke="#666666" points="6217.79,-758.92 6216.1,-750.62 6212.24,-758.17 6217.79,-758.92"/>
+<path fill="none" stroke="#666666" d="M6208.39,-834.34C6216.36,-815.62 6231.38,-780.35 6241.02,-757.69"/>
+<polygon fill="#666666" stroke="#666666" points="6243.52,-758.97 6244.08,-750.51 6238.37,-756.77 6243.52,-758.97"/>
 </g>
 <!-- src/shared/external/vendors/vendor&#45;api&#45;safe.ts&#45;&gt;src/shared/external/vendors/vendor&#45;manager&#45;static.ts -->
 <g id="edge135" class="edge">
 <title>src/shared/external/vendors/vendor&#45;api&#45;safe.ts&#45;&gt;src/shared/external/vendors/vendor&#45;manager&#45;static.ts</title>
-<path fill="none" stroke="#666666" d="M6377.16,-834.34C6384.79,-815.62 6399.17,-780.35 6408.4,-757.69"/>
-<polygon fill="#666666" stroke="#666666" points="6410.9,-758.98 6411.33,-750.52 6405.71,-756.87 6410.9,-758.98"/>
+<path fill="none" stroke="#666666" d="M6375.67,-834.34C6381.07,-815.7 6391.23,-780.66 6397.8,-757.99"/>
+<polygon fill="#666666" stroke="#666666" points="6400.41,-759.03 6399.95,-750.57 6395.03,-757.47 6400.41,-759.03"/>
 </g>
 <!-- src/shared/hooks/index.ts -->
 <g id="node109" class="node">
@@ -2699,9 +2704,9 @@
 <polygon fill="none" stroke="#666666" points="12777.36,-646.77 12776.54,-638.33 12771.92,-645.44 12777.36,-646.77"/>
 </g>
 <!-- src/shared/types/app.types.ts -->
-<g id="node183" class="node">
+<g id="node184" class="node">
 <title>src/shared/types/app.types.ts</title>
-<g id="a_node183"><a xlink:href="src/shared/types/app.types.ts" xlink:title="app.types.ts">
+<g id="a_node184"><a xlink:href="src/shared/types/app.types.ts" xlink:title="app.types.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M13049.4,-636.4C13049.4,-636.4 12998.6,-636.4 12998.6,-636.4 12994.2,-636.4 12989.8,-632 12989.8,-627.6 12989.8,-627.6 12989.8,-618.8 12989.8,-618.8 12989.8,-614.4 12994.2,-610 12998.6,-610 12998.6,-610 13049.4,-610 13049.4,-610 13053.8,-610 13058.2,-614.4 13058.2,-618.8 13058.2,-618.8 13058.2,-627.6 13058.2,-627.6 13058.2,-632 13053.8,-636.4 13049.4,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="12997" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">app.types.ts</text>
 </a>
@@ -2714,9 +2719,9 @@
 <polygon fill="none" stroke="#666666" points="13015.3,-646.43 13016.6,-638.05 13010.36,-643.79 13015.3,-646.43"/>
 </g>
 <!-- src/shared/types/core/userscript.d.ts -->
-<g id="node188" class="node">
+<g id="node189" class="node">
 <title>src/shared/types/core/userscript.d.ts</title>
-<g id="a_node188"><a xlink:href="src/shared/types/core/userscript.d.ts" xlink:title="userscript.d.ts">
+<g id="a_node189"><a xlink:href="src/shared/types/core/userscript.d.ts" xlink:title="userscript.d.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M13169.53,-636.4C13169.53,-636.4 13110.47,-636.4 13110.47,-636.4 13106.07,-636.4 13101.67,-632 13101.67,-627.6 13101.67,-627.6 13101.67,-618.8 13101.67,-618.8 13101.67,-614.4 13106.07,-610 13110.47,-610 13110.47,-610 13169.53,-610 13169.53,-610 13173.93,-610 13178.33,-614.4 13178.33,-618.8 13178.33,-618.8 13178.33,-627.6 13178.33,-627.6 13178.33,-632 13173.93,-636.4 13169.53,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="13108.88" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">userscript.d.ts</text>
 </a>
@@ -2729,9 +2734,9 @@
 <polygon fill="#666666" stroke="#666666" points="13129.26,-639.03 13121.65,-642.75 13125.28,-635.09 13129.26,-639.03"/>
 </g>
 <!-- src/shared/types/media.types.ts -->
-<g id="node189" class="node">
+<g id="node190" class="node">
 <title>src/shared/types/media.types.ts</title>
-<g id="a_node189"><a xlink:href="src/shared/types/media.types.ts" xlink:title="media.types.ts">
+<g id="a_node190"><a xlink:href="src/shared/types/media.types.ts" xlink:title="media.types.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M12937.65,-636.4C12937.65,-636.4 12876.35,-636.4 12876.35,-636.4 12871.95,-636.4 12867.55,-632 12867.55,-627.6 12867.55,-627.6 12867.55,-618.8 12867.55,-618.8 12867.55,-614.4 12871.95,-610 12876.35,-610 12876.35,-610 12937.65,-610 12937.65,-610 12942.05,-610 12946.45,-614.4 12946.45,-618.8 12946.45,-618.8 12946.45,-627.6 12946.45,-627.6 12946.45,-632 12942.05,-636.4 12937.65,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="12874.75" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">media.types.ts</text>
 </a>
@@ -2750,9 +2755,9 @@
 <polygon fill="none" stroke="#666666" points="10833.8,-756.72 10828.05,-750.5 10828.67,-758.96 10833.8,-756.72"/>
 </g>
 <!-- src/shared/utils/accessibility.ts -->
-<g id="node190" class="node">
+<g id="node191" class="node">
 <title>src/shared/utils/accessibility.ts</title>
-<g id="a_node190"><a xlink:href="src/shared/utils/accessibility.ts" xlink:title="accessibility.ts">
+<g id="a_node191"><a xlink:href="src/shared/utils/accessibility.ts" xlink:title="accessibility.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11551.65,-636.4C11551.65,-636.4 11490.35,-636.4 11490.35,-636.4 11485.95,-636.4 11481.55,-632 11481.55,-627.6 11481.55,-627.6 11481.55,-618.8 11481.55,-618.8 11481.55,-614.4 11485.95,-610 11490.35,-610 11490.35,-610 11551.65,-610 11551.65,-610 11556.05,-610 11560.45,-614.4 11560.45,-618.8 11560.45,-618.8 11560.45,-627.6 11560.45,-627.6 11560.45,-632 11556.05,-636.4 11551.65,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="11488.75" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">accessibility.ts</text>
 </a>
@@ -2766,9 +2771,9 @@
 <path fill="none" stroke="#666666" d="M10897.25,-845.59C11029.59,-838.75 11599,-809.3 11599,-809.3 11599,-809.3 11604,-736.6 11604,-736.6"/>
 </g>
 <!-- src/shared/utils/type&#45;safety&#45;helpers.ts -->
-<g id="node192" class="node">
+<g id="node193" class="node">
 <title>src/shared/utils/type&#45;safety&#45;helpers.ts</title>
-<g id="a_node192"><a xlink:href="src/shared/utils/type-safety-helpers.ts" xlink:title="type&#45;safety&#45;helpers.ts">
+<g id="a_node193"><a xlink:href="src/shared/utils/type-safety-helpers.ts" xlink:title="type&#45;safety&#45;helpers.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11649.65,-524C11649.65,-524 11558.35,-524 11558.35,-524 11553.95,-524 11549.55,-519.6 11549.55,-515.2 11549.55,-515.2 11549.55,-506.4 11549.55,-506.4 11549.55,-502 11553.95,-497.6 11558.35,-497.6 11558.35,-497.6 11649.65,-497.6 11649.65,-497.6 11654.05,-497.6 11658.45,-502 11658.45,-506.4 11658.45,-506.4 11658.45,-515.2 11658.45,-515.2 11658.45,-519.6 11654.05,-524 11649.65,-524"/>
 <text xml:space="preserve" text-anchor="start" x="11556.75" y="-507.3" font-family="Arial" font-size="10.00" fill="#b45309">type&#45;safety&#45;helpers.ts</text>
 </a>
@@ -2781,9 +2786,9 @@
 <polygon fill="#666666" stroke="#666666" points="11606.8,-524.92 11604,-532.92 11601.2,-524.92 11606.8,-524.92"/>
 </g>
 <!-- src/shared/utils/core&#45;utils.ts -->
-<g id="node197" class="node">
+<g id="node198" class="node">
 <title>src/shared/utils/core&#45;utils.ts</title>
-<g id="a_node197"><a xlink:href="src/shared/utils/core-utils.ts" xlink:title="core&#45;utils.ts">
+<g id="a_node198"><a xlink:href="src/shared/utils/core-utils.ts" xlink:title="core&#45;utils.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11888.9,-411.6C11888.9,-411.6 11841.1,-411.6 11841.1,-411.6 11836.7,-411.6 11832.3,-407.2 11832.3,-402.8 11832.3,-402.8 11832.3,-394 11832.3,-394 11832.3,-389.6 11836.7,-385.2 11841.1,-385.2 11841.1,-385.2 11888.9,-385.2 11888.9,-385.2 11893.3,-385.2 11897.7,-389.6 11897.7,-394 11897.7,-394 11897.7,-402.8 11897.7,-402.8 11897.7,-407.2 11893.3,-411.6 11888.9,-411.6"/>
 <text xml:space="preserve" text-anchor="start" x="11839.5" y="-394.9" font-family="Arial" font-size="10.00" fill="#b45309">core&#45;utils.ts</text>
 </a>
@@ -2797,9 +2802,9 @@
 <polygon fill="#666666" stroke="#666666" points="11863.31,-413.37 11858.13,-420.08 11857.99,-411.61 11863.31,-413.37"/>
 </g>
 <!-- src/shared/utils/error&#45;handling.ts -->
-<g id="node208" class="node">
+<g id="node209" class="node">
 <title>src/shared/utils/error&#45;handling.ts</title>
-<g id="a_node208"><a xlink:href="src/shared/utils/error-handling.ts" xlink:title="error&#45;handling.ts">
+<g id="a_node209"><a xlink:href="src/shared/utils/error-handling.ts" xlink:title="error&#45;handling.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11936.28,-748.8C11936.28,-748.8 11869.72,-748.8 11869.72,-748.8 11865.32,-748.8 11860.92,-744.4 11860.92,-740 11860.92,-740 11860.92,-731.2 11860.92,-731.2 11860.92,-726.8 11865.32,-722.4 11869.72,-722.4 11869.72,-722.4 11936.28,-722.4 11936.28,-722.4 11940.68,-722.4 11945.08,-726.8 11945.08,-731.2 11945.08,-731.2 11945.08,-740 11945.08,-740 11945.08,-744.4 11940.68,-748.8 11936.28,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="11868.12" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">error&#45;handling.ts</text>
 </a>
@@ -2812,9 +2817,9 @@
 <polygon fill="none" stroke="#666666" points="11892.27,-758.8 11894.18,-750.54 11887.53,-755.81 11892.27,-758.8"/>
 </g>
 <!-- src/shared/utils/events.ts -->
-<g id="node209" class="node">
+<g id="node210" class="node">
 <title>src/shared/utils/events.ts</title>
-<g id="a_node209"><a xlink:href="src/shared/utils/events.ts" xlink:title="events.ts">
+<g id="a_node210"><a xlink:href="src/shared/utils/events.ts" xlink:title="events.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M10937.65,-748.8C10937.65,-748.8 10900.35,-748.8 10900.35,-748.8 10895.95,-748.8 10891.55,-744.4 10891.55,-740 10891.55,-740 10891.55,-731.2 10891.55,-731.2 10891.55,-726.8 10895.95,-722.4 10900.35,-722.4 10900.35,-722.4 10937.65,-722.4 10937.65,-722.4 10942.05,-722.4 10946.45,-726.8 10946.45,-731.2 10946.45,-731.2 10946.45,-740 10946.45,-740 10946.45,-744.4 10942.05,-748.8 10937.65,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="10898.75" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">events.ts</text>
 </a>
@@ -2827,9 +2832,9 @@
 <polygon fill="#666666" stroke="#666666" points="10915.98,-750.82 10910.27,-757.08 10910.83,-748.63 10915.98,-750.82"/>
 </g>
 <!-- src/shared/utils/media/index.ts -->
-<g id="node210" class="node">
+<g id="node211" class="node">
 <title>src/shared/utils/media/index.ts</title>
-<g id="a_node210"><a xlink:href="src/shared/utils/media/index.ts" xlink:title="index.ts">
+<g id="a_node211"><a xlink:href="src/shared/utils/media/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11228.2,-748.8C11228.2,-748.8 11191.8,-748.8 11191.8,-748.8 11187.4,-748.8 11183,-744.4 11183,-740 11183,-740 11183,-731.2 11183,-731.2 11183,-726.8 11187.4,-722.4 11191.8,-722.4 11191.8,-722.4 11228.2,-722.4 11228.2,-722.4 11232.6,-722.4 11237,-726.8 11237,-731.2 11237,-731.2 11237,-740 11237,-740 11237,-744.4 11232.6,-748.8 11228.2,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="11192.75" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -2842,9 +2847,9 @@
 <polygon fill="#666666" stroke="#666666" points="11206.98,-750.82 11201.27,-757.08 11201.83,-748.63 11206.98,-750.82"/>
 </g>
 <!-- src/shared/utils/timer&#45;management.ts -->
-<g id="node211" class="node">
+<g id="node212" class="node">
 <title>src/shared/utils/timer&#45;management.ts</title>
-<g id="a_node211"><a xlink:href="src/shared/utils/timer-management.ts" xlink:title="timer&#45;management.ts">
+<g id="a_node212"><a xlink:href="src/shared/utils/timer-management.ts" xlink:title="timer&#45;management.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M10259.53,-748.8C10259.53,-748.8 10170.47,-748.8 10170.47,-748.8 10166.07,-748.8 10161.67,-744.4 10161.67,-740 10161.67,-740 10161.67,-731.2 10161.67,-731.2 10161.67,-726.8 10166.07,-722.4 10170.47,-722.4 10170.47,-722.4 10259.53,-722.4 10259.53,-722.4 10263.93,-722.4 10268.33,-726.8 10268.33,-731.2 10268.33,-731.2 10268.33,-740 10268.33,-740 10268.33,-744.4 10263.93,-748.8 10259.53,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="10168.88" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">timer&#45;management.ts</text>
 </a>
@@ -2857,9 +2862,9 @@
 <polygon fill="#666666" stroke="#666666" points="10248.04,-746.85 10254.42,-752.43 10245.95,-752.05 10248.04,-746.85"/>
 </g>
 <!-- src/shared/utils/utils.ts -->
-<g id="node212" class="node">
+<g id="node213" class="node">
 <title>src/shared/utils/utils.ts</title>
-<g id="a_node212"><a xlink:href="src/shared/utils/utils.ts" xlink:title="utils.ts">
+<g id="a_node213"><a xlink:href="src/shared/utils/utils.ts" xlink:title="utils.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11809.2,-748.8C11809.2,-748.8 11772.8,-748.8 11772.8,-748.8 11768.4,-748.8 11764,-744.4 11764,-740 11764,-740 11764,-731.2 11764,-731.2 11764,-726.8 11768.4,-722.4 11772.8,-722.4 11772.8,-722.4 11809.2,-722.4 11809.2,-722.4 11813.6,-722.4 11818,-726.8 11818,-731.2 11818,-731.2 11818,-740 11818,-740 11818,-744.4 11813.6,-748.8 11809.2,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="11776.38" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">utils.ts</text>
 </a>
@@ -2878,9 +2883,9 @@
 <polygon fill="#666666" stroke="#666666" points="11855.88,-414.12 11848.51,-418.31 11851.66,-410.44 11855.88,-414.12"/>
 </g>
 <!-- src/shared/utils/dom/DOMBatcher.ts -->
-<g id="node206" class="node">
+<g id="node207" class="node">
 <title>src/shared/utils/dom/DOMBatcher.ts</title>
-<g id="a_node206"><a xlink:href="src/shared/utils/dom/DOMBatcher.ts" xlink:title="DOMBatcher.ts">
+<g id="a_node207"><a xlink:href="src/shared/utils/dom/DOMBatcher.ts" xlink:title="DOMBatcher.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M10711.53,-636.4C10711.53,-636.4 10646.47,-636.4 10646.47,-636.4 10642.07,-636.4 10637.67,-632 10637.67,-627.6 10637.67,-627.6 10637.67,-618.8 10637.67,-618.8 10637.67,-614.4 10642.07,-610 10646.47,-610 10646.47,-610 10711.53,-610 10711.53,-610 10715.93,-610 10720.33,-614.4 10720.33,-618.8 10720.33,-618.8 10720.33,-627.6 10720.33,-627.6 10720.33,-632 10715.93,-636.4 10711.53,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="10644.88" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">DOMBatcher.ts</text>
 </a>
@@ -2893,9 +2898,9 @@
 <polygon fill="none" stroke="#666666" points="10705.34,-640.06 10697.23,-637.58 10702.02,-644.57 10705.34,-640.06"/>
 </g>
 <!-- src/shared/utils/dom/css&#45;validation.ts -->
-<g id="node207" class="node">
+<g id="node208" class="node">
 <title>src/shared/utils/dom/css&#45;validation.ts</title>
-<g id="a_node207"><a xlink:href="src/shared/utils/dom/css-validation.ts" xlink:title="css&#45;validation.ts">
+<g id="a_node208"><a xlink:href="src/shared/utils/dom/css-validation.ts" xlink:title="css&#45;validation.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M10840.03,-636.4C10840.03,-636.4 10771.97,-636.4 10771.97,-636.4 10767.57,-636.4 10763.17,-632 10763.17,-627.6 10763.17,-627.6 10763.17,-618.8 10763.17,-618.8 10763.17,-614.4 10767.57,-610 10771.97,-610 10771.97,-610 10840.03,-610 10840.03,-610 10844.43,-610 10848.83,-614.4 10848.83,-618.8 10848.83,-618.8 10848.83,-627.6 10848.83,-627.6 10848.83,-632 10844.43,-636.4 10840.03,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="10770.38" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">css&#45;validation.ts</text>
 </a>
@@ -2908,9 +2913,9 @@
 <polygon fill="#666666" stroke="#666666" points="10810.66,-636.81 10809.03,-645.13 10805.11,-637.61 10810.66,-636.81"/>
 </g>
 <!-- src/shared/utils/optimization/bundle.ts -->
-<g id="node217" class="node">
+<g id="node218" class="node">
 <title>src/shared/utils/optimization/bundle.ts</title>
-<g id="a_node217"><a xlink:href="src/shared/utils/optimization/bundle.ts" xlink:title="bundle.ts">
+<g id="a_node218"><a xlink:href="src/shared/utils/optimization/bundle.ts" xlink:title="bundle.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M10459.28,-748.8C10459.28,-748.8 10422.72,-748.8 10422.72,-748.8 10418.32,-748.8 10413.92,-744.4 10413.92,-740 10413.92,-740 10413.92,-731.2 10413.92,-731.2 10413.92,-726.8 10418.32,-722.4 10422.72,-722.4 10422.72,-722.4 10459.28,-722.4 10459.28,-722.4 10463.68,-722.4 10468.08,-726.8 10468.08,-731.2 10468.08,-731.2 10468.08,-740 10468.08,-740 10468.08,-744.4 10463.68,-748.8 10459.28,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="10421.12" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">bundle.ts</text>
 </a>
@@ -2923,9 +2928,9 @@
 <polygon fill="#666666" stroke="#666666" points="10443.8,-749.62 10441,-757.62 10438.2,-749.62 10443.8,-749.62"/>
 </g>
 <!-- src/shared/utils/optimization/memo.ts -->
-<g id="node218" class="node">
+<g id="node219" class="node">
 <title>src/shared/utils/optimization/memo.ts</title>
-<g id="a_node218"><a xlink:href="src/shared/utils/optimization/memo.ts" xlink:title="memo.ts">
+<g id="a_node219"><a xlink:href="src/shared/utils/optimization/memo.ts" xlink:title="memo.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M10556.2,-748.8C10556.2,-748.8 10519.8,-748.8 10519.8,-748.8 10515.4,-748.8 10511,-744.4 10511,-740 10511,-740 10511,-731.2 10511,-731.2 10511,-726.8 10515.4,-722.4 10519.8,-722.4 10519.8,-722.4 10556.2,-722.4 10556.2,-722.4 10560.6,-722.4 10565,-726.8 10565,-731.2 10565,-731.2 10565,-740 10565,-740 10565,-744.4 10560.6,-748.8 10556.2,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="10518.88" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">memo.ts</text>
 </a>
@@ -3077,8 +3082,8 @@
 <g id="node143" class="node">
 <title>src/shared/services/EventManager.ts</title>
 <g id="a_node143"><a xlink:href="src/shared/services/EventManager.ts" xlink:title="EventManager.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M9586.53,-973.6C9586.53,-973.6 9515.47,-973.6 9515.47,-973.6 9511.07,-973.6 9506.67,-969.2 9506.67,-964.8 9506.67,-964.8 9506.67,-956 9506.67,-956 9506.67,-951.6 9511.07,-947.2 9515.47,-947.2 9515.47,-947.2 9586.53,-947.2 9586.53,-947.2 9590.93,-947.2 9595.33,-951.6 9595.33,-956 9595.33,-956 9595.33,-964.8 9595.33,-964.8 9595.33,-969.2 9590.93,-973.6 9586.53,-973.6"/>
-<text xml:space="preserve" text-anchor="start" x="9513.88" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">EventManager.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M9573.53,-973.6C9573.53,-973.6 9502.47,-973.6 9502.47,-973.6 9498.07,-973.6 9493.67,-969.2 9493.67,-964.8 9493.67,-964.8 9493.67,-956 9493.67,-956 9493.67,-951.6 9498.07,-947.2 9502.47,-947.2 9502.47,-947.2 9573.53,-947.2 9573.53,-947.2 9577.93,-947.2 9582.33,-951.6 9582.33,-956 9582.33,-956 9582.33,-964.8 9582.33,-964.8 9582.33,-969.2 9577.93,-973.6 9573.53,-973.6"/>
+<text xml:space="preserve" text-anchor="start" x="9500.88" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">EventManager.ts</text>
 </a>
 </g>
 </g>
@@ -3298,23 +3303,23 @@
 <g id="node158" class="node">
 <title>src/shared/services/event&#45;managers.ts</title>
 <g id="a_node158"><a xlink:href="src/shared/services/event-managers.ts" xlink:title="event&#45;managers.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M9589.9,-1086C9589.9,-1086 9512.1,-1086 9512.1,-1086 9507.7,-1086 9503.3,-1081.6 9503.3,-1077.2 9503.3,-1077.2 9503.3,-1068.4 9503.3,-1068.4 9503.3,-1064 9507.7,-1059.6 9512.1,-1059.6 9512.1,-1059.6 9589.9,-1059.6 9589.9,-1059.6 9594.3,-1059.6 9598.7,-1064 9598.7,-1068.4 9598.7,-1068.4 9598.7,-1077.2 9598.7,-1077.2 9598.7,-1081.6 9594.3,-1086 9589.9,-1086"/>
-<text xml:space="preserve" text-anchor="start" x="9510.5" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">event&#45;managers.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M9576.9,-1086C9576.9,-1086 9499.1,-1086 9499.1,-1086 9494.7,-1086 9490.3,-1081.6 9490.3,-1077.2 9490.3,-1077.2 9490.3,-1068.4 9490.3,-1068.4 9490.3,-1064 9494.7,-1059.6 9499.1,-1059.6 9499.1,-1059.6 9576.9,-1059.6 9576.9,-1059.6 9581.3,-1059.6 9585.7,-1064 9585.7,-1068.4 9585.7,-1068.4 9585.7,-1077.2 9585.7,-1077.2 9585.7,-1081.6 9581.3,-1086 9576.9,-1086"/>
+<text xml:space="preserve" text-anchor="start" x="9497.5" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">event&#45;managers.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/services/event&#45;managers.ts&#45;&gt;src/shared/services/EventManager.ts -->
 <g id="edge178" class="edge">
 <title>src/shared/services/event&#45;managers.ts&#45;&gt;src/shared/services/EventManager.ts</title>
-<path fill="none" stroke="#666666" d="M9551,-1059.14C9551,-1040.42 9551,-1005.15 9551,-982.49"/>
-<polygon fill="#666666" stroke="#666666" points="9553.8,-974.42 9551,-982.42 9548.2,-974.42 9553.8,-974.42"/>
+<path fill="none" stroke="#666666" d="M9538,-1059.14C9538,-1040.42 9538,-1005.15 9538,-982.49"/>
+<polygon fill="#666666" stroke="#666666" points="9540.8,-974.42 9538,-982.42 9535.2,-974.42 9540.8,-974.42"/>
 </g>
 <!-- src/shared/services/iconRegistry.ts -->
 <g id="node159" class="node">
 <title>src/shared/services/iconRegistry.ts</title>
 <g id="a_node159"><a xlink:href="src/shared/services/iconRegistry.ts" xlink:title="no&#45;orphans">
-<path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M9761.03,-1086C9761.03,-1086 9698.97,-1086 9698.97,-1086 9694.57,-1086 9690.17,-1081.6 9690.17,-1077.2 9690.17,-1077.2 9690.17,-1068.4 9690.17,-1068.4 9690.17,-1064 9694.57,-1059.6 9698.97,-1059.6 9698.97,-1059.6 9761.03,-1059.6 9761.03,-1059.6 9765.43,-1059.6 9769.83,-1064 9769.83,-1068.4 9769.83,-1068.4 9769.83,-1077.2 9769.83,-1077.2 9769.83,-1081.6 9765.43,-1086 9761.03,-1086"/>
-<text xml:space="preserve" text-anchor="start" x="9697.38" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">iconRegistry.ts</text>
+<path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M9742.03,-1086C9742.03,-1086 9679.97,-1086 9679.97,-1086 9675.57,-1086 9671.17,-1081.6 9671.17,-1077.2 9671.17,-1077.2 9671.17,-1068.4 9671.17,-1068.4 9671.17,-1064 9675.57,-1059.6 9679.97,-1059.6 9679.97,-1059.6 9742.03,-1059.6 9742.03,-1059.6 9746.43,-1059.6 9750.83,-1064 9750.83,-1068.4 9750.83,-1068.4 9750.83,-1077.2 9750.83,-1077.2 9750.83,-1081.6 9746.43,-1086 9742.03,-1086"/>
+<text xml:space="preserve" text-anchor="start" x="9678.38" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">iconRegistry.ts</text>
 </a>
 </g>
 </g>
@@ -3484,16 +3489,16 @@
 <g id="node173" class="node">
 <title>src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts</title>
 <g id="a_node173"><a xlink:href="src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts" xlink:title="MediaTabUrlDirectStrategy.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M9347.53,-861.2C9347.53,-861.2 9222.47,-861.2 9222.47,-861.2 9218.07,-861.2 9213.67,-856.8 9213.67,-852.4 9213.67,-852.4 9213.67,-843.6 9213.67,-843.6 9213.67,-839.2 9218.07,-834.8 9222.47,-834.8 9222.47,-834.8 9347.53,-834.8 9347.53,-834.8 9351.93,-834.8 9356.33,-839.2 9356.33,-843.6 9356.33,-843.6 9356.33,-852.4 9356.33,-852.4 9356.33,-856.8 9351.93,-861.2 9347.53,-861.2"/>
-<text xml:space="preserve" text-anchor="start" x="9220.88" y="-844.5" font-family="Arial" font-size="10.00" fill="#b45309">MediaTabUrlDirectStrategy.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M9346.53,-861.2C9346.53,-861.2 9221.47,-861.2 9221.47,-861.2 9217.07,-861.2 9212.67,-856.8 9212.67,-852.4 9212.67,-852.4 9212.67,-843.6 9212.67,-843.6 9212.67,-839.2 9217.07,-834.8 9221.47,-834.8 9221.47,-834.8 9346.53,-834.8 9346.53,-834.8 9350.93,-834.8 9355.33,-839.2 9355.33,-843.6 9355.33,-843.6 9355.33,-852.4 9355.33,-852.4 9355.33,-856.8 9350.93,-861.2 9346.53,-861.2"/>
+<text xml:space="preserve" text-anchor="start" x="9219.88" y="-844.5" font-family="Arial" font-size="10.00" fill="#b45309">MediaTabUrlDirectStrategy.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/services/media&#45;mapping/MediaMappingService.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts -->
 <g id="edge203" class="edge">
 <title>src/shared/services/media&#45;mapping/MediaMappingService.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts</title>
-<path fill="none" stroke="#666666" d="M9264.64,-946.74C9268.5,-928.19 9275.76,-893.37 9280.48,-870.69"/>
-<polygon fill="#666666" stroke="#666666" points="9283.19,-871.4 9282.08,-863 9277.71,-870.26 9283.19,-871.4"/>
+<path fill="none" stroke="#666666" d="M9264.52,-946.74C9268.22,-928.19 9275.16,-893.37 9279.68,-870.69"/>
+<polygon fill="#666666" stroke="#666666" points="9282.39,-871.39 9281.21,-863 9276.9,-870.3 9282.39,-871.39"/>
 </g>
 <!-- src/shared/services/media&#45;mapping/index.ts -->
 <g id="node174" class="node">
@@ -3513,8 +3518,8 @@
 <!-- src/shared/services/media&#45;mapping/index.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts -->
 <g id="edge205" class="edge">
 <title>src/shared/services/media&#45;mapping/index.ts&#45;&gt;src/shared/services/media&#45;mapping/MediaTabUrlDirectStrategy.ts</title>
-<path fill="none" stroke="#666666" d="M9312.19,-1059.34C9329.8,-1039.72 9362,-1003.85 9362,-1003.85 9362,-1003.85 9362,-931.2 9362,-931.2 9362,-931.2 9325.12,-891.83 9302.41,-867.58"/>
-<polygon fill="#666666" stroke="#666666" points="9299.08,-859.94 9302.51,-867.69 9294.99,-863.76 9299.08,-859.94"/>
+<path fill="none" stroke="#666666" d="M9312.19,-1059.34C9329.8,-1039.72 9362,-1003.85 9362,-1003.85 9362,-1003.85 9362,-931.2 9362,-931.2 9362,-931.2 9324.64,-891.83 9301.63,-867.58"/>
+<polygon fill="#666666" stroke="#666666" points="9298.22,-859.92 9301.7,-867.65 9294.16,-863.77 9298.22,-859.92"/>
 </g>
 <!-- src/shared/services/media/index.ts -->
 <g id="node175" class="node">
@@ -3571,8 +3576,8 @@
 <g id="node180" class="node">
 <title>src/shared/styles/index.ts</title>
 <g id="a_node180"><a xlink:href="src/shared/styles/index.ts" xlink:title="index.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M13020.2,-1086C13020.2,-1086 12983.8,-1086 12983.8,-1086 12979.4,-1086 12975,-1081.6 12975,-1077.2 12975,-1077.2 12975,-1068.4 12975,-1068.4 12975,-1064 12979.4,-1059.6 12983.8,-1059.6 12983.8,-1059.6 13020.2,-1059.6 13020.2,-1059.6 13024.6,-1059.6 13029,-1064 13029,-1068.4 13029,-1068.4 13029,-1077.2 13029,-1077.2 13029,-1081.6 13024.6,-1086 13020.2,-1086"/>
-<text xml:space="preserve" text-anchor="start" x="12984.75" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M13073.2,-1086C13073.2,-1086 13036.8,-1086 13036.8,-1086 13032.4,-1086 13028,-1081.6 13028,-1077.2 13028,-1077.2 13028,-1068.4 13028,-1068.4 13028,-1064 13032.4,-1059.6 13036.8,-1059.6 13036.8,-1059.6 13073.2,-1059.6 13073.2,-1059.6 13077.6,-1059.6 13082,-1064 13082,-1068.4 13082,-1068.4 13082,-1077.2 13082,-1077.2 13082,-1081.6 13077.6,-1086 13073.2,-1086"/>
+<text xml:space="preserve" text-anchor="start" x="13037.75" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
 </g>
 </g>
@@ -3588,8 +3593,8 @@
 <!-- src/shared/styles/index.ts&#45;&gt;src/shared/styles/namespaced&#45;styles.ts -->
 <g id="edge224" class="edge">
 <title>src/shared/styles/index.ts&#45;&gt;src/shared/styles/namespaced&#45;styles.ts</title>
-<path fill="none" stroke="#666666" d="M12994.31,-1059.14C12982.7,-1040 12960.59,-1003.57 12946.89,-981"/>
-<polygon fill="#666666" stroke="#666666" points="12945.25,-972.89 12947.01,-981.18 12940.46,-975.8 12945.25,-972.89"/>
+<path fill="none" stroke="#666666" d="M13041.23,-1059.14C13019.99,-1039.59 12979.11,-1001.98 12954.72,-979.54"/>
+<polygon fill="#666666" stroke="#666666" points="12950.87,-972.19 12954.86,-979.67 12947.08,-976.32 12950.87,-972.19"/>
 </g>
 <!-- src/shared/styles/theme&#45;utils.ts -->
 <g id="node182" class="node">
@@ -3603,13 +3608,22 @@
 <!-- src/shared/styles/index.ts&#45;&gt;src/shared/styles/theme&#45;utils.ts -->
 <g id="edge225" class="edge">
 <title>src/shared/styles/index.ts&#45;&gt;src/shared/styles/theme&#45;utils.ts</title>
-<path fill="none" stroke="#666666" d="M13009.8,-1059.14C13021.59,-1040 13044.03,-1003.57 13057.93,-981"/>
-<polygon fill="#666666" stroke="#666666" points="13064.41,-975.81 13057.83,-981.15 13059.64,-972.87 13064.41,-975.81"/>
+<path fill="none" stroke="#666666" d="M13056.72,-1059.14C13059.28,-1040.34 13064.1,-1004.83 13067.18,-982.19"/>
+<polygon fill="#666666" stroke="#666666" points="13071.01,-974.79 13067.15,-982.34 13065.46,-974.04 13071.01,-974.79"/>
+</g>
+<!-- src/shared/styles/tokens/button.ts -->
+<g id="node183" class="node">
+<title>src/shared/styles/tokens/button.ts</title>
+<g id="a_node183"><a xlink:href="src/shared/styles/tokens/button.ts" xlink:title="no&#45;orphans">
+<path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M12962.2,-1086C12962.2,-1086 12925.8,-1086 12925.8,-1086 12921.4,-1086 12917,-1081.6 12917,-1077.2 12917,-1077.2 12917,-1068.4 12917,-1068.4 12917,-1064 12921.4,-1059.6 12925.8,-1059.6 12925.8,-1059.6 12962.2,-1059.6 12962.2,-1059.6 12966.6,-1059.6 12971,-1064 12971,-1068.4 12971,-1068.4 12971,-1077.2 12971,-1077.2 12971,-1081.6 12966.6,-1086 12962.2,-1086"/>
+<text xml:space="preserve" text-anchor="start" x="12924.88" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">button.ts</text>
+</a>
+</g>
 </g>
 <!-- src/shared/types/core/core&#45;types.ts -->
-<g id="node184" class="node">
+<g id="node185" class="node">
 <title>src/shared/types/core/core&#45;types.ts</title>
-<g id="a_node184"><a xlink:href="src/shared/types/core/core-types.ts" xlink:title="core&#45;types.ts">
+<g id="a_node185"><a xlink:href="src/shared/types/core/core-types.ts" xlink:title="core&#45;types.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M13283.9,-636.4C13283.9,-636.4 13230.1,-636.4 13230.1,-636.4 13225.7,-636.4 13221.3,-632 13221.3,-627.6 13221.3,-627.6 13221.3,-618.8 13221.3,-618.8 13221.3,-614.4 13225.7,-610 13230.1,-610 13230.1,-610 13283.9,-610 13283.9,-610 13288.3,-610 13292.7,-614.4 13292.7,-618.8 13292.7,-618.8 13292.7,-627.6 13292.7,-627.6 13292.7,-632 13288.3,-636.4 13283.9,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="13228.5" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">core&#45;types.ts</text>
 </a>
@@ -3646,9 +3660,9 @@
 <polygon fill="none" stroke="#666666" points="9781.87,-510.95 9773.77,-513.46 9781.67,-516.54 9781.87,-510.95"/>
 </g>
 <!-- src/shared/types/core/media.types.ts -->
-<g id="node185" class="node">
+<g id="node186" class="node">
 <title>src/shared/types/core/media.types.ts</title>
-<g id="a_node185"><a xlink:href="src/shared/types/core/media.types.ts" xlink:title="media.types.ts">
+<g id="a_node186"><a xlink:href="src/shared/types/core/media.types.ts" xlink:title="media.types.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M13287.65,-524C13287.65,-524 13226.35,-524 13226.35,-524 13221.95,-524 13217.55,-519.6 13217.55,-515.2 13217.55,-515.2 13217.55,-506.4 13217.55,-506.4 13217.55,-502 13221.95,-497.6 13226.35,-497.6 13226.35,-497.6 13287.65,-497.6 13287.65,-497.6 13292.05,-497.6 13296.45,-502 13296.45,-506.4 13296.45,-506.4 13296.45,-515.2 13296.45,-515.2 13296.45,-519.6 13292.05,-524 13287.65,-524"/>
 <text xml:space="preserve" text-anchor="start" x="13224.75" y="-507.3" font-family="Arial" font-size="10.00" fill="#b45309">media.types.ts</text>
 </a>
@@ -3661,9 +3675,9 @@
 <polygon fill="none" stroke="#666666" points="13259.8,-533.83 13257,-525.83 13254.2,-533.83 13259.8,-533.83"/>
 </g>
 <!-- src/shared/types/core/extraction.types.ts -->
-<g id="node186" class="node">
+<g id="node187" class="node">
 <title>src/shared/types/core/extraction.types.ts</title>
-<g id="a_node186"><a xlink:href="src/shared/types/core/extraction.types.ts" xlink:title="extraction.types.ts">
+<g id="a_node187"><a xlink:href="src/shared/types/core/extraction.types.ts" xlink:title="extraction.types.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M13467.9,-636.4C13467.9,-636.4 13390.1,-636.4 13390.1,-636.4 13385.7,-636.4 13381.3,-632 13381.3,-627.6 13381.3,-627.6 13381.3,-618.8 13381.3,-618.8 13381.3,-614.4 13385.7,-610 13390.1,-610 13390.1,-610 13467.9,-610 13467.9,-610 13472.3,-610 13476.7,-614.4 13476.7,-618.8 13476.7,-618.8 13476.7,-627.6 13476.7,-627.6 13476.7,-632 13472.3,-636.4 13467.9,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="13388.5" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">extraction.types.ts</text>
 </a>
@@ -3676,9 +3690,9 @@
 <polygon fill="none" stroke="#666666" points="13286.28,-527.27 13278.04,-525.3 13283.26,-531.98 13286.28,-527.27"/>
 </g>
 <!-- src/shared/types/core/index.ts -->
-<g id="node187" class="node">
+<g id="node188" class="node">
 <title>src/shared/types/core/index.ts</title>
-<g id="a_node187"><a xlink:href="src/shared/types/core/index.ts" xlink:title="index.ts">
+<g id="a_node188"><a xlink:href="src/shared/types/core/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M13355.2,-748.8C13355.2,-748.8 13318.8,-748.8 13318.8,-748.8 13314.4,-748.8 13310,-744.4 13310,-740 13310,-740 13310,-731.2 13310,-731.2 13310,-726.8 13314.4,-722.4 13318.8,-722.4 13318.8,-722.4 13355.2,-722.4 13355.2,-722.4 13359.6,-722.4 13364,-726.8 13364,-731.2 13364,-731.2 13364,-740 13364,-740 13364,-744.4 13359.6,-748.8 13355.2,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="13319.75" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -3709,9 +3723,9 @@
 <polygon fill="#666666" stroke="#666666" points="13167.26,-634.58 13173.19,-640.64 13164.78,-639.59 13167.26,-634.58"/>
 </g>
 <!-- src/shared/utils/accessibility/accessibility&#45;utils.ts -->
-<g id="node191" class="node">
+<g id="node192" class="node">
 <title>src/shared/utils/accessibility/accessibility&#45;utils.ts</title>
-<g id="a_node191"><a xlink:href="src/shared/utils/accessibility/accessibility-utils.ts" xlink:title="accessibility&#45;utils.ts">
+<g id="a_node192"><a xlink:href="src/shared/utils/accessibility/accessibility-utils.ts" xlink:title="accessibility&#45;utils.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11053.53,-524C11053.53,-524 10970.47,-524 10970.47,-524 10966.07,-524 10961.67,-519.6 10961.67,-515.2 10961.67,-515.2 10961.67,-506.4 10961.67,-506.4 10961.67,-502 10966.07,-497.6 10970.47,-497.6 10970.47,-497.6 11053.53,-497.6 11053.53,-497.6 11057.93,-497.6 11062.33,-502 11062.33,-506.4 11062.33,-506.4 11062.33,-515.2 11062.33,-515.2 11062.33,-519.6 11057.93,-524 11053.53,-524"/>
 <text xml:space="preserve" text-anchor="start" x="10968.88" y="-507.3" font-family="Arial" font-size="10.00" fill="#b45309">accessibility&#45;utils.ts</text>
 </a>
@@ -3730,9 +3744,9 @@
 <polygon fill="#666666" stroke="#666666" points="11591.11,-533.6 11593.68,-525.53 11586.63,-530.24 11591.11,-533.6"/>
 </g>
 <!-- src/shared/utils/accessibility/barrel.ts -->
-<g id="node193" class="node">
+<g id="node194" class="node">
 <title>src/shared/utils/accessibility/barrel.ts</title>
-<g id="a_node193"><a xlink:href="src/shared/utils/accessibility/barrel.ts" xlink:title="barrel.ts">
+<g id="a_node194"><a xlink:href="src/shared/utils/accessibility/barrel.ts" xlink:title="barrel.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11053.2,-748.8C11053.2,-748.8 11016.8,-748.8 11016.8,-748.8 11012.4,-748.8 11008,-744.4 11008,-740 11008,-740 11008,-731.2 11008,-731.2 11008,-726.8 11012.4,-722.4 11016.8,-722.4 11016.8,-722.4 11053.2,-722.4 11053.2,-722.4 11057.6,-722.4 11062,-726.8 11062,-731.2 11062,-731.2 11062,-740 11062,-740 11062,-744.4 11057.6,-748.8 11053.2,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="11017.38" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">barrel.ts</text>
 </a>
@@ -3745,9 +3759,9 @@
 <polygon fill="#666666" stroke="#666666" points="11509.94,-639.05 11502.28,-642.68 11506.01,-635.07 11509.94,-639.05"/>
 </g>
 <!-- src/shared/utils/accessibility/index.ts -->
-<g id="node194" class="node">
+<g id="node195" class="node">
 <title>src/shared/utils/accessibility/index.ts</title>
-<g id="a_node194"><a xlink:href="src/shared/utils/accessibility/index.ts" xlink:title="index.ts">
+<g id="a_node195"><a xlink:href="src/shared/utils/accessibility/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11030.2,-636.4C11030.2,-636.4 10993.8,-636.4 10993.8,-636.4 10989.4,-636.4 10985,-632 10985,-627.6 10985,-627.6 10985,-618.8 10985,-618.8 10985,-614.4 10989.4,-610 10993.8,-610 10993.8,-610 11030.2,-610 11030.2,-610 11034.6,-610 11039,-614.4 11039,-618.8 11039,-618.8 11039,-627.6 11039,-627.6 11039,-632 11034.6,-636.4 11030.2,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="10994.75" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -3760,18 +3774,18 @@
 <polygon fill="#666666" stroke="#666666" points="11014.8,-524.82 11012,-532.82 11009.2,-524.82 11014.8,-524.82"/>
 </g>
 <!-- src/shared/utils/animations.ts -->
-<g id="node195" class="node">
+<g id="node196" class="node">
 <title>src/shared/utils/animations.ts</title>
-<g id="a_node195"><a xlink:href="src/shared/utils/animations.ts" xlink:title="animations.ts">
+<g id="a_node196"><a xlink:href="src/shared/utils/animations.ts" xlink:title="animations.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11814.65,-1086C11814.65,-1086 11759.35,-1086 11759.35,-1086 11754.95,-1086 11750.55,-1081.6 11750.55,-1077.2 11750.55,-1077.2 11750.55,-1068.4 11750.55,-1068.4 11750.55,-1064 11754.95,-1059.6 11759.35,-1059.6 11759.35,-1059.6 11814.65,-1059.6 11814.65,-1059.6 11819.05,-1059.6 11823.45,-1064 11823.45,-1068.4 11823.45,-1068.4 11823.45,-1077.2 11823.45,-1077.2 11823.45,-1081.6 11819.05,-1086 11814.65,-1086"/>
 <text xml:space="preserve" text-anchor="start" x="11757.75" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">animations.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/utils/css&#45;animations.ts -->
-<g id="node196" class="node">
+<g id="node197" class="node">
 <title>src/shared/utils/css&#45;animations.ts</title>
-<g id="a_node196"><a xlink:href="src/shared/utils/css-animations.ts" xlink:title="css&#45;animations.ts">
+<g id="a_node197"><a xlink:href="src/shared/utils/css-animations.ts" xlink:title="css&#45;animations.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11824.03,-973.6C11824.03,-973.6 11749.97,-973.6 11749.97,-973.6 11745.57,-973.6 11741.17,-969.2 11741.17,-964.8 11741.17,-964.8 11741.17,-956 11741.17,-956 11741.17,-951.6 11745.57,-947.2 11749.97,-947.2 11749.97,-947.2 11824.03,-947.2 11824.03,-947.2 11828.43,-947.2 11832.83,-951.6 11832.83,-956 11832.83,-956 11832.83,-964.8 11832.83,-964.8 11832.83,-969.2 11828.43,-973.6 11824.03,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="11748.38" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">css&#45;animations.ts</text>
 </a>
@@ -3784,9 +3798,9 @@
 <polygon fill="#666666" stroke="#666666" points="11789.8,-974.42 11787,-982.42 11784.2,-974.42 11789.8,-974.42"/>
 </g>
 <!-- src/shared/utils/debug/gallery&#45;debug.ts -->
-<g id="node198" class="node">
+<g id="node199" class="node">
 <title>src/shared/utils/debug/gallery&#45;debug.ts</title>
-<g id="a_node198"><a xlink:href="src/shared/utils/debug/gallery-debug.ts" xlink:title="gallery&#45;debug.ts">
+<g id="a_node199"><a xlink:href="src/shared/utils/debug/gallery-debug.ts" xlink:title="gallery&#45;debug.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M12294.9,-299.2C12294.9,-299.2 12229.1,-299.2 12229.1,-299.2 12224.7,-299.2 12220.3,-294.8 12220.3,-290.4 12220.3,-290.4 12220.3,-281.6 12220.3,-281.6 12220.3,-277.2 12224.7,-272.8 12229.1,-272.8 12229.1,-272.8 12294.9,-272.8 12294.9,-272.8 12299.3,-272.8 12303.7,-277.2 12303.7,-281.6 12303.7,-281.6 12303.7,-290.4 12303.7,-290.4 12303.7,-294.8 12299.3,-299.2 12294.9,-299.2"/>
 <text xml:space="preserve" text-anchor="start" x="12227.5" y="-282.5" font-family="Arial" font-size="10.00" fill="#b45309">gallery&#45;debug.ts</text>
 </a>
@@ -3799,9 +3813,9 @@
 <polygon fill="#666666" stroke="#666666" points="12240.23,-302.2 12231.87,-303.61 12237.52,-297.3 12240.23,-302.2"/>
 </g>
 <!-- src/shared/utils/performance/performance&#45;utils.ts -->
-<g id="node199" class="node">
+<g id="node200" class="node">
 <title>src/shared/utils/performance/performance&#45;utils.ts</title>
-<g id="a_node199"><a xlink:href="src/shared/utils/performance/performance-utils.ts" xlink:title="performance&#45;utils.ts">
+<g id="a_node200"><a xlink:href="src/shared/utils/performance/performance-utils.ts" xlink:title="performance&#45;utils.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11751.53,-299.2C11751.53,-299.2 11668.47,-299.2 11668.47,-299.2 11664.07,-299.2 11659.67,-294.8 11659.67,-290.4 11659.67,-290.4 11659.67,-281.6 11659.67,-281.6 11659.67,-277.2 11664.07,-272.8 11668.47,-272.8 11668.47,-272.8 11751.53,-272.8 11751.53,-272.8 11755.93,-272.8 11760.33,-277.2 11760.33,-281.6 11760.33,-281.6 11760.33,-290.4 11760.33,-290.4 11760.33,-294.8 11755.93,-299.2 11751.53,-299.2"/>
 <text xml:space="preserve" text-anchor="start" x="11666.88" y="-282.5" font-family="Arial" font-size="10.00" fill="#b45309">performance&#45;utils.ts</text>
 </a>
@@ -3814,9 +3828,9 @@
 <polygon fill="#666666" stroke="#666666" points="11729.6,-297.53 11734.5,-304.45 11726.36,-302.09 11729.6,-297.53"/>
 </g>
 <!-- src/shared/utils/styles/css&#45;utilities.ts -->
-<g id="node200" class="node">
+<g id="node201" class="node">
 <title>src/shared/utils/styles/css&#45;utilities.ts</title>
-<g id="a_node200"><a xlink:href="src/shared/utils/styles/css-utilities.ts" xlink:title="css&#45;utilities.ts">
+<g id="a_node201"><a xlink:href="src/shared/utils/styles/css-utilities.ts" xlink:title="css&#45;utilities.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M12115.78,-299.2C12115.78,-299.2 12058.22,-299.2 12058.22,-299.2 12053.82,-299.2 12049.42,-294.8 12049.42,-290.4 12049.42,-290.4 12049.42,-281.6 12049.42,-281.6 12049.42,-277.2 12053.82,-272.8 12058.22,-272.8 12058.22,-272.8 12115.78,-272.8 12115.78,-272.8 12120.18,-272.8 12124.58,-277.2 12124.58,-281.6 12124.58,-281.6 12124.58,-290.4 12124.58,-290.4 12124.58,-294.8 12120.18,-299.2 12115.78,-299.2"/>
 <text xml:space="preserve" text-anchor="start" x="12056.62" y="-282.5" font-family="Arial" font-size="10.00" fill="#b45309">css&#45;utilities.ts</text>
 </a>
@@ -3829,9 +3843,9 @@
 <polygon fill="#666666" stroke="#666666" points="12054.22,-306.43 12060.13,-300.36 12051.72,-301.42 12054.22,-306.43"/>
 </g>
 <!-- src/shared/utils/core/index.ts -->
-<g id="node201" class="node">
+<g id="node202" class="node">
 <title>src/shared/utils/core/index.ts</title>
-<g id="a_node201"><a xlink:href="src/shared/utils/core/index.ts" xlink:title="index.ts">
+<g id="a_node202"><a xlink:href="src/shared/utils/core/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11693.2,-636.4C11693.2,-636.4 11656.8,-636.4 11656.8,-636.4 11652.4,-636.4 11648,-632 11648,-627.6 11648,-627.6 11648,-618.8 11648,-618.8 11648,-614.4 11652.4,-610 11656.8,-610 11656.8,-610 11693.2,-610 11693.2,-610 11697.6,-610 11702,-614.4 11702,-618.8 11702,-618.8 11702,-627.6 11702,-627.6 11702,-632 11697.6,-636.4 11693.2,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="11657.75" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -3844,9 +3858,9 @@
 <polygon fill="#666666" stroke="#666666" points="11614.68,-523.22 11616.65,-531.47 11609.97,-526.25 11614.68,-523.22"/>
 </g>
 <!-- src/shared/utils/debug/index.ts -->
-<g id="node202" class="node">
+<g id="node203" class="node">
 <title>src/shared/utils/debug/index.ts</title>
-<g id="a_node202"><a xlink:href="src/shared/utils/debug/index.ts" xlink:title="index.ts">
+<g id="a_node203"><a xlink:href="src/shared/utils/debug/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M12295.2,-411.6C12295.2,-411.6 12258.8,-411.6 12258.8,-411.6 12254.4,-411.6 12250,-407.2 12250,-402.8 12250,-402.8 12250,-394 12250,-394 12250,-389.6 12254.4,-385.2 12258.8,-385.2 12258.8,-385.2 12295.2,-385.2 12295.2,-385.2 12299.6,-385.2 12304,-389.6 12304,-394 12304,-394 12304,-402.8 12304,-402.8 12304,-407.2 12299.6,-411.6 12295.2,-411.6"/>
 <text xml:space="preserve" text-anchor="start" x="12259.75" y="-394.9" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -3859,18 +3873,18 @@
 <polygon fill="#666666" stroke="#666666" points="12266.54,-299.64 12264.85,-307.94 12260.99,-300.39 12266.54,-299.64"/>
 </g>
 <!-- src/shared/utils/deduplication/deduplication&#45;utils.ts -->
-<g id="node203" class="node">
+<g id="node204" class="node">
 <title>src/shared/utils/deduplication/deduplication&#45;utils.ts</title>
-<g id="a_node203"><a xlink:href="src/shared/utils/deduplication/deduplication-utils.ts" xlink:title="deduplication&#45;utils.ts">
+<g id="a_node204"><a xlink:href="src/shared/utils/deduplication/deduplication-utils.ts" xlink:title="deduplication&#45;utils.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11903.03,-524C11903.03,-524 11816.97,-524 11816.97,-524 11812.57,-524 11808.17,-519.6 11808.17,-515.2 11808.17,-515.2 11808.17,-506.4 11808.17,-506.4 11808.17,-502 11812.57,-497.6 11816.97,-497.6 11816.97,-497.6 11903.03,-497.6 11903.03,-497.6 11907.43,-497.6 11911.83,-502 11911.83,-506.4 11911.83,-506.4 11911.83,-515.2 11911.83,-515.2 11911.83,-519.6 11907.43,-524 11903.03,-524"/>
 <text xml:space="preserve" text-anchor="start" x="11815.38" y="-507.3" font-family="Arial" font-size="10.00" fill="#b45309">deduplication&#45;utils.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/utils/deduplication/index.ts -->
-<g id="node204" class="node">
+<g id="node205" class="node">
 <title>src/shared/utils/deduplication/index.ts</title>
-<g id="a_node204"><a xlink:href="src/shared/utils/deduplication/index.ts" xlink:title="index.ts">
+<g id="a_node205"><a xlink:href="src/shared/utils/deduplication/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11880.2,-636.4C11880.2,-636.4 11843.8,-636.4 11843.8,-636.4 11839.4,-636.4 11835,-632 11835,-627.6 11835,-627.6 11835,-618.8 11835,-618.8 11835,-614.4 11839.4,-610 11843.8,-610 11843.8,-610 11880.2,-610 11880.2,-610 11884.6,-610 11889,-614.4 11889,-618.8 11889,-618.8 11889,-627.6 11889,-627.6 11889,-632 11884.6,-636.4 11880.2,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="11844.75" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -3883,9 +3897,9 @@
 <polygon fill="#666666" stroke="#666666" points="11863.04,-524.77 11860.38,-532.82 11857.44,-524.87 11863.04,-524.77"/>
 </g>
 <!-- src/shared/utils/dom/BatchDOMUpdateManager.ts -->
-<g id="node205" class="node">
+<g id="node206" class="node">
 <title>src/shared/utils/dom/BatchDOMUpdateManager.ts</title>
-<g id="a_node205"><a xlink:href="src/shared/utils/dom/BatchDOMUpdateManager.ts" xlink:title="BatchDOMUpdateManager.ts">
+<g id="a_node206"><a xlink:href="src/shared/utils/dom/BatchDOMUpdateManager.ts" xlink:title="BatchDOMUpdateManager.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M10742.9,-748.8C10742.9,-748.8 10617.1,-748.8 10617.1,-748.8 10612.7,-748.8 10608.3,-744.4 10608.3,-740 10608.3,-740 10608.3,-731.2 10608.3,-731.2 10608.3,-726.8 10612.7,-722.4 10617.1,-722.4 10617.1,-722.4 10742.9,-722.4 10742.9,-722.4 10747.3,-722.4 10751.7,-726.8 10751.7,-731.2 10751.7,-731.2 10751.7,-740 10751.7,-740 10751.7,-744.4 10747.3,-748.8 10742.9,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="10615.5" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">BatchDOMUpdateManager.ts</text>
 </a>
@@ -3898,9 +3912,9 @@
 <polygon fill="#666666" stroke="#666666" points="10681.92,-637.19 10679.19,-645.22 10676.32,-637.24 10681.92,-637.19"/>
 </g>
 <!-- src/shared/utils/media/MediaClickDetector.ts -->
-<g id="node213" class="node">
+<g id="node214" class="node">
 <title>src/shared/utils/media/MediaClickDetector.ts</title>
-<g id="a_node213"><a xlink:href="src/shared/utils/media/MediaClickDetector.ts" xlink:title="MediaClickDetector.ts">
+<g id="a_node214"><a xlink:href="src/shared/utils/media/MediaClickDetector.ts" xlink:title="MediaClickDetector.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11189.15,-636.4C11189.15,-636.4 11094.85,-636.4 11094.85,-636.4 11090.45,-636.4 11086.05,-632 11086.05,-627.6 11086.05,-627.6 11086.05,-618.8 11086.05,-618.8 11086.05,-614.4 11090.45,-610 11094.85,-610 11094.85,-610 11189.15,-610 11189.15,-610 11193.55,-610 11197.95,-614.4 11197.95,-618.8 11197.95,-618.8 11197.95,-627.6 11197.95,-627.6 11197.95,-632 11193.55,-636.4 11189.15,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="11093.25" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">MediaClickDetector.ts</text>
 </a>
@@ -3913,9 +3927,9 @@
 <polygon fill="#666666" stroke="#666666" points="11152.36,-635.67 11154.17,-643.95 11147.59,-638.61 11152.36,-635.67"/>
 </g>
 <!-- src/shared/utils/media/image&#45;filter.ts -->
-<g id="node214" class="node">
+<g id="node215" class="node">
 <title>src/shared/utils/media/image&#45;filter.ts</title>
-<g id="a_node214"><a xlink:href="src/shared/utils/media/image-filter.ts" xlink:title="image&#45;filter.ts">
+<g id="a_node215"><a xlink:href="src/shared/utils/media/image-filter.ts" xlink:title="image&#45;filter.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11306.03,-636.4C11306.03,-636.4 11249.97,-636.4 11249.97,-636.4 11245.57,-636.4 11241.17,-632 11241.17,-627.6 11241.17,-627.6 11241.17,-618.8 11241.17,-618.8 11241.17,-614.4 11245.57,-610 11249.97,-610 11249.97,-610 11306.03,-610 11306.03,-610 11310.43,-610 11314.83,-614.4 11314.83,-618.8 11314.83,-618.8 11314.83,-627.6 11314.83,-627.6 11314.83,-632 11310.43,-636.4 11306.03,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="11248.38" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">image&#45;filter.ts</text>
 </a>
@@ -3928,9 +3942,9 @@
 <polygon fill="#666666" stroke="#666666" points="11272.41,-638.61 11265.83,-643.95 11267.64,-635.67 11272.41,-638.61"/>
 </g>
 <!-- src/shared/utils/media/media&#45;url.util.ts -->
-<g id="node215" class="node">
+<g id="node216" class="node">
 <title>src/shared/utils/media/media&#45;url.util.ts</title>
-<g id="a_node215"><a xlink:href="src/shared/utils/media/media-url.util.ts" xlink:title="media&#45;url.util.ts">
+<g id="a_node216"><a xlink:href="src/shared/utils/media/media-url.util.ts" xlink:title="media&#45;url.util.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11429.78,-636.4C11429.78,-636.4 11366.22,-636.4 11366.22,-636.4 11361.82,-636.4 11357.42,-632 11357.42,-627.6 11357.42,-627.6 11357.42,-618.8 11357.42,-618.8 11357.42,-614.4 11361.82,-610 11366.22,-610 11366.22,-610 11429.78,-610 11429.78,-610 11434.18,-610 11438.58,-614.4 11438.58,-618.8 11438.58,-618.8 11438.58,-627.6 11438.58,-627.6 11438.58,-632 11434.18,-636.4 11429.78,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="11364.62" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">media&#45;url.util.ts</text>
 </a>
@@ -3986,9 +4000,9 @@
 <polygon fill="#666666" stroke="#666666" points="11856.03,-638.65 11849.35,-643.87 11851.32,-635.62 11856.03,-638.65"/>
 </g>
 <!-- src/shared/utils/scroll/index.ts -->
-<g id="node224" class="node">
+<g id="node225" class="node">
 <title>src/shared/utils/scroll/index.ts</title>
-<g id="a_node224"><a xlink:href="src/shared/utils/scroll/index.ts" xlink:title="index.ts">
+<g id="a_node225"><a xlink:href="src/shared/utils/scroll/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M12004.2,-636.4C12004.2,-636.4 11967.8,-636.4 11967.8,-636.4 11963.4,-636.4 11959,-632 11959,-627.6 11959,-627.6 11959,-618.8 11959,-618.8 11959,-614.4 11963.4,-610 11967.8,-610 11967.8,-610 12004.2,-610 12004.2,-610 12008.6,-610 12013,-614.4 12013,-618.8 12013,-618.8 12013,-627.6 12013,-627.6 12013,-632 12008.6,-636.4 12004.2,-636.4"/>
 <text xml:space="preserve" text-anchor="start" x="11968.75" y="-619.7" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -4001,9 +4015,9 @@
 <polygon fill="#666666" stroke="#666666" points="11978.83,-638.76 11971.85,-643.57 11974.31,-635.46 11978.83,-638.76"/>
 </g>
 <!-- src/shared/utils/memory/index.ts -->
-<g id="node216" class="node">
+<g id="node217" class="node">
 <title>src/shared/utils/memory/index.ts</title>
-<g id="a_node216"><a xlink:href="src/shared/utils/memory/index.ts" xlink:title="index.ts">
+<g id="a_node217"><a xlink:href="src/shared/utils/memory/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M10356.2,-748.8C10356.2,-748.8 10319.8,-748.8 10319.8,-748.8 10315.4,-748.8 10311,-744.4 10311,-740 10311,-740 10311,-731.2 10311,-731.2 10311,-726.8 10315.4,-722.4 10319.8,-722.4 10319.8,-722.4 10356.2,-722.4 10356.2,-722.4 10360.6,-722.4 10365,-726.8 10365,-731.2 10365,-731.2 10365,-740 10365,-740 10365,-744.4 10360.6,-748.8 10356.2,-748.8"/>
 <text xml:space="preserve" text-anchor="start" x="10320.75" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -4016,18 +4030,18 @@
 <polygon fill="#666666" stroke="#666666" points="10340,-646.2 10337.13,-638.23 10334.4,-646.26 10340,-646.2"/>
 </g>
 <!-- src/shared/utils/patterns/index.ts -->
-<g id="node219" class="node">
+<g id="node220" class="node">
 <title>src/shared/utils/patterns/index.ts</title>
-<g id="a_node219"><a xlink:href="src/shared/utils/patterns/index.ts" xlink:title="index.ts">
+<g id="a_node220"><a xlink:href="src/shared/utils/patterns/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11201.2,-1086C11201.2,-1086 11164.8,-1086 11164.8,-1086 11160.4,-1086 11156,-1081.6 11156,-1077.2 11156,-1077.2 11156,-1068.4 11156,-1068.4 11156,-1064 11160.4,-1059.6 11164.8,-1059.6 11164.8,-1059.6 11201.2,-1059.6 11201.2,-1059.6 11205.6,-1059.6 11210,-1064 11210,-1068.4 11210,-1068.4 11210,-1077.2 11210,-1077.2 11210,-1081.6 11205.6,-1086 11201.2,-1086"/>
 <text xml:space="preserve" text-anchor="start" x="11165.75" y="-1069.3" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/utils/patterns/url&#45;patterns.ts -->
-<g id="node220" class="node">
+<g id="node221" class="node">
 <title>src/shared/utils/patterns/url&#45;patterns.ts</title>
-<g id="a_node220"><a xlink:href="src/shared/utils/patterns/url-patterns.ts" xlink:title="url&#45;patterns.ts">
+<g id="a_node221"><a xlink:href="src/shared/utils/patterns/url-patterns.ts" xlink:title="url&#45;patterns.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11211.4,-973.6C11211.4,-973.6 11154.6,-973.6 11154.6,-973.6 11150.2,-973.6 11145.8,-969.2 11145.8,-964.8 11145.8,-964.8 11145.8,-956 11145.8,-956 11145.8,-951.6 11150.2,-947.2 11154.6,-947.2 11154.6,-947.2 11211.4,-947.2 11211.4,-947.2 11215.8,-947.2 11220.2,-951.6 11220.2,-956 11220.2,-956 11220.2,-964.8 11220.2,-964.8 11220.2,-969.2 11215.8,-973.6 11211.4,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="11153" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">url&#45;patterns.ts</text>
 </a>
@@ -4040,9 +4054,9 @@
 <polygon fill="#666666" stroke="#666666" points="11185.8,-974.42 11183,-982.42 11180.2,-974.42 11185.8,-974.42"/>
 </g>
 <!-- src/shared/utils/performance/index.ts -->
-<g id="node221" class="node">
+<g id="node222" class="node">
 <title>src/shared/utils/performance/index.ts</title>
-<g id="a_node221"><a xlink:href="src/shared/utils/performance/index.ts" xlink:title="index.ts">
+<g id="a_node222"><a xlink:href="src/shared/utils/performance/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11445.2,-411.6C11445.2,-411.6 11408.8,-411.6 11408.8,-411.6 11404.4,-411.6 11400,-407.2 11400,-402.8 11400,-402.8 11400,-394 11400,-394 11400,-389.6 11404.4,-385.2 11408.8,-385.2 11408.8,-385.2 11445.2,-385.2 11445.2,-385.2 11449.6,-385.2 11454,-389.6 11454,-394 11454,-394 11454,-402.8 11454,-402.8 11454,-407.2 11449.6,-411.6 11445.2,-411.6"/>
 <text xml:space="preserve" text-anchor="start" x="11409.75" y="-394.9" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -4067,9 +4081,9 @@
 <polygon fill="#666666" stroke="#666666" points="11689.78,-302.17 11681.46,-303.82 11686.93,-297.35 11689.78,-302.17"/>
 </g>
 <!-- src/shared/utils/performance/memoization.ts -->
-<g id="node222" class="node">
+<g id="node223" class="node">
 <title>src/shared/utils/performance/memoization.ts</title>
-<g id="a_node222"><a xlink:href="src/shared/utils/performance/memoization.ts" xlink:title="memoization.ts">
+<g id="a_node223"><a xlink:href="src/shared/utils/performance/memoization.ts" xlink:title="memoization.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11458.78,-299.2C11458.78,-299.2 11395.22,-299.2 11395.22,-299.2 11390.82,-299.2 11386.42,-294.8 11386.42,-290.4 11386.42,-290.4 11386.42,-281.6 11386.42,-281.6 11386.42,-277.2 11390.82,-272.8 11395.22,-272.8 11395.22,-272.8 11458.78,-272.8 11458.78,-272.8 11463.18,-272.8 11467.58,-277.2 11467.58,-281.6 11467.58,-281.6 11467.58,-290.4 11467.58,-290.4 11467.58,-294.8 11463.18,-299.2 11458.78,-299.2"/>
 <text xml:space="preserve" text-anchor="start" x="11393.62" y="-282.5" font-family="Arial" font-size="10.00" fill="#b45309">memoization.ts</text>
 </a>
@@ -4082,9 +4096,9 @@
 <polygon fill="#666666" stroke="#666666" points="11429.8,-300.02 11427,-308.02 11424.2,-300.02 11429.8,-300.02"/>
 </g>
 <!-- src/shared/utils/performance/signalOptimization.ts -->
-<g id="node223" class="node">
+<g id="node224" class="node">
 <title>src/shared/utils/performance/signalOptimization.ts</title>
-<g id="a_node223"><a xlink:href="src/shared/utils/performance/signalOptimization.ts" xlink:title="signalOptimization.ts">
+<g id="a_node224"><a xlink:href="src/shared/utils/performance/signalOptimization.ts" xlink:title="signalOptimization.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M11608.15,-299.2C11608.15,-299.2 11519.85,-299.2 11519.85,-299.2 11515.45,-299.2 11511.05,-294.8 11511.05,-290.4 11511.05,-290.4 11511.05,-281.6 11511.05,-281.6 11511.05,-277.2 11515.45,-272.8 11519.85,-272.8 11519.85,-272.8 11608.15,-272.8 11608.15,-272.8 11612.55,-272.8 11616.95,-277.2 11616.95,-281.6 11616.95,-281.6 11616.95,-290.4 11616.95,-290.4 11616.95,-294.8 11612.55,-299.2 11608.15,-299.2"/>
 <text xml:space="preserve" text-anchor="start" x="11518.25" y="-282.5" font-family="Arial" font-size="10.00" fill="#b45309">signalOptimization.ts</text>
 </a>
@@ -4097,9 +4111,9 @@
 <polygon fill="#666666" stroke="#666666" points="11549.84,-302.01 11541.85,-304.85 11546.32,-297.65 11549.84,-302.01"/>
 </g>
 <!-- src/shared/utils/scroll/scroll&#45;utils.ts -->
-<g id="node225" class="node">
+<g id="node226" class="node">
 <title>src/shared/utils/scroll/scroll&#45;utils.ts</title>
-<g id="a_node225"><a xlink:href="src/shared/utils/scroll/scroll-utils.ts" xlink:title="scroll&#45;utils.ts">
+<g id="a_node226"><a xlink:href="src/shared/utils/scroll/scroll-utils.ts" xlink:title="scroll&#45;utils.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M12016.15,-524C12016.15,-524 11963.85,-524 11963.85,-524 11959.45,-524 11955.05,-519.6 11955.05,-515.2 11955.05,-515.2 11955.05,-506.4 11955.05,-506.4 11955.05,-502 11959.45,-497.6 11963.85,-497.6 11963.85,-497.6 12016.15,-497.6 12016.15,-497.6 12020.55,-497.6 12024.95,-502 12024.95,-506.4 12024.95,-506.4 12024.95,-515.2 12024.95,-515.2 12024.95,-519.6 12020.55,-524 12016.15,-524"/>
 <text xml:space="preserve" text-anchor="start" x="11962.25" y="-507.3" font-family="Arial" font-size="10.00" fill="#b45309">scroll&#45;utils.ts</text>
 </a>
@@ -4124,9 +4138,9 @@
 <polygon fill="#666666" stroke="#666666" points="11755.63,-300.17 11747.15,-300.14 11753.76,-305.45 11755.63,-300.17"/>
 </g>
 <!-- src/shared/utils/styles/index.ts -->
-<g id="node226" class="node">
+<g id="node227" class="node">
 <title>src/shared/utils/styles/index.ts</title>
-<g id="a_node226"><a xlink:href="src/shared/utils/styles/index.ts" xlink:title="index.ts">
+<g id="a_node227"><a xlink:href="src/shared/utils/styles/index.ts" xlink:title="index.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M12158.2,-524C12158.2,-524 12121.8,-524 12121.8,-524 12117.4,-524 12113,-519.6 12113,-515.2 12113,-515.2 12113,-506.4 12113,-506.4 12113,-502 12117.4,-497.6 12121.8,-497.6 12121.8,-497.6 12158.2,-497.6 12158.2,-497.6 12162.6,-497.6 12167,-502 12167,-506.4 12167,-506.4 12167,-515.2 12167,-515.2 12167,-519.6 12162.6,-524 12158.2,-524"/>
 <text xml:space="preserve" text-anchor="start" x="12122.75" y="-507.3" font-family="Arial" font-size="10.00" fill="#b45309">index.ts</text>
 </a>
@@ -4138,9 +4152,9 @@
 <path fill="none" stroke="#666666" d="M12131.2,-497.25C12122.03,-484.18 12109,-465.6 12109,-465.6 12109,-465.6 12050,-399.4 12050,-399.4"/>
 </g>
 <!-- src/shared/utils/styles/style&#45;utils.ts -->
-<g id="node227" class="node">
+<g id="node228" class="node">
 <title>src/shared/utils/styles/style&#45;utils.ts</title>
-<g id="a_node227"><a xlink:href="src/shared/utils/styles/style-utils.ts" xlink:title="style&#45;utils.ts">
+<g id="a_node228"><a xlink:href="src/shared/utils/styles/style-utils.ts" xlink:title="style&#45;utils.ts">
 <path fill="#fffbeb" stroke="#b45309" d="M12153.03,-411.6C12153.03,-411.6 12102.97,-411.6 12102.97,-411.6 12098.57,-411.6 12094.17,-407.2 12094.17,-402.8 12094.17,-402.8 12094.17,-394 12094.17,-394 12094.17,-389.6 12098.57,-385.2 12102.97,-385.2 12102.97,-385.2 12153.03,-385.2 12153.03,-385.2 12157.43,-385.2 12161.83,-389.6 12161.83,-394 12161.83,-394 12161.83,-402.8 12161.83,-402.8 12161.83,-407.2 12157.43,-411.6 12153.03,-411.6"/>
 <text xml:space="preserve" text-anchor="start" x="12101.38" y="-394.9" font-family="Arial" font-size="10.00" fill="#b45309">style&#45;utils.ts</text>
 </a>
@@ -4159,9 +4173,9 @@
 <polygon fill="#666666" stroke="#666666" points="12094.45,-299.01 12094.61,-307.48 12089.2,-300.96 12094.45,-299.01"/>
 </g>
 <!-- src/types/index.ts -->
-<g id="node228" class="node">
+<g id="node229" class="node">
 <title>src/types/index.ts</title>
-<g id="a_node228"><a xlink:href="src/types/index.ts" xlink:title="index.ts">
+<g id="a_node229"><a xlink:href="src/types/index.ts" xlink:title="index.ts">
 <path fill="#ddfeff" stroke="#333333" d="M13562.2,-861.2C13562.2,-861.2 13525.8,-861.2 13525.8,-861.2 13521.4,-861.2 13517,-856.8 13517,-852.4 13517,-852.4 13517,-843.6 13517,-843.6 13517,-839.2 13521.4,-834.8 13525.8,-834.8 13525.8,-834.8 13562.2,-834.8 13562.2,-834.8 13566.6,-834.8 13571,-839.2 13571,-843.6 13571,-843.6 13571,-852.4 13571,-852.4 13571,-856.8 13566.6,-861.2 13562.2,-861.2"/>
 <text xml:space="preserve" text-anchor="start" x="13526.75" y="-844.5" font-family="Arial" font-size="10.00" fill="#333333">index.ts</text>
 </a>
@@ -4174,9 +4188,9 @@
 <polygon fill="#666666" stroke="#666666" points="13365.75,-746.94 13371.82,-752.86 13363.38,-752.01 13365.75,-746.94"/>
 </g>
 <!-- src/utils/index.ts -->
-<g id="node229" class="node">
+<g id="node230" class="node">
 <title>src/utils/index.ts</title>
-<g id="a_node229"><a xlink:href="src/utils/index.ts" xlink:title="index.ts">
+<g id="a_node230"><a xlink:href="src/utils/index.ts" xlink:title="index.ts">
 <path fill="#ddfeff" stroke="#333333" d="M13598.2,-1086C13598.2,-1086 13561.8,-1086 13561.8,-1086 13557.4,-1086 13553,-1081.6 13553,-1077.2 13553,-1077.2 13553,-1068.4 13553,-1068.4 13553,-1064 13557.4,-1059.6 13561.8,-1059.6 13561.8,-1059.6 13598.2,-1059.6 13598.2,-1059.6 13602.6,-1059.6 13607,-1064 13607,-1068.4 13607,-1068.4 13607,-1077.2 13607,-1077.2 13607,-1081.6 13602.6,-1086 13598.2,-1086"/>
 <text xml:space="preserve" text-anchor="start" x="13562.75" y="-1069.3" font-family="Arial" font-size="10.00" fill="#333333">index.ts</text>
 </a>
