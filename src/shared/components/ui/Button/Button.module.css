@@ -423,3 +423,141 @@
 .neutral {
   content: '';
 } /* intent='neutral'을 위한 추가 클래스 */
+
+/* ===== 레거시 통합 클래스 (Phase 3 Consolidation) ===== */
+/* ToolbarButton.module.css / IconButton.css 에서 필요한 최소 스타일만 유지 */
+
+/* toolbarButton: 기존 ToolbarButton 기본 스타일을 unifiedButton 스타일에 매핑 */
+.toolbarButton,
+.xeg-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--xeg-spacing-sm);
+  font-family: var(--xeg-font-family-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-weight: var(--xeg-font-weight-medium);
+  font-size: var(--xeg-font-size-sm);
+  line-height: 1.2;
+  border: 1px solid transparent;
+  border-radius: var(--xeg-radius-md);
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  transition: background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  outline: none;
+}
+
+.toolbarButton:hover:not(:disabled),
+.xeg-toolbar-button:hover {
+  transform: translateY(var(--xeg-button-lift, -1px));
+}
+
+.toolbarButton:active:not(:disabled),
+.xeg-toolbar-button:active {
+  transform: translateY(0);
+}
+
+.toolbarButton:disabled,
+.xeg-toolbar-button:disabled {
+  opacity: var(--xeg-opacity-disabled, 0.5);
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.toolbarButton:focus-visible,
+.xeg-toolbar-button:focus-visible {
+  outline: var(--xeg-focus-ring, 2px solid var(--color-primary));
+  outline-offset: var(--xeg-focus-ring-offset, 2px);
+  z-index: 1;
+}
+
+/* IconButton primitive 매핑 */
+.xeg-icon-button {
+  background: transparent;
+  border: 1px solid var(--xeg-color-border-primary, transparent);
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: var(--xeg-color-text-secondary);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-easeOut);
+  outline: none;
+}
+
+.xeg-icon-button:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100, rgba(255, 255, 255, 0.1));
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-primary, var(--xeg-color-neutral-300));
+  transform: translateY(var(--xeg-button-lift, -1px));
+  box-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+.xeg-icon-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-xs, 0 0 0 1px rgba(0, 0, 0, 0.05));
+  background: var(--xeg-color-border-primary, var(--xeg-color-neutral-200));
+}
+
+.xeg-icon-button:focus-visible {
+  outline: var(--xeg-focus-ring, 2px solid var(--xeg-color-primary));
+  outline-offset: var(--xeg-focus-ring-offset, 2px);
+  z-index: 1;
+}
+
+.xeg-icon-button:disabled {
+  opacity: var(--xeg-opacity-disabled, 0.5);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* IconButton size variants */
+.xeg-icon-button--sm {
+  padding: var(--xeg-spacing-xs);
+  width: 28px;
+  height: 28px;
+}
+.xeg-icon-button--md {
+  padding: var(--xeg-spacing-sm);
+  width: 36px;
+  height: 36px;
+}
+.xeg-icon-button--lg {
+  padding: var(--xeg-spacing-md);
+  width: 44px;
+  height: 44px;
+}
+
+/* loading spinner placeholder (ToolbarButton -> Unified) */
+.loadingSpinner {
+  display: inline-block;
+  animation: xeg-spin 1s linear infinite;
+  font-size: 0.875em;
+}
+
+/* variant-loading (map to .loading state) */
+.variant-loading {
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* hasIcon spacing 유지 */
+.hasIcon {
+  gap: var(--xeg-spacing-xs);
+}
