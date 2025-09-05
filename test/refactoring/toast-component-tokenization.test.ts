@@ -4,12 +4,15 @@
  */
 
 import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 describe('Toast Component Tokenization', () => {
-  let toastCssContent: string;
+  let toastCssContent;
 
   beforeEach(() => {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
     const cssPath = resolve(__dirname, '../../src/shared/components/ui/Toast/Toast.module.css');
     toastCssContent = readFileSync(cssPath, 'utf-8');
   });
@@ -42,14 +45,13 @@ describe('Toast Component Tokenization', () => {
       expect(toastCssContent).toContain('var(--xeg-radius-2xl)');
     });
 
-    it('Action button은 --xeg-radius-lg 토큰을 사용해야 함', () => {
-      // 8px -> --xeg-radius-lg
-      expect(toastCssContent).toContain('var(--xeg-radius-lg)');
+    it('Action / Close 버튼은 정책상 --xeg-radius-md 토큰을 사용해야 함', () => {
+      expect(toastCssContent).toContain('var(--xeg-radius-md)');
     });
 
-    it('작은 요소들은 --xeg-radius-sm 토큰을 사용해야 함', () => {
-      // 4px -> --xeg-radius-sm
-      expect(toastCssContent).toContain('var(--xeg-radius-sm)');
+    it('sm/lg 토큰은 더 이상 Toast에서 사용하지 않음 (정책: interaction=md)', () => {
+      expect(toastCssContent).not.toContain('var(--xeg-radius-sm)');
+      expect(toastCssContent).not.toContain('var(--xeg-radius-lg)');
     });
 
     it('xeg-radius 접두사 토큰만 사용해야 함', () => {
@@ -87,8 +89,7 @@ describe('Toast Component Tokenization', () => {
       if (buttonMatches) {
         buttonMatches.forEach(match => {
           // 버튼은 중간 radius 사용
-          const hasMediumRadius =
-            match.includes('var(--xeg-radius-md)') || match.includes('var(--xeg-radius-lg)');
+          const hasMediumRadius = match.includes('var(--xeg-radius-md)');
           expect(hasMediumRadius, `Button should use medium radius: ${match}`).toBe(true);
         });
       }

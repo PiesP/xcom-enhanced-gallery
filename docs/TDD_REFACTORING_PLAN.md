@@ -22,7 +22,8 @@
 | FocusTrap / a11y / dynamic import 후속 | 완료 | 해당 영향 테스트 GREEN                                    |
 | 시각 회귀 (snapshot)                   | 보류 | 별도 PR 예정                                              |
 
-테스트 핵심 스코프 GREEN. 제거/정리된 레거시: UnifiedToolbarButton CSS + 전용 tokenization 테스트 + 중복 consistency clean 테스트.
+테스트 핵심 스코프 GREEN. 제거/정리된 레거시: UnifiedToolbarButton CSS + 전용
+tokenization 테스트 + 중복 consistency clean 테스트.
 
 ## 3. 완료/후속
 
