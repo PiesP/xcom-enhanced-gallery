@@ -23,7 +23,7 @@ import styles from './Component.module.css';
 
 ### 파일 네이밍
 
-```
+````
 // 파일 및 디렉토리: kebab-case
 gallery-view.tsx
 media-processor.ts
@@ -56,9 +56,10 @@ Gallery
   .controls (집합 pill 형태)                -> var(--xeg-radius-pill)
   .xegCloseButton / .xegNavButton (shape)   -> var(--xeg-radius-full)
   .mediaElement / .error (standard surface) -> var(--xeg-radius-lg)
-```
+````
 
 권장 패턴:
+
 - Interaction 요소는 통일된 hover/active 스타일을 유지하기 위해 모두 `md` 사용
 - Surface 크기 차별화: 일반(`lg`), 대형/시각적 강조(`2xl` - Toast 등)
 - 형태 구분은 `pill` / `full` 만 사용하고 임의 radius 조합 지양
@@ -69,7 +70,8 @@ Gallery
 - 사이즈: `sm(28px)`, `md(36px)`, `lg(44px)` – 레이아웃 밀도에 맞게 선택
 - 접근성: 항상 `aria-label` 필수, variant에 관계없이 role="button" 의미 명확화
 - 커스텀 버튼에 동일 패턴 필요 시 확장 대신 IconButton 조합 우선
-```
+
+````
 
 ## 🏷️ 네이밍 규칙
 
@@ -90,7 +92,7 @@ function extractMediaUrl(element: HTMLElement): string {}
 // Boolean: is/has/can prefix
 const isLoading = signal(false);
 const hasPermission = checkPermission();
-```
+````
 
 ### 타입 정의
 

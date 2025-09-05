@@ -9,25 +9,26 @@
 
 ## 2. 진행 현황 (간결 요약)
 
-| 항목 | 상태 | 비고 |
-| ---- | ---- | ---- |
-| Fit 모드 그룹 white box 제거 | 완료 | 계약 테스트로 회귀 방지 |
-| Radius 정책 수립/테스트 | 완료 | primitive ↔ semantic 1:1, 위반 차단 |
-| IconButton 추출 & 적용 | 완료 | 중복 스타일 제거 |
-| Isolated radius alias 제거 | 완료 | semantic 직접 사용 |
-| ToolbarButton CSS 통합 | 완료 | Unified 파일 삭제, 레거시 selector 흡수 |
-| Cross-component consistency 단일화 | 완료 | clean/legacy 중복 제거, 정책 기반 검사 |
-| 정책 파서 자동화 | 완료 | 테스트에서 가이드 문서 파싱 (deriveRoleTokenExpectations) |
-| CODING_GUIDELINES Toast/Gallery 예시 | 완료 | 실사용 맥락 추가 |
-| FocusTrap / a11y / dynamic import 후속 | 완료 | 해당 영향 테스트 GREEN |
-| 시각 회귀 (snapshot) | 보류 | 별도 PR 예정 |
+| 항목                                   | 상태 | 비고                                                      |
+| -------------------------------------- | ---- | --------------------------------------------------------- |
+| Fit 모드 그룹 white box 제거           | 완료 | 계약 테스트로 회귀 방지                                   |
+| Radius 정책 수립/테스트                | 완료 | primitive ↔ semantic 1:1, 위반 차단                      |
+| IconButton 추출 & 적용                 | 완료 | 중복 스타일 제거                                          |
+| Isolated radius alias 제거             | 완료 | semantic 직접 사용                                        |
+| ToolbarButton CSS 통합                 | 완료 | Unified 파일/전용 테스트 삭제, 레거시 selector 흡수       |
+| Cross-component consistency 단일화     | 완료 | clean/legacy 중복 제거, 정책 기반 검사                    |
+| 정책 파서 자동화                       | 완료 | 테스트에서 가이드 문서 파싱 (deriveRoleTokenExpectations) |
+| CODING_GUIDELINES Toast/Gallery 예시   | 완료 | 실사용 맥락 추가                                          |
+| FocusTrap / a11y / dynamic import 후속 | 완료 | 해당 영향 테스트 GREEN                                    |
+| 시각 회귀 (snapshot)                   | 보류 | 별도 PR 예정                                              |
 
-테스트 핵심 스코프 GREEN. 제거/정리된 레거시: UnifiedToolbarButton CSS, 중복 consistency *clean* 테스트, tokenization 전용 Unified 테스트.
+테스트 핵심 스코프 GREEN. 제거/정리된 레거시: UnifiedToolbarButton CSS + 전용 tokenization 테스트 + 중복 consistency clean 테스트.
 
 ## 3. 완료/후속
 
 - 현 스코프 추가 작업 없음.
-- 후속 제안: (a) 시각 회귀(Playwright 또는 percy) (b) Icon 시스템 리팩터로 dynamic import 관련 OUT-OF-SCOPE 테스트 정리.
+- 후속 제안: (a) 시각 회귀(Playwright 또는 percy) (b) Icon 시스템 리팩터로
+  dynamic import 관련 OUT-OF-SCOPE 테스트 정리.
 
 ## 4. 핵심 TDD 테스트 (요약)
 
@@ -51,6 +52,7 @@
 ## 7. 완료 정의 (Final)
 
 스코프 목표 충족:
+
 1. White box 제거 (계약 테스트)
 2. Radius 정책 확정 & 위반 차단 (primitive/semantic, 문서-코드 동기화)
 3. IconButton 도입 및 ToolbarButton 통합 (중복 제거)

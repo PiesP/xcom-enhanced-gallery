@@ -17,7 +17,6 @@ const __dirname = dirname(__filename);
 const CSS_FILES = {
   designTokensPrimitive: 'src/shared/styles/design-tokens.primitive.css',
   designTokensSemantic: 'src/shared/styles/design-tokens.semantic.css',
-  unifiedToolbarButton: 'src/shared/components/ui/Toolbar/UnifiedToolbarButton.module.css',
   toast: 'src/shared/components/ui/Toast/Toast.module.css',
   gallery: 'src/features/gallery/styles/Gallery.module.css',
   galleryGlobal: 'src/features/gallery/assets/styles/gallery-global.css',
@@ -56,7 +55,7 @@ function deriveRoleTokenExpectations() {
 
     // 테이블 행 파싱 (파이프 기반) -> 용도 / 토큰
     const lines = section.split('\n').filter(l => l.includes('| var(--xeg-radius'));
-  const policy = {};
+    const policy = {};
     for (const line of lines) {
       // | 용도 | `var(--xeg-radius-md)` | 설명 |
       const cols = line.split('|').map(c => c.trim());
@@ -79,7 +78,7 @@ function deriveRoleTokenExpectations() {
     }
 
     // 후처리: 중복 제거 & 비어있으면 폴백 사용
-  const uniq = (arr = []) => Array.from(new Set(arr));
+    const uniq = (arr = []) => Array.from(new Set(arr));
     const result = {
       interaction: uniq(policy.interaction?.length ? policy.interaction : fallback.interaction),
       surface: uniq(policy.surface?.length ? policy.surface : fallback.surface),
@@ -141,7 +140,7 @@ describe('Cross-Component Consistency Verification', () => {
   });
 
   describe('Phase 2: 컴포넌트별 토큰 사용 검증', () => {
-    it('UnifiedToolbarButton이 적절한 토큰만 사용해야 함', () => {
+  it('ToolbarButton / IconButton이 정책 토큰만 사용해야 함', () => {
       const toolbarCSS = readCSSFile(CSS_FILES.toolbarButton);
       const iconCSS = readCSSFile(CSS_FILES.iconButton);
       const combined = toolbarCSS + '\n' + iconCSS;
