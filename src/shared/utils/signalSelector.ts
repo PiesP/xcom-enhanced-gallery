@@ -79,6 +79,7 @@ export function createSelector<T, R>(
 ): SelectorFn<T, R> {
   const { dependencies, debug = isDebugMode, name = 'Anonymous' } = options;
 
+  let lastArgs: T | undefined;
   let lastDependencies: readonly unknown[] | undefined;
   let lastResult: R;
   let hasResult = false;
@@ -94,6 +95,15 @@ export function createSelector<T, R>(
   const optimizedSelector: SelectorFn<T, R> = (state: T): R => {
     const startTime = debug ? performance.now() : 0;
 
+    // Object.is 기반 인자 참조 동일성 검사
+    if (hasResult && lastArgs && Object.is(lastArgs, state)) {
+      if (debug) {
+        stats.cacheHits++;
+        console.info(`[Selector:${name}] Cache hit (same reference)`, { stats });
+      }
+      return lastResult;
+    }
+
     // 의존성 기반 캐싱
     if (dependencies) {
       const currentDependencies = dependencies(state);
@@ -101,7 +111,7 @@ export function createSelector<T, R>(
       if (hasResult && lastDependencies && shallowEqual(lastDependencies, currentDependencies)) {
         if (debug) {
           stats.cacheHits++;
-          console.info(`[Selector:${name}] Cache hit`, { stats });
+          console.info(`[Selector:${name}] Cache hit (dependencies)`, { stats });
         }
         return lastResult;
       }
@@ -112,23 +122,20 @@ export function createSelector<T, R>(
     // 새로운 값 계산
     const result = selector(state);
 
-    // 결과 캐싱
-    if (!hasResult || !Object.is(lastResult, result)) {
-      lastResult = result;
-      hasResult = true;
+    // 인자와 결과 캐싱
+    lastArgs = state;
+    lastResult = result;
+    hasResult = true;
 
-      if (debug) {
-        stats.computeCount++;
-        stats.cacheMisses++;
-        stats.lastComputeTime = performance.now() - startTime;
-        console.info(`[Selector:${name}] Computed new value`, {
-          result,
-          computeTime: stats.lastComputeTime,
-          stats,
-        });
-      }
-    } else if (debug) {
-      stats.cacheHits++;
+    if (debug) {
+      stats.computeCount++;
+      stats.cacheMisses++;
+      stats.lastComputeTime = performance.now() - startTime;
+      console.info(`[Selector:${name}] Computed new value`, {
+        result,
+        computeTime: stats.lastComputeTime,
+        stats,
+      });
     }
 
     return result;
@@ -224,45 +231,57 @@ export function useCombinedSelector<T extends readonly Signal<unknown>[], R>(
  * @param signal - Preact Signal
  * @param asyncSelector - 비동기 선택 함수
  * @param defaultValue - 기본값
+ * @param debounceMs - 디바운스 시간 (밀리초)
  * @returns 선택된 값과 로딩 상태
  */
 export function useAsyncSelector<T, R>(
   signalInstance: Signal<T>,
   asyncSelector: (state: T) => Promise<R>,
-  defaultValue: R
+  defaultValue: R,
+  debounceMs = 300
 ): { value: R; loading: boolean; error: Error | null } {
-  const { useMemo, useCallback } = getPreactHooks();
-  const { signal, computed } = getPreactSignals();
+  const { useMemo, useCallback, useRef, useEffect } = getPreactHooks();
+  const { signal } = getPreactSignals();
 
   const result = useMemo(
     () => signal({ value: defaultValue, loading: false, error: null as Error | null }),
     [defaultValue]
   );
 
+  // Generation counter로 race condition 방지
+  const generationRef = useRef(0);
+
   const debouncedSelector = useCallback(
-    debounce(async (state: unknown) => {
-      const typedState = state as T;
+    debounce(async (state: T) => {
+      const currentGeneration = ++generationRef.current;
+
       result.value = { value: result.value.value, loading: true, error: null };
+
       try {
-        const value = await asyncSelector(typedState);
-        result.value = { value, loading: false, error: null };
+        const value = await asyncSelector(state);
+
+        // 최신 요청인지 확인 (race condition 방지)
+        if (currentGeneration === generationRef.current) {
+          result.value = { value, loading: false, error: null };
+        }
       } catch (error) {
-        result.value = {
-          value: result.value.value,
-          loading: false,
-          error: error instanceof Error ? error : new Error(String(error)),
-        };
+        // 최신 요청인지 확인
+        if (currentGeneration === generationRef.current) {
+          result.value = {
+            value: result.value.value,
+            loading: false,
+            error: error instanceof Error ? error : new Error(String(error)),
+          };
+        }
       }
-    }, 300),
-    [asyncSelector, result]
+    }, debounceMs),
+    [asyncSelector, result, debounceMs]
   );
 
   // Signal 값 변경 시 비동기 셀렉터 실행
-  useMemo(() => {
-    computed(() => {
-      debouncedSelector(signalInstance.value);
-    });
-  }, [signalInstance, debouncedSelector]);
+  useEffect(() => {
+    debouncedSelector(signalInstance.value);
+  }, [signalInstance.value, debouncedSelector]);
 
   return result.value;
 }
@@ -285,19 +304,24 @@ function shallowEqual(a: readonly unknown[], b: readonly unknown[]): boolean {
 }
 
 /**
- * 디바운스 함수
+ * 디바운스 함수 (개선된 버전)
  */
-function debounce<T extends (...args: readonly unknown[]) => unknown>(
-  func: T,
+function debounce<TArgs extends readonly unknown[]>(
+  func: (...args: TArgs) => unknown,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   let timeout: ReturnType<typeof setTimeout> | undefined;
 
-  return (...args: Parameters<T>) => {
+  return (...args: TArgs) => {
+    const later = () => {
+      timeout = undefined;
+      func(...args);
+    };
+
     if (timeout) {
       clearTimeout(timeout);
     }
-    timeout = setTimeout(() => func(...args), wait);
+    timeout = setTimeout(later, wait);
   };
 }
 

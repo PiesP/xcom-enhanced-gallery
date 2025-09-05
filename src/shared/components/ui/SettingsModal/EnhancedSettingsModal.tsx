@@ -1,67 +1,19 @@
 /**
- * @fileoverview EnhancedSettingsModal Component (TDD Phase T4)
- * @description Focus trap과 scroll lock이 적용된 설정 모달
+ * @fileoverview EnhancedSettingsModal Wrapper
+ * @deprecated 통합 RefactoredSettingsModal (mode="modal") 사용.
  */
-
 import { h, type ComponentChildren } from '@shared/external/vendors';
-import { getPreactHooks } from '@shared/external/vendors';
-import { useFocusTrap } from '@shared/hooks/useFocusTrap';
-import { useScrollLock } from '@shared/hooks/useScrollLock';
+import { RefactoredSettingsModal } from './RefactoredSettingsModal';
 
 export interface EnhancedSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   children?: ComponentChildren;
+  'data-testid'?: string;
 }
 
 export function EnhancedSettingsModal(props: EnhancedSettingsModalProps) {
-  const { useRef } = getPreactHooks();
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useFocusTrap(containerRef.current, props.isOpen, {
-    onEscape: props.onClose,
-    restoreFocus: true,
-  });
-
-  useScrollLock({
-    enabled: props.isOpen,
-    reserveScrollBarGap: true,
-  });
-
-  if (!props.isOpen) {
-    return null;
-  }
-
-  const handleBackdropClick = (event: Event) => {
-    if (event.target === event.currentTarget) {
-      props.onClose();
-    }
-  };
-
-  const handleEscapeKey = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      props.onClose();
-    }
-  };
-
-  return h(
-    'div',
-    {
-      class: 'enhanced-settings-modal-backdrop',
-      onClick: handleBackdropClick,
-      onKeyDown: handleEscapeKey,
-      role: 'dialog',
-      'aria-modal': 'true',
-      'aria-label': 'Settings dialog',
-    },
-    h(
-      'div',
-      {
-        ref: containerRef,
-        class: 'enhanced-settings-modal-content',
-        role: 'document',
-      },
-      props.children
-    )
-  );
+  return h(RefactoredSettingsModal, { ...props, mode: 'modal' });
 }
+
+export default EnhancedSettingsModal;

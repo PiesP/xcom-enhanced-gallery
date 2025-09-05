@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
+import process from 'process';
 
 describe('Phase 2: 테마 동기화 메커니즘', () => {
   let mockDocument;
@@ -20,15 +21,15 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
             return this[name];
           },
           classList: {
-            add: function (className: string) {
+            add: function (className) {
               if (!this.element) this.element = element;
               if (!this.element.className) this.element.className = '';
               if (!this.element.className.includes(className)) {
                 this.element.className += (this.element.className ? ' ' : '') + className;
               }
             },
-            remove: (className: string) => {},
-            contains: function (className: string) {
+            remove: () => {},
+            contains: function (className) {
               if (!this.element) this.element = element;
               return (this.element.className || '').includes(className);
             },
@@ -49,7 +50,7 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
     };
 
     mockWindow = {
-      getComputedStyle: (element: any) => ({
+      getComputedStyle: element => ({
         getPropertyValue: prop => {
           // className을 확인하는 방식 개선
           const className = element.className || '';
@@ -124,10 +125,10 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
     });
 
     it('ThemeService가 활성화되고 설정 모달과 연동되어야 함', () => {
-      // SettingsModal.tsx에서 ThemeService가 import되고 사용되는지 확인
+      // RefactoredSettingsModal.tsx에서 ThemeService가 import되고 사용되는지 확인
       const settingsModalPath = resolve(
         process.cwd(),
-        'src/shared/components/ui/SettingsModal/SettingsModal.tsx'
+        'src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx'
       );
 
       if (existsSync(settingsModalPath)) {

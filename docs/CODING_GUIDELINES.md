@@ -64,6 +64,72 @@ Gallery
 - Surface 크기 차별화: 일반(`lg`), 대형/시각적 강조(`2xl` - Toast 등)
 - 형태 구분은 `pill` / `full` 만 사용하고 임의 radius 조합 지양
 
+### 테마 토큰 시스템 (Theme Tokens)
+
+#### 다크/라이트 모드 자동 대응
+
+| 용도      | 라이트 모드 | 다크 모드   | 권장 토큰                         |
+| --------- | ----------- | ----------- | --------------------------------- |
+| 기본 배경 | 밝은 색상   | 어두운 색상 | `var(--xeg-color-bg-primary)`     |
+| 호버 배경 | 약간 어두움 | 약간 밝음   | `var(--xeg-color-bg-hover)`       |
+| 텍스트    | 어두운 색상 | 밝은 색상   | `var(--xeg-color-text-primary)`   |
+| 보더      | 중간 색상   | 중간 색상   | `var(--xeg-color-border-primary)` |
+
+#### 테마별 토큰 사용 예시
+
+```css
+/* ✅ 권장: 테마 자동 대응 토큰 */
+.button {
+  background: var(--xeg-color-neutral-100, rgba(0, 0, 0, 0.05));
+  color: var(--xeg-color-text-primary, rgba(0, 0, 0, 0.8));
+  border: 1px solid var(--xeg-color-border-primary, rgba(0, 0, 0, 0.1));
+}
+
+.button:hover {
+  background: var(--xeg-color-neutral-200, rgba(0, 0, 0, 0.1));
+  color: var(--xeg-color-text-primary, rgba(0, 0, 0, 0.9));
+}
+
+/* ✅ 다크 모드 특별 처리가 필요한 경우 */
+[data-theme='dark'] .button:hover {
+  background: var(--xeg-color-neutral-800, rgba(64, 64, 64, 0.8));
+}
+
+/* ❌ 피할 것: 하드코딩된 색상 */
+.button {
+  background: rgba(255, 255, 255, 0.1); /* 테마 변경 불가 */
+  color: #333; /* 다크 모드에서 문제 */
+}
+```
+
+#### 인터랙션 상태 표준화
+
+```css
+/* ✅ 표준화된 호버 효과 */
+.interactive-element:hover {
+  transform: translateY(-1px); /* 또는 var(--xeg-button-lift) */
+  box-shadow: var(--xeg-shadow-md);
+  background: var(--xeg-color-bg-hover);
+}
+
+.interactive-element:active {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+/* ✅ 접근성 포커스 */
+.interactive-element:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+```
+
+규칙:
+
+- CSS 변수에 폴백값 제공 (브라우저 호환성)
+- 다크 모드에서 라이트 모드 토큰(neutral-100, neutral-200) 사용 금지
+- 인터랙션 요소는 표준화된 transform/shadow 효과 사용
+
 ### IconButton 사용 규칙
 
 - 반복되는 아이콘 전용 버튼은 `<IconButton>` 사용 (토큰/hover/active 일관)

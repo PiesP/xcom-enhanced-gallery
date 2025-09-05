@@ -107,8 +107,16 @@ export class IconRegistry {
   private async loadIconInternal(name: IconName): Promise<IconComponent> {
     try {
       // 기존 아이콘 컴포넌트에서 동적 import
-      // NOTE: .js 확장자를 제거하여 TS/ESM 소스 단계에서도 해석되도록 함 (Vite 변환 전 테스트 환경 호환)
-      const module = await import(`../components/ui/Icon/icons/${name}`);
+      // NOTE: 테스트 환경에서는 .js로, 빌드에서는 .tsx로 처리됨
+      let module: Record<string, unknown>;
+      try {
+        // 먼저 .tsx로 시도
+        module = await import(`../components/ui/Icon/icons/${name}.tsx`);
+      } catch {
+        // 실패하면 .js로 시도 (테스트 환경)
+        module = await import(`../components/ui/Icon/icons/${name}.js`);
+      }
+
       const IconComponent = module[name] as IconComponent;
 
       if (!IconComponent) {

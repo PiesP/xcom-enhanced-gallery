@@ -1,10 +1,11 @@
 /**
  * @fileoverview IconButton Primitive Component
- * @description 아이콘 전용 버튼 - 접근성 필수 aria-label
+ * @description 아이콘 전용 버튼 - Compatibility Wrapper for Button
+ * @deprecated Use Button with iconOnly prop for new code
  */
 
+import { Button, type ButtonProps } from '../Button';
 import type { ComponentChildren } from '@shared/external/vendors';
-import './IconButton.css';
 
 export interface IconButtonProps {
   readonly children: ComponentChildren;
@@ -15,43 +16,32 @@ export interface IconButtonProps {
   readonly onClick?: (event: MouseEvent) => void;
 }
 
-export function IconButton({
-  children,
-  'aria-label': ariaLabel,
-  className = '',
-  size = 'md',
-  disabled = false,
-  onClick,
-  ...props
-}: IconButtonProps) {
-  const handleClick = (event: MouseEvent) => {
-    if (!disabled) {
-      onClick?.(event);
-    }
-  };
+// Props 매핑 함수
+function mapIconButtonPropsToUnified(props: IconButtonProps): ButtonProps {
+  const { ...rest } = props;
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      if (!disabled && onClick) {
-        onClick(event as unknown as MouseEvent);
-      }
-    }
+  return {
+    ...rest,
+    iconOnly: true, // IconButton은 항상 iconOnly 모드
+    variant: 'icon', // 기본 icon variant 사용
   };
+}
 
-  return (
-    <button
-      type='button'
-      className={`xeg-icon-button xeg-icon-button--${size} ${className}`}
-      disabled={disabled}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      aria-label={ariaLabel}
-      role='button'
-      tabIndex={disabled ? -1 : 0}
-      {...props}
-    >
-      {children}
-    </button>
-  );
+// 개발 모드 deprecation 경고 (한 번만)
+let hasWarned = false;
+function warnDeprecation() {
+  if (!hasWarned && typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.warn(
+      '[IconButton Deprecation]: Consider using Button with iconOnly prop for new code. ' +
+        'Legacy IconButton wrapper will be removed in a future version.'
+    );
+    hasWarned = true;
+  }
+}
+
+export function IconButton(props: IconButtonProps) {
+  warnDeprecation();
+
+  const unifiedProps = mapIconButtonPropsToUnified(props);
+  return Button(unifiedProps);
 }

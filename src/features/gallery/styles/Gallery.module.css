@@ -915,7 +915,7 @@
   }
 
   .error {
-    border: 2px solid #ff4444;
+    border: 2px solid var(--color-error);
   }
 }
 

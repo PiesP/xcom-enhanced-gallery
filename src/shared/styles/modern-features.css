@@ -96,8 +96,8 @@
   border-radius: var(--xeg-radius-lg);
   padding: var(--xeg-spacing-md);
 
-  /* Nesting으로 가독성 향상 - UnifiedToolbarButton.module.css로 통합됨 */
-  /* @deprecated - UnifiedToolbarButton.module.css의 .toolbarButton 사용 권장 */
+  /* Nesting으로 가독성 향상 - ToolbarButton.module.css로 통합됨 */
+  /* @deprecated - ToolbarButton.module.css의 .toolbarButton 사용 권장 */
 
   & .toolbar-separator {
     width: 1px;

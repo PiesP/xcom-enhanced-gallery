@@ -1104,8 +1104,8 @@
       "dependencies": [],
       "dependents": [
         "src/shared/browser/BrowserUtils.ts",
-        "src/shared/services/LanguageService.ts",
         "src/shared/logging/index.ts",
+        "src/shared/services/LanguageService.ts",
         "src/utils/index.ts"
       ],
       "orphan": false,
@@ -1296,11 +1296,10 @@
       ],
       "dependents": [
         "src/shared/components/hoc/GalleryHOC.tsx",
-        "src/shared/components/ui/Button/Button.tsx",
         "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
@@ -1530,23 +1529,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../StandardProps",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./Button.module.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1565,6 +1547,7 @@
       ],
       "dependents": [
         "src/shared/components/index.ts",
+        "src/shared/components/ui/Button/index.ts",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
@@ -1859,7 +1842,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1922,7 +1905,7 @@
       ],
       "dependents": [
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -2426,94 +2409,187 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
+      "source": "src/shared/components/ui/Button-legacy/Button.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Button/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Button-legacy/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Button/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Button-legacy/Button.tsx",
+        "src/shared/components/ui/Toolbar/ToolbarButton.tsx",
+        "src/shared/components/ui/primitive/IconButton.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Button-legacy/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Button-legacy/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Button-legacy/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ModalShell/ModalShell.tsx",
       "dependencies": [],
       "dependents": [
+        "src/shared/components/ui/ModalShell/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ModalShell/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ModalShell",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ModalShell/ModalShell.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ModalShell",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ModalShell/ModalShell.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./RefactoredSettingsModal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/SettingsModal/index.ts",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
-      "source": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../services/LanguageService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/LanguageService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../services/ThemeService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/ThemeService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../Icon",
@@ -2584,8 +2660,9 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/index.ts",
-        "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx"
+        "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/shared/components/ui/SettingsModal/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2602,139 +2679,37 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/shared/external/vendors/index.ts",
-      "dependencies": [
+      "source": "src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
         {
-          "dynamic": false,
-          "module": "./vendor-api",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-api.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-api-safe",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-api-safe.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-manager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-manager-static",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-manager-static",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
+          "severity": "info",
+          "name": "no-orphans"
         }
-      ],
-      "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/external/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
+      ]
     },
     {
-      "source": "src/shared/external/vendors/vendor-api.ts",
+      "source": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./vendor-manager",
+          "module": "./RefactoredSettingsModal",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/external/vendors/vendor-manager.ts",
+          "resolved": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2744,103 +2719,8 @@
         }
       ],
       "dependents": [
-        "src/shared/external/vendors/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-manager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/external/vendors/index.ts",
-        "src/shared/external/vendors/vendor-api.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-api-safe.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./vendor-manager-static",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/external/vendors/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-manager-static.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/external/vendors/index.ts",
-        "src/shared/external/vendors/vendor-api-safe.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/external/vendors/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/LanguageService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/ThemeService.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/services/index.ts",
-        "src/shared/services/service-initialization.ts",
-        "src/shared/types/core/core-types.ts"
+        "src/shared/components/ui/SettingsModal/index.ts",
+        "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -2848,6 +2728,58 @@
     {
       "source": "src/shared/components/ui/SettingsModal/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EnhancedSettingsModal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EnhancedSettingsModal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./RefactoredSettingsModal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./SettingsModal",
@@ -2948,16 +2880,16 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./ToolbarButton.module.css",
+          "module": "../Button",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/components/ui/Toolbar/ToolbarButton.module.css",
+          "resolved": "src/shared/components/ui/Button/index.ts",
           "coreModule": false,
-          "followable": false,
+          "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -2966,23 +2898,6 @@
       ],
       "dependents": [
         "src/shared/components/ui/Toolbar/ToolbarView.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Toolbar/ToolbarButton.module.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/ui/Toolbar/ToolbarButton.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -3088,6 +3003,58 @@
       "dependents": [
         "src/shared/components/ui/Toolbar/ToolbarView.tsx"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ToolbarShell/ToolbarShell.tsx",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/ToolbarShell/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ToolbarShell/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ToolbarShell",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ToolbarShell/ToolbarShell.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ToolbarShell",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ToolbarShell/ToolbarShell.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -3508,16 +3475,16 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./IconButton.css",
+          "module": "../Button",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/components/ui/primitive/IconButton.css",
+          "resolved": "src/shared/components/ui/Button/index.ts",
           "coreModule": false,
-          "followable": false,
+          "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -3526,23 +3493,6 @@
       ],
       "dependents": [
         "src/shared/components/ui/primitive/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/primitive/IconButton.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/ui/primitive/IconButton.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -3809,6 +3759,203 @@
         }
       ],
       "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendor-api",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-api-safe",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-api-safe.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-manager-static",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-manager-static",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/external/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-api.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendor-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/external/vendors/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-manager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/vendors/index.ts",
+        "src/shared/external/vendors/vendor-api.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-api-safe.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./vendor-manager-static",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/external/vendors/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-manager-static.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/vendors/index.ts",
+        "src/shared/external/vendors/vendor-api-safe.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/vendors/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -5407,12 +5554,50 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/ThemeService.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/index.ts",
+        "src/shared/services/service-initialization.ts",
+        "src/shared/types/core/core-types.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/ToastController.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/service-initialization.ts",
         "src/shared/types/core/core-types.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/LanguageService.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7897,15 +8082,6 @@
       },
       {
         "type": "module",
-        "from": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
-        "to": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "src/shared/hooks/useFocusScope.ts",
         "to": "src/shared/hooks/useFocusScope.ts",
         "rule": {
@@ -7934,10 +8110,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 5,
+    "info": 4,
     "ignore": 0,
-    "totalCruised": 224,
-    "totalDependenciesCruised": 326,
+    "totalCruised": 229,
+    "totalDependenciesCruised": 335,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

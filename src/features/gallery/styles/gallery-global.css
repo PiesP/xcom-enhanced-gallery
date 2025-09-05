@@ -17,8 +17,8 @@
 /* ===== 미니멀 Surface 클래스 (글래스모피즘 제거) ===== */
 /* 설정 모달용 - 밝은 미니멀 스타일 */
 .glass-surface-light {
-  background: var(--xeg-bg-primary, #ffffff) !important;
-  border: 1px solid var(--xeg-border-light, #e5e7eb) !important;
+  background: var(--xeg-bg-primary, var(--color-bg-primary)) !important;
+  border: 1px solid var(--xeg-border-light, var(--color-border-default)) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow: var(--xeg-shadow-md, 0 2px 4px rgba(0, 0, 0, 0.08)) !important;
@@ -27,8 +27,8 @@
 
 /* 툴바용 - 어두운 미니멀 스타일 */
 .glass-surface-dark {
-  background: var(--xeg-bg-primary, #1a1a1a) !important;
-  border: 1px solid var(--xeg-border-light, #404040) !important;
+  background: var(--xeg-bg-primary, var(--color-bg-secondary)) !important;
+  border: 1px solid var(--xeg-border-light, var(--color-border-subtle)) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow: var(--xeg-shadow-md, 0 2px 4px rgba(0, 0, 0, 0.3)) !important;
@@ -96,8 +96,8 @@
   justify-content: center;
 }
 
-/* 툴바 버튼 - UnifiedToolbarButton.module.css로 통합됨 */
-/* @deprecated - UnifiedToolbarButton.module.css 사용 권장 */
+/* 툴바 버튼 - ToolbarButton.module.css로 통합됨 */
+/* @deprecated - ToolbarButton.module.css 사용 권장 */
 
 /* 갤러리 카운터 - 현대적 디자인 */
 .xeg-gallery-counter {
@@ -446,12 +446,12 @@
 
   .xeg-gallery-toolbar {
     background: rgba(255, 255, 255, 0.9);
-    color: #1f2937;
+    color: var(--color-text-primary);
   }
 
   .xeg-toolbar-button {
     background: rgba(0, 0, 0, 0.1);
-    color: #1f2937;
+    color: var(--color-text-primary);
   }
 
   .xeg-toolbar-button:hover {
@@ -473,7 +473,7 @@
   .xeg-gallery-nav-left,
   .xeg-gallery-nav-right {
     background: rgba(0, 0, 0, 0.1);
-    color: #1f2937;
+    color: var(--color-text-primary);
   }
 
   .xeg-gallery-nav-left:hover,

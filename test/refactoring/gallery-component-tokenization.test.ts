@@ -176,7 +176,7 @@ describe('Gallery Component Border-Radius Tokenization', () => {
   });
 
   describe('Integration: 다른 컴포넌트와의 호환성', () => {
-    test('UnifiedToolbarButton과 Toast 컴포넌트와 일관된 토큰 사용', () => {
+    test('ToolbarButton과 Toast 컴포넌트와 일관된 토큰 사용', () => {
       const galleryGlobalContent = readFileSync(GALLERY_GLOBAL_CSS, 'utf-8');
 
       // 동일한 크기의 요소들이 같은 토큰을 사용하는지 확인

@@ -19,12 +19,15 @@
   /* Border Colors - Semantic Roles */
   --color-border-default: var(--color-gray-200);
   --color-border-muted: var(--color-gray-100);
+  --color-border-subtle: var(--color-gray-100);
   --color-border-emphasis: var(--color-gray-500);
 
   /* State Colors - Semantic Roles */
   --color-success: var(--color-green-500);
+  --color-success-hover: var(--color-green-600);
   --color-success-bg: var(--color-green-50);
   --color-error: var(--color-red-500);
+  --color-error-hover: var(--color-red-600);
   --color-error-bg: var(--color-red-50);
   --color-warning: var(--color-yellow-500);
   --color-warning-bg: var(--color-yellow-50);
@@ -84,6 +87,13 @@
   --xeg-z-overlay: 9999;
   --xeg-z-toast: 10080;
 
+  /* Layer Management - Semantic Roles */
+  --xeg-layer-base: 0;
+  --xeg-layer-toolbar: var(--xeg-z-toolbar);
+  --xeg-layer-modal: var(--xeg-z-modal);
+  --xeg-layer-overlay: var(--xeg-z-overlay);
+  --xeg-layer-toast: var(--xeg-z-toast);
+
   /* Animation Timing - Semantic Roles */
   --xeg-anim-duration: var(--duration-normal);
   --xeg-duration: var(--duration-normal);
@@ -94,6 +104,12 @@
   --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
   --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
   --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Interaction State Tokens */
+  --xeg-button-lift: -1px;
+  --xeg-button-lift-hover: -2px;
+  --xeg-opacity-disabled: 0.5;
+  --xeg-opacity-hover: 0.8;
 
   /* Surface Glass - Unified Tokens */
   --xeg-surface-glass-bg: var(--color-glass-bg);
@@ -146,4 +162,54 @@
     --transition-normal: 0ms;
     --transition-slow: 0ms;
   }
+}
+
+/* Component Scope Tokens */
+:root {
+  /* Toolbar Component Tokens */
+  --xeg-comp-toolbar-bg: var(--color-bg-surface);
+  --xeg-comp-toolbar-border: var(--color-border-default);
+  --xeg-comp-toolbar-shadow: var(--shadow-md);
+  --xeg-comp-toolbar-radius: var(--xeg-radius-lg);
+  --xeg-comp-toolbar-z-index: var(--xeg-layer-toolbar);
+
+  /* Modal Component Tokens */
+  --xeg-comp-modal-bg: var(--color-bg-surface);
+  --xeg-comp-modal-border: var(--color-border-default);
+  --xeg-comp-modal-shadow: var(--shadow-lg);
+  --xeg-comp-modal-radius: var(--xeg-radius-xl);
+  --xeg-comp-modal-z-index: var(--xeg-layer-modal);
+  --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
+
+  /* Toast Component Tokens */
+  --xeg-toast-bg-info: oklch(0.95 0.05 237.8);
+  --xeg-toast-border-info: oklch(0.676 0.151 237.8);
+  --xeg-toast-bg-success: oklch(0.95 0.08 142);
+  --xeg-toast-border-success: oklch(0.725 0.17 142.5);
+  --xeg-toast-bg-warning: oklch(0.988 0.029 86.7);
+  --xeg-toast-border-warning: oklch(0.761 0.16 70.7);
+  --xeg-toast-bg-error: oklch(0.971 0.013 17.4);
+  --xeg-toast-border-error: oklch(0.628 0.257 27.3);
+  --xeg-toast-bg-neutral: oklch(0.943 0.006 206.2);
+  --xeg-toast-shadow-info: 0 2px 8px oklch(0.676 0.151 237.8 / 0.15);
+  --xeg-toast-shadow-focus: 0 4px 16px oklch(0.676 0.151 237.8 / 0.25);
+
+  /* Focus Ring Utilities */
+  --xeg-focus-ring: 2px solid oklch(0.676 0.151 237.8);
+  --xeg-focus-ring-offset: 2px;
+  --xeg-focus-ring-color: oklch(0.676 0.151 237.8);
+  --xeg-focus-ring-width: 2px;
+}
+
+/* ===== 유틸리티 클래스 ===== */
+
+/* Focus Ring 유틸리티 클래스 */
+.xeg-focus-ring {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+.xeg-focus-ring:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
 }

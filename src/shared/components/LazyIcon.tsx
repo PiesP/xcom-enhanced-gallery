@@ -3,9 +3,15 @@
  * @description 성능 최적화된 지연 로딩 아이콘 컴포넌트
  */
 
-import { type VNode } from 'preact';
 import { getPreact, getPreactHooks } from '@shared/external/vendors';
-import { getIconRegistry, type IconName, type IconComponent } from '@shared/services/iconRegistry';
+import {
+  getIconRegistry,
+  type IconName,
+  type IconComponent,
+  preloadCommonIcons,
+} from '@shared/services/iconRegistry';
+
+type VNode = ReturnType<typeof getPreact>['h'];
 
 interface LazyIconProps {
   /** 아이콘 이름 */
@@ -78,34 +84,38 @@ export function LazyIcon({
 
   // 로딩 상태
   if (iconState.status === 'loading') {
-    return (
-      fallback ||
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (h as any)('div', {
-        className: `lazy-icon-loading ${className}`,
-        'aria-label': '아이콘 로딩 중',
-        'data-testid': testId ? `${testId}-loading` : undefined,
-        style: { width: size, height: size },
-      })
-    );
+    if (fallback) {
+      return fallback;
+    }
+
+    // 기본 로딩 표시
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (h as any)('div', {
+      className: `lazy-icon-loading ${className}`,
+      'aria-label': '아이콘 로딩 중',
+      'data-testid': testId ? `${testId}-loading` : 'lazy-icon-loading',
+      style: { width: size, height: size },
+    });
   }
 
   // 에러 상태
   if (iconState.status === 'error') {
-    return (
-      errorFallback ||
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (h as any)(
-        'div',
-        {
-          className: `lazy-icon-error ${className}`,
-          'aria-label': '아이콘 로드 실패',
-          'data-testid': testId ? `${testId}-error` : undefined,
-          style: { width: size, height: size },
-          title: iconState.error?.message,
-        },
-        '⚠️'
-      )
+    if (errorFallback) {
+      return errorFallback;
+    }
+
+    // 기본 에러 표시
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (h as any)(
+      'div',
+      {
+        className: `lazy-icon-error ${className}`,
+        'aria-label': '아이콘 로드 실패',
+        'data-testid': testId ? `${testId}-error` : 'lazy-icon-error',
+        style: { width: size, height: size },
+        title: iconState.error?.message,
+      },
+      '⚠️'
     );
   }
 
@@ -118,7 +128,7 @@ export function LazyIcon({
       stroke,
       color,
       className,
-      'data-testid': testId,
+      'data-testid': testId || `icon-${name.toLowerCase()}`,
     });
   }
 
@@ -129,4 +139,33 @@ export function LazyIcon({
     'data-testid': testId,
     style: { width: size, height: size },
   });
+}
+
+/**
+ * 지정된 아이콘들을 프리로드하는 훅
+ */
+export function useIconPreload(iconNames: IconName[]): void {
+  const { useEffect } = getPreactHooks();
+
+  useEffect(() => {
+    const registry = getIconRegistry();
+    iconNames.forEach(name => {
+      registry.loadIcon(name).catch(() => {
+        // 프리로드 실패는 무시 (실제 사용 시 처리됨)
+      });
+    });
+  }, [iconNames.join(',')]);
+}
+
+/**
+ * 공통으로 사용되는 아이콘들을 프리로드하는 훅
+ */
+export function useCommonIconPreload(): void {
+  const { useEffect } = getPreactHooks();
+
+  useEffect(() => {
+    preloadCommonIcons().catch(() => {
+      // 프리로드 실패는 무시
+    });
+  }, []);
 }

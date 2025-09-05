@@ -140,7 +140,7 @@ describe('Cross-Component Consistency Verification', () => {
   });
 
   describe('Phase 2: 컴포넌트별 토큰 사용 검증', () => {
-    it('ToolbarButton / IconButton이 정책 토큰만 사용해야 함', () => {
+    it('ToolbarButton이 적절한 토큰만 사용해야 함', () => {
       const toolbarCSS = readCSSFile(CSS_FILES.toolbarButton);
       const iconCSS = readCSSFile(CSS_FILES.iconButton);
       const combined = toolbarCSS + '\n' + iconCSS;

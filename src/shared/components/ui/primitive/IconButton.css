@@ -82,7 +82,7 @@
 
 /* 다크 모드 (토큰 기반) */
 [data-theme='dark'] .xeg-icon-button:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-800, rgba(255, 255, 255, 0.1));
+  background: var(--xeg-color-neutral-800, rgba(64, 64, 64, 0.8));
   border-color: var(--xeg-color-neutral-600, currentColor);
 }
 

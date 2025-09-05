@@ -131,7 +131,7 @@
 
 /* 색맹 고려 패턴 */
 .xeg-colorblind-safe {
-  --xeg-color-success: #0066cc;
-  --xeg-color-warning: #ff6600;
-  --xeg-color-error: #cc0000;
+  --xeg-color-success: var(--color-blue-500);
+  --xeg-color-warning: var(--color-twitter-orange);
+  --xeg-color-error: var(--color-red-500);
 }

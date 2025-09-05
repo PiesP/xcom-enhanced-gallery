@@ -1,0 +1,111 @@
+/**
+ * @fileoverview ToolbarShell CSS Module
+ * @description 툴바 Shell의 semantic 기반 스타일
+ */
+
+/* ===== 기본 Shell 스타일 ===== */
+.toolbar-shell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+/* ===== Elevation 변형 ===== */
+.toolbar-elevation-low {
+  box-shadow:
+    0 1px 3px oklch(from var(--color-base-black) l c h / 0.1),
+    0 1px 2px oklch(from var(--color-base-black) l c h / 0.06);
+  z-index: var(--xeg-layer-toolbar);
+}
+
+.toolbar-elevation-medium {
+  box-shadow:
+    0 4px 6px oklch(from var(--color-base-black) l c h / 0.1),
+    0 2px 4px oklch(from var(--color-base-black) l c h / 0.06);
+  z-index: calc(var(--xeg-layer-toolbar) + 1);
+}
+
+.toolbar-elevation-high {
+  box-shadow:
+    0 10px 15px oklch(from var(--color-base-black) l c h / 0.1),
+    0 4px 6px oklch(from var(--color-base-black) l c h / 0.05);
+  z-index: calc(var(--xeg-layer-toolbar) + 2);
+}
+
+/* ===== Surface 변형 ===== */
+.toolbar-surface-glass {
+  background: oklch(from var(--color-base-black) l c h / 0.8);
+  border: 1px solid oklch(from var(--color-base-white) l c h / 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.toolbar-surface-solid {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.toolbar-surface-overlay {
+  background: oklch(from var(--color-base-black) l c h / 0.95);
+  border: 1px solid oklch(from var(--color-base-white) l c h / 0.05);
+}
+
+/* ===== Position 변형 ===== */
+.toolbar-position-fixed {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.toolbar-position-sticky {
+  position: sticky;
+  top: 16px;
+}
+
+.toolbar-position-relative {
+  position: relative;
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 768px) {
+  .toolbar-shell {
+    border-radius: var(--radius-md);
+  }
+
+  .toolbar-position-fixed {
+    bottom: 16px;
+    top: auto;
+    transform: translateX(-50%);
+  }
+}
+
+/* ===== 다크 모드 지원 ===== */
+@media (prefers-color-scheme: dark) {
+  .toolbar-surface-glass {
+    background: oklch(from var(--color-base-black) l c h / 0.9);
+    border-color: oklch(from var(--color-base-white) l c h / 0.15);
+  }
+
+  .toolbar-surface-solid {
+    background: var(--color-gray-900);
+    border-color: var(--color-gray-700);
+  }
+}
+
+/* ===== 접근성 강화 ===== */
+.toolbar-shell:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toolbar-shell {
+    transition: none;
+  }
+}

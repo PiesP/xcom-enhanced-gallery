@@ -17,7 +17,7 @@
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
   font-size: 14px !important;
   line-height: 1.5 !important;
-  color: #ffffff !important;
+  color: var(--color-base-white) !important;
 
   /* 박스 모델 */
   box-sizing: border-box !important;
@@ -65,68 +65,65 @@
    ======================================== */
 
 .xeg-root {
-  /* 색상 시스템 */
-  --xeg-isolated-bg: rgba(0, 0, 0, 0.95);
-  --xeg-isolated-bg-secondary: rgba(0, 0, 0, 0.8);
-  --xeg-isolated-text: #ffffff;
-  --xeg-isolated-text-secondary: rgba(255, 255, 255, 0.8);
-  --xeg-isolated-text-muted: rgba(255, 255, 255, 0.6);
+  /* 색상 토큰 - 트위터 네이티브 디자인 매칭 */
+  --xeg-isolated-text: var(--color-base-white);
+  --xeg-isolated-text-muted: var(--color-gray-500);
 
-  /* 프라이머리 색상 */
-  --xeg-isolated-primary: #1d9bf0;
-  --xeg-isolated-primary-hover: #1a8cd8;
-  --xeg-isolated-primary-active: #1570b8;
+  /* Twitter 브랜드 색상 (OKLCH) */
+  --xeg-isolated-primary: var(--color-twitter-blue);
+  --xeg-isolated-primary-hover: var(--color-twitter-blue-hover);
+  --xeg-isolated-primary-active: var(--color-twitter-blue-active);
 
-  /* 위험/오류 색상 */
-  --xeg-isolated-danger: #f4212e;
-  --xeg-isolated-danger-hover: #dc1928;
+  /* 상태 색상 */
+  --xeg-isolated-danger: var(--color-twitter-red);
+  --xeg-isolated-danger-hover: var(--color-twitter-red-hover);
 
-  /* 성공 색상 */
-  --xeg-isolated-success: #00ba7c;
-  --xeg-isolated-success-hover: #00a46c;
+  /* 성공/경고 색상 */
+  --xeg-isolated-success: var(--color-twitter-green);
+  --xeg-isolated-success-hover: var(--color-twitter-green-hover);
 
   /* 경고 색상 */
-  --xeg-isolated-warning: #ffad1f;
-  --xeg-isolated-warning-hover: #fd9700;
+  --xeg-isolated-warning: var(--color-twitter-orange);
+  --xeg-isolated-warning-hover: var(--color-twitter-orange-hover);
 
-  /* 그레이 스케일 */
-  --xeg-isolated-gray-100: rgba(255, 255, 255, 0.1);
-  --xeg-isolated-gray-200: rgba(255, 255, 255, 0.2);
-  --xeg-isolated-gray-300: rgba(255, 255, 255, 0.3);
-  --xeg-isolated-gray-400: rgba(255, 255, 255, 0.4);
-  --xeg-isolated-gray-500: rgba(255, 255, 255, 0.5);
+  /* 그레이 스케일 - semantic 토큰 참조로 통합 */
+  --xeg-isolated-gray-100: var(--color-overlay-light);
+  --xeg-isolated-gray-200: var(--color-overlay-medium);
+  --xeg-isolated-gray-300: var(--color-overlay-strong);
+  --xeg-isolated-gray-400: var(--color-overlay-backdrop);
+  --xeg-isolated-gray-500: var(--color-glass-bg);
 
-  /* 그림자 */
-  --xeg-isolated-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --xeg-isolated-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
-  --xeg-isolated-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.3);
-  --xeg-isolated-shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.4);
+  /* 그림자 - semantic 토큰 참조로 통합 */
+  --xeg-isolated-shadow-sm: var(--shadow-sm);
+  --xeg-isolated-shadow-md: var(--shadow-md);
+  --xeg-isolated-shadow-lg: var(--shadow-lg);
+  --xeg-isolated-shadow-xl: 0 16px 32px oklch(0.234 0.006 277.8 / 0.4);
 
   /* 반경 (alias 제거 - 직접 semantic 토큰 사용) */
   /* 기존 --xeg-isolated-radius-* 변수 제거됨: 테스트 업데이트 필요 */
 
-  /* 간격 */
-  --xeg-isolated-spacing-xs: 4px;
-  --xeg-isolated-spacing-sm: 8px;
-  --xeg-isolated-spacing-md: 16px;
-  --xeg-isolated-spacing-lg: 24px;
-  --xeg-isolated-spacing-xl: 32px;
-  --xeg-isolated-spacing-2xl: 48px;
+  /* 간격 - semantic 토큰 참조로 통합 */
+  --xeg-isolated-spacing-xs: var(--space-xs);
+  --xeg-isolated-spacing-sm: var(--space-sm);
+  --xeg-isolated-spacing-md: var(--space-md);
+  --xeg-isolated-spacing-lg: var(--space-lg);
+  --xeg-isolated-spacing-xl: var(--space-xl);
+  --xeg-isolated-spacing-2xl: var(--space-2xl);
 
-  /* 전환 */
-  --xeg-isolated-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --xeg-isolated-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --xeg-isolated-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* 전환 - semantic 토큰 참조로 통합 */
+  --xeg-isolated-transition-fast: var(--transition-fast);
+  --xeg-isolated-transition-normal: var(--transition-normal);
+  --xeg-isolated-transition-slow: var(--transition-slow);
 
-  /* z-index */
-  --xeg-isolated-z-base: 1;
+  /* z-index - semantic 토큰 참조로 통합 */
+  --xeg-isolated-z-base: var(--xeg-layer-base);
   --xeg-isolated-z-dropdown: 10;
   --xeg-isolated-z-sticky: 20;
   --xeg-isolated-z-fixed: 30;
-  --xeg-isolated-z-modal: 40;
+  --xeg-isolated-z-modal: var(--xeg-layer-modal);
   --xeg-isolated-z-popover: 50;
   --xeg-isolated-z-tooltip: 60;
-  --xeg-isolated-z-toast: 70;
+  --xeg-isolated-z-toast: var(--xeg-layer-toast);
 }
 
 /* ========================================
@@ -191,7 +188,7 @@
 .xeg-root .button-primary {
   background: var(--xeg-isolated-primary) !important;
   border-color: var(--xeg-isolated-primary) !important;
-  color: #ffffff !important;
+  color: var(--color-base-white) !important;
 }
 
 .xeg-root .button-primary:hover {
@@ -203,7 +200,7 @@
 .xeg-root .button-danger {
   background: var(--xeg-isolated-danger) !important;
   border-color: var(--xeg-isolated-danger) !important;
-  color: #ffffff !important;
+  color: var(--color-base-white) !important;
 }
 
 .xeg-root .button-danger:hover {
@@ -218,7 +215,7 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .xeg-root {
-    background: #000000 !important;
+    background: var(--color-base-black) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }

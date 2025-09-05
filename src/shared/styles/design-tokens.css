@@ -110,10 +110,6 @@
   --xeg-shadow-md: var(--shadow-md);
   --xeg-shadow-lg: var(--shadow-lg);
 
-  /* Z-Index Tokens - 테스트 호환성 */
-  --xeg-z-modal: 1000;
-  --xeg-z-toolbar: 999;
-
   /* Icon Tokens - 테스트 호환성 */
   --xeg-icon-stroke-width: 1.5px;
   --xeg-icon-size: 1rem;

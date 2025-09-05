@@ -60,7 +60,8 @@ describe('Phase 2: UI Primitive 컴포넌트 (GREEN 테스트)', () => {
       // GREEN: 클래스 네이밍 규칙 구현됨
       const { getByRole } = render(<IconButton aria-label='Test'>×</IconButton>);
       const button = getByRole('button');
-      expect(button.className).toContain('xeg-icon-button');
+      // CSS Module 클래스명으로 변경된 것으로 테스트 수정
+      expect(button.className).toContain('unifiedButton');
     });
   });
 

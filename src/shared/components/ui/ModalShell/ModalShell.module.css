@@ -1,0 +1,183 @@
+/**
+ * @fileoverview ModalShell CSS Module
+ * @description 모달 Shell의 semantic 기반 스타일
+ */
+
+/* ===== 백드롭 ===== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: oklch(from var(--color-base-black) l c h / 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--xeg-z-modal);
+
+  /* 시작 상태 */
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    visibility var(--duration-fast) var(--ease-out);
+
+  /* 센터링 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+}
+
+.modal-backdrop.modal-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===== 기본 Shell 스타일 ===== */
+.modal-shell {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-default);
+  overflow: hidden;
+
+  /* 시작 상태 */
+  transform: scale(0.95) translateY(-10px);
+  transition: transform var(--duration-fast) var(--ease-out);
+
+  /* 포커스 관리 */
+  outline: none;
+}
+
+.modal-open .modal-shell {
+  transform: scale(1) translateY(0);
+}
+
+/* ===== 크기 변형 ===== */
+.modal-size-sm {
+  width: 100%;
+  max-width: 400px;
+  max-height: 300px;
+}
+
+.modal-size-md {
+  width: 100%;
+  max-width: 500px;
+  max-height: 70vh;
+}
+
+.modal-size-lg {
+  width: 100%;
+  max-width: 700px;
+  max-height: 80vh;
+}
+
+.modal-size-xl {
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+}
+
+/* ===== Surface 변형 ===== */
+.modal-surface-glass {
+  background: oklch(from var(--color-bg-surface) l c h / 0.9);
+  border-color: oklch(from var(--color-border-default) l c h / 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 20px 25px oklch(from var(--color-base-black) l c h / 0.1),
+    0 10px 10px oklch(from var(--color-base-black) l c h / 0.04);
+}
+
+.modal-surface-solid {
+  background: var(--color-bg-surface);
+  border-color: var(--color-border-default);
+  box-shadow:
+    0 10px 15px oklch(from var(--color-base-black) l c h / 0.1),
+    0 4px 6px oklch(from var(--color-base-black) l c h / 0.05);
+}
+
+.modal-surface-elevated {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-emphasis);
+  box-shadow:
+    0 25px 50px oklch(from var(--color-base-black) l c h / 0.25),
+    0 0 0 1px oklch(from var(--color-base-white) l c h / 0.05);
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 768px) {
+  .modal-backdrop {
+    padding: var(--space-md);
+  }
+
+  .modal-shell {
+    border-radius: var(--radius-md);
+  }
+
+  .modal-size-sm,
+  .modal-size-md,
+  .modal-size-lg,
+  .modal-size-xl {
+    max-width: 100%;
+    max-height: 85vh;
+  }
+}
+
+/* ===== 다크 모드 지원 ===== */
+@media (prefers-color-scheme: dark) {
+  .modal-backdrop {
+    background: oklch(from var(--color-base-black) l c h / 0.8);
+  }
+
+  .modal-surface-glass {
+    background: oklch(from var(--color-gray-900) l c h / 0.9);
+    border-color: oklch(from var(--color-gray-700) l c h / 0.5);
+  }
+
+  .modal-surface-solid {
+    background: var(--color-gray-900);
+    border-color: var(--color-gray-700);
+  }
+}
+
+/* ===== 접근성 강화 ===== */
+.modal-shell:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal-shell {
+    transition: none;
+  }
+
+  .modal-shell {
+    transform: none;
+  }
+}
+
+/* ===== 스크롤 처리 ===== */
+.modal-shell {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
+}
+
+.modal-shell::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-shell::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-shell::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: 3px;
+}
+
+.modal-shell::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-emphasis);
+}

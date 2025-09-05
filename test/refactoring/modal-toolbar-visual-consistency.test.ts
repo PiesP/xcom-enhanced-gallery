@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 // 공통 경로 상수
-const DESIGN_TOKENS_PATH = 'src/shared/styles/design-tokens.css';
+const DESIGN_TOKENS_PATH = 'src/shared/styles/design-tokens.semantic.css';
 const TOOLBAR_CSS_PATH = 'src/shared/components/ui/Toolbar/Toolbar.module.css';
 const SETTINGS_MODAL_CSS_PATH = 'src/shared/components/ui/SettingsModal/SettingsModal.module.css';
 

@@ -50,8 +50,8 @@
  */
 .toast.info {
   border-left-color: var(--xeg-color-primary);
-  background: rgba(71, 133, 163, 0.08);
-  border-color: rgba(71, 133, 163, 0.2);
+  background: var(--xeg-toast-bg-info);
+  border-color: var(--xeg-toast-border-info);
 }
 
 /**
@@ -63,8 +63,8 @@
  */
 .toast.success {
   border-left-color: var(--xeg-color-success);
-  background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.2);
+  background: var(--xeg-toast-bg-success);
+  border-color: var(--xeg-toast-border-success);
 }
 
 /**
@@ -76,8 +76,8 @@
  */
 .toast.warning {
   border-left-color: var(--xeg-color-warning);
-  background: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.2);
+  background: var(--xeg-toast-bg-warning);
+  border-color: var(--xeg-toast-border-warning);
 }
 
 /**
@@ -89,8 +89,8 @@
  */
 .toast.error {
   border-left-color: var(--xeg-color-error);
-  background: rgba(220, 38, 38, 0.08);
-  border-color: rgba(220, 38, 38, 0.2);
+  background: var(--xeg-toast-bg-error);
+  border-color: var(--xeg-toast-border-error);
 }
 
 /**
@@ -188,7 +188,7 @@
  * - Light gray background (rgba(83, 100, 113, 0.1))
  */
 .closeButton:hover {
-  background-color: rgba(83, 100, 113, 0.1);
+  background-color: var(--xeg-toast-bg-neutral);
 }
 
 /**
@@ -216,7 +216,7 @@
  */
 .actionButton {
   background: var(--xeg-color-primary);
-  border: 1px solid rgba(71, 133, 163, 0.3);
+  border: 1px solid var(--xeg-toast-border-info);
   /* Interaction element radius policy: use md */
   border-radius: var(--xeg-radius-md);
   color: white;
@@ -227,7 +227,7 @@
   transition: all var(--xeg-duration-normal) var(--xeg-easing-easeOut);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  box-shadow: 0 2px 8px rgba(71, 133, 163, 0.15);
+  box-shadow: var(--xeg-toast-shadow-info);
 }
 
 /**
@@ -241,7 +241,7 @@
 .actionButton:hover {
   background: var(--xeg-color-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(71, 133, 163, 0.25);
+  box-shadow: var(--xeg-toast-shadow-focus);
 }
 
 /**

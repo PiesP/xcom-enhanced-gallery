@@ -180,7 +180,7 @@
 
 /* 접근성 */
 .container:focus-within {
-  outline: 2px solid #007acc;
+  outline: 2px solid var(--xeg-color-primary);
   outline-offset: -2px;
 }
 

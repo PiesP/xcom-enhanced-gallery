@@ -1,0 +1,268 @@
+/**
+ * Button Component Styles
+ * @version 3.0.0 - Design System Implementation
+ *
+ * 새로운 디자인 시스템을 기반으로 한 Button 컴포넌트 스타일
+ * - CSS Custom Properties 활용
+ * - 다크 모드 지원
+ * - 접근성 중심 설계
+ * - 현대적인 UI/UX
+ *
+ * Button-specific CSS 변수들:
+ * - --xeg-button-height-sm/md/lg: 버튼 높이
+ * - --xeg-button-lift: 호버 시 변환 값
+ */
+
+.button {
+  /* Base Button Styles */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--xeg-spacing-sm);
+  border: 1px solid transparent;
+  border-radius: var(--xeg-radius-md);
+  font-family: var(
+    --font-family,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-easeOut);
+  position: relative;
+  box-sizing: border-box;
+  user-select: none;
+
+  /* Focus styles for accessibility */
+  &:focus-visible {
+    outline: var(--xeg-focus-ring);
+    outline-offset: var(--xeg-focus-ring-offset);
+    z-index: 1;
+  }
+
+  /* Disabled state */
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* Loading state */
+  &:has(.spinner) {
+    pointer-events: none;
+  }
+}
+
+/* Button Variants */
+.primary {
+  background-color: var(--xeg-color-primary-500);
+  color: white;
+  border-color: var(--xeg-color-primary-500);
+
+  &:hover:not(:disabled) {
+    background-color: var(--xeg-color-primary-600);
+    border-color: var(--xeg-color-primary-600);
+    transform: translateY(var(--xeg-button-lift));
+    box-shadow: var(--xeg-shadow-md);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--xeg-shadow-sm);
+  }
+}
+
+.secondary {
+  background-color: var(--xeg-color-neutral-100);
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--xeg-color-border-primary);
+    border-color: var(--xeg-color-neutral-400);
+    transform: translateY(var(--xeg-button-lift));
+    box-shadow: var(--xeg-shadow-sm);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    background-color: var(--xeg-color-neutral-100);
+  }
+}
+
+.ghost {
+  background-color: transparent;
+  color: var(--xeg-color-text-secondary);
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    background-color: var(--xeg-color-neutral-100);
+    color: var(--xeg-color-text-primary);
+    border-color: var(--xeg-color-border-primary);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--xeg-color-border-primary);
+  }
+}
+
+/* Icon variant - 정사각형 아이콘 버튼 */
+.icon {
+  background-color: transparent;
+  color: var(--xeg-color-text-secondary);
+  border-color: var(--xeg-color-border-primary);
+  aspect-ratio: 1;
+  padding: var(--xeg-spacing-sm);
+  border-radius: var(--xeg-radius-md);
+
+  &:hover:not(:disabled) {
+    background-color: var(--xeg-color-neutral-100);
+    color: var(--xeg-color-text-primary);
+    border-color: var(--xeg-color-neutral-400);
+    transform: translateY(var(--xeg-button-lift));
+    box-shadow: var(--xeg-shadow-sm);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    background-color: var(--xeg-color-border-primary);
+  }
+
+  /* Icon variants sub-types */
+  &.primary {
+    border-color: var(--xeg-color-primary);
+    color: var(--xeg-color-primary);
+
+    &:hover:not(:disabled) {
+      background-color: var(--xeg-color-primary-50);
+      border-color: var(--xeg-color-primary-hover);
+    }
+  }
+
+  &.success {
+    border-color: var(--xeg-color-success);
+    color: var(--xeg-color-success);
+
+    &:hover:not(:disabled) {
+      background-color: var(--xeg-color-success-50);
+      border-color: var(--xeg-color-success-hover);
+    }
+  }
+
+  &.danger {
+    border-color: var(--xeg-color-error);
+    color: var(--xeg-color-error);
+
+    &:hover:not(:disabled) {
+      background-color: var(--xeg-color-error-50);
+      border-color: var(--xeg-color-error-hover);
+    }
+  }
+}
+
+/* Button Sizes */
+.sm {
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  font-size: var(--xeg-font-size-sm);
+  min-height: var(--xeg-button-height-sm);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.md {
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-font-size-base);
+  min-height: var(--xeg-button-height-md);
+}
+
+.lg {
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+  font-size: var(--xeg-font-size-lg);
+  min-height: var(--xeg-button-height-lg);
+  border-radius: var(--xeg-radius-lg);
+}
+
+/* Loading Spinner */
+.spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: xeg-spin 1s linear infinite;
+}
+
+/* Dark Mode Support */
+[data-theme='dark'] .secondary {
+  background-color: var(--xeg-color-neutral-800);
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-primary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--xeg-color-border-primary);
+    border-color: var(--xeg-color-neutral-400);
+  }
+}
+
+[data-theme='dark'] .ghost {
+  color: var(--xeg-color-text-secondary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--xeg-color-neutral-800);
+    color: var(--xeg-color-text-primary);
+    border-color: var(--xeg-color-border-primary);
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .spinner {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .button {
+    border: 1px solid currentColor;
+  }
+
+  .primary {
+    border-color: currentColor;
+  }
+
+  .secondary {
+    border-color: currentColor;
+  }
+
+  .ghost {
+    border: 1px solid currentColor;
+  }
+}
+
+/* Special states */
+.button[aria-pressed='true'] {
+  background-color: var(--xeg-color-primary-500);
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .lg {
+    padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+    font-size: var(--xeg-font-size-base);
+    min-height: var(--xeg-button-height-md);
+  }
+}

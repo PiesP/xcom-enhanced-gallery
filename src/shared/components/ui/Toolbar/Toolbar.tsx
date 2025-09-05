@@ -256,7 +256,7 @@ function ToolbarCore({
         h(
           'div',
           {
-            className: `${styles.toolbarSection} ${styles.toolbarLeft}`,
+            className: `${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft`,
             'data-gallery-element': 'navigation-left',
             key: 'toolbar-left',
           },
@@ -353,7 +353,7 @@ function ToolbarCore({
             h(
               'div',
               {
-                className: styles.fitModeGroup,
+                className: `${styles.fitModeGroup} fitModeGroup`,
                 key: 'fit-mode-group',
               },
               [
@@ -429,7 +429,7 @@ function ToolbarCore({
               'button',
               {
                 type: 'button',
-                className: `${styles.toolbarButton} ${styles.downloadButton} ${styles.downloadCurrent}`,
+                className: `${styles.toolbarButton} ${styles.downloadButton} ${styles.downloadCurrent} downloadButton downloadCurrent`,
                 onClick: (e: Event) => handleButtonClick(e, 'download-current', onDownloadCurrent),
                 disabled: disabled || isDownloading,
                 'aria-label': '현재 파일 다운로드',
