@@ -23,6 +23,10 @@ export interface BaseComponentProps {
   'aria-describedby'?: string;
   'aria-expanded'?: boolean;
   'aria-hidden'?: boolean;
+  'aria-disabled'?: string;
+  'aria-busy'?: string;
+  'aria-pressed'?: string;
+  'aria-haspopup'?: string;
   /** 접근성 역할 */
   role?: string;
   /** 탭 인덱스 */
@@ -68,7 +72,7 @@ export interface SizedComponentProps extends BaseComponentProps {
  */
 export interface VariantComponentProps extends BaseComponentProps {
   /** 색상/스타일 변형 */
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning' | 'icon';
 }
 
 /**

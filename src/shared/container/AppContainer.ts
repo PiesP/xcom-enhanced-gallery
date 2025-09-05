@@ -59,6 +59,8 @@ export interface IVideoService {
 export interface ISettingsService {
   getSettings(): Record<string, unknown>;
   updateSettings(settings: Record<string, unknown>): void;
+  get<T = unknown>(key: string): T;
+  set<T = unknown>(key: string, value: T): Promise<void>;
   cleanup(): void;
 }
 

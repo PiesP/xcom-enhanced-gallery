@@ -96,53 +96,8 @@
   justify-content: center;
 }
 
-/* 툴바 버튼 - 현대적 glassmorphism 디자인 */
-.xeg-toolbar-button {
-  background: var(--xeg-bg-button);
-  border: 1px solid var(--xeg-border-button);
-  border-radius: 10px;
-  padding: 8px 12px;
-  color: var(--xeg-text-button);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.08),
-    0 1px 4px rgba(15, 23, 42, 0.05);
-}
-
-.xeg-toolbar-button:hover {
-  background: var(--xeg-bg-button-hover);
-  color: var(--xeg-text-button-hover);
-  transform: translateY(-2px);
-  box-shadow:
-    0 4px 16px rgba(15, 23, 42, 0.12),
-    0 2px 8px rgba(15, 23, 42, 0.08);
-}
-
-.xeg-toolbar-button:active {
-  transform: translateY(0);
-}
-
-.xeg-toolbar-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.xeg-toolbar-button.active {
-  background: var(--xeg-color-primary);
-  color: white;
-  border-color: var(--xeg-color-primary);
-}
+/* 툴바 버튼 - UnifiedToolbarButton.module.css로 통합됨 */
+/* @deprecated - UnifiedToolbarButton.module.css 사용 권장 */
 
 /* 갤러리 카운터 - 현대적 디자인 */
 .xeg-gallery-counter {
@@ -151,7 +106,7 @@
   color: var(--xeg-text-counter);
   background: var(--xeg-bg-counter);
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--xeg-radius-lg);
   border: 1px solid var(--xeg-border-counter);
   margin-left: 16px;
   backdrop-filter: none;
@@ -165,7 +120,7 @@
   gap: 4px;
   background: var(--xeg-neutral-100);
   border: 1px solid var(--xeg-neutral-200);
-  border-radius: 8px;
+  border-radius: var(--xeg-radius-lg);
   padding: 4px;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -179,7 +134,7 @@
   transform: translateX(-50%);
   background: var(--xeg-bg-toolbar);
   border: 1px solid var(--xeg-color-border-primary);
-  border-radius: 8px;
+  border-radius: var(--xeg-radius-lg);
   padding: 12px 16px;
   min-width: 200px;
   text-align: center;
@@ -192,7 +147,7 @@
   width: 100%;
   height: 4px;
   background: var(--xeg-neutral-200);
-  border-radius: 2px;
+  border-radius: var(--xeg-radius-xs);
   overflow: hidden;
   margin-bottom: 8px;
 }
@@ -236,7 +191,7 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: var(--xeg-radius-lg);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
@@ -256,7 +211,7 @@
   transform: translateY(-50%);
   background: var(--xeg-color-neutral-100);
   border: 1px solid var(--xeg-border-button);
-  border-radius: 50%;
+  border-radius: var(--xeg-radius-full);
   width: 50px;
   height: 50px;
   color: var(--xeg-text-button-navigation);
@@ -319,7 +274,7 @@
   padding: 14px;
   background: var(--xeg-bg-toolbar);
   border: 1px solid var(--xeg-color-border-primary);
-  border-radius: 16px;
+  border-radius: var(--xeg-radius-2xl);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: var(--xeg-shadow-toolbar);
@@ -336,7 +291,7 @@
   position: relative;
   background: none;
   border: 2px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--xeg-radius-xl);
   padding: 0;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -360,7 +315,7 @@
   width: 80px;
   height: 80px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: var(--xeg-radius-md);
   display: block;
 }
 
@@ -371,7 +326,7 @@
   width: 8px;
   height: 8px;
   background: var(--xeg-color-primary);
-  border-radius: 50%;
+  border-radius: var(--xeg-radius-full);
   border: 2px solid white;
 }
 
@@ -579,7 +534,7 @@
 .glass-surface {
   background: var(--xeg-surface-glass-bg);
   border: 1px solid var(--xeg-surface-glass-border);
-  border-radius: var(--xeg-radius-xl);
+  border-radius: var(--xeg-radius-2xl);
   box-shadow: var(--xeg-surface-glass-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;

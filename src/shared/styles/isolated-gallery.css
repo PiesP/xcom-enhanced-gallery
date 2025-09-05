@@ -103,11 +103,11 @@
   --xeg-isolated-shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.4);
 
   /* 반경 */
-  --xeg-isolated-radius-sm: 4px;
-  --xeg-isolated-radius-md: 8px;
-  --xeg-isolated-radius-lg: 12px;
-  --xeg-isolated-radius-xl: 16px;
-  --xeg-isolated-radius-full: 9999px;
+  --xeg-isolated-radius-sm: var(--xeg-radius-sm);
+  --xeg-isolated-radius-md: var(--xeg-radius-lg);
+  --xeg-isolated-radius-lg: var(--xeg-radius-xl);
+  --xeg-isolated-radius-xl: var(--xeg-radius-2xl);
+  --xeg-isolated-radius-full: var(--xeg-radius-full);
 
   /* 간격 */
   --xeg-isolated-spacing-xs: 4px;

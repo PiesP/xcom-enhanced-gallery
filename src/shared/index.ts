@@ -50,6 +50,26 @@ export { isInsideGallery } from './utils/dom';
 // 최적화 유틸리티들 (Phase 3)
 export * from './utils/optimization';
 
+// 새로운 P4-P7 유틸리티들
+export {
+  createSelector,
+  useSelector,
+  useCombinedSelector,
+  useAsyncSelector,
+  getGlobalSelectorStats,
+  clearGlobalSelectorStats,
+} from './utils/signalSelector';
+export { createFocusTrap } from './utils/focusTrap';
+export type { FocusTrapOptions, FocusTrap } from './utils/focusTrap';
+
+// 새로운 P4-P7 훅들
+export { useScrollLock } from './hooks/useScrollLock';
+export { useGalleryToolbarLogic } from './hooks/useGalleryToolbarLogic';
+export { useFocusTrap } from './hooks/useFocusTrap';
+
+// 새로운 P6 스타일 토큰들
+export * from './styles/tokens';
+
 // 타입들
 export type {
   BaseComponentProps,

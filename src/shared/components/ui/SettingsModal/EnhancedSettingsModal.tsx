@@ -4,19 +4,22 @@
  */
 
 import { h, type ComponentChildren } from '@shared/external/vendors';
+import { getPreactHooks } from '@shared/external/vendors';
 import { useFocusTrap } from '@shared/hooks/useFocusTrap';
 import { useScrollLock } from '@shared/hooks/useScrollLock';
 
-interface EnhancedSettingsModalProps {
+export interface EnhancedSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   children?: ComponentChildren;
 }
 
 export function EnhancedSettingsModal(props: EnhancedSettingsModalProps) {
-  const { containerRef } = useFocusTrap({
-    enabled: props.isOpen,
-    autoFocus: true,
+  const { useRef } = getPreactHooks();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(containerRef.current, props.isOpen, {
+    onEscape: props.onClose,
     restoreFocus: true,
   });
 

@@ -115,6 +115,60 @@
   }
 }
 
+/* Icon variant - 정사각형 아이콘 버튼 */
+.icon {
+  background-color: transparent;
+  color: var(--xeg-color-text-secondary);
+  border-color: var(--xeg-color-border-primary);
+  aspect-ratio: 1;
+  padding: var(--xeg-spacing-sm);
+  border-radius: var(--xeg-radius-md);
+
+  &:hover:not(:disabled) {
+    background-color: var(--xeg-color-neutral-100);
+    color: var(--xeg-color-text-primary);
+    border-color: var(--xeg-color-neutral-400);
+    transform: translateY(var(--xeg-button-lift));
+    box-shadow: var(--xeg-shadow-sm);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    background-color: var(--xeg-color-border-primary);
+  }
+
+  /* Icon variants sub-types */
+  &.primary {
+    border-color: var(--xeg-color-primary);
+    color: var(--xeg-color-primary);
+
+    &:hover:not(:disabled) {
+      background-color: var(--xeg-color-primary-50);
+      border-color: var(--xeg-color-primary-hover);
+    }
+  }
+
+  &.success {
+    border-color: var(--xeg-color-success);
+    color: var(--xeg-color-success);
+
+    &:hover:not(:disabled) {
+      background-color: var(--xeg-color-success-50);
+      border-color: var(--xeg-color-success-hover);
+    }
+  }
+
+  &.danger {
+    border-color: var(--xeg-color-error);
+    color: var(--xeg-color-error);
+
+    &:hover:not(:disabled) {
+      background-color: var(--xeg-color-error-50);
+      border-color: var(--xeg-color-error-hover);
+    }
+  }
+}
+
 /* Button Sizes */
 .sm {
   padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);

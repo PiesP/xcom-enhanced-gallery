@@ -96,29 +96,8 @@
   border-radius: var(--xeg-radius-lg);
   padding: var(--xeg-spacing-md);
 
-  /* Nesting으로 가독성 향상 */
-  & .toolbar-button {
-    background: transparent;
-    border: 1px solid var(--xeg-color-border-primary);
-    border-radius: var(--xeg-radius-md);
-    padding: var(--xeg-spacing-sm);
-    transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-
-    &:hover {
-      background: var(--xeg-color-primary-light);
-      border-color: var(--xeg-color-primary);
-      transform: translateY(-2px);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--xeg-color-primary);
-      outline-offset: 2px;
-    }
-  }
+  /* Nesting으로 가독성 향상 - UnifiedToolbarButton.module.css로 통합됨 */
+  /* @deprecated - UnifiedToolbarButton.module.css의 .toolbarButton 사용 권장 */
 
   & .toolbar-separator {
     width: 1px;

@@ -47,10 +47,14 @@
   --space-2xl: 48px;
 
   /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  --radius-xs: 2px; /* 작은 요소 */
+  --radius-sm: 4px; /* 기본 작은 요소 */
+  --radius-md: 6px; /* 기본 버튼 */
+  --radius-lg: 8px; /* 카드, 패널 */
+  --radius-xl: 12px; /* 모달 */
+  --radius-2xl: 16px; /* 큰 카드 */
+  --radius-pill: 28px; /* pill 형태 둥근 버튼 */
+  --radius-full: 50%; /* 원형 요소 */
 
   /* Typography Scale */
   --font-size-sm: 14px;

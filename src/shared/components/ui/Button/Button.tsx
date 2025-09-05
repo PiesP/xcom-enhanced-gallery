@@ -4,15 +4,47 @@
  */
 
 import { getPreactCompat } from '@shared/external/vendors';
+import type { ComponentChildren } from '@shared/external/vendors';
 import styles from './Button.module.css';
 import { ComponentStandards } from '../StandardProps';
-import type { StandardButtonProps } from '../StandardProps';
-import type { BaseComponentProps } from '../../base/BaseComponentProps';
 
-// 통합된 Button Props
-export interface ButtonProps extends StandardButtonProps {
-  // onClick 이벤트 핸들러 (구체적 타입)
+// 통합된 Button Props - 독립적으로 정의
+export interface ButtonProps {
+  // 기본 HTML 버튼 속성들
+  children?: ComponentChildren;
+  type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
+  autoFocus?: boolean;
+  form?: string;
+  className?: string;
+
+  // 이벤트 핸들러들
   onClick?: (event?: Event) => void;
+  onFocus?: (event: FocusEvent) => void;
+  onBlur?: (event: FocusEvent) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
+  onMouseEnter?: (event: MouseEvent) => void;
+  onMouseLeave?: (event: MouseEvent) => void;
+
+  // 커스텀 속성들
+  variant?: 'primary' | 'secondary' | 'outline' | 'icon' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  iconVariant?: 'primary' | 'success' | 'danger';
+  loading?: boolean;
+
+  // 테스트 속성
+  testId?: string;
+  'data-testid'?: string;
+
+  // ARIA 접근성 속성들
+  role?: string;
+  tabIndex?: number;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-pressed'?: boolean | 'true' | 'false' | 'mixed';
+  'aria-expanded'?: boolean | 'true' | 'false';
+  'aria-haspopup'?: boolean | 'true' | 'false' | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
+  'aria-busy'?: boolean;
 }
 
 export const Button = (() => {
@@ -31,9 +63,14 @@ export const Button = (() => {
         type = 'button',
         autoFocus,
         form,
+        iconVariant,
         'data-testid': testId,
         'aria-label': ariaLabel,
         'aria-describedby': ariaDescribedBy,
+        'aria-pressed': ariaPressed,
+        'aria-expanded': ariaExpanded,
+        'aria-haspopup': ariaHaspopup,
+        'aria-busy': ariaBusy,
         role,
         tabIndex,
         onFocus,
@@ -48,24 +85,17 @@ export const Button = (() => {
         styles.button,
         styles[variant],
         styles[size],
+        variant === 'icon' && iconVariant ? styles[iconVariant] : undefined,
         loading ? styles.loading : undefined,
         disabled ? styles.disabled : undefined,
         className
       );
 
-      // 표준화된 ARIA 속성 생성 (타입 안전성 보장)
-      const ariaProps = ComponentStandards.createAriaProps({
-        'aria-label': ariaLabel,
-        'aria-describedby': ariaDescribedBy,
-        role: role || 'button',
-        tabIndex,
-      } as Partial<BaseComponentProps>);
+      // 로딩 상태 처리 (ARIA 속성 생성 전에 계산)
+      const isDisabled = ComponentStandards.handleLoadingState(loading, disabled);
 
       // 표준화된 테스트 속성 생성
       const testProps = ComponentStandards.createTestProps(testId);
-
-      // 로딩 상태 처리
-      const isDisabled = ComponentStandards.handleLoadingState(loading, disabled);
 
       return (
         <button
@@ -75,11 +105,34 @@ export const Button = (() => {
           autoFocus={autoFocus}
           className={buttonClass}
           disabled={isDisabled}
+          aria-label={ariaLabel}
+          aria-describedby={ariaDescribedBy}
+          aria-pressed={
+            ariaPressed === true || ariaPressed === 'true'
+              ? 'true'
+              : ariaPressed === false || ariaPressed === 'false'
+                ? 'false'
+                : ariaPressed === 'mixed'
+                  ? 'mixed'
+                  : undefined
+          }
+          aria-expanded={
+            ariaExpanded === true || ariaExpanded === 'true'
+              ? 'true'
+              : ariaExpanded === false || ariaExpanded === 'false'
+                ? 'false'
+                : undefined
+          }
+          aria-haspopup={
+            ariaHaspopup === true ? true : ariaHaspopup === false ? false : ariaHaspopup
+          }
+          aria-busy={ariaBusy ? 'true' : loading ? 'true' : undefined}
+          aria-disabled={isDisabled ? 'true' : undefined}
+          tabIndex={tabIndex}
           onClick={onClick}
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
-          {...ariaProps}
           {...testProps}
           {...props}
         >

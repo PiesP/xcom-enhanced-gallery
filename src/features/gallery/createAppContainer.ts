@@ -7,6 +7,8 @@ import { logger } from '@shared/logging/logger';
 import { CoreService, getService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from '@/constants';
 import { FilenameService } from '@shared/media/FilenameService';
+import type { MediaItemForFilename, MediaInfoForFilename } from '@shared/types/media.types';
+import type { FilenameOptions } from '@shared/media/FilenameService';
 import type {
   AppContainer,
   CreateContainerOptions,
@@ -223,7 +225,10 @@ class AppContainerImpl implements AppContainer {
       }),
       toast: Object.assign(() => Promise.resolve(toastService), toastService, {
         cleanup: () => toastService.cleanup(),
-        show: (options: any) => toastService.show(options),
+        show: (
+          message: string,
+          options?: { type?: 'info' | 'success' | 'warning' | 'error'; duration?: number }
+        ) => toastService.show(message, options),
       }),
       video: Object.assign(() => Promise.resolve(videoService), videoService, {
         cleanup: () => videoService.cleanup(),
@@ -235,7 +240,7 @@ class AppContainerImpl implements AppContainer {
         get: (key: string) => settingsService.get(key),
         set: (key: string, value: unknown) => settingsService.set(key, value),
       }),
-    } as any;
+    };
 
     this.features = {
       loadGallery: this.loadGalleryFactory.bind(this),
@@ -275,9 +280,12 @@ class AppContainerImpl implements AppContainer {
 
         return urls;
       },
-      generateFilename: (media: unknown, options?: unknown) => {
+      generateFilename: (
+        media: MediaItemForFilename | MediaInfoForFilename,
+        options?: FilenameOptions
+      ) => {
         const filenameService = new FilenameService();
-        return filenameService.generateMediaFilename(media as any, options as any);
+        return filenameService.generateMediaFilename(media, options);
       },
       optimizeUrl: (url: string) => {
         // Mock URL optimization
@@ -327,11 +335,18 @@ class AppContainerImpl implements AppContainer {
    */
   private createSettingsService(): ISettingsService {
     return {
-      get: (key: string) => {
-        logger.debug(`Settings service - get: ${key}`);
-        return null;
+      getSettings: () => {
+        logger.debug('Settings service - getSettings called');
+        return {};
       },
-      set: (key: string, value: unknown) => {
+      updateSettings: (settings: Record<string, unknown>) => {
+        logger.debug('Settings service - updateSettings:', settings);
+      },
+      get: <T = unknown>(key: string): T => {
+        logger.debug(`Settings service - get: ${key}`);
+        return null as T;
+      },
+      set: async <T = unknown>(key: string, value: T): Promise<void> => {
         logger.debug(`Settings service - set: ${key} = ${value}`);
       },
       cleanup: () => logger.debug('Settings service - cleanup'),

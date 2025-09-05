@@ -101,10 +101,14 @@
   --xeg-surface-glass-shadow: var(--shadow-lg);
 
   /* Border Radius - Extended Scale */
+  --xeg-radius-xs: var(--radius-xs);
   --xeg-radius-sm: var(--radius-sm);
   --xeg-radius-md: var(--radius-md);
   --xeg-radius-lg: var(--radius-lg);
   --xeg-radius-xl: var(--radius-xl);
+  --xeg-radius-2xl: var(--radius-2xl);
+  --xeg-radius-pill: var(--radius-pill);
+  --xeg-radius-full: var(--radius-full);
 }
 
 /* Theme Support - Dark/Light Mode */

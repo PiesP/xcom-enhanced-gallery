@@ -1,0 +1,199 @@
+/**
+ * @fileoverview Unified Toolbar Button Styles
+ * @description 중복된 .xeg-toolbar-button과 .toolbar-button 스타일을 통합
+ */
+
+/* 통합된 툴바 버튼 스타일 */
+.toolbarButton {
+  /* 기본 레이아웃 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 8px 12px;
+  border-radius: var(--xeg-radius-lg);
+  cursor: pointer;
+
+  /* 디자인 토큰 사용 */
+  background: var(--xeg-bg-button);
+  border: 1px solid var(--xeg-border-button);
+  color: var(--xeg-text-button);
+  font-size: 14px;
+  font-weight: 500;
+
+  /* 현대적 애니메이션 */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* 글래스모피즘 효과 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.toolbarButton:hover {
+  background: var(--xeg-bg-button-hover);
+  color: var(--xeg-text-button-hover);
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.toolbarButton:active {
+  transform: translateY(0);
+  background: var(--xeg-bg-button-active);
+}
+
+.toolbarButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.toolbarButton.active {
+  background: var(--xeg-bg-button-active);
+  color: var(--xeg-text-button-active);
+  border-color: var(--xeg-border-button-active);
+}
+
+/* 아이콘 버튼 변형 */
+.toolbarButton.iconOnly {
+  min-width: 36px;
+  width: 36px;
+  padding: 8px;
+}
+
+/* 사이즈 변형 */
+.toolbarButton.small {
+  min-width: 28px;
+  height: 28px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.toolbarButton.large {
+  min-width: 44px;
+  height: 44px;
+  padding: 10px 16px;
+  font-size: 16px;
+}
+
+/* 색상 변형 */
+.toolbarButton.primary {
+  background: var(--xeg-color-primary);
+  border-color: var(--xeg-color-primary);
+  color: var(--xeg-color-on-primary);
+}
+
+.toolbarButton.primary:hover {
+  background: var(--xeg-color-primary-hover);
+  border-color: var(--xeg-color-primary-hover);
+}
+
+.toolbarButton.secondary {
+  background: var(--xeg-color-secondary);
+  border-color: var(--xeg-color-secondary);
+  color: var(--xeg-color-on-secondary);
+}
+
+.toolbarButton.secondary:hover {
+  background: var(--xeg-color-secondary-hover);
+  border-color: var(--xeg-color-secondary-hover);
+}
+
+/* 레거시 클래스 호환성 - 점진적 마이그레이션 지원 */
+.xeg-toolbar-button,
+.toolbar-button {
+  /* 기본 레이아웃 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 8px 12px;
+  border-radius: var(--xeg-radius-lg);
+  cursor: pointer;
+
+  /* 디자인 토큰 사용 */
+  background: var(--xeg-bg-button);
+  border: 1px solid var(--xeg-border-button);
+  color: var(--xeg-text-button);
+  font-size: 14px;
+  font-weight: 500;
+
+  /* 현대적 애니메이션 */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* 글래스모피즘 효과 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.xeg-toolbar-button:hover,
+.toolbar-button:hover {
+  background: var(--xeg-bg-button-hover);
+  color: var(--xeg-text-button-hover);
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.xeg-toolbar-button:active,
+.toolbar-button:active {
+  transform: translateY(0);
+  background: var(--xeg-bg-button-active);
+}
+
+.xeg-toolbar-button:disabled,
+.toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.xeg-toolbar-button.active,
+.toolbar-button.active {
+  background: var(--xeg-bg-button-active);
+  color: var(--xeg-text-button-active);
+  border-color: var(--xeg-border-button-active);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .toolbarButton {
+    min-width: 32px;
+    height: 32px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .toolbarButton.small {
+    min-width: 24px;
+    height: 24px;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .toolbarButton.large {
+    min-width: 36px;
+    height: 36px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbarButton {
+    min-width: 28px;
+    height: 28px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}

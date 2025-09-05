@@ -1,0 +1,318 @@
+/**
+ * @fileoverview ToolbarButton CSS Module (Phase P2)
+ * @description 통합된 버튼 스타일 - 모든 툴바 버튼의 시각적 일관성 보장
+ */
+
+/* ===== 기본 버튼 스타일 ===== */
+.toolbarButton {
+  /* 기본 레이아웃 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--xeg-spacing-xs, 4px);
+
+  /* 타이포그래피 */
+  font-family: var(
+    --xeg-font-family-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    system-ui,
+    sans-serif
+  );
+  font-weight: var(--xeg-font-weight-medium, 500);
+  font-size: var(--xeg-font-size-sm, 14px);
+  line-height: 1.2;
+
+  /* 기본 스타일 */
+  border: 1px solid transparent;
+  border-radius: var(--xeg-radius-md, 8px);
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+
+  /* 트랜지션 */
+  transition: all var(--xeg-duration-fast, 150ms)
+    var(--xeg-easing-ease-out, cubic-bezier(0.4, 0, 0.2, 1));
+
+  /* 포커스 관리 */
+  outline: none;
+
+  /* backdrop-filter 제거 (성능 개선) */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ===== 크기 변형 ===== */
+.size-sm {
+  padding: var(--xeg-spacing-xs, 4px) var(--xeg-spacing-sm, 8px);
+  min-height: var(--xeg-size-button-sm, 28px);
+  min-width: var(--xeg-size-button-sm, 28px);
+  font-size: var(--xeg-font-size-xs, 12px);
+}
+
+.size-md {
+  padding: var(--xeg-spacing-sm, 8px) var(--xeg-spacing-md, 12px);
+  min-height: var(--xeg-size-button-md, 36px);
+  min-width: var(--xeg-size-button-md, 36px);
+  font-size: var(--xeg-font-size-sm, 14px);
+}
+
+.size-lg {
+  padding: var(--xeg-spacing-md, 12px) var(--xeg-spacing-lg, 16px);
+  min-height: var(--xeg-size-button-lg, 44px);
+  min-width: var(--xeg-size-button-lg, 44px);
+  font-size: var(--xeg-font-size-base, 16px);
+}
+
+/* ===== 아이콘 전용 버튼 ===== */
+.iconOnly.size-sm {
+  padding: var(--xeg-spacing-xs, 4px);
+  width: var(--xeg-size-button-sm, 28px);
+  height: var(--xeg-size-button-sm, 28px);
+}
+
+.iconOnly.size-md {
+  padding: var(--xeg-spacing-sm, 8px);
+  width: var(--xeg-size-button-md, 36px);
+  height: var(--xeg-size-button-md, 36px);
+}
+
+.iconOnly.size-lg {
+  padding: var(--xeg-spacing-md, 12px);
+  width: var(--xeg-size-button-lg, 44px);
+  height: var(--xeg-size-button-lg, 44px);
+}
+
+/* ===== 색상 변형 ===== */
+.variant-primary {
+  background: var(--xeg-color-primary, #3b82f6);
+  color: var(--xeg-color-primary-foreground, white);
+  border-color: var(--xeg-color-primary, #3b82f6);
+  box-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.variant-primary:hover:not(:disabled) {
+  background: var(--xeg-color-primary-hover, #2563eb);
+  border-color: var(--xeg-color-primary-hover, #2563eb);
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.variant-secondary {
+  background: var(--xeg-bg-button, rgba(255, 255, 255, 0.1));
+  color: var(--xeg-text-button, rgba(255, 255, 255, 0.9));
+  border-color: var(--xeg-border-button, rgba(255, 255, 255, 0.2));
+  box-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.variant-secondary:hover:not(:disabled) {
+  background: var(--xeg-bg-button-hover, rgba(255, 255, 255, 0.15));
+  color: var(--xeg-text-button-hover, white);
+  border-color: var(--xeg-border-button-hover, rgba(255, 255, 255, 0.3));
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.variant-outline {
+  background: transparent;
+  color: var(--xeg-text-button, rgba(255, 255, 255, 0.9));
+  border-color: var(--xeg-border-button, rgba(255, 255, 255, 0.2));
+}
+
+.variant-outline:hover:not(:disabled) {
+  background: var(--xeg-bg-button-hover, rgba(255, 255, 255, 0.1));
+  color: var(--xeg-text-button-hover, white);
+  border-color: var(--xeg-border-button-hover, rgba(255, 255, 255, 0.3));
+}
+
+.variant-ghost {
+  background: transparent;
+  color: var(--xeg-text-button, rgba(255, 255, 255, 0.9));
+  border-color: transparent;
+}
+
+.variant-ghost:hover:not(:disabled) {
+  background: var(--xeg-bg-button-hover, rgba(255, 255, 255, 0.1));
+  color: var(--xeg-text-button-hover, white);
+}
+
+.variant-danger {
+  background: var(--xeg-color-danger, #ef4444);
+  color: var(--xeg-color-danger-foreground, white);
+  border-color: var(--xeg-color-danger, #ef4444);
+  box-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.variant-danger:hover:not(:disabled) {
+  background: var(--xeg-color-danger-hover, #dc2626);
+  border-color: var(--xeg-color-danger-hover, #dc2626);
+  transform: translateY(-1px);
+  box-shadow: var(--xeg-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+/* ===== 상태 변형 ===== */
+.active {
+  background: var(--xeg-color-primary, #3b82f6) !important;
+  color: var(--xeg-color-primary-foreground, white) !important;
+  border-color: var(--xeg-color-primary, #3b82f6) !important;
+  box-shadow: var(--xeg-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.loading {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.disabled,
+.toolbarButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ===== 포커스 상태 ===== */
+.toolbarButton:focus-visible {
+  outline: 2px solid var(--xeg-color-primary, #3b82f6);
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+/* ===== 액티브 상태 ===== */
+.toolbarButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+/* ===== 로딩 스피너 ===== */
+.loadingSpinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  font-size: 0.875em;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== 아이콘이 있는 버튼 ===== */
+.hasIcon {
+  gap: var(--xeg-spacing-xs, 4px);
+}
+
+.hasIcon.size-sm {
+  gap: var(--xeg-spacing-xs, 4px);
+}
+
+.hasIcon.size-md {
+  gap: var(--xeg-spacing-sm, 8px);
+}
+
+.hasIcon.size-lg {
+  gap: var(--xeg-spacing-sm, 8px);
+}
+
+/* ===== 반응형 디자인 ===== */
+@media (max-width: 768px) {
+  .toolbarButton {
+    min-height: var(--xeg-size-button-touch, 44px);
+    min-width: var(--xeg-size-button-touch, 44px);
+  }
+
+  .size-sm {
+    min-height: var(--xeg-size-button-md, 36px);
+    min-width: var(--xeg-size-button-md, 36px);
+  }
+
+  .iconOnly {
+    width: var(--xeg-size-button-touch, 44px);
+    height: var(--xeg-size-button-touch, 44px);
+  }
+
+  .iconOnly.size-sm {
+    width: var(--xeg-size-button-md, 36px);
+    height: var(--xeg-size-button-md, 36px);
+  }
+}
+
+/* ===== 다크 테마 지원 ===== */
+@media (prefers-color-scheme: light) {
+  .variant-secondary {
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .variant-secondary:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .variant-outline {
+    color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .variant-outline:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.9);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .variant-ghost {
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .variant-ghost:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* ===== 고대비 모드 지원 ===== */
+@media (prefers-contrast: high) {
+  .toolbarButton {
+    border-width: 2px;
+  }
+
+  .variant-secondary,
+  .variant-outline,
+  .variant-ghost {
+    background: white;
+    color: black;
+    border-color: black;
+  }
+
+  .variant-secondary:hover:not(:disabled),
+  .variant-outline:hover:not(:disabled),
+  .variant-ghost:hover:not(:disabled) {
+    background: black;
+    color: white;
+    border-color: white;
+  }
+}
+
+/* ===== 애니메이션 감소 지원 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .toolbarButton {
+    transition: none;
+  }
+
+  .loadingSpinner {
+    animation: none;
+  }
+
+  .toolbarButton:hover:not(:disabled) {
+    transform: none;
+  }
+}

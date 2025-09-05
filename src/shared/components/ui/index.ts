@@ -31,6 +31,10 @@ export type { ToolbarProps } from './Toolbar/Toolbar';
 export { SettingsModal } from './SettingsModal';
 export type { SettingsModalProps } from './SettingsModal';
 
+// Enhanced SettingsModal 컴포넌트 (P6 표준화)
+export { EnhancedSettingsModal } from './SettingsModal/EnhancedSettingsModal';
+export type { EnhancedSettingsModalProps } from './SettingsModal/EnhancedSettingsModal';
+
 // ToolbarWithSettings 컴포넌트
 export { ToolbarWithSettings } from './ToolbarWithSettings/ToolbarWithSettings';
 export type { ToolbarWithSettingsProps } from './ToolbarWithSettings/ToolbarWithSettings';

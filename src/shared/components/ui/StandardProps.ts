@@ -116,6 +116,10 @@ export const ComponentStandards = {
     if (props['aria-describedby']) ariaProps['aria-describedby'] = props['aria-describedby'];
     if (props['aria-expanded'] !== undefined) ariaProps['aria-expanded'] = props['aria-expanded'];
     if (props['aria-hidden'] !== undefined) ariaProps['aria-hidden'] = props['aria-hidden'];
+    if (props['aria-disabled']) ariaProps['aria-disabled'] = props['aria-disabled'];
+    if (props['aria-busy']) ariaProps['aria-busy'] = props['aria-busy'];
+    if (props['aria-pressed']) ariaProps['aria-pressed'] = props['aria-pressed'];
+    if (props['aria-haspopup']) ariaProps['aria-haspopup'] = props['aria-haspopup'];
     if (props.role) ariaProps.role = props.role;
     if (props.tabIndex !== undefined) ariaProps.tabIndex = props.tabIndex;
 
