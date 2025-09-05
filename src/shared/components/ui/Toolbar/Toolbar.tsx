@@ -40,7 +40,7 @@ import {
   ArrowsMaximize,
 } from '../Icon';
 import styles from './Toolbar.module.css';
-import { IconButton } from '@shared/components/ui/primitive/IconButton';
+import { Button } from '@shared/components/ui/Button';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
 export interface ToolbarProps {
@@ -262,8 +262,9 @@ function ToolbarCore({
           },
           [
             h(
-              IconButton as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+              Button,
               {
+                iconOnly: true,
                 'aria-label': '이전 미디어',
                 title: '이전 미디어 (←)',
                 disabled: disabled || !canGoPrevious,
@@ -276,8 +277,9 @@ function ToolbarCore({
               h(ChevronLeft, { size: 18 })
             ),
             h(
-              IconButton as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+              Button,
               {
+                iconOnly: true,
                 'aria-label': '다음 미디어',
                 title: '다음 미디어 (→)',
                 disabled: disabled || !canGoNext,
@@ -476,8 +478,9 @@ function ToolbarCore({
             // 설정 버튼
             onOpenSettings &&
               h(
-                IconButton as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+                Button,
                 {
+                  iconOnly: true,
                   'aria-label': '설정 열기',
                   title: '설정',
                   disabled,
@@ -493,8 +496,9 @@ function ToolbarCore({
 
             // 닫기 버튼
             h(
-              IconButton as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+              Button,
               {
+                iconOnly: true,
                 'aria-label': '갤러리 닫기',
                 title: '갤러리 닫기 (Esc)',
                 disabled,

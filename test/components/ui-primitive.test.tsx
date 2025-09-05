@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/preact';
-import { Button, IconButton, Panel } from '@shared/components/ui/primitive';
+import { Button, Panel } from '@shared/components/ui/primitive';
 
 describe('Phase 2: UI Primitive 컴포넌트 (GREEN 테스트)', () => {
   describe('1. Button Primitive', () => {
@@ -44,21 +44,21 @@ describe('Phase 2: UI Primitive 컴포넌트 (GREEN 테스트)', () => {
 
   describe('2. IconButton Primitive', () => {
     it('IconButton 컴포넌트가 존재해야 한다', async () => {
-      // GREEN: 컴포넌트 성공적으로 import됨
-      const iconButtonModule = await import('@shared/components/ui/primitive/IconButton');
-      expect(iconButtonModule.IconButton).toBeDefined();
+      // IconButton은 이제 Button의 iconOnly 모드로 통합됨
+      const buttonModule = await import('@shared/components/ui/Button');
+      expect(buttonModule.Button).toBeDefined();
     });
 
     it('IconButton에 aria-label이 필수여야 한다', () => {
       // GREEN: aria-label 필수 속성 구현됨
-      const { getByRole } = render(<IconButton aria-label='Close dialog'>×</IconButton>);
+      const { getByRole } = render(<Button iconOnly aria-label='Close dialog'>×</Button>);
       const button = getByRole('button');
       expect(button).toHaveAttribute('aria-label', 'Close dialog');
     });
 
     it('IconButton이 xeg- 네임스페이스 클래스를 가져야 한다', () => {
       // GREEN: 클래스 네이밍 규칙 구현됨
-      const { getByRole } = render(<IconButton aria-label='Test'>×</IconButton>);
+      const { getByRole } = render(<Button iconOnly aria-label='Test'>×</Button>);
       const button = getByRole('button');
       // CSS Module 클래스명으로 변경된 것으로 테스트 수정
       expect(button.className).toContain('unifiedButton');

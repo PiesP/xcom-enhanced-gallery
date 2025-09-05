@@ -10,7 +10,7 @@
  */
 
 import { getPreact, type VNode } from '@shared/external/vendors';
-import { ToolbarButton } from './ToolbarButton';
+import { Button } from '@shared/components/ui/Button';
 import {
   ChevronLeft,
   ChevronRight,
@@ -75,7 +75,7 @@ function renderToolbarButton(item: ToolbarItem, key: string): VNode {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (h as any)(
-    ToolbarButton,
+    Button,
     {
       key,
       variant: item.variant || 'secondary',

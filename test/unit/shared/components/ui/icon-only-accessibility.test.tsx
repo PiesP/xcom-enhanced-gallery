@@ -9,7 +9,7 @@ import { h } from 'preact';
 
 // 현재 구현들
 import { Button } from '../../../../../src/shared/components/ui/Button/Button';
-import { IconButton } from '../../../../../src/shared/components/ui/primitive/IconButton';
+import { Button } from '@shared/components/ui/Button';
 
 describe('Icon-Only Accessibility (v4.1 - RED)', () => {
   describe('Current Implementation Baseline', () => {

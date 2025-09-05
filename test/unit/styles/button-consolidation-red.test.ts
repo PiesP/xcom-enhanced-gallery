@@ -15,8 +15,8 @@ const __dirname = path.dirname(__filename);
 // test/unit/styles → 프로젝트 루트 상위 3단계
 const root = path.normalize(path.join(__dirname, '..', '..', '..'));
 
-describe('Phase 3: Button Consolidation (Transition to GREEN)', () => {
-  test('Wrapper 컴포넌트 현재 존재 (Baseline) - Phase 4에서 제거 예정', () => {
+describe('Phase 3: Button Consolidation (완료) + Phase 4: Wrapper 제거 (완료)', () => {
+  test('Wrapper 컴포넌트 제거 완료 (Phase 4 GREEN)', () => {
     const toolbarButton = existsSync(
       join(root, 'src/shared/components/ui/Toolbar/ToolbarButton.tsx')
     );
@@ -25,21 +25,21 @@ describe('Phase 3: Button Consolidation (Transition to GREEN)', () => {
       join(root, 'src/shared/components/ui/Button-legacy/Button.tsx')
     );
 
-    // Baseline: 현재는 존재해야 함 (Phase 4에서 제거 후 반대로 수정)
-    expect(toolbarButton || iconButton || legacyButton).toBe(true);
+    // Phase 4 완료: 모든 wrapper가 제거되어야 함
+    expect(toolbarButton || iconButton || legacyButton).toBe(false);
   });
 
-  test('중복 CSS 변형 제거 확인 (ToolbarButton.styles 축소 placeholder)', () => {
+  test('중복 CSS 파일 제거 완료 (Phase 4 GREEN)', () => {
     const toolbarCssPath = join(root, 'src/shared/components/ui/Toolbar/ToolbarButton.module.css');
     const toolbarCssExists = existsSync(toolbarCssPath);
-    expect(toolbarCssExists).toBe(true);
+    expect(toolbarCssExists).toBe(false);
   });
 
-  test('IconButton.css 축소 placeholder (통합 완료)', () => {
+  test('IconButton.css 제거 완료 (Phase 4 GREEN)', () => {
     const iconCssExists = existsSync(
       join(root, 'src/shared/components/ui/primitive/IconButton.css')
     );
-    expect(iconCssExists).toBe(true);
+    expect(iconCssExists).toBe(false);
   });
 
   test('Button 전용 semantic token layer (button.ts) 구현 여부 (Phase 2 GREEN)', () => {
