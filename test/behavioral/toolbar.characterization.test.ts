@@ -11,7 +11,10 @@ import { ToolbarHeadless } from '@shared/components/ui/Toolbar/ToolbarHeadless';
 // Mock external dependencies
 vi.mock('@shared/external/vendors', () => ({
   getPreact: () => ({
-    h: (tag: string, props: unknown, ...children: unknown[]) => ({ tag, props, children }),
+    // 단순 객체 트리 생성을 위한 mock h 구현 (타입 제거로 파서 오류 회피)
+    h: function (tag: any, props: any, ...children: any[]) {
+      return { tag, props, children } as any;
+    },
     Fragment: 'Fragment',
   }),
   getPreactHooks: () => ({
@@ -143,32 +146,65 @@ describe('Toolbar Characterization (P0)', () => {
 
     it('네비게이션 버튼들이 존재해야 함', () => {
       const result = Toolbar(mockProps) as any;
-      const leftSection = result.children[0].children[0];
 
-      expect(leftSection.props.className).toContain('toolbarLeft');
-      expect(leftSection.children).toHaveLength(2); // previous, next 버튼
+      const findNode = (node: any, predicate: (n: any) => boolean): any | null => {
+        if (!node) return null;
+        if (predicate(node)) return node;
+        if (Array.isArray(node.children)) {
+          for (const child of node.children) {
+            const found = findNode(child, predicate);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      const leftSection = findNode(result, (n: any) =>
+        (n.props?.className || '').includes('toolbarLeft')
+      );
+      expect(leftSection).toBeTruthy();
+      const buttonChildren = (leftSection.children || []).filter(
+        (c: any) => c && (c.tag === 'button' || typeof c.tag === 'function')
+      );
+      expect(buttonChildren.length).toBe(2); // previous, next
     });
 
     it('다운로드 버튼이 존재해야 함', () => {
       const result = Toolbar(mockProps) as any;
-      const rightSection = result.children[0].children[2];
-
-      // 다운로드 관련 버튼 확인
-      const downloadButtons = rightSection.children.filter((child: any) =>
-        child.props?.className?.includes('downloadButton')
-      );
+      const collectNodes = (node: any, acc: any[] = []): any[] => {
+        if (!node) return acc;
+        if (Array.isArray(node.children)) {
+          node.children.forEach(child => collectNodes(child, acc));
+        }
+        acc.push(node);
+        return acc;
+      };
+      const all = collectNodes(result, []);
+      const downloadButtons = all.filter(n => n.props?.className?.includes('downloadButton'));
       expect(downloadButtons.length).toBeGreaterThanOrEqual(1);
     });
 
     it('핏 모드 버튼 그룹이 존재해야 함', () => {
       const result = Toolbar(mockProps) as any;
-      const rightSection = result.children[0].children[2];
-
-      const fitModeGroup = rightSection.children.find((child: any) =>
-        child.props?.className?.includes('fitModeGroup')
+      const findNode = (node: any, predicate: (n: any) => boolean): any | null => {
+        if (!node) return null;
+        if (predicate(node)) return node;
+        if (Array.isArray(node.children)) {
+          for (const child of node.children) {
+            const found = findNode(child, predicate);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const fitModeGroup = findNode(result, (n: any) =>
+        n.props?.className?.includes('fitModeGroup')
       );
-      expect(fitModeGroup).toBeDefined();
-      expect(fitModeGroup.children).toHaveLength(4); // original, width, height, container
+      expect(fitModeGroup).toBeTruthy();
+      const fitButtons = (fitModeGroup.children || []).filter(
+        (c: any) => c && (c.tag === 'button' || typeof c.tag === 'function')
+      );
+      expect(fitButtons.length).toBe(4);
     });
   });
 
@@ -218,9 +254,25 @@ describe('Toolbar Characterization (P0)', () => {
       };
 
       const result = Toolbar(mockProps) as any;
-      const leftSection = result.children[0].children[0];
-      const prevButton = leftSection.children[0];
-      const nextButton = leftSection.children[1];
+      const findNode = (node: any, predicate: (n: any) => boolean): any | null => {
+        if (!node) return null;
+        if (predicate(node)) return node;
+        if (Array.isArray(node.children)) {
+          for (const child of node.children) {
+            const found = findNode(child, predicate);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const leftSection = findNode(result, (n: any) =>
+        (n.props?.className || '').includes('toolbarLeft')
+      );
+      const buttons = (leftSection?.children || []).filter(
+        (c: any) => c && (c.tag === 'button' || typeof c.tag === 'function')
+      );
+      const prevButton = buttons[0];
+      const nextButton = buttons[1];
 
       expect(prevButton.props.disabled).toBe(true);
       expect(nextButton.props.disabled).toBe(true);
@@ -241,12 +293,16 @@ describe('Toolbar Characterization (P0)', () => {
       };
 
       const result = Toolbar(mockProps) as any;
-      const rightSection = result.children[0].children[2];
-
-      // 다운로드 버튼 찾기
-      const downloadButton = rightSection.children.find((child: any) =>
-        child.props?.className?.includes('downloadCurrent')
-      );
+      const collectNodes = (node: any, acc: any[] = []): any[] => {
+        if (!node) return acc;
+        if (Array.isArray(node.children)) {
+          node.children.forEach(child => collectNodes(child, acc));
+        }
+        acc.push(node);
+        return acc;
+      };
+      const all = collectNodes(result, []);
+      const downloadButton = all.find(n => n.props?.className?.includes('downloadCurrent'));
 
       expect(downloadButton).toBeDefined();
       expect(downloadButton.props.disabled).toBe(true);

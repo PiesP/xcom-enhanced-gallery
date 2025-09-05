@@ -102,12 +102,8 @@
   --xeg-isolated-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.3);
   --xeg-isolated-shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.4);
 
-  /* 반경 */
-  --xeg-isolated-radius-sm: var(--xeg-radius-sm);
-  --xeg-isolated-radius-md: var(--xeg-radius-lg);
-  --xeg-isolated-radius-lg: var(--xeg-radius-xl);
-  --xeg-isolated-radius-xl: var(--xeg-radius-2xl);
-  --xeg-isolated-radius-full: var(--xeg-radius-full);
+  /* 반경 (alias 제거 - 직접 semantic 토큰 사용) */
+  /* 기존 --xeg-isolated-radius-* 변수 제거됨: 테스트 업데이트 필요 */
 
   /* 간격 */
   --xeg-isolated-spacing-xs: 4px;
@@ -152,7 +148,7 @@
   background: var(--xeg-isolated-gray-200) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  border-radius: var(--xeg-isolated-radius-lg) !important;
+  border-radius: var(--xeg-radius-xl) !important; /* alias 제거 후 직접 참조 */
   box-shadow: var(--xeg-isolated-shadow-md) !important;
   padding: var(--xeg-isolated-spacing-sm) var(--xeg-isolated-spacing-md) !important;
   margin: var(--xeg-isolated-spacing-md) !important;
@@ -163,7 +159,7 @@
   background: var(--xeg-isolated-gray-200) !important;
   color: var(--xeg-isolated-text) !important;
   border: 1px solid var(--xeg-isolated-gray-300) !important;
-  border-radius: var(--xeg-isolated-radius-md) !important;
+  border-radius: var(--xeg-radius-lg) !important; /* alias 제거 후 직접 참조 */
   padding: var(--xeg-isolated-spacing-sm) var(--xeg-isolated-spacing-md) !important;
   font-family: inherit !important;
   font-size: 14px !important;

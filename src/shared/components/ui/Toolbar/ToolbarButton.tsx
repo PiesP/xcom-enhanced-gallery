@@ -4,7 +4,7 @@
  */
 
 import { getPreact, type VNode, type ComponentChildren } from '@shared/external/vendors';
-import styles from './UnifiedToolbarButton.module.css';
+import styles from './ToolbarButton.module.css';
 
 export type ToolbarButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ToolbarButtonSize = 'sm' | 'md' | 'lg';

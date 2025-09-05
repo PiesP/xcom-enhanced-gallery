@@ -176,7 +176,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: var(--xeg-radius-sm);
+  /* Interaction element radius policy: use md */
+  border-radius: var(--xeg-radius-md);
   transition: background-color var(--xeg-duration-fast) ease;
 }
 
@@ -216,7 +217,8 @@
 .actionButton {
   background: var(--xeg-color-primary);
   border: 1px solid rgba(71, 133, 163, 0.3);
-  border-radius: var(--xeg-radius-lg);
+  /* Interaction element radius policy: use md */
+  border-radius: var(--xeg-radius-md);
   color: white;
   cursor: pointer;
   font-size: 13px;

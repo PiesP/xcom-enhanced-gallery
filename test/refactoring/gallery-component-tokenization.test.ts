@@ -29,8 +29,6 @@ describe('Gallery Component Border-Radius Tokenization', () => {
       const hardcodedPattern = /border-radius:\s*\d+px|border-radius:\s*\d+%/g;
       const hardcodedValues = content.match(hardcodedPattern) || [];
       expect(hardcodedValues.length).toBe(0);
-
-      console.log('✅ Gallery.module.css 토큰화 검증 완료');
     });
 
     test('gallery-global.css에서 모든 border-radius 값이 토큰화되었는지 확인', () => {
@@ -44,27 +42,15 @@ describe('Gallery Component Border-Radius Tokenization', () => {
       const hardcodedPattern = /border-radius:\s*\d+px|border-radius:\s*\d+%/g;
       const hardcodedValues = content.match(hardcodedPattern) || [];
       expect(hardcodedValues.length).toBe(0);
-
-      console.log('✅ gallery-global.css 토큰화 검증 완료');
     });
 
-    test('isolated-gallery.css에서 semantic 토큰 참조가 올바른지 확인', () => {
+    test('isolated-gallery.css에서 radius alias 변수가 제거되었는지 확인', () => {
       const content = readFileSync(ISOLATED_GALLERY_CSS, 'utf-8');
-
-      // semantic 토큰 참조 확인
-      const semanticMappings = [
-        '--xeg-isolated-radius-sm: var(--xeg-radius-sm)',
-        '--xeg-isolated-radius-md: var(--xeg-radius-lg)',
-        '--xeg-isolated-radius-lg: var(--xeg-radius-xl)',
-        '--xeg-isolated-radius-xl: var(--xeg-radius-2xl)',
-        '--xeg-isolated-radius-full: var(--xeg-radius-full)',
-      ];
-
-      semanticMappings.forEach(mapping => {
-        expect(content).toContain(mapping);
-      });
-
-      console.log('✅ isolated-gallery.css semantic 토큰 참조 검증 완료');
+      const aliasPattern = /--xeg-isolated-radius-(sm|md|lg|xl|full)/g;
+      expect(content.match(aliasPattern)).toBeNull();
+      // 직접 semantic 토큰 사용 여부 (toolbar, button 등)
+      expect(content).toMatch(/border-radius:\s*var\(--xeg-radius-xl\)/);
+      expect(content).toMatch(/border-radius:\s*var\(--xeg-radius-lg\)/);
     });
   });
 
@@ -83,8 +69,6 @@ describe('Gallery Component Border-Radius Tokenization', () => {
 
       // 하드코딩된 값이 제거되었는지 확인
       expect(content).not.toContain('border-radius: 8px');
-
-      console.log('✅ Gallery.module.css의 border-radius 토큰화 완료');
     });
 
     test('gallery-global.css의 border-radius가 토큰을 사용해야 함', () => {
@@ -117,40 +101,22 @@ describe('Gallery Component Border-Radius Tokenization', () => {
       hardcodedValues.forEach(value => {
         expect(content).not.toContain(value);
       });
-
-      console.log('✅ gallery-global.css의 border-radius 토큰화 완료');
     });
 
-    test('isolated-gallery.css의 border-radius 토큰이 semantic 토큰을 참조해야 함', () => {
+    test('isolated-gallery.css의 border-radius가 직접 semantic 토큰을 사용해야 함', () => {
       const content = readFileSync(ISOLATED_GALLERY_CSS, 'utf-8');
-
-      // isolated 토큰들이 semantic 토큰을 참조하도록 변경
-      const semanticMappings = [
-        '--xeg-isolated-radius-sm: var(--xeg-radius-sm)', // 4px → semantic token
-        '--xeg-isolated-radius-md: var(--xeg-radius-lg)', // 8px → semantic token
-        '--xeg-isolated-radius-lg: var(--xeg-radius-xl)', // 12px → semantic token (가장 가까운 10px)
-        '--xeg-isolated-radius-xl: var(--xeg-radius-2xl)', // 16px → semantic token
-        '--xeg-isolated-radius-full: var(--xeg-radius-full)', // 9999px → semantic token
-      ];
-
-      semanticMappings.forEach(mapping => {
-        expect(content).toContain(mapping);
+      // alias 제거 후 직접 참조된 패턴만 존재
+      expect(content).toMatch(/border-radius:\s*var\(--xeg-radius-(lg|xl)\)/);
+      // 제거된 alias 정의가 다시 등장하지 않아야 함
+      [
+        '--xeg-isolated-radius-sm',
+        '--xeg-isolated-radius-md',
+        '--xeg-isolated-radius-lg',
+        '--xeg-isolated-radius-xl',
+        '--xeg-isolated-radius-full',
+      ].forEach(v => {
+        expect(content).not.toContain(v);
       });
-
-      // 하드코딩된 픽셀 값이 제거되었는지 확인
-      const hardcodedDefinitions = [
-        '--xeg-isolated-radius-sm: 4px',
-        '--xeg-isolated-radius-md: 8px',
-        '--xeg-isolated-radius-lg: 12px',
-        '--xeg-isolated-radius-xl: 16px',
-        '--xeg-isolated-radius-full: 9999px',
-      ];
-
-      hardcodedDefinitions.forEach(definition => {
-        expect(content).not.toContain(definition);
-      });
-
-      console.log('✅ isolated-gallery.css의 토큰이 semantic 토큰 참조로 변경됨');
     });
   });
 
@@ -158,7 +124,7 @@ describe('Gallery Component Border-Radius Tokenization', () => {
     test('모든 Gallery 컴포넌트가 일관된 토큰 시스템을 사용해야 함', () => {
       const galleryModuleContent = readFileSync(GALLERY_MODULE_CSS, 'utf-8');
       const galleryGlobalContent = readFileSync(GALLERY_GLOBAL_CSS, 'utf-8');
-      const isolatedGalleryContent = readFileSync(ISOLATED_GALLERY_CSS, 'utf-8');
+      // const isolatedGalleryContent = readFileSync(ISOLATED_GALLERY_CSS, 'utf-8'); // alias 제거로 현재 테스트에서 직접 사용 안 함
 
       // 모든 border-radius가 토큰을 사용하는지 확인
       const tokenPattern = /border-radius:\s*var\(--xeg-radius-\w+\)/g;
@@ -177,8 +143,6 @@ describe('Gallery Component Border-Radius Tokenization', () => {
 
       expect(galleryGlobalTokens.length).toBeGreaterThan(0);
       expect(galleryGlobalHardcoded.length).toBe(0);
-
-      console.log('✅ 모든 Gallery 컴포넌트가 일관된 토큰 시스템 사용 확인됨');
     });
 
     test('토큰 사용량이 적절한 수준이어야 함', () => {
@@ -194,10 +158,6 @@ describe('Gallery Component Border-Radius Tokenization', () => {
       // 최소 사용량 확인 (실제 하드코딩된 값 개수만큼)
       expect(moduleTokenUsage).toBeGreaterThanOrEqual(1); // Gallery.module.css: 1개 이상
       expect(globalTokenUsage).toBeGreaterThanOrEqual(6); // gallery-global.css: 6개 이상
-
-      console.log(
-        `✅ 토큰 사용량 - Gallery.module.css: ${moduleTokenUsage}개, gallery-global.css: ${globalTokenUsage}개`
-      );
     });
 
     test('성능 영향이 최소화되어야 함', () => {
@@ -212,8 +172,6 @@ describe('Gallery Component Border-Radius Tokenization', () => {
       // 중첩 깊이 제한 (성능상 3단계 이하 권장)
       expect(moduleNested.length).toBeLessThanOrEqual(2);
       expect(globalNested.length).toBeLessThanOrEqual(3);
-
-      console.log('✅ 성능 영향 최소화 확인됨');
     });
   });
 
@@ -231,8 +189,6 @@ describe('Gallery Component Border-Radius Tokenization', () => {
       commonTokens.forEach(token => {
         expect(galleryGlobalContent).toContain(token);
       });
-
-      console.log('✅ 다른 컴포넌트와의 토큰 일관성 확인됨');
     });
   });
 });

@@ -3,57 +3,91 @@
  */
 
 .xeg-icon-button {
-  /* 기본 스타일 */
-  background-color: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: var(--space-sm);
+  /* 기본 스타일 (디자인 토큰 일원화) */
+  background: transparent;
+  border: 1px solid var(--xeg-color-border-primary, transparent);
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm);
 
   /* 레이아웃 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+
+  /* 타이포 & 컬러 */
+  color: var(--xeg-color-text-secondary);
+  font: inherit;
+  line-height: 1;
 
   /* 상호작용 */
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-easeOut);
 
   /* 접근성 */
   outline: none;
+}
 
-  /* 호버 상태 */
-  &:hover:not(:disabled) {
-    background-color: var(--color-overlay-light);
-  }
-
-  /* 포커스 상태 */
-  &:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  /* 비활성 상태 */
-  &:disabled {
-    opacity: var(--opacity-disabled);
-    cursor: not-allowed;
+@media (hover: hover) {
+  .xeg-icon-button:hover:not(:disabled) {
+    background: var(--xeg-color-neutral-100, rgba(255, 255, 255, 0.1));
+    color: var(--xeg-color-text-primary);
+    border-color: var(--xeg-color-border-primary, var(--xeg-color-neutral-300));
+    transform: translateY(-1px);
+    box-shadow: var(--xeg-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.15));
   }
 }
 
-/* 크기 변형 */
+.xeg-icon-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-xs, 0 0 0 1px rgba(0, 0, 0, 0.05));
+  background: var(--xeg-color-border-primary, var(--xeg-color-neutral-200));
+}
+
+.xeg-icon-button:focus-visible {
+  outline: var(--xeg-focus-ring, 2px solid var(--xeg-color-primary));
+  outline-offset: var(--xeg-focus-ring-offset, 2px);
+  z-index: 1;
+}
+
+.xeg-icon-button:disabled {
+  opacity: var(--xeg-opacity-disabled, 0.5);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 크기 변형 (디자인 시스템 크기 매핑) */
 .xeg-icon-button--sm {
-  padding: var(--space-xs);
+  padding: var(--xeg-spacing-xs);
   width: 28px;
   height: 28px;
 }
 
 .xeg-icon-button--md {
-  padding: var(--space-sm);
+  padding: var(--xeg-spacing-sm);
   width: 36px;
   height: 36px;
 }
 
 .xeg-icon-button--lg {
-  padding: var(--space-md);
+  padding: var(--xeg-spacing-md);
   width: 44px;
   height: 44px;
+}
+
+/* 다크 모드 (토큰 기반) */
+[data-theme='dark'] .xeg-icon-button:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-800, rgba(255, 255, 255, 0.1));
+  border-color: var(--xeg-color-neutral-600, currentColor);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xeg-icon-button {
+    transition: none;
+  }
 }

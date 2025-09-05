@@ -20,16 +20,16 @@ import {
 } from '../../../src/shared/components/LazyIcon.js';
 
 // Mock 기존 아이콘 컴포넌트들
-vi.mock('../../../src/shared/components/ui/Icon/icons/Download.js', () => ({
+vi.mock('../../../src/shared/components/ui/Icon/icons/Download', () => ({
   Download: vi.fn(() => <div data-testid='icon-download'>Download Icon</div>),
 }));
-vi.mock('../../../src/shared/components/ui/Icon/icons/Settings.js', () => ({
+vi.mock('../../../src/shared/components/ui/Icon/icons/Settings', () => ({
   Settings: vi.fn(() => <div data-testid='icon-settings'>Settings Icon</div>),
 }));
-vi.mock('../../../src/shared/components/ui/Icon/icons/X.js', () => ({
+vi.mock('../../../src/shared/components/ui/Icon/icons/X', () => ({
   X: vi.fn(() => <div data-testid='icon-x'>X Icon</div>),
 }));
-vi.mock('../../../src/shared/components/ui/Icon/icons/ChevronLeft.js', () => ({
+vi.mock('../../../src/shared/components/ui/Icon/icons/ChevronLeft', () => ({
   ChevronLeft: vi.fn(() => <div data-testid='icon-chevron-left'>Chevron Left Icon</div>),
 }));
 

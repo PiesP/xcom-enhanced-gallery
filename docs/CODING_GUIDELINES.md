@@ -29,6 +29,46 @@ gallery-view.tsx
 media-processor.ts
 components/
 services/
+
+### Border Radius 정책 (Design Tokens)
+
+| 용도 | 토큰 | 설명 |
+| ---- | ---- | ---- |
+| 인터랙션 (아이콘/작은 버튼) | `var(--xeg-radius-md)` | IconButton, 작은 액션 영역 |
+| 일반 Surface / 기본 버튼 | `var(--xeg-radius-lg)` | Toolbar 버튼, 카드성 작은 블록 |
+| 대형 Surface / 컨테이너 | `var(--xeg-radius-xl)` 또는 `var(--xeg-radius-2xl)` | 모달/토스트 등 큰 영역 |
+| Pill 형태 | `var(--xeg-radius-pill)` | 배지, Chip 요소 |
+| 원형 | `var(--xeg-radius-full)` | 원형 아바타, 원형 토글 |
+
+규칙:
+- px 직접 값 사용 금지 (테스트에서 검출)
+- semantic (`--xeg-radius-*`) 토큰만 컴포넌트 CSS에 사용
+
+#### 구현 예시 (Toast / Gallery)
+
+```text
+Toast
+  .toast (container / surface large)        -> var(--xeg-radius-2xl)
+  .actionButton / .closeButton (interaction)-> var(--xeg-radius-md)
+
+Gallery
+  .controlButton (interaction)              -> var(--xeg-radius-md)
+  .controls (집합 pill 형태)                -> var(--xeg-radius-pill)
+  .xegCloseButton / .xegNavButton (shape)   -> var(--xeg-radius-full)
+  .mediaElement / .error (standard surface) -> var(--xeg-radius-lg)
+```
+
+권장 패턴:
+- Interaction 요소는 통일된 hover/active 스타일을 유지하기 위해 모두 `md` 사용
+- Surface 크기 차별화: 일반(`lg`), 대형/시각적 강조(`2xl` - Toast 등)
+- 형태 구분은 `pill` / `full` 만 사용하고 임의 radius 조합 지양
+
+### IconButton 사용 규칙
+
+- 반복되는 아이콘 전용 버튼은 `<IconButton>` 사용 (토큰/hover/active 일관)
+- 사이즈: `sm(28px)`, `md(36px)`, `lg(44px)` – 레이아웃 밀도에 맞게 선택
+- 접근성: 항상 `aria-label` 필수, variant에 관계없이 role="button" 의미 명확화
+- 커스텀 버튼에 동일 패턴 필요 시 확장 대신 IconButton 조합 우선
 ```
 
 ## 🏷️ 네이밍 규칙

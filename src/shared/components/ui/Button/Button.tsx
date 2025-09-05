@@ -97,6 +97,9 @@ export const Button = (() => {
       // 표준화된 테스트 속성 생성
       const testProps = ComponentStandards.createTestProps(testId);
 
+      // icon variant는 명시적으로 role="button"을 부여 (테스트 및 접근성 명확화)
+      const resolvedRole = role || (variant === 'icon' ? 'button' : undefined);
+
       return (
         <button
           ref={ref}
@@ -128,6 +131,8 @@ export const Button = (() => {
           }
           aria-busy={ariaBusy ? 'true' : loading ? 'true' : undefined}
           aria-disabled={isDisabled ? 'true' : undefined}
+          // TS Signalish role compatibility (string acceptable)
+          role={resolvedRole as unknown as never}
           tabIndex={tabIndex}
           onClick={onClick}
           onFocus={onFocus}

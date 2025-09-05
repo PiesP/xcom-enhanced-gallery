@@ -40,6 +40,7 @@ import {
   ArrowsMaximize,
 } from '../Icon';
 import styles from './Toolbar.module.css';
+import { IconButton } from '@shared/components/ui/primitive/IconButton';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
 export interface ToolbarProps {
@@ -261,14 +262,13 @@ function ToolbarCore({
           },
           [
             h(
-              'button',
+              IconButton as any, // eslint-disable-line @typescript-eslint/no-explicit-any
               {
-                type: 'button',
-                className: `${styles.toolbarButton} ${styles.navButton} xeg-glassmorphism button-variant`,
-                onClick: (e: Event) => handleButtonClick(e, 'previous', onPrevious),
-                disabled: disabled || !canGoPrevious,
                 'aria-label': '이전 미디어',
                 title: '이전 미디어 (←)',
+                disabled: disabled || !canGoPrevious,
+                onClick: (e: Event) => handleButtonClick(e, 'previous', onPrevious),
+                className: `${styles.navButton} button-variant`,
                 'data-gallery-element': 'nav-previous',
                 'data-disabled': disabled || !canGoPrevious,
                 key: 'previous-button',
@@ -276,14 +276,13 @@ function ToolbarCore({
               h(ChevronLeft, { size: 18 })
             ),
             h(
-              'button',
+              IconButton as any, // eslint-disable-line @typescript-eslint/no-explicit-any
               {
-                type: 'button',
-                className: `${styles.toolbarButton} ${styles.navButton} xeg-glassmorphism button-variant`,
-                onClick: (e: Event) => handleButtonClick(e, 'next', onNext),
-                disabled: disabled || !canGoNext,
                 'aria-label': '다음 미디어',
                 title: '다음 미디어 (→)',
+                disabled: disabled || !canGoNext,
+                onClick: (e: Event) => handleButtonClick(e, 'next', onNext),
+                className: `${styles.navButton} button-variant`,
                 'data-gallery-element': 'nav-next',
                 'data-disabled': disabled || !canGoNext,
                 key: 'next-button',
@@ -477,34 +476,34 @@ function ToolbarCore({
             // 설정 버튼
             onOpenSettings &&
               h(
-                'button',
+                IconButton as any, // eslint-disable-line @typescript-eslint/no-explicit-any
                 {
-                  type: 'button',
-                  className: `${styles.toolbarButton} ${styles.settingsButton}`,
-                  onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
-                  disabled,
                   'aria-label': '설정 열기',
                   title: '설정',
+                  disabled,
+                  onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
+                  className: styles.settingsButton,
                   'data-gallery-element': 'settings',
                   'data-disabled': disabled,
                   key: 'settings',
+                  size: 'md',
                 },
                 h(Settings, { size: 16 })
               ),
 
             // 닫기 버튼
             h(
-              'button',
+              IconButton as any, // eslint-disable-line @typescript-eslint/no-explicit-any
               {
-                type: 'button',
-                className: `${styles.toolbarButton} ${styles.closeButton}`,
-                onClick: (e: Event) => handleButtonClick(e, 'close', onClose),
-                disabled,
                 'aria-label': '갤러리 닫기',
                 title: '갤러리 닫기 (Esc)',
+                disabled,
+                onClick: (e: Event) => handleButtonClick(e, 'close', onClose),
+                className: styles.closeButton,
                 'data-gallery-element': 'close',
                 'data-disabled': disabled,
                 key: 'close',
+                size: 'md',
               },
               h(X, { size: 16 })
             ),

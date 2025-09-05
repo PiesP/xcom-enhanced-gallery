@@ -1683,40 +1683,40 @@
 <g id="node77" class="node">
 <title>src/shared/components/ui/Toolbar/toolbarConfig.ts</title>
 <g id="a_node77"><a xlink:href="src/shared/components/ui/Toolbar/toolbarConfig.ts" xlink:title="toolbarConfig.ts">
-<path fill="#fffbeb" stroke="#b45309" d="M2921.9,-748.8C2921.9,-748.8 2856.1,-748.8 2856.1,-748.8 2851.7,-748.8 2847.3,-744.4 2847.3,-740 2847.3,-740 2847.3,-731.2 2847.3,-731.2 2847.3,-726.8 2851.7,-722.4 2856.1,-722.4 2856.1,-722.4 2921.9,-722.4 2921.9,-722.4 2926.3,-722.4 2930.7,-726.8 2930.7,-731.2 2930.7,-731.2 2930.7,-740 2930.7,-740 2930.7,-744.4 2926.3,-748.8 2921.9,-748.8"/>
-<text xml:space="preserve" text-anchor="start" x="2854.5" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">toolbarConfig.ts</text>
+<path fill="#fffbeb" stroke="#b45309" d="M2936.9,-748.8C2936.9,-748.8 2871.1,-748.8 2871.1,-748.8 2866.7,-748.8 2862.3,-744.4 2862.3,-740 2862.3,-740 2862.3,-731.2 2862.3,-731.2 2862.3,-726.8 2866.7,-722.4 2871.1,-722.4 2871.1,-722.4 2936.9,-722.4 2936.9,-722.4 2941.3,-722.4 2945.7,-726.8 2945.7,-731.2 2945.7,-731.2 2945.7,-740 2945.7,-740 2945.7,-744.4 2941.3,-748.8 2936.9,-748.8"/>
+<text xml:space="preserve" text-anchor="start" x="2869.5" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">toolbarConfig.ts</text>
 </a>
 </g>
 </g>
 <!-- src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx&#45;&gt;src/shared/components/ui/Toolbar/toolbarConfig.ts -->
 <g id="edge92" class="edge">
 <title>src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx&#45;&gt;src/shared/components/ui/Toolbar/toolbarConfig.ts</title>
-<path fill="none" stroke="#666666" d="M2774.8,-834.34C2797.54,-814.87 2841.21,-777.5 2867.46,-755.03"/>
-<polygon fill="none" stroke="#666666" points="2868.97,-757.43 2873.22,-750.1 2865.33,-753.18 2868.97,-757.43"/>
+<path fill="none" stroke="#666666" d="M2776.52,-834.34C2802.02,-814.79 2851.07,-777.18 2880.33,-754.74"/>
+<polygon fill="none" stroke="#666666" points="2881.83,-757.13 2886.47,-750.04 2878.42,-752.68 2881.83,-757.13"/>
+</g>
+<!-- src/shared/components/ui/Toolbar/ToolbarButton.module.css -->
+<g id="node78" class="node">
+<title>src/shared/components/ui/Toolbar/ToolbarButton.module.css</title>
+<g id="a_node78"><a xlink:href="src/shared/components/ui/Toolbar/ToolbarButton.module.css" xlink:title="ToolbarButton.module.css">
+<path fill="#fffbeb" stroke="#b45309" d="M3253.02,-748.8C3253.02,-748.8 3142.98,-748.8 3142.98,-748.8 3138.58,-748.8 3134.18,-744.4 3134.18,-740 3134.18,-740 3134.18,-731.2 3134.18,-731.2 3134.18,-726.8 3138.58,-722.4 3142.98,-722.4 3142.98,-722.4 3253.02,-722.4 3253.02,-722.4 3257.42,-722.4 3261.82,-726.8 3261.82,-731.2 3261.82,-731.2 3261.82,-740 3261.82,-740 3261.82,-744.4 3257.42,-748.8 3253.02,-748.8"/>
+<text xml:space="preserve" text-anchor="start" x="3141.38" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">ToolbarButton.module.css</text>
+</a>
+</g>
 </g>
 <!-- src/shared/components/ui/Toolbar/ToolbarButton.tsx -->
-<g id="node78" class="node">
+<g id="node79" class="node">
 <title>src/shared/components/ui/Toolbar/ToolbarButton.tsx</title>
-<g id="a_node78"><a xlink:href="src/shared/components/ui/Toolbar/ToolbarButton.tsx" xlink:title="ToolbarButton.tsx">
+<g id="a_node79"><a xlink:href="src/shared/components/ui/Toolbar/ToolbarButton.tsx" xlink:title="ToolbarButton.tsx">
 <path fill="#fffbeb" stroke="#b45309" d="M3253.65,-861.2C3253.65,-861.2 3180.35,-861.2 3180.35,-861.2 3175.95,-861.2 3171.55,-856.8 3171.55,-852.4 3171.55,-852.4 3171.55,-843.6 3171.55,-843.6 3171.55,-839.2 3175.95,-834.8 3180.35,-834.8 3180.35,-834.8 3253.65,-834.8 3253.65,-834.8 3258.05,-834.8 3262.45,-839.2 3262.45,-843.6 3262.45,-843.6 3262.45,-852.4 3262.45,-852.4 3262.45,-856.8 3258.05,-861.2 3253.65,-861.2"/>
 <text xml:space="preserve" text-anchor="start" x="3178.75" y="-844.5" font-family="Arial" font-size="10.00" fill="#b45309">ToolbarButton.tsx</text>
 </a>
 </g>
 </g>
-<!-- src/shared/components/ui/Toolbar/UnifiedToolbarButton.module.css -->
-<g id="node79" class="node">
-<title>src/shared/components/ui/Toolbar/UnifiedToolbarButton.module.css</title>
-<g id="a_node79"><a xlink:href="src/shared/components/ui/Toolbar/UnifiedToolbarButton.module.css" xlink:title="UnifiedToolbarButton.module.css">
-<path fill="#fffbeb" stroke="#b45309" d="M3253.4,-748.8C3253.4,-748.8 3112.6,-748.8 3112.6,-748.8 3108.2,-748.8 3103.8,-744.4 3103.8,-740 3103.8,-740 3103.8,-731.2 3103.8,-731.2 3103.8,-726.8 3108.2,-722.4 3112.6,-722.4 3112.6,-722.4 3253.4,-722.4 3253.4,-722.4 3257.8,-722.4 3262.2,-726.8 3262.2,-731.2 3262.2,-731.2 3262.2,-740 3262.2,-740 3262.2,-744.4 3257.8,-748.8 3253.4,-748.8"/>
-<text xml:space="preserve" text-anchor="start" x="3111" y="-732.1" font-family="Arial" font-size="10.00" fill="#b45309">UnifiedToolbarButton.module.css</text>
-</a>
-</g>
-</g>
-<!-- src/shared/components/ui/Toolbar/ToolbarButton.tsx&#45;&gt;src/shared/components/ui/Toolbar/UnifiedToolbarButton.module.css -->
+<!-- src/shared/components/ui/Toolbar/ToolbarButton.tsx&#45;&gt;src/shared/components/ui/Toolbar/ToolbarButton.module.css -->
 <g id="edge96" class="edge">
-<title>src/shared/components/ui/Toolbar/ToolbarButton.tsx&#45;&gt;src/shared/components/ui/Toolbar/UnifiedToolbarButton.module.css</title>
-<path fill="none" stroke="#666666" d="M3213.1,-834.34C3207.36,-815.7 3196.57,-780.66 3189.59,-757.99"/>
-<polygon fill="#666666" stroke="#666666" points="3192.33,-757.38 3187.3,-750.56 3186.98,-759.03 3192.33,-757.38"/>
+<title>src/shared/components/ui/Toolbar/ToolbarButton.tsx&#45;&gt;src/shared/components/ui/Toolbar/ToolbarButton.module.css</title>
+<path fill="none" stroke="#666666" d="M3214.82,-834.34C3211.63,-815.79 3205.64,-780.97 3201.73,-758.29"/>
+<polygon fill="#666666" stroke="#666666" points="3204.53,-758.02 3200.41,-750.61 3199.01,-758.97 3204.53,-758.02"/>
 </g>
 <!-- src/shared/components/ui/Toolbar/ToolbarHeadless.tsx -->
 <g id="node80" class="node">
@@ -1730,8 +1730,8 @@
 <!-- src/shared/components/ui/Toolbar/ToolbarHeadless.tsx&#45;&gt;src/shared/components/ui/Toolbar/toolbarConfig.ts -->
 <g id="edge97" class="edge">
 <title>src/shared/components/ui/Toolbar/ToolbarHeadless.tsx&#45;&gt;src/shared/components/ui/Toolbar/toolbarConfig.ts</title>
-<path fill="none" stroke="#666666" d="M3055.43,-834.34C3021.81,-814.59 2956.81,-776.42 2918.75,-754.07"/>
-<polygon fill="#666666" stroke="#666666" points="2920.22,-751.69 2911.91,-750.05 2917.39,-756.52 2920.22,-751.69"/>
+<path fill="none" stroke="#666666" d="M3057.15,-834.34C3026.34,-814.67 2966.9,-776.74 2931.82,-754.35"/>
+<polygon fill="#666666" stroke="#666666" points="2933.41,-752.04 2925.16,-750.1 2930.39,-756.76 2933.41,-752.04"/>
 </g>
 <!-- src/shared/components/ui/Toolbar/ToolbarView.module.css -->
 <g id="node81" class="node">

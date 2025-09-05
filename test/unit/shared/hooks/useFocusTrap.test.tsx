@@ -4,8 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/preact';
+import { cleanup, render } from '@testing-library/preact';
 import { useFocusTrap } from '@shared/hooks/useFocusTrap';
+import { h } from 'preact';
 
 describe('P4: Focus Trap Hook', () => {
   let container;
@@ -37,8 +38,14 @@ describe('P4: Focus Trap Hook', () => {
 
     it('focus trap이 올바른 타입을 반환해야 함', () => {
       const modalContainer = document.getElementById('modal-container');
-      const result = useFocusTrap(modalContainer, false);
-
+      const outputs = {} as any;
+      const Harness = () => {
+        const api = useFocusTrap(modalContainer, false);
+        (outputs as any).api = api;
+        return null;
+      };
+      render(h(Harness, {}));
+      const result = outputs.api;
       expect(typeof result).toBe('object');
       expect(typeof result.isActive).toBe('boolean');
       expect(typeof result.activate).toBe('function');
@@ -46,26 +53,37 @@ describe('P4: Focus Trap Hook', () => {
     });
 
     it('null container로 안전하게 처리해야 함', () => {
-      expect(() => {
+      const Harness = () => {
         useFocusTrap(null, true);
-      }).not.toThrow();
+        return null;
+      };
+      expect(() => render(h(Harness, {}))).not.toThrow();
     });
   });
 
   describe('Focus Trap 활성화', () => {
     it('활성화 시 isActive가 true가 되어야 함', () => {
       const modalContainer = document.getElementById('modal-container');
-      const result = useFocusTrap(modalContainer, true);
-
-      // Note: isActive는 실제로는 useRef로 관리되므로 즉시 반영되지 않을 수 있음
-      expect(typeof result.isActive).toBe('boolean');
+      const outputs = {} as any;
+      const Harness = () => {
+        const api = useFocusTrap(modalContainer, true);
+        (outputs as any).api = api;
+        return null;
+      };
+      render(h(Harness, {}));
+      expect(typeof outputs.api.isActive).toBe('boolean');
     });
 
     it('비활성화 시 isActive가 false여야 함', () => {
       const modalContainer = document.getElementById('modal-container');
-      const result = useFocusTrap(modalContainer, false);
-
-      expect(result.isActive).toBe(false);
+      const outputs = {} as any;
+      const Harness = () => {
+        const api = useFocusTrap(modalContainer, false);
+        (outputs as any).api = api;
+        return null;
+      };
+      render(h(Harness, {}));
+      expect(outputs.api.isActive).toBe(false);
     });
   });
 
@@ -74,11 +92,11 @@ describe('P4: Focus Trap Hook', () => {
       const emptyContainer = document.createElement('div');
       emptyContainer.innerHTML = '<div>No focusable elements</div>';
       document.body.appendChild(emptyContainer);
-
-      expect(() => {
+      const Harness = () => {
         useFocusTrap(emptyContainer, true);
-      }).not.toThrow();
-
+        return null;
+      };
+      expect(() => render(h(Harness, {}))).not.toThrow();
       document.body.removeChild(emptyContainer);
     });
 
@@ -86,16 +104,17 @@ describe('P4: Focus Trap Hook', () => {
       const tempContainer = document.createElement('div');
       tempContainer.innerHTML = '<button>Test</button>';
       document.body.appendChild(tempContainer);
-
-      const result = useFocusTrap(tempContainer, true);
-
-      // 컨테이너 제거
+      const outputs = {} as any;
+      const Harness = () => {
+        const api = useFocusTrap(tempContainer, true);
+        (outputs as any).api = api;
+        return null;
+      };
+      render(h(Harness, {}));
       document.body.removeChild(tempContainer);
-
-      // 여전히 안전하게 함수 호출 가능해야 함
       expect(() => {
-        result.activate();
-        result.deactivate();
+        outputs.api.activate();
+        outputs.api.deactivate();
       }).not.toThrow();
     });
   });
@@ -117,19 +136,16 @@ describe('P4: Focus Trap Hook', () => {
   describe('Function Signature', () => {
     it('올바른 매개변수를 받아야 함', () => {
       const modalContainer = document.getElementById('modal-container');
-
-      // 기본 사용법
-      expect(() => {
+      const HarnessBasic = () => {
         useFocusTrap(modalContainer, true);
-      }).not.toThrow();
-
-      // 옵션과 함께 사용
-      expect(() => {
-        useFocusTrap(modalContainer, true, {
-          onEscape: () => {},
-          restoreFocus: false,
-        });
-      }).not.toThrow();
+        return null;
+      };
+      const HarnessWithOptions = () => {
+        useFocusTrap(modalContainer, true, { onEscape: () => {}, restoreFocus: false });
+        return null;
+      };
+      expect(() => render(h(HarnessBasic, {}))).not.toThrow();
+      expect(() => render(h(HarnessWithOptions, {}))).not.toThrow();
     });
   });
 });

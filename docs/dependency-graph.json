@@ -2948,14 +2948,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./UnifiedToolbarButton.module.css",
+          "module": "./ToolbarButton.module.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/components/ui/Toolbar/UnifiedToolbarButton.module.css",
+          "resolved": "src/shared/components/ui/Toolbar/ToolbarButton.module.css",
           "coreModule": false,
           "followable": false,
           "couldNotResolve": false,
@@ -2971,7 +2971,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Toolbar/UnifiedToolbarButton.module.css",
+      "source": "src/shared/components/ui/Toolbar/ToolbarButton.module.css",
       "followable": false,
       "coreModule": false,
       "couldNotResolve": false,

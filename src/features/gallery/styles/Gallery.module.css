@@ -555,7 +555,8 @@
 .controlButton {
   background: var(--xeg-button-bg);
   border: 1px solid var(--xeg-button-border);
-  border-radius: var(--xeg-radius-2xl);
+  /* Interaction element radius policy: md */
+  border-radius: var(--xeg-radius-md);
   padding: 8px 12px;
   color: var(--xeg-button-text);
   font-size: 14px;

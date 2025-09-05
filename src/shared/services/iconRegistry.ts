@@ -107,7 +107,8 @@ export class IconRegistry {
   private async loadIconInternal(name: IconName): Promise<IconComponent> {
     try {
       // 기존 아이콘 컴포넌트에서 동적 import
-      const module = await import(`../components/ui/Icon/icons/${name}.js`);
+      // NOTE: .js 확장자를 제거하여 TS/ESM 소스 단계에서도 해석되도록 함 (Vite 변환 전 테스트 환경 호환)
+      const module = await import(`../components/ui/Icon/icons/${name}`);
       const IconComponent = module[name] as IconComponent;
 
       if (!IconComponent) {

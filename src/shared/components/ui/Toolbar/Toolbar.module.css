@@ -318,11 +318,12 @@
 /* 크기 조절 섹션 */
 .fitModeGroup {
   display: flex;
-  gap: 0.125em; /* 2px → 0.125em */
-  background: var(--xeg-color-neutral-100);
-  border-radius: var(--xeg-radius-md);
-  padding: 0.125em; /* 2px → 0.125em */
-  border: 1px solid var(--xeg-color-neutral-200);
+  gap: 0.125em; /* 그룹형 태생 여백만 유지 */
+  /* White box 제거: 배경/보더/패딩 삭제 */
+  background: transparent;
+  padding: 0; /* 기존 2px 제거 */
+  border: none;
+  border-radius: var(--xeg-radius-md); /* 정책 반영 */
 }
 
 .fitButton,
@@ -485,9 +486,7 @@ button.fitButton {
     height: 0.125em; /* 2px → 0.125em */
   }
 
-  .fitModeGroup {
-    border-radius: var(--xeg-radius-md);
-  }
+  /* (white box 제거 유지 - 별도 스타일 불필요) */
 
   .fitButton {
     padding: 0.1875em 0.375em; /* 3px 6px → 0.1875em 0.375em */
