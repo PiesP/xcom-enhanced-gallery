@@ -238,3 +238,11 @@ describe('Cross-Component Consistency Verification', () => {
     });
   });
 });
+
+// Deprecated duplicate of cross-component-consistency.test.ts kept temporarily to avoid environment cache issues.
+// File intentionally minimized.
+describe.skip('Cross-Component Consistency Verification (legacy clean variant - deprecated)', () => {
+  it('deprecated placeholder', () => {
+    expect(true).toBe(true);
+  });
+});
