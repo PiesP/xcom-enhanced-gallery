@@ -12,13 +12,20 @@ import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal
 // Mock dependencies
 vi.mock('@shared/external/vendors', () => ({
   getPreact: () => ({ h, Fragment: h }),
-  getPreactHooks: () => ({
-    useEffect: vi.fn(),
-    useState: vi.fn(() => [false, vi.fn()]),
-    useRef: vi.fn(() => ({ current: null })),
-    useCallback: vi.fn(fn => fn),
-    useMemo: vi.fn(fn => fn()),
-  }),
+  getPreactHooks: () => {
+    return {
+      // effect는 통합 테스트에서 사이드이펙트 최소화를 위해 noop
+      useEffect: vi.fn(),
+      // useState 초기값(또는 이니셜라이저 함수) 실행하여 실제 인스턴스를 유지
+      useState: vi.fn(initial => {
+        const value = typeof initial === 'function' ? initial() : initial;
+        return [value, vi.fn()];
+      }),
+      useRef: vi.fn(initial => ({ current: initial ?? null })),
+      useCallback: vi.fn(fn => fn),
+      useMemo: vi.fn(factory => factory()),
+    };
+  },
   getPreactCompat: () => ({
     memo: vi.fn(component => component),
     forwardRef: vi.fn(fn => fn),

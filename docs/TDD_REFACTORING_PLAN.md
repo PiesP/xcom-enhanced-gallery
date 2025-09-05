@@ -1,114 +1,45 @@
-# TDD 기반 디자인 시스템 통합 리팩토링 - ✅ **완료**
+# TDD 기반 디자인 시스템 통합 리팩토링 - 완료 요약 (2025-09-05)
 
-> **툴바 버튼 디자인 불일치 해소 프로젝트** - 2025년 9월 완료
+툴바/설정 모달 버튼 디자인 불일치 해소 및 통합 Button 시스템 구축 작업이 TDD
+기반으로 완료되었습니다.
 
-## 🎯 목표 달성 현황
+## 핵심 결과
 
-**주요 목표**: ✅ **완료** - 툴바 버튼 간 디자인 불일치 및 툴바-설정 모달 간
-디자인 불일치 해소
+- 통합 `Button` 컴포넌트: toolbar / navigation / action variant 및 toolbar 전용
+  size 지원
+- `Toolbar` 전면 마이그레이션: 모든 raw `<button>` 제거, any 캐스팅 0
+- glassmorphism 표준화: 공통 `glass-surface` 클래스 적용
+- 타입 안정성: strict 모드 오류 0, 잔여 any 제거
+- 테스트: 모든 통합 테스트 안정화 (언어 서비스 모킹 개선 후 실패 0)
 
-**세부 목표**:
+## 최종 품질 지표
 
-- ✅ 통합된 버튼 디자인 시스템 구축 (Button.tsx 완료)
-- ✅ 일관된 glassmorphism 효과 적용 (완료)
-- ✅ TypeScript 타입 안전성 보장 (완료)
-- ✅ TDD 기반 안전한 리팩토링 (완료)
+- 테스트: 1578 tests (pass 100%, skip 16 – 의도적 planning/legacy)
+- 타입 검사: pass (strict)
+- 빌드: dev/prod 모두 성공
 
-## � 최종 완료 내역 (2025/09/05)
+## 구현 산출물 (대표)
 
-### ✅ Phase 2: 컴포넌트 표준화 - **100% 완료**
+- `src/shared/components/ui/Button/Button.tsx`
+- `src/shared/components/ui/Toolbar/Toolbar.tsx`
+- `src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx`
 
-#### 🎯 핵심 성과
+## 유지보수 가이드
 
-**1. Button 컴포넌트 통합 완료**
+1. 새 버튼은 항상 `Button` 사용 (raw `<button>` 사용 금지)
+2. 추가 variant 필요 시 `ButtonVariant` 확장 + CSS Module token 기반 스타일 추가
+3. data-\* 상태 표기는 (`data-selected`, `data-loading`, `data-disabled`) 일관
+   유지
+4. 접근성: iconOnly 시 `aria-label` 필수
+5. 서비스 의존은 추후 주입 필요 시 useState 이니셜라이저 패턴 유지 (테스트 친화)
 
-- ✅ `src/shared/components/ui/Button/Button.tsx`
-- ✅ `ButtonVariant` 타입: `toolbar | navigation | action` 추가
-- ✅ `size='toolbar'` 추가로 툴바 전용 크기 지원 (height: 2.5em)
-- ✅ iconOnly 프로퍼티로 아이콘 버튼 완벽 지원
+## 회고 (요약)
 
-**2. CSS 스타일 통합 완료**
+- 초기 통합 중 data-\* prop 타입 누락 → 타입 확장으로 해결
+- LanguageService 모킹 불일치로 통합 테스트 일부 실패 → custom useState 모킹으로
+  초기화 로직 수행하도록 수정하여 해결
+- 불필요한 phase 상세 문서는 완료 후 축약, 핵심 지표만 유지
 
-- ✅ `src/shared/components/ui/Button/Button.module.css`
-- ✅ `.variant-toolbar`, `.variant-navigation`, `.variant-action` 클래스
-- ✅ `.size-toolbar` 클래스로 툴바 전용 스타일
-- ✅ 모든 디자인 토큰 일관성 확보
+모든 목표가 충족되어 추가 작업은 현재 시점에서 필요하지 않습니다.
 
-**3. Toolbar 마이그레이션 100% 완료**
-
-- ✅ `src/shared/components/ui/Toolbar/Toolbar.tsx`
-- ✅ 모든 `button` 요소 → `Button` 컴포넌트 교체 완료
-- ✅ 모든 `Button as any` 타입 캐스팅 제거
-- ✅ 체계적 variant 분류:
-  - Navigation buttons → `variant='navigation'`
-  - Fit buttons → `variant='toolbar'`
-  - Download buttons → `variant='action'`
-  - Settings/Close buttons → `variant='danger'`
-
-**4. 타입 안전성 보장**
-
-- ✅ TypeScript strict 모드 100% 준수
-- ✅ 모든 타입 캐스팅 제거로 타입 안전성 향상
-- ✅ 컴파일 오류 0개
-
-#### 🔧 기술적 품질 지표
-
-**정량적 성과**
-
-- ✅ 모든 툴바 버튼이 통합 Button 컴포넌트 사용 (100%)
-- ✅ 타입 캐스팅 제거 (8개 → 0개)
-- ✅ TypeScript strict 모드 준수 (100%)
-- ✅ 빌드 성공률 (100%)
-
-**정성적 성과**
-
-- ✅ 툴바 버튼 간 시각적 일관성 확보
-- ✅ 개발자 경험 대폭 개선 (명확한 API, 타입 안전성)
-- ✅ TDD 기반 안전한 리팩토링 완료
-- ✅ 유지보수성 및 확장성 향상
-
-### � 최종 검증 결과
-
-#### ✅ 빌드 성공
-
-```bash
-npm run build:dev
-# ✓ 135 modules transformed.
-# ✅ Userscript 생성: xcom-enhanced-gallery.dev.user.js
-# ✓ built in 4.49s
-```
-
-#### ✅ 테스트 성공률
-
-- **총 테스트**: 1578개
-- **성공**: 1559개 (98.8%)
-- **실패**: 3개 (통합 테스트 모킹 문제, 실제 기능과 무관)
-- **스킵**: 16개
-
-#### ✅ 타입 검사
-
-- TypeScript strict 모드 100% 통과
-- 컴파일 오류 0개
-- 모든 타입 캐스팅 제거
-
-## 🎊 프로젝트 완료 선언
-
-**2025년 9월 5일 기준으로 TDD 기반 디자인 시스템 통합 리팩토링이 성공적으로
-완료되었습니다.**
-
-### 주요 달성 사항
-
-- ✅ 툴바 버튼 간 디자인 불일치 **완전 해소**
-- ✅ 통합 버튼 시스템으로 일관성 확보
-- ✅ 타입 안전성 보장으로 개발 경험 향상
-- ✅ TDD 기반 안전한 리팩토링 완료
-
-### 향후 유지보수 가이드
-
-1. 새로운 버튼 추가 시 `Button` 컴포넌트 사용
-2. 새로운 variant 필요 시 `ButtonVariant` 타입 확장
-3. 타입 캐스팅 대신 적절한 타입 정의 활용
-
----
-
-**🎉 프로젝트 성공적 완료! 모든 목표가 달성되었습니다.**
+— End of Plan —
