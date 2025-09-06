@@ -64,32 +64,72 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
       const outDir = options.dir ?? 'dist';
       let cssConcat = '';
       let entryChunk: OutputChunk | undefined;
+      let sourcemapContent = '';
+
+      // 모든 번들 항목을 처리
       for (const fileName of Object.keys(bundle)) {
         const item = bundle[fileName];
         if (!item) continue;
+
         if (fileName.endsWith('.css') && item.type === 'asset') {
           const asset = item as OutputAsset;
           if (typeof asset.source === 'string') {
             cssConcat += asset.source;
-            delete bundle[fileName];
+          }
+        } else if (fileName.endsWith('.js.map') && item.type === 'asset') {
+          const asset = item as OutputAsset;
+          if (typeof asset.source === 'string') {
+            sourcemapContent = asset.source;
+          }
+        } else if (item.type === 'chunk' && item.isEntry) {
+          entryChunk = item as OutputChunk;
+          if (entryChunk.map && flags.isDev) {
+            sourcemapContent = JSON.stringify(entryChunk.map);
           }
         }
-        if (item.type === 'chunk' && item.isEntry) entryChunk = item as OutputChunk;
       }
+
       if (!entryChunk) {
         console.warn('[userscript] entry chunk not found');
         return;
       }
+
       const styleInjector = cssConcat.trim().length
         ? `(function(){try{var s=document.getElementById('xeg-styles');if(s) s.remove();s=document.createElement('style');s.id='xeg-styles';s.textContent=${JSON.stringify(cssConcat)};(document.head||document.documentElement).appendChild(s);}catch(e){console.error('[XEG] style inject fail',e);}})();\n`
         : '';
+
       const wrapped = `${userscriptHeader(flags)}(function(){\n'use strict';\n${styleInjector}${entryChunk.code}\n})();`;
       const finalName = flags.isDev
         ? 'xcom-enhanced-gallery.dev.user.js'
         : 'xcom-enhanced-gallery.user.js';
+
       fs.writeFileSync(path.join(outDir, finalName), wrapped, 'utf8');
-      delete bundle[entryChunk.fileName];
+
+      // 개발 모드에서만 sourcemap 생성
+      if (flags.isDev && sourcemapContent) {
+        const mapName = 'xcom-enhanced-gallery.dev.user.js.map';
+        fs.writeFileSync(path.join(outDir, mapName), sourcemapContent, 'utf8');
+        console.log(`✅ Sourcemap 생성: ${mapName}`);
+      }
+
       console.log(`✅ Userscript 생성: ${finalName}`);
+
+      // assets 폴더와 그 내용, 기타 불필요한 파일들을 삭제
+      const assetsDir = path.join(outDir, 'assets');
+      if (fs.existsSync(assetsDir)) {
+        fs.rmSync(assetsDir, { recursive: true, force: true });
+      }
+
+      // 불필요한 파일들 정리
+      const unnecessaryFiles = ['_cleanup_marker'];
+      for (const file of unnecessaryFiles) {
+        const filePath = path.join(outDir, file);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      console.log('🗑️ 불필요한 파일들 정리 완료');
     },
   };
 }
@@ -128,7 +168,7 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'es2020',
       outDir: 'dist',
-      emptyOutDir: false, // 다중(dev/prod) 빌드 연속 실행 고려
+      emptyOutDir: flags.isDev, // dev 빌드 시에만 정리, prod는 추가
       cssCodeSplit: false,
       assetsInlineLimit: 0,
       sourcemap: flags.sourcemap,
