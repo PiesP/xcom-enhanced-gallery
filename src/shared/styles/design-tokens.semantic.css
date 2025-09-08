@@ -35,9 +35,9 @@
   --color-info-bg: var(--color-blue-50);
 
   /* Interactive Colors - Semantic Roles */
-  --color-primary: var(--color-blue-500);
-  --color-primary-hover: var(--color-blue-600);
-  --color-primary-active: var(--color-blue-700);
+  --color-primary: var(--color-twitter-blue);
+  --color-primary-hover: var(--color-twitter-blue-hover);
+  --color-primary-active: var(--color-twitter-blue-active);
 
   /* Overlay Colors - Semantic Roles */
   --color-overlay-light: rgba(0, 0, 0, var(--opacity-overlay-light));

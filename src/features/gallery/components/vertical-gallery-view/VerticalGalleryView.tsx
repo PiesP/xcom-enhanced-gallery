@@ -82,7 +82,8 @@ function VerticalGalleryViewCore({
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  // DOM 평탄화를 위해 중간 content 래퍼 제거 (A1)
+  // const contentRef = useRef<HTMLDivElement>(null);
   const toolbarHoverZoneRef = useRef<HTMLDivElement>(null);
   const toolbarWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -256,11 +257,6 @@ function VerticalGalleryViewCore({
     },
     [onClose]
   );
-
-  // 콘텐츠 클릭 핸들러 (이벤트 전파 방지)
-  const handleContentClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-  }, []);
 
   const [toasts, setToasts] = useState<
     Array<{
@@ -514,33 +510,31 @@ function VerticalGalleryViewCore({
         />
       </div>
 
-      {/* 콘텐츠 영역 */}
-      <div ref={contentRef} className={styles.content} onClick={handleContentClick}>
-        <div className={styles.itemsList} data-xeg-role='items-list'>
-          {itemsToRender.map((item, index) => {
-            // 가상 스크롤링 제거 - 실제 인덱스는 배열 인덱스와 동일
-            const actualIndex = index;
+      {/* 콘텐츠 영역 (content 래퍼 제거, itemsList가 직접 컨테이너 역할 수행) */}
+      {/* 콘텐츠 영역 (직접 아이템 렌더링, itemsList 래퍼 제거) */}
+      {itemsToRender.map((item, index) => {
+        const actualIndex = index;
+        const itemKey = `${item.id || item.url}-${actualIndex}`;
 
-            // 키 생성 (memoizedMediaItems와 동일한 방식)
-            const itemKey = `${item.id || item.url}-${actualIndex}`;
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return createElement(VerticalImageItem as any, {
-              key: itemKey,
-              media: item,
-              index: actualIndex,
-              isActive: actualIndex === currentIndex,
-              isFocused: actualIndex === focusedIndex,
-              forceVisible: forceVisibleItems.has(actualIndex),
-              fitMode: imageFitMode,
-              onClick: () => handleMediaItemClick(actualIndex),
-              onMediaLoad: handleMediaLoad,
-              className: `${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`,
-              'data-index': actualIndex,
-            });
-          })}
-        </div>
-      </div>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return createElement(VerticalImageItem as any, {
+          key: itemKey,
+          media: item,
+          index: actualIndex,
+          isActive: actualIndex === currentIndex,
+          isFocused: actualIndex === focusedIndex,
+          forceVisible: forceVisibleItems.has(actualIndex),
+          fitMode: imageFitMode,
+          onClick: () => handleMediaItemClick(actualIndex),
+          onMediaLoad: handleMediaLoad,
+          className: `${styles.galleryItem} ${styles.itemsList || ''} ${actualIndex === currentIndex ? styles.itemActive : ''}`,
+          'data-index': actualIndex,
+          'data-xeg-role': 'gallery-item',
+          onDownload: onDownloadAll ? () => handleDownloadCurrent() : undefined,
+          onFocus: () => setFocusedIndex(actualIndex),
+          onBlur: () => setFocusedIndex(-1),
+        });
+      })}
 
       {/* Toast 메시지 */}
       <div className={styles.toastContainer}>

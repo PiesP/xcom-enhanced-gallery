@@ -12,10 +12,10 @@
   width: 100%;
   height: var(--xeg-size-toolbar, 60px);
   padding: 0 var(--xeg-spacing-lg, 16px);
-  background: var(--xeg-bg-toolbar, rgba(0, 0, 0, 0.8));
+  background: var(--xeg-bg-toolbar, var(--color-overlay-strong));
   border-radius: var(--xeg-radius-lg, 12px);
-  border: 1px solid var(--xeg-border-toolbar, rgba(255, 255, 255, 0.1));
-  box-shadow: var(--xeg-shadow-toolbar, 0 4px 12px rgba(0, 0, 0, 0.3));
+  border: 1px solid var(--xeg-border-toolbar, var(--color-overlay-light));
+  box-shadow: var(--xeg-shadow-toolbar, 0 4px 12px var(--color-overlay-medium));
   z-index: var(--xeg-z-toolbar, 1000);
 }
 
@@ -57,7 +57,7 @@
   gap: var(--xeg-spacing-xs, 4px);
   font-size: var(--xeg-font-size-sm, 14px);
   font-weight: var(--xeg-font-weight-medium, 500);
-  color: var(--xeg-text-counter, rgba(255, 255, 255, 0.9));
+  color: var(--xeg-text-counter, var(--color-glass-bg));
   margin-bottom: var(--xeg-spacing-xs, 4px);
 }
 
@@ -79,7 +79,7 @@
 .progressBar {
   width: 100%;
   height: 3px;
-  background: var(--xeg-bg-progress, rgba(255, 255, 255, 0.2));
+  background: var(--xeg-bg-progress, var(--color-glass-border));
   border-radius: var(--xeg-radius-full, 9999px);
   overflow: hidden;
 }
@@ -98,8 +98,8 @@
   align-items: center;
   gap: var(--xeg-spacing-xs, 4px);
   padding: var(--xeg-spacing-xs, 4px);
-  background: var(--xeg-bg-group, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--xeg-border-group, rgba(255, 255, 255, 0.1));
+  background: var(--xeg-bg-group, var(--color-overlay-light));
+  border: 1px solid var(--xeg-border-group, var(--color-overlay-light));
   border-radius: var(--xeg-radius-md, 8px);
 }
 
@@ -123,12 +123,12 @@
 }
 
 .highContrast .progressBar {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--color-overlay-light);
 }
 
 .highContrast .fitModeGroup {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.2);
+  background: var(--color-overlay-light);
+  border-color: var(--color-overlay-light);
 }
 
 /* ===== 애니메이션 ===== */
@@ -180,13 +180,13 @@
 /* ===== 다크 테마 지원 ===== */
 @media (prefers-color-scheme: light) {
   .toolbarView {
-    background: var(--xeg-bg-toolbar-light, rgba(255, 255, 255, 0.9));
-    border-color: var(--xeg-border-toolbar-light, rgba(0, 0, 0, 0.1));
-    box-shadow: var(--xeg-shadow-toolbar-light, 0 2px 8px rgba(0, 0, 0, 0.1));
+    background: var(--xeg-bg-toolbar-light, var(--color-glass-bg));
+    border-color: var(--xeg-border-toolbar-light, var(--color-overlay-light));
+    box-shadow: var(--xeg-shadow-toolbar-light, 0 2px 8px var(--color-overlay-light));
   }
 
   .mediaCounter {
-    color: var(--xeg-text-counter-light, rgba(0, 0, 0, 0.8));
+    color: var(--xeg-text-counter-light, var(--color-overlay-strong));
   }
 
   .currentIndex {
@@ -194,12 +194,12 @@
   }
 
   .progressBar {
-    background: var(--xeg-bg-progress-light, rgba(0, 0, 0, 0.1));
+    background: var(--xeg-bg-progress-light, var(--color-overlay-light));
   }
 
   .fitModeGroup {
-    background: var(--xeg-bg-group-light, rgba(0, 0, 0, 0.05));
-    border-color: var(--xeg-border-group-light, rgba(0, 0, 0, 0.1));
+    background: var(--xeg-bg-group-light, var(--color-overlay-light));
+    border-color: var(--xeg-border-group-light, var(--color-overlay-light));
   }
 }
 

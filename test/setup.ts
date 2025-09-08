@@ -146,53 +146,48 @@ function setupJsdomPolyfills() {
         if (element && typeof element === 'object' && !this._isDisconnected) {
           this._observing.add(element);
 
-          // 안전한 비동기 콜백 실행 - 무한 루프 방지
-          if (this.callback && !this._isDisconnected) {
-            // 다음 틱에서 실행하여 동기적 무한 루프 방지
-            setTimeout(() => {
-              if (!this._isDisconnected && this._observing.has(element)) {
-                try {
-                  this.callback(
-                    [
-                      {
-                        target: element,
-                        isIntersecting: true,
-                        intersectionRatio: 1,
-                        boundingClientRect: {
-                          top: 0,
-                          left: 0,
-                          right: 100,
-                          bottom: 100,
-                          width: 100,
-                          height: 100,
-                        },
-                        intersectionRect: {
-                          top: 0,
-                          left: 0,
-                          right: 100,
-                          bottom: 100,
-                          width: 100,
-                          height: 100,
-                        },
-                        rootBounds: {
-                          top: 0,
-                          left: 0,
-                          right: 1000,
-                          bottom: 1000,
-                          width: 1000,
-                          height: 1000,
-                        },
-                        time: Date.now(),
-                      },
-                    ],
-                    this
-                  );
-                } catch (error) {
-                  // 콜백 에러를 무시하여 테스트 안정성 확보
-                  console.warn('IntersectionObserver 콜백 에러 (무시됨):', error);
-                }
-              }
-            }, 0);
+          // 테스트 안정성을 위해 즉시 콜백 실행
+          if (this.callback && !this._isDisconnected && this._observing.has(element)) {
+            try {
+              this.callback(
+                [
+                  {
+                    target: element,
+                    isIntersecting: true,
+                    intersectionRatio: 1,
+                    boundingClientRect: {
+                      top: 0,
+                      left: 0,
+                      right: 100,
+                      bottom: 100,
+                      width: 100,
+                      height: 100,
+                    },
+                    intersectionRect: {
+                      top: 0,
+                      left: 0,
+                      right: 100,
+                      bottom: 100,
+                      width: 100,
+                      height: 100,
+                    },
+                    rootBounds: {
+                      top: 0,
+                      left: 0,
+                      right: 1000,
+                      bottom: 1000,
+                      width: 1000,
+                      height: 1000,
+                    },
+                    time: Date.now(),
+                  },
+                ],
+                this
+              );
+            } catch (error) {
+              // 콜백 에러를 무시하여 테스트 안정성 확보
+              console.warn('IntersectionObserver 콜백 에러 (무시됨):', error);
+            }
           }
         }
       }

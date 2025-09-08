@@ -185,7 +185,7 @@
  * Close button hover state
  *
  * @hover
- * - Light gray background (rgba(83, 100, 113, 0.1))
+ * - Light gray background (var(--color-overlay-light))
  */
 .closeButton:hover {
   background-color: var(--xeg-toast-bg-neutral);

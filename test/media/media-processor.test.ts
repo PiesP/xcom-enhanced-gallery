@@ -134,12 +134,92 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
       const { processMedia } = await import('@shared/media/MediaProcessor');
 
       // null을 전달하여 에러 유발
-      const result = processMedia(null as any);
+      // TS 구문을 사용하지 않고 런타임에서 강제로 호출하기 위해 JSDoc 캐스트 사용
+      // @ts-expect-error - 의도적으로 잘못된 인수 전달 경로 테스트
+      const result = /** @type {any} */ processMedia(null);
 
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeTruthy();
         expect(result.error).toBeInstanceOf(Error);
+      }
+    });
+  });
+
+  describe('6. 고급 케이스 (C2 커버리지 보강)', () => {
+    it('data-src 속성에서도 URL을 추출해야 한다', async () => {
+      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const root = document.createElement('div');
+      const img = document.createElement('img');
+      img.setAttribute('data-src', '/assets/pic.png');
+      root.appendChild(img);
+
+      const result = processMedia(root);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(1);
+        expect(result.data[0].url).toBe('/assets/pic.png');
+        expect(result.data[0].type).toBe('image');
+      }
+    });
+
+    it('<video>와 <source>가 함께 있을 때 중복 없이 한 항목만 생성해야 한다', async () => {
+      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const root = document.createElement('div');
+      const video = document.createElement('video');
+      video.src = 'https://example.com/clip.mp4';
+      const source = document.createElement('source');
+      source.src = 'https://example.com/clip.mp4';
+      video.appendChild(source);
+      root.appendChild(video);
+
+      const result = processMedia(root);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(1);
+        expect(result.data[0].url).toBe('https://example.com/clip.mp4');
+        expect(result.data[0].type).toBe('video');
+      }
+    });
+
+    it('상대 경로와 data: URL도 유효로 간주해야 한다', async () => {
+      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const root = document.createElement('div');
+      const img1 = document.createElement('img');
+      img1.src = '/images/pic.jpg';
+      const img2 = document.createElement('img');
+      img2.src = 'data:image/png;base64,iVBORw0KGgo=';
+      root.appendChild(img1);
+      root.appendChild(img2);
+
+      const result = processMedia(root);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(2);
+        const urls = result.data.map(d => d.url);
+        expect(urls).toContain('/images/pic.jpg');
+        expect(urls).toContain('data:image/png;base64,iVBORw0KGgo=');
+      }
+    });
+
+    it('img와 source가 같은 URL을 가리키면 dedupe되어야 한다', async () => {
+      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const root = document.createElement('div');
+      const picture = document.createElement('picture');
+      const source = document.createElement('source');
+      source.src = 'https://example.com/image.jpg';
+      const img = document.createElement('img');
+      img.src = 'https://example.com/image.jpg';
+      picture.appendChild(source);
+      picture.appendChild(img);
+      root.appendChild(picture);
+
+      const result = processMedia(root);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(1);
+        expect(result.data[0].url).toBe('https://example.com/image.jpg');
+        expect(result.data[0].type).toBe('image');
       }
     });
   });

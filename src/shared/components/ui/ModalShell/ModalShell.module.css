@@ -175,7 +175,7 @@
 
 .modal-shell::-webkit-scrollbar-thumb {
   background: var(--color-border-default);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .modal-shell::-webkit-scrollbar-thumb:hover {

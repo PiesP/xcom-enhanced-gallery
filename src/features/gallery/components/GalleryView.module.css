@@ -27,7 +27,7 @@
   right: 0;
   bottom: 0;
   z-index: var(--xeg-z-gallery);
-  background: rgba(0, 0, 0, 0.95);
+  background: var(--color-overlay-backdrop);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -155,7 +155,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-glass-bg);
   font-size: 1.2rem;
 }
 
@@ -191,7 +191,12 @@
   }
 
   .toolbarWrapper {
-    background: linear-gradient(to bottom, black 0%, rgba(0, 0, 0, 0.8) 70%, transparent 100%);
+    background: linear-gradient(
+      to bottom,
+      black 0%,
+      var(--color-overlay-strong) 70%,
+      transparent 100%
+    );
   }
 }
 

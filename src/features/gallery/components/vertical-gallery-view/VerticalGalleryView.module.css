@@ -510,7 +510,7 @@
 @media (prefers-contrast: high) {
   .itemActive::before {
     border-color: HighlightText;
-    box-shadow: 0 0 8px HighlightText;
+    box-shadow: var(--shadow-md);
   }
 
   .container {
@@ -595,7 +595,7 @@
 /* 고대비 모드 지원 - 향상된 가시성 */
 @media (prefers-contrast: high) {
   .toolbarWrapper {
-    background: var(--xeg-color-overlay-dark); /* rgba(0, 0, 0, 0.95)를 토큰으로 교체 */
+    background: var(--xeg-color-overlay-dark); /* var(--color-overlay-backdrop)를 토큰으로 교체 */
     border: 2px solid white;
     border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
     margin: var(--xeg-gap-xs); /* 4px를 토큰으로 교체 */
@@ -603,7 +603,7 @@
 
   /* 고대비 모드에서 호버 영역 시각화 */
   .toolbarHoverZone:hover {
-    background: var(--xeg-color-overlay-subtle); /* rgba(255, 255, 255, 0.1)를 토큰으로 교체 */
+    background: var(--xeg-color-overlay-subtle); /* var(--color-overlay-light)를 토큰으로 교체 */
   }
 }
 

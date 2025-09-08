@@ -334,7 +334,10 @@ function BaseVerticalImageItemCore({
   return (
     <div
       ref={containerRef}
-      className={containerClasses}
+      className={ComponentStandards.createClassName(
+        containerClasses,
+        styles.imageWrapper // imageWrapper 스타일을 container에 병합
+      )}
       data-index={index}
       onClick={handleClick}
       onFocus={onFocus as (event: FocusEvent) => void}
@@ -343,73 +346,69 @@ function BaseVerticalImageItemCore({
       {...ariaProps}
       {...testProps}
     >
-      <div className={styles.imageWrapper}>
-        {isVisible && (
-          <>
-            {!isLoaded && !isError && !isVideo && (
-              <div className={styles.placeholder}>
-                <div className={styles.loadingSpinner} />
-              </div>
-            )}
+      {isVisible && (
+        <>
+          {!isLoaded && !isError && !isVideo && (
+            <div className={styles.placeholder}>
+              <div className={styles.loadingSpinner} />
+            </div>
+          )}
 
-            {/* 비디오 렌더링 */}
-            {isVideo ? (
-              <video
-                src={media.url}
-                autoPlay={false}
-                controls={true}
-                muted={true}
-                className={`${styles.video} ${getFitModeClass(fitMode)}`}
-                onLoadedMetadata={handleVideoLoadedMetadata}
-                onLoadedData={handleVideoLoaded}
-                onCanPlay={handleVideoLoaded}
-                onError={handleVideoError}
-                onContextMenu={handleImageContextMenu}
-                onDragStart={handleImageDragStart}
-                style={{
-                  opacity: isLoaded ? 1 : 0,
-                  transition: 'opacity 0.2s ease-in-out',
-                }}
-              />
-            ) : (
-              /* 이미지 렌더링 */
-              <img
-                ref={imgRef}
-                src={media.url}
-                alt={cleanFilename(media.filename) || `Image ${index + 1}`}
-                className={imageClasses}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                onContextMenu={handleImageContextMenu}
-                onDragStart={handleImageDragStart}
-                style={{
-                  opacity: isLoaded ? 1 : 0,
-                  transition: 'opacity 0.3s ease',
-                }}
-              />
-            )}
+          {/* 비디오 렌더링 */}
+          {isVideo ? (
+            <video
+              src={media.url}
+              autoPlay={false}
+              controls={true}
+              muted={true}
+              className={`${styles.video} ${getFitModeClass(fitMode)}`}
+              onLoadedMetadata={handleVideoLoadedMetadata}
+              onLoadedData={handleVideoLoaded}
+              onCanPlay={handleVideoLoaded}
+              onError={handleVideoError}
+              onContextMenu={handleImageContextMenu}
+              onDragStart={handleImageDragStart}
+              style={{
+                opacity: isLoaded ? 1 : 0,
+                transition: 'opacity 0.2s ease-in-out',
+              }}
+            />
+          ) : (
+            /* 이미지 렌더링 */
+            <img
+              ref={imgRef}
+              src={media.url}
+              alt={cleanFilename(media.filename) || `Image ${index + 1}`}
+              className={imageClasses}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              onContextMenu={handleImageContextMenu}
+              onDragStart={handleImageDragStart}
+              style={{
+                opacity: isLoaded ? 1 : 0,
+                transition: 'opacity 0.3s ease',
+              }}
+            />
+          )}
 
-            {/* 로드 완료 확인 및 자동 로드 콜백 (이미지의 경우) */}
-            {!isVideo &&
-              imgRef.current?.complete &&
-              !isLoaded &&
-              (() => {
-                // 이미지가 이미 캐시되어 있는 경우 즉시 로드 처리
-                handleImageLoad();
-                return null;
-              })()}
+          {/* 로드 완료 확인 및 자동 로드 콜백 (이미지의 경우) */}
+          {!isVideo &&
+            imgRef.current?.complete &&
+            !isLoaded &&
+            (() => {
+              // 이미지가 이미 캐시되어 있는 경우 즉시 로드 처리
+              handleImageLoad();
+              return null;
+            })()}
 
-            {isError && (
-              <div className={styles.error}>
-                <span className={styles.errorIcon}>⚠️</span>
-                <span className={styles.errorText}>
-                  Failed to load {isVideo ? 'video' : 'image'}
-                </span>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          {isError && (
+            <div className={styles.error}>
+              <span className={styles.errorIcon}>⚠️</span>
+              <span className={styles.errorText}>Failed to load {isVideo ? 'video' : 'image'}</span>
+            </div>
+          )}
+        </>
+      )}
 
       {onDownload && (
         <Button

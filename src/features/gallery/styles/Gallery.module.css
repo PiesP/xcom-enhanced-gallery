@@ -421,7 +421,7 @@
   max-height: 100%;
   object-fit: contain;
   border-radius: var(--xeg-radius-lg);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px var(--color-overlay-medium);
   transition: transform 0.2s ease;
 }
 

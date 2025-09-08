@@ -414,7 +414,7 @@
   .container.active,
   .container.focused {
     border-color: Highlight;
-    box-shadow: 0 0 8px Highlight;
+    box-shadow: var(--shadow-md);
   }
 
   .downloadButton {
