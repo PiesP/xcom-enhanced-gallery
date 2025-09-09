@@ -1,41 +1,43 @@
 /**
- * 재작성된 설정 패널 스타일
- * - 백드롭 제거, 툴바 디자인 토큰 재사용
- * - .panel 은 glass-surface 클래스를 함께 사용
+ * 설정 모달 스타일 - Twitter 네이티브 UI 스타일
+ * - 적절한 패딩/마진으로 텍스트와 경계선 간격 확보
+ * - Twitter 브랜드 색상 및 간격 시스템 적용
  */
 
 /* 테스트 호환: .modal 규칙이 파일 선두에 존재해야 하는 레거시 테스트 대응 */
 .modal {
   display: flex;
   flex-direction: column;
-  gap: 1em;
-  border-radius: var(--xeg-radius-lg);
+  gap: var(--space-lg, 24px); /* 트위터 간격 시스템 적용 */
+  border-radius: var(--radius-xl, 12px); /* 트위터 스타일 둥근 모서리 */
+  padding: var(--space-xl, 32px); /* 충분한 내부 여백 */
 }
 
 .panel {
   position: fixed;
-  top: calc(1.25em + 3.25em); /* 기존 toolbar 아래 여유 */
+  top: calc(var(--space-xl, 32px) + var(--space-2xl, 48px)); /* 툴바 아래 충분한 여유 */
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar, 10000);
   display: flex;
   flex-direction: column;
-  gap: 1em;
-  padding: 0.75em 1em 1.25em;
-  min-width: 18em;
-  max-width: 26em;
-  border-radius: var(--xeg-radius-lg);
-  box-shadow: var(--xeg-shadow-lg);
+  gap: var(--space-lg, 24px); /* 요소 간 넉넉한 간격 */
+  padding: var(--space-xl, 32px) var(--space-lg, 24px) var(--space-xl, 32px); /* 상하좌우 충분한 패딩 */
+  min-width: 20em; /* 최소 너비 증가 */
+  max-width: 28em; /* 최대 너비 증가 */
+  border-radius: var(--radius-xl, 12px); /* 트위터 스타일 둥근 모서리 */
+  box-shadow:
+    0 8px 25px rgba(29, 155, 240, 0.15),
+    0 4px 12px rgba(29, 155, 240, 0.1); /* 트위터 블루 그림자 */
   transition: var(--xeg-transition-fast);
 }
-
-/* .modal 규칙은 위로 이동 */
 
 /* 내부 컨테이너 (레이아웃만) */
 .inner {
   display: flex;
   flex-direction: column;
-  gap: 1em;
+  gap: var(--space-lg, 24px); /* 일관된 간격 */
+  padding: var(--space-md, 16px); /* 추가 내부 패딩 */
 }
 
 /* 레거시 위치 클래스 (테스트 기대) */
@@ -67,35 +69,42 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75em;
-  padding-bottom: 0.5em;
-  border-bottom: 1px solid var(--xeg-color-border-primary);
+  gap: var(--space-lg, 24px);
+  padding-bottom: var(--space-md, 16px);
+  border-bottom: 2px solid var(--color-twitter-blue, #1d9bf0);
+  margin-bottom: var(--space-lg, 24px);
 }
 
 .title {
   margin: 0;
-  font-size: 1.0625em;
-  font-weight: 600;
-  color: var(--xeg-color-text-primary);
+  font-size: 1.25em;
+  font-weight: 700;
+  color: var(--color-twitter-blue, #1d9bf0);
+  letter-spacing: -0.02em;
 }
 
 .body {
   display: flex;
   flex-direction: column;
-  gap: 1.25em;
+  gap: var(--space-xl, 32px);
 }
 
 .setting {
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
+  gap: var(--space-md, 16px);
+  padding: var(--space-md, 16px);
+  border-radius: var(--radius-lg, 8px);
+  background: rgba(29, 155, 240, 0.05);
+  border: 1px solid rgba(29, 155, 240, 0.1);
 }
 
 .label {
-  font-size: 0.8125em;
-  font-weight: 500;
-  color: var(--xeg-color-text-secondary);
-  letter-spacing: 0.25px;
+  font-size: 0.9375em;
+  font-weight: 600;
+  color: var(--color-twitter-blue, #1d9bf0);
+  letter-spacing: 0.01em;
+  margin-bottom: var(--space-xs, 4px);
   text-transform: uppercase;
   border-radius: var(--xeg-radius-sm);
 }

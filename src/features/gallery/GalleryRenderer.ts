@@ -150,7 +150,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
         }
       },
       className: 'xeg-gallery-renderer',
-      useShadowDOM: false, // 기본적으로 Shadow DOM 비사용
+      useShadowDOM: true, // Shadow DOM 활성화로 스타일 격리
       children: createElement(VerticalGalleryView, {
         // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
         onClose: () => {

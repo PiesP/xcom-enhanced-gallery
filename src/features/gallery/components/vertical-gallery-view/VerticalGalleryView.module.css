@@ -150,7 +150,7 @@
 
 /* 스크롤 가능한 콘텐츠 영역은 항상 이벤트 허용 */
 .container.uiHidden [data-xeg-role='items-list'],
-.container.uiHidden .itemsList {
+.container.uiHidden .itemsContainer {
   pointer-events: auto;
 }
 
@@ -383,8 +383,8 @@
 
 /* focusGlow 애니메이션 제거 - 2중 테두리 방지 */
 
-/* 아이템 리스트 - 네이티브 스크롤만 사용 */
-.itemsList {
+/* 아이템 컨테이너 - 네이티브 스크롤만 사용 */
+.itemsContainer {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -413,21 +413,21 @@
 }
 
 /* 웹킷 스크롤바 스타일 */
-.itemsList::-webkit-scrollbar {
+.itemsContainer::-webkit-scrollbar {
   width: var(--xeg-scrollbar-width); /* 8px를 토큰으로 교체 */
 }
 
-.itemsList::-webkit-scrollbar-track {
+.itemsContainer::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.itemsList::-webkit-scrollbar-thumb {
+.itemsContainer::-webkit-scrollbar-thumb {
   background: var(--xeg-neutral-300);
   border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
   transition: background-color 0.2s ease;
 }
 
-.itemsList::-webkit-scrollbar-thumb:hover {
+.itemsContainer::-webkit-scrollbar-thumb:hover {
   background: var(--xeg-neutral-400);
 }
 
@@ -471,7 +471,7 @@
 }
 /* 컨테이너 쿼리 기반 반응형 디자인 */
 @container gallery-container (max-width: 768px) {
-  .itemsList {
+  .itemsContainer {
     padding: var(--xeg-spacing-mobile);
     gap: var(--xeg-spacing-mobile);
   }
@@ -482,7 +482,7 @@
 }
 
 @container gallery-container (max-width: 480px) {
-  .itemsList {
+  .itemsContainer {
     padding: var(--xeg-spacing-compact);
     gap: var(--xeg-spacing-compact);
   }
@@ -490,7 +490,7 @@
 
 /* 기존 미디어 쿼리는 컨테이너 쿼리 지원이 없는 브라우저를 위한 폴백 */
 @media (max-width: 768px) {
-  .itemsList {
+  .itemsContainer {
     padding: var(--xeg-spacing-mobile);
     gap: var(--xeg-spacing-mobile);
   }
@@ -501,7 +501,7 @@
 }
 
 @media (max-width: 480px) {
-  .itemsList {
+  .itemsContainer {
     padding: var(--xeg-spacing-compact);
     gap: var(--xeg-spacing-compact);
   }
@@ -530,11 +530,11 @@
 
 /* 접근성 - 모션 감소 지원 */
 @media (prefers-reduced-motion: reduce) {
-  .itemsList {
+  .itemsContainer {
     scroll-behavior: auto;
   }
 
-  .itemsList {
+  .itemsContainer {
     will-change: auto;
     transform: none;
   }

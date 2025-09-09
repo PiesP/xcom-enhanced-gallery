@@ -24,7 +24,6 @@ import {
   animateGalleryExit,
   setupScrollAnimation,
 } from '@shared/utils/animations';
-import { useToolbarPositionBased } from '@features/gallery/hooks';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
@@ -100,22 +99,19 @@ function VerticalGalleryViewCore({
     }
   }, [isVisible]); // isVisible이 변경될 때마다 DOM 요소 확인
 
-  // useToolbarPositionBased 훅을 사용하여 간소화된 위치 기반 툴바 제어
-  const {
-    isVisible: _toolbarVisible,
-    show: _showToolbar,
-    hide: _hideToolbar,
-  } = useToolbarPositionBased({
-    toolbarElement: domReady ? toolbarWrapperRef.current : null,
-    hoverZoneElement: domReady ? toolbarHoverZoneRef.current : null,
-    enabled: isVisible && mediaItems.length > 0 && domReady,
-    initialAutoHideDelay: 1000, // 1초 후 자동 숨김
+  // 순수 CSS 기반 툴바 제어 시스템으로 전환 완료
+  // - 복잡한 JavaScript 타이머 로직 제거
+  // - 브라우저 네이티브 호버 성능 활용
+  // - CSS 변수를 통한 상태 관리
+  logger.debug('VerticalGalleryView: CSS 기반 툴바 시스템 활성화', {
+    mediaCount: mediaItems.length,
+    domReady,
   });
 
-  // 간소화된 위치 기반 시스템으로 교체:
-  // - 복잡한 타이머 로직 제거 (100줄 → 30줄)
-  // - 마우스 위치에 따른 즉시 반응형 제어
-  // - 기존 CSS 호버 존 시스템 활용
+  // 간소화된 CSS 기반 툴바 제어 시스템:
+  // - JavaScript 타이머 로직 제거 (100줄 → 0줄)
+  // - 브라우저 네이티브 성능 활용
+  // - CSS 호버 존 시스템으로 즉시 반응형 제어
 
   // 포커스 상태 관리
   const [focusedIndex, setFocusedIndex] = useState<number>(currentIndex);
@@ -298,10 +294,10 @@ function VerticalGalleryViewCore({
       // 현재 선택된 인덱스와 일치하고, 아직 자동 스크롤하지 않은 경우에만 스크롤
       if (index === currentIndex && index !== lastAutoScrolledIndex) {
         // 이미지/비디오가 완전히 로드되었는지 확인
-        const itemsListElement = containerRef.current?.querySelector(
-          '[data-xeg-role="items-list"]'
+        const itemsContainerElement = containerRef.current?.querySelector(
+          '[data-xeg-role="items-container"]'
         );
-        const targetElement = itemsListElement?.children[index] as HTMLElement;
+        const targetElement = itemsContainerElement?.children[index] as HTMLElement;
 
         if (targetElement) {
           // 이미지 또는 비디오 요소 찾기
@@ -465,7 +461,7 @@ function VerticalGalleryViewCore({
     });
   }, [imageFitMode, mediaItems.length]);
 
-  // useToolbarPositionBased 훅이 모든 툴바 이벤트 처리를 담당
+  // CSS 기반 툴바 제어가 모든 이벤트 처리를 담당
   // 중복된 이벤트 핸들러 제거 완료
 
   // 빈 상태 처리
@@ -510,31 +506,42 @@ function VerticalGalleryViewCore({
         />
       </div>
 
-      {/* 콘텐츠 영역 (content 래퍼 제거, itemsList가 직접 컨테이너 역할 수행) */}
-      {/* 콘텐츠 영역 (직접 아이템 렌더링, itemsList 래퍼 제거) */}
-      {itemsToRender.map((item, index) => {
-        const actualIndex = index;
-        const itemKey = `${item.id || item.url}-${actualIndex}`;
+      {/* 콘텐츠 영역 - 직접 아이템 렌더링 (래퍼 제거 완료) */}
+      <div
+        className={styles.itemsContainer}
+        data-xeg-role='items-container'
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          height: '100%',
+          overflow: 'auto',
+        }}
+      >
+        {itemsToRender.map((item, index) => {
+          const actualIndex = index;
+          const itemKey = `${item.id || item.url}-${actualIndex}`;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return createElement(VerticalImageItem as any, {
-          key: itemKey,
-          media: item,
-          index: actualIndex,
-          isActive: actualIndex === currentIndex,
-          isFocused: actualIndex === focusedIndex,
-          forceVisible: forceVisibleItems.has(actualIndex),
-          fitMode: imageFitMode,
-          onClick: () => handleMediaItemClick(actualIndex),
-          onMediaLoad: handleMediaLoad,
-          className: `${styles.galleryItem} ${styles.itemsList || ''} ${actualIndex === currentIndex ? styles.itemActive : ''}`,
-          'data-index': actualIndex,
-          'data-xeg-role': 'gallery-item',
-          onDownload: onDownloadAll ? () => handleDownloadCurrent() : undefined,
-          onFocus: () => setFocusedIndex(actualIndex),
-          onBlur: () => setFocusedIndex(-1),
-        });
-      })}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return createElement(VerticalImageItem as any, {
+            key: itemKey,
+            media: item,
+            index: actualIndex,
+            isActive: actualIndex === currentIndex,
+            isFocused: actualIndex === focusedIndex,
+            forceVisible: forceVisibleItems.has(actualIndex),
+            fitMode: imageFitMode,
+            onClick: () => handleMediaItemClick(actualIndex),
+            onMediaLoad: handleMediaLoad,
+            className: `${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`,
+            'data-index': actualIndex,
+            'data-xeg-role': 'gallery-item',
+            onDownload: onDownloadAll ? () => handleDownloadCurrent() : undefined,
+            onFocus: () => setFocusedIndex(actualIndex),
+            onBlur: () => setFocusedIndex(-1),
+          });
+        })}
+      </div>
 
       {/* Toast 메시지 */}
       <div className={styles.toastContainer}>

@@ -1,38 +1,59 @@
 /**
- * Gallery Component Global Styles - Subdued Color System
- * @version 2.1.0
+ * Gallery Component Global Styles - Twitter Native UI Integration
+ * @version 3.0.0
  *
  * @description
- * 갤러리 컴포넌트를 위한 전역 스타일을 정의합니다.
- * design-tokens.css에서 정의된 통합 디자인 토큰 시스템을 사용하여
- * 차분하고 일관된 시각적 경험을 제공합니다.
+ * 트위터 네이티브 UI와 일관된 갤러리 컴포넌트 스타일.
+ * Twitter 브랜드 색상을 활용한 현대적이고 친숙한 사용자 경험 제공.
  *
  * @features
- * - 통합된 neutral/slate 색상 팔레트 사용
- * - gallery.constants.ts의 CSS_CLASSES와 연동
- * - 반응형 디자인 및 접근성 최적화
- * - 모바일 우선 터치 인터페이스
+ * - Twitter 브랜드 색상 시스템 완전 통합
+ * - 네이티브 Twitter UI 패턴 적용
+ * - 다크/라이트 모드 완전 대응
+ * - 접근성 및 모바일 최적화
  */
 
-/* ===== 미니멀 Surface 클래스 (글래스모피즘 제거) ===== */
-/* 설정 모달용 - 밝은 미니멀 스타일 */
+/* ===== Twitter 브랜드 색상 기반 Surface 클래스 ===== */
+
+/* 기본 갤러리 Surface - 트위터 스타일 */
+.glass-surface {
+  background: var(--color-twitter-blue, #1d9bf0) !important;
+  color: white !important;
+  border: 1px solid var(--color-twitter-blue-active, #1570b8) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow:
+    0 4px 16px rgba(29, 155, 240, 0.15),
+    0 2px 8px rgba(29, 155, 240, 0.1) !important;
+  isolation: isolate;
+  transition: all 0.2s ease;
+}
+
+.glass-surface:hover {
+  background: var(--color-twitter-blue-hover, #1a8cd8) !important;
+  box-shadow:
+    0 6px 20px rgba(29, 155, 240, 0.2),
+    0 3px 10px rgba(29, 155, 240, 0.15) !important;
+}
+
+/* 라이트 모드 설정 패널 - 차분한 Twitter 스타일 */
 .glass-surface-light {
-  background: var(--xeg-bg-primary, var(--color-bg-primary)) !important;
-  border: 1px solid var(--xeg-border-light, var(--color-border-default)) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: var(--xeg-shadow-md, 0 2px 4px rgba(0, 0, 0, 0.08)) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: var(--color-twitter-blue, #1d9bf0) !important;
+  border: 1px solid var(--color-twitter-blue, #1d9bf0) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow:
+    0 4px 16px rgba(29, 155, 240, 0.1),
+    0 2px 8px rgba(29, 155, 240, 0.05) !important;
   isolation: isolate;
 }
 
-/* 툴바용 - 어두운 미니멀 스타일 */
+/* 다크 모드 - 어두운 Twitter 스타일 */
 .glass-surface-dark {
-  background: var(--xeg-bg-primary, var(--color-bg-secondary)) !important;
-  border: 1px solid var(--xeg-border-light, var(--color-border-subtle)) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: var(--xeg-shadow-md, 0 2px 4px rgba(0, 0, 0, 0.3)) !important;
-  isolation: isolate;
+  background: rgba(21, 32, 43, 0.95) !important;
+  color: var(--color-twitter-blue, #1d9bf0) !important;
+  border: 1px solid var(--color-twitter-blue-active, #1570b8) !important;
 }
 
 /* 갤러리 오버레이 - 통합 색상 시스템 적용 */
@@ -376,6 +397,7 @@
 /* 갤러리 내부 요소들은 정상 스크롤 허용 */
 .xeg-gallery-isolated * {
   /* 갤러리 내부에서는 정상적인 스크롤 동작 허용 */
+  overflow: auto;
 }
 
 /* 반응형 디자인 */
