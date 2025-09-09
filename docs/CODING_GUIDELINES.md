@@ -64,41 +64,71 @@ Gallery
 - Surface 크기 차별화: 일반(`lg`), 대형/시각적 강조(`2xl` - Toast 등)
 - 형태 구분은 `pill` / `full` 만 사용하고 임의 radius 조합 지양
 
-### 테마 토큰 시스템 (Theme Tokens)
+### 테마 토큰 시스템 (Theme Tokens) ✅ **완료된 시스템**
 
-#### 다크/라이트 모드 자동 대응
+#### 자동 테마 대응 시스템
 
-| 용도      | 라이트 모드 | 다크 모드   | 권장 토큰                         |
-| --------- | ----------- | ----------- | --------------------------------- |
-| 기본 배경 | 밝은 색상   | 어두운 색상 | `var(--xeg-color-bg-primary)`     |
-| 호버 배경 | 약간 어두움 | 약간 밝음   | `var(--xeg-color-bg-hover)`       |
-| 텍스트    | 어두운 색상 | 밝은 색상   | `var(--xeg-color-text-primary)`   |
-| 보더      | 중간 색상   | 중간 색상   | `var(--xeg-color-border-primary)` |
+| 용도        | 라이트 모드 | 다크 모드   | 권장 토큰                     |
+| ----------- | ----------- | ----------- | ----------------------------- |
+| 갤러리 배경 | 밝은 색상   | 어두운 색상 | `var(--xeg-gallery-bg)`       |
+| 모달 배경   | 밝은 색상   | 어두운 색상 | `var(--xeg-modal-bg)`         |
+| 모달 보더   | 중간 색상   | 밝은 색상   | `var(--xeg-modal-border)`     |
+| 기본 배경   | 밝은 색상   | 어두운 색상 | `var(--xeg-color-bg-primary)` |
 
-#### 테마별 토큰 사용 예시
+#### 완성된 테마 토큰 사용 예시
 
 ```css
-/* ✅ 권장: 테마 자동 대응 토큰 */
+/* ✅ 갤러리 - 테마 자동 대응 */
+.gallery-container {
+  background: var(--xeg-gallery-bg); /* 라이트/다크 자동 전환 */
+}
+
+/* ✅ 설정 모달 - 테마별 배경/보더 */
+.modal {
+  background: var(--xeg-modal-bg);
+  border: 1px solid var(--xeg-modal-border);
+}
+
+/* ✅ 기본 인터랙션 요소 */
 .button {
-  background: var(--xeg-color-neutral-100, rgba(0, 0, 0, 0.05));
-  color: var(--xeg-color-text-primary, rgba(0, 0, 0, 0.8));
-  border: 1px solid var(--xeg-color-border-primary, rgba(0, 0, 0, 0.1));
+  background: var(--xeg-color-bg-primary);
+  color: var(--xeg-color-text-primary);
 }
 
 .button:hover {
-  background: var(--xeg-color-neutral-200, rgba(0, 0, 0, 0.1));
-  color: var(--xeg-color-text-primary, rgba(0, 0, 0, 0.9));
+  background: var(--xeg-color-bg-hover);
+}
+```
+
+#### 시스템 테마 감지 (구현 완료)
+
+```css
+/* 시스템 설정 감지 */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+    --xeg-modal-bg: var(--xeg-modal-bg-light);
+  }
 }
 
-/* ✅ 다크 모드 특별 처리가 필요한 경우 */
-[data-theme='dark'] .button:hover {
-  background: var(--xeg-color-neutral-800, rgba(64, 64, 64, 0.8));
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
+    --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  }
 }
 
-/* ❌ 피할 것: 하드코딩된 색상 */
-.button {
-  background: rgba(255, 255, 255, 0.1); /* 테마 변경 불가 */
-  color: #333; /* 다크 모드에서 문제 */
+/* 수동 테마 설정 */
+[data-theme='light'] {
+  --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
+}
+
+[data-theme='dark'] {
+  --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
+  --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  --xeg-modal-border: var(--xeg-modal-border-dark);
 }
 ```
 
@@ -126,9 +156,12 @@ Gallery
 
 규칙:
 
-- CSS 변수에 폴백값 제공 (브라우저 호환성)
-- 다크 모드에서 라이트 모드 토큰(neutral-100, neutral-200) 사용 금지
-- 인터랙션 요소는 표준화된 transform/shadow 효과 사용
+- ✅ **하드코딩 색상 사용 금지** - 모든 색상은 토큰을 통해서만 사용
+- ✅ **테마 자동 대응** - `--xeg-gallery-bg`, `--xeg-modal-bg` 등 테마별 토큰
+  활용
+- ✅ **시스템 테마 감지** - `prefers-color-scheme` 미디어 쿼리 지원
+- ✅ **접근성 보장** - 라이트/다크 모드 모두에서 적절한 대비율 유지
+- ✅ **표준화된 호버/포커스** - 일관된 인터랙션 상태 스타일 사용
 
 ### IconButton 사용 규칙
 

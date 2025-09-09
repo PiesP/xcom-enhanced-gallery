@@ -240,6 +240,49 @@
   --xeg-focus-ring-offset: 2px;
   --xeg-focus-ring-color: oklch(0.676 0.151 237.8);
   --xeg-focus-ring-width: 2px;
+
+  /* 갤러리 테마별 배경 토큰 */
+  --xeg-gallery-bg-light: var(--color-bg-primary);
+  --xeg-gallery-bg-dark: var(--color-gray-900);
+  --xeg-gallery-bg: var(--xeg-gallery-bg-dark); /* 기본값: 다크 */
+
+  /* 모달 테마별 배경 토큰 */
+  --xeg-modal-bg-light: var(--color-bg-surface);
+  --xeg-modal-bg-dark: var(--color-gray-800);
+  --xeg-modal-bg: var(--xeg-modal-bg-light); /* 기본값: 라이트 */
+  --xeg-modal-border-light: var(--color-border-default);
+  --xeg-modal-border-dark: var(--color-border-emphasis);
+  --xeg-modal-border: var(--xeg-modal-border-light);
+}
+
+/* 테마별 토큰 오버라이드 */
+[data-theme='light'] {
+  --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
+}
+
+[data-theme='dark'] {
+  --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
+  --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  --xeg-modal-border: var(--xeg-modal-border-dark);
+}
+
+/* 시스템 테마 기본 지원 */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+    --xeg-modal-bg: var(--xeg-modal-bg-light);
+    --xeg-modal-border: var(--xeg-modal-border-light);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
+    --xeg-modal-bg: var(--xeg-modal-bg-dark);
+    --xeg-modal-border: var(--xeg-modal-border-dark);
+  }
 }
 
 /* ===== 유틸리티 클래스 ===== */
