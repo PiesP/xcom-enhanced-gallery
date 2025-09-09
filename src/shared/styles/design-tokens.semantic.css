@@ -19,6 +19,8 @@
   --color-text-secondary: var(--color-gray-700);
   --color-text-muted: var(--color-gray-500);
   --color-text-inverse: var(--color-base-white);
+  --color-text-error: rgba(255, 255, 255, 0.7);
+  --color-text-on-overlay: rgba(255, 255, 255, 0.9);
 
   /* Border Colors - Semantic Roles */
   --color-border-default: var(--color-gray-200);
@@ -48,6 +50,10 @@
   --color-overlay-medium: rgba(0, 0, 0, var(--opacity-overlay-medium));
   --color-overlay-strong: rgba(0, 0, 0, var(--opacity-overlay-strong));
   --color-overlay-backdrop: rgba(0, 0, 0, var(--opacity-overlay-backdrop));
+  --color-overlay-light-bg: rgba(255, 255, 255, 0.95);
+  --color-overlay-dark-bg: rgba(0, 0, 0, 0.95);
+  --color-overlay-button-light: rgba(0, 0, 0, 0.1);
+  --color-overlay-button-light-hover: rgba(0, 0, 0, 0.2);
 
   /* Glass Effect - Semantic Roles */
   --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
@@ -75,6 +81,11 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-gallery-image: var(--shadow-xl);
+  --shadow-gallery-nav: var(--shadow-md);
+  --shadow-thumbnail: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --shadow-thumbnail-hover: 0 4px 16px rgba(15, 23, 42, 0.12);
 
   /* Legacy Shadow Tokens - 호환성 보장 */
   --xeg-shadow-sm: var(--shadow-sm);
@@ -120,6 +131,10 @@
   --xeg-surface-glass-border: var(--color-glass-border);
   --xeg-surface-glass-shadow: var(--shadow-lg);
 
+  /* Surface Glass Hover States */
+  --xeg-surface-glass-bg-hover: rgba(255, 255, 255, 0.15);
+  --xeg-surface-glass-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
+
   /* Border Radius - Extended Scale */
   --xeg-radius-xs: var(--radius-xs);
   --xeg-radius-sm: var(--radius-sm);
@@ -136,6 +151,13 @@
   --color-bg-primary: var(--color-base-white);
   --color-text-primary: var(--color-base-black);
   --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
+
+  /* 라이트 모드 컴포넌트 토큰 */
+  --xeg-comp-toolbar-bg: var(--color-bg-surface);
+  --xeg-comp-modal-bg: var(--color-bg-surface);
+  --xeg-surface-glass-bg-light: rgba(255, 255, 255, 0.95);
+  --xeg-surface-glass-text-light: var(--color-text-primary);
+  --xeg-surface-glass-border-light: var(--color-border-default);
 }
 
 [data-theme='dark'] {
@@ -146,6 +168,13 @@
   /* 다크 테마 갤러리 배경 */
   --xeg-gallery-bg: var(--color-gray-900);
   --xeg-bg-toolbar: var(--color-gray-800);
+
+  /* 다크 모드 컴포넌트 토큰 */
+  --xeg-comp-toolbar-bg: var(--color-gray-800);
+  --xeg-comp-modal-bg: var(--color-gray-800);
+  --xeg-surface-glass-bg-dark: rgba(0, 0, 0, 0.85);
+  --xeg-surface-glass-text-dark: var(--color-text-inverse);
+  --xeg-surface-glass-border-dark: var(--color-border-emphasis);
 }
 
 @media (prefers-color-scheme: dark) {

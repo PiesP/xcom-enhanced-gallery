@@ -141,8 +141,41 @@
 }
 
 /* ======================================= */
-/* Keyframes */
+/* Accessibility Media Queries */
 /* ======================================= */
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  :root {
+    --xeg-focus-outline: 3px solid var(--color-primary);
+    --color-border-emphasis: var(--color-base-black);
+    --glass-bg: var(--color-bg-primary);
+    --glass-border: var(--color-border-emphasis);
+  }
+}
+
+/* 투명도 감소 선호 지원 */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --color-glass-bg: var(--color-bg-primary);
+    --glass-bg: var(--color-bg-primary);
+    --xeg-surface-glass-bg: var(--color-bg-surface);
+    --glass-backdrop-filter: none;
+  }
+}
+
+/* 애니메이션 감소 선호 지원 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --xeg-duration: 0ms;
+    --animation-fade-in: none;
+    --animation-fade-out: none;
+    --animation-slide-in: none;
+    --animation-slide-out: none;
+    --animation-toolbar-show: none;
+    --animation-toolbar-hide: none;
+  }
+}
 
 @keyframes xeg-fade-in {
   from {
