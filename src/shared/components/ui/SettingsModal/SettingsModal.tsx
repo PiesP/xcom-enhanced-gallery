@@ -64,10 +64,31 @@ export function SettingsModal({
         : 'auto'
     );
 
+    // Basic keyboard event handling
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    // Basic scroll lock for panel mode
+    if (typeof document !== 'undefined') {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      document.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+
     return () => {
       // Panel cleanup logic
     };
-  }, [isOpen, mode, languageService, themeService]);
+  }, [isOpen, mode, languageService, themeService, onClose]);
 
   // Modal mode logic
   if (mode === 'modal') {

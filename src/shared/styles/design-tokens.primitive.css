@@ -67,11 +67,22 @@
   --radius-pill: 28px; /* pill 형태 둥근 버튼 */
   --radius-full: 50%; /* 원형 요소 */
 
-  /* Typography Scale */
+  /* Typography Scale - Twitter Style */
+  --font-family-primary:
+    'TwitterChirp', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 12px;
   --font-size-sm: 14px;
+  --font-size-base: 15px; /* Twitter 기본 */
   --font-size-md: 16px;
-  --font-size-lg: 18px;
+  --font-size-lg: 17px;
   --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+
+  /* Font Weight Scale */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 
   /* Duration Scale */
   --duration-fast: 150ms;

@@ -27,13 +27,9 @@ export type { ToastContainerProps } from './Toast/ToastContainer';
 export { Toolbar } from './Toolbar/Toolbar';
 export type { ToolbarProps } from './Toolbar/Toolbar';
 
-// SettingsModal 컴포넌트
+// Settings Modal Components
 export { SettingsModal } from './SettingsModal';
 export type { SettingsModalProps } from './SettingsModal';
-
-// Enhanced SettingsModal 컴포넌트 (P6 표준화)
-export { EnhancedSettingsModal } from './SettingsModal/EnhancedSettingsModal';
-export type { EnhancedSettingsModalProps } from './SettingsModal/EnhancedSettingsModal';
 
 // ToolbarWithSettings 컴포넌트
 export { ToolbarWithSettings } from './ToolbarWithSettings/ToolbarWithSettings';

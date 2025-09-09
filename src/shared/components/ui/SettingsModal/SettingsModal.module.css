@@ -26,9 +26,7 @@
   min-width: 20em; /* 최소 너비 증가 */
   max-width: 28em; /* 최대 너비 증가 */
   border-radius: var(--radius-xl, 12px); /* 트위터 스타일 둥근 모서리 */
-  box-shadow:
-    0 8px 25px rgba(29, 155, 240, 0.15),
-    0 4px 12px rgba(29, 155, 240, 0.1); /* 트위터 블루 그림자 */
+  box-shadow: var(--xeg-shadow-lg); /* 디자인 토큰 기반 그림자 */
   transition: var(--xeg-transition-fast);
 }
 
@@ -95,8 +93,8 @@
   gap: var(--space-md, 16px);
   padding: var(--space-md, 16px);
   border-radius: var(--radius-lg, 8px);
-  background: rgba(29, 155, 240, 0.05);
-  border: 1px solid rgba(29, 155, 240, 0.1);
+  background: var(--xeg-color-bg-hover);
+  border: 1px solid var(--xeg-color-border-primary);
 }
 
 .label {

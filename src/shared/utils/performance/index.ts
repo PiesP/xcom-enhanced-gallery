@@ -10,9 +10,3 @@ export { createSelector, useAsyncSelector } from './signalOptimization';
 
 // Component Memoization
 export { memo, useCallback, useMemo } from './memoization';
-
-// Icon Performance
-export { useIconPreload, useCommonIconPreload } from '../../hooks/useIconPreload';
-
-// LazyIcon Component
-export { LazyIcon } from '../../components/LazyIcon';

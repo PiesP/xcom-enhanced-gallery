@@ -20,8 +20,6 @@
   background: var(--color-twitter-blue, #1d9bf0) !important;
   color: white !important;
   border: 1px solid var(--color-twitter-blue-active, #1570b8) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
   box-shadow:
     0 4px 16px rgba(29, 155, 240, 0.15),
     0 2px 8px rgba(29, 155, 240, 0.1) !important;
@@ -41,8 +39,6 @@
   background: rgba(255, 255, 255, 0.95) !important;
   color: var(--color-twitter-blue, #1d9bf0) !important;
   border: 1px solid var(--color-twitter-blue, #1d9bf0) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
   box-shadow:
     0 4px 16px rgba(29, 155, 240, 0.1),
     0 2px 8px rgba(29, 155, 240, 0.05) !important;
