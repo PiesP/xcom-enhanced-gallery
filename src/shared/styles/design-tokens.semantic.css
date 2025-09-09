@@ -10,6 +10,10 @@
   --color-bg-surface: var(--color-base-white);
   --color-bg-elevated: var(--color-base-white);
 
+  /* 갤러리 및 툴바 배경 토큰 */
+  --xeg-gallery-bg: var(--color-bg-primary);
+  --xeg-bg-toolbar: var(--color-bg-surface);
+
   /* Text Colors - Semantic Roles */
   --color-text-primary: var(--color-base-black);
   --color-text-secondary: var(--color-gray-700);
@@ -138,6 +142,10 @@
   --color-bg-primary: var(--color-gray-900);
   --color-text-primary: var(--color-base-white);
   --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
+
+  /* 다크 테마 갤러리 배경 */
+  --xeg-gallery-bg: var(--color-gray-900);
+  --xeg-bg-toolbar: var(--color-gray-800);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -145,6 +153,10 @@
     --color-bg-primary: var(--color-gray-900);
     --color-text-primary: var(--color-base-white);
     --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
+
+    /* prefers-color-scheme 다크 모드 갤러리 배경 */
+    --xeg-gallery-bg: var(--color-gray-900);
+    --xeg-bg-toolbar: var(--color-gray-800);
   }
 }
 

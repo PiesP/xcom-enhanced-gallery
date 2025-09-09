@@ -132,11 +132,7 @@ export function SettingsModal({
   const positionClass = normalizedPosition === 'top-right' ? styles.topRight : styles.toolbarBelow;
 
   const panelClass = ComponentStandards.createClassName(styles.panel, positionClass, className);
-  const innerClass = ComponentStandards.createClassName(
-    styles.modal,
-    'glass-surface',
-    styles.inner
-  );
+  const innerClass = ComponentStandards.createClassName(styles.modal, styles.inner);
 
   const header = h('div', { className: styles.header, key: 'header' }, [
     h(

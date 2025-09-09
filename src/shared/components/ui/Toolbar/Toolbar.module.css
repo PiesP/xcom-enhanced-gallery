@@ -13,9 +13,11 @@
   /* 단순한 클릭 효과 - transform 제거 */
 }
 
-/* 기본 툴바 - glass-surface 클래스 사용 */
+/* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
-  /* 레이아웃 속성만 정의 - glassmorphism은 glass-surface 클래스로 */
+  /* 레이아웃 속성만 정의 - 컴포넌트 토큰 사용 */
+  background: var(--xeg-comp-toolbar-bg);
+  border: 1px solid var(--xeg-comp-toolbar-border);
   border-radius: var(--xeg-radius-lg);
 
   /* 레이아웃 속성 */
@@ -315,20 +317,9 @@
   transform-origin: left;
 }
 
-/* 크기 조절 섹션 */
-.fitModeGroup {
-  display: flex;
-  gap: 0.125em; /* 그룹형 태생 여백만 유지 */
-  /* White box 제거: 배경/보더/패딩 삭제 */
-  background: transparent;
-  padding: 0; /* 기존 2px 제거 */
-  border: none;
-  border-radius: var(--xeg-radius-md); /* 정책 반영 */
-}
+/* 크기 조절 섹션 - fitModeGroup 제거됨 */
 
 .fitButton,
-.fitModeGroup .fitButton,
-.fitModeGroup > .fitButton,
 button.fitButton {
   /* 🔧 FIXED: 다른 버튼들과 동일한 크기 보장 - 최고 우선순위 */
   width: 2.5em !important; /* 40px → 2.5em */
@@ -340,7 +331,7 @@ button.fitButton {
   padding: 0.5em !important; /* 8px → 0.5em */
   box-sizing: border-box !important;
 
-  /* toolbarButton 기본 스타일 상속하면서 그룹 내 스타일 적용 */
+  /* toolbarButton 기본 스타일 상속하면서 독립 버튼 스타일 적용 */
   border-radius: var(--xeg-radius-md);
   background: transparent;
   border: none;

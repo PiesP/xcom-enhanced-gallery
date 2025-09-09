@@ -128,11 +128,10 @@ function ToolbarCore({
   const [toolbarState, toolbarActions] = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
 
-  // 표준화된 클래스명 생성 - 통합 glass-surface 클래스 적용
+  // 표준화된 클래스명 생성 - 컴포넌트 토큰 기반 스타일
   const toolbarClass = ComponentStandards.createClassName(
     styles.toolbar,
     getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
-    'glass-surface', // 통합된 glassmorphism 스타일 적용
     className
   );
 
@@ -353,83 +352,74 @@ function ToolbarCore({
             key: 'toolbar-right',
           },
           [
-            // 이미지 핏 모드 버튼들
+            // 이미지 핏 모드 버튼들 - 독립적으로 배치
             h(
-              'div',
+              Button,
               {
-                className: `${styles.fitModeGroup} fitModeGroup`,
-                key: 'fit-mode-group',
+                variant: 'toolbar',
+                size: 'toolbar',
+                iconOnly: true,
+                onClick: (e: Event) => handleFitMode(e, 'original', onFitOriginal),
+                disabled: disabled || !onFitOriginal,
+                'aria-label': '원본 크기',
+                title: '원본 크기 (1:1)',
+                'data-gallery-element': 'fit-original',
+                'data-selected': toolbarState.currentFitMode === 'original',
+                'data-disabled': disabled || !onFitOriginal,
+                key: 'fit-original',
               },
-              [
-                h(
-                  Button,
-                  {
-                    variant: 'toolbar',
-                    size: 'toolbar',
-                    iconOnly: true,
-                    onClick: (e: Event) => handleFitMode(e, 'original', onFitOriginal),
-                    disabled: disabled || !onFitOriginal,
-                    'aria-label': '원본 크기',
-                    title: '원본 크기 (1:1)',
-                    'data-gallery-element': 'fit-original',
-                    'data-selected': toolbarState.currentFitMode === 'original',
-                    'data-disabled': disabled || !onFitOriginal,
-                    key: 'fit-original',
-                  },
-                  h(ZoomIn, { size: 16 })
-                ),
-                h(
-                  Button,
-                  {
-                    variant: 'toolbar',
-                    size: 'toolbar',
-                    iconOnly: true,
-                    onClick: (e: Event) => handleFitMode(e, 'fitWidth', onFitWidth),
-                    disabled: disabled || !onFitWidth,
-                    'aria-label': '가로에 맞춤',
-                    title: '가로에 맞추기',
-                    'data-gallery-element': 'fit-width',
-                    'data-selected': toolbarState.currentFitMode === 'fitWidth',
-                    'data-disabled': disabled || !onFitWidth,
-                    key: 'fit-width',
-                  },
-                  h(ArrowAutofitWidth, { size: 16 })
-                ),
-                h(
-                  Button,
-                  {
-                    variant: 'toolbar',
-                    size: 'toolbar',
-                    iconOnly: true,
-                    onClick: (e: Event) => handleFitMode(e, 'fitHeight', onFitHeight),
-                    disabled: disabled || !onFitHeight,
-                    'aria-label': '세로에 맞춤',
-                    title: '세로에 맞추기',
-                    'data-gallery-element': 'fit-height',
-                    'data-selected': toolbarState.currentFitMode === 'fitHeight',
-                    'data-disabled': disabled || !onFitHeight,
-                    key: 'fit-height',
-                  },
-                  h(ArrowAutofitHeight, { size: 16 })
-                ),
-                h(
-                  Button,
-                  {
-                    variant: 'toolbar',
-                    size: 'toolbar',
-                    iconOnly: true,
-                    onClick: (e: Event) => handleFitMode(e, 'fitContainer', onFitContainer),
-                    disabled: disabled || !onFitContainer,
-                    'aria-label': '창에 맞춤',
-                    title: '창에 맞추기',
-                    'data-gallery-element': 'fit-container',
-                    'data-selected': toolbarState.currentFitMode === 'fitContainer',
-                    'data-disabled': disabled || !onFitContainer,
-                    key: 'fit-container',
-                  },
-                  h(ArrowsMaximize, { size: 16 })
-                ),
-              ]
+              h(ZoomIn, { size: 16 })
+            ),
+            h(
+              Button,
+              {
+                variant: 'toolbar',
+                size: 'toolbar',
+                iconOnly: true,
+                onClick: (e: Event) => handleFitMode(e, 'fitWidth', onFitWidth),
+                disabled: disabled || !onFitWidth,
+                'aria-label': '가로에 맞춤',
+                title: '가로에 맞추기',
+                'data-gallery-element': 'fit-width',
+                'data-selected': toolbarState.currentFitMode === 'fitWidth',
+                'data-disabled': disabled || !onFitWidth,
+                key: 'fit-width',
+              },
+              h(ArrowAutofitWidth, { size: 16 })
+            ),
+            h(
+              Button,
+              {
+                variant: 'toolbar',
+                size: 'toolbar',
+                iconOnly: true,
+                onClick: (e: Event) => handleFitMode(e, 'fitHeight', onFitHeight),
+                disabled: disabled || !onFitHeight,
+                'aria-label': '세로에 맞춤',
+                title: '세로에 맞추기',
+                'data-gallery-element': 'fit-height',
+                'data-selected': toolbarState.currentFitMode === 'fitHeight',
+                'data-disabled': disabled || !onFitHeight,
+                key: 'fit-height',
+              },
+              h(ArrowAutofitHeight, { size: 16 })
+            ),
+            h(
+              Button,
+              {
+                variant: 'toolbar',
+                size: 'toolbar',
+                iconOnly: true,
+                onClick: (e: Event) => handleFitMode(e, 'fitContainer', onFitContainer),
+                disabled: disabled || !onFitContainer,
+                'aria-label': '창에 맞춤',
+                title: '창에 맞추기',
+                'data-gallery-element': 'fit-container',
+                'data-selected': toolbarState.currentFitMode === 'fitContainer',
+                'data-disabled': disabled || !onFitContainer,
+                key: 'fit-container',
+              },
+              h(ArrowsMaximize, { size: 16 })
             ),
 
             // 다운로드 버튼들
