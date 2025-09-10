@@ -29,7 +29,13 @@ export class TwitterAPIExtractor implements APIExtractor {
         timeout: options.timeoutMs,
       });
 
-      const apiMedias = await TwitterAPI.getTweetMedias(tweetInfo.tweetId);
+      const timeoutMs = options.timeoutMs ?? 10_000;
+      const maxRetries = options.maxRetries ?? 3;
+
+      const apiMedias = await this.fetchWithRetry(
+        () => TwitterAPI.getTweetMedias(tweetInfo.tweetId),
+        { timeoutMs, maxRetries }
+      );
 
       if (!apiMedias || apiMedias.length === 0) {
         return this.createFailureResult('No media found in API response');
@@ -57,6 +63,55 @@ export class TwitterAPIExtractor implements APIExtractor {
         error instanceof Error ? error.message : 'API extraction failed'
       );
     }
+  }
+
+  /**
+   * 재시도/타임아웃 래퍼
+   */
+  private async fetchWithRetry<T>(
+    fn: () => Promise<T>,
+    {
+      timeoutMs,
+      maxRetries,
+    }: {
+      timeoutMs: number;
+      maxRetries: number;
+    }
+  ): Promise<T> {
+    let attempt = 0;
+    const attempts = Math.max(0, maxRetries) + 1;
+
+    // 타임아웃 래퍼 (Abort 불가 환경 고려: 타임아웃 시 reject)
+    const withTimeout = <U>(p: Promise<U>): Promise<U> => {
+      return new Promise<U>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          reject(new Error('timeout'));
+        }, timeoutMs);
+        p.then(
+          v => {
+            clearTimeout(timer);
+            resolve(v);
+          },
+          e => {
+            clearTimeout(timer);
+            reject(e);
+          }
+        );
+      });
+    };
+
+    let lastError: unknown;
+    while (attempt < attempts) {
+      try {
+        const res = await withTimeout(fn());
+        return res;
+      } catch (e) {
+        lastError = e;
+        attempt += 1;
+        if (attempt >= attempts) break;
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error('unknown');
   }
 
   /**

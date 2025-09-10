@@ -3,7 +3,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { MediaInfo } from '@shared/types/media.types';
 
 // Partial mock: override only getNativeDownload, keep others intact
 vi.mock('@shared/external/vendors', async () => {
@@ -28,7 +27,7 @@ describe('BulkDownloadService - queue & concurrency', () => {
     vi.restoreAllMocks();
   });
 
-  function buildMedia(count: number, prefix = 'file'): MediaInfo[] {
+  function buildMedia(count: number, prefix = 'file'): any[] {
     return Array.from({ length: count }).map((_, i) => ({
       id: `${prefix}-${i}`,
       type: 'image',
@@ -36,7 +35,7 @@ describe('BulkDownloadService - queue & concurrency', () => {
       originalUrl: `https://example.com/${prefix}-${i}.bin`,
       filename: `${prefix}-${i}.bin`,
       tweetId: '0',
-    })) as MediaInfo[];
+    })) as any[];
   }
 
   it('should utilize concurrency when provided (RED: API to implement)', async () => {
@@ -60,7 +59,6 @@ describe('BulkDownloadService - queue & concurrency', () => {
     }) as any;
 
     const items = buildMedia(5, 'concurrency');
-    // @ts-expect-error - concurrency option to be implemented
     const result = await svc.downloadMultiple(items, { concurrency: 2 });
 
     expect(result.success).toBe(true);
@@ -85,7 +83,6 @@ describe('BulkDownloadService - queue & concurrency', () => {
       } as any;
     }) as any;
 
-    // @ts-expect-error - concurrency option to be implemented
     const promise = svc.downloadMultiple(buildMedia(8, 'cancel'), {
       signal: controller.signal,
       concurrency: 3,
@@ -125,7 +122,6 @@ describe('BulkDownloadService - queue & concurrency', () => {
     }) as any;
 
     const items = buildMedia(3, 'retry');
-    // @ts-expect-error - retries option to be implemented
     const res = await svc.downloadMultiple(items, { retries: 1 });
     expect(res.success).toBe(true);
     expect(res.filesSuccessful).toBeGreaterThanOrEqual(3);

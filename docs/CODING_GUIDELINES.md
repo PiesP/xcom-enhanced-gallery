@@ -506,3 +506,24 @@ describe('GalleryItem', () => {
   - DownloadResult.failures?: Array<{ url: string; error: string }>
 - 성공/실패 요약은 UI/로그/알림에서 사용자에게 상황을 알리기 위한 최소 정보를
   제공합니다.
+
+### 대량 다운로드 서비스 옵션 표준
+
+- 동시성(concurrency)
+  - 의미: 동시에 진행할 네트워크 요청 수 (기본 2, 최소 1, 최대 8)
+  - 사용: `downloadMultiple(items, { concurrency: 2 })`
+- 재시도(retries)
+  - 의미: 네트워크 오류 등 실패 시 항목별 재시도 횟수 (기본 0)
+  - 사용: `downloadMultiple(items, { retries: 1 })`
+- 취소(AbortSignal)
+  - 의미: 진행 중인 일괄 다운로드 취소
+  - 사용: `downloadMultiple(items, { signal: controller.signal })`
+  - 취소 시: 진행 중 작업 중단, 서비스는 정리 후 `isDownloading() === false`
+
+### 미디어 추출(Extraction) 재시도/타임아웃 표준
+
+- API 우선 추출은 다음 기본값을 따른다:
+  - 재시도: 기본 3회(총 4회 시도), 옵션 `maxRetries`
+  - 타임아웃: 기본 10s, 옵션 `timeoutMs`
+- 실패 시 DOM 백업 추출을 자동 시도하며, 가능한 미디어만 반환한다.
+- URL 정규화: 이미지 URL은 항상 `name=orig`를 강제한다(png/webp/jpg 유지).

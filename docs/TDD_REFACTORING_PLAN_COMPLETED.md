@@ -140,3 +140,24 @@
   - 소스 스캐너 테스트 추가: `direct-imports-source-scan.test.js` (벤더 경로
     제외)
   - 결과: 규칙/소스 스캐너 이중 가드 GREEN, 빌드/린트/형식 PASS 유지
+
+- 2025-09-11: Phase A/B 이관 정리 (간결)
+  - Phase A — 부트스트랩/수명주기/PC 전용 이벤트: 아이드포턴트/핫키/핸들러 정리
+    GREEN
+  - Phase B — 의존성 getter 정책: 린트 규칙+정적 스캔 가드 GREEN
+  - 계획서에서 해당 섹션 제거, 본 완료 로그로 최종 이동
+
+- 2025-09-11: Phase D — 다운로드 UX 안정화(부분 성공/취소) 완료
+  - ZIP 파일명 충돌 시 -1, -2 접미사 부여(파일 고유화)
+  - 부분 실패 요약 수집: `failures: { url, error }[]`
+  - 취소(AbortSignal)·동시성(concurrency)·재시도(retries) 옵션 구현
+  - 관련 테스트: bulk-download.filename-policy.test.(ts|js),
+    bulk-download.service.test.ts
+
+- 2025-09-11: Phase C — 미디어 추출/정규화 견고성 향상 (완료)
+  - URL 유효성 검증 강화(pbs.twimg.com/media 전용, profile_images 제외, video
+    도메인 허용)
+  - name=orig 강제 규칙(png/webp/jpg) 정규화 및 DOMDirectExtractor 연동
+  - API 재시도/타임아웃(기본 RETRY=3, TIMEOUT=10s) + 실패 시 DOM 폴백 확인
+  - 테스트: test/unit/media/extraction.url-normalization.test.ts,
+    test/unit/media/extraction.retry-timeout.test.ts (GREEN)
