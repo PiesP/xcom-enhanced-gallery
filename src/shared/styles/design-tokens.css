@@ -173,13 +173,13 @@
 
 /* Toast 애니메이션 시스템 - 테스트 요구사항 */
 .xeg-anim-slide-in {
-  animation: xeg-slide-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: xeg-slide-in var(--xeg-duration-normal) var(--xeg-easing-ease-out);
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
 .xeg-anim-fade-slide-in {
-  animation: xeg-fade-slide-in 0.3s ease-out;
+  animation: xeg-fade-slide-in var(--xeg-duration-slow) var(--xeg-easing-ease-out);
   will-change: transform, opacity;
   backface-visibility: hidden;
 }

@@ -18,6 +18,7 @@ import './styles/globals';
 
 // 애플리케이션 상태 관리
 let isStarted = false;
+let startPromise: Promise<void> | null = null;
 let galleryApp: unknown = null; // Features GalleryApp 인스턴스
 let serviceManager: CoreService | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
@@ -116,16 +117,9 @@ async function registerFeatureServicesLazy(): Promise<void> {
 }
 
 /**
- * 갤러리 앱 시작
+ * 갤러리 앱 시작은 파일 하단의 DOM 준비 상태에서 한 번만 트리거됩니다.
+ * 중복 호출은 startPromise로 병합되어 단일 초기화만 수행됩니다.
  */
-// 메인 애플리케이션 entry point
-(async () => {
-  try {
-    await startApplication();
-  } catch (error) {
-    logger.error('Main initialization failed', error);
-  }
-})();
 
 /**
  * Non-Critical 시스템 백그라운드 초기화
@@ -303,7 +297,12 @@ async function startApplication(): Promise<void> {
     return;
   }
 
-  try {
+  if (startPromise) {
+    logger.debug('Application: Start in progress - reusing promise');
+    return startPromise;
+  }
+
+  startPromise = (async () => {
     logger.info('🚀 X.com Enhanced Gallery 시작 중...');
 
     const startTime = performance.now();
@@ -347,17 +346,23 @@ async function startApplication(): Promise<void> {
         galleryApp,
       };
     }
-  } catch (error) {
-    logger.error('❌ 애플리케이션 초기화 실패:', error);
+  })()
+    .catch(error => {
+      logger.error('❌ 애플리케이션 초기화 실패:', error);
+      // 에러 복구 시도
+      setTimeout(() => {
+        logger.info('🔄 애플리케이션 재시작 시도...');
+        startApplication().catch(retryError => {
+          logger.error('❌ 재시작 실패:', retryError);
+        });
+      }, 2000);
+    })
+    .finally(() => {
+      // 다음 수동 호출을 위해 startPromise 해제(이미 시작된 경우 isStarted가 가드)
+      startPromise = null;
+    });
 
-    // 에러 복구 시도
-    setTimeout(() => {
-      logger.info('🔄 애플리케이션 재시작 시도...');
-      startApplication().catch(retryError => {
-        logger.error('❌ 재시작 실패:', retryError);
-      });
-    }, 2000);
-  }
+  return startPromise;
 }
 
 /**

@@ -8,96 +8,19 @@
   - C2 완료: Radius 정책 전면 반영(`--xeg-radius-*`만 사용)
   - 해당 항목들은 계획 문서에서 제거되고 본 완료 로그로 이동되었습니다.
 
-- 2025-09-10: Userscript 어댑터 도입
-  - `getUserscript()`로 GM\_\* API 캡슐화, 테스트/노드 환경 안전 fallback 구현
-  - 외부 의존성 격리 원칙(getter 함수) 준수
+  - 2025-09-10: 디자인 토큰/라디우스/애니메이션/컴포넌트 표준화 1차
+    완료(Userscript 현대화 기반)
+  - 2025-09-10: Userscript 어댑터 및 외부 의존성 getter 정착(GM\_\*, preact,
+    fflate)
+  - 2025-09-10: Core 로깅/Result/에러 핸들러 표준화, 빌드/사이즈 예산 도입
+  - 2025-09-10: MediaProcessor 파이프라인/테스트 완료, BulkDownloadService 1차
+    구현
+  - 2025-09-10: Bootstrap 정리(PC-only 핫키/지연 초기화), A11y 시각 피드백/테마
+    커버리지 테스트 통과
+  - 2025-09-10: Toolbar/Modal/Toast 토큰 일관화, IconButton 통일, 파일명
+    충돌/실패 요약 정책 반영
 
-- 2025-09-10: 테스트 차단 요소 제거
-  - UnifiedToolbar 엔트리 스텁 추가(모듈 해상도 실패 해소)
-  - vendors getter 강제(ESLint 예외 및 코드모드 적용)
-  - TSX 내 'glass-surface' 문자열 제거(효과는 CSS로 유지)
-  - Component↔Semantic alias 정리(중앙 파일에서 제공 확인)
-  - 애니메이션 토큰 통합(`--xeg-duration-*`, `--xeg-ease-*`,
-    `--xeg-button-lift`)
-
-- 2025-09-10: 빌드/ESLint/Prettier 워크플로 안정화(유지 관리 상태)
-- 2025-09-10: 외부 의존성 격리 적용(일부)
-  - preact/hooks 직접 import 제거 → vendors getter 사용
-  - 대상: `useGalleryToolbarLogic`, `useScrollLock`
-
-- 2025-09-10: preact/compat 직접 타입 import 제거
-  - VerticalGalleryView에서 `MouseEvent` 타입 외부 import 제거(브라우저 DOM 타입
-    사용)
-
-- 2025-09-10: Component↔Semantic alias 문서화 강화
-  - CODING_GUIDELINES에 중앙 alias 매핑 예시 추가(툴바/모달)
-  - 인라인/주입 CSS에도 토큰 규칙 동일 적용 명시
-
-- 2025-09-10: ModalShell/ToolbarShell 토큰 정리
-  - radius/ease/duration/focus-ring 토큰 사용으로 통일
-  - 배경/보더는 semantic(alias) 토큰으로 교체
-
-- 2025-09-10: CSS 네이밍/토큰 미세 조정
-  - SettingsModal radius 구 토큰→xeg 토큰 교체
-  - component 토큰 파일의 radius 변수들을 xeg 토큰으로 정규화
-
-- 2025-09-10: TDD 진행(추가)
-  - B4 부분 완료: `Toolbar.module.css`의 비-토큰 색상/변수 → `--xeg-*` 토큰으로
-    정규화
-  - C2 부분 완료: Toolbar 버튼/다운로드 버튼/미디어 카운터에 radius
-    정책(`--xeg-radius-md`) 일괄 적용
-
-- 2025-09-10: 최종 완료(계약/토큰)
-  - C1 완료: fitModeGroup 계약 정리
-    - 래퍼 제거(white-box), 버튼 독립 배치 유지,
-      `data-gallery-element`/`data-selected` 계약 충족
-    - Headless(`ToolbarHeadless`) 상태/액션 계약 안정화, Shell 사용 시 접근성
-      속성 유지
-  - B4 완료: CSS 네이밍/볼륨 최종 점검
-    - `ToolbarShell.module.css`의 solid 표면을 semantic
-      토큰(`--color-bg-surface`)으로 교정
-    - 전역 토큰/하드코딩/중복 관련 테스트 전량 통과로 정책 준수 확인
-  - C2 완료: Radius 정책 전면 반영 확인
-    - 인터랙션/서피스에 `--xeg-radius-*`만 사용, 하드코딩 px 제거
-    - 관련 스타일/리그레션 테스트 전량 통과
-
-- 2025-09-10: Core/로깅·Result 패턴 정착
-  - `Result`/`AsyncResult`/`safeAsync` 유틸 반영, 타입 안전성 강화
-  - 중앙 로깅(`@shared/logging/logger`) 확립: level/timestamp/scoped
-    logger/measurePerformance/logError
-  - ErrorHandler 통합(AppError/코드/심각도/글로벌 핸들러)
-
-- 2025-09-10: MediaProcessor 파이프라인 완성
-  - `collectNodes` → `extractRawData` → `normalize` → `dedupe` → `validate` 구현
-    및 테스트 통과
-  - `processMedia()` 헬퍼 제공, 실패 경로 메시지 표준화
-
-- 2025-09-10: BulkDownloadService 도입(간소화)
-  - ZIP(fflate via getter), 진행률 콜백, AbortSignal 취소, 제한적 동시성/재시도
-    옵션
-  - 단건/대용량 모두 지원, Userscript/브라우저 동작
-
-- 2025-09-10: 갤러리 부트스트랩 정리
-  - 즉시 초기화 및 PC 전용 핫키 구성, 비핵심은 백그라운드 초기화
-
-- 2025-09-10: 빌드/메타데이터 강화
-  - Vite 플러그인으로 Userscript 헤더 자동화, 소스맵(dev) 생성
-  - 빌드 검증 스크립트에 gzip 사이즈 예산(경고≥300KB, 차단>450KB) 추가
-
-- 2025-09-10: Userscript 현대화 1차 마일스톤 정리
-  - Core/Result/로깅/에러 핸들러 표준화 완료
-  - MediaProcessor 파이프라인 및 테스트 완료
-  - DownloadService(기본 ZIP/진행률/취소/동시성·재시도) 1차 구현 완료
-  - Bootstrap(PC-only 핫키/즉시 초기화) 정비 완료
-  - Build(헤더/소스맵/사이즈 예산) 구성 완료
-
-- 2025-09-10: IconButton/Action Controls 통일
-  - Toolbar 내 아이콘 전용 버튼 전량 IconButton로 교체, 사이즈/토큰/ARIA 일관화
-  - 닫기 버튼은 intent='danger' 매핑으로 시각 의미 유지
-
-- 2025-09-10: Overlay/Modal/Surface 토큰 일관화(1차)
-  - ModalShell.module.css의 surface 그림자 하드코딩 제거 →
-    `var(--xeg-comp-modal-shadow)` 사용
+  참고: 세부 결정/테스트 파일 경로는 커밋 메시지와 테스트 스위트에서 추적합니다.
   - 단위 테스트 추가: `ModalShell.tokens.test.ts`로 토큰 준수 회귀 방지
 
 - 2025-09-10: Overlay/Modal/Surface 토큰 일관화(Toast 완료)
@@ -196,3 +119,17 @@
   - SettingsModal `z-index`를 `var(--xeg-z-modal)`로 정규화(툴바보다 위 레이어
     보장)
   - CODING_GUIDELINES에 모달↔툴바 배경/텍스트/보더/포커스/레이어 통합 정책 추가
+
+- 2025-09-10: 애니메이션/트랜지션 하드코딩 제거
+  - 주입 CSS(`src/shared/utils/css-animations.ts`) duration/easing 토큰화 및
+    reduce-motion 비활성화 처리
+  - 디자인 토큰 유틸리티(`src/shared/styles/design-tokens.css`)의 .xeg-anim-\*
+    클래스 토큰화
+  - `useProgressiveImage` 훅 inline transition 토큰 기반으로 변경
+
+- 2025-09-10: Phase A — 부트스트랩/수명주기/PC 전용 이벤트 (완료)
+  - main.start/cleanup 아이드포턴스 보장, 글로벌 핸들러 중복 등록 방지
+  - PC 전용 이벤트 정책 준수: click/keydown만 사용, touch/pointer 미사용
+  - 핫키 정책: ESC는 갤러리 열림 시 닫기, Enter는 사용자 핸들러로 위임
+  - 테스트 추가: `test/unit/main/main-start-idempotency.test.ts`,
+    `test/unit/events/gallery-pc-only-events.test.ts` (GREEN)

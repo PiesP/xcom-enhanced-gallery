@@ -268,7 +268,7 @@ export function useProgressiveImage({
     onError: () => handleError(new Error('Image element error')),
     style: {
       opacity: state.isLoaded ? 1 : 0.7,
-      transition: 'opacity 0.3s ease',
+      transition: 'opacity var(--xeg-duration-normal) var(--xeg-ease-standard)',
       transform: state.loadedSrc === lowQualitySrc ? 'scale(0.98)' : 'scale(1)',
     },
   };

@@ -88,21 +88,21 @@ export function injectAnimationStyles(): void {
       to { opacity: 1; transform: scale(1); }
     }
 
-    .animate-fade-in { animation: fade-in 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-    .animate-fade-out { animation: fade-out 150ms cubic-bezier(0.4, 0, 1, 1) forwards; }
-    .animate-slide-in-bottom { animation: slide-in-bottom 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-    .animate-slide-out-top { animation: slide-out-top 150ms cubic-bezier(0.4, 0, 1, 1) forwards; }
-    .animate-scale-in { animation: scale-in 250ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-    .animate-scale-out { animation: scale-out 150ms cubic-bezier(0.4, 0, 1, 1) forwards; }
-    .animate-toolbar-slide-down { animation: toolbar-slide-down 150ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-    .animate-toolbar-slide-up { animation: toolbar-slide-up 150ms cubic-bezier(0.4, 0, 1, 1) forwards; }
-    .animate-image-load { animation: image-load 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  .animate-fade-in { animation: fade-in var(--xeg-duration-normal) var(--xeg-easing-ease-out) forwards; }
+  .animate-fade-out { animation: fade-out var(--xeg-duration-fast) var(--xeg-easing-ease-in) forwards; }
+  .animate-slide-in-bottom { animation: slide-in-bottom var(--xeg-duration-normal) var(--xeg-easing-ease-out) forwards; }
+  .animate-slide-out-top { animation: slide-out-top var(--xeg-duration-fast) var(--xeg-easing-ease-in) forwards; }
+  .animate-scale-in { animation: scale-in var(--xeg-duration-normal) var(--xeg-easing-ease-out) forwards; }
+  .animate-scale-out { animation: scale-out var(--xeg-duration-fast) var(--xeg-easing-ease-in) forwards; }
+  .animate-toolbar-slide-down { animation: toolbar-slide-down var(--xeg-duration-fast) var(--xeg-easing-ease-out) forwards; }
+  .animate-toolbar-slide-up { animation: toolbar-slide-up var(--xeg-duration-fast) var(--xeg-easing-ease-in) forwards; }
+  .animate-image-load { animation: image-load var(--xeg-duration-slow) var(--xeg-easing-ease-out) forwards; }
 
     @media (prefers-reduced-motion: reduce) {
       .animate-fade-in, .animate-fade-out, .animate-slide-in-bottom,
       .animate-slide-out-top, .animate-scale-in, .animate-scale-out,
       .animate-toolbar-slide-down, .animate-toolbar-slide-up, .animate-image-load {
-        animation-duration: 1ms !important;
+        animation: none !important;
       }
     }
   `;
