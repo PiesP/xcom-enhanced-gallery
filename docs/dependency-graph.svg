@@ -674,7 +674,7 @@
 <!-- src/features/gallery/hooks/useToolbarPositionBased.ts -->
 <g id="node20" class="node">
 <title>src/features/gallery/hooks/useToolbarPositionBased.ts</title>
-<g id="a_node20"><a xlink:href="src/features/gallery/hooks/useToolbarPositionBased.ts" xlink:title="no&#45;orphans">
+<g id="a_node20"><a xlink:href="src/features/gallery/hooks/useToolbarPositionBased.ts" xlink:title="useToolbarPositionBased.ts">
 <path fill="#f0fdf4" stroke="#15803d" stroke-width="1.5" stroke-dasharray="5,2" d="M227.15,-973.6C227.15,-973.6 108.85,-973.6 108.85,-973.6 104.45,-973.6 100.05,-969.2 100.05,-964.8 100.05,-964.8 100.05,-956 100.05,-956 100.05,-951.6 104.45,-947.2 108.85,-947.2 108.85,-947.2 227.15,-947.2 227.15,-947.2 231.55,-947.2 235.95,-951.6 235.95,-956 235.95,-956 235.95,-964.8 235.95,-964.8 235.95,-969.2 231.55,-973.6 227.15,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="107.25" y="-956.9" font-family="Arial" font-size="10.00" fill="#15803d">useToolbarPositionBased.ts</text>
 </a>
@@ -905,7 +905,7 @@
 <!-- src/shared/components/LazyIcon.tsx -->
 <g id="node35" class="node">
 <title>src/shared/components/LazyIcon.tsx</title>
-<g id="a_node35"><a xlink:href="src/shared/components/LazyIcon.tsx" xlink:title="no&#45;orphans">
+<g id="a_node35"><a xlink:href="src/shared/components/LazyIcon.tsx" xlink:title="LazyIcon.tsx">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M5576.52,-973.6C5576.52,-973.6 5523.48,-973.6 5523.48,-973.6 5519.07,-973.6 5514.68,-969.2 5514.68,-964.8 5514.68,-964.8 5514.68,-956 5514.68,-956 5514.68,-951.6 5519.07,-947.2 5523.48,-947.2 5523.48,-947.2 5576.52,-947.2 5576.52,-947.2 5580.93,-947.2 5585.32,-951.6 5585.32,-956 5585.32,-956 5585.32,-964.8 5585.32,-964.8 5585.32,-969.2 5580.93,-973.6 5576.52,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="5521.88" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">LazyIcon.tsx</text>
 </a>
@@ -1493,7 +1493,7 @@
 <!-- src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx -->
 <g id="node66" class="node">
 <title>src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx</title>
-<g id="a_node66"><a xlink:href="src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx" xlink:title="no&#45;orphans">
+<g id="a_node66"><a xlink:href="src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx" xlink:title="EnhancedSettingsModal.tsx">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M2581.52,-973.6C2581.52,-973.6 2462.48,-973.6 2462.48,-973.6 2458.08,-973.6 2453.68,-969.2 2453.68,-964.8 2453.68,-964.8 2453.68,-956 2453.68,-956 2453.68,-951.6 2458.08,-947.2 2462.48,-947.2 2462.48,-947.2 2581.52,-947.2 2581.52,-947.2 2585.92,-947.2 2590.32,-951.6 2590.32,-956 2590.32,-956 2590.32,-964.8 2590.32,-964.8 2590.32,-969.2 2585.92,-973.6 2581.52,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="2460.88" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">EnhancedSettingsModal.tsx</text>
 </a>
@@ -1502,7 +1502,7 @@
 <!-- src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx -->
 <g id="node67" class="node">
 <title>src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx</title>
-<g id="a_node67"><a xlink:href="src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx" xlink:title="no&#45;orphans">
+<g id="a_node67"><a xlink:href="src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx" xlink:title="HeadlessSettingsModal.tsx">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M2759.4,-973.6C2759.4,-973.6 2642.6,-973.6 2642.6,-973.6 2638.2,-973.6 2633.8,-969.2 2633.8,-964.8 2633.8,-964.8 2633.8,-956 2633.8,-956 2633.8,-951.6 2638.2,-947.2 2642.6,-947.2 2642.6,-947.2 2759.4,-947.2 2759.4,-947.2 2763.8,-947.2 2768.2,-951.6 2768.2,-956 2768.2,-956 2768.2,-964.8 2768.2,-964.8 2768.2,-969.2 2763.8,-973.6 2759.4,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="2641" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">HeadlessSettingsModal.tsx</text>
 </a>
@@ -1586,7 +1586,7 @@
 <!-- src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx -->
 <g id="node72" class="node">
 <title>src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx</title>
-<g id="a_node72"><a xlink:href="src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx" xlink:title="no&#45;orphans">
+<g id="a_node72"><a xlink:href="src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx" xlink:title="UnifiedSettingsModal.tsx">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M2926.15,-973.6C2926.15,-973.6 2819.85,-973.6 2819.85,-973.6 2815.45,-973.6 2811.05,-969.2 2811.05,-964.8 2811.05,-964.8 2811.05,-956 2811.05,-956 2811.05,-951.6 2815.45,-947.2 2819.85,-947.2 2819.85,-947.2 2926.15,-947.2 2926.15,-947.2 2930.55,-947.2 2934.95,-951.6 2934.95,-956 2934.95,-956 2934.95,-964.8 2934.95,-964.8 2934.95,-969.2 2930.55,-973.6 2926.15,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="2818.25" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">UnifiedSettingsModal.tsx</text>
 </a>
@@ -1610,7 +1610,7 @@
 <!-- src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx -->
 <g id="node76" class="node">
 <title>src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx</title>
-<g id="a_node76"><a xlink:href="src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx" xlink:title="no&#45;orphans">
+<g id="a_node76"><a xlink:href="src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx" xlink:title="ConfigurableToolbar.tsx">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M3086.77,-973.6C3086.77,-973.6 2987.23,-973.6 2987.23,-973.6 2982.83,-973.6 2978.43,-969.2 2978.43,-964.8 2978.43,-964.8 2978.43,-956 2978.43,-956 2978.43,-951.6 2982.83,-947.2 2987.23,-947.2 2987.23,-947.2 3086.77,-947.2 3086.77,-947.2 3091.17,-947.2 3095.57,-951.6 3095.57,-956 3095.57,-956 3095.57,-964.8 3095.57,-964.8 3095.57,-969.2 3091.17,-973.6 3086.77,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="2985.62" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">ConfigurableToolbar.tsx</text>
 </a>
@@ -1619,7 +1619,7 @@
 <!-- src/shared/components/ui/Toolbar/ToolbarHeadless.tsx -->
 <g id="node77" class="node">
 <title>src/shared/components/ui/Toolbar/ToolbarHeadless.tsx</title>
-<g id="a_node77"><a xlink:href="src/shared/components/ui/Toolbar/ToolbarHeadless.tsx" xlink:title="no&#45;orphans">
+<g id="a_node77"><a xlink:href="src/shared/components/ui/Toolbar/ToolbarHeadless.tsx" xlink:title="ToolbarHeadless.tsx">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M3233.02,-973.6C3233.02,-973.6 3146.98,-973.6 3146.98,-973.6 3142.58,-973.6 3138.18,-969.2 3138.18,-964.8 3138.18,-964.8 3138.18,-956 3138.18,-956 3138.18,-951.6 3142.58,-947.2 3146.98,-947.2 3146.98,-947.2 3233.02,-947.2 3233.02,-947.2 3237.42,-947.2 3241.82,-951.6 3241.82,-956 3241.82,-956 3241.82,-964.8 3241.82,-964.8 3241.82,-969.2 3237.42,-973.6 3233.02,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="3145.38" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">ToolbarHeadless.tsx</text>
 </a>
@@ -1628,7 +1628,7 @@
 <!-- src/shared/components/ui/Toolbar/UnifiedToolbar.tsx -->
 <g id="node78" class="node">
 <title>src/shared/components/ui/Toolbar/UnifiedToolbar.tsx</title>
-<g id="a_node78"><a xlink:href="src/shared/components/ui/Toolbar/UnifiedToolbar.tsx" xlink:title="no&#45;orphans">
+<g id="a_node78"><a xlink:href="src/shared/components/ui/Toolbar/UnifiedToolbar.tsx" xlink:title="UnifiedToolbar.tsx">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M3368.77,-973.6C3368.77,-973.6 3293.23,-973.6 3293.23,-973.6 3288.83,-973.6 3284.43,-969.2 3284.43,-964.8 3284.43,-964.8 3284.43,-956 3284.43,-956 3284.43,-951.6 3288.83,-947.2 3293.23,-947.2 3293.23,-947.2 3368.77,-947.2 3368.77,-947.2 3373.17,-947.2 3377.57,-951.6 3377.57,-956 3377.57,-956 3377.57,-964.8 3377.57,-964.8 3377.57,-969.2 3373.17,-973.6 3368.77,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="3291.62" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">UnifiedToolbar.tsx</text>
 </a>
@@ -1637,7 +1637,7 @@
 <!-- src/shared/components/ui/Toolbar/toolbarConfig.ts -->
 <g id="node79" class="node">
 <title>src/shared/components/ui/Toolbar/toolbarConfig.ts</title>
-<g id="a_node79"><a xlink:href="src/shared/components/ui/Toolbar/toolbarConfig.ts" xlink:title="no&#45;orphans">
+<g id="a_node79"><a xlink:href="src/shared/components/ui/Toolbar/toolbarConfig.ts" xlink:title="toolbarConfig.ts">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M3494.9,-973.6C3494.9,-973.6 3429.1,-973.6 3429.1,-973.6 3424.7,-973.6 3420.3,-969.2 3420.3,-964.8 3420.3,-964.8 3420.3,-956 3420.3,-956 3420.3,-951.6 3424.7,-947.2 3429.1,-947.2 3429.1,-947.2 3494.9,-947.2 3494.9,-947.2 3499.3,-947.2 3503.7,-951.6 3503.7,-956 3503.7,-956 3503.7,-964.8 3503.7,-964.8 3503.7,-969.2 3499.3,-973.6 3494.9,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="3427.5" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">toolbarConfig.ts</text>
 </a>
@@ -2040,7 +2040,7 @@
 <!-- src/shared/external/userscript/adapter.ts -->
 <g id="node98" class="node">
 <title>src/shared/external/userscript/adapter.ts</title>
-<g id="a_node98"><a xlink:href="src/shared/external/userscript/adapter.ts" xlink:title="no&#45;orphans">
+<g id="a_node98"><a xlink:href="src/shared/external/userscript/adapter.ts" xlink:title="adapter.ts">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M6427.15,-973.6C6427.15,-973.6 6386.85,-973.6 6386.85,-973.6 6382.45,-973.6 6378.05,-969.2 6378.05,-964.8 6378.05,-964.8 6378.05,-956 6378.05,-956 6378.05,-951.6 6382.45,-947.2 6386.85,-947.2 6386.85,-947.2 6427.15,-947.2 6427.15,-947.2 6431.55,-947.2 6435.95,-951.6 6435.95,-956 6435.95,-956 6435.95,-964.8 6435.95,-964.8 6435.95,-969.2 6431.55,-973.6 6427.15,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="6385.25" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">adapter.ts</text>
 </a>
@@ -2115,7 +2115,7 @@
 <!-- src/shared/hooks/useFocusScope.ts -->
 <g id="node109" class="node">
 <title>src/shared/hooks/useFocusScope.ts</title>
-<g id="a_node109"><a xlink:href="src/shared/hooks/useFocusScope.ts" xlink:title="no&#45;orphans">
+<g id="a_node109"><a xlink:href="src/shared/hooks/useFocusScope.ts" xlink:title="useFocusScope.ts">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M6982.27,-973.6C6982.27,-973.6 6903.73,-973.6 6903.73,-973.6 6899.32,-973.6 6894.93,-969.2 6894.93,-964.8 6894.93,-964.8 6894.93,-956 6894.93,-956 6894.93,-951.6 6899.32,-947.2 6903.73,-947.2 6903.73,-947.2 6982.27,-947.2 6982.27,-947.2 6986.68,-947.2 6991.07,-951.6 6991.07,-956 6991.07,-956 6991.07,-964.8 6991.07,-964.8 6991.07,-969.2 6986.68,-973.6 6982.27,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="6902.12" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">useFocusScope.ts</text>
 </a>
@@ -2151,7 +2151,7 @@
 <!-- src/shared/hooks/useSettingsModal.ts -->
 <g id="node113" class="node">
 <title>src/shared/hooks/useSettingsModal.ts</title>
-<g id="a_node113"><a xlink:href="src/shared/hooks/useSettingsModal.ts" xlink:title="no&#45;orphans">
+<g id="a_node113"><a xlink:href="src/shared/hooks/useSettingsModal.ts" xlink:title="useSettingsModal.ts">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M7129.02,-973.6C7129.02,-973.6 7042.98,-973.6 7042.98,-973.6 7038.57,-973.6 7034.18,-969.2 7034.18,-964.8 7034.18,-964.8 7034.18,-956 7034.18,-956 7034.18,-951.6 7038.57,-947.2 7042.98,-947.2 7042.98,-947.2 7129.02,-947.2 7129.02,-947.2 7133.43,-947.2 7137.82,-951.6 7137.82,-956 7137.82,-956 7137.82,-964.8 7137.82,-964.8 7137.82,-969.2 7133.43,-973.6 7129.02,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="7041.38" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">useSettingsModal.ts</text>
 </a>
@@ -3199,7 +3199,7 @@
 <!-- src/shared/services/iconRegistry.ts -->
 <g id="node154" class="node">
 <title>src/shared/services/iconRegistry.ts</title>
-<g id="a_node154"><a xlink:href="src/shared/services/iconRegistry.ts" xlink:title="no&#45;orphans">
+<g id="a_node154"><a xlink:href="src/shared/services/iconRegistry.ts" xlink:title="iconRegistry.ts">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M9747.03,-973.6C9747.03,-973.6 9684.97,-973.6 9684.97,-973.6 9680.57,-973.6 9676.17,-969.2 9676.17,-964.8 9676.17,-964.8 9676.17,-956 9676.17,-956 9676.17,-951.6 9680.57,-947.2 9684.97,-947.2 9684.97,-947.2 9747.03,-947.2 9747.03,-947.2 9751.43,-947.2 9755.83,-951.6 9755.83,-956 9755.83,-956 9755.83,-964.8 9755.83,-964.8 9755.83,-969.2 9751.43,-973.6 9747.03,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="9683.38" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">iconRegistry.ts</text>
 </a>
@@ -3457,7 +3457,7 @@
 <!-- src/shared/state/gallery&#45;store.ts -->
 <g id="node175" class="node">
 <title>src/shared/state/gallery&#45;store.ts</title>
-<g id="a_node175"><a xlink:href="src/shared/state/gallery-store.ts" xlink:title="no&#45;orphans">
+<g id="a_node175"><a xlink:href="src/shared/state/gallery-store.ts" xlink:title="gallery&#45;store.ts">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M12483.65,-973.6C12483.65,-973.6 12422.35,-973.6 12422.35,-973.6 12417.95,-973.6 12413.55,-969.2 12413.55,-964.8 12413.55,-964.8 12413.55,-956 12413.55,-956 12413.55,-951.6 12417.95,-947.2 12422.35,-947.2 12422.35,-947.2 12483.65,-947.2 12483.65,-947.2 12488.05,-947.2 12492.45,-951.6 12492.45,-956 12492.45,-956 12492.45,-964.8 12492.45,-964.8 12492.45,-969.2 12488.05,-973.6 12483.65,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="12420.75" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">gallery&#45;store.ts</text>
 </a>
@@ -3505,7 +3505,7 @@
 <!-- src/shared/styles/tokens/button.ts -->
 <g id="node179" class="node">
 <title>src/shared/styles/tokens/button.ts</title>
-<g id="a_node179"><a xlink:href="src/shared/styles/tokens/button.ts" xlink:title="no&#45;orphans">
+<g id="a_node179"><a xlink:href="src/shared/styles/tokens/button.ts" xlink:title="button.ts">
 <path fill="#fffbeb" stroke="#b45309" stroke-width="1.5" stroke-dasharray="5,2" d="M12890.2,-973.6C12890.2,-973.6 12853.8,-973.6 12853.8,-973.6 12849.4,-973.6 12845,-969.2 12845,-964.8 12845,-964.8 12845,-956 12845,-956 12845,-951.6 12849.4,-947.2 12853.8,-947.2 12853.8,-947.2 12890.2,-947.2 12890.2,-947.2 12894.6,-947.2 12899,-951.6 12899,-956 12899,-956 12899,-964.8 12899,-964.8 12899,-969.2 12894.6,-973.6 12890.2,-973.6"/>
 <text xml:space="preserve" text-anchor="start" x="12852.88" y="-956.9" font-family="Arial" font-size="10.00" fill="#b45309">button.ts</text>
 </a>

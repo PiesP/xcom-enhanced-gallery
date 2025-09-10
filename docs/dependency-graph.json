@@ -624,13 +624,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/features/gallery/index.ts",
@@ -1092,13 +1086,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/components/base/BaseComponentProps.ts",
@@ -2451,26 +2439,14 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
@@ -2650,13 +2626,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/SettingsModal/index.ts",
@@ -2708,52 +2678,28 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/Toolbar/ToolbarHeadless.tsx",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/Toolbar/UnifiedToolbar.tsx",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/Toolbar/toolbarConfig.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/ToolbarShell/ToolbarShell.tsx",
@@ -3705,13 +3651,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/hooks/index.ts",
@@ -3804,13 +3744,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/hooks/useFocusTrap.ts",
@@ -3844,13 +3778,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/index.ts",
@@ -6636,13 +6564,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/services/media-extraction/index.ts",
@@ -6974,13 +6896,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/styles/index.ts",
@@ -7047,13 +6963,7 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "valid": true
     },
     {
       "source": "src/shared/types/core/core-types.ts",
@@ -7771,146 +7681,10 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/features/gallery/hooks/useToolbarPositionBased.ts",
-        "to": "src/features/gallery/hooks/useToolbarPositionBased.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/LazyIcon.tsx",
-        "to": "src/shared/components/LazyIcon.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
-        "to": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx",
-        "to": "src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
-        "to": "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx",
-        "to": "src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/ui/Toolbar/toolbarConfig.ts",
-        "to": "src/shared/components/ui/Toolbar/toolbarConfig.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/ui/Toolbar/ToolbarHeadless.tsx",
-        "to": "src/shared/components/ui/Toolbar/ToolbarHeadless.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/components/ui/Toolbar/UnifiedToolbar.tsx",
-        "to": "src/shared/components/ui/Toolbar/UnifiedToolbar.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/external/userscript/adapter.ts",
-        "to": "src/shared/external/userscript/adapter.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/hooks/useFocusScope.ts",
-        "to": "src/shared/hooks/useFocusScope.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/hooks/useSettingsModal.ts",
-        "to": "src/shared/hooks/useSettingsModal.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/services/iconRegistry.ts",
-        "to": "src/shared/services/iconRegistry.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/state/gallery-store.ts",
-        "to": "src/shared/state/gallery-store.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
-        "from": "src/shared/styles/tokens/button.ts",
-        "to": "src/shared/styles/tokens/button.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 15,
+    "info": 0,
     "ignore": 0,
     "totalCruised": 226,
     "totalDependenciesCruised": 318,
@@ -8214,7 +7988,7 @@
           "severity": "info",
           "from": {
             "orphan": true,
-            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$"
+            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$|^src/shared/components/LazyIcon[.]tsx$|^src/features/gallery/hooks/useToolbarPositionBased[.]ts$|^src/shared/hooks/useSettingsModal[.]ts$|^src/shared/hooks/useFocusScope[.]ts$|^src/shared/external/userscript/adapter[.]ts$|^src/shared/state/gallery-store[.]ts$|^src/shared/services/iconRegistry[.]ts$|^src/shared/styles/tokens/button[.]ts$|^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)[.]tsx$|^src/shared/components/ui/Toolbar/toolbarConfig[.]ts$|^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal|EnhancedSettingsModal)[.]tsx$"
           },
           "to": {},
           "scope": "module"

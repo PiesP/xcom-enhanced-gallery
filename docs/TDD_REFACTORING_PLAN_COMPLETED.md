@@ -105,6 +105,12 @@
     (`--xeg-surface-glass-*`)하여 컴포넌트 전용 토큰 의존 제거
   - 결과: 빌드/전체 테스트 그린, surface 일관성 가드와 충돌 없음
 
+- 2025-09-10: Overlay/Modal/Surface 토큰 일관화(최종 정리)
+  - ModalShell/ToolbarShell 그림자·배경·보더 토큰 사용 검증, Toast까지 포함해
+    표면 계층의 semantic 토큰 일관화 완료
+  - 가드 테스트: `ModalShell.tokens.test.ts`, `ToolbarShell.tokens.test.ts`,
+    theme/surface 커버리지 테스트 통과 확인
+
 - 2025-09-10: 문서 업데이트(PC 전용 이벤트, README 배지 정리)
   - README의 설치/브라우저 배지와 PC 전용 이벤트 설명 정리
   - 잘못된 마크다운 중단 문자열(배지) 수정, 오타 교정
@@ -144,3 +150,35 @@
   - design-tokens.css에서 light/dark/system(prefers-color-scheme) 오버라이드
     보장
   - 결과: 테스트 통과
+
+  - ZIP 내 파일명 충돌 자동 해소: 동일 기본 이름 시 `-1`, `-2` 순차 접미사 부여
+  - 실패 요약 수집: 부분 실패 시 `{ url, error }[]`를
+    `DownloadResult.failures`로 포함
+  - 적용 범위: `BulkDownloadService`와 `MediaService`의 ZIP 경로
+  - 테스트: `test/unit/shared/services/bulk-download.filename-policy.test.ts`
+    추가, GREEN 확인
+
+- Extraction 규칙 유틸 통합
+  - DOMDirectExtractor가 media-url.util의
+    isValidMediaUrl/extractOriginalImageUrl을 사용하도록 리팩토링
+  - PNG 등 원본 포맷 유지 + name=orig 승격 규칙 일원화
+  - 회귀 테스트 추가: dom-direct-extractor.refactor.test.ts(GREEN)
+
+- 2025-09-10: 의존성 그래프 위생(Dependency-Cruiser 튜닝)
+  - 테스트 전용/과도기 모듈을 orphan 예외로 화이트리스트 처리
+  - 결과: dependency-cruiser 위반 0건(에러/경고 없음)
+  - 문서 갱신: docs/dependency-graph.(json|dot|svg) 재생성
+
+- 2025-09-10: 애니메이션 토큰/감속 정책 정규화
+  - transition/animation에 `--xeg-duration-*`, `--xeg-ease-*`로 통일
+  - reduce-motion 대응 확인, 하드코딩 지속시간 제거
+  - 가드 테스트: animation-utilities.tokens.test.ts,
+    components-animations.tokens.test.ts
+
+- 2025-09-10: 테마 커버리지 감사(Audit)
+  - 갤러리/툴바/버튼 표면 토큰 적용 및 라이트/다크 전환 리그레션 없음 확인
+  - 가드 테스트: theme-glass-surface.coverage.test.ts 등 통과
+
+- 2025-09-10: 접근성 시각 피드백 정합성
+  - focus-visible 링/hover lift/그림자 토큰 표준화
+  - 가드 테스트: a11y-visual-feedback.tokens.test.ts 통과

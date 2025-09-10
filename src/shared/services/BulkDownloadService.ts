@@ -33,6 +33,8 @@ export interface DownloadResult {
   filesSuccessful: number;
   error?: string;
   filename?: string;
+  // optional: when partial failures occur, include concise summary
+  failures?: Array<{ url: string; error: string }>;
 }
 
 export interface SingleDownloadResult {
@@ -187,6 +189,34 @@ export class BulkDownloadService {
       const files: Record<string, Uint8Array> = {};
       let successful = 0;
       let processed = 0;
+      const failures: Array<{ url: string; error: string }> = [];
+
+      // filename collision handling: ensure unique names with -1, -2 suffixes
+      const usedNames = new Set<string>();
+      const baseCounts = new Map<string, number>();
+      const ensureUniqueFilename = (desired: string): string => {
+        if (!usedNames.has(desired) && !files[desired]) {
+          usedNames.add(desired);
+          baseCounts.set(desired, 0);
+          return desired;
+        }
+        // split name and extension
+        const lastDot = desired.lastIndexOf('.');
+        const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
+        const ext = lastDot > 0 ? desired.slice(lastDot) : '';
+        const baseKey = desired; // track per original desired
+        let count = baseCounts.get(baseKey) ?? 0;
+        // start suffixing at 1
+        while (true) {
+          count += 1;
+          const candidate = `${name}-${count}${ext}`;
+          if (!usedNames.has(candidate) && !files[candidate]) {
+            baseCounts.set(baseKey, count);
+            usedNames.add(candidate);
+            return candidate;
+          }
+        }
+      };
 
       const concurrency = Math.max(1, Math.min(options.concurrency ?? 2, 8));
       const retries = Math.max(0, options.retries ?? 0);
@@ -246,12 +276,15 @@ export class BulkDownloadService {
           try {
             const data = await fetchWithRetry(media.url);
             const converted = toFilenameCompatible(media);
-            const filename = generateMediaFilename(converted);
+            const desiredName = generateMediaFilename(converted);
+            const filename = ensureUniqueFilename(desiredName);
             files[filename] = data;
             successful++;
           } catch (error) {
             if (isAborted()) throw new Error('Download cancelled by user');
-            logger.warn(`Failed to download ${media.filename}: ${getErrorMessage(error)}`);
+            const errMsg = getErrorMessage(error);
+            logger.warn(`Failed to download ${media.filename}: ${errMsg}`);
+            failures.push({ url: media.url, error: errMsg });
           } finally {
             processed++;
           }
@@ -292,6 +325,7 @@ export class BulkDownloadService {
         filesProcessed: mediaItems.length,
         filesSuccessful: successful,
         filename: zipFilename,
+        ...(failures.length > 0 ? { failures } : {}),
       };
     } catch (error) {
       const message = getErrorMessage(error);

@@ -62,6 +62,8 @@ export interface DownloadResult {
   filesSuccessful: number;
   error?: string;
   filename?: string;
+  // optional failure summary for partial failures
+  failures?: Array<{ url: string; error: string }>;
 }
 
 export interface SingleDownloadResult {
@@ -724,6 +726,32 @@ export class MediaService {
 
       const files: Record<string, Uint8Array> = {};
       let successful = 0;
+      const failures: Array<{ url: string; error: string }> = [];
+
+      // filename collision handling: ensure unique names with -1, -2 suffixes
+      const usedNames = new Set<string>();
+      const baseCounts = new Map<string, number>();
+      const ensureUniqueFilename = (desired: string): string => {
+        if (!usedNames.has(desired) && !files[desired]) {
+          usedNames.add(desired);
+          baseCounts.set(desired, 0);
+          return desired;
+        }
+        const lastDot = desired.lastIndexOf('.');
+        const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
+        const ext = lastDot > 0 ? desired.slice(lastDot) : '';
+        const baseKey = desired;
+        let count = baseCounts.get(baseKey) ?? 0;
+        while (true) {
+          count += 1;
+          const candidate = `${name}-${count}${ext}`;
+          if (!usedNames.has(candidate) && !files[candidate]) {
+            baseCounts.set(baseKey, count);
+            usedNames.add(candidate);
+            return candidate;
+          }
+        }
+      };
 
       options.onProgress?.({
         phase: 'preparing',
@@ -755,11 +783,14 @@ export class MediaService {
           const uint8Array = new Uint8Array(arrayBuffer);
 
           const converted = this.ensureMediaItem(media);
-          const filename = generateMediaFilename(converted);
+          const desiredName = generateMediaFilename(converted);
+          const filename = ensureUniqueFilename(desiredName);
           files[filename] = uint8Array;
           successful++;
         } catch (error) {
-          logger.warn(`Failed to download ${media.filename}: ${getErrorMessage(error)}`);
+          const errMsg = getErrorMessage(error);
+          logger.warn(`Failed to download ${media.filename}: ${errMsg}`);
+          failures.push({ url: media.url, error: errMsg });
         }
       }
 
@@ -791,6 +822,7 @@ export class MediaService {
         filesProcessed: mediaItems.length,
         filesSuccessful: successful,
         filename: zipFilename,
+        ...(failures.length > 0 ? { failures } : {}),
       };
     } catch (error) {
       const message = getErrorMessage(error);

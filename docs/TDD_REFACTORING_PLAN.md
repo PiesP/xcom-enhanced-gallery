@@ -40,39 +40,9 @@
 
 ## 3) 단계별 TDD 플랜 (Red → Green → Refactor)
 
-참고: 기반 레이어/MediaProcessor/로깅·에러/부트스트랩/빌드 자동화는 완료. 아래는
-디자인 현대화 중심 잔여 항목입니다.
-
-1. Overlay/Modal/Surface 토큰 일관화
-
-- Red: 갤러리 오버레이/컨테이너/토스트/모달에서 배경/보더/그림자 토큰 미사용을
-  탐지하는 테스트
-- Green: `--xeg-gallery-bg`, `--xeg-modal-bg`, `--xeg-modal-border`,
-  `--xeg-shadow-*`로 치환
-- Refactor: 컴포넌트 alias 제거(가능한 범위), semantic 토큰 직참조로 단순화 성공
-  기준: 하드코딩 색상/보더 0건, 다크/라이트 대비 테스트 통과
-
-2. 애니메이션 토큰/감속 정책 정규화
-
-- Red: transition/animation에 토큰 미사용 또는 ease 키워드 직접 사용 시 실패
-- Green: `--xeg-duration-*`, `--xeg-ease-*`로 통일, reduce-motion 시 애니메이션
-  비활성 확인
-- Refactor: 공통 transition 유틸 변수로 중복 제거 성공 기준: 애니메이션 토큰
-  100%, reduce-motion 스모크 통과
-
-3. 테마 커버리지 감사(Audit)
-
-- Red: 갤러리 주요 표면(컨테이너/툴바/버튼 상태)의 테마 토큰 누락 리포트 테스트
-- Green: 누락 지점에 토큰 적용, 시스템/수동 테마 전환 시 시각적 리그레션 없음
-- Refactor: 테마별 오버라이드 최소화, 기본 토큰에 수렴 성공 기준: 커버리지 100%,
-  라이트/다크 스냅샷 테스트 통과
-
-4. 접근성 시각 피드백 정합성
-
-- Red: focus-visible, hover/active 리프트와 그림자 토큰이 표준을 벗어나면 실패
-- Green: 모든 인터랙션 요소에 동일 패턴 적용(리프트/그림자/포커스 링)
-- Refactor: 인터랙션 유틸 클래스 또는 mixin으로 재사용화 성공 기준: 포커스
-  가시성 AA 스모크, 상호작용 상태 시각 일관성 체크 통과
+본 단계(애니메이션 토큰 정규화, 테마 커버리지, 접근성 시각 피드백)는 모두
+완료되어 가드 테스트가 GREEN 상태입니다. 세부 진행사항은
+`TDD_REFACTORING_PLAN_COMPLETED.md` 에 정리되었습니다.
 
 ## 4) 적용 가능한 솔루션 옵션과 선택
 
@@ -98,10 +68,6 @@
 
 ## 5) 체크리스트(진행)
 
-- [ ] Overlay/Modal/Surface 토큰 일관화(배경/보더/그림자)
-  - 진행: ModalShell/ToolbarShell 컴포넌트 그림자 토큰화 및 가드 테스트 완료
-  - 진행: Toast surface 토큰 통일 완료(semantic `--xeg-surface-glass-*` 적용)
-  - 다음: 기타 surface 잔여 지점 점검
 - [x] 애니메이션 토큰 100% 및 reduce-motion 대응
   - 완료: 유틸리티(.xeg-anim-_) + 컴포넌트 애니메이션(.xeg-animate-_) + 갤러리
     피처 CSS 전부 duration/easing 토큰화 및 정책 테스트 추가
@@ -115,8 +81,8 @@
 
 ### Backlog(비-디자인)
 
-- [ ] Download: 실패 요약 리포트 및 파일명 충돌 자동 해소 정책(-1, -2)
-- [ ] Extraction: 규칙 유틸 통합 및 중복 제거(회귀 테스트 유지)
+- [x] Download: 실패 요약 리포트 및 파일명 충돌 자동 해소 정책(-1, -2)
+- [x] Extraction: 규칙 유틸 통합 및 중복 제거(회귀 테스트 유지)
 
 ## 6) 품질 게이트
 

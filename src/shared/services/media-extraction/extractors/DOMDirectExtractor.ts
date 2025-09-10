@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { extractOriginalImageUrl, isValidMediaUrl } from '@shared/utils/media/media-url.util';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
 import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
 
@@ -75,11 +76,11 @@ export class DOMDirectExtractor {
     const mediaItems: MediaInfo[] = [];
 
     // 이미지 추출
-    const images = container.querySelectorAll('img[src*="pbs.twimg.com"]');
+    const images = container.querySelectorAll('img[src]');
     images.forEach((img, index) => {
       const imgElement = img as HTMLImageElement;
       if (this.isValidImageUrl(imgElement.src)) {
-        const originalUrl = this.getOriginalImageUrl(imgElement.src);
+        const originalUrl = extractOriginalImageUrl(imgElement.src);
         if (originalUrl) {
           mediaItems.push(this.createImageMediaInfo(originalUrl, index, tweetInfo));
         }
@@ -147,20 +148,10 @@ export class DOMDirectExtractor {
   }
 
   /**
-   * 원본 이미지 URL 생성
-   */
-  private getOriginalImageUrl(url: string): string {
-    // format=jpg&name=orig로 변경하여 원본 이미지 URL 생성
-    return url.replace(/format=\w+&name=\w+/, 'format=jpg&name=orig');
-  }
-
-  /**
    * 유효한 이미지 URL 검사
    */
   private isValidImageUrl(url: string): boolean {
-    return (
-      url.startsWith('http') && url.includes('pbs.twimg.com') && !url.includes('profile_images')
-    );
+    return isValidMediaUrl(url);
   }
 
   /**

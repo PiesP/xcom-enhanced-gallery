@@ -458,3 +458,25 @@ describe('GalleryItem', () => {
 ---
 
 **💻 일관된 코드 스타일은 팀 생산성을 높입니다.**
+
+## ⬇️ 다운로드 동작 가이드
+
+### ZIP 내 파일명 충돌 정책
+
+- 동일한 기본 파일명이 ZIP에 여러 번 추가될 수 있습니다. 이때 덮어쓰지 않고 다음
+  규칙으로 고유화를 보장합니다.
+  - 첫 번째 파일은 그대로 유지: alice_100_1.jpg
+  - 이후 충돌 파일은 접미사 -1, -2, ... 를 확장자 앞에 붙입니다:
+    alice_100_1-1.jpg, alice_100_1-2.jpg
+- 구현 위치: BulkDownloadService 및 MediaService의 ZIP 경로에서 충돌 감지 및
+  접미사 부여
+- 테스트로 보장: test/unit/shared/services/bulk-download.filename-policy.test.ts
+
+### 실패 요약 수집 정책
+
+- 다중 다운로드(ZIP) 중 일부 항목이 실패해도 가능한 항목은 계속 진행합니다(부분
+  성공 허용).
+- 실패 항목은 다음 구조로 수집되어 결과에 포함됩니다.
+  - DownloadResult.failures?: Array<{ url: string; error: string }>
+- 성공/실패 요약은 UI/로그/알림에서 사용자에게 상황을 알리기 위한 최소 정보를
+  제공합니다.

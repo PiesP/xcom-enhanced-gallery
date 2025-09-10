@@ -93,6 +93,18 @@ module.exports = {
           '^src/core/state/base/.*[.]ts$', // 상태 관리 기반 클래스들
           '^src/.*[.]interface[.]ts$', // 인터페이스 정의
           '^src/.*[.]abstract[.]ts$', // 추상 클래스들
+          // --- Whitelist: test-only or transitional modules kept for characterization & docs ---
+          '^src/shared/components/LazyIcon[.]tsx$',
+          '^src/features/gallery/hooks/useToolbarPositionBased[.]ts$',
+          '^src/shared/hooks/useSettingsModal[.]ts$',
+          '^src/shared/hooks/useFocusScope[.]ts$',
+          '^src/shared/external/userscript/adapter[.]ts$',
+          '^src/shared/state/gallery-store[.]ts$',
+          '^src/shared/services/iconRegistry[.]ts$',
+          '^src/shared/styles/tokens/button[.]ts$',
+          '^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)[.]tsx$',
+          '^src/shared/components/ui/Toolbar/toolbarConfig[.]ts$',
+          '^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal|EnhancedSettingsModal)[.]tsx$',
         ],
       },
       to: {},
