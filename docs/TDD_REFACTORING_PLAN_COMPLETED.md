@@ -33,3 +33,7 @@
 - 2025-09-10: ModalShell/ToolbarShell 토큰 정리
   - radius/ease/duration/focus-ring 토큰 사용으로 통일
   - 배경/보더는 semantic(alias) 토큰으로 교체
+
+- 2025-09-10: CSS 네이밍/토큰 미세 조정
+  - SettingsModal radius 구 토큰→xeg 토큰 교체
+  - component 토큰 파일의 radius 변수들을 xeg 토큰으로 정규화

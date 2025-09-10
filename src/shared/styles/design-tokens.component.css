@@ -25,7 +25,7 @@
   --button-text-primary: var(--color-text-inverse);
   --button-text-secondary: var(--color-text-primary);
   --button-border: var(--color-border-default);
-  --button-radius: var(--radius-md);
+  --button-radius: var(--xeg-radius-md);
   --button-padding-x: var(--space-md);
   --button-padding-y: var(--space-sm);
   --button-height: var(--size-button-height);
@@ -44,7 +44,7 @@
   --toast-border-error: var(--color-error);
   --toast-border-warning: var(--color-warning);
   --toast-border-info: var(--color-info);
-  --toast-radius: var(--radius-lg);
+  --toast-radius: var(--xeg-radius-lg);
   --toast-padding: var(--spacing-component-padding);
   --toast-shadow: var(--shadow-md);
   --toast-offset: 20px;
@@ -52,7 +52,7 @@
   /* Panel/Surface Component */
   --panel-bg: var(--color-bg-elevated);
   --panel-border: var(--color-border-default);
-  --panel-radius: var(--radius-lg);
+  --panel-radius: var(--xeg-radius-lg);
   --panel-padding: var(--spacing-component-padding);
   --panel-shadow: var(--shadow-sm);
 
@@ -63,7 +63,7 @@
   --glass-shadow: var(--shadow-lg);
 
   /* Media/Image Component */
-  --media-border-radius: var(--radius-md);
+  --media-border-radius: var(--xeg-radius-md);
   --media-loading-bg: var(--color-bg-secondary);
   --media-placeholder-text: var(--color-text-muted);
 
@@ -108,7 +108,7 @@
   border: 1px solid var(--glass-border);
   backdrop-filter: var(--glass-backdrop-filter);
   box-shadow: var(--glass-shadow);
-  border-radius: var(--radius-lg);
+  border-radius: var(--xeg-radius-lg);
 }
 
 /* Focus Ring Utility */
