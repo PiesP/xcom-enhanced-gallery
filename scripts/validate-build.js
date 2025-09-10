@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-env node */
 
 /**
  * 빌드 검증 스크립트
@@ -7,6 +8,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
+import { gzipSync } from 'zlib';
 
 function validateUserScript() {
   console.log('🔍 Validating UserScript build...');
@@ -68,9 +70,29 @@ function validateUserScript() {
     process.exit(1);
   }
 
+  // 사이즈 예산(Gzip) 검사
+  const gzipped = gzipSync(Buffer.from(content, 'utf8'));
+  const rawBytes = Buffer.byteLength(content, 'utf8');
+  const gzBytes = gzipped.length;
+
+  const WARN_BUDGET = 300 * 1024; // 300KB (경고)
+  const FAIL_BUDGET = 450 * 1024; // 450KB (실패)
+
+  if (gzBytes > FAIL_BUDGET) {
+    console.error(
+      `❌ Gzip size exceeds hard limit: ${(gzBytes / 1024).toFixed(2)} KB (limit ${(FAIL_BUDGET / 1024).toFixed(0)} KB)`
+    );
+    process.exit(1);
+  } else if (gzBytes > WARN_BUDGET) {
+    console.warn(
+      `⚠️ Gzip size exceeds budget: ${(gzBytes / 1024).toFixed(2)} KB (budget ${(WARN_BUDGET / 1024).toFixed(0)} KB)`
+    );
+  }
+
   console.log('✅ UserScript validation passed');
   console.log(`📄 File: ${userScriptPath}`);
-  console.log(`📏 Size: ${(content.length / 1024).toFixed(2)} KB`);
+  console.log(`📏 Size (raw): ${(rawBytes / 1024).toFixed(2)} KB`);
+  console.log(`📦 Size (gzip): ${(gzBytes / 1024).toFixed(2)} KB`);
 
   return true;
 }

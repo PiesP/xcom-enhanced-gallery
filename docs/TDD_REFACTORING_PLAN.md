@@ -30,38 +30,24 @@
 
 ## 3) 단계별 TDD 플랜 (Red → Green → Refactor)
 
-1. 기반 레이어(Adapters & Types)
+참고: 기반
+레이어/MediaProcessor/DownloadService(간소화)/로깅·에러/부트스트랩/빌드 자동화는
+완료되어 완료 로그로 이동했습니다. 아래는 잔여/후속 정비 항목입니다.
 
-- 테스트: tampermonkey 어댑터가 GM\_\* 존재 시 위임/부재 시 no-op/fallback 동작
-- 구현: `getTampermonkey()` + 타입 선언, `getVendors()`에서 preact/fflate 제공
-- 리팩터: 오류 메시지/스택 표준화, 타입 내보내기 일원화
+1. DownloadService 고도화(선택)
 
-2. MediaProcessor (핵심 추출 파이프라인)
+- 테스트: ZIP 외 스트리밍 다운로드 경로 벤치(성능 단위), 실패 사유 리포팅 강화
+- 구현: 실패 항목 요약 리포트, 파일명 충돌 자동 해소(policy: -1, -2 suffix)
 
-- 테스트: HTMLElement에서 미디어 URL 배열 추출, 유효 도메인 필터링, 빈 입력→[]
-- 테스트: `generateOriginalUrl` 규칙 검증, 잘못된 URL은 skip
-- 구현: 최소 통과 후, 캐시/재시도/타임아웃(옵션) 단계적 추가
+2. MediaExtractor 백업 경로 일원화(선택)
 
-3. DownloadService (GM_download 래퍼)
+- 테스트: `DOMDirectExtractor`와 `MediaMappingStrategy` 간 중복 제거 리그레션
+- 구현: 공용 유틸로 추출 규칙 합치기, 테스트 유지
 
-- 테스트: 동시성 제한, 실패 재시도, 취소 토큰 지원, GM\_\* 미지원 시 xhr
-  fallback
-- 구현: 큐 기반 스케줄러 + 진행 이벤트, 파일명 패턴 적용
+3. 문서/가이드라인 강화(소)
 
-4. Gallery 부트스트랩(레이어 분리)
-
-- 테스트: 트윗 DOM 감지 시 Lazy init, PC-only 핫키(Enter/Escape) 동작 스모크
-- 구현: `startApplication()` 내 책임 분리(탐지/초기화/정리), 전역 핸들러 정리
-
-5. 로깅/에러 표준화
-
-- 테스트: shouldLog 레벨, 타임스탬프/스택 포함 포맷
-- 구현: `createScopedLogger`, `logError`, `measurePerformance`
-
-6. 빌드/메타데이터
-
-- 테스트: 유저스크립트 헤더 배너 주입(이름/버전/매치/권한), 소스맵 생성
-- 구현: 릴리즈 사이즈 예산(예: ≤ 300KB gzip) 경고, 메타 데이터 자동화
+- CODING_GUIDELINES: userscript 환경에서의 PC 전용 이벤트 정책 예시 1문단 추가
+- README: 설치/개발 모드 안내 최신화
 
 ## 4) 적용 가능한 솔루션 옵션과 선택
 
@@ -80,13 +66,13 @@
 
 ## 5) 체크리스트(진행)
 
-- [x] Adapters: Userscript 어댑터(`getUserscript`) 추가, `getVendors`는 현 구조
-      유지
-- [ ] Core: Result 타입/에러 유틸, logger 기초
-- [ ] MediaProcessor: 추출/검증/정규화 + 테스트
-- [ ] DownloadService: 큐/동시성/취소 + 테스트
-- [ ] Bootstrap: Lazy init + PC-only 핫키 스모크
-- [ ] Build: 헤더 배너/사이즈 예산/소스맵
+- [x] Adapters: Userscript 어댑터(`getUserscript`) 추가, vendors getter 유지
+- [x] Core: Result/로깅/에러 핸들러 표준화
+- [x] MediaProcessor: 추출 파이프라인 + 테스트
+- [x] DownloadService: ZIP/진행률/취소/동시성·재시도(기본)
+- [x] Bootstrap: PC-only 핫키/즉시 초기화
+- [x] Build: 헤더 배너/소스맵/사이즈 예산 경고·차단
+- [ ] Follow-ups: Download 실패 요약/파일명 충돌 처리, 추출 규칙 통합(선택)
 
 ## 6) 품질 게이트
 

@@ -87,11 +87,11 @@ jobs:
       - name: 🔍 Type checking
         run: npm run typecheck
 
-      - name: � Lint code
+      - name: 🧹 Lint code
         run: npm run lint
 
-      - name: 🎨 Format check
-        run: npm run format:check
+      - name: 🎨 Prettier check
+        run: npx --yes prettier --check .
 
       - name: 🧪 Run tests
         run: npm run test
@@ -123,6 +123,9 @@ jobs:
         run: |
           echo "🚀 Building production version..."
           npm run build:prod
+
+      - name: ✅ Validate build outputs
+        run: node ./scripts/validate-build.js
 
       - name: 📦 Create release package
         run: |

@@ -222,6 +222,18 @@ export default [
       'vitest.config.*',
       'scripts/**/*.{ts,js}',
     ],
+    languageOptions: {
+      globals: {
+        // Node.js 환경 전역 (설정/스크립트 파일용)
+        console: 'readonly',
+        process: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        Buffer: 'readonly',
+      },
+    },
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',

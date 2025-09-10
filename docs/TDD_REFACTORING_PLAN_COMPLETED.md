@@ -60,3 +60,26 @@
   - C2 완료: Radius 정책 전면 반영 확인
     - 인터랙션/서피스에 `--xeg-radius-*`만 사용, 하드코딩 px 제거
     - 관련 스타일/리그레션 테스트 전량 통과
+
+- 2025-09-10: Core/로깅·Result 패턴 정착
+  - `Result`/`AsyncResult`/`safeAsync` 유틸 반영, 타입 안전성 강화
+  - 중앙 로깅(`@shared/logging/logger`) 확립: level/timestamp/scoped
+    logger/measurePerformance/logError
+  - ErrorHandler 통합(AppError/코드/심각도/글로벌 핸들러)
+
+- 2025-09-10: MediaProcessor 파이프라인 완성
+  - `collectNodes` → `extractRawData` → `normalize` → `dedupe` → `validate` 구현
+    및 테스트 통과
+  - `processMedia()` 헬퍼 제공, 실패 경로 메시지 표준화
+
+- 2025-09-10: BulkDownloadService 도입(간소화)
+  - ZIP(fflate via getter), 진행률 콜백, AbortSignal 취소, 제한적 동시성/재시도
+    옵션
+  - 단건/대용량 모두 지원, Userscript/브라우저 동작
+
+- 2025-09-10: 갤러리 부트스트랩 정리
+  - 즉시 초기화 및 PC 전용 핫키 구성, 비핵심은 백그라운드 초기화
+
+- 2025-09-10: 빌드/메타데이터 강화
+  - Vite 플러그인으로 Userscript 헤더 자동화, 소스맵(dev) 생성
+  - 빌드 검증 스크립트에 gzip 사이즈 예산(경고≥300KB, 차단>450KB) 추가
