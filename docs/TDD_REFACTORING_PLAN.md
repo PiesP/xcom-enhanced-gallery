@@ -1,14 +1,15 @@
-# 🔄 TDD 리팩토링 계획 — 유저 스크립트 현대화(간결 버전)
+# 🎨 TDD 리팩토링 계획 — 디자인 현대화(간결 버전)
 
 > 테스트 우선(TDD)으로 유저 스크립트 소스를 모듈화·간결화하고, 타입/의존성/성능
 > 기준을 일관화합니다.
 
 ## 1) 현재 상태 스냅샷 (2025-09-10)
 
-- B4/C1/C2는 완료되어 완료 로그로 이관했습니다. 본 문서는 유저 스크립트 현대화
-  계획만 남깁니다.
-- 기준 원칙: TypeScript strict 100%, 외부 의존성은 getter 함수로만 접근, PC 전용
-  이벤트만 사용.
+- 디자인 시스템 핵심(B4/C1/C2: 토큰/라디우스/계약)은 완료되어 완료 로그로
+  이관되었습니다.
+- 본 문서는 디자인 측면의 간결성/일관성/현대화 항목에 집중합니다.
+- 기준 원칙: TypeScript strict 100%, 의존성 getter, PC 전용 이벤트, 디자인 토큰
+  100% 사용.
 
 ## 2) 의사결정(Decision Log)
 
@@ -28,26 +29,59 @@
 - D5. 입력 처리: PC 전용(Mouse/Keyboard/Wheel), 터치 이벤트 비사용. 키 지원은
   가이드라인 상수만 허용.
 
+- D6. 스타일 아키텍처: CSS Modules + Semantic Tokens 우선, 컴포넌트 alias는
+  과도기용만 허용.
+  - 장점: 런타임 오버헤드 없음, 트리셰이킹/번들 영향 최소, 토큰 일관성 보장
+  - 단점: 전역 변수 의존, 토큰 네임 충돌 시 테스트 필요
+- D7. 인터랙션 컴포넌트: IconButton 패턴 통일(사이즈/호버/포커스/ARIA), 커스텀은
+  합성 우선.
+  - 장점: 접근성/일관성↑, 테스트/리뷰 용이
+  - 단점: 기존 산발적 버튼 교체 작업 필요
+
 ## 3) 단계별 TDD 플랜 (Red → Green → Refactor)
 
-참고: 기반
-레이어/MediaProcessor/DownloadService(간소화)/로깅·에러/부트스트랩/빌드 자동화는
-완료되어 완료 로그로 이동했습니다. 아래는 잔여/후속 정비 항목입니다.
+참고: 기반 레이어/MediaProcessor/로깅·에러/부트스트랩/빌드 자동화는 완료. 아래는
+디자인 현대화 중심 잔여 항목입니다.
 
-1. DownloadService 고도화(선택)
+1. IconButton/Action Controls 통일
 
-- 테스트: ZIP 외 스트리밍 다운로드 경로 벤치(성능 단위), 실패 사유 리포팅 강화
-- 구현: 실패 항목 요약 리포트, 파일명 충돌 자동 해소(policy: -1, -2 suffix)
+- Red: 갤러리 내 아이콘 전용 버튼(닫기/내비게이션/다운로드 등)이 IconButton
+  계약(사이즈/ARIA/포커스 링/토큰) 위반 시 실패하는 테스트 작성
+- Green: 모든 해당 버튼을 IconButton 합성으로 교체,
+  `--xeg-radius-md`/hover/active/포커스 토큰 적용
+- Refactor: 변형(variant) 프로퍼티 최소화 및 공통 스타일 유틸 추출 성공 기준:
+  위반 0건, 접근성 스모크(키보드 탐색/포커스 가시성) 통과
 
-2. MediaExtractor 백업 경로 일원화(선택)
+2. Overlay/Modal/Surface 토큰 일관화
 
-- 테스트: `DOMDirectExtractor`와 `MediaMappingStrategy` 간 중복 제거 리그레션
-- 구현: 공용 유틸로 추출 규칙 합치기, 테스트 유지
+- Red: 갤러리 오버레이/컨테이너/토스트/모달에서 배경/보더/그림자 토큰 미사용을
+  탐지하는 테스트
+- Green: `--xeg-gallery-bg`, `--xeg-modal-bg`, `--xeg-modal-border`,
+  `--xeg-shadow-*`로 치환
+- Refactor: 컴포넌트 alias 제거(가능한 범위), semantic 토큰 직참조로 단순화 성공
+  기준: 하드코딩 색상/보더 0건, 다크/라이트 대비 테스트 통과
 
-3. 문서/가이드라인 강화(소)
+3. 애니메이션 토큰/감속 정책 정규화
 
-- CODING_GUIDELINES: userscript 환경에서의 PC 전용 이벤트 정책 예시 1문단 추가
-- README: 설치/개발 모드 안내 최신화
+- Red: transition/animation에 토큰 미사용 또는 ease 키워드 직접 사용 시 실패
+- Green: `--xeg-duration-*`, `--xeg-ease-*`로 통일, reduce-motion 시 애니메이션
+  비활성 확인
+- Refactor: 공통 transition 유틸 변수로 중복 제거 성공 기준: 애니메이션 토큰
+  100%, reduce-motion 스모크 통과
+
+4. 테마 커버리지 감사(Audit)
+
+- Red: 갤러리 주요 표면(컨테이너/툴바/버튼 상태)의 테마 토큰 누락 리포트 테스트
+- Green: 누락 지점에 토큰 적용, 시스템/수동 테마 전환 시 시각적 리그레션 없음
+- Refactor: 테마별 오버라이드 최소화, 기본 토큰에 수렴 성공 기준: 커버리지 100%,
+  라이트/다크 스냅샷 테스트 통과
+
+5. 접근성 시각 피드백 정합성
+
+- Red: focus-visible, hover/active 리프트와 그림자 토큰이 표준을 벗어나면 실패
+- Green: 모든 인터랙션 요소에 동일 패턴 적용(리프트/그림자/포커스 링)
+- Refactor: 인터랙션 유틸 클래스 또는 mixin으로 재사용화 성공 기준: 포커스
+  가시성 AA 스모크, 상호작용 상태 시각 일관성 체크 통과
 
 ## 4) 적용 가능한 솔루션 옵션과 선택
 
@@ -64,15 +98,26 @@
   - GM_download(선택): 저장 UX 우수 / 샌드박스 종속성
   - 결정: GM_download 1순위, fetch+xhr fallback
 
+- 스타일링
+  - CSS-in-JS: 조합성↑/동적 테마 용이 / 번들 및 런타임 오버헤드, userscript 환경
+    부적합
+  - 전역 CSS: 간단 / 충돌 위험, 캡슐화 약함
+  - CSS Modules + Tokens(선택): 캡슐화/경량/테스트 친화 / 토큰 네임 관리 필요
+  - 결정: CSS Modules + Semantic Tokens, alias는 점진 제거
+
 ## 5) 체크리스트(진행)
 
-- [x] Adapters: Userscript 어댑터(`getUserscript`) 추가, vendors getter 유지
-- [x] Core: Result/로깅/에러 핸들러 표준화
-- [x] MediaProcessor: 추출 파이프라인 + 테스트
-- [x] DownloadService: ZIP/진행률/취소/동시성·재시도(기본)
-- [x] Bootstrap: PC-only 핫키/즉시 초기화
-- [x] Build: 헤더 배너/소스맵/사이즈 예산 경고·차단
-- [ ] Follow-ups: Download 실패 요약/파일명 충돌 처리, 추출 규칙 통합(선택)
+- [ ] IconButton/Action Controls 통일(사이즈/ARIA/토큰)
+- [ ] Overlay/Modal/Surface 토큰 일관화(배경/보더/그림자)
+- [ ] 애니메이션 토큰 100% 및 reduce-motion 대응
+- [ ] 테마 커버리지 100%(라이트/다크 스냅샷)
+- [ ] 접근성 시각 피드백 정합성(hover/active/focus)
+- [ ] Docs: PC 전용 이벤트 예시/README 최신화
+
+### Backlog(비-디자인)
+
+- [ ] Download: 실패 요약 리포트 및 파일명 충돌 자동 해소 정책(-1, -2)
+- [ ] Extraction: 규칙 유틸 통합 및 중복 제거(회귀 테스트 유지)
 
 ## 6) 품질 게이트
 

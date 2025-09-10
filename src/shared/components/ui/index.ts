@@ -16,6 +16,8 @@ export * from './Icon/icons';
 // Button 컴포넌트
 export { default as Button } from './Button/Button';
 export type { ButtonProps } from './Button/Button';
+export { default as IconButton } from './Button/IconButton';
+export type { IconButtonProps } from './Button/IconButton';
 
 // Toast 컴포넌트 (실제 export 확인 후 수정)
 export { Toast, addToast, clearAllToasts, removeToast, toasts } from './Toast/Toast';

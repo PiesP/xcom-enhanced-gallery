@@ -145,7 +145,7 @@
   /* 개별 UI 요소만 이벤트 차단 */
   pointer-events: none;
   opacity: 0;
-  transition: opacity var(--xeg-transition-fast);
+  transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
 /* 스크롤 가능한 콘텐츠 영역은 항상 이벤트 허용 */
@@ -424,7 +424,7 @@
 .itemsContainer::-webkit-scrollbar-thumb {
   background: var(--xeg-neutral-300);
   border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
-  transition: background-color 0.2s ease;
+  transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 .itemsContainer::-webkit-scrollbar-thumb:hover {
@@ -433,7 +433,7 @@
 
 /* 애니메이션 - GPU 가속 */
 .fadeInOut {
-  animation: fadeInOut var(--xeg-duration-normal) cubic-bezier(0.16, 1, 0.3, 1); /* 0.3s를 토큰으로 교체 */
+  animation: fadeInOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
 
 @keyframes fadeInOut {
@@ -571,19 +571,19 @@
 /* 감소된 모션 사용자를 위한 지원 - 개선된 접근성 */
 @media (prefers-reduced-motion: reduce) {
   .toolbarWrapper {
-    transition: opacity var(--xeg-duration-fast) ease; /* 150ms를 토큰으로 교체 */
+    transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
     transform: translateY(-100%); /* Y축 이동만 제거 */
   }
 
   .toolbarWrapper:hover,
   .toolbarWrapper:focus-within {
     transform: translateY(0); /* 단순한 Y축 이동만 */
-    transition: opacity var(--xeg-duration-toolbar) ease; /* 100ms를 토큰으로 교체 */
+    transition: opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out);
   }
 
   /* 컨테이너 레벨에서도 모션 감소 */
   .container {
-    transition: opacity var(--xeg-duration-normal) ease; /* 200ms를 토큰으로 교체 */
+    transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
   }
 
   /* 모든 애니메이션 제거 */

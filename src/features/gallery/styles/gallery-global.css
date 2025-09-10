@@ -14,8 +14,6 @@
  */
 
 /* ===== 통합 Glass Surface 클래스 ===== */
-
-/* 기본 갤러리 Surface - 토큰 기반 */
 .glass-surface {
   background: var(--xeg-surface-glass-bg);
   border: 1px solid var(--xeg-surface-glass-border);
@@ -24,6 +22,7 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   isolation: isolate;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
 }
 
 .glass-surface:hover {
@@ -33,7 +32,8 @@
 
 /* 테마별 Surface 변형 */
 .glass-surface-light {
-  background: var(--xeg-surface-glass-bg-light, var(--xeg-surface-glass-bg));
+  background: var(--xeg-surface-glass-bg-light, rgba(255, 255, 255, 0.85));
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
   color: var(--xeg-surface-glass-text-light, var(--color-text-primary));
   border: 1px solid var(--xeg-surface-glass-border-light, var(--xeg-surface-glass-border));
   border-radius: var(--xeg-radius-2xl);
@@ -51,7 +51,7 @@
   box-shadow: var(--xeg-surface-glass-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  isolation: isolate;
+  transition: width var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 /* 갤러리 오버레이 - 통합 색상 시스템 적용 */
@@ -67,7 +67,7 @@
   align-items: center;
   justify-content: center;
   opacity: 1;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
   pointer-events: auto;
 }
 
@@ -92,7 +92,7 @@
   background: var(--xeg-bg-toolbar);
   border-bottom: 1px solid var(--xeg-color-border-primary);
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
   z-index: 1005;
   display: flex;
   align-items: center;
@@ -178,7 +178,7 @@
     var(--xeg-color-primary) 0%,
     var(--xeg-color-primary-hover) 100%
   );
-  transition: width 0.3s ease;
+  transition: width var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 .xeg-progress-text {
@@ -237,7 +237,7 @@
   font-size: 20px;
   cursor: pointer;
   z-index: 1002;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -313,7 +313,7 @@
   border-radius: var(--xeg-radius-xl);
   padding: 0;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
   flex-shrink: 0;
   overflow: hidden;
   box-shadow: var(--shadow-thumbnail);

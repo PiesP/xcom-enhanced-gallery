@@ -83,3 +83,10 @@
 - 2025-09-10: 빌드/메타데이터 강화
   - Vite 플러그인으로 Userscript 헤더 자동화, 소스맵(dev) 생성
   - 빌드 검증 스크립트에 gzip 사이즈 예산(경고≥300KB, 차단>450KB) 추가
+
+- 2025-09-10: Userscript 현대화 1차 마일스톤 정리
+  - Core/Result/로깅/에러 핸들러 표준화 완료
+  - MediaProcessor 파이프라인 및 테스트 완료
+  - DownloadService(기본 ZIP/진행률/취소/동시성·재시도) 1차 구현 완료
+  - Bootstrap(PC-only 핫키/즉시 초기화) 정비 완료
+  - Build(헤더/소스맵/사이즈 예산) 구성 완료

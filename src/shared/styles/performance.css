@@ -108,8 +108,7 @@
  */
 .xeg-optimized-image {
   /* 이미지 로딩 최적화 */
-  loading: lazy;
-  decoding: async;
+  /* HTML 속성으로 제어: loading="lazy", decoding="async" */
 
   /* 레이아웃 시프트 방지 */
   aspect-ratio: 16 / 9; /* 기본 비율 */

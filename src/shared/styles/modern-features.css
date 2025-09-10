@@ -156,11 +156,11 @@
 
 /* View Transition 스타일 */
 ::view-transition-old(gallery-main) {
-  animation: slideOut 300ms ease-out;
+  animation: slideOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
 
 ::view-transition-new(gallery-main) {
-  animation: slideIn 300ms ease-out;
+  animation: slideIn var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
 
 @keyframes slideOut {

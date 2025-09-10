@@ -179,6 +179,10 @@ Gallery
 - 하드코딩 숫자(ms/s)나 키워드(ease, ease-in-out 등) 직접 사용 금지
 - 서비스에서 주입하는 CSS 역시 동일 토큰을 사용
 
+추가 규칙:
+- `--xeg-easing-*` vs `--xeg-ease-*` 혼용 금지. 프로젝트 표준은 `--xeg-easing-*` 입니다.
+- CSS Modules의 `composes` 사용 금지(도구 호환성 문제). 공통 스타일은 유틸 클래스로 분리하거나 명시적으로 중복 선언합니다.
+
 ### Component vs Semantic 토큰
 
 - 소스 오브 트루스는 Semantic 토큰(`--xeg-modal-bg`, `--xeg-color-*`, `--xeg-radius-*`).

@@ -67,9 +67,13 @@
   --xeg-duration-fast: 150ms;
   --xeg-duration-normal: 200ms;
   --xeg-duration-slow: 300ms;
+  /* Preferred easing tokens */
   --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
   --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
   --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Aliases used across codebase */
+  --xeg-ease-standard: var(--xeg-easing-ease-out);
+  --xeg-easing-linear: linear;
 
   /* Shadow 토큰 - 테스트 요구사항 */
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);

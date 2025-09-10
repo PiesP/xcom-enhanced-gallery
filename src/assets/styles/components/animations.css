@@ -161,15 +161,15 @@
 }
 
 .xeg-animate-bounce {
-  animation: xeg-bounce 1s ease-in-out;
+  animation: xeg-bounce 1s var(--xeg-easing-ease-in-out);
 }
 
 .xeg-animate-pulse {
-  animation: xeg-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: xeg-pulse 2s var(--xeg-easing-ease-in-out) infinite;
 }
 
 .xeg-animate-spin {
-  animation: xeg-spin 1s linear infinite;
+  animation: xeg-spin 1s var(--xeg-easing-linear) infinite;
 }
 
 /* 인터랙션 애니메이션 */

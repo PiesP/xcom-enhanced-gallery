@@ -61,8 +61,8 @@
   inset: 0;
   z-index: var(--xeg-z-gallery, 10000);
 
-  /* 배경 - OKLCH 색상 사용 */
-  background: var(--xeg-gallery-bg-oklch);
+  /* 배경 - Semantic 토큰 사용 */
+  background: var(--xeg-gallery-bg);
   backdrop-filter: none;
 
   /* Logical Properties */
@@ -87,8 +87,8 @@
   inset: 0;
   z-index: var(--xeg-z-gallery-overlay);
 
-  /* OKLCH 배경 색상 + 글래스모피즘 */
-  background: var(--xeg-gallery-glass-bg);
+  /* 배경 - Semantic 토큰 사용 */
+  background: var(--xeg-gallery-bg);
 
   /* 플렉스 레이아웃 - :has() 선택자로 상태 관리 */
   display: flex;
@@ -162,20 +162,13 @@
 .xegGalleryViewer {
   /* CSS Nesting - 테마별 변형 */
   &.xegThemeLight {
-    background: var(--xeg-gallery-bg-light-oklch, oklch(0.98 0.01 220 / 0.9));
+    background: var(--xeg-gallery-bg-light);
   }
-
   &.xegThemeDark {
-    background: var(--xeg-gallery-bg-dark-oklch, oklch(0.15 0.02 220 / 0.95));
+    background: var(--xeg-gallery-bg-dark);
   }
-
   &.xegThemeAuto {
-    background: var(--xeg-gallery-bg-auto-oklch, oklch(0.15 0.02 220 / 0.95));
-
-    /* 시스템 라이트 모드 감지 */
-    @media (prefers-color-scheme: light) {
-      background: var(--xeg-gallery-bg-light-oklch, oklch(0.98 0.01 220 / 0.9));
-    }
+    background: var(--xeg-gallery-bg);
   }
 }
 
@@ -189,9 +182,9 @@
   inset-block-start: var(--xeg-spacing-lg);
   inset-inline-end: var(--xeg-spacing-lg);
 
-  /* OKLCH 색상 */
-  background: var(--xeg-gallery-surface-oklch);
-  border: 1px solid oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.2);
+  /* 표면/경계 - Semantic/Component 토큰 */
+  background: var(--xeg-comp-toolbar-bg);
+  border: 1px solid var(--xeg-comp-toolbar-border);
   border-radius: var(--xeg-radius-full);
 
   /* 크기 */
@@ -199,7 +192,7 @@
   block-size: var(--xeg-button-size-lg);
 
   /* 텍스트 */
-  color: var(--xeg-gallery-text-oklch);
+  color: var(--color-text-primary);
   font-size: var(--xeg-icon-size-lg);
 
   /* 레이아웃 */
@@ -223,20 +216,20 @@
   -webkit-backdrop-filter: none;
 
   /* 그림자 */
-  box-shadow: var(--xeg-shadow-button);
+  box-shadow: var(--xeg-comp-toolbar-shadow, var(--xeg-shadow-lg));
 
   /* 트랜지션 */
   transition:
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
 
   /* CSS Nesting - 상호작용 상태 */
   &:hover {
-    background: oklch(from var(--xeg-gallery-surface-oklch) calc(l * 0.95) c h);
-    border-color: oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.4);
-    transform: var(--xeg-gallery-gpu-acceleration) scale(1.1) translateY(-1px);
+    background: var(--xeg-comp-toolbar-bg);
+    border-color: var(--xeg-comp-toolbar-border);
+    transform: var(--xeg-gallery-gpu-acceleration) scale(1.1) translateY(var(--xeg-button-lift));
     box-shadow: var(--xeg-shadow-lg);
   }
 
@@ -245,8 +238,8 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--xeg-color-primary-oklch, oklch(0.7 0.15 220));
-    outline-offset: 2px;
+    outline: var(--xeg-focus-ring);
+    outline-offset: var(--xeg-focus-ring-offset);
   }
 }
 
@@ -260,9 +253,9 @@
   inset-block-start: 50%;
   transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
 
-  /* OKLCH 색상 */
-  background: var(--xeg-gallery-surface-oklch);
-  border: 1px solid oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.2);
+  /* 표면/경계 - Semantic/Component 토큰 */
+  background: var(--xeg-comp-toolbar-bg);
+  border: 1px solid var(--xeg-comp-toolbar-border);
   border-radius: var(--xeg-radius-full);
 
   /* 크기 */
@@ -270,7 +263,7 @@
   block-size: var(--xeg-button-size-xl);
 
   /* 텍스트 */
-  color: var(--xeg-gallery-text-oklch);
+  color: var(--color-text-primary);
   font-size: var(--xeg-icon-size-lg);
 
   /* 레이아웃 */
@@ -293,18 +286,18 @@
   -webkit-backdrop-filter: none;
 
   /* 그림자 */
-  box-shadow: var(--xeg-toolbar-shadow);
+  box-shadow: var(--xeg-comp-toolbar-shadow, var(--xeg-shadow-md));
 
   /* 트랜지션 */
   transition:
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard);
 
   /* CSS Nesting - 상호작용 상태 */
   &:hover {
-    background: oklch(from var(--xeg-gallery-surface-oklch) calc(l * 0.95) c h);
-    border-color: oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.4);
+    background: var(--xeg-comp-toolbar-bg);
+    border-color: var(--xeg-comp-toolbar-border);
     transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration) scale(1.1);
   }
 
@@ -313,8 +306,8 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--xeg-color-primary-oklch, oklch(0.7 0.15 220));
-    outline-offset: 2px;
+    outline: var(--xeg-focus-ring);
+    outline-offset: var(--xeg-focus-ring-offset);
   }
 
   /* CSS Nesting - 비활성 상태 */
@@ -421,8 +414,8 @@
   max-height: 100%;
   object-fit: contain;
   border-radius: var(--xeg-radius-lg);
-  box-shadow: 0 20px 60px var(--color-overlay-medium);
-  transition: transform 0.2s ease;
+  box-shadow: var(--shadow-gallery-image);
+  transition: transform var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 /**
@@ -470,7 +463,7 @@
   border: 2px solid var(--xeg-color-neutral-400);
   border-radius: var(--xeg-radius-full);
   border-top-color: var(--xeg-color-text-primary);
-  animation: spin 1s linear infinite;
+  animation: spin 1s var(--xeg-easing-linear) infinite;
   margin-right: 10px;
 }
 
@@ -530,7 +523,7 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: var(--xeg-toolbar-shadow);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
 }
 
 /**
@@ -561,7 +554,7 @@
   color: var(--xeg-button-text);
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--xeg-duration-fast) var(--xeg-ease-standard);
   white-space: nowrap;
 }
 
@@ -572,7 +565,7 @@
 .controlButton:hover {
   background: var(--xeg-button-bg-hover);
   border-color: var(--xeg-button-border-hover);
-  transform: translateY(-1px);
+  transform: translateY(var(--xeg-button-lift));
 }
 
 /**
@@ -602,7 +595,14 @@
  * - 호버 시 더 진한 프라이머리 색상
  */
 .downloadButton {
-  composes: controlButton;
+  /* controlButton 기본 속성 포함 (CSS Modules composes 미사용) */
+  border-radius: var(--xeg-radius-md);
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--xeg-duration-fast) var(--xeg-ease-standard);
+  white-space: nowrap;
+  color: var(--xeg-button-text);
   background: var(--xeg-color-primary);
   border-color: var(--xeg-color-primary);
 }
@@ -626,7 +626,14 @@
  * - 호버 시 더 진한 성공 색상
  */
 .downloadAllButton {
-  composes: controlButton;
+  /* controlButton 기본 속성 포함 (CSS Modules composes 미사용) */
+  border-radius: var(--xeg-radius-md);
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--xeg-duration-fast) var(--xeg-ease-standard);
+  white-space: nowrap;
+  color: var(--xeg-button-text);
   background: var(--xeg-color-success);
   border-color: var(--xeg-color-success);
 }
@@ -749,7 +756,7 @@
  * 투명도가 0에서 1로 변화하는 애니메이션입니다.
  */
 .fadeIn {
-  animation: fadeIn 0.3s ease-in-out;
+  animation: fadeIn var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
 }
 
 /**
@@ -757,7 +764,7 @@
  * 투명도가 1에서 0으로 변화하는 애니메이션입니다.
  */
 .fadeOut {
-  animation: fadeOut 0.3s ease-in-out;
+  animation: fadeOut var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
 }
 
 /**
@@ -765,7 +772,7 @@
  * 크기와 투명도가 동시에 변화하는 애니메이션입니다.
  */
 .scaleIn {
-  animation: scaleIn 0.2s ease-in-out;
+  animation: scaleIn var(--xeg-duration-fast) var(--xeg-easing-ease-in-out);
 }
 
 /**
@@ -773,7 +780,7 @@
  * 왼쪽에서 오른쪽으로 슬라이드하며 등장하는 애니메이션입니다.
  */
 .slideInLeft {
-  animation: slideInLeft 0.3s ease-in-out;
+  animation: slideInLeft var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
 }
 
 /**
@@ -781,7 +788,7 @@
  * 오른쪽에서 왼쪽으로 슬라이드하며 등장하는 애니메이션입니다.
  */
 .slideInRight {
-  animation: slideInRight 0.3s ease-in-out;
+  animation: slideInRight var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
 }
 
 /**
