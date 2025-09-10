@@ -5,26 +5,25 @@
 
 ## 1) 현재 상태 스냅샷 (2025-09-10)
 
-- 테스트 요약: Test Files 18 failed | 153 passed | 7 skipped / Tests 7 failed
+- 테스트 요약(초기 기준): Test Files 18 failed | 153 passed | 7 skipped / Tests
+  7 failed
 - 주된 실패 원인
-  - A. 모듈 해상도 실패: 기대 경로의 컴포넌트/훅/서비스 없음
-    - Toolbar/ToolbarHeadless, Toolbar/UnifiedToolbar,
-      Toolbar/ConfigurableToolbar
-    - SettingsModal/\* (Headless/Unified/Enhanced), LazyIcon, iconRegistry,
-      gallery-store
-    - @features/gallery/hooks/useToolbarPositionBased
+  - A. 모듈 해상도 실패: 일부 경로 스텁/구현 부재
+    - UnifiedToolbar (해결: 최소 스텁 추가)
+    - 나머지: ToolbarHeadless/ConfigurableToolbar는 이미 존재, SettingsModal
+      계열 존재, iconRegistry/LazyIcon 존재, gallery-store 존재,
+      useToolbarPositionBased 존재
   - B. 정책 충돌
-    - 토큰: 테스트는 component token `--xeg-comp-modal-*` 요구 vs 현재 CSS는
-      semantic token `--xeg-modal-*` 사용
-    - 클래스: TSX 내 'glass-surface' 금지 테스트 vs 현재 TSX에서 사용 중
-    - 외부 라이브러리 접근: 직접 `from 'preact'` import 탐지됨 → vendors getter
-      정책 위반
+    - 토큰: component↔semantic alias 레이어 존재(해결: 중앙 파일에서 alias
+      제공)
+    - 클래스: TSX 내 'glass-surface' 사용 없음(해결)
+    - 외부 라이브러리 접근: 일부 훅에서 직접 import 사용(부분 해결: 2건 교정)
   - C. 디자인 시스템 일관성
     - 애니메이션 토큰/패턴 불일치
     - CSS 변수 네이밍 컨벤션 검사 실패, 스타일 수(선택자 수) 기대 미달
 
-참고: 기존 문서의 "완료" 표기 중 일부(예: glass-surface 제거, component token
-적용)는 현재 코드/테스트 결과와 상이하여 정정합니다.
+참고: glass-surface, component token alias 등 상이 표기는 현 시점 기준으로
+정리했습니다.
 
 ## 2) 의사결정(Decision Log)
 
@@ -34,7 +33,7 @@
     충족
   - 방법: `--xeg-comp-modal-bg` → `var(--xeg-modal-bg)` 등 alias 레이어
     추가(컴포넌트 CSS 우선 적용)
-- D2. glass-surface 사용: TSX 문자열 사용 금지, 효과는 CSS Module 내부에 캡슐화
+- D2. glass-surface 사용: TSX 문자열 사용 금지, 효과는 CSS에 캡슐화(준수)
 - D3. 외부 의존성: 모든 외부 라이브러리는 vendors getter로 통일, 직접 import
   제거(코드모드 적용)
 - D4. 결측 모듈: 테스트가 참조하는 경로에 인터페이스 우선의 최소
@@ -46,25 +45,19 @@
 
 Phase A. 테스트 가로막는 임계 이슈 제거 (Fail Fast blockers)
 
-- A1. 모듈 스텁 추가(인터페이스 중심, 타입 명시) → import 해상도 해결
-  - ToolbarHeadless, UnifiedToolbar, ConfigurableToolbar
-  - SettingsModal(Headless/Unified/Enhanced), LazyIcon, iconRegistry,
-    gallery-store
-  - useToolbarPositionBased
-  - 성공 기준: 해당 테스트 파일의 "Failed to resolve import" 사라짐
-- A2. vendors getter 강제
-  - 코드베이스에서 `from 'preact'` 직접 참조 제거 → `@shared/external/vendors`
-    경유
+- A1. UnifiedToolbar 엔트리 스텁 추가(완료)
+  - 성공 기준: 해당 테스트에서 import 해상도 실패 없음
+- A2. vendors getter 강제(진행중)
+  - 잔여 직접 import 제거(훅/유틸 소수 남음) → `@shared/external/vendors` 경유
   - 성공 기준: Architecture Dependency Rules 통과
 
 Phase B. 디자인/토큰 정책 일관화
 
-- B1. Component Token Alias 레이어 도입
-  - CSS: `--xeg-comp-modal-bg/border`를 사용하도록 컴포넌트 CSS 수정
-  - Alias: component → semantic 매핑 정의(중앙 파일 또는 :root 레이어)
-  - 성공 기준: color-token-consistency, glass-surface-consistency 관련 통과
-- B2. TSX에서 'glass-surface' 문자열 제거, CSS Module로 효과 이전
-- B3. 애니메이션 토큰 통합
+- B1. Component Token Alias 레이어 확인/보강(진행중)
+  - Alias: component → semantic 매핑은 중앙 토큰 파일에서 제공됨(확인)
+  - 컴포넌트 CSS에서 `--xeg-modal-*` 사용 유지(테스트와 호환)
+- B2. TSX에서 'glass-surface' 문자열 제거(완료, TSX 내 검색 결과 없음)
+- B3. 애니메이션 토큰 통합(대부분 반영됨)
   - 공통: `--xeg-motion-fast/normal`, `--xeg-ease-standard`, `--xeg-button-lift`
     등
   - 적용: Button, Toolbar, Toast에 동일 패턴 적용
@@ -95,13 +88,14 @@ Phase C. Toolbar 계약 정리 (fitModeGroup 등)
 
 ## 5) 체크리스트 (요구사항 → 작업)
 
-- [ ] 모듈 해상도 실패 제거(스텁 생성, 타입 엄격)
-- [ ] vendors getter 강제(코드모드/ESLint 룰)
-- [ ] SettingsModal CSS: `--xeg-comp-modal-*` 사용, TSX의 'glass-surface' 제거
-- [ ] Component→Semantic 토큰 alias 정의
-- [ ] 공통 애니메이션 토큰 정의 및 적용(Button/Toolbar/Toast)
-- [ ] CSS 변수 네이밍 컨벤션 정리와 선택자 볼륨 기준 충족
-- [ ] fitModeGroup 계약 어댑터로 상충 테스트 동시 만족
+- [x] UnifiedToolbar 스텁 추가로 모듈 해상도 실패 제거
+- [x] TSX 내 'glass-surface' 제거 확인(정책 준수)
+- [ ] 남은 직접 import 일괄 제거(훅 1~2개, 유틸 일부)
+- [ ] vendors getter 강제(ESLint 룰 보강, 코드모드 반영)
+- [ ] Component↔Semantic alias 주석 및 문서 명시 강화
+- [ ] 공통 애니메이션 토큰 사용 일관성 점검(Button/Toolbar/Toast)
+- [ ] CSS 변수 네이밍 컨벤션 점검 및 미세 조정
+- [ ] fitModeGroup 계약 어댑터(필요 시) 작성
 
 ## 6) 품질 게이트
 
@@ -111,9 +105,9 @@ Phase C. Toolbar 계약 정리 (fitModeGroup 등)
 
 ## 7) 진행 현황 표기(간결)
 
-- 완료로 표시했던 항목 중 실제 미완료 항목 정정: glass-surface 제거, component
-  token 적용 → 미완료(이 계획에서 수행)
-- 이미 안정화: 빌드/ESLint/Prettier 워크플로(유지)
+- 완료: UnifiedToolbar 스텁, glass-surface TSX 제거, component↔semantic alias
+  확인
+- 진행중: vendors getter 100% 적용, 애니메이션/네이밍 점검
 
 ---
 

@@ -3,7 +3,7 @@
  * @description Toolbar 컴포넌트의 헤드리스 로직 분리
  */
 
-import { useState } from 'preact/hooks';
+import { getPreactHooks } from '@shared/external/vendors';
 
 type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
@@ -55,6 +55,7 @@ interface ToolbarState {
 }
 
 export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
+  const { useState } = getPreactHooks();
   const [currentFitMode, setCurrentFitMode] = useState<FitMode>('fitContainer');
 
   // 네비게이션 경계 계산

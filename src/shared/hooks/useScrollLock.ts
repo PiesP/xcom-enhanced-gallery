@@ -3,7 +3,7 @@
  * @description Modal이 열렸을 때 배경 스크롤을 막는 훅
  */
 
-import { useEffect } from 'preact/hooks';
+import { getPreactHooks } from '@shared/external/vendors';
 
 export interface ScrollLockOptions {
   enabled: boolean;
@@ -11,6 +11,7 @@ export interface ScrollLockOptions {
 }
 
 export function useScrollLock(options: ScrollLockOptions) {
+  const { useEffect } = getPreactHooks();
   useEffect(() => {
     if (!options.enabled) return;
 
