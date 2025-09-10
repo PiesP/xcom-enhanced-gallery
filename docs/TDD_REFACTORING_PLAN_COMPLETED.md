@@ -13,3 +13,15 @@
     존재(`--xeg-comp-modal-*` ↔ `--xeg-modal-*`)
 - 2025-09-10: glass-surface 정책 라우팅
   - TSX 내 클래스 사용 금지 준수(검색 결과 TSX 내 미사용), 효과는 CSS로만 유지
+
+- 2025-09-10: 애니메이션 토큰 통합 완료
+  - AnimationService/BrowserService/VerticalImageItem의 하드코딩된
+    transition/easing → `--xeg-duration-*`, `--xeg-ease-*` 토큰으로 치환
+
+- 2025-09-10: preact/compat 직접 타입 import 제거
+  - VerticalGalleryView에서 `MouseEvent` 타입 외부 import 제거(브라우저 DOM 타입
+    사용)
+
+- 2025-09-10: vendors getter 강제(리포지토리 레벨)
+  - ESLint에 vendors 디렉터리만 직접 import 허용 예외 추가
+  - 코드 검색 기준 vendors 외 직접 import 없음(테스트/벤더 레이어 제외)

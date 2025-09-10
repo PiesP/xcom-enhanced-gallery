@@ -252,6 +252,14 @@ export default [
     },
   },
 
+  // 벤더 래퍼 레이어: 외부 라이브러리 직접 import 허용 (중앙 집중 관리 지점)
+  {
+    files: ['src/shared/external/vendors/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+
   // 타입 정의 파일들
   {
     files: ['**/*.d.ts', 'types/**/*.ts'],

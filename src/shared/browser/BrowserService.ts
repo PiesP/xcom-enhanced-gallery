@@ -128,14 +128,14 @@ export class BrowserService {
     const styles = `
       .xeg-fade-in {
         opacity: 0;
-        transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
       }
       .xeg-fade-in.active {
         opacity: 1;
       }
       .xeg-fade-out {
         opacity: 1;
-        transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
       }
       .xeg-fade-out.active {
         opacity: 0;
@@ -151,7 +151,7 @@ export class BrowserService {
    */
   public fadeIn(element: HTMLElement, duration = 300): Promise<void> {
     return new Promise(resolve => {
-      element.style.transition = `opacity ${duration}ms ease-in-out`;
+      element.style.transition = `opacity ${duration}ms var(--xeg-ease-standard)`;
       element.style.opacity = '0';
 
       requestAnimationFrame(() => {
@@ -166,7 +166,7 @@ export class BrowserService {
    */
   public fadeOut(element: HTMLElement, duration = 300): Promise<void> {
     return new Promise(resolve => {
-      element.style.transition = `opacity ${duration}ms ease-in-out`;
+      element.style.transition = `opacity ${duration}ms var(--xeg-ease-standard)`;
       element.style.opacity = '1';
 
       requestAnimationFrame(() => {

@@ -370,7 +370,7 @@ function BaseVerticalImageItemCore({
               onDragStart={handleImageDragStart}
               style={{
                 opacity: isLoaded ? 1 : 0,
-                transition: 'opacity 0.2s ease-in-out',
+                transition: 'opacity var(--xeg-duration-fast) var(--xeg-ease-standard)',
               }}
             />
           ) : (
@@ -386,7 +386,7 @@ function BaseVerticalImageItemCore({
               onDragStart={handleImageDragStart}
               style={{
                 opacity: isLoaded ? 1 : 0,
-                transition: 'opacity 0.3s ease',
+                transition: 'opacity var(--xeg-duration-normal) var(--xeg-ease-standard)',
               }}
             />
           )}

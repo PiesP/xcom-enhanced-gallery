@@ -172,6 +172,20 @@ Gallery
 
 ````
 
+### 애니메이션 규칙
+
+- transition/animation은 토큰만 사용: 시간은 `--xeg-duration-*`, 이징은 `--xeg-ease-*`
+- 인라인 스타일에서도 동일 규칙 적용 (예: `opacity var(--xeg-duration-normal) var(--xeg-ease-standard)`)
+- 하드코딩 숫자(ms/s)나 키워드(ease, ease-in-out 등) 직접 사용 금지
+- 서비스에서 주입하는 CSS 역시 동일 토큰을 사용
+
+### Component vs Semantic 토큰
+
+- 소스 오브 트루스는 Semantic 토큰(`--xeg-modal-bg`, `--xeg-color-*`, `--xeg-radius-*`).
+- 컴포넌트 토큰은 중앙 매핑(alias)만 허용: `--xeg-comp-foo-*` → `var(--xeg-foo-*)`.
+- 컴포넌트 CSS에서는 가능하면 Semantic 토큰 직접 사용, 과도기에는 alias 허용.
+- 새 컴포넌트 추가 시 alias는 공용 토큰 파일에서만 정의(로컬 정의 금지).
+
 ## 🏷️ 네이밍 규칙
 
 ### 변수 및 함수

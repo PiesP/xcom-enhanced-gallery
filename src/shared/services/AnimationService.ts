@@ -51,14 +51,14 @@ export class AnimationService {
     style.textContent = `
       .xcom-fade-in {
         opacity: 0;
-        transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
       }
       .xcom-fade-in.active {
         opacity: 1;
       }
       .xcom-fade-out {
         opacity: 1;
-        transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
       }
       .xcom-fade-out.active {
         opacity: 0;
@@ -66,7 +66,7 @@ export class AnimationService {
       .xcom-slide-in {
         transform: translateY(20px);
         opacity: 0;
-        transition: all 0.3s ease-out;
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-decelerate);
       }
       .xcom-slide-in.active {
         transform: translateY(0);

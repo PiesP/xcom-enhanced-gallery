@@ -18,7 +18,6 @@ import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import { getPreactHooks, getPreact } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
-import type { MouseEvent } from 'preact/compat';
 import {
   animateGalleryEnter,
   animateGalleryExit,
@@ -233,7 +232,7 @@ function VerticalGalleryViewCore({
     return () => {}; // cleanup 함수가 없는 경우 빈 함수 반환
   }, [isVisible]); // 백그라운드 클릭 핸들러 (갤러리 닫기만 처리)
   const handleBackgroundClick = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+    (event: MouseEvent) => {
       // 툴바나 툴바 영역 클릭은 무시
       const target = event.target as HTMLElement;
       if (

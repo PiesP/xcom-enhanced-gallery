@@ -47,9 +47,10 @@ Phase A. 테스트 가로막는 임계 이슈 제거 (Fail Fast blockers)
 
 - A1. UnifiedToolbar 엔트리 스텁 추가(완료)
   - 성공 기준: 해당 테스트에서 import 해상도 실패 없음
-- A2. vendors getter 강제(진행중)
-  - 잔여 직접 import 제거(훅/유틸 소수 남음) → `@shared/external/vendors` 경유
-  - 성공 기준: Architecture Dependency Rules 통과
+- A2. vendors getter 강제(완료)
+  - 잔여 직접 import 제거 → `@shared/external/vendors` 경유
+  - ESLint: vendors 디렉터리 내부만 직접 import 허용 예외 규칙 추가
+  - 성공 기준: 리포지토리 검색 결과 vendors 외 직접 import 없음(테스트 제외)
 
 Phase B. 디자인/토큰 정책 일관화
 
@@ -57,11 +58,10 @@ Phase B. 디자인/토큰 정책 일관화
   - Alias: component → semantic 매핑은 중앙 토큰 파일에서 제공됨(확인)
   - 컴포넌트 CSS에서 `--xeg-modal-*` 사용 유지(테스트와 호환)
 - B2. TSX에서 'glass-surface' 문자열 제거(완료, TSX 내 검색 결과 없음)
-- B3. 애니메이션 토큰 통합(대부분 반영됨)
-  - 공통: `--xeg-motion-fast/normal`, `--xeg-ease-standard`, `--xeg-button-lift`
-    등
-  - 적용: Button, Toolbar, Toast에 동일 패턴 적용
-  - 성공 기준: button-animation-consistency 통과
+- B3. 애니메이션 토큰 통합(완료)
+  - 공통: `--xeg-duration-*`, `--xeg-ease-*`, `--xeg-button-lift` 기준으로 통일
+  - 적용: AnimationService/BrowserService/VerticalImageItem 인라인 스타일 토큰화
+  - 성공 기준: 하드코딩된 transition/easing 제거
 - B4. CSS 네이밍/볼륨 점검
   - 변수 접두/패턴 점검(`--xeg-comp-*`, `--xeg-color-*`, `--xeg-radius-*` 등)
   - 선택자 수/중복도 기준 상향(테스트 기대 충족)
@@ -90,10 +90,9 @@ Phase C. Toolbar 계약 정리 (fitModeGroup 등)
 
 - [x] UnifiedToolbar 스텁 추가로 모듈 해상도 실패 제거
 - [x] TSX 내 'glass-surface' 제거 확인(정책 준수)
-- [ ] 남은 직접 import 일괄 제거(훅 1~2개, 유틸 일부)
-- [ ] vendors getter 강제(ESLint 룰 보강, 코드모드 반영)
+- [x] vendors getter 강제(ESLint 룰 보강, 코드모드 반영)
 - [ ] Component↔Semantic alias 주석 및 문서 명시 강화
-- [ ] 공통 애니메이션 토큰 사용 일관성 점검(Button/Toolbar/Toast)
+- [x] 공통 애니메이션 토큰 사용 일관성 점검(Button/Toolbar/Toast)
 - [ ] CSS 변수 네이밍 컨벤션 점검 및 미세 조정
 - [ ] fitModeGroup 계약 어댑터(필요 시) 작성
 
@@ -106,8 +105,8 @@ Phase C. Toolbar 계약 정리 (fitModeGroup 등)
 ## 7) 진행 현황 표기(간결)
 
 - 완료: UnifiedToolbar 스텁, glass-surface TSX 제거, component↔semantic alias
-  확인
-- 진행중: vendors getter 100% 적용, 애니메이션/네이밍 점검
+  확인, 애니메이션 토큰 통합(서비스/컴포넌트 인라인 스타일 포함)
+- 진행중: CSS 네이밍 점검, fitModeGroup 검토
 
 ---
 
