@@ -94,3 +94,8 @@
 - 2025-09-10: IconButton/Action Controls 통일
   - Toolbar 내 아이콘 전용 버튼 전량 IconButton로 교체, 사이즈/토큰/ARIA 일관화
   - 닫기 버튼은 intent='danger' 매핑으로 시각 의미 유지
+
+- 2025-09-10: Overlay/Modal/Surface 토큰 일관화(1차)
+  - ModalShell.module.css의 surface 그림자 하드코딩 제거 →
+    `var(--xeg-comp-modal-shadow)` 사용
+  - 단위 테스트 추가: `ModalShell.tokens.test.ts`로 토큰 준수 회귀 방지

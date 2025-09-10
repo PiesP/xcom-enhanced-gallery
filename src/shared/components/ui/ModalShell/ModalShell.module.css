@@ -84,25 +84,19 @@
   border-color: var(--xeg-modal-border);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  box-shadow:
-    0 20px 25px oklch(from var(--color-base-black) l c h / 0.1),
-    0 10px 10px oklch(from var(--color-base-black) l c h / 0.04);
+  box-shadow: var(--xeg-comp-modal-shadow);
 }
 
 .modal-surface-solid {
   background: var(--color-bg-surface);
   border-color: var(--color-border-default);
-  box-shadow:
-    0 10px 15px oklch(from var(--color-base-black) l c h / 0.1),
-    0 4px 6px oklch(from var(--color-base-black) l c h / 0.05);
+  box-shadow: var(--xeg-comp-modal-shadow);
 }
 
 .modal-surface-elevated {
   background: var(--color-bg-elevated);
   border-color: var(--color-border-emphasis);
-  box-shadow:
-    0 25px 50px oklch(from var(--color-base-black) l c h / 0.25),
-    0 0 0 1px oklch(from var(--color-base-white) l c h / 0.05);
+  box-shadow: var(--xeg-comp-modal-shadow);
 }
 
 /* ===== 반응형 ===== */

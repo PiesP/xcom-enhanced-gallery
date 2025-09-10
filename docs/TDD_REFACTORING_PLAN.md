@@ -43,15 +43,7 @@
 참고: 기반 레이어/MediaProcessor/로깅·에러/부트스트랩/빌드 자동화는 완료. 아래는
 디자인 현대화 중심 잔여 항목입니다.
 
-1. IconButton/Action Controls 통일 — 완료됨(2025-09-10)
-
-- 상태: GREEN → 리팩토링 적용. Toolbar 내 아이콘 전용 버튼 전량 `IconButton`
-  합성으로 교체.
-- 효과: `--xeg-radius-md`/hover/active/포커스 토큰 규칙 준수, aria-label 강제
-  경고 로깅 유지.
-- 후속: 기타 UI 사용처 점검은 리그레션 테스트로 커버(추가 발견 시 개별 PR).
-
-2. Overlay/Modal/Surface 토큰 일관화
+1. Overlay/Modal/Surface 토큰 일관화
 
 - Red: 갤러리 오버레이/컨테이너/토스트/모달에서 배경/보더/그림자 토큰 미사용을
   탐지하는 테스트
@@ -60,7 +52,7 @@
 - Refactor: 컴포넌트 alias 제거(가능한 범위), semantic 토큰 직참조로 단순화 성공
   기준: 하드코딩 색상/보더 0건, 다크/라이트 대비 테스트 통과
 
-3. 애니메이션 토큰/감속 정책 정규화
+2. 애니메이션 토큰/감속 정책 정규화
 
 - Red: transition/animation에 토큰 미사용 또는 ease 키워드 직접 사용 시 실패
 - Green: `--xeg-duration-*`, `--xeg-ease-*`로 통일, reduce-motion 시 애니메이션
@@ -68,14 +60,14 @@
 - Refactor: 공통 transition 유틸 변수로 중복 제거 성공 기준: 애니메이션 토큰
   100%, reduce-motion 스모크 통과
 
-4. 테마 커버리지 감사(Audit)
+3. 테마 커버리지 감사(Audit)
 
 - Red: 갤러리 주요 표면(컨테이너/툴바/버튼 상태)의 테마 토큰 누락 리포트 테스트
 - Green: 누락 지점에 토큰 적용, 시스템/수동 테마 전환 시 시각적 리그레션 없음
 - Refactor: 테마별 오버라이드 최소화, 기본 토큰에 수렴 성공 기준: 커버리지 100%,
   라이트/다크 스냅샷 테스트 통과
 
-5. 접근성 시각 피드백 정합성
+4. 접근성 시각 피드백 정합성
 
 - Red: focus-visible, hover/active 리프트와 그림자 토큰이 표준을 벗어나면 실패
 - Green: 모든 인터랙션 요소에 동일 패턴 적용(리프트/그림자/포커스 링)
@@ -106,7 +98,6 @@
 
 ## 5) 체크리스트(진행)
 
-- [x] IconButton/Action Controls 통일(사이즈/ARIA/토큰)
 - [ ] Overlay/Modal/Surface 토큰 일관화(배경/보더/그림자)
 - [ ] 애니메이션 토큰 100% 및 reduce-motion 대응
 - [ ] 테마 커버리지 100%(라이트/다크 스냅샷)
