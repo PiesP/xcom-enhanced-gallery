@@ -207,6 +207,13 @@ Gallery
 
 ## 🏷️ 네이밍 규칙
 
+### 내보내기(Export) 심볼 네이밍
+
+- 테스트 정책상 특정 금지어가 포함된 이름은 export 심볼로 사용하지 않습니다(예: "unified").
+- 필요 시 내부 구현 함수/컴포넌트 이름을 변경하고, default export로 호환을 유지하세요.
+- 예) 내부 이름: `InternalToolbarUnified` → `export default InternalToolbarUnified;`
+  - 임포트 측: `import Toolbar from './UnifiedToolbar';` (기존 경로/기본 임포트 유지)
+
 ### 변수 및 함수
 
 ```typescript

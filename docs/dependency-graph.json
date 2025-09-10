@@ -3620,6 +3620,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/external/userscript/adapter.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/hooks/index.ts",
       "dependencies": [
         {
@@ -7761,6 +7774,15 @@
       },
       {
         "type": "module",
+        "from": "src/shared/external/userscript/adapter.ts",
+        "to": "src/shared/external/userscript/adapter.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/hooks/useFocusScope.ts",
         "to": "src/shared/hooks/useFocusScope.ts",
         "rule": {
@@ -7807,9 +7829,9 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 14,
+    "info": 15,
     "ignore": 0,
-    "totalCruised": 224,
+    "totalCruised": 225,
     "totalDependenciesCruised": 314,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

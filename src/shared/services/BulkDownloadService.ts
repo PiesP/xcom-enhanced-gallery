@@ -23,6 +23,8 @@ export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;
   signal?: AbortSignal;
   zipFilename?: string;
+  concurrency?: number; // RED -> GREEN: 제한된 동시성 처리
+  retries?: number; // RED -> GREEN: 실패 재시도 횟수
 }
 
 export interface DownloadResult {
@@ -184,6 +186,31 @@ export class BulkDownloadService {
 
       const files: Record<string, Uint8Array> = {};
       let successful = 0;
+      let processed = 0;
+
+      const concurrency = Math.max(1, Math.min(options.concurrency ?? 2, 8));
+      const retries = Math.max(0, options.retries ?? 0);
+      const abortSignal = this.currentAbortController?.signal;
+
+      const isAborted = (): boolean => !!abortSignal?.aborted;
+
+      const fetchWithRetry = async (url: string): Promise<Uint8Array> => {
+        let attempt = 0;
+        while (true) {
+          if (isAborted()) throw new Error('Download cancelled by user');
+          try {
+            const response = await fetch(url, {
+              // signal 지원 (환경에 따라 무시될 수 있음)
+              ...(abortSignal ? { signal: abortSignal } : {}),
+            } as RequestInit);
+            const arrayBuffer = await response.arrayBuffer();
+            return new Uint8Array(arrayBuffer);
+          } catch (err) {
+            if (attempt >= retries) throw err;
+            attempt += 1;
+          }
+        }
+      };
 
       options.onProgress?.({
         phase: 'preparing',
@@ -192,36 +219,50 @@ export class BulkDownloadService {
         percentage: 0,
       });
 
-      // 파일들을 다운로드하여 ZIP에 추가
-      for (let i = 0; i < mediaItems.length; i++) {
-        if (this.currentAbortController?.signal.aborted) {
-          throw new Error('Download cancelled by user');
+      // 동시성 큐 실행
+      let index = 0;
+      const workers: Promise<void>[] = [];
+
+      const runNext = async (): Promise<void> => {
+        // 루프를 통해 할당
+        while (true) {
+          if (isAborted()) throw new Error('Download cancelled by user');
+          const i = index++;
+          if (i >= mediaItems.length) return;
+          const media = mediaItems[i];
+          if (!media) {
+            processed++;
+            continue;
+          }
+
+          options.onProgress?.({
+            phase: 'downloading',
+            current: Math.min(processed + 1, mediaItems.length),
+            total: mediaItems.length,
+            percentage: Math.round(((processed + 1) / mediaItems.length) * 100),
+            filename: media.filename,
+          });
+
+          try {
+            const data = await fetchWithRetry(media.url);
+            const converted = toFilenameCompatible(media);
+            const filename = generateMediaFilename(converted);
+            files[filename] = data;
+            successful++;
+          } catch (error) {
+            if (isAborted()) throw new Error('Download cancelled by user');
+            logger.warn(`Failed to download ${media.filename}: ${getErrorMessage(error)}`);
+          } finally {
+            processed++;
+          }
         }
+      };
 
-        const media = mediaItems[i];
-        if (!media) continue;
-
-        options.onProgress?.({
-          phase: 'downloading',
-          current: i + 1,
-          total: mediaItems.length,
-          percentage: Math.round(((i + 1) / mediaItems.length) * 100),
-          filename: media.filename,
-        });
-
-        try {
-          const response = await fetch(media.url);
-          const arrayBuffer = await response.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-
-          const converted = toFilenameCompatible(media);
-          const filename = generateMediaFilename(converted);
-          files[filename] = uint8Array;
-          successful++;
-        } catch (error) {
-          logger.warn(`Failed to download ${media.filename}: ${getErrorMessage(error)}`);
-        }
+      for (let w = 0; w < concurrency; w++) {
+        workers.push(runNext());
       }
+
+      await Promise.all(workers);
 
       if (successful === 0) {
         throw new Error('All downloads failed');
