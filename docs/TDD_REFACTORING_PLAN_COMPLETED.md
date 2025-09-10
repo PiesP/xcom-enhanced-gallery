@@ -120,3 +120,18 @@
     - 파일: `src/features/gallery/styles/Gallery.module.css`,
       `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css`
     - 가드 테스트: `test/unit/styles/gallery-animations.tokens.test.ts` 통과
+
+- 2025-09-10: 접근성 시각 피드백 일관성(Toast/SettingsModal)
+  - 새로운 가드 테스트 추가:
+    `test/unit/styles/a11y-visual-feedback.tokens.test.ts`
+  - CSS 반영: `Toast.module.css`에 focus-visible 토큰/토큰화된 lift 추가,
+    `SettingsModal.module.css` focus-visible 토큰 적용 및 hover lift는 em 단위
+    유지(레거시 단위 테스트 호환)
+  - 결과: 전체 테스트 그린
+
+- 2025-09-10: 테마 커버리지(Glass Surface 토큰)
+  - 새로운 가드 테스트 추가:
+    `test/unit/styles/theme-glass-surface.coverage.test.ts`
+  - design-tokens.css에서 light/dark/system(prefers-color-scheme) 오버라이드
+    보장
+  - 결과: 테스트 통과

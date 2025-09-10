@@ -161,8 +161,8 @@
 /* Focus ring (모듈 내 정의 - design consistency 테스트 통과) */
 .closeButton:focus-visible,
 .select:focus-visible {
-  outline: 0.125em solid var(--xeg-color-primary);
-  outline-offset: 0.125em;
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
 }
 
 @media (max-width: 48em) {

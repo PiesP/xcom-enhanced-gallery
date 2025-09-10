@@ -191,6 +191,13 @@
   background-color: var(--xeg-toast-bg-neutral);
 }
 
+/* Focus ring for interactive controls */
+.closeButton:focus-visible,
+.actionButton:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
 /**
  * Toast actions container
  *
@@ -240,7 +247,7 @@
  */
 .actionButton:hover {
   background: var(--xeg-color-primary-hover);
-  transform: translateY(-2px);
+  transform: translateY(var(--xeg-button-lift-hover));
   box-shadow: var(--xeg-toast-shadow-focus);
 }
 

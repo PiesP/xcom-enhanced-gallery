@@ -104,8 +104,12 @@
 - [x] 애니메이션 토큰 100% 및 reduce-motion 대응
   - 완료: 유틸리티(.xeg-anim-_) + 컴포넌트 애니메이션(.xeg-animate-_) + 갤러리
     피처 CSS 전부 duration/easing 토큰화 및 정책 테스트 추가
-- [ ] 테마 커버리지 100%(라이트/다크 스냅샷)
-- [ ] 접근성 시각 피드백 정합성(hover/active/focus)
+- [x] 테마 커버리지 1차(Glass Surface light/dark/system 오버라이드 가드)
+  - 진행: design-tokens.css glass surface 토큰 커버리지 테스트 추가 및 통과
+  - 다음: 기타 핵심 표면으로 확장 필요 시 추가
+- [x] 접근성 시각 피드백 정합성(hover/active/focus)
+  - 완료: SettingsModal/Toast에 focus-visible 토큰 적용, lift 정책 정렬(토큰
+    또는 em), 가드 테스트 추가 및 통과
 - [ ] Docs: PC 전용 이벤트 예시/README 최신화
 
 ### Backlog(비-디자인)
