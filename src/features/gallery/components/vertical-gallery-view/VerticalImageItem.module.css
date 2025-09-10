@@ -100,7 +100,7 @@
   border: 2px solid var(--xeg-color-border-primary);
   border-top: 2px solid var(--xeg-color-primary);
   border-radius: var(--xeg-radius-full);
-  animation: spin 1s linear infinite;
+  animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
 }
 
 @keyframes spin {

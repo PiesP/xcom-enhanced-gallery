@@ -394,7 +394,7 @@ button.fitButton {
   align-items: center;
   justify-content: center;
   font-size: 0.5em; /* 8px → 0.5em */
-  animation: xeg-spin 1s var(--xeg-easing-linear) infinite;
+  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
 }
 
 /* 설정 및 닫기 버튼 - 기본 스타일 상속 */

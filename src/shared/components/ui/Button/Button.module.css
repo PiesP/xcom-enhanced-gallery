@@ -361,7 +361,7 @@
   border: 2px solid transparent;
   border-top: 2px solid currentColor;
   border-radius: 50%;
-  animation: xeg-spin 1s var(--xeg-easing-linear) infinite;
+  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
   margin-right: var(--xeg-spacing-xs);
 }
 
@@ -639,7 +639,7 @@
 /* loading spinner placeholder (ToolbarButton -> Unified) */
 .loadingSpinner {
   display: inline-block;
-  animation: xeg-spin 1s var(--xeg-easing-linear) infinite;
+  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
   font-size: 0.875em;
 }
 

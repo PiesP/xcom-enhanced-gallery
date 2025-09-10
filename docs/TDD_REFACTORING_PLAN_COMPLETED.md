@@ -99,3 +99,24 @@
   - ModalShell.module.css의 surface 그림자 하드코딩 제거 →
     `var(--xeg-comp-modal-shadow)` 사용
   - 단위 테스트 추가: `ModalShell.tokens.test.ts`로 토큰 준수 회귀 방지
+
+- 2025-09-10: 애니메이션 토큰 정책(1차)
+  - xeg-spin 하드코딩 지속시간 제거 → `var(--xeg-duration-*)` 사용으로 통일
+  - 유닛 테스트 추가: `animation-tokens-policy.test.ts`로 회귀 방지
+
+- 2025-09-10: ToolbarShell 컴포넌트 그림자 토큰 정책
+  - ToolbarShell elevation 클래스의 raw oklch 및 하드코딩 제거 →
+    `var(--xeg-comp-toolbar-shadow)` 사용
+  - 유닛 테스트 추가: `ToolbarShell.tokens.test.ts`로 회귀 방지
+
+- 2025-09-10: 애니메이션 유틸리티/컴포넌트 정책 고도화
+  - `design-tokens.semantic.css`의 유틸리티(.xeg-anim-\*) duration/ease 토큰화
+  - `src/assets/styles/components/animations.css`의 .xeg-animate-\* 클래스
+    duration 하드코딩 제거 → 토큰화
+  - 유닛 테스트 추가:
+    - `test/unit/styles/animation-utilities.tokens.test.ts`
+    - `test/unit/styles/components-animations.tokens.test.ts`
+  - 갤러리 피처 CSS 스피너/등장 애니메이션 토큰화 완료
+    - 파일: `src/features/gallery/styles/Gallery.module.css`,
+      `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css`
+    - 가드 테스트: `test/unit/styles/gallery-animations.tokens.test.ts` 통과

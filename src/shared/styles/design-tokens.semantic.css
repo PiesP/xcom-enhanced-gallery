@@ -308,13 +308,13 @@
 
 /* Toast 애니메이션 토큰 */
 .xeg-anim-slide-in {
-  animation: slideInFromRight 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideInFromRight var(--xeg-duration-fast) var(--xeg-ease-standard);
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
 .xeg-anim-fade-slide-in {
-  animation: fadeSlideIn 0.3s ease-out;
+  animation: fadeSlideIn var(--xeg-duration-normal) var(--xeg-ease-standard);
   will-change: transform, opacity;
   backface-visibility: hidden;
 }

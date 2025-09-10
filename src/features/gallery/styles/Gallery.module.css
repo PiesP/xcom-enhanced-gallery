@@ -463,7 +463,7 @@
   border: 2px solid var(--xeg-color-neutral-400);
   border-radius: var(--xeg-radius-full);
   border-top-color: var(--xeg-color-text-primary);
-  animation: spin 1s var(--xeg-easing-linear) infinite;
+  animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
   margin-right: 10px;
 }
 

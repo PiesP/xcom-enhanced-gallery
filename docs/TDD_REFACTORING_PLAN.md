@@ -99,7 +99,11 @@
 ## 5) 체크리스트(진행)
 
 - [ ] Overlay/Modal/Surface 토큰 일관화(배경/보더/그림자)
-- [ ] 애니메이션 토큰 100% 및 reduce-motion 대응
+  - 진행: ModalShell/ToolbarShell 컴포넌트 그림자 토큰화 및 가드 테스트 완료
+  - 다음: Toast/기타 surface 잔여 지점 점검
+- [x] 애니메이션 토큰 100% 및 reduce-motion 대응
+  - 완료: 유틸리티(.xeg-anim-_) + 컴포넌트 애니메이션(.xeg-animate-_) + 갤러리
+    피처 CSS 전부 duration/easing 토큰화 및 정책 테스트 추가
 - [ ] 테마 커버리지 100%(라이트/다크 스냅샷)
 - [ ] 접근성 시각 피드백 정합성(hover/active/focus)
 - [ ] Docs: PC 전용 이벤트 예시/README 최신화

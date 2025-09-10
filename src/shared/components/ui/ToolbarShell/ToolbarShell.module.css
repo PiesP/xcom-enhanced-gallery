@@ -17,23 +17,17 @@
 
 /* ===== Elevation 변형 ===== */
 .toolbar-elevation-low {
-  box-shadow:
-    0 1px 3px oklch(from var(--color-base-black) l c h / 0.1),
-    0 1px 2px oklch(from var(--color-base-black) l c h / 0.06);
+  box-shadow: var(--xeg-comp-toolbar-shadow);
   z-index: var(--xeg-layer-toolbar);
 }
 
 .toolbar-elevation-medium {
-  box-shadow:
-    0 4px 6px oklch(from var(--color-base-black) l c h / 0.1),
-    0 2px 4px oklch(from var(--color-base-black) l c h / 0.06);
+  box-shadow: var(--xeg-comp-toolbar-shadow);
   z-index: calc(var(--xeg-layer-toolbar) + 1);
 }
 
 .toolbar-elevation-high {
-  box-shadow:
-    0 10px 15px oklch(from var(--color-base-black) l c h / 0.1),
-    0 4px 6px oklch(from var(--color-base-black) l c h / 0.05);
+  box-shadow: var(--xeg-comp-toolbar-shadow);
   z-index: calc(var(--xeg-layer-toolbar) + 2);
 }
 
