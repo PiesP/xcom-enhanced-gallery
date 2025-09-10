@@ -18,6 +18,42 @@
   새로운 3단 계층 토큰 사용을 권장합니다.
 */
 :root {
+  /* Surface Glass 토큰 - 테스트 요구사항 */
+  --xeg-surface-glass-bg: var(--glass-bg);
+  --xeg-surface-glass-border: var(--glass-border);
+  --xeg-surface-glass-shadow: var(--glass-shadow);
+  --xeg-surface-glass-blur: blur(10px);
+
+  /* Focus 토큰 - 테스트 요구사항 */
+  --xeg-focus-outline: 0.125em solid var(--xeg-color-primary);
+  --xeg-focus-outline-color: var(--xeg-color-primary);
+  --xeg-focus-outline-width: 0.125em;
+  --xeg-focus-outline-style: solid;
+
+  /* Font Size 토큰 - 테스트 요구사항 */
+  --xeg-font-size-sm: 0.875rem;
+  --xeg-font-size-base: 1rem;
+  --xeg-font-size-lg: 1.125rem;
+
+  /* Component Modal 토큰 - 테스트 요구사항 */
+  --xeg-comp-modal-bg: var(--xeg-modal-bg);
+
+  /* Icon 토큰 - 테스트 요구사항 */
+  --xeg-icon-stroke-width: 1.5px;
+  --xeg-icon-size: 16px;
+  --xeg-icon-line-height: 1;
+  --xeg-icon-color: currentColor;
+
+  /* Transition 토큰 - 테스트 요구사항 */
+  --xeg-transition-fast: 0.15s ease-out;
+  --xeg-transition-normal: 0.2s ease-out;
+  --xeg-transition-slow: 0.3s ease-out;
+
+  /* Shadow 토큰 - 테스트 요구사항 */
+  --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --xeg-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --xeg-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+
   /* Legacy Primary Colors - 호환성 보장 */
   --xeg-color-primary-500: var(--color-primary);
   --xeg-color-primary-600: var(--color-primary-hover);
@@ -39,6 +75,7 @@
   --xeg-surface-secondary: var(--color-bg-secondary);
   --xeg-surface-glass: var(--glass-bg);
   --xeg-surface-elevated: var(--color-bg-elevated);
+  --xeg-color-surface-elevated: var(--color-bg-elevated);
 
   /* Legacy Glass System - 호환성 보장 */
   --xeg-glass-bg: var(--glass-bg);
@@ -57,6 +94,7 @@
   --xeg-color-overlay-medium: var(--color-overlay-medium);
   --xeg-color-overlay-strong: var(--color-overlay-strong);
   --xeg-color-overlay-backdrop: var(--color-overlay-backdrop);
+  --xeg-color-backdrop: var(--color-overlay-backdrop);
 
   /* Legacy Spacing - 호환성 보장 */
   --xeg-spacing-sm: var(--space-sm);
@@ -64,8 +102,73 @@
   --xeg-spacing-lg: var(--space-lg);
   --xeg-spacing-xl: var(--space-xl);
 
+  /* Legacy Radius - 호환성 보장 */
+  --xeg-radius-sm: var(--radius-sm);
+  --xeg-radius-md: var(--radius-md);
+  --xeg-radius-lg: var(--radius-lg);
+  --xeg-radius-xl: var(--radius-xl);
+  --xeg-radius-2xl: var(--radius-2xl);
+  --xeg-radius-pill: var(--radius-pill);
+  --xeg-radius-full: var(--radius-full);
+
   /* Legacy Component-specific - 호환성 보장 */
   --xeg-hover-zone-height: var(--hover-zone-height);
   --xeg-scrollbar-width: var(--scrollbar-width);
   --xeg-toast-offset: var(--toast-offset);
+}
+
+/* 테마 선택자 - 테스트 요구사항 */
+[data-theme='light'] {
+  --xeg-surface-glass-bg: rgba(255, 255, 255, 0.1);
+  --xeg-surface-glass-border: rgba(255, 255, 255, 0.2);
+  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --xeg-surface-glass-bg: rgba(0, 0, 0, 0.1);
+  --xeg-surface-glass-border: rgba(255, 255, 255, 0.1);
+  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --xeg-surface-glass-bg: rgba(0, 0, 0, 0.1);
+    --xeg-surface-glass-border: rgba(255, 255, 255, 0.1);
+    --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Toast 애니메이션 시스템 - 테스트 요구사항 */
+.xeg-anim-slide-in {
+  animation: slideInFromRight 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.xeg-anim-fade-slide-in {
+  animation: fadeSlideIn 0.3s ease-out;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateZ(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeSlideIn {
+  from {
+    transform: translateY(-10px) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) translateZ(0);
+    opacity: 1;
+  }
 }

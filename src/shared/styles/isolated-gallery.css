@@ -273,3 +273,19 @@
     background: var(--xeg-isolated-gray-400) !important;
   }
 }
+
+/* ===== 통합 Glass Surface 클래스 ===== */
+
+/* Glass Surface 통합 클래스 */
+.glass-surface {
+  background: var(--xeg-surface-glass-bg) !important;
+  border: 1px solid var(--xeg-surface-glass-border) !important;
+  box-shadow: var(--xeg-surface-glass-shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.glass-surface:hover {
+  background: var(--xeg-surface-glass-bg-hover) !important;
+  box-shadow: var(--xeg-surface-glass-shadow-hover) !important;
+}

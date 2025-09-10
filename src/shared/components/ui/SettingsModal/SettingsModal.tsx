@@ -52,6 +52,74 @@ export function SettingsModal({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
   const modalContainerRef = useRef<HTMLDivElement | null>(null);
+  const firstFocusableRef = useRef<HTMLButtonElement | null>(null);
+  const lastFocusableRef = useRef<HTMLSelectElement | null>(null);
+
+  // 포커스 트랩 구현
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      // 모달 내부에서만 이벤트 처리
+      if (!isOpen || !panelRef.current?.contains(event.target as Node)) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        event.preventDefault();
+
+        const firstElement = firstFocusableRef.current;
+        const lastElement = lastFocusableRef.current;
+
+        if (!firstElement || !lastElement) return;
+
+        if (event.shiftKey) {
+          // Shift+Tab: 첫 번째에서 마지막으로
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+          } else {
+            firstElement.focus();
+          }
+        } else {
+          // Tab: 마지막에서 첫 번째로
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+          } else {
+            lastElement.focus();
+          }
+        }
+      }
+    },
+    [isOpen, onClose]
+  );
+
+  // 배경 요소 비활성화 - 접근성 개선
+  const setBackgroundInert = useCallback((inert: boolean) => {
+    if (typeof document === 'undefined') return;
+
+    // 설정 모달을 제외한 다른 요소들만 비활성화
+    const backgroundElements = document.querySelectorAll('body > *');
+    backgroundElements.forEach(element => {
+      // dialog나 모달 관련 요소가 포함된 컨테이너는 제외
+      const hasDialog = element.querySelector('[role="dialog"], [aria-modal="true"]');
+      const isModalContainer =
+        element.classList?.contains('settings-modal-backdrop') ||
+        (element.hasAttribute?.('data-testid') &&
+          element.getAttribute('data-testid')?.includes('settings'));
+
+      if (!hasDialog && !isModalContainer) {
+        if (inert) {
+          element.setAttribute('tabindex', '-1');
+          element.setAttribute('aria-hidden', 'true');
+        } else {
+          element.removeAttribute('tabindex');
+          element.removeAttribute('aria-hidden');
+        }
+      }
+    });
+  }, []);
 
   // Panel mode logic
   useEffect(() => {
@@ -64,31 +132,34 @@ export function SettingsModal({
         : 'auto'
     );
 
-    // Basic keyboard event handling
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
+    // 접근성 설정
+    setBackgroundInert(true);
+
+    // 키보드 이벤트 리스너 등록
+    document.addEventListener('keydown', handleKeyDown, true);
+
+    // 첫 번째 포커스 가능한 요소에 포커스
+    setTimeout(() => {
+      firstFocusableRef.current?.focus();
+    }, 0);
 
     // Basic scroll lock for panel mode
     if (typeof document !== 'undefined') {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
 
-      document.addEventListener('keydown', handleKeyDown);
-
       return () => {
         document.body.style.overflow = originalOverflow;
-        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('keydown', handleKeyDown, true);
+        setBackgroundInert(false);
       };
     }
 
     return () => {
-      // Panel cleanup logic
+      document.removeEventListener('keydown', handleKeyDown, true);
+      setBackgroundInert(false);
     };
-  }, [isOpen, mode, languageService, themeService, onClose]);
+  }, [isOpen, mode, languageService, themeService, handleKeyDown, setBackgroundInert]);
 
   // Modal mode logic
   if (mode === 'modal') {
@@ -125,13 +196,27 @@ export function SettingsModal({
   if (!isOpen) return null;
 
   const testProps = ComponentStandards.createTestProps(testId);
-  const normalizedPosition = ((): 'toolbar-below' | 'top-right' => {
-    if (position === 'top-right') return 'top-right';
-    return 'toolbar-below';
-  })();
-  const positionClass = normalizedPosition === 'top-right' ? styles.topRight : styles.toolbarBelow;
 
-  const panelClass = ComponentStandards.createClassName(styles.panel, positionClass, className);
+  // 위치 클래스 결정 로직
+  const getPositionClass = (): string => {
+    switch (position) {
+      case 'center':
+        return styles.center || '';
+      case 'bottom-sheet':
+        return styles.bottomSheet || '';
+      case 'top-right':
+        return styles.topRight || '';
+      case 'toolbar-below':
+      default:
+        return styles.toolbarBelow || '';
+    }
+  };
+
+  const panelClass = ComponentStandards.createClassName(
+    styles.panel,
+    getPositionClass(),
+    className
+  );
   const innerClass = ComponentStandards.createClassName(styles.modal, styles.inner);
 
   const header = h('div', { className: styles.header, key: 'header' }, [
@@ -143,6 +228,7 @@ export function SettingsModal({
     h(
       'button',
       {
+        ref: firstFocusableRef,
         type: 'button',
         className: `${toolbarStyles.toolbarButton} ${styles.closeButton}`,
         onClick: onClose,
@@ -171,6 +257,7 @@ export function SettingsModal({
   const languageSelect = h(
     'select',
     {
+      ref: lastFocusableRef,
       id: 'language-select',
       className: `${toolbarStyles.toolbarButton} ${styles.select}`,
       value: currentLanguage,
@@ -236,6 +323,7 @@ export function SettingsModal({
     onClick: (event: Event) => {
       if (event.target === event.currentTarget) onClose();
     },
+    onKeyDown: handleKeyDown,
     role: 'dialog',
     'aria-modal': 'true',
     'aria-labelledby': 'settings-title',

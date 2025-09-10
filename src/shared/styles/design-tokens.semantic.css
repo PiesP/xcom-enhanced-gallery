@@ -131,6 +131,11 @@
   --xeg-surface-glass-border: var(--color-glass-border);
   --xeg-surface-glass-shadow: var(--shadow-lg);
 
+  /* Surface Glass - Unified Tokens */
+  --xeg-surface-glass-bg: var(--color-glass-bg);
+  --xeg-surface-glass-border: var(--color-glass-border);
+  --xeg-surface-glass-shadow: var(--shadow-lg);
+
   /* Surface Glass Hover States */
   --xeg-surface-glass-bg-hover: rgba(255, 255, 255, 0.15);
   --xeg-surface-glass-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -169,12 +174,13 @@
   --xeg-gallery-bg: var(--color-gray-900);
   --xeg-bg-toolbar: var(--color-gray-800);
 
-  /* 다크 모드 컴포넌트 토큰 */
-  --xeg-comp-toolbar-bg: var(--color-gray-800);
-  --xeg-comp-modal-bg: var(--color-gray-800);
-  --xeg-surface-glass-bg-dark: rgba(0, 0, 0, 0.85);
+  /* 다크 모드 컴포넌트 토큰 - 시인성 개선 */
+  --xeg-comp-toolbar-bg: rgba(30, 30, 30, 0.95);
+  --xeg-comp-modal-bg: rgba(20, 20, 20, 0.98);
+  --xeg-surface-glass-bg-dark: rgba(30, 30, 30, 0.95);
   --xeg-surface-glass-text-dark: var(--color-text-inverse);
-  --xeg-surface-glass-border-dark: var(--color-border-emphasis);
+  --xeg-surface-glass-border-dark: rgba(255, 255, 255, 0.2);
+  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -183,9 +189,12 @@
     --color-text-primary: var(--color-base-white);
     --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
 
-    /* prefers-color-scheme 다크 모드 갤러리 배경 */
+    /* prefers-color-scheme 다크 모드 갤러리 배경 - 시인성 개선 */
     --xeg-gallery-bg: var(--color-gray-900);
     --xeg-bg-toolbar: var(--color-gray-800);
+    --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
+    --xeg-modal-bg: rgba(20, 20, 20, 0.98);
+    --xeg-modal-border: rgba(255, 255, 255, 0.15);
   }
 }
 
@@ -264,8 +273,14 @@
 
 [data-theme='dark'] {
   --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-  --xeg-modal-bg: var(--xeg-modal-bg-dark);
-  --xeg-modal-border: var(--xeg-modal-border-dark);
+  --xeg-modal-bg: rgba(20, 20, 20, 0.98);
+  --xeg-modal-border: rgba(255, 255, 255, 0.15);
+
+  /* 다크 테마 Glass Surface 시인성 개선 */
+  --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
+  --xeg-surface-glass-bg-dark: rgba(30, 30, 30, 0.95);
+  --xeg-surface-glass-border-dark: rgba(255, 255, 255, 0.2);
+  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* 시스템 테마 기본 지원 */
@@ -286,6 +301,42 @@
 }
 
 /* ===== 유틸리티 클래스 ===== */
+
+/* Toast 애니메이션 토큰 */
+.xeg-anim-slide-in {
+  animation: slideInFromRight 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.xeg-anim-fade-slide-in {
+  animation: fadeSlideIn 0.3s ease-out;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Toast GPU 가속 keyframes */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateZ(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeSlideIn {
+  from {
+    transform: translateY(-0.5rem) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) translateZ(0);
+    opacity: 1;
+  }
+}
 
 /* Focus Ring 유틸리티 클래스 */
 .xeg-focus-ring {

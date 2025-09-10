@@ -35,13 +35,23 @@
 .glass-surface-light {
   background: var(--xeg-surface-glass-bg-light, var(--xeg-surface-glass-bg));
   color: var(--xeg-surface-glass-text-light, var(--color-text-primary));
-  border-color: var(--xeg-surface-glass-border-light, var(--xeg-surface-glass-border));
+  border: 1px solid var(--xeg-surface-glass-border-light, var(--xeg-surface-glass-border));
+  border-radius: var(--xeg-radius-2xl);
+  box-shadow: var(--xeg-surface-glass-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  isolation: isolate;
 }
 
 .glass-surface-dark {
-  background: var(--xeg-surface-glass-bg-dark, var(--xeg-surface-glass-bg));
+  background: var(--xeg-surface-glass-bg-dark, rgba(0, 0, 0, 0.85));
   color: var(--xeg-surface-glass-text-dark, var(--color-text-inverse));
-  border-color: var(--xeg-surface-glass-border-dark, var(--xeg-surface-glass-border));
+  border: 1px solid var(--xeg-surface-glass-border-dark, var(--xeg-surface-glass-border));
+  border-radius: var(--xeg-radius-2xl);
+  box-shadow: var(--xeg-surface-glass-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  isolation: isolate;
 }
 
 /* 갤러리 오버레이 - 통합 색상 시스템 적용 */

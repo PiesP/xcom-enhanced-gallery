@@ -317,7 +317,15 @@
   transform-origin: left;
 }
 
-/* 크기 조절 섹션 - fitModeGroup 제거됨 */
+/* 크기 조절 섹션 - fitModeGroup 정의 */
+.fitModeGroup {
+  background: transparent;
+  border: none;
+  border-radius: var(--xeg-radius-md);
+  display: flex;
+  gap: 0.25em;
+  padding: 0;
+}
 
 .fitButton,
 button.fitButton {
