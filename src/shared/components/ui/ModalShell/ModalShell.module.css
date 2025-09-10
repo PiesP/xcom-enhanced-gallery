@@ -11,8 +11,8 @@
   width: 100vw;
   height: 100vh;
   background: oklch(from var(--color-base-black) l c h / 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   z-index: var(--xeg-z-modal);
 
   /* 시작 상태 */
@@ -82,8 +82,8 @@
 .modal-surface-glass {
   background: oklch(from var(--color-bg-surface) l c h / 0.9);
   border-color: oklch(from var(--color-border-default) l c h / 0.3);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
     0 20px 25px oklch(from var(--color-base-black) l c h / 0.1),
     0 10px 10px oklch(from var(--color-base-black) l c h / 0.04);

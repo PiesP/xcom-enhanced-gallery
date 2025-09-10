@@ -38,8 +38,8 @@
   border: 1px solid var(--xeg-surface-glass-border-light, var(--xeg-surface-glass-border));
   border-radius: var(--xeg-radius-2xl);
   box-shadow: var(--xeg-surface-glass-shadow);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   isolation: isolate;
 }
 
@@ -49,8 +49,8 @@
   border: 1px solid var(--xeg-surface-glass-border-dark, var(--xeg-surface-glass-border));
   border-radius: var(--xeg-radius-2xl);
   box-shadow: var(--xeg-surface-glass-shadow);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   isolation: isolate;
 }
 

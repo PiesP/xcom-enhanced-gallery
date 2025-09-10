@@ -22,13 +22,16 @@
   --xeg-surface-glass-bg: var(--glass-bg);
   --xeg-surface-glass-border: var(--glass-border);
   --xeg-surface-glass-shadow: var(--glass-shadow);
-  --xeg-surface-glass-blur: blur(10px);
+  --xeg-surface-glass-blur: none;
 
   /* Focus 토큰 - 테스트 요구사항 */
   --xeg-focus-outline: 0.125em solid var(--xeg-color-primary);
   --xeg-focus-outline-color: var(--xeg-color-primary);
   --xeg-focus-outline-width: 0.125em;
   --xeg-focus-outline-style: solid;
+  --xeg-focus-offset: 0.125em;
+  --xeg-focus-ring: 0.125em solid var(--xeg-color-primary);
+  --xeg-focus-ring-offset: 0.125em;
 
   /* Font Size 토큰 - 테스트 요구사항 */
   --xeg-font-size-sm: 0.875rem;
@@ -42,8 +45,12 @@
   --xeg-font-weight-bold: 700;
 
   /* Component Modal 토큰 - 테스트 요구사항 */
+  /* Component-specific */
   --xeg-comp-modal-bg: var(--color-bg-surface);
-  --xeg-modal-bg: var(--color-bg-surface);
+  --xeg-comp-modal-border: var(--color-border-primary);
+  /* 호환성 alias */
+  --xeg-modal-bg: var(--xeg-comp-modal-bg);
+  --xeg-modal-border: var(--xeg-comp-modal-border);
 
   /* Icon 토큰 - 테스트 요구사항 */
   --xeg-icon-stroke-width: 1.5px;
@@ -62,10 +69,12 @@
   --xeg-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
 
   /* Legacy Primary Colors - 호환성 보장 */
+  /* Primary Colors */
   --xeg-color-primary-500: var(--color-primary);
   --xeg-color-primary-600: var(--color-primary-hover);
   --xeg-color-primary-700: var(--color-primary-active);
 
+  /* Semantic Colors */
   /* Legacy Neutral Colors - 호환성 보장 */
   --xeg-color-neutral-100: var(--color-gray-100);
   --xeg-color-neutral-500: var(--color-gray-500);
@@ -200,5 +209,42 @@
   to {
     transform: translateY(0) translateZ(0);
     opacity: 1;
+  }
+}
+
+/* Glassmorphism Base Class - 테스트 요구사항 */
+.xeg-glassmorphism {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: none;
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+}
+
+/* 접근성 미디어 쿼리 - 테스트 요구사항 */
+@media (prefers-contrast: high) {
+  :root {
+    /* 고대비 모드 토큰 */
+    --glass-bg: var(--color-base-white);
+    --glass-border: var(--color-base-black);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* 감소된 모션 토큰 */
+    --xeg-transition-fast: none;
+    --xeg-transition-normal: none;
+    --xeg-transition-slow: none;
+  }
+}
+
+/* 공통 애니메이션 - 테스트 요구사항 */
+@keyframes xeg-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }

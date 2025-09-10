@@ -20,16 +20,32 @@ describe('🔴 TDD RED: Final Glassmorphism Cleanup', () => {
 
     it('build output should not contain blur tokens', () => {
       const devFilePath = join(process.cwd(), 'dist/xcom-enhanced-gallery.dev.user.js');
+      const prodFilePath = join(process.cwd(), 'dist/xcom-enhanced-gallery.user.js');
 
-      if (existsSync(devFilePath)) {
-        const content = readFileSync(devFilePath, 'utf8');
+      // 개발 버전 또는 프로덕션 버전 중 하나 이상 존재해야 함
+      const hasDevFile = existsSync(devFilePath);
+      const hasProdFile = existsSync(prodFilePath);
+
+      expect(hasDevFile || hasProdFile).toBe(true);
+
+      // 존재하는 파일들을 모두 검사
+      const filesToCheck = [];
+      if (hasDevFile) filesToCheck.push(devFilePath);
+      if (hasProdFile) filesToCheck.push(prodFilePath);
+
+      filesToCheck.forEach(filePath => {
+        const content = readFileSync(filePath, 'utf8');
 
         // 빌드된 CSS 내 blur 토큰 탐지
         expect(content).not.toMatch(/--xeg-[^:]*-blur:\s*blur\(/);
         expect(content).not.toMatch(/--xeg-modal-glass-blur:\s*blur\(16px\)/);
         expect(content).not.toMatch(/--xeg-toolbar-glass-blur:\s*blur\(16px\)/);
         expect(content).not.toMatch(/--xeg-surface-glass-blur:\s*blur\(16px\)/);
-      }
+
+        // 일반적인 blur 패턴도 검사
+        expect(content).not.toMatch(/backdrop-filter:\s*blur\(/);
+        expect(content).not.toMatch(/-webkit-backdrop-filter:\s*blur\(/);
+      });
     });
   });
 

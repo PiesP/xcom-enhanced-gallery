@@ -59,7 +59,7 @@
   /* Glass Surface Component */
   --glass-bg: var(--color-glass-bg);
   --glass-border: var(--color-glass-border);
-  --glass-backdrop-filter: blur(12px);
+  --glass-backdrop-filter: none;
   --glass-shadow: var(--shadow-lg);
 
   /* Media/Image Component */
