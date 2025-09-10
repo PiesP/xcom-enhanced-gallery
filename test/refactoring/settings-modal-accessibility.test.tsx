@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, fireEvent, screen, cleanup } from '@testing-library/preact';
+import { render, fireEvent, screen, cleanup, waitFor } from '@testing-library/preact';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal Accessibility Improvements (TDD)', () => {
@@ -36,12 +36,14 @@ describe('SettingsModal Accessibility Improvements (TDD)', () => {
   });
 
   describe('RED: 포커스 관리', () => {
-    it('모달이 열릴 때 첫 번째 포커스 가능한 요소로 포커스가 이동해야 함', () => {
+    it('모달이 열릴 때 첫 번째 포커스 가능한 요소로 포커스가 이동해야 함', async () => {
       render(<SettingsModal {...mockProps} />);
 
-      // 첫 번째 포커스 가능한 요소는 닫기 버튼이어야 함
-      const closeButton = screen.getByLabelText('Close');
-      expect(document.activeElement).toBe(closeButton);
+      // 비동기 포커스 이동을 기다림
+      await waitFor(() => {
+        const closeButton = screen.getByLabelText('Close');
+        expect(document.activeElement).toBe(closeButton);
+      });
     });
 
     it('모달이 닫힐 때 이전 포커스 요소로 포커스가 복원되어야 함', () => {
@@ -230,7 +232,7 @@ describe('SettingsModal Accessibility Improvements (TDD)', () => {
       rerender(<SettingsModal {...mockProps} isOpen={false} />);
 
       // keydown 이벤트 리스너가 제거되었어야 함
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function), true);
 
       removeEventListenerSpy.mockRestore();
     });

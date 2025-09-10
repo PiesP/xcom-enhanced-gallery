@@ -35,8 +35,15 @@
   --xeg-font-size-base: 1rem;
   --xeg-font-size-lg: 1.125rem;
 
+  /* Font Weight 토큰 - 테스트 요구사항 */
+  --xeg-font-weight-normal: 400;
+  --xeg-font-weight-medium: 500;
+  --xeg-font-weight-semibold: 600;
+  --xeg-font-weight-bold: 700;
+
   /* Component Modal 토큰 - 테스트 요구사항 */
-  --xeg-comp-modal-bg: var(--xeg-modal-bg);
+  --xeg-comp-modal-bg: var(--color-bg-surface);
+  --xeg-modal-bg: var(--color-bg-surface);
 
   /* Icon 토큰 - 테스트 요구사항 */
   --xeg-icon-stroke-width: 1.5px;
@@ -140,17 +147,40 @@
 
 /* Toast 애니메이션 시스템 - 테스트 요구사항 */
 .xeg-anim-slide-in {
-  animation: slideInFromRight 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: xeg-slide-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
 .xeg-anim-fade-slide-in {
-  animation: fadeSlideIn 0.3s ease-out;
+  animation: xeg-fade-slide-in 0.3s ease-out;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
+@keyframes xeg-slide-in {
+  from {
+    transform: translateX(100%) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateZ(0);
+    opacity: 1;
+  }
+}
+
+@keyframes xeg-fade-slide-in {
+  from {
+    transform: translateY(-10px) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) translateZ(0);
+    opacity: 1;
+  }
+}
+
+/* Legacy compatibility - 점진적 제거 예정 */
 @keyframes slideInFromRight {
   from {
     transform: translateX(100%) translateZ(0);
