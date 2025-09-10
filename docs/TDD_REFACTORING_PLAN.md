@@ -5,11 +5,10 @@
 
 ## 1) 현재 상태 스냅샷 (2025-09-10)
 
-- 디자인 시스템 핵심(B4/C1/C2: 토큰/라디우스/계약)은 완료되어 완료 로그로
-  이관되었습니다.
-- 본 문서는 디자인 측면의 간결성/일관성/현대화 항목에 집중합니다.
-- 기준 원칙: TypeScript strict 100%, 의존성 getter, PC 전용 이벤트, 디자인 토큰
-  100% 사용.
+- 디자인 시스템 핵심(B4/C1/C2: 토큰/라디우스/계약)은 완료되어 완료 로그로 이관.
+- 본 문서는 “설정 모달 ↔ 툴바” 디자인 일원화에 집중합니다.
+- 기준 원칙: TypeScript strict 100%, getter 함수로 외부 의존성 접근, PC 전용
+  이벤트, 디자인 토큰 100% 사용.
 
 ## 2) 의사결정(Decision Log)
 
@@ -38,11 +37,11 @@
   - 장점: 접근성/일관성↑, 테스트/리뷰 용이
   - 단점: 기존 산발적 버튼 교체 작업 필요
 
-## 3) 단계별 TDD 플랜 (Red → Green → Refactor)
+## 3) 완료된 선행 작업(요약)
 
-본 단계(애니메이션 토큰 정규화, 테마 커버리지, 접근성 시각 피드백)는 모두
-완료되어 가드 테스트가 GREEN 상태입니다. 세부 진행사항은
-`TDD_REFACTORING_PLAN_COMPLETED.md` 에 정리되었습니다.
+- 애니메이션 토큰 정규화, 테마 커버리지, 접근성 시각 피드백 TDD는 GREEN 상태로
+  완료.
+- 세부 사항은 `TDD_REFACTORING_PLAN_COMPLETED.md`에서 관리합니다.
 
 ## 4) 적용 가능한 솔루션 옵션과 선택
 
@@ -66,23 +65,72 @@
   - CSS Modules + Tokens(선택): 캡슐화/경량/테스트 친화 / 토큰 네임 관리 필요
   - 결정: CSS Modules + Semantic Tokens, alias는 점진 제거
 
-## 5) 체크리스트(진행)
+## 5) 설정 모달 ↔ 툴바 디자인 일원화 (TDD 계획)
 
-- [x] 애니메이션 토큰 100% 및 reduce-motion 대응
-  - 완료: 유틸리티(.xeg-anim-_) + 컴포넌트 애니메이션(.xeg-animate-_) + 갤러리
-    피처 CSS 전부 duration/easing 토큰화 및 정책 테스트 추가
-- [x] 테마 커버리지 1차(Glass Surface light/dark/system 오버라이드 가드)
-  - 진행: design-tokens.css glass surface 토큰 커버리지 테스트 추가 및 통과
-  - 다음: 기타 핵심 표면으로 확장 필요 시 추가
-- [x] 접근성 시각 피드백 정합성(hover/active/focus)
-  - 완료: SettingsModal/Toast에 focus-visible 토큰 적용, lift 정책 정렬(토큰
-    또는 em), 가드 테스트 추가 및 통과
-- [x] Docs: PC 전용 이벤트 예시/README 최신화
+목표: 설정 모달의 헤더/버튼/컨트롤/표면이 툴바의 디자인 요소(IconButton,
+상태·포커스 토큰, radius/spacing/shadow)와 1:1로 정합되도록 리팩토링하고,
+테스트로 회귀를 방지합니다.
 
-### Backlog(비-디자인)
+대상 파일(초기):
 
-- [x] Download: 실패 요약 리포트 및 파일명 충돌 자동 해소 정책(-1, -2)
-- [x] Extraction: 규칙 유틸 통합 및 중복 제거(회귀 테스트 유지)
+- `src/shared/components/ui/SettingsModal/SettingsModal.tsx`
+- `src/shared/components/ui/SettingsModal/SettingsModal.module.css`
+- `src/shared/components/ui/Toolbar/Toolbar.module.css` (참조)
+- `src/shared/components/ui/Button/IconButton` (재사용)
+
+옵션 비교:
+
+- A) CSS 재사용만으로 통일(현행처럼 Toolbar CSS 클래스만 가져다 쓰기)
+  - 장점: 변경 범위 작고 리스크 낮음
+  - 단점: 컴포넌트 레벨 행태(ARIA, 상태, 포커스) 불일치가 남을 수 있음, 중복
+    로직 지속
+- B) 공용 프리미티브 재구성(IconButton 강제 사용 + Modal 헤더 프리미티브 +
+  표면/토큰 정합)
+  - 장점: 실질적 일관성·재사용성 확보, 향후 변경 비용↓
+  - 단점: 교체 범위가 다소 넓음(헤더/버튼 교체), 테스트 보완 필요
+- C) 테스트 기반 정책 강화(토큰/컴포넌트 사용 가드)
+  - 장점: 회귀 방지, 코드리뷰 부담↓
+  - 단점: 초기 테스트 작성 비용
+
+선택: B + C (단계적 적용, Red→Green→Refactor)
+
+Red — 실패하는 테스트 먼저 작성
+
+- 스타일 정책 테스트
+  - `test/unit/styles/settings-modal.tokens.test.ts`
+    - .modal/.panel/.select/.closeButton에서 하드코딩 색상/지속시간 금지,
+      `--xeg-*` 토큰만 사용
+    - 헤더 구분선/텍스트 색상이 semantic 토큰(`--xeg-modal-border`,
+      `--xeg-color-text-*`) 사용
+- 컴포넌트 정합성 테스트
+  - `test/unit/components/settings-modal.toolbar-consistency.test.tsx`
+    - 헤더 닫기 버튼이 `IconButton` 사용(ARIA 라벨, 사이즈 md, intent='danger')
+    - select 컨트롤이 툴바 버튼 크기/포커스 링과 일치(.toolbarButton 또는 변형
+      클래스)
+  - `test/unit/components/settings-modal.a11y.test.tsx`
+    - Escape로 닫힘, 포커스 트랩 유지, PC 전용 키 이벤트만 처리
+
+Green — 최소 구현으로 통과 (완료, 완료 로그 참조)
+
+Refactor — 가독성/재사용성 개선
+
+- `ModalHeader`(프리미티브) 도입 검토: 제목 슬롯 + 오른쪽 액션 슬롯(IconButton)
+- select용 작은 프리미티브(`ToolbarSelect` 변형 클래스) 도입 검토
+- 내부 상수/유틸 분리, 의존성은 getter 함수 사용(테스트 모킹 확보)
+
+타입/의존성/이벤트 정책
+
+- TypeScript strict 모드로 작성, 모든 함수/컴포넌트에 명시적 타입 지정
+- 외부 라이브러리 접근은 getter 함수 사용하여 모킹 가능하게 유지
+- PC 전용 이벤트만 처리(Keyboard/Mouse/Wheel), 터치 이벤트 비사용
+
+완료 기준(Definition of Done)
+
+- 신규 테스트 3종 GREEN, 기존 토큰/테마/접근성 테스트 GREEN 유지
+- 설정 모달 헤더/버튼/컨트롤 시각·행태가 툴바와 일치(사이즈, 포커스 링,
+  호버/액티브 피드백)
+- 하드코딩 색/지속시간/px radius 사용 0건
+- 문서화 반영(본 계획서 업데이트)
 
 ## 6) 품질 게이트
 
@@ -92,9 +140,9 @@
 
 ## 7) 진행 현황 표기(간결)
 
-- B/C 단계 완료분은 완료 로그 참조. 본 계획은 Userscript 현대화 범위에 한정.
+- B/C 단계 완료분은 완료 로그 참조. 본 계획은 “설정 모달 ↔ 툴바” 정합에 한정.
 
 ---
 
-요약: Tampermonkey 호환 단일 번들 + 의존성 getter +
-MediaProcessor/DownloadService 중심의 TDD로 단계적 현대화를 진행합니다.
+요약: Tampermonkey 호환 단일 번들 + 의존성 getter + IconButton/토큰 표준을
+기반으로 설정 모달과 툴바의 디자인을 TDD로 일원화합니다.

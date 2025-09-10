@@ -15,6 +15,7 @@ import { X } from '../Icon';
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
+import { IconButton } from '@shared/components/ui';
 import styles from './SettingsModal.module.css';
 
 export interface SettingsModalProps {
@@ -225,18 +226,19 @@ export function SettingsModal({
       { id: 'settings-title', className: styles.title, key: 'title' },
       languageService.getString('settings.title')
     ),
-    h(
-      'button',
-      {
-        ref: firstFocusableRef,
-        type: 'button',
-        className: `${toolbarStyles.toolbarButton} ${styles.closeButton}`,
-        onClick: onClose,
-        'aria-label': 'Close',
-        key: 'close',
+    h(IconButton, {
+      ref: (el: HTMLButtonElement | null) => {
+        // 포커스 트랩의 첫 요소로 지정
+        firstFocusableRef.current = el;
       },
-      h(X, { size: 16 })
-    ),
+      className: styles.closeButton || '',
+      onClick: onClose,
+      'aria-label': 'Close',
+      intent: 'danger',
+      size: 'md',
+      key: 'close',
+      children: h(X, { size: 16 }),
+    }),
   ]);
 
   const themeSelect = h(

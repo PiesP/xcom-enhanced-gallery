@@ -26,7 +26,7 @@
   top: calc(var(--space-xl, 32px) + var(--space-2xl, 48px)); /* 툴바 아래 충분한 여유 */
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--xeg-z-toolbar, 10000);
+  z-index: var(--xeg-z-modal);
   display: flex;
   flex-direction: column;
   gap: var(--space-lg, 24px); /* 요소 간 넉넉한 간격 */
@@ -92,7 +92,7 @@
   justify-content: space-between;
   gap: var(--space-lg, 24px);
   padding-bottom: var(--space-md, 16px);
-  border-bottom: 2px solid var(--color-twitter-blue);
+  border-bottom: 1px solid var(--xeg-modal-border);
   margin-bottom: var(--space-lg, 24px);
 }
 
@@ -100,7 +100,7 @@
   margin: 0;
   font-size: 1.25em;
   font-weight: 700;
-  color: var(--color-twitter-blue);
+  color: var(--xeg-color-text-primary);
   letter-spacing: -0.02em;
 }
 
@@ -123,7 +123,7 @@
 .label {
   font-size: 0.9375em;
   font-weight: 600;
-  color: var(--color-twitter-blue);
+  color: var(--xeg-color-text-secondary);
   letter-spacing: 0.01em;
   margin-bottom: var(--space-xs, 4px);
   text-transform: uppercase;
@@ -136,25 +136,24 @@
   font-size: 0.875em;
   padding: 0.375em 0.75em;
   border-radius: var(--xeg-radius-md);
+  /* 툴바 버튼과 동일한 포커스/호버 체계 공유 */
+  background: var(--xeg-color-neutral-0, transparent);
+  color: var(--xeg-color-text-primary);
+  border: 1px solid var(--xeg-color-border-primary);
+  transition: var(--xeg-transition-fast);
 }
 
 /* 닫기 버튼 (테스트 검증용 크기/레이아웃만 정의) */
 .closeButton {
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
-  border-radius: var(--xeg-radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: var(--xeg-transition-fast);
+  /* IconButton로 대체되므로 보조 레이아웃만 유지 */
+  width: 2.25em;
+  height: 2.25em;
+  min-width: 2.25em;
+  min-height: 2.25em;
 }
 
 .closeButton:hover {
+  /* IconButton가 자체 호버를 처리하므로 미세 이동만 허용 */
   transform: translateY(-0.0625em);
 }
 

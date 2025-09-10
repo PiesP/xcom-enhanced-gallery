@@ -173,6 +173,28 @@ Gallery
 - 파괴적 액션(닫기/삭제 등)은 `intent="danger"`로 의미 전달(색/상태 토큰 매핑)
 - 커스텀 버튼에 동일 패턴 필요 시 확장 대신 IconButton 조합 우선
 
+설정 모달 전용 규칙:
+
+- SettingsModal 헤더의 닫기 버튼은 반드시 IconButton을 사용하고 intent="danger",
+  size="md"를 권장합니다.
+- SettingsModal의 select 컨트롤은 툴바 버튼과 동일한 포커스 링/호버 체계를
+  갖도록 토큰(`--xeg-*`)과 공용 변형 클래스를 사용합니다.
+
+#### 모달 ↔ 툴바 색상/레이어 통합 정책
+
+- 배경/보더/텍스트 색:
+  - 모달: `--xeg-modal-bg`, `--xeg-modal-border`, 텍스트는 `--xeg-color-text-*`
+  - 툴바: `--xeg-comp-toolbar-bg`, `--xeg-comp-toolbar-border`, 텍스트는
+    `--xeg-color-text-*`
+- 상호작용 상태(hover/active/focus):
+  - 포커스 링은 `--xeg-focus-ring`/`--xeg-focus-ring-offset`을 공통 사용
+  - hover lift는 변환 수치 일관 유지(툴바 기준), reduce-motion일 때 transform
+    제거
+- 레이어(z-index) 정책:
+  - 툴바는 `--xeg-z-toolbar`, 모달은 `--xeg-z-modal`만 사용(하드코딩 금지)
+  - 모달 패널/백드롭은 Toolbar보다 위 레이어가 되어야 하며, 모달 내부 요소는
+    추가 z-index를 지양
+
 ````
 
 ### 애니메이션 규칙

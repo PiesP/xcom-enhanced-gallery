@@ -179,6 +179,20 @@
   - 갤러리/툴바/버튼 표면 토큰 적용 및 라이트/다크 전환 리그레션 없음 확인
   - 가드 테스트: theme-glass-surface.coverage.test.ts 등 통과
 
-- 2025-09-10: 접근성 시각 피드백 정합성
   - focus-visible 링/hover lift/그림자 토큰 표준화
   - 가드 테스트: a11y-visual-feedback.tokens.test.ts 통과
+
+  - 애니메이션 토큰 정규화, 테마 커버리지, 접근성 피드백 등 일반 현대화 작업을
+
+- 2025-09-10: 설정 모달 ↔ 툴바 정합(Green) 완료
+  - `SettingsModal.tsx` 닫기 버튼을 IconButton(intent='danger', size='md')로
+    교체
+  - `SettingsModal.module.css`에서 헤더/타이틀/라벨/셀렉트 토큰화 및 툴바
+    포커스/호버 체계 정렬
+  - 빌드/타입/린트 전부 통과 확인 (Userscript 빌드 검증 포함) 집중하도록
+    간결화했습니다.
+
+- 2025-09-10: 모달 레이어/색상 토큰 정합 최종화
+  - SettingsModal `z-index`를 `var(--xeg-z-modal)`로 정규화(툴바보다 위 레이어
+    보장)
+  - CODING_GUIDELINES에 모달↔툴바 배경/텍스트/보더/포커스/레이어 통합 정책 추가
