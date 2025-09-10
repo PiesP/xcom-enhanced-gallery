@@ -100,6 +100,15 @@
     `var(--xeg-comp-modal-shadow)` 사용
   - 단위 테스트 추가: `ModalShell.tokens.test.ts`로 토큰 준수 회귀 방지
 
+- 2025-09-10: Overlay/Modal/Surface 토큰 일관화(Toast 완료)
+  - Toast.module.css의 surface 배경/보더/그림자 토큰을 semantic으로 통일
+    (`--xeg-surface-glass-*`)하여 컴포넌트 전용 토큰 의존 제거
+  - 결과: 빌드/전체 테스트 그린, surface 일관성 가드와 충돌 없음
+
+- 2025-09-10: 문서 업데이트(PC 전용 이벤트, README 배지 정리)
+  - README의 설치/브라우저 배지와 PC 전용 이벤트 설명 정리
+  - 잘못된 마크다운 중단 문자열(배지) 수정, 오타 교정
+
 - 2025-09-10: 애니메이션 토큰 정책(1차)
   - xeg-spin 하드코딩 지속시간 제거 → `var(--xeg-duration-*)` 사용으로 통일
   - 유닛 테스트 추가: `animation-tokens-policy.test.ts`로 회귀 방지

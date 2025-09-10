@@ -25,10 +25,10 @@
  * - glassmorphism 배경 효과
  */
 .toast {
-  background: var(--xeg-toast-glass-bg);
-  border: 1px solid var(--xeg-toast-glass-border);
+  background: var(--xeg-surface-glass-bg);
+  border: 1px solid var(--xeg-surface-glass-border);
   border-radius: var(--xeg-radius-2xl);
-  box-shadow: var(--xeg-toast-glass-shadow);
+  box-shadow: var(--xeg-surface-glass-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   margin-bottom: 12px;

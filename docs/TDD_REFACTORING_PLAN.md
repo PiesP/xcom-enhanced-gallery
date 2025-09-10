@@ -100,7 +100,8 @@
 
 - [ ] Overlay/Modal/Surface 토큰 일관화(배경/보더/그림자)
   - 진행: ModalShell/ToolbarShell 컴포넌트 그림자 토큰화 및 가드 테스트 완료
-  - 다음: Toast/기타 surface 잔여 지점 점검
+  - 진행: Toast surface 토큰 통일 완료(semantic `--xeg-surface-glass-*` 적용)
+  - 다음: 기타 surface 잔여 지점 점검
 - [x] 애니메이션 토큰 100% 및 reduce-motion 대응
   - 완료: 유틸리티(.xeg-anim-_) + 컴포넌트 애니메이션(.xeg-animate-_) + 갤러리
     피처 CSS 전부 duration/easing 토큰화 및 정책 테스트 추가
@@ -110,7 +111,7 @@
 - [x] 접근성 시각 피드백 정합성(hover/active/focus)
   - 완료: SettingsModal/Toast에 focus-visible 토큰 적용, lift 정책 정렬(토큰
     또는 em), 가드 테스트 추가 및 통과
-- [ ] Docs: PC 전용 이벤트 예시/README 최신화
+- [x] Docs: PC 전용 이벤트 예시/README 최신화
 
 ### Backlog(비-디자인)
 
