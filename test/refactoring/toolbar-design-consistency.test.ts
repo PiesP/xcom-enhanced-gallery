@@ -3,6 +3,7 @@
  * @description TDD 기반 툴바 버튼 border-radius 일관성 검증
  */
 
+/* eslint-disable no-undef */
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -52,16 +53,16 @@ describe('Toolbar Button Design Consistency', () => {
       expect(borderRadiusValue).toBe('var(--xeg-radius-md)');
     });
 
-    it('fitModeGroup은 CSS 변수를 사용해야 한다', () => {
+    it('fitModeGroup 래퍼가 없어도 버튼은 일관된 radius를 유지해야 한다', () => {
       // Given: CSS 파일 내용 검사
-      // When: fitModeGroup 스타일 찾기
-      const fitModeGroupMatch = toolbarCssContent.match(
-        /\.fitModeGroup[^{]*\{[^}]*border-radius:\s*([^;]+);/
+      // When: fitButton 스타일 찾기
+      const fitButtonMatch = toolbarCssContent.match(
+        /\.fitButton[^\{]*\{[^}]*border-radius:\s*([^;]+);/
       );
 
       // Then: CSS 변수를 사용해야 함
-      expect(fitModeGroupMatch).toBeTruthy();
-      const borderRadiusValue = fitModeGroupMatch[1].trim();
+      expect(fitButtonMatch).toBeTruthy();
+      const borderRadiusValue = fitButtonMatch[1].trim();
       expect(borderRadiusValue).toBe('var(--xeg-radius-md)');
     });
 
@@ -92,7 +93,7 @@ describe('Toolbar Button Design Consistency', () => {
 
       // Then: progress bar의 1px만 허용됨
       if (hardcodedMatches) {
-        console.log('발견된 하드코딩된 border-radius 값들:', hardcodedMatches);
+        // 발견된 하드코딩된 border-radius 값들 디버깅용 로그는 생략
         // progress bar의 1px만 허용
         const allowedValues = hardcodedMatches.filter(match => match === 'border-radius: 1px');
         expect(hardcodedMatches.length).toBe(allowedValues.length);

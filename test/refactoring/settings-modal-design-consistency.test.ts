@@ -34,11 +34,11 @@ describe('SettingsModal-Toolbar Design Consistency', () => {
   });
 
   describe('Glass Surface Token Consistency', () => {
-    it('SettingsModal은 통합된 glass-surface 클래스를 사용해야 한다', () => {
+    it('SettingsModal은 테마 토큰을 사용해야 한다', () => {
       // Given: SettingsModal TSX 파일 확인
       // When: 컴포넌트가 CSS 토큰 기반 아키텍처를 사용하는지 확인
-      // Then: CSS에서 컴포넌트 토큰을 사용해야 함
-      expect(settingsModalCssContent).toMatch(/var\(--xeg-comp-modal-bg\)/);
+      // Then: CSS에서 테마 토큰을 사용해야 함
+      expect(settingsModalCssContent).toMatch(/var\(--xeg-modal-bg\)/);
 
       // 그리고 modal 클래스는 레이아웃 속성과 컴포넌트 토큰을 사용해야 함
       const modalClassMatch = settingsModalCssContent.match(/^\.modal\s*\{[^}]*\}/ms);

@@ -217,11 +217,7 @@ export function SettingsModal({
     getPositionClass(),
     className
   );
-  const innerClass = ComponentStandards.createClassName(
-    styles.modal,
-    styles.inner,
-    'glass-surface'
-  );
+  const innerClass = ComponentStandards.createClassName(styles.modal, styles.inner);
 
   const header = h('div', { className: styles.header, key: 'header' }, [
     h(

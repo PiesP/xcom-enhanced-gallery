@@ -38,8 +38,8 @@
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition:
-    opacity var(--xeg-duration-normal) var(--xeg-easing-easeOut),
-    transform var(--xeg-duration-normal) var(--xeg-easing-easeOut);
+    opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 
   user-select: none;
 }
@@ -656,10 +656,4 @@ button.fitButton {
 
 /* 고대비 모드 - 시인성 개선 */
 
-/* Fit Mode Group - TDD 테스트 요구사항 */
-.fitModeGroup {
-  background: transparent;
-  border: none;
-  padding: 0;
-  border-radius: var(--xeg-radius-md);
-}
+/* Fit Mode Group 래퍼 제거 - 독립 버튼 배치 원칙 준수 */

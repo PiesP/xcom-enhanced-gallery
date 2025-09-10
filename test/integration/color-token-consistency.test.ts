@@ -92,17 +92,17 @@ describe('Color Token Consistency', () => {
       );
     });
 
-    it('should use component tokens for modal backgrounds', () => {
+    it('should use semantic tokens for modal backgrounds', () => {
       const modalCssPath = resolve(
         projectRoot,
         'src/shared/components/ui/SettingsModal/SettingsModal.module.css'
       );
       const modalCss = readFileSync(modalCssPath, 'utf8');
 
-      // 모달에서 컴포넌트 토큰 사용 확인
+      // 모달에서 시맨틱 토큰 사용 확인
       expect(modalCss).toMatch(
-        /background:\s*var\(--xeg-comp-modal-bg\)/,
-        'Modal should use component background token'
+        /background:\s*var\(--xeg-modal-bg\)/,
+        'Modal should use semantic background token'
       );
     });
   });

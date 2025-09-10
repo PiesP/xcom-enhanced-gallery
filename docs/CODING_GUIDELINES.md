@@ -83,7 +83,7 @@ Gallery
   background: var(--xeg-gallery-bg); /* 라이트/다크 자동 전환 */
 }
 
-/* ✅ 설정 모달 - 테마별 배경/보더 */
+/* ✅ 설정 모달 - 테마별 배경/보더 (컴포넌트 토큰 금지, 테마 토큰만 사용) */
 .modal {
   background: var(--xeg-modal-bg);
   border: 1px solid var(--xeg-modal-border);

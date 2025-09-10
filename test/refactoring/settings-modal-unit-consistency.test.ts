@@ -62,7 +62,7 @@ describe('SettingsModal Unit Consistency', () => {
   });
 
   describe('Toolbar와의 일관성', () => {
-    it('컴포넌트 토큰 기반 아키텍처를 사용하며 CSS에서 개별 glassmorphism 속성이 제거되어야 함', () => {
+    it('테마 토큰 기반 아키텍처를 사용하며 CSS에서 개별 glassmorphism 속성이 제거되어야 함', () => {
       // 개별 glassmorphism 속성이 CSS에서 제거되어야 함
       const removedTokens = [
         'var(--xeg-surface-glass-bg)',
@@ -86,10 +86,10 @@ describe('SettingsModal Unit Consistency', () => {
         'TSX에서 glass-surface 클래스는 제거되어야 함'
       ).toBe(false);
 
-      // 컴포넌트 토큰 사용 확인
+      // 테마 토큰 사용 확인
       expect(
-        settingsModalCSS.includes('var(--xeg-comp-modal-bg)'),
-        'CSS에서 컴포넌트 배경 토큰을 사용해야 함'
+        settingsModalCSS.includes('var(--xeg-modal-bg)'),
+        'CSS에서 테마 배경 토큰을 사용해야 함'
       ).toBe(true);
 
       // 레거시 toolbar 토큰 직접 사용 금지

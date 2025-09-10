@@ -1,10 +1,6 @@
 /**
- * @fileoverview SettingsModal 컴포넌트    it('설정 제목이 표시되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
-
-      const title = screen.getByText('Settings');
-      expect(title).toBeDefined();
-    });* @description TDD 기반 설정 모달 컴포넌트 테스트
+ * @fileoverview SettingsModal 컴포넌트 테스트
+ * @description TDD 기반 설정 모달 컴포넌트 테스트
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -248,17 +244,14 @@ describe('SettingsModal', () => {
   });
 
   describe('TDD: 툴바와 디자인 일관성', () => {
-    it('설정 모달이 툴바와 동일한 통합 glassmorphism 클래스를 사용해야 함', () => {
+    it('설정 모달이 테마 토큰 기반 스타일을 사용해야 함', () => {
       render(<SettingsModal {...mockProps} />);
 
       const modal = screen.getByRole('dialog').firstElementChild;
       expect(modal).toBeDefined();
 
-      // 통합된 glassmorphism 클래스 사용 확인
-      expect(modal.className).toContain('glass-surface');
-      // 개별 테마별 클래스는 사용하지 않음
-      expect(modal.className).not.toContain('glass-surface-dark');
-      expect(modal.className).not.toContain('glass-surface-light');
+      // CSS 모듈 클래스만 존재해야 하며 glass-surface는 TSX에서 사용하지 않음
+      expect(modal!.className).not.toContain('glass-surface');
     });
 
     it('닫기 버튼이 올바른 CSS 클래스를 가져야 함', () => {

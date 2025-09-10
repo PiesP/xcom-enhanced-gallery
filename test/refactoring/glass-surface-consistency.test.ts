@@ -136,15 +136,15 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
       expect(toolbarCSS.includes('var(--xeg-comp-toolbar-bg)')).toBe(true);
     });
 
-    it('SettingsModal 컴포넌트 TSX 파일이 glass-surface 클래스를 제거하고 CSS 토큰을 사용해야 함', () => {
+    it('SettingsModal 컴포넌트 TSX 파일이 glass-surface 클래스를 제거하고 CSS 시맨틱 토큰을 사용해야 함', () => {
       const modalTSX = readFile('src/shared/components/ui/SettingsModal/SettingsModal.tsx');
       const modalCSS = readFile('src/shared/components/ui/SettingsModal/SettingsModal.module.css');
 
       // SettingsModal TSX 파일에서 glass-surface 클래스 제거 확인
       expect(modalTSX.includes('glass-surface')).toBe(false);
 
-      // CSS에서 컴포넌트 토큰 사용 확인
-      expect(modalCSS.includes('var(--xeg-comp-modal-bg)')).toBe(true);
+      // CSS에서 시맨틱 토큰 사용 확인
+      expect(modalCSS.includes('var(--xeg-modal-bg)')).toBe(true);
     });
   });
 });

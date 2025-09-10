@@ -585,11 +585,11 @@
   line-height: 1;
   cursor: pointer;
   transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
-    color var(--xeg-duration-fast) var(--xeg-easing-easeOut),
-    transform var(--xeg-duration-fast) var(--xeg-easing-easeOut),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-easeOut);
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
   outline: none;
 }
 

@@ -51,7 +51,7 @@ describe('Surface Glass Token Unification', () => {
     ).not.toBeNull();
   });
 
-  it('SettingsModal CSS 는 컴포넌트 토큰을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
+  it('SettingsModal CSS 는 테마 토큰을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
     const modalCSS = read(SETTINGS_MODAL_CSS_PATH);
     expect(
       modalCSS.match(/--xeg-toolbar-glass-bg/),
@@ -64,10 +64,10 @@ describe('Surface Glass Token Unification', () => {
       'SettingsModal에서 개별 glassmorphism 속성이 제거되지 않음'
     ).toBeNull();
 
-    // 대신 컴포넌트 토큰 사용을 확인
+    // 대신 테마 토큰 사용을 확인
     expect(
-      modalCSS.match(/var\(--xeg-comp-modal-bg\)/),
-      'SettingsModal CSS에서 컴포넌트 토큰을 사용하지 않음'
+      modalCSS.match(/var\(--xeg-modal-bg\)/),
+      'SettingsModal CSS에서 테마 토큰을 사용하지 않음'
     ).not.toBeNull();
   });
 });

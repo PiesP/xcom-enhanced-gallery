@@ -59,7 +59,7 @@ describe('Glass Surface Removal', () => {
     expect(toolbarCssContent).toMatch(/var\(--xeg-comp-toolbar-bg\)/);
   });
 
-  it('should use component tokens for SettingsModal background in CSS', () => {
+  it('should use theme tokens for SettingsModal background in CSS', () => {
     const modalCssPath = join(
       process.cwd(),
       'src',
@@ -71,7 +71,7 @@ describe('Glass Surface Removal', () => {
     );
     const modalCssContent = readFileSync(modalCssPath, 'utf-8');
 
-    // 컴포넌트 토큰 사용 확인
-    expect(modalCssContent).toMatch(/var\(--xeg-comp-modal-bg\)/);
+    // 테마 토큰 사용 확인
+    expect(modalCssContent).toMatch(/var\(--xeg-modal-bg\)/);
   });
 });
