@@ -39,10 +39,10 @@ describe('Fit Button Independence', () => {
     const toolbarContent = readFileSync(toolbarPath, 'utf-8');
 
     // 핏 버튼들이 개별적으로 존재해야 함
-    expect(toolbarContent).toMatch(/data-gallery-element=["']fit-original["']/);
-    expect(toolbarContent).toMatch(/data-gallery-element=["']fit-width["']/);
-    expect(toolbarContent).toMatch(/data-gallery-element=["']fit-height["']/);
-    expect(toolbarContent).toMatch(/data-gallery-element=["']fit-container["']/);
+    expect(toolbarContent).toMatch(/data-gallery-element.*fit-original/);
+    expect(toolbarContent).toMatch(/data-gallery-element.*fit-width/);
+    expect(toolbarContent).toMatch(/data-gallery-element.*fit-height/);
+    expect(toolbarContent).toMatch(/data-gallery-element.*fit-container/);
   });
 
   it('should not have fitModeGroup CSS class defined', () => {

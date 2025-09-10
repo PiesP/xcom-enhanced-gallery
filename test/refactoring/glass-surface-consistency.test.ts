@@ -124,19 +124,27 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
     });
   });
 
-  describe('분리된 glassmorphism 클래스 사용 요구사항', () => {
-    it('Toolbar 컴포넌트 TSX 파일이 glass-surface 클래스를 사용해야 함', () => {
+  describe('컴포넌트 토큰 기반 아키텍처 사용 요구사항', () => {
+    it('Toolbar 컴포넌트 TSX 파일이 glass-surface 클래스를 제거하고 CSS 토큰을 사용해야 함', () => {
       const toolbarTSX = readFile('src/shared/components/ui/Toolbar/Toolbar.tsx');
+      const toolbarCSS = readFile('src/shared/components/ui/Toolbar/Toolbar.module.css');
 
-      // Toolbar TSX 파일에서 통합 glass-surface 클래스 사용 여부 확인
-      expect(toolbarTSX.includes("'glass-surface'")).toBe(true);
+      // Toolbar TSX 파일에서 glass-surface 클래스 제거 확인
+      expect(toolbarTSX.includes("'glass-surface'")).toBe(false);
+
+      // CSS에서 컴포넌트 토큰 사용 확인
+      expect(toolbarCSS.includes('var(--xeg-comp-toolbar-bg)')).toBe(true);
     });
 
-    it('SettingsModal 컴포넌트 TSX 파일이 glass-surface 클래스를 사용해야 함', () => {
+    it('SettingsModal 컴포넌트 TSX 파일이 glass-surface 클래스를 제거하고 CSS 토큰을 사용해야 함', () => {
       const modalTSX = readFile('src/shared/components/ui/SettingsModal/SettingsModal.tsx');
+      const modalCSS = readFile('src/shared/components/ui/SettingsModal/SettingsModal.module.css');
 
-      // SettingsModal TSX 파일에서 통합 glass-surface 클래스 사용 여부 확인
-      expect(modalTSX.includes('glass-surface')).toBe(true);
+      // SettingsModal TSX 파일에서 glass-surface 클래스 제거 확인
+      expect(modalTSX.includes('glass-surface')).toBe(false);
+
+      // CSS에서 컴포넌트 토큰 사용 확인
+      expect(modalCSS.includes('var(--xeg-comp-modal-bg)')).toBe(true);
     });
   });
 });

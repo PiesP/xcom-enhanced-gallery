@@ -36,17 +36,11 @@ describe('SettingsModal-Toolbar Design Consistency', () => {
   describe('Glass Surface Token Consistency', () => {
     it('SettingsModal은 통합된 glass-surface 클래스를 사용해야 한다', () => {
       // Given: SettingsModal TSX 파일 확인
-      const settingsModalTsxPath = resolve(
-        __dirname,
-        '../../src/shared/components/ui/SettingsModal/SettingsModal.tsx'
-      );
-      const settingsModalTsxContent = readFileSync(settingsModalTsxPath, 'utf-8');
+      // When: 컴포넌트가 CSS 토큰 기반 아키텍처를 사용하는지 확인
+      // Then: CSS에서 컴포넌트 토큰을 사용해야 함
+      expect(settingsModalCssContent).toMatch(/var\(--xeg-comp-modal-bg\)/);
 
-      // When: 컴포넌트가 glass-surface 클래스를 사용하는지 확인
-      // Then: glass-surface 클래스가 적용되어야 함
-      expect(settingsModalTsxContent).toMatch(/glass-surface/);
-
-      // 그리고 modal 클래스는 레이아웃 속성만 가져야 함 (glassmorphism은 .glass-surface 클래스로)
+      // 그리고 modal 클래스는 레이아웃 속성과 컴포넌트 토큰을 사용해야 함
       const modalClassMatch = settingsModalCssContent.match(/^\.modal\s*\{[^}]*\}/ms);
       expect(modalClassMatch).toBeTruthy();
       const modalStyles = modalClassMatch[0];
@@ -248,19 +242,18 @@ describe('SettingsModal-Toolbar Design Consistency', () => {
       expect(designTokensCssContent).toMatch(/--xeg-surface-glass-blur:/);
     });
 
-    it('Toolbar도 glass-surface 클래스 방식을 사용해야 한다', () => {
+    it('Toolbar도 CSS 토큰 기반 아키텍처를 사용해야 한다', () => {
       // Given: Toolbar CSS 내용
-      // Then: glassmorphism 속성이 개별 클래스에서 제거되어야 함
-      expect(toolbarCssContent).not.toMatch(/\.galleryToolbar.*var\(--xeg-surface-glass-bg\)/s);
-      expect(toolbarCssContent).not.toMatch(/\.toolbarButton.*var\(--xeg-surface-glass-bg\)/s);
+      // Then: 컴포넌트 토큰을 사용해야 함
+      expect(toolbarCssContent).toMatch(/var\(--xeg-comp-toolbar-bg\)/);
 
-      // TSX 파일에서 glass-surface 클래스 사용 확인
+      // TSX 파일에서 glass-surface 클래스 사용하지 않음 확인
       const toolbarTsxPath = resolve(
         __dirname,
         '../../src/shared/components/ui/Toolbar/Toolbar.tsx'
       );
       const toolbarTsxContent = readFileSync(toolbarTsxPath, 'utf-8');
-      expect(toolbarTsxContent).toMatch(/glass-surface/);
+      expect(toolbarTsxContent).not.toMatch(/glass-surface/);
     });
   });
 });

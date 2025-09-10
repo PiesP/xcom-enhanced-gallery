@@ -132,7 +132,6 @@ function ToolbarCore({
   const toolbarClass = ComponentStandards.createClassName(
     styles.toolbar,
     getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
-    'glass-surface',
     className
   );
 

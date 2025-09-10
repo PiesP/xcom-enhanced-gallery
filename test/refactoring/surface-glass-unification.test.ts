@@ -36,7 +36,7 @@ describe('Surface Glass Token Unification', () => {
     });
   });
 
-  it('Toolbar CSS 는 glass-surface 클래스 방식을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
+  it('Toolbar CSS 는 컴포넌트 토큰을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
     const toolbarCSS = read(TOOLBAR_CSS_PATH);
     // 새로운 조건: toolbarCSS에서 개별 glassmorphism 속성이 제거되어야 함
     expect(
@@ -44,15 +44,14 @@ describe('Surface Glass Token Unification', () => {
       'Toolbar에서 개별 glassmorphism 속성이 제거되지 않음'
     ).toBeNull();
 
-    // 대신 TSX에서 glass-surface 클래스 사용을 확인
-    const toolbarTSX = read('src/shared/components/ui/Toolbar/Toolbar.tsx');
+    // 대신 컴포넌트 토큰 사용을 확인
     expect(
-      toolbarTSX.match(/glass-surface/),
-      'Toolbar TSX에서 glass-surface 클래스를 사용하지 않음'
+      toolbarCSS.match(/var\(--xeg-comp-toolbar-bg\)/),
+      'Toolbar CSS에서 컴포넌트 토큰을 사용하지 않음'
     ).not.toBeNull();
   });
 
-  it('SettingsModal CSS 는 glass-surface 클래스 방식을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
+  it('SettingsModal CSS 는 컴포넌트 토큰을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
     const modalCSS = read(SETTINGS_MODAL_CSS_PATH);
     expect(
       modalCSS.match(/--xeg-toolbar-glass-bg/),
@@ -65,11 +64,10 @@ describe('Surface Glass Token Unification', () => {
       'SettingsModal에서 개별 glassmorphism 속성이 제거되지 않음'
     ).toBeNull();
 
-    // 대신 TSX에서 glass-surface 클래스 사용을 확인
-    const modalTSX = read('src/shared/components/ui/SettingsModal/SettingsModal.tsx');
+    // 대신 컴포넌트 토큰 사용을 확인
     expect(
-      modalTSX.match(/glass-surface/),
-      'SettingsModal TSX에서 glass-surface 클래스를 사용하지 않음'
+      modalCSS.match(/var\(--xeg-comp-modal-bg\)/),
+      'SettingsModal CSS에서 컴포넌트 토큰을 사용하지 않음'
     ).not.toBeNull();
   });
 });
