@@ -165,9 +165,12 @@ Gallery
 
 ### IconButton 사용 규칙
 
-- 반복되는 아이콘 전용 버튼은 `<IconButton>` 사용 (토큰/hover/active 일관)
-- 사이즈: `sm(28px)`, `md(36px)`, `lg(44px)` – 레이아웃 밀도에 맞게 선택
+- 반복되는 아이콘 전용 버튼은 반드시 `<IconButton>` 사용 (토큰/hover/active
+  일관)
+- 사이즈: `sm(28px)`, `md(36px)`, `lg(44px)`, `toolbar` – 툴바에는 `toolbar`
+  권장
 - 접근성: 항상 `aria-label` 필수, variant에 관계없이 role="button" 의미 명확화
+- 파괴적 액션(닫기/삭제 등)은 `intent="danger"`로 의미 전달(색/상태 토큰 매핑)
 - 커스텀 버튼에 동일 패턴 필요 시 확장 대신 IconButton 조합 우선
 
 ````

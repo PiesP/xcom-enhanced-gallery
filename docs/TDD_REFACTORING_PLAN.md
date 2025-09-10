@@ -43,14 +43,13 @@
 참고: 기반 레이어/MediaProcessor/로깅·에러/부트스트랩/빌드 자동화는 완료. 아래는
 디자인 현대화 중심 잔여 항목입니다.
 
-1. IconButton/Action Controls 통일
+1. IconButton/Action Controls 통일 — 완료됨(2025-09-10)
 
-- Red: 갤러리 내 아이콘 전용 버튼(닫기/내비게이션/다운로드 등)이 IconButton
-  계약(사이즈/ARIA/포커스 링/토큰) 위반 시 실패하는 테스트 작성
-- Green: 모든 해당 버튼을 IconButton 합성으로 교체,
-  `--xeg-radius-md`/hover/active/포커스 토큰 적용
-- Refactor: 변형(variant) 프로퍼티 최소화 및 공통 스타일 유틸 추출 성공 기준:
-  위반 0건, 접근성 스모크(키보드 탐색/포커스 가시성) 통과
+- 상태: GREEN → 리팩토링 적용. Toolbar 내 아이콘 전용 버튼 전량 `IconButton`
+  합성으로 교체.
+- 효과: `--xeg-radius-md`/hover/active/포커스 토큰 규칙 준수, aria-label 강제
+  경고 로깅 유지.
+- 후속: 기타 UI 사용처 점검은 리그레션 테스트로 커버(추가 발견 시 개별 PR).
 
 2. Overlay/Modal/Surface 토큰 일관화
 
@@ -107,7 +106,7 @@
 
 ## 5) 체크리스트(진행)
 
-- [ ] IconButton/Action Controls 통일(사이즈/ARIA/토큰)
+- [x] IconButton/Action Controls 통일(사이즈/ARIA/토큰)
 - [ ] Overlay/Modal/Surface 토큰 일관화(배경/보더/그림자)
 - [ ] 애니메이션 토큰 100% 및 reduce-motion 대응
 - [ ] 테마 커버리지 100%(라이트/다크 스냅샷)

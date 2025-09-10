@@ -1,13 +1,13 @@
 /**
  * @file IconButton - Thin wrapper over Unified Button for icon-only actions
  */
-import type { VNode } from '@shared/external/vendors';
+import type { ComponentChildren, VNode } from '@shared/external/vendors';
 import { getPreact } from '@shared/external/vendors';
 import { Button } from './Button';
 import type { ButtonProps } from './Button';
 
 export interface IconButtonProps extends Omit<ButtonProps, 'variant' | 'iconOnly' | 'children'> {
-  readonly children: VNode | string;
+  readonly children?: ComponentChildren;
 }
 
 export function IconButton({ size = 'md', ...props }: IconButtonProps): VNode {

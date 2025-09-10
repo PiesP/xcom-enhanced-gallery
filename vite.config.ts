@@ -39,7 +39,6 @@ function userscriptHeader(flags: BuildFlags): string {
     `// @description  ${pkg.description || ''}\n` +
     `// @author       PiesP\n` +
     `// @license      MIT\n` +
-    `// @match        https://x.com/*\n` +
     `// @match        https://*.x.com/*\n` +
     `// @grant        GM_setValue\n` +
     `// @grant        GM_getValue\n` +

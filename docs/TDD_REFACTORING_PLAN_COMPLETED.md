@@ -90,3 +90,7 @@
   - DownloadService(기본 ZIP/진행률/취소/동시성·재시도) 1차 구현 완료
   - Bootstrap(PC-only 핫키/즉시 초기화) 정비 완료
   - Build(헤더/소스맵/사이즈 예산) 구성 완료
+
+- 2025-09-10: IconButton/Action Controls 통일
+  - Toolbar 내 아이콘 전용 버튼 전량 IconButton로 교체, 사이즈/토큰/ARIA 일관화
+  - 닫기 버튼은 intent='danger' 매핑으로 시각 의미 유지

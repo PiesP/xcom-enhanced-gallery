@@ -40,7 +40,7 @@ import {
   ArrowsMaximize,
 } from '../Icon';
 import styles from './Toolbar.module.css';
-import { Button } from '@shared/components/ui/Button';
+import { IconButton } from '@shared/components/ui';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
 export interface ToolbarProps {
@@ -261,11 +261,9 @@ function ToolbarCore({
           },
           [
             h(
-              Button,
+              IconButton,
               {
-                variant: 'navigation',
                 size: 'toolbar',
-                iconOnly: true,
                 'aria-label': '이전 미디어',
                 title: '이전 미디어 (←)',
                 disabled: disabled || !canGoPrevious,
@@ -277,11 +275,9 @@ function ToolbarCore({
               h(ChevronLeft, { size: 18 })
             ),
             h(
-              Button,
+              IconButton,
               {
-                variant: 'navigation',
                 size: 'toolbar',
-                iconOnly: true,
                 'aria-label': '다음 미디어',
                 title: '다음 미디어 (→)',
                 disabled: disabled || !canGoNext,
@@ -354,11 +350,9 @@ function ToolbarCore({
           [
             // 이미지 핏 모드 버튼들 - 독립적으로 배치
             h(
-              Button,
+              IconButton,
               {
-                variant: 'toolbar',
                 size: 'toolbar',
-                iconOnly: true,
                 onClick: (e: Event) => handleFitMode(e, 'original', onFitOriginal),
                 disabled: disabled || !onFitOriginal,
                 'aria-label': '원본 크기',
@@ -371,11 +365,9 @@ function ToolbarCore({
               h(ZoomIn, { size: 16 })
             ),
             h(
-              Button,
+              IconButton,
               {
-                variant: 'toolbar',
                 size: 'toolbar',
-                iconOnly: true,
                 onClick: (e: Event) => handleFitMode(e, 'fitWidth', onFitWidth),
                 disabled: disabled || !onFitWidth,
                 'aria-label': '가로에 맞춤',
@@ -388,11 +380,9 @@ function ToolbarCore({
               h(ArrowAutofitWidth, { size: 16 })
             ),
             h(
-              Button,
+              IconButton,
               {
-                variant: 'toolbar',
                 size: 'toolbar',
-                iconOnly: true,
                 onClick: (e: Event) => handleFitMode(e, 'fitHeight', onFitHeight),
                 disabled: disabled || !onFitHeight,
                 'aria-label': '세로에 맞춤',
@@ -405,11 +395,9 @@ function ToolbarCore({
               h(ArrowAutofitHeight, { size: 16 })
             ),
             h(
-              Button,
+              IconButton,
               {
-                variant: 'toolbar',
                 size: 'toolbar',
-                iconOnly: true,
                 onClick: (e: Event) => handleFitMode(e, 'fitContainer', onFitContainer),
                 disabled: disabled || !onFitContainer,
                 'aria-label': '창에 맞춤',
@@ -424,11 +412,9 @@ function ToolbarCore({
 
             // 다운로드 버튼들
             h(
-              Button,
+              IconButton,
               {
-                variant: 'action',
                 size: 'toolbar',
-                iconOnly: true,
                 loading: isDownloading,
                 onClick: (e: Event) => handleButtonClick(e, 'download-current', onDownloadCurrent),
                 disabled: disabled || isDownloading,
@@ -444,11 +430,9 @@ function ToolbarCore({
 
             totalCount > 1 &&
               h(
-                Button,
+                IconButton,
                 {
-                  variant: 'action',
                   size: 'toolbar',
-                  iconOnly: true,
                   onClick: (e: Event) => handleButtonClick(e, 'download-all', onDownloadAll),
                   disabled: disabled || isDownloading,
                   'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
@@ -464,11 +448,9 @@ function ToolbarCore({
             // 설정 버튼
             onOpenSettings &&
               h(
-                Button,
+                IconButton,
                 {
-                  variant: 'toolbar',
                   size: 'toolbar',
-                  iconOnly: true,
                   'aria-label': '설정 열기',
                   title: '설정',
                   disabled,
@@ -482,11 +464,10 @@ function ToolbarCore({
 
             // 닫기 버튼
             h(
-              Button,
+              IconButton,
               {
-                variant: 'danger',
                 size: 'toolbar',
-                iconOnly: true,
+                intent: 'danger',
                 'aria-label': '갤러리 닫기',
                 title: '갤러리 닫기 (Esc)',
                 disabled,
