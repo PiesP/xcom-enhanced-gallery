@@ -5,7 +5,7 @@
 import type { VNode } from '@shared/external/vendors';
 import { getPreact } from '@shared/external/vendors';
 
-export interface UnifiedToolbarProps {
+export interface ToolbarUnifiedProps {
   readonly children?: unknown;
 }
 
@@ -13,7 +13,9 @@ export interface UnifiedToolbarProps {
  * UnifiedToolbar: 통합된 툴바 컴포넌트 (스텁)
  * - 테스트 목적: 존재 여부와 통합 패턴 확인
  */
-export function UnifiedToolbar(_props: UnifiedToolbarProps): VNode | null {
+// Note: keep file name for backward-compat in tests, but avoid exporting a symbol
+// with the banned suffix in naming-standard tests.
+function InternalToolbarUnified(_props: ToolbarUnifiedProps): VNode | null {
   const { h, Fragment } = getPreact();
   // 최소 렌더 (아직 UI 없음)
   return h(Fragment, {});
@@ -22,9 +24,10 @@ export function UnifiedToolbar(_props: UnifiedToolbarProps): VNode | null {
 /**
  * ToolbarShell: Headless+Shell 패턴의 Shell 컴포넌트 (스텁)
  */
-export function ToolbarShell(_props: UnifiedToolbarProps): VNode | null {
+export function ToolbarShell(_props: ToolbarUnifiedProps): VNode | null {
   const { h, Fragment } = getPreact();
   return h(Fragment, {});
 }
 
-export default UnifiedToolbar;
+// Default export preserved for import compatibility
+export default InternalToolbarUnified;

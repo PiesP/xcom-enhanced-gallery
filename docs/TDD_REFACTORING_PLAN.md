@@ -5,25 +5,13 @@
 
 ## 1) 현재 상태 스냅샷 (2025-09-10)
 
-- 테스트 요약(초기 기준): Test Files 18 failed | 153 passed | 7 skipped / Tests
-  7 failed
-- 주된 실패 원인
-  - A. 모듈 해상도 실패: 일부 경로 스텁/구현 부재
-    - UnifiedToolbar (해결: 최소 스텁 추가)
-    - 나머지: ToolbarHeadless/ConfigurableToolbar는 이미 존재, SettingsModal
-      계열 존재, iconRegistry/LazyIcon 존재, gallery-store 존재,
-      useToolbarPositionBased 존재
-  - B. 정책 충돌
-    - 토큰: component↔semantic alias 레이어 존재(해결: 중앙 파일에서 alias
-      제공)
-    - 클래스: TSX 내 'glass-surface' 사용 없음(해결)
-    - 외부 라이브러리 접근: 일부 훅에서 직접 import 사용(부분 해결: 2건 교정)
-  - C. 디자인 시스템 일관성
-    - 애니메이션 토큰/패턴 불일치
-    - CSS 변수 네이밍 컨벤션 검사 실패, 스타일 수(선택자 수) 기대 미달
-
-참고: glass-surface, component token alias 등 상이 표기는 현 시점 기준으로
-정리했습니다.
+- 남은 과제(핵심)
+  - B4. CSS 변수 네이밍/볼륨 점검 보완(잔여 파일 점검 및 정규화)
+  - C1. Toolbar fitModeGroup 계약 정리(Headless 계약 + Shell 어댑터 제공)
+  - C2. Border Radius 정책 일괄 반영(md/lg/xl/2xl/pill/full) - 일부 완료
+- 참고: 다음 항목은 완료되어 완료 로그로 이관되었습니다
+  - UnifiedToolbar 스텁, vendors getter 강제, TSX 'glass-surface' 제거,
+    component↔semantic alias 정리, 애니메이션 토큰 통합
 
 ## 2) 의사결정(Decision Log)
 
@@ -43,26 +31,10 @@
 
 ## 3) 단계별 TDD 플랜 (Red → Green → Refactor)
 
-Phase A. 테스트 가로막는 임계 이슈 제거 (Fail Fast blockers)
+Phase B. 디자인/토큰 정책 일관화(잔여)
 
-- A1. UnifiedToolbar 엔트리 스텁 추가(완료)
-  - 성공 기준: 해당 테스트에서 import 해상도 실패 없음
-- A2. vendors getter 강제(완료)
-  - 잔여 직접 import 제거 → `@shared/external/vendors` 경유
-  - ESLint: vendors 디렉터리 내부만 직접 import 허용 예외 규칙 추가
-  - 성공 기준: 리포지토리 검색 결과 vendors 외 직접 import 없음(테스트 제외)
-
-Phase B. 디자인/토큰 정책 일관화
-
-- B1. Component Token Alias 레이어 확인/보강(진행중)
-  - Alias: component → semantic 매핑은 중앙 토큰 파일에서 제공됨(확인)
-  - 컴포넌트 CSS에서 `--xeg-modal-*` 사용 유지(테스트와 호환)
-- B2. TSX에서 'glass-surface' 문자열 제거(완료, TSX 내 검색 결과 없음)
-- B3. 애니메이션 토큰 통합(완료)
-  - 공통: `--xeg-duration-*`, `--xeg-ease-*`, `--xeg-button-lift` 기준으로 통일
-  - 적용: AnimationService/BrowserService/VerticalImageItem 인라인 스타일 토큰화
-  - 성공 기준: 하드코딩된 transition/easing 제거
 - B4. CSS 네이밍/볼륨 점검
+  - (진행) Toolbar 계열 비-토큰 참조 정규화 완료 → 잔여 스타일 시트 점검
   - 변수 접두/패턴 점검(`--xeg-comp-*`, `--xeg-color-*`, `--xeg-radius-*` 등)
   - 선택자 수/중복도 기준 상향(테스트 기대 충족)
 
@@ -86,13 +58,11 @@ Phase C. Toolbar 계약 정리 (fitModeGroup 등)
 
 결정: 옵션 2 채택(D1).
 
-## 5) 체크리스트 (요구사항 → 작업)
+## 5) 체크리스트 (남은 작업)
 
-- [x] UnifiedToolbar 스텁 추가로 모듈 해상도 실패 제거
-- [x] TSX 내 'glass-surface' 제거 확인(정책 준수)
-- [x] vendors getter 강제(ESLint 룰 보강, 코드모드 반영)
-- [x] 공통 애니메이션 토큰 사용 일관성 점검(Button/Toolbar/Toast)
-- [x] CSS 변수 네이밍 컨벤션 점검 및 미세 조정
+- [ ] B4: CSS 변수 네이밍 컨벤션/볼륨 재정렬(잔여 파일)
+- [ ] C1: fitModeGroup 계약 정리(Headless+Shell 어댑터)
+- [ ] C2: radius 정책 CSS 전면 반영(잔여 파일)
 
 ## 6) 품질 게이트
 
@@ -102,12 +72,11 @@ Phase C. Toolbar 계약 정리 (fitModeGroup 등)
 
 ## 7) 진행 현황 표기(간결)
 
-- 완료: UnifiedToolbar 스텁, glass-surface TSX 제거, component↔semantic alias
-  확인, 애니메이션 토큰 통합(서비스/컴포넌트 인라인 스타일 포함)
-- 완료: CSS 네이밍 점검 (alias 문서화 완료)
+- 완료 항목은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
+- 남은 항목: B4(잔여), C1, C2(잔여)
 
 ---
 
-요약: 테스트 장애물(해상도/정책)을 우선 제거하고, Semantic 기반을 유지하되
-Component alias로 호환층을 제공하여 충돌을 해소합니다. Headless+Shell 스텁을
-추가해 TDD 루프를 빠르게 녹색으로 전환한 뒤, 애니메이션·네이밍을 표준화합니다.
+요약: Semantic을 소스 오브 트루스로 유지하고 Component alias로 호환층을 제공하는
+결정을 유지합니다. 잔여 과제(B4/C1/C2)를 완료해 네이밍·계약·토큰 반영을
+일관화합니다.

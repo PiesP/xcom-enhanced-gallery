@@ -164,6 +164,7 @@
   font-weight: 500;
   position: relative;
   overflow: hidden;
+  border-radius: var(--xeg-radius-md);
 }
 
 /* 데이터 속성 기반 상태 관리 */
@@ -349,6 +350,7 @@ button.fitButton {
 /* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {
   position: relative;
+  border-radius: var(--xeg-radius-md);
 }
 
 .downloadButton:hover:not([data-disabled='true']) {
@@ -490,77 +492,77 @@ button.fitButton {
     border: 2px solid var(--color-base-black);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    box-shadow: 0 4px 20px var(--color-overlay-medium);
+    box-shadow: 0 4px 20px var(--xeg-color-overlay-medium);
   }
 
   .toolbarButton {
-    background: var(--color-gray-50);
-    border: 1px solid var(--color-base-black);
-    color: var(--color-base-black);
+    background: var(--xeg-color-neutral-100);
+    border: 1px solid var(--xeg-color-neutral-900);
+    color: var(--xeg-color-neutral-900);
   }
 
   .toolbarButton:hover:not(:disabled) {
-    background: var(--color-gray-200);
-    border: 2px solid var(--color-base-black);
+    background: var(--xeg-color-neutral-200);
+    border: 2px solid var(--xeg-color-neutral-900);
   }
 
   .navButton {
-    background: var(--color-blue-500);
-    border: 1px solid var(--color-base-black);
-    color: var(--color-base-white);
+    background: var(--xeg-color-primary-500);
+    border: 1px solid var(--xeg-color-neutral-900);
+    color: var(--xeg-color-neutral-100);
   }
 
   .downloadButton {
-    background: var(--color-green-500);
-    border: 1px solid var(--color-base-black);
-    color: var(--color-base-white);
+    background: var(--xeg-color-success-500);
+    border: 1px solid var(--xeg-color-neutral-900);
+    color: var(--xeg-color-neutral-100);
   }
 
   .closeButton {
-    background: var(--color-red-500);
-    border: 1px solid var(--color-base-black);
-    color: var(--color-base-white);
+    background: var(--xeg-color-error-500);
+    border: 1px solid var(--xeg-color-neutral-900);
+    color: var(--xeg-color-neutral-100);
   }
 }
 
 /* 다크 테마에서 고대비 모드 */
 [data-theme='dark'] .galleryToolbar {
-  background: var(--color-base-black);
-  border: 2px solid var(--color-base-white);
+  background: var(--xeg-color-neutral-900);
+  border: 2px solid var(--xeg-color-neutral-100);
 }
 
 [data-theme='dark'] .toolbarButton {
-  background: var(--color-gray-700);
-  border: 1px solid var(--color-base-white);
-  color: var(--color-base-white);
+  background: var(--xeg-color-neutral-700);
+  border: 1px solid var(--xeg-color-neutral-100);
+  color: var(--xeg-color-neutral-100);
 }
 
 @media (prefers-color-scheme: dark) and (prefers-contrast: high) {
   .galleryToolbar {
-    background: var(--color-base-black);
-    border: 2px solid var(--color-base-white);
+    background: var(--xeg-color-neutral-900);
+    border: 2px solid var(--xeg-color-neutral-100);
   }
 
   .toolbarButton {
-    background: var(--color-gray-700);
-    border: 1px solid var(--color-base-white);
-    color: var(--color-base-white);
+    background: var(--xeg-color-neutral-700);
+    border: 1px solid var(--xeg-color-neutral-100);
+    color: var(--xeg-color-neutral-100);
   }
 }
 
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
-    background: var(--color-base-white);
+    background: var(--xeg-color-neutral-100);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
-      0 4px 16px var(--color-overlay-light),
-      0 2px 8px var(--color-overlay-light);
+      0 4px 16px var(--xeg-color-overlay-light),
+      0 2px 8px var(--xeg-color-overlay-light);
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--color-gray-900);
+    background: var(--xeg-color-neutral-900);
   }
 }
 
@@ -568,7 +570,7 @@ button.fitButton {
 @media (max-width: 48em) {
   /* 768px → 48em */
   .galleryToolbar {
-    background: var(--color-glass-bg); /* 모바일에서 더 불투명 */
+    background: var(--xeg-glass-bg); /* 모바일에서 더 불투명 */
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
@@ -576,7 +578,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--color-gray-900);
+    background: var(--xeg-color-neutral-900);
   }
 }
 
@@ -616,40 +618,40 @@ button.fitButton {
 
 /* 동적 고대비 모드 - 완전 불투명 배경 */
 .galleryToolbar.highContrast {
-  background: var(--color-base-white) !important; /* 완전 불투명 */
-  border: 2px solid var(--color-overlay-medium) !important;
+  background: var(--xeg-color-neutral-100) !important; /* 완전 불투명 */
+  border: 2px solid var(--xeg-color-overlay-medium) !important;
   backdrop-filter: none !important; /* 블러 효과 제거 */
   -webkit-backdrop-filter: none !important;
   box-shadow:
-    0 4px 20px var(--color-overlay-medium),
-    0 2px 8px var(--color-overlay-light) !important;
+    0 4px 20px var(--xeg-color-overlay-medium),
+    0 2px 8px var(--xeg-color-overlay-light) !important;
 }
 
 [data-theme='dark'] .galleryToolbar.highContrast {
-  background: var(--color-gray-900) !important; /* 완전 불투명 */
-  border: 2px solid var(--color-glass-border) !important;
+  background: var(--xeg-color-neutral-900) !important; /* 완전 불투명 */
+  border: 2px solid var(--xeg-glass-border) !important;
   box-shadow:
-    0 4px 20px var(--color-overlay-medium),
-    0 2px 8px var(--color-overlay-medium) !important;
+    0 4px 20px var(--xeg-color-overlay-medium),
+    0 2px 8px var(--xeg-color-overlay-medium) !important;
 }
 
 /* 고대비 모드에서 버튼 시인성 개선 */
 .highContrast .toolbarButton {
-  background: var(--color-glass-bg);
-  border: 1px solid var(--color-overlay-light);
-  color: var(--color-overlay-strong);
+  background: var(--xeg-glass-bg);
+  border: 1px solid var(--xeg-color-overlay-light);
+  color: var(--xeg-color-overlay-strong);
 }
 
 .highContrast .toolbarButton:hover:not(:disabled) {
-  background: var(--color-gray-50);
-  border-color: var(--color-overlay-medium);
-  box-shadow: 0 0.125em 0.5em var(--color-overlay-light); /* 2px 8px → 0.125em 0.5em */
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-overlay-medium);
+  box-shadow: 0 0.125em 0.5em var(--xeg-color-overlay-light); /* 2px 8px → 0.125em 0.5em */
 }
 
 [data-theme='dark'] .highContrast .toolbarButton {
-  background: var(--color-gray-700);
-  border: 1px solid var(--color-glass-border);
-  color: var(--color-glass-bg);
+  background: var(--xeg-color-neutral-700);
+  border: 1px solid var(--xeg-glass-border);
+  color: var(--xeg-glass-bg);
 }
 
 /* ===== 접근성 개선 ===== */
