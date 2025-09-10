@@ -231,6 +231,10 @@
   --xeg-comp-modal-z-index: var(--xeg-layer-modal);
   --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
 
+  /* Legacy semantic tokens mapped to component tokens */
+  --xeg-modal-bg: var(--xeg-comp-modal-bg);
+  --xeg-modal-border: var(--xeg-comp-modal-border);
+
   /* Toast Component Tokens */
   --xeg-toast-bg-info: oklch(0.95 0.05 237.8);
   --xeg-toast-border-info: oklch(0.676 0.151 237.8);

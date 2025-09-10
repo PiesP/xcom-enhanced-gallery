@@ -655,3 +655,11 @@ button.fitButton {
 /* ===== 접근성 개선 ===== */
 
 /* 고대비 모드 - 시인성 개선 */
+
+/* Fit Mode Group - TDD 테스트 요구사항 */
+.fitModeGroup {
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: var(--xeg-radius-md);
+}

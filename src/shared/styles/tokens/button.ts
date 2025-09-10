@@ -52,3 +52,43 @@ export const BUTTON_TOKENS = {
 } as const;
 
 export type ButtonTokenKey = keyof typeof BUTTON_TOKENS;
+
+/**
+ * Get button tokens in the expected test format
+ */
+export function getButtonTokens() {
+  return {
+    color: {
+      bg: {
+        primary: BUTTON_TOKENS.PRIMARY,
+        secondary: BUTTON_TOKENS.SECONDARY,
+        ghost: 'transparent',
+        icon: 'transparent',
+      },
+      text: {
+        inverse: 'var(--xeg-color-text-inverse)',
+      },
+      state: {
+        focusRing: BUTTON_TOKENS.FOCUS_RING,
+      },
+    },
+    radius: {
+      md: 'var(--xeg-radius-md)',
+    },
+    spacing: {
+      padMd: 'var(--space-md)',
+    },
+    elevation: {
+      hover: 'var(--xeg-shadow-md)',
+    },
+    motion: {
+      lift: 'var(--xeg-button-lift)',
+    },
+    opacity: {
+      disabled: 'var(--xeg-opacity-disabled)',
+    },
+    transition: {
+      normal: BUTTON_TOKENS.TRANSITION,
+    },
+  };
+}
