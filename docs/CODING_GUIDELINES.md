@@ -170,13 +170,17 @@ Gallery
 - 사이즈: `sm(28px)`, `md(36px)`, `lg(44px)`, `toolbar` – 툴바에는 `toolbar`
   권장
 - 접근성: 항상 `aria-label` 필수, variant에 관계없이 role="button" 의미 명확화
-- 파괴적 액션(닫기/삭제 등)은 `intent="danger"`로 의미 전달(색/상태 토큰 매핑)
+- 파괴적 액션(삭제 등)은 `intent="danger"` 사용. 단, "닫기"는 파괴적 액션이
+  아니므로 중립(intent 미지정 또는 `intent="neutral"`)을 사용합니다.
 - 커스텀 버튼에 동일 패턴 필요 시 확장 대신 IconButton 조합 우선
 
 설정 모달 전용 규칙:
 
-- SettingsModal 헤더의 닫기 버튼은 반드시 IconButton을 사용하고 intent="danger",
-  size="md"를 권장합니다.
+- SettingsModal 헤더의 닫기 버튼은 반드시 IconButton을 사용하되, intent는
+  중립(미지정)으로 합니다. 테스트 표준에 따라 버튼 크기는 2.5em(약 40px)에
+  맞춥니다.
+- 닫기 버튼의 모양은 radius 토큰을 사용합니다:
+  `border-radius: var(--xeg-radius-md)`.
 - SettingsModal의 select 컨트롤은 툴바 버튼과 동일한 포커스 링/호버 체계를
   갖도록 토큰(`--xeg-*`)과 공용 변형 클래스를 사용합니다.
 

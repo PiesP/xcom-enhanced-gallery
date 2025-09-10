@@ -133,3 +133,10 @@
   - 핫키 정책: ESC는 갤러리 열림 시 닫기, Enter는 사용자 핸들러로 위임
   - 테스트 추가: `test/unit/main/main-start-idempotency.test.ts`,
     `test/unit/events/gallery-pc-only-events.test.ts` (GREEN)
+
+- 2025-09-10: Phase B — 서비스 경계/의존성 getter 강화 (완료)
+  - ESLint flat config에 preact/fflate/GM\_\* 직접 import 제한 규칙 고정
+  - 벤더 경로 예외 허용(getter 경유), 정적 구성 검사 테스트 추가
+  - 소스 스캐너 테스트 추가: `direct-imports-source-scan.test.js` (벤더 경로
+    제외)
+  - 결과: 규칙/소스 스캐너 이중 가드 GREEN, 빌드/린트/형식 PASS 유지

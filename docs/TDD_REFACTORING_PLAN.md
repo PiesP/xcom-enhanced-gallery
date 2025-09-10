@@ -47,12 +47,12 @@ Phase A — Userscript 부트스트랩/수명주기 정리 (완료)
   - 관련 테스트: `test/unit/main/main-start-idempotency.test.ts`,
     `test/unit/events/gallery-pc-only-events.test.ts`
 
-Phase B — 서비스 경계/의존성 getter 강화
+Phase B — 서비스 경계/의존성 getter 강화 (완료 → 완료 로그로 이동)
 
-- 목표: `SERVICE_KEYS`/`CoreService` 타입 안정성, vendor 접근은 getter만 사용.
-- 테스트(Red):
-  - preact/fflate/GM\_\* 직접 import 시 ESLint 룰 위반으로 실패.
-  - getter 모킹으로 서비스 단위 테스트 가능(의존성 격리 검증).
+- 달성: ESLint flat config에 제한 import 규칙 고정, 벤더 경로 예외 정의.
+- 가드 테스트: lint-getter-policy(정적 구성 검사),
+  direct-imports-source-scan(벤더 경로 제외) 추가.
+- 결과: 규칙/소스 스캐너 이중 가드 GREEN.
 
 Phase C — 미디어 추출/정규화 견고성 향상
 
