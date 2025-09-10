@@ -1,18 +1,16 @@
 #!/usr/bin/env sh
 
-# =============================================================================
-# Pre-push Hook for X.com Enhanced Gallery
-# =============================================================================
-# Ensures code quality and stability before pushing to remote repositories.
-# =============================================================================
+# Pre-push: ensure types and tests are good before pushing
+echo "🧪 Pre-push: typecheck + tests"
 
-echo "🧪 Pre-push validation starting..."
-
-# Run comprehensive quality check
-echo "🔍 Running quality checks..."
-npm run quality || {
-  echo "❌ Quality check failed"
+npm run typecheck || {
+  echo "❌ Typecheck failed"
   exit 1
 }
 
-echo "✅ Pre-push validation completed successfully!"
+npm run test || {
+  echo "❌ Tests failed"
+  exit 1
+}
+
+echo "✅ Pre-push checks passed"

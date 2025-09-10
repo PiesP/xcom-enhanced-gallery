@@ -1,29 +1,11 @@
 #!/usr/bin/env sh
 
-# =============================================================================
-# Pre-commit Hook for X.com Enhanced Gallery (Optimized)
-# =============================================================================
-# 병렬 처리로 최적화된 커밋 전 검증
-# =============================================================================
+# Lightweight pre-commit: run staged linters/formatters only
+echo "� Running lint-staged..."
 
-echo "🔍 Pre-commit validation starting..."
-
-# TypeScript Type Checking과 lint-staged 병렬 실행
-echo "📋 Running type check and linting in parallel..."
-
-npm run typecheck &
-PID1=$!
-
-npx lint-staged &
-PID2=$!
-
-# 모든 작업 완료 대기
-wait $PID1 $PID2
-
-# 종료 코드 확인
-if [ $? -eq 0 ]; then
-  echo "✅ Pre-commit validation completed successfully!"
-else
-  echo "❌ Pre-commit validation failed"
+npm run lint:staged || {
+  echo "❌ Pre-commit failed (lint-staged)"
   exit 1
-fi
+}
+
+echo "✅ Pre-commit passed"
