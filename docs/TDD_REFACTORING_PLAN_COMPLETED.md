@@ -25,3 +25,11 @@
 - 2025-09-10: vendors getter 강제(리포지토리 레벨)
   - ESLint에 vendors 디렉터리만 직접 import 허용 예외 추가
   - 코드 검색 기준 vendors 외 직접 import 없음(테스트/벤더 레이어 제외)
+
+- 2025-09-10: Component↔Semantic alias 문서화 강화
+  - CODING_GUIDELINES에 중앙 alias 매핑 예시 추가(툴바/모달)
+  - 인라인/주입 CSS에도 토큰 규칙 동일 적용 명시
+
+- 2025-09-10: ModalShell/ToolbarShell 토큰 정리
+  - radius/ease/duration/focus-ring 토큰 사용으로 통일
+  - 배경/보더는 semantic(alias) 토큰으로 교체

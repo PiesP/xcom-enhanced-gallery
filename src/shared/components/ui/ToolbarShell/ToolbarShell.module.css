@@ -8,11 +8,11 @@
   display: flex;
   align-items: center;
   width: 100%;
-  border-radius: var(--radius-lg);
+  border-radius: var(--xeg-radius-lg);
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 /* ===== Elevation 변형 ===== */
@@ -39,20 +39,20 @@
 
 /* ===== Surface 변형 ===== */
 .toolbar-surface-glass {
-  background: oklch(from var(--color-base-black) l c h / 0.8);
-  border: 1px solid oklch(from var(--color-base-white) l c h / 0.1);
+  background: var(--xeg-surface-glass-bg);
+  border: 1px solid var(--xeg-surface-glass-border);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
 .toolbar-surface-solid {
-  background: var(--color-bg-surface);
+  background: var(--xeg-bg-toolbar);
   border: 1px solid var(--color-border-subtle);
 }
 
 .toolbar-surface-overlay {
-  background: oklch(from var(--color-base-black) l c h / 0.95);
-  border: 1px solid oklch(from var(--color-base-white) l c h / 0.05);
+  background: var(--xeg-surface-glass-bg);
+  border: 1px solid var(--xeg-surface-glass-border);
 }
 
 /* ===== Position 변형 ===== */
@@ -75,7 +75,7 @@
 /* ===== 반응형 ===== */
 @media (max-width: 768px) {
   .toolbar-shell {
-    border-radius: var(--radius-md);
+    border-radius: var(--xeg-radius-md);
   }
 
   .toolbar-position-fixed {
@@ -88,20 +88,20 @@
 /* ===== 다크 모드 지원 ===== */
 @media (prefers-color-scheme: dark) {
   .toolbar-surface-glass {
-    background: oklch(from var(--color-base-black) l c h / 0.9);
-    border-color: oklch(from var(--color-base-white) l c h / 0.15);
+    background: var(--xeg-surface-glass-bg);
+    border-color: var(--xeg-surface-glass-border);
   }
 
   .toolbar-surface-solid {
-    background: var(--color-gray-900);
-    border-color: var(--color-gray-700);
+    background: var(--xeg-bg-toolbar);
+    border-color: var(--color-border-subtle);
   }
 }
 
 /* ===== 접근성 강화 ===== */
 .toolbar-shell:focus-within {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
 }
 
 @media (prefers-reduced-motion: reduce) {

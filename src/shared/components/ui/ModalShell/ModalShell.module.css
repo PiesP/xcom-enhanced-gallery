@@ -10,7 +10,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: oklch(from var(--color-base-black) l c h / 0.5);
+  background: var(--xeg-comp-modal-backdrop);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   z-index: var(--xeg-z-modal);
@@ -19,8 +19,8 @@
   opacity: 0;
   visibility: hidden;
   transition:
-    opacity var(--duration-fast) var(--ease-out),
-    visibility var(--duration-fast) var(--ease-out);
+    opacity var(--xeg-duration-fast) var(--xeg-ease-standard),
+    visibility var(--xeg-duration-fast) var(--xeg-ease-standard);
 
   /* 센터링 */
   display: flex;
@@ -36,14 +36,14 @@
 
 /* ===== 기본 Shell 스타일 ===== */
 .modal-shell {
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-default);
+  background: var(--xeg-modal-bg);
+  border-radius: var(--xeg-radius-lg);
+  border: 1px solid var(--xeg-modal-border);
   overflow: hidden;
 
   /* 시작 상태 */
   transform: scale(0.95) translateY(-10px);
-  transition: transform var(--duration-fast) var(--ease-out);
+  transition: transform var(--xeg-duration-fast) var(--xeg-ease-standard);
 
   /* 포커스 관리 */
   outline: none;
@@ -80,8 +80,8 @@
 
 /* ===== Surface 변형 ===== */
 .modal-surface-glass {
-  background: oklch(from var(--color-bg-surface) l c h / 0.9);
-  border-color: oklch(from var(--color-border-default) l c h / 0.3);
+  background: var(--xeg-modal-bg);
+  border-color: var(--xeg-modal-border);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
@@ -112,7 +112,7 @@
   }
 
   .modal-shell {
-    border-radius: var(--radius-md);
+    border-radius: var(--xeg-radius-md);
   }
 
   .modal-size-sm,
@@ -127,24 +127,24 @@
 /* ===== 다크 모드 지원 ===== */
 @media (prefers-color-scheme: dark) {
   .modal-backdrop {
-    background: oklch(from var(--color-base-black) l c h / 0.8);
+    background: var(--xeg-comp-modal-backdrop);
   }
 
   .modal-surface-glass {
-    background: oklch(from var(--color-gray-900) l c h / 0.9);
-    border-color: oklch(from var(--color-gray-700) l c h / 0.5);
+    background: var(--xeg-modal-bg);
+    border-color: var(--xeg-modal-border);
   }
 
   .modal-surface-solid {
-    background: var(--color-gray-900);
-    border-color: var(--color-gray-700);
+    background: var(--xeg-modal-bg);
+    border-color: var(--xeg-modal-border);
   }
 }
 
 /* ===== 접근성 강화 ===== */
 .modal-shell:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -175,7 +175,7 @@
 
 .modal-shell::-webkit-scrollbar-thumb {
   background: var(--color-border-default);
-  border-radius: var(--radius-sm);
+  border-radius: var(--xeg-radius-sm);
 }
 
 .modal-shell::-webkit-scrollbar-thumb:hover {

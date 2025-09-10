@@ -186,6 +186,25 @@ Gallery
 - 컴포넌트 CSS에서는 가능하면 Semantic 토큰 직접 사용, 과도기에는 alias 허용.
 - 새 컴포넌트 추가 시 alias는 공용 토큰 파일에서만 정의(로컬 정의 금지).
 
+#### 권장 매핑 예시(중앙 토큰 파일에서만 정의)
+
+```
+/* design-tokens.semantic.css (중앙 정의 예) */
+:root {
+  /* Toolbar */
+  --xeg-comp-toolbar-bg: var(--xeg-bg-toolbar);
+  --xeg-comp-toolbar-border: var(--color-border-default);
+  --xeg-comp-toolbar-radius: var(--xeg-radius-lg);
+
+  /* Modal */
+  --xeg-comp-modal-bg: var(--xeg-modal-bg);
+  --xeg-comp-modal-border: var(--xeg-modal-border);
+  --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
+}
+```
+
+컴포넌트 CSS에서는 semantic 또는 위 alias만 사용하세요. 인라인 스타일/주입 CSS도 동일 규칙이 적용됩니다.
+
 ## 🏷️ 네이밍 규칙
 
 ### 변수 및 함수

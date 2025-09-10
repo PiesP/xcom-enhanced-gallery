@@ -91,10 +91,8 @@ Phase C. Toolbar 계약 정리 (fitModeGroup 등)
 - [x] UnifiedToolbar 스텁 추가로 모듈 해상도 실패 제거
 - [x] TSX 내 'glass-surface' 제거 확인(정책 준수)
 - [x] vendors getter 강제(ESLint 룰 보강, 코드모드 반영)
-- [ ] Component↔Semantic alias 주석 및 문서 명시 강화
 - [x] 공통 애니메이션 토큰 사용 일관성 점검(Button/Toolbar/Toast)
 - [ ] CSS 변수 네이밍 컨벤션 점검 및 미세 조정
-- [ ] fitModeGroup 계약 어댑터(필요 시) 작성
 
 ## 6) 품질 게이트
 
@@ -106,7 +104,7 @@ Phase C. Toolbar 계약 정리 (fitModeGroup 등)
 
 - 완료: UnifiedToolbar 스텁, glass-surface TSX 제거, component↔semantic alias
   확인, 애니메이션 토큰 통합(서비스/컴포넌트 인라인 스타일 포함)
-- 진행중: CSS 네이밍 점검, fitModeGroup 검토
+- 진행중: CSS 네이밍 점검 (alias 문서화 완료)
 
 ---
 
