@@ -44,13 +44,7 @@
 
 <!-- Phase 3 (Progressive Feature Loader & Bundle Slimming) : 완료되어 활성 계획에서 제거 -->
 
-### Phase 4 — LanguageService Expansion & Missing-Key Guard
-
-목표: 다국어(en, ko) 리소스 구조/키 스캐너 테스트. Fallback: en. RED 테스트:
-
-- `i18n.missing-keys.red.test.ts` (두 로케일 키 mismatch 검출)
-- `i18n.language-switch.red.test.ts` DoD: 모든 사용자 facing 문자열 키 변환,
-  테스트에서 literal 한글/영문 UI 문구 0건.
+<!-- Phase 4 (LanguageService Expansion & Missing-Key Guard) : 완료되어 활성 계획에서 제거 -->
 
 ### Phase 5 — Accessibility Focus & Announcement Hardening
 

@@ -37,6 +37,16 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
 - 향후: idle 스케줄러 + 번들 사이즈 임계 테스트는 후속 백로그 항목으로 이동
   (현재 핵심 로더 기반 확보)
 
+2025-09-11: Phase 4 (2차) — LanguageService Expansion & Missing-Key Guard 완료
+
+- RED → GREEN: `i18n.missing-keys.red.test.ts` → `i18n.missing-keys.test.ts`
+  (getIntegrityReport)
+- 구현: LanguageService.getIntegrityReport() (en 기준 flatten 비교,
+  missing/extra 구조 보고)
+- 결과: en/ko/ja 구조 완전 동기화, 사용자-facing literal 제거 기존 테스트 유지
+- 향후: 다국어 locale pack lazy-load는 Progressive Loader 고도화 후 백로그
+  재평가
+
 Phase 요약 (완료):
 
 - Phase 1: 토큰 alias 축소 & 스타일 가드 강화 — semantic 직접 사용 전환

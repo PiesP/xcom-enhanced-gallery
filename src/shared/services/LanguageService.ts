@@ -166,6 +166,41 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
 export class LanguageService {
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
+  /**
+   * (Phase 4) 다국어 리소스 정합성 보고
+   * missing: 기준(en) 대비 누락된 키 목록
+   * extra: 기준(en)에는 없지만 다른 로케일에 존재하는 키 목록
+   */
+  getIntegrityReport() {
+    const locales: Array<Exclude<SupportedLanguage, 'auto'>> = ['en', 'ko', 'ja'];
+    const base = LANGUAGE_STRINGS.en;
+
+    const flatten = (obj: unknown, prefix = '', acc: string[] = []): string[] => {
+      if (obj && typeof obj === 'object') {
+        for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+          const key = prefix ? `${prefix}.${k}` : k;
+          // 리프는 string, 그 외는 재귀
+          if (typeof v === 'string') acc.push(key);
+          else flatten(v, key, acc);
+        }
+      }
+      return acc;
+    };
+
+    const baseKeys = new Set(flatten(base));
+    const missing: Record<string, string[]> = { en: [], ko: [], ja: [] };
+    const extra: Record<string, string[]> = { en: [], ko: [], ja: [] };
+
+    for (const locale of locales) {
+      const keys = new Set(flatten(LANGUAGE_STRINGS[locale]));
+      // missing (base 존재, locale 없음)
+      for (const k of baseKeys) if (!keys.has(k)) missing[locale].push(k);
+      // extra (locale 존재, base 없음)
+      for (const k of keys) if (!baseKeys.has(k)) extra[locale].push(k);
+    }
+
+    return { missing, extra };
+  }
 
   detectLanguage(): Exclude<SupportedLanguage, 'auto'> {
     // 안전한 navigator.language 접근
