@@ -224,3 +224,11 @@
   - 구현: isValidMediaUrl(+fallback) 확장, URL_PATTERNS.MEDIA/GALLERY_MEDIA/
     VIDEO_THUMB_ID 정규식 보강, extractMediaId/generateOriginalUrl 개선
   - 테스트: media-url.policy.edge-cases.test.ts GREEN, 기존 회귀 스위트 GREEN
+
+- 2025-09-11: Phase 5 — 주입 CSS 표준화 v2 완료
+  - 주입된 CSS에서 하드코딩된 duration/easing 제거, `--xeg-duration-*`,
+    `--xeg-ease-(standard|decelerate|accelerate)` 토큰으로 정규화
+  - css-animations.ts와 AnimationService.ts의 easing 참조를 표준 토큰으로 교체
+  - 가드 테스트 추가: `test/unit/styles/injected-css.token-policy.red.test.ts`
+    포함 전체 스타일 가드 GREEN
+  - 결과: 전체 테스트 100% GREEN, 린트/타입/빌드 PASS

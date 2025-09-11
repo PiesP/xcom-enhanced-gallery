@@ -88,15 +88,15 @@ export function injectAnimationStyles(): void {
       to { opacity: 1; transform: scale(1); }
     }
 
-  .animate-fade-in { animation: fade-in var(--xeg-duration-normal) var(--xeg-easing-ease-out) forwards; }
-  .animate-fade-out { animation: fade-out var(--xeg-duration-fast) var(--xeg-easing-ease-in) forwards; }
-  .animate-slide-in-bottom { animation: slide-in-bottom var(--xeg-duration-normal) var(--xeg-easing-ease-out) forwards; }
-  .animate-slide-out-top { animation: slide-out-top var(--xeg-duration-fast) var(--xeg-easing-ease-in) forwards; }
-  .animate-scale-in { animation: scale-in var(--xeg-duration-normal) var(--xeg-easing-ease-out) forwards; }
-  .animate-scale-out { animation: scale-out var(--xeg-duration-fast) var(--xeg-easing-ease-in) forwards; }
-  .animate-toolbar-slide-down { animation: toolbar-slide-down var(--xeg-duration-fast) var(--xeg-easing-ease-out) forwards; }
-  .animate-toolbar-slide-up { animation: toolbar-slide-up var(--xeg-duration-fast) var(--xeg-easing-ease-in) forwards; }
-  .animate-image-load { animation: image-load var(--xeg-duration-slow) var(--xeg-easing-ease-out) forwards; }
+  .animate-fade-in { animation: fade-in var(--xeg-duration-normal) var(--xeg-ease-standard) forwards; }
+  .animate-fade-out { animation: fade-out var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
+  .animate-slide-in-bottom { animation: slide-in-bottom var(--xeg-duration-normal) var(--xeg-ease-decelerate) forwards; }
+  .animate-slide-out-top { animation: slide-out-top var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
+  .animate-scale-in { animation: scale-in var(--xeg-duration-normal) var(--xeg-ease-standard) forwards; }
+  .animate-scale-out { animation: scale-out var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
+  .animate-toolbar-slide-down { animation: toolbar-slide-down var(--xeg-duration-fast) var(--xeg-ease-decelerate) forwards; }
+  .animate-toolbar-slide-up { animation: toolbar-slide-up var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
+  .animate-image-load { animation: image-load var(--xeg-duration-slow) var(--xeg-ease-decelerate) forwards; }
 
     @media (prefers-reduced-motion: reduce) {
       .animate-fade-in, .animate-fade-out, .animate-slide-in-bottom,
