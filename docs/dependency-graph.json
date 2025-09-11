@@ -6608,6 +6608,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/loader/progressive-loader.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/EventManager.ts",
       "dependencies": [],
       "dependents": [
@@ -7822,12 +7835,22 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/loader/progressive-loader.ts",
+        "to": "src/shared/loader/progressive-loader.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 230,
+    "totalCruised": 231,
     "totalDependenciesCruised": 324,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

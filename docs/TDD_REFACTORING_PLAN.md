@@ -40,26 +40,9 @@
 
 <!-- Phase 1 (Result/Error Model Unification v2) : 완료되어 활성 계획에서 제거 -->
 
-### Phase 2 — MediaProcessor Telemetry & Stage Metrics
+<!-- Phase 2 (MediaProcessor Telemetry & Stage Metrics) : 완료되어 활성 계획에서 제거 -->
 
-목표: collect→complete 각 단계 latency(ms)/total count 측정 + 옵셔널
-로그(`performance.performanceLogging` 설정 true 시). RED 테스트:
-
-- `media-processor.telemetry.red.test.ts` (stage 순서/latency shape 검증) 구현
-  스텝: 진행률 옵저버 wrapper → 타임스탬프 diff → telemetry 배열 반환. DoD: 설정
-  off 시 오버헤드 ≤ 1 microtask / no global state.
-
-### Phase 3 — Progressive Feature Loader & Bundle Slimming
-
-목표: 비즉시 기능(다운로드 ZIP, 고급 애니메이션, 프리로드, I18N 추가 로케일)을
-idle 시점 지연 로딩. 대안: 단일 번들 유지(미채택 — 초기 비용 증가) RED 테스트:
-
-- `bootstrap.progressive-loader.red.test.ts` (초기 start 후 특정 심볼 undefined
-  → lazy 호출 시 동적 로딩 확인)
-- `bundle-size.threshold.red.test.ts` (사이즈 예산 상향 방지) 구현 스텝: feature
-  registry + idle scheduler (requestIdleCallback|setTimeout 폴백) + dynamic
-  import 캡슐화(getter). DoD: 초기 번들 gzip < 기존 기준 - N KB (목표 -8% 이상)
-  / 기능 호출 시 단 1회 로드.
+<!-- Phase 3 (Progressive Feature Loader & Bundle Slimming) : 완료되어 활성 계획에서 제거 -->
 
 ### Phase 4 — LanguageService Expansion & Missing-Key Guard
 

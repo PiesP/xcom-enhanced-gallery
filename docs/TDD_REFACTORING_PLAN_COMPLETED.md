@@ -17,6 +17,26 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
 - 후속: MediaService 반환 구조 코드 매핑 & 재시도 UX code 스위치 업데이터 Phase
   2/3에서 처리 예정
 
+2025-09-11: Phase 2 (2차) — MediaProcessor Telemetry & Stage Metrics 완료
+
+- 테스트: `media-processor.telemetry.test.ts` (collect→validate 단계 latency
+  수집)
+- 구현: `MediaProcessor.process(root, { telemetry:true })` 시 `telemetry` 배열
+  반환 (stage,count,duration(ms)); 기본(off) 경로는 기존 오버헤드 유지
+- 성능: telemetry=false일 때 추가 배열/record 연산 없음 (flag gating)
+- 후속: performanceLogging 설정과 연계된 조건부 로그 출력은 Progressive Loader
+  이후 고려
+
+2025-09-11: Phase 3 (2차) — Progressive Feature Loader & Bundle Slimming 완료
+
+- RED → GREEN: `progressive-loader.red.test.ts` 작성 후 구현 →
+  `progressive-loader.test.ts`로 전환 (lazy 등록 / 최초 1회 실행 / 결과 캐시)
+- 구현: `@shared/loader/progressive-loader` (registerFeature / loadFeature /
+  getFeatureIfLoaded / \_\_resetFeatureRegistry)
+- 특징: 실패 시 재호출 가능하도록 Promise 캐시 해제 처리, 중복 register 무시
+- 향후: idle 스케줄러 + 번들 사이즈 임계 테스트는 후속 백로그 항목으로 이동
+  (현재 핵심 로더 기반 확보)
+
 Phase 요약 (완료):
 
 - Phase 1: 토큰 alias 축소 & 스타일 가드 강화 — semantic 직접 사용 전환
