@@ -103,7 +103,7 @@ export interface MediaExtractionOptions {
   enableBackgroundLoading?: boolean;
   /** 유효성 검사 활성화 */
   enableValidation?: boolean;
-  /** 최대 재시도 횟수 */
+  /** Maximum retry attempts */
   maxRetries?: number;
 }
 

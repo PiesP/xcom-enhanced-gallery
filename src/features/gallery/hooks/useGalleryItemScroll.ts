@@ -127,7 +127,7 @@ export function useGalleryItemScroll(
         }
 
         lastScrolledIndexRef.current = index;
-        retryCountRef.current = 0; // 성공 시 재시도 카운터 리셋
+        retryCountRef.current = 0; // reset retry counter on success
 
         logger.debug('useGalleryItemScroll: 스크롤 완료', {
           index,
@@ -144,15 +144,15 @@ export function useGalleryItemScroll(
       } catch (error) {
         logger.error('useGalleryItemScroll: 스크롤 실패', { index, error });
 
-        // 재시도 로직 (최대 1회)
+        // Retry logic (max 1)
         if (retryCountRef.current < 1) {
           retryCountRef.current++;
-          logger.debug('useGalleryItemScroll: 재시도 시도', {
+          logger.debug('useGalleryItemScroll: retry attempt', {
             index,
             retryCount: retryCountRef.current,
           });
 
-          // IntersectionObserver로 요소 가시성 확인 후 재시도
+          // Retry after confirming visibility via IntersectionObserver
           const observer = new IntersectionObserver(entries => {
             entries.forEach(entry => {
               if (entry.isIntersecting) {

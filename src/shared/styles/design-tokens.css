@@ -63,6 +63,14 @@
   --xeg-transition-normal: 0.2s ease-out;
   --xeg-transition-slow: 0.3s ease-out;
 
+  /* Phase 2: Transition Preset Tokens (중복 제거용) */
+  /* 공통 opacity 페이드 */
+  --xeg-transition-preset-fade: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
+  /* transform + opacity 슬라이드-인 */
+  --xeg-transition-preset-slide:
+    transform var(--xeg-duration-normal) var(--xeg-ease-decelerate),
+    opacity var(--xeg-duration-normal) var(--xeg-ease-decelerate);
+
   /* Duration/Easing tokens for component usage */
   --xeg-duration-fast: 150ms;
   --xeg-duration-normal: 200ms;

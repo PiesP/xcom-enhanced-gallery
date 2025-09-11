@@ -245,6 +245,9 @@ export default [
   {
     files: ['**/*.{test,spec}.{ts,tsx}', 'test/**/*.{ts,tsx}'],
     languageOptions: {
+      parser: tsParser,
+      sourceType: 'module',
+      ecmaVersion: 2022,
       globals: {
         vi: 'readonly',
         describe: 'readonly',

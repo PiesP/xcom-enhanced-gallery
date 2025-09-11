@@ -120,6 +120,8 @@ export interface SettingChangeEvent<T = unknown> {
   oldValue: T;
   newValue: T;
   timestamp: number;
+  /** Result 패턴 정합: 이벤트 상태 (현재 성공만 사용) */
+  status?: 'success' | 'error';
 }
 
 /**

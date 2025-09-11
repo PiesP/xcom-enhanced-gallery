@@ -182,9 +182,9 @@
   inset-block-start: var(--xeg-spacing-lg);
   inset-inline-end: var(--xeg-spacing-lg);
 
-  /* 표면/경계 - Semantic/Component 토큰 */
-  background: var(--xeg-comp-toolbar-bg);
-  border: 1px solid var(--xeg-comp-toolbar-border);
+  /* 표면/경계 - Semantic 토큰 (alias 제거) */
+  background: var(--xeg-bg-toolbar);
+  border: 1px solid var(--color-border-default);
   border-radius: var(--xeg-radius-full);
 
   /* 크기 */
@@ -215,8 +215,8 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 
-  /* 그림자 */
-  box-shadow: var(--xeg-comp-toolbar-shadow, var(--xeg-shadow-lg));
+  /* 그림자 - semantic shadow 사용 */
+  box-shadow: var(--shadow-md, var(--xeg-shadow-md));
 
   /* 트랜지션 */
   transition:
@@ -227,8 +227,8 @@
 
   /* CSS Nesting - 상호작용 상태 */
   &:hover {
-    background: var(--xeg-comp-toolbar-bg);
-    border-color: var(--xeg-comp-toolbar-border);
+    background: var(--xeg-bg-toolbar);
+    border-color: var(--color-border-default);
     transform: var(--xeg-gallery-gpu-acceleration) scale(1.1) translateY(var(--xeg-button-lift));
     box-shadow: var(--xeg-shadow-lg);
   }
@@ -253,9 +253,9 @@
   inset-block-start: 50%;
   transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
 
-  /* 표면/경계 - Semantic/Component 토큰 */
-  background: var(--xeg-comp-toolbar-bg);
-  border: 1px solid var(--xeg-comp-toolbar-border);
+  /* 표면/경계 - Semantic 토큰 */
+  background: var(--xeg-bg-toolbar);
+  border: 1px solid var(--color-border-default);
   border-radius: var(--xeg-radius-full);
 
   /* 크기 */
@@ -286,7 +286,7 @@
   -webkit-backdrop-filter: none;
 
   /* 그림자 */
-  box-shadow: var(--xeg-comp-toolbar-shadow, var(--xeg-shadow-md));
+  box-shadow: var(--shadow-md, var(--xeg-shadow-md));
 
   /* 트랜지션 */
   transition:
@@ -296,8 +296,8 @@
 
   /* CSS Nesting - 상호작용 상태 */
   &:hover {
-    background: var(--xeg-comp-toolbar-bg);
-    border-color: var(--xeg-comp-toolbar-border);
+    background: var(--xeg-bg-toolbar);
+    border-color: var(--color-border-default);
     transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration) scale(1.1);
   }
 

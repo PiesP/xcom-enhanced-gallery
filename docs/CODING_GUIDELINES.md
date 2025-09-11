@@ -210,6 +210,10 @@ Gallery
 ### 애니메이션 규칙
 
 - transition/animation은 토큰만 사용: 시간은 `--xeg-duration-*`, 이징은 `--xeg-ease-*`만 사용합니다.
+- Phase 2 (완료): 공통 transition 패턴은 preset 토큰 사용 권장
+  - `--xeg-transition-preset-fade` → `opacity` 페이드 인/아웃
+  - `--xeg-transition-preset-slide` → `transform + opacity` 조합
+  - 신규 패턴 필요 시 동일 명명 규칙: `--xeg-transition-preset-<pattern>`
 - 인라인 스타일에서도 동일 규칙 적용 (예: `opacity var(--xeg-duration-normal) var(--xeg-ease-standard)`).
 - 하드코딩 숫자(ms/s)나 키워드(ease, ease-in, ease-in-out 등) 직접 사용 금지.
 - 서비스에서 주입하는 CSS 역시 동일 토큰을 사용합니다.
@@ -340,6 +344,45 @@ animateCustom(el, keyframes, {
 - 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야 합니다.
 - 예: `import { getPreact } from '@shared/external/vendors'; const { useEffect } = getPreact();`
 
+#### Userscript(GM_*) 어댑터 경계 가드
+
+- Userscript API는 `src/shared/external/userscript/adapter.ts`의 `getUserscript()`로만 접근합니다.
+- GM_*이 없는 환경(Node/Vitest/JSDOM)에서도 안전하게 동작해야 합니다.
+  - download: GM_download → 실패 시 fetch+BlobURL로 폴백, 비브라우저 환경(document/body 없음)에서는 no-op
+  - xhr: GM_xmlhttpRequest → 실패/부재 시 fetch 기반 폴백(onload/onerror/onloadend 콜백 지원)
+- 테스트: `test/unit/shared/external/userscript-adapter.contract.test.ts`에서 계약/폴백 동작을 가드합니다.
+
+### 오류 복구 UX 표준 (Error Recovery UX)
+
+BulkDownloadService / MediaService 다운로드 흐름에서 사용자 피드백은 토스트로 통일합니다.
+
+정책 (Phase I 1차 구현 상태):
+- 단일 다운로드 성공: 토스트 생략 (소음 최소화)
+- 단일 다운로드 실패: error 토스트 (제목: "다운로드 실패")
+- 다중 ZIP 전체 실패: error 토스트 ("모든 항목을 다운로드하지 못했습니다.")
+- 다중 ZIP 부분 실패: warning 토스트 ("n개 항목을 받지 못했습니다.")
+- 다중 ZIP 전체 성공: 토스트 생략
+- 사용자 취소(Abort): info 토스트 ("다운로드 취소됨") — 중복 방지를 위해 1회만 표시
+
+구현 세부:
+- 중복 취소 방지 플래그: BulkDownloadService.cancelToastShown
+- 부분 실패 요약: DownloadResult.failures: { url, error }[] (0 < length < total 인 경우 warning)
+- 전체 실패: success=false & error 메시지 + error 토스트
+
+향후(추가 고도화 계획):
+- warning 토스트 재시도 고도화: 재시도 후 남은 실패 상세/CorrelationId 표시
+- error 토스트: [자세히] 액션으로 Dev 모드 상세 로그/CorrelationId 표시
+- 국제화(I18n) 어댑터: 메시지 키 기반 전환 (예: download.error.allFailed)
+
+관련 테스트:
+- `test/unit/shared/services/bulk-download.error-recovery.test.ts`
+- 재시도 액션: `bulk-download.retry-action.test.ts`, `bulk-download.retry-action.sequence.test.ts`
+
+가드 원칙:
+- 토스트 메시지는 간결하고 중복을 최소화
+- Action 버튼은 실패/재시도 컨텍스트에서만 노출
+- 동일 세션 내 중복 error/warning 방지(불필요한 반복 표시 지양)
+
 ### PC 전용 입력 정책 강화
 
 - 애플리케이션은 PC 전용 이벤트만 사용합니다: click/keydown/wheel/contextmenu
@@ -436,6 +479,14 @@ async function loadImage(url: string): Promise<Result<HTMLImageElement>> {
     return { success: false, error: error as Error };
   }
 }
+
+### 서비스 계약/Result 가드
+
+- 공개 서비스(API)는 계약 테스트로 보호합니다.
+  - MediaService 공개 메서드/기본 동작 가드: `test/unit/shared/services/media-service.contract.test.ts`
+  - 다운로드 Result shape 가드: `test/unit/shared/services/media-service.download-result.test.ts`
+- 실패 경로는 `{ success: false, error }`를 일관되게 반환합니다.
+- 성공 경로는 `{ success: true, ... }`로 데이터/파일명 등 필수 정보를 제공합니다.
 ```
 
 ### 로깅 상관관계 ID(correlationId)
@@ -527,6 +578,19 @@ interface PCEventHandlers {
 // ❌ 터치 이벤트 금지
 // onTouchStart, onTouchMove, onTouchEnd
 ```
+
+### MediaProcessor 진행률 옵저버 (Progress Observer)
+
+- 파이프라인 단계: collect → extract → normalize → dedupe → validate → complete
+- 사용: `new MediaProcessor().process(root, { onStage: e => ... })`
+- 콜백 시그니처:
+  `{ stage: 'collect'|'extract'|'normalize'|'dedupe'|'validate'|'complete', count?: number }`
+  - count는 해당 단계 처리 직후 누적(또는 최종) 아이템 수
+- 오류 발생 시에도 `complete` 이벤트는 항상 1회 방출 (count=0 또는 partial 결과
+  수)
+- 계약 테스트: `media-processor.progress-observer.test.ts`
+- 향후 고도화(옵션): duration(ms) 측정, 메모리 사용량 샘플링, stage별 latency
+  로깅
 
 ### 키보드 & 마우스 처리
 

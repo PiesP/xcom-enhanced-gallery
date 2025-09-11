@@ -33,9 +33,27 @@ type SettingChangeListener = (event: SettingChangeEvent) => void;
  * - 마이그레이션 지원
  */
 export class SettingsService {
-  private settings: AppSettings = { ...defaultSettings };
+  // NOTE: 기본 설정은 중첩 객체를 포함하므로 얕은 복사 시 set() 호출이 defaultSettings.* 까지
+  // 오염(예: preloadCount 변경 시 defaultSettings.gallery.preloadCount 값 자체가 변형)되는 문제가 있었다.
+  // resetToDefaults(category) 동작이 실패한 원인은 초기 얕은 복사로 인해 set()이 기본 객체를 직접 변경했기 때문.
+  // 해결: 초기 상태 및 reset 시 항상 깊은(필요한 레벨의) 구조적 복사 사용.
+  private settings: AppSettings = SettingsService.cloneDefaults();
   private readonly listeners = new Set<SettingChangeListener>();
   private initialized = false;
+
+  /** 기본 설정 깊은 복제 (1단계 depth - 각 카테고리 객체 분리) */
+  private static cloneDefaults(): AppSettings {
+    return {
+      ...defaultSettings,
+      gallery: { ...defaultSettings.gallery },
+      download: { ...defaultSettings.download },
+      tokens: { ...defaultSettings.tokens },
+      performance: { ...defaultSettings.performance },
+      accessibility: { ...defaultSettings.accessibility },
+      // lastModified 는 새 타임스탬프로 재설정
+      lastModified: Date.now(),
+    } as AppSettings;
+  }
 
   /**
    * 서비스 초기화
@@ -149,6 +167,7 @@ export class SettingsService {
       oldValue,
       newValue: value,
       timestamp: Date.now(),
+      status: 'success',
     });
 
     // 즉시 저장 (중요한 설정)
@@ -210,6 +229,7 @@ export class SettingsService {
         oldValue,
         newValue: value,
         timestamp: Date.now(),
+        status: 'success',
       });
     }
 
@@ -233,14 +253,16 @@ export class SettingsService {
     const oldSettings = { ...this.settings };
 
     if (category) {
-      // 타입 안전성을 위해 unknown을 경유하여 캐스팅
-      const settingsRecord = this.settings as unknown as Record<string, unknown>;
+      // 카테고리 단위 깊은 복제 (shared reference 제거)
       const defaultsRecord = defaultSettings as unknown as Record<string, unknown>;
-      settingsRecord[category] = {
-        ...(defaultsRecord[category] as Record<string, unknown>),
+      const cloned = {
+        ...(defaultsRecord[category as string] as Record<string, unknown>),
       };
+      // 기존 객체에 주입 (다른 카테고리 영향 없음)
+      (this.settings as unknown as Record<string, unknown>)[category] = cloned;
     } else {
-      this.settings = { ...defaultSettings };
+      // 전체 재설정은 안전한 깊은 복제 사용
+      this.settings = SettingsService.cloneDefaults();
     }
 
     this.settings.lastModified = Date.now();
@@ -252,6 +274,7 @@ export class SettingsService {
       oldValue: oldSettings,
       newValue: this.settings,
       timestamp: Date.now(),
+      status: 'success',
     });
 
     await this.saveSettings();
@@ -307,6 +330,7 @@ export class SettingsService {
         oldValue: oldSettings,
         newValue: this.settings,
         timestamp: Date.now(),
+        status: 'success',
       });
 
       await this.saveSettings();

@@ -14,7 +14,7 @@ export interface ErrorContext {
   timestamp: number;
   /** 추가 컨텍스트 데이터 */
   metadata?: Record<string, unknown>;
-  /** 재시도 가능 여부 */
+  /** Retry possible flag */
   retryable?: boolean;
   /** 치명적 에러 여부 */
   fatal?: boolean;
@@ -99,14 +99,14 @@ export function getErrorMessage(error: unknown, fallback = 'Unknown error'): str
 }
 
 /**
- * 재시도 가능한 에러인지 확인
+ * Check if error is retryable
  *
  * @param error - 확인할 에러
- * @returns 재시도 가능 여부
+ * @returns whether retryable
  */
 export function isRetryableError(error: unknown): boolean {
   if (error instanceof Error) {
-    // 네트워크 관련 에러는 재시도 가능
+    // Network related errors are retryable
     const retryableMessages = [
       'network error',
       'timeout',
@@ -213,11 +213,11 @@ export async function withFallback<T>(
 }
 
 /**
- * 재시도 로직을 포함한 작업 실행
+ * Execute task with retry logic
  *
  * @param operation - 실행할 작업
- * @param maxRetries - 최대 재시도 횟수
- * @param delay - 재시도 간격 (ms)
+ * @param maxRetries - maximum retries
+ * @param delay - retry delay (ms)
  * @param context - 에러 컨텍스트
  * @returns 작업 결과
  */

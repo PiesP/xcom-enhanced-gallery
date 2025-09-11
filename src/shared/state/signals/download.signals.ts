@@ -273,7 +273,7 @@ export function completeDownload(taskId: string): Result<void, Error> {
 }
 
 /**
- * 다운로드 실패
+ * Download failure
  */
 export function failDownload(taskId: string, error: string): Result<void, Error> {
   const currentState = downloadState.value;
@@ -303,7 +303,7 @@ export function failDownload(taskId: string, error: string): Result<void, Error>
     isProcessing: newQueue.length > 0,
   };
 
-  logger.error(`[Download] 다운로드 실패: ${taskId} - ${error}`);
+  logger.error(`[Download] download failed: ${taskId} - ${error}`);
   dispatchEvent('download:failed', { taskId, error });
 
   return { success: true, data: undefined };

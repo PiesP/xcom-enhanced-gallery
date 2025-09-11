@@ -297,7 +297,7 @@ export class VendorManager {
 
           logger.debug('네이티브 다운로드 완료:', filename);
         } catch (error) {
-          logger.error('네이티브 다운로드 실패:', error);
+          logger.error('Native download failed:', error);
           throw error;
         } finally {
           // finally 블록에서 확실한 정리

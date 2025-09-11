@@ -47,6 +47,11 @@ function safeInfo(): UserScriptInfo | null {
 async function fallbackDownload(url: string, filename: string): Promise<void> {
   // 브라우저 환경에서 동작하는 최소 다운로드(Fetch + Blob + a[href])
   // 테스트(Node)에서는 fetch가 없어 호출을 피해야 함
+  // document/body 가 없으면 안전하게 no-op 처리
+  if (typeof document === 'undefined' || !document.body) {
+    return; // 비브라우저 환경에서는 수행할 수 없음
+  }
+
   const response = await fetch(url);
   const blob = await response.blob();
   const objectUrl = URL.createObjectURL(blob);

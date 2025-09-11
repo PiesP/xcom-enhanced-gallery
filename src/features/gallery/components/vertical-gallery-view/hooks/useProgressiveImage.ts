@@ -205,7 +205,7 @@ export function useProgressiveImage({
     [src, state.retryCount, maxRetries, retryDelay, loadImage, updateState]
   );
 
-  // 수동 재시도
+  // Manual retry
   const retry = useCallback(() => {
     if (state.retryCount < maxRetries) {
       logger.info('Manual retry triggered:', src);

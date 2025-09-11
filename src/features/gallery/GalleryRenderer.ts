@@ -204,7 +204,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
         await downloadService.downloadMultiple(state.mediaItems);
       }
     } catch (error) {
-      logger.error(`[GalleryRenderer] ${type} 다운로드 실패:`, error);
+      logger.error(`[GalleryRenderer] ${type} download failed:`, error);
       setError('다운로드에 실패했습니다.');
     } finally {
       setLoading(false);

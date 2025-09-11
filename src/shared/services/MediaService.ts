@@ -12,6 +12,7 @@ import { scheduleIdle } from '@shared/utils/performance';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
+import type { BaseResultStatus } from '@shared/types/result.types';
 
 // 통합된 서비스 타입들
 /**
@@ -64,16 +65,17 @@ export interface BulkDownloadOptions {
 
 export interface DownloadResult {
   success: boolean;
+  status: BaseResultStatus;
   filesProcessed: number;
   filesSuccessful: number;
   error?: string;
   filename?: string;
-  // optional failure summary for partial failures
   failures?: Array<{ url: string; error: string }>;
 }
 
 export interface SingleDownloadResult {
   success: boolean;
+  status: BaseResultStatus;
   filename?: string;
   error?: string;
 }
@@ -718,11 +720,13 @@ export class MediaService {
       download.downloadBlob(blob, filename);
 
       logger.debug(`Single download initiated: ${filename}`);
-      return { success: true, filename };
+      return { success: true, status: 'success', filename };
     } catch (error) {
       const message = getErrorMessage(error);
       logger.error(`Single download failed: ${message}`);
-      return { success: false, error: message };
+      const lowered = message.toLowerCase();
+      const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
+      return { success: false, status, error: message };
     }
   }
 
@@ -833,6 +837,12 @@ export class MediaService {
 
       return {
         success: true,
+        status:
+          failures.length === 0
+            ? 'success'
+            : failures.length === mediaItems.length
+              ? 'error'
+              : 'partial',
         filesProcessed: mediaItems.length,
         filesSuccessful: successful,
         filename: zipFilename,
@@ -841,8 +851,10 @@ export class MediaService {
     } catch (error) {
       const message = getErrorMessage(error);
       logger.error(`ZIP download failed: ${message}`);
+      const lowered = message.toLowerCase();
       return {
         success: false,
+        status: lowered.includes('cancel') ? 'cancelled' : 'error',
         filesProcessed: mediaItems.length,
         filesSuccessful: 0,
         error: message,

@@ -8,22 +8,51 @@ import { logger } from '../logging/logger';
 export type SupportedLanguage = 'auto' | 'ko' | 'en' | 'ja';
 
 export interface LanguageStrings {
-  toolbar: {
-    previous: string;
-    next: string;
-    download: string;
-    downloadAll: string;
-    settings: string;
-    close: string;
+  readonly toolbar: {
+    readonly previous: string;
+    readonly next: string;
+    readonly download: string;
+    readonly downloadAll: string;
+    readonly settings: string;
+    readonly close: string;
   };
-  settings: {
-    title: string;
-    theme: string;
-    language: string;
-    themeAuto: string;
-    themeLight: string;
-    themeDark: string;
-    close: string;
+  readonly settings: {
+    readonly title: string;
+    readonly theme: string;
+    readonly language: string;
+    readonly themeAuto: string;
+    readonly themeLight: string;
+    readonly themeDark: string;
+    readonly close: string;
+  };
+  readonly messages: {
+    readonly download: {
+      readonly single: {
+        readonly error: {
+          readonly title: string;
+          readonly body: string; // {error}
+        };
+      };
+      readonly allFailed: {
+        readonly title: string;
+        readonly body: string;
+      };
+      readonly partial: {
+        readonly title: string;
+        readonly body: string; // {count}
+      };
+      readonly retry: {
+        readonly action: string;
+        readonly success: {
+          readonly title: string;
+          readonly body: string;
+        };
+      };
+      readonly cancelled: {
+        readonly title: string;
+        readonly body: string;
+      };
+    };
   };
 }
 
@@ -46,6 +75,18 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeDark: '다크',
       close: '닫기',
     },
+    messages: {
+      download: {
+        single: { error: { title: '다운로드 실패', body: '파일을 받을 수 없습니다: {error}' } },
+        allFailed: { title: '다운로드 실패', body: '모든 항목을 다운로드하지 못했습니다.' },
+        partial: { title: '일부 실패', body: '{count}개 항목을 받지 못했습니다.' },
+        retry: {
+          action: '재시도',
+          success: { title: '재시도 성공', body: '실패했던 항목을 모두 받았습니다.' },
+        },
+        cancelled: { title: '다운로드 취소됨', body: '요청한 다운로드가 취소되었습니다.' },
+      },
+    },
   },
   en: {
     toolbar: {
@@ -65,6 +106,23 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeDark: 'Dark',
       close: 'Close',
     },
+    messages: {
+      download: {
+        single: {
+          error: { title: 'Download Failed', body: 'Could not download the file: {error}' },
+        },
+        allFailed: { title: 'Download Failed', body: 'Failed to download all items.' },
+        partial: { title: 'Partial Failure', body: 'Failed to download {count} items.' },
+        retry: {
+          action: 'Retry',
+          success: {
+            title: 'Retry Successful',
+            body: 'Successfully downloaded all previously failed items.',
+          },
+        },
+        cancelled: { title: 'Download Cancelled', body: 'The requested download was cancelled.' },
+      },
+    },
   },
   ja: {
     toolbar: {
@@ -83,6 +141,24 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: 'ライト',
       themeDark: 'ダーク',
       close: '閉じる',
+    },
+    messages: {
+      download: {
+        single: { error: { title: 'ダウンロード失敗', body: 'ファイルを取得できません: {error}' } },
+        allFailed: {
+          title: 'ダウンロード失敗',
+          body: 'すべての項目をダウンロードできませんでした。',
+        },
+        partial: { title: '一部失敗', body: '{count}個の項目を取得できませんでした。' },
+        retry: {
+          action: '再試行',
+          success: { title: '再試行成功', body: '失敗していた項目をすべて取得しました。' },
+        },
+        cancelled: {
+          title: 'ダウンロードがキャンセルされました',
+          body: '要求したダウンロードはキャンセルされました。',
+        },
+      },
     },
   },
 };
@@ -136,8 +212,20 @@ export class LanguageService {
     return value || path;
   }
 
+  /**
+   * 메시지 포맷 지원: {param} 치환
+   */
+  getFormattedString(path: string, params?: Record<string, string | number>): string {
+    const base = this.getString(path);
+    if (!params) return base;
+    return base.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? `{${k}}`));
+  }
+
   onLanguageChange(callback: (language: SupportedLanguage) => void): () => void {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
   }
 }
+
+// 전역 싱글톤 (간단한 소비 편의)
+export const languageService = new LanguageService();

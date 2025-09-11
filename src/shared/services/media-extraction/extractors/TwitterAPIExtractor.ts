@@ -66,7 +66,7 @@ export class TwitterAPIExtractor implements APIExtractor {
   }
 
   /**
-   * 재시도/타임아웃 래퍼
+   * Retry / timeout wrapper
    */
   private async fetchWithRetry<T>(
     fn: () => Promise<T>,

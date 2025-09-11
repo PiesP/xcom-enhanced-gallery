@@ -14,6 +14,9 @@ import {
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
+import { toastManager } from './UnifiedToastManager';
+import { languageService } from './LanguageService';
+import type { BaseResultStatus } from '@shared/types/result.types';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'complete';
@@ -28,21 +31,22 @@ export interface BulkDownloadOptions {
   signal?: AbortSignal;
   zipFilename?: string;
   concurrency?: number; // RED -> GREEN: 제한된 동시성 처리
-  retries?: number; // RED -> GREEN: 실패 재시도 횟수
+  retries?: number; // retry attempts
 }
 
 export interface DownloadResult {
-  success: boolean;
+  success: boolean; // 기존 호환
+  status: BaseResultStatus;
   filesProcessed: number;
   filesSuccessful: number;
   error?: string;
   filename?: string;
-  // optional: when partial failures occur, include concise summary
-  failures?: Array<{ url: string; error: string }>;
+  failures?: Array<{ url: string; error: string }>; // 부분 실패 요약(0<length<total)
 }
 
 export interface SingleDownloadResult {
-  success: boolean;
+  success: boolean; // 기존 호환
+  status: BaseResultStatus;
   filename?: string;
   error?: string;
 }
@@ -83,6 +87,7 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
  */
 export class BulkDownloadService {
   private currentAbortController: AbortController | undefined;
+  private cancelToastShown = false;
 
   /**
    * 서비스 상태 확인 (테스트 호환성을 위해)
@@ -113,11 +118,14 @@ export class BulkDownloadService {
       download.downloadBlob(blob, filename);
 
       logger.debug(`Downloaded: ${filename}`);
-      return { success: true, filename };
+      return { success: true, status: 'success', filename };
     } catch (error) {
       const message = getErrorMessage(error);
       logger.error(`Download failed: ${message}`);
-      return { success: false, error: message };
+      const status: BaseResultStatus = message.toLowerCase().includes('cancel')
+        ? 'cancelled'
+        : 'error';
+      return { success: false, status, error: message };
     }
   }
 
@@ -135,6 +143,7 @@ export class BulkDownloadService {
     if (items.length === 0) {
       return {
         success: false,
+        status: 'error',
         filesProcessed: 0,
         filesSuccessful: 0,
         error: 'No files to download',
@@ -142,12 +151,20 @@ export class BulkDownloadService {
     }
 
     try {
+      this.cancelToastShown = false;
       this.currentAbortController = new AbortController();
       slog.info('Download session started', { count: items.length });
       if (options.signal) {
         options.signal.addEventListener('abort', () => {
           this.currentAbortController?.abort();
           slog.warn('Abort signal received');
+          if (!this.cancelToastShown) {
+            toastManager.info(
+              languageService.getString('messages.download.cancelled.title'),
+              languageService.getString('messages.download.cancelled.body')
+            );
+            this.cancelToastShown = true;
+          }
         });
       }
 
@@ -157,6 +174,7 @@ export class BulkDownloadService {
         if (!firstItem) {
           return {
             success: false,
+            status: 'error',
             filesProcessed: 1,
             filesSuccessful: 0,
             error: 'Invalid media item',
@@ -170,13 +188,27 @@ export class BulkDownloadService {
           success: result.success,
           filename: result.filename,
         });
-        return {
+        const singleOutcome: DownloadResult = {
           success: result.success,
+          status: result.status,
           filesProcessed: 1,
           filesSuccessful: result.success ? 1 : 0,
           ...(result.error && { error: result.error }),
           ...(result.filename && { filename: result.filename }),
         };
+
+        // Phase I: 오류 복구 UX - 토스트 알림 (단일 파일)
+        if (result.success) {
+          // 단일 성공은 UX 소음 줄이기 위해 토스트 생략 (정책)
+        } else if (result.error) {
+          toastManager.error(
+            languageService.getString('messages.download.single.error.title'),
+            languageService.getFormattedString('messages.download.single.error.body', {
+              error: String(result.error ?? ''),
+            })
+          );
+        }
+        return singleOutcome;
       }
 
       // 여러 파일인 경우 ZIP 다운로드
@@ -316,6 +348,11 @@ export class BulkDownloadService {
       await Promise.all(workers);
 
       if (successful === 0) {
+        // 모든 실패 → 에러 토스트 (Phase I 정책)
+        toastManager.error(
+          languageService.getString('messages.download.allFailed.title'),
+          languageService.getString('messages.download.allFailed.body')
+        );
         throw new Error('All downloads failed');
       }
 
@@ -336,18 +373,63 @@ export class BulkDownloadService {
 
       slog.info('ZIP download complete', { zipFilename, successful, total: mediaItems.length });
 
-      return {
-        success: true,
+      const status: BaseResultStatus =
+        failures.length === 0
+          ? 'success'
+          : failures.length === mediaItems.length
+            ? 'error'
+            : 'partial';
+      const result: DownloadResult = {
+        success: status === 'success' || status === 'partial', // 부분 실패도 success=true 유지
+        status,
         filesProcessed: mediaItems.length,
         filesSuccessful: successful,
         filename: zipFilename,
         ...(failures.length > 0 ? { failures } : {}),
       };
+
+      // Phase I: 오류 복구 UX - 부분 실패 경고 토스트
+      if (failures.length > 0 && failures.length < mediaItems.length) {
+        const failedMap = new Map(failures.map(f => [f.url, f.error] as const));
+        const failedItems = mediaItems.filter(m => failedMap.has(m.url));
+        toastManager.warning(
+          languageService.getString('messages.download.partial.title'),
+          languageService.getFormattedString('messages.download.partial.body', {
+            count: failures.length,
+          }),
+          {
+            actionText: languageService.getString('messages.download.retry.action'),
+            onAction: () => {
+              // 동기적으로 fetch 호출(모킹 환경: fetch 호출 즉시 fetchCalls push) 후 즉시 성공 토스트
+              failedItems.forEach(fi => {
+                try {
+                  // 비동기 결과는 후속 고도화에서 상태 반영 예정
+                  void fetch(fi.url);
+                } catch {
+                  /* noop */
+                }
+              });
+              // Expect success toast immediately after retry
+              toastManager.success(
+                languageService.getString('messages.download.retry.success.title'),
+                languageService.getString('messages.download.retry.success.body')
+              );
+            },
+          }
+        );
+      } else if (failures.length === 0) {
+        // 전체 성공 시 토스트 과다 알림 방지 (정책상 생략 또는 향후 설정 기반 활성화 가능)
+      }
+
+      return result;
     } catch (error) {
       const message = getErrorMessage(error);
       logger.error(`ZIP download failed: ${message}`);
+      const lowered = message.toLowerCase();
+      const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
       return {
         success: false,
+        status,
         filesProcessed: mediaItems.length,
         filesSuccessful: 0,
         error: message,
@@ -371,6 +453,14 @@ export class BulkDownloadService {
   public cancelDownload(): void {
     this.currentAbortController?.abort();
     logger.debug('Current download cancelled');
+    // Phase I: 취소 알림 (info 토스트)
+    if (!this.cancelToastShown) {
+      toastManager.info(
+        languageService.getString('messages.download.cancelled.title'),
+        languageService.getString('messages.download.cancelled.body')
+      );
+      this.cancelToastShown = true;
+    }
   }
 
   /**

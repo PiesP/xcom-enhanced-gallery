@@ -1,74 +1,76 @@
-# 🎨 TDD 리팩토링 계획 — Userscript 소스 현대화(차기 사이클)
+# 🎨 TDD 리팩토링 계획 — Userscript 디자인 현대화 (새 사이클 제안)
 
-> 테스트 우선(TDD)으로 Userscript 소스를 더 간결·일관·현대적으로
-> 유지/고도화합니다. 완료된 항목은 `TDD_REFACTORING_PLAN_COMPLETED.md`에서만
-> 관리합니다.
+> 목적: 소스 스타일/레이어/토큰/파이프라인을 더 간결·일관·현대적 구조로 정비.
+> 완료된 과거 단계는 `TDD_REFACTORING_PLAN_COMPLETED.md`에만 기록합니다.
 
-## 범위와 가드레일
+## 공통 가드 (불변)
 
-- TypeScript strict 100%, 모든 함수 명시적 타입
-- 외부 의존성은 getter 함수로만 접근(Preact, Signals, fflate, GM\_\*)
-- PC 전용 입력만 사용(Mouse/Keyboard/Wheel)
-- 디자인 토큰 100% 사용(색/시간/라디우스 하드코딩 금지)
+- TypeScript strict 100%, 모든 함수/공개 메서드 명시적 반환 타입
+- 외부 의존성: 전용 getter (preact / signals / fflate / GM\_\*)
+- PC 전용 이벤트만 사용 (click / keydown / wheel / contextmenu)
+- 디자인/모션/spacing/z-index는 토큰만 사용 (raw number/hex/ms 금지)
+- Result status 모델: `success | partial | error | cancelled` (회귀 금지)
 
-## 적용 가능한 솔루션 비교(요약·선택 포함)
+## 핵심 설계 선택 & 대안 비교 (요약)
 
-- 스타일 소스 오브 트루스
-  - 대안 A: JS 상수(CSS.SPACING 등) 병행 — 스타일/컴포넌트 분리로 불일치 위험↑
-  - 대안 B(선택·현행): CSS Semantic 토큰 단일화 — 단일 출처, 정적 검사/테스트
-    용이
-- 이벤트/핫키 처리
-  - 대안 A: 각 컴포넌트 분산 처리 — 중복/충돌 가능, 테스트 난이도↑
-  - 대안 B(선택·현행): 중앙 Keybinding + PC-only 가드 — 일관성·테스트 용이성↑
-- 외부 의존성 접근
-  - 대안 A: 직접 import — 모킹/교체 어려움, 테스트 취약
-  - 대안 B(선택·현행): vendor getter + 주입 — 의존성 격리/모킹 용이
-- 미디어 추출/정규화
-  - 대안 A: ad-hoc 정규식 호출 — 예외 처리 분산, 회귀 위험↑
-  - 대안 B(선택·현행): 정책 엔진 + 정규화 유틸 — 규칙 중심, 테스트/확장 용이
-- 로깅/에러 처리
-  - 대안 A: console 기반 — 상관관계/레벨 제어 한계
-  - 대안 B(선택·현행): 구조화 로거 + correlationId — 디버깅/진단 정확도↑
-- 번들/사이즈 거버넌스
-  - 대안 A: best-effort — 사이즈 회귀 탐지 어려움
-  - 대안 B(선택): 사이즈 예산 + 번들 분석 리포트 — 회귀 차단, CI 가시성↑
+1. 디자인 토큰 alias 정리
+   - A: 컴포넌트 alias 다양성 유지 → 중복/학습비 증가, 제거 비용 지연
+   - B (선택): 불필요 alias 단계 제거, semantic 직접 사용 + 최소
+     alias(레이어/컴포넌트 특수)만 허용 → 단일 소스/검색 용이
+2. z-index 및 레이어 스택
+   - A: 컴포넌트별 임의 숫자 → 회귀/충돌 디버깅 비용↑
+   - B (선택): 승인 리스트 토큰(`--xeg-z-(root|overlay|modal|toolbar|toast)`)
+     정합 테스트 → 예측 가능
+3. 애니메이션 정의
+   - A: 컴포넌트마다 keyframes/transition 개별 작성 → 중복/불균일/정책 위반
+     위험↑
+   - B (선택): 공용 preset(utilities + animateCustom API) + 중복 탐지 테스트 →
+     유지비↓, 정책 가드↑
+4. Icon 전용/작은 상호작용 요소 스타일
+   - A: IconButton + ad-hoc 클래스 혼재 → 접근성/크기 변형 일관성 저하
+   - B (선택): IconButton size map + 토큰화된 spacing/radius 재사용, 외부
+     컴포넌트는 조합만 허용
+5. MediaProcessor 파이프라인
+   - A: 클래스 내부 다단계 로직(내부 상태 혼합) → 단위 테스트 세분화 어려움
+   - B (선택): 단계별 순수 함수(export) + orchestrator + progress observer →
+     회귀 가시성/부분 교체 용이
 
-## 리팩토링 단계(테스트 우선)
+## 활성 스코프 (현재)
 
-아래 항목은 신규 사이클에 수행할 계획입니다. 각 단계는 RED → GREEN → 리팩토링
-순으로 진행합니다.
+현재 사이클에서 진행 중인 활성 Phase는 없습니다. (I18N 메시지 키 도입 Phase 4
+옵션 과제는 완료되어 완료 로그로 이관되었습니다.)
 
-1. Phase E — 서비스 계약 고도화/순수 함수화
+새로운 개선 항목은 백로그(`docs/TDD_REFACTORING_BACKLOG.md`)에서 선별 후 본
+문서에 추가됩니다.
 
-- 목표: Media/Download/Toast/Settings의 공개 계약(Interface) 명시, Result 패턴
-  일관화, 부수효과 어댑터로 격리(GM\_\*, DOM).
-- RED: 서비스 경계 스냅샷 테스트(타입/시그니처), 실패 경로(Result.error) 계약
-  테스트.
-- GREEN: 최소 구현/어댑터 추출 및 모킹 테스트 통과.
-- 리팩토링: 내부 구현 정리(함수형 유틸 분리), 문서화.
+## Phase 기록
 
-3. Phase I — 오류 복구 UX 표준화(Toast/Retry)
+모든 정의된 초기 Phase(1–4 + 옵션)는 완료되어
+`TDD_REFACTORING_PLAN_COMPLETED.md`에만 보관됩니다. 이 문서는 새로운 Phase가
+선정될 때까지 활성 스코프가 비어있는 상태를 유지합니다. (완료 Phase 요약은 완료
+로그 상단 "Phase 요약" 섹션 참고)
 
-- 목표: 추출/다운로드 실패 UX 통일(요약/재시도/취소), 사용자 피드백 일관화.
-- RED: 실패 요약/재시도/취소 플로우 테스트.
-- GREEN: 구현 후 회귀 스위트 GREEN.
-- 리팩토링: 메시지/로깅 스키마 통일.
+## 작업 순서 & 브랜치 전략
 
-## 완료 기준(DoD)
+이전 사이클의 Phase 절차는 모두 완료되었습니다. 이후 새 Phase를 도입할 때는
+동일한 RED → GREEN → REFACTOR 절차를 재사용합니다.
 
-- 각 Phase RED→GREEN, 회귀 테스트 유지
-- getter-only 의존성, PC 전용 입력, 토큰 사용 위반 0건
-- 문서/체인지로그 갱신 및 사이즈 예산 준수(경고 ≥ 300KB, 실패 > 450KB; 추후
-  프로젝트 합의로 조정 가능)
+## Definition of Done (공통)
 
-## 진행/이관 노트
+- 각 Phase: RED 테스트 1+개 → GREEN → 회귀 스위트 전체 GREEN (MediaProcessor
+  단계화 및 I18N 키 적용까지 모두 완료됨)
+- 린트/타입/빌드 PASS, 사이즈 예산 위반 없음
+- 문서(본 계획 + 가이드라인 필요 부분) 갱신
+- 완료 즉시 해당 Phase 섹션을 본 문서에서 제거 & 완료 로그에 1줄 기록
 
-- 이전 사이클의 완료 항목은 모두 `TDD_REFACTORING_PLAN_COMPLETED.md`로
-  이관되었습니다(본 문서에는 진행 중/계획 항목만 유지).
+## 추적 & 향후 후보
 
-## What's next (요약)
+- 추가 성능/메트릭 항목(MP stage metrics, prefetch 실험)은 백로그 유지
+- 메모리 프로파일(MEM_PROFILE)은 디자인 범위 밖 → 별도 사이클
 
-- Phase E: 서비스 계약 고도화/순수 함수화 — 인터페이스 명시 및 Result 패턴
-  일관화, GM\_\*/DOM 부수효과 분리-어댑터화. 계약 스냅샷 테스트부터 RED.
-- Phase I: 오류 복구 UX 표준화 — 실패 요약/재시도/취소 UX 통일과 로깅 스키마
-  일치.
+## 참고
+
+- 백로그: `docs/TDD_REFACTORING_BACKLOG.md`
+- 완료 로그: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
+
+업데이트 일시: 2025-09-11 (Phase 4 옵션 과제 이관 후)

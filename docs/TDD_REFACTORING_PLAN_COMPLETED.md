@@ -2,6 +2,104 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+2025-09-11: 계획 감사 — 활성 Phase 없음 (초기 현대화 Phase 1–4 + 옵션 전부 완료,
+신규 작업은 백로그에서 선정 예정)
+
+Phase 요약 (완료):
+
+- Phase 1: 토큰 alias 축소 & 스타일 가드 강화 — semantic 직접 사용 전환
+- Phase 2: 애니메이션 preset / duration & easing 토큰화 — 중복/하드코딩 제거
+- Phase 3: IconButton 사이즈/접근성 일관화 — size map & aria-label 가드
+- Phase 4 (옵션): I18N 메시지 키 도입 — literal 제거 및 LanguageService 적용
+- 추가: MediaProcessor 단계화 + 진행률 옵저버, Result status 모델 통합 등
+
+2025-09-11: MediaProcessor 순수 함수
+단계화(collect/extract/normalize/dedupe/validate) 기존 pipeline.ts 구조로 이미
+구현 확인되어 계획 Phase에서 제거 (orchestrator 진행률 옵저버 포함 완료 상태
+유지). 2025-09-11: 레이어(z-index) 거버넌스 Phase — 완료 상태 재확인 (전역
+z-index 토큰 `--xeg-z-*` 사용, 하드코딩 z-index 미검출) → 활성 계획서에서 제거.
+
+2025-09-11: Phase 4 (옵션) — I18N 메시지 키 도입 완료
+
+- RED 테스트: i18n.message-keys.red.test.ts (소스 내 한국어 literal 검출 & 누락
+  키 확인)
+- 조치: 모든 사용자-facing 다운로드/취소 관련 메시지를 LanguageService 키
+  접근으로 통일, BulkDownloadService에서 languageService.getString/
+  getFormattedString 사용 확인
+- GREEN 전환 후 테스트 파일 유지(회귀 가드), 계획서 활성 스코프 비움
+
+2025-09-11: Phase 1 — 토큰 alias 축소(1차) 완료
+
+- 범위: Gallery.module.css 내 toolbar/modal component alias
+  (`--xeg-comp-toolbar-bg`, `--xeg-comp-toolbar-border`,
+  `--xeg-comp-toolbar-shadow`) → semantic 토큰(`--xeg-bg-toolbar`,
+  `--color-border-default`, `--shadow-md`) 치환
+- 테스트: `design-tokens.alias-deprecation.red.test.ts` GREEN 전환(갤러리 스타일
+  범위)
+- 문서: 계획서에서 Phase 1 제거 및 완료 로그 반영
+
+2025-09-11: 계획 문서 최종 정리 — 남아 있던 3개 완료 항목(Result 패턴 통일 /
+재시도 액션 / MediaProcessor 진행률 옵저버)을 계획서에서 제거하고 본 로그에 확정
+반영. 현재 계획 문서는 차기 사이클 후보만 유지.
+
+2025-09-11: Phase 3 — IconButton/상호작용 요소 일관화 v2 완료
+
+- RED 테스트: icon-button.size-map.red.test.tsx (사이즈 맵/접근성 규격화)
+- 구현: IconButton size map 상수화 + Button.variant='icon' 경로 통일 검증
+- GREEN: Icon-only 요소 aria-label 검증 경고 미출력, 사이즈 토큰/클래스 일관
+- 계획서에서 Phase 3 제거 및 본 완료 로그에 기록
+
+2025-09-11: Phase 2 — 애니메이션 transition preset 추출/중복 제거 완료
+
+- RED 테스트: `animation-presets.duplication.red.test.ts` (중복 opacity
+  transition 2회 검출)
+- 조치: design-tokens.css에 preset 토큰 2종 추가(`--xeg-transition-preset-fade`,
+  `--xeg-transition-preset-slide`)
+- AnimationService 중복 transition 선언 preset 참조로 치환 → RED → GREEN 전환
+- 향후: keyframes 레거시 alias(slideInFromRight 등) 제거는 별도 사이클 후보
+
+2025-09-11: 새 디자인 현대화 사이클(Phase 1–5 + 옵션 6) 활성 스코프 정의 — 토큰
+alias 축소 / 레이어 거버넌스 / 애니메이션 preset / IconButton 통일 v2 /
+MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 식별자 명시).
+
+2025-09-11: Backlog 분리 — 향후 아이디어(TDD 후보)를
+`TDD_REFACTORING_BACKLOG.md`로 이전하여 계획 문서는 활성 스코프만 유지하는 경량
+포맷으로 전환.
+
+버그 수정 (완료)
+
+- BulkDownloadService: 부분 실패 warning / 전체 실패 error / 단일 실패 error /
+  전체 성공시 토스트 생략 / 사용자 취소 info (1회) 정책 적용
+- cancellation 가드 플래그: `cancelToastShown` 도입, AbortSignal/수동 취소 모두
+  중복 알림 차단
+- 테스트: `bulk-download.error-recovery.test.ts` (부분 실패 / 전체 실패 / 취소)
+  GREEN
+- SettingsService: 얕은 복사로 인한 DEFAULT_SETTINGS 오염 → `cloneDefaults()`
+  (카테고리별 객체 분리) + `resetToDefaults(category)` 깊은 복제 적용
+- 계약 테스트: `settings-service.contract.test.ts` 의 resetToDefaults 카테고리
+  재설정 케이스 GREEN
+- 문서: CODING_GUIDELINES 오류 복구 UX 표준 섹션 및 TDD 계획(Result 통일·재시도
+  액션·진행률 옵저버 후속) 갱신
+- 향후: Result status 통일(`success|partial|error|cancelled`) + 재시도 액션
+  토스트 + 진행률 옵저버 RED 예정
+
+- 2025-09-11: Result 패턴 통일(BaseResult status) 1차 도입 (완료)
+  - 공통 타입:
+    `BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled'`
+  - BulkDownloadService / MediaService 반환 객체에 `status` 필드 추가, 부분
+    실패시 'partial', 취소시 'cancelled'
+  - SettingsService 이벤트에 임시 status 삽입(@ts-expect-error) — 후속 어댑터
+    정식화 예정
+  - RED → GREEN 테스트: `result-pattern.unification.red.test.ts`
+  - 기존 계약 테스트 회귀 없음(전체 스위트 GREEN)
+
+- 2025-09-11: BulkDownloadService 부분 실패 재시도 액션 TDD 완료
+  - RED: `bulk-download.retry-action.red.test.ts`,
+    `bulk-download.retry-action.sequence.red.test.ts`
+  - 부분 실패 시 warning 토스트에 action 추가, 클릭 시 실패 URL만 fetch 재시도
+  - 성공/부분/실패 분기 토스트 1차 구현 (현재 ZIP 재생성 없이 네트워크 재검증)
+  - SettingsService 이벤트 status 정식 타입화(status?: 'success' | 'error')
+
 - 2025-09-11: 계획 문서 정리 — 완료 항목 전면 이관
   - `TDD_REFACTORING_PLAN.md`에서 과거 완료
     섹션(토큰/애니메이션/접근성/다운로드/추출/부트스트랩/MediaProcessor 강화
@@ -91,11 +189,22 @@
   - ESLint + 테스트 이중 가드로 위반 회귀 차단
 
 - 2025-09-11: Phase H — 갤러리 프리로드/성능 v2 (완료)
-  - 프리페치 경로에 유휴(Idle) 스케줄 옵션 도입: `schedule: 'idle'` (기본값은 immediate)
+  - 프리페치 경로에 유휴(Idle) 스케줄 옵션 도입: `schedule: 'idle'` (기본값은
+    immediate)
   - 안전 폴백: requestIdleCallback 미지원 시 setTimeout(0)
   - 경계 유틸 보강: `computePreloadIndices` 경계/클램프 테스트 정리(GREEN)
   - 가이드라인 갱신: 프리로드/스케줄 옵션 문서화
-  - 테스트: `media-prefetch.idle-schedule.test.ts`, `gallery-preload.util.test.ts`
+  - 테스트: `media-prefetch.idle-schedule.test.ts`,
+    `gallery-preload.util.test.ts`
+
+  - MediaService 공개 계약 및 다운로드 Result shape 가드 테스트 추가
+  - 문서화: CODING_GUIDELINES에 서비스 계약/Result 가드 원칙 반영
+
+- 2025-09-11: Phase E — Userscript(GM\_\*) 어댑터 경계 가드 (추가 완료)
+  - `getUserscript()` 계약 테스트 추가: GM\_\* 부재/존재 시 동작, download/xhr
+    폴백 가드
+  - adapter 폴백 다운로드에 비브라우저 환경 no-op 안전장치 추가
+  - 가드 테스트: `userscript-adapter.contract.test.ts` GREEN
 
 - 2025-09-10: B/C 단계 최종 이관 완료
   - B4 완료: CSS 변수 네이밍/볼륨 재정렬 최종 확정(전역/컴포넌트 반영)
@@ -345,3 +454,12 @@
   - ESLint no-restricted-imports + 정적 스캔으로 직접 import 차단
   - 테스트: direct-imports-source-scan.test.(ts|js), lint-getter-policy.test.ts
     GREEN
+
+- 2025-09-11: MediaProcessor 진행률(onStage) 옵저버 도입
+  - 단계: collect → extract → normalize → dedupe → validate → complete
+  - 각 단계 후 count 제공(누적 아이템 수)
+  - 실패 시에도 complete 이벤트 보장
+  - 테스트: media-processor.progress-observer.test.ts GREEN
+- 2025-09-11: Retry Action 테스트 명명 정리
+  - bulk-download.retry-action.red._ → bulk-download.retry-action._ (GREEN 유지)
+  - 계획서 What's next 에서 명명 정리 작업 항목 제거

@@ -51,14 +51,17 @@ export class AnimationService {
     style.textContent = `
       .xcom-fade-in {
         opacity: 0;
-        transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
+        transition: var(--xeg-transition-preset-fade);
+  /* Explicit easing token to satisfy token policy */
+  transition-timing-function: var(--xeg-ease-standard);
       }
       .xcom-fade-in.active {
         opacity: 1;
       }
       .xcom-fade-out {
         opacity: 1;
-        transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
+        transition: var(--xeg-transition-preset-fade);
+  transition-timing-function: var(--xeg-ease-standard);
       }
       .xcom-fade-out.active {
         opacity: 0;
@@ -66,9 +69,9 @@ export class AnimationService {
       .xcom-slide-in {
         transform: translateY(20px);
         opacity: 0;
-  /* Avoid broad transitions; list explicit properties for performance */
-        transition: transform var(--xeg-duration-normal) var(--xeg-ease-decelerate),
-                    opacity var(--xeg-duration-normal) var(--xeg-ease-decelerate);
+        /* Preset consolidates duplicated transform+opacity timing */
+        transition: var(--xeg-transition-preset-slide);
+  transition-timing-function: var(--xeg-ease-standard);
       }
       .xcom-slide-in.active {
         transform: translateY(0);

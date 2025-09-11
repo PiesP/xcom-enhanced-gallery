@@ -220,7 +220,7 @@ export function SettingsModal({
     docKeydownNoopRef.current = noop;
     document.addEventListener('keydown', noop, true);
 
-    // 첫 번째 포커스 가능한 요소에 포커스 (자식 ref 연결 시점 보장 위해 재시도 루프)
+    // Focus first focusable element (retry loop to ensure refs are attached)
     let tries = 0;
     const tryFocus = () => {
       let el = firstFocusableRef.current as HTMLElement | null;
@@ -235,7 +235,7 @@ export function SettingsModal({
         } catch {
           /* no-op for jsdom */
         }
-        // activeElement가 목표가 아니면 재시도하여 확실히 전환
+        // If activeElement not target, retry to ensure focus transition
         if (typeof document !== 'undefined' && document.activeElement !== el && tries < 10) {
           tries += 1;
           focusRetryTimerRef.current = window.setTimeout(tryFocus, 0);
