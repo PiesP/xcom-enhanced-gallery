@@ -522,17 +522,7 @@ function VerticalGalleryViewCore({
       </div>
 
       {/* 콘텐츠 영역 - 직접 아이템 렌더링 (래퍼 제거 완료) */}
-      <div
-        className={styles.itemsContainer}
-        data-xeg-role='items-container'
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-          height: '100%',
-          overflow: 'auto',
-        }}
-      >
+      <div className={styles.itemsContainer} data-xeg-role='items-container'>
         {itemsToRender.map((item, index) => {
           const actualIndex = index;
           const itemKey = `${item.id || item.url}-${actualIndex}`;

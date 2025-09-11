@@ -361,17 +361,17 @@ function BaseVerticalImageItemCore({
               autoPlay={false}
               controls={true}
               muted={true}
-              className={`${styles.video} ${getFitModeClass(fitMode)}`}
+              className={ComponentStandards.createClassName(
+                styles.video,
+                getFitModeClass(fitMode),
+                isLoaded ? styles.loaded : styles.loading
+              )}
               onLoadedMetadata={handleVideoLoadedMetadata}
               onLoadedData={handleVideoLoaded}
               onCanPlay={handleVideoLoaded}
               onError={handleVideoError}
               onContextMenu={handleImageContextMenu}
               onDragStart={handleImageDragStart}
-              style={{
-                opacity: isLoaded ? 1 : 0,
-                transition: 'opacity var(--xeg-duration-fast) var(--xeg-ease-standard)',
-              }}
             />
           ) : (
             /* 이미지 렌더링 */
@@ -381,15 +381,14 @@ function BaseVerticalImageItemCore({
               alt={cleanFilename(media.filename) || `Image ${index + 1}`}
               loading='lazy'
               decoding='async'
-              className={imageClasses}
+              className={ComponentStandards.createClassName(
+                imageClasses,
+                isLoaded ? styles.loaded : styles.loading
+              )}
               onLoad={handleImageLoad}
               onError={handleImageError}
               onContextMenu={handleImageContextMenu}
               onDragStart={handleImageDragStart}
-              style={{
-                opacity: isLoaded ? 1 : 0,
-                transition: 'opacity var(--xeg-duration-normal) var(--xeg-ease-standard)',
-              }}
             />
           )}
 

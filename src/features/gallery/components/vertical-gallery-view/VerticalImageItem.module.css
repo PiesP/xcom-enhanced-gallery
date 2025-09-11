@@ -133,6 +133,22 @@
   will-change: opacity;
 }
 
+/* Loading/Loaded state transitions (tokenized) */
+.loading.image,
+.loading.video {
+  opacity: 0;
+}
+
+.loaded.image,
+.loaded.video {
+  opacity: 1;
+}
+
+.image,
+.video {
+  transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
 /* 이미지 크기 조정 모드별 스타일 */
 .image.fitOriginal {
   width: auto !important;
