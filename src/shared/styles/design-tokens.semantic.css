@@ -97,10 +97,15 @@
   --xeg-focus-offset: 2px;
 
   /* Z-Index Management */
+  /* Base overlay/modal/toolbar/toast z-index tokens */
   --xeg-z-modal: 10000;
   --xeg-z-toolbar: 10001;
   --xeg-z-overlay: 9999;
   --xeg-z-toast: 10080;
+  /* Gallery overlay (alias of overlay) */
+  --xeg-z-gallery: var(--xeg-z-overlay);
+  /* Isolated root container (userscript) — must be above all site UI */
+  --xeg-z-root: 2147483647;
 
   /* Layer Management - Semantic Roles */
   --xeg-layer-base: 0;
@@ -108,6 +113,7 @@
   --xeg-layer-modal: var(--xeg-z-modal);
   --xeg-layer-overlay: var(--xeg-z-overlay);
   --xeg-layer-toast: var(--xeg-z-toast);
+  --xeg-layer-root: var(--xeg-z-root);
 
   /* Animation Timing - Semantic Roles */
   --xeg-anim-duration: var(--duration-normal);

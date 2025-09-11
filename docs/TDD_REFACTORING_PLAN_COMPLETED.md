@@ -2,6 +2,33 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+- `TDD_REFACTORING_PLAN.md`에 디자인 현대화 중심의 7단계 TDD 계획 신설
+- 완료된 초기 현대화(토큰/애니메이션/접근성/다운로드/추출/부트스트랩)는 본
+  로그에서만 관리
+
+- 2025-09-11: 레이어 토큰 정합(완료)
+  - z-index 하드코딩 제거 및 토큰 치환: `--xeg-z-overlay|modal|toolbar|toast`
+    적용
+  - 신규 토큰 추가: `--xeg-z-gallery`(overlay alias), `--xeg-z-root`(격리 루트
+    최상위)
+  - 적용 파일: `isolated-gallery.css`, `gallery-global.css`, `GalleryApp.ts`,
+    `GalleryContainer.tsx`, `accessibility.css`
+
+- 2025-09-11: 포커스 트랩 표준화(완료)
+  - 접근성 유틸의 `createFocusTrap`을 통합 유틸(`@shared/utils/focusTrap`)로
+    위임
+  - 위임 직후 activate 호출로 기존 시그니처 유지, 중복 구현 제거 방향 정착
+  - 테스트 추가:
+    `test/unit/shared/utils/accessibility/focus-trap-standardization.test.ts`
+  - 변경 파일: `src/shared/utils/accessibility/accessibility-utils.ts`
+
+- 2025-09-11: 모션 토큰 정책(추가 강화)
+  - animateCustom API가 duration/easing 토큰 옵션을 지원하도록 확장
+    (`durationToken: fast|normal|slow`,
+    `easingToken: standard|decelerate|accelerate`)
+  - 가드 테스트 추가: `test/unit/shared/utils/animations.tokens.test.ts`
+  - 변경 파일: `src/shared/utils/animations.ts`
+
 - 2025-09-11: 계획 문서 정리 및 이관 완료
   - 완료된 Phase(부트스트랩/의존성 getter/토큰·애니메이션/다운로드 UX v1/접근성
     스모크)를 본 완료 로그로 최종 이관
@@ -232,3 +259,9 @@
   - 가드 테스트 추가: `test/unit/styles/injected-css.token-policy.red.test.ts`
     포함 전체 스타일 가드 GREEN
   - 결과: 전체 테스트 100% GREEN, 린트/타입/빌드 PASS
+
+- 2025-09-11: Phase 1 — 환경 어댑터 계층 정리(getter-주입 강화) 완료
+  - 외부 의존성(preact/@preact/signals/fflate/GM\_\*) 접근을 전용 getter로 통일
+  - ESLint no-restricted-imports + 정적 스캔으로 직접 import 차단
+  - 테스트: direct-imports-source-scan.test.(ts|js), lint-getter-policy.test.ts
+    GREEN

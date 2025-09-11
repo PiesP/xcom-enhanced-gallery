@@ -93,7 +93,7 @@
   border-bottom: 1px solid var(--xeg-color-border-primary);
   backdrop-filter: none;
   transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
-  z-index: 1005;
+  z-index: var(--xeg-z-toolbar);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -236,7 +236,7 @@
   color: var(--xeg-text-button-navigation);
   font-size: 20px;
   cursor: pointer;
-  z-index: 1002;
+  z-index: var(--xeg-z-overlay);
   transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
   display: flex;
   align-items: center;
@@ -284,7 +284,7 @@
   left: 50%;
   transform: translateX(-50%);
   max-width: calc(100vw - 40px);
-  z-index: 1002;
+  z-index: var(--xeg-z-overlay);
 }
 
 .xeg-thumbnails-container {
@@ -361,7 +361,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1000;
+  z-index: var(--xeg-z-overlay);
   cursor: pointer;
 }
 
@@ -380,7 +380,7 @@
   left: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  z-index: 2147483647 !important;
+  z-index: var(--xeg-layer-root) !important;
 
   /* 갤러리 내부만 제어 */
   pointer-events: auto !important;

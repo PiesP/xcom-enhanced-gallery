@@ -6,7 +6,7 @@
 /**
  * 안전한 숫자 파싱
  */
-function safeParseInt(value: string | undefined, radix: number): number {
+export function safeParseInt(value: string | undefined, radix: number): number {
   if (!value) return 0;
   const parsed = parseInt(value, radix);
   return isNaN(parsed) ? 0 : parsed;
@@ -356,27 +356,13 @@ export function validateAltTextQuality(altText: string, imageType = 'informative
  * 포커스 트랩 설정
  * WCAG 2.4.3 Focus Order
  */
+import { createFocusTrap as unifiedCreateFocusTrap } from '@shared/utils/focusTrap';
+
 export function createFocusTrap(container: HTMLElement): void {
-  const focusableElements = container.querySelectorAll(
-    'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  );
-
-  if (focusableElements.length === 0) return;
-
-  const firstElement = focusableElements[0] as HTMLElement;
-  const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-  container.addEventListener('keydown', event => {
-    if (event.key === 'Tab') {
-      if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    }
-  });
+  // 통합 유틸로 위임하여 표준화된 동작을 사용한다
+  const trap = unifiedCreateFocusTrap(container, { restoreFocus: false });
+  // 접근성 유틸의 기존 시그니처를 유지하면서 즉시 활성화
+  trap.activate();
 }
 
 /**

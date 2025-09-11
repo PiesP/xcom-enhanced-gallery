@@ -253,7 +253,7 @@ export class GalleryApp {
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 999999;
+  z-index: var(--xeg-layer-root);
         pointer-events: none;
       `;
       document.body.appendChild(container);

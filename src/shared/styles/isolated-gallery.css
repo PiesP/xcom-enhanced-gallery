@@ -30,7 +30,7 @@
   height: 100vh !important;
 
   /* 레이어링 */
-  z-index: 2147483647 !important;
+  z-index: var(--xeg-layer-root) !important;
 
   /* 스타일 격리 */
   isolation: isolate !important;

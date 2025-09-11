@@ -54,7 +54,7 @@ export function mountGallery(
           left: 0;
           width: 100%;
           height: 100%;
-          z-index: 9999;
+          z-index: var(--xeg-z-overlay);
           isolation: isolate;
         }
       `;

@@ -199,31 +199,52 @@ Gallery
   - 모달 패널/백드롭은 Toolbar보다 위 레이어가 되어야 하며, 모달 내부 요소는
     추가 z-index를 지양
 
+추가 토큰:
+
+- 격리 루트(Userscript 오버레이 최상위): `--xeg-z-root` / 레이어 alias:
+  `--xeg-layer-root`
+- 갤러리 오버레이: `--xeg-z-gallery`(=`--xeg-z-overlay` alias)
+
 ````
 
 ### 애니메이션 규칙
 
-- transition/animation은 토큰만 사용: 시간은 `--xeg-duration-*`, 이징은 `--xeg-ease-*`
-- 인라인 스타일에서도 동일 규칙 적용 (예: `opacity var(--xeg-duration-normal) var(--xeg-ease-standard)`)
-- 하드코딩 숫자(ms/s)나 키워드(ease, ease-in-out 등) 직접 사용 금지
-- 서비스에서 주입하는 CSS 역시 동일 토큰을 사용
+- transition/animation은 토큰만 사용: 시간은 `--xeg-duration-*`, 이징은 `--xeg-ease-*`만 사용합니다.
+- 인라인 스타일에서도 동일 규칙 적용 (예: `opacity var(--xeg-duration-normal) var(--xeg-ease-standard)`).
+- 하드코딩 숫자(ms/s)나 키워드(ease, ease-in, ease-in-out 등) 직접 사용 금지.
+- 서비스에서 주입하는 CSS 역시 동일 토큰을 사용합니다.
+
+구현 가이드(animateCustom 예시):
+
+```ts
+// src/shared/utils/animations.ts
+// API
+animateCustom(el, keyframes, {
+  durationToken: 'normal',          // fast | normal | slow
+  easingToken: 'standard',          // standard | decelerate | accelerate
+});
+
+// 결과: transition 문자열 내부에 토큰 var()가 포함되어야 합니다.
+// e.g. "opacity var(--xeg-duration-normal) var(--xeg-ease-standard)"
+// 참고: guard 테스트는 test/unit/shared/utils/animations.tokens.test.ts 에 있습니다.
+```
 
 추가 규칙:
-- 이징 토큰 네이밍: 내부 표준은 `--xeg-easing-*`, 소비자(alias) 레이어는 `--xeg-ease-*`만 사용(혼용 금지; 중앙 매핑을 통해 연결됨).
+- 이징 토큰 네이밍 표준: 소비자 레이어는 `--xeg-ease-standard`/`--xeg-ease-decelerate`/`--xeg-ease-accelerate`만 사용합니다.
 - CSS Modules의 `composes` 사용 금지(도구 호환성 문제). 공통 스타일은 유틸 클래스로 분리하거나 명시적으로 중복 선언합니다.
 
 권장 예시:
 
 ```css
 /* 금지 */
-.spinner { animation: xeg-spin 1s var(--xeg-easing-linear) infinite; }
+.spinner { animation: xeg-spin 1s ease-in-out infinite; }
 
 /* 권장 */
-.spinner { animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite; }
+.spinner { animation: xeg-spin var(--xeg-duration-normal) var(--xeg-ease-standard) infinite; }
 
-컴포넌트 애니메이션 정책:
-- `src/assets/styles/components/animations.css` 내 `.xeg-animate-*` 클래스는 `var(--xeg-duration-*)`와 `var(--xeg-easing-*)`(또는 alias `--xeg-ease-*`)만 사용합니다.
-- 하드코딩된 지속시간(예: `1s`, `200ms`) 금지 — 전용 테스트로 검증됩니다.
+/* 컴포넌트 애니메이션 정책 */
+/* `src/assets/styles/components/animations.css` 내 `.xeg-animate-*`는
+  `var(--xeg-duration-*)`와 `var(--xeg-ease-*)`만 사용합니다. */
 ```
 
 ### 갤러리 프리로드 규칙 (Performance)

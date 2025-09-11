@@ -27,19 +27,49 @@ export {
 } from './css-animations';
 
 // Motion One 관련 함수들을 CSS 기반으로 교체
+type DurationToken = 'fast' | 'normal' | 'slow';
+type EasingToken = 'standard' | 'decelerate' | 'accelerate';
+
+interface AnimateCustomOptions {
+  duration?: number;
+  easing?: string;
+  delay?: number;
+  durationToken?: DurationToken;
+  easingToken?: EasingToken;
+}
+
 export const animateCustom = async (
   element: Element,
   keyframes: Record<string, string | number>,
-  options?: { duration?: number; easing?: string; delay?: number }
+  options?: AnimateCustomOptions
 ): Promise<void> => {
-  // CSS 트랜지션으로 변환
+  // CSS 트랜지션으로 변환 (토큰 우선)
   const htmlElement = element as HTMLElement;
-  const duration = options?.duration || 300;
-  const easing = options?.easing || 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+  const TOKEN_DURATION_MS: Record<DurationToken, number> = {
+    fast: 150,
+    normal: 300,
+    slow: 500,
+  } as const;
+
+  const durationVar = options?.durationToken
+    ? `var(--xeg-duration-${options.durationToken})`
+    : typeof options?.duration === 'number'
+      ? `${options.duration}ms`
+      : 'var(--xeg-duration-normal)';
+
+  const easingVar = options?.easingToken
+    ? `var(--xeg-ease-${options.easingToken})`
+    : (options?.easing ?? 'var(--xeg-ease-standard)');
+
+  const delayMs = options?.delay ?? 0;
+  const durationMs = options?.durationToken
+    ? TOKEN_DURATION_MS[options.durationToken]
+    : (options?.duration ?? 300);
 
   return new Promise<void>(resolve => {
     const transition = Object.keys(keyframes)
-      .map(prop => `${prop} ${duration}ms ${easing}`)
+      .map(prop => `${prop} ${durationVar} ${easingVar}`)
       .join(', ');
 
     htmlElement.style.transition = transition;
@@ -54,12 +84,9 @@ export const animateCustom = async (
       }
     });
 
-    setTimeout(
-      () => {
-        resolve();
-      },
-      duration + (options?.delay || 0)
-    );
+    setTimeout(() => {
+      resolve();
+    }, durationMs + delayMs);
   });
 };
 

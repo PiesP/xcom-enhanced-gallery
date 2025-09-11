@@ -77,7 +77,7 @@
   padding: 8px;
   text-decoration: none;
   border-radius: var(--xeg-radius-sm);
-  z-index: 100000;
+  z-index: var(--xeg-z-toast);
 }
 
 .xeg-skip-link:focus {
@@ -104,7 +104,7 @@
 
 /* 로딩 상태 접근성 */
 .xeg-loading[aria-hidden='false'] {
-  speak: never;
+  position: relative;
 }
 
 .xeg-loading::before {
