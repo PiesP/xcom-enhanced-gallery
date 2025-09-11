@@ -214,6 +214,14 @@ Gallery
 - 하드코딩 숫자(ms/s)나 키워드(ease, ease-in, ease-in-out 등) 직접 사용 금지.
 - 서비스에서 주입하는 CSS 역시 동일 토큰을 사용합니다.
 
+주입 CSS 추가 규칙:
+- `transition: all` 금지 → 성능과 예측 가능성을 위해 명시적 프로퍼티만 나열합니다.
+- `@media (prefers-reduced-motion: reduce)`에서 전환/애니메이션을 비활성화합니다.
+- 테스트로 가드됩니다:
+  - `test/unit/styles/injected-css.token-policy.red.test.ts`
+  - `test/unit/styles/injected-css.reduced-motion.guard.test.ts`
+  - `test/unit/styles/injected-css.no-transition-all.guard.test.ts`
+
 구현 가이드(animateCustom 예시):
 
 ```ts
@@ -245,6 +253,14 @@ animateCustom(el, keyframes, {
 /* 컴포넌트 애니메이션 정책 */
 /* `src/assets/styles/components/animations.css` 내 `.xeg-animate-*`는
   `var(--xeg-duration-*)`와 `var(--xeg-ease-*)`만 사용합니다. */
+
+/* 주입 CSS 예시 (요약) */
+/* transition: all 대신 명시적 프로퍼티 사용 + reduced-motion 대응 */
+.xcom-fade-in { transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard); }
+.xcom-slide-in { transition: transform var(--xeg-duration-normal) var(--xeg-ease-decelerate), opacity var(--xeg-duration-normal) var(--xeg-ease-decelerate); }
+@media (prefers-reduced-motion: reduce) {
+  .xcom-fade-in, .xcom-slide-in { transition: none; }
+}
 ```
 
 ### 갤러리 프리로드 규칙 (Performance)
@@ -288,6 +304,30 @@ animateCustom(el, keyframes, {
 ```
 
 컴포넌트 CSS에서는 semantic 또는 위 alias만 사용하세요. 인라인 스타일/주입 CSS도 동일 규칙이 적용됩니다.
+
+### Spacing 스케일 정책
+
+- px를 TS/TSX 컴포넌트의 인라인 스타일에서 직접 사용하지 않습니다. 여백/간격은 CSS Module 클래스와 디자인 토큰으로만 정의합니다.
+- 권장 토큰(예): `var(--xeg-space-2)`, `var(--xeg-space-4)`, `var(--xeg-space-8)`, `var(--xeg-space-12)`, `var(--xeg-space-16)`, `var(--xeg-space-24)`, `var(--xeg-space-32)`
+- 컴포넌트에서는 margin/padding/gap을 CSS로 이동하고, JS 문자열 기반 스타일 주입은 지양합니다(불가피할 경우 유틸리티 모듈로 한정).
+- 자동 가드: `test/unit/styles/spacing-scale.guard.test.ts`가 TSX의 인라인 style에서 px 사용을 차단합니다.
+
+예시(권장):
+
+```css
+.itemsContainer {
+  gap: var(--xeg-space-8);
+  padding: var(--xeg-space-16);
+}
+```
+
+```tsx
+// 금지
+<div style={{ padding: '16px', gap: '8px' }} />
+
+// 권장
+<div className={styles.itemsContainer} />
+```
 
 ### 외부 의존성 접근 (Vendor Getters)
 

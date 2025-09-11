@@ -29,6 +29,37 @@
   - 가드 테스트 추가: `test/unit/shared/utils/animations.tokens.test.ts`
   - 변경 파일: `src/shared/utils/animations.ts`
 
+- 2025-09-11: 인라인 스타일 제거 —
+  GalleryContainer/VerticalGalleryView/VerticalImageItem (완료)
+  - GalleryContainer 오버레이 인라인 스타일 제거,
+    `xeg-gallery-overlay xeg-gallery-container gallery-container` 클래스 적용
+  - VerticalGalleryView 아이템 컨테이너 인라인 스타일 제거, CSS 모듈로 이전
+  - VerticalImageItem의 opacity/transition 인라인 스타일 제거,
+    `.loading/.loaded` 상태 클래스와 토큰화된 트랜지션 적용
+  - 가드 테스트 추가 및 GREEN:
+    - `test/unit/shared/components/isolation/GalleryContainer.inline-style.tokens.test.tsx`
+    - `test/unit/features/gallery/components/VerticalGalleryView.inline-style.policy.test.ts`
+    - `test/unit/features/gallery/components/VerticalImageItem.inline-style.policy.test.ts`
+  - CSS: `VerticalImageItem.module.css`에 토큰화된 opacity 전환 추가
+
+- 2025-09-11: Spacing 스케일 가드(1차) 도입 (완료)
+  - TSX 컴포넌트의 인라인 style에서 px 사용을 차단하는 가드 테스트 추가
+  - 파일: `test/unit/styles/spacing-scale.guard.test.ts`
+  - CODING_GUIDELINES에 스페이싱 정책 및 예시 추가
+
+- 2025-09-11: 주입 CSS 표준화(완료)
+  - AnimationService의 주입 CSS를 디자인 토큰 기반으로 정규화하고 접근성 정책
+    적용
+    - transition: all 사용 금지 → 명시적 프로퍼티 목록으로 전환(transform,
+      opacity)
+    - reduced motion 지원: `@media (prefers-reduced-motion: reduce)`에서
+      `transition: none`
+  - 가드 테스트 추가(GREEN):
+    - `test/unit/styles/injected-css.token-policy.red.test.ts`
+    - `test/unit/styles/injected-css.reduced-motion.guard.test.ts`
+    - `test/unit/styles/injected-css.no-transition-all.guard.test.ts`
+  - 변경 파일: `src/shared/services/AnimationService.ts`
+
 - 2025-09-11: 계획 문서 정리 및 이관 완료
   - 완료된 Phase(부트스트랩/의존성 getter/토큰·애니메이션/다운로드 UX v1/접근성
     스모크)를 본 완료 로그로 최종 이관
