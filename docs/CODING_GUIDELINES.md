@@ -625,4 +625,6 @@ describe('GalleryItem', () => {
   - 재시도: 기본 3회(총 4회 시도), 옵션 `maxRetries`
   - 타임아웃: 기본 10s, 옵션 `timeoutMs`
 - 실패 시 DOM 백업 추출을 자동 시도하며, 가능한 미디어만 반환한다.
-- URL 정규화: 이미지 URL은 항상 `name=orig`를 강제한다(png/webp/jpg 유지).
+- URL 정규화: 트위터 미디어 도메인(`pbs.twimg.com/media/...`)에 한해 이미지
+  URL은 항상 `name=orig`를 강제한다(png/webp/jpg 유지). 그 외 도메인/상대/data:
+  URL은 원본을 보존한다.

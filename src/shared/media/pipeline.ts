@@ -3,8 +3,13 @@
  * @description 단계별 미디어 처리 함수들
  */
 
-import type { MediaDescriptor, RawMediaCandidate, Result } from './types';
+import type { MediaDescriptor, MediaVariant, RawMediaCandidate, Result } from './types';
 import { logger } from '@shared/logging';
+import {
+  extractOriginalImageUrl,
+  getHighQualityMediaUrl,
+  isValidMediaUrl as isTwitterMediaUrl,
+} from '@shared/utils/media/media-url.util';
 
 /**
  * 1단계: DOM에서 미디어 요소 수집
@@ -91,8 +96,14 @@ export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[]
 
   for (const candidate of rawCandidates) {
     try {
-      const id = generateMediaId(candidate.url);
-      const mediaType = normalizeMediaType(candidate.type);
+      const originalUrl = candidate.url.trim();
+      // URL 기반 GIF 유사 패턴 감지: tweet_video_thumb, ext_tw_video_thumb, video_thumb
+      const gifLike = isGifLikeUrl(originalUrl);
+
+      // 기본 타입을 정규화하되, GIF 유사 패턴이면 우선 gif로 분류
+      const mediaType = gifLike
+        ? ('gif' as MediaDescriptor['type'])
+        : normalizeMediaType(candidate.type);
 
       if (!mediaType) {
         continue; // 지원하지 않는 타입
@@ -102,10 +113,52 @@ export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[]
       const height = parseNumber(candidate.attributes.height);
       const alt = candidate.attributes.alt;
 
+      // 이미지인 경우: 트위터 CDN(media/video_thumb)만 정규화(canonical) 및 variants 생성
+      if (mediaType === 'image') {
+        const isTwitter = isTwitterMediaUrl(originalUrl);
+        const canonicalUrl = isTwitter ? extractOriginalImageUrl(originalUrl) : originalUrl;
+        const id = generateMediaId(canonicalUrl);
+
+        const descriptor: MediaDescriptor = {
+          id,
+          type: mediaType,
+          url: canonicalUrl,
+          ...(width !== undefined && { width }),
+          ...(height !== undefined && { height }),
+          ...(alt && { alt }),
+          ...(isTwitter && {
+            variants: [
+              {
+                quality: 'small',
+                url: getHighQualityMediaUrl(canonicalUrl, 'small'),
+                ...(width !== undefined && { width }),
+                ...(height !== undefined && { height }),
+              },
+              {
+                quality: 'large',
+                url: getHighQualityMediaUrl(canonicalUrl, 'large'),
+                ...(width !== undefined && { width }),
+                ...(height !== undefined && { height }),
+              },
+              {
+                quality: 'orig',
+                url: extractOriginalImageUrl(canonicalUrl),
+                ...(width !== undefined && { width }),
+                ...(height !== undefined && { height }),
+              },
+            ] as ReadonlyArray<MediaVariant>,
+          }),
+        };
+        descriptors.push(descriptor);
+        continue;
+      }
+
+      // 이미지가 아닌 경우는 원본 URL 기반으로 ID 생성 및 그대로 사용
+      const id = generateMediaId(originalUrl);
       const descriptor: MediaDescriptor = {
         id,
         type: mediaType,
-        url: candidate.url,
+        url: originalUrl,
         ...(width !== undefined && { width }),
         ...(height !== undefined && { height }),
         ...(alt && { alt }),
@@ -198,5 +251,27 @@ function isValidUrl(url: string): boolean {
     return true;
   } catch {
     return false;
+  }
+}
+
+// (Note) 간단한 트위터 이미지 URL 판별 유틸은 현재 미사용
+
+// GIF 유사 트위터 썸네일 URL인지 확인
+function isGifLikeUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const path = u.pathname;
+    return (
+      path.includes('/tweet_video_thumb/') ||
+      path.includes('/ext_tw_video_thumb/') ||
+      path.includes('/video_thumb/')
+    );
+  } catch {
+    // fallback 문자열 검사
+    return (
+      url.includes('/tweet_video_thumb/') ||
+      url.includes('/ext_tw_video_thumb/') ||
+      url.includes('/video_thumb/')
+    );
   }
 }

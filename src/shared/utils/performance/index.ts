@@ -5,6 +5,7 @@
 
 export * from './performance-utils';
 export * from './preload';
+export * from './idleScheduler';
 
 // Signal Optimization
 export { createSelector, useAsyncSelector } from './signalOptimization';

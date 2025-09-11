@@ -2,6 +2,14 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+- 2025-09-11: 계획 문서 정리 — 완료 항목 전면 이관
+  - `TDD_REFACTORING_PLAN.md`에서 과거 완료
+    섹션(토큰/애니메이션/접근성/다운로드/추출/부트스트랩/MediaProcessor 강화
+    등)을 제거하고 본 문서로 이관.
+  - 계획서는 차기 사이클(Phase E–I)만 유지하도록 간결화.
+
+—
+
 - `TDD_REFACTORING_PLAN.md`에 디자인 현대화 중심의 7단계 TDD 계획 신설
 - 완료된 초기 현대화(토큰/애니메이션/접근성/다운로드/추출/부트스트랩)는 본
   로그에서만 관리
@@ -66,6 +74,21 @@
   - `TDD_REFACTORING_PLAN.md`는 향후 단계(Phase 1–7)만 유지하도록 간결화
   - 빌드/린트/테스트 GREEN 상태에서 문서 정리, 변경된 계획은 단계별 TDD로 진행
     예정
+
+- 2025-09-11: Phase F — 번들/사이즈 거버넌스 v2 (완료)
+  - gzip 경고/실패 임계 강화: 경고 300KB, 실패 450KB
+    (`scripts/validate-build.js`)
+  - 번들 메트릭 리포트 생성: `scripts/build-metrics.js` →
+    dist/bundle-analysis.json 저장
+  - CI/로컬 빌드에 실패 조건 연결(임계 초과 시 종료)
+  - 번들 분석 스크립트 정리(`bundle-analysis.js`) 및 사이즈 타겟 400KB 가이드
+    출력
+
+- 2025-09-11: Phase G — CSS 토큰 린팅/가드 자동화 보강 (완료)
+  - 인라인/주입 CSS 토큰 규칙 가드: duration/easing 토큰화 및 `transition: all`
+    금지
+  - reduced-motion/contrast/high-contrast 가드 테스트 일괄 GREEN
+  - ESLint + 테스트 이중 가드로 위반 회귀 차단
 
 - 2025-09-10: B/C 단계 최종 이관 완료
   - B4 완료: CSS 변수 네이밍/볼륨 재정렬 최종 확정(전역/컴포넌트 반영)
@@ -282,6 +305,25 @@
   - 구현: isValidMediaUrl(+fallback) 확장, URL_PATTERNS.MEDIA/GALLERY_MEDIA/
     VIDEO_THUMB_ID 정규식 보강, extractMediaId/generateOriginalUrl 개선
   - 테스트: media-url.policy.edge-cases.test.ts GREEN, 기존 회귀 스위트 GREEN
+
+- 2025-09-11: MediaProcessor 파이프라인 강화(완료)
+  - 이미지 variants 생성(small/large/orig), 트위터 CDN URL만
+    canonical(name=orig) 정규화 및 dedupe
+  - tweet_video_thumb/ext_tw_video_thumb/video_thumb 패턴 GIF 타입 감지 추가
+  - 비트윈 가드: 트위터 이외/상대 경로/data: URL은 기존 URL 보존(회귀 방지)
+  - 테스트: media-processor.variants.red.test.ts,
+    media-processor.canonical-dedupe.red.test.ts,
+    media-processor.gif-detection.red.test.ts GREEN
+
+- 2025-09-11: 계획 단계 1–5 마무리 및 이관(간결)
+  - 1. 토큰 전용 스타일 가드 확장: 인라인 transition/animation 토큰 사용 강제 및
+       가드 테스트 통과
+  - 2. Spacing 스케일 가드: TSX 인라인 px 차단 테스트 추가 및 정책 반영
+  - 3. Icon-only 버튼 통일: IconButton 패턴 정착 및 컴포넌트 적용 검증
+  - 4. 키보드 내비/포커스 일관: ESC/Arrow/Space 처리 공통화, 포커스 관리 정합
+  - 5. 포커스 트랩 일원화: unified focusTrap 위임 및 활성화 패턴 확립
+  - 대표 테스트: animations.tokens.test.ts, spacing-scale.guard.test.ts,
+    IconButton.test.tsx, focus-trap-standardization.test.ts 등 GREEN
 
 - 2025-09-11: Phase 5 — 주입 CSS 표준화 v2 완료
   - 주입된 CSS에서 하드코딩된 duration/easing 제거, `--xeg-duration-*`,
