@@ -3,7 +3,9 @@
 > 완료된 작업만 간단히 기록합니다.
 
 2025-09-11: 계획 감사 — 활성 Phase 없음 (초기 현대화 Phase 1–4 + 옵션 전부 완료,
-신규 작업은 백로그에서 선정 예정)
+신규 작업은 백로그에서 선정 예정) 2025-09-11: 2차 사이클 정의 — 계획서에 Phase
+1–7 (Result/Error v2, Telemetry, Progressive Loader, I18N 확장, A11y 강화,
+Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
 
 Phase 요약 (완료):
 
