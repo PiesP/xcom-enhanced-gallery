@@ -6,8 +6,8 @@ describe('MediaService.prefetchNextMedia with idle scheduling', () => {
 
   beforeEach(() => {
     // mock fetch to resolve with a small blob
-    global.fetch = vi.fn(async () =>
-      new Response(new Blob([new Uint8Array([1, 2, 3])]))
+    global.fetch = vi.fn(
+      async () => new Response(new Blob([new Uint8Array([1, 2, 3])]))
     ) as unknown as typeof fetch;
   });
 
@@ -27,7 +27,10 @@ describe('MediaService.prefetchNextMedia with idle scheduling', () => {
 
   it('schedules prefetch tasks during idle when schedule="idle"', async () => {
     const spy = vi.spyOn<any, any>(mediaService as any, 'prefetchSingle').mockResolvedValue();
-    await mediaService.prefetchNextMedia(['a', 'b', 'c'], 0, { prefetchRange: 1, schedule: 'idle' });
+    await mediaService.prefetchNextMedia(['a', 'b', 'c'], 0, {
+      prefetchRange: 1,
+      schedule: 'idle',
+    });
     // Allow microtasks and timers to flush
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(spy).toHaveBeenCalled();

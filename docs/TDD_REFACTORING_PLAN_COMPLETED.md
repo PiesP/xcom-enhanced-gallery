@@ -90,6 +90,13 @@
   - reduced-motion/contrast/high-contrast 가드 테스트 일괄 GREEN
   - ESLint + 테스트 이중 가드로 위반 회귀 차단
 
+- 2025-09-11: Phase H — 갤러리 프리로드/성능 v2 (완료)
+  - 프리페치 경로에 유휴(Idle) 스케줄 옵션 도입: `schedule: 'idle'` (기본값은 immediate)
+  - 안전 폴백: requestIdleCallback 미지원 시 setTimeout(0)
+  - 경계 유틸 보강: `computePreloadIndices` 경계/클램프 테스트 정리(GREEN)
+  - 가이드라인 갱신: 프리로드/스케줄 옵션 문서화
+  - 테스트: `media-prefetch.idle-schedule.test.ts`, `gallery-preload.util.test.ts`
+
 - 2025-09-10: B/C 단계 최종 이관 완료
   - B4 완료: CSS 변수 네이밍/볼륨 재정렬 최종 확정(전역/컴포넌트 반영)
   - C1 완료: fitModeGroup 계약 및 접근성 속성 표준화
