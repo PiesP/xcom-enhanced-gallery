@@ -17,6 +17,7 @@ import { generateMediaFilename } from '@shared/media';
 import { toastManager } from './UnifiedToastManager';
 import { languageService } from './LanguageService';
 import type { BaseResultStatus } from '@shared/types/result.types';
+import { ErrorCode } from '@shared/types/result.types';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'complete';
@@ -147,7 +148,8 @@ export class BulkDownloadService {
         filesProcessed: 0,
         filesSuccessful: 0,
         error: 'No files to download',
-      };
+        code: ErrorCode.EMPTY_INPUT,
+      } as DownloadResult & { code: ErrorCode };
     }
 
     try {
@@ -188,13 +190,18 @@ export class BulkDownloadService {
           success: result.success,
           filename: result.filename,
         });
-        const singleOutcome: DownloadResult = {
+        const singleOutcome: DownloadResult & { code?: ErrorCode } = {
           success: result.success,
           status: result.status,
           filesProcessed: 1,
           filesSuccessful: result.success ? 1 : 0,
           ...(result.error && { error: result.error }),
           ...(result.filename && { filename: result.filename }),
+          ...(result.success
+            ? { code: ErrorCode.NONE }
+            : {
+                code: result.status === 'cancelled' ? ErrorCode.CANCELLED : ErrorCode.UNKNOWN,
+              }),
         };
 
         // Phase I: 오류 복구 UX - 토스트 알림 (단일 파일)
@@ -379,13 +386,22 @@ export class BulkDownloadService {
           : failures.length === mediaItems.length
             ? 'error'
             : 'partial';
-      const result: DownloadResult = {
+      const code: ErrorCode =
+        status === 'success'
+          ? ErrorCode.NONE
+          : status === 'partial'
+            ? ErrorCode.PARTIAL_FAILED
+            : failures.length === mediaItems.length
+              ? ErrorCode.ALL_FAILED
+              : ErrorCode.UNKNOWN;
+      const result: DownloadResult & { code: ErrorCode } = {
         success: status === 'success' || status === 'partial', // 부분 실패도 success=true 유지
         status,
         filesProcessed: mediaItems.length,
         filesSuccessful: successful,
         filename: zipFilename,
         ...(failures.length > 0 ? { failures } : {}),
+        code,
       };
 
       // Phase I: 오류 복구 UX - 부분 실패 경고 토스트
@@ -433,7 +449,13 @@ export class BulkDownloadService {
         filesProcessed: mediaItems.length,
         filesSuccessful: 0,
         error: message,
-      };
+        code:
+          status === 'cancelled'
+            ? ErrorCode.CANCELLED
+            : message.toLowerCase().includes('all downloads failed')
+              ? ErrorCode.ALL_FAILED
+              : ErrorCode.UNKNOWN,
+      } as DownloadResult & { code: ErrorCode };
     }
   }
 

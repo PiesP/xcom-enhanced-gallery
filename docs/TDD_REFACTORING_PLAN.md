@@ -38,24 +38,7 @@
 
 ---
 
-### Phase 1 — Result/Error Model Unification v2
-
-목표: 모든 서비스 반환을 `Result<T>` 확장 구조로 통일:
-`{ status, data?, error?, code?, cause?, meta? }` + 중앙 `ErrorCode` enum. 대안:
-단순 message 기반 유지 → 재시도/토스트 분기 중복 증가 (미채택). RED 테스트
-(신규):
-
-- `test/unit/core/result/result-error-model.red.test.ts`
-- `test/unit/shared/services/bulk-download.error-codes.red.test.ts`
-- `test/unit/shared/services/media-service.error-codes.red.test.ts` 구현 스텝:
-
-1. RED: 기존 status만 있는 서비스 호출에서 code 필드 누락 검출
-2. 최소 enum/타입 도입 후 GREEN
-3. 재시도/부분 실패/취소 분기에서 code 스위치 사용하도록 리팩터 DoD:
-
-- 모든 서비스 공용 타입 import 동일 경로 (`@shared/types/result` 가정)
-- error.code 존재율 100%(error 있는 경우)
-- 다운로드/미디어 추출 재시도 로직이 code 스위치 기반
+<!-- Phase 1 (Result/Error Model Unification v2) : 완료되어 활성 계획에서 제거 -->
 
 ### Phase 2 — MediaProcessor Telemetry & Stage Metrics
 

@@ -7,6 +7,16 @@
 1–7 (Result/Error v2, Telemetry, Progressive Loader, I18N 확장, A11y 강화,
 Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
 
+2025-09-11: Phase 1 (2차) — Result/Error Model Unification v2 완료
+
+- RED 테스트: result-error-model.red / bulk-download.error-codes.red
+  (MediaService 예정 테스트는 후속 Phase로 분리)
+- 구현: ErrorCode enum + Result<T> 확장(code/cause/meta) + BulkDownloadService
+  코드 매핑(EMPTY_INPUT/PARTIAL_FAILED/ALL_FAILED/CANCELLED)
+- GREEN: 신규 테스트 통과, 기존 스위트 회귀 없음
+- 후속: MediaService 반환 구조 코드 매핑 & 재시도 UX code 스위치 업데이터 Phase
+  2/3에서 처리 예정
+
 Phase 요약 (완료):
 
 - Phase 1: 토큰 alias 축소 & 스타일 가드 강화 — semantic 직접 사용 전환
