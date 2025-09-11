@@ -379,6 +379,8 @@ function BaseVerticalImageItemCore({
               ref={imgRef}
               src={media.url}
               alt={cleanFilename(media.filename) || `Image ${index + 1}`}
+              loading='lazy'
+              decoding='async'
               className={imageClasses}
               onLoad={handleImageLoad}
               onError={handleImageError}

@@ -6,7 +6,11 @@
 
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import type { MediaItemForFilename } from '@shared/types/media.types';
-import { logger } from '@shared/logging/logger';
+import {
+  logger,
+  createCorrelationId,
+  createScopedLoggerWithCorrelation,
+} from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
@@ -124,6 +128,8 @@ export class BulkDownloadService {
     mediaItems: Array<MediaInfo | MediaItem> | readonly (MediaInfo | MediaItem)[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
+    const correlationId = createCorrelationId();
+    const slog = createScopedLoggerWithCorrelation('BulkDownload', correlationId);
     const items = Array.from(mediaItems);
 
     if (items.length === 0) {
@@ -137,9 +143,11 @@ export class BulkDownloadService {
 
     try {
       this.currentAbortController = new AbortController();
+      slog.info('Download session started', { count: items.length });
       if (options.signal) {
         options.signal.addEventListener('abort', () => {
           this.currentAbortController?.abort();
+          slog.warn('Abort signal received');
         });
       }
 
@@ -157,6 +165,10 @@ export class BulkDownloadService {
 
         const result = await this.downloadSingle(firstItem, {
           signal: this.currentAbortController.signal,
+        });
+        slog.info('Single download finished', {
+          success: result.success,
+          filename: result.filename,
         });
         return {
           success: result.success,
@@ -182,6 +194,8 @@ export class BulkDownloadService {
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
     try {
+      const correlationId = createCorrelationId();
+      const slog = createScopedLoggerWithCorrelation('BulkDownload', correlationId);
       const { getFflate } = await import('@shared/external/vendors');
       const fflate = getFflate();
       const download = getNativeDownload();
@@ -269,7 +283,10 @@ export class BulkDownloadService {
             phase: 'downloading',
             current: Math.min(processed + 1, mediaItems.length),
             total: mediaItems.length,
-            percentage: Math.round(((processed + 1) / mediaItems.length) * 100),
+            percentage: Math.min(
+              100,
+              Math.max(0, Math.round(((processed + 1) / mediaItems.length) * 100))
+            ),
             filename: media.filename,
           });
 
@@ -280,10 +297,11 @@ export class BulkDownloadService {
             const filename = ensureUniqueFilename(desiredName);
             files[filename] = data;
             successful++;
+            slog.debug('File added to ZIP', { filename });
           } catch (error) {
             if (isAborted()) throw new Error('Download cancelled by user');
             const errMsg = getErrorMessage(error);
-            logger.warn(`Failed to download ${media.filename}: ${errMsg}`);
+            slog.warn('Failed to download', { filename: media.filename, error: errMsg });
             failures.push({ url: media.url, error: errMsg });
           } finally {
             processed++;
@@ -316,9 +334,7 @@ export class BulkDownloadService {
         percentage: 100,
       });
 
-      logger.debug(
-        `ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`
-      );
+      slog.info('ZIP download complete', { zipFilename, successful, total: mediaItems.length });
 
       return {
         success: true,

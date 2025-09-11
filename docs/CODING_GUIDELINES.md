@@ -209,7 +209,7 @@ Gallery
 - 서비스에서 주입하는 CSS 역시 동일 토큰을 사용
 
 추가 규칙:
-- `--xeg-easing-*` vs `--xeg-ease-*` 혼용 금지. 내부 표준은 `--xeg-easing-*`, 소비자(alias) 레이어에서는 `--xeg-ease-*` 허용(중앙 매핑 존재).
+- 이징 토큰 네이밍: 내부 표준은 `--xeg-easing-*`, 소비자(alias) 레이어는 `--xeg-ease-*`만 사용(혼용 금지; 중앙 매핑을 통해 연결됨).
 - CSS Modules의 `composes` 사용 금지(도구 호환성 문제). 공통 스타일은 유틸 클래스로 분리하거나 명시적으로 중복 선언합니다.
 
 권장 예시:
@@ -267,6 +267,17 @@ Gallery
 ```
 
 컴포넌트 CSS에서는 semantic 또는 위 alias만 사용하세요. 인라인 스타일/주입 CSS도 동일 규칙이 적용됩니다.
+
+### 외부 의존성 접근 (Vendor Getters)
+
+- preact, @preact/signals, fflate, Userscript API(GM_*) 등 외부 의존성은 반드시 전용 getter를 통해 접근합니다.
+- 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야 합니다.
+- 예: `import { getPreact } from '@shared/external/vendors'; const { useEffect } = getPreact();`
+
+### PC 전용 입력 정책 강화
+
+- 애플리케이션은 PC 전용 이벤트만 사용합니다: click/keydown/wheel/contextmenu
+- 터치/포인터 계열 이벤트(onTouchStart/PointerDown 등)는 금지합니다. 테스트에서 RED로 검출됩니다.
 
 ## 🏷️ 네이밍 규칙
 
@@ -360,6 +371,17 @@ async function loadImage(url: string): Promise<Result<HTMLImageElement>> {
   }
 }
 ```
+
+### 로깅 상관관계 ID(correlationId)
+
+- 체인 단위 추적이 필요한 작업(예: 대량 다운로드)은 `createCorrelationId()`로
+  ID를 생성하고, `createScopedLoggerWithCorrelation(scope, id)`를 사용합니다.
+- 로그 출력 예: `[XEG] [BulkDownload] [DEBUG] [cid:abcd1234] message`
+
+### 이미지 디코딩/로딩 속성
+
+- 성능 기본값으로 이미지에는 `loading="lazy"`, `decoding="async"`를 부여합니다.
+- 컴포넌트와 테스트 모두 이 속성을 가정합니다.
 
 ## 🧩 컴포넌트 패턴
 

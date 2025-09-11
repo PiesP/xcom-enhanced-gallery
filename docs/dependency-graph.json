@@ -3255,6 +3255,7 @@
       "source": "src/shared/dom/DOMCache.ts",
       "dependencies": [],
       "dependents": [
+        "src/shared/dom/SelectorRegistry.ts",
         "src/shared/dom/index.ts"
       ],
       "orphan": false,
@@ -3263,6 +3264,33 @@
     {
       "source": "src/shared/dom/DOMEventManager.ts",
       "dependencies": [],
+      "dependents": [
+        "src/shared/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/dom/SelectorRegistry.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./DOMCache",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/dom/DOMCache.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/dom/index.ts"
       ],
@@ -3299,6 +3327,23 @@
             "export"
           ],
           "resolved": "src/shared/dom/DOMEventManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SelectorRegistry",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/dom/SelectorRegistry.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7712,8 +7757,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 227,
-    "totalDependenciesCruised": 319,
+    "totalCruised": 228,
+    "totalDependenciesCruised": 321,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

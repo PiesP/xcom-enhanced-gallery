@@ -249,8 +249,14 @@ export function isValidMediaUrl(url: string): boolean {
 
     // 도메인별 경로 검증
     if (urlObj.hostname === 'pbs.twimg.com') {
-      // pbs.twimg.com은 /media/ 경로를 포함해야 하고, profile_images는 제외
-      return urlObj.pathname.includes('/media/') && !urlObj.pathname.includes('/profile_images/');
+      // pbs.twimg.com은 /media/ 또는 video thumbnail 경로를 포함해야 하고, profile_images는 제외
+      const path = urlObj.pathname;
+      const isMedia = path.includes('/media/');
+      const isVideoThumb =
+        /\/ext_tw_video_thumb\//.test(path) ||
+        /\/tweet_video_thumb\//.test(path) ||
+        /\/video_thumb\//.test(path);
+      return (isMedia || isVideoThumb) && !path.includes('/profile_images/');
     }
 
     if (urlObj.hostname === 'video.twimg.com') {
@@ -292,7 +298,12 @@ function isValidMediaUrlFallback(url: string): boolean {
 
   // 트위터 미디어 도메인 정확한 검사
   if (hostname === 'pbs.twimg.com') {
-    return url.includes('/media/') && !url.includes('/profile_images/');
+    const isMedia = url.includes('/media/');
+    const isVideoThumb =
+      url.includes('/ext_tw_video_thumb/') ||
+      url.includes('/tweet_video_thumb/') ||
+      url.includes('/video_thumb/');
+    return (isMedia || isVideoThumb) && !url.includes('/profile_images/');
   }
 
   if (hostname === 'video.twimg.com') {

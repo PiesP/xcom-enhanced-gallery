@@ -6,6 +6,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { extractOriginalImageUrl, isValidMediaUrl } from '@shared/utils/media/media-url.util';
+import { createSelectorRegistry } from '@shared/dom';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
 import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
 
@@ -14,6 +15,7 @@ import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types
  * 기본적인 DOM 파싱 수행
  */
 export class DOMDirectExtractor {
+  private readonly selectors = createSelectorRegistry();
   /**
    * DOM에서 직접 미디어 추출
    */
@@ -58,15 +60,21 @@ export class DOMDirectExtractor {
    * 미디어 컨테이너 찾기 (단순화된 로직)
    */
   private findMediaContainer(element: HTMLElement): HTMLElement | null {
-    const selectors = ['[data-testid*="tweet"]', '[role="article"]', '.tweet', 'article'];
+    // 우선 가장 가까운 상위 트윗 컨테이너를 우선 선택
+    const closestTweet = this.selectors.findClosest(
+      [
+        'article[data-testid="tweet"]',
+        'article[role="article"]',
+        'div[data-testid="tweet"]',
+        'article',
+      ],
+      element
+    );
+    if (closestTweet) return closestTweet as HTMLElement;
 
-    for (const selector of selectors) {
-      const container = element.closest(selector);
-      if (container) return container as HTMLElement;
-    }
-
-    // 컨테이너를 찾지 못하면 요소 자체 반환
-    return element;
+    // fallback: 기존 우선순위로 탐색
+    const first = this.selectors.findTweetContainer(element) || this.selectors.findTweetContainer();
+    return (first as HTMLElement) || element;
   }
 
   /**

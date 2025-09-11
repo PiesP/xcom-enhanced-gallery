@@ -58,6 +58,8 @@ interface LoggerConfig {
   readonly includeTimestamp: boolean;
   /** Whether to include stack traces for errors */
   readonly includeStackTrace: boolean;
+  /** Optional correlation id for structured tracing */
+  readonly correlationId?: string;
 }
 
 /**
@@ -132,8 +134,9 @@ function formatMessage(
   const prefix = config.prefix;
   const timestamp = config.includeTimestamp ? `[${new Date().toISOString()}]` : '';
   const levelTag = `[${level.toUpperCase()}]`;
+  const cid = config.correlationId ? `[cid:${String(config.correlationId)}]` : '';
 
-  const prefixParts = [prefix, timestamp, levelTag].filter(Boolean);
+  const prefixParts = [prefix, timestamp, levelTag, cid].filter(Boolean);
   return [prefixParts.join(' '), ...args];
 }
 
@@ -250,6 +253,43 @@ export function createScopedLogger(scope: string, config: Partial<LoggerConfig> 
   return createLogger({
     ...config,
     prefix: `${DEFAULT_CONFIG.prefix} [${scope}]`,
+  });
+}
+
+/**
+ * Generates a short correlation id for tracing a request/task chain.
+ * Uses crypto.getRandomValues when available, falls back to Math.random.
+ */
+export function createCorrelationId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+      const bytes = new Uint8Array(8);
+      crypto.getRandomValues(bytes);
+      // Convert to base36 for compact readability
+      const num = Array.from(bytes).reduce((acc, b) => (acc << 8) | b, 0) >>> 0;
+      return num.toString(36);
+    }
+  } catch {
+    // ignore
+  }
+  // Fallback
+  return Math.random().toString(36).slice(2, 10);
+}
+
+/**
+ * Creates a scoped logger that embeds a correlation id into every log line.
+ *
+ * Example output: [XEG] [BulkDownload] [DEBUG] [cid:abcd1234] message
+ */
+export function createScopedLoggerWithCorrelation(
+  scope: string,
+  correlationId: string,
+  config: Partial<LoggerConfig> = {}
+): Logger {
+  return createLogger({
+    ...config,
+    prefix: `${DEFAULT_CONFIG.prefix} [${scope}]`,
+    correlationId,
   });
 }
 

@@ -70,17 +70,18 @@ export const MEDIA = {
 export const URL_PATTERNS = {
   /** 미디어 URL 패턴 */
   MEDIA:
-    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=(?:[a-z]+|\d{2,4}x\d{2,4})|[\w-]+_video_thumb\/\d+\/img\/[\w-]+(?:\?.*)?)/,
+    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=(?:[a-z]+|\d{2,4}x\d{2,4})|(?:ext_tw_video_thumb|video_thumb)\/\d+(?:\/pu)?\/img\/[\w-]+(?:\?.*)?|tweet_video_thumb\/[\w-]+(?:\?.*)?)/,
 
   /** 갤러리용 미디어 패턴 */
   GALLERY_MEDIA:
-    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=orig|[\w-]+_video_thumb\/\d+\/img\/[\w-]+(?:\?.*)?)/,
+    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=orig|(?:ext_tw_video_thumb|video_thumb)\/\d+(?:\/pu)?\/img\/[\w-]+(?:\?.*)?|tweet_video_thumb\/[\w-]+(?:\?.*)?)/,
 
   /** 미디어 ID 추출 */
   MEDIA_ID: /\/media\/([\w-]+)\?/,
 
-  /** 동영상 썸네일 ID 추출 */
-  VIDEO_THUMB_ID: /\/([\w-]+_video_thumb)\/(\d+)\/img\/([\w-]+)/,
+  /** 동영상 썸네일 ID 추출 (ext_tw_video_thumb|video_thumb|tweet_video_thumb) */
+  VIDEO_THUMB_ID:
+    /\/(?:(?:ext_tw_video_thumb|video_thumb)\/\d+(?:\/pu)?\/img\/([\w-]+)(?:\.[a-z0-9]+)?|tweet_video_thumb\/([\w-]+)(?:\.[a-z0-9]+)?)(?=[?/]|$)/,
 
   /** 트윗 ID 추출 */
   TWEET_ID: /https?:\/\/(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
@@ -178,9 +179,9 @@ export const STABLE_SELECTORS = {
   /** 이미지 컨테이너 선택자 */
   IMAGE_CONTAINERS: [
     '[data-testid="tweetPhoto"]', // 트윗 이미지 - 최우선
-    'a[href*="/photo/"]', // 이미지 링크
-    'img[src*="pbs.twimg.com"]', // 트위터 CDN 이미지
+    'img[src*="pbs.twimg.com"]', // 트위터 CDN 이미지 (직접 이미지 우선)
     'img[src*="twimg.com"]', // 레거시 CDN 도메인
+    'a[href*="/photo/"]', // 이미지 링크 (이미지 다음 우선)
     '.media-container img', // 컨테이너 내 이미지
     '[role="img"]', // 접근성 기반 이미지
   ],
@@ -300,7 +301,11 @@ export function extractMediaId(url: string): string | null {
   if (match?.[1]) return match[1];
 
   const videoMatch = url.match(URL_PATTERNS.VIDEO_THUMB_ID);
-  if (videoMatch?.[3]) return videoMatch[3];
+  // For ext_tw_video_thumb|video_thumb, group 1 captures the media id (e.g., ZZYYXX)
+  // For tweet_video_thumb, group 2 captures the id
+  if (videoMatch) {
+    return videoMatch[1] || videoMatch[2] || null;
+  }
 
   return null;
 }

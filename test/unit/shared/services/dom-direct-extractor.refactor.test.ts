@@ -3,6 +3,10 @@
  * - 규칙 유틸 통합 및 중복 제거
  */
 
+/* @vitest-environment jsdom */
+/* eslint-env browser */
+/* global document */
+
 import { describe, it, expect } from 'vitest';
 
 describe('DOMDirectExtractor - 규칙 유틸 통합', () => {
@@ -73,6 +77,44 @@ describe('DOMDirectExtractor - 규칙 유틸 통합', () => {
       expect(result.mediaItems[0].url).toBe(
         'https://pbs.twimg.com/media/FooBar.png?format=png&name=orig'
       );
+    }
+  });
+
+  it('우선순위 선택자 기반으로 가장 가까운 상위 트윗 컨테이너(article[data-testid="tweet"])를 선택해야 한다', async () => {
+    const { DOMDirectExtractor } = await import(
+      '@shared/services/media-extraction/extractors/DOMDirectExtractor'
+    );
+
+    // 구조: article[data-testid="tweet"] (outer)
+    //   └─ div[data-testid="tweet"] (inner) ─ img (clicked)
+    //   └─ img (sibling in outer)
+    const outer = document.createElement('article');
+    outer.setAttribute('data-testid', 'tweet');
+
+    const inner = document.createElement('div');
+    inner.setAttribute('data-testid', 'tweet');
+
+    const clickedImg = document.createElement('img');
+    clickedImg.src = 'https://pbs.twimg.com/media/Inner.jpg?format=jpg&name=large';
+
+    const siblingImg = document.createElement('img');
+    siblingImg.src = 'https://pbs.twimg.com/media/Sibling.jpg?format=jpg&name=large';
+
+    inner.appendChild(clickedImg);
+    outer.appendChild(inner);
+    outer.appendChild(siblingImg);
+    document.body.appendChild(outer);
+
+    const extractor = new DOMDirectExtractor();
+    const result = await extractor.extract(clickedImg, {}, 'test-extract-closest');
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // 올바른 상위 컨테이너(article)를 선택했다면 두 이미지가 모두 수집되어야 함
+      expect(result.mediaItems.length).toBe(2);
+      const urls = result.mediaItems.map(m => m.url).sort();
+      expect(urls[0]).toContain('Inner');
+      expect(urls[1]).toContain('Sibling');
     }
   });
 });

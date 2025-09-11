@@ -17,6 +17,14 @@ export {
   invalidateCacheOnMutation,
 } from './DOMCache';
 
+// SelectorRegistry
+export {
+  SelectorRegistry,
+  createSelectorRegistry,
+  type ISelectorRegistry,
+  type QueryContainer,
+} from './SelectorRegistry';
+
 // Named exports for convenience
 export {
   addEventListener,

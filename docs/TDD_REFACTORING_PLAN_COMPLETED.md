@@ -2,6 +2,13 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+- 2025-09-11: 계획 문서 정리 및 이관 완료
+  - 완료된 Phase(부트스트랩/의존성 getter/토큰·애니메이션/다운로드 UX v1/접근성
+    스모크)를 본 완료 로그로 최종 이관
+  - `TDD_REFACTORING_PLAN.md`는 향후 단계(Phase 1–7)만 유지하도록 간결화
+  - 빌드/린트/테스트 GREEN 상태에서 문서 정리, 변경된 계획은 단계별 TDD로 진행
+    예정
+
 - 2025-09-10: B/C 단계 최종 이관 완료
   - B4 완료: CSS 변수 네이밍/볼륨 재정렬 최종 확정(전역/컴포넌트 반영)
   - C1 완료: fitModeGroup 계약 및 접근성 속성 표준화
@@ -87,6 +94,14 @@
   - PNG 등 원본 포맷 유지 + name=orig 승격 규칙 일원화
   - 회귀 테스트 추가: dom-direct-extractor.refactor.test.ts(GREEN)
 
+- 2025-09-11: Phase 2 — SelectorRegistry 기반 DOM 추상화 완료
+  - `src/shared/dom/SelectorRegistry.ts` 추가 및 배럴 export
+  - `STABLE_SELECTORS.IMAGE_CONTAINERS` 우선순위 조정(img 우선)
+  - `DOMDirectExtractor`가 가장 가까운 트윗 article 우선으로 컨테이너를
+    선택하도록 통합
+  - 테스트: `selector-registry.dom-matrix.test.ts` 및 DOMDirectExtractor 통합
+    케이스(GREEN)
+
 - 2025-09-10: 의존성 그래프 위생(Dependency-Cruiser 튜닝)
   - 테스트 전용/과도기 모듈을 orphan 예외로 화이트리스트 처리
   - 결과: dependency-cruiser 위반 0건(에러/경고 없음)
@@ -154,6 +169,16 @@
   - 관련 테스트: bulk-download.filename-policy.test.(ts|js),
     bulk-download.service.test.ts
 
+- 2025-09-11: Phase 6 — 로깅/진단 고도화(상관관계 ID) 완료
+  - `logger`에 correlationId 지원 추가(`createCorrelationId`,
+    `createScopedLoggerWithCorrelation`)
+  - BulkDownloadService에 세션 단위 correlationId 적용(시작/실패/완료 로그
+    구조화)
+
+- 2025-09-11: Phase 7 — 성능 미세 튜닝(이미지 디코드) 일부 완료
+  - 갤러리 아이템 이미지에 `loading="lazy"`, `decoding="async"` 속성 부여
+  - 관련 스모크 테스트 통과 및 가이드라인 준수 확인
+
 - 2025-09-11: Phase C — 미디어 추출/정규화 견고성 향상 (완료)
 - 2025-09-11: 성능 설정 반영 — cacheTTL 런타임 적용 완료
   - SettingsService 변경 구독으로 performance.cacheTTL → DOMCache.defaultTTL
@@ -174,19 +199,28 @@
 
 ---
 
-  - `computePreloadIndices` 유틸 추가 및 `VerticalGalleryView`에서
-    `forceVisible`에 반영
-  - 단위 테스트 추가: `test/unit/performance/gallery-preload.util.test.ts`
-    (GREEN)
-  - 설정 키: `gallery.preloadCount`(0–20), 기본값 3
+- `computePreloadIndices` 유틸 추가 및 `VerticalGalleryView`에서
+  `forceVisible`에 반영
+- 단위 테스트 추가: `test/unit/performance/gallery-preload.util.test.ts` (GREEN)
+- 설정 키: `gallery.preloadCount`(0–20), 기본값 3
 
 - 2025-09-11: 접근성 스모크 완료(경량 확인)
-  - focus-visible: `interaction-state-standards.test.ts` 등에서 토큰화된 포커스 링 적용 확인
-  - contrast: `phase-4-accessibility-contrast.test.ts`, `css-integration.test.ts`의 prefers-contrast: high 지원 확인
-  - reduced motion: `styles/animation-standards.test.ts` 및 관련 refactoring 테스트에서 prefers-reduced-motion 지원 확인
+  - focus-visible: `interaction-state-standards.test.ts` 등에서 토큰화된 포커스
+    링 적용 확인
+  - contrast: `phase-4-accessibility-contrast.test.ts`,
+    `css-integration.test.ts`의 prefers-contrast: high 지원 확인
+  - reduced motion: `styles/animation-standards.test.ts` 및 관련 refactoring
+    테스트에서 prefers-reduced-motion 지원 확인
   - 결과: 관련 스위트 GREEN, 추가 구현 필요 없음(정책과 토큰이 이미 반영됨)
 
 - name=orig 강제 규칙(png/webp/jpg) 정규화 및 DOMDirectExtractor 연동
 - API 재시도/타임아웃(기본 RETRY=3, TIMEOUT=10s) + 실패 시 DOM 폴백 확인
 - 테스트: test/unit/media/extraction.url-normalization.test.ts,
   test/unit/media/extraction.retry-timeout.test.ts (GREEN)
+
+- 2025-09-11: Phase 3 — 미디어 URL 정책 엔진 v2 완료
+  - 정책 보강: name=orig 단일화, 기존 format/확장자 보존, video_thumb(ext/tweet)
+    경로 지원 및 ID 추출 → 원본 URL 생성 지원
+  - 구현: isValidMediaUrl(+fallback) 확장, URL_PATTERNS.MEDIA/GALLERY_MEDIA/
+    VIDEO_THUMB_ID 정규식 보강, extractMediaId/generateOriginalUrl 개선
+  - 테스트: media-url.policy.edge-cases.test.ts GREEN, 기존 회귀 스위트 GREEN
