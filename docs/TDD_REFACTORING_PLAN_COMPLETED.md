@@ -11,6 +11,17 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
 문구로 대체 (활성 목표 비어 있음 상태 확정)
 
 2025-09-12: Phase M — SettingsModal 다크 모드 투명 배경 회귀 수정 완료
+2025-09-12: U2 (부분) — 엔트리/부트스트랩에서 ServiceManager 직접 의존 제거 완료
+
+2025-09-12: U2 — SERVICE_KEYS 직접 사용 축소(헬퍼 도입)
+
+- 추가: `@shared/container/service-accessors` (등록/조회/워밍업 헬퍼 + 타이핑)
+- 변경: `main.ts`, `bootstrap/feature-registration.ts`가 헬퍼 사용으로 전환
+- 효과: 서비스 키 하드코딩/노출 감소, 컨테이너 경계 테스트/모킹 용이성 향상
+
+- 조치: `src/main.ts`와 `src/bootstrap/feature-registration.ts`를
+  `service-bridge` 기반으로 통일, features 레이어 가드와 일관성 확보
+- 결과: 타입/린트/전체 테스트/개발·프로덕션 빌드 PASS, 기능 회귀 없음
 
 - 조치: design-tokens.semantic.css에서 모달 토큰 정리(`--xeg-comp-modal-*` →
   semantic 단방향 참조, 다크 토큰 단일 소스화)

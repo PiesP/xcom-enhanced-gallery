@@ -3300,17 +3300,38 @@
       "valid": true
     },
     {
+      "source": "src/shared/container/service-accessors.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./service-bridge",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/container/service-bridge.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/container/service-bridge.ts",
       "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
+      "dependents": [
+        "src/shared/container/service-accessors.ts"
+      ],
+      "orphan": false,
+      "valid": true
     },
     {
       "source": "src/shared/container/settings-access.ts",
@@ -8067,15 +8088,6 @@
       },
       {
         "type": "module",
-        "from": "src/shared/container/service-bridge.ts",
-        "to": "src/shared/container/service-bridge.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "src/shared/loader/progressive-loader.ts",
         "to": "src/shared/loader/progressive-loader.ts",
         "rule": {
@@ -8086,10 +8098,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 5,
+    "info": 4,
     "ignore": 0,
-    "totalCruised": 240,
-    "totalDependenciesCruised": 330,
+    "totalCruised": 241,
+    "totalDependenciesCruised": 331,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

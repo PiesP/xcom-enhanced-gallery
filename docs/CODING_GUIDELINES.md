@@ -364,9 +364,21 @@ animateCustom(el, keyframes, {
 #### ServiceManager 접근 규칙 (U2)
 
 - features 레이어에서는 `@shared/services/ServiceManager`를 직접 import 하지 않습니다.
+- 가능한 한 `@shared/container/service-accessors`의 헬퍼를 사용해 SERVICE_KEYS 의존을 감춥니다.
 - 필요한 경우 `@shared/container/service-bridge` 또는 목적별 얇은 액세서(`@shared/container/settings-access`)를 사용합니다.
 - 이유: 전역 컨테이너 의존 축소, 타입 안전한 경계 유지, 테스트/모킹 용이성 향상.
 - 가드: `test/unit/lint/features-no-servicemanager.imports.red.test.ts` 가 import를 정적 스캔합니다.
+
+예외(정리 한정):
+- 애플리케이션 종료(cleanup) 시점의 전역 정리는 엔트리(`src/main.ts`)에서만 `CoreService.getInstance().cleanup()`을 호출할 수 있습니다.
+- 그 외 레이어에서는 항상 `@shared/container/service-bridge` 또는 목적별 액세서를 사용하세요.
+
+추가 규칙:
+- SERVICE_KEYS 직접 참조를 점진적으로 제거합니다. 공용 접근은 다음 헬퍼를 우선 사용하세요:
+  - 등록: `registerGalleryRenderer`, `registerSettingsManager`, `registerTwitterTokenExtractor`
+  - 조회: `getToastController`, `getThemeService`, `getMediaServiceFromContainer` 등
+  - 워밍업: `warmupCriticalServices()`, `warmupNonCriticalServices()`
+  - 헬퍼가 부족할 경우 추가를 선호하고, raw 키 문자열 사용은 지양합니다.
 
 #### Userscript(GM_*) 어댑터 경계 가드
 

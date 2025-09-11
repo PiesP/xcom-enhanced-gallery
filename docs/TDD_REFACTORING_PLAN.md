@@ -55,15 +55,19 @@
 
 진행 상황(2025-09-12):
 
-- 추가 가드 GREEN: features 레이어에서 `ServiceManager` 직접 import 금지 테스트
-  추가 및 통과
+- 가드 GREEN: features 레이어에서 `ServiceManager` 직접 import 금지 테스트 통과
   - 테스트: `test/unit/lint/features-no-servicemanager.imports.red.test.ts`
   - 변경: `VerticalGalleryView`, `GalleryApp`, `createAppContainer`가
     브리지/액세서 사용으로 전환
-- 신규 유틸 추가: `@shared/container/service-bridge`,
+- 유틸 추가: `@shared/container/service-bridge`,
   `@shared/container/settings-access`
-- 다음 단계: main.ts와 features 전반에서 SERVICE_KEYS 의존 축소, 팩토리 경유
-  일관화
+- 엔트리/부트스트랩 정비: `main.ts`/`feature-registration.ts`가 브리지 사용으로
+  통일, ServiceManager 직접 의존 제거(정리 시점 제외)
+
+남은 작업(우선순위 순):
+
+1. service-factories 확장 여부 검토(안전 범위 내에서 Media/Settings 외 확대)
+2. 진단/로그에서 키 문자열 하드코딩 제거(상수 접근 최소화 가이드 반영)
 
 ### U3 — Preact 컴포넌트 일관화
 

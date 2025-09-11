@@ -1,6 +1,8 @@
-import { SERVICE_KEYS } from '@/constants';
 import { logger } from '@/shared/logging';
-import { bridgeRegister } from '@shared/container/service-bridge';
+import {
+  registerSettingsManager,
+  registerTwitterTokenExtractor,
+} from '@shared/container/service-accessors';
 import type { NestedSettingKey } from '@features/settings/types/settings.types';
 
 /**
@@ -13,7 +15,7 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     // Settings Manager - Features 레이어
     const { getSettingsService } = await import('@features/settings/services/settings-factory');
     const settingsService = await getSettingsService();
-    bridgeRegister(SERVICE_KEYS.SETTINGS, settingsService);
+    registerSettingsManager(settingsService);
 
     // 성능 설정(cacheTTL) 변화를 DOMCache에 반영
     try {
@@ -40,7 +42,7 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     const { TwitterTokenExtractor } = await import(
       '@features/settings/services/TwitterTokenExtractor'
     );
-    bridgeRegister(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, new TwitterTokenExtractor());
+    registerTwitterTokenExtractor(new TwitterTokenExtractor());
 
     logger.debug('✅ Features 서비스 지연 등록 완료');
   } catch (error) {

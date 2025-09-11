@@ -10,9 +10,12 @@ import { logger } from '@/shared/logging';
 import { initializeEnvironment } from '@/bootstrap/env-init';
 import { wireGlobalEvents } from '@/bootstrap/event-wiring';
 import type { AppConfig } from '@/types';
-import { SERVICE_KEYS } from '@/constants';
 import { registerFeatureServicesLazy as registerFeatures } from '@/bootstrap/feature-registration';
-import { bridgeGetService, bridgeRegister } from '@shared/container/service-bridge';
+import {
+  warmupCriticalServices,
+  warmupNonCriticalServices,
+  registerGalleryRenderer,
+} from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/ServiceManager';
 
 // 전역 스타일
@@ -64,26 +67,13 @@ async function initializeCriticalSystems(): Promise<void> {
     await registerCoreServices();
 
     // Critical Services만 즉시 초기화
-    const criticalServices = [
-      SERVICE_KEYS.VIDEO_CONTROL,
-      SERVICE_KEYS.MEDIA_EXTRACTION,
-      SERVICE_KEYS.TOAST,
-    ];
-
-    for (const serviceKey of criticalServices) {
-      try {
-        // 강제 로드 (팩토리/서비스 즉시 활성화)
-        bridgeGetService(serviceKey);
-      } catch (error) {
-        logger.error(`❌ Critical 서비스 초기화 실패: ${serviceKey}`, error);
-        throw error;
-      }
-    }
+    // 강제 로드 (팩토리/서비스 즉시 활성화)
+    warmupCriticalServices();
 
     // Toast 컨테이너 초기화 (동적 import)
     await initializeToastContainer();
 
-    logger.info(`✅ Critical Path 초기화 완료: ${criticalServices.length}개 서비스`);
+    logger.info('✅ Critical Path 초기화 완료');
   } catch (error) {
     logger.error('❌ Critical Path 초기화 실패:', error);
     throw error;
@@ -110,22 +100,7 @@ function initializeNonCriticalSystems(): void {
     try {
       logger.info('Non-Critical 시스템 백그라운드 초기화 시작');
 
-      const nonCriticalServices = [
-        'theme.auto',
-        'core.bulkDownload',
-        'media.filename',
-        'gallery.download',
-      ];
-
-      for (const serviceKey of nonCriticalServices) {
-        try {
-          // 비동기 아님: 필요 시 즉시 팩토리 생성
-          bridgeGetService(serviceKey);
-          logger.debug(`✅ Non-Critical 서비스 초기화: ${serviceKey}`);
-        } catch (error) {
-          logger.warn(`⚠️ Non-Critical 서비스 초기화 실패 (무시): ${serviceKey}`, error);
-        }
-      }
+      warmupNonCriticalServices();
 
       logger.info('✅ Non-Critical 시스템 백그라운드 초기화 완료');
     } catch (error) {
@@ -240,7 +215,7 @@ async function initializeGalleryApp(): Promise<void> {
 
     // Gallery Renderer 서비스 등록 (갤러리 앱에만 필요)
     const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
-    bridgeRegister(SERVICE_KEYS.GALLERY_RENDERER, new GalleryRenderer());
+    registerGalleryRenderer(new GalleryRenderer());
 
     // 갤러리 앱 인스턴스 생성
     const { GalleryApp } = await import('@features/gallery/GalleryApp');
