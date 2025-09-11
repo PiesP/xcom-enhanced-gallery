@@ -43,7 +43,6 @@
       "source": "src/constants.ts",
       "dependencies": [],
       "dependents": [
-        "src/main.ts",
         "src/shared/services/service-initialization.ts"
       ],
       "orphan": false,
@@ -983,23 +982,6 @@
     {
       "source": "src/main.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": true,
           "module": "./styles/globals",
@@ -8107,7 +8089,7 @@
     "info": 5,
     "ignore": 0,
     "totalCruised": 240,
-    "totalDependenciesCruised": 331,
+    "totalDependenciesCruised": 330,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

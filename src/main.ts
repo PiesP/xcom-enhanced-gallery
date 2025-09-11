@@ -10,21 +10,20 @@ import { logger } from '@/shared/logging';
 import { initializeEnvironment } from '@/bootstrap/env-init';
 import { wireGlobalEvents } from '@/bootstrap/event-wiring';
 import type { AppConfig } from '@/types';
-import { CoreService } from '@shared/services/ServiceManager';
-import { SERVICE_KEYS } from './constants';
+import { SERVICE_KEYS } from '@/constants';
 import { registerFeatureServicesLazy as registerFeatures } from '@/bootstrap/feature-registration';
+import { bridgeGetService, bridgeRegister } from '@shared/container/service-bridge';
+import { CoreService } from '@shared/services/ServiceManager';
 
 // 전역 스타일
 // 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.
 // startApplication 내부에서 동적으로 로드하여 테스트/번들링 모두에 안전합니다.
 
 // Vendor 초기화는 startApplication에서 처리하도록 이동
-
 // 애플리케이션 상태 관리
 let isStarted = false;
 let startPromise: Promise<void> | null = null;
 let galleryApp: unknown = null; // Features GalleryApp 인스턴스
-let serviceManager: CoreService | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
 
 /**
@@ -60,8 +59,6 @@ async function initializeCriticalSystems(): Promise<void> {
   try {
     logger.info('Critical Path 초기화 시작');
 
-    serviceManager = CoreService.getInstance();
-
     // Core 서비스 등록 (동적 import)
     const { registerCoreServices } = await import('@shared/services/core-services');
     await registerCoreServices();
@@ -75,8 +72,8 @@ async function initializeCriticalSystems(): Promise<void> {
 
     for (const serviceKey of criticalServices) {
       try {
-        await serviceManager.get(serviceKey);
-        logger.debug(`✅ Critical 서비스 초기화: ${serviceKey}`);
+        // 강제 로드 (팩토리/서비스 즉시 활성화)
+        bridgeGetService(serviceKey);
       } catch (error) {
         logger.error(`❌ Critical 서비스 초기화 실패: ${serviceKey}`, error);
         throw error;
@@ -94,11 +91,10 @@ async function initializeCriticalSystems(): Promise<void> {
 }
 
 /**
- * Feature Services 지연 등록 (필요시에만 로드)
+ * Features 서비스 지연 등록
  */
 async function registerFeatureServicesLazy(): Promise<void> {
-  if (!serviceManager) return;
-  await registerFeatures(serviceManager);
+  await registerFeatures();
 }
 
 /**
@@ -121,11 +117,10 @@ function initializeNonCriticalSystems(): void {
         'gallery.download',
       ];
 
-      if (!serviceManager) return;
-
       for (const serviceKey of nonCriticalServices) {
         try {
-          await serviceManager.get(serviceKey);
+          // 비동기 아님: 필요 시 즉시 팩토리 생성
+          bridgeGetService(serviceKey);
           logger.debug(`✅ Non-Critical 서비스 초기화: ${serviceKey}`);
         } catch (error) {
           logger.warn(`⚠️ Non-Critical 서비스 초기화 실패 (무시): ${serviceKey}`, error);
@@ -153,7 +148,6 @@ async function initializeToastContainer(): Promise<void> {
     ]);
 
     const { h, render } = getPreact();
-
     let toastContainer = document.getElementById('xeg-toast-container');
     if (!toastContainer) {
       toastContainer = document.createElement('div');
@@ -161,7 +155,7 @@ async function initializeToastContainer(): Promise<void> {
       document.body.appendChild(toastContainer);
     }
 
-    render(h(ToastContainer, {}), toastContainer);
+    render(h(ToastContainer, {}), toastContainer as HTMLElement);
     logger.debug('✅ Toast 컨테이너 지연 초기화 완료');
   } catch (error) {
     logger.warn('Toast 컨테이너 초기화 실패:', error);
@@ -191,10 +185,8 @@ async function cleanup(): Promise<void> {
       delete (globalThis as Record<string, unknown>).__XEG_GALLERY_APP__;
     }
 
-    if (serviceManager) {
-      serviceManager.cleanup();
-      serviceManager = null;
-    }
+    // CoreService 인스턴스 정리 (features 레이어에서 접근 금지이므로 여기서만 수행)
+    CoreService.getInstance().cleanup();
 
     await Promise.all(
       cleanupHandlers.map(handler =>
@@ -248,7 +240,7 @@ async function initializeGalleryApp(): Promise<void> {
 
     // Gallery Renderer 서비스 등록 (갤러리 앱에만 필요)
     const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
-    serviceManager!.register(SERVICE_KEYS.GALLERY_RENDERER, new GalleryRenderer());
+    bridgeRegister(SERVICE_KEYS.GALLERY_RENDERER, new GalleryRenderer());
 
     // 갤러리 앱 인스턴스 생성
     const { GalleryApp } = await import('@features/gallery/GalleryApp');

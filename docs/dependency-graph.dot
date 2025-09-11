@@ -72,7 +72,6 @@ strict digraph "dependency-cruiser output"{
     "src/features/settings/services/settings-factory.ts" -> "src/features/settings/services/SettingsService.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/settings" {label="settings" subgraph "cluster_src/features/settings/types" {label="types" "src/features/settings/types/settings.types.ts" [label=<settings.types.ts> tooltip="settings.types.ts" URL="src/features/settings/types/settings.types.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     subgraph "cluster_src" {label="src" "src/main.ts" [label=<main.ts> tooltip="main.ts" URL="src/main.ts" fillcolor="#ddfeff"] }
-    "src/main.ts" -> "src/constants.ts"
     "src/main.ts" -> "src/styles/globals.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/browser" {label="browser" "src/shared/browser/BrowserService.ts" [label=<BrowserService.ts> tooltip="BrowserService.ts" URL="src/shared/browser/BrowserService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/browser" {label="browser" "src/shared/browser/BrowserUtils.ts" [label=<BrowserUtils.ts> tooltip="BrowserUtils.ts" URL="src/shared/browser/BrowserUtils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
