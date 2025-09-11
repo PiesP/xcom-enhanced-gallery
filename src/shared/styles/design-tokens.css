@@ -44,13 +44,7 @@
   --xeg-font-weight-semibold: 600;
   --xeg-font-weight-bold: 700;
 
-  /* Component Modal 토큰 - 테스트 요구사항 */
-  /* Component-specific */
-  --xeg-comp-modal-bg: var(--color-bg-surface);
-  --xeg-comp-modal-border: var(--color-border-primary);
-  /* 호환성 alias */
-  --xeg-modal-bg: var(--xeg-comp-modal-bg);
-  --xeg-modal-border: var(--xeg-comp-modal-border);
+  /* Modal component 토큰은 semantic 파일에서만 정의 (회귀 방지 테스트: modal-token.hardening.test.ts) */
 
   /* Icon 토큰 - 테스트 요구사항 */
   --xeg-icon-stroke-width: 1.5px;

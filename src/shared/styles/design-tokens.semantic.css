@@ -165,7 +165,6 @@
 
   /* 라이트 모드 컴포넌트 토큰 */
   --xeg-comp-toolbar-bg: var(--color-bg-surface);
-  --xeg-comp-modal-bg: var(--color-bg-surface);
   --xeg-surface-glass-bg-light: rgba(255, 255, 255, 0.95);
   --xeg-surface-glass-text-light: var(--color-text-primary);
   --xeg-surface-glass-border-light: var(--color-border-default);
@@ -182,7 +181,6 @@
 
   /* 다크 모드 컴포넌트 토큰 - 시인성 개선 */
   --xeg-comp-toolbar-bg: rgba(30, 30, 30, 0.95);
-  --xeg-comp-modal-bg: rgba(20, 20, 20, 0.98);
   --xeg-surface-glass-bg-dark: rgba(30, 30, 30, 0.95);
   --xeg-surface-glass-text-dark: var(--color-text-inverse);
   --xeg-surface-glass-border-dark: rgba(255, 255, 255, 0.2);
@@ -199,8 +197,7 @@
     --xeg-gallery-bg: var(--color-gray-900);
     --xeg-bg-toolbar: var(--color-gray-800);
     --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
-    --xeg-modal-bg: rgba(20, 20, 20, 0.98);
-    --xeg-modal-border: rgba(255, 255, 255, 0.15);
+    /* 모달 토큰은 하단 시스템 테마 블록에서 var 매핑으로 일관 처리 */
   }
 }
 
@@ -230,16 +227,16 @@
   --xeg-comp-toolbar-z-index: var(--xeg-layer-toolbar);
 
   /* Modal Component Tokens */
-  --xeg-comp-modal-bg: var(--color-bg-surface);
-  --xeg-comp-modal-border: var(--color-border-default);
+  /* NOTE: Modal component tokens now defer to semantic tokens to avoid
+    cascading alias overwrite issues that previously caused dark mode
+    transparency regressions (see 2025-09-11 fix log). */
+  --xeg-comp-modal-bg: var(--xeg-modal-bg);
+  --xeg-comp-modal-border: var(--xeg-modal-border);
   --xeg-comp-modal-shadow: var(--shadow-lg);
   --xeg-comp-modal-radius: var(--xeg-radius-xl);
   --xeg-comp-modal-z-index: var(--xeg-layer-modal);
   --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
-
-  /* Legacy semantic tokens mapped to component tokens */
-  --xeg-modal-bg: var(--xeg-comp-modal-bg);
-  --xeg-modal-border: var(--xeg-comp-modal-border);
+  /* Semantic tokens (authoritative) defined later in file control actual values */
 
   /* Toast Component Tokens */
   --xeg-toast-bg-info: oklch(0.95 0.05 237.8);
@@ -267,10 +264,10 @@
 
   /* 모달 테마별 배경 토큰 */
   --xeg-modal-bg-light: var(--color-bg-surface);
-  --xeg-modal-bg-dark: var(--color-gray-800);
+  --xeg-modal-bg-dark: rgba(20, 20, 20, 0.98);
   --xeg-modal-bg: var(--xeg-modal-bg-light); /* 기본값: 라이트 */
   --xeg-modal-border-light: var(--color-border-default);
-  --xeg-modal-border-dark: var(--color-border-emphasis);
+  --xeg-modal-border-dark: rgba(255, 255, 255, 0.15);
   --xeg-modal-border: var(--xeg-modal-border-light);
 }
 
@@ -283,8 +280,8 @@
 
 [data-theme='dark'] {
   --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-  --xeg-modal-bg: rgba(20, 20, 20, 0.98);
-  --xeg-modal-border: rgba(255, 255, 255, 0.15);
+  --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  --xeg-modal-border: var(--xeg-modal-border-dark);
 
   /* 다크 테마 Glass Surface 시인성 개선 */
   --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);

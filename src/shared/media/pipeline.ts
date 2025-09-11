@@ -96,6 +96,10 @@ export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[]
 
   for (const candidate of rawCandidates) {
     try {
+      // URL Sanitization (Phase 8): 허용되지 않은 스킴 필터링
+      if (!isSafeMediaUrl(candidate.url)) {
+        continue; // unsafe URL 제거
+      }
       const originalUrl = candidate.url.trim();
       // URL 기반 GIF 유사 패턴 감지: tweet_video_thumb, ext_tw_video_thumb, video_thumb
       const gifLike = isGifLikeUrl(originalUrl);
@@ -274,4 +278,57 @@ function isGifLikeUrl(url: string): boolean {
       url.includes('/video_thumb/')
     );
   }
+}
+
+// ==============================
+// URL Sanitization Helpers (Phase 8)
+// ==============================
+
+function isSafeMediaUrl(url: string): boolean {
+  const trimmed = url.trim();
+  const lower = trimmed.toLowerCase();
+
+  // Allow root-relative / relative paths
+  if (lower.startsWith('/') || lower.startsWith('./') || lower.startsWith('../')) {
+    return true;
+  }
+
+  // Allow protocol-relative
+  if (lower.startsWith('//')) {
+    return true;
+  }
+
+  // Block explicit dangerous schemes
+  const blockedSchemes = [
+    'javascript:',
+    'vbscript:',
+    'file:',
+    'ftp:',
+    'chrome-extension:',
+    'about:',
+    'mailto:',
+    'tel:',
+  ];
+  for (const scheme of blockedSchemes) {
+    if (lower.startsWith(scheme)) return false;
+  }
+
+  // data: 정책 — 이미지 MIME 만 허용
+  if (lower.startsWith('data:')) {
+    // e.g. data:image/png;base64,... 허용
+    if (/^data:image\//i.test(lower)) return true;
+    return false; // 그 외 (text/html, application/javascript 등) 차단
+  }
+
+  // blob: 허용
+  if (lower.startsWith('blob:')) return true;
+
+  // http / https 허용
+  if (lower.startsWith('http://') || lower.startsWith('https://')) return true;
+
+  // No explicit scheme (relative like images/foo.png) — 허용
+  if (!/^[a-z0-9+.-]+:/.test(lower)) return true;
+
+  // 나머지 스킴은 기본 차단
+  return false;
 }

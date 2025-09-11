@@ -7,6 +7,41 @@
 1–7 (Result/Error v2, Telemetry, Progressive Loader, I18N 확장, A11y 강화,
 Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
 
+2025-09-11: 계획 문서 경량화 2차 — Phase 8 / 옵션 Phase 섹션 제거 및 백로그 참조
+문구로 대체 (활성 목표 비어 있음 상태 확정)
+
+2025-09-12: Phase M — SettingsModal 다크 모드 투명 배경 회귀 수정 완료
+
+- 조치: design-tokens.semantic.css에서 모달 토큰 정리(`--xeg-comp-modal-*` →
+  semantic 단방향 참조, 다크 토큰 단일 소스화)
+- 결과: 다크 모드 모달 배경/보더 불투명(준불투명) 정상 표시, 전체 빌드/테스트
+  GREEN
+
+2025-09-11: 설정 모달 다크 모드 배경 투명도 회귀 수정
+
+- 원인: 잘못된 alias(`--xeg-modal-bg`가 component 토큰을 재참조)로 다크
+  오버라이드가 뒤에서 덮임
+- 해결: alias 방향 반전(`--xeg-comp-modal-bg: var(--xeg-modal-bg)`) 및 중복 매핑
+  제거
+- 결과: 다크 모달 불투명 배경 정상화, 기존 토큰/테마 테스트 GREEN
+
+2025-09-11: Phase 8 — Media URL Sanitization 완료
+
+- 허용: http/https/상대/data:image/\*/blob, 차단: javascript 등 위험 스킴 +
+  비이미지 data:
+- 구현: normalize 단계 unsafe 필터, stage 시퀀스 변경 없음
+- 테스트: media-processor.url-sanitization.red.test.ts → GREEN
+- 문서: CODING_GUIDELINES Sanitization 섹션
+
+2025-09-11: Phase 10 — Modal Dark Mode Token Hardening 완료
+
+- RED→GREEN: modal-token.hardening.test.ts로 alias 재정의 금지/다크 토큰 존재
+  가드
+- 구현: design-tokens.css alias 재정의 제거 (이전 버그 수정 커밋), 문서에
+  hardening 규칙 추가
+- REFACTOR: 중복 작업 없음, 회귀 테스트만 유지
+- DoD: 전체 스위트 PASS, 계획서 Phase 10 제거
+
 2025-09-11: Phase 1 (2차) — Result/Error Model Unification v2 완료
 
 - RED 테스트: result-error-model.red / bulk-download.error-codes.red
@@ -38,6 +73,9 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
   (현재 핵심 로더 기반 확보)
 
 2025-09-11: Phase 4 (2차) — LanguageService Expansion & Missing-Key Guard 완료
+
+2025-09-11: 문서 조정 — 존재하지 않는 토큰 명시(`--xeg-color-bg-primary`)를
+`--color-bg-primary`로 정정 (가이드라인/예시 코드 일관성 확보, 회귀 영향 없음)
 
 - RED → GREEN: `i18n.missing-keys.red.test.ts` → `i18n.missing-keys.test.ts`
   (getIntegrityReport)

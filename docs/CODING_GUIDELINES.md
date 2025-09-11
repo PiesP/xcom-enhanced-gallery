@@ -68,12 +68,12 @@ Gallery
 
 #### 자동 테마 대응 시스템
 
-| 용도        | 라이트 모드 | 다크 모드   | 권장 토큰                     |
-| ----------- | ----------- | ----------- | ----------------------------- |
-| 갤러리 배경 | 밝은 색상   | 어두운 색상 | `var(--xeg-gallery-bg)`       |
-| 모달 배경   | 밝은 색상   | 어두운 색상 | `var(--xeg-modal-bg)`         |
-| 모달 보더   | 중간 색상   | 밝은 색상   | `var(--xeg-modal-border)`     |
-| 기본 배경   | 밝은 색상   | 어두운 색상 | `var(--xeg-color-bg-primary)` |
+| 용도        | 라이트 모드 | 다크 모드   | 권장 토큰                 |
+| ----------- | ----------- | ----------- | ------------------------- |
+| 갤러리 배경 | 밝은 색상   | 어두운 색상 | `var(--xeg-gallery-bg)`   |
+| 모달 배경   | 밝은 색상   | 어두운 색상 | `var(--xeg-modal-bg)`     |
+| 모달 보더   | 중간 색상   | 밝은 색상   | `var(--xeg-modal-border)` |
+| 기본 배경   | 밝은 색상   | 어두운 색상 | `var(--color-bg-primary)` |
 
 #### 완성된 테마 토큰 사용 예시
 
@@ -91,7 +91,9 @@ Gallery
 
 /* ✅ 기본 인터랙션 요소 */
 .button {
-  background: var(--xeg-color-bg-primary);
+  background: var(
+    --color-bg-primary
+  ); /* (구) 문서에 있었던 --xeg-color-bg-primary 는 존재하지 않으므로 정정 */
   color: var(--xeg-color-text-primary);
 }
 
@@ -198,6 +200,11 @@ Gallery
   - 툴바는 `--xeg-z-toolbar`, 모달은 `--xeg-z-modal`만 사용(하드코딩 금지)
   - 모달 패널/백드롭은 Toolbar보다 위 레이어가 되어야 하며, 모달 내부 요소는
     추가 z-index를 지양
+
+  추가 규칙 (Hardening):
+  - `design-tokens.css`에서 `--xeg-modal-bg` / `--xeg-modal-border` 재정의(alias
+    재매핑) 금지 — semantic 테마 토큰이 최종 authoritative.
+  - 회귀 방지 테스트: `modal-token.hardening.test.ts`.
 
 추가 토큰:
 
@@ -697,3 +704,24 @@ describe('GalleryItem', () => {
 - URL 정규화: 트위터 미디어 도메인(`pbs.twimg.com/media/...`)에 한해 이미지
   URL은 항상 `name=orig`를 강제한다(png/webp/jpg 유지). 그 외 도메인/상대/data:
   URL은 원본을 보존한다.
+
+### Media URL Sanitization (Phase 8 완료)
+
+- 허용 스킴 / 형태:
+  - http:, https:
+  - // (프로토콜 상대), / (루트 상대), ./, ../ (상대 경로)
+  - data:image/\* (이미지 MIME 한정)
+  - blob:
+  - 스킴 없는 relative 경로 (e.g. images/pic.png)
+- 차단 스킴:
+  - javascript:, vbscript:, file:, ftp:, chrome-extension:, about:, mailto:,
+    tel:
+  - data: 중 image/\* MIME 이외 (text/html, application/javascript 등)
+- 처리 정책:
+  - MediaProcessor.normalize 단계에서 unsafe URL 은 descriptor 생성 전 필터링
+  - stage 이벤트 시퀀스는 기존(collect→extract→normalize...) 유지 (추가 stage
+    미노출) — 회귀 최소화
+  - telemetry 옵션은 sanitize 오버헤드를 별도 stage 로 기록하지 않음(간결성)
+- 테스트 가드: `media-processor.url-sanitization.red.test.ts` (RED 파일 유지,
+  구현 후 GREEN 상태)
+- 문서 반영: 본 섹션 (Phase 8 완료 시점 2025-09-11)

@@ -1,8 +1,7 @@
-# 🎨 TDD 리팩토링 계획 — Userscript 디자인 현대화 2차 사이클
+# TDD 리팩토링 활성 계획 (경량)
 
-> 목적: 1차 현대화(토큰/애니메이션/접근성/다운로드/추출 등) 완료 이후, "설계
-> 일관성 · 관찰 가능성 · 국제화 · 번들 슬림화"를 중심으로 한 2차 개선을 TDD로
-> 단계적 수행.
+본 문서는 "아직 완료되지 않은" 활성 Phase만 유지합니다. 완료된 항목은
+`TDD_REFACTORING_PLAN_COMPLETED.md`에 1줄 요약으로 이동합니다.
 
 ## 공통 가드 (불변)
 
@@ -13,62 +12,34 @@
 - 디자인/모션/spacing/z-index는 토큰만 사용 (raw number/hex/ms 금지)
 - Result status 모델 `success | partial | error | cancelled` 유지 (회귀 금지)
 
-## 신규 핵심 설계 초점 & 대안 요약
+## 활성 목표 (요약)
 
-| 주제                       | 선택 (✅)                             | 대안(미채택)                            | 근거                                                     |
-| -------------------------- | ------------------------------------- | --------------------------------------- | -------------------------------------------------------- |
-| Result/Error v2            | 코드/원인 체인 + enum 에러코드 (✅)   | 단순 message 문자열                     | 재시도/UX 분기 단순화, 테스트로 코드 존재 여부 가드 가능 |
-| MediaProcessor Metrics     | 단계 지연 측정 + 옵셔널 로깅 (✅)     | 브라우저 Performance API 직접 수동 로그 | 오케스트레이터 한정 래핑으로 오버헤드 최소화             |
-| Progressive Feature Load   | Idle/Lazy 로더 + 분리 번들 (✅)       | 단일 번들 모든 기능 포함                | 초기 TTI 감소, 사이즈 예산 안정화                        |
-| LanguageService 확장       | 다국어 리소스 + Missing-Key Test (✅) | 기존 다운로드 메시지 키만 유지          | 확장성/지역화 준비, 테스트로 누락 예방                   |
-| A11y 강화                  | 포커스 복원 + ARIA live 규격화 (✅)   | 기존 trap 유지                          | 재사용/누락 방지, 회귀 가드                              |
-| Service Contract Interface | I/F + factory 주입 (✅)               | 암묵적 구현(구조 타이핑)                | 교체 테스트/모킹 단순화                                  |
-| CSS Layer/Theming 단려화   | Surface Layer 토큰 계층 표 (✅)       | 현 상태 유지                            | 탐색/리뷰 비용 감소, 회귀 테스트 용이                    |
+현재 활성 Phase 없음. (직전 사이클 변경 사항 반영 완료)
 
-## Phase 개요
+## Phase 개요 (활성)
 
-1. Result/Error Model Unification v2
-2. MediaProcessor Telemetry & Stage Metrics
-3. Progressive Feature Loader & Bundle Slimming
-4. LanguageService Expansion & Missing-Key Guard
-5. Accessibility Focus & Announcement Hardening
-6. Service Contract Interface Extraction (DI 강화)
-7. CSS Layer Architecture & Theming Simplification 옵션: (8) Security & URL
-   Sanitization Policy, (9) Memory/Listener Leak Harness
+현재 활성 Phase 없음 (완료 항목은 완료 로그로 이관됨).
 
 ---
 
-<!-- Phase 1 (Result/Error Model Unification v2) : 완료되어 활성 계획에서 제거 -->
+현재 옵션 Phase 명시 항목 없음 (모든 완료 또는 백로그로 이동).
 
-<!-- Phase 2 (MediaProcessor Telemetry & Stage Metrics) : 완료되어 활성 계획에서 제거 -->
+## 브랜치 & TDD 규칙
 
-<!-- Phase 3 (Progressive Feature Loader & Bundle Slimming) : 완료되어 활성 계획에서 제거 -->
+향후 신규 Phase 착수 시:
 
-<!-- Phase 4 (LanguageService Expansion & Missing-Key Guard) : 완료되어 활성 계획에서 제거 -->
+1. feature branch: `phase/<n>-<slug>`
+2. 커밋 순서: RED (실패 테스트) → GREEN (최소 구현) → REFACTOR (정리/최적화)
+3. 병합 전 품질 게이트: 타입/린트/전체 테스트/사이즈 가드 PASS
 
-<!-- Phase 5 (Accessibility Focus & Announcement Hardening) : 완료되어 활성 계획에서 제거 -->
+## Definition of Done
 
-<!-- Phase 7 (CSS Layer Architecture & Theming Simplification) : 완료되어 활성 계획에서 제거 -->
+DONE 판정 시 아래를 충족해야 합니다:
 
-### (옵션) Phase 8 — Security & URL Sanitization Policy
-
-목표: 추출 URL 화이트리스트 + data:/blob: 허용 정책 테스트.
-
-### (옵션) Phase 9 — Memory/Listener Leak Harness
-
-목표: WeakRef/FinalizationRegistry 기반 이벤트 핸들러 해제 스모크.
-
-## 작업 순서 & 브랜치 전략
-
-1 Phase = 1 feature branch (`phase/<n>-<slug>`), RED 커밋 → GREEN 커밋 →
-REFACTOR 커밋 최소 1회. 메인 병합 전 전체 스위트/사이즈/린트/타입 PASS 필수.
-
-## Definition of Done (공통)
-
-- RED → GREEN → REFACTOR 증적 커밋
+- RED → GREEN → REFACTOR 커밋 히스토리
 - 전체 테스트 / 타입 / 린트 / 빌드 / 사이즈 예산 PASS
-- 계획/가이드라인 동기화 (추가/변경된 정책 표기)
-- 완료 후 본 문서에서 해당 Phase 섹션 제거 & 완료 로그에 1줄 기록
+- 문서: 가이드라인/계획 동기화, 완료 로그 기록
+- 계획 문서에서 해당 Phase 제거
 
 ## 추적 & 백로그
 
@@ -80,4 +51,4 @@ REFACTOR 커밋 최소 1회. 메인 병합 전 전체 스위트/사이즈/린트
 - 완료 로그: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
 - 백로그: `docs/TDD_REFACTORING_BACKLOG.md`
 
-업데이트 일시: 2025-09-11 (2차 현대화 사이클 초기화)
+업데이트 일시: 2025-09-12 (활성 Phase 없음 상태)
