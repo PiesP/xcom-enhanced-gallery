@@ -7359,6 +7359,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/accessibility/focus-restore-manager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/accessibility/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/accessibility/index.ts",
       "dependencies": [
         {
@@ -7377,9 +7386,52 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./focus-restore-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/accessibility/focus-restore-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./live-region-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/accessibility/live-region-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/accessibility/live-region-manager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/accessibility/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -7850,8 +7902,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 231,
-    "totalDependenciesCruised": 324,
+    "totalCruised": 233,
+    "totalDependenciesCruised": 326,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

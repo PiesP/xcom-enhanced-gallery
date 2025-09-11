@@ -505,3 +505,18 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
 - 2025-09-11: Retry Action 테스트 명명 정리
   - bulk-download.retry-action.red._ → bulk-download.retry-action._ (GREEN 유지)
   - 계획서 What's next 에서 명명 정리 작업 항목 제거
+
+2025-09-11: Phase 5 (2차) — Accessibility Focus & Live Region Hardening 완료
+
+- RED → GREEN:
+  - focus-restore-manager.red.test.ts → focus-restore-manager.test.ts
+  - live-region-manager.red.test.ts → live-region-manager.test.ts
+- 구현:
+  - focus-restore-manager.ts: beginFocusScope() (단일 스코프, 안전 복원 &
+    fallback)
+  - live-region-manager.ts: polite/assertive singleton + 재부착 가드
+- 테스트 검증:
+  - 제거된 origin 포커스 fallback(body/html) 동작
+  - polite/assertive 각각 1개만 생성 & 총 2개 초과 금지
+- 후속(Backlog): 다중 스코프 스택, announcement queue/debounce, assertive 우선
+  정책 튜닝

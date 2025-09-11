@@ -171,9 +171,12 @@ export class LanguageService {
    * missing: 기준(en) 대비 누락된 키 목록
    * extra: 기준(en)에는 없지만 다른 로케일에 존재하는 키 목록
    */
-  getIntegrityReport() {
+  getIntegrityReport(): {
+    missing: Record<Exclude<SupportedLanguage, 'auto'>, string[]>;
+    extra: Record<Exclude<SupportedLanguage, 'auto'>, string[]>;
+  } {
     const locales: Array<Exclude<SupportedLanguage, 'auto'>> = ['en', 'ko', 'ja'];
-    const base = LANGUAGE_STRINGS.en;
+    const base: LanguageStrings = LANGUAGE_STRINGS.en;
 
     const flatten = (obj: unknown, prefix = '', acc: string[] = []): string[] => {
       if (obj && typeof obj === 'object') {
@@ -188,11 +191,20 @@ export class LanguageService {
     };
 
     const baseKeys = new Set(flatten(base));
-    const missing: Record<string, string[]> = { en: [], ko: [], ja: [] };
-    const extra: Record<string, string[]> = { en: [], ko: [], ja: [] };
+    const missing: Record<Exclude<SupportedLanguage, 'auto'>, string[]> = {
+      en: [],
+      ko: [],
+      ja: [],
+    };
+    const extra: Record<Exclude<SupportedLanguage, 'auto'>, string[]> = {
+      en: [],
+      ko: [],
+      ja: [],
+    };
 
     for (const locale of locales) {
-      const keys = new Set(flatten(LANGUAGE_STRINGS[locale]));
+      const localeStrings: LanguageStrings = LANGUAGE_STRINGS[locale];
+      const keys = new Set(flatten(localeStrings));
       // missing (base 존재, locale 없음)
       for (const k of baseKeys) if (!keys.has(k)) missing[locale].push(k);
       // extra (locale 존재, base 없음)

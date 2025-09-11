@@ -46,14 +46,7 @@
 
 <!-- Phase 4 (LanguageService Expansion & Missing-Key Guard) : 완료되어 활성 계획에서 제거 -->
 
-### Phase 5 — Accessibility Focus & Announcement Hardening
-
-목표: 갤러리 열림/닫힘 포커스 복원, Toast/Download 중요 이벤트 ARIA live
-polite/assertive 분기, 포커스 트랩 회귀 가드. RED 테스트:
-
-- `a11y.focus-restore.red.test.ts`
-- `a11y.toast-live-region.red.test.ts` DoD: focus 복원 테스트 pass, 중복
-  live-region 생성 없음.
+<!-- Phase 5 (Accessibility Focus & Announcement Hardening) : 완료되어 활성 계획에서 제거 -->
 
 ### Phase 6 — Service Contract Interface Extraction
 
