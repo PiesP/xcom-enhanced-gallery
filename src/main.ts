@@ -7,13 +7,16 @@
  */
 
 import { logger } from '@/shared/logging';
+import { initializeEnvironment } from '@/bootstrap/env-init';
+import { wireGlobalEvents } from '@/bootstrap/event-wiring';
 import type { AppConfig } from '@/types';
-import type { NestedSettingKey } from '@features/settings/types/settings.types';
 import { CoreService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from './constants';
+import { registerFeatureServicesLazy as registerFeatures } from '@/bootstrap/feature-registration';
 
 // 전역 스타일
-import './styles/globals';
+// 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.
+// startApplication 내부에서 동적으로 로드하여 테스트/번들링 모두에 안전합니다.
 
 // Vendor 초기화는 startApplication에서 처리하도록 이동
 
@@ -42,9 +45,7 @@ function createAppConfig(): AppConfig {
  */
 async function initializeInfrastructure(): Promise<void> {
   try {
-    // Vendor 라이브러리 초기화
-    const { initializeVendors } = await import('@shared/external/vendors');
-    await initializeVendors();
+    await initializeEnvironment();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);
@@ -96,49 +97,8 @@ async function initializeCriticalSystems(): Promise<void> {
  * Feature Services 지연 등록 (필요시에만 로드)
  */
 async function registerFeatureServicesLazy(): Promise<void> {
-  try {
-    // Features 서비스들을 지연 로딩으로 등록만 하고 초기화는 하지 않음
-    logger.debug('Features 서비스 지연 등록 시작');
-
-    // Settings Manager - Features 레이어 (features/settings/services/settings-factory)
-    const { getSettingsService } = await import('@features/settings/services/settings-factory');
-    const settingsService = await getSettingsService();
-    serviceManager!.register(SERVICE_KEYS.SETTINGS, settingsService);
-
-    // 성능 설정(cacheTTL) 변화를 DOMCache에 반영
-    try {
-      const { globalDOMCache } = await import('@shared/dom/DOMCache');
-      // 초기 적용
-      const initialTTL = settingsService.get<number>('performance.cacheTTL' as NestedSettingKey);
-      if (typeof initialTTL === 'number') {
-        globalDOMCache.setDefaultTTL(initialTTL);
-      }
-      // 변경 구독 (옵셔널 subscribe 보호)
-      if (typeof settingsService.subscribe === 'function') {
-        settingsService.subscribe(event => {
-          if (
-            (event.key as NestedSettingKey) === 'performance.cacheTTL' &&
-            typeof event.newValue === 'number'
-          ) {
-            globalDOMCache.setDefaultTTL(event.newValue);
-          }
-        });
-      }
-    } catch {
-      // DOMCache가 없거나 초기화 전이면 무시
-    }
-
-    // Twitter Token Extractor - Features 레이어
-    const { TwitterTokenExtractor } = await import(
-      '@features/settings/services/TwitterTokenExtractor'
-    );
-    serviceManager!.register(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, new TwitterTokenExtractor());
-
-    logger.debug('✅ Features 서비스 지연 등록 완료');
-  } catch (error) {
-    // Features 레이어 서비스 로딩 실패는 치명적이지 않음
-    logger.warn('⚠️ Features 서비스 지연 로딩 실패:', error);
-  }
+  if (!serviceManager) return;
+  await registerFeatures(serviceManager);
 }
 
 /**
@@ -212,17 +172,10 @@ async function initializeToastContainer(): Promise<void> {
  * 전역 이벤트 핸들러 설정
  */
 function setupGlobalEventHandlers(): void {
-  const beforeUnloadHandler = (): void => {
+  const unregister = wireGlobalEvents(() => {
     cleanup().catch(error => logger.error('페이지 언로드 정리 중 오류:', error));
-  };
-
-  window.addEventListener('beforeunload', beforeUnloadHandler);
-  window.addEventListener('pagehide', beforeUnloadHandler);
-
-  cleanupHandlers.push(() => {
-    window.removeEventListener('beforeunload', beforeUnloadHandler);
-    window.removeEventListener('pagehide', beforeUnloadHandler);
   });
+  cleanupHandlers.push(unregister);
 }
 
 /**
@@ -331,6 +284,9 @@ async function startApplication(): Promise<void> {
     logger.info('🚀 X.com Enhanced Gallery 시작 중...');
 
     const startTime = performance.now();
+
+    // 전역 스타일 로드 (사이드이펙트 import 방지)
+    await import('./styles/globals');
 
     // 개발 도구 초기화 (개발 환경만)
     await initializeDevTools();

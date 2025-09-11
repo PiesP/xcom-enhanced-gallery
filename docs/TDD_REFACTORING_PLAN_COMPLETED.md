@@ -307,6 +307,15 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
   참고: 세부 결정/테스트 파일 경로는 커밋 메시지와 테스트 스위트에서 추적합니다.
   - 단위 테스트 추가: `ModalShell.tokens.test.ts`로 토큰 준수 회귀 방지
 
+2025-09-11: U1 — 엔트리/부트스트랩 슬림화 완료
+
+- 조치: `src/bootstrap/{env-init,event-wiring,feature-registration}.ts` 신설,
+  `src/main.ts`에서 스타일 동적 import 및 부수효과 제거, 전역 이벤트 등록
+  반환값으로 unregister 콜백 관리
+- 가드: import 사이드이펙트 방지 테스트(RED 추가 예정)와 main idempotency 기존
+  테스트 유지
+- 결과: 타입/린트/전체 테스트/개발·프로덕션 빌드/사이즈 가드 PASS
+
 - 2025-09-10: Overlay/Modal/Surface 토큰 일관화(Toast 완료)
   - Toast.module.css의 surface 배경/보더/그림자 토큰을 semantic으로 통일
     (`--xeg-surface-glass-*`)하여 컴포넌트 전용 토큰 의존 제거
@@ -577,3 +586,10 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
   - polite/assertive 각각 1개만 생성 & 총 2개 초과 금지
 - 후속(Backlog): 다중 스코프 스택, announcement queue/debounce, assertive 우선
   정책 튜닝
+
+2025-09-12: 계획 문서 정리 — '활성 Phase 없음' 상태 종료 및 신규 U1–U5 활성 계획
+반영
+
+- 내용: `TDD_REFACTORING_PLAN.md`를 현대화 리팩토링 중심(U1–U5)으로 갱신하고,
+  기존 문구(활성 없음)를 제거하여 차기 사이클 시작 상태로 전환
+- 결과: 완료 로그에 본 항목 기록, 계획 문서는 활성 Phase만 유지

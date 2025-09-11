@@ -3,6 +3,9 @@ strict digraph "dependency-cruiser output"{
     node [shape="box" style="rounded,filled" height="0.2" color="#333333" fillcolor="#FAFAFA" fontcolor="#333333" fontname="Arial" fontsize="10" penwidth="1" margin="0.1"]
     edge [arrowhead="normal" arrowsize="0.8" penwidth="1" color="#666666" fontname="Arial" fontsize="8" fontcolor="#333333"]
 
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/bootstrap" {label="bootstrap" "src/bootstrap/env-init.ts" [label=<env-init.ts> tooltip="no-orphans" URL="src/bootstrap/env-init.ts" fillcolor="#FEF2F2" fontcolor="#DC2626" color="#DC2626" style="rounded,filled,dashed" penwidth="1.5"] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/bootstrap" {label="bootstrap" "src/bootstrap/event-wiring.ts" [label=<event-wiring.ts> tooltip="no-orphans" URL="src/bootstrap/event-wiring.ts" fillcolor="#FEF2F2" fontcolor="#DC2626" color="#DC2626" style="rounded,filled,dashed" penwidth="1.5"] } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/bootstrap" {label="bootstrap" "src/bootstrap/feature-registration.ts" [label=<feature-registration.ts> tooltip="no-orphans" URL="src/bootstrap/feature-registration.ts" fillcolor="#FEF2F2" fontcolor="#DC2626" color="#DC2626" style="rounded,filled,dashed" penwidth="1.5"] } }
     subgraph "cluster_src" {label="src" "src/constants.ts" [label=<constants.ts> tooltip="constants.ts" URL="src/constants.ts" fillcolor="#ddfeff"] }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryApp.ts" [label=<GalleryApp.ts> tooltip="GalleryApp.ts" URL="src/features/gallery/GalleryApp.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryRenderer.ts" [label=<GalleryRenderer.ts> tooltip="GalleryRenderer.ts" URL="src/features/gallery/GalleryRenderer.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } }
@@ -70,7 +73,7 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/settings" {label="settings" subgraph "cluster_src/features/settings/types" {label="types" "src/features/settings/types/settings.types.ts" [label=<settings.types.ts> tooltip="settings.types.ts" URL="src/features/settings/types/settings.types.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     subgraph "cluster_src" {label="src" "src/main.ts" [label=<main.ts> tooltip="main.ts" URL="src/main.ts" fillcolor="#ddfeff"] }
     "src/main.ts" -> "src/constants.ts"
-    "src/main.ts" -> "src/styles/globals.ts"
+    "src/main.ts" -> "src/styles/globals.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/browser" {label="browser" "src/shared/browser/BrowserService.ts" [label=<BrowserService.ts> tooltip="BrowserService.ts" URL="src/shared/browser/BrowserService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/browser" {label="browser" "src/shared/browser/BrowserUtils.ts" [label=<BrowserUtils.ts> tooltip="BrowserUtils.ts" URL="src/shared/browser/BrowserUtils.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/browser/BrowserUtils.ts" -> "src/shared/logging/logger.ts"

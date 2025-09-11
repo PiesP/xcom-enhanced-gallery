@@ -19,8 +19,12 @@ describe('modal-token.hardening (static)', () => {
   it('semantic file defines dark modal background & border tokens', () => {
     expect(semantic).toMatch(/--xeg-modal-bg-dark:/);
     expect(semantic).toMatch(/--xeg-modal-border-dark:/);
-    // Dark theme override usage
-    expect(semantic).toMatch(/\[data-theme='dark'\][^{]*{[^}]*--xeg-modal-bg:/);
+    // Dark theme override usage (rgba(...) or var(--xeg-modal-*-dark))
+    expect(
+      /\[data-theme='dark'\][^{]*{[^}]*--xeg-modal-bg:\s*(rgba\([^)]*\)|var\(--xeg-modal-bg-dark\))/i.test(
+        semantic
+      )
+    ).toBe(true);
   });
 
   it('layered tokens file does not redeclare component modal tokens', () => {

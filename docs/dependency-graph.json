@@ -1,6 +1,45 @@
 {
   "modules": [
     {
+      "source": "src/bootstrap/env-init.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/bootstrap/event-wiring.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/bootstrap/feature-registration.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/constants.ts",
       "dependencies": [],
       "dependents": [
@@ -961,13 +1000,13 @@
           "valid": true
         },
         {
-          "dynamic": false,
+          "dynamic": true,
           "module": "./styles/globals",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "dynamic-import"
           ],
           "resolved": "src/styles/globals.ts",
           "coreModule": false,
@@ -7979,6 +8018,33 @@
     "violations": [
       {
         "type": "module",
+        "from": "src/bootstrap/env-init.ts",
+        "to": "src/bootstrap/env-init.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/bootstrap/event-wiring.ts",
+        "to": "src/bootstrap/event-wiring.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/bootstrap/feature-registration.ts",
+        "to": "src/bootstrap/feature-registration.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
         "from": "src/shared/loader/progressive-loader.ts",
         "to": "src/shared/loader/progressive-loader.ts",
         "rule": {
@@ -7989,9 +8055,9 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 4,
     "ignore": 0,
-    "totalCruised": 235,
+    "totalCruised": 238,
     "totalDependenciesCruised": 330,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

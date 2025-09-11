@@ -214,6 +214,16 @@ Gallery
 
 ````
 
+### 모듈 사이드이펙트 금지 정책 (Import Safety)
+
+- 엔트리(`src/main.ts`) 외 모듈은 import 시점에 DOM 변경/리스너 등록 등 부수효과를 발생시키지 않습니다.
+- 전역 스타일도 정적 import 대신 런타임 동적 import를 사용하여 테스트/빌드 시 안전성을 보장합니다.
+  - 예) `await import('./styles/globals')`를 애플리케이션 시작 흐름 내부에서 호출
+- 글로벌 이벤트 등록은 `bootstrap/event-wiring.ts`를 통한 함수 호출 기반으로만 수행합니다.
+
+가드:
+- `test/unit/main/side-effect-free.imports.red.test.ts` (U1) — import 시 부수효과가 없음을 검증 (RED→GREEN)
+
 ### 애니메이션 규칙
 
 - transition/animation은 토큰만 사용: 시간은 `--xeg-duration-*`, 이징은 `--xeg-ease-*`만 사용합니다.

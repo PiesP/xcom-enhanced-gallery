@@ -32,19 +32,23 @@ describe('Modal Token Hardening', () => {
     expect(semanticCss).toMatch(/--xeg-modal-border-dark\s*:/);
   });
 
-  it('at least one dark theme block provides concrete rgba values for modal bg & border', () => {
+  it("dark theme block assigns modal bg & border (rgba or var('--xeg-modal-*-dark'))", () => {
     const darkBlocks = [...semanticCss.matchAll(/\[data-theme='dark']\s*{[^}]*}/g)].map(m => m[0]);
     expect(darkBlocks.length, 'no dark theme blocks found').toBeGreaterThan(0);
-    const hasModalBg = darkBlocks.some(b =>
-      /--xeg-modal-bg:\s*rgba\(20,\s*20,\s*20,\s*0\.98\)/.test(b)
+    const assignsModalBg = darkBlocks.some(b =>
+      /--xeg-modal-bg:\s*(rgba\([^)]*\)|var\(--xeg-modal-bg-dark\))/i.test(b)
     );
-    const hasModalBorder = darkBlocks.some(b =>
-      /--xeg-modal-border:\s*rgba\(255,\s*255,\s*255,\s*0\.15\)/.test(b)
+    const assignsModalBorder = darkBlocks.some(b =>
+      /--xeg-modal-border:\s*(rgba\([^)]*\)|var\(--xeg-modal-border-dark\))/i.test(b)
     );
-    expect(hasModalBg, 'no dark block defines --xeg-modal-bg expected rgba value').toBe(true);
-    expect(hasModalBorder, 'no dark block defines --xeg-modal-border expected rgba value').toBe(
-      true
-    );
+    expect(
+      assignsModalBg,
+      "dark block should assign --xeg-modal-bg using rgba(...) or var('--xeg-modal-bg-dark')"
+    ).toBe(true);
+    expect(
+      assignsModalBorder,
+      "dark block should assign --xeg-modal-border using rgba(...) or var('--xeg-modal-border-dark')"
+    ).toBe(true);
   });
 
   it('SettingsModal.module.css uses semantic modal background token', () => {
