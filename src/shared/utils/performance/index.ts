@@ -4,6 +4,7 @@
  */
 
 export * from './performance-utils';
+export * from './preload';
 
 // Signal Optimization
 export { createSelector, useAsyncSelector } from './signalOptimization';

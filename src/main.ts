@@ -8,6 +8,7 @@
 
 import { logger } from '@/shared/logging';
 import type { AppConfig } from '@/types';
+import type { NestedSettingKey } from '@features/settings/types/settings.types';
 import { CoreService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from './constants';
 
@@ -101,7 +102,29 @@ async function registerFeatureServicesLazy(): Promise<void> {
 
     // Settings Manager - Features 레이어
     const { SettingsService } = await import('@features/settings/services/SettingsService');
-    serviceManager!.register(SERVICE_KEYS.SETTINGS, new SettingsService());
+    const settingsService = new SettingsService();
+    serviceManager!.register(SERVICE_KEYS.SETTINGS, settingsService);
+
+    // 성능 설정(cacheTTL) 변화를 DOMCache에 반영
+    try {
+      const { globalDOMCache } = await import('@shared/dom/DOMCache');
+      // 초기 적용
+      const initialTTL = settingsService.get<number>('performance.cacheTTL' as NestedSettingKey);
+      if (typeof initialTTL === 'number') {
+        globalDOMCache.setDefaultTTL(initialTTL);
+      }
+      // 변경 구독
+      settingsService.subscribe(event => {
+        if (
+          (event.key as NestedSettingKey) === 'performance.cacheTTL' &&
+          typeof event.newValue === 'number'
+        ) {
+          globalDOMCache.setDefaultTTL(event.newValue);
+        }
+      });
+    } catch {
+      // DOMCache가 없거나 초기화 전이면 무시
+    }
 
     // Twitter Token Extractor - Features 레이어
     const { TwitterTokenExtractor } = await import(

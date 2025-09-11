@@ -69,27 +69,16 @@
 
 ## 4) 다음 단계 백로그(테스트 우선)
 
-Phase C — 미디어 추출/정규화 견고성 향상 (완료)
-
-- URL 유효성, name=orig 강제 규칙, API 재시도/타임아웃(기본 RETRY=3,
-  TIMEOUT=10s) 구현/테스트 GREEN
-- 테스트: `test/unit/media/extraction.url-normalization.test.ts`,
-  `test/unit/media/extraction.retry-timeout.test.ts`
-  - DOMDirectExtractor가 media-url.util을 사용하여 name=orig 정규화 보장
-  - TwitterAPIExtractor에 fetchWithRetry(timeout/retries) 추가로 API 실패 시 DOM
-    폴백 확인
-
-<!-- Phase D는 완료되어 완료 로그로 이관되었습니다. -->
-
 Phase E — 성능/접근성 스모크
 
-- 목표: 가상 스크롤/프리로드 카운트/캐시 TTL 동작, 포커스 링/대비 유지
-- 테스트(Red):
-  - 설정 변경 반영(virtualScrolling/preloadCount/cacheTTL)
-  - focus-visible, reduce-motion 대응 스모크
-- 테스트 파일(예정):
-  - `test/smoke/performance/gallery-virtualization.smoke.test.ts`
-  - `test/smoke/a11y/focus-contrast.smoke.test.ts`
+- 목표: 캐시 TTL 동작, 프리로드 카운트 반영, 포커스 링/대비 유지
+- 진행:
+  - 프리로드 카운트 소비 구현 완료: `computePreloadIndices` 유틸 +
+    `VerticalGalleryView` 연동
+  - 단위 테스트 추가: `test/unit/performance/gallery-preload.util.test.ts`
+- 남음:
+  - a11y 스모크: focus-visible/contrast/reduce-motion 확인(경량 스모크)
+  - 필요 시 캐시 TTL 관측 포인트 보강(현재 DOMCache 구독 반영 완료)
 
 ## 5) 완료 기준(Definition of Done)
 

@@ -30,6 +30,10 @@ import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
+import { computePreloadIndices } from '@shared/utils/performance';
+import { serviceManager } from '@shared/services/ServiceManager';
+import { SERVICE_KEYS } from '@/constants';
+import type { ISettingsService } from '@shared/container/AppContainer';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -145,6 +149,18 @@ function VerticalGalleryViewCore({
 
   // 렌더링할 아이템들 (가상 스크롤링 제거 - 항상 모든 아이템 렌더링)
   const itemsToRender = memoizedMediaItems;
+
+  // Settings: preloadCount 소비 → 주변 항목을 강제 가시화(preload)하여 초기 지연을 줄임
+  const preloadIndices = useMemo(() => {
+    try {
+      // settings 서비스는 main 초기화 이후 등록됨; 테스트 환경에선 없을 수 있음
+      const settingsSvc = serviceManager.tryGet<ISettingsService>(SERVICE_KEYS.SETTINGS as string);
+      const count = settingsSvc?.get<number>('gallery.preloadCount' as unknown as string) ?? 0;
+      return computePreloadIndices(currentIndex, mediaItems.length, count);
+    } catch {
+      return [] as number[];
+    }
+  }, [currentIndex, mediaItems.length]);
 
   // 최적화: 미디어 개수 변경 시에만 가시성 업데이트
   useEffect(() => {
@@ -520,6 +536,7 @@ function VerticalGalleryViewCore({
         {itemsToRender.map((item, index) => {
           const actualIndex = index;
           const itemKey = `${item.id || item.url}-${actualIndex}`;
+          const forcePreload = preloadIndices.includes(actualIndex);
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return createElement(VerticalImageItem as any, {
@@ -528,7 +545,7 @@ function VerticalGalleryViewCore({
             index: actualIndex,
             isActive: actualIndex === currentIndex,
             isFocused: actualIndex === focusedIndex,
-            forceVisible: forceVisibleItems.has(actualIndex),
+            forceVisible: forceVisibleItems.has(actualIndex) || forcePreload,
             fitMode: imageFitMode,
             onClick: () => handleMediaItemClick(actualIndex),
             onMediaLoad: handleMediaLoad,

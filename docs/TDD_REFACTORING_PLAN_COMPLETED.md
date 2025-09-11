@@ -155,9 +155,33 @@
     bulk-download.service.test.ts
 
 - 2025-09-11: Phase C — 미디어 추출/정규화 견고성 향상 (완료)
-  - URL 유효성 검증 강화(pbs.twimg.com/media 전용, profile_images 제외, video
-    도메인 허용)
-  - name=orig 강제 규칙(png/webp/jpg) 정규화 및 DOMDirectExtractor 연동
-  - API 재시도/타임아웃(기본 RETRY=3, TIMEOUT=10s) + 실패 시 DOM 폴백 확인
-  - 테스트: test/unit/media/extraction.url-normalization.test.ts,
-    test/unit/media/extraction.retry-timeout.test.ts (GREEN)
+- 2025-09-11: 성능 설정 반영 — cacheTTL 런타임 적용 완료
+  - SettingsService 변경 구독으로 performance.cacheTTL → DOMCache.defaultTTL
+    동기화
+  - 초기값 반영 + 변경 시 즉시 적용 (main.ts에서 구독)
+  - 위험도 낮음(격리된 유틸), 빌드/타입/린트 통과
+- 2025-09-11: 설정 정리 — virtualScrolling 옵션 제거 완료
+  - 소스 기본값(DEFAULT_SETTINGS.gallery)에서 virtualScrolling 제거
+  - 가상 스크롤링 관련 사용처 제거 확인 테스트
+    유지(`refactoring/remove-virtual-scrolling.test.ts`)
+  - 결과: 타입/빌드 통과, 계획 문서의 관련 항목 정리
+
+- 2025-09-11: 계획 이관 — Phase C 상세 설명 본 계획서에서 제거, 완료 로그로 정리
+  - 문서 정리로 남은 단계(Phase E)만 계획서에 유지
+
+- URL 유효성 검증 강화(pbs.twimg.com/media 전용, profile_images 제외, video
+  도메인 허용)
+
+---
+
+- 2025-09-11: 성능 — 갤러리 프리로드 카운트 소비 구현 완료
+  - `computePreloadIndices` 유틸 추가 및 `VerticalGalleryView`에서
+    `forceVisible`에 반영
+  - 단위 테스트 추가: `test/unit/performance/gallery-preload.util.test.ts`
+    (GREEN)
+  - 설정 키: `gallery.preloadCount`(0–20), 기본값 3
+
+- name=orig 강제 규칙(png/webp/jpg) 정규화 및 DOMDirectExtractor 연동
+- API 재시도/타임아웃(기본 RETRY=3, TIMEOUT=10s) + 실패 시 DOM 폴백 확인
+- 테스트: test/unit/media/extraction.url-normalization.test.ts,
+  test/unit/media/extraction.retry-timeout.test.ts (GREEN)

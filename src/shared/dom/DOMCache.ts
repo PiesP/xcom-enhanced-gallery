@@ -27,7 +27,7 @@ interface DOMCacheEntry {
 export class DOMCache {
   private readonly cache = new Map<string, DOMCacheEntry>();
   private readonly hitCount = new Map<string, number>();
-  private readonly defaultTTL: number;
+  private defaultTTL: number;
   private readonly maxCacheSize: number;
   private cleanupInterval: number | null = null;
 
@@ -47,6 +47,18 @@ export class DOMCache {
         () => this.adaptiveCleanup(),
         options.cleanupIntervalMs ?? 45000 // 45초마다 정리 (빈도 감소)
       );
+    }
+  }
+
+  /**
+   * 기본 TTL 업데이트 (런타임 설정 반영)
+   */
+  setDefaultTTL(ttl: number): void {
+    if (typeof ttl === 'number' && Number.isFinite(ttl) && ttl > 0) {
+      this.defaultTTL = ttl;
+      logger.debug(`DOMCache: default TTL updated to ${ttl}ms`);
+    } else {
+      logger.warn('DOMCache: invalid TTL provided, ignoring', { ttl });
     }
   }
 

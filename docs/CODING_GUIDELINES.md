@@ -226,6 +226,14 @@ Gallery
 - 하드코딩된 지속시간(예: `1s`, `200ms`) 금지 — 전용 테스트로 검증됩니다.
 ```
 
+### 갤러리 프리로드 규칙 (Performance)
+
+- 설정 `gallery.preloadCount`는 현재 인덱스를 중심으로 좌/우 이웃 항목을 우선 순위대로 프리로드합니다.
+- 구현은 순수 함수 `computePreloadIndices(currentIndex, total, count)`를 사용하여 테스트 가능하게 유지합니다.
+- 소비 지점: 갤러리 아이템 렌더링 시 `forceVisible`에 반영하여 초기 지연을 줄입니다.
+- 경계: 인덱스/총합은 안전하게 클램프되며, 최대 카운트는 20으로 제한합니다(설정 서비스의 검증 규칙 일치).
+
+
 ### Component vs Semantic 토큰
 
 - 소스 오브 트루스는 Semantic 토큰(`--xeg-modal-bg`, `--xeg-color-*`, `--xeg-radius-*`).

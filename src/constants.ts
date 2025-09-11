@@ -424,7 +424,6 @@ export const DEFAULT_SETTINGS = {
     autoScrollSpeed: 5,
     infiniteScroll: true,
     preloadCount: 3,
-    virtualScrolling: true,
     theme: 'auto' as const,
     animations: true,
   },
