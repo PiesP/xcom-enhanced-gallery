@@ -8,6 +8,7 @@ import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
+import { scheduleIdle } from '@shared/utils/performance';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
@@ -37,6 +38,11 @@ export interface MediaLoadingOptions {
 export interface PrefetchOptions {
   maxConcurrent?: number;
   prefetchRange?: number;
+  /**
+   * 스케줄 방식: 즉시 실행(immediate) 또는 유휴 시간(idle) 예약.
+   * 기본값: 'immediate' (기존 동작과 동일)
+   */
+  schedule?: 'immediate' | 'idle';
 }
 
 /**
@@ -535,6 +541,7 @@ export class MediaService {
   ): Promise<void> {
     const maxConcurrent = options.maxConcurrent || 2;
     const prefetchRange = options.prefetchRange || 2;
+    const scheduleMode = options.schedule ?? 'immediate';
 
     const prefetchUrls = this.calculatePrefetchUrls(mediaItems, currentIndex, prefetchRange);
 
@@ -546,7 +553,14 @@ export class MediaService {
         break;
       }
 
-      void this.prefetchSingle(url);
+      if (scheduleMode === 'idle') {
+        // 유휴 시간에 프리페치 예약 (환경 미지원 시 안전 폴백)
+        scheduleIdle(() => {
+          void this.prefetchSingle(url);
+        });
+      } else {
+        void this.prefetchSingle(url);
+      }
     }
   }
 

@@ -7495,8 +7495,34 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/performance/idleScheduler.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/performance/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/performance/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./idleScheduler",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/performance/idleScheduler.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./memoization",
@@ -7757,8 +7783,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 228,
-    "totalDependenciesCruised": 321,
+    "totalCruised": 229,
+    "totalDependenciesCruised": 322,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
