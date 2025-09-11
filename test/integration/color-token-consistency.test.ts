@@ -77,18 +77,22 @@ describe('Color Token Consistency', () => {
     });
   });
 
-  describe('Component Token Usage', () => {
-    it('should use component tokens for toolbar backgrounds', () => {
+  describe('Semantic Token Usage', () => {
+    it('should use semantic tokens for toolbar backgrounds (alias removed)', () => {
       const toolbarCssPath = resolve(
         projectRoot,
         'src/shared/components/ui/Toolbar/Toolbar.module.css'
       );
       const toolbarCss = readFileSync(toolbarCssPath, 'utf8');
 
-      // 툴바에서 컴포넌트 토큰 사용 확인
+      // 툴바에서 시맨틱 토큰 사용 (component alias 금지)
       expect(toolbarCss).toMatch(
-        /background:\s*var\(--xeg-comp-toolbar-bg\)/,
-        'Toolbar should use component background token'
+        /background:\s*var\(--xeg-bg-toolbar\)/,
+        'Toolbar should use semantic background token (--xeg-bg-toolbar)'
+      );
+      expect(toolbarCss).not.toMatch(
+        /--xeg-comp-toolbar-bg/,
+        'Toolbar should not use deprecated component alias token'
       );
     });
 
@@ -108,23 +112,21 @@ describe('Color Token Consistency', () => {
   });
 
   describe('Theme-specific Token Definition', () => {
-    it('should define theme-specific tokens correctly', () => {
+    it('should define theme-specific toolbar semantic tokens correctly', () => {
       const semanticTokensPath = resolve(
         projectRoot,
         'src/shared/styles/design-tokens.semantic.css'
       );
       const semanticTokens = readFileSync(semanticTokensPath, 'utf8');
 
-      // 라이트 모드 토큰 확인
+      // 라이트 / 다크 모드에서 시맨틱 툴바 배경 토큰 정의 확인
       expect(semanticTokens).toMatch(
-        /\[data-theme=['"]light['"][^}]*--xeg-comp-toolbar-bg/s,
-        'Should define light mode toolbar tokens'
+        /--xeg-bg-toolbar:/,
+        'Should define base semantic toolbar background token'
       );
-
-      // 다크 모드 토큰 확인
       expect(semanticTokens).toMatch(
-        /\[data-theme=['"]dark['"][^}]*--xeg-comp-toolbar-bg/s,
-        'Should define dark mode toolbar tokens'
+        /\[data-theme=['"]dark['"][^}]*--xeg-bg-toolbar/s,
+        'Should define dark mode semantic toolbar override'
       );
 
       // prefers-color-scheme 지원 확인

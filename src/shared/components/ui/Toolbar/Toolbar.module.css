@@ -15,9 +15,9 @@
 
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
-  /* 레이아웃 속성만 정의 - 컴포넌트 토큰 사용 */
-  background: var(--xeg-comp-toolbar-bg);
-  border: 1px solid var(--xeg-comp-toolbar-border);
+  /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
+  background: var(--xeg-bg-toolbar);
+  border: 1px solid var(--color-border-default);
   border-radius: var(--xeg-radius-lg);
 
   /* 레이아웃 속성 */

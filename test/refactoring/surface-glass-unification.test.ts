@@ -1,7 +1,7 @@
 /**
  * TDD Red Test: Surface Glass Token Unification
- * @description Toolbar와 SettingsModal 이 공통 글래스 토큰(--xeg-surface-glass-*)을 사용하도록 강제.
- * 현재 구현은 각각 --xeg-toolbar-glass-* 토큰을 직접 참조하므로 이 테스트는 실패(Red)해야 함.
+ * @description Toolbar와 SettingsModal 이 공통 글래스 토큰(--xeg-surface-glass-*) 과 semantic surface/background 토큰을 사용하도록 강제.
+ * 정책 변경: Toolbar는 component alias(--xeg-comp-toolbar-*) 대신 semantic(--xeg-bg-toolbar)을 사용해야 함.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -13,8 +13,9 @@ const SETTINGS_MODAL_CSS_PATH = 'src/shared/components/ui/SettingsModal/Settings
 
 /** 기대 사항 (Green 목표)
  * 1. design-tokens.css 에 --xeg-surface-glass-{bg,border,blur,shadow} 토큰이 정의되어야 한다.
- * 2. Toolbar / SettingsModal CSS는 --xeg-toolbar-glass-* 직접 참조 대신 --xeg-surface-glass-* 를 사용해야 한다.
- * 3. (선택) 하위 호환 위해 design-tokens.css 에서 toolbar 토큰은 surface 토큰을 재사용하도록 매핑될 수 있다.
+ * 2. Toolbar CSS 는 개별 glass 속성 직접 정의 대신 semantic background 토큰 --xeg-bg-toolbar 를 사용한다.
+ * 3. SettingsModal CSS 는 --xeg-modal-bg semantic 토큰을 사용한다.
+ * 4. Deprecated component alias 토큰(--xeg-comp-toolbar-bg 등)은 Toolbar.module.css 내에서 사용되지 않는다.
  */
 
 describe('Surface Glass Token Unification', () => {
@@ -36,38 +37,36 @@ describe('Surface Glass Token Unification', () => {
     });
   });
 
-  it('Toolbar CSS 는 컴포넌트 토큰을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
+  it('Toolbar CSS 는 semantic 토큰을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
     const toolbarCSS = read(TOOLBAR_CSS_PATH);
-    // 새로운 조건: toolbarCSS에서 개별 glassmorphism 속성이 제거되어야 함
-    expect(
-      toolbarCSS.match(/\.galleryToolbar.*var\(--xeg-surface-glass-bg\)/s),
-      'Toolbar에서 개별 glassmorphism 속성이 제거되지 않음'
-    ).toBeNull();
+    // galleryToolbar 블록 추출
+    const toolbarBlockMatch = toolbarCSS.match(/\.galleryToolbar\s*{[\s\S]*?}/);
+    expect(toolbarBlockMatch, 'galleryToolbar block not found').not.toBeNull();
+    const toolbarBlock = toolbarBlockMatch ? toolbarBlockMatch[0] : '';
 
-    // 대신 컴포넌트 토큰 사용을 확인
+    // semantic background 토큰 사용 확인
     expect(
-      toolbarCSS.match(/var\(--xeg-comp-toolbar-bg\)/),
-      'Toolbar CSS에서 컴포넌트 토큰을 사용하지 않음'
-    ).not.toBeNull();
+      toolbarBlock.includes('var(--xeg-bg-toolbar)'),
+      'Toolbar should use semantic bg token'
+    ).toBe(true);
+    // component alias 미사용 확인
+    expect(
+      toolbarBlock.includes('--xeg-comp-toolbar-bg'),
+      'Toolbar should not use component alias bg token'
+    ).toBe(false);
   });
 
-  it('SettingsModal CSS 는 테마 토큰을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
+  it('SettingsModal CSS 는 semantic modal 토큰을 사용하고 개별 glassmorphism 속성을 제거해야 함', () => {
     const modalCSS = read(SETTINGS_MODAL_CSS_PATH);
+    // semantic modal bg 토큰 사용
     expect(
-      modalCSS.match(/--xeg-toolbar-glass-bg/),
-      'SettingsModal이 아직 toolbar 전용 토큰을 직접 사용'
-    ).toBeNull();
-
-    // 개별 glassmorphism 속성이 제거되어야 함
+      modalCSS.includes('var(--xeg-modal-bg)'),
+      'SettingsModal should use semantic modal bg token'
+    ).toBe(true);
+    // component alias 미사용 (허용: design tokens 파일 내부 정의)
     expect(
-      modalCSS.match(/\.modal.*var\(--xeg-surface-glass-bg\)/s),
-      'SettingsModal에서 개별 glassmorphism 속성이 제거되지 않음'
-    ).toBeNull();
-
-    // 대신 테마 토큰 사용을 확인
-    expect(
-      modalCSS.match(/var\(--xeg-modal-bg\)/),
-      'SettingsModal CSS에서 테마 토큰을 사용하지 않음'
-    ).not.toBeNull();
+      modalCSS.includes('--xeg-comp-modal-bg'),
+      'SettingsModal should not use component alias modal bg token'
+    ).toBe(false);
   });
 });

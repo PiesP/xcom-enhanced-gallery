@@ -9,6 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import path from 'path';
+import process from 'node:process';
 
 /**
  * 파일을 읽는 헬퍼 함수
@@ -125,15 +126,16 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
   });
 
   describe('컴포넌트 토큰 기반 아키텍처 사용 요구사항', () => {
-    it('Toolbar 컴포넌트 TSX 파일이 glass-surface 클래스를 제거하고 CSS 토큰을 사용해야 함', () => {
+    it('Toolbar 컴포넌트 TSX 파일이 glass-surface 클래스를 제거하고 semantic CSS 토큰을 사용해야 함', () => {
       const toolbarTSX = readFile('src/shared/components/ui/Toolbar/Toolbar.tsx');
       const toolbarCSS = readFile('src/shared/components/ui/Toolbar/Toolbar.module.css');
 
       // Toolbar TSX 파일에서 glass-surface 클래스 제거 확인
       expect(toolbarTSX.includes("'glass-surface'")).toBe(false);
 
-      // CSS에서 컴포넌트 토큰 사용 확인
-      expect(toolbarCSS.includes('var(--xeg-comp-toolbar-bg)')).toBe(true);
+      // CSS에서 semantic 토큰 사용 확인 (alias 제거)
+      expect(toolbarCSS.includes('var(--xeg-bg-toolbar)')).toBe(true);
+      expect(toolbarCSS.includes('--xeg-comp-toolbar-bg')).toBe(false);
     });
 
     it('SettingsModal 컴포넌트 TSX 파일이 glass-surface 클래스를 제거하고 CSS 시맨틱 토큰을 사용해야 함', () => {

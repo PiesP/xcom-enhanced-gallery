@@ -100,9 +100,9 @@ async function registerFeatureServicesLazy(): Promise<void> {
     // Features 서비스들을 지연 로딩으로 등록만 하고 초기화는 하지 않음
     logger.debug('Features 서비스 지연 등록 시작');
 
-    // Settings Manager - Features 레이어
-    const { SettingsService } = await import('@features/settings/services/SettingsService');
-    const settingsService = new SettingsService();
+    // Settings Manager - Features 레이어 (features/settings/services/settings-factory)
+    const { getSettingsService } = await import('@features/settings/services/settings-factory');
+    const settingsService = await getSettingsService();
     serviceManager!.register(SERVICE_KEYS.SETTINGS, settingsService);
 
     // 성능 설정(cacheTTL) 변화를 DOMCache에 반영
@@ -113,15 +113,17 @@ async function registerFeatureServicesLazy(): Promise<void> {
       if (typeof initialTTL === 'number') {
         globalDOMCache.setDefaultTTL(initialTTL);
       }
-      // 변경 구독
-      settingsService.subscribe(event => {
-        if (
-          (event.key as NestedSettingKey) === 'performance.cacheTTL' &&
-          typeof event.newValue === 'number'
-        ) {
-          globalDOMCache.setDefaultTTL(event.newValue);
-        }
-      });
+      // 변경 구독 (옵셔널 subscribe 보호)
+      if (typeof settingsService.subscribe === 'function') {
+        settingsService.subscribe(event => {
+          if (
+            (event.key as NestedSettingKey) === 'performance.cacheTTL' &&
+            typeof event.newValue === 'number'
+          ) {
+            globalDOMCache.setDefaultTTL(event.newValue);
+          }
+        });
+      }
     } catch {
       // DOMCache가 없거나 초기화 전이면 무시
     }

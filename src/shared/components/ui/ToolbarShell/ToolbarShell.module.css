@@ -17,17 +17,18 @@
 
 /* ===== Elevation 변형 ===== */
 .toolbar-elevation-low {
-  box-shadow: var(--xeg-comp-toolbar-shadow);
+  /* alias 제거: --xeg-comp-toolbar-shadow → semantic shadow token */
+  box-shadow: var(--xeg-shadow-md);
   z-index: var(--xeg-layer-toolbar);
 }
 
 .toolbar-elevation-medium {
-  box-shadow: var(--xeg-comp-toolbar-shadow);
+  box-shadow: var(--xeg-shadow-md);
   z-index: calc(var(--xeg-layer-toolbar) + 1);
 }
 
 .toolbar-elevation-high {
-  box-shadow: var(--xeg-comp-toolbar-shadow);
+  box-shadow: var(--xeg-shadow-md);
   z-index: calc(var(--xeg-layer-toolbar) + 2);
 }
 

@@ -829,7 +829,8 @@
       ],
       "dependents": [
         "src/features/settings/index.ts",
-        "src/features/settings/services/index.ts"
+        "src/features/settings/services/index.ts",
+        "src/features/settings/services/settings-factory.ts"
       ],
       "orphan": false,
       "valid": true
@@ -902,6 +903,31 @@
             "export"
           ],
           "resolved": "src/features/settings/services/TwitterTokenExtractor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/settings/services/settings-factory.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SettingsService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/settings/services/SettingsService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4568,32 +4594,15 @@
           "valid": true
         },
         {
-          "dynamic": true,
-          "module": "./BulkDownloadService",
+          "dynamic": false,
+          "module": "./service-factories",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "dynamic-import"
+            "import"
           ],
-          "resolved": "src/shared/services/BulkDownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./MediaService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/services/MediaService.ts",
+          "resolved": "src/shared/services/service-factories.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4834,6 +4843,86 @@
       "valid": true
     },
     {
+      "source": "src/shared/services/service-factories.ts",
+      "dependencies": [
+        {
+          "dynamic": true,
+          "module": "./BulkDownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/BulkDownloadService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./BulkDownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/BulkDownloadService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./MediaService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/MediaService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/MediaService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/service-initialization.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/services/BulkDownloadService.ts",
       "dependencies": [
         {
@@ -4872,7 +4961,7 @@
         }
       ],
       "dependents": [
-        "src/shared/services/service-initialization.ts",
+        "src/shared/services/service-factories.ts",
         "src/shared/types/core/core-types.ts"
       ],
       "orphan": false,
@@ -5025,7 +5114,7 @@
       ],
       "dependents": [
         "src/shared/services/index.ts",
-        "src/shared/services/service-initialization.ts"
+        "src/shared/services/service-factories.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7902,8 +7991,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 233,
-    "totalDependenciesCruised": 326,
+    "totalCruised": 235,
+    "totalDependenciesCruised": 330,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

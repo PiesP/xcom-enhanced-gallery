@@ -48,22 +48,7 @@
 
 <!-- Phase 5 (Accessibility Focus & Announcement Hardening) : 완료되어 활성 계획에서 제거 -->
 
-### Phase 6 — Service Contract Interface Extraction
-
-목표: 주요 서비스(MediaService, BulkDownloadService, SettingsService…) I/F
-선언 + factory + 주입 경계. 구조 타이핑 축소. RED 테스트:
-
-- `services.contract-interface.red.test.ts` (직접 new 사용 금지 규칙 위반 검출)
-  DoD: 서비스 생성은 전부 factory/getService 경유, 테스트 모킹 간소화 예시 추가.
-
-### Phase 7 — CSS Layer Architecture & Theming Simplification
-
-목표: surface/elevation/token 계층 표
-정의(`semantic → component alias 최소화 → utility`). 레거시/중복 alias 제거 목록
-테스트. RED 테스트:
-
-- `styles.layer-architecture.red.test.ts` (금지 alias 검출) DoD: alias 축소
-  목록(N개) → 0; 문서 표 반영.
+<!-- Phase 7 (CSS Layer Architecture & Theming Simplification) : 완료되어 활성 계획에서 제거 -->
 
 ### (옵션) Phase 8 — Security & URL Sanitization Policy
 

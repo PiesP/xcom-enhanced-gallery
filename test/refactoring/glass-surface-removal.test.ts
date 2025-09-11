@@ -43,7 +43,7 @@ describe('Glass Surface Removal', () => {
     expect(modalContent).not.toMatch(/className.*glass-surface/);
   });
 
-  it('should use component tokens for Toolbar background in CSS', () => {
+  it('should use semantic tokens (not component alias) for Toolbar background in CSS', () => {
     const toolbarCssPath = join(
       process.cwd(),
       'src',
@@ -55,8 +55,9 @@ describe('Glass Surface Removal', () => {
     );
     const toolbarCssContent = readFileSync(toolbarCssPath, 'utf-8');
 
-    // 컴포넌트 토큰 사용 확인
-    expect(toolbarCssContent).toMatch(/var\(--xeg-comp-toolbar-bg\)/);
+    // semantic 토큰 사용 확인 (alias 제거 정책)
+    expect(toolbarCssContent).toMatch(/var\(--xeg-bg-toolbar\)/);
+    expect(toolbarCssContent).not.toMatch(/var\(--xeg-comp-toolbar-bg\)/);
   });
 
   it('should use theme tokens for SettingsModal background in CSS', () => {

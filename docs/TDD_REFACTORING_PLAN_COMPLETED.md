@@ -508,6 +508,25 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
 
 2025-09-11: Phase 5 (2차) — Accessibility Focus & Live Region Hardening 완료
 
+2025-09-11: Phase 6 (2차) — Service Contract Interface Extraction 완료
+
+- 2025-09-11: Phase 7 (2차) — CSS Layer Architecture & Theming Simplification
+  완료
+  - alias 토큰(background/border/shadow) 전면 제거: toolbar/modal CSS 모듈에서
+    `--xeg-comp-*` → semantic(`--xeg-bg-toolbar`, `--color-border-default`,
+    `--xeg-shadow-md|lg`) 치환
+  - RED: styles.layer-architecture.alias-prune.red.test.ts (초기 FAIL) → GREEN
+    (위반 0건)
+  - 기존 ModalShell.tokens.test 업데이트: alias 의존 → semantic shadow 토큰 검증
+  - 계획서 Phase 7 섹션 제거 & 본 완료 로그에 요약 추가
+
+- factory 도입: getMediaService / getBulkDownloadService / getSettingsService
+  (lazy singleton)
+- 직접 new 사용 제거(main.ts, service-initialization.ts, GalleryRenderer.ts)
+- GREEN 테스트: services.contract-interface.test.ts (직접 인스턴스화 금지 +
+  factory export 검증)
+- 계획서에서 Phase 6 섹션 제거
+
 - RED → GREEN:
   - focus-restore-manager.red.test.ts → focus-restore-manager.test.ts
   - live-region-manager.red.test.ts → live-region-manager.test.ts

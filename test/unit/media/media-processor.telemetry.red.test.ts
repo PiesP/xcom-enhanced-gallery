@@ -27,7 +27,7 @@ describe('MediaProcessor - Telemetry (RED)', () => {
 
     // 가설 옵션: telemetry 수집 플래그 (아직 구현 전)
     const result: any = processor.process(root, {
-      /* telemetry: true */
+      telemetry: true,
     } as any);
 
     expect(result).toHaveProperty('success');

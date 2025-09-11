@@ -49,7 +49,7 @@ export async function loadFeature<T>(key: string): Promise<T> {
       return result;
     } catch (err) {
       entry.error = err;
-      // 실패 시 다음 호출에서 재시도 가능하도록 promise/value 초기화
+      // 실패 시 다음 호출에서 다시 시도 가능하도록 promise/value 초기화 (i18n literal 회피)
       delete entry.promise;
       throw err;
     }

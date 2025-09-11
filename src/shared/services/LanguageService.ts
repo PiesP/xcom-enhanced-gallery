@@ -81,6 +81,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
         allFailed: { title: '다운로드 실패', body: '모든 항목을 다운로드하지 못했습니다.' },
         partial: { title: '일부 실패', body: '{count}개 항목을 받지 못했습니다.' },
         retry: {
+          // NOTE: i18n literal 스캐너 예외: 이미 리소스 테이블 내이므로 허용
           action: '재시도',
           success: { title: '재시도 성공', body: '실패했던 항목을 모두 받았습니다.' },
         },

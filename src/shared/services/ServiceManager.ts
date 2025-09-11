@@ -17,6 +17,8 @@ import { logger } from '@shared/logging/logger';
 export class CoreService {
   private static instance: CoreService | null = null;
   private readonly services = new Map<string, unknown>();
+  private readonly factories = new Map<string, () => unknown>();
+  private readonly factoryCache = new Map<string, unknown>();
 
   private constructor() {
     logger.debug('[CoreService] 초기화됨');
@@ -45,14 +47,35 @@ export class CoreService {
   }
 
   /**
+   * 서비스 팩토리 등록 (Phase 6 확장)
+   * 동일 key 재등록 시 경고 후 무시
+   */
+  public registerFactory<T>(key: string, factory: () => T): void {
+    if (this.factories.has(key) || this.services.has(key)) {
+      logger.warn(`[CoreService] 팩토리 중복 등록 무시: ${key}`);
+      return;
+    }
+    this.factories.set(key, factory);
+    logger.debug(`[CoreService] 서비스 팩토리 등록: ${key}`);
+  }
+
+  /**
    * 서비스 조회
    */
   public get<T>(key: string): T {
-    const instance = this.services.get(key);
-    if (!instance) {
-      throw new Error(`서비스를 찾을 수 없습니다: ${key}`);
+    if (this.services.has(key)) {
+      return this.services.get(key) as T;
     }
-    return instance as T;
+    if (this.factoryCache.has(key)) {
+      return this.factoryCache.get(key) as T;
+    }
+    const factory = this.factories.get(key);
+    if (factory) {
+      const created = factory();
+      this.factoryCache.set(key, created);
+      return created as T;
+    }
+    throw new Error(`서비스를 찾을 수 없습니다: ${key}`);
   }
 
   /**
@@ -132,6 +155,8 @@ export class CoreService {
    */
   public reset(): void {
     this.services.clear();
+    this.factories.clear();
+    this.factoryCache.clear();
     logger.debug('[ServiceManager] 모든 서비스 초기화됨');
   }
 
@@ -196,3 +221,14 @@ export const serviceManager = CoreService.getInstance();
 export function getService<T>(key: string): T {
   return CoreService.getInstance().get<T>(key);
 }
+
+/**
+ * Phase 6: 서비스 팩토리 등록 전역 함수 (테스트 사용)
+ */
+export function registerServiceFactory<T>(key: string, factory: () => T): void {
+  CoreService.getInstance().registerFactory<T>(key, factory);
+}
+
+// 테스트 호환: 전역 네임스페이스에 노출 (기존 RED 테스트가 전역 심볼로 가정)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).registerServiceFactory = registerServiceFactory;

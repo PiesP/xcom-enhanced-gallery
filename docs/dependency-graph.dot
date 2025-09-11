@@ -65,6 +65,8 @@ strict digraph "dependency-cruiser output"{
     "src/features/settings/services/index.ts" -> "src/features/settings/services/SettingsService.ts" [arrowhead="inv"]
     "src/features/settings/services/index.ts" -> "src/features/settings/services/TwitterTokenExtractor.ts" [arrowhead="inv"]
     "src/features/settings/services/index.ts" -> "src/features/settings/services/TwitterTokenExtractor.ts" [arrowhead="onormal" penwidth="1.0"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/settings" {label="settings" subgraph "cluster_src/features/settings/services" {label="services" "src/features/settings/services/settings-factory.ts" [label=<settings-factory.ts> tooltip="settings-factory.ts" URL="src/features/settings/services/settings-factory.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
+    "src/features/settings/services/settings-factory.ts" -> "src/features/settings/services/SettingsService.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/settings" {label="settings" subgraph "cluster_src/features/settings/types" {label="types" "src/features/settings/types/settings.types.ts" [label=<settings.types.ts> tooltip="settings.types.ts" URL="src/features/settings/types/settings.types.ts" fillcolor="#F0FDF4" color="#15803D" fontcolor="#15803D"] } } } }
     subgraph "cluster_src" {label="src" "src/main.ts" [label=<main.ts> tooltip="main.ts" URL="src/main.ts" fillcolor="#ddfeff"] }
     "src/main.ts" -> "src/constants.ts"
@@ -397,11 +399,15 @@ strict digraph "dependency-cruiser output"{
     "src/shared/services/media/index.ts" -> "src/shared/services/media/UsernameExtractionService.ts" [arrowhead="inv"]
     "src/shared/services/media/index.ts" -> "src/shared/services/media/UsernameExtractionService.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/services/media/index.ts" -> "src/shared/services/media/VideoControlService.ts" [arrowhead="inv"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/service-factories.ts" [label=<service-factories.ts> tooltip="service-factories.ts" URL="src/shared/services/service-factories.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    "src/shared/services/service-factories.ts" -> "src/shared/services/BulkDownloadService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
+    "src/shared/services/service-factories.ts" -> "src/shared/services/BulkDownloadService.ts" [arrowhead="onormal" penwidth="1.0"]
+    "src/shared/services/service-factories.ts" -> "src/shared/services/MediaService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
+    "src/shared/services/service-factories.ts" -> "src/shared/services/MediaService.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/service-initialization.ts" [label=<service-initialization.ts> tooltip="service-initialization.ts" URL="src/shared/services/service-initialization.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/services/service-initialization.ts" -> "src/constants.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/shared/services/service-initialization.ts" -> "src/shared/media/index.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
-    "src/shared/services/service-initialization.ts" -> "src/shared/services/BulkDownloadService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
-    "src/shared/services/service-initialization.ts" -> "src/shared/services/MediaService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
+    "src/shared/services/service-initialization.ts" -> "src/shared/services/service-factories.ts"
     "src/shared/services/service-initialization.ts" -> "src/shared/services/ServiceManager.ts"
     "src/shared/services/service-initialization.ts" -> "src/shared/services/ThemeService.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]
     "src/shared/services/service-initialization.ts" -> "src/shared/services/ToastController.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]

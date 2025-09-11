@@ -242,10 +242,11 @@ describe('SettingsModal-Toolbar Design Consistency', () => {
       expect(designTokensCssContent).toMatch(/--xeg-surface-glass-blur:/);
     });
 
-    it('Toolbar도 CSS 토큰 기반 아키텍처를 사용해야 한다', () => {
+    it('Toolbar도 semantic CSS 토큰( alias 제거 ) 기반 아키텍처를 사용해야 한다', () => {
       // Given: Toolbar CSS 내용
-      // Then: 컴포넌트 토큰을 사용해야 함
-      expect(toolbarCssContent).toMatch(/var\(--xeg-comp-toolbar-bg\)/);
+      // Then: semantic 토큰 사용 및 alias 미사용
+      expect(toolbarCssContent).toMatch(/var\(--xeg-bg-toolbar\)/);
+      expect(toolbarCssContent).not.toMatch(/var\(--xeg-comp-toolbar-bg\)/);
 
       // TSX 파일에서 glass-surface 클래스 사용하지 않음 확인
       const toolbarTsxPath = resolve(
