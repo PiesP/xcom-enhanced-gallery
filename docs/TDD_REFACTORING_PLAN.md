@@ -53,6 +53,18 @@
 - 리스크/완화: 기존 키 기반 조회 사용처 단계적 마이그레이션 → 배럴 export로 점진
   치환
 
+진행 상황(2025-09-12):
+
+- 추가 가드 GREEN: features 레이어에서 `ServiceManager` 직접 import 금지 테스트
+  추가 및 통과
+  - 테스트: `test/unit/lint/features-no-servicemanager.imports.red.test.ts`
+  - 변경: `VerticalGalleryView`, `GalleryApp`, `createAppContainer`가
+    브리지/액세서 사용으로 전환
+- 신규 유틸 추가: `@shared/container/service-bridge`,
+  `@shared/container/settings-access`
+- 다음 단계: main.ts와 features 전반에서 SERVICE_KEYS 의존 축소, 팩토리 경유
+  일관화
+
 ### U3 — Preact 컴포넌트 일관화
 
 - 목표: signals selector 유틸 사용, memo/forwardRef는 compat getter 경유, 인라인

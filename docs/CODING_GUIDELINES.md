@@ -361,6 +361,13 @@ animateCustom(el, keyframes, {
 - 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야 합니다.
 - 예: `import { getPreact } from '@shared/external/vendors'; const { useEffect } = getPreact();`
 
+#### ServiceManager 접근 규칙 (U2)
+
+- features 레이어에서는 `@shared/services/ServiceManager`를 직접 import 하지 않습니다.
+- 필요한 경우 `@shared/container/service-bridge` 또는 목적별 얇은 액세서(`@shared/container/settings-access`)를 사용합니다.
+- 이유: 전역 컨테이너 의존 축소, 타입 안전한 경계 유지, 테스트/모킹 용이성 향상.
+- 가드: `test/unit/lint/features-no-servicemanager.imports.red.test.ts` 가 import를 정적 스캔합니다.
+
 #### Userscript(GM_*) 어댑터 경계 가드
 
 - Userscript API는 `src/shared/external/userscript/adapter.ts`의 `getUserscript()`로만 접근합니다.
