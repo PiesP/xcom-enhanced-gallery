@@ -234,6 +234,14 @@ Gallery
 - 경계: 인덱스/총합은 안전하게 클램프되며, 최대 카운트는 20으로 제한합니다(설정 서비스의 검증 규칙 일치).
 
 
+### 접근성 스모크 규칙 (A11y)
+
+- focus-visible: 모든 인터랙션 요소는 `outline: var(--xeg-focus-ring)` 및 `outline-offset: var(--xeg-focus-ring-offset)`을 사용합니다.
+- high contrast: 디자인 토큰 레이어에서 `@media (prefers-contrast: high)`를 지원해야 합니다.
+- reduced motion: 애니메이션/트랜지션은 `@media (prefers-reduced-motion: reduce)`에서 최소화/비활성화됩니다.
+- 금지: 임의 색상/하드코딩 outline/키워드 이징 사용. 항상 토큰 기반으로 정의합니다.
+- 테스트: 관련 스위트에서 자동 검증되므로, 규칙 위반 시 바로 RED가 됩니다.
+
 ### Component vs Semantic 토큰
 
 - 소스 오브 트루스는 Semantic 토큰(`--xeg-modal-bg`, `--xeg-color-*`, `--xeg-radius-*`).

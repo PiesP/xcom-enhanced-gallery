@@ -69,16 +69,7 @@
 
 ## 4) 다음 단계 백로그(테스트 우선)
 
-Phase E — 성능/접근성 스모크
-
-- 목표: 캐시 TTL 동작, 프리로드 카운트 반영, 포커스 링/대비 유지
-- 진행:
-  - 프리로드 카운트 소비 구현 완료: `computePreloadIndices` 유틸 +
-    `VerticalGalleryView` 연동
-  - 단위 테스트 추가: `test/unit/performance/gallery-preload.util.test.ts`
-- 남음:
-  - a11y 스모크: focus-visible/contrast/reduce-motion 확인(경량 스모크)
-  - 필요 시 캐시 TTL 관측 포인트 보강(현재 DOMCache 구독 반영 완료)
+- 현재 남은 백로그 없음(Phase E 항목까지 완료되어 본 문서에서 제거됨)
 
 ## 5) 완료 기준(Definition of Done)
 

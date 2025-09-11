@@ -174,12 +174,17 @@
 
 ---
 
-- 2025-09-11: 성능 — 갤러리 프리로드 카운트 소비 구현 완료
   - `computePreloadIndices` 유틸 추가 및 `VerticalGalleryView`에서
     `forceVisible`에 반영
   - 단위 테스트 추가: `test/unit/performance/gallery-preload.util.test.ts`
     (GREEN)
   - 설정 키: `gallery.preloadCount`(0–20), 기본값 3
+
+- 2025-09-11: 접근성 스모크 완료(경량 확인)
+  - focus-visible: `interaction-state-standards.test.ts` 등에서 토큰화된 포커스 링 적용 확인
+  - contrast: `phase-4-accessibility-contrast.test.ts`, `css-integration.test.ts`의 prefers-contrast: high 지원 확인
+  - reduced motion: `styles/animation-standards.test.ts` 및 관련 refactoring 테스트에서 prefers-reduced-motion 지원 확인
+  - 결과: 관련 스위트 GREEN, 추가 구현 필요 없음(정책과 토큰이 이미 반영됨)
 
 - name=orig 강제 규칙(png/webp/jpg) 정규화 및 DOMDirectExtractor 연동
 - API 재시도/타임아웃(기본 RETRY=3, TIMEOUT=10s) + 실패 시 DOM 폴백 확인
