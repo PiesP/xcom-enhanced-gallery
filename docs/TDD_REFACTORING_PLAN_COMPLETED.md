@@ -39,7 +39,20 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
   `registerVendorCleanupOnUnload(Safe)` 명시적 API로 전환(import 부작용 제거)
 - 결과: 전체 테스트/빌드 GREEN, 기존 초기화 플로우(main에서 명시적 등록만 필요)
 
-2025-09-12: U2 — SERVICE_KEYS 직접 사용 축소(헬퍼 도입)
+2025-09-12: 외부 라이브러리 평가 — mediabunny 도입 보류 (결론 확정)
+
+- 범위/비용 대비 이점 부족으로 도입 보류. 향후 옵션 플러그인(기본 Off) +
+  Progressive Loader 경유 lazy 로 재평가.
+- 계획서에는 M0(현행 경량 유지)로 반영, 세부 근거는 본 로그 참조.
+
+2025-09-12: U2 — SERVICE_KEYS 직접 사용 축소(헬퍼 도입) 2025-09-12: 외부
+라이브러리 평가 — mediabunny 도입 보류 결정
+
+- 결론: 현 범위(추출/다운로드/ZIP)에 비해 mediabunny의 변환/인코딩 기능이
+  과도하며, 번들 예산 및 경계 유지비 리스크가 커서 도입을 보류함. 향후 옵션
+  플러그인(기본 Off, Progressive Loader 경유 lazy)으로 재평가 예정.
+- 조치: 계획서에 “M0 — 미디어 처리 경량화(현행 유지)” 추가, U5 항목 중 이미
+  완료된 vendor beforeunload 자동 등록 제거 내역은 계획 범위에서 제외 처리.
 
 - 추가: `@shared/container/service-accessors` (등록/조회/워밍업 헬퍼 + 타이핑)
 - 변경: `main.ts`, `bootstrap/feature-registration.ts`,

@@ -27,10 +27,18 @@
 선택: A (점진 모듈화) — Progressive Loader·벤더 getter·서비스 팩토리 패턴을
 기반으로, 소스 간결성/일관성/현대성 확보를 TDD로 단계 적용.
 
+## 외부 라이브러리 평가 결과 (요약)
+
+- 결론(완료): mediabunny 도입 보류 — 옵션 플러그인(기본 Off, Progressive Loader
+  경유 lazy)로 향후 재평가. 세부 근거는 완료 로그에 기록됨.
+
 ## 활성 목표 (요약)
 
-- U5. 사이즈/성능: 기능 분할 로드 강제, 사이드이펙트 없는 import 가드, 번들 예산
+- U5. 사이즈/성능: 기능 분할 로드 강화, import 부작용 가드 유지, 번들 예산
   유지·개선
+- M0. 미디어 처리 경량화(현행 유지) — mediabunny 도입 보류 결론 반영:
+  변환/인코딩 미사용 확인, 서비스 표면/유형 정돈, 고급 변환 기능은
+  옵션(비활성)로 분리 설계
 
 ## Phase 개요 (활성)
 
@@ -40,17 +48,35 @@
 
 ### U5 — 사이즈/성능 분할 로드 강화
 
-- 목표: Progressive Loader로 기능 단위 lazy 보장, 사이드이펙트 없는 모듈화 확인.
-- 계약/가드:
-  - 번들 예산 경고/실패 임계 유지/개선 (scripts/validate-build.js)
-  - feature register는 최초 1회, 실패 시 캐시 해제 (기존 로더 계약 유지)
-- RED 테스트(추가): `test/unit/loader/feature-side-effect.red.test.ts`,
-  `test/unit/loader/import-side-effect.scan.red.test.ts`
+- 목표: Progressive Loader로 기능 단위 lazy 보장, import 부작용 0, 번들 예산
+  유지/개선.
+- 계약/가드(DoD):
+  - 번들 예산 임계 PASS (scripts/validate-build.js; 경고/실패 임계 준수)
+  - feature register 최초 1회, 실패 시 Promise 캐시 해제(재시도 가능)
+  - import 시 document/window 이벤트 등록 없음 스캔 GREEN
+- RED 테스트(추가):
+  - `test/unit/loader/feature-side-effect.red.test.ts`
+  - `test/unit/loader/import-side-effect.scan.red.test.ts`
 - 구현 개요:
-  - main 초기화 경량화와 연계, 갤러리/설정 피처를 registerFeature로만 노출
-  - vendor 모듈(import 시)에서 beforeunload 등록 제거 → 명시적 등록 API 추가
-  - 런타임 적용: 엔트리 cleanup() 흐름에서 cleanupVendors()를 호출하여 언로드 시
-    안전 정리 수행
+  - main 초기화 경량화와 연계, 갤러리/설정 피처는 registerFeature로만 노출(lazy)
+  - 엔트리 cleanup() 경로에서 명시적 정리 API 호출(벤더/이벤트/DOM 리소스)
+
+### M0 — 미디어 처리 경량화(현행 유지, mediabunny 보류 결론 반영)
+
+- 목표: 현재 범위(추출/다운로드/ZIP/간단 메타데이터)에 집중하여 표면을 정리하고,
+  고급 변환 기능은 “옵션 플러그인” 설계로 분리(기본 비활성)합니다.
+- 계약/가드:
+  - 사이즈/의존성 가드: mediabunny 정적 import 금지 스캔(red) → 추후 옵션
+    플러그인 도입 시 Progressive Loader 경유 강제
+  - 서비스 계약 유지: MediaService 공개 API/Result 타입 변동 없음
+- RED 테스트(추가 제안):
+  - `test/unit/deps/mediabunny.not-imported.scan.red.test.ts`
+  - `test/unit/services/media-service.contract.test.ts` (API 표면 회귀 가드
+    강화)
+- 구현 개요:
+  - MediaService 내 변환/인코딩 관련 표면 노출 금지(추후 플러그인 경유)
+  - 옵션 플러그인 구조 초안만 정의(폴더/팩토리/토글), 실제 의존성 추가는
+    백로그로 이동. 설정 기본값 Off, lazy 로드, 실패 시 회복 가능하게 설계
 
 ---
 
@@ -81,4 +107,4 @@ DONE 판정 시 아래를 충족해야 합니다:
 - 완료 로그: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
 - 백로그: `docs/TDD_REFACTORING_BACKLOG.md`
 
-업데이트 일시: 2025-09-12 (U5 활성: import side-effect guard 확장)
+업데이트 일시: 2025-09-12 (mediabunny 도입 보류 결론 반영 · U5 계획 정리)
