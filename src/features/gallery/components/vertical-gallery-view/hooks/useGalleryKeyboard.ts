@@ -11,9 +11,14 @@ import { getPreactHooks } from '@shared/external/vendors';
 
 interface UseGalleryKeyboardOptions {
   onClose: () => void;
+  /**
+   * 키보드 도움말 오버레이 열기 콜백 (Shift + / 또는 '?')
+   * 갤러리 컨텍스트에서만 활성화됩니다.
+   */
+  onOpenHelp?: () => void;
 }
 
-export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions) {
+export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOptions) {
   const { useCallback, useEffect } = getPreactHooks();
 
   // 갤러리 키보드 이벤트 핸들러 (확장된 버전)
@@ -30,7 +35,7 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions) {
         return;
       }
 
-      // 키보드 이벤트 처리
+      // 키보드 이벤트 처리 (PC 전용 키)
       switch (event.key) {
         case 'Escape':
           event.preventDefault();
@@ -38,9 +43,27 @@ export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions) {
           onClose();
           logger.debug('Gallery: Esc key pressed, closing gallery');
           break;
+        case '?':
+          // Shift + / 의 결과로 key가 '?'가 되기도 함 (브라우저/레어 환경 차이 고려)
+          event.preventDefault();
+          event.stopPropagation();
+          if (onOpenHelp) {
+            onOpenHelp();
+          }
+          break;
+        case '/':
+          // 일부 환경에서 key는 '/'이고 shiftKey가 true인 형태로 전달됨
+          if (event.shiftKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (onOpenHelp) {
+              onOpenHelp();
+            }
+          }
+          break;
       }
     },
-    [onClose]
+    [onClose, onOpenHelp]
   );
 
   useEffect(() => {

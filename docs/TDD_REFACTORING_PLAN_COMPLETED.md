@@ -2,6 +2,21 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+2025-09-12: A3 — 키보드 단축키 도움말 오버레이('?') 완료
+
+- 변경: 갤러리 내에서 Shift + / ( '?')로 열리는 접근성 지원 도움말 오버레이 추가
+  (role=dialog, aria-modal, aria-labelledby/aria-describedby). IconButton 닫기,
+  ESC/배경 클릭으로 닫기, PC 전용 입력만 사용.
+- 테스트: keyboard-help.overlay.test.tsx, keyboard-help.aria.test.tsx GREEN.
+- 통합: useGalleryKeyboard에 onOpenHelp 훅 추가, VerticalGalleryView에 상태 및
+  렌더링 연결. 스타일은 토큰 기반으로 구현.
+
+2025-09-12: UI 감사 보고 및 차기 활성 Phase(A1–A4) 정의 완료
+
+- 내용: 갤러리 프리로드/프리페치(A1), 비디오 CLS 하드닝(A2), 키보드 도움말
+  오버레이(A3), SettingsModal 폼 컨트롤 토큰 정합(A4) 계획 수립 및 활성화
+- 문서: `TDD_REFACTORING_PLAN.md` 갱신(활성 Phase 추가)
+
 2025-09-12: UI 감사 및 차기 활성 계획(U6–U10) 수립 완료
 
 - 내용: 현 UI/UX 점검(키보드/비디오/CLS/토큰/아나운스) 결과를 바탕으로 활성 계획
@@ -766,3 +781,6 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
 - 내용: `TDD_REFACTORING_PLAN.md`를 현대화 리팩토링 중심(U1–U5)으로 갱신하고,
   기존 문구(활성 없음)를 제거하여 차기 사이클 시작 상태로 전환
 - 결과: 완료 로그에 본 항목 기록, 계획 문서는 활성 Phase만 유지
+
+2025-09-12: 계획 문서 단순화 — 활성 Phase 없음(전 구간 GREEN) 확정, 완료 항목을
+본 로그로 이관하고 계획서는 스켈레톤만 유지

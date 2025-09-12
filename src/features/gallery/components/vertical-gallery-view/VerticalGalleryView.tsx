@@ -32,6 +32,7 @@ import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { getSetting } from '@shared/container/settings-access';
+import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -379,9 +380,13 @@ function VerticalGalleryViewCore({
     [currentIndex, mediaItems.length]
   );
 
-  // 키보드 지원 (Esc 키만)
+  // 키보드 도움말 오버레이 상태
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // 키보드 지원 (Esc 닫기 + '?' 도움말)
   useGalleryKeyboard({
     onClose: onClose || (() => {}),
+    onOpenHelp: () => setIsHelpOpen(true),
   });
 
   // 다운로드 핸들러들
@@ -491,6 +496,8 @@ function VerticalGalleryViewCore({
       data-xeg-gallery='true'
       data-xeg-role='gallery'
     >
+      {/* 키보드 도움말 오버레이 */}
+      <KeyboardHelpOverlay open={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       {/* 툴바 호버 트리거 영역 (브라우저 상단 100px) */}
       <div className={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
 

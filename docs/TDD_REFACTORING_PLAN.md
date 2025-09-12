@@ -1,85 +1,83 @@
 # TDD 리팩토링 활성 계획 (경량)
 
-본 문서는 "아직 완료되지 않은" 활성 Phase만 유지합니다. 완료된 항목은
-`TDD_REFACTORING_PLAN_COMPLETED.md`에 1줄 요약으로 이동합니다.
+본 문서는 진행 중인 활성 Phase만 유지합니다. 완료된 항목은
+`TDD_REFACTORING_PLAN_COMPLETED.md`로 즉시 이관합니다.
 
-## 공통 가드 (불변)
+업데이트: 2025-09-12 — UI 감사 결과를 반영한 활성 Phase(A1–A4) 정의
 
-- TypeScript strict 100%, 모든 공개 함수/서비스 명시적 반환 타입
-- 외부 의존성: 전용 getter (preact / signals / fflate / GM\_\*) — 직접 import
+## 운영 원칙(불변)
+
+- TypeScript strict 100%, 공개 API 명시적 반환 타입
+- 외부 의존성은 전용 getter 경유(preact/signals/fflate/GM\_\*) — 직접 import
   금지
-- PC 전용 이벤트만 사용 (click | keydown | wheel | contextmenu)
-- 디자인/모션/spacing/z-index는 토큰만 사용 (raw number/hex/ms 금지)
-- Result status 모델 `success | partial | error | cancelled` 유지 (회귀 금지)
+- PC 전용 입력만 사용(click/keydown/wheel/contextmenu)
+- 디자인/모션/spacing/z-index 모두 토큰 기반만 사용(raw 숫자/hex/ms 금지)
+- Result status 모델: 'success' | 'partial' | 'error' | 'cancelled'
 
-## 접근 전략 (요약: 옵션 평가 → 선택)
+## 활성 Phase
 
-- A. 점진 모듈화/DI 강화(현 구조 유지, 서비스 경계 슬림화)
-  - 장점: 위험/변경 범위 최소, 기존 테스트 재사용, 빠른 가치 창출
-  - 단점: 일부 레거시 흔적 유지, 완전한 재설계 아님
-- B. 전면 재작성(엔트리/서비스/컴포넌트 대수술)
-  - 장점: 일관성 최고, 기술부채 일괄 청산
-  - 단점: 리스크/기간 큼, 회귀 위험/커버리지 갭
-- C. 표면 정리(린트/형식/네이밍만)
-  - 장점: 매우 안전/빠름
-  - 단점: 실질 구조/성능 개선 미미
+### A1 — 갤러리 프리로드/프리페치 엔진 도입
 
-선택: A (점진 모듈화) — Progressive Loader·벤더 getter·서비스 팩토리 패턴을
-기반으로, 소스 간결성/일관성/현대성 확보를 TDD로 단계 적용.
+- 목표: 현재 인덱스를 중심으로 좌/우 이웃 항목을 우선순위대로 프리로드하여 초기
+  지연을 최소화합니다.
+- 설계:
+  - 순수 함수 computePreloadIndices(currentIndex, total, count) 구현 (최대 20,
+    경계 클램프, 대칭 우선순위)
+  - MediaService.prefetchNextMedia(urls, currentIndex, { prefetchRange,
+    maxConcurrent, schedule: 'immediate'|'idle' })
+  - 갤러리 렌더링 시 forceVisible/nearby 항목에 우선 반영, idle 예약은 저우선
+    작업에만 적용
+- TDD:
+  - test/unit/features/gallery/preload.compute-indices.test.ts — 경계/비정상
+    값/대칭성/중복 제거
+  - test/unit/shared/services/media-prefetch.contract.test.ts — 스케줄별
+    동작/동시성 제한/캐시 히트
+  - test/integration/gallery/preload.integration.test.ts — 스크롤/키 네비게이션
+    중 프리로드 지속 보장
+- 리스크/완화:
+  - 메모리/네트워크 비용 증가 ↔ count 상한 20, idle 스케줄 기본값, 중복 요청
+    차단 캐시
 
-## UI 감사 결과 요약 (2025-09-12)
+### A2 — 비디오 항목 CLS 하드닝(Aspect Ratio & Skeleton)
 
-현 빌드 산출물과 가이드/테스트 커버리지를 바탕으로 사용성/현대화 관점에서 다음
-개선 여지가 확인되었습니다.
+- 목표: 영상 썸네일/플레이어 컨테이너에 aspect-ratio와 스켈레톤을 적용해
+  레이아웃 시프트(CLS)를 추가로 감소시킵니다.
+- 설계:
+  - VideoItem.module.css: `aspect-ratio` 또는 높이 예약 + 토큰화된 스켈레톤 배경
+  - 로딩 상태 클래스(.loading/.loaded)와 토큰화된 transition 사용(transition:
+    all 금지)
+- TDD:
+  - test/unit/features/gallery/video-item.cls.test.ts — 초기 렌더 CLS 0에
+    수렴하는지 스냅/측정
+  - test/unit/styles/video-skeleton.tokens.test.ts — 색상/라운드/모션 토큰 준수
+- 리스크/완화:
+  - 스켈레톤 깜빡임 ↔ reduced-motion/빠른 페이드 프리셋 사용, 비디오 메타 확보
+    시 즉시 교체
 
-- JS 계층의 하드코딩 상수 존재: z-index/spacing/animation duration이 코드
-  상수(CSS.Z_INDEX, CSS.SPACING, APP_CONFIG.ANIMATION_DURATION)로 남아 있음 →
-  토큰/클래스로 이관 필요
-- 키보드 네비게이션 보강 여지: Escape/Enter 중심 →
-  Home/End/PageUp/PageDown/Arrow 가드 및 preventDefault 범위 명확화 필요(PC 전용
-  정책 유지)
-- 비디오 재생 제어와 Space 스크롤 충돌 가능성: 갤러리 포커스 컨텍스트에서
-  Space/Arrow 동작 표준화 필요
-- 레이아웃 안정성(CLS) 개선: 이미지 컨테이너 aspect-ratio 예약, 로딩
-  스켈레톤(토큰 기반) 적용 여지
-- 토스트/라이브영역 아나운스 정책: 실패/경고 위주 알림 최소화는 완비되었으나,
-  번들 전역 아나운스 경로 통일(토스트→라이브영역 위임) 확인 및 하드닝 필요
+### A4 — SettingsModal 폼 컨트롤 토큰/포커스 링 정합
 
-위 항목을 TDD 단계로 진행합니다.
+- 목표: select/input 등 폼 컨트롤의 hover/active/focus 상태를 툴바 버튼과 동일한
+  토큰 체계로 일원화합니다.
+- 설계:
+  - CSS Modules에서 --xeg-focus-ring/offset, --xeg-color-bg-hover 등 사용,
+    radius md 규칙 적용
+  - IconButton 닫기 intent=neutral 유지, aria-label 필수
+- TDD:
+  - test/unit/features/settings/settings-controls.tokens.test.ts — 색상/포커스
+    링/라운드 토큰 준수
+  - test/unit/a11y/settings-modal.focus.test.ts — 탭 순서/포커스 가시성
+- 리스크/완화:
+  - 브라우저 기본 스타일 차이 ↔ reset 유틸 클래스 도입, Tokens 기반으로 상단
+    덮어쓰기
 
-## 활성 목표 (요약)
+## TDD 규칙과 브랜치
 
-현재 활성화된 목표는 없습니다. 다음 사이클 후보는 백로그를 참조하세요.
+1. RED → GREEN → REFACTOR 순으로 커밋을 구성합니다.
+2. 병합 전 필수 게이트: 타입/린트/전체 테스트/빌드/사이즈 가드 PASS.
+3. 완료 시: 계획 문서에서 제거하고 완료 로그에 1줄 요약 추가.
 
-## Phase 개요 (활성)
+## 참고 링크
 
-<!-- U6/U7: 2025-09-12 완료되어 완료 로그로 이관됨 -->
-
-<!-- U8–U10은 완료되어 완료 로그로 이관되었습니다. -->
-
-## 브랜치 & TDD 규칙
-
-1. feature branch: `phase/<n>-<slug>`
-2. 커밋 순서: RED (실패 테스트) → GREEN (최소 구현) → REFACTOR (정리/최적화)
-3. 병합 전 품질 게이트: 타입/린트/전체 테스트/사이즈 가드 PASS
-
-## Definition of Done
-
-DONE 판정 시 아래를 충족해야 합니다:
-
-- RED → GREEN → REFACTOR 커밋 히스토리
-- 전체 테스트 / 타입 / 린트 / 빌드 / 사이즈 예산 PASS
-- 문서: 가이드라인/계획 동기화, 완료 로그 기록
-- 계획 문서에서 해당 Phase 제거
-
-## 추적 & 백로그
-
-- 추가 성능/메모리/보안 심화 항목은 `TDD_REFACTORING_BACKLOG.md` 유지
-- 선택 Phase는 핵심 완료 후 우선순위 재평가
-
-## 참고
-
-- 완료 로그: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
-- 백로그: `docs/TDD_REFACTORING_BACKLOG.md`
-
-업데이트 일시: 2025-09-12 (U6–U10 완료 반영)
+- 완료 로그: docs/TDD_REFACTORING_PLAN_COMPLETED.md
+- 백로그: docs/TDD_REFACTORING_BACKLOG.md
+- 코딩 규칙: docs/CODING_GUIDELINES.md
