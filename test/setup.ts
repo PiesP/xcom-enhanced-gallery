@@ -213,6 +213,69 @@ function setupJsdomPolyfills() {
   if (typeof globalThis.IntersectionObserver === 'undefined') {
     globalThis.IntersectionObserver = globalThis.window?.IntersectionObserver;
   }
+
+  // HTMLCanvasElement.toDataURL polyfill (jsdom: Not implemented 방지)
+  try {
+    // jsdom에서는 HTMLCanvasElement가 존재하지만 toDataURL 호출 시 예외를 던질 수 있음
+    const CanvasCtor: any = (globalThis as any).HTMLCanvasElement;
+    if (CanvasCtor && CanvasCtor.prototype) {
+      const proto = CanvasCtor.prototype as any;
+      const needsPolyfill =
+        typeof proto.toDataURL !== 'function' ||
+        // 일부 jsdom 버전은 함수가 존재하더라도 호출 시 Not implemented를 던짐
+        // 안전하게 오버라이드하여 테스트 노이즈를 제거
+        /not implemented/i.test(String(proto.toDataURL));
+
+      if (needsPolyfill) {
+        proto.toDataURL = function toDataURL(type?: string) {
+          const mime = typeof type === 'string' ? type.toLowerCase() : 'image/png';
+          const isWebp = mime.includes('webp');
+          // 최소한의 dataURL(내용은 중요하지 않음) 반환
+          return `data:${isWebp ? 'image/webp' : 'image/png'};base64,AAAA`;
+        };
+      }
+    }
+
+    // 문서 생성 경로에서도 안전 보장: canvas 생성 시 toDataURL 주입
+    const doc: any = (globalThis as any).document;
+    if (doc && typeof doc.createElement === 'function') {
+      const origCreate = doc.createElement.bind(doc);
+      doc.createElement = function (tagName: any, options?: any) {
+        const el = origCreate(tagName, options);
+        try {
+          if (
+            el &&
+            (String(tagName).toLowerCase?.() === 'canvas' || el.tagName?.toLowerCase() === 'canvas')
+          ) {
+            if (typeof el.toDataURL !== 'function') {
+              el.toDataURL = function toDataURL(type?: string) {
+                const mime = typeof type === 'string' ? type.toLowerCase() : 'image/png';
+                const isWebp = mime.includes('webp');
+                return `data:${isWebp ? 'image/webp' : 'image/png'};base64,AAAA`;
+              };
+            } else {
+              // 기존 구현이 예외를 던지는 경우를 대비해 안전 래핑
+              const original = el.toDataURL;
+              el.toDataURL = function toDataURL(type?: string) {
+                try {
+                  return original.call(el, type);
+                } catch {
+                  const mime = typeof type === 'string' ? type.toLowerCase() : 'image/png';
+                  const isWebp = mime.includes('webp');
+                  return `data:${isWebp ? 'image/webp' : 'image/png'};base64,AAAA`;
+                }
+              };
+            }
+          }
+        } catch {
+          // 무시
+        }
+        return el;
+      };
+    }
+  } catch {
+    // 무시: 테스트 환경에서만 사용되는 폴리필
+  }
 }
 
 // 기본적인 브라우저 환경 설정 강화

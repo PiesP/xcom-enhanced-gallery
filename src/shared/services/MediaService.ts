@@ -8,7 +8,6 @@ import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-import { scheduleIdle } from '@shared/utils/performance';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
@@ -43,7 +42,7 @@ export interface PrefetchOptions {
    * 스케줄 방식: 즉시 실행(immediate) 또는 유휴 시간(idle) 예약.
    * 기본값: 'immediate' (기존 동작과 동일)
    */
-  schedule?: 'immediate' | 'idle';
+  schedule?: 'immediate' | 'idle' | 'raf' | 'microtask';
 }
 
 /**
@@ -555,13 +554,33 @@ export class MediaService {
         break;
       }
 
-      if (scheduleMode === 'idle') {
-        // 유휴 시간에 프리페치 예약 (환경 미지원 시 안전 폴백)
-        scheduleIdle(() => {
+      switch (scheduleMode) {
+        case 'idle': {
+          // 유휴 시간에 프리페치 예약 (환경 미지원 시 안전 폴백)
+          const { scheduleIdle } = await import('@shared/utils/performance');
+          scheduleIdle(() => {
+            void this.prefetchSingle(url);
+          });
+          break;
+        }
+        case 'raf': {
+          const { scheduleRaf } = await import('@shared/utils/performance');
+          scheduleRaf(() => {
+            void this.prefetchSingle(url);
+          });
+          break;
+        }
+        case 'microtask': {
+          const { scheduleMicrotask } = await import('@shared/utils/performance');
+          scheduleMicrotask(() => {
+            void this.prefetchSingle(url);
+          });
+          break;
+        }
+        case 'immediate':
+        default: {
           void this.prefetchSingle(url);
-        });
-      } else {
-        void this.prefetchSingle(url);
+        }
       }
     }
   }

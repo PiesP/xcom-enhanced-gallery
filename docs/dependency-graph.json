@@ -7856,6 +7856,23 @@
         },
         {
           "dynamic": false,
+          "module": "./schedulers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/performance/schedulers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./signalOptimization",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7887,6 +7904,15 @@
     },
     {
       "source": "src/shared/utils/performance/preload.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/performance/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/performance/schedulers.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/performance/index.ts"
@@ -8100,8 +8126,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 241,
-    "totalDependenciesCruised": 331,
+    "totalCruised": 242,
+    "totalDependenciesCruised": 332,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

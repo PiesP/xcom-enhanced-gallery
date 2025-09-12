@@ -391,6 +391,14 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
 
 2025-09-11: U1 — 엔트리/부트스트랩 슬림화 완료
 
+2025-09-12: Phase P — 프리페치 스케줄 고도화(raf/microtask) 완료
+
+- 구현: `scheduleRaf`/`scheduleMicrotask` 유틸 추가,
+  `MediaService.prefetchNextMedia`에
+  `schedule: 'immediate'|'idle'|'raf'|'microtask'` 옵션 지원
+- 문서: CODING_GUIDELINES 갱신(스케줄 옵션/유틸/범위)
+- 결과: 타입/린트/빌드 PASS, 기존 idle 경로와 호환 유지(폴백 안전)
+
 - 조치: `src/bootstrap/{env-init,event-wiring,feature-registration}.ts` 신설,
   `src/main.ts`에서 스타일 동적 import 및 부수효과 제거, 전역 이벤트 등록
   반환값으로 unregister 콜백 관리

@@ -29,8 +29,9 @@
   근거
 - IDEA | MEM_PROFILE | Memory/GC 경량 프로파일(지원 환경에서 snapshot) + noop
   폴백 | 대량 처리 시 메모리 패턴 가시화 | H | 환경 의존 / 선택적
-- IDEA | PREFETCH_ADV | 고급 프리페치 스케줄 idle→rAF→microtask 계층 & A/B 벤치
-  하네스 | 체감 렌더 지연 감소 | M | 퍼포먼스 실험 필요
+- REVIEW | PREFETCH_ADV | 고급 프리페치 스케줄 idle→rAF→microtask 계층 & A/B
+  벤치 하네스 | 체감 렌더 지연 감소 | M | Phase P 진행 중 (스케줄 옵션 제공,
+  벤치 하네스는 후속)
 - IDEA | RESULT_STATUS_V2 | SettingsService 등 남은 경로 status 필드 정식 전파
   및 임시 @ts-expect-error 제거 | 상태 모델 일관성 / 테스트 신뢰성 | S | 부분
   적용 여부 재검증 필요

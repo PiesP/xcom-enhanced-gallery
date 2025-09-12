@@ -300,9 +300,11 @@ animateCustom(el, keyframes, {
 - 경계: 인덱스/총합은 안전하게 클램프되며, 최대 카운트는 20으로 제한합니다(설정 서비스의 검증 규칙 일치).
 
 - 예약 스케줄: 프리페치는 기본 즉시(immediate) 실행이며, 저우선 작업은 `schedule: 'idle'` 옵션을 사용하여 유휴 시간에 예약할 수 있습니다.
-  - API: `mediaService.prefetchNextMedia(urls, currentIndex, { prefetchRange, maxConcurrent, schedule: 'idle' })`
+  - API: `mediaService.prefetchNextMedia(urls, currentIndex, { prefetchRange, maxConcurrent, schedule })`
+    - schedule: 'immediate' | 'idle' | 'raf' | 'microtask' (기본: 'immediate')
   - 환경에서 `requestIdleCallback`이 없을 때는 안전하게 `setTimeout(0)`으로 폴백됩니다.
-  - 테스트: `test/unit/performance/media-prefetch.idle-schedule.test.ts`에서 보장합니다.
+  - 유틸: 인덱스 계산은 `@shared/utils/performance/computePreloadIndices` 사용, 스케줄은 `scheduleIdle/scheduleRaf/scheduleMicrotask` 사용
+  - 테스트: `test/unit/performance/media-prefetch.idle-schedule.test.ts` (idle) 및 후속 확장 테스트에서 보장합니다.
 
 
 ### 접근성 스모크 규칙 (A11y)
