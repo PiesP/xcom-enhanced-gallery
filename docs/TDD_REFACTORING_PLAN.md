@@ -29,10 +29,12 @@ N2 — 렌더링 성능 최적화(memo + selector)
 진행 상황(부분 완료):
 
 - VerticalGalleryView에 compat memo 적용 및 테스트 호환을 위한 toString
-  오버라이드 추가.
+  오버라이드 완료.
 - VerticalImageItem은 기존 compat memo 유지 확인.
-- 남은 작업: useSignalSelector/useCombinedSelector로 상태 파생 구독 최적화(렌더
-  수 가드 테스트와 정합).
+- VerticalGalleryView에서 상태 파생 구독을 useSelector로 최적화(전체 state 구독
+  제거) 완료.
+- 남은 작업: VerticalImageItem에서 필요한 파생 신호만 구독하도록 확장 여부 검토
+  및 렌더 수 가드 테스트 보강.
 
 N6 — 프리로드/프리페치 UX 미세 튜닝
 

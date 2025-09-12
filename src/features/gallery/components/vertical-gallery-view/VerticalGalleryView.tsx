@@ -32,6 +32,8 @@ import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { getSetting, setSetting } from '@shared/container/settings-access';
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
+import { useSelector } from '@shared/utils/signalSelector';
+import type { MediaInfo } from '@shared/types';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -53,27 +55,24 @@ function VerticalGalleryViewCore({
   const { useCallback, useEffect, useRef, useState, useMemo } = getPreactHooks();
   const { createElement } = getPreact();
 
-  // Signal에서 상태 구독
-  const [state, setState] = useState(galleryState.value);
+  // 최적화된 Signal 구독: 필요한 파생값만 선택 (렌더 수 최소화)
+  const mediaItems = useSelector<typeof galleryState.value, readonly MediaInfo[]>(
+    galleryState as unknown as { value: typeof galleryState.value },
+    (s: typeof galleryState.value) => s.mediaItems,
+    { dependencies: (s: typeof galleryState.value) => [s.mediaItems] }
+  );
 
-  useEffect(() => {
-    const unsubscribe = galleryState.subscribe(newState => {
-      setState(newState);
-    });
+  const currentIndex = useSelector<typeof galleryState.value, number>(
+    galleryState as unknown as { value: typeof galleryState.value },
+    (s: typeof galleryState.value) => s.currentIndex,
+    { dependencies: (s: typeof galleryState.value) => [s.currentIndex] }
+  );
 
-    logger.info('🚀 VerticalGalleryView: Signal 구독 시작', {
-      mediaCount: state.mediaItems.length,
-      currentIndex: state.currentIndex,
-      isDownloading: state.isLoading,
-    });
-
-    return unsubscribe;
-  }, []);
-
-  // 구독된 상태에서 값 추출
-  const mediaItems = state.mediaItems;
-  const currentIndex = state.currentIndex;
-  const isDownloading = state.isLoading;
+  const isDownloading = useSelector<typeof galleryState.value, boolean>(
+    galleryState as unknown as { value: typeof galleryState.value },
+    (s: typeof galleryState.value) => s.isLoading,
+    { dependencies: (s: typeof galleryState.value) => [s.isLoading] }
+  );
 
   logger.debug('VerticalGalleryView: Rendering with state', {
     mediaCount: mediaItems.length,

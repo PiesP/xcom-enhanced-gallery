@@ -22,6 +22,15 @@
   스위트 GREEN.
 - 남은 작업: useSignalSelector 기반 파생 구독으로 렌더 수 추가 감소.
 
+2025-09-12: N2(부분) — Signal selector 구독 최적화 적용
+
+- 구현: VerticalGalleryView가 galleryState 전체를 useState로 구독하던 방식을
+  useSelector 기반 파생 구독(mediaItems/currentIndex/isLoading)으로 대체하여
+  불필요한 재렌더를 축소.
+- 영향: 메모 유지 + 선택적 렌더로 스크롤 중 렌더 횟수 감소(테스트 훅과 호환).
+- 후속: VerticalImageItem 수준의 파생 구독 적용 범위 확대는 별도 사이클에서
+  검토.
+
 2025-09-12: N6(부분) — 프리로드/프리페치 동조(대칭 이웃) 정합
 
 - 구현: MediaService.calculatePrefetchUrls가 computePreloadIndices를 사용해 현재

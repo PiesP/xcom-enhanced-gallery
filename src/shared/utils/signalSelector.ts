@@ -9,8 +9,11 @@ import { getPreactHooks, getPreactSignals } from '@shared/external/vendors';
 
 // 타입 정의
 type Signal<T> = {
+  /**
+   * Current value of the signal. Accessing this inside a computed/effect
+   * body will correctly register reactive dependencies via preact/signals.
+   */
   value: T;
-  subscribe: (callback: () => void) => () => void;
 };
 
 /**
