@@ -17,6 +17,7 @@ import {
   registerGalleryRenderer,
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/ServiceManager';
+import { cleanupVendors } from '@shared/external/vendors';
 
 // 전역 스타일
 // 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.
@@ -162,6 +163,13 @@ async function cleanup(): Promise<void> {
 
     // CoreService 인스턴스 정리 (features 레이어에서 접근 금지이므로 여기서만 수행)
     CoreService.getInstance().cleanup();
+
+    // Vendor 리소스 정리 (명시적 호출; import 시점 부작용 없음)
+    try {
+      cleanupVendors();
+    } catch (e) {
+      logger.warn('벤더 정리 중 경고:', e);
+    }
 
     await Promise.all(
       cleanupHandlers.map(handler =>

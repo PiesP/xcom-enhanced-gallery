@@ -8,9 +8,11 @@
  * - 상태 관리는 기존 signals 활용
  */
 
-import { SERVICE_KEYS } from '@/constants';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
-import { bridgeGetService } from '@shared/container/service-bridge';
+import {
+  getGalleryRenderer,
+  getMediaServiceFromContainer,
+} from '@shared/container/service-accessors';
 import { VideoControlService } from '@shared/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -61,9 +63,7 @@ export class GalleryApp {
    */
   private async getMediaService(): Promise<MediaService> {
     if (!this.mediaService) {
-      this.mediaService = (await bridgeGetService(
-        SERVICE_KEYS.MEDIA_SERVICE
-      )) as unknown as MediaService;
+      this.mediaService = getMediaServiceFromContainer();
     }
     return this.mediaService;
   }
@@ -101,9 +101,7 @@ export class GalleryApp {
    * 갤러리 렌더러 초기화
    */
   private async initializeRenderer(): Promise<void> {
-    this.galleryRenderer = (await bridgeGetService(
-      SERVICE_KEYS.GALLERY_RENDERER
-    )) as unknown as GalleryRenderer;
+    this.galleryRenderer = getGalleryRenderer();
 
     // 갤러리 닫기 콜백 설정
     this.galleryRenderer?.setOnCloseCallback(() => {

@@ -376,9 +376,12 @@ animateCustom(el, keyframes, {
 추가 규칙:
 - SERVICE_KEYS 직접 참조를 점진적으로 제거합니다. 공용 접근은 다음 헬퍼를 우선 사용하세요:
   - 등록: `registerGalleryRenderer`, `registerSettingsManager`, `registerTwitterTokenExtractor`
-  - 조회: `getToastController`, `getThemeService`, `getMediaServiceFromContainer` 등
+  - 조회: `getToastController`, `getThemeService`, `getMediaServiceFromContainer`, `getGalleryRenderer` 등
   - 워밍업: `warmupCriticalServices()`, `warmupNonCriticalServices()`
   - 헬퍼가 부족할 경우 추가를 선호하고, raw 키 문자열 사용은 지양합니다.
+
+레거시 어댑터 예외:
+- `features/gallery/createAppContainer.ts` 내 LegacyServiceAdapter switch 문은 과도기 호환을 위해 SERVICE_KEYS 상수를 사용합니다. 신규 코드에서는 service-accessors 헬퍼를 사용하고, 해당 switch는 점진 제거 대상입니다.
 
 #### Userscript(GM_*) 어댑터 경계 가드
 

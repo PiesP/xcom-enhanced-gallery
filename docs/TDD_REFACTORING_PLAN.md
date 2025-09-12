@@ -29,69 +29,14 @@
 
 ## 활성 목표 (요약)
 
-- U2. 서비스 컨테이너 경량화: 전역 ServiceManager 의존 축소 → 타입 안전
-  팩토리/싱글턴
-- U3. Preact 컴포넌트 일관화: signals 선택자·메모·PC 전용 이벤트·인라인 스타일
-  제거 준수
-- U4. 파일/심볼 표면 축소: 배럴 export 정리, 네이밍/경로 케밥 표준화, 죽은 코드
-  제거
 - U5. 사이즈/성능: 기능 분할 로드 강제, 사이드이펙트 없는 import 가드, 번들 예산
   유지·개선
 
 ## Phase 개요 (활성)
 
-### U2 — 서비스 컨테이너 경량화
+<!-- U2는 2025-09-12에 완료되어 완료 로그로 이동되었습니다. -->
 
-- 목표: 전역 ServiceManager를 경량 팩토리+캐시로 치환, 등록 함수의 범위 축소.
-- 계약/가드:
-  - 직접 new 금지, `getXxxService()`만 허용 (existing 계약 테스트 보강)
-  - 순환 의존 방지 및 TDZ-safe (게터 주입 유지)
-- RED 테스트(추가): `test/unit/shared/services/factory.singletons.red.test.ts`
-- 구현 개요:
-  - `src/shared/services/factories.ts` 추가: lazy singleton + 명시 타입 반환
-  - 전역 `registerServiceFactory` 외부 노출 축소 (내부에서만 사용)
-- 리스크/완화: 기존 키 기반 조회 사용처 단계적 마이그레이션 → 배럴 export로 점진
-  치환
-
-진행 상황(2025-09-12):
-
-- 가드 GREEN: features 레이어에서 `ServiceManager` 직접 import 금지 테스트 통과
-  - 테스트: `test/unit/lint/features-no-servicemanager.imports.red.test.ts`
-  - 변경: `VerticalGalleryView`, `GalleryApp`, `createAppContainer`가
-    브리지/액세서 사용으로 전환
-- 유틸 추가: `@shared/container/service-bridge`,
-  `@shared/container/settings-access`
-- 엔트리/부트스트랩 정비: `main.ts`/`feature-registration.ts`가 브리지 사용으로
-  통일, ServiceManager 직접 의존 제거(정리 시점 제외)
-
-남은 작업(우선순위 순):
-
-1. service-factories 확장 여부 검토(안전 범위 내에서 Media/Settings 외 확대)
-2. 진단/로그에서 키 문자열 하드코딩 제거(상수 접근 최소화 가이드 반영)
-
-### U3 — Preact 컴포넌트 일관화
-
-- 목표: signals selector 유틸 사용, memo/forwardRef는 compat getter 경유, 인라인
-  스타일 제거 유지.
-- 계약/가드:
-  - 인라인 px/transition/all 금지 기존 테스트 GREEN 유지
-  - PC 전용 이벤트만 사용 (터치/포인터 사용 시 RED)
-- RED 테스트(추가): `test/unit/components/pc-only-events.scan.red.test.tsx`
-- 구현 개요:
-  - 갤러리/설정 주요 컴포넌트에서 selector 훅 일관 적용, 불필요한 re-render 제거
-  - compat 필요 지점 한정 및 주석 가이드 추가
-
-### U4 — 파일/심볼 표면 축소
-
-- 목표: 배럴 export 정리, 케밥 네이밍 미준수 정정, 죽은 코드/사용되지 않는
-  export 제거.
-- 계약/가드:
-  - 정적 스캐너로 사용되지 않는 export FAIL (신규 테스트)
-  - 경로 별칭 배럴만 통해 접근 (벤더 제외)
-- RED 테스트(추가): `test/unit/refactoring/unused-exports.scan.red.test.ts`
-- 구현 개요:
-  - shared/** 배럴 재구성, features/** 필요 최소 export 유지
-  - codemod 스크립트로 임포트 경로 자동 치환 (semi-auto)
+<!-- U4는 2025-09-12에 완료되어 완료 로그로 이동되었습니다. -->
 
 ### U5 — 사이즈/성능 분할 로드 강화
 
@@ -99,9 +44,13 @@
 - 계약/가드:
   - 번들 예산 경고/실패 임계 유지/개선 (scripts/validate-build.js)
   - feature register는 최초 1회, 실패 시 캐시 해제 (기존 로더 계약 유지)
-- RED 테스트(추가): `test/unit/loader/feature-side-effect.red.test.ts`
+- RED 테스트(추가): `test/unit/loader/feature-side-effect.red.test.ts`,
+  `test/unit/loader/import-side-effect.scan.red.test.ts`
 - 구현 개요:
   - main 초기화 경량화와 연계, 갤러리/설정 피처를 registerFeature로만 노출
+  - vendor 모듈(import 시)에서 beforeunload 등록 제거 → 명시적 등록 API 추가
+  - 런타임 적용: 엔트리 cleanup() 흐름에서 cleanupVendors()를 호출하여 언로드 시
+    안전 정리 수행
 
 ---
 
@@ -132,4 +81,4 @@ DONE 판정 시 아래를 충족해야 합니다:
 - 완료 로그: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
 - 백로그: `docs/TDD_REFACTORING_BACKLOG.md`
 
-업데이트 일시: 2025-09-11 (U2–U5 활성)
+업데이트 일시: 2025-09-12 (U5 활성: import side-effect guard 확장)

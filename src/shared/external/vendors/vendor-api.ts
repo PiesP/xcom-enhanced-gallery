@@ -310,9 +310,21 @@ export function isVendorInitialized(vendorName: string): boolean {
   }
 }
 
-// 정리 핸들러 등록
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
-    cleanupVendors();
-  });
+// 정리 핸들러 등록 (명시적 호출로 변경하여 import 시 부작용 제거)
+export function registerVendorCleanupOnUnload(
+  target: Window | undefined = typeof window !== 'undefined' ? window : undefined
+): void {
+  try {
+    if (!target) return;
+    const handler = () => {
+      try {
+        cleanupVendors();
+      } catch {
+        // ignore
+      }
+    };
+    target.addEventListener('beforeunload', handler);
+  } catch {
+    // ignore
+  }
 }

@@ -4,7 +4,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { bridgeRegister, bridgeGetService } from '@shared/container/service-bridge';
+import { bridgeGetService } from '@shared/container/service-bridge';
+import { registerGalleryRenderer } from '@shared/container/service-accessors';
 import { SERVICE_KEYS } from '@/constants';
 import { FilenameService } from '@shared/media/FilenameService';
 import type { MediaItemForFilename, MediaInfoForFilename } from '@shared/types/media.types';
@@ -376,7 +377,7 @@ class AppContainerImpl implements AppContainer {
     try {
       // Gallery Renderer 서비스 등록 (갤러리 앱에 필요)
       const galleryRendererModule = await import('./GalleryRenderer');
-      bridgeRegister(SERVICE_KEYS.GALLERY_RENDERER, new galleryRendererModule.GalleryRenderer());
+      registerGalleryRenderer(new galleryRendererModule.GalleryRenderer());
 
       // 동적 import로 갤러리 앱 로드 (같은 디렉토리)
       const galleryAppModule = await import('./GalleryApp');

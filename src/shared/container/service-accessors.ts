@@ -7,6 +7,7 @@ import type { FilenameService } from '@shared/media';
 import type { ThemeService } from '@shared/services/ThemeService';
 import type { ToastController } from '@shared/services/ToastController';
 import type { MediaService } from '@shared/services/MediaService';
+import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 
 import { bridgeGetService, bridgeRegister } from './service-bridge';
 import { SERVICE_KEYS } from '@/constants';
@@ -34,6 +35,10 @@ export function getGalleryDownloadService(): BulkDownloadService {
 
 export function getMediaServiceFromContainer(): MediaService {
   return bridgeGetService<MediaService>(SERVICE_KEYS.MEDIA_SERVICE);
+}
+
+export function getGalleryRenderer(): GalleryRenderer {
+  return bridgeGetService<GalleryRenderer>(SERVICE_KEYS.GALLERY_RENDERER);
 }
 
 // Registrations (to container)

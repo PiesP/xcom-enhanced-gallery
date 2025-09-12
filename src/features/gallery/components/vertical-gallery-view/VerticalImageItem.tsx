@@ -7,7 +7,7 @@
  * @description 통합된 수직 이미지 아이템 컴포넌트 - StandardProps 표준화 완료
  */
 
-import { withGallery, type GalleryComponentProps } from '@shared/components/hoc/GalleryHOC';
+import { withGallery, type GalleryComponentProps } from '@shared/components/hoc';
 import { Button } from '@shared/components/ui/Button/Button';
 import { ComponentStandards } from '@shared/components/ui/StandardProps';
 import type { ImageFitMode } from '@shared/types';

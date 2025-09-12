@@ -13,10 +13,38 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
 2025-09-12: Phase M — SettingsModal 다크 모드 투명 배경 회귀 수정 완료
 2025-09-12: U2 (부분) — 엔트리/부트스트랩에서 ServiceManager 직접 의존 제거 완료
 
+2025-09-12: U3 — Preact 컴포넌트 일관화 (PC 전용 이벤트·selector·memo) 완료
+
+- 가드: PC 전용 이벤트 스캔 테스트
+  (`test/unit/components/pc-only-events.scan.red.test.tsx`) → GREEN, 갤러리 전역
+  이벤트 가드(`test/unit/events/gallery-pc-only-events.test.ts`) 통과
+- 구현: selector 유틸 및 compat getter 경유 memo 적용 지점 재확인, 인라인 스타일
+  금지 가드 유지(기존 관련 테스트 GREEN)
+- 문서: 계획서에서 U3 제거, 본 완료 로그에 요약 기록
+
+2025-09-12: U4 — 파일/심볼 표면 축소 (1차) 완료
+
+- 가드: 배럴 import 강제(HOC) `only-barrel-imports.red.test.ts` → GREEN, HOC 딥
+  경로 임포트 제거(`VerticalImageItem.tsx` 수정)
+- 가드: 배럴 unused export 스캔 `unused-exports.scan.red.test.ts` → GREEN(현
+  범위)
+- 문서: 계획서에서 U4 제거, 완료 로그에 요약 추가 (후속 범위 확장 백로그로)
+
+2025-09-12: U5(부분) — import 시 부작용 가드 확장 완료
+
+- 가드: `feature-side-effect.red.test.ts` +
+  `import-side-effect.scan.red.test.ts`로 document/window
+  add/removeEventListener 호출이 import 시점에 발생하지 않음을 검증
+- 변경: vendor 모듈의 beforeunload 자동 등록 제거 →
+  `registerVendorCleanupOnUnload(Safe)` 명시적 API로 전환(import 부작용 제거)
+- 결과: 전체 테스트/빌드 GREEN, 기존 초기화 플로우(main에서 명시적 등록만 필요)
+
 2025-09-12: U2 — SERVICE_KEYS 직접 사용 축소(헬퍼 도입)
 
 - 추가: `@shared/container/service-accessors` (등록/조회/워밍업 헬퍼 + 타이핑)
-- 변경: `main.ts`, `bootstrap/feature-registration.ts`가 헬퍼 사용으로 전환
+- 변경: `main.ts`, `bootstrap/feature-registration.ts`,
+  `features/gallery/GalleryApp.ts`, `features/gallery/createAppContainer.ts`가
+  헬퍼 사용으로 전환 (getter/registration)
 - 효과: 서비스 키 하드코딩/노출 감소, 컨테이너 경계 테스트/모킹 용이성 향상
 
 - 조치: `src/main.ts`와 `src/bootstrap/feature-registration.ts`를

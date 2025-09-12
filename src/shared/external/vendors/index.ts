@@ -19,6 +19,7 @@ export {
   validateVendorsSafe as validateVendors,
   getVendorVersionsSafe as getVendorVersions,
   cleanupVendorsSafe as cleanupVendors,
+  registerVendorCleanupOnUnloadSafe,
   isVendorsInitializedSafe as isVendorsInitialized,
   getVendorInitializationReportSafe as getVendorInitializationReport,
   getVendorStatusesSafe as getVendorStatuses,
