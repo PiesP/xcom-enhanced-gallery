@@ -190,8 +190,8 @@ Gallery
 
 - 배경/보더/텍스트 색:
   - 모달: `--xeg-modal-bg`, `--xeg-modal-border`, 텍스트는 `--xeg-color-text-*`
-  - 툴바: `--xeg-comp-toolbar-bg`, `--xeg-comp-toolbar-border`, 텍스트는
-    `--xeg-color-text-*`
+  - 툴바: `--xeg-bg-toolbar`, `--color-border-default`, 텍스트는
+    `--xeg-color-text-*` (가능하면 semantic 직접 사용, 과도기에는 alias 허용)
 - 상호작용 상태(hover/active/focus):
   - 포커스 링은 `--xeg-focus-ring`/`--xeg-focus-ring-offset`을 공통 사용
   - hover lift는 변환 수치 일관 유지(툴바 기준), reduce-motion일 때 transform
