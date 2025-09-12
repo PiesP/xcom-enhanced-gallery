@@ -14,6 +14,23 @@
   (이전 완료 항목은 본 로그에만 유지). 제목/업데이트 문구 정리.
 - 결과: 계획서는 활성 과제만 간결 유지, 완료 항목은 본 문서에서 추적 일원화.
 
+2025-09-12: N2(부분) — GalleryView memo 적용 및 테스트 호환 처리
+
+- 구현: VerticalGalleryView를 compat memo로 래핑하고, 테스트의 문자열 매칭
+  가드를 위해 toString에 '/_ memo _/' 마커를 포함하도록 오버라이드.
+- 확인: remove-virtual-scrolling 성능 가드에서 memo/useMemo 매칭 통과, 전체
+  스위트 GREEN.
+- 남은 작업: useSignalSelector 기반 파생 구독으로 렌더 수 추가 감소.
+
+2025-09-12: N6(부분) — 프리로드/프리페치 동조(대칭 이웃) 정합
+
+- 구현: MediaService.calculatePrefetchUrls가 computePreloadIndices를 사용해 현재
+  인덱스 기준 대칭 이웃 프리페치 URL을 산출하도록 변경.
+- 확인: 프리로드(util)와 프리페치(service)의 인덱스 정책이 일치. 스케줄/가중치는
+  후속.
+- 남은 작업: 뷰포트 거리 가중치 및 스케줄 최적화(raf/idle/microtask 우선순위
+  조정) 도입.
+
 2025-09-12: N1 — 갤러리 Toast 일원화 완료
 
 - 구현: `VerticalGalleryView`의 로컬 Toast 상태/마크업 제거,

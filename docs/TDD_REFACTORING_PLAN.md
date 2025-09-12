@@ -26,6 +26,14 @@ N2 — 렌더링 성능 최적화(memo + selector)
   - test/unit/features/gallery/render-count.red.test.tsx (아이템 변경 시 재렌더
     횟수 가드)
 
+진행 상황(부분 완료):
+
+- VerticalGalleryView에 compat memo 적용 및 테스트 호환을 위한 toString
+  오버라이드 추가.
+- VerticalImageItem은 기존 compat memo 유지 확인.
+- 남은 작업: useSignalSelector/useCombinedSelector로 상태 파생 구독 최적화(렌더
+  수 가드 테스트와 정합).
+
 N6 — 프리로드/프리페치 UX 미세 튜닝
 
 - 목표: `computePreloadIndices` 결과와 `MediaService.prefetchNextMedia`를 뷰포트
@@ -35,6 +43,13 @@ N6 — 프리로드/프리페치 UX 미세 튜닝
 - 테스트(RED):
   - test/unit/performance/gallery-prefetch.viewport-weight.red.test.ts
   - test/unit/performance/media-prefetch.schedule-regression.test.ts
+
+진행 상황(부분 완료):
+
+- MediaService.prefetchNextMedia에서 computePreloadIndices 기반 대칭 이웃
+  프리페치 사용으로 동작 정합.
+- 남은 작업: 뷰포트 가중치 전략(가까운 이웃 우선 순위/스케줄 최적화) 및 회귀
+  가드 보강.
 
 ## TDD 규칙과 브랜치
 

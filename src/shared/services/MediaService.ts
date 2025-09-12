@@ -639,17 +639,27 @@ export class MediaService {
     currentIndex: number,
     prefetchRange: number
   ): string[] {
-    const urls: string[] = [];
+    // 대칭 이웃 기반 인덱스 계산(현재를 제외)
+    try {
+      const { computePreloadIndices } = require('../utils/performance/preload') as {
+        computePreloadIndices: (currentIndex: number, total: number, count: number) => number[];
+      };
 
-    // 다음 N개 이미지들만 프리페치
-    for (let i = 1; i <= prefetchRange; i++) {
-      const nextIndex = currentIndex + i;
-      if (nextIndex < mediaItems.length && mediaItems[nextIndex]) {
-        urls.push(mediaItems[nextIndex]);
+      const indices = computePreloadIndices(currentIndex, mediaItems.length, prefetchRange);
+      return indices
+        .map(i => mediaItems[i])
+        .filter((u): u is string => typeof u === 'string' && u.length > 0);
+    } catch {
+      // 안전 폴백: 기존 next-only 방식
+      const urls: string[] = [];
+      for (let i = 1; i <= prefetchRange; i++) {
+        const nextIndex = currentIndex + i;
+        if (nextIndex < mediaItems.length && mediaItems[nextIndex]) {
+          urls.push(mediaItems[nextIndex]);
+        }
       }
+      return urls;
     }
-
-    return urls;
   }
 
   /**

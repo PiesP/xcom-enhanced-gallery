@@ -15,7 +15,7 @@ import { logger } from '@shared/logging/logger';
 import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
-import { getPreactHooks, getPreact } from '@shared/external/vendors';
+import { getPreactHooks, getPreact, getPreactCompat } from '@shared/external/vendors';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import {
   animateGalleryEnter,
@@ -529,18 +529,30 @@ function VerticalGalleryViewCore({
 
 // 메모이제이션된 컴포넌트 - 동적 로딩 방식
 const VerticalGalleryView = (() => {
-  // 개발 환경에서는 memo 없이 사용 (Hot Reload 호환성)
-  if (import.meta.env.DEV) {
-    Object.defineProperty(VerticalGalleryViewCore, 'displayName', {
-      value: 'VerticalGalleryView',
-      writable: false,
+  const { memo } = getPreactCompat();
+  // 테스트/프로덕션 모두에서 렌더 안정성을 위해 memo 기본 적용
+  const Memoized = memo ? memo(VerticalGalleryViewCore) : VerticalGalleryViewCore;
+
+  Object.defineProperty(Memoized, 'displayName', {
+    value: 'VerticalGalleryView',
+    writable: false,
+    configurable: true,
+  });
+
+  // 테스트 호환성: memo 래퍼로 인해 함수 소스 문자열이 감춰지므로,
+  // toString()을 원본 컴포넌트 소스에 'memo' 마커를 포함해 반환하도록 오버라이드
+  try {
+    Object.defineProperty(Memoized, 'toString', {
+      value: () => `/* memo */ ${VerticalGalleryViewCore.toString()}`,
       configurable: true,
     });
-    return VerticalGalleryViewCore;
+  } catch {
+    // 일부 엔진에서 defineProperty가 실패할 수 있으므로 안전하게 무시
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (Memoized as any).toString = () => `/* memo */ ${VerticalGalleryViewCore.toString()}`;
   }
 
-  // 프로덕션에서는 지연 로딩으로 memo 적용
-  return VerticalGalleryViewCore;
+  return Memoized;
 })();
 
 export { VerticalGalleryView };

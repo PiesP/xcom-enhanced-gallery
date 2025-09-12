@@ -5153,6 +5153,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../utils/performance/preload",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "require"
+          ],
+          "resolved": "src/shared/utils/performance/preload.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./media-extraction/MediaExtractionService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5258,6 +5275,16 @@
       "dependents": [
         "src/shared/services/index.ts",
         "src/shared/services/service-factories.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/performance/preload.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/MediaService.ts",
+        "src/shared/utils/performance/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8008,15 +8035,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/performance/preload.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/performance/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/performance/schedulers.ts",
       "dependencies": [],
       "dependents": [
@@ -8232,7 +8250,7 @@
     "info": 4,
     "ignore": 0,
     "totalCruised": 245,
-    "totalDependenciesCruised": 336,
+    "totalDependenciesCruised": 337,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
