@@ -13,6 +13,8 @@ import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
 import type { BaseResultStatus } from '@shared/types/result.types';
 import { ErrorCode } from '@shared/types/result.types';
+// Schedulers for prefetch task coordination
+import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 
 // 통합된 서비스 타입들
 /**
@@ -553,41 +555,99 @@ export class MediaService {
 
     logger.debug('[MediaService] 미디어 프리페칭 시작:', { currentIndex, prefetchUrls });
 
-    // 동시 프리페치 수 제한
-    for (const url of prefetchUrls) {
-      if (this.activePrefetchRequests.size >= maxConcurrent) {
-        break;
-      }
+    // 스케줄 모드별 동작:
+    // - immediate: 동기 드레이닝(완료까지 대기)
+    // - idle/raf/microtask: 비동기 시드 후 즉시 반환(내부에서 동시성 한도로 끝까지 소진)
+    if (scheduleMode === 'immediate') {
+      // 동시성 제한 큐 실행기: 전체 큐를 소진할 때까지 실행(블로킹)
+      await new Promise<void>(resolve => {
+        let i = 0;
+        let running = 0;
 
-      switch (scheduleMode) {
-        case 'idle': {
-          // 유휴 시간에 프리페치 예약 (환경 미지원 시 안전 폴백)
-          const { scheduleIdle } = await import('@shared/utils/performance');
-          scheduleIdle(() => {
-            void this.prefetchSingle(url);
-          });
-          break;
-        }
-        case 'raf': {
-          const { scheduleRaf } = await import('@shared/utils/performance');
-          scheduleRaf(() => {
-            void this.prefetchSingle(url);
-          });
-          break;
-        }
-        case 'microtask': {
-          const { scheduleMicrotask } = await import('@shared/utils/performance');
-          scheduleMicrotask(() => {
-            void this.prefetchSingle(url);
-          });
-          break;
-        }
-        case 'immediate':
-        default: {
-          void this.prefetchSingle(url);
-        }
-      }
+        const next = () => {
+          if (i >= prefetchUrls.length && running === 0) {
+            resolve();
+            return;
+          }
+
+          while (running < maxConcurrent && i < prefetchUrls.length) {
+            const url = prefetchUrls[i++];
+            if (typeof url !== 'string') continue;
+            running++;
+            this.prefetchSingle(url)
+              .catch(() => {})
+              .finally(() => {
+                running--;
+                next();
+              });
+          }
+        };
+
+        next();
+      });
+      return;
     }
+
+    // 비동기 스케줄 모드: 내부에서 끝까지 소진하되, 호출자는 대기하지 않음
+    const queue = prefetchUrls.slice();
+    let inFlight = 0;
+
+    const scheduleTask = (url: string) => {
+      switch (scheduleMode) {
+        case 'idle':
+          scheduleIdle(() => {
+            void this.prefetchSingle(url)
+              .catch(() => {})
+              .finally(() => {
+                inFlight--;
+                startNext();
+              });
+          });
+          break;
+        case 'raf':
+          scheduleRaf(() => {
+            void this.prefetchSingle(url)
+              .catch(() => {})
+              .finally(() => {
+                inFlight--;
+                startNext();
+              });
+          });
+          break;
+        case 'microtask':
+          scheduleMicrotask(() => {
+            void this.prefetchSingle(url)
+              .catch(() => {})
+              .finally(() => {
+                inFlight--;
+                startNext();
+              });
+          });
+          break;
+        default:
+          // fallback safety
+          setTimeout(() => {
+            void this.prefetchSingle(url)
+              .catch(() => {})
+              .finally(() => {
+                inFlight--;
+                startNext();
+              });
+          }, 0);
+      }
+    };
+
+    const startNext = () => {
+      while (inFlight < maxConcurrent && queue.length > 0) {
+        const nextUrl = queue.shift();
+        if (typeof nextUrl !== 'string') continue;
+        inFlight++;
+        scheduleTask(nextUrl);
+      }
+    };
+
+    startNext();
+    return; // 즉시 반환
   }
 
   /**
@@ -639,27 +699,39 @@ export class MediaService {
     currentIndex: number,
     prefetchRange: number
   ): string[] {
-    // 대칭 이웃 기반 인덱스 계산(현재를 제외)
-    try {
-      const { computePreloadIndices } = require('../utils/performance/preload') as {
-        computePreloadIndices: (currentIndex: number, total: number, count: number) => number[];
-      };
+    // 대칭 이웃 기반 인덱스 계산(현재를 제외) + 뷰포트 가중치 정렬
+    const total = mediaItems.length;
+    const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
+    const safeIndex = Math.min(Math.max(0, Math.floor(currentIndex)), Math.max(0, safeTotal - 1));
+    const safeCount = Math.max(0, Math.min(20, Math.floor(prefetchRange)));
 
-      const indices = computePreloadIndices(currentIndex, mediaItems.length, prefetchRange);
-      return indices
-        .map(i => mediaItems[i])
-        .filter((u): u is string => typeof u === 'string' && u.length > 0);
-    } catch {
-      // 안전 폴백: 기존 next-only 방식
-      const urls: string[] = [];
-      for (let i = 1; i <= prefetchRange; i++) {
-        const nextIndex = currentIndex + i;
-        if (nextIndex < mediaItems.length && mediaItems[nextIndex]) {
-          urls.push(mediaItems[nextIndex]);
-        }
-      }
-      return urls;
+    if (safeTotal === 0 || safeCount === 0) return [];
+
+    const raw: number[] = [];
+    for (let i = 1; i <= safeCount; i++) {
+      const prev = safeIndex - i;
+      if (prev >= 0) raw.push(prev);
+      else break;
     }
+    for (let i = 1; i <= safeCount; i++) {
+      const next = safeIndex + i;
+      if (next < safeTotal) raw.push(next);
+      else break;
+    }
+
+    // 거리 기준 오름차순 정렬, 동일 거리 시 다음(오른쪽) 우선
+    const indices = raw.sort((a, b) => {
+      const da = Math.abs(a - safeIndex);
+      const db = Math.abs(b - safeIndex);
+      if (da !== db) return da - db;
+      const aIsNext = a > safeIndex ? 0 : 1; // next 우선(0) / prev(1)
+      const bIsNext = b > safeIndex ? 0 : 1;
+      return aIsNext - bIsNext;
+    });
+
+    return indices
+      .map(i => mediaItems[i])
+      .filter((u): u is string => typeof u === 'string' && u.length > 0);
   }
 
   /**

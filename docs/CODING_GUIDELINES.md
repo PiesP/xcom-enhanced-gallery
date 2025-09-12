@@ -302,9 +302,15 @@ animateCustom(el, keyframes, {
 - 예약 스케줄: 프리페치는 기본 즉시(immediate) 실행이며, 저우선 작업은 `schedule: 'idle'` 옵션을 사용하여 유휴 시간에 예약할 수 있습니다.
   - API: `mediaService.prefetchNextMedia(urls, currentIndex, { prefetchRange, maxConcurrent, schedule })`
     - schedule: 'immediate' | 'idle' | 'raf' | 'microtask' (기본: 'immediate')
-  - 환경에서 `requestIdleCallback`이 없을 때는 안전하게 `setTimeout(0)`으로 폴백됩니다.
-  - 유틸: 인덱스 계산은 `@shared/utils/performance/computePreloadIndices` 사용, 스케줄은 `scheduleIdle/scheduleRaf/scheduleMicrotask` 사용
-  - 테스트: `test/unit/performance/media-prefetch.idle-schedule.test.ts` (idle) 및 후속 확장 테스트에서 보장합니다.
+  - 스케줄 모드별 동작(계약):
+    - immediate: 호출 스레드에서 "블로킹"으로 동시성 제한 큐를 끝까지 드레인합니다(완료까지 대기, Promise는 모든 작업 종료 후 resolve).
+    - idle/raf/microtask: 호출 시점에는 대기열만 시드하고 즉시 반환하는 "논블로킹" 동작입니다. 내부적으로 해당 스케줄러를 통해 동시성 제한 큐를 끝까지 드레인합니다.
+    - 비고: JSDOM 등 테스트 환경에서 `requestIdleCallback` 부재 시 안전하게 `setTimeout(0)`으로 폴백합니다. 애니메이션 프레임/마이크로태스크도 유틸 레이어를 통해 폴백 처리됩니다.
+  - 유틸: 인덱스 계산은 `@shared/utils/performance/computePreloadIndices` 사용, 스케줄은 `scheduleIdle/scheduleRaf/scheduleMicrotask` 사용(정적 import 권장, 동적 import 지양).
+  - 정렬 정책: 현재 인덱스와의 거리 오름차순으로 정렬하며, 동일 거리일 경우 다음 항목(오른쪽)을 우선합니다.
+  - 동시성 큐: `maxConcurrent` 제한 하에 전체 대기열를 끝까지 소진하도록 실행합니다(1개 동시성에서도 순차 실행 보장).
+  - 테스트: `test/unit/performance/gallery-prefetch.viewport-weight.red.test.ts` (거리 정렬/큐 소진),
+    `test/unit/performance/media-prefetch.idle-schedule.test.ts`/`media-prefetch.raf-schedule.test.ts`/`media-prefetch.microtask-schedule.test.ts` 등에서 보장합니다.
   - 벤치 하네스: `runPrefetchBench(mediaService, { urls, currentIndex, prefetchRange, modes })`로 간단 비교 가능
     - 산출: 각 모드별 elapsedMs, cacheEntries, bestMode
 

@@ -50,8 +50,16 @@ N6 — 프리로드/프리페치 UX 미세 튜닝
 
 - MediaService.prefetchNextMedia에서 computePreloadIndices 기반 대칭 이웃
   프리페치 사용으로 동작 정합.
-- 남은 작업: 뷰포트 가중치 전략(가까운 이웃 우선 순위/스케줄 최적화) 및 회귀
-  가드 보강.
+- 뷰포트 가중치 정렬 도입: 현재 인덱스와의 거리 오름차순, 동일 거리 시 다음
+  항목(오른쪽) 우선 정책 적용. 동시성 제한 큐가 전체 대기열을 끝까지 소진하도록
+  보장(1개 동시성에서도 순차 실행 보장).
+- 회귀 가드 추가:
+  test/unit/performance/gallery-prefetch.viewport-weight.red.test.ts (거리 기반
+  정렬 및 큐 소진).
+- 스케줄 모드 계약 확정: immediate는 블로킹 드레인, idle/raf/microtask는
+  논블로킹 시드 후 내부 드레인(테스트 환경 폴백 포함). 관련 스케줄 테스트 GREEN.
+- 남은 작업: 스케줄 모드별 가중치/우선순위 미세 튜닝 및 벤치 지표 기반 파라미터
+  조정.
 
 ## TDD 규칙과 브랜치
 

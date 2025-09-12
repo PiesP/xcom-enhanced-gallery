@@ -335,7 +335,6 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/LanguageService.ts" [label=<LanguageService.ts> tooltip="LanguageService.ts" URL="src/shared/services/LanguageService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/services/LanguageService.ts" -> "src/shared/logging/logger.ts"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/services" {label="services" "src/shared/services/MediaService.ts" [label=<MediaService.ts> tooltip="MediaService.ts" URL="src/shared/services/MediaService.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
-    "src/shared/services/MediaService.ts" -> "src/shared/utils/performance/preload.ts"
     "src/shared/services/MediaService.ts" -> "src/shared/services/media-extraction/MediaExtractionService.ts"
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/FallbackExtractor.ts"
     "src/shared/services/MediaService.ts" -> "src/shared/services/media/TwitterVideoExtractor.ts" [style="dashed" color="#6366F1" xlabel="dynamic" fontcolor="#6366F1"]

@@ -110,6 +110,24 @@
   문서에 U6–U10 단계 정의
 - 문서: `TDD_REFACTORING_PLAN.md` 갱신(활성 목표 반영)
 
+2025-09-12: N6(부분) — 프리로드/프리페치 UX 미세 튜닝: 뷰포트 가중치/큐 소진
+보장
+
+- 구현: computePreloadIndices 결과에 거리 기반 정렬 적용(동일 거리 시 다음 항목
+  우선), MediaService.prefetchNextMedia 동시성 제한 큐가 전체 대기열을
+  소진하도록 개선.
+- 가드: gallery-prefetch.viewport-weight.red.test.ts GREEN (정렬/큐 소진).
+- 후속: raf/idle/microtask 스케줄 모드별 가중치 미세 튜닝은 차기 사이클에서 벤치
+  지표와 함께 조정.
+
+2025-09-12: N6(부분) — 프리페치 스케줄 모드 계약 확정
+
+- 확정: immediate=블로킹 드레인, idle/raf/microtask=논블로킹 시드 후 내부
+  드레인(폴백 포함).
+- 근거: media-prefetch.(idle|raf|microtask)-schedule.test.ts GREEN, 타임아웃
+  회귀 제거.
+- 비고: 스케줄러 유틸은 정적 import로 전환하여 TDZ/타이밍 변동성 축소.
+
 2025-09-12: U8 — 비디오 키보드 제어 표준화(컨텍스트 한정) 완료
 
 - 변경: 갤러리 포커스 컨텍스트에서 Space/Arrow/Mute 키 처리 표준화, 스크롤 충돌
