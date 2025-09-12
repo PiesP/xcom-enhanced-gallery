@@ -45,6 +45,22 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
   Progressive Loader 경유 lazy 로 재평가.
 - 계획서에는 M0(현행 경량 유지)로 반영, 세부 근거는 본 로그 참조.
 
+2025-09-12: U5 — 사이즈/성능 분할 로드 강화 완료
+
+- import 부작용 가드 GREEN: `feature-side-effect.red.test.ts`,
+  `import-side-effect.scan.red.test.ts`
+- Progressive Loader 경로 유지, 엔트리 cleanup 명시적 정리로 일관화, 번들 예산
+  가드 PASS
+- 문서: U5 활성 계획 제거, 본 로그에 요약 기록
+
+2025-09-12: M0 — 미디어 처리 경량화(현행 유지) 완료
+
+- mediabunny 정적 import 금지 스캔 테스트 추가(GREEN):
+  `deps/mediabunny.not-imported.scan.red.test.ts`
+- MediaService 공개 계약 유지 확인(기존 계약 테스트 GREEN), 옵션 플러그인 설계는
+  백로그로 이동
+- 문서: M0 활성 계획 제거, 본 로그에 요약 기록
+
 2025-09-12: U2 — SERVICE_KEYS 직접 사용 축소(헬퍼 도입) 2025-09-12: 외부
 라이브러리 평가 — mediabunny 도입 보류 결정
 
