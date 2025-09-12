@@ -13,6 +13,14 @@ import { logger } from '@shared/logging';
 export interface MediaProcessStageEvent {
   readonly stage: 'collect' | 'extract' | 'normalize' | 'dedupe' | 'validate' | 'complete';
   readonly count?: number; // 해당 단계 처리 후 아이템 수 (가능한 경우)
+  /**
+   * 단계별 소요 시간(ms) — telemetry=true일 때 제공
+   */
+  readonly stageMs?: number;
+  /**
+   * 처리 시작 이후 누적 시간(ms) — telemetry=true일 때 제공
+   */
+  readonly totalMs?: number;
 }
 
 export interface MediaProcessOptions {
@@ -37,13 +45,18 @@ export class MediaProcessor {
     const telemetry: Array<{ stage: string; count: number; duration: number }> = collectTelemetry
       ? []
       : [];
-    let lastTime = collectTelemetry ? performance.now() : 0;
+    const startTime = collectTelemetry ? performance.now() : 0;
+    let lastTime = startTime;
     const record = (stage: MediaProcessStageEvent['stage'], count: number): void => {
-      onStage?.({ stage, count });
       if (collectTelemetry) {
         const now = performance.now();
-        telemetry.push({ stage, count, duration: Math.max(0, now - lastTime) });
+        const stageMs = Math.max(0, now - lastTime);
+        const totalMs = Math.max(0, now - startTime);
+        telemetry.push({ stage, count, duration: stageMs });
         lastTime = now;
+        onStage?.({ stage, count, stageMs, totalMs });
+      } else {
+        onStage?.({ stage, count });
       }
     };
     try {
@@ -81,7 +94,19 @@ export class MediaProcessor {
         logger.error('❌ MediaProcessor: 검증 실패:', result.error);
       }
 
-      onStage?.({ stage: 'complete', count: result.success ? result.data.length : 0 });
+      if (collectTelemetry) {
+        const now = performance.now();
+        const stageMs = Math.max(0, now - lastTime);
+        const totalMs = Math.max(0, now - startTime);
+        onStage?.({
+          stage: 'complete',
+          count: result.success ? result.data.length : 0,
+          stageMs,
+          totalMs,
+        });
+      } else {
+        onStage?.({ stage: 'complete', count: result.success ? result.data.length : 0 });
+      }
       return collectTelemetry ? { ...result, telemetry } : result;
     } catch (error) {
       logger.error('❌ MediaProcessor: 처리 중 오류:', error);
@@ -89,7 +114,19 @@ export class MediaProcessor {
         success: false,
         error: error instanceof Error ? error : new Error(String(error)),
       };
-      onStage?.({ stage: 'complete', count: 0 });
+      if (collectTelemetry) {
+        const now = performance.now();
+        const stageMs = Math.max(0, now - lastTime);
+        const totalMs = Math.max(0, now - startTime);
+        onStage?.({
+          stage: 'complete',
+          count: 0,
+          stageMs,
+          totalMs,
+        });
+      } else {
+        onStage?.({ stage: 'complete', count: 0 });
+      }
       return collectTelemetry ? { ...err, telemetry } : err;
     }
   }

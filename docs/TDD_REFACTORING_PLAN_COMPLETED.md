@@ -93,6 +93,12 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
   제거
 - 결과: 다크 모달 불투명 배경 정상화, 기존 토큰/테마 테스트 GREEN
 
+2025-09-12: 문서 정리 — 활성 계획서 주석형 완료 표식 제거 및 완료 로그 이관
+
+- 계획서(`TDD_REFACTORING_PLAN.md`)에서 주석으로 남아 있던 완료
+  표식(U2/U4/U5/M0) 제거
+- 본 완료 로그에 간결 요약 추가로 추적 일원화
+
 2025-09-11: Phase 8 — Media URL Sanitization 완료
 
 - 허용: http/https/상대/data:image/\*/blob, 차단: javascript 등 위험 스킴 +
@@ -119,6 +125,14 @@ Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
 - GREEN: 신규 테스트 통과, 기존 스위트 회귀 없음
 - 후속: MediaService 반환 구조 코드 매핑 & 재시도 UX code 스위치 업데이터 Phase
   2/3에서 처리 예정
+
+2025-09-12: MP_STAGE_METRICS — MediaProcessor 단계별 시간(stageMs/totalMs) 노출
+완료
+
+- onStage 콜백에 stageMs/totalMs 추가(telemetry=true일 때 제공), 기존 시그니처와
+  호환 유지
+- 테스트 추가: `test/unit/media/media-processor.stage-metrics.test.ts` GREEN
+- 가이드 반영: CODING_GUIDELINES의 진행률 옵저버 섹션에 stageMs/totalMs 명시
 
 2025-09-11: Phase 2 (2차) — MediaProcessor Telemetry & Stage Metrics 완료
 

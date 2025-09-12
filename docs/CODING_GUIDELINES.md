@@ -224,6 +224,14 @@ Gallery
 가드:
 - `test/unit/main/side-effect-free.imports.red.test.ts` (U1) — import 시 부수효과가 없음을 검증 (RED→GREEN)
 
+벤더 초기화/정리 규칙(확장):
+
+- StaticVendorManager 등 벤더 브릿지는 import 시 자동 초기화/리스너 등록을 하지 않습니다.
+- 초기화는 엔트리 흐름에서 명시적으로 호출합니다: `initializeVendors()` 또는 동등 API.
+- 정리는 명시적 API를 사용합니다: `registerVendorCleanupOnUnload()`를 통해 beforeunload에 안전하게 등록하거나, 테스트에서는 직접 `cleanup()` 호출.
+- 이유: import 부작용 제거로 테스트/모킹 안정성 확보 및 TDZ/순환 의존 문제 예방.
+- 가드 테스트: `test/unit/loader/feature-side-effect.red.test.ts`, `test/unit/loader/import-side-effect.scan.red.test.ts`.
+
 ### 애니메이션 규칙
 
 - transition/animation은 토큰만 사용: 시간은 `--xeg-duration-*`, 이징은 `--xeg-ease-*`만 사용합니다.
@@ -623,8 +631,9 @@ interface PCEventHandlers {
 - 파이프라인 단계: collect → extract → normalize → dedupe → validate → complete
 - 사용: `new MediaProcessor().process(root, { onStage: e => ... })`
 - 콜백 시그니처:
-  `{ stage: 'collect'|'extract'|'normalize'|'dedupe'|'validate'|'complete', count?: number }`
+  `{ stage: 'collect'|'extract'|'normalize'|'dedupe'|'validate'|'complete', count?: number, stageMs?: number, totalMs?: number }`
   - count는 해당 단계 처리 직후 누적(또는 최종) 아이템 수
+  - stageMs/totalMs는 `telemetry: true`일 때 제공됩니다(기본 off).
 - 오류 발생 시에도 `complete` 이벤트는 항상 1회 방출 (count=0 또는 partial 결과
   수)
 - 계약 테스트: `media-processor.progress-observer.test.ts`
