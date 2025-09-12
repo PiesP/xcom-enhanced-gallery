@@ -32,3 +32,12 @@ export {
 import { globalResourceManager } from './ResourceManager';
 export const getResourceCount = () => globalResourceManager.getResourceCount();
 export const hasResource = (id: string) => globalResourceManager.hasResource(id);
+
+// Memory profiler (lightweight, optional)
+export {
+  isMemoryProfilingSupported,
+  takeMemorySnapshot,
+  MemoryProfiler,
+  type MemorySnapshot,
+  type MemoryProfileResult,
+} from './memory-profiler';

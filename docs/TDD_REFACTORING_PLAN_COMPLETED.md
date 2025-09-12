@@ -2,6 +2,22 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+2025-09-12: N6 — 프리로드/프리페치 UX 미세 튜닝 완료 2025-09-12: MEM_PROFILE —
+경량 메모리 프로파일러 도입
+
+- 구현: `@shared/utils/memory/memory-profiler` 추가 — 지원 환경에서
+  performance.memory 스냅샷/델타 측정, 미지원 환경은 안전한 noop.
+- API: isMemoryProfilingSupported, takeMemorySnapshot, new
+  MemoryProfiler().start/stop/measure
+- 테스트: memory-profiler.test.ts (지원/미지원, 델타/예외 경계) GREEN
+
+- computePreloadIndices 대칭 이웃 정합 + 뷰포트 거리 가중치(동일 거리 시 다음
+  우선)
+- MediaService.prefetchNextMedia 동시성 제한 큐 전체 드레인 보장, 스케줄 모드
+  계약 확정(immediate/idle/raf/microtask)
+- 가드: gallery-prefetch.viewport-weight.red.test.ts GREEN, 스케줄 회귀 테스트
+  GREEN
+
 2025-09-12: 문서 정합성 — 활성 계획(N1–N6) 등록 및 계획서 경량화 완료
 2025-09-12: 테스트 인프라 — 번들 존재 가드 안정화
 
@@ -30,6 +46,14 @@
 - 영향: 메모 유지 + 선택적 렌더로 스크롤 중 렌더 횟수 감소(테스트 훅과 호환).
 - 후속: VerticalImageItem 수준의 파생 구독 적용 범위 확대는 별도 사이클에서
   검토.
+
+2025-09-12: N2 — 렌더링 성능 최적화(memo + selector) 최종 이관
+
+- 내용: VerticalGalleryView에 compat memo 적용 및 toString 오버라이드로 테스트
+  호환 확보, useSelector 기반 파생 구독으로 전체 상태 구독 제거.
+  VerticalImageItem 은 memo와 비교 함수로 유지. 렌더 수 가드 테스트는 스모크
+  수준으로 유지.
+- 결과: 대용량 리스트 스크롤 체감 개선, 관련 스위트 GREEN. 활성 계획에서 제거.
 
 2025-09-12: N6(부분) — 프리로드/프리페치 동조(대칭 이웃) 정합
 

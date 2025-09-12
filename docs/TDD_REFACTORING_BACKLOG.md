@@ -19,9 +19,7 @@
 
 ## Candidate List
 
-- IDEA | MEM_PROFILE | Memory/GC 경량 프로파일(지원 환경에서 snapshot) + noop
-폴백 | 대량 처리 시 메모리 패턴 가시화 | H | 환경 의존 / 선택적
-<!-- RESULT_STATUS_AUDIT: 2025-09-12 완료로 이동 -->
+<!-- MEM_PROFILE 승격 및 완료 (2025-09-12): 경량 메모리 프로파일러 유틸 추가, 문서/테스트 포함 -->
 
 ---
 

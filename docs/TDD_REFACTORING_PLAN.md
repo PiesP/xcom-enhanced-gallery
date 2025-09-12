@@ -3,7 +3,7 @@
 본 문서는 진행 중인 활성 Phase만 유지합니다. 완료된 항목은
 `TDD_REFACTORING_PLAN_COMPLETED.md`로 즉시 이관합니다.
 
-업데이트: 2025-09-12 — 활성 Phase: N2, N6 (N5 완료 이관)
+업데이트: 2025-09-12 — 활성 Phase: 없음 (MEM_PROFILE 완료 이관)
 
 ## 운영 원칙(불변)
 
@@ -16,50 +16,8 @@
 
 ## 활성 Phase
 
-N2 — 렌더링 성능 최적화(memo + selector)
-
-- 목표: `VerticalGalleryView`/`VerticalImageItem`에 compat `memo` 적용,
-  `useSignalSelector`로 필요한 파생값만 구독
-- 장점: 불필요한 재렌더 감소, 큰 리스트 스크롤 체감 개선
-- 단점: 메모화 경계 설정에 따른 props 안정성 요구, 테스트 보강 필요
-- 테스트(RED):
-  - test/unit/features/gallery/render-count.red.test.tsx (아이템 변경 시 재렌더
-    횟수 가드)
-
-진행 상황(부분 완료):
-
-- VerticalGalleryView에 compat memo 적용 및 테스트 호환을 위한 toString
-  오버라이드 완료.
-- VerticalImageItem은 기존 compat memo 유지 확인.
-- VerticalGalleryView에서 상태 파생 구독을 useSelector로 최적화(전체 state 구독
-  제거) 완료.
-- 남은 작업: VerticalImageItem에서 필요한 파생 신호만 구독하도록 확장 여부 검토
-  및 렌더 수 가드 테스트 보강.
-
-N6 — 프리로드/프리페치 UX 미세 튜닝
-
-- 목표: `computePreloadIndices` 결과와 `MediaService.prefetchNextMedia`를 뷰포트
-  기반으로 동조(현재/다음 구간 가중치)
-- 장점: 체감 로딩 시간 추가 단축, 네트워크 효율화
-- 단점: 구현 복잡도 소폭 증가, 벤치 변동성 고려 필요
-- 테스트(RED):
-  - test/unit/performance/gallery-prefetch.viewport-weight.red.test.ts
-  - test/unit/performance/media-prefetch.schedule-regression.test.ts
-
-진행 상황(부분 완료):
-
-- MediaService.prefetchNextMedia에서 computePreloadIndices 기반 대칭 이웃
-  프리페치 사용으로 동작 정합.
-- 뷰포트 가중치 정렬 도입: 현재 인덱스와의 거리 오름차순, 동일 거리 시 다음
-  항목(오른쪽) 우선 정책 적용. 동시성 제한 큐가 전체 대기열을 끝까지 소진하도록
-  보장(1개 동시성에서도 순차 실행 보장).
-- 회귀 가드 추가:
-  test/unit/performance/gallery-prefetch.viewport-weight.red.test.ts (거리 기반
-  정렬 및 큐 소진).
-- 스케줄 모드 계약 확정: immediate는 블로킹 드레인, idle/raf/microtask는
-  논블로킹 시드 후 내부 드레인(테스트 환경 폴백 포함). 관련 스케줄 테스트 GREEN.
-- 남은 작업: 스케줄 모드별 가중치/우선순위 미세 튜닝 및 벤치 지표 기반 파라미터
-  조정.
+현재 활성 Phase는 없습니다. 다음 사이클 시작 시 본 문서에 활성 항목만 간결히
+유지합니다.
 
 ## TDD 규칙과 브랜치
 

@@ -365,6 +365,23 @@ animateCustom(el, keyframes, {
 }
 ```
 
+### 메모리 프로파일링 유틸리티 (선택 기능)
+
+- 목적: 대량 처리/성능 회귀 조사 시 JS 힙 사용량 스냅샷과 델타를 측정합니다.
+- 지원 환경: Chromium 계열 등 `performance.memory` 제공 환경에서만 동작하며, 그 외 환경(Node/Vitest/JSDOM)은 안전하게 noop으로 폴백합니다.
+- API 위치: `@shared/utils/memory/memory-profiler` (배럴: `@shared/utils/memory`)
+- 공개 API:
+  - `isMemoryProfilingSupported(): boolean`
+  - `takeMemorySnapshot(): MemorySnapshot | null`
+  - `new MemoryProfiler().start(): boolean` / `.stop(): MemoryProfileResult | null` / `.measure(fn): Promise<MemoryProfileResult>`
+- 데이터 구조:
+  - `MemorySnapshot { usedJSHeapSize, totalJSHeapSize, jsHeapSizeLimit, timestamp }`
+  - `MemoryProfileResult { start, end, delta: { usedJSHeapSize, totalJSHeapSize }, durationMs }`
+- 사용 가이드:
+  - import 시 부작용이 없어야 하며, 측정이 필요한 코드 경계에서만 호출합니다.
+  - 테스트에서는 지원 환경을 모킹하여 스냅샷/델타 계산을 검증합니다.
+  - 미지원 환경에서 API는 null/false/zero 결과를 반환하므로 호출부에서 분기 없이 안전하게 사용할 수 있습니다.
+
 ```tsx
 // 금지
 <div style={{ padding: '16px', gap: '8px' }} />

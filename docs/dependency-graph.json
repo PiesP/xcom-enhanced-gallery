@@ -7799,6 +7799,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./memory-profiler",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/memory/memory-profiler.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ResourceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7816,6 +7833,15 @@
         }
       ],
       "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/memory/memory-profiler.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/memory/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -8231,8 +8257,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 245,
-    "totalDependenciesCruised": 336,
+    "totalCruised": 246,
+    "totalDependenciesCruised": 337,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
