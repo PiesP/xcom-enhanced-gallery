@@ -31,7 +31,10 @@ import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { getSetting } from '@shared/container/settings-access';
+<<<<<<< HEAD
 import { setSetting } from '@shared/container/settings-access';
+=======
+>>>>>>> 9ae57a75f3576eccccbe64ceb4aeef10bd742748
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
 
 export interface VerticalGalleryViewProps {
