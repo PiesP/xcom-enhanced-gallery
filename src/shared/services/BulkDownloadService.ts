@@ -454,10 +454,11 @@ export class BulkDownloadService {
               const remaining: Array<{ url: string; error: string }> = [];
               let idx = 0;
 
-              // Optimistic UX: immediately show success to align with tests and fast feedback
+              // Optimistic UX: immediately show success (announce + toast)
               toastManager.success(
                 languageService.getString('messages.download.retry.success.title'),
-                languageService.getString('messages.download.retry.success.body')
+                languageService.getString('messages.download.retry.success.body'),
+                { route: 'both' }
               );
 
               const run = async () => {

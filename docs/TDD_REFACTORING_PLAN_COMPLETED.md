@@ -8,6 +8,30 @@
   문서에 U6–U10 단계 정의
 - 문서: `TDD_REFACTORING_PLAN.md` 갱신(활성 목표 반영)
 
+2025-09-12: U8 — 비디오 키보드 제어 표준화(컨텍스트 한정) 완료
+
+- 변경: 갤러리 포커스 컨텍스트에서 Space/Arrow/Mute 키 처리 표준화, 스크롤 충돌
+  방지 가드 적용
+- 테스트: video-keyboard.controls.red.test.ts → GREEN (기존 테스트 스위트 내
+  확인)
+- 주의: PC 전용 입력 정책 준수, 네이티브 컨트롤 충돌 회피 로직 유지
+
+2025-09-12: U9 — CLS(레이아웃 안정성) 개선 완료
+
+- 변경: VerticalImageItem.module.css에 aspect-ratio 예약 및 스켈레톤 토큰 적용
+- 테스트: layout-stability.cls.red.test.ts, skeleton.tokens.red.test.ts → GREEN
+- 효과: 초기 로드 시 CLS 감소, 토큰화된 로딩 상태 일관성 확보
+
+2025-09-12: U10 — 토스트↔라이브영역 아나운스 경로 하드닝 완료
+
+- 변경: UnifiedToastManager 라우팅 정책 도입(기본: info/success → live-only,
+  warning/error → toast-only), route override('live-only'|'toast-only'|'both')
+  지원
+- 부수: 접근성 배럴 재노출 정리(shared/utils/accessibility.ts ← index 재수출),
+  Toast.tsx의 compat 접근 안전화(모킹 환경 친화)
+- 테스트: a11y.announce-routing.red.test.ts → GREEN, BulkDownload 재시도 플로우
+  success 경로 'both'로 조정하여 관련 테스트 GREEN
+
 2025-09-12: PREFETCH_BENCH — 프리페치 A/B 벤치 하네스 도입 완료 2025-09-12: U6 —
 JS 계층 토큰화 하드닝 완료
 

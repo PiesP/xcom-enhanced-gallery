@@ -79,6 +79,8 @@
   justify-content: center;
   align-items: center;
   min-height: var(--xeg-spacing-3xl);
+  /* CLS: 초기 레이아웃 안정성을 위한 기본 종횡비 예약 */
+  aspect-ratio: var(--xeg-aspect-default);
 }
 
 .placeholder {
@@ -90,7 +92,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--xeg-color-bg-secondary);
+  /* Skeleton: 토큰화된 배경/모션 사용 */
+  background: var(--xeg-skeleton-bg);
   min-height: var(--xeg-spacing-3xl);
 }
 
@@ -100,6 +103,7 @@
   border: 2px solid var(--xeg-color-border-primary);
   border-top: 2px solid var(--xeg-color-primary);
   border-radius: var(--xeg-radius-full);
+  /* Skeleton: 토큰화된 duration/easing 사용 */
   animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
 }
 

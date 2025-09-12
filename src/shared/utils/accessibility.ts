@@ -15,6 +15,13 @@ export { getRelativeLuminance } from './accessibility/accessibility-utils';
 
 // Import for internal use
 import { getRelativeLuminance } from './accessibility/accessibility-utils';
+// Barrel collision fix: re-export live region helpers here so module path '@/shared/utils/accessibility'
+// exposes them directly (tests and some features import without '/index').
+export {
+  ensurePoliteLiveRegion,
+  ensureAssertiveLiveRegion,
+  getLiveRegionElements,
+} from './accessibility/live-region-manager';
 
 /**
  * CSS 색상 문자열을 RGB 배열로 파싱합니다.

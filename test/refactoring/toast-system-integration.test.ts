@@ -11,9 +11,9 @@ vi.mock('@shared/external/vendors', () => ({
   getPreactSignals: () => ({
     signal: (initialValue: unknown) => ({
       value: initialValue,
-      subscribe: (callback: (value: unknown) => void) => {
+      subscribe: (callback: (_: unknown) => void) => {
         // 즉시 초기값으로 호출
-        setTimeout(() => callback(initialValue), 0);
+        globalThis.setTimeout(() => callback(initialValue), 0);
         return () => {}; // unsubscribe function
       },
     }),
@@ -55,7 +55,7 @@ describe('Toast 시스템 통합 (TDD)', () => {
       const id = unifiedToastManager.show({
         title: 'Test Toast',
         message: 'This is a test message',
-        type: 'info',
+        type: 'warning', // info는 라이브 리전으로만 공지되므로 리스트 변화를 보려면 warning 사용
       });
       expect(typeof id).toBe('string');
       expect(id.length).toBeGreaterThan(0);
@@ -77,7 +77,7 @@ describe('Toast 시스템 통합 (TDD)', () => {
       unifiedToastManager.show({
         title: 'Test',
         message: 'Message',
-        type: 'info',
+        type: 'warning',
       });
 
       const updatedToasts = unifiedToastManager.getToasts();
@@ -89,7 +89,7 @@ describe('Toast 시스템 통합 (TDD)', () => {
       const unsubscribe = unifiedToastManager.subscribe(mockCallback);
 
       // 초기 구독 콜백이 비동기적으로 호출되므로 대기
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise(resolve => globalThis.setTimeout(resolve, 10));
 
       // 초기 호출 (구독 시) + signals 초기값 호출 = 2번
       expect(mockCallback).toHaveBeenCalledTimes(2);
@@ -115,6 +115,7 @@ describe('Toast 시스템 통합 (TDD)', () => {
       const id = unifiedToastManager.show({
         title: 'Test',
         message: 'Message',
+        type: 'warning',
       });
 
       expect(unifiedToastManager.getToasts()).toHaveLength(1);
@@ -128,8 +129,8 @@ describe('Toast 시스템 통합 (TDD)', () => {
 
     it('should clear all toasts', () => {
       // GREEN: 모든 Toast 제거 기능
-      unifiedToastManager.show({ title: 'Test 1', message: 'Message 1' });
-      unifiedToastManager.show({ title: 'Test 2', message: 'Message 2' });
+      unifiedToastManager.show({ title: 'Test 1', message: 'Message 1', type: 'warning' });
+      unifiedToastManager.show({ title: 'Test 2', message: 'Message 2', type: 'error' });
 
       expect(unifiedToastManager.getToasts()).toHaveLength(2);
 
@@ -152,11 +153,11 @@ describe('Toast 시스템 통합 (TDD)', () => {
       expect(typeof infoId).toBe('string');
 
       const toasts = unifiedToastManager.getToasts();
-      expect(toasts).toHaveLength(4);
-      expect(toasts.find(t => t.type === 'success')).toBeDefined();
+      // 기본 라우팅 정책: info/success는 라이브 리전, warning/error는 토스트로 표시
       expect(toasts.find(t => t.type === 'error')).toBeDefined();
       expect(toasts.find(t => t.type === 'warning')).toBeDefined();
-      expect(toasts.find(t => t.type === 'info')).toBeDefined();
+      expect(toasts.find(t => t.type === 'success')).toBeUndefined();
+      expect(toasts.find(t => t.type === 'info')).toBeUndefined();
     });
   });
 

@@ -6025,6 +6025,23 @@
         },
         {
           "dynamic": false,
+          "module": "./accessibility/live-region-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/accessibility/live-region-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./type-safety-helpers",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6051,6 +6068,16 @@
     },
     {
       "source": "src/shared/utils/accessibility/accessibility-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/accessibility.ts",
+        "src/shared/utils/accessibility/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/accessibility/live-region-manager.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/accessibility.ts",
@@ -7598,15 +7625,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/accessibility/live-region-manager.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/accessibility/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/animations.ts",
       "dependencies": [
         {
@@ -8153,7 +8171,7 @@
     "info": 4,
     "ignore": 0,
     "totalCruised": 243,
-    "totalDependenciesCruised": 333,
+    "totalDependenciesCruised": 334,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
