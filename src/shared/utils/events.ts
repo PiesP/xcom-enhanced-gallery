@@ -7,6 +7,7 @@ import { isGalleryInternalElement } from '@shared/utils/utils';
 import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
 import { galleryState } from '@shared/state/signals/gallery.signals';
+import { videoControlService } from '@shared/services/media/VideoControlService';
 import type { MediaInfo } from '@shared/types/media.types';
 
 // 기본 이벤트 관리
@@ -573,6 +574,59 @@ function handleKeyboardEvent(
   if (!options.enableKeyboard) return;
 
   try {
+    // 갤러리 열린 상태에서 네비게이션 키들의 기본 스크롤을 차단하여 충돌 방지
+    if (checkGalleryOpen()) {
+      const key = event.key;
+      const isNavKey =
+        key === 'Home' ||
+        key === 'End' ||
+        key === 'PageDown' ||
+        key === 'PageUp' ||
+        key === 'ArrowLeft' ||
+        key === 'ArrowRight' ||
+        key === ' ' ||
+        key === 'Space';
+
+      // 비디오 제어 키: Space(재생/일시정지), ArrowUp/Down(볼륨), M/m(음소거)
+      const isVideoKey =
+        key === ' ' ||
+        key === 'Space' ||
+        key === 'ArrowUp' ||
+        key === 'ArrowDown' ||
+        key === 'm' ||
+        key === 'M';
+
+      if (isNavKey || isVideoKey) {
+        // 기본 스크롤/페이지 전환을 차단
+        event.preventDefault();
+        event.stopPropagation();
+
+        // 비디오 키 처리
+        switch (key) {
+          case ' ': // fallthrough
+          case 'Space':
+            videoControlService.togglePlayPauseCurrent();
+            break;
+          case 'ArrowUp':
+            videoControlService.volumeUpCurrent();
+            break;
+          case 'ArrowDown':
+            videoControlService.volumeDownCurrent();
+            break;
+          case 'm':
+          case 'M':
+            videoControlService.toggleMuteCurrent();
+            break;
+        }
+
+        // 커스텀 핸들러 위임
+        if (handlers.onKeyboardEvent) {
+          handlers.onKeyboardEvent(event);
+        }
+        return;
+      }
+    }
+
     // ESC 키로 갤러리 닫기
     if (event.key === 'Escape' && checkGalleryOpen()) {
       handlers.onGalleryClose();

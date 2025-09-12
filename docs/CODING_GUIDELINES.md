@@ -305,6 +305,8 @@ animateCustom(el, keyframes, {
   - 환경에서 `requestIdleCallback`이 없을 때는 안전하게 `setTimeout(0)`으로 폴백됩니다.
   - 유틸: 인덱스 계산은 `@shared/utils/performance/computePreloadIndices` 사용, 스케줄은 `scheduleIdle/scheduleRaf/scheduleMicrotask` 사용
   - 테스트: `test/unit/performance/media-prefetch.idle-schedule.test.ts` (idle) 및 후속 확장 테스트에서 보장합니다.
+  - 벤치 하네스: `runPrefetchBench(mediaService, { urls, currentIndex, prefetchRange, modes })`로 간단 비교 가능
+    - 산출: 각 모드별 elapsedMs, cacheEntries, bestMode
 
 
 ### 접근성 스모크 규칙 (A11y)
@@ -671,6 +673,18 @@ function handleWheel(event: WheelEvent) {
   }
 }
 ```
+
+정책 보강(갤러리 컨텍스트):
+
+- 갤러리가 열린 상태에서만 네비게이션
+  키(Home/End/PageUp/PageDown/ArrowLeft/ArrowRight/Space)를 활성화하고, 페이지
+  스크롤/페이지 이동을 방지하기 위해 기본 동작을 차단합니다.
+- 갤러리가 닫힌 상태에서는 위 키들에 대한 전역 차단을 하지 않습니다(페이지 기본
+  동작 유지).
+- ESC는 갤러리 열림 상태에서 닫기 동작을 수행하며 기본 동작을 차단합니다.
+- 이 정책은 통합 이벤트 유틸(`shared/utils/events.ts`)에서 강제되며,
+  테스트(`test/unit/events/gallery-keyboard.navigation.red.test.ts`)로
+  가드됩니다.
 
 ## 🧪 테스트 패턴
 

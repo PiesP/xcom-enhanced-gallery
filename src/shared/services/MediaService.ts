@@ -12,6 +12,7 @@ import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
 import type { BaseResultStatus } from '@shared/types/result.types';
+import { ErrorCode } from '@shared/types/result.types';
 
 // 통합된 서비스 타입들
 /**
@@ -70,6 +71,8 @@ export interface DownloadResult {
   error?: string;
   filename?: string;
   failures?: Array<{ url: string; error: string }>;
+  /** Machine readable code (Result v2) */
+  code?: ErrorCode;
 }
 
 export interface SingleDownloadResult {
@@ -77,6 +80,8 @@ export interface SingleDownloadResult {
   status: BaseResultStatus;
   filename?: string;
   error?: string;
+  /** Machine readable code (Result v2) */
+  code?: ErrorCode;
 }
 
 // 기존 서비스들 import
@@ -739,13 +744,18 @@ export class MediaService {
       download.downloadBlob(blob, filename);
 
       logger.debug(`Single download initiated: ${filename}`);
-      return { success: true, status: 'success', filename };
+      return { success: true, status: 'success', filename, code: ErrorCode.NONE };
     } catch (error) {
       const message = getErrorMessage(error);
       logger.error(`Single download failed: ${message}`);
       const lowered = message.toLowerCase();
       const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
-      return { success: false, status, error: message };
+      return {
+        success: false,
+        status,
+        error: message,
+        code: status === 'cancelled' ? ErrorCode.CANCELLED : ErrorCode.UNKNOWN,
+      };
     }
   }
 
@@ -757,6 +767,16 @@ export class MediaService {
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
     try {
+      if (mediaItems.length === 0) {
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: 0,
+          filesSuccessful: 0,
+          error: 'No files to download',
+          code: ErrorCode.EMPTY_INPUT,
+        } as DownloadResult;
+      }
       const { getFflate } = await import('@shared/external/vendors');
       const fflate = getFflate();
       const download = getNativeDownload();
@@ -854,29 +874,47 @@ export class MediaService {
         `ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`
       );
 
-      return {
-        success: true,
-        status:
-          failures.length === 0
-            ? 'success'
+      const status: BaseResultStatus =
+        failures.length === 0
+          ? 'success'
+          : failures.length === mediaItems.length
+            ? 'error'
+            : 'partial';
+      const code: ErrorCode =
+        status === 'success'
+          ? ErrorCode.NONE
+          : status === 'partial'
+            ? ErrorCode.PARTIAL_FAILED
             : failures.length === mediaItems.length
-              ? 'error'
-              : 'partial',
+              ? ErrorCode.ALL_FAILED
+              : ErrorCode.UNKNOWN;
+
+      return {
+        success: status === 'success' || status === 'partial',
+        status,
         filesProcessed: mediaItems.length,
         filesSuccessful: successful,
         filename: zipFilename,
         ...(failures.length > 0 ? { failures } : {}),
+        code,
       };
     } catch (error) {
       const message = getErrorMessage(error);
       logger.error(`ZIP download failed: ${message}`);
       const lowered = message.toLowerCase();
+      const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
       return {
         success: false,
-        status: lowered.includes('cancel') ? 'cancelled' : 'error',
+        status,
         filesProcessed: mediaItems.length,
         filesSuccessful: 0,
         error: message,
+        code:
+          status === 'cancelled'
+            ? ErrorCode.CANCELLED
+            : message.toLowerCase().includes('all downloads failed')
+              ? ErrorCode.ALL_FAILED
+              : ErrorCode.UNKNOWN,
       };
     }
   }

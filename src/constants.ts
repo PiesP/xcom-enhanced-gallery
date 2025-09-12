@@ -7,7 +7,8 @@ export const APP_CONFIG = {
   VERSION: '3.1.0',
   NAME: 'X.com Enhanced Gallery',
   MAX_MEDIA_ITEMS: 100,
-  ANIMATION_DURATION: 300,
+  // 토큰 기반 duration 사용(정책: raw ms 금지)
+  ANIMATION_DURATION: 'var(--xeg-duration-normal)',
 } as const;
 
 // 타이밍 및 성능 상수
@@ -103,20 +104,22 @@ export const CSS = {
 
   /** Z-index 값 */
   Z_INDEX: {
-    GALLERY: 9999,
-    MODAL: 10000,
-    TOOLBAR: 10001,
-    TOAST: 10080,
+    // 토큰 기반 z-index 사용(정책: raw number 금지)
+    GALLERY: 'var(--xeg-z-gallery)',
+    MODAL: 'var(--xeg-z-modal)',
+    TOOLBAR: 'var(--xeg-z-toolbar)',
+    TOAST: 'var(--xeg-z-toast)',
   } as const,
 
   /** 스페이싱 (8px 기반) */
   SPACING: {
-    XS: 4,
-    SM: 8,
-    MD: 16,
-    LG: 24,
-    XL: 32,
-    XXL: 40,
+    // 토큰 기반 spacing 사용(정책: raw number 금지)
+    XS: 'var(--xeg-spacing-xs)',
+    SM: 'var(--xeg-spacing-sm)',
+    MD: 'var(--xeg-spacing-md)',
+    LG: 'var(--xeg-spacing-lg)',
+    XL: 'var(--xeg-spacing-xl)',
+    XXL: 'var(--xeg-spacing-2xl)',
   } as const,
 } as const;
 

@@ -2,6 +2,34 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+2025-09-12: UI 감사 및 차기 활성 계획(U6–U10) 수립 완료
+
+- 내용: 현 UI/UX 점검(키보드/비디오/CLS/토큰/아나운스) 결과를 바탕으로 활성 계획
+  문서에 U6–U10 단계 정의
+- 문서: `TDD_REFACTORING_PLAN.md` 갱신(활성 목표 반영)
+
+2025-09-12: PREFETCH_BENCH — 프리페치 A/B 벤치 하네스 도입 완료 2025-09-12: U6 —
+JS 계층 토큰화 하드닝 완료
+
+- 변경: `src/constants.ts`의 APP_CONFIG.ANIMATION_DURATION, CSS.Z_INDEX,
+  CSS.SPACING 값을 디자인 토큰 var(--xeg-\*) 문자열로 전환
+- 테스트: `test/unit/styles/js-constants.tokenization.test.ts` GREEN
+- 참고: 런타임 인젝션 스타일 정책은 정적 스캐너 기반으로 재도입 예정 (기존 실험
+  테스트는 skip 처리)
+
+2025-09-12: U7 — 갤러리 키보드 네비게이션 확장/충돌 방지 완료
+
+- 변경: 갤러리 열림 상태에서
+  Home/End/PageUp/PageDown/ArrowLeft/ArrowRight/Space의 기본 스크롤 차단 +
+  onKeyboardEvent 위임(`shared/utils/events.ts`)
+- 테스트: `test/unit/events/gallery-keyboard.navigation.red.test.ts` GREEN,
+  PC-only 가드 회귀 통과
+
+- 구현: `runPrefetchBench(mediaService, { modes:['raf','idle','microtask'] })`로
+  스케줄 모드별 elapsedMs/cacheEntries/hitRate 수집, bestMode 도출
+- 테스트: `test/unit/performance/media-prefetch.bench.test.ts` GREEN
+- 공개: `@shared/utils/performance` 배럴에서 재노출, 가이드에 사용 예시 추가
+
 2025-09-11: 계획 감사 — 활성 Phase 없음 (초기 현대화 Phase 1–4 + 옵션 전부 완료,
 신규 작업은 백로그에서 선정 예정) 2025-09-11: 2차 사이클 정의 — 계획서에 Phase
 1–7 (Result/Error v2, Telemetry, Progressive Loader, I18N 확장, A11y 강화,
@@ -246,14 +274,28 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
   토스트 + 진행률 옵저버 RED 예정
 
 - 2025-09-11: Result 패턴 통일(BaseResult status) 1차 도입 (완료)
-  - 공통 타입:
-    `BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled'`
-  - BulkDownloadService / MediaService 반환 객체에 `status` 필드 추가, 부분
-    실패시 'partial', 취소시 'cancelled'
-  - SettingsService 이벤트에 임시 status 삽입(@ts-expect-error) — 후속 어댑터
-    정식화 예정
-  - RED → GREEN 테스트: `result-pattern.unification.red.test.ts`
-  - 기존 계약 테스트 회귀 없음(전체 스위트 GREEN)
+
+### 2025-09-12: RESULT_STATUS_AUDIT — Result/Error 코드 전파 감사 완료
+
+- 범위: BulkDownloadService, MediaService, SettingsService 이벤트 흐름 샘플
+- 내용: Result v2(code 포함) 일관화 —
+  EMPTY_INPUT/ALL_FAILED/PARTIAL_FAILED/CANCELLED 매핑, success 시 NONE
+- 구현: MediaService 결과 타입에 code 추가, 빈 입력 가드 및 상태/코드 매핑 추가
+- 검증: RED 스펙 통과 —
+  - test/unit/core/result/result-error-model.red.test.ts
+  - test/unit/shared/services/bulk-download.error-codes.red.test.ts
+  - test/unit/shared/services/result-pattern.unification.red.test.ts
+
+메모: SettingsService는 이벤트 구조 유지(SettingChangeEvent.status='success');
+결과 어댑터 필요 시 별도 사이클에서 검토
+
+- 공통 타입: `BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled'`
+- BulkDownloadService / MediaService 반환 객체에 `status` 필드 추가, 부분 실패시
+  'partial', 취소시 'cancelled'
+- SettingsService 이벤트에 임시 status 삽입(@ts-expect-error) — 후속 어댑터
+  정식화 예정
+- RED → GREEN 테스트: `result-pattern.unification.red.test.ts`
+- 기존 계약 테스트 회귀 없음(전체 스위트 GREEN)
 
 - 2025-09-11: BulkDownloadService 부분 실패 재시도 액션 TDD 완료
   - RED: `bulk-download.retry-action.red.test.ts`,
@@ -388,6 +430,23 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
 
   참고: 세부 결정/테스트 파일 경로는 커밋 메시지와 테스트 스위트에서 추적합니다.
   - 단위 테스트 추가: `ModalShell.tokens.test.ts`로 토큰 준수 회귀 방지
+
+2025-09-12: 백로그 정리 — 중복/완료 항목 정돈 및 명확화
+
+- 제거: I18N_KEYS(완료), MP_STAGE_METRICS(완료) — LanguageService/i18n 및
+  MediaProcessor stage metrics가 이미 GREEN 상태로 반영되어 백로그에서 삭제
+- 업데이트: PREFETCH_ADV → PREFETCH_BENCH (명칭/범위 정리) — 스케줄러 기능은
+  완료, 벤치 하네스만 후속 항목으로 유지
+- 상태 변경: RETRY_V2를 READY로 승격(현재 재시도 액션 기본형 구현, 실패
+  상세/백오프/상관관계 노출은 후속)
+
+2025-09-12: RETRY_V2 — BulkDownload 재시도 고도화 1차 완료
+
+- 부분 실패 경고 토스트의 [재시도] 클릭 시 실패 항목만 제한 동시성(최대 2)으로
+  재검증하고, 지수 백오프 기반 재시도를 적용. 모두 성공 시 성공 토스트, 일부
+  남으면 남은 개수와 correlationId를 경고 메시지에 표기.
+- 구현: fetchArrayBufferWithRetry 도입, 백오프 중 AbortSignal 취소 전파 처리,
+  기존 경고 토스트 onAction 로직 대체
 
 2025-09-11: U1 — 엔트리/부트스트랩 슬림화 완료
 

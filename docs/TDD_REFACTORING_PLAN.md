@@ -27,18 +27,71 @@
 선택: A (점진 모듈화) — Progressive Loader·벤더 getter·서비스 팩토리 패턴을
 기반으로, 소스 간결성/일관성/현대성 확보를 TDD로 단계 적용.
 
-## 외부 라이브러리 평가 결과 (요약)
+## UI 감사 결과 요약 (2025-09-12)
 
-- 결론(완료): mediabunny 도입 보류 — 옵션 플러그인(기본 Off, Progressive Loader
-  경유 lazy)로 향후 재평가. 세부 근거는 완료 로그에 기록됨.
+현 빌드 산출물과 가이드/테스트 커버리지를 바탕으로 사용성/현대화 관점에서 다음
+개선 여지가 확인되었습니다.
+
+- JS 계층의 하드코딩 상수 존재: z-index/spacing/animation duration이 코드
+  상수(CSS.Z_INDEX, CSS.SPACING, APP_CONFIG.ANIMATION_DURATION)로 남아 있음 →
+  토큰/클래스로 이관 필요
+- 키보드 네비게이션 보강 여지: Escape/Enter 중심 →
+  Home/End/PageUp/PageDown/Arrow 가드 및 preventDefault 범위 명확화 필요(PC 전용
+  정책 유지)
+- 비디오 재생 제어와 Space 스크롤 충돌 가능성: 갤러리 포커스 컨텍스트에서
+  Space/Arrow 동작 표준화 필요
+- 레이아웃 안정성(CLS) 개선: 이미지 컨테이너 aspect-ratio 예약, 로딩
+  스켈레톤(토큰 기반) 적용 여지
+- 토스트/라이브영역 아나운스 정책: 실패/경고 위주 알림 최소화는 완비되었으나,
+  번들 전역 아나운스 경로 통일(토스트→라이브영역 위임) 확인 및 하드닝 필요
+
+위 항목을 TDD 단계로 진행합니다.
 
 ## 활성 목표 (요약)
 
-현재 활성 Phase는 없으며, 다음 사이클 후보는 백로그에서 선별합니다.
+- U8: 비디오 키보드 제어 표준화(Space/Arrow/Mute) — 갤러리 컨텍스트 한정
+- U9: 레이아웃 안정성(CLS) 개선 — aspect-ratio 예약 + 스켈레톤
+- U10: 토스트↔라이브영역 아나운스 경로 정합성 하드닝
 
 ## Phase 개요 (활성)
 
-현재 옵션 Phase 명시 항목 없음 (완료 또는 백로그로 이동).
+<!-- U6/U7: 2025-09-12 완료되어 완료 로그로 이관됨 -->
+
+### U8 — 비디오 키보드 제어 표준화(컨텍스트 한정)
+
+- 목표: 갤러리 컨텍스트에서 Space(재생/일시정지), ArrowUp/Down(볼륨), M(음소거)
+  등 표준 키를 안전 제공.
+- 접근: isVideoControlElement 가드와 포커스 컨텍스트 판단 사용. 문서 스크롤 충돌
+  방지.
+- 장점: 영상 UX 향상. 단점: 트위터 네이티브 컨트롤과의 충돌 회피 로직 필요.
+- TDD(RED):
+  - video-keyboard.controls.red.test.ts — 컨텍스트별 키 처리/충돌 회피 검증
+- 완료 기준: GREEN, 기존 네이티브 플레이어와 중복 핸들러 없음
+
+### U9 — CLS(누적 레이아웃 이동) 개선
+
+- 목표: 이미지/비디오 컨테이너 aspect-ratio 예약 및 토큰화된 스켈레톤 적용으로
+  초기 레이아웃 안정화.
+- 접근: CSS Modules에 aspect-ratio 선언 및 placeholder 높이 예약. 스켈레톤은
+  토큰 기반 색/모션 사용.
+- 장점: 초기 로드 체감 개선. 단점: 일부 레이아웃 조정 필요.
+- TDD(RED):
+  - layout-stability.cls.red.test.tsx — 첫 페인트 전후 바운딩 박스 차이 임계
+    가드
+  - skeleton.tokens.red.test.ts — 스켈레톤 토큰 준수 가드
+- 완료 기준: GREEN, 스타일 가이드 준수
+
+### U10 — 토스트↔라이브영역 아나운스 정합 하드닝
+
+- 목표: 사용자 알림 경로를 토스트 최소화 + 라이브영역 아나운스로 통일(중복
+  방지).
+- 접근: UnifiedToastManager가 라이브영역 매니저로 위임하도록 정책
+  정리(오류/경고만 토스트).
+- 장점: 소음 감소, 접근성 향상. 단점: 경계 리팩토링 일부 필요.
+- TDD(RED):
+  - a11y.announce-routing.red.test.ts — 실패/경고 시 live-region announce,
+    성공/정보성 토스트 억제
+- 완료 기준: GREEN, 기존 오류 복구 UX 표준과 일치
 
 ## 브랜치 & TDD 규칙
 
@@ -65,4 +118,4 @@ DONE 판정 시 아래를 충족해야 합니다:
 - 완료 로그: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
 - 백로그: `docs/TDD_REFACTORING_BACKLOG.md`
 
-업데이트 일시: 2025-09-12 (mediabunny 도입 보류 결론 반영 · U5 계획 정리)
+업데이트 일시: 2025-09-12 (U6/U7 완료 반영 · U8–U10 활성화)

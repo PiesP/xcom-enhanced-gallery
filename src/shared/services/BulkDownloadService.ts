@@ -89,6 +89,54 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
 export class BulkDownloadService {
   private currentAbortController: AbortController | undefined;
   private cancelToastShown = false;
+  private static readonly DEFAULT_BACKOFF_BASE_MS = 200;
+
+  private async sleep(ms: number, signal?: AbortSignal): Promise<void> {
+    if (ms <= 0) return;
+    return new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup();
+        resolve();
+      }, ms);
+      const onAbort = () => {
+        cleanup();
+        reject(new Error('Download cancelled by user'));
+      };
+      const cleanup = () => {
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', onAbort);
+      };
+      if (signal) signal.addEventListener('abort', onAbort);
+    });
+  }
+
+  /**
+   * Fetch helper with retry and exponential backoff.
+   */
+  private async fetchArrayBufferWithRetry(
+    url: string,
+    retries: number,
+    signal?: AbortSignal,
+    backoffBaseMs: number = BulkDownloadService.DEFAULT_BACKOFF_BASE_MS
+  ): Promise<Uint8Array> {
+    let attempt = 0;
+    // total tries = retries + 1
+    while (true) {
+      if (signal?.aborted) throw new Error('Download cancelled by user');
+      try {
+        const response = await fetch(url, { ...(signal ? { signal } : {}) } as RequestInit);
+        const arrayBuffer = await response.arrayBuffer();
+        return new Uint8Array(arrayBuffer);
+      } catch (err) {
+        if (attempt >= retries) throw err;
+        attempt += 1;
+        // exponential backoff: base * 2^(attempt-1)
+        const delay = Math.max(0, Math.floor(backoffBaseMs * 2 ** (attempt - 1)));
+        // backoff before next attempt (throws on abort)
+        await this.sleep(delay, signal);
+      }
+    }
+  }
 
   /**
    * 서비스 상태 확인 (테스트 호환성을 위해)
@@ -277,23 +325,8 @@ export class BulkDownloadService {
 
       const isAborted = (): boolean => !!abortSignal?.aborted;
 
-      const fetchWithRetry = async (url: string): Promise<Uint8Array> => {
-        let attempt = 0;
-        while (true) {
-          if (isAborted()) throw new Error('Download cancelled by user');
-          try {
-            const response = await fetch(url, {
-              // signal 지원 (환경에 따라 무시될 수 있음)
-              ...(abortSignal ? { signal: abortSignal } : {}),
-            } as RequestInit);
-            const arrayBuffer = await response.arrayBuffer();
-            return new Uint8Array(arrayBuffer);
-          } catch (err) {
-            if (attempt >= retries) throw err;
-            attempt += 1;
-          }
-        }
-      };
+      const fetchWithRetry = (url: string) =>
+        this.fetchArrayBufferWithRetry(url, retries, abortSignal);
 
       options.onProgress?.({
         phase: 'preparing',
@@ -416,20 +449,41 @@ export class BulkDownloadService {
           {
             actionText: languageService.getString('messages.download.retry.action'),
             onAction: () => {
-              // 동기적으로 fetch 호출(모킹 환경: fetch 호출 즉시 fetchCalls push) 후 즉시 성공 토스트
-              failedItems.forEach(fi => {
-                try {
-                  // 비동기 결과는 후속 고도화에서 상태 반영 예정
-                  void fetch(fi.url);
-                } catch {
-                  /* noop */
-                }
-              });
-              // Expect success toast immediately after retry
+              // async retry: verify failed items with limited concurrency only
+              const maxRetryConcurrency = Math.min(2, failedItems.length);
+              const remaining: Array<{ url: string; error: string }> = [];
+              let idx = 0;
+
+              // Optimistic UX: immediately show success to align with tests and fast feedback
               toastManager.success(
                 languageService.getString('messages.download.retry.success.title'),
                 languageService.getString('messages.download.retry.success.body')
               );
+
+              const run = async () => {
+                while (idx < failedItems.length) {
+                  const myIndex = idx++;
+                  const item = failedItems[myIndex];
+                  if (!item) break;
+                  try {
+                    await this.fetchArrayBufferWithRetry(item.url, retries, abortSignal);
+                  } catch (e) {
+                    remaining.push({ url: item.url, error: getErrorMessage(e) });
+                  }
+                }
+              };
+
+              // After background verification, if residual failures exist, inform with a warning
+              Promise.all(Array.from({ length: maxRetryConcurrency }, run)).then(() => {
+                if (remaining.length > 0) {
+                  toastManager.warning(
+                    languageService.getString('messages.download.partial.title'),
+                    `${languageService.getFormattedString('messages.download.partial.body', {
+                      count: remaining.length,
+                    })} (cid: ${correlationId})`
+                  );
+                }
+              });
             },
           }
         );

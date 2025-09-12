@@ -7,6 +7,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { getCurrentIndex } from '@shared/state/signals/gallery.signals';
 
 /**
  * 비디오 상태 정보
@@ -35,6 +36,8 @@ export class VideoControlService {
   private readonly pausedVideos = new Map<HTMLVideoElement, VideoState>();
   private isGalleryActive = false;
   private cleanupInterval: number | null = null;
+  // 갤러리 비디오 재생 상태(테스트/JSDOM 호환 목적)
+  private readonly galleryPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
 
   constructor() {
     this.startCleanupTimer();
@@ -76,6 +79,107 @@ export class VideoControlService {
 
     this.isGalleryActive = true;
     logger.info(`[VideoControl] 배경 비디오 정지 완료: ${pausedCount}개`);
+  }
+
+  // ================================
+  // Gallery context helpers (keyboard controls)
+  // ================================
+
+  /**
+   * 현재 갤러리 인덱스의 비디오 요소를 반환 (없으면 null)
+   */
+  private getCurrentGalleryVideo(): HTMLVideoElement | null {
+    try {
+      let doc: Document | undefined;
+      if (typeof document !== 'undefined') {
+        doc = document;
+      } else if (typeof globalThis !== 'undefined') {
+        doc = (globalThis as { document?: Document }).document;
+      }
+
+      if (!doc) return null;
+
+      const container = doc.querySelector('#xeg-gallery-root');
+      if (!container) return null;
+
+      const items = container.querySelector('[data-xeg-role="items-container"]');
+      if (!items) return null;
+
+      const index = getCurrentIndex();
+      const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
+      if (!target) return null;
+
+      const video = target.querySelector('video');
+      return video instanceof HTMLVideoElement ? video : null;
+    } catch (error) {
+      logger.debug('[VideoControl] Failed to get current gallery video', { error });
+      return null;
+    }
+  }
+
+  /**
+   * 현재 갤러리 비디오의 play/pause 토글 (JSDOM 환경 호환)
+   */
+  public togglePlayPauseCurrent(): void {
+    const video = this.getCurrentGalleryVideo();
+    if (!video) return;
+
+    try {
+      const current = this.galleryPlaybackState.get(video)?.playing ?? !video.paused;
+      const next = !current;
+
+      if (next) {
+        // JSDOM 환경을 고려하여 optional chaining 사용
+        // 일부 환경에서 play()가 Promise를 반환하지 않을 수 있으므로 void 처리
+        void (video as HTMLVideoElement & Partial<{ play: () => Promise<void> }>).play?.();
+      } else {
+        (video as HTMLVideoElement & Partial<{ pause: () => void }>).pause?.();
+      }
+
+      this.galleryPlaybackState.set(video, { playing: next });
+      logger.debug(`[VideoControl] toggle play->${next}`);
+    } catch (error) {
+      logger.debug('[VideoControl] toggle play/pause failed', { error });
+    }
+  }
+
+  /** 볼륨 증가 (10% 스텝, 상한 1.0) */
+  public volumeUpCurrent(step = 0.1): void {
+    const video = this.getCurrentGalleryVideo();
+    if (!video) return;
+    try {
+      const v = Math.min(1, Math.round((video.volume + step) * 100) / 100);
+      video.volume = v;
+      if (v > 0 && video.muted) video.muted = false;
+      logger.debug('[VideoControl] volume up', { volume: v });
+    } catch (error) {
+      logger.debug('[VideoControl] volume up failed', { error });
+    }
+  }
+
+  /** 볼륨 감소 (10% 스텝, 하한 0.0) */
+  public volumeDownCurrent(step = 0.1): void {
+    const video = this.getCurrentGalleryVideo();
+    if (!video) return;
+    try {
+      const v = Math.max(0, Math.round((video.volume - step) * 100) / 100);
+      video.volume = v;
+      logger.debug('[VideoControl] volume down', { volume: v });
+    } catch (error) {
+      logger.debug('[VideoControl] volume down failed', { error });
+    }
+  }
+
+  /** 음소거 토글 */
+  public toggleMuteCurrent(): void {
+    const video = this.getCurrentGalleryVideo();
+    if (!video) return;
+    try {
+      video.muted = !video.muted;
+      logger.debug('[VideoControl] toggle mute', { muted: video.muted });
+    } catch (error) {
+      logger.debug('[VideoControl] toggle mute failed', { error });
+    }
   }
 
   /**

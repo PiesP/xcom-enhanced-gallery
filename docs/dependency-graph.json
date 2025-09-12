@@ -7839,6 +7839,23 @@
         },
         {
           "dynamic": false,
+          "module": "./prefetch-bench",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/performance/prefetch-bench.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./preload",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7895,6 +7912,15 @@
     },
     {
       "source": "src/shared/utils/performance/memoization.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/performance/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/performance/prefetch-bench.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/performance/index.ts"
@@ -8126,8 +8152,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 242,
-    "totalDependenciesCruised": 332,
+    "totalCruised": 243,
+    "totalDependenciesCruised": 333,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
