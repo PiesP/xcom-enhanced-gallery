@@ -2,8 +2,13 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
-<<<<<<< HEAD
 2025-09-12: 문서 정합성 — 활성 계획(N1–N6) 등록 및 계획서 경량화 완료
+2025-09-12: 테스트 인프라 — 번들 존재 가드 안정화
+
+- 조치: 테스트 시작 전에 프로덕션 번들을 생성하도록 pretest 스크립트
+  추가(`package.json`에 "pretest": "npm run build:prod").
+- 결과: `hardcoded-css-elimination.test.ts`의 dist 산출물 존재 가드가 안정적으로
+  GREEN 유지. 전체 스위트 100% GREEN.
 
 - 조치: `TDD_REFACTORING_PLAN.md`를 최신 UI 감사에 맞춰 N1–N6 활성 Phase로 갱신
   (이전 완료 항목은 본 로그에만 유지). 제목/업데이트 문구 정리.
@@ -57,11 +62,8 @@
 - 변경: SettingsModal.module.css에 semantic modal 토큰(bg/border)과 focus ring
   토큰(outline/offset) 명시, 닫기 버튼 intent 중립 유지, select에 toolbar 호환
   클래스 적용
-- 테스트: settings-controls.tokens.test.ts GREEN
-
-=======
->>>>>>> 9ae57a75f3576eccccbe64ceb4aeef10bd742748
-2025-09-12: A3 — 키보드 단축키 도움말 오버레이('?') 완료
+- 테스트: settings-controls.tokens.test.ts GREEN 2025-09-12: A3 — 키보드 단축키
+  도움말 오버레이('?') 완료
 
 - 변경: 갤러리 내에서 Shift + / ( '?')로 열리는 접근성 지원 도움말 오버레이 추가
   (role=dialog, aria-modal, aria-labelledby/aria-describedby). IconButton 닫기,
@@ -122,6 +124,17 @@ JS 계층 토큰화 하드닝 완료
   onKeyboardEvent 위임(`shared/utils/events.ts`)
 - 테스트: `test/unit/events/gallery-keyboard.navigation.red.test.ts` GREEN,
   PC-only 가드 회귀 통과
+
+2025-09-12: N5 — 키보드/포커스 흐름 하드닝 완료
+
+- 구현: KeyboardHelpOverlay에 focus trap과 초기 포커스/복원 로직을 안정화.
+  useFocusTrap이 ref 기반으로 개선되어 컨테이너 준비 시점에 정확히 활성화되고,
+  jsdom 환경에서의 포커스 안정화를 위해 useLayoutEffect 및 이벤트 기반 마지막
+  포커스 요소 추적을 도입.
+- 테스트: keyboard-help-overlay.accessibility.test.tsx GREEN (열림 시 닫기
+  버튼에 포커스, ESC로 닫을 때 트리거로 포커스 복원). 툴바 탭 순서는 기존 가드로
+  충분하여 별도 항목은 보류.
+- 영향: 접근성 일관성 향상, 회귀 없음(전체 스위트 GREEN).
 
 - 구현: `runPrefetchBench(mediaService, { modes:['raf','idle','microtask'] })`로
   스케줄 모드별 elapsedMs/cacheEntries/hitRate 수집, bestMode 도출

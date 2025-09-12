@@ -337,7 +337,7 @@ export function SettingsModal({
 
   // Modal mode logic
   if (mode === 'modal') {
-    useFocusTrap(modalContainerRef.current, isOpen, { onEscape: onClose, restoreFocus: true });
+    useFocusTrap(modalContainerRef, isOpen, { onEscape: onClose, restoreFocus: true });
     useScrollLock({ enabled: isOpen, reserveScrollBarGap: true });
   }
 
