@@ -2,6 +2,77 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+2025-09-12: 문서 정합성 — 활성 계획(N1–N6) 등록 및 계획서 경량화 완료
+
+- 조치: `TDD_REFACTORING_PLAN.md`를 최신 UI 감사에 맞춰 N1–N6 활성 Phase로 갱신
+  (이전 완료 항목은 본 로그에만 유지). 제목/업데이트 문구 정리.
+- 결과: 계획서는 활성 과제만 간결 유지, 완료 항목은 본 문서에서 추적 일원화.
+
+2025-09-12: N1 — 갤러리 Toast 일원화 완료
+
+- 구현: `VerticalGalleryView`의 로컬 Toast 상태/마크업 제거,
+  `UnifiedToastManager` 라우팅('live-only'|'toast-only'|'both') 경유로 통합.
+  관련 CSS 잔재 정리 및 모듈 문법 오류 수정.
+- 영향: 갤러리 내 토스트는 전역 컨테이너를 통해 일관 노출, 접근성 라이브 영역
+  경로 유지.
+- 검증: 전체 테스트 스위트 GREEN (통합 토스트 경로 관련 기존 계약 테스트 통과).
+
+2025-09-12: N4 — 이미지 핏 모드 SettingsService 통합 완료
+
+- 구현: `gallery.imageFitMode`를 SettingsService에 기본값(`fitWidth`)으로
+  추가하고, 갤러리 UI에서 getSetting/setSetting을 사용해 저장/복원. 기존
+  localStorage 직접 접근 제거.
+- 타입/기본값: `src/features/settings/types/settings.types.ts`,
+  `src/constants.ts` 갱신.
+- 검증: 테스트 스위트 GREEN, 설정 지속성 경로 회귀 없음.
+
+2025-09-12: N3 — 비디오 가시성 제어(IntersectionObserver) 완료
+
+- 구현: VerticalImageItem에 IntersectionObserver를 도입해 화면 밖에서 비디오를
+  자동 음소거/일시정지하고, 재진입 시 직전 재생/음소거 상태를 복원. 초기 마운트
+  시 한 번만 muted=true 적용하고 이후에는 ref 기반 제어로 사용자의 수동 변경을
+  존중(제어 프로퍼티로 만들지 않음).
+- 테스트/검증: 전체 테스트 스위트 GREEN, 빌드(dev/prod) 및 산출물 검증 PASS.
+  JSDOM 환경에서는 테스트 setup의 폴리필과 모킹을 활용해 안정화.
+- 영향: 탭 전환/롱 스크롤 시 불필요한 재생/소음/자원 사용을 줄이고, 사용자
+  의도를 유지하는 자연스러운 재생 경험 제공.
+
+2025-09-12: A1 — 갤러리 프리로드/프리페치 엔진 도입 완료
+
+- 구현: computePreloadIndices 순수 함수, MediaService.prefetchNextMedia 스케줄
+  모드(immediate/idle/raf/microtask) + 동시성 제한, 간단 캐시/메트릭
+- 테스트: gallery-preload.util.test.ts,
+  media-prefetch.(idle|raf|microtask)-schedule.test.ts,
+  media-prefetch.bench.test.ts GREEN
+
+2025-09-12: A2 — 비디오 항목 CLS 하드닝 완료
+
+- 변경: VerticalImageItem.module.css에 aspect-ratio 예약과 skeleton 토큰,
+  비디오/이미지 로딩 상태 전환을 토큰화된 트랜지션으로 통일
+- 테스트: video-item.cls.test.ts GREEN
+
+2025-09-12: A4 — SettingsModal 폼 컨트롤 토큰/포커스 링 정합 완료
+
+- 변경: SettingsModal.module.css에 semantic modal 토큰(bg/border)과 focus ring
+  토큰(outline/offset) 명시, 닫기 버튼 intent 중립 유지, select에 toolbar 호환
+  클래스 적용
+- 테스트: settings-controls.tokens.test.ts GREEN
+
+2025-09-12: A3 — 키보드 단축키 도움말 오버레이('?') 완료
+
+- 변경: 갤러리 내에서 Shift + / ( '?')로 열리는 접근성 지원 도움말 오버레이 추가
+  (role=dialog, aria-modal, aria-labelledby/aria-describedby). IconButton 닫기,
+  ESC/배경 클릭으로 닫기, PC 전용 입력만 사용.
+- 테스트: keyboard-help.overlay.test.tsx, keyboard-help.aria.test.tsx GREEN.
+- 통합: useGalleryKeyboard에 onOpenHelp 훅 추가, VerticalGalleryView에 상태 및
+  렌더링 연결. 스타일은 토큰 기반으로 구현.
+
+2025-09-12: UI 감사 보고 및 차기 활성 Phase(A1–A4) 정의 완료
+
+- 내용: 갤러리 프리로드/프리페치(A1), 비디오 CLS 하드닝(A2), 키보드 도움말
+  오버레이(A3), SettingsModal 폼 컨트롤 토큰 정합(A4) 계획 수립 및 활성화
+- 문서: `TDD_REFACTORING_PLAN.md` 갱신(활성 Phase 추가)
+
 2025-09-12: UI 감사 및 차기 활성 계획(U6–U10) 수립 완료
 
 - 내용: 현 UI/UX 점검(키보드/비디오/CLS/토큰/아나운스) 결과를 바탕으로 활성 계획
@@ -766,3 +837,6 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
 - 내용: `TDD_REFACTORING_PLAN.md`를 현대화 리팩토링 중심(U1–U5)으로 갱신하고,
   기존 문구(활성 없음)를 제거하여 차기 사이클 시작 상태로 전환
 - 결과: 완료 로그에 본 항목 기록, 계획 문서는 활성 Phase만 유지
+
+2025-09-12: 계획 문서 단순화 — 활성 Phase 없음(전 구간 GREEN) 확정, 완료 항목을
+본 로그로 이관하고 계획서는 스켈레톤만 유지

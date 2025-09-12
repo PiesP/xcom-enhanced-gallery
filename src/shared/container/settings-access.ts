@@ -42,3 +42,17 @@ export function getSetting<T>(key: string, defaultValue: T): T {
     return defaultValue;
   }
 }
+
+/**
+ * Write a settings key safely; no-op if service is unavailable.
+ */
+export async function setSetting<T>(key: string, value: T): Promise<void> {
+  const svc = tryGetSettingsService();
+  if (!svc) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc as any).set?.(key as unknown as string, value);
+  } catch {
+    // ignore in non-browser/test environments
+  }
+}

@@ -13,6 +13,8 @@ export interface GallerySettings {
   infiniteScroll: boolean;
   /** 이미지 사전 로딩 개수 */
   preloadCount: number;
+  /** 이미지 핏 모드 */
+  imageFitMode: 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
   /** 갤러리 테마 */
   theme: 'auto' | 'light' | 'dark';
   /** 애니메이션 활성화 */

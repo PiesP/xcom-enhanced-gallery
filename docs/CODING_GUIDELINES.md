@@ -403,6 +403,27 @@ animateCustom(el, keyframes, {
   - xhr: GM_xmlhttpRequest → 실패/부재 시 fetch 기반 폴백(onload/onerror/onloadend 콜백 지원)
 - 테스트: `test/unit/shared/external/userscript-adapter.contract.test.ts`에서 계약/폴백 동작을 가드합니다.
 
+### 설정 저장 정책 (Settings Persistence)
+
+- features 레이어에서 `localStorage`/`sessionStorage`에 직접 접근하지 않습니다.
+- 모든 설정은 SettingsService를 통해 저장/복원하고, features에서는 목적별 액세서 `@shared/container/settings-access`의 `getSetting`/`setSetting`을 사용합니다.
+- 새 설정 키 추가 시:
+  - 타입: `src/features/settings/types/settings.types.ts`에 명시적 타입 추가
+  - 기본값: `src/constants.ts` 또는 SettingsService의 defaults 경로에 추가(중앙 관리)
+  - 마이그레이션: SettingsService의 migrate/validate가 담당 — feature 로컬 마이그레이션 로직 금지
+- 가드 테스트: `test/unit/shared/services/settings-service.contract.test.ts`
+
+### 토스트 시스템 사용 규칙 (UnifiedToastManager)
+
+- features 레이어는 로컬 Toast UI/상태를 렌더하지 않습니다. 전역 `ToastContainer` 1개와 `UnifiedToastManager`만 사용합니다.
+- 라우팅 정책(기본):
+  - info/success → live-only
+  - warning/error → toast-only
+  - 필요 시 route='both' 허용(예: 재시도 플로우의 성공 알림)
+- 사용 방법: `UnifiedToastManager.show({ level, message, route? })` — 컴포넌트 내 임의 DOM 토스트 생성 금지
+- 스타일: 로컬 `.toastContainer` 등 스타일 선언 금지. 공용 컴포넌트의 토큰 기반 스타일만 사용합니다.
+- 가드 테스트: `test/unit/shared/services/toast-manager.contract.test.ts`, `test/unit/a11y/announce-routing.red.test.ts`
+
 ### 오류 복구 UX 표준 (Error Recovery UX)
 
 BulkDownloadService / MediaService 다운로드 흐름에서 사용자 피드백은 토스트로 통일합니다.

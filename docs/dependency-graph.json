@@ -222,6 +222,23 @@
         },
         {
           "dynamic": false,
+          "module": "../KeyboardHelpOverlay/KeyboardHelpOverlay",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./hooks/useGalleryCleanup",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -329,6 +346,50 @@
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/features/gallery/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./KeyboardHelpOverlay.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -8170,8 +8231,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 243,
-    "totalDependenciesCruised": 334,
+    "totalCruised": 245,
+    "totalDependenciesCruised": 336,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

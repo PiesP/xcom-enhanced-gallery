@@ -386,26 +386,19 @@
 /* 아이템 컨테이너 - 네이티브 스크롤만 사용 */
 .itemsContainer {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  overflow: auto; /* 갤러리 내부 스크롤만 허용 */
+  position: relative;
 
   /* 성능 최적화 */
-  contain: layout style paint;
+  contain: layout style;
   transform: translateZ(0);
-  will-change: scroll-position;
-  content-visibility: auto;
 
-  /* 스크롤바 스타일링 */
+  /* 스크롤/이벤트 */
   scrollbar-gutter: stable;
-
-  /* 스크롤 스냅 (선택적) */
   scroll-snap-type: y proximity;
-
-  /* 이벤트 처리 */
   pointer-events: auto;
-
-  /* 갤러리 내부 스크롤만 허용 */
 
   /* 컨테이너 쿼리 */
   container-type: size;
@@ -552,21 +545,7 @@
   margin-top: 1rem;
 }
 
-/* Toast 컨테이너 */
-.toastContainer {
-  position: fixed;
-  top: var(--xeg-toast-offset); /* 20px를 토큰으로 교체 */
-  right: var(--xeg-toast-offset); /* 20px를 토큰으로 교체 */
-  z-index: calc(var(--xeg-gallery-z-index) + 2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--xeg-gap-sm); /* 10px를 토큰으로 교체 */
-  pointer-events: none;
-}
-
-.toastContainer > * {
-  pointer-events: auto;
-}
+/* N1: 통합 ToastContainer 사용으로 로컬 toastContainer 제거됨 */
 
 /* 감소된 모션 사용자를 위한 지원 - 개선된 접근성 */
 @media (prefers-reduced-motion: reduce) {

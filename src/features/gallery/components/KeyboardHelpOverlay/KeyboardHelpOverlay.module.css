@@ -1,0 +1,64 @@
+/**
+ * KeyboardHelpOverlay styles
+ * - Tokenized colors, radius, spacing, z-index
+ * - PC-only interactions, accessible focus ring
+ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay-backdrop);
+  z-index: var(--xeg-z-modal);
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 20em;
+  max-width: 32em;
+  padding: var(--xeg-space-16);
+  border-radius: var(--xeg-radius-2xl);
+  background: var(--xeg-modal-bg);
+  border: 1px solid var(--xeg-modal-border);
+  box-shadow: var(--xeg-shadow-lg);
+  z-index: calc(var(--xeg-z-modal) + 1);
+}
+
+.title {
+  margin: 0 0 var(--xeg-space-12) 0;
+  font-size: 1.125rem;
+  color: var(--xeg-color-text-primary);
+}
+
+.content {
+  color: var(--xeg-color-text-secondary);
+  line-height: 1.6;
+}
+
+.shortcutList {
+  margin: 0;
+  padding-left: 1.25em;
+}
+
+.closeButton {
+  position: absolute;
+  top: var(--xeg-space-8);
+  right: var(--xeg-space-8);
+  width: 2.5em;
+  height: 2.5em;
+  border-radius: var(--xeg-radius-md);
+}
+
+.closeButton:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog {
+    transition: none;
+    animation: none;
+  }
+}

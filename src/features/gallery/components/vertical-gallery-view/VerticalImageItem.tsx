@@ -169,6 +169,9 @@ function BaseVerticalImageItemCore({
   const [isVisible, setIsVisible] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const wasPlayingBeforeHiddenRef = useRef(false);
+  const wasMutedBeforeHiddenRef = useRef<boolean | null>(null);
 
   // 비디오 타입 확인
   const isVideo = isVideoMedia(media);
@@ -311,6 +314,67 @@ function BaseVerticalImageItemCore({
     }
   }, [isVisible, isLoaded, isVideo, handleVideoLoaded, handleImageLoad]);
 
+  // N3 — 비디오 가시성 제어: 화면에서 벗어나면 자동 일시정지(음소거 유지)
+  useEffect(() => {
+    if (!isVideo) return;
+    const container = containerRef.current;
+    const videoEl = (videoRef.current ||
+      (container?.querySelector('video') as HTMLVideoElement | null)) as HTMLVideoElement | null;
+    if (!container || !videoEl || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const entry = entries[0];
+        if (!entry) return;
+        if (!entry.isIntersecting) {
+          try {
+            // 현재 상태를 보관
+            wasPlayingBeforeHiddenRef.current = !videoEl.paused;
+            wasMutedBeforeHiddenRef.current = videoEl.muted;
+            // 소음 방지를 위해 숨김 시에는 항상 음소거 + 일시정지
+            videoEl.muted = true;
+            if (!videoEl.paused) videoEl.pause();
+          } catch {
+            /* ignore */
+          }
+        } else {
+          // 보이는 경우: 이전에 재생 중이었던 경우에만 재생 복원, 음소거 상태는 이전 상태로 복원
+          try {
+            if (wasMutedBeforeHiddenRef.current !== null) {
+              videoEl.muted = wasMutedBeforeHiddenRef.current;
+            }
+            if (wasPlayingBeforeHiddenRef.current) {
+              void videoEl.play?.();
+            }
+          } catch {
+            /* ignore */
+          } finally {
+            // 플래그 초기화
+            wasPlayingBeforeHiddenRef.current = false;
+            wasMutedBeforeHiddenRef.current = null;
+          }
+        }
+      },
+      { threshold: 0.0, rootMargin: '0px' }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [isVideo]);
+
+  // 비디오 초기 마운트 시 기본 음소거만 1회 설정(제어 컴포넌트가 되지 않도록)
+  useEffect(() => {
+    if (!isVideo) return;
+    const v = videoRef.current;
+    if (v) {
+      try {
+        if (typeof v.muted === 'boolean') v.muted = true;
+      } catch {
+        /* noop */
+      }
+    }
+  }, [isVideo]);
+
   const containerClasses = ComponentStandards.createClassName(
     styles.container,
     isActive ? styles.active : undefined,
@@ -360,7 +424,7 @@ function BaseVerticalImageItemCore({
               src={media.url}
               autoPlay={false}
               controls={true}
-              muted={true}
+              ref={videoRef}
               className={ComponentStandards.createClassName(
                 styles.video,
                 getFitModeClass(fitMode),

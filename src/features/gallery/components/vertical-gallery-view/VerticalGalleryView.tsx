@@ -12,7 +12,6 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { Toast } from '@shared/components/ui/Toast/Toast';
 import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
@@ -32,6 +31,8 @@ import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { getSetting } from '@shared/container/settings-access';
+import { setSetting } from '@shared/container/settings-access';
+import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -197,13 +198,9 @@ function VerticalGalleryViewCore({
 
   // 초기 설정 최적화
   const getInitialFitMode = (): ImageFitMode => {
-    try {
-      const saved = localStorage.getItem('xeg-image-fit-mode');
-      return (saved as ImageFitMode) || 'fitWidth';
-    } catch (error) {
-      logger.warn('ImageFitMode 복원 실패:', error);
-      return 'fitWidth';
-    }
+    // SettingsService에서 우선 읽고, 서비스 부재 시 기본값 사용
+    const saved = getSetting<ImageFitMode>('gallery.imageFitMode' as unknown as string, 'fitWidth');
+    return saved ?? 'fitWidth';
   };
 
   const [imageFitMode, updateImageFitMode] = useState<ImageFitMode>(() => getInitialFitMode());
@@ -261,15 +258,7 @@ function VerticalGalleryViewCore({
     [onClose]
   );
 
-  const [toasts, setToasts] = useState<
-    Array<{
-      id: string;
-      type: 'info' | 'warning' | 'error' | 'success';
-      title: string;
-      message: string;
-      duration?: number;
-    }>
-  >([]);
+  // 로컬 Toast 상태 제거(N1) — 통합 ToastContainer 사용. 이 컴포넌트는 더 이상 토스트를 직접 렌더링하지 않음.
 
   // 갤러리 아이템 스크롤 (자동 스크롤 처리)
   useGalleryItemScroll(containerRef, currentIndex, mediaItems.length, {
@@ -289,9 +278,7 @@ function VerticalGalleryViewCore({
   });
 
   // Toast 관리 함수
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
+  // NOP: 통합 토스트 매니저 사용으로 로컬 제거 함수 불필요
 
   // 미디어 로드 완료 핸들러 - 자동 스크롤 로직 적용
   const handleMediaLoad = useCallback(
@@ -379,9 +366,13 @@ function VerticalGalleryViewCore({
     [currentIndex, mediaItems.length]
   );
 
-  // 키보드 지원 (Esc 키만)
+  // 키보드 도움말 오버레이 상태
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // 키보드 지원 (Esc 닫기 + '?' 도움말)
   useGalleryKeyboard({
     onClose: onClose || (() => {}),
+    onOpenHelp: () => setIsHelpOpen(true),
   });
 
   // 다운로드 핸들러들
@@ -407,12 +398,11 @@ function VerticalGalleryViewCore({
     }
 
     updateImageFitMode('original');
-    try {
-      localStorage.setItem('xeg-image-fit-mode', 'original');
-      logger.debug('VerticalGalleryView: 이미지 크기를 원본으로 설정');
-    } catch (error) {
-      logger.debug('Failed to save image fit mode:', error);
-    }
+    // SettingsService 반영(가능 시)
+    setSetting('gallery.imageFitMode' as unknown as string, 'original').catch(() => {
+      /* no-op: 테스트/노드 환경 안전 */
+    });
+    logger.debug('VerticalGalleryView: 이미지 크기를 원본으로 설정');
   }, []);
 
   const handleFitWidth = useCallback((event?: Event) => {
@@ -422,12 +412,8 @@ function VerticalGalleryViewCore({
     }
 
     updateImageFitMode('fitWidth');
-    try {
-      localStorage.setItem('xeg-image-fit-mode', 'fitWidth');
-      logger.debug('VerticalGalleryView: 이미지 크기를 가로 맞춤으로 설정');
-    } catch (error) {
-      logger.debug('Failed to save image fit mode:', error);
-    }
+    setSetting('gallery.imageFitMode' as unknown as string, 'fitWidth').catch(() => {});
+    logger.debug('VerticalGalleryView: 이미지 크기를 가로 맞춤으로 설정');
   }, []);
 
   const handleFitHeight = useCallback((event?: Event) => {
@@ -437,12 +423,8 @@ function VerticalGalleryViewCore({
     }
 
     updateImageFitMode('fitHeight');
-    try {
-      localStorage.setItem('xeg-image-fit-mode', 'fitHeight');
-      logger.debug('VerticalGalleryView: 이미지 크기를 세로 맞춤으로 설정');
-    } catch (error) {
-      logger.debug('Failed to save image fit mode:', error);
-    }
+    setSetting('gallery.imageFitMode' as unknown as string, 'fitHeight').catch(() => {});
+    logger.debug('VerticalGalleryView: 이미지 크기를 세로 맞춤으로 설정');
   }, []);
 
   const handleFitContainer = useCallback((event?: Event) => {
@@ -452,12 +434,8 @@ function VerticalGalleryViewCore({
     }
 
     updateImageFitMode('fitContainer');
-    try {
-      localStorage.setItem('xeg-image-fit-mode', 'fitContainer');
-      logger.debug('VerticalGalleryView: 이미지 크기를 창 맞춤으로 설정');
-    } catch (error) {
-      logger.debug('Failed to save image fit mode:', error);
-    }
+    setSetting('gallery.imageFitMode' as unknown as string, 'fitContainer').catch(() => {});
+    logger.debug('VerticalGalleryView: 이미지 크기를 창 맞춤으로 설정');
   }, []);
 
   // 이미지 핏 모드가 변경될 때 로그 출력
@@ -491,6 +469,8 @@ function VerticalGalleryViewCore({
       data-xeg-gallery='true'
       data-xeg-role='gallery'
     >
+      {/* 키보드 도움말 오버레이 */}
+      <KeyboardHelpOverlay open={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       {/* 툴바 호버 트리거 영역 (브라우저 상단 100px) */}
       <div className={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
 
@@ -541,12 +521,7 @@ function VerticalGalleryViewCore({
         })}
       </div>
 
-      {/* Toast 메시지 */}
-      <div className={styles.toastContainer}>
-        {toasts.map(toast => (
-          <Toast key={toast.id} toast={toast} onRemove={() => removeToast(toast.id)} />
-        ))}
-      </div>
+      {/* Toast 메시지 렌더링 제거(N1): 전역 ToastContainer 사용 */}
 
       {/* 툴바 호버 핸들러 - 프로덕션 빌드 호환성을 위한 JavaScript 백업 */}
     </div>
