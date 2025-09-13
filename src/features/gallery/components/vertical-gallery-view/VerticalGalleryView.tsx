@@ -34,6 +34,7 @@ import { getSetting, setSetting } from '@shared/container/settings-access';
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
 import { useSelector } from '@shared/utils/signalSelector';
 import type { MediaInfo } from '@shared/types';
+import { observeViewportCssVars } from '@shared/utils/viewport';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -209,6 +210,20 @@ function VerticalGalleryViewCore({
       ensureGalleryScrollAvailable(containerRef.current);
     }
   }, []); // showToolbar 의존성 제거 - 순수 CSS로 관리됨
+
+  // 컨테이너 뷰포트 제약 CSS 변수 주입(ResizeObserver + window resize 폴백)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const getChrome = () => {
+      // toolbarWrapperRef는 상단 고정 툴바 컨테이너. 실제 높이를 보정에 사용.
+      const t = toolbarWrapperRef.current;
+      const toolbarHeight = t ? Math.floor(t.getBoundingClientRect().height) : 0;
+      return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
+    };
+    const cleanup = observeViewportCssVars(el, getChrome);
+    return cleanup;
+  }, [containerRef, toolbarWrapperRef]);
 
   // 개선된 갤러리 스크롤 처리 - UI 상태와 독립적으로 동작
   useGalleryScroll({

@@ -904,6 +904,7 @@
         "src/shared/utils/events.ts",
         "src/shared/utils/css-animations.ts",
         "src/shared/utils/signalSelector.ts",
+        "src/shared/utils/viewport.ts",
         "src/main.ts",
         "src/shared/utils/index.ts"
       ],
@@ -6212,6 +6213,26 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/viewport",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/viewport.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -9592,6 +9613,33 @@
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/viewport.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -15955,8 +16003,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 250,
-    "totalDependenciesCruised": 697,
+    "totalCruised": 251,
+    "totalDependenciesCruised": 699,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -349,6 +349,38 @@ animateCustom(el, keyframes, {
 
 ```
 
+### 뷰포트 CSS 변수 정책 (Fit 모드)
+
+동적 리사이즈 시 이미지/비디오의 fit 모드가 정확히 현재 창 크기를 반영하도록, 컨테이너 수준의 CSS 변수를 단일 소스로 사용합니다.
+
+- 단일 소스 변수 (container-level)
+  - `--xeg-viewport-w`
+  - `--xeg-viewport-h`
+  - `--xeg-viewport-height-constrained` — 툴바 등 상단 크롬을 제외한 실제 가용 높이
+
+- 산출/적용 방법
+  - 구현: `src/shared/utils/viewport.ts`
+    - `observeViewportCssVars(el, getChrome)`가 `ResizeObserver + window resize`에 기반해 변수를 갱신합니다.
+    - `computeViewportConstraints()`는 컨테이너 rect와 크롬 오프셋을 모두 정수(px)로 내림 처리하여 일관성을 보장합니다.
+  - 통합 지점: `VerticalGalleryView`가 갤러리 컨테이너에 위 변수를 설정합니다(툴바 높이를 `getBoundingClientRect().height`로 크롬 오프셋에 포함).
+
+- 사용 규칙
+  - TSX 인라인 스타일로 px 고정 금지. 토큰/변수만 사용합니다.
+  - 이미지/비디오의 `fitHeight`/`fitContainer`는 반드시 `max-height: var(--xeg-viewport-height-constrained)`를 사용합니다.
+  - 동일 계산을 다른 컴포넌트에서 재구현하지 않습니다. 상위 컨테이너에 설정된 변수를 참조하세요.
+
+- 수명주기/성능
+  - 관측자는 rAF 스로틀링됩니다. 언마운트 시 정리 필수: 내부적으로 `TimerManager.cleanup()`로 누수 0을 보장합니다.
+
+- 테스트 가드
+  - `test/unit/viewport-utils.test.ts`가 산출 값(정수화/비음수), CSS 변수 적용, 리스너 정리를 검증합니다.
+
+- 참고 예시 (이미 구현됨)
+  - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css`
+    - 이미지/비디오 `fitHeight`/`fitContainer` 클래스가 `--xeg-viewport-height-constrained`를 사용합니다.
+
+```
+
 ### 갤러리 프리로드 규칙 (Performance)
 
 - 설정 `gallery.preloadCount`는 현재 인덱스를 중심으로 좌/우 이웃 항목을 우선 순위대로 프리로드합니다.

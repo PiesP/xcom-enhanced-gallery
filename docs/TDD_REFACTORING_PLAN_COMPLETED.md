@@ -1,5 +1,10 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-13: SETTINGS-MODAL-CLICK-HARDENING — 계획서에서 완료 섹션 이관 정리
+
+- Toolbar 설정 버튼 신뢰성 강화(메모 비교 + onMouseDown 조기 트리거) 내용이
+  계획서에서 제거되었으며, 본 완료 로그에 최종 확정으로만 유지합니다.
+
 2025-09-13: SETTINGS-MODAL-CLICK-HARDENING — 툴바 설정 버튼 간헐 미동작 수정
 
 - 증상: 툴바의 설정 버튼을 클릭해도 간헐적으로 SettingsModal이 열리지 않음. 다른
