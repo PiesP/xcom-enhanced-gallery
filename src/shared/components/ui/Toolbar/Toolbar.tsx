@@ -485,6 +485,9 @@ function ToolbarCore({
                   title: '설정',
                   disabled,
                   onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
+                  // 마우스다운 시점에 즉시 트리거하여 hover/pointer-events 경계에서의 클릭 손실 최소화
+                  onMouseDown: (e: MouseEvent) =>
+                    handleButtonClick(e as unknown as Event, 'settings', onOpenSettings),
                   'data-gallery-element': 'settings',
                   'data-disabled': disabled,
                   key: 'settings',
@@ -536,6 +539,7 @@ export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarP
   if (prevProps.onDownloadAll !== nextProps.onDownloadAll) return false;
   if (prevProps.onClose !== nextProps.onClose) return false;
   if (prevProps.onViewModeChange !== nextProps.onViewModeChange) return false;
+  if (prevProps.onOpenSettings !== nextProps.onOpenSettings) return false;
 
   // ImageFit 콜백들
   if (prevProps.onFitOriginal !== nextProps.onFitOriginal) return false;

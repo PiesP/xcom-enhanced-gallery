@@ -19,6 +19,20 @@
 현재 활성화된 Phase는 없습니다. 신규 항목은 백로그에서 선별하여 필요 시 다시
 활성화합니다.
 
+### [완료 이관됨] SETTINGS-MODAL-CLICK-HARDENING (간헐 미동작 수정)
+
+- 목표: 툴바 설정 버튼 클릭 시 SettingsModal이 안정적으로 열리도록 신뢰성 향상.
+- 선택지(요약):
+  - 메모 비교(onOpenSettings 포함) — stale 핸들러 방지
+  - onMouseDown 조기 트리거 — hover 경계 click 소실 완화
+  - pointer 정책 변경/상위 캡처 — 영향 범위 큼(채택 안 함)
+- 채택: 메모 비교 + onMouseDown. Button이 onMouseDown/Up을 타입/가드 포함해
+  위임.
+- DoD: 타입/린트/테스트 GREEN, PC 전용 이벤트 정책/접근성/토큰 가드 위반 없음,
+  빌드 산출물 검증 PASS.
+- 상태: 구현 완료 — 상세는 COMPLETED 문서 SETTINGS-MODAL-CLICK-HARDENING 항목
+  참조.
+
 ## TDD 규칙과 브랜치
 
 1. RED → GREEN → REFACTOR 순으로 커밋을 구성합니다.

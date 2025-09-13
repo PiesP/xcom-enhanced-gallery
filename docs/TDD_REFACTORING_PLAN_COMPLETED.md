@@ -1,5 +1,35 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-13: SETTINGS-MODAL-CLICK-HARDENING — 툴바 설정 버튼 간헐 미동작 수정
+
+- 증상: 툴바의 설정 버튼을 클릭해도 간헐적으로 SettingsModal이 열리지 않음. 다른
+  툴바 버튼을 먼저 클릭하면 이후에는 재현되지 않는 경향 관찰(지연 등록/렌더
+  게이팅 의심).
+- 원인 가설:
+  - 메모 비교 함수가 onOpenSettings 핸들러 변화를 인식하지 못해 핸들러가 stale
+    상태로 남을 가능성.
+  - Hover/pointer-events 경계에서 click 이벤트가 소실되는 레이스(마우스 이동 중
+    hover 해제 → pointer-events:none으로 전환) 가능성.
+- 대안 비교:
+  1. Toolbar compare 함수에 onOpenSettings 포함 — 장점: 최소 변경, 정확히 의심
+     지점 교정. 단점: 근본 레이스(hover 경계)에는 영향 제한.
+  2. 설정 IconButton에 onMouseDown 조기 트리거 추가 — 장점: click 이전 단계에서
+     액션 보장, 경계 레이스 완화. 단점: 의도치 않은 중복 트리거 위험(가드 필요).
+  3. Toolbar hover/pointer-events 정책 완화(항상 클릭 가능) — 장점: 이벤트 소실
+     근본 차단. 단점: UI 상호작용/레이아웃 의도와 충돌, 포커스/접근성 영향 우려.
+  4. 컨테이너 상위에서 캡처 단계 위임 — 장점: 이벤트 소실 추가 완화. 단점: 책임
+     경계가 흐려지고 테스트/유지보수 복잡.
+- 결정: 1) + 2) 조합으로 최소 위험·최대 효과를 확보. pointer 정책/DOM 구조는
+  유지.
+- 구현:
+  - Toolbar.tsx: compareToolbarProps에 onOpenSettings 비교 추가. 설정 버튼에
+    onMouseDown 핸들러 추가(클릭과 동일 액션, disabled/loading 가드 상속).
+  - Button.tsx: onMouseDown/onMouseUp 타입/포워딩 지원을 추가하고
+    disabled/loading 가드 포함.
+- 검증: 타입/린트/전체 테스트 GREEN(289 파일 중 280 passed, 9 skipped). PC 전용
+  이벤트 정책 준수, 접근성/토큰 가드 위반 없음. dev/prod 빌드 및 산출물 검증
+  PASS.
+
 2025-09-13: DEPS-CYCLE-RESOLVED — 남은 순환 의존 1건 해소
 
 - 원인: VideoControlService → gallery.signals → core-services →

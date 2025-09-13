@@ -60,6 +60,8 @@ interface ButtonHTMLAttributes {
   readonly title?: string;
   readonly role?: string;
   readonly onClick?: (event: MouseEvent) => void;
+  readonly onMouseDown?: (event: MouseEvent) => void;
+  readonly onMouseUp?: (event: MouseEvent) => void;
   readonly onFocus?: (event: FocusEvent) => void;
   readonly onBlur?: (event: FocusEvent) => void;
   readonly onKeyDown?: (event: KeyboardEvent) => void;
@@ -117,6 +119,8 @@ function ButtonComponent(props: ButtonProps): VNode {
     onFocus,
     onBlur,
     onKeyDown,
+    onMouseDown,
+    onMouseUp,
     onMouseEnter,
     onMouseLeave,
     ref,
@@ -161,6 +165,19 @@ function ButtonComponent(props: ButtonProps): VNode {
       return;
     }
     onClick?.(event);
+  };
+
+  const handleMouseDown = (event: MouseEvent) => {
+    if (disabled || loading) {
+      event.preventDefault();
+      return;
+    }
+    onMouseDown?.(event);
+  };
+
+  const handleMouseUp = (event: MouseEvent) => {
+    if (disabled || loading) return;
+    onMouseUp?.(event);
   };
 
   // 키보드 핸들러
@@ -217,6 +234,8 @@ function ButtonComponent(props: ButtonProps): VNode {
       'data-selected': dataSelected,
       'data-loading': dataLoading,
       onClick: handleClick,
+      onMouseDown: handleMouseDown,
+      onMouseUp: handleMouseUp,
       onFocus,
       onBlur,
       onKeyDown: handleKeyDown,
