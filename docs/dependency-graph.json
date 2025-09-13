@@ -2822,7 +2822,13 @@
           "valid": true
         }
       ],
+<<<<<<< HEAD
       "dependents": [],
+=======
+      "dependents": [
+        "src/shared/components/ui/index.ts"
+      ],
+>>>>>>> aab5c0d016f60b23804d1646b17ebcee22181175
       "orphan": false,
       "valid": true
     },
@@ -8702,7 +8708,11 @@
     "info": 4,
     "ignore": 0,
     "totalCruised": 258,
+<<<<<<< HEAD
     "totalDependenciesCruised": 356,
+=======
+    "totalDependenciesCruised": 357,
+>>>>>>> aab5c0d016f60b23804d1646b17ebcee22181175
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
