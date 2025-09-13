@@ -304,7 +304,7 @@ animateCustom(el, keyframes, {
 ```
 
 추가 규칙:
-- 이징 토큰 네이밍 표준: 소비자 레이어는 `--xeg-ease-standard`/`--xeg-ease-decelerate`/`--xeg-ease-accelerate`만 사용합니다.
+- 이징 토큰 네이밍 표준: 소비자 레이어는 `--xeg-ease-standard`/`--xeg-ease-decelerate`/`--xeg-ease-accelerate`만 사용합니다. (구 `--xeg-easing-*` 표기 금지)
 - CSS Modules의 `composes` 사용 금지(도구 호환성 문제). 공통 스타일은 유틸 클래스로 분리하거나 명시적으로 중복 선언합니다.
 
 권장 예시:
@@ -340,6 +340,7 @@ animateCustom(el, keyframes, {
 - `.xeg-center-between`: `display:flex; align-items:center; justify-content:space-between;`
 - `.xeg-gap-sm|md|lg`: `gap: var(--xeg-space-4|8|12)`
 - `.xeg-size-toolbar`: `min-width/min-height: 2.5em` — 최소 클릭 타겟 보장
+  - 밀도 스케일은 em 기반으로 유지하며, 인라인 px 오버라이드는 금지합니다.
 
 가이드:
 

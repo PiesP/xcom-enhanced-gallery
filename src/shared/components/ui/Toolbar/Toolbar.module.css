@@ -38,8 +38,8 @@
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition:
-    opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
+    transform var(--xeg-duration-normal) var(--xeg-ease-standard);
 
   user-select: none;
 }
@@ -247,8 +247,8 @@
 .settingsButton:focus-visible,
 .closeButton:focus-visible,
 .fitButton:focus-visible {
-  outline: 0.125em solid var(--xeg-color-primary); /* 2px → 0.125em */
-  outline-offset: 0.125em; /* 2px → 0.125em */
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
 }
 /* 네비게이션 섹션 */
 .toolbarNavigation {
