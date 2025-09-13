@@ -109,6 +109,22 @@
 - H6: 빌드/라이선스 — dev/prod 빌드 및 postbuild validator PASS,
   `LICENSES/heroicons-MIT.txt` 추가
 - 후속(H4–H5): 사용처 잔여 이행 및 레거시(Tabler) 아이콘 자산 정리 진행 예정
+  - 후속(H4–H5): 2025-09-13 완료 — 소비처 전면 전환 및 레거시 아이콘 자산 제거
+
+2025-09-13: ICN-H0 — H4(소비처 전환)·H5(제거/정리) 완료
+
+- H4: 툴바/설정 등 대표 UI의 아이콘 소비 경로를 Heroicons 어댑터로 일원화.
+- H5: 레거시 Tabler 스타일 아이콘
+  디렉터리(`src/shared/components/ui/Icon/icons/`) 및 배럴 제거.
+- 테스트/빌드: 전체 스위트 GREEN, dev/prod 빌드 및 산출물 검증 PASS.
+
+2025-09-13: UI-ALIGN — 툴바/설정 정렬·배치 하드닝 완료
+
+- Toolbar.module.css 패딩/갭/높이/정렬 토큰화 정비, SettingsModal.module.css
+  헤더/닫기 버튼 정렬 및 포커스 링 토큰 일치.
+- IconButton 크기 스케일 준수(md/toolbar)와 클릭 타겟 2.5em 보장, aria-label
+  유지.
+- 스냅샷/스캔 가드 통과, 접근성/토큰 정책 위반 없음.
 
 2025-09-13: R4 — 타이머/리스너 수명주기 일원화 완료
 
