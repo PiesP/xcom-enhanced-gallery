@@ -11,7 +11,6 @@ export * from './StandardProps';
 // Icon 컴포넌트
 export { Icon } from './Icon/Icon';
 export type { IconProps } from './Icon/Icon';
-export * from './Icon/icons';
 
 // Button 컴포넌트
 export { default as Button } from './Button/Button';

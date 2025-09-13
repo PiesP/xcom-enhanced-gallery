@@ -234,7 +234,6 @@ strict digraph "dependency-cruiser output"{
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Button/IconButton.tsx" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Icon/Icon.tsx" [arrowhead="inv"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Icon/Icon.tsx" [arrowhead="onormal" penwidth="1.0"]
-    "src/shared/components/ui/index.ts" -> "src/shared/components/ui/Icon/icons/index.ts" [arrowhead="inv"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/SettingsModal/index.ts" [arrowhead="inv"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/SettingsModal/index.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/components/ui/index.ts" -> "src/shared/components/ui/StandardProps.ts" [arrowhead="inv"]

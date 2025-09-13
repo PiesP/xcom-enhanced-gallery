@@ -2822,9 +2822,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/components/ui/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -3344,23 +3342,6 @@
             "export"
           ],
           "resolved": "src/shared/components/ui/Icon/Icon.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Icon/icons",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8721,7 +8702,7 @@
     "info": 4,
     "ignore": 0,
     "totalCruised": 258,
-    "totalDependenciesCruised": 357,
+    "totalDependenciesCruised": 356,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

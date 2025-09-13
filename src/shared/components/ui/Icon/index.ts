@@ -17,3 +17,4 @@ export { HeroFileZip as FileZip } from './hero/HeroFileZip';
 export { HeroArrowAutofitWidth as ArrowAutofitWidth } from './hero/HeroArrowAutofitWidth';
 export { HeroArrowAutofitHeight as ArrowAutofitHeight } from './hero/HeroArrowAutofitHeight';
 export { HeroArrowsMaximize as ArrowsMaximize } from './hero/HeroArrowsMaximize';
+// Note: 레거시 icons/ 배럴은 제거되었습니다.
