@@ -1,5 +1,31 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-13: UI-VNEXT-01(결정) — Glass Refresh & Density Scale 접근 채택
+
+- 결론: Semantic 토큰 직사용 + CSS Modules + alignment 유틸 보강(Option A) 채택
+- 배제: 컴포넌트 alias 재확장/런타임 CSS-in-JS(복잡성·정책 불일치)
+- 계획서 반영: `TDD_REFACTORING_PLAN.md` 활성 Phase로 등록(TDD 단계 포함)
+
+2025-09-13: DESIGN-UNIFICATION-DECISION — 갤러리/툴바/설정 모달 디자인 통일 방안
+확정
+
+- 옵션 검토 결과, Semantic 토큰 직사용 + em 기반 스케일 + 공용
+  유틸(alignment.css) 채택(Option A)으로 최종 결정.
+- 컴포넌트 전용 alias 레이어 재도입(Option B) 및 CSS-in-JS 런타임 테마(Option
+  C)는 복잡도/정책 위반/중복 비용으로 배제.
+- 근거: CODING_GUIDELINES의 토큰·PC 전용 입력·모션 정책과 기존 가드
+  테스트(spacing/animation/a11y/vendor) 일치.
+
+2025-09-13: UI-DESIGN-UNIFICATION — 갤러리/툴바/설정 모달 디자인 통일 Phase 완료
+
+- DoD 충족: 하드코딩 색/px/ms/키워드 easing 0건, z-index/spacing/transition 모두
+  토큰화
+- Toolbar/SettingsModal 클릭 타겟 2.5em 보장, focus ring/radius 토큰 준수
+- 정렬·간격: alignment.css
+  유틸(.xeg-row-center/.xeg-center-between/.xeg-gap-\*/.xeg-size-toolbar) 적용
+- 인라인 px 사용 금지 가드와 토큰/애니메이션/접근성 스위트 전체 GREEN 유지
+- 문서: CODING_GUIDELINES 최신화로 정책/예시 정합 확인
+
 2025-09-13: UI-ALIGN-BASELINE-SYNC — 툴바 인디케이터 베이스라인/설정 헤더 정렬
 일원화
 
