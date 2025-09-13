@@ -1,5 +1,17 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-13: 의존성 구조 — dependency-cruiser 설정 정합/분석 경고 가드 추가
+
+- 변경: `.dependency-cruiser.cjs`에 TS 경로 별칭(tsConfig) 연결, vendor 직접
+  import 예외 경로를 실제 구조(`src/shared/external/vendors`)로 보정.
+- 경고 가드: UI/Utils/Media 내부에서 자기 패키지의 배럴(index.ts) 재수입을
+  경고하는 규칙 추가(no-internal-barrel-imports-XXX).
+- 순환: 분석 단계에서는 경고로 낮춰 전체 그래프를 안정적으로 확인 가능하도록
+  조정(리팩토링 완료 후 error로 복귀 권장).
+- 산출물: `npm run deps:all`로 `docs/dependency-graph.(json|dot|svg)` 갱신.
+  Graphviz 부재 환경에서도 안전하게 SVG/DOT 생성 처리.
+- 문서: CODING_GUIDELINES에 내부 배럴 재수입 금지 및 의존성 리포트 사용법 추가.
+
 2025-09-13: CI — 의존성 그래프 생성 하드닝 (Graphviz 미설치 환경 호환)
 
 - 원인: CI 러너에 graphviz(dot/sfdp)가 없어 `dependency-cruiser | dot -T svg`

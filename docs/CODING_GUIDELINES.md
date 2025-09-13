@@ -441,6 +441,19 @@ animateCustom(el, keyframes, {
   (예: `src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx`).
 - `iconRegistry`의 동적 import 경로를 사용해 코드 스플리팅/캐시 일관성을 유지합니다.
 
+### 의존성 구조 가이드(Dependency Graph)
+
+- 내부 디렉터리에서는 동일 디렉터리의 배럴(index.ts)을 통해 재수입하지 않습니다(순환 유발 방지).
+  - 금지 예: `src/shared/utils/media/image-filter.ts` → `src/shared/utils/index.ts`
+  - 권장: 필요한 모듈을 상대 경로로 직접 import (`../events`, `../css-animations` 등)
+- UI/Utils/Media 패키지 내부 배럴 재수입은 리포트 경고 대상입니다.
+- 순환 참조는 금지입니다. 분석 단계에서는 경고로 표기될 수 있으나, 리팩토링 완료 후 에러로 승격됩니다.
+- 의존성 리포트/그래프 생성:
+  - 전체 생성: `npm run deps:all` (JSON/DOT/SVG + 규칙 검증)
+  - 검증만: `npm run deps:check`
+  - 산출물: `docs/dependency-graph.(json|dot|svg)`
+  - CI/로컬에서 Graphviz가 없어도 실패하지 않도록 안전하게 처리됩니다.
+
 #### ServiceManager 접근 규칙 (U2)
 
 - features 레이어에서는 `@shared/services/ServiceManager`를 직접 import 하지 않습니다.
