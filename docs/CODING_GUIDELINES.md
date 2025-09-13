@@ -23,24 +23,26 @@ import styles from './Component.module.css';
 
 ### 파일 네이밍
 
-````
+```
 // 파일 및 디렉토리: kebab-case
 gallery-view.tsx
 media-processor.ts
 components/
 services/
+```
 
 ### Border Radius 정책 (Design Tokens)
 
-| 용도 | 토큰 | 설명 |
-| ---- | ---- | ---- |
-| 인터랙션 (아이콘/작은 버튼) | `var(--xeg-radius-md)` | IconButton, 작은 액션 영역 |
-| 일반 Surface / 기본 버튼 | `var(--xeg-radius-lg)` | Toolbar 버튼, 카드성 작은 블록 |
-| 대형 Surface / 컨테이너 | `var(--xeg-radius-xl)` 또는 `var(--xeg-radius-2xl)` | 모달/토스트 등 큰 영역 |
-| Pill 형태 | `var(--xeg-radius-pill)` | 배지, Chip 요소 |
-| 원형 | `var(--xeg-radius-full)` | 원형 아바타, 원형 토글 |
+| 용도                        | 토큰                                                | 설명                           |
+| --------------------------- | --------------------------------------------------- | ------------------------------ |
+| 인터랙션 (아이콘/작은 버튼) | `var(--xeg-radius-md)`                              | IconButton, 작은 액션 영역     |
+| 일반 Surface / 기본 버튼    | `var(--xeg-radius-lg)`                              | Toolbar 버튼, 카드성 작은 블록 |
+| 대형 Surface / 컨테이너     | `var(--xeg-radius-xl)` 또는 `var(--xeg-radius-2xl)` | 모달/토스트 등 큰 영역         |
+| Pill 형태                   | `var(--xeg-radius-pill)`                            | 배지, Chip 요소                |
+| 원형                        | `var(--xeg-radius-full)`                            | 원형 아바타, 원형 토글         |
 
 규칙:
+
 - px 직접 값 사용 금지 (테스트에서 검출)
 - semantic (`--xeg-radius-*`) 토큰만 컴포넌트 CSS에 사용
 
@@ -56,7 +58,7 @@ Gallery
   .controls (집합 pill 형태)                -> var(--xeg-radius-pill)
   .xegCloseButton / .xegNavButton (shape)   -> var(--xeg-radius-full)
   .mediaElement / .error (standard surface) -> var(--xeg-radius-lg)
-````
+```
 
 권장 패턴:
 
@@ -198,6 +200,22 @@ Gallery
     제거
 - 레이어(z-index) 정책:
   - 툴바는 `--xeg-z-toolbar`, 모달은 `--xeg-z-modal`만 사용(하드코딩 금지)
+
+## 🗺️ Sourcemap 정책 (R5)
+
+- 빌드: 개발/프로덕션 모두 Userscript에 대해 sourcemap을 생성합니다.
+  - vite 설정에서 `build.sourcemap: true` 유지
+  - 소스맵에는 반드시 `sources`와 `sourcesContent`가 포함되어야 합니다
+  - Userscript 말미에 `//# sourceMappingURL=<파일명>.map` 주석이 존재해야 합니다
+- 검증: `scripts/validate-build.js`가 다음을 검사합니다
+  - dev/prod Userscript와 대응 .map 파일의 존재 여부
+  - .map JSON의 `sources`/`sourcesContent` 비어있지 않음 및 길이 일치
+  - 프로덕션 번들 내 `__vitePreload` 등 dead-preload 코드가 남아 있지 않음
+- 참고/주의
+  - 내부 엔트리 청크에 남는 기존 sourceMappingURL 주석은 빌드 플러그인에서
+    제거하고, Userscript 끝에만 하나의 주석을 추가합니다
+  - 소스 경로가 절대 경로(예: C:\, /home/…)를 포함할 경우 validator가 경고를
+    출력합니다 — 가능하면 상대 경로가 되도록 유지하세요
   - 모달 패널/백드롭은 Toolbar보다 위 레이어가 되어야 하며, 모달 내부 요소는
     추가 z-index를 지양
 
@@ -414,6 +432,15 @@ animateCustom(el, keyframes, {
 - 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야 합니다.
 - 예: `import { getPreact } from '@shared/external/vendors'; const { useEffect } = getPreact();`
 
+#### 아이콘 라이브러리(Heroicons) 정책
+
+- Heroicons는 React 컴포넌트 형태이므로 반드시 전용 getter를 통해 접근합니다:
+  `@shared/external/vendors/heroicons-react.ts`
+- 컴포넌트 소비부에서는 내부 `Icon` 래퍼 규격(디자인 토큰/접근성)을 유지해야 하므로
+  Heroicons 컴포넌트를 직접 사용하지 말고 어댑터를 통해 감쌉니다
+  (예: `src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx`).
+- `iconRegistry`의 동적 import 경로를 사용해 코드 스플리팅/캐시 일관성을 유지합니다.
+
 #### ServiceManager 접근 규칙 (U2)
 
 - features 레이어에서는 `@shared/services/ServiceManager`를 직접 import 하지 않습니다.
@@ -598,15 +625,18 @@ async function loadImage(url: string): Promise<Result<HTMLImageElement>> {
     return { success: false, error: error as Error };
   }
 }
+```
 
 ### 서비스 계약/Result 가드
 
 - 공개 서비스(API)는 계약 테스트로 보호합니다.
-  - MediaService 공개 메서드/기본 동작 가드: `test/unit/shared/services/media-service.contract.test.ts`
-  - 다운로드 Result shape 가드: `test/unit/shared/services/media-service.download-result.test.ts`
+  - MediaService 공개 메서드/기본 동작 가드:
+    `test/unit/shared/services/media-service.contract.test.ts`
+  - 다운로드 Result shape 가드:
+    `test/unit/shared/services/media-service.download-result.test.ts`
 - 실패 경로는 `{ success: false, error }`를 일관되게 반환합니다.
-- 성공 경로는 `{ success: true, ... }`로 데이터/파일명 등 필수 정보를 제공합니다.
-```
+- 성공 경로는 `{ success: true, ... }`로 데이터/파일명 등 필수 정보를
+  제공합니다.
 
 ### 로깅 상관관계 ID(correlationId)
 

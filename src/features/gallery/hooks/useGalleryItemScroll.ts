@@ -86,20 +86,24 @@ export function useGalleryItemScroll(
       try {
         const container = containerRef.current;
 
-        // itemsList 컨테이너 찾기
-        const itemsList = container.querySelector('[data-xeg-role="items-list"]') as HTMLElement;
-        if (!itemsList) {
-          logger.warn('useGalleryItemScroll: items-list 컨테이너를 찾을 수 없음');
+        // 아이템 루트 컨테이너 찾기 (호환: items-list | items-container)
+        const itemsRoot = container.querySelector(
+          '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+        ) as HTMLElement | null;
+        if (!itemsRoot) {
+          logger.warn('useGalleryItemScroll: 아이템 컨테이너를 찾을 수 없음', {
+            selectors: '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
+          });
           return;
         }
 
-        const targetElement = itemsList.children[index] as HTMLElement;
+        const targetElement = itemsRoot.children[index] as HTMLElement;
 
         if (!targetElement) {
           logger.warn('useGalleryItemScroll: 타겟 요소를 찾을 수 없음', {
             index,
             totalItems,
-            itemsListChildrenCount: itemsList.children.length,
+            itemsContainerChildrenCount: itemsRoot.children.length,
           });
           return;
         }

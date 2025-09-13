@@ -128,6 +128,19 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 - **압축**: fflate - 고성능 ZIP 압축 라이브러리
 - **스타일링**: CSS Modules + 디자인 토큰 시스템
 
+### 아이콘 시스템
+
+- **아이콘 라이브러리**: Heroicons (React) 컴포넌트를 안전하게 사용하기 위해
+  “벤더 getter” 패턴을 적용했습니다.
+  - 애플리케이션 코드에서는 `@shared/external/vendors`의 getter만 사용하며, 외부
+    라이브러리를 직접 import하지 않습니다.
+  - `@heroicons/react` 컴포넌트는 getter 내부에서 React Element → Preact VNode로
+    변환되어 jsdom/테스트 환경(QName/DOM mutation 오류)을 회피합니다.
+  - UI에서는 의미적 이름의 어댑터(예: `HeroDownload` → `Download`)를 통해 일관된
+    `Icon` 래퍼로 렌더링합니다.
+  - 레거시 Tabler 아이콘은 제거되었고(내보내기 대상에서 제외), 현재는 Heroicons
+    기반만 사용합니다.
+
 ### 브라우저 호환성
 
 | 브라우저 | 버전 | 상태 |
@@ -143,11 +156,12 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ### 사용된 오픈소스 라이브러리
 
-| 라이브러리          | 라이센스 | 용도             |
-| ------------------- | -------- | ---------------- |
-| **Preact**          | MIT      | UI 프레임워크    |
-| **@preact/signals** | MIT      | 반응형 상태 관리 |
-| **fflate**          | MIT      | 고성능 압축      |
+| 라이브러리           | 라이센스 | 용도             |
+| -------------------- | -------- | ---------------- |
+| **Preact**           | MIT      | UI 프레임워크    |
+| **@preact/signals**  | MIT      | 반응형 상태 관리 |
+| **fflate**           | MIT      | 고성능 압축      |
+| **@heroicons/react** | MIT      | 아이콘 컴포넌트  |
 
 모든 라이센스 전문은 [`LICENSES/`](LICENSES/) 디렉토리에서 확인할 수 있습니다.
 

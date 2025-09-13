@@ -142,48 +142,74 @@ function ToolbarCore({
 
   // 배경 밝기 감지 및 자동 대비 조정 - 개선된 다중 포인트 샘플링
   useEffect(() => {
+    // 테스트/JSDOM 환경 가드: 필수 브라우저 API가 없으면 감지를 건너뜀
+    const canDetect =
+      typeof document !== 'undefined' &&
+      typeof (document as unknown as { elementsFromPoint?: unknown }).elementsFromPoint ===
+        'function' &&
+      typeof window !== 'undefined' &&
+      typeof window.getComputedStyle === 'function';
+
+    if (!canDetect) {
+      return;
+    }
+
     const detectBackgroundBrightness = (): void => {
-      if (!toolbarRef.current) {
-        return;
-      }
-
-      const toolbar = toolbarRef.current;
-      const rect = toolbar.getBoundingClientRect();
-
-      // 더 정확한 배경 감지를 위한 다중 포인트 샘플링
-      const samplePoints = [
-        {
-          x: rect.left + rect.width * 0.25,
-          y: rect.top + rect.height / 2,
-        },
-        {
-          x: rect.left + rect.width * 0.5,
-          y: rect.top + rect.height / 2,
-        },
-        {
-          x: rect.left + rect.width * 0.75,
-          y: rect.top + rect.height / 2,
-        },
-      ];
-
-      let lightBackgroundCount = 0;
-
-      samplePoints.forEach(point => {
-        const elementsBelow = document.elementsFromPoint(point.x, point.y);
-        const hasLight = elementsBelow.some((el: Element) => {
-          const computedStyles = window.getComputedStyle(el);
-          const bgColor = computedStyles.backgroundColor;
-          return (
-            bgColor.includes('rgb(255') || bgColor.includes('white') || bgColor.includes('rgba(255')
-          );
-        });
-        if (hasLight) {
-          lightBackgroundCount++;
+      try {
+        if (!toolbarRef.current) {
+          return;
         }
-      });
 
-      // 3개 중 2개 이상이 밝으면 고대비 모드 활성화
-      toolbarActions.setNeedsHighContrast(lightBackgroundCount >= 2);
+        const toolbar = toolbarRef.current;
+        const rect = toolbar.getBoundingClientRect();
+
+        // 실제 렌더 크기가 0이면 감지를 수행하지 않음(JSDOM 등)
+        if (!rect || rect.width === 0 || rect.height === 0) {
+          toolbarActions.setNeedsHighContrast(false);
+          return;
+        }
+
+        // 더 정확한 배경 감지를 위한 다중 포인트 샘플링
+        const samplePoints = [
+          {
+            x: rect.left + rect.width * 0.25,
+            y: rect.top + rect.height / 2,
+          },
+          {
+            x: rect.left + rect.width * 0.5,
+            y: rect.top + rect.height / 2,
+          },
+          {
+            x: rect.left + rect.width * 0.75,
+            y: rect.top + rect.height / 2,
+          },
+        ];
+
+        let lightBackgroundCount = 0;
+
+        samplePoints.forEach(point => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const elementsBelow = (document as any).elementsFromPoint(point.x, point.y) as Element[];
+          const hasLight = elementsBelow.some((el: Element) => {
+            const computedStyles = window.getComputedStyle(el);
+            const bgColor = computedStyles.backgroundColor || '';
+            return (
+              bgColor.includes('rgb(255') ||
+              bgColor.includes('white') ||
+              bgColor.includes('rgba(255')
+            );
+          });
+          if (hasLight) {
+            lightBackgroundCount++;
+          }
+        });
+
+        // 3개 중 2개 이상이 밝으면 고대비 모드 활성화
+        toolbarActions.setNeedsHighContrast(lightBackgroundCount >= 2);
+      } catch {
+        // 테스트/폴리필 환경에서 안전 종료
+        toolbarActions.setNeedsHighContrast(false);
+      }
     };
 
     // 초기 감지
@@ -191,14 +217,18 @@ function ToolbarCore({
 
     // 스크롤 시 재감지 - RAF throttle로 성능 최적화
     const throttledDetect = throttleScroll(() => {
-      requestAnimationFrame(detectBackgroundBrightness);
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(detectBackgroundBrightness);
+      } else {
+        detectBackgroundBrightness();
+      }
     }); // RAF 기반으로 최적화된 스크롤 감지
 
     window.addEventListener('scroll', throttledDetect, { passive: true });
     return (): void => {
       window.removeEventListener('scroll', throttledDetect);
     };
-  }, []);
+  }, [toolbarActions]);
 
   // 네비게이션 가능 여부 계산
   const canGoNext = useMemo(() => currentIndex < totalCount - 1, [currentIndex, totalCount]);
