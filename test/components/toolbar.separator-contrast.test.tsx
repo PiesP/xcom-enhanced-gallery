@@ -29,5 +29,8 @@ describe('Toolbar separator contrast', () => {
     // className should include 'separator' and computed style should not be empty
     const className = sep?.getAttribute('class') || '';
     expect(className).toContain('separator');
+
+    // cleanup: unmount to avoid async work after environment teardown
+    render(null as any, container);
   });
 });
