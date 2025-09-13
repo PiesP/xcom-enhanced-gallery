@@ -8704,7 +8704,7 @@
     "totalCruised": 258,
     "totalDependenciesCruised": 356,
     "optionsUsed": {
-      "baseDir": "C:\\git\\xcom-enhanced-gallery",
+      "baseDir": "c:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
       "detectJSDocImports": false,
       "doNotFollow": {
