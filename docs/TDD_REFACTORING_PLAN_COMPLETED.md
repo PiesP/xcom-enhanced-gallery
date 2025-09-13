@@ -1,5 +1,19 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-13: CI — 의존성 그래프 생성 하드닝 (Graphviz 미설치 환경 호환)
+
+- 원인: CI 러너에 graphviz(dot/sfdp)가 없어 `dependency-cruiser | dot -T svg`
+  파이프에서 EPIPE로 실패
+- 조치: `npm run deps:graph`를 쉘 파이프 대신 Node
+  스크립트(`scripts/generate-dep-graph.cjs`)로 교체
+  - Graphviz 유무를 감지하여 있으면 SVG 생성, 없으면 DOT만 생성하고 placeholder
+    SVG를 기록 후 정상 종료
+  - CI에서 더 이상 dot/sfdp 부재로 실패하지 않음 (종속성 설치 불필요)
+- 영향: 테스트/빌드 사전 단계(pretest→build→prebuild)의 안정성 향상, CI
+  타임/플레이크 감소
+- 참고: 설치 비용을 줄이기 위해 기본 CI에서는 Graphviz를 설치하지 않음. 고품질
+  SVG가 필요한 경우 별도 워크플로/개발 환경에서 실행
+
 2025-09-13: 세션 검증 — 전체 테스트 GREEN · 빌드/산출물 검증 PASS
 
 - 테스트: 276 passed, 9 skipped (총 285 파일) — RED 없음, 경고성 jsdom

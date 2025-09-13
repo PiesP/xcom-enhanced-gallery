@@ -216,11 +216,11 @@ export default [
   // 설정 파일들
   {
     files: [
-      '*.config.{ts,js}',
+      '*.config.{ts,js,cjs,mjs}',
       'vite.config.*',
       'eslint.config.*',
       'vitest.config.*',
-      'scripts/**/*.{ts,js}',
+      'scripts/**/*.{ts,js,cjs,mjs}',
     ],
     languageOptions: {
       globals: {
@@ -238,6 +238,7 @@ export default [
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       'no-restricted-imports': 'off',
+      'no-empty': 'off',
     },
   },
 

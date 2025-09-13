@@ -24,7 +24,7 @@
     "prebuild": "npm run deps:all && npm run validate",
     "prebuild:all": "npm run prebuild && npm run test",
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
-    "deps:graph": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | dot -T svg > docs/dependency-graph.svg || dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src | sfdp -T svg > docs/dependency-graph.svg",
+    "deps:graph": "node ./scripts/generate-dep-graph.cjs",
     "deps:graph:dot": "dependency-cruiser --config .dependency-cruiser.cjs --output-type dot src > docs/dependency-graph.dot",
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
     "deps:all": "npm run deps:json && npm run deps:graph:dot && npm run deps:graph && npm run deps:check",
