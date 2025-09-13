@@ -261,10 +261,31 @@ export default [
         afterAll: 'readonly',
       },
     },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
       'no-restricted-imports': 'off',
+      // 금지: 테스트에서 import.meta.glob 사용 (OS/번들러 의존 문제 방지)
+      // AST 셀렉터 설명:
+      // - CallExpression(... import.meta.glob(...)) 형태와 단순 참조(import.meta.glob) 모두 차단
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.type='MemberExpression'][callee.object.type='MetaProperty'][callee.object.meta.name='import'][callee.object.property.name='meta'][callee.property.name='glob']",
+          message:
+            '테스트에서 import.meta.glob 사용 금지: Node fs/path 재귀 스캔 유틸을 사용하세요.',
+        },
+        {
+          selector:
+            "MemberExpression[object.type='MetaProperty'][object.meta.name='import'][object.property.name='meta'][property.name='glob']",
+          message:
+            '테스트에서 import.meta.glob 참조 금지: Node fs/path 재귀 스캔 유틸을 사용하세요.',
+        },
+      ],
     },
   },
 
