@@ -2,7 +2,7 @@
  * @fileoverview Gallery Debug Utilities
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '../../logging/logger';
 
 /** 갤러리 디버깅 유틸리티 */
 export const galleryDebugUtils = {

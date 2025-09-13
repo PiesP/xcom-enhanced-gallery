@@ -4,14 +4,11 @@
  * @version 1.0.0 - TDD 기반 중복 제거 구현
  */
 
-import { logger } from '@shared/logging/logger';
-import { getPreactSignals } from '@shared/external/vendors';
-import {
-  ensurePoliteLiveRegion,
-  ensureAssertiveLiveRegion,
-} from '@shared/utils/accessibility/index';
+import { logger } from '../logging/logger';
+import { getPreactSignals } from '../external/vendors';
+import { ensurePoliteLiveRegion, ensureAssertiveLiveRegion } from '../utils/accessibility/index';
 // 레거시 Toast 컴포넌트 상태와의 호환성 유지: 경고/에러는 UI 토스트 목록에도 반영
-import { toasts as legacyToasts } from '@shared/components/ui/Toast/Toast';
+import { toasts as legacyToasts } from '../components/ui/Toast/Toast';
 type LegacyToastItem = {
   id: string;
   type: 'info' | 'success' | 'warning' | 'error';

@@ -4,20 +4,16 @@
  * @version 3.0.0 - Phase B: 간소화
  */
 
-import type { MediaInfo, MediaItem } from '@shared/types/media.types';
-import type { MediaItemForFilename } from '@shared/types/media.types';
-import {
-  logger,
-  createCorrelationId,
-  createScopedLoggerWithCorrelation,
-} from '@shared/logging/logger';
-import { getNativeDownload } from '@shared/external/vendors';
-import { getErrorMessage } from '@shared/utils/error-handling';
-import { generateMediaFilename } from '@shared/media';
+import type { MediaInfo, MediaItem } from '../types/media.types';
+import type { MediaItemForFilename } from '../types/media.types';
+import { logger, createCorrelationId, createScopedLoggerWithCorrelation } from '../logging/logger';
+import { getNativeDownload } from '../external/vendors';
+import { getErrorMessage } from '../utils/error-handling';
+import { generateMediaFilename } from '../media';
 import { toastManager } from './UnifiedToastManager';
 import { languageService } from './LanguageService';
-import type { BaseResultStatus } from '@shared/types/result.types';
-import { ErrorCode } from '@shared/types/result.types';
+import type { BaseResultStatus } from '../types/result.types';
+import { ErrorCode } from '../types/result.types';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'complete';
@@ -283,7 +279,7 @@ export class BulkDownloadService {
     try {
       const correlationId = createCorrelationId();
       const slog = createScopedLoggerWithCorrelation('BulkDownload', correlationId);
-      const { getFflate } = await import('@shared/external/vendors');
+      const { getFflate } = await import('../external/vendors');
       const fflate = getFflate();
       const download = getNativeDownload();
 

@@ -18,14 +18,14 @@
  * @version 6.0.0 - Phase 3 StandardProps 시스템 적용
  */
 
-import type { ViewMode } from '@shared/types';
-import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
+import type { ViewMode } from '../../../types';
+import { getPreact, getPreactHooks, type VNode } from '../../../external/vendors';
 import {
   useToolbarState,
   getToolbarDataState,
   getToolbarClassName,
-} from '@shared/hooks/useToolbarState';
-import { throttleScroll } from '@shared/utils/performance/performance-utils';
+} from '../../../hooks/useToolbarState';
+import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { ComponentStandards } from '../StandardProps';
 import {
   ChevronLeft,
@@ -556,7 +556,7 @@ export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarP
 };
 
 // memo 적용
-import { getPreactCompat } from '@shared/external/vendors';
+import { getPreactCompat } from '../../../external/vendors';
 const { memo } = getPreactCompat();
 const MemoizedToolbar = memo(ToolbarCore, compareToolbarProps);
 

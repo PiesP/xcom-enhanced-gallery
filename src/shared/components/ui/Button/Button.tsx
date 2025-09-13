@@ -11,9 +11,9 @@
  * - Icon-only 모드 지원
  */
 
-import type { ComponentChildren, VNode } from '@shared/external/vendors';
-import { getPreact, getPreactHooks } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
+import type { ComponentChildren, VNode } from '../../../external/vendors';
+import { getPreact, getPreactHooks } from '../../../external/vendors';
+import { logger } from '../../../logging';
 import styles from './Button.module.css';
 
 // 간단한 clsx 대체 함수

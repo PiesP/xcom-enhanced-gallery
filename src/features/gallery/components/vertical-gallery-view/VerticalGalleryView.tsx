@@ -11,30 +11,31 @@
  * - 일관된 사용자 경험 제공
  */
 
-import { logger } from '@shared/logging/logger';
-import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
-import type { ImageFitMode } from '@shared/types';
-import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
-import { getPreactHooks, getPreact, getPreactCompat } from '@shared/external/vendors';
-import { stringWithDefault } from '@shared/utils/type-safety-helpers';
+// Vitest Windows alias 해석 이슈 회피: 내부 경로는 상대 경로로 명시
+import { logger } from '../../../../shared/logging/logger';
+import { ToolbarWithSettings } from '../../../../shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
+import type { ImageFitMode } from '../../../../shared/types';
+import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';
+import { getPreactHooks, getPreact, getPreactCompat } from '../../../../shared/external/vendors';
+import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
 import {
   animateGalleryEnter,
   animateGalleryExit,
   setupScrollAnimation,
-} from '@shared/utils/animations';
+} from '../../../../shared/utils/animations';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
-import { ensureGalleryScrollAvailable } from '@shared/utils/core-utils';
+import { ensureGalleryScrollAvailable } from '../../../../shared/utils/core-utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
-import { computePreloadIndices } from '@shared/utils/performance';
-import { getSetting, setSetting } from '@shared/container/settings-access';
+import { computePreloadIndices } from '../../../../shared/utils/performance';
+import { getSetting, setSetting } from '../../../../shared/container/settings-access';
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
-import { useSelector } from '@shared/utils/signalSelector';
-import type { MediaInfo } from '@shared/types';
-import { observeViewportCssVars } from '@shared/utils/viewport';
+import { useSelector } from '../../../../shared/utils/signalSelector';
+import type { MediaInfo } from '../../../../shared/types';
+import { observeViewportCssVars } from '../../../../shared/utils/viewport';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;

@@ -3,9 +3,9 @@
  * @description 간소화된 갤러리 컨테이너
  */
 
-import { getPreact, getPreactHooks } from '@shared/external/vendors';
-import type { ComponentChildren } from '@shared/external/vendors';
-import { logger } from '@shared/logging';
+import { getPreact, getPreactHooks } from '../../external/vendors';
+import type { ComponentChildren } from '../../external/vendors';
+import { logger } from '../../logging';
 
 /**
  * 갤러리 컨테이너 Props

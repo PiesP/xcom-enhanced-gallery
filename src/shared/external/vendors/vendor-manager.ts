@@ -2,7 +2,7 @@
  * Core External Vendor Manager Implementation
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../../logging';
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {

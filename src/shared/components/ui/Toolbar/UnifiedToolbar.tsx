@@ -2,8 +2,8 @@
  * @fileoverview UnifiedToolbar - Headless+Shell 패턴 통합 스텁
  * 테스트가 요구하는 엔트리 포인트를 제공하고, 점진 구현을 위한 최소 구조만 노출합니다.
  */
-import type { VNode } from '@shared/external/vendors';
-import { getPreact } from '@shared/external/vendors';
+import type { VNode } from '../../../external/vendors';
+import { getPreact } from '../../../external/vendors';
 
 export interface ToolbarUnifiedProps {
   readonly children?: unknown;

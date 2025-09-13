@@ -2,16 +2,19 @@
  * @fileoverview 통합 이벤트 관리 시스템
  */
 
-import { logger } from '@shared/logging/logger';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { isGalleryInternalElement } from '@shared/utils/utils';
-import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
-import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
-import { galleryState } from '@shared/state/signals/gallery.signals';
-import { CoreService } from '@shared/services/ServiceManager';
-import { SERVICE_KEYS } from '@/constants';
-import type { MediaService } from '@shared/services/MediaService';
-import type { MediaInfo } from '@shared/types/media.types';
+import { logger } from '../logging/logger';
+import { globalTimerManager } from './timer-management';
+import { isGalleryInternalElement } from './utils';
+import { MediaClickDetector } from './media/MediaClickDetector';
+import {
+  isVideoControlElement,
+  isTwitterNativeGalleryElement,
+  SERVICE_KEYS,
+} from '../../constants';
+import { galleryState } from '../state/signals/gallery.signals';
+import { CoreService } from '../services/ServiceManager';
+import type { MediaService } from '../services/MediaService';
+import type { MediaInfo } from '../types/media.types';
 
 // 기본 이벤트 관리
 interface EventContext {

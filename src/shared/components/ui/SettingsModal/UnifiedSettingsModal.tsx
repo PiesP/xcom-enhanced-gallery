@@ -1,4 +1,4 @@
-import { getPreact } from '@shared/external/vendors';
+import { getPreact } from '../../../external/vendors';
 
 export interface UnifiedSettingsModalProps {
   readonly isOpen: boolean;

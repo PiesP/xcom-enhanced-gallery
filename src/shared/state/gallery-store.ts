@@ -1,4 +1,4 @@
-import { getPreactSignals } from '@shared/external/vendors';
+import { getPreactSignals } from '../external/vendors';
 
 export interface GalleryUIState {
   readonly toolbarVisible: boolean;

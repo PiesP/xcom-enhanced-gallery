@@ -2,7 +2,7 @@
  * @fileoverview Scroll Utilities
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '../../logging/logger';
 import { Debouncer } from '../performance/performance-utils';
 import { addWheelListener, ensureWheelLock } from '../events/wheel';
 

@@ -16,7 +16,8 @@ export { VerticalGalleryView } from './components/vertical-gallery-view';
 
 // 갤러리 서비스들 (Core로 통합됨) - GalleryService 제거됨
 // export { GalleryService, galleryService } from '@shared/services/gallery/GalleryService';
-export { BulkDownloadService } from '@shared/services/BulkDownloadService';
+// Vitest(vite-node) Windows alias 해석 이슈 회피를 위해 내부 임포트는 상대 경로 사용
+export { BulkDownloadService } from '../../shared/services/BulkDownloadService';
 // export type {
 //   OpenGalleryOptions,
 //   NavigationResult,

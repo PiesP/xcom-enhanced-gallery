@@ -8,17 +8,21 @@
  * - 상태 관리는 기존 signals 활용
  */
 
-import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
+import type { GalleryRenderer } from '../../shared/interfaces/gallery.interfaces';
 import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
-} from '@shared/container/service-accessors';
-import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
-import type { MediaInfo } from '@shared/types/media.types';
-import { logger } from '@shared/logging/logger';
-import { MediaService } from '@shared/services/MediaService';
-import { ToastController } from '@shared/services/ToastController';
-import { unmountGallery } from '@shared/components/isolation';
+} from '../../shared/container/service-accessors';
+import {
+  galleryState,
+  openGallery,
+  closeGallery,
+} from '../../shared/state/signals/gallery.signals';
+import type { MediaInfo } from '../../shared/types/media.types';
+import { logger } from '../../shared/logging/logger';
+import { MediaService } from '../../shared/services/MediaService';
+import { ToastController } from '../../shared/services/ToastController';
+import { unmountGallery } from '../../shared/components/isolation';
 
 /**
  * 갤러리 앱 설정
@@ -116,7 +120,7 @@ export class GalleryApp {
   private async setupEventHandlers(): Promise<void> {
     try {
       // 새로운 갤러리 이벤트 시스템 사용
-      const { initializeGalleryEvents } = await import('@shared/utils/events');
+      const { initializeGalleryEvents } = await import('../../shared/utils/events');
 
       await initializeGalleryEvents({
         onMediaClick: async (_mediaInfo, element, _event) => {
@@ -320,7 +324,7 @@ export class GalleryApp {
 
       // 이벤트 핸들러 정리
       try {
-        const { cleanupGalleryEvents } = await import('@shared/utils/events');
+        const { cleanupGalleryEvents } = await import('../../shared/utils/events');
         cleanupGalleryEvents();
       } catch (error) {
         logger.warn('이벤트 코디네이터 정리 실패:', error);

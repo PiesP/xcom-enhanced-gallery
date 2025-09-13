@@ -3,13 +3,13 @@
  * @version 3.0.0 - Phase 3 StandardProps 시스템 적용
  */
 
-import { getPreact, getPreactHooks, getPreactCompat } from '@shared/external/vendors';
+import { getPreact, getPreactHooks, getPreactCompat } from '../../../external/vendors';
 import { toasts, removeToast, Toast } from './Toast';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';
 import styles from './ToastContainer.module.css';
-import type { VNode } from '@shared/external/vendors';
+import type { VNode } from '../../../external/vendors';
 
 // 통합된 ToastContainer Props (표준 우선, 레거시 fallback)
 export interface ToastContainerProps extends Partial<StandardToastContainerProps> {

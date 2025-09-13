@@ -5,7 +5,7 @@
  * TDD Phase: GREEN - 정적 import로 TDZ 문제 해결
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../../logging';
 
 // 정적 import로 모든 라이브러리를 안전하게 로드
 import * as fflate from 'fflate';

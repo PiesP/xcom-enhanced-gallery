@@ -198,6 +198,13 @@ npm test
 
 더 자세한 개발 가이드는 [`docs/`](docs/) 디렉토리의 문서를 참고하세요.
 
+#### 테스트 실행 안내
+
+이 저장소의 테스트는 Vitest Projects로 분할되어 있어 목적별로 빠르게 실행할 수
+있습니다(예: smoke/fast/unit/styles/performance/phases/refactor). 구체적인 사용
+방법과 스크립트는 `AGENTS.md`의 "테스트 가이드 (Vitest) > 분할 실행(Projects)"
+섹션을 참고하세요.
+
 ## 📞 지원 및 피드백
 
 - **🐛 버그 신고**:

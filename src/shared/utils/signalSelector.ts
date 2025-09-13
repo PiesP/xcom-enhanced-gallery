@@ -5,7 +5,7 @@
  * 불필요한 리렌더링을 방지하여 성능을 최적화합니다.
  */
 
-import { getPreactHooks, getPreactSignals } from '@shared/external/vendors';
+import { getPreactHooks, getPreactSignals } from '../external/vendors';
 import { globalTimerManager } from './timer-management';
 
 // 타입 정의

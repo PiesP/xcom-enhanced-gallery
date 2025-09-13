@@ -1,4 +1,4 @@
-import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
+import { getPreact, getPreactHooks, type VNode } from '../external/vendors';
 import {
   getIconRegistry,
   preloadCommonIcons,

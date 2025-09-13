@@ -5,7 +5,7 @@
  * @description 외부 라이브러리 공개 API 함수들 - Core 레이어로 이동 완료
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../../logging';
 import {
   VendorManager,
   type FflateAPI,

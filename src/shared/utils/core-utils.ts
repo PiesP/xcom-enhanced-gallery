@@ -4,7 +4,7 @@
  * @version 1.0.0 - Simplification Phase 1
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '../logging/logger';
 
 // ================================
 // DOM 유틸리티

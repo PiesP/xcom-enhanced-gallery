@@ -4,7 +4,7 @@
  * @version 2.0.0 - P4: Focus Trap 리팩토링
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { getPreactHooks } from '../external/vendors';
 
 export interface FocusTrapOptions {
   /** Escape 키 핸들러 */

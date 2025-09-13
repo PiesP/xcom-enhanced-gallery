@@ -3,7 +3,7 @@
  * @description 메모화를 통한 시그널 셀렉터 성능 최적화
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { getPreactHooks } from '../../external/vendors';
 
 /**
  * 셀렉터 함수 타입

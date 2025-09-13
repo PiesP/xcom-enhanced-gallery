@@ -5,9 +5,9 @@
  * @version 2.0.0 - Core layer
  */
 
-import { logger } from '@shared/logging/logger';
-import { safeParseInt, undefinedToNull } from '@shared/utils/type-safety-helpers';
-import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
+import { logger } from '../logging/logger';
+import { safeParseInt, undefinedToNull } from '../utils/type-safety-helpers';
+import type { MediaInfoForFilename, MediaItemForFilename } from '../types/media.types';
 
 /**
  * 파일명 생성 옵션

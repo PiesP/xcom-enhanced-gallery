@@ -1,6 +1,6 @@
 import styles from './Toast.module.css';
-import * as Vendors from '@shared/external/vendors';
-import type { VNode } from '@shared/external/vendors';
+import * as Vendors from '../../../external/vendors';
+import type { VNode } from '../../../external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastProps } from '../StandardProps';
 

@@ -5,6 +5,7 @@
  * - Output: single userscript file
  */
 import { defineConfig, Plugin, UserConfig } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
 import preact from '@preact/preset-vite';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -151,6 +152,7 @@ export default defineConfig(({ mode }) => {
   const config: UserConfig = {
     plugins: [
       preact({ devToolsEnabled: flags.isDev, prefreshEnabled: flags.isDev }),
+      tsconfigPaths({ projects: ['tsconfig.json'] }),
       userscriptPlugin(flags),
     ],
     define: {
@@ -162,12 +164,13 @@ export default defineConfig(({ mode }) => {
       global: 'globalThis',
     },
     resolve: {
-      alias: {
-        '@': path.resolve(process.cwd(), 'src'),
-        '@shared': path.resolve(process.cwd(), 'src/shared'),
-        '@features': path.resolve(process.cwd(), 'src/features'),
-        '@assets': path.resolve(process.cwd(), 'src/assets'),
-      },
+      extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],
+      alias: [
+        { find: '@features', replacement: '/src/features' },
+        { find: '@shared', replacement: '/src/shared' },
+        { find: '@assets', replacement: '/src/assets' },
+        { find: '@', replacement: '/src' },
+      ],
     },
     css: {
       modules: {

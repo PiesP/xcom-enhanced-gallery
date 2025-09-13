@@ -6,11 +6,12 @@
  * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
-import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/EventManager';
-import { galleryState } from '@shared/state/signals/gallery.signals';
-import { findTwitterScrollContainer } from '@shared/utils/core-utils';
+import { getPreactHooks } from '../../../shared/external/vendors';
+// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
+import { logger } from '../../../shared/logging/logger';
+import { EventManager } from '../../../shared/services/EventManager';
+import { galleryState } from '../../../shared/state/signals/gallery.signals';
+import { findTwitterScrollContainer } from '../../../shared/utils/core-utils';
 
 const { useEffect, useRef, useCallback } = getPreactHooks();
 

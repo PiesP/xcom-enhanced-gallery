@@ -4,8 +4,8 @@
  * @version 2.0.0 - Complexity Reduction & Modularization
  */
 
-import { logger } from '@shared/logging/logger';
-import { galleryState } from '@shared/state/signals/gallery.signals';
+import { logger } from '../logging/logger';
+import { galleryState } from '../state/signals/gallery.signals';
 
 // ================================
 // Re-exports from focused modules

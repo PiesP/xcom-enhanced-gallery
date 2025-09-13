@@ -1,7 +1,7 @@
-import { getPreact, getPreactHooks } from '@shared/external/vendors';
-import { useFocusTrap } from '@shared/hooks/useFocusTrap';
+import { getPreact, getPreactHooks } from '../../../../shared/external/vendors';
+import { useFocusTrap } from '../../../../shared/hooks/useFocusTrap';
 import styles from './KeyboardHelpOverlay.module.css';
-import { IconButton } from '@shared/components/ui/Button/IconButton';
+import { IconButton } from '../../../../shared/components/ui/Button/IconButton';
 
 export interface KeyboardHelpOverlayProps {
   open: boolean;

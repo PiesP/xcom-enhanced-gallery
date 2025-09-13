@@ -8,10 +8,10 @@
  * - Immutable state
  */
 
-import type { MediaInfo } from '@shared/types/media.types';
-import { getPreactSignals } from '@shared/external/vendors';
+import type { MediaInfo } from '../../types/media.types';
+import { getPreactSignals } from '../../external/vendors';
 // Break runtime dependency on services: use logging barrel directly
-import { logger as rootLogger, type Logger as ILogger } from '@shared/logging';
+import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 
 // Signal type
 type Signal<T> = {

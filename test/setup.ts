@@ -7,6 +7,7 @@ import '@testing-library/jest-dom';
 import { beforeEach, afterEach } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
+import { URL as NodeURL } from 'node:url';
 
 // ================================
 // 전역 테스트 환경 설정
@@ -14,42 +15,10 @@ import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.
 
 // URL 생성자 폴백 - Node.js URL 직접 사용
 function createURLPolyfill() {
-  try {
-    // Node.js의 기본 URL을 직접 사용
-    const { URL: NodeURL } = require('node:url');
-    console.log('Using Node.js URL constructor');
-    return NodeURL;
-  } catch (error) {
-    console.warn('Node URL import failed, using fallback:', error);
-
-    // fallback implementation
-    function URLConstructor(url) {
-      if (!(this instanceof URLConstructor)) {
-        return new URLConstructor(url);
-      }
-
-      const urlRegex = /^(https?):\/\/([^/]+)(\/[^?]*)?\??(.*)$/;
-      const match = url.match(urlRegex);
-
-      if (!match) {
-        throw new Error('Invalid URL');
-      }
-
-      const [, protocol, hostname, pathname = '/', search = ''] = match;
-
-      this.protocol = `${protocol}:`;
-      this.hostname = hostname;
-      this.pathname = pathname;
-      this.search = search ? `?${search}` : '';
-      this.href = url;
-
-      this.toString = () => this.href;
-
-      return this;
-    }
-
-    return URLConstructor;
-  }
+  // Node.js ESM 환경에서 URL 생성자 확보
+  // jsdom이 제공하는 URL이 있으면 우선 사용, 없으면 Node URL 사용
+  if (typeof globalThis.URL === 'function') return globalThis.URL as unknown as typeof URL;
+  return NodeURL as unknown as typeof URL;
 }
 
 // URL 폴백 설정
@@ -62,6 +31,7 @@ function setupURLPolyfill() {
   // window 레벨에도 설정 (안전하게)
   try {
     if (typeof window !== 'undefined') {
+      // @ts-expect-error — jsdom Window type
       window.URL = URLPolyfill;
     }
   } catch {
@@ -282,16 +252,22 @@ function setupJsdomPolyfills() {
 if (typeof globalThis !== 'undefined') {
   // 안전한 window 객체 설정
   if (!globalThis.window || typeof globalThis.window !== 'object') {
+    // 기본 형태의 window 객체 확보
+    // @ts-expect-error — define minimal window for tests
     globalThis.window = {};
   }
 
   // 안전한 document 객체 설정 - body 포함
   if (!globalThis.document || typeof globalThis.document !== 'object') {
+    // 최소 document 구현을 제공하여 스파이 설정이 실패하지 않도록 함
+    // @ts-expect-error — lightweight document stub for tests
     globalThis.document = {
       body: { innerHTML: '' },
       createElement: () => ({ innerHTML: '' }),
       querySelector: () => null,
       querySelectorAll: () => [],
+      addEventListener: () => {},
+      removeEventListener: () => {},
     };
   } else if (!globalThis.document.body) {
     globalThis.document.body = { innerHTML: '' };

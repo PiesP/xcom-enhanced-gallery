@@ -6,8 +6,9 @@
  * @description 갤러리 키보드 지원을 제공하는 커스텀 훅 (Esc 키만 지원)
  */
 
-import { logger } from '@shared/logging/logger';
-import { getPreactHooks } from '@shared/external/vendors';
+// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
+import { logger } from '../../../../../shared/logging/logger';
+import { getPreactHooks } from '../../../../../shared/external/vendors';
 
 interface UseGalleryKeyboardOptions {
   onClose: () => void;

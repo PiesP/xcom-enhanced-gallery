@@ -115,7 +115,8 @@ function fallbackXhr(options: GMXmlHttpRequestOptions): { abort: () => void } | 
         } as never);
       })
       .finally(() => {
-        options.onloadend?.(new ProgressEvent('loadend'));
+        // JSDOM/Node 환경에서는 ProgressEvent가 없을 수 있으므로 안전한 스텁 객체 사용
+        options.onloadend?.({ type: 'loadend' } as unknown as ProgressEvent);
       });
 
     return { abort: () => controller.abort() };

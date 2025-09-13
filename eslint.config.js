@@ -223,6 +223,7 @@ export default [
       'scripts/**/*.{ts,js,cjs,mjs}',
     ],
     languageOptions: {
+      parser: tsParser,
       globals: {
         // Node.js 환경 전역 (설정/스크립트 파일용)
         console: 'readonly',
@@ -250,6 +251,7 @@ export default [
       sourceType: 'module',
       ecmaVersion: 2022,
       globals: {
+        // Vitest globals
         vi: 'readonly',
         describe: 'readonly',
         it: 'readonly',
@@ -259,6 +261,23 @@ export default [
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
+
+        // jsdom/브라우저 전역 (정적 분석 시 no-undef 방지)
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        navigator: 'readonly',
+        performance: 'readonly',
+        Image: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+        global: 'readonly',
+        globalThis: 'readonly',
+
+        // Node 전역 (테스트 유틸/환경에서 사용)
+        process: 'readonly',
       },
     },
     plugins: {
@@ -267,6 +286,9 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
+      // 테스트 코드에서는 사용하지 않는 파라미터/변수 경고를 비활성화하여 노이즈 제거
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
       'no-restricted-imports': 'off',
       // 금지: 테스트에서 import.meta.glob 사용 (OS/번들러 의존 문제 방지)
       // AST 셀렉터 설명:

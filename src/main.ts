@@ -17,7 +17,7 @@ import {
   registerGalleryRenderer,
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/ServiceManager';
-import { cleanupVendors } from '@shared/external/vendors';
+import { cleanupVendors } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
 // 전역 스타일
@@ -133,7 +133,7 @@ async function initializeToastContainer(): Promise<void> {
     // UI 컴포넌트를 지연 로딩
     const [{ ToastContainer }, { getPreact }] = await Promise.all([
       import('@shared/components/ui'),
-      import('@shared/external/vendors'),
+      import('./shared/external/vendors'),
     ]);
 
     const { h, render } = getPreact();
@@ -207,7 +207,7 @@ async function cleanup(): Promise<void> {
       if (import.meta.env.MODE !== 'test') {
         const container = document.getElementById('xeg-toast-container');
         if (container) {
-          const { getPreact } = await import('@shared/external/vendors');
+          const { getPreact } = await import('./shared/external/vendors');
           const { render } = getPreact();
           // 언마운트
           render(null, container as HTMLElement);

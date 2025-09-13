@@ -7,7 +7,8 @@
  * @version 2.0.0 - Core layer migration
  */
 
-import { logger } from '@shared/logging/logger';
+// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
+import { logger } from '../logging/logger';
 
 type EventCleanup = () => void;
 

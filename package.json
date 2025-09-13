@@ -15,6 +15,13 @@
     "test:watch": "vitest",
     "test:coverage": "vitest -coverage",
     "test:ui": "vitest --ui",
+    "test:smoke": "vitest --project smoke run",
+    "test:fast": "vitest --project fast run",
+    "test:unit": "vitest --project unit run",
+    "test:styles": "vitest --project styles run",
+    "test:perf": "vitest --project performance run",
+    "test:phases": "vitest --project phases run",
+    "test:refactor": "vitest --project refactor run",
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
     "lint:staged": "lint-staged",
@@ -31,9 +38,9 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "preact": "10.27.1",
     "@preact/signals": "2.3.1",
-    "fflate": "0.8.2"
+    "fflate": "0.8.2",
+    "preact": "10.27.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
@@ -73,6 +80,7 @@
     "terser": "^5.44.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.5",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
   "lint-staged": {

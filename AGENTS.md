@@ -49,6 +49,35 @@ Windows PowerShell에서도 위 명령 그대로 사용 가능합니다.
 - 테스트 포함 경로: `test/**/*.{test,spec}.{ts,tsx}`
 - 일부 리팩터링 테스트는 임시 제외됨(워크플로 파일 참고)
 
+### 분할 실행(Projects)
+
+대규모 스위트는 Vitest projects로 분할되어 있으며, `vitest.config.ts`의
+`test.projects`에 정의되어 있습니다.
+
+- smoke: 초고속 스모크(구성/토큰 가드)
+- fast: 빠른 단위 테스트(RED/벤치/퍼포먼스 제외)
+- unit: 단위 전체
+- styles: 스타일/토큰/정책 전용
+- performance: 성능/벤치 전용
+- phases: 단계별(phase-\*)/최종 스위트
+- refactor: 리팩토링 진행/가드
+
+실행 방법
+
+```pwsh
+# 프로젝트 직접 지정
+vitest --project smoke run
+
+# npm 스크립트 단축키 권장
+npm run test:smoke
+npm run test:fast
+npm run test:unit
+npm run test:styles
+npm run test:perf
+npm run test:phases
+npm run test:refactor
+```
+
 유용한 실행 패턴
 
 ```pwsh

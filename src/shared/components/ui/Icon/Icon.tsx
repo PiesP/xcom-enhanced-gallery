@@ -9,8 +9,8 @@
  * - TypeScript strict 모드 준수
  */
 
-import { getPreact } from '@shared/external/vendors';
-import type { VNode, ComponentChildren } from '@shared/external/vendors';
+import { getPreact } from '../../../external/vendors';
+import type { VNode, ComponentChildren } from '../../../external/vendors';
 
 export interface IconProps {
   /**

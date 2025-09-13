@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { APP_CONFIG, CSS } from '@/constants';
+import { APP_CONFIG, CSS } from '../../../src/constants';
 
 describe('JS constants tokenization policy', () => {
   it('APP_CONFIG.ANIMATION_DURATION must be a token var string', () => {

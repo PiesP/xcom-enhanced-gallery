@@ -5,7 +5,7 @@
  * TDD Phase: GREEN - 안전한 초기화와 동기 접근 보장
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../../logging';
 import {
   StaticVendorManager,
   type FflateAPI,

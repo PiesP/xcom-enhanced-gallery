@@ -5,7 +5,7 @@
  * 이 모듈은 기본적인 DOM 조작 기능만 제공합니다.
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../../logging/logger';
 
 // ========== 타입 정의 ==========
 

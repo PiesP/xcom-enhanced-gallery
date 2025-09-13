@@ -3,10 +3,11 @@
  * @description DOMEventManager와 GalleryEventManager를 통합한 단일 인터페이스
  */
 
-import { logger } from '@shared/logging/logger';
-import { DOMEventManager, createEventManager } from '@shared/dom/DOMEventManager';
-import { GalleryEventManager } from '@shared/utils/events';
-import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events';
+// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
+import { logger } from '../logging/logger';
+import { DOMEventManager, createEventManager } from '../dom/DOMEventManager';
+import { GalleryEventManager } from '../utils/events';
+import type { EventHandlers, GalleryEventOptions } from '../utils/events';
 
 /**
  * 이벤트 관리자

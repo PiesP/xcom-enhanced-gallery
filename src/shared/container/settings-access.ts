@@ -3,7 +3,7 @@
  * - Avoids importing ServiceManager directly in features
  * - Uses optional global adapter bridge or lazy getter functions
  */
-import { SERVICE_KEYS } from '@/constants';
+import { SERVICE_KEYS } from '../../constants';
 import type { ISettingsService } from './AppContainer';
 
 /**

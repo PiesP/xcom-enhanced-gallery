@@ -3,7 +3,7 @@
  * @description 모달의 공통 레이아웃/스타일 Shell - semantic props 사용
  */
 
-import { getPreact, type ComponentChildren } from '@shared/external/vendors';
+import { getPreact, type ComponentChildren } from '../../../external/vendors';
 
 export interface ModalShellProps {
   /** 컨텐츠 */

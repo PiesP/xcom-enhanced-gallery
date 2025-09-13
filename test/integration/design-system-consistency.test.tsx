@@ -33,12 +33,20 @@ vi.mock('@shared/external/vendors', () => ({
   h,
 }));
 
-vi.mock('@shared/logging', () => ({
-  logger: {
+vi.mock('@shared/logging', () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+  };
+  return {
+    logger: mockLogger,
+    default: mockLogger,
+  };
+});
 
 vi.mock('@shared/services', () => ({
   languageService: {

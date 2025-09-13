@@ -4,7 +4,7 @@
  * @version 1.0.0 - Phase 5: 서비스 레이어 단순화
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '../logging/logger';
 
 /**
  * 단순화된 서비스 저장소

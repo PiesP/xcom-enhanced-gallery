@@ -5,7 +5,7 @@
 
 import type { MediaDescriptor, Result } from './types';
 import { collectNodes, extractRawData, normalize, dedupe, validate } from './pipeline';
-import { logger } from '@shared/logging';
+import { logger } from '../logging';
 
 /**
  * MediaProcessor 클래스

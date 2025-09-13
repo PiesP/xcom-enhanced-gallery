@@ -7,13 +7,13 @@ import {
   getPreactHooks,
   type VNode,
   type ComponentChildren,
-} from '@shared/external/vendors';
-import { useFocusTrap } from '@shared/hooks/useFocusTrap';
-import { useScrollLock } from '@shared/hooks/useScrollLock';
+} from '../../../external/vendors';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 import { ComponentStandards } from '../StandardProps';
 import { X } from '../Icon';
-import { LanguageService } from '@shared/services/LanguageService';
-import { ThemeService } from '@shared/services/ThemeService';
+import { LanguageService } from '../../../services/LanguageService';
+import { ThemeService } from '../../../services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
 import styles from './SettingsModal.module.css';
 

@@ -9,7 +9,7 @@
  * - ARIA 상태 관리
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { getPreactHooks } from '../external/vendors';
 import { logger } from '@shared/logging/logger';
 
 /**

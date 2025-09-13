@@ -4,7 +4,7 @@
  * @version 2.0.0 - Phase 1 단순화
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../logging';
 
 const NAMESPACE = 'xeg-gallery';
 const STYLE_ID = 'xeg-namespaced-styles';

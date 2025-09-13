@@ -8,9 +8,9 @@
  * @version 1.0.0
  */
 
-import { logger } from '@shared/logging';
-import { getFflate } from '@shared/external/vendors';
-import { safeParseInt } from '@shared/utils/type-safety-helpers';
+import { logger } from '../../logging';
+import { getFflate } from '../../external/vendors';
+import { safeParseInt } from '../../utils/type-safety-helpers';
 
 /**
  * Media item interface for ZIP creation

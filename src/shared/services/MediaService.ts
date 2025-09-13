@@ -8,7 +8,7 @@ import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-import { getNativeDownload } from '@shared/external/vendors';
+import { getNativeDownload } from '../external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename } from '@shared/media';
 import type { BaseResultStatus } from '@shared/types/result.types';
@@ -882,7 +882,7 @@ export class MediaService {
           code: ErrorCode.EMPTY_INPUT,
         } as DownloadResult;
       }
-      const { getFflate } = await import('@shared/external/vendors');
+      const { getFflate } = await import('../external/vendors');
       const fflate = getFflate();
       const download = getNativeDownload();
 

@@ -1,4 +1,4 @@
-import { getPreactHooks, type VNode } from '@shared/external/vendors';
+import { getPreactHooks, type VNode } from '../../../external/vendors';
 
 export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 

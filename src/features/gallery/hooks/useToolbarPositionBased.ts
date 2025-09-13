@@ -1,4 +1,4 @@
-import { getPreactHooks } from '@shared/external/vendors';
+import { getPreactHooks } from '../../../shared/external/vendors';
 
 export interface UseToolbarPositionBasedOptions {
   readonly toolbarElement: HTMLElement | null | undefined;

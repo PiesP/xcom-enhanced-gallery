@@ -3,9 +3,9 @@
  * @description UI 변경에 강건한 미디어 클릭 감지 및 처리 로직 (DOM 캐싱 최적화)
  */
 
-import { SELECTORS } from '@/constants';
-import { logger } from '@shared/logging/logger';
-import { cachedQuerySelector } from '@shared/dom';
+import { SELECTORS } from '../../../constants';
+import { logger } from '../../logging/logger';
+import { cachedQuerySelector } from '../../dom';
 
 /**
  * 미디어 감지 결과

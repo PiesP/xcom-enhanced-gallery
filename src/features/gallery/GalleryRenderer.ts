@@ -21,13 +21,13 @@ import {
   setViewMode,
   navigatePrevious,
   navigateNext,
-} from '@shared/state/signals/gallery.signals';
+} from '../../shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
-import { GalleryContainer } from '@shared/components/isolation';
+import { GalleryContainer } from '../../shared/components/isolation';
 import './styles/gallery-global.css';
-import { logger } from '@shared/logging/logger';
-import { getPreact } from '@shared/external/vendors';
+import { logger } from '../../shared/logging/logger';
+import { getPreact } from '../../shared/external/vendors';
 
 /**
  * 갤러리 정리 관리자
@@ -190,7 +190,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       setLoading(true);
 
       // 다운로드 서비스 - factory 경유 사용 (Phase 6)
-      const { getBulkDownloadService } = await import('@shared/services/service-factories');
+      const { getBulkDownloadService } = await import('../../shared/services/service-factories');
       const downloadService = await getBulkDownloadService();
       const state = galleryState.value;
 

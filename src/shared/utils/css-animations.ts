@@ -7,7 +7,7 @@
  * Motion One 라이브러리 의존성 제거 및 번들 크기 최적화
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../logging';
 import { globalTimerManager } from './timer-management';
 
 // CSS 애니메이션 변수 및 상수
