@@ -18,7 +18,7 @@ import {
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/ServiceManager';
 import { cleanupVendors } from '@shared/external/vendors';
-import { globalTimerManager } from '@shared/utils';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 // 전역 스타일
 // 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.

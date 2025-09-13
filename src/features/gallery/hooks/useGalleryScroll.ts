@@ -10,7 +10,7 @@ import { getPreactHooks } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/EventManager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-import { findTwitterScrollContainer } from '@shared/utils';
+import { findTwitterScrollContainer } from '@shared/utils/core-utils';
 
 const { useEffect, useRef, useCallback } = getPreactHooks();
 

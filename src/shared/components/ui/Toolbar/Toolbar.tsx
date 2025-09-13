@@ -25,7 +25,7 @@ import {
   getToolbarDataState,
   getToolbarClassName,
 } from '@shared/hooks/useToolbarState';
-import { throttleScroll } from '@shared/utils';
+import { throttleScroll } from '@shared/utils/performance/performance-utils';
 import { ComponentStandards } from '../StandardProps';
 import {
   ChevronLeft,
@@ -40,7 +40,7 @@ import {
   ArrowsMaximize,
 } from '../Icon';
 import styles from './Toolbar.module.css';
-import { IconButton } from '@shared/components/ui';
+import { IconButton } from '../Button/IconButton';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
 export interface ToolbarProps {
@@ -277,7 +277,7 @@ function ToolbarCore({
     h(
       'div',
       {
-        className: styles.toolbarContent,
+        className: `${styles.toolbarContent} xeg-center-between xeg-gap-md`,
         'data-gallery-element': 'toolbar-content',
       },
       [
@@ -285,7 +285,7 @@ function ToolbarCore({
         h(
           'div',
           {
-            className: `${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft`,
+            className: `${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft xeg-row-center xeg-gap-sm`,
             'data-gallery-element': 'navigation-left',
             key: 'toolbar-left',
           },
@@ -325,7 +325,7 @@ function ToolbarCore({
         h(
           'div',
           {
-            className: `${styles.toolbarSection} ${styles.toolbarCenter}`,
+            className: `${styles.toolbarSection} ${styles.toolbarCenter} xeg-row-center`,
             'data-gallery-element': 'counter-section',
             key: 'toolbar-center',
           },
@@ -373,7 +373,7 @@ function ToolbarCore({
         h(
           'div',
           {
-            className: `${styles.toolbarSection} ${styles.toolbarRight}`,
+            className: `${styles.toolbarSection} ${styles.toolbarRight} xeg-row-center xeg-gap-sm`,
             'data-gallery-element': 'actions-right',
             key: 'toolbar-right',
           },

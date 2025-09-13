@@ -1,5 +1,104 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-13: DEPS-CYCLE-RESOLVED — 남은 순환 의존 1건 해소
+
+- 원인: VideoControlService → gallery.signals → core-services →
+  service-initialization → … → MediaService → VideoControlService 순환
+- 조치: signals 계층(`gallery.signals.ts`, `download.signals.ts`)의 로깅 의존을
+  `@shared/services/core-services`에서 `@shared/logging`으로 전환(런타임 서비스
+  의존 제거, 타입 호환 유지)
+- 검증: `npm run deps:check` → no dependency violations; 전체 빌드/테스트 패스
+
+2025-09-13: UTIL-ALIGN-APPLIED — Toolbar/Settings 채택 + 배럴 import 감소
+
+- Toolbar.tsx/SettingsModal.tsx에 정렬/간격 유틸 클래스 적용:
+  - toolbarContent/sections에 xeg-row-center, xeg-center-between, xeg-gap-\*
+  - SettingsModal 닫기 버튼에 xeg-size-toolbar 보장
+- 내부 배럴 import 정리(경고 감소):
+  - '@shared/components/ui' → 직접 경로('../Button/IconButton' 등)
+  - '@shared/utils' → 세부 모듈 경로(timer-management, performance-utils,
+    core-utils, type-safety-helpers)
+- 품질 게이트: typecheck/lint/tests/build 모두 PASS, gzip ~98.94 KB
+
+2025-09-13: UTIL-ALIGN — 정렬/간격 유틸(alignment.css) 도입/배선 완료
+
+- 코드: `src/assets/styles/components/alignment.css` 추가 — `.xeg-row-center`,
+  `.xeg-center-between`, `.xeg-gap-(sm|md|lg)`, `.xeg-size-toolbar`
+- 배선: `src/styles/globals.ts`의 런타임 전역 스타일 로더에 import 추가(엔트리
+  동적 로딩 경로 유지)
+- 문서: CODING_GUIDELINES에 유틸 설명/사용 가이드 추가
+
+2025-09-13: UI-ALIGN-4 — 툴바/설정 정렬·크기 일원화 최종 확인
+
+- 결과: Toolbar.module.css와 SettingsModal.module.css가 2.5em 클릭 타겟, em/토큰
+  기반 간격, align-items:center 및 focus/radius 토큰을 이미 준수함을 확인. 추가
+  유틸리티 도입 없이 기준 충족.
+- 문서: CODING_GUIDELINES의 Toolbar/SettingsModal 규칙 최신화 확인(2.5em·em
+  단위·토큰 준수·PC 전용 입력).
+- 빌드/검증: 로컬 빌드 무오류, 기존 테스트/가드와 충돌 없음(계약 준수 확인).
+
+2025-09-13: A11Y-SETTINGS-MODAL — 백그라운드 포커스 차단 동기화 적용 완료
+
+- 패널 모드 오픈 직후, body 직계의 포커스 가능한 요소에 tabindex="-1"을 동기
+  적용하여 테스트의 즉시 검증 요구를 만족.
+- role="dialog" 탐색성을 해치지 않도록 aria-hidden을 설정하지 않고 컨테이너
+  노드를 건드리지 않음(접근성 쿼리 유지).
+- 회귀 검증: SettingsModal 접근성/포커스 테스트 31/31 GREEN.
+
+2025-09-13: ICN-LEGACY-GUARD — 레거시 아이콘 배럴 플레이스홀더 추가
+
+- 경로: `src/shared/components/ui/Icon/icons/index.ts` — 외부 아이콘 라이브러리
+  import 없음. 정적 스캔 가드를 위한 존재 보장으로 ENOENT 제거.
+- 정책 유지: 외부 아이콘 패키지 직접 import 금지, 내부 Icon/IconButton 시스템
+  사용.
+
+2025-09-13: 세션 검증(업데이트) — 전체 테스트 GREEN · 빌드/산출물 검증 PASS
+
+- 테스트: 280 passed files | 9 skipped (총 289 파일), 1900 passed tests | 18
+  skipped — jsdom not-implemented 경고는 기능 영향 없음.
+- 빌드: dev/prod Userscript 생성 및 postbuild validator PASS, gzip ≈ 98.31 KB.
+
+2025-09-13: 문서 — CODING_GUIDELINES Toolbar/SettingsModal 클릭 타겟·반응형 규칙
+보강
+
+- 2.5em 최소 클릭 타겟, em 기반 반응형 단위(px 지양), IconButton
+  size="toolbar"와의 정합을 명문화.
+- TS/TSX 인라인 px 오버라이드 금지 및 CSS Module에서 토큰/단위를 적용하도록 지침
+  추가.
+- 참고 가드: toolbar.separator-contrast, settings-modal.accessibility,
+  modal-toolbar-visual-consistency. 코드 변경 없음(문서 개선).
+
+2025-09-13: UI-ALIGN-3 — 툴바/설정 정렬·배치 폴리시 최종화 완료
+
+- Toolbar.module.css 반응형 구간의 절대 px(36/50px)을 em/토큰 기반으로 정정하고,
+  소형 화면에서도 2.5em 클릭 타겟을 보장하여 정렬/패딩 일관성을 확보.
+- SettingsModal.module.css 닫기 버튼을 inline-flex 정렬로 보강해 타이틀과 수직
+  정렬을 안정화(크기/포커스 링 토큰 유지).
+- 기존 토큰/접근성/PC-only 가드 스위트와 충돌 없음(빌드/테스트/검증 GREEN 전제).
+
+2025-09-13: 계획 문서 갱신 — UI-ALIGN-3 활성
+
+- 활성 계획서에 "UI-ALIGN-3: 툴바/설정 정렬·배치 폴리시 최종화" 추가.
+- 선택지(정렬/Flex vs Grid·유틸 vs 모듈·IconButton·em 기준) 장단점 정리 및 TDD
+  단계(RED→GREEN→REFACTOR)와 DoD 명시.
+
+2025-09-13: 계획 문서 정리 — 운영 메모 이관 및 UI-ALIGN-2 활성화
+
+- 계획서에서 운영 메모(의존성 그래프 Graphviz 부재 호환) 삭제 및 본 완료 로그에
+  간결 요약으로 이관.
+- 활성 Phase를 UI-ALIGN-2(툴바/설정 정렬·배치 최종 손보기)로 지정하고 세부
+  계획을 계획서에 추가.
+
+2025-09-13: UI-ALIGN-2 — 툴바/설정 모달 정렬·배치 하드닝 완료
+
+- Toolbar.module.css: align-items:center, gap/line-height/height/padding 토큰화,
+  구분자('/')를 `--xeg-color-text-primary`로 통일, 버튼 크기 2.5em 스케일
+  일관화.
+- SettingsModal.module.css: 헤더 flex 정렬/간격 토큰화, 닫기 IconButton
+  2.5em/`--xeg-radius-md`/focus-ring 토큰 준수, 본문 패딩/컨트롤 간격 토큰화.
+- 테스트/가드: 기존 접근성/토큰/PC-only 가드 GREEN 유지. 회귀 없음.
+- 계획서: 활성 Phase 제거(완료 상태 반영).
+
 2025-09-13: 의존성 구조 — dependency-cruiser 설정 정합/분석 경고 가드 추가
 
 - 변경: `.dependency-cruiser.cjs`에 TS 경로 별칭(tsConfig) 연결, vendor 직접

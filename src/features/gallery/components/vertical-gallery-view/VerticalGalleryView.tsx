@@ -26,7 +26,7 @@ import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
-import { ensureGalleryScrollAvailable } from '@shared/utils';
+import { ensureGalleryScrollAvailable } from '@shared/utils/core-utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';

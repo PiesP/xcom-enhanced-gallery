@@ -188,6 +188,19 @@ Gallery
 - SettingsModal의 select 컨트롤은 툴바 버튼과 동일한 포커스 링/호버 체계를
   갖도록 토큰(`--xeg-*`)과 공용 변형 클래스를 사용합니다.
 
+#### Toolbar/SettingsModal 클릭 타겟·반응형 규칙
+
+- 최소 인터랙션 크기: Toolbar 버튼 및 SettingsModal 헤더 닫기 버튼 모두 최소
+  2.5em width/height/padding 스케일을 보장합니다(접근성·일관성 기준).
+- 반응형에서는 px 대신 em 단위를 사용합니다. 특히 폭/높이/min-size/padding, gap,
+  font-size, 진행 표시 폭(progress bar width) 등은 em 기반으로 정의합니다.
+- TS/TSX 인라인 스타일로 크기를 오버라이드하지 말고, CSS Module 클래스에서
+  토큰/단위를 적용합니다.
+- IconButton size="toolbar"는 2.5em 타겟과 일치하도록 설계되어 있으므로 별도 px
+  고정 값을 부여하지 않습니다.
+- 관련 가드(예): toolbar.separator-contrast, settings-modal.accessibility,
+  modal-toolbar-visual-consistency
+
 #### 모달 ↔ 툴바 색상/레이어 통합 정책
 
 - 배경/보더/텍스트 색:
@@ -314,6 +327,26 @@ animateCustom(el, keyframes, {
 @media (prefers-reduced-motion: reduce) {
   .xcom-fade-in, .xcom-slide-in { transition: none; }
 }
+
+### 정렬/간격 유틸리티 (alignment.css)
+
+- 위치: `src/assets/styles/components/alignment.css`
+- 목적: Toolbar/Settings 등에서 반복되는 정렬/간격/크기 규칙을 토큰/em 기반의 경량 유틸로 재사용
+- 로딩: 전역 스타일은 엔트리 흐름에서만 동적 import됩니다(`src/styles/globals.ts` 경유) — 모듈 사이드이펙트 금지 정책 준수
+
+클래스 목록:
+
+- `.xeg-row-center`: `display:flex; align-items:center;`
+- `.xeg-center-between`: `display:flex; align-items:center; justify-content:space-between;`
+- `.xeg-gap-sm|md|lg`: `gap: var(--xeg-space-4|8|12)`
+- `.xeg-size-toolbar`: `min-width/min-height: 2.5em` — 최소 클릭 타겟 보장
+
+가이드:
+
+- 유틸 클래스는 CSS Modules의 `composes` 없이 병용합니다(직접 클래스 추가).
+- px 고정값 대신 em/토큰을 유지하세요. 아이콘/텍스트 baseline 정렬은 `.xeg-row-center`를 우선 적용한 후 컴포넌트 특수 케이스만 국소 조정합니다.
+- 포커스 링/색상은 본 유틸에 포함하지 않으며, 기존 토큰(`--xeg-focus-ring` 등)과 컴포넌트 스타일에서 관리합니다.
+
 ```
 
 ### 갤러리 프리로드 규칙 (Performance)
@@ -723,6 +756,59 @@ export function selectNext() {
   }
 }
 ```
+
+#### Signals ↔ Services 의존성 경계 (중요)
+
+signals 모듈은 순수 상태 계층으로, 런타임 서비스에 절대 의존하지 않습니다. 이는
+의존성 순환(cycle)과 테스트 격리 실패를 방지하기 위함입니다.
+
+- 허용되는 import (signals 파일에서):
+  - 타입 전용: `import type {...} from '@shared/types'` 등
+  - 벤더 getter: `import { getPreactSignals } from '@shared/external/vendors'`
+  - 순수 유틸/상수: `@shared/utils/*`, `@/constants`
+  - 로깅: `import { logger } from '@shared/logging'` (서비스 경유 금지)
+- 금지되는 import (signals 파일에서):
+  - 모든 `@shared/services/**` 및 `@shared/services/core-services` (런타임
+    서비스 의존 금지)
+  - 외부 라이브러리 직접 import (`preact`, `@preact/signals` 등) → 반드시 vendor
+    getter 사용
+
+패턴 가이드:
+
+- 서비스가 signals를 구독/호출하는 것은 가능하지만, signals가 서비스를 호출하는
+  방향은 금지합니다.
+- 서비스 기능이 필요하면 의존성 역전: action 함수에 콜백을 주입하거나(호출자
+  제공), 서비스 쪽에서 signals 변경을 구독하여 반응하세요.
+- 서비스 타입이 필요하면 타입 전용 import만 사용하세요(`import type`) — 런타임
+  심볼 사용 금지.
+
+스니펫 예시:
+
+```ts
+// ✅ 벤더 getter를 통해 Signals API 접근
+import { getPreactSignals } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
+
+const { signal, computed } = getPreactSignals();
+
+export const count = signal(0);
+export const doubled = computed(() => count.value * 2);
+
+export function increment() {
+  count.value += 1;
+  logger.debug('[signals] count incremented', { value: count.value });
+}
+
+// ❌ 금지: services 런타임 의존 (예시)
+// import { defaultLogger } from '@shared/services/core-services';
+// import { MediaService } from '@shared/services/media/MediaService';
+```
+
+검증:
+
+- 의존성 순환은 `npm run deps:check`에서 자동 검출됩니다.
+- signals 파일은 테스트에서 독립적으로 import되어도 동작해야 합니다(Vitest +
+  JSDOM).
 
 ## 💻 PC 환경 전용
 

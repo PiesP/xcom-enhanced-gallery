@@ -8,7 +8,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { globalTimerManager } from '@shared/utils';
+import { globalTimerManager } from './timer-management';
 
 // CSS 애니메이션 변수 및 상수
 export const ANIMATION_CONSTANTS = {

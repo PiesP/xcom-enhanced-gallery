@@ -10,7 +10,8 @@
 
 import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
-import { defaultLogger, type ILogger } from '@shared/services/core-services';
+// Break runtime dependency on services: use logging barrel directly
+import { logger as rootLogger, type Logger as ILogger } from '@shared/logging';
 
 // Signal type
 type Signal<T> = {
@@ -55,8 +56,8 @@ export type GalleryEvents = {
 // Preact Signals lazy initialization
 let galleryStateSignal: Signal<GalleryState> | null = null;
 
-// Logger instance (default fallback)
-const logger: ILogger = defaultLogger;
+// Logger instance (services-free)
+const logger: ILogger = rootLogger;
 
 function getGalleryStateSignal(): Signal<GalleryState> {
   if (!galleryStateSignal) {

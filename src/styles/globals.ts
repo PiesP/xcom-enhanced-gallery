@@ -18,3 +18,6 @@ import '@assets/styles/animation-utilities.css';
 
 // 브라우저 스타일 초기화 (갤러리 컨테이너 내부에만 적용)
 import '@assets/styles/base/reset.css';
+
+// 정렬/간격/크기 유틸리티 (경량) — em/토큰 기반
+import '@assets/styles/components/alignment.css';

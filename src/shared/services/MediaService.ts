@@ -15,7 +15,7 @@ import type { BaseResultStatus } from '@shared/types/result.types';
 import { ErrorCode } from '@shared/types/result.types';
 // Schedulers for prefetch task coordination
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
-import { globalTimerManager } from '@shared/utils';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 // 통합된 서비스 타입들
 /**

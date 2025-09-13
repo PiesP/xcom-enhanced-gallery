@@ -421,7 +421,7 @@ button.fitButton {
   }
 
   .toolbarSection {
-    gap: 6px;
+    gap: 0.375em; /* 6px → 0.375em */
   }
 
   .toolbarButton,
@@ -430,20 +430,21 @@ button.fitButton {
   .toolbarButton.settingsButton,
   .toolbarButton.closeButton,
   .fitButton {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-    padding: 6px;
-    font-size: 13px;
+    /* ✅ 최소 클릭 타겟 유지: 2.5em (정책 준수) */
+    width: 2.5em !important;
+    height: 2.5em !important;
+    min-width: 2.5em !important;
+    min-height: 2.5em !important;
+    padding: 0.5em !important;
+    font-size: 0.8125em; /* 13px → 0.8125em */
   }
 
   .mediaCounter {
-    font-size: 14px;
+    font-size: 0.875em; /* 14px → 0.875em */
   }
 
   .progressBar {
-    width: 50px;
+    width: 3.125em; /* 50px → 3.125em */
   }
 
   /* 반응형에서도 separator 표시 유지 */
@@ -466,9 +467,12 @@ button.fitButton {
   }
 
   .toolbarButton {
-    padding: 0.3125em 0.5em; /* 5px 8px → 0.3125em 0.5em */
-    min-width: 2em; /* 32px → 2em */
-    min-height: 2em; /* 32px → 2em */
+    /* ✅ 작은 화면에서도 클릭 타겟 최소치 유지 */
+    width: 2.5em; /* 고정 폭으로 정렬 안정화 */
+    height: 2.5em;
+    min-width: 2.5em;
+    min-height: 2.5em;
+    padding: 0.5em; /* 컨텐츠 여백 유지 */
   }
 
   .mediaCounterWrapper {

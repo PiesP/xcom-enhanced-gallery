@@ -6,7 +6,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { safeParseInt, undefinedToNull } from '@shared/utils';
+import { safeParseInt, undefinedToNull } from '@shared/utils/type-safety-helpers';
 import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
 
 /**

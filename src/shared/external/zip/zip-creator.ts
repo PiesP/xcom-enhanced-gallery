@@ -10,7 +10,7 @@
 
 import { logger } from '@shared/logging';
 import { getFflate } from '@shared/external/vendors';
-import { safeParseInt } from '@shared/utils';
+import { safeParseInt } from '@shared/utils/type-safety-helpers';
 
 /**
  * Media item interface for ZIP creation

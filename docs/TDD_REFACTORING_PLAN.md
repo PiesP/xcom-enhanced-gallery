@@ -19,18 +19,10 @@
 현재 활성화된 Phase는 없습니다. 신규 항목은 백로그에서 선별하여 필요 시 다시
 활성화합니다.
 
-메모(2025-09-13): CI에서 Graphviz 부재로 인한 의존성 그래프 생성 실패를
-해소했습니다 — 계획 항목이 아닌 운영 안정화 성격이라 본 문서에는 상세 기록을
-보관하지 않습니다 (간결 요약은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조).
-
 ## TDD 규칙과 브랜치
 
 1. RED → GREEN → REFACTOR 순으로 커밋을 구성합니다.
 2. 병합 전 필수 게이트: 타입/린트/전체 테스트/빌드/사이즈 가드 PASS.
 3. 완료 시: 계획 문서에서 제거하고 완료 로그에 1줄 요약 추가.
 
-## 참고 링크
-
-- 완료 로그: docs/TDD_REFACTORING_PLAN_COMPLETED.md
-- 백로그: docs/TDD_REFACTORING_BACKLOG.md
-- 코딩 규칙: docs/CODING_GUIDELINES.md
+-- 완료 로그: docs/TDD_REFACTORING_PLAN_COMPLETED.md

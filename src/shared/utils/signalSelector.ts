@@ -6,7 +6,7 @@
  */
 
 import { getPreactHooks, getPreactSignals } from '@shared/external/vendors';
-import { globalTimerManager } from '@shared/utils';
+import { globalTimerManager } from './timer-management';
 
 // 타입 정의
 type Signal<T> = {

@@ -146,12 +146,15 @@
 
 /* 닫기 버튼 (테스트 검증용 크기/레이아웃만 정의) */
 .closeButton {
-  /* IconButton로 대체되므로 보조 레이아웃만 유지 */
+  /* IconButton로 대체되므로 보조 레이아웃만 유지 - 2.5em 클릭 타겟 보장 */
   width: 2.5em;
   height: 2.5em;
   min-width: 2.5em;
   min-height: 2.5em;
   border-radius: var(--xeg-radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .closeButton:hover {
