@@ -15,6 +15,7 @@ import type { BaseResultStatus } from '@shared/types/result.types';
 import { ErrorCode } from '@shared/types/result.types';
 // Schedulers for prefetch task coordination
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
+import { globalTimerManager } from '@shared/utils';
 
 // 통합된 서비스 타입들
 /**
@@ -218,7 +219,6 @@ export class MediaService {
   isVideoControlActive(): boolean {
     return this.videoControl.isActive();
   }
-
   /**
    * 일시정지된 비디오 수
    */
@@ -231,6 +231,29 @@ export class MediaService {
    */
   forceResetVideoControl(): void {
     this.videoControl.forceReset();
+  }
+
+  /**
+   * 현재 갤러리 비디오 재생/일시정지 토글
+   * (이전에는 VideoControlService 싱글톤 경유 – 중앙 MediaService로 통합)
+   */
+  togglePlayPauseCurrent(): void {
+    this.videoControl.togglePlayPauseCurrent();
+  }
+
+  /** 현재 갤러리 비디오 볼륨 증가 */
+  volumeUpCurrent(step = 0.1): void {
+    this.videoControl.volumeUpCurrent(step);
+  }
+
+  /** 현재 갤러리 비디오 볼륨 감소 */
+  volumeDownCurrent(step = 0.1): void {
+    this.videoControl.volumeDownCurrent(step);
+  }
+
+  /** 현재 갤러리 비디오 음소거 토글 */
+  toggleMuteCurrent(): void {
+    this.videoControl.toggleMuteCurrent();
   }
 
   // ====================================
@@ -625,8 +648,8 @@ export class MediaService {
           });
           break;
         default:
-          // fallback safety
-          setTimeout(() => {
+          // fallback safety routed through TimerManager for lifecycle cleanup
+          globalTimerManager.setTimeout(() => {
             void this.prefetchSingle(url)
               .catch(() => {})
               .finally(() => {
@@ -1046,10 +1069,11 @@ export class MediaService {
   }
 }
 
-/**
- * 전역 미디어 서비스 인스턴스
- */
-export const mediaService = MediaService.getInstance();
+// Note:
+// 전역 미디어 서비스 인스턴스(module-level singleton)는 import 시점 부작용으로
+// 백그라운드 interval/리스너가 시작되어 테스트/런타임에서 누수를 유발할 수 있습니다(R4).
+// 따라서 여기서는 인스턴스를 export 하지 않습니다. 필요한 곳에서 반드시
+// service-factories의 getMediaService() 또는 ServiceManager 등록 경유로 가져오세요.
 
 // ====================================
 // 편의 함수들 (기존 코드 호환성)
@@ -1069,3 +1093,57 @@ export { parseUsernameFast };
  * 편의 함수: 사용자명 추출 결과 타입
  */
 export type { UsernameExtractionResult };
+
+// ====================================
+// Backward-compatible module-level export (lazy)
+// ====================================
+// 일부 테스트는 `import { mediaService } from './MediaService'` 형태를 기대합니다.
+// import 시점에 싱글톤을 즉시 생성하면 import-time 부작용(타이머/리스너)이 발생할 수 있어
+// Proxy를 사용해 최초 속성 접근 시에만 MediaService.getInstance()를 생성/바인딩합니다.
+// 메서드는 인스턴스에 바인딩되어 this 컨텍스트가 안전합니다.
+let __mediaServiceInstance: MediaService | null = null;
+function __getMediaService(): MediaService {
+  if (!__mediaServiceInstance) {
+    __mediaServiceInstance = MediaService.getInstance();
+  }
+  return __mediaServiceInstance;
+}
+
+export const mediaService: MediaService = new Proxy({} as MediaService, {
+  get(_target, prop: keyof MediaService, receiver) {
+    const inst = __getMediaService();
+    const value = Reflect.get(inst as object, prop as string | symbol, receiver) as unknown;
+    if (typeof value === 'function') {
+      type AnyFunc = (...args: unknown[]) => unknown;
+      return (value as AnyFunc).bind(inst);
+    }
+    return value as never;
+  },
+  has(_target, prop: keyof MediaService) {
+    const inst = __getMediaService();
+    return prop in (inst as object);
+  },
+  getOwnPropertyDescriptor(_target, prop: keyof MediaService) {
+    const inst = __getMediaService();
+    return Object.getOwnPropertyDescriptor(inst as object, prop as string | symbol);
+  },
+  ownKeys() {
+    const inst = __getMediaService();
+    return Reflect.ownKeys(inst as object);
+  },
+  set(_target, prop: keyof MediaService, value: unknown) {
+    const inst = __getMediaService();
+    return Reflect.set(inst as object, prop as string | symbol, value);
+  },
+  defineProperty(_target, prop: keyof MediaService, attributes: PropertyDescriptor) {
+    const inst = __getMediaService();
+    return Reflect.defineProperty(inst as object, prop as string | symbol, attributes);
+  },
+  getPrototypeOf() {
+    // Expose prototype so spy utilities can walk the chain
+    return MediaService.prototype;
+  },
+});
+
+// Test helper (non-exported in production bundles) — provide typed instance access if needed
+// export function __getMediaServiceInstanceForTest(): MediaService { return __getMediaService(); }

@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * DOM 캐시 엔트리 타입
@@ -42,8 +43,9 @@ export class DOMCache {
     this.maxCacheSize = options.maxCacheSize ?? 300; // 더 큰 캐시 크기 (300개)
 
     // 주기적 정리 스케줄링 (성능 최적화: 적응형 정리)
-    if (options.cleanupIntervalMs !== 0) {
-      this.cleanupInterval = window.setInterval(
+    // 테스트 모드에서는 타이머 잔여를 방지하기 위해 interval을 생성하지 않는다
+    if (options.cleanupIntervalMs !== 0 && import.meta.env.MODE !== 'test') {
+      this.cleanupInterval = globalTimerManager.setInterval(
         () => this.adaptiveCleanup(),
         options.cleanupIntervalMs ?? 45000 // 45초마다 정리 (빈도 감소)
       );
@@ -208,7 +210,7 @@ export class DOMCache {
    */
   dispose(): void {
     if (this.cleanupInterval !== null) {
-      clearInterval(this.cleanupInterval);
+      globalTimerManager.clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
 

@@ -13,7 +13,6 @@ import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
 } from '@shared/container/service-accessors';
-import { VideoControlService } from '@shared/services/media/VideoControlService';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
@@ -38,7 +37,7 @@ export interface GalleryConfig {
 export class GalleryApp {
   private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
-  private readonly videoControl = new VideoControlService();
+  // VideoControl은 MediaService 내부에서 관리되므로 직접 인스턴스화하지 않습니다.
   private readonly toastController: ToastController;
 
   // 새로운 격리 시스템 컴포넌트들
@@ -179,8 +178,8 @@ export class GalleryApp {
    */
   private handleGalleryClose(): void {
     try {
-      // 배경 비디오 상태 복원
-      this.videoControl.restoreBackgroundVideos();
+      // 배경 비디오 상태 복원은 MediaService에 위임
+      this.mediaService?.restoreBackgroundVideos();
 
       logger.debug('갤러리 닫기 처리 완료');
     } catch (error) {

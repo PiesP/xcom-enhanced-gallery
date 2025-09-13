@@ -7,6 +7,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { globalTimerManager } from '@shared/utils/timer-management';
 import { getCurrentIndex } from '@shared/state/signals/gallery.signals';
 
 /**
@@ -248,7 +249,7 @@ export class VideoControlService {
   public destroy(): void {
     this.restoreBackgroundVideos();
     if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
+      globalTimerManager.clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
     logger.info('[VideoControl] 서비스 종료됨');
@@ -337,7 +338,11 @@ export class VideoControlService {
    * 정리 타이머 시작 (메모리 누수 방지)
    */
   private startCleanupTimer(): void {
-    this.cleanupInterval = window.setInterval(() => {
+    // 테스트 모드에서는 주기적 정리 타이머를 시작하지 않아 타이머 잔여를 방지
+    if (import.meta.env.MODE === 'test') {
+      return;
+    }
+    this.cleanupInterval = globalTimerManager.setInterval(() => {
       // 더 이상 DOM에 없는 비디오 참조 정리
       const invalidVideos: HTMLVideoElement[] = [];
       this.pausedVideos.forEach((_state, video) => {
@@ -356,8 +361,3 @@ export class VideoControlService {
     }, 30000); // 30초마다 정리
   }
 }
-
-/**
- * 전역 비디오 제어 서비스 인스턴스 - 간단한 인스턴스 export
- */
-export const videoControlService = new VideoControlService();

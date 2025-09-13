@@ -232,6 +232,12 @@ Gallery
 - 이유: import 부작용 제거로 테스트/모킹 안정성 확보 및 TDZ/순환 의존 문제 예방.
 - 가드 테스트: `test/unit/loader/feature-side-effect.red.test.ts`, `test/unit/loader/import-side-effect.scan.red.test.ts`.
 
+#### 전역 표면 정책(R1)
+
+- 프로덕션 번들에는 디버그/진단 전역 키(예: `globalThis.registerServiceFactory`)를 노출하지 않습니다.
+- 개발 모드에서만 전역 노출을 허용하고, 빌드 플래그로 게이트하여 프로덕션에서는 트리쉐이킹으로 제거되도록 합니다.
+- 권장 가드: `global-surface.no-leak.red.test.ts` — prod 산출물 문자열 스캔으로 전역 키 미존재 검증.
+
 ### 애니메이션 규칙
 
 - transition/animation은 토큰만 사용: 시간은 `--xeg-duration-*`, 이징은 `--xeg-ease-*`만 사용합니다.
@@ -313,6 +319,18 @@ animateCustom(el, keyframes, {
     `test/unit/performance/media-prefetch.idle-schedule.test.ts`/`media-prefetch.raf-schedule.test.ts`/`media-prefetch.microtask-schedule.test.ts` 등에서 보장합니다.
   - 벤치 하네스: `runPrefetchBench(mediaService, { urls, currentIndex, prefetchRange, modes })`로 간단 비교 가능
     - 산출: 각 모드별 elapsedMs, cacheEntries, bestMode
+
+### 타이머/리스너 수명주기 일원화(R4)
+
+- 타이머/리스너는 공통 매니저를 통해 등록/정리합니다.
+- API 예시: `TimerManager#setTimeout/clearAll`, `EventManager#on/offAll`.
+- 종료 시 `clearAll`/`offAll` 호출로 누수 0 보장. 테스트: `lifecycle.cleanup.leak-scan.red.test.ts`.
+
+### 빌드 산출물/소스맵 가드(R5)
+
+- dev: 소스맵 `sources`/`sourcesContent` 필수.
+- prod: 디버그 전용 프리로드/헬퍼 코드는 트리쉐이킹으로 제외.
+- 테스트: `build-artifacts.sourcemap.guard.test.ts`, `bundle-deadcode.preload-scan.test.ts`.
 
 
 ### 접근성 스모크 규칙 (A11y)
@@ -425,6 +443,12 @@ animateCustom(el, keyframes, {
   - download: GM_download → 실패 시 fetch+BlobURL로 폴백, 비브라우저 환경(document/body 없음)에서는 no-op
   - xhr: GM_xmlhttpRequest → 실패/부재 시 fetch 기반 폴백(onload/onerror/onloadend 콜백 지원)
 - 테스트: `test/unit/shared/external/userscript-adapter.contract.test.ts`에서 계약/폴백 동작을 가드합니다.
+
+#### Twitter 토큰 추출 우선순위(R3)
+
+- 우선순위: 페이지 컨텍스트 → 쿠키/세션 → 게스트 토큰(최후 폴백)
+- `GUEST_AUTHORIZATION` 등 상수 접근은 어댑터 레이어로 한정합니다. 서비스/피처 레이어는 추출기 결과만 소비합니다.
+- 가드: `twitter-token.extractor.priority.test.ts`, `adapter.no-direct-constant.red.test.ts`
 
 ### 설정 저장 정책 (Settings Persistence)
 
@@ -729,6 +753,27 @@ function handleWheel(event: WheelEvent) {
 - 이 정책은 통합 이벤트 유틸(`shared/utils/events.ts`)에서 강제되며,
   테스트(`test/unit/events/gallery-keyboard.navigation.red.test.ts`)로
   가드됩니다.
+
+#### Wheel 이벤트 정책(R2)
+
+- 기본: wheel 리스너는 원칙적으로 `passive: true`입니다. 단, 의도적 소비가
+  필요할 때만 `passive: false`로 등록합니다.
+- 직접 `addEventListener('wheel', ...)` 호출은 지양하고 전용 유틸을 사용합니다.
+- 유틸 계약(ensureWheelLock):
+  - `ensureWheelLock(target, onWheel, { signal? }) => cleanup`
+  - `onWheel(e)`가 `true`를 반환할 때만 `e.preventDefault()` 수행
+  - 반환된 cleanup 또는 AbortSignal로 정리 보장
+- 예시:
+  ```ts
+  const cleanup = ensureWheelLock(overlayEl, e => {
+    if (!isGalleryOpen()) return false; // 기본 스크롤 유지
+    return shouldConsumeWheel(e); // true일 때만 preventDefault
+  });
+  // 닫힘/언마운트 시
+  cleanup();
+  ```
+  테스트: `wheel-listener.policy.red.test.ts`,
+  `ensureWheelLock.contract.test.ts`.
 
 ## 🧪 테스트 패턴
 

@@ -91,6 +91,9 @@ export interface ErrorHandlerInterface {
 export class ErrorHandler implements ErrorHandlerInterface {
   private static instance: ErrorHandler | null = null;
   private isGlobalHandlerInitialized = false;
+  // Store bound listeners to ensure removeEventListener uses the same references
+  private boundGlobalErrorListener: ((event: ErrorEvent) => void) | null = null;
+  private boundUnhandledRejectionListener: ((event: PromiseRejectionEvent) => void) | null = null;
 
   public static getInstance(): ErrorHandler {
     this.instance ??= new ErrorHandler();
@@ -109,8 +112,15 @@ export class ErrorHandler implements ErrorHandlerInterface {
     }
 
     // 전역 에러 핸들링
-    window.addEventListener('error', this.handleGlobalError.bind(this));
-    window.addEventListener('unhandledrejection', this.handleUnhandledRejection.bind(this));
+    if (!this.boundGlobalErrorListener) {
+      this.boundGlobalErrorListener = this.handleGlobalError.bind(this);
+    }
+    if (!this.boundUnhandledRejectionListener) {
+      this.boundUnhandledRejectionListener = this.handleUnhandledRejection.bind(this);
+    }
+
+    window.addEventListener('error', this.boundGlobalErrorListener);
+    window.addEventListener('unhandledrejection', this.boundUnhandledRejectionListener);
 
     this.isGlobalHandlerInitialized = true;
     logger.debug('[ErrorHandler] Global error handlers initialized');
@@ -124,10 +134,16 @@ export class ErrorHandler implements ErrorHandlerInterface {
       return;
     }
 
-    window.removeEventListener('error', this.handleGlobalError.bind(this));
-    window.removeEventListener('unhandledrejection', this.handleUnhandledRejection.bind(this));
+    if (this.boundGlobalErrorListener) {
+      window.removeEventListener('error', this.boundGlobalErrorListener);
+    }
+    if (this.boundUnhandledRejectionListener) {
+      window.removeEventListener('unhandledrejection', this.boundUnhandledRejectionListener);
+    }
 
     this.isGlobalHandlerInitialized = false;
+    this.boundGlobalErrorListener = null;
+    this.boundUnhandledRejectionListener = null;
     logger.debug('[ErrorHandler] Global error handlers destroyed');
   }
 

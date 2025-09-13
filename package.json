@@ -44,7 +44,7 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/preact": "^3.2.4",
     "@testing-library/preact-hooks": "^1.1.0",
-    "@types/node": "^24.3.1",
+    "@types/node": "^24.3.3",
     "@types/tampermonkey": "^5.0.4",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",

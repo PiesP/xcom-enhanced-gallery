@@ -8,6 +8,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { globalTimerManager } from '@shared/utils';
 
 // CSS 애니메이션 변수 및 상수
 export const ANIMATION_CONSTANTS = {
@@ -178,7 +179,8 @@ export async function animateImageItemsEnter(elements: Element[]): Promise<void>
       elements.forEach((element, index) => {
         const delay = index * ANIMATION_CONSTANTS.STAGGER_DELAY;
 
-        setTimeout(() => {
+        // 테스트/정리 경로 일원화를 위해 전역 타이머 매니저 사용
+        globalTimerManager.setTimeout(() => {
           const handleAnimationEnd = () => {
             element.removeEventListener('animationend', handleAnimationEnd);
             element.classList.remove(ANIMATION_CLASSES.SLIDE_IN_BOTTOM);

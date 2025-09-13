@@ -3,11 +3,14 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '@shared/utils/timer-management';
 import { isGalleryInternalElement } from '@shared/utils/utils';
 import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-import { videoControlService } from '@shared/services/media/VideoControlService';
+import { CoreService } from '@shared/services/ServiceManager';
+import { SERVICE_KEYS } from '@/constants';
+import type { MediaService } from '@shared/services/MediaService';
 import type { MediaInfo } from '@shared/types/media.types';
 
 // 기본 이벤트 관리
@@ -24,6 +27,8 @@ interface EventContext {
 // 모듈 레벨 상태 관리
 const listeners = new Map<string, EventContext>();
 let listenerIdCounter = 0;
+// Fallback 재생 상태 추적(서비스 미가용 시 키보드 제어용)
+const __videoPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
 
 /**
  * 고유 리스너 ID 생성
@@ -328,7 +333,7 @@ let galleryEventState = {
   listenerIds: [] as string[],
   options: null as GalleryEventOptions | null,
   handlers: null as EventHandlers | null,
-  priorityInterval: null as ReturnType<typeof setTimeout> | null,
+  priorityInterval: null as number | null,
 };
 
 /**
@@ -425,11 +430,11 @@ export async function initializeGalleryEvents(
 function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEventOptions): void {
   // 기존 인터벌 정리
   if (galleryEventState.priorityInterval) {
-    clearInterval(galleryEventState.priorityInterval);
+    globalTimerManager.clearInterval(galleryEventState.priorityInterval);
   }
 
   // 15초마다 우선순위 재설정 (성능 최적화: 적응형 스케줄링)
-  galleryEventState.priorityInterval = setInterval(() => {
+  galleryEventState.priorityInterval = globalTimerManager.setInterval(() => {
     try {
       if (!galleryEventState.initialized) return;
 
@@ -602,20 +607,106 @@ function handleKeyboardEvent(
         event.stopPropagation();
 
         // 비디오 키 처리
+        // 내부 헬퍼: 현재 갤러리 비디오 검색 (Service 미사용 폴백)
+        const getCurrentGalleryVideo = (): HTMLVideoElement | null => {
+          try {
+            const doc = (
+              typeof document !== 'undefined'
+                ? document
+                : (globalThis as { document?: Document }).document
+            ) as Document | undefined;
+            if (!doc) return null;
+            const root = doc.querySelector('#xeg-gallery-root');
+            const items = root?.querySelector('[data-xeg-role="items-container"]');
+            if (!items) return null;
+            const index = galleryState.value.currentIndex;
+            const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
+            if (!target) return null;
+            const v = target.querySelector('video');
+            return v instanceof HTMLVideoElement ? v : null;
+          } catch {
+            return null;
+          }
+        };
+
         switch (key) {
           case ' ': // fallthrough
           case 'Space':
-            videoControlService.togglePlayPauseCurrent();
+            try {
+              const svc = CoreService.getInstance().tryGet<MediaService>(
+                SERVICE_KEYS.MEDIA_SERVICE
+              );
+              if (svc) {
+                svc.togglePlayPauseCurrent();
+              } else {
+                const v = getCurrentGalleryVideo();
+                if (v) {
+                  const current = __videoPlaybackState.get(v)?.playing ?? false;
+                  const next = !current;
+                  if (next) {
+                    (v as HTMLVideoElement & Partial<{ play: () => Promise<void> }>).play?.();
+                  } else {
+                    (v as HTMLVideoElement & Partial<{ pause: () => void }>).pause?.();
+                  }
+                  __videoPlaybackState.set(v, { playing: next });
+                }
+              }
+            } catch (err) {
+              logger.debug('togglePlayPauseCurrent dispatch failed', err);
+            }
             break;
           case 'ArrowUp':
-            videoControlService.volumeUpCurrent();
+            try {
+              const svc = CoreService.getInstance().tryGet<MediaService>(
+                SERVICE_KEYS.MEDIA_SERVICE
+              );
+              if (svc) {
+                svc.volumeUpCurrent();
+              } else {
+                const v = getCurrentGalleryVideo();
+                if (v) {
+                  const next = Math.min(1, Math.round((v.volume + 0.1) * 100) / 100);
+                  v.volume = next;
+                  if (next > 0 && v.muted) v.muted = false;
+                }
+              }
+            } catch (err) {
+              logger.debug('volumeUpCurrent dispatch failed', err);
+            }
             break;
           case 'ArrowDown':
-            videoControlService.volumeDownCurrent();
+            try {
+              const svc = CoreService.getInstance().tryGet<MediaService>(
+                SERVICE_KEYS.MEDIA_SERVICE
+              );
+              if (svc) {
+                svc.volumeDownCurrent();
+              } else {
+                const v = getCurrentGalleryVideo();
+                if (v) {
+                  const next = Math.max(0, Math.round((v.volume - 0.1) * 100) / 100);
+                  v.volume = next;
+                }
+              }
+            } catch (err) {
+              logger.debug('volumeDownCurrent dispatch failed', err);
+            }
             break;
           case 'm':
           case 'M':
-            videoControlService.toggleMuteCurrent();
+            try {
+              const svc = CoreService.getInstance().tryGet<MediaService>(
+                SERVICE_KEYS.MEDIA_SERVICE
+              );
+              if (svc) {
+                svc.toggleMuteCurrent();
+              } else {
+                const v = getCurrentGalleryVideo();
+                if (v) v.muted = !v.muted;
+              }
+            } catch (err) {
+              logger.debug('toggleMuteCurrent dispatch failed', err);
+            }
             break;
         }
 
@@ -662,7 +753,7 @@ export function cleanupGalleryEvents(): void {
 
     // 우선순위 강화 인터벌 정리
     if (galleryEventState.priorityInterval) {
-      clearInterval(galleryEventState.priorityInterval);
+      globalTimerManager.clearInterval(galleryEventState.priorityInterval);
     }
 
     galleryEventState = {

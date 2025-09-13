@@ -4,7 +4,7 @@
  */
 
 // Core Media Services
-export { VideoControlService, videoControlService } from './VideoControlService';
+export { VideoControlService } from './VideoControlService';
 export { UsernameParser, extractUsername, parseUsernameFast } from './UsernameExtractionService';
 
 // Media Extraction Services

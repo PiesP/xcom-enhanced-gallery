@@ -3,6 +3,8 @@
  * @description Provides requestAnimationFrame and microtask scheduling helpers.
  */
 
+import { globalTimerManager } from '../timer-management';
+
 export type SchedulerHandle = { cancel: () => void };
 
 type GlobalLike = {
@@ -27,6 +29,7 @@ export function scheduleRaf(task: () => void): SchedulerHandle {
     const caf: ((h: number) => void) | undefined = g?.cancelAnimationFrame;
     if (typeof raf === 'function') {
       let done = false;
+      let fallbackTid: number | null = null;
       const id = raf(() => {
         if (done) return;
         done = true;
@@ -35,11 +38,14 @@ export function scheduleRaf(task: () => void): SchedulerHandle {
         } catch {
           // noop
         } finally {
-          clearTimeout(timer);
+          if (fallbackTid !== null) {
+            globalTimerManager.clearTimeout(fallbackTid);
+            fallbackTid = null;
+          }
         }
       });
       // Fallback: in non-visual/test envs rAF may not flush promptly
-      const timer = setTimeout(() => {
+      fallbackTid = globalTimerManager.setTimeout(() => {
         if (done) return;
         done = true;
         try {
@@ -54,7 +60,10 @@ export function scheduleRaf(task: () => void): SchedulerHandle {
         cancel: () => {
           done = true;
           caf?.(id);
-          clearTimeout(timer);
+          if (fallbackTid !== null) {
+            globalTimerManager.clearTimeout(fallbackTid);
+            fallbackTid = null;
+          }
         },
       };
     }
@@ -62,14 +71,14 @@ export function scheduleRaf(task: () => void): SchedulerHandle {
     // ignore
   }
 
-  const t = setTimeout(() => {
+  const t = globalTimerManager.setTimeout(() => {
     try {
       task();
     } catch {
       // noop
     }
   }, 0);
-  return { cancel: () => clearTimeout(t) };
+  return { cancel: () => globalTimerManager.clearTimeout(t) };
 }
 
 /**
@@ -110,13 +119,12 @@ export function scheduleMicrotask(task: () => void): SchedulerHandle {
   } catch {
     // ignore
   }
-
-  const t = setTimeout(() => {
+  const t = globalTimerManager.setTimeout(() => {
     try {
       task();
     } catch {
       // noop
     }
   }, 0);
-  return { cancel: () => clearTimeout(t) };
+  return { cancel: () => globalTimerManager.clearTimeout(t) };
 }

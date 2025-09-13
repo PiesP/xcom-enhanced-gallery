@@ -69,6 +69,9 @@ export {
   isClickableElement,
 } from './events';
 
+// === Wheel Event utilities (R2) ===
+export { addWheelListener, ensureWheelLock } from './events/wheel';
+
 // === 미디어 (3개) ===
 export { imageFilter, getHighQualityMediaUrl, MediaClickDetector } from './media';
 

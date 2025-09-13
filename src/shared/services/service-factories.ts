@@ -12,7 +12,10 @@ let bulkDownloadServiceInstance: Promise<BulkDownloadService> | null = null;
 
 export async function getMediaService(): Promise<MediaService> {
   if (!mediaServiceInstance) {
-    mediaServiceInstance = import('./MediaService').then(m => new m.MediaService());
+    // Use class-level singleton to avoid duplicate instances created via both
+    // module-level exports (mediaService) and factory usage. This ensures a single
+    // VideoControlService interval lifecycle that is properly cleaned up.
+    mediaServiceInstance = import('./MediaService').then(m => m.MediaService.getInstance());
   }
   return mediaServiceInstance;
 }

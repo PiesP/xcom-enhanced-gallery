@@ -32,6 +32,8 @@ export class ThemeService {
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private isInitialized = false;
+  private onMediaQueryChange: ((this: MediaQueryList, ev: MediaQueryListEvent) => void) | null =
+    null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -80,11 +82,27 @@ export class ThemeService {
     if (!this.mediaQueryList) return;
 
     // 시스템 테마 변경 감지
-    this.mediaQueryList.addEventListener('change', () => {
+    this.onMediaQueryChange = () => {
       if (this.themeSetting === 'auto') {
         this.applyCurrentTheme();
       }
-    });
+    };
+
+    try {
+      this.mediaQueryList.addEventListener('change', this.onMediaQueryChange);
+    } catch {
+      // older APIs fallback
+      try {
+        this.mediaQueryList.addListener(
+          this.onMediaQueryChange as unknown as (
+            this: MediaQueryList,
+            ev: MediaQueryListEvent
+          ) => void
+        );
+      } catch {
+        // ignore
+      }
+    }
 
     logger.info('System theme detection initialized');
   }
@@ -203,16 +221,25 @@ export class ThemeService {
    */
   public destroy(): void {
     if (this.mediaQueryList) {
-      this.mediaQueryList.removeEventListener('change', () => {
-        if (this.themeSetting === 'auto') {
-          this.applyCurrentTheme();
+      try {
+        if (this.onMediaQueryChange) {
+          this.mediaQueryList.removeEventListener('change', this.onMediaQueryChange);
+          this.mediaQueryList.removeListener?.(
+            this.onMediaQueryChange as unknown as (
+              this: MediaQueryList,
+              ev: MediaQueryListEvent
+            ) => void
+          );
         }
-      });
+      } catch {
+        // ignore
+      }
       this.mediaQueryList = null;
     }
 
     this.listeners.clear();
     this.isInitialized = false;
+    this.onMediaQueryChange = null;
 
     logger.info('ThemeService destroyed');
   }
@@ -225,7 +252,7 @@ export class ThemeService {
   }
 }
 
-/**
- * 전역 테마 서비스 인스턴스 - 간단한 인스턴스 export
- */
-export const themeService = new ThemeService();
+// Note: 전역 싱글턴 인스턴스 생성은 import 시점 부작용을 유발하여
+// 테스트/런타임에서 이벤트 리스너가 남을 수 있습니다. R4 누수 방지를 위해
+// 이 파일에서는 인스턴스를 생성/export하지 않습니다. 필요한 곳에서
+// 서비스 매니저를 통해 생성/주입하세요.

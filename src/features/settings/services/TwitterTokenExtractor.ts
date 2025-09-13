@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '@shared/utils';
 
 /**
  * 토큰 추출 결과
@@ -86,7 +87,7 @@ export class TwitterTokenExtractor {
    */
   async cleanup(): Promise<void> {
     if (this.extractionTimer) {
-      clearInterval(this.extractionTimer);
+      globalTimerManager.clearInterval(this.extractionTimer);
       this.extractionTimer = null;
     }
 
@@ -165,26 +166,33 @@ export class TwitterTokenExtractor {
    */
   private async extractToken(): Promise<TokenExtractionResult> {
     this.extractionAttempts++;
+    // 우선순위: 페이지(script) → cookie/session → 설정(localStorage) → (보조)네트워크 힌트 → fallback
 
-    // 1. 네트워크 요청에서 추출 시도
-    const networkResult = await this.extractFromNetwork();
-    if (networkResult.success) {
-      return networkResult;
-    }
-
-    // 2. 스크립트 태그에서 추출 시도
+    // 1. 스크립트 태그에서 추출 시도 (페이지 최우선)
     const scriptResult = await this.extractFromScripts();
     if (scriptResult.success) {
       return scriptResult;
     }
 
-    // 3. 설정에서 추출 시도
+    // 2. 쿠키/세션 스토리지에서 추출 시도
+    const cookieSessionResult = await this.extractFromCookieSession();
+    if (cookieSessionResult.success) {
+      return cookieSessionResult;
+    }
+
+    // 3. 설정(LocalStorage: xeg-app-settings)에서 추출 시도
     const configResult = await this.extractFromConfig();
     if (configResult.success) {
       return configResult;
     }
 
-    // 4. Fallback 토큰 사용
+    // 4. (선택) 네트워크 모니터 힌트 — 실제 토큰 획득은 아님
+    const networkResult = await this.extractFromNetwork();
+    if (networkResult.success) {
+      return networkResult;
+    }
+
+    // 5. Fallback 토큰 사용
     if (this.extractionAttempts >= this.maxExtractionAttempts) {
       logger.warn('최대 추출 시도 횟수 도달, fallback 토큰 사용');
       return this.useFallbackToken();
@@ -196,6 +204,57 @@ export class TwitterTokenExtractor {
       source: 'network',
       timestamp: Date.now(),
     };
+  }
+
+  /**
+   * 쿠키/세션 스토리지에서 토큰 추출
+   * 우선순위: cookie(auth_token) → sessionStorage(auth_token)
+   */
+  private async extractFromCookieSession(): Promise<TokenExtractionResult> {
+    try {
+      // 1) cookie: auth_token
+      const cookie = typeof document !== 'undefined' ? document.cookie : '';
+      if (cookie) {
+        const match = cookie.match(/(?:^|;\s*)auth_token=([^;]+)/);
+        const token = match?.[1];
+        if (token && this.isValidTokenFormat(token)) {
+          return {
+            success: true,
+            token,
+            source: 'config',
+            timestamp: Date.now(),
+          };
+        }
+      }
+
+      // 2) sessionStorage
+      if (typeof sessionStorage !== 'undefined') {
+        const sToken = sessionStorage.getItem('auth_token');
+        if (sToken && this.isValidTokenFormat(sToken)) {
+          return {
+            success: true,
+            token: sToken,
+            source: 'config',
+            timestamp: Date.now(),
+          };
+        }
+      }
+
+      return {
+        success: false,
+        error: 'cookie/sessionStorage에 토큰이 없음',
+        source: 'config',
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      logger.debug('cookie/session 토큰 추출 오류:', error);
+      return {
+        success: false,
+        error: String(error),
+        source: 'config',
+        timestamp: Date.now(),
+      };
+    }
   }
 
   /**
@@ -403,7 +462,7 @@ export class TwitterTokenExtractor {
    * 주기적 토큰 추출 시작
    */
   private startPeriodicExtraction(): void {
-    this.extractionTimer = window.setInterval(async () => {
+    this.extractionTimer = globalTimerManager.setInterval(async () => {
       if (!this.currentToken) {
         const result = await this.extractToken();
         if (result.success && result.token) {
@@ -412,7 +471,7 @@ export class TwitterTokenExtractor {
 
           // 토큰을 찾았으므로 주기적 추출 중단
           if (this.extractionTimer) {
-            clearInterval(this.extractionTimer);
+            globalTimerManager.clearInterval(this.extractionTimer);
             this.extractionTimer = null;
           }
         }

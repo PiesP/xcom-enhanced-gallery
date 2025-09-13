@@ -4,6 +4,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { Debouncer } from '../performance/performance-utils';
+import { addWheelListener, ensureWheelLock } from '../events/wheel';
 
 /** Twitter 스크롤 컨테이너 찾기 */
 export { findTwitterScrollContainer } from '../core-utils';
@@ -48,18 +49,10 @@ export function preventScrollPropagation(
 ): () => void {
   const { disableBodyScroll = false } = options;
 
-  const handleWheel = (e: Event) => {
-    e.stopPropagation();
-    if (disableBodyScroll) {
-      e.preventDefault();
-    }
-  };
-
-  element.addEventListener('wheel', handleWheel, { passive: false });
-
-  return () => {
-    element.removeEventListener('wheel', handleWheel);
-  };
+  return ensureWheelLock(element, _e => {
+    if (disableBodyScroll) return true;
+    return false;
+  });
 }
 
 // Re-export throttleScroll from performance utils (RAF-based, more efficient)
@@ -92,7 +85,7 @@ export function createScrollHandler(
   const targetElement = captureOnDocument ? document : element;
 
   try {
-    targetElement.addEventListener('wheel', wheelHandler, { passive: false });
+    const cleanup = addWheelListener(targetElement, wheelHandler, { passive: true });
     logger.debug('Wheel event listener registered', {
       target: captureOnDocument ? 'document' : 'element',
       threshold,
@@ -100,7 +93,7 @@ export function createScrollHandler(
 
     return () => {
       try {
-        targetElement.removeEventListener('wheel', wheelHandler);
+        cleanup();
         logger.debug('Wheel event listener removed');
       } catch (error) {
         logger.warn('Event listener removal failed', error);

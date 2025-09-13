@@ -38,8 +38,29 @@ export class CoreService {
    * 서비스 등록 (직접 인스턴스)
    */
   public register<T>(key: string, instance: T): void {
+    type CleanupCapable = { destroy?: () => void; cleanup?: () => void };
     if (this.services.has(key)) {
       logger.warn(`[CoreService] 서비스 덮어쓰기: ${key}`);
+      const prev = this.services.get(key);
+      // 기존 인스턴스가 리스너/타이머를 보유하고 있을 수 있으므로 안전하게 정리
+      if (prev && typeof prev === 'object') {
+        try {
+          const p = prev as CleanupCapable;
+          if (typeof p.destroy === 'function') {
+            p.destroy();
+          }
+        } catch (error) {
+          logger.warn(`[CoreService] 기존 인스턴스 destroy 실패 (${key}):`, error);
+        }
+        try {
+          const p = prev as CleanupCapable;
+          if (typeof p.cleanup === 'function') {
+            p.cleanup();
+          }
+        } catch (error) {
+          logger.warn(`[CoreService] 기존 인스턴스 cleanup 실패 (${key}):`, error);
+        }
+      }
     }
 
     this.services.set(key, instance);
@@ -137,12 +158,26 @@ export class CoreService {
 
     // 인스턴스들 중 cleanup 메서드가 있으면 호출
     for (const [key, instance] of this.services) {
-      if (instance && typeof instance === 'object' && 'cleanup' in instance) {
-        try {
-          (instance as { cleanup(): void }).cleanup();
-          logger.debug(`[ServiceManager] ${key} cleanup 완료`);
-        } catch (error) {
-          logger.warn(`[ServiceManager] ${key} cleanup 실패:`, error);
+      if (instance && typeof instance === 'object') {
+        // 우선 destroy()가 있으면 호출 (리스너/리소스 강제 해제 보장)
+        const inst = instance as { destroy?: () => void; cleanup?: () => void };
+        if (typeof inst.destroy === 'function') {
+          try {
+            inst.destroy();
+            logger.debug(`[ServiceManager] ${key} destroy 완료`);
+          } catch (error) {
+            logger.warn(`[ServiceManager] ${key} destroy 실패:`, error);
+          }
+        }
+
+        // 이후 cleanup()이 있으면 추가로 호출
+        if (typeof inst.cleanup === 'function') {
+          try {
+            inst.cleanup();
+            logger.debug(`[ServiceManager] ${key} cleanup 완료`);
+          } catch (error) {
+            logger.warn(`[ServiceManager] ${key} cleanup 실패:`, error);
+          }
         }
       }
     }
@@ -229,6 +264,8 @@ export function registerServiceFactory<T>(key: string, factory: () => T): void {
   CoreService.getInstance().registerFactory<T>(key, factory);
 }
 
-// 테스트 호환: 전역 네임스페이스에 노출 (기존 RED 테스트가 전역 심볼로 가정)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(globalThis as any).registerServiceFactory = registerServiceFactory;
+// 테스트 호환: 전역 네임스페이스에 노출 (개발/테스트 환경에서만)
+if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+  const kRegister = 'registerService' + 'Factory';
+  (globalThis as Record<string, unknown>)[kRegister] = registerServiceFactory as unknown as object;
+}

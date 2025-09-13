@@ -5991,6 +5991,23 @@
         },
         {
           "dynamic": false,
+          "module": "./events/wheel",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/events/wheel.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./media",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6376,6 +6393,16 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/events/wheel.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts",
+        "src/shared/utils/scroll/scroll-utils.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/media/index.ts",
       "dependencies": [
         {
@@ -6485,7 +6512,9 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/index.ts"
+        "src/shared/utils/index.ts",
+        "src/shared/utils/performance/idleScheduler.ts",
+        "src/shared/utils/performance/schedulers.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6695,6 +6724,23 @@
             "export"
           ],
           "resolved": "src/shared/utils/core-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../events/wheel",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/events/wheel.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7881,7 +7927,25 @@
     },
     {
       "source": "src/shared/utils/performance/idleScheduler.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/performance/index.ts"
       ],
@@ -8044,7 +8108,25 @@
     },
     {
       "source": "src/shared/utils/performance/schedulers.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/performance/index.ts"
       ],
@@ -8257,8 +8339,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 246,
-    "totalDependenciesCruised": 337,
+    "totalCruised": 247,
+    "totalDependenciesCruised": 341,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

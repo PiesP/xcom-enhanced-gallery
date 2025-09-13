@@ -6,6 +6,7 @@
  */
 
 import { getPreactHooks, getPreactSignals } from '@shared/external/vendors';
+import { globalTimerManager } from '@shared/utils';
 
 // 타입 정의
 type Signal<T> = {
@@ -313,7 +314,7 @@ function debounce<TArgs extends readonly unknown[]>(
   func: (...args: TArgs) => unknown,
   wait: number
 ): (...args: TArgs) => void {
-  let timeout: ReturnType<typeof setTimeout> | undefined;
+  let timeout: number | undefined;
 
   return (...args: TArgs) => {
     const later = () => {
@@ -322,9 +323,9 @@ function debounce<TArgs extends readonly unknown[]>(
     };
 
     if (timeout) {
-      clearTimeout(timeout);
+      globalTimerManager.clearTimeout(timeout);
     }
-    timeout = setTimeout(later, wait);
+    timeout = globalTimerManager.setTimeout(later, wait);
   };
 }
 

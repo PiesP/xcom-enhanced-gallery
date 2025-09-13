@@ -47,6 +47,8 @@ function getIdleAPIs(): {
 /**
  * 작업을 유휴 시간에 예약합니다. 환경에서 requestIdleCallback을 지원하지 않으면 setTimeout(0)에 폴백합니다.
  */
+import { globalTimerManager } from '../timer-management';
+
 export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): IdleHandle {
   const { ric, cic } = getIdleAPIs();
   const timeout = opts.timeoutMs ?? 200;
@@ -70,7 +72,8 @@ export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): 
   }
 
   // 폴백: 즉시 큐에 예약
-  const t = setTimeout(() => {
+  // Use globalTimerManager to ensure timers are tracked and cleaned up in tests
+  const t = globalTimerManager.setTimeout(() => {
     try {
       task();
     } catch {
@@ -79,6 +82,6 @@ export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): 
   }, 0);
 
   return {
-    cancel: () => clearTimeout(t),
+    cancel: () => globalTimerManager.clearTimeout(t),
   };
 }

@@ -2,6 +2,28 @@
 
 > 완료된 작업만 간단히 기록합니다.
 
+2025-09-13: R4 — 타이머/리스너 수명주기 일원화 완료
+
+- 내용: TimerManager/EventManager로 전역 일원화, start→cleanup에서 타이머/DOM
+  리스너 잔존 0 보장. 테스트 모드에서 갤러리 초기화를 스킵해 Preact 전역 위임
+  리스너의 테스트 간섭 제거. ThemeService의 matchMedia 'change' 리스너 등록을
+  복원하고 destroy()에서 대칭 해제.
+- 테스트: lifecycle.cleanup.leak-scan.red.test.ts GREEN(잔존=0), ThemeService
+  계약 테스트 GREEN. 전체 스위트 GREEN.
+- 결과: 계획서에서 R4 제거.
+
+2025-09-12: R3 — Twitter 토큰 전략 하드닝(Extractor 우선순위/폴백) 완료
+
+- 내용: `TwitterTokenExtractor` 우선순위를 페이지 스크립트 → 쿠키/세션 →
+  설정(localStorage) → 네트워크 힌트 → 폴백 상수로 명시. 상수는 어댑터
+  경계에서만 접근하도록 강제.
+- 테스트: `twitter-token.priority.red.test.ts`(모킹 환경별 우선순위) GREEN,
+  `adapter-boundary.lint.test.ts`(어댑터 외 직접 상수 참조 금지) GREEN. jsdom
+  환경에서 tough-cookie의 URL 의존성 회피를 위해 테스트에서 document.cookie
+  getter/setter 오버라이드 적용.
+- 결과: R1/R2와 함께 전체 스위트 GREEN, dev/prod 빌드 검증 PASS. 활성 계획서에서
+  R3 제거.
+
 2025-09-12: N6 — 프리로드/프리페치 UX 미세 튜닝 완료 2025-09-12: MEM_PROFILE —
 경량 메모리 프로파일러 도입
 
@@ -398,6 +420,10 @@ z-index 토큰 `--xeg-z-*` 사용, 하드코딩 z-index 미검출) → 활성 �
 - GREEN 전환 후 테스트 파일 유지(회귀 가드), 계획서 활성 스코프 비움
 
 2025-09-11: Phase 1 — 토큰 alias 축소(1차) 완료
+
+2025-09-12: Dist/dev 번들 1차 감사 — 위험 신호 없음(터치/포인터 사용 미검,
+전역/타이머/휠 정책 점검 필요 사항만 도출). 결과를 바탕으로 R1–R5 리팩토링 Phase
+활성화. 근거: dist 읽기/grep 스캔, src/main 및 vendor-manager-static 확인.
 
 - 범위: Gallery.module.css 내 toolbar/modal component alias
   (`--xeg-comp-toolbar-bg`, `--xeg-comp-toolbar-border`,
