@@ -35,25 +35,25 @@ vi.mock('../../../src/shared/external/vendors', () => ({
 }));
 
 // Mock 기존 아이콘 컴포넌트들 - 올바른 export 구조 제공 (.tsx 파일)
-vi.mock('../../../src/shared/components/ui/Icon/icons/Download.tsx', () => ({
-  Download: vi.fn(() => ({
+vi.mock('../../../src/shared/components/ui/Icon/hero/HeroDownload.tsx', () => ({
+  HeroDownload: vi.fn(() => ({
     tag: 'div',
     props: { 'data-testid': 'icon-download' },
     children: ['Download Icon'],
   })),
 }));
-vi.mock('../../../src/shared/components/ui/Icon/icons/Settings.tsx', () => ({
-  Settings: vi.fn(() => ({
+vi.mock('../../../src/shared/components/ui/Icon/hero/HeroSettings.tsx', () => ({
+  HeroSettings: vi.fn(() => ({
     tag: 'div',
     props: { 'data-testid': 'icon-settings' },
     children: ['Settings Icon'],
   })),
 }));
-vi.mock('../../../src/shared/components/ui/Icon/icons/X.tsx', () => ({
-  X: vi.fn(() => ({ tag: 'div', props: { 'data-testid': 'icon-x' }, children: ['X Icon'] })),
+vi.mock('../../../src/shared/components/ui/Icon/hero/HeroX.tsx', () => ({
+  HeroX: vi.fn(() => ({ tag: 'div', props: { 'data-testid': 'icon-x' }, children: ['X Icon'] })),
 }));
-vi.mock('../../../src/shared/components/ui/Icon/icons/ChevronLeft.tsx', () => ({
-  ChevronLeft: vi.fn(() => ({
+vi.mock('../../../src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx', () => ({
+  HeroChevronLeft: vi.fn(() => ({
     tag: 'div',
     props: { 'data-testid': 'icon-chevron-left' },
     children: ['Chevron Left Icon'],
@@ -164,10 +164,10 @@ describe('P7: Performance Optimization Unit Tests', () => {
       registry.setFallbackIcon(fallbackComponent);
 
       // 존재하지 않는 아이콘을 시뮬레이션하기 위해 임시 mock 제거
-      vi.doUnmock('../../../src/shared/components/ui/Icon/icons/Download.tsx');
+      vi.doUnmock('../../../src/shared/components/ui/Icon/hero/HeroDownload.tsx');
 
       // 빈 객체로 mock하여 아이콘을 찾을 수 없도록 설정
-      vi.doMock('../../../src/shared/components/ui/Icon/icons/Download.tsx', () => ({}));
+      vi.doMock('../../../src/shared/components/ui/Icon/hero/HeroDownload.tsx', () => ({}));
 
       try {
         const result = await registry.loadIcon('Download' as IconName);
@@ -179,8 +179,8 @@ describe('P7: Performance Optimization Unit Tests', () => {
       }
 
       // 원래 mock 복원
-      vi.doMock('../../../src/shared/components/ui/Icon/icons/Download.tsx', () => ({
-        Download: vi.fn(() => ({
+      vi.doMock('../../../src/shared/components/ui/Icon/hero/HeroDownload.tsx', () => ({
+        HeroDownload: vi.fn(() => ({
           tag: 'div',
           props: { 'data-testid': 'icon-download' },
           children: ['Download Icon'],

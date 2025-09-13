@@ -7,26 +7,11 @@
  */
 
 import { readFileSync, existsSync } from 'fs';
-import { resolve } from 'path';
+import { resolve, basename } from 'path';
 import { gzipSync } from 'zlib';
 
-function validateUserScript() {
-  console.log('🔍 Validating UserScript build...');
-
-  const distPath = resolve(process.cwd(), 'dist');
-
-  // 프로덕션 파일 우선, 없으면 개발 파일 사용
-  let userScriptPath = resolve(distPath, 'xcom-enhanced-gallery.user.js');
-  if (!existsSync(userScriptPath)) {
-    userScriptPath = resolve(distPath, 'xcom-enhanced-gallery.dev.user.js');
-  }
-
-  if (!existsSync(userScriptPath)) {
-    console.error('❌ UserScript file not found at:', userScriptPath);
-    process.exit(1);
-  }
-
-  const content = readFileSync(userScriptPath, 'utf8');
+function validateOne(scriptPath, { requireNoVitePreload = false } = {}) {
+  const content = readFileSync(scriptPath, 'utf8');
 
   // UserScript 헤더 검증
   if (!content.includes('// ==UserScript==')) {
@@ -55,11 +40,90 @@ function validateUserScript() {
     process.exit(1);
   }
 
+  // R5: sourceMappingURL 주석 확인 및 .map 파일 무결성 검사
+  const scriptFileName = basename(scriptPath);
+  const expectedMapName = `${scriptFileName}.map`;
+  const sourceMapUrlPattern = /#\s*sourceMappingURL\s*=\s*(.+)$/m;
+  const match = content.match(sourceMapUrlPattern);
+  if (!match) {
+    console.error('❌ Missing sourceMappingURL comment in userscript');
+    process.exit(1);
+  }
+  const mapFileFromComment = match[1].trim();
+  if (mapFileFromComment !== expectedMapName) {
+    console.error(
+      `❌ sourceMappingURL mismatch. Expected '${expectedMapName}', got '${mapFileFromComment}'`
+    );
+    process.exit(1);
+  }
+
+  const mapPath = resolve(resolve(scriptPath, '..'), mapFileFromComment);
+  if (!existsSync(mapPath)) {
+    console.error('❌ Sourcemap file not found:', mapPath);
+    process.exit(1);
+  }
+  let map;
+  try {
+    map = JSON.parse(readFileSync(mapPath, 'utf8'));
+  } catch (e) {
+    console.error('❌ Failed to parse sourcemap JSON:', e.message);
+    process.exit(1);
+  }
+  if (!map || !Array.isArray(map.sources) || map.sources.length === 0) {
+    console.error('❌ Sourcemap missing non-empty sources array');
+    process.exit(1);
+  }
+  if (!Array.isArray(map.sourcesContent) || map.sourcesContent.length === 0) {
+    console.error('❌ Sourcemap missing non-empty sourcesContent array');
+    process.exit(1);
+  }
+  if (map.sources.length !== map.sourcesContent.length) {
+    console.error('❌ Sourcemap sources and sourcesContent length mismatch');
+    process.exit(1);
+  }
+  // 경고: 절대 경로 포함 여부 체크 (Windows/Unix)
+  const hasAbsolute = map.sources.some(s => /^(?:[A-Za-z]:\\|\/)/.test(s));
+  if (hasAbsolute) {
+    console.warn('⚠️ Sourcemap sources include absolute paths. Consider making them relative.');
+  }
+
+  // R5: 프로덕션 번들에서 __vitePreload 등 dead-preload 브랜치가 제거되었는지 검사
+  if (requireNoVitePreload) {
+    if (/__vitePreload/.test(content)) {
+      console.error('❌ Prod userscript contains __vitePreload dead branch');
+      process.exit(1);
+    }
+  }
+
+  return { content, map, mapPath };
+}
+
+function validateUserScript() {
+  console.log('🔍 Validating UserScript build...');
+
+  const distPath = resolve(process.cwd(), 'dist');
+
+  const prodPath = resolve(distPath, 'xcom-enhanced-gallery.user.js');
+  const devPath = resolve(distPath, 'xcom-enhanced-gallery.dev.user.js');
+
+  // 두 파일 모두 존재해야 함 (빌드 스크립트가 dev/prod 모두 생성)
+  if (!existsSync(prodPath) || !existsSync(devPath)) {
+    console.error('❌ Expected both prod and dev userscripts to exist.');
+    console.error(`   prod: ${existsSync(prodPath) ? 'OK' : 'MISSING'}`);
+    console.error(`   dev : ${existsSync(devPath) ? 'OK' : 'MISSING'}`);
+    process.exit(1);
+  }
+
+  // 상세 검증: dev (소스맵 포함), prod (소스맵 + dead code 제거)
+  validateOne(devPath, { requireNoVitePreload: false });
+  const prodInfo = validateOne(prodPath, { requireNoVitePreload: true });
+
   // 기본적인 JavaScript 구문 검증
   try {
     // 간단한 구문 검증 (실제 실행하지 않음)
-    const scriptStart = content.indexOf('// ==/UserScript==') + '// ==/UserScript=='.length;
-    const scriptContent = content.substring(scriptStart);
+    const scriptStart =
+      prodInfo.content.indexOf('// ==/UserScript==') + '// ==/UserScript=='.length;
+    const scriptContent = prodInfo.content.substring(scriptStart);
 
     // 기본적인 구문 오류 검사
     if (scriptContent.includes('undefined is not a function')) {
@@ -71,8 +135,8 @@ function validateUserScript() {
   }
 
   // 사이즈 예산(Gzip) 검사
-  const gzipped = gzipSync(Buffer.from(content, 'utf8'));
-  const rawBytes = Buffer.byteLength(content, 'utf8');
+  const gzipped = gzipSync(Buffer.from(prodInfo.content, 'utf8'));
+  const rawBytes = Buffer.byteLength(prodInfo.content, 'utf8');
   const gzBytes = gzipped.length;
 
   const WARN_BUDGET = 300 * 1024; // 300KB (경고)
@@ -90,7 +154,7 @@ function validateUserScript() {
   }
 
   console.log('✅ UserScript validation passed');
-  console.log(`📄 File: ${userScriptPath}`);
+  console.log(`📄 Files: \n  - ${prodPath}\n  - ${devPath}`);
   console.log(`📏 Size (raw): ${(rawBytes / 1024).toFixed(2)} KB`);
   console.log(`📦 Size (gzip): ${(gzBytes / 1024).toFixed(2)} KB`);
 

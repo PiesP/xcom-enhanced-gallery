@@ -139,7 +139,8 @@
 }
 
 .separator {
-  color: var(--xeg-color-neutral-500);
+  /* 구분자('/')를 인디케이터 숫자와 동일 톤(Primary)으로 통일 */
+  color: var(--xeg-color-text-primary);
   margin: 0 0.125em; /* 0 2px → 0 0.125em */
 }
 
@@ -287,13 +288,19 @@
   font-weight: 700;
 }
 
-.separator {
-  color: var(--color-glass-bg);
-  margin: 0 0.125em; /* 0 2px → 0 0.125em */
+/* 고대비 필요 상태(data-high-contrast) 또는 시스템 고대비에서 1차 텍스트 색상으로 승격 */
+.galleryToolbar[data-high-contrast='true'] .separator {
+  color: var(--xeg-color-text-primary);
 }
 
 .totalCount {
   color: var(--xeg-color-neutral-600);
+}
+/* 고대비 모드에서 구분자 시인성 강화 */
+@media (prefers-contrast: more), (prefers-contrast: high) {
+  .separator {
+    color: var(--xeg-color-text-primary);
+  }
 }
 /* 진행률 바 */
 .progressBar {

@@ -30,22 +30,24 @@ let _caches: WeakMap<object, Map<IconName, IconComponent>> = new WeakMap();
 function dynamicImport(name: IconName): Promise<IconComponent> {
   switch (name) {
     case 'Download':
-      return import('@shared/components/ui/Icon/icons/Download.tsx').then(
-        m => m.Download as IconComponent
+      return import('@shared/components/ui/Icon/hero/HeroDownload.tsx').then(
+        m => m.HeroDownload as unknown as IconComponent
       );
     case 'Settings':
-      return import('@shared/components/ui/Icon/icons/Settings.tsx').then(
-        m => m.Settings as IconComponent
+      return import('@shared/components/ui/Icon/hero/HeroSettings.tsx').then(
+        m => m.HeroSettings as unknown as IconComponent
       );
     case 'X':
-      return import('@shared/components/ui/Icon/icons/X.tsx').then(m => m.X as IconComponent);
+      return import('@shared/components/ui/Icon/hero/HeroX.tsx').then(
+        m => m.HeroX as unknown as IconComponent
+      );
     case 'ChevronLeft':
-      return import('@shared/components/ui/Icon/icons/ChevronLeft.tsx').then(
-        m => m.ChevronLeft as IconComponent
+      return import('@shared/components/ui/Icon/hero/HeroChevronLeft.tsx').then(
+        m => m.HeroChevronLeft as unknown as IconComponent
       );
     case 'ChevronRight':
-      return import('@shared/components/ui/Icon/icons/ChevronRight.tsx').then(
-        m => m.ChevronRight as IconComponent
+      return import('@shared/components/ui/Icon/hero/HeroChevronRight.tsx').then(
+        m => m.HeroChevronRight as unknown as IconComponent
       );
     default:
       if (_fallback) return Promise.resolve(_fallback);

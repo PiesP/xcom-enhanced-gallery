@@ -1,8 +1,8 @@
 /**
  * @fileoverview Icon Component
- * @version 1.0.0 - Tabler Icons 기반 아이콘 시스템
+ * @version 2.0.0 - 공통 아이콘 컨테이너 (Heroicons 어댑터 기반)
  * @description
- * Tabler Icons 스타일의 범용 아이콘 컴포넌트
+ * 범용 SVG 아이콘 컨테이너 컴포넌트
  * - 24x24 기본 크기
  * - stroke 기반 아이콘
  * - 접근성 지원
@@ -43,7 +43,7 @@ export interface IconProps {
 }
 
 /**
- * Tabler Icons 스타일의 아이콘 컴포넌트
+ * SVG 아이콘 컨테이너 컴포넌트
  * CSS 변수 기반으로 일관된 디자인 시스템 지원
  *
  * @example

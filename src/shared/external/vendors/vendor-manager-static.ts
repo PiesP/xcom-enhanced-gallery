@@ -70,6 +70,7 @@ export interface PreactSignalsAPI {
 export interface PreactCompatAPI {
   forwardRef: typeof preactCompat.forwardRef;
   memo: typeof preactCompat.memo;
+  createElement: typeof preactCompat.createElement;
 }
 
 export type ComponentChildren = import('preact').ComponentChildren;
@@ -180,7 +181,9 @@ export class StaticVendorManager {
       !this.vendors.preactCompat.forwardRef ||
       typeof this.vendors.preactCompat.forwardRef !== 'function' ||
       !this.vendors.preactCompat.memo ||
-      typeof this.vendors.preactCompat.memo !== 'function'
+      typeof this.vendors.preactCompat.memo !== 'function' ||
+      !this.vendors.preactCompat.createElement ||
+      typeof this.vendors.preactCompat.createElement !== 'function'
     ) {
       throw new Error('Preact Compat 라이브러리 검증 실패');
     }
@@ -239,6 +242,7 @@ export class StaticVendorManager {
     const preactCompatAPI: PreactCompatAPI = {
       forwardRef: this.vendors.preactCompat.forwardRef,
       memo: this.vendors.preactCompat.memo,
+      createElement: this.vendors.preactCompat.createElement,
     };
 
     // 캐시에 저장

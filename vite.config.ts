@@ -4,7 +4,7 @@
  * - Prod: terser + drop console
  * - Output: single userscript file
  */
-import { defineConfig, type Plugin, type UserConfig } from 'vite';
+import { defineConfig, Plugin, UserConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,7 +23,8 @@ interface PackageJsonMeta {
 
 function resolveFlags(mode: string): BuildFlags {
   const isDev = mode === 'development';
-  return { mode, isDev, isProd: !isDev, sourcemap: isDev };
+  // R5: dev/prod 모두 소스맵 생성 (추적/디버그용). prod는 validate-build에서 무결성 가드.
+  return { mode, isDev, isProd: !isDev, sourcemap: true };
 }
 
 const pkg: PackageJsonMeta = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
@@ -97,17 +98,29 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         ? `(function(){try{var s=document.getElementById('xeg-styles');if(s) s.remove();s=document.createElement('style');s.id='xeg-styles';s.textContent=${JSON.stringify(cssConcat)};(document.head||document.documentElement).appendChild(s);}catch(e){console.error('[XEG] style inject fail',e);}})();\n`
         : '';
 
-      const wrapped = `${userscriptHeader(flags)}(function(){\n'use strict';\n${styleInjector}${entryChunk.code}\n})();`;
+      // 내부 엔트리 코드에 남아 있을 수 있는 sourceMappingURL 주석 제거
+      const cleanedCode = entryChunk.code
+        .replace(/\/\/#\s*sourceMappingURL\s*=.*$/gm, '')
+        .replace(/\/\*#\s*sourceMappingURL\s*=.*?\*\//gs, '');
+
+      const wrapped = `${userscriptHeader(flags)}(function(){\n'use strict';\n${styleInjector}${cleanedCode}\n})();`;
       const finalName = flags.isDev
         ? 'xcom-enhanced-gallery.dev.user.js'
         : 'xcom-enhanced-gallery.user.js';
 
       fs.writeFileSync(path.join(outDir, finalName), wrapped, 'utf8');
 
-      // 개발 모드에서만 sourcemap 생성
-      if (flags.isDev && sourcemapContent) {
-        const mapName = 'xcom-enhanced-gallery.dev.user.js.map';
+      // dev/prod 모두 sourcemap 파일 기록 (R5)
+      if (sourcemapContent) {
+        const mapName = flags.isDev
+          ? 'xcom-enhanced-gallery.dev.user.js.map'
+          : 'xcom-enhanced-gallery.user.js.map';
         fs.writeFileSync(path.join(outDir, mapName), sourcemapContent, 'utf8');
+        // 파일 끝에 sourceMappingURL 주석 추가 (디버깅 편의)
+        try {
+          const suffix = `\n//# sourceMappingURL=${mapName}`;
+          fs.appendFileSync(path.join(outDir, finalName), suffix, 'utf8');
+        } catch {}
         console.log(`✅ Sourcemap 생성: ${mapName}`);
       }
 
@@ -179,6 +192,8 @@ export default defineConfig(({ mode }) => {
           format: 'iife',
           name: 'XEG',
           inlineDynamicImports: true, // 단일 번들 보장
+          // R5: 소스맵에 sourcesContent 포함
+          sourcemapExcludeSources: false,
           // 실제 산출 파일명은 plugin에서 생성
         },
         treeshake: flags.isProd,

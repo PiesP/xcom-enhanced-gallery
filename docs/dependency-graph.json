@@ -1864,6 +1864,176 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./hero/HeroArrowAutofitHeight",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroArrowAutofitWidth",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroArrowAutofitWidth.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroArrowsMaximize",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroArrowsMaximize.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroChevronLeft",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroChevronRight",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroChevronRight.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroDownload",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroDownload.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroFileZip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroFileZip.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroSettings",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroSettings.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroX",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroX.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./hero/HeroZoomIn",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Icon",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1896,23 +2066,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./icons",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
@@ -1924,10 +2077,47 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/ui/Icon/Icon.tsx",
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Icon/index.ts",
+        "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.tsx",
+        "src/shared/components/ui/Icon/hero/HeroArrowAutofitWidth.tsx",
+        "src/shared/components/ui/Icon/hero/HeroArrowsMaximize.tsx",
+        "src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx",
+        "src/shared/components/ui/Icon/hero/HeroChevronRight.tsx",
+        "src/shared/components/ui/Icon/hero/HeroDownload.tsx",
+        "src/shared/components/ui/Icon/hero/HeroFileZip.tsx",
+        "src/shared/components/ui/Icon/hero/HeroSettings.tsx",
+        "src/shared/components/ui/Icon/hero/HeroX.tsx",
+        "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx",
         "src/shared/components/ui/Icon/icons/ArrowAutofitHeight.tsx",
         "src/shared/components/ui/Icon/icons/ArrowAutofitWidth.tsx",
         "src/shared/components/ui/Icon/icons/ArrowsMaximize.tsx",
@@ -1944,171 +2134,18 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/index.ts",
+      "source": "src/shared/components/ui/Icon/hero/HeroArrowAutofitWidth.tsx",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./ArrowAutofitHeight",
+          "module": "../Icon",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "export"
+            "import"
           ],
-          "resolved": "src/shared/components/ui/Icon/icons/ArrowAutofitHeight.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ArrowAutofitWidth",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/ArrowAutofitWidth.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ArrowsMaximize",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/ArrowsMaximize.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ChevronLeft",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/ChevronLeft.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ChevronRight",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/ChevronRight.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Download",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/Download.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./FileZip",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/FileZip.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Settings",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/Settings.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./X",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/X.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ZoomIn",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/ZoomIn.tsx",
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2118,9 +2155,321 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/Icon/index.ts",
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroArrowsMaximize.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroChevronRight.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroDownload.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroFileZip.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroSettings.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroX.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Icon/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/isolation/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./GalleryContainer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Button/IconButton.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
         "src/shared/components/ui/index.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Button/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2226,9 +2575,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2253,9 +2600,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2280,9 +2625,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2334,9 +2677,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2361,9 +2702,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2395,45 +2734,18 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/isolation/index.ts",
+      "source": "src/shared/components/ui/Icon/icons/index.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./GalleryContainer",
+          "module": "./ArrowAutofitHeight",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/isolation/GalleryContainer.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Button/IconButton.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Button",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "resolved": "src/shared/components/ui/Icon/icons/ArrowAutofitHeight.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2443,15 +2755,65 @@
         },
         {
           "dynamic": false,
-          "module": "./Button",
+          "module": "./ArrowAutofitWidth",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "type-only",
-            "import"
+            "export"
           ],
-          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "resolved": "src/shared/components/ui/Icon/icons/ArrowAutofitWidth.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ArrowsMaximize",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/ArrowsMaximize.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./FileZip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/FileZip.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ZoomIn",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/ZoomIn.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2463,31 +2825,6 @@
       "dependents": [
         "src/shared/components/ui/index.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Button/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Button",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Button/Button.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -3736,7 +4073,8 @@
         }
       ],
       "dependents": [
-        "src/shared/external/index.ts"
+        "src/shared/external/index.ts",
+        "src/shared/external/vendors/heroicons-react.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3865,6 +4203,49 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/heroicons-react.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./index",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./index",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
       "valid": true
     },
     {
@@ -8339,8 +8720,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 247,
-    "totalDependenciesCruised": 341,
+    "totalCruised": 258,
+    "totalDependenciesCruised": 357,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -1,6 +1,114 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-13: 세션 검증 — 전체 테스트 GREEN · 빌드/산출물 검증 PASS
+
+- 테스트: 276 passed, 9 skipped (총 285 파일) — RED 없음, 경고성 jsdom
+  not-implemented 로그만 발생(기능 영향 없음)
+- 빌드: dev/prod Userscript 생성 및 postbuild validator PASS, gzip ≈ 96.6 KB
+- 계획: 활성 Phase 현재 없음 — 신규 과제는 백로그 선별 후 활성화 예정
+
+2025-09-13: 문서 — CODING_GUIDELINES 마크다운 코드펜스 정리 완료
+
+- 파일 네이밍/Toast·Gallery 예시/Result 패턴 섹션의 코드 블록 fence 오류
+  수정으로 렌더링 안정화(콘텐츠 변경 없음, 기능 영향 없음)
+
+2025-09-13: R5 — Source map/번들 메타 무결성 가드 완료
+
+- 목적: dev/prod 소스맵에 sources/sourcesContent 포함, Userscript 말미에 올바른
+  sourceMappingURL 주석 존재, 프로덕션 번들에 \_\_vitePreload 데드 브랜치
+  미포함.
+- 구현: vite.config.ts에서 dev/prod 공통 sourcemap 생성 및 userscript 플러그인에
+  sourcemap 파일(.map) 기록 + 기존 sourceMappingURL 제거 후 올바른 주석 추가.
+  scripts/validate-build.js를 확장해 dev/prod 각각 소스맵 존재/구조(sources,
+  sourcesContent 길이 일치) 검증과 prod에서 \_\_vitePreload 부재를 강제.
+- 검증: npm run build → postbuild validator GREEN, gzip ~96.6 KB, prod/dev 모두
+  소스맵 무결성 PASS.
+
+2025-09-13: R2 — Wheel 리스너 정책 하드닝 완료
+
+- 목적: wheel 리스너의 passive: false 사용을 필요한 경로로만 제한, 스크롤 충돌
+  방지.
+- 구현: ensureWheelLock 유틸 도입/정비, 직접 addEventListener('wheel', …) 사용
+  금지 스캔 유지.
+- 검증: test/unit/events/wheel-listener.policy.red.test.ts,
+  ensureWheelLock.contract.test.ts GREEN.
+
+2025-09-13: R1 — 전역 표면 정리(글로벌 누수 제거) 완료
+
+- 목적: 프로덕션 번들에서 디버그용 전역 노출 제거.
+- 구현: 서비스 접근을 배럴/헬퍼 경유로 일원화, 전역은 DEV 게이트만 허용.
+- 검증: 린트/테스트 스위트 및 번들 스캔으로 prod 전역 키 부재 확인, 전체 GREEN.
+
 > 완료된 작업만 간단히 기록합니다.
+
+2025-09-13: UI — 툴바 대비/Prev·Next 스크롤/아이콘 정비 완료
+
+- 내용:
+  - 툴바 미디어 카운터 구분자 '/'의 시인성 개선: 색상을 semantic 토큰으로
+    조정(`--xeg-color-text-secondary`), 고대비 모드에서는
+    `--xeg-color-text-primary`로 오버라이드.
+  - Prev/Next 버튼 클릭 시 선택 항목으로 스크롤 복구: `useGalleryItemScroll`의
+    컨테이너 선택자를 보강해
+    `[data-xeg-role="items-list"], [data-xeg-role="items-container"]` 모두
+    인식하도록 수정(레거시 호환).
+  - 아이콘: 내부 Icon/IconButton 시스템(라이선스 호환) 사용 확인 및 툴바 적용
+    상태 점검. 외부 아이콘 라이브러리 도입 불필요.
+- 테스트: `toolbar.separator-contrast.test.tsx`,
+  `prev-next-scroll.integration.test.ts` 추가/보강, 전체 테스트 스위트 GREEN.
+- 결과: 활성 계획서에는 해당 항목이 별도로 등재되어 있지 않아 제거 대상
+  없음(완료 로그로만 추적).
+
+2025-09-13: UI — 툴바 인디케이터('/') 대비 개선
+
+- 내용: Toolbar.module.css에서 카운터 구분자 .separator 색상을
+  `--xeg-color-text-secondary`로 기본 설정하고, `data-high-contrast=true` 및
+  시스템 고대비에서는 `--xeg-color-text-primary`로 승격하여 다양한 배경에서
+  충분한 대비를 보장.
+- 근거: PC 전용/토큰 규칙 준수, 스타일 중복 정의 제거로 일관성 향상.
+- 검증: 스타일 스모크 및 빌드/테스트 스위트 GREEN.
+
+2025-09-13: UI — 인디케이터/설정 라벨 색상 정합 완료
+
+- 내용: 툴바 미디어 카운터 구분자('/')와 설정 모달 라벨(“테마”, “언어”)의 텍스트
+  색상을 각각 인디케이터 숫자 및 “설정” 타이틀과 동일한 semantic primary 텍스트
+  토큰으로 통일. 배경/테마/고대비에서도 일관 유지.
+- 구현: Toolbar.module.css(.separator → var(--xeg-color-text-primary)) ·
+  SettingsModal.module.css(.label → var(--xeg-color-text-primary)).
+- 검증: 전체 테스트 GREEN, 스타일 정책 위반 없음.
+
+2025-09-13: ICN-EVAL-02 — 아이콘 라이브러리 평가/이행 계획 완료
+
+- 결론: 내부 Tabler 스타일 아이콘 시스템(Icon/IconButton)은 MIT 라이선스,
+  트리셰이킹 우수, 기존 API/접근성 가드와 호환되어 유지가 최적임. 외부 교체는
+  번들/시각적 이득이 제한적이므로 보류.
+- 조치: 어댑터 패턴 유지(../Icon 경유), 직간접 외부 패키지 직접 import 금지 정책
+  지속. 후속 비교/이행 메모는 `docs/_fragments/ICN-EVAL-02-plan.md` 참고.
+- 가드: deps/iconlib.no-external-imports.red.test.ts 유지, Toast/Toolbar 접근성
+  레이블 테스트 유지.
+
+2025-09-13: UI-ICN-01 — 툴바 아이콘 직관성/일관화 완료
+
+- 내용: 내부 MIT 호환 아이콘 래퍼를 유지하고, 툴바 버튼에 일관된
+  aria-label/title/크기 정책을 적용. 배경 대비 감지(useEffect)에 테스트/JSDOM
+  안전 가드를 추가하여 접근성 테스트 안정화. 외부 아이콘 패키지 정적 import 금지
+  가드 테스트 추가.
+- 테스트: toolbar.icon-accessibility.test.tsx 및
+  deps/iconlib.no-external-imports.red.test.ts GREEN. 기존 Toolbar-Icons 특성화
+  테스트와 함께 회귀 없음.
+- 결과: 라이선스/번들 정책 유지, 접근성 레이블 일관화, 활성 계획서에서 UI-ICN-01
+  제거.
+
+2025-09-13: ICN-H0(부분) — Heroicons 전면 이행 H1–H3, H6 완료
+
+- H1: 벤더 getter 추가 — `getHeroiconsOutline()` 제공, 외부 패키지 직접 import
+  금지 가드 통과
+- H2: 어댑터 계층 — HeroChevronLeft/Right, HeroDownload/Settings/X
+  구현(토큰/aria 준수)
+- H3: iconRegistry 스위치 — 기존 이름('Download','Settings','X','Chevron\*')을
+  Heroicons 어댑터로 매핑
+- H6: 빌드/라이선스 — dev/prod 빌드 및 postbuild validator PASS,
+  `LICENSES/heroicons-MIT.txt` 추가
+- 후속(H4–H5): 사용처 잔여 이행 및 레거시(Tabler) 아이콘 자산 정리 진행 예정
 
 2025-09-13: R4 — 타이머/리스너 수명주기 일원화 완료
 

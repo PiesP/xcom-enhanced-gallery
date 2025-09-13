@@ -213,7 +213,7 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
     });
 
     it('아이콘 컴포넌트들이 일관된 스타일을 사용해야 한다', async () => {
-      const iconsDir = path.resolve(currentDir, '../../src/shared/components/ui/Icon/icons');
+      const iconsDir = path.resolve(currentDir, '../../src/shared/components/ui/Icon/hero');
       const iconFiles = fs.readdirSync(iconsDir).filter(file => file.endsWith('.tsx'));
 
       for (const file of iconFiles) {
@@ -222,7 +222,8 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
 
         // 모든 아이콘 파일이 기본 Icon 컴포넌트를 사용해야 함
         expect(content).toMatch(/import.*Icon.*from.*Icon/);
-        expect(content).toMatch(/h\(Icon,/);
+        // 포맷팅에 의해 '(' 다음 줄바꿈이 들어갈 수 있으므로 공백 허용
+        expect(content).toMatch(/h\(\s*Icon,/);
       }
     });
 
