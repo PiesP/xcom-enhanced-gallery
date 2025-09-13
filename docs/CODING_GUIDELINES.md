@@ -347,6 +347,11 @@ animateCustom(el, keyframes, {
 - px 고정값 대신 em/토큰을 유지하세요. 아이콘/텍스트 baseline 정렬은 `.xeg-row-center`를 우선 적용한 후 컴포넌트 특수 케이스만 국소 조정합니다.
 - 포커스 링/색상은 본 유틸에 포함하지 않으며, 기존 토큰(`--xeg-focus-ring` 등)과 컴포넌트 스타일에서 관리합니다.
 
+권장 패턴(툴바 인디케이터 베이스라인 동기화):
+
+- 인디케이터 래퍼는 `display:inline-flex; align-items:center; min-height:2.5em;`으로 아이콘 버튼(2.5em)과 수직 중심을 맞춥니다.
+- 숫자/구분자 텍스트는 `line-height:1`로 라인박스 여백을 제거하고, 필요 시 진행 표시(progress)는 absolute 하단 오버레이로 배치해 수직 중심에 영향을 주지 않습니다.
+
 ```
 
 ### 뷰포트 CSS 변수 정책 (Fit 모드)

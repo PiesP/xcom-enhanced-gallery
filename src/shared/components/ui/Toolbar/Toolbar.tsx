@@ -392,7 +392,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !onFitOriginal,
                 key: 'fit-original',
               },
-              h(ZoomIn, { size: 16 })
+              h(ZoomIn, { size: 18 })
             ),
             h(
               IconButton,
@@ -407,7 +407,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !onFitWidth,
                 key: 'fit-width',
               },
-              h(ArrowAutofitWidth, { size: 16 })
+              h(ArrowAutofitWidth, { size: 18 })
             ),
             h(
               IconButton,
@@ -422,7 +422,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !onFitHeight,
                 key: 'fit-height',
               },
-              h(ArrowAutofitHeight, { size: 16 })
+              h(ArrowAutofitHeight, { size: 18 })
             ),
             h(
               IconButton,
@@ -437,7 +437,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !onFitContainer,
                 key: 'fit-container',
               },
-              h(ArrowsMaximize, { size: 16 })
+              h(ArrowsMaximize, { size: 18 })
             ),
 
             // 다운로드 버튼들
@@ -455,7 +455,7 @@ function ToolbarCore({
                 'data-loading': isDownloading,
                 key: 'download-current',
               },
-              h(Download, { size: 16, key: 'download-icon' })
+              h(Download, { size: 18, key: 'download-icon' })
             ),
 
             totalCount > 1 &&
@@ -472,7 +472,7 @@ function ToolbarCore({
                   'data-loading': isDownloading,
                   key: 'download-all',
                 },
-                h(FileZip, { size: 16, key: 'download-all-icon' })
+                h(FileZip, { size: 18, key: 'download-all-icon' })
               ),
 
             // 설정 버튼
@@ -492,7 +492,7 @@ function ToolbarCore({
                   'data-disabled': disabled,
                   key: 'settings',
                 },
-                h(Settings, { size: 16 })
+                h(Settings, { size: 18 })
               ),
 
             // 닫기 버튼
@@ -509,7 +509,7 @@ function ToolbarCore({
                 'data-disabled': disabled,
                 key: 'close',
               },
-              h(X, { size: 16 })
+              h(X, { size: 18 })
             ),
           ]
         ),

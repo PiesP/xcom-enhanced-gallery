@@ -1,5 +1,25 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-13: UI-ALIGN-BASELINE-SYNC — 툴바 인디케이터 베이스라인/설정 헤더 정렬
+일원화
+
+- Toolbar.module.css: mediaCounterWrapper를 inline-flex 정렬, 진행 바를 absolute
+  하단 오버레이로 변경, mediaCounter에 line-height:1 적용으로 숫자/아이콘 수직
+  중심 동기화. 아이콘 시각 가중치 보완(툴바 아이콘 크기 18 적용).
+- SettingsModal.module.css: header flex 중앙 정렬 재확인, closeButton 2.5em 클릭
+  타겟 및 inline-flex 정렬 유지.
+- 테스트: toolbar-indicator-baseline-alignment.test.ts,
+  settings-header-alignment.test.ts 추가. 전체 스위트 GREEN.
+- 빌드: dev/prod Userscript 및 postbuild validator PASS. gzip ≈ 99.36 KB.
+
+2025-09-13: FITMODE-VIEWPORT-DYNAMIC — 뷰포트 동적 반영 완료
+
+- ResizeObserver + window resize 백업으로 컨테이너 기준 CSS
+  변수(`--xeg-viewport-w/h`, `--xeg-viewport-height-constrained`)를 갱신하여
+  이미지 핏 모드가 즉시 반영되도록 하드닝. RAF 스로틀/cleanup 포함.
+- 테스트/가드: viewport-utils, 훅 계약, 통합 스모크 GREEN. dev/prod 빌드 및
+  소스맵/데드코드 가드 PASS.
+
 2025-09-13: SETTINGS-MODAL-CLICK-HARDENING — 계획서에서 완료 섹션 이관 정리
 
 - Toolbar 설정 버튼 신뢰성 강화(메모 비교 + onMouseDown 조기 트리거) 내용이

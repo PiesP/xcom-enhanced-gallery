@@ -264,11 +264,16 @@
 
 /* 미디어 카운터 */
 .mediaCounterWrapper {
-  display: flex;
-  flex-direction: column;
+  /* 베이스라인 동기화를 위한 인라인 플렉스 컨테이너 */
+  display: inline-flex;
   align-items: center;
-  gap: 0.25em; /* 4px → 0.25em */
+  justify-content: center;
+  position: relative; /* 진행 바를 오버레이로 배치 */
+  gap: 0; /* 세로 갭 제거 – 진행 바는 absolute로 하단에 고정 */
   min-width: 5em; /* 80px → 5em */
+  min-height: 2.5em; /* 아이콘 버튼과 동일 높이로 수직 중심 정렬 보장 */
+  padding-bottom: 0.5em; /* 진행 바 공간 확보 (em 기반) */
+  box-sizing: border-box;
 }
 
 .mediaCounter {
@@ -277,6 +282,10 @@
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
+  /* 베이스라인 동기화: 텍스트 자체의 라인 박스를 최소화 */
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
   background: var(--xeg-bg-counter);
   padding: 0.25em 0.5em; /* 4px 8px → 0.25em 0.5em */
   border-radius: var(--xeg-radius-md);
@@ -304,12 +313,16 @@
 }
 /* 진행률 바 */
 .progressBar {
+  /* 오버레이 배치하여 텍스트 수직 중심에 영향 없음 */
+  position: absolute;
+  left: 50%;
+  bottom: 0.125em; /* em 기반 하단 여백 */
+  transform: translateX(-50%);
   width: 3.75em; /* 60px → 3.75em */
   height: 0.125em; /* 2px → 0.125em */
   background: var(--xeg-color-neutral-200);
   border-radius: var(--xeg-radius-sm);
   overflow: hidden;
-  margin: 0.25em 0; /* 4px 0 → 0.25em 0 */
 }
 
 .progressFill {
