@@ -4,7 +4,7 @@
  * @version 2.0.0 - Service Consolidation
  */
 
-import { serviceManager } from './ServiceManager';
+import { CoreService } from './ServiceManager';
 import { logger } from '@shared/logging/logger';
 import { getMediaService, getBulkDownloadService } from './service-factories';
 
@@ -14,6 +14,8 @@ import { getMediaService, getBulkDownloadService } from './service-factories';
  */
 export async function registerCoreServices(): Promise<void> {
   const { SERVICE_KEYS } = await import('../../constants');
+  // Always resolve the current CoreService singleton to avoid stale instance issues in tests
+  const serviceManager = CoreService.getInstance();
 
   // ====================================
   // 통합된 핵심 서비스들
