@@ -660,6 +660,25 @@ animateCustom(el, keyframes, {
   - DEV 전용 레거시 어댑터 전역 키(`__XEG_LEGACY_ADAPTER__`, `__XEG_GET_SERVICE_OVERRIDE__`)는 개발 모드에서만 존재하며, 프로덕션 번들 문자열 누수는 금지됩니다
 - 가드 테스트: `test/unit/lint/runtime-appcontainer.imports.red.test.ts` — 허용 리스트 외의 런타임 import를 정적 스캔합니다.
 
+#### 컨테이너 단일화 로드맵 (U3)
+
+- 목표: 런타임/테스트 모두 `ServiceManager` + `service-accessors` 패턴으로 단일화합니다.
+- 테스트 하네스: 기존 `AppContainer`는 제거 대상이며, 테스트에서는 경량 `ServiceHarness`(팩토리/리셋 API 제공) 패턴으로 대체합니다.
+- 전역 키: DEV 전용 레거시 어댑터 전역 키는 최종 폐기 대상이며, 프로덕션 번들 문자열 누수는 금지됩니다.
+- 가드/DoD:
+  - 런타임 AppContainer import 금지 스캔(확장) — 전 경로 금지
+  - prod 번들 문자열 스캔 — 전역 키 누수 0건
+  - 접근자는 `@shared/container/service-accessors`만 사용합니다.
+
+#### 다운로드 오케스트레이션 원칙 (D1)
+
+- 동시성/재시도/스케줄/ZIP은 오케스트레이터 서비스(`DownloadOrchestrator`)에서 중앙화합니다.
+- 기존 `BulkDownloadService` / `GalleryDownloadService`는 얇은 위임 래퍼로 유지하여 외부 API를 안정화합니다.
+- 스케줄: 즉시(immediate) 기본, 유휴 예약은 `schedule: 'idle'` 옵션으로 노출합니다.
+- 테스트 기준(요약):
+  - 동시성 상한 준수, 오류 발생 시 제한 횟수 재시도, idle 스케줄 지연 실행
+  - 파일명은 `MediaFilenameService`를 통해서만 생성(소비처 직접 조립 금지)
+
 #### SERVICE_KEYS 직접 사용 금지 (P4)
 
 - 목적: 서비스 키 상수에 대한 직접 의존을 제거하고 타입 안전 액세서로 일원화합니다.
