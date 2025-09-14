@@ -100,7 +100,26 @@ function validateOne(
 
   // P1: 레거시 전역 키가 prod에 포함되지 않도록 가드
   if (assertNoLegacyGlobals) {
-    const legacyKeys = [/__XEG_LEGACY_ADAPTER__/, /__XEG_GET_SERVICE_OVERRIDE__/];
+    const legacyKeys = [
+      /__XEG_LEGACY_ADAPTER__/,
+      /__XEG_GET_SERVICE_OVERRIDE__/,
+      // 레거시 벤더 API/매니저 심볼 누출 금지
+      /initializeVendorsLegacy\b/,
+      /getPreactLegacy\b/,
+      /getPreactHooksLegacy\b/,
+      /getPreactSignalsLegacy\b/,
+      /getPreactCompatLegacy\b/,
+      /getNativeDownloadLegacy\b/,
+      /validateVendorsLegacy\b/,
+      /getVendorVersionsLegacy\b/,
+      /cleanupVendorsLegacy\b/,
+      /isVendorsInitializedLegacy\b/,
+      /getVendorInitializationReportLegacy\b/,
+      /getVendorStatusesLegacy\b/,
+      /isVendorInitializedLegacy\b/,
+      /(?<!Static)VendorManager\b/, // 동적 VendorManager 노출 금지 (정적 매니저는 허용)
+      /vendor-api\.ts/, // 소스 문자열 누출 금지
+    ];
     for (const re of legacyKeys) {
       if (re.test(content)) {
         console.error('❌ Prod userscript leaked legacy global key:', re);

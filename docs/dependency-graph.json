@@ -138,23 +138,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./vendor-api",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-api.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./vendor-api-safe",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -163,23 +146,6 @@
             "export"
           ],
           "resolved": "src/shared/external/vendors/vendor-api-safe.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-manager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -249,7 +215,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/external/vendors/vendor-api.ts",
+      "source": "src/shared/external/vendors/vendor-api-safe.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -270,14 +236,14 @@
         },
         {
           "dynamic": false,
-          "module": "./vendor-manager",
+          "module": "./vendor-manager-static",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/external/vendors/vendor-manager.ts",
+          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -315,8 +281,6 @@
       ],
       "dependents": [
         "src/bootstrap/env-init.ts",
-        "src/shared/external/vendors/vendor-api.ts",
-        "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/external/vendors/vendor-api-safe.ts",
         "src/shared/external/vendors/vendor-manager-static.ts",
         "src/bootstrap/event-wiring.ts",
@@ -330,6 +294,8 @@
         "src/shared/utils/css-animations.ts",
         "src/main.ts",
         "src/shared/external/zip/zip-creator.ts",
+        "src/shared/external/vendors/vendor-api.ts",
+        "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/index.ts",
         "src/shared/services/AnimationService.ts",
         "src/shared/state/signals/download.signals.ts",
@@ -408,78 +374,6 @@
         "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
         "src/shared/utils/patterns/url-patterns.ts",
         "src/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-manager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/external/vendors/index.ts",
-        "src/shared/external/vendors/vendor-api.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-api-safe.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-manager-static",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/external/vendors/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -13221,6 +13115,75 @@
       "valid": true
     },
     {
+      "source": "src/shared/external/vendors/vendor-api.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/vendors/vendor-manager.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/external/vendors/vendor-api.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/hooks/index.ts",
       "dependencies": [
         {
@@ -15576,7 +15539,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 259,
-    "totalDependenciesCruised": 705,
+    "totalDependenciesCruised": 703,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

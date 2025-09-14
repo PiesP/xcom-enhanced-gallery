@@ -50,30 +50,5 @@ export type {
   PreactCompat,
 } from './vendor-types';
 
-/**
- * 🔄 기존 동적 import API 호환성
- * @deprecated 테스트/과도기 호환 목적 외 사용 금지. 런타임/프로덕션 코드에서는
- * 반드시 TDZ-safe 정적 API(getPreact/getPreactHooks/...)를 사용하세요.
- * 레거시 alias(*Legacy) 심볼은 향후 메이저에서 제거될 예정입니다.
- */
-export {
-  initializeVendors as initializeVendorsLegacy,
-  getFflate as getFflateLegacy,
-  getPreact as getPreactLegacy,
-  getPreactHooks as getPreactHooksLegacy,
-  getPreactSignals as getPreactSignalsLegacy,
-  getPreactCompat as getPreactCompatLegacy,
-  getNativeDownload as getNativeDownloadLegacy,
-  validateVendors as validateVendorsLegacy,
-  getVendorVersions as getVendorVersionsLegacy,
-  cleanupVendors as cleanupVendorsLegacy,
-  isVendorsInitialized as isVendorsInitializedLegacy,
-  getVendorInitializationReport as getVendorInitializationReportLegacy,
-  getVendorStatuses as getVendorStatusesLegacy,
-  isVendorInitialized as isVendorInitializedLegacy,
-} from './vendor-api';
-
 // 🔧 고급 사용자용 직접 접근
 export { StaticVendorManager } from './vendor-manager-static';
-
-export { VendorManager } from './vendor-manager';
