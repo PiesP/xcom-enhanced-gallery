@@ -14,3 +14,6 @@ npm run test || {
 }
 
 echo "✅ Pre-push checks passed"
+
+# Explicitly exit with success to avoid any shell/state quirks returning a non-zero code
+exit 0
