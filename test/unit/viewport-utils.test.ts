@@ -5,7 +5,7 @@ import {
   computeViewportConstraints,
   applyViewportCssVars,
   observeViewportCssVars,
-} from '@/shared/utils/viewport';
+} from '../../src/shared/utils/viewport';
 
 function makeRect(width: number, height: number) {
   return { width, height };
@@ -67,10 +67,10 @@ describe('viewport utils', () => {
     expect(el.style.getPropertyValue('--xeg-viewport-height-constrained')).toBe('365px');
 
     // trigger resize
-    window.dispatchEvent(new Event('resize'));
+    window.dispatchEvent(new globalThis.Event('resize'));
 
     // microtask to allow raf(0) fallback timers
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise(r => globalThis.setTimeout(r, 0));
 
     expect(el.style.getPropertyValue('--xeg-viewport-height-constrained')).toBe('365px');
 

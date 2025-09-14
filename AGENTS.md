@@ -92,17 +92,17 @@ npx vitest run test/path/to/file.test.ts
 로컬 푸시 가속(선택):
 
 ```pwsh
-# Pre-push 훅이 전체 스위트 대신 특정 프로젝트만 실행하도록 설정할 수 있습니다.
+# Pre-push 훅은 기본으로 'smoke' 프로젝트만 실행합니다. 아래처럼 스코프를 바꿀 수 있습니다.
 # PowerShell
-$env:XEG_PREPUSH_SCOPE = 'smoke'
+$env:XEG_PREPUSH_SCOPE = 'full'   # 전체 스위트 실행 예시
 git push
 
 # Bash/Zsh
-export XEG_PREPUSH_SCOPE=fast
+export XEG_PREPUSH_SCOPE=smoke    # 기본 smoke 유지 예시
 git push
 
-# 사용 가능한 값: smoke | fast | unit | styles | performance | phases | refactor
-# 설정하지 않으면 전체 스위트를 실행합니다.
+# 사용 가능한 값: smoke | fast | unit | styles | performance | phases | refactor | full(all)
+# 기본은 smoke 입니다. 전체 스위트를 실행하려면 'full' 또는 'all'을 사용하세요.
 ```
 
 주의

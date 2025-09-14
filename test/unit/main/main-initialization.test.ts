@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { CoreService } from '@shared/services/ServiceManager';
+import { CoreService } from '../../../src/shared/services/ServiceManager';
 
 describe('Main.ts 초기화 오류 수정', () => {
   beforeEach(() => {
@@ -50,7 +50,7 @@ describe('Main.ts 초기화 오류 수정', () => {
 
     it('utils에서 CoreService export가 정상 작동해야 함', async () => {
       // utils/index.ts의 export 검증
-      const { CoreService: UtilsCoreService } = await import('@/utils');
+      const { CoreService: UtilsCoreService } = await import('../../../src/utils');
 
       expect(UtilsCoreService).toBeDefined();
       expect(UtilsCoreService.getInstance).toBeDefined();

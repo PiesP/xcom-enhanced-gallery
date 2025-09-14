@@ -9,21 +9,39 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath, URL } from 'node:url';
+// note: no fs usage
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 // Helpers
 const toPosix = (p: string) => p.replace(/\\/g, '/');
+// helpers kept minimal for lint cleanliness
 // NOTE: 테스트에서는 vite-tsconfig-paths로 TS paths를 그대로 사용합니다.
+
+// 공용 alias/resolve 구성 (프로젝트별 config에도 주입)
+const SRC_DIR = toPosix(resolve(__dirname, './src'));
+const FEATURES_DIR = toPosix(resolve(__dirname, './src/features'));
+const SHARED_DIR = toPosix(resolve(__dirname, './src/shared'));
+const ASSETS_DIR = toPosix(resolve(__dirname, './src/assets'));
+
+const sharedResolve = {
+  extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],
+  alias: [
+    { find: '@features', replacement: FEATURES_DIR },
+    { find: '@shared', replacement: SHARED_DIR },
+    { find: '@assets', replacement: ASSETS_DIR },
+    { find: '@', replacement: SRC_DIR },
+  ],
+} as const;
 
 export default defineConfig({
   // DEBUG: 구성 로딩 및 alias 경로 확인
   // @ts-expect-error runtime debug
   _debug_alias: (() => {
     try {
-      const SRC = toPosix(resolve(__dirname, './src'));
-      const FEATURES = toPosix(resolve(__dirname, './src/features'));
-      const SHARED = toPosix(resolve(__dirname, './src/shared'));
-      const ASSETS = toPosix(resolve(__dirname, './src/assets'));
+      const SRC = SRC_DIR;
+      const FEATURES = FEATURES_DIR;
+      const SHARED = SHARED_DIR;
+      const ASSETS = ASSETS_DIR;
       console.log('[vitest.config] resolve.alias', {
         '@': SRC,
         '@features': FEATURES,
@@ -52,16 +70,7 @@ export default defineConfig({
     preact(),
   ],
 
-  resolve: {
-    extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],
-    // 별칭: 프로덕션과 동일하게 root-relative 매핑을 사용 (vite-tsconfig-paths와 병행)
-    alias: [
-      { find: '@features', replacement: '/src/features' },
-      { find: '@shared', replacement: '/src/shared' },
-      { find: '@assets', replacement: '/src/assets' },
-      { find: '@', replacement: '/src' },
-    ],
-  },
+  resolve: sharedResolve,
   test: {
     globals: true,
     environment: 'jsdom',
@@ -147,15 +156,25 @@ export default defineConfig({
         maxThreads: 4,
       },
     },
-
-    // Vitest v3: 분할 실행(projects)을 여기 test.projects에 정의합니다.
-    // 기존 vitest.workspace.ts에서 유지하던 스위트 정의를 이관했습니다.
+    // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)
+    // 각 프로젝트에 jsdom 환경/설정 파일을 명시하여 상속 이슈를 방지합니다.
     projects: [
       // 최소 스모크: 빠르게 핵심 경계만 확인
       {
-        name: 'smoke',
+        // 개별 프로젝트에도 동일한 resolve를 명시적으로 주입 (Windows vite-node 호환)
+        resolve: sharedResolve,
         test: {
           name: 'smoke',
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
           include: [
             'test/unit/main/main-initialization.test.ts',
             'test/unit/viewport-utils.test.ts',
@@ -167,9 +186,19 @@ export default defineConfig({
       },
       // 빠른 단위 테스트: red/벤치/퍼포먼스 제외
       {
-        name: 'fast',
+        resolve: sharedResolve,
         test: {
           name: 'fast',
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
           include: ['test/unit/**/*.{test,spec}.{ts,tsx}'],
           exclude: [
             '**/node_modules/**',
@@ -182,18 +211,38 @@ export default defineConfig({
       },
       // 전체 단위 테스트(성능/벤치 포함 안함)
       {
-        name: 'unit',
+        resolve: sharedResolve,
         test: {
           name: 'unit',
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
           include: ['test/unit/**/*.{test,spec}.{ts,tsx}'],
           exclude: ['**/node_modules/**', '**/dist/**'],
         },
       },
       // 스타일 관련 테스트(토큰/테마/정책)
       {
-        name: 'styles',
+        resolve: sharedResolve,
         test: {
           name: 'styles',
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
           include: [
             'test/styles/**/*.{test,spec}.{ts,tsx}',
             'test/unit/styles/**/*.{test,spec}.{ts,tsx}',
@@ -203,9 +252,19 @@ export default defineConfig({
       },
       // 성능/벤치마크 전용
       {
-        name: 'performance',
+        resolve: sharedResolve,
         test: {
           name: 'performance',
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
           include: [
             'test/performance/**/*.{test,spec}.{ts,tsx}',
             'test/unit/performance/**/*.{test,spec}.{ts,tsx}',
@@ -216,18 +275,38 @@ export default defineConfig({
       },
       // 단계별(phase-*)/최종 스위트
       {
-        name: 'phases',
+        resolve: sharedResolve,
         test: {
           name: 'phases',
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
           include: ['test/phase-*.*', 'test/final/**/*.{test,spec}.{ts,tsx}'],
           exclude: ['**/node_modules/**', '**/dist/**'],
         },
       },
       // 리팩토링 진행/가드 스위트
       {
-        name: 'refactor',
+        resolve: sharedResolve,
         test: {
           name: 'refactor',
+          globals: true,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
           include: ['test/refactoring/**/*.{test,spec}.{ts,tsx}'],
           // 기본 설정의 임시 exclude(특정 refactoring 통합 테스트)는 프로젝트에도 반영
           exclude: [

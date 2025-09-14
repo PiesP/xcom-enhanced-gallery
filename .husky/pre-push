@@ -4,7 +4,7 @@
 # Optimization goals:
 # - Skip in CI (workflows already run full checks)
 # - Allow developer override via env (XEG_PREPUSH_SCOPE) or git config (xeg.prepushScope)
-# - Default to fast suite locally for speed; use "full" to run entire tests
+# - Default to smoke suite locally for speed; use "full" to run entire tests
 
 if [ "$CI" = "true" ]; then
   echo "⏭️  Pre-push: Skipping in CI (handled by GitHub Actions)."
