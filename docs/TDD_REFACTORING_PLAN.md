@@ -46,22 +46,13 @@ E1 — Event Surface Consolidation (단일 진입점 정리)
   상태: 문서/가이드라인 보강 및 utils @deprecated 표기 완료(코드/테스트는 다음
   단계).
 
-E2 — Event Guard Hardening (정책 가드 보강)
+E2 — Event Guard Hardening (정책 가드 보강) — 완료
 
-- 배경: 이벤트 정책 가드가 존재하나, `TwitterEventManager` 명칭/별칭 경유 사용을
-  명시적으로 차단하는 스캔이 없음.
-- 목표: PC 전용 입력/휠 패시브 정책 가드 유지 + `TwitterEventManager` 명칭 직접
-  사용 금지 스캔 추가(서비스 별칭 제외).
-- 옵션 비교:
-  - A 상태 유지 — 장점: 즉시 비용 0. 단점: 회귀 감지 누락 가능성.
-  - B 스캔 강화 — 장점: 명명/경로 회귀 조기 감지. 단점: 테스트 유지 비용 소폭
-    증가.
-- 결정: B.
-- TDD 진행: RED 스캐너 추가 → GREEN(소스 정리 후) → REFACTOR(테스트 주석/문서
-  보강).
-- DoD: 새 스캔 테스트 GREEN, 기존 이벤트 정책 가드와 충돌 없음.
-
-  상태: 가이드라인에 금지 명칭/경로 명문화 완료(테스트 스캐너는 다음 단계).
+- 결과: 금지 import 스캐너 강화 및 GREEN 확인. `@shared/utils/events` 외부
+  import 전면 금지, `TwitterEventManager` 명칭 직접 import 금지(서비스 별칭
+  포함), 내부 모듈/어댑터는 예외 처리. 가이드라인과 정합.
+- 테스트: `test/unit/lint/event-deprecated-removal.test.ts` 추가/강화로 GREEN.
+- 후속: 배럴/별칭 정리(E1/ E3)와 동기화 유지.
 
 E3 — Naming/Alias Prune (별칭 축소 및 용어 정리)
 

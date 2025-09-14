@@ -1,5 +1,14 @@
 ### 2025-09-14
 
+2025-09-14: E2 — Event Guard Hardening (완료)
+
+- 내용: 이벤트 레거시 유틸 금지 스캐너 강화. `@shared/utils/events` 외부 import
+  전면 금지, `TwitterEventManager` 명칭 직접 import 금지(services/EventManager
+  및 barrel 경유 포함). 내부 정의/어댑터 파일은 예외. 배럴에서는
+  `TwitterEventManager` 재노출 제거.
+- 검증: 대상 단위 테스트 GREEN(`event-deprecated-removal.test.ts`), 전체
+  스위트/빌드 영향 없음.
+
 2025-09-14: E1/E2(doc) — 이벤트 표면/가드 문서 반영
 
 - 내용: 코드 변경 전 단계로 문서 가드 보강 진행 — CODING_GUIDELINES에 외부
