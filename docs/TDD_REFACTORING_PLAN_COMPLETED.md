@@ -1,5 +1,23 @@
 ### 2025-09-14
 
+2025-09-14: P4 — SERVICE_KEYS 직접 사용 축소 (완료)
+
+- 내용: `SERVICE_KEYS` 직참조를 전역에서 탐지하는 RED 스캔 테스트
+  (`test/unit/lint/service-keys.direct-usage.scan.red.test.ts`)를 추가하고,
+  `src/shared/services/index.ts`의 재노출 제거 및 주석 조정으로 런타임/주석
+  경로의 직참조를 제거. 서비스 접근은 `service-accessors` 헬퍼를 경유하도록
+  통일.
+- 검증: 전체 테스트 GREEN, 타입/린트 PASS. dev/prod 빌드 및 postbuild validator
+  PASS.
+
+2025-09-14: P3 — AppContainer 범위 재정의(테스트 전용 하네스) (완료)
+
+- 내용: 런타임 경로에서 AppContainer import를 금지하는 RED 스캔 테스트
+  (`test/unit/lint/runtime-appcontainer.imports.red.test.ts`)를 추가하고, 허용
+  리스트 외의 런타임 import 0건을 확인. 배럴 재노출 경로 점검 및 주석 정합화로
+  테스트/리팩터링 스위트 한정 사용을 보장.
+- 검증: 전체 테스트 GREEN, dev/prod 빌드 PASS(전역 키 DEV 게이트와 충돌 없음).
+
 2025-09-14: P1 — Legacy Adapter DEV 게이트 적용 (완료)
 
 - 내용: AppContainer에서 레거시 전역 키를 DEV에서만 노출하도록 게이트. prod 번들

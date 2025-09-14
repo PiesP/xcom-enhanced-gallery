@@ -73,6 +73,6 @@ export { CoreService } from './ServiceManager';
 export { type ILogger, ConsoleLogger, defaultLogger } from './core-services';
 
 // 서비스 관리 유틸리티
-export { SERVICE_KEYS } from '@/constants';
+// Note: Service key constants are not re-exported here to reduce direct usage pathways.
 
 // ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거

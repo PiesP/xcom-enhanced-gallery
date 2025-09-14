@@ -3,7 +3,7 @@
 본 문서는 “유저스크립트에 적합한 복잡성”을 유지하기 위한 현재 활성 계획만
 담습니다. 완료된 항목은 즉시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
 
-업데이트: 2025-09-14 — 활성 Phase: P1–P5
+업데이트: 2025-09-14 — 활성 Phase: P5
 
 ## 운영 원칙(불변)
 
@@ -41,38 +41,12 @@
 
 ## 활성 Phase (TDD)
 
-- P1. Legacy Adapter DEV 게이트 & Prod 누수 차단
-  - 상태: GREEN(코드/빌드 가드 적용). DEV에서만 전역 키 활성, prod 번들 문자열
-    미포함 가드 추가(`scripts/validate-build.js`).
-  - 추가: AppContainer의 enableLegacyAdapter 기본값을 DEV에서만 true로 변경.
-
-- P2. 이벤트 유틸의 CoreService 직접 의존 제거(서비스 어댑터화)
-  - 상태: GREEN(핵심 경로 교체). `shared/utils/events.ts`에서 CoreService 및
-    SERVICE_KEYS 직접 참조 제거 →
-    `service-accessors.getMediaServiceFromContainer` 경유. 서비스 미가용 시 폴백
-    유지.
-  - 후속: 금지 스캔 테스트 추가는 별도 커밋에서 진행.
-
-- P3. 컨테이너 범위 재정의(AppContainer=test 전용 하네스)
-  - 목표: AppContainer를 런타임 경로에서 제거하고 테스트/샌드박스 하네스로 명시
-  - RED: `deps/runtime-path.scan.red.test.ts`로 런타임 엔트리/피처에서
-    AppContainer import 금지
-  - GREEN: 런타임 사용 0건, 테스트/리팩터링 스위트에서만 사용
-  - REFACTOR: 파일 헤더/경로 주석 갱신, 배럴에서 런타임 재노출 제거
-
-- P4. SERVICE_KEYS 직접 사용 축소(타입 안전 액세서)
-  - 목표: `SERVICE_KEYS` 직참조를 `service-accessors` 헬퍼로 대체
-  - RED: `service-keys.direct-usage.scan.red.test.ts`
-  - GREEN: features/shared 일반 경로에서 직참조 0건(서비스 등록/부트스트랩은
-    예외)
-  - REFACTOR: 관련 호출부 일괄 교체 및 타입 보강
-
 - P5. 레거시/플레이스홀더 정리(테스트 가드 동기)
   - 목표: @deprecated 플레이스홀더를 제거 또는 types-only/노출 축소
   - RED: `unused-exports.scan.red.test.ts` 강화, `orphan-allowlist` 축소
   - GREEN: 런타임 dead 모듈 0건(테스트 전용은 예외)
 
-우선순위(Next): P3 → P4 → P5
+우선순위(Next): P5
 
 ## DoD / 게이트
 
