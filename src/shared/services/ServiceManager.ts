@@ -199,31 +199,7 @@ export class CoreService {
   // 진단 기능 (ServiceDiagnostics 통합)
   // ====================================
 
-  /**
-   * ServiceManager 상태 진단
-   */
-  public async diagnoseServiceManager(): Promise<void> {
-    // 단일 진입점으로 위임하여 중복 제거
-    try {
-      const { ServiceDiagnostics } = await import('./core-services');
-      await ServiceDiagnostics.diagnoseServiceManager();
-    } catch (error) {
-      logger.error('❌ CoreService 진단 실패:', error);
-    }
-  }
-
-  /**
-   * 서비스 상태 진단 (정적 메서드)
-   */
-  public static async diagnoseServiceManager(): Promise<void> {
-    try {
-      const { ServiceDiagnostics } = await import('./core-services');
-      return ServiceDiagnostics.diagnoseServiceManager();
-    } catch (error) {
-      logger.error('❌ CoreService 진단 실패:', error);
-      throw error;
-    }
-  }
+  // (removed) Diagnostics delegation methods were removed to avoid cyclic deps.
 
   /**
    * 싱글톤 인스턴스 초기화 (테스트용)

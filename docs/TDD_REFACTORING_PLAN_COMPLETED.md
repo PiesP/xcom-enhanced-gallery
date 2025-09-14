@@ -7,6 +7,24 @@
 - UI-SHELL-DEDUP (부분) — RefactoredSettingsModal를 SettingsModal로
   리다이렉트(중복 구현 제거, 테스트 경로 호환 유지).
 
+- UI-SHELL-DEDUP (완료) — UnifiedToolbar를 실제 구현(ToolbarWithSettings)으로
+  재export하고 ToolbarShell은 실제 모듈에서 재노출. UnifiedSettingsModal은
+  SettingsModal을 감싸 role="dialog"와 glass-surface 클래스를 보장하는 얇은 호환
+  래퍼로 통일. 타입/테스트 GREEN.
+
+- DEPS-CYCLE-RESOLVED — Service diagnostics를 별도 모듈
+  (`service-diagnostics.ts`)로 추출하고 ServiceManager의 위임 메서드를 제거하여
+  core-services ↔ ServiceManager 순환을 해소. `npm run deps:check` → no
+  dependency violations. 전체 테스트 GREEN.
+
+- SERVICE-DIAG-UNIFY (완료) — `ServiceManager`와 `core-services`의 진단 API를
+  단일 진단 엔트리(`ServiceDiagnostics` in `service-diagnostics.ts`)로 통합.
+  `ServiceManager`의 진단 위임 메서드 제거 및 `core-services`에서 재export로
+  소비 경로 안정화. 타입/린트/테스트/의존성 그래프 GREEN.
+
+- SESSION-BUILD-VERIFY — Clear-Host && npm run build 수행: dev/prod Userscript
+  생성 및 postbuild 검증 PASS. 번들 크기: raw 370.44 KB / gzip 99.36 KB.
+
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
 2025-09-14: PLAN-ACTIVATION — 활성 리팩토링 계획 등록(5건)

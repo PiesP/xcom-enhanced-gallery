@@ -24,9 +24,7 @@ export { getService } from './ServiceManager';
 // Logger Interface & Implementation
 // ================================
 
-import { SERVICE_KEYS } from '@/constants';
 import { logger } from '@shared/logging/logger';
-import { registerCoreServices } from './service-initialization';
 
 // ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
 // 직접적인 서비스 키 타입 사용
@@ -80,76 +78,8 @@ export const defaultLogger = new ConsoleLogger();
  *
  * ServiceManager의 상태와 서비스 등록 상황을 확인하는 도구
  */
-export class ServiceDiagnostics {
-  /**
-   * ServiceManager 상태 진단
-   * @deprecated v1.1.0 - UnifiedServiceDiagnostics.diagnoseServiceManager()를 사용하세요
-   */
-  static async diagnoseServiceManager(): Promise<void> {
-    try {
-      logger.info('🔍 ServiceManager 진단 시작');
-
-      // 동적 import로 순환 의존성 방지
-      await registerCoreServices();
-      const { CoreService } = await import('./ServiceManager');
-
-      const serviceManager = CoreService.getInstance();
-
-      // 1. 서비스 등록
-      logger.info('📋 서비스 등록 중...');
-      await registerCoreServices();
-
-      // 2. 등록 상태 확인
-      const diagnostics = serviceManager.getDiagnostics();
-      logger.info('📊 진단 결과:', {
-        registeredCount: diagnostics.registeredServices,
-        initializedCount: diagnostics.activeInstances,
-        services: diagnostics.services,
-        instances: diagnostics.instances,
-      });
-
-      // 3. 등록된 서비스 목록
-      logger.debug('🗂️ 등록된 서비스:', diagnostics.services);
-
-      // 4. 필수 서비스 초기화 테스트
-      logger.info('🧪 필수 서비스 초기화 테스트 중...');
-      const autoTheme = await serviceManager.tryGet(SERVICE_KEYS.THEME);
-
-      logger.info('✅ 서비스 초기화 결과:', {
-        autoTheme: autoTheme ? '성공' : '실패',
-      });
-
-      // 5. 메모리 사용량 (간소화된 ResourceManager 사용)
-      try {
-        const { ResourceManager } = await import('../utils/memory/ResourceManager');
-        const resourceManager = new ResourceManager();
-        const resourceCount = resourceManager.getResourceCount();
-        if (resourceCount > 0) {
-          logger.info('💾 리소스 사용량:', { activeResources: resourceCount });
-        }
-      } catch (error) {
-        logger.warn('리소스 사용량 조회 실패:', error);
-      }
-
-      logger.info('✅ ServiceManager 진단 완료');
-    } catch (error) {
-      logger.error('❌ ServiceManager 진단 실패:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 브라우저 콘솔에서 실행할 수 있는 진단 명령 등록
-   */
-  static registerGlobalDiagnostic(): void {
-    if (import.meta.env.DEV) {
-      (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ = this.diagnoseServiceManager;
-    }
-  }
-}
-
-// 개발 환경에서 전역 진단 함수 등록
-ServiceDiagnostics.registerGlobalDiagnostic();
+// Diagnostics are extracted to a separate module to avoid cycles
+export { ServiceDiagnostics } from './service-diagnostics';
 
 // ================================
 // Service Registry는 별도 파일로 분리됨
