@@ -10,6 +10,7 @@
     "build:prod": "vite build --mode production",
     "build": "npm run clean && npm run build:dev && npm run build:prod",
     "postbuild": "node ./scripts/validate-build.js",
+    "pretest": "npm run build:prod",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest -coverage",
