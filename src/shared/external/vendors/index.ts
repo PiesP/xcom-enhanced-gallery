@@ -50,7 +50,12 @@ export type {
   PreactCompat,
 } from './vendor-types';
 
-// 🔄 기존 동적 import API 호환성 (deprecated, 점진적 마이그레이션용)
+/**
+ * 🔄 기존 동적 import API 호환성
+ * @deprecated 테스트/과도기 호환 목적 외 사용 금지. 런타임/프로덕션 코드에서는
+ * 반드시 TDZ-safe 정적 API(getPreact/getPreactHooks/...)를 사용하세요.
+ * 레거시 alias(*Legacy) 심볼은 향후 메이저에서 제거될 예정입니다.
+ */
 export {
   initializeVendors as initializeVendorsLegacy,
   getFflate as getFflateLegacy,

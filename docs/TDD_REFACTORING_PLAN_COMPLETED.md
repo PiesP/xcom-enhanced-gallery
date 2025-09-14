@@ -1,5 +1,11 @@
 ### 2025-09-14
 
+- VENDOR-LEGACY-SUNSET — 동적 Vendor API 사용 제거 완료. 레거시(alias \*Legacy)
+  re-export는 테스트/호환 목적만 유지하고 JSDoc @deprecated 표기. 와일드카드
+  vendor import 제거, 안전 getter 직참조로 일원화. 빌드/테스트/가드 GREEN.
+- UNUSED-CODE-SWEEP — 미사용 파일/심볼 제거 항목은 이전 세션에서 완료되어 본
+  로그에만 유지.
+
 - VENDOR-USAGE-SIMPLIFY — 와일드카드 vendor import 제거(Toast.tsx). 안전 getter
   도입, 타입 의존 간소화. 빌드/테스트 GREEN.
 - SERVICE-DIAG-UNIFY (1/2) — ServiceManager.diagnoseServiceManager를
