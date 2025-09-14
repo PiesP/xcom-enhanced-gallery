@@ -380,6 +380,8 @@ animateCustom(el, keyframes, {
   - `@shared/dom/DOMEventManager` 직접 import
   - `createEventManager` 팩토리 직접 import
   - `GalleryEventManager`를 `@shared/utils/events`에서 import
+  - `TwitterEventManager` 명칭을 직접 import(서비스 내부 별칭은 예외)
+  - `@shared/utils/events` 모듈을 외부 소비 계층에서 직접 import
 - 가드 테스트: `test/unit/lint/event-deprecated-removal.test.ts` — 금지된 import를 정적 스캔합니다(내부 모듈/어댑터 파일은 예외).
 
 권장 예시:
