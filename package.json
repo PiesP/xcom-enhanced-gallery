@@ -5,7 +5,6 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "pretest": "npm run build",
     "clean": "rimraf dist",
     "build:dev": "vite build --mode development",
     "build:prod": "vite build --mode production",
