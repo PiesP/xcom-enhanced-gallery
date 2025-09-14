@@ -201,6 +201,21 @@
 - 정책 유지: 외부 아이콘 패키지 직접 import 금지, 내부 Icon/IconButton 시스템
   사용.
 
+2025-09-14: UNUSED-CODE-SWEEP — 미사용 UI 구성/래퍼 정리 (완료)
+
+- 조치: 다음 고아/레거시 파일을 런타임 비사용 보장 하에 테스트/가드 호환
+  목적으로 최소 placeholder로 유지하며 명시적 @deprecated JSDoc을 추가
+  - `src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx` —
+    placeholder 객체를 `Object.freeze({})`로 유지, 기본/명명 export 동일, 주석에
+    대체 경로(SettingsModal) 명시
+  - `src/shared/components/ui/Toolbar/toolbarConfig.ts` — 타입/기본 구성 유지,
+    `Object.freeze`로 불변화, 전면 @deprecated 주석 추가(런타임 참조 금지)
+  - `src/shared/components/ui/Icon/icons/index.ts` — 레거시 아이콘 배럴
+    placeholder 유지(외부 아이콘 직접 import 가드와 문서 연계)
+- 검증: `npm run deps:all` 결과 0 violation, 순환/벤더 가드 GREEN. 고아 모듈은
+  정책 예외 목록에 포함되어 info 레벨 경고만 발생하도록 유지
+- 비고: 차기 메이저에서 테스트/가드가 정리되면 물리 파일 제거 검토
+
 2025-09-13: 세션 검증(업데이트) — 전체 테스트 GREEN · 빌드/산출물 검증 PASS
 
 - 테스트: 280 passed files | 9 skipped (총 289 파일), 1900 passed tests | 18

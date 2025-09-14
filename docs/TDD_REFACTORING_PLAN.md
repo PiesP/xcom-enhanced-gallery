@@ -3,7 +3,7 @@
 본 문서는 진행 중인 활성 Phase만 유지합니다. 완료된 항목은
 `TDD_REFACTORING_PLAN_COMPLETED.md`로 즉시 이관합니다.
 
-업데이트: 2025-09-14 — 활성 Phase: 2건
+업데이트: 2025-09-14 — 활성 Phase: 1건
 
 ## 운영 원칙(불변)
 
@@ -36,9 +36,7 @@
   - REFACTOR: 레거시 export JSDoc에 제거 시점 명시, 사용량 메트릭 훅 추가(선택).
 - DoD: 코드베이스에서 레거시 심볼 사용 0건, dev/prod 빌드/가드 GREEN.
 
-3. UNUSED-CODE-SWEEP — 미사용 파일/심볼 제거
-
-상태: 진행 — 테스트/스캔을 통해 남은 잔재를 제거합니다.
+<!-- 3. UNUSED-CODE-SWEEP — 미사용 파일/심볼 제거: 완료되어 완료 로그로 이관 -->
 
 5. VENDOR-USAGE-SIMPLIFY — 와일드카드 import 축소
 
