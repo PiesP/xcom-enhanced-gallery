@@ -141,7 +141,8 @@ Gallery
 ```css
 /* ✅ 표준화된 호버 효과 */
 .interactive-element:hover {
-  transform: translateY(-1px); /* 또는 var(--xeg-button-lift) */
+  /* hover lift는 반드시 토큰을 사용합니다. */
+  transform: translateY(var(--xeg-button-lift));
   box-shadow: var(--xeg-shadow-md);
   background: var(--xeg-color-bg-hover);
 }
@@ -166,6 +167,9 @@ Gallery
 - ✅ **시스템 테마 감지** - `prefers-color-scheme` 미디어 쿼리 지원
 - ✅ **접근성 보장** - 라이트/다크 모드 모두에서 적절한 대비율 유지
 - ✅ **표준화된 호버/포커스** - 일관된 인터랙션 상태 스타일 사용
+- ✅ **트랜지션 정책** - `transition: all` 금지. 변할 가능성이 있는 프로퍼티만
+  명시적으로 나열하고, 시간/이징은 반드시 토큰(`var(--xeg-duration-*)`,
+  `var(--xeg-ease-*)`)을 사용합니다.
 
 ### IconButton 사용 규칙
 

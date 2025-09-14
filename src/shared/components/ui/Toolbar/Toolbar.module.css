@@ -201,7 +201,7 @@
     /* glassmorphism 클래스의 호버 효과 사용 */
     /* 복잡한 transform 효과 제거 */
     background: var(--xeg-glass-bg-hover, var(--color-glass-bg));
-    transform: translateY(-1px);
+    transform: translateY(var(--xeg-button-lift));
   }
 }
 

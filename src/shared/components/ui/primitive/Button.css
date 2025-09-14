@@ -36,7 +36,8 @@
   /* 호버 상태 */
   &:hover:not(:disabled) {
     background-color: var(--button-bg-primary-hover);
-    transform: translateY(-1px);
+    /* hover lift는 디자인 토큰 기반 */
+    transform: translateY(var(--xeg-button-lift));
   }
 
   /* 활성 상태 */
@@ -76,14 +77,16 @@
 
 /* 크기: Small */
 .xeg-button--sm {
-  height: 32px;
+  /* em 기반 스케일로 전환 (2em ≈ 32px @16px) */
+  height: 2em;
   padding: var(--space-xs) var(--space-sm);
   font-size: var(--font-size-sm);
 }
 
 /* 크기: Large */
 .xeg-button--lg {
-  height: 48px;
+  /* em 기반 스케일로 전환 (3em ≈ 48px @16px) */
+  height: 3em;
   padding: var(--space-sm) var(--space-lg);
   font-size: var(--font-size-lg);
 }

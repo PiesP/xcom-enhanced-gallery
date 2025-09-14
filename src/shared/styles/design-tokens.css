@@ -263,13 +263,28 @@
 
 /* Transition utility classes to encourage common pattern usage */
 .xeg-transition-fast {
-  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition:
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    opacity var(--xeg-duration-fast) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 .xeg-transition-normal {
-  transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  transition:
+    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 .xeg-transition-slow {
-  transition: all var(--xeg-duration-slow) var(--xeg-easing-ease-out);
+  transition:
+    transform var(--xeg-duration-slow) var(--xeg-ease-standard),
+    opacity var(--xeg-duration-slow) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-slow) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-slow) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-slow) var(--xeg-ease-standard);
 }
 
 /* 접근성 미디어 쿼리 - 테스트 요구사항 */

@@ -1,5 +1,32 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-14: POLICY-HARDENING-TRANSITIONS — transition: all 제거/이징 토큰 정합
+
+- animation-utilities.css: 기본/hover 트랜지션을 명시적 프로퍼티로 전환, hover
+  lift 토큰 적용
+- design-tokens.css: .xeg-transition-(fast|normal|slow) 유틸을 명시적 프로퍼티
+  목록으로 전환, --xeg-ease-standard 사용
+- Toast.module.css/Gallery.module.css/gallery-global.css/modern-features.css:
+  잔여 `transition: all` 제거 및 표준 이징 토큰으로 통일
+- 검증: 타입/린트/테스트/빌드 예정 — postbuild validator 통과 전제
+
+2025-09-14: POLICY-HARDENING — 전역/프리미티브 스타일 준수 보강
+
+- isolated-gallery.css: transition: all 제거 → 명시적 프로퍼티
+  전환(background-color, border-color, transform, box-shadow)
+- hover lift 토큰화: translateY(-1px) → translateY(var(--xeg-button-lift))
+- primitive/Button.css: hover lift 토큰화 및 크기 px → em 전환(sm=2em, lg=3em)
+- 문서: CODING_GUIDELINES 예시에서 -1px 제거, 토큰 강제 표기
+- 검증: build/postbuild validator PASS
+
+2025-09-14: UI-VNEXT-01 — Toolbar/Settings Glass Refresh & Density Scale (완료)
+
+- DoD 충족: Toolbar/SettingsModal이 semantic 토큰만 사용(bg/border/text), 2.5em
+  클릭 타겟·em 스케일·토큰화된 transition/ease, z-index 토큰(`--xeg-z-*`) 일원화
+- 잔여 교정: Toolbar hover 이동 값 하드코딩(-1px) →
+  `translateY(var(--xeg-button-lift))`로 토큰화
+- 검증: 타입/린트/전체 테스트/빌드 + postbuild sourcemap/dead-preload 가드 PASS
+
 2025-09-13: UI-VNEXT-01(결정) — Glass Refresh & Density Scale 접근 채택
 
 - 결론: Semantic 토큰 직사용 + CSS Modules + alignment 유틸 보강(Option A) 채택
