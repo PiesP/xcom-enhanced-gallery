@@ -7,7 +7,7 @@
 
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
 import type { Result } from '@shared/types/core/core-types';
-import { getPreactSignals } from '../../external/vendors';
+import { createSignalSafe, effectSafe } from './signal-factory';
 // Remove runtime dependency on services to avoid cycles; use logging directly
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 
@@ -76,8 +76,7 @@ const logger: ILogger = rootLogger;
 
 function getDownloadState(): Signal<DownloadState> {
   if (!downloadStateSignal) {
-    const { signal } = getPreactSignals();
-    downloadStateSignal = signal<DownloadState>(INITIAL_STATE);
+    downloadStateSignal = createSignalSafe<DownloadState>(INITIAL_STATE);
   }
   return downloadStateSignal!;
 }
@@ -98,8 +97,7 @@ export const downloadState = {
    * 상태 변경 구독
    */
   subscribe(callback: (state: DownloadState) => void): () => void {
-    const { effect } = getPreactSignals();
-    return effect(() => {
+    return effectSafe(() => {
       callback(this.value);
     });
   },

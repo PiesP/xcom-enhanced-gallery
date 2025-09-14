@@ -3,7 +3,7 @@
 본 문서는 “유저스크립트에 적합한 복잡성”을 유지하기 위한 현재 활성 계획만
 담습니다. 완료된 항목은 즉시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
 
-업데이트: 2025-09-14 — 활성 Phase: 5건
+업데이트: 2025-09-14 — 활성 Phase: 4건
 
 ## 운영 원칙(불변)
 
@@ -25,14 +25,7 @@
 - DoD: UI에서 legacyToasts 미사용, 테스트(a11y/live-region/토스트 라우팅) GREEN,
   번들 사이즈 ≤ 기존 ±0.3KB.
 
-2. SIGNALS-SAFE-FACTORY
-
-- 목적: Signals 의존부의 초기화/폴백 패턴을 통일(`createSignalSafe<T>()`).
-- 접근: `@shared/utils/signals/createSignalSafe` 유틸 추가 →
-  gallery/download/toolbar signals에서 공통 사용.
-- 장점: 에러/폴백 동작 일관화, 테스트 모킹 단순화. 단점: 경미한 간접 비용.
-- DoD: 세 signals 모듈이 유틸 사용, RED 스캔(직접 require/import) 0건, 테스트
-  GREEN.
+<!-- 2. SIGNALS-SAFE-FACTORY: 완료되어 완료 로그로 이동 -->
 
 3. VENDOR-GUARD-02
 

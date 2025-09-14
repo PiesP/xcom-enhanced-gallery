@@ -9,14 +9,14 @@
  */
 
 import type { MediaInfo } from '../../types/media.types';
-import { getPreactSignals } from '../../external/vendors';
+import { effectSafe, createSignalSafe } from './signal-factory';
 // Break runtime dependency on services: use logging barrel directly
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 
 // Signal type
 type Signal<T> = {
   value: T;
-  subscribe?: (callback: (value: T) => void) => void;
+  subscribe?: (callback: (value: T) => void) => () => void;
 };
 
 /**
@@ -61,8 +61,7 @@ const logger: ILogger = rootLogger;
 
 function getGalleryStateSignal(): Signal<GalleryState> {
   if (!galleryStateSignal) {
-    const { signal } = getPreactSignals();
-    galleryStateSignal = signal<GalleryState>(INITIAL_STATE);
+    galleryStateSignal = createSignalSafe<GalleryState>(INITIAL_STATE);
   }
   return galleryStateSignal;
 }
@@ -83,8 +82,7 @@ export const galleryState = {
    * Subscribe to state changes
    */
   subscribe(callback: (state: GalleryState) => void): () => void {
-    const { effect } = getPreactSignals();
-    return effect(() => {
+    return effectSafe(() => {
       callback(getGalleryStateSignal().value);
     });
   },

@@ -61,7 +61,15 @@ dependency violations. 전체 테스트 GREEN.
   배럴은 기존 가드 테스트와 호환되는 최소 표면만 유지.
 - 검증: 타입/린트/전체 테스트 GREEN, 의존성/벤더 가드 PASS.
 
-2025-09-14: S3 — EVENT-DEPRECATED-REMOVAL (완료)
+2025-09-14: S3 — EVENT-DEPRECATED-REMOVAL (완료) 2025-09-14:
+SIGNALS-SAFE-FACTORY (완료)
+
+- 내용: 공통 시그널 팩토리 `createSignalSafe/effectSafe/computedSafe` 도입
+  (`src/shared/state/signals/signal-factory.ts`). gallery/download/toolbar 상태
+  모듈과 `shared/state/gallery-store.ts`에 적용하여 벤더 getter 의존과 폴백
+  로직을 일원화.
+- 검증: 타입/린트/전체 테스트 GREEN(1824/0/25), dev/prod 빌드 및 postbuild
+  validator PASS. 벤더 가드 정책 준수(직접 import 0건).
 
 - 내용: 레거시 이벤트 유틸(Direct DOMEventManager/createEventManager,
   GalleryEventManager) 외부 사용 제거. 서비스 배럴에서 deprecated re-export
