@@ -9,6 +9,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { getPreactSignals } from '@shared/external/vendors';
 
 /**
  * 간소화된 툴바 상태 인터페이스
@@ -45,13 +46,14 @@ let toolbarStateSignal: Signal<ToolbarState> | null = null;
 function getToolbarStateSignal(): Signal<ToolbarState> {
   if (!toolbarStateSignal) {
     try {
-      // Preact Signals 동적 로딩
-      const signalsModule = require('@preact/signals');
-      const { signal } = signalsModule;
+      // 안전 벤더 getter 사용(테스트/모듈 사이드이펙트 가드 준수)
+      const { signal } = getPreactSignals();
       toolbarStateSignal = signal(INITIAL_TOOLBAR_STATE);
       logger.debug('Toolbar state signal initialized');
     } catch (error) {
-      logger.warn('Failed to initialize Preact Signals, using fallback', { error });
+      logger.warn('Failed to initialize Preact Signals via vendor getter, using fallback', {
+        error,
+      });
       // 폴백 구현
       toolbarStateSignal = {
         value: INITIAL_TOOLBAR_STATE,

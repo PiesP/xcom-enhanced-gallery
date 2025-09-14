@@ -35,6 +35,14 @@ dependency violations. 전체 테스트 GREEN.
 
 생성 및 postbuild 검증 PASS. 번들 크기: raw 370.44 KB / gzip 99.36 KB.
 
+2025-09-14: SIGNALS-SAFE-FACTORY(seed) — toolbar.signals 안전 getter 적용
+(소규모 완료)
+
+- 내용: `toolbar.signals.ts`에서 `require('@preact/signals')` 직접 접근을
+  제거하고 안전 getter(`getPreactSignals`)로 교체. 예외 시 폴백 경로 유지.
+- 검증: typecheck/lint/tests GREEN(전 스위트), 빌드 스모크 통과. 벤더 가드 정책
+  부합.
+
 2025-09-14: S2 — TOOLBAR-ANIMATION-PATH-UNIFY (완료)
 
 - 내용: 툴바 show/hide를 공식 JS API(toolbarSlideDown/Up)로 일원화. CSS 엔진의
