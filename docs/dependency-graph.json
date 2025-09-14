@@ -13696,9 +13696,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/utils/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -15510,23 +15508,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../shared",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../shared/logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15572,7 +15553,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 257,
-    "totalDependenciesCruised": 706,
+    "totalDependenciesCruised": 705,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

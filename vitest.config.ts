@@ -6,8 +6,7 @@
 
 import preact from '@preact/preset-vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import fs from 'node:fs';
-import path, { resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath, URL } from 'node:url';
 
@@ -68,6 +67,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
     isolate: true, // 테스트 파일 간 격리
+    testTimeout: 20000, // 동적 import 및 멀티 프로젝트 실행 시 플래키 타임아웃 방지
+    hookTimeout: 25000,
 
     // Bare import로 인식되는 @features/@shared/@assets/@* 별칭을
     // 외부 의존성으로 최적화(deps optimize)하지 말고 Vitest(vite-node)
