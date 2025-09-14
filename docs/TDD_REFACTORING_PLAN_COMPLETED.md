@@ -1,5 +1,41 @@
 ### 2025-09-14
 
+2025-09-14: P9 — 벤더 레거시 API 제거 (완료)
+
+- 내용: 동적 VendorManager 및 legacy vendor API 표면을 엔트리/문서에서 제거하고,
+  prod 번들 가드를 정밀화(StaticVendorManager 허용, 동적 VendorManager 금지).
+  vendor-api.ts 문자열 누출 차단. 안전 getter(`vendor-api-safe`)만 공개.
+- 검증: 전체 테스트 GREEN, dev/prod 빌드 PASS, postbuild validator PASS.
+
+2025-09-14: P8 — 파일명 규칙 단일 소스(FilenameService) (완료)
+
+- 2025-09-14: P7 — 다운로드 오케스트레이션 일원화 (완료)
+
+- 내용: DownloadOrchestrator 도입으로 동시성/재시도/ZIP 조립을 중앙화. 기존
+  BulkDownloadService는 퍼사드로 유지하고 내부적으로 오케스트레이터에 위임.
+  진행률(onProgress) 경로 일원화 및 실패 재시도 액션과의 정합 확보.
+- 영향: 공개 API/소비처 변경 없음. 구현 내부 리팩터.
+- 검증: 관련 단위 테스트(BulkDownloadService queue/concurrency/cancel/retry,
+  retry-action) GREEN, 타입/린트 PASS, dev/prod 빌드 및 postbuild validator
+  PASS.
+
+- 내용:
+  - 모든 파일명 생성 경로를 FilenameService 및 편의 함수(generateMediaFilename/
+    generateZipFilename)로 일원화. ad-hoc 문자열 조립 금지.
+  - `shared/utils/media/media-url.util.ts`에서 이미지/영상 생성자
+    (`createMediaInfoFromImage`/`createMediaInfoFromVideo`)가
+    `generateMediaFilename`을 사용하도록 리팩터링.
+  - 동영상 확장자 정확도 개선: src/poster URL에서 확장자를 정규식으로 추출하여
+    서비스 옵션으로 전달. exactOptionalPropertyTypes 규칙에 맞춘 안전한 옵션
+    구성.
+  - 가드 테스트 추가: `test/unit/shared/utils/media-url.filename-policy.test.ts`
+    (이미지/영상 파일명이 `{username}_{tweetId}_{index}.{ext}` 규칙을 준수하는지
+    검증; DOM 의존 없는 스텁 사용).
+  - CODING_GUIDELINES에 “파일명 정책(단일 소스)” 섹션 추가 및 벤더 레거시 금지
+    조항 보강. TDD 계획서에서 P8 제거 및 잔여 순서를 P7 → P6 → P10으로 재정렬.
+- 검증: 타입/린트/fast 테스트 GREEN, dev/prod 빌드 PASS, postbuild validator
+  PASS.
+
 2025-09-14: PLAN-REFRESH-03 — 활성 계획 재정비(P6–P10) (완료)
 
 - 내용: 이전 진단/결정(하이브리드 단기 C 등)을 완료 로그로 이관하고, 활성 계획을

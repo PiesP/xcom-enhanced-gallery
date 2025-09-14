@@ -10,6 +10,7 @@
 
 import { logger } from '../../logging/logger';
 import { parseUsernameFast } from '../../services/media/UsernameExtractionService';
+import { generateMediaFilename } from '../../media';
 import type { MediaInfo } from '../../types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '../../dom';
 
@@ -104,13 +105,16 @@ export function createMediaInfoFromImage(
     // 썸네일 URL (small 버전)
     const thumbnailUrl = `${src.replace(/[?&]name=[^&]*/, '').replace(/[?&]format=[^&]*/, '')}?format=jpg&name=small`;
 
-    // 파일명 추출 (URL에서 실제 미디어 ID 부분)
-    const urlMatch = src.match(/\/media\/([^?]+)/);
-    const mediaId = urlMatch?.[1] ?? `media_${tweetId}_${index}`;
-
-    // 안전한 파일명 생성 - 중복 확장자 제거 및 유효성 검증
-    const cleanMediaId = cleanFilename(mediaId);
-    const filename = `${cleanMediaId}.jpg`;
+    // 사용자/트윗 정보 기반 단일 소스 파일명 생성
+    const username = parseUsernameFast() || undefined;
+    const tempInfo: Partial<MediaInfo> = {
+      id: `${tweetId}-${index}`,
+      url: originalUrl,
+      type: 'image',
+      tweetId,
+      tweetUsername: username,
+    } as const;
+    const filename = generateMediaFilename(tempInfo as MediaInfo, { index: index + 1 });
 
     return {
       id: `${tweetId}-${index}`,
@@ -149,13 +153,31 @@ export function createMediaInfoFromVideo(
       return null;
     }
 
-    // 비디오 썸네일 (poster)에서 미디어 ID 추출
-    const posterMatch = poster.match(/\/media\/([^?]+)/);
-    const mediaId = posterMatch ? posterMatch[1] : `video_${tweetId}_${index}`;
-
-    // 안전한 파일명 생성
-    const cleanMediaId = cleanFilename(mediaId ?? `fallback_${tweetId}_${index}`);
-    const filename = `${cleanMediaId}.mp4`;
+    // 사용자/트윗 정보 기반 단일 소스 파일명 생성
+    const username = parseUsernameFast() || undefined;
+    const tempInfo: Partial<MediaInfo> = {
+      id: `${tweetId}-video-${index}`,
+      url: src || poster,
+      type: 'video',
+      tweetId,
+      tweetUsername: username,
+    } as const;
+    // 확장자는 소스 URL에서 직접 우선 추출하여 서비스에 전달 (mp4 등의 정확성 보장)
+    let ext: string | undefined;
+    try {
+      const sourceUrl = src || poster;
+      const m = sourceUrl.match(/\.([a-z0-9]+)(?:[?#]|$)/i);
+      ext = m?.[1]?.toLowerCase();
+    } catch {
+      // ignore parse errors; fallback extension logic in FilenameService will apply
+    }
+    const options: { index: number } | { index: number; extension: string } = ext
+      ? { index: index + 1, extension: ext }
+      : { index: index + 1 };
+    const filename = generateMediaFilename(
+      tempInfo as MediaInfo,
+      options as import('../../media').FilenameOptions
+    );
 
     return {
       id: `${tweetId}-video-${index}`,

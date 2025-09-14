@@ -60,8 +60,9 @@ services/
   등.
 - 와일드카드 import(`import * as Vendors from ...`) 금지. 필요한 심볼만
   명시적으로 가져옵니다.
-- Legacy 동적 API(`*Legacy` 접미사, `vendor-api.ts`)는 테스트/마이그레이션
-  전용이며, 런타임 코드에서 사용 금지.
+- Legacy 동적 API 금지: `*Legacy` 접미사, 동적 `VendorManager`, `vendor-api.ts`
+  등은 테스트/마이그레이션 문맥 이외 사용 금지입니다. 프로덕션 번들에서 해당
+  문자열이 검출되면 postbuild validator가 실패합니다.
 - 타입도 가능하면 벤더 index에서 재export된 것을 사용합니다: `type VNode`,
   `type ComponentChildren` 등.
 
@@ -70,6 +71,23 @@ services/
 - 직접 import 금지 정책은 테스트에서 정적으로 스캔되어 위반 시 실패합니다.
   `test/unit/lint/direct-imports-source-scan.test.js`를 참고하세요. 반드시
   `@shared/external/vendors`의 getter로만 접근하세요.
+
+추가 보강(2025-09-14):
+
+- Prod 누출 가드: postbuild 검증은 StaticVendorManager는 허용하고 동적
+  VendorManager 식별자를 금지합니다. 또한 `vendor-api.ts` 문자열이 산출물에
+  포함되면 실패합니다.
+
+### 파일명 정책 (단일 소스)
+
+- 모든 파일명 생성은 `FilenameService` 또는 동등 편의 함수
+  (`generateMediaFilename`, `generateZipFilename`)를 통해서만 수행합니다.
+- 소비처(서비스/유틸/컴포넌트)에서 파일명 직접 조립(문자열 연결, suffix 관리
+  등)을 구현하지 않습니다. 충돌 처리(`-1`, `-2` 접미사)는 호출층(예: ZIP 단계)
+  또는 서비스 내부 정책으로 일원화합니다.
+- 스캔 가드: 파일명 직접 조립이 확인되면 RED로 전환하는 테스트를 유지/보강합니다
+  (예: ad-hoc 파일명 패턴 탐지). 현재 구현은 MediaService/BulkDownloadService가
+  FilenameService를 사용합니다.
 
 추가 보강(2025-09-14):
 

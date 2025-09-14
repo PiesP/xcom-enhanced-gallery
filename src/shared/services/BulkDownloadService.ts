@@ -14,6 +14,7 @@ import { toastManager } from './UnifiedToastManager';
 import { languageService } from './LanguageService';
 import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';
+import { DownloadOrchestrator } from './download/DownloadOrchestrator';
 
 export interface DownloadProgress {
   phase: 'preparing' | 'downloading' | 'complete';
@@ -85,54 +86,12 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
 export class BulkDownloadService {
   private currentAbortController: AbortController | undefined;
   private cancelToastShown = false;
-  private static readonly DEFAULT_BACKOFF_BASE_MS = 200;
-
-  private async sleep(ms: number, signal?: AbortSignal): Promise<void> {
-    if (ms <= 0) return;
-    return new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        cleanup();
-        resolve();
-      }, ms);
-      const onAbort = () => {
-        cleanup();
-        reject(new Error('Download cancelled by user'));
-      };
-      const cleanup = () => {
-        clearTimeout(timer);
-        signal?.removeEventListener('abort', onAbort);
-      };
-      if (signal) signal.addEventListener('abort', onAbort);
-    });
-  }
+  private readonly orchestrator = new DownloadOrchestrator();
 
   /**
    * Fetch helper with retry and exponential backoff.
    */
-  private async fetchArrayBufferWithRetry(
-    url: string,
-    retries: number,
-    signal?: AbortSignal,
-    backoffBaseMs: number = BulkDownloadService.DEFAULT_BACKOFF_BASE_MS
-  ): Promise<Uint8Array> {
-    let attempt = 0;
-    // total tries = retries + 1
-    while (true) {
-      if (signal?.aborted) throw new Error('Download cancelled by user');
-      try {
-        const response = await fetch(url, { ...(signal ? { signal } : {}) } as RequestInit);
-        const arrayBuffer = await response.arrayBuffer();
-        return new Uint8Array(arrayBuffer);
-      } catch (err) {
-        if (attempt >= retries) throw err;
-        attempt += 1;
-        // exponential backoff: base * 2^(attempt-1)
-        const delay = Math.max(0, Math.floor(backoffBaseMs * 2 ** (attempt - 1)));
-        // backoff before next attempt (throws on abort)
-        await this.sleep(delay, signal);
-      }
-    }
-  }
+  // fetchArrayBufferWithRetry moved to DownloadOrchestrator
 
   /**
    * 서비스 상태 확인 (테스트 호환성을 위해)
@@ -279,109 +238,25 @@ export class BulkDownloadService {
     try {
       const correlationId = createCorrelationId();
       const slog = createScopedLoggerWithCorrelation('BulkDownload', correlationId);
-      const { getFflate } = await import('../external/vendors');
-      const fflate = getFflate();
       const download = getNativeDownload();
-
-      const files: Record<string, Uint8Array> = {};
-      let successful = 0;
-      let processed = 0;
-      const failures: Array<{ url: string; error: string }> = [];
-
-      // filename collision handling: ensure unique names with -1, -2 suffixes
-      const usedNames = new Set<string>();
-      const baseCounts = new Map<string, number>();
-      const ensureUniqueFilename = (desired: string): string => {
-        if (!usedNames.has(desired) && !files[desired]) {
-          usedNames.add(desired);
-          baseCounts.set(desired, 0);
-          return desired;
-        }
-        // split name and extension
-        const lastDot = desired.lastIndexOf('.');
-        const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
-        const ext = lastDot > 0 ? desired.slice(lastDot) : '';
-        const baseKey = desired; // track per original desired
-        let count = baseCounts.get(baseKey) ?? 0;
-        // start suffixing at 1
-        while (true) {
-          count += 1;
-          const candidate = `${name}-${count}${ext}`;
-          if (!usedNames.has(candidate) && !files[candidate]) {
-            baseCounts.set(baseKey, count);
-            usedNames.add(candidate);
-            return candidate;
-          }
-        }
-      };
-
-      const concurrency = Math.max(1, Math.min(options.concurrency ?? 2, 8));
-      const retries = Math.max(0, options.retries ?? 0);
       const abortSignal = this.currentAbortController?.signal;
+      const itemsForZip = mediaItems.map(m => ({
+        url: m.url,
+        desiredName: generateMediaFilename(toFilenameCompatible(m)),
+      }));
 
-      const isAborted = (): boolean => !!abortSignal?.aborted;
+      const orchOptions = {
+        ...(typeof options.concurrency === 'number' ? { concurrency: options.concurrency } : {}),
+        ...(typeof options.retries === 'number' ? { retries: options.retries } : {}),
+        ...(abortSignal ? { signal: abortSignal } : {}),
+        ...(options.onProgress ? { onProgress: options.onProgress } : {}),
+      } as const;
 
-      const fetchWithRetry = (url: string) =>
-        this.fetchArrayBufferWithRetry(url, retries, abortSignal);
-
-      options.onProgress?.({
-        phase: 'preparing',
-        current: 0,
-        total: mediaItems.length,
-        percentage: 0,
-      });
-
-      // 동시성 큐 실행
-      let index = 0;
-      const workers: Promise<void>[] = [];
-
-      const runNext = async (): Promise<void> => {
-        // 루프를 통해 할당
-        while (true) {
-          if (isAborted()) throw new Error('Download cancelled by user');
-          const i = index++;
-          if (i >= mediaItems.length) return;
-          const media = mediaItems[i];
-          if (!media) {
-            processed++;
-            continue;
-          }
-
-          options.onProgress?.({
-            phase: 'downloading',
-            current: Math.min(processed + 1, mediaItems.length),
-            total: mediaItems.length,
-            percentage: Math.min(
-              100,
-              Math.max(0, Math.round(((processed + 1) / mediaItems.length) * 100))
-            ),
-            filename: media.filename,
-          });
-
-          try {
-            const data = await fetchWithRetry(media.url);
-            const converted = toFilenameCompatible(media);
-            const desiredName = generateMediaFilename(converted);
-            const filename = ensureUniqueFilename(desiredName);
-            files[filename] = data;
-            successful++;
-            slog.debug('File added to ZIP', { filename });
-          } catch (error) {
-            if (isAborted()) throw new Error('Download cancelled by user');
-            const errMsg = getErrorMessage(error);
-            slog.warn('Failed to download', { filename: media.filename, error: errMsg });
-            failures.push({ url: media.url, error: errMsg });
-          } finally {
-            processed++;
-          }
-        }
-      };
-
-      for (let w = 0; w < concurrency; w++) {
-        workers.push(runNext());
-      }
-
-      await Promise.all(workers);
+      const {
+        filesSuccessful: successful,
+        failures,
+        zipData,
+      } = await this.orchestrator.zipMediaItems(itemsForZip, orchOptions);
 
       if (successful === 0) {
         // 모든 실패 → 에러 토스트 (Phase I 정책)
@@ -391,9 +266,6 @@ export class BulkDownloadService {
         );
         throw new Error('All downloads failed');
       }
-
-      // ZIP 생성
-      const zipData = fflate.zipSync(files);
       const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
 
       // ZIP 다운로드
@@ -463,7 +335,16 @@ export class BulkDownloadService {
                   const item = failedItems[myIndex];
                   if (!item) break;
                   try {
-                    await this.fetchArrayBufferWithRetry(item.url, retries, abortSignal);
+                    // lightweight re-try: perform a single fetch with orchestrator retry logic
+                    const retryOptions = {
+                      retries: options.retries ?? 0,
+                      concurrency: 1,
+                      ...(abortSignal ? { signal: abortSignal } : {}),
+                    } as const;
+                    await this.orchestrator.zipMediaItems(
+                      [{ url: item.url, desiredName: item.filename ?? 'file.bin' }],
+                      retryOptions
+                    );
                   } catch (e) {
                     remaining.push({ url: item.url, error: getErrorMessage(e) });
                   }

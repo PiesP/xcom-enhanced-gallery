@@ -3,8 +3,7 @@
 본 문서는 “유저스크립트에 적합한 복잡성”을 유지하기 위한 현재 활성 계획만
 담습니다. 완료된 항목은 즉시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
 
-업데이트: 2025-09-14 — 활성 Phase: P6–P10 실행 순서(권장): P9 → P8 → P7 → P6 →
-P10
+업데이트: 2025-09-14 — 활성 Phase: P6–P10 실행 순서(권장): P6 → P10
 
 ## 운영 원칙(불변)
 
@@ -21,9 +20,9 @@ P10
 - 다운로드 경로 분산: `BulkDownloadService`/`GalleryDownloadService`의 책임이
   일부 중첩 가능 — 동시성/재시도/ZIP 경로의 정책을 중앙화 필요.
 - 파일명 규칙 중복: `MediaFilenameService`와 소비처의 패턴 처리 로직이 중복될
-  여지가 있어 단일 소스화 필요.
-- 벤더 레거시 API: getter 표준화는 완료되었으나 `*Legacy` 동적 API 표면은
-  문서/배럴에 잔존할 수 있어 제거 또는 DEV 한정화 필요.
+  여지가 있어 단일 소스화 필요. \- (해결) 벤더 레거시 API: 동적
+  VendorManager/API 표면을 제거/차단했고, prod 번들 문자열 누출 가드를
+  강화했습니다.
 
 ## 옵션 비교와 결정(핵심 주제: 컨테이너 단일화)
 
@@ -52,28 +51,12 @@ P6 — 컨테이너 단일화(최종)
 - GREEN: 접근자 이행 및 테스트 하네스 `ServiceHarness` 도입
 - DoD: 전 스위트 GREEN, dev/prod 빌드 및 postbuild validator PASS
 
-P7 — 다운로드 오케스트레이션 일원화
+진행 현황(부분):
 
-- 목표: 동시성/재시도/스케줄링/ZIP 경로를 `DownloadOrchestrator`(서비스)로
-  중앙화. 기존 `BulkDownloadService`/`GalleryDownloadService`는 위임 래퍼로
-  축소.
-- RED: 통합 단위 테스트(동시성 제한, 오류 재시도, idle 스케줄 옵션)
-- GREEN: 서비스 구현/와이어링, 접근자 업데이트
-- DoD: 기존 퍼사드 API 유지(호환), 성능/가드 테스트 GREEN
+- settings-access가 레거시 전역 어댑터 의존을 제거하고 ServiceManager 브리지로
+  전환됨
 
-P8 — 파일명 규칙 단일 소스화
-
-- 목표: `MediaFilenameService`를 단일 소스로 확정하고 소비처의 중복 로직 제거.
-- RED: 패턴/토큰/경계값 테스트(긴 트윗, 이모지, 확장자 규칙)
-- GREEN: 소비처 정리 및 서비스 강화
-- DoD: 소비처에서 파일명 직접 조립 0건(스캔 테스트)
-
-P9 — 벤더 레거시 API 제거
-
-- 목표: `*Legacy`/동적 API 표면 제거 또는 DEV 전용 게이트(배럴/문서 포함).
-- RED: 금지 import/재export 스캔 테스트 추가
-- GREEN: 배럴/문서 정리, 대체 경로 안내
-- DoD: 정적 스캔 GREEN, 번들 문자열 누수 0건
+<!-- P7 — 다운로드 오케스트레이션 일원화 (완료: Completed Log 참조) -->
 
 P10 — 플레이스홀더/고아 코드 최종 정리
 
