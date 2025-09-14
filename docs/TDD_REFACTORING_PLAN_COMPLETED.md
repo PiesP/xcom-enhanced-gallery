@@ -49,6 +49,15 @@
   postbuild validator PASS
 - 비고: P6 잔여(런타임/리팩토링 스위트의 AppContainer 제거)는 후속 커밋에서 진행
 
+2025-09-15: P6 — 컨테이너 단일화(부분 완료: 리팩토링 테스트 1건 하네스 전환)
+
+- 내용: refactor 스위트의 `container/services/service-keys-reduction.test.ts`를
+  AppContainer 의존 제거 후 `ServiceHarness` + `service-accessors` 기반으로
+  마이그레이션. SERVICE_KEYS 기준선/성능/싱글톤/확장성 검증을 접근자/브리지
+  경유로 재작성.
+- 검증: refactor 프로젝트 전체 GREEN(53 파일), 기존 가드와 충돌 없음. dev/prod
+  빌드는 동일(소스 변경은 테스트 한정).
+
 2025-09-14: PLAN-REFRESH-03 — 활성 계획 재정비(P6–P10) (완료)
 
 - 내용: 이전 진단/결정(하이브리드 단기 C 등)을 완료 로그로 이관하고, 활성 계획을

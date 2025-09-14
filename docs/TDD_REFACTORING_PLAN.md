@@ -54,6 +54,8 @@ P6 — 컨테이너 단일화(최종)
 진행 현황(부분):
 
 - 테스트 하네스 도입 및 core 리셋 호환성 확보까지 진행 (완료 로그에 기록됨)
+- refactor 스위트 중 `container/services/service-keys-reduction.test.ts`를
+  ServiceHarness + service-accessors 기반으로 마이그레이션하여 GREEN 확인
 
 <!-- P7 — 다운로드 오케스트레이션 일원화 (완료: Completed Log 참조) -->
 
