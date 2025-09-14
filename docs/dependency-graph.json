@@ -75,7 +75,7 @@
         "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/base/BaseComponentProps.ts",
         "src/shared/services/MediaService.ts",
-        "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/state/signals/signal-factory.ts",
         "src/shared/utils/performance/signalOptimization.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
         "src/features/gallery/GalleryRenderer.ts",
@@ -128,9 +128,7 @@
         "src/shared/hooks/useFocusScope.ts",
         "src/shared/hooks/useGalleryToolbarLogic.ts",
         "src/shared/hooks/useSettingsModal.ts",
-        "src/shared/state/signals/download.signals.ts",
-        "src/shared/utils/optimization/memo.ts",
-        "src/shared/state/gallery-store.ts"
+        "src/shared/utils/optimization/memo.ts"
       ],
       "orphan": false,
       "valid": true
@@ -370,6 +368,7 @@
         "src/shared/services/media/TwitterVideoExtractor.ts",
         "src/shared/services/media/FallbackExtractor.ts",
         "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
+        "src/shared/state/signals/signal-factory.ts",
         "src/shared/services/ThemeService.ts",
         "src/shared/services/ToastController.ts",
         "src/shared/services/ServiceManager.ts",
@@ -3781,23 +3780,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../logging",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3830,6 +3812,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./signal-factory",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/state/signals/signal-factory.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -3842,6 +3841,59 @@
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/shared/state/index.ts",
         "src/shared/state/app-state.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/state/signals/signal-factory.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/state/signals/download.signals.ts",
+        "src/shared/state/signals/toolbar.signals.ts",
+        "src/shared/state/gallery-store.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12440,13 +12492,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/ui/ModalShell/ModalShell.tsx",
       "dependencies": [
         {
@@ -14287,14 +14332,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../external/vendors",
+          "module": "../../logging",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/external/vendors.ts",
+          "resolved": "src/shared/logging/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14304,14 +14349,14 @@
         },
         {
           "dynamic": false,
-          "module": "../../logging",
+          "module": "./signal-factory",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/logging/index.ts",
+          "resolved": "src/shared/state/signals/signal-factory.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14372,6 +14417,23 @@
     {
       "source": "src/shared/state/signals/toolbar.signals.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./signal-factory",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/state/signals/signal-factory.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "@shared/logging/logger",
@@ -15039,14 +15101,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../external/vendors",
+          "module": "./signals/signal-factory",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/external/vendors.ts",
+          "resolved": "src/shared/state/signals/signal-factory.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15525,7 +15587,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 258,
-    "totalDependenciesCruised": 703,
+    "totalDependenciesCruised": 706,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
