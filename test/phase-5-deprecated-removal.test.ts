@@ -46,11 +46,11 @@ describe('Phase 5: Deprecated 제거 & 안전망 (RED)', () => {
   });
 
   describe('Deprecated 컴포넌트 감지', () => {
-    test('EnhancedSettingsModal 컴포넌트가 deprecated 마킹되어야 함', () => {
+    test('EnhancedSettingsModal 컴포넌트가 제거되었거나(deleted) 최소 @deprecated 마킹되어야 함', () => {
       const enhancedModal = projectFiles.find(f => f.path.includes('EnhancedSettingsModal'));
 
       if (!enhancedModal || !enhancedModal.exists) {
-        expect.soft(true).toBe(true); // 파일이 없으면 이미 제거됨
+        expect.soft(true).toBe(true); // 파일이 없으면 이미 제거됨(P10 완료)
         return;
       }
 
@@ -59,7 +59,7 @@ describe('Phase 5: Deprecated 제거 & 안전망 (RED)', () => {
         enhancedModal.content?.includes('@deprecated') ||
         enhancedModal.content?.includes('DEPRECATED');
 
-      // RED 단계에서는 deprecated 마킹이 있어야 함
+      // 존재한다면 최소 @deprecated 마킹이 있어야 함
       expect(hasDeprecatedComment).toBe(true);
     });
 
@@ -77,7 +77,7 @@ describe('Phase 5: Deprecated 제거 & 안전망 (RED)', () => {
             file.content?.includes('FIXME:') ||
             file.content?.includes('// deprecated');
 
-          // RED 단계에서는 경고가 있어야 함
+          // 잔존 import가 있다면 경고가 있어야 함
           expect(hasWarning).toBe(true);
         });
       } else {

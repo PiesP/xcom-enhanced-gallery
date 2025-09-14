@@ -378,6 +378,16 @@ Gallery
 - 엔트리(`src/main.ts`) 외 모듈은 import 시점에 DOM 변경/리스너 등록 등 부수효과를 발생시키지 않습니다.
 - 전역 스타일도 정적 import 대신 런타임 동적 import를 사용하여 테스트/빌드 시 안전성을 보장합니다.
   - 예) `await import('./styles/globals')`를 애플리케이션 시작 흐름 내부에서 호출
+
+### Deprecated/Placeholder 정리 정책 (P10 연계)
+
+- types-only placeholder 혹은 @deprecated로만 유지되는 래퍼/배럴은 실제 소비처(코드/테스트) 참조가 0건임을 스캔 테스트로 확인한 경우 제거 대상입니다.
+- 제거 순서
+  1) 스캔/인벤토리 테스트를 최신 정책에 맞게 갱신하여 참조 0건을 RED→GREEN으로 확정
+  2) 물리 삭제 또는 얇은 래퍼 유지(사이드이펙트 없음) 중 하나를 선택
+  3) 배럴/테스트/문서 의존 정리 후 빌드/포스트빌드 validator 확인
+- 여전히 테스트에서 존재 확인이 필요한 경우에는 명시적 @deprecated 주석과 사이드이펙트 없는 얇은 래퍼만 남기며, 신규 코드에서의 import는 금지합니다.
+- 완료된 삭제/정리는 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 간단 요약으로 추가하고, 계획서에서는 해당 항목을 제거합니다.
 - 글로벌 이벤트 등록은 `bootstrap/event-wiring.ts`를 통한 함수 호출 기반으로만 수행합니다.
 
 가드:

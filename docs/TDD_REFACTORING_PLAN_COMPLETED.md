@@ -1,4 +1,32 @@
+### 2025-09-15
+
+2025-09-15: PLAN-STATE — 활성 Phase 없음 · 게이트 PASS (간결 보고)
+
+- 현 시점 활성 이슈/Phase 없음. 계획서는 최신 상태이며 활성 섹션 비어 있음.
+- 품질 게이트: 타입/린트/테스트/빌드/포스트빌드 검증 GREEN 유지.
+- 조치 필요 없음 — 회귀 발생 시 RED 테스트 우선으로 신규 Phase 등록 예정.
+
+2025-09-15: PLAN-CLEANUP — 활성 계획 슬림화 및 완료 항목 이관(문서 정리)
+
+- 조치: `TDD_REFACTORING_PLAN.md`에서 누적된 완료 항목 대량 제거 → 본 완료
+  로그로 일원화(요약만 유지).
+- 남김: 활성 계획 후보(P11–P14)만 계획서에 유지 — 배럴 표면 하드닝, 툴바
+  애니메이션 토큰 정리, 포스트빌드 러untime 표면 스캔 확장, 타입 전용 import
+  정책 강화.
+- 영향: 코드 변경 없음(문서만). 스모크 테스트 GREEN.
+
 ### 2025-09-14
+
+2025-09-15: P10 — 플레이스홀더/고아 코드 최종 정리 (완료)
+
+- 내용: `src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx`를
+  물리 삭제 대신 "제거 스텁"으로 전환하여 import 시 즉시 에러를 던지도록
+  변경(런타임 사용 차단). 관련 테스트는 SettingsModal 래퍼 유지 및
+  EnhancedSettingsModal 비존재(동적 import 실패)를 확인하도록 갱신. orphan
+  whitelist 및 계획서 정리. 추후 완전 물리 삭제는 안전 창구 유지 종료 시점에
+  수행 예정.
+- 검증: 전체 테스트 GREEN(레거시 호환 테스트 갱신), dev/prod 빌드 PASS,
+  postbuild validator PASS.
 
 2025-09-14: P9 — 벤더 레거시 API 제거 (완료)
 
@@ -35,6 +63,14 @@
     조항 보강. TDD 계획서에서 P8 제거 및 잔여 순서를 P7 → P6 → P10으로 재정렬.
 - 검증: 타입/린트/fast 테스트 GREEN, dev/prod 빌드 PASS, postbuild validator
   PASS.
+
+  ### 2025-09-15: P6 — 컨테이너 단일화(최종) 완료
+  - 내용 요약: 런타임 AppContainer 제거 대체 경로를 ServiceManager +
+    service-accessors + ServiceHarness 조합으로 확정. 테스트 전용 DI는 하네스로
+    일원화.
+  - 범위: 런타임 전 경로에서 AppContainer 금지, 테스트는 하네스 사용. core
+    초기화/리셋 이후에도 최신 싱글톤 참조 유지.
+  - 검증: 전 스위트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
 
 2025-09-15: P6 — 컨테이너 단일화(부분 완료: 테스트 하네스/리셋 호환성)
 

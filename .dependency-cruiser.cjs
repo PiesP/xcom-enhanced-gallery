@@ -108,7 +108,7 @@ module.exports = {
           '^src/shared/styles/tokens/button[.]ts$',
           '^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)[.]tsx$',
           '^src/shared/components/ui/Toolbar/toolbarConfig[.]ts$',
-          '^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal|EnhancedSettingsModal)[.]tsx$',
+          '^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal)[.]tsx$',
           // 프로젝트 내 실험적/후속 예정 로더 (의도적 보류)
           '^src/shared/loader/progressive-loader[.]ts$',
         ],

@@ -6311,7 +6311,6 @@
       "dependents": [
         "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
         "src/shared/components/ui/SettingsModal/index.ts",
-        "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx"
       ],
@@ -12735,32 +12734,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./SettingsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx",
       "dependencies": [
         {
@@ -15939,8 +15912,8 @@
     "warn": 2,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 261,
-    "totalDependenciesCruised": 711,
+    "totalCruised": 260,
+    "totalDependenciesCruised": 710,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
@@ -16244,7 +16217,7 @@
           "severity": "info",
           "from": {
             "orphan": true,
-            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$|^src/shared/components/LazyIcon[.]tsx$|^src/features/gallery/hooks/useToolbarPositionBased[.]ts$|^src/shared/hooks/useSettingsModal[.]ts$|^src/shared/hooks/useFocusScope[.]ts$|^src/shared/external/userscript/adapter[.]ts$|^src/shared/state/gallery-store[.]ts$|^src/shared/services/iconRegistry[.]ts$|^src/shared/styles/tokens/button[.]ts$|^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)[.]tsx$|^src/shared/components/ui/Toolbar/toolbarConfig[.]ts$|^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal|EnhancedSettingsModal)[.]tsx$|^src/shared/loader/progressive-loader[.]ts$"
+            "pathNot": "(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$|[.]d[.]ts$|(^|/)tsconfig[.]json$|(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$|^src/main[.]ts$|^src/.*/index[.]ts$|REFACTORING_PLAN[.]ts$|^src/core/constants/STABLE_SELECTORS[.]ts$|^src/features/.*/types[.]ts$|^src/shared/types/.*[.]ts$|^src/.*[.]module[.]css$|^src/assets/|^src/core/state/base/.*[.]ts$|^src/.*[.]interface[.]ts$|^src/.*[.]abstract[.]ts$|^src/shared/components/LazyIcon[.]tsx$|^src/features/gallery/hooks/useToolbarPositionBased[.]ts$|^src/shared/hooks/useSettingsModal[.]ts$|^src/shared/hooks/useFocusScope[.]ts$|^src/shared/external/userscript/adapter[.]ts$|^src/shared/state/gallery-store[.]ts$|^src/shared/services/iconRegistry[.]ts$|^src/shared/styles/tokens/button[.]ts$|^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)[.]tsx$|^src/shared/components/ui/Toolbar/toolbarConfig[.]ts$|^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal)[.]tsx$|^src/shared/loader/progressive-loader[.]ts$"
           },
           "to": {},
           "scope": "module"
