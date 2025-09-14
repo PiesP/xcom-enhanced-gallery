@@ -1,17 +1,29 @@
 #!/usr/bin/env sh
 
 # Pre-push: ensure types and tests are good before pushing
-echo "🧪 Pre-push: typecheck + tests"
+SCOPE=${XEG_PREPUSH_SCOPE:-}
+if [ -n "$SCOPE" ]; then
+  echo "🧪 Pre-push: typecheck + tests (project: $SCOPE)"
+else
+  echo "🧪 Pre-push: typecheck + tests"
+fi
 
 npm run typecheck || {
   echo "❌ Typecheck failed"
   exit 1
 }
 
-npm run test || {
+if [ -n "$SCOPE" ]; then
+  npm run test:$SCOPE || {
+    echo "❌ Tests ($SCOPE) failed"
+    exit 1
+  }
+else
+  npm run test || {
   echo "❌ Tests failed"
   exit 1
-}
+  }
+fi
 
 echo "✅ Pre-push checks passed"
 

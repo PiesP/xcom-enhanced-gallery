@@ -102,17 +102,6 @@ export default defineConfig({
       include: ['**/*.{test,spec}.{ts,tsx}'],
     },
 
-    // 글로브 패턴
-    include: ['test/**/*.{test,spec}.{ts,tsx}'],
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/e2e/**',
-      // 임시 비활성화: 구현되지 않은 의존성이 있는 테스트들
-      'test/refactoring/event-manager-integration.test.ts',
-      'test/refactoring/service-diagnostics-integration.test.ts',
-    ],
-
     // 커버리지 설정
     coverage: {
       provider: 'istanbul',
@@ -159,6 +148,89 @@ export default defineConfig({
       },
     },
 
-    // Workspace 분할은 vitest.workspace.ts에서 관리합니다.
+    // 분할 실행은 상위 projects에서 관리합니다.
   },
+  // Vitest v3: projects를 최상위에 정의하여 --project 필터 사용 가능
+  projects: [
+    // 최소 스모크: 빠르게 핵심 경계만 확인
+    {
+      test: {
+        name: 'smoke',
+        include: [
+          'test/unit/main/main-initialization.test.ts',
+          'test/unit/viewport-utils.test.ts',
+          'test/unit/shared/external/userscript-adapter.contract.test.ts',
+          'test/unit/styles/animation-tokens-policy.test.ts',
+        ],
+        exclude: ['**/node_modules/**', '**/dist/**'],
+      },
+    },
+    // 빠른 단위 테스트: red/벤치/퍼포먼스 제외
+    {
+      test: {
+        name: 'fast',
+        include: ['test/unit/**/*.{test,spec}.{ts,tsx}'],
+        exclude: [
+          '**/node_modules/**',
+          '**/dist/**',
+          '**/*.red.test.*',
+          'test/unit/performance/**',
+          '**/*.bench.test.*',
+        ],
+      },
+    },
+    // 전체 단위 테스트(성능/벤치 포함 안함)
+    {
+      test: {
+        name: 'unit',
+        include: ['test/unit/**/*.{test,spec}.{ts,tsx}'],
+        exclude: ['**/node_modules/**', '**/dist/**'],
+      },
+    },
+    // 스타일 관련 테스트(토큰/테마/정책)
+    {
+      test: {
+        name: 'styles',
+        include: [
+          'test/styles/**/*.{test,spec}.{ts,tsx}',
+          'test/unit/styles/**/*.{test,spec}.{ts,tsx}',
+        ],
+        exclude: ['**/node_modules/**', '**/dist/**'],
+      },
+    },
+    // 성능/벤치마크 전용
+    {
+      test: {
+        name: 'performance',
+        include: [
+          'test/performance/**/*.{test,spec}.{ts,tsx}',
+          'test/unit/performance/**/*.{test,spec}.{ts,tsx}',
+          '**/*.bench.test.*',
+        ],
+        exclude: ['**/node_modules/**', '**/dist/**'],
+      },
+    },
+    // 단계별(phase-*)/최종 스위트
+    {
+      test: {
+        name: 'phases',
+        include: ['test/phase-*.*', 'test/final/**/*.{test,spec}.{ts,tsx}'],
+        exclude: ['**/node_modules/**', '**/dist/**'],
+      },
+    },
+    // 리팩토링 진행/가드 스위트
+    {
+      test: {
+        name: 'refactor',
+        include: ['test/refactoring/**/*.{test,spec}.{ts,tsx}'],
+        // 기본 설정의 임시 exclude(특정 refactoring 통합 테스트)는 프로젝트에도 반영
+        exclude: [
+          '**/node_modules/**',
+          '**/dist/**',
+          'test/refactoring/event-manager-integration.test.ts',
+          'test/refactoring/service-diagnostics-integration.test.ts',
+        ],
+      },
+    },
+  ],
 });

@@ -51,8 +51,9 @@ Windows PowerShell에서도 위 명령 그대로 사용 가능합니다.
 
 ### 분할 실행(Projects)
 
-대규모 스위트는 Vitest projects로 분할되어 있으며, `vitest.config.ts`의
-`test.projects`에 정의되어 있습니다.
+대규모 스위트는 Vitest projects로 분할되어 있으며, `vitest.config.ts`의 최상위
+`projects` 필드에 정의되어 있습니다. `vitest --project <name>` 필터로 선택
+실행할 수 있습니다.
 
 - smoke: 초고속 스모크(구성/토큰 가드)
 - fast: 빠른 단위 테스트(RED/벤치/퍼포먼스 제외)
@@ -86,6 +87,22 @@ npm run test -- -t "<test name>"
 
 # 특정 파일만 실행
 npx vitest run test/path/to/file.test.ts
+```
+
+로컬 푸시 가속(선택):
+
+```pwsh
+# Pre-push 훅이 전체 스위트 대신 특정 프로젝트만 실행하도록 설정할 수 있습니다.
+# PowerShell
+$env:XEG_PREPUSH_SCOPE = 'smoke'
+git push
+
+# Bash/Zsh
+export XEG_PREPUSH_SCOPE=fast
+git push
+
+# 사용 가능한 값: smoke | fast | unit | styles | performance | phases | refactor
+# 설정하지 않으면 전체 스위트를 실행합니다.
 ```
 
 주의
