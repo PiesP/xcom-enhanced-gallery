@@ -1,5 +1,12 @@
 ### 2025-09-14
 
+2025-09-14: TOAST-LEGACY-BRIDGE-REMOVAL (완료)
+
+- 내용: UnifiedToastManager ↔ Toast.tsx legacyToasts 동기화 브리지 제거. UI는
+  이제 UnifiedToastManager에 직접 구독하며, ToastContainer가 관리자 신호를 사용.
+- 정리: ToastController는 UnifiedToastManager 위임 래퍼로 축소(단일 소스 유지).
+- 검증: announce-routing 및 통합 테스트 GREEN, 타입/린트/빌드 PASS.
+
 2025-09-14: PHYS-REMOVE-LEGACY-ICON-DIR (완료)
 
 - 내용: 레거시 아이콘 배럴 디렉터리 제거 —

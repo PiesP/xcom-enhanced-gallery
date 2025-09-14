@@ -45,6 +45,12 @@ services/
 - 타입도 가능하면 벤더 index에서 재export된 것을 사용합니다: `type VNode`,
   `type ComponentChildren` 등.
 
+가드/테스트:
+
+- 직접 import 금지 정책은 테스트에서 정적으로 스캔되어 위반 시 실패합니다.
+  `test/unit/lint/direct-imports-source-scan.test.js`를 참고하세요. 반드시
+  `@shared/external/vendors`의 getter로만 접근하세요.
+
 예시:
 
 ```ts
@@ -67,6 +73,15 @@ const { signal } = getPreactSignals();
 // import * as preact from 'preact';
 // import * as signals from '@preact/signals';
 // import compat from 'preact/compat';
+
+### Toast 시스템(싱글톤 매니저)
+
+- 토스트 상태의 단일 소스는 `UnifiedToastManager`입니다. 컴포넌트/서비스는
+  통합 매니저의 API를 사용하세요.
+- UI 컴포넌트에서 토스트 목록을 구독해야 할 경우,
+  `UnifiedToastManager.getInstance().subscribe(...)`를 사용합니다.
+- 레거시 `Toast.tsx`의 `toasts` 신호를 외부에서 직접 구독/조작하지 마세요.
+  브리징은 제거되었으며, 외부 소비자는 통합 매니저만 사용합니다.
 ```
 
 ### Border Radius 정책 (Design Tokens)

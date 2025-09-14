@@ -7,17 +7,6 @@
 import { logger } from '../logging/logger';
 import { getPreactSignals } from '../external/vendors';
 import { ensurePoliteLiveRegion, ensureAssertiveLiveRegion } from '../utils/accessibility/index';
-// 레거시 Toast 컴포넌트 상태와의 호환성 유지: 경고/에러는 UI 토스트 목록에도 반영
-import { toasts as legacyToasts } from '../components/ui/Toast/Toast';
-type LegacyToastItem = {
-  id: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  title: string;
-  message: string;
-  duration?: number;
-  actionText?: string;
-  onAction?: () => void;
-};
 
 // 통합된 Toast 타입 정의
 export interface ToastItem {
@@ -115,22 +104,6 @@ export class ToastManager {
     if (route === 'toast-only' || route === 'both') {
       const currentToasts = this.toastsSignal.value || [];
       this.toastsSignal.value = [...currentToasts, toast];
-      // 레거시 토스트 목록에도 동기화 (UI가 Toast.tsx의 toasts를 구독하므로)
-      try {
-        const legacy = (legacyToasts.value as LegacyToastItem[]) || [];
-        const legacyToast: LegacyToastItem = {
-          id: toast.id,
-          type: toast.type,
-          title: toast.title,
-          message: toast.message,
-          ...(toast.duration !== undefined && { duration: toast.duration }),
-          ...(toast.actionText !== undefined && { actionText: toast.actionText }),
-          ...(toast.onAction !== undefined && { onAction: toast.onAction }),
-        };
-        legacyToasts.value = [...legacy, legacyToast];
-      } catch {
-        // 테스트/SSR 환경에서 실패할 경우 조용히 무시
-      }
 
       logger.debug(`[ToastManager] Toast shown: ${options.title} - ${options.message}`);
     }
@@ -197,13 +170,6 @@ export class ToastManager {
 
     if (filteredToasts.length !== currentToasts.length) {
       this.toastsSignal.value = filteredToasts;
-      // 레거시 토스트 목록에서도 제거
-      try {
-        const current = (legacyToasts.value as LegacyToastItem[]) || [];
-        legacyToasts.value = current.filter(t => t.id !== id);
-      } catch {
-        /* noop */
-      }
       logger.debug(`[ToastManager] Toast 제거: ${id}`);
     }
   }
@@ -213,11 +179,6 @@ export class ToastManager {
    */
   public clear(): void {
     this.toastsSignal.value = [];
-    try {
-      legacyToasts.value = [];
-    } catch {
-      /* noop */
-    }
     logger.debug('[ToastManager] 모든 Toast 제거');
   }
 

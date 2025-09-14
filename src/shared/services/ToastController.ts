@@ -5,6 +5,7 @@
 
 import { logger } from '../logging/logger';
 import type { BaseService } from '../types/app.types';
+import { UnifiedToastManager } from './UnifiedToastManager';
 
 // Toast 관련 타입 정의
 export interface ToastItem {
@@ -16,31 +17,7 @@ export interface ToastItem {
   dismissible?: boolean;
 }
 
-// Toast 스토리지 (메모리 기반)
-const toastStorage = new Map<string, ToastItem>();
-let toastIdCounter = 0;
-
-// Toast 관리 함수들
-function addToast(item: Omit<ToastItem, 'id'>): string {
-  const id = `toast-${++toastIdCounter}`;
-  const toast: ToastItem = { ...item, id };
-  toastStorage.set(id, toast);
-  logger.debug('Toast 추가됨:', toast);
-  return id;
-}
-
-function removeToast(id: string): boolean {
-  const removed = toastStorage.delete(id);
-  if (removed) {
-    logger.debug('Toast 제거됨:', id);
-  }
-  return removed;
-}
-
-function clearAllToasts(): void {
-  toastStorage.clear();
-  logger.debug('모든 Toast 제거됨');
-}
+// 단일 소스화: UnifiedToastManager 사용
 
 /**
  * Toast 알림 옵션
@@ -82,8 +59,8 @@ export class ToastController implements BaseService {
    * 서비스 정리
    */
   async cleanup(): Promise<void> {
-    // 모든 토스트 제거
-    clearAllToasts();
+    // 모든 토스트 제거 (통합 관리자 위임)
+    UnifiedToastManager.getInstance().clear();
     this.initialized = false;
     logger.debug('ToastController 정리 완료');
   }
@@ -127,18 +104,8 @@ export class ToastController implements BaseService {
    * ```
    */
   show(options: ToastOptions): string {
-    const toastItem: Omit<ToastItem, 'id'> = {
-      type: options.type ?? 'info',
-      title: options.title,
-      message: options.message,
-      ...(options.duration !== undefined && { duration: options.duration }),
-      ...(options.actionText && { actionText: options.actionText }),
-      ...(options.onAction && { onAction: options.onAction }),
-    };
-
-    const id = addToast(toastItem);
-
-    logger.debug(`토스트 표시: ${options.title} - ${options.message}`);
+    const id = UnifiedToastManager.getInstance().show(options);
+    logger.debug(`토스트 표시(위임): ${options.title} - ${options.message}`);
     return id;
   }
 
@@ -194,14 +161,14 @@ export class ToastController implements BaseService {
    * 특정 토스트 제거
    */
   remove(id: string): void {
-    removeToast(id);
+    UnifiedToastManager.getInstance().remove(id);
   }
 
   /**
    * 모든 토스트 제거
    */
   clear(): void {
-    clearAllToasts();
+    UnifiedToastManager.getInstance().clear();
   }
 }
 

@@ -15,19 +15,11 @@
 
 ## 활성 Phase (2025-09)
 
-1. TOAST-LEGACY-BRIDGE-REMOVAL
-
-- 목적: `UnifiedToastManager` ↔ 레거시 `Toast.tsx` 간 동기화(legacyToasts)
-  제거. 단일 소스(ToastManager)로 단순화.
-- 접근: UI가 ToastManager를 직접 구독하도록 전환 → 레거시 bridge 삭제.
-  마이그레이션 기간 동안 호환 어댑터를 선택적으로 제공.
-- 장점: 중복 상태 제거, 번들/런타임 복잡도 감소. 단점: UI 연결부 변경 범위 존재.
-- DoD: UI에서 legacyToasts 미사용, 테스트(a11y/live-region/토스트 라우팅) GREEN,
-  번들 사이즈 ≤ 기존 ±0.3KB.
+1. ~TOAST-LEGACY-BRIDGE-REMOVAL~ (완료 → 완료 로그 이관)
 
 <!-- 2. SIGNALS-SAFE-FACTORY: 완료되어 완료 로그로 이동 -->
 
-3. VENDOR-GUARD-02
+2. VENDOR-GUARD-02
 
 - 목적: 외부 라이브러리 직접 import/require 잔존 여부 최종 정리(벤더 getter
   강제).
@@ -37,7 +29,7 @@
 - DoD: src/\* 에서 preact/@preact/signals/preact/compat 직접 참조 0건, 테스트
   GREEN.
 
-4. TOKEN-LEGACY-PRUNE-P1
+3. TOKEN-LEGACY-PRUNE-P1
 
 - 목적: CSS 토큰의 Legacy alias를 1차 정리(문서/테스트와 동기화).
 - 접근: 사용 실적 0인 alias 제거 → 영향 영역 테스트 보강 → 후속 P2에서 잔여

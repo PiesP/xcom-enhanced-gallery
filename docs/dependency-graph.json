@@ -72,8 +72,6 @@
         "src/bootstrap/env-init.ts",
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/UnifiedToastManager.ts",
-        "src/shared/components/ui/Toast/Toast.tsx",
-        "src/shared/components/base/BaseComponentProps.ts",
         "src/shared/services/MediaService.ts",
         "src/shared/state/signals/signal-factory.ts",
         "src/shared/utils/performance/signalOptimization.ts",
@@ -97,6 +95,7 @@
         "src/shared/components/ui/Icon/hero/HeroSettings.tsx",
         "src/shared/components/ui/Icon/hero/HeroX.tsx",
         "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx",
+        "src/shared/components/base/BaseComponentProps.ts",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/shared/hooks/useToolbarState.ts",
         "src/shared/utils/signalSelector.ts",
@@ -110,6 +109,7 @@
         "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
         "src/features/gallery/hooks/useToolbarPositionBased.ts",
         "src/main.ts",
+        "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/components/LazyIcon.tsx",
         "src/shared/services/iconRegistry.ts",
@@ -2114,23 +2114,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../components/ui/Toast/Toast",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toast/Toast.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../external/vendors",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2183,171 +2166,9 @@
       ],
       "dependents": [
         "src/shared/services/BulkDownloadService.ts",
+        "src/shared/services/ToastController.ts",
+        "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Toast/Toast.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../StandardProps",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../StandardProps",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Toast.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toast/Toast.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/UnifiedToastManager.ts",
-        "src/shared/components/ui/index.ts",
-        "src/shared/components/ui/Toast/ToastContainer.tsx",
-        "src/shared/components/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Toast/Toast.module.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/ui/Toast/Toast.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/StandardProps.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../base/BaseComponentProps",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/base/BaseComponentProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Toast/Toast.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-        "src/shared/components/hoc/GalleryHOC.tsx",
-        "src/shared/components/ui/index.ts",
-        "src/shared/components/ui/Toast/ToastContainer.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/base/BaseComponentProps.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/StandardProps.ts",
-        "src/shared/components/hoc/GalleryHOC.tsx",
-        "src/shared/components/ui/Toast/ToastContainer.tsx",
-        "src/shared/components/base/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4199,6 +4020,23 @@
             "import"
           ],
           "resolved": "src/shared/types/app.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./UnifiedToastManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/UnifiedToastManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7734,6 +7572,71 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/StandardProps.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../base/BaseComponentProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/base/BaseComponentProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/shared/components/hoc/GalleryHOC.tsx",
+        "src/shared/components/ui/index.ts",
+        "src/shared/components/ui/Toast/Toast.tsx",
+        "src/shared/components/ui/Toast/ToastContainer.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/base/BaseComponentProps.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/StandardProps.ts",
+        "src/shared/components/hoc/GalleryHOC.tsx",
+        "src/shared/components/ui/Toast/ToastContainer.tsx",
+        "src/shared/components/base/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/ui/Toolbar/Toolbar.tsx",
       "dependencies": [
         {
@@ -10955,6 +10858,104 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/Toast/Toast.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../StandardProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/StandardProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../StandardProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/StandardProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Toast.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Toast/Toast.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/index.ts",
+        "src/shared/components/ui/Toast/ToastContainer.tsx",
+        "src/shared/components/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Toast/Toast.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/Toast/Toast.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/ui/Toast/ToastContainer.tsx",
       "dependencies": [
         {
@@ -11074,6 +11075,26 @@
           "resolved": "src/shared/components/ui/Toast/ToastContainer.module.css",
           "coreModule": false,
           "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@/shared/services/UnifiedToastManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/UnifiedToastManager.ts",
+          "coreModule": false,
+          "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -15587,7 +15608,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 258,
-    "totalDependenciesCruised": 706,
+    "totalDependenciesCruised": 707,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

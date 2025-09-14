@@ -4,7 +4,8 @@
  */
 
 import { getPreact, getPreactHooks, getPreactCompat } from '../../../external/vendors';
-import { toasts, removeToast, Toast } from './Toast';
+import { Toast } from './Toast';
+import { UnifiedToastManager } from '@/shared/services/UnifiedToastManager';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';
@@ -42,7 +43,8 @@ function ToastContainerCore({
 }: ToastContainerProps = {}): VNode {
   const { h } = getPreact();
   const { useEffect, useState } = getPreactHooks();
-  const [currentToasts, setCurrentToasts] = useState(toasts.value);
+  const manager = UnifiedToastManager.getInstance();
+  const [currentToasts, setCurrentToasts] = useState(manager.getToasts());
 
   // 표준화된 클래스명 생성
   const containerClass = ComponentStandards.createClassName(
@@ -71,10 +73,10 @@ function ToastContainerCore({
   const testProps = ComponentStandards.createTestProps(testId || 'toast-container');
 
   useEffect(() => {
-    // 토스트 상태 변경 구독
-    const unsubscribe = toasts.subscribe(setCurrentToasts);
+    // 토스트 상태 변경 구독 (UnifiedToastManager)
+    const unsubscribe = manager.subscribe(setCurrentToasts);
     return unsubscribe;
-  }, []);
+  }, [manager]);
 
   // maxToasts 제한 적용
   const limitedToasts = currentToasts.slice(0, maxToasts);
@@ -97,7 +99,7 @@ function ToastContainerCore({
       h(Toast, {
         key: toast.id,
         toast,
-        onRemove: removeToast,
+        onRemove: id => manager.remove(id),
       })
     )
   );
