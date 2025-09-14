@@ -824,8 +824,7 @@
         "src/shared/types/core/media.types.ts",
         "src/features/gallery/createAppContainer.ts",
         "src/shared/services/service-diagnostics.ts",
-        "src/shared/services/service-initialization.ts",
-        "src/shared/services/index.ts"
+        "src/shared/services/service-initialization.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12495,6 +12494,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/Icon/icons/index.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/ui/ModalShell/ModalShell.tsx",
       "dependencies": [
         {
@@ -14047,26 +14053,6 @@
         },
         {
           "dynamic": false,
-          "module": "@/constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "export"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "@shared/browser",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15589,8 +15575,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 258,
-    "totalDependenciesCruised": 706,
+    "totalCruised": 259,
+    "totalDependenciesCruised": 705,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

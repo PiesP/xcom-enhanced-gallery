@@ -3,7 +3,7 @@
 본 문서는 “유저스크립트에 적합한 복잡성”을 유지하기 위한 현재 활성 계획만
 담습니다. 완료된 항목은 즉시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
 
-업데이트: 2025-09-14 — 활성 Phase: P5
+업데이트: 2025-09-14 — 활성 Phase: (없음)
 
 ## 운영 원칙(불변)
 
@@ -41,12 +41,7 @@
 
 ## 활성 Phase (TDD)
 
-- P5. 레거시/플레이스홀더 정리(테스트 가드 동기)
-  - 목표: @deprecated 플레이스홀더를 제거 또는 types-only/노출 축소
-  - RED: `unused-exports.scan.red.test.ts` 강화, `orphan-allowlist` 축소
-  - GREEN: 런타임 dead 모듈 0건(테스트 전용은 예외)
-
-우선순위(Next): P5
+- 현재 활성 Phase 없음 — 모든 계획 항목이 완료 로그로 이동했습니다.
 
 ## DoD / 게이트
 

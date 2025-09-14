@@ -1,5 +1,20 @@
 ### 2025-09-14
 
+2025-09-14: P5 — 레거시/플레이스홀더 정리 + 가드 하드닝 (완료)
+
+- 내용:
+  - 배럴/플레이스홀더 최소화: HOC 배럴은 withGallery + type
+    GalleryComponentProps만 노출. 레거시 아이콘 배럴은 types-only placeholder
+    유지(사이드이펙트 없음).
+  - 스캔/가드 하드닝: unused-exports 경로 정규화로 Windows 호환 개선. runtime
+    AppContainer import 가드의 allowlist를 비움(타입 전용만 허용). spacing px
+    가드의 whitelist 제거로 전 TSX 스캔. 토큰 어댑터 경계 가드는 추출기 파일만
+    예외로 축소.
+  - 문서 반영: CODING_GUIDELINES에 배럴 최소화와 가드 정책 요약 추가.
+- 검증: 전체 테스트 1826 passed | 25 skipped | 2 todo. dev/prod 빌드 사전
+  실행에서 postbuild validator와의 충돌 없음(추가 빌드 검증은 아래 세션 로그
+  참조).
+
 2025-09-14: P4 — SERVICE_KEYS 직접 사용 축소 (완료)
 
 - 내용: `SERVICE_KEYS` 직참조를 전역에서 탐지하는 RED 스캔 테스트

@@ -13,12 +13,6 @@ const __filename_local = fileURLToPath(import.meta.url);
 const __dirname_local = dirname(__filename_local);
 const ROOT = join(__dirname_local, '..', '..', '..', 'src');
 
-const WHITELIST_PATH_SUBSTRINGS = [
-  // Animation helpers allowed to contain transform translate distances in strings
-  `${sep}shared${sep}utils${sep}animations.ts`,
-  `${sep}shared${sep}utils${sep}css-animations.ts`,
-];
-
 function listFiles(dir, acc = []) {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
@@ -29,13 +23,9 @@ function listFiles(dir, acc = []) {
   return acc;
 }
 
-function isWhitelisted(file) {
-  return WHITELIST_PATH_SUBSTRINGS.some(p => file.endsWith(p));
-}
-
 describe('Spacing scale guard (TSX inline styles only)', () => {
   it('should not use px values in inline style props within TSX components', () => {
-    const files = listFiles(ROOT).filter(f => /\.(tsx)$/.test(f) && !isWhitelisted(f));
+    const files = listFiles(ROOT).filter(f => /\.(tsx)$/.test(f));
 
     const violations = [];
 

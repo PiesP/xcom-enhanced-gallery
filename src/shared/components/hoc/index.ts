@@ -6,14 +6,5 @@
  */
 
 // 갤러리 HOC (메인)
-export {
-  withGallery,
-  GalleryHOC,
-  withGalleryContainer,
-  withGalleryItem,
-  withGalleryOverlay,
-  getGalleryType,
-  type GalleryType,
-  type GalleryOptions,
-  type GalleryComponentProps,
-} from './GalleryHOC';
+// 배럴 표면 최소화: 실제 사용되는 심볼만 노출
+export { withGallery, type GalleryComponentProps } from './GalleryHOC';

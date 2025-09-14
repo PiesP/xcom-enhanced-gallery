@@ -23,15 +23,9 @@ describe('P3: AppContainer import scope (runtime ban)', () => {
     const ROOT = join(process.cwd(), 'src');
     expect(statSync(ROOT).isDirectory()).toBe(true);
 
-    const ALLOWLIST_PATHS = new Set(
-      [
-        // Implementation/definitions themselves
-        'src/shared/container/AppContainer.ts',
-        'src/features/gallery/createAppContainer.ts',
-        // Safe accessor using type-only import
-        'src/shared/container/settings-access.ts',
-      ].map(p => p.replace(/\\/g, '/'))
-    );
+    // Allowlist is intentionally empty: type-only imports are allowed globally
+    // and no runtime files should import AppContainer/createAppContainer.
+    const ALLOWLIST_PATHS = new Set<string>();
 
     const offenders: { file: string; line: string }[] = [];
     for (const f of listFilesRecursive(ROOT)) {

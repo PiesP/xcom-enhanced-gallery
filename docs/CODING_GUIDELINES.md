@@ -2,6 +2,26 @@
 
 > **일관된 코드 스타일과 품질 보장**
 
+## 컴포넌트 배럴 표면 정책 (U4)
+
+- HOC 배럴(`@shared/components/hoc`)은 실제 사용 심볼만 노출합니다.
+  - 허용: `withGallery`, `type GalleryComponentProps`
+  - 금지: 미사용 편의 함수/유틸(예: `withGalleryContainer`, `withGalleryItem`,
+    `withGalleryOverlay`, `GalleryHOC`, `getGalleryType` 등)과 타입 도메인의
+    과도한 전역 노출
+- 목적: dead export를 줄여 번들/스캔 복잡도를 낮추고 경계 가드를 단순화합니다.
+- 테스트: `test/unit/refactoring/unused-exports.scan.red.test.ts`가 배럴의
+  미사용 export를 RED로 탐지합니다(Windows 경로 정규화 적용).
+
+보강(2025-09-14):
+
+- Windows 경로 정규화: 스캔 테스트는 모든 경로를 POSIX(`/`)로 정규화하여 OS에
+  독립적으로 동작합니다.
+- 오프너 허용목록 축소: 배럴/가드 테스트의 allowlist는 가능한 한 비워두거나 단일
+  파일로 한정합니다(예: 토큰 추출기만 예외).
+- 타입 전용 import 예외: 런타임 import 금지 가드에서는 type-only import는
+  허용되며, 이를 제외한 모든 런타임 import는 금지됩니다.
+
 ## 🎨 코딩 스타일
 
 ### 기본 포맷팅
@@ -50,6 +70,13 @@ services/
 - 직접 import 금지 정책은 테스트에서 정적으로 스캔되어 위반 시 실패합니다.
   `test/unit/lint/direct-imports-source-scan.test.js`를 참고하세요. 반드시
   `@shared/external/vendors`의 getter로만 접근하세요.
+
+추가 보강(2025-09-14):
+
+- 런타임 AppContainer import 금지: 테스트 전용 하니스 이외에서
+  AppContainer/createAppContainer 런타임 import 금지. 타입 전용은 허용.
+- SERVICE_KEYS 직접 사용 금지: 허용된 service-accessors 경유만 사용. 직접
+  import/접근은 가드 테스트에서 실패 처리.
 
 예시:
 
@@ -623,6 +650,24 @@ animateCustom(el, keyframes, {
 
 레거시 어댑터 예외:
 - `features/gallery/createAppContainer.ts` 내 LegacyServiceAdapter switch 문은 과도기 호환을 위해 SERVICE_KEYS 상수를 사용합니다. 신규 코드에서는 service-accessors 헬퍼를 사용하고, 해당 switch는 점진 제거 대상입니다.
+
+#### AppContainer 범위 정책 (P3)
+
+- 목적: AppContainer는 테스트/샌드박스 하네스 전용입니다. 런타임 코드에서의 import를 금지합니다.
+- 규칙:
+  - 런타임 엔트리/피처/서비스 경로에서 `features/gallery/createAppContainer` 및 `AppContainer` 관련 심볼의 import 금지
+  - 타입 전용 import(`import type { ... }`)는 테스트 도구/리팩토링 문맥에서만 허용
+  - DEV 전용 레거시 어댑터 전역 키(`__XEG_LEGACY_ADAPTER__`, `__XEG_GET_SERVICE_OVERRIDE__`)는 개발 모드에서만 존재하며, 프로덕션 번들 문자열 누수는 금지됩니다
+- 가드 테스트: `test/unit/lint/runtime-appcontainer.imports.red.test.ts` — 허용 리스트 외의 런타임 import를 정적 스캔합니다.
+
+#### SERVICE_KEYS 직접 사용 금지 (P4)
+
+- 목적: 서비스 키 상수에 대한 직접 의존을 제거하고 타입 안전 액세서로 일원화합니다.
+- 규칙:
+  - 다음 모듈을 제외하고 `SERVICE_KEYS` 직접 참조 금지: 상수 정의 파일, `@shared/container/service-accessors`, 서비스 초기화/부트스트랩, 서비스 진단, 그리고 과도기 예외로 `features/gallery/createAppContainer.ts`
+  - 일반 소비 경로(features/shared 등)는 반드시 `@shared/container/service-accessors`의 등록/조회 헬퍼를 사용합니다
+  - 주석/문자열로도 키 이름을 노출하지 않습니다(빌드/스캔 가드 회피 목적)
+- 가드 테스트: `test/unit/lint/service-keys.direct-usage.scan.red.test.ts` — 승인된 범위 외 직접 참조를 정적으로 스캔합니다.
 
 #### Userscript(GM_*) 어댑터 경계 가드
 
