@@ -1,5 +1,13 @@
 ### 2025-09-14
 
+2025-09-14: E1/E2(doc) — 이벤트 표면/가드 문서 반영
+
+- 내용: 코드 변경 전 단계로 문서 가드 보강 진행 — CODING_GUIDELINES에 외부
+  소비자는 `@shared/services/EventManager`만 사용하도록 명시,
+  `TwitterEventManager`/`GalleryEventManager`/`DOMEventManager` 직접 import 금지
+  조항 추가. utils의 Gallery/TwitterEventManager에 @deprecated 주석 추가.
+- 비고: 테스트 RED 추가 및 배럴/소비처 조정은 다음 커밋에서 진행.
+
 2025-09-14: PLAN-REFRESH — 계획 감사 및 활성 Phase 등록(E1–E3)
 
 - 내용: 코드/문서 감사를 통해 이벤트 계층 중복

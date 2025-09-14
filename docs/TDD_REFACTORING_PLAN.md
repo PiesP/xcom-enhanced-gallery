@@ -43,6 +43,9 @@ E1 — Event Surface Consolidation (단일 진입점 정리)
 - DoD: 정적 스캔 가드 GREEN, 외부 소비 경로에서 EventManager만 노출, 전체
   테스트/빌드 PASS.
 
+  상태: 문서/가이드라인 보강 및 utils @deprecated 표기 완료(코드/테스트는 다음
+  단계).
+
 E2 — Event Guard Hardening (정책 가드 보강)
 
 - 배경: 이벤트 정책 가드가 존재하나, `TwitterEventManager` 명칭/별칭 경유 사용을
@@ -57,6 +60,8 @@ E2 — Event Guard Hardening (정책 가드 보강)
 - TDD 진행: RED 스캐너 추가 → GREEN(소스 정리 후) → REFACTOR(테스트 주석/문서
   보강).
 - DoD: 새 스캔 테스트 GREEN, 기존 이벤트 정책 가드와 충돌 없음.
+
+  상태: 가이드라인에 금지 명칭/경로 명문화 완료(테스트 스캐너는 다음 단계).
 
 E3 — Naming/Alias Prune (별칭 축소 및 용어 정리)
 

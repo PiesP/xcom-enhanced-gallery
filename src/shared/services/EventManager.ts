@@ -200,6 +200,7 @@ export class EventManager {
 // ================================
 
 /**
- * TwitterEventManager 별칭 (기존 호환성 유지)
+ * @deprecated 외부 소비자는 EventManager만 사용하세요. TwitterEventManager 명칭은 레거시 호환성용 별칭이며
+ * 향후 제거될 수 있습니다. 코드 전역에서 `EventManager`로 마이그레이션해 주세요.
  */
 export const TwitterEventManager = EventManager;

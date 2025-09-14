@@ -15,9 +15,19 @@ describe('lint: deprecated event utilities removed (S3)', () => {
     // Importing GalleryEventManager symbol from events (alias or relative)
     /from\s+['"]@shared\/utils\/events['"][^;]*\bGalleryEventManager\b/,
     /from\s+['"][./].*shared\/utils\/events['"][^;]*\bGalleryEventManager\b/,
+    // Importing TwitterEventManager symbol from events (alias or relative)
+    /from\s+['"]@shared\/utils\/events['"][^;]*\bTwitterEventManager\b/,
+    /from\s+['"][./].*shared\/utils\/events['"][^;]*\bTwitterEventManager\b/,
+    // Importing the events module at all from external consumers (ban entire module)
+    /from\s+['"]@shared\/utils\/events['"]/,
+    /from\s+['"][./].*shared\/utils\/events['"]/,
     // Importing deprecated symbols via event-managers barrel
     /from\s+['"]@shared\/services\/event-managers['"][^;]*\bDOMEventManager\b/,
     /from\s+['"]@shared\/services\/event-managers['"][^;]*\bGalleryEventManager\b/,
+    /from\s+['"]@shared\/services\/event-managers['"][^;]*\bTwitterEventManager\b/,
+    // Importing TwitterEventManager via services/EventManager directly (alias or relative)
+    /from\s+['"]@shared\/services\/EventManager['"][^;]*\bTwitterEventManager\b/,
+    /from\s+['"][./].*shared\/services\/EventManager['"][^;]*\bTwitterEventManager\b/,
   ];
 
   function walk(dir: string, list: string[] = []): string[] {
@@ -51,11 +61,15 @@ describe('lint: deprecated event utilities removed (S3)', () => {
         /shared\/utils\/events\.ts$/.test(o.file);
       const isUnifiedAdapterWin = /shared\\services\\EventManager\.ts$/.test(o.file);
       const isUnifiedAdapterPosix = /shared\/services\/EventManager\.ts$/.test(o.file);
+      const isEventsBarrelWin = /shared\\utils\\events\\index\.ts$/.test(o.file);
+      const isEventsBarrelPosix = /shared\/utils\/events\/index\.ts$/.test(o.file);
       return !(
         isModuleSelfWin ||
         isModuleSelfPosix ||
         isUnifiedAdapterWin ||
-        isUnifiedAdapterPosix
+        isUnifiedAdapterPosix ||
+        isEventsBarrelWin ||
+        isEventsBarrelPosix
       );
     });
 
