@@ -10,7 +10,10 @@ import { readFileSync, existsSync } from 'fs';
 import { resolve, basename } from 'path';
 import { gzipSync } from 'zlib';
 
-function validateOne(scriptPath, { requireNoVitePreload = false } = {}) {
+function validateOne(
+  scriptPath,
+  { requireNoVitePreload = false, assertNoLegacyGlobals = false } = {}
+) {
   const content = readFileSync(scriptPath, 'utf8');
 
   // UserScript 헤더 검증
@@ -95,6 +98,17 @@ function validateOne(scriptPath, { requireNoVitePreload = false } = {}) {
     }
   }
 
+  // P1: 레거시 전역 키가 prod에 포함되지 않도록 가드
+  if (assertNoLegacyGlobals) {
+    const legacyKeys = [/__XEG_LEGACY_ADAPTER__/, /__XEG_GET_SERVICE_OVERRIDE__/];
+    for (const re of legacyKeys) {
+      if (re.test(content)) {
+        console.error('❌ Prod userscript leaked legacy global key:', re);
+        process.exit(1);
+      }
+    }
+  }
+
   return { content, map, mapPath };
 }
 
@@ -116,7 +130,10 @@ function validateUserScript() {
 
   // 상세 검증: dev (소스맵 포함), prod (소스맵 + dead code 제거)
   validateOne(devPath, { requireNoVitePreload: false });
-  const prodInfo = validateOne(prodPath, { requireNoVitePreload: true });
+  const prodInfo = validateOne(prodPath, {
+    requireNoVitePreload: true,
+    assertNoLegacyGlobals: true,
+  });
 
   // 기본적인 JavaScript 구문 검증
   try {

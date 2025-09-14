@@ -3,30 +3,25 @@
  * - Avoids importing ServiceManager directly in features
  * - Uses optional global adapter bridge or lazy getter functions
  */
-import { SERVICE_KEYS } from '../../constants';
 import type { ISettingsService } from './AppContainer';
 
 /**
  * Attempt to get settings service via legacy adapter if present, otherwise null.
  */
 export function tryGetSettingsService(): ISettingsService | null {
-  // Prefer global legacy adapter bridge installed by AppContainer when enabled
-  const anyGlobal = globalThis as unknown as {
-    __XEG_LEGACY_ADAPTER__?: { getService: (key: string) => unknown };
-  };
-
+  // DEV 전용: 레거시 어댑터 브리지 접근 (prod 번들에 전역 키 문자열이 포함되지 않도록 가드)
+  if (!import.meta.env.DEV) return null;
   try {
-    const adapter = anyGlobal.__XEG_LEGACY_ADAPTER__;
+    const anyGlobal = globalThis as unknown as Record<string, unknown>;
+    const LEGACY_KEY = '__XEG_LEGACY_ADAPTER__';
+    const adapter = anyGlobal[LEGACY_KEY] as { getService: (key: string) => unknown } | undefined;
     if (adapter) {
-      const svc = adapter.getService(
-        SERVICE_KEYS.SETTINGS as unknown as string
-      ) as unknown as ISettingsService;
-      return svc ?? null;
+      const svc = adapter.getService('SETTINGS') as unknown as ISettingsService;
+      return (svc as ISettingsService) ?? null;
     }
   } catch {
     // ignore and fallback
   }
-
   return null;
 }
 

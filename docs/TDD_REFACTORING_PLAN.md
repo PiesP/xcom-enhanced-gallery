@@ -42,19 +42,16 @@
 ## 활성 Phase (TDD)
 
 - P1. Legacy Adapter DEV 게이트 & Prod 누수 차단
-  - 목표: `__XEG_LEGACY_ADAPTER__`/`__XEG_GET_SERVICE_OVERRIDE__` 전역 키 DEV
-    전용화, prod 번들 미포함 보장
-  - RED: `global-surface.no-leak.red.test.ts`에 prod 산출물 문자열 스캔 추가
-  - GREEN: DEV 빌드에서만 존재, prod에서 미검출; 기존 레거시 계약 테스트 호환
-  - REFACTOR: 문서/주석 정리(테스트 하네스 용도 명시)
+  - 상태: GREEN(코드/빌드 가드 적용). DEV에서만 전역 키 활성, prod 번들 문자열
+    미포함 가드 추가(`scripts/validate-build.js`).
+  - 추가: AppContainer의 enableLegacyAdapter 기본값을 DEV에서만 true로 변경.
 
 - P2. 이벤트 유틸의 CoreService 직접 의존 제거(서비스 어댑터화)
-  - 목표: `shared/utils/events.ts`가 서비스 접근 시
-    `@shared/container/service-accessors` 경유
-  - RED: `event-deprecated-removal.test.ts` 확장(직접 CoreService 참조 금지),
-    `lint/service-access-scan.red.test.ts`
-  - GREEN: 직접 참조 0건, 기능/테스트 회귀 없음
-  - REFACTOR: @deprecated 별칭 유지하되 외부 배럴 재노출 없음 확인
+  - 상태: GREEN(핵심 경로 교체). `shared/utils/events.ts`에서 CoreService 및
+    SERVICE_KEYS 직접 참조 제거 →
+    `service-accessors.getMediaServiceFromContainer` 경유. 서비스 미가용 시 폴백
+    유지.
+  - 후속: 금지 스캔 테스트 추가는 별도 커밋에서 진행.
 
 - P3. 컨테이너 범위 재정의(AppContainer=test 전용 하네스)
   - 목표: AppContainer를 런타임 경로에서 제거하고 테스트/샌드박스 하네스로 명시
@@ -74,6 +71,8 @@
   - 목표: @deprecated 플레이스홀더를 제거 또는 types-only/노출 축소
   - RED: `unused-exports.scan.red.test.ts` 강화, `orphan-allowlist` 축소
   - GREEN: 런타임 dead 모듈 0건(테스트 전용은 예외)
+
+우선순위(Next): P3 → P4 → P5
 
 ## DoD / 게이트
 

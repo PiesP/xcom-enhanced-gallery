@@ -820,7 +820,6 @@
         "src/shared/services/media/TwitterVideoExtractor.ts",
         "src/shared/utils/events.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
-        "src/shared/container/settings-access.ts",
         "src/shared/types/core/core-types.ts",
         "src/shared/types/core/media.types.ts",
         "src/features/gallery/createAppContainer.ts",
@@ -1102,6 +1101,7 @@
       "dependents": [
         "src/bootstrap/feature-registration.ts",
         "src/features/gallery/GalleryApp.ts",
+        "src/shared/utils/events.ts",
         "src/features/gallery/createAppContainer.ts",
         "src/main.ts"
       ],
@@ -4106,7 +4106,6 @@
       ],
       "dependents": [
         "src/shared/container/service-bridge.ts",
-        "src/shared/utils/events.ts",
         "src/main.ts",
         "src/shared/services/core-services.ts",
         "src/shared/services/service-diagnostics.ts",
@@ -4398,6 +4397,23 @@
         },
         {
           "dynamic": false,
+          "module": "../container/service-accessors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/container/service-accessors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4424,23 +4440,6 @@
             "import"
           ],
           "resolved": "src/shared/services/MediaService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../services/ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/ServiceManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7816,23 +7815,6 @@
     {
       "source": "src/shared/container/settings-access.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./AppContainer",
@@ -15608,7 +15590,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 258,
-    "totalDependenciesCruised": 707,
+    "totalDependenciesCruised": 706,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -6,14 +6,10 @@ import { logger } from '../logging/logger';
 import { globalTimerManager } from './timer-management';
 import { isGalleryInternalElement } from './utils';
 import { MediaClickDetector } from './media/MediaClickDetector';
-import {
-  isVideoControlElement,
-  isTwitterNativeGalleryElement,
-  SERVICE_KEYS,
-} from '../../constants';
+import { isVideoControlElement, isTwitterNativeGalleryElement } from '../../constants';
 import { galleryState } from '../state/signals/gallery.signals';
-import { CoreService } from '../services/ServiceManager';
 import type { MediaService } from '../services/MediaService';
+import { getMediaServiceFromContainer } from '../container/service-accessors';
 import type { MediaInfo } from '../types/media.types';
 
 // 기본 이벤트 관리
@@ -636,9 +632,12 @@ function handleKeyboardEvent(
           case ' ': // fallthrough
           case 'Space':
             try {
-              const svc = CoreService.getInstance().tryGet<MediaService>(
-                SERVICE_KEYS.MEDIA_SERVICE
-              );
+              let svc: MediaService | null = null;
+              try {
+                svc = getMediaServiceFromContainer();
+              } catch {
+                svc = null;
+              }
               if (svc) {
                 svc.togglePlayPauseCurrent();
               } else {
@@ -660,9 +659,12 @@ function handleKeyboardEvent(
             break;
           case 'ArrowUp':
             try {
-              const svc = CoreService.getInstance().tryGet<MediaService>(
-                SERVICE_KEYS.MEDIA_SERVICE
-              );
+              let svc: MediaService | null = null;
+              try {
+                svc = getMediaServiceFromContainer();
+              } catch {
+                svc = null;
+              }
               if (svc) {
                 svc.volumeUpCurrent();
               } else {
@@ -679,9 +681,12 @@ function handleKeyboardEvent(
             break;
           case 'ArrowDown':
             try {
-              const svc = CoreService.getInstance().tryGet<MediaService>(
-                SERVICE_KEYS.MEDIA_SERVICE
-              );
+              let svc: MediaService | null = null;
+              try {
+                svc = getMediaServiceFromContainer();
+              } catch {
+                svc = null;
+              }
               if (svc) {
                 svc.volumeDownCurrent();
               } else {
@@ -698,9 +703,12 @@ function handleKeyboardEvent(
           case 'm':
           case 'M':
             try {
-              const svc = CoreService.getInstance().tryGet<MediaService>(
-                SERVICE_KEYS.MEDIA_SERVICE
-              );
+              let svc: MediaService | null = null;
+              try {
+                svc = getMediaServiceFromContainer();
+              } catch {
+                svc = null;
+              }
               if (svc) {
                 svc.toggleMuteCurrent();
               } else {

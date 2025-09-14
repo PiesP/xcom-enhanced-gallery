@@ -32,10 +32,6 @@ type LegacyServiceMap = Record<string, any>;
 /**
  * Global 확장을 위한 타입 정의
  */
-interface LegacyGlobal {
-  __XEG_LEGACY_ADAPTER__?: LegacyServiceAdapter;
-  __XEG_GET_SERVICE_OVERRIDE__?: (key: string) => unknown;
-}
 
 /**
  * Legacy Adapter - 기존 SERVICE_KEYS를 통한 서비스 접근을 AppContainer로 매핑
@@ -247,11 +243,14 @@ class AppContainerImpl implements AppContainer {
       loadGallery: this.loadGalleryFactory.bind(this),
     };
 
-    // Legacy Adapter 설정
-    if (enableLegacyAdapter) {
+    // Legacy Adapter 설정 (DEV 전용 게이트)
+    if (enableLegacyAdapter && import.meta.env.DEV) {
       this.legacyAdapter = new LegacyServiceAdapter(this);
-      // 전역에서 접근 가능하도록 설정 (임시)
-      (globalThis as LegacyGlobal).__XEG_LEGACY_ADAPTER__ = this.legacyAdapter;
+      // 전역에서 접근 가능하도록 설정 (임시, DEV 전용)
+      // 키 문자열은 DEV에서만 번들에 포함되도록 계산된 상수 사용
+      const anyGlobal = globalThis as unknown as Record<string, unknown>;
+      const LEGACY_ADAPTER_KEY = import.meta.env.DEV ? '__XEG_LEGACY_ADAPTER__' : 'XEG_DEV_ONLY';
+      anyGlobal[LEGACY_ADAPTER_KEY] = this.legacyAdapter;
     }
   }
 
@@ -469,9 +468,13 @@ class AppContainerImpl implements AppContainer {
     // 진행 중인 로딩 Promise 정리
     this.galleryLoadingPromise = undefined;
 
-    // Legacy adapter 정리
-    if (this.legacyAdapter && (globalThis as LegacyGlobal).__XEG_LEGACY_ADAPTER__) {
-      delete (globalThis as LegacyGlobal).__XEG_LEGACY_ADAPTER__;
+    // Legacy adapter 정리 (DEV 전용)
+    if (this.legacyAdapter && import.meta.env.DEV) {
+      const anyGlobal = globalThis as unknown as Record<string, unknown>;
+      const LEGACY_ADAPTER_KEY = import.meta.env.DEV ? '__XEG_LEGACY_ADAPTER__' : 'XEG_DEV_ONLY';
+      if (LEGACY_ADAPTER_KEY in anyGlobal) {
+        delete anyGlobal[LEGACY_ADAPTER_KEY];
+      }
     }
 
     // disposed 플래그 설정
@@ -488,7 +491,8 @@ export async function createAppContainer(
   options: CreateContainerOptions = {}
 ): Promise<AppContainer> {
   const config = { ...createDefaultConfig(), ...options.config };
-  const enableLegacyAdapter = options.enableLegacyAdapter ?? true;
+  // DEV 기본 허용, PROD 기본 비활성
+  const enableLegacyAdapter = options.enableLegacyAdapter ?? import.meta.env.DEV;
 
   logger.info('Creating AppContainer', { config, enableLegacyAdapter });
 
@@ -502,8 +506,11 @@ export async function createAppContainer(
  * Legacy 지원을 위한 전역 getService 함수 오버라이드 (임시)
  */
 export function installLegacyAdapter(container: AppContainer): void {
+  if (!import.meta.env.DEV) return; // DEV 전용
   const adapter = new LegacyServiceAdapter(container);
 
-  // 전역 getService 함수를 오버라이드
-  (globalThis as LegacyGlobal).__XEG_GET_SERVICE_OVERRIDE__ = adapter.getService.bind(adapter);
+  // 전역 getService 함수를 오버라이드 (DEV 전용, 계산된 키 사용)
+  const anyGlobal = globalThis as unknown as Record<string, unknown>;
+  const GET_OVERRIDE_KEY = import.meta.env.DEV ? '__XEG_GET_SERVICE_OVERRIDE__' : 'XEG_DEV_ONLY';
+  anyGlobal[GET_OVERRIDE_KEY] = adapter.getService.bind(adapter);
 }

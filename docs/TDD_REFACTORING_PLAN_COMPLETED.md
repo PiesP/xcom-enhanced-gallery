@@ -1,5 +1,21 @@
 ### 2025-09-14
 
+2025-09-14: P1 — Legacy Adapter DEV 게이트 적용 (완료)
+
+- 내용: AppContainer에서 레거시 전역 키를 DEV에서만 노출하도록 게이트. prod 번들
+  문자열 누수는 postbuild 검증(`scripts/validate-build.js`)으로 차단.
+- 결과: dev 키(`__XEG_LEGACY_ADAPTER__`, `__XEG_GET_SERVICE_OVERRIDE__`)는 dev
+  빌드에서만 존재, prod Userscript에서는 미검출 가드 통과.
+
+2025-09-14: P2 — 이벤트 유틸 CoreService 의존 제거(핵심) (완료)
+
+- 내용: `shared/utils/events.ts`에서 MediaService 접근을
+  CoreService/SERVICE_KEYS 직접 참조 대신
+  `service-accessors.getMediaServiceFromContainer` 경유로 교체. 미가용 시 DOM
+  폴백 로직 유지.
+- 결과: features/shared 경로에서 CoreService 직접 의존 감소, 향후 금지 스캔
+  테스트 추가 여지 확보. 타입/린트/빌드 PASS.
+
 2025-09-14: PLAN-REFRESH-02 — 활성 계획(P1–P5) 등록 및 중복/레거시 진단 반영
 
 - 내용: 컨테이너 이중화·전역 레거시 어댑터·이벤트 유틸 CoreService 직접
