@@ -7,6 +7,29 @@
 - 조치 필요 없음 — 회귀 발생 시 RED 테스트 우선으로 신규 Phase 등록 예정.
 
 2025-09-15: PLAN-CLEANUP — 활성 계획 슬림화 및 완료 항목 이관(문서 정리)
+2025-09-15: P11 — 배럴 표면 하드닝(dom/services) (완료)
+
+- 내용: `@shared/dom` 배럴에서 `DOMEventManager`/`createEventManager` 런타임
+  재노출 제거. 내부 모듈은 상대 경로로 직접 import하도록 주석 가이드 추가. 외부
+  소비층은 통합 `EventManager`만 사용.
+- 검증: 단위 테스트 GREEN, 배럴 스캔 가드 충돌 없음.
+
+2025-09-15: P12 — Toolbar 애니메이션 토큰 정리 (완료)
+
+- 내용: 컴포넌트 토큰 CSS와 주입 CSS(`css-animations.ts`)에서 `toolbar-slide-*`
+  키프레임/변수 제거. 툴바 표시/숨김은 JS API(`toolbarSlideDown/Up`) 단일 경로만
+  사용하도록 정리.
+- 검증: 스타일/애니메이션 토큰 가드 GREEN, 회귀 없음.
+
+2025-09-15: P13 — Postbuild Validator 확장 (완료)
+
+- 내용: `scripts/validate-build.js`에 금지 문자열 추가 —
+  `DOMEventManager`/`createEventManager` 런타임 표면 차단(기존 동적
+  VendorManager, `vendor-api.ts` 가드에 추가). 내부 구현은 `DomEventManager`로
+  리네이밍하고 로그 문자열을 ‘DOM EM’로 축약해 누출을 차단.
+- 검증: dev/prod 빌드 및 postbuild validator GREEN(누출 문자열 미검출,
+  dead-preload 미포함, 소스맵 무결성 체크 PASS). 번들 크기: raw 362.41 KB / gzip
+  98.29 KB.
 
 - 조치: `TDD_REFACTORING_PLAN.md`에서 누적된 완료 항목 대량 제거 → 본 완료
   로그로 일원화(요약만 유지).

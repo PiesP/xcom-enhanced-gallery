@@ -78,6 +78,14 @@ services/
   VendorManager 식별자를 금지합니다. 또한 `vendor-api.ts` 문자열이 산출물에
   포함되면 실패합니다.
 
+보강(2025-09-15):
+
+- DOM 유틸 표면: `DOMEventManager`/`createEventManager`는 내부 전용입니다. 외부
+  소비자는 `@shared/services/EventManager` 어댑터만 사용하세요. 배럴
+  (`@shared/dom`)에서는 더 이상 재노출하지 않습니다.
+- Toolbar 애니메이션: CSS `toolbar-slide-*` 키프레임/변수는 제거되었습니다. 툴바
+  show/hide는 JS API(`toolbarSlideDown/Up`)만 사용합니다.
+
 ### 파일명 정책 (단일 소스)
 
 - 모든 파일명 생성은 `FilenameService` 또는 동등 편의 함수

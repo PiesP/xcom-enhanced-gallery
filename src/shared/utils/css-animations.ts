@@ -74,14 +74,7 @@ export function injectAnimationStyles(): void {
       from { opacity: 1; transform: scale(1); }
       to { opacity: 0; transform: scale(0.95); }
     }
-    @keyframes toolbar-slide-down {
-      from { opacity: 0; transform: translateY(-100%); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes toolbar-slide-up {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(-100%); }
-    }
+    /* toolbar-slide-* 키프레임 제거: JS API(toolbarSlideDown/Up) 사용 */
     @keyframes image-load {
       from { opacity: 0; transform: scale(0.98); }
       to { opacity: 1; transform: scale(1); }

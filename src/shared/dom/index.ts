@@ -1,8 +1,8 @@
 /**
  * @fileoverview Core DOM Utilities Barrel Export
+ * Note: DOMEventManager is intentionally NOT re-exported to prevent external runtime imports.
+ * Internal modules should import from './DOMEventManager' via relative path when necessary.
  */
-
-export { DOMEventManager, createEventManager } from './DOMEventManager';
 
 // Core DOM utilities (moved from Infrastructure)
 export { DOMUtils, type DOMElementCreationOptions } from './utils/dom-utils';

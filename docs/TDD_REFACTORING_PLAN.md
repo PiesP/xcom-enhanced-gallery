@@ -12,7 +12,7 @@
 
 ## 활성 계획(차기 스프린트 후보, TDD)
 
-1. P11 — Barrel 표면 하드닝(dom/services)
+1. P11 — Barrel 표면 하드닝(dom/services) [완료]
    - 목표: 외부 소비층에서 EventManager 어댑터만 사용하도록 배럴 표면 축소.
      `@shared/dom`의 DOMEventManager 재노출 제거(또는 type-only로 축소) 및 외부
      런타임 import 금지 스캔 강화.
@@ -25,7 +25,7 @@
        `@shared/dom/DOMEventManager` 런타임 import 금지)
      - GREEN: 내부 사용처는 상대 경로 또는 서비스 어댑터로 교체 후 통과
 
-2. P12 — Toolbar 애니메이션 토큰 정리
+2. P12 — Toolbar 애니메이션 토큰 정리 [완료]
    - 목표: CSS에 남아있는 `toolbar-slide-*` 계열 키프레임/변수를 제거하고 JS API
      `toolbarSlideDown/Up` 단일 경로만 사용.
    - 대안/장단점
@@ -38,7 +38,7 @@
        문자열 금지)
      - GREEN: CSS/TSX 전역에서 미사용 확인 후 삭제
 
-3. P13 — Postbuild Validator 확장(배포 안전성)
+3. P13 — Postbuild Validator 확장(배포 안전성) [완료]
    - 목표: dist 산출물에서 위험 표면 문자열을 추가 스캔(예: `DOMEventManager`,
      동적 VendorManager, `vendor-api.ts`).
    - 대안/장단점
@@ -47,7 +47,7 @@
    - 선택: A(기존 스캐너에 식별자 추가, 오탐은 allowlist 주석 관리)
    - TDD
      - RED: test/final/build-artifacts.runtime-surface.red.test.ts
-     - GREEN: postbuild 스캐너 업데이트로 통과
+     - GREEN: postbuild 스캐너 업데이트로 통과(빌드 검증 GREEN 확인)
 
 4. P14 — 타입 전용 import 예외 정책 강화
    - 목표: 런타임 import 금지는 유지하되 type-only import는 허용 규칙을 테스트로

@@ -119,6 +119,9 @@ function validateOne(
       /isVendorInitializedLegacy\b/,
       /(?<!Static)VendorManager\b/, // 동적 VendorManager 노출 금지 (정적 매니저는 허용)
       /vendor-api\.ts/, // 소스 문자열 누출 금지
+      // 신규: 런타임 DOMEventManager 표면 금지(내부 전용)
+      /\bDOMEventManager\b/,
+      /\bcreateEventManager\b/,
     ];
     for (const re of legacyKeys) {
       if (re.test(content)) {

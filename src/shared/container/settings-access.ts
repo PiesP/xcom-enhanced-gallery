@@ -3,8 +3,7 @@
  * - Avoids importing ServiceManager directly in features
  * - Uses ServiceManager bridge getters (no legacy globals)
  */
-import { bridgeTryGet } from './service-bridge';
-import { SERVICE_KEYS } from '@/constants';
+import { tryGetSettingsManager } from './service-accessors';
 
 // Minimal settings service contract used by accessors (avoid AppContainer types)
 interface SettingsServiceLike {
@@ -17,8 +16,8 @@ interface SettingsServiceLike {
  * Attempt to get settings service via legacy adapter if present, otherwise null.
  */
 export function tryGetSettingsService(): SettingsServiceLike | null {
-  // Prefer ServiceManager bridge (works in runtime and test when settings registered)
-  const svc = bridgeTryGet<SettingsServiceLike>(SERVICE_KEYS.SETTINGS);
+  // Prefer typed accessor that hides service key details from call sites
+  const svc = tryGetSettingsManager<SettingsServiceLike>();
   return svc ?? null;
 }
 

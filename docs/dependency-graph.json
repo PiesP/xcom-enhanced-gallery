@@ -316,7 +316,6 @@
         "src/shared/media/FilenameService.ts",
         "src/shared/utils/media/media-url.util.ts",
         "src/shared/dom/DOMCache.ts",
-        "src/shared/dom/DOMEventManager.ts",
         "src/shared/dom/utils/dom-utils.ts",
         "src/shared/services/media/UsernameExtractionService.ts",
         "src/shared/services/BulkDownloadService.ts",
@@ -352,6 +351,7 @@
         "src/features/gallery/hooks/useGalleryItemScroll.ts",
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/shared/services/EventManager.ts",
+        "src/shared/dom/DOMEventManager.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
         "src/shared/components/hoc/GalleryHOC.tsx",
@@ -715,7 +715,6 @@
         "src/shared/services/media/TwitterVideoExtractor.ts",
         "src/shared/utils/events.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
-        "src/shared/container/settings-access.ts",
         "src/features/gallery/createAppContainer.ts",
         "src/shared/types/core/core-types.ts",
         "src/shared/types/core/media.types.ts",
@@ -997,6 +996,7 @@
         "src/bootstrap/feature-registration.ts",
         "src/features/gallery/GalleryApp.ts",
         "src/shared/utils/events.ts",
+        "src/shared/container/settings-access.ts",
         "src/features/gallery/createAppContainer.ts",
         "src/main.ts"
       ],
@@ -1706,23 +1706,6 @@
         },
         {
           "dynamic": false,
-          "module": "./DOMEventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/dom/DOMEventManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./SelectorRegistry",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1807,34 +1790,6 @@
         "src/shared/dom/index.ts",
         "src/shared/dom/SelectorRegistry.ts",
         "src/main.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/dom/DOMEventManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/dom/index.ts",
-        "src/shared/services/EventManager.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4219,7 +4174,6 @@
       ],
       "dependents": [
         "src/shared/container/service-accessors.ts",
-        "src/shared/container/settings-access.ts",
         "src/features/gallery/createAppContainer.ts",
         "src/shared/container/ServiceHarness.ts"
       ],
@@ -7960,34 +7914,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./service-bridge",
+          "module": "./service-accessors",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/container/service-bridge.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@/constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
+          "resolved": "src/shared/container/service-accessors.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8363,6 +8297,33 @@
       "dependents": [
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/shared/services/event-managers.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/dom/DOMEventManager.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/EventManager.ts"
       ],
       "orphan": false,
       "valid": true
@@ -15913,7 +15874,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 260,
-    "totalDependenciesCruised": 710,
+    "totalDependenciesCruised": 708,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -21,7 +21,7 @@ interface EventOptions {
 /**
  * DOM 이벤트 등록 및 관리를 위한 유틸리티 클래스
  */
-export class DOMEventManager {
+export class DomEventManager {
   private cleanups: EventCleanup[] = [];
   private isDestroyed = false;
 
@@ -39,7 +39,7 @@ export class DOMEventManager {
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
     options?: EventOptions
-  ): DOMEventManager {
+  ): DomEventManager {
     if (!element || this.isDestroyed) {
       return this;
     }
@@ -50,13 +50,13 @@ export class DOMEventManager {
         try {
           element.removeEventListener(eventType, handler as EventListener, options);
         } catch (error) {
-          logger.warn('DOMEventManager: 이벤트 리스너 제거 실패', { eventType, error });
+          logger.warn('DOM EM: 이벤트 리스너 제거 실패', { eventType, error });
         }
       });
 
-      logger.debug('DOMEventManager: 이벤트 리스너 등록', { eventType, options });
+      logger.debug('DOM EM: 이벤트 리스너 등록', { eventType, options });
     } catch (error) {
-      logger.error('DOMEventManager: 이벤트 리스너 등록 실패', { eventType, error });
+      logger.error('DOM EM: 이벤트 리스너 등록 실패', { eventType, error });
     }
 
     return this;
@@ -76,7 +76,7 @@ export class DOMEventManager {
     eventType: string,
     handler: (event: Event) => void,
     options?: EventOptions
-  ): DOMEventManager {
+  ): DomEventManager {
     if (!element || this.isDestroyed) {
       return this;
     }
@@ -87,13 +87,13 @@ export class DOMEventManager {
         try {
           element.removeEventListener(eventType, handler, options);
         } catch (error) {
-          logger.warn('DOMEventManager: 커스텀 이벤트 리스너 제거 실패', { eventType, error });
+          logger.warn('DOM EM: 커스텀 이벤트 리스너 제거 실패', { eventType, error });
         }
       });
 
-      logger.debug('DOMEventManager: 커스텀 이벤트 리스너 등록', { eventType, options });
+      logger.debug('DOM EM: 커스텀 이벤트 리스너 등록', { eventType, options });
     } catch (error) {
-      logger.error('DOMEventManager: 커스텀 이벤트 리스너 등록 실패', { eventType, error });
+      logger.error('DOM EM: 커스텀 이벤트 리스너 등록 실패', { eventType, error });
     }
 
     return this;
@@ -113,14 +113,14 @@ export class DOMEventManager {
         cleanup();
         cleanupCount++;
       } catch (error) {
-        logger.warn('DOMEventManager: 개별 정리 실패', error);
+        logger.warn('DOM EM: 개별 정리 실패', error);
       }
     });
 
     this.cleanups = [];
     this.isDestroyed = true;
 
-    logger.debug('DOMEventManager: 모든 이벤트 리스너 정리 완료', { cleanupCount });
+    logger.debug('DOM EM: 모든 이벤트 리스너 정리 완료', { cleanupCount });
   }
 
   /**
@@ -142,8 +142,8 @@ export class DOMEventManager {
  * DOM 이벤트 매니저 인스턴스 생성
  *
  * @deprecated UnifiedEventManager를 사용하세요
- * @returns 새로운 DOMEventManager 인스턴스
+ * @returns 새로운 내부 DOM 이벤트 매니저 인스턴스
  */
-export function createEventManager(): DOMEventManager {
-  return new DOMEventManager();
+export function createDomEventManager(): DomEventManager {
+  return new DomEventManager();
 }

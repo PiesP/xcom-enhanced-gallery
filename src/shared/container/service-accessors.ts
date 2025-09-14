@@ -9,7 +9,7 @@ import type { ToastController } from '../services/ToastController';
 import type { MediaService } from '../services/MediaService';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
-import { bridgeGetService, bridgeRegister } from './service-bridge';
+import { bridgeGetService, bridgeRegister, bridgeTryGet } from './service-bridge';
 import { SERVICE_KEYS } from '../../constants';
 
 // Getters (from container)
@@ -48,6 +48,11 @@ export function registerGalleryRenderer(renderer: unknown): void {
 
 export function registerSettingsManager(settings: unknown): void {
   bridgeRegister(SERVICE_KEYS.SETTINGS, settings);
+}
+
+// Optional getter (no-throw) for Settings service; avoids exposing SERVICE_KEYS at call sites
+export function tryGetSettingsManager<T = unknown>(): T | null {
+  return bridgeTryGet<T>(SERVICE_KEYS.SETTINGS);
 }
 
 export function registerTwitterTokenExtractor(instance: unknown): void {

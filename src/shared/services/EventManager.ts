@@ -1,26 +1,26 @@
 /**
  * @fileoverview 통합 이벤트 관리자 (TDD GREEN 단계)
- * @description DOMEventManager와 GalleryEventManager를 통합한 단일 인터페이스
+ * @description DOM 이벤트 매니저(DOM EM)와 GalleryEventManager를 통합한 단일 인터페이스
  */
 
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '../logging/logger';
-import { DOMEventManager, createEventManager } from '../dom/DOMEventManager';
+import { DomEventManager, createDomEventManager } from '../dom/DOMEventManager';
 import { GalleryEventManager } from '../utils/events';
 import type { EventHandlers, GalleryEventOptions } from '../utils/events';
 
 /**
  * 이벤트 관리자
- * DOMEventManager와 GalleryEventManager의 기능을 통합
+ * DOM 이벤트 매니저와 GalleryEventManager의 기능을 통합
  */
 export class EventManager {
   private static instance: EventManager | null = null;
-  private readonly domManager: DOMEventManager;
+  private readonly domManager: DomEventManager;
   private readonly galleryManager: GalleryEventManager;
   private isDestroyed = false;
 
   constructor() {
-    this.domManager = createEventManager();
+    this.domManager = createDomEventManager();
     this.galleryManager = GalleryEventManager.getInstance();
 
     logger.debug('EventManager 초기화 완료');
@@ -37,7 +37,7 @@ export class EventManager {
   }
 
   // ================================
-  // DOMEventManager 위임 메서드들
+  // DOM 이벤트 매니저 위임 메서드들
   // ================================
 
   /**
