@@ -1,5 +1,13 @@
 ### 2025-09-14
 
+2025-09-14: PHYS-REMOVE-LEGACY-ICON-DIR (완료)
+
+- 내용: 레거시 아이콘 배럴 디렉터리 제거 —
+  `src/shared/components/ui/Icon/icons/index.ts` 물리 삭제. 경로 참조 가드
+  테스트 유지로 회귀 방지.
+- 검증: 타입/린트/fast 테스트 GREEN(101 files), dev/prod 빌드 및 postbuild
+  validator PASS. 번들 크기: raw 371.09 KB / gzip 99.58 KB.
+
 2025-09-14: S1 — IMPORT-SIDE-EFFECT REMOVAL (완료)
 
 - 내용: ServiceDiagnostics import-시 글로벌 등록 제거. DEV 전용으로
