@@ -4,7 +4,7 @@
  */
 
 import '@testing-library/jest-dom';
-import { beforeEach, afterEach } from 'vitest';
+import { beforeEach, afterEach, vi } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
 import { URL as NodeURL } from 'node:url';
@@ -190,20 +190,20 @@ function setupJsdomPolyfills() {
     const CanvasCtor: any = (globalThis as any).HTMLCanvasElement;
     if (CanvasCtor && CanvasCtor.prototype) {
       const proto = CanvasCtor.prototype as any;
-      const needsPolyfill =
-        typeof proto.toDataURL !== 'function' ||
-        // 일부 jsdom 버전은 함수가 존재하더라도 호출 시 Not implemented를 던짐
-        // 안전하게 오버라이드하여 테스트 노이즈를 제거
-        /not implemented/i.test(String(proto.toDataURL));
-
-      if (needsPolyfill) {
-        proto.toDataURL = function toDataURL(type?: string) {
-          const mime = typeof type === 'string' ? type.toLowerCase() : 'image/png';
-          const isWebp = mime.includes('webp');
-          // 최소한의 dataURL(내용은 중요하지 않음) 반환
-          return `data:${isWebp ? 'image/webp' : 'image/png'};base64,AAAA`;
-        };
-      }
+      // 항상 안전 래핑: 원본이 있으면 try/catch로 감싸고, 실패 시 폴백 반환
+      const originalToDataURL = proto.toDataURL;
+      proto.toDataURL = function toDataURL(type?: string) {
+        try {
+          if (typeof originalToDataURL === 'function') {
+            return originalToDataURL.call(this, type);
+          }
+        } catch {
+          // fallthrough to fallback
+        }
+        const mime = typeof type === 'string' ? type.toLowerCase() : 'image/png';
+        const isWebp = mime.includes('webp');
+        return `data:${isWebp ? 'image/webp' : 'image/png'};base64,AAAA`;
+      };
     }
 
     // 문서 생성 경로에서도 안전 보장: canvas 생성 시 toDataURL 주입
@@ -245,6 +245,34 @@ function setupJsdomPolyfills() {
     }
   } catch {
     // 무시: 테스트 환경에서만 사용되는 폴리필
+  }
+
+  // jsdom navigation not implemented 경고 억제: assign/replace를 안전 스텁으로
+  try {
+    if (typeof globalThis.window !== 'undefined' && globalThis.window.location) {
+      const loc = globalThis.window.location as any;
+      if (typeof loc.assign === 'function') {
+        try {
+          vi.spyOn(loc, 'assign').mockImplementation(() => {});
+        } catch {
+          loc.assign = () => {};
+        }
+      } else {
+        loc.assign = () => {};
+      }
+
+      if (typeof loc.replace === 'function') {
+        try {
+          vi.spyOn(loc, 'replace').mockImplementation(() => {});
+        } catch {
+          loc.replace = () => {};
+        }
+      } else {
+        loc.replace = () => {};
+      }
+    }
+  } catch {
+    // 무시
   }
 }
 
@@ -290,6 +318,29 @@ if (typeof globalThis !== 'undefined') {
 
   // jsdom polyfill 적용
   setupJsdomPolyfills();
+
+  // 공용 콘솔 필터: jsdom의 알려진 Not implemented 노이즈를 억제
+  try {
+    const originalError = console.error.bind(console);
+    const originalWarn = console.warn.bind(console);
+    const shouldSuppress = (args: any[]) => {
+      const msg = String(args[0] ?? '').toLowerCase();
+      return (
+        msg.includes("not implemented: htmlcanvaselement's todataurl() method") ||
+        msg.includes('not implemented: navigation to another document')
+      );
+    };
+    console.error = (...args: any[]) => {
+      if (shouldSuppress(args)) return; // 억제
+      originalError(...args);
+    };
+    console.warn = (...args: any[]) => {
+      if (shouldSuppress(args)) return; // 억제
+      originalWarn(...args);
+    };
+  } catch {
+    // 무시
+  }
 }
 
 /**
