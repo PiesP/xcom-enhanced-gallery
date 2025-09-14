@@ -60,6 +60,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
+      - name: ♻️ Cache ESLint/Prettier
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/eslint
+            ~/.cache/prettier
+          key: lint-prettier-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json', '.prettierrc*', 'eslint.config.js', '**/.eslint*', '**/.prettier*') }}
+          restore-keys: |
+            lint-prettier-${{ runner.os }}-${{ env.NODE_VERSION }}-
+
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 

@@ -18,7 +18,7 @@ if [ -z "$SCOPE" ]; then
   if [ -n "$CFG_SCOPE" ]; then
     SCOPE="$CFG_SCOPE"
   else
-    SCOPE="fast"
+    SCOPE="smoke"
   fi
 fi
 
