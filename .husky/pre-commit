@@ -1,7 +1,13 @@
 #!/usr/bin/env sh
 
 # Lightweight pre-commit: run staged linters/formatters only
-echo "� Running lint-staged..."
+# Skip in CI (full checks run in GitHub Actions)
+if [ "$CI" = "true" ]; then
+  echo "⏭️  Pre-commit: Skipping in CI."
+  exit 0
+fi
+
+echo "🧹 Running lint-staged..."
 
 npm run lint:staged || {
   echo "❌ Pre-commit failed (lint-staged)"

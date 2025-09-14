@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
 
 # Validate commit message with commitlint
+# Skip in CI (handled by workflow commitlint job)
+if [ "$CI" = "true" ]; then
+  echo "⏭️  Commit-msg: Skipping in CI."
+  exit 0
+fi
+
 echo "📝 Validating commit message..."
 
 npx --no-install commitlint --edit "$1" --config commitlint.config.cjs || {
