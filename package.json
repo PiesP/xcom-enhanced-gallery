@@ -11,6 +11,7 @@
     "build": "npm run clean && npm run build:dev && npm run build:prod",
     "postbuild": "node ./scripts/validate-build.js",
     "pretest": "npm run build:prod",
+    "pretest:coverage": "npm run build:prod",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest -coverage",
@@ -40,7 +41,7 @@
   "dependencies": {
     "@preact/signals": "2.3.1",
     "fflate": "0.8.2",
-    "preact": "10.27.1"
+    "preact": "10.27.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

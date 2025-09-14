@@ -115,7 +115,6 @@
         "src/shared/services/iconRegistry.ts",
         "src/shared/components/ui/ModalShell/ModalShell.tsx",
         "src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
         "src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx",
         "src/shared/components/ui/Toolbar/ToolbarHeadless.tsx",
@@ -375,6 +374,9 @@
         "src/shared/services/ThemeService.ts",
         "src/shared/services/ToastController.ts",
         "src/shared/services/ServiceManager.ts",
+        "src/shared/services/core-services.ts",
+        "src/shared/utils/memory/ResourceManager.ts",
+        "src/shared/services/service-initialization.ts",
         "src/features/gallery/GalleryApp.ts",
         "src/shared/utils/events.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
@@ -394,9 +396,6 @@
         "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
         "src/features/gallery/createAppContainer.ts",
         "src/shared/error/ErrorHandler.ts",
-        "src/shared/services/core-services.ts",
-        "src/shared/utils/memory/ResourceManager.ts",
-        "src/shared/services/service-initialization.ts",
         "src/shared/utils/dom/DOMBatcher.ts",
         "src/shared/browser/BrowserService.ts",
         "src/shared/browser/BrowserUtils.ts",
@@ -820,14 +819,14 @@
         "src/shared/dom/SelectorRegistry.ts",
         "src/shared/services/media/UsernameExtractionService.ts",
         "src/shared/services/media/TwitterVideoExtractor.ts",
+        "src/shared/services/core-services.ts",
+        "src/shared/services/service-initialization.ts",
         "src/shared/utils/events.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
         "src/shared/container/settings-access.ts",
         "src/shared/types/core/core-types.ts",
         "src/shared/types/core/media.types.ts",
         "src/features/gallery/createAppContainer.ts",
-        "src/shared/services/core-services.ts",
-        "src/shared/services/service-initialization.ts",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -1315,8 +1314,8 @@
         "src/shared/container/service-accessors.ts",
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/MediaService.ts",
-        "src/shared/types/core/core-types.ts",
-        "src/shared/services/service-initialization.ts"
+        "src/shared/services/service-initialization.ts",
+        "src/shared/types/core/core-types.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2107,7 +2106,6 @@
       "dependents": [
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -2202,24 +2200,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
@@ -2338,8 +2318,7 @@
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
         "src/shared/components/hoc/GalleryHOC.tsx",
         "src/shared/components/ui/index.ts",
-        "src/shared/components/ui/Toast/ToastContainer.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
+        "src/shared/components/ui/Toast/ToastContainer.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -2781,9 +2760,9 @@
       ],
       "dependents": [
         "src/shared/container/service-accessors.ts",
+        "src/shared/services/service-factories.ts",
         "src/features/gallery/GalleryApp.ts",
         "src/shared/utils/events.ts",
-        "src/shared/services/service-factories.ts",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -4129,10 +4108,9 @@
       ],
       "dependents": [
         "src/shared/container/service-accessors.ts",
+        "src/shared/services/service-initialization.ts",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/types/core/core-types.ts",
-        "src/shared/services/service-initialization.ts",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -4179,9 +4157,9 @@
       ],
       "dependents": [
         "src/shared/container/service-accessors.ts",
+        "src/shared/services/service-initialization.ts",
         "src/features/gallery/GalleryApp.ts",
         "src/shared/types/core/core-types.ts",
-        "src/shared/services/service-initialization.ts",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -4234,16 +4212,482 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./core-services",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/core-services.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": true,
+          "cycle": [
+            {
+              "name": "src/shared/services/core-services.ts",
+              "dependencyTypes": [
+                "local",
+                "dynamic-import"
+              ]
+            },
+            {
+              "name": "src/shared/services/ServiceManager.ts",
+              "dependencyTypes": [
+                "local",
+                "export"
+              ]
+            }
+          ],
+          "valid": false,
+          "rules": [
+            {
+              "severity": "warn",
+              "name": "no-circular-deps"
+            }
+          ]
         }
       ],
       "dependents": [
         "src/shared/container/service-bridge.ts",
-        "src/shared/utils/events.ts",
-        "src/main.ts",
         "src/shared/services/core-services.ts",
         "src/shared/services/service-initialization.ts",
+        "src/shared/utils/events.ts",
+        "src/main.ts",
         "src/shared/services/index.ts",
         "src/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/core-services.ts",
+      "dependencies": [
+        {
+          "dynamic": true,
+          "module": "../utils/memory/ResourceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/utils/memory/ResourceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./service-initialization",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/service-initialization.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": true,
+          "cycle": [
+            {
+              "name": "src/shared/services/service-initialization.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/services/ServiceManager.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/services/core-services.ts",
+              "dependencyTypes": [
+                "local",
+                "dynamic-import"
+              ]
+            }
+          ],
+          "valid": false,
+          "rules": [
+            {
+              "severity": "warn",
+              "name": "no-circular-deps"
+            }
+          ]
+        },
+        {
+          "dynamic": false,
+          "module": "./ServiceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/ServiceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": true,
+          "cycle": [
+            {
+              "name": "src/shared/services/ServiceManager.ts",
+              "dependencyTypes": [
+                "local",
+                "export"
+              ]
+            },
+            {
+              "name": "src/shared/services/core-services.ts",
+              "dependencyTypes": [
+                "local",
+                "dynamic-import"
+              ]
+            }
+          ],
+          "valid": false,
+          "rules": [
+            {
+              "severity": "warn",
+              "name": "no-circular-deps"
+            }
+          ]
+        },
+        {
+          "dynamic": false,
+          "module": "@/constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/ServiceManager.ts",
+        "src/main.ts",
+        "src/shared/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/memory/ResourceManager.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/core-services.ts",
+        "src/shared/utils/memory/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/service-initialization.ts",
+      "dependencies": [
+        {
+          "dynamic": true,
+          "module": "../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../media",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/media/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./service-factories",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/service-factories.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ServiceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/ServiceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": true,
+          "cycle": [
+            {
+              "name": "src/shared/services/ServiceManager.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/services/core-services.ts",
+              "dependencyTypes": [
+                "local",
+                "dynamic-import"
+              ]
+            },
+            {
+              "name": "src/shared/services/service-initialization.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            }
+          ],
+          "valid": false,
+          "rules": [
+            {
+              "severity": "warn",
+              "name": "no-circular-deps"
+            }
+          ]
+        },
+        {
+          "dynamic": true,
+          "module": "./ThemeService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/ThemeService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./ToastController",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/ToastController.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/core-services.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/service-factories.ts",
+      "dependencies": [
+        {
+          "dynamic": true,
+          "module": "./BulkDownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/BulkDownloadService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./BulkDownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/BulkDownloadService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./MediaService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/MediaService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/MediaService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/service-initialization.ts",
+        "src/features/gallery/GalleryRenderer.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5565,87 +6009,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/service-factories.ts",
-      "dependencies": [
-        {
-          "dynamic": true,
-          "module": "./BulkDownloadService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/services/BulkDownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./BulkDownloadService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/services/BulkDownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./MediaService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/services/MediaService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./MediaService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/services/MediaService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/GalleryRenderer.ts",
-        "src/shared/services/service-initialization.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/features/gallery/components/vertical-gallery-view/index.ts",
       "dependencies": [
         {
@@ -6298,7 +6661,8 @@
       ],
       "dependents": [
         "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
-        "src/shared/components/ui/SettingsModal/index.ts"
+        "src/shared/components/ui/SettingsModal/index.ts",
+        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -6316,8 +6680,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
+        "src/shared/components/ui/Toolbar/Toolbar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -6334,8 +6697,7 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -6364,7 +6726,6 @@
       "dependents": [
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/index.ts"
       ],
       "orphan": false,
@@ -6393,7 +6754,6 @@
       ],
       "dependents": [
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/index.ts"
       ],
       "orphan": false,
@@ -6793,8 +7153,7 @@
       ],
       "dependents": [
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
+        "src/shared/components/ui/Toolbar/Toolbar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -11115,271 +11474,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/core-services.ts",
-      "dependencies": [
-        {
-          "dynamic": true,
-          "module": "../utils/memory/ResourceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/utils/memory/ResourceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./service-initialization",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/service-initialization.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@/constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/main.ts",
-        "src/shared/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/memory/ResourceManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@shared/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/core-services.ts",
-        "src/shared/utils/memory/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/service-initialization.ts",
-      "dependencies": [
-        {
-          "dynamic": true,
-          "module": "../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../media",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/media/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./service-factories",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/service-factories.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./ThemeService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/services/ThemeService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./ToastController",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/services/ToastController.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/core-services.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/index.ts",
       "dependencies": [
         {
@@ -12477,14 +12571,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../../external/vendors",
+          "module": "./SettingsModal",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "export"
           ],
-          "resolved": "src/shared/external/vendors.ts",
+          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12494,135 +12588,17 @@
         },
         {
           "dynamic": false,
-          "module": "../../../hooks/useFocusTrap",
+          "module": "./SettingsModal",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "type-only",
+            "export"
           ],
-          "resolved": "src/shared/hooks/useFocusTrap.ts",
+          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
           "coreModule": false,
           "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../hooks/useScrollLock",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/hooks/useScrollLock.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../services/LanguageService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/LanguageService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../services/ThemeService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/ThemeService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../StandardProps",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Toolbar/Toolbar.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toolbar/Toolbar.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./SettingsModal.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.module.css",
-          "coreModule": false,
-          "followable": false,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -15547,13 +15523,71 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "cycle",
+        "from": "src/shared/services/core-services.ts",
+        "to": "src/shared/services/service-initialization.ts",
+        "rule": {
+          "severity": "warn",
+          "name": "no-circular-deps"
+        },
+        "cycle": [
+          {
+            "name": "src/shared/services/service-initialization.ts",
+            "dependencyTypes": [
+              "local",
+              "import"
+            ]
+          },
+          {
+            "name": "src/shared/services/ServiceManager.ts",
+            "dependencyTypes": [
+              "local",
+              "import"
+            ]
+          },
+          {
+            "name": "src/shared/services/core-services.ts",
+            "dependencyTypes": [
+              "local",
+              "dynamic-import"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "cycle",
+        "from": "src/shared/services/core-services.ts",
+        "to": "src/shared/services/ServiceManager.ts",
+        "rule": {
+          "severity": "warn",
+          "name": "no-circular-deps"
+        },
+        "cycle": [
+          {
+            "name": "src/shared/services/ServiceManager.ts",
+            "dependencyTypes": [
+              "local",
+              "export"
+            ]
+          },
+          {
+            "name": "src/shared/services/core-services.ts",
+            "dependencyTypes": [
+              "local",
+              "dynamic-import"
+            ]
+          }
+        ]
+      }
+    ],
     "error": 0,
-    "warn": 0,
+    "warn": 2,
     "info": 0,
     "ignore": 0,
     "totalCruised": 257,
-    "totalDependenciesCruised": 705,
+    "totalDependenciesCruised": 698,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

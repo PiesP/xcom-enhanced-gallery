@@ -28,7 +28,8 @@ Windows PowerShell에서도 위 명령 그대로 사용 가능합니다.
 - 테스트:
   - 전체: `npm test` (vitest run)
   - 워치: `npm run test:watch`
-  - 커버리지: `npm run test:coverage`
+  - 커버리지: `npm run test:coverage` (사전 단계: `pretest:coverage`가 프로덕션
+    빌드를 수행)
   - UI: `npm run test:ui`
 - 빌드:
   - 개발: `npm run build:dev`

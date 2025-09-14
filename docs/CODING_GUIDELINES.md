@@ -31,6 +31,44 @@ components/
 services/
 ```
 
+### Vendor 사용 규칙 (중요)
+
+- 외부 라이브러리(preact, @preact/signals, fflate, preact/compat 등)는 직접
+  import 금지.
+- 반드시 안전 getter를 사용: `@shared/external/vendors`의 `getPreact()`,
+  `getPreactHooks()`, `getPreactSignals()`, `getPreactCompat()`, `getFflate()`
+  등.
+- 와일드카드 import(`import * as Vendors from ...`) 금지. 필요한 심볼만
+  명시적으로 가져옵니다.
+- Legacy 동적 API(`*Legacy` 접미사, `vendor-api.ts`)는 테스트/마이그레이션
+  전용이며, 런타임 코드에서 사용 금지.
+- 타입도 가능하면 벤더 index에서 재export된 것을 사용합니다: `type VNode`,
+  `type ComponentChildren` 등.
+
+예시:
+
+```ts
+// ✅ 권장
+import {
+  getPreact,
+  getPreactHooks,
+  getPreactCompat,
+  getPreactSignals,
+  type VNode,
+} from '@shared/external/vendors';
+
+const { h } = getPreact();
+const { useEffect } = getPreactHooks();
+const compat = getPreactCompat();
+const { signal } = getPreactSignals();
+
+// ❌ 금지
+// import * as Vendors from '@shared/external/vendors';
+// import * as preact from 'preact';
+// import * as signals from '@preact/signals';
+// import compat from 'preact/compat';
+```
+
 ### Border Radius 정책 (Design Tokens)
 
 | 용도                        | 토큰                                                | 설명                           |

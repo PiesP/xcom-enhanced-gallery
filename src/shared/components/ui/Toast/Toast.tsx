@@ -1,6 +1,11 @@
 import styles from './Toast.module.css';
-import * as Vendors from '../../../external/vendors';
-import type { VNode } from '../../../external/vendors';
+import {
+  getPreact,
+  getPreactHooks,
+  getPreactCompat,
+  getPreactSignals,
+  type VNode,
+} from '../../../external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastProps } from '../StandardProps';
 
@@ -38,7 +43,7 @@ function ToastComponent({
   'aria-label': ariaLabel,
   role = 'alert',
 }: ToastProps): VNode {
-  const { useEffect } = Vendors.getPreactHooks();
+  const { useEffect } = getPreactHooks();
 
   // 안전성 체크
   if (!toast || !onRemove) {
@@ -89,7 +94,7 @@ function ToastComponent({
   // 표준화된 테스트 속성 생성
   const testProps = ComponentStandards.createTestProps(testId);
 
-  const { h } = Vendors.getPreact();
+  const { h } = getPreact();
 
   return h(
     'div',
@@ -151,7 +156,7 @@ const areToastPropsEqual = (prevProps: ToastProps, nextProps: ToastProps): boole
 // memo를 적용한 최적화된 Toast 컴포넌트 (안전한 지연 접근)
 const MemoizedToast = (() => {
   try {
-    const compat = Vendors.getPreactCompat?.();
+    const compat = getPreactCompat();
     if (compat && typeof compat.memo === 'function') {
       return compat.memo(ToastComponent, areToastPropsEqual);
     }
@@ -173,26 +178,27 @@ Object.defineProperty(MemoizedToast, 'displayName', {
 export const Toast = MemoizedToast;
 
 // Global toast state - lazy initialization
-let _toasts: ReturnType<typeof import('@preact/signals').signal<ToastItem[]>> | null = null;
+type Signal<T> = { value: T; subscribe?: (cb: (v: T) => void) => () => void };
+let _toasts: Signal<ToastItem[]> | null = null;
 export const toasts = {
   get value(): ToastItem[] {
     if (!_toasts) {
-      const { signal } = Vendors.getPreactSignals();
-      _toasts = signal<ToastItem[]>([]);
+      const { signal } = getPreactSignals();
+      _toasts = signal<ToastItem[]>([]) as unknown as Signal<ToastItem[]>;
     }
     return _toasts.value || [];
   },
   set value(newValue: ToastItem[]) {
     if (!_toasts) {
-      const { signal } = Vendors.getPreactSignals();
-      _toasts = signal<ToastItem[]>([]);
+      const { signal } = getPreactSignals();
+      _toasts = signal<ToastItem[]>([]) as unknown as Signal<ToastItem[]>;
     }
     _toasts.value = newValue;
   },
   subscribe(callback: (value: ToastItem[]) => void) {
     if (!_toasts) {
-      const { signal } = Vendors.getPreactSignals();
-      _toasts = signal<ToastItem[]>([]);
+      const { signal } = getPreactSignals();
+      _toasts = signal<ToastItem[]>([]) as unknown as Signal<ToastItem[]>;
     }
     return _toasts.subscribe?.(value => callback(value || [])) || (() => {});
   },

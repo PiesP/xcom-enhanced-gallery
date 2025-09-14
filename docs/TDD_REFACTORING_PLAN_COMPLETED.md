@@ -1,4 +1,27 @@
+### 2025-09-14
+
+- VENDOR-USAGE-SIMPLIFY — 와일드카드 vendor import 제거(Toast.tsx). 안전 getter
+  도입, 타입 의존 간소화. 빌드/테스트 GREEN.
+- SERVICE-DIAG-UNIFY (1/2) — ServiceManager.diagnoseServiceManager를
+  core-services.ServiceDiagnostics로 위임하도록 통합(중복 제거).
+- UI-SHELL-DEDUP (부분) — RefactoredSettingsModal를 SettingsModal로
+  리다이렉트(중복 구현 제거, 테스트 경로 호환 유지).
+
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
+
+2025-09-14: PLAN-ACTIVATION — 활성 리팩토링 계획 등록(5건)
+
+- UI-SHELL-DEDUP, VENDOR-LEGACY-SUNSET, SERVICE-DIAG-UNIFY, UNUSED-CODE-SWEEP,
+  VENDOR-USAGE-SIMPLIFY 활성화. 목적: Userscript 적합 복잡성
+  유지(중복·분산·미사용 최소화).
+
+2025-09-14: SESSION-VERIFICATION — 계획 검토 및 게이트 통과 보고
+
+- 활성 Phase 없음(계획서 최신화 상태 유지).
+- 스모크/패스트 테스트 모두 GREEN, 경고는 의도된 모킹/폴백 로그 수준.
+- Clear-Host && npm run build 수행: dev/prod Userscript 생성 및 postbuild 검증
+  PASS.
+- 번들 크기: raw 370.92 KB / gzip 99.53 KB (가드 임계 내).
 
 2025-09-14: POLICY-HARDENING-TRANSITIONS — transition: all 제거/이징 토큰 정합
 

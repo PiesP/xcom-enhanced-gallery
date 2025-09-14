@@ -203,22 +203,10 @@ export class CoreService {
    * ServiceManager 상태 진단
    */
   public async diagnoseServiceManager(): Promise<void> {
+    // 단일 진입점으로 위임하여 중복 제거
     try {
-      logger.info('🔍 ServiceManager 진단 시작');
-
-      // 등록 상태 확인
-      const diagnostics = this.getDiagnostics();
-      logger.info('📊 진단 결과:', {
-        registeredCount: diagnostics.registeredServices,
-        activeInstances: diagnostics.activeInstances,
-        services: diagnostics.services,
-        instances: diagnostics.instances,
-      });
-
-      // 등록된 서비스 목록
-      logger.debug('🗂️ 등록된 서비스:', diagnostics.services);
-
-      logger.info('✅ CoreService 진단 완료');
+      const { ServiceDiagnostics } = await import('./core-services');
+      await ServiceDiagnostics.diagnoseServiceManager();
     } catch (error) {
       logger.error('❌ CoreService 진단 실패:', error);
     }
@@ -228,8 +216,13 @@ export class CoreService {
    * 서비스 상태 진단 (정적 메서드)
    */
   public static async diagnoseServiceManager(): Promise<void> {
-    const instance = CoreService.getInstance();
-    return instance.diagnoseServiceManager();
+    try {
+      const { ServiceDiagnostics } = await import('./core-services');
+      return ServiceDiagnostics.diagnoseServiceManager();
+    } catch (error) {
+      logger.error('❌ CoreService 진단 실패:', error);
+      throw error;
+    }
   }
 
   /**
