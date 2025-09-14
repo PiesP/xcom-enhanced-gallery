@@ -1,5 +1,14 @@
 ### 2025-09-14
 
+2025-09-14: PLAN-REFRESH — 계획 감사 및 활성 Phase 등록(E1–E3)
+
+- 내용: 코드/문서 감사를 통해 이벤트 계층 중복
+  표면(EventManager/GalleryEventManager, TwitterEventManager 별칭)을 확인. 활성
+  계획에 E1(표면 일원화)·E2(가드 보강)·E3(별칭 정리) 등록. 완료 항목 이동은
+  없음(기존 계획서가 비어 있었음).
+- 검증: 문서만 변경 — 빌드/테스트 영향 없음. 후속 커밋에서 RED 스캔 테스트 추가
+  예정.
+
 2025-09-14: VENDOR-GUARD-02 (완료)
 
 - 내용: src/\* 전역에서 preact/@preact/signals/preact/compat 직접 참조 0건 확인.

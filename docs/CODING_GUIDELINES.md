@@ -73,16 +73,16 @@ const { signal } = getPreactSignals();
 // import * as preact from 'preact';
 // import * as signals from '@preact/signals';
 // import compat from 'preact/compat';
+```
 
 ### Toast 시스템(싱글톤 매니저)
 
-- 토스트 상태의 단일 소스는 `UnifiedToastManager`입니다. 컴포넌트/서비스는
-  통합 매니저의 API를 사용하세요.
+- 토스트 상태의 단일 소스는 `UnifiedToastManager`입니다. 컴포넌트/서비스는 통합
+  매니저의 API를 사용하세요.
 - UI 컴포넌트에서 토스트 목록을 구독해야 할 경우,
   `UnifiedToastManager.getInstance().subscribe(...)`를 사용합니다.
 - 레거시 `Toast.tsx`의 `toasts` 신호를 외부에서 직접 구독/조작하지 마세요.
   브리징은 제거되었으며, 외부 소비자는 통합 매니저만 사용합니다.
-```
 
 ### Border Radius 정책 (Design Tokens)
 
