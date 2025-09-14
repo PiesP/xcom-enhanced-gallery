@@ -120,6 +120,32 @@ const { signal } = getPreactSignals();
 // import compat from 'preact/compat';
 ```
 
+### 테스트 DI 가이드(U6) — ServiceHarness 사용
+
+- 런타임에서는 AppContainer를 사용하지 않습니다. 테스트에서도 가능한
+  ServiceManager + 접근자 패턴을 그대로 사용합니다.
+- 테스트에서 서비스 초기화/리셋/주입이 필요할 때 `ServiceHarness`를 사용하세요.
+  - `await harness.initCoreServices()`로 코어 서비스 등록
+  - `harness.get/tryGet/register`로 조회/주입
+  - `harness.reset()`으로 싱글톤 상태 초기화(테스트 간 격리)
+- AppContainer/createAppContainer는 리팩토링 스위트 전용이며, 일반 단위
+  테스트에서 금지합니다.
+- 가드: `test/unit/lint/runtime-appcontainer.imports.red.test.ts`가 런타임
+  import를 금지합니다(type-only 허용).
+
+샘플(단위 테스트):
+
+```ts
+import { createServiceHarness } from '@/shared/container/ServiceHarness';
+import { SERVICE_KEYS } from '@/constants';
+
+const h = createServiceHarness();
+await h.initCoreServices();
+expect(h.get(SERVICE_KEYS.TOAST)).toBeDefined();
+h.reset();
+expect(h.tryGet(SERVICE_KEYS.TOAST)).toBeNull();
+```
+
 ### Toast 시스템(싱글톤 매니저)
 
 - 토스트 상태의 단일 소스는 `UnifiedToastManager`입니다. 컴포넌트/서비스는 통합

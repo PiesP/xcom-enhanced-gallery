@@ -36,6 +36,19 @@
 - 검증: 타입/린트/fast 테스트 GREEN, dev/prod 빌드 PASS, postbuild validator
   PASS.
 
+2025-09-15: P6 — 컨테이너 단일화(부분 완료: 테스트 하네스/리셋 호환성)
+
+- 내용:
+  - 테스트 경량 하네스(ServiceHarness) 도입으로 ServiceManager 기반
+    초기화/리셋/주입을 표준화
+  - core 서비스 초기화가 reset() 이후에도 최신 CoreService 싱글톤을 참조하도록
+    수정
+  - CODING_GUIDELINES에 테스트 DI 가이드(U6) 추가(런타임 AppContainer 금지,
+    하네스 사용)
+- 검증: fast 스위트 GREEN(신규 하네스 계약 테스트 포함), dev/prod 빌드 및
+  postbuild validator PASS
+- 비고: P6 잔여(런타임/리팩토링 스위트의 AppContainer 제거)는 후속 커밋에서 진행
+
 2025-09-14: PLAN-REFRESH-03 — 활성 계획 재정비(P6–P10) (완료)
 
 - 내용: 이전 진단/결정(하이브리드 단기 C 등)을 완료 로그로 이관하고, 활성 계획을

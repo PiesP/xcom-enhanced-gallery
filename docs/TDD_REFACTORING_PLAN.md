@@ -53,13 +53,7 @@ P6 — 컨테이너 단일화(최종)
 
 진행 현황(부분):
 
-- settings-access가 레거시 전역 어댑터 의존을 제거하고 ServiceManager 브리지로
-  전환됨
-- 테스트 경량 하네스(ServiceHarness) 도입 — 테스트에서 CoreService 초기화/리셋
-  및 서비스 접근을 단순화
-- core 서비스 초기화 리셋 호환성 수정 — registerCoreServices()가 항상 최신
-  CoreService 싱글톤 인스턴스를 참조하도록 변경하여 reset() 이후 재초기화 시
-  스테일 참조 문제를 방지
+- 테스트 하네스 도입 및 core 리셋 호환성 확보까지 진행 (완료 로그에 기록됨)
 
 <!-- P7 — 다운로드 오케스트레이션 일원화 (완료: Completed Log 참조) -->
 
