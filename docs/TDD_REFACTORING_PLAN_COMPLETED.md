@@ -1,5 +1,20 @@
 ### 2025-09-14
 
+2025-09-14: E3 — Naming/Alias Prune (완료)
+
+- 내용: 외부 공개 표면에서 `TwitterEventManager` 명칭 제거(배럴 미노출), 서비스
+  내 별칭은 @deprecated로 내부 호환만 유지. 외부 소비자는
+  `@shared/services/EventManager`만 사용.
+- 검증: 금지 import 스캐너 GREEN(`event-deprecated-removal.test.ts`),
+  타입/테스트/빌드 PASS.
+
+2025-09-14: E1 — Event Surface Consolidation (완료)
+
+- 내용: 외부 공개 표면을 `EventManager`로 일원화. 서비스
+  배럴(`services/event-managers.ts`) 에서 `TwitterEventManager` 재노출 제거.
+  utils 이벤트 유틸은 @deprecated 주석으로 내부 전용화.
+- 검증: 금지 import 스캐너 GREEN, 전체 빌드/테스트 영향 없음.
+
 2025-09-14: E2 — Event Guard Hardening (완료)
 
 - 내용: 이벤트 레거시 유틸 금지 스캐너 강화. `@shared/utils/events` 외부 import
