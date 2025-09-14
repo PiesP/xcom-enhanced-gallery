@@ -3,7 +3,7 @@
 본 문서는 “유저스크립트에 적합한 복잡성”을 유지하기 위한 현재 활성 계획만
 담습니다. 완료된 항목은 즉시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
 
-업데이트: 2025-09-14 — 활성 Phase: 3건
+업데이트: 2025-09-14 — 활성 Phase: 0건
 
 ## 운영 원칙(불변)
 
@@ -15,29 +15,7 @@
 
 ## 활성 Phase (2025-09)
 
-1. ~TOAST-LEGACY-BRIDGE-REMOVAL~ (완료 → 완료 로그 이관)
-
-<!-- 2. SIGNALS-SAFE-FACTORY: 완료되어 완료 로그로 이동 -->
-
-2. VENDOR-GUARD-02
-
-- 목적: 외부 라이브러리 직접 import/require 잔존 여부 최종 정리(벤더 getter
-  강제).
-- 접근: 정적 스캔 테스트 강화 + 1건이라도 발견 시 실패. 필요 시 안전 getter
-  확장.
-- 장점: 모킹/TDZ 안전성 향상. 단점: 벤더 내부 어댑터 보완 필요 가능.
-- DoD: src/\* 에서 preact/@preact/signals/preact/compat 직접 참조 0건, 테스트
-  GREEN.
-
-3. TOKEN-LEGACY-PRUNE-P1
-
-- 목적: CSS 토큰의 Legacy alias를 1차 정리(문서/테스트와 동기화).
-- 접근: 사용 실적 0인 alias 제거 → 영향 영역 테스트 보강 → 후속 P2에서 잔여
-  alias 일괄 제거.
-- 장점: 토큰 표면 축소, 유지보수성 향상. 단점: 회귀 위험 → TDD로 완화.
-- DoD: “미사용 토큰 스캔” 테스트 0건 보고, 스타일 스위트 GREEN.
-
-<!-- 5. PHYS-REMOVE-LEGACY-ICON-DIR: 완료되어 완료 로그로 이동 -->
+현재 활성 Phase 없음 — 모든 계획 항목이 완료되어 완료 로그로 이관되었습니다.
 
 ## TDD 규칙과 브랜치
 

@@ -1,5 +1,21 @@
 ### 2025-09-14
 
+2025-09-14: VENDOR-GUARD-02 (완료)
+
+- 내용: src/\* 전역에서 preact/@preact/signals/preact/compat 직접 참조 0건 확인.
+  vendor getter 경유 정책이 정적 스캔/테스트로 강제됨. 예외는 벤더 어댑터 내부
+  (`src/shared/external/vendors/**`)만 허용.
+- 검증: dependency-cruiser/정적 스캔 및 전 스위트 테스트 GREEN, dev/prod 빌드
+  PASS.
+
+2025-09-14: TOKEN-LEGACY-PRUNE-P1 (완료)
+
+- 내용: Token governance 리포트 기준 사용 실적 0인 legacy alias 1차 정리 상태
+  확정. 소스 전역에서 panel/modal-button/toolbar-dark/light 등 잔존 alias 사용
+  0건 확인. semantic 토큰으로 통일됨.
+- 검증: 스타일/리팩터/통합 테스트 GREEN, dev/prod 빌드 및 postbuild validator
+  PASS.
+
 2025-09-14: TOAST-LEGACY-BRIDGE-REMOVAL (완료)
 
 - 내용: UnifiedToastManager ↔ Toast.tsx legacyToasts 동기화 브리지 제거. UI는
