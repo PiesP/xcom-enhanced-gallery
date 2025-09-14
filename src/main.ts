@@ -312,6 +312,8 @@ async function initializeDevTools(): Promise<void> {
 
     // 서비스 진단 도구
     const { ServiceDiagnostics } = await import('@shared/services/core-services');
+    // DEV 전용 전역 진단 등록 (import 부작용 제거)
+    ServiceDiagnostics.registerGlobalDiagnostic();
     await ServiceDiagnostics.diagnoseServiceManager();
 
     logger.info('🛠️ 개발 도구 활성화됨');

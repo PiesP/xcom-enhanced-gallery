@@ -19,12 +19,7 @@ export {
   type CSSAnimationOptions,
 } from './css-animations';
 
-// 기존 함수들을 CSS 기반으로 리다이렉트하여 하위 호환성 유지
-export {
-  animateGalleryEnter as animateToolbarShow,
-  animateGalleryExit as animateToolbarHide,
-  animateGalleryEnter as animateImageLoad,
-} from './css-animations';
+// 별칭 제거: 공식 API만 유지(toolbarSlideDown/toolbarSlideUp)
 
 // Motion One 관련 함수들을 CSS 기반으로 교체
 type DurationToken = 'fast' | 'normal' | 'slow';
@@ -219,3 +214,28 @@ export const ANIMATION_PRESETS = {
     options: { duration: 300, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
   },
 } as const;
+
+// Phase 2: JS 프리셋 경로를 정식 API로 노출
+export const toolbarSlideDown = async (element: Element): Promise<void> => {
+  // 최종 상태로 전환(초기 상태는 CSS 또는 호출측에서 관리)
+  return animateCustom(
+    element,
+    { opacity: '1', transform: 'translateY(0)' },
+    {
+      durationToken: 'fast',
+      easingToken: 'decelerate',
+    }
+  );
+};
+
+export const toolbarSlideUp = async (element: Element): Promise<void> => {
+  // 툴바를 상단으로 숨기는 상태로 전환
+  return animateCustom(
+    element,
+    { opacity: '0', transform: 'translateY(-100%)' },
+    {
+      durationToken: 'fast',
+      easingToken: 'accelerate',
+    }
+  );
+};

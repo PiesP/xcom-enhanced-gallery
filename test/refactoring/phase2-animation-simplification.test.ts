@@ -75,9 +75,13 @@ describe('Phase 2: Animation System Simplification', () => {
       expect(ANIMATION_CLASSES.SLIDE_OUT_TOP).toBe('animate-slide-out-top');
       expect(ANIMATION_CLASSES.SCALE_IN).toBe('animate-scale-in');
       expect(ANIMATION_CLASSES.SCALE_OUT).toBe('animate-scale-out');
-      expect(ANIMATION_CLASSES.TOOLBAR_SLIDE_DOWN).toBe('animate-toolbar-slide-down');
-      expect(ANIMATION_CLASSES.TOOLBAR_SLIDE_UP).toBe('animate-toolbar-slide-up');
       expect(ANIMATION_CLASSES.IMAGE_LOAD).toBe('animate-image-load');
+    });
+
+    it('should not define toolbar slide CSS classes (JS-only policy)', () => {
+      // 정책 변경: 툴바 애니메이션은 JS API(toolbarSlideDown/Up)로 통합됨
+      expect((ANIMATION_CLASSES as any).TOOLBAR_SLIDE_DOWN).toBeUndefined();
+      expect((ANIMATION_CLASSES as any).TOOLBAR_SLIDE_UP).toBeUndefined();
     });
   });
 

@@ -1,35 +1,71 @@
 ### 2025-09-14
 
-- VENDOR-LEGACY-SUNSET — 동적 Vendor API 사용 제거 완료. 레거시(alias \*Legacy)
-  re-export는 테스트/호환 목적만 유지하고 JSDoc @deprecated 표기. 와일드카드
-  vendor import 제거, 안전 getter 직참조로 일원화. 빌드/테스트/가드 GREEN.
-- UNUSED-CODE-SWEEP — 미사용 파일/심볼 제거 항목은 이전 세션에서 완료되어 본
-  로그에만 유지.
+2025-09-14: S1 — IMPORT-SIDE-EFFECT REMOVAL (완료)
 
-- VENDOR-USAGE-SIMPLIFY — 와일드카드 vendor import 제거(Toast.tsx). 안전 getter
-  도입, 타입 의존 간소화. 빌드/테스트 GREEN.
-- SERVICE-DIAG-UNIFY (1/2) — ServiceManager.diagnoseServiceManager를
-  core-services.ServiceDiagnostics로 위임하도록 통합(중복 제거).
-- UI-SHELL-DEDUP (부분) — RefactoredSettingsModal를 SettingsModal로
-  리다이렉트(중복 구현 제거, 테스트 경로 호환 유지).
+- 내용: ServiceDiagnostics import-시 글로벌 등록 제거. DEV 전용으로
+  `main.ts`에서만 명시적 등록 + 진단 실행.
+- 검증: 정적 스캔/사이드이펙트 가드 GREEN, 전체 테스트/빌드/포스트빌드 검증
+  PASS.
 
-- UI-SHELL-DEDUP (완료) — UnifiedToolbar를 실제 구현(ToolbarWithSettings)으로
-  재export하고 ToolbarShell은 실제 모듈에서 재노출. UnifiedSettingsModal은
-  SettingsModal을 감싸 role="dialog"와 glass-surface 클래스를 보장하는 얇은 호환
-  래퍼로 통일. 타입/테스트 GREEN.
+2025-09-14: S4 — ANIMATION-ALIAS-REMOVAL (완료)
 
-- DEPS-CYCLE-RESOLVED — Service diagnostics를 별도 모듈
-  (`service-diagnostics.ts`)로 추출하고 ServiceManager의 위임 메서드를 제거하여
-  core-services ↔ ServiceManager 순환을 해소. `npm run deps:check` → no
-  dependency violations. 전체 테스트 GREEN.
+- 내용: `animateToolbarShow/Hide/animateImageLoad` 별칭 제거. 테스트 호출부를
+  공식 API `toolbarSlideDown/Up`로 이행. 소스 전역에서 별칭 금지 스캔 테스트
+  추가 (`test/unit/lint/animation-alias-removal.test.ts`).
+- 검증: 타입/린트/전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
 
-- SERVICE-DIAG-UNIFY (완료) — `ServiceManager`와 `core-services`의 진단 API를
-  단일 진단 엔트리(`ServiceDiagnostics` in `service-diagnostics.ts`)로 통합.
-  `ServiceManager`의 진단 위임 메서드 제거 및 `core-services`에서 재export로
-  소비 경로 안정화. 타입/린트/테스트/의존성 그래프 GREEN.
+re-export는 테스트/호환 목적만 유지하고 JSDoc @deprecated 표기. 와일드카드
+vendor import 제거, 안전 getter 직참조로 일원화. 빌드/테스트/가드 GREEN.
+로그에만 유지.
 
-- SESSION-BUILD-VERIFY — Clear-Host && npm run build 수행: dev/prod Userscript
-  생성 및 postbuild 검증 PASS. 번들 크기: raw 370.44 KB / gzip 99.36 KB.
+도입, 타입 의존 간소화. 빌드/테스트 GREEN. core-services.ServiceDiagnostics로
+위임하도록 통합(중복 제거). 리다이렉트(중복 구현 제거, 테스트 경로 호환 유지).
+
+재export하고 ToolbarShell은 실제 모듈에서 재노출. UnifiedSettingsModal은
+SettingsModal을 감싸 role="dialog"와 glass-surface 클래스를 보장하는 얇은 호환
+래퍼로 통일. 타입/테스트 GREEN.
+
+(`service-diagnostics.ts`)로 추출하고 ServiceManager의 위임 메서드를 제거하여
+core-services ↔ ServiceManager 순환을 해소. `npm run deps:check` → no
+dependency violations. 전체 테스트 GREEN.
+
+단일 진단 엔트리(`ServiceDiagnostics` in `service-diagnostics.ts`)로 통합.
+`ServiceManager`의 진단 위임 메서드 제거 및 `core-services`에서 재export로 소비
+경로 안정화. 타입/린트/테스트/의존성 그래프 GREEN.
+
+생성 및 postbuild 검증 PASS. 번들 크기: raw 370.44 KB / gzip 99.36 KB.
+
+2025-09-14: S2 — TOOLBAR-ANIMATION-PATH-UNIFY (완료)
+
+- 내용: 툴바 show/hide를 공식 JS API(toolbarSlideDown/Up)로 일원화. CSS 엔진의
+  툴바 전용 키프레임/클래스(toolbar-slide-_, .animate-toolbar-_) 제거로 중복
+  축소.
+- 구현: useToolbarPositionBased 훅에서 toolbarSlideDown/Up 호출 추가,
+  css-animations.ts의 관련 키프레임/클래스 삭제. 별칭/레거시 호출부는 기존
+  S4에서 제거됨.
+- 검증: 전체 테스트/스타일/리팩터 스위트 GREEN(1823 passed), dev/prod 빌드 및
+  postbuild validator PASS.
+
+2025-09-14: S5 — LEGACY-PLACEHOLDER-REDUCTION (완료)
+
+- 내용: `src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx`를
+  런타임 무존재(types-only 재export)로 축소하여 dead 코드 제거. 기타 레거시
+  배럴은 기존 가드 테스트와 호환되는 최소 표면만 유지.
+- 검증: 타입/린트/전체 테스트 GREEN, 의존성/벤더 가드 PASS.
+
+2025-09-14: S3 — EVENT-DEPRECATED-REMOVAL (완료)
+
+- 내용: 레거시 이벤트 유틸(Direct DOMEventManager/createEventManager,
+  GalleryEventManager) 외부 사용 제거. 서비스 배럴에서 deprecated re-export
+  삭제. 금지 import 가드 테스트
+  추가(`test/unit/lint/event-deprecated-removal.test.ts`).
+- 검증: 전체 테스트/스타일/리팩터 스위트 GREEN, dev/prod 빌드 PASS.
+
+### 2025-09-14: 계획 갱신(활성 Phase 등록)
+
+- 활성화: S1(import 부작용 제거), S2(툴바 애니메이션 경로 통일), S3(이벤트 유틸
+  레거시 제거), S4(애니메이션 명명 정합), S5(레거시 UI placeholder 정리)
+- 목표: Userscript 적합 복잡성 유지 — 중복/부작용/레거시/명명 혼재 최소화
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 

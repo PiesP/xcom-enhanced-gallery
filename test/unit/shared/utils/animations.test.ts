@@ -8,8 +8,8 @@ import {
   ANIMATION_PRESETS,
   animateGalleryEnter,
   animateGalleryExit,
-  animateToolbarShow,
-  animateToolbarHide,
+  toolbarSlideDown,
+  toolbarSlideUp,
   setupScrollAnimation,
   setupInViewAnimation,
   transformValue,
@@ -90,12 +90,12 @@ describe('애니메이션 유틸리티', () => {
 
   describe('툴바 애니메이션', () => {
     it('툴바 표시 애니메이션이 실행되어야 한다', async () => {
-      await animateToolbarShow(mockElement);
+      await toolbarSlideDown(mockElement);
       expect(true).toBe(true); // 에러 없이 완료되면 성공
     });
 
     it('툴바 숨김 애니메이션이 실행되어야 한다', async () => {
-      await animateToolbarHide(mockElement);
+      await toolbarSlideUp(mockElement);
       expect(true).toBe(true); // 에러 없이 완료되면 성공
     });
   });

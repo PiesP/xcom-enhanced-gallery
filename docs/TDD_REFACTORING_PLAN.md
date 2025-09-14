@@ -16,7 +16,7 @@
 
 ## 활성 Phase
 
-현재 활성 Phase 없음 (완료 항목은 `TDD_REFACTORING_PLAN_COMPLETED.md`에서 관리).
+현재 활성 Phase 없음 — 모든 계획된 항목은 완료 로그를 참조하세요.
 
 ## TDD 규칙과 브랜치
 

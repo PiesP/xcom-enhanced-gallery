@@ -166,6 +166,9 @@ export default defineConfig({
         test: {
           name: 'smoke',
           globals: true,
+          // 상위 testTimeout/hookTimeout이 projects에 상속되지 않아 명시적으로 지정
+          testTimeout: 20000,
+          hookTimeout: 25000,
           environment: 'jsdom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
@@ -190,6 +193,9 @@ export default defineConfig({
         test: {
           name: 'fast',
           globals: true,
+          // 타임아웃을 명시적으로 설정하여 Windows/transform 지연으로 인한 플래키 방지
+          testTimeout: 20000,
+          hookTimeout: 25000,
           environment: 'jsdom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
@@ -215,6 +221,8 @@ export default defineConfig({
         test: {
           name: 'unit',
           globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
           environment: 'jsdom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
@@ -234,6 +242,8 @@ export default defineConfig({
         test: {
           name: 'styles',
           globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
           environment: 'jsdom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
@@ -256,6 +266,8 @@ export default defineConfig({
         test: {
           name: 'performance',
           globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
           environment: 'jsdom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
@@ -279,6 +291,8 @@ export default defineConfig({
         test: {
           name: 'phases',
           globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
           environment: 'jsdom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
@@ -298,6 +312,8 @@ export default defineConfig({
         test: {
           name: 'refactor',
           globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
           environment: 'jsdom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {

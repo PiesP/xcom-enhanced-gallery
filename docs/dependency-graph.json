@@ -1756,8 +1756,7 @@
       ],
       "dependents": [
         "src/shared/dom/index.ts",
-        "src/shared/services/EventManager.ts",
-        "src/shared/services/event-managers.ts"
+        "src/shared/services/EventManager.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4111,6 +4110,7 @@
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/types/core/core-types.ts",
         "src/shared/services/service-initialization.ts",
+        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -4650,7 +4650,6 @@
         "src/shared/services/EventManager.ts",
         "src/main.ts",
         "src/shared/utils/index.ts",
-        "src/shared/services/event-managers.ts",
         "src/shared/utils/events/index.ts"
       ],
       "orphan": false,
@@ -6279,6 +6278,7 @@
       "dependents": [
         "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
         "src/shared/components/ui/SettingsModal/index.ts",
+        "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx"
       ],
@@ -8338,7 +8338,8 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/hooks/useToolbarPositionBased.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9645,6 +9646,23 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../shared/utils/animations",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/animations.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12500,9 +12518,28 @@
     },
     {
       "source": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SettingsModal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
-      "orphan": true,
+      "orphan": false,
       "valid": true
     },
     {
@@ -12534,6 +12571,23 @@
     {
       "source": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../services/ThemeService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/ThemeService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./SettingsModal",
@@ -14534,46 +14588,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/dom/DOMEventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/dom/DOMEventManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/utils/events",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/events.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [],
@@ -15511,7 +15525,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 258,
-    "totalDependenciesCruised": 702,
+    "totalDependenciesCruised": 703,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -73,5 +73,4 @@ export class ServiceDiagnostics {
   }
 }
 
-// Dev environment: expose a global helper
-ServiceDiagnostics.registerGlobalDiagnostic();
+// Note: 글로벌 등록은 import 시점 부작용을 피하기 위해 엔트리(main.ts)의 DEV 분기에서만 수행합니다.

@@ -29,8 +29,6 @@ export const ANIMATION_CLASSES = {
   SLIDE_OUT_TOP: 'animate-slide-out-top',
   SCALE_IN: 'animate-scale-in',
   SCALE_OUT: 'animate-scale-out',
-  TOOLBAR_SLIDE_DOWN: 'animate-toolbar-slide-down',
-  TOOLBAR_SLIDE_UP: 'animate-toolbar-slide-up',
   IMAGE_LOAD: 'animate-image-load',
   REDUCED_MOTION: 'reduced-motion',
 } as const;
@@ -95,14 +93,12 @@ export function injectAnimationStyles(): void {
   .animate-slide-out-top { animation: slide-out-top var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
   .animate-scale-in { animation: scale-in var(--xeg-duration-normal) var(--xeg-ease-standard) forwards; }
   .animate-scale-out { animation: scale-out var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
-  .animate-toolbar-slide-down { animation: toolbar-slide-down var(--xeg-duration-fast) var(--xeg-ease-decelerate) forwards; }
-  .animate-toolbar-slide-up { animation: toolbar-slide-up var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
   .animate-image-load { animation: image-load var(--xeg-duration-slow) var(--xeg-ease-decelerate) forwards; }
 
     @media (prefers-reduced-motion: reduce) {
       .animate-fade-in, .animate-fade-out, .animate-slide-in-bottom,
       .animate-slide-out-top, .animate-scale-in, .animate-scale-out,
-      .animate-toolbar-slide-down, .animate-toolbar-slide-up, .animate-image-load {
+      .animate-image-load {
         animation: none !important;
       }
     }

@@ -349,6 +349,24 @@ animateCustom(el, keyframes, {
 - 이징 토큰 네이밍 표준: 소비자 레이어는 `--xeg-ease-standard`/`--xeg-ease-decelerate`/`--xeg-ease-accelerate`만 사용합니다. (구 `--xeg-easing-*` 표기 금지)
 - CSS Modules의 `composes` 사용 금지(도구 호환성 문제). 공통 스타일은 유틸 클래스로 분리하거나 명시적으로 중복 선언합니다.
 
+#### 툴바 애니메이션 경로(Phase 2 완료)
+
+- 툴바 show/hide 전환은 JS API만 사용합니다: `shared/utils/animations.ts`의
+  `toolbarSlideDown(element)`, `toolbarSlideUp(element)`.
+- CSS 엔진의 툴바 전용 키프레임/클래스(`toolbar-slide-*`, `.animate-toolbar-*`)는 제거되었습니다. 새 코드에서 사용 금지.
+- 갤러리 컨테이너 enter/exit 및 이미지 스태거 등은 CSS 엔진(`css-animations.ts`)을 유지합니다.
+- 테스트 가드: `test/refactoring/phase2-animation-simplification.test.ts`,
+  `test/unit/lint/animation-alias-removal.test.ts`.
+
+#### 이벤트 시스템(Deprecated 제거)
+
+- 외부 소비 코드는 통합 어댑터만 사용: `@shared/services/EventManager`.
+- 다음 심볼/경로는 import 금지:
+  - `@shared/dom/DOMEventManager` 직접 import
+  - `createEventManager` 팩토리 직접 import
+  - `GalleryEventManager`를 `@shared/utils/events`에서 import
+- 가드 테스트: `test/unit/lint/event-deprecated-removal.test.ts` — 금지된 import를 정적 스캔합니다(내부 모듈/어댑터 파일은 예외).
+
 권장 예시:
 
 ```css
