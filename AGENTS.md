@@ -147,12 +147,52 @@ CI
 - 릴리즈 산출물: `xcom-enhanced-gallery.user.js`, `checksums.txt`,
   `metadata.json`
 
+## AI 협업/토큰 절약 워크플로 (ModGo 적용)
+
+ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 토큰 사용이 크게
+줄어든다”는 결과를 팀 워크플로에 반영합니다. 세부 작업 지침은
+`.github/copilot-instructions.md`의 “토큰/맥락 최적화 가이드”를 참고하세요.
+
+핵심 원칙
+
+- 구조 우선: 기능 작업 전 3계층 경계(Features → Shared → External)와 vendors
+  getter 규칙을 먼저 정리합니다.
+- 최소 컨텍스트: 요청/PR에는 영향 파일 경로(3–7개), 핵심 타입/시그니처,
+  제약(벤더 getter/PC-only/토큰 규칙)만 요약해 제공합니다.
+- 최소 diff: 큰 파일 전체 붙여넣기 대신 변경 diff만 제시합니다.
+- TDD 실행: 실패 테스트 → 최소 구현 → 리팩토링으로 RED→GREEN 흐름을 짧게
+  보고합니다.
+- 정책 준수: PC 전용 이벤트만 사용, CSS Modules + 디자인 토큰만 사용, 외부
+  라이브러리는 vendors getter 경유.
+
+한 줄 구조 리팩토링 템플릿(프로젝트 맞춤)
+
+- Services/로직: “Refactor <기능> 동작은 Strategy, 생성은 Factory로 분리하고
+  구현을 `shared/services/<domain>/**`로 이동. 외부 의존은 `@shared/external/*`
+  getter 경유. Vitest 추가/갱신. strict TS/alias 유지.”
+- UI/Features: “Split <컴포넌트> into container(pure wiring) and
+  presentational(view). 상태는 `shared/state/**` Signals로 이동하고
+  `@shared/utils/signalSelector` 사용. PC 전용 이벤트만, CSS Modules + 디자인
+  토큰만.”
+
+요청/PR 최소 컨텍스트 패키지
+
+- 파일 경로 목록(3–7개)
+- 관련 타입/시그니처(입력/출력/에러 모드) 2–4줄 요약
+- 제약 요약: vendors getter, PC-only, 디자인 토큰, TDD
+- 수용 기준(3–5줄): 어떤 테스트가 추가/수정되고 무엇이 GREEN이어야 하는지
+
 ## PR 규칙
 
 - 제목: `[xcom-enhanced-gallery] <Title>`
 - 머지 전 필수: `npm run typecheck` / `npm run lint` / `npm test`
 - 스타일/토큰/접근성은 `docs/CODING_GUIDELINES.md`와 테스트 스위트 기준을
   따릅니다.
+  - PR 설명에 다음 확인 사항을 포함해 주세요:
+    - 최소 컨텍스트 제공(파일 경로/타입/제약/수용 기준)
+    - “한 줄 구조 리팩토링”/최소 diff 원칙 적용 여부
+    - vendors/Userscript getter 사용, PC 전용 이벤트, 디자인 토큰 준수 여부
+    - RED→GREEN 테스트 링크 또는 요약
 
 ## 트러블슈팅 팁
 

@@ -8562,6 +8562,7 @@
       ],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/index.ts"
       ],
@@ -8738,6 +8739,23 @@
             "import"
           ],
           "resolved": "src/shared/utils/core-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../shared/utils/signalSelector",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/signalSelector.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -16119,7 +16137,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 261,
-    "totalDependenciesCruised": 721,
+    "totalDependenciesCruised": 722,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
