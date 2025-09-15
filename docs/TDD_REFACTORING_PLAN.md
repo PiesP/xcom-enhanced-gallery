@@ -3,7 +3,7 @@
 > 목적: 유저스크립트에 최적화된 “낮은 복잡성”을 지속 유지하고,
 > 충돌·중복·레거시를 TDD로 안전하게 정리합니다. 완료된 내용은
 > `docs/TDD_REFACTORING_PLAN_COMPLETED.md`로 즉시 이관합니다. (최종 수정:
-> 2025-09-15, 활성 항목 처리 완료 — 본 문서는 슬림 상태 유지)
+> 2025-09-15, 활성 항목 재정비 — 신규 4개 과제 등록)
 
 ## 운영 원칙(요약)
 
@@ -19,12 +19,80 @@
 ## 현재 상태(요약)
 
 - 스모크·린트·타입·유닛 테스트·빌드/포스트빌드 가드: GREEN 유지
-- 최신 작업(VND-GETTER-STRICT, GUARD-02, F1-c, TEST-DEDUP-VMOCK, DEPG-REFRESH)은
-  완료되어 COMPLETED 문서에 이관됨
+- 최근 작업(VND-GETTER-STRICT, GUARD-02, F1/F1-c, D2, ZIP-UNIFY-01 등)은
+  완료되어 COMPLETED 문서에 이관됨(문서/가드와 일치)
 
 ## 활성 계획(차기 단계, TDD 우선)
 
-현재 활성 항목 없음. 새로운 요구가 생기면 RED 테스트부터 등록합니다.
+아래 항목은 “작은 단위 · 명확한 가드 · 뒤로 호환” 원칙으로 수행합니다. 모든
+변경은 RED → GREEN(TDD) 순서를 따릅니다.
+
+1. KBD-NAV-UNIFY — 키보드 네비게이션 단일화(PC 전용, EventManager 경유)
+
+- 배경/문제: `shared/utils/events.ts`, `shared/utils/focusTrap.ts`,
+  `shared/hooks/useFocusTrap.ts` 등에서 keydown 핸들링과 수명주기가 분산되어
+  있습니다(직접 addEventListener 사용 포함).
+- 옵션
+  - A: 현 상태 유지(누적 분산) — 단순하나 회귀/중복 리스크 지속
+  - B: 공통 서비스 `shared/services/input/KeyboardNavigator.ts` 도입 후 소비처
+    이행 — 초기 비용 있으나 테스트/수명주기/가드 일원화
+- 결정: B 채택(최소 표면 서비스 + EventManager 경유 등록/해제)
+- TDD 단계
+  - RED: 키 네비 계약 테스트 추가(ArrowLeft/Right, Home/End, Escape, Space) +
+    “직접 addEventListener('keydown', …) 금지” 스캔 가드(예외: 서비스 내부)
+  - GREEN: KeyboardNavigator 구현(서비스/팩토리) 및 소비처 점진
+    이행(useFocusTrap 내부 포함)
+  - REFACTOR: 공통 키맵/가드 로깅 통합, 모듈 주석/가이드 추가
+- DoD/가드: PC 전용 입력만; EventManager 경유 등록/해제; 포커스 스코프와 충돌
+  없음; 기존 UX 동일
+
+2. URL-PATTERN-SOURCE-UNIFY — URL 정규식 단일 소스화
+
+- 배경/문제: `constants.ts`의 URL_PATTERNS와
+  `shared/utils/patterns/url-patterns.ts`가 공존하여 드리프트 위험 존재
+- 옵션
+  - A: 상호 import로 동기화 — 사이클/경계 복잡도 증가
+  - B: `shared/utils/patterns/url-patterns.ts`를 단일 소스로 두고,
+    `constants.ts`는 타입 안전 re-export만 수행
+- 결정: B 채택(불변 객체 freeze + 단위 테스트로 동등성 보장)
+- TDD 단계
+  - RED: 두 소스 간 불일치 검출 테스트 및 “단일 소스” 가드 스캔 추가
+  - GREEN: constants에서 재노출로 이행, 사용처 영향 없음 확인
+  - REFACTOR: 주석/가이드 갱신, 중복 정의 제거
+- DoD/가드: 단일 소스만 정의; prod/dev 빌드 및 포스트빌드 무영향; 기존 정규식
+  호환 유지
+
+3. FOCUS-TRAP-UNIFY — focusTrap 유틸/훅 구현 통합 + 수명주기 표준화
+
+- 배경/문제: `shared/utils/focusTrap.ts`와 `shared/hooks/useFocusTrap.ts`에 유사
+  로직이 중복되고, 일부 직접 이벤트 등록이 남아있음
+- 옵션
+  - A: 중복 유지(부분 수정) — 향후 회귀 가능성 높음
+  - B: 단일 내부 구현을 두고 훅은 래퍼로 축소, 이벤트 등록은 EventManager 경유로
+    통일
+- 결정: B 채택(내부 핵심은 유틸, 훅은 얇은 wiring)
+- TDD 단계
+  - RED: 중복/직접 등록 검출 스캔 + 포커스 이동/복원/ESC 동작 계약 테스트
+  - GREEN: 유틸 단일화 → 훅 위임 변경 → EventManager 경유
+  - REFACTOR: 문서/주석 정비, 불필요 분기 제거
+- DoD/가드: ESC 동작/초기 포커스/복원 동작 유지, 캡처 단계(true) 보장, PC-only
+  정책 충족
+
+4. A11Y-LIVE-REGION-LIFECYCLE — LiveRegion 단일 인스턴스/정리 보장
+
+- 배경/문제: `shared/utils/accessibility/live-region-manager.ts`가 DOM에 노드를
+  추가하나, 다중 생성/정리 경계가 약함
+- 옵션
+  - A: 현 상태 유지 — 드문 중복 생성 가능성, 테스트에서 간헐적 누수 의심
+  - B: 싱글톤/레지스트리 + EventManager/Unload 훅으로 정리 표준화
+- 결정: B 채택(단일 인스턴스/중복 방지/정리 API)
+- TDD 단계
+  - RED: 다중 호출 시 body에 추가되는 엘리먼트 수가 1로 유지되는지 검증,
+    beforeunload/cleanup 계약 테스트
+  - GREEN: 매니저 단일화/정리 경로 추가, 소비처 최소 변경
+  - REFACTOR: 로그/문서 보강
+- DoD/가드: 메모리/DOM 누수 0; 기존 aria-live 동작 동일; 테스트 격리에서
+  init/reset 안전
 
 ## 품질 게이트(DoD 공통)
 
@@ -34,7 +102,10 @@
 
 ## 타임라인/우선순위(제안)
 
-- 활성 항목 없음. 차기 스프린트에 신규 항목 등록 예정.
+1. KBD-NAV-UNIFY (가장 높은 UX/안정성 영향)
+2. URL-PATTERN-SOURCE-UNIFY (드리프트 예방 효과 높음)
+3. FOCUS-TRAP-UNIFY (중복 제거 + 수명주기 표준화)
+4. A11Y-LIVE-REGION-LIFECYCLE (누수 방지/안정성)
 
-업데이트 이력: 2025-09-15 — 활성 과제 처리 완료(위 5개 항목 이관). COMPLETED
-문서 참조.
+업데이트 이력: 2025-09-15 — 활성 계획 신규 4건 등록(KBD/URL/FOCUS/A11Y). 이전
+완료 항목은 COMPLETED 문서 참조.

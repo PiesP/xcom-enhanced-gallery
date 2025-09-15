@@ -4321,7 +4321,6 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/index.ts",
         "src/main.ts"
       ],
       "orphan": false,
@@ -5580,7 +5579,6 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/index.ts",
         "src/main.ts"
       ],
       "orphan": false,
@@ -5741,8 +5739,7 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/GalleryRenderer.ts",
-        "src/features/gallery/index.ts"
+        "src/features/gallery/GalleryRenderer.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9749,75 +9746,6 @@
     {
       "source": "src/features/gallery/index.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./components/vertical-gallery-view",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryApp",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/GalleryApp.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryApp",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/features/gallery/GalleryApp.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./GalleryRenderer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/GalleryRenderer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./types",
@@ -15711,7 +15639,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 261,
-    "totalDependenciesCruised": 713,
+    "totalDependenciesCruised": 709,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
