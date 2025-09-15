@@ -812,7 +812,6 @@
         "src/shared/media/FilenameService.ts",
         "src/shared/external/zip/zip-creator.ts",
         "src/shared/services/media/TwitterVideoExtractor.ts",
-        "src/shared/utils/accessibility.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/utils/index.ts",
         "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
@@ -2364,7 +2363,8 @@
         }
       ],
       "dependents": [
-        "src/shared/services/UnifiedToastManager.ts"
+        "src/shared/services/UnifiedToastManager.ts",
+        "src/shared/utils/accessibility.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2391,8 +2391,7 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/accessibility/index.ts",
-        "src/shared/utils/accessibility.ts"
+        "src/shared/utils/accessibility/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2422,7 +2421,6 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/accessibility/index.ts",
-        "src/shared/utils/accessibility.ts",
         "src/shared/hooks/useAccessibility.ts"
       ],
       "orphan": false,
@@ -5014,48 +5012,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./accessibility/accessibility-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/accessibility/accessibility-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./accessibility/live-region-manager",
+          "module": "./accessibility/index",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/utils/accessibility/live-region-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./type-safety-helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/type-safety-helpers.ts",
+          "resolved": "src/shared/utils/accessibility/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15757,7 +15721,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 262,
-    "totalDependenciesCruised": 715,
+    "totalDependenciesCruised": 713,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

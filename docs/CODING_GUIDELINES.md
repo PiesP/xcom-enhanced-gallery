@@ -247,15 +247,32 @@ const { signal } = getPreactSignals();
 ### 접근성 유틸/훅 표준화 (Focus Trap & Live Region)
 
 - Focus Trap: 통합 유틸 `@shared/utils/focusTrap`이 단일 소스입니다. 훅
-  `useFocusTrap`은 얇은 래퍼로 유틸을 위임하며, 문서 레벨 키 이벤트는
-  `EventManager` 경유로 등록합니다. 직접
-  `document.addEventListener('keydown', ...)` 사용은 금지됩니다.
+  `useFocusTrap`은 얇은 래퍼로 유틸을 위임하며, 문서 레벨 키 이벤트는 표준 DOM
+  API(`document.addEventListener('keydown', ...)`, capture=true)를 사용해 직접
+  등록·해제합니다. 저수준 유틸은 서비스 이벤트 매니저에 의존하지 않습니다.
 - Live Region: 단일 인스턴스 매니저
   `@shared/utils/accessibility/live-region-manager`를 사용합니다. `useAriaLive`
-  훅은 매니저의 `announce(message, politeness)`를 호출하며, 임시 DOM 노드
-  생성/제거로 인한 누수를 방지합니다.
+  훅은 매니저의 `announce(message, politeness)`를 호출합니다. 매니저는
+  beforeunload 리스너/DOM 노드 정리를 포함한 자체 정리 로직을 갖습니다.
 - 테스트: 포커스 초기화/복원(Escape) 및 라이브 리전 싱글톤/속성 가드는 단위
   테스트로 검증됩니다.
+
+#### Utils ↔ Services 의존성 경계 (추가 규정)
+
+utils 레이어는 순수 도메인/플랫폼 보조 계층으로, 런타임
+서비스(`@shared/services/**`)에 의존하지 않습니다. 접근성/이벤트 등 저수준
+유틸은 가능한 한 표준 DOM API (`window.addEventListener`,
+`document.addEventListener` 등)를 우선 사용하며, 서비스의 이벤트
+중개자(`EventManager` 등)를 직접 참조하지 않습니다.
+
+- 허용: 타입 전용 import(`import type`), 로깅(`@shared/logging`), 상수/순수
+  함수(`@shared/utils/**` 내부 참조), 벤더 getter(`@shared/external/vendors`).
+- 금지: 서비스 단 참조(`@shared/services/**`), 컨테이너/ServiceManager 경유
+  참조, 상위 배럴을 통해 간접적으로 서비스로 연결되는 import.
+
+이 규정은 의존성 순환(cycle) 예방과 테스트 격리를 보장하기 위한 것으로, 예를
+들어 `focusTrap`/`live-region-manager`는 표준 DOM 리스너를 사용하고 서비스
+이벤트 매니저에 의존하지 않습니다.
 
 ### 테스트 DI 가이드(U6) — ServiceHarness 사용
 
