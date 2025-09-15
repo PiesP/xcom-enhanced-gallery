@@ -1,5 +1,23 @@
 ### 2025-09-15
 
+2025-09-15: TW-VIDEO-LEGACY-NORMALIZER-01 — TwitterVideoExtractor 레거시 필드
+정규화 분리 (완료)
+
+- 내용: 레거시 tweet/user 필드 정규화를 전담하는 normalizer를
+  `shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts`로 분리하고
+  `TwitterVideoExtractor`는 해당 모듈에 위임하도록 변경. modern 필드 우선,
+  idempotent merge 보장.
+- 테스트: extractor 경로 및 normalizer 단위 테스트 추가/갱신.
+- 검증: 전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
+
+2025-09-15: SETTINGS-MIG-TESTS-02 — SettingsMigration 경로 커버리지 확대 (완료)
+
+- 내용: SettingsMigration에 대해 pruneWithTemplate, fillWithDefaults,
+  idempotency(버전/lastModified) 커버리지 보강. 기본값에 enableKeyboardNav 추가.
+- 테스트: settings migration 스위트 강화, 경계/템플릿 불일치/알 수 없는 키
+  pruning 등을 검증.
+- 검증: 전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
+
 2025-09-15: SEL-SOURCE-GUARD-01 — STABLE_SELECTORS 단일 소스 강제 (완료)
 
 - 내용: `src/constants.ts`의 `STABLE_SELECTORS`/`SELECTORS`만 사용하도록 소스
