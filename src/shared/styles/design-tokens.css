@@ -118,12 +118,6 @@
   --xeg-glass-shadow: var(--glass-shadow);
   --xeg-glass-blur: none; /* 미니멀 디자인 유지 */
 
-  /* Legacy Overlay Colors - 호환성 보장 */
-  --xeg-overlay-light: var(--color-overlay-light);
-  --xeg-overlay-medium: var(--color-overlay-medium);
-  --xeg-overlay-strong: var(--color-overlay-strong);
-  --xeg-overlay-backdrop: var(--color-overlay-backdrop);
-
   /* Legacy Color aliases - 호환성 보장 */
   --xeg-color-overlay-light: var(--color-overlay-light);
   --xeg-color-overlay-medium: var(--color-overlay-medium);

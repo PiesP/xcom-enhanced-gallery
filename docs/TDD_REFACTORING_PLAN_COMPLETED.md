@@ -3,6 +3,18 @@
 2025-09-15: PLAN-REVIEW — 활성 계획 점검(완료 이관 항목 없음;
 LEGACY-TOKENS-PRUNE-01만 활성 유지)
 
+2025-09-15: LEGACY-TOKENS-PRUNE-01 — 레거시 overlay alias 정리(1차) (완료)
+
+- 내용: 사용처가 없는 overlay alias(무접두 `--xeg-overlay-*`) 4종을 제거하고,
+  선언 대비 전역 사용 여부를 스캔하는 RED 테스트를 추가하여 회귀를 방지. 보존:
+  `--xeg-color-overlay-*` 및 `--xeg-color-backdrop`(실사용).
+- 변경:
+  - 제거: `--xeg-overlay-light` · `--xeg-overlay-medium` ·
+    `--xeg-overlay-strong` · `--xeg-overlay-backdrop`
+  - 테스트 추가: `test/unit/styles/design-tokens.usage-scan.red.test.ts`
+- 검증: fast/unit(styles)에서 신규 스캔 GREEN(해당 토큰 미사용 확인), 타입/린트
+  PASS, dev/prod 빌드 및 postbuild validator PASS.
+
 2025-09-15: USERSCRIPT-ADAPTER-GUARD-01 — GM\_\* 직접 사용 금지 가드 (완료)
 
 - 내용: Userscript GM\_\* API는 어댑터(`getUserscript()`) 또는 타입 선언
