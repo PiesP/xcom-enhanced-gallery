@@ -112,6 +112,23 @@ PLAN-CLEANUP-2 — 활성 계획 정비(완료 항목 제거, ZIP 계획 추가)
   PASS
 - 결과: 활성 계획 항목 없음(계획 문서 정리 완료)
 
+2025-09-15: ZIP-UNIFY-01 — ZIP 생성 경로 단일화 (완료)
+
+- 내용: MediaService 및 DownloadOrchestrator에서 직접 사용하던
+  `fflate.zipSync`를 제거하고, `shared/external/zip/zip-creator.ts`의 새 API
+  `createZipBytesFromFileMap()`로 일원화. 어댑터는 비동기 zip 우선, 환경에 따라
+  zipSync 폴백을 제공.
+- 검증: 단위 테스트 전체 GREEN(621 passed), zip 경로 관련 테스트(파일명 충돌,
+  오류 코드/요약/재시도 시퀀스 등) PASS. 타입/린트 PASS.
+- 영향: 중복 제거 및 모킹 용이성 상승. 기능/UX/성능 스모크 동일.
+
+2025-09-15: ZIP-LINT-01 — fflate 직접 사용 금지 가드 (완료)
+
+- 내용: zip-creator 외부에서 `fflate.zip(`/`zipSync(` 직접 사용을 금지하는 정적
+  스캔 테스트 `test/unit/lint/zip-direct-usage.scan.red.test.ts` 추가. 어댑터
+  단위 테스트 `zip-creator.adapter.test.ts`로 API 유효성 검증.
+- 검증: 스캔 GREEN(위반 0건), 어댑터 테스트 PASS. 전체 스위트 GREEN.
+
 2025-09-15: SEL-OPT-01(part) — Selector 채택 1단계 (ToastContainer)
 
 - 내용: `ToastContainer`가 `UnifiedToastManager.subscribe()` 기반 수동 구독을
