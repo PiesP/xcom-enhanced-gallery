@@ -1,5 +1,14 @@
 ### 2025-09-15
 
+2025-09-15: ZIP-API-SURFACE-REDUCE-01 — ZIP API 표면 축소(호출 단일화) (완료)
+
+- 내용: `src/shared/external/zip/zip-creator.ts`의 `createZipFromItems`에
+  @deprecated JSDoc을 추가하고, prod 소스(`src/**`)에서 해당 심볼 사용이 0건임을
+  보장하는 스캔 테스트를
+  추가(`test/unit/lint/zip-api-surface.scan.red.test.ts`). Orchestrator
+  경로(`createZipBytesFromFileMap`)만 사용.
+- 검증: 테스트/타입/린트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
+
 2025-09-15: CSS-TOKEN-GUARD-01 — 디자인 토큰 사용 가드 확대 (완료)
 
 - 내용: 컴포넌트 CSS 색상 리터럴 금지 가드에 더해 TSX 인라인 style 속성에서도

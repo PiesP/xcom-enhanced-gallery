@@ -64,6 +64,10 @@ const DEFAULT_ZIP_CONFIG: ZipCreationConfig = {
 
 /**
  * Creates a ZIP file from media items
+ *
+ * @deprecated This high-level helper is superseded by createZipBytesFromFileMap and
+ * DownloadOrchestrator-based flows. Do not use in production services; keep only
+ * for legacy/tests until fully removed in a future cleanup cycle.
  */
 export async function createZipFromItems(
   items: MediaItemForZip[],

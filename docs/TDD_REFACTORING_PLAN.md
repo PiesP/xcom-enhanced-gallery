@@ -74,48 +74,7 @@ TDD 단계
 
 ---
 
-## 2) ZIP-API-SURFACE-REDUCE-01 — ZIP API 표면 축소(호출 단일화)
-
-문제/배경
-
-- `zip-creator.ts`의 `createZipFromItems`(+내부 download helpers)는 현재
-  코드에서 직접 사용처가 없고, Orchestrator 경로(`createZipBytesFromFileMap`)와
-  기능 중복.
-
-대안 비교
-
-- A) Deprecated 표기 후 유지: 외부/향후 사용 고려, 위험 낮음. 표면은 줄이지
-  못함.
-- B) 내부 테스트 헬퍼로 이동(비공개): 표면 축소, 호환성 리스크 중간.
-- C) 완전 제거: 표면 최소화, 예기치 않은 외부 의존이 있다면 리스크 큼.
-
-결정(최적안): A → B 순차 진행
-
-- 1차: `@deprecated` JSDoc과 테스트 스캔으로 prod 소스에서의 사용 0건 가드.
-- 2차: 다음 사이클에서 내부 테스트 헬퍼로 이동 검토.
-
-TDD 단계
-
-1. RED: 소스 스캔 테스트 추가 — prod `src/**`에서 `createZipFromItems` 임포트
-   0건 보장.
-2. GREEN: JSDoc deprecated 주석 추가.
-
-변경 범위(예상)
-
-- `src/shared/external/zip/zip-creator.ts`(JSDoc deprecated)
-- 테스트: `test/unit/lint/zip-api-surface.scan.red.test.ts`(신규)
-
-수용 기준
-
-- 스캔 테스트 GREEN, 기존 기능/빌드/포스트빌드 가드 PASS.
-
-리스크/롤백
-
-- 외부 소비가 없음을 테스트로 보장. 추후 사용 수요 발생 시 어댑터 경유로 제공.
-
----
-
-## 3) FETCH-OK-GUARD-01 — fetch 응답 가드 표준화
+## 2) FETCH-OK-GUARD-01 — fetch 응답 가드 표준화
 
 문제/배경
 
@@ -154,7 +113,7 @@ TDD 단계
 
 ---
 
-## 4) PROGRESS-API-CONSISTENCY-01 — 진행률 이벤트 일관화
+## 3) PROGRESS-API-CONSISTENCY-01 — 진행률 이벤트 일관화
 
 문제/배경
 
@@ -196,7 +155,6 @@ TDD 단계
 1. DOWNLOAD-FLOW-UNIFY-01
 2. FETCH-OK-GUARD-01
 3. PROGRESS-API-CONSISTENCY-01
-4. ZIP-API-SURFACE-REDUCE-01
 
 메모
 
