@@ -33,6 +33,18 @@
 - 가드: `test/unit/lint/features-barrel.surface.scan.red.test.ts`가 배럴에서
   금지된 경로 재노출을 RED로 탐지합니다.
 
+## 아이콘 시스템(I2) — 사용된 아이콘만 export
+
+- 원칙: 아이콘 배럴(`src/shared/components/ui/Icon/index.ts`)은 실제 소스
+  코드에서 사용되는 아이콘만 export 합니다. 불필요한 래퍼/별칭은 추가/유지하지
+  않습니다.
+- 가드: `test/unit/lint/icons-used-only.scan.red.test.ts`가 배럴 export된
+  아이콘이 소스 전역에서 최소 1회 이상 사용되는지 정적으로 스캔합니다(주석 제외,
+  JSX 및 `h(Name, ...)` 패턴 포함). 미사용 발견 시 RED.
+- 신규 아이콘 추가 시: 배럴에 추가했다면 실제 사용 코드를 함께 포함하세요.
+  부득이하게 미사용 상태를 유지해야 한다면 allowlist를 신중히 사용하되, 원칙은
+  “사용 추가 → 가드 GREEN”입니다.
+
 ## 🎨 코딩 스타일
 
 ### 기본 포맷팅
@@ -121,6 +133,15 @@ services/
   개발 모드에서만 활성화되며, prod에서는 트리쉐이킹으로 제거됩니다.
 - 가드: `scripts/validate-build.js`가 prod Userscript에서 `Stack trace:`
   문자열을 검출하면 실패 처리합니다.
+
+## 빌드 크기 예산(B2)
+
+- Userscript gzip 사이즈 예산을 포스트빌드에서 강제합니다.
+- 임계값(2025-09-15): WARN 120 KB, FAIL 160 KB.
+- 위치: `scripts/validate-build.js` — gzip 길이가 FAIL 초과면 프로세스
+  종료(실패), WARN 초과면 경고 로그를 출력합니다.
+- 목적: 번들 크기 회귀를 조기에 감지하고, 불가피한 증가 시 최적화/정리 우선
+  검토를 유도합니다.
 
 ### 파일명 정책 (단일 소스)
 
@@ -1011,11 +1032,11 @@ async function loadImage(url: string): Promise<Result<HTMLImageElement>> {
 
 ```typescript
 import type { ComponentProps } from '@shared/types';
-import { signal } from '@preact/signals';
-import { getPreact } from '@shared/external/vendors';
+import { getPreact, getPreactSignals } from '@shared/external/vendors';
 import styles from './GalleryItem.module.css';
 
 const { useCallback } = getPreact();
+const { signal } = getPreactSignals();
 
 interface GalleryItemProps {
   readonly item: MediaItem;
@@ -1041,7 +1062,9 @@ export function GalleryItem({ item, className, onSelect }: GalleryItemProps) {
 ### 상태 관리 (Signals)
 
 ```typescript
-import { signal, computed } from '@preact/signals';
+import { getPreactSignals } from '@shared/external/vendors';
+
+const { signal, computed } = getPreactSignals();
 
 // Signal 정의
 export const mediaItems = signal<MediaItem[]>([]);

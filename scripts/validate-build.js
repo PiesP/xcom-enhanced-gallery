@@ -190,8 +190,10 @@ function validateUserScript() {
   const rawBytes = Buffer.byteLength(prodInfo.content, 'utf8');
   const gzBytes = gzipped.length;
 
-  const WARN_BUDGET = 300 * 1024; // 300KB (경고)
-  const FAIL_BUDGET = 450 * 1024; // 450KB (실패)
+  // B2: 사이즈 예산 강화 — 현재 gzip ~99KB 기준 보수적 상향
+  // WARN은 120KB, FAIL은 160KB로 설정하여 회귀를 조기 감지(현 상태에서는 여유 유지)
+  const WARN_BUDGET = 120 * 1024; // 120KB (경고)
+  const FAIL_BUDGET = 160 * 1024; // 160KB (실패)
 
   if (gzBytes > FAIL_BUDGET) {
     console.error(

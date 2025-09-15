@@ -1,5 +1,28 @@
 ### 2025-09-15
 
+2025-09-15: PLAN-CLEANUP — 활성 계획 최신화(완료)
+
+- 내용: 구식 스프린트 표기(L2/F1/I2/B2 등 완료 항목)와 중복된 설명을 계획
+  문서에서 제거하고, 신규 과제(F1-b, VND-LEGACY-MOVE, DOC-SYNC)를 활성 계획으로
+  등록했습니다. 기능 변경은 없고 문서 정리만 수행했습니다.
+- 검증: 타입/린트/테스트/빌드/포스트빌드 가드 모두 영향 없음(문서 변경), 유지
+  중인 모든 가드 GREEN.
+
+2025-09-15: B2 — BUILD-BUDGET-TIGHTEN (완료)
+
+- 내용: 포스트빌드 검증 스크립트의 gzip 사이즈 버짓을 보수적으로 강화. WARN
+  120KB, FAIL 160KB로 조정하여 번들 크기 회귀를 조기 감지.
+- 검증: dev/prod 빌드 및 postbuild validator PASS. 현재 gzip ≈ 99KB로 경고/실패
+  임계치 미만 유지.
+
+2025-09-15: I2 — ICONS-TRIM-USED-ONLY (완료)
+
+- 내용: 아이콘 사용 스캔 가드(`icons-used-only.scan.red.test.ts`)를 추가하여
+  배럴에서 export된 아이콘이 실제 소스에서 최소 1회 이상 사용되는지 검증. 현
+  시점 미사용 아이콘 없음으로 확인(트리밍 불필요), 가드만 설치.
+- 검증: 유닛 스위트 GREEN(스캔 통과), 타입/린트 PASS. dev/prod 빌드 및 postbuild
+  validator PASS.
+
 2025-09-15: L2 — LOG-GATE-V2 (완료)
 
 - 내용: 로깅을 환경별로 게이트 — dev에서만 stack trace/verbose 출력, prod는 기본
