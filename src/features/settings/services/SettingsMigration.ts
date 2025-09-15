@@ -16,17 +16,68 @@ const migrations: Partial<Record<string, Migration>> = {
 };
 
 /**
+ * Recursively prune unknown fields from input using the provided template as the allowed shape.
+ * Only keys present in the template are retained; nested objects are pruned likewise.
+ */
+function pruneWithTemplate<T extends Record<string, unknown>>(
+  input: unknown,
+  template: T
+): Partial<T> {
+  if (input == null || typeof input !== 'object') return {} as Partial<T>;
+
+  const out: Record<string, unknown> = {};
+  const inputRec = input as Record<string, unknown>;
+
+  for (const key of Object.keys(template) as Array<keyof T>) {
+    const tplVal = template[key];
+    const inVal = inputRec[key as string];
+    if (inVal === undefined) continue;
+
+    if (tplVal !== null && typeof tplVal === 'object' && !Array.isArray(tplVal)) {
+      out[key as string] = pruneWithTemplate(inVal, tplVal as Record<string, unknown>);
+    } else {
+      out[key as string] = inVal;
+    }
+  }
+  return out as Partial<T>;
+}
+
+/**
  * Fill missing fields by merging with defaults while preserving user values where present.
+ * Unknown top-level and nested fields are pruned based on the DEFAULT_SETTINGS shape.
  */
 function fillWithDefaults(settings: AppSettings): AppSettings {
+  const pruned = pruneWithTemplate(settings, defaultSettings) as Partial<AppSettings>;
+
+  const gallery = {
+    ...defaultSettings.gallery,
+    ...(pruned.gallery ?? {}),
+  };
+  const download = {
+    ...defaultSettings.download,
+    ...(pruned.download ?? {}),
+  };
+  const tokens = {
+    ...defaultSettings.tokens,
+    ...(pruned.tokens ?? {}),
+  };
+  const performance = {
+    ...defaultSettings.performance,
+    ...(pruned.performance ?? {}),
+  };
+  const accessibility = {
+    ...defaultSettings.accessibility,
+    ...(pruned.accessibility ?? {}),
+  };
+
   return {
     ...defaultSettings,
-    ...settings,
-    gallery: { ...defaultSettings.gallery, ...settings.gallery },
-    download: { ...defaultSettings.download, ...settings.download },
-    tokens: { ...defaultSettings.tokens, ...settings.tokens },
-    performance: { ...defaultSettings.performance, ...settings.performance },
-    accessibility: { ...defaultSettings.accessibility, ...settings.accessibility },
+    ...pruned,
+    gallery,
+    download,
+    tokens,
+    performance,
+    accessibility,
     version: defaultSettings.version, // always bump to latest
     lastModified: Date.now(),
   } as AppSettings;
@@ -53,4 +104,4 @@ export function migrateSettings(input: AppSettings): AppSettings {
   return fillWithDefaults(working);
 }
 
-export const __private = { fillWithDefaults };
+export const __private = { fillWithDefaults, pruneWithTemplate };

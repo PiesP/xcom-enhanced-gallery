@@ -123,11 +123,16 @@ export function createMediaInfoFromImage(
       tweetId,
       tweetUsername: username,
     } as const;
-    const filename = getFilename(tempInfo as MediaInfo, {
-      index: index + 1,
-      // 서비스 표준 형식 유지를 위해 fallbackUsername도 전달
-      fallbackUsername: username,
-    });
+    const filename = getFilename(
+      tempInfo as MediaInfo,
+      username
+        ? {
+            index: index + 1,
+            // 서비스 표준 형식 유지를 위해 fallbackUsername도 전달
+            fallbackUsername: username,
+          }
+        : { index: index + 1 }
+    );
 
     return {
       id: `${tweetId}-${index}`,
@@ -189,11 +194,9 @@ export function createMediaInfoFromVideo(
       : { index: index + 1 };
     const filename = getFilename(
       tempInfo as MediaInfo,
-      {
-        ...(options as FilenameOptions),
-        // 서비스 표준 형식 유지를 위해 fallbackUsername도 전달
-        fallbackUsername: username,
-      } as FilenameOptions
+      username
+        ? ({ ...(options as FilenameOptions), fallbackUsername: username } as FilenameOptions)
+        : (options as FilenameOptions)
     );
 
     return {
