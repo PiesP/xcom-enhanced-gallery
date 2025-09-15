@@ -689,6 +689,18 @@ animateCustom(el, keyframes, {
 - 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야 합니다.
 - 예: `import { getPreact } from '@shared/external/vendors'; const { useEffect } = getPreact();`
 
+#### ZIP 생성 정책 (Adapter)
+
+- ZIP 생성은 반드시 전용 어댑터를 통해 수행합니다: `@shared/external/zip/zip-creator.ts`의 `createZipBytesFromFileMap(files, config?)`.
+- `fflate.zip`/`zipSync`를 어댑터 외부에서 직접 호출하는 것은 금지입니다. 서비스/오케스트레이터는 어댑터만 사용하세요.
+- 사유: 실행 환경에 따라 async/sync 지원 차이를 어댑터에서 흡수하고, 테스트에서 벤더를 안전하게 모킹하기 위함입니다.
+- 가드/테스트: `test/unit/lint/zip-direct-usage.scan.red.test.ts`가 어댑터 외부의 직접 사용을 RED로 탐지합니다.
+
+보강(2025-09-15):
+
+- `vendor-api.ts` 직접 import 금지(허용목록 제외). 벤더 접근은 `@shared/external/vendors` 배럴과 getter를 통해서만 수행하세요.
+- 가드/테스트: `test/unit/lint/vendor-api.imports.scan.red.test.ts`가 위반 시 RED로 탐지합니다.
+
 #### 아이콘 라이브러리(Heroicons) 정책
 
 - Heroicons는 React 컴포넌트 형태이므로 반드시 전용 getter를 통해 접근합니다:
