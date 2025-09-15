@@ -1,5 +1,27 @@
 ### 2025-09-15
 
+2025-09-15: SEL-SOURCE-GUARD-01 — STABLE_SELECTORS 단일 소스 강제 (완료)
+
+- 내용: `src/constants.ts`의 `STABLE_SELECTORS`/`SELECTORS`만 사용하도록 소스
+  스캔 가드 추가. 위반 모듈을 상수 참조로 교체. 테스트
+  `test/unit/lint/selectors-single-source.scan.red.test.ts` 추가.
+- 검증: 위반 0건(GREEN), 기능/빌드/포스트빌드 가드 PASS.
+
+2025-09-15: INPUT-PC-GUARD-02 — PC 전용 입력 소스 가드 강화 (완료)
+
+- 내용: `onPointer*`/`PointerEvent`/`onTouch*`/`TouchEvent` 사용을 소스 레벨에서
+  스캔하여 차단. 테스트 `test/unit/lint/pc-input-only.source.scan.red.test.ts`
+  추가. 번들 문자열 가드와 이중 안전망.
+- 검증: 위반 0건(GREEN), 기존 번들 가드와 함께 PASS.
+
+2025-09-15: UTILS-SVC-BOUNDARY-01 — Utils → Services 의존 금지 가드 (완료)
+
+- 내용: `src/shared/utils/** -> src/shared/services/**` 정적 import 금지 스캔
+  추가. 위반 모듈(events.ts, media-url.util.ts) 수정 — 서비스 접근은
+  컨테이너/헬퍼 경유. 테스트
+  `test/unit/lint/utils-services-boundary.scan.red.test.ts` 추가.
+- 검증: 위반 0건(GREEN), 타입/린트/테스트/빌드/포스트빌드 PASS.
+
 2025-09-15: PLAN-TOAST-CLEAN — 토스트 관련 활성 과제 정리(완료)
 
 - 내용: 활성 계획의 토스트 관련 과제를 모두 완료 처리하고 계획 문서에서 제거.
