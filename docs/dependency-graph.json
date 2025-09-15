@@ -253,7 +253,8 @@
         }
       ],
       "dependents": [
-        "src/shared/external/vendors/index.ts"
+        "src/shared/external/vendors/index.ts",
+        "src/shared/external/vendors/vendor-api.ts"
       ],
       "orphan": false,
       "valid": true
@@ -295,7 +296,6 @@
         "src/shared/state/signals/download.signals.ts",
         "src/shared/utils/css-animations.ts",
         "src/main.ts",
-        "src/shared/external/vendors/vendor-api.ts",
         "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/index.ts",
         "src/shared/services/AnimationService.ts",
@@ -400,7 +400,8 @@
       ],
       "dependents": [
         "src/shared/external/vendors/index.ts",
-        "src/shared/external/vendors/vendor-api-safe.ts"
+        "src/shared/external/vendors/vendor-api-safe.ts",
+        "src/shared/external/vendors/vendor-api.ts"
       ],
       "orphan": false,
       "valid": true
@@ -13371,14 +13372,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../logging",
+          "module": "./vendor-api-safe",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "export"
           ],
-          "resolved": "src/shared/logging/index.ts",
+          "resolved": "src/shared/external/vendors/vendor-api-safe.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -13388,14 +13389,15 @@
         },
         {
           "dynamic": false,
-          "module": "./vendor-manager",
+          "module": "./vendor-manager-static",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "type-only",
+            "export"
           ],
-          "resolved": "src/shared/external/vendors/vendor-manager.ts",
+          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -13429,9 +13431,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/external/vendors/vendor-api.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
