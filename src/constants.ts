@@ -419,6 +419,7 @@ export const DEFAULT_SETTINGS = {
     imageFitMode: 'fitWidth' as const,
     theme: 'auto' as const,
     animations: true,
+    enableKeyboardNav: false,
   },
   download: {
     filenamePattern: 'original' as const,
