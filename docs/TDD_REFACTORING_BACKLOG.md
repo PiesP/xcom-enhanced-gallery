@@ -21,6 +21,12 @@
 
 <!-- MEM_PROFILE 승격 및 완료 (2025-09-12): 경량 메모리 프로파일러 유틸 추가, 문서/테스트 포함 -->
 
+IDEA | MEDIA-CYCLE-PRUNE-01 | shared/media 인근 순환(2건:
+index↔pipeline↔media-url.util) 제거 | 의존성 위생 및 테스트 용이성 향상,
+리팩터링 안전망 강화 | M | 수용 기준: dependency-cruiser circular 경고 0(해당
+영역), 기존 테스트 GREEN, 동작 변화 없음. 접근: util 경계 분리 또는 의존 방향
+정리.
+
 ---
 
 ## Parking Lot (미보류)
