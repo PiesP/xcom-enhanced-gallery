@@ -355,7 +355,6 @@
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
         "src/shared/components/hoc/GalleryHOC.tsx",
         "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
-        "src/features/gallery/createAppContainer.ts",
         "src/shared/error/ErrorHandler.ts",
         "src/shared/services/core-services.ts",
         "src/shared/services/service-diagnostics.ts",
@@ -734,7 +733,6 @@
         "src/shared/utils/media/MediaClickDetector.ts",
         "src/shared/types/core/core-types.ts",
         "src/shared/types/core/media.types.ts",
-        "src/features/gallery/createAppContainer.ts",
         "src/shared/services/service-diagnostics.ts",
         "src/shared/services/service-initialization.ts"
       ],
@@ -1063,7 +1061,6 @@
         "src/features/gallery/GalleryApp.ts",
         "src/shared/utils/events.ts",
         "src/shared/container/settings-access.ts",
-        "src/features/gallery/createAppContainer.ts",
         "src/main.ts"
       ],
       "orphan": false,
@@ -1188,7 +1185,6 @@
         "src/features/gallery/GalleryRenderer.ts",
         "src/shared/state/signals/download.signals.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-        "src/features/gallery/createAppContainer.ts",
         "src/shared/types/core/extraction.types.ts",
         "src/shared/interfaces/ServiceInterfaces.ts",
         "src/shared/services/media-mapping/MediaMappingService.ts",
@@ -1338,8 +1334,7 @@
       ],
       "dependents": [
         "src/shared/media/index.ts",
-        "src/shared/utils/media/media-url.util.ts",
-        "src/features/gallery/createAppContainer.ts"
+        "src/shared/utils/media/media-url.util.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4128,7 +4123,6 @@
       ],
       "dependents": [
         "src/shared/container/service-accessors.ts",
-        "src/features/gallery/createAppContainer.ts",
         "src/shared/container/ServiceHarness.ts"
       ],
       "orphan": false,
@@ -4328,7 +4322,6 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/createAppContainer.ts",
         "src/features/gallery/index.ts",
         "src/main.ts"
       ],
@@ -5588,7 +5581,6 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/createAppContainer.ts",
         "src/features/gallery/index.ts",
         "src/main.ts"
       ],
@@ -9443,203 +9435,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./GalleryApp",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/gallery/GalleryApp.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "./GalleryRenderer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/features/gallery/GalleryRenderer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@/constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@/types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/types/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/container/service-accessors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/container/service-accessors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/container/service-bridge",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/container/service-bridge.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/media/FilenameService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/media/FilenameService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/media/FilenameService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/media/FilenameService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [],
@@ -9699,7 +9494,6 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/createAppContainer.ts",
         "src/shared/container/AppContainer.ts",
         "src/main.ts"
       ],
@@ -15935,7 +15729,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 261,
-    "totalDependenciesCruised": 724,
+    "totalDependenciesCruised": 714,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

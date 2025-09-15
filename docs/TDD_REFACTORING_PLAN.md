@@ -3,7 +3,7 @@
 > 목적: 유저스크립트에 최적화된 “낮은 복잡성”을 지속 유지하고,
 > 충돌·중복·레거시를 TDD로 안전하게 정리합니다. 완료된 내용은
 > `docs/TDD_REFACTORING_PLAN_COMPLETED.md`로 즉시 이관합니다. (최종 수정:
-> 2025-09-15)
+> 2025-09-15, V3 완료 반영)
 
 ## 운영 원칙(요약)
 
@@ -26,20 +26,7 @@
 다음 항목들은 Userscript 복잡성 최소화와 경계 하드닝에 직결되는 작업으로, 각
 항목은 RED 테스트부터 시작합니다.
 
-1. V3 — VENDOR-LEGACY-PRUNE-03 (동적 Vendor 제거 단계)
-   - 목적: `shared/external/vendors/vendor-api.ts`와 `vendor-manager.ts` 동적
-     매니저를 최종 퇴역(2단계)
-   - 단계:
-     - V3a: 소스/테스트 전역에서 vendor-api.ts 직접 import 0건 보증(스캔
-       RED→GREEN, 현재 기준 유지 검증)
-     - V3b: 동적 매니저/래퍼 파일 제거 또는 dev-only fallback로 축소, index는
-       정적 안전 API만 유지
-   - 장점: 정책/가드 간소화, 트리쉐이킹/분석 용이
-   - 단점: 테스트/도구 일부에서 레거시 경로 의존 시 마이그레이션 필요
-   - 수용 기준(DoD):
-     - 정적 스캔에서 vendor-api.ts import 0건, 동적 VendorManager 심볼 미사용
-     - dev/prod 빌드 및 postbuild validator GREEN(금지 문자열 미검출)
-     - 전체 테스트 GREEN(벤더 초기화/모킹 경로 정상)
+<!-- V3(VENDOR-LEGACY-PRUNE-03) 완료로 COMPLETED 문서로 이관되었습니다. -->
 
 <!-- E4(EVENT-ALIAS-REMOVAL-FINAL)는 2025-09-15 완료되어 COMPLETED 문서로 이관되었습니다. -->
 

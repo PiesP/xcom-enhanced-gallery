@@ -1,5 +1,15 @@
 ### 2025-09-15
 
+2025-09-15: V3 — VENDOR-LEGACY-PRUNE-03 (완료)
+
+- 내용: 레거시 동적 VendorManager 경로를 사용하던 `vendor-api.ts`를 TDZ-safe
+  정적 API(`vendor-api-safe.ts`)로 얇게 위임하는 어댑터로 전환. 앱/런타임은
+  여전히 배럴 `@shared/external/vendors`만 사용. 동적 VendorManager에 대한 실행
+  경로 제거로 포스트빌드 가드와의 정합 강화.
+- 검증: 소스 스캔에서 vendor-api.ts 직접 import 0건 유지, 빌드 산출물에 동적
+  `VendorManager` 심볼/`vendor-api.ts` 문자열 누출 없음. 전체 테스트 GREEN,
+  dev/prod 빌드 및 postbuild validator PASS.
+
 2025-09-15: A1 — APP-CONTAINER-SOURCE-PRUNE (완료)
 
 - 내용: 런타임 소스 `src/features/gallery/createAppContainer.ts`를 테스트 하네스
