@@ -103,7 +103,7 @@ export function addListener(
           // once 옵션으로 자동 해제되지만, 방어적으로 제거 시도
           try {
             signal.removeEventListener('abort', onAbort);
-          } catch (e) {
+          } catch {
             logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
               context,
             });
@@ -112,7 +112,7 @@ export function addListener(
       };
       try {
         signal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
-      } catch (e) {
+      } catch {
         // ignore — 환경에 따라 EventTarget 미구현일 수 있음
         logger.debug('AbortSignal addEventListener not available (ignored)', { context });
       }
