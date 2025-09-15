@@ -14,25 +14,9 @@
 
 ## 빠른 현황 점검 요약
 
-스캔 결과(코드 grep/정책 키워드 기준):
-
-- 직접 벤더 import: External
-  내부(`shared/external/vendors/vendor-manager-static.ts`)에서만 발견 — External
-  계층에 한해 합당
-- 터치/포인터 이벤트: 사용 없음(OK)
-- transition: all 사용: 소스 내 사용 없음(주석 가이드만 존재)
-- TSX 인라인 색상 하드코딩: 직접 사용 정황 없음(OK). 유틸리티 내 rgb/oklch
-  문자열은 계산/문서 예제 맥락
-- AppContainer: features 런타임 금지, type-only import만 존재(OK)
-- GM\_\* 직접 사용: 타입 선언만 존재, 실제 사용처 없음(OK) — 가드 테스트 추가
-  가치 높음
-- 배럴/재exports: shared/utils 다수 배럴과 와일드카드 재노출 존재 — 표면 축소
-  여지 있음
-- 키보드/휠: 공용 유틸과 focusTrap, wheel 유틸 존재 — “중앙 집중 가이드”와 실제
-  사용 간 일치성 보강 여지
-
-요약: 치명 위반은 없으나, “가드 강화 + 표면 축소 + 접근 경로 표준화”로 품질을
-끌어올릴 수 있는 영역이 여러 개 존재.
+현재 코드베이스는 정책 위반 주요 이슈가 없으며, 활성 과제는 "레거시 토큰 정리"
+단일 항목으로 축소되었습니다. 다른 영역의 가드/표면 축소 과제는 완료되어 본 완료
+문서로 이관되었습니다.
 
 ---
 
@@ -45,16 +29,16 @@
 
 해결 옵션
 
-1. 유지, 사용처만 모니터링
+1. 유지하며 사용처만 모니터링
 2. 사용처 스캔 → 미사용만 제거(단계적)
 
-선택: 2)
+선택: 2
 
 TDD 단계
 
 - RED: `test/unit/styles/design-tokens.usage-scan.red.test.ts` — 선언됐으나 전역
-  미사용 토큰 RED(allowlist 지원)
-- 구현: 미사용 legacy 토큰 제거
+  미사용 토큰을 식별(allowlist 지원)
+- GREEN: 미사용 legacy 토큰 제거(점진), 회귀 시 allowlist로 예외 관리
 
 수용 기준
 
@@ -84,7 +68,7 @@ Phase 1 — 레거시 정리
 
 - Build: N/A(문서 변경)
 - Lint/Typecheck: N/A
-- Tests: N/A — 이후 각 과제 진행 시 RED 테스트부터 추가 예정
+- Tests: N/A — 본 과제 진행 시 RED 테스트부터 추가 예정
 
 요구사항 커버리지
 
@@ -96,15 +80,17 @@ Phase 1 — 레거시 정리
 
 ## 위험/의존성/롤백 전략
 
-- 위험: 광범위 배럴 수정 시 경로 변경 리스크 → Phase/폴더 단위 진행 + CI project
-  분할 실행
-- 의존성: KeyboardNavigator 확장에 따른 소비자 수정 최소화(구독 API 호환 유지)
-- 롤백: 테스트 allowlist/폴더 스코프 단위로 부분 롤백 가능하도록 구성
+- 위험: 토큰 제거로 인한 외부(injected CSS 등) 의존성 파손 → allowlist로 관리,
+  릴리즈 노트에 명시
+- 의존성: 스타일 토큰을 소비하는 CSS Modules/유틸 스크립트
+- 롤백: allowlist(토큰 키) 단위로 부분 롤백 가능하도록 구성
 
 ---
 
 ## 다음 액션(착수 순서 제안)
 
-1. legacy 토큰 사용처 스캔 후 미사용 제거(allowlist와 릴리즈 노트 포함)(I)
+1. legacy 토큰 사용처 스캔 자동화(테스트) 추가 → RED
+2. 미사용 토큰 제거(allowlist 적용) → GREEN
+3. 릴리즈 노트에 변경 토큰 목록/마이그레이션 안내 추가
 
 완료된 항목은 즉시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
