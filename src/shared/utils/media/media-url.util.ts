@@ -9,15 +9,11 @@
  */
 
 import { logger } from '../../logging/logger';
-import { getMediaServiceFromContainer } from '../../container/service-accessors';
 // FilenameService는 shared/media 레이어에 있으므로 직접 import 허용(services 아님)
 import { generateMediaFilename } from '../../media/FilenameService';
 import type { FilenameOptions } from '../../media/FilenameService';
 // Username은 shared/media/UsernameSource 헬퍼를 통해 제공
 import { getPreferredUsername } from '../../media/UsernameSource';
-type MediaServiceLike = {
-  parseUsernameFast: (element?: HTMLElement | Document) => string | null;
-};
 export type { FilenameOptions };
 import type { MediaInfo } from '../../types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '../../dom';
@@ -451,14 +447,6 @@ function getUsernameSafe(): string | null {
     if (viaMedia) return viaMedia;
   } catch {
     // noop
-  }
-  // 다음으로 컨테이너에서 제공되는 MediaService 경유 시도
-  try {
-    const svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-    const direct = svc.parseUsernameFast();
-    if (direct) return direct;
-  } catch {
-    // ignore
   }
   return null;
 }

@@ -49,7 +49,7 @@ module.exports = {
     {
       name: 'no-direct-vendor-imports',
       comment: '외부 라이브러리는 vendors getter를 통해 접근',
-      severity: 'warn',
+      severity: 'error',
       from: {
         path: '^src',
         // 실제 프로젝트 구조에 맞춘 예외 경로: shared/external/vendors 에서는 직접 import 허용(어댑터 전용)
@@ -67,9 +67,8 @@ module.exports = {
     {
       name: 'no-circular-deps',
       comment: '순환 참조 금지',
-      // 분석 단계에서는 경고로 설정하여 그래프 파악 및 점진적 개선을 유도
-      // 리팩토링 완료 후 'error'로 상향 권장
-      severity: 'warn',
+      // 리팩토링 완료: 경고에서 에러로 승격하여 CI에서 실패 처리
+      severity: 'error',
       from: {},
       to: { circular: true },
     },
@@ -122,21 +121,21 @@ module.exports = {
       name: 'no-internal-barrel-imports-ui',
       comment:
         'UI 패키지 내부에서는 @shared/components/ui(index)를 통하지 말고 상대 경로로 import하세요',
-      severity: 'warn',
+      severity: 'error',
       from: { path: '^src/shared/components/ui/(?!index[.])' },
       to: { path: '^src/shared/components/ui/index[.]ts$' },
     },
     {
       name: 'no-internal-barrel-imports-utils',
       comment: 'utils 패키지 내부에서 utils/index를 통해 재수입 금지(상대 경로 사용)',
-      severity: 'warn',
+      severity: 'error',
       from: { path: '^src/shared/utils/(?!index[.]).+' },
       to: { path: '^src/shared/utils/index[.]ts$' },
     },
     {
       name: 'no-internal-barrel-imports-media',
       comment: 'media 패키지 내부에서 media/index를 통해 재수입 금지(상대 경로 사용)',
-      severity: 'warn',
+      severity: 'error',
       from: { path: '^src/shared/media/(?!index[.]).+' },
       to: { path: '^src/shared/media/index[.]ts$' },
     },

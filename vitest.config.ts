@@ -8,10 +8,13 @@ import preact from '@preact/preset-vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
+import os from 'node:os';
 import { fileURLToPath, URL } from 'node:url';
 // note: no fs usage
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const CPU_COUNT = Math.max(1, (os.cpus?.() || []).length || 4);
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 // Helpers
 const toPosix = (p: string) => p.replace(/\\/g, '/');
 // helpers kept minimal for lint cleanliness
@@ -52,8 +55,8 @@ export default defineConfig({
     return undefined;
   })(),
   plugins: [
-    // 최종 alias 설정 확인용 로거
-    {
+    // CI에서는 로그를 줄여 I/O 오버헤드를 최소화
+    !isCI && {
       name: 'xeg-log-config',
       enforce: 'pre',
       configResolved(cfg) {
@@ -68,7 +71,7 @@ export default defineConfig({
     tsconfigPaths({ projects: ['tsconfig.json'] }),
     // Preact preset
     preact(),
-  ],
+  ].filter(Boolean) as any,
 
   resolve: sharedResolve,
   test: {
@@ -113,7 +116,8 @@ export default defineConfig({
 
     // 커버리지 설정
     coverage: {
-      provider: 'istanbul',
+      // CI에서는 v8 커버리지가 더 빠름, 로컬에서는 istanbul 유지(리포트 포맷 호환)
+      provider: isCI ? 'v8' : 'istanbul',
       reporter: ['text', 'json-summary', 'html'],
       reportsDirectory: './coverage',
       exclude: [
@@ -152,8 +156,9 @@ export default defineConfig({
     poolOptions: {
       threads: {
         singleThread: false,
+        // 로컬: CPU-1(최대 8), CI: CPU-1(최대 6)로 제한하여 컨텍스트 스위칭 과도 방지
         minThreads: 1,
-        maxThreads: 4,
+        maxThreads: Math.max(2, Math.min(isCI ? 6 : 8, Math.max(1, CPU_COUNT - 1))),
       },
     },
     // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)

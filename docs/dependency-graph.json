@@ -286,13 +286,13 @@
         "src/shared/external/vendors/vendor-manager-static.ts",
         "src/bootstrap/event-wiring.ts",
         "src/bootstrap/feature-registration.ts",
-        "src/shared/media/MediaProcessor.ts",
-        "src/shared/media/pipeline.ts",
         "src/shared/external/zip/zip-creator.ts",
         "src/shared/state/signals/gallery.signals.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
         "src/shared/components/ui/Button/Button.tsx",
         "src/shared/state/signals/download.signals.ts",
+        "src/shared/media/MediaProcessor.ts",
+        "src/shared/media/pipeline.ts",
         "src/shared/utils/css-animations.ts",
         "src/main.ts",
         "src/shared/external/vendors/vendor-manager.ts",
@@ -313,16 +313,16 @@
         "src/features/settings/services/TwitterTokenExtractor.ts",
         "src/shared/utils/performance/performance-utils.ts",
         "src/shared/media/FilenameService.ts",
-        "src/shared/utils/media/media-url.util.ts",
-        "src/shared/dom/DOMCache.ts",
-        "src/shared/dom/utils/dom-utils.ts",
-        "src/shared/services/media/UsernameExtractionService.ts",
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/LanguageService.ts",
         "src/shared/services/UnifiedToastManager.ts",
         "src/shared/services/MediaService.ts",
         "src/shared/services/media-extraction/MediaExtractionService.ts",
         "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
+        "src/shared/dom/DOMCache.ts",
+        "src/shared/dom/utils/dom-utils.ts",
+        "src/shared/utils/media/media-url.util.ts",
+        "src/shared/services/media/UsernameExtractionService.ts",
         "src/shared/services/media-extraction/extractors/TweetInfoExtractor.ts",
         "src/shared/services/media-extraction/strategies/ClickedElementTweetStrategy.ts",
         "src/shared/services/media-extraction/strategies/DataAttributeTweetStrategy.ts",
@@ -746,10 +746,10 @@
         "src/features/settings/types/settings.types.ts",
         "src/shared/container/service-accessors.ts",
         "src/shared/types/media.types.ts",
-        "src/shared/utils/media/media-url.util.ts",
-        "src/shared/dom/SelectorRegistry.ts",
-        "src/shared/services/media/UsernameExtractionService.ts",
         "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
+        "src/shared/dom/SelectorRegistry.ts",
+        "src/shared/utils/media/media-url.util.ts",
+        "src/shared/services/media/UsernameExtractionService.ts",
         "src/shared/services/media/TwitterVideoExtractor.ts",
         "src/shared/services/media/VideoControlService.ts",
         "src/shared/utils/events.ts",
@@ -943,8 +943,8 @@
       ],
       "dependents": [
         "src/features/settings/services/TwitterTokenExtractor.ts",
-        "src/shared/dom/DOMCache.ts",
         "src/shared/services/MediaService.ts",
+        "src/shared/dom/DOMCache.ts",
         "src/shared/services/media/VideoControlService.ts",
         "src/shared/utils/performance/idleScheduler.ts",
         "src/shared/utils/performance/schedulers.ts",
@@ -1034,7 +1034,7 @@
         },
         {
           "dynamic": false,
-          "module": "../media",
+          "module": "../media/FilenameService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -1042,57 +1042,13 @@
             "type-only",
             "import"
           ],
-          "resolved": "src/shared/media/index.ts",
+          "resolved": "src/shared/media/FilenameService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -1109,59 +1065,8 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/services/BulkDownloadService.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -1178,55 +1083,8 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/services/MediaService.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/media-extraction/MediaExtractionService.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "aliased",
-                "aliased-tsconfig",
-                "aliased-tsconfig-paths",
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -1284,7 +1142,6 @@
       ],
       "dependents": [
         "src/bootstrap/feature-registration.ts",
-        "src/shared/utils/media/media-url.util.ts",
         "src/features/gallery/GalleryApp.ts",
         "src/shared/utils/events.ts",
         "src/shared/container/settings-access.ts",
@@ -1391,11 +1248,11 @@
       "dependents": [
         "src/shared/interfaces/gallery.interfaces.ts",
         "src/shared/media/FilenameService.ts",
-        "src/shared/utils/media/media-url.util.ts",
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/MediaService.ts",
         "src/shared/services/media-extraction/MediaExtractionService.ts",
         "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
+        "src/shared/utils/media/media-url.util.ts",
         "src/shared/services/media-extraction/extractors/TweetInfoExtractor.ts",
         "src/shared/services/media-extraction/strategies/ClickedElementTweetStrategy.ts",
         "src/shared/services/media-extraction/strategies/DataAttributeTweetStrategy.ts",
@@ -1416,170 +1273,6 @@
         "src/shared/interfaces/ServiceInterfaces.ts",
         "src/shared/services/media-mapping/MediaMappingService.ts",
         "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/media/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./FilenameService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/media/FilenameService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./MediaProcessor",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/media/MediaProcessor.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
-        },
-        {
-          "dynamic": false,
-          "module": "./pipeline",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/media/pipeline.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/media/types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/container/service-accessors.ts",
-        "src/shared/services/BulkDownloadService.ts",
-        "src/shared/services/MediaService.ts",
-        "src/shared/types/core/core-types.ts",
-        "src/shared/services/service-initialization.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1641,679 +1334,12 @@
         }
       ],
       "dependents": [
-        "src/shared/media/index.ts",
-        "src/shared/utils/media/media-url.util.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/media/MediaProcessor.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./pipeline",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/media/pipeline.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/media/types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/media/pipeline.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../utils/media/media-url.util",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/media/media-url.util.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
-        },
-        {
-          "dynamic": false,
-          "module": "./types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/media/types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/media/index.ts",
-        "src/shared/media/MediaProcessor.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/media/media-url.util.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../container/service-accessors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/container/service-accessors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
-        },
-        {
-          "dynamic": false,
-          "module": "../../dom",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/dom/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../media/FilenameService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/media/FilenameService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../media/FilenameService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/media/FilenameService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../media/UsernameSource",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/media/UsernameSource.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../types/media.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/types/media.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/media/pipeline.ts",
-        "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
-        "src/shared/utils/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/dom/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./DOMCache",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/dom/DOMCache.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./SelectorRegistry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/dom/SelectorRegistry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./utils/dom-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/dom/utils/dom-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/media/media-url.util.ts",
-        "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
-        "src/shared/utils/media/MediaClickDetector.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/dom/DOMCache.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../utils/timer-management",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/timer-management.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/bootstrap/feature-registration.ts",
-        "src/shared/dom/index.ts",
-        "src/shared/dom/SelectorRegistry.ts",
-        "src/main.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/dom/SelectorRegistry.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./DOMCache",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/dom/DOMCache.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/dom/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/dom/utils/dom-utils.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/dom/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/media/UsernameSource.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@shared/services/media/UsernameExtractionService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/media/UsernameExtractionService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/media/media-url.util.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/media/UsernameExtractionService.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../constants",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/constants.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/media/UsernameSource.ts",
+        "src/shared/container/service-accessors.ts",
+        "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/MediaService.ts",
-        "src/shared/services/media-extraction/strategies/DomStructureTweetStrategy.ts",
-        "src/shared/services/media-extraction/strategies/UrlBasedTweetStrategy.ts",
-        "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
-        "src/shared/services/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/media/types.ts",
-      "dependencies": [],
-      "dependents": [
+        "src/shared/utils/media/media-url.util.ts",
         "src/shared/media/index.ts",
-        "src/shared/media/MediaProcessor.ts",
-        "src/shared/media/pipeline.ts"
+        "src/shared/services/service-initialization.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2357,71 +1383,20 @@
         },
         {
           "dynamic": false,
-          "module": "../media",
+          "module": "../media/FilenameService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/media/index.ts",
+          "resolved": "src/shared/media/FilenameService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/BulkDownloadService.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -2947,55 +1922,8 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/services/media-extraction/MediaExtractionService.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "aliased",
-                "aliased-tsconfig",
-                "aliased-tsconfig-paths",
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/MediaService.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -3105,7 +2033,7 @@
         },
         {
           "dynamic": false,
-          "module": "@shared/media",
+          "module": "@shared/media/FilenameService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -3115,67 +2043,13 @@
             "local",
             "import"
           ],
-          "resolved": "src/shared/media/index.ts",
+          "resolved": "src/shared/media/FilenameService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "aliased",
-                "aliased-tsconfig",
-                "aliased-tsconfig-paths",
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/MediaService.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -3326,55 +2200,8 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "aliased",
-                "aliased-tsconfig",
-                "aliased-tsconfig-paths",
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/MediaService.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/media-extraction/MediaExtractionService.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -3580,59 +2407,405 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "aliased",
-                "aliased-tsconfig",
-                "aliased-tsconfig-paths",
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/container/service-accessors.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/MediaService.ts",
-              "dependencyTypes": [
-                "local",
-                "type-only",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/media-extraction/MediaExtractionService.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
         "src/shared/services/media-extraction/MediaExtractionService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/dom/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./DOMCache",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/dom/DOMCache.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SelectorRegistry",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/dom/SelectorRegistry.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./utils/dom-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/dom/utils/dom-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
+        "src/shared/utils/media/media-url.util.ts",
+        "src/shared/utils/media/MediaClickDetector.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/dom/DOMCache.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/bootstrap/feature-registration.ts",
+        "src/shared/dom/index.ts",
+        "src/shared/dom/SelectorRegistry.ts",
+        "src/main.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/dom/SelectorRegistry.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./DOMCache",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/dom/DOMCache.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/dom/utils/dom-utils.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/dom/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/media/media-url.util.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../dom",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/dom/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../media/FilenameService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/media/FilenameService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../media/FilenameService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/media/FilenameService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../media/UsernameSource",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/media/UsernameSource.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../types/media.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/types/media.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
+        "src/shared/media/pipeline.ts",
+        "src/shared/utils/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/media/UsernameSource.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/services/media/UsernameExtractionService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/media/UsernameExtractionService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/media/media-url.util.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/media/UsernameExtractionService.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/MediaService.ts",
+        "src/shared/media/UsernameSource.ts",
+        "src/shared/services/media-extraction/strategies/DomStructureTweetStrategy.ts",
+        "src/shared/services/media-extraction/strategies/UrlBasedTweetStrategy.ts",
+        "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
+        "src/shared/services/media/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9116,6 +8289,221 @@
       "valid": true
     },
     {
+      "source": "src/shared/media/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./FilenameService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/media/FilenameService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaProcessor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/media/MediaProcessor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./pipeline",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/media/pipeline.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/media/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/types/core/core-types.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/media/MediaProcessor.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./pipeline",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/media/pipeline.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/media/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/media/pipeline.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../utils/media/media-url.util",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/media/media-url.util.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/media/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/media/index.ts",
+        "src/shared/media/MediaProcessor.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/media/types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/media/index.ts",
+        "src/shared/media/MediaProcessor.ts",
+        "src/shared/media/pipeline.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/types/core/media.types.ts",
       "dependencies": [
         {
@@ -12331,14 +11719,14 @@
         },
         {
           "dynamic": true,
-          "module": "../media",
+          "module": "../media/FilenameService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "dynamic-import"
           ],
-          "resolved": "src/shared/media/index.ts",
+          "resolved": "src/shared/media/FilenameService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -16445,262 +15833,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "cycle",
-        "from": "src/shared/container/service-accessors.ts",
-        "to": "src/shared/media/index.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-circular-deps"
-        },
-        "cycle": [
-          {
-            "name": "src/shared/media/index.ts",
-            "dependencyTypes": [
-              "local",
-              "type-only",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/media/MediaProcessor.ts",
-            "dependencyTypes": [
-              "local",
-              "export"
-            ]
-          },
-          {
-            "name": "src/shared/media/pipeline.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/utils/media/media-url.util.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/container/service-accessors.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "cycle",
-        "from": "src/shared/container/service-accessors.ts",
-        "to": "src/shared/services/BulkDownloadService.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-circular-deps"
-        },
-        "cycle": [
-          {
-            "name": "src/shared/services/BulkDownloadService.ts",
-            "dependencyTypes": [
-              "local",
-              "type-only",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/media/index.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/media/MediaProcessor.ts",
-            "dependencyTypes": [
-              "local",
-              "export"
-            ]
-          },
-          {
-            "name": "src/shared/media/pipeline.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/utils/media/media-url.util.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/container/service-accessors.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "cycle",
-        "from": "src/shared/container/service-accessors.ts",
-        "to": "src/shared/services/MediaService.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-circular-deps"
-        },
-        "cycle": [
-          {
-            "name": "src/shared/services/MediaService.ts",
-            "dependencyTypes": [
-              "local",
-              "type-only",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/services/media-extraction/MediaExtractionService.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/services/media-extraction/extractors/DOMDirectExtractor.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/utils/media/media-url.util.ts",
-            "dependencyTypes": [
-              "aliased",
-              "aliased-tsconfig",
-              "aliased-tsconfig-paths",
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/container/service-accessors.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "cycle",
-        "from": "src/shared/media/index.ts",
-        "to": "src/shared/media/pipeline.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-circular-deps"
-        },
-        "cycle": [
-          {
-            "name": "src/shared/media/pipeline.ts",
-            "dependencyTypes": [
-              "local",
-              "export"
-            ]
-          },
-          {
-            "name": "src/shared/utils/media/media-url.util.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/container/service-accessors.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/media/index.ts",
-            "dependencyTypes": [
-              "local",
-              "type-only",
-              "import"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "cycle",
-        "from": "src/shared/services/MediaService.ts",
-        "to": "src/shared/media/index.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-circular-deps"
-        },
-        "cycle": [
-          {
-            "name": "src/shared/media/index.ts",
-            "dependencyTypes": [
-              "aliased",
-              "aliased-tsconfig",
-              "aliased-tsconfig-paths",
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/media/MediaProcessor.ts",
-            "dependencyTypes": [
-              "local",
-              "export"
-            ]
-          },
-          {
-            "name": "src/shared/media/pipeline.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/utils/media/media-url.util.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/container/service-accessors.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/services/MediaService.ts",
-            "dependencyTypes": [
-              "local",
-              "type-only",
-              "import"
-            ]
-          }
-        ]
-      }
-    ],
+    "violations": [],
     "error": 0,
-    "warn": 5,
+    "warn": 0,
     "info": 0,
     "ignore": 0,
     "totalCruised": 263,
-    "totalDependenciesCruised": 719,
+    "totalDependenciesCruised": 718,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
@@ -16978,7 +16117,7 @@
         {
           "name": "no-direct-vendor-imports",
           "comment": "외부 라이브러리는 vendors getter를 통해 접근",
-          "severity": "warn",
+          "severity": "error",
           "from": {
             "path": "^src",
             "pathNot": "^src/shared/external/vendors|^src/(shared/utils/vendors|infrastructure/external/vendors)|^src/shared/types/vendor.types.ts|^src/types/"
@@ -16991,7 +16130,7 @@
         {
           "name": "no-circular-deps",
           "comment": "순환 참조 금지",
-          "severity": "warn",
+          "severity": "error",
           "from": {},
           "to": {
             "circular": true
@@ -17012,7 +16151,7 @@
         {
           "name": "no-internal-barrel-imports-ui",
           "comment": "UI 패키지 내부에서는 @shared/components/ui(index)를 통하지 말고 상대 경로로 import하세요",
-          "severity": "warn",
+          "severity": "error",
           "from": {
             "path": "^src/shared/components/ui/(?!index[.])"
           },
@@ -17024,7 +16163,7 @@
         {
           "name": "no-internal-barrel-imports-utils",
           "comment": "utils 패키지 내부에서 utils/index를 통해 재수입 금지(상대 경로 사용)",
-          "severity": "warn",
+          "severity": "error",
           "from": {
             "path": "^src/shared/utils/(?!index[.]).+"
           },
@@ -17036,7 +16175,7 @@
         {
           "name": "no-internal-barrel-imports-media",
           "comment": "media 패키지 내부에서 media/index를 통해 재수입 금지(상대 경로 사용)",
-          "severity": "warn",
+          "severity": "error",
           "from": {
             "path": "^src/shared/media/(?!index[.]).+"
           },

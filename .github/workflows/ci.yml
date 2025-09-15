@@ -72,6 +72,9 @@ jobs:
       - name: 🎨 Prettier check
         run: npx --yes prettier --check .
 
+      - name: 🧭 Dependency policy check
+        run: npm run deps:check
+
   tests:
     name: 🧪 Tests
     runs-on: ubuntu-latest
@@ -95,11 +98,11 @@ jobs:
 
       - name: 🧪 Run tests (Node ${{ matrix.node-version }})
         if: ${{ matrix.node-version != 20 }}
-        run: npm run test
+        run: npm run test:ci:node22
 
       - name: 🧪 Run tests with coverage (Node 20)
         if: ${{ matrix.node-version == 20 }}
-        run: npm run test:coverage
+        run: npm run test:coverage:ci
 
       - name: 📊 Upload coverage reports
         uses: actions/upload-artifact@v4
