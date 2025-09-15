@@ -29,8 +29,8 @@
    - 접근(TDD):
      - RED: 렌더 횟수 가드(간단한 카운터/spy) 도입 + 회귀 스냅샷
      - GREEN: selector 적용 및 비교 함수 보강, memo 경로 정리
-   - 진행상황: ToastContainer에 selector 적용 완료(구독→selector 경로로 전환,
-     테스트/빌드 GREEN)
+   - 진행상황: ToastContainer, useGalleryScroll에 selector 적용 완료(구독/직접
+     읽기 → selector 경로로 전환, 테스트/빌드 GREEN 예정)
    - DoD: 대상 컴포넌트 3곳 이상에서 렌더 횟수 감소 확인, UX/기능 동일
 2. (완료) — 항목 이관됨
 3. (완료) — 항목 이관됨

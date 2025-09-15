@@ -11,6 +11,7 @@ import { getPreactHooks } from '../../../shared/external/vendors';
 import { logger } from '../../../shared/logging/logger';
 import { EventManager } from '../../../shared/services/EventManager';
 import { galleryState } from '../../../shared/state/signals/gallery.signals';
+import { useSelector } from '../../../shared/utils/signalSelector';
 import { findTwitterScrollContainer } from '../../../shared/utils/core-utils';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 
@@ -64,6 +65,13 @@ export function useGalleryScroll({
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
   const scrollTimeoutRef = useRef<number | null>(null);
+
+  // Optimize subscription to gallery open state using selector
+  const isGalleryOpen = useSelector<typeof galleryState.value, boolean>(
+    galleryState as unknown as { value: typeof galleryState.value },
+    (s: typeof galleryState.value) => s.isOpen,
+    { dependencies: (s: typeof galleryState.value) => [s.isOpen] }
+  );
 
   // 스크롤 방향 감지 관련 상태 (옵션)
   const scrollDirectionRef = useRef<'up' | 'down' | 'idle'>('idle');
@@ -137,7 +145,7 @@ export function useGalleryScroll({
   const handleGalleryWheel = useCallback(
     (event: WheelEvent) => {
       // 갤러리가 열려있지 않으면 무시
-      if (!galleryState.value.isOpen) {
+      if (!isGalleryOpen) {
         logger.debug('useGalleryScroll: 갤러리가 열려있지 않음 - 휠 이벤트 무시');
         return;
       }
@@ -164,13 +172,20 @@ export function useGalleryScroll({
 
       logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
         delta,
-        isGalleryOpen: galleryState.value.isOpen,
+        isGalleryOpen,
         targetElement: (event.target as HTMLElement)?.tagName || 'unknown',
         targetClass: (event.target as HTMLElement)?.className || 'none',
         timestamp: Date.now(),
       });
     },
-    [onScroll, blockTwitterScroll, updateScrollState, handleScrollEnd, updateScrollDirection]
+    [
+      onScroll,
+      blockTwitterScroll,
+      updateScrollState,
+      handleScrollEnd,
+      updateScrollDirection,
+      isGalleryOpen,
+    ]
   );
 
   // 이벤트 리스너 설정
