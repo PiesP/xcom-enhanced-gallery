@@ -3,7 +3,7 @@
  * @description UI 변경에 강건한 미디어 클릭 감지 및 처리 로직 (DOM 캐싱 최적화)
  */
 
-import { SELECTORS } from '../../../constants';
+import { STABLE_SELECTORS, CSS, isVideoControlElement } from '../../../constants';
 import { logger } from '../../logging/logger';
 import { cachedQuerySelector } from '../../dom';
 
@@ -52,7 +52,7 @@ export class MediaClickDetector {
     });
 
     // 갤러리가 이미 열려있으면 무시 (캐시된 조회 사용)
-    if (cachedQuerySelector('.xeg-gallery-container', document, 1000)) {
+    if (cachedQuerySelector(`.${CSS.CLASSES.GALLERY_CONTAINER}`, document, 1000)) {
       logger.debug('MediaClickDetector: Gallery already open - blocking');
       return false;
     }
@@ -64,17 +64,7 @@ export class MediaClickDetector {
     }
 
     // 1. 미디어 컨테이너 확인 (최우선) - 더 포괄적인 선택자 사용
-    const imageSelectors = [
-      SELECTORS.TWEET_PHOTO,
-      'img[src*="pbs.twimg.com"]',
-      '[data-testid="tweetPhoto"]',
-      '[data-testid="tweet"] img',
-      'article img[src*="twimg.com"]',
-      // 트위터 미디어 컨테이너
-      '[data-testid="tweetText"] img',
-      '.tweet-media img',
-      '.media-entity img',
-    ];
+    const imageSelectors = STABLE_SELECTORS.IMAGE_CONTAINERS;
     for (const selector of imageSelectors) {
       if (target.closest(selector)) {
         logger.info(`✅ MediaClickDetector: 이미지 컨테이너 감지 - ${selector}`);
@@ -83,17 +73,7 @@ export class MediaClickDetector {
     }
 
     // 2. 미디어 플레이어 확인 - 더 포괄적인 선택자 사용
-    const videoSelectors = [
-      SELECTORS.VIDEO_PLAYER,
-      'video',
-      '[data-testid="videoPlayer"]',
-      '[data-testid="videoComponent"]',
-      '[data-testid="tweet"] video',
-      'article video',
-      // 추가 비디오 선택자
-      '.video-container',
-      '.media-video',
-    ];
+    const videoSelectors = STABLE_SELECTORS.MEDIA_PLAYERS;
     for (const selector of videoSelectors) {
       if (target.closest(selector)) {
         logger.info(`✅ MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
@@ -111,12 +91,7 @@ export class MediaClickDetector {
     }
 
     // 4. 미디어 링크 확인 - 더 포괄적인 선택자 사용
-    const linkSelectors = [
-      'a[href*="/photo/"]',
-      'a[href*="/video/"]',
-      'a[href*="pic.twitter.com"]',
-      'a[href*="pbs.twimg.com"]',
-    ];
+    const linkSelectors = STABLE_SELECTORS.MEDIA_LINKS;
     for (const selector of linkSelectors) {
       if (target.closest(selector)) {
         logger.info(`✅ MediaClickDetector: 미디어 링크 감지 - ${selector}`);
@@ -125,7 +100,14 @@ export class MediaClickDetector {
     }
 
     // 5. 트윗 내부의 미디어 영역 확인 (가장 넓은 범위)
-    const tweetContainer = target.closest('article[data-testid="tweet"], [data-testid="tweet"]');
+    let tweetContainer: Element | null = null;
+    for (const selector of STABLE_SELECTORS.TWEET_CONTAINERS) {
+      const found = target.closest(selector);
+      if (found) {
+        tweetContainer = found;
+        break;
+      }
+    }
     if (tweetContainer) {
       // 트윗 내부에서 이미지나 비디오가 포함된 영역 클릭 확인
       const hasMediaInTweet = tweetContainer.querySelector(
@@ -167,31 +149,14 @@ export class MediaClickDetector {
     }
 
     // 2. 확장된 비디오 제어 요소들 차단 (구체적인 컨트롤만)
-    const videoControlSelectors = [
-      'button[aria-label*="다시보기"]',
-      'button[aria-label*="일시정지"]',
-      'button[aria-label*="재생"]',
-      'button[aria-label*="Replay"]',
-      'button[aria-label*="Pause"]',
-      'button[aria-label*="Play"]',
-      '[data-testid="videoComponent"] button',
-      '[data-testid="videoPlayer"] button',
-      '.video-controls button',
-      '.player-controls button',
-      '[role="slider"]', // 진행 바
-      // 'video' 제거됨 - 너무 포괄적
-    ];
-
-    for (const selector of videoControlSelectors) {
-      if (target.closest(selector)) {
-        logger.debug('MediaClickDetector: 비디오 제어 요소 클릭 - 기본 동작 허용');
-        return true;
-      }
+    if (isVideoControlElement(target)) {
+      logger.debug('MediaClickDetector: 비디오 제어 요소 클릭 - 기본 동작 허용');
+      return true;
     }
 
     // 3. 갤러리 내부 요소들 차단 (갤러리 중복 열기 방지)
     const galleryInternalSelectors = [
-      '.xeg-gallery-container',
+      `.${CSS.CLASSES.GALLERY_CONTAINER}`,
       '[data-gallery-element]',
       '#xeg-gallery-root',
       '.vertical-gallery-view',
@@ -315,7 +280,7 @@ export class MediaClickDetector {
       }
 
       // 안정적인 선택자를 통한 미디어 컨테이너 검색
-      const imageSelectors = [SELECTORS.TWEET_PHOTO, 'img[src*="pbs.twimg.com"]'];
+      const imageSelectors = STABLE_SELECTORS.IMAGE_CONTAINERS;
       for (const selector of imageSelectors) {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
@@ -334,7 +299,7 @@ export class MediaClickDetector {
       }
 
       // 미디어 플레이어 검색
-      const videoSelectors = [SELECTORS.VIDEO_PLAYER, 'video'];
+      const videoSelectors = STABLE_SELECTORS.MEDIA_PLAYERS;
       for (const selector of videoSelectors) {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
