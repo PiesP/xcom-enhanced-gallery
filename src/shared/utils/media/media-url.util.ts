@@ -10,7 +10,9 @@
 
 import { logger } from '../../logging/logger';
 import { parseUsernameFast } from '../../services/media/UsernameExtractionService';
-import { generateMediaFilename } from '../../media';
+// NOTE(MEDIA-CYCLE-PRUNE-01): 배럴 import(../../media)로 인한 순환 방지를 위해 구체 모듈로 직접 import
+import { generateMediaFilename } from '../../media/FilenameService';
+import type { FilenameOptions } from '../../media/FilenameService';
 import type { MediaInfo } from '../../types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '../../dom';
 
@@ -174,10 +176,7 @@ export function createMediaInfoFromVideo(
     const options: { index: number } | { index: number; extension: string } = ext
       ? { index: index + 1, extension: ext }
       : { index: index + 1 };
-    const filename = generateMediaFilename(
-      tempInfo as MediaInfo,
-      options as import('../../media').FilenameOptions
-    );
+    const filename = generateMediaFilename(tempInfo as MediaInfo, options as FilenameOptions);
 
     return {
       id: `${tweetId}-video-${index}`,

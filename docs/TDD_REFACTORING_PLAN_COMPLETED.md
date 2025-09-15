@@ -1,5 +1,13 @@
 ### 2025-09-15
 
+2025-09-15: MEDIA-CYCLE-PRUNE-01 — shared/media 인근 순환 제거 (완료)
+
+- 내용: `src/shared/utils/media/media-url.util.ts`에서 `../../media` 배럴
+  import를 구체 모듈(`../../media/FilenameService`)로 교체하여 역참조 사이클
+  제거. 금지 스캔 테스트 `test/unit/lint/media-cycle.prune.red.test.ts` 추가.
+- 검증: 테스트 GREEN(해당 스캐너 통과), `npm run deps:check`에서 순환 0건(✔ no
+  dependency violations found). 전체 fast 스위트/빌드/포스트빌드 가드 GREEN.
+
 2025-09-15: PLAN-STATE — 활성 Phase 없음 · 게이트 PASS (간결 보고) 2025-09-15:
 PLAN-CLEANUP-2 — 활성 계획 정비(완료 항목 제거, ZIP 계획 추가)
 

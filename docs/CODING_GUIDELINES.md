@@ -130,6 +130,16 @@ services/
   `AppContainer`/`createAppContainer` 식별자 누출을 금지합니다. validator에서
   실패 처리됩니다.
 
+보강(2025-09-15): 배럴 우회로 순환 방지
+
+- 내부 유틸/서비스에서 상위 도메인 배럴(`index.ts`)을 참조하면 역참조 사이클이
+  발생할 수 있습니다.
+- 원칙: 내부 모듈 간에는 필요한 심볼을 구체 경로로 직접 import하고, 배럴은 외부
+  공개 표면에 한정합니다.
+- 사례: `media-url.util.ts`는 `../../media` 배럴 대신
+  `../../media/FilenameService`를 직접 import하도록 수정(MEDIA-CYCLE-PRUNE-01
+  완료).
+
 예시:
 
 ```ts
