@@ -14,6 +14,8 @@ import { ComponentStandards } from '../StandardProps';
 import { X } from '../Icon';
 import { LanguageService } from '../../../services/LanguageService';
 import { ThemeService } from '../../../services/ThemeService';
+import { globalTimerManager } from '../../../utils/timer-management';
+import { EventManager } from '../../../services/EventManager';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
 import { IconButton } from '../Button/IconButton';
 import styles from './SettingsModal.module.css';
@@ -64,6 +66,7 @@ export function SettingsModal({
   const lastFocusableRef = useRef<HTMLSelectElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const docKeydownNoopRef = useRef<((e: KeyboardEvent) => void) | null>(null);
+  const docKeydownListenerIdRef = useRef<string | null>(null);
   const focusRetryTimerRef = useRef<number | null>(null);
   const refFocusTimerRef = useRef<number | null>(null);
 
@@ -240,7 +243,13 @@ export function SettingsModal({
       // intentionally empty
     };
     docKeydownNoopRef.current = noop;
-    document.addEventListener('keydown', noop, true);
+    // 테스트는 boolean true 옵션 제거 호출을 기대하므로, 등록 시에도 캡처를 true로 전달한다
+    docKeydownListenerIdRef.current = EventManager.getInstance().addListener(
+      document,
+      'keydown',
+      noop as unknown as EventListener,
+      true as unknown as AddEventListenerOptions
+    );
 
     // Focus first focusable element (retry loop to ensure refs are attached)
     let tries = 0;
@@ -260,13 +269,13 @@ export function SettingsModal({
         // If activeElement not target, retry to ensure focus transition
         if (typeof document !== 'undefined' && document.activeElement !== el && tries < 10) {
           tries += 1;
-          focusRetryTimerRef.current = window.setTimeout(tryFocus, 0);
+          focusRetryTimerRef.current = globalTimerManager.setTimeout(tryFocus, 0);
         }
         return;
       }
       if (tries < 10) {
         tries += 1;
-        focusRetryTimerRef.current = window.setTimeout(tryFocus, 0);
+        focusRetryTimerRef.current = globalTimerManager.setTimeout(tryFocus, 0);
       }
     };
     tryFocus();
@@ -278,11 +287,12 @@ export function SettingsModal({
 
       return () => {
         document.body.style.overflow = originalOverflow;
-        if (docKeydownNoopRef.current) {
-          document.removeEventListener('keydown', docKeydownNoopRef.current, true);
+        if (docKeydownListenerIdRef.current) {
+          EventManager.getInstance().removeListener(docKeydownListenerIdRef.current);
+          docKeydownListenerIdRef.current = null;
         }
         if (focusRetryTimerRef.current) {
-          clearTimeout(focusRetryTimerRef.current);
+          globalTimerManager.clearTimeout(focusRetryTimerRef.current);
           focusRetryTimerRef.current = null;
         }
         setBackgroundInert(false);
@@ -291,11 +301,12 @@ export function SettingsModal({
     }
 
     return () => {
-      if (docKeydownNoopRef.current) {
-        document.removeEventListener('keydown', docKeydownNoopRef.current, true);
+      if (docKeydownListenerIdRef.current) {
+        EventManager.getInstance().removeListener(docKeydownListenerIdRef.current);
+        docKeydownListenerIdRef.current = null;
       }
       if (focusRetryTimerRef.current) {
-        clearTimeout(focusRetryTimerRef.current);
+        globalTimerManager.clearTimeout(focusRetryTimerRef.current);
         focusRetryTimerRef.current = null;
       }
       setBackgroundInert(false);
@@ -351,9 +362,9 @@ export function SettingsModal({
         }
       }
     };
-    const t = window.setTimeout(afterPaint, 0);
+    const t = globalTimerManager.setTimeout(afterPaint, 0);
     return () => {
-      clearTimeout(t);
+      globalTimerManager.clearTimeout(t);
     };
   }, [isOpen, mode]);
 
@@ -392,11 +403,11 @@ export function SettingsModal({
   if (!isOpen) {
     // 패널 비활성화 이전에 inert 해제 및 포커스 복원 타이머 정리
     if (focusRetryTimerRef.current) {
-      clearTimeout(focusRetryTimerRef.current);
+      globalTimerManager.clearTimeout(focusRetryTimerRef.current);
       focusRetryTimerRef.current = null;
     }
     if (refFocusTimerRef.current) {
-      clearTimeout(refFocusTimerRef.current);
+      globalTimerManager.clearTimeout(refFocusTimerRef.current);
       refFocusTimerRef.current = null;
     }
     setBackgroundInert(false);
@@ -454,7 +465,7 @@ export function SettingsModal({
               }
               if (document.activeElement !== el && attempts < 10) {
                 attempts += 1;
-                refFocusTimerRef.current = window.setTimeout(run, 0);
+                refFocusTimerRef.current = globalTimerManager.setTimeout(run, 0);
               }
             };
             const g = globalThis as unknown as {
@@ -464,11 +475,11 @@ export function SettingsModal({
             if (typeof qmicro === 'function') {
               qmicro(run);
             } else {
-              refFocusTimerRef.current = window.setTimeout(run, 0);
+              refFocusTimerRef.current = globalTimerManager.setTimeout(run, 0);
             }
           }
           if (!el && refFocusTimerRef.current) {
-            clearTimeout(refFocusTimerRef.current);
+            globalTimerManager.clearTimeout(refFocusTimerRef.current);
             refFocusTimerRef.current = null;
           }
         },

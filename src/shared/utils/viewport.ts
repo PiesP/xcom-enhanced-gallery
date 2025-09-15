@@ -3,6 +3,7 @@
  * - Pure calculator + DOM hook to expose values via CSS variables
  */
 import { TimerManager } from './timer-management';
+import { addListener, removeEventListenerManaged } from './events';
 
 export interface ChromeOffsets {
   readonly toolbarHeight?: number; // px
@@ -90,8 +91,16 @@ export function observeViewportCssVars(
 
   // window resize fallback
   const onResize = (): void => schedule();
+  let resizeListenerId: string | null = null;
   if (typeof window !== 'undefined') {
-    window.addEventListener('resize', onResize, { passive: true });
+    // 통합 이벤트 유틸로 등록하여 추적/정리가 용이하도록 함
+    resizeListenerId = addListener(
+      window,
+      'resize',
+      onResize as unknown as EventListener,
+      { passive: true },
+      'viewport:resize'
+    );
   }
 
   return () => {
@@ -103,8 +112,9 @@ export function observeViewportCssVars(
         /* ignore */
       }
     }
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', onResize);
+    if (resizeListenerId) {
+      removeEventListenerManaged(resizeListenerId);
+      resizeListenerId = null;
     }
     timers.cleanup();
   };

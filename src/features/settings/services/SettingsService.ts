@@ -11,6 +11,7 @@ import type {
   SettingValidationResult,
 } from '../types/settings.types';
 import { DEFAULT_SETTINGS as defaultSettings } from '../types/settings.types';
+import { migrateSettings as runMigration } from './SettingsMigration';
 
 /**
  * 설정 저장 키
@@ -363,8 +364,8 @@ export class SettingsService {
         return;
       }
 
-      // 마이그레이션 수행
-      this.settings = this.migrateSettings(parsedSettings);
+      // 마이그레이션 수행 (헬퍼 사용)
+      this.settings = runMigration(parsedSettings);
 
       logger.debug('설정 로드 완료');
     } catch (error) {
@@ -450,19 +451,7 @@ export class SettingsService {
    * 설정 마이그레이션
    */
   private migrateSettings(settings: AppSettings): AppSettings {
-    // 버전별 마이그레이션 로직
-    // 현재는 기본값으로 누락된 필드 채우기
-    return {
-      ...defaultSettings,
-      ...settings,
-      gallery: { ...defaultSettings.gallery, ...settings.gallery },
-      download: { ...defaultSettings.download, ...settings.download },
-      tokens: { ...defaultSettings.tokens, ...settings.tokens },
-      performance: { ...defaultSettings.performance, ...settings.performance },
-      accessibility: { ...defaultSettings.accessibility, ...settings.accessibility },
-      version: defaultSettings.version, // 항상 최신 버전으로
-      lastModified: Date.now(),
-    };
+    return runMigration(settings);
   }
 
   /**

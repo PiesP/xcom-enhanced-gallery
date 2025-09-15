@@ -16,6 +16,7 @@ import { logger } from '../../../../shared/logging/logger';
 import { ToolbarWithSettings } from '../../../../shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 import type { ImageFitMode } from '../../../../shared/types';
 import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';
+import { downloadState } from '../../../../shared/state/signals/download.signals';
 import { getPreactHooks, getPreact, getPreactCompat } from '../../../../shared/external/vendors';
 import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
 import {
@@ -33,7 +34,7 @@ import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '../../../../shared/utils/performance';
 import { getSetting, setSetting } from '../../../../shared/container/settings-access';
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
-import { useSelector } from '../../../../shared/utils/signalSelector';
+import { useSelector, useCombinedSelector } from '../../../../shared/utils/signalSelector';
 import type { MediaInfo } from '../../../../shared/types';
 import { observeViewportCssVars } from '../../../../shared/utils/viewport';
 
@@ -70,10 +71,14 @@ function VerticalGalleryViewCore({
     { dependencies: (s: typeof galleryState.value) => [s.currentIndex] }
   );
 
-  const isDownloading = useSelector<typeof galleryState.value, boolean>(
-    galleryState as unknown as { value: typeof galleryState.value },
-    (s: typeof galleryState.value) => s.isLoading,
-    { dependencies: (s: typeof galleryState.value) => [s.isLoading] }
+  // 다운로드/로딩 상태를 통합하여 툴바에 전달 (다중 시그널 결합)
+  const isDownloading = useCombinedSelector(
+    [
+      galleryState as unknown as { value: typeof galleryState.value },
+      downloadState as unknown as { value: typeof downloadState.value },
+    ] as const,
+    (g, d) => Boolean(g.isLoading || d.isProcessing),
+    (g, d) => [g.isLoading, d.isProcessing]
   );
 
   logger.debug('VerticalGalleryView: Rendering with state', {

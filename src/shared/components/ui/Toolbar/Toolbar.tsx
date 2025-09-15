@@ -26,6 +26,7 @@ import {
   getToolbarClassName,
 } from '../../../hooks/useToolbarState';
 import { throttleScroll } from '../../../utils/performance/performance-utils';
+import { EventManager } from '../../../services/EventManager';
 import { ComponentStandards } from '../StandardProps';
 import {
   ChevronLeft,
@@ -224,9 +225,14 @@ function ToolbarCore({
       }
     }); // RAF 기반으로 최적화된 스크롤 감지
 
-    window.addEventListener('scroll', throttledDetect, { passive: true });
+    const listenerId = EventManager.getInstance().addListener(
+      window,
+      'scroll',
+      throttledDetect as unknown as EventListener,
+      { passive: true }
+    );
     return (): void => {
-      window.removeEventListener('scroll', throttledDetect);
+      EventManager.getInstance().removeListener(listenerId);
     };
   }, [toolbarActions]);
 

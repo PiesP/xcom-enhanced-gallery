@@ -12,6 +12,7 @@ import { logger } from '../../../shared/logging/logger';
 import { EventManager } from '../../../shared/services/EventManager';
 import { galleryState } from '../../../shared/state/signals/gallery.signals';
 import { findTwitterScrollContainer } from '../../../shared/utils/core-utils';
+import { globalTimerManager } from '../../../shared/utils/timer-management';
 
 const { useEffect, useRef, useCallback } = getPreactHooks();
 
@@ -95,10 +96,10 @@ export function useGalleryScroll({
 
       // 스크롤 방향 idle 상태로 전환 타이머
       if (directionTimeoutRef.current) {
-        clearTimeout(directionTimeoutRef.current);
+        globalTimerManager.clearTimeout(directionTimeoutRef.current);
       }
 
-      directionTimeoutRef.current = window.setTimeout(() => {
+      directionTimeoutRef.current = globalTimerManager.setTimeout(() => {
         if (scrollDirectionRef.current !== 'idle') {
           scrollDirectionRef.current = 'idle';
           onScrollDirectionChange?.('idle');
@@ -111,10 +112,10 @@ export function useGalleryScroll({
   // 스크롤 종료 감지
   const handleScrollEnd = useCallback(() => {
     if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+      globalTimerManager.clearTimeout(scrollTimeoutRef.current);
     }
 
-    scrollTimeoutRef.current = window.setTimeout(() => {
+    scrollTimeoutRef.current = globalTimerManager.setTimeout(() => {
       updateScrollState(false);
       logger.debug('useGalleryScroll: 스크롤 종료');
     }, 150);
@@ -207,12 +208,12 @@ export function useGalleryScroll({
 
       // 타이머 정리
       if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
+        globalTimerManager.clearTimeout(scrollTimeoutRef.current);
       }
 
       // 방향 감지 타이머 정리
       if (directionTimeoutRef.current) {
-        clearTimeout(directionTimeoutRef.current);
+        globalTimerManager.clearTimeout(directionTimeoutRef.current);
       }
 
       logger.debug('useGalleryScroll: 정리 완료');
@@ -224,10 +225,10 @@ export function useGalleryScroll({
     return () => {
       eventManagerRef.current.cleanup();
       if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
+        globalTimerManager.clearTimeout(scrollTimeoutRef.current);
       }
       if (directionTimeoutRef.current) {
-        clearTimeout(directionTimeoutRef.current);
+        globalTimerManager.clearTimeout(directionTimeoutRef.current);
       }
     };
   }, []);

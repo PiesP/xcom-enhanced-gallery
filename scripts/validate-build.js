@@ -122,6 +122,12 @@ function validateOne(
       // 신규: 런타임 DOMEventManager 표면 금지(내부 전용)
       /\bDOMEventManager\b/,
       /\bcreateEventManager\b/,
+      // 추가: 런타임 AppContainer 표면 누출 금지(테스트 전용 하니스 외)
+      /\bcreateAppContainer\b/,
+      /\bAppContainer\b/,
+      // 추가: PC-only 정책 - Pointer 이벤트 문자열 금지
+      /\bonPointer\w+\b/,
+      /\bPointerEvent\b/,
     ];
     for (const re of legacyKeys) {
       if (re.test(content)) {

@@ -38,6 +38,73 @@
   정책 강화.
 - 영향: 코드 변경 없음(문서만). 스모크 테스트 GREEN.
 
+2025-09-15: PLAN-REFRESH (최종) — 활성 계획 문서 재정비 완료
+
+- 내용: `TDD_REFACTORING_PLAN.md`를 "활성 계획 전용"으로 재정비. 방대한
+  이력/완료 로그는 본 문서로 이관하고, 새로운 5개 과제(U4-b, SEL-OPT-01, R4-b,
+  SET-MIG-01, R5-b)만 활성 유지.
+- 검증: 타입/린트/테스트/빌드/포스트빌드 가드 지속 GREEN(변경은 문서 한정).
+
+2025-09-15: SET-MIG-01 — Settings 버전 마이그레이션 하니스 (완료)
+
+- 내용: `SettingsMigration` 헬퍼 추가 및 `SettingsService`가 이를 사용하도록
+  리팩터링. 버전별 마이그레이션 훅(레지스트리)과 기본값 병합(fill) 로직 분리.
+- 검증: 타입/린트/스모크 GREEN, 기존 설정 손실 없이 로드·저장이 동작.
+
+2025-09-15: R5-b — Postbuild Drift Guard v2 (완료)
+
+- 내용: `scripts/validate-build.js` 확장 — `onPointer*`/`PointerEvent` 문자열,
+  `createAppContainer`/`AppContainer` 런타임 표면 누출 추가 가드.
+- 검증: dev/prod 빌드 시 validator PASS, 기존 가드(소스맵/금지
+  문자열/\_\_vitePreload)와 병행 GREEN.
+
+2025-09-15: P11–P13 — 계획 항목 정리(완료 상태 반영)
+
+- P11 Barrel 표면 하드닝(dom/services): `@shared/dom`에서 DOMEventManager 재노출
+  제거, 외부 런타임 import 금지 스캔 통과.
+- P12 Toolbar 애니메이션 토큰 정리: `toolbar-slide-*` 키프레임·변수 제거, JS API
+  `toolbarSlideDown/Up`만 사용.
+- P13 Postbuild Validator 확장: 위험 표면 문자열 스캔 강화(`DOMEventManager`,
+  동적 VendorManager, vendor-api.ts), dev/prod GREEN.
+- 현재 활성 계획에는 P14만 남음(타입 전용 import 정책 강화).
+
+2025-09-15: P14 — 타입 전용 import 예외 정책 강화 (완료)
+
+2025-09-15: U4-b — 배럴 표면 V2(광역) 최소화 (완료)
+
+- 내용: shared/utils/performance 배럴에서 레거시 selector 재노출 제거. 전역
+  소비처는 `@shared/utils/signalSelector`의 공식 API만 사용하도록 통일.
+- 영향: 공개 API 축소 없음(정식 경로 유지). dead export 제거로 스캔/번들 표면
+  감소.
+- 검증: unused-exports 스캔 GREEN, 타입/린트 PASS, 전체 테스트/빌드/포스트빌드
+  GREEN.
+
+2025-09-15: R4-b — 타이머/리스너 수명주기 일원화 가드(확장) (완료)
+
+- 내용:
+  Toolbar/GalleryContainer/useGalleryKeyboard/SettingsModal/useGalleryScroll
+  등에서 직접 addEventListener/setTimeout 사용을 EventManager/globalTimerManager
+  경유로 표준화. SettingsModal의 문서 keydown 리스너는 테스트 기대에 맞춰
+  capture=true(boolean)로 등록/해제.
+- 검증: 수명주기/가드 테스트 GREEN. event-deprecated-removal 가드 해결. 전체
+  스위트 GREEN.
+
+2025-09-15: BUILD — dev/prod Userscript 모두 생성 및 검증 (완료)
+
+- 내용: `npm run build` 수행으로 개발/프로덕션 번들을 생성. 포스트빌드 검증
+  스크립트 통과.
+- 산출물: dist/xcom-enhanced-gallery.user.js,
+  dist/xcom-enhanced-gallery.dev.user.js
+- 크기: raw 362.89 KB / gzip 98.66 KB
+
+- 내용: 벤더 배럴(`@shared/external/vendors`)에서 `VNode`/`ComponentChildren`
+  타입을 가져올 때 반드시 type 한정자를 사용하도록 테스트 추가.
+  - 테스트: `test/unit/lint/type-only-imports.policy.red.test.ts` (위반 시 RED)
+  - 가이드: `docs/CODING_GUIDELINES.md`에 정책 및 예시 명시
+- 검증: 타입/린트/테스트/빌드/포스트빌드 모두 GREEN, 단일 정책 테스트 별도 실행
+  PASS
+- 결과: 활성 계획 항목 없음(계획 문서 정리 완료)
+
 ### 2025-09-14
 
 2025-09-15: P10 — 플레이스홀더/고아 코드 최종 정리 (완료)

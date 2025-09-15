@@ -17,6 +17,7 @@
  */
 
 import { getPreactHooks } from '../external/vendors';
+import { globalTimerManager } from '../utils/timer-management';
 
 /**
  * 툴바 상태 인터페이스
@@ -118,9 +119,9 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
       if (timeSinceStart < minDisplayTime) {
         // 최소 표시 시간이 지나지 않았으면 지연 후 변경
         if (downloadTimeoutRef.current) {
-          clearTimeout(downloadTimeoutRef.current);
+          globalTimerManager.clearTimeout(downloadTimeoutRef.current);
         }
-        downloadTimeoutRef.current = window.setTimeout(() => {
+        downloadTimeoutRef.current = globalTimerManager.setTimeout(() => {
           setState((prev: ToolbarState) => ({
             ...prev,
             isDownloading: false,
@@ -171,7 +172,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const resetState = useCallback(() => {
     // 타이머 정리
     if (downloadTimeoutRef.current) {
-      clearTimeout(downloadTimeoutRef.current);
+      globalTimerManager.clearTimeout(downloadTimeoutRef.current);
       downloadTimeoutRef.current = null;
     }
     setState(INITIAL_STATE);
@@ -181,7 +182,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   useEffect(() => {
     return () => {
       if (downloadTimeoutRef.current) {
-        clearTimeout(downloadTimeoutRef.current);
+        globalTimerManager.clearTimeout(downloadTimeoutRef.current);
       }
     };
   }, []);

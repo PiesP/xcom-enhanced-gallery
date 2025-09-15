@@ -44,6 +44,8 @@ function ToastComponent({
   role = 'alert',
 }: ToastProps): VNode {
   const { useEffect } = getPreactHooks();
+  // 표준화된 타이머 매니저 사용(누수/정리 용이)
+  const { globalTimerManager } = require('../../../utils/timer-management');
 
   // 안전성 체크
   if (!toast || !onRemove) {
@@ -52,11 +54,11 @@ function ToastComponent({
 
   useEffect(() => {
     if (toast.duration && toast.duration > 0) {
-      const timer = setTimeout(() => {
+      const timer = globalTimerManager.setTimeout(() => {
         onRemove(toast.id);
       }, toast.duration);
 
-      return (): void => clearTimeout(timer);
+      return (): void => globalTimerManager.clearTimeout(timer);
     }
 
     // duration이 없거나 0일 때도 cleanup 함수 반환

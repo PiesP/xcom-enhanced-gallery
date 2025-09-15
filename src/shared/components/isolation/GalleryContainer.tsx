@@ -6,6 +6,7 @@
 import { getPreact, getPreactHooks } from '../../external/vendors';
 import type { ComponentChildren } from '../../external/vendors';
 import { logger } from '../../logging';
+import { EventManager } from '../../services/EventManager';
 
 /**
  * 갤러리 컨테이너 Props
@@ -136,9 +137,13 @@ export function GalleryContainer({
   // 키보드 이벤트 리스너 등록
   useEffect(() => {
     if (onClose) {
-      document.addEventListener('keydown', handleKeyDown);
+      const id = EventManager.getInstance().addListener(
+        document,
+        'keydown',
+        handleKeyDown as unknown as EventListener
+      );
       return () => {
-        document.removeEventListener('keydown', handleKeyDown);
+        EventManager.getInstance().removeListener(id);
       };
     }
     return undefined;

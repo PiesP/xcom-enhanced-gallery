@@ -66,6 +66,15 @@ services/
 - 타입도 가능하면 벤더 index에서 재export된 것을 사용합니다: `type VNode`,
   `type ComponentChildren` 등.
 
+보강(2025-09-15):
+
+- VNode/ComponentChildren 등 타입은 반드시 type 한정자로 import합니다.
+  - 허용: `import type { VNode } from '@shared/external/vendors'` 또는
+    `import { getPreact, type VNode } from '@shared/external/vendors'`
+  - 금지: `import { VNode } from '@shared/external/vendors'` (type 한정자 누락)
+  - 테스트: `test/unit/lint/type-only-imports.policy.red.test.ts`가 위반 시
+    RED로 탐지합니다.
+
 가드/테스트:
 
 - 직접 import 금지 정책은 테스트에서 정적으로 스캔되어 위반 시 실패합니다.
@@ -103,6 +112,17 @@ services/
   AppContainer/createAppContainer 런타임 import 금지. 타입 전용은 허용.
 - SERVICE_KEYS 직접 사용 금지: 허용된 service-accessors 경유만 사용. 직접
   import/접근은 가드 테스트에서 실패 처리.
+
+보강(2025-09-15):
+
+- Settings 마이그레이션: DEFAULT_SETTINGS 변경에 따른 사용자 설정 호환성은
+  SettingsMigration 헬퍼를 통해 처리합니다. 서비스는 헬퍼를 호출해 누락 필드
+  보완/버전 업을 수행해야 하며, 구조 변경(키 변경/삭제/리네임)은 명시적
+  migration 스텝으로 추가합니다.
+- Postbuild 가드 확장: PC 전용 정책 강화로 Userscript 산출물 내
+  `onPointer*`/`PointerEvent` 문자열과 런타임
+  `AppContainer`/`createAppContainer` 식별자 누출을 금지합니다. validator에서
+  실패 처리됩니다.
 
 예시:
 

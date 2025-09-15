@@ -9,8 +9,7 @@ export * from './idleScheduler';
 export * from './schedulers';
 export * from './prefetch-bench';
 
-// Signal Optimization
-export { createSelector, useAsyncSelector } from './signalOptimization';
+// Note: Legacy signal optimization exports removed (use '@shared/utils/signalSelector')
 
 // Component Memoization
 export { memo, useCallback, useMemo } from './memoization';
