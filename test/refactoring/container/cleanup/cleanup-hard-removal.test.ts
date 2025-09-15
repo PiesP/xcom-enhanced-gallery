@@ -11,6 +11,9 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createAppContainer } from '../../helpers/createAppContainer';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { SERVICE_KEYS } from '../../../../src/constants';
 import { CoreService } from '../../../../src/shared/services/ServiceManager';
 
@@ -30,11 +33,17 @@ describe('Phase 7 - Cleanup & Hard Removal', () => {
 
   describe('Legacy Adapter 완전 제거', () => {
     test('Legacy adapter 파일이 삭제되어야 함', async () => {
-      // Legacy adapter 모듈이 더 이상 존재하지 않아야 함
-      await expect(
-        // 동적 import 시 실패해야 함
-        import('../../../../src/shared/container/legacy/legacyAdapter')
-      ).rejects.toThrow();
+      // 동적 import는 Vite import-analysis 단계에서 실패하여 테스트 수집 자체가 중단되므로
+      // 파일 존재 여부를 직접 확인한다.
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirnameLocal = path.dirname(__filename);
+      const legacyPath = path.resolve(
+        __dirnameLocal,
+        '../../../../src/shared/container/legacy/legacyAdapter.ts'
+      );
+      const legacyJsPath = legacyPath.replace(/\.ts$/, '.js');
+      const exists = fs.existsSync(legacyPath) || fs.existsSync(legacyJsPath);
+      expect(exists).toBe(false);
     });
 
     test('CoreService 전역 설치가 제거되어야 함', async () => {

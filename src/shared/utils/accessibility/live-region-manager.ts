@@ -103,8 +103,8 @@ export function cleanupLiveRegions(): void {
   } catch {
     /* no-op */
   } finally {
-    regions.polite = undefined;
-    regions.assertive = undefined;
+    delete (regions as Record<string, unknown>).polite;
+    delete (regions as Record<string, unknown>).assertive;
     if (unloadListenerId) {
       try {
         const { EventManager } = require('../../services/EventManager');

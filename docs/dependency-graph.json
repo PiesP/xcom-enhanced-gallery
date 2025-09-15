@@ -2684,8 +2684,66 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
+          "circular": true,
+          "cycle": [
+            {
+              "name": "src/shared/utils/accessibility/live-region-manager.ts",
+              "dependencyTypes": [
+                "local",
+                "export"
+              ]
+            },
+            {
+              "name": "src/shared/services/EventManager.ts",
+              "dependencyTypes": [
+                "local",
+                "require"
+              ]
+            },
+            {
+              "name": "src/shared/utils/events.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/container/service-accessors.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/services/BulkDownloadService.ts",
+              "dependencyTypes": [
+                "local",
+                "type-only",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/services/UnifiedToastManager.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/utils/accessibility/index.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            }
+          ],
+          "valid": false,
+          "rules": [
+            {
+              "severity": "warn",
+              "name": "no-circular-deps"
+            }
+          ]
         }
       ],
       "dependents": [
@@ -2875,6 +2933,7 @@
       ],
       "dependents": [
         "src/shared/utils/accessibility/accessibility-utils.ts",
+        "src/shared/hooks/useFocusTrap.ts",
         "src/shared/index.ts"
       ],
       "orphan": false,
@@ -3085,9 +3144,9 @@
       ],
       "dependents": [
         "src/shared/utils/focusTrap.ts",
+        "src/shared/utils/accessibility/live-region-manager.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/hooks/useFocusTrap.ts",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/shared/services/input/KeyboardNavigator.ts",
@@ -5408,8 +5467,51 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
+          "circular": true,
+          "cycle": [
+            {
+              "name": "src/shared/utils/accessibility/live-region-manager.ts",
+              "dependencyTypes": [
+                "local",
+                "export"
+              ]
+            },
+            {
+              "name": "src/shared/services/EventManager.ts",
+              "dependencyTypes": [
+                "local",
+                "require"
+              ]
+            },
+            {
+              "name": "src/shared/utils/events.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/utils/utils.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/utils/accessibility.ts",
+              "dependencyTypes": [
+                "local",
+                "export"
+              ]
+            }
+          ],
+          "valid": false,
+          "rules": [
+            {
+              "severity": "warn",
+              "name": "no-circular-deps"
+            }
+          ]
         },
         {
           "dynamic": false,
@@ -5439,10 +5541,87 @@
     },
     {
       "source": "src/shared/utils/accessibility/live-region-manager.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../services/EventManager",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "require"
+          ],
+          "resolved": "src/shared/services/EventManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": true,
+          "cycle": [
+            {
+              "name": "src/shared/services/EventManager.ts",
+              "dependencyTypes": [
+                "local",
+                "require"
+              ]
+            },
+            {
+              "name": "src/shared/utils/events.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/container/service-accessors.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/services/BulkDownloadService.ts",
+              "dependencyTypes": [
+                "local",
+                "type-only",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/services/UnifiedToastManager.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/utils/accessibility/index.ts",
+              "dependencyTypes": [
+                "local",
+                "import"
+              ]
+            },
+            {
+              "name": "src/shared/utils/accessibility/live-region-manager.ts",
+              "dependencyTypes": [
+                "local",
+                "export"
+              ]
+            }
+          ],
+          "valid": false,
+          "rules": [
+            {
+              "severity": "warn",
+              "name": "no-circular-deps"
+            }
+          ]
+        }
+      ],
       "dependents": [
         "src/shared/utils/accessibility/index.ts",
-        "src/shared/utils/accessibility.ts"
+        "src/shared/utils/accessibility.ts",
+        "src/shared/hooks/useAccessibility.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7400,14 +7579,14 @@
         },
         {
           "dynamic": false,
-          "module": "../services/EventManager",
-          "moduleSystem": "cjs",
+          "module": "../utils/focusTrap",
+          "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "require"
+            "import"
           ],
-          "resolved": "src/shared/services/EventManager.ts",
+          "resolved": "src/shared/utils/focusTrap.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14454,6 +14633,23 @@
         },
         {
           "dynamic": false,
+          "module": "../utils/accessibility/live-region-manager",
+          "moduleSystem": "cjs",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "require"
+          ],
+          "resolved": "src/shared/utils/accessibility/live-region-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@shared/logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -16806,14 +17002,121 @@
             ]
           }
         ]
+      },
+      {
+        "type": "cycle",
+        "from": "src/shared/utils/accessibility.ts",
+        "to": "src/shared/utils/accessibility/live-region-manager.ts",
+        "rule": {
+          "severity": "warn",
+          "name": "no-circular-deps"
+        },
+        "cycle": [
+          {
+            "name": "src/shared/utils/accessibility/live-region-manager.ts",
+            "dependencyTypes": [
+              "local",
+              "export"
+            ]
+          },
+          {
+            "name": "src/shared/services/EventManager.ts",
+            "dependencyTypes": [
+              "local",
+              "require"
+            ]
+          },
+          {
+            "name": "src/shared/utils/events.ts",
+            "dependencyTypes": [
+              "local",
+              "import"
+            ]
+          },
+          {
+            "name": "src/shared/utils/utils.ts",
+            "dependencyTypes": [
+              "local",
+              "import"
+            ]
+          },
+          {
+            "name": "src/shared/utils/accessibility.ts",
+            "dependencyTypes": [
+              "local",
+              "export"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "cycle",
+        "from": "src/shared/utils/accessibility/index.ts",
+        "to": "src/shared/utils/accessibility/live-region-manager.ts",
+        "rule": {
+          "severity": "warn",
+          "name": "no-circular-deps"
+        },
+        "cycle": [
+          {
+            "name": "src/shared/utils/accessibility/live-region-manager.ts",
+            "dependencyTypes": [
+              "local",
+              "export"
+            ]
+          },
+          {
+            "name": "src/shared/services/EventManager.ts",
+            "dependencyTypes": [
+              "local",
+              "require"
+            ]
+          },
+          {
+            "name": "src/shared/utils/events.ts",
+            "dependencyTypes": [
+              "local",
+              "import"
+            ]
+          },
+          {
+            "name": "src/shared/container/service-accessors.ts",
+            "dependencyTypes": [
+              "local",
+              "import"
+            ]
+          },
+          {
+            "name": "src/shared/services/BulkDownloadService.ts",
+            "dependencyTypes": [
+              "local",
+              "type-only",
+              "import"
+            ]
+          },
+          {
+            "name": "src/shared/services/UnifiedToastManager.ts",
+            "dependencyTypes": [
+              "local",
+              "import"
+            ]
+          },
+          {
+            "name": "src/shared/utils/accessibility/index.ts",
+            "dependencyTypes": [
+              "local",
+              "import"
+            ]
+          }
+        ]
       }
     ],
     "error": 0,
-    "warn": 3,
+    "warn": 5,
     "info": 0,
     "ignore": 0,
     "totalCruised": 262,
-    "totalDependenciesCruised": 715,
+    "totalDependenciesCruised": 717,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

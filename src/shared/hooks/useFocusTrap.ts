@@ -11,7 +11,10 @@ import {
   type FocusTrapOptions as UtilOptions,
 } from '../utils/focusTrap';
 
-export interface FocusTrapOptions extends UtilOptions {}
+export interface FocusTrapOptions extends UtilOptions {
+  previousFocusElement?: HTMLElement | null;
+  previousFocusSelector?: string | null;
+}
 
 export interface FocusTrapResult {
   /** Focus trap 활성 상태 */

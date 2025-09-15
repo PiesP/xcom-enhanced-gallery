@@ -2,6 +2,12 @@
 
 > **일관된 코드 스타일과 품질 보장**
 
+## 리팩토링/계획 이관 정책
+
+- 모든 TDD 리팩토링 활성 계획은 완료 즉시
+  `docs/TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
+- 활성 계획은 항상 최신 상태로 유지하며, 완료된 항목은 PLAN.md에서 제거합니다.
+
 ## 컴포넌트 배럴 표면 정책 (U4)
 
 - HOC 배럴(`@shared/components/hoc`)은 실제 사용 심볼만 노출합니다.
@@ -111,13 +117,13 @@ services/
 - 타입도 가능하면 벤더 index에서 재export된 것을 사용합니다: `type VNode`,
   `type ComponentChildren` 등.
 
-보강(2025-09-15):
+#### 타입 한정자 import 정책
 
 - VNode/ComponentChildren 등 타입은 반드시 type 한정자로 import합니다.
   - 허용: `import type { VNode } from '@shared/external/vendors'` 또는
     `import { getPreact, type VNode } from '@shared/external/vendors'`
   - 금지: `import { VNode } from '@shared/external/vendors'` (type 한정자 누락)
-  - 테스트: `test/unit/lint/type-only-imports.policy.red.test.ts`가 위반 시
+  - 테스트: `test/unit/lint/type-only-imports.policy.red.test.ts`가 위반 시 RED.
     RED로 탐지합니다.
 
 가드/테스트:

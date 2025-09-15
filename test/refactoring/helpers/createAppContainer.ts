@@ -195,10 +195,11 @@ class AppContainerImpl implements AppContainer {
 
     this.features = { loadGallery: this.loadGalleryFactory.bind(this) };
 
-    if (enableLegacyAdapter && import.meta.env.DEV) {
+    const devLike = import.meta.env.DEV || import.meta.env.MODE === 'test';
+    if (enableLegacyAdapter && devLike) {
       this.legacyAdapter = new LegacyServiceAdapter(this);
       const anyGlobal = globalThis as unknown as Record<string, unknown>;
-      const LEGACY_ADAPTER_KEY = import.meta.env.DEV ? '__XEG_LEGACY_ADAPTER__' : 'XEG_DEV_ONLY';
+      const LEGACY_ADAPTER_KEY = devLike ? '__XEG_LEGACY_ADAPTER__' : 'XEG_DEV_ONLY';
       anyGlobal[LEGACY_ADAPTER_KEY] = this.legacyAdapter;
     }
   }
@@ -387,9 +388,12 @@ export async function createAppContainer(
 }
 
 export function installLegacyAdapter(container: AppContainer): void {
-  if (!import.meta.env.DEV) return;
+  if (!(import.meta.env.DEV || import.meta.env.MODE === 'test')) return;
   const adapter = new LegacyServiceAdapter(container);
   const anyGlobal = globalThis as unknown as Record<string, unknown>;
-  const GET_OVERRIDE_KEY = import.meta.env.DEV ? '__XEG_GET_SERVICE_OVERRIDE__' : 'XEG_DEV_ONLY';
+  const GET_OVERRIDE_KEY =
+    import.meta.env.DEV || import.meta.env.MODE === 'test'
+      ? '__XEG_GET_SERVICE_OVERRIDE__'
+      : 'XEG_DEV_ONLY';
   anyGlobal[GET_OVERRIDE_KEY] = adapter.getService.bind(adapter);
 }
