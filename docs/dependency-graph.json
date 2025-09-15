@@ -1468,6 +1468,24 @@
         },
         {
           "dynamic": false,
+          "module": "./download/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/download/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./LanguageService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1632,6 +1650,17 @@
       "dependents": [
         "src/shared/services/download/DownloadOrchestrator.ts",
         "src/shared/external/zip/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/download/types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/BulkDownloadService.ts",
+        "src/shared/services/MediaService.ts",
+        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3534,6 +3563,24 @@
     {
       "source": "src/shared/services/MediaService.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./download/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/download/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./media-extraction/MediaExtractionService",
@@ -14197,6 +14244,24 @@
         },
         {
           "dynamic": false,
+          "module": "./download/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/services/download/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./LanguageService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15762,8 +15827,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 263,
-    "totalDependenciesCruised": 714,
+    "totalCruised": 264,
+    "totalDependenciesCruised": 717,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
