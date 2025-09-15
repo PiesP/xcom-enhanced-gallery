@@ -8,7 +8,7 @@
 import { logger } from '@shared/logging/logger';
 import { undefinedToNull } from '@shared/utils/type-safety-helpers';
 
-import { TWITTER_API_CONFIG } from '@/constants';
+import { STABLE_SELECTORS, TWITTER_API_CONFIG } from '@/constants';
 
 /**
  * Twitter API 응답 타입 정의
@@ -116,7 +116,7 @@ export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
     src.includes('tweet_video_thumb') ||
     alt === 'Animated Text GIF' ||
     alt === 'Embedded video' ||
-    imgElement.closest('[data-testid="videoComponent"]') !== null ||
+    imgElement.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', ')) !== null ||
     imgElement.closest('a[aria-label*="video"]') !== null ||
     imgElement.closest('a[aria-label*="Video"]') !== null ||
     imgElement.closest('a[aria-label="Embedded video"]') !== null
@@ -129,8 +129,7 @@ export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
 export function isVideoPlayer(element: HTMLElement): boolean {
   return (
     element.tagName === 'VIDEO' ||
-    element.closest('[data-testid="videoPlayer"]') !== null ||
-    element.closest('[data-testid="videoComponent"]') !== null ||
+    element.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', ')) !== null ||
     element.closest('div[role="img"][aria-label*="video"]') !== null ||
     element.closest('div[role="img"][aria-label*="Video"]') !== null
   );

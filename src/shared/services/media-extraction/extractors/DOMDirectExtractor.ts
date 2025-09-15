@@ -7,6 +7,7 @@
 import { logger } from '@shared/logging/logger';
 import { extractOriginalImageUrl, isValidMediaUrl } from '@shared/utils/media/media-url.util';
 import { createSelectorRegistry } from '@shared/dom';
+import { STABLE_SELECTORS } from '@/constants';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
 import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
 
@@ -61,15 +62,7 @@ export class DOMDirectExtractor {
    */
   private findMediaContainer(element: HTMLElement): HTMLElement | null {
     // 우선 가장 가까운 상위 트윗 컨테이너를 우선 선택
-    const closestTweet = this.selectors.findClosest(
-      [
-        'article[data-testid="tweet"]',
-        'article[role="article"]',
-        'div[data-testid="tweet"]',
-        'article',
-      ],
-      element
-    );
+    const closestTweet = this.selectors.findClosest(STABLE_SELECTORS.TWEET_CONTAINERS, element);
     if (closestTweet) return closestTweet as HTMLElement;
 
     // fallback: 기존 우선순위로 탐색

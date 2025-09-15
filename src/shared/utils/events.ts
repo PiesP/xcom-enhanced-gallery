@@ -8,7 +8,6 @@ import { isGalleryInternalElement } from './utils';
 import { MediaClickDetector } from './media/MediaClickDetector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '../../constants';
 import { galleryState } from '../state/signals/gallery.signals';
-import type { MediaService } from '../services/MediaService';
 import { getMediaServiceFromContainer } from '../container/service-accessors';
 import type { MediaInfo } from '../types/media.types';
 
@@ -28,6 +27,14 @@ const listeners = new Map<string, EventContext>();
 let listenerIdCounter = 0;
 // Fallback 재생 상태 추적(서비스 미가용 시 키보드 제어용)
 const __videoPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
+
+// Local minimal contract to avoid importing service types from utils layer
+type MediaServiceLike = {
+  togglePlayPauseCurrent: () => void;
+  volumeUpCurrent: () => void;
+  volumeDownCurrent: () => void;
+  toggleMuteCurrent: () => void;
+};
 
 /**
  * 고유 리스너 ID 생성
@@ -632,9 +639,9 @@ function handleKeyboardEvent(
           case ' ': // fallthrough
           case 'Space':
             try {
-              let svc: MediaService | null = null;
+              let svc: MediaServiceLike | null = null;
               try {
-                svc = getMediaServiceFromContainer();
+                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
               } catch {
                 svc = null;
               }
@@ -659,9 +666,9 @@ function handleKeyboardEvent(
             break;
           case 'ArrowUp':
             try {
-              let svc: MediaService | null = null;
+              let svc: MediaServiceLike | null = null;
               try {
-                svc = getMediaServiceFromContainer();
+                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
               } catch {
                 svc = null;
               }
@@ -681,9 +688,9 @@ function handleKeyboardEvent(
             break;
           case 'ArrowDown':
             try {
-              let svc: MediaService | null = null;
+              let svc: MediaServiceLike | null = null;
               try {
-                svc = getMediaServiceFromContainer();
+                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
               } catch {
                 svc = null;
               }
@@ -703,9 +710,9 @@ function handleKeyboardEvent(
           case 'm':
           case 'M':
             try {
-              let svc: MediaService | null = null;
+              let svc: MediaServiceLike | null = null;
               try {
-                svc = getMediaServiceFromContainer();
+                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
               } catch {
                 svc = null;
               }

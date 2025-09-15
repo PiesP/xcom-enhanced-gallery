@@ -6,6 +6,10 @@
 
 import { logger } from '../logging/logger';
 import { galleryState } from '../state/signals/gallery.signals';
+import {
+  CSS as CSS_CONST,
+  isVideoControlElement as isVideoControlElementCentral,
+} from '../../constants';
 
 // ================================
 // Re-exports from focused modules
@@ -64,21 +68,13 @@ export {
 // Gallery utilities (simplified functions)
 // ================================
 
-// 갤러리 요소 선택자들 (간소화)
+// 갤러리 요소 선택자들 (상수화)
 const GALLERY_SELECTORS = [
-  '.xeg-gallery-container',
+  `.${CSS_CONST.CLASSES.GALLERY_CONTAINER}`,
   '[data-gallery-element]',
   '#xeg-gallery-root',
   '.vertical-gallery-view',
   '[data-xeg-gallery-container]',
-];
-
-// 비디오 컨트롤 선택자들 (간소화)
-const VIDEO_CONTROL_SELECTORS = [
-  '[data-testid="playButton"]',
-  '[aria-label*="play"]',
-  '[aria-label*="pause"]',
-  '.video-player',
 ];
 
 /**
@@ -146,15 +142,7 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
  */
 export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!element) return false;
-
-  return VIDEO_CONTROL_SELECTORS.some(selector => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch (error) {
-      logger.warn('Invalid video control selector:', selector, error);
-      return false;
-    }
-  });
+  return isVideoControlElementCentral(element);
 }
 
 /**

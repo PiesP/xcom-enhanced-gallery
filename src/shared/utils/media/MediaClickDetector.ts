@@ -110,9 +110,10 @@ export class MediaClickDetector {
     }
     if (tweetContainer) {
       // 트윗 내부에서 이미지나 비디오가 포함된 영역 클릭 확인
-      const hasMediaInTweet = tweetContainer.querySelector(
-        'img[src*="twimg.com"], video, [data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
+      const mediaSelectors = Array.from(
+        new Set([...STABLE_SELECTORS.IMAGE_CONTAINERS, ...STABLE_SELECTORS.MEDIA_PLAYERS])
       );
+      const hasMediaInTweet = tweetContainer.querySelector(mediaSelectors.join(', '));
       if (hasMediaInTweet) {
         // 클릭된 위치가 미디어 영역 근처인지 확인
         const mediaRect = hasMediaInTweet.getBoundingClientRect();
@@ -142,19 +143,13 @@ export class MediaClickDetector {
    * @returns 차단 여부
    */
   public static shouldBlockGalleryTrigger(target: HTMLElement): boolean {
-    // 1. 플레이 버튼은 기본 동작 유지
-    if (target.closest('[data-testid="playButton"]')) {
-      logger.debug('MediaClickDetector: 플레이 버튼 클릭 - 기본 동작 허용');
-      return true;
-    }
-
-    // 2. 확장된 비디오 제어 요소들 차단 (구체적인 컨트롤만)
+    // 1. 확장된 비디오 제어 요소들 차단 (구체적인 컨트롤만)
     if (isVideoControlElement(target)) {
       logger.debug('MediaClickDetector: 비디오 제어 요소 클릭 - 기본 동작 허용');
       return true;
     }
 
-    // 3. 갤러리 내부 요소들 차단 (갤러리 중복 열기 방지)
+    // 2. 갤러리 내부 요소들 차단 (갤러리 중복 열기 방지)
     const galleryInternalSelectors = [
       `.${CSS.CLASSES.GALLERY_CONTAINER}`,
       '[data-gallery-element]',
@@ -172,22 +167,15 @@ export class MediaClickDetector {
       }
     }
 
-    // 4. 플레이 버튼 내부의 SVG 아이콘들은 기본 동작 유지
-    const playButton = target.closest('[data-testid="playButton"]');
-    if (
-      playButton &&
-      (target.tagName === 'svg' || target.tagName === 'circle' || target.tagName === 'path')
-    ) {
-      logger.debug('MediaClickDetector: 플레이 버튼 내 SVG 요소 클릭 - 기본 동작 허용');
-      return true;
-    }
-
-    // 5. 명확한 UI 버튼들만 차단
+    // 3. 명확한 UI 버튼들만 차단
     const uiButtonSelectors = [
-      'button[data-testid*="bookmark"]',
-      'button[data-testid*="retweet"]',
-      'button[data-testid*="like"]',
-      'button[data-testid*="reply"]',
+      // 안정 선택자 활용
+      STABLE_SELECTORS.ACTION_BUTTONS.bookmark,
+      STABLE_SELECTORS.ACTION_BUTTONS.retweet,
+      STABLE_SELECTORS.ACTION_BUTTONS.like,
+      STABLE_SELECTORS.ACTION_BUTTONS.reply,
+      STABLE_SELECTORS.ACTION_BUTTONS.share,
+      // 추가 사용자/아바타 요소들
       '[data-testid="User-Name"]',
       '[data-testid="UserAvatar"]',
     ];
@@ -199,24 +187,21 @@ export class MediaClickDetector {
       }
     }
 
-    // 5. 순수 텍스트 링크만 차단 (미디어가 없는 링크)
+    // 4. 순수 텍스트 링크만 차단 (미디어가 없는 링크)
     const statusLink = target.closest('a[href*="/status/"]') as HTMLAnchorElement;
     if (statusLink) {
       // 미디어 컨테이너 내부에 있으면 허용
-      const isInMediaContainer = target.closest(
-        '[data-testid="tweetPhoto"], [data-testid="videoPlayer"]'
-      );
+      const isInMediaContainer = target.closest(STABLE_SELECTORS.MEDIA_CONTAINERS.join(', '));
       if (isInMediaContainer) {
         logger.debug('MediaClickDetector: 미디어 컨테이너 내 링크 - 갤러리 허용');
         return false;
       }
 
       // 링크 안에 미디어 요소가 있으면 허용 (캐시된 조회 사용)
-      const hasMedia = cachedQuerySelector(
-        'img[src*="twimg.com"], video, [data-testid="tweetPhoto"]',
-        statusLink,
-        2000 // 미디어 요소는 상대적으로 안정적이므로 긴 TTL
+      const mediaInLinkSelectors = Array.from(
+        new Set([...STABLE_SELECTORS.IMAGE_CONTAINERS, ...STABLE_SELECTORS.MEDIA_PLAYERS])
       );
+      const hasMedia = cachedQuerySelector(mediaInLinkSelectors.join(', '), statusLink, 2000);
       if (hasMedia) {
         logger.debug('MediaClickDetector: 미디어 포함 링크 - 갤러리 허용');
         return false;
@@ -243,7 +228,7 @@ export class MediaClickDetector {
 
     if (element.tagName === 'VIDEO') {
       // 트위터 비디오는 보통 특정 컨테이너 안에 있음
-      return !!element.closest('[data-testid="videoPlayer"], [data-testid="tweetVideo"]');
+      return !!element.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', '));
     }
 
     return false;
@@ -284,15 +269,26 @@ export class MediaClickDetector {
       for (const selector of imageSelectors) {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
-          // 이미지 찾기
-          const img = container.querySelector('img[src*="twimg.com"]') as HTMLImageElement;
-          if (img) {
+          // 컨테이너가 이미지 자체인 경우
+          if (container.tagName === 'IMG' && MediaClickDetector.isTwitterMediaElement(container)) {
+            const img = container as HTMLImageElement;
             return {
               type: 'image',
               element: img,
               mediaUrl: img.src,
               confidence: 0.9,
-              method: `container_search:${selector}`,
+              method: `container_search:self:${selector}`,
+            };
+          }
+          // 하위에서 이미지 탐색 후 유효성 확인
+          const candidateImg = container.querySelector('img') as HTMLImageElement | null;
+          if (candidateImg && MediaClickDetector.isTwitterMediaElement(candidateImg)) {
+            return {
+              type: 'image',
+              element: candidateImg,
+              mediaUrl: candidateImg.src,
+              confidence: 0.9,
+              method: `container_search:descendant:${selector}`,
             };
           }
         }
@@ -303,15 +299,26 @@ export class MediaClickDetector {
       for (const selector of videoSelectors) {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
-          // 비디오 찾기
-          const video = container.querySelector('video') as HTMLVideoElement;
+          // 컨테이너가 비디오 자체인 경우
+          if (container.tagName === 'VIDEO') {
+            const video = container as HTMLVideoElement;
+            return {
+              type: 'video',
+              element: video,
+              mediaUrl: video.src || video.currentSrc,
+              confidence: 0.9,
+              method: `player_search:self:${selector}`,
+            };
+          }
+          // 하위에서 비디오 탐색
+          const video = container.querySelector('video') as HTMLVideoElement | null;
           if (video) {
             return {
               type: 'video',
               element: video,
               mediaUrl: video.src || video.currentSrc,
               confidence: 0.9,
-              method: `player_search:${selector}`,
+              method: `player_search:descendant:${selector}`,
             };
           }
         }

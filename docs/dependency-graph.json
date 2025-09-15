@@ -751,6 +751,7 @@
         "src/shared/services/media/TwitterVideoExtractor.ts",
         "src/shared/utils/events.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
+        "src/shared/utils/utils.ts",
         "src/shared/types/core/core-types.ts",
         "src/shared/types/core/media.types.ts",
         "src/shared/services/service-diagnostics.ts",
@@ -4848,6 +4849,23 @@
     {
       "source": "src/shared/utils/utils.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../logging/logger",
@@ -15721,7 +15739,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 261,
-    "totalDependenciesCruised": 713,
+    "totalDependenciesCruised": 714,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
