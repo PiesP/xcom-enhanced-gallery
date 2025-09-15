@@ -1,5 +1,62 @@
 ### 2025-09-15
 
+2025-09-15: DOWNLOAD-PROGRESS-TYPE-UNIFY-01 — 진행률 타입 단일 소스화 (완료)
+
+- 내용: 중복 정의된 DownloadProgress 인터페이스를
+  `src/shared/services/download/types.ts`로 단일화하고,
+  `BulkDownloadService.ts`/`MediaService.ts`는 type-only import로 교체.
+  배럴(`shared/services/index.ts`)에서 type 재노출.
+- 테스트: 스캔/타입 의존만 — 기존 스위트 GREEN, 타입/린트 PASS.
+- 검증: dev/prod 빌드 및 postbuild validator PASS.
+
+2025-09-15: USERSCRIPT-ADAPTER-DOWNLOAD-OK-GUARD-01 — 어댑터 fallback 다운로드
+응답 가드 (완료)
+
+- 내용: `shared/external/userscript/adapter.ts`의 `fallbackDownload`에
+  `!response.ok` 가드 추가, 오류 메시지 "HTTP {status}: {statusText}" 표준화.
+- 테스트: 어댑터 경로 모킹으로 404/500시 에러 메시지 형식 검증. GREEN.
+- 검증: 타입/린트/빌드/포스트빌드 PASS.
+
+2025-09-15: FETCH-CANCELLATION-TIMEOUT-01 — fetch 옵션(취소/타임아웃) 일관화
+(완료)
+
+- 내용: `BulkDownloadService.downloadSingle`에 `signal` 전파 및 기본
+  타임아웃(AbortSignal.timeout 20s) 적용. zip/orchestrator 경로는 기존 표준 유지
+  확인.
+- 테스트: 단일 경로 취소/타임아웃 동작 검증. GREEN.
+- 검증: 타입/린트/빌드/포스트빌드 PASS.
+
+2025-09-15: FILENAME-WIN-SANITIZE-01 — Windows 예약어/경계 케이스 파일명 보정
+(완료)
+
+- 내용: `FilenameService.sanitizeForWindows` 도입 — 예약어 회피, 선행/후행
+  공백·마침표 제거, 금지 문자 치환, 길이 제한.
+  `generateMediaFilename`/`generateZipFilename` 출력에 적용.
+- 테스트: 경계 케이스 입력 스냅샷/정규화 테스트 추가. GREEN.
+- 검증: 타입/린트 PASS(형식 정리), dev/prod 빌드 및 postbuild validator PASS.
+
+2025-09-15: FETCH-OK-GUARD-01 — fetch 응답 가드 표준화 (완료)
+
+- 내용: 비정상 응답(4xx/5xx)을 명시적으로 실패로 처리하도록 다운로드 경로를
+  표준화.
+  - DownloadOrchestrator.fetchArrayBufferWithRetry: `!response.ok` 시 즉시
+    throw(`HTTP {status}: {statusText}`)
+  - BulkDownloadService.downloadSingle: `!response.ok` 가드 추가 후 Blob 생성
+- 테스트: `bulk-download.fetch-ok-guard.test.ts` 추가 — ZIP 경로 부분 실패/단일
+  경로 실패 검증. GREEN.
+- 검증: 타입/린트/의존성 가드 PASS, dev/prod 빌드 및 postbuild validator PASS.
+
+2025-09-15: PROGRESS-API-CONSISTENCY-01 — 진행률 complete(100%) 일관화 (완료)
+
+- 내용: 단일 다운로드 흐름에서 최종 complete 이벤트를 정확히 1회(100%) 보장.
+  - BulkDownloadService.downloadMultiple(single): preparing(0) →
+    downloading(100, filename) → complete(100, filename?) 순으로 방출(성공시에만
+    complete).
+  - exactOptionalPropertyTypes 준수를 위해 filename은 정의된 경우에만 포함.
+- 테스트: `bulk-download.progress-complete.test.ts` 추가 — 단일 흐름에서 final
+  complete 1회 검증. GREEN.
+- 검증: 전체 스위트/빌드/포스트빌드 가드 PASS.
+
 2025-09-15: DOWNLOAD-FLOW-UNIFY-01 — 다운로드 경로 단일화(서비스 위임) (완료)
 
 - 내용: `MediaService.downloadSingle/Multiple`을 컨테이너 액세서

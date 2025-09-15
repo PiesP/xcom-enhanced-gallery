@@ -6,7 +6,6 @@ import type { BulkDownloadService } from '../services/BulkDownloadService';
 import type { FilenameService } from '../media/FilenameService';
 import type { ThemeService } from '../services/ThemeService';
 import type { ToastController } from '../services/ToastController';
-import type { MediaService } from '../services/MediaService';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
 import { bridgeGetService, bridgeRegister, bridgeTryGet } from './service-bridge';
@@ -33,8 +32,9 @@ export function getGalleryDownloadService(): BulkDownloadService {
   return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.GALLERY_DOWNLOAD);
 }
 
-export function getMediaServiceFromContainer(): MediaService {
-  return bridgeGetService<MediaService>(SERVICE_KEYS.MEDIA_SERVICE);
+export function getMediaServiceFromContainer(): unknown {
+  // Return unknown to avoid type-level import and potential circular deps with MediaService
+  return bridgeGetService<unknown>(SERVICE_KEYS.MEDIA_SERVICE);
 }
 
 export function getGalleryRenderer(): GalleryRenderer {

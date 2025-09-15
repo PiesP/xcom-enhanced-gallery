@@ -15,14 +15,9 @@ import { languageService } from './LanguageService';
 import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';
 import { DownloadOrchestrator } from './download/DownloadOrchestrator';
+import type { DownloadProgress } from './download/types';
 
-export interface DownloadProgress {
-  phase: 'preparing' | 'downloading' | 'complete';
-  current: number;
-  total: number;
-  percentage: number;
-  filename?: string;
-}
+// DownloadProgress 타입은 단일 소스에서 가져옵니다.
 
 export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;
@@ -117,7 +112,22 @@ export class BulkDownloadService {
       }
 
       // URL로부터 Blob 생성 후 다운로드
-      const response = await fetch(media.url);
+      // 기본 타임아웃(20s) 적용 + 호출부 AbortSignal 전파
+      const defaultTimeout = AbortSignal.timeout?.(20_000);
+      let signal: AbortSignal | undefined = options.signal ?? defaultTimeout;
+      // 둘 다 존재하면 병합: 어느 한쪽이 abort되면 중단
+      if (options.signal && defaultTimeout) {
+        const controller = new AbortController();
+        const onAbort = () => controller.abort();
+        options.signal.addEventListener('abort', onAbort, { once: true });
+        defaultTimeout.addEventListener('abort', onAbort, { once: true });
+        signal = controller.signal;
+      }
+
+      const response = await fetch(media.url, { ...(signal ? { signal } : {}) } as RequestInit);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       const blob = await response.blob();
       download.downloadBlob(blob, filename);
 
@@ -186,6 +196,16 @@ export class BulkDownloadService {
           };
         }
 
+        // Progress events for single flow
+        options.onProgress?.({ phase: 'preparing', current: 0, total: 1, percentage: 0 });
+        options.onProgress?.({
+          phase: 'downloading',
+          current: 1,
+          total: 1,
+          percentage: 100,
+          filename: generateMediaFilename(toFilenameCompatible(firstItem)),
+        });
+
         const result = await this.downloadSingle(firstItem, {
           signal: this.currentAbortController.signal,
         });
@@ -217,6 +237,15 @@ export class BulkDownloadService {
               error: String(result.error ?? ''),
             })
           );
+        }
+        if (result.success) {
+          options.onProgress?.({
+            phase: 'complete',
+            current: 1,
+            total: 1,
+            percentage: 100,
+            ...(result.filename ? { filename: result.filename } : {}),
+          });
         }
         return singleOutcome;
       }

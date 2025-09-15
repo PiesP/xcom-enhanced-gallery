@@ -19,87 +19,48 @@
 
 ---
 
-## 1) FETCH-OK-GUARD-01 — fetch 응답 가드 표준화
+## 4) EVENT-LIFECYCLE-ABORT-01 — 이벤트 리스너 수명주기 강화(AbortSignal 지원)
 
 문제/배경
 
-- 단일 다운로드 경로 일부에서 `response.ok` 검증이 누락되어 비정상 응답(4xx/5xx)
-  시 불명확한 에러 메시지 가능.
+- 일부 유틸/훅에 직접 `addEventListener` 사용이 남아 있으며, AbortSignal 기반
+  정리가 일관되지 않습니다.
 
 대안 비교
 
-- A) 필요한 지점만 보수: 변경 최소, 누락 재발 위험.
-- B) 다운로드 경로 전역 표준화(단일 서비스 경유 + 공통 가드): 일관성↑, 회귀
-  위험↓.
+- A) 문서화만: 일관성 보장 어려움
+- B) EventManager 또는 AbortSignal 기반 정리 헬퍼로 표준화
 
-결정(최적안): B 채택 — 위임 통합(항목 1) 이후 BulkDownloadService 단일 경로에서
-`ok` 가드 표준화.
-
-TDD 단계
-
-1. RED: 404/500 응답 모킹 시 의미 있는 에러 메시지/상태 코드 매핑 테스트.
-2. GREEN: BulkDownloadService 단일/ZIP 내부 fetch 경로에 `!response.ok` 처리
-   추가.
-
-변경 범위(예상)
-
-- `src/shared/services/BulkDownloadService.ts`
-- 필요 시: `src/shared/external/zip/zip-creator.ts` 내 네트워크 경로(향후 B
-  단계에서 헬퍼화)
-
-수용 기준
-
-- 에러 매핑 테스트 GREEN, 기존 스위트/빌드 가드 PASS.
-
-리스크/롤백
-
-- 메시지 변화로 일부 테스트 갱신 필요 가능. 실패 시 이전 메시지 문자열을 호환
-  포맷으로 병행 노출.
-
-## 2) PROGRESS-API-CONSISTENCY-01 — 진행률 이벤트 일관화
-
-문제/배경
-
-- `onProgress` 콜백의 최종 complete 이벤트(`percentage: 100`,
-  `phase: 'complete'`) 보장이 경로마다 상이할 수 있음.
-
-대안 비교
-
-- A) 문서화만: 리스크 잔존.
-- B) Orchestrator에서 종결 이벤트를 표준화하고 위임 경로는 그대로 전달.
-
-결정(최적안): B 채택
+결정(최적안): B 채택 — 이벤트 등록 시 AbortSignal 지원을 우선 도입, 필요 시
+EventManager 경유
 
 TDD 단계
 
-1. RED: 여러 파일 다운로드에서 마지막에 단 한 번의
-   `{ phase: 'complete', percentage: 100 }`가 호출되는지 검증.
-2. GREEN: Orchestrator/BulkDownloadService에서 보장 로직 추가 또는 누락 경로
-   보완.
+1. EVENT-LIFECYCLE-ABORT-01 변경 범위(예상)
 
-변경 범위(예상)
-
-- `src/shared/services/download/DownloadOrchestrator.ts`
-- `src/shared/services/BulkDownloadService.ts`(필요 시)
+- `src/shared/media/FilenameService.ts`
+- 테스트: `media.filename.windows-sanitize.test.ts`
 
 수용 기준
 
-- 진행률 일관성 테스트 GREEN, 기존 스위트/빌드 가드 PASS.
+- 신규 테스트 GREEN, 기존 파일명 정책 테스트 모두 GREEN, 빌드/포스트빌드 PASS
 
 리스크/롤백
 
-- 일부 소비처가 중간 상태에 의존할 경우 동작 차이 가능 → 테스트로 가드하고 필요
-  시 minor 버전에서 옵션 게이트 제공.
+- 일부 기존 파일명 스냅샷 차이 가능 → 정책에 따른 기대값으로 테스트 업데이트
 
 ---
 
 우선순위/순서(권장)
 
-1. FETCH-OK-GUARD-01
-2. PROGRESS-API-CONSISTENCY-01
+1. DOWNLOAD-PROGRESS-TYPE-UNIFY-01
+2. USERSCRIPT-ADAPTER-DOWNLOAD-OK-GUARD-01
+3. FETCH-CANCELLATION-TIMEOUT-01
+4. FILENAME-WIN-SANITIZE-01
+5. EVENT-LIFECYCLE-ABORT-01
 
 메모
 
-- 본 계획은 “한 줄 구조 리팩토링 후, 최소 diff로 구현” 원칙에 따라 서비스 경계를
-  유지하고, 벤더/유저스크립트 getter 사용 및 PC 전용 입력 정책을 엄격히
-  준수합니다.
+- “한 줄 구조 리팩토링 후, 최소 diff로 구현” 원칙을 적용합니다.
+- 벤더/유저스크립트 getter 사용(직접 import 금지), PC 전용 입력, 디자인 토큰
+  정책을 엄격히 준수합니다.

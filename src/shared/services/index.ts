@@ -33,11 +33,11 @@ export type {
   MediaLoadingState,
   MediaLoadingOptions,
   PrefetchOptions,
-  DownloadProgress,
   BulkDownloadOptions,
   DownloadResult,
   SingleDownloadResult,
 } from './MediaService';
+export type { DownloadProgress } from './download/types';
 
 // 3. 테마 서비스
 export { ThemeService } from './ThemeService';

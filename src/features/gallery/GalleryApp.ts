@@ -66,7 +66,7 @@ export class GalleryApp {
    */
   private async getMediaService(): Promise<MediaService> {
     if (!this.mediaService) {
-      this.mediaService = getMediaServiceFromContainer();
+      this.mediaService = getMediaServiceFromContainer() as unknown as MediaService;
     }
     return this.mediaService;
   }

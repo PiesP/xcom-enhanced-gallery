@@ -65,6 +65,9 @@ export class DownloadOrchestrator {
       if (signal?.aborted) throw new Error('Download cancelled by user');
       try {
         const response = await fetch(url, { ...(signal ? { signal } : {}) } as RequestInit);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         const arrayBuffer = await response.arrayBuffer();
         return new Uint8Array(arrayBuffer);
       } catch (err) {

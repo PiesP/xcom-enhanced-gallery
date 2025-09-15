@@ -63,7 +63,7 @@ export class FilenameService {
     try {
       // 기존 파일명이 유효하면 그대로 사용
       if (media.filename && this.isValidMediaFilename(media.filename)) {
-        return media.filename;
+        return this.sanitizeForWindows(media.filename);
       }
 
       // 사용자명과 트윗ID가 모두 유효한 경우에만 표준 형식 사용
@@ -71,7 +71,9 @@ export class FilenameService {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
-        return `${media.tweetUsername}_${media.tweetId}_${index}.${extension}`;
+        return this.sanitizeForWindows(
+          `${media.tweetUsername}_${media.tweetId}_${index}.${extension}`
+        );
       }
 
       // URL에서 사용자명 추출 시도
@@ -82,7 +84,9 @@ export class FilenameService {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
-        return `${extractedUsername}_${media.tweetId}_${index}.${extension}`;
+        return this.sanitizeForWindows(
+          `${extractedUsername}_${media.tweetId}_${index}.${extension}`
+        );
       }
 
       // 옵션에서 제공된 사용자명 사용
@@ -90,13 +94,15 @@ export class FilenameService {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
-        return `${options.fallbackUsername}_${media.tweetId}_${index}.${extension}`;
+        return this.sanitizeForWindows(
+          `${options.fallbackUsername}_${media.tweetId}_${index}.${extension}`
+        );
       }
 
-      return this.generateFallbackFilename(media, options);
+      return this.sanitizeForWindows(this.generateFallbackFilename(media, options));
     } catch (error) {
       logger.warn('Failed to generate media filename:', error);
-      return this.generateFallbackFilename(media, options);
+      return this.sanitizeForWindows(this.generateFallbackFilename(media, options));
     }
   }
 
@@ -125,16 +131,16 @@ export class FilenameService {
       const firstItem = mediaItems[0];
       if (firstItem?.tweetUsername && firstItem?.tweetId) {
         // 요구사항: {authorHandle}_{tweetId}.zip 형식
-        return `${firstItem.tweetUsername}_${firstItem.tweetId}.zip`;
+        return this.sanitizeForWindows(`${firstItem.tweetUsername}_${firstItem.tweetId}.zip`);
       }
 
       const prefix = options.fallbackPrefix ?? 'xcom_gallery';
       const timestamp = Date.now();
-      return `${prefix}_${timestamp}.zip`;
+      return this.sanitizeForWindows(`${prefix}_${timestamp}.zip`);
     } catch (error) {
       logger.warn('Failed to generate ZIP filename:', error);
       const timestamp = Date.now();
-      return `download_${timestamp}.zip`;
+      return this.sanitizeForWindows(`download_${timestamp}.zip`);
     }
   }
 
@@ -269,6 +275,70 @@ export class FilenameService {
     const timestamp = Date.now();
     const index = this.normalizeIndex(options.index);
     return `${prefix}_${timestamp}_${index}.${extension}`;
+  }
+
+  /**
+   * Windows 파일 시스템 호환 보정
+   * - 예약어(CON, PRN, AUX, NUL, COM1-9, LPT1-9) 단독 이름 방지
+   * - 선행/후행 공백 및 마침표 제거
+   * - 금지 문자(<>:"/\|?*)를 '_'로 치환 (추가 방어)
+   */
+  private sanitizeForWindows(name: string): string {
+    try {
+      if (!name) return 'media';
+      const base = String(name);
+
+      // 분리: 파일명과 확장자
+      const lastDot = base.lastIndexOf('.');
+      const hasExt = lastDot > 0 && lastDot < base.length - 1;
+      const pure = hasExt ? base.slice(0, lastDot) : base;
+      const ext = hasExt ? base.slice(lastDot) : '';
+
+      // 금지 문자 치환
+      let safe = pure.replace(/[<>:"/\\|?*]/g, '_');
+
+      // 선행/후행 공백/마침표 제거
+      safe = safe.replace(/[\s.]+$/g, '');
+      safe = safe.replace(/^[\s.]+/g, '');
+
+      // 예약어 방지 (대소문자 무시)
+      const reserved = new Set([
+        'con',
+        'prn',
+        'aux',
+        'nul',
+        'com1',
+        'com2',
+        'com3',
+        'com4',
+        'com5',
+        'com6',
+        'com7',
+        'com8',
+        'com9',
+        'lpt1',
+        'lpt2',
+        'lpt3',
+        'lpt4',
+        'lpt5',
+        'lpt6',
+        'lpt7',
+        'lpt8',
+        'lpt9',
+      ]);
+      if (reserved.has(safe.toLowerCase())) {
+        safe = `_${safe}`; // 접두어로 회피
+      }
+
+      // 빈 문자열 방지
+      if (!safe) safe = 'media';
+
+      // 최종 길이 제한 (255자 내)
+      const result = (safe + ext).slice(0, 255);
+      return result;
+    } catch {
+      return name || 'media';
+    }
   }
 
   /**

@@ -53,6 +53,9 @@ async function fallbackDownload(url: string, filename: string): Promise<void> {
   }
 
   const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
   const blob = await response.blob();
   const objectUrl = URL.createObjectURL(blob);
   try {

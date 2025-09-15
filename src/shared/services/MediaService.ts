@@ -10,6 +10,7 @@ import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 // downloads are delegated to BulkDownloadService; keep vendors/helpers unused here
 import type { BaseResultStatus } from '@shared/types/result.types';
+import type { DownloadProgress } from './download/types';
 import { ErrorCode } from '@shared/types/result.types';
 // Schedulers for prefetch task coordination
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
@@ -51,13 +52,8 @@ export interface PrefetchOptions {
 /**
  * 대량 다운로드 관련 타입들 (BulkDownloadService에서 통합)
  */
-export interface DownloadProgress {
-  phase: 'preparing' | 'downloading' | 'complete';
-  current: number;
-  total: number;
-  percentage: number;
-  filename?: string;
-}
+// DownloadProgress 타입은 단일 소스에서 import하세요.
+export type { DownloadProgress } from './download/types';
 
 export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;
@@ -822,16 +818,6 @@ export class MediaService {
   // ====================================
   // 대량 다운로드 기능 (BulkDownloadService 통합)
   // ====================================
-
-  /**
-   * MediaInfo를 FilenameService와 호환되는 타입으로 변환
-   */
-  private ensureMediaItem(media: MediaInfo | MediaItem): MediaItem & { id: string } {
-    return {
-      ...media,
-      id: media.id || `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    };
-  }
 
   /**
    * 단일 미디어 다운로드
