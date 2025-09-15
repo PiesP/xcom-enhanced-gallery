@@ -1,5 +1,50 @@
 ### 2025-09-15
 
+2025-09-15: KBD-NAV-UNIFY-02 — 키보드 입력 중앙화(확장) (완료)
+
+- 내용: document/window 직접 keydown 등록 경로를 가드하고, 갤러리 키 입력을
+  `KeyboardNavigator` 구독 기반으로 통일. 스코프/구독
+  API(onEscape/onArrow/OnSpace) 확장.
+- 테스트: `keyboard-listener.centralization.policy.test.ts`(가드) 및 서비스 계약
+  테스트 GREEN.
+- 검증: 타입/린트/빌드/포스트빌드 PASS.
+
+2025-09-15: BARREL-SURFACE-TRIM-01 — 배럴/재노출 표면 축소 (완료)
+
+- 내용: utils/performance/media 배럴에서 와일드카드 재노출 제거, 사용 심볼만
+  명시 export. 소비처 import 정리.
+- 테스트: `barrel-surface.used-only.scan.red.test.ts` 추가, GREEN.
+- 검증: 순환 0, 빌드/테스트 PASS.
+
+2025-09-15: TOAST-BOUNDARY-02 — Toast UI/상태 경계 강화 (완료)
+
+- 내용: UI 배럴 상태성 재노출 제거, 컴포넌트 내 로컬 Toast 상태 금지 가드 설치.
+- 테스트: `toast-ui-barrel.stateful-exports.guard.test.ts`,
+  `toast-ui-components.no-local-state.guard.test.ts` GREEN.
+- 검증: 전체 스위트/빌드 PASS.
+
+2025-09-15: FILENAME-POLICY-02 — 파일명 정책 가드 강화 (완료)
+
+- 내용: ad-hoc 파일명 조합 금지 스캔 추가, 모든 생성 경로는 FilenameService로
+  일원화.
+- 테스트: `filename.ad-hoc-construction.scan.red.test.ts` GREEN.
+- 검증: 타입/린트/빌드 PASS.
+
+2025-09-15: VENDOR-GETTER-GUARD-02 — 벤더 직접 import 금지 강화 (완료)
+
+- 내용: preact/@preact/signals/fflate/compat 직접 import 금지 스캔 강화(External
+  vendors 예외), vendors getter 전용 사용을 가드.
+- 테스트: `direct-imports-source-scan.test.ts` 확장, GREEN.
+- 검증: 전체 스위트/빌드 PASS.
+
+2025-09-15: STYLE-TOKENS-GUARD-02 — 스타일/색/애니메이션 가드 보강 (완료)
+
+- 내용: TSX 인라인 색상 리터럴 금지, `transition: all` 금지 스캔 테스트 추가로
+  회귀 방지 강화.
+- 테스트: `tsx-inline-colors.guard.test.ts`,
+  `injected-css.no-transition-all.guard.test.ts` GREEN.
+- 검증: 스타일/유닛 스위트 GREEN, 빌드/포스트빌드 PASS.
+
 2025-09-15: EVENT-LIFECYCLE-ABORT-01 — 이벤트 리스너 수명주기 강화(AbortSignal
 지원) (완료)
 
