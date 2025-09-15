@@ -1,5 +1,13 @@
 ### 2025-09-15
 
+2025-09-15: WHEEL-LOCK-POLICY-01 — 휠 락(policy) 일관성 가드 (완료)
+
+- 내용: 직접 addEventListener('wheel', ...) 금지 가드와 휠 유틸 계약을 확정.
+  컴포넌트/피처는 `addWheelListener`/`ensureWheelLock`만 사용하도록 표준화.
+- 테스트: `test/unit/events/wheel-listener.policy.red.test.ts`,
+  `test/unit/events/ensureWheelLock.contract.test.ts` GREEN.
+- 검증: 타입/린트/전체 테스트/빌드/포스트빌드 모두 PASS.
+
 2025-09-15: KBD-NAV-UNIFY-02 — 키보드 입력 중앙화(확장) (완료)
 
 - 내용: document/window 직접 keydown 등록 경로를 가드하고, 갤러리 키 입력을

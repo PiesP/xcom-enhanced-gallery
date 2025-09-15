@@ -68,32 +68,7 @@ TDD 단계
 
 ---
 
-## 과제 H — 휠 락(policy) 일관성 가드(WHEEL-LOCK-POLICY-01)
-
-문제
-
-- `ensureWheelLock` 유틸 존재. 갤러리/오버레이에서 일관되게 이를 통하도록 가드
-  필요
-
-해결 옵션
-
-1. 문서화만
-2. 정적 스캔 + 소규모 통합 테스트로 보강
-
-선택: 2)
-
-TDD 단계
-
-- RED-Scan: `test/unit/lint/wheel-listener.policy.red.test.ts` — 직접 wheel 등록
-  금지(허용: 유틸 내부)
-- RED-Contract: `test/unit/utils/ensureWheelLock.contract.test.ts`
-- GREEN: 기존 소비자가 유틸 사용
-
-수용 기준
-
-- 직접 wheel 등록(컴포넌트/feature) 0, 유틸 계약 테스트 GREEN
-
----
+<!-- 과제 H(WHEEL-LOCK-POLICY-01)는 R2 가드/계약 테스트로 이미 완료되어 완료 로그로 이관했습니다. -->
 
 ## 과제 I — 레거시 토큰 단계적 정리(LEGACY-TOKENS-PRUNE-01)
 
@@ -129,7 +104,7 @@ TDD 단계
 
 Phase 1 — 정책 가드 추가(회귀 방지 중심)
 
-- C(Userscript GM\_\*), H(Wheel lock)
+- C(Userscript GM\_\*)
 
 Phase 2 — 레거시 정리
 
@@ -168,7 +143,7 @@ Phase 2 — 레거시 정리
 
 ## 다음 액션(착수 순서 제안)
 
-1. RED 테스트 추가: Userscript GM 직접 사용 금지(C), wheel 정책(H)
+1. RED 테스트 추가: Userscript GM 직접 사용 금지(C)
 2. legacy 토큰 사용처 스캔 후 미사용 제거(allowlist와 릴리즈 노트 포함)(I)
 
 완료된 항목은 즉시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
