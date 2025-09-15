@@ -598,7 +598,8 @@
         }
       ],
       "dependents": [
-        "src/bootstrap/feature-registration.ts"
+        "src/bootstrap/feature-registration.ts",
+        "src/features/settings/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -681,7 +682,6 @@
       ],
       "dependents": [
         "src/features/settings/services/settings-factory.ts",
-        "src/features/settings/index.ts",
         "src/features/settings/services/index.ts"
       ],
       "orphan": false,
@@ -831,7 +831,6 @@
       ],
       "dependents": [
         "src/bootstrap/feature-registration.ts",
-        "src/features/settings/index.ts",
         "src/features/settings/services/index.ts"
       ],
       "orphan": false,
@@ -9877,14 +9876,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./services/SettingsService",
+          "module": "./services/settings-factory",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/features/settings/services/SettingsService.ts",
+          "resolved": "src/features/settings/services/settings-factory.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -9894,14 +9893,15 @@
         },
         {
           "dynamic": false,
-          "module": "./services/TwitterTokenExtractor",
+          "module": "./services/settings-factory",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "export"
           ],
-          "resolved": "src/features/settings/services/TwitterTokenExtractor.ts",
+          "resolved": "src/features/settings/services/settings-factory.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
