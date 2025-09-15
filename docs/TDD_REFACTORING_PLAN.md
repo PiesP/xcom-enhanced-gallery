@@ -28,52 +28,7 @@
 항목은 RED 테스트부터 시작합니다. 모든 작업은 다음 정책을 준수합니다: 벤더
 getter 경유, PC 전용 이벤트, CSS Modules + 디자인 토큰, 사이드이펙트 금지.
 
-1. F1-b — Features 배럴 표면 추가 축소(설정 도메인 중심)
-
-- 배경/문제: F1 가드로 “동일 feature 폴더 이외 재노출 금지”는 달성했으나,
-  feature 배럴에서 구현(Service 클래스)까지 공개되면 공개 표면이 커져 리팩토링
-  탄력성이 낮아집니다.
-- 옵션 비교(요약)
-  - A 유지: 현행 유지(구현까지 export) — 장점: 변경 없음, 단기 안전. 단점: 공개
-    표면 과대, 순환/의존성 리스크 증가.
-  - B 최소화: 배럴은 “UI + 타입 + Factory”만 재노출, 구현(Service 클래스)는 직접
-    경로로만 사용 — 장점: 표면 최소화, 순환 리스크 감소, 테스트/모킹 용이. 단점:
-    일부 import 경로 교체 필요.
-  - C 점진: 우선 Factory만 병행 노출 후 점진 전환 — 장점: 마이그레이션 완충.
-    단점: 과도기 중 표면 중복.
-- 선택: B(최소화). 설정(feature/settings) 배럴을 “Settings factory/타입만
-  노출”로 조정하고, 구현 클래스 직접 노출은 중단.
-- 수용 기준(DoD)
-  - 정적 스캔: 배럴에서 Service 구현명 재노출 0건(GREEN)
-  - 소비처 빌드/테스트 GREEN(Factory 경유로 전환), 순환 의존 경고/오류 0건
-  - 문서: CODING_GUIDELINES의 F1 보강 문구에 “배럴은 UI/타입/Factory에 한정”
-    반영
-
-2. VND-LEGACY-MOVE — 동적 VendorManager 소스의 테스트 전용 격리/명시
-
-- 배경/문제: `src/shared/external/vendors/vendor-manager.ts`(동적 로딩)가
-  런타임에 사용되지는 않으나, src 내 공존으로 혼동 여지가 있습니다(정책은 정적
-  StaticVendorManager 권장).
-- 옵션 비교(요약)
-  - A 그대로: 현 상태 유지 + 가드 테스트만 — 장점: 무변경. 단점: 혼동/탐색 비용.
-  - B 이동: 테스트 픽스처 경로로 이동(test/\_fixtures) 후 테스트 경로 수정 —
-    장점: 의도 명확. 단점: 테스트 변경/경로 리라이트 필요.
-  - C 명시화: 파일 상단 @deprecated test-only 주석 + 배럴 미노출 보장 + tsconfig
-    빌드 제외 또는 글로브 예외(선택) — 장점: 변경 최소/의도 명확. 단점: 파일은
-    여전히 src에 존재.
-- 선택: C(명시화). 주석/태그로 테스트 전용임을 명시하고, 소스 스캔/포스트빌드
-  가드로 prod 번들 유입 0을 유지.
-- 수용 기준(DoD)
-  - 소스 스캔: `vendor-manager.ts`로의 import 0건(GREEN)
-  - 포스트빌드: 산출물 문자열에 `VendorManager`/`vendor-manager.ts`
-    미존재(GREEN)
-  - (선택) tsconfig 빌드 제외 글로브 초안 준비, 필요 시 적용
-
-3. DOC-SYNC — F1 정책 보강 및 예시 정리(저위험)
-
-- 내용: CODING_GUIDELINES의 F1 절에 “배럴은 UI/타입/Factory만”으로 표면 기준을
-  명확화하고, 예시 import를 갱신합니다(코드 변경 없음).
-- DoD: 문서 변경만, 모든 테스트/빌드 GREEN
+현재 활성 항목 없음. 신규 이슈 발생 시 RED 테스트부터 등록합니다.
 
 ## 품질 게이트(DoD 공통)
 
@@ -83,9 +38,7 @@ getter 경유, PC 전용 이벤트, CSS Modules + 디자인 토큰, 사이드이
 
 ## 타임라인/우선순위(제안)
 
-- Sprint X: F1-b(배럴 표면 축소)
-- Sprint Y: VND-LEGACY-MOVE(벤더 레거시 명시 격리)
-- Sprint Z: DOC-SYNC(F1 문서 보강)
+- Sprint: (빈 슬롯) — 신규 항목 발생 시 등록
 
-업데이트 이력: 2025-09-15 — 구식 스프린트(L2/F1 등 완료 항목) 목록 제거, 신규
-F1-b/VND-LEGACY-MOVE/DOC-SYNC 등록. 완료 내역은 COMPLETED 문서에서 관리.
+업데이트 이력: 2025-09-15 — F1-b/VND-LEGACY-MOVE/DOC-SYNC 완료 이관. 활성 항목
+없음.

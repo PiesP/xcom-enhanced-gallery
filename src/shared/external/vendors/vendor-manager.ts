@@ -1,5 +1,13 @@
 /**
- * Core External Vendor Manager Implementation
+ * Core External Vendor Manager Implementation (LEGACY/DYNAMIC)
+ *
+ * @deprecated TEST-ONLY: 동적 VendorManager는 테스트/리팩토링 문맥 전용입니다.
+ * 프로덕션/런타임 소스에서는 TDZ-safe 정적 API를 사용하세요:
+ *   import { getPreact, getPreactSignals, getFflate, getPreactCompat } from '@shared/external/vendors'
+ * 정적 매니저: StaticVendorManager
+ *
+ * 가드: postbuild validator는 prod 번들에 'VendorManager' 식별자/이 파일 경로 문자열
+ * 누출을 금지합니다. 런타임 소스는 절대 이 모듈을 import 하지 마세요.
  */
 
 import { logger } from '../../logging';

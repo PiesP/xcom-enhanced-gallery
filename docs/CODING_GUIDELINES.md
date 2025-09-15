@@ -26,12 +26,34 @@
 
 - features 배럴(`src/features/<feature>/index.ts`)은 동일 feature 폴더의 모듈만
   재노출합니다. shared 레이어(`@shared/**` 또는 `../../shared/**`)의 서비스나
-  구현을 재노출하지 않습니다.
+  구현을 재노출하지 않습니다. 또한 배럴은 “UI 컴포넌트 + 타입 + Factory”로
+  표면을 한정합니다. 구체 구현(Service 클래스) 재노출은 금지합니다.
 - 목적: 공개 표면을 최소화하여 순환/의존성 복잡성을 줄이고 리팩토링 안전도를
   높입니다. 소비처는 필요한 경우 factory 또는 shared 레이어에서 직접 import
-  하세요(정책 허용 범위 내).
+  하세요(정책 허용 범위 내). 예를 들어 Settings 기능은 다음과 같이 사용합니다:
+
+```ts
+// ✅ 권장: factory/type만 배럴을 통해 접근
+import {
+  getSettingsService,
+  type ISettingsServiceFactoryShape,
+} from '@features/settings';
+
+// ❌ 금지: 구현(Service 클래스) 재노출/직접 경로를 배럴로 노출
+// import { SettingsService } from '@features/settings';
+// import { TwitterTokenExtractor } from '@features/settings';
+```
+
 - 가드: `test/unit/lint/features-barrel.surface.scan.red.test.ts`가 배럴에서
   금지된 경로 재노출을 RED로 탐지합니다.
+
+보강(2025-09-15): VND-LEGACY-MOVE
+
+- 동적 VendorManager(`vendor-manager.ts`)는 테스트 전용입니다. 프로덕션 소스는
+  반드시 `@shared/external/vendors`의 TDZ-safe 정적 API(getPreact/
+  getPreactSignals/getFflate/getPreactCompat 등)만 사용하세요.
+- 포스트빌드 가드가 prod 번들 내 'VendorManager' 식별자/경로 문자열 누출을
+  금지합니다.
 
 ## 아이콘 시스템(I2) — 사용된 아이콘만 export
 

@@ -1,5 +1,27 @@
 ### 2025-09-15
 
+2025-09-15: F1-b — FEATURES-BARREL(Hardening, settings) (완료)
+
+- 내용: `src/features/settings/index.ts` 배럴을 Factory/타입만 노출하도록 축소.
+  구현 클래스(`SettingsService`, `TwitterTokenExtractor`) 재노출 제거. 소비처는
+  `@features/settings/services/settings-factory` 또는 배럴의 factory만 사용.
+- 검증: 정적 스캔(배럴 내 구현명 0), 타입/린트/테스트 GREEN, dev/prod 빌드 및
+  postbuild validator PASS.
+
+2025-09-15: VND-LEGACY-MOVE — 동적 VendorManager 테스트 전용 명시 (완료)
+
+- 내용: `src/shared/external/vendors/vendor-manager.ts` 상단에 @deprecated
+  TEST-ONLY 주석/설명을 추가, prod 런타임 사용 금지를 명시. 배럴은 정적 API만
+  노출 유지.
+- 검증: 소스 스캔에서 해당 경로 import 0건, dev/prod 빌드 산출물에서
+  'VendorManager' 문자열 미검출. 전체 스위트/포스트빌드 가드 GREEN.
+
+2025-09-15: DOC-SYNC — 가이드라인 F1/Vendor 보강 (완료)
+
+- 내용: CODING_GUIDELINES에 “배럴은 UI/타입/Factory만” 원칙과 Settings 예시
+  추가. 동적 VendorManager 테스트 전용 명시를 문서화.
+- 검증: 문서 변경만 — 타입/린트/테스트/빌드/포스트빌드 GREEN.
+
 2025-09-15: PLAN-CLEANUP — 활성 계획 최신화(완료)
 
 - 내용: 구식 스프린트 표기(L2/F1/I2/B2 등 완료 항목)와 중복된 설명을 계획
