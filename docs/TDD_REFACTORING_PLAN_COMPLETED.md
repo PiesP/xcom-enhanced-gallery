@@ -1,5 +1,17 @@
 ### 2025-09-15
 
+2025-09-15: DOWNLOAD-FLOW-UNIFY-01 — 다운로드 경로 단일화(서비스 위임) (완료)
+
+- 내용: `MediaService.downloadSingle/Multiple`을 컨테이너 액세서
+  `getBulkDownloadServiceFromContainer()` 경유로 `BulkDownloadService`에 위임.
+  MediaService 내부 중복 로직 및 미사용 메서드 제거. 컨테이너 순환 의존은
+  `service-accessors`의 반환 타입을 `unknown`으로 완화하고 사용처에서 단언하는
+  방식으로 해소.
+- 테스트: 위임 검증 테스트 추가 및 기존 계약/결과 테스트는 accessor mock으로
+  격리. fast/unit GREEN.
+- 검증: 타입/린트/의존성 검증 PASS(`deps:check` 순환 0), dev/prod 빌드 및
+  postbuild validator PASS.
+
 2025-09-15: ZIP-API-SURFACE-REDUCE-01 — ZIP API 표면 축소(호출 단일화) (완료)
 
 - 내용: `src/shared/external/zip/zip-creator.ts`의 `createZipFromItems`에

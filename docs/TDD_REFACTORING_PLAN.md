@@ -19,62 +19,7 @@
 
 ---
 
-## 1) DOWNLOAD-FLOW-UNIFY-01 — 다운로드 경로 단일화(서비스 위임)
-
-문제/배경
-
-- `MediaService`가 `downloadSingle`/`downloadMultiple`을 자체 구현하고 있으며,
-  `BulkDownloadService`+`DownloadOrchestrator`와 로직이 중복됩니다.
-- 파일명 충돌 해결 로직(ensureUniqueFilename)이
-  `MediaService`/`DownloadOrchestrator`에 중복 존재.
-- 진행률/에러 UX가 경로별로 상이할 위험(토스트/코드/부분 실패 처리).
-
-대안 비교
-
-- A) 현 상태 유지(문서화만): 변경 최소, 그러나 드리프트/버그 발생 가능성 증가.
-- B) MediaService → BulkDownloadService 얇은 위임으로 통합, 충돌 해결 로직은
-  Orchestrator 단일 소스 사용: 중복 제거·일관성↑, 변경 범위 중간.
-- C) BulkDownloadService 제거 후 MediaService로 흡수: 대규모 변경, 기존 소비처
-  영향 큼.
-
-결정(최적안): B 채택
-
-- `MediaService.downloadSingle/Multiple`을 `getBulkDownloadService()`를 통해
-  위임. 내부 중복 로직 제거.
-- 충돌 해결 로직은 `DownloadOrchestrator`의 팩토리만 사용. 필요 시 helper로
-  분리(export 없이 내부 유지).
-
-TDD 단계
-
-1. RED: 단위 테스트 추가
-   - MediaService가 BulkDownloadService에 위임하는지 spy로 검증(진행률/결과 전달
-     포함).
-   - 파일명 충돌 시 `name-1.ext` 순 증분 보장(Orchestrator 경유) 테스트.
-   - 에러/취소 시 코드/상태 매핑 일치 테스트(ErrorCode, BaseResultStatus).
-2. GREEN: 최소 구현
-   - MediaService의 downloadSingle/Multiple을 위임으로 교체(주석에 @deprecated
-     wrapper 명시).
-   - 중복된 `ensureUniqueFilename` 제거.
-3. REFACTOR: 주석/타입 정리, 완료 로그 이관.
-
-변경 범위(예상)
-
-- `src/shared/services/MediaService.ts`(downloadSingle/Multiple → 위임, 중복
-  삭제)
-- 테스트: `test/unit/services/media-service.download.unify.test.ts`(신규)
-
-수용 기준
-
-- 위임/충돌 해결/상태 코드 테스트 GREEN, 기존 스위트 GREEN, 빌드/검증 PASS.
-
-리스크/롤백
-
-- 위임 경로에서 토스트/진행률 동작 차이 가능 → 테스트로 가드. 문제 발생 시
-  feature flag로 MediaService 내부 경로를 임시 유지하는 가드 분기 복원 가능.
-
----
-
-## 2) FETCH-OK-GUARD-01 — fetch 응답 가드 표준화
+## 1) FETCH-OK-GUARD-01 — fetch 응답 가드 표준화
 
 문제/배경
 
@@ -111,9 +56,7 @@ TDD 단계
 - 메시지 변화로 일부 테스트 갱신 필요 가능. 실패 시 이전 메시지 문자열을 호환
   포맷으로 병행 노출.
 
----
-
-## 3) PROGRESS-API-CONSISTENCY-01 — 진행률 이벤트 일관화
+## 2) PROGRESS-API-CONSISTENCY-01 — 진행률 이벤트 일관화
 
 문제/배경
 
@@ -152,9 +95,8 @@ TDD 단계
 
 우선순위/순서(권장)
 
-1. DOWNLOAD-FLOW-UNIFY-01
-2. FETCH-OK-GUARD-01
-3. PROGRESS-API-CONSISTENCY-01
+1. FETCH-OK-GUARD-01
+2. PROGRESS-API-CONSISTENCY-01
 
 메모
 
