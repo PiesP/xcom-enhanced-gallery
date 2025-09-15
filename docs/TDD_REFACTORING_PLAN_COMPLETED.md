@@ -113,6 +113,17 @@
 - 검증: 타입/테스트(전 스위트)/dev·prod 빌드 및 postbuild validator 모두 GREEN.
 - 영향: 공개 API 변화 없음. 불필요한 상태/구독 제거로 단순화.
 
+2025-09-15: SEL-OPT-01 — 상태 selector 채택 확대(재렌더 절감) (완료)
+
+- 내용: 주요 구독 경로를 selector 훅으로 통일하여 리렌더를 절감.
+  - ToastContainer: UnifiedToastManager.signal을 useSelector로 구독
+  - useGalleryScroll: isOpen 등 갤러리 상태를 useSelector로 구독해 리스너 게이트
+  - VerticalGalleryView: mediaItems/currentIndex는 useSelector, 다운로드 진행은
+    useCombinedSelector로 결합
+- DoD: 대상 컴포넌트 3곳 이상 적용(위 3곳) 및 기능/UX 동일성 확인.
+- 검증: 전체 테스트 1800+ GREEN, 타입/린트 PASS, dev/prod 빌드 및 postbuild
+  validator GREEN.
+
 ### 2025-09-14
 
 2025-09-15: P10 — 플레이스홀더/고아 코드 최종 정리 (완료)

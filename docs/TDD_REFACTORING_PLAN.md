@@ -23,15 +23,7 @@
 
 ## 활성 계획(차기 단계, TDD 우선)
 
-1. SEL-OPT-01 — 상태 selector 채택 확대(재렌더 절감)
-   - 목표: 주요 컴포넌트에서 신호를 직접 구독하는 패턴을
-     `useSignalSelector`/`useCombinedSelector`로 통일해 재렌더 최소화
-   - 접근(TDD):
-     - RED: 렌더 횟수 가드(간단한 카운터/spy) 도입 + 회귀 스냅샷
-     - GREEN: selector 적용 및 비교 함수 보강, memo 경로 정리
-   - 진행상황: ToastContainer, useGalleryScroll에 selector 적용 완료(구독/직접
-     읽기 → selector 경로로 전환, 테스트/빌드 GREEN 예정)
-   - DoD: 대상 컴포넌트 3곳 이상에서 렌더 횟수 감소 확인, UX/기능 동일
+1. (빈 슬롯) — 활성 과제 없음
 2. (완료) — 항목 이관됨
 3. (완료) — 항목 이관됨
 
