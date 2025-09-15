@@ -1,47 +1,80 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import glob from 'fast-glob';
+/**
+ * Scan test: forbid direct imports of vendor-api.ts in source code
+ *
+ * Allowlist:
+ *  - src/shared/external/vendors/index.ts (barrel)
+ *  - src/shared/external/vendors/vendor-api.ts (the file itself)
+ *  - Anything under test/** (not scanned here)
+ *
+ * Rationale:
+ *  - All vendor access must go through the safe barrel `@shared/external/vendors`
+ *  - Legacy dynamic API in vendor-api.ts must not be referenced from app code
+ */
 
-// VENDOR-LEGACY-PRUNE-02 — vendor-api.ts 소스 레벨 금지 스캔
-// 허용: vendors/index.ts 내부, 테스트 목/스텁 경로(test/**)만
-// 금지: src/** 에서 @shared/external/vendors/vendor-api.ts 직접 import
+import { readdirSync, readFileSync, statSync } from 'fs';
+import { resolve, relative, sep } from 'path';
 
-const ROOT = join(process.cwd());
-
-function isAllowed(file: string) {
-  // 허용 경로: vendors 인덱스, 또는 테스트 디렉터리
-  const normalized = file.replace(/\\/g, '/');
-  if (/src\/shared\/external\/vendors\/index\.ts$/.test(normalized)) return true;
-  if (/^test\//.test(normalized)) return true;
-  return false;
+function toPosixPath(p: string): string {
+  return p.split(sep).join('/');
 }
 
-describe('VENDOR-LEGACY-PRUNE-02: forbid vendor-api.ts direct imports in src/**', () => {
-  it('should have 0 offending imports outside allowlist', async () => {
-    const files = await glob(['src/**/*.{ts,tsx}'], { cwd: ROOT, dot: false, absolute: false });
-    const offenders: Array<{ file: string; line: number; lineText: string }> = [];
+function listFiles(dir: string, out: string[] = []): string[] {
+  const entries = readdirSync(dir);
+  for (const name of entries) {
+    const full = resolve(dir, name);
+    const st = statSync(full);
+    if (st.isDirectory()) {
+      // Skip common non-source folders just in case
+      if (/\b(node_modules|dist|coverage)\b/.test(full)) continue;
+      listFiles(full, out);
+    } else if (/\.(ts|tsx)$/.test(name)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+describe('lint: vendor-api direct imports are forbidden', () => {
+  it('src/** must not import vendor-api.ts directly (use barrel getters)', () => {
+    const repoRoot = resolve(process.cwd());
+    const srcRoot = resolve(repoRoot, 'src');
+
+    const files = listFiles(srcRoot);
+    const violations: { file: string; line: number; snippet: string }[] = [];
+
+    const allowlist = new Set<string>([
+      toPosixPath(resolve(srcRoot, 'shared/external/vendors/index.ts')),
+      toPosixPath(resolve(srcRoot, 'shared/external/vendors/vendor-api.ts')),
+    ]);
+
+    const vendorApiMatchers = [
+      /from\s+['"](?:@shared\/external\/vendors\/vendor-api|\.\.\/.*\/vendor-api|\.\/vendor-api)['"];?/,
+      /require\(\s*['"](?:@shared\/external\/vendors\/vendor-api|\.\.\/.*\/vendor-api|\.\/vendor-api)['"]\s*\)/,
+    ];
 
     for (const file of files) {
-      const full = join(ROOT, file);
-      const text = readFileSync(full, 'utf8');
-      const lines = text.split(/\r?\n/g);
-      lines.forEach((line, idx) => {
-        if (
-          /(from\s+['"]@shared\/external\/vendors\/vendor-api['"])|(from\s+['"]\.\.\/vendor-api['"])|(from\s+['"]\.\/vendor-api['"])|(from\s+['"]@shared\/external\/vendors\/vendor-api\.ts['"])|(from\s+['"]..\/..\/shared\/external\/vendors\/vendor-api['"])|(@shared\/external\/vendors\/vendor-api\.ts)/.test(
-            line
-          )
-        ) {
-          if (!isAllowed(file)) {
-            offenders.push({ file, line: idx + 1, lineText: line.trim() });
-          }
+      const filePosix = toPosixPath(file);
+      if (allowlist.has(filePosix)) continue; // ignore allowlist
+
+      const rel = toPosixPath(relative(repoRoot, file));
+      const content = readFileSync(file, 'utf8');
+      const lines = content.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (vendorApiMatchers.some(re => re.test(line))) {
+          violations.push({ file: rel, line: i + 1, snippet: line.trim() });
         }
-      });
+      }
     }
 
-    const details = offenders.map(o => `${o.file}:${o.line} → ${o.lineText}`).join('\n');
-    expect(offenders.length, `vendor-api direct import is forbidden. Offenders:\n${details}`).toBe(
-      0
-    );
+    if (violations.length > 0) {
+      const details = violations.map(v => ` - ${v.file}:${v.line} -> ${v.snippet}`).join('\n');
+      throw new Error(
+        [
+          'Forbidden vendor-api.ts imports found (use @shared/external/vendors barrel getters):',
+          details,
+        ].join('\n')
+      );
+    }
   });
 });

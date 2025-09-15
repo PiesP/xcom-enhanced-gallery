@@ -87,6 +87,12 @@ services/
   VendorManager 식별자를 금지합니다. 또한 `vendor-api.ts` 문자열이 산출물에
   포함되면 실패합니다.
 
+추가(2025-09-15):
+
+- `vendor-api.ts` 직접 import 금지(허용목록 제외). 소스 레벨 스캔 테스트
+  `test/unit/lint/vendor-api.imports.scan.red.test.ts`가 위반 시 RED로
+  탐지합니다.
+
 보강(2025-09-15):
 
 - DOM 유틸 표면: `DOMEventManager`/`createEventManager`는 내부 전용입니다. 외부

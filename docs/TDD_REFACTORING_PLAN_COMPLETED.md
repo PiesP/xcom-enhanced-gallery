@@ -148,6 +148,15 @@ PLAN-CLEANUP-2 — 활성 계획 정비(완료 항목 제거, ZIP 계획 추가)
 - 검증: 전체 테스트 1800+ GREEN, 타입/린트 PASS, dev/prod 빌드 및 postbuild
   validator GREEN.
 
+2025-09-15: VENDOR-LEGACY-PRUNE-02 — vendor-api.ts 소스 레벨 금지 스캔 (완료)
+
+- 내용: `src/**`에서 `@shared/external/vendors/vendor-api` 직접 import를
+  금지하는 정적 스캔 테스트 추가
+  (`test/unit/lint/vendor-api.imports.scan.red.test.ts`). 허용 경로는 vendors
+  배럴 (`src/shared/external/vendors/index.ts`)과 파일 자체만.
+- 검증: 스캔 GREEN(위반 0건), prod/dev 빌드 산출물 가드(legacy vendor 문자열)와
+  문서 가이드 일치. 전체 스위트/빌드/포스트빌드 GREEN.
+
 ### 2025-09-14
 
 2025-09-15: P10 — 플레이스홀더/고아 코드 최종 정리 (완료)

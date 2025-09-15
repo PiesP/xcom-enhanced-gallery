@@ -23,15 +23,7 @@
 
 ## 활성 계획(차기 단계, TDD 우선)
 
-1. VENDOR-LEGACY-PRUNE-02 — vendor-api.ts 소스 레벨 금지 스캔
-
-- 배경: prod 산출물 스캔 가드는 존재(문자열 검출). 소스에서의 직접 import 방지는
-  보완 필요
-- 목표: `src/shared/external/vendors/vendor-api.ts`를 테스트/마이그레이션 문맥
-  외 소스에서 import 금지
-- TDD: RED 스캔 테스트(allowlist: vendors/index.ts, test mocks만). GREEN 전환 시
-  위반 0건 유지 — 테스트 추가 완료, 유지 관리만 필요
-- DoD: prod/ dev 빌드 산출물 가드 유지 + 소스 스캔 GREEN, 문서/가이드 일치
+- 현재 활성 계획 없음 — 모든 항목이 완료되어 COMPLETED 문서로 이관되었습니다.
 
 ## 품질 게이트(DoD 공통)
 
