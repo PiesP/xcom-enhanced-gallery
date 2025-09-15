@@ -1,5 +1,15 @@
 ### 2025-09-15
 
+2025-09-15: KBD-NAV-UNIFY — 키보드 입력 중앙화(완료)
+
+- 내용: document/window에 대한 직접 keydown/keyup 등록을 금지하는 가드 테스트를
+  추가하고, focusTrap 유틸/훅과 useAccessibility 훅을 EventManager 경유 등록으로
+  리팩터링. 공통 서비스 `shared/services/input/KeyboardNavigator.ts`를 도입하여
+  키 처리(Escape, '?', Shift+'/', Arrow/Home/End/Enter/Space)를 중앙화하고,
+  갤러리 훅(`useGalleryKeyboard`)을 해당 서비스 구독으로 마이그레이션.
+- 검증: 타입/린트 GREEN, fast/단위 스위트에서 신규 가드 및 서비스 계약 테스트
+  GREEN. 기능/UX 동일성 유지, dev/prod 빌드 및 postbuild validator 영향 없음.
+
 2025-09-15: URL-PATTERN-SOURCE-UNIFY — URL 정규식 단일 소스화 (완료)
 
 - 내용: `src/shared/utils/patterns/url-patterns.ts`에 `URL_PATTERNS` 단일 소스를

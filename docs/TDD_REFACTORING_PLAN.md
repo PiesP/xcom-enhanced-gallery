@@ -27,28 +27,9 @@
 아래 항목은 “작은 단위 · 명확한 가드 · 뒤로 호환” 원칙으로 수행합니다. 모든
 변경은 RED → GREEN(TDD) 순서를 따릅니다.
 
-1. KBD-NAV-UNIFY — 키보드 네비게이션 단일화(PC 전용, EventManager 경유)
+1. FOCUS-TRAP-UNIFY — focusTrap 유틸/훅 구현 통합 + 수명주기 표준화
 
-- 배경/문제: `shared/utils/events.ts`, `shared/utils/focusTrap.ts`,
-  `shared/hooks/useFocusTrap.ts` 등에서 keydown 핸들링과 수명주기가 분산되어
-  있습니다(직접 addEventListener 사용 포함).
-- 옵션
-  - A: 현 상태 유지(누적 분산) — 단순하나 회귀/중복 리스크 지속
-  - B: 공통 서비스 `shared/services/input/KeyboardNavigator.ts` 도입 후 소비처
-    이행 — 초기 비용 있으나 테스트/수명주기/가드 일원화
-- 결정: B 채택(최소 표면 서비스 + EventManager 경유 등록/해제)
-- TDD 단계
-  - RED: 키 네비 계약 테스트 추가(ArrowLeft/Right, Home/End, Escape, Space) +
-    “직접 addEventListener('keydown', …) 금지” 스캔 가드(예외: 서비스 내부)
-  - GREEN: KeyboardNavigator 구현(서비스/팩토리) 및 소비처 점진
-    이행(useFocusTrap 내부 포함)
-  - REFACTOR: 공통 키맵/가드 로깅 통합, 모듈 주석/가이드 추가
-- DoD/가드: PC 전용 입력만; EventManager 경유 등록/해제; 포커스 스코프와 충돌
-  없음; 기존 UX 동일
-
-2. FOCUS-TRAP-UNIFY — focusTrap 유틸/훅 구현 통합 + 수명주기 표준화
-
-3. A11Y-LIVE-REGION-LIFECYCLE — LiveRegion 단일 인스턴스/정리 보장
+2. A11Y-LIVE-REGION-LIFECYCLE — LiveRegion 단일 인스턴스/정리 보장
 
 - 배경/문제: `shared/utils/focusTrap.ts`와 `shared/hooks/useFocusTrap.ts`에 유사
   로직이 중복되고, 일부 직접 이벤트 등록이 남아있음

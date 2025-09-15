@@ -943,6 +943,32 @@ BulkDownloadService / MediaService 다운로드 흐름에서 사용자 피드백
 - 애플리케이션은 PC 전용 이벤트만 사용합니다: click/keydown/wheel/contextmenu
 - 터치/포인터 계열 이벤트(onTouchStart/PointerDown 등)는 금지합니다. 테스트에서 RED로 검출됩니다.
 
+#### 키보드 입력 중앙화(KBD-NAV-UNIFY)
+
+- 원칙: document/window에 직접 `addEventListener('keydown'|'keyup', ...)`를 등록하지 않습니다.
+  UI/훅/컴포넌트 층에서는 반드시 EventManager/서비스를 경유합니다.
+- 구현: `shared/services/input/KeyboardNavigator`를 통해 구독합니다. 이 서비스는
+  - EventManager로 document keydown을 단일 지점에서 등록(capture: true, context tag 포함)
+  - 편집 가능한 대상(INPUT/TEXTAREA/contentEditable)에서는 기본적으로 무시(가드)
+  - 처리된 키에 대해 preventDefault/stopPropagation을 수행(옵션으로 비활성화 가능)
+- 금지: features/컴포넌트/훅에서 `document.addEventListener('keydown'|'keyup', ...)` 또는
+  `window.addEventListener('keydown'|'keyup', ...)` 사용
+- 가드 테스트: `test/unit/lint/keyboard-listener.centralization.policy.test.ts`가 위반 시 RED로 탐지합니다.
+
+예시(권장):
+
+```ts
+import { keyboardNavigator } from '@shared/services/input/KeyboardNavigator';
+
+const unsubscribe = keyboardNavigator.subscribe({
+  onEscape: () => onClose(),
+  onHelp: () => onOpenHelp(),
+});
+
+// ...언마운트 시
+unsubscribe();
+```
+
 ## 🏷️ 네이밍 규칙
 
 ### 내보내기(Export) 심볼 네이밍
