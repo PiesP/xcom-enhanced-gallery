@@ -3,7 +3,6 @@
  * - Centralizes concurrency, retry, and ZIP assembly for media downloads
  * - Pure service with no UI side-effects. Vendors accessed only via getters.
  */
-import { getFflate } from '../../external/vendors';
 import { getErrorMessage } from '../../utils/error-handling';
 
 export interface OrchestratorItem {
@@ -114,7 +113,6 @@ export class DownloadOrchestrator {
     items: OrchestratorItem[],
     options: OrchestratorOptions = {}
   ): Promise<ZipResult> {
-    const fflate = getFflate();
     const files: Record<string, Uint8Array> = {};
     const failures: Array<{ url: string; error: string }> = [];
 
@@ -170,7 +168,8 @@ export class DownloadOrchestrator {
     const workers = Array.from({ length: concurrency }, () => runNext());
     await Promise.all(workers);
 
-    const zipBytes = fflate.zipSync(files);
+    const { createZipBytesFromFileMap } = await import('../../external/zip/zip-creator');
+    const zipBytes = await createZipBytesFromFileMap(files);
     return {
       filesSuccessful: successful,
       failures,

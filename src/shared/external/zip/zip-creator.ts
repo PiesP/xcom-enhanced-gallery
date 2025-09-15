@@ -98,6 +98,62 @@ export async function createZipFromItems(
 }
 
 /**
+ * Creates a ZIP Uint8Array from in-memory files map
+ * - Adapter function to consolidate zip path usage from services
+ */
+export async function createZipBytesFromFileMap(
+  files: Record<string, Uint8Array>,
+  config: Partial<ZipCreationConfig> = {}
+): Promise<Uint8Array> {
+  const fullConfig = { ...DEFAULT_ZIP_CONFIG, ...config };
+  const fflate = await getFflate();
+  if (!fflate) throw new Error('fflate library not available');
+
+  // Prefer async API if available
+  if (typeof (fflate as any).zip === 'function') {
+    return new Promise<Uint8Array>((resolve, reject) => {
+      try {
+        (fflate as any).zip(
+          files,
+          { level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL },
+          (err: any, data: Uint8Array) => {
+            if (err) {
+              logger.error('[ZipCreator] fflate.zip failed:', err.message ?? String(err));
+              reject(new Error(`ZIP creation failed: ${err.message ?? String(err)}`));
+              return;
+            }
+            if (!data || data.byteLength === 0) {
+              reject(new Error('No valid data returned from fflate.zip'));
+              return;
+            }
+            resolve(new Uint8Array(data));
+          }
+        );
+      } catch (e) {
+        reject(e instanceof Error ? e : new Error(String(e)));
+      }
+    });
+  }
+
+  // Fallback: legacy sync API (used by tests to capture input)
+  if (typeof (fflate as any).zipSync === 'function') {
+    try {
+      const bytes: Uint8Array = (fflate as any).zipSync(files, {
+        level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL,
+      });
+      if (!bytes || bytes.byteLength === 0) {
+        throw new Error('No valid data returned from fflate.zipSync');
+      }
+      return new Uint8Array(bytes);
+    } catch (e) {
+      throw e instanceof Error ? e : new Error(String(e));
+    }
+  }
+
+  throw new Error('No supported fflate zip API available');
+}
+
+/**
  * Downloads files and prepares them for ZIP creation
  */
 async function downloadFilesForZip(
