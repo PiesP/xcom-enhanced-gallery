@@ -22,7 +22,8 @@ describe('Alias static import', () => {
   it('imports gallery barrel via @features', async () => {
     const Gallery = await loadGallery();
     expect(Gallery).toBeTruthy();
-    expect(Gallery.GalleryRenderer).toBeTruthy();
+    // Barrel is types-only; no runtime implementations are re-exported
+    expect(Object.keys(Gallery).length).toBe(0);
   });
 
   it('imports component via @features path', async () => {

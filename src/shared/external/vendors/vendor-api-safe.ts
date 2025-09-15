@@ -250,25 +250,33 @@ export const resetVendorManagerInstance = (): void => {
 };
 
 // ================================
-// Preact 함수들 직접 export (UI 컴포넌트용)
+// Preact 함수들 직접 export (UI 컴포넌트/테스트 편의용)
 // ================================
 
 /**
  * Preact h 함수 (JSX createElement)
+ * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().h를 사용하세요.
+ * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
  */
 export const h = getPreactSafe().h;
 
 /**
  * Preact render 함수
+ * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().render를 사용하세요.
+ * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
  */
 export const render = getPreactSafe().render;
 
 /**
  * Preact Component 클래스
+ * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().Component를 사용하세요.
+ * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
  */
 export const Component = getPreactSafe().Component;
 
 /**
  * Preact Fragment 컴포넌트
+ * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().Fragment를 사용하세요.
+ * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
  */
 export const Fragment = getPreactSafe().Fragment;

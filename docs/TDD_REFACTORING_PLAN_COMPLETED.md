@@ -1,5 +1,37 @@
 ### 2025-09-15
 
+2025-09-15: VND-GETTER-STRICT — 벤더 getter 전용 사용 강제 (완료)
+
+- 내용: `test/unit/lint/vendor-getter.strict.scan.red.test.ts` 추가로
+  src/\*\*에서 `@shared/external/vendors` 배럴의 `h/render/Component/Fragment`
+  직접 import 금지. 배럴은 getter 우선 노출 유지, 직접 export는 @deprecated
+  안내만 유지.
+- 검증: 스캔 GREEN, 타입/린트/테스트/빌드/포스트빌드 모두 GREEN.
+
+2025-09-15: GUARD-02 — 배럴 역참조 순환 가드 (완료)
+
+- 내용: `test/unit/lint/barrel-reimport.cycle.scan.red.test.ts` 추가로
+  `src/shared/**` 내부 모듈의 상위 배럴 재수입 금지. 내부는 구체 경로만 허용.
+- 검증: 스캔 GREEN, dependency-cruiser 순환 0 유지.
+
+2025-09-15: F1-c — gallery 배럴 슬림화 (완료)
+
+- 내용: `src/features/gallery/index.ts`를 types-only로 축소. 클래스/컴포넌트
+  재노출 제거. 스캔 테스트 `features-barrel.class-exports.scan.red.test.ts`
+  추가.
+- 검증: 관련 alias 테스트 갱신, 유닛 스위트 GREEN, 빌드/포스트빌드 PASS.
+
+2025-09-15: TEST-DEDUP-VMOCK — 벤더 모크 중복 정리 (완료)
+
+- 내용: `test/utils/mocks/vendor-mocks-clean.ts` 제거. 공통 모듈 유지 및 계약
+  테스트 `test/unit/utils/vendor-mocks.contract.test.ts` 추가.
+- 검증: 유닛 스위트 GREEN.
+
+2025-09-15: DEPG-REFRESH — 의존성 그래프/문서 최신화 (완료)
+
+- 내용: `npm run deps:all` 실행으로 `docs/dependency-graph.(json|dot|svg)` 갱신.
+- 검증: `✔ no dependency violations found`, 빌드/포스트빌드 PASS.
+
 2025-09-15: F1-b — FEATURES-BARREL(Hardening, settings) (완료)
 
 - 내용: `src/features/settings/index.ts` 배럴을 Factory/타입만 노출하도록 축소.
