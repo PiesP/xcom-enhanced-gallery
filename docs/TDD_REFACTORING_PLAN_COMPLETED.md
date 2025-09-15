@@ -1,5 +1,20 @@
 ### 2025-09-15
 
+2025-09-15: TOAST-UNIFY-02 / TOAST-TYPE-CONSOLIDATE / UI-BARREL-HARDEN-02 (완료)
+
+- 내용: 토스트 시스템 단일화 및 UI 배럴 표면 하드닝을 완료했습니다.
+  - UI 배럴(`src/shared/components/ui/index.ts`)에서 토스트 상태성 API 재노출
+    제거
+  - UI Toast 컴포넌트는 표현 전용으로 유지하고, 서비스 타입 `ToastItem`을
+    type-only import로 사용
+  - 가드 테스트 추가:
+    - `test/unit/lint/toast-ui-barrel.stateful-exports.guard.test.ts`
+    - `test/unit/lint/toast-ui-components.no-local-state.guard.test.ts`
+  - 레거시 RED 스캔 플레이스홀더 파일 두 개는 스킵 테스트로 대체하여 히스토리
+    보존: `ui-toast-*.scan.red.test.ts`
+- 검증: 전체 테스트 GREEN(376 passed | 16 skipped), 타입/린트/빌드/포스트빌드
+  기존 흐름과 충돌 없음.
+
 2025-09-15: PLAN-REFRESH-TOAST — 활성 계획에 토스트 단일화 과제 등록(문서)
 
 - 내용: UI 배럴/컴포넌트에 남아 있던 토스트 상태성 API 중복을 제거하는 활성

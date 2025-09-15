@@ -2301,6 +2301,8 @@
       "dependents": [
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/ToastController.ts",
+        "src/shared/components/ui/index.ts",
+        "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/services/index.ts"
       ],
@@ -10802,24 +10804,6 @@
         },
         {
           "dynamic": false,
-          "module": "./Toast/Toast",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Toast/Toast.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./Toast/ToastContainer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -10916,6 +10900,27 @@
             "export"
           ],
           "resolved": "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@/shared/services/UnifiedToastManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/services/UnifiedToastManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -11060,6 +11065,27 @@
           "resolved": "src/shared/components/ui/Toast/Toast.module.css",
           "coreModule": false,
           "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@/shared/services/UnifiedToastManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/services/UnifiedToastManager.ts",
+          "coreModule": false,
+          "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -15695,7 +15721,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 261,
-    "totalDependenciesCruised": 712,
+    "totalDependenciesCruised": 713,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

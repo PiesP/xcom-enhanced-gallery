@@ -309,6 +309,18 @@ expect(h.tryGet(SERVICE_KEYS.TOAST)).toBeNull();
 - 레거시 `Toast.tsx`의 `toasts` 신호를 외부에서 직접 구독/조작하지 마세요.
   브리징은 제거되었으며, 외부 소비자는 통합 매니저만 사용합니다.
 
+가드/테스트:
+
+- UI 배럴 표면 가드:
+  `test/unit/lint/toast-ui-barrel.stateful-exports.guard.test.ts`
+  - 금지: `src/shared/components/ui/index.ts`에서 `addToast`/`removeToast`/
+    `clearAllToasts`/`toasts` 같은 상태성 API의 런타임 export
+  - 허용: 컴포넌트(`Toast`, `ToastContainer`)와 타입(type-only)만
+- UI 컴포넌트 가드:
+  `test/unit/lint/toast-ui-components.no-local-state.guard.test.ts`
+  - 금지: UI Toast 파일에서 로컬 상태/함수 정의(토스트 추가/삭제 등)
+  - 요구: `ToastItem`은 서비스 타입을 type-only import로 사용
+
 ### Border Radius 정책 (Design Tokens)
 
 | 용도                        | 토큰                                                | 설명                           |
@@ -586,6 +598,15 @@ Gallery
 // src/shared/utils/animations.ts
 // API
 animateCustom(el, keyframes, {
+
+### Toast 시스템(단일 소스 강화)
+
+- 단일 소스: `UnifiedToastManager`가 토스트 상태와 API(addToast/removeToast/clearAllToasts, toasts)를 단독으로 소유합니다.
+- UI 계층(컴포넌트/배럴)에서는 토스트 상태성 함수/신호를 재노출하거나 소유하지 않습니다.
+  - 금지: `src/shared/components/ui/Toast/Toast.tsx` 내 로컬 `toasts` 신호/`addToast` 등의 구현과 배럴 재노출
+  - 허용: `Toast`(표현 컴포넌트), `ToastContainer`(구독/표시)와 타입(type-only import)만 export
+- 타입 단일화: `ToastItem` 타입은 서비스에서 type-only import하여 사용합니다.
+- 가드(권장): 스캔 테스트로 UI 배럴의 토스트 상태성 함수 export 금지 및 UI 경로에서의 로컬 토스트 상태 사용 금지를 검증합니다.
   durationToken: 'normal',          // fast | normal | slow
   easingToken: 'standard',          // standard | decelerate | accelerate
 });
