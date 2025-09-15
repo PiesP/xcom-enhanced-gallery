@@ -38,35 +38,7 @@
 
 <!-- 과제 A/B/D/E/F/G는 완료되어 완료 로그로 이관되었습니다. 활성 계획에서는 제거합니다. -->
 
-## 과제 C — GM\_\* 직접 사용 금지 가드(USERSCRIPT-ADAPTER-GUARD-01)
-
-문제
-
-- 현재 직접 사용 정황은 없으나, 회귀 방지를 위해 GM\_\* 직접 참조를 금지하고
-  adapter 사용만 허용하는 테스트 가드 필요
-
-해결 옵션
-
-1. 문서화만
-2. 정적 스캔 테스트로 가드
-
-선택: 2)
-
-TDD 단계
-
-- RED: `test/unit/lint/userscript-gm.direct-usage.scan.red.test.ts`
-  - 규칙: `GM_` 접두 식별자 직접 사용 금지(예외: 타입 선언/adapter 내부)
-- 구현 없음(정책 가드)
-
-수용 기준
-
-- 전체 소스에서 GM\_\* 직접 사용 0, adapter(getUserscript) 경유만 존재
-
-리스크/롤백
-
-- 낮음(가드만 추가)
-
----
+<!-- 과제 C(USERSCRIPT-ADAPTER-GUARD-01)는 가드 테스트 추가로 완료되어 완료 로그로 이관되었습니다. -->
 
 <!-- 과제 H(WHEEL-LOCK-POLICY-01)는 R2 가드/계약 테스트로 이미 완료되어 완료 로그로 이관했습니다. -->
 

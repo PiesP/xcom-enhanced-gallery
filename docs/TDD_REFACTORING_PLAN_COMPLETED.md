@@ -1,5 +1,14 @@
 ### 2025-09-15
 
+2025-09-15: USERSCRIPT-ADAPTER-GUARD-01 — GM\_\* 직접 사용 금지 가드 (완료)
+
+- 내용: Userscript GM\_\* API는 어댑터(`getUserscript()`) 또는 타입 선언
+  파일에서만 허용. 런타임 소스(`src/**`) 전반에 대한 정적 스캔 가드 추가로 회귀
+  방지.
+- 테스트: `test/unit/lint/userscript-gm.direct-usage.scan.red.test.ts` GREEN.
+- 검증: fast/unit 스위트 GREEN(해당 가드 포함), dev/prod 빌드 및 postbuild
+  validator PASS.
+
 2025-09-15: WHEEL-LOCK-POLICY-01 — 휠 락(policy) 일관성 가드 (완료)
 
 - 내용: 직접 addEventListener('wheel', ...) 금지 가드와 휠 유틸 계약을 확정.
