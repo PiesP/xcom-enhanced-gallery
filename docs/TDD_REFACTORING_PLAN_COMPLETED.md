@@ -1,5 +1,16 @@
 ### 2025-09-15
 
+2025-09-15: CSS-TOKEN-GUARD-01 — 디자인 토큰 사용 가드 확대 (완료)
+
+- 내용: 컴포넌트 CSS 색상 리터럴 금지 가드에 더해 TSX 인라인 style 속성에서도
+  색상 리터럴(hex/rgb/rgba/hsl/hsla/oklch/color-mix/white/black)을 금지하는 스캔
+  테스트를 추가(`test/unit/styles/tsx-inline-colors.guard.test.ts`). 허용 값은
+  디자인 토큰 변수(`var(--xeg-*/--color-*)`)와 제한된 시스템 키워드
+  (`transparent`, `currentColor`, `Canvas`, `CanvasText`, `HighlightText`)로
+  한정.
+- 테스트: styles 프로젝트 GREEN(31 passed | 1 skipped), 신규 가드 통과.
+- 검증: 전체 스위트/빌드에 영향 없음. 정책은 CODING_GUIDELINES에 추가.
+
 2025-09-15: TW-VIDEO-LEGACY-NORMALIZER-01 — TwitterVideoExtractor 레거시 필드
 정규화 분리 (완료)
 

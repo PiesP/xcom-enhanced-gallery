@@ -274,6 +274,20 @@ utils 레이어는 순수 도메인/플랫폼 보조 계층으로, 런타임
 들어 `focusTrap`/`live-region-manager`는 표준 DOM 리스너를 사용하고 서비스
 이벤트 매니저에 의존하지 않습니다.
 
+### TSX 인라인 스타일 — 색상 정책 (CSS 토큰만)
+
+- 원칙: TSX의 inline style에서 색상 관련 속성(color/background/backgroundColor/
+  borderColor/outlineColor/fill/stroke/caretColor 등)에 색상 리터럴을 직접
+  사용하지 않습니다.
+- 허용 값: 디자인 토큰 변수 `var(--xeg-*/--color-*)`만 사용합니다. 시스템 키워드
+  `transparent`/`currentColor`/`Canvas`/`CanvasText`/`HighlightText`는
+  예외적으로 허용됩니다.
+- 금지 예: `'#fff'`, `'rgb(255,255,255)'`, `'hsl(0,0%,100%)'`, `'oklch(...)'`,
+  `'color-mix(...)'`, `'white'`, `'black'` 등.
+- 권장: 인라인 스타일 대신 CSS Modules로 옮겨 토큰을 사용하세요.
+- 가드: `test/unit/styles/tsx-inline-colors.guard.test.ts`가 위반을 RED로
+  검출합니다.
+
 ### 테스트 DI 가이드(U6) — ServiceHarness 사용
 
 - 런타임에서는 AppContainer를 사용하지 않습니다. 테스트에서도 가능한
