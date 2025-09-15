@@ -106,29 +106,35 @@ export async function createZipBytesFromFileMap(
   config: Partial<ZipCreationConfig> = {}
 ): Promise<Uint8Array> {
   const fullConfig = { ...DEFAULT_ZIP_CONFIG, ...config };
-  const fflate = await getFflate();
-  if (!fflate) throw new Error('fflate library not available');
+  const api = getFflate();
+  if (!api) throw new Error('fflate library not available');
 
   // Prefer async API if available
-  if (typeof (fflate as any).zip === 'function') {
+  if (typeof (api as { zip?: unknown }).zip === 'function') {
     return new Promise<Uint8Array>((resolve, reject) => {
       try {
-        (fflate as any).zip(
-          files,
-          { level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL },
-          (err: any, data: Uint8Array) => {
-            if (err) {
-              logger.error('[ZipCreator] fflate.zip failed:', err.message ?? String(err));
-              reject(new Error(`ZIP creation failed: ${err.message ?? String(err)}`));
-              return;
-            }
-            if (!data || data.byteLength === 0) {
-              reject(new Error('No valid data returned from fflate.zip'));
-              return;
-            }
-            resolve(new Uint8Array(data));
+        const options = { level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL } as unknown;
+        const callback: (err: unknown, data: Uint8Array) => void = (err, data) => {
+          if (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            logger.error('[ZipCreator] fflate.zip failed:', msg);
+            reject(new Error(`ZIP creation failed: ${msg}`));
+            return;
           }
-        );
+          if (!data || data.byteLength === 0) {
+            reject(new Error('No valid data returned from fflate.zip'));
+            return;
+          }
+          resolve(new Uint8Array(data));
+        };
+
+        (
+          api.zip as unknown as (
+            data: unknown,
+            opts: unknown,
+            cb: (err: unknown, data: Uint8Array) => void
+          ) => void
+        )(files as unknown, options, callback);
       } catch (e) {
         reject(e instanceof Error ? e : new Error(String(e)));
       }
@@ -136,11 +142,13 @@ export async function createZipBytesFromFileMap(
   }
 
   // Fallback: legacy sync API (used by tests to capture input)
-  if (typeof (fflate as any).zipSync === 'function') {
+  if (typeof (api as { zipSync?: unknown }).zipSync === 'function') {
     try {
-      const bytes: Uint8Array = (fflate as any).zipSync(files, {
-        level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL,
-      });
+      const syncOptions = { level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL } as unknown;
+      const bytes = (api.zipSync as unknown as (data: unknown, opts?: unknown) => Uint8Array)(
+        files as unknown,
+        syncOptions
+      );
       if (!bytes || bytes.byteLength === 0) {
         throw new Error('No valid data returned from fflate.zipSync');
       }
