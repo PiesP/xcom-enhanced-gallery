@@ -73,6 +73,15 @@ export function addListener(
       return id; // 빈 ID 반환하여 오류 방지
     }
 
+    // AbortSignal 지원: 이미 종료된 시그널이면 등록을 건너뜀
+    const signal: AbortSignal | undefined = options?.signal as AbortSignal | undefined;
+    if (signal?.aborted) {
+      logger.debug(`Skip adding listener due to pre-aborted signal: ${type} (${id})`, {
+        context,
+      });
+      return id; // 등록/저장하지 않음
+    }
+
     element.addEventListener(type, listener, options);
 
     listeners.set(id, {
@@ -84,6 +93,30 @@ export function addListener(
       context,
       created: Date.now(),
     });
+
+    // AbortSignal 지원: abort 시 자동 해제
+    if (signal && typeof signal.addEventListener === 'function') {
+      const onAbort = () => {
+        try {
+          removeEventListenerManaged(id);
+        } finally {
+          // once 옵션으로 자동 해제되지만, 방어적으로 제거 시도
+          try {
+            signal.removeEventListener('abort', onAbort);
+          } catch (e) {
+            logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
+              context,
+            });
+          }
+        }
+      };
+      try {
+        signal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
+      } catch (e) {
+        // ignore — 환경에 따라 EventTarget 미구현일 수 있음
+        logger.debug('AbortSignal addEventListener not available (ignored)', { context });
+      }
+    }
 
     logger.debug(`Event listener added: ${type} (${id})`, { context });
     return id;

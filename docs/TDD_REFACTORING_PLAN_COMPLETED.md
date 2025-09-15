@@ -1,5 +1,15 @@
 ### 2025-09-15
 
+2025-09-15: EVENT-LIFECYCLE-ABORT-01 — 이벤트 리스너 수명주기 강화(AbortSignal
+지원) (완료)
+
+- 내용: `shared/utils/events.ts`의 `addListener`가 `AbortSignal` 옵션을
+  수용하도록 확장. 사전 중단된 신호는 등록을 생략하고, abort 발생 시 자동으로
+  `removeEventListener`와 내부 맵 정리를 수행.
+- 테스트: `test/unit/events/event-lifecycle.abort-signal.integration.test.ts`
+  추가 — 등록/중단/정리 동작 검증. GREEN.
+- 검증: 타입/린트/fast 스위트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
+
 2025-09-15: DOWNLOAD-PROGRESS-TYPE-UNIFY-01 — 진행률 타입 단일 소스화 (완료)
 
 - 내용: 중복 정의된 DownloadProgress 인터페이스를
