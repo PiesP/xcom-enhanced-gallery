@@ -65,28 +65,12 @@ export const MEDIA = {
 } as const;
 
 // ================================
-// URL 패턴
+// URL 패턴 (단일 소스 재노출)
 // ================================
-
-export const URL_PATTERNS = {
-  /** 미디어 URL 패턴 */
-  MEDIA:
-    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=(?:[a-z]+|\d{2,4}x\d{2,4})|(?:ext_tw_video_thumb|video_thumb)\/\d+(?:\/pu)?\/img\/[\w-]+(?:\?.*)?|tweet_video_thumb\/[\w-]+(?:\?.*)?)/,
-
-  /** 갤러리용 미디어 패턴 */
-  GALLERY_MEDIA:
-    /^https:\/\/pbs\.twimg\.com\/(?:media\/[\w-]+\?format=(?:jpg|jpeg|png|webp)&name=orig|(?:ext_tw_video_thumb|video_thumb)\/\d+(?:\/pu)?\/img\/[\w-]+(?:\?.*)?|tweet_video_thumb\/[\w-]+(?:\?.*)?)/,
-
-  /** 미디어 ID 추출 */
-  MEDIA_ID: /\/media\/([\w-]+)\?/,
-
-  /** 동영상 썸네일 ID 추출 (ext_tw_video_thumb|video_thumb|tweet_video_thumb) */
-  VIDEO_THUMB_ID:
-    /\/(?:(?:ext_tw_video_thumb|video_thumb)\/\d+(?:\/pu)?\/img\/([\w-]+)(?:\.[a-z0-9]+)?|tweet_video_thumb\/([\w-]+)(?:\.[a-z0-9]+)?)(?=[?/]|$)/,
-
-  /** 트윗 ID 추출 */
-  TWEET_ID: /https?:\/\/(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
-} as const;
+// 단일 소스는 shared/utils/patterns/url-patterns.ts 입니다.
+// constants.ts에서는 타입 안전 re-export만 수행합니다.
+import { URL_PATTERNS as SHARED_URL_PATTERNS } from './shared/utils/patterns/url-patterns';
+export const URL_PATTERNS = SHARED_URL_PATTERNS;
 
 // ================================
 // CSS 클래스 및 스타일

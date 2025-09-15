@@ -46,23 +46,9 @@
 - DoD/가드: PC 전용 입력만; EventManager 경유 등록/해제; 포커스 스코프와 충돌
   없음; 기존 UX 동일
 
-2. URL-PATTERN-SOURCE-UNIFY — URL 정규식 단일 소스화
+2. FOCUS-TRAP-UNIFY — focusTrap 유틸/훅 구현 통합 + 수명주기 표준화
 
-- 배경/문제: `constants.ts`의 URL_PATTERNS와
-  `shared/utils/patterns/url-patterns.ts`가 공존하여 드리프트 위험 존재
-- 옵션
-  - A: 상호 import로 동기화 — 사이클/경계 복잡도 증가
-  - B: `shared/utils/patterns/url-patterns.ts`를 단일 소스로 두고,
-    `constants.ts`는 타입 안전 re-export만 수행
-- 결정: B 채택(불변 객체 freeze + 단위 테스트로 동등성 보장)
-- TDD 단계
-  - RED: 두 소스 간 불일치 검출 테스트 및 “단일 소스” 가드 스캔 추가
-  - GREEN: constants에서 재노출로 이행, 사용처 영향 없음 확인
-  - REFACTOR: 주석/가이드 갱신, 중복 정의 제거
-- DoD/가드: 단일 소스만 정의; prod/dev 빌드 및 포스트빌드 무영향; 기존 정규식
-  호환 유지
-
-3. FOCUS-TRAP-UNIFY — focusTrap 유틸/훅 구현 통합 + 수명주기 표준화
+3. A11Y-LIVE-REGION-LIFECYCLE — LiveRegion 단일 인스턴스/정리 보장
 
 - 배경/문제: `shared/utils/focusTrap.ts`와 `shared/hooks/useFocusTrap.ts`에 유사
   로직이 중복되고, 일부 직접 이벤트 등록이 남아있음
@@ -78,7 +64,7 @@
 - DoD/가드: ESC 동작/초기 포커스/복원 동작 유지, 캡처 단계(true) 보장, PC-only
   정책 충족
 
-4. A11Y-LIVE-REGION-LIFECYCLE — LiveRegion 단일 인스턴스/정리 보장
+4. (예약) — 다음 후보 항목은 실행 전 재평가하여 등록
 
 - 배경/문제: `shared/utils/accessibility/live-region-manager.ts`가 DOM에 노드를
   추가하나, 다중 생성/정리 경계가 약함
@@ -103,9 +89,8 @@
 ## 타임라인/우선순위(제안)
 
 1. KBD-NAV-UNIFY (가장 높은 UX/안정성 영향)
-2. URL-PATTERN-SOURCE-UNIFY (드리프트 예방 효과 높음)
-3. FOCUS-TRAP-UNIFY (중복 제거 + 수명주기 표준화)
-4. A11Y-LIVE-REGION-LIFECYCLE (누수 방지/안정성)
+2. FOCUS-TRAP-UNIFY (중복 제거 + 수명주기 표준화)
+3. A11Y-LIVE-REGION-LIFECYCLE (누수 방지/안정성)
 
 업데이트 이력: 2025-09-15 — 활성 계획 신규 4건 등록(KBD/URL/FOCUS/A11Y). 이전
 완료 항목은 COMPLETED 문서 참조.

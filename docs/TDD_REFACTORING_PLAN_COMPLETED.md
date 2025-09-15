@@ -1,5 +1,13 @@
 ### 2025-09-15
 
+2025-09-15: URL-PATTERN-SOURCE-UNIFY — URL 정규식 단일 소스화 (완료)
+
+- 내용: `src/shared/utils/patterns/url-patterns.ts`에 `URL_PATTERNS` 단일 소스를
+  추가하고, `src/constants.ts`는 이를 타입 안전하게 재노출하도록 변경. 중복 정의
+  제거로 드리프트 위험 해소.
+- 검증: 타입/린트/테스트/빌드/포스트빌드 모두 GREEN. 기존 소비처는 변경 없이
+  동작(호환 API 유지).
+
 2025-09-15: VND-GETTER-STRICT — 벤더 getter 전용 사용 강제 (완료)
 
 - 내용: `test/unit/lint/vendor-getter.strict.scan.red.test.ts` 추가로
