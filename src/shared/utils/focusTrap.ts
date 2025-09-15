@@ -51,17 +51,8 @@ export function createFocusTrap(
 
   let isActive = false;
   let previousActiveElement: Element | null = null;
-  // 중앙화된 이벤트 매니저 사용을 위한 리스너 ID
-  let keydownListenerId: string | null = null;
-  // EventManager는 런타임에만 동적으로 가져와 순환 의존을 피합니다.
-  const getEventManager = () => {
-    try {
-      const { EventManager } = require('../services/EventManager');
-      return EventManager.getInstance();
-    } catch {
-      return null;
-    }
-  };
+  // 표준 이벤트 리스너 등록/해제용 플래그
+  let keydownAttached = false;
 
   /**
    * 컨테이너 내 focusable 요소들 조회
@@ -169,20 +160,9 @@ export function createFocusTrap(
     // 현재 포커스된 요소 저장
     previousActiveElement = document.activeElement;
 
-    // 키보드 이벤트 리스너 등록(중앙 이벤트 매니저 경유)
-    const em = getEventManager();
-    if (em) {
-      keydownListenerId = em.addListener(
-        document,
-        'keydown',
-        handleKeyDown as unknown as EventListener,
-        { capture: true },
-        'focus-trap'
-      );
-    } else {
-      // 안전 폴백(테스트/비정상 환경)
-      document.addEventListener('keydown', handleKeyDown, true);
-    }
+    // 키보드 이벤트 리스너 등록(표준 API 사용 — utils 레이어의 services 의존 제거)
+    document.addEventListener('keydown', handleKeyDown, true);
+    keydownAttached = true;
 
     // 첫 번째 요소로 포커스 이동
     focusFirstElement();
@@ -197,20 +177,13 @@ export function createFocusTrap(
     if (!isActive) return;
 
     // 키보드 이벤트 리스너 제거
-    const em = getEventManager();
-    if (em && keydownListenerId) {
-      try {
-        em.removeListener(keydownListenerId);
-      } catch {
-        /* no-op */
-      }
-      keydownListenerId = null;
-    } else {
+    if (keydownAttached) {
       try {
         document.removeEventListener('keydown', handleKeyDown, true);
       } catch {
         /* no-op */
       }
+      keydownAttached = false;
     }
 
     // 이전 포커스 복원

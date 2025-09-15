@@ -14,21 +14,23 @@ interface LiveRegionElements {
 
 const regions: LiveRegionElements = {};
 let initialized = false;
-let unloadListenerId: string | null = null;
+// beforeunload 청소를 위한 핸들러 참조(순환 의존 방지를 위해 EventManager 미사용)
+let unloadHandler: ((this: Window, ev: BeforeUnloadEvent) => unknown) | null = null;
 
 function initLifecycleOnce(): void {
   if (initialized) return;
   initialized = true;
   try {
-    // 중앙 EventManager 경유로 beforeunload에서 정리 (동적 require로 순환 의존 방지)
-    const { EventManager } = require('../../services/EventManager');
-    unloadListenerId = EventManager.getInstance().addListener(
-      window,
-      'beforeunload',
-      (() => cleanupLiveRegions()) as unknown as EventListener,
-      { capture: false },
-      'live-region-manager'
-    );
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      unloadHandler = () => {
+        try {
+          cleanupLiveRegions();
+        } catch {
+          /* no-op */
+        }
+      };
+      window.addEventListener('beforeunload', unloadHandler, { capture: false });
+    }
   } catch {
     // 비브라우저/테스트 환경 폴백은 무시(정리는 각 테스트에서 body reset으로 처리)
   }
@@ -105,14 +107,17 @@ export function cleanupLiveRegions(): void {
   } finally {
     delete (regions as Record<string, unknown>).polite;
     delete (regions as Record<string, unknown>).assertive;
-    if (unloadListenerId) {
+    if (
+      unloadHandler &&
+      typeof window !== 'undefined' &&
+      typeof window.removeEventListener === 'function'
+    ) {
       try {
-        const { EventManager } = require('../../services/EventManager');
-        EventManager.getInstance().removeListener(unloadListenerId);
+        window.removeEventListener('beforeunload', unloadHandler, false);
       } catch {
         /* ignore */
       }
-      unloadListenerId = null;
+      unloadHandler = null;
     }
     initialized = false;
   }
