@@ -9,7 +9,7 @@
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '../../../../../shared/logging/logger';
 import { getPreactHooks } from '../../../../../shared/external/vendors';
-import { EventManager } from '../../../../../shared/services/EventManager';
+import { keyboardNavigator } from '../../../../../shared/services/input/KeyboardNavigator';
 
 interface UseGalleryKeyboardOptions {
   onClose: () => void;
@@ -69,14 +69,22 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
   );
 
   useEffect(() => {
-    const id = EventManager.getInstance().addListener(
-      document,
-      'keydown',
-      handleKeyDown as unknown as EventListener,
-      { capture: true }
+    const unsubscribe = keyboardNavigator.subscribe(
+      {
+        onEscape: () => {
+          try {
+            logger.debug('Gallery: Esc key pressed, closing gallery');
+          } catch {
+            /* no-op */
+          }
+          onClose();
+        },
+        onHelp: () => {
+          if (onOpenHelp) onOpenHelp();
+        },
+      },
+      { context: 'use-gallery-keyboard', capture: true }
     );
-    return () => {
-      EventManager.getInstance().removeListener(id);
-    };
+    return () => unsubscribe();
   }, [handleKeyDown]);
 }

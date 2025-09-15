@@ -36,8 +36,19 @@ export function useKeyboardNavigation(
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    // 중앙 이벤트 매니저 경유 등록 (정책상 직접 등록 금지)
+    const { EventManager } = require('../services/EventManager');
+    EventManager.getInstance().addListener(
+      document,
+      'keydown',
+      handleKeyDown as unknown as EventListener,
+      { capture: false },
+      'use-accessibility'
+    );
+    return () => {
+      const { EventManager } = require('../services/EventManager');
+      EventManager.getInstance().removeByContext('use-accessibility');
+    };
   }, dependencies);
 }
 

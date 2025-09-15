@@ -280,8 +280,21 @@ export function useFocusTrap(
       previousActiveSelector.current = previousFocusSelector;
     }
 
-    // 키보드 이벤트 리스너 등록
-    document.addEventListener('keydown', handleKeyDown, true);
+    // 키보드 이벤트 리스너 등록(중앙 이벤트 매니저 경유 시도)
+    try {
+      // 동적 require로 순환 의존 방지
+      const { EventManager } = require('../services/EventManager');
+      EventManager.getInstance().addListener(
+        document,
+        'keydown',
+        handleKeyDown as unknown as EventListener,
+        { capture: true },
+        'use-focus-trap'
+      );
+    } catch {
+      // fallback in tests/non-browser
+      document.addEventListener('keydown', handleKeyDown, true);
+    }
 
     // 첫 번째 요소로 포커스 이동 (paint 이후 안전하게)
     const tid = window.setTimeout(() => {
@@ -303,7 +316,17 @@ export function useFocusTrap(
     if (!isActiveRef.current) return;
 
     // 키보드 이벤트 리스너 제거
-    document.removeEventListener('keydown', handleKeyDown, true);
+    try {
+      const { EventManager } = require('../services/EventManager');
+      // remove by context for safety
+      EventManager.getInstance().removeByContext('use-focus-trap');
+    } catch {
+      try {
+        document.removeEventListener('keydown', handleKeyDown, true);
+      } catch {
+        /* no-op */
+      }
+    }
 
     // 지연 포커스 타이머 정리
     const tid = focusTimerRef.current;
