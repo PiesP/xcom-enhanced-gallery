@@ -1,5 +1,8 @@
 ### 2025-09-15
 
+2025-09-15: PLAN-REVIEW — 활성 계획 점검(완료 이관 항목 없음;
+LEGACY-TOKENS-PRUNE-01만 활성 유지)
+
 2025-09-15: USERSCRIPT-ADAPTER-GUARD-01 — GM\_\* 직접 사용 금지 가드 (완료)
 
 - 내용: Userscript GM\_\* API는 어댑터(`getUserscript()`) 또는 타입 선언
