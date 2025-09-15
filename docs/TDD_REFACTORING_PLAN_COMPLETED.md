@@ -1,5 +1,12 @@
 ### 2025-09-15
 
+2025-09-15: PLAN-REFRESH-TOAST — 활성 계획에 토스트 단일화 과제 등록(문서)
+
+- 내용: UI 배럴/컴포넌트에 남아 있던 토스트 상태성 API 중복을 제거하는 활성
+  계획(TOAST-UNIFY-02/TOAST-TYPE-CONSOLIDATE/UI-BARREL-HARDEN-02)을 추가로 등록.
+  코드 변경은 계획 수립과 일부 배럴 표면 정리로 시작.
+- 검증: 문서/표면 변경만 — 타입/린트/테스트/빌드/포스트빌드 영향 없음.
+
 2025-09-15: FOCUS-TRAP-UNIFY — 유틸 단일화/훅 위임(완료)
 
 - 내용: `shared/utils/focusTrap.ts`를 단일 소스로 확정하고, `useFocusTrap` 훅은

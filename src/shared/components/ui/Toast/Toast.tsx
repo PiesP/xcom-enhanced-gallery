@@ -1,26 +1,13 @@
 import styles from './Toast.module.css';
-import {
-  getPreact,
-  getPreactHooks,
-  getPreactCompat,
-  getPreactSignals,
-  type VNode,
-} from '../../../external/vendors';
+import { getPreact, getPreactHooks, getPreactCompat, type VNode } from '../../../external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastProps } from '../StandardProps';
+import type { ToastItem as ServiceToastItem } from '@/shared/services/UnifiedToastManager';
 
-// Constants
-const DEFAULT_TOAST_DURATION = 5000; // 5 seconds
+// Constants (상태/함수는 서비스에서 관리)
 
-export interface ToastItem {
-  id: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  title: string;
-  message: string;
-  duration?: number;
-  actionText?: string;
-  onAction?: () => void;
-}
+// UI에서는 서비스의 ToastItem 타입만 사용하여 드리프트를 방지합니다.
+export interface ToastItem extends ServiceToastItem {}
 
 // 레거시 Props 인터페이스 (하위 호환성)
 interface LegacyToastProps {
@@ -179,51 +166,4 @@ Object.defineProperty(MemoizedToast, 'displayName', {
 // 메모이제이션된 컴포넌트를 Toast로 export
 export const Toast = MemoizedToast;
 
-// Global toast state - lazy initialization
-type Signal<T> = { value: T; subscribe?: (cb: (v: T) => void) => () => void };
-let _toasts: Signal<ToastItem[]> | null = null;
-export const toasts = {
-  get value(): ToastItem[] {
-    if (!_toasts) {
-      const { signal } = getPreactSignals();
-      _toasts = signal<ToastItem[]>([]) as unknown as Signal<ToastItem[]>;
-    }
-    return _toasts.value || [];
-  },
-  set value(newValue: ToastItem[]) {
-    if (!_toasts) {
-      const { signal } = getPreactSignals();
-      _toasts = signal<ToastItem[]>([]) as unknown as Signal<ToastItem[]>;
-    }
-    _toasts.value = newValue;
-  },
-  subscribe(callback: (value: ToastItem[]) => void) {
-    if (!_toasts) {
-      const { signal } = getPreactSignals();
-      _toasts = signal<ToastItem[]>([]) as unknown as Signal<ToastItem[]>;
-    }
-    return _toasts.subscribe?.(value => callback(value || [])) || (() => {});
-  },
-};
-
-let toastIdCounter = 0;
-
-export function addToast(toast: Omit<ToastItem, 'id'>): string {
-  const id = `toast_${++toastIdCounter}_${Date.now()}`;
-  const newToast: ToastItem = {
-    ...toast,
-    id,
-    duration: toast.duration ?? DEFAULT_TOAST_DURATION,
-  };
-
-  toasts.value = [...toasts.value, newToast];
-  return id;
-}
-
-export function removeToast(id: string): void {
-  toasts.value = toasts.value.filter(toast => toast.id !== id);
-}
-
-export function clearAllToasts(): void {
-  toasts.value = [];
-}
+// UI 컴포넌트는 상태/함수를 소유하지 않습니다. 상태 제어는 UnifiedToastManager가 담당합니다.

@@ -5030,8 +5030,7 @@
       ],
       "dependents": [
         "src/shared/utils/utils.ts",
-        "src/shared/utils/index.ts",
-        "src/shared/utils/accessibility/barrel.ts"
+        "src/shared/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -15360,31 +15359,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/accessibility/barrel.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../accessibility",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/accessibility.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/core/index.ts",
       "dependencies": [
         {
@@ -15720,8 +15694,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 262,
-    "totalDependenciesCruised": 713,
+    "totalCruised": 261,
+    "totalDependenciesCruised": 712,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
