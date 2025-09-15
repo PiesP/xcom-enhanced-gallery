@@ -105,6 +105,14 @@
   PASS
 - 결과: 활성 계획 항목 없음(계획 문서 정리 완료)
 
+2025-09-15: SEL-OPT-01(part) — Selector 채택 1단계 (ToastContainer)
+
+- 내용: `ToastContainer`가 `UnifiedToastManager.subscribe()` 기반 수동 구독을
+  중단하고, `useSelector`로 통합 시그널을 직접 선택하도록 전환. 렌더링은 토스트
+  배열 변경에만 반응하도록 최적화.
+- 검증: 타입/테스트(전 스위트)/dev·prod 빌드 및 postbuild validator 모두 GREEN.
+- 영향: 공개 API 변화 없음. 불필요한 상태/구독 제거로 단순화.
+
 ### 2025-09-14
 
 2025-09-15: P10 — 플레이스홀더/고아 코드 최종 정리 (완료)

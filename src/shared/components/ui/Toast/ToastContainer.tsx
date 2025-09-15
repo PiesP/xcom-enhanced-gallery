@@ -3,14 +3,15 @@
  * @version 3.0.0 - Phase 3 StandardProps 시스템 적용
  */
 
-import { getPreact, getPreactHooks, getPreactCompat } from '../../../external/vendors';
+import { getPreact, getPreactCompat } from '../../../external/vendors';
 import { Toast } from './Toast';
-import { UnifiedToastManager } from '@/shared/services/UnifiedToastManager';
+import { UnifiedToastManager, type ToastItem } from '@/shared/services/UnifiedToastManager';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';
 import styles from './ToastContainer.module.css';
 import type { VNode } from '../../../external/vendors';
+import { useSelector } from '@/shared/utils/signalSelector';
 
 // 통합된 ToastContainer Props (표준 우선, 레거시 fallback)
 export interface ToastContainerProps extends Partial<StandardToastContainerProps> {
@@ -42,9 +43,12 @@ function ToastContainerCore({
   onKeyDown,
 }: ToastContainerProps = {}): VNode {
   const { h } = getPreact();
-  const { useEffect, useState } = getPreactHooks();
   const manager = UnifiedToastManager.getInstance();
-  const [currentToasts, setCurrentToasts] = useState(manager.getToasts());
+  // Selector 기반으로 토스트 목록을 구독하여 불필요한 리렌더를 줄입니다.
+  const currentToasts = useSelector<ToastItem[], ToastItem[]>(
+    manager.signal as unknown as { value: ToastItem[] },
+    (s: ToastItem[]) => s
+  );
 
   // 표준화된 클래스명 생성
   const containerClass = ComponentStandards.createClassName(
@@ -71,12 +75,6 @@ function ToastContainerCore({
 
   // 표준화된 테스트 속성 생성
   const testProps = ComponentStandards.createTestProps(testId || 'toast-container');
-
-  useEffect(() => {
-    // 토스트 상태 변경 구독 (UnifiedToastManager)
-    const unsubscribe = manager.subscribe(setCurrentToasts);
-    return unsubscribe;
-  }, [manager]);
 
   // maxToasts 제한 적용
   const limitedToasts = currentToasts.slice(0, maxToasts);
