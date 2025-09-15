@@ -3,7 +3,7 @@
  * - Forbid importing or referencing SERVICE_KEYS outside of approved modules.
  * Approved: constants.ts, shared/container/service-accessors.ts, shared/services/service-initialization.ts,
  *           shared/services/service-diagnostics.ts, shared/container/service-bridge.ts (indirect, not referencing keys),
- *           features/gallery/createAppContainer.ts (temporary legacy adapter switch only, DEV-gated)
+ *           (runtime createAppContainer implementation removed; test harness only)
  */
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -31,7 +31,7 @@ describe('P4: SERVICE_KEYS direct usage scan', () => {
         'src/shared/container/service-accessors.ts',
         'src/shared/services/service-initialization.ts',
         'src/shared/services/service-diagnostics.ts',
-        'src/features/gallery/createAppContainer.ts', // temporary allowance (DEV-only legacy adapter)
+        // runtime createAppContainer removed — keep allowlist minimal
       ].map(p => p.replace(/\\/g, '/'))
     );
 

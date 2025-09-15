@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { createAppContainer } from '@features/gallery/createAppContainer';
+import { createAppContainer } from '../../helpers/createAppContainer';
 
 describe('Phase 4 - Feature Lazy Factory Contract', () => {
   let container;

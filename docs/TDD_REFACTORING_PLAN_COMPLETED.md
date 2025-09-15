@@ -1,5 +1,23 @@
 ### 2025-09-15
 
+2025-09-15: A1 — APP-CONTAINER-SOURCE-PRUNE (완료)
+
+- 내용: 런타임 소스 `src/features/gallery/createAppContainer.ts`를 테스트 하네스
+  전용으로 분리하고, 런타임에는 금지 스텁만 남김. 모든 리팩토링 테스트는
+  `test/refactoring/helpers/createAppContainer`를 import하도록 수정.
+- 검증: 소스 정적 스캔에서 런타임 경로 import 0건, 테스트 GREEN, 포스트빌드
+  가드에서 `createAppContainer` 문자열 누출 없음. SERVICE_KEYS 스캐너 허용
+  목록에서 런타임 파일 의존 제거 필요 사항 확인(추가 단계에서 병행 유지).
+
+2025-09-15: E4 — EVENT-ALIAS-REMOVAL-FINAL (완료)
+
+- 내용: `TwitterEventManager` 별칭 export를 services(EventManager)와
+  utils(events)에서 최종 제거. 외부 공개 표면은 `@shared/services/EventManager`
+  단일 경로로 확정.
+- 검증: 전역 스캔에서 `TwitterEventManager` 사용 0건, 가드 테스트
+  GREEN(`event-deprecated-removal.test.ts`), fast 스위트 520 passed, dev/prod
+  빌드 및 postbuild validator PASS.
+
 2025-09-15: PLAN-CLEANUP-04 — 활성 계획 최신화(A1/V3/E4만 유지)
 
 - 내용: 활성 계획에서 완료된 ZIP-UNIFY-01, ZIP-LINT-01, VENDOR-LEGACY-PRUNE-02

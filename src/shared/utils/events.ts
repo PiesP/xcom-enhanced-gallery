@@ -999,8 +999,4 @@ export function handleTwitterEvent(
   return addListener(element, eventType, handler, undefined, context);
 }
 
-/**
- * TwitterEventManager 클래스 (GalleryEventManager의 별칭)
- * @deprecated 외부 소비자는 `@shared/services/EventManager`만 사용하세요. 이 별칭은 내부 호환 용도로만 유지됩니다.
- */
-export const TwitterEventManager = GalleryEventManager;
+// 별칭 제거됨: 이벤트 매니저 표면은 Service 레이어의 EventManager로 일원화됩니다.
