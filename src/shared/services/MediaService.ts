@@ -963,8 +963,10 @@ export class MediaService {
       const zipData = await createZipBytesFromFileMap(files);
       const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
 
-      // ZIP 다운로드
-      const blob = new Blob([zipData], { type: 'application/zip' });
+      // ZIP 다운로드 — BlobPart는 ArrayBufferView(typed array) 허용
+      // zipData의 ArrayBufferLike(SAB 가능성)를 피하기 위해 복사본을 생성
+      const zipBytes = new Uint8Array(zipData);
+      const blob = new Blob([zipBytes], { type: 'application/zip' });
       download.downloadBlob(blob, zipFilename);
 
       options.onProgress?.({

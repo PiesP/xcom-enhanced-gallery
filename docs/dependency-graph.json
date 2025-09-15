@@ -71,7 +71,7 @@
       "dependents": [
         "src/bootstrap/env-init.ts",
         "src/shared/services/BulkDownloadService.ts",
-        "src/shared/services/download/DownloadOrchestrator.ts",
+        "src/shared/external/zip/zip-creator.ts",
         "src/shared/services/UnifiedToastManager.ts",
         "src/shared/services/MediaService.ts",
         "src/shared/state/signals/signal-factory.ts",
@@ -122,7 +122,6 @@
         "src/shared/components/ui/primitive/Button.tsx",
         "src/shared/components/ui/primitive/Panel.tsx",
         "src/shared/external/index.ts",
-        "src/shared/external/zip/zip-creator.ts",
         "src/shared/hooks/useAccessibility.ts",
         "src/shared/hooks/useDOMReady.ts",
         "src/shared/hooks/useFocusScope.ts",
@@ -288,6 +287,7 @@
         "src/bootstrap/feature-registration.ts",
         "src/shared/media/MediaProcessor.ts",
         "src/shared/media/pipeline.ts",
+        "src/shared/external/zip/zip-creator.ts",
         "src/shared/services/media/VideoControlService.ts",
         "src/shared/state/signals/gallery.signals.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
@@ -295,7 +295,6 @@
         "src/shared/state/signals/download.signals.ts",
         "src/shared/utils/css-animations.ts",
         "src/main.ts",
-        "src/shared/external/zip/zip-creator.ts",
         "src/shared/external/vendors/vendor-api.ts",
         "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/index.ts",
@@ -1415,11 +1414,11 @@
       "dependencies": [],
       "dependents": [
         "src/shared/media/FilenameService.ts",
+        "src/shared/external/zip/zip-creator.ts",
         "src/shared/services/media/TwitterVideoExtractor.ts",
         "src/shared/utils/accessibility.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/utils/index.ts",
-        "src/shared/external/zip/zip-creator.ts",
         "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
         "src/shared/utils/core/index.ts",
         "src/shared/utils/patterns/url-patterns.ts"
@@ -2203,15 +2202,15 @@
       "source": "src/shared/services/download/DownloadOrchestrator.ts",
       "dependencies": [
         {
-          "dynamic": false,
-          "module": "../../external/vendors",
+          "dynamic": true,
+          "module": "../../external/zip/zip-creator",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "dynamic-import"
           ],
-          "resolved": "src/shared/external/vendors.ts",
+          "resolved": "src/shared/external/zip/zip-creator.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2239,6 +2238,69 @@
       ],
       "dependents": [
         "src/shared/services/BulkDownloadService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/zip/zip-creator.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../utils/type-safety-helpers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/type-safety-helpers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/download/DownloadOrchestrator.ts",
+        "src/shared/services/MediaService.ts",
+        "src/shared/external/zip/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2467,6 +2529,23 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "../external/zip/zip-creator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/external/zip/zip-creator.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -13613,67 +13692,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/external/zip/zip-creator.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../utils/type-safety-helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/type-safety-helpers.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/external/zip/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/external/userscript/adapter.ts",
       "dependencies": [
         {
@@ -16137,7 +16155,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 261,
-    "totalDependenciesCruised": 722,
+    "totalDependenciesCruised": 723,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
