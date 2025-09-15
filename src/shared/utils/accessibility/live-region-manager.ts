@@ -13,6 +13,26 @@ interface LiveRegionElements {
 }
 
 const regions: LiveRegionElements = {};
+let initialized = false;
+let unloadListenerId: string | null = null;
+
+function initLifecycleOnce(): void {
+  if (initialized) return;
+  initialized = true;
+  try {
+    // 중앙 EventManager 경유로 beforeunload에서 정리 (동적 require로 순환 의존 방지)
+    const { EventManager } = require('../../services/EventManager');
+    unloadListenerId = EventManager.getInstance().addListener(
+      window,
+      'beforeunload',
+      (() => cleanupLiveRegions()) as unknown as EventListener,
+      { capture: false },
+      'live-region-manager'
+    );
+  } catch {
+    // 비브라우저/테스트 환경 폴백은 무시(정리는 각 테스트에서 body reset으로 처리)
+  }
+}
 
 function createRegion(kind: 'polite' | 'assertive'): HTMLElement {
   if (typeof document === 'undefined') {
@@ -44,6 +64,7 @@ function createRegion(kind: 'polite' | 'assertive'): HTMLElement {
 }
 
 export function ensurePoliteLiveRegion(): HTMLElement {
+  initLifecycleOnce();
   if (!regions.polite) {
     regions.polite = createRegion('polite');
   } else if (!regions.polite.isConnected) {
@@ -56,6 +77,7 @@ export function ensurePoliteLiveRegion(): HTMLElement {
 }
 
 export function ensureAssertiveLiveRegion(): HTMLElement {
+  initLifecycleOnce();
   if (!regions.assertive) {
     regions.assertive = createRegion('assertive');
   } else if (!regions.assertive.isConnected) {
@@ -68,4 +90,44 @@ export function ensureAssertiveLiveRegion(): HTMLElement {
 
 export function getLiveRegionElements(): LiveRegionElements {
   return { ...regions };
+}
+
+export function cleanupLiveRegions(): void {
+  try {
+    if (regions.polite?.isConnected) {
+      regions.polite.remove();
+    }
+    if (regions.assertive?.isConnected) {
+      regions.assertive.remove();
+    }
+  } catch {
+    /* no-op */
+  } finally {
+    regions.polite = undefined;
+    regions.assertive = undefined;
+    if (unloadListenerId) {
+      try {
+        const { EventManager } = require('../../services/EventManager');
+        EventManager.getInstance().removeListener(unloadListenerId);
+      } catch {
+        /* ignore */
+      }
+      unloadListenerId = null;
+    }
+    initialized = false;
+  }
+}
+
+export function announce(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
+  if (!message) return;
+  const region = politeness === 'polite' ? ensurePoliteLiveRegion() : ensureAssertiveLiveRegion();
+  try {
+    // SR이 동일 텍스트를 감지하도록 약간의 reset 후 설정
+    region.textContent = '';
+    setTimeout(() => {
+      region.textContent = message;
+    }, 0);
+  } catch {
+    /* no-op */
+  }
 }

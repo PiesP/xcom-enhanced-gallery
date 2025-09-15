@@ -123,35 +123,14 @@ export function useAriaLive(message: string, politeness: 'polite' | 'assertive' 
   const { useEffect } = getPreactHooks();
   useEffect(() => {
     if (!message) return;
-
-    const liveRegion = document.createElement('div');
-    liveRegion.setAttribute('aria-live', politeness);
-    liveRegion.setAttribute('aria-atomic', 'true');
-    liveRegion.setAttribute('class', 'sr-only');
-    liveRegion.style.cssText = `
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    `;
-
-    document.body.appendChild(liveRegion);
-
-    const timeoutId = setTimeout(() => {
-      liveRegion.textContent = message;
-    }, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (document.body.contains(liveRegion)) {
-        document.body.removeChild(liveRegion);
-      }
-    };
+    // 중앙 라이브 리전 매니저를 사용하여 단일 인스턴스에 공지
+    try {
+      const { announce } = require('../utils/accessibility/live-region-manager');
+      announce(message, politeness);
+    } catch {
+      // fallback: 무시 (테스트/비브라우저 환경)
+    }
+    return () => void 0;
   }, [message, politeness]);
 }
 

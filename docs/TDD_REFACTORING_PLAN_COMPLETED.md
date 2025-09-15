@@ -1,5 +1,20 @@
 ### 2025-09-15
 
+2025-09-15: FOCUS-TRAP-UNIFY — 유틸 단일화/훅 위임(완료)
+
+- 내용: `shared/utils/focusTrap.ts`를 단일 소스로 확정하고, `useFocusTrap` 훅은
+  해당 유틸에 위임하도록 리팩토링. 문서 수준 키다운은 `EventManager` 경유, 초기
+  포커스/복원 동작 유지.
+- 검증: 관련 테스트 GREEN(useFocusTrap/focusTrap), 타입/린트/빌드/포스트빌드
+  PASS.
+
+2025-09-15: A11Y-LIVE-REGION-LIFECYCLE — 단일 인스턴스/정리 보장(완료)
+
+- 내용: `shared/utils/accessibility/live-region-manager.ts`에 싱글톤 관리,
+  beforeunload 정리, `announce()` 헬퍼 추가. `useAriaLive`는 매니저를 사용하도록
+  변경.
+- 검증: 라이브 리전 테스트 GREEN, 메모리/DOM 누수 없음, 빌드/포스트빌드 PASS.
+
 2025-09-15: KBD-NAV-UNIFY — 키보드 입력 중앙화(완료)
 
 - 내용: document/window에 대한 직접 keydown/keyup 등록을 금지하는 가드 테스트를

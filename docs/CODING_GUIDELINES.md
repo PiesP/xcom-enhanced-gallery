@@ -238,6 +238,19 @@ const { signal } = getPreactSignals();
 // import compat from 'preact/compat';
 ```
 
+### 접근성 유틸/훅 표준화 (Focus Trap & Live Region)
+
+- Focus Trap: 통합 유틸 `@shared/utils/focusTrap`이 단일 소스입니다. 훅
+  `useFocusTrap`은 얇은 래퍼로 유틸을 위임하며, 문서 레벨 키 이벤트는
+  `EventManager` 경유로 등록합니다. 직접
+  `document.addEventListener('keydown', ...)` 사용은 금지됩니다.
+- Live Region: 단일 인스턴스 매니저
+  `@shared/utils/accessibility/live-region-manager`를 사용합니다. `useAriaLive`
+  훅은 매니저의 `announce(message, politeness)`를 호출하며, 임시 DOM 노드
+  생성/제거로 인한 누수를 방지합니다.
+- 테스트: 포커스 초기화/복원(Escape) 및 라이브 리전 싱글톤/속성 가드는 단위
+  테스트로 검증됩니다.
+
 ### 테스트 DI 가이드(U6) — ServiceHarness 사용
 
 - 런타임에서는 AppContainer를 사용하지 않습니다. 테스트에서도 가능한

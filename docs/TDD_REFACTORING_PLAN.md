@@ -27,39 +27,7 @@
 아래 항목은 “작은 단위 · 명확한 가드 · 뒤로 호환” 원칙으로 수행합니다. 모든
 변경은 RED → GREEN(TDD) 순서를 따릅니다.
 
-1. FOCUS-TRAP-UNIFY — focusTrap 유틸/훅 구현 통합 + 수명주기 표준화
-
-2. A11Y-LIVE-REGION-LIFECYCLE — LiveRegion 단일 인스턴스/정리 보장
-
-- 배경/문제: `shared/utils/focusTrap.ts`와 `shared/hooks/useFocusTrap.ts`에 유사
-  로직이 중복되고, 일부 직접 이벤트 등록이 남아있음
-- 옵션
-  - A: 중복 유지(부분 수정) — 향후 회귀 가능성 높음
-  - B: 단일 내부 구현을 두고 훅은 래퍼로 축소, 이벤트 등록은 EventManager 경유로
-    통일
-- 결정: B 채택(내부 핵심은 유틸, 훅은 얇은 wiring)
-- TDD 단계
-  - RED: 중복/직접 등록 검출 스캔 + 포커스 이동/복원/ESC 동작 계약 테스트
-  - GREEN: 유틸 단일화 → 훅 위임 변경 → EventManager 경유
-  - REFACTOR: 문서/주석 정비, 불필요 분기 제거
-- DoD/가드: ESC 동작/초기 포커스/복원 동작 유지, 캡처 단계(true) 보장, PC-only
-  정책 충족
-
 4. (예약) — 다음 후보 항목은 실행 전 재평가하여 등록
-
-- 배경/문제: `shared/utils/accessibility/live-region-manager.ts`가 DOM에 노드를
-  추가하나, 다중 생성/정리 경계가 약함
-- 옵션
-  - A: 현 상태 유지 — 드문 중복 생성 가능성, 테스트에서 간헐적 누수 의심
-  - B: 싱글톤/레지스트리 + EventManager/Unload 훅으로 정리 표준화
-- 결정: B 채택(단일 인스턴스/중복 방지/정리 API)
-- TDD 단계
-  - RED: 다중 호출 시 body에 추가되는 엘리먼트 수가 1로 유지되는지 검증,
-    beforeunload/cleanup 계약 테스트
-  - GREEN: 매니저 단일화/정리 경로 추가, 소비처 최소 변경
-  - REFACTOR: 로그/문서 보강
-- DoD/가드: 메모리/DOM 누수 0; 기존 aria-live 동작 동일; 테스트 격리에서
-  init/reset 안전
 
 ## 품질 게이트(DoD 공통)
 
