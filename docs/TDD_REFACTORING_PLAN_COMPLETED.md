@@ -1,5 +1,29 @@
 ### 2025-09-15
 
+2025-09-15: L2 — LOG-GATE-V2 (완료)
+
+- 내용: 로깅을 환경별로 게이트 — dev에서만 stack trace/verbose 출력, prod는 기본
+  warn 이상만 허용. 포스트빌드 검증 스크립트에 "Stack trace:" 금지 문자열 규칙
+  추가로 누출 차단.
+- 검증: 타입/린트/테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS(금지
+  문자열 미검출).
+
+2025-09-15: F1 — FEATURES-BARREL-HARDEN (완료)
+
+- 내용: features 배럴에서 외부/공유 모듈 재노출을 제거하고 공개 표면을 최소화.
+  정적 스캔 테스트(`features-barrel.surface.scan.red.test.ts`)로
+  @shared/../../shared 재수출 금지(주석은 무시) 가드 추가.
+  `src/features/gallery/index.ts`의 공유 서비스 재노출 제거.
+- 검증: 전체 유닛 테스트 GREEN(스캔 포함), 타입/린트 PASS, dev/prod 빌드 및
+  postbuild validator PASS. 가이드라인에 배럴 표면 정책 반영.
+
+2025-09-15: D2 — BULK-RETRY-FAILED-ONLY (완료)
+
+- 내용: BulkDownloadService의 재시도 액션이 실패 항목만 대상으로 동작함을 확인.
+  DownloadOrchestrator 기반 구현과 토스트 onAction 핸들러가 실패 집합을 추적하여
+  제한 동시성으로 재검증. 관련 스위트(bulk-download.retry-action.\*) GREEN.
+- 검증: 타입/린트/테스트/빌드/포스트빌드 모두 GREEN.
+
 2025-09-15: PLAN-REFRESH — 활성 계획 갱신(D2/L2/F1/I2/B2 등록)
 
 - 내용: 활성 계획을 Userscript 단순화에 직결되는 5개 과제(D2, L2, F1, I2, B2)로

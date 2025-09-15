@@ -163,6 +163,12 @@ function validateUserScript() {
     assertNoLegacyGlobals: true,
   });
 
+  // L2: Logging gate v2 — prod bundle must not contain development-only stack trace marker
+  if (/Stack trace:/.test(prodInfo.content)) {
+    console.error('❌ Prod userscript contains development-only stack trace marker (logging gate)');
+    process.exit(1);
+  }
+
   // 기본적인 JavaScript 구문 검증
   try {
     // 간단한 구문 검증 (실제 실행하지 않음)

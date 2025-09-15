@@ -183,8 +183,10 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
       if (shouldLog('error', finalConfig)) {
         console.error(...formatMessage('error', finalConfig, ...args));
 
-        // Add stack trace for errors if enabled
-        if (finalConfig.includeStackTrace && args.length > 0) {
+        // Add stack trace for errors if enabled (DEV-only)
+        // This branch is gated by import.meta.env.DEV so the literal
+        // 'Stack trace:' string is tree-shaken out in production builds.
+        if (import.meta.env.DEV && finalConfig.includeStackTrace && args.length > 0) {
           const firstArg = args[0];
           if (firstArg instanceof Error && firstArg.stack) {
             console.error('Stack trace:', firstArg.stack);

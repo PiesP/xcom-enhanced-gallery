@@ -22,6 +22,17 @@
 - 타입 전용 import 예외: 런타임 import 금지 가드에서는 type-only import는
   허용되며, 이를 제외한 모든 런타임 import는 금지됩니다.
 
+보강(2025-09-15): Features 배럴(F1)
+
+- features 배럴(`src/features/<feature>/index.ts`)은 동일 feature 폴더의 모듈만
+  재노출합니다. shared 레이어(`@shared/**` 또는 `../../shared/**`)의 서비스나
+  구현을 재노출하지 않습니다.
+- 목적: 공개 표면을 최소화하여 순환/의존성 복잡성을 줄이고 리팩토링 안전도를
+  높입니다. 소비처는 필요한 경우 factory 또는 shared 레이어에서 직접 import
+  하세요(정책 허용 범위 내).
+- 가드: `test/unit/lint/features-barrel.surface.scan.red.test.ts`가 배럴에서
+  금지된 경로 재노출을 RED로 탐지합니다.
+
 ## 🎨 코딩 스타일
 
 ### 기본 포맷팅
@@ -100,6 +111,16 @@ services/
   (`@shared/dom`)에서는 더 이상 재노출하지 않습니다.
 - Toolbar 애니메이션: CSS `toolbar-slide-*` 키프레임/변수는 제거되었습니다. 툴바
   show/hide는 JS API(`toolbarSlideDown/Up`)만 사용합니다.
+
+### 로깅 정책(L2) — 프로덕션 게이트 강화
+
+- 개발(dev) 모드에서는 `logger.debug()`가 활성화되고, 타임스탬프 및 스택
+  트레이스 출력이 허용됩니다.
+- 프로덕션(prod) 번들에서는 기본 로그 레벨을 `warn` 이상으로 제한하고
+  `Stack trace:` 문자열이 산출물에 포함되지 않도록 합니다. 스택 트레이스 출력은
+  개발 모드에서만 활성화되며, prod에서는 트리쉐이킹으로 제거됩니다.
+- 가드: `scripts/validate-build.js`가 prod Userscript에서 `Stack trace:`
+  문자열을 검출하면 실패 처리합니다.
 
 ### 파일명 정책 (단일 소스)
 

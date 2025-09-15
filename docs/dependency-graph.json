@@ -2018,8 +2018,7 @@
       "dependents": [
         "src/shared/container/service-accessors.ts",
         "src/shared/services/service-factories.ts",
-        "src/shared/types/core/core-types.ts",
-        "src/features/gallery/index.ts"
+        "src/shared/types/core/core-types.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9753,23 +9752,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../shared/services/BulkDownloadService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/BulkDownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./components/vertical-gallery-view",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15729,7 +15711,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 261,
-    "totalDependenciesCruised": 714,
+    "totalDependenciesCruised": 713,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
