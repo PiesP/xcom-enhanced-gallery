@@ -7,6 +7,10 @@
 
 import { logger } from '@shared/logging/logger';
 import { undefinedToNull } from '@shared/utils/type-safety-helpers';
+import {
+  normalizeTweetLegacy,
+  normalizeUserLegacy,
+} from '@shared/services/media/normalizers/TwitterVideoLegacyNormalizer';
 
 import { STABLE_SELECTORS, TWITTER_API_CONFIG } from '@/constants';
 
@@ -442,22 +446,15 @@ export class TwitterAPI {
 
     const tweetUser = tweetResult.core?.user_results?.result;
 
-    // 현대적 API 구조와 legacy 구조 통합
-    if (tweetResult.legacy) {
-      // legacy에서 현대적 구조로 데이터 복사
-      tweetResult.extended_entities = tweetResult.legacy.extended_entities;
-      tweetResult.full_text = tweetResult.legacy.full_text;
-      tweetResult.id_str = tweetResult.legacy.id_str;
-    }
+    // 현대적 API 구조와 legacy 구조 통합 (normalizer 사용)
+    normalizeTweetLegacy(tweetResult);
 
     if (!tweetUser) {
       return [];
     }
 
-    // tweetUser의 legacy 정보도 직접 복사
-    if (tweetUser.legacy?.screen_name) {
-      tweetUser.screen_name = tweetUser.legacy.screen_name;
-    }
+    // 사용자 정보도 통합
+    normalizeUserLegacy(tweetUser);
 
     let result = this.extractMediaFromTweet(tweetResult, tweetUser);
 
@@ -467,15 +464,9 @@ export class TwitterAPI {
       const quotedUser = quotedTweet.core?.user_results?.result;
 
       if (quotedTweet && quotedUser) {
-        // 인용 트윗의 legacy 정보도 통합
-        if (quotedTweet.legacy) {
-          quotedTweet.extended_entities = quotedTweet.legacy.extended_entities;
-          quotedTweet.full_text = quotedTweet.legacy.full_text;
-          quotedTweet.id_str = quotedTweet.legacy.id_str;
-        }
-        if (quotedUser.legacy?.screen_name) {
-          quotedUser.screen_name = quotedUser.legacy.screen_name;
-        }
+        // 인용 트윗/사용자도 통합
+        normalizeTweetLegacy(quotedTweet);
+        normalizeUserLegacy(quotedUser);
 
         result = [...result, ...this.extractMediaFromTweet(quotedTweet, quotedUser)];
       }
