@@ -259,7 +259,7 @@
 .navButton:active:not(:disabled),
 .navButton.active {
   background: var(--xeg-color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 /* 미디어 카운터 */
@@ -365,7 +365,7 @@ button.fitButton {
 
 .fitButton.selected {
   background: var(--xeg-color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 /* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {
@@ -408,7 +408,7 @@ button.fitButton {
   width: 0.75em; /* 12px → 0.75em */
   height: 0.75em; /* 12px → 0.75em */
   background: var(--color-green-500);
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: 50%;
   display: flex;
   align-items: center;
