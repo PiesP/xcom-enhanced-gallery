@@ -1231,44 +1231,8 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -1284,37 +1248,8 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -1337,7 +1272,6 @@
       ],
       "dependents": [
         "src/shared/container/service-accessors.ts",
-        "src/shared/utils/media/media-url.util.ts",
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/MediaService.ts",
         "src/shared/types/core/core-types.ts",
@@ -1404,6 +1338,7 @@
       ],
       "dependents": [
         "src/shared/media/index.ts",
+        "src/shared/utils/media/media-url.util.ts",
         "src/features/gallery/createAppContainer.ts"
       ],
       "orphan": false,
@@ -1460,44 +1395,8 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -1558,37 +1457,8 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            }
-          ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -1655,56 +1525,38 @@
         },
         {
           "dynamic": false,
-          "module": "../../media",
+          "module": "../../media/FilenameService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/media/index.ts",
+          "resolved": "src/shared/media/FilenameService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": true,
-          "cycle": [
-            {
-              "name": "src/shared/media/index.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/media/MediaProcessor.ts",
-              "dependencyTypes": [
-                "local",
-                "export"
-              ]
-            },
-            {
-              "name": "src/shared/media/pipeline.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            },
-            {
-              "name": "src/shared/utils/media/media-url.util.ts",
-              "dependencyTypes": [
-                "local",
-                "import"
-              ]
-            }
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../media/FilenameService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
           ],
-          "valid": false,
-          "rules": [
-            {
-              "severity": "warn",
-              "name": "no-circular-deps"
-            }
-          ]
+          "resolved": "src/shared/media/FilenameService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         },
         {
           "dynamic": false,
@@ -16077,85 +15929,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "cycle",
-        "from": "src/shared/media/index.ts",
-        "to": "src/shared/media/MediaProcessor.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-circular-deps"
-        },
-        "cycle": [
-          {
-            "name": "src/shared/media/MediaProcessor.ts",
-            "dependencyTypes": [
-              "local",
-              "export"
-            ]
-          },
-          {
-            "name": "src/shared/media/pipeline.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/utils/media/media-url.util.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/media/index.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "cycle",
-        "from": "src/shared/media/index.ts",
-        "to": "src/shared/media/pipeline.ts",
-        "rule": {
-          "severity": "warn",
-          "name": "no-circular-deps"
-        },
-        "cycle": [
-          {
-            "name": "src/shared/media/pipeline.ts",
-            "dependencyTypes": [
-              "local",
-              "export"
-            ]
-          },
-          {
-            "name": "src/shared/utils/media/media-url.util.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          },
-          {
-            "name": "src/shared/media/index.ts",
-            "dependencyTypes": [
-              "local",
-              "import"
-            ]
-          }
-        ]
-      }
-    ],
+    "violations": [],
     "error": 0,
-    "warn": 2,
+    "warn": 0,
     "info": 0,
     "ignore": 0,
     "totalCruised": 261,
-    "totalDependenciesCruised": 723,
+    "totalDependenciesCruised": 724,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -1,5 +1,12 @@
 ### 2025-09-15
 
+2025-09-15: PLAN-CLEANUP-04 — 활성 계획 최신화(A1/V3/E4만 유지)
+
+- 내용: 활성 계획에서 완료된 ZIP-UNIFY-01, ZIP-LINT-01, VENDOR-LEGACY-PRUNE-02
+  관련 항목을 제거하고, 신규 활성 항목(A1, V3, E4)만 남김. Userscript 복잡성
+  최소화를 위한 단계 구성을 명확화.
+- 검증: 문서 변경만 — 타입/린트/테스트/빌드/포스트빌드 모두 GREEN 유지.
+
 2025-09-15: MEDIA-CYCLE-PRUNE-01 — shared/media 인근 순환 제거 (완료)
 
 - 내용: `src/shared/utils/media/media-url.util.ts`에서 `../../media` 배럴
