@@ -36,12 +36,6 @@
 
 ---
 
-<!-- 과제 A/B/D/E/F/G는 완료되어 완료 로그로 이관되었습니다. 활성 계획에서는 제거합니다. -->
-
-<!-- 과제 C(USERSCRIPT-ADAPTER-GUARD-01)는 가드 테스트 추가로 완료되어 완료 로그로 이관되었습니다. -->
-
-<!-- 과제 H(WHEEL-LOCK-POLICY-01)는 R2 가드/계약 테스트로 이미 완료되어 완료 로그로 이관했습니다. -->
-
 ## 과제 I — 레거시 토큰 단계적 정리(LEGACY-TOKENS-PRUNE-01)
 
 문제
@@ -74,11 +68,7 @@ TDD 단계
 
 ## 실행 순서(권장)와 마일스톤
 
-Phase 1 — 정책 가드 추가(회귀 방지 중심)
-
-- C(Userscript GM\_\*)
-
-Phase 2 — 레거시 정리
+Phase 1 — 레거시 정리
 
 - I(Legacy tokens)
 
@@ -115,7 +105,6 @@ Phase 2 — 레거시 정리
 
 ## 다음 액션(착수 순서 제안)
 
-1. RED 테스트 추가: Userscript GM 직접 사용 금지(C)
-2. legacy 토큰 사용처 스캔 후 미사용 제거(allowlist와 릴리즈 노트 포함)(I)
+1. legacy 토큰 사용처 스캔 후 미사용 제거(allowlist와 릴리즈 노트 포함)(I)
 
 완료된 항목은 즉시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
