@@ -15,6 +15,18 @@ LEGACY-TOKENS-PRUNE-01만 활성 유지)
 - 검증: fast/unit(styles)에서 신규 스캔 GREEN(해당 토큰 미사용 확인), 타입/린트
   PASS, dev/prod 빌드 및 postbuild validator PASS.
 
+2025-09-15: LEGACY-TOKENS-PRUNE-02 — surface helper 클래스 정리 (완료)
+
+- 내용: design-tokens.css에 정의만 존재하고 실제 사용되지 않던 surface helper
+  클래스 2종을 스캔하여 제거. 선언 파일 자체는 사용처로 보지 않는 RED usage-scan
+  테스트를 추가해 회귀를 방지.
+- 변경:
+  - 제거: `.xeg-surface-primary`, `.xeg-surface-elevated`
+  - 테스트 추가:
+    `test/unit/styles/design-tokens.surface-helpers.usage-scan.red.test.ts`
+- 검증: styles 스위트에서 신규 스캔 GREEN, 기존 스타일/단위 테스트 GREEN,
+  타입/린트 PASS. dev/prod 빌드 및 postbuild validator PASS.
+
 2025-09-15: USERSCRIPT-ADAPTER-GUARD-01 — GM\_\* 직접 사용 금지 가드 (완료)
 
 - 내용: Userscript GM\_\* API는 어댑터(`getUserscript()`) 또는 타입 선언

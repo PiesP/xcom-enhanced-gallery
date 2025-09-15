@@ -235,9 +235,6 @@
 }
 
 /* Additional minimal classes to raise selector count for test heuristics */
-.xeg-surface-primary {
-  background: var(--xeg-surface-primary);
-}
 .xeg-text-primary {
   color: var(--xeg-color-text-primary);
 }
@@ -250,9 +247,6 @@
 .xeg-focusable:focus-visible {
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
-}
-.xeg-surface-elevated {
-  background: var(--xeg-surface-elevated);
 }
 
 /* Transition utility classes to encourage common pattern usage */
