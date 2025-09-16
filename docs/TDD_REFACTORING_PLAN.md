@@ -15,37 +15,28 @@
 
 ## 0) 현재 상태 점검 요약
 
-- 품질 게이트: typecheck, lint, smoke/fast 테스트 모두 GREEN. 빌드 가드는 별도
-  실행 시 유지될 것으로 예상됨(포스트빌드 밸리데이터 존재).
-- Vendors: 정적 매니저(`StaticVendorManager`) 경유 사용 OK. 다만 테스트 로그에
-  “StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.”
-  경고가 자주 출력됨(신호 초기화 타이밍 개선 여지). 중앙 집중 정책 테스트 GREEN.
-  `var(--color-*)` 직접 사용이 남아 있으나 허용 범주(테마/기초 색상)로 보이며,
-- 레거시 표면: 동적 VendorManager(`vendor-manager.ts`)는 TEST-ONLY로 남아 있고,
-  `features/gallery/createAppContainer.ts` 런타임 스텁이 존재(실행 시 예외). 둘
-  다 런타임 접근 금지 테스트/포스트빌드 가드로 보호되나, 소스에서 제거/이전 시
+- 품질 게이트: typecheck, lint, smoke/fast 테스트 GREEN. dev/prod 빌드 및
+  postbuild validator 정상 동작 중.
+- Vendors: 정적 매니저(`StaticVendorManager`) 경유 정책 준수. 테스트 모드 자동
+  초기화 경고는 다운그레이드되어 소음 없음(완료 항목으로 이관됨).
+- 레거시 표면: 동적 VendorManager(`vendor-manager.ts`)는 TEST-ONLY, 갤러리
+  `createAppContainer.ts`는 런타임 금지 스텁으로 유지(접근 금지 가드 존재).
 
 ---
 
-1. SRC-PATH-RENAME-01 • Icon placeholder import 금지 가드 추가 — 완료(완료 로그
-   이관)
+## 남은 작업(우선순위 및 순서)
 
-- 완료: `test/unit/lint/icon-deprecated-placeholder.imports.scan.red.test.ts`
-  추가 및 offenders 0 확인. 상세는 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
+1. D2 — Media Normalizer 구(old) 경로 제거 준비: 새 경로로의 소비처 이행률을
+   100%로 만든 뒤 구 경로 제거(스캔 테스트로 사용 0 보증 후 실행).
+2. E — Icon placeholder 물리 삭제 후보: 가드(offenders 0) 유지 모니터링 후, 추가
+   소비 0이 지속되면 디렉터리/파일 물리 삭제 PR로 진행.
+3. A — Runtime Stub(`features/gallery/createAppContainer.ts`) 처리: 런타임 접근
+   0 상태가 지속 확인되면 테스트 하네스 전용 경로로 이전하거나 제거.
+4. B/C/F — TEST-ONLY/LEGACY 표면 유지: prod 경로에서의 참조 0 유지(스캔/번들
+   문자열 가드 지속) — 필요 시 주석/문서 보강만.
 
-2. SRC-PATH-RENAME-01 • Media Normalizer 리네임(단계 D1: re-export) — 완료(완료
-   로그 이관)
-
-- 완료: 새 경로 `shared/services/media/normalizers/legacy/twitter.ts` 도입, 구
-  경로는 @deprecated + re-export. 상세는 완료 로그 참조.
-
-3. Vendors 초기화 경고 소음 축소 — 상태: 완료됨(VND-INIT-01). 추가 작업 없음.
-
-4. UI/UX 토큰 마이크로 정리(선택) — 상태: 완료됨(TOKENS-TOOLBAR-03). 추가 작업
-   없음.
-
-- 롤백 전략: 각 단계는 독립 브랜치/PR로 나누고, 실패 시 해당 커밋만 리버트
-  가능하도록 최소 diff 유지. re-export 단계는 즉시 되돌림 용이.
+롤백 전략: 각 단계는 독립 PR로 최소 diff 수행. 스캔/가드 테스트 GREEN 전제에서
+진행하며, 실패 시 해당 커밋만 리버트 가능.
 
 ## 품질 게이트 (작업 중 반복 확인)
 
@@ -126,8 +117,8 @@
 
 ### 단계별 실행 순서(요약 현행화)
 
-- Phase 0 — 완료
-- Phase 1 — 완료(E 가드, D re-export)
+- Phase 0 — 완료(이관)
+- Phase 1 — 완료(이관: E 가드, D re-export)
 - Phase 2/3 — 보류(필요 시 후속 PR로 삭제/전환)
 - Phase 4 — 보류(관찰 지속)
 
