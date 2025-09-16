@@ -35,3 +35,7 @@
 진행하며, 실패 시 해당 커밋만 리버트 가능.
 
 <!-- 부록(SOURCE PATH RENAME / CLEANUP PLAN): 완료 로그로 이관됨 -->
+
+---
+
+<!-- “초기 페인트 시 툴바 투명” 이슈는 완료되어 완료 로그(TDD_REFACTORING_PLAN_COMPLETED.md)로 이관되었습니다. 활성 계획에서는 제외합니다. -->

@@ -29,6 +29,23 @@
 
 ### 2025-09-16 — PHASE 3(완료): Theme/Filename 서비스 지연 초기화 전환
 
+### 2025-09-16 — THEME-BOOTSTRAP-INIT 페인트 플래시 제거 (완료)
+
+- 배경: 첫 렌더에서 `data-theme` 미설정으로 툴바 배경이 잠시 투명하게 보이는
+  현상.
+- 해결: 초경량 동기 부트스트랩 `bootstrapInitialTheme()`를 도입하여 글로벌
+  스타일 로드 직후(`main.ts`) `document.documentElement[data-theme]`를 확정.
+- 구현:
+  - 추가: `src/shared/services/ThemeBootstrap.ts` — 저장값(light/dark) 우선,
+    auto/미설정은 `matchMedia('(prefers-color-scheme: dark)')`로 판정,
+    예외/잘못된 저장값은 `light` 폴백. 리스너/타이머/인스턴스 생성 없음.
+  - 통합: `src/main.ts`에서 `await import('./styles/globals')` 직후 1회 호출.
+  - 테스트: `test/unit/shared/services/theme-bootstrap.test.ts`로 케이스
+    커버(자동/명시/잘못된 값/idempotency/ThemeService 정합) — GREEN.
+- 검증: typecheck/lint PASS, fast/unit 스위트 GREEN, dev/prod 빌드 및 postbuild
+  validator PASS. 사용자 시나리오에서 초기/상호작용 후 배경색 일관.
+- 롤백: `main.ts` 호출 1줄+파일 삭제로 즉시 복구 가능.
+
 - 내용: `service-initialization.ts`에서 ThemeService와 FilenameService를
   registerFactory 기반의 lazy-init으로 전환. ToastController는 사용자 피드백
   경로 특성상 eager 인스턴스로 유지.

@@ -369,6 +369,15 @@ async function startApplication(): Promise<void> {
     // 전역 스타일 로드 (사이드이펙트 import 방지)
     await import('./styles/globals');
 
+    // 초기 테마 부트스트랩: 첫 페인트 전에 data-theme를 동기 설정하여
+    // 투명/플래시 현상을 방지한다. (리스너/인스턴스 생성 없음)
+    try {
+      const { bootstrapInitialTheme } = await import('@shared/services/ThemeBootstrap');
+      bootstrapInitialTheme();
+    } catch (e) {
+      logger.debug('Theme bootstrap skipped or failed:', e);
+    }
+
     // 개발 도구 초기화 (개발 환경만; 테스트 모드에서는 제외하여 누수 스캔 간섭 방지)
     if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
       await initializeDevTools();

@@ -10594,6 +10594,26 @@
         },
         {
           "dynamic": true,
+          "module": "@shared/services/ThemeBootstrap",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/ThemeBootstrap.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
           "module": "@shared/utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -12182,6 +12202,15 @@
         "src/main.ts",
         "src/shared/services/core-services.ts",
         "src/shared/services/service-diagnostics.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/ThemeBootstrap.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/main.ts"
       ],
       "orphan": false,
       "valid": true
@@ -16372,8 +16401,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 265,
-    "totalDependenciesCruised": 745,
+    "totalCruised": 266,
+    "totalDependenciesCruised": 746,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
