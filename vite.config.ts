@@ -147,10 +147,51 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
   };
 }
 
+/**
+ * Strip development-only logger calls in production build.
+ * - Removes calls to `logger.debug(...)`, `logger.time(...)`, and `logger.timeEnd(...)`
+ * - Keeps info/warn/error for operational visibility
+ * This runs before other transforms to reduce bundle size and avoid leaking debug strings.
+ */
+function stripLoggerDebugPlugin(flags: BuildFlags): Plugin {
+  return {
+    name: 'xeg-strip-logger-debug',
+    enforce: 'pre',
+    apply: 'build',
+    transform(code, id) {
+      if (!flags.isProd) return null;
+      // Only transform our source files
+      if (!id.includes('/src/') || !/\.(t|j)sx?$/.test(id)) return null;
+
+      let out = code;
+
+      // Robust regex to match function call with nested parentheses: fn( ... )
+      const parenCall = (name: string) =>
+        new RegExp(String.raw`\b${name}\s*\((?:[^)(]|\((?:[^)(]|\([^)(]*\))*\))*\)\s*;?`, 'g');
+
+      const patterns = [
+        parenCall('logger\\.debug'),
+        parenCall('logger\\.time'),
+        parenCall('logger\\.timeEnd'),
+      ];
+
+      for (const re of patterns) {
+        out = out.replace(re, '');
+      }
+
+      if (out !== code) {
+        return { code: out, map: null };
+      }
+      return null;
+    },
+  } as Plugin;
+}
+
 export default defineConfig(({ mode }) => {
   const flags = resolveFlags(mode);
   const config: UserConfig = {
     plugins: [
+      stripLoggerDebugPlugin(flags),
       preact({ devToolsEnabled: flags.isDev, prefreshEnabled: flags.isDev }),
       tsconfigPaths({ projects: ['tsconfig.json'] }),
       userscriptPlugin(flags),

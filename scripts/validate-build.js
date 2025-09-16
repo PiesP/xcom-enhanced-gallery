@@ -169,6 +169,28 @@ function validateUserScript() {
     process.exit(1);
   }
 
+  // L3: Logging/Diagnostics tree-shake gate — forbid common dev-only strings in prod bundle
+  const prodStringGates = [
+    /logger\.debug\(/, // direct debug call
+    /logger\.time\(/, // perf timer start
+    /logger\.timeEnd\(/, // perf timer end
+    /__XEG_DEBUG__/, // dev-only global key
+    /\[TEST\]/, // explicit test diagnostics marker
+  ];
+  for (const re of prodStringGates) {
+    if (re.test(prodInfo.content)) {
+      console.error('❌ Prod userscript contains development-only string:', re);
+      process.exit(1);
+    }
+  }
+
+  // L4: ServiceDiagnostics should not be present in prod output symbol names
+  // note: the diagnostic code is dynamically imported in dev only; this guards against leakage
+  if (/ServiceDiagnostics\b/.test(prodInfo.content)) {
+    console.error('❌ Prod userscript leaked ServiceDiagnostics symbol');
+    process.exit(1);
+  }
+
   // 기본적인 JavaScript 구문 검증
   try {
     // 간단한 구문 검증 (실제 실행하지 않음)

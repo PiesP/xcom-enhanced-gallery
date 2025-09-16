@@ -655,7 +655,8 @@ function handleKeyboardEvent(
                 : (globalThis as { document?: Document }).document
             ) as Document | undefined;
             if (!doc) return null;
-            const root = doc.querySelector('#xeg-gallery-root');
+            const root = (doc.querySelector('.xeg-gallery-container') ||
+              doc.querySelector('[data-xeg-gallery-container]')) as HTMLElement | null;
             const items = root?.querySelector('[data-xeg-role="items-container"]');
             if (!items) return null;
             const index = galleryState.value.currentIndex;

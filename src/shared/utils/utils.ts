@@ -72,7 +72,6 @@ export {
 const GALLERY_SELECTORS = [
   `.${CSS_CONST.CLASSES.GALLERY_CONTAINER}`,
   '[data-gallery-element]',
-  '#xeg-gallery-root',
   '.vertical-gallery-view',
   '[data-xeg-gallery-container]',
 ];
@@ -131,7 +130,9 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
   if (!element) return false;
 
   try {
-    return element.matches('.xeg-gallery-container, #xeg-gallery-root');
+    return (
+      element.matches('.xeg-gallery-container') || element.matches('[data-xeg-gallery-container]')
+    );
   } catch {
     return false;
   }

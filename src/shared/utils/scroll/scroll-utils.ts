@@ -16,7 +16,6 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
   const gallerySelectors = [
     '.xeg-gallery-container',
     '[data-gallery-element]',
-    '#xeg-gallery-root',
     '.vertical-gallery-view',
     '[data-xeg-gallery-container]',
     '[data-xeg-gallery]',

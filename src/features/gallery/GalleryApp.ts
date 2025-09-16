@@ -247,11 +247,21 @@ export class GalleryApp {
    * 갤러리 컨테이너 확인 및 생성
    */
   private async ensureGalleryContainer(): Promise<void> {
-    let container = document.querySelector('#xeg-gallery-root') as HTMLDivElement | null;
+    let container = (document.querySelector('.xeg-gallery-container') ||
+      document.querySelector('[data-xeg-gallery-container]')) as HTMLDivElement | null;
 
     if (!container) {
       container = document.createElement('div');
-      container.id = 'xeg-gallery-root';
+      // 일부 테스트 환경(mocked document)에서는 classList가 없을 수 있으므로 폴백 처리
+      if (
+        (container as HTMLElement).classList &&
+        typeof (container as HTMLElement).classList.add === 'function'
+      ) {
+        container.classList.add('xeg-gallery-container');
+      } else {
+        container.setAttribute('class', 'xeg-gallery-container');
+      }
+      container.setAttribute('data-xeg-gallery-container', '');
       container.style.cssText = `
         position: fixed;
         top: 0;
@@ -262,6 +272,7 @@ export class GalleryApp {
         pointer-events: none;
       `;
       document.body.appendChild(container);
+      this.galleryContainer = container;
       logger.debug('갤러리 컨테이너 생성됨');
     }
   }

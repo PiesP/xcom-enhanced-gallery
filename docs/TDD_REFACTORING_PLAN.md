@@ -32,45 +32,9 @@
 > 코드 제거”와 “지연 실행(조건부 로딩)”, “디버그 제거”로 실측 크기·초기화 비용을
 > 낮춘다.
 
-### Phase 1 — 갤러리 셀렉터 단일화와 가드 테스트 추가 (TDD)
+<!-- Phase 1은 2025-09-16에 완료 로그로 이관되었습니다. (COMPLETED.md 참조) -->
 
-- 배경: 현재 `.xeg-gallery-container`, `#xeg-gallery-root`,
-  `[data-xeg-gallery-container]`, `.gallery-container` 등 다수의 셀렉터 조합이
-  공존합니다(`constants.ts`, `shared/utils/(utils|core-utils|scroll-utils).ts`,
-  `assets/styles/utilities/accessibility.css`). Shadow DOM 기반
-  `GalleryContainer`와 격리 스타일(`shared/styles/isolated-gallery.css`)이
-  존재하므로 런타임 판단 분기를 최소화합니다.
-- 작업:
-  - 테스트 추가: `test/behavioral/gallery-selectors.test.ts`
-    - isGalleryInternalElement/isGalleryContainer/canTriggerGallery가 Shadow DOM
-      루트와 `.xeg-gallery-container`에서 일관 동작함을 보장
-    - `#xeg-gallery-root` 직접 참조가 없어도 동작 유지(호환 레이어는 tests-only)
-  - 구현: `shared/utils/utils.ts`와 `shared/utils/core-utils.ts`의 중복
-    함수/상수 통합
-    - 단일 소스: `constants.SELECTORS.GALLERY_CONTAINER` 및 소수의 호환 키만
-      허용
-    - 런타임 경로에서 `#xeg-gallery-root` 직참조 제거(필요 시 내부 호환 배열로만
-      관리)
-  - 스타일: `assets/styles/utilities/accessibility.css`의
-    `.xeg-gallery-container` 규칙이 `isolated-gallery.css`와 중복이면
-    제거/통합(토큰 유지)
-- 수용 기준:
-  - src/\*\*에서 `#xeg-gallery-root` 직접 참조 0(테스트/문서 제외)
-  - 새 테스트 GREEN, 기존 갤러리 열기/닫기/네비 동작 무변
-  - 스타일 회귀 없음(contrast/토큰 테스트 GREEN)
-- 이득: 중복 경로 제거로 번들 크기 및 분기 비용 감소, 유지보수성 향상
-
-### Phase 2 — 로깅/디버그 코드의 프로덕션 제거(Tree-shaking 강제)
-
-- 배경: dev 레벨 로그/디버그 util이 프로덕션 번들에 잔존할 수 있음
-- 작업:
-  - 테스트 추가: `test/smoke/logging-tree-shake.test.ts`
-    - prod 빌드 산출물에서 `logger.debug(`, `ServiceDiagnostics` 문자열 0 보장
-  - 구현: vite 정의값(define) 또는 환경 플래그로 디버그 분기 제거
-    - logger에서 `if (__DEV__)`/레벨 가드로 debug/info 제거 가능하도록 분리
-    - dev 전용 글로벌 attach/키리스너는 dev 환경에서만 import/실행
-- 수용 기준: prod 번들 문자열 가드 PASS, 기능 회귀 없음
-- 이득: 수 kB~ 수십 kB 감축(소스 비중에 따라 다름), 런타임 오버헤드 감소
+<!-- Phase 2는 2025-09-16에 완료 로그로 이관되었습니다. (COMPLETED.md 참조) -->
 
 ### Phase 3 — 비핵심 서비스 지연 실행(조건부 import) 및 경량화
 

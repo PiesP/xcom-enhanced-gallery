@@ -101,7 +101,8 @@ export class VideoControlService {
 
       if (!doc) return null;
 
-      const container = doc.querySelector('#xeg-gallery-root');
+      const container = (doc.querySelector('.xeg-gallery-container') ||
+        doc.querySelector('[data-xeg-gallery-container]')) as HTMLElement | null;
       if (!container) return null;
 
       const items = container.querySelector('[data-xeg-role="items-container"]');
@@ -295,7 +296,6 @@ export class VideoControlService {
       '[data-xeg-role]',
       '[data-gallery-element]',
       '[data-gallery-video]',
-      '#xeg-gallery-root',
       '.vertical-gallery-view',
     ];
 

@@ -153,7 +153,6 @@ export class MediaClickDetector {
     const galleryInternalSelectors = [
       `.${CSS.CLASSES.GALLERY_CONTAINER}`,
       '[data-gallery-element]',
-      '#xeg-gallery-root',
       '.vertical-gallery-view',
       '[data-xeg-gallery-container]',
       '[data-xeg-gallery]',

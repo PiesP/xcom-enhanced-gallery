@@ -1,5 +1,37 @@
 ### 2025-09-16 — PLAN-CLOSE (B/C/F 관찰 지속 항목 정리)
 
+### 2025-09-16 — PHASE 2 완료: 로깅/디버그 코드 프로덕션 제거(Tree-shaking 강제)
+
+- 내용: 프로덕션 번들에서 dev 전용 로깅/진단 문자열 누출을 차단.
+  - 빌드 전 변환 플러그인으로 `logger.debug(`, `logger.time(`, `logger.timeEnd(`
+    호출 제거 (prod 한정)
+  - 포스트빌드 validator 강화: prod 산출물에 `logger.debug(`, `logger.time(`,
+    `logger.timeEnd(`, `__XEG_DEBUG__`, `[TEST]`, `ServiceDiagnostics` 문자열이
+    존재하면 FAIL
+  - 기존 Terser 설정(drop_console/debugger) 유지
+- 수용 기준: prod 번들 문자열 가드 PASS, 기능 회귀 없음
+- 검증: typecheck/lint/fast 테스트 GREEN, dev/prod 빌드 및 postbuild validator
+  PASS (gzip ≈ 96KB)
+
+### 2025-09-16 — PHASE 1 완료: 갤러리 셀렉터 단일화 + 가드 테스트
+
+- 내용: 런타임 src/\*\* 전역에서 `#xeg-gallery-root` 직접 참조 제거. 컨테이너
+  탐지는 `.xeg-gallery-container`/`[data-xeg-gallery-container]`로 단일화.
+  테스트 환경(mock) 호환을 위해 `GalleryApp.ensureGalleryContainer()`에서
+  classList 폴백 처리.
+- 변경:
+  - 소스: `shared/utils/utils.ts`, `shared/utils/scroll/scroll-utils.ts`,
+    `shared/utils/media/MediaClickDetector.ts`, `shared/utils/events.ts`,
+    `shared/services/media/VideoControlService.ts`,
+    `features/gallery/GalleryApp.ts` (id 기반 참조 제거/대체)
+  - 테스트 추가:
+    `test/unit/lint/gallery-root.direct-usage.scan.red.test.ts`(정적 스캔 가드),
+    `test/unit/shared/utils/gallery-selectors.contract.test.ts`(행위 계약)
+- 수용 기준: src/\*\*에 `#xeg-gallery-root` 0, 갤러리 활성/네비/닫기 기존 테스트
+  GREEN, 스타일/토큰 가드 GREEN → 충족
+- 검증: typecheck PASS, lint PASS, fast/unit 스위트 GREEN(새 테스트 포함),
+  dev/prod 빌드 및 postbuild validator PASS.
+
 - 대상: B(legacy vendor-manager.ts), C(toolbarConfig.ts @deprecated),
   F(zip-creator @deprecated high-level helper)
 - 조치: 활성 계획서에서 B/C/F를 제거하고 본 완료 로그로 이관. TEST-ONLY/LEGACY
