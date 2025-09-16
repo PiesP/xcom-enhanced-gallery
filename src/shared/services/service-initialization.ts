@@ -34,19 +34,22 @@ export async function registerCoreServices(): Promise<void> {
   const { ThemeService } = await import('./ThemeService');
   const { ToastController } = await import('./ToastController');
 
-  const themeService = new ThemeService();
+  // ToastController는 즉시 사용 가능해야 하므로 인스턴스 등록 유지
   const toastController = new ToastController();
-
-  serviceManager.register(SERVICE_KEYS.THEME, themeService);
   serviceManager.register(SERVICE_KEYS.TOAST, toastController);
+  serviceManager.register('toast.controller', toastController); // 하위 호환
 
-  // 하위 호환성을 위한 추가 키 등록
-  serviceManager.register('theme.service', themeService); // 테스트에서 사용하는 키
-  serviceManager.register('toast.controller', toastController); // 테스트에서 사용하는 키
-
-  // 기존 키들과의 호환성을 위해 중복 등록
-  serviceManager.register(SERVICE_KEYS.THEME, themeService);
-  // TOAST_CONTROLLER는 이미 위에서 등록됨
+  // ThemeService/FilenameService는 Non-Critical → 첫 접근 시 생성되도록 팩토리 등록
+  // 동일 인스턴스를 여러 키에서 공유해야 하므로 클로저 팩토리를 공유
+  const themeFactory = (() => {
+    let instance: InstanceType<typeof ThemeService> | null = null;
+    return () => {
+      if (!instance) instance = new ThemeService();
+      return instance;
+    };
+  })();
+  serviceManager.registerFactory(SERVICE_KEYS.THEME, themeFactory);
+  serviceManager.registerFactory('theme.service', themeFactory); // 테스트 호환 키
 
   // ====================================
   // 독립 유지 서비스들
@@ -59,7 +62,14 @@ export async function registerCoreServices(): Promise<void> {
 
   // 파일명 서비스 (배럴 경유 금지 — 구체 모듈로 import)
   const { FilenameService } = await import('../media/FilenameService');
-  serviceManager.register(SERVICE_KEYS.MEDIA_FILENAME, new FilenameService());
+  const filenameFactory = (() => {
+    let instance: InstanceType<typeof FilenameService> | null = null;
+    return () => {
+      if (!instance) instance = new FilenameService();
+      return instance;
+    };
+  })();
+  serviceManager.registerFactory(SERVICE_KEYS.MEDIA_FILENAME, filenameFactory);
 
   logger.info('Core services registered successfully');
 }

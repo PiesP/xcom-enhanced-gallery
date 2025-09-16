@@ -64,7 +64,8 @@ async function initializeCriticalSystems(): Promise<void> {
     logger.info('Critical Path 초기화 시작');
 
     // Core 서비스 등록 (동적 import)
-    const { registerCoreServices } = await import('@shared/services/core-services');
+    // Avoid pulling ServiceDiagnostics via core-services re-export on critical path
+    const { registerCoreServices } = await import('@shared/services/service-initialization');
     await registerCoreServices();
 
     // Critical Services만 즉시 초기화
@@ -466,7 +467,12 @@ if (document.readyState === 'loading') {
     logger.debug('DOMContentLoaded wiring skipped (test mode)');
   }
 } else {
-  startApplication();
+  // 테스트 모드에서는 자동 시작을 생략하여 import/eval 비용과 전역 리스너/타이머 누수를 방지
+  if (import.meta.env.MODE !== 'test') {
+    startApplication();
+  } else {
+    logger.debug('Auto-start skipped (test mode)');
+  }
 }
 
 // 모듈 기본 export (외부에서 수동 시작 가능)
