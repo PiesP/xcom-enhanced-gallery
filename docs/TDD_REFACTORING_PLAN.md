@@ -32,10 +32,6 @@
 > 코드 제거”와 “지연 실행(조건부 로딩)”, “디버그 제거”로 실측 크기·초기화 비용을
 > 낮춘다.
 
-<!-- Phase 1은 2025-09-16에 완료 로그로 이관되었습니다. (COMPLETED.md 참조) -->
-
-<!-- Phase 2는 2025-09-16에 완료 로그로 이관되었습니다. (COMPLETED.md 참조) -->
-
 ### Phase 3 — 비핵심 서비스 지연 실행(조건부 import) 및 경량화
 
 - 배경: 단일 번들이지만, 즉시 실행 비용을 낮추면 초기 체감속도가 개선됨
@@ -49,7 +45,16 @@
 - 수용 기준: 갤러리 미사용 시 초기 타이머/리스너 수 감소, 기능 회귀 없음
 - 이득: 초기화 비용/메모리 풋프린트 감소
 
-> 참고: Phase 1–3만 활성 유지. Phase 4–6은 완료
+메모(준비):
+
+- 초기 후보(Non-Critical): ThemeService 초기화 지연, BulkDownloadService
+  컨테이너 등록 시점 지연(기능 트리거 시), FilenameService 지연
+- main.ts 경계: initializeNonCriticalSystems 안에서의 warmupNonCriticalServices
+  호출 제거/조정 검토(테스트 방해 없는 범위에서)
+- 테스트(RED): startup 시 import/eval 스캔으로
+  BulkDownload/ZIP/Settings/Diagnostics 모듈의 즉시 평가 방지 확인
+
+> 참고: 현재 활성 과제는 Phase 3만 남아 있습니다. Phase 4–6은 완료
 > 로그(TDD_REFACTORING_PLAN_COMPLETED.md)에 기록됨.
 
 <!-- Phase 4–6은 기존 가드/수정으로 충족되어 완료 로그로 이관되었습니다. 활성 계획에서는 제거합니다. -->
