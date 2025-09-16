@@ -8,6 +8,43 @@
 - 검증: 문서 렌더링 수동 점검으로 코드 블록/헤딩 구조 파손 없음 확인. 기존
   테스트/타입/린트/빌드 플로우와 충돌 없음.
 
+### 2025-09-16 — D1.1 다운로드 에러 복구 UX 가드 완료
+
+- 내용: 대량 다운로드(다중 ZIP) 전체 실패/부분 실패/성공/취소 케이스에서 토스트
+  라우팅과 중복 방지가 일관되도록 서비스 계약 테스트 정비. 추가 코드 변경 없이
+  현행 구현이 수용 기준을 충족함을 확인.
+- 테스트: `test/unit/shared/services/bulk-download.error-recovery.test.ts` GREEN
+- 검증: 타입/린트/전체 테스트/빌드/포스트빌드 모두 PASS.
+
+### 2025-09-16 — KBD-NAV-UNIFY 가드 보강 완료
+
+- 내용: document/window 직접 keydown 등록 금지 스캔 규칙 보강과
+  `KeyboardNavigator` 계약 테스트 확장(편집 가능 요소 무시, preventDefault 옵션
+  검증). 현행 서비스가 기준 충족을 확인.
+- 테스트:
+  - `test/unit/lint/keyboard-listener.centralization.policy.test.ts` GREEN
+  - `test/unit/shared/services/keyboard-navigator.service.test.ts` GREEN
+- 검증: 타입/린트/테스트/빌드/포스트빌드 PASS.
+
+### 2025-09-16 — VND-MESSAGING-ALIGN-01 완료
+
+- 내용: Vendors 정적 경로 단일화 관련 메시지/주석/문서 정합성 보강 항목은
+  2025-09-15의 "VND-LEGACY-MOVE — 동적 VendorManager 테스트 전용 명시"로 충족됨.
+  추가 작업 불필요함을 확인.
+- 검증: 빌드 산출물 문자열 스캔에서 'VendorManager' 누출 없음(기 완료 항목
+  참조).
+
+### 2025-09-16 — F1/U4 배럴 표면 가드 유지보수 완료
+
+- 내용: features/아이콘 배럴 표면 가드 유지보수는 기 완료 항목들로 충족됨
+  (BARREL-SURFACE-TRIM-01, icons-used-only/used-only 스캔). 예외 목록/메시지
+  현행화 필요 없음 확인.
+- 테스트:
+  - `test/unit/lint/features-barrel.surface.scan.red.test.ts` GREEN
+  - `test/unit/lint/icons-used-only.scan.red.test.ts` GREEN
+  - `test/unit/refactoring/unused-exports.scan.red.test.ts` GREEN
+- 검증: 타입/린트/테스트/빌드/포스트빌드 PASS.
+
 ### 2025-09-16 — SETTINGS-MIG-HASH-01 완료
 
 - 내용: Settings 스키마 해시(`__schemaHash`) 도입. 저장된 해시와 현재 해시가
