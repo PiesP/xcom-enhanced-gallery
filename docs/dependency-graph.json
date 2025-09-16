@@ -5026,7 +5026,7 @@
         },
         {
           "dynamic": false,
-          "module": "@shared/services/media/normalizers/TwitterVideoLegacyNormalizer",
+          "module": "@shared/services/media/normalizers/legacy/twitter",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -5036,7 +5036,7 @@
             "local",
             "import"
           ],
-          "resolved": "src/shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts",
+          "resolved": "src/shared/services/media/normalizers/legacy/twitter.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5074,36 +5074,10 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./legacy/twitter",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/media/normalizers/legacy/twitter.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/services/media/TwitterVideoExtractor.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/services/media/normalizers/legacy/twitter.ts",
       "dependencies": [],
       "dependents": [
+        "src/shared/services/media/TwitterVideoExtractor.ts",
         "src/shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts"
       ],
       "orphan": false,
@@ -15948,6 +15922,31 @@
             "export"
           ],
           "resolved": "src/shared/services/media/VideoControlService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./legacy/twitter",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/services/media/normalizers/legacy/twitter.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
