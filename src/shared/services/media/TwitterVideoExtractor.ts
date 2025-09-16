@@ -10,7 +10,7 @@ import { undefinedToNull } from '@shared/utils/type-safety-helpers';
 import {
   normalizeTweetLegacy,
   normalizeUserLegacy,
-} from '@shared/services/media/normalizers/TwitterVideoLegacyNormalizer';
+} from '@shared/services/media/normalizers/legacy/twitter';
 
 import { STABLE_SELECTORS, TWITTER_API_CONFIG } from '@/constants';
 

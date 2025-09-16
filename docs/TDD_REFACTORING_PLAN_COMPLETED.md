@@ -25,6 +25,21 @@
 
 ### 2025-09-16 — MEDIA-STRATEGY-05 종결(옵션 과제 클로즈)
 
+### 2025-09-16 — D2/E/A 정리(경로/플레이스홀더/런타임 스텁)
+
+- D2 — Media Normalizer 구(old) 경로 제거: 소비처를 새 경로
+  `@shared/services/media/normalizers/legacy/twitter`로 전환하고, 구 경로 파일
+  `TwitterVideoLegacyNormalizer.ts`를 제거. 관련 단위 테스트의 import도 새
+  경로로 조정. 스캔에서 구 경로 사용 0 보장.
+- E — Icon placeholder 물리 삭제: `src/shared/components/ui/Icon/icons/index.ts`
+  플레이스홀더 파일을 물리 삭제. 소스 전역 사용 스캔(offenders 0) 및 기존 가드
+  테스트 유지(경로 직접 import 금지)로 회귀 방지.
+- A — Runtime Stub(createAppContainer) 제거: 런타임 금지 스텁
+  `src/features/gallery/createAppContainer.ts`를 삭제. 테스트 하네스 전용
+  `test/refactoring/helpers/createAppContainer.ts` 사용 경로는 그대로 유지하며,
+  런타임 import 금지 RED 스캔 테스트는 지속 GREEN.
+- 검증: 타입/린트/테스트/빌드/포스트빌드 모두 PASS.
+
 - 주제: 미디어 추출/정규화 경로 정리(Strategy/Factory 경계 명료화, normalizer
   단일화)
 - 결정: 현 구조 유지(A안). 기능/테스트 GREEN이며 경계 재정렬은 리스크 대비

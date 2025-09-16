@@ -26,13 +26,7 @@
 
 ## 남은 작업(우선순위 및 순서)
 
-1. D2 — Media Normalizer 구(old) 경로 제거 준비: 새 경로로의 소비처 이행률을
-   100%로 만든 뒤 구 경로 제거(스캔 테스트로 사용 0 보증 후 실행).
-2. E — Icon placeholder 물리 삭제 후보: 가드(offenders 0) 유지 모니터링 후, 추가
-   소비 0이 지속되면 디렉터리/파일 물리 삭제 PR로 진행.
-3. A — Runtime Stub(`features/gallery/createAppContainer.ts`) 처리: 런타임 접근
-   0 상태가 지속 확인되면 테스트 하네스 전용 경로로 이전하거나 제거.
-4. B/C/F — TEST-ONLY/LEGACY 표면 유지: prod 경로에서의 참조 0 유지(스캔/번들
+1. B/C/F — TEST-ONLY/LEGACY 표면 유지: prod 경로에서의 참조 0 유지(스캔/번들
    문자열 가드 지속) — 필요 시 주석/문서 보강만.
 
 롤백 전략: 각 단계는 독립 PR로 최소 diff 수행. 스캔/가드 테스트 GREEN 전제에서
@@ -53,14 +47,14 @@
 
 ### 스코프(1차)
 
-- A. Runtime Stub: `src/features/gallery/createAppContainer.ts` (런타임 금지
-  스텁)
+- A. Runtime Stub: `src/features/gallery/createAppContainer.ts` (완료 — 런타임
+  스텁 제거)
 - B. Vendor Legacy Manager(TEST-ONLY):
   `src/shared/external/vendors/vendor-manager.ts` (@deprecated, 테스트 전용)
 - C. Deprecated Config: `src/shared/components/ui/Toolbar/toolbarConfig.ts`
-- D. Media Normalizer:
+- D. Media Normalizer: (완료 — 구(old) 경로 제거)
   `src/shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts`
-- E. Deprecated Icon Barrel Placeholder:
+- E. Deprecated Icon Barrel Placeholder: (완료 — 물리 삭제)
   `src/shared/components/ui/Icon/icons/index.ts`
 - F. Zip Legacy Helper: `src/shared/external/zip/zip-creator.ts`의 @deprecated
   API
