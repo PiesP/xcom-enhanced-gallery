@@ -32,17 +32,7 @@
 
 ---
 
-<!-- 1) VND-INIT-01 — 완료: COMPLETED 문서로 이동 -->
-
----
-
-<!-- 3) TOKENS-TOOLBAR-03 — 완료: COMPLETED 문서로 이동 -->
-
----
-
-<!-- 4) A11Y-ICON-04 — 완료: COMPLETED 문서로 이동 -->
-
----
+<!-- 완료 항목(참고용): VND-INIT-01 / VND-LEGACY-MOVE-02 / TOKENS-TOOLBAR-03 / A11Y-ICON-04 는 완료 로그로 이관되었습니다. -->
 
 ## 5) MEDIA-STRATEGY-05: 미디어 추출/정규화 경로 정리(옵션)
 
@@ -63,8 +53,10 @@
 
 ## 실행 순서 및 리스크/롤백
 
-1. VND-INIT-01 → 2) VND-LEGACY-MOVE-02 → 3) TOKENS-TOOLBAR-03 → 4) (완료) (5는
-   보류)
+완료: VND-INIT-01 → VND-LEGACY-MOVE-02 → TOKENS-TOOLBAR-03 → A11Y-ICON-04 (완료
+로그 참조)
+
+보류: 5) MEDIA-STRATEGY-05 (옵션, 후속 사이클에서 범위 축소 후 재검토)
 
 - 공통 리스크: 테스트 경로/모킹 조정 필요. 해결: `test/setup.ts`에서 중앙화.
 - 롤백 전략: 각 단계는 독립 브랜치/PR로 나누고, 실패 시 해당 커밋만 리버트
