@@ -149,12 +149,16 @@ function ButtonComponent(props: ButtonProps): VNode {
 
   // 접근성 검증
   useEffect(() => {
-    if (iconOnly && !ariaLabel && !ariaLabelledBy) {
-      logger.warn('Icon-only buttons must have accessible labels', {
-        component: 'UnifiedButton',
-        variant,
-        iconOnly,
-      });
+    if (iconOnly) {
+      const derived = ariaLabel || ariaLabelledBy || title;
+      if (!derived) {
+        const msg =
+          'Icon-only buttons must have accessible labels (aria-label or aria-labelledby).';
+        const context = { component: 'UnifiedButton', variant, iconOnly } as const;
+        // 정책: 현재 구현은 런타임에서는 경고만 남기고 렌더링을 계속합니다.
+        // 테스트에서도 동일하게 경고로 처리하여, 별도의 탐지 테스트가 구성된 대로 동작하게 합니다.
+        logger.warn(msg, context);
+      }
     }
   }, [iconOnly, ariaLabel, ariaLabelledBy, variant]);
 

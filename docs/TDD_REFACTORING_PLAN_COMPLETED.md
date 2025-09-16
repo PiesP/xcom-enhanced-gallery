@@ -1,3 +1,29 @@
+### 2025-09-16 — TOKENS-TOOLBAR-03 완료
+
+- 내용: ToolbarShell에 컴포넌트 섀도 토큰을 도입하여 box-shadow/배경/보더가
+  컴포넌트 레이어 토큰을 통해 제어되도록 정렬. 레거시/신규 토큰명 전환기를 통해
+  점진 이행.
+- 변경:
+  - `src/shared/components/ui/ToolbarShell/ToolbarShell.module.css`:
+    `--xeg-comp-toolbar-shadow` 정의 및 elevation/surface 변형에서 소비
+  - 테스트: `test/unit/shared/components/ui/ToolbarShell.tokens.test.ts`,
+    `test/styles/toolbar-shell.shadow-tokens.test.ts`(레거시/신규 토큰명 모두
+    허용)
+- 검증: styles/fast 스위트 GREEN. 타입/린트 PASS. 빌드 영향 없음.
+
+### 2025-09-16 — A11Y-ICON-04 완료
+
+- 내용: 아이콘 전용 버튼(iconOnly)의 접근성 보강.
+  aria-label/aria-labelledby/title 중 하나가 없으면 런타임 경고(logger.warn)로
+  기록하고, 테스트에서 누락을 탐지.
+- 변경:
+  - `src/shared/components/ui/Button/Button.tsx`: 테스트 모드 예외 throw 제거 →
+    `logger.warn` 유지. 라벨 파생(title/i18n) 우선순위 문서화.
+  - 테스트: `test/unit/ui/toolbar.icon-accessibility.test.tsx` 통과. 기타 a11y
+    가드와 정합성 유지.
+- 검증: fast/styles 스위트 GREEN, 타입/린트 PASS, dev/prod 빌드 및 postbuild
+  validator PASS.
+
 ### 2025-09-16 — DOCS-HARDENING-01 완료
 
 ### 2025-09-16 — VND-INIT-01 완료
@@ -13,6 +39,19 @@
   - 신규 테스트 추가: warn 미발생 확인
 - 검증: smoke/fast 스위트 GREEN, 벤더 경고 미출력(테스트 모드), 기존 기능/빌드
   플로우 영향 없음.
+
+### 2025-09-16 — VND-LEGACY-MOVE-02 완료
+
+- 내용: 동적 VendorManager의 런타임 접근을 금지하는 스캔 테스트를 추가해 테스트
+  전용임을 명확화하고, 런타임 소스에서의 참조가 0임을 보장. `createAppContainer`
+  런타임 스텁은 유지하되 테스트 하네스 전용 사용을 재확인(기존 lint 테스트
+  유지).
+- 변경:
+  - 신규 테스트: `test/unit/lint/vendor-manager.runtime-imports.red.test.ts`
+  - 기존 가드와 함께 prod 번들 문자열 가드가 'VendorManager' 누출을 금지하는지
+    확인(`scripts/validate-build.js`)
+- 검증: 전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS
+  (VendorManager/legacy 전역 키 누출 없음).
 
 - 내용: CODING_GUIDELINES의 코드펜스 파손 및 Toast 섹션 혼입 문제를 수정하고,
   animateCustom 예시 인접 영역을 정상화. ARCHITECTURE와
