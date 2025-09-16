@@ -1,3 +1,13 @@
+### 2025-09-16 — PLAN-CLOSE (B/C/F 관찰 지속 항목 정리)
+
+- 대상: B(legacy vendor-manager.ts), C(toolbarConfig.ts @deprecated),
+  F(zip-creator @deprecated high-level helper)
+- 조치: 활성 계획서에서 B/C/F를 제거하고 본 완료 로그로 이관. TEST-ONLY/LEGACY
+  표면은 유지하되 가드/스캔/번들 문자열 검증으로 회귀 방지.
+- 가드/수용 기준: src/\*\* 런타임 import 0, prod 번들 'VendorManager' 문자열 0,
+  zip-creator @deprecated API 사용 0, toolbarConfig 런타임 사용 0.
+- 검증: 타입/린트/테스트/빌드/포스트빌드 PASS.
+
 ### 2025-09-16 — PLAN-SYNC (VND/TOKENS/A11Y)
 
 - 계획 정리: 활성 계획서(TDD_REFACTORING_PLAN.md)에서 완료 항목을 본 완료 로그로
