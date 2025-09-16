@@ -13,7 +13,6 @@ import type { AppConfig } from '@/types';
 import { registerFeatureServicesLazy as registerFeatures } from '@/bootstrap/feature-registration';
 import {
   warmupCriticalServices,
-  warmupNonCriticalServices,
   registerGalleryRenderer,
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/ServiceManager';
@@ -104,23 +103,10 @@ async function registerFeatureServicesLazy(): Promise<void> {
  * Non-Critical 시스템 백그라운드 초기화
  */
 function initializeNonCriticalSystems(): void {
-  // 테스트 모드에서는 비필수 시스템 초기화를 건너뛰어 불필요한 타이머를 만들지 않는다
-  if (import.meta.env.MODE === 'test') {
-    logger.debug('Non-Critical 시스템 초기화 생략 (test mode)');
-    return;
-  }
-
-  globalTimerManager.setTimeout(async () => {
-    try {
-      logger.info('Non-Critical 시스템 백그라운드 초기화 시작');
-
-      warmupNonCriticalServices();
-
-      logger.info('✅ Non-Critical 시스템 백그라운드 초기화 완료');
-    } catch (error) {
-      logger.warn('Non-Critical 시스템 초기화 중 오류 (앱 동작에는 영향 없음):', error);
-    }
-  }, 0);
+  // Phase 3: 비핵심 서비스는 실제 사용 시점까지 초기화를 지연합니다.
+  // 이전에는 setTimeout(0)으로 warmupNonCriticalServices()를 호출했으나 제거했습니다.
+  // 효과: 초기 타이머 1개 감소, 불필요한 인스턴스 사전 생성 방지.
+  logger.debug('Non-Critical 시스템 사전 워밍업을 비활성화(지연 실행)했습니다.');
 }
 
 /**

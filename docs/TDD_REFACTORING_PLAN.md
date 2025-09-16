@@ -39,7 +39,7 @@
   - 다운로드/ZIP/설정/진단 관련 서비스는 이벤트 시점까지 import/초기화를 지연
     - 예: BulkDownloadService/zip creator/ServiceDiagnostics/Settings 로딩 지연
   - main.ts의 initializeNonCriticalSystems/initializeToastContainer 경계 검토 →
-    불필요 선행 초기화 제거
+    불필요 선행 초기화 제거 (Non-Critical 워밍업 제거 완료)
   - 테스트 추가: `test/performance/startup-latency.test.ts`
     - 갤러리 미개시 상태의 초기 작업(타이머/리스너 수) 상한 가드
 - 수용 기준: 갤러리 미사용 시 초기 타이머/리스너 수 감소, 기능 회귀 없음
