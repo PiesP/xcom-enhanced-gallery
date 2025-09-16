@@ -27,31 +27,22 @@
 
 ---
 
-1. SRC-PATH-RENAME-01 • Icon placeholder import 금지 가드 추가
+1. SRC-PATH-RENAME-01 • Icon placeholder import 금지 가드 추가 — 완료(완료 로그
+   이관)
 
-- 배경: `src/shared/components/ui/Icon/icons/index.ts`는 @deprecated placeholder
-  입니다. 런타임 import는 금지되어야 합니다.
-- 수용 기준:
-  - src/\*\* 경로에서 위 파일로의 import/require 사용 0건
-  - 테스트/스냅샷 GREEN, 빌드/포스트빌드 가드 GREEN
+- 완료: `test/unit/lint/icon-deprecated-placeholder.imports.scan.red.test.ts`
+  추가 및 offenders 0 확인. 상세는 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
 
-2. SRC-PATH-RENAME-01 • Media Normalizer 리네임(단계 D1: re-export)
+2. SRC-PATH-RENAME-01 • Media Normalizer 리네임(단계 D1: re-export) — 완료(완료
+   로그 이관)
 
-- 작업:
-  - 새 파일 `src/shared/services/media/normalizers/legacy/twitter.ts` 생성
-  - 기존 파일은 JSDoc @deprecated 표기 후 새 경로에서 re-export만 수행
-  - import 스캔 시 새/구 경로 혼재 허용(과도기), D2에서 구 경로 0으로 정리
+- 완료: 새 경로 `shared/services/media/normalizers/legacy/twitter.ts` 도입, 구
+  경로는 @deprecated + re-export. 상세는 완료 로그 참조.
 
-3. Vendors 초기화 경고 소음 축소(테스트 환경) 산발적으로 보임.
+3. Vendors 초기화 경고 소음 축소 — 상태: 완료됨(VND-INIT-01). 추가 작업 없음.
 
-- 작업(저위험):
-  - `test/setup.ts`의 선행 초기화가 실패 시 경고를 감추지 않도록 최소화/리트라이
-    로직 점검(필요 시 vi.spyOn(console, ...) 기반 warn 카운트 가드 도입)
-  - smoke/fast 스위트에서 벤더 초기화 관련 warn 카운트 0 또는 허용 임계치 이내
-
-4. UI/UX 토큰 마이크로 정리(선택) 사용 불가 정책 준수 점검
-
-- 수용 기준: 스타일 가드 GREEN 유지, 번들 영향 없음
+4. UI/UX 토큰 마이크로 정리(선택) — 상태: 완료됨(TOKENS-TOOLBAR-03). 추가 작업
+   없음.
 
 - 롤백 전략: 각 단계는 독립 브랜치/PR로 나누고, 실패 시 해당 커밋만 리버트
   가능하도록 최소 diff 유지. re-export 단계는 즉시 되돌림 용이.
@@ -133,21 +124,12 @@
 - 제안: 향후 완전 제거 전, tests 전용 파일로 분리하거나 이름에 `.legacy` 접미사
 - 가드/수용 기준: src/\*\* 사용 0 유지, 제거 시 테스트 리팩토링 동반
 
-### 단계별 실행 순서(제안)
+### 단계별 실행 순서(요약 현행화)
 
-- Phase 0 — Baseline
-  - 전체 테스트/빌드 GREEN 확인, offenders 스캔 스냅샷 기록
-- Phase 1 — 가드 강화(문서/테스트)
-  - E import 스캔 RED 테스트 추가(icons placeholder 경로)
-  - D re-export 경로 준비(@deprecated JSDoc) — 코드 변경 최소
-- Phase 2 — 안전 리네임(선택 적용)
-  - D 소비처 일부를 새 경로로 전환(소규모, 1~2곳)
-- Phase 3 — 제거/이전(선택 적용)
-  - E offenders 0이면 파일 삭제
-  - D 구 경로 제거(오프렌더 0)
-- Phase 4 — 런타임 스텁/Deprecated 정리 검토
-  - A 삭제 또는 runtime-stubs 이전(사용 0 보증 시)
-  - C/F tests 경로로 이전 검토
+- Phase 0 — 완료
+- Phase 1 — 완료(E 가드, D re-export)
+- Phase 2/3 — 보류(필요 시 후속 PR로 삭제/전환)
+- Phase 4 — 보류(관찰 지속)
 
 ### 리스크/롤백
 

@@ -79,6 +79,7 @@
   (VendorManager/legacy 전역 키 누출 없음).
 
 - 내용: CODING_GUIDELINES의 코드펜스 파손 및 Toast 섹션 혼입 문제를 수정하고,
+- 내용: CODING_GUIDELINES의 코드펜스 파손 및 Toast 섹션 혼입 문제를 수정하고,
   animateCustom 예시 인접 영역을 정상화. ARCHITECTURE와
   DEPENDENCY-GOVERNANCE에는 "런타임 코딩/스타일/토큰/테스트 정책은
   CODING_GUIDELINES를 단일 소스로 참조"하도록 교차 링크를 추가해 문서 중복을
@@ -363,6 +364,28 @@ LEGACY-TOKENS-PRUNE-01만 활성 유지)
 - 검증: 테스트/타입/린트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
 
 2025-09-15: CSS-TOKEN-GUARD-01 — 디자인 토큰 사용 가드 확대 (완료)
+
+### 2025-09-16 — SRC-PATH-RENAME-01 (icons placeholder 가드) 완료
+
+- 내용: `src/shared/components/ui/Icon/icons/index.ts` 경로에 대한
+  import/require를 전역 금지하는 RED 스캔 테스트 추가.
+- 테스트: `test/unit/lint/icon-deprecated-placeholder.imports.scan.red.test.ts`
+  GREEN, offenders 0.
+- 검증: 타입/린트/전체 스위트/빌드/포스트빌드 PASS.
+
+### 2025-09-16 — D1(Media Normalizer re-export) 완료
+
+- 내용: 새 경로 `src/shared/services/media/normalizers/legacy/twitter.ts` 생성.
+  구 경로 `TwitterVideoLegacyNormalizer.ts`는 @deprecated 주석 후 새 경로
+  re-export로 유지.
+- 영향: 소비처 점진 이행 가능. 타입/테스트/빌드 GREEN.
+
+### 2025-09-16 — PLAN-MAP — Vendors 경고/토큰 미세정리
+
+- 계획 항목 3(벤더 초기화 경고 소음 축소)은 본 문서의 "VND-INIT-01 완료"로 이미
+  충족됨.
+- 계획 항목 4(UI/UX 토큰 마이크로 정리)은 "TOKENS-TOOLBAR-03 완료"로 충족됨.
+  추가 작업 없음.
 
 - 내용: 컴포넌트 CSS 색상 리터럴 금지 가드에 더해 TSX 인라인 style 속성에서도
   색상 리터럴(hex/rgb/rgba/hsl/hsla/oklch/color-mix/white/black)을 금지하는 스캔
