@@ -19,8 +19,9 @@
   postbuild validator 정상 동작 중.
 - Vendors: 정적 매니저(`StaticVendorManager`) 경유 정책 준수. 테스트 모드 자동
   초기화 경고는 다운그레이드되어 소음 없음(완료 항목으로 이관됨).
-- 레거시 표면: 동적 VendorManager(`vendor-manager.ts`)는 TEST-ONLY, 갤러리
-  `createAppContainer.ts`는 런타임 금지 스텁으로 유지(접근 금지 가드 존재).
+- 레거시 표면: 동적 VendorManager(`vendor-manager.ts`)는 TEST-ONLY 유지. 갤러리
+  런타임 `createAppContainer.ts` 스텁은 삭제 완료(테스트 하네스 전용 경로만
+  사용).
 
 ---
 
@@ -47,29 +48,13 @@
 
 ### 스코프(1차)
 
-- A. Runtime Stub: `src/features/gallery/createAppContainer.ts` (완료 — 런타임
-  스텁 제거)
 - B. Vendor Legacy Manager(TEST-ONLY):
   `src/shared/external/vendors/vendor-manager.ts` (@deprecated, 테스트 전용)
 - C. Deprecated Config: `src/shared/components/ui/Toolbar/toolbarConfig.ts`
-- D. Media Normalizer: (완료 — 구(old) 경로 제거)
-  `src/shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts`
-- E. Deprecated Icon Barrel Placeholder: (완료 — 물리 삭제)
-  `src/shared/components/ui/Icon/icons/index.ts`
 - F. Zip Legacy Helper: `src/shared/external/zip/zip-creator.ts`의 @deprecated
   API
 
 ### 후보와 제안
-
-1. A(Runtime Stub createAppContainer)
-
-- 현상: 런타임 접근 금지 throw 스텁(테스트 하네스 분리 존재). 런타임에서 import
-  금지 가드 테스트 있음.
-- 제안: 유지(즉시 변경 없음). 후속: 사용 0임이 지속 보장되면 삭제 또는
-  `shared/container/runtime-stubs/createAppContainer.runtime.ts`로 이전.
-- 가드/수용 기준:
-  - src/\*\* import 0(기존 RED 테스트 통과)
-  - 삭제/이전 시 빌드/테스트 GREEN, 번들 문자열에 createAppContainer 미포함
 
 2. B(legacy vendor-manager.ts)
 
@@ -85,24 +70,6 @@
 - 가드/수용 기준: src/\*\* 런타임 사용 0, 제거 시 관련 테스트를 tests util로
   치환
 
-4. D(TwitterVideoLegacyNormalizer)
-
-- 현상: modern + legacy 병합 순수 모듈. 네이밍이 명확하나 폴더 구조 개선 여지.
-- 제안: 2단계 리네임 시나리오(옵션 실행)
-  - Step D1: 새 경로 추가:
-    `src/shared/services/media/normalizers/legacy/twitter.ts`
-    - 구(old) 경로에서 새 경로로 re-export(@deprecated JSDoc)
-    - 내부 소비처는 새 경로로 점진 교체
-  - Step D2(후속): 구(old) 경로 제거
-- 가드/수용 기준: 타입/테스트/빌드 GREEN, import 스캔에서 구 경로 사용 0 → 제거
-
-5. E(Icon deprecated barrel placeholder)
-
-- 현상: @deprecated placeholder, 실사용 없음을 전제로 존재
-- 제안: 삭제 후보. 선행: src/\*\* import 스캔 가드 추가 → offenders 0 확인 후
-  삭제
-- 가드/수용 기준: offenders 0, 빌드/테스트 GREEN, 번들 문자열에 관련 키 없음
-
 6. F(zip-creator @deprecated high-level helper)
 
 - 현상: prod 소스에서 사용 금지 가드 존재. 유지
@@ -111,10 +78,8 @@
 
 ### 단계별 실행 순서(요약 현행화)
 
-- Phase 0 — 완료(이관)
-- Phase 1 — 완료(이관: E 가드, D re-export)
-- Phase 2/3 — 보류(필요 시 후속 PR로 삭제/전환)
-- Phase 4 — 보류(관찰 지속)
+- 관찰 지속 — B/C/F TEST-ONLY/LEGACY 표면 유지(런타임 참조 0, 번들/스캔 가드
+  PASS)
 
 ### 리스크/롤백
 
