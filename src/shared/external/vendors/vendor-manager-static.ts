@@ -264,7 +264,11 @@ export class StaticVendorManager {
    */
   public getFflate(): FflateAPI {
     if (!this.isInitialized) {
-      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      if (import.meta.env.MODE === 'test') {
+        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      } else {
+        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      }
       // 동기 초기화 시도 (정적 import이므로 안전)
       this.validateStaticImports();
       this.cacheAPIs();
@@ -283,7 +287,11 @@ export class StaticVendorManager {
    */
   public getPreact(): PreactAPI {
     if (!this.isInitialized) {
-      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      if (import.meta.env.MODE === 'test') {
+        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      } else {
+        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      }
       this.validateStaticImports();
       this.cacheAPIs();
       this.isInitialized = true;
@@ -301,7 +309,11 @@ export class StaticVendorManager {
    */
   public getPreactHooks(): PreactHooksAPI {
     if (!this.isInitialized) {
-      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      if (import.meta.env.MODE === 'test') {
+        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      } else {
+        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      }
       this.validateStaticImports();
       this.cacheAPIs();
       this.isInitialized = true;
@@ -319,7 +331,11 @@ export class StaticVendorManager {
    */
   public getPreactSignals(): PreactSignalsAPI {
     if (!this.isInitialized) {
-      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      if (import.meta.env.MODE === 'test') {
+        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      } else {
+        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      }
       this.validateStaticImports();
       this.cacheAPIs();
       this.isInitialized = true;

@@ -1,5 +1,19 @@
 ### 2025-09-16 — DOCS-HARDENING-01 완료
 
+### 2025-09-16 — VND-INIT-01 완료
+
+- 내용: 테스트 실행 시 발생하던 StaticVendorManager 자동 초기화 경고를 테스트
+  모드에서 debug로 다운그레이드하고, `test/setup.ts`에서 벤더 선행 초기화를
+  보강. 경고 0을 보장하는 단위 테스트
+  추가(`test/unit/vendors/vendor-initialization.warnings.test.ts`).
+- 변경:
+  - `src/shared/external/vendors/vendor-manager-static.ts`: auto-init 경고를
+    `import.meta.env.MODE === 'test'`에서 debug로 로깅
+  - `test/setup.ts`: 선행 초기화 유지(안전 가드)
+  - 신규 테스트 추가: warn 미발생 확인
+- 검증: smoke/fast 스위트 GREEN, 벤더 경고 미출력(테스트 모드), 기존 기능/빌드
+  플로우 영향 없음.
+
 - 내용: CODING_GUIDELINES의 코드펜스 파손 및 Toast 섹션 혼입 문제를 수정하고,
   animateCustom 예시 인접 영역을 정상화. ARCHITECTURE와
   DEPENDENCY-GOVERNANCE에는 "런타임 코딩/스타일/토큰/테스트 정책은
