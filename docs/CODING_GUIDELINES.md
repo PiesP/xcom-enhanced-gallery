@@ -616,15 +616,6 @@ Gallery
 // src/shared/utils/animations.ts
 // API
 animateCustom(el, keyframes, {
-
-### Toast 시스템(단일 소스 강화)
-
-- 단일 소스: `UnifiedToastManager`가 토스트 상태와 API(addToast/removeToast/clearAllToasts, toasts)를 단독으로 소유합니다.
-- UI 계층(컴포넌트/배럴)에서는 토스트 상태성 함수/신호를 재노출하거나 소유하지 않습니다.
-  - 금지: `src/shared/components/ui/Toast/Toast.tsx` 내 로컬 `toasts` 신호/`addToast` 등의 구현과 배럴 재노출
-  - 허용: `Toast`(표현 컴포넌트), `ToastContainer`(구독/표시)와 타입(type-only import)만 export
-- 타입 단일화: `ToastItem` 타입은 서비스에서 type-only import하여 사용합니다.
-- 가드(권장): 스캔 테스트로 UI 배럴의 토스트 상태성 함수 export 금지 및 UI 경로에서의 로컬 토스트 상태 사용 금지를 검증합니다.
   durationToken: 'normal',          // fast | normal | slow
   easingToken: 'standard',          // standard | decelerate | accelerate
 });
@@ -632,18 +623,24 @@ animateCustom(el, keyframes, {
 // 결과: transition 문자열 내부에 토큰 var()가 포함되어야 합니다.
 // e.g. "opacity var(--xeg-duration-normal) var(--xeg-ease-standard)"
 // 참고: guard 테스트는 test/unit/shared/utils/animations.tokens.test.ts 에 있습니다.
-```
+````
 
 추가 규칙:
-- 이징 토큰 네이밍 표준: 소비자 레이어는 `--xeg-ease-standard`/`--xeg-ease-decelerate`/`--xeg-ease-accelerate`만 사용합니다. (구 `--xeg-easing-*` 표기 금지)
-- CSS Modules의 `composes` 사용 금지(도구 호환성 문제). 공통 스타일은 유틸 클래스로 분리하거나 명시적으로 중복 선언합니다.
+
+- 이징 토큰 네이밍 표준: 소비자 레이어는
+  `--xeg-ease-standard`/`--xeg-ease-decelerate`/`--xeg-ease-accelerate`만
+  사용합니다. (구 `--xeg-easing-*` 표기 금지)
+- CSS Modules의 `composes` 사용 금지(도구 호환성 문제). 공통 스타일은 유틸
+  클래스로 분리하거나 명시적으로 중복 선언합니다.
 
 #### 툴바 애니메이션 경로(Phase 2 완료)
 
 - 툴바 show/hide 전환은 JS API만 사용합니다: `shared/utils/animations.ts`의
   `toolbarSlideDown(element)`, `toolbarSlideUp(element)`.
-- CSS 엔진의 툴바 전용 키프레임/클래스(`toolbar-slide-*`, `.animate-toolbar-*`)는 제거되었습니다. 새 코드에서 사용 금지.
-- 갤러리 컨테이너 enter/exit 및 이미지 스태거 등은 CSS 엔진(`css-animations.ts`)을 유지합니다.
+- CSS 엔진의 툴바 전용 키프레임/클래스(`toolbar-slide-*`,
+  `.animate-toolbar-*`)는 제거되었습니다. 새 코드에서 사용 금지.
+- 갤러리 컨테이너 enter/exit 및 이미지 스태거 등은 CSS
+  엔진(`css-animations.ts`)을 유지합니다.
 - 테스트 가드: `test/refactoring/phase2-animation-simplification.test.ts`,
   `test/unit/lint/animation-alias-removal.test.ts`.
 
@@ -656,7 +653,8 @@ animateCustom(el, keyframes, {
   - `GalleryEventManager`를 `@shared/utils/events`에서 import
   - `TwitterEventManager` 명칭을 직접 import(서비스 내부 별칭은 예외)
   - `@shared/utils/events` 모듈을 외부 소비 계층에서 직접 import
-- 가드 테스트: `test/unit/lint/event-deprecated-removal.test.ts` — 금지된 import를 정적 스캔합니다(내부 모듈/어댑터 파일은 예외).
+- 가드 테스트: `test/unit/lint/event-deprecated-removal.test.ts` — 금지된
+  import를 정적 스캔합니다(내부 모듈/어댑터 파일은 예외).
 
 권장 예시:
 
@@ -708,33 +706,44 @@ animateCustom(el, keyframes, {
 
 ### 뷰포트 CSS 변수 정책 (Fit 모드)
 
-동적 리사이즈 시 이미지/비디오의 fit 모드가 정확히 현재 창 크기를 반영하도록, 컨테이너 수준의 CSS 변수를 단일 소스로 사용합니다.
+동적 리사이즈 시 이미지/비디오의 fit 모드가 정확히 현재 창 크기를 반영하도록,
+컨테이너 수준의 CSS 변수를 단일 소스로 사용합니다.
 
 - 단일 소스 변수 (container-level)
   - `--xeg-viewport-w`
   - `--xeg-viewport-h`
-  - `--xeg-viewport-height-constrained` — 툴바 등 상단 크롬을 제외한 실제 가용 높이
+  - `--xeg-viewport-height-constrained` — 툴바 등 상단 크롬을 제외한 실제 가용
+    높이
 
 - 산출/적용 방법
   - 구현: `src/shared/utils/viewport.ts`
-    - `observeViewportCssVars(el, getChrome)`가 `ResizeObserver + window resize`에 기반해 변수를 갱신합니다.
-    - `computeViewportConstraints()`는 컨테이너 rect와 크롬 오프셋을 모두 정수(px)로 내림 처리하여 일관성을 보장합니다.
-  - 통합 지점: `VerticalGalleryView`가 갤러리 컨테이너에 위 변수를 설정합니다(툴바 높이를 `getBoundingClientRect().height`로 크롬 오프셋에 포함).
+    - `observeViewportCssVars(el, getChrome)`가
+      `ResizeObserver + window resize`에 기반해 변수를 갱신합니다.
+    - `computeViewportConstraints()`는 컨테이너 rect와 크롬 오프셋을 모두
+      정수(px)로 내림 처리하여 일관성을 보장합니다.
+  - 통합 지점: `VerticalGalleryView`가 갤러리 컨테이너에 위 변수를
+    설정합니다(툴바 높이를 `getBoundingClientRect().height`로 크롬 오프셋에
+    포함).
 
 - 사용 규칙
   - TSX 인라인 스타일로 px 고정 금지. 토큰/변수만 사용합니다.
-  - 이미지/비디오의 `fitHeight`/`fitContainer`는 반드시 `max-height: var(--xeg-viewport-height-constrained)`를 사용합니다.
-  - 동일 계산을 다른 컴포넌트에서 재구현하지 않습니다. 상위 컨테이너에 설정된 변수를 참조하세요.
+  - 이미지/비디오의 `fitHeight`/`fitContainer`는 반드시
+    `max-height: var(--xeg-viewport-height-constrained)`를 사용합니다.
+  - 동일 계산을 다른 컴포넌트에서 재구현하지 않습니다. 상위 컨테이너에 설정된
+    변수를 참조하세요.
 
 - 수명주기/성능
-  - 관측자는 rAF 스로틀링됩니다. 언마운트 시 정리 필수: 내부적으로 `TimerManager.cleanup()`로 누수 0을 보장합니다.
+  - 관측자는 rAF 스로틀링됩니다. 언마운트 시 정리 필수: 내부적으로
+    `TimerManager.cleanup()`로 누수 0을 보장합니다.
 
 - 테스트 가드
-  - `test/unit/viewport-utils.test.ts`가 산출 값(정수화/비음수), CSS 변수 적용, 리스너 정리를 검증합니다.
+  - `test/unit/viewport-utils.test.ts`가 산출 값(정수화/비음수), CSS 변수 적용,
+    리스너 정리를 검증합니다.
 
 - 참고 예시 (이미 구현됨)
   - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css`
-    - 이미지/비디오 `fitHeight`/`fitContainer` 클래스가 `--xeg-viewport-height-constrained`를 사용합니다.
+    - 이미지/비디오 `fitHeight`/`fitContainer` 클래스가
+      `--xeg-viewport-height-constrained`를 사용합니다.
 
 ```
 
@@ -791,19 +800,16 @@ animateCustom(el, keyframes, {
 #### 권장 매핑 예시(중앙 토큰 파일에서만 정의)
 
 ```
-/* design-tokens.semantic.css (중앙 정의 예) */
-:root {
-  /* Toolbar */
-  --xeg-comp-toolbar-bg: var(--xeg-bg-toolbar);
-  --xeg-comp-toolbar-border: var(--color-border-default);
-  --xeg-comp-toolbar-radius: var(--xeg-radius-lg);
 
-  /* Modal */
-  --xeg-comp-modal-bg: var(--xeg-modal-bg);
-  --xeg-comp-modal-border: var(--xeg-modal-border);
-  --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
-}
-```
+/_ design-tokens.semantic.css (중앙 정의 예) _/ :root { /_ Toolbar _/
+--xeg-comp-toolbar-bg: var(--xeg-bg-toolbar); --xeg-comp-toolbar-border:
+var(--color-border-default); --xeg-comp-toolbar-radius: var(--xeg-radius-lg);
+
+/_ Modal _/ --xeg-comp-modal-bg: var(--xeg-modal-bg); --xeg-comp-modal-border:
+var(--xeg-modal-border); --xeg-comp-modal-backdrop:
+var(--color-overlay-backdrop); }
+
+````
 
 컴포넌트 CSS에서는 semantic 또는 위 alias만 사용하세요. 인라인 스타일/주입 CSS도 동일 규칙이 적용됩니다.
 
@@ -821,24 +827,29 @@ animateCustom(el, keyframes, {
   gap: var(--xeg-space-8);
   padding: var(--xeg-space-16);
 }
-```
+````
 
 ### 메모리 프로파일링 유틸리티 (선택 기능)
 
 - 목적: 대량 처리/성능 회귀 조사 시 JS 힙 사용량 스냅샷과 델타를 측정합니다.
-- 지원 환경: Chromium 계열 등 `performance.memory` 제공 환경에서만 동작하며, 그 외 환경(Node/Vitest/JSDOM)은 안전하게 noop으로 폴백합니다.
-- API 위치: `@shared/utils/memory/memory-profiler` (배럴: `@shared/utils/memory`)
+- 지원 환경: Chromium 계열 등 `performance.memory` 제공 환경에서만 동작하며, 그
+  외 환경(Node/Vitest/JSDOM)은 안전하게 noop으로 폴백합니다.
+- API 위치: `@shared/utils/memory/memory-profiler` (배럴:
+  `@shared/utils/memory`)
 - 공개 API:
   - `isMemoryProfilingSupported(): boolean`
   - `takeMemorySnapshot(): MemorySnapshot | null`
-  - `new MemoryProfiler().start(): boolean` / `.stop(): MemoryProfileResult | null` / `.measure(fn): Promise<MemoryProfileResult>`
+  - `new MemoryProfiler().start(): boolean` /
+    `.stop(): MemoryProfileResult | null` /
+    `.measure(fn): Promise<MemoryProfileResult>`
 - 데이터 구조:
   - `MemorySnapshot { usedJSHeapSize, totalJSHeapSize, jsHeapSizeLimit, timestamp }`
   - `MemoryProfileResult { start, end, delta: { usedJSHeapSize, totalJSHeapSize }, durationMs }`
 - 사용 가이드:
   - import 시 부작용이 없어야 하며, 측정이 필요한 코드 경계에서만 호출합니다.
   - 테스트에서는 지원 환경을 모킹하여 스냅샷/델타 계산을 검증합니다.
-  - 미지원 환경에서 API는 null/false/zero 결과를 반환하므로 호출부에서 분기 없이 안전하게 사용할 수 있습니다.
+  - 미지원 환경에서 API는 null/false/zero 결과를 반환하므로 호출부에서 분기 없이
+    안전하게 사용할 수 있습니다.
 
 ```tsx
 // 금지
@@ -850,38 +861,53 @@ animateCustom(el, keyframes, {
 
 ### 외부 의존성 접근 (Vendor Getters)
 
-- preact, @preact/signals, fflate, Userscript API(GM_*) 등 외부 의존성은 반드시 전용 getter를 통해 접근합니다.
-- 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야 합니다.
-- 예: `import { getPreact } from '@shared/external/vendors'; const { useEffect } = getPreact();`
+- preact, @preact/signals, fflate, Userscript API(GM\_\*) 등 외부 의존성은
+  반드시 전용 getter를 통해 접근합니다.
+- 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야
+  합니다.
+- 예:
+  `import { getPreact } from '@shared/external/vendors'; const { useEffect } = getPreact();`
 
 #### ZIP 생성 정책 (Adapter)
 
-- ZIP 생성은 반드시 전용 어댑터를 통해 수행합니다: `@shared/external/zip/zip-creator.ts`의 `createZipBytesFromFileMap(files, config?)`.
-- `fflate.zip`/`zipSync`를 어댑터 외부에서 직접 호출하는 것은 금지입니다. 서비스/오케스트레이터는 어댑터만 사용하세요.
-- 사유: 실행 환경에 따라 async/sync 지원 차이를 어댑터에서 흡수하고, 테스트에서 벤더를 안전하게 모킹하기 위함입니다.
-- 가드/테스트: `test/unit/lint/zip-direct-usage.scan.red.test.ts`가 어댑터 외부의 직접 사용을 RED로 탐지합니다.
+- ZIP 생성은 반드시 전용 어댑터를 통해 수행합니다:
+  `@shared/external/zip/zip-creator.ts`의
+  `createZipBytesFromFileMap(files, config?)`.
+- `fflate.zip`/`zipSync`를 어댑터 외부에서 직접 호출하는 것은 금지입니다.
+  서비스/오케스트레이터는 어댑터만 사용하세요.
+- 사유: 실행 환경에 따라 async/sync 지원 차이를 어댑터에서 흡수하고, 테스트에서
+  벤더를 안전하게 모킹하기 위함입니다.
+- 가드/테스트: `test/unit/lint/zip-direct-usage.scan.red.test.ts`가 어댑터
+  외부의 직접 사용을 RED로 탐지합니다.
 
 보강(2025-09-15):
 
-- `vendor-api.ts` 직접 import 금지(허용목록 제외). 벤더 접근은 `@shared/external/vendors` 배럴과 getter를 통해서만 수행하세요.
-- 가드/테스트: `test/unit/lint/vendor-api.imports.scan.red.test.ts`가 위반 시 RED로 탐지합니다.
+- `vendor-api.ts` 직접 import 금지(허용목록 제외). 벤더 접근은
+  `@shared/external/vendors` 배럴과 getter를 통해서만 수행하세요.
+- 가드/테스트: `test/unit/lint/vendor-api.imports.scan.red.test.ts`가 위반 시
+  RED로 탐지합니다.
 
 #### 아이콘 라이브러리(Heroicons) 정책
 
 - Heroicons는 React 컴포넌트 형태이므로 반드시 전용 getter를 통해 접근합니다:
   `@shared/external/vendors/heroicons-react.ts`
-- 컴포넌트 소비부에서는 내부 `Icon` 래퍼 규격(디자인 토큰/접근성)을 유지해야 하므로
-  Heroicons 컴포넌트를 직접 사용하지 말고 어댑터를 통해 감쌉니다
-  (예: `src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx`).
-- `iconRegistry`의 동적 import 경로를 사용해 코드 스플리팅/캐시 일관성을 유지합니다.
+- 컴포넌트 소비부에서는 내부 `Icon` 래퍼 규격(디자인 토큰/접근성)을 유지해야
+  하므로 Heroicons 컴포넌트를 직접 사용하지 말고 어댑터를 통해 감쌉니다 (예:
+  `src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx`).
+- `iconRegistry`의 동적 import 경로를 사용해 코드 스플리팅/캐시 일관성을
+  유지합니다.
 
 ### 의존성 구조 가이드(Dependency Graph)
 
-- 내부 디렉터리에서는 동일 디렉터리의 배럴(index.ts)을 통해 재수입하지 않습니다(순환 유발 방지).
-  - 금지 예: `src/shared/utils/media/image-filter.ts` → `src/shared/utils/index.ts`
-  - 권장: 필요한 모듈을 상대 경로로 직접 import (`../events`, `../css-animations` 등)
+- 내부 디렉터리에서는 동일 디렉터리의 배럴(index.ts)을 통해 재수입하지
+  않습니다(순환 유발 방지).
+  - 금지 예: `src/shared/utils/media/image-filter.ts` →
+    `src/shared/utils/index.ts`
+  - 권장: 필요한 모듈을 상대 경로로 직접 import (`../events`,
+    `../css-animations` 등)
 - UI/Utils/Media 패키지 내부 배럴 재수입은 리포트 경고 대상입니다.
-- 순환 참조는 금지입니다. 분석 단계에서는 경고로 표기될 수 있으나, 리팩토링 완료 후 에러로 승격됩니다.
+- 순환 참조는 금지입니다. 분석 단계에서는 경고로 표기될 수 있으나, 리팩토링 완료
+  후 에러로 승격됩니다.
 - 의존성 리포트/그래프 생성:
   - 전체 생성: `npm run deps:all` (JSON/DOT/SVG + 규칙 검증)
   - 검증만: `npm run deps:check`
@@ -890,40 +916,63 @@ animateCustom(el, keyframes, {
 
 #### ServiceManager 접근 규칙 (U2)
 
-- features 레이어에서는 `@shared/services/ServiceManager`를 직접 import 하지 않습니다.
-- 가능한 한 `@shared/container/service-accessors`의 헬퍼를 사용해 SERVICE_KEYS 의존을 감춥니다.
-- 필요한 경우 `@shared/container/service-bridge` 또는 목적별 얇은 액세서(`@shared/container/settings-access`)를 사용합니다.
+- features 레이어에서는 `@shared/services/ServiceManager`를 직접 import 하지
+  않습니다.
+- 가능한 한 `@shared/container/service-accessors`의 헬퍼를 사용해 SERVICE_KEYS
+  의존을 감춥니다.
+- 필요한 경우 `@shared/container/service-bridge` 또는 목적별 얇은
+  액세서(`@shared/container/settings-access`)를 사용합니다.
 - 이유: 전역 컨테이너 의존 축소, 타입 안전한 경계 유지, 테스트/모킹 용이성 향상.
-- 가드: `test/unit/lint/features-no-servicemanager.imports.red.test.ts` 가 import를 정적 스캔합니다.
+- 가드: `test/unit/lint/features-no-servicemanager.imports.red.test.ts` 가
+  import를 정적 스캔합니다.
 
 예외(정리 한정):
-- 애플리케이션 종료(cleanup) 시점의 전역 정리는 엔트리(`src/main.ts`)에서만 `CoreService.getInstance().cleanup()`을 호출할 수 있습니다.
-- 그 외 레이어에서는 항상 `@shared/container/service-bridge` 또는 목적별 액세서를 사용하세요.
+
+- 애플리케이션 종료(cleanup) 시점의 전역 정리는 엔트리(`src/main.ts`)에서만
+  `CoreService.getInstance().cleanup()`을 호출할 수 있습니다.
+- 그 외 레이어에서는 항상 `@shared/container/service-bridge` 또는 목적별
+  액세서를 사용하세요.
 
 추가 규칙:
-- SERVICE_KEYS 직접 참조를 점진적으로 제거합니다. 공용 접근은 다음 헬퍼를 우선 사용하세요:
-  - 등록: `registerGalleryRenderer`, `registerSettingsManager`, `registerTwitterTokenExtractor`
-  - 조회: `getToastController`, `getThemeService`, `getMediaServiceFromContainer`, `getGalleryRenderer` 등
+
+- SERVICE_KEYS 직접 참조를 점진적으로 제거합니다. 공용 접근은 다음 헬퍼를 우선
+  사용하세요:
+  - 등록: `registerGalleryRenderer`, `registerSettingsManager`,
+    `registerTwitterTokenExtractor`
+  - 조회: `getToastController`, `getThemeService`,
+    `getMediaServiceFromContainer`, `getGalleryRenderer` 등
   - 워밍업: `warmupCriticalServices()`, `warmupNonCriticalServices()`
   - 헬퍼가 부족할 경우 추가를 선호하고, raw 키 문자열 사용은 지양합니다.
 
 레거시 어댑터 예외:
-- `features/gallery/createAppContainer.ts` 내 LegacyServiceAdapter switch 문은 과도기 호환을 위해 SERVICE_KEYS 상수를 사용합니다. 신규 코드에서는 service-accessors 헬퍼를 사용하고, 해당 switch는 점진 제거 대상입니다.
+
+- `features/gallery/createAppContainer.ts` 내 LegacyServiceAdapter switch 문은
+  과도기 호환을 위해 SERVICE_KEYS 상수를 사용합니다. 신규 코드에서는
+  service-accessors 헬퍼를 사용하고, 해당 switch는 점진 제거 대상입니다.
 
 #### AppContainer 범위 정책 (P3)
 
-- 목적: AppContainer는 테스트/샌드박스 하네스 전용입니다. 런타임 코드에서의 import를 금지합니다.
+- 목적: AppContainer는 테스트/샌드박스 하네스 전용입니다. 런타임 코드에서의
+  import를 금지합니다.
 - 규칙:
-  - 런타임 엔트리/피처/서비스 경로에서 `features/gallery/createAppContainer` 및 `AppContainer` 관련 심볼의 import 금지
-  - 타입 전용 import(`import type { ... }`)는 테스트 도구/리팩토링 문맥에서만 허용
-  - DEV 전용 레거시 어댑터 전역 키(`__XEG_LEGACY_ADAPTER__`, `__XEG_GET_SERVICE_OVERRIDE__`)는 개발 모드에서만 존재하며, 프로덕션 번들 문자열 누수는 금지됩니다
-- 가드 테스트: `test/unit/lint/runtime-appcontainer.imports.red.test.ts` — 허용 리스트 외의 런타임 import를 정적 스캔합니다.
+  - 런타임 엔트리/피처/서비스 경로에서 `features/gallery/createAppContainer` 및
+    `AppContainer` 관련 심볼의 import 금지
+  - 타입 전용 import(`import type { ... }`)는 테스트 도구/리팩토링 문맥에서만
+    허용
+  - DEV 전용 레거시 어댑터 전역 키(`__XEG_LEGACY_ADAPTER__`,
+    `__XEG_GET_SERVICE_OVERRIDE__`)는 개발 모드에서만 존재하며, 프로덕션 번들
+    문자열 누수는 금지됩니다
+- 가드 테스트: `test/unit/lint/runtime-appcontainer.imports.red.test.ts` — 허용
+  리스트 외의 런타임 import를 정적 스캔합니다.
 
 #### 컨테이너 단일화 로드맵 (U3)
 
-- 목표: 런타임/테스트 모두 `ServiceManager` + `service-accessors` 패턴으로 단일화합니다.
-- 테스트 하네스: 기존 `AppContainer`는 제거 대상이며, 테스트에서는 경량 `ServiceHarness`(팩토리/리셋 API 제공) 패턴으로 대체합니다.
-- 전역 키: DEV 전용 레거시 어댑터 전역 키는 최종 폐기 대상이며, 프로덕션 번들 문자열 누수는 금지됩니다.
+- 목표: 런타임/테스트 모두 `ServiceManager` + `service-accessors` 패턴으로
+  단일화합니다.
+- 테스트 하네스: 기존 `AppContainer`는 제거 대상이며, 테스트에서는 경량
+  `ServiceHarness`(팩토리/리셋 API 제공) 패턴으로 대체합니다.
+- 전역 키: DEV 전용 레거시 어댑터 전역 키는 최종 폐기 대상이며, 프로덕션 번들
+  문자열 누수는 금지됩니다.
 - 가드/DoD:
   - 런타임 AppContainer import 금지 스캔(확장) — 전 경로 금지
   - prod 번들 문자열 스캔 — 전역 키 누수 0건
@@ -931,84 +980,114 @@ animateCustom(el, keyframes, {
 
 #### 다운로드 오케스트레이션 원칙 (D1)
 
-- 동시성/재시도/스케줄/ZIP은 오케스트레이터 서비스(`DownloadOrchestrator`)에서 중앙화합니다.
-- 기존 `BulkDownloadService` / `GalleryDownloadService`는 얇은 위임 래퍼로 유지하여 외부 API를 안정화합니다.
-- 스케줄: 즉시(immediate) 기본, 유휴 예약은 `schedule: 'idle'` 옵션으로 노출합니다.
+- 동시성/재시도/스케줄/ZIP은 오케스트레이터 서비스(`DownloadOrchestrator`)에서
+  중앙화합니다.
+- 기존 `BulkDownloadService` / `GalleryDownloadService`는 얇은 위임 래퍼로
+  유지하여 외부 API를 안정화합니다.
+- 스케줄: 즉시(immediate) 기본, 유휴 예약은 `schedule: 'idle'` 옵션으로
+  노출합니다.
 - 테스트 기준(요약):
   - 동시성 상한 준수, 오류 발생 시 제한 횟수 재시도, idle 스케줄 지연 실행
   - 파일명은 `MediaFilenameService`를 통해서만 생성(소비처 직접 조립 금지)
 
 #### SERVICE_KEYS 직접 사용 금지 (P4)
 
-- 목적: 서비스 키 상수에 대한 직접 의존을 제거하고 타입 안전 액세서로 일원화합니다.
+- 목적: 서비스 키 상수에 대한 직접 의존을 제거하고 타입 안전 액세서로
+  일원화합니다.
 - 규칙:
-  - 다음 모듈을 제외하고 `SERVICE_KEYS` 직접 참조 금지: 상수 정의 파일, `@shared/container/service-accessors`, 서비스 초기화/부트스트랩, 서비스 진단, 그리고 과도기 예외로 `features/gallery/createAppContainer.ts`
-  - 일반 소비 경로(features/shared 등)는 반드시 `@shared/container/service-accessors`의 등록/조회 헬퍼를 사용합니다
+  - 다음 모듈을 제외하고 `SERVICE_KEYS` 직접 참조 금지: 상수 정의 파일,
+    `@shared/container/service-accessors`, 서비스 초기화/부트스트랩, 서비스
+    진단, 그리고 과도기 예외로 `features/gallery/createAppContainer.ts`
+  - 일반 소비 경로(features/shared 등)는 반드시
+    `@shared/container/service-accessors`의 등록/조회 헬퍼를 사용합니다
   - 주석/문자열로도 키 이름을 노출하지 않습니다(빌드/스캔 가드 회피 목적)
-- 가드 테스트: `test/unit/lint/service-keys.direct-usage.scan.red.test.ts` — 승인된 범위 외 직접 참조를 정적으로 스캔합니다.
+- 가드 테스트: `test/unit/lint/service-keys.direct-usage.scan.red.test.ts` —
+  승인된 범위 외 직접 참조를 정적으로 스캔합니다.
 
-#### Userscript(GM_*) 어댑터 경계 가드
+#### Userscript(GM\_\*) 어댑터 경계 가드
 
-- Userscript API는 `src/shared/external/userscript/adapter.ts`의 `getUserscript()`로만 접근합니다.
-- GM_*이 없는 환경(Node/Vitest/JSDOM)에서도 안전하게 동작해야 합니다.
-  - download: GM_download → 실패 시 fetch+BlobURL로 폴백, 비브라우저 환경(document/body 없음)에서는 no-op
-  - xhr: GM_xmlhttpRequest → 실패/부재 시 fetch 기반 폴백(onload/onerror/onloadend 콜백 지원)
-- 테스트: `test/unit/shared/external/userscript-adapter.contract.test.ts`에서 계약/폴백 동작을 가드합니다.
+- Userscript API는 `src/shared/external/userscript/adapter.ts`의
+  `getUserscript()`로만 접근합니다.
+- GM\_\*이 없는 환경(Node/Vitest/JSDOM)에서도 안전하게 동작해야 합니다.
+  - download: GM_download → 실패 시 fetch+BlobURL로 폴백, 비브라우저
+    환경(document/body 없음)에서는 no-op
+  - xhr: GM_xmlhttpRequest → 실패/부재 시 fetch 기반
+    폴백(onload/onerror/onloadend 콜백 지원)
+- 테스트: `test/unit/shared/external/userscript-adapter.contract.test.ts`에서
+  계약/폴백 동작을 가드합니다.
 
 #### Twitter 토큰 추출 우선순위(R3)
 
 - 우선순위: 페이지 컨텍스트 → 쿠키/세션 → 게스트 토큰(최후 폴백)
-- `GUEST_AUTHORIZATION` 등 상수 접근은 어댑터 레이어로 한정합니다. 서비스/피처 레이어는 추출기 결과만 소비합니다.
-- 가드: `twitter-token.extractor.priority.test.ts`, `adapter.no-direct-constant.red.test.ts`
+- `GUEST_AUTHORIZATION` 등 상수 접근은 어댑터 레이어로 한정합니다. 서비스/피처
+  레이어는 추출기 결과만 소비합니다.
+- 가드: `twitter-token.extractor.priority.test.ts`,
+  `adapter.no-direct-constant.red.test.ts`
 
 ### 설정 저장 정책 (Settings Persistence)
 
 - features 레이어에서 `localStorage`/`sessionStorage`에 직접 접근하지 않습니다.
-- 모든 설정은 SettingsService를 통해 저장/복원하고, features에서는 목적별 액세서 `@shared/container/settings-access`의 `getSetting`/`setSetting`을 사용합니다.
+- 모든 설정은 SettingsService를 통해 저장/복원하고, features에서는 목적별 액세서
+  `@shared/container/settings-access`의 `getSetting`/`setSetting`을 사용합니다.
 - 새 설정 키 추가 시:
   - 타입: `src/features/settings/types/settings.types.ts`에 명시적 타입 추가
-  - 기본값: `src/constants.ts` 또는 SettingsService의 defaults 경로에 추가(중앙 관리)
-  - 마이그레이션: SettingsService의 migrate/validate가 담당 — feature 로컬 마이그레이션 로직 금지
+  - 기본값: `src/constants.ts` 또는 SettingsService의 defaults 경로에 추가(중앙
+    관리)
+  - 마이그레이션: SettingsService의 migrate/validate가 담당 — feature 로컬
+    마이그레이션 로직 금지
 - 가드 테스트: `test/unit/shared/services/settings-service.contract.test.ts`
 
 ### 토스트 시스템 사용 규칙 (UnifiedToastManager)
 
-- features 레이어는 로컬 Toast UI/상태를 렌더하지 않습니다. 전역 `ToastContainer` 1개와 `UnifiedToastManager`만 사용합니다.
+- features 레이어는 로컬 Toast UI/상태를 렌더하지 않습니다. 전역
+  `ToastContainer` 1개와 `UnifiedToastManager`만 사용합니다.
 - 라우팅 정책(기본):
   - info/success → live-only
   - warning/error → toast-only
   - 필요 시 route='both' 허용(예: 재시도 플로우의 성공 알림)
-- 사용 방법: `UnifiedToastManager.show({ level, message, route? })` — 컴포넌트 내 임의 DOM 토스트 생성 금지
-- 스타일: 로컬 `.toastContainer` 등 스타일 선언 금지. 공용 컴포넌트의 토큰 기반 스타일만 사용합니다.
-- 가드 테스트: `test/unit/shared/services/toast-manager.contract.test.ts`, `test/unit/a11y/announce-routing.red.test.ts`
+- 사용 방법: `UnifiedToastManager.show({ level, message, route? })` — 컴포넌트
+  내 임의 DOM 토스트 생성 금지
+- 스타일: 로컬 `.toastContainer` 등 스타일 선언 금지. 공용 컴포넌트의 토큰 기반
+  스타일만 사용합니다.
+- 가드 테스트: `test/unit/shared/services/toast-manager.contract.test.ts`,
+  `test/unit/a11y/announce-routing.red.test.ts`
 
 ### 오류 복구 UX 표준 (Error Recovery UX)
 
-BulkDownloadService / MediaService 다운로드 흐름에서 사용자 피드백은 토스트로 통일합니다.
+BulkDownloadService / MediaService 다운로드 흐름에서 사용자 피드백은 토스트로
+통일합니다.
 
 정책 (Phase I 1차 구현 상태):
+
 - 단일 다운로드 성공: 토스트 생략 (소음 최소화)
 - 단일 다운로드 실패: error 토스트 (제목: "다운로드 실패")
 - 다중 ZIP 전체 실패: error 토스트 ("모든 항목을 다운로드하지 못했습니다.")
 - 다중 ZIP 부분 실패: warning 토스트 ("n개 항목을 받지 못했습니다.")
 - 다중 ZIP 전체 성공: 토스트 생략
-- 사용자 취소(Abort): info 토스트 ("다운로드 취소됨") — 중복 방지를 위해 1회만 표시
+- 사용자 취소(Abort): info 토스트 ("다운로드 취소됨") — 중복 방지를 위해 1회만
+  표시
 
 구현 세부:
+
 - 중복 취소 방지 플래그: BulkDownloadService.cancelToastShown
-- 부분 실패 요약: DownloadResult.failures: { url, error }[] (0 < length < total 인 경우 warning)
+- 부분 실패 요약: DownloadResult.failures: { url, error }[] (0 < length < total
+  인 경우 warning)
 - 전체 실패: success=false & error 메시지 + error 토스트
 
 향후(추가 고도화 계획):
+
 - warning 토스트 재시도 고도화: 재시도 후 남은 실패 상세/CorrelationId 표시
 - error 토스트: [자세히] 액션으로 Dev 모드 상세 로그/CorrelationId 표시
 - 국제화(I18n) 어댑터: 메시지 키 기반 전환 (예: download.error.allFailed)
 
 관련 테스트:
+
 - `test/unit/shared/services/bulk-download.error-recovery.test.ts`
-- 재시도 액션: `bulk-download.retry-action.test.ts`, `bulk-download.retry-action.sequence.test.ts`
+- 재시도 액션: `bulk-download.retry-action.test.ts`,
+  `bulk-download.retry-action.sequence.test.ts`
 
 가드 원칙:
+
 - 토스트 메시지는 간결하고 중복을 최소화
 - Action 버튼은 실패/재시도 컨텍스트에서만 노출
 - 동일 세션 내 중복 error/warning 방지(불필요한 반복 표시 지양)
@@ -1016,19 +1095,26 @@ BulkDownloadService / MediaService 다운로드 흐름에서 사용자 피드백
 ### PC 전용 입력 정책 강화
 
 - 애플리케이션은 PC 전용 이벤트만 사용합니다: click/keydown/wheel/contextmenu
-- 터치/포인터 계열 이벤트(onTouchStart/PointerDown 등)는 금지합니다. 테스트에서 RED로 검출됩니다.
+- 터치/포인터 계열 이벤트(onTouchStart/PointerDown 등)는 금지합니다. 테스트에서
+  RED로 검출됩니다.
 
 #### 키보드 입력 중앙화(KBD-NAV-UNIFY)
 
-- 원칙: document/window에 직접 `addEventListener('keydown'|'keyup', ...)`를 등록하지 않습니다.
-  UI/훅/컴포넌트 층에서는 반드시 EventManager/서비스를 경유합니다.
+- 원칙: document/window에 직접 `addEventListener('keydown'|'keyup', ...)`를
+  등록하지 않습니다. UI/훅/컴포넌트 층에서는 반드시 EventManager/서비스를
+  경유합니다.
 - 구현: `shared/services/input/KeyboardNavigator`를 통해 구독합니다. 이 서비스는
-  - EventManager로 document keydown을 단일 지점에서 등록(capture: true, context tag 포함)
+  - EventManager로 document keydown을 단일 지점에서 등록(capture: true, context
+    tag 포함)
   - 편집 가능한 대상(INPUT/TEXTAREA/contentEditable)에서는 기본적으로 무시(가드)
-  - 처리된 키에 대해 preventDefault/stopPropagation을 수행(옵션으로 비활성화 가능)
-- 금지: features/컴포넌트/훅에서 `document.addEventListener('keydown'|'keyup', ...)` 또는
+  - 처리된 키에 대해 preventDefault/stopPropagation을 수행(옵션으로 비활성화
+    가능)
+- 금지: features/컴포넌트/훅에서
+  `document.addEventListener('keydown'|'keyup', ...)` 또는
   `window.addEventListener('keydown'|'keyup', ...)` 사용
-- 가드 테스트: `test/unit/lint/keyboard-listener.centralization.policy.test.ts`가 위반 시 RED로 탐지합니다.
+- 가드 테스트:
+  `test/unit/lint/keyboard-listener.centralization.policy.test.ts`가 위반 시
+  RED로 탐지합니다.
 
 예시(권장):
 
@@ -1048,10 +1134,14 @@ unsubscribe();
 
 ### 내보내기(Export) 심볼 네이밍
 
-- 테스트 정책상 특정 금지어가 포함된 이름은 export 심볼로 사용하지 않습니다(예: "unified").
-- 필요 시 내부 구현 함수/컴포넌트 이름을 변경하고, default export로 호환을 유지하세요.
-- 예) 내부 이름: `InternalToolbarUnified` → `export default InternalToolbarUnified;`
-  - 임포트 측: `import Toolbar from './UnifiedToolbar';` (기존 경로/기본 임포트 유지)
+- 테스트 정책상 특정 금지어가 포함된 이름은 export 심볼로 사용하지 않습니다(예:
+  "unified").
+- 필요 시 내부 구현 함수/컴포넌트 이름을 변경하고, default export로 호환을
+  유지하세요.
+- 예) 내부 이름: `InternalToolbarUnified` →
+  `export default InternalToolbarUnified;`
+  - 임포트 측: `import Toolbar from './UnifiedToolbar';` (기존 경로/기본 임포트
+    유지)
 
 ### 변수 및 함수
 
@@ -1070,26 +1160,21 @@ function extractMediaUrl(element: HTMLElement): string {}
 // Boolean: is/has/can prefix
 const isLoading = signal(false);
 const hasPermission = checkPermission();
-````
-
-### 타입 정의
-
-```typescript
-// 인터페이스 & 타입: PascalCase
-interface MediaItem {
-  readonly id: string;
-  readonly type: MediaType;
-}
-
-type MediaType = 'image' | 'video';
-type LoadingState = 'idle' | 'loading' | 'success' | 'error';
-
-// 컴포넌트 Props
-interface GalleryViewProps {
-  readonly items: MediaItem[];
-  onSelect?: (item: MediaItem) => void;
-}
 ```
+
+### Toast 시스템(단일 소스 강화)
+
+- 단일 소스: `UnifiedToastManager`가 토스트 상태와
+  API(addToast/removeToast/clearAllToasts, toasts)를 단독으로 소유합니다.
+- UI 계층(컴포넌트/배럴)에서는 토스트 상태성 함수/신호를 재노출하거나 소유하지
+  않습니다.
+  - 금지: `src/shared/components/ui/Toast/Toast.tsx` 내 로컬 `toasts`
+    신호/`addToast` 등의 구현과 배럴 재노출
+  - 허용: `Toast`(표현 컴포넌트), `ToastContainer`(구독/표시)와 타입(type-only
+    import)만 export
+- 타입 단일화: `ToastItem` 타입은 서비스에서 type-only import하여 사용합니다.
+- 가드(권장): 스캔 테스트로 UI 배럴의 토스트 상태성 함수 export 금지 및 UI
+  경로에서의 로컬 토스트 상태 사용 금지를 검증합니다.
 
 ## 📘 TypeScript 패턴
 
@@ -1466,3 +1551,7 @@ describe('GalleryItem', () => {
 - 테스트 가드: `media-processor.url-sanitization.red.test.ts` (RED 파일 유지,
   구현 후 GREEN 상태)
 - 문서 반영: 본 섹션 (Phase 8 완료 시점 2025-09-11)
+
+```
+
+```

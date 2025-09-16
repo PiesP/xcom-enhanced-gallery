@@ -1,6 +1,8 @@
 # 🏗️ 아키텍처 개요 (xcom-enhanced-gallery)
 
-> Preact + Signals 기반 Userscript의 3계층 구조와 의존성 경계
+> Preact + Signals 기반 Userscript의 3계층 구조와 의존성 경계 코딩
+> 규칙/스타일/토큰/테스트 정책은 중복 없이 `docs/CODING_GUIDELINES.md`를 단일
+> 기준으로 참조하세요.
 
 이 문서는 코드 작성 가이드(CODING_GUIDELINES)와 별개로, 상위 수준의 시스템
 구조와 계층 간 경계를 설명합니다. 구현 규칙/토큰/스타일은

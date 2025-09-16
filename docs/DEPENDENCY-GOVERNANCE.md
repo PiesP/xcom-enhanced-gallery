@@ -4,7 +4,8 @@
 
 이 문서는 dependency-cruiser를 이용해 프로젝트의 아키텍처 경계를 자동으로
 검사/강제하는 정책을 정의합니다. 설계 원칙은 `docs/ARCHITECTURE.md`를
-참고하세요.
+참고하세요. 런타임 코딩/스타일/토큰/입력 규칙은 `docs/CODING_GUIDELINES.md`를
+단일 기준으로 사용합니다.
 
 ## 핵심 규칙(요약)
 

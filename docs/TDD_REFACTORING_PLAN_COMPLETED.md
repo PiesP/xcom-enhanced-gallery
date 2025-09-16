@@ -1,3 +1,13 @@
+### 2025-09-16 — DOCS-HARDENING-01 완료
+
+- 내용: CODING_GUIDELINES의 코드펜스 파손 및 Toast 섹션 혼입 문제를 수정하고,
+  animateCustom 예시 인접 영역을 정상화. ARCHITECTURE와
+  DEPENDENCY-GOVERNANCE에는 "런타임 코딩/스타일/토큰/테스트 정책은
+  CODING_GUIDELINES를 단일 소스로 참조"하도록 교차 링크를 추가해 문서 중복을
+  해소.
+- 검증: 문서 렌더링 수동 점검으로 코드 블록/헤딩 구조 파손 없음 확인. 기존
+  테스트/타입/린트/빌드 플로우와 충돌 없음.
+
 ### 2025-09-16 — SETTINGS-MIG-HASH-01 완료
 
 - 내용: Settings 스키마 해시(`__schemaHash`) 도입. 저장된 해시와 현재 해시가
