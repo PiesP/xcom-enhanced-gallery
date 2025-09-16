@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '@shared/utils/timer-management';
 import { TwitterAPI, type TweetMediaEntry } from '@shared/services/media/TwitterVideoExtractor';
 import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/types/media.types';
@@ -84,16 +85,16 @@ export class TwitterAPIExtractor implements APIExtractor {
     // 타임아웃 래퍼 (Abort 불가 환경 고려: 타임아웃 시 reject)
     const withTimeout = <U>(p: Promise<U>): Promise<U> => {
       return new Promise<U>((resolve, reject) => {
-        const timer = setTimeout(() => {
+        const timer = globalTimerManager.setTimeout(() => {
           reject(new Error('timeout'));
         }, timeoutMs);
         p.then(
           v => {
-            clearTimeout(timer);
+            globalTimerManager.clearTimeout(timer);
             resolve(v);
           },
           e => {
-            clearTimeout(timer);
+            globalTimerManager.clearTimeout(timer);
             reject(e);
           }
         );

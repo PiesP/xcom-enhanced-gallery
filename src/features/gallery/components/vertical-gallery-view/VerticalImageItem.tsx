@@ -15,6 +15,7 @@ import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
 import { getPreactHooks, getPreactCompat } from '../../../../shared/external/vendors';
 import styles from './VerticalImageItem.module.css';
+import { languageService } from '../../../../shared/services/LanguageService';
 
 /**
  * Clean up filename by removing verbose path information
@@ -285,7 +286,7 @@ function BaseVerticalImageItemCore({
     observer.observe(container);
 
     return () => {
-      observer.disconnect();
+      // no-op cleanup; observer is disconnected above when visible
     };
   }, [isVisible, forceVisible]); // forceVisible 의존성 추가
 
@@ -442,7 +443,12 @@ function BaseVerticalImageItemCore({
             <img
               ref={imgRef}
               src={media.url}
-              alt={cleanFilename(media.filename) || `Image ${index + 1}`}
+              alt={
+                cleanFilename(media.filename) ||
+                languageService.getFormattedString('messages.gallery.failedToLoadImage', {
+                  type: 'image',
+                })
+              }
               loading='lazy'
               decoding='async'
               className={ComponentStandards.createClassName(
@@ -469,7 +475,11 @@ function BaseVerticalImageItemCore({
           {isError && (
             <div className={styles.error}>
               <span className={styles.errorIcon}>⚠️</span>
-              <span className={styles.errorText}>Failed to load {isVideo ? 'video' : 'image'}</span>
+              <span className={styles.errorText}>
+                {languageService.getFormattedString('messages.gallery.failedToLoadImage', {
+                  type: isVideo ? 'video' : 'image',
+                })}
+              </span>
             </div>
           )}
         </>
@@ -481,7 +491,7 @@ function BaseVerticalImageItemCore({
           size='sm'
           className={styles.downloadButton || ''}
           onClick={handleDownloadClick}
-          aria-label={`Download ${cleanFilename(media.filename)}`}
+          aria-label={languageService.getString('toolbar.download')}
         >
           <span className={styles.downloadIcon}>⬇️</span>
         </Button>

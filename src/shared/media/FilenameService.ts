@@ -286,7 +286,33 @@ export class FilenameService {
   private sanitizeForWindows(name: string): string {
     try {
       if (!name) return 'media';
-      const base = String(name);
+      let base = String(name);
+
+      // 1) 유니코드 정규화(NFKC)로 호환 문자/조합 문자 표준화
+      try {
+        if (typeof base.normalize === 'function') {
+          base = base.normalize('NFKC');
+        }
+      } catch {
+        // ignore normalize failures
+      }
+
+      // 2) 보이지 않는 제어/서식 문자 및 BiDi 마커 제거
+      // - C0 제어문자: U+0000–U+001F, DEL/제어 확장: U+007F–U+009F
+      // - Zero-width: ZWSP(200B), ZWNJ(200C), ZWJ(200D), WJ(2060)
+      // - BiDi marks: LRM(200E), RLM(200F), LRE/RLE/PDF/LRO/RLO(202A–202E), LRI/RLI/FSI/PDI(2066–2069)
+      base = Array.from(base)
+        .filter(ch => {
+          const cp = ch.codePointAt(0) ?? 0;
+          if (cp <= 0x001f) return false;
+          if (cp >= 0x007f && cp <= 0x009f) return false;
+          if (cp >= 0x200b && cp <= 0x200f) return false;
+          if (cp >= 0x202a && cp <= 0x202e) return false;
+          if (cp === 0x2060) return false;
+          if (cp >= 0x2066 && cp <= 0x2069) return false;
+          return true;
+        })
+        .join('');
 
       // 분리: 파일명과 확장자
       const lastDot = base.lastIndexOf('.');

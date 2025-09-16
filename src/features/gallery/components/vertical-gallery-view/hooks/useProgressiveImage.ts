@@ -8,6 +8,7 @@
 
 import { logger } from '../../../../../shared/logging/logger';
 import { getPreactHooks } from '../../../../../shared/external/vendors';
+import { globalTimerManager } from '../../../../../shared/utils/timer-management';
 
 export interface ProgressiveImageState {
   isLoading: boolean;
@@ -75,11 +76,11 @@ export function useProgressiveImage({
   // 타이머 정리
   const clearTimers = useCallback(() => {
     if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
+      globalTimerManager.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
     if (retryTimeoutRef.current) {
-      window.clearTimeout(retryTimeoutRef.current);
+      globalTimerManager.clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
     }
   }, []);
@@ -147,7 +148,7 @@ export function useProgressiveImage({
       }
 
       // 타임아웃 설정
-      timeoutRef.current = window.setTimeout(() => {
+      timeoutRef.current = globalTimerManager.setTimeout(() => {
         img.onload = null;
         img.onerror = null;
         handleError(new Error('Image load timeout'));
@@ -189,7 +190,7 @@ export function useProgressiveImage({
           retryCount: state.retryCount + 1,
         });
 
-        retryTimeoutRef.current = window.setTimeout(() => {
+        retryTimeoutRef.current = globalTimerManager.setTimeout(() => {
           logger.info('Retrying image load:', { src, att: state.retryCount + 1 });
           loadImage(src, true);
         }, delay);
@@ -234,7 +235,7 @@ export function useProgressiveImage({
       if (lowQualitySrc && !state.isLoaded) {
         loadImage(lowQualitySrc);
         // 고품질 이미지는 잠시 후 로드
-        setTimeout(() => loadImage(src), 100);
+        globalTimerManager.setTimeout(() => loadImage(src), 100);
       } else {
         loadImage(src);
       }

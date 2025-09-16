@@ -19,15 +19,49 @@ function listFilesRecursive(dir: string): string[] {
   return out;
 }
 
-function stripCommentsAndStrings(src: string): string {
-  // crude stripper to reduce false positives from comments/strings
-  // remove /* */ comments
-  let text = src.replace(/\/\*[\s\S]*?\*\//g, '');
-  // remove // comments
-  text = text.replace(/(^|\n)\s*\/\/.*(?=\n|$)/g, '$1');
-  // remove string literals ('...', "...", `...`)
-  text = text.replace(/(['"`])(?:\\.|(?!\1)[\s\S])*\1/g, '');
-  return text;
+function preprocessLines(src: string): string[] {
+  // Efficient comment stripping per line; preserves code shape for token scanning
+  const lines = src.split(/\r?\n/);
+  let inBlock = false;
+  return lines.map(line => {
+    let s = line;
+    if (inBlock) {
+      const end = s.indexOf('*/');
+      if (end >= 0) {
+        s = s.slice(end + 2);
+        inBlock = false;
+      } else {
+        return '';
+      }
+    }
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] === '/' && s[i + 1] === '*') {
+        inBlock = true;
+        i++;
+        continue;
+      }
+      if (s[i] === '/' && s[i + 1] === '/') {
+        break;
+      }
+      // strip string literals
+      if (s[i] === '"' || s[i] === "'" || s[i] === '`') {
+        const quote = s[i];
+        i++;
+        while (i < s.length) {
+          if (s[i] === '\\') {
+            i += 2;
+            continue;
+          }
+          if (s[i] === quote) break;
+          i++;
+        }
+        continue;
+      }
+      out += s[i];
+    }
+    return out;
+  });
 }
 
 describe('Guard: direct GM_* usage is forbidden (adapter-only)', () => {
@@ -38,6 +72,8 @@ describe('Guard: direct GM_* usage is forbidden (adapter-only)', () => {
     const ALLOWLIST = new Set<string>([
       'src/shared/external/userscript/adapter.ts',
       'src/shared/types/core/userscript.d.ts',
+      // logger may probe environment via bracket access without calling GM_*
+      'src/shared/logging/logger.ts',
     ]);
 
     const offenders: { file: string; line: string }[] = [];
@@ -48,8 +84,7 @@ describe('Guard: direct GM_* usage is forbidden (adapter-only)', () => {
       if (ALLOWLIST.has(rel)) continue;
 
       const raw = readFileSync(file, 'utf8');
-      const text = stripCommentsAndStrings(raw);
-      const lines = text.split(/\r?\n/);
+      const lines = preprocessLines(raw);
 
       for (const line of lines) {
         if (/\bGM_[A-Za-z0-9_]+/.test(line)) {

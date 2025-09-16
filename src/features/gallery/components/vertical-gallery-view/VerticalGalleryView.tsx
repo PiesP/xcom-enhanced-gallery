@@ -18,6 +18,7 @@ import type { ImageFitMode } from '../../../../shared/types';
 import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';
 import { downloadState } from '../../../../shared/state/signals/download.signals';
 import { getPreactHooks, getPreact, getPreactCompat } from '../../../../shared/external/vendors';
+import { languageService } from '../../../../shared/services/LanguageService';
 import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
 import {
   animateGalleryEnter,
@@ -470,14 +471,21 @@ function VerticalGalleryViewCore({
 
   // 빈 상태 처리
   if (!isVisible || mediaItems.length === 0) {
-    return (
-      <div className={`${styles.container} ${styles.empty} ${stringWithDefault(className, '')}`}>
-        <div className={styles.emptyMessage}>
-          <h3>미디어가 없습니다</h3>
-          <p>표시할 이미지나 비디오가 없습니다.</p>
-        </div>
-      </div>
-    );
+    const emptyTitle = languageService.getString('messages.gallery.emptyTitle');
+    const emptyDesc = languageService.getString('messages.gallery.emptyDescription');
+    const { createElement: h } = getPreact();
+    return h(
+      'div',
+      {
+        className: `${styles.container} ${styles.empty} ${stringWithDefault(className, '')}`,
+      },
+      h(
+        'div',
+        { className: styles.emptyMessage },
+        h('h3', null, emptyTitle),
+        h('p', null, emptyDesc)
+      )
+    ) as unknown as ReturnType<typeof getPreact>['h'];
   }
 
   return (

@@ -18,6 +18,7 @@ export {
   ANIMATION_CONSTANTS,
   type CSSAnimationOptions,
 } from './css-animations';
+import { globalTimerManager } from './timer-management';
 
 // 별칭 제거: 공식 API만 유지(toolbarSlideDown/toolbarSlideUp)
 
@@ -79,7 +80,7 @@ export const animateCustom = async (
       }
     });
 
-    setTimeout(() => {
+    globalTimerManager.setTimeout(() => {
       resolve();
     }, durationMs + delayMs);
   });

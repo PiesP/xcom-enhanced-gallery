@@ -26,6 +26,13 @@ export interface LanguageStrings {
     readonly close: string;
   };
   readonly messages: {
+    readonly keyboardHelp: {
+      readonly title: string;
+      readonly navPrevious: string;
+      readonly navNext: string;
+      readonly close: string;
+      readonly toggleHelp: string;
+    };
     readonly download: {
       readonly single: {
         readonly error: {
@@ -53,6 +60,11 @@ export interface LanguageStrings {
         readonly body: string;
       };
     };
+    readonly gallery: {
+      readonly emptyTitle: string;
+      readonly emptyDescription: string;
+      readonly failedToLoadImage: string; // {type}
+    };
   };
 }
 
@@ -76,6 +88,13 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: '닫기',
     },
     messages: {
+      keyboardHelp: {
+        title: '키보드 단축키',
+        navPrevious: 'ArrowLeft: 이전 미디어',
+        navNext: 'ArrowRight: 다음 미디어',
+        close: 'Escape: 갤러리 닫기',
+        toggleHelp: '?: 이 도움말 표시',
+      },
       download: {
         single: { error: { title: '다운로드 실패', body: '파일을 받을 수 없습니다: {error}' } },
         allFailed: { title: '다운로드 실패', body: '모든 항목을 다운로드하지 못했습니다.' },
@@ -86,6 +105,11 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
           success: { title: '재시도 성공', body: '실패했던 항목을 모두 받았습니다.' },
         },
         cancelled: { title: '다운로드 취소됨', body: '요청한 다운로드가 취소되었습니다.' },
+      },
+      gallery: {
+        emptyTitle: '미디어가 없습니다',
+        emptyDescription: '표시할 이미지나 비디오가 없습니다.',
+        failedToLoadImage: '{type} 로드에 실패했습니다',
       },
     },
   },
@@ -108,6 +132,13 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: 'Close',
     },
     messages: {
+      keyboardHelp: {
+        title: 'Keyboard shortcuts',
+        navPrevious: 'ArrowLeft: Previous media',
+        navNext: 'ArrowRight: Next media',
+        close: 'Escape: Close gallery',
+        toggleHelp: '?: Show this help',
+      },
       download: {
         single: {
           error: { title: 'Download Failed', body: 'Could not download the file: {error}' },
@@ -122,6 +153,11 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
           },
         },
         cancelled: { title: 'Download Cancelled', body: 'The requested download was cancelled.' },
+      },
+      gallery: {
+        emptyTitle: 'No media available',
+        emptyDescription: 'There are no images or videos to display.',
+        failedToLoadImage: 'Failed to load {type}',
       },
     },
   },
@@ -144,6 +180,13 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: '閉じる',
     },
     messages: {
+      keyboardHelp: {
+        title: 'キーボードショートカット',
+        navPrevious: 'ArrowLeft: 前のメディア',
+        navNext: 'ArrowRight: 次のメディア',
+        close: 'Escape: ギャラリーを閉じる',
+        toggleHelp: '?: このヘルプを表示',
+      },
       download: {
         single: { error: { title: 'ダウンロード失敗', body: 'ファイルを取得できません: {error}' } },
         allFailed: {
@@ -159,6 +202,11 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
           title: 'ダウンロードがキャンセルされました',
           body: '要求したダウンロードはキャンセルされました。',
         },
+      },
+      gallery: {
+        emptyTitle: 'メディアがありません',
+        emptyDescription: '表示する画像や動画がありません。',
+        failedToLoadImage: '{type} の読み込みに失敗しました',
       },
     },
   },

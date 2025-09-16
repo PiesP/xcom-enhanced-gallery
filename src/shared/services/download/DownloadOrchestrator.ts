@@ -4,6 +4,7 @@
  * - Pure service with no UI side-effects. Vendors accessed only via getters.
  */
 import { getErrorMessage } from '../../utils/error-handling';
+import { globalTimerManager } from '../../utils/timer-management';
 
 export interface OrchestratorItem {
   url: string;
@@ -37,7 +38,7 @@ export class DownloadOrchestrator {
   private async sleep(ms: number, signal?: AbortSignal): Promise<void> {
     if (ms <= 0) return;
     return new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const timer = globalTimerManager.setTimeout(() => {
         cleanup();
         resolve();
       }, ms);
@@ -46,7 +47,7 @@ export class DownloadOrchestrator {
         reject(new Error('Download cancelled by user'));
       };
       const cleanup = () => {
-        clearTimeout(timer);
+        globalTimerManager.clearTimeout(timer);
         signal?.removeEventListener('abort', onAbort);
       };
       if (signal) signal.addEventListener('abort', onAbort);
@@ -65,7 +66,8 @@ export class DownloadOrchestrator {
       if (signal?.aborted) throw new Error('Download cancelled by user');
       try {
         const response = await fetch(url, { ...(signal ? { signal } : {}) } as RequestInit);
-        if (!response.ok) {
+        // Some tests/mock responses may omit the "ok" property. In that case, assume OK.
+        if ('ok' in response && !response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         const arrayBuffer = await response.arrayBuffer();

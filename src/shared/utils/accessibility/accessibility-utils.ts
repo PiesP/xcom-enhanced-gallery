@@ -335,7 +335,7 @@ export function announceLiveMessage(message: string, politeness = 'polite'): voi
   document.body.appendChild(liveRegion);
   liveRegion.textContent = message;
 
-  setTimeout(() => {
+  globalTimerManager.setTimeout(() => {
     document.body.removeChild(liveRegion);
   }, 1000);
 }
@@ -357,6 +357,7 @@ export function validateAltTextQuality(altText: string, imageType = 'informative
  * WCAG 2.4.3 Focus Order
  */
 import { createFocusTrap as unifiedCreateFocusTrap } from '../focusTrap';
+import { globalTimerManager } from '../timer-management';
 
 export function createFocusTrap(container: HTMLElement): void {
   // 통합 유틸로 위임하여 표준화된 동작을 사용한다
@@ -639,7 +640,7 @@ export function announceToScreenReader(message: string): void {
   announcement.textContent = message;
 
   document.body.appendChild(announcement);
-  setTimeout(() => document.body.removeChild(announcement), 1000);
+  globalTimerManager.setTimeout(() => document.body.removeChild(announcement), 1000);
 }
 
 export function announceUrgentToScreenReader(message: string): void {
@@ -650,7 +651,7 @@ export function announceUrgentToScreenReader(message: string): void {
   announcement.textContent = message;
 
   document.body.appendChild(announcement);
-  setTimeout(() => document.body.removeChild(announcement), 1000);
+  globalTimerManager.setTimeout(() => document.body.removeChild(announcement), 1000);
 }
 
 export function setARIALabel(element: HTMLElement, label: string): void {

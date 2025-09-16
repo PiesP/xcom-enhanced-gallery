@@ -1,4 +1,29 @@
+### 2025-09-16 — FILENAME-UNICODE-NORMALIZE-01 완료
+
+- 구현: `FilenameService.sanitizeForWindows()`에 NFKC 정규화 + 제어/비표시/BiDi
+  문자 제거 추가. 기존 Windows 금지 문자/예약어/길이 제한 로직 유지.
+- 테스트: `test/unit/shared/media/filename.unicode-normalize.test.ts` 추가 —
+  한글 조합/분해 동등성, zero-width/BiDi 제거, 예약어/금지문자, 길이 제한
+  검증(GREEN).
+- 영향 범위: 교차 플랫폼 파일명 결정성 향상. 기존 파일명 정책과 호환 유지.
+
 ### 2025-09-15
+
+2025-09-15: PLAN-STATUS — TDD_REFACTORING_PLAN.md 점검 결과, 활성 과제
+7건(KBD-FOCUS-RETURN-01, TIMER-DETERMINISM-02, I18N-LITERAL-GUARD-01,
+SETTINGS-MIG-HASH-01, FILENAME-UNICODE-NORMALIZE-01, UI-ERROR-BOUNDARY-01,
+PLAYWRIGHT-SMOKE-01)은 모두 진행 필요 상태로 확인되어 완료 문서로 이관할 항목이
+없습니다(실행 순서 제안은 기존 문서 유지).
+
+2025-09-15: KBD-FOCUS-RETURN-01 — 모달/오버레이 닫힘 시 포커스 복원 보장 (완료)
+
+- 내용: `useFocusTrap`와 `KeyboardHelpOverlay` 개선으로 ESC/닫기/배경 클릭 시
+  트리거 요소로 포커스 복원을 보장. jsdom 안정화를 위한 짧은 재시도 루프를
+  추가해 테스트 환경에서도 안정적으로 복원.
+- 테스트: `test/features/gallery/keyboard-help.overlay.test.tsx`,
+  `test/unit/shared/hooks/useFocusTrap.test.tsx`,
+  `test/unit/accessibility/focus-restore-manager.*` GREEN
+- 검증: 타입/린트/빌드 PASS, dev/prod Userscript 및 postbuild validator PASS
 
 2025-09-15: PLAN-REVIEW — 활성 계획 점검(완료 이관 항목 없음;
 LEGACY-TOKENS-PRUNE-01만 활성 유지)
@@ -35,6 +60,22 @@ LEGACY-TOKENS-PRUNE-01만 활성 유지)
 - 테스트: `test/unit/lint/userscript-gm.direct-usage.scan.red.test.ts` GREEN.
 - 검증: fast/unit 스위트 GREEN(해당 가드 포함), dev/prod 빌드 및 postbuild
   validator PASS.
+
+### 2025-09-16 — TIMER-DETERMINISM-02 완료
+
+- 내용: `setTimeout|setInterval|clearTimeout|clearInterval` 직접 사용 금지 정적
+  스캔 테스트 추가. 합법 예외는 TimerManager 내부 및 테스트 파일로 한정.
+- 테스트: `test/unit/lint/timer-direct-usage.scan.red.test.ts` GREEN.
+- 검증: 전체 스위트 GREEN, 타입/린트/빌드/포스트빌드 PASS.
+
+### 2025-09-16 — I18N-LITERAL-GUARD-01 완료
+
+- 내용: TSX 사용자 노출 문자열 리터럴 가드 추가 및 기존 UI 컴포넌트 국제화 적용.
+  위양성 튜닝과 KeyboardHelpOverlay/VerticalImageItem 등 문자열을
+  LanguageService로 이전.
+- 테스트: `test/unit/lint/i18n-literal.scan.red.test.ts` GREEN, 관련 UI 테스트
+  GREEN.
+- 문서: CODING_GUIDELINES에 “사용자 노출 문자열은 LanguageService 사용” 명시.
 
 2025-09-15: WHEEL-LOCK-POLICY-01 — 휠 락(policy) 일관성 가드 (완료)
 

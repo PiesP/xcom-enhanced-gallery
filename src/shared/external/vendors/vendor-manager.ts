@@ -11,6 +11,7 @@
  */
 
 import { logger } from '../../logging';
+import { globalTimerManager } from '../../utils/timer-management';
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {
@@ -325,7 +326,7 @@ export class VendorManager {
         this.createdUrls.add(url);
 
         // 30초 후 자동 정리 (메모리 누수 방지 강화)
-        const timerId = window.setTimeout(() => {
+        const timerId = globalTimerManager.setTimeout(() => {
           if (this.createdUrls.has(url)) {
             try {
               URL.revokeObjectURL(url);
@@ -346,7 +347,7 @@ export class VendorManager {
           // 타이머 정리
           const timerId = this.urlTimers.get(url);
           if (timerId) {
-            clearTimeout(timerId);
+            globalTimerManager.clearTimeout(timerId);
             this.urlTimers.delete(url);
           }
 
@@ -415,7 +416,7 @@ export class VendorManager {
   public cleanup(): void {
     // 타이머들 정리
     this.urlTimers.forEach(timerId => {
-      clearTimeout(timerId);
+      globalTimerManager.clearTimeout(timerId);
     });
     this.urlTimers.clear();
 

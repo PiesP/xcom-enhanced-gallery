@@ -11,6 +11,7 @@
 
 import { getPreactHooks } from '../external/vendors';
 import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * 간소화된 키보드 네비게이션 훅 (Esc 키만 지원)
@@ -161,9 +162,9 @@ export function useLiveRegion(politeness: 'polite' | 'assertive' = 'polite') {
 
       document.body.appendChild(liveRegion);
 
-      setTimeout(() => {
+      globalTimerManager.setTimeout(() => {
         liveRegion.textContent = message;
-        setTimeout(() => {
+        globalTimerManager.setTimeout(() => {
           if (document.body.contains(liveRegion)) {
             document.body.removeChild(liveRegion);
           }

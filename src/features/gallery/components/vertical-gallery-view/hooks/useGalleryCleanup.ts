@@ -8,6 +8,7 @@
 
 import { logger } from '../../../../../shared/logging/logger';
 import { getPreactHooks } from '../../../../../shared/external/vendors';
+import { globalTimerManager } from '../../../../../shared/utils/timer-management';
 
 interface UseGalleryCleanupOptions {
   isVisible: boolean;
@@ -26,7 +27,7 @@ export function useGalleryCleanup({
   // 타이머 헬퍼 함수
   const clearTimer = useCallback((timerId: number | null) => {
     if (timerId) {
-      clearTimeout(timerId);
+      globalTimerManager.clearTimeout(timerId);
     }
   }, []);
 

@@ -4,6 +4,7 @@
  */
 
 import { getPreactHooks } from '../../external/vendors';
+import { globalTimerManager } from '../timer-management';
 
 /**
  * 셀렉터 함수 타입
@@ -98,7 +99,7 @@ export function useAsyncSelector<T, R>(
 
     setResult((prev: AsyncSelectorResult<R>) => ({ ...prev, loading: true, error: null }));
 
-    const timeoutId = setTimeout(async () => {
+    const timeoutId = globalTimerManager.setTimeout(async () => {
       if (!mountedRef.current || generation !== currentGenerationRef.current) return;
 
       try {
@@ -119,7 +120,7 @@ export function useAsyncSelector<T, R>(
 
     // 컴포넌트 unmount 시 정리
     return () => {
-      clearTimeout(timeoutId);
+      globalTimerManager.clearTimeout(timeoutId);
     };
   }, [actualState, selector, defaultValue, debounceMs]);
 

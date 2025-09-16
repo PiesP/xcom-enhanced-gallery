@@ -10,6 +10,7 @@
 import { getPreactHooks } from '../../../shared/external/vendors';
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '../../../shared/logging/logger';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 const { useCallback, useEffect, useRef } = getPreactHooks();
 
@@ -144,7 +145,7 @@ export function useGalleryItemScroll(
 
         // smooth scroll의 경우 애니메이션 완료 대기
         if (actualBehavior === 'smooth') {
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise<void>(resolve => globalTimerManager.setTimeout(() => resolve(), 300));
         }
       } catch (error) {
         logger.error('useGalleryItemScroll: 스크롤 실패', { index, error });
@@ -162,7 +163,7 @@ export function useGalleryItemScroll(
             entries.forEach(entry => {
               if (entry.isIntersecting) {
                 observer.disconnect();
-                setTimeout(() => scrollToItem(index), 50);
+                globalTimerManager.setTimeout(() => scrollToItem(index), 50);
               }
             });
           });
@@ -171,7 +172,7 @@ export function useGalleryItemScroll(
             ?.children[index] as HTMLElement;
           if (targetElement) {
             observer.observe(targetElement);
-            setTimeout(() => observer.disconnect(), 1000); // 1초 후 정리
+            globalTimerManager.setTimeout(() => observer.disconnect(), 1000); // 1초 후 정리
           }
         }
       }
@@ -214,11 +215,11 @@ export function useGalleryItemScroll(
 
     // 이전 타이머 취소
     if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+      globalTimerManager.clearTimeout(scrollTimeoutRef.current);
     }
 
     // 디바운스 적용
-    scrollTimeoutRef.current = window.setTimeout(() => {
+    scrollTimeoutRef.current = globalTimerManager.setTimeout(() => {
       logger.debug('useGalleryItemScroll: 자동 스크롤 실행', {
         currentIndex,
         lastScrolledIndex: lastScrolledIndexRef.current,
@@ -228,7 +229,7 @@ export function useGalleryItemScroll(
 
     return () => {
       if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
+        globalTimerManager.clearTimeout(scrollTimeoutRef.current);
       }
     };
   }, [enabled, currentIndex, debounceDelay, scrollToCurrentItem]);
@@ -239,7 +240,7 @@ export function useGalleryItemScroll(
   useEffect(() => {
     return () => {
       if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
+        globalTimerManager.clearTimeout(scrollTimeoutRef.current);
       }
     };
   }, []);

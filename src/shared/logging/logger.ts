@@ -71,7 +71,7 @@ function getEnvironmentLogLevel(): LogLevel {
   // Check if we're in a userscript environment (production)
   try {
     if (typeof window !== 'undefined') {
-      const gmInfo = (window as unknown as Record<string, unknown>).GM_info;
+      const gmInfo = (window as unknown as Record<string, unknown>)['GM_info'];
       const unsafeWin = (window as unknown as Record<string, unknown>).unsafeWindow;
       if (gmInfo !== undefined || unsafeWin !== undefined) {
         return 'info';

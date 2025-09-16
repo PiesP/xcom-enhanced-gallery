@@ -307,10 +307,10 @@
       "dependencies": [],
       "dependents": [
         "src/shared/logging/index.ts",
+        "src/shared/utils/performance/performance-utils.ts",
         "src/features/settings/services/SettingsService.ts",
         "src/shared/utils/patterns/url-patterns.ts",
         "src/features/settings/services/TwitterTokenExtractor.ts",
-        "src/shared/utils/performance/performance-utils.ts",
         "src/shared/media/FilenameService.ts",
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/LanguageService.ts",
@@ -396,12 +396,121 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
         "src/shared/external/vendors/index.ts",
         "src/shared/external/vendors/vendor-api-safe.ts",
         "src/shared/external/vendors/vendor-api.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/timer-management.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/external/vendors/vendor-manager-static.ts",
+        "src/features/settings/services/TwitterTokenExtractor.ts",
+        "src/shared/utils/error-handling.ts",
+        "src/shared/services/download/DownloadOrchestrator.ts",
+        "src/shared/utils/accessibility/accessibility-utils.ts",
+        "src/shared/utils/accessibility/live-region-manager.ts",
+        "src/shared/dom/DOMCache.ts",
+        "src/shared/utils/events.ts",
+        "src/shared/services/MediaService.ts",
+        "src/shared/services/media-extraction/extractors/TwitterAPIExtractor.ts",
+        "src/shared/services/media/VideoControlService.ts",
+        "src/shared/utils/performance/idleScheduler.ts",
+        "src/shared/utils/performance/prefetch-bench.ts",
+        "src/shared/utils/performance/schedulers.ts",
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/shared/hooks/useToolbarState.ts",
+        "src/shared/utils/animations.ts",
+        "src/shared/utils/css-animations.ts",
+        "src/shared/utils/signalSelector.ts",
+        "src/shared/utils/viewport.ts",
+        "src/features/gallery/hooks/useGalleryItemScroll.ts",
+        "src/features/gallery/hooks/useGalleryScroll.ts",
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
+        "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
+        "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
+        "src/main.ts",
+        "src/shared/components/ui/Toast/Toast.tsx",
+        "src/shared/utils/index.ts",
+        "src/shared/browser/BrowserService.ts",
+        "src/shared/browser/utils/browser-utils.ts",
+        "src/shared/external/vendors/vendor-manager.ts",
+        "src/shared/hooks/useAccessibility.ts",
+        "src/shared/services/AnimationService.ts",
+        "src/shared/utils/performance/signalOptimization.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/performance/performance-utils.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/utils/timer-management.ts",
+        "src/shared/utils/utils.ts",
+        "src/shared/utils/core-utils.ts",
+        "src/shared/utils/scroll/scroll-utils.ts",
+        "src/shared/utils/performance/index.ts",
+        "src/shared/components/ui/Toolbar/Toolbar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -661,6 +770,23 @@
         },
         {
           "dynamic": false,
+          "module": "./SettingsSchema",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/settings/services/SettingsSchema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@shared/logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -715,6 +841,7 @@
         "src/bootstrap/feature-registration.ts",
         "src/features/settings/services/SettingsService.ts",
         "src/features/settings/services/SettingsMigration.ts",
+        "src/features/settings/services/SettingsSchema.ts",
         "src/features/settings/index.ts"
       ],
       "orphan": false,
@@ -869,6 +996,33 @@
       "valid": true
     },
     {
+      "source": "src/features/settings/services/SettingsSchema.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../types/settings.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/settings/types/settings.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/settings/services/SettingsService.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/settings/services/TwitterTokenExtractor.ts",
       "dependencies": [
         {
@@ -915,80 +1069,6 @@
       "dependents": [
         "src/bootstrap/feature-registration.ts",
         "src/features/settings/services/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/timer-management.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./performance/performance-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/performance/performance-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/settings/services/TwitterTokenExtractor.ts",
-        "src/shared/dom/DOMCache.ts",
-        "src/shared/utils/events.ts",
-        "src/shared/services/MediaService.ts",
-        "src/shared/services/media/VideoControlService.ts",
-        "src/shared/utils/performance/idleScheduler.ts",
-        "src/shared/utils/performance/schedulers.ts",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/hooks/useToolbarState.ts",
-        "src/shared/utils/css-animations.ts",
-        "src/shared/utils/signalSelector.ts",
-        "src/shared/utils/viewport.ts",
-        "src/features/gallery/hooks/useGalleryScroll.ts",
-        "src/main.ts",
-        "src/shared/components/ui/Toast/Toast.tsx",
-        "src/shared/utils/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/performance/performance-utils.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/timer-management.ts",
-        "src/shared/utils/utils.ts",
-        "src/shared/utils/core-utils.ts",
-        "src/shared/utils/scroll/scroll-utils.ts",
-        "src/shared/utils/performance/index.ts",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1042,6 +1122,23 @@
             "import"
           ],
           "resolved": "src/shared/media/FilenameService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../services/BulkDownloadService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/BulkDownloadService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1539,7 +1636,25 @@
     },
     {
       "source": "src/shared/utils/error-handling.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/download/DownloadOrchestrator.ts",
@@ -1578,6 +1693,23 @@
             "import"
           ],
           "resolved": "src/shared/utils/error-handling.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1688,7 +1820,10 @@
       ],
       "dependents": [
         "src/shared/services/BulkDownloadService.ts",
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -1841,6 +1976,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -1871,7 +2023,25 @@
     },
     {
       "source": "src/shared/utils/accessibility/live-region-manager.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/accessibility/index.ts",
         "src/shared/hooks/useAccessibility.ts"
@@ -4780,6 +4950,26 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -5276,7 +5466,25 @@
     },
     {
       "source": "src/shared/utils/performance/prefetch-bench.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/performance/index.ts"
       ],
@@ -5714,6 +5922,23 @@
             "import"
           ],
           "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../../shared/services/LanguageService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/LanguageService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8526,6 +8751,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -8700,6 +8942,26 @@
             "import"
           ],
           "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8901,6 +9163,40 @@
         },
         {
           "dynamic": false,
+          "module": "../../../../shared/services/LanguageService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/LanguageService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../../shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./KeyboardHelpOverlay.module.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8970,6 +9266,23 @@
             "import"
           ],
           "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../../../shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -9155,6 +9468,23 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../../shared/services/LanguageService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/LanguageService.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -9579,6 +9909,23 @@
             "import"
           ],
           "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../../../shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12251,6 +12598,26 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -12363,6 +12730,26 @@
             "import"
           ],
           "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -13545,6 +13932,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [],
@@ -13677,6 +14081,26 @@
             "import"
           ],
           "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14477,6 +14901,26 @@
             "import"
           ],
           "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15703,6 +16147,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [],
@@ -15827,8 +16288,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 264,
-    "totalDependenciesCruised": 717,
+    "totalCruised": 265,
+    "totalDependenciesCruised": 741,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

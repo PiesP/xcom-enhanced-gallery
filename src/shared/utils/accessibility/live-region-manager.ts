@@ -6,6 +6,7 @@
  *  - ensureAssertiveLiveRegion(): singleton, data-xe-live-region="assertive", aria-live="assertive", role="alert"
  *  - 두 타입 동시 사용 시 총 2개만
  */
+import { globalTimerManager } from '../timer-management';
 
 interface LiveRegionElements {
   polite?: HTMLElement;
@@ -129,7 +130,7 @@ export function announce(message: string, politeness: 'polite' | 'assertive' = '
   try {
     // SR이 동일 텍스트를 감지하도록 약간의 reset 후 설정
     region.textContent = '';
-    setTimeout(() => {
+    globalTimerManager.setTimeout(() => {
       region.textContent = message;
     }, 0);
   } catch {

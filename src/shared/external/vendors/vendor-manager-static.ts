@@ -6,6 +6,7 @@
  */
 
 import { logger } from '../../logging';
+import { globalTimerManager } from '../../utils/timer-management';
 
 // 정적 import로 모든 라이브러리를 안전하게 로드
 import * as fflate from 'fflate';
@@ -388,7 +389,7 @@ export class StaticVendorManager {
         this.createdUrls.add(url);
 
         // 30초 후 자동 정리 (메모리 누수 방지 강화)
-        const timerId = window.setTimeout(() => {
+        const timerId = globalTimerManager.setTimeout(() => {
           if (this.createdUrls.has(url)) {
             try {
               URL.revokeObjectURL(url);
@@ -409,7 +410,7 @@ export class StaticVendorManager {
           // 타이머 정리
           const timerId = this.urlTimers.get(url);
           if (timerId) {
-            clearTimeout(timerId);
+            globalTimerManager.clearTimeout(timerId);
             this.urlTimers.delete(url);
           }
 
@@ -509,7 +510,7 @@ export class StaticVendorManager {
   public cleanup(): void {
     // 타이머들 정리
     this.urlTimers.forEach(timerId => {
-      clearTimeout(timerId);
+      globalTimerManager.clearTimeout(timerId);
     });
     this.urlTimers.clear();
 

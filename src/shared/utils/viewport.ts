@@ -2,7 +2,7 @@
  * Viewport/Container constraint helpers (PC-only)
  * - Pure calculator + DOM hook to expose values via CSS variables
  */
-import { TimerManager } from './timer-management';
+import { globalTimerManager } from './timer-management';
 import { addListener, removeEventListenerManaged } from './events';
 
 export interface ChromeOffsets {
@@ -47,7 +47,7 @@ export function observeViewportCssVars(
   el: HTMLElement,
   getChrome: () => ChromeOffsets
 ): () => void {
-  const timers = new TimerManager();
+  // 전역 타이머 매니저 사용 (정책상 직접 타이머 금지)
   let disposed = false;
 
   const calcAndApply = (): void => {
@@ -68,7 +68,7 @@ export function observeViewportCssVars(
         calcAndApply();
       });
     } else {
-      timers.setTimeout(() => {
+      globalTimerManager.setTimeout(() => {
         pending = false;
         calcAndApply();
       }, 0);
@@ -116,6 +116,6 @@ export function observeViewportCssVars(
       removeEventListenerManaged(resizeListenerId);
       resizeListenerId = null;
     }
-    timers.cleanup();
+    // 전역 매니저 사용으로 개별 정리 불필요
   };
 }

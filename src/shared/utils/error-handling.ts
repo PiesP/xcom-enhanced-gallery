@@ -4,6 +4,7 @@
  * @version 1.0.0
  */
 
+import { globalTimerManager } from './timer-management';
 /**
  * 에러 컨텍스트 정보
  */
@@ -241,7 +242,9 @@ export async function withRetry<T>(
 
       // 지수 백오프
       const retryDelay = delay * Math.pow(2, attempt);
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      await new Promise<void>(resolve =>
+        globalTimerManager.setTimeout(() => resolve(), retryDelay)
+      );
     }
   }
 

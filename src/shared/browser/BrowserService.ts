@@ -7,6 +7,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * 브라우저 서비스
@@ -156,7 +157,7 @@ export class BrowserService {
 
       requestAnimationFrame(() => {
         element.style.opacity = '1';
-        setTimeout(resolve, duration);
+        globalTimerManager.setTimeout(resolve, duration);
       });
     });
   }
@@ -171,7 +172,7 @@ export class BrowserService {
 
       requestAnimationFrame(() => {
         element.style.opacity = '0';
-        setTimeout(resolve, duration);
+        globalTimerManager.setTimeout(resolve, duration);
       });
     });
   }
@@ -182,7 +183,7 @@ export class BrowserService {
   public animate(element: HTMLElement, className: string, duration = 300): Promise<void> {
     return new Promise(resolve => {
       element.classList.add(className);
-      setTimeout(() => {
+      globalTimerManager.setTimeout(() => {
         element.classList.remove(className);
         resolve();
       }, duration);
