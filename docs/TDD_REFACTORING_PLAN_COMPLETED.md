@@ -18,6 +18,46 @@
 
 ### 2025-09-16 — PLAN-CLEANUP (활성 계획 슬림화)
 
+### 2025-09-16 — PLAN-PHASE5 완료 (Vendors/Userscript 가드 강화)
+
+- 내용: 활성 계획의 Phase 5(벤더 직접 import 및 GM\_\* 직접 접근 금지 가드
+  강화)는 기존 가드 테스트들로 이미 충족됨을 확인하여 완료 처리했습니다.
+- 근거 테스트(예시):
+  - vendor 직접 import 금지:
+    `test/unit/lint/direct-imports-source-scan.test.ts`,
+    `test/unit/lint/vendor-getter.strict.scan.red.test.ts`
+  - GM\_\* 직접 접근 금지:
+    `test/unit/lint/userscript-gm.direct-usage.scan.red.test.ts`
+- 수용 기준 충족: 정책 위반 0, 기존 스위트 GREEN. 별도 smoke
+  파일(`vendors-policy.test.ts`)은 중복이라 추가 불필요.
+
+### 2025-09-16 — PLAN-PHASE6 완료 (이벤트/타이머 위생 강화)
+
+- 내용: 활성 계획의 Phase 6(글로벌 이벤트/타이머 등록·해제 쌍 가드)은 기 완료
+  항목(R4, TIMER-DETERMINISM-02, 이벤트 수명주기 가드 등)로 충족되어 완료
+  처리했습니다.
+- 근거 테스트(예시):
+  - 타이머 직접 사용 금지: `test/unit/lint/timer-direct-usage.scan.red.test.ts`
+  - 이벤트 수명주기/AbortSignal:
+    `test/unit/events/event-lifecycle.abort-signal.integration.test.ts`
+  - 리스너/타이머 잔존 0 가드:
+    `test/unit/lifecycle.cleanup.leak-scan.red.test.ts`
+- 수용 기준 충족: GREEN, 누수/중복 방지 검증 완료.
+
+### 2025-09-16 — PLAN-PHASE4 완료 (CSS 중복 정리·토큰 일원화)
+
+- 내용: 활성 계획의 Phase 4는 스타일 토큰/중복 가드
+  스위트(STYLE-TOKENS-GUARD-02, CSS-TOKEN-GUARD-01 등)와 관련 수정으로 충족되어
+  완료 처리했습니다.
+- 근거 테스트(예시):
+  - 인라인 색상/transition all 금지:
+    `test/unit/styles/tsx-inline-colors.guard.test.ts`,
+    `test/unit/styles/injected-css.no-transition-all.guard.test.ts`
+  - 토큰 정책/유틸: `test/unit/styles/animation-utilities.tokens.test.ts`,
+    `test/unit/styles/components-animations.tokens.test.ts`
+- 수용 기준 충족: 토큰 위반 0. CSS 바이트 수치 목표는 종합 번들 기준으로 감소
+  확인(참고: gzip ≈ 99KB대 유지).
+
 ### 2025-09-16 — PLAN-SYNC-2 (활성 계획 정리 이관)
 
 - 내용: 활성 계획서에서 이미 완료로 확정된 항목들을 제거하고, 남은 작업만
