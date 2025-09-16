@@ -1,3 +1,13 @@
+### 2025-09-16 — SETTINGS-MIG-HASH-01 완료
+
+- 내용: Settings 스키마 해시(`__schemaHash`) 도입. 저장된 해시와 현재 해시가
+  불일치하면 prune/fill 마이그레이션을 강제하고, 최초 저장/저장 시 현재 해시를
+  포함하도록 표준화.
+- 테스트: `test/unit/features/settings/settings-migration.schema-hash.test.ts`
+  추가 — 불일치 시 자동 복구, 최초 실행 해시 기록, 반복 초기화 idempotent GREEN.
+- 검증: 타입/린트/fast/unit 스위트 GREEN, dev/prod 빌드 및 postbuild validator
+  PASS.
+
 ### 2025-09-16 — FILENAME-UNICODE-NORMALIZE-01 완료
 
 - 구현: `FilenameService.sanitizeForWindows()`에 NFKC 정규화 + 제어/비표시/BiDi
@@ -67,6 +77,15 @@ LEGACY-TOKENS-PRUNE-01만 활성 유지)
   스캔 테스트 추가. 합법 예외는 TimerManager 내부 및 테스트 파일로 한정.
 - 테스트: `test/unit/lint/timer-direct-usage.scan.red.test.ts` GREEN.
 - 검증: 전체 스위트 GREEN, 타입/린트/빌드/포스트빌드 PASS.
+
+### 2025-09-16 — UI-ERROR-BOUNDARY-01 완료
+
+- 내용: 상위 ErrorBoundary 컴포넌트 도입. 자식 렌더 오류를 포착해 토스트로
+  알리고 UI는 조용히 대체(Fragment). prod에서는 stack 미노출, 언어 서비스와
+  연동.
+- 테스트: `test/unit/components/error-boundary.fallback.test.tsx` GREEN.
+- 구현: `src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx` (vendors
+  getter/LanguageService/ToastManager 사용).
 
 ### 2025-09-16 — I18N-LITERAL-GUARD-01 완료
 
@@ -2311,3 +2330,12 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
 
 2025-09-12: 계획 문서 단순화 — 활성 Phase 없음(전 구간 GREEN) 확정, 완료 항목을
 본 로그로 이관하고 계획서는 스켈레톤만 유지
+
+### 2025-09-16 — PLAYWRIGHT-SMOKE-01 완료
+
+- Userscript 주입 스모크(e2e) 추가:
+  `playwright/smoke/userscript-injection.spec.ts`
+- 시나리오: https://x.com/ 요청을 미니멀 HTML로 스텁, 번들 주입(document-idle),
+  콘솔 error 0, `#xeg-styles` 존재 확인, 외부 네트워크 차단
+- 구성: `playwright.config.ts`, npm 스크립트 `e2e:smoke`
+- 실행 결과: GREEN (약 0.8s)

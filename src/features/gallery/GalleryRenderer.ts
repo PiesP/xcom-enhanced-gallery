@@ -25,6 +25,7 @@ import {
 import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
 import { GalleryContainer } from '../../shared/components/isolation';
+import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
 import './styles/gallery-global.css';
 import { logger } from '../../shared/logging/logger';
 import { getPreact } from '../../shared/external/vendors';
@@ -141,7 +142,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     const { render, createElement } = getPreact();
 
-    // GalleryContainer로 VerticalGalleryView를 래핑
+    // GalleryContainer → ErrorBoundary → VerticalGalleryView 계층으로 래핑
     const galleryElement = createElement(GalleryContainer, {
       onClose: () => {
         closeGallery();
@@ -151,20 +152,24 @@ export class GalleryRenderer implements GalleryRendererInterface {
       },
       className: 'xeg-gallery-renderer',
       useShadowDOM: true, // Shadow DOM 활성화로 스타일 격리
-      children: createElement(VerticalGalleryView, {
-        // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
-        onClose: () => {
-          closeGallery();
-          if (this.onCloseCallback) {
-            this.onCloseCallback();
-          }
-        },
-        onPrevious: () => this.handleNavigation('previous'),
-        onNext: () => this.handleNavigation('next'),
-        onDownloadCurrent: () => this.handleDownload('current'),
-        onDownloadAll: () => this.handleDownload('all'),
-        className: 'xeg-vertical-gallery',
-      }),
+      children: createElement(
+        ErrorBoundary,
+        {},
+        createElement(VerticalGalleryView, {
+          // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
+          onClose: () => {
+            closeGallery();
+            if (this.onCloseCallback) {
+              this.onCloseCallback();
+            }
+          },
+          onPrevious: () => this.handleNavigation('previous'),
+          onNext: () => this.handleNavigation('next'),
+          onDownloadCurrent: () => this.handleDownload('current'),
+          onDownloadAll: () => this.handleDownload('all'),
+          className: 'xeg-vertical-gallery',
+        })
+      ),
     });
 
     render(galleryElement, this.container);

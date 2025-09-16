@@ -26,6 +26,10 @@ export interface LanguageStrings {
     readonly close: string;
   };
   readonly messages: {
+    readonly errorBoundary: {
+      readonly title: string;
+      readonly body: string; // {error}
+    };
     readonly keyboardHelp: {
       readonly title: string;
       readonly navPrevious: string;
@@ -88,6 +92,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: '닫기',
     },
     messages: {
+      errorBoundary: { title: '오류 발생', body: '예기치 않은 오류가 발생했습니다: {error}' },
       keyboardHelp: {
         title: '키보드 단축키',
         navPrevious: 'ArrowLeft: 이전 미디어',
@@ -132,6 +137,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: 'Close',
     },
     messages: {
+      errorBoundary: { title: 'An error occurred', body: 'An unexpected error occurred: {error}' },
       keyboardHelp: {
         title: 'Keyboard shortcuts',
         navPrevious: 'ArrowLeft: Previous media',
@@ -180,6 +186,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: '閉じる',
     },
     messages: {
+      errorBoundary: {
+        title: 'エラーが発生しました',
+        body: '予期しないエラーが発生しました: {error}',
+      },
       keyboardHelp: {
         title: 'キーボードショートカット',
         navPrevious: 'ArrowLeft: 前のメディア',

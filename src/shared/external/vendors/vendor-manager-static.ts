@@ -59,6 +59,8 @@ export interface PreactHooksAPI {
   useContext: typeof preactHooks.useContext;
   useReducer: typeof preactHooks.useReducer;
   useLayoutEffect: typeof preactHooks.useLayoutEffect;
+  /** Preact error boundary hook */
+  useErrorBoundary: typeof preactHooks.useErrorBoundary;
 }
 
 export interface PreactSignalsAPI {
@@ -229,6 +231,7 @@ export class StaticVendorManager {
       useContext: this.vendors.preactHooks.useContext,
       useReducer: this.vendors.preactHooks.useReducer,
       useLayoutEffect: this.vendors.preactHooks.useLayoutEffect,
+      useErrorBoundary: this.vendors.preactHooks.useErrorBoundary,
     };
 
     // Preact Signals API

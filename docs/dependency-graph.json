@@ -76,6 +76,7 @@
         "src/shared/components/isolation/GalleryContainer.tsx",
         "src/shared/state/signals/signal-factory.ts",
         "src/features/gallery/GalleryRenderer.ts",
+        "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
@@ -1820,6 +1821,7 @@
       ],
       "dependents": [
         "src/shared/services/BulkDownloadService.ts",
+        "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
@@ -1887,6 +1889,7 @@
       "dependents": [
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/ToastController.ts",
+        "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/shared/components/ui/index.ts",
         "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
@@ -5549,6 +5552,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../shared/components/ui/ErrorBoundary/ErrorBoundary",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../shared/external/vendors",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5711,6 +5731,77 @@
       "dependencies": [],
       "dependents": [
         "src/features/gallery/GalleryRenderer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/services/LanguageService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/LanguageService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/services/UnifiedToastManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/UnifiedToastManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/GalleryRenderer.ts",
+        "src/shared/components/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -13056,6 +13147,23 @@
         },
         {
           "dynamic": false,
+          "module": "./ui/ErrorBoundary/ErrorBoundary",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ui/Toast/Toast",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -16288,8 +16396,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 265,
-    "totalDependenciesCruised": 741,
+    "totalCruised": 266,
+    "totalDependenciesCruised": 746,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
