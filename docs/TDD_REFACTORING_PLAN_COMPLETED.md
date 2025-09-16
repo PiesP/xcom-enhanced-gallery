@@ -9,6 +9,24 @@
 - 기대효과: 초기 타이머/리스너/모듈 평가 비용 감소, 비핵심 서비스는 실제 사용
   시점까지 로딩 지연
 
+### 2025-09-16 — STARTUP-LATENCY-GUARD 유지보수 완료
+
+- 대상 모듈(가드 목록) 재확인 및 테스트로 고정:
+  - shared/services/BulkDownloadService
+  - shared/external/zip/zip-creator
+  - shared/services/service-diagnostics
+  - features/settings/services/settings-factory
+- 테스트: `test/performance/startup-latency.test.ts` 유지. 목록 누락/회귀 시
+  RED.
+
+### 2025-09-16 — SETTINGS-FACTORY IMPORT GUARD 추가
+
+- 내용: settings-factory는 Feature 지연 등록
+  지점(`src/bootstrap/feature-registration.ts`)에서만 import 허용.
+- 테스트 추가: `test/unit/lint/settings-factory.import-scope.scan.red.test.ts` —
+  허용된 파일 외 import 발생 시 FAIL.
+- 효과: 레이어 경계 보존 및 초기 import/eval 비용 절감 유지.
+
 ### 2025-09-16 — PHASE 3(완료): Theme/Filename 서비스 지연 초기화 전환
 
 - 내용: `service-initialization.ts`에서 ThemeService와 FilenameService를
