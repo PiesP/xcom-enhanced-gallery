@@ -19,62 +19,144 @@
   실행 시 유지될 것으로 예상됨(포스트빌드 밸리데이터 존재).
 - Vendors: 정적 매니저(`StaticVendorManager`) 경유 사용 OK. 다만 테스트 로그에
   “StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.”
-  경고가 자주 출력됨(신호 초기화 타이밍 개선 여지).
-- PC-only 입력: 금지 이벤트(touch/pointer) 소스 스캔 결과 없음. 키보드 리스너
-  중앙 집중 정책 테스트 GREEN.
-- 토큰/스타일: 주요 CSS/JS 토큰 정책 테스트 GREEN. 일부 컴포넌트 CSS에서
+  경고가 자주 출력됨(신호 초기화 타이밍 개선 여지). 중앙 집중 정책 테스트 GREEN.
   `var(--color-*)` 직접 사용이 남아 있으나 허용 범주(테마/기초 색상)로 보이며,
-  컴포넌트 섀도 토큰 강화의 여지는 있음.
 - 레거시 표면: 동적 VendorManager(`vendor-manager.ts`)는 TEST-ONLY로 남아 있고,
   `features/gallery/createAppContainer.ts` 런타임 스텁이 존재(실행 시 예외). 둘
   다 런타임 접근 금지 테스트/포스트빌드 가드로 보호되나, 소스에서 제거/이전 시
-  리스크 감소 가능.
 
 ---
 
-<!-- 완료 항목(참고용): VND-INIT-01 / VND-LEGACY-MOVE-02 / TOKENS-TOOLBAR-03 / A11Y-ICON-04 는 완료 로그로 이관되었습니다. -->
+1. SRC-PATH-RENAME-01 • Icon placeholder import 금지 가드 추가
 
-## 5) MEDIA-STRATEGY-05: 미디어 추출/정규화 경로 정리(옵션)
+- 배경: `src/shared/components/ui/Icon/icons/index.ts`는 @deprecated placeholder
+  입니다. 런타임 import는 금지되어야 합니다.
+- 수용 기준:
+  - src/\*\* 경로에서 위 파일로의 import/require 사용 0건
+  - 테스트/스냅샷 GREEN, 빌드/포스트빌드 가드 GREEN
 
-- 문제 신호: 이미지/비디오 경로에 legacy 정규화 브릿지가 공존. 현재 GREEN이나
-  전략/팩토리 경계 명료화로 유지보수성 개선 여지.
-- 해결 옵션:
-  - A. 유지: 현 구조 유지. Pros: 리스크 0. Cons: 전략 경계 추론 비용.
-  - B. 추출 Strategy/Factory 경계 명확화 및 normalizer 단일 모듈화. Pros:
-    테스트/확장 용이. Cons: 변경 범위 크고 회귀 위험.
-- 결정: A 유지, B는 백로그로 보류. 소스 이동/리네임은 후속 PR에서 작은 단위로
-  진행.
-- TDD 단계(보류):
-  - 핵심 리트라이/타임아웃/DOM 폴백 테스트는 유지. 회귀 방지용 리네임/모듈 이동
-    시 경로 가드만 추가.
-- 수용 기준: N/A(보류 항목, 추후 스코프 축소 후 활성화).
+2. SRC-PATH-RENAME-01 • Media Normalizer 리네임(단계 D1: re-export)
 
----
+- 작업:
+  - 새 파일 `src/shared/services/media/normalizers/legacy/twitter.ts` 생성
+  - 기존 파일은 JSDoc @deprecated 표기 후 새 경로에서 re-export만 수행
+  - import 스캔 시 새/구 경로 혼재 허용(과도기), D2에서 구 경로 0으로 정리
 
-## 실행 순서 및 리스크/롤백
+3. Vendors 초기화 경고 소음 축소(테스트 환경) 산발적으로 보임.
 
-완료: VND-INIT-01 → VND-LEGACY-MOVE-02 → TOKENS-TOOLBAR-03 → A11Y-ICON-04 (완료
-로그 참조)
+- 작업(저위험):
+  - `test/setup.ts`의 선행 초기화가 실패 시 경고를 감추지 않도록 최소화/리트라이
+    로직 점검(필요 시 vi.spyOn(console, ...) 기반 warn 카운트 가드 도입)
+  - smoke/fast 스위트에서 벤더 초기화 관련 warn 카운트 0 또는 허용 임계치 이내
 
-보류: 5) MEDIA-STRATEGY-05 (옵션, 후속 사이클에서 범위 축소 후 재검토)
+4. UI/UX 토큰 마이크로 정리(선택) 사용 불가 정책 준수 점검
 
-- 공통 리스크: 테스트 경로/모킹 조정 필요. 해결: `test/setup.ts`에서 중앙화.
+- 수용 기준: 스타일 가드 GREEN 유지, 번들 영향 없음
+
 - 롤백 전략: 각 단계는 독립 브랜치/PR로 나누고, 실패 시 해당 커밋만 리버트
-  가능하도록 최소 diff 유지.
-
----
+  가능하도록 최소 diff 유지. re-export 단계는 즉시 되돌림 용이.
 
 ## 품질 게이트 (작업 중 반복 확인)
 
-- 타입/린트/포맷: `npm run validate` GREEN 유지
-- 테스트: smoke/fast 먼저, 필요 시 unit 전체. 경고 소음 카운트 테스트 포함
-- 빌드: dev/prod 빌드 + `scripts/validate-build.js`(gzip 예산/문자열 가드)
+## 참고/정책 고지
 
 ---
 
-## 참고/정책 고지
+## 부록 — SOURCE PATH RENAME / CLEANUP PLAN
 
-- Vendors: getter만 사용, 동적 매니저는 테스트 전용으로 이전
-- Userscript: `getUserscript()` 어댑터 경유, a[href] 직접 다운로드 금지
-- 입력: PC 전용 이벤트만 사용, 문서화된 네비 키만 처리
-- 스타일: CSS Modules + 디자인 토큰(가능하면 컴포넌트 섀도 토큰) 사용
+> 목적: 레거시/혼동 가능 경로를 식별하고, 안전한 단계별 리네임/정리를 통해
+
+- 근거/제약: 3계층 단방향(Features → Shared → External), vendors/userscript
+  getter 규칙, PC-only, CSS Tokens, 테스트 우선(TDD)
+
+### 스코프(1차)
+
+- A. Runtime Stub: `src/features/gallery/createAppContainer.ts` (런타임 금지
+  스텁)
+- B. Vendor Legacy Manager(TEST-ONLY):
+  `src/shared/external/vendors/vendor-manager.ts` (@deprecated, 테스트 전용)
+- C. Deprecated Config: `src/shared/components/ui/Toolbar/toolbarConfig.ts`
+- D. Media Normalizer:
+  `src/shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts`
+- E. Deprecated Icon Barrel Placeholder:
+  `src/shared/components/ui/Icon/icons/index.ts`
+- F. Zip Legacy Helper: `src/shared/external/zip/zip-creator.ts`의 @deprecated
+  API
+
+### 후보와 제안
+
+1. A(Runtime Stub createAppContainer)
+
+- 현상: 런타임 접근 금지 throw 스텁(테스트 하네스 분리 존재). 런타임에서 import
+  금지 가드 테스트 있음.
+- 제안: 유지(즉시 변경 없음). 후속: 사용 0임이 지속 보장되면 삭제 또는
+  `shared/container/runtime-stubs/createAppContainer.runtime.ts`로 이전.
+- 가드/수용 기준:
+  - src/\*\* import 0(기존 RED 테스트 통과)
+  - 삭제/이전 시 빌드/테스트 GREEN, 번들 문자열에 createAppContainer 미포함
+
+2. B(legacy vendor-manager.ts)
+
+- 현상: 테스트 전용. 일부 테스트가 정확한 경로 문자열을 참조.
+- 제안: 파일명 변경 금지(테스트 의존). 유지하되 주석/README로 TEST-ONLY 강조.
+- 가드/수용 기준: prod 번들에 "VendorManager" 문자열 0, src/\*\*에서 import
+  0(기존 테스트/validator PASS)
+
+3. C(toolbarConfig.ts @deprecated)
+
+- 현상: 테스트 호환 전용 구성. 런타임 사용 금지 주석 존재.
+- 제안: 유지. 후속: tests 전용 경로로 이관 시, 배럴 재노출로 단계적 전환.
+- 가드/수용 기준: src/\*\* 런타임 사용 0, 제거 시 관련 테스트를 tests util로
+  치환
+
+4. D(TwitterVideoLegacyNormalizer)
+
+- 현상: modern + legacy 병합 순수 모듈. 네이밍이 명확하나 폴더 구조 개선 여지.
+- 제안: 2단계 리네임 시나리오(옵션 실행)
+  - Step D1: 새 경로 추가:
+    `src/shared/services/media/normalizers/legacy/twitter.ts`
+    - 구(old) 경로에서 새 경로로 re-export(@deprecated JSDoc)
+    - 내부 소비처는 새 경로로 점진 교체
+  - Step D2(후속): 구(old) 경로 제거
+- 가드/수용 기준: 타입/테스트/빌드 GREEN, import 스캔에서 구 경로 사용 0 → 제거
+
+5. E(Icon deprecated barrel placeholder)
+
+- 현상: @deprecated placeholder, 실사용 없음을 전제로 존재
+- 제안: 삭제 후보. 선행: src/\*\* import 스캔 가드 추가 → offenders 0 확인 후
+  삭제
+- 가드/수용 기준: offenders 0, 빌드/테스트 GREEN, 번들 문자열에 관련 키 없음
+
+6. F(zip-creator @deprecated high-level helper)
+
+- 현상: prod 소스에서 사용 금지 가드 존재. 유지
+- 제안: 향후 완전 제거 전, tests 전용 파일로 분리하거나 이름에 `.legacy` 접미사
+- 가드/수용 기준: src/\*\* 사용 0 유지, 제거 시 테스트 리팩토링 동반
+
+### 단계별 실행 순서(제안)
+
+- Phase 0 — Baseline
+  - 전체 테스트/빌드 GREEN 확인, offenders 스캔 스냅샷 기록
+- Phase 1 — 가드 강화(문서/테스트)
+  - E import 스캔 RED 테스트 추가(icons placeholder 경로)
+  - D re-export 경로 준비(@deprecated JSDoc) — 코드 변경 최소
+- Phase 2 — 안전 리네임(선택 적용)
+  - D 소비처 일부를 새 경로로 전환(소규모, 1~2곳)
+- Phase 3 — 제거/이전(선택 적용)
+  - E offenders 0이면 파일 삭제
+  - D 구 경로 제거(오프렌더 0)
+- Phase 4 — 런타임 스텁/Deprecated 정리 검토
+  - A 삭제 또는 runtime-stubs 이전(사용 0 보증 시)
+  - C/F tests 경로로 이전 검토
+
+### 리스크/롤백
+
+- 리스크: 테스트 경로 의존(특히 vendor-manager.ts) 및 스캔 규칙 민감도
+- 롤백: re-export 유지, 배럴 되돌림, 문서/테스트만 수정으로 복구 가능
+
+### 수용 기준(전역)
+
+- deps-cruiser 순환/금지 위반 0
+- src/\*\*에서 TEST-ONLY/LEGACY 대상의 런타임 import 0
+- 번들 문자열 가드 PASS(VendorManager 등 금지 키워드 0)
+- 전체 테스트/빌드/포스트빌드 GREEN

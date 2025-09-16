@@ -27,6 +27,11 @@ index↔pipeline↔media-url.util) 제거 | 의존성 위생 및 테스트 용�
 영역), 기존 테스트 GREEN, 동작 변화 없음. 접근: util 경계 분리 또는 의존 방향
 정리.
 
+READY | SRC-PATH-RENAME-01 | 소스 경로 리네임/정리(legacy/test-only/옵션 리네임)
+| 유지보수성 향상 및 오탐 방지(런타임 금지 경로 명확화) | S/M | 세부 계획:
+`docs/SOURCE_PATH_RENAME_PLAN.md` 참조. 수용 기준: 전역 수용 기준 준수 및 계획서
+내 각 항목의 가드 충족.
+
 ---
 
 ## Parking Lot (미보류)
