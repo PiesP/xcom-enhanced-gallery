@@ -51,6 +51,19 @@ function setupURLPolyfill() {
 // URL 폴백 설정 실행
 setupURLPolyfill();
 
+// Vendors 선행 초기화 (모듈 로드 시 1회)
+// 자동 초기화 경고/신호 폴백 경고를 줄이기 위해 테스트 시작 전에 초기화합니다.
+// 중복 호출은 StaticVendorManager에서 안전하게 처리됩니다.
+try {
+  // vitest는 ESM을 지원하므로 top-level await 사용 가능
+  const vendors = await import('../src/shared/external/vendors/index.ts');
+  if (typeof vendors.initializeVendors === 'function') {
+    await vendors.initializeVendors();
+  }
+} catch {
+  // 테스트 환경에서만 사용되므로 실패해도 치명적이지 않음
+}
+
 // jsdom 환경 호환성 향상을 위한 polyfill 설정
 function setupJsdomPolyfills() {
   // window.scrollTo polyfill (jsdom에서 지원하지 않음)
