@@ -1137,23 +1137,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/BulkDownloadService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../services/BulkDownloadService",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
@@ -10570,6 +10553,26 @@
           "valid": true
         },
         {
+          "dynamic": true,
+          "module": "@shared/services/service-initialization",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "src/shared/services/service-initialization.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
           "dynamic": false,
           "module": "@shared/services/ServiceManager",
           "moduleSystem": "es6",
@@ -12176,6 +12179,7 @@
         }
       ],
       "dependents": [
+        "src/main.ts",
         "src/shared/services/core-services.ts",
         "src/shared/services/service-diagnostics.ts"
       ],

@@ -1,3 +1,29 @@
+## 2025-09-16 — Phase 3: Startup 지연/가드 1차 적용
+
+- startup import/eval 가드 테스트 추가:
+  `test/performance/startup-latency.test.ts`
+- main.ts 테스트 모드 자동 시작 비활성화, core-service 등록 경로
+  정리(service-initialization 직접 import)
+- BulkDownloadService의 service-accessors 모듈 레벨 fallback 제거로 즉시 import
+  방지
+- 기대효과: 초기 타이머/리스너/모듈 평가 비용 감소, 비핵심 서비스는 실제 사용
+  시점까지 로딩 지연
+
+### 2025-09-16 — PHASE 3(완료): Theme/Filename 서비스 지연 초기화 전환
+
+- 내용: `service-initialization.ts`에서 ThemeService와 FilenameService를
+  registerFactory 기반의 lazy-init으로 전환. ToastController는 사용자 피드백
+  경로 특성상 eager 인스턴스로 유지.
+- 변경:
+  - ThemeService: `SERVICE_KEYS.THEME` 및 `'theme.service'` 두 키에 팩토리 등록
+    (단일 인스턴스 공유)
+  - FilenameService: `SERVICE_KEYS.MEDIA_FILENAME`에 팩토리 등록
+  - BulkDownload/ZIP/Settings/Diagnostics는 import guard 대상 유지
+- 테스트: 전체 스위트 GREEN, startup-latency 가드 포함. 일부 테스트 환경에서의
+  중복 등록 경고는 idempotency 시나리오에서 의도된 동작으로 확인.
+- 영향: 초기 번들 평가 시점에 Theme/Filename 인스턴스 생성이 발생하지 않음.
+  실사용 접근 시 최초 생성되며, 기능 회귀 없음.
+
 ### 2025-09-16 — PLAN-CLOSE (B/C/F 관찰 지속 항목 정리)
 
 ### 2025-09-16 — PHASE 3(부분) 완료: 비핵심 서비스 사전 워밍업 제거 (추가 기록)
