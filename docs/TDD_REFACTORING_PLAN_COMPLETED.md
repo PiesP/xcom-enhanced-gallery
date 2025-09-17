@@ -14,6 +14,20 @@
   제거(항상 등록), 소비 조건을 "갤러리 외부"로 한정, Shadow DOM은 `composedPath`
   기반 내부 판정. 스크롤 가능 컨테이너 셀렉터 하드닝. 관련 테스트 GREEN.
 
+### 2025-09-17 — PLAN-SYNC-8 (활성 계획 → 완료 이관)
+
+- 활성 계획서 상단의 "2025-09-17 적용 사항 요약" 섹션을 본 완료 로그로 이관하고,
+  계획서에는 간단한 주석만 남김.
+- 4.x(Result 패턴 표준화) 및 4.8/4.9/4.10 상세 설계/테스트 메모를 완료 상태로 본
+  문서에만 유지하도록 정리.
+
+### 2025-09-17 — RESULT-PATTERN-UNIFY (보완) 완료
+
+- `MediaService` 다운로드 결과의 status/code 표준화 보완을 확정.
+- 단일/다중 경로 모두 code 누락 시 규칙에 따라
+  보정(ALL_FAILED/NONE/PARTIAL_FAILED/UNKNOWN).
+- 관련 계약 테스트 GREEN. 활성 계획서에서는 항목 제거.
+
 ### 2025-09-17 — PHASE 4 보강 테스트/경계 수정
 
 - 4.5 보강 테스트 추가: `new ToastController()` 직접 생성 금지 스캔(lint) 추가.
@@ -24,6 +38,15 @@
   `shared/utils/scroll/ScrollEventHub.ts`에서 `EventManager` 직접 import 제거,
   `@shared/utils/events`의 add/remove API 사용으로 전환. 경계 스캔 테스트 통과
   기대.
+
+### 2025-09-17 — PHASE 4 보강: ToastController 단일화 및 Result 패턴 하드닝
+
+- GalleryApp 단일화 테스트 추가: `galleryapp.toast-controller.singleton.test.ts`
+  — 갤러리 초기화 2회 호출 시에도 컨테이너 경유 `getToastController`가 1회만
+  호출됨을 spy로 확인. GREEN.
+- MediaService 결과 표준화 보완: 단일/다중 다운로드 경로에서 status/code를
+  일관되게 표준화하고, 공급자 구현이 `code`를 누락해도 소비자가 일관된 계약으로
+  사용할 수 있도록 개선. 관련 계약/RED 테스트 GREEN.
 
 ### 2025-09-17 — PHASE 3(최종) 활성 계획서에서 완료로 이관
 

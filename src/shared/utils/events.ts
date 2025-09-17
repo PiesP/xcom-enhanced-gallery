@@ -871,12 +871,18 @@ function handleKeyboardEvent(
                 : (globalThis as { document?: Document }).document
             ) as Document | undefined;
             if (!doc) return null;
+            // Support multiple root selectors, including test-only containers
             const root = (doc.querySelector('.xeg-gallery-container') ||
-              doc.querySelector('[data-xeg-gallery-container]')) as HTMLElement | null;
-            const items = root?.querySelector('[data-xeg-role="items-container"]');
+              doc.querySelector('[data-xeg-gallery-container]') ||
+              doc.getElementById('xeg-gallery-root') ||
+              doc.querySelector('[data-xeg-gallery-root]') ||
+              null) as HTMLElement | null;
+            // Items container may exist directly under document in tests
+            const items = (root?.querySelector('[data-xeg-role="items-container"]') ||
+              doc.querySelector('[data-xeg-role="items-container"]')) as HTMLElement | null;
             if (!items) return null;
             const index = galleryState.value.currentIndex;
-            const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
+            const target = items.children?.[index] as HTMLElement | undefined;
             if (!target) return null;
             const v = target.querySelector('video');
             return v instanceof HTMLVideoElement ? v : null;

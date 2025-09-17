@@ -197,6 +197,44 @@ function setupJsdomPolyfills() {
     globalThis.IntersectionObserver = globalThis.window?.IntersectionObserver;
   }
 
+  // requestAnimationFrame / cancelAnimationFrame polyfill (jsdom limitation)
+  // Preact hooks 등에서 사용되며, teardown 시 cancelAnimationFrame이 없으면 에러가 발생할 수 있음
+  try {
+    type RAFCallback = (time: number) => void;
+    const rafPolyfill = (cb: RAFCallback): number => {
+      // 60fps 근사치
+      return globalThis.setTimeout(() => cb(Date.now()), 16) as unknown as number;
+    };
+    const cafPolyfill = (id: number) => {
+      try {
+        globalThis.clearTimeout(id as unknown as any);
+      } catch {
+        // ignore
+      }
+    };
+
+    if (typeof globalThis.requestAnimationFrame !== 'function') {
+      // @ts-expect-error — assign polyfill in test env
+      globalThis.requestAnimationFrame = rafPolyfill;
+    }
+    if (typeof globalThis.cancelAnimationFrame !== 'function') {
+      // @ts-expect-error — assign polyfill in test env
+      globalThis.cancelAnimationFrame = cafPolyfill;
+    }
+    if (typeof globalThis.window !== 'undefined') {
+      if (typeof globalThis.window.requestAnimationFrame !== 'function') {
+        // @ts-expect-error — jsdom Window type
+        globalThis.window.requestAnimationFrame = rafPolyfill;
+      }
+      if (typeof globalThis.window.cancelAnimationFrame !== 'function') {
+        // @ts-expect-error — jsdom Window type
+        globalThis.window.cancelAnimationFrame = cafPolyfill;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   // HTMLCanvasElement.toDataURL polyfill (jsdom: Not implemented 방지)
   try {
     // jsdom에서는 HTMLCanvasElement가 존재하지만 toDataURL 호출 시 예외를 던질 수 있음

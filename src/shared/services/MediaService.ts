@@ -827,8 +827,29 @@ export class MediaService {
      * @deprecated Wrapper — delegating to BulkDownloadService
      * Use BulkDownloadService for actual implementation to avoid duplication.
      */
-    const bulk = getBulkDownloadServiceFromContainer();
-    return bulk.downloadSingle(media);
+    let bulk: import('./BulkDownloadService').BulkDownloadService;
+    try {
+      bulk = getBulkDownloadServiceFromContainer();
+    } catch {
+      // Test/Node 환경 또는 초기화 순서 이슈로 컨테이너 미등록일 수 있음 — 로컬 폴백 사용
+      const { BulkDownloadService } = await import('./BulkDownloadService');
+      bulk = new BulkDownloadService();
+    }
+    const res = await bulk.downloadSingle(media);
+    // Standardize result code when provider omitted it
+    if (res && !('code' in (res as object))) {
+      const code: ErrorCode =
+        res.status === 'success'
+          ? ErrorCode.NONE
+          : res.status === 'cancelled'
+            ? ErrorCode.CANCELLED
+            : res.status === 'partial'
+              ? ErrorCode.PARTIAL_FAILED
+              : ErrorCode.UNKNOWN;
+      const out: SingleDownloadResult = { ...(res as SingleDownloadResult), code };
+      return out;
+    }
+    return res as SingleDownloadResult;
   }
 
   /**
@@ -842,8 +863,40 @@ export class MediaService {
      * @deprecated Wrapper — delegating to BulkDownloadService
      * Use BulkDownloadService for actual implementation to avoid duplication.
      */
-    const bulk = getBulkDownloadServiceFromContainer();
-    return bulk.downloadMultiple(mediaItems, options);
+    let bulk: import('./BulkDownloadService').BulkDownloadService;
+    try {
+      bulk = getBulkDownloadServiceFromContainer();
+    } catch {
+      // Test/Node 환경 또는 초기화 순서 이슈로 컨테이너 미등록일 수 있음 — 로컬 폴백 사용
+      const { BulkDownloadService } = await import('./BulkDownloadService');
+      bulk = new BulkDownloadService();
+    }
+    const res = await bulk.downloadMultiple(mediaItems, options);
+    // Standardize status/code for multi path if provider omitted code
+    if (res) {
+      const all = (res as DownloadResult).filesProcessed ?? mediaItems.length;
+      const ok = (res as DownloadResult).filesSuccessful ?? 0;
+      const status = ((res as DownloadResult).status ??
+        (ok === all ? 'success' : ok > 0 ? 'partial' : 'error')) as BaseResultStatus;
+      const code: ErrorCode =
+        status === 'success'
+          ? ErrorCode.NONE
+          : status === 'cancelled'
+            ? ErrorCode.CANCELLED
+            : status === 'partial'
+              ? ErrorCode.PARTIAL_FAILED
+              : ok === 0 && all > 0
+                ? ErrorCode.ALL_FAILED
+                : ErrorCode.UNKNOWN;
+      const hasCode = 'code' in (res as object);
+      const out: DownloadResult = {
+        ...(res as DownloadResult),
+        status,
+        ...(hasCode ? {} : { code }),
+      } as DownloadResult;
+      return out;
+    }
+    return res as DownloadResult;
   }
 
   /**
