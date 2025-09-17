@@ -23,6 +23,9 @@ export class EventManager {
   private readonly galleryManager: GalleryEventManager;
   private isDestroyed = false;
   private readonly extraCleanups: Array<() => void> = [];
+  // Diagnostics
+  private wheelListenerCount = 0;
+  private wheelLockCount = 0;
 
   constructor() {
     this.domManager = createDomEventManager();
@@ -221,8 +224,16 @@ export class EventManager {
   ): () => void {
     if (this.isDestroyed || !target) return () => {};
     const cleanup = coreAddWheelListener(target, handler, options);
-    this.extraCleanups.push(cleanup);
-    return cleanup;
+    this.wheelListenerCount++;
+    const wrapped = () => {
+      try {
+        cleanup();
+      } finally {
+        this.wheelListenerCount = Math.max(0, this.wheelListenerCount - 1);
+      }
+    };
+    this.extraCleanups.push(wrapped);
+    return wrapped;
   }
 
   /**
@@ -236,8 +247,24 @@ export class EventManager {
   ): () => void {
     if (this.isDestroyed || !target) return () => {};
     const cleanup = coreEnsureWheelLock(target, handler, options);
-    this.extraCleanups.push(cleanup);
-    return cleanup;
+    this.wheelLockCount++;
+    const wrapped = () => {
+      try {
+        cleanup();
+      } finally {
+        this.wheelLockCount = Math.max(0, this.wheelLockCount - 1);
+      }
+    };
+    this.extraCleanups.push(wrapped);
+    return wrapped;
+  }
+
+  /** Diagnostics getters */
+  public getWheelDiagnostics() {
+    return {
+      listeners: this.wheelListenerCount,
+      locks: this.wheelLockCount,
+    };
   }
 }
 

@@ -47,11 +47,17 @@ export function preventScrollPropagation(
   options: { disableBodyScroll?: boolean } = {}
 ): () => void {
   const { disableBodyScroll = false } = options;
-
-  return ensureWheelLock(element, _e => {
-    if (disableBodyScroll) return true;
-    return false;
+  const cleanup = ensureWheelLock(element, _e => (disableBodyScroll ? true : false), {
+    // capture defaults to false
   });
+
+  return () => {
+    try {
+      cleanup();
+    } catch (error) {
+      logger.warn('Wheel lock cleanup failed', error);
+    }
+  };
 }
 
 // Re-export throttleScroll from performance utils (RAF-based, more efficient)
@@ -84,7 +90,13 @@ export function createScrollHandler(
   const targetElement = captureOnDocument ? document : element;
 
   try {
-    const cleanup = addWheelListener(targetElement, wheelHandler, { passive: true });
+    const cleanup = addWheelListener(
+      targetElement as EventTarget,
+      wheelHandler as (e: WheelEvent) => void,
+      {
+        passive: true,
+      }
+    );
     logger.debug('Wheel event listener registered', {
       target: captureOnDocument ? 'document' : 'element',
       threshold,

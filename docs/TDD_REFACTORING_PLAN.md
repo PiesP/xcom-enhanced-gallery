@@ -255,6 +255,27 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
     보장).
   - 리스너 누수 0, 정책(PC 전용 입력, vendors getter 경유) 준수.
 
+---
+
+### 4.8 휠 핸들링 완전 일원화 및 경계 고정 (완료)
+
+- 목적: 모든 휠 처리 경로를 EventManager의 단일 API로 집결하고, 정책 테스트로
+  강제.
+- 구현:
+  - EventManager에 addWheelListener/addWheelLock API 추가, 진단
+    카운터(listeners/locks) 노출.
+  - ensureWheelLock가 소비(true) 시 stopPropagation도 수행하도록 보강.
+  - useGalleryScroll은 문서 레벨/컨테이너 레벨 모두 addWheelLock 사용, 핸들러는
+    boolean 반환으로 소비 신호화.
+  - scroll-utils는 utils→services 경계 위반 및 순환 의존을 방지하기 위해
+    EventManager 의존 제거 → wheel 헬퍼(addWheelListener/ensureWheelLock) 직접
+    사용으로 전환.
+  - Policy 테스트 추가: EventManager.addEventListener('wheel', …) 금지.
+- 결과:
+  - fast/unit 스위트 GREEN, dev/prod 빌드 및 validate-build GREEN.
+  - dependency-cruiser 순환 의존 오류 제거, utils→services 경계 테스트 GREEN.
+  - 진단 카운터는 추후 운영 로그에 선택적 노출 가능.
+
 ### 일정/PR 단위
 
 - PR-1: 4.1(idempotent 등록) + 4.5(Toast accessor 사용) — 서비스 경계 정리, 로그
