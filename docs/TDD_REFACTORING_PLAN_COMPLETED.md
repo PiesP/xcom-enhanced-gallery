@@ -1,3 +1,7 @@
+# TDD 리팩토링 완료 로그 (누적)
+
+활성 계획에서 완료된 항목을 시간 순으로 누적 기록합니다.
+
 ### 2025-09-17 — P4.6b ScrollEventHub 경로 수명주기 — GREEN
 
 - 테스트 추가:
@@ -368,7 +372,6 @@
 - 검증: 전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS
   (VendorManager/legacy 전역 키 누출 없음).
 
-- 내용: CODING_GUIDELINES의 코드펜스 파손 및 Toast 섹션 혼입 문제를 수정하고,
 - 내용: CODING_GUIDELINES의 코드펜스 파손 및 Toast 섹션 혼입 문제를 수정하고,
   animateCustom 예시 인접 영역을 정상화. ARCHITECTURE와
   DEPENDENCY-GOVERNANCE에는 "런타임 코딩/스타일/토큰/테스트 정책은
