@@ -126,6 +126,45 @@ Acceptance Criteria (AC)
   검출
 - 번들 팽창 → 코드젠/분기 재평가, 인라인 import 제거 커밋 빠른 revert 가능
 
+비목표(Non-Goals)
+
+- 새로운 아이콘 세트(예: Lucide, Feather) 추가 도입은 본 Epic 범위 아님
+- SVG 최적화 파이프라인(SVGO 등) 구축은 후속 Epic 고려
+- 다크모드/테마 신규 토큰 정의 확장(아이콘 색상 외)은 범위 제외
+- 아이콘 애니메이션(트랜지션/모션) 도입은 별도 퍼포먼스/UX Epic으로 관리
+
+측정 & 메트릭 캡처 전략
+
+| 항목                          | 방법                                           | 시점    | 기준값(BL) | 예산(Budget)       |
+| ----------------------------- | ---------------------------------------------- | ------- | ---------- | ------------------ |
+| 초기 prod 번들(raw)           | `dist/xcom-enhanced-gallery.user.js` 크기 기록 | R1 종료 | (채워넣기) | +5% 이내           |
+| gzip 크기                     | `scripts/build-metrics.js` 또는 압축 후 측정   | R1 종료 | (채워넣기) | +5% 이내           |
+| Lazy 아이콘 로딩 수           | 레지스트리 debugInfo.loadingIcons 길이         | R4 직후 | —          | 초기 뷰 0          |
+| 최초 인터랙션 아이콘 지연(ms) | Synthetic test (JSDOM + perf.now)              | R3/R4   | (채워넣기) | < 16ms (한 프레임) |
+| A11y 위반(아이콘-only 버튼)   | 기존 RED 테스트 카운트                         | R2      | 0 증가     | 0 증가             |
+
+테스트 명명 규칙 (아이콘 Epic 전용)
+
+- 파일 접두사: `icon-` 또는 `icon-registry.` 로 목적 구분
+- 태그(설명 문자열): `[ICN-Rx][RED]` / `[ICN-Rx][GREEN]` / `[ICN-Rx][REF]`
+- 사이즈 가드: `test/performance/icon-bundle-size.guard.test.ts`
+- 직접 import 스캔: `test/unit/deps/icon-direct-imports.red.test.ts`
+
+롤백 절차 (Fast Revert Steps)
+
+1. 문제 커밋 식별 (`git bisect` / 실패 테스트 출력)
+2. `scripts/generate-icon-map.cjs` 산출물 사용 시 이전 버전 재생성
+3. `LazyIcon` 사용부 → 임시로 기존 `Icon` 배럴 import 복귀 (1-commit hotfix)
+4. Preload 호출 제거하여 초기화 경량화(문제 영역이 Preload 충돌인 경우)
+5. 빌드/테스트 재검증 후 후속 개선 브랜치에서 원인 분석 재도입
+
+추가 Acceptance 보강
+
+- R4 완료 시 점프(툴바 탐색) 액션에서 추가 레이아웃 쉬프트(아이콘 로딩 지연
+  이미지 없음) 0
+- 레지스트리 fallback 발생률(테스트 시) 0 (의도된 미스케이스 제외)
+- 코드 스멜: hero 아이콘 경로 하드코딩 import 0 (스캔 테스트)
+
 측정/모니터링
 
 - 번들 분석: 기존 `scripts/css-bundle-metrics.cjs` + 신규 아이콘 맵 통계
