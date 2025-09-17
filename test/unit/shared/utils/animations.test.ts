@@ -108,6 +108,47 @@ describe('애니메이션 유틸리티', () => {
       expect(typeof cleanup).toBe('function');
       cleanup();
     });
+
+    it('idempotent: 동일 target+callback 중복 등록 시 한 번만 addEventListener가 호출되어야 한다', () => {
+      const mockCallback = vi.fn();
+      const addSpy = vi.spyOn(window, 'addEventListener');
+      const removeSpy = vi.spyOn(window, 'removeEventListener');
+
+      const cleanup1 = setupScrollAnimation(mockCallback);
+      const cleanup2 = setupScrollAnimation(mockCallback);
+
+      expect(addSpy).toHaveBeenCalledTimes(1);
+
+      // 첫 번째 해제 → 아직 참조 남아 있으므로 removeEventListener 호출 없음
+      cleanup1();
+      expect(removeSpy).not.toHaveBeenCalled();
+
+      // 두 번째 해제 → refCount=0이 되어 removeEventListener 호출
+      cleanup2();
+      expect(removeSpy).toHaveBeenCalledTimes(1);
+
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
+    });
+
+    it('서로 다른 callback은 각각 등록되어야 한다', () => {
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
+      const addSpy = vi.spyOn(window, 'addEventListener');
+      const removeSpy = vi.spyOn(window, 'removeEventListener');
+
+      const c1 = setupScrollAnimation(cb1);
+      const c2 = setupScrollAnimation(cb2);
+      expect(addSpy).toHaveBeenCalledTimes(2);
+
+      c1();
+      expect(removeSpy).toHaveBeenCalledTimes(1); // cb1 제거
+      c2();
+      expect(removeSpy).toHaveBeenCalledTimes(2); // cb2 제거
+
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
+    });
   });
 
   describe('뷰포트 진입 애니메이션', () => {

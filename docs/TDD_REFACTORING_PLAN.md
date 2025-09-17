@@ -178,6 +178,14 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - setupScrollAnimation: 내부적으로 이미 존재하는 같은 target의 scroll 리스너를
     재사용하거나, 최소한 idempotent(같은 콜백/옵션이면 no-op) 가드 추가. 반환
     cleanup은 참조 카운팅 또는 단순 no-op로 안전하게 처리.
+
+  현재 상태(진행 로그):
+  - EventManager 레벨 de-dup/refcount 구현 및 단위 테스트 추가(GREEN).
+  - setupScrollAnimation에 idempotency 가드(WeakMap 기반 refCount) 추가 및
+    테스트 통과.
+  - useGalleryScroll 훅은 검사 완료(로컬 EventManager 적용은 다음 PR-2 범위에서
+    반영 예정).
+
 - 테스트(RED → GREEN):
   - unit: EventManager 중복 등록 방지 — 같은 target/type/options/callback으로
     2회 add 시 실제 DOM add는 1회만 호출(spy로 검증). remove 후에는 다시 1회 add

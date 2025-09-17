@@ -100,10 +100,17 @@ export const animateParallel = async (
 };
 
 // Motion One 특수 기능들을 간소화된 버전으로 교체
+type OnScrollFn = (info: { scrollY: number; progress: number }) => void;
+type ScrollEntry = { handler: () => void; refCount: number };
+// Module-scoped registry for idempotency (target -> (onScroll -> entry))
+const SCROLL_REGISTRY: WeakMap<object, Map<OnScrollFn, ScrollEntry>> = new WeakMap();
+
 export const setupScrollAnimation = (
-  onScroll: (info: { scrollY: number; progress: number }) => void,
+  onScroll: OnScrollFn,
   container?: Element | null
 ): (() => void) => {
+  // Idempotency guard: avoid duplicate registrations for same target + onScroll
+
   const handleScroll = () => {
     const scrollY = window.scrollY;
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -112,10 +119,43 @@ export const setupScrollAnimation = (
   };
 
   const target = container || window;
-  target.addEventListener('scroll', handleScroll, { passive: true });
+
+  // Registry keying: per target, per onScroll function identity
+  const targetKey = target as unknown as object;
+  let map = SCROLL_REGISTRY.get(targetKey);
+  if (!map) {
+    map = new Map();
+    SCROLL_REGISTRY.set(targetKey, map);
+  }
+
+  const existing = map.get(onScroll);
+  if (existing) {
+    existing.refCount += 1;
+  } else {
+    target.addEventListener('scroll', handleScroll, { passive: true });
+    map.set(onScroll, { handler: handleScroll, refCount: 1 });
+  }
 
   return () => {
-    target.removeEventListener('scroll', handleScroll);
+    const entry = map!.get(onScroll);
+    if (!entry) {
+      // Fallback: if not found, attempt direct removal
+      try {
+        target.removeEventListener('scroll', handleScroll as EventListener);
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    entry.refCount -= 1;
+    if (entry.refCount <= 0) {
+      target.removeEventListener('scroll', entry.handler as EventListener);
+      map!.delete(onScroll);
+      if (map!.size === 0) {
+        SCROLL_REGISTRY.delete(targetKey);
+      }
+    }
   };
 };
 

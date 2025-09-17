@@ -2125,7 +2125,6 @@
       ],
       "dependents": [
         "src/shared/container/service-accessors.ts",
-        "src/features/gallery/GalleryApp.ts",
         "src/shared/types/core/core-types.ts",
         "src/shared/services/service-initialization.ts",
         "src/shared/services/index.ts"
@@ -2324,23 +2323,6 @@
             "import"
           ],
           "resolved": "src/shared/services/MediaService.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../shared/services/ToastController",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/ToastController.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -16402,7 +16384,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 266,
-    "totalDependenciesCruised": 746,
+    "totalDependenciesCruised": 745,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
