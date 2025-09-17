@@ -89,6 +89,8 @@ function VerticalGalleryViewCore({
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
+  // 컨테이너 요소를 상태로 고정하여 ref 설정 이후 훅/효과에 안정적으로 전달
+  const [containerEl, setContainerEl] = useState<HTMLElement | null>(null);
   // DOM 평탄화를 위해 중간 content 래퍼 제거 (A1)
   // const contentRef = useRef<HTMLDivElement>(null);
   const toolbarHoverZoneRef = useRef<HTMLDivElement>(null);
@@ -213,10 +215,10 @@ function VerticalGalleryViewCore({
 
   // UI 상태와 독립적으로 스크롤 가용성 보장
   useEffect(() => {
-    if (containerRef.current) {
-      ensureGalleryScrollAvailable(containerRef.current);
+    if (containerEl) {
+      ensureGalleryScrollAvailable(containerEl);
     }
-  }, []); // showToolbar 의존성 제거 - 순수 CSS로 관리됨
+  }, [containerEl]); // 컨테이너 준비 후 1회 실행
 
   // 컨테이너 뷰포트 제약 CSS 변수 주입(ResizeObserver + window resize 폴백)
   useEffect(() => {
@@ -234,7 +236,7 @@ function VerticalGalleryViewCore({
 
   // 개선된 갤러리 스크롤 처리 - UI 상태와 독립적으로 동작
   useGalleryScroll({
-    container: containerRef.current,
+    container: containerEl,
     onScroll: delta => {
       // 스크롤이 발생할 때마다 호출되는 콜백
       logger.debug('VerticalGalleryView: 스크롤 감지', { delta, timestamp: Date.now() });
@@ -490,7 +492,13 @@ function VerticalGalleryViewCore({
 
   return (
     <div
-      ref={containerRef}
+      ref={el => {
+        // ref 동기화 + 상태 고정(최초 비-null 시)
+        containerRef.current = el;
+        if (el && el !== containerEl) {
+          setContainerEl(el);
+        }
+      }}
       className={`${styles.container} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'

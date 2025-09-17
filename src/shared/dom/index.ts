@@ -33,6 +33,7 @@ export {
   isElementInViewport,
   isElementVisible,
   isHTMLElement,
+  isEventInsideContainer,
   querySelector,
   querySelectorAll,
   removeElement,

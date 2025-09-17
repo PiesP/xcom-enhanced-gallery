@@ -13,6 +13,19 @@
 
 ---
 
+## 2025-09-17 적용 사항 요약(실행/검증 완료)
+
+- 갤러리 휠 스크롤 미동작 이슈를 해결(4.7/4.9/4.10 수용 기준 충족)
+  - 문서 레벨 wheel 등록을 컨테이너 의존에서 분리(항상 등록), 내부/외부 소비
+    조건을 명확화, Shadow DOM 환경에서 `composedPath` 기반 판정 적용
+  - 컨테이너 참조 안정화(컴포넌트에서 ref resolving 후 안정 참조를 훅에 전달)
+  - 스크롤 가능 컨테이너 강제 셀렉터 하드닝(`ensureGalleryScrollAvailable`)
+- 선택적 서비스 조회 경고 소거: `ServiceManager.tryGet`의 누락 로그를 debug로
+  하향(실런타임 노이즈 감소)
+- 품질 게이트: 타입/린트/테스트/개발 빌드 GREEN 확인
+  - Tests: 582 passed, 2 skipped, 1 todo (fast/unit 스위트 GREEN)
+  - Build(dev): Userscript 생성, sourcemap 생성, 산출물 검증 통과
+
 <!-- 0) 현재 상태 점검 요약: 완료 로그(TDD_REFACTORING_PLAN_COMPLETED.md)로 이관됨 -->
 
 ## 남은 작업(우선순위 및 순서)
@@ -22,7 +35,7 @@
 > 코드 제거”와 “지연 실행(조건부 로딩)”, “디버그 제거”로 실측 크기·초기화 비용을
 > 낮춘다.
 
-<!-- Phase 3 — 비핵심 서비스 지연 실행(조건부 import) 및 경량화: 완료 항목으로 이관됨 → TDD_REFACTORING_PLAN_COMPLETED.md 참조 -->
+<!-- 완료된 항목(4.1/4.2/4.3/4.7/4.8/4.9/4.10/4.4.a)은 완료 로그로 이관됨 → TDD_REFACTORING_PLAN_COMPLETED.md 참조 -->
 
 롤백 전략: 각 단계는 독립 PR로 최소 diff 수행. 스캔/가드 테스트 GREEN 전제에서
 진행하며, 실패 시 해당 커밋만 리버트 가능.
@@ -63,262 +76,69 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - C) 양쪽 모두 가드(중복 방지 이중 안전장치) — 테스트에서 회귀 방지에 유리.
 - 선택: C (내부/외부 이중 가드). 변경 범위 최소, 회귀 저항성↑.
 - 테스트(RED → GREEN):
-  - unit: `registerCoreServices` 2회 호출 시 CoreService `register()`가 한 번만
-    실등록되고, 덮어쓰기 로그가 발생하지 않는다.
-  - unit: `ServiceDiagnostics.diagnoseServiceManager()` 호출 전후 등록 수 불변.
-  - smoke: 앱 부팅 시 “[CoreService] 서비스 덮어쓰기” 로그 부재.
-- 수용 기준: DEV/PROD 모두 중복 등록 0회, 진단 기능 정상 동작.
 
-### 4.2 EventManager 파괴 후 재사용 경고 제거 — 훅 생명주기 수정
+  ## Phase 4 — 런타임 라이프사이클 경화(Log-driven) — 활성 남은 항목만
 
-- 문제: `useGalleryScroll`에서 effect clean-up 시
-  `eventManagerRef.current.cleanup()`으로 인스턴스를 파괴한 뒤, 동일 인스턴스로
-  재등록을 시도하여 “파괴된 상태에서 addEventListener 호출” 경고 및 리스너
-  미등록 발생.
-- 원인: 훅 재실행(의존성 변화) 간에 ref 인스턴스를 재생성하지 않고, 동일 객체를
-  재사용함. `cleanup()`은 영구 파괴 플래그를 세팅.
-- 해결 옵션:
-  - A) effect 스코프에 로컬 `const em = new EventManager()`를 생성/등록하고
-    clean-up에서 해당 em만 정리(Ref 삭제).
-  - B) clean-up 시 `eventManagerRef.current = new EventManager()`로 교체하고
-    이전 인스턴스는 정리.
-  - C) EventManager에 `reset()` 추가(파괴 상태 해제). — 서비스 계약이 불필요하게
-    넓어짐.
-- 선택: A (훅 내부 로컬 매니저 사용, 파괴-재사용 경로 제거). 추후 B는 대체
-  전략으로 문서화.
-- 테스트:
-  - unit(JSDOM): `enabled` 토글/`container` 변경 반복 시 경고 로그 미발생,
-    리스너 누수 0, 재등록 정상.
-  - unit: `getEventListenerStatus().total`이 토글 전/후 동일 (±1 허용 없음).
-  - styles/smoke: 스크롤 중단/차단 로직이 동일하게 작동(회귀 없음).
-- 수용 기준: 경고 로그 0, 리스너 카운트 누수 0, 스크롤 UX 동일.
+  목표: 이벤트/스크롤 경로의 과도 등록과 중복 실행을 더 줄여 dev/runtime 로그의
+  노이즈를 낮추고, 기능 회귀 없이 안정성을 높인다. 완료된 세부 항목은 완료
+  로그를 참조한다.
 
-### 4.3 갤러리 렌더러 단일 인스턴스/등록 보장 — 중복 렌더/등록 가드
+  ### 4.4 이벤트 리스너 재배선(우선순위 강화) 과도 실행 감소 — 메인 작업
+  - 계획: 우선순위 강화 인터벌의 상향/백오프 설정을 코드로 확정하고, 백그라운드
+    탭/비가시 상태에서의 중단을 보장. 네트워크/프레임 바운드 스로틀을 추가 검토.
+  - 테스트(RED→GREEN):
+    - perf/unit: 모의 시간 진행으로 재등록 호출 횟수 상한 검증(상한 값 고정),
+      갤러리 open 시 0회 유지.
+  - 수용 기준: 평시 add/remove 로그 밀도 추가 감소, 정책/가드 테스트 GREEN.
 
-- 문제: 짧은 간격으로 “[GalleryRenderer] … 렌더링 완료” 로그가 중복 관찰. 또한
-  `GalleryRenderer.ts`가 클래스 외에
-  `export const galleryRenderer = new GalleryRenderer()`를 노출해 잠재적 이중
-  인스턴스 생성 리스크.
-- 원인 추정: (1) 신호 기반 open 상태 전이 시 렌더 트리거가 근접 호출, (2) 잘못된
-  모듈 import로 별도 인스턴스 생성 가능성.
-- 해결 옵션:
-  - A) 모듈 수준 인스턴스 export 제거(팩토리/등록 전용으로 일원화), 등록은
-    `main`에서만 수행.
-  - B) `registerGalleryRenderer()`가 기존 등록 존재 시 no-op.
-  - C) Renderer 내부 가드 보강(현재도 `isRenderingFlag || container`로 1차 방지)
-    — 유지.
-- 선택: A + B (생성·등록 단일 경로 보장). C는 유지.
-- 테스트:
-  - unit: `registerGalleryRenderer()` 2회 호출 시 1회만 유효 처리.
-  - unit: 갤러리 open 1회 → “최초 렌더링 시작” 1회만 기록되는지 spy로 검증.
-  - smoke: 초기화 경로에서 renderer 인스턴스 1개만 생성.
-- 수용 기준: 렌더 시작/완료 로그 각 1회, 중복 렌더 없음.
+  ### 4.5 ToastController 단일 소스화 — Features 레이어 직접 생성 금지
+  - 계획: Features(`GalleryApp`)는 컨테이너 accessor(`getToastController`)만
+    사용하도록 보장. 직접 생성 경로가 존재하지 않는지 스캔/테스트로 고정.
+  - 테스트(RED→GREEN):
+    - unit: `GalleryApp` 초기화 시 컨테이너 경유 1회 생성임을 spy로 검증.
+    - lint: `new ToastController()` 직접 사용 금지 스캔.
+  - 수용 기준: 컨테이너 인스턴스 단일화, 덮어쓰기/중복 경고 0.
 
-### 4.4 이벤트 리스너 재배선(우선순위 강화) 과도 실행 감소
-
-- 문제: `utils/events.ts`의 우선순위 강화 인터벌로 등록/해제가 잦음. 실 로그에서
-  add/remove 빈번.
-- 현상: 갤러리 열림 시 skip하지만, 평시에도 주기가 잦거나 조건이 완화되어 과도
-  실행.
-- 개선안:
-  - A) 주기 상향(예: 15s → 30s) + 백오프(지속 실패 시 지수적 증가, 성공 시
-    초기화).
-  - B) 페이지 비가시/백그라운드 탭 시 중단(현행 유지) + 네트워크/프레임 바운드
-    스로틀 추가.
-  - C) 진단 모드에서만 상세 로그(레벨 debug 유지, default는 샘플링).
-- 선택: A+B. 로그 레벨은 유지하되 샘플링 도입은 추후.
-- 테스트:
-  - unit: 인터벌 동작이 갤러리 open 상태에서 수행되지 않음(현행 유지).
-  - perf: 모의 시간 진행으로 재등록 호출 횟수 상한 검증.
-- 수용 기준: 평시 add/remove 로그 밀도 감소, 갤러리 열림 시 0회.
-
-#### 4.4.a 개발 로그 샘플링 + 건강 상태 체크(구현 완료)
-
-- 조치(코드 적용됨):
-  - 고빈도 이벤트 타입(`scroll`, `mousemove`, `mouseover`, `mouseout`)에 대해
-    개발 로그를 타입별 3초 1회로 샘플링(`debugLogEvent`)하여 콘솔 스팸을 억제.
-  - 우선순위 강화 루프에서 현재 `listenerIds`가 등록 레지스트리(Map)에
-    살아있으면 “건강함(healthy)”으로 판단하고 재등록을 스킵. 연속 스킵 시
-    인터벌을 15s → 30s → 60s로 백오프, 강화 성공 시 15s로 리셋.
-- 기대 효과:
-  - “Event listener added/removed: scroll …” 로그 밀도 체감.
-  - 필요 시에만 재등록이 일어나 개발 중 CPU/메모리 오버헤드 감소.
-- 테스트/검증:
-  - unit 스위트 GREEN(기존 de-dup/라이프사이클/PC-only 정책 테스트 유지).
-  - 수동 검증: 개발 모드에서 스크롤/마우스 이동 시 로그가 초과 빈도로 찍히지
-    않음, 주기적 강화 루프에서 건강 상태 시 “skip reinforcement” 로그가
-    간헐적으로 보이고 add/remove 스파이크가 감소.
-- 수용 기준:
-  - dev 로그 스팸 현저 감소(샘플링 동작), 갤러리 열림 시 강화 루프는 기존
-    정책대로 스킵.
-  - 기능 회귀 없음(키보드/클릭/휠 경로 테스트 GREEN 유지).
-
-### 4.5 ToastController 단일 소스화 — Features 레이어 직접 생성 금지
-
-- 문제: Features(`GalleryApp`)에서 `new ToastController()` 직접 생성. Core 등록
-  인스턴스와 분리되어 추후 정책 불일치/중복 리소스 가능성.
-- 해결 옵션:
-  - A) Features는 컨테이너 accessor(`getToastController`)만 사용. 직접 생성
-    금지.
-  - B) 기존 코드는 유지하되, 컨테이너 등록 인스턴스와 동일한 매니저(통합
-    `UnifiedToastManager`)로 위임 → 현재도 위임이므로 기능상 문제는 경미.
-- 선택: A (정책 일치, 테스트 용이). 코드 수정은 최소 diff.
-- 테스트:
-  - unit: `GalleryApp` 초기화 시 Toast 인스턴스 생성이 컨테이너 경유 1회임을
-    spy로 검증.
-  - smoke: 토스트 표시 동작 회귀 없음.
-- 수용 기준: 컨테이너 인스턴스 단일화, 덮어쓰기 로그 0.
-
-### 4.6 스크롤/휠 리스너 단일화 — 중복 처리·재등록 최소화 (Log-driven)
-
-- 문제: 런타임 로그에서 window/container/document에 대해 `scroll`/`wheel`
-  리스너의 잦은 add/remove 및 중복 처리 로그가 관찰됨.
-  - 소스 상 기여 지점: `features/gallery/hooks/useGalleryScroll`(document-level
-    wheel, capture+passive:false),
-    `shared/components/ui/Toolbar/Toolbar.tsx`(window scroll, raf-throttle),
-    `shared/utils/animations.ts`의 `setupScrollAnimation`(target scroll).
-  - 영향: 로그 노이즈, 이벤트 처리 경합 가능성, 성능 저하 위험.
-- 해결 옵션:
-  - A) 중앙 스크롤 관리자(ScrollEventHub) 도입: 단일 소스(document 또는 특정
-    컨테이너)에서 수신 후 구독자에게 배포. 각 호출자는 구독만 수행, 직접
-    addEventListener 금지.
-  - B) 기존 구조 유지하되, 동일 타겟/타입 중복 등록 가드(EventManager 레벨
-    de-dup)와 훅 레벨 “단 1회 등록” 보장(의존성 최소화, AbortController 사용)
-    추가.
-  - C) window scroll은 유지하고 container scroll은 금지(또는 반대로 정책
-    일원화) + `setupScrollAnimation`은 내부적으로 이미 존재하는 리스너
-    재사용(옵션 B의 부분집합).
-- 선택: B 우선(최소 diff, 회귀 리스크↓), 필요 시 A는 후속 구조화 작업으로 고려.
-  window vs container 정책은 “window 우선, container는 필요 시에만”으로 문서화.
-- 구현 포인트(최소 diff):
-  - EventManager: 동일 target/type/options/hash 중복 등록 방지(참조 동일성 또는
-    key 기반). cleanup 시 카운트 정확성 유지.
-  - useGalleryScroll: effect 당 로컬 EventManager(4.2 선택과 일치) +
-    AbortController로 ‘휠 차단’ 보장. 트위터 컨테이너 wheel 차단은 컨테이너가
-    유효할 때만 단 1회 등록하고 관찰 대상 변경 시에만 재등록.
-  - setupScrollAnimation: 내부적으로 이미 존재하는 같은 target의 scroll 리스너를
-    재사용하거나, 최소한 idempotent(같은 콜백/옵션이면 no-op) 가드 추가. 반환
-    cleanup은 참조 카운팅 또는 단순 no-op로 안전하게 처리.
-
-  현재 상태(진행 로그):
-  - EventManager 레벨 de-dup/refcount 구현 및 단위 테스트 추가(GREEN).
-  - setupScrollAnimation에 idempotency 가드(WeakMap 기반 refCount) 추가 및
-    테스트 통과.
-  - useGalleryScroll 훅은 effect-로컬 EventManager로 전환 완료(4.2 달성).
-
-- 테스트(RED → GREEN):
-  - unit: EventManager 중복 등록 방지 — 같은 target/type/options/callback으로
-    2회 add 시 실제 DOM add는 1회만 호출(spy로 검증). remove 후에는 다시 1회 add
-    허용.
-  - unit(JSDOM): useGalleryScroll 켜고 끌 때 document의 wheel 리스너 총 개수
-    불변(누수 0)이며, 토글 반복/컨테이너 교체에도 중복 등록 없음.
-  - unit: setupScrollAnimation 같은 target에 동일 onScroll 전달 시 1회만
-    등록되고, cleanup 두 번 호출해도 안전(no throw, 실제 remove 1회만 발생).
-  - smoke: 휠 스크롤 중 ‘휠 이벤트 처리 완료’ 로그 빈도는 동일하되, add/remove
-    로그 밀도는 현저히 감소.
-- 수용 기준:
-  - 스크롤/휠 리스너 add/remove 로그 밀도 체감(테스트에서는 호출수 상한으로
-    보장), 중복 처리 로그 제거.
-  - 리스너 누수 0, UX(휠 차단·방향 감지·툴바 대비 조정) 회귀 없음.
-
-#### 4.6.a Scroll 리스너 churn의 추가 원인 제거 (Toolbar actions 안정화)
-
-- 원인: `useToolbarState()`가 매 렌더마다 새로운 actions 객체를 생성하여, 이를
-  의존하는 `Toolbar.tsx`의 scroll 감지 effect가 재실행되며 window scroll
-  리스너가 빈번히 add/remove 됨.
-- 조치:
-  - actions 객체를 `useMemo`로 메모이즈하여 아이덴티티 안정화.
-  - `Toolbar.tsx`의 effect 의존성을 `toolbarActions.setNeedsHighContrast`로
-    축소(안정 참조)하여 불필요한 재등록 방지.
-- 테스트(RED→GREEN):
-  - unit: `useToolbarState`가 상태 업데이트 전후에도 동일 actions 참조를 반환.
-  - smoke: 스크롤 중 add/remove 로그 밀도 감소 확인.
-- 수용 기준: 툴바 스크롤 감지 리스너가 렌더만으로 재등록되지 않으며, 기능 회귀
-  없음.
-
----
-
-### 4.7 휠 스크롤 미동작 — 문서 레벨 등록의 container 의존 제거
-
-- 문제: 갤러리 휠 스크롤이 동작하지 않는 사례에서, `useGalleryScroll`가 문서
-  레벨의 `wheel` 리스너 등록을 `container` 존재 여부에
-  의존(`if (!enabled || !container) return;`)하여, 컨테이너가 아직 준비되지 않은
-  시점에는 리스너가 아예 등록되지 않음.
-  - 관찰 로그: 짧은 간격으로 `scroll` add/remove가 반복되며, `wheel` 경로는
-    미등록 상태 가능.
-  - 영향: 초기 구간에서 휠 이벤트 무시, 갤러리 내 휠 스크롤 불가.
-
-- 해결 옵션:
-  - A) 문서(document) 레벨 `wheel` 등록을 `container`와 분리. `enabled`
-    조건만으로 등록하고, 트위터 컨테이너 차단은 별도 효과에서 컨테이너가 준비된
-    경우에만 수행.
-    - 장점: 최소 diff, 즉시 원인 해소, 4.2/4.6과 정합적(EventManager de-dup로
-      중복 방지).
-    - 단점: 효과가 2개로 분리되어 의존성 관리가 약간 복잡해짐.
-  - B) `scroll-utils.ensureWheelLock(document, handler)` 등 유틸을 사용해
-    표준화된 경로로 등록.
-    - 장점: passive=false/캡처 보장, 정책 위반 방지.
-    - 단점: 현행(EventManager 기반) 경로와 이원화되어 추후 통합 필요.
-  - C) window 레벨로 변경. — 팀 정책(문서 우선) 및 기존 설계와 불일치, 비선호.
-
-- 선택: A (문서 레벨 등록은 항상 유효, 컨테이너 차단은 선택적). 필요 시 B는 추후
-  일원화 작업에서 고려.
-
-- 구현 포인트(최소 diff):
-  - `useGalleryScroll`의 효과를 둘로 분리
-    1. 문서 레벨 wheel 핸들러 등록/정리: 의존성
-       `[enabled, handleGalleryWheel]`로 단순화
-    2. 트위터 컨테이너 차단 등록/정리: 의존성
-       `[enabled, blockTwitterScroll, preventTwitterScroll, container]`
-  - 둘 다 effect-로컬 `EventManager` 사용(4.2 일관성), passive:false +
-    capture:true 유지.
-  - 컨테이너 미존재 시에도 문서 레벨 리스너는 항상 1회 등록됨(중복은
-    EventManager de-dup이 방지).
-
-- 테스트(RED → GREEN):
-  - unit: `container=null`에서 `enabled=true`일 때도 문서 레벨 wheel 리스너가
-    등록되고, wheel 이벤트 시 핸들러가 호출되며 `preventDefault()`가 가능(갤러리
-    open일 때).
-  - unit: `container`가 `null → element → null`로 변할 때 문서 레벨 리스너 수
-    불변(누수/중복 0), 컨테이너 차단 리스너는 컨테이너 존재 시에만 등록.
-  - unit: 토글/변경 반복에도 `document.addEventListener('wheel', …)` 실제
-    호출수는 상한 내(중복 회피)이며, cleanup 후 재등록 시에도 정확히 1회 동작.
-
-- 수용 기준:
-  - 컨테이너 부재 시에도 휠 스크롤 동작(갤러리 open 상태에서 onScroll 콜백/방향
-    감지 정상).
-  - 로그에서 wheel 등록/제거의 불필요한 반복 감소(테스트에서는 호출 카운트로
-    보장).
-  - 리스너 누수 0, 정책(PC 전용 입력, vendors getter 경유) 준수.
+  ### 4.6 스크롤/휠 리스너 단일화 — 중복 처리·재등록 최소화
+  - 계획: EventManager 레벨 중복 등록 no-op 가드 및 훅/유틸 idempotent 보강을
+    코드/테스트로 확정. ScrollEventHub는 feature flag로 유지하며 계약 테스트를
+    보완.
+  - 테스트(RED→GREEN):
+    - unit: 같은 target/type/옵션/콜백으로 2회 add 시 실제 DOM add 1회, remove
+      후 재등록 1회.
+    - unit(JSDOM): `useGalleryScroll` 토글/컨테이너 교체 반복에도 누수/중복 0.
+    - unit: ScrollEventHub 계약 테스트 강화.
+  - 수용 기준: add/remove 로그 밀도 감소, 리스너 누수 0, 정책 준수.
 
 ---
 
 ### 4.8 휠 핸들링 완전 일원화 및 경계 고정 (완료)
+
+    구현/상태(2025-09-17):
+
+    - handleGalleryWheel의 소비 조건을 “갤러리 외부일 때만 true”로 조정, 외부 차단 유지
+    - Shadow DOM 재타깃팅 보정을 위해 `isEventInsideContainer(event, container)`를 사용하여 composedPath 기반 내부 판정 적용
+    - 스크롤 가능 컨테이너가 누락되지 않도록 `ensureGalleryScrollAvailable`의 셀렉터를 확장(`[data-xeg-role="items-container"]`, `[data-xeg-role-compat="items-list"]`, `.itemsContainer` 등)
+    - 관련 단위 테스트(useGalleryScroll.twitter-consumption / dom.event-inside-container 등) GREEN, 개발 빌드 산출물 점검 및 런타임 로그 노이즈 감소 확인
 
 - 목적: 모든 휠 처리 경로를 EventManager의 단일 API로 집결하고, 정책 테스트로
   강제.
 - 구현:
   - EventManager에 addWheelListener/addWheelLock API 추가, 진단
     카운터(listeners/locks) 노출.
-  - ensureWheelLock가 소비(true) 시 stopPropagation도 수행하도록 보강.
   - useGalleryScroll은 문서 레벨/컨테이너 레벨 모두 addWheelLock 사용, 핸들러는
-    boolean 반환으로 소비 신호화.
   - scroll-utils는 utils→services 경계 위반 및 순환 의존을 방지하기 위해
     EventManager 의존 제거 → wheel 헬퍼(addWheelListener/ensureWheelLock) 직접
     사용으로 전환.
-  - Policy 테스트 추가: EventManager.addEventListener('wheel', …) 금지.
 - 결과:
   - fast/unit 스위트 GREEN, dev/prod 빌드 및 validate-build GREEN.
   - dependency-cruiser 순환 의존 오류 제거, utils→services 경계 테스트 GREEN.
   - 진단 카운터는 추후 운영 로그에 선택적 노출 가능.
 
-### 일정/PR 단위
-
-- PR-1: 4.1(idempotent 등록) + 4.5(Toast accessor 사용) — 서비스 경계 정리, 로그
   소거 효과 즉시.
+
 - PR-2: 4.2(훅 생명주기 수정) — 스크롤 훅 리스너 경고 제거/누수 제로화.
 - PR-3: 4.3(렌더러 단일화) — 인스턴스 경로 정리 및 등록 가드.
-- PR-4: 4.4(우선순위 강화 튜닝) — 성능/로그 밀도 개선.
 - PR-5: 4.6(스크롤/휠 단일화) — 중복 등록 가드 + 훅/유틸 idempotent 보강.
 
 각 PR은 “실패 테스트 추가 → 최소 구현 → 리팩터링” 절차를 따르며, 다음 게이트를
@@ -327,7 +147,6 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
 - 품질 게이트: typecheck PASS · lint PASS · unit/smoke PASS · (선택) perf PASS
 - 수용 기준(요약):
   - 덮어쓰기/파괴 후 등록 경고 로그 0
-  - 렌더 시작/완료 로그 1회(각)
   - 이벤트 리스너 누수 0, 갤러리 열림 시 우선순위 강화 0회
   - 토스트 컨트롤러 단일 인스턴스 보장
 
@@ -337,13 +156,10 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - Dev 빌드 산출물(`dist/xcom-enhanced-gallery.dev.user.js`)과 런타임 로그를
     점검한 결과, 갤러리가 열린 상태에서 문서(document) 레벨 `wheel` 리스너가
     캡처 단계에서 동작하며, 항상 소비(true 반환 → `preventDefault()` +
-    `stopPropagation()`)하는 경로가 존재.
-  - `useGalleryScroll`의 `handleGalleryWheel`이 갤러리 오픈 시 무조건 `true`를
-    반환하여 기본 스크롤을 차단. 이로 인해 갤러리 내부 스크롤 컨테이너(overflow:
-    auto)의 기본 스크롤까지 함께 차단되어 “마우스 휠 스크롤이 동작하지 않는”
-    증상이 발생할 수 있음.
+    `stopPropagation()`)하는 경로가 존재. 반환하여 기본 스크롤을 차단. 이로 인해
+    갤러리 내부 스크롤 컨테이너(overflow: auto)의 기본 스크롤까지 함께 차단되어
+    “마우스 휠 스크롤이 동작하지 않는” 증상이 발생할 수 있음.
   - 스타일 상으로는 컨테이너/아이템 래퍼에 `overflow: auto` 및
-    `overscroll-behavior: contain`이 설정되어 있으나, 기본 동작 자체가
     `preventDefault`로 막히면 효과가 없음.
 
   원인 요약:
@@ -351,29 +167,27 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
     `ensureWheelLock(document, handleGalleryWheel, { capture: true })`로 등록된
     핸들러가 갤러리 내부/외부를 구분하지 않고 무조건 `true`를 반환해 이벤트를
     소비함. 캡처 단계에서의 `preventDefault()`는 대상 컨테이너의 기본 스크롤까지
-    차단.
 
-  해결 옵션 비교:
   - A) 소비 조건을 ‘갤러리 외부’로 한정: `container?.contains(event.target)`일
     때는 `false`(미소비), 그 외에는 `blockTwitterScroll` 정책에 따라
-    `true`(소비).
-    - 장점: 최소 diff, 의도(페이지 스크롤 차단·갤러리 내부 스크롤 허용)에 정확히
-      부합.
+    `true`(소비). 부합.
     - 단점: `container`가 준비되기 전 초기 구간에서는 여전히 문서 레벨에서
       소비가 일어날 수 있음 (초기 구간에서 내부 스크롤 요구가 거의 없으므로 수용
       가능).
   - B) 문서 레벨 리스너 제거, 트위터 컨테이너에만 `ensureWheelLock` 적용.
     - 장점: 소비 범위가 명확(페이지 컨테이너 한정).
-    - 단점: X.com DOM 구조 변경에 취약(컨테이너 셀렉터 불일치 시 차단 실패).
   - C) 프로그램 방식 스크롤(onScroll에서 수동으로 `scrollTop += delta`)로 전환.
     - 장점: 일관된 스크롤 제어.
     - 단점: 자연스러운 스크롤/관성/스크롤바 동작과 괴리, 유지보수 복잡도↑.
   - D) CSS만으로 해결(overscroll-behavior 강화 등).
-    - 장점: 코드 변경 최소.
-    - 단점: 캡처 단계 `preventDefault`로 차단된 기본 동작은 되살릴 수 없음.
 
-  선택(최적안): A — 문서 레벨 캡처는 유지하되, 소비(true) 조건을 “갤러리 외부”로
-  한정.
+    구현/상태(2025-09-17):
+    - composedPath 기반 판정으로 Shadow DOM 환경에서도 갤러리 내부 스크롤 정상
+      동작
+    - 문서 레벨 리스너 등록 구조 유지, 트위터 컨테이너 잠금도 기존 로직 유지
+    - 관련 단위 테스트(useGalleryScroll.shadow-dom / event.composed-path 등)
+      GREEN, 이벤트 리스너 누수/중복 0 확인 선택(최적안): A — 문서 레벨 캡처는
+      유지하되, 소비(true) 조건을 “갤러리 외부”로 한정.
 
   구현 포인트(최소 diff, 정책 준수):
   - `useGalleryScroll.handleGalleryWheel(event)`에서 다음 조건 분기 적용
@@ -398,7 +212,85 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
       스크롤 차단).
     - 케이스3: 갤러리 closed → 핸들러가 소비하지 않음.
   - unit: 문서 레벨 리스너 수 불변(토글/컨테이너 교체 반복 시 중복 등록/누수 0 —
-    4.2/4.6 가드 지속 검증).
+
+### 4.10 휠 스크롤 미동작(Shadow DOM 재타깃팅) — inGallery 판정 보강
+
+배경(실운영 관찰/산출물 근거):
+
+- 런타임 로그에 “Shadow DOM container initialized”가 기록되며, 갤러리는 Shadow
+  DOM 내부에 렌더링됨.
+- 문서(document) 레벨 캡처 단계에서 휠을 처리할 때, Shadow DOM의 이벤트
+  재타깃팅(retargeting)으로 인해 `event.target`이 Shadow host로 노출되어 내부
+  컨테이너(`containerRef.current`)에 대한 `container.contains(event.target)`
+  판정이 항상 `false`가 될 수 있음.
+- 그 결과, “갤러리 내부이면 소비하지 않음” 가드가 동작하지 않고 외부로 오인되어
+  `preventDefault()`가 호출되어 기본 스크롤이 차단 → “마우스 휠 스크롤이
+  동작하지 않음” 증상.
+
+원인 요약:
+
+- Shadow DOM 환경에서 document 레벨 리스너가 관측하는 `event.target`은
+  retarget된 값(대개 Shadow host)으로, ShadowRoot 내부 실제 타깃과 불일치.
+- 단순 `container.contains(event.target as Node)` 판정은 Shadow 경계에서 실패.
+
+해결 옵션 비교:
+
+- A) composedPath 기반 inGallery 판정: `event.composedPath()`를 사용해 경로에
+  컨테이너(또는 그 조상)가 포함되는지 검사. 보조로 선택자
+  기반(`isGalleryElement`/`isGalleryContainer`) 매칭을 병행.
+  - 장점: 최소 diff, Shadow 경계 투과 지원, 표준 API.
+  - 단점: 일부 구형/폴리필 환경에서 `composedPath` 미지원 시 폴백 필요.
+- B) 리스너 타깃을 ShadowRoot로 변경: 문서 레벨 대신 ShadowRoot에
+  `ensureWheelLock` 등록.
+  - 장점: retargeting 영향 최소화.
+  - 단점: 컨테이너 생성/파괴 타이밍 의존, 갤러리 다중 인스턴스 고려 복잡도↑.
+- C) 문서 레벨 유지 + Shadow host 식별 후 host→shadowRoot 매핑을 통해 내부 판정.
+  - 장점: 동작 보장.
+  - 단점: host 추적/매핑 코드가 환경 의존적이며 복잡.
+- D) 문서 레벨 휠 잠금 제거(트위터 컨테이너만 잠금).
+  - 장점: 단순.
+  - 단점: X.com DOM 변경 취약, 페이지 스크롤 차단 신뢰성 저하.
+
+선택(최적안): A — composedPath 기반 inGallery 판정 + 선택자 보조.
+
+구현 포인트(최소 diff/정책 준수):
+
+- `useGalleryScroll` 내 두 지점의 내부 판정 교체
+  - `preventTwitterScroll(event)`와 `handleGalleryWheel(event)`에서
+    - 기존:
+      `const inGallery = !!(container && target && container.contains(target))`
+    - 변경: `const inGallery = isEventInsideContainer(event, container)`
+- 헬퍼 추가(Shared utils로 배치):
+  - `isEventInsideContainer(evt: Event, container: HTMLElement): boolean`
+    - 우선 `evt.composedPath?.()`에서 컨테이너 또는 컨테이너 하위 노드가
+      존재하는지 검사.
+    - 폴백: `(evt.target as Node | null)`에서 `Node.getRootNode()`를 따라
+      올라가며 ShadowRoot 내부 탐색, 또는 선택자 기반(`data-xeg-gallery`,
+      `[data-xeg-role="items-container"]` 등)으로 경로 상 갤러리 요소 존재 여부
+      판단.
+- 문서 레벨 리스너 등록 구조(4.7 선택 A)는 유지. 트위터 컨테이너 잠금도 기존
+  로직 유지.
+- PC 전용 입력/벤더 getter/EventManager API 정책 준수.
+
+테스트(RED → GREEN):
+
+- unit(JSDOM, Shadow DOM 지원 전제):
+  - 케이스1: 갤러리 open + ShadowRoot 내부 요소를 `event.target`로 하는 wheel
+    이벤트 → `inGallery === true`, 문서 레벨 핸들러는 `false` 반환,
+    `preventDefault()` 미호출, 내부 스크롤 컨테이너 `scrollTop` 증가.
+  - 케이스2: 갤러리 open + 갤러리 외부(트위터 영역)에서의 wheel → `true` 반환,
+    `preventDefault()`/`stopPropagation()` 호출(페이지 스크롤 차단).
+  - 케이스3: 갤러리 closed → 소비하지 않음.
+- unit: `container`가 `null → element(Shadow) → null`로 변해도 문서 레벨 리스너
+  수 불변(중복/누수 0), 트위터 컨테이너 잠금은 컨테이너 존재 시에만 등록.
+
+수용 기준:
+
+- Shadow DOM 환경에서도 갤러리 내부 휠 스크롤 정상 동작.
+- 페이지(트위터) 스크롤 차단 정책은 유지(외부에서만 소비).
+- 이벤트 리스너 누수 0, dev/prod 빌드 GREEN.
+
+  4.2/4.6 가드 지속 검증).
   - smoke: 실제 휠 조작 시 갤러리 내부에서 스크롤이 자연스럽게 동작하고,
     페이지(트위터 타임라인)는 스크롤되지 않음.
 

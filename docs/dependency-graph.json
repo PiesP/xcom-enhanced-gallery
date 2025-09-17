@@ -294,6 +294,7 @@
         "src/shared/media/MediaProcessor.ts",
         "src/shared/media/pipeline.ts",
         "src/shared/utils/css-animations.ts",
+        "src/shared/utils/scroll/ScrollEventHub.ts",
         "src/main.ts",
         "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/index.ts",
@@ -884,6 +885,8 @@
         "src/shared/services/media/VideoControlService.ts",
         "src/shared/types/core/core-types.ts",
         "src/shared/types/core/media.types.ts",
+        "src/features/gallery/hooks/useGalleryScroll.ts",
+        "src/shared/utils/scroll/ScrollEventHub.ts",
         "src/shared/services/service-diagnostics.ts",
         "src/shared/services/service-initialization.ts"
       ],
@@ -2593,6 +2596,7 @@
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/features/gallery/hooks/useGalleryScroll.ts",
+        "src/shared/utils/scroll/ScrollEventHub.ts",
         "src/shared/services/input/KeyboardNavigator.ts",
         "src/shared/hooks/useAccessibility.ts",
         "src/shared/services/event-managers.ts"
@@ -3093,7 +3097,8 @@
         }
       ],
       "dependents": [
-        "src/shared/dom/index.ts"
+        "src/shared/dom/index.ts",
+        "src/features/gallery/hooks/useGalleryScroll.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5409,7 +5414,8 @@
       ],
       "dependents": [
         "src/shared/services/MediaService.ts",
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/shared/utils/scroll/ScrollEventHub.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5508,7 +5514,8 @@
         }
       ],
       "dependents": [
-        "src/shared/utils/performance/index.ts"
+        "src/shared/utils/performance/index.ts",
+        "src/shared/utils/scroll/ScrollEventHub.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9056,6 +9063,40 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../../../constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../shared/dom/utils/dom-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/dom/utils/dom-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../../shared/external/vendors",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9141,6 +9182,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../../shared/utils/scroll/ScrollEventHub",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/scroll/ScrollEventHub.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../../shared/utils/signalSelector",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9177,6 +9235,117 @@
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/features/gallery/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/scroll/ScrollEventHub.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@/constants",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/constants.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/services/EventManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/EventManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/performance",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/performance/schedulers",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/schedulers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/hooks/useGalleryScroll.ts"
       ],
       "orphan": false,
       "valid": true
@@ -16401,8 +16570,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 266,
-    "totalDependenciesCruised": 746,
+    "totalCruised": 267,
+    "totalDependenciesCruised": 754,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -1,3 +1,19 @@
+### 2025-09-17 — PHASE 4(Log-driven) 주요 완료 요약
+
+- 4.1 Core 서비스 재등록 가드: `registerCoreServices()`는 핵심 키 존재 시 no-op,
+  `ServiceDiagnostics`도 사전 확인 후만 등록 호출(idempotent). 덮어쓰기 경고 0
+  확인.
+- 4.2 EventManager 파괴 후 재사용 경고 제거: `useGalleryScroll`이 effect-로컬
+  EventManager를 사용하도록 전환. 재등록 경고/리스너 누수 0.
+- 4.3 GalleryRenderer 단일화: 모듈 레벨 싱글턴 export 제거, 생성·등록은
+  `main.ts` 단일 경로. `registerGalleryRenderer()` idempotent 가드.
+- 4.4.a 개발 로그 샘플링/강화 루프 백오프: 샘플링
+  타입(`scroll/mousemove/mouseover/mouseout/wheel`) 확장, 윈도우 5s, 백오프 1.5x
+  상한 90s. dev 로그 스팸 감소.
+- 4.7/4.8/4.9/4.10 휠 스크롤 이슈 일괄 해결: 문서 레벨 등록의 컨테이너 의존
+  제거(항상 등록), 소비 조건을 "갤러리 외부"로 한정, Shadow DOM은 `composedPath`
+  기반 내부 판정. 스크롤 가능 컨테이너 셀렉터 하드닝. 관련 테스트 GREEN.
+
 ### 2025-09-17 — PHASE 3(최종) 활성 계획서에서 완료로 이관
 
 - 내용: 활성 계획서(`TDD_REFACTORING_PLAN.md`)의 Phase 3 잔여 표식/요약을

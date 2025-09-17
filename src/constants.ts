@@ -11,6 +11,12 @@ export const APP_CONFIG = {
   ANIMATION_DURATION: 'var(--xeg-duration-normal)',
 } as const;
 
+// 기능 플래그(기본 비활성) — 실험적 기능은 반드시 여기에서 제어
+export const FEATURE_FLAGS = {
+  /** ScrollEventHub 중앙집중 관리 (실험) */
+  SCROLL_EVENT_HUB: false,
+} as const;
+
 // 타이밍 및 성능 상수
 export const TIMING = {
   DEBOUNCE_DELAY: 100,

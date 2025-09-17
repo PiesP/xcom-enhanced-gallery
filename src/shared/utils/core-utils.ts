@@ -278,7 +278,14 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 
   // 스크롤 가능한 요소들을 찾고 기본 스크롤 활성화
   const scrollableElements = element.querySelectorAll(
-    '[data-xeg-role="items-list"], .itemsList, .content'
+    [
+      '[data-xeg-role="items-list"]',
+      '[data-xeg-role="items-container"]',
+      '[data-xeg-role-compat="items-list"]',
+      '.itemsList',
+      '.itemsContainer',
+      '.content',
+    ].join(', ')
   ) as NodeListOf<HTMLElement>;
 
   scrollableElements.forEach(el => {

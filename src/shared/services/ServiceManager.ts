@@ -110,8 +110,9 @@ export class CoreService {
   public tryGet<T>(key: string): T | null {
     try {
       return this.get<T>(key);
-    } catch (error) {
-      logger.warn(`[ServiceManager] 서비스 조회 실패: ${key}`, error);
+    } catch {
+      // 일부 경로에서는 등록 이전의 선택적 조회가 발생할 수 있으므로 경고를 낮춥니다.
+      logger.debug(`[ServiceManager] 서비스 조회 실패(선택적 접근 가정): ${key}`);
       return null;
     }
   }

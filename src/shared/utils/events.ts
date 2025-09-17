@@ -629,7 +629,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
     globalTimerManager.clearInterval(galleryEventState.priorityInterval);
   }
 
-  // 적응형 백오프 설정: 15s → 30s → 60s 상한. 강화 성공 시 15s로 리셋.
+  // 적응형 백오프 설정: 15s → ~22.5s → ~33.7s … 최대 90s. 강화 성공 시 15s로 리셋.
   let currentInterval = 15000;
   let consecutiveSkips = 0;
 
@@ -652,9 +652,9 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
         // 스킵 조건: 갤러리 열림, document 없음, 페이지 hidden
         if (checkGalleryOpen() || !documentElement || documentElement.hidden) {
           consecutiveSkips++;
-          // 백오프 증가: 2회 이상 연속 스킵 시 인터벌을 다음 단계로 증가 (최대 60s)
+          // 백오프 증가: 2회 이상 연속 스킵 시 인터벌을 다음 단계로 증가 (최대 90s)
           if (consecutiveSkips >= 2) {
-            const next = Math.min(currentInterval * 2, 60000);
+            const next = Math.min(Math.floor(currentInterval * 1.5), 90000);
             if (next !== currentInterval) {
               currentInterval = next;
               schedule();
@@ -673,7 +673,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
           // 스킵이 계속되면 백오프를 증가시킨다
           consecutiveSkips++;
           if (consecutiveSkips >= 2) {
-            const next = Math.min(currentInterval * 2, 60000);
+            const next = Math.min(Math.floor(currentInterval * 1.5), 90000);
             if (next !== currentInterval) {
               currentInterval = next;
               schedule();
@@ -736,7 +736,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
 // ================================
 // Log sampling for high-frequency event types
 // ================================
-const NOISY_EVENT_TYPES = new Set(['scroll', 'mousemove', 'mouseover', 'mouseout']);
+const NOISY_EVENT_TYPES = new Set(['scroll', 'mousemove', 'mouseover', 'mouseout', 'wheel']);
 const lastLogByType = new Map<string, number>();
 
 function debugLogEvent(message: string, type: string, meta?: Record<string, unknown>) {
@@ -744,8 +744,8 @@ function debugLogEvent(message: string, type: string, meta?: Record<string, unkn
     if (NOISY_EVENT_TYPES.has(type)) {
       const now = Date.now();
       const last = lastLogByType.get(type) ?? 0;
-      // log at most once per 3000ms for each noisy type
-      if (now - last < 3000) return;
+      // log at most once per 5000ms for each noisy type
+      if (now - last < 5000) return;
       lastLogByType.set(type, now);
     }
     if (meta) {

@@ -285,4 +285,5 @@ export class GalleryRenderer implements GalleryRendererInterface {
 }
 
 // 싱글톤 인스턴스 export
-export const galleryRenderer = new GalleryRenderer();
+// Note: Module-level singleton export removed to prevent accidental eager instantiation.
+// Create and register the renderer explicitly in the app entry (main.ts).
