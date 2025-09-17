@@ -21,14 +21,13 @@ import {
   setViewMode,
   navigatePrevious,
   navigateNext,
-} from '../../shared/state/signals/gallery.signals';
+} from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
-import { GalleryContainer } from '../../shared/components/isolation';
-import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
+import { GalleryContainer } from '@shared/components/isolation';
 import './styles/gallery-global.css';
-import { logger } from '../../shared/logging/logger';
-import { getPreact } from '../../shared/external/vendors';
+import { logger } from '@shared/logging/logger';
+import { getPreact } from '@shared/external/vendors';
 
 /**
  * 갤러리 정리 관리자
@@ -142,7 +141,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     const { render, createElement } = getPreact();
 
-    // GalleryContainer → ErrorBoundary → VerticalGalleryView 계층으로 래핑
+    // GalleryContainer로 VerticalGalleryView를 래핑
     const galleryElement = createElement(GalleryContainer, {
       onClose: () => {
         closeGallery();
@@ -152,24 +151,20 @@ export class GalleryRenderer implements GalleryRendererInterface {
       },
       className: 'xeg-gallery-renderer',
       useShadowDOM: true, // Shadow DOM 활성화로 스타일 격리
-      children: createElement(
-        ErrorBoundary,
-        {},
-        createElement(VerticalGalleryView, {
-          // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
-          onClose: () => {
-            closeGallery();
-            if (this.onCloseCallback) {
-              this.onCloseCallback();
-            }
-          },
-          onPrevious: () => this.handleNavigation('previous'),
-          onNext: () => this.handleNavigation('next'),
-          onDownloadCurrent: () => this.handleDownload('current'),
-          onDownloadAll: () => this.handleDownload('all'),
-          className: 'xeg-vertical-gallery',
-        })
-      ),
+      children: createElement(VerticalGalleryView, {
+        // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
+        onClose: () => {
+          closeGallery();
+          if (this.onCloseCallback) {
+            this.onCloseCallback();
+          }
+        },
+        onPrevious: () => this.handleNavigation('previous'),
+        onNext: () => this.handleNavigation('next'),
+        onDownloadCurrent: () => this.handleDownload('current'),
+        onDownloadAll: () => this.handleDownload('all'),
+        className: 'xeg-vertical-gallery',
+      }),
     });
 
     render(galleryElement, this.container);
@@ -195,7 +190,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       setLoading(true);
 
       // 다운로드 서비스 - factory 경유 사용 (Phase 6)
-      const { getBulkDownloadService } = await import('../../shared/services/service-factories');
+      const { getBulkDownloadService } = await import('@shared/services/service-factories');
       const downloadService = await getBulkDownloadService();
       const state = galleryState.value;
 
@@ -285,5 +280,4 @@ export class GalleryRenderer implements GalleryRendererInterface {
 }
 
 // 싱글톤 인스턴스 export
-// Note: Module-level singleton export removed to prevent accidental eager instantiation.
-// Create and register the renderer explicitly in the app entry (main.ts).
+export const galleryRenderer = new GalleryRenderer();

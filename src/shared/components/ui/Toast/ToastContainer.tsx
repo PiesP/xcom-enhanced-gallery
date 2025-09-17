@@ -3,15 +3,13 @@
  * @version 3.0.0 - Phase 3 StandardProps 시스템 적용
  */
 
-import { getPreact, getPreactCompat } from '../../../external/vendors';
-import { Toast } from './Toast';
-import { UnifiedToastManager, type ToastItem } from '@/shared/services/UnifiedToastManager';
+import { getPreact, getPreactHooks, getPreactCompat } from '@shared/external/vendors';
+import { toasts, removeToast, Toast } from './Toast';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';
 import styles from './ToastContainer.module.css';
-import type { VNode } from '../../../external/vendors';
-import { useSelector } from '@/shared/utils/signalSelector';
+import type { VNode } from '@shared/external/vendors';
 
 // 통합된 ToastContainer Props (표준 우선, 레거시 fallback)
 export interface ToastContainerProps extends Partial<StandardToastContainerProps> {
@@ -43,12 +41,8 @@ function ToastContainerCore({
   onKeyDown,
 }: ToastContainerProps = {}): VNode {
   const { h } = getPreact();
-  const manager = UnifiedToastManager.getInstance();
-  // Selector 기반으로 토스트 목록을 구독하여 불필요한 리렌더를 줄입니다.
-  const currentToasts = useSelector<ToastItem[], ToastItem[]>(
-    manager.signal as unknown as { value: ToastItem[] },
-    (s: ToastItem[]) => s
-  );
+  const { useEffect, useState } = getPreactHooks();
+  const [currentToasts, setCurrentToasts] = useState(toasts.value);
 
   // 표준화된 클래스명 생성
   const containerClass = ComponentStandards.createClassName(
@@ -76,6 +70,12 @@ function ToastContainerCore({
   // 표준화된 테스트 속성 생성
   const testProps = ComponentStandards.createTestProps(testId || 'toast-container');
 
+  useEffect(() => {
+    // 토스트 상태 변경 구독
+    const unsubscribe = toasts.subscribe(setCurrentToasts);
+    return unsubscribe;
+  }, []);
+
   // maxToasts 제한 적용
   const limitedToasts = currentToasts.slice(0, maxToasts);
 
@@ -97,7 +97,7 @@ function ToastContainerCore({
       h(Toast, {
         key: toast.id,
         toast,
-        onRemove: id => manager.remove(id),
+        onRemove: removeToast,
       })
     )
   );

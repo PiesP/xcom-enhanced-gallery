@@ -51,8 +51,6 @@ export function createFocusTrap(
 
   let isActive = false;
   let previousActiveElement: Element | null = null;
-  // 표준 이벤트 리스너 등록/해제용 플래그
-  let keydownAttached = false;
 
   /**
    * 컨테이너 내 focusable 요소들 조회
@@ -160,9 +158,8 @@ export function createFocusTrap(
     // 현재 포커스된 요소 저장
     previousActiveElement = document.activeElement;
 
-    // 키보드 이벤트 리스너 등록(표준 API 사용 — utils 레이어의 services 의존 제거)
+    // 키보드 이벤트 리스너 등록
     document.addEventListener('keydown', handleKeyDown, true);
-    keydownAttached = true;
 
     // 첫 번째 요소로 포커스 이동
     focusFirstElement();
@@ -177,14 +174,7 @@ export function createFocusTrap(
     if (!isActive) return;
 
     // 키보드 이벤트 리스너 제거
-    if (keydownAttached) {
-      try {
-        document.removeEventListener('keydown', handleKeyDown, true);
-      } catch {
-        /* no-op */
-      }
-      keydownAttached = false;
-    }
+    document.removeEventListener('keydown', handleKeyDown, true);
 
     // 이전 포커스 복원
     if (restoreFocus && previousActiveElement) {

@@ -1,17 +1,8 @@
 /**
- * Core External Vendor Manager Implementation (LEGACY/DYNAMIC)
- *
- * @deprecated TEST-ONLY: 동적 VendorManager는 테스트/리팩토링 문맥 전용입니다.
- * 프로덕션/런타임 소스에서는 TDZ-safe 정적 API를 사용하세요:
- *   import { getPreact, getPreactSignals, getFflate, getPreactCompat } from '@shared/external/vendors'
- * 정적 매니저: StaticVendorManager
- *
- * 가드: postbuild validator는 prod 번들에 'VendorManager' 식별자/이 파일 경로 문자열
- * 누출을 금지합니다. 런타임 소스는 절대 이 모듈을 import 하지 마세요.
+ * Core External Vendor Manager Implementation
  */
 
-import { logger } from '../../logging';
-import { globalTimerManager } from '../../utils/timer-management';
+import { logger } from '@shared/logging';
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {
@@ -326,7 +317,7 @@ export class VendorManager {
         this.createdUrls.add(url);
 
         // 30초 후 자동 정리 (메모리 누수 방지 강화)
-        const timerId = globalTimerManager.setTimeout(() => {
+        const timerId = window.setTimeout(() => {
           if (this.createdUrls.has(url)) {
             try {
               URL.revokeObjectURL(url);
@@ -347,7 +338,7 @@ export class VendorManager {
           // 타이머 정리
           const timerId = this.urlTimers.get(url);
           if (timerId) {
-            globalTimerManager.clearTimeout(timerId);
+            clearTimeout(timerId);
             this.urlTimers.delete(url);
           }
 
@@ -416,7 +407,7 @@ export class VendorManager {
   public cleanup(): void {
     // 타이머들 정리
     this.urlTimers.forEach(timerId => {
-      globalTimerManager.clearTimeout(timerId);
+      clearTimeout(timerId);
     });
     this.urlTimers.clear();
 

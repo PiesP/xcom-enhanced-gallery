@@ -4,7 +4,7 @@
  * @version 1.0.0 - Simplification Phase 1
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging/logger';
 
 // ================================
 // DOM 유틸리티
@@ -278,14 +278,7 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
 
   // 스크롤 가능한 요소들을 찾고 기본 스크롤 활성화
   const scrollableElements = element.querySelectorAll(
-    [
-      '[data-xeg-role="items-list"]',
-      '[data-xeg-role="items-container"]',
-      '[data-xeg-role-compat="items-list"]',
-      '.itemsList',
-      '.itemsContainer',
-      '.content',
-    ].join(', ')
+    '[data-xeg-role="items-list"], .itemsList, .content'
   ) as NodeListOf<HTMLElement>;
 
   scrollableElements.forEach(el => {

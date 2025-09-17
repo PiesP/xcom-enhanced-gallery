@@ -11,9 +11,9 @@
  * - Icon-only 모드 지원
  */
 
-import type { ComponentChildren, VNode } from '../../../external/vendors';
-import { getPreact, getPreactHooks } from '../../../external/vendors';
-import { logger } from '../../../logging';
+import type { ComponentChildren, VNode } from '@shared/external/vendors';
+import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
 import styles from './Button.module.css';
 
 // 간단한 clsx 대체 함수
@@ -60,8 +60,6 @@ interface ButtonHTMLAttributes {
   readonly title?: string;
   readonly role?: string;
   readonly onClick?: (event: MouseEvent) => void;
-  readonly onMouseDown?: (event: MouseEvent) => void;
-  readonly onMouseUp?: (event: MouseEvent) => void;
   readonly onFocus?: (event: FocusEvent) => void;
   readonly onBlur?: (event: FocusEvent) => void;
   readonly onKeyDown?: (event: KeyboardEvent) => void;
@@ -119,8 +117,6 @@ function ButtonComponent(props: ButtonProps): VNode {
     onFocus,
     onBlur,
     onKeyDown,
-    onMouseDown,
-    onMouseUp,
     onMouseEnter,
     onMouseLeave,
     ref,
@@ -149,16 +145,12 @@ function ButtonComponent(props: ButtonProps): VNode {
 
   // 접근성 검증
   useEffect(() => {
-    if (iconOnly) {
-      const derived = ariaLabel || ariaLabelledBy || title;
-      if (!derived) {
-        const msg =
-          'Icon-only buttons must have accessible labels (aria-label or aria-labelledby).';
-        const context = { component: 'UnifiedButton', variant, iconOnly } as const;
-        // 정책: 현재 구현은 런타임에서는 경고만 남기고 렌더링을 계속합니다.
-        // 테스트에서도 동일하게 경고로 처리하여, 별도의 탐지 테스트가 구성된 대로 동작하게 합니다.
-        logger.warn(msg, context);
-      }
+    if (iconOnly && !ariaLabel && !ariaLabelledBy) {
+      logger.warn('Icon-only buttons must have accessible labels', {
+        component: 'UnifiedButton',
+        variant,
+        iconOnly,
+      });
     }
   }, [iconOnly, ariaLabel, ariaLabelledBy, variant]);
 
@@ -169,19 +161,6 @@ function ButtonComponent(props: ButtonProps): VNode {
       return;
     }
     onClick?.(event);
-  };
-
-  const handleMouseDown = (event: MouseEvent) => {
-    if (disabled || loading) {
-      event.preventDefault();
-      return;
-    }
-    onMouseDown?.(event);
-  };
-
-  const handleMouseUp = (event: MouseEvent) => {
-    if (disabled || loading) return;
-    onMouseUp?.(event);
   };
 
   // 키보드 핸들러
@@ -238,8 +217,6 @@ function ButtonComponent(props: ButtonProps): VNode {
       'data-selected': dataSelected,
       'data-loading': dataLoading,
       onClick: handleClick,
-      onMouseDown: handleMouseDown,
-      onMouseUp: handleMouseUp,
       onFocus,
       onBlur,
       onKeyDown: handleKeyDown,

@@ -18,15 +18,14 @@
  * @version 6.0.0 - Phase 3 StandardProps 시스템 적용
  */
 
-import type { ViewMode } from '../../../types';
-import { getPreact, getPreactHooks, type VNode } from '../../../external/vendors';
+import type { ViewMode } from '@shared/types';
+import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import {
   useToolbarState,
   getToolbarDataState,
   getToolbarClassName,
-} from '../../../hooks/useToolbarState';
-import { throttleScroll } from '../../../utils/performance/performance-utils';
-import { EventManager } from '../../../services/EventManager';
+} from '@shared/hooks/useToolbarState';
+import { throttleScroll } from '@shared/utils';
 import { ComponentStandards } from '../StandardProps';
 import {
   ChevronLeft,
@@ -41,7 +40,7 @@ import {
   ArrowsMaximize,
 } from '../Icon';
 import styles from './Toolbar.module.css';
-import { IconButton } from '../Button/IconButton';
+import { IconButton } from '@shared/components/ui';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
 export interface ToolbarProps {
@@ -225,16 +224,11 @@ function ToolbarCore({
       }
     }); // RAF 기반으로 최적화된 스크롤 감지
 
-    const listenerId = EventManager.getInstance().addListener(
-      window,
-      'scroll',
-      throttledDetect as unknown as EventListener,
-      { passive: true }
-    );
+    window.addEventListener('scroll', throttledDetect, { passive: true });
     return (): void => {
-      EventManager.getInstance().removeListener(listenerId);
+      window.removeEventListener('scroll', throttledDetect);
     };
-  }, [toolbarActions.setNeedsHighContrast]);
+  }, [toolbarActions]);
 
   // 네비게이션 가능 여부 계산
   const canGoNext = useMemo(() => currentIndex < totalCount - 1, [currentIndex, totalCount]);
@@ -283,7 +277,7 @@ function ToolbarCore({
     h(
       'div',
       {
-        className: `${styles.toolbarContent} xeg-center-between xeg-gap-md`,
+        className: styles.toolbarContent,
         'data-gallery-element': 'toolbar-content',
       },
       [
@@ -291,7 +285,7 @@ function ToolbarCore({
         h(
           'div',
           {
-            className: `${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft xeg-row-center xeg-gap-sm`,
+            className: `${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft`,
             'data-gallery-element': 'navigation-left',
             key: 'toolbar-left',
           },
@@ -331,7 +325,7 @@ function ToolbarCore({
         h(
           'div',
           {
-            className: `${styles.toolbarSection} ${styles.toolbarCenter} xeg-row-center`,
+            className: `${styles.toolbarSection} ${styles.toolbarCenter}`,
             'data-gallery-element': 'counter-section',
             key: 'toolbar-center',
           },
@@ -379,7 +373,7 @@ function ToolbarCore({
         h(
           'div',
           {
-            className: `${styles.toolbarSection} ${styles.toolbarRight} xeg-row-center xeg-gap-sm`,
+            className: `${styles.toolbarSection} ${styles.toolbarRight}`,
             'data-gallery-element': 'actions-right',
             key: 'toolbar-right',
           },
@@ -398,7 +392,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !onFitOriginal,
                 key: 'fit-original',
               },
-              h(ZoomIn, { size: 18 })
+              h(ZoomIn, { size: 16 })
             ),
             h(
               IconButton,
@@ -413,7 +407,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !onFitWidth,
                 key: 'fit-width',
               },
-              h(ArrowAutofitWidth, { size: 18 })
+              h(ArrowAutofitWidth, { size: 16 })
             ),
             h(
               IconButton,
@@ -428,7 +422,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !onFitHeight,
                 key: 'fit-height',
               },
-              h(ArrowAutofitHeight, { size: 18 })
+              h(ArrowAutofitHeight, { size: 16 })
             ),
             h(
               IconButton,
@@ -443,7 +437,7 @@ function ToolbarCore({
                 'data-disabled': disabled || !onFitContainer,
                 key: 'fit-container',
               },
-              h(ArrowsMaximize, { size: 18 })
+              h(ArrowsMaximize, { size: 16 })
             ),
 
             // 다운로드 버튼들
@@ -461,7 +455,7 @@ function ToolbarCore({
                 'data-loading': isDownloading,
                 key: 'download-current',
               },
-              h(Download, { size: 18, key: 'download-icon' })
+              h(Download, { size: 16, key: 'download-icon' })
             ),
 
             totalCount > 1 &&
@@ -478,7 +472,7 @@ function ToolbarCore({
                   'data-loading': isDownloading,
                   key: 'download-all',
                 },
-                h(FileZip, { size: 18, key: 'download-all-icon' })
+                h(FileZip, { size: 16, key: 'download-all-icon' })
               ),
 
             // 설정 버튼
@@ -491,14 +485,11 @@ function ToolbarCore({
                   title: '설정',
                   disabled,
                   onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
-                  // 마우스다운 시점에 즉시 트리거하여 hover/pointer-events 경계에서의 클릭 손실 최소화
-                  onMouseDown: (e: MouseEvent) =>
-                    handleButtonClick(e as unknown as Event, 'settings', onOpenSettings),
                   'data-gallery-element': 'settings',
                   'data-disabled': disabled,
                   key: 'settings',
                 },
-                h(Settings, { size: 18 })
+                h(Settings, { size: 16 })
               ),
 
             // 닫기 버튼
@@ -515,7 +506,7 @@ function ToolbarCore({
                 'data-disabled': disabled,
                 key: 'close',
               },
-              h(X, { size: 18 })
+              h(X, { size: 16 })
             ),
           ]
         ),
@@ -545,7 +536,6 @@ export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarP
   if (prevProps.onDownloadAll !== nextProps.onDownloadAll) return false;
   if (prevProps.onClose !== nextProps.onClose) return false;
   if (prevProps.onViewModeChange !== nextProps.onViewModeChange) return false;
-  if (prevProps.onOpenSettings !== nextProps.onOpenSettings) return false;
 
   // ImageFit 콜백들
   if (prevProps.onFitOriginal !== nextProps.onFitOriginal) return false;
@@ -562,7 +552,7 @@ export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarP
 };
 
 // memo 적용
-import { getPreactCompat } from '../../../external/vendors';
+import { getPreactCompat } from '@shared/external/vendors';
 const { memo } = getPreactCompat();
 const MemoizedToolbar = memo(ToolbarCore, compareToolbarProps);
 

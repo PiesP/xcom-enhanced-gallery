@@ -6,8 +6,7 @@
  * 미디어 클릭 즉시 배경 비디오를 정지시켜 사용자 경험을 개선합니다.
  */
 
-import { logger } from '@shared/logging/logger';
-import { STABLE_SELECTORS } from '@/constants';
+import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { getCurrentIndex } from '@shared/state/signals/gallery.signals';
 
@@ -101,8 +100,7 @@ export class VideoControlService {
 
       if (!doc) return null;
 
-      const container = (doc.querySelector('.xeg-gallery-container') ||
-        doc.querySelector('[data-xeg-gallery-container]')) as HTMLElement | null;
+      const container = doc.querySelector('#xeg-gallery-root');
       if (!container) return null;
 
       const items = container.querySelector('[data-xeg-role="items-container"]');
@@ -263,10 +261,10 @@ export class VideoControlService {
   private findAllBackgroundVideos(): HTMLVideoElement[] {
     const selectors = [
       'video',
-      // 안정적인 플레이어 컨테이너 조합
-      ...STABLE_SELECTORS.MEDIA_PLAYERS.map(s => `${s} video`),
+      '[data-testid="videoPlayer"] video',
       '[data-testid="previewInterstitial"] video',
-      '.r-1p0dtai video', // 트위터 비디오 컨테이너(임시 유지)
+      '.r-1p0dtai video', // 트위터 비디오 컨테이너
+      '[data-testid="videoComponent"] video',
     ];
 
     const videos: HTMLVideoElement[] = [];
@@ -296,6 +294,7 @@ export class VideoControlService {
       '[data-xeg-role]',
       '[data-gallery-element]',
       '[data-gallery-video]',
+      '#xeg-gallery-root',
       '.vertical-gallery-view',
     ];
 

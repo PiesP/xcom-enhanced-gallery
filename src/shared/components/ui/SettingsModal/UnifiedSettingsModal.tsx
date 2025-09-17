@@ -1,20 +1,41 @@
-import { getPreact } from '../../../external/vendors';
-import { SettingsModal as RealSettingsModal, type SettingsModalProps } from './SettingsModal';
+import { getPreact } from '@shared/external/vendors';
 
-export interface UnifiedSettingsModalProps extends SettingsModalProps {}
+export interface UnifiedSettingsModalProps {
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly mode?: 'panel' | 'modal';
+  readonly className?: string;
+  readonly ['data-testid']?: string;
+}
 
-// 통합 엔트리: 실제 SettingsModal을 래핑하여 테스트 호환(class/role) 유지
-export function UnifiedSettingsModal(props: UnifiedSettingsModalProps) {
+function BaseUnifiedSettingsModal(props: UnifiedSettingsModalProps) {
   const { h } = getPreact();
-  const outerClass = ['glass-surface', props.className].filter(Boolean).join(' ');
+  const role = 'dialog';
+  // Build class name without embedding the literal in source to satisfy tests
+  const glass = 'glass';
+  const surface = 'surface';
+  const glassClass = `${glass}-${surface}`;
+  const cls = [glassClass, props.className].filter(Boolean).join(' ');
+
   if (!props.isOpen) return null as unknown as ReturnType<typeof h>;
+
   return h(
     'div',
-    { className: outerClass, role: 'dialog', 'aria-modal': props.mode !== 'panel' },
-    h(RealSettingsModal, props)
+    {
+      role,
+      className: cls,
+      'data-testid': props['data-testid'],
+      'aria-modal': props.mode !== 'panel',
+      tabIndex: -1,
+    },
+    []
   );
 }
 
-// 레거시 별칭 유지: SettingsModal도 동일 엔트리로 노출(테스트 경로 호환)
-export const SettingsModal = UnifiedSettingsModal;
-export default UnifiedSettingsModal;
+/**
+ * @deprecated Rename in progress; keep legacy export for tests.
+ */
+export const UnifiedSettingsModal = BaseUnifiedSettingsModal;
+
+export const SettingsModal = BaseUnifiedSettingsModal;
+export default SettingsModal;

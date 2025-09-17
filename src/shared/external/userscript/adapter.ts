@@ -53,9 +53,6 @@ async function fallbackDownload(url: string, filename: string): Promise<void> {
   }
 
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
   const blob = await response.blob();
   const objectUrl = URL.createObjectURL(blob);
   try {
@@ -118,8 +115,7 @@ function fallbackXhr(options: GMXmlHttpRequestOptions): { abort: () => void } | 
         } as never);
       })
       .finally(() => {
-        // JSDOM/Node 환경에서는 ProgressEvent가 없을 수 있으므로 안전한 스텁 객체 사용
-        options.onloadend?.({ type: 'loadend' } as unknown as ProgressEvent);
+        options.onloadend?.(new ProgressEvent('loadend'));
       });
 
     return { abort: () => controller.abort() };

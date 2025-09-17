@@ -7,12 +7,8 @@
 
 import { logger } from '@shared/logging/logger';
 import { undefinedToNull } from '@shared/utils/type-safety-helpers';
-import {
-  normalizeTweetLegacy,
-  normalizeUserLegacy,
-} from '@shared/services/media/normalizers/legacy/twitter';
 
-import { STABLE_SELECTORS, TWITTER_API_CONFIG } from '@/constants';
+import { TWITTER_API_CONFIG } from '@/constants';
 
 /**
  * Twitter API 응답 타입 정의
@@ -120,7 +116,7 @@ export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
     src.includes('tweet_video_thumb') ||
     alt === 'Animated Text GIF' ||
     alt === 'Embedded video' ||
-    imgElement.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', ')) !== null ||
+    imgElement.closest('[data-testid="videoComponent"]') !== null ||
     imgElement.closest('a[aria-label*="video"]') !== null ||
     imgElement.closest('a[aria-label*="Video"]') !== null ||
     imgElement.closest('a[aria-label="Embedded video"]') !== null
@@ -133,7 +129,8 @@ export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
 export function isVideoPlayer(element: HTMLElement): boolean {
   return (
     element.tagName === 'VIDEO' ||
-    element.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', ')) !== null ||
+    element.closest('[data-testid="videoPlayer"]') !== null ||
+    element.closest('[data-testid="videoComponent"]') !== null ||
     element.closest('div[role="img"][aria-label*="video"]') !== null ||
     element.closest('div[role="img"][aria-label*="Video"]') !== null
   );
@@ -446,15 +443,22 @@ export class TwitterAPI {
 
     const tweetUser = tweetResult.core?.user_results?.result;
 
-    // 현대적 API 구조와 legacy 구조 통합 (normalizer 사용)
-    normalizeTweetLegacy(tweetResult);
+    // 현대적 API 구조와 legacy 구조 통합
+    if (tweetResult.legacy) {
+      // legacy에서 현대적 구조로 데이터 복사
+      tweetResult.extended_entities = tweetResult.legacy.extended_entities;
+      tweetResult.full_text = tweetResult.legacy.full_text;
+      tweetResult.id_str = tweetResult.legacy.id_str;
+    }
 
     if (!tweetUser) {
       return [];
     }
 
-    // 사용자 정보도 통합
-    normalizeUserLegacy(tweetUser);
+    // tweetUser의 legacy 정보도 직접 복사
+    if (tweetUser.legacy?.screen_name) {
+      tweetUser.screen_name = tweetUser.legacy.screen_name;
+    }
 
     let result = this.extractMediaFromTweet(tweetResult, tweetUser);
 
@@ -464,9 +468,15 @@ export class TwitterAPI {
       const quotedUser = quotedTweet.core?.user_results?.result;
 
       if (quotedTweet && quotedUser) {
-        // 인용 트윗/사용자도 통합
-        normalizeTweetLegacy(quotedTweet);
-        normalizeUserLegacy(quotedUser);
+        // 인용 트윗의 legacy 정보도 통합
+        if (quotedTweet.legacy) {
+          quotedTweet.extended_entities = quotedTweet.legacy.extended_entities;
+          quotedTweet.full_text = quotedTweet.legacy.full_text;
+          quotedTweet.id_str = quotedTweet.legacy.id_str;
+        }
+        if (quotedUser.legacy?.screen_name) {
+          quotedUser.screen_name = quotedUser.legacy.screen_name;
+        }
 
         result = [...result, ...this.extractMediaFromTweet(quotedTweet, quotedUser)];
       }

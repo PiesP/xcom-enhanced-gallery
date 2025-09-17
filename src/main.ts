@@ -13,11 +13,12 @@ import type { AppConfig } from '@/types';
 import { registerFeatureServicesLazy as registerFeatures } from '@/bootstrap/feature-registration';
 import {
   warmupCriticalServices,
+  warmupNonCriticalServices,
   registerGalleryRenderer,
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/ServiceManager';
-import { cleanupVendors } from './shared/external/vendors';
-import { globalTimerManager } from '@shared/utils/timer-management';
+import { cleanupVendors } from '@shared/external/vendors';
+import { globalTimerManager } from '@shared/utils';
 
 // 전역 스타일
 // 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.
@@ -64,8 +65,7 @@ async function initializeCriticalSystems(): Promise<void> {
     logger.info('Critical Path 초기화 시작');
 
     // Core 서비스 등록 (동적 import)
-    // Avoid pulling ServiceDiagnostics via core-services re-export on critical path
-    const { registerCoreServices } = await import('@shared/services/service-initialization');
+    const { registerCoreServices } = await import('@shared/services/core-services');
     await registerCoreServices();
 
     // Critical Services만 즉시 초기화
@@ -104,10 +104,23 @@ async function registerFeatureServicesLazy(): Promise<void> {
  * Non-Critical 시스템 백그라운드 초기화
  */
 function initializeNonCriticalSystems(): void {
-  // Phase 3: 비핵심 서비스는 실제 사용 시점까지 초기화를 지연합니다.
-  // 이전에는 setTimeout(0)으로 warmupNonCriticalServices()를 호출했으나 제거했습니다.
-  // 효과: 초기 타이머 1개 감소, 불필요한 인스턴스 사전 생성 방지.
-  logger.debug('Non-Critical 시스템 사전 워밍업을 비활성화(지연 실행)했습니다.');
+  // 테스트 모드에서는 비필수 시스템 초기화를 건너뛰어 불필요한 타이머를 만들지 않는다
+  if (import.meta.env.MODE === 'test') {
+    logger.debug('Non-Critical 시스템 초기화 생략 (test mode)');
+    return;
+  }
+
+  globalTimerManager.setTimeout(async () => {
+    try {
+      logger.info('Non-Critical 시스템 백그라운드 초기화 시작');
+
+      warmupNonCriticalServices();
+
+      logger.info('✅ Non-Critical 시스템 백그라운드 초기화 완료');
+    } catch (error) {
+      logger.warn('Non-Critical 시스템 초기화 중 오류 (앱 동작에는 영향 없음):', error);
+    }
+  }, 0);
 }
 
 /**
@@ -120,7 +133,7 @@ async function initializeToastContainer(): Promise<void> {
     // UI 컴포넌트를 지연 로딩
     const [{ ToastContainer }, { getPreact }] = await Promise.all([
       import('@shared/components/ui'),
-      import('./shared/external/vendors'),
+      import('@shared/external/vendors'),
     ]);
 
     const { h, render } = getPreact();
@@ -194,7 +207,7 @@ async function cleanup(): Promise<void> {
       if (import.meta.env.MODE !== 'test') {
         const container = document.getElementById('xeg-toast-container');
         if (container) {
-          const { getPreact } = await import('./shared/external/vendors');
+          const { getPreact } = await import('@shared/external/vendors');
           const { render } = getPreact();
           // 언마운트
           render(null, container as HTMLElement);
@@ -299,8 +312,6 @@ async function initializeDevTools(): Promise<void> {
 
     // 서비스 진단 도구
     const { ServiceDiagnostics } = await import('@shared/services/core-services');
-    // DEV 전용 전역 진단 등록 (import 부작용 제거)
-    ServiceDiagnostics.registerGlobalDiagnostic();
     await ServiceDiagnostics.diagnoseServiceManager();
 
     logger.info('🛠️ 개발 도구 활성화됨');
@@ -368,15 +379,6 @@ async function startApplication(): Promise<void> {
 
     // 전역 스타일 로드 (사이드이펙트 import 방지)
     await import('./styles/globals');
-
-    // 초기 테마 부트스트랩: 첫 페인트 전에 data-theme를 동기 설정하여
-    // 투명/플래시 현상을 방지한다. (리스너/인스턴스 생성 없음)
-    try {
-      const { bootstrapInitialTheme } = await import('@shared/services/ThemeBootstrap');
-      bootstrapInitialTheme();
-    } catch (e) {
-      logger.debug('Theme bootstrap skipped or failed:', e);
-    }
 
     // 개발 도구 초기화 (개발 환경만; 테스트 모드에서는 제외하여 누수 스캔 간섭 방지)
     if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
@@ -476,12 +478,7 @@ if (document.readyState === 'loading') {
     logger.debug('DOMContentLoaded wiring skipped (test mode)');
   }
 } else {
-  // 테스트 모드에서는 자동 시작을 생략하여 import/eval 비용과 전역 리스너/타이머 누수를 방지
-  if (import.meta.env.MODE !== 'test') {
-    startApplication();
-  } else {
-    logger.debug('Auto-start skipped (test mode)');
-  }
+  startApplication();
 }
 
 // 모듈 기본 export (외부에서 수동 시작 가능)

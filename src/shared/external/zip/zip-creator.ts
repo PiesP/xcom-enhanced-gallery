@@ -8,9 +8,9 @@
  * @version 1.0.0
  */
 
-import { logger } from '../../logging';
-import { getFflate } from '../../external/vendors';
-import { safeParseInt } from '../../utils/type-safety-helpers';
+import { logger } from '@shared/logging';
+import { getFflate } from '@shared/external/vendors';
+import { safeParseInt } from '@shared/utils';
 
 /**
  * Media item interface for ZIP creation
@@ -64,10 +64,6 @@ const DEFAULT_ZIP_CONFIG: ZipCreationConfig = {
 
 /**
  * Creates a ZIP file from media items
- *
- * @deprecated This high-level helper is superseded by createZipBytesFromFileMap and
- * DownloadOrchestrator-based flows. Do not use in production services; keep only
- * for legacy/tests until fully removed in a future cleanup cycle.
  */
 export async function createZipFromItems(
   items: MediaItemForZip[],
@@ -99,70 +95,6 @@ export async function createZipFromItems(
   } finally {
     logger.timeEnd('[ZipCreator] createZipFromItems');
   }
-}
-
-/**
- * Creates a ZIP Uint8Array from in-memory files map
- * - Adapter function to consolidate zip path usage from services
- */
-export async function createZipBytesFromFileMap(
-  files: Record<string, Uint8Array>,
-  config: Partial<ZipCreationConfig> = {}
-): Promise<Uint8Array> {
-  const fullConfig = { ...DEFAULT_ZIP_CONFIG, ...config };
-  const api = getFflate();
-  if (!api) throw new Error('fflate library not available');
-
-  // Prefer async API if available
-  if (typeof (api as { zip?: unknown }).zip === 'function') {
-    return new Promise<Uint8Array>((resolve, reject) => {
-      try {
-        const options = { level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL } as unknown;
-        const callback: (err: unknown, data: Uint8Array) => void = (err, data) => {
-          if (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            logger.error('[ZipCreator] fflate.zip failed:', msg);
-            reject(new Error(`ZIP creation failed: ${msg}`));
-            return;
-          }
-          if (!data || data.byteLength === 0) {
-            reject(new Error('No valid data returned from fflate.zip'));
-            return;
-          }
-          resolve(new Uint8Array(data));
-        };
-
-        (
-          api.zip as unknown as (
-            data: unknown,
-            opts: unknown,
-            cb: (err: unknown, data: Uint8Array) => void
-          ) => void
-        )(files as unknown, options, callback);
-      } catch (e) {
-        reject(e instanceof Error ? e : new Error(String(e)));
-      }
-    });
-  }
-
-  // Fallback: legacy sync API (used by tests to capture input)
-  if (typeof (api as { zipSync?: unknown }).zipSync === 'function') {
-    try {
-      const syncOptions = { level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL } as unknown;
-      const bytes = (api.zipSync as unknown as (data: unknown, opts?: unknown) => Uint8Array)(
-        files as unknown,
-        syncOptions
-      );
-      if (!bytes || bytes.byteLength === 0) {
-        throw new Error('No valid data returned from fflate.zipSync');
-      }
-      return new Uint8Array(bytes);
-    } catch (e) {
-      throw e instanceof Error ? e : new Error(String(e));
-    }
-  }
-
-  throw new Error('No supported fflate zip API available');
 }
 
 /**

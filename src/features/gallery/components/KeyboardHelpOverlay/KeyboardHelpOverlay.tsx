@@ -1,9 +1,7 @@
-import { getPreact, getPreactHooks } from '../../../../shared/external/vendors';
-import { globalTimerManager } from '../../../../shared/utils/timer-management';
-import { useFocusTrap } from '../../../../shared/hooks/useFocusTrap';
+import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import { useFocusTrap } from '@shared/hooks/useFocusTrap';
 import styles from './KeyboardHelpOverlay.module.css';
-import { IconButton } from '../../../../shared/components/ui/Button/IconButton';
-import { languageService } from '../../../../shared/services/LanguageService';
+import { IconButton } from '@shared/components/ui';
 
 export interface KeyboardHelpOverlayProps {
   open: boolean;
@@ -61,7 +59,9 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
       }
       // Fallback: any non-close aria-labeled button (likely the trigger)
       if (!el?.isConnected) {
-        const fallback = document.querySelector('button[aria-label]') as HTMLElement | null;
+        const fallback = document.querySelector(
+          'button[aria-label]:not([aria-label="Close"])'
+        ) as HTMLElement | null;
         if (fallback) el = fallback;
       }
     }
@@ -91,7 +91,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
       focusPrevNow();
       // Schedule a few retries to stabilize in jsdom
       [0, 10, 20, 50, 100, 250, 500].forEach(ms => {
-        const id = globalTimerManager.setTimeout(() => {
+        const id = setTimeout(() => {
           focusPrevNow();
         }, ms) as unknown as number;
         timeoutsRef.current.push(id);
@@ -99,7 +99,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
       // Brief enforcement loop (<=1s)
       try {
         const start = Date.now();
-        const iv = globalTimerManager.setInterval(() => {
+        const iv = setInterval(() => {
           if (typeof document === 'undefined') return;
           try {
             focusPrevNow();
@@ -108,7 +108,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
           }
           if (Date.now() - start > 950) {
             try {
-              globalTimerManager.clearInterval(iv);
+              clearInterval(iv);
             } catch {
               /* ignore */
             }
@@ -121,8 +121,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
       // Now close
       onClose();
     },
-    // Focus the explicit close button via data-testid to avoid localization issues
-    initialFocus: '[data-testid="kho-close-button"]',
+    initialFocus: 'button[aria-label="Close"]',
     restoreFocus: true,
     previousFocusElement: prevFocusElRef.current,
     previousFocusSelector: prevFocusSelectorRef.current,
@@ -133,7 +132,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
     if (open) return;
     const attempts = [0, 10, 20, 50, 100, 250, 500, 800, 900, 1200];
     attempts.forEach(ms => {
-      const id = globalTimerManager.setTimeout(() => {
+      const id = setTimeout(() => {
         if (typeof document === 'undefined') return;
         const target = resolvePrevTarget();
         if (!target) return;
@@ -153,7 +152,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
         const id = timeoutsRef.current.pop();
         if (id) {
           try {
-            globalTimerManager.clearTimeout(id);
+            clearTimeout(id);
           } catch {
             /* ignore */
           }
@@ -162,7 +161,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
       const iv = intervalRef.current;
       if (iv) {
         try {
-          globalTimerManager.clearInterval(iv);
+          clearInterval(iv);
         } catch {
           /* ignore */
         }
@@ -178,7 +177,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
         const id = timeoutsRef.current.pop();
         if (id) {
           try {
-            globalTimerManager.clearTimeout(id);
+            clearTimeout(id);
           } catch {
             /* ignore */
           }
@@ -187,7 +186,7 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
       const iv = intervalRef.current;
       if (iv) {
         try {
-          globalTimerManager.clearInterval(iv);
+          clearInterval(iv);
         } catch {
           /* ignore */
         }
@@ -224,35 +223,18 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
           size: 'md',
           tabIndex: 0,
           onClick: () => onClose(),
-          'aria-label': languageService.getString('toolbar.close'),
-          'data-testid': 'kho-close-button',
+          'aria-label': 'Close',
         }),
-        h(
-          'h2',
-          { id: titleId, className: styles.title },
-          languageService.getString('messages.keyboardHelp.title')
-        ),
+        h('h2', { id: titleId, className: styles.title }, 'Keyboard shortcuts'),
         h(
           'div',
           { id: descId, className: styles.content },
           (() => {
             const items = [
-              h(
-                'li',
-                { key: 'nav-left' },
-                languageService.getString('messages.keyboardHelp.navPrevious')
-              ),
-              h(
-                'li',
-                { key: 'nav-right' },
-                languageService.getString('messages.keyboardHelp.navNext')
-              ),
-              h('li', { key: 'close' }, languageService.getString('messages.keyboardHelp.close')),
-              h(
-                'li',
-                { key: 'toggle' },
-                languageService.getString('messages.keyboardHelp.toggleHelp')
-              ),
+              h('li', { key: 'nav-left' }, 'ArrowLeft: Previous media'),
+              h('li', { key: 'nav-right' }, 'ArrowRight: Next media'),
+              h('li', { key: 'close' }, 'Escape: Close gallery'),
+              h('li', { key: 'toggle' }, '?: Show this help'),
             ];
             return h('ul', { className: styles.shortcutList }, items);
           })()

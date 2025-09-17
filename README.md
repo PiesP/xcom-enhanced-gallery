@@ -198,25 +198,6 @@ npm test
 
 더 자세한 개발 가이드는 [`docs/`](docs/) 디렉토리의 문서를 참고하세요.
 
-#### 테스트 실행 안내
-
-이 저장소의 테스트는 Vitest Projects로 분할되어 있어 목적별로 빠르게 실행할 수
-있습니다(예: smoke/fast/unit/styles/performance/phases/refactor). 구체적인 사용
-방법과 스크립트는 `AGENTS.md`의 "테스트 가이드 (Vitest) > 분할 실행(Projects)"
-섹션을 참고하세요.
-
-추가로, 로컬 개발 속도를 위해 다음 기본 명령을 제공합니다:
-
-- 빠른 기본 스위트: `npm test` → fast 프로젝트만 실행(개발 루프 최적)
-- 전체 스위트: `npm run test:full`
-- 워치 모드: `npm run test:watch` (fast 프로젝트)
-- 커버리지(로컬): `npm run test:coverage` (unit 프로젝트)
-
-참고: CI에서는 dot 리포터와 v8 커버리지로 속도를 최적화했고, Node 22는 빠른
-스위트, Node 20은 커버리지 스위트를 수행합니다. 로컬 기본 테스트 전에 사전
-빌드는 수행하지 않아 빠르게 시작되며, 커버리지 작업은 안정성을 위해
-사전(production) 빌드를 수행합니다.
-
 ## 📞 지원 및 피드백
 
 - **🐛 버그 신고**:

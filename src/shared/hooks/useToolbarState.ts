@@ -16,8 +16,7 @@
  * @module useToolbarState
  */
 
-import { getPreactHooks } from '../external/vendors';
-import { globalTimerManager } from '../utils/timer-management';
+import { getPreactHooks } from '@shared/external/vendors';
 
 /**
  * 툴바 상태 인터페이스
@@ -92,7 +91,7 @@ const INITIAL_STATE: ToolbarState = {
  * ```
  */
 export function useToolbarState(): [ToolbarState, ToolbarActions] {
-  const { useState, useCallback, useRef, useEffect, useMemo } = getPreactHooks();
+  const { useState, useCallback, useRef, useEffect } = getPreactHooks();
   const [state, setState] = useState<ToolbarState>(INITIAL_STATE);
 
   // 다운로드 상태 변경 시간 추적
@@ -119,9 +118,9 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
       if (timeSinceStart < minDisplayTime) {
         // 최소 표시 시간이 지나지 않았으면 지연 후 변경
         if (downloadTimeoutRef.current) {
-          globalTimerManager.clearTimeout(downloadTimeoutRef.current);
+          clearTimeout(downloadTimeoutRef.current);
         }
-        downloadTimeoutRef.current = globalTimerManager.setTimeout(() => {
+        downloadTimeoutRef.current = window.setTimeout(() => {
           setState((prev: ToolbarState) => ({
             ...prev,
             isDownloading: false,
@@ -172,7 +171,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   const resetState = useCallback(() => {
     // 타이머 정리
     if (downloadTimeoutRef.current) {
-      globalTimerManager.clearTimeout(downloadTimeoutRef.current);
+      clearTimeout(downloadTimeoutRef.current);
       downloadTimeoutRef.current = null;
     }
     setState(INITIAL_STATE);
@@ -182,23 +181,19 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   useEffect(() => {
     return () => {
       if (downloadTimeoutRef.current) {
-        globalTimerManager.clearTimeout(downloadTimeoutRef.current);
+        clearTimeout(downloadTimeoutRef.current);
       }
     };
   }, []);
 
-  // Memoize actions object to keep identity stable across renders
-  const actions: ToolbarActions = useMemo(
-    () => ({
-      setDownloading,
-      setLoading,
-      setError,
-      setCurrentFitMode,
-      setNeedsHighContrast,
-      resetState,
-    }),
-    [setDownloading, setLoading, setError, setCurrentFitMode, setNeedsHighContrast, resetState]
-  );
+  const actions: ToolbarActions = {
+    setDownloading,
+    setLoading,
+    setError,
+    setCurrentFitMode,
+    setNeedsHighContrast,
+    resetState,
+  };
 
   return [state, actions];
 }

@@ -3,7 +3,7 @@
  * @description 툴바의 공통 레이아웃/스타일 Shell - semantic props 사용
  */
 
-import { getPreact, type ComponentChildren } from '../../../external/vendors';
+import { getPreact, type ComponentChildren } from '@shared/external/vendors';
 
 export interface ToolbarShellProps {
   /** 컨텐츠 */

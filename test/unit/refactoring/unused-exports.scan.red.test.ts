@@ -8,7 +8,6 @@ import { join, extname } from 'node:path';
 const BARREL = 'src/shared/components/hoc/index.ts';
 const SOURCE = 'src/shared/components/hoc/GalleryHOC.tsx';
 const ROOT = 'src';
-const normalize = (p: string) => p.replace(/\\/g, '/');
 const exts = new Set(['.ts', '.tsx']);
 
 function listFilesRecursive(dir: string): string[] {
@@ -28,7 +27,7 @@ function listFilesRecursive(dir: string): string[] {
         stack.push(join(cur, e.name));
       }
     } else if (exts.has(extname(cur))) {
-      files.push(normalize(cur));
+      files.push(cur);
     }
   }
   return files;
@@ -60,9 +59,7 @@ describe('U4: HOC 배럴 unused export 축소', () => {
   it('배럴에서 export된 심볼은 최소 1회 이상 사용되어야 한다 (현재 RED 기대: FAIL)', () => {
     const barrelContent = readFileSync(BARREL, 'utf8');
     const exported = parseExportedNames(barrelContent);
-    const files = listFilesRecursive(ROOT).filter(
-      f => normalize(f) !== BARREL && normalize(f) !== SOURCE
-    );
+    const files = listFilesRecursive(ROOT).filter(f => f !== BARREL && f !== SOURCE);
 
     const contentMap = new Map<string, string>();
     for (const f of files) contentMap.set(f, readFileSync(f, 'utf8'));

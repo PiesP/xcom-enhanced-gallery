@@ -3,8 +3,7 @@
  * @description 메모화를 통한 시그널 셀렉터 성능 최적화
  */
 
-import { getPreactHooks } from '../../external/vendors';
-import { globalTimerManager } from '../timer-management';
+import { getPreactHooks } from '@shared/external/vendors';
 
 /**
  * 셀렉터 함수 타입
@@ -99,7 +98,7 @@ export function useAsyncSelector<T, R>(
 
     setResult((prev: AsyncSelectorResult<R>) => ({ ...prev, loading: true, error: null }));
 
-    const timeoutId = globalTimerManager.setTimeout(async () => {
+    const timeoutId = setTimeout(async () => {
       if (!mountedRef.current || generation !== currentGenerationRef.current) return;
 
       try {
@@ -120,7 +119,7 @@ export function useAsyncSelector<T, R>(
 
     // 컴포넌트 unmount 시 정리
     return () => {
-      globalTimerManager.clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
     };
   }, [actualState, selector, defaultValue, debounceMs]);
 

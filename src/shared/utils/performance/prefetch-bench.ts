@@ -2,7 +2,6 @@
  * @fileoverview Prefetch benchmarking harness
  * @description Runs MediaService.prefetchNextMedia under different schedule modes and collects simple metrics.
  */
-import { globalTimerManager } from '../timer-management';
 
 export type PrefetchBenchMode = 'immediate' | 'idle' | 'raf' | 'microtask';
 
@@ -72,9 +71,7 @@ async function waitUntil(
   while (true) {
     if (check()) return;
     if (Date.now() - start > timeoutMs) return; // timeboxed — report whatever we have
-    await new Promise<void>(resolve =>
-      globalTimerManager.setTimeout(() => resolve(), pollIntervalMs)
-    );
+    await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
   }
 }
 

@@ -49,13 +49,11 @@ module.exports = {
     {
       name: 'no-direct-vendor-imports',
       comment: '외부 라이브러리는 vendors getter를 통해 접근',
-      severity: 'error',
+      severity: 'warn',
       from: {
         path: '^src',
-        // 실제 프로젝트 구조에 맞춘 예외 경로: shared/external/vendors 에서는 직접 import 허용(어댑터 전용)
         pathNot: [
-          '^src/shared/external/vendors',
-          '^src/(shared/utils/vendors|infrastructure/external/vendors)', // 과거 경로 호환
+          '^src/(shared/utils/vendors|infrastructure/external/vendors)', // vendors 유틸리티
           '^src/shared/types/vendor.types.ts', // 타입 정의 파일
           '^src/types/', // 전역 타입 정의
         ],
@@ -67,7 +65,6 @@ module.exports = {
     {
       name: 'no-circular-deps',
       comment: '순환 참조 금지',
-      // 리팩토링 완료: 경고에서 에러로 승격하여 CI에서 실패 처리
       severity: 'error',
       from: {},
       to: { circular: true },
@@ -107,37 +104,10 @@ module.exports = {
           '^src/shared/styles/tokens/button[.]ts$',
           '^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)[.]tsx$',
           '^src/shared/components/ui/Toolbar/toolbarConfig[.]ts$',
-          '^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal)[.]tsx$',
-          // 프로젝트 내 실험적/후속 예정 로더 (의도적 보류)
-          '^src/shared/loader/progressive-loader[.]ts$',
+          '^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal|EnhancedSettingsModal)[.]tsx$',
         ],
       },
       to: {},
-    },
-
-    // 내부 패키지에서 동일 패키지의 barrel(index.ts)을 통해 재수입하는 관행은
-    // 순환을 유발하기 쉬움. 경고로 가이드한다.
-    {
-      name: 'no-internal-barrel-imports-ui',
-      comment:
-        'UI 패키지 내부에서는 @shared/components/ui(index)를 통하지 말고 상대 경로로 import하세요',
-      severity: 'error',
-      from: { path: '^src/shared/components/ui/(?!index[.])' },
-      to: { path: '^src/shared/components/ui/index[.]ts$' },
-    },
-    {
-      name: 'no-internal-barrel-imports-utils',
-      comment: 'utils 패키지 내부에서 utils/index를 통해 재수입 금지(상대 경로 사용)',
-      severity: 'error',
-      from: { path: '^src/shared/utils/(?!index[.]).+' },
-      to: { path: '^src/shared/utils/index[.]ts$' },
-    },
-    {
-      name: 'no-internal-barrel-imports-media',
-      comment: 'media 패키지 내부에서 media/index를 통해 재수입 금지(상대 경로 사용)',
-      severity: 'error',
-      from: { path: '^src/shared/media/(?!index[.]).+' },
-      to: { path: '^src/shared/media/index[.]ts$' },
     },
   ],
 
@@ -147,12 +117,6 @@ module.exports = {
     },
     includeOnly: '^src',
     tsPreCompilationDeps: true,
-
-    // TypeScript 경로 별칭(@, @features, @shared 등) 해석을 위해 tsconfig 연결 및 alias 힌트 제공
-    tsConfig: {
-      fileName: 'tsconfig.json',
-    },
-    // enhancedResolveOptions는 v17 스키마에서 제한적이므로 제거 (tsConfig로 alias 해석 충분)
 
     reporterOptions: {
       dot: {

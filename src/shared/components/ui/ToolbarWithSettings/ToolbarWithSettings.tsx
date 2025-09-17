@@ -4,7 +4,7 @@
  * @version 6.0.0 - Glassmorphism 일관성 적용
  */
 
-import { getPreact, getPreactHooks, type VNode } from '../../../external/vendors';
+import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import { Toolbar, type ToolbarProps } from '../Toolbar/Toolbar';
 import { SettingsModal } from '../SettingsModal/SettingsModal';
 

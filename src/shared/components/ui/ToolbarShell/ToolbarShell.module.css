@@ -5,11 +5,6 @@
 
 /* ===== 기본 Shell 스타일 ===== */
 .toolbar-shell {
-  /* Component-level shadow tokens (fallback to semantic tokens) */
-  --xeg-toolbar-bg: var(--xeg-surface-glass-bg);
-  --xeg-toolbar-border: var(--xeg-surface-glass-border);
-  --xeg-comp-toolbar-shadow: var(--xeg-shadow-md);
-
   display: flex;
   align-items: center;
   width: 100%;
@@ -22,37 +17,37 @@
 
 /* ===== Elevation 변형 ===== */
 .toolbar-elevation-low {
-  /* Use component shadow token */
-  box-shadow: var(--xeg-comp-toolbar-shadow);
+  /* alias 제거: --xeg-comp-toolbar-shadow → semantic shadow token */
+  box-shadow: var(--xeg-shadow-md);
   z-index: var(--xeg-layer-toolbar);
 }
 
 .toolbar-elevation-medium {
-  box-shadow: var(--xeg-comp-toolbar-shadow);
+  box-shadow: var(--xeg-shadow-md);
   z-index: calc(var(--xeg-layer-toolbar) + 1);
 }
 
 .toolbar-elevation-high {
-  box-shadow: var(--xeg-comp-toolbar-shadow);
+  box-shadow: var(--xeg-shadow-md);
   z-index: calc(var(--xeg-layer-toolbar) + 2);
 }
 
 /* ===== Surface 변형 ===== */
 .toolbar-surface-glass {
-  background: var(--xeg-toolbar-bg);
-  border: 1px solid var(--xeg-toolbar-border);
+  background: var(--xeg-surface-glass-bg);
+  border: 1px solid var(--xeg-surface-glass-border);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
 .toolbar-surface-solid {
-  background: var(--xeg-toolbar-bg, var(--color-bg-surface));
-  border: 1px solid var(--xeg-toolbar-border, var(--color-border-subtle));
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
 }
 
 .toolbar-surface-overlay {
-  background: var(--xeg-toolbar-bg);
-  border: 1px solid var(--xeg-toolbar-border);
+  background: var(--xeg-surface-glass-bg);
+  border: 1px solid var(--xeg-surface-glass-border);
 }
 
 /* ===== Position 변형 ===== */
@@ -88,13 +83,13 @@
 /* ===== 다크 모드 지원 ===== */
 @media (prefers-color-scheme: dark) {
   .toolbar-surface-glass {
-    background: var(--xeg-toolbar-bg);
-    border-color: var(--xeg-toolbar-border);
+    background: var(--xeg-surface-glass-bg);
+    border-color: var(--xeg-surface-glass-border);
   }
 
   .toolbar-surface-solid {
-    background: var(--xeg-toolbar-bg, var(--color-bg-surface));
-    border-color: var(--xeg-toolbar-border, var(--color-border-subtle));
+    background: var(--color-bg-surface);
+    border-color: var(--color-border-subtle);
   }
 }
 

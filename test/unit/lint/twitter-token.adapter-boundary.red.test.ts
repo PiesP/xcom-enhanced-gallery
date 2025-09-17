@@ -16,7 +16,10 @@ describe('R3: Token constants must not leak outside adapter/extractor (RED)', ()
   const forbiddenPatterns = [/BEARER_TOKEN\b/i, /['"]Bearer['"]/];
 
   // 허용 경로 화이트리스트 (경로 구분자 정규화)
-  const allowList = ['src/features/settings/services/TwitterTokenExtractor.ts'];
+  const allowList = [
+    'src/features/settings/services/TwitterTokenExtractor.ts',
+    'src/shared/external/userscript/adapter.ts',
+  ];
   const allowListNormalized = new Set(allowList.map(p => p.replace(/\\/g, '/')));
 
   function walk(dir: string, acc: string[] = []): string[] {

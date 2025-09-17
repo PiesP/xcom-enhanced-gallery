@@ -5,7 +5,7 @@
 import { logger } from '@/shared/logging';
 
 export async function initializeEnvironment(): Promise<void> {
-  const { initializeVendors } = await import('../shared/external/vendors');
+  const { initializeVendors } = await import('@shared/external/vendors');
   await initializeVendors();
   logger.debug('✅ Environment: vendors initialized');
 }

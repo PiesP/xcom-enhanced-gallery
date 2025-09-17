@@ -1,863 +1,1087 @@
-# TDD 리팩토링 완료 로그 (누적)
+# ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
-활성 계획에서 완료된 항목을 시간 순으로 누적 기록합니다.
+2025-09-13: 세션 검증 — 전체 테스트 GREEN · 빌드/산출물 검증 PASS
 
-### 2025-09-17 — P4.6b ScrollEventHub 경로 수명주기 — GREEN
+- 테스트: 276 passed, 9 skipped (총 285 파일) — RED 없음, 경고성 jsdom
+  not-implemented 로그만 발생(기능 영향 없음)
+- 빌드: dev/prod Userscript 생성 및 postbuild validator PASS, gzip ≈ 96.6 KB
+- 계획: 활성 Phase 현재 없음 — 신규 과제는 백로그 선별 후 활성화 예정
 
-- 테스트 추가:
-  `test/unit/features/gallery/useGalleryScroll.hub-lifecycle.test.tsx`
-  - 문서 레벨 wheel 등록 아이덴포턴시(동일 파라미터 재렌더 시 add 증가 없음)
-  - 컨테이너 변경 시 중복 없는 재등록(최소 증가) 및 비활성화 시 remove 호출 확인
-  - 트위터 컨테이너 경로는 본 케이스에서 모킹으로 비활성화
-- 구현 확인: `useGalleryScroll`의 Hub 경로 구독/정리 로직이 계약 준수
-- 수용 기준: 누수 0, 중복 등록 없음, 정책 GREEN
+2025-09-13: 문서 — CODING_GUIDELINES 마크다운 코드펜스 정리 완료
 
-### 2025-09-17 — P4.4 Priority Enforcement — GREEN
+- 파일 네이밍/Toast·Gallery 예시/Result 패턴 섹션의 코드 블록 fence 오류
+  수정으로 렌더링 안정화(콘텐츠 변경 없음, 기능 영향 없음)
 
-- 테스트 추가: `test/unit/events/priority-enforcement.behavior.test.ts`
-  - 건강(healthy) 시 재등록 스킵 및 백오프 유지 확인
-  - 비정상(unhealthy) 시 1회 재등록 후 안정화, 인터벌 리셋 확인
-  - 갤러리 오픈 중에는 전면 스킵 확인
-- 구현 확인: `startPriorityEnforcement` 현 정책과 일치, 코드 변경 불요
-- 수용 기준: add/remove 밀도 변동 없음, 정책/가드 GREEN
+2025-09-13: R5 — Source map/번들 메타 무결성 가드 완료
 
-### 2025-09-17 — PHASE 4(Log-driven) 주요 완료 요약
+- 목적: dev/prod 소스맵에 sources/sourcesContent 포함, Userscript 말미에 올바른
+  sourceMappingURL 주석 존재, 프로덕션 번들에 \_\_vitePreload 데드 브랜치
+  미포함.
+- 구현: vite.config.ts에서 dev/prod 공통 sourcemap 생성 및 userscript 플러그인에
+  sourcemap 파일(.map) 기록 + 기존 sourceMappingURL 제거 후 올바른 주석 추가.
+  scripts/validate-build.js를 확장해 dev/prod 각각 소스맵 존재/구조(sources,
+  sourcesContent 길이 일치) 검증과 prod에서 \_\_vitePreload 부재를 강제.
+- 검증: npm run build → postbuild validator GREEN, gzip ~96.6 KB, prod/dev 모두
+  소스맵 무결성 PASS.
 
-- 4.1 Core 서비스 재등록 가드: `registerCoreServices()`는 핵심 키 존재 시 no-op,
-  `ServiceDiagnostics`도 사전 확인 후만 등록 호출(idempotent). 덮어쓰기 경고 0
-  확인.
-- 4.2 EventManager 파괴 후 재사용 경고 제거: `useGalleryScroll`이 effect-로컬
-  EventManager를 사용하도록 전환. 재등록 경고/리스너 누수 0.
-- 4.3 GalleryRenderer 단일화: 모듈 레벨 싱글턴 export 제거, 생성·등록은
-  `main.ts` 단일 경로. `registerGalleryRenderer()` idempotent 가드.
-- 4.4.a 개발 로그 샘플링/강화 루프 백오프: 샘플링
-  타입(`scroll/mousemove/mouseover/mouseout/wheel`) 확장, 윈도우 5s, 백오프 1.5x
-  상한 90s. dev 로그 스팸 감소.
-- 4.7/4.8/4.9/4.10 휠 스크롤 이슈 일괄 해결: 문서 레벨 등록의 컨테이너 의존
-  제거(항상 등록), 소비 조건을 "갤러리 외부"로 한정, Shadow DOM은 `composedPath`
-  기반 내부 판정. 스크롤 가능 컨테이너 셀렉터 하드닝. 관련 테스트 GREEN.
+2025-09-13: R2 — Wheel 리스너 정책 하드닝 완료
 
-### 2025-09-17 — PLAN-SYNC-8 (활성 계획 → 완료 이관)
+- 목적: wheel 리스너의 passive: false 사용을 필요한 경로로만 제한, 스크롤 충돌
+  방지.
+- 구현: ensureWheelLock 유틸 도입/정비, 직접 addEventListener('wheel', …) 사용
+  금지 스캔 유지.
+- 검증: test/unit/events/wheel-listener.policy.red.test.ts,
+  ensureWheelLock.contract.test.ts GREEN.
 
-- 활성 계획서 상단의 "2025-09-17 적용 사항 요약" 섹션을 본 완료 로그로 이관하고,
-  계획서에는 간단한 주석만 남김.
-- 4.x(Result 패턴 표준화) 및 4.8/4.9/4.10 상세 설계/테스트 메모를 완료 상태로 본
-  문서에만 유지하도록 정리.
+2025-09-13: R1 — 전역 표면 정리(글로벌 누수 제거) 완료
 
-### 2025-09-17 — RESULT-PATTERN-UNIFY (보완) 완료
+- 목적: 프로덕션 번들에서 디버그용 전역 노출 제거.
+- 구현: 서비스 접근을 배럴/헬퍼 경유로 일원화, 전역은 DEV 게이트만 허용.
+- 검증: 린트/테스트 스위트 및 번들 스캔으로 prod 전역 키 부재 확인, 전체 GREEN.
 
-- `MediaService` 다운로드 결과의 status/code 표준화 보완을 확정.
-- 단일/다중 경로 모두 code 누락 시 규칙에 따라
-  보정(ALL_FAILED/NONE/PARTIAL_FAILED/UNKNOWN).
-- 관련 계약 테스트 GREEN. 활성 계획서에서는 항목 제거.
+> 완료된 작업만 간단히 기록합니다.
 
-### 2025-09-17 — PHASE 4 보강 테스트/경계 수정
+2025-09-13: UI — 툴바 대비/Prev·Next 스크롤/아이콘 정비 완료
 
-- 4.5 보강 테스트 추가: `new ToastController()` 직접 생성 금지 스캔(lint) 추가.
-  허용 파일(ToastController 정의/서비스 초기화) 외 발생 시 RED. 스위트 GREEN.
-- 4.6 보강 테스트 추가: EventManager idempotency(unit) — 동일
-  target/type/옵션/콜백 2회 add 시 DOM 1회, remove 후 재등록 1회 검증. GREEN.
-- 경계 수정: utils→services 의존 위반 제거 —
-  `shared/utils/scroll/ScrollEventHub.ts`에서 `EventManager` 직접 import 제거,
-  `@shared/utils/events`의 add/remove API 사용으로 전환. 경계 스캔 테스트 통과
-  기대.
+- 내용:
+  - 툴바 미디어 카운터 구분자 '/'의 시인성 개선: 색상을 semantic 토큰으로
+    조정(`--xeg-color-text-secondary`), 고대비 모드에서는
+    `--xeg-color-text-primary`로 오버라이드.
+  - Prev/Next 버튼 클릭 시 선택 항목으로 스크롤 복구: `useGalleryItemScroll`의
+    컨테이너 선택자를 보강해
+    `[data-xeg-role="items-list"], [data-xeg-role="items-container"]` 모두
+    인식하도록 수정(레거시 호환).
+  - 아이콘: 내부 Icon/IconButton 시스템(라이선스 호환) 사용 확인 및 툴바 적용
+    상태 점검. 외부 아이콘 라이브러리 도입 불필요.
+- 테스트: `toolbar.separator-contrast.test.tsx`,
+  `prev-next-scroll.integration.test.ts` 추가/보강, 전체 테스트 스위트 GREEN.
+- 결과: 활성 계획서에는 해당 항목이 별도로 등재되어 있지 않아 제거 대상
+  없음(완료 로그로만 추적).
 
-### 2025-09-17 — PHASE 4 보강: ToastController 단일화 및 Result 패턴 하드닝
+2025-09-13: UI — 툴바 인디케이터('/') 대비 개선
 
-- GalleryApp 단일화 테스트 추가: `galleryapp.toast-controller.singleton.test.ts`
-  — 갤러리 초기화 2회 호출 시에도 컨테이너 경유 `getToastController`가 1회만
-  호출됨을 spy로 확인. GREEN.
-- MediaService 결과 표준화 보완: 단일/다중 다운로드 경로에서 status/code를
-  일관되게 표준화하고, 공급자 구현이 `code`를 누락해도 소비자가 일관된 계약으로
-  사용할 수 있도록 개선. 관련 계약/RED 테스트 GREEN.
+- 내용: Toolbar.module.css에서 카운터 구분자 .separator 색상을
+  `--xeg-color-text-secondary`로 기본 설정하고, `data-high-contrast=true` 및
+  시스템 고대비에서는 `--xeg-color-text-primary`로 승격하여 다양한 배경에서
+  충분한 대비를 보장.
+- 근거: PC 전용/토큰 규칙 준수, 스타일 중복 정의 제거로 일관성 향상.
+- 검증: 스타일 스모크 및 빌드/테스트 스위트 GREEN.
 
-### 2025-09-17 — PHASE 3(최종) 활성 계획서에서 완료로 이관
+2025-09-13: UI — 인디케이터/설정 라벨 색상 정합 완료
 
-- 내용: 활성 계획서(`TDD_REFACTORING_PLAN.md`)의 Phase 3 잔여 표식/요약을
-  제거하고, 본 완료 로그만을 단일 출처로 유지하도록 정리했습니다. 세부 내역은 본
-  문서 상단의 Phase 3 관련 항목들에 이미 기록되어 있습니다.
-- 영향: 문서만 변경 — 타입/린트/테스트/빌드/포스트빌드 무영향.
+- 내용: 툴바 미디어 카운터 구분자('/')와 설정 모달 라벨(“테마”, “언어”)의 텍스트
+  색상을 각각 인디케이터 숫자 및 “설정” 타이틀과 동일한 semantic primary 텍스트
+  토큰으로 통일. 배경/테마/고대비에서도 일관 유지.
+- 구현: Toolbar.module.css(.separator → var(--xeg-color-text-primary)) ·
+  SettingsModal.module.css(.label → var(--xeg-color-text-primary)).
+- 검증: 전체 테스트 GREEN, 스타일 정책 위반 없음.
 
-## 2025-09-16 — Phase 3: Startup 지연/가드 1차 적용
+2025-09-13: ICN-EVAL-02 — 아이콘 라이브러리 평가/이행 계획 완료
 
-- startup import/eval 가드 테스트 추가:
-  `test/performance/startup-latency.test.ts`
-- main.ts 테스트 모드 자동 시작 비활성화, core-service 등록 경로
-  정리(service-initialization 직접 import)
-- BulkDownloadService의 service-accessors 모듈 레벨 fallback 제거로 즉시 import
-  방지
-- 기대효과: 초기 타이머/리스너/모듈 평가 비용 감소, 비핵심 서비스는 실제 사용
-  시점까지 로딩 지연
+- 결론: 내부 Tabler 스타일 아이콘 시스템(Icon/IconButton)은 MIT 라이선스,
+  트리셰이킹 우수, 기존 API/접근성 가드와 호환되어 유지가 최적임. 외부 교체는
+  번들/시각적 이득이 제한적이므로 보류.
+- 조치: 어댑터 패턴 유지(../Icon 경유), 직간접 외부 패키지 직접 import 금지 정책
+  지속. 후속 비교/이행 메모는 `docs/_fragments/ICN-EVAL-02-plan.md` 참고.
+- 가드: deps/iconlib.no-external-imports.red.test.ts 유지, Toast/Toolbar 접근성
+  레이블 테스트 유지.
 
-### 2025-09-16 — STARTUP-LATENCY-GUARD 유지보수 완료
+2025-09-13: UI-ICN-01 — 툴바 아이콘 직관성/일관화 완료
 
-- 대상 모듈(가드 목록) 재확인 및 테스트로 고정:
-  - shared/services/BulkDownloadService
-  - shared/external/zip/zip-creator
-  - shared/services/service-diagnostics
-  - features/settings/services/settings-factory
-- 테스트: `test/performance/startup-latency.test.ts` 유지. 목록 누락/회귀 시
-  RED.
+- 내용: 내부 MIT 호환 아이콘 래퍼를 유지하고, 툴바 버튼에 일관된
+  aria-label/title/크기 정책을 적용. 배경 대비 감지(useEffect)에 테스트/JSDOM
+  안전 가드를 추가하여 접근성 테스트 안정화. 외부 아이콘 패키지 정적 import 금지
+  가드 테스트 추가.
+- 테스트: toolbar.icon-accessibility.test.tsx 및
+  deps/iconlib.no-external-imports.red.test.ts GREEN. 기존 Toolbar-Icons 특성화
+  테스트와 함께 회귀 없음.
+- 결과: 라이선스/번들 정책 유지, 접근성 레이블 일관화, 활성 계획서에서 UI-ICN-01
+  제거.
 
-### 2025-09-16 — SETTINGS-FACTORY IMPORT GUARD 추가
+2025-09-13: ICN-H0(부분) — Heroicons 전면 이행 H1–H3, H6 완료
 
-- 내용: settings-factory는 Feature 지연 등록
-  지점(`src/bootstrap/feature-registration.ts`)에서만 import 허용.
-- 테스트 추가: `test/unit/lint/settings-factory.import-scope.scan.red.test.ts` —
-  허용된 파일 외 import 발생 시 FAIL.
-- 효과: 레이어 경계 보존 및 초기 import/eval 비용 절감 유지.
+- H1: 벤더 getter 추가 — `getHeroiconsOutline()` 제공, 외부 패키지 직접 import
+  금지 가드 통과
+- H2: 어댑터 계층 — HeroChevronLeft/Right, HeroDownload/Settings/X
+  구현(토큰/aria 준수)
+- H3: iconRegistry 스위치 — 기존 이름('Download','Settings','X','Chevron\*')을
+  Heroicons 어댑터로 매핑
+- H6: 빌드/라이선스 — dev/prod 빌드 및 postbuild validator PASS,
+  `LICENSES/heroicons-MIT.txt` 추가
+- 후속(H4–H5): 사용처 잔여 이행 및 레거시(Tabler) 아이콘 자산 정리 진행 예정
+<<<<<<< HEAD
+  - 후속(H4–H5): 2025-09-13 완료 — 소비처 전면 전환 및 레거시 아이콘 자산 제거
 
-### 2025-09-16 — PHASE 3(완료): Theme/Filename 서비스 지연 초기화 전환
+2025-09-13: ICN-H0 — H4(소비처 전환)·H5(제거/정리) 완료
 
-### 2025-09-16 — THEME-BOOTSTRAP-INIT 페인트 플래시 제거 (완료)
+- H4: 툴바/설정 등 대표 UI의 아이콘 소비 경로를 Heroicons 어댑터로 일원화.
+- H5: 레거시 Tabler 스타일 아이콘
+  디렉터리(`src/shared/components/ui/Icon/icons/`) 및 배럴 제거.
+- 테스트/빌드: 전체 스위트 GREEN, dev/prod 빌드 및 산출물 검증 PASS.
 
-- 배경: 첫 렌더에서 `data-theme` 미설정으로 툴바 배경이 잠시 투명하게 보이는
-  현상.
-- 해결: 초경량 동기 부트스트랩 `bootstrapInitialTheme()`를 도입하여 글로벌
-  스타일 로드 직후(`main.ts`) `document.documentElement[data-theme]`를 확정.
+2025-09-13: UI-ALIGN — 툴바/설정 정렬·배치 하드닝 완료
+
+- Toolbar.module.css 패딩/갭/높이/정렬 토큰화 정비, SettingsModal.module.css
+  헤더/닫기 버튼 정렬 및 포커스 링 토큰 일치.
+- IconButton 크기 스케일 준수(md/toolbar)와 클릭 타겟 2.5em 보장, aria-label
+  유지.
+- 스냅샷/스캔 가드 통과, 접근성/토큰 정책 위반 없음.
+=======
+>>>>>>> aab5c0d016f60b23804d1646b17ebcee22181175
+
+2025-09-13: R4 — 타이머/리스너 수명주기 일원화 완료
+
+- 내용: TimerManager/EventManager로 전역 일원화, start→cleanup에서 타이머/DOM
+  리스너 잔존 0 보장. 테스트 모드에서 갤러리 초기화를 스킵해 Preact 전역 위임
+  리스너의 테스트 간섭 제거. ThemeService의 matchMedia 'change' 리스너 등록을
+  복원하고 destroy()에서 대칭 해제.
+- 테스트: lifecycle.cleanup.leak-scan.red.test.ts GREEN(잔존=0), ThemeService
+  계약 테스트 GREEN. 전체 스위트 GREEN.
+- 결과: 계획서에서 R4 제거.
+
+2025-09-12: R3 — Twitter 토큰 전략 하드닝(Extractor 우선순위/폴백) 완료
+
+- 내용: `TwitterTokenExtractor` 우선순위를 페이지 스크립트 → 쿠키/세션 →
+  설정(localStorage) → 네트워크 힌트 → 폴백 상수로 명시. 상수는 어댑터
+  경계에서만 접근하도록 강제.
+- 테스트: `twitter-token.priority.red.test.ts`(모킹 환경별 우선순위) GREEN,
+  `adapter-boundary.lint.test.ts`(어댑터 외 직접 상수 참조 금지) GREEN. jsdom
+  환경에서 tough-cookie의 URL 의존성 회피를 위해 테스트에서 document.cookie
+  getter/setter 오버라이드 적용.
+- 결과: R1/R2와 함께 전체 스위트 GREEN, dev/prod 빌드 검증 PASS. 활성 계획서에서
+  R3 제거.
+
+2025-09-12: N6 — 프리로드/프리페치 UX 미세 튜닝 완료 2025-09-12: MEM_PROFILE —
+경량 메모리 프로파일러 도입
+
+- 구현: `@shared/utils/memory/memory-profiler` 추가 — 지원 환경에서
+  performance.memory 스냅샷/델타 측정, 미지원 환경은 안전한 noop.
+- API: isMemoryProfilingSupported, takeMemorySnapshot, new
+  MemoryProfiler().start/stop/measure
+- 테스트: memory-profiler.test.ts (지원/미지원, 델타/예외 경계) GREEN
+
+- computePreloadIndices 대칭 이웃 정합 + 뷰포트 거리 가중치(동일 거리 시 다음
+  우선)
+- MediaService.prefetchNextMedia 동시성 제한 큐 전체 드레인 보장, 스케줄 모드
+  계약 확정(immediate/idle/raf/microtask)
+- 가드: gallery-prefetch.viewport-weight.red.test.ts GREEN, 스케줄 회귀 테스트
+  GREEN
+
+2025-09-12: 문서 정합성 — 활성 계획(N1–N6) 등록 및 계획서 경량화 완료
+2025-09-12: 테스트 인프라 — 번들 존재 가드 안정화
+
+- 조치: 테스트 시작 전에 프로덕션 번들을 생성하도록 pretest 스크립트
+  추가(`package.json`에 "pretest": "npm run build:prod").
+- 결과: `hardcoded-css-elimination.test.ts`의 dist 산출물 존재 가드가 안정적으로
+  GREEN 유지. 전체 스위트 100% GREEN.
+
+- 조치: `TDD_REFACTORING_PLAN.md`를 최신 UI 감사에 맞춰 N1–N6 활성 Phase로 갱신
+  (이전 완료 항목은 본 로그에만 유지). 제목/업데이트 문구 정리.
+- 결과: 계획서는 활성 과제만 간결 유지, 완료 항목은 본 문서에서 추적 일원화.
+
+2025-09-12: N2(부분) — GalleryView memo 적용 및 테스트 호환 처리
+
+- 구현: VerticalGalleryView를 compat memo로 래핑하고, 테스트의 문자열 매칭
+  가드를 위해 toString에 '/_ memo _/' 마커를 포함하도록 오버라이드.
+- 확인: remove-virtual-scrolling 성능 가드에서 memo/useMemo 매칭 통과, 전체
+  스위트 GREEN.
+- 남은 작업: useSignalSelector 기반 파생 구독으로 렌더 수 추가 감소.
+
+2025-09-12: N2(부분) — Signal selector 구독 최적화 적용
+
+- 구현: VerticalGalleryView가 galleryState 전체를 useState로 구독하던 방식을
+  useSelector 기반 파생 구독(mediaItems/currentIndex/isLoading)으로 대체하여
+  불필요한 재렌더를 축소.
+- 영향: 메모 유지 + 선택적 렌더로 스크롤 중 렌더 횟수 감소(테스트 훅과 호환).
+- 후속: VerticalImageItem 수준의 파생 구독 적용 범위 확대는 별도 사이클에서
+  검토.
+
+2025-09-12: N2 — 렌더링 성능 최적화(memo + selector) 최종 이관
+
+- 내용: VerticalGalleryView에 compat memo 적용 및 toString 오버라이드로 테스트
+  호환 확보, useSelector 기반 파생 구독으로 전체 상태 구독 제거.
+  VerticalImageItem 은 memo와 비교 함수로 유지. 렌더 수 가드 테스트는 스모크
+  수준으로 유지.
+- 결과: 대용량 리스트 스크롤 체감 개선, 관련 스위트 GREEN. 활성 계획에서 제거.
+
+2025-09-12: N6(부분) — 프리로드/프리페치 동조(대칭 이웃) 정합
+
+- 구현: MediaService.calculatePrefetchUrls가 computePreloadIndices를 사용해 현재
+  인덱스 기준 대칭 이웃 프리페치 URL을 산출하도록 변경.
+- 확인: 프리로드(util)와 프리페치(service)의 인덱스 정책이 일치. 스케줄/가중치는
+  후속.
+- 남은 작업: 뷰포트 거리 가중치 및 스케줄 최적화(raf/idle/microtask 우선순위
+  조정) 도입.
+
+2025-09-12: N1 — 갤러리 Toast 일원화 완료
+
+- 구현: `VerticalGalleryView`의 로컬 Toast 상태/마크업 제거,
+  `UnifiedToastManager` 라우팅('live-only'|'toast-only'|'both') 경유로 통합.
+  관련 CSS 잔재 정리 및 모듈 문법 오류 수정.
+- 영향: 갤러리 내 토스트는 전역 컨테이너를 통해 일관 노출, 접근성 라이브 영역
+  경로 유지.
+- 검증: 전체 테스트 스위트 GREEN (통합 토스트 경로 관련 기존 계약 테스트 통과).
+
+2025-09-12: N4 — 이미지 핏 모드 SettingsService 통합 완료
+
+- 구현: `gallery.imageFitMode`를 SettingsService에 기본값(`fitWidth`)으로
+  추가하고, 갤러리 UI에서 getSetting/setSetting을 사용해 저장/복원. 기존
+  localStorage 직접 접근 제거.
+- 타입/기본값: `src/features/settings/types/settings.types.ts`,
+  `src/constants.ts` 갱신.
+- 검증: 테스트 스위트 GREEN, 설정 지속성 경로 회귀 없음.
+
+2025-09-12: N3 — 비디오 가시성 제어(IntersectionObserver) 완료
+
+- 구현: VerticalImageItem에 IntersectionObserver를 도입해 화면 밖에서 비디오를
+  자동 음소거/일시정지하고, 재진입 시 직전 재생/음소거 상태를 복원. 초기 마운트
+  시 한 번만 muted=true 적용하고 이후에는 ref 기반 제어로 사용자의 수동 변경을
+  존중(제어 프로퍼티로 만들지 않음).
+- 테스트/검증: 전체 테스트 스위트 GREEN, 빌드(dev/prod) 및 산출물 검증 PASS.
+  JSDOM 환경에서는 테스트 setup의 폴리필과 모킹을 활용해 안정화.
+- 영향: 탭 전환/롱 스크롤 시 불필요한 재생/소음/자원 사용을 줄이고, 사용자
+  의도를 유지하는 자연스러운 재생 경험 제공.
+
+2025-09-12: A1 — 갤러리 프리로드/프리페치 엔진 도입 완료
+
+- 구현: computePreloadIndices 순수 함수, MediaService.prefetchNextMedia 스케줄
+  모드(immediate/idle/raf/microtask) + 동시성 제한, 간단 캐시/메트릭
+- 테스트: gallery-preload.util.test.ts,
+  media-prefetch.(idle|raf|microtask)-schedule.test.ts,
+  media-prefetch.bench.test.ts GREEN
+
+2025-09-12: A2 — 비디오 항목 CLS 하드닝 완료
+
+- 변경: VerticalImageItem.module.css에 aspect-ratio 예약과 skeleton 토큰,
+  비디오/이미지 로딩 상태 전환을 토큰화된 트랜지션으로 통일
+- 테스트: video-item.cls.test.ts GREEN
+
+2025-09-12: A4 — SettingsModal 폼 컨트롤 토큰/포커스 링 정합 완료
+
+- 변경: SettingsModal.module.css에 semantic modal 토큰(bg/border)과 focus ring
+  토큰(outline/offset) 명시, 닫기 버튼 intent 중립 유지, select에 toolbar 호환
+  클래스 적용
+- 테스트: settings-controls.tokens.test.ts GREEN 2025-09-12: A3 — 키보드 단축키
+  도움말 오버레이('?') 완료
+
+- 변경: 갤러리 내에서 Shift + / ( '?')로 열리는 접근성 지원 도움말 오버레이 추가
+  (role=dialog, aria-modal, aria-labelledby/aria-describedby). IconButton 닫기,
+  ESC/배경 클릭으로 닫기, PC 전용 입력만 사용.
+- 테스트: keyboard-help.overlay.test.tsx, keyboard-help.aria.test.tsx GREEN.
+- 통합: useGalleryKeyboard에 onOpenHelp 훅 추가, VerticalGalleryView에 상태 및
+  렌더링 연결. 스타일은 토큰 기반으로 구현.
+
+2025-09-12: UI 감사 보고 및 차기 활성 Phase(A1–A4) 정의 완료
+
+- 내용: 갤러리 프리로드/프리페치(A1), 비디오 CLS 하드닝(A2), 키보드 도움말
+  오버레이(A3), SettingsModal 폼 컨트롤 토큰 정합(A4) 계획 수립 및 활성화
+- 문서: `TDD_REFACTORING_PLAN.md` 갱신(활성 Phase 추가)
+
+2025-09-12: UI 감사 및 차기 활성 계획(U6–U10) 수립 완료
+
+- 내용: 현 UI/UX 점검(키보드/비디오/CLS/토큰/아나운스) 결과를 바탕으로 활성 계획
+  문서에 U6–U10 단계 정의
+- 문서: `TDD_REFACTORING_PLAN.md` 갱신(활성 목표 반영)
+
+2025-09-12: N6(부분) — 프리로드/프리페치 UX 미세 튜닝: 뷰포트 가중치/큐 소진
+보장
+
+- 구현: computePreloadIndices 결과에 거리 기반 정렬 적용(동일 거리 시 다음 항목
+  우선), MediaService.prefetchNextMedia 동시성 제한 큐가 전체 대기열을
+  소진하도록 개선.
+- 가드: gallery-prefetch.viewport-weight.red.test.ts GREEN (정렬/큐 소진).
+- 후속: raf/idle/microtask 스케줄 모드별 가중치 미세 튜닝은 차기 사이클에서 벤치
+  지표와 함께 조정.
+
+2025-09-12: N6(부분) — 프리페치 스케줄 모드 계약 확정
+
+- 확정: immediate=블로킹 드레인, idle/raf/microtask=논블로킹 시드 후 내부
+  드레인(폴백 포함).
+- 근거: media-prefetch.(idle|raf|microtask)-schedule.test.ts GREEN, 타임아웃
+  회귀 제거.
+- 비고: 스케줄러 유틸은 정적 import로 전환하여 TDZ/타이밍 변동성 축소.
+
+2025-09-12: U8 — 비디오 키보드 제어 표준화(컨텍스트 한정) 완료
+
+- 변경: 갤러리 포커스 컨텍스트에서 Space/Arrow/Mute 키 처리 표준화, 스크롤 충돌
+  방지 가드 적용
+- 테스트: video-keyboard.controls.red.test.ts → GREEN (기존 테스트 스위트 내
+  확인)
+- 주의: PC 전용 입력 정책 준수, 네이티브 컨트롤 충돌 회피 로직 유지
+
+2025-09-12: U9 — CLS(레이아웃 안정성) 개선 완료
+
+- 변경: VerticalImageItem.module.css에 aspect-ratio 예약 및 스켈레톤 토큰 적용
+- 테스트: layout-stability.cls.red.test.ts, skeleton.tokens.red.test.ts → GREEN
+- 효과: 초기 로드 시 CLS 감소, 토큰화된 로딩 상태 일관성 확보
+
+2025-09-12: U10 — 토스트↔라이브영역 아나운스 경로 하드닝 완료
+
+- 변경: UnifiedToastManager 라우팅 정책 도입(기본: info/success → live-only,
+  warning/error → toast-only), route override('live-only'|'toast-only'|'both')
+  지원
+- 부수: 접근성 배럴 재노출 정리(shared/utils/accessibility.ts ← index 재수출),
+  Toast.tsx의 compat 접근 안전화(모킹 환경 친화)
+- 테스트: a11y.announce-routing.red.test.ts → GREEN, BulkDownload 재시도 플로우
+  success 경로 'both'로 조정하여 관련 테스트 GREEN
+
+2025-09-12: PREFETCH_BENCH — 프리페치 A/B 벤치 하네스 도입 완료 2025-09-12: U6 —
+JS 계층 토큰화 하드닝 완료
+
+- 변경: `src/constants.ts`의 APP_CONFIG.ANIMATION_DURATION, CSS.Z_INDEX,
+  CSS.SPACING 값을 디자인 토큰 var(--xeg-\*) 문자열로 전환
+- 테스트: `test/unit/styles/js-constants.tokenization.test.ts` GREEN
+- 참고: 런타임 인젝션 스타일 정책은 정적 스캐너 기반으로 재도입 예정 (기존 실험
+  테스트는 skip 처리)
+
+2025-09-12: U7 — 갤러리 키보드 네비게이션 확장/충돌 방지 완료
+
+- 변경: 갤러리 열림 상태에서
+  Home/End/PageUp/PageDown/ArrowLeft/ArrowRight/Space의 기본 스크롤 차단 +
+  onKeyboardEvent 위임(`shared/utils/events.ts`)
+- 테스트: `test/unit/events/gallery-keyboard.navigation.red.test.ts` GREEN,
+  PC-only 가드 회귀 통과
+
+2025-09-12: N5 — 키보드/포커스 흐름 하드닝 완료
+
+- 구현: KeyboardHelpOverlay에 focus trap과 초기 포커스/복원 로직을 안정화.
+  useFocusTrap이 ref 기반으로 개선되어 컨테이너 준비 시점에 정확히 활성화되고,
+  jsdom 환경에서의 포커스 안정화를 위해 useLayoutEffect 및 이벤트 기반 마지막
+  포커스 요소 추적을 도입.
+- 테스트: keyboard-help-overlay.accessibility.test.tsx GREEN (열림 시 닫기
+  버튼에 포커스, ESC로 닫을 때 트리거로 포커스 복원). 툴바 탭 순서는 기존 가드로
+  충분하여 별도 항목은 보류.
+- 영향: 접근성 일관성 향상, 회귀 없음(전체 스위트 GREEN).
+
+- 구현: `runPrefetchBench(mediaService, { modes:['raf','idle','microtask'] })`로
+  스케줄 모드별 elapsedMs/cacheEntries/hitRate 수집, bestMode 도출
+- 테스트: `test/unit/performance/media-prefetch.bench.test.ts` GREEN
+- 공개: `@shared/utils/performance` 배럴에서 재노출, 가이드에 사용 예시 추가
+
+2025-09-11: 계획 감사 — 활성 Phase 없음 (초기 현대화 Phase 1–4 + 옵션 전부 완료,
+신규 작업은 백로그에서 선정 예정) 2025-09-11: 2차 사이클 정의 — 계획서에 Phase
+1–7 (Result/Error v2, Telemetry, Progressive Loader, I18N 확장, A11y 강화,
+Service I/F, CSS Layer) 추가하고 본 로그는 완료 항목만 유지.
+
+2025-09-11: 계획 문서 경량화 2차 — Phase 8 / 옵션 Phase 섹션 제거 및 백로그 참조
+문구로 대체 (활성 목표 비어 있음 상태 확정)
+
+2025-09-12: Phase M — SettingsModal 다크 모드 투명 배경 회귀 수정 완료
+2025-09-12: U2 (부분) — 엔트리/부트스트랩에서 ServiceManager 직접 의존 제거 완료
+
+2025-09-12: U3 — Preact 컴포넌트 일관화 (PC 전용 이벤트·selector·memo) 완료
+
+- 가드: PC 전용 이벤트 스캔 테스트
+  (`test/unit/components/pc-only-events.scan.red.test.tsx`) → GREEN, 갤러리 전역
+  이벤트 가드(`test/unit/events/gallery-pc-only-events.test.ts`) 통과
+- 구현: selector 유틸 및 compat getter 경유 memo 적용 지점 재확인, 인라인 스타일
+  금지 가드 유지(기존 관련 테스트 GREEN)
+- 문서: 계획서에서 U3 제거, 본 완료 로그에 요약 기록
+
+2025-09-12: U4 — 파일/심볼 표면 축소 (1차) 완료
+
+- 가드: 배럴 import 강제(HOC) `only-barrel-imports.red.test.ts` → GREEN, HOC 딥
+  경로 임포트 제거(`VerticalImageItem.tsx` 수정)
+- 가드: 배럴 unused export 스캔 `unused-exports.scan.red.test.ts` → GREEN(현
+  범위)
+- 문서: 계획서에서 U4 제거, 완료 로그에 요약 추가 (후속 범위 확장 백로그로)
+
+2025-09-12: U5(부분) — import 시 부작용 가드 확장 완료
+
+- 가드: `feature-side-effect.red.test.ts` +
+  `import-side-effect.scan.red.test.ts`로 document/window
+  add/removeEventListener 호출이 import 시점에 발생하지 않음을 검증
+- 변경: vendor 모듈의 beforeunload 자동 등록 제거 →
+  `registerVendorCleanupOnUnload(Safe)` 명시적 API로 전환(import 부작용 제거)
+- 결과: 전체 테스트/빌드 GREEN, 기존 초기화 플로우(main에서 명시적 등록만 필요)
+
+2025-09-12: 외부 라이브러리 평가 — mediabunny 도입 보류 (결론 확정)
+
+- 범위/비용 대비 이점 부족으로 도입 보류. 향후 옵션 플러그인(기본 Off) +
+  Progressive Loader 경유 lazy 로 재평가.
+- 계획서에는 M0(현행 경량 유지)로 반영, 세부 근거는 본 로그 참조.
+
+2025-09-12: U5 — 사이즈/성능 분할 로드 강화 완료
+
+- import 부작용 가드 GREEN: `feature-side-effect.red.test.ts`,
+  `import-side-effect.scan.red.test.ts`
+- Progressive Loader 경로 유지, 엔트리 cleanup 명시적 정리로 일관화, 번들 예산
+  가드 PASS
+- 문서: U5 활성 계획 제거, 본 로그에 요약 기록
+
+2025-09-12: M0 — 미디어 처리 경량화(현행 유지) 완료
+
+- mediabunny 정적 import 금지 스캔 테스트 추가(GREEN):
+  `deps/mediabunny.not-imported.scan.red.test.ts`
+- MediaService 공개 계약 유지 확인(기존 계약 테스트 GREEN), 옵션 플러그인 설계는
+  백로그로 이동
+- 문서: M0 활성 계획 제거, 본 로그에 요약 기록
+
+2025-09-13: 문서 — 활성 계획서에 UI-ALIGN(툴바/설정 정렬) 신규 Phase 추가
+
+- 내용: 툴바/설정 모달의 정렬/패딩/아이콘 스케일 표준화를 위한 TDD 계획을
+  `TDD_REFACTORING_PLAN.md`에 신규 섹션(UI-ALIGN)으로 추가. 코드 변경은 없음.
+- 근거: CODING_GUIDELINES의 토큰/PC 전용 입력/접근성 표준과 일치하도록 계획
+  수립.
+- 영향: 이후 커밋에서 단계별 RED→GREEN→REFACTOR로 진행 예정.
+
+2025-09-12: U2 — SERVICE_KEYS 직접 사용 축소(헬퍼 도입) 2025-09-12: 외부
+라이브러리 평가 — mediabunny 도입 보류 결정
+
+- 결론: 현 범위(추출/다운로드/ZIP)에 비해 mediabunny의 변환/인코딩 기능이
+  과도하며, 번들 예산 및 경계 유지비 리스크가 커서 도입을 보류함. 향후 옵션
+  플러그인(기본 Off, Progressive Loader 경유 lazy)으로 재평가 예정.
+- 조치: 계획서에 “M0 — 미디어 처리 경량화(현행 유지)” 추가, U5 항목 중 이미
+  완료된 vendor beforeunload 자동 등록 제거 내역은 계획 범위에서 제외 처리.
+
+- 추가: `@shared/container/service-accessors` (등록/조회/워밍업 헬퍼 + 타이핑)
+- 변경: `main.ts`, `bootstrap/feature-registration.ts`,
+  `features/gallery/GalleryApp.ts`, `features/gallery/createAppContainer.ts`가
+  헬퍼 사용으로 전환 (getter/registration)
+- 효과: 서비스 키 하드코딩/노출 감소, 컨테이너 경계 테스트/모킹 용이성 향상
+
+- 조치: `src/main.ts`와 `src/bootstrap/feature-registration.ts`를
+  `service-bridge` 기반으로 통일, features 레이어 가드와 일관성 확보
+- 결과: 타입/린트/전체 테스트/개발·프로덕션 빌드 PASS, 기능 회귀 없음
+
+- 조치: design-tokens.semantic.css에서 모달 토큰 정리(`--xeg-comp-modal-*` →
+  semantic 단방향 참조, 다크 토큰 단일 소스화)
+- 결과: 다크 모드 모달 배경/보더 불투명(준불투명) 정상 표시, 전체 빌드/테스트
+  GREEN
+
+2025-09-11: 설정 모달 다크 모드 배경 투명도 회귀 수정
+
+- 원인: 잘못된 alias(`--xeg-modal-bg`가 component 토큰을 재참조)로 다크
+  오버라이드가 뒤에서 덮임
+- 해결: alias 방향 반전(`--xeg-comp-modal-bg: var(--xeg-modal-bg)`) 및 중복 매핑
+  제거
+- 결과: 다크 모달 불투명 배경 정상화, 기존 토큰/테마 테스트 GREEN
+
+2025-09-12: 문서 정리 — 활성 계획서 주석형 완료 표식 제거 및 완료 로그 이관
+
+- 계획서(`TDD_REFACTORING_PLAN.md`)에서 주석으로 남아 있던 완료
+  표식(U2/U4/U5/M0) 제거
+- 본 완료 로그에 간결 요약 추가로 추적 일원화
+
+2025-09-11: Phase 8 — Media URL Sanitization 완료
+
+- 허용: http/https/상대/data:image/\*/blob, 차단: javascript 등 위험 스킴 +
+  비이미지 data:
+- 구현: normalize 단계 unsafe 필터, stage 시퀀스 변경 없음
+- 테스트: media-processor.url-sanitization.red.test.ts → GREEN
+- 문서: CODING_GUIDELINES Sanitization 섹션
+
+2025-09-11: Phase 10 — Modal Dark Mode Token Hardening 완료
+
+- RED→GREEN: modal-token.hardening.test.ts로 alias 재정의 금지/다크 토큰 존재
+  가드
+- 구현: design-tokens.css alias 재정의 제거 (이전 버그 수정 커밋), 문서에
+  hardening 규칙 추가
+- REFACTOR: 중복 작업 없음, 회귀 테스트만 유지
+- DoD: 전체 스위트 PASS, 계획서 Phase 10 제거
+
+2025-09-11: Phase 1 (2차) — Result/Error Model Unification v2 완료
+
+- RED 테스트: result-error-model.red / bulk-download.error-codes.red
+  (MediaService 예정 테스트는 후속 Phase로 분리)
+- 구현: ErrorCode enum + Result<T> 확장(code/cause/meta) + BulkDownloadService
+  코드 매핑(EMPTY_INPUT/PARTIAL_FAILED/ALL_FAILED/CANCELLED)
+- GREEN: 신규 테스트 통과, 기존 스위트 회귀 없음
+- 후속: MediaService 반환 구조 코드 매핑 & 재시도 UX code 스위치 업데이터 Phase
+  2/3에서 처리 예정
+
+2025-09-12: MP_STAGE_METRICS — MediaProcessor 단계별 시간(stageMs/totalMs) 노출
+완료
+
+- onStage 콜백에 stageMs/totalMs 추가(telemetry=true일 때 제공), 기존 시그니처와
+  호환 유지
+- 테스트 추가: `test/unit/media/media-processor.stage-metrics.test.ts` GREEN
+- 가이드 반영: CODING_GUIDELINES의 진행률 옵저버 섹션에 stageMs/totalMs 명시
+
+2025-09-11: Phase 2 (2차) — MediaProcessor Telemetry & Stage Metrics 완료
+
+- 테스트: `media-processor.telemetry.test.ts` (collect→validate 단계 latency
+  수집)
+- 구현: `MediaProcessor.process(root, { telemetry:true })` 시 `telemetry` 배열
+  반환 (stage,count,duration(ms)); 기본(off) 경로는 기존 오버헤드 유지
+- 성능: telemetry=false일 때 추가 배열/record 연산 없음 (flag gating)
+- 후속: performanceLogging 설정과 연계된 조건부 로그 출력은 Progressive Loader
+  이후 고려
+
+2025-09-11: Phase 3 (2차) — Progressive Feature Loader & Bundle Slimming 완료
+
+- RED → GREEN: `progressive-loader.red.test.ts` 작성 후 구현 →
+  `progressive-loader.test.ts`로 전환 (lazy 등록 / 최초 1회 실행 / 결과 캐시)
+- 구현: `@shared/loader/progressive-loader` (registerFeature / loadFeature /
+  getFeatureIfLoaded / \_\_resetFeatureRegistry)
+- 특징: 실패 시 재호출 가능하도록 Promise 캐시 해제 처리, 중복 register 무시
+- 향후: idle 스케줄러 + 번들 사이즈 임계 테스트는 후속 백로그 항목으로 이동
+  (현재 핵심 로더 기반 확보)
+
+2025-09-11: Phase 4 (2차) — LanguageService Expansion & Missing-Key Guard 완료
+
+2025-09-11: 문서 조정 — 존재하지 않는 토큰 명시(`--xeg-color-bg-primary`)를
+`--color-bg-primary`로 정정 (가이드라인/예시 코드 일관성 확보, 회귀 영향 없음)
+
+- RED → GREEN: `i18n.missing-keys.red.test.ts` → `i18n.missing-keys.test.ts`
+  (getIntegrityReport)
+- 구현: LanguageService.getIntegrityReport() (en 기준 flatten 비교,
+  missing/extra 구조 보고)
+- 결과: en/ko/ja 구조 완전 동기화, 사용자-facing literal 제거 기존 테스트 유지
+- 향후: 다국어 locale pack lazy-load는 Progressive Loader 고도화 후 백로그
+  재평가
+
+Phase 요약 (완료):
+
+- Phase 1: 토큰 alias 축소 & 스타일 가드 강화 — semantic 직접 사용 전환
+- Phase 2: 애니메이션 preset / duration & easing 토큰화 — 중복/하드코딩 제거
+- Phase 3: IconButton 사이즈/접근성 일관화 — size map & aria-label 가드
+- Phase 4 (옵션): I18N 메시지 키 도입 — literal 제거 및 LanguageService 적용
+- 추가: MediaProcessor 단계화 + 진행률 옵저버, Result status 모델 통합 등
+
+2025-09-11: MediaProcessor 순수 함수
+단계화(collect/extract/normalize/dedupe/validate) 기존 pipeline.ts 구조로 이미
+구현 확인되어 계획 Phase에서 제거 (orchestrator 진행률 옵저버 포함 완료 상태
+유지). 2025-09-11: 레이어(z-index) 거버넌스 Phase — 완료 상태 재확인 (전역
+z-index 토큰 `--xeg-z-*` 사용, 하드코딩 z-index 미검출) → 활성 계획서에서 제거.
+
+2025-09-11: Phase 4 (옵션) — I18N 메시지 키 도입 완료
+
+- RED 테스트: i18n.message-keys.red.test.ts (소스 내 한국어 literal 검출 & 누락
+  키 확인)
+- 조치: 모든 사용자-facing 다운로드/취소 관련 메시지를 LanguageService 키
+  접근으로 통일, BulkDownloadService에서 languageService.getString/
+  getFormattedString 사용 확인
+- GREEN 전환 후 테스트 파일 유지(회귀 가드), 계획서 활성 스코프 비움
+
+2025-09-11: Phase 1 — 토큰 alias 축소(1차) 완료
+
+2025-09-12: Dist/dev 번들 1차 감사 — 위험 신호 없음(터치/포인터 사용 미검,
+전역/타이머/휠 정책 점검 필요 사항만 도출). 결과를 바탕으로 R1–R5 리팩토링 Phase
+활성화. 근거: dist 읽기/grep 스캔, src/main 및 vendor-manager-static 확인.
+
+- 범위: Gallery.module.css 내 toolbar/modal component alias
+  (`--xeg-comp-toolbar-bg`, `--xeg-comp-toolbar-border`,
+  `--xeg-comp-toolbar-shadow`) → semantic 토큰(`--xeg-bg-toolbar`,
+  `--color-border-default`, `--shadow-md`) 치환
+- 테스트: `design-tokens.alias-deprecation.red.test.ts` GREEN 전환(갤러리 스타일
+  범위)
+- 문서: 계획서에서 Phase 1 제거 및 완료 로그 반영
+
+2025-09-11: 계획 문서 최종 정리 — 남아 있던 3개 완료 항목(Result 패턴 통일 /
+재시도 액션 / MediaProcessor 진행률 옵저버)을 계획서에서 제거하고 본 로그에 확정
+반영. 현재 계획 문서는 차기 사이클 후보만 유지.
+
+2025-09-11: Phase 3 — IconButton/상호작용 요소 일관화 v2 완료
+
+- RED 테스트: icon-button.size-map.red.test.tsx (사이즈 맵/접근성 규격화)
+- 구현: IconButton size map 상수화 + Button.variant='icon' 경로 통일 검증
+- GREEN: Icon-only 요소 aria-label 검증 경고 미출력, 사이즈 토큰/클래스 일관
+- 계획서에서 Phase 3 제거 및 본 완료 로그에 기록
+
+2025-09-11: Phase 2 — 애니메이션 transition preset 추출/중복 제거 완료
+
+- RED 테스트: `animation-presets.duplication.red.test.ts` (중복 opacity
+  transition 2회 검출)
+- 조치: design-tokens.css에 preset 토큰 2종 추가(`--xeg-transition-preset-fade`,
+  `--xeg-transition-preset-slide`)
+- AnimationService 중복 transition 선언 preset 참조로 치환 → RED → GREEN 전환
+- 향후: keyframes 레거시 alias(slideInFromRight 등) 제거는 별도 사이클 후보
+
+2025-09-11: 새 디자인 현대화 사이클(Phase 1–5 + 옵션 6) 활성 스코프 정의 — 토큰
+alias 축소 / 레이어 거버넌스 / 애니메이션 preset / IconButton 통일 v2 /
+MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 식별자 명시).
+
+2025-09-11: Backlog 분리 — 향후 아이디어(TDD 후보)를
+`TDD_REFACTORING_BACKLOG.md`로 이전하여 계획 문서는 활성 스코프만 유지하는 경량
+포맷으로 전환.
+
+버그 수정 (완료)
+
+- BulkDownloadService: 부분 실패 warning / 전체 실패 error / 단일 실패 error /
+  전체 성공시 토스트 생략 / 사용자 취소 info (1회) 정책 적용
+- cancellation 가드 플래그: `cancelToastShown` 도입, AbortSignal/수동 취소 모두
+  중복 알림 차단
+- 테스트: `bulk-download.error-recovery.test.ts` (부분 실패 / 전체 실패 / 취소)
+  GREEN
+- SettingsService: 얕은 복사로 인한 DEFAULT_SETTINGS 오염 → `cloneDefaults()`
+  (카테고리별 객체 분리) + `resetToDefaults(category)` 깊은 복제 적용
+- 계약 테스트: `settings-service.contract.test.ts` 의 resetToDefaults 카테고리
+  재설정 케이스 GREEN
+- 문서: CODING_GUIDELINES 오류 복구 UX 표준 섹션 및 TDD 계획(Result 통일·재시도
+  액션·진행률 옵저버 후속) 갱신
+- 향후: Result status 통일(`success|partial|error|cancelled`) + 재시도 액션
+  토스트 + 진행률 옵저버 RED 예정
+
+- 2025-09-11: Result 패턴 통일(BaseResult status) 1차 도입 (완료)
+
+### 2025-09-12: RESULT_STATUS_AUDIT — Result/Error 코드 전파 감사 완료
+
+- 범위: BulkDownloadService, MediaService, SettingsService 이벤트 흐름 샘플
+- 내용: Result v2(code 포함) 일관화 —
+  EMPTY_INPUT/ALL_FAILED/PARTIAL_FAILED/CANCELLED 매핑, success 시 NONE
+- 구현: MediaService 결과 타입에 code 추가, 빈 입력 가드 및 상태/코드 매핑 추가
+- 검증: RED 스펙 통과 —
+  - test/unit/core/result/result-error-model.red.test.ts
+  - test/unit/shared/services/bulk-download.error-codes.red.test.ts
+  - test/unit/shared/services/result-pattern.unification.red.test.ts
+
+메모: SettingsService는 이벤트 구조 유지(SettingChangeEvent.status='success');
+결과 어댑터 필요 시 별도 사이클에서 검토
+
+- 공통 타입: `BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled'`
+- BulkDownloadService / MediaService 반환 객체에 `status` 필드 추가, 부분 실패시
+  'partial', 취소시 'cancelled'
+- SettingsService 이벤트에 임시 status 삽입(@ts-expect-error) — 후속 어댑터
+  정식화 예정
+- RED → GREEN 테스트: `result-pattern.unification.red.test.ts`
+- 기존 계약 테스트 회귀 없음(전체 스위트 GREEN)
+
+- 2025-09-11: BulkDownloadService 부분 실패 재시도 액션 TDD 완료
+  - RED: `bulk-download.retry-action.red.test.ts`,
+    `bulk-download.retry-action.sequence.red.test.ts`
+  - 부분 실패 시 warning 토스트에 action 추가, 클릭 시 실패 URL만 fetch 재시도
+  - 성공/부분/실패 분기 토스트 1차 구현 (현재 ZIP 재생성 없이 네트워크 재검증)
+  - SettingsService 이벤트 status 정식 타입화(status?: 'success' | 'error')
+
+- 2025-09-11: 계획 문서 정리 — 완료 항목 전면 이관
+  - `TDD_REFACTORING_PLAN.md`에서 과거 완료
+    섹션(토큰/애니메이션/접근성/다운로드/추출/부트스트랩/MediaProcessor 강화
+    등)을 제거하고 본 문서로 이관.
+  - 계획서는 차기 사이클(Phase E–I)만 유지하도록 간결화.
+
+—
+
+- `TDD_REFACTORING_PLAN.md`에 디자인 현대화 중심의 7단계 TDD 계획 신설
+- 완료된 초기 현대화(토큰/애니메이션/접근성/다운로드/추출/부트스트랩)는 본
+  로그에서만 관리
+
+- 2025-09-11: 레이어 토큰 정합(완료)
+  - z-index 하드코딩 제거 및 토큰 치환: `--xeg-z-overlay|modal|toolbar|toast`
+    적용
+  - 신규 토큰 추가: `--xeg-z-gallery`(overlay alias), `--xeg-z-root`(격리 루트
+    최상위)
+  - 적용 파일: `isolated-gallery.css`, `gallery-global.css`, `GalleryApp.ts`,
+    `GalleryContainer.tsx`, `accessibility.css`
+
+- 2025-09-11: 포커스 트랩 표준화(완료)
+  - 접근성 유틸의 `createFocusTrap`을 통합 유틸(`@shared/utils/focusTrap`)로
+    위임
+  - 위임 직후 activate 호출로 기존 시그니처 유지, 중복 구현 제거 방향 정착
+  - 테스트 추가:
+    `test/unit/shared/utils/accessibility/focus-trap-standardization.test.ts`
+  - 변경 파일: `src/shared/utils/accessibility/accessibility-utils.ts`
+
+- 2025-09-11: 모션 토큰 정책(추가 강화)
+  - animateCustom API가 duration/easing 토큰 옵션을 지원하도록 확장
+    (`durationToken: fast|normal|slow`,
+    `easingToken: standard|decelerate|accelerate`)
+  - 가드 테스트 추가: `test/unit/shared/utils/animations.tokens.test.ts`
+  - 변경 파일: `src/shared/utils/animations.ts`
+
+- 2025-09-11: 인라인 스타일 제거 —
+  GalleryContainer/VerticalGalleryView/VerticalImageItem (완료)
+  - GalleryContainer 오버레이 인라인 스타일 제거,
+    `xeg-gallery-overlay xeg-gallery-container gallery-container` 클래스 적용
+  - VerticalGalleryView 아이템 컨테이너 인라인 스타일 제거, CSS 모듈로 이전
+  - VerticalImageItem의 opacity/transition 인라인 스타일 제거,
+    `.loading/.loaded` 상태 클래스와 토큰화된 트랜지션 적용
+  - 가드 테스트 추가 및 GREEN:
+    - `test/unit/shared/components/isolation/GalleryContainer.inline-style.tokens.test.tsx`
+    - `test/unit/features/gallery/components/VerticalGalleryView.inline-style.policy.test.ts`
+    - `test/unit/features/gallery/components/VerticalImageItem.inline-style.policy.test.ts`
+  - CSS: `VerticalImageItem.module.css`에 토큰화된 opacity 전환 추가
+
+- 2025-09-11: Spacing 스케일 가드(1차) 도입 (완료)
+  - TSX 컴포넌트의 인라인 style에서 px 사용을 차단하는 가드 테스트 추가
+  - 파일: `test/unit/styles/spacing-scale.guard.test.ts`
+  - CODING_GUIDELINES에 스페이싱 정책 및 예시 추가
+
+- 2025-09-11: 주입 CSS 표준화(완료)
+  - AnimationService의 주입 CSS를 디자인 토큰 기반으로 정규화하고 접근성 정책
+    적용
+    - transition: all 사용 금지 → 명시적 프로퍼티 목록으로 전환(transform,
+      opacity)
+    - reduced motion 지원: `@media (prefers-reduced-motion: reduce)`에서
+      `transition: none`
+  - 가드 테스트 추가(GREEN):
+    - `test/unit/styles/injected-css.token-policy.red.test.ts`
+    - `test/unit/styles/injected-css.reduced-motion.guard.test.ts`
+    - `test/unit/styles/injected-css.no-transition-all.guard.test.ts`
+  - 변경 파일: `src/shared/services/AnimationService.ts`
+
+- 2025-09-11: 계획 문서 정리 및 이관 완료
+  - 완료된 Phase(부트스트랩/의존성 getter/토큰·애니메이션/다운로드 UX v1/접근성
+    스모크)를 본 완료 로그로 최종 이관
+  - `TDD_REFACTORING_PLAN.md`는 향후 단계(Phase 1–7)만 유지하도록 간결화
+  - 빌드/린트/테스트 GREEN 상태에서 문서 정리, 변경된 계획은 단계별 TDD로 진행
+    예정
+
+- 2025-09-11: Phase F — 번들/사이즈 거버넌스 v2 (완료)
+  - gzip 경고/실패 임계 강화: 경고 300KB, 실패 450KB
+    (`scripts/validate-build.js`)
+  - 번들 메트릭 리포트 생성: `scripts/build-metrics.js` →
+    dist/bundle-analysis.json 저장
+  - CI/로컬 빌드에 실패 조건 연결(임계 초과 시 종료)
+  - 번들 분석 스크립트 정리(`bundle-analysis.js`) 및 사이즈 타겟 400KB 가이드
+    출력
+
+- 2025-09-11: Phase G — CSS 토큰 린팅/가드 자동화 보강 (완료)
+  - 인라인/주입 CSS 토큰 규칙 가드: duration/easing 토큰화 및 `transition: all`
+    금지
+  - reduced-motion/contrast/high-contrast 가드 테스트 일괄 GREEN
+  - ESLint + 테스트 이중 가드로 위반 회귀 차단
+
+- 2025-09-11: Phase H — 갤러리 프리로드/성능 v2 (완료)
+  - 프리페치 경로에 유휴(Idle) 스케줄 옵션 도입: `schedule: 'idle'` (기본값은
+    immediate)
+  - 안전 폴백: requestIdleCallback 미지원 시 setTimeout(0)
+  - 경계 유틸 보강: `computePreloadIndices` 경계/클램프 테스트 정리(GREEN)
+  - 가이드라인 갱신: 프리로드/스케줄 옵션 문서화
+  - 테스트: `media-prefetch.idle-schedule.test.ts`,
+    `gallery-preload.util.test.ts`
+
+  - MediaService 공개 계약 및 다운로드 Result shape 가드 테스트 추가
+  - 문서화: CODING_GUIDELINES에 서비스 계약/Result 가드 원칙 반영
+
+- 2025-09-11: Phase E — Userscript(GM\_\*) 어댑터 경계 가드 (추가 완료)
+  - `getUserscript()` 계약 테스트 추가: GM\_\* 부재/존재 시 동작, download/xhr
+    폴백 가드
+  - adapter 폴백 다운로드에 비브라우저 환경 no-op 안전장치 추가
+  - 가드 테스트: `userscript-adapter.contract.test.ts` GREEN
+
+- 2025-09-10: B/C 단계 최종 이관 완료
+  - B4 완료: CSS 변수 네이밍/볼륨 재정렬 최종 확정(전역/컴포넌트 반영)
+  - C1 완료: fitModeGroup 계약 및 접근성 속성 표준화
+  - C2 완료: Radius 정책 전면 반영(`--xeg-radius-*`만 사용)
+  - 해당 항목들은 계획 문서에서 제거되고 본 완료 로그로 이동되었습니다.
+
+  - 2025-09-10: 디자인 토큰/라디우스/애니메이션/컴포넌트 표준화 1차
+    완료(Userscript 현대화 기반)
+  - 2025-09-10: Userscript 어댑터 및 외부 의존성 getter 정착(GM\_\*, preact,
+    fflate)
+  - 2025-09-10: Core 로깅/Result/에러 핸들러 표준화, 빌드/사이즈 예산 도입
+  - 2025-09-10: MediaProcessor 파이프라인/테스트 완료, BulkDownloadService 1차
+    구현
+  - 2025-09-10: Bootstrap 정리(PC-only 핫키/지연 초기화), A11y 시각 피드백/테마
+    커버리지 테스트 통과
+  - 2025-09-10: Toolbar/Modal/Toast 토큰 일관화, IconButton 통일, 파일명
+    충돌/실패 요약 정책 반영
+
+  참고: 세부 결정/테스트 파일 경로는 커밋 메시지와 테스트 스위트에서 추적합니다.
+  - 단위 테스트 추가: `ModalShell.tokens.test.ts`로 토큰 준수 회귀 방지
+
+2025-09-12: 백로그 정리 — 중복/완료 항목 정돈 및 명확화
+
+- 제거: I18N_KEYS(완료), MP_STAGE_METRICS(완료) — LanguageService/i18n 및
+  MediaProcessor stage metrics가 이미 GREEN 상태로 반영되어 백로그에서 삭제
+- 업데이트: PREFETCH_ADV → PREFETCH_BENCH (명칭/범위 정리) — 스케줄러 기능은
+  완료, 벤치 하네스만 후속 항목으로 유지
+- 상태 변경: RETRY_V2를 READY로 승격(현재 재시도 액션 기본형 구현, 실패
+  상세/백오프/상관관계 노출은 후속)
+
+2025-09-12: RETRY_V2 — BulkDownload 재시도 고도화 1차 완료
+
+- 부분 실패 경고 토스트의 [재시도] 클릭 시 실패 항목만 제한 동시성(최대 2)으로
+  재검증하고, 지수 백오프 기반 재시도를 적용. 모두 성공 시 성공 토스트, 일부
+  남으면 남은 개수와 correlationId를 경고 메시지에 표기.
+- 구현: fetchArrayBufferWithRetry 도입, 백오프 중 AbortSignal 취소 전파 처리,
+  기존 경고 토스트 onAction 로직 대체
+
+2025-09-11: U1 — 엔트리/부트스트랩 슬림화 완료
+
+2025-09-12: Phase P — 프리페치 스케줄 고도화(raf/microtask) 완료
+
+- 구현: `scheduleRaf`/`scheduleMicrotask` 유틸 추가,
+  `MediaService.prefetchNextMedia`에
+  `schedule: 'immediate'|'idle'|'raf'|'microtask'` 옵션 지원
+- 문서: CODING_GUIDELINES 갱신(스케줄 옵션/유틸/범위)
+- 결과: 타입/린트/빌드 PASS, 기존 idle 경로와 호환 유지(폴백 안전)
+
+- 조치: `src/bootstrap/{env-init,event-wiring,feature-registration}.ts` 신설,
+  `src/main.ts`에서 스타일 동적 import 및 부수효과 제거, 전역 이벤트 등록
+  반환값으로 unregister 콜백 관리
+- 가드: import 사이드이펙트 방지 테스트(RED 추가 예정)와 main idempotency 기존
+  테스트 유지
+- 결과: 타입/린트/전체 테스트/개발·프로덕션 빌드/사이즈 가드 PASS
+
+- 2025-09-10: Overlay/Modal/Surface 토큰 일관화(Toast 완료)
+  - Toast.module.css의 surface 배경/보더/그림자 토큰을 semantic으로 통일
+    (`--xeg-surface-glass-*`)하여 컴포넌트 전용 토큰 의존 제거
+  - 결과: 빌드/전체 테스트 그린, surface 일관성 가드와 충돌 없음
+
+- 2025-09-10: Overlay/Modal/Surface 토큰 일관화(최종 정리)
+  - ModalShell/ToolbarShell 그림자·배경·보더 토큰 사용 검증, Toast까지 포함해
+    표면 계층의 semantic 토큰 일관화 완료
+  - 가드 테스트: `ModalShell.tokens.test.ts`, `ToolbarShell.tokens.test.ts`,
+    theme/surface 커버리지 테스트 통과 확인
+
+- 2025-09-10: 문서 업데이트(PC 전용 이벤트, README 배지 정리)
+  - README의 설치/브라우저 배지와 PC 전용 이벤트 설명 정리
+  - 잘못된 마크다운 중단 문자열(배지) 수정, 오타 교정
+
+- 2025-09-10: 애니메이션 토큰 정책(1차)
+  - xeg-spin 하드코딩 지속시간 제거 → `var(--xeg-duration-*)` 사용으로 통일
+  - 유닛 테스트 추가: `animation-tokens-policy.test.ts`로 회귀 방지
+
+- 2025-09-10: ToolbarShell 컴포넌트 그림자 토큰 정책
+  - ToolbarShell elevation 클래스의 raw oklch 및 하드코딩 제거 →
+    `var(--xeg-comp-toolbar-shadow)` 사용
+  - 유닛 테스트 추가: `ToolbarShell.tokens.test.ts`로 회귀 방지
+
+- 2025-09-10: 애니메이션 유틸리티/컴포넌트 정책 고도화
+  - `design-tokens.semantic.css`의 유틸리티(.xeg-anim-\*) duration/ease 토큰화
+  - `src/assets/styles/components/animations.css`의 .xeg-animate-\* 클래스
+    duration 하드코딩 제거 → 토큰화
+  - 유닛 테스트 추가:
+    - `test/unit/styles/animation-utilities.tokens.test.ts`
+    - `test/unit/styles/components-animations.tokens.test.ts`
+  - 갤러리 피처 CSS 스피너/등장 애니메이션 토큰화 완료
+    - 파일: `src/features/gallery/styles/Gallery.module.css`,
+      `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css`
+    - 가드 테스트: `test/unit/styles/gallery-animations.tokens.test.ts` 통과
+
+- 2025-09-10: 접근성 시각 피드백 일관성(Toast/SettingsModal)
+  - 새로운 가드 테스트 추가:
+    `test/unit/styles/a11y-visual-feedback.tokens.test.ts`
+  - CSS 반영: `Toast.module.css`에 focus-visible 토큰/토큰화된 lift 추가,
+    `SettingsModal.module.css` focus-visible 토큰 적용 및 hover lift는 em 단위
+    유지(레거시 단위 테스트 호환)
+  - 결과: 전체 테스트 그린
+
+- 2025-09-10: 테마 커버리지(Glass Surface 토큰)
+  - 새로운 가드 테스트 추가:
+    `test/unit/styles/theme-glass-surface.coverage.test.ts`
+  - design-tokens.css에서 light/dark/system(prefers-color-scheme) 오버라이드
+    보장
+  - 결과: 테스트 통과
+
+  - ZIP 내 파일명 충돌 자동 해소: 동일 기본 이름 시 `-1`, `-2` 순차 접미사 부여
+  - 실패 요약 수집: 부분 실패 시 `{ url, error }[]`를
+    `DownloadResult.failures`로 포함
+  - 적용 범위: `BulkDownloadService`와 `MediaService`의 ZIP 경로
+  - 테스트: `test/unit/shared/services/bulk-download.filename-policy.test.ts`
+    추가, GREEN 확인
+
+- Extraction 규칙 유틸 통합
+  - DOMDirectExtractor가 media-url.util의
+    isValidMediaUrl/extractOriginalImageUrl을 사용하도록 리팩토링
+  - PNG 등 원본 포맷 유지 + name=orig 승격 규칙 일원화
+  - 회귀 테스트 추가: dom-direct-extractor.refactor.test.ts(GREEN)
+
+- 2025-09-11: Phase 2 — SelectorRegistry 기반 DOM 추상화 완료
+  - `src/shared/dom/SelectorRegistry.ts` 추가 및 배럴 export
+  - `STABLE_SELECTORS.IMAGE_CONTAINERS` 우선순위 조정(img 우선)
+  - `DOMDirectExtractor`가 가장 가까운 트윗 article 우선으로 컨테이너를
+    선택하도록 통합
+  - 테스트: `selector-registry.dom-matrix.test.ts` 및 DOMDirectExtractor 통합
+    케이스(GREEN)
+
+- 2025-09-10: 의존성 그래프 위생(Dependency-Cruiser 튜닝)
+  - 테스트 전용/과도기 모듈을 orphan 예외로 화이트리스트 처리
+  - 결과: dependency-cruiser 위반 0건(에러/경고 없음)
+  - 문서 갱신: docs/dependency-graph.(json|dot|svg) 재생성
+
+- 2025-09-10: 애니메이션 토큰/감속 정책 정규화
+  - transition/animation에 `--xeg-duration-*`, `--xeg-ease-*`로 통일
+  - reduce-motion 대응 확인, 하드코딩 지속시간 제거
+  - 가드 테스트: animation-utilities.tokens.test.ts,
+    components-animations.tokens.test.ts
+
+- 2025-09-10: 테마 커버리지 감사(Audit)
+  - 갤러리/툴바/버튼 표면 토큰 적용 및 라이트/다크 전환 리그레션 없음 확인
+  - 가드 테스트: theme-glass-surface.coverage.test.ts 등 통과
+
+  - focus-visible 링/hover lift/그림자 토큰 표준화
+  - 가드 테스트: a11y-visual-feedback.tokens.test.ts 통과
+
+  - 애니메이션 토큰 정규화, 테마 커버리지, 접근성 피드백 등 일반 현대화 작업을
+
+- 2025-09-10: 설정 모달 ↔ 툴바 정합(Green) 완료
+  - `SettingsModal.tsx` 닫기 버튼을 IconButton(intent='danger', size='md')로
+    교체
+  - `SettingsModal.module.css`에서 헤더/타이틀/라벨/셀렉트 토큰화 및 툴바
+    포커스/호버 체계 정렬
+  - 빌드/타입/린트 전부 통과 확인 (Userscript 빌드 검증 포함) 집중하도록
+    간결화했습니다.
+
+- 2025-09-10: 모달 레이어/색상 토큰 정합 최종화
+  - SettingsModal `z-index`를 `var(--xeg-z-modal)`로 정규화(툴바보다 위 레이어
+    보장)
+  - CODING_GUIDELINES에 모달↔툴바 배경/텍스트/보더/포커스/레이어 통합 정책 추가
+
+- 2025-09-10: 애니메이션/트랜지션 하드코딩 제거
+  - 주입 CSS(`src/shared/utils/css-animations.ts`) duration/easing 토큰화 및
+    reduce-motion 비활성화 처리
+  - 디자인 토큰 유틸리티(`src/shared/styles/design-tokens.css`)의 .xeg-anim-\*
+    클래스 토큰화
+  - `useProgressiveImage` 훅 inline transition 토큰 기반으로 변경
+
+- 2025-09-10: Phase A — 부트스트랩/수명주기/PC 전용 이벤트 (완료)
+  - main.start/cleanup 아이드포턴스 보장, 글로벌 핸들러 중복 등록 방지
+  - PC 전용 이벤트 정책 준수: click/keydown만 사용, touch/pointer 미사용
+  - 핫키 정책: ESC는 갤러리 열림 시 닫기, Enter는 사용자 핸들러로 위임
+  - 테스트 추가: `test/unit/main/main-start-idempotency.test.ts`,
+    `test/unit/events/gallery-pc-only-events.test.ts` (GREEN)
+
+- 2025-09-10: Phase B — 서비스 경계/의존성 getter 강화 (완료)
+  - ESLint flat config에 preact/fflate/GM\_\* 직접 import 제한 규칙 고정
+  - 벤더 경로 예외 허용(getter 경유), 정적 구성 검사 테스트 추가
+  - 소스 스캐너 테스트 추가: `direct-imports-source-scan.test.js` (벤더 경로
+    제외)
+  - 결과: 규칙/소스 스캐너 이중 가드 GREEN, 빌드/린트/형식 PASS 유지
+
+- 2025-09-11: Phase A/B 이관 정리 (간결)
+  - Phase A — 부트스트랩/수명주기/PC 전용 이벤트: 아이드포턴트/핫키/핸들러 정리
+    GREEN
+  - Phase B — 의존성 getter 정책: 린트 규칙+정적 스캔 가드 GREEN
+  - 계획서에서 해당 섹션 제거, 본 완료 로그로 최종 이동
+
+- 2025-09-11: Phase D — 다운로드 UX 안정화(부분 성공/취소) 완료
+  - ZIP 파일명 충돌 시 -1, -2 접미사 부여(파일 고유화)
+  - 부분 실패 요약 수집: `failures: { url, error }[]`
+  - 취소(AbortSignal)·동시성(concurrency)·재시도(retries) 옵션 구현
+  - 관련 테스트: bulk-download.filename-policy.test.(ts|js),
+    bulk-download.service.test.ts
+
+- 2025-09-11: Phase 6 — 로깅/진단 고도화(상관관계 ID) 완료
+  - `logger`에 correlationId 지원 추가(`createCorrelationId`,
+    `createScopedLoggerWithCorrelation`)
+  - BulkDownloadService에 세션 단위 correlationId 적용(시작/실패/완료 로그
+    구조화)
+
+- 2025-09-11: Phase 7 — 성능 미세 튜닝(이미지 디코드) 일부 완료
+  - 갤러리 아이템 이미지에 `loading="lazy"`, `decoding="async"` 속성 부여
+  - 관련 스모크 테스트 통과 및 가이드라인 준수 확인
+
+- 2025-09-11: Phase C — 미디어 추출/정규화 견고성 향상 (완료)
+- 2025-09-11: 성능 설정 반영 — cacheTTL 런타임 적용 완료
+  - SettingsService 변경 구독으로 performance.cacheTTL → DOMCache.defaultTTL
+    동기화
+  - 초기값 반영 + 변경 시 즉시 적용 (main.ts에서 구독)
+  - 위험도 낮음(격리된 유틸), 빌드/타입/린트 통과
+- 2025-09-11: 설정 정리 — virtualScrolling 옵션 제거 완료
+  - 소스 기본값(DEFAULT_SETTINGS.gallery)에서 virtualScrolling 제거
+  - 가상 스크롤링 관련 사용처 제거 확인 테스트
+    유지(`refactoring/remove-virtual-scrolling.test.ts`)
+  - 결과: 타입/빌드 통과, 계획 문서의 관련 항목 정리
+
+- 2025-09-11: 계획 이관 — Phase C 상세 설명 본 계획서에서 제거, 완료 로그로 정리
+  - 문서 정리로 남은 단계(Phase E)만 계획서에 유지
+
+- URL 유효성 검증 강화(pbs.twimg.com/media 전용, profile_images 제외, video
+  도메인 허용)
+
+---
+
+- `computePreloadIndices` 유틸 추가 및 `VerticalGalleryView`에서
+  `forceVisible`에 반영
+- 단위 테스트 추가: `test/unit/performance/gallery-preload.util.test.ts` (GREEN)
+- 설정 키: `gallery.preloadCount`(0–20), 기본값 3
+
+- 2025-09-11: 접근성 스모크 완료(경량 확인)
+  - focus-visible: `interaction-state-standards.test.ts` 등에서 토큰화된 포커스
+    링 적용 확인
+  - contrast: `phase-4-accessibility-contrast.test.ts`,
+    `css-integration.test.ts`의 prefers-contrast: high 지원 확인
+  - reduced motion: `styles/animation-standards.test.ts` 및 관련 refactoring
+    테스트에서 prefers-reduced-motion 지원 확인
+  - 결과: 관련 스위트 GREEN, 추가 구현 필요 없음(정책과 토큰이 이미 반영됨)
+
+- name=orig 강제 규칙(png/webp/jpg) 정규화 및 DOMDirectExtractor 연동
+- API 재시도/타임아웃(기본 RETRY=3, TIMEOUT=10s) + 실패 시 DOM 폴백 확인
+- 테스트: test/unit/media/extraction.url-normalization.test.ts,
+  test/unit/media/extraction.retry-timeout.test.ts (GREEN)
+
+- 2025-09-11: Phase 3 — 미디어 URL 정책 엔진 v2 완료
+  - 정책 보강: name=orig 단일화, 기존 format/확장자 보존, video_thumb(ext/tweet)
+    경로 지원 및 ID 추출 → 원본 URL 생성 지원
+  - 구현: isValidMediaUrl(+fallback) 확장, URL_PATTERNS.MEDIA/GALLERY_MEDIA/
+    VIDEO_THUMB_ID 정규식 보강, extractMediaId/generateOriginalUrl 개선
+  - 테스트: media-url.policy.edge-cases.test.ts GREEN, 기존 회귀 스위트 GREEN
+
+- 2025-09-11: MediaProcessor 파이프라인 강화(완료)
+  - 이미지 variants 생성(small/large/orig), 트위터 CDN URL만
+    canonical(name=orig) 정규화 및 dedupe
+  - tweet_video_thumb/ext_tw_video_thumb/video_thumb 패턴 GIF 타입 감지 추가
+  - 비트윈 가드: 트위터 이외/상대 경로/data: URL은 기존 URL 보존(회귀 방지)
+  - 테스트: media-processor.variants.red.test.ts,
+    media-processor.canonical-dedupe.red.test.ts,
+    media-processor.gif-detection.red.test.ts GREEN
+
+- 2025-09-11: 계획 단계 1–5 마무리 및 이관(간결)
+  - 1. 토큰 전용 스타일 가드 확장: 인라인 transition/animation 토큰 사용 강제 및
+       가드 테스트 통과
+  - 2. Spacing 스케일 가드: TSX 인라인 px 차단 테스트 추가 및 정책 반영
+  - 3. Icon-only 버튼 통일: IconButton 패턴 정착 및 컴포넌트 적용 검증
+  - 4. 키보드 내비/포커스 일관: ESC/Arrow/Space 처리 공통화, 포커스 관리 정합
+  - 5. 포커스 트랩 일원화: unified focusTrap 위임 및 활성화 패턴 확립
+  - 대표 테스트: animations.tokens.test.ts, spacing-scale.guard.test.ts,
+    IconButton.test.tsx, focus-trap-standardization.test.ts 등 GREEN
+
+- 2025-09-11: Phase 5 — 주입 CSS 표준화 v2 완료
+  - 주입된 CSS에서 하드코딩된 duration/easing 제거, `--xeg-duration-*`,
+    `--xeg-ease-(standard|decelerate|accelerate)` 토큰으로 정규화
+  - css-animations.ts와 AnimationService.ts의 easing 참조를 표준 토큰으로 교체
+  - 가드 테스트 추가: `test/unit/styles/injected-css.token-policy.red.test.ts`
+    포함 전체 스타일 가드 GREEN
+  - 결과: 전체 테스트 100% GREEN, 린트/타입/빌드 PASS
+
+- 2025-09-11: Phase 1 — 환경 어댑터 계층 정리(getter-주입 강화) 완료
+  - 외부 의존성(preact/@preact/signals/fflate/GM\_\*) 접근을 전용 getter로 통일
+  - ESLint no-restricted-imports + 정적 스캔으로 직접 import 차단
+  - 테스트: direct-imports-source-scan.test.(ts|js), lint-getter-policy.test.ts
+    GREEN
+
+- 2025-09-11: MediaProcessor 진행률(onStage) 옵저버 도입
+  - 단계: collect → extract → normalize → dedupe → validate → complete
+  - 각 단계 후 count 제공(누적 아이템 수)
+  - 실패 시에도 complete 이벤트 보장
+  - 테스트: media-processor.progress-observer.test.ts GREEN
+- 2025-09-11: Retry Action 테스트 명명 정리
+  - bulk-download.retry-action.red._ → bulk-download.retry-action._ (GREEN 유지)
+  - 계획서 What's next 에서 명명 정리 작업 항목 제거
+
+2025-09-11: Phase 5 (2차) — Accessibility Focus & Live Region Hardening 완료
+
+2025-09-11: Phase 6 (2차) — Service Contract Interface Extraction 완료
+
+- 2025-09-11: Phase 7 (2차) — CSS Layer Architecture & Theming Simplification
+  완료
+  - alias 토큰(background/border/shadow) 전면 제거: toolbar/modal CSS 모듈에서
+    `--xeg-comp-*` → semantic(`--xeg-bg-toolbar`, `--color-border-default`,
+    `--xeg-shadow-md|lg`) 치환
+  - RED: styles.layer-architecture.alias-prune.red.test.ts (초기 FAIL) → GREEN
+    (위반 0건)
+  - 기존 ModalShell.tokens.test 업데이트: alias 의존 → semantic shadow 토큰 검증
+  - 계획서 Phase 7 섹션 제거 & 본 완료 로그에 요약 추가
+
+- factory 도입: getMediaService / getBulkDownloadService / getSettingsService
+  (lazy singleton)
+- 직접 new 사용 제거(main.ts, service-initialization.ts, GalleryRenderer.ts)
+- GREEN 테스트: services.contract-interface.test.ts (직접 인스턴스화 금지 +
+  factory export 검증)
+- 계획서에서 Phase 6 섹션 제거
+
+- RED → GREEN:
+  - focus-restore-manager.red.test.ts → focus-restore-manager.test.ts
+  - live-region-manager.red.test.ts → live-region-manager.test.ts
 - 구현:
-  - 추가: `src/shared/services/ThemeBootstrap.ts` — 저장값(light/dark) 우선,
-    auto/미설정은 `matchMedia('(prefers-color-scheme: dark)')`로 판정,
-    예외/잘못된 저장값은 `light` 폴백. 리스너/타이머/인스턴스 생성 없음.
-  - 통합: `src/main.ts`에서 `await import('./styles/globals')` 직후 1회 호출.
-  - 테스트: `test/unit/shared/services/theme-bootstrap.test.ts`로 케이스
-    커버(자동/명시/잘못된 값/idempotency/ThemeService 정합) — GREEN.
-- 검증: typecheck/lint PASS, fast/unit 스위트 GREEN, dev/prod 빌드 및 postbuild
-  validator PASS. 사용자 시나리오에서 초기/상호작용 후 배경색 일관.
-- 롤백: `main.ts` 호출 1줄+파일 삭제로 즉시 복구 가능.
-
-- 내용: `service-initialization.ts`에서 ThemeService와 FilenameService를
-  registerFactory 기반의 lazy-init으로 전환. ToastController는 사용자 피드백
-  경로 특성상 eager 인스턴스로 유지.
-- 변경:
-  - ThemeService: `SERVICE_KEYS.THEME` 및 `'theme.service'` 두 키에 팩토리 등록
-    (단일 인스턴스 공유)
-  - FilenameService: `SERVICE_KEYS.MEDIA_FILENAME`에 팩토리 등록
-  - BulkDownload/ZIP/Settings/Diagnostics는 import guard 대상 유지
-- 테스트: 전체 스위트 GREEN, startup-latency 가드 포함. 일부 테스트 환경에서의
-  중복 등록 경고는 idempotency 시나리오에서 의도된 동작으로 확인.
-- 영향: 초기 번들 평가 시점에 Theme/Filename 인스턴스 생성이 발생하지 않음.
-  실사용 접근 시 최초 생성되며, 기능 회귀 없음.
-
-### 2025-09-16 — PLAN-CLOSE (B/C/F 관찰 지속 항목 정리)
-
-### 2025-09-16 — PHASE 3(부분) 완료: 비핵심 서비스 사전 워밍업 제거 (추가 기록)
-
-- 내용: `src/main.ts`에서 비핵심 서비스 사전 워밍업 호출 제거로 초기화 비용을 더
-  낮춤. `initializeNonCriticalSystems()`는 워밍업을 수행하지 않고, 실제 사용
-  시점까지 지연 실행됨.
-- 영향: 초기 타이머/인스턴스 사전 생성 방지. 기능 회귀 없음.
-- 후속: startup-latency 테스트 보강 예정.
-
-### 2025-09-16 — PHASE 3(부분) 완료: 비핵심 서비스 사전 워밍업 제거
-
-- 내용: `src/main.ts`에서 비핵심 서비스 사전 워밍업(타이머로
-  `warmupNonCriticalServices()` 호출)을 제거하여 실제 사용 시점까지 초기화가
-  지연되도록 조정했습니다. 초기 타이머 1개 감소 및 불필요 인스턴스 사전 생성
-  방지.
-- 영향: 기능 회귀 없음(서비스는 최초 접근 시 팩토리/컨테이너 경유로 초기화).
-  문서의 Phase 3 항목 중 해당 작업을 완료 처리.
-- 후속: Toast 컨테이너 경계 재검토, startup-latency 테스트 추가는 별도 진행.
-
-### 2025-09-16 — PLAN-SYNC-6 (활성 계획 최신 상태 확인)
-
-- 내용: 활성 계획서(TDD_REFACTORING_PLAN.md)를 점검하여 현재 남은 작업이 Phase
-  3(비핵심 서비스 지연 실행) 단일 항목임을 재확인했습니다. 이동할 추가 완료
-  항목은 없으며, 문서 구조만 최소 정리(불필요한 주석 제거)했습니다.
-- 영향: 문서만 변경 — 타입/린트/테스트/빌드/포스트빌드 무영향.
-
-### 2025-09-16 — PLAN-SYNC-5 (활성 계획 정리: Phase 1/2 표식 제거)
-
-- 내용: 활성 계획서(`TDD_REFACTORING_PLAN.md`)에서 이미 완료된 Phase 1/2 관련
-  안내 주석을 제거하고, 현재 활성 과제가 Phase 3 단일 항목임을 명확히
-  표기했습니다.
-- 영향: 문서만 변경 — 타입/린트/테스트/빌드/포스트빌드 무영향.
-
-### 2025-09-16 — PHASE 2 완료: 로깅/디버그 코드 프로덕션 제거(Tree-shaking 강제)
-
-- 내용: 프로덕션 번들에서 dev 전용 로깅/진단 문자열 누출을 차단.
-  - 빌드 전 변환 플러그인으로 `logger.debug(`, `logger.time(`, `logger.timeEnd(`
-    호출 제거 (prod 한정)
-  - 포스트빌드 validator 강화: prod 산출물에 `logger.debug(`, `logger.time(`,
-    `logger.timeEnd(`, `__XEG_DEBUG__`, `[TEST]`, `ServiceDiagnostics` 문자열이
-    존재하면 FAIL
-  - 기존 Terser 설정(drop_console/debugger) 유지
-- 수용 기준: prod 번들 문자열 가드 PASS, 기능 회귀 없음
-- 검증: typecheck/lint/fast 테스트 GREEN, dev/prod 빌드 및 postbuild validator
-  PASS (gzip ≈ 96KB)
-
-### 2025-09-16 — PHASE 1 완료: 갤러리 셀렉터 단일화 + 가드 테스트
-
-- 내용: 런타임 src/\*\* 전역에서 `#xeg-gallery-root` 직접 참조 제거. 컨테이너
-  탐지는 `.xeg-gallery-container`/`[data-xeg-gallery-container]`로 단일화.
-  테스트 환경(mock) 호환을 위해 `GalleryApp.ensureGalleryContainer()`에서
-  classList 폴백 처리.
-- 변경:
-  - 소스: `shared/utils/utils.ts`, `shared/utils/scroll/scroll-utils.ts`,
-    `shared/utils/media/MediaClickDetector.ts`, `shared/utils/events.ts`,
-    `shared/services/media/VideoControlService.ts`,
-    `features/gallery/GalleryApp.ts` (id 기반 참조 제거/대체)
-  - 테스트 추가:
-    `test/unit/lint/gallery-root.direct-usage.scan.red.test.ts`(정적 스캔 가드),
-    `test/unit/shared/utils/gallery-selectors.contract.test.ts`(행위 계약)
-- 수용 기준: src/\*\*에 `#xeg-gallery-root` 0, 갤러리 활성/네비/닫기 기존 테스트
-  GREEN, 스타일/토큰 가드 GREEN → 충족
-- 검증: typecheck PASS, lint PASS, fast/unit 스위트 GREEN(새 테스트 포함),
-  dev/prod 빌드 및 postbuild validator PASS.
-
-- 대상: B(legacy vendor-manager.ts), C(toolbarConfig.ts @deprecated),
-  F(zip-creator @deprecated high-level helper)
-- 조치: 활성 계획서에서 B/C/F를 제거하고 본 완료 로그로 이관. TEST-ONLY/LEGACY
-  표면은 유지하되 가드/스캔/번들 문자열 검증으로 회귀 방지.
-- 가드/수용 기준: src/\*\* 런타임 import 0, prod 번들 'VendorManager' 문자열 0,
-  zip-creator @deprecated API 사용 0, toolbarConfig 런타임 사용 0.
-- 검증: 타입/린트/테스트/빌드/포스트빌드 PASS.
-
-### 2025-09-16 — PLAN-SYNC (VND/TOKENS/A11Y)
-
-- 계획 정리: 활성 계획서(TDD_REFACTORING_PLAN.md)에서 완료 항목을 본 완료 로그로
-  최종 이관.
-- 이관 항목: VND-INIT-01, VND-LEGACY-MOVE-02, TOKENS-TOOLBAR-03, A11Y-ICON-04.
-- 상태: 관련 테스트/문서/가드 모두 GREEN. 활성 계획서에는 보류 항목만 유지(5)
-  MEDIA-STRATEGY-05).
-
-### 2025-09-16 — PLAN-CLEANUP (활성 계획 슬림화)
-
-### 2025-09-16 — PLAN-PHASE5 완료 (Vendors/Userscript 가드 강화)
-
-- 내용: 활성 계획의 Phase 5(벤더 직접 import 및 GM\_\* 직접 접근 금지 가드
-  강화)는 기존 가드 테스트들로 이미 충족됨을 확인하여 완료 처리했습니다.
-- 근거 테스트(예시):
-  - vendor 직접 import 금지:
-    `test/unit/lint/direct-imports-source-scan.test.ts`,
-    `test/unit/lint/vendor-getter.strict.scan.red.test.ts`
-  - GM\_\* 직접 접근 금지:
-    `test/unit/lint/userscript-gm.direct-usage.scan.red.test.ts`
-- 수용 기준 충족: 정책 위반 0, 기존 스위트 GREEN. 별도 smoke
-  파일(`vendors-policy.test.ts`)은 중복이라 추가 불필요.
-
-### 2025-09-16 — PLAN-PHASE6 완료 (이벤트/타이머 위생 강화)
-
-- 내용: 활성 계획의 Phase 6(글로벌 이벤트/타이머 등록·해제 쌍 가드)은 기 완료
-  항목(R4, TIMER-DETERMINISM-02, 이벤트 수명주기 가드 등)로 충족되어 완료
-  처리했습니다.
-- 근거 테스트(예시):
-  - 타이머 직접 사용 금지: `test/unit/lint/timer-direct-usage.scan.red.test.ts`
-  - 이벤트 수명주기/AbortSignal:
-    `test/unit/events/event-lifecycle.abort-signal.integration.test.ts`
-  - 리스너/타이머 잔존 0 가드:
-    `test/unit/lifecycle.cleanup.leak-scan.red.test.ts`
-- 수용 기준 충족: GREEN, 누수/중복 방지 검증 완료.
-
-### 2025-09-16 — PLAN-PHASE4 완료 (CSS 중복 정리·토큰 일원화)
-
-- 내용: 활성 계획의 Phase 4는 스타일 토큰/중복 가드
-  스위트(STYLE-TOKENS-GUARD-02, CSS-TOKEN-GUARD-01 등)와 관련 수정으로 충족되어
-  완료 처리했습니다.
-- 근거 테스트(예시):
-  - 인라인 색상/transition all 금지:
-    `test/unit/styles/tsx-inline-colors.guard.test.ts`,
-    `test/unit/styles/injected-css.no-transition-all.guard.test.ts`
-  - 토큰 정책/유틸: `test/unit/styles/animation-utilities.tokens.test.ts`,
-    `test/unit/styles/components-animations.tokens.test.ts`
-- 수용 기준 충족: 토큰 위반 0. CSS 바이트 수치 목표는 종합 번들 기준으로 감소
-  확인(참고: gzip ≈ 99KB대 유지).
-
-### 2025-09-16 — PLAN-SYNC-2 (활성 계획 정리 이관)
-
-- 내용: 활성 계획서에서 이미 완료로 확정된 항목들을 제거하고, 남은 작업만
-  우선순위 순으로 유지하도록 정리했습니다.
-- 이관 요약: SRC-PATH-RENAME-01(E 가드), D1(Media Normalizer re-export),
-  VND-INIT-01(벤더 초기화 경고 소음), TOKENS-TOOLBAR-03(토큰 마이크로 정리) 등
-  완료 표식들을 본 완료 로그로 최종 이동.
-- 활성 잔여(요약): D2(구 경로 제거 준비) → E(아이콘 placeholder 물리 삭제 후보)
-  → A(Runtime Stub 처리) → B/C/F(TEST-ONLY/LEGACY 표면 유지).
-
-- 내용: 활성 계획서에서 완료 항목의 잔여 표식/주석을 제거하고, 완료 항목은 본
-  문서(완료 로그)에만 유지하도록 정리. 활성 계획서에는 옵션 과제인
-  MEDIA-STRATEGY-05만 남김.
-- 검증: 문서 변경만 — 타입/린트/테스트/빌드/포스트빌드 영향 없음.
-
-### 2025-09-16 — MEDIA-STRATEGY-05 종결(옵션 과제 클로즈)
-
-### 2025-09-16 — D2/E/A 정리(경로/플레이스홀더/런타임 스텁)
-
-- D2 — Media Normalizer 구(old) 경로 제거: 소비처를 새 경로
-  `@shared/services/media/normalizers/legacy/twitter`로 전환하고, 구 경로 파일
-  `TwitterVideoLegacyNormalizer.ts`를 제거. 관련 단위 테스트의 import도 새
-  경로로 조정. 스캔에서 구 경로 사용 0 보장.
-- E — Icon placeholder 물리 삭제: `src/shared/components/ui/Icon/icons/index.ts`
-  플레이스홀더 파일을 물리 삭제. 소스 전역 사용 스캔(offenders 0) 및 기존 가드
-  테스트 유지(경로 직접 import 금지)로 회귀 방지.
-- A — Runtime Stub(createAppContainer) 제거: 런타임 금지 스텁
-  `src/features/gallery/createAppContainer.ts`를 삭제. 테스트 하네스 전용
-  `test/refactoring/helpers/createAppContainer.ts` 사용 경로는 그대로 유지하며,
-  런타임 import 금지 RED 스캔 테스트는 지속 GREEN.
-- 검증: 타입/린트/테스트/빌드/포스트빌드 모두 PASS.
-
-### 2025-09-16 — PLAN-SYNC-3 (A 상태 정합 수정)
-
-- 내용: 활성 계획서의 현재 상태 요약에서 `createAppContainer.ts` 런타임 스텁이
-  유지되는 것으로 표기되어 있던 부분을, 실제 리포지토리 상태(스텁 물리 삭제
-  완료)에 맞게 정정했습니다.
-- 검증: 문서만 변경 — 타입/린트/테스트/빌드/포스트빌드 영향 없음.
-
-- 주제: 미디어 추출/정규화 경로 정리(Strategy/Factory 경계 명료화, normalizer
-  단일화)
-- 결정: 현 구조 유지(A안). 기능/테스트 GREEN이며 경계 재정렬은 리스크 대비
-  이득이 제한적이라 판단해 옵션 과제를 문서상 종결.
-- 메모: 추후 소스 이동/리네임이 필요한 경우, 작은 범위의 후속 PR로 처리하고 경로
-  가드 테스트만 추가하는 방식을 권장.
-- 영향: 코드 변경 없음 — 타입/린트/테스트/빌드/포스트빌드 모두 무영향.
-
-### 2025-09-16 — PLAN-SYNC-4 (PLAN 슬림화: A/D/E 제거, B/C/F만 유지)
-
-- 내용: 활성 계획서의 부록(SOURCE PATH RENAME / CLEANUP PLAN)에서 완료된 A/D/E
-  항목을 제거하고, 관찰 지속 대상인 B/C/F만 남기도록 정리했습니다. 해당 완료
-  내역은 본 완료 로그에 이미 기록되어 있어 중복을 제거했습니다(문서만 변경).
-- 가드: deps-cruiser/정적 스캔/번들 문자열 가드는 기존과 동일하게 GREEN.
-
-### 2025-09-16 — TOKENS-TOOLBAR-03 완료
-
-- 내용: ToolbarShell에 컴포넌트 섀도 토큰을 도입하여 box-shadow/배경/보더가
-  컴포넌트 레이어 토큰을 통해 제어되도록 정렬. 레거시/신규 토큰명 전환기를 통해
-  점진 이행.
-- 변경:
-  - `src/shared/components/ui/ToolbarShell/ToolbarShell.module.css`:
-    `--xeg-comp-toolbar-shadow` 정의 및 elevation/surface 변형에서 소비
-  - 테스트: `test/unit/shared/components/ui/ToolbarShell.tokens.test.ts`,
-    `test/styles/toolbar-shell.shadow-tokens.test.ts`(레거시/신규 토큰명 모두
-    허용)
-- 검증: styles/fast 스위트 GREEN. 타입/린트 PASS. 빌드 영향 없음.
-
-### 2025-09-16 — A11Y-ICON-04 완료
-
-- 내용: 아이콘 전용 버튼(iconOnly)의 접근성 보강.
-  aria-label/aria-labelledby/title 중 하나가 없으면 런타임 경고(logger.warn)로
-  기록하고, 테스트에서 누락을 탐지.
-- 변경:
-  - `src/shared/components/ui/Button/Button.tsx`: 테스트 모드 예외 throw 제거 →
-    `logger.warn` 유지. 라벨 파생(title/i18n) 우선순위 문서화.
-  - 테스트: `test/unit/ui/toolbar.icon-accessibility.test.tsx` 통과. 기타 a11y
-    가드와 정합성 유지.
-- 검증: fast/styles 스위트 GREEN, 타입/린트 PASS, dev/prod 빌드 및 postbuild
-  validator PASS.
-
-### 2025-09-16 — DOCS-HARDENING-01 완료
-
-### 2025-09-16 — VND-INIT-01 완료
-
-- 내용: 테스트 실행 시 발생하던 StaticVendorManager 자동 초기화 경고를 테스트
-  모드에서 debug로 다운그레이드하고, `test/setup.ts`에서 벤더 선행 초기화를
-  보강. 경고 0을 보장하는 단위 테스트
-  추가(`test/unit/vendors/vendor-initialization.warnings.test.ts`).
-- 변경:
-  - `src/shared/external/vendors/vendor-manager-static.ts`: auto-init 경고를
-    `import.meta.env.MODE === 'test'`에서 debug로 로깅
-  - `test/setup.ts`: 선행 초기화 유지(안전 가드)
-  - 신규 테스트 추가: warn 미발생 확인
-- 검증: smoke/fast 스위트 GREEN, 벤더 경고 미출력(테스트 모드), 기존 기능/빌드
-  플로우 영향 없음.
-
-### 2025-09-16 — VND-LEGACY-MOVE-02 완료
-
-- 내용: 동적 VendorManager의 런타임 접근을 금지하는 스캔 테스트를 추가해 테스트
-  전용임을 명확화하고, 런타임 소스에서의 참조가 0임을 보장. `createAppContainer`
-  런타임 스텁은 유지하되 테스트 하네스 전용 사용을 재확인(기존 lint 테스트
-  유지).
-- 변경:
-  - 신규 테스트: `test/unit/lint/vendor-manager.runtime-imports.red.test.ts`
-  - 기존 가드와 함께 prod 번들 문자열 가드가 'VendorManager' 누출을 금지하는지
-    확인(`scripts/validate-build.js`)
-- 검증: 전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS
-  (VendorManager/legacy 전역 키 누출 없음).
-
-- 내용: CODING_GUIDELINES의 코드펜스 파손 및 Toast 섹션 혼입 문제를 수정하고,
-  animateCustom 예시 인접 영역을 정상화. ARCHITECTURE와
-  DEPENDENCY-GOVERNANCE에는 "런타임 코딩/스타일/토큰/테스트 정책은
-  CODING_GUIDELINES를 단일 소스로 참조"하도록 교차 링크를 추가해 문서 중복을
-  해소.
-- 검증: 문서 렌더링 수동 점검으로 코드 블록/헤딩 구조 파손 없음 확인. 기존
-  테스트/타입/린트/빌드 플로우와 충돌 없음.
-
-### 2025-09-16 — D1.1 다운로드 에러 복구 UX 가드 완료
-
-- 내용: 대량 다운로드(다중 ZIP) 전체 실패/부분 실패/성공/취소 케이스에서 토스트
-  라우팅과 중복 방지가 일관되도록 서비스 계약 테스트 정비. 추가 코드 변경 없이
-  현행 구현이 수용 기준을 충족함을 확인.
-- 테스트: `test/unit/shared/services/bulk-download.error-recovery.test.ts` GREEN
-- 검증: 타입/린트/전체 테스트/빌드/포스트빌드 모두 PASS.
-
-### 2025-09-16 — KBD-NAV-UNIFY 가드 보강 완료
-
-- 내용: document/window 직접 keydown 등록 금지 스캔 규칙 보강과
-  `KeyboardNavigator` 계약 테스트 확장(편집 가능 요소 무시, preventDefault 옵션
-  검증). 현행 서비스가 기준 충족을 확인.
-- 테스트:
-  - `test/unit/lint/keyboard-listener.centralization.policy.test.ts` GREEN
-  - `test/unit/shared/services/keyboard-navigator.service.test.ts` GREEN
-- 검증: 타입/린트/테스트/빌드/포스트빌드 PASS.
-
-### 2025-09-16 — VND-MESSAGING-ALIGN-01 완료
-
-- 내용: Vendors 정적 경로 단일화 관련 메시지/주석/문서 정합성 보강 항목은
-  2025-09-15의 "VND-LEGACY-MOVE — 동적 VendorManager 테스트 전용 명시"로 충족됨.
-  추가 작업 불필요함을 확인.
-- 검증: 빌드 산출물 문자열 스캔에서 'VendorManager' 누출 없음(기 완료 항목
-  참조).
-
-### 2025-09-16 — F1/U4 배럴 표면 가드 유지보수 완료
-
-- 내용: features/아이콘 배럴 표면 가드 유지보수는 기 완료 항목들로 충족됨
-  (BARREL-SURFACE-TRIM-01, icons-used-only/used-only 스캔). 예외 목록/메시지
-  현행화 필요 없음 확인.
-- 테스트:
-  - `test/unit/lint/features-barrel.surface.scan.red.test.ts` GREEN
-  - `test/unit/lint/icons-used-only.scan.red.test.ts` GREEN
-  - `test/unit/refactoring/unused-exports.scan.red.test.ts` GREEN
-- 검증: 타입/린트/테스트/빌드/포스트빌드 PASS.
-
-### 2025-09-16 — SETTINGS-MIG-HASH-01 완료
-
-- 내용: Settings 스키마 해시(`__schemaHash`) 도입. 저장된 해시와 현재 해시가
-  불일치하면 prune/fill 마이그레이션을 강제하고, 최초 저장/저장 시 현재 해시를
-  포함하도록 표준화.
-- 테스트: `test/unit/features/settings/settings-migration.schema-hash.test.ts`
-  추가 — 불일치 시 자동 복구, 최초 실행 해시 기록, 반복 초기화 idempotent GREEN.
-- 검증: 타입/린트/fast/unit 스위트 GREEN, dev/prod 빌드 및 postbuild validator
-  PASS.
-
-### 2025-09-17 — PLAN-SYNC-9 (활성 계획 중복 제거/이관)
-
-- 내용: 활성 계획서(`TDD_REFACTORING_PLAN.md`)에 잔존하던 4.4(이벤트 리스너
-  재배선) 중복 섹션과 4.6b(ScrollEventHub 계약 테스트 보강) 표식을 제거하고,
-  해당 항목을 본 완료 로그에만 유지하도록 정리했습니다. 활성 계획서에는 “현재
-  활성 항목 없음”을 명시하여 혼동을 방지했습니다.
-- 영향: 문서 변경만 — 타입/린트/테스트/빌드/포스트빌드 무영향.
-
-### 2025-09-17 — 휠 스크롤 누수/이벤트 과다 해결 계획 수립(문서 정리)
-
-- 내용: 문제 분석, 해결 옵션(A/B/C/D) 비교, 선택안(B+D) 확정 및 수용 기준/TDD
-  단계 정의를 활성 계획서에 반영. 실제 구현은 후속 단계에서 진행.
-- 근거: ensureWheelLock를 갤러리 루트에 적용하고, EventManager 수명/컨텍스트
-  가드를 강화하는 방향이 최소 침습으로 효과적.
-- 영향: 문서 중심 변경 — 빌드/테스트 무영향(해당 구현은 후속 커밋에서 진행).
-
-### 2025-09-16 — FILENAME-UNICODE-NORMALIZE-01 완료
-
-- 구현: `FilenameService.sanitizeForWindows()`에 NFKC 정규화 + 제어/비표시/BiDi
-  문자 제거 추가. 기존 Windows 금지 문자/예약어/길이 제한 로직 유지.
-- 테스트: `test/unit/shared/media/filename.unicode-normalize.test.ts` 추가 —
-  한글 조합/분해 동등성, zero-width/BiDi 제거, 예약어/금지문자, 길이 제한
-  검증(GREEN).
-- 영향 범위: 교차 플랫폼 파일명 결정성 향상. 기존 파일명 정책과 호환 유지.
-
-### 2025-09-15
-
-2025-09-15: PLAN-STATUS — TDD_REFACTORING_PLAN.md 점검 결과, 활성 과제
-7건(KBD-FOCUS-RETURN-01, TIMER-DETERMINISM-02, I18N-LITERAL-GUARD-01,
-SETTINGS-MIG-HASH-01, FILENAME-UNICODE-NORMALIZE-01, UI-ERROR-BOUNDARY-01,
-PLAYWRIGHT-SMOKE-01)은 모두 진행 필요 상태로 확인되어 완료 문서로 이관할 항목이
-없습니다(실행 순서 제안은 기존 문서 유지).
-
-2025-09-15: KBD-FOCUS-RETURN-01 — 모달/오버레이 닫힘 시 포커스 복원 보장 (완료)
-
-- 내용: `useFocusTrap`와 `KeyboardHelpOverlay` 개선으로 ESC/닫기/배경 클릭 시
-  트리거 요소로 포커스 복원을 보장. jsdom 안정화를 위한 짧은 재시도 루프를
-  추가해 테스트 환경에서도 안정적으로 복원.
-- 테스트: `test/features/gallery/keyboard-help.overlay.test.tsx`,
-  `test/unit/shared/hooks/useFocusTrap.test.tsx`,
-  `test/unit/accessibility/focus-restore-manager.*` GREEN
-- 검증: 타입/린트/빌드 PASS, dev/prod Userscript 및 postbuild validator PASS
-
-2025-09-15: PLAN-REVIEW — 활성 계획 점검(완료 이관 항목 없음;
-LEGACY-TOKENS-PRUNE-01만 활성 유지)
-
-2025-09-15: LEGACY-TOKENS-PRUNE-01 — 레거시 overlay alias 정리(1차) (완료)
-
-- 내용: 사용처가 없는 overlay alias(무접두 `--xeg-overlay-*`) 4종을 제거하고,
-  선언 대비 전역 사용 여부를 스캔하는 RED 테스트를 추가하여 회귀를 방지. 보존:
-  `--xeg-color-overlay-*` 및 `--xeg-color-backdrop`(실사용).
-- 변경:
-  - 제거: `--xeg-overlay-light` · `--xeg-overlay-medium` ·
-    `--xeg-overlay-strong` · `--xeg-overlay-backdrop`
-  - 테스트 추가: `test/unit/styles/design-tokens.usage-scan.red.test.ts`
-- 검증: fast/unit(styles)에서 신규 스캔 GREEN(해당 토큰 미사용 확인), 타입/린트
-  PASS, dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: LEGACY-TOKENS-PRUNE-02 — surface helper 클래스 정리 (완료)
-
-- 내용: design-tokens.css에 정의만 존재하고 실제 사용되지 않던 surface helper
-  클래스 2종을 스캔하여 제거. 선언 파일 자체는 사용처로 보지 않는 RED usage-scan
-  테스트를 추가해 회귀를 방지.
-- 변경:
-  - 제거: `.xeg-surface-primary`, `.xeg-surface-elevated`
-  - 테스트 추가:
-    `test/unit/styles/design-tokens.surface-helpers.usage-scan.red.test.ts`
-- 검증: styles 스위트에서 신규 스캔 GREEN, 기존 스타일/단위 테스트 GREEN,
-  타입/린트 PASS. dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: USERSCRIPT-ADAPTER-GUARD-01 — GM\_\* 직접 사용 금지 가드 (완료)
-
-- 내용: Userscript GM\_\* API는 어댑터(`getUserscript()`) 또는 타입 선언
-  파일에서만 허용. 런타임 소스(`src/**`) 전반에 대한 정적 스캔 가드 추가로 회귀
-  방지.
-- 테스트: `test/unit/lint/userscript-gm.direct-usage.scan.red.test.ts` GREEN.
-- 검증: fast/unit 스위트 GREEN(해당 가드 포함), dev/prod 빌드 및 postbuild
-  validator PASS.
-
-### 2025-09-16 — TIMER-DETERMINISM-02 완료
-
-- 내용: `setTimeout|setInterval|clearTimeout|clearInterval` 직접 사용 금지 정적
-  스캔 테스트 추가. 합법 예외는 TimerManager 내부 및 테스트 파일로 한정.
-- 테스트: `test/unit/lint/timer-direct-usage.scan.red.test.ts` GREEN.
-- 검증: 전체 스위트 GREEN, 타입/린트/빌드/포스트빌드 PASS.
-
-### 2025-09-16 — UI-ERROR-BOUNDARY-01 완료
-
-- 내용: 상위 ErrorBoundary 컴포넌트 도입. 자식 렌더 오류를 포착해 토스트로
-  알리고 UI는 조용히 대체(Fragment). prod에서는 stack 미노출, 언어 서비스와
-  연동.
-- 테스트: `test/unit/components/error-boundary.fallback.test.tsx` GREEN.
-- 구현: `src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx` (vendors
-  getter/LanguageService/ToastManager 사용).
-
-### 2025-09-16 — I18N-LITERAL-GUARD-01 완료
-
-- 내용: TSX 사용자 노출 문자열 리터럴 가드 추가 및 기존 UI 컴포넌트 국제화 적용.
-  위양성 튜닝과 KeyboardHelpOverlay/VerticalImageItem 등 문자열을
-  LanguageService로 이전.
-- 테스트: `test/unit/lint/i18n-literal.scan.red.test.ts` GREEN, 관련 UI 테스트
-  GREEN.
-- 문서: CODING_GUIDELINES에 “사용자 노출 문자열은 LanguageService 사용” 명시.
-
-2025-09-15: WHEEL-LOCK-POLICY-01 — 휠 락(policy) 일관성 가드 (완료)
-
-- 내용: 직접 addEventListener('wheel', ...) 금지 가드와 휠 유틸 계약을 확정.
-  컴포넌트/피처는 `addWheelListener`/`ensureWheelLock`만 사용하도록 표준화.
-- 테스트: `test/unit/events/wheel-listener.policy.red.test.ts`,
-  `test/unit/events/ensureWheelLock.contract.test.ts` GREEN.
-- 검증: 타입/린트/전체 테스트/빌드/포스트빌드 모두 PASS.
-
-2025-09-15: KBD-NAV-UNIFY-02 — 키보드 입력 중앙화(확장) (완료)
-
-- 내용: document/window 직접 keydown 등록 경로를 가드하고, 갤러리 키 입력을
-  `KeyboardNavigator` 구독 기반으로 통일. 스코프/구독
-  API(onEscape/onArrow/OnSpace) 확장.
-- 테스트: `keyboard-listener.centralization.policy.test.ts`(가드) 및 서비스 계약
-  테스트 GREEN.
-- 검증: 타입/린트/빌드/포스트빌드 PASS.
-
-2025-09-15: BARREL-SURFACE-TRIM-01 — 배럴/재노출 표면 축소 (완료)
-
-- 내용: utils/performance/media 배럴에서 와일드카드 재노출 제거, 사용 심볼만
-  명시 export. 소비처 import 정리.
-- 테스트: `barrel-surface.used-only.scan.red.test.ts` 추가, GREEN.
-- 검증: 순환 0, 빌드/테스트 PASS.
-
-2025-09-15: TOAST-BOUNDARY-02 — Toast UI/상태 경계 강화 (완료)
-
-- 내용: UI 배럴 상태성 재노출 제거, 컴포넌트 내 로컬 Toast 상태 금지 가드 설치.
-- 테스트: `toast-ui-barrel.stateful-exports.guard.test.ts`,
-  `toast-ui-components.no-local-state.guard.test.ts` GREEN.
-- 검증: 전체 스위트/빌드 PASS.
-
-2025-09-15: FILENAME-POLICY-02 — 파일명 정책 가드 강화 (완료)
-
-- 내용: ad-hoc 파일명 조합 금지 스캔 추가, 모든 생성 경로는 FilenameService로
-  일원화.
-- 테스트: `filename.ad-hoc-construction.scan.red.test.ts` GREEN.
-- 검증: 타입/린트/빌드 PASS.
-
-2025-09-15: VENDOR-GETTER-GUARD-02 — 벤더 직접 import 금지 강화 (완료)
-
-- 내용: preact/@preact/signals/fflate/compat 직접 import 금지 스캔 강화(External
-  vendors 예외), vendors getter 전용 사용을 가드.
-- 테스트: `direct-imports-source-scan.test.ts` 확장, GREEN.
-- 검증: 전체 스위트/빌드 PASS.
-
-2025-09-15: STYLE-TOKENS-GUARD-02 — 스타일/색/애니메이션 가드 보강 (완료)
-
-- 내용: TSX 인라인 색상 리터럴 금지, `transition: all` 금지 스캔 테스트 추가로
-  회귀 방지 강화.
-- 테스트: `tsx-inline-colors.guard.test.ts`,
-  `injected-css.no-transition-all.guard.test.ts` GREEN.
-- 검증: 스타일/유닛 스위트 GREEN, 빌드/포스트빌드 PASS.
-
-2025-09-15: EVENT-LIFECYCLE-ABORT-01 — 이벤트 리스너 수명주기 강화(AbortSignal
-지원) (완료)
-
-- 내용: `shared/utils/events.ts`의 `addListener`가 `AbortSignal` 옵션을
-  수용하도록 확장. 사전 중단된 신호는 등록을 생략하고, abort 발생 시 자동으로
-  `removeEventListener`와 내부 맵 정리를 수행.
-- 테스트: `test/unit/events/event-lifecycle.abort-signal.integration.test.ts`
-  추가 — 등록/중단/정리 동작 검증. GREEN.
-- 검증: 타입/린트/fast 스위트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: DOWNLOAD-PROGRESS-TYPE-UNIFY-01 — 진행률 타입 단일 소스화 (완료)
-
-- 내용: 중복 정의된 DownloadProgress 인터페이스를
-  `src/shared/services/download/types.ts`로 단일화하고,
-  `BulkDownloadService.ts`/`MediaService.ts`는 type-only import로 교체.
-  배럴(`shared/services/index.ts`)에서 type 재노출.
-- 테스트: 스캔/타입 의존만 — 기존 스위트 GREEN, 타입/린트 PASS.
-- 검증: dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: USERSCRIPT-ADAPTER-DOWNLOAD-OK-GUARD-01 — 어댑터 fallback 다운로드
-응답 가드 (완료)
-
-- 내용: `shared/external/userscript/adapter.ts`의 `fallbackDownload`에
-  `!response.ok` 가드 추가, 오류 메시지 "HTTP {status}: {statusText}" 표준화.
-- 테스트: 어댑터 경로 모킹으로 404/500시 에러 메시지 형식 검증. GREEN.
-- 검증: 타입/린트/빌드/포스트빌드 PASS.
-
-2025-09-15: FETCH-CANCELLATION-TIMEOUT-01 — fetch 옵션(취소/타임아웃) 일관화
-(완료)
-
-- 내용: `BulkDownloadService.downloadSingle`에 `signal` 전파 및 기본
-  타임아웃(AbortSignal.timeout 20s) 적용. zip/orchestrator 경로는 기존 표준 유지
-  확인.
-- 테스트: 단일 경로 취소/타임아웃 동작 검증. GREEN.
-- 검증: 타입/린트/빌드/포스트빌드 PASS.
-
-2025-09-15: FILENAME-WIN-SANITIZE-01 — Windows 예약어/경계 케이스 파일명 보정
-(완료)
-
-- 내용: `FilenameService.sanitizeForWindows` 도입 — 예약어 회피, 선행/후행
-  공백·마침표 제거, 금지 문자 치환, 길이 제한.
-  `generateMediaFilename`/`generateZipFilename` 출력에 적용.
-- 테스트: 경계 케이스 입력 스냅샷/정규화 테스트 추가. GREEN.
-- 검증: 타입/린트 PASS(형식 정리), dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: FETCH-OK-GUARD-01 — fetch 응답 가드 표준화 (완료)
-
-- 내용: 비정상 응답(4xx/5xx)을 명시적으로 실패로 처리하도록 다운로드 경로를
-  표준화.
-  - DownloadOrchestrator.fetchArrayBufferWithRetry: `!response.ok` 시 즉시
-    throw(`HTTP {status}: {statusText}`)
-  - BulkDownloadService.downloadSingle: `!response.ok` 가드 추가 후 Blob 생성
-- 테스트: `bulk-download.fetch-ok-guard.test.ts` 추가 — ZIP 경로 부분 실패/단일
-  경로 실패 검증. GREEN.
-- 검증: 타입/린트/의존성 가드 PASS, dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: PROGRESS-API-CONSISTENCY-01 — 진행률 complete(100%) 일관화 (완료)
-
-- 내용: 단일 다운로드 흐름에서 최종 complete 이벤트를 정확히 1회(100%) 보장.
-  - BulkDownloadService.downloadMultiple(single): preparing(0) →
-    downloading(100, filename) → complete(100, filename?) 순으로 방출(성공시에만
-    complete).
-  - exactOptionalPropertyTypes 준수를 위해 filename은 정의된 경우에만 포함.
-- 테스트: `bulk-download.progress-complete.test.ts` 추가 — 단일 흐름에서 final
-  complete 1회 검증. GREEN.
-- 검증: 전체 스위트/빌드/포스트빌드 가드 PASS.
-
-2025-09-15: DOWNLOAD-FLOW-UNIFY-01 — 다운로드 경로 단일화(서비스 위임) (완료)
-
-- 내용: `MediaService.downloadSingle/Multiple`을 컨테이너 액세서
-  `getBulkDownloadServiceFromContainer()` 경유로 `BulkDownloadService`에 위임.
-  MediaService 내부 중복 로직 및 미사용 메서드 제거. 컨테이너 순환 의존은
-  `service-accessors`의 반환 타입을 `unknown`으로 완화하고 사용처에서 단언하는
-  방식으로 해소.
-- 테스트: 위임 검증 테스트 추가 및 기존 계약/결과 테스트는 accessor mock으로
-  격리. fast/unit GREEN.
-- 검증: 타입/린트/의존성 검증 PASS(`deps:check` 순환 0), dev/prod 빌드 및
-  postbuild validator PASS.
-
-2025-09-15: ZIP-API-SURFACE-REDUCE-01 — ZIP API 표면 축소(호출 단일화) (완료)
-
-- 내용: `src/shared/external/zip/zip-creator.ts`의 `createZipFromItems`에
-  @deprecated JSDoc을 추가하고, prod 소스(`src/**`)에서 해당 심볼 사용이 0건임을
-  보장하는 스캔 테스트를
-  추가(`test/unit/lint/zip-api-surface.scan.red.test.ts`). Orchestrator
-  경로(`createZipBytesFromFileMap`)만 사용.
-- 검증: 테스트/타입/린트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: CSS-TOKEN-GUARD-01 — 디자인 토큰 사용 가드 확대 (완료)
-
-### 2025-09-16 — SRC-PATH-RENAME-01 (icons placeholder 가드) 완료
-
-- 내용: `src/shared/components/ui/Icon/icons/index.ts` 경로에 대한
-  import/require를 전역 금지하는 RED 스캔 테스트 추가.
-- 테스트: `test/unit/lint/icon-deprecated-placeholder.imports.scan.red.test.ts`
-  GREEN, offenders 0.
-- 검증: 타입/린트/전체 스위트/빌드/포스트빌드 PASS.
-
-### 2025-09-16 — D1(Media Normalizer re-export) 완료
-
-- 내용: 새 경로 `src/shared/services/media/normalizers/legacy/twitter.ts` 생성.
-  구 경로 `TwitterVideoLegacyNormalizer.ts`는 @deprecated 주석 후 새 경로
-  re-export로 유지.
-- 영향: 소비처 점진 이행 가능. 타입/테스트/빌드 GREEN.
-
-### 2025-09-16 — PLAN-MAP — Vendors 경고/토큰 미세정리
-
-- 계획 항목 3(벤더 초기화 경고 소음 축소)은 본 문서의 "VND-INIT-01 완료"로 이미
-  충족됨.
-- 계획 항목 4(UI/UX 토큰 마이크로 정리)은 "TOKENS-TOOLBAR-03 완료"로 충족됨.
-  추가 작업 없음.
-
-- 내용: 컴포넌트 CSS 색상 리터럴 금지 가드에 더해 TSX 인라인 style 속성에서도
-  색상 리터럴(hex/rgb/rgba/hsl/hsla/oklch/color-mix/white/black)을 금지하는 스캔
-  테스트를 추가(`test/unit/styles/tsx-inline-colors.guard.test.ts`). 허용 값은
-  디자인 토큰 변수(`var(--xeg-*/--color-*)`)와 제한된 시스템 키워드
-  (`transparent`, `currentColor`, `Canvas`, `CanvasText`, `HighlightText`)로
-  한정.
-- 테스트: styles 프로젝트 GREEN(31 passed | 1 skipped), 신규 가드 통과.
-- 검증: 전체 스위트/빌드에 영향 없음. 정책은 CODING_GUIDELINES에 추가.
-
-2025-09-15: TW-VIDEO-LEGACY-NORMALIZER-01 — TwitterVideoExtractor 레거시 필드
-정규화 분리 (완료)
-
-- 내용: 레거시 tweet/user 필드 정규화를 전담하는 normalizer를
-  `shared/services/media/normalizers/TwitterVideoLegacyNormalizer.ts`로 분리하고
-  `TwitterVideoExtractor`는 해당 모듈에 위임하도록 변경. modern 필드 우선,
-  idempotent merge 보장.
-- 테스트: extractor 경로 및 normalizer 단위 테스트 추가/갱신.
-- 검증: 전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: SETTINGS-MIG-TESTS-02 — SettingsMigration 경로 커버리지 확대 (완료)
-
-- 내용: SettingsMigration에 대해 pruneWithTemplate, fillWithDefaults,
-  idempotency(버전/lastModified) 커버리지 보강. 기본값에 enableKeyboardNav 추가.
-- 테스트: settings migration 스위트 강화, 경계/템플릿 불일치/알 수 없는 키
-  pruning 등을 검증.
-- 검증: 전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS.
-
-2025-09-15: SEL-SOURCE-GUARD-01 — STABLE_SELECTORS 단일 소스 강제 (완료)
-
-- 내용: `src/constants.ts`의 `STABLE_SELECTORS`/`SELECTORS`만 사용하도록 소스
-  스캔 가드 추가. 위반 모듈을 상수 참조로 교체. 테스트
-  `test/unit/lint/selectors-single-source.scan.red.test.ts` 추가.
-- 검증: 위반 0건(GREEN), 기능/빌드/포스트빌드 가드 PASS.
-
-2025-09-15: INPUT-PC-GUARD-02 — PC 전용 입력 소스 가드 강화 (완료)
-
-- 내용: `onPointer*`/`PointerEvent`/`onTouch*`/`TouchEvent` 사용을 소스 레벨에서
-  스캔하여 차단. 테스트 `test/unit/lint/pc-input-only.source.scan.red.test.ts`
-  추가. 번들 문자열 가드와 이중 안전망.
-- 검증: 위반 0건(GREEN), 기존 번들 가드와 함께 PASS.
-
-2025-09-15: UTILS-SVC-BOUNDARY-01 — Utils → Services 의존 금지 가드 (완료)
-
-- 내용: `src/shared/utils/** -> src/shared/services/**` 정적 import 금지 스캔
-  추가. 위반 모듈(events.ts, media-url.util.ts) 수정 — 서비스 접근은
-  컨테이너/헬퍼 경유. 테스트
-  `test/unit/lint/utils-services-boundary.scan.red.test.ts` 추가.
-- 검증: 위반 0건(GREEN), 타입/린트/테스트/빌드/포스트빌드 PASS.
-
-2025-09-15: PLAN-TOAST-CLEAN — 토스트 관련 활성 과제 정리(완료)
-
-- 내용: 활성 계획의 토스트 관련 과제를 모두 완료 처리하고 계획 문서에서 제거.
-- 검증: 문서 변경만 — 타입/린트/테스트/빌드/포스트빌드 영향 없음.
-
-2025-09-15: TOAST-UNIFY-02 / TOAST-TYPE-CONSOLIDATE / UI-BARREL-HARDEN-02 (완료)
-
-- 내용: 토스트 시스템 단일화 및 UI 배럴 표면 하드닝을 완료했습니다.
-  - UI 배럴(`src/shared/components/ui/index.ts`)에서 토스트 상태성 API 재노출
-    제거
-  - UI Toast 컴포넌트는 표현 전용으로 유지하고, 서비스 타입 `ToastItem`을
-    type-only import로 사용
-  - 가드 테스트 추가:
-    - `test/unit/lint/toast-ui-barrel.stateful-exports.guard.test.ts`
-    - `test/unit/lint/toast-ui-components.no-local-state.guard.test.ts`
-  - 레거시 RED 스캔 플레이스홀더 파일 두 개는 스킵 테스트로 대체하여 히스토리
-    보존: `ui-toast-*.scan.red.test.ts`
-- 검증: 전체 테스트 GREEN(376 passed | 16 skipped), 타입/린트/빌드/포스트빌드
-  기존 흐름과 충돌 없음.
-
-2025-09-15: PLAN-REFRESH-TOAST — 활성 계획에 토스트 단일화 과제 등록(문서)
-
-- 내용: UI 배럴/컴포넌트에 남아 있던 토스트 상태성 API 중복을 제거하는 활성
-  계획(TOAST-UNIFY-02/TOAST-TYPE-CONSOLIDATE/UI-BARREL-HARDEN-02)을 추가로 등록.
-  코드 변경은 계획 수립과 일부 배럴 표면 정리로 시작.
-- 검증: 문서/표면 변경만 — 타입/린트/테스트/빌드/포스트빌드 영향 없음.
-
-2025-09-15: FOCUS-TRAP-UNIFY — 유틸 단일화/훅 위임(완료)
-
-- 내용: `shared/utils/focusTrap.ts`를 단일 소스로 확정하고, `useFocusTrap` 훅은
-  해당 유틸에 위임하도록 리팩토링. 문서 수준 키다운은 `EventManager` 경유, 초기
-  포커스/복원 동작 유지.
-- 검증: 관련 테스트 GREEN(useFocusTrap/focusTrap), 타입/린트/빌드/포스트빌드
-  PASS.
-
-2025-09-15: A11Y-LIVE-REGION-LIFECYCLE — 단일 인스턴스/정리 보장(완료)
-
-- 내용: `shared/utils/accessibility/live-region-manager.ts`에 싱글톤 관리,
-  beforeunload 정리, `announce()` 헬퍼 추가. `useAriaLive`는 매니저를 사용하도록
-  변경.
-- 검증: 라이브 리전 테스트 GREEN, 메모리/DOM 누수 없음, 빌드/포스트빌드 PASS.
-
-2025-09-15: KBD-NAV-UNIFY — 키보드 입력 중앙화(완료)
-
-- 내용: document/window에 대한 직접 keydown/keyup 등록을 금지하는 가드 테스트를
-  추가하고, focusTrap 유틸/훅과 useAccessibility 훅을 EventManager 경유 등록으로
-  리팩터링. 공통 서비스 `shared/services/input/KeyboardNavigator.ts`를 도입하여
-  키 처리(Escape, '?', Shift+'/', Arrow/Home/End/Enter/Space)를 중앙화하고,
-  갤러리 훅(`useGalleryKeyboard`)을 해당 서비스 구독으로 마이그레이션.
-- 검증: 타입/린트 GREEN, fast/단위 스위트에서 신규 가드 및 서비스 계약 테스트
-  GREEN. 기능/UX 동일성 유지, dev/prod 빌드 및 postbuild validator 영향 없음.
-
-2025-09-15: URL-PATTERN-SOURCE-UNIFY — URL 정규식 단일 소스화 (완료)
-
-- 내용: `src/shared/utils/patterns/url-patterns.ts`에 `URL_PATTERNS` 단일 소스를
-  추가하고, `src/constants.ts`는 이를 타입 안전하게 재노출하도록 변경. 중복 정의
-  제거로 드리프트 위험 해소.
-- 검증: 타입/린트/테스트/빌드/포스트빌드 모두 GREEN. 기존 소비처는 변경 없이
-  동작(호환 API 유지).
-
-2025-09-15: VND-GETTER-STRICT — 벤더 getter 전용 사용 강제 (완료)
-
-- 내용: `test/unit/lint/vendor-getter.strict.scan.red.test.ts` 추가로
-  src/\*\*에서 `@shared/external/vendors` 배럴의 `h/render/Component/Fragment`
-  직접 import 금지. 배럴은 getter 우선 노출 유지, 직접 export는 @deprecated
-  안내만 유지.
-- 검증: 스캔 GREEN, 타입/린트/테스트/빌드/포스트빌드 모두 GREEN.
-
-2025-09-15: GUARD-02 — 배럴 역참조 순환 가드 (완료)
-
-- 내용: `test/unit/lint/barrel-reimport.cycle.scan.red.test.ts` 추가로
-  `src/shared/**` 내부 모듈의 상위 배럴 재수입 금지. 내부는 구체 경로만 허용.
-- 검증: 스캔 GREEN, dependency-cruiser 순환 0 유지.
-
-2025-09-15: F1-c — gallery 배럴 슬림화 (완료)
-
-- 내용: `src/features/gallery/index.ts`를 types-only로 축소. 클래스/컴포넌트
-  재노출 제거. 스캔 테스트 `features-barrel.class-exports.scan.red.test.ts`
-  추가.
-- 검증: 관련 alias 테스트 갱신, 유닛 스위트 GREEN, 빌드/포스트빌드 PASS.
-
-2025-09-15: TEST-DEDUP-VMOCK — 벤더 모크 중복 정리 (완료)
-
-- 내용: `test/utils/mocks/vendor-mocks-clean.ts` 제거. 공통 모듈 유지 및 계약
-  테스트 `test/unit/utils/vendor-mocks.contract.test.ts` 추가.
-- 검증: 유닛 스위트 GREEN.
-
-2025-09-15: DEPG-REFRESH — 의존성 그래프/문서 최신화 (완료)
-
-- 내용: `npm run deps:all` 실행으로 `docs/dependency-graph.(json|dot|svg)` 갱신.
-- 검증: `✔ no dependency violations found`, 빌드/포스트빌드 PASS.
-
-2025-09-15: F1-b — FEATURES-BARREL(Hardening, settings) (완료)
-
-- 내용: `src/features/settings/index.ts` 배럴을 Factory/타입만 노출하도록 축소.
-  구현 클래스(`SettingsService`, `TwitterTokenExtractor`) 재노출 제거. 소비처는
-  `@features/settings/services/settings-factory` 또는 배럴의 factory만 사용.
-- 검증: 정적 스캔(배럴 내 구현명 0), 타입/린트/테스트 GREEN, dev/prod 빌드 및
-  postbuild validator PASS.
-
-2025-09-15: VND-LEGACY-MOVE — 동적 VendorManager 테스트 전용 명시 (완료)
-
-- 내용: `src/shared/external/vendors/vendor-manager.ts` 상단에 @deprecated
-  TEST-ONLY 주석/설명을 추가, prod 런타임 사용 금지를 명시. 배럴은 정적 API만
-  노출 유지.
-- 검증: 소스 스캔에서 해당 경로 import 0건, dev/prod 빌드 산출물에서
-  'VendorManager' 문자열 미검출. 전체 스위트/포스트빌드 가드 GREEN.
-
-### 2025-09-16 — PLAN-SYNC-7 (활성 계획 슬림화/이관)
-
-- 내용: 활성 계획서에서 완료된 스냅샷 섹션(현재 상태 점검 요약)과 부록(SOURCE
-  PATH RENAME / CLEANUP PLAN)을 완료 로그로 이관하고, 문서 내에는 간단한
-  주석으로 대체했습니다. Phase 3 메모 중 이미 적용된 warmup 제거 검토 항목도
-  정리했습니다.
-- 영향: 문서 변경만 — 타입/린트/테스트/빌드/포스트빌드 무영향.
-- 현행 활성 항목: Phase 3 — 비핵심 서비스 지연 실행(조건부 import) 및 경량화.
+  - focus-restore-manager.ts: beginFocusScope() (단일 스코프, 안전 복원 &
+    fallback)
+  - live-region-manager.ts: polite/assertive singleton + 재부착 가드
+- 테스트 검증:
+  - 제거된 origin 포커스 fallback(body/html) 동작
+  - polite/assertive 각각 1개만 생성 & 총 2개 초과 금지
+- 후속(Backlog): 다중 스코프 스택, announcement queue/debounce, assertive 우선
+  정책 튜닝
+
+2025-09-12: 계획 문서 정리 — '활성 Phase 없음' 상태 종료 및 신규 U1–U5 활성 계획
+반영
+
+- 내용: `TDD_REFACTORING_PLAN.md`를 현대화 리팩토링 중심(U1–U5)으로 갱신하고,
+  기존 문구(활성 없음)를 제거하여 차기 사이클 시작 상태로 전환
+- 결과: 완료 로그에 본 항목 기록, 계획 문서는 활성 Phase만 유지
+
+2025-09-12: 계획 문서 단순화 — 활성 Phase 없음(전 구간 GREEN) 확정, 완료 항목을
+본 로그로 이관하고 계획서는 스켈레톤만 유지

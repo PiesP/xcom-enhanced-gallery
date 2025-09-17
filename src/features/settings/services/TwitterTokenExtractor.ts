@@ -4,7 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { globalTimerManager } from '@shared/utils/timer-management';
+import { globalTimerManager } from '@shared/utils';
 
 /**
  * 토큰 추출 결과

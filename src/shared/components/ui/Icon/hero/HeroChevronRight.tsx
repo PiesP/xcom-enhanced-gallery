@@ -1,7 +1,7 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
+import type { VNode } from '@shared/external/vendors';
+import { getPreact } from '@shared/external/vendors';
 import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
+import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
 
 type IconLike = (props: Record<string, unknown>) => VNode | null;
 

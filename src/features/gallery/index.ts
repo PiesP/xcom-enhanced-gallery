@@ -1,8 +1,27 @@
 /**
- * @fileoverview Gallery Feature Barrel (Slim Surface)
- * @version 2.1.0 - F1-c: types-only barrel
- * @description 공개 표면 최소화: 런타임 구현은 재노출하지 않습니다.
+ * @fileoverview Gallery Feature Exports
+ * @version 2.0.0 - Phase 2 컴포넌트 단순화
+ * @description 갤러리 Feature 통합 및 최적화 - 단일 렌더러 통합
  */
 
-// Types only
+// 통합된 갤러리 렌더러 (기본)
+export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
+
+// 갤러리 앱 (App 레이어에서 이동)
+export { GalleryApp } from './GalleryApp';
+export type { GalleryConfig } from './GalleryApp';
+
+// 핵심 갤러리 컴포넌트들
+export { VerticalGalleryView } from './components/vertical-gallery-view';
+
+// 갤러리 서비스들 (Core로 통합됨) - GalleryService 제거됨
+// export { GalleryService, galleryService } from '@shared/services/gallery/GalleryService';
+export { BulkDownloadService } from '@shared/services/BulkDownloadService';
+// export type {
+//   OpenGalleryOptions,
+//   NavigationResult,
+//   GalleryInfo,
+// } from '@shared/services/gallery/GalleryService';
+
+// 갤러리 타입들
 export * from './types';

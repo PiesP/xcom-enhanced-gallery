@@ -6,9 +6,8 @@
  * @description 갤러리 정리 작업을 담당하는 커스텀 훅
  */
 
-import { logger } from '../../../../../shared/logging/logger';
-import { getPreactHooks } from '../../../../../shared/external/vendors';
-import { globalTimerManager } from '../../../../../shared/utils/timer-management';
+import { logger } from '@shared/logging/logger';
+import { getPreactHooks } from '@shared/external/vendors';
 
 interface UseGalleryCleanupOptions {
   isVisible: boolean;
@@ -27,7 +26,7 @@ export function useGalleryCleanup({
   // 타이머 헬퍼 함수
   const clearTimer = useCallback((timerId: number | null) => {
     if (timerId) {
-      globalTimerManager.clearTimeout(timerId);
+      clearTimeout(timerId);
     }
   }, []);
 

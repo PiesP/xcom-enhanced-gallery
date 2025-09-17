@@ -4,12 +4,8 @@
  * @version 2.0.0 - Complexity Reduction & Modularization
  */
 
-import { logger } from '../logging/logger';
-import { galleryState } from '../state/signals/gallery.signals';
-import {
-  CSS as CSS_CONST,
-  isVideoControlElement as isVideoControlElementCentral,
-} from '../../constants';
+import { logger } from '@shared/logging/logger';
+import { galleryState } from '@shared/state/signals/gallery.signals';
 
 // ================================
 // Re-exports from focused modules
@@ -68,12 +64,21 @@ export {
 // Gallery utilities (simplified functions)
 // ================================
 
-// 갤러리 요소 선택자들 (상수화)
+// 갤러리 요소 선택자들 (간소화)
 const GALLERY_SELECTORS = [
-  `.${CSS_CONST.CLASSES.GALLERY_CONTAINER}`,
+  '.xeg-gallery-container',
   '[data-gallery-element]',
+  '#xeg-gallery-root',
   '.vertical-gallery-view',
   '[data-xeg-gallery-container]',
+];
+
+// 비디오 컨트롤 선택자들 (간소화)
+const VIDEO_CONTROL_SELECTORS = [
+  '[data-testid="playButton"]',
+  '[aria-label*="play"]',
+  '[aria-label*="pause"]',
+  '.video-player',
 ];
 
 /**
@@ -130,9 +135,7 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
   if (!element) return false;
 
   try {
-    return (
-      element.matches('.xeg-gallery-container') || element.matches('[data-xeg-gallery-container]')
-    );
+    return element.matches('.xeg-gallery-container, #xeg-gallery-root');
   } catch {
     return false;
   }
@@ -143,7 +146,15 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
  */
 export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!element) return false;
-  return isVideoControlElementCentral(element);
+
+  return VIDEO_CONTROL_SELECTORS.some(selector => {
+    try {
+      return element.matches(selector) || element.closest(selector) !== null;
+    } catch (error) {
+      logger.warn('Invalid video control selector:', selector, error);
+      return false;
+    }
+  });
 }
 
 /**

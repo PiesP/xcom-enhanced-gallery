@@ -9,9 +9,8 @@
  * - ARIA 상태 관리
  */
 
-import { getPreactHooks } from '../external/vendors';
+import { getPreactHooks } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
-import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * 간소화된 키보드 네비게이션 훅 (Esc 키만 지원)
@@ -37,19 +36,8 @@ export function useKeyboardNavigation(
       }
     };
 
-    // 중앙 이벤트 매니저 경유 등록 (정책상 직접 등록 금지)
-    const { EventManager } = require('../services/EventManager');
-    EventManager.getInstance().addListener(
-      document,
-      'keydown',
-      handleKeyDown as unknown as EventListener,
-      { capture: false },
-      'use-accessibility'
-    );
-    return () => {
-      const { EventManager } = require('../services/EventManager');
-      EventManager.getInstance().removeByContext('use-accessibility');
-    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, dependencies);
 }
 
@@ -124,14 +112,35 @@ export function useAriaLive(message: string, politeness: 'polite' | 'assertive' 
   const { useEffect } = getPreactHooks();
   useEffect(() => {
     if (!message) return;
-    // 중앙 라이브 리전 매니저를 사용하여 단일 인스턴스에 공지
-    try {
-      const { announce } = require('../utils/accessibility/live-region-manager');
-      announce(message, politeness);
-    } catch {
-      // fallback: 무시 (테스트/비브라우저 환경)
-    }
-    return () => void 0;
+
+    const liveRegion = document.createElement('div');
+    liveRegion.setAttribute('aria-live', politeness);
+    liveRegion.setAttribute('aria-atomic', 'true');
+    liveRegion.setAttribute('class', 'sr-only');
+    liveRegion.style.cssText = `
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    `;
+
+    document.body.appendChild(liveRegion);
+
+    const timeoutId = setTimeout(() => {
+      liveRegion.textContent = message;
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (document.body.contains(liveRegion)) {
+        document.body.removeChild(liveRegion);
+      }
+    };
   }, [message, politeness]);
 }
 
@@ -162,9 +171,9 @@ export function useLiveRegion(politeness: 'polite' | 'assertive' = 'polite') {
 
       document.body.appendChild(liveRegion);
 
-      globalTimerManager.setTimeout(() => {
+      setTimeout(() => {
         liveRegion.textContent = message;
-        globalTimerManager.setTimeout(() => {
+        setTimeout(() => {
           if (document.body.contains(liveRegion)) {
             document.body.removeChild(liveRegion);
           }

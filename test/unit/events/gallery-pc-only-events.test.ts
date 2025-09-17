@@ -4,15 +4,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-const isWindows = process.platform === 'win32';
-const ROOT = process.cwd().replace(/\\/g, '/');
-const EVENTS_SPEC = isWindows
-  ? (`/@fs/${ROOT}/src/shared/utils/events/index.ts` as string)
-  : ('@/shared/utils/events' as string);
-const SIGNALS_SPEC = isWindows
-  ? (`/@fs/${ROOT}/src/shared/state/signals/gallery.signals.ts` as string)
-  : ('@/shared/state/signals/gallery.signals' as string);
-
 // 전역 스파이(타입 주석 제거: 파서 호환)
 let addSpy;
 let removeSpy;
@@ -51,8 +42,8 @@ async function importEventsWithVendorsMock() {
   addSpy = vi.spyOn(globalThis.document, 'addEventListener');
   removeSpy = vi.spyOn(globalThis.document, 'removeEventListener');
 
-  const events = await import(EVENTS_SPEC);
-  const signals = await import(SIGNALS_SPEC);
+  const events = await import('@/shared/utils/events');
+  const signals = await import('@/shared/state/signals/gallery.signals');
 
   return {
     initializeGalleryEvents: events.initializeGalleryEvents,

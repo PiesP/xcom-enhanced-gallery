@@ -86,21 +86,20 @@ describe('Settings Modal Unification', () => {
   });
 
   describe('Legacy Component Compatibility', () => {
-    it('should keep SettingsModal wrapper and remove EnhancedSettingsModal', async () => {
-      // SettingsModal should still exist as a lightweight wrapper to UnifiedSettingsModal
+    it('should maintain backward compatibility with existing components', async () => {
+      // SettingsModal should still exist as a wrapper
       const settingsModule = await import(
         '../../src/shared/components/ui/SettingsModal/SettingsModal.tsx'
       );
-      expect(settingsModule.default).toBeDefined();
 
-      // EnhancedSettingsModal should be removed (dynamic import should fail)
-      let enhancedImportFailed = false;
-      try {
-        await import('../../src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx');
-      } catch {
-        enhancedImportFailed = true;
-      }
-      expect(enhancedImportFailed).toBe(true);
+      // EnhancedSettingsModal should still exist as a wrapper
+      const enhancedModule = await import(
+        '../../src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx'
+      );
+
+      // Both should exist as temporary wrappers during transition
+      expect(settingsModule.default).toBeDefined();
+      expect(enhancedModule.default).toBeDefined();
     });
   });
 

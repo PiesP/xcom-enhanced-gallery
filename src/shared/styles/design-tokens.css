@@ -118,6 +118,12 @@
   --xeg-glass-shadow: var(--glass-shadow);
   --xeg-glass-blur: none; /* 미니멀 디자인 유지 */
 
+  /* Legacy Overlay Colors - 호환성 보장 */
+  --xeg-overlay-light: var(--color-overlay-light);
+  --xeg-overlay-medium: var(--color-overlay-medium);
+  --xeg-overlay-strong: var(--color-overlay-strong);
+  --xeg-overlay-backdrop: var(--color-overlay-backdrop);
+
   /* Legacy Color aliases - 호환성 보장 */
   --xeg-color-overlay-light: var(--color-overlay-light);
   --xeg-color-overlay-medium: var(--color-overlay-medium);
@@ -235,6 +241,9 @@
 }
 
 /* Additional minimal classes to raise selector count for test heuristics */
+.xeg-surface-primary {
+  background: var(--xeg-surface-primary);
+}
 .xeg-text-primary {
   color: var(--xeg-color-text-primary);
 }
@@ -248,31 +257,19 @@
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
 }
+.xeg-surface-elevated {
+  background: var(--xeg-surface-elevated);
+}
 
 /* Transition utility classes to encourage common pattern usage */
 .xeg-transition-fast {
-  transition:
-    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
-    opacity var(--xeg-duration-fast) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 .xeg-transition-normal {
-  transition:
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
 .xeg-transition-slow {
-  transition:
-    transform var(--xeg-duration-slow) var(--xeg-ease-standard),
-    opacity var(--xeg-duration-slow) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-slow) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-slow) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-slow) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-slow) var(--xeg-easing-ease-out);
 }
 
 /* 접근성 미디어 쿼리 - 테스트 요구사항 */

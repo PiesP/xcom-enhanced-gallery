@@ -11,7 +11,6 @@ export * from './base';
 export { Button } from './ui/Button/Button';
 export { Toast } from './ui/Toast/Toast';
 export { ToastContainer } from './ui/Toast/ToastContainer';
-export { ErrorBoundary } from './ui/ErrorBoundary/ErrorBoundary';
 export { Toolbar } from './ui/Toolbar/Toolbar';
 
 // 갤러리 컴포넌트들 (간소화된 명명)

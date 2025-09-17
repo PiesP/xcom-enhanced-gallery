@@ -1,4 +1,4 @@
-import { getPreactHooks } from '../external/vendors';
+import { getPreactHooks } from '@shared/external/vendors';
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
 export type LanguageCode = 'en' | 'ko' | string;

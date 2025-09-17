@@ -6,9 +6,8 @@
  * @description 이미지의 점진적 로딩과 품질 향상을 제공하는 훅
  */
 
-import { logger } from '../../../../../shared/logging/logger';
-import { getPreactHooks } from '../../../../../shared/external/vendors';
-import { globalTimerManager } from '../../../../../shared/utils/timer-management';
+import { logger } from '@shared/logging/logger';
+import { getPreactHooks } from '@shared/external/vendors';
 
 export interface ProgressiveImageState {
   isLoading: boolean;
@@ -76,11 +75,11 @@ export function useProgressiveImage({
   // 타이머 정리
   const clearTimers = useCallback(() => {
     if (timeoutRef.current) {
-      globalTimerManager.clearTimeout(timeoutRef.current);
+      window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
     if (retryTimeoutRef.current) {
-      globalTimerManager.clearTimeout(retryTimeoutRef.current);
+      window.clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
     }
   }, []);
@@ -148,7 +147,7 @@ export function useProgressiveImage({
       }
 
       // 타임아웃 설정
-      timeoutRef.current = globalTimerManager.setTimeout(() => {
+      timeoutRef.current = window.setTimeout(() => {
         img.onload = null;
         img.onerror = null;
         handleError(new Error('Image load timeout'));
@@ -190,7 +189,7 @@ export function useProgressiveImage({
           retryCount: state.retryCount + 1,
         });
 
-        retryTimeoutRef.current = globalTimerManager.setTimeout(() => {
+        retryTimeoutRef.current = window.setTimeout(() => {
           logger.info('Retrying image load:', { src, att: state.retryCount + 1 });
           loadImage(src, true);
         }, delay);
@@ -235,7 +234,7 @@ export function useProgressiveImage({
       if (lowQualitySrc && !state.isLoaded) {
         loadImage(lowQualitySrc);
         // 고품질 이미지는 잠시 후 로드
-        globalTimerManager.setTimeout(() => loadImage(src), 100);
+        setTimeout(() => loadImage(src), 100);
       } else {
         loadImage(src);
       }

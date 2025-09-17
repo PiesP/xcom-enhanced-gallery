@@ -6,10 +6,8 @@
  * @description 갤러리 키보드 지원을 제공하는 커스텀 훅 (Esc 키만 지원)
  */
 
-// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
-import { logger } from '../../../../../shared/logging/logger';
-import { getPreactHooks } from '../../../../../shared/external/vendors';
-import { keyboardNavigator } from '../../../../../shared/services/input/KeyboardNavigator';
+import { logger } from '@shared/logging/logger';
+import { getPreactHooks } from '@shared/external/vendors';
 
 interface UseGalleryKeyboardOptions {
   onClose: () => void;
@@ -69,22 +67,7 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
   );
 
   useEffect(() => {
-    const unsubscribe = keyboardNavigator.subscribe(
-      {
-        onEscape: () => {
-          try {
-            logger.debug('Gallery: Esc key pressed, closing gallery');
-          } catch {
-            /* no-op */
-          }
-          onClose();
-        },
-        onHelp: () => {
-          if (onOpenHelp) onOpenHelp();
-        },
-      },
-      { context: 'use-gallery-keyboard', capture: true }
-    );
-    return () => unsubscribe();
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [handleKeyDown]);
 }

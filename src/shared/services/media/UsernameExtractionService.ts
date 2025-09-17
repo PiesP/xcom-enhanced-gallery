@@ -5,8 +5,8 @@
  * @moved-from shared/utils/media/username-extraction.ts
  */
 
-import { logger } from '../../logging/logger';
-import { SYSTEM_PAGES } from '../../../constants';
+import { logger } from '@shared/logging/logger';
+import { SYSTEM_PAGES } from '@/constants';
 
 /**
  * 사용자명 추출 결과

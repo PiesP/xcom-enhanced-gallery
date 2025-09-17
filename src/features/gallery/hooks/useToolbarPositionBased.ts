@@ -1,5 +1,4 @@
-import { getPreactHooks } from '../../../shared/external/vendors';
-import { toolbarSlideDown, toolbarSlideUp } from '../../../shared/utils/animations';
+import { getPreactHooks } from '@shared/external/vendors';
 
 export interface UseToolbarPositionBasedOptions {
   readonly toolbarElement: HTMLElement | null | undefined;
@@ -37,23 +36,11 @@ export function useToolbarPositionBased(options: UseToolbarPositionBasedOptions)
   const show = (): void => {
     setIsVisible(true);
     applyVisibility(true);
-    // S2: 통일된 애니메이션 경로 사용 (가능할 때만)
-    const el = options.toolbarElement ?? null;
-    if (el) {
-      // 비동기 호출 - 테스트 환경 안정성을 위해 결과는 기다리지 않음
-      void toolbarSlideDown(el);
-    }
   };
 
   const hide = (): void => {
     setIsVisible(false);
     applyVisibility(false);
-    // S2: 통일된 애니메이션 경로 사용 (가능할 때만)
-    const el = options.toolbarElement ?? null;
-    if (el) {
-      // 비동기 호출 - 테스트 환경 안정성을 위해 결과는 기다리지 않음
-      void toolbarSlideUp(el);
-    }
   };
 
   useEffect(() => {

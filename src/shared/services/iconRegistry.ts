@@ -1,4 +1,4 @@
-import type { VNode } from '../external/vendors';
+import type { VNode } from '@shared/external/vendors';
 
 export type IconName =
   | 'Download'

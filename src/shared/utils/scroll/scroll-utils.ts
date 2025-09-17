@@ -2,7 +2,7 @@
  * @fileoverview Scroll Utilities
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging/logger';
 import { Debouncer } from '../performance/performance-utils';
 import { addWheelListener, ensureWheelLock } from '../events/wheel';
 
@@ -16,6 +16,7 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
   const gallerySelectors = [
     '.xeg-gallery-container',
     '[data-gallery-element]',
+    '#xeg-gallery-root',
     '.vertical-gallery-view',
     '[data-xeg-gallery-container]',
     '[data-xeg-gallery]',
@@ -47,17 +48,11 @@ export function preventScrollPropagation(
   options: { disableBodyScroll?: boolean } = {}
 ): () => void {
   const { disableBodyScroll = false } = options;
-  const cleanup = ensureWheelLock(element, _e => (disableBodyScroll ? true : false), {
-    // capture defaults to false
-  });
 
-  return () => {
-    try {
-      cleanup();
-    } catch (error) {
-      logger.warn('Wheel lock cleanup failed', error);
-    }
-  };
+  return ensureWheelLock(element, _e => {
+    if (disableBodyScroll) return true;
+    return false;
+  });
 }
 
 // Re-export throttleScroll from performance utils (RAF-based, more efficient)
@@ -90,13 +85,7 @@ export function createScrollHandler(
   const targetElement = captureOnDocument ? document : element;
 
   try {
-    const cleanup = addWheelListener(
-      targetElement as EventTarget,
-      wheelHandler as (e: WheelEvent) => void,
-      {
-        passive: true,
-      }
-    );
+    const cleanup = addWheelListener(targetElement, wheelHandler, { passive: true });
     logger.debug('Wheel event listener registered', {
       target: captureOnDocument ? 'document' : 'element',
       threshold,

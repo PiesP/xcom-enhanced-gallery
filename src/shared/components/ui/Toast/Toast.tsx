@@ -1,13 +1,21 @@
 import styles from './Toast.module.css';
-import { getPreact, getPreactHooks, getPreactCompat, type VNode } from '../../../external/vendors';
+import * as Vendors from '@shared/external/vendors';
+import type { VNode } from '@shared/external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastProps } from '../StandardProps';
-import type { ToastItem as ServiceToastItem } from '@/shared/services/UnifiedToastManager';
 
-// Constants (상태/함수는 서비스에서 관리)
+// Constants
+const DEFAULT_TOAST_DURATION = 5000; // 5 seconds
 
-// UI에서는 서비스의 ToastItem 타입만 사용하여 드리프트를 방지합니다.
-export interface ToastItem extends ServiceToastItem {}
+export interface ToastItem {
+  id: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  title: string;
+  message: string;
+  duration?: number;
+  actionText?: string;
+  onAction?: () => void;
+}
 
 // 레거시 Props 인터페이스 (하위 호환성)
 interface LegacyToastProps {
@@ -30,9 +38,7 @@ function ToastComponent({
   'aria-label': ariaLabel,
   role = 'alert',
 }: ToastProps): VNode {
-  const { useEffect } = getPreactHooks();
-  // 표준화된 타이머 매니저 사용(누수/정리 용이)
-  const { globalTimerManager } = require('../../../utils/timer-management');
+  const { useEffect } = Vendors.getPreactHooks();
 
   // 안전성 체크
   if (!toast || !onRemove) {
@@ -41,11 +47,11 @@ function ToastComponent({
 
   useEffect(() => {
     if (toast.duration && toast.duration > 0) {
-      const timer = globalTimerManager.setTimeout(() => {
+      const timer = setTimeout(() => {
         onRemove(toast.id);
       }, toast.duration);
 
-      return (): void => globalTimerManager.clearTimeout(timer);
+      return (): void => clearTimeout(timer);
     }
 
     // duration이 없거나 0일 때도 cleanup 함수 반환
@@ -83,7 +89,7 @@ function ToastComponent({
   // 표준화된 테스트 속성 생성
   const testProps = ComponentStandards.createTestProps(testId);
 
-  const { h } = getPreact();
+  const { h } = Vendors.getPreact();
 
   return h(
     'div',
@@ -145,7 +151,7 @@ const areToastPropsEqual = (prevProps: ToastProps, nextProps: ToastProps): boole
 // memo를 적용한 최적화된 Toast 컴포넌트 (안전한 지연 접근)
 const MemoizedToast = (() => {
   try {
-    const compat = getPreactCompat();
+    const compat = Vendors.getPreactCompat?.();
     if (compat && typeof compat.memo === 'function') {
       return compat.memo(ToastComponent, areToastPropsEqual);
     }
@@ -166,4 +172,50 @@ Object.defineProperty(MemoizedToast, 'displayName', {
 // 메모이제이션된 컴포넌트를 Toast로 export
 export const Toast = MemoizedToast;
 
-// UI 컴포넌트는 상태/함수를 소유하지 않습니다. 상태 제어는 UnifiedToastManager가 담당합니다.
+// Global toast state - lazy initialization
+let _toasts: ReturnType<typeof import('@preact/signals').signal<ToastItem[]>> | null = null;
+export const toasts = {
+  get value(): ToastItem[] {
+    if (!_toasts) {
+      const { signal } = Vendors.getPreactSignals();
+      _toasts = signal<ToastItem[]>([]);
+    }
+    return _toasts.value || [];
+  },
+  set value(newValue: ToastItem[]) {
+    if (!_toasts) {
+      const { signal } = Vendors.getPreactSignals();
+      _toasts = signal<ToastItem[]>([]);
+    }
+    _toasts.value = newValue;
+  },
+  subscribe(callback: (value: ToastItem[]) => void) {
+    if (!_toasts) {
+      const { signal } = Vendors.getPreactSignals();
+      _toasts = signal<ToastItem[]>([]);
+    }
+    return _toasts.subscribe?.(value => callback(value || [])) || (() => {});
+  },
+};
+
+let toastIdCounter = 0;
+
+export function addToast(toast: Omit<ToastItem, 'id'>): string {
+  const id = `toast_${++toastIdCounter}_${Date.now()}`;
+  const newToast: ToastItem = {
+    ...toast,
+    id,
+    duration: toast.duration ?? DEFAULT_TOAST_DURATION,
+  };
+
+  toasts.value = [...toasts.value, newToast];
+  return id;
+}
+
+export function removeToast(id: string): void {
+  toasts.value = toasts.value.filter(toast => toast.id !== id);
+}
+
+export function clearAllToasts(): void {
+  toasts.value = [];
+}

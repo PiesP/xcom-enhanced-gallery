@@ -8,14 +8,14 @@ import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-// downloads are delegated to BulkDownloadService; keep vendors/helpers unused here
+import { getNativeDownload } from '@shared/external/vendors';
+import { getErrorMessage } from '@shared/utils/error-handling';
+import { generateMediaFilename } from '@shared/media';
 import type { BaseResultStatus } from '@shared/types/result.types';
-import type { DownloadProgress } from './download/types';
 import { ErrorCode } from '@shared/types/result.types';
 // Schedulers for prefetch task coordination
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
-import { globalTimerManager } from '@shared/utils/timer-management';
-import { getBulkDownloadServiceFromContainer } from '@shared/container/service-accessors';
+import { globalTimerManager } from '@shared/utils';
 
 // 통합된 서비스 타입들
 /**
@@ -52,8 +52,13 @@ export interface PrefetchOptions {
 /**
  * 대량 다운로드 관련 타입들 (BulkDownloadService에서 통합)
  */
-// DownloadProgress 타입은 단일 소스에서 import하세요.
-export type { DownloadProgress } from './download/types';
+export interface DownloadProgress {
+  phase: 'preparing' | 'downloading' | 'complete';
+  current: number;
+  total: number;
+  percentage: number;
+  filename?: string;
+}
 
 export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;
@@ -820,36 +825,43 @@ export class MediaService {
   // ====================================
 
   /**
+   * MediaInfo를 FilenameService와 호환되는 타입으로 변환
+   */
+  private ensureMediaItem(media: MediaInfo | MediaItem): MediaItem & { id: string } {
+    return {
+      ...media,
+      id: media.id || `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+  }
+
+  /**
    * 단일 미디어 다운로드
    */
   async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    /**
-     * @deprecated Wrapper — delegating to BulkDownloadService
-     * Use BulkDownloadService for actual implementation to avoid duplication.
-     */
-    let bulk: import('./BulkDownloadService').BulkDownloadService;
     try {
-      bulk = getBulkDownloadServiceFromContainer();
-    } catch {
-      // Test/Node 환경 또는 초기화 순서 이슈로 컨테이너 미등록일 수 있음 — 로컬 폴백 사용
-      const { BulkDownloadService } = await import('./BulkDownloadService');
-      bulk = new BulkDownloadService();
+      const download = getNativeDownload();
+      const converted = this.ensureMediaItem(media);
+      const filename = generateMediaFilename(converted);
+
+      // URL에서 fetch하여 Blob으로 다운로드
+      const response = await fetch(media.url);
+      const blob = await response.blob();
+      download.downloadBlob(blob, filename);
+
+      logger.debug(`Single download initiated: ${filename}`);
+      return { success: true, status: 'success', filename, code: ErrorCode.NONE };
+    } catch (error) {
+      const message = getErrorMessage(error);
+      logger.error(`Single download failed: ${message}`);
+      const lowered = message.toLowerCase();
+      const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
+      return {
+        success: false,
+        status,
+        error: message,
+        code: status === 'cancelled' ? ErrorCode.CANCELLED : ErrorCode.UNKNOWN,
+      };
     }
-    const res = await bulk.downloadSingle(media);
-    // Standardize result code when provider omitted it
-    if (res && !('code' in (res as object))) {
-      const code: ErrorCode =
-        res.status === 'success'
-          ? ErrorCode.NONE
-          : res.status === 'cancelled'
-            ? ErrorCode.CANCELLED
-            : res.status === 'partial'
-              ? ErrorCode.PARTIAL_FAILED
-              : ErrorCode.UNKNOWN;
-      const out: SingleDownloadResult = { ...(res as SingleDownloadResult), code };
-      return out;
-    }
-    return res as SingleDownloadResult;
   }
 
   /**
@@ -859,44 +871,157 @@ export class MediaService {
     mediaItems: Array<MediaInfo | MediaItem>,
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
-    /**
-     * @deprecated Wrapper — delegating to BulkDownloadService
-     * Use BulkDownloadService for actual implementation to avoid duplication.
-     */
-    let bulk: import('./BulkDownloadService').BulkDownloadService;
     try {
-      bulk = getBulkDownloadServiceFromContainer();
-    } catch {
-      // Test/Node 환경 또는 초기화 순서 이슈로 컨테이너 미등록일 수 있음 — 로컬 폴백 사용
-      const { BulkDownloadService } = await import('./BulkDownloadService');
-      bulk = new BulkDownloadService();
-    }
-    const res = await bulk.downloadMultiple(mediaItems, options);
-    // Standardize status/code for multi path if provider omitted code
-    if (res) {
-      const all = (res as DownloadResult).filesProcessed ?? mediaItems.length;
-      const ok = (res as DownloadResult).filesSuccessful ?? 0;
-      const status = ((res as DownloadResult).status ??
-        (ok === all ? 'success' : ok > 0 ? 'partial' : 'error')) as BaseResultStatus;
+      if (mediaItems.length === 0) {
+        return {
+          success: false,
+          status: 'error',
+          filesProcessed: 0,
+          filesSuccessful: 0,
+          error: 'No files to download',
+          code: ErrorCode.EMPTY_INPUT,
+        } as DownloadResult;
+      }
+      const { getFflate } = await import('@shared/external/vendors');
+      const fflate = getFflate();
+      const download = getNativeDownload();
+
+      const files: Record<string, Uint8Array> = {};
+      let successful = 0;
+      const failures: Array<{ url: string; error: string }> = [];
+
+      // filename collision handling: ensure unique names with -1, -2 suffixes
+      const usedNames = new Set<string>();
+      const baseCounts = new Map<string, number>();
+      const ensureUniqueFilename = (desired: string): string => {
+        if (!usedNames.has(desired) && !files[desired]) {
+          usedNames.add(desired);
+          baseCounts.set(desired, 0);
+          return desired;
+        }
+        const lastDot = desired.lastIndexOf('.');
+        const name = lastDot > 0 ? desired.slice(0, lastDot) : desired;
+        const ext = lastDot > 0 ? desired.slice(lastDot) : '';
+        const baseKey = desired;
+        let count = baseCounts.get(baseKey) ?? 0;
+        while (true) {
+          count += 1;
+          const candidate = `${name}-${count}${ext}`;
+          if (!usedNames.has(candidate) && !files[candidate]) {
+            baseCounts.set(baseKey, count);
+            usedNames.add(candidate);
+            return candidate;
+          }
+        }
+      };
+
+      options.onProgress?.({
+        phase: 'preparing',
+        current: 0,
+        total: mediaItems.length,
+        percentage: 0,
+      });
+
+      // 파일들을 다운로드하여 ZIP에 추가
+      for (let i = 0; i < mediaItems.length; i++) {
+        if (this.currentAbortController?.signal.aborted) {
+          throw new Error('Download cancelled by user');
+        }
+
+        const media = mediaItems[i];
+        if (!media) continue;
+
+        options.onProgress?.({
+          phase: 'downloading',
+          current: i + 1,
+          total: mediaItems.length,
+          percentage: Math.round(((i + 1) / mediaItems.length) * 100),
+          filename: media.filename,
+        });
+
+        try {
+          const response = await fetch(media.url);
+          const arrayBuffer = await response.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          const converted = this.ensureMediaItem(media);
+          const desiredName = generateMediaFilename(converted);
+          const filename = ensureUniqueFilename(desiredName);
+          files[filename] = uint8Array;
+          successful++;
+        } catch (error) {
+          const errMsg = getErrorMessage(error);
+          logger.warn(`Failed to download ${media.filename}: ${errMsg}`);
+          failures.push({ url: media.url, error: errMsg });
+        }
+      }
+
+      if (successful === 0) {
+        throw new Error('All downloads failed');
+      }
+
+      // ZIP 생성
+      const zipData = fflate.zipSync(files);
+      const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
+
+      // ZIP 다운로드
+      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
+      download.downloadBlob(blob, zipFilename);
+
+      options.onProgress?.({
+        phase: 'complete',
+        current: mediaItems.length,
+        total: mediaItems.length,
+        percentage: 100,
+      });
+
+      logger.debug(
+        `ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`
+      );
+
+      const status: BaseResultStatus =
+        failures.length === 0
+          ? 'success'
+          : failures.length === mediaItems.length
+            ? 'error'
+            : 'partial';
       const code: ErrorCode =
         status === 'success'
           ? ErrorCode.NONE
-          : status === 'cancelled'
-            ? ErrorCode.CANCELLED
-            : status === 'partial'
-              ? ErrorCode.PARTIAL_FAILED
-              : ok === 0 && all > 0
-                ? ErrorCode.ALL_FAILED
-                : ErrorCode.UNKNOWN;
-      const hasCode = 'code' in (res as object);
-      const out: DownloadResult = {
-        ...(res as DownloadResult),
+          : status === 'partial'
+            ? ErrorCode.PARTIAL_FAILED
+            : failures.length === mediaItems.length
+              ? ErrorCode.ALL_FAILED
+              : ErrorCode.UNKNOWN;
+
+      return {
+        success: status === 'success' || status === 'partial',
         status,
-        ...(hasCode ? {} : { code }),
-      } as DownloadResult;
-      return out;
+        filesProcessed: mediaItems.length,
+        filesSuccessful: successful,
+        filename: zipFilename,
+        ...(failures.length > 0 ? { failures } : {}),
+        code,
+      };
+    } catch (error) {
+      const message = getErrorMessage(error);
+      logger.error(`ZIP download failed: ${message}`);
+      const lowered = message.toLowerCase();
+      const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
+      return {
+        success: false,
+        status,
+        filesProcessed: mediaItems.length,
+        filesSuccessful: 0,
+        error: message,
+        code:
+          status === 'cancelled'
+            ? ErrorCode.CANCELLED
+            : message.toLowerCase().includes('all downloads failed')
+              ? ErrorCode.ALL_FAILED
+              : ErrorCode.UNKNOWN,
+      };
     }
-    return res as DownloadResult;
   }
 
   /**

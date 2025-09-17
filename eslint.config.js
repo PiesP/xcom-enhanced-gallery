@@ -216,14 +216,13 @@ export default [
   // 설정 파일들
   {
     files: [
-      '*.config.{ts,js,cjs,mjs}',
+      '*.config.{ts,js}',
       'vite.config.*',
       'eslint.config.*',
       'vitest.config.*',
-      'scripts/**/*.{ts,js,cjs,mjs}',
+      'scripts/**/*.{ts,js}',
     ],
     languageOptions: {
-      parser: tsParser,
       globals: {
         // Node.js 환경 전역 (설정/스크립트 파일용)
         console: 'readonly',
@@ -239,7 +238,6 @@ export default [
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       'no-restricted-imports': 'off',
-      'no-empty': 'off',
     },
   },
 
@@ -251,7 +249,6 @@ export default [
       sourceType: 'module',
       ecmaVersion: 2022,
       globals: {
-        // Vitest globals
         vi: 'readonly',
         describe: 'readonly',
         it: 'readonly',
@@ -261,58 +258,12 @@ export default [
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
-
-        // jsdom/브라우저 전역 (정적 분석 시 no-undef 방지)
-        window: 'readonly',
-        document: 'readonly',
-        console: 'readonly',
-        URL: 'readonly',
-        URLSearchParams: 'readonly',
-        navigator: 'readonly',
-        performance: 'readonly',
-        Image: 'readonly',
-        Element: 'readonly',
-        HTMLElement: 'readonly',
-        HTMLImageElement: 'readonly',
-        HTMLVideoElement: 'readonly',
-        setTimeout: 'readonly',
-        Blob: 'readonly',
-        File: 'readonly',
-        global: 'readonly',
-        globalThis: 'readonly',
-
-        // Node 전역 (테스트 유틸/환경에서 사용)
-        process: 'readonly',
       },
-    },
-    plugins: {
-      '@typescript-eslint': tsPlugin,
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
-      // 테스트 코드에서는 사용하지 않는 파라미터/변수 경고를 비활성화하여 노이즈 제거
-      '@typescript-eslint/no-unused-vars': 'off',
-      'no-unused-vars': 'off',
       'no-restricted-imports': 'off',
-      // 금지: 테스트에서 import.meta.glob 사용 (OS/번들러 의존 문제 방지)
-      // AST 셀렉터 설명:
-      // - CallExpression(... import.meta.glob(...)) 형태와 단순 참조(import.meta.glob) 모두 차단
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector:
-            "CallExpression[callee.type='MemberExpression'][callee.object.type='MetaProperty'][callee.object.meta.name='import'][callee.object.property.name='meta'][callee.property.name='glob']",
-          message:
-            '테스트에서 import.meta.glob 사용 금지: Node fs/path 재귀 스캔 유틸을 사용하세요.',
-        },
-        {
-          selector:
-            "MemberExpression[object.type='MetaProperty'][object.meta.name='import'][object.property.name='meta'][property.name='glob']",
-          message:
-            '테스트에서 import.meta.glob 참조 금지: Node fs/path 재귀 스캔 유틸을 사용하세요.',
-        },
-      ],
     },
   },
 

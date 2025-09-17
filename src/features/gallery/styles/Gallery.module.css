@@ -523,12 +523,7 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: var(--xeg-toolbar-shadow);
-  transition:
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
 }
 
 /**
@@ -559,11 +554,7 @@
   color: var(--xeg-button-text);
   font-size: 14px;
   cursor: pointer;
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-fast) var(--xeg-ease-standard);
   white-space: nowrap;
 }
 
@@ -609,11 +600,7 @@
   padding: 8px 12px;
   font-size: 14px;
   cursor: pointer;
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-fast) var(--xeg-ease-standard);
   white-space: nowrap;
   color: var(--xeg-button-text);
   background: var(--xeg-color-primary);
@@ -644,11 +631,7 @@
   padding: 8px 12px;
   font-size: 14px;
   cursor: pointer;
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-fast) var(--xeg-ease-standard);
   white-space: nowrap;
   color: var(--xeg-button-text);
   background: var(--xeg-color-success);

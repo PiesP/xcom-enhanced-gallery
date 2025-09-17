@@ -47,6 +47,8 @@ export interface StandardToastProps extends BaseComponentProps {
  * 표준화된 ToastContainer Props
  */
 export interface StandardToastContainerProps extends BaseComponentProps {
+  /** Toast 목록 */
+  toasts?: unknown[];
   /** 최대 Toast 수 */
   maxToasts?: number;
   /** 컨테이너 위치 */

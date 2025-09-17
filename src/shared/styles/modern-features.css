@@ -140,12 +140,7 @@
 /* :is() 선택자로 그룹화 */
 :is(.xeg-primary, .xeg-secondary, .xeg-tertiary) {
   font-weight: var(--xeg-font-weight-medium);
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard),
-    transform var(--xeg-duration-fast) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
 /**
@@ -161,11 +156,11 @@
 
 /* View Transition 스타일 */
 ::view-transition-old(gallery-main) {
-  animation: slideOut var(--xeg-duration-normal) var(--xeg-ease-standard);
+  animation: slideOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
 
 ::view-transition-new(gallery-main) {
-  animation: slideIn var(--xeg-duration-normal) var(--xeg-ease-standard);
+  animation: slideIn var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
 
 @keyframes slideOut {

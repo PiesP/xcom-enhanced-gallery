@@ -7,8 +7,7 @@
  * @version 2.0.0 - Core layer migration
  */
 
-// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging/logger';
 
 type EventCleanup = () => void;
 
@@ -21,7 +20,7 @@ interface EventOptions {
 /**
  * DOM 이벤트 등록 및 관리를 위한 유틸리티 클래스
  */
-export class DomEventManager {
+export class DOMEventManager {
   private cleanups: EventCleanup[] = [];
   private isDestroyed = false;
 
@@ -39,7 +38,7 @@ export class DomEventManager {
     eventType: K,
     handler: (event: HTMLElementEventMap[K]) => void,
     options?: EventOptions
-  ): DomEventManager {
+  ): DOMEventManager {
     if (!element || this.isDestroyed) {
       return this;
     }
@@ -50,13 +49,13 @@ export class DomEventManager {
         try {
           element.removeEventListener(eventType, handler as EventListener, options);
         } catch (error) {
-          logger.warn('DOM EM: 이벤트 리스너 제거 실패', { eventType, error });
+          logger.warn('DOMEventManager: 이벤트 리스너 제거 실패', { eventType, error });
         }
       });
 
-      logger.debug('DOM EM: 이벤트 리스너 등록', { eventType, options });
+      logger.debug('DOMEventManager: 이벤트 리스너 등록', { eventType, options });
     } catch (error) {
-      logger.error('DOM EM: 이벤트 리스너 등록 실패', { eventType, error });
+      logger.error('DOMEventManager: 이벤트 리스너 등록 실패', { eventType, error });
     }
 
     return this;
@@ -76,7 +75,7 @@ export class DomEventManager {
     eventType: string,
     handler: (event: Event) => void,
     options?: EventOptions
-  ): DomEventManager {
+  ): DOMEventManager {
     if (!element || this.isDestroyed) {
       return this;
     }
@@ -87,13 +86,13 @@ export class DomEventManager {
         try {
           element.removeEventListener(eventType, handler, options);
         } catch (error) {
-          logger.warn('DOM EM: 커스텀 이벤트 리스너 제거 실패', { eventType, error });
+          logger.warn('DOMEventManager: 커스텀 이벤트 리스너 제거 실패', { eventType, error });
         }
       });
 
-      logger.debug('DOM EM: 커스텀 이벤트 리스너 등록', { eventType, options });
+      logger.debug('DOMEventManager: 커스텀 이벤트 리스너 등록', { eventType, options });
     } catch (error) {
-      logger.error('DOM EM: 커스텀 이벤트 리스너 등록 실패', { eventType, error });
+      logger.error('DOMEventManager: 커스텀 이벤트 리스너 등록 실패', { eventType, error });
     }
 
     return this;
@@ -113,14 +112,14 @@ export class DomEventManager {
         cleanup();
         cleanupCount++;
       } catch (error) {
-        logger.warn('DOM EM: 개별 정리 실패', error);
+        logger.warn('DOMEventManager: 개별 정리 실패', error);
       }
     });
 
     this.cleanups = [];
     this.isDestroyed = true;
 
-    logger.debug('DOM EM: 모든 이벤트 리스너 정리 완료', { cleanupCount });
+    logger.debug('DOMEventManager: 모든 이벤트 리스너 정리 완료', { cleanupCount });
   }
 
   /**
@@ -142,8 +141,8 @@ export class DomEventManager {
  * DOM 이벤트 매니저 인스턴스 생성
  *
  * @deprecated UnifiedEventManager를 사용하세요
- * @returns 새로운 내부 DOM 이벤트 매니저 인스턴스
+ * @returns 새로운 DOMEventManager 인스턴스
  */
-export function createDomEventManager(): DomEventManager {
-  return new DomEventManager();
+export function createEventManager(): DOMEventManager {
+  return new DOMEventManager();
 }

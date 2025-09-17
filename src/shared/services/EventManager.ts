@@ -1,34 +1,25 @@
 /**
  * @fileoverview 통합 이벤트 관리자 (TDD GREEN 단계)
- * @description DOM 이벤트 매니저(DOM EM)와 GalleryEventManager를 통합한 단일 인터페이스
+ * @description DOMEventManager와 GalleryEventManager를 통합한 단일 인터페이스
  */
 
-// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
-import { logger } from '../logging/logger';
-import { DomEventManager, createDomEventManager } from '../dom/DOMEventManager';
-import { GalleryEventManager } from '../utils/events';
-import type { EventHandlers, GalleryEventOptions } from '../utils/events';
-import {
-  addWheelListener as coreAddWheelListener,
-  ensureWheelLock as coreEnsureWheelLock,
-} from '../utils/events/wheel';
+import { logger } from '@shared/logging/logger';
+import { DOMEventManager, createEventManager } from '@shared/dom/DOMEventManager';
+import { GalleryEventManager } from '@shared/utils/events';
+import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events';
 
 /**
  * 이벤트 관리자
- * DOM 이벤트 매니저와 GalleryEventManager의 기능을 통합
+ * DOMEventManager와 GalleryEventManager의 기능을 통합
  */
 export class EventManager {
   private static instance: EventManager | null = null;
-  private readonly domManager: DomEventManager;
+  private readonly domManager: DOMEventManager;
   private readonly galleryManager: GalleryEventManager;
   private isDestroyed = false;
-  private readonly extraCleanups: Array<() => void> = [];
-  // Diagnostics
-  private wheelListenerCount = 0;
-  private wheelLockCount = 0;
 
   constructor() {
-    this.domManager = createDomEventManager();
+    this.domManager = createEventManager();
     this.galleryManager = GalleryEventManager.getInstance();
 
     logger.debug('EventManager 초기화 완료');
@@ -45,7 +36,7 @@ export class EventManager {
   }
 
   // ================================
-  // DOM 이벤트 매니저 위임 메서드들
+  // DOMEventManager 위임 메서드들
   // ================================
 
   /**
@@ -103,14 +94,6 @@ export class EventManager {
    */
   public cleanup(): void {
     this.domManager.cleanup();
-    // run extra cleanups e.g., from wheel helpers
-    for (const fn of this.extraCleanups.splice(0)) {
-      try {
-        fn();
-      } catch (error) {
-        logger.warn('EventManager: extra cleanup failed', error);
-      }
-    }
     this.isDestroyed = true;
     logger.debug('EventManager DOM 이벤트 정리 완료');
   }
@@ -209,63 +192,13 @@ export class EventManager {
     this.cleanup();
     logger.debug('EventManager 전체 정리 완료');
   }
-
-  // ================================
-  // Wheel helpers (unified API)
-  // ================================
-
-  /**
-   * Add a wheel listener (passive by default). Returns a cleanup function.
-   */
-  public addWheelListener(
-    target: EventTarget | null,
-    handler: (event: WheelEvent) => void,
-    options: { capture?: boolean; passive?: boolean } = {}
-  ): () => void {
-    if (this.isDestroyed || !target) return () => {};
-    const cleanup = coreAddWheelListener(target, handler, options);
-    this.wheelListenerCount++;
-    const wrapped = () => {
-      try {
-        cleanup();
-      } finally {
-        this.wheelListenerCount = Math.max(0, this.wheelListenerCount - 1);
-      }
-    };
-    this.extraCleanups.push(wrapped);
-    return wrapped;
-  }
-
-  /**
-   * Ensure wheel lock (passive: false). If handler returns true, consume event.
-   * Returns a cleanup function.
-   */
-  public addWheelLock(
-    target: EventTarget | null,
-    handler: (event: WheelEvent) => void | boolean,
-    options: { capture?: boolean } = {}
-  ): () => void {
-    if (this.isDestroyed || !target) return () => {};
-    const cleanup = coreEnsureWheelLock(target, handler, options);
-    this.wheelLockCount++;
-    const wrapped = () => {
-      try {
-        cleanup();
-      } finally {
-        this.wheelLockCount = Math.max(0, this.wheelLockCount - 1);
-      }
-    };
-    this.extraCleanups.push(wrapped);
-    return wrapped;
-  }
-
-  /** Diagnostics getters */
-  public getWheelDiagnostics() {
-    return {
-      listeners: this.wheelListenerCount,
-      locks: this.wheelLockCount,
-    };
-  }
 }
 
-// 별칭 제거됨: 외부 표면은 EventManager 단일 표면만 유지합니다.
+// ================================
+// 백워드 호환성을 위한 별칭
+// ================================
+
+/**
+ * TwitterEventManager 별칭 (기존 호환성 유지)
+ */
+export const TwitterEventManager = EventManager;

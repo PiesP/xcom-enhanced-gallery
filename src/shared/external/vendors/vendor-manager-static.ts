@@ -5,8 +5,7 @@
  * TDD Phase: GREEN - 정적 import로 TDZ 문제 해결
  */
 
-import { logger } from '../../logging';
-import { globalTimerManager } from '../../utils/timer-management';
+import { logger } from '@shared/logging';
 
 // 정적 import로 모든 라이브러리를 안전하게 로드
 import * as fflate from 'fflate';
@@ -59,8 +58,6 @@ export interface PreactHooksAPI {
   useContext: typeof preactHooks.useContext;
   useReducer: typeof preactHooks.useReducer;
   useLayoutEffect: typeof preactHooks.useLayoutEffect;
-  /** Preact error boundary hook */
-  useErrorBoundary: typeof preactHooks.useErrorBoundary;
 }
 
 export interface PreactSignalsAPI {
@@ -231,7 +228,6 @@ export class StaticVendorManager {
       useContext: this.vendors.preactHooks.useContext,
       useReducer: this.vendors.preactHooks.useReducer,
       useLayoutEffect: this.vendors.preactHooks.useLayoutEffect,
-      useErrorBoundary: this.vendors.preactHooks.useErrorBoundary,
     };
 
     // Preact Signals API
@@ -264,11 +260,7 @@ export class StaticVendorManager {
    */
   public getFflate(): FflateAPI {
     if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      } else {
-        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      }
+      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
       // 동기 초기화 시도 (정적 import이므로 안전)
       this.validateStaticImports();
       this.cacheAPIs();
@@ -287,11 +279,7 @@ export class StaticVendorManager {
    */
   public getPreact(): PreactAPI {
     if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      } else {
-        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      }
+      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
       this.validateStaticImports();
       this.cacheAPIs();
       this.isInitialized = true;
@@ -309,11 +297,7 @@ export class StaticVendorManager {
    */
   public getPreactHooks(): PreactHooksAPI {
     if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      } else {
-        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      }
+      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
       this.validateStaticImports();
       this.cacheAPIs();
       this.isInitialized = true;
@@ -331,11 +315,7 @@ export class StaticVendorManager {
    */
   public getPreactSignals(): PreactSignalsAPI {
     if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      } else {
-        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      }
+      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
       this.validateStaticImports();
       this.cacheAPIs();
       this.isInitialized = true;
@@ -408,7 +388,7 @@ export class StaticVendorManager {
         this.createdUrls.add(url);
 
         // 30초 후 자동 정리 (메모리 누수 방지 강화)
-        const timerId = globalTimerManager.setTimeout(() => {
+        const timerId = window.setTimeout(() => {
           if (this.createdUrls.has(url)) {
             try {
               URL.revokeObjectURL(url);
@@ -429,7 +409,7 @@ export class StaticVendorManager {
           // 타이머 정리
           const timerId = this.urlTimers.get(url);
           if (timerId) {
-            globalTimerManager.clearTimeout(timerId);
+            clearTimeout(timerId);
             this.urlTimers.delete(url);
           }
 
@@ -529,7 +509,7 @@ export class StaticVendorManager {
   public cleanup(): void {
     // 타이머들 정리
     this.urlTimers.forEach(timerId => {
-      globalTimerManager.clearTimeout(timerId);
+      clearTimeout(timerId);
     });
     this.urlTimers.clear();
 

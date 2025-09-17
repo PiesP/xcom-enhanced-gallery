@@ -4,10 +4,11 @@
  */
 
 // 새로운 이벤트 관리자 (권장)
-export { EventManager } from './EventManager';
+export { EventManager, TwitterEventManager } from './EventManager';
 
-// 레거시 호환성 제거: 외부로 더 이상 노출하지 않음 (S3)
-// 기존 코드는 EventManager를 통해 접근해야 합니다.
+// 레거시 호환성 유지 (deprecated)
+export { DOMEventManager, createEventManager } from '@shared/dom/DOMEventManager';
+export { GalleryEventManager } from '@shared/utils/events';
 
 // 기본 export
 export { EventManager as default } from './EventManager';

@@ -60,10 +60,6 @@ export function ensureWheelLock(
     if (result === true) {
       // Only consume when explicitly requested by handler
       we.preventDefault();
-      // Also stop propagation to avoid page-level scroll while gallery consumes it
-      if (typeof we.stopPropagation === 'function') {
-        we.stopPropagation();
-      }
     }
   };
 

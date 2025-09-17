@@ -7,9 +7,8 @@
 
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
 import type { Result } from '@shared/types/core/core-types';
-import { createSignalSafe, effectSafe } from './signal-factory';
-// Remove runtime dependency on services to avoid cycles; use logging directly
-import { logger as rootLogger, type Logger as ILogger } from '../../logging';
+import { getPreactSignals } from '@shared/external/vendors';
+import { defaultLogger, type ILogger } from '@shared/services/core-services';
 
 // Signal 타입 정의
 type Signal<T> = {
@@ -71,12 +70,13 @@ export type DownloadEvents = {
 // Preact Signals 지연 초기화
 let downloadStateSignal: Signal<DownloadState> | null = null;
 
-// 로거 인스턴스 (services-free)
-const logger: ILogger = rootLogger;
+// 로거 인스턴스 (의존성 주입 가능)
+const logger: ILogger = defaultLogger;
 
 function getDownloadState(): Signal<DownloadState> {
   if (!downloadStateSignal) {
-    downloadStateSignal = createSignalSafe<DownloadState>(INITIAL_STATE);
+    const { signal } = getPreactSignals();
+    downloadStateSignal = signal<DownloadState>(INITIAL_STATE);
   }
   return downloadStateSignal!;
 }
@@ -97,7 +97,8 @@ export const downloadState = {
    * 상태 변경 구독
    */
   subscribe(callback: (state: DownloadState) => void): () => void {
-    return effectSafe(() => {
+    const { effect } = getPreactSignals();
+    return effect(() => {
       callback(this.value);
     });
   },

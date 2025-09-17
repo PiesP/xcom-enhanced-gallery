@@ -4,10 +4,10 @@
  * @version 3.0.0 - GalleryMarker 기능 통합
  */
 
-import { logger } from '../../logging/logger';
-import type { ComponentType } from '../../types/app.types';
-import { getPreact } from '../../external/vendors';
-import type { VNode } from '../../external/vendors';
+import { logger } from '@shared/logging/logger';
+import type { ComponentType } from '@shared/types/app.types';
+import { getPreact } from '@shared/external/vendors';
+import type { VNode } from '@shared/external/vendors';
 import type { GalleryComponentProps as BaseGalleryComponentProps } from '../base/BaseComponentProps';
 
 /**

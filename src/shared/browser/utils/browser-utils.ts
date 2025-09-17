@@ -7,7 +7,6 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * 브라우저 환경 체크
@@ -145,10 +144,10 @@ export function setScrollPosition(x: number, y: number): void {
  * 안전한 타이머 생성 (메모리 관리와 연동)
  */
 export function safeSetTimeout(callback: () => void, delay: number): number | null {
-  // 테스트/SSR 안전 가드
   const win = safeWindow();
-  if (!win) return null;
-  return globalTimerManager.setTimeout(callback, delay);
+  if (!win || typeof win.setTimeout !== 'function') return null;
+
+  return win.setTimeout(callback, delay);
 }
 
 /**
@@ -156,9 +155,11 @@ export function safeSetTimeout(callback: () => void, delay: number): number | nu
  */
 export function safeClearTimeout(timerId: number | null): void {
   if (timerId === null) return;
+
   const win = safeWindow();
-  if (!win) return;
-  globalTimerManager.clearTimeout(timerId);
+  if (win && typeof win.clearTimeout === 'function') {
+    win.clearTimeout(timerId);
+  }
 }
 
 /**

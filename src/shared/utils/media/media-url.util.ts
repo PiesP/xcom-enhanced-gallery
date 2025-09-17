@@ -8,16 +8,10 @@
  * BackgroundTweetLoader와 함께 사용되어 정확한 미디어 정보를 제공합니다.
  */
 
-import { logger } from '../../logging/logger';
-// FilenameService는 shared/media 레이어에 있으므로 직접 import 허용(services 아님)
-import { generateMediaFilename } from '../../media/FilenameService';
-import type { FilenameOptions } from '../../media/FilenameService';
-// Username은 shared/media/UsernameSource 헬퍼를 통해 제공
-import { getPreferredUsername } from '../../media/UsernameSource';
-export type { FilenameOptions };
-import type { MediaInfo } from '../../types/media.types';
-import { cachedQuerySelector, cachedQuerySelectorAll } from '../../dom';
-import { SELECTORS } from '../../../constants';
+import { logger } from '@shared/logging/logger';
+import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
+import type { MediaInfo } from '@shared/types/media.types';
+import { cachedQuerySelector, cachedQuerySelectorAll } from '@shared/dom';
 
 /**
  * 트윗 document에서 미디어 URL들을 추출
@@ -65,7 +59,7 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     }
 
     // 추가: data-testid="tweetPhoto"와 data-testid="videoPlayer" 요소들도 확인 (캐시된 조회)
-    const tweetPhotos = cachedQuerySelectorAll(SELECTORS.TWEET_PHOTO, rootElement, 3000);
+    const tweetPhotos = cachedQuerySelectorAll('[data-testid="tweetPhoto"]', rootElement, 3000);
     if (tweetPhotos && tweetPhotos.length > 0) {
       Array.from(tweetPhotos).forEach(photo => {
         const imgElement = cachedQuerySelector('img', photo as Element, 2000) as HTMLImageElement;
@@ -110,25 +104,13 @@ export function createMediaInfoFromImage(
     // 썸네일 URL (small 버전)
     const thumbnailUrl = `${src.replace(/[?&]name=[^&]*/, '').replace(/[?&]format=[^&]*/, '')}?format=jpg&name=small`;
 
-    // 사용자/트윗 정보 기반 단일 소스 파일명 생성
-    const username = getUsernameSafe() || undefined;
-    const tempInfo: Partial<MediaInfo> = {
-      id: `${tweetId}-${index}`,
-      url: originalUrl,
-      type: 'image',
-      tweetId,
-      tweetUsername: username,
-    } as const;
-    const filename = getFilename(
-      tempInfo as MediaInfo,
-      username
-        ? {
-            index: index + 1,
-            // 서비스 표준 형식 유지를 위해 fallbackUsername도 전달
-            fallbackUsername: username,
-          }
-        : { index: index + 1 }
-    );
+    // 파일명 추출 (URL에서 실제 미디어 ID 부분)
+    const urlMatch = src.match(/\/media\/([^?]+)/);
+    const mediaId = urlMatch?.[1] ?? `media_${tweetId}_${index}`;
+
+    // 안전한 파일명 생성 - 중복 확장자 제거 및 유효성 검증
+    const cleanMediaId = cleanFilename(mediaId);
+    const filename = `${cleanMediaId}.jpg`;
 
     return {
       id: `${tweetId}-${index}`,
@@ -138,7 +120,7 @@ export function createMediaInfoFromImage(
       originalUrl: `https://twitter.com/i/status/${tweetId}/photo/${index + 1}`,
       tweetId,
       filename,
-      tweetUsername: getUsernameSafe() || undefined,
+      tweetUsername: parseUsernameFast() || undefined,
       tweetUrl: `https://twitter.com/i/status/${tweetId}`,
       alt,
       width: imgElement.width || 1200,
@@ -167,33 +149,13 @@ export function createMediaInfoFromVideo(
       return null;
     }
 
-    // 사용자/트윗 정보 기반 단일 소스 파일명 생성
-    const username = getUsernameSafe() || undefined;
-    const tempInfo: Partial<MediaInfo> = {
-      id: `${tweetId}-video-${index}`,
-      url: src || poster,
-      type: 'video',
-      tweetId,
-      tweetUsername: username,
-    } as const;
-    // 확장자는 소스 URL에서 직접 우선 추출하여 서비스에 전달 (mp4 등의 정확성 보장)
-    let ext: string | undefined;
-    try {
-      const sourceUrl = src || poster;
-      const m = sourceUrl.match(/\.([a-z0-9]+)(?:[?#]|$)/i);
-      ext = m?.[1]?.toLowerCase();
-    } catch {
-      // ignore parse errors; fallback extension logic in FilenameService will apply
-    }
-    const options: { index: number } | { index: number; extension: string } = ext
-      ? { index: index + 1, extension: ext }
-      : { index: index + 1 };
-    const filename = getFilename(
-      tempInfo as MediaInfo,
-      username
-        ? ({ ...(options as FilenameOptions), fallbackUsername: username } as FilenameOptions)
-        : (options as FilenameOptions)
-    );
+    // 비디오 썸네일 (poster)에서 미디어 ID 추출
+    const posterMatch = poster.match(/\/media\/([^?]+)/);
+    const mediaId = posterMatch ? posterMatch[1] : `video_${tweetId}_${index}`;
+
+    // 안전한 파일명 생성
+    const cleanMediaId = cleanFilename(mediaId ?? `fallback_${tweetId}_${index}`);
+    const filename = `${cleanMediaId}.mp4`;
 
     return {
       id: `${tweetId}-video-${index}`,
@@ -203,7 +165,7 @@ export function createMediaInfoFromVideo(
       originalUrl: `https://twitter.com/i/status/${tweetId}/video/${index + 1}`,
       tweetId,
       filename,
-      tweetUsername: getUsernameSafe() || undefined,
+      tweetUsername: parseUsernameFast() || undefined,
       tweetUrl: `https://twitter.com/i/status/${tweetId}`,
       alt: `Video ${index + 1} from tweet`,
       width: videoElement.videoWidth || 1920,
@@ -437,30 +399,6 @@ function getHighQualityMediaUrlFallback(
   }
 
   return `${baseUrl}?${params.join('&')}`;
-}
-
-// ===== helpers to access services via container (no direct service imports in utils) =====
-function getUsernameSafe(): string | null {
-  // 우선 media 레이어 헬퍼 사용 (테스트에서 모킹 용이)
-  try {
-    const viaMedia = getPreferredUsername();
-    if (viaMedia) return viaMedia;
-  } catch {
-    // noop
-  }
-  return null;
-}
-
-function getFilename(info: MediaInfo, options: FilenameOptions): string {
-  try {
-    return generateMediaFilename(info, options);
-  } catch {
-    // minimal fallback: synthesize simple filename
-    const base = info.tweetId ? `${info.tweetId}` : 'media';
-    const idx = (options.index ?? 1).toString().padStart(2, '0');
-    const ext = options.extension ? `.${options.extension}` : '';
-    return `${base}_${idx}${ext}`;
-  }
 }
 
 /**

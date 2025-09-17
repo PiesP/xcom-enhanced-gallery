@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@shared/logging';
-import { globalTimerManager } from '@shared/utils/timer-management';
 
 export interface AnimationConfig {
   duration?: number;
@@ -187,9 +186,7 @@ export class AnimationService {
    * 비동기 지연 유틸리티
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => {
-      globalTimerManager.setTimeout(resolve, ms);
-    });
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 

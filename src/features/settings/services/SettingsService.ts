@@ -11,8 +11,6 @@ import type {
   SettingValidationResult,
 } from '../types/settings.types';
 import { DEFAULT_SETTINGS as defaultSettings } from '../types/settings.types';
-import { migrateSettings as runMigration } from './SettingsMigration';
-import { computeCurrentSettingsSchemaHash } from './SettingsSchema';
 
 /**
  * 설정 저장 키
@@ -42,7 +40,6 @@ export class SettingsService {
   private settings: AppSettings = SettingsService.cloneDefaults();
   private readonly listeners = new Set<SettingChangeListener>();
   private initialized = false;
-  private readonly schemaHash = computeCurrentSettingsSchemaHash();
 
   /** 기본 설정 깊은 복제 (1단계 depth - 각 카테고리 객체 분리) */
   private static cloneDefaults(): AppSettings {
@@ -355,35 +352,19 @@ export class SettingsService {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) {
         logger.debug('저장된 설정이 없음, 기본값 사용');
-        // 최초 저장에 현재 스키마 해시를 포함시켜 일관화
-        await this.saveSettings();
         return;
       }
 
-      type WithSchemaHash = AppSettings & { __schemaHash?: string };
-      const parsedSettings = JSON.parse(stored) as WithSchemaHash;
+      const parsedSettings = JSON.parse(stored) as AppSettings;
 
       // 설정 구조 검증
       if (!this.validateSettingsStructure(parsedSettings)) {
         logger.warn('유효하지 않은 설정 구조, 기본값으로 복원');
-        // 기본값으로 복원 후 저장(해시 포함)
-        this.settings = SettingsService.cloneDefaults();
-        await this.saveSettings();
         return;
       }
 
-      // 스키마 해시 비교 — 불일치 시 prune/fill 마이그레이션 강제
-      const storedHash: string | undefined = parsedSettings.__schemaHash;
-      const currentHash = this.schemaHash;
-
-      if (!storedHash || storedHash !== currentHash) {
-        logger.warn('설정 스키마 해시 불일치 감지 — 마이그레이션 실행');
-        this.settings = runMigration(parsedSettings);
-        await this.saveSettings();
-      } else {
-        // 해시 일치 시에도 마지막 안전성 확보를 위해 한 번 prune/fill 수행(무해)
-        this.settings = runMigration(parsedSettings);
-      }
+      // 마이그레이션 수행
+      this.settings = this.migrateSettings(parsedSettings);
 
       logger.debug('설정 로드 완료');
     } catch (error) {
@@ -396,12 +377,7 @@ export class SettingsService {
    */
   private async saveSettings(): Promise<void> {
     try {
-      // 저장 전 현재 스키마 해시를 보장
-      const withHash: AppSettings & { __schemaHash: string } = {
-        ...this.settings,
-        __schemaHash: this.schemaHash,
-      } as AppSettings & { __schemaHash: string };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(withHash));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.settings));
       logger.debug('설정 저장 완료');
     } catch (error) {
       logger.error('설정 저장 실패:', error);
@@ -474,7 +450,19 @@ export class SettingsService {
    * 설정 마이그레이션
    */
   private migrateSettings(settings: AppSettings): AppSettings {
-    return runMigration(settings);
+    // 버전별 마이그레이션 로직
+    // 현재는 기본값으로 누락된 필드 채우기
+    return {
+      ...defaultSettings,
+      ...settings,
+      gallery: { ...defaultSettings.gallery, ...settings.gallery },
+      download: { ...defaultSettings.download, ...settings.download },
+      tokens: { ...defaultSettings.tokens, ...settings.tokens },
+      performance: { ...defaultSettings.performance, ...settings.performance },
+      accessibility: { ...defaultSettings.accessibility, ...settings.accessibility },
+      version: defaultSettings.version, // 항상 최신 버전으로
+      lastModified: Date.now(),
+    };
   }
 
   /**

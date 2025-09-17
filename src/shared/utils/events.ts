@@ -2,14 +2,16 @@
  * @fileoverview 통합 이벤트 관리 시스템
  */
 
-import { logger } from '../logging/logger';
-import { globalTimerManager } from './timer-management';
-import { isGalleryInternalElement } from './utils';
-import { MediaClickDetector } from './media/MediaClickDetector';
-import { isVideoControlElement, isTwitterNativeGalleryElement } from '../../constants';
-import { galleryState } from '../state/signals/gallery.signals';
-import { getMediaServiceFromContainer } from '../container/service-accessors';
-import type { MediaInfo } from '../types/media.types';
+import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '@shared/utils/timer-management';
+import { isGalleryInternalElement } from '@shared/utils/utils';
+import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
+import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
+import { galleryState } from '@shared/state/signals/gallery.signals';
+import { CoreService } from '@shared/services/ServiceManager';
+import { SERVICE_KEYS } from '@/constants';
+import type { MediaService } from '@shared/services/MediaService';
+import type { MediaInfo } from '@shared/types/media.types';
 
 // 기본 이벤트 관리
 interface EventContext {
@@ -24,85 +26,9 @@ interface EventContext {
 
 // 모듈 레벨 상태 관리
 const listeners = new Map<string, EventContext>();
-// De-duplication registry: key -> { masterId, refCount }
-interface DedupEntry {
-  masterId: string;
-  refCount: number;
-  element: EventTarget;
-  type: string;
-  listener: EventListener;
-  options?: AddEventListenerOptions | undefined;
-}
-const dedupRegistry = new Map<string, DedupEntry>();
-
-// Stable identity maps for element and listener
-const elementIds = new WeakMap<object, number>();
-let elementIdCounter = 0;
-function getElementId(element: EventTarget): number {
-  const key = element as unknown as object;
-  let id = elementIds.get(key);
-  if (!id) {
-    id = ++elementIdCounter;
-    elementIds.set(key, id);
-  }
-  return id;
-}
-
-const listenerIds = new WeakMap<Function, number>();
-let listenerFnIdCounter = 0;
-function getListenerId(fn: EventListener): number {
-  const key = fn as unknown as Function;
-  let id = listenerIds.get(key);
-  if (!id) {
-    id = ++listenerFnIdCounter;
-    listenerIds.set(key, id);
-  }
-  return id;
-}
-
-type ListenerOptionsWithSignal = AddEventListenerOptions & {
-  signal?: {
-    aborted: boolean;
-    addEventListener?: (
-      type: 'abort',
-      listener: () => void,
-      options?: AddEventListenerOptions
-    ) => void;
-    removeEventListener?: (type: 'abort', listener: () => void) => void;
-  };
-};
-
-const signalIds = new WeakMap<object, number>();
-let signalIdCounter = 0;
-function getSignalId(signalObj: object): number {
-  let id = signalIds.get(signalObj);
-  if (!id) {
-    id = ++signalIdCounter;
-    signalIds.set(signalObj, id);
-  }
-  return id;
-}
-
-function getOptionsKey(options?: AddEventListenerOptions): string {
-  const o = options as ListenerOptionsWithSignal | undefined;
-  const capture = o?.capture ? 1 : 0;
-  const passive = o?.passive ? 1 : 0;
-  const once = o?.once ? 1 : 0;
-  const hasSignal = o?.signal ? 1 : 0;
-  const sigId = hasSignal ? getSignalId(o!.signal as unknown as object) : 0;
-  return `${capture}:${passive}:${once}:${hasSignal ? 'sig' : 'nosig'}:${sigId}`;
-}
 let listenerIdCounter = 0;
 // Fallback 재생 상태 추적(서비스 미가용 시 키보드 제어용)
 const __videoPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
-
-// Local minimal contract to avoid importing service types from utils layer
-type MediaServiceLike = {
-  togglePlayPauseCurrent: () => void;
-  volumeUpCurrent: () => void;
-  volumeDownCurrent: () => void;
-  toggleMuteCurrent: () => void;
-};
 
 /**
  * 고유 리스너 ID 생성
@@ -141,65 +67,6 @@ export function addListener(
       return id; // 빈 ID 반환하여 오류 방지
     }
 
-    // AbortSignal 지원: 이미 종료된 시그널이면 등록을 건너뜀
-    const signal: AbortSignal | undefined = options?.signal as AbortSignal | undefined;
-    if (signal?.aborted) {
-      logger.debug(`Skip adding listener due to pre-aborted signal: ${type} (${id})`, {
-        context,
-      });
-      return id; // 등록/저장하지 않음
-    }
-
-    // If AbortSignal provided and already aborted, skip any registration
-    const abortSignal = (options as ListenerOptionsWithSignal | undefined)?.signal;
-    if (abortSignal?.aborted) {
-      logger.debug(`Skip adding listener due to pre-aborted signal: ${type} (${id})`, {
-        context,
-      });
-      return id;
-    }
-
-    // De-duplication key: element identity + type + listener identity + options signature
-    const key = `${getElementId(element)}|${type}|${getListenerId(listener)}|${getOptionsKey(options)}`;
-    const existing = dedupRegistry.get(key);
-
-    if (existing) {
-      // Increase refCount and alias this id to master id in listeners map (without double addEventListener)
-      existing.refCount += 1;
-      listeners.set(id, {
-        id,
-        element,
-        type,
-        listener,
-        options,
-        context,
-        created: Date.now(),
-      });
-      logger.debug(`Event listener deduped: ${type} (${id} -> ${existing.masterId})`, {
-        context,
-      });
-      // attach abort handler for this alias as well
-      if (abortSignal && typeof abortSignal.addEventListener === 'function') {
-        const onAbort = () => {
-          try {
-            removeEventListenerManaged(id);
-          } finally {
-            try {
-              abortSignal.removeEventListener?.('abort', onAbort);
-            } catch {
-              /* ignore */
-            }
-          }
-        };
-        try {
-          abortSignal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
-        } catch {
-          logger.debug('AbortSignal addEventListener not available (ignored)', { context });
-        }
-      }
-      return id;
-    }
-
     element.addEventListener(type, listener, options);
 
     listeners.set(id, {
@@ -212,42 +79,7 @@ export function addListener(
       created: Date.now(),
     });
 
-    // Create dedup entry as master
-    dedupRegistry.set(key, {
-      masterId: id,
-      refCount: 1,
-      element,
-      type,
-      listener,
-      options,
-    });
-
-    // AbortSignal 지원: abort 시 자동 해제
-    if (abortSignal && typeof abortSignal.addEventListener === 'function') {
-      const onAbort = () => {
-        try {
-          removeEventListenerManaged(id);
-        } finally {
-          // once 옵션으로 자동 해제되지만, 방어적으로 제거 시도
-          try {
-            abortSignal.removeEventListener?.('abort', onAbort);
-          } catch {
-            logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
-              context,
-            });
-          }
-        }
-      };
-      try {
-        abortSignal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
-      } catch {
-        // ignore — 환경에 따라 EventTarget 미구현일 수 있음
-        logger.debug('AbortSignal addEventListener not available (ignored)', { context });
-      }
-    }
-
-    // Debug log with sampling for high-frequency types to reduce noise in dev
-    debugLogEvent(`Event listener added: ${type} (${id})`, type, { context });
+    logger.debug(`Event listener added: ${type} (${id})`, { context });
     return id;
   } catch (error) {
     logger.error(`Failed to add event listener: ${type}`, { error, context });
@@ -279,42 +111,14 @@ export function removeEventListenerManaged(id: string): boolean {
   }
 
   try {
-    // Reconstruct the de-dup key used during registration
-    const key = `${getElementId(eventContext.element)}|${eventContext.type}|${getListenerId(eventContext.listener)}|${getOptionsKey(eventContext.options)}`;
-
-    const entry = dedupRegistry.get(key);
-    if (entry) {
-      entry.refCount -= 1;
-      listeners.delete(id);
-      if (entry.refCount <= 0) {
-        // Actually remove the DOM listener once
-        entry.element.removeEventListener(
-          entry.type,
-          entry.listener as EventListener,
-          entry.options as AddEventListenerOptions | undefined
-        );
-        dedupRegistry.delete(key);
-        debugLogEvent(`Event listener removed: ${eventContext.type} (${id})`, eventContext.type);
-      } else {
-        debugLogEvent(
-          `Event listener dereferenced: ${eventContext.type} (${id}), refs=${entry.refCount}`,
-          eventContext.type
-        );
-      }
-      return true;
-    }
-
-    // Fallback: if no registry entry exists (legacy), remove directly
     eventContext.element.removeEventListener(
       eventContext.type,
       eventContext.listener,
       eventContext.options
     );
     listeners.delete(id);
-    debugLogEvent(
-      `Event listener removed (no-registry): ${eventContext.type} (${id})`,
-      eventContext.type
-    );
+
+    logger.debug(`Event listener removed: ${eventContext.type} (${id})`);
     return true;
   } catch (error) {
     logger.error(`Failed to remove event listener: ${id}`, error);
@@ -629,133 +433,74 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
     globalTimerManager.clearInterval(galleryEventState.priorityInterval);
   }
 
-  // 적응형 백오프 설정: 15s → ~22.5s → ~33.7s … 최대 90s. 강화 성공 시 15s로 리셋.
-  let currentInterval = 15000;
-  let consecutiveSkips = 0;
+  // 15초마다 우선순위 재설정 (성능 최적화: 적응형 스케줄링)
+  galleryEventState.priorityInterval = globalTimerManager.setInterval(() => {
+    try {
+      if (!galleryEventState.initialized) return;
 
-  const schedule = () => {
-    // 기존 인터벌이 있으면 정리 후 재설정
-    if (galleryEventState.priorityInterval) {
-      globalTimerManager.clearInterval(galleryEventState.priorityInterval);
-    }
-
-    galleryEventState.priorityInterval = globalTimerManager.setInterval(() => {
-      try {
-        if (!galleryEventState.initialized) return;
-
-        // Document 안전성 검사
-        const documentElement =
-          (typeof document !== 'undefined' && document) ||
-          (typeof globalThis !== 'undefined' && (globalThis as { document?: Document }).document) ||
-          null;
-
-        // 스킵 조건: 갤러리 열림, document 없음, 페이지 hidden
-        if (checkGalleryOpen() || !documentElement || documentElement.hidden) {
-          consecutiveSkips++;
-          // 백오프 증가: 2회 이상 연속 스킵 시 인터벌을 다음 단계로 증가 (최대 90s)
-          if (consecutiveSkips >= 2) {
-            const next = Math.min(Math.floor(currentInterval * 1.5), 90000);
-            if (next !== currentInterval) {
-              currentInterval = next;
-              schedule();
-            }
-          }
-          return;
-        }
-
-        // 현재 리스너가 모두 정상적으로 유지되고 있으면 재등록을 건너뛴다
-        const listenersHealthy = Array.isArray(galleryEventState.listenerIds)
-          ? galleryEventState.listenerIds.every(id => listeners.has(id))
-          : false;
-
-        if (listenersHealthy) {
-          logger.debug('Gallery event priority check: listeners healthy — skip reinforcement');
-          // 스킵이 계속되면 백오프를 증가시킨다
-          consecutiveSkips++;
-          if (consecutiveSkips >= 2) {
-            const next = Math.min(Math.floor(currentInterval * 1.5), 90000);
-            if (next !== currentInterval) {
-              currentInterval = next;
-              schedule();
-            }
-          }
-          return;
-        }
-
-        // 우선순위 강화 실행: 기존 리스너 제거 후 재등록
-        galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
-
-        const clickHandler: EventListener = async (evt: Event) => {
-          const event = evt as MouseEvent;
-          const result = await handleMediaClick(event, handlers, options);
-          if (result.handled && options.preventBubbling) {
-            event.stopPropagation();
-            event.preventDefault();
-          }
-        };
-
-        const keyHandler: EventListener = (evt: Event) => {
-          const event = evt as KeyboardEvent;
-          handleKeyboardEvent(event, handlers, options);
-        };
-
-        const clickId = addListener(
-          documentElement,
-          'click',
-          clickHandler,
-          { passive: false, capture: true },
-          options.context
-        );
-
-        const keyId = addListener(
-          documentElement,
-          'keydown',
-          keyHandler,
-          { passive: false, capture: true },
-          options.context
-        );
-
-        galleryEventState.listenerIds = [clickId, keyId];
-        logger.debug('Gallery event priority reinforced');
-
-        // 강화 성공: 백오프 리셋 및 기본 인터벌(15s)로 복귀
-        if (currentInterval !== 15000) {
-          currentInterval = 15000;
-          schedule();
-        }
-        consecutiveSkips = 0;
-      } catch (error) {
-        logger.warn('Failed to reinforce gallery event priority:', error);
+      // 갤러리가 열린 상태에서는 우선순위 강화 중단 (메모리 최적화)
+      if (checkGalleryOpen()) {
+        logger.debug('Gallery is open, skipping priority enforcement');
+        return;
       }
-    }, currentInterval);
-  };
 
-  schedule();
-}
+      // Document 안전성 검사
+      const documentElement =
+        (typeof document !== 'undefined' && document) ||
+        (typeof globalThis !== 'undefined' && globalThis.document) ||
+        null;
 
-// ================================
-// Log sampling for high-frequency event types
-// ================================
-const NOISY_EVENT_TYPES = new Set(['scroll', 'mousemove', 'mouseover', 'mouseout', 'wheel']);
-const lastLogByType = new Map<string, number>();
+      if (!documentElement) {
+        logger.debug('Document not available, skipping priority enforcement');
+        return;
+      }
 
-function debugLogEvent(message: string, type: string, meta?: Record<string, unknown>) {
-  try {
-    if (NOISY_EVENT_TYPES.has(type)) {
-      const now = Date.now();
-      const last = lastLogByType.get(type) ?? 0;
-      // log at most once per 5000ms for each noisy type
-      if (now - last < 5000) return;
-      lastLogByType.set(type, now);
+      // 페이지가 비활성 상태일 때는 스케줄링 중단 (CPU 절약)
+      if (documentElement.hidden) {
+        logger.debug('Page is hidden, skipping priority enforcement');
+        return;
+      }
+
+      // 기존 리스너 제거
+      galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
+
+      // 새로운 리스너 등록 (최신 우선순위로)
+      const clickHandler: EventListener = async (evt: Event) => {
+        const event = evt as MouseEvent;
+        const result = await handleMediaClick(event, handlers, options);
+        if (result.handled && options.preventBubbling) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      };
+
+      const keyHandler: EventListener = (evt: Event) => {
+        const event = evt as KeyboardEvent;
+        handleKeyboardEvent(event, handlers, options);
+      };
+
+      const clickId = addListener(
+        documentElement,
+        'click',
+        clickHandler,
+        { passive: false, capture: true },
+        options.context
+      );
+
+      const keyId = addListener(
+        documentElement,
+        'keydown',
+        keyHandler,
+        { passive: false, capture: true },
+        options.context
+      );
+
+      galleryEventState.listenerIds = [clickId, keyId];
+      logger.debug('Gallery event priority reinforced');
+    } catch (error) {
+      logger.warn('Failed to reinforce gallery event priority:', error);
     }
-    if (meta) {
-      logger.debug(message, meta);
-    } else {
-      logger.debug(message);
-    }
-  } catch {
-    // ignore logging failures
-  }
+  }, 15000);
 }
 
 /**
@@ -871,18 +616,11 @@ function handleKeyboardEvent(
                 : (globalThis as { document?: Document }).document
             ) as Document | undefined;
             if (!doc) return null;
-            // Support multiple root selectors, including test-only containers
-            const root = (doc.querySelector('.xeg-gallery-container') ||
-              doc.querySelector('[data-xeg-gallery-container]') ||
-              doc.getElementById('xeg-gallery-root') ||
-              doc.querySelector('[data-xeg-gallery-root]') ||
-              null) as HTMLElement | null;
-            // Items container may exist directly under document in tests
-            const items = (root?.querySelector('[data-xeg-role="items-container"]') ||
-              doc.querySelector('[data-xeg-role="items-container"]')) as HTMLElement | null;
+            const root = doc.querySelector('#xeg-gallery-root');
+            const items = root?.querySelector('[data-xeg-role="items-container"]');
             if (!items) return null;
             const index = galleryState.value.currentIndex;
-            const target = items.children?.[index] as HTMLElement | undefined;
+            const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
             if (!target) return null;
             const v = target.querySelector('video');
             return v instanceof HTMLVideoElement ? v : null;
@@ -895,12 +633,9 @@ function handleKeyboardEvent(
           case ' ': // fallthrough
           case 'Space':
             try {
-              let svc: MediaServiceLike | null = null;
-              try {
-                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-              } catch {
-                svc = null;
-              }
+              const svc = CoreService.getInstance().tryGet<MediaService>(
+                SERVICE_KEYS.MEDIA_SERVICE
+              );
               if (svc) {
                 svc.togglePlayPauseCurrent();
               } else {
@@ -922,12 +657,9 @@ function handleKeyboardEvent(
             break;
           case 'ArrowUp':
             try {
-              let svc: MediaServiceLike | null = null;
-              try {
-                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-              } catch {
-                svc = null;
-              }
+              const svc = CoreService.getInstance().tryGet<MediaService>(
+                SERVICE_KEYS.MEDIA_SERVICE
+              );
               if (svc) {
                 svc.volumeUpCurrent();
               } else {
@@ -944,12 +676,9 @@ function handleKeyboardEvent(
             break;
           case 'ArrowDown':
             try {
-              let svc: MediaServiceLike | null = null;
-              try {
-                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-              } catch {
-                svc = null;
-              }
+              const svc = CoreService.getInstance().tryGet<MediaService>(
+                SERVICE_KEYS.MEDIA_SERVICE
+              );
               if (svc) {
                 svc.volumeDownCurrent();
               } else {
@@ -966,12 +695,9 @@ function handleKeyboardEvent(
           case 'm':
           case 'M':
             try {
-              let svc: MediaServiceLike | null = null;
-              try {
-                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-              } catch {
-                svc = null;
-              }
+              const svc = CoreService.getInstance().tryGet<MediaService>(
+                SERVICE_KEYS.MEDIA_SERVICE
+              );
               if (svc) {
                 svc.toggleMuteCurrent();
               } else {
@@ -1073,7 +799,7 @@ export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOption
 
 /**
  * 통합 이벤트 관리자 클래스
- * @deprecated 외부 소비자는 `@shared/services/EventManager`를 사용하세요. 이 클래스는 내부 호환 용도로만 유지됩니다.
+ * @deprecated UnifiedEventManager를 사용하세요
  */
 export class GalleryEventManager {
   private static instance: GalleryEventManager | null = null;
@@ -1262,4 +988,8 @@ export function handleTwitterEvent(
   return addListener(element, eventType, handler, undefined, context);
 }
 
-// 별칭 제거됨: 이벤트 매니저 표면은 Service 레이어의 EventManager로 일원화됩니다.
+/**
+ * TwitterEventManager 클래스 (GalleryEventManager의 별칭)
+ * @deprecated UnifiedEventManager를 사용하세요
+ */
+export const TwitterEventManager = GalleryEventManager;

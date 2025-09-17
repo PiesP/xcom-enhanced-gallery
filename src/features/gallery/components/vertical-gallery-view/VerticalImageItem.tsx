@@ -7,15 +7,14 @@
  * @description 통합된 수직 이미지 아이템 컴포넌트 - StandardProps 표준화 완료
  */
 
-import { withGallery, type GalleryComponentProps } from '../../../../shared/components/hoc';
-import { Button } from '../../../../shared/components/ui/Button/Button';
-import { ComponentStandards } from '../../../../shared/components/ui/StandardProps';
+import { withGallery, type GalleryComponentProps } from '@shared/components/hoc';
+import { Button } from '@shared/components/ui/Button/Button';
+import { ComponentStandards } from '@shared/components/ui/StandardProps';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
-import { getPreactHooks, getPreactCompat } from '../../../../shared/external/vendors';
+import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
 import styles from './VerticalImageItem.module.css';
-import { languageService } from '../../../../shared/services/LanguageService';
 
 /**
  * Clean up filename by removing verbose path information
@@ -286,7 +285,7 @@ function BaseVerticalImageItemCore({
     observer.observe(container);
 
     return () => {
-      // no-op cleanup; observer is disconnected above when visible
+      observer.disconnect();
     };
   }, [isVisible, forceVisible]); // forceVisible 의존성 추가
 
@@ -443,12 +442,7 @@ function BaseVerticalImageItemCore({
             <img
               ref={imgRef}
               src={media.url}
-              alt={
-                cleanFilename(media.filename) ||
-                languageService.getFormattedString('messages.gallery.failedToLoadImage', {
-                  type: 'image',
-                })
-              }
+              alt={cleanFilename(media.filename) || `Image ${index + 1}`}
               loading='lazy'
               decoding='async'
               className={ComponentStandards.createClassName(
@@ -475,11 +469,7 @@ function BaseVerticalImageItemCore({
           {isError && (
             <div className={styles.error}>
               <span className={styles.errorIcon}>⚠️</span>
-              <span className={styles.errorText}>
-                {languageService.getFormattedString('messages.gallery.failedToLoadImage', {
-                  type: isVideo ? 'video' : 'image',
-                })}
-              </span>
+              <span className={styles.errorText}>Failed to load {isVideo ? 'video' : 'image'}</span>
             </div>
           )}
         </>
@@ -491,7 +481,7 @@ function BaseVerticalImageItemCore({
           size='sm'
           className={styles.downloadButton || ''}
           onClick={handleDownloadClick}
-          aria-label={languageService.getString('toolbar.download')}
+          aria-label={`Download ${cleanFilename(media.filename)}`}
         >
           <span className={styles.downloadIcon}>⬇️</span>
         </Button>

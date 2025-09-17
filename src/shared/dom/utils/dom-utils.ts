@@ -5,7 +5,7 @@
  * 이 모듈은 기본적인 DOM 조작 기능만 제공합니다.
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 
 // ========== 타입 정의 ==========
 
@@ -227,50 +227,6 @@ export class DOMUtils {
       },
     };
   }
-
-  // ========== 이벤트 경로 유틸리티 ==========
-
-  /**
-   * 이벤트가 지정한 컨테이너 내부(또는 경로 상)에 있는지 판정합니다.
-   * Shadow DOM의 이벤트 retargeting을 고려하여 composedPath를 우선 확인합니다.
-   */
-  public static isEventInsideContainer(
-    event: Event | null | undefined,
-    container: Element | null
-  ): boolean {
-    if (!event || !container) return false;
-
-    // 즉시 타겟 포함 여부 (light DOM 또는 동일 트리)
-    const target = event.target;
-    if (target && target instanceof Node && container.contains(target)) return true;
-
-    // 타입 가드: composedPath 지원 여부
-    const hasComposedPath = (e: unknown): e is Event & { composedPath: () => EventTarget[] } => {
-      return !!e && typeof (e as { composedPath?: unknown }).composedPath === 'function';
-    };
-
-    // 타입 가드: Node 여부
-    const isNode = (obj: unknown): obj is Node => {
-      return !!obj && typeof (obj as { nodeType?: unknown }).nodeType === 'number';
-    };
-
-    // Shadow DOM: composedPath 상에 컨테이너 또는 그 하위 노드가 존재하는지 검사
-    try {
-      const path = hasComposedPath(event) ? event.composedPath() : null;
-      if (Array.isArray(path) && path.length > 0) {
-        for (const node of path) {
-          if (isNode(node)) {
-            if (node === container) return true;
-            if (container.contains(node)) return true;
-          }
-        }
-      }
-    } catch {
-      // composedPath 접근 실패 시 무시하고 false로 폴백
-    }
-
-    return false;
-  }
 }
 
 // ========== 편의를 위한 named export ==========
@@ -286,7 +242,6 @@ export const {
   isHTMLElement,
   isElementVisible,
   isElementInViewport,
-  isEventInsideContainer,
 } = DOMUtils;
 
 // ========== 기본 export ==========

@@ -3,8 +3,8 @@
  * @description 중복 제거를 위한 유틸리티 함수들
  */
 
-import { logger } from '../../logging/logger';
-import type { MediaInfo } from '../../types';
+import { logger } from '@shared/logging/logger';
+import type { MediaInfo } from '@shared/types';
 
 /**
  * 범용 중복 제거 함수

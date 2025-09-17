@@ -64,9 +64,7 @@
 
 /* 기본 트랜지션 */
 .xeg-transition {
-  transition:
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
   will-change: transform, opacity;
 }
 
@@ -80,7 +78,7 @@
 }
 
 .xeg-transition-hover:hover {
-  transform: translateY(var(--xeg-button-lift)) var(--xeg-gpu-hack);
+  transform: translateY(-2px) var(--xeg-gpu-hack);
 }
 
 /* 포커스 트랜지션 */

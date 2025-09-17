@@ -38,8 +38,8 @@
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition:
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard);
+    opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 
   user-select: none;
 }
@@ -201,7 +201,7 @@
     /* glassmorphism 클래스의 호버 효과 사용 */
     /* 복잡한 transform 효과 제거 */
     background: var(--xeg-glass-bg-hover, var(--color-glass-bg));
-    transform: translateY(var(--xeg-button-lift));
+    transform: translateY(-1px);
   }
 }
 
@@ -247,8 +247,8 @@
 .settingsButton:focus-visible,
 .closeButton:focus-visible,
 .fitButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  outline: 0.125em solid var(--xeg-color-primary); /* 2px → 0.125em */
+  outline-offset: 0.125em; /* 2px → 0.125em */
 }
 /* 네비게이션 섹션 */
 .toolbarNavigation {
@@ -259,21 +259,16 @@
 .navButton:active:not(:disabled),
 .navButton.active {
   background: var(--xeg-color-primary);
-  color: var(--color-text-inverse);
+  color: white;
 }
 
 /* 미디어 카운터 */
 .mediaCounterWrapper {
-  /* 베이스라인 동기화를 위한 인라인 플렉스 컨테이너 */
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: relative; /* 진행 바를 오버레이로 배치 */
-  gap: 0; /* 세로 갭 제거 – 진행 바는 absolute로 하단에 고정 */
+  gap: 0.25em; /* 4px → 0.25em */
   min-width: 5em; /* 80px → 5em */
-  min-height: 2.5em; /* 아이콘 버튼과 동일 높이로 수직 중심 정렬 보장 */
-  padding-bottom: 0.5em; /* 진행 바 공간 확보 (em 기반) */
-  box-sizing: border-box;
 }
 
 .mediaCounter {
@@ -282,10 +277,6 @@
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
-  /* 베이스라인 동기화: 텍스트 자체의 라인 박스를 최소화 */
-  display: inline-flex;
-  align-items: center;
-  line-height: 1;
   background: var(--xeg-bg-counter);
   padding: 0.25em 0.5em; /* 4px 8px → 0.25em 0.5em */
   border-radius: var(--xeg-radius-md);
@@ -313,16 +304,12 @@
 }
 /* 진행률 바 */
 .progressBar {
-  /* 오버레이 배치하여 텍스트 수직 중심에 영향 없음 */
-  position: absolute;
-  left: 50%;
-  bottom: 0.125em; /* em 기반 하단 여백 */
-  transform: translateX(-50%);
   width: 3.75em; /* 60px → 3.75em */
   height: 0.125em; /* 2px → 0.125em */
   background: var(--xeg-color-neutral-200);
   border-radius: var(--xeg-radius-sm);
   overflow: hidden;
+  margin: 0.25em 0; /* 4px 0 → 0.25em 0 */
 }
 
 .progressFill {
@@ -365,7 +352,7 @@ button.fitButton {
 
 .fitButton.selected {
   background: var(--xeg-color-primary);
-  color: var(--color-text-inverse);
+  color: white;
 }
 /* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {
@@ -408,7 +395,7 @@ button.fitButton {
   width: 0.75em; /* 12px → 0.75em */
   height: 0.75em; /* 12px → 0.75em */
   background: var(--color-green-500);
-  color: var(--color-text-inverse);
+  color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -434,7 +421,7 @@ button.fitButton {
   }
 
   .toolbarSection {
-    gap: 0.375em; /* 6px → 0.375em */
+    gap: 6px;
   }
 
   .toolbarButton,
@@ -443,21 +430,20 @@ button.fitButton {
   .toolbarButton.settingsButton,
   .toolbarButton.closeButton,
   .fitButton {
-    /* ✅ 최소 클릭 타겟 유지: 2.5em (정책 준수) */
-    width: 2.5em !important;
-    height: 2.5em !important;
-    min-width: 2.5em !important;
-    min-height: 2.5em !important;
-    padding: 0.5em !important;
-    font-size: 0.8125em; /* 13px → 0.8125em */
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 6px;
+    font-size: 13px;
   }
 
   .mediaCounter {
-    font-size: 0.875em; /* 14px → 0.875em */
+    font-size: 14px;
   }
 
   .progressBar {
-    width: 3.125em; /* 50px → 3.125em */
+    width: 50px;
   }
 
   /* 반응형에서도 separator 표시 유지 */
@@ -480,12 +466,9 @@ button.fitButton {
   }
 
   .toolbarButton {
-    /* ✅ 작은 화면에서도 클릭 타겟 최소치 유지 */
-    width: 2.5em; /* 고정 폭으로 정렬 안정화 */
-    height: 2.5em;
-    min-width: 2.5em;
-    min-height: 2.5em;
-    padding: 0.5em; /* 컨텐츠 여백 유지 */
+    padding: 0.3125em 0.5em; /* 5px 8px → 0.3125em 0.5em */
+    min-width: 2em; /* 32px → 2em */
+    min-height: 2em; /* 32px → 2em */
   }
 
   .mediaCounterWrapper {

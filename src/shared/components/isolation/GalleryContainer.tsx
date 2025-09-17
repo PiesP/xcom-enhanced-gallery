@@ -3,11 +3,9 @@
  * @description 간소화된 갤러리 컨테이너
  */
 
-import { getPreact, getPreactHooks } from '../../external/vendors';
-import type { ComponentChildren } from '../../external/vendors';
-import { logger } from '../../logging';
-import { EventManager } from '../../services/EventManager';
-import { ensureWheelLock } from '../../utils';
+import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import type { ComponentChildren } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
 
 /**
  * 갤러리 컨테이너 Props
@@ -138,45 +136,13 @@ export function GalleryContainer({
   // 키보드 이벤트 리스너 등록
   useEffect(() => {
     if (onClose) {
-      const id = EventManager.getInstance().addListener(
-        document,
-        'keydown',
-        handleKeyDown as unknown as EventListener
-      );
+      document.addEventListener('keydown', handleKeyDown);
       return () => {
-        EventManager.getInstance().removeListener(id);
+        document.removeEventListener('keydown', handleKeyDown);
       };
     }
     return undefined;
   }, [handleKeyDown, onClose]);
-
-  // 휠 락: 컨텐츠가 뷰포트보다 작아 스크롤 불가할 때 배경 스크롤 차단
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const cleanup = ensureWheelLock(
-      el,
-      () => {
-        try {
-          // 스크롤 불가(내부 높이 <= 뷰포트 높이)일 때만 이벤트 소비
-          const canScroll = el.scrollHeight > el.clientHeight;
-          return !canScroll;
-        } catch {
-          return false;
-        }
-      },
-      { capture: true }
-    );
-
-    return () => {
-      try {
-        cleanup();
-      } catch (err) {
-        logger.debug('GalleryContainer wheel lock cleanup error (ignored)', err);
-      }
-    };
-  }, []);
 
   return h(
     'div',

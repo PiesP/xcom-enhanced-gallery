@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { createAppContainer } from '../../helpers/createAppContainer';
+import { createAppContainer } from '@features/gallery/createAppContainer';
 import { SERVICE_KEYS } from '@/constants';
 
 describe('Phase 2 - Legacy Adapter Contract', () => {
@@ -137,10 +137,7 @@ describe('Phase 2 - Legacy Adapter Contract', () => {
       const mediaService = adapter.getService(SERVICE_KEYS.MEDIA_SERVICE);
 
       // When: 서비스 메서드 호출
-      const mockElement = { querySelector: () => null, querySelectorAll: () => [] } as unknown as {
-        querySelector: (s: string) => unknown;
-        querySelectorAll: (s: string) => unknown;
-      };
+      const mockElement = { querySelector: () => null, querySelectorAll: () => [] } as HTMLElement;
 
       // Then: 에러 없이 실행되어야 함
       expect(async () => {

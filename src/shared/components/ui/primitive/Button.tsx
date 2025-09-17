@@ -3,7 +3,7 @@
  * @description 기본 버튼 컴포넌트 - 디자인 토큰 사용
  */
 
-import type { ComponentChildren } from '../../../external/vendors';
+import type { ComponentChildren } from '@shared/external/vendors';
 import './Button.css';
 
 export interface ButtonProps {

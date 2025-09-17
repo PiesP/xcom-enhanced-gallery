@@ -2,23 +2,19 @@
  * Typed service accessors wrapping the service-bridge and centralizing SERVICE_KEYS usage.
  * Use these helpers instead of referring to SERVICE_KEYS directly in features/bootstrap.
  */
-import type { BulkDownloadService } from '../services/BulkDownloadService';
-import type { FilenameService } from '../media/FilenameService';
-import type { ThemeService } from '../services/ThemeService';
-import type { ToastController } from '../services/ToastController';
-import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
+import type { BulkDownloadService } from '@shared/services/BulkDownloadService';
+import type { FilenameService } from '@shared/media';
+import type { ThemeService } from '@shared/services/ThemeService';
+import type { ToastController } from '@shared/services/ToastController';
+import type { MediaService } from '@shared/services/MediaService';
+import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 
-import { bridgeGetService, bridgeRegister, bridgeTryGet } from './service-bridge';
-import { SERVICE_KEYS } from '../../constants';
+import { bridgeGetService, bridgeRegister } from './service-bridge';
+import { SERVICE_KEYS } from '@/constants';
 
 // Getters (from container)
 export function getToastController(): ToastController {
   return bridgeGetService<ToastController>(SERVICE_KEYS.TOAST);
-}
-
-// Optional getter for ToastController (does not throw when missing)
-export function tryGetToastController(): ToastController | null {
-  return bridgeTryGet<ToastController>(SERVICE_KEYS.TOAST);
 }
 
 export function getThemeService(): ThemeService {
@@ -30,26 +26,15 @@ export function getMediaFilenameService(): FilenameService {
 }
 
 export function getBulkDownloadServiceFromContainer(): BulkDownloadService {
-  try {
-    return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.BULK_DOWNLOAD);
-  } catch {
-    // Phase 3: Avoid eager import at module eval time.
-    // Do not import or instantiate BulkDownloadService here.
-    // Callers must ensure core services are registered first
-    // (registerCoreServices) before accessing this accessor.
-    throw new Error(
-      '[getBulkDownloadServiceFromContainer] BulkDownloadService is not available. Ensure core services are registered before access.'
-    );
-  }
+  return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.BULK_DOWNLOAD);
 }
 
 export function getGalleryDownloadService(): BulkDownloadService {
   return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.GALLERY_DOWNLOAD);
 }
 
-export function getMediaServiceFromContainer(): unknown {
-  // Return unknown to avoid type-level import and potential circular deps with MediaService
-  return bridgeGetService<unknown>(SERVICE_KEYS.MEDIA_SERVICE);
+export function getMediaServiceFromContainer(): MediaService {
+  return bridgeGetService<MediaService>(SERVICE_KEYS.MEDIA_SERVICE);
 }
 
 export function getGalleryRenderer(): GalleryRenderer {
@@ -58,36 +43,11 @@ export function getGalleryRenderer(): GalleryRenderer {
 
 // Registrations (to container)
 export function registerGalleryRenderer(renderer: unknown): void {
-  // 단일 인스턴스 가드: 이미 등록된 인스턴스가 있다면 동일 참조는 무시,
-  // 다른 인스턴스인 경우 이전 인스턴스를 우선 정리한 뒤 교체한다.
-  const existing = bridgeTryGet<GalleryRenderer>(SERVICE_KEYS.GALLERY_RENDERER);
-  if (existing) {
-    if (existing === renderer) {
-      // 동일 인스턴스 재등록은 무시 (idempotent)
-      return;
-    }
-    try {
-      // 안전한 정리 시도
-      (existing as unknown as { destroy?: () => void; cleanup?: () => void }).destroy?.();
-    } catch {
-      // ignore
-    }
-    try {
-      (existing as unknown as { destroy?: () => void; cleanup?: () => void }).cleanup?.();
-    } catch {
-      // ignore
-    }
-  }
-  bridgeRegister(SERVICE_KEYS.GALLERY_RENDERER, renderer as GalleryRenderer);
+  bridgeRegister(SERVICE_KEYS.GALLERY_RENDERER, renderer);
 }
 
 export function registerSettingsManager(settings: unknown): void {
   bridgeRegister(SERVICE_KEYS.SETTINGS, settings);
-}
-
-// Optional getter (no-throw) for Settings service; avoids exposing SERVICE_KEYS at call sites
-export function tryGetSettingsManager<T = unknown>(): T | null {
-  return bridgeTryGet<T>(SERVICE_KEYS.SETTINGS);
 }
 
 export function registerTwitterTokenExtractor(instance: unknown): void {

@@ -1,8 +1,8 @@
 /**
  * @file IconButton - Thin wrapper over Unified Button for icon-only actions
  */
-import type { ComponentChildren, VNode } from '../../../external/vendors';
-import { getPreact } from '../../../external/vendors';
+import type { ComponentChildren, VNode } from '@shared/external/vendors';
+import { getPreact } from '@shared/external/vendors';
 import { Button } from './Button';
 import type { ButtonProps } from './Button';
 

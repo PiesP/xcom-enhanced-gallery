@@ -4,9 +4,23 @@
  * @version 1.0.0 - TDD 기반 중복 제거 구현
  */
 
-import { logger } from '../logging/logger';
-import { getPreactSignals } from '../external/vendors';
-import { ensurePoliteLiveRegion, ensureAssertiveLiveRegion } from '../utils/accessibility/index';
+import { logger } from '@shared/logging/logger';
+import { getPreactSignals } from '@shared/external/vendors';
+import {
+  ensurePoliteLiveRegion,
+  ensureAssertiveLiveRegion,
+} from '@shared/utils/accessibility/index';
+// 레거시 Toast 컴포넌트 상태와의 호환성 유지: 경고/에러는 UI 토스트 목록에도 반영
+import { toasts as legacyToasts } from '@shared/components/ui/Toast/Toast';
+type LegacyToastItem = {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
+  message: string;
+  duration?: number;
+  actionText?: string;
+  onAction?: () => void;
+};
 
 // 통합된 Toast 타입 정의
 export interface ToastItem {
@@ -47,69 +61,18 @@ export class ToastManager {
   private static instance: ToastManager | null = null;
   private readonly toastsSignal: {
     value: ToastItem[];
-    subscribe?: (callback: (value: ToastItem[]) => void) => () => void;
+    subscribe: (callback: (value: ToastItem[]) => void) => () => void;
   };
   private toastIdCounter = 0;
   private readonly subscribers = new Set<(toasts: ToastItem[]) => void>();
 
   private constructor() {
     // Preact signals를 사용한 반응형 상태 관리
-    // 테스트에서 vendors가 부분 모킹되어 getPreactSignals().signal이 없을 수 있으므로
-    // 안전한 폴백 신호를 제공한다.
-    const createLocalSignal = <T>(initial: T) => {
-      let _value = initial;
-      const subscribers = new Set<(v: T) => void>();
-      return {
-        get value() {
-          return _value;
-        },
-        set value(v: T) {
-          _value = v;
-          // 구독자들에게 변경 알림
-          subscribers.forEach(cb => {
-            try {
-              cb(_value);
-            } catch {
-              // 구독자 에러는 무시
-            }
-          });
-        },
-        subscribe(callback: (v: T) => void) {
-          subscribers.add(callback);
-          return () => subscribers.delete(callback);
-        },
-      };
-    };
+    const { signal } = getPreactSignals();
+    this.toastsSignal = signal<ToastItem[]>([]);
 
-    let toastsSignalImpl: typeof this.toastsSignal | null = null;
-    try {
-      const vendorsSignals = getPreactSignals() as unknown as {
-        signal?: <U>(v: U) => { value: U; subscribe: (cb: (v: U) => void) => () => void };
-      };
-      const createSignal = vendorsSignals?.signal as
-        | (<U>(v: U) => { value: U; subscribe: (cb: (v: U) => void) => () => void })
-        | undefined;
-      if (typeof createSignal === 'function') {
-        toastsSignalImpl = createSignal<ToastItem[]>([]);
-      }
-    } catch {
-      // ignore and use fallback
-    }
-
-    // 폴백: 로컬 신호 구현 사용
-    if (!toastsSignalImpl) {
-      logger.warn('[ToastManager] Preact Signals 미가용: 로컬 신호 폴백을 사용합니다.');
-      toastsSignalImpl = createLocalSignal<ToastItem[]>([]);
-    }
-
-    this.toastsSignal = toastsSignalImpl;
-
-    // signals의 변화를 감지하여 구독자들에게 알림 (구독 API가 없는 모킹을 대비해 가드)
-    if (typeof this.toastsSignal.subscribe === 'function') {
-      this.toastsSignal.subscribe(this.notifySubscribers.bind(this));
-    } else {
-      logger.debug('[ToastManager] signals.subscribe 미가용: 수동 알림 모드로 동작합니다.');
-    }
+    // signals의 변화를 감지하여 구독자들에게 알림
+    this.toastsSignal.subscribe(this.notifySubscribers.bind(this));
 
     logger.debug('[ToastManager] 초기화됨');
   }
@@ -155,10 +118,24 @@ export class ToastManager {
     if (route === 'toast-only' || route === 'both') {
       const currentToasts = this.toastsSignal.value || [];
       this.toastsSignal.value = [...currentToasts, toast];
+      // 레거시 토스트 목록에도 동기화 (UI가 Toast.tsx의 toasts를 구독하므로)
+      try {
+        const legacy = (legacyToasts.value as LegacyToastItem[]) || [];
+        const legacyToast: LegacyToastItem = {
+          id: toast.id,
+          type: toast.type,
+          title: toast.title,
+          message: toast.message,
+          ...(toast.duration !== undefined && { duration: toast.duration }),
+          ...(toast.actionText !== undefined && { actionText: toast.actionText }),
+          ...(toast.onAction !== undefined && { onAction: toast.onAction }),
+        };
+        legacyToasts.value = [...legacy, legacyToast];
+      } catch {
+        // 테스트/SSR 환경에서 실패할 경우 조용히 무시
+      }
 
       logger.debug(`[ToastManager] Toast shown: ${options.title} - ${options.message}`);
-      // 구독 API가 없는 환경에서도 UI가 갱신되도록 수동 알림
-      this.notifySubscribers(this.toastsSignal.value || []);
     }
 
     // return id regardless of routing path
@@ -223,8 +200,14 @@ export class ToastManager {
 
     if (filteredToasts.length !== currentToasts.length) {
       this.toastsSignal.value = filteredToasts;
+      // 레거시 토스트 목록에서도 제거
+      try {
+        const current = (legacyToasts.value as LegacyToastItem[]) || [];
+        legacyToasts.value = current.filter(t => t.id !== id);
+      } catch {
+        /* noop */
+      }
       logger.debug(`[ToastManager] Toast 제거: ${id}`);
-      this.notifySubscribers(this.toastsSignal.value || []);
     }
   }
 
@@ -233,8 +216,12 @@ export class ToastManager {
    */
   public clear(): void {
     this.toastsSignal.value = [];
+    try {
+      legacyToasts.value = [];
+    } catch {
+      /* noop */
+    }
     logger.debug('[ToastManager] 모든 Toast 제거');
-    this.notifySubscribers(this.toastsSignal.value || []);
   }
 
   /**

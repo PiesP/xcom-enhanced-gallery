@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createAppContainer } from '../helpers/createAppContainer';
+import { createAppContainer } from '@features/gallery/createAppContainer';
 
 describe('Phase 1 - AppContainer Contract', () => {
   let container;

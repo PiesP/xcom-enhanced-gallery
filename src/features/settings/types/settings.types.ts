@@ -19,8 +19,6 @@ export interface GallerySettings {
   theme: 'auto' | 'light' | 'dark';
   /** 애니메이션 활성화 */
   animations: boolean;
-  /** 키보드 네비게이션 사용 */
-  enableKeyboardNav: boolean;
 }
 
 /**

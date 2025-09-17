@@ -7,8 +7,8 @@
  * Motion One 라이브러리 의존성 제거 및 번들 크기 최적화
  */
 
-import { logger } from '../logging';
-import { globalTimerManager } from './timer-management';
+import { logger } from '@shared/logging';
+import { globalTimerManager } from '@shared/utils';
 
 // CSS 애니메이션 변수 및 상수
 export const ANIMATION_CONSTANTS = {
@@ -29,6 +29,8 @@ export const ANIMATION_CLASSES = {
   SLIDE_OUT_TOP: 'animate-slide-out-top',
   SCALE_IN: 'animate-scale-in',
   SCALE_OUT: 'animate-scale-out',
+  TOOLBAR_SLIDE_DOWN: 'animate-toolbar-slide-down',
+  TOOLBAR_SLIDE_UP: 'animate-toolbar-slide-up',
   IMAGE_LOAD: 'animate-image-load',
   REDUCED_MOTION: 'reduced-motion',
 } as const;
@@ -74,7 +76,14 @@ export function injectAnimationStyles(): void {
       from { opacity: 1; transform: scale(1); }
       to { opacity: 0; transform: scale(0.95); }
     }
-    /* toolbar-slide-* 키프레임 제거: JS API(toolbarSlideDown/Up) 사용 */
+    @keyframes toolbar-slide-down {
+      from { opacity: 0; transform: translateY(-100%); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toolbar-slide-up {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-100%); }
+    }
     @keyframes image-load {
       from { opacity: 0; transform: scale(0.98); }
       to { opacity: 1; transform: scale(1); }
@@ -86,12 +95,14 @@ export function injectAnimationStyles(): void {
   .animate-slide-out-top { animation: slide-out-top var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
   .animate-scale-in { animation: scale-in var(--xeg-duration-normal) var(--xeg-ease-standard) forwards; }
   .animate-scale-out { animation: scale-out var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
+  .animate-toolbar-slide-down { animation: toolbar-slide-down var(--xeg-duration-fast) var(--xeg-ease-decelerate) forwards; }
+  .animate-toolbar-slide-up { animation: toolbar-slide-up var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
   .animate-image-load { animation: image-load var(--xeg-duration-slow) var(--xeg-ease-decelerate) forwards; }
 
     @media (prefers-reduced-motion: reduce) {
       .animate-fade-in, .animate-fade-out, .animate-slide-in-bottom,
       .animate-slide-out-top, .animate-scale-in, .animate-scale-out,
-      .animate-image-load {
+      .animate-toolbar-slide-down, .animate-toolbar-slide-up, .animate-image-load {
         animation: none !important;
       }
     }

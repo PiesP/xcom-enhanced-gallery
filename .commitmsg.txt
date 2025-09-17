@@ -1,7 +1,0 @@
-refactor(gallery): unify gallery selectors; forbid #xeg-gallery-root
-
-- add RED scan test for #xeg-gallery-root in src/**
-- add selector contract tests
-- update sources to use .xeg-gallery-container / [data-xeg-gallery-container]
-- fix GalleryApp.ensureGalleryContainer for mock classList fallback
-- docs: move Phase 1 to completed and prune from active plan

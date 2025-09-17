@@ -4,12 +4,12 @@
  */
 
 import type { MediaDescriptor, MediaVariant, RawMediaCandidate, Result } from './types';
-import { logger } from '../logging';
+import { logger } from '@shared/logging';
 import {
   extractOriginalImageUrl,
   getHighQualityMediaUrl,
   isValidMediaUrl as isTwitterMediaUrl,
-} from '../utils/media/media-url.util';
+} from '@shared/utils/media/media-url.util';
 
 /**
  * 1단계: DOM에서 미디어 요소 수집

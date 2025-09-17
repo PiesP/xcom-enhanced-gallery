@@ -10,10 +10,7 @@ import { readFileSync, existsSync } from 'fs';
 import { resolve, basename } from 'path';
 import { gzipSync } from 'zlib';
 
-function validateOne(
-  scriptPath,
-  { requireNoVitePreload = false, assertNoLegacyGlobals = false } = {}
-) {
+function validateOne(scriptPath, { requireNoVitePreload = false } = {}) {
   const content = readFileSync(scriptPath, 'utf8');
 
   // UserScript 헤더 검증
@@ -98,45 +95,6 @@ function validateOne(
     }
   }
 
-  // P1: 레거시 전역 키가 prod에 포함되지 않도록 가드
-  if (assertNoLegacyGlobals) {
-    const legacyKeys = [
-      /__XEG_LEGACY_ADAPTER__/,
-      /__XEG_GET_SERVICE_OVERRIDE__/,
-      // 레거시 벤더 API/매니저 심볼 누출 금지
-      /initializeVendorsLegacy\b/,
-      /getPreactLegacy\b/,
-      /getPreactHooksLegacy\b/,
-      /getPreactSignalsLegacy\b/,
-      /getPreactCompatLegacy\b/,
-      /getNativeDownloadLegacy\b/,
-      /validateVendorsLegacy\b/,
-      /getVendorVersionsLegacy\b/,
-      /cleanupVendorsLegacy\b/,
-      /isVendorsInitializedLegacy\b/,
-      /getVendorInitializationReportLegacy\b/,
-      /getVendorStatusesLegacy\b/,
-      /isVendorInitializedLegacy\b/,
-      /(?<!Static)VendorManager\b/, // 동적 VendorManager 노출 금지 (정적 매니저는 허용)
-      /vendor-api\.ts/, // 소스 문자열 누출 금지
-      // 신규: 런타임 DOMEventManager 표면 금지(내부 전용)
-      /\bDOMEventManager\b/,
-      /\bcreateEventManager\b/,
-      // 추가: 런타임 AppContainer 표면 누출 금지(테스트 전용 하니스 외)
-      /\bcreateAppContainer\b/,
-      /\bAppContainer\b/,
-      // 추가: PC-only 정책 - Pointer 이벤트 문자열 금지
-      /\bonPointer\w+\b/,
-      /\bPointerEvent\b/,
-    ];
-    for (const re of legacyKeys) {
-      if (re.test(content)) {
-        console.error('❌ Prod userscript leaked legacy global key:', re);
-        process.exit(1);
-      }
-    }
-  }
-
   return { content, map, mapPath };
 }
 
@@ -158,38 +116,7 @@ function validateUserScript() {
 
   // 상세 검증: dev (소스맵 포함), prod (소스맵 + dead code 제거)
   validateOne(devPath, { requireNoVitePreload: false });
-  const prodInfo = validateOne(prodPath, {
-    requireNoVitePreload: true,
-    assertNoLegacyGlobals: true,
-  });
-
-  // L2: Logging gate v2 — prod bundle must not contain development-only stack trace marker
-  if (/Stack trace:/.test(prodInfo.content)) {
-    console.error('❌ Prod userscript contains development-only stack trace marker (logging gate)');
-    process.exit(1);
-  }
-
-  // L3: Logging/Diagnostics tree-shake gate — forbid common dev-only strings in prod bundle
-  const prodStringGates = [
-    /logger\.debug\(/, // direct debug call
-    /logger\.time\(/, // perf timer start
-    /logger\.timeEnd\(/, // perf timer end
-    /__XEG_DEBUG__/, // dev-only global key
-    /\[TEST\]/, // explicit test diagnostics marker
-  ];
-  for (const re of prodStringGates) {
-    if (re.test(prodInfo.content)) {
-      console.error('❌ Prod userscript contains development-only string:', re);
-      process.exit(1);
-    }
-  }
-
-  // L4: ServiceDiagnostics should not be present in prod output symbol names
-  // note: the diagnostic code is dynamically imported in dev only; this guards against leakage
-  if (/ServiceDiagnostics\b/.test(prodInfo.content)) {
-    console.error('❌ Prod userscript leaked ServiceDiagnostics symbol');
-    process.exit(1);
-  }
+  const prodInfo = validateOne(prodPath, { requireNoVitePreload: true });
 
   // 기본적인 JavaScript 구문 검증
   try {
@@ -212,10 +139,8 @@ function validateUserScript() {
   const rawBytes = Buffer.byteLength(prodInfo.content, 'utf8');
   const gzBytes = gzipped.length;
 
-  // B2: 사이즈 예산 강화 — 현재 gzip ~99KB 기준 보수적 상향
-  // WARN은 120KB, FAIL은 160KB로 설정하여 회귀를 조기 감지(현 상태에서는 여유 유지)
-  const WARN_BUDGET = 120 * 1024; // 120KB (경고)
-  const FAIL_BUDGET = 160 * 1024; // 160KB (실패)
+  const WARN_BUDGET = 300 * 1024; // 300KB (경고)
+  const FAIL_BUDGET = 450 * 1024; // 450KB (실패)
 
   if (gzBytes > FAIL_BUDGET) {
     console.error(

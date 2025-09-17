@@ -162,12 +162,7 @@
   font-size: 14px !important;
   font-weight: 500 !important;
   cursor: pointer !important;
-  /* 명시적 프로퍼티 전환으로 성능/정확성 향상 (transition: all 금지) */
-  transition:
-    background-color var(--xeg-isolated-transition-fast),
-    border-color var(--xeg-isolated-transition-fast),
-    transform var(--xeg-isolated-transition-fast),
-    box-shadow var(--xeg-isolated-transition-fast) !important;
+  transition: all var(--xeg-isolated-transition-fast) !important;
   user-select: none !important;
   outline: none !important;
 }
@@ -175,18 +170,13 @@
 .xeg-root .button:hover {
   background: var(--xeg-isolated-gray-300) !important;
   border-color: var(--xeg-isolated-gray-400) !important;
-  /* hover lift는 토큰 기반으로만 정의 */
-  transform: translateY(var(--xeg-button-lift)) !important;
+  transform: translateY(-1px) !important;
   box-shadow: var(--xeg-isolated-shadow-md) !important;
 }
 
 .xeg-root .button:active {
   transform: translateY(0) !important;
-  transition:
-    background-color var(--xeg-isolated-transition-fast),
-    border-color var(--xeg-isolated-transition-fast),
-    transform var(--xeg-isolated-transition-fast),
-    box-shadow var(--xeg-isolated-transition-fast) !important;
+  transition: all var(--xeg-isolated-transition-fast) !important;
 }
 
 .xeg-root .button:focus-visible {

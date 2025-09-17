@@ -8,15 +8,14 @@
  * - Immutable state
  */
 
-import type { MediaInfo } from '../../types/media.types';
-import { effectSafe, createSignalSafe } from './signal-factory';
-// Break runtime dependency on services: use logging barrel directly
-import { logger as rootLogger, type Logger as ILogger } from '../../logging';
+import type { MediaInfo } from '@shared/types/media.types';
+import { getPreactSignals } from '@shared/external/vendors';
+import { defaultLogger, type ILogger } from '@shared/services/core-services';
 
 // Signal type
 type Signal<T> = {
   value: T;
-  subscribe?: (callback: (value: T) => void) => () => void;
+  subscribe?: (callback: (value: T) => void) => void;
 };
 
 /**
@@ -56,12 +55,13 @@ export type GalleryEvents = {
 // Preact Signals lazy initialization
 let galleryStateSignal: Signal<GalleryState> | null = null;
 
-// Logger instance (services-free)
-const logger: ILogger = rootLogger;
+// Logger instance (default fallback)
+const logger: ILogger = defaultLogger;
 
 function getGalleryStateSignal(): Signal<GalleryState> {
   if (!galleryStateSignal) {
-    galleryStateSignal = createSignalSafe<GalleryState>(INITIAL_STATE);
+    const { signal } = getPreactSignals();
+    galleryStateSignal = signal<GalleryState>(INITIAL_STATE);
   }
   return galleryStateSignal;
 }
@@ -82,7 +82,8 @@ export const galleryState = {
    * Subscribe to state changes
    */
   subscribe(callback: (state: GalleryState) => void): () => void {
-    return effectSafe(() => {
+    const { effect } = getPreactSignals();
+    return effect(() => {
       callback(getGalleryStateSignal().value);
     });
   },

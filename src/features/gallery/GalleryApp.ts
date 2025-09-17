@@ -8,25 +8,17 @@
  * - 상태 관리는 기존 signals 활용
  */
 
-import type { GalleryRenderer } from '../../shared/interfaces/gallery.interfaces';
+import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
-} from '../../shared/container/service-accessors';
-import {
-  galleryState,
-  openGallery,
-  closeGallery,
-} from '../../shared/state/signals/gallery.signals';
-import type { MediaInfo } from '../../shared/types/media.types';
-import { logger } from '../../shared/logging/logger';
-import { MediaService } from '../../shared/services/MediaService';
-// Use container accessor for ToastController to ensure single instance
-import {
-  getToastController,
-  tryGetToastController,
-} from '../../shared/container/service-accessors';
-import { unmountGallery } from '../../shared/components/isolation';
+} from '@shared/container/service-accessors';
+import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@shared/types/media.types';
+import { logger } from '@shared/logging/logger';
+import { MediaService } from '@shared/services/MediaService';
+import { ToastController } from '@shared/services/ToastController';
+import { unmountGallery } from '@shared/components/isolation';
 
 /**
  * 갤러리 앱 설정
@@ -46,16 +38,7 @@ export class GalleryApp {
   private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
   // VideoControl은 MediaService 내부에서 관리되므로 직접 인스턴스화하지 않습니다.
-  // ToastController는 컨테이너 등록 이전일 수 있으므로 lazy/optional로 접근한다.
-  private _toastController: ReturnType<typeof getToastController> | null = null;
-  private get toastController() {
-    // 이미 획득했으면 재사용
-    if (this._toastController) return this._toastController;
-    // 등록 전 생성자 접근 시에는 try-get으로 조용히 null 반환
-    const tc = tryGetToastController();
-    if (tc) this._toastController = tc;
-    return this._toastController;
-  }
+  private readonly toastController: ToastController;
 
   // 새로운 격리 시스템 컴포넌트들
   private galleryContainer: HTMLElement | null = null;
@@ -71,6 +54,7 @@ export class GalleryApp {
 
   constructor() {
     logger.info('[GalleryApp] 생성자 호출');
+    this.toastController = new ToastController();
   }
 
   /**
@@ -78,7 +62,7 @@ export class GalleryApp {
    */
   private async getMediaService(): Promise<MediaService> {
     if (!this.mediaService) {
-      this.mediaService = getMediaServiceFromContainer() as unknown as MediaService;
+      this.mediaService = getMediaServiceFromContainer();
     }
     return this.mediaService;
   }
@@ -90,17 +74,8 @@ export class GalleryApp {
     try {
       logger.info('GalleryApp: 격리된 시스템으로 초기화 시작');
 
-      // 토스트 컨트롤러 확보 및 초기화(이 시점에는 core 등록이 완료되어 있어야 함)
-      if (!this._toastController) {
-        try {
-          this._toastController = getToastController();
-        } catch {
-          // 테스트 또는 조기 초기화 경로에서 미등록일 수 있음 — 기능은 계속 진행
-          this._toastController = tryGetToastController();
-        }
-      }
-      // Initialize toast controller if supported
-      await this._toastController?.initialize?.();
+      // 토스트 컨트롤러 초기화
+      await this.toastController.initialize();
 
       // 갤러리 렌더러 초기화
       await this.initializeRenderer();
@@ -141,7 +116,7 @@ export class GalleryApp {
   private async setupEventHandlers(): Promise<void> {
     try {
       // 새로운 갤러리 이벤트 시스템 사용
-      const { initializeGalleryEvents } = await import('../../shared/utils/events');
+      const { initializeGalleryEvents } = await import('@shared/utils/events');
 
       await initializeGalleryEvents({
         onMediaClick: async (_mediaInfo, element, _event) => {
@@ -268,21 +243,11 @@ export class GalleryApp {
    * 갤러리 컨테이너 확인 및 생성
    */
   private async ensureGalleryContainer(): Promise<void> {
-    let container = (document.querySelector('.xeg-gallery-container') ||
-      document.querySelector('[data-xeg-gallery-container]')) as HTMLDivElement | null;
+    let container = document.querySelector('#xeg-gallery-root') as HTMLDivElement | null;
 
     if (!container) {
       container = document.createElement('div');
-      // 일부 테스트 환경(mocked document)에서는 classList가 없을 수 있으므로 폴백 처리
-      if (
-        (container as HTMLElement).classList &&
-        typeof (container as HTMLElement).classList.add === 'function'
-      ) {
-        container.classList.add('xeg-gallery-container');
-      } else {
-        container.setAttribute('class', 'xeg-gallery-container');
-      }
-      container.setAttribute('data-xeg-gallery-container', '');
+      container.id = 'xeg-gallery-root';
       container.style.cssText = `
         position: fixed;
         top: 0;
@@ -293,7 +258,6 @@ export class GalleryApp {
         pointer-events: none;
       `;
       document.body.appendChild(container);
-      this.galleryContainer = container;
       logger.debug('갤러리 컨테이너 생성됨');
     }
   }
@@ -356,7 +320,7 @@ export class GalleryApp {
 
       // 이벤트 핸들러 정리
       try {
-        const { cleanupGalleryEvents } = await import('../../shared/utils/events');
+        const { cleanupGalleryEvents } = await import('@shared/utils/events');
         cleanupGalleryEvents();
       } catch (error) {
         logger.warn('이벤트 코디네이터 정리 실패:', error);

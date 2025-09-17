@@ -6,16 +6,11 @@
  * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
  */
 
-import { getPreactHooks } from '../../../shared/external/vendors';
-// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
-import { logger } from '../../../shared/logging/logger';
-import { EventManager } from '../../../shared/services/EventManager';
-import { galleryState } from '../../../shared/state/signals/gallery.signals';
-import { findTwitterScrollContainer } from '../../../shared/utils/core-utils';
-import { globalTimerManager } from '../../../shared/utils/timer-management';
-import { isEventInsideContainer } from '../../../shared/dom/utils/dom-utils';
-import { FEATURE_FLAGS } from '../../../constants';
-import { scrollEventHub } from '../../../shared/utils/scroll/ScrollEventHub';
+import { getPreactHooks } from '@shared/external/vendors';
+import { logger } from '@shared/logging/logger';
+import { EventManager } from '@shared/services/EventManager';
+import { galleryState } from '@shared/state/signals/gallery.signals';
+import { findTwitterScrollContainer } from '@shared/utils';
 
 const { useEffect, useRef, useCallback } = getPreactHooks();
 
@@ -63,28 +58,10 @@ export function useGalleryScroll({
   enableScrollDirection = false,
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
-  const eventManagerRef = useRef<EventManager | null>(null);
-  // Policy: PC-only inputs. Window(document) 우선, container는 필요 시에만 추가.
-  // EventManager는 effect-로컬로 생성/정리하여 파괴된 인스턴스의 재사용 경로를 제거한다.
+  const eventManagerRef = useRef(new EventManager());
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
   const scrollTimeoutRef = useRef<number | null>(null);
-
-  // Optimize subscription to gallery open state using selector
-  // 갤러리 열림 상태는 핸들러 내에서 galleryState.value로 직접 조회합니다.
-
-  // 최신 상태 접근을 위한 ref들 (리스너를 재등록하지 않고 최신 값을 참조)
-  const onScrollRef = useRef<typeof onScroll>(onScroll);
-  const blockTwitterScrollRef = useRef<boolean>(blockTwitterScroll);
-
-  // signal/props 변경 시 ref 동기화
-  useEffect(() => {
-    onScrollRef.current = onScroll;
-  }, [onScroll]);
-
-  useEffect(() => {
-    blockTwitterScrollRef.current = blockTwitterScroll;
-  }, [blockTwitterScroll]);
 
   // 스크롤 방향 감지 관련 상태 (옵션)
   const scrollDirectionRef = useRef<'up' | 'down' | 'idle'>('idle');
@@ -117,10 +94,10 @@ export function useGalleryScroll({
 
       // 스크롤 방향 idle 상태로 전환 타이머
       if (directionTimeoutRef.current) {
-        globalTimerManager.clearTimeout(directionTimeoutRef.current);
+        clearTimeout(directionTimeoutRef.current);
       }
 
-      directionTimeoutRef.current = globalTimerManager.setTimeout(() => {
+      directionTimeoutRef.current = window.setTimeout(() => {
         if (scrollDirectionRef.current !== 'idle') {
           scrollDirectionRef.current = 'idle';
           onScrollDirectionChange?.('idle');
@@ -133,41 +110,34 @@ export function useGalleryScroll({
   // 스크롤 종료 감지
   const handleScrollEnd = useCallback(() => {
     if (scrollTimeoutRef.current) {
-      globalTimerManager.clearTimeout(scrollTimeoutRef.current);
+      clearTimeout(scrollTimeoutRef.current);
     }
 
-    scrollTimeoutRef.current = globalTimerManager.setTimeout(() => {
+    scrollTimeoutRef.current = window.setTimeout(() => {
       updateScrollState(false);
       logger.debug('useGalleryScroll: 스크롤 종료');
     }, 150);
   }, [updateScrollState]);
 
-  // 트위터 페이지 스크롤 차단 (ensureWheelLock와 함께 사용)
+  // 트위터 페이지 스크롤 차단
   const preventTwitterScroll = useCallback(
-    (event: WheelEvent) => {
-      // P4.9.b: 갤러리 내부 타겟이면 트위터 컨테이너 캡처 단계에서도 소비하지 않음
-      const inGallery = isEventInsideContainer(event, container);
-      if (inGallery) {
-        return false; // 내부 기본 스크롤 허용
-      }
-
+    (event: Event) => {
       if (isScrollingRef.current && blockTwitterScroll) {
+        event.preventDefault();
+        event.stopPropagation();
         logger.debug('useGalleryScroll: 트위터 스크롤 차단');
-        return true; // 소비 요청
       }
-      return false;
     },
-    [blockTwitterScroll, container]
+    [blockTwitterScroll]
   );
 
-  // 갤러리 휠 이벤트 처리 (안정 핸들러: 최신 상태는 ref로 참조)
-  const handleGalleryWheelStable = useCallback(
+  // 갤러리 휠 이벤트 처리
+  const handleGalleryWheel = useCallback(
     (event: WheelEvent) => {
-      // 최신 갤러리 열림 상태를 전역 signal에서 직접 조회 (리렌더 대기 불필요)
-      const isOpen = galleryState.value.isOpen;
-      if (!isOpen) {
+      // 갤러리가 열려있지 않으면 무시
+      if (!galleryState.value.isOpen) {
         logger.debug('useGalleryScroll: 갤러리가 열려있지 않음 - 휠 이벤트 무시');
-        return false;
+        return;
       }
 
       const delta = event.deltaY;
@@ -176,76 +146,41 @@ export function useGalleryScroll({
       // 스크롤 방향 감지 (옵션)
       updateScrollDirection(delta);
 
-      // 스크롤 콜백 실행 (최신 콜백 사용)
-      const onScrollCb = onScrollRef.current;
-      if (onScrollCb) {
-        onScrollCb(delta);
+      // 스크롤 콜백 실행
+      if (onScroll) {
+        onScroll(delta);
+      }
+
+      // 트위터 페이지로의 이벤트 전파 방지
+      if (blockTwitterScroll) {
+        event.preventDefault();
+        event.stopPropagation();
       }
 
       // 스크롤 종료 감지 타이머 재설정
       handleScrollEnd();
-      // 휠 소비는 ensureWheelLock에 위임 (true 반환 시 preventDefault/stopPropagation 수행)
-      // P4.9: 갤러리 컨테이너 내부 타겟이면 소비하지 않음(내부 기본 스크롤 허용)
-      const inGallery = isEventInsideContainer(event, container);
-      if (!inGallery && blockTwitterScrollRef.current) {
-        // Hub 경로에서는 true 반환으로 소비, 직접 경로에서는 즉시 소비
-        try {
-          event.preventDefault();
-          event.stopPropagation();
-        } catch {
-          // noop (일부 환경에서 수동 소비 불가 시 반환 값으로 위임)
-        }
-        return true; // 갤러리 외부는 페이지 스크롤 차단
-      }
 
       logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
         delta,
-        isGalleryOpen: isOpen,
+        isGalleryOpen: galleryState.value.isOpen,
         targetElement: (event.target as HTMLElement)?.tagName || 'unknown',
         targetClass: (event.target as HTMLElement)?.className || 'none',
         timestamp: Date.now(),
       });
-      return false;
     },
-    [updateScrollState, handleScrollEnd, updateScrollDirection, container]
+    [onScroll, blockTwitterScroll, updateScrollState, handleScrollEnd, updateScrollDirection]
   );
 
-  // 문서 레벨 wheel 등록: container와 독립 (4.7)
+  // 이벤트 리스너 설정
   useEffect(() => {
-    if (!enabled) return;
-
-    // Flag-gated central hub path
-    if (FEATURE_FLAGS.SCROLL_EVENT_HUB) {
-      const sub = scrollEventHub.subscribeWheelLock(document, handleGalleryWheelStable, {
-        capture: true,
-        context: 'features/gallery/useGalleryScroll',
-      });
-
-      logger.debug('useGalleryScroll: [Hub] 문서 레벨 wheel 등록 완료', {
-        hasContainer: !!container,
-      });
-
-      return () => {
-        sub.cancel();
-        // 타이머 정리
-        if (scrollTimeoutRef.current) {
-          globalTimerManager.clearTimeout(scrollTimeoutRef.current);
-        }
-        if (directionTimeoutRef.current) {
-          globalTimerManager.clearTimeout(directionTimeoutRef.current);
-        }
-        logger.debug('useGalleryScroll: [Hub] 문서 레벨 wheel 정리 완료');
-      };
+    if (!enabled || !container) {
+      return;
     }
 
-    // 새 이벤트 매니저를 효과 수명에 맞춰 생성(파괴 인스턴스 재사용 방지)
-    if (!eventManagerRef.current || eventManagerRef.current.getIsDestroyed()) {
-      eventManagerRef.current = new EventManager();
-    }
     const eventManager = eventManagerRef.current;
 
-    // 문서 레벨에서 휠 이벤트 처리: 항상 등록하고, 동작 여부는 isOpenRef로 제어
-    eventManager.addEventListener(document, 'wheel', handleGalleryWheelStable, {
+    // 문서 레벨에서 휠 이벤트 처리 (갤러리 열림 상태에 따라 동작)
+    eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
       capture: true,
       passive: false,
     });
@@ -263,60 +198,35 @@ export function useGalleryScroll({
 
     logger.debug('useGalleryScroll: 이벤트 리스너 등록 완료', {
       hasContainer: !!container,
+      blockTwitterScroll,
     });
+
     return () => {
       eventManager.cleanup();
+
+      // 타이머 정리
       if (scrollTimeoutRef.current) {
-        globalTimerManager.clearTimeout(scrollTimeoutRef.current);
+        clearTimeout(scrollTimeoutRef.current);
       }
+
+      // 방향 감지 타이머 정리
       if (directionTimeoutRef.current) {
-        globalTimerManager.clearTimeout(directionTimeoutRef.current);
+        clearTimeout(directionTimeoutRef.current);
       }
-      logger.debug('useGalleryScroll: 문서 레벨 wheel 정리 완료');
+
+      logger.debug('useGalleryScroll: 정리 완료');
     };
-  }, [enabled, container, blockTwitterScroll, handleGalleryWheelStable, preventTwitterScroll]);
+  }, [enabled, container, blockTwitterScroll, handleGalleryWheel, preventTwitterScroll]);
 
-  // 트위터 컨테이너 wheel 차단: 컨테이너 준비 여부와 무관하나, 변경 시 갱신
-  useEffect(() => {
-    if (!enabled || !blockTwitterScroll) return;
-
-    const twitterContainer = findTwitterScrollContainer();
-    if (!twitterContainer) return;
-
-    if (FEATURE_FLAGS.SCROLL_EVENT_HUB) {
-      const sub = scrollEventHub.subscribeWheelLock(twitterContainer, preventTwitterScroll, {
-        capture: true,
-        context: 'features/gallery/useGalleryScroll:twitter',
-      });
-      logger.debug('useGalleryScroll: [Hub] 트위터 컨테이너 차단 등록', {
-        hasTwitterContainer: !!twitterContainer,
-      });
-      return () => {
-        sub.cancel();
-        logger.debug('useGalleryScroll: [Hub] 트위터 컨테이너 차단 정리');
-      };
-    }
-
-    const eventManager = new EventManager();
-    eventManager.addWheelLock(twitterContainer, preventTwitterScroll, { capture: true });
-    logger.debug('useGalleryScroll: 트위터 컨테이너 차단 등록', {
-      hasTwitterContainer: !!twitterContainer,
-    });
-    return () => {
-      eventManager.cleanup();
-      logger.debug('useGalleryScroll: 트위터 컨테이너 차단 정리');
-    };
-  }, [enabled, blockTwitterScroll, preventTwitterScroll, container]);
-
-  // 컴포넌트 언마운트 시 타이머 정리(효과들의 cleanup가 호출되지만, 안전망 유지)
+  // 컴포넌트 언마운트 시 정리
   useEffect(() => {
     return () => {
-      eventManagerRef.current?.cleanup();
+      eventManagerRef.current.cleanup();
       if (scrollTimeoutRef.current) {
-        globalTimerManager.clearTimeout(scrollTimeoutRef.current);
+        clearTimeout(scrollTimeoutRef.current);
       }
       if (directionTimeoutRef.current) {
-        globalTimerManager.clearTimeout(directionTimeoutRef.current);
+        clearTimeout(directionTimeoutRef.current);
       }
     };
   }, []);

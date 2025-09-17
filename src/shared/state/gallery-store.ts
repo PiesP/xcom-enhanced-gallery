@@ -1,4 +1,4 @@
-import { createSignalSafe, effectSafe } from './signals/signal-factory';
+import { getPreactSignals } from '@shared/external/vendors';
 
 export interface GalleryUIState {
   readonly toolbarVisible: boolean;
@@ -17,6 +17,9 @@ export interface GalleryState {
   readonly loading: boolean;
   readonly ui: GalleryUIState;
 }
+
+const { signal } = getPreactSignals();
+
 const initialState: GalleryState = {
   items: [],
   currentIndex: 0,
@@ -24,9 +27,7 @@ const initialState: GalleryState = {
   ui: { toolbarVisible: false, settingsOpen: false },
 };
 
-const stateSignal = createSignalSafe<GalleryState>(initialState);
-
-// stateSignal already created via factory
+const stateSignal = signal<GalleryState>(initialState);
 
 export const galleryState = {
   get value(): GalleryState {
@@ -36,7 +37,8 @@ export const galleryState = {
     stateSignal.value = v;
   },
   subscribe(listener: (v: GalleryState) => void): () => void {
-    return effectSafe(() => listener(stateSignal.value));
+    const { effect } = getPreactSignals();
+    return effect(() => listener(stateSignal.value));
   },
 };
 

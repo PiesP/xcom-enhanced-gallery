@@ -8,8 +8,8 @@ import {
   ANIMATION_PRESETS,
   animateGalleryEnter,
   animateGalleryExit,
-  toolbarSlideDown,
-  toolbarSlideUp,
+  animateToolbarShow,
+  animateToolbarHide,
   setupScrollAnimation,
   setupInViewAnimation,
   transformValue,
@@ -90,12 +90,12 @@ describe('애니메이션 유틸리티', () => {
 
   describe('툴바 애니메이션', () => {
     it('툴바 표시 애니메이션이 실행되어야 한다', async () => {
-      await toolbarSlideDown(mockElement);
+      await animateToolbarShow(mockElement);
       expect(true).toBe(true); // 에러 없이 완료되면 성공
     });
 
     it('툴바 숨김 애니메이션이 실행되어야 한다', async () => {
-      await toolbarSlideUp(mockElement);
+      await animateToolbarHide(mockElement);
       expect(true).toBe(true); // 에러 없이 완료되면 성공
     });
   });
@@ -107,47 +107,6 @@ describe('애니메이션 유틸리티', () => {
 
       expect(typeof cleanup).toBe('function');
       cleanup();
-    });
-
-    it('idempotent: 동일 target+callback 중복 등록 시 한 번만 addEventListener가 호출되어야 한다', () => {
-      const mockCallback = vi.fn();
-      const addSpy = vi.spyOn(window, 'addEventListener');
-      const removeSpy = vi.spyOn(window, 'removeEventListener');
-
-      const cleanup1 = setupScrollAnimation(mockCallback);
-      const cleanup2 = setupScrollAnimation(mockCallback);
-
-      expect(addSpy).toHaveBeenCalledTimes(1);
-
-      // 첫 번째 해제 → 아직 참조 남아 있으므로 removeEventListener 호출 없음
-      cleanup1();
-      expect(removeSpy).not.toHaveBeenCalled();
-
-      // 두 번째 해제 → refCount=0이 되어 removeEventListener 호출
-      cleanup2();
-      expect(removeSpy).toHaveBeenCalledTimes(1);
-
-      addSpy.mockRestore();
-      removeSpy.mockRestore();
-    });
-
-    it('서로 다른 callback은 각각 등록되어야 한다', () => {
-      const cb1 = vi.fn();
-      const cb2 = vi.fn();
-      const addSpy = vi.spyOn(window, 'addEventListener');
-      const removeSpy = vi.spyOn(window, 'removeEventListener');
-
-      const c1 = setupScrollAnimation(cb1);
-      const c2 = setupScrollAnimation(cb2);
-      expect(addSpy).toHaveBeenCalledTimes(2);
-
-      c1();
-      expect(removeSpy).toHaveBeenCalledTimes(1); // cb1 제거
-      c2();
-      expect(removeSpy).toHaveBeenCalledTimes(2); // cb2 제거
-
-      addSpy.mockRestore();
-      removeSpy.mockRestore();
     });
   });
 

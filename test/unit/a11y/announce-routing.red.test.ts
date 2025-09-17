@@ -27,7 +27,8 @@ describe('Announce routing hardening (RED)', () => {
     tm.error('Error', 'boom');
 
     // Expect info/success to go to live region, not to toast list
-    const list = tm.getToasts();
+    const { toasts } = await import('@/shared/components/ui/Toast/Toast');
+    const list = toasts.value;
 
     // At least warning and error should be present as toast items
     expect(list.some(t => t.type === 'warning')).toBe(true);

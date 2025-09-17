@@ -5,9 +5,9 @@
  * @version 2.0.0 - Core layer
  */
 
-import { logger } from '../logging/logger';
-import { safeParseInt, undefinedToNull } from '../utils/type-safety-helpers';
-import type { MediaInfoForFilename, MediaItemForFilename } from '../types/media.types';
+import { logger } from '@shared/logging/logger';
+import { safeParseInt, undefinedToNull } from '@shared/utils';
+import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
 
 /**
  * 파일명 생성 옵션
@@ -63,7 +63,7 @@ export class FilenameService {
     try {
       // 기존 파일명이 유효하면 그대로 사용
       if (media.filename && this.isValidMediaFilename(media.filename)) {
-        return this.sanitizeForWindows(media.filename);
+        return media.filename;
       }
 
       // 사용자명과 트윗ID가 모두 유효한 경우에만 표준 형식 사용
@@ -71,9 +71,7 @@ export class FilenameService {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
-        return this.sanitizeForWindows(
-          `${media.tweetUsername}_${media.tweetId}_${index}.${extension}`
-        );
+        return `${media.tweetUsername}_${media.tweetId}_${index}.${extension}`;
       }
 
       // URL에서 사용자명 추출 시도
@@ -84,9 +82,7 @@ export class FilenameService {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
-        return this.sanitizeForWindows(
-          `${extractedUsername}_${media.tweetId}_${index}.${extension}`
-        );
+        return `${extractedUsername}_${media.tweetId}_${index}.${extension}`;
       }
 
       // 옵션에서 제공된 사용자명 사용
@@ -94,15 +90,13 @@ export class FilenameService {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
-        return this.sanitizeForWindows(
-          `${options.fallbackUsername}_${media.tweetId}_${index}.${extension}`
-        );
+        return `${options.fallbackUsername}_${media.tweetId}_${index}.${extension}`;
       }
 
-      return this.sanitizeForWindows(this.generateFallbackFilename(media, options));
+      return this.generateFallbackFilename(media, options);
     } catch (error) {
       logger.warn('Failed to generate media filename:', error);
-      return this.sanitizeForWindows(this.generateFallbackFilename(media, options));
+      return this.generateFallbackFilename(media, options);
     }
   }
 
@@ -131,16 +125,16 @@ export class FilenameService {
       const firstItem = mediaItems[0];
       if (firstItem?.tweetUsername && firstItem?.tweetId) {
         // 요구사항: {authorHandle}_{tweetId}.zip 형식
-        return this.sanitizeForWindows(`${firstItem.tweetUsername}_${firstItem.tweetId}.zip`);
+        return `${firstItem.tweetUsername}_${firstItem.tweetId}.zip`;
       }
 
       const prefix = options.fallbackPrefix ?? 'xcom_gallery';
       const timestamp = Date.now();
-      return this.sanitizeForWindows(`${prefix}_${timestamp}.zip`);
+      return `${prefix}_${timestamp}.zip`;
     } catch (error) {
       logger.warn('Failed to generate ZIP filename:', error);
       const timestamp = Date.now();
-      return this.sanitizeForWindows(`download_${timestamp}.zip`);
+      return `download_${timestamp}.zip`;
     }
   }
 
@@ -275,96 +269,6 @@ export class FilenameService {
     const timestamp = Date.now();
     const index = this.normalizeIndex(options.index);
     return `${prefix}_${timestamp}_${index}.${extension}`;
-  }
-
-  /**
-   * Windows 파일 시스템 호환 보정
-   * - 예약어(CON, PRN, AUX, NUL, COM1-9, LPT1-9) 단독 이름 방지
-   * - 선행/후행 공백 및 마침표 제거
-   * - 금지 문자(<>:"/\|?*)를 '_'로 치환 (추가 방어)
-   */
-  private sanitizeForWindows(name: string): string {
-    try {
-      if (!name) return 'media';
-      let base = String(name);
-
-      // 1) 유니코드 정규화(NFKC)로 호환 문자/조합 문자 표준화
-      try {
-        if (typeof base.normalize === 'function') {
-          base = base.normalize('NFKC');
-        }
-      } catch {
-        // ignore normalize failures
-      }
-
-      // 2) 보이지 않는 제어/서식 문자 및 BiDi 마커 제거
-      // - C0 제어문자: U+0000–U+001F, DEL/제어 확장: U+007F–U+009F
-      // - Zero-width: ZWSP(200B), ZWNJ(200C), ZWJ(200D), WJ(2060)
-      // - BiDi marks: LRM(200E), RLM(200F), LRE/RLE/PDF/LRO/RLO(202A–202E), LRI/RLI/FSI/PDI(2066–2069)
-      base = Array.from(base)
-        .filter(ch => {
-          const cp = ch.codePointAt(0) ?? 0;
-          if (cp <= 0x001f) return false;
-          if (cp >= 0x007f && cp <= 0x009f) return false;
-          if (cp >= 0x200b && cp <= 0x200f) return false;
-          if (cp >= 0x202a && cp <= 0x202e) return false;
-          if (cp === 0x2060) return false;
-          if (cp >= 0x2066 && cp <= 0x2069) return false;
-          return true;
-        })
-        .join('');
-
-      // 분리: 파일명과 확장자
-      const lastDot = base.lastIndexOf('.');
-      const hasExt = lastDot > 0 && lastDot < base.length - 1;
-      const pure = hasExt ? base.slice(0, lastDot) : base;
-      const ext = hasExt ? base.slice(lastDot) : '';
-
-      // 금지 문자 치환
-      let safe = pure.replace(/[<>:"/\\|?*]/g, '_');
-
-      // 선행/후행 공백/마침표 제거
-      safe = safe.replace(/[\s.]+$/g, '');
-      safe = safe.replace(/^[\s.]+/g, '');
-
-      // 예약어 방지 (대소문자 무시)
-      const reserved = new Set([
-        'con',
-        'prn',
-        'aux',
-        'nul',
-        'com1',
-        'com2',
-        'com3',
-        'com4',
-        'com5',
-        'com6',
-        'com7',
-        'com8',
-        'com9',
-        'lpt1',
-        'lpt2',
-        'lpt3',
-        'lpt4',
-        'lpt5',
-        'lpt6',
-        'lpt7',
-        'lpt8',
-        'lpt9',
-      ]);
-      if (reserved.has(safe.toLowerCase())) {
-        safe = `_${safe}`; // 접두어로 회피
-      }
-
-      // 빈 문자열 방지
-      if (!safe) safe = 'media';
-
-      // 최종 길이 제한 (255자 내)
-      const result = (safe + ext).slice(0, 255);
-      return result;
-    } catch {
-      return name || 'media';
-    }
   }
 
   /**

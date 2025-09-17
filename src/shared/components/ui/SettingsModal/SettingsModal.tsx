@@ -7,17 +7,15 @@ import {
   getPreactHooks,
   type VNode,
   type ComponentChildren,
-} from '../../../external/vendors';
-import { useFocusTrap } from '../../../hooks/useFocusTrap';
-import { useScrollLock } from '../../../hooks/useScrollLock';
+} from '@shared/external/vendors';
+import { useFocusTrap } from '@shared/hooks/useFocusTrap';
+import { useScrollLock } from '@shared/hooks/useScrollLock';
 import { ComponentStandards } from '../StandardProps';
 import { X } from '../Icon';
-import { LanguageService } from '../../../services/LanguageService';
-import { ThemeService } from '../../../services/ThemeService';
-import { globalTimerManager } from '../../../utils/timer-management';
-import { EventManager } from '../../../services/EventManager';
+import { LanguageService } from '@shared/services/LanguageService';
+import { ThemeService } from '@shared/services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
-import { IconButton } from '../Button/IconButton';
+import { IconButton } from '@shared/components/ui';
 import styles from './SettingsModal.module.css';
 
 export interface SettingsModalProps {
@@ -66,7 +64,6 @@ export function SettingsModal({
   const lastFocusableRef = useRef<HTMLSelectElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const docKeydownNoopRef = useRef<((e: KeyboardEvent) => void) | null>(null);
-  const docKeydownListenerIdRef = useRef<string | null>(null);
   const focusRetryTimerRef = useRef<number | null>(null);
   const refFocusTimerRef = useRef<number | null>(null);
 
@@ -186,28 +183,6 @@ export function SettingsModal({
     });
   }, []);
 
-  // 동기 포커스 차단(경량): 테스트에서 즉시 tabindex 변경을 기대하므로,
-  // 패널 모드에서는 body의 직접 자식 중 포커스 가능한 요소에만 tabindex=-1을 부여한다.
-  // 컨테이너 div에는 aria-hidden을 설정하지 않아 접근 가능한 dialog 탐색에 영향을 주지 않는다.
-  const applySyncBackgroundFocusBlockers = () => {
-    if (typeof document === 'undefined') return;
-    const focusables = document.querySelectorAll<HTMLElement>(
-      'body > button, body > a[href], body > select, body > input, body > textarea, body > [tabindex]'
-    );
-    focusables.forEach(el => {
-      // 모달 자체가 아직 DOM에 없을 수 있으므로, 최소한의 차단만 수행
-      try {
-        el.setAttribute('tabindex', '-1');
-      } catch {
-        /* noop */
-      }
-    });
-  };
-
-  if (isOpen && mode === 'panel') {
-    applySyncBackgroundFocusBlockers();
-  }
-
   // Panel mode logic
   useEffect(() => {
     if (!isOpen || mode !== 'panel') return;
@@ -243,13 +218,7 @@ export function SettingsModal({
       // intentionally empty
     };
     docKeydownNoopRef.current = noop;
-    // 테스트는 boolean true 옵션 제거 호출을 기대하므로, 등록 시에도 캡처를 true로 전달한다
-    docKeydownListenerIdRef.current = EventManager.getInstance().addListener(
-      document,
-      'keydown',
-      noop as unknown as EventListener,
-      true as unknown as AddEventListenerOptions
-    );
+    document.addEventListener('keydown', noop, true);
 
     // Focus first focusable element (retry loop to ensure refs are attached)
     let tries = 0;
@@ -269,13 +238,13 @@ export function SettingsModal({
         // If activeElement not target, retry to ensure focus transition
         if (typeof document !== 'undefined' && document.activeElement !== el && tries < 10) {
           tries += 1;
-          focusRetryTimerRef.current = globalTimerManager.setTimeout(tryFocus, 0);
+          focusRetryTimerRef.current = window.setTimeout(tryFocus, 0);
         }
         return;
       }
       if (tries < 10) {
         tries += 1;
-        focusRetryTimerRef.current = globalTimerManager.setTimeout(tryFocus, 0);
+        focusRetryTimerRef.current = window.setTimeout(tryFocus, 0);
       }
     };
     tryFocus();
@@ -287,12 +256,11 @@ export function SettingsModal({
 
       return () => {
         document.body.style.overflow = originalOverflow;
-        if (docKeydownListenerIdRef.current) {
-          EventManager.getInstance().removeListener(docKeydownListenerIdRef.current);
-          docKeydownListenerIdRef.current = null;
+        if (docKeydownNoopRef.current) {
+          document.removeEventListener('keydown', docKeydownNoopRef.current, true);
         }
         if (focusRetryTimerRef.current) {
-          globalTimerManager.clearTimeout(focusRetryTimerRef.current);
+          clearTimeout(focusRetryTimerRef.current);
           focusRetryTimerRef.current = null;
         }
         setBackgroundInert(false);
@@ -301,12 +269,11 @@ export function SettingsModal({
     }
 
     return () => {
-      if (docKeydownListenerIdRef.current) {
-        EventManager.getInstance().removeListener(docKeydownListenerIdRef.current);
-        docKeydownListenerIdRef.current = null;
+      if (docKeydownNoopRef.current) {
+        document.removeEventListener('keydown', docKeydownNoopRef.current, true);
       }
       if (focusRetryTimerRef.current) {
-        globalTimerManager.clearTimeout(focusRetryTimerRef.current);
+        clearTimeout(focusRetryTimerRef.current);
         focusRetryTimerRef.current = null;
       }
       setBackgroundInert(false);
@@ -362,9 +329,9 @@ export function SettingsModal({
         }
       }
     };
-    const t = globalTimerManager.setTimeout(afterPaint, 0);
+    const t = window.setTimeout(afterPaint, 0);
     return () => {
-      globalTimerManager.clearTimeout(t);
+      clearTimeout(t);
     };
   }, [isOpen, mode]);
 
@@ -403,11 +370,11 @@ export function SettingsModal({
   if (!isOpen) {
     // 패널 비활성화 이전에 inert 해제 및 포커스 복원 타이머 정리
     if (focusRetryTimerRef.current) {
-      globalTimerManager.clearTimeout(focusRetryTimerRef.current);
+      clearTimeout(focusRetryTimerRef.current);
       focusRetryTimerRef.current = null;
     }
     if (refFocusTimerRef.current) {
-      globalTimerManager.clearTimeout(refFocusTimerRef.current);
+      clearTimeout(refFocusTimerRef.current);
       refFocusTimerRef.current = null;
     }
     setBackgroundInert(false);
@@ -441,59 +408,55 @@ export function SettingsModal({
   );
   const innerClass = ComponentStandards.createClassName(styles.modal, styles.inner);
 
-  const header = h(
-    'div',
-    { className: `${styles.header} xeg-row-center xeg-center-between xeg-gap-md`, key: 'header' },
-    [
-      h(
-        'h2',
-        { id: 'settings-title', className: styles.title, key: 'title' },
-        languageService.getString('settings.title')
-      ),
-      h(IconButton, {
-        ref: (el: HTMLButtonElement | null) => {
-          // 포커스 트랩의 첫 요소로 지정
-          firstFocusableRef.current = el;
-          if (isOpen && el) {
-            let attempts = 0;
-            const run = () => {
-              if (typeof document === 'undefined') return;
-              try {
-                el.focus();
-              } catch {
-                /* no-op */
-              }
-              if (document.activeElement !== el && attempts < 10) {
-                attempts += 1;
-                refFocusTimerRef.current = globalTimerManager.setTimeout(run, 0);
-              }
-            };
-            const g = globalThis as unknown as {
-              queueMicrotask?: (cb: () => void) => void;
-            };
-            const qmicro = g.queueMicrotask;
-            if (typeof qmicro === 'function') {
-              qmicro(run);
-            } else {
-              refFocusTimerRef.current = globalTimerManager.setTimeout(run, 0);
+  const header = h('div', { className: styles.header, key: 'header' }, [
+    h(
+      'h2',
+      { id: 'settings-title', className: styles.title, key: 'title' },
+      languageService.getString('settings.title')
+    ),
+    h(IconButton, {
+      ref: (el: HTMLButtonElement | null) => {
+        // 포커스 트랩의 첫 요소로 지정
+        firstFocusableRef.current = el;
+        if (isOpen && el) {
+          let attempts = 0;
+          const run = () => {
+            if (typeof document === 'undefined') return;
+            try {
+              el.focus();
+            } catch {
+              /* no-op */
             }
+            if (document.activeElement !== el && attempts < 10) {
+              attempts += 1;
+              refFocusTimerRef.current = window.setTimeout(run, 0);
+            }
+          };
+          const g = globalThis as unknown as {
+            queueMicrotask?: (cb: () => void) => void;
+          };
+          const qmicro = g.queueMicrotask;
+          if (typeof qmicro === 'function') {
+            qmicro(run);
+          } else {
+            refFocusTimerRef.current = window.setTimeout(run, 0);
           }
-          if (!el && refFocusTimerRef.current) {
-            globalTimerManager.clearTimeout(refFocusTimerRef.current);
-            refFocusTimerRef.current = null;
-          }
-        },
-        className: `${styles.closeButton || ''} xeg-size-toolbar`,
-        onClick: onClose,
-        'aria-label': 'Close',
-        autoFocus: true,
-        // close는 파괴적 액션이 아니므로 intent 미지정(중립)
-        size: 'md',
-        key: 'close',
-        children: h(X, { size: 16 }),
-      }),
-    ]
-  );
+        }
+        if (!el && refFocusTimerRef.current) {
+          clearTimeout(refFocusTimerRef.current);
+          refFocusTimerRef.current = null;
+        }
+      },
+      className: styles.closeButton || '',
+      onClick: onClose,
+      'aria-label': 'Close',
+      autoFocus: true,
+      // close는 파괴적 액션이 아니므로 intent 미지정(중립)
+      size: 'md',
+      key: 'close',
+      children: h(X, { size: 16 }),
+    }),
+  ]);
 
   const themeSelect = h(
     'select',

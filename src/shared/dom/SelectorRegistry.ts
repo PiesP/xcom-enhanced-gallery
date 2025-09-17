@@ -3,7 +3,7 @@
  * 테스트 가능한 구조(TDD)와 캐시 연동을 위한 경량 래퍼
  */
 
-import { STABLE_SELECTORS } from '../../constants';
+import { STABLE_SELECTORS } from '@/constants';
 import { cachedQuerySelectorAll, cachedStableQuery } from './DOMCache';
 
 export type QueryContainer = Document | Element;

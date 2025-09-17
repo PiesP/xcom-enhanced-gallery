@@ -1,4 +1,4 @@
-import { getPreactHooks } from '../external/vendors';
+import { getPreactHooks } from '@shared/external/vendors';
 
 export interface FocusScopeApi<T extends HTMLElement = HTMLElement> {
   readonly ref: { current: T | null };

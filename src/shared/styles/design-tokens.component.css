@@ -83,7 +83,8 @@
   --animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
   --animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
   --animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
-  /* toolbar-slide-* 키프레임 및 토큰 제거: JS API(toolbarSlideDown/Up)만 사용 */
+  --animation-toolbar-show: toolbar-slide-down var(--duration-fast) var(--transition-fast);
+  --animation-toolbar-hide: toolbar-slide-up var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
 
   /* Icon Component Tokens */
   --xeg-icon-stroke-width: 2px;
@@ -216,4 +217,24 @@
   }
 }
 
-/* toolbar-slide-* 키프레임 제거됨 (애니메이션은 JS 유틸을 사용) */
+@keyframes toolbar-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toolbar-slide-up {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}

@@ -3,7 +3,7 @@
  * @description Modal이 열렸을 때 배경 스크롤을 막는 훅
  */
 
-import { getPreactHooks } from '../external/vendors';
+import { getPreactHooks } from '@shared/external/vendors';
 
 export interface ScrollLockOptions {
   enabled: boolean;

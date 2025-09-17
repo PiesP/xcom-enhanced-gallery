@@ -1,17 +1,4 @@
-let ensureWheelLock: any;
-let addWheelListener: any;
-
-const isWindows = (globalThis as any).process?.platform === 'win32';
-const ROOT = 'C:/git/xcom-enhanced-gallery';
-const SPEC_ALIAS = '@shared/utils/events/wheel';
-const SPEC_FS = `/@fs/${ROOT}/src/shared/utils/events/wheel.ts`;
-
-beforeAll(async () => {
-  const spec = isWindows ? SPEC_FS : SPEC_ALIAS;
-  const mod = await import(spec as string);
-  ensureWheelLock = mod.ensureWheelLock;
-  addWheelListener = mod.addWheelListener;
-});
+import { ensureWheelLock, addWheelListener } from '@/shared/utils/events/wheel';
 
 describe('R2: ensureWheelLock & addWheelListener contract', () => {
   it('addWheelListener should not call preventDefault by default (passive)', () => {
@@ -19,7 +6,7 @@ describe('R2: ensureWheelLock & addWheelListener contract', () => {
     globalThis.document.body.appendChild(div);
 
     let prevented = false;
-    const handler = (e: any) => {
+    const handler = (e: WheelEvent) => {
       try {
         e.preventDefault();
         prevented = true;
@@ -46,7 +33,7 @@ describe('R2: ensureWheelLock & addWheelListener contract', () => {
     let calls: Array<{ pd: boolean }> = [];
 
     // Spy on preventDefault via wrapping event
-    const cleanup = ensureWheelLock(div, (e: any) => {
+    const cleanup = ensureWheelLock(div, e => {
       // simulate: consume only when deltaY > 0
       const consume = e.deltaY > 0;
       calls.push({ pd: consume });

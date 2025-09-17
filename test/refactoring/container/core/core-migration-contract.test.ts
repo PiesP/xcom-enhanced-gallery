@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { createAppContainer } from '../../helpers/createAppContainer';
+import { createAppContainer } from '../../../../src/features/gallery/createAppContainer';
 
 describe('Phase 3 - Core Migration Contract', () => {
   let container;
@@ -109,10 +109,7 @@ describe('Phase 3 - Core Migration Contract', () => {
         const mockElement = {
           querySelector: () => null,
           querySelectorAll: () => [],
-        } as unknown as {
-          querySelectorAll: (sel: string) => Array<{ src?: string }>;
-          querySelector: (sel: string) => { src?: string } | null;
-        };
+        } as HTMLElement;
         services.media.extractMediaUrls(mockElement);
       }).not.toThrow();
 

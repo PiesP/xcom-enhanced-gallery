@@ -18,9 +18,13 @@ export {
   ANIMATION_CONSTANTS,
   type CSSAnimationOptions,
 } from './css-animations';
-import { globalTimerManager } from './timer-management';
 
-// 별칭 제거: 공식 API만 유지(toolbarSlideDown/toolbarSlideUp)
+// 기존 함수들을 CSS 기반으로 리다이렉트하여 하위 호환성 유지
+export {
+  animateGalleryEnter as animateToolbarShow,
+  animateGalleryExit as animateToolbarHide,
+  animateGalleryEnter as animateImageLoad,
+} from './css-animations';
 
 // Motion One 관련 함수들을 CSS 기반으로 교체
 type DurationToken = 'fast' | 'normal' | 'slow';
@@ -80,7 +84,7 @@ export const animateCustom = async (
       }
     });
 
-    globalTimerManager.setTimeout(() => {
+    setTimeout(() => {
       resolve();
     }, durationMs + delayMs);
   });
@@ -100,17 +104,10 @@ export const animateParallel = async (
 };
 
 // Motion One 특수 기능들을 간소화된 버전으로 교체
-type OnScrollFn = (info: { scrollY: number; progress: number }) => void;
-type ScrollEntry = { handler: () => void; refCount: number };
-// Module-scoped registry for idempotency (target -> (onScroll -> entry))
-const SCROLL_REGISTRY: WeakMap<object, Map<OnScrollFn, ScrollEntry>> = new WeakMap();
-
 export const setupScrollAnimation = (
-  onScroll: OnScrollFn,
+  onScroll: (info: { scrollY: number; progress: number }) => void,
   container?: Element | null
 ): (() => void) => {
-  // Idempotency guard: avoid duplicate registrations for same target + onScroll
-
   const handleScroll = () => {
     const scrollY = window.scrollY;
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -119,43 +116,10 @@ export const setupScrollAnimation = (
   };
 
   const target = container || window;
-
-  // Registry keying: per target, per onScroll function identity
-  const targetKey = target as unknown as object;
-  let map = SCROLL_REGISTRY.get(targetKey);
-  if (!map) {
-    map = new Map();
-    SCROLL_REGISTRY.set(targetKey, map);
-  }
-
-  const existing = map.get(onScroll);
-  if (existing) {
-    existing.refCount += 1;
-  } else {
-    target.addEventListener('scroll', handleScroll, { passive: true });
-    map.set(onScroll, { handler: handleScroll, refCount: 1 });
-  }
+  target.addEventListener('scroll', handleScroll, { passive: true });
 
   return () => {
-    const entry = map!.get(onScroll);
-    if (!entry) {
-      // Fallback: if not found, attempt direct removal
-      try {
-        target.removeEventListener('scroll', handleScroll as EventListener);
-      } catch {
-        // ignore
-      }
-      return;
-    }
-
-    entry.refCount -= 1;
-    if (entry.refCount <= 0) {
-      target.removeEventListener('scroll', entry.handler as EventListener);
-      map!.delete(onScroll);
-      if (map!.size === 0) {
-        SCROLL_REGISTRY.delete(targetKey);
-      }
-    }
+    target.removeEventListener('scroll', handleScroll);
   };
 };
 
@@ -255,28 +219,3 @@ export const ANIMATION_PRESETS = {
     options: { duration: 300, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
   },
 } as const;
-
-// Phase 2: JS 프리셋 경로를 정식 API로 노출
-export const toolbarSlideDown = async (element: Element): Promise<void> => {
-  // 최종 상태로 전환(초기 상태는 CSS 또는 호출측에서 관리)
-  return animateCustom(
-    element,
-    { opacity: '1', transform: 'translateY(0)' },
-    {
-      durationToken: 'fast',
-      easingToken: 'decelerate',
-    }
-  );
-};
-
-export const toolbarSlideUp = async (element: Element): Promise<void> => {
-  // 툴바를 상단으로 숨기는 상태로 전환
-  return animateCustom(
-    element,
-    { opacity: '0', transform: 'translateY(-100%)' },
-    {
-      durationToken: 'fast',
-      easingToken: 'accelerate',
-    }
-  );
-};

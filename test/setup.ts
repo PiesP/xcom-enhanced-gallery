@@ -4,10 +4,9 @@
  */
 
 import '@testing-library/jest-dom';
-import { beforeEach, afterEach, vi } from 'vitest';
+import { beforeEach, afterEach } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
-import { URL as NodeURL } from 'node:url';
 
 // ================================
 // 전역 테스트 환경 설정
@@ -15,10 +14,42 @@ import { URL as NodeURL } from 'node:url';
 
 // URL 생성자 폴백 - Node.js URL 직접 사용
 function createURLPolyfill() {
-  // Node.js ESM 환경에서 URL 생성자 확보
-  // jsdom이 제공하는 URL이 있으면 우선 사용, 없으면 Node URL 사용
-  if (typeof globalThis.URL === 'function') return globalThis.URL as unknown as typeof URL;
-  return NodeURL as unknown as typeof URL;
+  try {
+    // Node.js의 기본 URL을 직접 사용
+    const { URL: NodeURL } = require('node:url');
+    console.log('Using Node.js URL constructor');
+    return NodeURL;
+  } catch (error) {
+    console.warn('Node URL import failed, using fallback:', error);
+
+    // fallback implementation
+    function URLConstructor(url) {
+      if (!(this instanceof URLConstructor)) {
+        return new URLConstructor(url);
+      }
+
+      const urlRegex = /^(https?):\/\/([^/]+)(\/[^?]*)?\??(.*)$/;
+      const match = url.match(urlRegex);
+
+      if (!match) {
+        throw new Error('Invalid URL');
+      }
+
+      const [, protocol, hostname, pathname = '/', search = ''] = match;
+
+      this.protocol = `${protocol}:`;
+      this.hostname = hostname;
+      this.pathname = pathname;
+      this.search = search ? `?${search}` : '';
+      this.href = url;
+
+      this.toString = () => this.href;
+
+      return this;
+    }
+
+    return URLConstructor;
+  }
 }
 
 // URL 폴백 설정
@@ -31,7 +62,6 @@ function setupURLPolyfill() {
   // window 레벨에도 설정 (안전하게)
   try {
     if (typeof window !== 'undefined') {
-      // @ts-expect-error — jsdom Window type
       window.URL = URLPolyfill;
     }
   } catch {
@@ -50,19 +80,6 @@ function setupURLPolyfill() {
 
 // URL 폴백 설정 실행
 setupURLPolyfill();
-
-// Vendors 선행 초기화 (모듈 로드 시 1회)
-// 자동 초기화 경고/신호 폴백 경고를 줄이기 위해 테스트 시작 전에 초기화합니다.
-// 중복 호출은 StaticVendorManager에서 안전하게 처리됩니다.
-try {
-  // vitest는 ESM을 지원하므로 top-level await 사용 가능
-  const vendors = await import('../src/shared/external/vendors/index.ts');
-  if (typeof vendors.initializeVendors === 'function') {
-    await vendors.initializeVendors();
-  }
-} catch {
-  // 테스트 환경에서만 사용되므로 실패해도 치명적이지 않음
-}
 
 // jsdom 환경 호환성 향상을 위한 polyfill 설정
 function setupJsdomPolyfills() {
@@ -197,64 +214,26 @@ function setupJsdomPolyfills() {
     globalThis.IntersectionObserver = globalThis.window?.IntersectionObserver;
   }
 
-  // requestAnimationFrame / cancelAnimationFrame polyfill (jsdom limitation)
-  // Preact hooks 등에서 사용되며, teardown 시 cancelAnimationFrame이 없으면 에러가 발생할 수 있음
-  try {
-    type RAFCallback = (time: number) => void;
-    const rafPolyfill = (cb: RAFCallback): number => {
-      // 60fps 근사치
-      return globalThis.setTimeout(() => cb(Date.now()), 16) as unknown as number;
-    };
-    const cafPolyfill = (id: number) => {
-      try {
-        globalThis.clearTimeout(id as unknown as any);
-      } catch {
-        // ignore
-      }
-    };
-
-    if (typeof globalThis.requestAnimationFrame !== 'function') {
-      // @ts-expect-error — assign polyfill in test env
-      globalThis.requestAnimationFrame = rafPolyfill;
-    }
-    if (typeof globalThis.cancelAnimationFrame !== 'function') {
-      // @ts-expect-error — assign polyfill in test env
-      globalThis.cancelAnimationFrame = cafPolyfill;
-    }
-    if (typeof globalThis.window !== 'undefined') {
-      if (typeof globalThis.window.requestAnimationFrame !== 'function') {
-        // @ts-expect-error — jsdom Window type
-        globalThis.window.requestAnimationFrame = rafPolyfill;
-      }
-      if (typeof globalThis.window.cancelAnimationFrame !== 'function') {
-        // @ts-expect-error — jsdom Window type
-        globalThis.window.cancelAnimationFrame = cafPolyfill;
-      }
-    }
-  } catch {
-    // ignore
-  }
-
   // HTMLCanvasElement.toDataURL polyfill (jsdom: Not implemented 방지)
   try {
     // jsdom에서는 HTMLCanvasElement가 존재하지만 toDataURL 호출 시 예외를 던질 수 있음
     const CanvasCtor: any = (globalThis as any).HTMLCanvasElement;
     if (CanvasCtor && CanvasCtor.prototype) {
       const proto = CanvasCtor.prototype as any;
-      // 항상 안전 래핑: 원본이 있으면 try/catch로 감싸고, 실패 시 폴백 반환
-      const originalToDataURL = proto.toDataURL;
-      proto.toDataURL = function toDataURL(type?: string) {
-        try {
-          if (typeof originalToDataURL === 'function') {
-            return originalToDataURL.call(this, type);
-          }
-        } catch {
-          // fallthrough to fallback
-        }
-        const mime = typeof type === 'string' ? type.toLowerCase() : 'image/png';
-        const isWebp = mime.includes('webp');
-        return `data:${isWebp ? 'image/webp' : 'image/png'};base64,AAAA`;
-      };
+      const needsPolyfill =
+        typeof proto.toDataURL !== 'function' ||
+        // 일부 jsdom 버전은 함수가 존재하더라도 호출 시 Not implemented를 던짐
+        // 안전하게 오버라이드하여 테스트 노이즈를 제거
+        /not implemented/i.test(String(proto.toDataURL));
+
+      if (needsPolyfill) {
+        proto.toDataURL = function toDataURL(type?: string) {
+          const mime = typeof type === 'string' ? type.toLowerCase() : 'image/png';
+          const isWebp = mime.includes('webp');
+          // 최소한의 dataURL(내용은 중요하지 않음) 반환
+          return `data:${isWebp ? 'image/webp' : 'image/png'};base64,AAAA`;
+        };
+      }
     }
 
     // 문서 생성 경로에서도 안전 보장: canvas 생성 시 toDataURL 주입
@@ -297,56 +276,22 @@ function setupJsdomPolyfills() {
   } catch {
     // 무시: 테스트 환경에서만 사용되는 폴리필
   }
-
-  // jsdom navigation not implemented 경고 억제: assign/replace를 안전 스텁으로
-  try {
-    if (typeof globalThis.window !== 'undefined' && globalThis.window.location) {
-      const loc = globalThis.window.location as any;
-      if (typeof loc.assign === 'function') {
-        try {
-          vi.spyOn(loc, 'assign').mockImplementation(() => {});
-        } catch {
-          loc.assign = () => {};
-        }
-      } else {
-        loc.assign = () => {};
-      }
-
-      if (typeof loc.replace === 'function') {
-        try {
-          vi.spyOn(loc, 'replace').mockImplementation(() => {});
-        } catch {
-          loc.replace = () => {};
-        }
-      } else {
-        loc.replace = () => {};
-      }
-    }
-  } catch {
-    // 무시
-  }
 }
 
 // 기본적인 브라우저 환경 설정 강화
 if (typeof globalThis !== 'undefined') {
   // 안전한 window 객체 설정
   if (!globalThis.window || typeof globalThis.window !== 'object') {
-    // 기본 형태의 window 객체 확보
-    // @ts-expect-error — define minimal window for tests
     globalThis.window = {};
   }
 
   // 안전한 document 객체 설정 - body 포함
   if (!globalThis.document || typeof globalThis.document !== 'object') {
-    // 최소 document 구현을 제공하여 스파이 설정이 실패하지 않도록 함
-    // @ts-expect-error — lightweight document stub for tests
     globalThis.document = {
       body: { innerHTML: '' },
       createElement: () => ({ innerHTML: '' }),
       querySelector: () => null,
       querySelectorAll: () => [],
-      addEventListener: () => {},
-      removeEventListener: () => {},
     };
   } else if (!globalThis.document.body) {
     globalThis.document.body = { innerHTML: '' };
@@ -369,29 +314,6 @@ if (typeof globalThis !== 'undefined') {
 
   // jsdom polyfill 적용
   setupJsdomPolyfills();
-
-  // 공용 콘솔 필터: jsdom의 알려진 Not implemented 노이즈를 억제
-  try {
-    const originalError = console.error.bind(console);
-    const originalWarn = console.warn.bind(console);
-    const shouldSuppress = (args: any[]) => {
-      const msg = String(args[0] ?? '').toLowerCase();
-      return (
-        msg.includes("not implemented: htmlcanvaselement's todataurl() method") ||
-        msg.includes('not implemented: navigation to another document')
-      );
-    };
-    console.error = (...args: any[]) => {
-      if (shouldSuppress(args)) return; // 억제
-      originalError(...args);
-    };
-    console.warn = (...args: any[]) => {
-      if (shouldSuppress(args)) return; // 억제
-      originalWarn(...args);
-    };
-  } catch {
-    // 무시
-  }
 }
 
 /**

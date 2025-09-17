@@ -172,8 +172,7 @@
 .image.fitHeight {
   width: auto;
   height: auto;
-  /* 뷰포트 제약(훅에서 계산) - 툴바/패딩 보정 포함 */
-  max-height: var(--xeg-viewport-height-constrained);
+  max-height: var(--xeg-viewport-height-constrained); /* 스크롤 방지를 위해 적절한 높이 제한 */
   object-fit: contain;
 }
 
@@ -181,8 +180,7 @@
   width: 100%;
   height: auto;
   max-width: 100vw;
-  /* 뷰포트 제약(훅에서 계산) - 툴바/패딩 보정 포함 */
-  max-height: var(--xeg-viewport-height-constrained);
+  max-height: var(--xeg-viewport-height-constrained); /* 스크롤 방지를 위해 적절한 높이 제한 */
   object-fit: contain;
 }
 
@@ -398,16 +396,6 @@
   max-width: none !important;
   max-height: none !important;
   object-fit: none;
-}
-
-/* Video fit modes aligned with image */
-.video.fitHeight,
-.video.fitContainer {
-  width: 100%;
-  height: auto;
-  max-width: 100vw;
-  max-height: var(--xeg-viewport-height-constrained);
-  object-fit: contain;
 }
 
 .video.fitWidth {

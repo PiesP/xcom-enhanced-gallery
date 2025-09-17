@@ -1,47 +1,16 @@
 #!/usr/bin/env sh
 
-# Pre-push: typecheck + tests
-# Optimization goals:
-# - Skip in CI (workflows already run full checks)
-# - Allow developer override via env (XEG_PREPUSH_SCOPE) or git config (xeg.prepushScope)
-# - Default to smoke suite locally for speed; use "full" to run entire tests
-
-if [ "$CI" = "true" ]; then
-  echo "⏭️  Pre-push: Skipping in CI (handled by GitHub Actions)."
-  exit 0
-fi
-
-# Resolve scope precedence: env > git config > default
-SCOPE="${XEG_PREPUSH_SCOPE:-}"
-if [ -z "$SCOPE" ]; then
-  CFG_SCOPE=$(git config --get xeg.prepushScope 2>/dev/null || true)
-  if [ -n "$CFG_SCOPE" ]; then
-    SCOPE="$CFG_SCOPE"
-  else
-    SCOPE="smoke"
-  fi
-fi
-
-echo "🧪 Pre-push: typecheck + tests (scope: $SCOPE)"
+# Pre-push: ensure types and tests are good before pushing
+echo "🧪 Pre-push: typecheck + tests"
 
 npm run typecheck || {
   echo "❌ Typecheck failed"
   exit 1
 }
 
-if [ "$SCOPE" = "full" ] || [ "$SCOPE" = "all" ]; then
-  npm run test || {
-    echo "❌ Tests (full) failed"
-    exit 1
-  }
-else
-  npm run test:$SCOPE || {
-    echo "❌ Tests ($SCOPE) failed"
-    echo "💡 Tip: set XEG_PREPUSH_SCOPE=full to run the entire suite, or configure 'git config xeg.prepushScope <scope>'"
-    exit 1
-  }
-fi
+npm run test || {
+  echo "❌ Tests failed"
+  exit 1
+}
 
 echo "✅ Pre-push checks passed"
-
-exit 0

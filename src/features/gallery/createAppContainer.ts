@@ -1,10 +1,6 @@
 /**
- * Test Harness: createAppContainer
- *
- * 목적: 런타임 소스에서 AppContainer 구현을 제거하고, 리팩토링/계약 테스트에서만
- * 사용할 수 있도록 테스트 하네스 경로로 이전합니다.
- *
- * 주의: 이 파일은 테스트 전용입니다. 프로덕션 번들에 포함되지 않습니다.
+ * @fileoverview App Container Factory - 타입 안전한 의존성 주입 컨테이너 생성
+ * @description CoreService를 대체하는 명시적 의존성 주입 컨테이너
  */
 
 import { logger } from '@shared/logging/logger';
@@ -24,39 +20,67 @@ import type {
   IVideoService,
   ISettingsService,
   IGalleryApp,
-} from '@shared/container/AppContainer';
+} from '../../shared/container/AppContainer';
 import type { AppConfig } from '@/types';
 
-type LegacyServiceMap = Record<string, unknown>;
+/**
+ * Legacy Service 타입 정의
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LegacyServiceMap = Record<string, any>;
 
+/**
+ * Global 확장을 위한 타입 정의
+ */
+interface LegacyGlobal {
+  __XEG_LEGACY_ADAPTER__?: LegacyServiceAdapter;
+  __XEG_GET_SERVICE_OVERRIDE__?: (key: string) => unknown;
+}
+
+/**
+ * Legacy Adapter - 기존 SERVICE_KEYS를 통한 서비스 접근을 AppContainer로 매핑
+ */
 class LegacyServiceAdapter {
   constructor(private readonly container: AppContainer) {}
 
+  /**
+   * 기존 getService(key) 호출을 새 컨테이너로 매핑
+   */
   getService<T>(key: string): T {
+    // Deprecation 경고
     logger.warn(`[DEPRECATED] getService('${key}') 사용 중. container.services.* 로 이전하세요.`);
 
     switch (key) {
       case SERVICE_KEYS.MEDIA_SERVICE:
       case SERVICE_KEYS.MEDIA_EXTRACTION:
         return this.container.services.media as T;
+
       case SERVICE_KEYS.THEME:
         return this.container.services.theme as T;
+
       case SERVICE_KEYS.TOAST:
         return this.container.services.toast as T;
+
       case SERVICE_KEYS.VIDEO_CONTROL:
       case SERVICE_KEYS.VIDEO_STATE:
         return this.container.services.video as T;
+
       case SERVICE_KEYS.SETTINGS:
         if (!this.container.services.settings) {
           throw new Error(`Lazy service not loaded: ${key}`);
         }
         return this.container.services.settings as T;
+
       default:
+        // Fallback to legacy bridge (CoreService 비직접 접근)
         return bridgeGetService<T>(key);
     }
   }
 }
 
+/**
+ * 기본 AppConfig 생성
+ */
 function createDefaultConfig(): AppConfig {
   return {
     version: import.meta.env.VITE_VERSION ?? '4.0.0',
@@ -67,37 +91,49 @@ function createDefaultConfig(): AppConfig {
   };
 }
 
+/**
+ * 서비스 래퍼 클래스들 (기존 서비스를 인터페이스에 맞게 래핑)
+ */
 class MediaServiceWrapper implements IMediaService {
   constructor(private readonly legacyService: LegacyServiceMap | null) {}
 
-  extractUrls = (element: Element): string[] => {
-    if (this.legacyService?.extractUrls) return this.legacyService.extractUrls(element);
+  // 테스트가 기대하는 인터페이스 제공
+  extractUrls = (element: HTMLElement): string[] => {
+    if (this.legacyService?.extractUrls) {
+      return this.legacyService.extractUrls(element);
+    }
     return [];
   };
 
   generateFilename = (media: unknown, options?: unknown): string => {
-    if (this.legacyService?.generateFilename)
+    if (this.legacyService?.generateFilename) {
       return this.legacyService.generateFilename(media, options);
+    }
     return `media_${Date.now()}.jpg`;
   };
 
-  async extractMediaUrls(element: Element): Promise<string[]> {
+  async extractMediaUrls(element: HTMLElement): Promise<string[]> {
     return this.extractUrls(element);
   }
 
   async cleanup(): Promise<void> {
-    await this.legacyService?.cleanup?.();
+    if (this.legacyService?.cleanup) {
+      await this.legacyService.cleanup();
+    }
   }
 }
 
 class ThemeServiceWrapper implements IThemeService {
   constructor(private readonly legacyService: LegacyServiceMap | null) {}
+
   getCurrentTheme(): 'light' | 'dark' | 'auto' {
     return this.legacyService?.getCurrentTheme?.() ?? 'auto';
   }
+
   setTheme(theme: 'light' | 'dark' | 'auto'): void {
     this.legacyService?.setTheme?.(theme);
   }
+
   cleanup(): void {
     this.legacyService?.cleanup?.();
   }
@@ -105,12 +141,14 @@ class ThemeServiceWrapper implements IThemeService {
 
 class ToastServiceWrapper implements IToastService {
   constructor(private readonly legacyService: LegacyServiceMap | null) {}
+
   show(
     message: string,
     options?: { type?: 'info' | 'success' | 'warning' | 'error'; duration?: number }
   ): void {
     this.legacyService?.show?.(message, options);
   }
+
   cleanup(): void {
     this.legacyService?.cleanup?.();
   }
@@ -118,23 +156,32 @@ class ToastServiceWrapper implements IToastService {
 
 class VideoServiceWrapper implements IVideoService {
   constructor(private readonly legacyService: LegacyServiceMap | null) {}
+
+  // 테스트가 기대하는 인터페이스
   play = (): void => {
     this.legacyService?.resumeAll?.();
   };
+
   pause = (): void => {
     this.legacyService?.pauseAll?.();
   };
+
   pauseAll(): void {
     this.legacyService?.pauseAll?.();
   }
+
   resumeAll(): void {
     this.legacyService?.resumeAll?.();
   }
+
   cleanup(): void {
     this.legacyService?.cleanup?.();
   }
 }
 
+/**
+ * AppContainer 구현
+ */
 class AppContainerImpl implements AppContainer {
   public config: AppConfig;
   public logger: ILogger;
@@ -145,7 +192,9 @@ class AppContainerImpl implements AppContainer {
     video: IVideoService;
     settings?: ISettingsService;
   };
-  public features: { loadGallery(): Promise<IGalleryApp> };
+  public features: {
+    loadGallery(): Promise<IGalleryApp>;
+  };
   public disposed = false;
 
   private readonly legacyAdapter?: LegacyServiceAdapter;
@@ -156,18 +205,19 @@ class AppContainerImpl implements AppContainer {
     this.config = config;
     this.logger = logger;
 
+    // 직접 서비스들을 생성 (CoreService 의존성 제거)
     const mediaService = new MediaServiceWrapper(this.createMediaService());
     const themeService = new ThemeServiceWrapper(this.createThemeService());
     const toastService = new ToastServiceWrapper(this.createToastService());
     const videoService = new VideoServiceWrapper(this.createVideoService());
     const settingsService = this.createSettingsService();
 
+    // 객체 방식과 함수 방식 모두 지원
     this.services = {
       media: Object.assign(() => Promise.resolve(mediaService), mediaService, {
         cleanup: () => mediaService.cleanup(),
-        extractMediaUrls: (element: unknown) => mediaService.extractMediaUrls(element as Element),
-        extractFromClickedElement: (element: unknown) =>
-          mediaService.extractMediaUrls(element as Element),
+        extractMediaUrls: (element: HTMLElement) => mediaService.extractMediaUrls(element),
+        extractFromClickedElement: (element: HTMLElement) => mediaService.extractMediaUrls(element),
       }),
       theme: Object.assign(() => Promise.resolve(themeService), themeService, {
         cleanup: () => themeService.cleanup(),
@@ -193,31 +243,42 @@ class AppContainerImpl implements AppContainer {
       }),
     };
 
-    this.features = { loadGallery: this.loadGalleryFactory.bind(this) };
+    this.features = {
+      loadGallery: this.loadGalleryFactory.bind(this),
+    };
 
-    const devLike = import.meta.env.DEV || import.meta.env.MODE === 'test';
-    if (enableLegacyAdapter && devLike) {
+    // Legacy Adapter 설정
+    if (enableLegacyAdapter) {
       this.legacyAdapter = new LegacyServiceAdapter(this);
-      const anyGlobal = globalThis as unknown as Record<string, unknown>;
-      const LEGACY_ADAPTER_KEY = devLike ? '__XEG_LEGACY_ADAPTER__' : 'XEG_DEV_ONLY';
-      anyGlobal[LEGACY_ADAPTER_KEY] = this.legacyAdapter;
+      // 전역에서 접근 가능하도록 설정 (임시)
+      (globalThis as LegacyGlobal).__XEG_LEGACY_ADAPTER__ = this.legacyAdapter;
     }
   }
 
+  /**
+   * 실제 미디어 서비스 생성 (테스트 환경용 mock)
+   */
   private createMediaService(): LegacyServiceMap {
+    // 테스트 환경에서는 간단한 mock 서비스 제공
     return {
-      extractUrls: (element: Element) => {
+      extractUrls: (element: HTMLElement) => {
+        // Mock implementation
         const images = element.querySelectorAll('img[src*="twimg.com"]');
         const videos = element.querySelectorAll('video');
         const urls: string[] = [];
+
         images.forEach(img => {
-          const src = (img as Element & { src?: string }).src;
-          if (typeof src === 'string' && src) urls.push(src);
+          if (img instanceof HTMLImageElement && img.src) {
+            urls.push(img.src);
+          }
         });
+
         videos.forEach(video => {
-          const src = (video as Element & { src?: string }).src;
-          if (typeof src === 'string' && src) urls.push(src);
+          if (video instanceof HTMLVideoElement && video.src) {
+            urls.push(video.src);
+          }
         });
+
         return urls;
       },
       generateFilename: (
@@ -227,12 +288,20 @@ class AppContainerImpl implements AppContainer {
         const filenameService = new FilenameService();
         return filenameService.generateMediaFilename(media, options);
       },
-      optimizeUrl: (url: string) => url.replace(/&name=\w+/, '&name=orig'),
-      loadMediaInBackground: async (urls: string[]) =>
-        Promise.resolve(urls.map(url => ({ url, loaded: true }))),
+      optimizeUrl: (url: string) => {
+        // Mock URL optimization
+        return url.replace(/&name=\w+/, '&name=orig');
+      },
+      loadMediaInBackground: async (urls: string[]) => {
+        // Mock background loading
+        return Promise.resolve(urls.map(url => ({ url, loaded: true })));
+      },
     };
   }
 
+  /**
+   * 테마 서비스 생성
+   */
   private createThemeService(): LegacyServiceMap {
     return {
       apply: () => logger.debug('Theme service - apply'),
@@ -240,6 +309,9 @@ class AppContainerImpl implements AppContainer {
     };
   }
 
+  /**
+   * 토스트 서비스 생성
+   */
   private createToastService(): LegacyServiceMap {
     return {
       show: (message: string) => logger.info(`Toast: ${message}`),
@@ -248,6 +320,9 @@ class AppContainerImpl implements AppContainer {
     };
   }
 
+  /**
+   * 비디오 서비스 생성
+   */
   private createVideoService(): LegacyServiceMap {
     return {
       pauseAll: () => logger.debug('Video service - pauseAll'),
@@ -256,6 +331,9 @@ class AppContainerImpl implements AppContainer {
     };
   }
 
+  /**
+   * 설정 서비스 생성 (lazy loading)
+   */
   private createSettingsService(): ISettingsService {
     return {
       getSettings: () => {
@@ -277,8 +355,14 @@ class AppContainerImpl implements AppContainer {
   }
 
   private async loadGalleryFactory(): Promise<IGalleryApp> {
-    if (this.galleryAppCache) return this.galleryAppCache;
-    if (this.galleryLoadingPromise) return this.galleryLoadingPromise;
+    if (this.galleryAppCache) {
+      return this.galleryAppCache;
+    }
+
+    // 동시 호출 시 Promise 캐싱으로 중복 생성 방지
+    if (this.galleryLoadingPromise) {
+      return this.galleryLoadingPromise;
+    }
 
     this.galleryLoadingPromise = this.createGalleryApp();
     try {
@@ -291,59 +375,14 @@ class AppContainerImpl implements AppContainer {
 
   private async createGalleryApp(): Promise<IGalleryApp> {
     try {
-      try {
-        const RENDERER_IMPORT_TIMEBOX_MS = 800;
-        const galleryRendererModule = await Promise.race([
-          import('@/features/gallery/GalleryRenderer'),
-          new Promise<undefined>(resolve =>
-            globalThis.setTimeout?.(() => resolve(undefined), RENDERER_IMPORT_TIMEBOX_MS)
-          ),
-        ]);
-        if ((galleryRendererModule as any)?.GalleryRenderer) {
-          registerGalleryRenderer(new (galleryRendererModule as any).GalleryRenderer());
-        } else {
-          this.logger.warn('GalleryRenderer import timed out; skip registration for now');
-        }
-      } catch (regErr) {
-        this.logger.warn('GalleryRenderer registration skipped due to error:', regErr);
-      }
+      // Gallery Renderer 서비스 등록 (갤러리 앱에 필요)
+      const galleryRendererModule = await import('./GalleryRenderer');
+      registerGalleryRenderer(new galleryRendererModule.GalleryRenderer());
 
-      const APP_IMPORT_TIMEBOX_MS = 1000;
-      let galleryApp: IGalleryApp;
-      try {
-        const galleryAppModule = await Promise.race([
-          import('@/features/gallery/GalleryApp'),
-          new Promise<undefined>(resolve =>
-            globalThis.setTimeout?.(() => resolve(undefined), APP_IMPORT_TIMEBOX_MS)
-          ),
-        ]);
-
-        if ((galleryAppModule as any)?.GalleryApp) {
-          galleryApp = new (galleryAppModule as any).GalleryApp();
-        } else {
-          this.logger.warn('GalleryApp import timed out; returning minimal stub');
-          galleryApp = {
-            async initialize() {},
-            async cleanup() {},
-          } as IGalleryApp;
-        }
-      } catch (appErr) {
-        this.logger.warn('GalleryApp import failed; returning minimal stub:', appErr);
-        galleryApp = {
-          async initialize() {},
-          async cleanup() {},
-        } as IGalleryApp;
-      }
-
-      try {
-        const TIMEBOX_MS = 1500;
-        await Promise.race([
-          galleryApp.initialize(),
-          new Promise<void>(resolve => globalThis.setTimeout?.(resolve, TIMEBOX_MS)),
-        ]);
-      } catch (initError) {
-        this.logger.warn('Gallery app initialization error (continuing):', initError);
-      }
+      // 동적 import로 갤러리 앱 로드 (같은 디렉토리)
+      const galleryAppModule = await import('./GalleryApp');
+      const galleryApp = new galleryAppModule.GalleryApp();
+      await galleryApp.initialize();
 
       return galleryApp;
     } catch (error) {
@@ -354,6 +393,8 @@ class AppContainerImpl implements AppContainer {
 
   async dispose(): Promise<void> {
     this.logger.info('AppContainer cleanup started');
+
+    // 서비스들 정리
     await Promise.all([
       this.services.media.cleanup(),
       this.services.theme.cleanup(),
@@ -361,39 +402,51 @@ class AppContainerImpl implements AppContainer {
       this.services.video.cleanup(),
       this.services.settings?.cleanup(),
     ]);
+
+    // 갤러리 앱 정리
     if (this.galleryAppCache) {
       await this.galleryAppCache.cleanup();
       this.galleryAppCache = undefined;
     }
+
+    // 진행 중인 로딩 Promise 정리
     this.galleryLoadingPromise = undefined;
-    if (this.legacyAdapter && import.meta.env.DEV) {
-      const anyGlobal = globalThis as unknown as Record<string, unknown>;
-      const LEGACY_ADAPTER_KEY = import.meta.env.DEV ? '__XEG_LEGACY_ADAPTER__' : 'XEG_DEV_ONLY';
-      if (LEGACY_ADAPTER_KEY in anyGlobal) delete anyGlobal[LEGACY_ADAPTER_KEY];
+
+    // Legacy adapter 정리
+    if (this.legacyAdapter && (globalThis as LegacyGlobal).__XEG_LEGACY_ADAPTER__) {
+      delete (globalThis as LegacyGlobal).__XEG_LEGACY_ADAPTER__;
     }
+
+    // disposed 플래그 설정
     this.disposed = true;
+
     this.logger.info('AppContainer cleanup completed');
   }
 }
 
+/**
+ * AppContainer 팩토리 함수
+ */
 export async function createAppContainer(
   options: CreateContainerOptions = {}
 ): Promise<AppContainer> {
   const config = { ...createDefaultConfig(), ...options.config };
-  const enableLegacyAdapter = options.enableLegacyAdapter ?? import.meta.env.DEV;
-  logger.info('Creating AppContainer [TEST HARNESS]', { config, enableLegacyAdapter });
+  const enableLegacyAdapter = options.enableLegacyAdapter ?? true;
+
+  logger.info('Creating AppContainer', { config, enableLegacyAdapter });
+
   const container = new AppContainerImpl(config, enableLegacyAdapter);
-  logger.info('AppContainer created successfully [TEST HARNESS]');
+
+  logger.info('AppContainer created successfully');
   return container;
 }
 
+/**
+ * Legacy 지원을 위한 전역 getService 함수 오버라이드 (임시)
+ */
 export function installLegacyAdapter(container: AppContainer): void {
-  if (!(import.meta.env.DEV || import.meta.env.MODE === 'test')) return;
   const adapter = new LegacyServiceAdapter(container);
-  const anyGlobal = globalThis as unknown as Record<string, unknown>;
-  const GET_OVERRIDE_KEY =
-    import.meta.env.DEV || import.meta.env.MODE === 'test'
-      ? '__XEG_GET_SERVICE_OVERRIDE__'
-      : 'XEG_DEV_ONLY';
-  anyGlobal[GET_OVERRIDE_KEY] = adapter.getService.bind(adapter);
+
+  // 전역 getService 함수를 오버라이드
+  (globalThis as LegacyGlobal).__XEG_GET_SERVICE_OVERRIDE__ = adapter.getService.bind(adapter);
 }

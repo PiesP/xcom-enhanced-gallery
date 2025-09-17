@@ -119,9 +119,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
-      - name: 🔨 Development build
-        run: npm run build:dev
-
       - name: 🏗️ Build production
         run: |
           echo "🚀 Building production version..."

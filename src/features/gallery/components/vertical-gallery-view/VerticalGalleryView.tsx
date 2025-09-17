@@ -11,33 +11,29 @@
  * - 일관된 사용자 경험 제공
  */
 
-// Vitest Windows alias 해석 이슈 회피: 내부 경로는 상대 경로로 명시
-import { logger } from '../../../../shared/logging/logger';
-import { ToolbarWithSettings } from '../../../../shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
-import type { ImageFitMode } from '../../../../shared/types';
-import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';
-import { downloadState } from '../../../../shared/state/signals/download.signals';
-import { getPreactHooks, getPreact, getPreactCompat } from '../../../../shared/external/vendors';
-import { languageService } from '../../../../shared/services/LanguageService';
-import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
+import { logger } from '@shared/logging/logger';
+import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
+import type { ImageFitMode } from '@shared/types';
+import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
+import { getPreactHooks, getPreact, getPreactCompat } from '@shared/external/vendors';
+import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import {
   animateGalleryEnter,
   animateGalleryExit,
   setupScrollAnimation,
-} from '../../../../shared/utils/animations';
+} from '@shared/utils/animations';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
-import { ensureGalleryScrollAvailable } from '../../../../shared/utils/core-utils';
+import { ensureGalleryScrollAvailable } from '@shared/utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
-import { computePreloadIndices } from '../../../../shared/utils/performance';
-import { getSetting, setSetting } from '../../../../shared/container/settings-access';
+import { computePreloadIndices } from '@shared/utils/performance';
+import { getSetting, setSetting } from '@shared/container/settings-access';
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
-import { useSelector, useCombinedSelector } from '../../../../shared/utils/signalSelector';
-import type { MediaInfo } from '../../../../shared/types';
-import { observeViewportCssVars } from '../../../../shared/utils/viewport';
+import { useSelector } from '@shared/utils/signalSelector';
+import type { MediaInfo } from '@shared/types';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -72,14 +68,10 @@ function VerticalGalleryViewCore({
     { dependencies: (s: typeof galleryState.value) => [s.currentIndex] }
   );
 
-  // 다운로드/로딩 상태를 통합하여 툴바에 전달 (다중 시그널 결합)
-  const isDownloading = useCombinedSelector(
-    [
-      galleryState as unknown as { value: typeof galleryState.value },
-      downloadState as unknown as { value: typeof downloadState.value },
-    ] as const,
-    (g, d) => Boolean(g.isLoading || d.isProcessing),
-    (g, d) => [g.isLoading, d.isProcessing]
+  const isDownloading = useSelector<typeof galleryState.value, boolean>(
+    galleryState as unknown as { value: typeof galleryState.value },
+    (s: typeof galleryState.value) => s.isLoading,
+    { dependencies: (s: typeof galleryState.value) => [s.isLoading] }
   );
 
   logger.debug('VerticalGalleryView: Rendering with state', {
@@ -89,8 +81,6 @@ function VerticalGalleryViewCore({
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
-  // 컨테이너 요소를 상태로 고정하여 ref 설정 이후 훅/효과에 안정적으로 전달
-  const [containerEl, setContainerEl] = useState<HTMLElement | null>(null);
   // DOM 평탄화를 위해 중간 content 래퍼 제거 (A1)
   // const contentRef = useRef<HTMLDivElement>(null);
   const toolbarHoverZoneRef = useRef<HTMLDivElement>(null);
@@ -215,28 +205,14 @@ function VerticalGalleryViewCore({
 
   // UI 상태와 독립적으로 스크롤 가용성 보장
   useEffect(() => {
-    if (containerEl) {
-      ensureGalleryScrollAvailable(containerEl);
+    if (containerRef.current) {
+      ensureGalleryScrollAvailable(containerRef.current);
     }
-  }, [containerEl]); // 컨테이너 준비 후 1회 실행
-
-  // 컨테이너 뷰포트 제약 CSS 변수 주입(ResizeObserver + window resize 폴백)
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const getChrome = () => {
-      // toolbarWrapperRef는 상단 고정 툴바 컨테이너. 실제 높이를 보정에 사용.
-      const t = toolbarWrapperRef.current;
-      const toolbarHeight = t ? Math.floor(t.getBoundingClientRect().height) : 0;
-      return { toolbarHeight, paddingTop: 0, paddingBottom: 0 } as const;
-    };
-    const cleanup = observeViewportCssVars(el, getChrome);
-    return cleanup;
-  }, [containerRef, toolbarWrapperRef]);
+  }, []); // showToolbar 의존성 제거 - 순수 CSS로 관리됨
 
   // 개선된 갤러리 스크롤 처리 - UI 상태와 독립적으로 동작
   useGalleryScroll({
-    container: containerEl,
+    container: containerRef.current,
     onScroll: delta => {
       // 스크롤이 발생할 때마다 호출되는 콜백
       logger.debug('VerticalGalleryView: 스크롤 감지', { delta, timestamp: Date.now() });
@@ -473,32 +449,19 @@ function VerticalGalleryViewCore({
 
   // 빈 상태 처리
   if (!isVisible || mediaItems.length === 0) {
-    const emptyTitle = languageService.getString('messages.gallery.emptyTitle');
-    const emptyDesc = languageService.getString('messages.gallery.emptyDescription');
-    const { createElement: h } = getPreact();
-    return h(
-      'div',
-      {
-        className: `${styles.container} ${styles.empty} ${stringWithDefault(className, '')}`,
-      },
-      h(
-        'div',
-        { className: styles.emptyMessage },
-        h('h3', null, emptyTitle),
-        h('p', null, emptyDesc)
-      )
-    ) as unknown as ReturnType<typeof getPreact>['h'];
+    return (
+      <div className={`${styles.container} ${styles.empty} ${stringWithDefault(className, '')}`}>
+        <div className={styles.emptyMessage}>
+          <h3>미디어가 없습니다</h3>
+          <p>표시할 이미지나 비디오가 없습니다.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div
-      ref={el => {
-        // ref 동기화 + 상태 고정(최초 비-null 시)
-        containerRef.current = el;
-        if (el && el !== containerEl) {
-          setContainerEl(el);
-        }
-      }}
+      ref={containerRef}
       className={`${styles.container} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
