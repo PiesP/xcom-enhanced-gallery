@@ -14,6 +14,17 @@
   제거(항상 등록), 소비 조건을 "갤러리 외부"로 한정, Shadow DOM은 `composedPath`
   기반 내부 판정. 스크롤 가능 컨테이너 셀렉터 하드닝. 관련 테스트 GREEN.
 
+### 2025-09-17 — PHASE 4 보강 테스트/경계 수정
+
+- 4.5 보강 테스트 추가: `new ToastController()` 직접 생성 금지 스캔(lint) 추가.
+  허용 파일(ToastController 정의/서비스 초기화) 외 발생 시 RED. 스위트 GREEN.
+- 4.6 보강 테스트 추가: EventManager idempotency(unit) — 동일
+  target/type/옵션/콜백 2회 add 시 DOM 1회, remove 후 재등록 1회 검증. GREEN.
+- 경계 수정: utils→services 의존 위반 제거 —
+  `shared/utils/scroll/ScrollEventHub.ts`에서 `EventManager` 직접 import 제거,
+  `@shared/utils/events`의 add/remove API 사용으로 전환. 경계 스캔 테스트 통과
+  기대.
+
 ### 2025-09-17 — PHASE 3(최종) 활성 계획서에서 완료로 이관
 
 - 내용: 활성 계획서(`TDD_REFACTORING_PLAN.md`)의 Phase 3 잔여 표식/요약을

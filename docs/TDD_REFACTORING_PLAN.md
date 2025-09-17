@@ -91,23 +91,20 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
       갤러리 open 시 0회 유지.
   - 수용 기준: 평시 add/remove 로그 밀도 추가 감소, 정책/가드 테스트 GREEN.
 
-  ### 4.5 ToastController 단일 소스화 — Features 레이어 직접 생성 금지
-  - 계획: Features(`GalleryApp`)는 컨테이너 accessor(`getToastController`)만
-    사용하도록 보장. 직접 생성 경로가 존재하지 않는지 스캔/테스트로 고정.
-  - 테스트(RED→GREEN):
-    - unit: `GalleryApp` 초기화 시 컨테이너 경유 1회 생성임을 spy로 검증.
-    - lint: `new ToastController()` 직접 사용 금지 스캔.
+  ### 4.5 ToastController 단일 소스화 — Features 레이어 직접 생성 금지 (테스트 추가 완료)
+  - 상태: lint 스캔 테스트 추가 완료 — `new ToastController()` 직접 사용 금지.
+    허용 파일(서비스 정의/초기화) 외 발생 시 RED.
+  - 후속: `GalleryApp` 초기화 시 컨테이너 경유 1회 생성 spy 검증은 선택 과제로
+    유지.
   - 수용 기준: 컨테이너 인스턴스 단일화, 덮어쓰기/중복 경고 0.
 
-  ### 4.6 스크롤/휠 리스너 단일화 — 중복 처리·재등록 최소화
-  - 계획: EventManager 레벨 중복 등록 no-op 가드 및 훅/유틸 idempotent 보강을
-    코드/테스트로 확정. ScrollEventHub는 feature flag로 유지하며 계약 테스트를
-    보완.
-  - 테스트(RED→GREEN):
-    - unit: 같은 target/type/옵션/콜백으로 2회 add 시 실제 DOM add 1회, remove
-      후 재등록 1회.
-    - unit(JSDOM): `useGalleryScroll` 토글/컨테이너 교체 반복에도 누수/중복 0.
-    - unit: ScrollEventHub 계약 테스트 강화.
+  ### 4.6 스크롤/휠 리스너 단일화 — 중복 처리·재등록 최소화 (1차 테스트/경계 수정 완료)
+  - 상태: EventManager facade 경유 idempotency(unit) 테스트 추가 완료 — 동일
+    파라미터 2회 add는 DOM 1회, remove 재등록 동작 검증.
+  - 추가 조치: utils→services 경계 위반 수정 — `ScrollEventHub`가 `EventManager`
+    직참조하지 않고 `@shared/utils/events`를 사용하도록 전환.
+  - 후속: `useGalleryScroll` 토글/컨테이너 교체 누수 0, ScrollEventHub 계약
+    테스트는 추가 보강 예정.
   - 수용 기준: add/remove 로그 밀도 감소, 리스너 누수 0, 정책 준수.
 
 ---

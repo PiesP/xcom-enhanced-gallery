@@ -2596,7 +2596,6 @@
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/features/gallery/hooks/useGalleryScroll.ts",
-        "src/shared/utils/scroll/ScrollEventHub.ts",
         "src/shared/services/input/KeyboardNavigator.ts",
         "src/shared/hooks/useAccessibility.ts",
         "src/shared/services/event-managers.ts"
@@ -2776,6 +2775,7 @@
         "src/features/gallery/GalleryApp.ts",
         "src/shared/services/EventManager.ts",
         "src/shared/utils/viewport.ts",
+        "src/shared/utils/scroll/ScrollEventHub.ts",
         "src/main.ts",
         "src/shared/utils/index.ts",
         "src/shared/utils/events/index.ts"
@@ -9244,6 +9244,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../events",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/events.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@/constants",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9275,26 +9292,6 @@
             "import"
           ],
           "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/services/EventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/EventManager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,

@@ -9,7 +9,8 @@ import type { SchedulerHandle } from '@shared/utils/performance/schedulers';
 import { FEATURE_FLAGS } from '@/constants';
 import { createScopedLogger } from '@shared/logging';
 import { scheduleRaf } from '@shared/utils/performance';
-import { EventManager } from '@shared/services/EventManager';
+// Use utils/events directly to avoid utils→services boundary violations
+import { addListener, removeEventListenerManaged } from '../events';
 
 const logger = createScopedLogger('ScrollEventHub');
 
@@ -40,7 +41,6 @@ export interface ScrollSubscriptionHandle {
  */
 export class ScrollEventHub {
   private readonly subscriptions = new Map<string, ScrollSubscriptionHandle>();
-  private readonly em = new EventManager();
 
   static isEnabled(): boolean {
     return FEATURE_FLAGS.SCROLL_EVENT_HUB;
@@ -60,7 +60,7 @@ export class ScrollEventHub {
     const existing = this.subscriptions.get(key);
     if (existing) return existing; // idempotent
 
-    const id = this.em.addListener(
+    const id = addListener(
       target as EventTarget,
       type,
       handler as EventListener,
@@ -72,7 +72,7 @@ export class ScrollEventHub {
       id,
       cancel: () => {
         try {
-          this.em.removeListener(id);
+          removeEventListenerManaged(id);
           this.subscriptions.delete(key);
         } catch (err) {
           logger.debug('unsubscribe failed (ignored)', { err });
