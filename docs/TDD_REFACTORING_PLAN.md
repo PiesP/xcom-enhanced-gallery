@@ -4,10 +4,8 @@
 > 테스트로 고정하며, UI/UX 일관성과 안정성을 높인다. 모든 변경은 실패 테스트 →
 > 최소 구현 → 리팩토링 순으로 진행한다.
 
-- 근거 문서: `docs/ARCHITECTURE.md`, `docs/CODING_GUIDELINES.md`,
-  `docs/DEPENDENCY-GOVERNANCE.md`
-- 환경: Vitest + JSDOM, 기본 URL https://x.com, vendors/userscript는
-  getter/adapter로 모킹
+- 근거 문서: `docs/ARCHITECTURE.md`, `docs/CODING_GUIDELINES.md`
+- 환경: Vitest + JSDOM, 기본 URL https://x.com, vendors/userscript는 getter 경유
 - 공통 원칙: 최소 diff, 3계층 단방향(Features → Shared → External), PC 전용
   입력, CSS Modules + 디자인 토큰만
 

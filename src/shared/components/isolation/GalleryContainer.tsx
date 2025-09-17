@@ -7,6 +7,7 @@ import { getPreact, getPreactHooks } from '../../external/vendors';
 import type { ComponentChildren } from '../../external/vendors';
 import { logger } from '../../logging';
 import { EventManager } from '../../services/EventManager';
+import { ensureWheelLock } from '../../utils';
 
 /**
  * 갤러리 컨테이너 Props
@@ -148,6 +149,34 @@ export function GalleryContainer({
     }
     return undefined;
   }, [handleKeyDown, onClose]);
+
+  // 휠 락: 컨텐츠가 뷰포트보다 작아 스크롤 불가할 때 배경 스크롤 차단
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const cleanup = ensureWheelLock(
+      el,
+      () => {
+        try {
+          // 스크롤 불가(내부 높이 <= 뷰포트 높이)일 때만 이벤트 소비
+          const canScroll = el.scrollHeight > el.clientHeight;
+          return !canScroll;
+        } catch {
+          return false;
+        }
+      },
+      { capture: true }
+    );
+
+    return () => {
+      try {
+        cleanup();
+      } catch (err) {
+        logger.debug('GalleryContainer wheel lock cleanup error (ignored)', err);
+      }
+    };
+  }, []);
 
   return h(
     'div',
