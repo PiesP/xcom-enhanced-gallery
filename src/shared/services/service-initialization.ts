@@ -17,6 +17,13 @@ export async function registerCoreServices(): Promise<void> {
   // Always resolve the current CoreService singleton to avoid stale instance issues in tests
   const serviceManager = CoreService.getInstance();
 
+  // Idempotency guard: if a sentinel core service is already registered, no-op
+  // MEDIA_SERVICE is a concrete instance (not a factory), so presence implies prior full registration on normal boot
+  if (serviceManager.has(SERVICE_KEYS.MEDIA_SERVICE)) {
+    logger.debug('Core services already registered (idempotent no-op)');
+    return;
+  }
+
   // ====================================
   // 통합된 핵심 서비스들
   // ====================================

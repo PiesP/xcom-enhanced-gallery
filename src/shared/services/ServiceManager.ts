@@ -40,8 +40,13 @@ export class CoreService {
   public register<T>(key: string, instance: T): void {
     type CleanupCapable = { destroy?: () => void; cleanup?: () => void };
     if (this.services.has(key)) {
-      logger.warn(`[CoreService] 서비스 덮어쓰기: ${key}`);
       const prev = this.services.get(key);
+      // If the same instance is re-registered (idempotent), ignore silently
+      if (prev === instance) {
+        logger.debug(`[CoreService] 동일 인스턴스 재등록 감지, 무시: ${key}`);
+        return;
+      }
+      logger.warn(`[CoreService] 서비스 덮어쓰기: ${key}`);
       // 기존 인스턴스가 리스너/타이머를 보유하고 있을 수 있으므로 안전하게 정리
       if (prev && typeof prev === 'object') {
         try {

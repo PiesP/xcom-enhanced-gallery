@@ -16,6 +16,11 @@ export function getToastController(): ToastController {
   return bridgeGetService<ToastController>(SERVICE_KEYS.TOAST);
 }
 
+// Optional getter for ToastController (does not throw when missing)
+export function tryGetToastController(): ToastController | null {
+  return bridgeTryGet<ToastController>(SERVICE_KEYS.TOAST);
+}
+
 export function getThemeService(): ThemeService {
   return bridgeGetService<ThemeService>(SERVICE_KEYS.THEME);
 }
@@ -53,7 +58,27 @@ export function getGalleryRenderer(): GalleryRenderer {
 
 // Registrations (to container)
 export function registerGalleryRenderer(renderer: unknown): void {
-  bridgeRegister(SERVICE_KEYS.GALLERY_RENDERER, renderer);
+  // 단일 인스턴스 가드: 이미 등록된 인스턴스가 있다면 동일 참조는 무시,
+  // 다른 인스턴스인 경우 이전 인스턴스를 우선 정리한 뒤 교체한다.
+  const existing = bridgeTryGet<GalleryRenderer>(SERVICE_KEYS.GALLERY_RENDERER);
+  if (existing) {
+    if (existing === renderer) {
+      // 동일 인스턴스 재등록은 무시 (idempotent)
+      return;
+    }
+    try {
+      // 안전한 정리 시도
+      (existing as unknown as { destroy?: () => void; cleanup?: () => void }).destroy?.();
+    } catch {
+      // ignore
+    }
+    try {
+      (existing as unknown as { destroy?: () => void; cleanup?: () => void }).cleanup?.();
+    } catch {
+      // ignore
+    }
+  }
+  bridgeRegister(SERVICE_KEYS.GALLERY_RENDERER, renderer as GalleryRenderer);
 }
 
 export function registerSettingsManager(settings: unknown): void {

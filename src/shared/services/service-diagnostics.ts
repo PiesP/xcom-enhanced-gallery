@@ -25,8 +25,12 @@ export class ServiceDiagnostics {
       const serviceManager = CoreService.getInstance();
 
       // 1) Ensure services are registered (idempotent)
-      logger.info('📋 서비스 등록 중...');
-      await registerCoreServices();
+      if (!serviceManager.has(SERVICE_KEYS.MEDIA_SERVICE)) {
+        logger.info('📋 서비스 등록 중...');
+        await registerCoreServices();
+      } else {
+        logger.debug('📋 서비스 등록 생략: 이미 등록됨');
+      }
 
       // 2) Gather diagnostics
       const diagnostics = serviceManager.getDiagnostics();

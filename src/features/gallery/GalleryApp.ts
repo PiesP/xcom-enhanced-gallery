@@ -21,7 +21,11 @@ import {
 import type { MediaInfo } from '../../shared/types/media.types';
 import { logger } from '../../shared/logging/logger';
 import { MediaService } from '../../shared/services/MediaService';
-import { ToastController } from '../../shared/services/ToastController';
+// Use container accessor for ToastController to ensure single instance
+import {
+  getToastController,
+  tryGetToastController,
+} from '../../shared/container/service-accessors';
 import { unmountGallery } from '../../shared/components/isolation';
 
 /**
@@ -42,7 +46,16 @@ export class GalleryApp {
   private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
   // VideoControl은 MediaService 내부에서 관리되므로 직접 인스턴스화하지 않습니다.
-  private readonly toastController: ToastController;
+  // ToastController는 컨테이너 등록 이전일 수 있으므로 lazy/optional로 접근한다.
+  private _toastController: ReturnType<typeof getToastController> | null = null;
+  private get toastController() {
+    // 이미 획득했으면 재사용
+    if (this._toastController) return this._toastController;
+    // 등록 전 생성자 접근 시에는 try-get으로 조용히 null 반환
+    const tc = tryGetToastController();
+    if (tc) this._toastController = tc;
+    return this._toastController;
+  }
 
   // 새로운 격리 시스템 컴포넌트들
   private galleryContainer: HTMLElement | null = null;
@@ -58,7 +71,6 @@ export class GalleryApp {
 
   constructor() {
     logger.info('[GalleryApp] 생성자 호출');
-    this.toastController = new ToastController();
   }
 
   /**
@@ -78,8 +90,17 @@ export class GalleryApp {
     try {
       logger.info('GalleryApp: 격리된 시스템으로 초기화 시작');
 
-      // 토스트 컨트롤러 초기화
-      await this.toastController.initialize();
+      // 토스트 컨트롤러 확보 및 초기화(이 시점에는 core 등록이 완료되어 있어야 함)
+      if (!this._toastController) {
+        try {
+          this._toastController = getToastController();
+        } catch {
+          // 테스트 또는 조기 초기화 경로에서 미등록일 수 있음 — 기능은 계속 진행
+          this._toastController = tryGetToastController();
+        }
+      }
+      // Initialize toast controller if supported
+      await this._toastController?.initialize?.();
 
       // 갤러리 렌더러 초기화
       await this.initializeRenderer();

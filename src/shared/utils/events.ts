@@ -472,74 +472,89 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
     globalTimerManager.clearInterval(galleryEventState.priorityInterval);
   }
 
-  // 15초마다 우선순위 재설정 (성능 최적화: 적응형 스케줄링)
-  galleryEventState.priorityInterval = globalTimerManager.setInterval(() => {
-    try {
-      if (!galleryEventState.initialized) return;
+  // 적응형 백오프 설정: 15s → 30s → 60s 상한. 강화 성공 시 15s로 리셋.
+  let currentInterval = 15000;
+  let consecutiveSkips = 0;
 
-      // 갤러리가 열린 상태에서는 우선순위 강화 중단 (메모리 최적화)
-      if (checkGalleryOpen()) {
-        logger.debug('Gallery is open, skipping priority enforcement');
-        return;
-      }
-
-      // Document 안전성 검사
-      const documentElement =
-        (typeof document !== 'undefined' && document) ||
-        (typeof globalThis !== 'undefined' && globalThis.document) ||
-        null;
-
-      if (!documentElement) {
-        logger.debug('Document not available, skipping priority enforcement');
-        return;
-      }
-
-      // 페이지가 비활성 상태일 때는 스케줄링 중단 (CPU 절약)
-      if (documentElement.hidden) {
-        logger.debug('Page is hidden, skipping priority enforcement');
-        return;
-      }
-
-      // 기존 리스너 제거
-      galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
-
-      // 새로운 리스너 등록 (최신 우선순위로)
-      const clickHandler: EventListener = async (evt: Event) => {
-        const event = evt as MouseEvent;
-        const result = await handleMediaClick(event, handlers, options);
-        if (result.handled && options.preventBubbling) {
-          event.stopPropagation();
-          event.preventDefault();
-        }
-      };
-
-      const keyHandler: EventListener = (evt: Event) => {
-        const event = evt as KeyboardEvent;
-        handleKeyboardEvent(event, handlers, options);
-      };
-
-      const clickId = addListener(
-        documentElement,
-        'click',
-        clickHandler,
-        { passive: false, capture: true },
-        options.context
-      );
-
-      const keyId = addListener(
-        documentElement,
-        'keydown',
-        keyHandler,
-        { passive: false, capture: true },
-        options.context
-      );
-
-      galleryEventState.listenerIds = [clickId, keyId];
-      logger.debug('Gallery event priority reinforced');
-    } catch (error) {
-      logger.warn('Failed to reinforce gallery event priority:', error);
+  const schedule = () => {
+    // 기존 인터벌이 있으면 정리 후 재설정
+    if (galleryEventState.priorityInterval) {
+      globalTimerManager.clearInterval(galleryEventState.priorityInterval);
     }
-  }, 15000);
+
+    galleryEventState.priorityInterval = globalTimerManager.setInterval(() => {
+      try {
+        if (!galleryEventState.initialized) return;
+
+        // Document 안전성 검사
+        const documentElement =
+          (typeof document !== 'undefined' && document) ||
+          (typeof globalThis !== 'undefined' && (globalThis as { document?: Document }).document) ||
+          null;
+
+        // 스킵 조건: 갤러리 열림, document 없음, 페이지 hidden
+        if (checkGalleryOpen() || !documentElement || documentElement.hidden) {
+          consecutiveSkips++;
+          // 백오프 증가: 2회 이상 연속 스킵 시 인터벌을 다음 단계로 증가 (최대 60s)
+          if (consecutiveSkips >= 2) {
+            const next = Math.min(currentInterval * 2, 60000);
+            if (next !== currentInterval) {
+              currentInterval = next;
+              schedule();
+            }
+          }
+          return;
+        }
+
+        // 우선순위 강화 실행: 기존 리스너 제거 후 재등록
+        galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
+
+        const clickHandler: EventListener = async (evt: Event) => {
+          const event = evt as MouseEvent;
+          const result = await handleMediaClick(event, handlers, options);
+          if (result.handled && options.preventBubbling) {
+            event.stopPropagation();
+            event.preventDefault();
+          }
+        };
+
+        const keyHandler: EventListener = (evt: Event) => {
+          const event = evt as KeyboardEvent;
+          handleKeyboardEvent(event, handlers, options);
+        };
+
+        const clickId = addListener(
+          documentElement,
+          'click',
+          clickHandler,
+          { passive: false, capture: true },
+          options.context
+        );
+
+        const keyId = addListener(
+          documentElement,
+          'keydown',
+          keyHandler,
+          { passive: false, capture: true },
+          options.context
+        );
+
+        galleryEventState.listenerIds = [clickId, keyId];
+        logger.debug('Gallery event priority reinforced');
+
+        // 강화 성공: 백오프 리셋 및 기본 인터벌(15s)로 복귀
+        if (currentInterval !== 15000) {
+          currentInterval = 15000;
+          schedule();
+        }
+        consecutiveSkips = 0;
+      } catch (error) {
+        logger.warn('Failed to reinforce gallery event priority:', error);
+      }
+    }, currentInterval);
+  };
+
+  schedule();
 }
 
 /**

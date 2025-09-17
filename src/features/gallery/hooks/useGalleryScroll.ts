@@ -61,7 +61,9 @@ export function useGalleryScroll({
   enableScrollDirection = false,
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
-  const eventManagerRef = useRef(new EventManager());
+  // EventManager는 cleanup() 이후 재사용이 불가하므로, 지연 생성 + 파괴 검사를 통해
+  // 항상 유효한 인스턴스를 사용한다.
+  const eventManagerRef = useRef<EventManager | null>(null);
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
   const scrollTimeoutRef = useRef<number | null>(null);
@@ -194,6 +196,10 @@ export function useGalleryScroll({
       return;
     }
 
+    // ensure fresh EventManager (create lazily or replace if destroyed)
+    if (!eventManagerRef.current || eventManagerRef.current.getIsDestroyed()) {
+      eventManagerRef.current = new EventManager();
+    }
     const eventManager = eventManagerRef.current;
 
     // 문서 레벨에서 휠 이벤트 처리 (갤러리 열림 상태에 따라 동작)
@@ -219,6 +225,7 @@ export function useGalleryScroll({
     });
 
     return () => {
+      // EventManager는 한 번 cleanup되면 재사용하지 않는다.
       eventManager.cleanup();
 
       // 타이머 정리
@@ -238,7 +245,7 @@ export function useGalleryScroll({
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
     return () => {
-      eventManagerRef.current.cleanup();
+      eventManagerRef.current?.cleanup();
       if (scrollTimeoutRef.current) {
         globalTimerManager.clearTimeout(scrollTimeoutRef.current);
       }
