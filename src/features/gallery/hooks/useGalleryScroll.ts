@@ -11,7 +11,6 @@ import { getPreactHooks } from '../../../shared/external/vendors';
 import { logger } from '../../../shared/logging/logger';
 import { EventManager } from '../../../shared/services/EventManager';
 import { galleryState } from '../../../shared/state/signals/gallery.signals';
-import { useSelector } from '../../../shared/utils/signalSelector';
 import { findTwitterScrollContainer } from '../../../shared/utils/core-utils';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 
@@ -61,17 +60,26 @@ export function useGalleryScroll({
   enableScrollDirection = false,
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
-  const eventManagerRef = useRef(new EventManager());
+  const eventManagerRef = useRef<EventManager | null>(null);
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
   const scrollTimeoutRef = useRef<number | null>(null);
 
   // Optimize subscription to gallery open state using selector
-  const isGalleryOpen = useSelector<typeof galleryState.value, boolean>(
-    galleryState as unknown as { value: typeof galleryState.value },
-    (s: typeof galleryState.value) => s.isOpen,
-    { dependencies: (s: typeof galleryState.value) => [s.isOpen] }
-  );
+  // 갤러리 열림 상태는 핸들러 내에서 galleryState.value로 직접 조회합니다.
+
+  // 최신 상태 접근을 위한 ref들 (리스너를 재등록하지 않고 최신 값을 참조)
+  const onScrollRef = useRef<typeof onScroll>(onScroll);
+  const blockTwitterScrollRef = useRef<boolean>(blockTwitterScroll);
+
+  // signal/props 변경 시 ref 동기화
+  useEffect(() => {
+    onScrollRef.current = onScroll;
+  }, [onScroll]);
+
+  useEffect(() => {
+    blockTwitterScrollRef.current = blockTwitterScroll;
+  }, [blockTwitterScroll]);
 
   // 스크롤 방향 감지 관련 상태 (옵션)
   const scrollDirectionRef = useRef<'up' | 'down' | 'idle'>('idle');
@@ -141,11 +149,12 @@ export function useGalleryScroll({
     [blockTwitterScroll]
   );
 
-  // 갤러리 휠 이벤트 처리
-  const handleGalleryWheel = useCallback(
+  // 갤러리 휠 이벤트 처리 (안정 핸들러: 최신 상태는 ref로 참조)
+  const handleGalleryWheelStable = useCallback(
     (event: WheelEvent) => {
-      // 갤러리가 열려있지 않으면 무시
-      if (!isGalleryOpen) {
+      // 최신 갤러리 열림 상태를 전역 signal에서 직접 조회 (리렌더 대기 불필요)
+      const isOpen = galleryState.value.isOpen;
+      if (!isOpen) {
         logger.debug('useGalleryScroll: 갤러리가 열려있지 않음 - 휠 이벤트 무시');
         return;
       }
@@ -156,13 +165,14 @@ export function useGalleryScroll({
       // 스크롤 방향 감지 (옵션)
       updateScrollDirection(delta);
 
-      // 스크롤 콜백 실행
-      if (onScroll) {
-        onScroll(delta);
+      // 스크롤 콜백 실행 (최신 콜백 사용)
+      const onScrollCb = onScrollRef.current;
+      if (onScrollCb) {
+        onScrollCb(delta);
       }
 
       // 트위터 페이지로의 이벤트 전파 방지
-      if (blockTwitterScroll) {
+      if (blockTwitterScrollRef.current) {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -172,20 +182,13 @@ export function useGalleryScroll({
 
       logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
         delta,
-        isGalleryOpen,
+        isGalleryOpen: isOpen,
         targetElement: (event.target as HTMLElement)?.tagName || 'unknown',
         targetClass: (event.target as HTMLElement)?.className || 'none',
         timestamp: Date.now(),
       });
     },
-    [
-      onScroll,
-      blockTwitterScroll,
-      updateScrollState,
-      handleScrollEnd,
-      updateScrollDirection,
-      isGalleryOpen,
-    ]
+    [updateScrollState, handleScrollEnd, updateScrollDirection]
   );
 
   // 이벤트 리스너 설정
@@ -194,10 +197,14 @@ export function useGalleryScroll({
       return;
     }
 
+    // 새 이벤트 매니저를 효과 수명에 맞춰 생성(파괴 인스턴스 재사용 방지)
+    if (!eventManagerRef.current || eventManagerRef.current.getIsDestroyed()) {
+      eventManagerRef.current = new EventManager();
+    }
     const eventManager = eventManagerRef.current;
 
-    // 문서 레벨에서 휠 이벤트 처리 (갤러리 열림 상태에 따라 동작)
-    eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
+    // 문서 레벨에서 휠 이벤트 처리: 항상 등록하고, 동작 여부는 isOpenRef로 제어
+    eventManager.addEventListener(document, 'wheel', handleGalleryWheelStable, {
       capture: true,
       passive: false,
     });
@@ -233,12 +240,12 @@ export function useGalleryScroll({
 
       logger.debug('useGalleryScroll: 정리 완료');
     };
-  }, [enabled, container, blockTwitterScroll, handleGalleryWheel, preventTwitterScroll]);
+  }, [enabled, container, blockTwitterScroll, handleGalleryWheelStable, preventTwitterScroll]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
     return () => {
-      eventManagerRef.current.cleanup();
+      eventManagerRef.current?.cleanup();
       if (scrollTimeoutRef.current) {
         globalTimerManager.clearTimeout(scrollTimeoutRef.current);
       }

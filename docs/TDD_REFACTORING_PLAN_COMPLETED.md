@@ -348,6 +348,14 @@
 - 검증: 타입/린트/fast/unit 스위트 GREEN, dev/prod 빌드 및 postbuild validator
   PASS.
 
+### 2025-09-17 — 휠 스크롤 누수/이벤트 과다 해결 계획 수립(문서 정리)
+
+- 내용: 문제 분석, 해결 옵션(A/B/C/D) 비교, 선택안(B+D) 확정 및 수용 기준/TDD
+  단계 정의를 활성 계획서에 반영. 실제 구현은 후속 단계에서 진행.
+- 근거: ensureWheelLock를 갤러리 루트에 적용하고, EventManager 수명/컨텍스트
+  가드를 강화하는 방향이 최소 침습으로 효과적.
+- 영향: 문서 중심 변경 — 빌드/테스트 무영향(해당 구현은 후속 커밋에서 진행).
+
 ### 2025-09-16 — FILENAME-UNICODE-NORMALIZE-01 완료
 
 - 구현: `FilenameService.sanitizeForWindows()`에 NFKC 정규화 + 제어/비표시/BiDi
