@@ -8,6 +8,10 @@ import { logger } from '../logging/logger';
 import { DomEventManager, createDomEventManager } from '../dom/DOMEventManager';
 import { GalleryEventManager } from '../utils/events';
 import type { EventHandlers, GalleryEventOptions } from '../utils/events';
+import {
+  addWheelListener as coreAddWheelListener,
+  ensureWheelLock as coreEnsureWheelLock,
+} from '../utils/events/wheel';
 
 /**
  * 이벤트 관리자
@@ -18,6 +22,7 @@ export class EventManager {
   private readonly domManager: DomEventManager;
   private readonly galleryManager: GalleryEventManager;
   private isDestroyed = false;
+  private readonly extraCleanups: Array<() => void> = [];
 
   constructor() {
     this.domManager = createDomEventManager();
@@ -95,6 +100,14 @@ export class EventManager {
    */
   public cleanup(): void {
     this.domManager.cleanup();
+    // run extra cleanups e.g., from wheel helpers
+    for (const fn of this.extraCleanups.splice(0)) {
+      try {
+        fn();
+      } catch (error) {
+        logger.warn('EventManager: extra cleanup failed', error);
+      }
+    }
     this.isDestroyed = true;
     logger.debug('EventManager DOM 이벤트 정리 완료');
   }
@@ -192,6 +205,39 @@ export class EventManager {
     this.cleanupGallery();
     this.cleanup();
     logger.debug('EventManager 전체 정리 완료');
+  }
+
+  // ================================
+  // Wheel helpers (unified API)
+  // ================================
+
+  /**
+   * Add a wheel listener (passive by default). Returns a cleanup function.
+   */
+  public addWheelListener(
+    target: EventTarget | null,
+    handler: (event: WheelEvent) => void,
+    options: { capture?: boolean; passive?: boolean } = {}
+  ): () => void {
+    if (this.isDestroyed || !target) return () => {};
+    const cleanup = coreAddWheelListener(target, handler, options);
+    this.extraCleanups.push(cleanup);
+    return cleanup;
+  }
+
+  /**
+   * Ensure wheel lock (passive: false). If handler returns true, consume event.
+   * Returns a cleanup function.
+   */
+  public addWheelLock(
+    target: EventTarget | null,
+    handler: (event: WheelEvent) => void | boolean,
+    options: { capture?: boolean } = {}
+  ): () => void {
+    if (this.isDestroyed || !target) return () => {};
+    const cleanup = coreEnsureWheelLock(target, handler, options);
+    this.extraCleanups.push(cleanup);
+    return cleanup;
   }
 }
 

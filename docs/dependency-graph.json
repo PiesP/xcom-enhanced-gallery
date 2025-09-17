@@ -2569,6 +2569,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../utils/events/wheel",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/events/wheel.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -3691,6 +3708,7 @@
       "source": "src/shared/utils/events/wheel.ts",
       "dependencies": [],
       "dependents": [
+        "src/shared/services/EventManager.ts",
         "src/shared/utils/scroll/scroll-utils.ts",
         "src/shared/utils/index.ts",
         "src/shared/utils/events/index.ts"
@@ -16384,7 +16402,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 266,
-    "totalDependenciesCruised": 745,
+    "totalDependenciesCruised": 746,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

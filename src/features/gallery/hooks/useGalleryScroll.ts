@@ -130,14 +130,14 @@ export function useGalleryScroll({
     }, 150);
   }, [updateScrollState]);
 
-  // 트위터 페이지 스크롤 차단
+  // 트위터 페이지 스크롤 차단 (ensureWheelLock와 함께 사용)
   const preventTwitterScroll = useCallback(
-    (event: Event) => {
+    (_event: WheelEvent) => {
       if (isScrollingRef.current && blockTwitterScroll) {
-        event.preventDefault();
-        event.stopPropagation();
         logger.debug('useGalleryScroll: 트위터 스크롤 차단');
+        return true; // 소비 요청
       }
+      return false;
     },
     [blockTwitterScroll]
   );
@@ -148,7 +148,7 @@ export function useGalleryScroll({
       // 갤러리가 열려있지 않으면 무시
       if (!isGalleryOpen) {
         logger.debug('useGalleryScroll: 갤러리가 열려있지 않음 - 휠 이벤트 무시');
-        return;
+        return false;
       }
 
       const delta = event.deltaY;
@@ -162,14 +162,12 @@ export function useGalleryScroll({
         onScroll(delta);
       }
 
-      // 트위터 페이지로의 이벤트 전파 방지
-      if (blockTwitterScroll) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-
       // 스크롤 종료 감지 타이머 재설정
       handleScrollEnd();
+      // 휠 소비는 ensureWheelLock에 위임 (true 반환 시 preventDefault/stopPropagation 수행)
+      if (blockTwitterScroll) {
+        return true;
+      }
 
       logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
         delta,
@@ -178,6 +176,7 @@ export function useGalleryScroll({
         targetClass: (event.target as HTMLElement)?.className || 'none',
         timestamp: Date.now(),
       });
+      return false;
     },
     [
       onScroll,
@@ -189,34 +188,16 @@ export function useGalleryScroll({
     ]
   );
 
-  // 이벤트 리스너 설정: effect-로컬 EventManager 사용
+  // 문서 레벨 wheel 등록: container와 독립 (4.7)
   useEffect(() => {
-    if (!enabled || !container) {
-      return;
-    }
+    if (!enabled) return;
 
     const eventManager = new EventManager();
 
-    // 문서 레벨에서 휠 이벤트 처리 (갤러리 열림 상태에 따라 동작)
-    eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
-      capture: true,
-      passive: false,
-    });
+    eventManager.addWheelLock(document, handleGalleryWheel, { capture: true });
 
-    // 트위터 페이지 스크롤 차단 (옵션) — container는 선택적
-    if (blockTwitterScroll) {
-      const twitterContainer = findTwitterScrollContainer();
-      if (twitterContainer) {
-        eventManager.addEventListener(twitterContainer, 'wheel', preventTwitterScroll, {
-          capture: true,
-          passive: false,
-        });
-      }
-    }
-
-    logger.debug('useGalleryScroll: 이벤트 리스너 등록 완료', {
+    logger.debug('useGalleryScroll: 문서 레벨 wheel 등록 완료', {
       hasContainer: !!container,
-      blockTwitterScroll,
     });
 
     return () => {
@@ -226,15 +207,33 @@ export function useGalleryScroll({
       if (scrollTimeoutRef.current) {
         globalTimerManager.clearTimeout(scrollTimeoutRef.current);
       }
-
-      // 방향 감지 타이머 정리
       if (directionTimeoutRef.current) {
         globalTimerManager.clearTimeout(directionTimeoutRef.current);
       }
 
-      logger.debug('useGalleryScroll: 정리 완료');
+      logger.debug('useGalleryScroll: 문서 레벨 wheel 정리 완료');
     };
-  }, [enabled, container, blockTwitterScroll, handleGalleryWheel, preventTwitterScroll]);
+  }, [enabled, handleGalleryWheel, container]);
+
+  // 트위터 컨테이너 wheel 차단: 컨테이너 준비 여부와 무관하나, 변경 시 갱신
+  useEffect(() => {
+    if (!enabled || !blockTwitterScroll) return;
+
+    const eventManager = new EventManager();
+    const twitterContainer = findTwitterScrollContainer();
+    if (twitterContainer) {
+      eventManager.addWheelLock(twitterContainer, preventTwitterScroll, { capture: true });
+    }
+
+    logger.debug('useGalleryScroll: 트위터 컨테이너 차단 등록', {
+      hasTwitterContainer: !!twitterContainer,
+    });
+
+    return () => {
+      eventManager.cleanup();
+      logger.debug('useGalleryScroll: 트위터 컨테이너 차단 정리');
+    };
+  }, [enabled, blockTwitterScroll, preventTwitterScroll, container]);
 
   // 컴포넌트 언마운트 시 타이머 정리(효과들의 cleanup가 호출되지만, 안전망 유지)
   useEffect(() => {

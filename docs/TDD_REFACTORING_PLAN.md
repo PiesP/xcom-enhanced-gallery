@@ -183,8 +183,7 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - EventManager 레벨 de-dup/refcount 구현 및 단위 테스트 추가(GREEN).
   - setupScrollAnimation에 idempotency 가드(WeakMap 기반 refCount) 추가 및
     테스트 통과.
-  - useGalleryScroll 훅은 검사 완료(로컬 EventManager 적용은 다음 PR-2 범위에서
-    반영 예정).
+  - useGalleryScroll 훅은 effect-로컬 EventManager로 전환 완료(4.2 달성).
 
 - 테스트(RED → GREEN):
   - unit: EventManager 중복 등록 방지 — 같은 target/type/options/callback으로
@@ -202,6 +201,59 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - 리스너 누수 0, UX(휠 차단·방향 감지·툴바 대비 조정) 회귀 없음.
 
 ---
+
+### 4.7 휠 스크롤 미동작 — 문서 레벨 등록의 container 의존 제거
+
+- 문제: 갤러리 휠 스크롤이 동작하지 않는 사례에서, `useGalleryScroll`가 문서
+  레벨의 `wheel` 리스너 등록을 `container` 존재 여부에
+  의존(`if (!enabled || !container) return;`)하여, 컨테이너가 아직 준비되지 않은
+  시점에는 리스너가 아예 등록되지 않음.
+  - 관찰 로그: 짧은 간격으로 `scroll` add/remove가 반복되며, `wheel` 경로는
+    미등록 상태 가능.
+  - 영향: 초기 구간에서 휠 이벤트 무시, 갤러리 내 휠 스크롤 불가.
+
+- 해결 옵션:
+  - A) 문서(document) 레벨 `wheel` 등록을 `container`와 분리. `enabled`
+    조건만으로 등록하고, 트위터 컨테이너 차단은 별도 효과에서 컨테이너가 준비된
+    경우에만 수행.
+    - 장점: 최소 diff, 즉시 원인 해소, 4.2/4.6과 정합적(EventManager de-dup로
+      중복 방지).
+    - 단점: 효과가 2개로 분리되어 의존성 관리가 약간 복잡해짐.
+  - B) `scroll-utils.ensureWheelLock(document, handler)` 등 유틸을 사용해
+    표준화된 경로로 등록.
+    - 장점: passive=false/캡처 보장, 정책 위반 방지.
+    - 단점: 현행(EventManager 기반) 경로와 이원화되어 추후 통합 필요.
+  - C) window 레벨로 변경. — 팀 정책(문서 우선) 및 기존 설계와 불일치, 비선호.
+
+- 선택: A (문서 레벨 등록은 항상 유효, 컨테이너 차단은 선택적). 필요 시 B는 추후
+  일원화 작업에서 고려.
+
+- 구현 포인트(최소 diff):
+  - `useGalleryScroll`의 효과를 둘로 분리
+    1. 문서 레벨 wheel 핸들러 등록/정리: 의존성
+       `[enabled, handleGalleryWheel]`로 단순화
+    2. 트위터 컨테이너 차단 등록/정리: 의존성
+       `[enabled, blockTwitterScroll, preventTwitterScroll, container]`
+  - 둘 다 effect-로컬 `EventManager` 사용(4.2 일관성), passive:false +
+    capture:true 유지.
+  - 컨테이너 미존재 시에도 문서 레벨 리스너는 항상 1회 등록됨(중복은
+    EventManager de-dup이 방지).
+
+- 테스트(RED → GREEN):
+  - unit: `container=null`에서 `enabled=true`일 때도 문서 레벨 wheel 리스너가
+    등록되고, wheel 이벤트 시 핸들러가 호출되며 `preventDefault()`가 가능(갤러리
+    open일 때).
+  - unit: `container`가 `null → element → null`로 변할 때 문서 레벨 리스너 수
+    불변(누수/중복 0), 컨테이너 차단 리스너는 컨테이너 존재 시에만 등록.
+  - unit: 토글/변경 반복에도 `document.addEventListener('wheel', …)` 실제
+    호출수는 상한 내(중복 회피)이며, cleanup 후 재등록 시에도 정확히 1회 동작.
+
+- 수용 기준:
+  - 컨테이너 부재 시에도 휠 스크롤 동작(갤러리 open 상태에서 onScroll 콜백/방향
+    감지 정상).
+  - 로그에서 wheel 등록/제거의 불필요한 반복 감소(테스트에서는 호출 카운트로
+    보장).
+  - 리스너 누수 0, 정책(PC 전용 입력, vendors getter 경유) 준수.
 
 ### 일정/PR 단위
 
