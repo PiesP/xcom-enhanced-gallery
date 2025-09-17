@@ -1,3 +1,22 @@
+### 2025-09-17 — P4.6b ScrollEventHub 경로 수명주기 — GREEN
+
+- 테스트 추가:
+  `test/unit/features/gallery/useGalleryScroll.hub-lifecycle.test.tsx`
+  - 문서 레벨 wheel 등록 아이덴포턴시(동일 파라미터 재렌더 시 add 증가 없음)
+  - 컨테이너 변경 시 중복 없는 재등록(최소 증가) 및 비활성화 시 remove 호출 확인
+  - 트위터 컨테이너 경로는 본 케이스에서 모킹으로 비활성화
+- 구현 확인: `useGalleryScroll`의 Hub 경로 구독/정리 로직이 계약 준수
+- 수용 기준: 누수 0, 중복 등록 없음, 정책 GREEN
+
+### 2025-09-17 — P4.4 Priority Enforcement — GREEN
+
+- 테스트 추가: `test/unit/events/priority-enforcement.behavior.test.ts`
+  - 건강(healthy) 시 재등록 스킵 및 백오프 유지 확인
+  - 비정상(unhealthy) 시 1회 재등록 후 안정화, 인터벌 리셋 확인
+  - 갤러리 오픈 중에는 전면 스킵 확인
+- 구현 확인: `startPriorityEnforcement` 현 정책과 일치, 코드 변경 불요
+- 수용 기준: add/remove 밀도 변동 없음, 정책/가드 GREEN
+
 ### 2025-09-17 — PHASE 4(Log-driven) 주요 완료 요약
 
 - 4.1 Core 서비스 재등록 가드: `registerCoreServices()`는 핵심 키 존재 시 no-op,
@@ -404,6 +423,14 @@
   추가 — 불일치 시 자동 복구, 최초 실행 해시 기록, 반복 초기화 idempotent GREEN.
 - 검증: 타입/린트/fast/unit 스위트 GREEN, dev/prod 빌드 및 postbuild validator
   PASS.
+
+### 2025-09-17 — PLAN-SYNC-9 (활성 계획 중복 제거/이관)
+
+- 내용: 활성 계획서(`TDD_REFACTORING_PLAN.md`)에 잔존하던 4.4(이벤트 리스너
+  재배선) 중복 섹션과 4.6b(ScrollEventHub 계약 테스트 보강) 표식을 제거하고,
+  해당 항목을 본 완료 로그에만 유지하도록 정리했습니다. 활성 계획서에는 “현재
+  활성 항목 없음”을 명시하여 혼동을 방지했습니다.
+- 영향: 문서 변경만 — 타입/린트/테스트/빌드/포스트빌드 무영향.
 
 ### 2025-09-16 — FILENAME-UNICODE-NORMALIZE-01 완료
 
