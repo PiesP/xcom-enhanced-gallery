@@ -61,9 +61,8 @@ export function useGalleryScroll({
   enableScrollDirection = false,
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
-  // EventManager는 cleanup() 이후 재사용이 불가하므로, 지연 생성 + 파괴 검사를 통해
-  // 항상 유효한 인스턴스를 사용한다.
-  const eventManagerRef = useRef<EventManager | null>(null);
+  // Policy: PC-only inputs. Window(document) 우선, container는 필요 시에만 추가.
+  // EventManager는 effect-로컬로 생성/정리하여 파괴된 인스턴스의 재사용 경로를 제거한다.
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
   const scrollTimeoutRef = useRef<number | null>(null);
@@ -190,17 +189,13 @@ export function useGalleryScroll({
     ]
   );
 
-  // 이벤트 리스너 설정
+  // 이벤트 리스너 설정: effect-로컬 EventManager 사용
   useEffect(() => {
     if (!enabled || !container) {
       return;
     }
 
-    // ensure fresh EventManager (create lazily or replace if destroyed)
-    if (!eventManagerRef.current || eventManagerRef.current.getIsDestroyed()) {
-      eventManagerRef.current = new EventManager();
-    }
-    const eventManager = eventManagerRef.current;
+    const eventManager = new EventManager();
 
     // 문서 레벨에서 휠 이벤트 처리 (갤러리 열림 상태에 따라 동작)
     eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
@@ -208,7 +203,7 @@ export function useGalleryScroll({
       passive: false,
     });
 
-    // 트위터 페이지 스크롤 차단 (옵션)
+    // 트위터 페이지 스크롤 차단 (옵션) — container는 선택적
     if (blockTwitterScroll) {
       const twitterContainer = findTwitterScrollContainer();
       if (twitterContainer) {
@@ -225,7 +220,6 @@ export function useGalleryScroll({
     });
 
     return () => {
-      // EventManager는 한 번 cleanup되면 재사용하지 않는다.
       eventManager.cleanup();
 
       // 타이머 정리
@@ -242,10 +236,9 @@ export function useGalleryScroll({
     };
   }, [enabled, container, blockTwitterScroll, handleGalleryWheel, preventTwitterScroll]);
 
-  // 컴포넌트 언마운트 시 정리
+  // 컴포넌트 언마운트 시 타이머 정리(효과들의 cleanup가 호출되지만, 안전망 유지)
   useEffect(() => {
     return () => {
-      eventManagerRef.current?.cleanup();
       if (scrollTimeoutRef.current) {
         globalTimerManager.clearTimeout(scrollTimeoutRef.current);
       }
