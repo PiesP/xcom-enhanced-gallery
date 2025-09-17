@@ -246,7 +246,8 @@ export function addListener(
       }
     }
 
-    logger.debug(`Event listener added: ${type} (${id})`, { context });
+    // Debug log with sampling for high-frequency types to reduce noise in dev
+    debugLogEvent(`Event listener added: ${type} (${id})`, type, { context });
     return id;
   } catch (error) {
     logger.error(`Failed to add event listener: ${type}`, { error, context });
@@ -293,10 +294,11 @@ export function removeEventListenerManaged(id: string): boolean {
           entry.options as AddEventListenerOptions | undefined
         );
         dedupRegistry.delete(key);
-        logger.debug(`Event listener removed: ${eventContext.type} (${id})`);
+        debugLogEvent(`Event listener removed: ${eventContext.type} (${id})`, eventContext.type);
       } else {
-        logger.debug(
-          `Event listener dereferenced: ${eventContext.type} (${id}), refs=${entry.refCount}`
+        debugLogEvent(
+          `Event listener dereferenced: ${eventContext.type} (${id}), refs=${entry.refCount}`,
+          eventContext.type
         );
       }
       return true;
@@ -309,7 +311,10 @@ export function removeEventListenerManaged(id: string): boolean {
       eventContext.options
     );
     listeners.delete(id);
-    logger.debug(`Event listener removed (no-registry): ${eventContext.type} (${id})`);
+    debugLogEvent(
+      `Event listener removed (no-registry): ${eventContext.type} (${id})`,
+      eventContext.type
+    );
     return true;
   } catch (error) {
     logger.error(`Failed to remove event listener: ${id}`, error);
@@ -658,6 +663,25 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
           return;
         }
 
+        // 현재 리스너가 모두 정상적으로 유지되고 있으면 재등록을 건너뛴다
+        const listenersHealthy = Array.isArray(galleryEventState.listenerIds)
+          ? galleryEventState.listenerIds.every(id => listeners.has(id))
+          : false;
+
+        if (listenersHealthy) {
+          logger.debug('Gallery event priority check: listeners healthy — skip reinforcement');
+          // 스킵이 계속되면 백오프를 증가시킨다
+          consecutiveSkips++;
+          if (consecutiveSkips >= 2) {
+            const next = Math.min(currentInterval * 2, 60000);
+            if (next !== currentInterval) {
+              currentInterval = next;
+              schedule();
+            }
+          }
+          return;
+        }
+
         // 우선순위 강화 실행: 기존 리스너 제거 후 재등록
         galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
 
@@ -707,6 +731,31 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
   };
 
   schedule();
+}
+
+// ================================
+// Log sampling for high-frequency event types
+// ================================
+const NOISY_EVENT_TYPES = new Set(['scroll', 'mousemove', 'mouseover', 'mouseout']);
+const lastLogByType = new Map<string, number>();
+
+function debugLogEvent(message: string, type: string, meta?: Record<string, unknown>) {
+  try {
+    if (NOISY_EVENT_TYPES.has(type)) {
+      const now = Date.now();
+      const last = lastLogByType.get(type) ?? 0;
+      // log at most once per 3000ms for each noisy type
+      if (now - last < 3000) return;
+      lastLogByType.set(type, now);
+    }
+    if (meta) {
+      logger.debug(message, meta);
+    } else {
+      logger.debug(message);
+    }
+  } catch {
+    // ignore logging failures
+  }
 }
 
 /**

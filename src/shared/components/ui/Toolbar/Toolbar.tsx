@@ -234,7 +234,7 @@ function ToolbarCore({
     return (): void => {
       EventManager.getInstance().removeListener(listenerId);
     };
-  }, [toolbarActions]);
+  }, [toolbarActions.setNeedsHighContrast]);
 
   // 네비게이션 가능 여부 계산
   const canGoNext = useMemo(() => currentIndex < totalCount - 1, [currentIndex, totalCount]);

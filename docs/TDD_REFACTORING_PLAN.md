@@ -132,6 +132,27 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - perf: 모의 시간 진행으로 재등록 호출 횟수 상한 검증.
 - 수용 기준: 평시 add/remove 로그 밀도 감소, 갤러리 열림 시 0회.
 
+#### 4.4.a 개발 로그 샘플링 + 건강 상태 체크(구현 완료)
+
+- 조치(코드 적용됨):
+  - 고빈도 이벤트 타입(`scroll`, `mousemove`, `mouseover`, `mouseout`)에 대해
+    개발 로그를 타입별 3초 1회로 샘플링(`debugLogEvent`)하여 콘솔 스팸을 억제.
+  - 우선순위 강화 루프에서 현재 `listenerIds`가 등록 레지스트리(Map)에
+    살아있으면 “건강함(healthy)”으로 판단하고 재등록을 스킵. 연속 스킵 시
+    인터벌을 15s → 30s → 60s로 백오프, 강화 성공 시 15s로 리셋.
+- 기대 효과:
+  - “Event listener added/removed: scroll …” 로그 밀도 체감.
+  - 필요 시에만 재등록이 일어나 개발 중 CPU/메모리 오버헤드 감소.
+- 테스트/검증:
+  - unit 스위트 GREEN(기존 de-dup/라이프사이클/PC-only 정책 테스트 유지).
+  - 수동 검증: 개발 모드에서 스크롤/마우스 이동 시 로그가 초과 빈도로 찍히지
+    않음, 주기적 강화 루프에서 건강 상태 시 “skip reinforcement” 로그가
+    간헐적으로 보이고 add/remove 스파이크가 감소.
+- 수용 기준:
+  - dev 로그 스팸 현저 감소(샘플링 동작), 갤러리 열림 시 강화 루프는 기존
+    정책대로 스킵.
+  - 기능 회귀 없음(키보드/클릭/휠 경로 테스트 GREEN 유지).
+
 ### 4.5 ToastController 단일 소스화 — Features 레이어 직접 생성 금지
 
 - 문제: Features(`GalleryApp`)에서 `new ToastController()` 직접 생성. Core 등록
@@ -199,6 +220,21 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - 스크롤/휠 리스너 add/remove 로그 밀도 체감(테스트에서는 호출수 상한으로
     보장), 중복 처리 로그 제거.
   - 리스너 누수 0, UX(휠 차단·방향 감지·툴바 대비 조정) 회귀 없음.
+
+#### 4.6.a Scroll 리스너 churn의 추가 원인 제거 (Toolbar actions 안정화)
+
+- 원인: `useToolbarState()`가 매 렌더마다 새로운 actions 객체를 생성하여, 이를
+  의존하는 `Toolbar.tsx`의 scroll 감지 effect가 재실행되며 window scroll
+  리스너가 빈번히 add/remove 됨.
+- 조치:
+  - actions 객체를 `useMemo`로 메모이즈하여 아이덴티티 안정화.
+  - `Toolbar.tsx`의 effect 의존성을 `toolbarActions.setNeedsHighContrast`로
+    축소(안정 참조)하여 불필요한 재등록 방지.
+- 테스트(RED→GREEN):
+  - unit: `useToolbarState`가 상태 업데이트 전후에도 동일 actions 참조를 반환.
+  - smoke: 스크롤 중 add/remove 로그 밀도 감소 확인.
+- 수용 기준: 툴바 스크롤 감지 리스너가 렌더만으로 재등록되지 않으며, 기능 회귀
+  없음.
 
 ---
 

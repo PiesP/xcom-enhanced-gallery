@@ -92,7 +92,7 @@ const INITIAL_STATE: ToolbarState = {
  * ```
  */
 export function useToolbarState(): [ToolbarState, ToolbarActions] {
-  const { useState, useCallback, useRef, useEffect } = getPreactHooks();
+  const { useState, useCallback, useRef, useEffect, useMemo } = getPreactHooks();
   const [state, setState] = useState<ToolbarState>(INITIAL_STATE);
 
   // 다운로드 상태 변경 시간 추적
@@ -187,14 +187,18 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     };
   }, []);
 
-  const actions: ToolbarActions = {
-    setDownloading,
-    setLoading,
-    setError,
-    setCurrentFitMode,
-    setNeedsHighContrast,
-    resetState,
-  };
+  // Memoize actions object to keep identity stable across renders
+  const actions: ToolbarActions = useMemo(
+    () => ({
+      setDownloading,
+      setLoading,
+      setError,
+      setCurrentFitMode,
+      setNeedsHighContrast,
+      resetState,
+    }),
+    [setDownloading, setLoading, setError, setCurrentFitMode, setNeedsHighContrast, resetState]
+  );
 
   return [state, actions];
 }
