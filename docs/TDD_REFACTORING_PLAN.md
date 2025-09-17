@@ -1,4 +1,4 @@
-# TDD 리팩토링 활성 계획 (2025-09-16 갱신)
+# TDD 리팩토링 활성 계획 (2025-09-17 갱신)
 
 > 목표: 충돌/중복/분산·레거시 코드를 줄이고, 아키텍처·토큰·입력 정책 위반을
 > 테스트로 고정하며, UI/UX 일관성과 안정성을 높인다. 모든 변경은 실패 테스트 →
@@ -148,6 +148,51 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - smoke: 토스트 표시 동작 회귀 없음.
 - 수용 기준: 컨테이너 인스턴스 단일화, 덮어쓰기 로그 0.
 
+### 4.6 스크롤/휠 리스너 단일화 — 중복 처리·재등록 최소화 (Log-driven)
+
+- 문제: 런타임 로그에서 window/container/document에 대해 `scroll`/`wheel`
+  리스너의 잦은 add/remove 및 중복 처리 로그가 관찰됨.
+  - 소스 상 기여 지점: `features/gallery/hooks/useGalleryScroll`(document-level
+    wheel, capture+passive:false),
+    `shared/components/ui/Toolbar/Toolbar.tsx`(window scroll, raf-throttle),
+    `shared/utils/animations.ts`의 `setupScrollAnimation`(target scroll).
+  - 영향: 로그 노이즈, 이벤트 처리 경합 가능성, 성능 저하 위험.
+- 해결 옵션:
+  - A) 중앙 스크롤 관리자(ScrollEventHub) 도입: 단일 소스(document 또는 특정
+    컨테이너)에서 수신 후 구독자에게 배포. 각 호출자는 구독만 수행, 직접
+    addEventListener 금지.
+  - B) 기존 구조 유지하되, 동일 타겟/타입 중복 등록 가드(EventManager 레벨
+    de-dup)와 훅 레벨 “단 1회 등록” 보장(의존성 최소화, AbortController 사용)
+    추가.
+  - C) window scroll은 유지하고 container scroll은 금지(또는 반대로 정책
+    일원화) + `setupScrollAnimation`은 내부적으로 이미 존재하는 리스너
+    재사용(옵션 B의 부분집합).
+- 선택: B 우선(최소 diff, 회귀 리스크↓), 필요 시 A는 후속 구조화 작업으로 고려.
+  window vs container 정책은 “window 우선, container는 필요 시에만”으로 문서화.
+- 구현 포인트(최소 diff):
+  - EventManager: 동일 target/type/options/hash 중복 등록 방지(참조 동일성 또는
+    key 기반). cleanup 시 카운트 정확성 유지.
+  - useGalleryScroll: effect 당 로컬 EventManager(4.2 선택과 일치) +
+    AbortController로 ‘휠 차단’ 보장. 트위터 컨테이너 wheel 차단은 컨테이너가
+    유효할 때만 단 1회 등록하고 관찰 대상 변경 시에만 재등록.
+  - setupScrollAnimation: 내부적으로 이미 존재하는 같은 target의 scroll 리스너를
+    재사용하거나, 최소한 idempotent(같은 콜백/옵션이면 no-op) 가드 추가. 반환
+    cleanup은 참조 카운팅 또는 단순 no-op로 안전하게 처리.
+- 테스트(RED → GREEN):
+  - unit: EventManager 중복 등록 방지 — 같은 target/type/options/callback으로
+    2회 add 시 실제 DOM add는 1회만 호출(spy로 검증). remove 후에는 다시 1회 add
+    허용.
+  - unit(JSDOM): useGalleryScroll 켜고 끌 때 document의 wheel 리스너 총 개수
+    불변(누수 0)이며, 토글 반복/컨테이너 교체에도 중복 등록 없음.
+  - unit: setupScrollAnimation 같은 target에 동일 onScroll 전달 시 1회만
+    등록되고, cleanup 두 번 호출해도 안전(no throw, 실제 remove 1회만 발생).
+  - smoke: 휠 스크롤 중 ‘휠 이벤트 처리 완료’ 로그 빈도는 동일하되, add/remove
+    로그 밀도는 현저히 감소.
+- 수용 기준:
+  - 스크롤/휠 리스너 add/remove 로그 밀도 체감(테스트에서는 호출수 상한으로
+    보장), 중복 처리 로그 제거.
+  - 리스너 누수 0, UX(휠 차단·방향 감지·툴바 대비 조정) 회귀 없음.
+
 ---
 
 ### 일정/PR 단위
@@ -157,6 +202,7 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
 - PR-2: 4.2(훅 생명주기 수정) — 스크롤 훅 리스너 경고 제거/누수 제로화.
 - PR-3: 4.3(렌더러 단일화) — 인스턴스 경로 정리 및 등록 가드.
 - PR-4: 4.4(우선순위 강화 튜닝) — 성능/로그 밀도 개선.
+- PR-5: 4.6(스크롤/휠 단일화) — 중복 등록 가드 + 훅/유틸 idempotent 보강.
 
 각 PR은 “실패 테스트 추가 → 최소 구현 → 리팩터링” 절차를 따르며, 다음 게이트를
 모두 통과해야 한다.

@@ -24,6 +24,74 @@ interface EventContext {
 
 // 모듈 레벨 상태 관리
 const listeners = new Map<string, EventContext>();
+// De-duplication registry: key -> { masterId, refCount }
+interface DedupEntry {
+  masterId: string;
+  refCount: number;
+  element: EventTarget;
+  type: string;
+  listener: EventListener;
+  options?: AddEventListenerOptions | undefined;
+}
+const dedupRegistry = new Map<string, DedupEntry>();
+
+// Stable identity maps for element and listener
+const elementIds = new WeakMap<object, number>();
+let elementIdCounter = 0;
+function getElementId(element: EventTarget): number {
+  const key = element as unknown as object;
+  let id = elementIds.get(key);
+  if (!id) {
+    id = ++elementIdCounter;
+    elementIds.set(key, id);
+  }
+  return id;
+}
+
+const listenerIds = new WeakMap<Function, number>();
+let listenerFnIdCounter = 0;
+function getListenerId(fn: EventListener): number {
+  const key = fn as unknown as Function;
+  let id = listenerIds.get(key);
+  if (!id) {
+    id = ++listenerFnIdCounter;
+    listenerIds.set(key, id);
+  }
+  return id;
+}
+
+type ListenerOptionsWithSignal = AddEventListenerOptions & {
+  signal?: {
+    aborted: boolean;
+    addEventListener?: (
+      type: 'abort',
+      listener: () => void,
+      options?: AddEventListenerOptions
+    ) => void;
+    removeEventListener?: (type: 'abort', listener: () => void) => void;
+  };
+};
+
+const signalIds = new WeakMap<object, number>();
+let signalIdCounter = 0;
+function getSignalId(signalObj: object): number {
+  let id = signalIds.get(signalObj);
+  if (!id) {
+    id = ++signalIdCounter;
+    signalIds.set(signalObj, id);
+  }
+  return id;
+}
+
+function getOptionsKey(options?: AddEventListenerOptions): string {
+  const o = options as ListenerOptionsWithSignal | undefined;
+  const capture = o?.capture ? 1 : 0;
+  const passive = o?.passive ? 1 : 0;
+  const once = o?.once ? 1 : 0;
+  const hasSignal = o?.signal ? 1 : 0;
+  const sigId = hasSignal ? getSignalId(o!.signal as unknown as object) : 0;
+  return `${capture}:${passive}:${once}:${hasSignal ? 'sig' : 'nosig'}:${sigId}`;
+}
 let listenerIdCounter = 0;
 // Fallback 재생 상태 추적(서비스 미가용 시 키보드 제어용)
 const __videoPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
@@ -82,6 +150,56 @@ export function addListener(
       return id; // 등록/저장하지 않음
     }
 
+    // If AbortSignal provided and already aborted, skip any registration
+    const abortSignal = (options as ListenerOptionsWithSignal | undefined)?.signal;
+    if (abortSignal?.aborted) {
+      logger.debug(`Skip adding listener due to pre-aborted signal: ${type} (${id})`, {
+        context,
+      });
+      return id;
+    }
+
+    // De-duplication key: element identity + type + listener identity + options signature
+    const key = `${getElementId(element)}|${type}|${getListenerId(listener)}|${getOptionsKey(options)}`;
+    const existing = dedupRegistry.get(key);
+
+    if (existing) {
+      // Increase refCount and alias this id to master id in listeners map (without double addEventListener)
+      existing.refCount += 1;
+      listeners.set(id, {
+        id,
+        element,
+        type,
+        listener,
+        options,
+        context,
+        created: Date.now(),
+      });
+      logger.debug(`Event listener deduped: ${type} (${id} -> ${existing.masterId})`, {
+        context,
+      });
+      // attach abort handler for this alias as well
+      if (abortSignal && typeof abortSignal.addEventListener === 'function') {
+        const onAbort = () => {
+          try {
+            removeEventListenerManaged(id);
+          } finally {
+            try {
+              abortSignal.removeEventListener?.('abort', onAbort);
+            } catch {
+              /* ignore */
+            }
+          }
+        };
+        try {
+          abortSignal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
+        } catch {
+          logger.debug('AbortSignal addEventListener not available (ignored)', { context });
+        }
+      }
+      return id;
+    }
+
     element.addEventListener(type, listener, options);
 
     listeners.set(id, {
@@ -94,15 +212,25 @@ export function addListener(
       created: Date.now(),
     });
 
+    // Create dedup entry as master
+    dedupRegistry.set(key, {
+      masterId: id,
+      refCount: 1,
+      element,
+      type,
+      listener,
+      options,
+    });
+
     // AbortSignal 지원: abort 시 자동 해제
-    if (signal && typeof signal.addEventListener === 'function') {
+    if (abortSignal && typeof abortSignal.addEventListener === 'function') {
       const onAbort = () => {
         try {
           removeEventListenerManaged(id);
         } finally {
           // once 옵션으로 자동 해제되지만, 방어적으로 제거 시도
           try {
-            signal.removeEventListener('abort', onAbort);
+            abortSignal.removeEventListener?.('abort', onAbort);
           } catch {
             logger.debug('AbortSignal removeEventListener safeguard failed (ignored)', {
               context,
@@ -111,7 +239,7 @@ export function addListener(
         }
       };
       try {
-        signal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
+        abortSignal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
       } catch {
         // ignore — 환경에 따라 EventTarget 미구현일 수 있음
         logger.debug('AbortSignal addEventListener not available (ignored)', { context });
@@ -150,14 +278,38 @@ export function removeEventListenerManaged(id: string): boolean {
   }
 
   try {
+    // Reconstruct the de-dup key used during registration
+    const key = `${getElementId(eventContext.element)}|${eventContext.type}|${getListenerId(eventContext.listener)}|${getOptionsKey(eventContext.options)}`;
+
+    const entry = dedupRegistry.get(key);
+    if (entry) {
+      entry.refCount -= 1;
+      listeners.delete(id);
+      if (entry.refCount <= 0) {
+        // Actually remove the DOM listener once
+        entry.element.removeEventListener(
+          entry.type,
+          entry.listener as EventListener,
+          entry.options as AddEventListenerOptions | undefined
+        );
+        dedupRegistry.delete(key);
+        logger.debug(`Event listener removed: ${eventContext.type} (${id})`);
+      } else {
+        logger.debug(
+          `Event listener dereferenced: ${eventContext.type} (${id}), refs=${entry.refCount}`
+        );
+      }
+      return true;
+    }
+
+    // Fallback: if no registry entry exists (legacy), remove directly
     eventContext.element.removeEventListener(
       eventContext.type,
       eventContext.listener,
       eventContext.options
     );
     listeners.delete(id);
-
-    logger.debug(`Event listener removed: ${eventContext.type} (${id})`);
+    logger.debug(`Event listener removed (no-registry): ${eventContext.type} (${id})`);
     return true;
   } catch (error) {
     logger.error(`Failed to remove event listener: ${id}`, error);
