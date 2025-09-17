@@ -165,8 +165,11 @@ export function useGalleryScroll({
       // 스크롤 종료 감지 타이머 재설정
       handleScrollEnd();
       // 휠 소비는 ensureWheelLock에 위임 (true 반환 시 preventDefault/stopPropagation 수행)
-      if (blockTwitterScroll) {
-        return true;
+      // P4.9: 갤러리 컨테이너 내부 타겟이면 소비하지 않음(내부 기본 스크롤 허용)
+      const targetNode = event.target as Node | null;
+      const inGallery = !!(container && targetNode && container.contains(targetNode));
+      if (!inGallery && blockTwitterScroll) {
+        return true; // 갤러리 외부는 페이지 스크롤 차단
       }
 
       logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
@@ -185,6 +188,7 @@ export function useGalleryScroll({
       handleScrollEnd,
       updateScrollDirection,
       isGalleryOpen,
+      container,
     ]
   );
 

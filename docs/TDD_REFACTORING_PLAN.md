@@ -294,3 +294,81 @@ TDD로 진행하며, PC 전용 입력·벤더 getter 규칙을 준수한다.
   - 렌더 시작/완료 로그 1회(각)
   - 이벤트 리스너 누수 0, 갤러리 열림 시 우선순위 강화 0회
   - 토스트 컨트롤러 단일 인스턴스 보장
+
+  ### 4.9 휠 스크롤 미동작(문서 캡처 과다 소비) 고치기 — 소비 범위의 조건화
+
+  배경(현상/로그):
+  - Dev 빌드 산출물(`dist/xcom-enhanced-gallery.dev.user.js`)과 런타임 로그를
+    점검한 결과, 갤러리가 열린 상태에서 문서(document) 레벨 `wheel` 리스너가
+    캡처 단계에서 동작하며, 항상 소비(true 반환 → `preventDefault()` +
+    `stopPropagation()`)하는 경로가 존재.
+  - `useGalleryScroll`의 `handleGalleryWheel`이 갤러리 오픈 시 무조건 `true`를
+    반환하여 기본 스크롤을 차단. 이로 인해 갤러리 내부 스크롤 컨테이너(overflow:
+    auto)의 기본 스크롤까지 함께 차단되어 “마우스 휠 스크롤이 동작하지 않는”
+    증상이 발생할 수 있음.
+  - 스타일 상으로는 컨테이너/아이템 래퍼에 `overflow: auto` 및
+    `overscroll-behavior: contain`이 설정되어 있으나, 기본 동작 자체가
+    `preventDefault`로 막히면 효과가 없음.
+
+  원인 요약:
+  - 문서 레벨
+    `ensureWheelLock(document, handleGalleryWheel, { capture: true })`로 등록된
+    핸들러가 갤러리 내부/외부를 구분하지 않고 무조건 `true`를 반환해 이벤트를
+    소비함. 캡처 단계에서의 `preventDefault()`는 대상 컨테이너의 기본 스크롤까지
+    차단.
+
+  해결 옵션 비교:
+  - A) 소비 조건을 ‘갤러리 외부’로 한정: `container?.contains(event.target)`일
+    때는 `false`(미소비), 그 외에는 `blockTwitterScroll` 정책에 따라
+    `true`(소비).
+    - 장점: 최소 diff, 의도(페이지 스크롤 차단·갤러리 내부 스크롤 허용)에 정확히
+      부합.
+    - 단점: `container`가 준비되기 전 초기 구간에서는 여전히 문서 레벨에서
+      소비가 일어날 수 있음 (초기 구간에서 내부 스크롤 요구가 거의 없으므로 수용
+      가능).
+  - B) 문서 레벨 리스너 제거, 트위터 컨테이너에만 `ensureWheelLock` 적용.
+    - 장점: 소비 범위가 명확(페이지 컨테이너 한정).
+    - 단점: X.com DOM 구조 변경에 취약(컨테이너 셀렉터 불일치 시 차단 실패).
+  - C) 프로그램 방식 스크롤(onScroll에서 수동으로 `scrollTop += delta`)로 전환.
+    - 장점: 일관된 스크롤 제어.
+    - 단점: 자연스러운 스크롤/관성/스크롤바 동작과 괴리, 유지보수 복잡도↑.
+  - D) CSS만으로 해결(overscroll-behavior 강화 등).
+    - 장점: 코드 변경 최소.
+    - 단점: 캡처 단계 `preventDefault`로 차단된 기본 동작은 되살릴 수 없음.
+
+  선택(최적안): A — 문서 레벨 캡처는 유지하되, 소비(true) 조건을 “갤러리 외부”로
+  한정.
+
+  구현 포인트(최소 diff, 정책 준수):
+  - `useGalleryScroll.handleGalleryWheel(event)`에서 다음 조건 분기 적용
+    - if (!isGalleryOpen) return false
+    - const inGallery = container && container.contains(event.target as Node)
+    - if (inGallery) return false // 내부 스크롤은 기본 동작 허용(미소비)
+    - else if (blockTwitterScroll) return true // 갤러리 외부(트위터 페이지)
+      스크롤 차단
+    - else return false
+  - 문서 레벨 리스너 등록은 현행대로 유지(4.7에서 분리된 구조). 컨테이너 준비
+    여부와 무관하게 동작.
+  - 트위터 컨테이너 차단 효과(`findTwitterScrollContainer()`)는 보조로 유지.
+  - PC 전용 입력, vendors getter, EventManager API 사용 준수.
+
+  테스트(RED → GREEN):
+  - unit(JSDOM):
+    - 케이스1: 갤러리 open + `event.target`이 갤러리 컨테이너 내부 → 핸들러가
+      `false`를 반환, `preventDefault`가 호출되지 않음(기본 스크롤 허용). 내부
+      스크롤 컨테이너의 `scrollTop` 변화 검증.
+    - 케이스2: 갤러리 open + `event.target`이 갤러리 외부(트위터 페이지 영역) →
+      핸들러가 `true`를 반환, `preventDefault`/`stopPropagation`이 호출됨(페이지
+      스크롤 차단).
+    - 케이스3: 갤러리 closed → 핸들러가 소비하지 않음.
+  - unit: 문서 레벨 리스너 수 불변(토글/컨테이너 교체 반복 시 중복 등록/누수 0 —
+    4.2/4.6 가드 지속 검증).
+  - smoke: 실제 휠 조작 시 갤러리 내부에서 스크롤이 자연스럽게 동작하고,
+    페이지(트위터 타임라인)는 스크롤되지 않음.
+
+  수용 기준:
+  - 갤러리 내부 휠 스크롤 정상 동작(연속/가속/스크롤바 포함), 페이지 스크롤은
+    차단.
+  - 초기 컨테이너 미준비 구간에서의 동작은 회귀 없음(필요 시 터치 없음, PC 전용
+    유지).
+  - 이벤트 리스너 누수/중복 없음, 정책/테스트 스위트 GREEN.
