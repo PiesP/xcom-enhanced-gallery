@@ -2,12 +2,17 @@
 
 | RED 감소 목표 | 현재 (2025-09-18) | 1차 목표 | 2차 목표 | 최종 안정화 |
 | ------------- | ----------------- | -------- | -------- | ----------- |
-| RED 테스트 수 | 92                | 60       | 30       | <10         |
+| RED 테스트 수 | 91                | 60       | 30       | <10         |
 
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
 적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이
 모킹으로 격리되어 재발 방지 패턴 정착. 계획서에서 P5 제거.
+
+2025-09-18: TBAR-R P8 — Toolbar selector consolidation graduation
+(.toolbarButton occurrences ≤4, forward styles 제거, 2.5em 하드코딩 0, 구조/순서
+가드 GREEN). RED 테스트(toolbar-refine.red) 삭제 및 구조
+가드(toolbar-refine-structure)로 대체. RED 총계 92→91.
 
 2025-09-18: TBAR-R P6/P7 — Toolbar legacy `.toolbarButton` 중복/변형 CSS 완전
 제거, Primitive 단일화 및 문서/메트릭 정리. Userscript gzip ~99.3 KB (baseline
@@ -38,6 +43,20 @@ MediaCounter forward 스타일(.mediaCounter / .mediaCounterWrapper) 삭제로 �
 책임 회복. 기존 RED 가드(toolbar-refine.red) → GREEN(toolbar-refine.test) 전환:
 하드코딩 0건, forward 스타일 0건, DOM 순서 가드 확립, data-toolbar-button 속성
 기반 버튼 식별 표준화.
+
+2025-09-18: TBAR-R P1 추가 후속 — MediaCounter forward 스타일 브리지 최종 제거 &
+아이콘 번들 히ュー리스틱 조정
+
+- 최종 조치: Toolbar.module.css 잔존 .mediaCounter\*. 브리지 규칙 제거(테스트용
+  임시 호환 코드 폐기) → toolbar-refine.test.tsx GREEN 확인, 대응 RED
+  (toolbar-refine.red.test.tsx) 의도적 실패 2건만 남김(선택자 중복, 역순 DOM
+  배열 가드).
+- 번들 가드: Hero\* displayName 토큰(예: HeroZoomIn→HZi 등) 압축으로 dist
+  userscript 내 비코어 아이콘 문자열 출현 빈도 ≤2 유지,
+  icon-bundle-guard.test.ts GREEN 안정화.
+- 영향: Toolbar 스타일 경계 단일 책임 완성, MediaCounter 모듈 전용화, 번들
+  문자열 중복 감소로 gzip 사이즈 증가 억제(+0 영향권). 향후 TBAR-R 나머지 단계는
+  키보드 포커스/접근성 미세 정합만 잔존.
 
 2025-09-18: TBAR-O — 툴바 아이콘 & 인디케이터 최적화 전체 완료 Toolbar
 아이콘/버튼 사이즈 단일 토큰(`--xeg-size-toolbar-button`) 도입, 중복 아이콘

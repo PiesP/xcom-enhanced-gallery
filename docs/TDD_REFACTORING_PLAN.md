@@ -4,7 +4,8 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-18 — 활성 Epic: (없음 — DEPS-GOV 완료 이관)
+업데이트: 2025-09-18 — 활성 Epic: (없음 — 최신 상태, 신규 Epic 필요 시 백로그
+승격)
 
 ---
 
@@ -24,19 +25,13 @@
 
 ## 2. 활성 Epic 현황
 
-### (비어 있음) — 새 Epic 제안 필요
-
-현재 활성 Epic 없음. 새 Epic 필요 시 백로그 초안 작성 후 승격.
-
----
-
----
-
----
+현재 활성 Epic 없음. 새 Epic 필요 시 백로그 초안(Problem / Outcomes / Metrics)
+작성 후 본 문서로 승격.
 
 ## 3. 제안 / 대기 Epic
 
-현재 제안/대기 Epic 없음. 새 Epic은 백로그에 초안 후 승격.
+현재 제안/대기 Epic 없음. 새 Epic은 백로그(`TDD_REFACTORING_BACKLOG.md`)에 초안
+후 승격.
 
 ---
 
