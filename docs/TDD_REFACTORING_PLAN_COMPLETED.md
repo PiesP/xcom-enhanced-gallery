@@ -2,7 +2,7 @@
 
 | RED 감소 목표 | 현재 (2025-09-18) | 1차 목표 | 2차 목표 | 최종 안정화 |
 | ------------- | ----------------- | -------- | -------- | ----------- |
-| RED 테스트 수 | 87                | 60       | 30       | <10         |
+| RED 테스트 수 | 83                | 60       | 30       | <10         |
 
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
@@ -19,6 +19,12 @@ grouping RED 테스트(toolbar-groups.a11y.red) 제거 (GREEN 가드 이미 존�
 minimal toolbar hang 재현 스캐폴드 rename(GREEN), i18n message/missing-keys RED
 테스트 2건 제거 (LanguageService.getIntegrityReport 구현·키 정합 이미 GREEN).
 RED 총계 91→87.
+
+2025-09-18: BATCH-B — 중복 Toolbar/Styles RED 테스트 4건 정리 Toolbar
+refine/keyboard navigation/size token/legacy controls 관련 RED 테스트 각각이
+동일 목적의 GREEN 가드(구조/키보드 네비/토큰 적용/legacy 제거)로 100% 대체되어
+중복 유지 비용만 존재. 4개 RED 파일 삭제로 노이즈 축소 및 잔여 RED 집중도 향상.
+RED 총계 87→83.
 
 2025-09-18: TBAR-R P6/P7 — Toolbar legacy `.toolbarButton` 중복/변형 CSS 완전
 제거, Primitive 단일화 및 문서/메트릭 정리. Userscript gzip ~99.3 KB (baseline
