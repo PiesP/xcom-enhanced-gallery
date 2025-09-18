@@ -28,137 +28,48 @@
 현재 활성 Epic 없음. 새 Epic 필요 시 백로그 초안(Problem / Outcomes / Metrics)
 작성 후 본 문서로 승격.
 
-### SCROLL-ISOLATION — 전역 차단 → 경계 기반 정밀 제어 전환
+### SCROLL-ISOLATION — Phase 2 이후 잔여 (keyboard & cleanup)
 
-Baseline: feat/scroll-isolation (2025-09-18)
+Baseline(갱신): feat/scroll-isolation @ boundary guard + flag merged
+(2025-09-18)
 
-문제 재정의:
+현재 상태 요약: 경계 기반 wheel 소비 로직(P1–P3) 및 feature flag 통합 완료. 남은
+범위는 키보드 네비게이션 차단을 boundary 정책과 정렬하고, dead code
+(`disableBodyScroll`) 제거 및 rollout 측정(옵션) 수행.
 
-현재 구현은 갤러리 open 시 문서 capture wheel 리스너가 (경계 여부와 무관하게)
-preventDefault 를 수행하는 과도 차단 형태. 목표는 "내부 스크롤 여유가 있을 땐
-전파 허용, 경계(top/bottom)에서만 차단" 으로 정책을 정밀화하고 keyboard(PageDown
-등) 도 동일 기준으로 일관화.
+Remaining Outcomes:
 
-주요 개선 목표 (Outcomes):
+- Keyboard: Space/PageDown/PageUp/Home/End - boundary 상황에서만 body scroll
+  차단 & 내부 이동 (상/하/처음/끝)
+- Focus Trap (선택): ESC 동작 유지 + Tab 순환 회귀 여부 결정 (도입 시 a11y
+  테스트 추가)
+- Cleanup: disableBodyScroll / 미사용 분기 제거 (기존 전역 차단 경로 완전 정리는
+  FLAG ON 기본화 이후)
+- Metrics: 번들 사이즈/핸들러 등록 수 변화 0 또는 감소
 
-- Wheel: 경계(top에서 위, bottom에서 아래)일 때만 소비(true) → 나머지 경우
-  pass-through
-- Keyboard: Space/PageDown/Home/End 등은 갤러리 open + boundary 상황에서만 body
-  스크롤 차단 (향후 focus trap 시 Tab 흐름 유지)
-- Feature Flag `xeg_scrollIsolationV1` OFF 시 기존(과도 차단) 경로 유지 (안전
-  롤백)
-- 번들 gzip Δ ≤ +0.5%
+| Updated Phases:                                | Phase                                          | 코드/작업 | 목적 | 상태           |                        | ----- |
+| ---------------------------------------------- | ---------------------------------------------- | --------- | ---- | -------------- | ---------------------- | ----- |
+| ---------------------------------------------- | ----                                           |           | K1   | keyboard guard |
+| RED                                            | boundary 동일 조건의 keydown prevent 스펙 도출 | 예정      |      | K2             | keyboard               |
+| guard 구현 (GREEN)                             | 방향/페이지 키 내부 이동 & body 차단           | 예정      |      | F1             | (옵션)                 |
+| focus trap RED                                 | Tab 순환/ESC 유지 명세                         | 보류      |      | F2             | (옵션) focus trap 구현 |
+| (GREEN)                                        | tabbable 순환/escape 안정화                    | 보류      |      | C1             | disableBodyScroll dead |
+| code 식별 RED                                  | 존재/경로 가드 (삭제 전)                       | 예정      |      | C2             | dead code 제거 + 회귀  |
+| 테스트 업데이트                                | wheel 경로 단순화                              | 예정      |      | M1             | rollout metrics        |
+| (bundle/handler count)                         | 전환 영향 수치화                               | 보류      |
 
-측정 지표 (Metrics):
+Revised Acceptance (남은 부분):
 
-- 순수 유틸 단위 테스트 (경계 판단) RED→GREEN 4 케이스
-- 통합(FLAG ON) 시 mid-scroll pass-through / boundary consume 시나리오 2 케이스
-- keyboard guard (후속) 4 케이스
-- 번들 사이즈 스크립트 결과 유지
+- [AC-K] 경계 외 keyboard 입력 시 문서 스크롤 허용 & 내부 상태 정상
+- [AC-F] (선택) focus trap 도입 시 Tab 순환 & ESC close 유지
+- [AC-C] dead code 제거 후 전체 테스트 GREEN & bundle size Δ ≤ +0.5%
 
-Phase (TDD):
+Risk (잔여):
 
-| Phase | 코드/작업                         | 목적                                     | 상태 |
-| ----- | --------------------------------- | ---------------------------------------- | ---- |
-| P1    | characterization + boundary RED   | 현 상태 기록 & 경계 판단 순수 로직 RED   | 진행 |
-| P2    | boundary guard 구현 (GREEN1)      | shouldConsumeWheelAtBoundary 안정화      | 예정 |
-| P3    | useGalleryScroll flag 통합        | FLAG ON 시 경계 기반 preventDefault 적용 | 예정 |
-| P4    | keyboard guard (+선택 focus trap) | 키 입력도 동일 정책 / a11y 유지          | 예정 |
-| P5    | disableBodyScroll 경로 정리       | dead code 제거 & 문서/테스트 갱신        | 예정 |
+- Keyboard guard로 단축키 충돌 → modifier(key.alt||key.meta) 무시 조건 적용
+- Focus trap 도입 시 다른 모달과 충돌 → 단일 갤러리 활성 조건 + attribute opt-in
 
-비고: `scroll-isolation.characterization.test.ts` 는 기존 전역 차단(또는 jsdom
-환경 상 no-op) 상태를 기록하는 문서화 테스트로 유지. 경계 유틸 RED → GREEN 진행
-후 필요 시 정책 테스트로 전환.
-
-Acceptance Criteria:
-
-- [AC1] 갤러리 open 시 wheel/keyboard로 X.com 메인 피드 scrollTop 변화
-  없음(mock)
-- [AC2] 갤러리 close 시 기존 문서 스크롤 정상 복원
-- [AC3] 내부 컨텐츠 스크롤(필요한 경우) 자연스러움 & 버벅임 없음
-- [AC4] focus trap 도입 시 Shift+Tab/Tab 순환 가능, ESC 닫기 기능 유지
-- [AC5] 번들 사이즈 증가 허용 오차 이내
-
-위험 & 완화:
-
-- 위험: 지나친 전역 preventDefault 로 단축키/보조기능 영향 → 완화: 조건(
-  isGalleryOpen && !modifierKeys ) 체크
-- 위험: passive=false 남용으로 성능 저하 → 완화: 필요한 capture 2개 이내 유지,
-  delta threshold 적용
-- 위험: focus trap 사이드이펙트 (모달 중첩) → 완화: 단일 갤러리 활성 플래그 확인
-  후 trap 적용
-- 위험: body scroll lock 스타일 충돌 → 완화: class 토글 기반 (overflow:hidden) +
-  cleanup 보장 테스트
-
-Roll-back 전략:
-
-- feature flag `xeg_scrollIsolationV1` (signals/state) 도입 → 비활성 시 새
-  boundary/keyboard 가드 미사용
-- revert commit 로 빠른 복구, 기존 wheel 경로 유지
-
-솔루션 옵션 비교 (요약):
-
-| 옵션 | 설명                                                         | 장점                    | 단점                                                  | 선택 |
-| ---- | ------------------------------------------------------------ | ----------------------- | ----------------------------------------------------- | ---- |
-| A    | overscroll-behavior 강화(root/body 포함)                     | CSS 한 줄, 간단         | 일부 브라우저 체인 완전 차단 불가, keyboard 영향 없음 | 보조 |
-| B    | boundary-aware wheel lock (ensureWheelLock + scrollTop 계산) | 정확한 전파 차단        | 로직/측정 필요                                        | 주도 |
-| C    | 전역 capture wheel guard (현재 개선)                         | 구현 단순               | 모든 wheel 가로채 성능 우려                           | 부분 |
-| D    | body overflow hidden lock                                    | 확실한 body 스크롤 차단 | 레이아웃 shift 위험                                   | 예비 |
-| E    | focus trap + keyboard prevent                                | 키 입력 누수 차단       | 추가 포커스 관리 필요                                 | 보조 |
-| F    | PointerEvents layering                                       | CSS 로 간단             | 키/휠 모두 해결 불완전                                | 보류 |
-
-선택된 접근(조합): B + E + (A 보조) + 최소한의 C 유지
-
-Implementation Sketch:
-
-1. boundaryWheelGuard(element): wheel 이벤트에서 현재 스크롤 가능 여부 판단 →
-   불가능(경계) 시 true 반환하여 preventDefault
-2. keyboardScrollGuard(document): 갤러리 open && key in [Space, PageDown,
-   PageUp, Home, End] → preventDefault + 내부 네비게이션 위임
-3. focusTrap: 갤러리 root 내 tabbable 수집 → 첫/마지막 순환, ESC close 유지
-4. 기존 useGalleryScroll 개선: blockTwitterScroll 조건 분리 + boundary guard
-   통합
-5. disableBodyScroll 플래그 제거/대체 (feature flag 도입)
-6. 테스트 후 리팩터: wheel util 경량화/주석 정리
-
-TDD 단계 상세:
-
-- RED1: test/features/scroll/scroll-isolation.red.test.ts → wheel 이벤트 두 번
-  (deltaY±120) 발생 시 document scrollTop 변하지 않아야 (현재 실패)
-- RED2: keyboard Space/PageDown/Home/End 전파 테스트 추가
-- GREEN1: boundaryWheelGuard 구현 + useGalleryScroll 내 ensureWheelLock 적용
-  (passive=false)
-- GREEN2: keyboard guard & focus trap 조건 추가 (flag on)
-- REF1: disableBodyScroll 제거 및 dead code 정리
-- REF2: metrics 테스트 (bundle size diff snapshot)
-
-테스트 목록 (초안):
-
-1. Wheel - 갤러리 open, 내부 스크롤 가능: 이벤트 내부 소비 안함, onScroll 호출
-2. Wheel - 갤러리 open, 내부 경계(top/bottom) 도달: preventDefault 호출,
-   document scrollTop 유지
-3. Wheel - 갤러리 close: document 기본 스크롤 정상
-4. Keyboard - Space/PageDown: 갤러리 open 시 preventDefault, 내부 onScroll 혹은
-   next item 전환
-5. Keyboard - Home/End: 내부 인덱스 이동, 문서 스크롤 변화 없음
-6. Focus Trap - Tab 순환: 마지막 → 첫, 첫 → 마지막 역방향
-7. Feature Flag Off - 기존 동작 회귀 (테스트 보증)
-8. Cleanup - 언마운트 후 wheel/keydown 리스너 제거(assert spy 호출)
-
-비기능 요구 (Non-Functional):
-
-- 성능: wheel handler 경계 계산 O(1) (scrollTop, scrollHeight, clientHeight 참조
-  1회)
-- 유지보수: 신규 util 1파일, 훅 수정 1곳, 테스트 1 폴더 내 1~2파일
-- 가시성: logger.debug 경계 차단 시 1줄 (과다 로깅 금지)
-
-추가 노트:
-
-- 실제 X.com 구조 변화 시 `findTwitterScrollContainer` fallback 필요 → 실패 시
-  body 대상으로 처리
-- delta threshold(현재 0) 유지, 필요 시 사용자 설정화 가능 (범위 외 scope)
-
-다음 액션: P1 잔여 - boundary guard 순수 RED 테스트 작성 후 GREEN 구현 착수
+Next Action 후보: K1 RED 설계 (우선순위), 이후 K2 GREEN.
 
 ## 3. 제안 / 대기 Epic
 
