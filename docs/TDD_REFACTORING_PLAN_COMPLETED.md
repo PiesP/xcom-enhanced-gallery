@@ -26,6 +26,13 @@ gallery-prefetch.viewport-weight / skeleton.tokens) rename 처리 및 내부 '(R
 라벨 제거. 잔존 RED 0 — RED 명세 단계 완료. 향후 신규 실패 스펙은 즉시
 구현하거나 유지 비용 분석 후 도입 결정. 문서 메트릭 0 반영.
 
+2025-09-18: BATCH-F 후속 정리 — 위 Graduation 직후 일시적으로 남겨 두었던
+동일명(deprecated duplicate) placeholder \*.red.test.ts 9개 파일(위 목록 동일)에
+대한 describe.skip placeholder 제거 및 물리 삭제 완료. (이전 단계에서 Vitest의
+"No test suite found" 보호를 위해 임시 describe.skip 유지했으나, GREEN 동등
+가드가 안정화되었으므로 보존 가치 낮다고 판단해 완전 제거.) 향후 동일 패턴 발생
+시: 즉시 rename (Graduation) 후 원본 RED 사본을 남기지 않는 정책 확정.
+
 결과/오류 코드 RED 2건을 통합 GREEN
 가드(`bulk-download.result-error-codes.contract.test.ts`)로 대체하고
 MediaProcessor(variants/url-sanitization/progress-observer/telemetry) ·
