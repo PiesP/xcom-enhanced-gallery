@@ -60,8 +60,11 @@ async function run() {
     JSON.stringify(
       {
         timestamp: new Date().toISOString(),
-        modules: summary.modules, dependencies: summary.dependencies,
-        errors: summary.error, warnings: summary.warn, info: summary.info,
+        modules: summary.modules,
+        dependencies: summary.dependencies,
+        errors: summary.error,
+        warnings: summary.warn,
+        info: summary.info,
       },
       null,
       2
@@ -72,7 +75,9 @@ async function run() {
   if (hasErrors) {
     // Re-render the output lines for visibility (dependency-cruiser doesn't expose full formatted text here)
     // => Fallback: instruct user to run legacy script `npm run deps:check` for detailed output.
-    console.error('[deps-runner] Validation errors detected. Run `npm run deps:check` for details.');
+    console.error(
+      '[deps-runner] Validation errors detected. Run `npm run deps:check` for details.'
+    );
     process.exit(1);
   } else {
     console.log('[deps-runner] Completed: json + dot + svg + validate (errors=0)');

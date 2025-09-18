@@ -259,6 +259,10 @@ Prev/Next 샘플 치환 완료
 
 <!-- END OF CONDENSED LOG -->
 
+2025-09-18: DEPS-GOV P1–P3 — dependency-cruiser tsConfig 해석 추가로 orphan 6→1,
+실행 스크립트 4회→2회(생성+검증) 통합, 순환 다량 노출로 임시 warn 강등(후속 Epic
+예정). 활성 계획서에서 제거.
+
 - 테스트/빌드: 전체 스위트 GREEN, dev/prod 빌드 및 산출물 검증 PASS.
 
 2025-09-13: UI-ALIGN — 툴바/설정 정렬·배치 하드닝 완료

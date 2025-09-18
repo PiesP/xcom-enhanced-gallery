@@ -20,7 +20,8 @@ async function run() {
   const target = ['src'];
 
   const jsonResult = cruise(target, { ...config, outputType: 'json' });
-  const jsonOutput = typeof jsonResult.output === 'string' ? jsonResult.output : JSON.stringify(jsonResult, null, 2);
+  const jsonOutput =
+    typeof jsonResult.output === 'string' ? jsonResult.output : JSON.stringify(jsonResult, null, 2);
   writeFileSync('docs/dependency-graph.json', jsonOutput, 'utf-8');
 
   const dotResult = cruise(target, { ...config, outputType: 'dot' });
@@ -31,11 +32,11 @@ async function run() {
   if (svg.status === 0) {
     writeFileSync('docs/dependency-graph.svg', svg.stdout, 'utf-8');
   } else {
-  const sfdp = spawnSync('sfdp', ['-T', 'svg'], { input: dotOutput });
+    const sfdp = spawnSync('sfdp', ['-T', 'svg'], { input: dotOutput });
     if (sfdp.status === 0) {
       writeFileSync('docs/dependency-graph.svg', sfdp.stdout, 'utf-8');
     } else {
-  console.warn('[deps-runner] Graphviz dot/sfdp both failed, skipping svg.');
+      console.warn('[deps-runner] Graphviz dot/sfdp both failed, skipping svg.');
     }
   }
 

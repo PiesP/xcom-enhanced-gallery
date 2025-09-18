@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-18 — 활성 Epic: DEPS-GOV (Dependency Governance 개선 진행 중)
+업데이트: 2025-09-18 — 활성 Epic: (없음 — DEPS-GOV 완료 이관)
 
 ---
 
@@ -24,60 +24,9 @@
 
 ## 2. 활성 Epic 현황
 
-### DEPS-GOV — dependency-cruiser 정확도 & 실행 효율 개선
+### (비어 있음) — 새 Epic 제안 필요
 
-Baseline: commit `<latest>` (2025-09-18)
-
-문제 요약:
-
-1. `deps:all` 스크립트가 dependency-cruiser 프로세스를 4회 기동 → 중복 초기화
-   비용
-2. `no-orphans` 규칙이 실제 참조되는 bootstrap/loader 모듈을 6건 info로 노이즈
-   출력
-3. TS path alias(`@`, `@shared`, `@features`) 해석 누락 가능성으로 edge 미인식
-   추정
-4. 빈 placeholder(`icon-types.ts`) 및 미래 확장 포인트(`progressive-loader.ts`)
-   구분 불명확
-
-목표 (Outcomes):
-
-- Orphan info 노이즈 6 → ≤2 (실제 미사용/placeholder만 남김)
-- deps 보고/검증 실행 시간(로컬) 체감 감소(프로세스 수 4 → 1)
-- 구성 명확성: path alias 해석 TS 기반으로 일관 적용
-- 아키텍처 테스트: orphan 최소화 및 vendor 직접 import 위반 지속 보호
-
-측정 지표 (Metrics):
-
-- Orphan info count (현재: 6)
-- deps:all 대체 스크립트 wall time (초, 3회 평균)
-- Config 복잡도(외부 스크립트 수) 4 → 1 (Node API 통합)
-
-Phase (TDD RED → GREEN → REFACTOR): | Phase | 코드 | 목적 | 상태 | | ----- |
----- | ---- | ---- | | P1 | config-resolution.red.test.ts | TS path alias 미해결
-상태 RED 재현 | RED | | P2 | .dependency-cruiser.cjs 조정 | tsConfig 지정 +
-orphan whitelist 축소 | PENDING | | P3 | deps:all 통합 스크립트(Node API) | 4회
-실행 → 단일 실행 통합 | PENDING | | P4 | orphan-accuracy.test.ts | Orphan ≤2
-검증 및 시간 측정 가드 | PENDING | | P5 | 문서/Completed 로그 이동 | 계획 섹션
-정리 & 결과 기록 | PENDING |
-
-Acceptance Criteria:
-
-- P4 시점 orphan info ≤2
-- 신규 통합 스크립트로 json + dot + svg + validate 모두 산출
-- 기존 테스트 스위트 GREEN (새 RED 테스트는 GREEN 전환 후 `.red.` 제거)
-- 문서에 before/after orphan & runtime 요약 추가
-
-위험 & 완화:
-
-- 위험: alias 해석 추가 후 edge 급증 → dot 그래프 복잡도 증가 / 완화:
-  collapsePattern 재도입 고려(후속)
-- 위험: Node API 마이그레이션 회귀 / 완화: 기존 스크립트 일시 보존(feat flag) →
-  성공 후 제거
-
-Roll-back 전략:
-
-- 실패 시 통합 스크립트 미사용 및 기존 `deps:all` 재사용 (커밋 revert). Config
-  변경은 주석 통해 원복 경로 명시.
+현재 활성 Epic 없음. 새 Epic 필요 시 백로그 초안 작성 후 승격.
 
 ---
 
