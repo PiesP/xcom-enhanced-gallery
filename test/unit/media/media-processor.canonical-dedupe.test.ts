@@ -1,5 +1,5 @@
 /**
- * @file RED: MediaProcessor URL 정규화 및 dedupe 검증
+ * MediaProcessor URL 정규화 및 dedupe 검증
  */
 import { describe, it, expect } from 'vitest';
 

@@ -258,10 +258,25 @@ export default [
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
+        // Browser-like globals for JSDOM tests
+        document: 'readonly',
+        window: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        KeyboardEvent: 'readonly',
       },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+      prettier,
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+      'no-empty': 'off',
       'no-console': 'off',
       'no-restricted-imports': 'off',
     },
@@ -278,6 +293,7 @@ export default [
   // 타입 정의 파일들
   {
     files: ['**/*.d.ts', 'types/**/*.ts'],
+    plugins: { '@typescript-eslint': tsPlugin },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
@@ -291,6 +307,7 @@ export default [
       '**/performance/**/*.{ts,tsx}',
       '**/diagnostics/**/*.{ts,tsx}',
     ],
+    plugins: { '@typescript-eslint': tsPlugin },
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',

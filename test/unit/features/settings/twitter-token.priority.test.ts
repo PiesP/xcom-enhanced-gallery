@@ -25,7 +25,6 @@ describe('R3: Twitter token priority policy (RED)', () => {
     // Ensure URL constructor exists on this jsdom window (tough-cookie relies on it)
     // Use the Node.js URL polyfilled in global setup when available
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (dom.window as any).URL = (globalThis as any).URL;
     } catch {
       // ignore - jsdom might already have URL

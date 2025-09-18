@@ -4,7 +4,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * GREEN 테스트: 레이어 아키텍처 단순화 – 컴포넌트 alias 토큰 사용 제거 완료 검증
+ * 레이어 아키텍처 단순화 – 컴포넌트 alias 토큰 사용 제거 완료 검증
  * 검사 대상 alias (background / border / shadow):
  *  - --xeg-comp-toolbar-bg / --xeg-comp-toolbar-border / --xeg-comp-toolbar-shadow
  *  - --xeg-comp-modal-bg / --xeg-comp-modal-border / --xeg-comp-modal-shadow
@@ -61,7 +61,7 @@ describe('styles.layer-architecture.alias-prune', () => {
       });
     }
 
-    // GREEN 목표: violations.length === 0
+    // 목표: violations.length === 0
     expect(violations).toEqual([]);
   });
 });

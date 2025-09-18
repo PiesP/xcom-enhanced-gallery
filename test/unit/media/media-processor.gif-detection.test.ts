@@ -1,5 +1,5 @@
 /**
- * @file RED: MediaProcessor GIF 타입 감지 검증
+ * MediaProcessor GIF 타입 감지 검증
  */
 import { describe, it, expect } from 'vitest';
 

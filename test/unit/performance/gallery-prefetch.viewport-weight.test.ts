@@ -1,5 +1,5 @@
 /**
- * @fileoverview RED: Viewport-weighted prefetch ordering and concurrency queue draining
+ * Viewport-weighted prefetch ordering and concurrency queue draining
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 

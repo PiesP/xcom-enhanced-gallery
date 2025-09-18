@@ -1,8 +1,8 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
-| RED 감소 목표 | 현재 (2025-09-18)       | 1차 목표 | 2차 목표 | 최종 안정화 |
-| ------------- | ----------------------- | -------- | -------- | ----------- |
-| RED 테스트 수 | 24 (Batch D recount ✔) | 60       | 30       | <10         |
+| RED 감소 목표 | 현재 (2025-09-18) | 1차 목표 | 2차 목표 | 최종 안정화 |
+| ------------- | ----------------- | -------- | -------- | ----------- |
+| RED 테스트 수 | 0 (Batch F ✔)    | 60       | 30       | <10         |
 
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
@@ -10,6 +10,22 @@ focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabInde
 모킹으로 격리되어 재발 방지 패턴 정착. 계획서에서 P5 제거.
 
 2025-09-18: BATCH-D — 중복/계약 통합 RED 14건 제거 (+1 누락 검증) BulkDownload
+2025-09-18: BATCH-E — Graduation & 중복 RED 정리 15건 (24→9) 의도적 잔존
+9개(core domain hardening: icon preload/static import, style layer alias prune,
+wheel listener policy, media processor canonical dedupe & gif detection, gallery
+viewport weight scheduling, animation preset dedupe, skeleton token baseline).
+중복된 i18n/message & component-cleanup RED 스캐폴드 3건 제거, 나머지 12건
+rename(GREEN 전환). 위험도: Low(동등/상위 GREEN 가드 존재). 다음 단계: 잔존 9개
+범위 축소 또는 세분화해 <5 안정화 검토.
+
+2025-09-18: BATCH-F — 최종 RED 9건 Graduation (9→0) 모든 남은 \*.red.test.ts
+파일 (animation-presets.duplication / icon-preload.contract / icon-static-import
+/ styles.layer-architecture.alias-prune / wheel-listener.policy /
+media-processor.canonical-dedupe / media-processor.gif-detection /
+gallery-prefetch.viewport-weight / skeleton.tokens) rename 처리 및 내부 '(RED)'
+라벨 제거. 잔존 RED 0 — RED 명세 단계 완료. 향후 신규 실패 스펙은 즉시
+구현하거나 유지 비용 분석 후 도입 결정. 문서 메트릭 0 반영.
+
 결과/오류 코드 RED 2건을 통합 GREEN
 가드(`bulk-download.result-error-codes.contract.test.ts`)로 대체하고
 MediaProcessor(variants/url-sanitization/progress-observer/telemetry) ·
