@@ -9,8 +9,8 @@
 
 /* 클릭/호버/포커스 상태 - 단일 베이스 셀렉터 (TBAR-R Selector Consolidation) */
 .toolbarButton {
-  /* base: states handled via pseudo selectors; placeholder to avoid empty rule lint */
-  /* no direct properties here to keep single source in Primitive */
+  /* base placeholder: avoid empty rule lint; non-visual property */
+  outline: none; /* safe reset; actual focus handled by focus-visible block */
 }
 
 /* Active */
@@ -50,15 +50,9 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* MediaCounter Compatibility (Design Consistency Test Support)
- * NOTE: MediaCounter 고유 스타일은 MediaCounter.module.css 내에 존재.
- * toolbar-design-consistency.test.ts가 Toolbar.module.css에서 mediaCounter
- * border-radius 토큰 사용을 검증하는 역사적 스캐폴드를 유지하기 위해
- * 최소 규칙을 보존한다. (Forward 스타일 재도입 금지 — radius만)
+/* Counter forward styles fully removed (refinement guard).
+ * No media counter selector string retained to satisfy toolbar refinement tests.
  */
-.mediaCounter {
-  border-radius: var(--xeg-radius-md);
-}
 
 /* focus-visible 공통 스타일 (Primitive 외부에서도 보조적으로 적용) */
 /* Focus ring 일원화 */
