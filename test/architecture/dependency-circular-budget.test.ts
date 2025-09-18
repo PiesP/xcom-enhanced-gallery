@@ -7,10 +7,10 @@ import { execSync } from 'node:child_process';
  */
 
 describe('architecture: dependency circular budget', () => {
-  test('circular warnings within P3 budget (<=7)', () => {
+  test('circular warnings within P4 budget (<=5)', () => {
     const stdout = execSync('npm run deps:check', { encoding: 'utf-8' });
     const circularLines = stdout.split(/\r?\n/).filter(l => l.includes('warn no-circular-deps:'));
-    // 예산 상한 (P3 interim)
-    expect(circularLines.length).toBeLessThanOrEqual(7);
+    // 예산 상한 (P4)
+    expect(circularLines.length).toBeLessThanOrEqual(5);
   });
 });

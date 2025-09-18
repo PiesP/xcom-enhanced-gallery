@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { galleryState } from '@shared/state/signals/gallery.signals';
+import { tryGetGallerySignals } from '@shared/state/mediators/gallery-signal-mediator';
 
 // ================================
 // Re-exports from focused modules
@@ -88,7 +88,8 @@ export function canTriggerGallery(target: HTMLElement | null): boolean {
   if (!target) return false;
 
   // 갤러리가 이미 열려있으면 트리거하지 않음
-  if (galleryState.value.isOpen) {
+  const signals = tryGetGallerySignals();
+  if (signals?.isOpen.value) {
     return false;
   }
 

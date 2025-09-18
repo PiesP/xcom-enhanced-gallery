@@ -55,8 +55,8 @@ export async function registerCoreServices(): Promise<void> {
   serviceManager.register(SERVICE_KEYS.BULK_DOWNLOAD, bulkDownloadService);
   serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, bulkDownloadService); // 호환성
 
-  // 파일명 서비스
-  const { FilenameService } = await import('../media');
+  // 파일명 서비스 (barrel 제거로 순환 단축)
+  const { FilenameService } = await import('../media/FilenameService');
   serviceManager.register(SERVICE_KEYS.MEDIA_FILENAME, new FilenameService());
 
   logger.info('Core services registered successfully');
