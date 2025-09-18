@@ -33,6 +33,26 @@ gallery-prefetch.viewport-weight / skeleton.tokens) rename 처리 및 내부 '(R
 가드가 안정화되었으므로 보존 가치 낮다고 판단해 완전 제거.) 향후 동일 패턴 발생
 시: 즉시 rename (Graduation) 후 원본 RED 사본을 남기지 않는 정책 확정.
 
+### 정책 확정: RED Graduation 후 원본 파일 보존 금지 (2025-09-18)
+
+- 목적: 이중(duplicate) 테스트 표면으로 인한 유지비/혼동 방지 및 메트릭 왜곡
+  제거
+- 규칙:
+  1. RED → GREEN 전환 시 반드시 `.red.` 세그먼트를 제거하여 동일 위치에 rename
+     수행
+  2. rename 직후 기존 RED 파일(원본 경로)은 절대 별도 사본
+     형태(placeholder/export {}/describe.skip)로 남기지 않는다
+  3. 만약 Vitest가 빈 파일 문제로 실패하는 경우라도 임시 placeholder 사용 대신
+     즉시 최소 GREEN 구현을 적용한다
+  4. Graduation 커밋에는 (a) rename diff, (b) 내부 `(RED)` 주석/라벨 제거가
+     포함되어야 한다
+  5. 완료 후 활성 계획 문서에서 해당 식별자를 제거하고 본 완료 로그에는 1줄
+     요약만 추가한다
+- 근거: Batch F 후속 정리에서 placeholder 9건을 물리 삭제하면서 GREEN 가드
+  중복으로 인해 사본 유지 가치가 0임을 재확인
+- 기대 효과: 테스트 실행 시간 단축(중복 skip 제거), RED 메트릭 신뢰도 제고,
+  검색/grep 시 단일 소스 보장
+
 결과/오류 코드 RED 2건을 통합 GREEN
 가드(`bulk-download.result-error-codes.contract.test.ts`)로 대체하고
 MediaProcessor(variants/url-sanitization/progress-observer/telemetry) ·
@@ -342,6 +362,15 @@ Prev/Next 샘플 치환 완료
 2025-09-18: DEPS-GOV P1–P3 — dependency-cruiser tsConfig 해석 추가로 orphan 6→1,
 실행 스크립트 4회→2회(생성+검증) 통합, 순환 다량 노출로 임시 warn 강등(후속 Epic
 예정). 활성 계획서에서 제거.
+
+2025-09-18: SCROLL-ISOLATION 초기 진단/설계 단계 완료 — 번들 wheel 로직/문서
+캡처 리스너 구조 역공학, root cause 매트릭스(패시브 기본, boundary 미가드,
+keyboard 누수 가능성) 문서화, 솔루션 옵션(A~F) 평가 및 B+E(+A 보조) 전략 선정.
+JSDOM 한계로 scroll 누수 재현 어려움 확인 → Epic을 "과도 차단을 경계 기반 정밀
+제어로 전환" 방향으로 재정의. 초기 RED
+시도(test/features/scroll/scroll-isolation.characterization.test.ts) 는 현 상태
+특성 기록용 characterization 로 전환 예정. Feature
+flag(`xeg_scrollIsolationV1`) + boundary guard 순수 함수 TDD로 단계 축소 확정.
 
 - 테스트/빌드: 전체 스위트 GREEN, dev/prod 빌드 및 산출물 검증 PASS.
 

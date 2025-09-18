@@ -11,6 +11,8 @@ import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/EventManager';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { findTwitterScrollContainer } from '@shared/utils';
+import { getFeatureFlags } from '@shared/state/signals/feature-flags.signals';
+import { shouldConsumeWheelAtBoundary } from '@shared/utils/scroll/boundary-wheel-guard';
 
 const { useEffect, useRef, useCallback } = getPreactHooks();
 
@@ -151,10 +153,34 @@ export function useGalleryScroll({
         onScroll(delta);
       }
 
-      // 트위터 페이지로의 이벤트 전파 방지
+      // Feature Flag 기반 경계 제어: scrollIsolationV1 활성 시 경계에서만 소비
+      const { scrollIsolationV1 } = getFeatureFlags();
       if (blockTwitterScroll) {
-        event.preventDefault();
-        event.stopPropagation();
+        if (scrollIsolationV1 && container) {
+          try {
+            const consume = shouldConsumeWheelAtBoundary({
+              scrollTop: container.scrollTop,
+              scrollHeight: container.scrollHeight,
+              clientHeight: container.clientHeight,
+              deltaY: delta,
+            });
+            if (consume) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          } catch (e) {
+            // 실패 시(예: container 변경 race) 기존 안전 소비 유지
+            event.preventDefault();
+            event.stopPropagation();
+            logger.debug('useGalleryScroll: boundary guard fallback consume', {
+              error: (e as Error).message,
+            });
+          }
+        } else {
+          // 기존(Flag OFF) 전역 차단 경로
+          event.preventDefault();
+          event.stopPropagation();
+        }
       }
 
       // 스크롤 종료 감지 타이머 재설정

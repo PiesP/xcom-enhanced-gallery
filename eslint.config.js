@@ -266,6 +266,9 @@ export default [
         requestAnimationFrame: 'readonly',
         cancelAnimationFrame: 'readonly',
         KeyboardEvent: 'readonly',
+        HTMLElement: 'readonly',
+        EventTarget: 'readonly',
+        WheelEvent: 'readonly',
       },
     },
     plugins: {
