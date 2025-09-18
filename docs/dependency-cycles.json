@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2025-09-18T07:23:33.319Z",
+  "count": 2,
+  "cycles": [
+    {
+      "id": 1,
+      "size": 14,
+      "modules": [
+        "src/shared/media/FilenameService.ts",
+        "src/shared/media/index.ts",
+        "src/shared/services/BulkDownloadService.ts",
+        "src/shared/services/MediaService.ts",
+        "src/shared/services/core-services.ts",
+        "src/shared/services/media/VideoControlService.ts",
+        "src/shared/services/service-factories.ts",
+        "src/shared/services/service-initialization.ts",
+        "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/utils/events.ts",
+        "src/shared/utils/index.ts",
+        "src/shared/utils/media/image-filter.ts",
+        "src/shared/utils/media/index.ts",
+        "src/shared/utils/utils.ts"
+      ]
+    },
+    {
+      "id": 2,
+      "size": 5,
+      "modules": [
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/shared/components/ui/SettingsModal/index.ts",
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
+        "src/shared/components/ui/index.ts"
+      ]
+    }
+  ]
+}

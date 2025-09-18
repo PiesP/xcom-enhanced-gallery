@@ -2,8 +2,9 @@ import { execSync } from 'node:child_process';
 
 /**
  * DEPS-GOV: orphan 모듈 노이즈 감소 가드
- * 허용 orphan: core-icons.ts (순환 회피 상수/타입 분리 용도) 또는 향후 placeholder (progressive-loader.ts, icon-types.ts)
- * 현재 목표: info no-orphans <= 2
+ * 허용 orphan: (placeholder) progressive-loader.ts, icon-types.ts
+ * core-icons.ts 통합 완료 → whitelist 제거
+ * 현재 목표(P1 이후): info no-orphans <= 1
  */
 
 describe('architecture: dependency orphan guard', () => {
@@ -13,11 +14,10 @@ describe('architecture: dependency orphan guard', () => {
 
     const orphanLines = stdout.split(/\r?\n/).filter(l => l.includes('info no-orphans:'));
 
-    // 허용 한도
-    expect(orphanLines.length).toBeLessThanOrEqual(2);
+    // 허용 한도 (core-icons.ts 제거 후 1 이하)
+    expect(orphanLines.length).toBeLessThanOrEqual(1);
 
     const allowed = new Set([
-      'src/shared/services/core-icons.ts',
       'src/shared/services/icon-types.ts',
       'src/shared/loader/progressive-loader.ts',
     ]);

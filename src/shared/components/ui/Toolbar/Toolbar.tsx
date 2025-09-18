@@ -14,7 +14,9 @@ import { throttleScroll } from '@shared/utils';
 import { ComponentStandards } from '../StandardProps';
 // R4: 직접 아이콘 컴포넌트 import 제거 → IconButton.iconName / LazyIcon 기반
 import styles from './Toolbar.module.css';
-import { ToolbarButton } from '@shared/components/ui';
+// Barrel import ↓ 가 ToolbarWithSettings ↔ Toolbar ↔ ui/index.ts 순환 일부 원인
+// cycle 감소(P1) 위해 로컬 상대 경로 직접 import
+import { ToolbarButton } from '../ToolbarButton/ToolbarButton';
 import { MediaCounter } from '../MediaCounter/MediaCounter';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의

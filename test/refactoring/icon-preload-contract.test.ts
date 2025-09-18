@@ -5,7 +5,7 @@ import {
   getIconRegistry,
   type IconName,
 } from '@shared/services/iconRegistry';
-import { CORE_ICONS } from '@shared/services/core-icons';
+import { CORE_ICONS } from '@shared/services/iconRegistry';
 
 // ICN-R5: 프리로드 후 synchronously getLoadedIconSync 가능해야 함
 

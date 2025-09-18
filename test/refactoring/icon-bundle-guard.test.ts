@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CORE_ICONS } from '@shared/services/core-icons';
+import { CORE_ICONS } from '@shared/services/iconRegistry';
 
 // ICN-R5: 번들 가드 - 비코어 아이콘이 dev build 산출물에 과도하게 포함되지 않는지 간단 문자열 스캔
 // (정밀 트리셰이킹 검증은 아니며, 회귀 감지용 경량 체크)

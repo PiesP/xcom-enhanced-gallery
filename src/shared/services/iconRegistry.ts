@@ -1,7 +1,8 @@
 import type { VNode } from '@shared/external/vendors';
-// NOTE: CORE_ICONS는 순환 의존 방지를 위해 타입/상수 분리 파일에서 재정의하지 않고 여기 로컬 상수로 선언
-// (core-icons.ts는 IconName 타입을 재사용해야 하므로 iconRegistry -> core-icons -> iconRegistry 순환을 일으킬 수 있음)
-// 필요 시 빌드 단계에서 통합 검증 가능
+// CORE 아이콘 관리 통합 (기존 core-icons.ts 제거)
+// - 분리 파일은 orphan 상태 + 타입 중복 정의로 유지 비용 증가
+// - IconName 내 코어 아이콘은 preloadCommonIcons에서 재사용되므로 단일 소스로 유지
+// - isCoreIcon/CORE_ICONS를 여기서 export하여 기존 테스트(icon-bundle-guard, icon-preload-contract) 경로 대체
 
 export type IconName =
   | 'Download'
@@ -15,6 +16,24 @@ export type IconName =
   | 'ArrowsMaximize'
   | 'FileZip'
   | (string & {});
+
+// 단일 소스 CORE 아이콘 목록 (ICN-R5)
+export const CORE_ICONS: readonly IconName[] = [
+  'Download',
+  'Settings',
+  'X',
+  'ChevronLeft',
+  'ChevronRight',
+  'ZoomIn',
+  'ArrowAutofitWidth',
+  'ArrowAutofitHeight',
+  'ArrowsMaximize',
+  'FileZip',
+];
+
+export function isCoreIcon(name: string): boolean {
+  return (CORE_ICONS as readonly string[]).includes(name);
+}
 
 type IconComponent = (props?: Record<string, unknown>) => VNode | unknown;
 
@@ -165,19 +184,7 @@ export function resetIconRegistry(): void {
 export async function preloadCommonIcons(): Promise<void> {
   const registry = getIconRegistry();
   // CORE 아이콘 확장: 모든 툴바 상호작용 아이콘 동기 렌더 체감 향상
-  const CORE: IconName[] = [
-    'Download',
-    'Settings',
-    'X',
-    'ChevronLeft',
-    'ChevronRight',
-    'ZoomIn',
-    'ArrowAutofitWidth',
-    'ArrowAutofitHeight',
-    'ArrowsMaximize',
-    'FileZip',
-  ];
-  const toLoad = CORE.filter(n => !registry.getLoadedIconSync(n));
+  const toLoad = CORE_ICONS.filter(n => !registry.getLoadedIconSync(n as IconName));
   if (toLoad.length === 0) return;
   const components = await Promise.all(toLoad.map(n => registry.loadIcon(n as IconName)));
   components.forEach((comp, idx) => {
