@@ -1,2 +1,4 @@
 // Deprecated duplicate (graduated to media-processor.gif-detection.test.ts)
-export {};
+describe.skip('media processor gif detection (deprecated)', () => {
+  it('placeholder', () => {});
+});

@@ -1,2 +1,4 @@
 // Deprecated duplicate (graduated to icon-preload.contract.test.ts)
-export {};
+describe.skip('icon preload contract (deprecated)', () => {
+  it('placeholder', () => {});
+});

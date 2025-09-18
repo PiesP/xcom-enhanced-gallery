@@ -1,2 +1,4 @@
 // Deprecated duplicate (graduated to icon-static-import.test.ts)
-export {};
+describe.skip('icon static import (deprecated)', () => {
+  it('placeholder', () => {});
+});

@@ -1,2 +1,4 @@
 // Deprecated duplicate (graduated to skeleton.tokens.test.ts)
-export {};
+describe.skip('skeleton tokens (deprecated)', () => {
+  it('placeholder', () => {});
+});
