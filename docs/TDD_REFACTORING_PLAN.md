@@ -32,52 +32,16 @@
 5. 향후 아이콘 추가/제거 시 switch-case 수동 편집 부담을 코드젠(or 선언적
    매핑)으로 완화
 
-문제 진단
+핵심 개선 방향 (요약)
 
-- 정적 배럴 재노출로 인해 Hero 아이콘이 전부 메인 번들에 포함 → 불필요한 초기
-  비용
-- `iconRegistry` 동적 import 경로는 정의되었지만 실제 사용 경로 미연결 → 사일로
-  코드
-- 레거시 주석과 충돌 마커가 문서에 남아 의사결정 히스토리 추적성 저하
-- 추후 아이콘 확장 시 수동 어댑터 중복 증가 가능성
+- Hybrid 전략: 핵심 아이콘만 Preload + 나머지 Lazy
+- `icon-map.ts` 선언 기반 dynamic import 맵 + (선택) 코드젠
+- 소비 컴포넌트는 아이콘 이름만 의존
+- 정책 테스트로 direct import, preload set, a11y, 사이즈 가드
 
-핵심 개선 방향
+대안 비교 (선택: Option C Hybrid) — 상세는 완료 로그 R1 항목 참조
 
-- Hybrid 전략: 핵심 아이콘만 Preload + 나머지 Lazy (Fully static ↔ Fully
-  dynamic 사이 타협)
-- 아이콘 매핑을 단일 선언 객체(icon-map.ts 등)로 정의 → 코드 생성 스크립트로
-  switch 분기 생성(or 직접 dynamic import map)
-- 소비 컴포넌트(`Icon`, `IconButton`, Toolbar 등)는 아이콘 이름만 의존 → 구현
-  교체 용이
-- 테스트 레이어로 정책(직접 vendor import 금지, 사이즈 가드, 접근성, preload set
-  포함)을 자동 검증
-
-대안 비교
-
-| 옵션 | 개요                             | 장점                             | 단점                              | 선정 여부 |
-| ---- | -------------------------------- | -------------------------------- | --------------------------------- | --------- |
-| A    | 현행 유지(정적 어댑터 배럴)      | 구현 0                           | 번들 비대, 레지스트리 미사용      | ❌        |
-| B    | 전면 동적 로딩(모든 아이콘 lazy) | 초기 번들 최소                   | 퍼스트 페인트 시 지연/플리커 가능 | ❌        |
-| C    | Hybrid: Preload 핵심 + Lazy 기타 | UX + 사이즈 균형, 점진 이행 용이 | 구성 관리 필요                    | ✅ (선정) |
-| D    | SVG 인라인/자체 sprite           | 외부 의존 최소                   | 유지보수/업데이트 부담 큼         | ❌        |
-
-선정 솔루션(Option C 세부)
-
-1. `icon-map.ts` 선언: `{ Download: () => import('.../HeroDownload'), ... }`
-2. 코드 사용부는 `<LazyIcon name="Download" />`(새 컴포넌트) 또는
-   `useIcon(name)` 훅 사용
-3. Preload: `preloadCommonIcons()`가 선언된 핵심 집합 (Download, Settings, X,
-   ChevronLeft, ChevronRight)
-4. 레지스트리: 실패 시 fallback 아이콘(간단한 ☐ outline) 제공, 캐시/디버그 정보
-   유지
-5. 번들 사이즈 가드: RED 테스트에서 baseline 비교(> +5% 증가 시 실패)
-
-세부 Phase (TDD: RED → GREEN → REFACTOR)
-
-1. ICN-R1 인벤토리 & 가드 추가
-   - RED: 정적 Hero\* 직접 import 스캔 테스트 (배럴 외 사용 발견 시 실패)
-   - GREEN: (없음 — 현 상태 기준으로 테스트 확립) → 커밋으로 베이스라인 고정
-   - REFACTOR: 문서 conflict 마커 제거(본 커밋)
+### 잔여 Phase (TDD: RED → GREEN → REFACTOR)
 
 2. ICN-R2 LazyIcon 도입
    - RED: `<Icon>` 소비 위치 스냅샷 + 기대 로딩 상태(placeholder) 테스트 추가
@@ -119,87 +83,31 @@ Acceptance Criteria (AC)
 - 번들 dev/prod 사이즈 baseline 대비 +5% 이내 (사이즈 가드 테스트 GREEN)
 - 디자인 토큰(`--xeg-icon-size-*`, `--xeg-color-*`) 외 하드코딩 스타일 없음
 
-리스크 & 롤백
+측정 & 메트릭 (Baseline: R1 완료 시점 — 값은 Completed 로그에 기록)
 
-- Lazy 로딩 지연 → Hybrid 유지: Preload 집합만 확장하여 즉시 롤백
-- 동적 import 경로 누락 → 레지스트리 미스 시 fallback + 콘솔 warn, 테스트로 조기
-  검출
-- 번들 팽창 → 코드젠/분기 재평가, 인라인 import 제거 커밋 빠른 revert 가능
+- raw/gzip 번들 크기
+- 첫 Lazy 아이콘 로딩 지연 < 16ms
+- 초기 뷰 Lazy 로딩 수 0 (모두 Preload set 또는 미사용)
 
-비목표(Non-Goals)
+테스트 명명 규칙 / 롤백 절차: 완료 로그 R1 항목 참조 (불변 정책)
 
-- 새로운 아이콘 세트(예: Lucide, Feather) 추가 도입은 본 Epic 범위 아님
-- SVG 최적화 파이프라인(SVGO 등) 구축은 후속 Epic 고려
-- 다크모드/테마 신규 토큰 정의 확장(아이콘 색상 외)은 범위 제외
-- 아이콘 애니메이션(트랜지션/모션) 도입은 별도 퍼포먼스/UX Epic으로 관리
+## 활성 Phase 상태 표
 
-측정 & 메트릭 캡처 전략
-
-| 항목                          | 방법                                           | 시점    | 기준값(BL) | 예산(Budget)       |
-| ----------------------------- | ---------------------------------------------- | ------- | ---------- | ------------------ |
-| 초기 prod 번들(raw)           | `dist/xcom-enhanced-gallery.user.js` 크기 기록 | R1 종료 | (채워넣기) | +5% 이내           |
-| gzip 크기                     | `scripts/build-metrics.js` 또는 압축 후 측정   | R1 종료 | (채워넣기) | +5% 이내           |
-| Lazy 아이콘 로딩 수           | 레지스트리 debugInfo.loadingIcons 길이         | R4 직후 | —          | 초기 뷰 0          |
-| 최초 인터랙션 아이콘 지연(ms) | Synthetic test (JSDOM + perf.now)              | R3/R4   | (채워넣기) | < 16ms (한 프레임) |
-| A11y 위반(아이콘-only 버튼)   | 기존 RED 테스트 카운트                         | R2      | 0 증가     | 0 증가             |
-
-테스트 명명 규칙 (아이콘 Epic 전용)
-
-- 파일 접두사: `icon-` 또는 `icon-registry.` 로 목적 구분
-- 태그(설명 문자열): `[ICN-Rx][RED]` / `[ICN-Rx][GREEN]` / `[ICN-Rx][REF]`
-- 사이즈 가드: `test/performance/icon-bundle-size.guard.test.ts`
-- 직접 import 스캔: `test/unit/deps/icon-direct-imports.red.test.ts`
-
-롤백 절차 (Fast Revert Steps)
-
-1. 문제 커밋 식별 (`git bisect` / 실패 테스트 출력)
-2. `scripts/generate-icon-map.cjs` 산출물 사용 시 이전 버전 재생성
-3. `LazyIcon` 사용부 → 임시로 기존 `Icon` 배럴 import 복귀 (1-commit hotfix)
-4. Preload 호출 제거하여 초기화 경량화(문제 영역이 Preload 충돌인 경우)
-5. 빌드/테스트 재검증 후 후속 개선 브랜치에서 원인 분석 재도입
-
-추가 Acceptance 보강
-
-- R4 완료 시 점프(툴바 탐색) 액션에서 추가 레이아웃 쉬프트(아이콘 로딩 지연
-  이미지 없음) 0
-- 레지스트리 fallback 발생률(테스트 시) 0 (의도된 미스케이스 제외)
-- 코드 스멜: hero 아이콘 경로 하드코딩 import 0 (스캔 테스트)
-
-측정/모니터링
-
-- 번들 분석: 기존 `scripts/css-bundle-metrics.cjs` + 신규 아이콘 맵 통계
-  출력(추가 예정)
-- 테스트 태그: `@icon-registry`, `@icon-preload`로 필터 가능하게 명명
-
-예상 산출물(추가/변경)
-
-- `src/shared/components/ui/Icon/LazyIcon.tsx` (새 구현)
-- `src/shared/services/icon-map.ts` (선언 기반 dynamic import 맵)
-- `scripts/generate-icon-map.cjs` (선택적)
-- 기존 hero/\* 어댑터 재활용 or 경량화
-- 테스트: `test/unit/performance/icon-registry.lazy.test.tsx`,
-  `test/unit/deps/icon-direct-imports.red.test.ts`
-
-현재 진행 상태: ICN-R1 REFACTOR (문서 정리) 완료 시 -> ICN-R2 착수 예정.
-
-## 활성 Phase (요약 표)
-
-| Phase | 목적               | 주요 산출물            | 상태   |
-| ----- | ------------------ | ---------------------- | ------ |
-| R1    | 인벤토리/가드 확립 | 스캔 테스트, 문서 정리 | 진행중 |
-| R2    | LazyIcon 도입      | LazyIcon, 샘플 치환    | 대기   |
-| R3    | Hybrid Preload     | preload 연결           | 대기   |
-| R4    | 전면 치환          | 모든 소비처 수정       | 대기   |
-| R5    | 최적화/사이즈      | 코드젠/사이즈 가드     | 대기   |
-| R6    | 정리/문서화        | 완료 로그 갱신         | 대기   |
+| Phase | 목적           | 주요 산출물         | 상태 |
+| ----- | -------------- | ------------------- | ---- |
+| R2    | LazyIcon 도입  | LazyIcon, 샘플 치환 | 대기 |
+| R3    | Hybrid Preload | preload 연결        | 대기 |
+| R4    | 전면 치환      | 모든 소비처 수정    | 대기 |
+| R5    | 최적화/사이즈  | 코드젠/사이즈 가드  | 대기 |
+| R6    | 정리/문서화    | 완료 로그 갱신      | 대기 |
 
 ## TDD 규칙과 브랜치
 
-1. RED → GREEN → REFACTOR 순으로 커밋을 구성합니다.
-2. 병합 전 필수 게이트: 타입/린트/전체 테스트/빌드/사이즈 가드 PASS.
-3. 완료 시: 계획 문서에서 제거하고 완료 로그에 1줄 요약 추가.
+1. RED → GREEN → REFACTOR 순으로 커밋 구성
+2. 병합 전 필수 게이트: 타입/린트/전체 테스트/빌드/사이즈 가드 PASS
+3. 완료 시: 계획 문서에서 제거하고 완료 로그에 1줄 요약 추가
 
-## 참고 링크
+## 참고
 
 - 완료 로그: docs/TDD_REFACTORING_PLAN_COMPLETED.md
 - 백로그: docs/TDD_REFACTORING_BACKLOG.md
