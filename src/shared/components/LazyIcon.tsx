@@ -12,24 +12,29 @@ export interface LazyIconProps {
   readonly stroke?: number;
   readonly color?: string;
   readonly className?: string;
+  /** 커스텀 placeholder. 제공되면 기본 placeholder를 건너뜀 */
   readonly fallback?: VNode | unknown;
+  /** 로드 실패시 대체 (미구현; 향후 R4에서 활용 가능) */
   readonly errorFallback?: VNode | unknown;
 }
 
 export function LazyIcon(props: LazyIconProps): VNode | unknown {
   const { h } = getPreact();
 
-  // 커스텀 fallback이 제공되면 즉시 반환 (테스트 기대)
+  // 커스텀 fallback이 제공되면 즉시 반환 (정책: 사용자가 전적으로 placeholder 구성)
   if (props.fallback) return props.fallback;
 
   const className = ['lazy-icon-loading', props.className].filter(Boolean).join(' ');
   const style = props.size ? { width: props.size, height: props.size } : undefined;
 
-  // 기본 반환은 로딩 상태 placeholder
+  // 표준 placeholder: 접근성 + 상태 data 속성
   return h('div', {
     className,
+    role: 'img',
     'data-testid': 'lazy-icon-loading',
+    'data-xeg-icon-loading': 'true',
     'aria-label': '아이콘 로딩 중',
+    'aria-busy': 'true',
     style,
   });
 }

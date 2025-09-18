@@ -1,5 +1,9 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-18: ICN-R2 — LazyIcon placeholder
+표준(data-xeg-icon-loading/aria-busy) + IconButton.iconName 도입 및 Toolbar
+Prev/Next 샘플 치환 완료
+
 2025-09-18: ICN-R1 — 아이콘 인벤토리 & 정책/가드 초기 확립 (직접 import
 스캔/Hybrid 전략 결정/메트릭 표 구조 정의) 문서 정리 완료
 

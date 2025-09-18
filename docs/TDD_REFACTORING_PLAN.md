@@ -43,12 +43,6 @@
 
 ### 잔여 Phase (TDD: RED → GREEN → REFACTOR)
 
-2. ICN-R2 LazyIcon 도입
-   - RED: `<Icon>` 소비 위치 스냅샷 + 기대 로딩 상태(placeholder) 테스트 추가
-   - GREEN: `LazyIcon` 구현 (registry.loadIcon 사용). 기존 배럴 export 경유
-     사용부 1곳 치환(샘플)
-   - REFACTOR: `IconButton` 내 아이콘 경로 추상화(`iconName` prop)
-
 3. ICN-R3 Hybrid Preload 적용
    - RED: 핵심 아이콘 Preload 미수행 시 E2E/단위(툴바 초기 렌더)에서 로딩 플래시
      검출 테스트
@@ -93,13 +87,12 @@ Acceptance Criteria (AC)
 
 ## 활성 Phase 상태 표
 
-| Phase | 목적           | 주요 산출물         | 상태 |
-| ----- | -------------- | ------------------- | ---- |
-| R2    | LazyIcon 도입  | LazyIcon, 샘플 치환 | 대기 |
-| R3    | Hybrid Preload | preload 연결        | 대기 |
-| R4    | 전면 치환      | 모든 소비처 수정    | 대기 |
-| R5    | 최적화/사이즈  | 코드젠/사이즈 가드  | 대기 |
-| R6    | 정리/문서화    | 완료 로그 갱신      | 대기 |
+| Phase | 목적           | 주요 산출물        | 상태 |
+| ----- | -------------- | ------------------ | ---- |
+| R3    | Hybrid Preload | preload 연결       | 대기 |
+| R4    | 전면 치환      | 모든 소비처 수정   | 대기 |
+| R5    | 최적화/사이즈  | 코드젠/사이즈 가드 | 대기 |
+| R6    | 정리/문서화    | 완료 로그 갱신     | 대기 |
 
 ## TDD 규칙과 브랜치
 

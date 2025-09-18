@@ -1,19 +1,4 @@
 /**
- * Copyright import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  FileZip,
-  Settings,
-  X,
-  ZoomIn,
-  ArrowAutofitWidth,
-  ArrowAutofitHeight,
-  ArrowsMaximize,
-  Loader2,
-} from '../Icon';om Enhanced Gallery
- * Licensed under the MIT License
- *
  * @fileoverview Gallery Toolbar Component
  * @version 6.0.0 - Phase 3 StandardProps 시스템 적용
  */
@@ -28,8 +13,6 @@ import {
 import { throttleScroll } from '@shared/utils';
 import { ComponentStandards } from '../StandardProps';
 import {
-  ChevronLeft,
-  ChevronRight,
   Download,
   FileZip,
   Settings,
@@ -290,34 +273,28 @@ function ToolbarCore({
             key: 'toolbar-left',
           },
           [
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                'aria-label': '이전 미디어',
-                title: '이전 미디어 (←)',
-                disabled: disabled || !canGoPrevious,
-                onClick: (e: Event) => handleButtonClick(e, 'previous', onPrevious),
-                'data-gallery-element': 'nav-previous',
-                'data-disabled': disabled || !canGoPrevious,
-                key: 'previous-button',
-              },
-              h(ChevronLeft, { size: 18 })
-            ),
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                'aria-label': '다음 미디어',
-                title: '다음 미디어 (→)',
-                disabled: disabled || !canGoNext,
-                onClick: (e: Event) => handleButtonClick(e, 'next', onNext),
-                'data-gallery-element': 'nav-next',
-                'data-disabled': disabled || !canGoNext,
-                key: 'next-button',
-              },
-              h(ChevronRight, { size: 18 })
-            ),
+            h(IconButton, {
+              size: 'toolbar',
+              'aria-label': '이전 미디어',
+              title: '이전 미디어 (←)',
+              disabled: disabled || !canGoPrevious,
+              onClick: (e: Event) => handleButtonClick(e, 'previous', onPrevious),
+              'data-gallery-element': 'nav-previous',
+              'data-disabled': disabled || !canGoPrevious,
+              key: 'previous-button',
+              iconName: 'ChevronLeft',
+            }),
+            h(IconButton, {
+              size: 'toolbar',
+              'aria-label': '다음 미디어',
+              title: '다음 미디어 (→)',
+              disabled: disabled || !canGoNext,
+              onClick: (e: Event) => handleButtonClick(e, 'next', onNext),
+              'data-gallery-element': 'nav-next',
+              'data-disabled': disabled || !canGoNext,
+              key: 'next-button',
+              iconName: 'ChevronRight',
+            }),
           ]
         ),
 
