@@ -1,5 +1,13 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-18: TBAR-O — 툴바 아이콘 & 인디케이터 최적화 전체 완료 Toolbar
+아이콘/버튼 사이즈 단일 토큰(`--xeg-size-toolbar-button`) 도입, 중복 아이콘
+사이즈/스트로크 토큰 제거(P1~P2), MediaCounter 컴포넌트 추출 및 ARIA(progressbar
+valuetext) 강화(P3/P6), legacy `.controls` DOM/CSS 완전 제거 및 회귀 가드(P4),
+icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gzip Δ ≤
++1% 유지(P6), 마지막 주석/alias 정리(P7)로 마이그레이션 마무리.
+사이즈/접근성/회귀/번들 메트릭 모두 목표 달성.
+
 2025-09-18: ICN-R4~R6 — 아이콘 정적 배럴 제거/동적 로딩 일원화/사이즈 가드
 스캐폴드 Icon/index.ts Hero\* 재노출 제거(R4), iconRegistry ICON_IMPORTS 기반
 dynamic import 구조 확립 및 사이즈/정적 포함 가드 RED 테스트 추가(R5), Hero
