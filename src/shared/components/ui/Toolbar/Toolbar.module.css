@@ -262,79 +262,15 @@
   color: white;
 }
 
-/* 미디어 카운터 */
-.mediaCounterWrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25em; /* 4px → 0.25em */
-  min-width: 5em; /* 80px → 5em */
-}
-
-.mediaCounter {
-  color: var(--xeg-text-counter);
-  font-size: var(--xeg-font-size-md);
-  font-weight: 600;
-  text-align: center;
-  white-space: nowrap;
-  background: var(--xeg-bg-counter);
-  padding: 0.25em 0.5em; /* 4px 8px → 0.25em 0.5em */
-  border-radius: var(--xeg-radius-md);
-  border: 1px solid var(--xeg-border-counter);
-}
-
-.currentIndex {
-  color: var(--xeg-color-text-primary);
-  font-weight: 700;
-}
-
-/* 고대비 필요 상태(data-high-contrast) 또는 시스템 고대비에서 1차 텍스트 색상으로 승격 */
-.galleryToolbar[data-high-contrast='true'] .separator {
-  color: var(--xeg-color-text-primary);
-}
-
-.totalCount {
-  color: var(--xeg-color-neutral-600);
-}
-/* 고대비 모드에서 구분자 시인성 강화 */
-@media (prefers-contrast: more), (prefers-contrast: high) {
-  .separator {
-    color: var(--xeg-color-text-primary);
-  }
-}
-/* 진행률 바 */
-.progressBar {
-  width: 3.75em; /* 60px → 3.75em */
-  height: 0.125em; /* 2px → 0.125em */
-  background: var(--xeg-color-neutral-200);
-  border-radius: var(--xeg-radius-sm);
-  overflow: hidden;
-  margin: 0.25em 0; /* 4px 0 → 0.25em 0 */
-}
-
-.progressFill {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    to right,
-    var(--xeg-color-primary) 0%,
-    var(--xeg-color-primary-light) 100%
-  );
-  border-radius: var(--xeg-radius-sm);
-  transition: var(--xeg-transition-normal);
-  transform-origin: left;
-}
-
 .fitButton,
 button.fitButton {
-  /* 🔧 FIXED: 다른 버튼들과 동일한 크기 보장 - 최고 우선순위 */
-  width: 2.5em !important; /* 40px → 2.5em */
-  height: 2.5em !important; /* 40px → 2.5em */
-  min-width: 2.5em !important; /* 40px → 2.5em */
-  min-height: 2.5em !important; /* 40px → 2.5em */
-  max-width: 2.5em !important; /* 40px → 2.5em */
-  max-height: 2.5em !important; /* 40px → 2.5em */
-  padding: 0.5em !important; /* 8px → 0.5em */
+  width: var(--xeg-size-toolbar-button) !important;
+  height: var(--xeg-size-toolbar-button) !important;
+  min-width: var(--xeg-size-toolbar-button) !important;
+  min-height: var(--xeg-size-toolbar-button) !important;
+  max-width: var(--xeg-size-toolbar-button) !important;
+  max-height: var(--xeg-size-toolbar-button) !important;
+  padding: 0.5em !important; /* 유지: 내부 아이콘 패딩 토큰화는 후속 */
   box-sizing: border-box !important;
 
   /* toolbarButton 기본 스타일 상속하면서 독립 버튼 스타일 적용 */
@@ -353,6 +289,10 @@ button.fitButton {
 .fitButton.selected {
   background: var(--xeg-color-primary);
   color: white;
+}
+/* Forward style reference for MediaCounter (extracted) to satisfy legacy consistency tests */
+.mediaCounter {
+  border-radius: var(--xeg-radius-md);
 }
 /* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {

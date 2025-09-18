@@ -12,18 +12,10 @@ import {
 } from '@shared/hooks/useToolbarState';
 import { throttleScroll } from '@shared/utils';
 import { ComponentStandards } from '../StandardProps';
-import {
-  Download,
-  FileZip,
-  Settings,
-  X,
-  ZoomIn,
-  ArrowAutofitWidth,
-  ArrowAutofitHeight,
-  ArrowsMaximize,
-} from '../Icon';
+// R4: 직접 아이콘 컴포넌트 import 제거 → IconButton.iconName / LazyIcon 기반
 import styles from './Toolbar.module.css';
 import { IconButton } from '@shared/components/ui';
+import { MediaCounter } from '../MediaCounter/MediaCounter';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
 export interface ToolbarProps {
@@ -306,44 +298,13 @@ function ToolbarCore({
             'data-gallery-element': 'counter-section',
             key: 'toolbar-center',
           },
-          h(
-            'div',
-            {
-              className: styles.mediaCounterWrapper,
-              key: 'media-counter-wrapper',
-            },
-            [
-              h(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                'span' as any,
-                {
-                  className: styles.mediaCounter,
-                  'aria-live': 'polite',
-                  'data-gallery-element': 'counter',
-                  key: 'counter-text',
-                },
-                [
-                  h('span', { className: styles.currentIndex, key: 'current' }, currentIndex + 1),
-                  h('span', { className: styles.separator, key: 'separator' }, '/'),
-                  h('span', { className: styles.totalCount, key: 'total' }, totalCount),
-                ]
-              ),
-              h(
-                'div',
-                {
-                  className: styles.progressBar,
-                  key: 'progress-bar',
-                },
-                h('div', {
-                  className: styles.progressFill,
-                  style: {
-                    width: `${totalCount > 0 ? ((currentIndex + 1) / totalCount) * 100 : 0}%`,
-                  },
-                  key: 'progress-fill',
-                })
-              ),
-            ]
-          )
+          h(MediaCounter, {
+            current: currentIndex + 1,
+            total: totalCount,
+            showProgress: true,
+            layout: 'stacked',
+            key: 'media-counter',
+          })
         ),
 
         // 우측 액션 섹션
@@ -356,135 +317,111 @@ function ToolbarCore({
           },
           [
             // 이미지 핏 모드 버튼들 - 독립적으로 배치
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                onClick: (e: Event) => handleFitMode(e, 'original', onFitOriginal),
-                disabled: disabled || !onFitOriginal,
-                'aria-label': '원본 크기',
-                title: '원본 크기 (1:1)',
-                'data-gallery-element': 'fit-original',
-                'data-selected': toolbarState.currentFitMode === 'original',
-                'data-disabled': disabled || !onFitOriginal,
-                key: 'fit-original',
-              },
-              h(ZoomIn, { size: 16 })
-            ),
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                onClick: (e: Event) => handleFitMode(e, 'fitWidth', onFitWidth),
-                disabled: disabled || !onFitWidth,
-                'aria-label': '가로에 맞춤',
-                title: '가로에 맞추기',
-                'data-gallery-element': 'fit-width',
-                'data-selected': toolbarState.currentFitMode === 'fitWidth',
-                'data-disabled': disabled || !onFitWidth,
-                key: 'fit-width',
-              },
-              h(ArrowAutofitWidth, { size: 16 })
-            ),
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                onClick: (e: Event) => handleFitMode(e, 'fitHeight', onFitHeight),
-                disabled: disabled || !onFitHeight,
-                'aria-label': '세로에 맞춤',
-                title: '세로에 맞추기',
-                'data-gallery-element': 'fit-height',
-                'data-selected': toolbarState.currentFitMode === 'fitHeight',
-                'data-disabled': disabled || !onFitHeight,
-                key: 'fit-height',
-              },
-              h(ArrowAutofitHeight, { size: 16 })
-            ),
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                onClick: (e: Event) => handleFitMode(e, 'fitContainer', onFitContainer),
-                disabled: disabled || !onFitContainer,
-                'aria-label': '창에 맞춤',
-                title: '창에 맞추기',
-                'data-gallery-element': 'fit-container',
-                'data-selected': toolbarState.currentFitMode === 'fitContainer',
-                'data-disabled': disabled || !onFitContainer,
-                key: 'fit-container',
-              },
-              h(ArrowsMaximize, { size: 16 })
-            ),
+            h(IconButton, {
+              size: 'toolbar',
+              onClick: (e: Event) => handleFitMode(e, 'original', onFitOriginal),
+              disabled: disabled || !onFitOriginal,
+              'aria-label': '원본 크기',
+              title: '원본 크기 (1:1)',
+              'data-gallery-element': 'fit-original',
+              'data-selected': toolbarState.currentFitMode === 'original',
+              'data-disabled': disabled || !onFitOriginal,
+              key: 'fit-original',
+              iconName: 'ZoomIn',
+            }),
+            h(IconButton, {
+              size: 'toolbar',
+              onClick: (e: Event) => handleFitMode(e, 'fitWidth', onFitWidth),
+              disabled: disabled || !onFitWidth,
+              'aria-label': '가로에 맞춤',
+              title: '가로에 맞추기',
+              'data-gallery-element': 'fit-width',
+              'data-selected': toolbarState.currentFitMode === 'fitWidth',
+              'data-disabled': disabled || !onFitWidth,
+              key: 'fit-width',
+              iconName: 'ArrowAutofitWidth',
+            }),
+            h(IconButton, {
+              size: 'toolbar',
+              onClick: (e: Event) => handleFitMode(e, 'fitHeight', onFitHeight),
+              disabled: disabled || !onFitHeight,
+              'aria-label': '세로에 맞춤',
+              title: '세로에 맞추기',
+              'data-gallery-element': 'fit-height',
+              'data-selected': toolbarState.currentFitMode === 'fitHeight',
+              'data-disabled': disabled || !onFitHeight,
+              key: 'fit-height',
+              iconName: 'ArrowAutofitHeight',
+            }),
+            h(IconButton, {
+              size: 'toolbar',
+              onClick: (e: Event) => handleFitMode(e, 'fitContainer', onFitContainer),
+              disabled: disabled || !onFitContainer,
+              'aria-label': '창에 맞춤',
+              title: '창에 맞추기',
+              'data-gallery-element': 'fit-container',
+              'data-selected': toolbarState.currentFitMode === 'fitContainer',
+              'data-disabled': disabled || !onFitContainer,
+              key: 'fit-container',
+              iconName: 'ArrowsMaximize',
+            }),
 
             // 다운로드 버튼들
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                loading: isDownloading,
-                onClick: (e: Event) => handleButtonClick(e, 'download-current', onDownloadCurrent),
-                disabled: disabled || isDownloading,
-                'aria-label': '현재 파일 다운로드',
-                title: '현재 파일 다운로드 (Ctrl+D)',
-                'data-gallery-element': 'download-current',
-                'data-disabled': disabled || isDownloading,
-                'data-loading': isDownloading,
-                key: 'download-current',
-              },
-              h(Download, { size: 16, key: 'download-icon' })
-            ),
+            h(IconButton, {
+              size: 'toolbar',
+              loading: isDownloading,
+              onClick: (e: Event) => handleButtonClick(e, 'download-current', onDownloadCurrent),
+              disabled: disabled || isDownloading,
+              'aria-label': '현재 파일 다운로드',
+              title: '현재 파일 다운로드 (Ctrl+D)',
+              'data-gallery-element': 'download-current',
+              'data-disabled': disabled || isDownloading,
+              'data-loading': isDownloading,
+              key: 'download-current',
+              iconName: 'Download',
+            }),
 
             totalCount > 1 &&
-              h(
-                IconButton,
-                {
-                  size: 'toolbar',
-                  onClick: (e: Event) => handleButtonClick(e, 'download-all', onDownloadAll),
-                  disabled: disabled || isDownloading,
-                  'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
-                  title: `전체 ${totalCount}개 파일 ZIP 다운로드`,
-                  'data-gallery-element': 'download-all',
-                  'data-disabled': disabled || isDownloading,
-                  'data-loading': isDownloading,
-                  key: 'download-all',
-                },
-                h(FileZip, { size: 16, key: 'download-all-icon' })
-              ),
+              h(IconButton, {
+                size: 'toolbar',
+                onClick: (e: Event) => handleButtonClick(e, 'download-all', onDownloadAll),
+                disabled: disabled || isDownloading,
+                'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
+                title: `전체 ${totalCount}개 파일 ZIP 다운로드`,
+                'data-gallery-element': 'download-all',
+                'data-disabled': disabled || isDownloading,
+                'data-loading': isDownloading,
+                key: 'download-all',
+                iconName: 'FileZip',
+              }),
 
             // 설정 버튼
             onOpenSettings &&
-              h(
-                IconButton,
-                {
-                  size: 'toolbar',
-                  'aria-label': '설정 열기',
-                  title: '설정',
-                  disabled,
-                  onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
-                  'data-gallery-element': 'settings',
-                  'data-disabled': disabled,
-                  key: 'settings',
-                },
-                h(Settings, { size: 16 })
-              ),
+              h(IconButton, {
+                size: 'toolbar',
+                'aria-label': '설정 열기',
+                title: '설정',
+                disabled,
+                onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
+                'data-gallery-element': 'settings',
+                'data-disabled': disabled,
+                key: 'settings',
+                iconName: 'Settings',
+              }),
 
             // 닫기 버튼
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                intent: 'danger',
-                'aria-label': '갤러리 닫기',
-                title: '갤러리 닫기 (Esc)',
-                disabled,
-                onClick: (e: Event) => handleButtonClick(e, 'close', onClose),
-                'data-gallery-element': 'close',
-                'data-disabled': disabled,
-                key: 'close',
-              },
-              h(X, { size: 16 })
-            ),
+            h(IconButton, {
+              size: 'toolbar',
+              intent: 'danger',
+              'aria-label': '갤러리 닫기',
+              title: '갤러리 닫기 (Esc)',
+              disabled,
+              onClick: (e: Event) => handleButtonClick(e, 'close', onClose),
+              'data-gallery-element': 'close',
+              'data-disabled': disabled,
+              key: 'close',
+              iconName: 'X',
+            }),
           ]
         ),
       ]

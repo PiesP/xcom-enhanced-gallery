@@ -1,0 +1,56 @@
+.mediaCounterWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25em;
+  min-width: 5em;
+}
+.mediaCounter {
+  color: var(--xeg-text-counter);
+  font-size: var(--xeg-font-size-md);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  background: var(--xeg-bg-counter);
+  padding: 0.25em 0.5em;
+  border-radius: var(--xeg-radius-md);
+  border: 1px solid var(--xeg-border-counter);
+}
+.currentIndex {
+  color: var(--xeg-color-text-primary);
+  font-weight: 700;
+}
+.separator {
+  color: var(--xeg-color-neutral-500);
+}
+.totalCount {
+  color: var(--xeg-color-neutral-600);
+}
+.progressBar {
+  width: 3.75em;
+  height: 0.125em;
+  background: var(--xeg-color-neutral-200);
+  border-radius: var(--xeg-radius-sm);
+  overflow: hidden;
+  margin: 0.25em 0;
+}
+.progressFill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    var(--xeg-color-primary) 0%,
+    var(--xeg-color-primary-light) 100%
+  );
+  border-radius: var(--xeg-radius-sm);
+  transition: var(--xeg-transition-normal);
+  transform-origin: left;
+}
+.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5em;
+}
+.inline .progressBar {
+  margin: 0;
+}

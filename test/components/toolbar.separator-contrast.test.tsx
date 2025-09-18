@@ -29,5 +29,8 @@ describe('Toolbar separator contrast', () => {
     // className should include 'separator' and computed style should not be empty
     const className = sep?.getAttribute('class') || '';
     expect(className).toContain('separator');
+
+    // 명시적 언마운트: 잔류 effect/타이머 제거
+    render(null as any, container);
   });
 });

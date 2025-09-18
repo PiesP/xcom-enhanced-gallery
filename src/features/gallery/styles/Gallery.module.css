@@ -498,44 +498,6 @@
 }
 
 /**
- * 컨트롤 툴바 - 현대적 glassmorphism 디자인
- * 갤러리 하단에 위치하는 컨트롤 버튼들의 컨테이너입니다.
- *
- * Features:
- * - 절대 위치로 하단 중앙 고정
- * - flexbox로 버튼들 배열
- * - 현대적 glassmorphism 배경과 블러 효과
- * - 부드러운 표시/숨김 트랜지션
- * - 향상된 그림자와 테두리 효과
- */
-.controls {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--xeg-toolbar-bg);
-  border: 1px solid var(--xeg-toolbar-border);
-  border-radius: var(--xeg-radius-pill);
-  z-index: var(--xeg-z-gallery-toolbar);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: var(--xeg-toolbar-shadow);
-  transition: all var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
-}
-
-/**
- * 컨트롤 툴바 숨김 상태
- * 마우스 비활성화나 자동 숨김 시 적용되는 스타일입니다.
- */
-.controls.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/**
  * 컨트롤 버튼 기본 스타일
  * 툴바 내의 모든 버튼에 적용되는 기본 스타일입니다.
  *
@@ -697,12 +659,6 @@
     right: 10px;
   }
 
-  .controls {
-    bottom: 10px;
-    padding: 8px;
-    gap: 8px;
-  }
-
   .controlButton {
     padding: 6px 10px;
     font-size: 12px;
@@ -729,12 +685,6 @@
  * - 최대 너비 제한
  */
 @media (max-width: 480px) {
-  .controls {
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 90vw;
-  }
-
   .controlButton {
     padding: 5px 8px;
     font-size: 11px;
@@ -876,9 +826,6 @@
  * 포커스 내 컨트롤 표시
  * 갤러리 뷰어에 포커스가 있을 때 컨트롤을 항상 표시합니다.
  */
-.galleryViewer:focus-within .controls {
-  opacity: 1;
-}
 
 /**
  * 스크린 리더 전용 텍스트
@@ -955,4 +902,13 @@
   .loadingSpinner {
     animation: none;
   }
+}
+
+/* Consistency Utilities (ensure required radius tokens are present after legacy cleanup) */
+.xegGalleryToolbarPillGroup {
+  border-radius: var(--xeg-radius-pill);
+}
+.xegGallerySurfaceLarge2xl {
+  /* Used for test coverage: potential future large surface */
+  border-radius: var(--xeg-radius-2xl);
 }

@@ -1,4 +1,7 @@
 import type { VNode } from '@shared/external/vendors';
+// NOTE: CORE_ICONS는 순환 의존 방지를 위해 타입/상수 분리 파일에서 재정의하지 않고 여기 로컬 상수로 선언
+// (core-icons.ts는 IconName 타입을 재사용해야 하므로 iconRegistry -> core-icons -> iconRegistry 순환을 일으킬 수 있음)
+// 필요 시 빌드 단계에서 통합 검증 가능
 
 export type IconName =
   | 'Download'
@@ -6,6 +9,11 @@ export type IconName =
   | 'X'
   | 'ChevronLeft'
   | 'ChevronRight'
+  | 'ZoomIn'
+  | 'ArrowAutofitWidth'
+  | 'ArrowAutofitHeight'
+  | 'ArrowsMaximize'
+  | 'FileZip'
   | (string & {});
 
 type IconComponent = (props?: Record<string, unknown>) => VNode | unknown;
@@ -31,32 +39,55 @@ let _caches: WeakMap<object, Map<IconName, IconComponent>> = new WeakMap();
 // 전역(하이브리드 프리로드) 캐시: preloadCommonIcons가 미리 채워 즉시 동기 조회 가능
 const _globalLoaded = new Map<IconName, IconComponent>();
 
+// Declarative import 맵 (ICN-R5)
+const ICON_IMPORTS: Record<string, () => Promise<IconComponent>> = {
+  Download: () =>
+    import('@shared/components/ui/Icon/hero/HeroDownload.tsx').then(
+      m => m.HeroDownload as unknown as IconComponent
+    ),
+  Settings: () =>
+    import('@shared/components/ui/Icon/hero/HeroSettings.tsx').then(
+      m => m.HeroSettings as unknown as IconComponent
+    ),
+  X: () =>
+    import('@shared/components/ui/Icon/hero/HeroX.tsx').then(
+      m => m.HeroX as unknown as IconComponent
+    ),
+  ChevronLeft: () =>
+    import('@shared/components/ui/Icon/hero/HeroChevronLeft.tsx').then(
+      m => m.HeroChevronLeft as unknown as IconComponent
+    ),
+  ChevronRight: () =>
+    import('@shared/components/ui/Icon/hero/HeroChevronRight.tsx').then(
+      m => m.HeroChevronRight as unknown as IconComponent
+    ),
+  ZoomIn: () =>
+    import('@shared/components/ui/Icon/hero/HeroZoomIn.tsx').then(
+      m => m.HeroZoomIn as unknown as IconComponent
+    ),
+  ArrowAutofitWidth: () =>
+    import('@shared/components/ui/Icon/hero/HeroArrowAutofitWidth.tsx').then(
+      m => m.HeroArrowAutofitWidth as unknown as IconComponent
+    ),
+  ArrowAutofitHeight: () =>
+    import('@shared/components/ui/Icon/hero/HeroArrowAutofitHeight.tsx').then(
+      m => m.HeroArrowAutofitHeight as unknown as IconComponent
+    ),
+  ArrowsMaximize: () =>
+    import('@shared/components/ui/Icon/hero/HeroArrowsMaximize.tsx').then(
+      m => m.HeroArrowsMaximize as unknown as IconComponent
+    ),
+  FileZip: () =>
+    import('@shared/components/ui/Icon/hero/HeroFileZip.tsx').then(
+      m => m.HeroFileZip as unknown as IconComponent
+    ),
+};
+
 function dynamicImport(name: IconName): Promise<IconComponent> {
-  switch (name) {
-    case 'Download':
-      return import('@shared/components/ui/Icon/hero/HeroDownload.tsx').then(
-        m => m.HeroDownload as unknown as IconComponent
-      );
-    case 'Settings':
-      return import('@shared/components/ui/Icon/hero/HeroSettings.tsx').then(
-        m => m.HeroSettings as unknown as IconComponent
-      );
-    case 'X':
-      return import('@shared/components/ui/Icon/hero/HeroX.tsx').then(
-        m => m.HeroX as unknown as IconComponent
-      );
-    case 'ChevronLeft':
-      return import('@shared/components/ui/Icon/hero/HeroChevronLeft.tsx').then(
-        m => m.HeroChevronLeft as unknown as IconComponent
-      );
-    case 'ChevronRight':
-      return import('@shared/components/ui/Icon/hero/HeroChevronRight.tsx').then(
-        m => m.HeroChevronRight as unknown as IconComponent
-      );
-    default:
-      if (_fallback) return Promise.resolve(_fallback);
-      return Promise.reject(new Error(`Icon not found: ${name}`));
-  }
+  const loader = ICON_IMPORTS[name];
+  if (loader) return loader();
+  if (_fallback) return Promise.resolve(_fallback);
+  return Promise.reject(new Error(`Icon not found: ${name}`));
 }
 
 function createRegistry(): IconRegistry {
@@ -133,18 +164,30 @@ export function resetIconRegistry(): void {
 
 export async function preloadCommonIcons(): Promise<void> {
   const registry = getIconRegistry();
-  const common: IconName[] = ['Download', 'Settings', 'X', 'ChevronLeft'];
-  // 이미 전역에 올라온 경우는 skip
-  const toLoad = common.filter(n => !registry.getLoadedIconSync(n));
+  // CORE 아이콘 확장: 모든 툴바 상호작용 아이콘 동기 렌더 체감 향상
+  const CORE: IconName[] = [
+    'Download',
+    'Settings',
+    'X',
+    'ChevronLeft',
+    'ChevronRight',
+    'ZoomIn',
+    'ArrowAutofitWidth',
+    'ArrowAutofitHeight',
+    'ArrowsMaximize',
+    'FileZip',
+  ];
+  const toLoad = CORE.filter(n => !registry.getLoadedIconSync(n));
   if (toLoad.length === 0) return;
-  const components = await Promise.all(toLoad.map(n => registry.loadIcon(n)));
+  const components = await Promise.all(toLoad.map(n => registry.loadIcon(n as IconName)));
   components.forEach((comp, idx) => {
     const name = toLoad[idx] as IconName;
     if (comp) {
-      // loadIcon에서 이미 _globalLoaded에 넣었을 가능성 존재 - 재확인
       _globalLoaded.set(name, comp as IconComponent);
     }
   });
 }
+
+export { ICON_IMPORTS };
 
 export { type IconComponent };

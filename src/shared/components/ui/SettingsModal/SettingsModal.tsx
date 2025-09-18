@@ -11,7 +11,7 @@ import {
 import { useFocusTrap } from '@shared/hooks/useFocusTrap';
 import { useScrollLock } from '@shared/hooks/useScrollLock';
 import { ComponentStandards } from '../StandardProps';
-import { X } from '../Icon';
+// R4: 직접 아이콘 import 제거 (X) → IconButton.iconName 사용
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
@@ -159,26 +159,20 @@ export function SettingsModal({
 
   // 배경 요소 비활성화 - 접근성 개선
   const setBackgroundInert = useCallback((inert: boolean) => {
+    // 배경 inert 처리는 모달 루트(panelRef) 자체나 그 조상에 aria-hidden을 적용하지 않아야 한다.
     if (typeof document === 'undefined') return;
-
-    // 설정 모달을 제외한 다른 요소들만 비활성화
-    const backgroundElements = document.querySelectorAll('body > *');
-    backgroundElements.forEach(element => {
-      // dialog나 모달 관련 요소가 포함된 컨테이너는 제외
-      const hasDialog = element.querySelector('[role="dialog"], [aria-modal="true"]');
-      const isModalContainer =
-        element.classList?.contains('settings-modal-backdrop') ||
-        (element.hasAttribute?.('data-testid') &&
-          element.getAttribute('data-testid')?.includes('settings'));
-
-      if (!hasDialog && !isModalContainer) {
-        if (inert) {
-          element.setAttribute('tabindex', '-1');
-          element.setAttribute('aria-hidden', 'true');
-        } else {
-          element.removeAttribute('tabindex');
-          element.removeAttribute('aria-hidden');
-        }
+    const panel = panelRef.current;
+    const bodyChildren = Array.from(document.querySelectorAll('body > *')) as HTMLElement[];
+    bodyChildren.forEach(el => {
+      // panel 자신 또는 panel을 포함(조상)하는 요소는 건너뛴다.
+      const skip = !!panel && (el === panel || el.contains(panel));
+      if (skip) return;
+      if (inert) {
+        if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+        el.setAttribute('aria-hidden', 'true');
+      } else {
+        if (el.getAttribute('aria-hidden') === 'true') el.removeAttribute('aria-hidden');
+        if (el.getAttribute('tabindex') === '-1') el.removeAttribute('tabindex');
       }
     });
   }, []);
@@ -454,7 +448,7 @@ export function SettingsModal({
       // close는 파괴적 액션이 아니므로 intent 미지정(중립)
       size: 'md',
       key: 'close',
-      children: h(X, { size: 16 }),
+      iconName: 'X',
     }),
   ]);
 

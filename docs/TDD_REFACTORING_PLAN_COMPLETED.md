@@ -1,5 +1,35 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-18: ICN-R4~R6 — 아이콘 정적 배럴 제거/동적 로딩 일원화/사이즈 가드
+스캐폴드 Icon/index.ts Hero\* 재노출 제거(R4), iconRegistry ICON_IMPORTS 기반
+dynamic import 구조 확립 및 사이즈/정적 포함 가드 RED 테스트 추가(R5), Hero
+어댑터 공통 유틸 `createHeroIconAdapter` 도입 + 코드젠 스크립트
+스텁(`generate-icon-map.mjs`) 작성, 레거시 icons/ 배럴 부재 테스트(R6)로 회귀
+방지. 초기 Hybrid Preload 전략 유지하며 LazyIcon 경로 100% 적용.
+
+2025-09-18: TBAR-O P7 — tbar-clean 주석/alias 정리 및 회귀 가드 토큰/사이즈
+스냅샷 유지, PLAN에서 제거 후 완료 로그 이관.
+
+2025-09-18: TBAR-O P3 — MediaCounter 컴포넌트 추출 Toolbar 인라인 카운터/진행률
+마크업을 `MediaCounter` 독립 컴포넌트로 이동하고 스타일을 전용 모듈로 분리.
+ARIA(group/progressbar/valuenow) 기초 구조 확립(세부 a11y 강화는 P6 예정).
+Toolbar 코어 단순화 및 중복 CSS 제거. 후속: P4 toolbar size 변수 주입.
+
+2025-09-18: TBAR-O P4 — Toolbar size 토큰 적용 `--xeg-size-toolbar-button` 토큰
+신설 후 Toolbar.module.css의 고정 2.5em 치수(폭/높이/최소/최대)를 토큰 참조로
+대체. RED 테스트(toolbar-size-token.red) GREEN 전환하며 사이즈 정책 단일화.
+후속: P5 legacy `.controls` 제거.
+
+2025-09-18: TBAR-O P5 — legacy .controls 제거 Gallery.module.css 내 하단
+glassmorphism `.controls` 컨테이너 및 변형(.hidden, media query 변형) CSS 블록
+완전 삭제. RED 테스트(legacy-controls.red) → GREEN(legacy-controls.test)로
+전환해 재도입 차단. Toolbar 경로만 단일 액션 영역 유지. 다음 단계: P6 ARIA 확장.
+
+2025-09-18: TBAR-O P6 — MediaCounter ARIA 강화 progressbar에 `aria-valuetext`
+추가로 스크린리더가 퍼센트와 위치(예: "30% (3/10)")를 모두 전달. 기존 RED 테스트
+(`media-counter-aria.red`) GREEN 전환, now/max/min/valuetext 계약 가드 확립.
+다음 단계: P7 주석/alias 정리.
+
 2025-09-18: TBAR-O P2 — 아이콘 사이즈 토큰 단일화 완료 design-tokens.css 에서
 `--xeg-icon-*` 사이즈/스트로크 토큰 직접 정의 제거 → component layer 단일 선언
 유지. 신규 RED 테스트(`duplicate-icon-token.test.ts`) GREEN 전환으로 중복 가드

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
+import { render, cleanup, waitFor } from '@testing-library/preact';
 import { h } from 'preact';
 
 // Vendor mocks 먼저 설정
@@ -12,9 +12,17 @@ vi.mock('@shared/external/vendors', () => ({
   getFflate: vi.fn(() => ({})),
   getPreact: vi.fn(() => ({ h })),
   getPreactHooks: vi.fn(() => ({
+    // LazyIcon이 stateful로 변경되었으므로 useState/즉시 실행 useEffect 모킹 필요
+    useState: vi.fn(initial => [initial, vi.fn()]),
     useMemo: vi.fn(factory => factory()),
     useCallback: vi.fn(callback => callback),
-    useEffect: vi.fn(),
+    // 아이콘 동적 로드를 트리거하기 위해 즉시 실행
+    useEffect: vi.fn(effect => {
+      if (typeof effect === 'function') {
+        // cleanup 무시
+        effect();
+      }
+    }),
     useRef: vi.fn(() => ({ current: null })),
   })),
   getPreactSignals: vi.fn(() => ({})),
@@ -31,6 +39,50 @@ vi.mock('@shared/external/vendors', () => ({
   getVendorStatuses: vi.fn(() => ({})),
   isVendorInitialized: vi.fn(() => true),
 }));
+
+// 아이콘 레지스트리/아이콘 컴포넌트 동기 모킹 (LazyIcon 비동기 로딩 우회)
+vi.mock('@shared/services/iconRegistry', () => {
+  const loaded: Record<string, () => unknown> = {};
+  const create = (name: string) => () =>
+    h(
+      'svg',
+      {
+        'data-testid': `icon-${name}`,
+        viewBox: '0 0 24 24',
+        role: 'img',
+        width: 24,
+        height: 24,
+      },
+      h('title', {}, name)
+    );
+  const names = [
+    'Download',
+    'Settings',
+    'X',
+    'ChevronLeft',
+    'ChevronRight',
+    'ZoomIn',
+    'ArrowAutofitWidth',
+    'ArrowAutofitHeight',
+    'ArrowsMaximize',
+    'FileZip',
+  ];
+  for (const n of names) loaded[n] = create(n);
+  return {
+    getIconRegistry: () => ({
+      loadIcon: (name: string) => Promise.resolve(loaded[name]),
+      getLoadedIconSync: (name: string) => loaded[name] ?? null,
+      isLoading: () => false,
+      setFallbackIcon: () => void 0,
+      getCachedIcon: () => null,
+      setCachedIcon: () => void 0,
+      clearCache: () => void 0,
+      clearAllCaches: () => void 0,
+      getDebugInfo: () => ({ loadingCount: 0, loadingIcons: [] }),
+    }),
+    preloadCommonIcons: () => Promise.resolve(),
+  };
+});
 
 // Hooks mock
 vi.mock('@shared/hooks/useToolbarState', () => ({
@@ -108,7 +160,7 @@ describe('Toolbar Icons Integration', () => {
   });
 
   describe('네비게이션 아이콘', () => {
-    it('이전 버튼에 chevron-left 아이콘이 렌더링되어야 함', () => {
+    it('이전 버튼에 chevron-left 아이콘이 렌더링되어야 함', async () => {
       const { container } = render(
         h(Toolbar, {
           currentIndex: 1,
@@ -123,13 +175,14 @@ describe('Toolbar Icons Integration', () => {
 
       const prevButton = container.querySelector('[data-gallery-element="nav-previous"]');
       expect(prevButton).toBeTruthy();
-
-      const svg = prevButton?.querySelector('svg');
-      expect(svg).toBeTruthy();
-      expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      await waitFor(() => {
+        const svg = prevButton?.querySelector('svg');
+        expect(svg).toBeTruthy();
+        expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      });
     });
 
-    it('다음 버튼에 chevron-right 아이콘이 렌더링되어야 함', () => {
+    it('다음 버튼에 chevron-right 아이콘이 렌더링되어야 함', async () => {
       const { container } = render(
         h(Toolbar, {
           currentIndex: 0,
@@ -144,15 +197,16 @@ describe('Toolbar Icons Integration', () => {
 
       const nextButton = container.querySelector('[data-gallery-element="nav-next"]');
       expect(nextButton).toBeTruthy();
-
-      const svg = nextButton?.querySelector('svg');
-      expect(svg).toBeTruthy();
-      expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      await waitFor(() => {
+        const svg = nextButton?.querySelector('svg');
+        expect(svg).toBeTruthy();
+        expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      });
     });
   });
 
   describe('액션 아이콘', () => {
-    it('다운로드 버튼에 download 아이콘이 렌더링되어야 함', () => {
+    it('다운로드 버튼에 download 아이콘이 렌더링되어야 함', async () => {
       const { container } = render(
         h(Toolbar, {
           currentIndex: 0,
@@ -167,13 +221,14 @@ describe('Toolbar Icons Integration', () => {
 
       const downloadButton = container.querySelector('[data-gallery-element="download-current"]');
       expect(downloadButton).toBeTruthy();
-
-      const svg = downloadButton?.querySelector('svg');
-      expect(svg).toBeTruthy();
-      expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      await waitFor(() => {
+        const svg = downloadButton?.querySelector('svg');
+        expect(svg).toBeTruthy();
+        expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      });
     });
 
-    it('전체 다운로드 버튼에 file-zip 아이콘이 렌더링되어야 함', () => {
+    it('전체 다운로드 버튼에 file-zip 아이콘이 렌더링되어야 함', async () => {
       const { container } = render(
         h(Toolbar, {
           currentIndex: 0,
@@ -188,13 +243,14 @@ describe('Toolbar Icons Integration', () => {
 
       const downloadAllButton = container.querySelector('[data-gallery-element="download-all"]');
       expect(downloadAllButton).toBeTruthy();
-
-      const svg = downloadAllButton?.querySelector('svg');
-      expect(svg).toBeTruthy();
-      expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      await waitFor(() => {
+        const svg = downloadAllButton?.querySelector('svg');
+        expect(svg).toBeTruthy();
+        expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      });
     });
 
-    it('닫기 버튼에 x 아이콘이 렌더링되어야 함', () => {
+    it('닫기 버튼에 x 아이콘이 렌더링되어야 함', async () => {
       const { container } = render(
         h(Toolbar, {
           currentIndex: 0,
@@ -209,15 +265,16 @@ describe('Toolbar Icons Integration', () => {
 
       const closeButton = container.querySelector('[data-gallery-element="close"]');
       expect(closeButton).toBeTruthy();
-
-      const svg = closeButton?.querySelector('svg');
-      expect(svg).toBeTruthy();
-      expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      await waitFor(() => {
+        const svg = closeButton?.querySelector('svg');
+        expect(svg).toBeTruthy();
+        expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      });
     });
   });
 
   describe('핏 모드 아이콘', () => {
-    it('원본 크기 버튼에 zoom-in 아이콘이 렌더링되어야 함', () => {
+    it('원본 크기 버튼에 zoom-in 아이콘이 렌더링되어야 함', async () => {
       const { container } = render(
         h(Toolbar, {
           currentIndex: 0,
@@ -236,10 +293,11 @@ describe('Toolbar Icons Integration', () => {
 
       const fitOriginalButton = container.querySelector('[data-gallery-element="fit-original"]');
       expect(fitOriginalButton).toBeTruthy();
-
-      const svg = fitOriginalButton?.querySelector('svg');
-      expect(svg).toBeTruthy();
-      expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      await waitFor(() => {
+        const svg = fitOriginalButton?.querySelector('svg');
+        expect(svg).toBeTruthy();
+        expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+      });
     });
   });
 });

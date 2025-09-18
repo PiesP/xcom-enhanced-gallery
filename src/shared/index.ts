@@ -67,7 +67,6 @@ export { useScrollLock } from './hooks/useScrollLock';
 export { useGalleryToolbarLogic } from './hooks/useGalleryToolbarLogic';
 export { useFocusTrap } from './hooks/useFocusTrap';
 
-// 새로운 P6 스타일 토큰들
 export * from './styles/tokens';
 
 // 타입들

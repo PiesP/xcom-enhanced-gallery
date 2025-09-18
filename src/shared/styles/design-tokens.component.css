@@ -17,6 +17,8 @@
   --toolbar-height: 60px;
   --toolbar-padding: var(--spacing-component-padding);
   --toolbar-gap: var(--spacing-item-gap);
+  /* Toolbar sizing (P4 tbar-scope) */
+  --xeg-size-toolbar-button: 2.5em;
 
   /* Button Component */
   --button-bg-primary: var(--color-primary);
@@ -86,16 +88,7 @@
   --animation-toolbar-show: toolbar-slide-down var(--duration-fast) var(--transition-fast);
   --animation-toolbar-hide: toolbar-slide-up var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
 
-  /* Icon Component Tokens */
-  --xeg-icon-stroke-width: 2px;
-  --xeg-icon-size: var(--size-icon-md);
-  --xeg-icon-line-height: 1;
-  --xeg-icon-color: currentColor;
-
-  /* Icon Size Variants */
-  --xeg-icon-size-sm: var(--size-icon-sm);
-  --xeg-icon-size-md: var(--size-icon-md);
-  --xeg-icon-size-lg: var(--size-icon-lg);
+  /* Icon Component Tokens moved to design-tokens.css (aggregator) */
 }
 
 /* ======================================= */

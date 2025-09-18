@@ -14,42 +14,27 @@ import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.
 
 // URL 생성자 폴백 - Node.js URL 직접 사용
 function createURLPolyfill() {
-  try {
-    // Node.js의 기본 URL을 직접 사용
-    const { URL: NodeURL } = require('node:url');
-    console.log('Using Node.js URL constructor');
-    return NodeURL;
-  } catch (error) {
-    console.warn('Node URL import failed, using fallback:', error);
+  // Node 18+ 환경에서는 기본적으로 globalThis.URL 존재
+  if (typeof globalThis.URL === 'function') return globalThis.URL as any;
 
-    // fallback implementation
-    function URLConstructor(url) {
-      if (!(this instanceof URLConstructor)) {
-        return new URLConstructor(url);
-      }
-
-      const urlRegex = /^(https?):\/\/([^/]+)(\/[^?]*)?\??(.*)$/;
-      const match = url.match(urlRegex);
-
-      if (!match) {
-        throw new Error('Invalid URL');
-      }
-
-      const [, protocol, hostname, pathname = '/', search = ''] = match;
-
-      this.protocol = `${protocol}:`;
-      this.hostname = hostname;
-      this.pathname = pathname;
-      this.search = search ? `?${search}` : '';
-      this.href = url;
-
-      this.toString = () => this.href;
-
-      return this;
+  // fallback implementation (단순 파서)
+  function URLConstructor(this: any, url: string) {
+    if (!(this instanceof URLConstructor)) {
+      return new (URLConstructor as any)(url);
     }
-
-    return URLConstructor;
+    const urlRegex = /^(https?):\/\/([^/]+)(\/[^?]*)?\??(.*)$/;
+    const match = url.match(urlRegex);
+    if (!match) throw new Error('Invalid URL');
+    const [, protocol, hostname, pathname = '/', search = ''] = match;
+    this.protocol = `${protocol}:`;
+    this.hostname = hostname;
+    this.pathname = pathname;
+    this.search = search ? `?${search}` : '';
+    this.href = url;
+    this.toString = () => this.href;
+    return this;
   }
+  return URLConstructor as any;
 }
 
 // URL 폴백 설정
@@ -61,8 +46,8 @@ function setupURLPolyfill() {
 
   // window 레벨에도 설정 (안전하게)
   try {
-    if (typeof window !== 'undefined') {
-      window.URL = URLPolyfill;
+    if (typeof globalThis.window !== 'undefined') {
+      (globalThis as any).window.URL = URLPolyfill;
     }
   } catch {
     // 무시
@@ -70,8 +55,8 @@ function setupURLPolyfill() {
 
   // global 레벨에도 설정 (안전하게)
   try {
-    if (typeof global !== 'undefined') {
-      global.URL = URLPolyfill;
+    if (typeof (globalThis as any).global !== 'undefined') {
+      (globalThis as any).global.URL = URLPolyfill;
     }
   } catch {
     // 무시
@@ -103,7 +88,7 @@ function setupJsdomPolyfills() {
 
   // document.elementsFromPoint polyfill (jsdom limitation)
   if (typeof globalThis.document !== 'undefined' && !globalThis.document.elementsFromPoint) {
-    globalThis.document.elementsFromPoint = function (x, y) {
+    globalThis.document.elementsFromPoint = function () {
       // 테스트 환경에서는 빈 배열 반환
       return [];
     };
@@ -186,7 +171,9 @@ function setupJsdomPolyfills() {
               );
             } catch (error) {
               // 콜백 에러를 무시하여 테스트 안정성 확보
-              console.warn('IntersectionObserver 콜백 에러 (무시됨):', error);
+              if (typeof globalThis.console !== 'undefined') {
+                globalThis.console.warn('IntersectionObserver 콜백 에러 (무시됨):', error);
+              }
             }
           }
         }
@@ -314,6 +301,68 @@ if (typeof globalThis !== 'undefined') {
 
   // jsdom polyfill 적용
   setupJsdomPolyfills();
+
+  // requestAnimationFrame 폴리필 (마이크로태스크 기반으로 flush를 teardown 이전에 앞당김)
+  if (typeof globalThis.requestAnimationFrame !== 'function') {
+    (globalThis as any).requestAnimationFrame = (cb: () => void) => {
+      // queueMicrotask 사용: next frame을 최대한 빨리 실행시켜 effect cleanup 레이스 감소
+      const run = () => {
+        try {
+          const nowProvider = (globalThis as any).performance;
+          cb(nowProvider && typeof nowProvider.now === 'function' ? nowProvider.now() : Date.now());
+        } catch {
+          // 무시
+        }
+      };
+      const qm = (globalThis as any).queueMicrotask;
+      if (typeof qm === 'function') {
+        qm(run);
+        // id 의미 없음 - clear에 대비해 심볼 반환
+        return -1 as unknown as number;
+      }
+      return (globalThis as any).setTimeout(run, 0);
+    };
+  }
+  if (typeof globalThis.cancelAnimationFrame !== 'function') {
+    (globalThis as any).cancelAnimationFrame = (id: number) => {
+      if (id !== -1 && (globalThis as any).clearTimeout) {
+        (globalThis as any).clearTimeout(id);
+      }
+    };
+  }
+
+  // window / global 객체에 동기화 (일부 라이브러리가 window.cancelAnimationFrame 직접 참조)
+  try {
+    const win: any = (globalThis as any).window;
+    if (win && typeof win === 'object') {
+      if (typeof win.requestAnimationFrame !== 'function') {
+        win.requestAnimationFrame = (globalThis as any).requestAnimationFrame;
+      }
+      if (typeof win.cancelAnimationFrame !== 'function') {
+        win.cancelAnimationFrame = (globalThis as any).cancelAnimationFrame;
+      }
+    }
+  } catch {
+    // 무시
+  }
+
+  // Node 글로벌 (global)에도 동기화 - 일부 polyfill/라이브러리가 global.* 접근
+  try {
+    const g: any = (globalThis as any).global || globalThis;
+    if (g && typeof g === 'object') {
+      if (typeof g.requestAnimationFrame !== 'function') {
+        g.requestAnimationFrame = (globalThis as any).requestAnimationFrame;
+      }
+      if (typeof g.cancelAnimationFrame !== 'function') {
+        g.cancelAnimationFrame = (globalThis as any).cancelAnimationFrame;
+      }
+    }
+  } catch {
+    // 무시
+  }
+
+  // (중요) Vitest teardown이 글로벌 키 delete 시도 → non-configurable이면 오류를 유발하므로
+  // 삭제 가능 상태(configurable) 유지. 대신 rAF를 microtask로 빠르게 실행해 잔여 cleanup을 최소화.
 }
 
 /**
@@ -334,7 +383,7 @@ beforeEach(async () => {
   try {
     const { initializeVendors } = await import('../src/shared/external/vendors/vendor-api.js');
     await initializeVendors();
-  } catch (error) {
+  } catch {
     // vendor 초기화 실패는 무시하고 계속 진행
   }
 

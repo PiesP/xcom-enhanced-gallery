@@ -11,7 +11,8 @@ import {
 import { useFocusTrap } from '@shared/hooks/useFocusTrap';
 import { useScrollLock } from '@shared/hooks/useScrollLock';
 import { ComponentStandards } from '../StandardProps';
-import { X } from '../Icon';
+// R4: 직접 아이콘 import 제거 (X) → IconButton.iconName 사용
+import { IconButton } from '@shared/components/ui';
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
@@ -225,18 +226,18 @@ export function SettingsModal({
       { id: 'settings-title', className: styles.title, key: 'title' },
       languageService.getString('settings.title')
     ),
-    h(
-      'button',
-      {
-        ref: firstFocusableRef,
-        type: 'button',
-        className: `${toolbarStyles.toolbarButton} ${styles.closeButton}`,
-        onClick: onClose,
-        'aria-label': 'Close',
-        key: 'close',
+    h(IconButton, {
+      ref: (el: HTMLButtonElement | null) => {
+        firstFocusableRef.current = el;
       },
-      h(X, { size: 16 })
-    ),
+      type: 'button',
+      className: `${toolbarStyles.toolbarButton} ${styles.closeButton}`,
+      onClick: onClose,
+      'aria-label': 'Close',
+      key: 'close',
+      iconName: 'X',
+      size: 'md',
+    }),
   ]);
 
   const themeSelect = h(

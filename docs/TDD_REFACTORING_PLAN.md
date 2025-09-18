@@ -41,25 +41,18 @@
 
 대안 비교 (선택: Option C Hybrid) — 상세는 완료 로그 R1 항목 참조
 
-### 잔여 Phase (TDD: RED → GREEN → REFACTOR)
+### Phase 상태
 
-4. ICN-R4 전체 전환
-   - RED: 기존 정적 배럴 export 목록 중 특정 아이콘 직접 사용 검출(새 테스트)
-   - GREEN: 남은 소비처 모두 LazyIcon/registry 경유로 변경
-   - REFACTOR: 불필요한 hero/\* 어댑터 중복 로직 정리(스타일/ARIA 공통 util
-     추출)
+ICN-R4~R6 달성 (2025-09-18)
 
-5. ICN-R5 최적화 & 사이즈 가드
-   - RED: 번들 사이즈 회귀 테스트(> +5% 또는 Preload set 제외 아이콘 static 포함
-     시 실패)
-   - GREEN: dynamic import 분기(map/switch) 적용, dead code 제거 결과 사이즈
-     안정
-   - REFACTOR: 코드젠 스크립트(optional) `scripts/generate-icon-map.cjs`
+- R4: Icon 배럴 정적 Hero 재노출 제거 → LazyIcon + registry 100% 경로 일원화
+- R5: ICON_IMPORTS 선언 기반 dynamic import 맵 안정 / 사이즈 가드 RED 스캐폴드
+  추가 / dead code 배럴 제거
+- R5 Refactor: Hero 어댑터 공통화 유틸(`createHeroIconAdapter`) 도입 및 코드젠
+  스크립트 스텁(`scripts/generate-icon-map.mjs`) 작성
+- R6: 레거시 icons/ 배럴 부재 테스트 도입 및 문서 반영
 
-6. ICN-R6 정리/문서화
-   - RED: 레거시 배럴(정적 재노출) 존재 여부 스캔 테스트
-   - GREEN: 불필요 배럴/주석 제거, README/PLAN 갱신
-   - REFACTOR: `TDD_REFACTORING_PLAN_COMPLETED.md`에 1줄 요약 이관
+잔여 활성 Phase 없음 — 신규 Epic 또는 TBAR-O 후속 선택 필요 시 백로그 등록
 
 Acceptance Criteria (AC)
 
@@ -81,11 +74,9 @@ Acceptance Criteria (AC)
 
 ## 활성 Phase 상태 표
 
-| Phase | 목적          | 주요 산출물        | 상태 |
-| ----- | ------------- | ------------------ | ---- |
-| R4    | 전면 치환     | 모든 소비처 수정   | 대기 |
-| R5    | 최적화/사이즈 | 코드젠/사이즈 가드 | 대기 |
-| R6    | 정리/문서화   | 완료 로그 갱신     | 대기 |
+| Phase  | 목적 | 주요 산출물 | 상태 |
+| ------ | ---- | ----------- | ---- |
+| (없음) | -    | -           | 완료 |
 
 ## 신규 Epic 제안: TBAR-O — 툴바 아이콘/인디케이터 최적화
 
@@ -136,13 +127,9 @@ Acceptance Criteria (AC)
 
 ### Phase 설계 (TDD RED → GREEN → REFACTOR)
 
-| Phase | 코드명       | 목표                       | RED (테스트)                                     | GREEN (구현)                                                 | REFACTOR                           |
-| ----- | ------------ | -------------------------- | ------------------------------------------------ | ------------------------------------------------------------ | ---------------------------------- |
-| P3    | tbar-counter | MediaCounter 컴포넌트 분리 | 기존 counter 구조 스냅샷/role 누락 테스트        | `<MediaCounter>` 도입, aria 속성 부여, layout prop           | Toolbar.tsx 간소화, dead 코드 제거 |
-| P4    | tbar-scope   | Toolbar CSS 변수 주입      | 버튼 높이/아이콘 사이즈 불일치 테스트            | `.galleryToolbar` 루트에 CSS 변수 설정 + size prop 의존 축소 | Button/Icon 문서화 갱신            |
-| P5    | tbar-legacy  | legacy 제거                | `.controls` 존재 RED                             | Gallery.module.css `.controls` 제거 or feature flag          | BACKLOG migration note             |
-| P6    | tbar-a11y    | a11y 강화                  | progressbar aria-role/valuenow/valuemax 누락 RED | role="progressbar" props + aria-valuetext                    | README a11y 섹션 갱신              |
-| P7    | tbar-clean   | 정리/회귀 가드             | 사이즈/토큰 스냅샷 회귀 RED                      | 잔여 주석/alias 정리                                         | PLAN 완료 로그 이관                |
+| Phase | 코드명 | 목표 | RED (테스트) | GREEN (구현) | REFACTOR |
+| ----- | ------ | ---- | ------------ | ------------ | -------- |
+| (빈)  | -      | -    | -            | -            | -        |
 
 ### 세부 구현 메모
 
@@ -205,7 +192,7 @@ Acceptance Criteria (AC)
 | Epic Code  | TBAR-O                         |
 | Start Date | 2025-09-18                     |
 | Owner      | Frontend/Infrastructure Hybrid |
-| Status     | P1–P2 완료 / P3 대기           |
+| Status     | P1–P6 완료 / P7 대기           |
 
 ---
 
