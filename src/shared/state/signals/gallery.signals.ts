@@ -11,6 +11,7 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
+import { registerGallerySignalAccess } from '../mediators/gallery-signal-mediator';
 
 // Signal type
 type Signal<T> = {
@@ -62,6 +63,20 @@ function getGalleryStateSignal(): Signal<GalleryState> {
   if (!galleryStateSignal) {
     const { signal } = getPreactSignals();
     galleryStateSignal = signal<GalleryState>(INITIAL_STATE);
+    // mediator accessor 등록 (idempotent)
+    const { signal: createSignal, effect } = getPreactSignals();
+    // 파생 신호 생성 (lightweight derived signals)
+    const isOpenSignal = createSignal(galleryState.value.isOpen);
+    const currentIndexSignal = createSignal(galleryState.value.currentIndex);
+    effect(() => {
+      const state = galleryState.value;
+      isOpenSignal.value = state.isOpen;
+      currentIndexSignal.value = state.currentIndex;
+    });
+    registerGallerySignalAccess(() => ({
+      isOpen: isOpenSignal,
+      currentIndex: currentIndexSignal,
+    }));
   }
   return galleryStateSignal;
 }

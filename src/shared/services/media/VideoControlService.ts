@@ -8,7 +8,7 @@
 
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/timer-management';
-import { getCurrentIndex } from '@shared/state/signals/gallery.signals';
+import { getGallerySignals } from '@shared/state/mediators/gallery-signal-mediator';
 
 /**
  * 비디오 상태 정보
@@ -106,7 +106,7 @@ export class VideoControlService {
       const items = container.querySelector('[data-xeg-role="items-container"]');
       if (!items) return null;
 
-      const index = getCurrentIndex();
+      const index = getGallerySignals().currentIndex.value;
       const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
       if (!target) return null;
 
