@@ -46,11 +46,9 @@
 
   /* Modal component 토큰은 semantic 파일에서만 정의 (회귀 방지 테스트: modal-token.hardening.test.ts) */
 
-  /* Icon 토큰 - 테스트 요구사항 */
-  --xeg-icon-stroke-width: 1.5px;
-  --xeg-icon-size: 16px;
-  --xeg-icon-line-height: 1;
-  --xeg-icon-color: currentColor;
+  /* Icon 토큰 - (TBAR-O P2) 단일 소스 이전 완료
+    NOTE: 중복 정의 제거. 모든 아이콘 사이즈/스트로크 토큰은 component layer (`design-tokens.component.css`)에서만 선언.
+    여기서는 추가 alias를 두지 않음 (회귀 테스트에서 중복 방지). */
 
   /* Transition 토큰 - 테스트 요구사항 */
   --xeg-transition-fast: 0.15s ease-out;

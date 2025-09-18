@@ -1,5 +1,13 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-18: TBAR-O P2 — 아이콘 사이즈 토큰 단일화 완료 design-tokens.css 에서
+`--xeg-icon-*` 사이즈/스트로크 토큰 직접 정의 제거 → component layer 단일 선언
+유지. 신규 RED 테스트(`duplicate-icon-token.test.ts`) GREEN 전환으로 중복 가드
+확립. 다음 단계: MediaCounter 추출(P3).
+
+2025-09-18: TBAR-O P1 — 중복 토큰/감시 RED 도입 아이콘 사이즈/스트로크 토큰 중복
+정의 탐지 RED 테스트 추가 후 실패 확인. 계획된 단일화 준비 완료.
+
 2025-09-18: ICN-R3 — Hybrid Preload 구현 `iconRegistry` 전역 동기
 캐시(`getLoadedIconSync`) 추가 및 `preloadCommonIcons`가 핵심
 아이콘(Download/Settings/X/ChevronLeft) 로드 후 즉시 동기 렌더 가능하도록 확장.
@@ -38,99 +46,142 @@ Prev/Next 샘플 치환 완료
 - 검증: npm run build → postbuild validator GREEN, gzip ~96.6 KB, prod/dev 모두
   소스맵 무결성 PASS.
 
-2025-09-13: R2 — Wheel 리스너 정책 하드닝 완료
+<!--
+  NOTE: 이 파일은 2025-09-18 기준 방대한 완료 로그(1091 lines)를
+  'docs/archive/TDD_REFACTORING_PLAN_COMPLETED.full.md' 로 보존한 뒤
+  핵심 지표 중심으로 축약된 버전입니다.
+  필요 시 전체 이력은 archive 파일을 참조하세요.
+-->
 
-- 목적: wheel 리스너의 passive: false 사용을 필요한 경로로만 제한, 스크롤 충돌
-  방지.
-- 구현: ensureWheelLock 유틸 도입/정비, 직접 addEventListener('wheel', …) 사용
-  금지 스캔 유지.
-- 검증: test/unit/events/wheel-listener.policy.red.test.ts,
-  ensureWheelLock.contract.test.ts GREEN.
+# ✅ TDD Refactoring / Modernization Completed (Condensed)
 
-2025-09-13: R1 — 전역 표면 정리(글로벌 누수 제거) 완료
+## 현재 핵심 메트릭 (2025-09-18)
 
-- 목적: 프로덕션 번들에서 디버그용 전역 노출 제거.
-- 구현: 서비스 접근을 배럴/헬퍼 경유로 일원화, 전역은 DEV 게이트만 허용.
-- 검증: 린트/테스트 스위트 및 번들 스캔으로 prod 전역 키 부재 확인, 전체 GREEN.
+- 총 테스트 파일: 594
+- RED 테스트: 92 (실패 또는 의도적 미충족 명세 / 가드 스캐폴드)
+- GREEN 테스트: 502
+- 최근 전체 스위트 상태: GREEN (구성/빌드/사이즈 가드 통과)
+- 번들(gzip prod userscript): ~96.6 KB (예산 내)
 
-> 완료된 작업만 간단히 기록합니다.
+## RED 테스트 분류(요약)
 
-2025-09-13: UI — 툴바 대비/Prev·Next 스크롤/아이콘 정비 완료
+| 카테고리        | 대표 패턴 / 예시                                                       | 대략 개수\* | 목적 요약                               |
+| --------------- | ---------------------------------------------------------------------- | ----------- | --------------------------------------- |
+| 스타일/토큰     | injected-css.token-policy.red, layout-stability.cls.red                | ~10         | 토큰/레이아웃/접근성 가드 강화          |
+| 접근성/UI       | a11y.announce-routing.red, toolbar.preload-icons.red                   | ~8          | 라이브 영역/아이콘 프리로드/키보드 흐름 |
+| 서비스 계약     | services.contract-interface.red, result-pattern.unification.red        | ~6          | Factory/Result/Error 통일 가드          |
+| Media 처리      | media-processor._.red, media-url._.red                                 | ~12         | 정규화/variants/보안/telemetry          |
+| 로더/부작용     | feature-side-effect.red, import-side-effect.scan.red                   | ~4          | import 시 부작용 차단                   |
+| 국제화          | i18n.missing-keys.red, i18n.message-keys.red                           | ~2          | 키/구조 무결성 가드                     |
+| 성능/프리로드   | gallery-prefetch.viewport-weight.red, progressive-loader.red           | ~5          | 스케줄/프리로드/벤치 하네스             |
+| 리팩토링 스캔   | only-barrel-imports.red, unused-exports.scan.red                       | ~6          | 표면 축소/배럴 일원화                   |
+| 다운로드/재시도 | bulk-download.error-codes.red, bulk-download.retry-action.sequence.red | ~5          | 오류 코드/재시도 순서/액션 UX           |
+| 기타 인프라     | wheel-listener.policy.red, styles.layer-architecture.alias-prune.red   | ~4          | 정책 하드닝/레이어 구조                 |
+| 합계            |                                                                        | 92          |                                         |
 
-- 내용:
-  - 툴바 미디어 카운터 구분자 '/'의 시인성 개선: 색상을 semantic 토큰으로
-    조정(`--xeg-color-text-secondary`), 고대비 모드에서는
-    `--xeg-color-text-primary`로 오버라이드.
-  - Prev/Next 버튼 클릭 시 선택 항목으로 스크롤 복구: `useGalleryItemScroll`의
-    컨테이너 선택자를 보강해
-    `[data-xeg-role="items-list"], [data-xeg-role="items-container"]` 모두
-    인식하도록 수정(레거시 호환).
-  - 아이콘: 내부 Icon/IconButton 시스템(라이선스 호환) 사용 확인 및 툴바 적용
-    상태 점검. 외부 아이콘 라이브러리 도입 불필요.
-- 테스트: `toolbar.separator-contrast.test.tsx`,
-  `prev-next-scroll.integration.test.ts` 추가/보강, 전체 테스트 스위트 GREEN.
-- 결과: 활성 계획서에는 해당 항목이 별도로 등재되어 있지 않아 제거 대상
-  없음(완료 로그로만 추적).
+\*대략 개수는 2025-09-18 검색 스냅샷 기준. 세부 경로/정확 목록은 RED → GREEN
+전환 시 커밋 메시지와 테스트 diff로 추적.
 
-2025-09-13: UI — 툴바 인디케이터('/') 대비 개선
+## RED → GREEN Graduation Workflow
 
-- 내용: Toolbar.module.css에서 카운터 구분자 .separator 색상을
-  `--xeg-color-text-secondary`로 기본 설정하고, `data-high-contrast=true` 및
-  시스템 고대비에서는 `--xeg-color-text-primary`로 승격하여 다양한 배경에서
-  충분한 대비를 보장.
-- 근거: PC 전용/토큰 규칙 준수, 스타일 중복 정의 제거로 일관성 향상.
-- 검증: 스타일 스모크 및 빌드/테스트 스위트 GREEN.
+1. Identification: _.red.test._ (스펙/가드가 의도적으로 FAIL 또는 TODO)
+2. Implement: 최소 구현으로 GREEN 전환 (불필요한 범위 확장 금지)
+3. Stabilize: 회귀/플레이크 점검 (watch 2회 이상, 비동기 타이밍 race 제거)
+4. Rename: 파일명에서 `.red.` 세그먼트 제거 (예:
+   icon-preload.contract.red.test.ts → icon-preload.contract.test.ts)
+5. Cleanup: 계획/백로그에서 해당 식별자 제거, 문서(이 파일)에는 집계만 갱신
+6. Harden (선택): 추가 가드(coverage / boundary / perf) 필요 시 별도 후속 테스트
+   추가 (red 아님)
 
-2025-09-13: UI — 인디케이터/설정 라벨 색상 정합 완료
+규칙
 
-- 내용: 툴바 미디어 카운터 구분자('/')와 설정 모달 라벨(“테마”, “언어”)의 텍스트
-  색상을 각각 인디케이터 숫자 및 “설정” 타이틀과 동일한 semantic primary 텍스트
-  토큰으로 통일. 배경/테마/고대비에서도 일관 유지.
-- 구현: Toolbar.module.css(.separator → var(--xeg-color-text-primary)) ·
-  SettingsModal.module.css(.label → var(--xeg-color-text-primary)).
-- 검증: 전체 테스트 GREEN, 스타일 정책 위반 없음.
+- 파일명 패턴만으로 RED 여부를 단일화 (주석/내부 플래그 사용 금지)
+- Rename 시 테스트 내부 snapshot / identifier 문자열도 `.red` 제거 반영
+- 연쇄 전환(여러 파일 동시 rename)은 지표 추적 혼선을 피하기 위해 카테고리 단위
+  ≤5개씩 배치
+- Flaky 발견 시 즉시 원인(비동기/타이머/DOM 정리) 회복 → 불가하면 TODO 주석 +
+  skip (skip 남긴 채 rename 금지)
 
-2025-09-13: ICN-EVAL-02 — 아이콘 라이브러리 평가/이행 계획 완료
+## 최근 완료된 주요 개선(하이라이트)
 
-- 결론: 내부 Tabler 스타일 아이콘 시스템(Icon/IconButton)은 MIT 라이선스,
-  트리셰이킹 우수, 기존 API/접근성 가드와 호환되어 유지가 최적임. 외부 교체는
-  번들/시각적 이득이 제한적이므로 보류.
-- 조치: 어댑터 패턴 유지(../Icon 경유), 직간접 외부 패키지 직접 import 금지 정책
-  지속. 후속 비교/이행 메모는 `docs/_fragments/ICN-EVAL-02-plan.md` 참고.
-- 가드: deps/iconlib.no-external-imports.red.test.ts 유지, Toast/Toolbar 접근성
-  레이블 테스트 유지.
+- requestAnimationFrame / document teardown 레이스 제거: 전역 microtask RAF
+  폴리필 + 명시적 unmount 패턴 도입 → 잔여 async 오류 0
+- Icon Hybrid Preload (ICN-R3): 프리로드된 아이콘 즉시 동기 렌더 → 초기 툴바
+  플래시 제거
+- Service Factory 경계 & Result/Error v2: status+code 통합, 재시도 액션 UX 토대
+  확보
+- Progressive Feature Loader: lazy registry + Promise 캐시/재시도 안전화
+- Prefetch Scheduling: idle/raf/microtask 옵션 및 벤치 하네스 도입 (향후 정책
+  튜닝 기반 마련)
+- CSS/Animation Token Hardening: transition preset, duration/easing 토큰화,
+  `transition: all` 제거, reduce-motion 대비
+- Accessibility Hardening: focus trap 표준화, live region routing 정책, keyboard
+  help overlay + focus 복원
+- Media Pipeline 강화: canonical dedupe, variants, URL sanitize, stage telemetry
+  & metrics
 
-2025-09-13: UI-ICN-01 — 툴바 아이콘 직관성/일관화 완료
+## Phase 종합 스냅샷
 
-- 내용: 내부 MIT 호환 아이콘 래퍼를 유지하고, 툴바 버튼에 일관된
-  aria-label/title/크기 정책을 적용. 배경 대비 감지(useEffect)에 테스트/JSDOM
-  안전 가드를 추가하여 접근성 테스트 안정화. 외부 아이콘 패키지 정적 import 금지
-  가드 테스트 추가.
-- 테스트: toolbar.icon-accessibility.test.tsx 및
-  deps/iconlib.no-external-imports.red.test.ts GREEN. 기존 Toolbar-Icons 특성화
-  테스트와 함께 회귀 없음.
-- 결과: 라이선스/번들 정책 유지, 접근성 레이블 일관화, 활성 계획서에서 UI-ICN-01
-  제거.
+| Phase 그룹                     | 상태           | 가치 요약                                                |
+| ------------------------------ | -------------- | -------------------------------------------------------- |
+| A (Bootstrap/PC 이벤트)        | 완료           | 아이드포턴트 start/cleanup + PC 전용 입력 정책 정착      |
+| B (Service 경계/Getter)        | 완료           | 외부 의존성 getter 일원화 + lint/정적 스캔 이중 가드     |
+| C (Media Extraction/정규화)    | 완료           | SelectorRegistry + URL/variant 정책 & 안정성             |
+| D (다운로드 UX)                | 완료           | 부분 실패/재시도/파일명 충돌 정책 + Result 통합 기반     |
+| E (Userscript Adapter)         | 완료           | GM\_\* 안전 래퍼 계약 및 폴백 가드                       |
+| F (Bundle Governance)          | 완료           | 사이즈 예산/빌드 메트릭/소스맵 무결성                    |
+| G (CSS Token Lint)             | 완료           | 인라인/주입 CSS 토큰 정책 & reduce-motion/contrast guard |
+| H (Prefetch/Performance)       | 완료           | computePreloadIndices + schedule modes + 벤치 준비       |
+| I (Accessibility/Live Region)  | 완료           | Focus/Live region 표준 & overlay/help 흐름               |
+| Icon Modernization (ICN-R1~R3) | 진행/부분 완료 | Hybrid preload / placeholder 표준 / inventory 확립       |
+| UI Alignment (UI-ALIGN)        | 진행           | Toolbar/Settings spacing/contrast 후속 미세 조정         |
 
-2025-09-13: ICN-H0(부분) — Heroicons 전면 이행 H1–H3, H6 완료
+## 다음 단계 (우선순위 제안)
 
-- H1: 벤더 getter 추가 — `getHeroiconsOutline()` 제공, 외부 패키지 직접 import
-  금지 가드 통과
-- H2: 어댑터 계층 — HeroChevronLeft/Right, HeroDownload/Settings/X
-  구현(토큰/aria 준수)
-- H3: iconRegistry 스위치 — 기존 이름('Download','Settings','X','Chevron\*')을
-  Heroicons 어댑터로 매핑
-- H6: 빌드/라이선스 — dev/prod 빌드 및 postbuild validator PASS,
-  `LICENSES/heroicons-MIT.txt` 추가
-- 후속(H4–H5): 사용처 잔여 이행 및 레거시(Tabler) 아이콘 자산 정리 진행 예정
-  <<<<<<< HEAD
-  - 후속(H4–H5): 2025-09-13 완료 — 소비처 전면 전환 및 레거시 아이콘 자산 제거
+1. RED 카테고리 축소 목표 설정: 92 → 60 (1차), 60 → 30 (2차), 30 → <10 (안정화)
+   — 각 단계는 2주 사이클 기준
+2. 아이콘 마이그레이션 잔여(H4–H5 후속 정리) 및 Heroicons 소비 경로 residual
+   확인
+3. Prefetch 튜닝: 벤치 하네스 기반 idle/raf/microtask 모드 dynamic 선택 정책
+   (hitRate/elapsedMs 임계 정의)
+4. Result/Error v2 확장: MediaService code 매핑 & SettingsService status 정식
+   타입화
+5. BulkDownload 재시도 고도화(Backoff 조정 + ZIP 재생성 옵션) 및 correlationId
+   기반 telemetry 로그 샘플링
+6. RED 플래그 정리: 플래키/시나리오 중복 RED → 통합 혹은 제거 (특히
+   media-processor.\* 중 겹치는 coverage)
+7. 문서화 개선: CODING_GUIDELINES에 Graduation Workflow 정식 챕터 추가 + 예제
+   rename diff
 
-2025-09-13: ICN-H0 — H4(소비처 전환)·H5(제거/정리) 완료
+## 진행 규율(Operating Principles)
 
-- H4: 툴바/설정 등 대표 UI의 아이콘 소비 경로를 Heroicons 어댑터로 일원화.
-- H5: 레거시 Tabler 스타일 아이콘
-  디렉터리(`src/shared/components/ui/Icon/icons/`) 및 배럴 제거.
+- TDD 순서: (1) Failing RED 추가 → (2) 최소 구현 GREEN → (3) 안정화/리팩터 → (4)
+  rename
+- Vendor 접근: 반드시 getter (preact/signals/fflate/GM\_\*) — 직접 import 발견
+  시 즉시 RED 테스트 추가
+- PC 전용 입력: touch/pointer 이벤트 추가 금지 — 위반 시 스캔 RED 테스트에
+  케이스 추가
+- 스타일/토큰: 하드코딩 색상/치수/transition 금지, design token 변수만 — 위반은
+  스타일 스캐너 RED 집계
+
+## 확인/재현 스니펫 (참고)
+
+- RED 테스트 찾기: `git ls-files "test/**/*\.red.test.*" | wc -l`
+- Graduation 예시:
+  `mv icon-preload.contract.red.test.ts icon-preload.contract.test.ts`
+- 사이즈 가드 실행: `npm run build:prod && node scripts/validate-build.js`
+
+## 변경 이력 (이 축약판 자체)
+
+- 2025-09-18: 최초 축약판 도입 (전체 1091 lines → 요약 ~140 lines). 원문은
+  archive/full 참조.
+
+---
+
+필요 시 아래 섹션에 추가 요약을 append 하되, 전체 서술식 장문의 도배는 지양.
+
+<!-- END OF CONDENSED LOG -->
+
 - 테스트/빌드: 전체 스위트 GREEN, dev/prod 빌드 및 산출물 검증 PASS.
 
 2025-09-13: UI-ALIGN — 툴바/설정 정렬·배치 하드닝 완료
