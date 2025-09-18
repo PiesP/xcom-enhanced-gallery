@@ -7,7 +7,8 @@ import { globalTimerManager } from '@shared/utils/timer-management';
 import { isGalleryInternalElement } from '@shared/utils/utils';
 import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
-import { galleryState } from '@shared/state/signals/gallery.signals';
+// gallery.signals 직접 import 금지 (순환 단축) → mediator 경유
+import { tryGetGallerySignals } from '@shared/state/mediators/gallery-signal-mediator';
 import { CoreService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from '@/constants';
 import type { MediaService } from '@shared/services/MediaService';
@@ -220,7 +221,8 @@ export function cleanupEventDispatcher(): void {
 // Helper 함수들
 function checkGalleryOpen(): boolean {
   try {
-    return galleryState.value.isOpen;
+    const signals = tryGetGallerySignals();
+    return !!signals?.isOpen.value;
   } catch {
     return false;
   }
@@ -619,7 +621,8 @@ function handleKeyboardEvent(
             const root = doc.querySelector('#xeg-gallery-root');
             const items = root?.querySelector('[data-xeg-role="items-container"]');
             if (!items) return null;
-            const index = galleryState.value.currentIndex;
+            const signals = tryGetGallerySignals();
+            const index = signals?.currentIndex.value ?? 0;
             const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
             if (!target) return null;
             const v = target.querySelector('video');

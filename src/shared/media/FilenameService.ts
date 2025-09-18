@@ -6,7 +6,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { safeParseInt, undefinedToNull } from '@shared/utils';
+// barrel(@shared/utils) 경유는 events → MediaService 경로를 통해 순환을 유도하므로 직접 모듈 import
+import { safeParseInt, undefinedToNull } from '@shared/utils/type-safety-helpers';
 import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
 
 /**

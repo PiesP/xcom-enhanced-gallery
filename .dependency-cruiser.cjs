@@ -68,7 +68,8 @@ module.exports = {
       // NOTE: TS alias 해석 활성화(tsConfig) 후 기존에 숨겨져 있던 순환이 다수 드러남.
       // 현재 Epic(DEPS-GOV)의 1차 목표는 orphan 노이즈 감소 및 실행 효율 개선이므로
       // 순환 제거는 후속 Epic에서 다루기 위해 임시로 warn 강등. (Completed 로그에 기록 예정)
-      severity: 'warn',
+      // P6: 순환 0 달성 → 경고에서 에러로 승격하여 회귀 즉시 차단
+      severity: 'error',
       from: {},
       to: { circular: true },
     },

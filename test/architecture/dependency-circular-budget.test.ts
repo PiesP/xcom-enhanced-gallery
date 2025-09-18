@@ -7,10 +7,12 @@ import { execSync } from 'node:child_process';
  */
 
 describe('architecture: dependency circular budget', () => {
-  test('circular warnings within P4 budget (<=5)', () => {
+  test('circular dependencies eliminated (P6 target == 0)', () => {
     const stdout = execSync('npm run deps:check', { encoding: 'utf-8' });
-    const circularLines = stdout.split(/\r?\n/).filter(l => l.includes('warn no-circular-deps:'));
-    // 예산 상한 (P4)
-    expect(circularLines.length).toBeLessThanOrEqual(5);
+    const circularLines = stdout
+      .split(/\r?\n/)
+      .filter(l => /(?:warn|error) no-circular-deps:/.test(l));
+    // 최종 목표: 순환 0
+    expect(circularLines.length).toBe(0);
   });
 });
