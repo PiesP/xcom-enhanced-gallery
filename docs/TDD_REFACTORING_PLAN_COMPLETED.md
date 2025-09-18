@@ -1,5 +1,26 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-18: TBAR-R P1–P4 패키지 이관 — Primitive/토큰/그룹화 완료 ToolbarButton
+Primitive, 토큰 기반 2.5em 치수 치환, MediaCounter forward 스타일 제거, toolbar
+grouping + data-group-first 규약 및 구조 가드 테스트 정착. (P5 이후 항목만 활성
+계획에 잔존)
+
+2025-09-18: TBAR-R P4 — Toolbar grouping & focus marker 구조 확립 툴바 3개 논리
+그룹(navigation | counter | actions)을 data-toolbar-group 속성으로 명시하고 각
+그룹 첫 포커스 가능 요소에 대응하는 data-group-first 단일 마커 규약 도입. 구조
+가드 테스트(toolbar-groups.a11y.test.tsx) 및 포커스 선행성 테스트
+스캐폴드(behavioral focus-order test) 준비. 기존 MediaCounter/버튼 DOM 순서 회귀
+방지 강화.
+
+2025-09-18: TBAR-R P1~P3 — ToolbarButton Primitive 도입 및 중복 제거
+ToolbarButton 단일 Primitive 추가(P2)로 IconButton 의존 제거, Toolbar 내 100%
+교체. Button/Toolbar CSS의 2.5em 하드코딩 치수 전부 토큰
+`--xeg-size-toolbar-button` 참조로 치환(P3 1단계). Toolbar.module.css 내
+MediaCounter forward 스타일(.mediaCounter / .mediaCounterWrapper) 삭제로 단일
+책임 회복. 기존 RED 가드(toolbar-refine.red) → GREEN(toolbar-refine.test) 전환:
+하드코딩 0건, forward 스타일 0건, DOM 순서 가드 확립, data-toolbar-button 속성
+기반 버튼 식별 표준화.
+
 2025-09-18: TBAR-O — 툴바 아이콘 & 인디케이터 최적화 전체 완료 Toolbar
 아이콘/버튼 사이즈 단일 토큰(`--xeg-size-toolbar-button`) 도입, 중복 아이콘
 사이즈/스트로크 토큰 제거(P1~P2), MediaCounter 컴포넌트 추출 및 ARIA(progressbar
