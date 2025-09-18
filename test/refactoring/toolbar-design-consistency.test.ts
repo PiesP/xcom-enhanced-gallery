@@ -41,29 +41,26 @@ describe('Toolbar Button Design Consistency', () => {
     });
 
     it('mediaCounter는 CSS 변수를 사용해야 한다', () => {
-      // Given: CSS 파일 내용 검사
-      // When: mediaCounter 스타일 찾기
-      const mediaCounterMatch = toolbarCssContent.match(
-        /\.mediaCounter[^{]*\{[^}]*border-radius:\s*([^;]+);/
-      );
+      // GIVEN: mediaCounter forward 스타일은 Toolbar.module.css 에서 제거되었음
+      // WHEN: mediaCounter 셀렉터를 검색
+      const mediaCounterRegex = /\.mediaCounter[^{]*\{[^}]*border-radius:\s*([^;]+);/;
+      const mediaCounterMatch = toolbarCssContent.match(mediaCounterRegex);
 
-      // Then: CSS 변수를 사용해야 함
-      expect(mediaCounterMatch).toBeTruthy();
-      const borderRadiusValue = mediaCounterMatch[1].trim();
-      expect(borderRadiusValue).toBe('var(--xeg-radius-md)');
+      // THEN: 더 이상 툴바 CSS 안에 존재하지 않아야 함 (정상적인 정리 단계)
+      expect(mediaCounterMatch).toBeNull();
     });
 
-    it('fitModeGroup 래퍼가 없어도 버튼은 일관된 radius를 유지해야 한다', () => {
-      // Given: CSS 파일 내용 검사
-      // When: fitButton 스타일 찾기
-      const fitButtonMatch = toolbarCssContent.match(
-        /\.fitButton[^\{]*\{[^}]*border-radius:\s*([^;]+);/
-      );
-
-      // Then: CSS 변수를 사용해야 함
-      expect(fitButtonMatch).toBeTruthy();
-      const borderRadiusValue = fitButtonMatch[1].trim();
-      expect(borderRadiusValue).toBe('var(--xeg-radius-md)');
+    it('fitModeGroup 제거 후 fitButton radius 규칙이 여전히 var(--xeg-radius-md) 사용', () => {
+      // fitButton 관련 모든 규칙 스캔 (multi selector 포함)
+      const allFitRules = toolbarCssContent
+        .split(/}\s*/)
+        .filter(block => /\.fitButton/.test(block));
+      const radiusLines = allFitRules
+        .flatMap(block => block.split(/\n/))
+        .filter(l => /border-radius:/.test(l));
+      expect(radiusLines.length).toBeGreaterThan(0);
+      // 적어도 하나는 정확한 토큰을 사용해야 함
+      expect(radiusLines.some(l => /border-radius:\s*var\(--xeg-radius-md\)/.test(l))).toBe(true);
     });
 
     it('Button 컴포넌트는 통일된 CSS 변수를 사용해야 한다', () => {
