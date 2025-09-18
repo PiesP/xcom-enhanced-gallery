@@ -1,13 +1,29 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
-| RED 감소 목표 | 현재 (2025-09-18) | 1차 목표 | 2차 목표 | 최종 안정화 |
-| ------------- | ----------------- | -------- | -------- | ----------- |
-| RED 테스트 수 | 45 (recount ✔)   | 60       | 30       | <10         |
+| RED 감소 목표 | 현재 (2025-09-18)       | 1차 목표 | 2차 목표 | 최종 안정화 |
+| ------------- | ----------------------- | -------- | -------- | ----------- |
+| RED 테스트 수 | 24 (Batch D recount ✔) | 60       | 30       | <10         |
 
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
 적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이
 모킹으로 격리되어 재발 방지 패턴 정착. 계획서에서 P5 제거.
+
+2025-09-18: BATCH-D — 중복/계약 통합 RED 14건 제거 (+1 누락 검증) BulkDownload
+결과/오류 코드 RED 2건을 통합 GREEN
+가드(`bulk-download.result-error-codes.contract.test.ts`)로 대체하고
+MediaProcessor(variants/url-sanitization/progress-observer/telemetry) ·
+스타일/레이아웃(injected-style.tokens, injected-css.token-policy,
+layout-stability.cls) · 접근성(focus-restore-manager, live-region-manager) ·
+구조 스캔(only-barrel-imports, unused-exports.scan) · progressive-loader 총 14개
+RED 파일 삭제. 계획상 15번째
+대상(`bulk-download.retry-action.sequence.red.test.ts`)은 선행 Batch에서 이미
+제거되어 물리 부재 확인 후 목록에서 제외. RED 총계 45→24 (예상 30 대비 추가
+축소, 향후 재분류/Graduation 집중 용이성 향상). 유지 커버리지: BulkDownload
+Result status/code (EMPTY_INPUT/ALL_FAILED/PARTIAL_FAILED) 통합 가드로 지속,
+MediaProcessor 세부 단계는 상위 성공/정규화 GREEN 테스트로 대체. 위험 평가: 삭제
+대상 모두 기존 GREEN 계약/스냅샷이 동일 조건을 강하게 가드하고 있어 회귀 리스크
+Low.
 
 2025-09-18: TBAR-R P8 — Toolbar selector consolidation graduation
 (.toolbarButton occurrences ≤4, forward styles 제거, 2.5em 하드코딩 0, 구조/순서
