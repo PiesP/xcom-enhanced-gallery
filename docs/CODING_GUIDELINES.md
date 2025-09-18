@@ -410,6 +410,37 @@ animateCustom(el, keyframes, {
 
 참고 테스트: `test/toolbar/toolbar-keyboard.navigation.test.tsx`
 
+### Graduation Workflow (RED → GREEN) (DW-GRAD)
+
+단계 요약:
+1. RED: 실패하는 `.red.test.` 파일 추가 (최소 명세, 과도한 시나리오 묶지 않기)
+2. GREEN: 가장 작은 구현으로 통과 (불필요한 최적화/확장 지연)
+3. Stabilize/Refactor: 중복 제거, flaky 원인(race/timer) 제거, 구조 개선 (테스트 유지)
+4. Rename: 파일명에서 `.red.` 세그먼트 제거 (`foo.feature.red.test.ts` → `foo.feature.test.ts`)
+5. Migrate Docs: Plan에서 제거, Completed 로그에 1줄 요약 추가 (날짜/식별자/핵심 결과)
+
+체크리스트 (P1→P5 실행용):
+- [ ] 파일명에 `.red.test.` 포함되어 있는가?
+- [ ] RED→GREEN 커밋이 단일 목적(기능 구현/회귀 가드)인가?
+- [ ] Rename 직후 테스트 내부 문자열/스냅샷에 `.red` 잔존 제거했는가?
+- [ ] Plan → Completed 로그 이동 시 날짜/식별자 포함 1줄 요약 추가했는가?
+- [ ] Completed 축약판에는 3~4줄 이내로 요약했는가 (장문은 archive)?
+
+RED 감소 목표 (점진): 92 → 60 → 30 → <10 (각 구간 1~2주 사이클 권장)
+
+예시 Rename Diff:
+```
+git mv test/unit/accessibility/live-region-manager.red.test.ts \
+  test/unit/accessibility/live-region-manager.test.ts
+```
+
+CI/자동화 제안:
+- grep "\.red\.test\." 카운트로 RED 수 변동 추적
+- Completed 로그에 "RED 감소 목표" 표 존재 여부 (DW-GRAD P2)
+
+단일 소스 정책:
+- 본 챕터가 Graduation 절차의 단일 소스. Plan/Backlog/Completed 는 이 챕터 링크만 유지(중복 서술 금지).
+
 
 ### Component vs Semantic 토큰
 

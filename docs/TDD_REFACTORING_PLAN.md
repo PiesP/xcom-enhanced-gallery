@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-18 — 활성 Epic: (없음 — TBAR-R 종결, 다음 Epic 대기)
+업데이트: 2025-09-18 — 활성 Epic: (없음 — DW-GRAD 종결)
 
 ---
 
@@ -24,33 +24,12 @@
 
 ## 2. 활성 Epic 현황
 
-### TBAR-R — Toolbar Button/Indicator Refinement & Consolidation (종결)
+### (비어 있음) — 새 Epic 제안 필요
 
-상태: 모든 Phase(P1–P7) Completed — 세부 이력 및 메트릭은
-`TDD_REFACTORING_PLAN_COMPLETED.md` 참조. 결과 요약: ToolbarButton Primitive
-단일화, 2.5em 하드코딩 제거 100%, MediaCounter 스타일 포워딩 제거,
-그룹/포커스/키보드(a11y) 가드 확립, legacy `.toolbarButton` 변형 및 중복 CSS
-제거 완료. 다음 단계: 새 Epic 제안 필요 시 백로그 초안 후 승격.
+현재 활성 Epic 없음. 새 Epic 필요 시 백로그에 Problem/Outcome/Metrics 초안 작성
+후 본 섹션으로 승격.
 
-위험 & 완화:
-
-- 위험: 테스트 스냅샷 대량 변경 → 완화: 구조적 테스트(쿼리/role 기반)로 전환,
-  snapshot 최소화
-- 위험: 다국어/문자열 회귀 (aria-label) → 완화: role/label 정규화 테스트 추가
-- 위험: 외부 의존 배포 중 스타일 누락 → 완화: build 산출물 validate-build.js
-  확장 (선택자 존재 검증 추가 가능)
-
-Roll-back 전략:
-
-- 새 Primitive 도입 커밋 revert 시 기존 IconButton 기반 구조로 즉시 복구 가능
-  (CSS 중복 복원)
-- 테스트는 revert 후에도 GREEN (단, RED 가드는 제거 필요하므로 revert 시 RED
-  테스트 동반 삭제)
-
-Notes:
-
-- Epic 코드: TBAR-R (Toolbar Refinement) — TBAR-O 후속 유지보수
-- Feature flag 불필요 (구조/스타일 단순화로 기능 토글 가치 낮음)
+---
 
 ---
 

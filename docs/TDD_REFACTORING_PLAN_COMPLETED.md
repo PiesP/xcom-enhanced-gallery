@@ -1,5 +1,9 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+| RED 감소 목표 | 현재 (2025-09-18) | 1차 목표 | 2차 목표 | 최종 안정화 |
+| ------------- | ----------------- | -------- | -------- | ----------- |
+| RED 테스트 수 | 92                | 60       | 30       | <10         |
+
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
 적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이
@@ -9,6 +13,10 @@ focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabInde
 제거, Primitive 단일화 및 문서/메트릭 정리. Userscript gzip ~99.3 KB (baseline
 ~96.6 KB, 증가분은 테스트/문서 동반 변경 영향) — 선택자 중복 제거로 유지보수성
 향상.
+
+2025-09-18: DW-GRAD P1–P4 — Graduation Workflow 공식
+문서화(가이드/체크리스트/예시 diff) 및 RED 감소 목표 표 도입. 문서 간 중복 제거,
+단일 소스 정책 확립.
 
 2025-09-18: TBAR-R P1–P4 패키지 이관 — Primitive/토큰/그룹화 완료 ToolbarButton
 Primitive, 토큰 기반 2.5em 치수 치환, MediaCounter forward 스타일 제거, toolbar
