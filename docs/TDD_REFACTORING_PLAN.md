@@ -28,48 +28,35 @@
 현재 활성 Epic 없음. 새 Epic 필요 시 백로그 초안(Problem / Outcomes / Metrics)
 작성 후 본 문서로 승격.
 
-### SCROLL-ISOLATION — Phase 2 이후 잔여 (keyboard & cleanup)
+### SCROLL-ISOLATION — 후속 (cleanup & optional focus)
 
-Baseline(갱신): feat/scroll-isolation @ boundary guard + flag merged
+Baseline(갱신): feat/scroll-isolation @ keyboard boundary guard merged
 (2025-09-18)
 
-현재 상태 요약: 경계 기반 wheel 소비 로직(P1–P3) 및 feature flag 통합 완료. 남은
-범위는 키보드 네비게이션 차단을 boundary 정책과 정렬하고, dead code
-(`disableBodyScroll`) 제거 및 rollout 측정(옵션) 수행.
+현재 상태 요약: Wheel(P1–P3) + Keyboard(K1–K2) 경계 가드 및 feature flag
+`xeg_scrollIsolationV1` 통합 완료. Keyboard는 DOM 이벤트 통합 테스트의 JSDOM
+false positive(중간 스크롤 위치 PageDown prevent) 문제를 피하기 위해 wheel과
+동일한 순수 함수 계약 테스트(shouldConsumeKeyboardAtBoundary) 접근으로 전환.
+핸들러는 scroll 컨테이너 탐색 실패 시 fail-open(pass-through) 전략 적용하여 과도
+차단 방지. Vendors mock 불완전 환경을 위한 feature flag signal 안전 셈(fallback
+signals) 추가.
 
 Remaining Outcomes:
 
-- Keyboard: Space/PageDown/PageUp/Home/End - boundary 상황에서만 body scroll
-  차단 & 내부 이동 (상/하/처음/끝)
-- Focus Trap (선택): ESC 동작 유지 + Tab 순환 회귀 여부 결정 (도입 시 a11y
-  테스트 추가)
-- Cleanup: disableBodyScroll / 미사용 분기 제거 (기존 전역 차단 경로 완전 정리는
-  FLAG ON 기본화 이후)
-- Metrics: 번들 사이즈/핸들러 등록 수 변화 0 또는 감소
-
-| Updated Phases:                                | Phase                                          | 코드/작업 | 목적 | 상태           |                        | ----- |
-| ---------------------------------------------- | ---------------------------------------------- | --------- | ---- | -------------- | ---------------------- | ----- |
-| ---------------------------------------------- | ----                                           |           | K1   | keyboard guard |
-| RED                                            | boundary 동일 조건의 keydown prevent 스펙 도출 | 예정      |      | K2             | keyboard               |
-| guard 구현 (GREEN)                             | 방향/페이지 키 내부 이동 & body 차단           | 예정      |      | F1             | (옵션)                 |
-| focus trap RED                                 | Tab 순환/ESC 유지 명세                         | 보류      |      | F2             | (옵션) focus trap 구현 |
-| (GREEN)                                        | tabbable 순환/escape 안정화                    | 보류      |      | C1             | disableBodyScroll dead |
-| code 식별 RED                                  | 존재/경로 가드 (삭제 전)                       | 예정      |      | C2             | dead code 제거 + 회귀  |
-| 테스트 업데이트                                | wheel 경로 단순화                              | 예정      |      | M1             | rollout metrics        |
-| (bundle/handler count)                         | 전환 영향 수치화                               | 보류      |
+- Cleanup: disableBodyScroll / 미사용 전역 차단 분기 제거 (FLAG 기본화 이후)
+- (선택) Focus Trap: ESC 유지 + Tab 순환 여부 결정 (도입 시 a11y 테스트 필요)
+- Metrics: 번들 사이즈/핸들러 등록 수 변화 ≤ 0 또는 감소 유지
 
 Revised Acceptance (남은 부분):
 
-- [AC-K] 경계 외 keyboard 입력 시 문서 스크롤 허용 & 내부 상태 정상
 - [AC-F] (선택) focus trap 도입 시 Tab 순환 & ESC close 유지
 - [AC-C] dead code 제거 후 전체 테스트 GREEN & bundle size Δ ≤ +0.5%
 
 Risk (잔여):
 
-- Keyboard guard로 단축키 충돌 → modifier(key.alt||key.meta) 무시 조건 적용
-- Focus trap 도입 시 다른 모달과 충돌 → 단일 갤러리 활성 조건 + attribute opt-in
+- Focus trap 도입 시 다른 모달과 충돌 → 단일 갤러리 활성 조건 + opt-in 속성
 
-Next Action 후보: K1 RED 설계 (우선순위), 이후 K2 GREEN.
+Next Action 후보: C1 dead code 식별 RED → C2 제거 GREEN.
 
 ## 3. 제안 / 대기 Epic
 

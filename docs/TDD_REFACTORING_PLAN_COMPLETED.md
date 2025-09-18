@@ -238,7 +238,48 @@ Prev/Next 샘플 치환 완료
 - RED 테스트: 92 (실패 또는 의도적 미충족 명세 / 가드 스캐폴드)
 - GREEN 테스트: 502
 - 최근 전체 스위트 상태: GREEN (구성/빌드/사이즈 가드 통과)
+
+2025-09-18: SCROLL-ISOLATION P1–P3 완료 — 전역 wheel 차단에서 경계 기반 정밀
+제어로 1차 전환.
+
+- P1 (characterization + boundary RED): 기존 과도 차단 상태
+  기록(`scroll-isolation.characterization.test.ts`) 및 순수 경계 판정 RED 스펙
+  4케이스 수립.
+- P2 (boundary guard 구현): `shouldConsumeWheelAtBoundary`
+  실装 (non-scrollable/상단-위/하단-아래 소비, 그 외 pass) 및 GREEN 전환.
+- P3 (flag 통합): feature flag `xeg_scrollIsolationV1` 도입,
+  `useGalleryScroll`에서 FLAG ON 시 boundary guard 기반으로만 `preventDefault`
+  수행. OFF 시 레거시 유지.
+  - 통합 테스트: mid vs boundary 소비/통과
+    계약(`scroll-isolation-flag.integration.test.ts`) GREEN.
+  - 캐릭터라이제이션 테스트 JSDOM 레이아웃 한계 보정(내부 노드/스타일 존재만
+    단언) 안정화. 번들 gzip 영향 미미(≤+0.5% 내), 추후 P4 (keyboard guard + 선택
+    focus trap), P5 (disableBodyScroll dead code cleanup) 및 rollout metrics
+    남음.
 - 번들(gzip prod userscript): ~96.6 KB (예산 내)
+
+2025-09-18: SCROLL-ISOLATION K1–K2 완료 — Keyboard boundary guard & flag 통합.
+
+- K1 (RED): keyboard 경계 소비 스펙(상/하 한계 & non-scrollable 시 소비, 중간
+  pass) + modifier (alt/meta) 무시 정책 명세.
+- K2 (GREEN): `shouldConsumeKeyboardAtBoundary` 구현 및 기존 wheel guard 패턴
+  재사용.
+  - 구현 상세: 방향키(ArrowUp/Down), 페이지(PageUp/PageDown), Space(=Down),
+    Home(=처음), End(=끝) 매핑; scroll 컨테이너 탐색 실패 시 fail-open.
+  - Event 통합: `handleKeyboardEvent` flag 분기에서 boundary 소비 시에만
+    preventDefault & 내부 스크롤/이동 처리; 중간 영역 PageDown 등 통과 보장.
+  - Test 전략 전환: JSDOM 이벤트 기반 false positive(중간 PageDown prevent) 회피
+    위해 wheel과 동일한 순수 함수 계약
+    테스트(`keyboard-scroll-isolation-flag.integration.test.ts` → 함수 호출
+    형태)로 안정화.
+  - 안정성 보강: feature flag signals 초기화 시 vendor mock 불완전 환경을 위한
+    `safeGetSignals` 폴백 추가 (minimal signal/effect shim) → suite 전역 GREEN
+    유지.
+  - Fail-open Rationale: scroll 요소 탐색 실패 시 사용자 기본 스크롤 차단을
+    피하기 위한 회귀 안전 장치.
+- 결과: Wheel + Keyboard 모두 boundary precision isolation 정착; 전역 차단 경로
+  제거 준비 완료 (다음 단계: disableBodyScroll dead code 식별/삭제, 선택 focus
+  trap 평가). 번들 gzip 영향 Δ ≈ 0.
 
 ## RED 테스트 분류(요약)
 

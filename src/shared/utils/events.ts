@@ -6,6 +6,8 @@ import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { isGalleryInternalElement } from '@shared/utils/utils';
 import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
+import { xeg_scrollIsolationV1 } from '@shared/state/signals/feature-flags.signals';
+import { shouldConsumeKeyboardAtBoundary } from '@shared/utils/scroll/boundary-keyboard-guard';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '@/constants';
 // gallery.signals 직접 import 금지 (순환 단축) → mediator 경유
 import { tryGetGallerySignals } from '@shared/state/mediators/gallery-signal-mediator';
@@ -609,9 +611,40 @@ function handleKeyboardEvent(
         key === 'M';
 
       if (isNavKey || isVideoKey) {
-        // 기본 스크롤/페이지 전환을 차단
-        event.preventDefault();
-        event.stopPropagation();
+        // scroll isolation flag가 켜져있다면 boundary 기반으로 prevent 결정
+        if (xeg_scrollIsolationV1.value) {
+          try {
+            const doc = (typeof document !== 'undefined' ? document : undefined) as
+              | Document
+              | undefined;
+            const root = doc?.querySelector('#xeg-gallery-root');
+            const scrollEl = (root?.querySelector('[data-xeg-role="items-container"]') ||
+              doc?.querySelector('[data-xeg-role="items-container"]')) as HTMLElement | null;
+            if (!scrollEl) {
+              // 요소를 찾지 못하면 과도 차단 위험을 피하기 위해 pass-through (FAIL-OPEN)
+              // Flag 실험 단계에서 보수적 prevent 대신 누수 관찰 허용 → 회귀 시 추후 조정
+              return;
+            }
+            const ctx = {
+              scrollTop: scrollEl.scrollTop,
+              scrollHeight: scrollEl.scrollHeight,
+              clientHeight: scrollEl.clientHeight,
+              key,
+            };
+            const consume = shouldConsumeKeyboardAtBoundary(ctx);
+            if (consume) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          } catch {
+            // 예외 시에도 과도 차단 피하기 위해 pass-through
+            return;
+          }
+        } else {
+          // 기존 정책: 갤러리 열려있으면 항상 차단
+          event.preventDefault();
+          event.stopPropagation();
+        }
 
         // 비디오 키 처리
         // 내부 헬퍼: 현재 갤러리 비디오 검색 (Service 미사용 폴백)
