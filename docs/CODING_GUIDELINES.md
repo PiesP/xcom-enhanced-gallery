@@ -1034,3 +1034,25 @@ npm run build:prod && node scripts/validate-build.js
 5. Completed 로그에 `ICN-R3 — Hybrid Preload GREEN` 1줄 요약 기록
 
 이 워크플로는 새 Epic / 백로그 항목 설계 리뷰 시 품질 기준으로 활용된다.
+
+### 추가 정책: Graduation 후 원본 RED 파일 보존 금지 (2025-09-18 확정)
+
+중복/혼동/메트릭 왜곡을 방지하기 위해 `.red.test.` → `.test.` rename(Graduation)
+완료 후 기존 RED 파일 사본/placeholder(빈 export, describe.skip 등)를 저장소에
+남기지 않는다.
+
+규칙 요약:
+
+- Rename 는 git mv (동일 경로)로 수행 (복사 후 잔존 금지)
+- GREEN 전환 시 테스트 내부의 `(RED)` 라벨/주석도 제거
+- Vitest 가 "No test suite found"를 피하기 위한 임시 placeholder 는 사용하지
+  않고, 즉시 최소 구현 또는 최소 expect 로 GREEN 상태를 만든다
+- Batch Graduation 중 하나라도 구현 미완/실패 상태라면 해당 파일은 배치에서
+  제외하여 독립 처리
+
+근거: Batch F 후속 정리에서 placeholder 9건(이미 GREEN 동등 가드 존재)의 물리
+삭제로 테스트 시간/검색 노이즈가 감소하고 RED 카운트 지표 신뢰도가 향상됨을
+검증.
+
+위반 발견 시: 즉시 불필요한 잔존 RED 사본 삭제 + Completed 로그에 정정 주석
+추가.

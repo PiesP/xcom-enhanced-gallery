@@ -33,6 +33,26 @@ gallery-prefetch.viewport-weight / skeleton.tokens) rename 처리 및 내부 '(R
 가드가 안정화되었으므로 보존 가치 낮다고 판단해 완전 제거.) 향후 동일 패턴 발생
 시: 즉시 rename (Graduation) 후 원본 RED 사본을 남기지 않는 정책 확정.
 
+### 정책 확정: RED Graduation 후 원본 파일 보존 금지 (2025-09-18)
+
+- 목적: 이중(duplicate) 테스트 표면으로 인한 유지비/혼동 방지 및 메트릭 왜곡
+  제거
+- 규칙:
+  1. RED → GREEN 전환 시 반드시 `.red.` 세그먼트를 제거하여 동일 위치에 rename
+     수행
+  2. rename 직후 기존 RED 파일(원본 경로)은 절대 별도 사본
+     형태(placeholder/export {}/describe.skip)로 남기지 않는다
+  3. 만약 Vitest가 빈 파일 문제로 실패하는 경우라도 임시 placeholder 사용 대신
+     즉시 최소 GREEN 구현을 적용한다
+  4. Graduation 커밋에는 (a) rename diff, (b) 내부 `(RED)` 주석/라벨 제거가
+     포함되어야 한다
+  5. 완료 후 활성 계획 문서에서 해당 식별자를 제거하고 본 완료 로그에는 1줄
+     요약만 추가한다
+- 근거: Batch F 후속 정리에서 placeholder 9건을 물리 삭제하면서 GREEN 가드
+  중복으로 인해 사본 유지 가치가 0임을 재확인
+- 기대 효과: 테스트 실행 시간 단축(중복 skip 제거), RED 메트릭 신뢰도 제고,
+  검색/grep 시 단일 소스 보장
+
 결과/오류 코드 RED 2건을 통합 GREEN
 가드(`bulk-download.result-error-codes.contract.test.ts`)로 대체하고
 MediaProcessor(variants/url-sanitization/progress-observer/telemetry) ·
