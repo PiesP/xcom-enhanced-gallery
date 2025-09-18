@@ -12,7 +12,8 @@ import { useFocusTrap } from '@shared/hooks/useFocusTrap';
 import { useScrollLock } from '@shared/hooks/useScrollLock';
 import { ComponentStandards } from '../StandardProps';
 // R4: 직접 아이콘 import 제거 (X) → IconButton.iconName 사용
-import { IconButton } from '@shared/components/ui';
+// Barrel import 제거 (cycle 감소)
+import { IconButton } from '../Button/IconButton';
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';

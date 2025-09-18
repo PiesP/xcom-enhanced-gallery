@@ -10,12 +10,13 @@ import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
-import { generateMediaFilename } from '@shared/media';
+// Barrel import에서 직접 util만 선택 import (cycle 감소)
+import { generateMediaFilename } from '@shared/media/FilenameService';
 import type { BaseResultStatus } from '@shared/types/result.types';
 import { ErrorCode } from '@shared/types/result.types';
 // Schedulers for prefetch task coordination
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
-import { globalTimerManager } from '@shared/utils';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 // 통합된 서비스 타입들
 /**

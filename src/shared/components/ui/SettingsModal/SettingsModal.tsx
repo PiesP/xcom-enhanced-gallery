@@ -15,7 +15,8 @@ import { ComponentStandards } from '../StandardProps';
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
-import { IconButton } from '@shared/components/ui';
+// Barrel import 제거 (cycle 감소) - direct relative import
+import { IconButton } from '../Button/IconButton';
 import styles from './SettingsModal.module.css';
 
 export interface SettingsModalProps {
