@@ -12,6 +12,8 @@ type IconComponent = (props?: Record<string, unknown>) => VNode | unknown;
 
 export interface IconRegistry {
   loadIcon: (name: IconName) => Promise<IconComponent>;
+  /** 이미 로드된 아이콘을 동기적으로 반환 (없으면 null) */
+  getLoadedIconSync: (name: IconName) => IconComponent | null;
   isLoading: (name: IconName) => boolean;
   setFallbackIcon: (component: IconComponent) => void;
   getCachedIcon: (cacheKey: object, name: IconName) => IconComponent | null;
@@ -26,6 +28,8 @@ let _registry: IconRegistry | null = null;
 let _fallback: IconComponent | null = null;
 const _loadingMap = new Map<IconName, Promise<IconComponent>>();
 let _caches: WeakMap<object, Map<IconName, IconComponent>> = new WeakMap();
+// 전역(하이브리드 프리로드) 캐시: preloadCommonIcons가 미리 채워 즉시 동기 조회 가능
+const _globalLoaded = new Map<IconName, IconComponent>();
 
 function dynamicImport(name: IconName): Promise<IconComponent> {
   switch (name) {
@@ -60,9 +64,15 @@ function createRegistry(): IconRegistry {
     async loadIcon(name) {
       if (_loadingMap.has(name)) return _loadingMap.get(name)!;
 
+      // 이미 동기 로드된 경우 Promise.resolve 즉시 반환
+      if (_globalLoaded.has(name)) {
+        return Promise.resolve(_globalLoaded.get(name)!);
+      }
+
       const promise = dynamicImport(name)
         .then(component => {
           _loadingMap.delete(name);
+          _globalLoaded.set(name, component as IconComponent);
           return component;
         })
         .catch(err => {
@@ -73,6 +83,9 @@ function createRegistry(): IconRegistry {
 
       _loadingMap.set(name, promise);
       return promise;
+    },
+    getLoadedIconSync(name) {
+      return _globalLoaded.get(name) ?? null;
     },
     isLoading(name) {
       return _loadingMap.has(name);
@@ -115,16 +128,23 @@ export function resetIconRegistry(): void {
   _fallback = null;
   _loadingMap.clear();
   _caches = new WeakMap();
+  _globalLoaded.clear();
 }
 
 export async function preloadCommonIcons(): Promise<void> {
   const registry = getIconRegistry();
-  await Promise.all([
-    registry.loadIcon('Download'),
-    registry.loadIcon('Settings'),
-    registry.loadIcon('X'),
-    registry.loadIcon('ChevronLeft'),
-  ]);
+  const common: IconName[] = ['Download', 'Settings', 'X', 'ChevronLeft'];
+  // 이미 전역에 올라온 경우는 skip
+  const toLoad = common.filter(n => !registry.getLoadedIconSync(n));
+  if (toLoad.length === 0) return;
+  const components = await Promise.all(toLoad.map(n => registry.loadIcon(n)));
+  components.forEach((comp, idx) => {
+    const name = toLoad[idx] as IconName;
+    if (comp) {
+      // loadIcon에서 이미 _globalLoaded에 넣었을 가능성 존재 - 재확인
+      _globalLoaded.set(name, comp as IconComponent);
+    }
+  });
 }
 
 export { type IconComponent };

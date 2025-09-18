@@ -1,5 +1,12 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-18: ICN-R3 — Hybrid Preload 구현 `iconRegistry` 전역 동기
+캐시(`getLoadedIconSync`) 추가 및 `preloadCommonIcons`가 핵심
+아이콘(Download/Settings/X/ChevronLeft) 로드 후 즉시 동기 렌더 가능하도록 확장.
+`LazyIcon`이 프리로드된 아이콘은 placeholder 없이 즉시 SVG 컴포넌트를 반환하여
+툴바 초기 플래시 제거. RED 테스트(`toolbar.preload-icons.red`) → GREEN 전환 후
+계획서에서 제거.
+
 2025-09-18: ICN-R2 — LazyIcon placeholder
 표준(data-xeg-icon-loading/aria-busy) + IconButton.iconName 도입 및 Toolbar
 Prev/Next 샘플 치환 완료

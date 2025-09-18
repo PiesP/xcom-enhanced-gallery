@@ -43,12 +43,6 @@
 
 ### 잔여 Phase (TDD: RED → GREEN → REFACTOR)
 
-3. ICN-R3 Hybrid Preload 적용
-   - RED: 핵심 아이콘 Preload 미수행 시 E2E/단위(툴바 초기 렌더)에서 로딩 플래시
-     검출 테스트
-   - GREEN: `preloadCommonIcons()` 앱 초기화 시점(main/bootstrap) 호출 연결
-   - REFACTOR: preload 세트 관리 유틸 (`core-icons.ts`)
-
 4. ICN-R4 전체 전환
    - RED: 기존 정적 배럴 export 목록 중 특정 아이콘 직접 사용 검출(새 테스트)
    - GREEN: 남은 소비처 모두 LazyIcon/registry 경유로 변경
@@ -87,12 +81,11 @@ Acceptance Criteria (AC)
 
 ## 활성 Phase 상태 표
 
-| Phase | 목적           | 주요 산출물        | 상태 |
-| ----- | -------------- | ------------------ | ---- |
-| R3    | Hybrid Preload | preload 연결       | 대기 |
-| R4    | 전면 치환      | 모든 소비처 수정   | 대기 |
-| R5    | 최적화/사이즈  | 코드젠/사이즈 가드 | 대기 |
-| R6    | 정리/문서화    | 완료 로그 갱신     | 대기 |
+| Phase | 목적          | 주요 산출물        | 상태 |
+| ----- | ------------- | ------------------ | ---- |
+| R4    | 전면 치환     | 모든 소비처 수정   | 대기 |
+| R5    | 최적화/사이즈 | 코드젠/사이즈 가드 | 대기 |
+| R6    | 정리/문서화   | 완료 로그 갱신     | 대기 |
 
 ## TDD 규칙과 브랜치
 
