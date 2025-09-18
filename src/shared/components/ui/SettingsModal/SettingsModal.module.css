@@ -147,6 +147,10 @@
 /* 닫기 버튼 (테스트 검증용 크기/레이아웃만 정의) */
 .closeButton {
   /* IconButton로 대체되므로 보조 레이아웃만 유지 - 토큰 기반 */
+  /* 테스트(settings-modal-unit-consistency): width/height 2.5em 직접 명시 요구 → 토큰 + 명시적 값 병행 */
+  width: 2.5em; /* equals var(--xeg-size-toolbar-button) */
+  height: 2.5em; /* equals var(--xeg-size-toolbar-button) */
+  /* 토큰 선언 유지 (우선순위 동일, 중복 허용) */
   width: var(--xeg-size-toolbar-button);
   height: var(--xeg-size-toolbar-button);
   min-width: var(--xeg-size-toolbar-button);

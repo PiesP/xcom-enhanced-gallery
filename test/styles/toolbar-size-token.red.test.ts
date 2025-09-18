@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 describe('P4 RED: toolbar size token adoption', () => {
   it('Toolbar.module.css should NOT yet reference --xeg-size-toolbar-button (forcing RED)', () => {
-    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+    // Match GREEN variant: only ascend two levels to reach project root
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
     const toolbarCssPath = path.join(
       root,
       'src',

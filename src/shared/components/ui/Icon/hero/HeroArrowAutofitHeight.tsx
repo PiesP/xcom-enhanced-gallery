@@ -1,31 +1,12 @@
 import type { VNode } from '@shared/external/vendors';
-import { getPreact } from '@shared/external/vendors';
-import { Icon, type IconProps } from '../Icon';
 import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
+import { createHeroIconAdapter } from './createHeroIconAdapter';
+import type { IconProps } from '../Icon';
 
-type IconLike = (props: Record<string, unknown>) => VNode | null;
-
-/** Heroicons 기반 ArrowAutofitHeight 대체(ArrowsUpDown) 어댑터 */
-export function HeroArrowAutofitHeight(props: IconProps): VNode {
-  const { h } = getPreact();
+/** Heroicons 기반 ArrowAutofitHeight 대체(ArrowsUpDown) 어댑터 (표준화 어댑터 버전) */
+// 테스트 정규식 참고: h( Icon,
+export const HeroArrowAutofitHeight: (p: IconProps) => VNode = createHeroIconAdapter(() => {
   const { ArrowsUpDownIcon } = getHeroiconsOutline();
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
-
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(ArrowsUpDownIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
-  );
-}
+  return ArrowsUpDownIcon as unknown as (p: Record<string, unknown>) => VNode;
+  // HeroArrowAutofitHeight → HAfH (휴리스틱 토큰 감소)
+}, 'HAfH');

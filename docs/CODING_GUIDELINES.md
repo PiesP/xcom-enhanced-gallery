@@ -984,3 +984,53 @@ describe('GalleryItem', () => {
 - 테스트 가드: `media-processor.url-sanitization.red.test.ts` (RED 파일 유지,
   구현 후 GREEN 상태)
 - 문서 반영: 본 섹션 (Phase 8 완료 시점 2025-09-11)
+
+## 🧪 Graduation Workflow (RED ➜ GREEN)
+
+테스트 주도 리팩토링/하드닝을 프로젝트 전역에서 일관되게 수행하기 위한 공식
+절차.
+
+### 단계
+
+1. Identification (RED) — `.red.test.` 파일을 추가하고 반드시 FAIL 상태 확인
+2. Implementation (GREEN) — 스펙을 만족하는 최소 변경으로 통과 (확장/추가 기능
+   포함 금지)
+3. Stabilization — watch 모드 2회 이상 / 비동기 race 제거 / flaky 재현 불가 확인
+4. Rename — 파일명에서 `.red.` 세그먼트 제거하여 가드를 GREEN으로 승격
+5. Documentation — 활성 계획서(TDD_REFACTORING_PLAN.md)에서 제거하고 Completed
+   로그에 1줄 요약 append
+6. Hardening (선택) — 경계/성능/커버리지 추가 테스트는 새 파일 (RED 아님)
+
+### 규칙
+
+- RED 여부 판별은 파일명 패턴만 사용 (주석 플래그 금지)
+- Batch Graduation 시 카테고리 단위 ≤5개씩 rename (diff 가독성 유지)
+- Vendor 직접 import 발견 → 즉시 RED 스캔 테스트 추가 (getter 정책 강제)
+- 하드코딩 색상/치수/transition 발견 시 토큰화 패치 전 RED 스캐너 우선 추가
+- Flaky 발생 시 원인 수정 불가하면 `test.skip` + TODO + 이슈/PR 레퍼런스 (rename
+  금지)
+
+### Merge Gate Checklist
+
+```bash
+npm run typecheck
+npm run lint
+npm test            # 의도된 RED(.red.)만 실패 허용
+npm run build:prod && node scripts/validate-build.js
+```
+
+### Anti-Patterns
+
+- 대규모 구조 변경과 GREEN 전환을 하나의 거대한 커밋에 혼합
+- `.red.` 제거와 동시에 스펙을 변경 (추적 혼선)
+- 번들/접근성/토큰 회귀 측정 없이 스타일/구조 수정
+
+### 예시 (아이콘 프리로드)
+
+1. `toolbar.preload-icons.red.test.tsx` 추가 (FAIL)
+2. Hybrid preload 최소 구현 (`preloadCommonIcons`)
+3. 테스트 안정성 확인 후 GREEN
+4. 파일 rename → `toolbar.preload-icons.test.tsx`
+5. Completed 로그에 `ICN-R3 — Hybrid Preload GREEN` 1줄 요약 기록
+
+이 워크플로는 새 Epic / 백로그 항목 설계 리뷰 시 품질 기준으로 활용된다.

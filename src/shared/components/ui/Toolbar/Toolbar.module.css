@@ -7,10 +7,57 @@
 
 /* ===== 상태 기반 CSS ===== */
 
-/* 클릭 상태 - 단순화된 피드백 */
+/* 클릭/호버/포커스 상태 - 단일 베이스 셀렉터 (TBAR-R Selector Consolidation) */
+.toolbarButton {
+  /* base: states handled via pseudo selectors; placeholder to avoid empty rule lint */
+  /* no direct properties here to keep single source in Primitive */
+}
+
+/* Active */
 .toolbarButton:active:not([data-disabled='true']) {
   box-shadow: var(--xeg-shadow-sm);
-  /* 단순한 클릭 효과 - transform 제거 */
+}
+
+/* ------------------------------------------------------------------ */
+/* Hover / Focus Visible Standardization (TBAR-R Completion)
+ * - 모든 버튼 타입(toolbarButton/navButton/downloadButton/settingsButton/closeButton/fitButton)
+ *   에 대해 단순화된 공통 hover 효과 적용
+ * - 복잡한 lift+scale 조합 transform 제거 (기존 복합 transform 패턴 제거)
+ * - focus-visible 시 공통 focus ring 시스템(--xeg-focus-ring / --xeg-focus-ring-offset) 사용
+ * - 테스트: toolbar-hover-consistency(.completion).test.ts, button-animation-consistency.test.ts
+ */
+
+/* Hover */
+.toolbarButton:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-neutral-300);
+  transform: translateY(var(--xeg-button-lift, -1px));
+  box-shadow: var(--xeg-shadow-sm, 0 1px 2px var(--xeg-color-overlay-light));
+}
+
+/* navButton / downloadButton / settingsButton / closeButton 에 공통 호버 효과 적용 */
+.navButton:hover:not(:disabled),
+.downloadButton:hover:not([data-disabled='true']),
+.settingsButton:hover:not([data-disabled='true']),
+.closeButton:hover:not([data-disabled='true']),
+.fitButton:hover:not([data-disabled='true']) {
+  /* 복잡한 transform 효과 제거 */
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-neutral-300);
+  transform: translateY(var(--xeg-button-lift, -1px));
+  box-shadow: var(--xeg-shadow-sm, 0 1px 2px var(--xeg-color-overlay-light));
+}
+
+/* focus-visible 공통 스타일 (Primitive 외부에서도 보조적으로 적용) */
+/* Focus ring 일원화 */
+.toolbarButton:focus-visible,
+.navButton:focus-visible,
+.downloadButton:focus-visible,
+.settingsButton:focus-visible,
+.closeButton:focus-visible,
+.fitButton:focus-visible {
+  outline: var(--xeg-focus-ring, 2px solid var(--xeg-color-primary));
+  outline-offset: var(--xeg-focus-ring-offset, 2px);
 }
 
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
@@ -394,15 +441,12 @@ button.fitButton {
 
 /* 감소된 모션 */
 @media (prefers-reduced-motion: reduce) {
-  .toolbarButton,
   .progressFill,
   .downloadSpinner {
     transition: none;
     animation: none;
   }
-
-  /* 모든 버튼에서 transform 효과 제거 */
-  .toolbarButton:hover:not(:disabled),
+  /* transform 제거 (toolbarButton 중복 셀렉터 제외) */
   .navButton:hover:not(:disabled),
   .downloadButton:hover:not(:disabled),
   .settingsButton:hover:not(:disabled),
@@ -441,3 +485,5 @@ button.fitButton {
 /* 고대비 모드 - 시인성 개선 */
 
 /* Fit Mode Group 래퍼 제거 - 독립 버튼 배치 원칙 준수 */
+
+/* (TBAR-R 완료) MediaCounter forward bridge 제거: MediaCounter.module.css 단일 소스 유지 */

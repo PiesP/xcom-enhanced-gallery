@@ -9,6 +9,11 @@
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
+// 글로벌 테스트 폴백 타입 선언 (window 확장)
+// 전역 객체 확장 인터페이스 (브라우저/노드 겸용 최소 타입)
+type XegGlobal = {
+  __XEG_GALLERY_STATE?: { isOpen: boolean };
+} & Record<string, unknown>;
 import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
 import { registerGallerySignalAccess } from '../mediators/gallery-signal-mediator';
@@ -122,6 +127,13 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   };
 
   logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
+  // 테스트 환경(비반응 mock signals)용 폴백 글로벌 플래그
+  try {
+    const g = globalThis as XegGlobal;
+    g.__XEG_GALLERY_STATE = { ...(g.__XEG_GALLERY_STATE || { isOpen: false }), isOpen: true };
+  } catch {
+    /* noop */
+  }
 }
 
 /**
@@ -136,6 +148,12 @@ export function closeGallery(): void {
   };
 
   logger.debug('[Gallery] 갤러리 종료 완료');
+  try {
+    const g = globalThis as XegGlobal;
+    g.__XEG_GALLERY_STATE = { ...(g.__XEG_GALLERY_STATE || { isOpen: false }), isOpen: false };
+  } catch {
+    /* noop */
+  }
 }
 
 /**

@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 describe('P5 RED: legacy .controls class must be removed', () => {
   it('Gallery.module.css still contains .controls class (expect removal in P5)', () => {
-    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+    // Align with GREEN test: only go up two levels to reach project root
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
     const cssPath = path.join(root, 'src', 'features', 'gallery', 'styles', 'Gallery.module.css');
     const css = fs.readFileSync(cssPath, 'utf-8');
     const hasControls = css.includes('.controls');

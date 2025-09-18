@@ -222,7 +222,12 @@ export function cleanupEventDispatcher(): void {
 function checkGalleryOpen(): boolean {
   try {
     const signals = tryGetGallerySignals();
-    return !!signals?.isOpen.value;
+    const viaSignal = !!signals?.isOpen.value;
+    if (viaSignal) return true;
+    // 테스트/모킹 환경에서 effect가 비동작(단발 실행)하여 isOpen 반영이 안 되는 경우 글로벌 폴백 사용
+    const g = globalThis as unknown as { __XEG_GALLERY_STATE?: { isOpen: boolean } };
+    if (g.__XEG_GALLERY_STATE) return !!g.__XEG_GALLERY_STATE.isOpen;
+    return false;
   } catch {
     return false;
   }

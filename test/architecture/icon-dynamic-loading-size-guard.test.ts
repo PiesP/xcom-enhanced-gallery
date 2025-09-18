@@ -10,7 +10,8 @@ import { dirname } from 'node:path';
 describe('architecture/icon-dynamic-loading-size-guard (R5 RED)', () => {
   it('iconRegistry ICON_IMPORTS 내 선언된 아이콘만 존재하며 직접 Hero* 재노출이 없어야 한다', () => {
     const current = fileURLToPath(import.meta.url);
-    const root = resolve(dirname(dirname(current))); // ../../ (test/architecture -> project root)
+    // test/architecture => go up two levels to test/, then one more to project root
+    const root = resolve(dirname(current), '..', '..');
     const registryPath = resolve(root, 'src/shared/services/iconRegistry.ts');
     const content = readFileSync(registryPath, 'utf8');
     // ICON_IMPORTS key 수 집계

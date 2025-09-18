@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 describe('P5 GREEN: legacy .controls class removed', () => {
   it('Gallery.module.css no longer contains .controls class', () => {
-    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+    // NOTE: Previous implementation climbed three levels (../../..) from test/styles, producing C:\git (one level above repo root)
+    // Adjust to two levels to reach actual project root (test/styles -> test -> projectRoot)
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
     const cssPath = path.join(root, 'src', 'features', 'gallery', 'styles', 'Gallery.module.css');
     const css = fs.readFileSync(cssPath, 'utf-8');
     expect(css.includes('.controls')).toBe(false);
