@@ -281,6 +281,17 @@ Prev/Next 샘플 치환 완료
   제거 준비 완료 (다음 단계: disableBodyScroll dead code 식별/삭제, 선택 focus
   trap 평가). 번들 gzip 영향 Δ ≈ 0.
 
+2025-09-18: SCROLL-ISOLATION C1–C2 완료 — disableBodyScroll dead code 제거.
+
+- C1 (RED): `disableBodyScroll` 문자열 존재 여부 스캔 RED 테스트 추가
+  (`disable-body-scroll-legacy.red.test.ts`)로 레거시 전역 차단 분기 잔존을
+  명시적 탐지 (초기 실패 확인).
+- C2 (GREEN): `scroll-utils.ts` 옵션/분기 완전 삭제 및 wheel lock 콜백 단일화,
+  주석 literal 제거 → 테스트 GREEN. 필요 시 후속 커밋에서 `.red.` Graduation
+  정책 적용(삭제 또는 rename) 예정.
+- 효과: boundary 기반 isolation 일관성 확립, 불필요한 전역 preventDefault 리스크
+  제거, 번들 영향 미미(문자열/조건 삭제 수준). Focus Trap 여부 판단만 잔존.
+
 ## RED 테스트 분류(요약)
 
 | 카테고리        | 대표 패턴 / 예시                                                       | 대략 개수\* | 목적 요약                               |

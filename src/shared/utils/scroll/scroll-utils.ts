@@ -43,16 +43,9 @@ export function createScrollDebouncer(callback: () => void, delay: number = 150)
 /**
  * 스크롤 전파 방지
  */
-export function preventScrollPropagation(
-  element: HTMLElement,
-  options: { disableBodyScroll?: boolean } = {}
-): () => void {
-  const { disableBodyScroll = false } = options;
-
-  return ensureWheelLock(element, _e => {
-    if (disableBodyScroll) return true;
-    return false;
-  });
+export function preventScrollPropagation(element: HTMLElement): () => void {
+  // Legacy body scroll 강제 차단 옵션 제거: boundary 기반 가드로 대체됨
+  return ensureWheelLock(element, _e => false);
 }
 
 // Re-export throttleScroll from performance utils (RAF-based, more efficient)

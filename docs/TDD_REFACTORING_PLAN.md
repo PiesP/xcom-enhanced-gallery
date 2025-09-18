@@ -43,20 +43,18 @@ signals) 추가.
 
 Remaining Outcomes:
 
-- Cleanup: disableBodyScroll / 미사용 전역 차단 분기 제거 (FLAG 기본화 이후)
 - (선택) Focus Trap: ESC 유지 + Tab 순환 여부 결정 (도입 시 a11y 테스트 필요)
 - Metrics: 번들 사이즈/핸들러 등록 수 변화 ≤ 0 또는 감소 유지
 
 Revised Acceptance (남은 부분):
 
 - [AC-F] (선택) focus trap 도입 시 Tab 순환 & ESC close 유지
-- [AC-C] dead code 제거 후 전체 테스트 GREEN & bundle size Δ ≤ +0.5%
 
 Risk (잔여):
 
 - Focus trap 도입 시 다른 모달과 충돌 → 단일 갤러리 활성 조건 + opt-in 속성
 
-Next Action 후보: C1 dead code 식별 RED → C2 제거 GREEN.
+Next Action 후보: Focus Trap 필요성 재평가 또는 Epic 종료.
 
 ## 3. 제안 / 대기 Epic
 
