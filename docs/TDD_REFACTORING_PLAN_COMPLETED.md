@@ -2,7 +2,7 @@
 
 | RED 감소 목표 | 현재 (2025-09-18) | 1차 목표 | 2차 목표 | 최종 안정화 |
 | ------------- | ----------------- | -------- | -------- | ----------- |
-| RED 테스트 수 | 83                | 60       | 30       | <10         |
+| RED 테스트 수 | 78                | 60       | 30       | <10         |
 
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
@@ -25,6 +25,15 @@ refine/keyboard navigation/size token/legacy controls 관련 RED 테스트 각�
 동일 목적의 GREEN 가드(구조/키보드 네비/토큰 적용/legacy 제거)로 100% 대체되어
 중복 유지 비용만 존재. 4개 RED 파일 삭제로 노이즈 축소 및 잔여 RED 집중도 향상.
 RED 총계 87→83.
+
+2025-09-18: BATCH-C — 서비스 계약/재시도/팩토리 중복 RED 5건 정리 BulkDownload
+재시도 액션(부분 실패/시퀀스), MediaProcessor 팩토리 계약, Service Contract 직접
+인스턴스화 금지, Result 패턴 통일 RED 테스트가 모두 대응 GREEN
+가드(bulk-download.retry-action\*.test.ts,
+media-processor.factory-contract.test.ts, services.contract-interface.test.ts 및
+서비스 레벨 결과/오류 가드)로 커버 중복됨을 확인. 잔존 RED는 구현 누락이 아닌
+이미 충족된 계약을 재검증하는 중복으로 유지 비용만 발생. 5개 RED 파일 삭제. RED
+총계 83→78.
 
 2025-09-18: TBAR-R P6/P7 — Toolbar legacy `.toolbarButton` 중복/변형 CSS 완전
 제거, Primitive 단일화 및 문서/메트릭 정리. Userscript gzip ~99.3 KB (baseline
