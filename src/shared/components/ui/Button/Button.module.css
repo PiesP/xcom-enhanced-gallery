@@ -197,10 +197,10 @@
   background: transparent;
   color: var(--xeg-color-text-primary);
   border-color: var(--xeg-color-border-primary);
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
+  width: var(--xeg-size-toolbar-button);
+  height: var(--xeg-size-toolbar-button);
+  min-width: var(--xeg-size-toolbar-button);
+  min-height: var(--xeg-size-toolbar-button);
   padding: 0.5em;
   aspect-ratio: 1;
 }
@@ -221,10 +221,10 @@
   background: var(--xeg-color-primary);
   color: var(--color-text-inverse);
   border-color: var(--xeg-color-primary);
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
+  width: var(--xeg-size-toolbar-button);
+  height: var(--xeg-size-toolbar-button);
+  min-width: var(--xeg-size-toolbar-button);
+  min-height: var(--xeg-size-toolbar-button);
   padding: 0.5em;
   aspect-ratio: 1;
 }
@@ -245,10 +245,10 @@
   background: var(--xeg-color-success);
   color: var(--color-text-inverse);
   border-color: var(--xeg-color-success);
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
+  width: var(--xeg-size-toolbar-button);
+  height: var(--xeg-size-toolbar-button);
+  min-width: var(--xeg-size-toolbar-button);
+  min-height: var(--xeg-size-toolbar-button);
   padding: 0.5em;
   aspect-ratio: 1;
 }
@@ -267,10 +267,10 @@
 
 /* ===== 툴바 전용 크기 ===== */
 .size-toolbar {
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
+  width: var(--xeg-size-toolbar-button);
+  height: var(--xeg-size-toolbar-button);
+  min-width: var(--xeg-size-toolbar-button);
+  min-height: var(--xeg-size-toolbar-button);
   padding: 0.5em;
   font-size: 0.875em;
 }

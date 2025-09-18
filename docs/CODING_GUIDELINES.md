@@ -359,6 +359,58 @@ animateCustom(el, keyframes, {
 - 금지: 임의 색상/하드코딩 outline/키워드 이징 사용. 항상 토큰 기반으로 정의합니다.
 - 테스트: 관련 스위트에서 자동 검증되므로, 규칙 위반 시 바로 RED가 됩니다.
 
+### Toolbar 키보드 내비게이션 규칙 (TBAR-R P5)
+
+목표: PC 전용 키 입력만으로 툴바 내 모든 상호작용 요소를 예측 가능한 순서로 탐색하고, ESC 로 안전하게 닫기(onClose) 동작을 트리거한다.
+
+포커스 순서(Focus Flow):
+1. Prev (이전 미디어)
+2. Next (다음 미디어)
+3. (MediaCounter 그룹: 건너뛰기 허용 - Arrow/Home/End 순회 대상 아님)
+4. Fit Mode 토글들 (예: fitWidth / fitHeight / original 등 가변 목록, DOM 순서 기준)
+5. 다운로드 관련 (현재 항목 / 전체 항목)
+6. Settings (환경설정 버튼 - 조건부 존재 가능)
+7. Close (갤러리 닫기)
+
+데이터 속성 규약 (그룹 경계):
+- 각 논리 그룹 루트/컨테이너 또는 버튼에 `data-toolbar-group="navigation|counter|actions"` 부여
+- 각 그룹 내 첫 포커스 가능 요소에 `data-group-first="true"` 단 한 곳만 존재
+- 테스트 가드: 그룹 순서 및 group-first 단일성 유지 (중복/누락 시 RED)
+
+키 매핑 (PC 전용):
+- ArrowRight: 다음 포커스 가능 요소로 이동 (Close 에서 순환 없음 - 끝에서 멈춤)
+- ArrowLeft: 이전 포커스 가능 요소로 이동 (Prev 에서 순환 없음 - 처음에서 멈춤)
+- Home: 항상 첫 포커스 가능 요소(Prev)로 이동
+- End: 마지막 포커스 가능 요소(Close)로 이동
+- Escape: onClose 핸들러 호출 (포커스는 이동하지 않을 수 있음; 구현 세부는 유지)
+- Tab / Shift+Tab: 브라우저 기본 순서 (명시적 관리하지 않으나 DOM 순서는 위 포커스 흐름을 반영해야 함)
+
+비포커스 대상 제외:
+- MediaCounter(현재/전체 표시 및 progress)는 Arrow/Home/End 순회 목록에서 제외 (정보성)
+
+구현 계약(요약):
+- Toolbar 루트 컨테이너는 포커스 초기 진입을 위해 `tabIndex=0` (명시 제공 시 오버라이드) 보장
+- 포커스 가능한 대상은 ToolbarButton primitive 사용 (data-disabled='true' 이면 skip)
+- 키 처리 로직은 이벤트 타겟이 툴바 내부이고 modifier(Alt/Ctrl/Meta)가 없는 keydown 에만 실행
+
+테스트 가드 (GREEN 기준):
+- Home → Prev 포커스 / End → Close 포커스
+- ArrowRight/Left 연속 입력 시 정의된 순서로 이동
+- Escape 누를 때마다 onClose 호출 count 증가
+- Disabled 버튼은 순회에서 제외 (추가 disabled 시나리오 발생 시 RED 확장)
+
+금지 사항:
+- 순환 래핑(focus wrap) (명시적 요구가 생길 때까지 비활성)
+- Pointer / Touch 이벤트 기반 포커스 전환
+- 그룹 경계를 파괴하는 임의 DOM 재배치 (테스트로 가드)
+
+향후 확장 (문서화 용 placeholder - 구현 전 실험 필요):
+- Shift+Arrow로 그룹 단위 이동
+- F1 / ? 로 키보드 도움말 오버레이 표시 (이미 구현된 help overlay와 통합 가능)
+
+참고 테스트: `test/toolbar/toolbar-keyboard.navigation.test.tsx`
+
+
 ### Component vs Semantic 토큰
 
 - 소스 오브 트루스는 Semantic 토큰(`--xeg-modal-bg`, `--xeg-color-*`, `--xeg-radius-*`).

@@ -71,22 +71,20 @@ Baseline: commit `<CURRENT_HEAD>` (2025-09-18)
 
 Phase (TDD RED → GREEN → REFACTOR) — 활성(남은) 항목만:
 
-| Phase | 코드(식별자)                  | 목적                                                  | 상태   |
-| ----- | ----------------------------- | ----------------------------------------------------- | ------ |
-| P5    | Focus order navigation test   | 실제 키보드(Arrow/Tab/Home/End) 순서 심층 검증        | ACTIVE |
-| P6    | Cleanup & Docs                | 레거시 `.toolbarButton` 선택자/주석 제거 & 문서 정리  | TODO   |
-| P7    | Metrics & CSS size validation | CSS gzip 감소 ≥5% 측정 및 build-metrics 스크립트 보강 | TODO   |
+| Phase | 코드(식별자)                  | 목적                                                  | 상태 |
+| ----- | ----------------------------- | ----------------------------------------------------- | ---- |
+| P6    | Cleanup & Docs                | 레거시 `.toolbarButton` 선택자/주석 제거 & 문서 정리  | TODO |
+| P7    | Metrics & CSS size validation | CSS gzip 감소 ≥5% 측정 및 build-metrics 스크립트 보강 | TODO |
 
 Acceptance Criteria (Remaining / In-Scope):
 
 - [ ] `.toolbarButton` (legacy) 잔여 선택자 정리 및 단일화 (필요 시 구조 리팩터)
-- [ ] 키보드 포커스 실제 순서 확증: Prev → Next → (Counter skip 허용) → Fit
-      모드들 → 다운로드 관련 → Settings(조건부) → Close
 - [ ] CSS gzip 감소 ≥ 5% (baseline metrics 대비) — metrics 계산 및 리포트 추가
-- [ ] Focus navigation test: ArrowLeft/Right, Home/End, Escape 시나리오 회귀
-      가드
 - [ ] 문서/코드: data-toolbar-group / data-group-first 규약 설명
-      CODING_GUIDELINES 반영
+      CODING_GUIDELINES 반영 (키보드 포커스 순서/키 매핑 명세 포함)
+
+Already fulfilled (moved to Completed log): Keyboard focus order & navigation
+test (Home/End/Arrow/Escape) GREEN, default tabIndex fallback 적용.
 
 이미 충족된 항목(P1–P4 관련 토큰/Primitive/Grouping)은 Completed 로그로 이관됨.
 

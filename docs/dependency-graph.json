@@ -1834,6 +1834,7 @@
       ],
       "dependents": [
         "src/shared/components/index.ts",
+        "src/shared/components/ui/Toolbar/UnifiedToolbar.tsx",
         "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
         "src/shared/components/ui/index.ts"
       ],
@@ -2639,9 +2640,27 @@
     },
     {
       "source": "src/shared/components/ui/Toolbar/UnifiedToolbar.tsx",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Toolbar",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Toolbar/Toolbar.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
-      "orphan": true,
+      "orphan": false,
       "valid": true
     },
     {
@@ -2649,6 +2668,50 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ToolbarButton/ToolbarButton.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ToolbarButton.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/ToolbarButton/ToolbarButton.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ToolbarButton/ToolbarButton.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/ToolbarButton/ToolbarButton.tsx"
+      ],
+      "orphan": false,
       "valid": true
     },
     {
@@ -3005,6 +3068,41 @@
             "export"
           ],
           "resolved": "src/shared/components/ui/Toolbar/Toolbar.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ToolbarButton/ToolbarButton",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ToolbarButton/ToolbarButton.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ToolbarButton/ToolbarButton",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ToolbarButton/ToolbarButton.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8251,8 +8349,8 @@
     "warn": 0,
     "info": 6,
     "ignore": 0,
-    "totalCruised": 253,
-    "totalDependenciesCruised": 332,
+    "totalCruised": 255,
+    "totalDependenciesCruised": 336,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

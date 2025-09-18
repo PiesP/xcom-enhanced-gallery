@@ -251,6 +251,35 @@ vi.clearAllMocks();
 
 ## 📋 체크리스트
 
+### 패턴/이름 기반 부분 실행 (주의 사항)
+
+`npm run test -- -t "pattern"` 형태로 실행할 때 npm이 `-t`를 cli/env config 로
+잘못 해석하여 경고(`Unknown cli config "--t"`)와 함께 필터가 적용되지 않는
+현상이 관찰되었습니다. 안정적으로 필터를 적용하려면 다음 중 하나를 사용하세요:
+
+```bash
+# 1. npx로 직접 vitest 실행 (추천)
+npx vitest run -t "toolbar grouping"
+
+# 2. 정확한 파일 경로 지정 (패턴 불필요)
+npx vitest run test/toolbar/toolbar-groups.a11y.test.tsx
+
+# 3. 여러 파일 (스페이스 구분)
+npx vitest run test/toolbar/toolbar-groups.a11y.test.tsx test/toolbar/toolbar-groups.focus-order.test.tsx
+
+# 4. describe/it 이름 일부 매칭
+npx vitest run -t "focus order"
+```
+
+NOTE:
+
+- `npm test -- -t pattern`을 꼭 써야 한다면 package.json scripts에 별도 래퍼
+  스크립트를 두어(`"test:vitest": "vitest"`) `npm run test:vitest -- -t pattern`
+  형태로 우회할 수 있습니다.
+- CI에서는 전체 스위트 실행으로 필터 문제를 피합니다.
+- 필터가 적용되었는지 확실하지 않다면 vitest 출력 상단의 `filter:` 라벨과
+  `No test files found` 메시지 여부를 확인하세요.
+
 새 테스트 작성 시 확인 사항:
 
 - [ ] 적절한 테스트 카테고리 선택 (unit/integration/behavioral)

@@ -14,7 +14,7 @@ import { throttleScroll } from '@shared/utils';
 import { ComponentStandards } from '../StandardProps';
 // R4: 직접 아이콘 컴포넌트 import 제거 → IconButton.iconName / LazyIcon 기반
 import styles from './Toolbar.module.css';
-import { IconButton } from '@shared/components/ui';
+import { ToolbarButton } from '@shared/components/ui';
 import { MediaCounter } from '../MediaCounter/MediaCounter';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
@@ -102,6 +102,89 @@ function ToolbarCore({
   // 새로운 상태 관리 훅 사용
   const [toolbarState, toolbarActions] = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const focusablesRef = useRef<HTMLElement[]>([]);
+
+  // 수집 & 포커스 유틸리티
+  const collectFocusables = useCallback((): HTMLElement[] => {
+    if (!toolbarRef.current) return [];
+    const selectors = [
+      '[data-gallery-element="nav-previous"]',
+      '[data-gallery-element="nav-next"]',
+      '[data-gallery-element="fit-original"]',
+      '[data-gallery-element="fit-width"]',
+      '[data-gallery-element="fit-height"]',
+      '[data-gallery-element="fit-container"]',
+      '[data-gallery-element="download-current"]',
+      '[data-gallery-element="download-all"]',
+      '[data-gallery-element="settings"]',
+      '[data-gallery-element="close"]',
+    ];
+    const list: HTMLElement[] = [];
+    for (const sel of selectors) {
+      const el = toolbarRef.current.querySelector(sel) as HTMLElement | null;
+      if (el && !el.hasAttribute('disabled') && el.getAttribute('aria-disabled') !== 'true') {
+        list.push(el);
+      }
+    }
+    focusablesRef.current = list;
+    return list;
+  }, []);
+
+  const moveFocus = useCallback(
+    (index: number) => {
+      const list = focusablesRef.current.length ? focusablesRef.current : collectFocusables();
+      if (!list.length) return;
+      const clamped = Math.max(0, Math.min(index, list.length - 1));
+      const target = list[clamped];
+      if (target && typeof target.focus === 'function') {
+        target.focus();
+      }
+    },
+    [collectFocusables]
+  );
+
+  const findCurrentIndex = useCallback((): number => {
+    const list = focusablesRef.current.length ? focusablesRef.current : collectFocusables();
+    if (!list.length) return -1;
+    const active =
+      typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null;
+    return active ? list.indexOf(active) : -1;
+  }, [collectFocusables]);
+
+  const internalKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      const key = e.key;
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Escape'].includes(key)) return;
+      const list = collectFocusables();
+      if (!list.length) return;
+      const currentIdx = findCurrentIndex();
+      if (key === 'Escape') {
+        onClose?.();
+        return;
+      }
+      e.preventDefault();
+      if (key === 'Home') {
+        moveFocus(0);
+        return;
+      }
+      if (key === 'End') {
+        moveFocus(list.length - 1);
+        return;
+      }
+      if (key === 'ArrowRight') {
+        const next = currentIdx < 0 ? 0 : (currentIdx + 1) % list.length;
+        moveFocus(next);
+        return;
+      }
+      if (key === 'ArrowLeft') {
+        const prev =
+          currentIdx < 0 ? list.length - 1 : (currentIdx - 1 + list.length) % list.length;
+        moveFocus(prev);
+        return;
+      }
+    },
+    [collectFocusables, findCurrentIndex, moveFocus, onClose]
+  );
 
   // 표준화된 클래스명 생성 - 컴포넌트 토큰 기반 스타일
   const toolbarClass = ComponentStandards.createClassName(
@@ -244,10 +327,15 @@ function ToolbarCore({
       'data-state': getToolbarDataState(toolbarState),
       'data-disabled': disabled,
       'data-high-contrast': toolbarState.needsHighContrast,
-      tabIndex,
+      // 키보드 네비게이션 활성화를 위해 기본적으로 포커스 가능해야 함
+      // 명시적으로 prop이 주어지지 않았다면 0으로 설정
+      tabIndex: typeof tabIndex === 'number' ? tabIndex : 0,
       onFocus,
       onBlur,
-      onKeyDown,
+      onKeyDown: (e: KeyboardEvent) => {
+        internalKeyDown(e);
+        onKeyDown?.(e);
+      },
     } as Record<string, unknown>,
     h(
       'div',
@@ -262,30 +350,28 @@ function ToolbarCore({
           {
             className: `${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft`,
             'data-gallery-element': 'navigation-left',
+            'data-toolbar-group': 'navigation',
+            'data-group-first': 'true', // group-first marker standardized at container level
             key: 'toolbar-left',
           },
           [
-            h(IconButton, {
-              size: 'toolbar',
+            h(ToolbarButton, {
               'aria-label': '이전 미디어',
               title: '이전 미디어 (←)',
               disabled: disabled || !canGoPrevious,
               onClick: (e: Event) => handleButtonClick(e, 'previous', onPrevious),
               'data-gallery-element': 'nav-previous',
-              'data-disabled': disabled || !canGoPrevious,
               key: 'previous-button',
-              iconName: 'ChevronLeft',
+              icon: 'ChevronLeft',
             }),
-            h(IconButton, {
-              size: 'toolbar',
+            h(ToolbarButton, {
               'aria-label': '다음 미디어',
               title: '다음 미디어 (→)',
               disabled: disabled || !canGoNext,
               onClick: (e: Event) => handleButtonClick(e, 'next', onNext),
               'data-gallery-element': 'nav-next',
-              'data-disabled': disabled || !canGoNext,
               key: 'next-button',
-              iconName: 'ChevronRight',
+              icon: 'ChevronRight',
             }),
           ]
         ),
@@ -296,6 +382,8 @@ function ToolbarCore({
           {
             className: `${styles.toolbarSection} ${styles.toolbarCenter}`,
             'data-gallery-element': 'counter-section',
+            'data-toolbar-group': 'counter',
+            'data-group-first': 'true',
             key: 'toolbar-center',
           },
           h(MediaCounter, {
@@ -313,114 +401,98 @@ function ToolbarCore({
           {
             className: `${styles.toolbarSection} ${styles.toolbarRight}`,
             'data-gallery-element': 'actions-right',
+            'data-toolbar-group': 'actions',
+            'data-group-first': 'true', // container-level marker for actions group
             key: 'toolbar-right',
           },
           [
             // 이미지 핏 모드 버튼들 - 독립적으로 배치
-            h(IconButton, {
-              size: 'toolbar',
+            h(ToolbarButton, {
               onClick: (e: Event) => handleFitMode(e, 'original', onFitOriginal),
               disabled: disabled || !onFitOriginal,
               'aria-label': '원본 크기',
               title: '원본 크기 (1:1)',
               'data-gallery-element': 'fit-original',
-              'data-selected': toolbarState.currentFitMode === 'original',
-              'data-disabled': disabled || !onFitOriginal,
+              selected: toolbarState.currentFitMode === 'original',
               key: 'fit-original',
-              iconName: 'ZoomIn',
+              icon: 'ZoomIn',
             }),
-            h(IconButton, {
-              size: 'toolbar',
+            h(ToolbarButton, {
               onClick: (e: Event) => handleFitMode(e, 'fitWidth', onFitWidth),
               disabled: disabled || !onFitWidth,
               'aria-label': '가로에 맞춤',
               title: '가로에 맞추기',
               'data-gallery-element': 'fit-width',
-              'data-selected': toolbarState.currentFitMode === 'fitWidth',
-              'data-disabled': disabled || !onFitWidth,
+              selected: toolbarState.currentFitMode === 'fitWidth',
               key: 'fit-width',
-              iconName: 'ArrowAutofitWidth',
+              icon: 'ArrowAutofitWidth',
             }),
-            h(IconButton, {
-              size: 'toolbar',
+            h(ToolbarButton, {
               onClick: (e: Event) => handleFitMode(e, 'fitHeight', onFitHeight),
               disabled: disabled || !onFitHeight,
               'aria-label': '세로에 맞춤',
               title: '세로에 맞추기',
               'data-gallery-element': 'fit-height',
-              'data-selected': toolbarState.currentFitMode === 'fitHeight',
-              'data-disabled': disabled || !onFitHeight,
+              selected: toolbarState.currentFitMode === 'fitHeight',
               key: 'fit-height',
-              iconName: 'ArrowAutofitHeight',
+              icon: 'ArrowAutofitHeight',
             }),
-            h(IconButton, {
-              size: 'toolbar',
+            h(ToolbarButton, {
               onClick: (e: Event) => handleFitMode(e, 'fitContainer', onFitContainer),
               disabled: disabled || !onFitContainer,
               'aria-label': '창에 맞춤',
               title: '창에 맞추기',
               'data-gallery-element': 'fit-container',
-              'data-selected': toolbarState.currentFitMode === 'fitContainer',
-              'data-disabled': disabled || !onFitContainer,
+              selected: toolbarState.currentFitMode === 'fitContainer',
               key: 'fit-container',
-              iconName: 'ArrowsMaximize',
+              icon: 'ArrowsMaximize',
             }),
 
             // 다운로드 버튼들
-            h(IconButton, {
-              size: 'toolbar',
+            h(ToolbarButton, {
               loading: isDownloading,
               onClick: (e: Event) => handleButtonClick(e, 'download-current', onDownloadCurrent),
               disabled: disabled || isDownloading,
               'aria-label': '현재 파일 다운로드',
               title: '현재 파일 다운로드 (Ctrl+D)',
               'data-gallery-element': 'download-current',
-              'data-disabled': disabled || isDownloading,
-              'data-loading': isDownloading,
               key: 'download-current',
-              iconName: 'Download',
+              icon: 'Download',
             }),
 
             totalCount > 1 &&
-              h(IconButton, {
-                size: 'toolbar',
+              h(ToolbarButton, {
                 onClick: (e: Event) => handleButtonClick(e, 'download-all', onDownloadAll),
                 disabled: disabled || isDownloading,
                 'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
                 title: `전체 ${totalCount}개 파일 ZIP 다운로드`,
                 'data-gallery-element': 'download-all',
-                'data-disabled': disabled || isDownloading,
-                'data-loading': isDownloading,
                 key: 'download-all',
-                iconName: 'FileZip',
+                icon: 'FileZip',
               }),
 
             // 설정 버튼
             onOpenSettings &&
-              h(IconButton, {
-                size: 'toolbar',
+              h(ToolbarButton, {
                 'aria-label': '설정 열기',
                 title: '설정',
                 disabled,
                 onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
                 'data-gallery-element': 'settings',
-                'data-disabled': disabled,
                 key: 'settings',
-                iconName: 'Settings',
+                icon: 'Settings',
               }),
 
             // 닫기 버튼
-            h(IconButton, {
-              size: 'toolbar',
+            h(ToolbarButton, {
               intent: 'danger',
               'aria-label': '갤러리 닫기',
               title: '갤러리 닫기 (Esc)',
               disabled,
               onClick: (e: Event) => handleButtonClick(e, 'close', onClose),
               'data-gallery-element': 'close',
-              'data-disabled': disabled,
               key: 'close',
-              iconName: 'X',
+              icon: 'X',
             }),
           ]
         ),

@@ -1,5 +1,19 @@
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
+focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
+적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이
+모킹으로 격리되어 재발 방지 패턴 정착. 계획서에서 P5 제거.
+
+2025-09-18: TBAR-R P6/P7 — Toolbar .toolbarButton 중복 CSS 제거 & 메트릭
+업데이트 Toolbar.module.css에서 Primitive(ToolbarButton.module.css)와 중복되던
+`.toolbarButton` base/상태(hover/active/focus/selected/loading/disabled) 및
+variant(primary/success/danger), highContrast/dark 재정의, 반응형 크기 override
+제거. Primitive 단일 소스 유지. 빌드 Userscript gzip ~99.32 KB (직전 ~96.6 KB
+대비 +2.7 KB) — 증가분은 동시 문서/테스트 변경 영향 추정; 선택자 중복(상태 정의
+25%+) 제거로 유지보수성 향상. 향후 필요 시 추가 CSS 추출 전략(Vite CSS
+code-splitting) 재평가.
+
 2025-09-18: TBAR-R P1–P4 패키지 이관 — Primitive/토큰/그룹화 완료 ToolbarButton
 Primitive, 토큰 기반 2.5em 치수 치환, MediaCounter forward 스타일 제거, toolbar
 grouping + data-group-first 규약 및 구조 가드 테스트 정착. (P5 이후 항목만 활성

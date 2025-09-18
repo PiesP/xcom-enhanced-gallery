@@ -144,112 +144,7 @@
   margin: 0 0.125em; /* 0 2px → 0 0.125em */
 }
 
-/* 🎨 REFACTOR: 통일된 툴바 버튼 스타일 - glassmorphism 클래스 기반 */
-.toolbarButton {
-  /* 기본 크기와 레이아웃만 정의, glassmorphism은 클래스로 */
-  width: 2.5em; /* 40px → 2.5em */
-  height: 2.5em; /* 40px → 2.5em */
-  min-width: 2.5em; /* 40px → 2.5em */
-  min-height: 2.5em; /* 40px → 2.5em */
-  padding: 0.5em; /* 8px → 0.5em */
-
-  /* 텍스트 및 커서 */
-  color: var(--xeg-color-text-primary);
-  cursor: pointer;
-
-  /* 레이아웃 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875em; /* 14px → 0.875em */
-  font-weight: 500;
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--xeg-radius-md);
-}
-
-/* 데이터 속성 기반 상태 관리 */
-.toolbarButton[data-active='true'] {
-  background: var(--xeg-color-primary);
-  --button-color: white;
-  box-shadow:
-    0 0 0 0.125em var(--xeg-color-primary-alpha-30),
-    /* 2px → 0.125em */ 0 0.25em 1em var(--color-overlay-light); /* 4px 16px → 0.25em 1em */
-}
-
-.toolbarButton[data-selected='true'] {
-  --button-bg: var(--xeg-color-primary);
-  --button-color: white;
-  border-color: var(--xeg-color-primary);
-}
-
-.toolbarButton[data-loading='true'] {
-  --button-opacity: 0.7;
-  --button-transform: scale(0.95);
-}
-
-.toolbarButton[data-disabled='true'] {
-  --button-opacity: 0.5;
-  background: var(--xeg-surface-disabled);
-  --button-color: var(--xeg-color-neutral-400);
-  cursor: not-allowed;
-}
-
-/* 호버 상태는 glassmorphism 클래스에서 처리 */
-@media (hover: hover) {
-  .toolbarButton:hover:not([data-disabled='true']) {
-    /* glassmorphism 클래스의 호버 효과 사용 */
-    /* 복잡한 transform 효과 제거 */
-    background: var(--xeg-glass-bg-hover, var(--color-glass-bg));
-    transform: translateY(-1px);
-  }
-}
-
-/* 의미론적 버튼 변형 */
-.toolbarButton.primary {
-  border-color: var(--xeg-color-primary);
-}
-
-.toolbarButton.primary:hover:not([data-disabled='true']) {
-  background: var(--xeg-color-primary-50);
-  border-color: var(--xeg-color-primary-hover);
-}
-
-.toolbarButton.success {
-  border-color: var(--xeg-color-success);
-}
-
-.toolbarButton.success:hover:not([data-disabled='true']) {
-  background: var(--xeg-color-success-50);
-  border-color: var(--xeg-color-success-hover);
-}
-
-.toolbarButton.danger {
-  border-color: var(--xeg-color-error);
-}
-
-.toolbarButton.danger:hover:not([data-disabled='true']) {
-  background: var(--xeg-color-error-50);
-  border-color: var(--xeg-color-error-hover);
-  color: var(--xeg-color-error);
-}
-
-/* 클릭 상태 */
-.toolbarButton:active:not([data-disabled='true']) {
-  box-shadow: var(--xeg-shadow-sm);
-  /* 단순한 클릭 효과만 */
-}
-
-/* 접근성 개선 - 포커스 상태 */
-.toolbarButton:focus-visible,
-.navButton:focus-visible,
-.downloadButton:focus-visible,
-.settingsButton:focus-visible,
-.closeButton:focus-visible,
-.fitButton:focus-visible {
-  outline: 0.125em solid var(--xeg-color-primary); /* 2px → 0.125em */
-  outline-offset: 0.125em; /* 2px → 0.125em */
-}
+/* NOTE: Toolbar 버튼 상태/크기/포커스/intent 스타일은 ToolbarButton.module.css (Primitive)에서 단일 관리. */
 /* 네비게이션 섹션 */
 .toolbarNavigation {
   gap: 0.5em; /* 8px → 0.5em */
@@ -290,10 +185,7 @@ button.fitButton {
   background: var(--xeg-color-primary);
   color: white;
 }
-/* Forward style reference for MediaCounter (extracted) to satisfy legacy consistency tests */
-.mediaCounter {
-  border-radius: var(--xeg-radius-md);
-}
+/* (P3 제거) MediaCounter forward styles 삭제: 단일 책임 유지 */
 /* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {
   position: relative;
@@ -364,23 +256,9 @@ button.fitButton {
     gap: 6px;
   }
 
-  .toolbarButton,
-  .toolbarButton.fitButton,
-  .toolbarButton.downloadButton,
-  .toolbarButton.settingsButton,
-  .toolbarButton.closeButton,
-  .fitButton {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-    padding: 6px;
-    font-size: 13px;
-  }
+  /* 버튼 크기/패딩 반응형 override 제거: Primitive가 토큰 기반 크기 관리 */
 
-  .mediaCounter {
-    font-size: 14px;
-  }
+  /* MediaCounter style removed (TBAR-R P3) */
 
   .progressBar {
     width: 50px;
@@ -405,22 +283,12 @@ button.fitButton {
     gap: 0.25em; /* 4px → 0.25em */
   }
 
-  .toolbarButton {
-    padding: 0.3125em 0.5em; /* 5px 8px → 0.3125em 0.5em */
-    min-width: 2em; /* 32px → 2em */
-    min-height: 2em; /* 32px → 2em */
-  }
+  /* (삭제) 반응형 전용 toolbarButton padding override - Primitive 일원화 */
 
-  .mediaCounterWrapper {
-    min-width: 4.375em; /* 70px → 4.375em */
-  }
-
-  .mediaCounter {
-    font-size: 0.8125em; /* 13px → 0.8125em */
-  }
+  /* MediaCounter forward styles 제거 (TBAR-R P3) */
 
   .progressBar {
-    width: 2.5em; /* 40px → 2.5em */
+    width: var(--xeg-size-toolbar-button); /* tokenized width */
     height: 0.125em; /* 2px → 0.125em */
   }
 
@@ -442,16 +310,7 @@ button.fitButton {
     box-shadow: 0 4px 20px var(--xeg-color-overlay-medium);
   }
 
-  .toolbarButton {
-    background: var(--xeg-color-neutral-100);
-    border: 1px solid var(--xeg-color-neutral-900);
-    color: var(--xeg-color-neutral-900);
-  }
-
-  .toolbarButton:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-200);
-    border: 2px solid var(--xeg-color-neutral-900);
-  }
+  /* (삭제) 고대비 모드 toolbarButton 개별 재정의 - Primitive 확장 고려 시 별도 파일에서 */
 
   .navButton {
     background: var(--xeg-color-primary-500);
@@ -478,11 +337,7 @@ button.fitButton {
   border: 2px solid var(--xeg-color-neutral-100);
 }
 
-[data-theme='dark'] .toolbarButton {
-  background: var(--xeg-color-neutral-700);
-  border: 1px solid var(--xeg-color-neutral-100);
-  color: var(--xeg-color-neutral-100);
-}
+/* (삭제) 다크 모드 toolbarButton 재정의 - Primitive 공통 스타일 사용 */
 
 @media (prefers-color-scheme: dark) and (prefers-contrast: high) {
   .galleryToolbar {
@@ -490,11 +345,7 @@ button.fitButton {
     border: 2px solid var(--xeg-color-neutral-100);
   }
 
-  .toolbarButton {
-    background: var(--xeg-color-neutral-700);
-    border: 1px solid var(--xeg-color-neutral-100);
-    color: var(--xeg-color-neutral-100);
-  }
+  /* (삭제) 다크+고대비 toolbarButton 재정의 */
 }
 
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
@@ -583,23 +434,7 @@ button.fitButton {
 }
 
 /* 고대비 모드에서 버튼 시인성 개선 */
-.highContrast .toolbarButton {
-  background: var(--xeg-glass-bg);
-  border: 1px solid var(--xeg-color-overlay-light);
-  color: var(--xeg-color-overlay-strong);
-}
-
-.highContrast .toolbarButton:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-overlay-medium);
-  box-shadow: 0 0.125em 0.5em var(--xeg-color-overlay-light); /* 2px 8px → 0.125em 0.5em */
-}
-
-[data-theme='dark'] .highContrast .toolbarButton {
-  background: var(--xeg-color-neutral-700);
-  border: 1px solid var(--xeg-glass-border);
-  color: var(--xeg-glass-bg);
-}
+/* (삭제) highContrast toolbarButton 변형 - Primitive로 추후 통합 시 별도 확장 */
 
 /* ===== 접근성 개선 ===== */
 

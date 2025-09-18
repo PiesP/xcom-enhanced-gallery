@@ -17,6 +17,9 @@ export { default as Button } from './Button/Button';
 export type { ButtonProps } from './Button/Button';
 export { default as IconButton } from './Button/IconButton';
 export type { IconButtonProps } from './Button/IconButton';
+// ToolbarButton primitive (TBAR-R P2)
+export { ToolbarButton } from './ToolbarButton/ToolbarButton';
+export type { ToolbarButtonProps } from './ToolbarButton/ToolbarButton';
 
 // Toast 컴포넌트 (실제 export 확인 후 수정)
 export { Toast, addToast, clearAllToasts, removeToast, toasts } from './Toast/Toast';

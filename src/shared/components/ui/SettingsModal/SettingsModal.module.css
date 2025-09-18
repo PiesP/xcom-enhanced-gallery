@@ -146,11 +146,11 @@
 
 /* 닫기 버튼 (테스트 검증용 크기/레이아웃만 정의) */
 .closeButton {
-  /* IconButton로 대체되므로 보조 레이아웃만 유지 */
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
+  /* IconButton로 대체되므로 보조 레이아웃만 유지 - 토큰 기반 */
+  width: var(--xeg-size-toolbar-button);
+  height: var(--xeg-size-toolbar-button);
+  min-width: var(--xeg-size-toolbar-button);
+  min-height: var(--xeg-size-toolbar-button);
   border-radius: var(--xeg-radius-md);
 }
 

@@ -1,0 +1,84 @@
+/* ToolbarButton Primitive CSS (TBAR-R P2)
+ * 목적: 툴바 내 모든 아이콘 버튼의 단일 크기/레이아웃/상태 표현
+ * 이후 P3에서 Toolbar / Button 기존 중복 스타일 제거 후 이 파일 유지
+ */
+
+.toolbarButton {
+  /* 크기: 토큰 기반 (하드코딩 제거 목표) */
+  width: var(--xeg-size-toolbar-button);
+  height: var(--xeg-size-toolbar-button);
+  min-width: var(--xeg-size-toolbar-button);
+  min-height: var(--xeg-size-toolbar-button);
+  /* 내부 패딩 (아이콘 가시성) - 후속 토큰화 후보 */
+  padding: 0.5em;
+  box-sizing: border-box;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--xeg-spacing-xs);
+  border: 1px solid var(--xeg-color-border-primary, transparent);
+  border-radius: var(--xeg-radius-md);
+  background: transparent;
+  color: var(--xeg-color-text-secondary);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+.toolbarButton:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-neutral-100);
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-hover, var(--xeg-color-neutral-300));
+  transform: translateY(var(--xeg-button-lift, -1px));
+  box-shadow: var(--xeg-shadow-sm, 0 1px 2px var(--color-overlay-light));
+}
+
+.toolbarButton:active:not([data-disabled='true']) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-xs, 0 0 0 1px var(--color-overlay-light));
+}
+
+.toolbarButton:focus-visible {
+  outline: var(--xeg-focus-ring, 2px solid var(--xeg-color-primary));
+  outline-offset: var(--xeg-focus-ring-offset, 2px);
+  z-index: 1;
+}
+
+.toolbarButton[data-selected='true'] {
+  background: var(--xeg-color-primary-50, var(--color-primary-bg));
+  color: var(--xeg-color-primary, var(--color-primary));
+  border-color: var(--xeg-color-primary, var(--color-primary));
+}
+
+.toolbarButton[data-loading='true'] {
+  opacity: 0.75;
+  cursor: wait;
+  pointer-events: none;
+}
+
+.toolbarButton[data-disabled='true'] {
+  opacity: var(--xeg-opacity-disabled, 0.5);
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.intent-danger {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+.intent-danger:hover:not([data-disabled='true']) {
+  background: var(--color-error-bg, var(--xeg-color-error-50));
+  color: var(--color-error);
+}
+
+/* (미래 확장 placeholder 제거: 빈 rule 금지) */
