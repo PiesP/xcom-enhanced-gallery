@@ -19,6 +19,15 @@
   0 확인.
 
 2025-09-19: XEG-TOOLBAR-VIS-CLEANUP P1 — 호버 기반 가시성 테스트 GREEN
+2025-09-19: XEG-TOOLBAR-VIS-CLEANUP P2 — 툴바 애니메이션 잔재 제거/Deprecated
+처리 및 회귀 가드 추가
+
+- css-animations.ts에서 toolbar-slide keyframes 및 관련 클래스 정의 제거, 상수는
+  호환성 목적으로 deprecated 주석만 유지.
+- design-tokens.component.css의 --animation-toolbar-show/hide를 none으로
+  고정하고 toolbar-slide-\* keyframes를 제거.
+- 회귀 테스트 추가: test/styles/toolbar-animation-removal.test.ts —
+  keyframes/클래스 부재 및 토큰 none 값 가드. 전체 스위트 GREEN.
 
 - `useToolbarPositionBased` 훅이 호버 시 `--xeg-toolbar-opacity` 및
   `--xeg-toolbar-pointer-events` 변수를 정확히 토글하는지 DOM 테스트로 검증.

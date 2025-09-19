@@ -316,6 +316,33 @@ animateCustom(el, keyframes, {
 }
 ```
 
+### Userscript 스타일 주입 게이팅 (Style Injection Gating)
+
+Userscript 번들은 전역 CSS 텍스트를 노출하고(head 주입은 게이트) Shadow DOM 경로를 기본 지원합니다.
+
+- 전역 노출: window.XEG_CSS_TEXT — 번들된 CSS 텍스트. ShadowRoot 주입에 사용됩니다.
+- Head 주입 게이팅: window.XEG_STYLE_HEAD_MODE ∈ {'auto' | 'off' | 'defer'}
+  - 'auto'(기본): 문서 head에 즉시 style 태그를 1회 주입(id='xeg-styles')
+  - 'off': head 주입 비활성화 — ShadowRoot 주입 경로만 사용
+  - 'defer': requestAnimationFrame 또는 setTimeout으로 지연 주입
+- 이중 주입 방지: id='xeg-styles' 존재 시 재주입하지 않습니다.
+
+구현/소비 가이드:
+- GalleryContainer는 ShadowRoot가 활성화된 경우 window.XEG_CSS_TEXT를 사용해 ShadowRoot에 스타일을 주입합니다. 별도의 @import 경로 사용 금지.
+- 테스트/비Userscript 환경에서는 window.XEG_CSS_TEXT가 없을 수 있으므로 안전 폴백을 고려하십시오(현재 컴포넌트가 처리).
+- 환경에 따라 head 주입을 제어하려면 스크립트 실행 전 전역 플래그를 설정합니다:
+
+```js
+// 실행 전(예: userscript 환경 설정 또는 디버그 콘솔)
+window.XEG_STYLE_HEAD_MODE = 'off'; // 또는 'auto' | 'defer'
+```
+
+참고:
+- 타입 선언은 src/shared/types/core/userscript.d.ts에 포함되어 있습니다:
+  - XEG_STYLE_HEAD_MODE?: 'auto' | 'off' | 'defer'
+  - XEG_CSS_TEXT?: string
+- 빌드 플러그인은 위 전역을 자동으로 주입/존중합니다(vite userscript wrapper).
+
 ### 갤러리 프리로드 규칙 (Performance)
 
 - 설정 `gallery.preloadCount`는 현재 인덱스를 중심으로 좌/우 이웃 항목을 우선 순위대로 프리로드합니다.

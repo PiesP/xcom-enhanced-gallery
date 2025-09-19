@@ -221,13 +221,13 @@ Phase:
 | Phase | 코드   | 목적                                                         | 상태     |
 | ----- | ------ | ------------------------------------------------------------ | -------- |
 | P1    | 테스트 | 툴바 가시성 E2E 성격의 경량 DOM 테스트(hover 시 변수 반영)   | GREEN    |
-| P2    | 구현   | 미사용 툴바 애니메이션 제거 또는 deprecated 주석/플래그 처리 | PLANNED  |
+| P2    | 구현   | 미사용 툴바 애니메이션 제거 또는 deprecated 주석/플래그 처리 | GREEN    |
 | P3    | 리팩터 | 문서화(코멘트, CODING_GUIDELINES 링크)                       | REFACTOR |
 
 #### 즉시 액션 (Next 4 steps)
 
 - TOOLBAR-VIS-CLEANUP P2: 잔존 툴바 관련 키프레임/클래스 deprecated 또는 제거,
-  회귀 가드 추가
+  회귀 가드 추가 — 완료. test/styles/toolbar-animation-removal.test.ts GREEN
 - XEG-STYLE-ISOLATION-UNIFY 후속: head 주입 gating 사용 가이드와 설정 예시를
   CODING_GUIDELINES에 반영(문서 작업)
 - CSS-GLOBAL-PRUNE 후속: 기타 유틸 클래스 중복 스캔 케이스 추가(필요 시) 및 설계
