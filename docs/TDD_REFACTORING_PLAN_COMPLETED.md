@@ -45,6 +45,19 @@ focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabInde
 적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이
 모킹으로 격리되어 재발 방지 패턴 정착. 계획서에서 P5 제거.
 
+2025-09-19: PLAN — 활성 리팩토링 에픽 체계화 및 산출물 점검 완료
+
+- 활성 계획서(TDD_REFACTORING_PLAN.md)에 신규 Epic 4건을 정식 등록하고
+  범위/지표/AC를 확정
+  - XEG-STYLE-ISOLATION-UNIFY (Shadow DOM 스타일 주입/격리 단일화)
+  - XEG-CORE-REG-DEDUPE (Core 서비스 중복 등록 제거)
+  - XEG-CSS-GLOBAL-PRUNE (글로벌 CSS 중복/충돌 정리)
+  - XEG-TOOLBAR-VIS-CLEANUP (툴바 가시성/애니메이션 단순화)
+- dev 빌드(dist/xcom-enhanced-gallery.dev.user.js, .map) 재검증 및 소스맵 무결성
+  확인
+- 완료 항목 이관 대상은 없음(신규 Epic은 ‘활성’ 상태 유지); 본 로그에는 계획
+  수립 완료 사실만 기록
+
 2025-09-18: BATCH-D — 중복/계약 통합 RED 14건 제거 (+1 누락 검증) BulkDownload
 2025-09-18: BATCH-E — Graduation & 중복 RED 정리 15건 (24→9) 의도적 잔존
 9개(core domain hardening: icon preload/static import, style layer alias prune,
