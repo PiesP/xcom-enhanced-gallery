@@ -14,21 +14,7 @@
  */
 
 /* ===== 통합 Glass Surface 클래스 ===== */
-.glass-surface {
-  background: var(--xeg-surface-glass-bg);
-  border: 1px solid var(--xeg-surface-glass-border);
-  border-radius: var(--xeg-radius-2xl);
-  box-shadow: var(--xeg-surface-glass-shadow);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  isolation: isolate;
-  transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
-}
-
-.glass-surface:hover {
-  background: var(--xeg-surface-glass-bg-hover, var(--xeg-surface-glass-bg));
-  box-shadow: var(--xeg-surface-glass-shadow-hover, var(--xeg-surface-glass-shadow));
-}
+/* base .glass-surface 클래스는 shared/styles/isolated-gallery.css에서 단일 출처로 유지합니다. */
 
 /* 테마별 Surface 변형 */
 .glass-surface-light {
