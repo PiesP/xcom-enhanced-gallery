@@ -55,19 +55,20 @@ Baseline: master (2025-09-19, dev build 확인)
 
 Phase (TDD RED → GREEN → REFACTOR):
 
-| Phase | 코드                          | 목적                                                                                                              | 상태     |
-| ----- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------- |
-| P1    | 테스트 추가                   | ShadowRoot에만 스타일 존재 시에도 컴포넌트가 예상 클래스(모듈 CSS 포함) 스타일을 얻는지 검증                      | RED      |
-| P2    | vite userscript 플러그인 보강 | 번들된 CSS 텍스트를 전역 변수(window.**XEG_CSS_TEXT**)로도 노출하고, 기본 style 주입은 옵트인으로 전환(또는 지연) | PLANNED  |
-| P3    | 런타임 주입기 도입            | `GalleryContainer`가 Shadow DOM 사용 시 전역 CSS 텍스트를 ShadowRoot에 주입, 미사용 경로(@import) 제거            | PLANNED  |
-| P4    | 정리                          | 문서(head) 이중 주입 방지, dev/prod 모두 동작 확인 및 코드 주석/문서화                                            | REFACTOR |
+| Phase | 코드                          | 목적                                                                                                   | 상태     |
+| ----- | ----------------------------- | ------------------------------------------------------------------------------------------------------ | -------- |
+| P1    | 테스트 추가                   | ShadowRoot에만 스타일 존재 시에도 컴포넌트가 예상 클래스(모듈 CSS 포함) 스타일을 얻는지 검증           | GREEN    |
+| P2    | vite userscript 플러그인 보강 | 번들된 CSS 텍스트를 전역 변수(window.**XEG_CSS_TEXT**)로 노출(문서 head 주입은 현 상태 유지)           | GREEN    |
+| P3    | 런타임 주입기 도입            | `GalleryContainer`가 Shadow DOM 사용 시 전역 CSS 텍스트를 ShadowRoot에 주입, 미사용 경로(@import) 제거 | GREEN    |
+| P4    | 정리                          | 문서(head) 이중 주입 방지(옵트인/지연 포함), dev/prod 모두 동작 확인 및 코드 주석/문서화               | REFACTOR |
 
 Acceptance Criteria:
 
-- Shadow DOM on: 문서에는 주입 없음, ShadowRoot에는 단일 style만 존재하고 모든
-  모듈 클래스가 적용됨
+- (Post-P3, 현재) Shadow DOM on: ShadowRoot에 전역 CSS 텍스트 기반 단일 style이
+  존재하고 모듈 클래스가 적용됨(문서 head 주입은 유지)
 - Shadow DOM off: 문서에 단일 style 존재, UI 정상 렌더
-- dist에서 '/src/\*.css' 문자열이 사라짐, glass-surface 정의 단일화
+- dist에서 '/src/\*.css' 문자열 제거(@import 경로 제거)
+- (Post-P4) 문서(head) 이중 주입 방지, 필요 시 옵트인/지연 옵션으로 제어
 
 위험 & 완화:
 
@@ -107,13 +108,21 @@ Phase:
 
 | Phase | 코드   | 목적                                                            | 상태     |
 | ----- | ------ | --------------------------------------------------------------- | -------- |
-| P1    | 테스트 | `registerCoreServices()` 호출 시 THEME 키 단일 등록 보장 테스트 | RED      |
-| P2    | 구현   | 중복 코드 제거, alias 키만 유지(이미 동일 객체 공유)            | PLANNED  |
+| P1    | 테스트 | `registerCoreServices()` 호출 시 THEME 키 단일 등록 보장 테스트 | GREEN    |
+| P2    | 구현   | 중복 코드 제거, alias 키만 유지(이미 동일 객체 공유)            | GREEN    |
 | P3    | 리팩터 | 경고/cleanup 경로 제거로 초기화 간소화, 주석 정리               | REFACTOR |
 
 Acceptance Criteria:
 
 - 콘솔 warn 없음, ServiceManager 진단에서 중복 키 0
+
+Implementation Notes:
+
+- 플러그인에서 window.XEG_CSS_TEXT 전역 노출 추가 및 문서 head 주입 유지(테스트
+  안정성/회귀 리스크 최소화). head 주입 gating은 P4에서 처리
+- GalleryContainer: Shadow DOM 경로의 `@import '/src/...css'` 제거, 전역 CSS
+  텍스트로 주입
+- Core: THEME 중복 register 제거, alias 키('theme.service') 유지
 
 위험 & 완화:
 
