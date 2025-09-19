@@ -58,8 +58,8 @@ Phase (TDD RED → GREEN → REFACTOR):
 | Phase | 코드                          | 목적                                                                                                              | 상태     |
 | ----- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------- |
 | P1    | 테스트 추가                   | ShadowRoot에만 스타일 존재 시에도 컴포넌트가 예상 클래스(모듈 CSS 포함) 스타일을 얻는지 검증                      | RED      |
-| P2    | vite userscript 플러그인 보강 | 번들된 CSS 텍스트를 전역 변수(window.**XEG_CSS_TEXT**)로도 노출하고, 기본 style 주입은 옵트인으로 전환(또는 지연) | RED      |
-| P3    | 런타임 주입기 도입            | `GalleryContainer`가 Shadow DOM 사용 시 전역 CSS 텍스트를 ShadowRoot에 주입, 미사용 경로(@import) 제거            | GREEN    |
+| P2    | vite userscript 플러그인 보강 | 번들된 CSS 텍스트를 전역 변수(window.**XEG_CSS_TEXT**)로도 노출하고, 기본 style 주입은 옵트인으로 전환(또는 지연) | PLANNED  |
+| P3    | 런타임 주입기 도입            | `GalleryContainer`가 Shadow DOM 사용 시 전역 CSS 텍스트를 ShadowRoot에 주입, 미사용 경로(@import) 제거            | PLANNED  |
 | P4    | 정리                          | 문서(head) 이중 주입 방지, dev/prod 모두 동작 확인 및 코드 주석/문서화                                            | REFACTOR |
 
 Acceptance Criteria:
@@ -108,7 +108,7 @@ Phase:
 | Phase | 코드   | 목적                                                            | 상태     |
 | ----- | ------ | --------------------------------------------------------------- | -------- |
 | P1    | 테스트 | `registerCoreServices()` 호출 시 THEME 키 단일 등록 보장 테스트 | RED      |
-| P2    | 구현   | 중복 코드 제거, alias 키만 유지(이미 동일 객체 공유)            | GREEN    |
+| P2    | 구현   | 중복 코드 제거, alias 키만 유지(이미 동일 객체 공유)            | PLANNED  |
 | P3    | 리팩터 | 경고/cleanup 경로 제거로 초기화 간소화, 주석 정리               | REFACTOR |
 
 Acceptance Criteria:
@@ -153,7 +153,7 @@ Phase:
 | Phase | 코드   | 목적                                                                        | 상태     |
 | ----- | ------ | --------------------------------------------------------------------------- | -------- |
 | P1    | 테스트 | 하드코딩/중복 스타일 스캐너 테스트 강화(기존 hardcoded-colors.test.ts 보완) | RED      |
-| P2    | 구현   | 공통 클래스 단일화, `GalleryRenderer.ts`의 불필요한 global.css import 제거  | GREEN    |
+| P2    | 구현   | 공통 클래스 단일화, `GalleryRenderer.ts`의 불필요한 global.css import 제거  | PLANNED  |
 | P3    | 리팩터 | 문서/주석 정리, 디자인 토큰 준수 확인                                       | REFACTOR |
 
 Acceptance Criteria:
@@ -196,8 +196,19 @@ Phase:
 | Phase | 코드   | 목적                                                         | 상태     |
 | ----- | ------ | ------------------------------------------------------------ | -------- |
 | P1    | 테스트 | 툴바 가시성 E2E 성격의 경량 DOM 테스트(hover 시 변수 반영)   | RED      |
-| P2    | 구현   | 미사용 툴바 애니메이션 제거 또는 deprecated 주석/플래그 처리 | GREEN    |
+| P2    | 구현   | 미사용 툴바 애니메이션 제거 또는 deprecated 주석/플래그 처리 | PLANNED  |
 | P3    | 리팩터 | 문서화(코멘트, CODING_GUIDELINES 링크)                       | REFACTOR |
+
+#### 즉시 액션 (Next 4 steps)
+
+- STYLE-ISOLATION-UNIFY P1: ShadowRoot 전용 주입 시에도 모듈 CSS가 적용되는지
+  RED 테스트 추가
+- STYLE-ISOLATION-UNIFY P2: Userscript 플러그인에서 번들된 CSS 텍스트를
+  window.XEG_CSS_TEXT로 노출
+- STYLE-ISOLATION-UNIFY P3: GalleryContainer가 ShadowRoot에 전역 CSS 텍스트를
+  주입하고 기존 @import 제거
+- CORE-REG-DEDUPE P1: registerCoreServices() 호출 시 동일 키 중복 등록 0을
+  보장하는 RED 테스트 추가
 
 Acceptance Criteria:
 

@@ -101,6 +101,11 @@ declare global {
     scriptHandler: string;
     version: string;
   };
+
+  // Userscript에서 노출되는 글로벌 CSS 텍스트(빌드 플러그인 설정)
+  interface Window {
+    XEG_CSS_TEXT?: string;
+  }
 }
 
 /**

@@ -42,8 +42,7 @@ export async function registerCoreServices(): Promise<void> {
   serviceManager.register('theme.service', themeService); // 테스트에서 사용하는 키
   serviceManager.register('toast.controller', toastController); // 테스트에서 사용하는 키
 
-  // 기존 키들과의 호환성을 위해 중복 등록
-  serviceManager.register(SERVICE_KEYS.THEME, themeService);
+  // 기존 키들과의 호환성: 중복 등록 제거 (THEME는 위에서 한 번만 등록)
   // TOAST_CONTROLLER는 이미 위에서 등록됨
 
   // ====================================

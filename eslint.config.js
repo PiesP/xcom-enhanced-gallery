@@ -223,6 +223,9 @@ export default [
       'scripts/**/*.{ts,js}',
     ],
     languageOptions: {
+      parser: tsParser,
+      sourceType: 'module',
+      ecmaVersion: 2022,
       globals: {
         // Node.js 환경 전역 (설정/스크립트 파일용)
         console: 'readonly',

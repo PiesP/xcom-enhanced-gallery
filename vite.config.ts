@@ -8,7 +8,7 @@ import { defineConfig, Plugin, UserConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
+import { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
 
 interface BuildFlags {
   mode: string;
@@ -95,7 +95,10 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
       }
 
       const styleInjector = cssConcat.trim().length
-        ? `(function(){try{var s=document.getElementById('xeg-styles');if(s) s.remove();s=document.createElement('style');s.id='xeg-styles';s.textContent=${JSON.stringify(cssConcat)};(document.head||document.documentElement).appendChild(s);}catch(e){console.error('[XEG] style inject fail',e);}})();\n`
+        ? `// expose bundled css for ShadowRoot consumers\n(function(){try{\n  // 1) 글로벌 변수로 CSS 텍스트 노출 (Shadow DOM 주입용)
+  try{ (globalThis||window).XEG_CSS_TEXT = ${JSON.stringify(cssConcat)}; }catch(_){}
+  // 2) 문서 head에도 기본 스타일 주입 (기존 동작 유지)
+  var s=document.getElementById('xeg-styles');if(s) s.remove();s=document.createElement('style');s.id='xeg-styles';s.textContent=(globalThis&&globalThis.XEG_CSS_TEXT)||${JSON.stringify(cssConcat)};(document.head||document.documentElement).appendChild(s);\n}catch(e){console.error('[XEG] style inject fail',e);}})();\n`
         : '';
 
       // 내부 엔트리 코드에 남아 있을 수 있는 sourceMappingURL 주석 제거
@@ -120,7 +123,9 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         try {
           const suffix = `\n//# sourceMappingURL=${mapName}`;
           fs.appendFileSync(path.join(outDir, finalName), suffix, 'utf8');
-        } catch {}
+        } catch (err) {
+          console.warn('[userscript] failed to append sourceMappingURL comment', err);
+        }
         console.log(`✅ Sourcemap 생성: ${mapName}`);
       }
 

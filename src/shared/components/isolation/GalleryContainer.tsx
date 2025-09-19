@@ -42,12 +42,10 @@ export function mountGallery(
       // Shadow DOM 지원
       shadowRoot = (container as HTMLElement).attachShadow({ mode: 'open' });
 
-      // 갤러리 스타일을 Shadow DOM에 주입
+      // 갤러리 스타일을 Shadow DOM에 주입: 번들된 CSS 텍스트를 사용 (userscript plugin이 window.XEG_CSS_TEXT로 노출)
       const styleElement = document.createElement('style');
-      styleElement.textContent = `
-        @import url('/src/features/gallery/styles/gallery-global.css');
-        @import url('/src/shared/styles/design-tokens.primitive.css');
-
+      const globalCssText = (globalThis as unknown as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT || '';
+      const hostRules = `
         :host {
           position: fixed;
           top: 0;
@@ -58,6 +56,7 @@ export function mountGallery(
           isolation: isolate;
         }
       `;
+      styleElement.textContent = `${globalCssText}\n${hostRules}`;
       shadowRoot.appendChild(styleElement);
 
       // ShadowRoot를 Element로 타입 캐스팅 (preact 렌더링 호환성)
