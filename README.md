@@ -198,6 +198,20 @@ npm test
 
 더 자세한 개발 가이드는 [`docs/`](docs/) 디렉토리의 문서를 참고하세요.
 
+주요 문서 바로가기
+
+- 아키텍처와 책임 분리 설계서: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- 코딩 가이드라인: [docs/CODING_GUIDELINES.md](docs/CODING_GUIDELINES.md)
+- 의존성 그래프(인터랙티브):
+  [docs/dependency-graph.html](docs/dependency-graph.html)
+
+의존성 그래프 생성/뷰어
+
+- 생성/검증: `npm run deps:all` (docs/dependency-graph.{json,dot,svg} 생성 + 룰
+  검증)
+- 뷰어 실행: `npm run deps:view` → 브라우저에서
+  `http://localhost:8080/dependency-graph.html`
+
 ## 📞 지원 및 피드백
 
 - **🐛 버그 신고**:

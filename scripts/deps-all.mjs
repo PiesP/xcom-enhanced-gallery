@@ -8,7 +8,7 @@
  * Resolves prior issue where direct API call produced empty JSON by explicitly awaiting cruise
  * result and serializing the .modules graph.
  */
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -17,17 +17,27 @@ import { cruise } from 'dependency-cruiser';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = __dirname.endsWith('scripts') ? dirname(__dirname) : __dirname;
-const docsDir = join(projectRoot, 'docs');
+const pkg = JSON.parse(
+  await (await import('node:fs/promises')).readFile(join(projectRoot, 'package.json'), 'utf-8')
+);
+const depCfg = pkg?.xeg?.depGraph || {};
+const sourceDir = depCfg.sourceDir ? join(projectRoot, depCfg.sourceDir) : join(projectRoot, 'src');
+const docsDir = depCfg.outputDir ? join(projectRoot, depCfg.outputDir) : join(projectRoot, 'docs');
+const files = Object.assign(
+  { json: 'dependency-graph.json', dot: 'dependency-graph.dot', svg: 'dependency-graph.svg' },
+  depCfg.files || {}
+);
+if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });
 
 async function run() {
   const start = Date.now();
-  const result = await cruise(['src'], {
+  const result = await cruise([sourceDir], {
     validate: {
       ruleSet:
         (await import('../.dependency-cruiser.cjs', { with: { type: 'commonjs' } })).default ||
         (await import('../.dependency-cruiser.cjs', { with: { type: 'commonjs' } })),
     },
-    includeOnly: '^src',
+    includeOnly: `^${depCfg.sourceDir || 'src'}`,
     tsConfig: { fileName: 'tsconfig.json' },
     outputType: 'json',
   });
@@ -35,20 +45,28 @@ async function run() {
   // result.output contains the JSON as string when outputType json not set? Ensure we serialize.
   const jsonGraph =
     typeof result.output === 'string' ? result.output : JSON.stringify(result, null, 2);
-  writeFileSync(join(docsDir, 'dependency-graph.json'), jsonGraph, 'utf-8');
+  writeFileSync(join(docsDir, files.json), jsonGraph, 'utf-8');
 
   // Generate DOT via CLI (uses existing config reporterOptions) then SVG via graphviz if available
   try {
     const dot = execSync(
-      'npx dependency-cruiser src --config .dependency-cruiser.cjs --output-type dot',
+      `npx dependency-cruiser ${depCfg.sourceDir || 'src'} --config ${depCfg.configFile || '.dependency-cruiser.cjs'} --output-type dot`,
       { encoding: 'utf-8' }
     );
-    writeFileSync(join(docsDir, 'dependency-graph.dot'), dot, 'utf-8');
+    writeFileSync(join(docsDir, files.dot), dot, 'utf-8');
     try {
-      const svg = execSync('npx dot -Tsvg docs/dependency-graph.dot', { encoding: 'utf-8' });
-      writeFileSync(join(docsDir, 'dependency-graph.svg'), svg, 'utf-8');
+      // Prefer file-based invocation to avoid stdin issues on Windows
+      execSync(`dot -Tsvg "${join(docsDir, files.dot)}" -o "${join(docsDir, files.svg)}"`, {
+        stdio: 'inherit',
+      });
     } catch {
-      globalThis.console?.warn?.('[deps-all] graphviz dot not available - skipping svg');
+      try {
+        execSync(`sfdp -Tsvg "${join(docsDir, files.dot)}" -o "${join(docsDir, files.svg)}"`, {
+          stdio: 'inherit',
+        });
+      } catch {
+        globalThis.console?.warn?.('[deps-all] graphviz dot/sfdp not available - skipping svg');
+      }
     }
   } catch (err) {
     globalThis.console?.error?.('[deps-all] dot generation failed', err);
