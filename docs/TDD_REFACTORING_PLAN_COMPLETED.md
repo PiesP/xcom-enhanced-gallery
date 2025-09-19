@@ -10,6 +10,31 @@
 - 핵심 성과: 래퍼 계층 축소, 툴바 hover/focus 단일화, Shadow/Light DOM 일관성,
   구조/키보드/a11y/사이즈 가드 GREEN 유지.
 
+2025-09-19: XEG-CSS-GLOBAL-PRUNE P3 — 글로벌 CSS 중복 스캐너 보강 및 문서화 완료
+
+- 중복 스캐너가 CSS 주석을 텍스트로 잘못 집계하던 문제를 수정(주석 제거 후
+  카운트)하여 `.glass-surface` 등 유틸 클래스의 중복 정의를 정확히 탐지. 관련
+  테스트 `test/refactoring/css-global-prune.duplication-expanded.test.ts` GREEN.
+- GalleryRenderer 글로벌 import 제거/단일 소스 유지(선행 P2)와 함께 dist 내 중복
+  0 확인.
+
+2025-09-19: XEG-TOOLBAR-VIS-CLEANUP P1 — 호버 기반 가시성 테스트 GREEN
+2025-09-19: XEG-TOOLBAR-VIS-CLEANUP P2 — 툴바 애니메이션 잔재 제거/Deprecated
+처리 및 회귀 가드 추가
+
+- css-animations.ts에서 toolbar-slide keyframes 및 관련 클래스 정의 제거, 상수는
+  호환성 목적으로 deprecated 주석만 유지.
+- design-tokens.component.css의 --animation-toolbar-show/hide를 none으로
+  고정하고 toolbar-slide-\* keyframes를 제거.
+- 회귀 테스트 추가: test/styles/toolbar-animation-removal.test.ts —
+  keyframes/클래스 부재 및 토큰 none 값 가드. 전체 스위트 GREEN.
+
+- `useToolbarPositionBased` 훅이 호버 시 `--xeg-toolbar-opacity` 및
+  `--xeg-toolbar-pointer-events` 변수를 정확히 토글하는지 DOM 테스트로 검증.
+  타이머/애니메이션 의존 없이 가시성 제어가 일관됨을 보장. 관련 테스트
+  `test/features/gallery/useToolbarPositionBased.test.ts` 및
+  `test/features/toolbar/toolbar-hover-consistency*.test.ts` GREEN.
+
 2025-09-19: DOM-001 P1–P2 — Overlay DOM 간소화 초기 단계 완료
 
 - P1: RED 테스트 추가(test/unit/ui/vertical-gallery-dom.red.test.tsx)로
@@ -40,10 +65,47 @@
   모두 --xeg-toolbar-*만 설정/사용. 회귀
   가드(toolbar-token-unification.test.ts)도 레거시 부재를 확인하도록 갱신.
 
+2025-09-19: XEG-STYLE-ISOLATION-UNIFY — P1–P4 완료 (Epic 종료)
+
+- 번들 CSS 전역 노출(window.XEG_CSS_TEXT) 및 ShadowRoot 주입 경로 확립, head
+  주입 게이트(window.XEG_STYLE_HEAD_MODE: 'auto'|'off'|'defer') 도입.
+- dist 내 '/src/\*.css' 경로 문자열 0, `.glass-surface` 중복 정의 0 확인.
+- CODING_GUIDELINES에 스타일 주입 게이팅 사용 가이드 추가.
+
+2025-09-19: XEG-CSS-GLOBAL-PRUNE — Epic 종료(요약)
+
+- base `.glass-surface` 단일 출처 유지(shared/styles/isolated-gallery.css),
+  GalleryRenderer 글로벌 import 제거. 중복 스캐너 보강(P3)과 함께 dist 중복 0.
+
+2025-09-19: XEG-CORE-REG-DEDUPE P3 — 초기화 경로 간소화/주석 정리 완료
+
+- service-initialization에서 동일 키 중복 관련 경고/cleanup 언급 제거, alias
+  키만 유지하도록 주석 정리.
+- 단위 테스트(service-initialization.dedupe.red.test.ts) 기대와 일치 확인.
+
+2025-09-19: XEG-TOOLBAR-VIS-CLEANUP P3 — 가이드라인 주석/참조 추가
+
+- useToolbarPositionBased 훅과 Toolbar 컴포넌트 헤더에 CODING_GUIDELINES의
+  "Toolbar 가시성 가이드라인" 섹션을 참조하는 주석 추가.
+- 타이머/애니메이션 미사용 정책을 소스 레벨에서 명확화.
+
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
 적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이
 모킹으로 격리되어 재발 방지 패턴 정착. 계획서에서 P5 제거.
+
+2025-09-19: PLAN — 활성 리팩토링 에픽 체계화 및 산출물 점검 완료
+
+- 활성 계획서(TDD_REFACTORING_PLAN.md)에 신규 Epic 4건을 정식 등록하고
+  범위/지표/AC를 확정
+  - XEG-STYLE-ISOLATION-UNIFY (Shadow DOM 스타일 주입/격리 단일화)
+  - XEG-CORE-REG-DEDUPE (Core 서비스 중복 등록 제거)
+  - XEG-CSS-GLOBAL-PRUNE (글로벌 CSS 중복/충돌 정리)
+  - XEG-TOOLBAR-VIS-CLEANUP (툴바 가시성/애니메이션 단순화)
+- dev 빌드(dist/xcom-enhanced-gallery.dev.user.js, .map) 재검증 및 소스맵 무결성
+  확인
+- 완료 항목 이관 대상은 없음(신규 Epic은 ‘활성’ 상태 유지); 본 로그에는 계획
+  수립 완료 사실만 기록
 
 2025-09-18: BATCH-D — 중복/계약 통합 RED 14건 제거 (+1 누락 검증) BulkDownload
 2025-09-18: BATCH-E — Graduation & 중복 RED 정리 15건 (24→9) 의도적 잔존

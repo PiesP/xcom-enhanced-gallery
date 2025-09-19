@@ -1,6 +1,9 @@
 /**
  * @fileoverview Gallery Toolbar Component
  * @version 6.0.0 - Phase 3 StandardProps 시스템 적용
+ *
+ * Visibility model: hover/CSS variables only (no timers/animations).
+ * See docs/CODING_GUIDELINES.md → "Toolbar 가시성 가이드라인 (Hover/CSS 변수)".
  */
 
 import type { ViewMode } from '@shared/types';

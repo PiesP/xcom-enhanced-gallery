@@ -1,5 +1,9 @@
 import { getPreactHooks } from '@shared/external/vendors';
 
+// Toolbar visibility guideline:
+// See docs/CODING_GUIDELINES.md → "Toolbar 가시성 가이드라인 (Hover/CSS 변수)"
+// - Visibility is controlled by CSS variables only (no timers/animations)
+// - Variables: --xeg-toolbar-opacity, --xeg-toolbar-pointer-events
 export interface UseToolbarPositionBasedOptions {
   readonly toolbarElement: HTMLElement | null | undefined;
   readonly hoverZoneElement: HTMLElement | null | undefined;

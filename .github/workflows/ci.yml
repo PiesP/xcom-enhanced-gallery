@@ -51,7 +51,16 @@ jobs:
       - name: � Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔎 Type check
+      - name: 🧩 Install Graphviz (for SVG graphs)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+
+      - name: �️ Generate dependency graphs (Node 20)
+        if: ${{ matrix.node-version == 20 }}
+        run: npm run deps:all
+
+      - name: �🔎 Type check
         run: npm run typecheck
 
       - name: 🧹 Lint
@@ -93,4 +102,15 @@ jobs:
         with:
           name: build-artifacts-${{ github.sha }}
           path: dist/
+          retention-days: 7
+
+      - name: 📈 Upload dependency graphs (Node 20)
+        uses: actions/upload-artifact@v4
+        if: ${{ success() && matrix.node-version == 20 }}
+        with:
+          name: dependency-graphs-${{ github.sha }}
+          path: |
+            docs/dependency-graph.json
+            docs/dependency-graph.dot
+            docs/dependency-graph.svg
           retention-days: 7

@@ -101,6 +101,18 @@ declare global {
     scriptHandler: string;
     version: string;
   };
+
+  // Userscript에서 노출되는 글로벌 CSS 텍스트(빌드 플러그인 설정)
+  interface Window {
+    XEG_CSS_TEXT?: string;
+    /**
+     * Userscript head 스타일 주입 모드 게이트
+     * - 'auto': 즉시 head 주입 (기본값)
+     * - 'off': head 주입 비활성화 (ShadowRoot 경로만 사용)
+     * - 'defer': rAF 또는 setTimeout으로 지연 주입
+     */
+    XEG_STYLE_HEAD_MODE?: 'auto' | 'off' | 'defer';
+  }
 }
 
 /**

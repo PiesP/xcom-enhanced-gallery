@@ -85,8 +85,9 @@
   --animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
   --animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
   --animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
-  --animation-toolbar-show: toolbar-slide-down var(--duration-fast) var(--transition-fast);
-  --animation-toolbar-hide: toolbar-slide-up var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+  /* Toolbar visibility is hover/CSS-variable based; animation presets are no-ops */
+  --animation-toolbar-show: none;
+  --animation-toolbar-hide: none;
 
   /* Icon Component Tokens moved to design-tokens.css (aggregator) */
 }
@@ -210,24 +211,4 @@
   }
 }
 
-@keyframes toolbar-slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes toolbar-slide-up {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-100%);
-  }
-}
+/* toolbar-slide-* keyframes removed (deprecated); visibility is controlled by CSS variables */

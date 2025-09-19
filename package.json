@@ -29,6 +29,7 @@
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
     "deps:gen": "node ./scripts/deps-runner.mjs",
     "deps:all": "npm run deps:gen && npm run deps:check",
+    "deps:view": "http-server docs -p 8080 -o /dependency-graph.html",
     "deps:all:legacy": "npm run deps:json && npm run deps:graph:dot && npm run deps:graph && npm run deps:check",
     "prepare": "husky"
   },
@@ -92,5 +93,18 @@
     "*.{css,scss}": [
       "prettier --write"
     ]
+  },
+  "xeg": {
+    "depGraph": {
+      "sourceDir": "src",
+      "configFile": ".dependency-cruiser.cjs",
+      "outputDir": "docs",
+      "files": {
+        "json": "dependency-graph.json",
+        "dot": "dependency-graph.dot",
+        "svg": "dependency-graph.svg",
+        "html": "dependency-graph.html"
+      }
+    }
   }
 }

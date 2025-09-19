@@ -8,7 +8,7 @@ import { defineConfig, Plugin, UserConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
+import { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
 
 interface BuildFlags {
   mode: string;
@@ -95,7 +95,7 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
       }
 
       const styleInjector = cssConcat.trim().length
-        ? `(function(){try{var s=document.getElementById('xeg-styles');if(s) s.remove();s=document.createElement('style');s.id='xeg-styles';s.textContent=${JSON.stringify(cssConcat)};(document.head||document.documentElement).appendChild(s);}catch(e){console.error('[XEG] style inject fail',e);}})();\n`
+        ? `// expose bundled css for ShadowRoot consumers\n(function(){try{\n  // 1) 글로벌 변수로 CSS 텍스트 노출 (Shadow DOM 주입용)\n  try{ (globalThis||window).XEG_CSS_TEXT = ${JSON.stringify(cssConcat)}; }catch(_){}\n  // 2) 문서 head 주입 gating: XEG_STYLE_HEAD_MODE ∈ {'auto','off','defer'}\n  var __mode = (globalThis && (globalThis).XEG_STYLE_HEAD_MODE) || 'auto';\n  function __injectHead(){\n    try{\n      var existing=document.getElementById('xeg-styles');\n      if(existing){ return; }\n      var s=document.createElement('style');\n      s.id='xeg-styles';\n      s.textContent=(globalThis&&globalThis.XEG_CSS_TEXT)||${JSON.stringify(cssConcat)};\n      (document.head||document.documentElement).appendChild(s);\n    }catch(err){ console.error('[XEG] style head inject fail', err); }\n  }\n  if(__mode==='auto'){\n    __injectHead();\n  }else if(__mode==='defer'){\n    var raf=(globalThis && globalThis.requestAnimationFrame) ? globalThis.requestAnimationFrame : null;\n    if(raf){ raf(function(){ __injectHead(); }); } else { setTimeout(function(){ __injectHead(); }, 0); }\n  }else if(__mode==='off'){\n    // no-op: ShadowRoot 경로만 사용\n  }\n}catch(e){console.error('[XEG] style inject wrapper fail',e);}})();\n`
         : '';
 
       // 내부 엔트리 코드에 남아 있을 수 있는 sourceMappingURL 주석 제거
@@ -120,7 +120,9 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         try {
           const suffix = `\n//# sourceMappingURL=${mapName}`;
           fs.appendFileSync(path.join(outDir, finalName), suffix, 'utf8');
-        } catch {}
+        } catch (err) {
+          console.warn('[userscript] failed to append sourceMappingURL comment', err);
+        }
         console.log(`✅ Sourcemap 생성: ${mapName}`);
       }
 
