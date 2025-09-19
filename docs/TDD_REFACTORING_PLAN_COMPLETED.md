@@ -10,6 +10,22 @@
 - 핵심 성과: 래퍼 계층 축소, 툴바 hover/focus 단일화, Shadow/Light DOM 일관성,
   구조/키보드/a11y/사이즈 가드 GREEN 유지.
 
+2025-09-19: XEG-CSS-GLOBAL-PRUNE P3 — 글로벌 CSS 중복 스캐너 보강 및 문서화 완료
+
+- 중복 스캐너가 CSS 주석을 텍스트로 잘못 집계하던 문제를 수정(주석 제거 후
+  카운트)하여 `.glass-surface` 등 유틸 클래스의 중복 정의를 정확히 탐지. 관련
+  테스트 `test/refactoring/css-global-prune.duplication-expanded.test.ts` GREEN.
+- GalleryRenderer 글로벌 import 제거/단일 소스 유지(선행 P2)와 함께 dist 내 중복
+  0 확인.
+
+2025-09-19: XEG-TOOLBAR-VIS-CLEANUP P1 — 호버 기반 가시성 테스트 GREEN
+
+- `useToolbarPositionBased` 훅이 호버 시 `--xeg-toolbar-opacity` 및
+  `--xeg-toolbar-pointer-events` 변수를 정확히 토글하는지 DOM 테스트로 검증.
+  타이머/애니메이션 의존 없이 가시성 제어가 일관됨을 보장. 관련 테스트
+  `test/features/gallery/useToolbarPositionBased.test.ts` 및
+  `test/features/toolbar/toolbar-hover-consistency*.test.ts` GREEN.
+
 2025-09-19: DOM-001 P1–P2 — Overlay DOM 간소화 초기 단계 완료
 
 - P1: RED 테스트 추가(test/unit/ui/vertical-gallery-dom.red.test.tsx)로

@@ -55,12 +55,12 @@ Baseline: master (2025-09-19, dev build 확인)
 
 Phase (TDD RED → GREEN → REFACTOR):
 
-| Phase | 코드                          | 목적                                                                                                   | 상태     |
-| ----- | ----------------------------- | ------------------------------------------------------------------------------------------------------ | -------- |
-| P1    | 테스트 추가                   | ShadowRoot에만 스타일 존재 시에도 컴포넌트가 예상 클래스(모듈 CSS 포함) 스타일을 얻는지 검증           | GREEN    |
-| P2    | vite userscript 플러그인 보강 | 번들된 CSS 텍스트를 전역 변수(window.**XEG_CSS_TEXT**)로 노출(문서 head 주입은 현 상태 유지)           | GREEN    |
-| P3    | 런타임 주입기 도입            | `GalleryContainer`가 Shadow DOM 사용 시 전역 CSS 텍스트를 ShadowRoot에 주입, 미사용 경로(@import) 제거 | GREEN    |
-| P4    | 정리                          | 문서(head) 이중 주입 방지(옵트인/지연 포함), dev/prod 모두 동작 확인 및 코드 주석/문서화               | REFACTOR |
+| Phase | 코드                          | 목적                                                                                                   | 상태  |
+| ----- | ----------------------------- | ------------------------------------------------------------------------------------------------------ | ----- |
+| P1    | 테스트 추가                   | ShadowRoot에만 스타일 존재 시에도 컴포넌트가 예상 클래스(모듈 CSS 포함) 스타일을 얻는지 검증           | GREEN |
+| P2    | vite userscript 플러그인 보강 | 번들된 CSS 텍스트를 전역 변수(window.**XEG_CSS_TEXT**)로 노출(문서 head 주입은 현 상태 유지)           | GREEN |
+| P3    | 런타임 주입기 도입            | `GalleryContainer`가 Shadow DOM 사용 시 전역 CSS 텍스트를 ShadowRoot에 주입, 미사용 경로(@import) 제거 | GREEN |
+| P4    | 정리                          | 문서(head) 이중 주입 방지(옵트인/지연 포함), dev/prod 모두 동작 확인 및 코드 주석/문서화               | GREEN |
 
 Acceptance Criteria:
 
@@ -69,6 +69,13 @@ Acceptance Criteria:
 - Shadow DOM off: 문서에 단일 style 존재, UI 정상 렌더
 - dist에서 '/src/\*.css' 문자열 제거(@import 경로 제거)
 - (Post-P4) 문서(head) 이중 주입 방지, 필요 시 옵트인/지연 옵션으로 제어
+  - vite userscript 플러그인의 styleInjector가 전역 플래그
+    window.XEG_STYLE_HEAD_MODE를 존중:
+    - 'auto'(기본): 즉시 head 주입
+    - 'off': head 주입 비활성화(ShadowRoot 경로만 사용)
+    - 'defer': requestAnimationFrame 또는 setTimeout으로 지연 주입
+  - id='xeg-styles' 중복 검사로 이중 주입 방지 가드 존재
+  - 타입 선언: Window.XEG_STYLE_HEAD_MODE가 userscript.d.ts에 정의됨
 
 위험 & 완화:
 
@@ -159,11 +166,11 @@ Baseline: master (2025-09-19)
 
 Phase:
 
-| Phase | 코드   | 목적                                                                        | 상태     |
-| ----- | ------ | --------------------------------------------------------------------------- | -------- |
-| P1    | 테스트 | 하드코딩/중복 스타일 스캐너 테스트 강화(기존 hardcoded-colors.test.ts 보완) | GREEN    |
-| P2    | 구현   | 공통 클래스 단일화, `GalleryRenderer.ts`의 불필요한 global.css import 제거  | PLANNED  |
-| P3    | 리팩터 | 문서/주석 정리, 디자인 토큰 준수 확인                                       | REFACTOR |
+| Phase | 코드   | 목적                                                                             | 상태  |
+| ----- | ------ | -------------------------------------------------------------------------------- | ----- |
+| P1    | 테스트 | 하드코딩/중복 스타일 스캐너 테스트 강화(기존 hardcoded-colors.test.ts 보완)      | GREEN |
+| P2    | 구현   | 공통 클래스 단일화, `GalleryRenderer.ts`의 불필요한 global.css import 제거       | GREEN |
+| P3    | 리팩터 | 문서/주석 정리, 디자인 토큰 준수 확인 — 중복 스캐너가 CSS 주석을 무시하도록 보강 | GREEN |
 
 Acceptance Criteria:
 
@@ -174,6 +181,9 @@ Implementation Notes:
 - base `.glass-surface`는 `shared/styles/isolated-gallery.css`에서 단일 출처로
   유지하고, `features/gallery/styles/gallery-global.css`에서는 제거함.
   라이트/다크 변형은 글로벌 파일에 유지
+
+- `features/gallery/GalleryRenderer.ts`에서 `./styles/gallery-global.css` 직접
+  import를 제거하여 전역(head)/ShadowRoot 주입 체계만을 사용. 테스트로 가드 추가
 
 위험 & 완화:
 
@@ -210,18 +220,19 @@ Phase:
 
 | Phase | 코드   | 목적                                                         | 상태     |
 | ----- | ------ | ------------------------------------------------------------ | -------- |
-| P1    | 테스트 | 툴바 가시성 E2E 성격의 경량 DOM 테스트(hover 시 변수 반영)   | RED      |
+| P1    | 테스트 | 툴바 가시성 E2E 성격의 경량 DOM 테스트(hover 시 변수 반영)   | GREEN    |
 | P2    | 구현   | 미사용 툴바 애니메이션 제거 또는 deprecated 주석/플래그 처리 | PLANNED  |
 | P3    | 리팩터 | 문서화(코멘트, CODING_GUIDELINES 링크)                       | REFACTOR |
 
 #### 즉시 액션 (Next 4 steps)
 
-- CSS-GLOBAL-PRUNE P2: 필요 시 `GalleryRenderer.ts`에서 불필요한
-  `gallery-global.css` import 제거 범위 검토
-- STYLE-ISOLATION-UNIFY P4: head 주입 gating(옵트인/지연) 설계 및 RED 테스트
-  추가
-- TOOLBAR-VIS-CLEANUP P1: hover 기반 가시성 DOM 테스트 추가
-- CSS-GLOBAL-PRUNE: glass 외 유틸 클래스 중복 스캐너 범위 확장(테스트 보강)
+- TOOLBAR-VIS-CLEANUP P2: 잔존 툴바 관련 키프레임/클래스 deprecated 또는 제거,
+  회귀 가드 추가
+- XEG-STYLE-ISOLATION-UNIFY 후속: head 주입 gating 사용 가이드와 설정 예시를
+  CODING_GUIDELINES에 반영(문서 작업)
+- CSS-GLOBAL-PRUNE 후속: 기타 유틸 클래스 중복 스캔 케이스 추가(필요 시) 및 설계
+  노트 업데이트
+- 번들/테스트 메트릭 모니터링: gzip/테스트 카운트 변동이 예산 내 유지되는지 점검
 
 Acceptance Criteria:
 
