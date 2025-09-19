@@ -1,3 +1,5 @@
+/* eslint-env browser */
+/* global Event, HTMLElement */
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery - MIT License
  *
@@ -48,8 +50,8 @@ describe('useToolbarPositionBased', () => {
       );
 
       expect(result.current.isVisible).toBe(true);
-      expect(mockSetProperty).toHaveBeenCalledWith('--toolbar-opacity', '1');
-      expect(mockSetProperty).toHaveBeenCalledWith('--toolbar-pointer-events', 'auto');
+      expect(mockSetProperty).toHaveBeenCalledWith('--xeg-toolbar-opacity', '1');
+      expect(mockSetProperty).toHaveBeenCalledWith('--xeg-toolbar-pointer-events', 'auto');
     });
 
     it('비활성화된 상태에서는 툴바가 숨겨져야 한다', () => {
@@ -62,8 +64,8 @@ describe('useToolbarPositionBased', () => {
       );
 
       expect(result.current.isVisible).toBe(false);
-      expect(mockSetProperty).toHaveBeenCalledWith('--toolbar-opacity', '0');
-      expect(mockSetProperty).toHaveBeenCalledWith('--toolbar-pointer-events', 'none');
+      expect(mockSetProperty).toHaveBeenCalledWith('--xeg-toolbar-opacity', '0');
+      expect(mockSetProperty).toHaveBeenCalledWith('--xeg-toolbar-pointer-events', 'none');
     });
   });
 
@@ -93,7 +95,7 @@ describe('useToolbarPositionBased', () => {
       });
 
       expect(result.current.isVisible).toBe(true);
-      expect(mockSetProperty).toHaveBeenCalledWith('--toolbar-opacity', '1');
+      expect(mockSetProperty).toHaveBeenCalledWith('--xeg-toolbar-opacity', '1');
     });
 
     it('호버 존에서 마우스 리브 시 툴바가 숨겨져야 한다', () => {
@@ -115,7 +117,7 @@ describe('useToolbarPositionBased', () => {
       });
 
       expect(result.current.isVisible).toBe(false);
-      expect(mockSetProperty).toHaveBeenCalledWith('--toolbar-opacity', '0');
+      expect(mockSetProperty).toHaveBeenCalledWith('--xeg-toolbar-opacity', '0');
     });
 
     it('툴바 자체에 마우스 엔터 시 표시 상태를 유지해야 한다', () => {
@@ -186,7 +188,7 @@ describe('useToolbarPositionBased', () => {
       });
 
       expect(result.current.isVisible).toBe(true);
-      expect(mockSetProperty).toHaveBeenCalledWith('--toolbar-opacity', '1');
+      expect(mockSetProperty).toHaveBeenCalledWith('--xeg-toolbar-opacity', '1');
     });
 
     it('hide() 호출 시 툴바가 숨겨져야 한다', () => {
@@ -203,7 +205,7 @@ describe('useToolbarPositionBased', () => {
       });
 
       expect(result.current.isVisible).toBe(false);
-      expect(mockSetProperty).toHaveBeenCalledWith('--toolbar-opacity', '0');
+      expect(mockSetProperty).toHaveBeenCalledWith('--xeg-toolbar-opacity', '0');
     });
   });
 
@@ -263,8 +265,8 @@ describe('useToolbarPositionBased', () => {
 
       // DOM 요소에 실제 이벤트 리스너가 등록되었는지 확인하기 위해
       // mousenter/mouseleave 이벤트를 발생시켜 봅니다
-      const mouseEnterEvent = new Event('mouseenter');
-      const mouseLeaveEvent = new Event('mouseleave');
+      const mouseEnterEvent = new globalThis.Event('mouseenter');
+      const mouseLeaveEvent = new globalThis.Event('mouseleave');
 
       // 호버 존에 마우스 진입
       act(() => {
@@ -305,7 +307,7 @@ describe('useToolbarPositionBased', () => {
       });
 
       // 이제 이벤트가 정상 동작해야 함
-      const mouseLeaveEvent = new Event('mouseleave');
+      const mouseLeaveEvent = new globalThis.Event('mouseleave');
       act(() => {
         hoverZoneElement.dispatchEvent(mouseLeaveEvent);
       });

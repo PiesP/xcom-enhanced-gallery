@@ -87,9 +87,9 @@
   padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
   gap: 0.75em; /* 12px → 0.75em */
 
-  /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
-  opacity: var(--toolbar-opacity, 1);
-  pointer-events: var(--toolbar-pointer-events, auto);
+  /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 (namespaced tokens) */
+  opacity: var(--xeg-toolbar-opacity, 1);
+  pointer-events: var(--xeg-toolbar-pointer-events, auto);
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
     transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
@@ -107,8 +107,8 @@
 /* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
 .galleryToolbar[data-state='idle'],
 .galleryToolbar:not([data-state]) {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --xeg-toolbar-opacity: 1 !important;
+  --xeg-toolbar-pointer-events: auto !important;
   /* 명시적 가시성 보장 */
   opacity: 1 !important;
   visibility: visible !important;
@@ -117,8 +117,8 @@
 }
 
 .galleryToolbar[data-state='loading'] {
-  --toolbar-opacity: 0.7 !important;
-  --toolbar-pointer-events: auto !important;
+  --xeg-toolbar-opacity: 0.7 !important;
+  --xeg-toolbar-pointer-events: auto !important;
   --toolbar-bg: var(--toolbar-bg-loading);
   /* 로딩 상태에서도 가시성 보장 */
   opacity: 0.7 !important;
@@ -126,8 +126,8 @@
 }
 
 .galleryToolbar[data-state='downloading'] {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --xeg-toolbar-opacity: 1 !important;
+  --xeg-toolbar-pointer-events: auto !important;
   --toolbar-bg: var(--toolbar-bg-downloading);
   /* 다운로드 상태에서도 가시성 보장 */
   opacity: 1 !important;
@@ -135,8 +135,8 @@
 }
 
 .galleryToolbar[data-state='error'] {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --xeg-toolbar-opacity: 1 !important;
+  --xeg-toolbar-pointer-events: auto !important;
   --toolbar-bg: var(--toolbar-bg-error);
   --toolbar-offset-y: -0.25em; /* -4px → -0.25em */
   /* 에러 상태에서도 가시성 보장 */

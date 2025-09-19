@@ -23,9 +23,10 @@ export function useToolbarPositionBased(options: UseToolbarPositionBasedOptions)
 
   const applyVisibility = (visible: boolean): void => {
     try {
-      document.documentElement.style.setProperty('--toolbar-opacity', visible ? '1' : '0');
+      // Unified namespaced tokens (finalized)
+      document.documentElement.style.setProperty('--xeg-toolbar-opacity', visible ? '1' : '0');
       document.documentElement.style.setProperty(
-        '--toolbar-pointer-events',
+        '--xeg-toolbar-pointer-events',
         visible ? 'auto' : 'none'
       );
     } catch {

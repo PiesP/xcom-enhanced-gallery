@@ -23,9 +23,9 @@ describe('Toolbar Visibility Fix 검증', () => {
 
     test('Toolbar CSS에 상태별 !important 규칙이 포함되어야 한다', () => {
       const stateRules = [
-        '--toolbar-opacity-idle: 0.8 !important',
-        '--toolbar-opacity-loading: 1 !important',
-        '--toolbar-opacity-error: 1 !important',
+        '--xeg-toolbar-opacity-idle: 0.8 !important',
+        '--xeg-toolbar-opacity-loading: 1 !important',
+        '--xeg-toolbar-opacity-error: 1 !important',
       ];
 
       stateRules.forEach(rule => {
@@ -66,16 +66,16 @@ describe('Toolbar Visibility Fix 검증', () => {
 
     test('CSS 변수 기반 상태 관리가 구현되어야 한다', () => {
       const cssVariables = [
-        '--toolbar-opacity-idle',
-        '--toolbar-opacity-loading',
-        '--toolbar-opacity-error',
-        '--toolbar-visibility-idle',
-        '--toolbar-visibility-loading',
-        '--toolbar-visibility-error',
+        '--xeg-toolbar-opacity-idle',
+        '--xeg-toolbar-opacity-loading',
+        '--xeg-toolbar-opacity-error',
+        '--xeg-toolbar-visibility-idle',
+        '--xeg-toolbar-visibility-loading',
+        '--xeg-toolbar-visibility-error',
       ];
 
       cssVariables.forEach(variable => {
-        expect(variable).toMatch(/^--toolbar-/);
+        expect(variable).toMatch(/^--xeg-toolbar-/);
       });
     });
   });

@@ -236,19 +236,29 @@ function VerticalGalleryViewCore({
   }, [isVisible]); // 백그라운드 클릭 핸들러 (갤러리 닫기만 처리)
   const handleBackgroundClick = useCallback(
     (event: MouseEvent) => {
-      // 툴바나 툴바 영역 클릭은 무시
+      // 툴바/호버 영역 클릭은 무시 (CSS Modules 환경에서도 안전하게 ref 기반으로 판별)
       const target = event.target as HTMLElement;
+
+      const hoverEl = toolbarHoverZoneRef.current;
+      const wrapperEl = toolbarWrapperRef.current;
+
+      const inHoverZone = !!(hoverEl && (target === hoverEl || hoverEl.contains(target)));
+      const inToolbarWrapper = !!(
+        wrapperEl &&
+        (target === wrapperEl || wrapperEl.contains(target))
+      );
+
       if (
-        target.closest('.toolbarWrapper') ||
-        target.closest('.toolbarHoverZone') ||
+        inHoverZone ||
+        inToolbarWrapper ||
+        // data-role 기반 식별자는 여전히 유지
         target.closest('[data-role="toolbar"]') ||
-        target.closest('[class*="toolbar"]')
+        target.closest('[data-testid*="toolbar"]')
       ) {
         return;
       }
 
-      // event.target이 실제 클릭된 요소이고, event.currentTarget은 이벤트 리스너가 부착된 요소입니다.
-      // 두 요소가 같을 때만 (즉, 컨테이너의 배경을 직접 클릭했을 때만) 갤러리를 닫습니다.
+      // 컨테이너 배경 직접 클릭에만 반응
       if (event.target === event.currentTarget) {
         onClose?.();
       }

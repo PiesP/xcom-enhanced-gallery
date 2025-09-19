@@ -149,7 +149,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
           this.onCloseCallback();
         }
       },
-      className: 'xeg-gallery-renderer',
+      // 내부 컨테이너에는 renderer 클래스를 중복 부여하지 않는다 (DOM 간소화)
+      className: '',
       useShadowDOM: true, // Shadow DOM 활성화로 스타일 격리
       children: createElement(VerticalGalleryView, {
         // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독

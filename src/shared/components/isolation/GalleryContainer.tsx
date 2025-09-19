@@ -149,7 +149,6 @@ export function GalleryContainer({
     {
       ref: containerRef,
       className: `xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`,
-      'data-xeg-gallery-container': '',
     },
     children
   );
