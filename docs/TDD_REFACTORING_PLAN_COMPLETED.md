@@ -4,6 +4,42 @@
 | ------------- | ----------------- | -------- | -------- | ----------- |
 | RED 테스트 수 | 0 (Batch F ✔)    | 60       | 30       | <10         |
 
+2025-09-19: DOM-001 — Epic 종료(Overlay DOM 간소화)
+
+- P1–P5 모든 Phase 완료 및 목표/AC 달성. 활성 계획서에서 Epic 제거.
+- 핵심 성과: 래퍼 계층 축소, 툴바 hover/focus 단일화, Shadow/Light DOM 일관성,
+  구조/키보드/a11y/사이즈 가드 GREEN 유지.
+
+2025-09-19: DOM-001 P1–P2 — Overlay DOM 간소화 초기 단계 완료
+
+- P1: RED 테스트 추가(test/unit/ui/vertical-gallery-dom.red.test.tsx)로
+  .xeg-gallery-renderer 중복 가드 명세화 → 이후 GREEN 전환
+- P2: GalleryRenderer에서 내부 GalleryContainer에 renderer 클래스 미전달로 중복
+  클래스 제거 → 최종 가드 테스트(vertical-gallery-dom.test.tsx) GREEN
+- 부수: toolbarHoverTrigger 잔재 제거를 위한 CSS 정리 및 재도입 가드 테스트
+  추가(toolbar-hover-trigger-guard.test.ts)
+
+2025-09-19: DOM-001 P3 — Hover 제어 통합 및 배경 클릭 가드 완료
+
+- Hover 제어 통합: toolbarHoverTrigger 제거, toolbarHoverZone 단일 메커니즘으로
+  수렴
+- 배경 클릭 제외 로직을 ref 기반으로 전환해 CSS Modules 클래스 네이밍 변화에
+  견고
+- 회귀 가드 추가: test/unit/ui/toolbar-hover-trigger-guard.test.ts GREEN
+- 단일 렌더러 클래스 정책 유지(외부 .xeg-gallery-renderer만) — 구조 가드 GREEN
+- 전체 스위트 GREEN 유지, 빌드/산출물 기존 가드 영향 없음
+
+2025-09-19: DOM-001 P4–P5 — GalleryContainer 최소 마크업 및 툴바 토큰 일원화
+완료
+
+- P4: GalleryContainer 최소 마크업 계약 가드 추가 및 data-xeg-gallery-container
+  제거 → Shadow/Light DOM 동등성 및 ESC 동작 가드 GREEN 유지
+- P5: VerticalGalleryView.module.css에 통합 네임스페이스 토큰(--xeg-toolbar-\_)
+  도입 및 최종 이관 완료. 기존 레거시 가시성 토큰(--toolbar-*)은 전면
+  제거(매핑/폴백 삭제), Toolbar.module.css 소비자와 useToolbarPositionBased 훅
+  모두 --xeg-toolbar-*만 설정/사용. 회귀
+  가드(toolbar-token-unification.test.ts)도 레거시 부재를 확인하도록 갱신.
+
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
 적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이
