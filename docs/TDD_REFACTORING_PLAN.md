@@ -161,13 +161,19 @@ Phase:
 
 | Phase | 코드   | 목적                                                                        | 상태     |
 | ----- | ------ | --------------------------------------------------------------------------- | -------- |
-| P1    | 테스트 | 하드코딩/중복 스타일 스캐너 테스트 강화(기존 hardcoded-colors.test.ts 보완) | RED      |
+| P1    | 테스트 | 하드코딩/중복 스타일 스캐너 테스트 강화(기존 hardcoded-colors.test.ts 보완) | GREEN    |
 | P2    | 구현   | 공통 클래스 단일화, `GalleryRenderer.ts`의 불필요한 global.css import 제거  | PLANNED  |
 | P3    | 리팩터 | 문서/주석 정리, 디자인 토큰 준수 확인                                       | REFACTOR |
 
 Acceptance Criteria:
 
 - 공통 클래스 정의가 shared 한 곳에서만 유지되며 dist에 1회만 존재
+
+Implementation Notes:
+
+- base `.glass-surface`는 `shared/styles/isolated-gallery.css`에서 단일 출처로
+  유지하고, `features/gallery/styles/gallery-global.css`에서는 제거함.
+  라이트/다크 변형은 글로벌 파일에 유지
 
 위험 & 완화:
 
@@ -210,14 +216,12 @@ Phase:
 
 #### 즉시 액션 (Next 4 steps)
 
-- STYLE-ISOLATION-UNIFY P1: ShadowRoot 전용 주입 시에도 모듈 CSS가 적용되는지
-  RED 테스트 추가
-- STYLE-ISOLATION-UNIFY P2: Userscript 플러그인에서 번들된 CSS 텍스트를
-  window.XEG_CSS_TEXT로 노출
-- STYLE-ISOLATION-UNIFY P3: GalleryContainer가 ShadowRoot에 전역 CSS 텍스트를
-  주입하고 기존 @import 제거
-- CORE-REG-DEDUPE P1: registerCoreServices() 호출 시 동일 키 중복 등록 0을
-  보장하는 RED 테스트 추가
+- CSS-GLOBAL-PRUNE P2: 필요 시 `GalleryRenderer.ts`에서 불필요한
+  `gallery-global.css` import 제거 범위 검토
+- STYLE-ISOLATION-UNIFY P4: head 주입 gating(옵트인/지연) 설계 및 RED 테스트
+  추가
+- TOOLBAR-VIS-CLEANUP P1: hover 기반 가시성 DOM 테스트 추가
+- CSS-GLOBAL-PRUNE: glass 외 유틸 클래스 중복 스캐너 범위 확장(테스트 보강)
 
 Acceptance Criteria:
 
