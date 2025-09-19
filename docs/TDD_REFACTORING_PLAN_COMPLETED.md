@@ -65,6 +65,18 @@
   모두 --xeg-toolbar-*만 설정/사용. 회귀
   가드(toolbar-token-unification.test.ts)도 레거시 부재를 확인하도록 갱신.
 
+2025-09-19: XEG-STYLE-ISOLATION-UNIFY — P1–P4 완료 (Epic 종료)
+
+- 번들 CSS 전역 노출(window.XEG_CSS_TEXT) 및 ShadowRoot 주입 경로 확립, head
+  주입 게이트(window.XEG_STYLE_HEAD_MODE: 'auto'|'off'|'defer') 도입.
+- dist 내 '/src/\*.css' 경로 문자열 0, `.glass-surface` 중복 정의 0 확인.
+- CODING_GUIDELINES에 스타일 주입 게이팅 사용 가이드 추가.
+
+2025-09-19: XEG-CSS-GLOBAL-PRUNE — Epic 종료(요약)
+
+- base `.glass-surface` 단일 출처 유지(shared/styles/isolated-gallery.css),
+  GalleryRenderer 글로벌 import 제거. 중복 스캐너 보강(P3)과 함께 dist 중복 0.
+
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
 적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이

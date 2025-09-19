@@ -343,6 +343,18 @@ window.XEG_STYLE_HEAD_MODE = 'off'; // 또는 'auto' | 'defer'
   - XEG_CSS_TEXT?: string
 - 빌드 플러그인은 위 전역을 자동으로 주입/존중합니다(vite userscript wrapper).
 
+### Toolbar 가시성 가이드라인 (Hover/CSS 변수)
+
+- 가시성 모델: 순수 CSS 변수 기반으로 제어합니다.
+  - 보여짐: `--xeg-toolbar-opacity: 1`, `--xeg-toolbar-pointer-events: auto`
+  - 숨김: `--xeg-toolbar-opacity: 0`, `--xeg-toolbar-pointer-events: none`
+- 트리거: 호버 존(컨테이너) 위로 마우스를 올리면 위 변수를 토글합니다.
+- 금지: 타이머/JS 기반 딜레이 또는 별도 애니메이션 키프레임을 사용하지 않습니다.
+  - `css-animations.ts`의 toolbar-slide 계열 키프레임/클래스는 제거되었습니다.
+  - 디자인 토큰 `--animation-toolbar-show/hide`는 `none`으로 고정됩니다.
+- 접근성: 포커스 진입 시에도 가시성이 보장되어야 하며, 키보드 내비게이션 규칙을 준수합니다.
+- 회귀 가드: `test/styles/toolbar-animation-removal.test.ts`에서 키프레임/클래스 부재와 토큰 `none`을 검증합니다.
+
 ### 갤러리 프리로드 규칙 (Performance)
 
 - 설정 `gallery.preloadCount`는 현재 인덱스를 중심으로 좌/우 이웃 항목을 우선 순위대로 프리로드합니다.

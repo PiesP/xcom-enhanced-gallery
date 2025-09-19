@@ -4,8 +4,8 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-19 — 활성 Epic: XEG-STYLE-ISOLATION-UNIFY,
-XEG-CORE-REG-DEDUPE, XEG-CSS-GLOBAL-PRUNE, XEG-TOOLBAR-VIS-CLEANUP
+업데이트: 2025-09-19 — 활성 Epic: XEG-CORE-REG-DEDUPE(P3),
+XEG-TOOLBAR-VIS-CLEANUP(P3)
 
 ---
 
@@ -24,72 +24,6 @@ XEG-CORE-REG-DEDUPE, XEG-CSS-GLOBAL-PRUNE, XEG-TOOLBAR-VIS-CLEANUP
 ---
 
 ## 2. 활성 Epic 현황
-
-### XEG-STYLE-ISOLATION-UNIFY — Shadow DOM 스타일 주입/격리 단일화
-
-Baseline: master (2025-09-19, dev build 확인)
-
-문제 요약:
-
-1. Userscript 플러그인이 CSS를 document.head에만 주입(style tag, id=xeg-styles)
-   — Shadow DOM 내부에는 적용되지 않음
-2. `GalleryContainer`는 Shadow DOM 사용 시 `@import '/src/...css'`로 스타일을
-   불러오려고 시도하나, 번들 환경에서 해당 경로는 유효하지 않아 누락 위험 존재
-3. 동일 글로벌/모듈 CSS가 문서(head)와 ShadowRoot 양쪽에 중복/누락 형태로
-   혼재(스타일 충돌/누락 가능성 증가)
-
-목표 (Outcomes):
-
-- Shadow DOM 사용 여부에 무관하게 단일 소스의 CSS가 정확한 대상(문서 또는
-  ShadowRoot)에 한 번만 주입됨
-- Dev/Prod 모두에서 경로 의존(@import '/src/...') 제거, 번들이 제공하는 CSS
-  텍스트만 사용
-- 스타일 중복/누락 0 — dist에 glass-surface 중복 정의 0회,
-  '/src/features/...css' 문자열 0회
-
-측정 지표 (Metrics):
-
-- dist userscript 내 '/src/' 상대경로 문자열 0
-- dist userscript 내 'glass-surface' 클래스 정의 중복 1→0
-- 기능 스냅샷(간단 렌더)에서 Shadow DOM 내 스타일 적용 여부 테스트 GREEN
-
-Phase (TDD RED → GREEN → REFACTOR):
-
-| Phase | 코드                          | 목적                                                                                                   | 상태  |
-| ----- | ----------------------------- | ------------------------------------------------------------------------------------------------------ | ----- |
-| P1    | 테스트 추가                   | ShadowRoot에만 스타일 존재 시에도 컴포넌트가 예상 클래스(모듈 CSS 포함) 스타일을 얻는지 검증           | GREEN |
-| P2    | vite userscript 플러그인 보강 | 번들된 CSS 텍스트를 전역 변수(window.**XEG_CSS_TEXT**)로 노출(문서 head 주입은 현 상태 유지)           | GREEN |
-| P3    | 런타임 주입기 도입            | `GalleryContainer`가 Shadow DOM 사용 시 전역 CSS 텍스트를 ShadowRoot에 주입, 미사용 경로(@import) 제거 | GREEN |
-| P4    | 정리                          | 문서(head) 이중 주입 방지(옵트인/지연 포함), dev/prod 모두 동작 확인 및 코드 주석/문서화               | GREEN |
-
-Acceptance Criteria:
-
-- (Post-P3, 현재) Shadow DOM on: ShadowRoot에 전역 CSS 텍스트 기반 단일 style이
-  존재하고 모듈 클래스가 적용됨(문서 head 주입은 유지)
-- Shadow DOM off: 문서에 단일 style 존재, UI 정상 렌더
-- dist에서 '/src/\*.css' 문자열 제거(@import 경로 제거)
-- (Post-P4) 문서(head) 이중 주입 방지, 필요 시 옵트인/지연 옵션으로 제어
-  - vite userscript 플러그인의 styleInjector가 전역 플래그
-    window.XEG_STYLE_HEAD_MODE를 존중:
-    - 'auto'(기본): 즉시 head 주입
-    - 'off': head 주입 비활성화(ShadowRoot 경로만 사용)
-    - 'defer': requestAnimationFrame 또는 setTimeout으로 지연 주입
-  - id='xeg-styles' 중복 검사로 이중 주입 방지 가드 존재
-  - 타입 선언: Window.XEG_STYLE_HEAD_MODE가 userscript.d.ts에 정의됨
-
-위험 & 완화:
-
-- 위험: 일부 브라우저/Userscript 환경에서 AdoptedStyleSheets 미지원 → 완화:
-  textContent 기반 style 태그 주입 기본값 유지
-- 위험: 기존 테스트의 스타일 의존 flake → 완화: DOM 구조 중심의 단정으로 유지,
-  스타일은 존재 여부만 확인
-
-Roll-back 전략:
-
-- 플러그인의 전역변수 노출만 유지하고 기존 head 주입을 되살리는 단일 커밋 롤백
-  가능
-
----
 
 ### XEG-CORE-REG-DEDUPE — Core 서비스 중복 등록 제거
 
@@ -140,62 +74,6 @@ Roll-back 전략:
 
 - 변경 라인 최소화, 이전 버전의 register 블록을 되돌리는 단일 커밋 롤백
 
----
-
-### XEG-CSS-GLOBAL-PRUNE — 글로벌 CSS 정리 및 중복 토큰/클래스 제거
-
-Baseline: master (2025-09-19)
-
-문제 요약:
-
-1. `isolated-gallery.css`와 `gallery-global.css`에 `glass-surface` 등 공통
-   클래스 중복 정의
-2. `GalleryRenderer.ts`에서 `gallery-global.css`를 import, 동시에 Shadow DOM
-   경로에서도 동일 스타일을 로드하려 시도 → 이중 포함 가능성
-
-목표 (Outcomes):
-
-- 공통 유틸 클래스(예: glass-surface) 단일 출처로만
-  유지(`shared/styles/isolated-gallery.css`)
-- Feature 레벨(global.css)은 필요한 영역만 유지하거나 모듈화하여 중복 제거
-
-측정 지표 (Metrics):
-
-- dist에서 공통 유틸 클래스 정의 중복 0
-- 의존성 그래프 상 순환 감소(모듈 스타일과 글로벌 스타일 경계 명확)
-
-Phase:
-
-| Phase | 코드   | 목적                                                                             | 상태  |
-| ----- | ------ | -------------------------------------------------------------------------------- | ----- |
-| P1    | 테스트 | 하드코딩/중복 스타일 스캐너 테스트 강화(기존 hardcoded-colors.test.ts 보완)      | GREEN |
-| P2    | 구현   | 공통 클래스 단일화, `GalleryRenderer.ts`의 불필요한 global.css import 제거       | GREEN |
-| P3    | 리팩터 | 문서/주석 정리, 디자인 토큰 준수 확인 — 중복 스캐너가 CSS 주석을 무시하도록 보강 | GREEN |
-
-Acceptance Criteria:
-
-- 공통 클래스 정의가 shared 한 곳에서만 유지되며 dist에 1회만 존재
-
-Implementation Notes:
-
-- base `.glass-surface`는 `shared/styles/isolated-gallery.css`에서 단일 출처로
-  유지하고, `features/gallery/styles/gallery-global.css`에서는 제거함.
-  라이트/다크 변형은 글로벌 파일에 유지
-
-- `features/gallery/GalleryRenderer.ts`에서 `./styles/gallery-global.css` 직접
-  import를 제거하여 전역(head)/ShadowRoot 주입 체계만을 사용. 테스트로 가드 추가
-
-위험 & 완화:
-
-- 위험: 일부 전역 선택자 제거로 특정 페이지에서 시각 회귀 → 완화: 스냅샷/수동
-  확인 체크리스트 제공
-
-Roll-back 전략:
-
-- import 라인 복원으로 즉시 이전 상태 회귀 가능
-
----
-
 ### XEG-TOOLBAR-VIS-CLEANUP — 툴바 가시성/애니메이션 로직 단순화
 
 Baseline: master (2025-09-19)
@@ -224,15 +102,12 @@ Phase:
 | P2    | 구현   | 미사용 툴바 애니메이션 제거 또는 deprecated 주석/플래그 처리 | GREEN    |
 | P3    | 리팩터 | 문서화(코멘트, CODING_GUIDELINES 링크)                       | REFACTOR |
 
-#### 즉시 액션 (Next 4 steps)
+#### 즉시 액션 (Next 2 steps)
 
-- TOOLBAR-VIS-CLEANUP P2: 잔존 툴바 관련 키프레임/클래스 deprecated 또는 제거,
-  회귀 가드 추가 — 완료. test/styles/toolbar-animation-removal.test.ts GREEN
-- XEG-STYLE-ISOLATION-UNIFY 후속: head 주입 gating 사용 가이드와 설정 예시를
-  CODING_GUIDELINES에 반영(문서 작업)
-- CSS-GLOBAL-PRUNE 후속: 기타 유틸 클래스 중복 스캔 케이스 추가(필요 시) 및 설계
-  노트 업데이트
-- 번들/테스트 메트릭 모니터링: gzip/테스트 카운트 변동이 예산 내 유지되는지 점검
+- XEG-CORE-REG-DEDUPE P3: 경고/cleanup 경로 제거 및 주석 정리(리팩터) — 테스트
+  유지
+- XEG-TOOLBAR-VIS-CLEANUP P3: CODING_GUIDELINES에 가시성 정책(hover/CSS 변수,
+  타이머/애니메이션 금지) 명시 — 테스트 참고 링크 포함
 
 Acceptance Criteria:
 
