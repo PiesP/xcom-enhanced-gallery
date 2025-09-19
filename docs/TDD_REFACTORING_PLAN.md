@@ -4,8 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-19 — 활성 Epic: XEG-CORE-REG-DEDUPE(P3),
-XEG-TOOLBAR-VIS-CLEANUP(P3)
+업데이트: 2025-09-19 — 활성 Epic: (현재 없음)
 
 ---
 
@@ -25,89 +24,8 @@ XEG-TOOLBAR-VIS-CLEANUP(P3)
 
 ## 2. 활성 Epic 현황
 
-### XEG-CORE-REG-DEDUPE — Core 서비스 중복 등록 제거
-
-Baseline: master (2025-09-19)
-
-문제 요약:
-
-1. `service-initialization.ts`에서 THEME가 중복 등록됨(동일 키 2회) →
-   `ServiceManager.register` 경고/덮어쓰기/cleanup 호출 가능
-2. 호환성을 위해 다중 키를 동일 인스턴스로 제공해야 하지만 “같은 키”의 중복
-   등록은 제거해야 함
-
-목표 (Outcomes):
-
-- 동일 서비스 키의 중복 register 0회, 경고 0회
-- 호환 alias 키는 별도 매핑 또는 다중 키 등록 시에도 “동일 키 중복”을 회피
-
-측정 지표 (Metrics):
-
-- 단위 테스트에서 register 호출 카운트 검증, warn 로깅 0
-
-Phase:
-
-| Phase | 코드   | 목적                                                            | 상태     |
-| ----- | ------ | --------------------------------------------------------------- | -------- |
-| P1    | 테스트 | `registerCoreServices()` 호출 시 THEME 키 단일 등록 보장 테스트 | GREEN    |
-| P2    | 구현   | 중복 코드 제거, alias 키만 유지(이미 동일 객체 공유)            | GREEN    |
-| P3    | 리팩터 | 경고/cleanup 경로 제거로 초기화 간소화, 주석 정리               | REFACTOR |
-
-Acceptance Criteria:
-
-- 콘솔 warn 없음, ServiceManager 진단에서 중복 키 0
-
-Implementation Notes:
-
-- 플러그인에서 window.XEG_CSS_TEXT 전역 노출 추가 및 문서 head 주입 유지(테스트
-  안정성/회귀 리스크 최소화). head 주입 gating은 P4에서 처리
-- GalleryContainer: Shadow DOM 경로의 `@import '/src/...css'` 제거, 전역 CSS
-  텍스트로 주입
-- Core: THEME 중복 register 제거, alias 키('theme.service') 유지
-
-위험 & 완화:
-
-- 위험: 레거시 테스트가 중복 등록 가정 → 완화: 테스트 업데이트 시 주석으로 변경
-  의도 명시
-
-Roll-back 전략:
-
-- 변경 라인 최소화, 이전 버전의 register 블록을 되돌리는 단일 커밋 롤백
-
-### XEG-TOOLBAR-VIS-CLEANUP — 툴바 가시성/애니메이션 로직 단순화
-
-Baseline: master (2025-09-19)
-
-문제 요약:
-
-1. 툴바 가시성은 CSS 호버 기반으로 통일되었으나, `css-animations.ts`에 toolbar
-   관련 키프레임/클래스가 남아 잠재적 중복/혼란 원인
-2. 타이머 기반 처리 흔적(전역 타이머 매니저)과 CSS-기반 처리가 혼재할 위험
-
-목표 (Outcomes):
-
-- 툴바 가시성은 순수 CSS 변수/호버 기반으로 단일화, 불필요한 키프레임/클래스
-  제거 또는 deprecated 표기
-
-측정 지표 (Metrics):
-
-- 툴바 관련 애니메이션 상수/키프레임 사용처 0 또는 명시적 deprecated 커버리지
-  100%
-
-Phase:
-
-| Phase | 코드   | 목적                                                         | 상태     |
-| ----- | ------ | ------------------------------------------------------------ | -------- |
-| P1    | 테스트 | 툴바 가시성 E2E 성격의 경량 DOM 테스트(hover 시 변수 반영)   | GREEN    |
-| P2    | 구현   | 미사용 툴바 애니메이션 제거 또는 deprecated 주석/플래그 처리 | GREEN    |
-| P3    | 리팩터 | 문서화(코멘트, CODING_GUIDELINES 링크)                       | REFACTOR |
-
-#### 즉시 액션 (Next 2 steps)
-
-- XEG-CORE-REG-DEDUPE P3: 경고/cleanup 경로 제거 및 주석 정리(리팩터) — 테스트
-  유지
-- XEG-TOOLBAR-VIS-CLEANUP P3: CODING_GUIDELINES에 가시성 정책(hover/CSS 변수,
-  타이머/애니메이션 금지) 명시 — 테스트 참고 링크 포함
+현재 활성 Epic 없음. 새 Epic은 백로그(`TDD_REFACTORING_BACKLOG.md`)에서 선정 후
+본 문서에 편입합니다.
 
 Acceptance Criteria:
 

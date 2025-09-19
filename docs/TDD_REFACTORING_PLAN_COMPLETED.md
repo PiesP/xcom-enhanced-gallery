@@ -77,6 +77,18 @@
 - base `.glass-surface` 단일 출처 유지(shared/styles/isolated-gallery.css),
   GalleryRenderer 글로벌 import 제거. 중복 스캐너 보강(P3)과 함께 dist 중복 0.
 
+2025-09-19: XEG-CORE-REG-DEDUPE P3 — 초기화 경로 간소화/주석 정리 완료
+
+- service-initialization에서 동일 키 중복 관련 경고/cleanup 언급 제거, alias
+  키만 유지하도록 주석 정리.
+- 단위 테스트(service-initialization.dedupe.red.test.ts) 기대와 일치 확인.
+
+2025-09-19: XEG-TOOLBAR-VIS-CLEANUP P3 — 가이드라인 주석/참조 추가
+
+- useToolbarPositionBased 훅과 Toolbar 컴포넌트 헤더에 CODING_GUIDELINES의
+  "Toolbar 가시성 가이드라인" 섹션을 참조하는 주석 추가.
+- 타이머/애니메이션 미사용 정책을 소스 레벨에서 명확화.
+
 2025-09-18: TBAR-R P5 — Toolbar keyboard navigation (Home/End/Arrow/Escape)
 focus order 확립 및 onClose(Escape) 가드 GREEN. Toolbar root 기본 tabIndex(0)
 적용으로 초기 포커스 가능 상태 보장. 초기 hang 원인(벤더 초기화 side-effect)이
