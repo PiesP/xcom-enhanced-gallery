@@ -269,6 +269,11 @@ export default [
         requestAnimationFrame: 'readonly',
         cancelAnimationFrame: 'readonly',
         KeyboardEvent: 'readonly',
+        // DOM element/event types used in tests
+        Element: 'readonly',
+        HTMLElement: 'readonly',
+        MouseEvent: 'readonly',
+        Event: 'readonly',
       },
     },
     plugins: {

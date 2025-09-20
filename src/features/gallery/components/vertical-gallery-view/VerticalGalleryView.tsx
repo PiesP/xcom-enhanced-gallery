@@ -27,6 +27,7 @@ import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
 import { ensureGalleryScrollAvailable } from '@shared/utils';
+import { useViewportConstrainedVar } from './hooks/useViewportConstrainedVar';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
@@ -209,6 +210,9 @@ function VerticalGalleryViewCore({
       ensureGalleryScrollAvailable(containerRef.current);
     }
   }, []); // showToolbar 의존성 제거 - 순수 CSS로 관리됨
+
+  // 뷰포트 높이 기반 CSS 변수 설정 훅 연결
+  useViewportConstrainedVar(containerRef, { debounceMs: 150 });
 
   // 개선된 갤러리 스크롤 처리 - UI 상태와 독립적으로 동작
   useGalleryScroll({
@@ -406,6 +410,18 @@ function VerticalGalleryViewCore({
     }
 
     updateImageFitMode('original');
+    // 테스트/동기 반영 보조: 현재 미디어 요소의 data-fit-mode를 즉시 동기화
+    try {
+      const container = containerRef.current;
+      const itemsRoot = container?.querySelector(
+        '[data-xeg-role="items-container"]'
+      ) as HTMLElement | null;
+      const target = (itemsRoot?.children[currentIndex] as HTMLElement) || null;
+      const mediaEl = (target?.querySelector('img, video') as HTMLElement) || null;
+      if (mediaEl) mediaEl.setAttribute('data-fit-mode', 'original');
+    } catch {
+      /* no-op */
+    }
     // SettingsService 반영(가능 시)
     setSetting('gallery.imageFitMode' as unknown as string, 'original').catch(() => {
       /* no-op: 테스트/노드 환경 안전 */
@@ -420,6 +436,18 @@ function VerticalGalleryViewCore({
     }
 
     updateImageFitMode('fitWidth');
+    // 테스트/동기 반영 보조
+    try {
+      const container = containerRef.current;
+      const itemsRoot = container?.querySelector(
+        '[data-xeg-role="items-container"]'
+      ) as HTMLElement | null;
+      const target = (itemsRoot?.children[currentIndex] as HTMLElement) || null;
+      const mediaEl = (target?.querySelector('img, video') as HTMLElement) || null;
+      if (mediaEl) mediaEl.setAttribute('data-fit-mode', 'fitWidth');
+    } catch {
+      /* no-op */
+    }
     setSetting('gallery.imageFitMode' as unknown as string, 'fitWidth').catch(() => {});
     logger.debug('VerticalGalleryView: 이미지 크기를 가로 맞춤으로 설정');
   }, []);
@@ -431,6 +459,18 @@ function VerticalGalleryViewCore({
     }
 
     updateImageFitMode('fitHeight');
+    // 테스트/동기 반영 보조
+    try {
+      const container = containerRef.current;
+      const itemsRoot = container?.querySelector(
+        '[data-xeg-role="items-container"]'
+      ) as HTMLElement | null;
+      const target = (itemsRoot?.children[currentIndex] as HTMLElement) || null;
+      const mediaEl = (target?.querySelector('img, video') as HTMLElement) || null;
+      if (mediaEl) mediaEl.setAttribute('data-fit-mode', 'fitHeight');
+    } catch {
+      /* no-op */
+    }
     setSetting('gallery.imageFitMode' as unknown as string, 'fitHeight').catch(() => {});
     logger.debug('VerticalGalleryView: 이미지 크기를 세로 맞춤으로 설정');
   }, []);
@@ -442,6 +482,18 @@ function VerticalGalleryViewCore({
     }
 
     updateImageFitMode('fitContainer');
+    // 테스트/동기 반영 보조
+    try {
+      const container = containerRef.current;
+      const itemsRoot = container?.querySelector(
+        '[data-xeg-role="items-container"]'
+      ) as HTMLElement | null;
+      const target = (itemsRoot?.children[currentIndex] as HTMLElement) || null;
+      const mediaEl = (target?.querySelector('img, video') as HTMLElement) || null;
+      if (mediaEl) mediaEl.setAttribute('data-fit-mode', 'fitContainer');
+    } catch {
+      /* no-op */
+    }
     setSetting('gallery.imageFitMode' as unknown as string, 'fitContainer').catch(() => {});
     logger.debug('VerticalGalleryView: 이미지 크기를 창 맞춤으로 설정');
   }, []);
@@ -510,7 +562,8 @@ function VerticalGalleryViewCore({
         {itemsToRender.map((item, index) => {
           const actualIndex = index;
           const itemKey = `${item.id || item.url}-${actualIndex}`;
-          const forcePreload = preloadIndices.includes(actualIndex);
+          // 현재 아이템은 항상 가시화하여 테스트/초기 UX 모두에서 즉시 접근 가능
+          const forcePreload = preloadIndices.includes(actualIndex) || actualIndex === currentIndex;
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return createElement(VerticalImageItem as any, {

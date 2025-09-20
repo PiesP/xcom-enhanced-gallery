@@ -166,7 +166,8 @@ function BaseVerticalImageItemCore({
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  // 현재 아이템(forceVisible)이면 초기 렌더부터 즉시 표시하여 테스트/UX 개선
+  const [isVisible, setIsVisible] = useState(!!forceVisible);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -430,6 +431,7 @@ function BaseVerticalImageItemCore({
                 getFitModeClass(fitMode),
                 isLoaded ? styles.loaded : styles.loading
               )}
+              data-fit-mode={fitMode || 'unset'}
               onLoadedMetadata={handleVideoLoadedMetadata}
               onLoadedData={handleVideoLoaded}
               onCanPlay={handleVideoLoaded}
@@ -449,6 +451,7 @@ function BaseVerticalImageItemCore({
                 imageClasses,
                 isLoaded ? styles.loaded : styles.loading
               )}
+              data-fit-mode={fitMode || 'unset'}
               onLoad={handleImageLoad}
               onError={handleImageError}
               onContextMenu={handleImageContextMenu}

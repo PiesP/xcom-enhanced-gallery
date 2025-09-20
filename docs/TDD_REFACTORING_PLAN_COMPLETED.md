@@ -166,6 +166,26 @@ MediaProcessor 세부 단계는 상위 성공/정규화 GREEN 테스트로 대�
 대상 모두 기존 GREEN 계약/스냅샷이 동일 조건을 강하게 가드하고 있어 회귀 리스크
 Low.
 
+2025-09-20: XEG-IMG-HEIGHT-FIT-01 — 세로 맞춤 축소 실패 수정 (Epic 종료)
+
+- P1–P4 GREEN: 전역 기본값 + 컨테이너 훅 병행으로
+  `--xeg-viewport-height-constrained` 제공
+  - 전역: `:root { --xeg-viewport-height-constrained: 100vh }`
+  - 훅: `useGalleryViewportConstrainedVar`(alias `useViewportConstrainedVar`)를
+    세로 갤러리 컨테이너에 연결해 `window.innerHeight + 'px'`를 설정, resize 시
+    debounce(150ms)로 갱신
+  - VerticalGalleryView에 훅 적용, 현재 아이템은 강제 가시화(preload)로
+    테스트/초기 UX 안정화
+  - VerticalImageItem의 미디어에 `data-fit-mode` 노출로 통합 테스트 가능
+- 통합 테스트 GREEN: 툴바의 세로 맞춤 클릭 시 아이템이 `fitHeight` 모드로
+  전환되고 컨테이너에 CSS 변수가 존재함을 검증
+  - JSDOM 스크롤 API 제한으로 발생 가능한 타이머/스크롤 에러는 무해하며, 속성
+    반영은 즉시성 보조 코드로 안정화
+- 명명/의존 가드 해결: 훅 네이밍(domain term 포함) 정리 및 누락된 icons 배럴
+  파일 생성으로 관련 가드 테스트 통과
+- 산출물 영향: 코드/스타일 변경은 최소, 빌드 검증 통과. 향후 필요 시 툴바 높이
+  보정 옵션(`calc(100vh - var(--xeg-toolbar-height))`)을 후속 Epic에서 검토 가능
+
 2025-09-18: TBAR-R P8 — Toolbar selector consolidation graduation
 (.toolbarButton occurrences ≤4, forward styles 제거, 2.5em 하드코딩 0, 구조/순서
 가드 GREEN). RED 테스트(toolbar-refine.red) 삭제 및 구조

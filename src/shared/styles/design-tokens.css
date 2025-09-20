@@ -156,6 +156,10 @@
   --xeg-hover-zone-height: var(--hover-zone-height);
   --xeg-scrollbar-width: var(--scrollbar-width);
   --xeg-toast-offset: var(--toast-offset);
+
+  /* Viewport-constrained height default (fallback) */
+  /* NOTE: JS 훅에서 컨테이너 단위로 더 정밀하게 설정하지만, 기본값으로 100vh를 제공 */
+  --xeg-viewport-height-constrained: 100vh;
 }
 
 /* 테마 선택자 - 테스트 요구사항 */

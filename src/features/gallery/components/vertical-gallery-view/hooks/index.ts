@@ -8,4 +8,8 @@
 export { useGalleryCleanup } from './useGalleryCleanup';
 export { useGalleryKeyboard } from './useGalleryKeyboard';
 export { useProgressiveImage } from './useProgressiveImage';
+export {
+  useGalleryViewportConstrainedVar,
+  useViewportConstrainedVar,
+} from './useViewportConstrainedVar';
 // 기타 복잡한 훅들은 제거됨 - 단순화된 아키텍처 적용

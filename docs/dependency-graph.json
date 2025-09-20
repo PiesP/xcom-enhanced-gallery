@@ -78,6 +78,7 @@
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
+        "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
         "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
         "src/features/gallery/hooks/useToolbarPositionBased.ts",
@@ -823,6 +824,23 @@
           "valid": true
         },
         {
+          "module": "./hooks/useViewportConstrainedVar",
+          "moduleSystem": "es6",
+          "dynamic": false,
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
           "module": "./VerticalGalleryView.module.css",
           "moduleSystem": "es6",
           "dynamic": false,
@@ -1529,6 +1547,33 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
+      "dependencies": [
+        {
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "dynamic": false,
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "@shared/external/vendors",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
       "dependencies": [
         {
@@ -1792,6 +1837,23 @@
             "export"
           ],
           "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "module": "./useViewportConstrainedVar",
+          "moduleSystem": "es6",
+          "dynamic": false,
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -28154,8 +28216,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 669,
-    "totalDependenciesCruised": 1220,
+    "totalCruised": 670,
+    "totalDependenciesCruised": 1223,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
