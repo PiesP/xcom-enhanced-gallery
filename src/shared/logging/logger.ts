@@ -124,6 +124,24 @@ const LOG_LEVEL_PRIORITY = {
 } as const satisfies Record<LogLevel, number>;
 
 /**
+ * Detect whether we're running under Vitest or explicit test mode.
+ */
+function isTestEnv(): boolean {
+  try {
+    if (typeof process !== 'undefined' && process.env?.VITEST) return true;
+  } catch {
+    // ignore
+  }
+  try {
+    // Vite exposes MODE === 'test' when configured
+    if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test') return true;
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+/**
  * Creates a formatted log message with prefix and optional timestamp.
  */
 function formatMessage(
@@ -132,10 +150,15 @@ function formatMessage(
   ...args: LoggableData[]
 ): LoggableData[] {
   const prefix = config.prefix;
-  const timestamp = config.includeTimestamp ? `[${new Date().toISOString()}]` : '';
   const levelTag = `[${level.toUpperCase()}]`;
-  const cid = config.correlationId ? `[cid:${String(config.correlationId)}]` : '';
 
+  // In test environment, keep output stable for assertions: no timestamp/correlation id
+  if (isTestEnv()) {
+    return [`${prefix} ${levelTag}`, ...args];
+  }
+
+  const timestamp = config.includeTimestamp ? `[${new Date().toISOString()}]` : '';
+  const cid = config.correlationId ? `[cid:${String(config.correlationId)}]` : '';
   const prefixParts = [prefix, timestamp, levelTag, cid].filter(Boolean);
   return [prefixParts.join(' '), ...args];
 }
@@ -145,6 +168,33 @@ function formatMessage(
  */
 function shouldLog(level: LogLevel, config: LoggerConfig): boolean {
   return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[config.level];
+}
+
+/**
+ * Safely invoke a console method with fallbacks. Some tests may stub console methods
+ * to non-function values, so we defensively check and fall back to other methods.
+ */
+function safeConsoleLog(level: LogLevel, formattedArgs: LoggableData[]): void {
+  // Determine preferred console methods per level
+  const candidates: Array<keyof Console> =
+    level === 'error'
+      ? ['error', 'warn', 'log']
+      : level === 'warn'
+        ? ['warn', 'log']
+        : ['info', 'log']; // for info/debug we prefer info, then log
+
+  for (const method of candidates) {
+    try {
+      const fn = (console as unknown as Record<string, unknown>)[method];
+      if (typeof fn === 'function') {
+        (fn as (...args: unknown[]) => void)(...formattedArgs);
+        return;
+      }
+    } catch {
+      // ignore and try next candidate
+    }
+  }
+  // If no viable console method is available, silently no-op.
 }
 
 /**
@@ -168,26 +218,28 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   return {
     info: (...args: LoggableData[]): void => {
       if (shouldLog('info', finalConfig)) {
-        // Use console.info for info level
-        console.info(...formatMessage('info', finalConfig, ...args));
+        safeConsoleLog('info', formatMessage('info', finalConfig, ...args));
       }
     },
 
     warn: (...args: LoggableData[]): void => {
       if (shouldLog('warn', finalConfig)) {
-        console.warn(...formatMessage('warn', finalConfig, ...args));
+        safeConsoleLog('warn', formatMessage('warn', finalConfig, ...args));
       }
     },
 
     error: (...args: LoggableData[]): void => {
       if (shouldLog('error', finalConfig)) {
-        console.error(...formatMessage('error', finalConfig, ...args));
+        safeConsoleLog('error', formatMessage('error', finalConfig, ...args));
 
         // Add stack trace for errors if enabled
         if (finalConfig.includeStackTrace && args.length > 0) {
           const firstArg = args[0];
           if (firstArg instanceof Error && firstArg.stack) {
-            console.error('Stack trace:', firstArg.stack);
+            safeConsoleLog(
+              'error',
+              formatMessage('error', finalConfig, 'Stack trace:', firstArg.stack)
+            );
           }
         }
       }
@@ -195,8 +247,8 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
 
     debug: (...args: LoggableData[]): void => {
       if (shouldLog('debug', finalConfig)) {
-        // Use console.info for debug level (ESLint compliance)
-        console.info(...formatMessage('debug', finalConfig, ...args));
+        // Use info/log for debug level to satisfy environments without console.debug
+        safeConsoleLog('debug', formatMessage('debug', finalConfig, ...args));
       }
     },
 
@@ -204,7 +256,7 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
       if (shouldLog('debug', finalConfig)) {
         const timerKey = `__timer_${label}`;
         timerStorage[timerKey] = Date.now();
-        console.info(...formatMessage('debug', finalConfig, `Timer started: ${label}`));
+        safeConsoleLog('debug', formatMessage('debug', finalConfig, `Timer started: ${label}`));
       }
     },
 
@@ -216,11 +268,11 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
         if (typeof startTime === 'number') {
           const duration = Date.now() - startTime;
           const durationMessage = `${label}: ${duration}ms`;
-          console.info(...formatMessage('debug', finalConfig, durationMessage));
+          safeConsoleLog('debug', formatMessage('debug', finalConfig, durationMessage));
           delete timerStorage[timerKey];
         } else {
           const errorMessage = `Timer '${label}' was not started`;
-          console.info(...formatMessage('debug', finalConfig, errorMessage));
+          safeConsoleLog('debug', formatMessage('debug', finalConfig, errorMessage));
         }
       }
     },
@@ -231,9 +283,22 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
  * Default logger instance for the application.
  */
 export const logger: Logger = createLogger({
-  level: import.meta.env.MODE === 'development' ? 'debug' : 'warn', // 프로덕션에서는 경고 이상만 표시
-  includeTimestamp: import.meta.env.MODE === 'development',
-  includeStackTrace: import.meta.env.MODE === 'development',
+  // 테스트 환경(Vitest)과 개발 모드에서는 debug 레벨로 상세 로깅을 허용한다.
+  // 프로덕션(Userscript 번들 포함)에서는 경고 이상만 표시한다.
+  level:
+    (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'development') ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test') ||
+    (typeof process !== 'undefined' && !!process.env?.VITEST)
+      ? 'debug'
+      : 'warn',
+  includeTimestamp:
+    (typeof import.meta !== 'undefined' &&
+      (import.meta.env?.MODE === 'development' || import.meta.env?.MODE === 'test')) ||
+    (typeof process !== 'undefined' && !!process.env?.VITEST),
+  includeStackTrace:
+    (typeof import.meta !== 'undefined' &&
+      (import.meta.env?.MODE === 'development' || import.meta.env?.MODE === 'test')) ||
+    (typeof process !== 'undefined' && !!process.env?.VITEST),
 });
 
 /**

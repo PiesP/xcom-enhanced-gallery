@@ -6956,7 +6956,9 @@
       "source": "src/shared/utils/signalSelector.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/index.ts"
+        "src/shared/index.ts",
+        "src/shared/utils/performance/index.ts",
+        "src/shared/utils/performance/signalOptimization.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8265,6 +8267,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../signalSelector",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/signalSelector.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./idleScheduler",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8364,23 +8383,6 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./signalOptimization",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance/signalOptimization.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [],
@@ -8443,10 +8445,26 @@
     },
     {
       "source": "src/shared/utils/performance/signalOptimization.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/performance/index.ts"
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../signalSelector",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/signalSelector.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
       ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -8611,7 +8629,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 258,
-    "totalDependenciesCruised": 354,
+    "totalDependenciesCruised": 355,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -1,61 +1,43 @@
 /**
- * @fileoverview Signal Selector Optimization
- * @description 메모화를 통한 시그널 셀렉터 성능 최적화
+ * @fileoverview [DEPRECATED] Signal Selector Optimization (legacy)
+ * @description 이 모듈은 signalSelector 유틸로 위임하도록 변경되었습니다.
+ * createSelector/useAsyncSelector/useCombinedSelector는 내부적으로
+ * ../signalSelector의 동등 API로 위임합니다.
+ *
+ * 유지 기간 동안의 호환성을 위해 남겨두며, 신규 코드는
+ * `@shared/utils/signalSelector` 또는 `@shared/utils/performance`(re-export)
+ * 경유 사용을 권장합니다.
  */
 
 import { getPreactHooks } from '@shared/external/vendors';
+import {
+  createSelector as createSelectorUnified,
+  useAsyncSelector as useAsyncSelectorUnified,
+  useCombinedSelector as useCombinedSelectorUnified,
+} from '../signalSelector';
 
 /**
  * 셀렉터 함수 타입
  */
+/** @deprecated use SelectorFn from signalSelector instead */
 type SelectorFunction<T, R> = (state: T) => R;
 
 /**
  * 메모화된 셀렉터 생성 함수
  * Object.is를 사용한 참조 동일성 검사로 불필요한 재계산 방지
  */
+/**
+ * @deprecated Use createSelector from '@shared/utils/signalSelector' instead.
+ * 이 구현은 통합 유틸로 위임합니다. legacy boolean debug 인자는
+ * options.debug로 매핑됩니다.
+ */
 export function createSelector<T, R>(
   selector: SelectorFunction<T, R>,
   debug = false
 ): SelectorFunction<T, R> {
-  let lastInput: T;
-  let lastOutput: R;
-  let hasResult = false;
-  const stats = { calls: 0, hits: 0, misses: 0 };
-
-  const memoizedSelector = (input: T): R => {
-    stats.calls++;
-    globalStats.selectorCalls++;
-
-    // Object.is를 사용한 참조 동일성 검사 (입력 전체가 아닌 실제 비교할 값 확인)
-    if (hasResult && Object.is(input, lastInput)) {
-      stats.hits++;
-      globalStats.cacheHits++;
-      if (debug || debugMode) {
-        console.log('[Signal Selector] Cache hit:', stats);
-      }
-      return lastOutput;
-    }
-
-    // 새로운 결과 계산
-    stats.misses++;
-    globalStats.cacheMisses++;
-    lastInput = input;
-    lastOutput = selector(input);
-    hasResult = true;
-
-    if (debug || debugMode) {
-      console.log('[Signal Selector] Cache miss, computed new result:', stats);
-    }
-
-    return lastOutput;
-  };
-
-  // 디버그용 통계 접근자 추가
-  (memoizedSelector as typeof memoizedSelector & { getStats: () => typeof stats }).getStats =
-    () => ({ ...stats });
-
-  return memoizedSelector;
+  // legacy API를 통합 옵션으로 위임
+  const wrapped = createSelectorUnified(selector, { debug, name: 'legacy' });
+  return (state: T) => wrapped(state);
 }
 
 /**
@@ -71,70 +53,34 @@ interface AsyncSelectorResult<T> {
  * 비동기 셀렉터 훅
  * 디바운싱을 통한 요청 최적화
  */
+/**
+ * @deprecated Use useAsyncSelector from '@shared/utils/signalSelector'.
+ * 통합 유틸로 위임하여 동작을 통일합니다.
+ */
 export function useAsyncSelector<T, R>(
   state: { value: T } | T,
   selector: (state: T) => Promise<R>,
   defaultValue: R,
   debounceMs = 300
 ): AsyncSelectorResult<R> {
-  const { useState, useEffect, useRef } = getPreactHooks();
-
-  const [result, setResult] = useState<AsyncSelectorResult<R>>(() => ({
-    value: defaultValue,
-    loading: false,
-    error: null,
-  }));
-
-  const mountedRef = useRef(true);
-  const currentGenerationRef = useRef(0);
-
-  // Signal 또는 값 추출
-  const actualState =
-    (state as { value?: T })?.value !== undefined ? (state as { value: T }).value : (state as T);
-
-  useEffect(() => {
-    // 새로운 generation 시작
-    const generation = ++currentGenerationRef.current;
-
-    setResult((prev: AsyncSelectorResult<R>) => ({ ...prev, loading: true, error: null }));
-
-    const timeoutId = setTimeout(async () => {
-      if (!mountedRef.current || generation !== currentGenerationRef.current) return;
-
-      try {
-        const value = await selector(actualState);
-        if (mountedRef.current && generation === currentGenerationRef.current) {
-          setResult({ value, loading: false, error: null });
-        }
-      } catch (error) {
-        if (mountedRef.current && generation === currentGenerationRef.current) {
-          setResult({
-            value: defaultValue,
-            loading: false,
-            error: error instanceof Error ? error : new Error('Unknown error'),
-          });
-        }
-      }
-    }, debounceMs);
-
-    // 컴포넌트 unmount 시 정리
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [actualState, selector, defaultValue, debounceMs]);
-
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  return result;
+  // signal-like 입력을 signalSelector의 API에 맞춰 전달
+  const signalLike = ((): { value: T } => {
+    if (state && typeof state === 'object' && 'value' in (state as Record<string, unknown>)) {
+      return state as { value: T };
+    }
+    // 간단한 래퍼 생성
+    return { value: state as T };
+  })();
+  const res = useAsyncSelectorUnified(signalLike, selector, defaultValue, debounceMs);
+  return res;
 }
 
 /**
  * useSelector Hook
  * Signal에서 값을 선택하는 훅
+ */
+/**
+ * @deprecated Use useSelector from '@shared/utils/signalSelector'.
  */
 export function useSelector<T, R>(
   signal: { value: T },
@@ -142,29 +88,24 @@ export function useSelector<T, R>(
   deps?: unknown[]
 ): R {
   const { useMemo } = getPreactHooks();
-
-  return useMemo(
-    () => {
-      return selector(signal.value);
-    },
-    deps ? [signal.value, ...deps] : [signal.value]
-  );
+  // 기존 동작 유지: 단순 selector 적용. 고급 최적화가 필요하면 통합 유틸 사용 권장.
+  return useMemo(() => selector(signal.value), deps ? [signal.value, ...deps] : [signal.value]);
 }
 
 /**
  * useCombinedSelector Hook
  * 여러 Signal을 조합하는 훅
  */
+/**
+ * @deprecated Use useCombinedSelector from '@shared/utils/signalSelector'.
+ * 여기서는 2-arity 시그니처를 유지하되 내부적으로 배열 기반 API로 위임합니다.
+ */
 export function useCombinedSelector<T1, T2, R>(
   signal1: { value: T1 },
   signal2: { value: T2 },
   selector: (value1: T1, value2: T2) => R
 ): R {
-  const { useMemo } = getPreactHooks();
-
-  return useMemo(() => {
-    return selector(signal1.value, signal2.value);
-  }, [signal1.value, signal2.value]);
+  return useCombinedSelectorUnified([signal1, signal2] as const, (a, b) => selector(a, b));
 }
 
 /**

@@ -195,7 +195,12 @@ export async function withFallback<T>(
     });
 
     // 로깅은 외부에서 처리하도록 에러를 다시 throw하지 않고 fallback 실행
-    console.warn('Operation failed, executing fallback:', standardError.message);
+    try {
+      const { logger } = await import('@shared/logging/logger');
+      logger.warn('Operation failed, executing fallback:', standardError.message);
+    } catch {
+      /* ignore */
+    }
 
     try {
       return await fallback();
@@ -206,7 +211,12 @@ export async function withFallback<T>(
         fatal: true,
       });
 
-      console.error('Fallback also failed:', fallbackStandardError.message);
+      try {
+        const { logger } = await import('@shared/logging/logger');
+        logger.error('Fallback also failed:', fallbackStandardError.message);
+      } catch {
+        /* ignore */
+      }
       throw fallbackStandardError;
     }
   }

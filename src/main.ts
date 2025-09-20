@@ -179,9 +179,8 @@ async function cleanup(): Promise<void> {
           byType: beforeEvents.byType,
           byContext: beforeEvents.byContext,
         });
-        // Vitest에서 보기 쉽도록 console에도 출력
-        // eslint-disable-next-line no-console
-        console.log('[TEST][cleanup:before]', {
+        // Vitest에서 보기 쉽게 로거로도 출력
+        logger.debug('[TEST][cleanup:before]', {
           timers: beforeTimers,
           events: beforeEvents,
         });
@@ -281,8 +280,7 @@ async function cleanup(): Promise<void> {
           byType: afterEvents.byType,
           byContext: afterEvents.byContext,
         });
-        // eslint-disable-next-line no-console
-        console.log('[TEST][cleanup:after]', {
+        logger.debug('[TEST][cleanup:after]', {
           timers: afterTimers,
           events: afterEvents,
         });

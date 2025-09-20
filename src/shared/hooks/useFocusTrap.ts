@@ -5,6 +5,7 @@
  */
 
 import { getPreactHooks } from '@shared/external/vendors';
+import { logger } from '@shared/logging/logger';
 
 export interface FocusTrapOptions {
   /** Escape 키 핸들러 */
@@ -207,12 +208,7 @@ export function useFocusTrap(
           if (onEscape) {
             event.preventDefault();
             if (isTest) {
-              try {
-                // eslint-disable-next-line no-console
-                console.debug('[FT] Escape pressed, attempting restore before onEscape');
-              } catch {
-                /* ignore */
-              }
+              logger.debug('[FT] Escape pressed, attempting restore before onEscape');
             }
             // 닫히기 전에 먼저 이전 포커스 대상으로 동기 복원 시도
             try {
@@ -227,12 +223,7 @@ export function useFocusTrap(
               const id = setTimeout(() => {
                 try {
                   if (isTest) {
-                    try {
-                      // eslint-disable-next-line no-console
-                      console.debug(`[FT] retry ${ms}ms resolve+focus`);
-                    } catch {
-                      /* ignore */
-                    }
+                    logger.debug(`[FT] retry ${ms}ms resolve+focus`);
                   }
                   const el = resolveRestoreTarget();
                   el?.focus?.();

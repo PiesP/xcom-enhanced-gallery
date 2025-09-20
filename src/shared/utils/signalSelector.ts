@@ -6,7 +6,8 @@
  */
 
 import { getPreactHooks, getPreactSignals } from '@shared/external/vendors';
-import { globalTimerManager } from '@shared/utils';
+import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 // 타입 정의
 type Signal<T> = {
@@ -103,7 +104,7 @@ export function createSelector<T, R>(
     if (hasResult && lastArgs && Object.is(lastArgs, state)) {
       if (debug) {
         stats.cacheHits++;
-        console.info(`[Selector:${name}] Cache hit (same reference)`, { stats });
+        logger.debug(`[Selector:${name}] Cache hit (same reference)`, { stats });
       }
       return lastResult;
     }
@@ -115,7 +116,7 @@ export function createSelector<T, R>(
       if (hasResult && lastDependencies && shallowEqual(lastDependencies, currentDependencies)) {
         if (debug) {
           stats.cacheHits++;
-          console.info(`[Selector:${name}] Cache hit (dependencies)`, { stats });
+          logger.debug(`[Selector:${name}] Cache hit (dependencies)`, { stats });
         }
         return lastResult;
       }
@@ -135,7 +136,7 @@ export function createSelector<T, R>(
       stats.computeCount++;
       stats.cacheMisses++;
       stats.lastComputeTime = performance.now() - startTime;
-      console.info(`[Selector:${name}] Computed new value`, {
+      logger.debug(`[Selector:${name}] Computed new value`, {
         result,
         computeTime: stats.lastComputeTime,
         stats,
