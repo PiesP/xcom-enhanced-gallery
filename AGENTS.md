@@ -6,7 +6,7 @@
 ## 개발 환경
 
 - 패키지 매니저: npm (단일 패키지)
-- Node.js: 20 권장 (CI는 18/20/22에서 검증)
+- Node.js: 20 권장 (CI는 20/22에서 검증)
 - 번들러: Vite 7, 프레임워크: Preact 10, 테스트: Vitest 3 + JSDOM
 - 타입 경로 별칭(ts/vite): `@`, `@features`, `@shared`, `@assets`
 - 코딩 규칙: `docs/CODING_GUIDELINES.md`를 항상 준수 (디자인 토큰, 벤더 getter,
@@ -82,7 +82,7 @@ node ./scripts/validate-build.js
 CI
 
 - 워크플로: `.github/workflows/ci.yml`
-- Node 18/20/22 매트릭스에서 다음을 수행:
+- Node 20/22 매트릭스에서 다음을 수행:
   - typecheck → lint → prettier check → 테스트(20에서는 커버리지)
   - dev/prod 빌드 후 `scripts/validate-build.js`로 산출물 검증
   - 커버리지/빌드 아티팩트 업로드

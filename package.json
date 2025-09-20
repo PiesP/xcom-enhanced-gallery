@@ -14,6 +14,8 @@
     "test": "vitest run",
     "test:fast": "cross-env TEST_FAST=true vitest run",
     "test:nobuild": "vitest run",
+    "test:ci": "cross-env CI=true TEST_SKIP_BUILD=true vitest run --reporter=dot",
+    "test:coverage:ci": "cross-env CI=true TEST_SKIP_BUILD=true vitest -coverage --reporter=dot",
     "test:watch": "vitest",
     "test:coverage": "vitest -coverage",
     "test:ui": "vitest --ui",
@@ -34,6 +36,9 @@
     "deps:view": "http-server docs -p 8080 -o /dependency-graph.html",
     "deps:all:legacy": "npm run deps:all",
     "prepare": "husky"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   },
   "dependencies": {
     "preact": "10.27.2",
