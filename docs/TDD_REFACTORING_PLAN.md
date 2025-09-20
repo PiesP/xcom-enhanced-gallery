@@ -97,6 +97,7 @@ Gate 체크리스트 (병합 전):
 | ---------------------- | ---------------------------------------- |
 | 완료 로그              | `docs/TDD_REFACTORING_PLAN_COMPLETED.md` |
 | 백로그                 | `docs/TDD_REFACTORING_BACKLOG.md`        |
+| 설계                   | `docs\ARCHITECTURE.md`                   |
 | 코딩 규칙              | `docs/CODING_GUIDELINES.md`              |
 | 계획 아카이브(축약 전) | `docs/archive/`                          |
 
