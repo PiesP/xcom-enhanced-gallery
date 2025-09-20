@@ -55,9 +55,7 @@
 1. GREEN: `useFocusTrap`로 통합 적용, 특수 케이스는
    `accessibility-utils.createFocusTrap()`로 주입
 2. REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트
-3. RED: 라이브 리전 공지 테스트(Toast/MediaCounter) 강화 — polite/assertive
-   채널, 큐잉/중복 억제
-4. GREEN: `live-region-manager.ts`에 디바운스/중복 필터 추가(선택), 테스트 통과
+
 
 수용 기준(샘플)
 

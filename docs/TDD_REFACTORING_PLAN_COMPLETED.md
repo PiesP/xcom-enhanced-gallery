@@ -323,6 +323,18 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 - 기존 SettingsModal/KeyboardHelpOverlay 경로와 동등한 접근성 행동 일관화.
   문서의 Epic A 단계 목록에서 해당 RED(테스트 추가) 항목 제거.
 
+2025-09-21: A11y-LIVE-REGION — 라이브 리전 채널/큐잉/중복 억제 완료 (Epic A
+단계)
+
+- 단일 싱글톤 라이브 리전(polite/status · assertive/alert) 생성 및 재부착 시
+  텍스트 초기화.
+- 짧은 시간창(200ms) 동일 문자열 중복 억제, 메시지 간 지연(50ms)과 공백-토글로
+  재공지 유도.
+- 큐 순서 보장, 채널 분리, DOM 누수 방지 가드 테스트
+  추가(`test/unit/shared/utils/accessibility.live-region.test.ts`).
+- announce 헬퍼는 `live-region-manager`의 `announcePolite/announceAssertive`로
+  위임.
+
 2025-09-20: XEG-SEL-01 — Selector 유틸 통합 및 로깅 일원화 (Epic 종료)
 
 - P1–P4 완료. `@shared/utils/signalSelector`를 단일 출처로 확립하고

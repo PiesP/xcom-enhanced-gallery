@@ -6227,7 +6227,25 @@
     },
     {
       "source": "src/shared/utils/accessibility/accessibility-utils.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./live-region-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/accessibility/live-region-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/accessibility.ts",
         "src/shared/utils/accessibility/index.ts"
@@ -6240,6 +6258,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/accessibility.ts",
+        "src/shared/utils/accessibility/accessibility-utils.ts",
         "src/shared/utils/accessibility/index.ts"
       ],
       "orphan": false,
@@ -8629,7 +8648,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 258,
-    "totalDependenciesCruised": 355,
+    "totalDependenciesCruised": 356,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
