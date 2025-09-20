@@ -52,16 +52,12 @@
 
 단계별 TDD 과제
 
-1. RED: 모달/오버레이/메뉴 셸 컴포넌트에 포커스 트랩이 없으면 실패하도록
-   스냅샷/행동 테스트 추가
-   - 위치: `test/accessibility/*.test.tsx` 신설
-   - 기준: Tab 순환, Escape 복귀, 초기 포커스 존재
-2. GREEN: `useFocusTrap`로 통합 적용, 특수 케이스는
+1. GREEN: `useFocusTrap`로 통합 적용, 특수 케이스는
    `accessibility-utils.createFocusTrap()`로 주입
-3. REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트
-4. RED: 라이브 리전 공지 테스트(Toast/MediaCounter) 강화 — polite/assertive
+2. REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트
+3. RED: 라이브 리전 공지 테스트(Toast/MediaCounter) 강화 — polite/assertive
    채널, 큐잉/중복 억제
-5. GREEN: `live-region-manager.ts`에 디바운스/중복 필터 추가(선택), 테스트 통과
+4. GREEN: `live-region-manager.ts`에 디바운스/중복 필터 추가(선택), 테스트 통과
 
 수용 기준(샘플)
 

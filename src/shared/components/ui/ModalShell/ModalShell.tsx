@@ -3,7 +3,8 @@
  * @description 모달의 공통 레이아웃/스타일 Shell - semantic props 사용
  */
 
-import { getPreact, type ComponentChildren } from '@shared/external/vendors';
+import { getPreact, type ComponentChildren, getPreactHooks } from '@shared/external/vendors';
+import { useFocusTrap } from '@shared/hooks/useFocusTrap';
 
 export interface ModalShellProps {
   /** 컨텐츠 */
@@ -54,15 +55,19 @@ export function ModalShell({
   ...props
 }: ModalShellProps) {
   const { h } = getPreact();
+  const { useRef } = getPreactHooks();
   const sizeClass = `modal-size-${size}`;
   const surfaceClass = `modal-surface-${surfaceVariant}`;
 
-  // ESC 키 핸들러
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (closeOnEscape && event.key === 'Escape' && onClose) {
-      onClose();
-    }
-  };
+  // Focus trap 컨테이너 (dialog 내부 요소)
+  const containerRef = useRef<HTMLElement | null>(null);
+  // ESC 동작은 focus trap 훅에서 처리 (옵션으로 제어)
+  const onEscapeHandler = closeOnEscape && onClose ? onClose : undefined;
+  const focusTrapOptions = {
+    restoreFocus: true,
+    ...(onEscapeHandler ? { onEscape: onEscapeHandler } : {}),
+  } as const;
+  useFocusTrap(containerRef, !!isOpen, focusTrapOptions);
 
   // 백드롭 클릭 핸들러
   const handleBackdropClick = (event: Event) => {
@@ -73,12 +78,16 @@ export function ModalShell({
 
   if (!isOpen) return null;
 
+  // preact ref setter
+  const setContainerRef = (el: Element | null) => {
+    containerRef.current = (el as HTMLElement | null) ?? null;
+  };
+
   return h(
     'div',
     {
       class: `modal-backdrop ${isOpen ? 'modal-open' : ''}`.trim(),
       onClick: handleBackdropClick,
-      onKeyDown: handleKeyDown,
       'data-testid': testId ? `${testId}-backdrop` : undefined,
     },
     h(
@@ -89,6 +98,7 @@ export function ModalShell({
         'aria-modal': 'true',
         'aria-label': ariaLabel || 'Modal',
         'data-testid': testId,
+        ref: setContainerRef,
         ...props,
       },
       children

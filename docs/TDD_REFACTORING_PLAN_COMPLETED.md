@@ -311,6 +311,18 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 +1% 유지(P6), 마지막 주석/alias 정리(P7)로 마이그레이션 마무리.
 사이즈/접근성/회귀/번들 메트릭 모두 목표 달성.
 
+2025-09-21: A11y-FOCUS-TRAP — ModalShell에 focus trap 통합 및 가드 테스트 추가
+(Epic A 단계 일부 완료)
+
+- ModalShell이 `useFocusTrap`를 사용하여 Tab 순환/ESC 복귀/초기 포커스를
+  보장하도록 통합.
+- 신규 테스트 `test/unit/shared/components/ui/ModalShell.accessibility.test.tsx`
+  추가:
+  - role="dialog"/aria-modal 구조 확인
+  - Tab/Shift+Tab 순환 가드, Escape 시 onClose 호출 및 포커스 복원 가드
+- 기존 SettingsModal/KeyboardHelpOverlay 경로와 동등한 접근성 행동 일관화.
+  문서의 Epic A 단계 목록에서 해당 RED(테스트 추가) 항목 제거.
+
 2025-09-20: XEG-SEL-01 — Selector 유틸 통합 및 로깅 일원화 (Epic 종료)
 
 - P1–P4 완료. `@shared/utils/signalSelector`를 단일 출처로 확립하고
