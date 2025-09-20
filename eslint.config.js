@@ -140,11 +140,34 @@ export default [
           patterns: [
             { group: ['../../../*', '../../../../*'], message: '절대 경로 alias 사용 권장' },
             {
-              group: ['preact', 'preact/hooks', '@preact/signals', 'fflate'],
+              group: ['preact', 'preact/hooks', 'preact/compat', '@preact/signals', 'fflate'],
               message: 'vendors getter를 통해 접근',
             },
           ],
         },
+      ],
+
+      // === PC 전용 입력 가드 ===
+      // - JSX에서 onTouch*/onPointer* 사용 금지
+      // - addEventListener('touch*' | 'pointer*', ...) 금지
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXAttribute[name.name=/^on(?:Touch|Pointer)/]',
+          message: 'PC-only 정책: Touch/Pointer 이벤트 핸들러 사용 금지',
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='addEventListener'][arguments.0.value=/^(?:touch|pointer)/i]",
+          message: 'PC-only 정책: addEventListener에서 touch*/pointer* 이벤트 등록 금지',
+        },
+      ],
+
+      // 전역 타입 사용 경고(필요 시 override 가능)
+      'no-restricted-globals': [
+        'warn',
+        { name: 'TouchEvent', message: 'PC-only 정책: TouchEvent 사용 지양' },
+        { name: 'PointerEvent', message: 'PC-only 정책: PointerEvent 사용 지양' },
       ],
     },
     settings: {

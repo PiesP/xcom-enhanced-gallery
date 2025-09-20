@@ -284,6 +284,17 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 +1% 유지(P6), 마지막 주석/alias 정리(P7)로 마이그레이션 마무리.
 사이즈/접근성/회귀/번들 메트릭 모두 목표 달성.
 
+2025-09-20: VDOM-HOOKS-HARDENING P5 — ESLint 가드 강화/문서 보강/RED Graduation
+(GREEN)
+
+- ESLint: PC-only 입력 가드 추가 — JSX onTouch*/onPointer* 금지,
+  addEventListener('touch*'|'pointer*') 금지, preact/compat 직접 import
+  금지(벤더 getter 경유)와 함께 경계 강화. TouchEvent/PointerEvent 전역 사용
+  경고 설정.
+- 테스트: 수명주기/재바인드 RED 2건을 GREEN 가드로 rename(graduation) 처리.
+- 문서: CODING_GUIDELINES에 PC-only 이벤트 lint 가드 명시, 활성 계획서에서 Epic
+  제거.
+
 2025-09-18: ICN-R4~R6 — 아이콘 정적 배럴 제거/동적 로딩 일원화/사이즈 가드
 스캐폴드 Icon/index.ts Hero\* 재노출 제거(R4), iconRegistry ICON_IMPORTS 기반
 dynamic import 구조 확립 및 사이즈/정적 포함 가드 RED 테스트 추가(R5), Hero

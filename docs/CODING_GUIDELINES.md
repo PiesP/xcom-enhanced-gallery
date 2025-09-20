@@ -142,6 +142,13 @@ await getUserscript().download(url, filename);
     contextmenu, mouseenter/leave/move/down/up
   - 금지: 모든 TouchEvent/PointerEvent 계열 (테스트로 RED)
 
+Lint 가드
+
+- JSX: onTouch*/onPointer* 속성 사용 금지 (ESLint no-restricted-syntax)
+- addEventListener: 'touch*' / 'pointer*' 이벤트 등록 금지
+- 전역 타입: TouchEvent/PointerEvent 사용은 경고로 표시(예외가 필요한 경우
+  테스트/설계 문서로 근거를 남기고 제한적으로 허용)
+
 ## 6) 스타일 가이드: CSS Modules · 디자인 토큰 · A11y
 
 - CSS Modules + 디자인 토큰만 사용. 하드코딩 색상/시간/이징 금지
@@ -245,6 +252,8 @@ Toolbar/Modal  → z-index는 토큰(`--xeg-z-toolbar`, `--xeg-z-modal`)만 사�
 - 빠른 체크리스트
   - [ ] 벤더/Userscript는 getter로만 접근했는가?
   - [ ] PC 전용 이벤트만 사용했는가? (Touch/Pointer 금지)
+  - [ ] ESLint PC-only 이벤트 가드가 위반을 탐지하는가? (onTouch*/onPointer*,
+        addEventListener touch*/pointer*)
   - [ ] CSS Modules + 디자인 토큰만 사용했는가? (색상/시간/이징 하드코딩 금지)
   - [ ] features 레이어에서 ServiceManager를 직접 import하지 않았는가?
   - [ ] 테스트는 RED→GREEN로 진행했는가? 계약 테스트를 추가했는가?
