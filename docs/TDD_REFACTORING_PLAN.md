@@ -26,8 +26,6 @@
 
 현재 활성 Epic 없음. 신규 Epic은 백로그에 제안 후 승격합니다.
 
-```
-
 ---
 
 ## 5. TDD 워크플로 (Reminder)
@@ -53,7 +51,7 @@ Gate 체크리스트 (병합 전):
 | ---------------------- | ---------------------------------------- |
 | 완료 로그              | `docs/TDD_REFACTORING_PLAN_COMPLETED.md` |
 | 백로그                 | `docs/TDD_REFACTORING_BACKLOG.md`        |
-| 설계                   | `docs\ARCHITECTURE.md`                   |
+| 설계                   | `docs/ARCHITECTURE.md`                   |
 | 코딩 규칙              | `docs/CODING_GUIDELINES.md`              |
 | 계획 아카이브(축약 전) | `docs/archive/`                          |
 
@@ -122,25 +120,12 @@ Gate 체크리스트 (병합 전):
 - 진단: 스케줄러/idle/raf 유틸 사용. 대규모 변경 필요 없음.
 - 계획/액션: 셀렉터 유틸 통합 시 성능 회귀 지표를 테스트로 가드.
 
-### 7.11 로깅/오류 처리
-
-- 진단: 일부 유틸에서 `console.*` 직접 호출 발견
-  - `src/shared/utils/signalSelector.ts`: debug 모드 `console.info` 사용
-  - `src/shared/utils/performance/signalOptimization.ts`: `console.log` 사용
-  - `src/shared/utils/media/media-url.util.ts`: `console.warn`
-  - `src/shared/utils/error-handling.ts`: `console.warn`/`console.error`
-  - `src/shared/hooks/useFocusTrap.ts`: `console.debug`
-- 계획/액션: 중앙 로거(`@shared/logging/logger`)로 일원화. 디버그 시에도 logger
-  사용. 콘솔 직접 호출 제거. 정책 가드 테스트 추가 완료:
-  `test/unit/lint/no-console-direct-usage.test.ts` (logger 구현 파일은
-  allowlist). 현 시점 소스 스캔 결과 위반 0건.
-
-### 7.12 접근성(A11y)
+### 7.11 접근성(A11y)
 
 - 진단: 포커스/라이브 리전 유틸 존재. 추가 이슈 미발견.
 - 계획/액션: 별도 액션 없음.
 
-### 7.13 서비스 계층/다운로드 흐름
+### 7.12 서비스 계층/다운로드 흐름
 
 - 진단: Userscript/native download 경유 흐름 일관. Result 모델 표준 유지.
 - 계획/액션: 별도 액션 없음.
@@ -148,4 +133,3 @@ Gate 체크리스트 (병합 전):
 ---
 
 <!-- EPIC XEG-SEL-01 — Completed and moved to TDD_REFACTORING_PLAN_COMPLETED.md -->
-```
