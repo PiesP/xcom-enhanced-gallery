@@ -202,12 +202,32 @@ Toolbar/Modal  → z-index는 토큰(`--xeg-z-toolbar`, `--xeg-z-modal`)만 사�
 - RED→GREEN 절차 유지, 계약 테스트로 공개 API 보호
 - 임시 제외 테스트는 vitest 설정 주석을 참고해 추적 관리
 
+추가 지침(훅/수명주기 테스트)
+
+- useEffect/useLayoutEffect는 항상 반환(cleanup)을 제공해야 하며, 등록한
+  리스너/타이머/관찰자를 해제합니다.
+- 의존성 배열(deps)은 ESLint 규칙을 따르며, signal이나 ref 래퍼를 사용하는 경우
+  안정 참조를 유지합니다. 깊은 객체를 deps에 직접 넣지 않습니다(필요 시 파생
+  원시값으로 분해).
+- 장시간 실행 시나리오(100+ 미디어 아이템)에서 메모리/리스너 누수 0을 검증하는
+  테스트를 제공합니다.
+
 ## 10) 툴바 키보드 내비 · Wheel 정책
 
 - 툴바 포커스 흐름: Prev → Next → Fit 토글들 → 다운로드 → Settings → Close
 - 키 매핑: Arrow/Home/End/Escape만 자체 처리(Tab은 브라우저 기본 순서)
 - 그룹 데이터 속성: `data-toolbar-group`, `data-group-first="true"` 규약
 - Wheel 정책: 전용 유틸 `ensureWheelLock` 사용, 필요 시에만 preventDefault
+
+## 11.5) Signals 최적화 가이드
+
+- 대형 배열/맵은 불변 업데이트를 적용하고, 파생 연산은 `computed` 또는
+  `useSignalSelector`로 메모이즈합니다.
+- 다수 구독으로 인한 리렌더 폭발을 피하기 위해, 컴포넌트에서는 selector 패턴으로
+  최소 필요한 파생값만 구독합니다.
+- 배치 업데이트를 통해 프레임당 변경 횟수를 제한하고, 타이머/스케줄러 유틸을
+  사용합니다.
+- 신호 파생에서 DOM을 직접 접근하지 않습니다(부작용 분리).
 
 ## 11) 성능/수명주기: 프리로드 · 타이머/리스너
 

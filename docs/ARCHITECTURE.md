@@ -104,6 +104,25 @@ Must Not
     `manager`
 - ZIP: `@shared/external/zip/zip-creator`
 
+### 2.4 vDOM/Shadow DOM/SPA 공존 전략
+
+본 프로젝트는 Preact 기반 vDOM과 X.com(내부 React SPA) DOM이 공존합니다. 충돌을
+피하고 안정성을 높이기 위해 다음 원칙을 따릅니다.
+
+- 단일 마운트 포인트: 기능 UI는 단일 컨테이너(필요 시 ShadowRoot) 아래에
+  렌더링합니다. 호스트 DOM을 직접 수정하지 않습니다(데이터 속성/앵커 엘리먼트
+  수준만 사용).
+- Shadow DOM 우선: X.com 스타일과의 충돌을 피하기 위해 기본적으로 ShadowRoot
+  컨테이너를 사용합니다. 글로벌 CSS 텍스트는 주입 게이팅 규약(7장)을 따릅니다.
+- 관찰과 재바인딩: X.com이 DOM을 교체/패치하는 시점에 대비해 MutationObserver
+  기반 감시자를 두고, 마운트 대상이 사라지면 안전하게 언마운트/재마운트를
+  수행합니다(배치 스케줄러 사용). 관찰자는 엔트리/렌더러에서 등록하고, 언마운트
+  시 정리합니다.
+- 이벤트 경계: PC 전용 입력만 처리하며, 기본 스크롤/단축키와의 충돌을 최소화하기
+  위해 목적 동작에 한해 `preventDefault()`를 적용합니다.
+- Vendor/Userscript 경유: Preact/Signals/ZIP/다운로드 등 외부 의존성은 항상
+  getter/어댑터를 통해 접근합니다(TDZ-safe, 모킹 가능).
+
 ## 3. 애플리케이션 시작(bootstrap) 흐름
 
 엔트리: `src/main.ts`
@@ -212,6 +231,15 @@ type UserscriptAPI = {
 - 스케줄러: immediate/idle/raf/microtask 지원, JSDOM 폴백
 - 동시성 큐: `maxConcurrent` 제한으로 전체 대기열 소진
 
+메모리/수명주기 가드
+
+- 컴포넌트/훅의 모든 리스너·타이머·관찰자는 useEffect 반환(cleanup)에서
+  해제합니다.
+- 대용량 갤러리 시나리오에서도 장시간 실행 누수가 없도록, 마운트/언마운트 사이의
+  살아있는 리스너/타이머 수가 0으로 회귀해야 합니다.
+- Vendors/외부 자원 정리는 `cleanupVendors()` 또는 unload-safe 등록 유틸을
+  사용합니다.
+
 ## 12. 테스트 전략(TDD) 매핑
 
 - 환경: Vitest + JSDOM, 기본 URL https://x.com, `test/setup.ts` 자동 로드
@@ -225,6 +253,8 @@ type UserscriptAPI = {
   - 토큰 하드닝: `test/unit/styles/modal-token.hardening.test.ts`
   - ServiceManager 경계:
     `test/unit/lint/features-no-servicemanager.imports.test.ts`
+  - 훅/수명주기: 효과 의존성/클린업 계약 테스트와 장시간 실행 누수 감시 테스트를
+    추가하여, 리스너·타이머·관찰자 누수 0을 가드합니다.
 
 ## 13. 빌드 산출물/소스맵/검증
 
