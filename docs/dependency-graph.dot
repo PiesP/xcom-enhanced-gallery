@@ -74,6 +74,7 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_@shared" {label="@shared" subgraph "cluster_@shared/utils" {label="utils" "@shared/utils/error-handling" [label=<error-handling> tooltip="error-handling" ] } }
     subgraph "cluster_@shared" {label="@shared" subgraph "cluster_@shared/utils" {label="utils" "@shared/utils/events" [label=<events> tooltip="events" ] } }
     subgraph "cluster_@shared" {label="@shared" subgraph "cluster_@shared/utils" {label="utils" "@shared/utils/focusTrap" [label=<focusTrap> tooltip="focusTrap" ] } }
+    subgraph "cluster_@shared" {label="@shared" subgraph "cluster_@shared/utils" {label="utils" subgraph "cluster_@shared/utils/lifecycle" {label="lifecycle" "@shared/utils/lifecycle/rebind-watcher" [label=<rebind-watcher> tooltip="rebind-watcher" ] } } }
     subgraph "cluster_@shared" {label="@shared" subgraph "cluster_@shared/utils" {label="utils" subgraph "cluster_@shared/utils/media" {label="media" "@shared/utils/media/MediaClickDetector" [label=<MediaClickDetector> tooltip="MediaClickDetector" ] } } }
     subgraph "cluster_@shared" {label="@shared" subgraph "cluster_@shared/utils" {label="utils" subgraph "cluster_@shared/utils/media" {label="media" "@shared/utils/media/media-url.util" [label=<media-url.util> tooltip="media-url.util" ] } } }
     subgraph "cluster_@shared" {label="@shared" subgraph "cluster_@shared/utils" {label="utils" "@shared/utils/performance" [label=<performance> tooltip="performance" ] } }
@@ -1095,11 +1096,13 @@ strict digraph "dependency-cruiser output"{
     "src/features/gallery/GalleryApp.ts" -> "@shared/utils/events" [style="dashed"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" "src/features/gallery/GalleryRenderer.ts" [label=<GalleryRenderer.ts> tooltip="GalleryRenderer.ts" URL="src/features/gallery/GalleryRenderer.ts" fillcolor="#ddfeff"] } } }
     "src/features/gallery/GalleryRenderer.ts" -> "src/features/gallery/components/vertical-gallery-view/index.ts"
+    "src/features/gallery/GalleryRenderer.ts" -> "@/constants"
     "src/features/gallery/GalleryRenderer.ts" -> "@shared/components/isolation"
     "src/features/gallery/GalleryRenderer.ts" -> "@shared/external/vendors"
     "src/features/gallery/GalleryRenderer.ts" -> "@shared/logging/logger"
     "src/features/gallery/GalleryRenderer.ts" -> "@shared/services/service-factories" [style="dashed"]
     "src/features/gallery/GalleryRenderer.ts" -> "@shared/state/signals/gallery.signals"
+    "src/features/gallery/GalleryRenderer.ts" -> "@shared/utils/lifecycle/rebind-watcher"
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/components" {label="components" subgraph "cluster_src/features/gallery/components/KeyboardHelpOverlay" {label="KeyboardHelpOverlay" "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css" [label=<KeyboardHelpOverlay.module.css> tooltip="KeyboardHelpOverlay.module.css" URL="src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css" ] } } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/features" {label="features" subgraph "cluster_src/features/gallery" {label="gallery" subgraph "cluster_src/features/gallery/components" {label="components" subgraph "cluster_src/features/gallery/components/KeyboardHelpOverlay" {label="KeyboardHelpOverlay" "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx" [label=<KeyboardHelpOverlay.tsx> tooltip="KeyboardHelpOverlay.tsx" URL="src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx" fillcolor="#bbfeff"] } } } } }
     "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx" -> "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css"
@@ -1804,6 +1807,8 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/index.ts" -> "src/shared/utils/timer-management.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/type-safety-helpers.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/utils.ts" [arrowhead="inv"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/lifecycle" {label="lifecycle" "src/shared/utils/lifecycle/leak-guard.ts" [label=<leak-guard.ts> tooltip="leak-guard.ts" URL="src/shared/utils/lifecycle/leak-guard.ts" fillcolor="#ccffcc"] } } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/lifecycle" {label="lifecycle" "src/shared/utils/lifecycle/rebind-watcher.ts" [label=<rebind-watcher.ts> tooltip="rebind-watcher.ts" URL="src/shared/utils/lifecycle/rebind-watcher.ts" fillcolor="#ccffcc"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/media" {label="media" "src/shared/utils/media/MediaClickDetector.ts" [label=<MediaClickDetector.ts> tooltip="MediaClickDetector.ts" URL="src/shared/utils/media/MediaClickDetector.ts" fillcolor="#ddfeff"] } } } }
     "src/shared/utils/media/MediaClickDetector.ts" -> "@/constants"
     "src/shared/utils/media/MediaClickDetector.ts" -> "@shared/dom"

@@ -230,6 +230,14 @@ export const SERVICE_KEYS = {
 } as const;
 
 // ================================
+// Feature Flags
+// ================================
+
+export const FEATURE_FLAGS = {
+  vdomRebind: true, // SPA DOM 교체 시 Shadow DOM 컨테이너 재바인드 시도
+} as const;
+
+// ================================
 // API 설정
 // ================================
 

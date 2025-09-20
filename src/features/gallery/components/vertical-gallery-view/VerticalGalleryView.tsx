@@ -56,24 +56,30 @@ function VerticalGalleryViewCore({
   const { useCallback, useEffect, useRef, useState, useMemo } = getPreactHooks();
   const { createElement } = getPreact();
 
-  // 최적화된 Signal 구독: 필요한 파생값만 선택 (렌더 수 최소화)
-  const mediaItems = useSelector<typeof galleryState.value, readonly MediaInfo[]>(
+  // 최적화된 Signal 구독: 필요한 파생값을 단일 셀렉터로 결합하여 리렌더 수 최소화 (P4)
+  const viewModel = useSelector<
+    typeof galleryState.value,
+    {
+      mediaItems: readonly MediaInfo[];
+      currentIndex: number;
+      isDownloading: boolean;
+    }
+  >(
     galleryState as unknown as { value: typeof galleryState.value },
-    (s: typeof galleryState.value) => s.mediaItems,
-    { dependencies: (s: typeof galleryState.value) => [s.mediaItems] }
+    (s: typeof galleryState.value) => ({
+      mediaItems: s.mediaItems,
+      currentIndex: s.currentIndex,
+      isDownloading: s.isLoading,
+    }),
+    {
+      // 의존성 기반 캐시: 세 필드 변화에만 재계산
+      dependencies: (s: typeof galleryState.value) => [s.mediaItems, s.currentIndex, s.isLoading],
+      name: 'VerticalGalleryView.vm',
+    }
   );
-
-  const currentIndex = useSelector<typeof galleryState.value, number>(
-    galleryState as unknown as { value: typeof galleryState.value },
-    (s: typeof galleryState.value) => s.currentIndex,
-    { dependencies: (s: typeof galleryState.value) => [s.currentIndex] }
-  );
-
-  const isDownloading = useSelector<typeof galleryState.value, boolean>(
-    galleryState as unknown as { value: typeof galleryState.value },
-    (s: typeof galleryState.value) => s.isLoading,
-    { dependencies: (s: typeof galleryState.value) => [s.isLoading] }
-  );
+  const mediaItems = viewModel.mediaItems;
+  const currentIndex = viewModel.currentIndex;
+  const isDownloading = viewModel.isDownloading;
 
   logger.debug('VerticalGalleryView: Rendering with state', {
     mediaCount: mediaItems.length,

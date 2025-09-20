@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-20 — 활성 Epic: VDOM-HOOKS-HARDENING
+업데이트: 2025-09-20 — 활성 Epic: VDOM-HOOKS-HARDENING (P4 완료)
 
 ---
 
@@ -52,13 +52,9 @@ Baseline: commit `9a93e5db` (2025-09-20)
 
 Phase (TDD RED → GREEN → REFACTOR):
 
-| Phase | 코드                                                       | 목적                                 | 상태 |
-| ----- | ---------------------------------------------------------- | ------------------------------------ | ---- |
-| P1    | `test/integration/hooks-lifecycle.leak-guard.red.test.tsx` | 리스너/타이머/관찰자 누수 RED        | RED  |
-| P2    | `src/shared/utils/lifecycle/*`, 훅 클린업 정비             | 최소 구현으로 GREEN                  | TODO |
-| P3    | `test/integration/mutation-observer.rebind.red.test.ts`    | SPA 교체 시 재마운트 RED             | RED  |
-| P4    | `src/features/gallery/*` 스케줄/배치/selector 확대         | 리렌더 감소/성능 GREEN               | TODO |
-| P5    | REFACTOR                                                   | 중복 제거/문서 보강/규칙 ESLint 강화 | TODO |
+| Phase | 코드     | 목적                                 | 상태 |
+| ----- | -------- | ------------------------------------ | ---- |
+| P5    | REFACTOR | 중복 제거/문서 보강/규칙 ESLint 강화 | TODO |
 
 Acceptance Criteria:
 

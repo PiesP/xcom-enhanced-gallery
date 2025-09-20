@@ -587,6 +587,22 @@
           "valid": true
         },
         {
+          "module": "@/constants",
+          "moduleSystem": "es6",
+          "dynamic": false,
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "@/constants",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
           "module": "@shared/components/isolation",
           "moduleSystem": "es6",
           "dynamic": false,
@@ -665,6 +681,22 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "module": "@shared/utils/lifecycle/rebind-watcher",
+          "moduleSystem": "es6",
+          "dynamic": false,
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "@shared/utils/lifecycle/rebind-watcher",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -675,7 +707,51 @@
       "valid": true
     },
     {
+      "source": "@/constants",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": true,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "unknown"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/GalleryRenderer.ts",
+        "src/features/gallery/createAppContainer.ts",
+        "src/features/settings/types/settings.types.ts",
+        "src/shared/container/service-accessors.ts",
+        "src/shared/container/settings-access.ts",
+        "src/shared/dom/SelectorRegistry.ts",
+        "src/shared/services/index.ts",
+        "src/shared/services/core-services.ts",
+        "src/shared/services/media/TwitterVideoExtractor.ts",
+        "src/shared/services/media/UsernameExtractionService.ts",
+        "src/shared/utils/events.ts",
+        "src/shared/utils/media/MediaClickDetector.ts",
+        "src/shared/types/core/core-types.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "@shared/services/service-factories",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": true,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "unknown"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/GalleryRenderer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "@shared/utils/lifecycle/rebind-watcher",
       "followable": false,
       "coreModule": false,
       "couldNotResolve": true,
@@ -2029,33 +2105,6 @@
         }
       ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "@/constants",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": true,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "unknown"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/createAppContainer.ts",
-        "src/features/settings/types/settings.types.ts",
-        "src/shared/container/service-accessors.ts",
-        "src/shared/container/settings-access.ts",
-        "src/shared/dom/SelectorRegistry.ts",
-        "src/shared/services/index.ts",
-        "src/shared/services/core-services.ts",
-        "src/shared/services/media/TwitterVideoExtractor.ts",
-        "src/shared/services/media/UsernameExtractionService.ts",
-        "src/shared/utils/events.ts",
-        "src/shared/utils/media/MediaClickDetector.ts",
-        "src/shared/types/core/core-types.ts"
-      ],
       "orphan": false,
       "valid": true
     },
@@ -27705,6 +27754,20 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/lifecycle/leak-guard.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/lifecycle/rebind-watcher.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/memory/index.ts",
       "dependencies": [
         {
@@ -28216,8 +28279,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 670,
-    "totalDependenciesCruised": 1223,
+    "totalCruised": 673,
+    "totalDependenciesCruised": 1225,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

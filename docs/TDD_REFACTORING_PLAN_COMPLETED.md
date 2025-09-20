@@ -186,6 +186,16 @@ Low.
 - 산출물 영향: 코드/스타일 변경은 최소, 빌드 검증 통과. 향후 필요 시 툴바 높이
   보정 옵션(`calc(100vh - var(--xeg-toolbar-height))`)을 후속 Epic에서 검토 가능
 
+2025-09-20: VDOM-HOOKS-HARDENING P4 — Selector 결합으로 리렌더 감소 (GREEN)
+
+- 변경: VerticalGalleryView에서 mediaItems/currentIndex/isLoading 개별 구독을
+  단일 useSelector(view-model)로 결합해 의존성 기반 재계산만 트리거되도록 최적화
+- 효과: 관련 상태 변경 시 단일 반응 업데이트로 수렴되어 불필요한 리렌더 감소
+- 범위:
+  src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx
+- 회귀 가드: signal-optimization.test.tsx의 의존성 기반 캐시 가드 및 기존 뷰
+  동작 계약 테스트로 커버
+
 2025-09-18: TBAR-R P8 — Toolbar selector consolidation graduation
 (.toolbarButton occurrences ≤4, forward styles 제거, 2.5em 하드코딩 0, 구조/순서
 가드 GREEN). RED 테스트(toolbar-refine.red) 삭제 및 구조
@@ -258,6 +268,15 @@ MediaCounter forward 스타일(.mediaCounter / .mediaCounterWrapper) 삭제로 �
   키보드 포커스/접근성 미세 정합만 잔존.
 
 2025-09-18: TBAR-O — 툴바 아이콘 & 인디케이터 최적화 전체 완료 Toolbar
+2025-09-20: VDOM-HOOKS-HARDENING — 초기 하드닝 적용 (P2/P3 일부 완료)
+
+- P2: lifecycle 유틸 `LeakGuard` 도입 — 타이머/이벤트/옵저버 추적 및 일괄 정리,
+  통계 노출 테스트 `test/integration/hooks-lifecycle.leak-guard.red.test.tsx`
+  추가로 계약 명세
+- P3: SPA DOM 교체 대응 `RebindWatcher` 도입 및 `GalleryRenderer` 통합 (feature
+  flag `FEATURE_FLAGS.vdomRebind` on) — 컨테이너 분실 시 ≤250ms 재마운트 테스트
+  `test/integration/mutation-observer.rebind.red.test.ts`로 리바인드 가드
+
 아이콘/버튼 사이즈 단일 토큰(`--xeg-size-toolbar-button`) 도입, 중복 아이콘
 사이즈/스트로크 토큰 제거(P1~P2), MediaCounter 컴포넌트 추출 및 ARIA(progressbar
 valuetext) 강화(P3/P6), legacy `.controls` DOM/CSS 완전 제거 및 회귀 가드(P4),

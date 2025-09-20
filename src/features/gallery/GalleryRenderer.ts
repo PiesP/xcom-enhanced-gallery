@@ -27,6 +27,8 @@ import { VerticalGalleryView } from './components/vertical-gallery-view';
 import { GalleryContainer } from '@shared/components/isolation';
 import { logger } from '@shared/logging/logger';
 import { getPreact } from '@shared/external/vendors';
+import { FEATURE_FLAGS } from '@/constants';
+import { RebindWatcher } from '@shared/utils/lifecycle/rebind-watcher';
 
 /**
  * 갤러리 정리 관리자
@@ -59,6 +61,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private readonly cleanupManager = new GalleryCleanupManager();
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
+  private rebindWatcher: RebindWatcher | null = null;
 
   constructor() {
     this.setupStateSubscription();
@@ -130,6 +133,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
     this.cleanupManager.addTask(() => {
       // 컨테이너 정리는 cleanupContainer에서 처리
     });
+
+    // SPA DOM 교체 시 재바인드 감시 시작 (feature flag)
+    if (FEATURE_FLAGS.vdomRebind) {
+      this.startRebindWatcher();
+    }
   }
 
   /**
@@ -240,6 +248,37 @@ export class GalleryRenderer implements GalleryRendererInterface {
       }
       this.container = null;
     }
+    // 리바인드 워처 중지
+    if (this.rebindWatcher) {
+      this.rebindWatcher.dispose();
+      this.rebindWatcher = null;
+    }
+  }
+
+  /**
+   * 컨테이너 분실 시 재바인드 감시 시작
+   */
+  private startRebindWatcher(): void {
+    if (!this.container) return;
+    // 기존 워처 정리
+    if (this.rebindWatcher) {
+      this.rebindWatcher.dispose();
+    }
+    const target = this.container;
+    this.rebindWatcher = new RebindWatcher({
+      isTargetNode: node => node === target,
+      onContainerLost: async () => {
+        // 갤러리가 열려있다면 컨테이너를 재생성하고, 이미 렌더 중이 아니면 컴포넌트 다시 렌더링
+        const isOpen = galleryState.value.isOpen;
+        if (!isOpen) return;
+        logger.info('[GalleryRenderer] 컨테이너 분실 감지 → 재바인드 시도');
+        this.createContainer();
+        // 이미 신컨테이너가 만들어졌으니 컴포넌트만 다시 렌더
+        this.renderComponent();
+      },
+      rebindDelayMs: 150,
+    });
+    this.rebindWatcher.start();
   }
 
   // =============================================================================
