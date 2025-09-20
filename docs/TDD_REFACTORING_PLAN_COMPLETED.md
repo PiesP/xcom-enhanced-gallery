@@ -268,6 +268,19 @@ MediaCounter forward 스타일(.mediaCounter / .mediaCounterWrapper) 삭제로 �
   키보드 포커스/접근성 미세 정합만 잔존.
 
 2025-09-18: TBAR-O — 툴바 아이콘 & 인디케이터 최적화 전체 완료 Toolbar
+2025-09-20: PLAN — 활성 계획 정리 및 문서 포맷 수정
+
+- `docs/TDD_REFACTORING_PLAN.md`의 잘못된 코드펜스/포맷 이슈를 정정하고, 완료된
+  로깅/오류 처리 섹션(기존 7.11)을 제거하여 현재 상태를 반영.
+- 섹션 번호를 재정렬(접근성 → 7.11, 서비스 계층 → 7.12)하고 Completed 로그에 본
+  항목을 간결히 기록. 기능 변화 없음.
+
+2025-09-20: PLAN ROLLOVER — 카테고리 리뷰 잔여 메모 제거(7.5/7.8/7.10)
+
+- XEG-SEL-01(Selector 유틸 통합) 완료에 따라 `TDD_REFACTORING_PLAN.md` 내
+  7.5/7.8/7.10 섹션의 "통합 시 ..." 후속 메모를 제거하고 완료 상태로 업데이트.
+- 별도 액션 없음으로 정리, 활성 Epic 현황은 변경 없음(없음 유지).
+
 2025-09-20: VDOM-HOOKS-HARDENING — 초기 하드닝 적용 (P2/P3 일부 완료)
 
 - P2: lifecycle 유틸 `LeakGuard` 도입 — 타이머/이벤트/옵저버 추적 및 일괄 정리,
