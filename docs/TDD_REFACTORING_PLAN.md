@@ -24,54 +24,7 @@
 
 ## 2. 활성 Epic 현황
 
-### XEG-LOG-02 — Logger Hardening (로깅 일원화 및 가드)
-
-Baseline: branch `feature/xeg-log-02-logger-hardening` (2025-09-20)
-
-문제 요약:
-
-1. 일부 유틸에서 `console.*` 직접 호출 리스크 (환경별 일관성 저하 가능)
-2. 중앙 로거 미사용 구간이 생길 가능성에 대한 가드 부재
-
-목표 (Outcomes):
-
-- 애플리케이션 코드에서 `console.*` 직접 호출 0건 유지(중앙 로거로 일원화)
-- 테스트로 정책 가드 추가하여 회귀 방지
-
-측정 지표 (Metrics):
-
-- 정적 스캔 테스트 GREEN, 위반 0건
-- 기존 테스트/빌드 GREEN 유지(번들 영향 없음)
-
-Phase (TDD RED → GREEN → REFACTOR):
-
-| Phase | 코드/작업                                                               | 목적      | 상태             |
-| ----- | ----------------------------------------------------------------------- | --------- | ---------------- |
-| P1    | 소스 전수 스캔 및 위반 식별                                             | 현황 파악 | GREEN            |
-| P2    | 정책 가드 테스트 추가(`test/unit/lint/no-console-direct-usage.test.ts`) | 회귀 방지 | GREEN            |
-| P3    | 남은 `console.*` 호출 로거로 치환                                       | 일원화    | GREEN(위반 없음) |
-
-Acceptance Criteria:
-
-- src/ 이하에서 `console.(log|info|warn|error|debug)` 직접 호출 0건
-- logger 구현부(`src/shared/logging/logger.ts`)만 예외 허용
-- `npm run typecheck` · `npm test` GREEN
-
-## 2. 활성 Epic 현황
-
-현재 활성 Epic 없음. 신규 Epic은 백로그에 제안 후 승격합니다. Acceptance
-Criteria:
-
-- <AC1>
-- <AC2>
-
-위험 & 완화:
-
-- 위험: <내용> / 완화: <전략>
-
-Roll-back 전략:
-
-- Feature flag `<flag>` 제거 시 이전 동작 복원 (분리 커밋 보존)
+현재 활성 Epic 없음. 신규 Epic은 백로그에 제안 후 승격합니다.
 
 ```
 
