@@ -122,7 +122,12 @@ module.exports = {
     doNotFollow: {
       path: 'node_modules',
     },
-    includeOnly: '^src',
+    // Only include modules within src (strict)
+    // - includeOnly narrows the traversal set to src and subpaths
+    // - exclude additionally prevents any accidental non-src nodes (e.g., externals) from rendering
+    includeOnly: '^src(?:/|$)',
+    // Exclude anything that does not start with src/ (also hides bare external module ids like "preact")
+    exclude: '^(?!src(?:/|$))',
     // TS path alias 해석 보장 (orphan 오검출 감소)
     tsConfig: {
       fileName: 'tsconfig.json',

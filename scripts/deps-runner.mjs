@@ -30,12 +30,20 @@ async function run() {
 
   const target = [sourceDir];
 
-  const jsonResult = await cruise(target, { ...config, outputType: 'json' });
+  const jsonResult = await cruise(target, {
+    ...(config.options || {}),
+    ruleSet: { forbidden: config.forbidden || [] },
+    outputType: 'json',
+  });
   const jsonOutput =
     typeof jsonResult.output === 'string' ? jsonResult.output : JSON.stringify(jsonResult, null, 2);
   writeFileSync(path.join(outDir, files.json), jsonOutput, 'utf-8');
 
-  const dotResult = await cruise(target, { ...config, outputType: 'dot' });
+  const dotResult = await cruise(target, {
+    ...(config.options || {}),
+    ruleSet: { forbidden: config.forbidden || [] },
+    outputType: 'dot',
+  });
   const dotOutput = typeof dotResult.output === 'string' ? dotResult.output : '';
   writeFileSync(path.join(outDir, files.dot), dotOutput, 'utf-8');
 

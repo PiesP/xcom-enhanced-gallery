@@ -30,11 +30,19 @@ async function run() {
   const target = ['src'];
 
   // 1. Cruise once for JSON (includes module/dependency graph)
-  const jsonResult = cruise(target, { ...config, outputType: 'json' });
+  const jsonResult = cruise(target, {
+    ...(config.options || {}),
+    ruleSet: { forbidden: config.forbidden || [] },
+    outputType: 'json',
+  });
   writeFileSync('docs/dependency-graph.json', JSON.stringify(jsonResult.output, null, 2), 'utf-8');
 
   // 2. Cruise once for DOT (separate to respect styling). Could reuse modules but keep clarity.
-  const dotResult = cruise(target, { ...config, outputType: 'dot' });
+  const dotResult = cruise(target, {
+    ...(config.options || {}),
+    ruleSet: { forbidden: config.forbidden || [] },
+    outputType: 'dot',
+  });
   writeFileSync('docs/dependency-graph.dot', dotResult.output, 'utf-8');
 
   // 3. Convert DOT -> SVG (prefer dot, fallback sfdp)
@@ -51,7 +59,10 @@ async function run() {
   }
 
   // 4. Validation run (forbidden rules) - use results from a cruise with validate
-  const validateResult = cruise(['src'], { ...config, validate: true });
+  const validateResult = cruise(['src'], {
+    ...(config.options || {}),
+    ruleSet: { forbidden: config.forbidden || [] },
+  });
   const { summary } = validateResult;
   const hasErrors = summary.error > 0;
   // Write a lightweight summary for potential future tooling
