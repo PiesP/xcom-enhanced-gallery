@@ -284,6 +284,18 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 +1% 유지(P6), 마지막 주석/alias 정리(P7)로 마이그레이션 마무리.
 사이즈/접근성/회귀/번들 메트릭 모두 목표 달성.
 
+2025-09-20: XEG-SEL-01 — Selector 유틸 통합 및 로깅 일원화 (Epic 종료)
+
+- P1–P4 완료. `@shared/utils/signalSelector`를 단일 출처로 확립하고
+  `@shared/utils/performance`는 동일 API를 re-export(또는 위임)하도록 정비.
+- `signalOptimization.ts`의 중복 구현은 Deprecated 래퍼로 유지하되 내부적으로
+  통합 유틸에 위임하여 호환성 확보. 공개 표면(배럴) 변화 없음.
+- 로깅 경로 일원화: 기존 `console.*` 호출을 `@shared/logging/logger`로 대체
+  (테스트 진단용 로그 포함).
+- 신규 통합 테스트 `test/unit/performance/selector-unification.test.ts` GREEN.
+  전체 스위트/빌드 가드 통과, userscript 사이즈 영향 미미(±0%~+1% 범위 내).
+- 계획서의 Epic 섹션은 제거하고 본 완료 로그에 요약을 이관.
+
 2025-09-20: VDOM-HOOKS-HARDENING P5 — ESLint 가드 강화/문서 보강/RED Graduation
 (GREEN)
 

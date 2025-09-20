@@ -268,7 +268,7 @@ export function isValidMediaUrl(url: string): boolean {
     return false;
   } catch (error) {
     // URL 생성이 실패하면 fallback 사용
-    console.warn('URL parsing failed, using fallback:', error);
+    logger.warn('URL parsing failed, using fallback:', error);
     return isValidMediaUrlFallback(url);
   }
 }
