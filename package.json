@@ -33,7 +33,6 @@
     "deps:json": "npm run deps:gen",
     "deps:gen": "node ./scripts/deps-runner.mjs",
     "deps:all": "npm run deps:gen && npm run deps:check",
-    "deps:view": "http-server docs -p 8080 -o /dependency-graph.html",
     "deps:all:legacy": "npm run deps:all",
     "prepare": "husky"
   },
