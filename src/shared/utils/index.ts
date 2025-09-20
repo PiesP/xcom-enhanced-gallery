@@ -81,3 +81,8 @@ export { DOMBatcher, globalDOMBatcher } from './dom/index';
 // === 핵심 타입 (총 44개 export) ===
 export type { DOMUpdate as DOMUpdateTask } from './dom/index';
 export type { StandardError, ErrorContext } from './error-handling';
+
+// === 라이프사이클 누수 가드 (LeakGuard) ===
+// 배럴을 통해 노출하여 내부 의존 그래프에서 orphan이 되지 않도록 연결
+export { LeakGuard } from './lifecycle/leak-guard';
+export type { Unsubscribe } from './lifecycle/leak-guard';

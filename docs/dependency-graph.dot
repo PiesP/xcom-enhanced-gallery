@@ -1803,11 +1803,12 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/index.ts" -> "src/shared/utils/error-handling.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/events.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/events/wheel.ts" [arrowhead="inv"]
+    "src/shared/utils/index.ts" -> "src/shared/utils/lifecycle/leak-guard.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/media/index.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/timer-management.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/type-safety-helpers.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/utils.ts" [arrowhead="inv"]
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/lifecycle" {label="lifecycle" "src/shared/utils/lifecycle/leak-guard.ts" [label=<leak-guard.ts> tooltip="leak-guard.ts" URL="src/shared/utils/lifecycle/leak-guard.ts" fillcolor="#ccffcc"] } } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/lifecycle" {label="lifecycle" "src/shared/utils/lifecycle/leak-guard.ts" [label=<leak-guard.ts> tooltip="leak-guard.ts" URL="src/shared/utils/lifecycle/leak-guard.ts" fillcolor="#ddfeff"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/lifecycle" {label="lifecycle" "src/shared/utils/lifecycle/rebind-watcher.ts" [label=<rebind-watcher.ts> tooltip="rebind-watcher.ts" URL="src/shared/utils/lifecycle/rebind-watcher.ts" fillcolor="#ccffcc"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/media" {label="media" "src/shared/utils/media/MediaClickDetector.ts" [label=<MediaClickDetector.ts> tooltip="MediaClickDetector.ts" URL="src/shared/utils/media/MediaClickDetector.ts" fillcolor="#ddfeff"] } } } }
     "src/shared/utils/media/MediaClickDetector.ts" -> "@/constants"

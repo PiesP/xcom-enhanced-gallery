@@ -24788,6 +24788,23 @@
           "valid": true
         },
         {
+          "module": "./lifecycle/leak-guard",
+          "moduleSystem": "es6",
+          "dynamic": false,
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/lifecycle/leak-guard.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
           "module": "./media",
           "moduleSystem": "es6",
           "dynamic": false,
@@ -25407,6 +25424,15 @@
       "dependents": [
         "src/shared/utils/index.ts",
         "src/shared/utils/scroll/scroll-utils.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/lifecycle/leak-guard.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -27754,13 +27780,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/lifecycle/leak-guard.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/lifecycle/rebind-watcher.ts",
       "dependencies": [],
       "dependents": [],
@@ -28280,7 +28299,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 673,
-    "totalDependenciesCruised": 1225,
+    "totalDependenciesCruised": 1226,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
