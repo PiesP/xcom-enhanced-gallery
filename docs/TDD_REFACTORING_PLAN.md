@@ -104,12 +104,12 @@ Gate 체크리스트 (병합 전):
   detection 보강 여지가 있음.
 - 계획/액션:
   - Vendors 안전 표면(Safe API Surface) 필수 존재 체크 및 graceful degrade
-    가드를 추가(벤더 getter 내부/호출부 단위 테스트 포함). 문서:
-    `docs/vendors-safe-api.md`.
+    가드를 추가(벤더 getter 내부/호출부 단위 테스트 포함).
   - ZIP 처리: 대용량 처리 시 idle/raf 청크 처리 유틸을 우선 검토(워커 도입은
     Userscript 제약을 고려해 백로그로 유지).
   - 네트워크/토큰 취급은 현행 규칙 유지(HTTPS 기본/민감정보 로깅 금지). 필요 시
-    URL 스킴 검증 유틸 도입을 소규모 변경으로 검토.
+    URL 스킴 검증 유틸 도입을 소규모 변경으로 검토. URL 스킴 검증 유틸 도입을
+    소규모 변경으로 검토.
 
 ### 7.5 상태 관리(Signals)와 파생값
 
