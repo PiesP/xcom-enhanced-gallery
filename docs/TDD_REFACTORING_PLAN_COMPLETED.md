@@ -309,6 +309,13 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 
 2025-09-18: ICN-R4~R6 — 아이콘 정적 배럴 제거/동적 로딩 일원화/사이즈 가드
 스캐폴드 Icon/index.ts Hero\* 재노출 제거(R4), iconRegistry ICON_IMPORTS 기반
+2025-09-20: XEG-LOG-02 — Logger Hardening (Epic 종료)
+
+- 목적: 애플리케이션 코드의 `console.*` 직접 호출 제거 및 중앙 로거 일원화.
+- 조치: 정적 스캔 유닛 테스트
+  추가(`test/unit/lint/no-console-direct-usage.test.ts`)로 회귀 가드 구축.
+- 결과: 현 소스 위반 0건, 타입체크/전체 테스트 GREEN, 빌드 영향 없음.
+
 dynamic import 구조 확립 및 사이즈/정적 포함 가드 RED 테스트 추가(R5), Hero
 어댑터 공통 유틸 `createHeroIconAdapter` 도입 + 코드젠 스크립트
 스텁(`generate-icon-map.mjs`) 작성, 레거시 icons/ 배럴 부재 테스트(R6)로 회귀

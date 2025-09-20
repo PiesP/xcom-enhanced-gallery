@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-20 — 활성 Epic 1건 진행 중
+업데이트: 2025-09-20 — 현재 활성 Epic 없음
 
 ---
 
@@ -57,50 +57,10 @@ Acceptance Criteria:
 - logger 구현부(`src/shared/logging/logger.ts`)만 예외 허용
 - `npm run typecheck` · `npm test` GREEN
 
-위험 & 완화:
+## 2. 활성 Epic 현황
 
-- 위험: 과도한 테스트 범위로 실행 시간 증가 / 완화: 파일 집합 최소화 및
-  문자열/주석/리터럴 제거 후 매칭
-- 위험: 빌드 환경 별 경로 차이 / 완화: `import.meta.url` 기반 프로젝트 루트 계산
-  사용
-
-Roll-back 전략:
-
-- 정책 테스트 파일만 되돌리면 기존 동작/빌드에 영향 없음
-
-## 3. 제안 / 대기 Epic
-
-현재 제안/대기 Epic 없음. 새 Epic은 백로그(`TDD_REFACTORING_BACKLOG.md`)에 초안
-후 승격.
-
----
-
-## 4. Epic 실행 템플릿 (복사하여 사용)
-
-```markdown
-### <EPIC-CODE> — <Epic 간단 설명>
-
-Baseline: commit `<hash>` (YYYY-MM-DD)
-
-문제 요약:
-
-1. <항목>
-2. <항목>
-
-목표 (Outcomes):
-
-- <정량/정성 목표>
-- <정량/정성 목표>
-
-측정 지표 (Metrics):
-
-- (예) 번들 gzip ≤ +5% vs baseline
-- (예) a11y ARIA missing rate 0
-
-Phase (TDD RED → GREEN → REFACTOR): | Phase | 코드 | 목적 | 상태 | | ----- |
----- | ---- | ---- | | P1 | ... | ... | (RED/GREEN/REF) |
-
-Acceptance Criteria:
+현재 활성 Epic 없음. 신규 Epic은 백로그에 제안 후 승격합니다. Acceptance
+Criteria:
 
 - <AC1>
 - <AC2>
@@ -112,6 +72,7 @@ Acceptance Criteria:
 Roll-back 전략:
 
 - Feature flag `<flag>` 제거 시 이전 동작 복원 (분리 커밋 보존)
+
 ```
 
 ---
@@ -234,3 +195,4 @@ Gate 체크리스트 (병합 전):
 ---
 
 <!-- EPIC XEG-SEL-01 — Completed and moved to TDD_REFACTORING_PLAN_COMPLETED.md -->
+```
