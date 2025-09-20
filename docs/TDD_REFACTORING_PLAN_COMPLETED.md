@@ -287,6 +287,14 @@ MediaCounter forward 스타일(.mediaCounter / .mediaCounterWrapper) 삭제로 �
   7.5/7.8/7.10 섹션의 "통합 시 ..." 후속 메모를 제거하고 완료 상태로 업데이트.
 - 별도 액션 없음으로 정리, 활성 Epic 현황은 변경 없음(없음 유지).
 
+2025-09-20: PLAN — 섹션 7 카테고리 리뷰 점검 완료
+
+- 범위: `TDD_REFACTORING_PLAN.md` 섹션 7(7.1~7.12) 정기 점검
+- 결과: 직접 import/터치·포인터 이벤트 사용 0건, Vendors/Userscript 경계 준수,
+  테스트/빌드 가드 기준 위반 없음. 즉시 이행할 추가 작업 없음.
+- 조치: 활성 Epic 생성하지 않음. 섹션 7 세부 항목은 활성 계획서에서 제거하고 본
+  완료 로그에 간결 요약으로 이관.
+
 2025-09-20: VDOM-HOOKS-HARDENING — 초기 하드닝 적용 (P2/P3 일부 완료)
 
 - P2: lifecycle 유틸 `LeakGuard` 도입 — 타이머/이벤트/옵저버 추적 및 일괄 정리,
