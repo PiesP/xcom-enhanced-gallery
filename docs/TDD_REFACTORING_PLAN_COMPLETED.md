@@ -276,6 +276,12 @@ MediaCounter forward 스타일(.mediaCounter / .mediaCounterWrapper) 삭제로 �
   항목을 간결히 기록. 기능 변화 없음.
 
 2025-09-20: PLAN ROLLOVER — 카테고리 리뷰 잔여 메모 제거(7.5/7.8/7.10)
+2025-09-20: VENDORS-SAFE-API — 안전 표면 가이드 문서/링크 추가 (완료)
+
+- 문서: `docs/vendors-safe-api.md` 생성 — getter/adapter 사용 규칙, feature
+  detection, 테스트 모킹 패턴/체크리스트 수록.
+- 아키텍처 문서에 참조 링크 추가(`docs/ARCHITECTURE.md` 관련 문서 목록).
+- 활성 계획 7.4 항목은 문서화 완료 상태로 표기(가드/테스트 보강 작업만 잔존).
 
 - XEG-SEL-01(Selector 유틸 통합) 완료에 따라 `TDD_REFACTORING_PLAN.md` 내
   7.5/7.8/7.10 섹션의 "통합 시 ..." 후속 메모를 제거하고 완료 상태로 업데이트.

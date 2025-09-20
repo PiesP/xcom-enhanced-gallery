@@ -9,6 +9,8 @@
 - 코딩 가이드: docs/CODING_GUIDELINES.md (코딩 규칙/토큰/A11y/테스트 전략)
 - 의존성 그래프: docs/dependency-graph.(svg|json|dot|html)
 - 실행/CI: AGENTS.md
+- Vendors Safe API: docs/vendors-safe-api.md (getter/adapter, feature detection,
+  모킹)
 
 ## 1. 시스템 개요와 레이어 경계
 

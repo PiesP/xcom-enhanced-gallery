@@ -103,8 +103,9 @@ Gate 체크리스트 (병합 전):
   API 변경(예: X.com DOM/API 변화)에 대한 방어 로직은 최소화되어 있어 feature
   detection 보강 여지가 있음.
 - 계획/액션:
-  - Vendors 안전 표면(Safe API Surface) 명세를 간단 문서화하고, 필수 존재 체크
-    및 graceful degrade 가드를 추가(벤더 getter 내부/호출부 단위 테스트 포함).
+  - Vendors 안전 표면(Safe API Surface) 필수 존재 체크 및 graceful degrade
+    가드를 추가(벤더 getter 내부/호출부 단위 테스트 포함). 문서:
+    `docs/vendors-safe-api.md`.
   - ZIP 처리: 대용량 처리 시 idle/raf 청크 처리 유틸을 우선 검토(워커 도입은
     Userscript 제약을 고려해 백로그로 유지).
   - 네트워크/토큰 취급은 현행 규칙 유지(HTTPS 기본/민감정보 로깅 금지). 필요 시
