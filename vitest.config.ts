@@ -19,6 +19,19 @@ export default defineConfig({
       '@features': resolve(__dirname, './src/features'),
       '@shared': resolve(__dirname, './src/shared'),
       '@assets': resolve(__dirname, './src/assets'),
+      // 리팩터링 통합 테스트 호환을 위한 조건부 alias
+      ...(process.env.VITEST_INCLUDE_REF_TESTS === '1'
+        ? {
+            '@shared/services/UnifiedEventManager': resolve(
+              __dirname,
+              './test/_adapters/UnifiedEventManager.ts'
+            ),
+            '@shared/services/UnifiedServiceDiagnostics': resolve(
+              __dirname,
+              './test/_adapters/UnifiedServiceDiagnostics.ts'
+            ),
+          }
+        : {}),
     },
   },
 
