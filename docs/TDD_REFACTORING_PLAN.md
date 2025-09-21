@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 2건(A11y, 메모리)
+업데이트: 2025-09-21 — 활성 Epic 1건(A11y)
 
 ---
 
@@ -52,8 +52,7 @@
 
 단계별 TDD 과제
 
-1. (완료) REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트 →
-   Completed로 이관
+— (해당 Epic의 선행 리팩토링 항목은 완료되어 Completed 로그로 이관되었습니다)
 
 수용 기준(샘플)
 
@@ -88,11 +87,7 @@
 
 단계별 TDD 과제
 
-1. (진행) RED: 페이지 전환/언마운트 시 살아있는 타이머/리스너가 0이어야 함 —
-   진단 훅 테스트 추가
-2. RED: 대량 썸네일 로딩 시 GC 후 잔존 객체 수가 한도 이하(모킹) — smoke
-   수준으로 유지
-3. GREEN: 미디어 URL revoke/DOM 파기 순서 보정
+— (Epic C의 핵심 단계는 완료되어 Completed 로그로 이관되었습니다)
 
 수용 기준(샘플)
 
