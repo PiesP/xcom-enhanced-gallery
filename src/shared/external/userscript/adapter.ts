@@ -117,7 +117,12 @@ async function fallbackDownload(url: string, filename: string): Promise<void> {
     return; // 비브라우저 환경에서는 수행할 수 없음
   }
 
-  const response = await fetch(url);
+  const response = (await fetch(url)) as Response;
+  // GM_download와의 정합성을 위해 비-2xx 응답은 오류로 처리
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    throw new Error(`http_${status}`);
+  }
   const blob = await response.blob();
   // 안전한 Object URL 생성/해제
   // object URL은 테스트/브라우저 모두에서 안전하게 직접 생성 후, finally에서 해제

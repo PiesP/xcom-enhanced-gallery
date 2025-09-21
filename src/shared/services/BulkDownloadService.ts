@@ -129,6 +129,20 @@ export class BulkDownloadService {
       if (signal?.aborted) throw new Error('Download cancelled by user');
       try {
         const response = await fetch(url, { ...(signal ? { signal } : {}) } as RequestInit);
+        // Standardize: treat non-2xx as errors (align with Userscript adapter fallback)
+        // Safety: some tests mock fetch without `ok`/`status`. In that case, assume success.
+        const respLike = response as unknown as Partial<Response>;
+        const status: number | undefined =
+          typeof respLike?.status === 'number' ? (respLike.status as number) : undefined;
+        const hasOk: boolean = typeof respLike?.ok === 'boolean';
+        const computedOk: boolean = hasOk
+          ? Boolean(respLike.ok)
+          : status !== undefined
+            ? status >= 200 && status < 300
+            : true; // if both ok and status are missing (mock), treat as ok
+        if (!computedOk) {
+          throw new Error(`http_${status ?? 0}`);
+        }
         const arrayBuffer = await response.arrayBuffer();
         return new Uint8Array(arrayBuffer);
       } catch (err) {
@@ -167,6 +181,19 @@ export class BulkDownloadService {
 
       // URL로부터 Blob 생성 후 다운로드
       const response = await fetch(media.url);
+      // Safety: tolerate mocks without ok/status (assume success in that case)
+      const respLike = response as unknown as Partial<Response>;
+      const status: number | undefined =
+        typeof respLike?.status === 'number' ? (respLike.status as number) : undefined;
+      const hasOk: boolean = typeof respLike?.ok === 'boolean';
+      const computedOk: boolean = hasOk
+        ? Boolean(respLike.ok)
+        : status !== undefined
+          ? status >= 200 && status < 300
+          : true;
+      if (!computedOk) {
+        throw new Error(`http_${status ?? 0}`);
+      }
       const blob = await response.blob();
       download.downloadBlob(blob, filename);
 
@@ -459,7 +486,18 @@ export class BulkDownloadService {
           languageService.getString('messages.download.allFailed.title'),
           languageService.getString('messages.download.allFailed.body')
         );
-        throw new Error('All downloads failed');
+        // 구조화된 실패 결과를 반환하여 per-item 실패 원인(failures[])을 노출
+        const result: DownloadResult & { code: ErrorCode } = {
+          success: false,
+          status: 'error',
+          filesProcessed: mediaItems.length,
+          filesSuccessful: 0,
+          // ZIP 파일은 생성되지 않았으므로 filename 생략
+          failures,
+          error: 'All downloads failed',
+          code: ErrorCode.ALL_FAILED,
+        };
+        return result;
       }
 
       // ZIP 생성

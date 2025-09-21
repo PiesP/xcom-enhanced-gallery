@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 1건(정리)
+업데이트: 2025-09-21 — 활성 Epic 1건(정리, EPIC-B 하위 REFACTOR 일부 완료)
 
 - EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
 
@@ -30,9 +30,12 @@
 ## 2. 활성 Epic 현황
 
 - EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
-  - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리에 대한 단위
-    테스트 보강 및 회귀 가드
-  - 상태: In Progress (RED 테스트 추가 → 어댑터 보강 예정)
+  - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리 단위 테스트
+    보강 및 회귀 가드, 서비스 계층의 비-2xx 표준화
+  - 상태: In Progress — xhr/download 폴백 GREEN, 서비스 비-2xx 표준화 완료
+    (Completed에 이관). REFACTOR 하위 과제 중 다음 두 항목 완료(Completed에
+    이관): 에러 메시지 포맷 통일(http\_<status>), 토스트 라우팅 정책 가드. 남은
+    작업: 로깅 상관관계 보강만 진행 예정.
 
 ---
 
@@ -55,10 +58,8 @@
 - Scope
   - `shared/external/userscript/adapter.ts` 폴백 경로 & GM\_\* 존재 감지 분기
   - 노이즈 회피를 위해 네트워크 모킹/가짜 타이머 활용
-- Tasks (TDD 순서)
-  1. RED: xhr/download 폴백 테스트 케이스 작성(성공/실패/timeout/abort)
-  2. GREEN: 어댑터 오류 매핑/AbortSignal 연동 보강(필요 시)
-  3. REFACTOR: 에러 타입/메시지 표준화, 로깅 상관관계 보강
+- Tasks (잔여)
+  - REFACTOR: 에러 타입/메시지 표준화, 토스트 정책 일관화, 로깅 상관관계 보강
 - Risks/Mitigations
   - 타이밍 이슈/flaky → 가짜 타이머 및 고립된 테스트 환경 사용
   - 환경별 GM\_\* 차이 → 존재 감지 분기 테스트로 커버
