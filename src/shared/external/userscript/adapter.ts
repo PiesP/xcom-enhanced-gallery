@@ -75,8 +75,9 @@ function notifyBlocked(kind: 'xhr' | 'download', url: string): void {
     const message = `[XEG] 차단됨(${kind}): ${url}`;
     if (typeof g.GM_notification === 'function') {
       g.GM_notification({ text: message, title: '네트워크 차단', timeout: 3000 });
-    } else if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-      console.warn(message);
+    } else {
+      // 외부 레이어에서는 @shared/logging에 의존하지 않는다.
+      // GM_notification이 없을 경우에는 조용히 무시(No-Op)한다.
     }
   } catch {
     // ignore
