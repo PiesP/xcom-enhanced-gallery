@@ -1,6 +1,7 @@
 /**
  * @fileoverview RebindWatcher - SPA DOM 교체 시 컨테이너 분실 감지 및 재바인드 도우미
  */
+import { globalTimerManager } from '../timer-management';
 
 export interface RebindWatcherOptions {
   /** 관찰 루트 (기본: document.body) */
@@ -17,6 +18,7 @@ export class RebindWatcher {
   private observer: MutationObserver | null = null;
   private disposed = false;
   private rebindTimer: number | null = null;
+  private static readonly TIMER_CONTEXT = 'rebind-watcher';
 
   constructor(private readonly options: RebindWatcherOptions) {}
 
@@ -55,19 +57,26 @@ export class RebindWatcher {
   private scheduleRebind() {
     if (this.disposed) return;
     if (this.rebindTimer) {
-      clearTimeout(this.rebindTimer);
+      // Use global timer manager for consistent tracking/cleanup
+      globalTimerManager.clearTimeout(this.rebindTimer);
       this.rebindTimer = null;
     }
     const delay = Math.min(Math.max(this.options.rebindDelayMs ?? 150, 0), 250);
-    this.rebindTimer = setTimeout(() => {
-      this.rebindTimer = null;
-      void this.options.onContainerLost();
-    }, delay) as unknown as number;
+    {
+      this.rebindTimer = globalTimerManager.setTimeout(
+        () => {
+          this.rebindTimer = null;
+          void this.options.onContainerLost();
+        },
+        delay,
+        RebindWatcher.TIMER_CONTEXT
+      );
+    }
   }
 
   stop(): void {
     if (this.rebindTimer) {
-      clearTimeout(this.rebindTimer);
+      globalTimerManager.clearTimeout(this.rebindTimer);
       this.rebindTimer = null;
     }
     this.observer?.disconnect();

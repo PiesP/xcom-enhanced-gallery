@@ -399,6 +399,36 @@ dynamic import 구조 확립 및 사이즈/정적 포함 가드 RED 테스트 �
 스텁(`generate-icon-map.mjs`) 작성, 레거시 icons/ 배럴 부재 테스트(R6)로 회귀
 방지. 초기 Hybrid Preload 전략 유지하며 LazyIcon 경로 100% 적용.
 
+2025-09-21: XEG-TIMER-CONTEXT — TimerManager 컨텍스트 확장 및 누수 가드 강화
+(Epic C 단계)
+
+- 전역 TimerManager에 컨텍스트 스코프(문자열) 기반 트래킹/일괄 정리를 도입하고,
+  jsdom/브라우저 간 타이머 핸들 타입 차이(window vs Node)를 흡수하도록 내부
+  맵으로 숫자 ID를 일관화. `getActiveTimersCountByContext`/`cleanupByContext` 등
+  진단/정리 API 확립.
+- 통합 대상 확대: `RebindWatcher`는 'rebind-watcher' 컨텍스트로 setTimeout을
+  등록/정리하고, `Debouncer`는 'debouncer' 컨텍스트로 타임아웃을 관리하도록
+  변경. 갤러리 이벤트 루프는 선행 통합에 이어 컨텍스트 적용과 정리 경로를 유지.
+- 테스트: 컨텍스트별 카운트/정리 가드(unit)와 RebindWatcher/Debouncer가 전역
+  매니저를 경유하는지 확인하는 계약 테스트 추가, 전체 스위트 GREEN.
+- 의존 순환 제거: timer-management의 불필요한 재-exports를 제거하고 utils 배럴을
+  정리하여 performance-utils ↔ timer-management 순환을 해소. dev/prod 빌드 및
+  산출물 검증 통과.
+
+2025-09-21: XEG-MEM-CTX-TIMERS — TimerManager 컨텍스트 스코프 도입 (Epic C 단계
+일부 GREEN)
+
+- 변경: TimerManager에 선택적 context 문자열 인자를 추가하여
+  setTimeout/setInterval을 컨텍스트별로 추적/정리 가능하게 함. cross-env(ID 타입
+  차이) 문제를 피하기 위해 내부 네이티브 핸들을 맵에 보관하고 외부에는 숫자 ID를
+  일관 반환.
+- 통합: 갤러리 이벤트 우선순위 강화 인터벌에 context를 적용하고 cleanup 경로에서
+  해당 context만 일괄 정리. 누락 리스너/타이머 정리가 보장됨.
+- 테스트: `test/unit/shared/utils/timer-manager.context.test.ts` 추가 —
+  컨텍스트별 카운트/cleanupByContext/전체 cleanup 계약 GREEN.
+- 영향: 타입/린트/빌드/전체 테스트 GREEN, 기존 API 호환성 유지(추가 인자
+  선택적).
+
 2025-09-18: TBAR-O P7 — tbar-clean 주석/alias 정리 및 회귀 가드 토큰/사이즈
 스냅샷 유지, PLAN에서 제거 후 완료 로그 이관.
 
