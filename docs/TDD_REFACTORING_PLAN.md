@@ -45,12 +45,14 @@
 
 스코프(What)
 
-- 헤더 정합성: 루트 도메인 매칭 및 @connect 도메인 정리
-- 릴리즈 메타데이터 동기화: package.json.version ↔ release/metadata.json
-- 네트워크 정책 기본값 강화(Prod): allowlist 활성 + 차단 알림
 - 갤러리 긴 목록 렌더 성능 가드: 간단 윈도우링(virtualization, 옵션)
 - 모션 접근성 가드: prefers-reduced-motion 전역 유틸/토큰 레벨 적용
 - 리팩토링 테스트 재활성화(단건 검증 후), 스타일 Hex 사용 임계 상향 계획 수립
+
+상태 메모(2025-09-22)
+
+- 다음 3개 항목은 완료되어 Completed 로그로 이관됨: 헤더 정합성, 릴리즈
+  메타데이터 동기화, 네트워크 정책 기본값 강화
 
 Acceptance(측정 기준)
 

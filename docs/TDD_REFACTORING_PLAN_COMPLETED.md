@@ -84,6 +84,15 @@ Userscript 하드닝 v3 (1차 완료)
   로그에 Epic 종료만 요약 유지.
 - 영향: 분기 커버리지 및 통합 가드 GREEN, dev/prod 빌드 및 산출물 검증 통과.
 
+2025-09-22: PLAN — EPIC-C 범위 정돈(완료 항목 이관)
+
+- 활성 계획서에서 다음 3개 항목을 제거하고 본 Completed 로그로 이관했습니다:
+  - US-Header-001: Userscript 헤더 정합성 강화(@match/@connect 정리)
+  - Release-001: release/metadata.json 동기화(빌드 검증 연계)
+  - NetPolicy-001: 프로덕션 기본 네트워크 정책 활성화(allowlist 동기화)
+- 활성 계획의 남은 스코프는 윈도우링 성능 가드, 모션 접근성 가드, 제외 테스트
+  재활성화, Hex 임계 상향 계획으로 축소되었습니다.
+
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
 
 - 완료 범위: 직접 색상 키워드(white/black) 0건, `transition: all` 전역 0건
