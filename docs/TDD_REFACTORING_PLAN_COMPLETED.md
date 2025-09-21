@@ -354,6 +354,14 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 - GREEN: 같은 값 재설정 시 재적용/리스너 중복 호출을 방지하는 가드 추가, 프레임
   내 DOM 반영 확인. matchMedia 변경 시 auto 설정에서 즉시 반영 가드.
 
+  2025-09-21: THEME Epic B — P4 GREEN: FOUC 최소화 + 중복 DOM 적용 방지 마무리
+  - GREEN: applyCurrentTheme를 실제 테마 변경시에만 DOM 갱신/리스너 통지로 조정,
+    setTheme 연속 호출 시 DOM 재적용/이벤트 중복 호출 방지. 시스템 테마
+    변경(auto) 경로에서도 즉시 반영 유지. 관련 테스트 전면 GREEN
+    (`test/unit/shared/services/ThemeService.test.ts`).
+  - 빌드(dev/prod)와 userscript 검증 스크립트 통과. 계획서 Epic B 단계는 모두
+    완료 처리하고 Epic C로 진행.
+
 2025-09-20: XEG-SEL-01 — Selector 유틸 통합 및 로깅 일원화 (Epic 종료)
 
 - P1–P4 완료. `@shared/utils/signalSelector`를 단일 출처로 확립하고

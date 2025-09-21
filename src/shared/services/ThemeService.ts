@@ -112,18 +112,17 @@ export class ThemeService {
    */
   private applyCurrentTheme(): void {
     const effectiveTheme = this.getEffectiveTheme();
+    const themeChanged = this.currentTheme !== effectiveTheme;
 
-    if (this.currentTheme !== effectiveTheme) {
-      this.currentTheme = effectiveTheme;
-
-      // data-theme 속성 설정으로 CSS에서 자동 적용
+    // 실제 테마 변경 시에만 DOM 갱신 및 리스너 통지(중복 적용/호출 방지)
+    if (themeChanged) {
       if (typeof document !== 'undefined') {
-        document.documentElement?.setAttribute('data-theme', this.currentTheme);
+        const root = document.documentElement;
+        root?.setAttribute('data-theme', effectiveTheme);
       }
 
-      // 리스너 호출
+      this.currentTheme = effectiveTheme;
       this.notifyListeners();
-
       logger.debug(`Theme applied: ${this.currentTheme} (setting: ${this.themeSetting})`);
     }
   }

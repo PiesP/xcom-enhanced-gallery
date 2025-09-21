@@ -95,7 +95,7 @@
 2. (완료) GREEN: Toolbar/Button/Gallery/Toast CSS의 명명 색상 값을 토큰으로 전환
    및 잔존 치환
 3. (완료) RED: ThemeService 전환/FOUC/중복 적용 가드 테스트 추가
-4. (진행) GREEN: `ThemeService` 이벤트/리스너 누락 케이스 보강 및 데이터 속성
+4. (완료) GREEN: `ThemeService` 이벤트/리스너 누락 케이스 보강 및 데이터 속성
    적용 지연 로직 개선(FOUC 최소화)
 
 수용 기준(샘플)
