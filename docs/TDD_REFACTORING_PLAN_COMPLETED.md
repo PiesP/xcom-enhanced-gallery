@@ -392,6 +392,17 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 - 영향: 기본 Off로 사용자 경험 소음 최소화, 필요 시만 활성화 가능. 아키텍처 경계
   및 디펜던시 크루저 사이클 준수.
 
+### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — 전체 완료 (Phases 1–4)
+
+- 범위: 보안/네트워크(Consent·Allowlist) · 선택자 폴백(SelectorRegistry 보강) ·
+  스크롤 성능(useGalleryScroll rAF/스로틀) · UX(진행률 토스트)
+- 결과: 동의 전 토큰 추출 차단 및 마스킹, GM\_\* 허용 도메인 기반 차단(옵션 Off
+  기본), 1차 선택자 실패 시 폴백 성공률 향상(>90% 테스트 기반), 휠 이벤트 처리
+  빈도 50%+ 감소, 대량 다운로드 진행 가시성 옵션 제공(기본 Off)
+- 테스트: 동의/마스킹/허용·차단 네트워크 케이스, 폴백 선택자, 스크롤 호출 감소
+  가드, 진행 토스트 On/Off 흐름 모두 GREEN
+- 문서화: 활성 계획서에서 Epic 섹션 제거, 본 완료 로그에 간결 요약만 유지
+
 ### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — Phase 2(선택자 폴백)
 
 - Phase 2 — Diagnostics standardization: unified logging keys for selector flows
