@@ -417,4 +417,19 @@ export function logError(
   }
 }
 
+/**
+ * Standardized logging field helper
+ *
+ * Use this to build structured log objects with consistent keys across the app.
+ * Recommended keys:
+ * - filename: string
+ * - size: number (bytes)
+ * - durationMs: number
+ * - total: number
+ * - count/successful/failed: number
+ */
+export function logFields<T extends Record<string, unknown>>(fields: T): T {
+  return fields;
+}
+
 export default logger;
