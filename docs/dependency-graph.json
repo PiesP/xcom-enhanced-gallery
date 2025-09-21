@@ -4877,7 +4877,8 @@
       "dependencies": [],
       "dependents": [
         "src/shared/services/core-services.ts",
-        "src/shared/utils/memory/index.ts"
+        "src/shared/utils/memory/index.ts",
+        "src/shared/utils/memory/object-url-manager.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8210,6 +8211,23 @@
         },
         {
           "dynamic": false,
+          "module": "./object-url-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/memory/object-url-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ResourceManager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8233,6 +8251,33 @@
     {
       "source": "src/shared/utils/memory/memory-profiler.ts",
       "dependencies": [],
+      "dependents": [
+        "src/shared/utils/memory/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/memory/object-url-manager.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ResourceManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/memory/ResourceManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/memory/index.ts"
       ],
@@ -8666,8 +8711,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 258,
-    "totalDependenciesCruised": 357,
+    "totalCruised": 259,
+    "totalDependenciesCruised": 359,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

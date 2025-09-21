@@ -22,6 +22,7 @@ export {
 // } from './useScrollDirection';
 
 export { useDOMReady } from './useDOMReady';
+// 접근성 표준화: 키보드 네비게이션(ESC)만 이 모듈에서 노출
 export { useKeyboardNavigation } from './useAccessibility';
 
 // Related scroll types (moved to individual hook files) - useScrollDirection 제거됨
