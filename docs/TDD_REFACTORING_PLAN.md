@@ -4,8 +4,13 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 0건 — 직전 사이클 Epic(유저스크립트 하드닝 v1)
-Phases 1–4 전체 완료(Completed 로그 이관)
+업데이트: 2025-09-21 — 활성 Epic 2건(신규)
+
+- EPIC-A: 스타일 하드닝 v1(디자인 토큰/모션)
+- EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
+
+직전 사이클 Epic(유저스크립트 하드닝 v1) Phases 1–4 전체 완료(Completed 로그
+이관)
 
 ---
 
@@ -25,17 +30,82 @@ Phases 1–4 전체 완료(Completed 로그 이관)
 
 ## 2. 활성 Epic 현황
 
-현재 활성 Epic은 없습니다. 추가 후보는 `docs/TDD_REFACTORING_BACKLOG.md`를
-참고하여 선정합니다. 직전 사이클의 "유저스크립트 하드닝 v1" Epic은 Phases 1–4가
-모두 완료되어 Completed 로그로 이관되었습니다.
+- EPIC-A: 스타일 하드닝 v1(디자인 토큰/모션)
+  - 목표: 디자인 토큰 100% 적용과 모션 정책 수렴(transition: all 제거), 접근성
+    대비 안정화
+  - 상태: In Progress (경량 RED 테스트 추가 → 점진 GREEN 계획)
+- EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
+  - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리에 대한 단위
+    테스트 보강 및 회귀 가드
+  - 상태: In Planning (테스트 명세 우선 작성)
 
 ---
 
-## 3. 활성 Epic 비어 있음 (Placeholder)
+## 3. 활성 Epic 상세
 
-현재 사이클에서 즉시 실행할 작업은 없습니다. 신규 Epic 제안은 백로그에
-초안(Problem/Outcome/Metrics) 형태로 추가 후 합의되면 본 문서 Epic 템플릿
-섹션으로 승격합니다.
+### EPIC-A — 스타일 하드닝 v1 (디자인 토큰/모션)
+
+- Problem
+  - 일부 CSS에서 직접 색상 키워드 사용 감지: 예)
+    `color: white;`(`src/assets/styles/utilities/accessibility.css`),
+    `color: black !important;`(`src/shared/styles/performance.css`)
+  - `transition: all` 광범위 사용: 대표 위치
+    - `shared/styles/modern-features.css`, `shared/styles/design-tokens.css`
+    - `features/gallery/styles/Gallery.module.css`,
+      `features/gallery/styles/gallery-global.css`
+    - `shared/components/ui/Toast/Toast.module.css`,
+      `assets/styles/animation-utilities.css`
+- Outcome (DoD)
+  - 직접 색상 키워드/임의 값 0건(디자인 토큰으로 치환: `--xeg-*`/`--color-*`)
+  - `transition: all` → 속성 명시 전환(예: opacity/transform/background-color
+    등) 및 reduced-motion 가드 일관 적용
+  - 스냅샷/정적 검사로 회귀 방지(테스트/스크립트)
+- Success Metrics
+  - grep 기준 `transition: all` 0건(예외 목록 승인 영역 제외),
+    `color: (white|black)` 0건
+  - 접근성 대비 스모크 GREEN, 시각 회귀 없음(주요 컴포넌트 스냅샷 유지)
+- Scope
+  - 상기 대표 파일 우선 정비 후 전역 검색 범위 확대
+  - TSX 인라인 스타일의 직접 px/ms/hex 금지 준수 확인(위반 시 포함)
+- Non-goals
+  - 컴포넌트 구조/레이아웃 대수정은 범위 외(시각 회귀 최소화)
+- Tasks (TDD 순서)
+  1. RED: 스타일 가드 테스트(또는 스크립트) 추가 — `transition: all`/직접 색상
+     키워드 탐지
+  2. GREEN: 최소 범위 교체(white/black → 토큰, 핵심 파일부터)
+  3. GREEN 확장: `transition` 속성 명시 전환 + reduced-motion 가드
+  4. REFACTOR: 중복 토큰/유틸 정리, 문서 지침 보강
+- Risks/Mitigations
+  - 시각 회귀 → 퍼블릭 UI 스냅샷/수동 스모크 병행, 점진 적용
+  - 성능 영향 → 전환 속성 축소로 페인팅 최소화 검증
+- Gates
+  - `npm run lint`(토큰/이벤트 가드 포함) · `npm test` · `npm run build:prod` +
+    산출물 validator
+
+### EPIC-B — Userscript 폴백 하드닝 v2 (테스트 강화)
+
+- Problem
+  - `getUserscript()`의 GM\_\* 미지원 환경 폴백은 구현되어 있으나, 오류
+    매핑/타임아웃/abort 등 세부 동작의 테스트 커버리지가 부족할 수 있음
+- Outcome (DoD)
+  - 폴백 다운로드/xhr에 대해 다음 시나리오 테스트 GREEN: 성공, 비-2xx, 네트워크
+    오류, 타임아웃, abort, 큰 응답 스트림 취소
+  - 오류 메시지/토스트 정책 일관화(사용자 피드백 표준화)
+- Success Metrics
+  - 해당 유닛/통합 테스트 100% GREEN, 결함 재현 케이스 회귀 0
+  - 커버리지 목표: 어댑터 모듈 분기 커버리지 ≥ 90%
+- Scope
+  - `shared/external/userscript/adapter.ts` 폴백 경로 & GM\_\* 존재 감지 분기
+  - 노이즈 회피를 위해 네트워크 모킹/가짜 타이머 활용
+- Tasks (TDD 순서)
+  1. RED: xhr/download 폴백 테스트 케이스 작성(성공/실패/timeout/abort)
+  2. GREEN: 어댑터 오류 매핑/AbortSignal 연동 보강(필요 시)
+  3. REFACTOR: 에러 타입/메시지 표준화, 로깅 상관관계 보강
+- Risks/Mitigations
+  - 타이밍 이슈/flaky → 가짜 타이머 및 고립된 테스트 환경 사용
+  - 환경별 GM\_\* 차이 → 존재 감지 분기 테스트로 커버
+- Gates
+  - `npm test`(JSDOM 격리) · `npm run typecheck` · `npm run build:prod`
 
 ---
 
