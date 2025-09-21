@@ -7,6 +7,13 @@
 - 테스트: 동의 Off/On 흐름, 로그 스냅샷(토큰 노출 금지), allow/deny 케이스 및
   다운로드 차단/허용 검증
 
+# 2025-09-21: EPIC-B — Userscript 폴백 하드닝 v2 (부분 완료)
+
+- xhr 폴백: timeout/abort/비-2xx/네트워크 오류/onloadend 보장 GREEN
+- download 폴백: 비-2xx 오류 처리/네트워크 오류 전달/DOM 부재 no-op GREEN
+- 네트워크 정책: allowlist 차단 시 download() 거부 및 알림 동작 GREEN
+- 잔여: 에러 메시지 표준화 및 토스트 정책 일관화(Plan에 유지)
+
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
