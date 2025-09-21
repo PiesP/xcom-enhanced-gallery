@@ -30,10 +30,11 @@
 ## 2. 활성 Epic 현황
 
 - EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
-  - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리에 대한 단위
-    테스트 보강 및 회귀 가드
-  - 상태: In Progress — xhr/download 폴백 GREEN 완료, 남은 작업: REFACTOR(오류
-    메시지 표준화/토스트 정책)
+  - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리 단위 테스트
+    보강 및 회귀 가드, 서비스 계층의 비-2xx 표준화
+  - 상태: In Progress — xhr/download 폴백 GREEN, 서비스 비-2xx 표준화
+    완료(Completed에 이관). 남은 작업: REFACTOR(에러 메시지 포맷 통일, 토스트
+    라우팅 정책 점검/정제)
 
 ---
 

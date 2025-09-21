@@ -129,6 +129,21 @@ export class BulkDownloadService {
       if (signal?.aborted) throw new Error('Download cancelled by user');
       try {
         const response = await fetch(url, { ...(signal ? { signal } : {}) } as RequestInit);
+        // Standardize: treat non-2xx as errors (align with Userscript adapter fallback)
+        // Safety: some tests mock fetch without `ok`/`status`. In that case, assume success.
+        const respLike = response as unknown as Partial<Response>;
+        const status: number | undefined =
+          typeof respLike?.status === 'number' ? (respLike.status as number) : undefined;
+        const hasOk: boolean = typeof respLike?.ok === 'boolean';
+        const computedOk: boolean = hasOk
+          ? Boolean(respLike.ok)
+          : status !== undefined
+            ? status >= 200 && status < 300
+            : true; // if both ok and status are missing (mock), treat as ok
+        if (!computedOk) {
+          const statusText = (response as Response).statusText ?? '';
+          throw new Error(`http_${status ?? 0}${statusText ? ` ${statusText}` : ''}`);
+        }
         const arrayBuffer = await response.arrayBuffer();
         return new Uint8Array(arrayBuffer);
       } catch (err) {
@@ -167,6 +182,20 @@ export class BulkDownloadService {
 
       // URL로부터 Blob 생성 후 다운로드
       const response = await fetch(media.url);
+      // Safety: tolerate mocks without ok/status (assume success in that case)
+      const respLike = response as unknown as Partial<Response>;
+      const status: number | undefined =
+        typeof respLike?.status === 'number' ? (respLike.status as number) : undefined;
+      const hasOk: boolean = typeof respLike?.ok === 'boolean';
+      const computedOk: boolean = hasOk
+        ? Boolean(respLike.ok)
+        : status !== undefined
+          ? status >= 200 && status < 300
+          : true;
+      if (!computedOk) {
+        const statusText = (response as Response).statusText ?? '';
+        throw new Error(`http_${status ?? 0}${statusText ? ` ${statusText}` : ''}`);
+      }
       const blob = await response.blob();
       download.downloadBlob(blob, filename);
 

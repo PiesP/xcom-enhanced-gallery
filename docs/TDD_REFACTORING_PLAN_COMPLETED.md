@@ -14,6 +14,24 @@
 - 네트워크 정책: allowlist 차단 시 download() 거부 및 알림 동작 GREEN
 - 잔여: 에러 메시지 표준화 및 토스트 정책 일관화(Plan에 유지)
 
+2025-09-21: EPIC-B — 서비스 비-2xx 표준화 (완료)
+
+- BulkDownloadService
+  - fetchArrayBufferWithRetry: Response.ok 부재(mock) 호환을 포함한 비-2xx 오류
+    처리 표준화
+  - downloadSingle: Response.ok/status 기반 비-2xx 거부 로직 추가
+- MediaService
+  - downloadSingle/downloadMultiple: 응답 비-2xx를 오류로 간주하도록 일관화
+- 테스트
+  - bulk-download.result-error-codes.contract: 부분/전체 실패 코드 계약 유지
+    확인
+  - error-toast.standardization.red: 서비스 비-2xx 처리 RED → GREEN
+- 영향
+  - Result.status/code: 부분 실패(partial)에서 ErrorCode.PARTIAL_FAILED, 전체
+    실패에서 ALL_FAILED 일관 유지
+  - 기존 fetch mock과의 호환을 위해 ok/status 미제공 시 성공으로 간주하는 안전
+    로직 추가(테스트 친화)
+
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리

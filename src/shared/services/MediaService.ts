@@ -846,6 +846,11 @@ export class MediaService {
 
       // URL에서 fetch하여 Blob으로 다운로드
       const response = await fetch(media.url);
+      if (!response.ok) {
+        const status = (response as Response).status ?? 0;
+        const statusText = (response as Response).statusText ?? '';
+        throw new Error(`http_${status}${statusText ? ` ${statusText}` : ''}`);
+      }
       const blob = await response.blob();
       download.downloadBlob(blob, filename);
 
@@ -942,6 +947,11 @@ export class MediaService {
 
         try {
           const response = await fetch(media.url);
+          if (!response.ok) {
+            const status = (response as Response).status ?? 0;
+            const statusText = (response as Response).statusText ?? '';
+            throw new Error(`http_${status}${statusText ? ` ${statusText}` : ''}`);
+          }
           const arrayBuffer = await response.arrayBuffer();
           const uint8Array = new Uint8Array(arrayBuffer);
 
