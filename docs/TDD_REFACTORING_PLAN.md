@@ -5,7 +5,7 @@
 분리합니다.
 
 업데이트: 2025-09-21 — 활성 Epic 1건 — Phase 1(보안/네트워크) 완료 · Phase
-2(선택자 폴백) 완료
+2(선택자 폴백) 완료 · Phase 3(스크롤 성능) 완료
 
 ---
 
@@ -105,13 +105,6 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 <!-- Phase 2(선택자 폴백) 관련 작업은 완료되어 Completed 로그로 이관되었습니다. -->
 
-3. 성능 — 스크롤 스로틀
-   - RED: 연속 wheel 이벤트 100회 시 현재 호출 수 기준 대비 50%+ 감소 기대치
-     테스트(가짜 타이머)
-   - GREEN: useGalleryScroll에 스로틀/또는 rAF 적용, 불필요한 preventDefault
-     축소
-   - REFACTOR: 스로틀 유틸 공용화(`@shared/utils/performance`)
-
 4. UX — 진행률 토스트(옵션)
 
 - RED: BulkDownloadService 진행 이벤트 → 토스트 업데이트 스냅샷
@@ -120,20 +113,11 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 우선순위(남은 작업 실행 순서):
 
-1. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
-2. UX(경량) — 진행률 토스트 통합 (Phase 4)
+1. UX(경량) — 진행률 토스트 통합 (Phase 4)
 
 ### Phase별 실행 계획(제안)
 
 <!-- Phase 2 — 선택자 폴백: 완료되어 본 섹션은 계획서에서 제거되었습니다. 상세는 Completed 로그 참고. -->
-
-Phase 3 — 성능(스크롤)
-
-- Deliverables
-  - useGalleryScroll: 스로틀 또는 rAF 스케줄링 적용, 불필요한 preventDefault
-    축소
-- Tests (RED → GREEN)
-  - 가짜 타이머 기반 wheel 100회 폭주 시 핸들러 호출 수 50%+ 감소 검증
 
 Phase 4 — UX(경량)
 

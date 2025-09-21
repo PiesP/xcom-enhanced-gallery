@@ -398,6 +398,13 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 - Refactor: 액션 버튼 셀렉터 매핑 테이블화 및 테스트 픽스처 공유화(GREEN)
   - getActionButtonMap 도입: like/reply/repost/share/bookmark에 대해 primary +
     fallbacks[] 스키마로 일원화
+
+### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — Phase 3(스크롤 성능)
+
+- useGalleryScroll에 rAF 기반 코얼레싱(스로틀) 적용 완료 — wheel 이벤트
+  폭주(100회) 시 onScroll 콜백 호출 수 50% 이상 감소를 가드하는 테스트를
+  GREEN으로 승격 (use-gallery-scroll.throttle.test.ts). 불필요한 preventDefault
+  사용도 최소화. 기능 회귀 없음, 기존 통합 테스트와 병행 GREEN.
   - queryActionButton이 매핑 테이블 기반 우선순위 탐색을 수행하도록 리팩터링
   - 하위 호환: getActionButtonFallbacks는 내부 매핑을 참조하도록 유지
   - 테스트 추가: selector-registry.mapping-schema.test — 스키마 유효성/우선순위
