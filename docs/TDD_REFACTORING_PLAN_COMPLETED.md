@@ -379,6 +379,16 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 +1% 유지(P6), 마지막 주석/alias 정리(P7)로 마이그레이션 마무리.
 사이즈/접근성/회귀/번들 메트릭 모두 목표 달성.
 
+### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — Phase 2(선택자 폴백)
+
+- invalid selector 폴백 하드닝 완료(GREEN)
+  - DOMCache.querySelector/All를 try/catch로 감싸 잘못된 CSS 선택자 예외를
+    무시하고 null/빈 결과를 캐시하여 폴백 진행 보장(warn 로그 남김)
+  - SelectorRegistry.findClosest에서 잘못된 선택자를 건너뛰고 다음 폴백 시도
+  - 테스트 추가: selector-registry.fallback-invalid-selector
+    (findFirst/findAll/findClosest)
+  - 결과: 폴백 전략의 회복력 향상, 전체 테스트/빌드 GREEN 유지
+
 2025-09-21: EPIC A 종료 — 접근성 강건화(A11y) 완료 요약
 
 - Focus Trap 표준화 완료: `useFocusTrap` 훅을 모달/오버레이(KeyboardHelpOverlay,

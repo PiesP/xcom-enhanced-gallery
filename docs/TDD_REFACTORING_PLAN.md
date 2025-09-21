@@ -105,10 +105,6 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 2. 호환성 — SelectorRegistry 폴백
 
-- RED: 1차 셀렉터 실패 시 보조 셀렉터로 성공하는 시나리오 테스트(가짜 DOM)
-- GREEN: 잘못된 CSS 선택자 예외 try/catch 가드(DAO 레벨:
-  DOMCache.querySelector/All, API 레벨: findClosest), 폴백으로 정상 동작
-  확인(신규 테스트 통과)
 - NEXT: 데이터 속성/role 기반 보조 셀렉터/우선순위 강화, 진단 로그 정리
 - REFACTOR: 셀렉터 매핑을 상수 테이블로 분리하고 테스트 픽스처 공유화
 
