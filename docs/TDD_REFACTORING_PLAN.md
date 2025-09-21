@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 1건(A11y 완료)
+업데이트: 2025-09-21 — 활성 Epic 1건(A11y 완료) — Phase 1(보안/네트워크) 완료
 
 ---
 
@@ -41,7 +41,7 @@
   호출의 도메인 범위
 - 호환성: X.com DOM 변화에 따른 SelectorRegistry 의존성 민감도
 - 성능: wheel 이벤트 처리 빈도 과다 가능성(useGalleryScroll), 대량 로드시 메모리
-  압력(ObjectURL)
+  압력(ObjectURL) — 완료됨(완료 로그 이관)
 - UX(경량): 대량 다운로드 시 진행 가시성 부족(토스트 기반 경량 진행 표시)
 
 목표(Outcome/Success Criteria):
@@ -122,10 +122,35 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 우선순위(남은 작업 실행 순서):
 
-1. 보안/네트워크 — 토큰 동의/마스킹, Userscript allowlist (Phase 1)
-2. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2)
-3. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
-4. UX(경량) — 진행률 토스트 통합 (Phase 4)
+1. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2)
+2. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
+3. UX(경량) — 진행률 토스트 통합 (Phase 4)
+
+### Phase별 실행 계획(제안)
+
+Phase 2 — 선택자 폴백
+
+- Deliverables
+  - SelectorRegistry: 데이터 속성/role 기반 보조 셀렉터 추가 및 폴백 우선순위
+    확정, 진단 로그 정리
+- Tests (RED → GREEN)
+  - 가짜 DOM 변형 시 1차 실패 → 보조 셀렉터로 추출 성공 가드(성공률 ≥ 90%)
+
+Phase 3 — 성능(스크롤)
+
+- Deliverables
+  - useGalleryScroll: 스로틀 또는 rAF 스케줄링 적용, 불필요한 preventDefault
+    축소
+- Tests (RED → GREEN)
+  - 가짜 타이머 기반 wheel 100회 폭주 시 핸들러 호출 수 50%+ 감소 검증
+
+Phase 4 — UX(경량)
+
+- Deliverables
+  - UnifiedToastManager: BulkDownload 진행률 토스트(진행/잔여/실패 재시도) 옵션
+    탑재
+- Tests (RED → GREEN)
+  - 진행 이벤트 → 토스트 업데이트/완료/에러 흐름 스냅샷 및 설정 On/Off 가드
 
 리스크/완화:
 
@@ -145,9 +170,9 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 롤아웃 계획(제안):
 
-- Phase 1 (보안·네트워크) → Phase 2 (선택자) → Phase 3 (스크롤) → Phase 4 (UX
-  토스트)
-- 각 Phase 종료 시 Completed 로그로 1줄 요약 이관
+- Phase 2 (선택자) → Phase 3 (스크롤) → Phase 4 (UX 토스트)
+- 각 Phase 종료 시 Completed 로그로 1줄 요약 이관 — Phase 1은 완료되어 Completed
+  로그에 기록됨
 
 ---
 

@@ -19,6 +19,71 @@ export interface UserscriptAPI {
   xhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined;
 }
 
+// ================================
+// 네트워크 정책 (Allowlist)
+// ================================
+export interface UserscriptNetworkPolicy {
+  enabled: boolean;
+  /** 허용 도메인 목록 (정규식 또는 정규식 문자열) */
+  allowlist: Array<RegExp | string>;
+  /** 차단 시 알림(토스트) 표시 */
+  notifyOnBlock?: boolean;
+}
+
+const DEFAULT_POLICY: UserscriptNetworkPolicy = {
+  enabled: false, // 기본 Off (점진적 롤아웃)
+  allowlist: ['x.com', 'api.twitter.com', 'pbs.twimg.com', 'video.twimg.com'],
+  notifyOnBlock: true,
+};
+
+let currentPolicy: UserscriptNetworkPolicy = { ...DEFAULT_POLICY };
+
+export function setUserscriptNetworkPolicy(policy: Partial<UserscriptNetworkPolicy>): void {
+  currentPolicy = { ...currentPolicy, ...policy };
+}
+
+function isUrlAllowed(rawUrl: string): boolean {
+  let host = '';
+  try {
+    const parsed = new URL(rawUrl);
+    host = parsed.hostname || '';
+  } catch {
+    // URL 파서가 실패하면 간단한 정규식으로 호스트 추출 시도
+    const m = rawUrl.match(/^https?:\/\/([^/]+)\//i);
+    host = m?.[1] ?? '';
+  }
+
+  for (const rule of currentPolicy.allowlist) {
+    if (rule instanceof RegExp) {
+      if (rule.test(host) || rule.test(rawUrl)) return true;
+    } else if (typeof rule === 'string') {
+      if (!rule) continue;
+      // 정확한 호스트 일치 또는 서브도메인 허용
+      if (host === rule || host.endsWith(`.${rule}`)) return true;
+      // 보수적 추가: 문자열 기반 URL 포함 검사 (폴리필/엣지 케이스 보호)
+      if (rawUrl.includes(`://${rule}/`) || rawUrl.includes(`.${rule}/`)) return true;
+    }
+  }
+  return false;
+}
+
+function notifyBlocked(kind: 'xhr' | 'download', url: string): void {
+  try {
+    if (!currentPolicy.notifyOnBlock) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const g: any = globalThis as any;
+    const message = `[XEG] 차단됨(${kind}): ${url}`;
+    if (typeof g.GM_notification === 'function') {
+      g.GM_notification({ text: message, title: '네트워크 차단', timeout: 3000 });
+    } else {
+      // 외부 레이어에서는 @shared/logging에 의존하지 않는다.
+      // GM_notification이 없을 경우에는 조용히 무시(No-Op)한다.
+    }
+  } catch {
+    // ignore
+  }
+}
+
 function detectManager(): UserscriptManager {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,6 +205,10 @@ export function getUserscript(): UserscriptAPI {
     manager: detectManager(),
     info: safeInfo,
     async download(url: string, filename: string): Promise<void> {
+      if (currentPolicy.enabled && !isUrlAllowed(url)) {
+        notifyBlocked('download', url);
+        return Promise.reject(new Error('blocked_by_network_policy'));
+      }
       if (hasGMDownload) {
         try {
           // GM_download는 동기 API처럼 보이는 구현이 많아 try/catch로 래핑
@@ -152,6 +221,23 @@ export function getUserscript(): UserscriptAPI {
       return fallbackDownload(url, filename);
     },
     xhr(options: GMXmlHttpRequestOptions) {
+      if (currentPolicy.enabled && options?.url && !isUrlAllowed(options.url)) {
+        notifyBlocked('xhr', options.url);
+        // 차단 시 onerror 콜백 알림 (상태 0)
+        try {
+          options.onerror?.({
+            responseText: '',
+            readyState: 4,
+            responseHeaders: '',
+            status: 0,
+            statusText: 'blocked_by_network_policy',
+            finalUrl: options.url,
+          } as never);
+        } catch {
+          // ignore
+        }
+        return undefined;
+      }
       if (hasGMXhr) {
         try {
           return g.GM_xmlhttpRequest(options);

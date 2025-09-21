@@ -5,6 +5,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils';
+import { isTokenExtractionConsentEnabled } from './token-consent';
 
 /**
  * 토큰 추출 결과
@@ -57,6 +58,13 @@ export class TwitterTokenExtractor {
       // 네트워크 요청 모니터링 시작
       this.startNetworkMonitoring();
 
+      // 동의(Consent) 체크: 동의가 없으면 추출 시도 자체를 건너뜀
+      if (!isTokenExtractionConsentEnabled()) {
+        logger.warn('토큰 추출 동의가 필요합니다. 설정에서 동의 후 다시 시도하세요.');
+        this.initialized = true;
+        return; // 동의 전에는 어떤 추출도 시도하지 않음
+      }
+
       // 토큰 추출 시도
       const result = await this.extractToken();
       if (result.success && result.token) {
@@ -103,6 +111,11 @@ export class TwitterTokenExtractor {
    * @returns 토큰 또는 null
    */
   async getToken(forceRefresh = false): Promise<string | null> {
+    // 동의(Consent) 전에는 어떤 경로로도 토큰을 제공하지 않음
+    if (!isTokenExtractionConsentEnabled()) {
+      return null;
+    }
+
     if (forceRefresh || !this.currentToken) {
       const result = await this.extractToken();
       if (result.success && result.token) {
@@ -165,6 +178,16 @@ export class TwitterTokenExtractor {
    * 토큰 추출 (메인 로직)
    */
   private async extractToken(): Promise<TokenExtractionResult> {
+    // 동의(Consent) 없으면 즉시 실패 처리 (추출 경로 차단)
+    if (!isTokenExtractionConsentEnabled()) {
+      return {
+        success: false,
+        error: 'consent_required',
+        source: 'config',
+        timestamp: Date.now(),
+      };
+    }
+
     this.extractionAttempts++;
     // 우선순위: 페이지(script) → cookie/session → 설정(localStorage) → (보조)네트워크 힌트 → fallback
 
