@@ -93,6 +93,25 @@ Userscript 하드닝 v3 (1차 완료)
 - 활성 계획의 남은 스코프는 윈도우링 성능 가드, 모션 접근성 가드, 제외 테스트
   재활성화, Hex 임계 상향 계획으로 축소되었습니다.
 
+2025-09-22: PLAN — EPIC-C 윈도우링 항목 완료에 따른 활성 계획서 정리
+
+- Gallery-Perf-001(간단 윈도우링) 항목이 완료되어 활성 계획서의 EPIC-C 스코프와
+  Acceptance에서 윈도우링 관련 문구를 제거하고, 상태 메모에 완료 사실을
+  반영했습니다. 세부 구현과 테스트 현황은 본 Completed 로그의 동일 항목을
+  참조합니다.
+
+2025-09-22: EPIC-C — Gallery-Perf-001 간단 윈도우링 (완료)
+
+- 구현: VerticalGalleryView에 렌더 윈도우 옵션 도입(±N, 기본 N=5, 기본 ON),
+  비가시 범위는 placeholder(div, data-xeg-role="gallery-item-placeholder")로
+  대체해 items-container.children 길이 보존. 현재/프리로드 인덱스는 항상
+  실아이템으로 렌더.
+- 테스트: windowing.behavior.test.tsx 추가 — 100개 데이터에서 실아이템 2N+1,
+  placeholder는 나머지, children 길이는 총계와 동일, windowing 비활성화 시 전부
+  실아이템 렌더 및 placeholder 0 검증. 전체 스위트 GREEN 유지.
+- 영향: useGalleryItemScroll의 인덱스 기반 스크롤 계약 보존, VerticalImageItem이
+  data-xeg-role을 DOM에 전달하도록 보강. 타입/린트/테스트/빌드 모두 GREEN.
+
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
 
 - 완료 범위: 직접 색상 키워드(white/black) 0건, `transition: all` 전역 0건
