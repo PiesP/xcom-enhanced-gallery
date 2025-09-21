@@ -69,6 +69,11 @@ describe('R3: Twitter token priority policy (RED)', () => {
     const { TwitterTokenExtractor } = await import(
       '@/features/settings/services/TwitterTokenExtractor'
     );
+    // Phase 1 consent gate: enable consent for tests expecting extraction
+    const { setTokenExtractionConsent } = await import(
+      '@/features/settings/services/token-consent'
+    );
+    setTokenExtractionConsent(true);
     const ex = new TwitterTokenExtractor();
 
     const result = await ex.getToken(true);
@@ -97,6 +102,10 @@ describe('R3: Twitter token priority policy (RED)', () => {
     const { TwitterTokenExtractor } = await import(
       '@/features/settings/services/TwitterTokenExtractor'
     );
+    const { setTokenExtractionConsent } = await import(
+      '@/features/settings/services/token-consent'
+    );
+    setTokenExtractionConsent(true);
     const ex = new TwitterTokenExtractor();
     const result = await ex.getToken(true);
     expect(typeof result).toBe('string');
