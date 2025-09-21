@@ -58,7 +58,8 @@
   - `shared/external/userscript/adapter.ts` 폴백 경로 & GM\_\* 존재 감지 분기
   - 노이즈 회피를 위해 네트워크 모킹/가짜 타이머 활용
 - Tasks (잔여)
-  - REFACTOR: 에러 타입/메시지 표준화, 토스트 정책 일관화, 로깅 상관관계 보강
+  - 잔여 없음 — 해당 REFACTOR 하위 과제(에러 메시지 표준화/토스트 정책/로깅
+    상관관계)는 Completed 로그로 이관됨
 - Risks/Mitigations
   - 타이밍 이슈/flaky → 가짜 타이머 및 고립된 테스트 환경 사용
   - 환경별 GM\_\* 차이 → 존재 감지 분기 테스트로 커버
