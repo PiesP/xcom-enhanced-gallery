@@ -150,6 +150,12 @@ export class ThemeService {
       setting = 'light';
     }
 
+    // 변경 없음 가드: 설정 값이 동일하고, auto가 아닌 경우 재적용/알림 방지
+    if (this.themeSetting === setting && setting !== 'auto') {
+      logger.debug(`Theme setting unchanged: ${setting} — skipping reapply`);
+      return;
+    }
+
     this.themeSetting = setting;
 
     // localStorage에 저장

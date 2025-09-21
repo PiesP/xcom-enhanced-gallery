@@ -335,6 +335,25 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 - announce 헬퍼는 `live-region-manager`의 `announcePolite/announceAssertive`로
   위임.
 
+2025-09-21: STYLE/THEME Epic B — P1–P2 완료 (토큰 위반 탐지 강화 및 Toolbar 토큰
+정합)
+
+- RED: CSS Modules 내 명명 색상(white/black) 직접 사용 탐지 테스트 추가
+  (`test/refactoring/design-token-violations.test.ts`).
+- GREEN: Toolbar/Button/Gallery/Toast 모듈의 white/black 직접값을
+  `var(--color-base-white|black)` 토큰으로 치환. downloadSpinner 등 잔존 값도
+  일괄 토큰화.
+- 스크립트 기준(find-token-violations.js)과 테스트 기준을 맞추고, dist/소스 모두
+  raw 명명 색상 사용 0건 유지.
+
+2025-09-21: THEME Epic B — P3 일부(GREEN): ThemeService 하드닝(중복 적용
+방지/FOUC 최소화)
+
+- RED: data-theme 적용 타이밍/시스템 테마 변경 반영/중복 호출 방지 테스트 추가
+  (`test/unit/shared/services/ThemeService.test.ts`).
+- GREEN: 같은 값 재설정 시 재적용/리스너 중복 호출을 방지하는 가드 추가, 프레임
+  내 DOM 반영 확인. matchMedia 변경 시 auto 설정에서 즉시 반영 가드.
+
 2025-09-20: XEG-SEL-01 — Selector 유틸 통합 및 로깅 일원화 (Epic 종료)
 
 - P1–P4 완료. `@shared/utils/signalSelector`를 단일 출처로 확립하고

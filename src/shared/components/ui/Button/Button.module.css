@@ -428,18 +428,18 @@
   .variant-outline,
   .variant-ghost,
   .variant-icon {
-    background: white;
-    color: black;
-    border-color: black;
+    background: var(--color-base-white);
+    color: var(--color-base-black);
+    border-color: var(--color-base-black);
   }
 
   .variant-secondary:hover:not(:disabled),
   .variant-outline:hover:not(:disabled),
   .variant-ghost:hover:not(:disabled),
   .variant-icon:hover:not(:disabled) {
-    background: black;
-    color: white;
-    border-color: white;
+    background: var(--color-base-black);
+    color: var(--color-base-white);
+    border-color: var(--color-base-white);
   }
 }
 

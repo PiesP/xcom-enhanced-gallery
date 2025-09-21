@@ -441,7 +441,7 @@
  * 미디어가 로드되는 동안 표시되는 로딩 메시지 스타일입니다.
  */
 .loading {
-  color: white;
+  color: var(--color-base-white);
   font-size: 18px;
   text-align: center;
   padding: 20px;
@@ -859,13 +859,13 @@
  */
 @media (prefers-contrast: high) {
   .galleryViewer {
-    background: black;
+    background: var(--color-base-black);
   }
 
   .controlButton,
   .navButton,
   .closeButton {
-    border: 2px solid white;
+    border: 2px solid var(--color-base-white);
   }
 
   .error {

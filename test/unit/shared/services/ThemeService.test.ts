@@ -8,7 +8,7 @@ import { ThemeService } from '../../../../src/shared/services/ThemeService';
 
 describe('ThemeService Extended', () => {
   let themeService: ThemeService;
-  let mockDocument: Partial<Document>;
+  let mockDocument: any;
 
   beforeEach(() => {
     // DOM mock 설정
@@ -202,6 +202,54 @@ describe('ThemeService Extended', () => {
         themeService.setTheme('light');
         themeService.getCurrentTheme();
       }).not.toThrow();
+    });
+
+    it('setTheme 호출 시 data-theme 속성이 프레임 내에 적용되어야 함(FOUC 최소화)', async () => {
+      const mockDoc = document as any;
+      themeService.setTheme('dark');
+      // 마이크로태스크 이후에도 적용되어야 함
+      await Promise.resolve();
+      expect(mockDoc.documentElement.setAttribute).toHaveBeenLastCalledWith('data-theme', 'dark');
+    });
+
+    it('auto 설정에서 시스템 테마 변경 시 즉시 반영되어야 함', () => {
+      const mockMediaQueryList = {
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as any;
+      vi.stubGlobal('window', { matchMedia: vi.fn().mockReturnValue(mockMediaQueryList) });
+
+      const service = new ThemeService();
+      service.setTheme('auto');
+
+      // change 이벤트 핸들러 수집
+      const handler = (mockMediaQueryList as any).addEventListener.mock.calls[0][1] as (
+        ev: any
+      ) => void;
+
+      // 다크 모드로 변경
+      (mockMediaQueryList as any).matches = true;
+      handler({ matches: true } as any);
+
+      // DOM 적용 확인
+      expect((document as any).documentElement.setAttribute).toHaveBeenLastCalledWith(
+        'data-theme',
+        'dark'
+      );
+    });
+
+    it('setTheme는 같은 값 연속 호출 시 리스너 중복 호출/DOM 재적용을 피해야 함', () => {
+      const listener = vi.fn();
+      themeService.onThemeChange(listener);
+
+      // 현재 기본 테마가 light일 수 있으므로 다른 값으로 변경 후 같은 값 재호출
+      themeService.setTheme('dark');
+      themeService.setTheme('dark');
+
+      // 최소 1회만 호출되어야 함
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect((document as any).documentElement.setAttribute).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -93,4 +93,21 @@ describe('D1: Design token violations detection', () => {
     // 하드코딩된 shadow가 있으면 실패해야 함 (RED → GREEN)
     expect(hardcodedShadows.length).toBe(0);
   });
+
+  it('should not use named colors (white/black) directly in CSS modules', () => {
+    const cssFiles = findCSSModules('src');
+    const namedColorUsages: string[] = [];
+
+    cssFiles.forEach(file => {
+      const content = readFileSync(file, 'utf-8');
+      // 속성 값으로 white/black이 직접 사용된 경우 탐지 (토큰 미사용)
+      // var(--color-base-white) 같은 토큰은 해당되지 않도록 ':' 다음 값만 검사
+      const matches = content.match(/:\s*(white|black)\b/gi);
+      if (matches) {
+        namedColorUsages.push(...matches.map(m => `${file} -> ${m}`));
+      }
+    });
+
+    expect(namedColorUsages.length).toBe(0);
+  });
 });
