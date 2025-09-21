@@ -63,6 +63,35 @@ export function useGalleryScroll({
   const lastScrollTimeRef = useRef(0);
   const scrollTimeoutRef = useRef<number | null>(null);
 
+  // 성능: onScroll 호출 코얼레싱(스로틀)
+  const pendingDeltaRef = useRef(0);
+  const flushScheduledRef = useRef(false);
+  const useRafForFlush = true; // 향후 옵션화 가능
+
+  const flushOnScroll = useCallback(() => {
+    flushScheduledRef.current = false;
+    const delta = pendingDeltaRef.current;
+    pendingDeltaRef.current = 0;
+    if (onScroll && delta !== 0) {
+      try {
+        onScroll(delta);
+      } catch (err) {
+        logger.error('useGalleryScroll: onScroll 처리 중 오류', err);
+      }
+    }
+  }, [onScroll]);
+
+  const scheduleFlush = useCallback(() => {
+    if (flushScheduledRef.current) return;
+    flushScheduledRef.current = true;
+    if (useRafForFlush && typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => flushOnScroll());
+      return;
+    }
+    // 폴백: 마이크로태스크
+    Promise.resolve().then(() => flushOnScroll());
+  }, [flushOnScroll]);
+
   // 스크롤 방향 감지 관련 상태 (옵션)
   const scrollDirectionRef = useRef<'up' | 'down' | 'idle'>('idle');
   const directionTimeoutRef = useRef<number | null>(null);
@@ -146,10 +175,9 @@ export function useGalleryScroll({
       // 스크롤 방향 감지 (옵션)
       updateScrollDirection(delta);
 
-      // 스크롤 콜백 실행
-      if (onScroll) {
-        onScroll(delta);
-      }
+      // 스크롤 콜백 실행(코얼레싱)
+      pendingDeltaRef.current += delta;
+      scheduleFlush();
 
       // 트위터 페이지로의 이벤트 전파 방지
       if (blockTwitterScroll) {
@@ -208,6 +236,10 @@ export function useGalleryScroll({
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
+
+      // 코얼레싱 상태 정리
+      pendingDeltaRef.current = 0;
+      flushScheduledRef.current = false;
 
       // 방향 감지 타이머 정리
       if (directionTimeoutRef.current) {
