@@ -208,7 +208,13 @@ export class GalleryRenderer implements GalleryRendererInterface {
           await downloadService.downloadSingle(currentMedia);
         }
       } else {
-        await downloadService.downloadMultiple(state.mediaItems);
+        // Read user setting safely (default false)
+        const { getSetting } = await import('@shared/container/settings-access');
+        const showProgressToast = getSetting<boolean>(
+          'download.showProgressToast' as unknown as string,
+          false
+        );
+        await downloadService.downloadMultiple(state.mediaItems, { showProgressToast });
       }
     } catch (error) {
       logger.error(`[GalleryRenderer] ${type} download failed:`, error);

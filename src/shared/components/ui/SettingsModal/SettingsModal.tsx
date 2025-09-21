@@ -18,6 +18,7 @@ import toolbarStyles from '../Toolbar/Toolbar.module.css';
 // Barrel import 제거 (cycle 감소) - direct relative import
 import { IconButton } from '../Button/IconButton';
 import styles from './SettingsModal.module.css';
+import { getSetting, setSetting } from '@shared/container/settings-access';
 
 export interface SettingsModalProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ export function SettingsModal({
   const [currentLanguage, setCurrentLanguage] = useState<'auto' | 'ko' | 'en' | 'ja'>('auto');
   const [languageService] = useState(() => new LanguageService());
   const [themeService] = useState(() => new ThemeService());
+  const [showProgressToast, setShowProgressToast] = useState<boolean>(false);
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
@@ -188,6 +190,16 @@ export function SettingsModal({
         ? (themeService.getCurrentTheme() as typeof currentTheme)
         : 'auto'
     );
+    // Load persisted setting safely
+    try {
+      const persisted = getSetting<boolean>(
+        'download.showProgressToast' as unknown as string,
+        false
+      );
+      setShowProgressToast(!!persisted);
+    } catch {
+      setShowProgressToast(false);
+    }
 
     // 접근성 설정
     if (typeof document !== 'undefined') {
@@ -362,6 +374,13 @@ export function SettingsModal({
     [languageService]
   );
 
+  const handleProgressToastToggle = useCallback((event: Event) => {
+    const checked = (event.target as HTMLInputElement).checked;
+    setShowProgressToast(checked);
+    // persist asynchronously; ignore errors in non-bridge envs
+    setSetting('download.showProgressToast' as unknown as string, checked).catch(() => {});
+  }, []);
+
   if (!isOpen) {
     // 패널 비활성화 이전에 inert 해제 및 포커스 복원 타이머 정리
     if (focusRetryTimerRef.current) {
@@ -501,6 +520,20 @@ export function SettingsModal({
         languageService.getString('settings.language')
       ),
       languageSelect,
+    ]),
+    // Download: progress toast toggle
+    h('div', { className: styles.setting, key: 'download-progress-toast-setting' }, [
+      h(
+        'label',
+        { htmlFor: 'download-progress-toast', className: styles.label },
+        languageService.getString('settings.downloadProgressToast')
+      ),
+      h('input', {
+        id: 'download-progress-toast',
+        type: 'checkbox',
+        checked: showProgressToast,
+        onChange: handleProgressToastToggle,
+      }),
     ]),
   ]);
 

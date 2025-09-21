@@ -24,6 +24,8 @@ export interface LanguageStrings {
     readonly themeLight: string;
     readonly themeDark: string;
     readonly close: string;
+    /** Bulk download: show progress toast toggle label */
+    readonly downloadProgressToast: string;
   };
   readonly messages: {
     readonly download: {
@@ -78,6 +80,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: '라이트',
       themeDark: '다크',
       close: '닫기',
+      downloadProgressToast: '대량 다운로드 진행 토스트 표시',
     },
     messages: {
       download: {
@@ -111,6 +114,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: 'Light',
       themeDark: 'Dark',
       close: 'Close',
+      downloadProgressToast: 'Show progress toast during bulk download',
     },
     messages: {
       download: {
@@ -148,6 +152,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: 'ライト',
       themeDark: 'ダーク',
       close: '閉じる',
+      downloadProgressToast: '一括ダウンロードの進行トーストを表示',
     },
     messages: {
       download: {
