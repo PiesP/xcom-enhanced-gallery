@@ -4,8 +4,8 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-22 — 활성 Epic 없음 (직전 사이클 EPIC-B 종료, Completed로
-이관)
+업데이트: 2025-09-22 — 활성 Epic 1건 진행(EPIC-C: Userscript 하드닝 v3). 직전
+사이클 EPIC-B 종료 항목은 Completed로 이관됨.
 
 직전 사이클 Epic(유저스크립트 하드닝 v1) Phases 1–4 전체 완료(Completed 로그
 이관)
@@ -45,7 +45,6 @@
 
 스코프(What)
 
-- 갤러리 긴 목록 렌더 성능 가드: 간단 윈도우링(virtualization, 옵션)
 - 모션 접근성 가드: prefers-reduced-motion 전역 유틸/토큰 레벨 적용
 - 리팩토링 테스트 재활성화(단건 검증 후), 스타일 Hex 사용 임계 상향 계획 수립
 
@@ -53,14 +52,14 @@
 
 - 다음 3개 항목은 완료되어 Completed 로그로 이관됨: 헤더 정합성, 릴리즈
   메타데이터 동기화, 네트워크 정책 기본값 강화
+- Gallery-Perf-001(간단 윈도우링) 완료 — Completed 로그 참조. 스코프/AC에서 관련
+  항목 제거.
 
 Acceptance(측정 기준)
 
 - 빌드 산출물 validator 통과 + Userscript 헤더 검사 추가 항목 녹색
 - 테스트: 신규/갱신 테스트 GREEN, 제외 테스트 단계적 재활성화(개별 실행 GREEN
   확인)
-- 성능 가드: 긴 목록에서 렌더된 DOM 아이템 수가 뷰포트 ±N 범위로
-  제한됨(스냅샷/상수 N)
 - 접근성 가드: 애니메이션 존재 파일의 “prefers-reduced-motion” 고려율 100%(허용
   리스트 제외 0)
 
