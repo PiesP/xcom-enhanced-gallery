@@ -28,7 +28,7 @@
 로그로 이관되었습니다. 추가 후보는 `docs/TDD_REFACTORING_BACKLOG.md`를 참고해
 선정합니다.
 
-- Epic: 유저스크립트 하드닝 v1 — 보안/선택자/성능(스크롤)/메모리 안정화
+- Epic: 유저스크립트 하드닝 v1 — 보안/선택자/성능(스크롤)
 
 ---
 
@@ -62,9 +62,6 @@
   - useGalleryScroll에 스로틀(또는 rAF 스케줄링) 적용으로 동일 입력 대비 핸들러
     호출 50% 이상 감소
   - 테스트: 가상 휠 이벤트 폭주 시 호출 수/프레임 기준 감소 검증(가짜 타이머)
-- 메모리(Object URL) — 완료됨(계획서에서 제외)
-  - 메모: object-url-manager 도입 및 갤러리 cleanup 연동은 완료되어 Completed
-    로그로 이관됨
 - UX(경량)
   - UnifiedToastManager 기반 진행률 토스트(선택적 표시)로 대량 다운로드 가시성
     개선
@@ -125,8 +122,10 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 우선순위(남은 작업 실행 순서):
 
-1. 보안/네트워크(토큰 동의/마스킹, Userscript allowlist) → 2) 선택자 폴백 강화
-   → 3) 스크롤 스로틀 → 4) UX 진행률 토스트
+1. 보안/네트워크 — 토큰 동의/마스킹, Userscript allowlist (Phase 1)
+2. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2)
+3. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
+4. UX(경량) — 진행률 토스트 통합 (Phase 4)
 
 리스크/완화:
 
