@@ -191,7 +191,8 @@
 .xeg-tooltip {
   position: absolute;
   position-anchor: --tooltip-anchor;
-  inset-area: top;
+  /* Anchor positioning draft property replaced with a safe fallback */
+  inset-block-end: 100%;
   margin-bottom: 8px;
 }
 
@@ -207,14 +208,31 @@
 }
 
 @supports not (container-type: size) {
-  .xeg-gallery-grid {
-    /* 미디어 쿼리 폴백 */
-  }
+  /* 미디어 쿼리 폴백: container가 없을 때는 일반 그리드만 사용 */
 }
 
 @supports not (display: subgrid) {
   .xeg-gallery-item {
     display: flex;
     flex-direction: column;
+  }
+}
+
+/**
+ * Reduced Motion Guard
+ * 사용자 설정(prefers-reduced-motion: reduce) 시 애니메이션/전환을 비활성화합니다.
+ */
+@media (prefers-reduced-motion: reduce) {
+  /* View Transitions 및 관련 애니메이션 비활성화 */
+  ::view-transition-old(gallery-main),
+  ::view-transition-new(gallery-main) {
+    animation: none !important;
+  }
+
+  .xeg-gallery-transition,
+  .xeg-gallery-item-transition {
+    /* 전환 및 뷰 트랜지션 이름 비활성화 */
+    transition: none !important;
+    view-transition-name: none;
   }
 }
