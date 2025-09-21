@@ -379,6 +379,19 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 +1% 유지(P6), 마지막 주석/alias 정리(P7)로 마이그레이션 마무리.
 사이즈/접근성/회귀/번들 메트릭 모두 목표 달성.
 
+2025-09-21: UX-PROGRESS-TOAST — BulkDownload 진행률 토스트 옵션 도입 (Phase 4
+완료)
+
+- BulkDownloadService에 진행 이벤트를 UnifiedToastManager로 라우팅하는 경량
+  진행률 토스트를 도입.
+- 설정 의존성/순환을 피하기 위해 서비스 내부에서 설정을 읽지 않고 호출
+  옵션(showProgressToast) 주입 방식으로 설계.
+- i18n 키(messages.download.progress.{title,body}) 추가 및 모든 로케일(en/ko/ja)
+  채움.
+- 테스트: 진행 중 업데이트/완료 시 제거/옵션 Off 시 미노출 가드 GREEN.
+- 영향: 기본 Off로 사용자 경험 소음 최소화, 필요 시만 활성화 가능. 아키텍처 경계
+  및 디펜던시 크루저 사이클 준수.
+
 ### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — Phase 2(선택자 폴백)
 
 - Phase 2 — Diagnostics standardization: unified logging keys for selector flows

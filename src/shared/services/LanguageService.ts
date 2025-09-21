@@ -33,6 +33,10 @@ export interface LanguageStrings {
           readonly body: string; // {error}
         };
       };
+      readonly progress: {
+        readonly title: string; // downloading… {current}/{total}
+        readonly body: string; // {percentage}% {filename?}
+      };
       readonly allFailed: {
         readonly title: string;
         readonly body: string;
@@ -78,6 +82,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
     messages: {
       download: {
         single: { error: { title: '다운로드 실패', body: '파일을 받을 수 없습니다: {error}' } },
+        progress: { title: '다운로드 중', body: '{current}/{total} • {percentage}% {filename}' },
         allFailed: { title: '다운로드 실패', body: '모든 항목을 다운로드하지 못했습니다.' },
         partial: { title: '일부 실패', body: '{count}개 항목을 받지 못했습니다.' },
         retry: {
@@ -112,6 +117,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
         single: {
           error: { title: 'Download Failed', body: 'Could not download the file: {error}' },
         },
+        progress: { title: 'Downloading', body: '{current}/{total} • {percentage}% {filename}' },
         allFailed: { title: 'Download Failed', body: 'Failed to download all items.' },
         partial: { title: 'Partial Failure', body: 'Failed to download {count} items.' },
         retry: {
@@ -146,6 +152,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
     messages: {
       download: {
         single: { error: { title: 'ダウンロード失敗', body: 'ファイルを取得できません: {error}' } },
+        progress: { title: 'ダウンロード中', body: '{current}/{total} • {percentage}% {filename}' },
         allFailed: {
           title: 'ダウンロード失敗',
           body: 'すべての項目をダウンロードできませんでした。',

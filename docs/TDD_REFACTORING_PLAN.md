@@ -5,7 +5,7 @@
 분리합니다.
 
 업데이트: 2025-09-21 — 활성 Epic 1건 — Phase 1(보안/네트워크) 완료 · Phase
-2(선택자 폴백) 완료 · Phase 3(스크롤 성능) 완료
+2(선택자 폴백) 완료 · Phase 3(스크롤 성능) 완료 · Phase 4(UX 진행 토스트) 완료
 
 ---
 
@@ -113,19 +113,21 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 우선순위(남은 작업 실행 순서):
 
-1. UX(경량) — 진행률 토스트 통합 (Phase 4)
+현재 활성 Epic 내 즉시 실행할 남은 작업은 없습니다(Phase 1~4 완료). 후속 후보는
+백로그에서 선별합니다.
 
 ### Phase별 실행 계획(제안)
 
 <!-- Phase 2 — 선택자 폴백: 완료되어 본 섹션은 계획서에서 제거되었습니다. 상세는 Completed 로그 참고. -->
 
-Phase 4 — UX(경량)
+Phase 4 — UX(경량) (완료)
 
 - Deliverables
   - UnifiedToastManager: BulkDownload 진행률 토스트(진행/잔여/실패 재시도) 옵션
-    탑재
+    탑재(기본 Off, 옵션 주입)
 - Tests (RED → GREEN)
-  - 진행 이벤트 → 토스트 업데이트/완료/에러 흐름 스냅샷 및 설정 On/Off 가드
+  - 진행 이벤트 → 토스트 업데이트/완료/에러 흐름 스냅샷 및 옵션 On/Off 가드
+    GREEN
 
 리스크/완화:
 
@@ -143,11 +145,11 @@ Phase 4 — UX(경량)
 - 테스트: Vitest + JSDOM, 벤더/GM\_\* 모킹으로 격리 검증
 - 빌드: dev/prod 빌드 및 산출물 validator 통과
 
-롤아웃 계획(제안):
+롤아웃 계획(현황):
 
-- Phase 2 (선택자) → Phase 3 (스크롤) → Phase 4 (UX 토스트)
-- 각 Phase 종료 시 Completed 로그로 1줄 요약 이관 — Phase 1은 완료되어 Completed
-  로그에 기록됨
+- Phase 1(보안) 완료 → Phase 2(선택자) 완료 → Phase 3(스크롤) 완료 → Phase 4(UX
+  토스트) 진행 예정
+- 각 Phase 종료 시 Completed 로그로 1줄 요약 이관 (본 문서에서 완료 항목은 제거)
 
 ---
 

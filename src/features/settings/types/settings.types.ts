@@ -37,6 +37,8 @@ export interface DownloadSettings {
   autoZip: boolean;
   /** 다운로드 폴더 구조 */
   folderStructure: 'flat' | 'by-date' | 'by-user';
+  /** 진행률 토스트 표시 여부 (옵션, 기본 꺼짐) */
+  showProgressToast: boolean;
 }
 
 /**

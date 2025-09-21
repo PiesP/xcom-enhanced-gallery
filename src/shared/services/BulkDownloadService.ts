@@ -33,6 +33,8 @@ export interface BulkDownloadOptions {
   zipFilename?: string;
   concurrency?: number; // RED -> GREEN: 제한된 동시성 처리
   retries?: number; // retry attempts
+  /** 진행률 토스트 표시 여부 (상위에서 설정 주입) */
+  showProgressToast?: boolean;
 }
 
 export interface DownloadResult {
@@ -90,6 +92,8 @@ export class BulkDownloadService {
   private currentAbortController: AbortController | undefined;
   private cancelToastShown = false;
   private static readonly DEFAULT_BACKOFF_BASE_MS = 200;
+  // 진행률 토스트 ID (옵션)
+  private progressToastId: string | null = null;
 
   private async sleep(ms: number, signal?: AbortSignal): Promise<void> {
     if (ms <= 0) return;
@@ -218,6 +222,9 @@ export class BulkDownloadService {
         });
       }
 
+      // 진행률 토스트 표시 여부 (상위 옵션으로 주입)
+      const showProgressToast = options.showProgressToast === true;
+
       // 단일 파일인 경우 개별 다운로드
       if (items.length === 1) {
         const firstItem = items[0];
@@ -267,7 +274,66 @@ export class BulkDownloadService {
       }
 
       // 여러 파일인 경우 ZIP 다운로드
-      return await this.downloadAsZip(items, options);
+      if (showProgressToast) {
+        // 초기 진행 토스트 생성 (live-only로도 충분하지만 시각 피드백을 위해 both)
+        const title = languageService.getString('messages.download.progress.title');
+        const body = languageService.getFormattedString('messages.download.progress.body', {
+          current: 0,
+          total: items.length,
+          percentage: 0,
+          filename: '',
+        });
+        this.progressToastId = toastManager.show({
+          title,
+          message: body,
+          type: 'info',
+          duration: 0, // 수동 제거
+          route: 'both',
+        });
+      }
+
+      const res = await this.downloadAsZip(items, {
+        ...options,
+        onProgress: p => {
+          options.onProgress?.(p);
+          if (showProgressToast && this.progressToastId) {
+            // 업데이트: 현재/총계/퍼센트/파일명
+            const title = languageService.getString('messages.download.progress.title');
+            const body = languageService.getFormattedString('messages.download.progress.body', {
+              current: p.current,
+              total: p.total,
+              percentage: p.percentage,
+              filename: p.filename ?? '',
+            });
+            // 간단 구현: 기존 토스트 제거 후 동일 ID로 다시 생성은 불가하므로 제거 후 새로 추가
+            // (UnifiedToastManager에 update가 없으므로 재생성)
+            try {
+              toastManager.remove(this.progressToastId);
+            } catch {
+              // ignore
+            }
+            this.progressToastId = toastManager.show({
+              title,
+              message: body,
+              type: 'info',
+              duration: 0,
+              route: 'both',
+            });
+          }
+        },
+      });
+
+      // 완료 시 진행 토스트 제거
+      if (this.progressToastId) {
+        try {
+          toastManager.remove(this.progressToastId);
+        } catch {
+          // ignore
+        }
+        this.progressToastId = null;
+      }
+
+      return res;
     } finally {
       this.currentAbortController = undefined;
     }
@@ -537,6 +603,15 @@ export class BulkDownloadService {
         languageService.getString('messages.download.cancelled.body')
       );
       this.cancelToastShown = true;
+    }
+    // 진행 토스트 제거
+    if (this.progressToastId) {
+      try {
+        toastManager.remove(this.progressToastId);
+      } catch {
+        // ignore
+      }
+      this.progressToastId = null;
     }
   }
 
