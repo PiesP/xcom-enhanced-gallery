@@ -20,12 +20,7 @@ export {
 } from './utils';
 
 // === 타이머 관리 (4개) ===
-export {
-  TimerManager,
-  globalTimerManager,
-  safePerformanceNow,
-  createManagedDebounce,
-} from './timer-management';
+export { TimerManager, globalTimerManager, safePerformanceNow } from './timer-management';
 
 // === 타입 안전 유틸리티 (6개) ===
 export {

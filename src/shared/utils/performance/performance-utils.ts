@@ -7,6 +7,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { globalTimerManager } from '../timer-management';
 
 /**
  * 디바운서 클래스 - 중복 실행 방지
@@ -14,6 +15,7 @@ import { logger } from '@shared/logging/logger';
 export class Debouncer<T extends unknown[] = unknown[]> {
   private timerId: number | null = null;
   private lastArgs: T | null = null;
+  private static readonly TIMER_CONTEXT = 'debouncer';
 
   constructor(
     private readonly fn: (...args: T) => void,
@@ -23,12 +25,16 @@ export class Debouncer<T extends unknown[] = unknown[]> {
   execute(...args: T): void {
     this.lastArgs = args;
     this.clearTimer();
-    this.timerId = window.setTimeout(() => {
-      if (this.lastArgs) {
-        this.fn(...this.lastArgs);
-        this.lastArgs = null;
-      }
-    }, this.delay);
+    this.timerId = globalTimerManager.setTimeout(
+      () => {
+        if (this.lastArgs) {
+          this.fn(...this.lastArgs);
+          this.lastArgs = null;
+        }
+      },
+      this.delay,
+      Debouncer.TIMER_CONTEXT
+    );
   }
 
   flush(): void {
@@ -50,7 +56,7 @@ export class Debouncer<T extends unknown[] = unknown[]> {
 
   private clearTimer(): void {
     if (this.timerId !== null) {
-      clearTimeout(this.timerId);
+      globalTimerManager.clearTimeout(this.timerId);
       this.timerId = null;
     }
   }

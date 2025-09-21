@@ -132,9 +132,10 @@
 
 1. (진행) RED: 페이지 전환/언마운트 시 살아있는 타이머/리스너가 0이어야 함 —
    진단 훅 테스트 추가
-2. (진행) GREEN: `useGalleryCleanup` 호출 누락 지점 보완, 전역 매니저에 스코프
-   태그 부여 — TimerManager에 context 스코프(문자열) 도입, 갤러리 이벤트 루프에
-   컨텍스트 적용 및 정리 경로 연동
+2. (완료) GREEN: 전역 TimerManager에 컨텍스트 스코프(문자열) 도입 및 갤러리
+   이벤트 루프/`RebindWatcher`/`Debouncer`에 컨텍스트 적용, 정리 경로 연동.
+   jsdom/브라우저 간 타이머 ID 타입 차이를 흡수하기 위해 내부 맵으로 숫자 ID
+   일관화. 관련 계약 테스트 GREEN.
 3. RED: 대량 썸네일 로딩 시 GC 후 잔존 객체 수가 한도 이하(모킹) — smoke
    수준으로 유지
 4. GREEN: 미디어 URL revoke/DOM 파기 순서 보정

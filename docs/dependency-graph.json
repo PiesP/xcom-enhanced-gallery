@@ -6353,13 +6353,43 @@
     },
     {
       "source": "src/shared/utils/performance/performance-utils.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/utils/core-utils.ts",
-        "src/shared/utils/timer-management.ts",
         "src/shared/utils/utils.ts",
         "src/shared/utils/scroll/scroll-utils.ts",
         "src/shared/utils/performance/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/timer-management.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts",
+        "src/shared/utils/performance/performance-utils.ts",
+        "src/shared/utils/lifecycle/rebind-watcher.ts",
+        "src/shared/utils/performance/idleScheduler.ts",
+        "src/shared/utils/performance/schedulers.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6614,35 +6644,6 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/media/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/timer-management.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./performance/performance-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/performance/performance-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/utils/index.ts",
-        "src/shared/utils/performance/idleScheduler.ts",
-        "src/shared/utils/performance/schedulers.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8164,9 +8165,27 @@
     },
     {
       "source": "src/shared/utils/lifecycle/rebind-watcher.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
-      "orphan": true,
+      "orphan": false,
       "valid": true
     },
     {
@@ -8648,7 +8667,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 258,
-    "totalDependenciesCruised": 356,
+    "totalDependenciesCruised": 357,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

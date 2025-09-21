@@ -4,8 +4,6 @@
  * @version 1.0.0
  */
 
-import { createDebouncer } from './performance/performance-utils';
-
 // 브라우저/Node(JSDOM)에서 setTimeout/setInterval이 반환하는 핸들을 포괄하는 타입
 type TimerHandle = number | { [key: string]: unknown };
 
@@ -240,13 +238,5 @@ export function safePerformanceNow(): number {
   return Date.now();
 }
 
-// Performance utilities re-export (deprecated wrappers removed)
-export {
-  measurePerformance,
-  measureAsyncPerformance,
-  createDebouncer,
-  rafThrottle,
-} from './performance/performance-utils';
-
-// Aliases for backward compatibility
-export const createManagedDebounce = createDebouncer;
+// Note: We intentionally avoid re-exporting performance utilities here to prevent
+// dependency cycles (performance-utils depends on timer-management for timer scoping).
