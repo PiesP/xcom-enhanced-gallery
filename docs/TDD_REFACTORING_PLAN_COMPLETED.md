@@ -395,6 +395,16 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
   - 테스트 추가: selector-registry.secondary-selectors — 데이터 속성 제거
     상황에서도 탐지 성공을 가드
 
+- Refactor: 액션 버튼 셀렉터 매핑 테이블화 및 테스트 픽스처 공유화(GREEN)
+  - getActionButtonMap 도입: like/reply/repost/share/bookmark에 대해 primary +
+    fallbacks[] 스키마로 일원화
+  - queryActionButton이 매핑 테이블 기반 우선순위 탐색을 수행하도록 리팩터링
+  - 하위 호환: getActionButtonFallbacks는 내부 매핑을 참조하도록 유지
+  - 테스트 추가: selector-registry.mapping-schema.test — 스키마 유효성/우선순위
+    검증, 공용 DOM 픽스처(test/**mocks**/dom-fixtures/action-buttons.ts) 도입
+  - 검증 결과: 전체 스위트 GREEN(파일 314/스킵 17, 테스트 1976/스킵 23/1 todo),
+    dev 빌드 성공(dist/xcom-enhanced-gallery.dev.user.js 생성, sourcemap 포함)
+
 2025-09-21: EPIC A 종료 — 접근성 강건화(A11y) 완료 요약
 
 - Focus Trap 표준화 완료: `useFocusTrap` 훅을 모달/오버레이(KeyboardHelpOverlay,
