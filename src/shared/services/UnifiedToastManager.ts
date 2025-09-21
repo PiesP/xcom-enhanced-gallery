@@ -9,6 +9,8 @@ import { getPreactSignals } from '@shared/external/vendors';
 import {
   ensurePoliteLiveRegion,
   ensureAssertiveLiveRegion,
+  announcePolite,
+  announceAssertive,
 } from '@shared/utils/accessibility/index';
 // 레거시 Toast 컴포넌트 상태와의 호환성 유지: 경고/에러는 UI 토스트 목록에도 반영
 import { toasts as legacyToasts } from '@shared/components/ui/Toast/Toast';
@@ -103,9 +105,12 @@ export class ToastManager {
     };
 
     // Routing policy with override
-    // Default routing: info/success → live-only, warning/error → toast-only
-    const defaultRoute: 'live-only' | 'toast-only' =
-      toast.type === 'warning' || toast.type === 'error' ? 'toast-only' : 'live-only';
+    // Default routing:
+    // - info/success → live-only (screen reader만 공지, 토스트 억제)
+    // - warning → toast-only (시각적 피드백만)
+    // - error → both (시각적 + assertive 라이브 리전 공지)
+    const defaultRoute: 'live-only' | 'toast-only' | 'both' =
+      toast.type === 'error' ? 'both' : toast.type === 'warning' ? 'toast-only' : 'live-only';
     const route = options.route ?? defaultRoute;
 
     if (route === 'live-only' || route === 'both') {
@@ -293,17 +298,20 @@ export class ToastManager {
    * 접근성: 라이브 리전에 메시지를 공지한다. info/success는 polite, error는 assertive를 사용할 수 있다.
    */
   private announceToLiveRegion(toast: ToastItem): void {
+    // 라이브 리전 매니저의 큐/중복 억제/blank toggle 메커니즘을 활용한다.
+    // error는 assertive 채널, 나머지는 polite 채널로 공지.
+    const message = `${toast.title}: ${toast.message}`;
     try {
-      const region =
-        toast.type === 'error' ? ensureAssertiveLiveRegion() : ensurePoliteLiveRegion();
-      // 텍스트 노드로 메시지를 갱신하여 스크린리더가 읽을 수 있게 한다
-      const text = document.createElement('div');
-      text.textContent = `${toast.title}: ${toast.message}`;
-      // region을 깨끗이 만들고 새 노드를 추가
-      while (region.firstChild) region.removeChild(region.firstChild);
-      region.appendChild(text);
+      if (toast.type === 'error') {
+        // 보장 차원에서 영역 생성만 사전 수행(테스트 환경 안정화)
+        ensureAssertiveLiveRegion();
+        announceAssertive(message);
+      } else {
+        ensurePoliteLiveRegion();
+        announcePolite(message);
+      }
     } catch {
-      // 테스트/SSR 환경에서 document가 없을 수 있음 – 조용히 무시
+      // 테스트/SSR 환경 등 비DOM 환경에서는 조용히 무시
     }
   }
 

@@ -9,4 +9,6 @@ export {
   ensurePoliteLiveRegion,
   ensureAssertiveLiveRegion,
   getLiveRegionElements,
+  announcePolite,
+  announceAssertive,
 } from './live-region-manager';
