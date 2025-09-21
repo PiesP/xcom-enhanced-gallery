@@ -4,7 +4,8 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 1건(A11y 완료) — Phase 1(보안/네트워크) 완료
+업데이트: 2025-09-21 — 활성 Epic 1건 — Phase 1(보안/네트워크) 완료 · Phase
+2(선택자 폴백) 완료
 
 ---
 
@@ -102,10 +103,7 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
    - GREEN: GM\_\* 래퍼에 allowlist/차단 사유 토스트/로그 추가, 설정 기반 예외
      토글(기본 꺼짐)
 
-2. 호환성 — SelectorRegistry 폴백
-   - RED: 1차 셀렉터 실패 시 보조 셀렉터로 성공하는 시나리오 테스트(가짜 DOM)
-   - GREEN: 데이터 속성/role 기반 보조 셀렉터/우선순위 구현, 진단 로그 정리
-   - REFACTOR: 셀렉터 매핑을 상수 테이블로 분리하고 테스트 픽스처 공유화
+<!-- Phase 2(선택자 폴백) 관련 작업은 완료되어 Completed 로그로 이관되었습니다. -->
 
 3. 성능 — 스크롤 스로틀
    - RED: 연속 wheel 이벤트 100회 시 현재 호출 수 기준 대비 50%+ 감소 기대치
@@ -122,19 +120,12 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 우선순위(남은 작업 실행 순서):
 
-1. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2)
-2. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
-3. UX(경량) — 진행률 토스트 통합 (Phase 4)
+1. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
+2. UX(경량) — 진행률 토스트 통합 (Phase 4)
 
 ### Phase별 실행 계획(제안)
 
-Phase 2 — 선택자 폴백
-
-- Deliverables
-  - SelectorRegistry: 데이터 속성/role 기반 보조 셀렉터 추가 및 폴백 우선순위
-    확정, 진단 로그 정리
-- Tests (RED → GREEN)
-  - 가짜 DOM 변형 시 1차 실패 → 보조 셀렉터로 추출 성공 가드(성공률 ≥ 90%)
+<!-- Phase 2 — 선택자 폴백: 완료되어 본 섹션은 계획서에서 제거되었습니다. 상세는 Completed 로그 참고. -->
 
 Phase 3 — 성능(스크롤)
 

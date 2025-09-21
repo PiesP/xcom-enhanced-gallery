@@ -379,6 +379,32 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 +1% 유지(P6), 마지막 주석/alias 정리(P7)로 마이그레이션 마무리.
 사이즈/접근성/회귀/번들 메트릭 모두 목표 달성.
 
+### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — Phase 2(선택자 폴백)
+
+- Phase 2 — Diagnostics standardization: unified logging keys for selector flows
+  — warn: 'selector.invalid' with { module, op, selector, reason, error? },
+  debug: 'selector.resolve' with { module, op, selector, matched }.
+- 테스트 추가: selector-registry.fallback-invalid-selector
+  (findFirst/findAll/findClosest)
+- 결과: 폴백 전략의 회복력 향상, 전체 테스트/빌드 GREEN 유지
+
+- secondary selectors(보조 셀렉터) 추가 완료(GREEN)
+  - SelectorRegistry.queryActionButton에 aria-label/role 기반 보조 셀렉터를
+    도입하여 data-testid 부재 시에도 액션 버튼 탐지가 가능하도록 보강
+  - 케이스 인센서티브 속성 선택자([aria-label i]) 사용, role=button 병행 지원
+  - 테스트 추가: selector-registry.secondary-selectors — 데이터 속성 제거
+    상황에서도 탐지 성공을 가드
+
+- Refactor: 액션 버튼 셀렉터 매핑 테이블화 및 테스트 픽스처 공유화(GREEN)
+  - getActionButtonMap 도입: like/reply/repost/share/bookmark에 대해 primary +
+    fallbacks[] 스키마로 일원화
+  - queryActionButton이 매핑 테이블 기반 우선순위 탐색을 수행하도록 리팩터링
+  - 하위 호환: getActionButtonFallbacks는 내부 매핑을 참조하도록 유지
+  - 테스트 추가: selector-registry.mapping-schema.test — 스키마 유효성/우선순위
+    검증, 공용 DOM 픽스처(test/**mocks**/dom-fixtures/action-buttons.ts) 도입
+  - 검증 결과: 전체 스위트 GREEN(파일 314/스킵 17, 테스트 1976/스킵 23/1 todo),
+    dev 빌드 성공(dist/xcom-enhanced-gallery.dev.user.js 생성, sourcemap 포함)
+
 2025-09-21: EPIC A 종료 — 접근성 강건화(A11y) 완료 요약
 
 - Focus Trap 표준화 완료: `useFocusTrap` 훅을 모달/오버레이(KeyboardHelpOverlay,

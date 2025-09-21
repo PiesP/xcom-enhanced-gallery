@@ -4,6 +4,7 @@
  */
 
 import { STABLE_SELECTORS } from '@/constants';
+import { logger } from '@shared/logging/logger';
 import { cachedQuerySelectorAll, cachedStableQuery } from './DOMCache';
 
 export type QueryContainer = Document | Element;
@@ -68,8 +69,20 @@ export class SelectorRegistry implements ISelectorRegistry {
     if (!start) return null;
 
     for (const sel of selectors) {
-      const found = start.closest(sel);
-      if (found) return found;
+      try {
+        const found = start.closest(sel);
+        if (found) return found;
+      } catch (error) {
+        // invalid selector — standardized warn log and skip to next fallback
+        logger.warn('selector.invalid', {
+          module: 'SelectorRegistry',
+          op: 'findClosest',
+          selector: sel,
+          reason: 'invalid-selector',
+          error,
+        });
+        continue;
+      }
     }
     return null;
   }
@@ -94,9 +107,14 @@ export class SelectorRegistry implements ISelectorRegistry {
     action: keyof typeof STABLE_SELECTORS.ACTION_BUTTONS,
     container?: QueryContainer
   ): Element | null {
-    const selector = this.selectors.ACTION_BUTTONS[action];
-    if (!selector) return null;
-    return this.findFirst([selector], container);
+    const table = getActionButtonMap(this.selectors);
+    const entry = table[action];
+    if (!entry) return null;
+
+    // data-testid 1순위 + aria-label/role 기반 보조 셀렉터 (테이블 기반)
+    const { primary, fallbacks } = entry;
+    const candidates = [primary, ...fallbacks];
+    return this.findFirst(candidates, container);
   }
 }
 
@@ -106,3 +124,63 @@ export function createSelectorRegistry(options: SelectorRegistryOptions = {}): S
 
 // 타입 안전성을 위한 안정적 export 타입(테스트에서 재사용)
 // (no-op)
+
+// 내부 유틸: 액션 버튼 보조 셀렉터 집합
+// data-testid가 제거/변경되어도 aria-label/role 조합으로 탐색 가능해야 함
+// CSS4의 대소문자 무시 플래그(i)를 사용해 레이블 변형에 대응
+// JSDOM/브라우저 지원 범위에서 안전한 속성 부분 일치 선택자를 사용
+export type ActionName = keyof typeof STABLE_SELECTORS.ACTION_BUTTONS;
+export interface ActionButtonMapEntry {
+  primary: string;
+  fallbacks: readonly string[];
+}
+export type ActionButtonMap = Record<ActionName, ActionButtonMapEntry>;
+
+/**
+ * 액션 버튼 선택자 매핑 테이블
+ * - primary(data-testid) + aria-label/role 기반 fallbacks를 단일 구조로 노출
+ * - 선택자 상수(STABLE_SELECTORS)를 주입 가능하게 유지
+ */
+export function getActionButtonMap(
+  selectors: typeof STABLE_SELECTORS = STABLE_SELECTORS
+): ActionButtonMap {
+  const map: ActionButtonMap = {
+    like: {
+      primary: selectors.ACTION_BUTTONS.like,
+      fallbacks: ['button[aria-label*="Like" i]', '[role="button"][aria-label*="Like" i]'],
+    },
+    retweet: {
+      primary: selectors.ACTION_BUTTONS.retweet,
+      fallbacks: [
+        '[aria-label*="Retweet" i]',
+        '[aria-label*="Repost" i]',
+        '[role="button"][aria-label*="Retweet" i]',
+        '[role="button"][aria-label*="Repost" i]',
+      ],
+    },
+    reply: {
+      primary: selectors.ACTION_BUTTONS.reply,
+      fallbacks: ['[aria-label*="Reply" i]', '[role="button"][aria-label*="Reply" i]'],
+    },
+    share: {
+      primary: selectors.ACTION_BUTTONS.share,
+      fallbacks: ['[aria-label*="Share" i]', '[role="button"][aria-label*="Share" i]'],
+    },
+    bookmark: {
+      primary: selectors.ACTION_BUTTONS.bookmark,
+      fallbacks: ['[aria-label*="Bookmark" i]', '[role="button"][aria-label*="Bookmark" i]'],
+    },
+  };
+  return map;
+}
+
+/**
+ * 내부 유틸(하위 호환): 액션 버튼 보조 셀렉터 집합
+ * - deprecated: 통합 테이블(getActionButtonMap)에서 fallbacks를 조회하는 얇은 래퍼
+ */
+export function getActionButtonFallbacks(
+  action: keyof typeof STABLE_SELECTORS.ACTION_BUTTONS
+): readonly string[] {
+  const table = getActionButtonMap();
+  return table[action]?.fallbacks ?? ([] as const);
+}
