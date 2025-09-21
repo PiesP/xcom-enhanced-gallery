@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 1건(A11y 완료)
+업데이트: 2025-09-21 — 활성 Epic 1건(A11y 완료) — Phase 1(보안/네트워크) 완료
 
 ---
 
@@ -122,26 +122,11 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 우선순위(남은 작업 실행 순서):
 
-1. 보안/네트워크 — 토큰 동의/마스킹, Userscript allowlist (Phase 1)
-2. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2)
-3. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
-4. UX(경량) — 진행률 토스트 통합 (Phase 4)
+1. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2)
+2. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
+3. UX(경량) — 진행률 토스트 통합 (Phase 4)
 
 ### Phase별 실행 계획(제안)
-
-Phase 1 — 보안/네트워크
-
-- Deliverables
-  - TwitterTokenExtractor: 사용자 동의(Consent) 게이트 추가, 토큰 일시 메모리
-    보관, 로그 마스킹
-  - Userscript 어댑터: 허용 도메인 allowlist(기본: x.com, pbs.twimg.com,
-    video.twimg.com), deny-by-default, 차단 사유 토스트/로그
-- Tests (RED → GREEN)
-  - 정적 가드: 토큰 영속화 API(localStorage/sessionStorage/IndexedDB) 사용 금지
-    스캔
-  - 단위: 동의 Off 시 추출 경로 차단, 동의 On 시 일시 사용 후 폐기, 민감 로그
-    마스킹 스냅샷
-  - 단위: allowlist 허용/차단 케이스, 설정 토글 on/off
 
 Phase 2 — 선택자 폴백
 
@@ -185,9 +170,9 @@ Phase 4 — UX(경량)
 
 롤아웃 계획(제안):
 
-- Phase 1 (보안·네트워크) → Phase 2 (선택자) → Phase 3 (스크롤) → Phase 4 (UX
-  토스트)
-- 각 Phase 종료 시 Completed 로그로 1줄 요약 이관
+- Phase 2 (선택자) → Phase 3 (스크롤) → Phase 4 (UX 토스트)
+- 각 Phase 종료 시 Completed 로그로 1줄 요약 이관 — Phase 1은 완료되어 Completed
+  로그에 기록됨
 
 ---
 

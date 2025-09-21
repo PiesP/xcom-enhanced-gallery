@@ -1,3 +1,12 @@
+### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — Phase 1(보안/네트워크)
+
+- TwitterTokenExtractor에 동의(Consent) 게이트 추가: 동의 전 추출 차단, 일시
+  메모리 사용, 민감 로그 마스킹 유지
+- Userscript 어댑터에 네트워크 allowlist(기본 Off) 도입:
+  x.com/api.twitter.com/pbs.twimg.com/video.twimg.com 허용, 차단 시 알림/로그
+- 테스트: 동의 Off/On 흐름, 로그 스냅샷(토큰 노출 금지), allow/deny 케이스 및
+  다운로드 차단/허용 검증
+
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
 | RED 감소 목표 | 현재 (2025-09-18) | 1차 목표 | 2차 목표 | 최종 안정화 |
