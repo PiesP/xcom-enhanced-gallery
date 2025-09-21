@@ -99,9 +99,13 @@ export class SelectorRegistry implements ISelectorRegistry {
     action: keyof typeof STABLE_SELECTORS.ACTION_BUTTONS,
     container?: QueryContainer
   ): Element | null {
-    const selector = this.selectors.ACTION_BUTTONS[action];
-    if (!selector) return null;
-    return this.findFirst([selector], container);
+    const primary = this.selectors.ACTION_BUTTONS[action];
+    if (!primary) return null;
+
+    // data-testid 1순위 + aria-label/role 기반 보조 셀렉터
+    const secondary = getActionButtonFallbacks(action);
+    const candidates = [primary, ...secondary];
+    return this.findFirst(candidates, container);
   }
 }
 
@@ -111,3 +115,31 @@ export function createSelectorRegistry(options: SelectorRegistryOptions = {}): S
 
 // 타입 안전성을 위한 안정적 export 타입(테스트에서 재사용)
 // (no-op)
+
+// 내부 유틸: 액션 버튼 보조 셀렉터 집합
+// data-testid가 제거/변경되어도 aria-label/role 조합으로 탐색 가능해야 함
+// CSS4의 대소문자 무시 플래그(i)를 사용해 레이블 변형에 대응
+// JSDOM/브라우저 지원 범위에서 안전한 속성 부분 일치 선택자를 사용
+export function getActionButtonFallbacks(
+  action: keyof typeof STABLE_SELECTORS.ACTION_BUTTONS
+): readonly string[] {
+  switch (action) {
+    case 'like':
+      return ['button[aria-label*="Like" i]', '[role="button"][aria-label*="Like" i]'];
+    case 'retweet':
+      return [
+        '[aria-label*="Retweet" i]',
+        '[aria-label*="Repost" i]',
+        '[role="button"][aria-label*="Retweet" i]',
+        '[role="button"][aria-label*="Repost" i]',
+      ];
+    case 'reply':
+      return ['[aria-label*="Reply" i]', '[role="button"][aria-label*="Reply" i]'];
+    case 'share':
+      return ['[aria-label*="Share" i]', '[role="button"][aria-label*="Share" i]'];
+    case 'bookmark':
+      return ['[aria-label*="Bookmark" i]', '[role="button"][aria-label*="Bookmark" i]'];
+    default:
+      return [] as const;
+  }
+}

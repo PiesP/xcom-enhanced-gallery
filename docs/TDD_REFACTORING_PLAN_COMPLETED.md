@@ -389,6 +389,13 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
     (findFirst/findAll/findClosest)
   - 결과: 폴백 전략의 회복력 향상, 전체 테스트/빌드 GREEN 유지
 
+- secondary selectors(보조 셀렉터) 추가 완료(GREEN)
+  - SelectorRegistry.queryActionButton에 aria-label/role 기반 보조 셀렉터를
+    도입하여 data-testid 부재 시에도 액션 버튼 탐지가 가능하도록 보강
+  - 케이스 인센서티브 속성 선택자([aria-label i]) 사용, role=button 병행 지원
+  - 테스트 추가: selector-registry.secondary-selectors — 데이터 속성 제거
+    상황에서도 탐지 성공을 가드
+
 2025-09-21: EPIC A 종료 — 접근성 강건화(A11y) 완료 요약
 
 - Focus Trap 표준화 완료: `useFocusTrap` 훅을 모달/오버레이(KeyboardHelpOverlay,
