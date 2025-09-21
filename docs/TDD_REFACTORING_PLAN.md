@@ -5,7 +5,8 @@
 분리합니다.
 
 업데이트: 2025-09-22 — 활성 Epic 1건 진행(EPIC-C: Userscript 하드닝 v3). 직전
-사이클 EPIC-B 종료 항목은 Completed로 이관됨.
+사이클 EPIC-B 종료 항목은 Completed로 이관됨. A11y-001(모션 가드) 1차 적용 및
+Refactoring Tests 토글 도입까지 완료(Completed 로그 참조).
 
 직전 사이클 Epic(유저스크립트 하드닝 v1) Phases 1–4 전체 완료(Completed 로그
 이관)
@@ -45,8 +46,11 @@
 
 스코프(What)
 
-- 모션 접근성 가드: prefers-reduced-motion 전역 유틸/토큰 레벨 적용
-- 리팩토링 테스트 재활성화(단건 검증 후), 스타일 Hex 사용 임계 상향 계획 수립
+- 모션 접근성 가드: prefers-reduced-motion 전역 유틸/토큰 레벨 적용(1차 적용
+  완료)
+- 리팩토링 테스트 재활성화(단건 검증 후) — 토글 경로 도입 완료, 단계적 GREEN
+  확인 예정
+- 스타일 Hex 사용 임계 상향 계획 수립(문서화 중심)
 
 상태 메모(2025-09-22)
 
@@ -54,15 +58,11 @@
   메타데이터 동기화, 네트워크 정책 기본값 강화
 - Gallery-Perf-001(간단 윈도우링) 완료 — Completed 로그 참조. 스코프/AC에서 관련
   항목 제거.
-- A11y-001 진행: CSS 애니메이션 정적 스캔 테스트 추가
-  (`test/unit/styles/animations.reduced-motion.scan.test.ts`) — 애니메이션 선언
-  파일에 대해 prefers-reduced-motion 가드 유무를 검사하는 RED 가드 강화. 현재
-  전체 스위트 GREEN 유지.
-- Tests-Refactor-001 진행: 환경 변수(VITEST_INCLUDE_REF_TESTS=1)로 개별 실행
-  검증 경로 추가. `event-manager-integration` 테스트는
-  `@shared/services/UnifiedEventManager` 경로 부재로 import 해석 실패하여 여전히
-  exclude 상태 유지. 후속: UnifiedEventManager 도입 또는 테스트 경로 정합화
-  검토.
+- A11y-001: CSS 애니메이션 정적 스캔 테스트 추가 및 CSS 보정으로 1차 완성. 전체
+  스위트 GREEN 유지.
+- Tests-Refactor-001: 환경 변수(VITEST_INCLUDE_REF_TESTS=1) 토글·vitest alias로
+  개별 실행 경로 도입 완료. 테스트 본체 재활성화는 단계적 진행(개별 GREEN 확인
+  후 exclude 제거).
 
 Acceptance(측정 기준)
 
@@ -77,15 +77,17 @@ Acceptance(측정 기준)
 5. A11y-001 — 모션 가드
 
 - 변경: CSS 레이어/유틸로 prefers-reduced-motion 가드 믹스인(or 토큰) 추가 및
-  적용 가이드
+  적용 가이드(1차 완료)
 - 테스트: 애니메이션 선언 파일이 가드를 포함하는지 정적 검사(화이트리스트 예외
-  허용)
+  허용) — 테스트 및 CSS 보정 완료
 
 6. Tests-Refactor-001 — 제외 테스트 재활성화 플랜
 
 - 절차: 개별 파일 단독 실행으로 GREEN 확인 → vitest.config.ts exclude에서 제거
 - 파일: test/refactoring/event-manager-integration.test.ts,
   test/refactoring/service-diagnostics-integration.test.ts
+- 현황: test 전용 어댑터 경로 및 조건부 alias 도입 완료. 본체 재활성화는 각 파일
+  GREEN 확인 후 순차 진행.
 
 7. Style-Guard-001 — Hex 직접 사용 임계 상향 계획(단계적)
 
