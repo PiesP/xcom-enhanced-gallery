@@ -325,19 +325,14 @@ export function createNavigationLandmark(element: HTMLElement, type = 'navigatio
  * 라이브 영역 공지
  * WCAG 4.1.3 Status Messages
  */
+import { announcePolite, announceAssertive } from './live-region-manager';
+
 export function announceLiveMessage(message: string, politeness = 'polite'): void {
-  const liveRegion = document.createElement('div');
-  liveRegion.setAttribute('aria-live', politeness);
-  liveRegion.setAttribute('aria-atomic', 'true');
-  liveRegion.style.cssText =
-    'position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;';
-
-  document.body.appendChild(liveRegion);
-  liveRegion.textContent = message;
-
-  setTimeout(() => {
-    document.body.removeChild(liveRegion);
-  }, 1000);
+  if (politeness === 'assertive') {
+    announceAssertive(message);
+  } else {
+    announcePolite(message);
+  }
 }
 
 /**
@@ -632,25 +627,11 @@ export function isValidHeadingStructure(container: HTMLElement): boolean {
  * 추가 WCAG 표준 용어 함수들
  */
 export function announceToScreenReader(message: string): void {
-  const announcement = document.createElement('div');
-  announcement.setAttribute('aria-live', 'polite');
-  announcement.setAttribute('aria-atomic', 'true');
-  announcement.className = 'sr-only';
-  announcement.textContent = message;
-
-  document.body.appendChild(announcement);
-  setTimeout(() => document.body.removeChild(announcement), 1000);
+  announcePolite(message);
 }
 
 export function announceUrgentToScreenReader(message: string): void {
-  const announcement = document.createElement('div');
-  announcement.setAttribute('aria-live', 'assertive');
-  announcement.setAttribute('aria-atomic', 'true');
-  announcement.className = 'sr-only';
-  announcement.textContent = message;
-
-  document.body.appendChild(announcement);
-  setTimeout(() => document.body.removeChild(announcement), 1000);
+  announceAssertive(message);
 }
 
 export function setARIALabel(element: HTMLElement, label: string): void {
