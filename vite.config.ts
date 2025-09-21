@@ -40,11 +40,14 @@ function userscriptHeader(flags: BuildFlags): string {
     `// @description  ${pkg.description || ''}\n` +
     `// @author       PiesP\n` +
     `// @license      MIT\n` +
+    `// @match        https://x.com/*\n` +
     `// @match        https://*.x.com/*\n` +
     `// @grant        GM_setValue\n` +
     `// @grant        GM_getValue\n` +
     `// @grant        GM_download\n` +
     `// @grant        GM_xmlhttpRequest\n` +
+    `// @connect      x.com\n` +
+    `// @connect      api.twitter.com\n` +
     `// @connect      pbs.twimg.com\n` +
     `// @connect      video.twimg.com\n` +
     `// @run-at       document-idle\n` +

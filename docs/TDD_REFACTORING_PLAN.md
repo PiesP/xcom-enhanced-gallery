@@ -28,16 +28,73 @@
 
 ## 2. 활성 Epic 현황
 
-- 현재 활성 Epic 없음 — 최근 EPIC-B(Userscript 폴백 하드닝 v2) 종료. 신규 Epic
-  제안은 백로그에 등록 후 합의 시 활성화합니다.
+- 활성 Epic 1건 — EPIC-C(Userscript 하드닝 v3). 직전 EPIC-B 종료 후 후속 경량
+  하드닝과 운영 안전성 개선에 집중합니다.
 
 ---
 
 ## 3. 활성 Epic 상세
 
-<!-- EPIC-A(스타일 하드닝 v1)는 완료되어 Completed 로그로 이관되었습니다. -->
+### EPIC-C — Userscript 하드닝 v3 (경량·신뢰성)
 
-<!-- (이전 활성 Epic 섹션은 Epic 종료에 따라 Completed 로그로 이관되었습니다) -->
+목표(Outcome)
+
+- 배포 신뢰성 강화: 헤더/릴리즈 메타데이터 정합성, 네트워크 권한/정책 일치
+- UX 품질 유지하며 성능/접근성 리스크 완화(가벼운 가드 수준)
+- RED 가드 유지: PC 전용 입력, 벤더 getter 정책, 디자인 토큰 일관성
+
+스코프(What)
+
+- 헤더 정합성: 루트 도메인 매칭 및 @connect 도메인 정리
+- 릴리즈 메타데이터 동기화: package.json.version ↔ release/metadata.json
+- 네트워크 정책 기본값 강화(Prod): allowlist 활성 + 차단 알림
+- 갤러리 긴 목록 렌더 성능 가드: 간단 윈도우링(virtualization, 옵션)
+- 모션 접근성 가드: prefers-reduced-motion 전역 유틸/토큰 레벨 적용
+- 리팩토링 테스트 재활성화(단건 검증 후), 스타일 Hex 사용 임계 상향 계획 수립
+
+Acceptance(측정 기준)
+
+- 빌드 산출물 validator 통과 + Userscript 헤더 검사 추가 항목 녹색
+- 테스트: 신규/갱신 테스트 GREEN, 제외 테스트 단계적 재활성화(개별 실행 GREEN
+  확인)
+- 성능 가드: 긴 목록에서 렌더된 DOM 아이템 수가 뷰포트 ±N 범위로
+  제한됨(스냅샷/상수 N)
+- 접근성 가드: 애니메이션 존재 파일의 “prefers-reduced-motion” 고려율 100%(허용
+  리스트 제외 0)
+
+작업 분해(Tasks · TDD)
+
+4. Gallery-Perf-001 — 간단 윈도우링
+
+- 변경: VerticalGalleryView에 렌더 윈도우(뷰포트 기준 ±N, 기본 N=5) 옵션
+  추가(기본 ON)
+- 테스트: 아이템 100개 시 DOM 렌더 수가 (2N+1)+ε 내로 유지되는지 스냅샷/카운트로
+  검증
+- 주의: 키보드 네비/다운로드 동작은 기존과 동일해야 함(회귀 테스트 포함)
+
+5. A11y-001 — 모션 가드
+
+- 변경: CSS 레이어/유틸로 prefers-reduced-motion 가드 믹스인(or 토큰) 추가 및
+  적용 가이드
+- 테스트: 애니메이션 선언 파일이 가드를 포함하는지 정적 검사(화이트리스트 예외
+  허용)
+
+6. Tests-Refactor-001 — 제외 테스트 재활성화 플랜
+
+- 절차: 개별 파일 단독 실행으로 GREEN 확인 → vitest.config.ts exclude에서 제거
+- 파일: test/refactoring/event-manager-integration.test.ts,
+  test/refactoring/service-diagnostics-integration.test.ts
+
+7. Style-Guard-001 — Hex 직접 사용 임계 상향 계획(단계적)
+
+- 현재: 경고/허용 수치 기반(Phase 6 테스트)
+- 계획: 릴리스마다 허용 수치 점진 하향(예: 25 → 15 → 5 → 0) 로드맵을
+  README/docs에 표기
+
+완료 정의(DoD)
+
+- typecheck/lint/test/build 모두 GREEN, postbuild validator 통과
+- Epic 산출물/결과 요약을 Completed 로그로 이관(변경 파일/테스트/지표 링크 포함)
 
 ---
 

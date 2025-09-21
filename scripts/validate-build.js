@@ -6,9 +6,10 @@
  * UserScript의 기본적인 유효성을 검사합니다.
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync } from 'fs';
 import { resolve, basename } from 'path';
 import { gzipSync } from 'zlib';
+import { createHash } from 'crypto';
 
 function validateOne(scriptPath, { requireNoVitePreload = false } = {}) {
   const content = readFileSync(scriptPath, 'utf8');
@@ -157,6 +158,53 @@ function validateUserScript() {
   console.log(`📄 Files: \n  - ${prodPath}\n  - ${devPath}`);
   console.log(`📏 Size (raw): ${(rawBytes / 1024).toFixed(2)} KB`);
   console.log(`📦 Size (gzip): ${(gzBytes / 1024).toFixed(2)} KB`);
+
+  // ===== Release-001: 릴리즈 메타데이터 동기화 =====
+  try {
+    const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8'));
+    const releaseDir = resolve(process.cwd(), 'release');
+    const metaPath = resolve(releaseDir, 'metadata.json');
+
+    const content = readFileSync(prodPath);
+    const md5 = createHash('md5').update(content).digest('hex');
+    const sha256 = createHash('sha256').update(content).digest('hex');
+    const fileSize = content.length;
+
+    const expectedFile = 'xcom-enhanced-gallery.user.js';
+    const files = [expectedFile, 'checksums.txt', 'RELEASE_NOTES.md', 'metadata.json'];
+
+    const next = {
+      version: String(pkg.version),
+      buildDate: new Date().toISOString(),
+      fileSize,
+      fileSizeKB: Math.round(fileSize / 1024),
+      checksums: { md5, sha256 },
+      files,
+    };
+
+    let prev;
+    if (existsSync(metaPath)) {
+      try {
+        prev = JSON.parse(readFileSync(metaPath, 'utf8'));
+      } catch {
+        prev = undefined;
+      }
+    }
+
+    if (
+      !prev ||
+      prev.version !== next.version ||
+      prev.fileSize !== next.fileSize ||
+      prev.checksums?.sha256 !== next.checksums.sha256
+    ) {
+      writeFileSync(metaPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+      console.log('📝 Updated release/metadata.json');
+    } else {
+      console.log('ℹ️ release/metadata.json up-to-date');
+    }
+  } catch (e) {
+    console.warn('⚠️ Release metadata sync skipped or failed:', e?.message || e);
+  }
 
   return true;
 }

@@ -64,7 +64,17 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
-2025-09-22: EPIC-B — Userscript 폴백 하드닝 v2 (Epic 종료)
+2025-09-22: EPIC-B — Userscript 폴백 하드닝 v2 (Epic 종료) 2025-09-22: EPIC-C —
+Userscript 하드닝 v3 (1차 완료)
+
+- US-Header-001: Userscript 헤더 정합성 강화 — `@match https://x.com/*` 추가 및
+  @connect 도메인 정리(`x.com`, `api.twitter.com`, `pbs.twimg.com`,
+  `video.twimg.com`). 산출물 validator 확장으로 헤더 필수 항목 가드 강화.
+- Release-001: 빌드 검증 스크립트에 `release/metadata.json` 자동 동기화 추가 —
+  `package.json.version` 기준으로 version/buildDate/size/checksums 갱신.
+- NetPolicy-001: 프로덕션 기본 네트워크 정책 활성화 — allowlist를 헤더와 동기화,
+  차단 시 onerror(status 0) 보장 및 알림 옵션 유지. 테스트 스위트의 사용자
+  스크립트 어댑터 계약과 일치.
 
 - 최종 상태: 폴백 xhr/download 성공/비-2xx/네트워크 오류/타임아웃/abort 시나리오
   GREEN, 에러 메시지 포맷(`http_<status>`)·토스트 라우팅 정책(announce/both
