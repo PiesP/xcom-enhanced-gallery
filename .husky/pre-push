@@ -8,7 +8,8 @@ npm run typecheck || {
   exit 1
 }
 
-npm run test || {
+# 기본적으로 리팩터링 통합 테스트는 제외 (환경에 남은 토글 플래그 무시)
+VITEST_INCLUDE_REF_TESTS=0 npm run test || {
   echo "❌ Tests failed"
   exit 1
 }

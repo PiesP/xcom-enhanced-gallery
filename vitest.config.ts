@@ -19,6 +19,19 @@ export default defineConfig({
       '@features': resolve(__dirname, './src/features'),
       '@shared': resolve(__dirname, './src/shared'),
       '@assets': resolve(__dirname, './src/assets'),
+      // 리팩터링 통합 테스트 호환을 위한 조건부 alias
+      ...(process.env.VITEST_INCLUDE_REF_TESTS === '1'
+        ? {
+            '@shared/services/UnifiedEventManager': resolve(
+              __dirname,
+              './test/_adapters/UnifiedEventManager.ts'
+            ),
+            '@shared/services/UnifiedServiceDiagnostics': resolve(
+              __dirname,
+              './test/_adapters/UnifiedServiceDiagnostics.ts'
+            ),
+          }
+        : {}),
     },
   },
 
@@ -52,8 +65,13 @@ export default defineConfig({
       '**/dist/**',
       '**/e2e/**',
       // 임시 비활성화: 구현되지 않은 의존성이 있는 테스트들
-      'test/refactoring/event-manager-integration.test.ts',
-      'test/refactoring/service-diagnostics-integration.test.ts',
+      // 환경 변수로 임시 포함을 허용: VITEST_INCLUDE_REF_TESTS=1 인 경우 아래 2개 항목을 제외 목록에서 제거
+      ...(process.env.VITEST_INCLUDE_REF_TESTS === '1'
+        ? []
+        : [
+            'test/refactoring/event-manager-integration.test.ts',
+            'test/refactoring/service-diagnostics-integration.test.ts',
+          ]),
     ],
 
     // 커버리지 설정
