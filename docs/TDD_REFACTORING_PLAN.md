@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 1건(A11y)
+업데이트: 2025-09-21 — 활성 Epic 1건(A11y 완료)
 
 ---
 
@@ -24,45 +24,131 @@
 
 ## 2. 활성 Epic 현황
 
-아래 1개 Epic을 즉시 진행합니다. 모든 작업은 TDD(RED→GREEN→REFACTOR)와 엄격한
-벤더 getter/디자인 토큰/PC 전용 입력 원칙을 준수합니다.
+다음 Epic 1건이 활성화되었습니다. 직전 사이클의 A11y Epic은 완료되어 Completed
+로그로 이관되었습니다. 추가 후보는 `docs/TDD_REFACTORING_BACKLOG.md`를 참고해
+선정합니다.
 
-### Epic A: 접근성 강건화 (A11y)
+- Epic: 유저스크립트 하드닝 v1 — 보안/선택자/성능(스크롤)/메모리 안정화
 
-목표
+---
 
-- 포커스 트랩의 일관 적용, 라이브 리전 고도화, 주요 위젯의 ARIA 속성 검증 자동화
+## 3. Epic: 유저스크립트 하드닝 v1 — 보안/선택자/성능
 
-선행 맥락
+배경: dist 산출물(`dist/xcom-enhanced-gallery*.user.js(.map)`)과 소스 트리 점검
+결과, 다음 리스크가 우선 개선 대상임을 확인했습니다.
 
-- 가용 컴포넌트/유틸: `shared/hooks/useFocusTrap.ts`,
-  `shared/utils/focusTrap.ts`, `shared/utils/accessibility/*`,
-  `shared/components/ui/Toast/*`, `shared/components/ui/MediaCounter/*`
+- 보안: TwitterTokenExtractor 사용 시 사용자 토큰 취급의 민감도, GM\_\* 네트워크
+  호출의 도메인 범위
+- 호환성: X.com DOM 변화에 따른 SelectorRegistry 의존성 민감도
+- 성능: wheel 이벤트 처리 빈도 과다 가능성(useGalleryScroll), 대량 로드시 메모리
+  압력(ObjectURL)
+- UX(경량): 대량 다운로드 시 진행 가시성 부족(토스트 기반 경량 진행 표시)
 
-옵션 비교(요약)
+목표(Outcome/Success Criteria):
 
-- 단일 훅 표준화 vs 유틸+훅 혼용
-  - 단일 훅 표준화: 장점 — 일관성/테스트 집중. 단점 — 특수 케이스 유연성 감소
-  - 혼용 유지: 장점 — 세밀 제어. 단점 — 테스트/사용 기준이 분산
+- 토큰 취급
+  - 사용자 동의(Consent) 없이는 토큰 추출/사용 경로 차단(기본값 Off)
+  - 토큰은 세션 메모리 내 일시 사용만 허용(영구 저장/로그 노출 금지)
+  - 테스트: 토큰 영속화/로그 유출 정적 가드 + 단위 테스트 RED→GREEN
+- 네트워크/GM\_ 사용
+  - Userscript 어댑터에서 허용 도메인(allowlist) 외 호출 기본 차단, 로깅/토스트
+    알림
+  - 테스트: 허용/차단 케이스 단위 테스트, 설정 토글 e2e 경량 테스트
+- 선택자 회복력
+  - SelectorRegistry를 데이터 속성/역할 기반 보조 셀렉터로 보강, 1차 실패 시
+    폴백
+  - 테스트: 의도적으로 DOM 구조가 일부 변한 가짜 DOM에서 추출 성공률 90%+
+- 성능(스크롤)
+  - useGalleryScroll에 스로틀(또는 rAF 스케줄링) 적용으로 동일 입력 대비 핸들러
+    호출 50% 이상 감소
+  - 테스트: 가상 휠 이벤트 폭주 시 호출 수/프레임 기준 감소 검증(가짜 타이머)
+- 메모리(Object URL) — 완료됨(계획서에서 제외)
+  - 메모: object-url-manager 도입 및 갤러리 cleanup 연동은 완료되어 Completed
+    로그로 이관됨
+- UX(경량)
+  - UnifiedToastManager 기반 진행률 토스트(선택적 표시)로 대량 다운로드 가시성
+    개선
+  - 테스트: 진행 이벤트 → 토스트 업데이트/완료/에러 흐름 스냅샷
 
-선택안
+범위(Scope)와 변경 지점:
 
-- 훅 표준화를 기본으로 하고, 유틸은 `accessibility-utils` 경유 생성만 허용(직접
-  import 금지)
+- 보안
+  - `src/features/settings/services/TwitterTokenExtractor.ts`: 동의 게이트 추가,
+    영속 저장 금지, 민감 정보 로그 마스킹
+  - `src/shared/external/userscript/adapter.ts`: GM\_\* 호출
+    allowlist/deny-by-default, 진단 로그 수준 정리
+- 호환성
+  - `src/shared/dom/SelectorRegistry.ts`: 다중 전략(데이터 속성/role 기반) 보조
+    셀렉터 추가, 폴백 순서/진단 로그 강화
+- 성능
+  - `src/features/gallery/hooks/useGalleryScroll.ts`: 스로틀/AnimationFrame
+    스케줄러 적용, defaultPrevented 기준 최소화
+- UX(경량)
+  - `src/shared/services/BulkDownloadService.ts` + `UnifiedToastManager`:
+    진행률/잔여/실패 재시도 토스트(옵션)
 
-단계별 TDD 과제
+비범위(Out of Scope):
 
-— (해당 Epic의 선행 리팩토링 항목은 완료되어 Completed 로그로 이관되었습니다)
+- 모바일/터치 입력 대응(프로젝트 원칙상 비대상)
+- 외부 Sanitizer 라이브러리 도입(현재 코드베이스는
+  innerHTML/dangerouslySetInnerHTML 사용 없음 — 정적 가드 테스트로 충분)
 
-수용 기준(샘플)
+TDD 작업 목록(RED → GREEN → REFACTOR):
 
-- 키보드만으로 모든 활성 레이어 진입/탈출 가능(Escape 복귀, Tab 순환 검증)
-- 주요 실시간 위젯은 적절한 aria-live 채널로 공지됨(중복 억제)
-- 컬러 대비 검사는 `accessibility-utils`의 계산 유틸 기준 PASS
+1. 보안 — 토큰/네트워크
+   - RED: 토큰 영속화 금지 정적 가드 테스트(금지 API:
+     localStorage/sessionStorage/IndexedDB에 토큰 키값), 로그 마스킹 스냅샷
+   - GREEN: TwitterTokenExtractor 동의 게이트/일시 메모리 보관 구현, logger
+     마스킹
+   - RED: Userscript 어댑터 allowlist 테스트(허용: x.com, pbs.twimg.com,
+     video.twimg.com / 차단: 기타)
+   - GREEN: GM\_\* 래퍼에 allowlist/차단 사유 토스트/로그 추가, 설정 기반 예외
+     토글(기본 꺼짐)
 
-리스크/완화
+2. 호환성 — SelectorRegistry 폴백
+   - RED: 1차 셀렉터 실패 시 보조 셀렉터로 성공하는 시나리오 테스트(가짜 DOM)
+   - GREEN: 데이터 속성/role 기반 보조 셀렉터/우선순위 구현, 진단 로그 정리
+   - REFACTOR: 셀렉터 매핑을 상수 테이블로 분리하고 테스트 픽스처 공유화
 
-- 이중 트랩 활성화: 훅/유틸 동시 사용 방지 가드와 테스트 추가
+3. 성능 — 스크롤 스로틀
+   - RED: 연속 wheel 이벤트 100회 시 현재 호출 수 기준 대비 50%+ 감소 기대치
+     테스트(가짜 타이머)
+   - GREEN: useGalleryScroll에 스로틀/또는 rAF 적용, 불필요한 preventDefault
+     축소
+   - REFACTOR: 스로틀 유틸 공용화(`@shared/utils/performance`)
+
+4. UX — 진행률 토스트(옵션)
+
+- RED: BulkDownloadService 진행 이벤트 → 토스트 업데이트 스냅샷
+- GREEN: UnifiedToastManager 통합, 사용자 설정 옵션으로 On/Off
+- REFACTOR: 메시지/아이콘 토큰화 및 i18n 키 정리
+
+우선순위(남은 작업 실행 순서):
+
+1. 보안/네트워크(토큰 동의/마스킹, Userscript allowlist) → 2) 선택자 폴백 강화
+   → 3) 스크롤 스로틀 → 4) UX 진행률 토스트
+
+리스크/완화:
+
+- 네트워크 차단에 따른 기능 회귀 가능 → 설정 플래그로 단계적 롤아웃(기본 Off),
+  로그로 false-positive 모니터링
+- 선택자 보강의 성능 영향 → 폴백은 1차 실패시에만 실행, 진단 레벨은 Dev에서만
+  상세
+- 스로틀로 인한 사용자 체감 변화 → 임계값/모드(스로틀 vs rAF) 실험 플래그 제공
+
+품질 게이트 정합성 확인 체크(병합 전):
+
+- TypeScript strict, 벤더/Userscript 접근은 getter/adapter 경유(직접 import
+  금지)
+- PC 전용 입력 이벤트 범위 유지(터치/포인터 금지)
+- 테스트: Vitest + JSDOM, 벤더/GM\_\* 모킹으로 격리 검증
+- 빌드: dev/prod 빌드 및 산출물 validator 통과
+
+롤아웃 계획(제안):
+
+- Phase 1 (보안·네트워크) → Phase 2 (선택자) → Phase 3 (스크롤) → Phase 4 (UX
+  토스트)
+- 각 Phase 종료 시 Completed 로그로 1줄 요약 이관
 
 ---
 

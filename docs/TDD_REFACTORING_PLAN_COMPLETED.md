@@ -23,6 +23,13 @@ PLAN — 활성 계획 정돈(표기 수정 및 Epic C 섹션 제거)
 - 활성 Epic 카운트는 1건(A11y)로 갱신되었습니다. 계획서는 진행 중 항목만 간결
   유지합니다.
 
+2025-09-21: MEM-OBJ-URL — Object URL 누수 0 계획 항목 이관(완료)
+
+- 객체 URL 생성/해제 매니저(object-url-manager) 도입·정착으로 생성↔해제 균형
+  보장, 갤러리 cleanup 경로 연동까지 완료. 활성 계획서의 “메모리(Object URL)”
+  항목은 완료로 판단되어 본 Completed 로그로 이관함. 후속은 통계/로깅 레벨
+  조정(리팩터)만 후보.
+
 2025-09-21: PLAN — 활성 Epic 갱신(2건 유지)
 
 - Epic B(스타일/테마 정합성) 모든 단계 GREEN 완료에 따라 활성 계획서에서 Epic B
@@ -356,6 +363,21 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 +1% 유지(P6), 마지막 주석/alias 정리(P7)로 마이그레이션 마무리.
 사이즈/접근성/회귀/번들 메트릭 모두 목표 달성.
 
+2025-09-21: EPIC A 종료 — 접근성 강건화(A11y) 완료 요약
+
+- Focus Trap 표준화 완료: `useFocusTrap` 훅을 모달/오버레이(KeyboardHelpOverlay,
+  SettingsModal modal 모드 등)에 일관 적용. ESC 복귀/Tab 순환/포커스 복원 가드
+  GREEN.
+- 라이브 리전 고도화: `live-region-manager` 싱글톤(polite/assertive) 확립,
+  큐/중복 억제/재공지 토글. UnifiedToastManager 라우팅
+  정책(info/success→live-only, warning→toast-only, error→both) 적용 및 테스트
+  GREEN.
+- ARIA 검증: SettingsModal에 role="dialog"/aria-modal/labelledby/desc 적용,
+  KeyboardHelpOverlay 동일. MediaCounter role="progressbar"와 valuetext 정합성
+  가드 GREEN.
+- 문서/가이드 동기화: 벤더 getter/PC 전용 입력/디자인 토큰 원칙 재확인, 활성
+  계획서에서 Epic A 제거 및 본 완료 로그에 요약 기록.
+
 2025-09-21: A11y-FOCUS-TRAP — ModalShell에 focus trap 통합 및 가드 테스트 추가
 (Epic A 단계 일부 완료)
 
@@ -379,6 +401,17 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
   추가(`test/unit/shared/utils/accessibility.live-region.test.ts`).
 - announce 헬퍼는 `live-region-manager`의 `announcePolite/announceAssertive`로
   위임.
+
+2025-09-21: A11y-ANNOUNCE-ROUTING — Toast → 라이브 리전 라우팅 일관화 (Epic A
+일부 완료)
+
+- 정책 정립: 기본 라우팅을 info/success → live-only, warning → toast-only, error
+  → both(토스트 + assertive 라이브 리전)으로 규정.
+- UnifiedToastManager가 직접 DOM 텍스트 변경 대신 live-region-manager의
+  `announcePolite/announceAssertive`를 사용하도록 통합.
+- 단위 테스트 보강: MutationObserver 기반으로 polite/assertive 채널 분리와 큐
+  처리 타이밍을 검증 (`test/unit/a11y/announce-routing.test.ts`).
+- 접근성 배럴에 announce API 재export 누락을 보완하여 공개 표면 일관성 유지.
 
 2025-09-21: STYLE/THEME Epic B — P1–P2 완료 (토큰 위반 탐지 강화 및 Toolbar 토큰
 정합)
