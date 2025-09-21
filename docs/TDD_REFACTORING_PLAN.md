@@ -33,9 +33,8 @@
   - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리 단위 테스트
     보강 및 회귀 가드, 서비스 계층의 비-2xx 표준화
   - 상태: In Progress — xhr/download 폴백 GREEN, 서비스 비-2xx 표준화 완료
-    (Completed에 이관). REFACTOR 하위 과제 중 다음 두 항목 완료(Completed에
-    이관): 에러 메시지 포맷 통일(http\_<status>), 토스트 라우팅 정책 가드. 남은
-    작업: 로깅 상관관계 보강만 진행 예정.
+    (Completed에 이관). REFACTOR 하위 과제(에러 메시지 포맷 통일, 토스트 라우팅
+    정책 가드, 로깅 상관관계 보강) 모두 완료되어 Completed에 이관되었습니다.
 
 ---
 
