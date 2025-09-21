@@ -41,7 +41,7 @@
   호출의 도메인 범위
 - 호환성: X.com DOM 변화에 따른 SelectorRegistry 의존성 민감도
 - 성능: wheel 이벤트 처리 빈도 과다 가능성(useGalleryScroll), 대량 로드시 메모리
-  압력(ObjectURL)
+  압력(ObjectURL) — 완료됨(완료 로그 이관)
 - UX(경량): 대량 다운로드 시 진행 가시성 부족(토스트 기반 경량 진행 표시)
 
 목표(Outcome/Success Criteria):
@@ -126,6 +126,46 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 2. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2)
 3. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
 4. UX(경량) — 진행률 토스트 통합 (Phase 4)
+
+### Phase별 실행 계획(제안)
+
+Phase 1 — 보안/네트워크
+
+- Deliverables
+  - TwitterTokenExtractor: 사용자 동의(Consent) 게이트 추가, 토큰 일시 메모리
+    보관, 로그 마스킹
+  - Userscript 어댑터: 허용 도메인 allowlist(기본: x.com, pbs.twimg.com,
+    video.twimg.com), deny-by-default, 차단 사유 토스트/로그
+- Tests (RED → GREEN)
+  - 정적 가드: 토큰 영속화 API(localStorage/sessionStorage/IndexedDB) 사용 금지
+    스캔
+  - 단위: 동의 Off 시 추출 경로 차단, 동의 On 시 일시 사용 후 폐기, 민감 로그
+    마스킹 스냅샷
+  - 단위: allowlist 허용/차단 케이스, 설정 토글 on/off
+
+Phase 2 — 선택자 폴백
+
+- Deliverables
+  - SelectorRegistry: 데이터 속성/role 기반 보조 셀렉터 추가 및 폴백 우선순위
+    확정, 진단 로그 정리
+- Tests (RED → GREEN)
+  - 가짜 DOM 변형 시 1차 실패 → 보조 셀렉터로 추출 성공 가드(성공률 ≥ 90%)
+
+Phase 3 — 성능(스크롤)
+
+- Deliverables
+  - useGalleryScroll: 스로틀 또는 rAF 스케줄링 적용, 불필요한 preventDefault
+    축소
+- Tests (RED → GREEN)
+  - 가짜 타이머 기반 wheel 100회 폭주 시 핸들러 호출 수 50%+ 감소 검증
+
+Phase 4 — UX(경량)
+
+- Deliverables
+  - UnifiedToastManager: BulkDownload 진행률 토스트(진행/잔여/실패 재시도) 옵션
+    탑재
+- Tests (RED → GREEN)
+  - 진행 이벤트 → 토스트 업데이트/완료/에러 흐름 스냅샷 및 설정 On/Off 가드
 
 리스크/완화:
 
