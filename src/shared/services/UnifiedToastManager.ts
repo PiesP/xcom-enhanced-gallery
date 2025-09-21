@@ -33,6 +33,8 @@ export interface ToastItem {
   duration?: number;
   actionText?: string;
   onAction?: () => void;
+  /** Optional metadata for diagnostics (e.g., correlationId) */
+  meta?: Record<string, unknown>;
 }
 
 export interface ToastOptions {
@@ -42,6 +44,8 @@ export interface ToastOptions {
   duration?: number;
   actionText?: string;
   onAction?: () => void;
+  /** Optional metadata for diagnostics (e.g., correlationId) */
+  meta?: Record<string, unknown>;
   /**
    * Routing override:
    * - 'live-only': announce to live region only (no toast list)
@@ -102,6 +106,7 @@ export class ToastManager {
       ...(options.duration !== undefined && { duration: options.duration }),
       ...(options.actionText && { actionText: options.actionText }),
       ...(options.onAction && { onAction: options.onAction }),
+      ...(options.meta && { meta: options.meta }),
     };
 
     // Routing policy with override

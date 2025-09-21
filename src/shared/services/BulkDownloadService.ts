@@ -10,6 +10,7 @@ import {
   logger,
   createCorrelationId,
   createScopedLoggerWithCorrelation,
+  logFields,
 } from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
@@ -35,6 +36,8 @@ export interface BulkDownloadOptions {
   retries?: number; // retry attempts
   /** 진행률 토스트 표시 여부 (상위에서 설정 주입) */
   showProgressToast?: boolean;
+  /** 상관관계 식별자(외부에서 주입 가능) */
+  correlationId?: string;
 }
 
 export interface DownloadResult {
@@ -94,6 +97,8 @@ export class BulkDownloadService {
   private static readonly DEFAULT_BACKOFF_BASE_MS = 200;
   // 진행률 토스트 ID (옵션)
   private progressToastId: string | null = null;
+  // 현재 세션 상관관계 ID (취소 토스트 등에서 메타 연동)
+  private sessionCorrelationId: string | undefined;
 
   private async sleep(ms: number, signal?: AbortSignal): Promise<void> {
     if (ms <= 0) return;
@@ -216,8 +221,9 @@ export class BulkDownloadService {
     mediaItems: Array<MediaInfo | MediaItem> | readonly (MediaInfo | MediaItem)[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
-    const correlationId = createCorrelationId();
+    const correlationId = options.correlationId ?? createCorrelationId();
     const slog = createScopedLoggerWithCorrelation('BulkDownload', correlationId);
+    this.sessionCorrelationId = correlationId;
     const items = Array.from(mediaItems);
 
     if (items.length === 0) {
@@ -242,7 +248,8 @@ export class BulkDownloadService {
           if (!this.cancelToastShown) {
             toastManager.info(
               languageService.getString('messages.download.cancelled.title'),
-              languageService.getString('messages.download.cancelled.body')
+              languageService.getString('messages.download.cancelled.body'),
+              { meta: { correlationId } }
             );
             this.cancelToastShown = true;
           }
@@ -294,7 +301,8 @@ export class BulkDownloadService {
             languageService.getString('messages.download.single.error.title'),
             languageService.getFormattedString('messages.download.single.error.body', {
               error: String(result.error ?? ''),
-            })
+            }),
+            { meta: { correlationId } }
           );
         }
         return singleOutcome;
@@ -316,11 +324,13 @@ export class BulkDownloadService {
           type: 'info',
           duration: 0, // 수동 제거
           route: 'both',
+          meta: { correlationId },
         });
       }
 
       const res = await this.downloadAsZip(items, {
         ...options,
+        correlationId,
         onProgress: p => {
           options.onProgress?.(p);
           if (showProgressToast && this.progressToastId) {
@@ -345,6 +355,7 @@ export class BulkDownloadService {
               type: 'info',
               duration: 0,
               route: 'both',
+              meta: { correlationId },
             });
           }
         },
@@ -362,6 +373,7 @@ export class BulkDownloadService {
 
       return res;
     } finally {
+      this.sessionCorrelationId = undefined;
       this.currentAbortController = undefined;
     }
   }
@@ -374,7 +386,7 @@ export class BulkDownloadService {
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
     try {
-      const correlationId = createCorrelationId();
+      const correlationId = options.correlationId ?? createCorrelationId();
       const slog = createScopedLoggerWithCorrelation('BulkDownload', correlationId);
       const { getFflate } = await import('@shared/external/vendors');
       const fflate = getFflate();
@@ -456,13 +468,18 @@ export class BulkDownloadService {
           });
 
           try {
+            const start = Date.now();
             const data = await fetchWithRetry(media.url);
             const converted = toFilenameCompatible(media);
             const desiredName = generateMediaFilename(converted);
             const filename = ensureUniqueFilename(desiredName);
             files[filename] = data;
             successful++;
-            slog.debug('File added to ZIP', { filename });
+            const durationMs = Math.max(0, Date.now() - start);
+            slog.debug(
+              'File added to ZIP',
+              logFields({ filename, size: data.byteLength, durationMs })
+            );
           } catch (error) {
             if (isAborted()) throw new Error('Download cancelled by user');
             const errMsg = getErrorMessage(error);
@@ -484,7 +501,8 @@ export class BulkDownloadService {
         // 모든 실패 → 에러 토스트 (Phase I 정책)
         toastManager.error(
           languageService.getString('messages.download.allFailed.title'),
-          languageService.getString('messages.download.allFailed.body')
+          languageService.getString('messages.download.allFailed.body'),
+          { meta: { correlationId } }
         );
         // 구조화된 실패 결과를 반환하여 per-item 실패 원인(failures[])을 노출
         const result: DownloadResult & { code: ErrorCode } = {
@@ -501,7 +519,9 @@ export class BulkDownloadService {
       }
 
       // ZIP 생성
+      const zipStart = Date.now();
       const zipData = fflate.zipSync(files);
+      const zipDurationMs = Math.max(0, Date.now() - zipStart);
       const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
 
       // ZIP 다운로드
@@ -515,7 +535,20 @@ export class BulkDownloadService {
         percentage: 100,
       });
 
-      slog.info('ZIP download complete', { zipFilename, successful, total: mediaItems.length });
+      const zipSize =
+        (zipData as unknown as { length?: number; byteLength?: number }).length ??
+        (zipData as unknown as { length?: number; byteLength?: number }).byteLength ??
+        0;
+      slog.info(
+        'ZIP download complete',
+        logFields({
+          zipFilename,
+          files: successful,
+          total: mediaItems.length,
+          size: zipSize,
+          durationMs: zipDurationMs,
+        })
+      );
 
       const status: BaseResultStatus =
         failures.length === 0
@@ -562,7 +595,7 @@ export class BulkDownloadService {
               toastManager.success(
                 languageService.getString('messages.download.retry.success.title'),
                 languageService.getString('messages.download.retry.success.body'),
-                { route: 'both' }
+                { route: 'both', meta: { correlationId } }
               );
 
               const run = async () => {
@@ -585,11 +618,13 @@ export class BulkDownloadService {
                     languageService.getString('messages.download.partial.title'),
                     `${languageService.getFormattedString('messages.download.partial.body', {
                       count: remaining.length,
-                    })} (cid: ${correlationId})`
+                    })} (cid: ${correlationId})`,
+                    { meta: { correlationId } }
                   );
                 }
               });
             },
+            meta: { correlationId },
           }
         );
       } else if (failures.length === 0) {
@@ -638,7 +673,8 @@ export class BulkDownloadService {
     if (!this.cancelToastShown) {
       toastManager.info(
         languageService.getString('messages.download.cancelled.title'),
-        languageService.getString('messages.download.cancelled.body')
+        languageService.getString('messages.download.cancelled.body'),
+        { meta: { correlationId: this.sessionCorrelationId ?? createCorrelationId() } }
       );
       this.cancelToastShown = true;
     }

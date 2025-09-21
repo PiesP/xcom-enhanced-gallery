@@ -7,7 +7,11 @@
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
-import { logger } from '@shared/logging/logger';
+import {
+  logger,
+  createCorrelationId,
+  createScopedLoggerWithCorrelation,
+} from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
 // Barrel import에서 직접 util만 선택 import (cycle 감소)
@@ -840,11 +844,14 @@ export class MediaService {
    */
   async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
     try {
+      const correlationId = createCorrelationId();
+      const slog = createScopedLoggerWithCorrelation('MediaDownload', correlationId);
       const download = getNativeDownload();
       const converted = this.ensureMediaItem(media);
       const filename = generateMediaFilename(converted);
 
       // URL에서 fetch하여 Blob으로 다운로드
+      slog.info('Single download started', { url: media.url, filename });
       const response = await fetch(media.url);
       if (!response.ok) {
         const status = (response as Response).status ?? 0;
@@ -852,12 +859,13 @@ export class MediaService {
       }
       const blob = await response.blob();
       download.downloadBlob(blob, filename);
-
-      logger.debug(`Single download initiated: ${filename}`);
+      slog.debug(`Single download initiated: ${filename}`);
       return { success: true, status: 'success', filename, code: ErrorCode.NONE };
     } catch (error) {
       const message = getErrorMessage(error);
-      logger.error(`Single download failed: ${message}`);
+      const correlationId = createCorrelationId();
+      const slog = createScopedLoggerWithCorrelation('MediaDownload', correlationId);
+      slog.error(`Single download failed: ${message}`);
       const lowered = message.toLowerCase();
       const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
       return {
@@ -877,6 +885,8 @@ export class MediaService {
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
     try {
+      const correlationId = createCorrelationId();
+      const slog = createScopedLoggerWithCorrelation('MediaDownload', correlationId);
       if (mediaItems.length === 0) {
         return {
           success: false,
@@ -960,7 +970,7 @@ export class MediaService {
           successful++;
         } catch (error) {
           const errMsg = getErrorMessage(error);
-          logger.warn(`Failed to download ${media.filename}: ${errMsg}`);
+          slog.warn(`Failed to download ${media.filename}: ${errMsg}`);
           failures.push({ url: media.url, error: errMsg });
         }
       }
@@ -983,10 +993,11 @@ export class MediaService {
         total: mediaItems.length,
         percentage: 100,
       });
-
-      logger.debug(
-        `ZIP download complete: ${zipFilename} (${successful}/${mediaItems.length} files)`
-      );
+      slog.info('ZIP download complete', {
+        zipFilename,
+        successful,
+        total: mediaItems.length,
+      });
 
       const status: BaseResultStatus =
         failures.length === 0
@@ -1014,7 +1025,9 @@ export class MediaService {
       };
     } catch (error) {
       const message = getErrorMessage(error);
-      logger.error(`ZIP download failed: ${message}`);
+      const correlationId = createCorrelationId();
+      const slog = createScopedLoggerWithCorrelation('MediaDownload', correlationId);
+      slog.error(`ZIP download failed: ${message}`);
       const lowered = message.toLowerCase();
       const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
       return {

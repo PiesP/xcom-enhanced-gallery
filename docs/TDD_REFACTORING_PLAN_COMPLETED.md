@@ -44,6 +44,24 @@
     (status=error, code=ALL_FAILED, failures[] 포함) — per-item 실패 원인 노출로
     진단성 향상. 관련 테스트 GREEN
 
+2025-09-21: EPIC-B — 로깅 상관관계 보강 (완료)
+
+- MediaService: downloadSingle/downloadMultiple 경로에 correlationId를 도입하고
+  createScopedLoggerWithCorrelation으로 범위 로거(slog) 적용. 시작/완료/실패
+  로그에 cid 포함으로 추적성 향상. BulkDownloadService 기존 상관관계 패턴과
+  일관화.
+- 테스트/빌드: 타입/린트/전체 테스트 GREEN, dev/prod 빌드 및 산출물 검증 통과
+
+2025-09-21: EPIC-B — 로깅/토스트 메타 표준화 (BulkDownloadService 보강)
+
+- BulkDownloadService: 세션 단위 correlationId 전파(sessionCorrelationId) 및
+  모든 관련 토스트에 메타(correlationId) 포함: 진행(progress), 취소(cancel),
+  전체 실패, 부분 실패/재시도 성공/잔여 경고.
+- 표준 로그 필드(logFields) 적용 확장: 파일 단위 다운로드에 durationMs/size
+  기록, ZIP 생성 완료 시 zipFilename/files/total/size/durationMs 구조화 로그
+  남김.
+- 게이트: 타입/린트/전체 테스트/빌드 모두 GREEN 유지.
+
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
