@@ -93,7 +93,13 @@ export class DOMCache {
       element = container.querySelector(selector);
     } catch (error) {
       // 잘못된 CSS 선택자 등으로 인한 예외는 폴백 전략을 위해 무시하고 null 캐싱
-      logger.warn('DOMCache.querySelector: invalid selector ignored', { selector, error });
+      logger.warn('selector.invalid', {
+        module: 'DOMCache',
+        op: 'querySelector',
+        selector,
+        reason: 'invalid-selector',
+        error,
+      });
       element = null;
     }
 
@@ -151,7 +157,13 @@ export class DOMCache {
     try {
       elements = container.querySelectorAll(selector);
     } catch (error) {
-      logger.warn('DOMCache.querySelectorAll: invalid selector ignored', { selector, error });
+      logger.warn('selector.invalid', {
+        module: 'DOMCache',
+        op: 'querySelectorAll',
+        selector,
+        reason: 'invalid-selector',
+        error,
+      });
       // 보장된 빈 결과 생성 (안전한 선택자 사용)
       elements = document.createElement('div').querySelectorAll('.__xeg_empty__');
     }
@@ -397,6 +409,12 @@ export function cachedStableQuery(
   for (const selector of selectors) {
     const element = cachedQuerySelector(selector, container, ttl);
     if (element) {
+      logger.debug('selector.resolve', {
+        module: 'DOMCache',
+        op: 'cachedStableQuery',
+        selector,
+        matched: true,
+      });
       return element;
     }
   }

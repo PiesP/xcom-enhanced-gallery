@@ -381,13 +381,12 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
 
 ### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — Phase 2(선택자 폴백)
 
-- invalid selector 폴백 하드닝 완료(GREEN)
-  - DOMCache.querySelector/All를 try/catch로 감싸 잘못된 CSS 선택자 예외를
-    무시하고 null/빈 결과를 캐시하여 폴백 진행 보장(warn 로그 남김)
-  - SelectorRegistry.findClosest에서 잘못된 선택자를 건너뛰고 다음 폴백 시도
-  - 테스트 추가: selector-registry.fallback-invalid-selector
-    (findFirst/findAll/findClosest)
-  - 결과: 폴백 전략의 회복력 향상, 전체 테스트/빌드 GREEN 유지
+- Phase 2 — Diagnostics standardization: unified logging keys for selector flows
+  — warn: 'selector.invalid' with { module, op, selector, reason, error? },
+  debug: 'selector.resolve' with { module, op, selector, matched }.
+- 테스트 추가: selector-registry.fallback-invalid-selector
+  (findFirst/findAll/findClosest)
+- 결과: 폴백 전략의 회복력 향상, 전체 테스트/빌드 GREEN 유지
 
 - secondary selectors(보조 셀렉터) 추가 완료(GREEN)
   - SelectorRegistry.queryActionButton에 aria-label/role 기반 보조 셀렉터를

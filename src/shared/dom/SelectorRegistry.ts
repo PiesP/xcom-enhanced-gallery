@@ -4,6 +4,7 @@
  */
 
 import { STABLE_SELECTORS } from '@/constants';
+import { logger } from '@shared/logging/logger';
 import { cachedQuerySelectorAll, cachedStableQuery } from './DOMCache';
 
 export type QueryContainer = Document | Element;
@@ -71,8 +72,15 @@ export class SelectorRegistry implements ISelectorRegistry {
       try {
         const found = start.closest(sel);
         if (found) return found;
-      } catch {
-        // invalid selector — skip to next fallback
+      } catch (error) {
+        // invalid selector — standardized warn log and skip to next fallback
+        logger.warn('selector.invalid', {
+          module: 'SelectorRegistry',
+          op: 'findClosest',
+          selector: sel,
+          reason: 'invalid-selector',
+          error,
+        });
         continue;
       }
     }
