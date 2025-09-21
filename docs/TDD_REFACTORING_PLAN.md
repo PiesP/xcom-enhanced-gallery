@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 3건(A11y, 스타일·테마, 메모리)
+업데이트: 2025-09-21 — 활성 Epic 2건(A11y, 메모리)
 
 ---
 
@@ -24,7 +24,7 @@
 
 ## 2. 활성 Epic 현황
 
-아래 3개 Epic을 즉시 진행합니다. 모든 작업은 TDD(RED→GREEN→REFACTOR)와 엄격한
+아래 2개 Epic을 즉시 진행합니다. 모든 작업은 TDD(RED→GREEN→REFACTOR)와 엄격한
 벤더 getter/디자인 토큰/PC 전용 입력 원칙을 준수합니다.
 
 ### Epic A: 접근성 강건화 (A11y)
@@ -52,9 +52,7 @@
 
 단계별 TDD 과제
 
-1. GREEN: `useFocusTrap`로 통합 적용, 특수 케이스는
-   `accessibility-utils.createFocusTrap()`로 주입
-2. REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트
+1. REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트
 
 수용 기준(샘플)
 
@@ -66,46 +64,7 @@
 
 - 이중 트랩 활성화: 훅/유틸 동시 사용 방지 가드와 테스트 추가
 
-### Epic B: 스타일/테마 정합성
-
-목표
-
-- Shadow DOM 스코프 유지, 루트 토큰 일원화, Toolbar 버튼 스타일 단순화, 테마
-  자동/수동 전환 신뢰성 향상
-
-선행 맥락
-
-- 가용 서비스: `shared/services/ThemeService.ts`(prefers-color-scheme,
-  data-theme), 디자인 토큰 주입(`XEG_CSS_TEXT`)
-
-옵션 비교(요약)
-
-- 토큰 루트 주입 vs 컴포넌트 분산
-  - 루트 주입: 장점 — 일관성/성능. 단점 — 일부 컴포넌트 독자 토큰 필요 시
-    오버라이드 필요
-
-선택안
-
-- 루트 토큰만 소스 오브 트루스로 유지. 컴포넌트는 변수 참조만 허용
-
-단계별 TDD 과제
-
-1. (완료) RED: 토큰 위반 탐지 테스트 강화 — CSS Modules에서 raw 명명 색상 사용
-   금지
-2. (완료) GREEN: Toolbar/Button/Gallery/Toast CSS의 명명 색상 값을 토큰으로 전환
-   및 잔존 치환
-3. (완료) RED: ThemeService 전환/FOUC/중복 적용 가드 테스트 추가
-4. (완료) GREEN: `ThemeService` 이벤트/리스너 누락 케이스 보강 및 데이터 속성
-   적용 지연 로직 개선(FOUC 최소화)
-
-수용 기준(샘플)
-
-- dev/prod 번들에서 raw 색상/치수 직접값 0건
-- 데이터 테마 전환 시 1 프레임 내 토큰 적용(테스트는 타임아웃 여유 50ms)
-
-리스크/완화
-
-- 서드파티 스타일 교차 영향: Shadow DOM 캡슐화 유지 검증 추가
+### Epic C: 메모리/리소스 누수 방지
 
 ### Epic C: 메모리/리소스 누수 방지
 
@@ -132,13 +91,9 @@
 
 1. (진행) RED: 페이지 전환/언마운트 시 살아있는 타이머/리스너가 0이어야 함 —
    진단 훅 테스트 추가
-2. (완료) GREEN: 전역 TimerManager에 컨텍스트 스코프(문자열) 도입 및 갤러리
-   이벤트 루프/`RebindWatcher`/`Debouncer`에 컨텍스트 적용, 정리 경로 연동.
-   jsdom/브라우저 간 타이머 ID 타입 차이를 흡수하기 위해 내부 맵으로 숫자 ID
-   일관화. 관련 계약 테스트 GREEN.
-3. RED: 대량 썸네일 로딩 시 GC 후 잔존 객체 수가 한도 이하(모킹) — smoke
+2. RED: 대량 썸네일 로딩 시 GC 후 잔존 객체 수가 한도 이하(모킹) — smoke
    수준으로 유지
-4. GREEN: 미디어 URL revoke/DOM 파기 순서 보정
+3. GREEN: 미디어 URL revoke/DOM 파기 순서 보정
 
 수용 기준(샘플)
 

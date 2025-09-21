@@ -4,6 +4,13 @@
 | ------------- | ----------------- | -------- | -------- | ----------- |
 | RED 테스트 수 | 0 (Batch F ✔)    | 60       | 30       | <10         |
 
+2025-09-21: PLAN — 활성 Epic 갱신(2건 유지)
+
+- Epic B(스타일/테마 정합성) 모든 단계 GREEN 완료에 따라 활성 계획서에서 Epic B
+  섹션을 제거하고, 활성 Epic 수를 2건(A11y, 메모리)으로 갱신.
+- 관련 세부 단계(토큰 위반 가드/ThemeService 하드닝/FOUC 최소화)는 기존 완료
+  로그 항목으로 커버되므로 본 항목은 요약만 기록.
+
 2025-09-19: DOM-001 — Epic 종료(Overlay DOM 간소화)
 
 - P1–P5 모든 Phase 완료 및 목표/AC 달성. 활성 계획서에서 Epic 제거.
@@ -361,6 +368,13 @@ icon-only aria-label/valuenow/value/max 정합성 스캔 0 실패(P5), 번들 gz
     (`test/unit/shared/services/ThemeService.test.ts`).
   - 빌드(dev/prod)와 userscript 검증 스크립트 통과. 계획서 Epic B 단계는 모두
     완료 처리하고 Epic C로 진행.
+
+2025-09-21: MEM-CTX — TimerManager 컨텍스트 스코프 GREEN (Epic C 단계 완료)
+
+- 전역 TimerManager에 컨텍스트 스코프(문자열) 도입 및 갤러리 이벤트 루프/
+  RebindWatcher/Debouncer 적용 경로를 연결. jsdom/브라우저 간 타이머 ID 타입
+  차이를 흡수하기 위해 내부 맵으로 숫자 ID 일관화. 관련 계약 테스트 GREEN. 활성
+  계획서에서 Epic C 단계 목록의 해당 항목을 제거.
 
 2025-09-20: XEG-SEL-01 — Selector 유틸 통합 및 로깅 일원화 (Epic 종료)
 
