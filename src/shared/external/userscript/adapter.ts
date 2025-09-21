@@ -54,6 +54,8 @@ async function fallbackDownload(url: string, filename: string): Promise<void> {
 
   const response = await fetch(url);
   const blob = await response.blob();
+  // 안전한 Object URL 생성/해제
+  // object URL은 테스트/브라우저 모두에서 안전하게 직접 생성 후, finally에서 해제
   const objectUrl = URL.createObjectURL(blob);
   try {
     const a = document.createElement('a');

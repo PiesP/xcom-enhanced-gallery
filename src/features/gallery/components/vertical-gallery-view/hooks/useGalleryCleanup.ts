@@ -7,6 +7,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { revokeManagedObjectURL } from '@shared/utils/memory';
 import { getPreactHooks } from '@shared/external/vendors';
 
 interface UseGalleryCleanupOptions {
@@ -60,7 +61,7 @@ export function useGalleryCleanup({
       images.forEach(img => {
         if (img instanceof HTMLImageElement) {
           if (img.src.startsWith('blob:')) {
-            URL.revokeObjectURL(img.src);
+            revokeManagedObjectURL(img.src, 'gallery-img');
           }
           img.src = '';
           img.onload = null;

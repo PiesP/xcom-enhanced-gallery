@@ -11,6 +11,25 @@
 - 관련 세부 단계(토큰 위반 가드/ThemeService 하드닝/FOUC 최소화)는 기존 완료
   로그 항목으로 커버되므로 본 항목은 요약만 기록.
 
+2025-09-21: A11y-ACCESSIBILITY-HOOKS — useAccessibility 중복 제거 및 유틸 정리
+(Epic A 일부 완료)
+
+- 기존 useAccessibility.ts 내 중복된 훅/유틸을 제거하고, 전용 훅(useFocusTrap)과
+  유틸(live-region-manager, accessibility-utils)로 경로 일원화.
+- 공개 API/컴포넌트 계약 변화 없음(호환), 관련 단위/통합 테스트 모두 GREEN 유지.
+- 문서/가이드의 표준 경로를 명시하여 신규 진입점 혼선을 방지.
+
+2025-09-21: MEM-OBJ-URL — Object URL manager 도입 및 갤러리 cleanup 통합 (Epic C
+일부 완료)
+
+- 신규 유틸: createManagedObjectURL/revokeManagedObjectURL — ResourceManager에
+  등록해 해제 시점 일관화, 이중 revoke 방지를 위해 내부 Set으로 한번만
+  URL.revokeObjectURL 호출.
+- 단위 테스트 추가: URL.createObjectURL/URL.revokeObjectURL 스텁 기반으로 1회
+  생성/1회 해제, 2번째 해제는 false 반환을 검증. 환경 의존(Blob) 제거.
+- 통합: 갤러리 이미지 cleanup 경로에서 revokeManagedObjectURL 사용으로 안전성
+  향상. 벤더/유저스크립트 어댑터는 경계 준수를 위해 기존 직접 URL.\* 경로 유지.
+
 2025-09-19: DOM-001 — Epic 종료(Overlay DOM 간소화)
 
 - P1–P5 모든 Phase 완료 및 목표/AC 달성. 활성 계획서에서 Epic 제거.

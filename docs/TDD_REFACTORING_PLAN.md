@@ -52,7 +52,8 @@
 
 단계별 TDD 과제
 
-1. REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트
+1. (완료) REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트 →
+   Completed로 이관
 
 수용 기준(샘플)
 
@@ -63,8 +64,6 @@
 리스크/완화
 
 - 이중 트랩 활성화: 훅/유틸 동시 사용 방지 가드와 테스트 추가
-
-### Epic C: 메모리/리소스 누수 방지
 
 ### Epic C: 메모리/리소스 누수 방지
 

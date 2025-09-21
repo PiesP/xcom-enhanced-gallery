@@ -25,7 +25,6 @@ export {
   globalResourceManager as createManagedInterval,
   globalResourceManager as addManagedEventListener,
   globalResourceManager as createManagedObserver,
-  globalResourceManager as createManagedObjectURL,
 } from './ResourceManager';
 
 // 편의 함수들
@@ -41,3 +40,6 @@ export {
   type MemorySnapshot,
   type MemoryProfileResult,
 } from './memory-profiler';
+
+// Object URL manager
+export { createManagedObjectURL, revokeManagedObjectURL } from './object-url-manager';
