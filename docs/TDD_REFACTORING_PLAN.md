@@ -56,7 +56,6 @@
    `accessibility-utils.createFocusTrap()`로 주입
 2. REFACTOR: `useAccessibility.ts` 내 중복 API 축소 및 문서화 업데이트
 
-
 수용 기준(샘플)
 
 - 키보드만으로 모든 활성 레이어 진입/탈출 가능(Escape 복귀, Tab 순환 검증)
