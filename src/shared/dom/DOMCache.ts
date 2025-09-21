@@ -87,8 +87,15 @@ export class DOMCache {
       return cached.element;
     }
 
-    // 캐시 미스 - 새로 조회
-    const element = container.querySelector(selector);
+    // 캐시 미스 - 새로 조회 (유효하지 않은 선택자 방어)
+    let element: Element | null = null;
+    try {
+      element = container.querySelector(selector);
+    } catch (error) {
+      // 잘못된 CSS 선택자 등으로 인한 예외는 폴백 전략을 위해 무시하고 null 캐싱
+      logger.warn('DOMCache.querySelector: invalid selector ignored', { selector, error });
+      element = null;
+    }
 
     // 캐시 저장
     this.cache.set(cacheKey, {
@@ -139,8 +146,15 @@ export class DOMCache {
       return cached.element as unknown as NodeListOf<Element>;
     }
 
-    // 캐시 미스 - 새로 조회
-    const elements = container.querySelectorAll(selector);
+    // 캐시 미스 - 새로 조회 (유효하지 않은 선택자 방어)
+    let elements: NodeListOf<Element>;
+    try {
+      elements = container.querySelectorAll(selector);
+    } catch (error) {
+      logger.warn('DOMCache.querySelectorAll: invalid selector ignored', { selector, error });
+      // 보장된 빈 결과 생성 (안전한 선택자 사용)
+      elements = document.createElement('div').querySelectorAll('.__xeg_empty__');
+    }
 
     // 캐시 저장
     this.cache.set(cacheKey, {

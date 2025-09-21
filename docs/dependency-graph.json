@@ -939,10 +939,37 @@
     },
     {
       "source": "src/features/settings/services/TwitterTokenExtractor.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./token-consent",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/settings/services/token-consent.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/features/settings/index.ts",
         "src/features/settings/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/settings/services/token-consent.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/settings/services/TwitterTokenExtractor.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8711,8 +8738,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 259,
-    "totalDependenciesCruised": 359,
+    "totalCruised": 260,
+    "totalDependenciesCruised": 360,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

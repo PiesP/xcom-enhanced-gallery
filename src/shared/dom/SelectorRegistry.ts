@@ -68,8 +68,13 @@ export class SelectorRegistry implements ISelectorRegistry {
     if (!start) return null;
 
     for (const sel of selectors) {
-      const found = start.closest(sel);
-      if (found) return found;
+      try {
+        const found = start.closest(sel);
+        if (found) return found;
+      } catch {
+        // invalid selector — skip to next fallback
+        continue;
+      }
     }
     return null;
   }
