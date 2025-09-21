@@ -54,6 +54,15 @@
   메타데이터 동기화, 네트워크 정책 기본값 강화
 - Gallery-Perf-001(간단 윈도우링) 완료 — Completed 로그 참조. 스코프/AC에서 관련
   항목 제거.
+- A11y-001 진행: CSS 애니메이션 정적 스캔 테스트 추가
+  (`test/unit/styles/animations.reduced-motion.scan.test.ts`) — 애니메이션 선언
+  파일에 대해 prefers-reduced-motion 가드 유무를 검사하는 RED 가드 강화. 현재
+  전체 스위트 GREEN 유지.
+- Tests-Refactor-001 진행: 환경 변수(VITEST_INCLUDE_REF_TESTS=1)로 개별 실행
+  검증 경로 추가. `event-manager-integration` 테스트는
+  `@shared/services/UnifiedEventManager` 경로 부재로 import 해석 실패하여 여전히
+  exclude 상태 유지. 후속: UnifiedEventManager 도입 또는 테스트 경로 정합화
+  검토.
 
 Acceptance(측정 기준)
 

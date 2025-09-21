@@ -112,6 +112,16 @@ Userscript 하드닝 v3 (1차 완료)
 - 영향: useGalleryItemScroll의 인덱스 기반 스크롤 계약 보존, VerticalImageItem이
   data-xeg-role을 DOM에 전달하도록 보강. 타입/린트/테스트/빌드 모두 GREEN.
 
+2025-09-22: PLAN — 리팩토링 테스트 일시 포함 토글 추가(진행 현황 기록)
+
+- vitest 설정에 환경 변수(`VITEST_INCLUDE_REF_TESTS=1`)로 제외 테스트를 임시
+  포함하는 토글을 도입하여 개별 실행 경로를 마련했습니다.
+- 현재 상태: `event-manager-integration`/`service-diagnostics-integration`
+  테스트는 각각 `@shared/services/UnifiedEventManager` 및
+  `@shared/services/UnifiedServiceDiagnostics` 경로가 존재하지 않아 import 해석
+  단계에서 실패합니다. 활성화 전, 관련 Unified\* 구현 또는 테스트 경로 정합화가
+  필요합니다.
+
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
 
 - 완료 범위: 직접 색상 키워드(white/black) 0건, `transition: all` 전역 0건
