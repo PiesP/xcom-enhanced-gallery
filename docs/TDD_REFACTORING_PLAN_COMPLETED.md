@@ -64,6 +64,16 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-22: EPIC-B — Userscript 폴백 하드닝 v2 (Epic 종료)
+
+- 최종 상태: 폴백 xhr/download 성공/비-2xx/네트워크 오류/타임아웃/abort 시나리오
+  GREEN, 에러 메시지 포맷(`http_<status>`)·토스트 라우팅 정책(announce/both
+  규약)·로깅 상관관계(correlationId) 표준화 완료. 서비스 계층 비-2xx 처리 일관화
+  및 회귀 가드 유지.
+- 조치: 활성 계획서(`TDD_REFACTORING_PLAN.md`)에서 EPIC-B 섹션 제거, 본 완료
+  로그에 Epic 종료만 요약 유지.
+- 영향: 분기 커버리지 및 통합 가드 GREEN, dev/prod 빌드 및 산출물 검증 통과.
+
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
 
 - 완료 범위: 직접 색상 키워드(white/black) 0건, `transition: all` 전역 0건

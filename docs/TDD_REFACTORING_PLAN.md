@@ -4,9 +4,8 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 1건(정리, EPIC-B 하위 REFACTOR 일부 완료)
-
-- EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
+업데이트: 2025-09-22 — 활성 Epic 없음 (직전 사이클 EPIC-B 종료, Completed로
+이관)
 
 직전 사이클 Epic(유저스크립트 하드닝 v1) Phases 1–4 전체 완료(Completed 로그
 이관)
@@ -29,12 +28,8 @@
 
 ## 2. 활성 Epic 현황
 
-- EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
-  - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리 단위 테스트
-    보강 및 회귀 가드, 서비스 계층의 비-2xx 표준화
-  - 상태: In Progress — xhr/download 폴백 GREEN, 서비스 비-2xx 표준화 완료
-    (Completed에 이관). REFACTOR 하위 과제(에러 메시지 포맷 통일, 토스트 라우팅
-    정책 가드, 로깅 상관관계 보강) 모두 완료되어 Completed에 이관되었습니다.
+- 현재 활성 Epic 없음 — 최근 EPIC-B(Userscript 폴백 하드닝 v2) 종료. 신규 Epic
+  제안은 백로그에 등록 후 합의 시 활성화합니다.
 
 ---
 
@@ -42,29 +37,7 @@
 
 <!-- EPIC-A(스타일 하드닝 v1)는 완료되어 Completed 로그로 이관되었습니다. -->
 
-### EPIC-B — Userscript 폴백 하드닝 v2 (테스트 강화)
-
-- Problem
-  - `getUserscript()`의 GM\_\* 미지원 환경 폴백은 구현되어 있으나, 오류
-    매핑/타임아웃/abort 등 세부 동작의 테스트 커버리지가 부족할 수 있음
-- Outcome (DoD)
-  - 폴백 다운로드/xhr에 대해 다음 시나리오 테스트 GREEN: 성공, 비-2xx, 네트워크
-    오류, 타임아웃, abort, 큰 응답 스트림 취소
-  - 오류 메시지/토스트 정책 일관화(사용자 피드백 표준화)
-- Success Metrics
-  - 해당 유닛/통합 테스트 100% GREEN, 결함 재현 케이스 회귀 0
-  - 커버리지 목표: 어댑터 모듈 분기 커버리지 ≥ 90%
-- Scope
-  - `shared/external/userscript/adapter.ts` 폴백 경로 & GM\_\* 존재 감지 분기
-  - 노이즈 회피를 위해 네트워크 모킹/가짜 타이머 활용
-- Tasks (잔여)
-  - 잔여 없음 — 해당 REFACTOR 하위 과제(에러 메시지 표준화/토스트 정책/로깅
-    상관관계)는 Completed 로그로 이관됨
-- Risks/Mitigations
-  - 타이밍 이슈/flaky → 가짜 타이머 및 고립된 테스트 환경 사용
-  - 환경별 GM\_\* 차이 → 존재 감지 분기 테스트로 커버
-- Gates
-  - `npm test`(JSDOM 격리) · `npm run typecheck` · `npm run build:prod`
+<!-- (이전 활성 Epic 섹션은 Epic 종료에 따라 Completed 로그로 이관되었습니다) -->
 
 ---
 
