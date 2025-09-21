@@ -136,56 +136,113 @@ async function fallbackDownload(url: string, filename: string): Promise<void> {
 }
 
 function fallbackXhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined {
-  // 최소 fetch 기반 대체 구현
+  // fetch 기반 대체 구현 (timeout/abort/에러 매핑 포함)
   try {
     const controller = new AbortController();
-    const { method = 'GET', url, headers, data, responseType } = options;
+    const { method = 'GET', url, headers, data, responseType, timeout } = options;
 
-    // 간단한 fetch 호출 (이벤트 콜백은 일부만 대응)
     const init: RequestInit = {
       method,
       ...(headers ? { headers: headers as HeadersInit } : {}),
-      ...(typeof data === 'string' || data instanceof Blob ? { body: data as BodyInit } : {}),
+      ...(typeof data === 'string' || (typeof Blob !== 'undefined' && data instanceof Blob)
+        ? { body: data as BodyInit }
+        : {}),
       signal: controller.signal,
     };
 
+    let finished = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const safeLoadEnd = () => {
+      try {
+        // ProgressEvent가 없을 수 있으므로 방어적으로 호출
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const evt: any =
+          typeof ProgressEvent !== 'undefined' ? new ProgressEvent('loadend') : undefined;
+        options.onloadend?.(evt as unknown as ProgressEvent);
+      } catch {
+        // ignore
+      }
+    };
+
+    const finishOnce = (fn: () => void) => {
+      if (finished) return;
+      finished = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+      try {
+        fn();
+      } finally {
+        safeLoadEnd();
+      }
+    };
+
+    if (typeof timeout === 'number' && timeout > 0) {
+      timeoutId = setTimeout(() => {
+        try {
+          controller.abort();
+        } catch {
+          // ignore
+        }
+        finishOnce(() => {
+          options.ontimeout?.();
+        });
+      }, timeout);
+    }
+
     fetch(url, init)
       .then(async res => {
+        if (finished) return; // abort/timeout 이미 처리됨
         const text = await res.text();
-        options.onload?.({
-          responseText: text,
-          readyState: 4,
-          responseHeaders: '',
-          status: res.status,
-          statusText: res.statusText,
-          finalUrl: res.url,
-          response:
-            responseType === 'json'
-              ? (() => {
-                  try {
-                    return JSON.parse(text);
-                  } catch {
-                    return undefined;
-                  }
-                })()
-              : text,
-        } as never);
+        finishOnce(() => {
+          options.onload?.({
+            responseText: text,
+            readyState: 4,
+            responseHeaders: '',
+            status: res.status,
+            statusText: res.statusText,
+            finalUrl: res.url,
+            response:
+              responseType === 'json'
+                ? (() => {
+                    try {
+                      return JSON.parse(text);
+                    } catch {
+                      return undefined;
+                    }
+                  })()
+                : text,
+          } as never);
+        });
       })
-      .catch(() => {
-        options.onerror?.({
-          responseText: '',
-          readyState: 4,
-          responseHeaders: '',
-          status: 0,
-          statusText: 'error',
-          finalUrl: options.url,
-        } as never);
-      })
-      .finally(() => {
-        options.onloadend?.(new ProgressEvent('loadend'));
+      .catch(err => {
+        if (finished) return; // abort/timeout 이미 처리됨
+        finishOnce(() => {
+          options.onerror?.({
+            responseText: '',
+            readyState: 4,
+            responseHeaders: '',
+            status: 0,
+            statusText: (err?.name && String(err.name)) || 'error',
+            finalUrl: options.url,
+          } as never);
+        });
       });
 
-    return { abort: () => controller.abort() };
+    return {
+      abort: () => {
+        try {
+          controller.abort();
+        } catch {
+          // ignore
+        }
+        finishOnce(() => {
+          options.onabort?.();
+        });
+      },
+    };
   } catch {
     return undefined;
   }

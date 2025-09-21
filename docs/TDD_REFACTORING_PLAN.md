@@ -4,9 +4,8 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 2건(신규)
+업데이트: 2025-09-21 — 활성 Epic 1건(정리)
 
-- EPIC-A: 스타일 하드닝 v1(디자인 토큰/모션)
 - EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
 
 직전 사이클 Epic(유저스크립트 하드닝 v1) Phases 1–4 전체 완료(Completed 로그
@@ -30,57 +29,16 @@
 
 ## 2. 활성 Epic 현황
 
-- EPIC-A: 스타일 하드닝 v1(디자인 토큰/모션)
-  - 목표: 디자인 토큰 100% 적용과 모션 정책 수렴(transition: all 제거), 접근성
-    대비 안정화
-  - 상태: In Progress (경량 RED 테스트 추가 → 점진 GREEN 계획)
 - EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
   - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리에 대한 단위
     테스트 보강 및 회귀 가드
-  - 상태: In Planning (테스트 명세 우선 작성)
+  - 상태: In Progress (RED 테스트 추가 → 어댑터 보강 예정)
 
 ---
 
 ## 3. 활성 Epic 상세
 
-### EPIC-A — 스타일 하드닝 v1 (디자인 토큰/모션)
-
-- Problem
-  - 일부 CSS에서 직접 색상 키워드 사용 감지: 예)
-    `color: white;`(`src/assets/styles/utilities/accessibility.css`),
-    `color: black !important;`(`src/shared/styles/performance.css`)
-  - `transition: all` 광범위 사용: 대표 위치
-    - `shared/styles/modern-features.css`, `shared/styles/design-tokens.css`
-    - `features/gallery/styles/Gallery.module.css`,
-      `features/gallery/styles/gallery-global.css`
-    - `shared/components/ui/Toast/Toast.module.css`,
-      `assets/styles/animation-utilities.css`
-- Outcome (DoD)
-  - 직접 색상 키워드/임의 값 0건(디자인 토큰으로 치환: `--xeg-*`/`--color-*`)
-  - `transition: all` → 속성 명시 전환(예: opacity/transform/background-color
-    등) 및 reduced-motion 가드 일관 적용
-  - 스냅샷/정적 검사로 회귀 방지(테스트/스크립트)
-- Success Metrics
-  - grep 기준 `transition: all` 0건(예외 목록 승인 영역 제외),
-    `color: (white|black)` 0건
-  - 접근성 대비 스모크 GREEN, 시각 회귀 없음(주요 컴포넌트 스냅샷 유지)
-- Scope
-  - 상기 대표 파일 우선 정비 후 전역 검색 범위 확대
-  - TSX 인라인 스타일의 직접 px/ms/hex 금지 준수 확인(위반 시 포함)
-- Non-goals
-  - 컴포넌트 구조/레이아웃 대수정은 범위 외(시각 회귀 최소화)
-- Tasks (TDD 순서)
-  1. RED: 스타일 가드 테스트(또는 스크립트) 추가 — `transition: all`/직접 색상
-     키워드 탐지
-  2. GREEN: 최소 범위 교체(white/black → 토큰, 핵심 파일부터)
-  3. GREEN 확장: `transition` 속성 명시 전환 + reduced-motion 가드
-  4. REFACTOR: 중복 토큰/유틸 정리, 문서 지침 보강
-- Risks/Mitigations
-  - 시각 회귀 → 퍼블릭 UI 스냅샷/수동 스모크 병행, 점진 적용
-  - 성능 영향 → 전환 속성 축소로 페인팅 최소화 검증
-- Gates
-  - `npm run lint`(토큰/이벤트 가드 포함) · `npm test` · `npm run build:prod` +
-    산출물 validator
+<!-- EPIC-A(스타일 하드닝 v1)는 완료되어 Completed 로그로 이관되었습니다. -->
 
 ### EPIC-B — Userscript 폴백 하드닝 v2 (테스트 강화)
 

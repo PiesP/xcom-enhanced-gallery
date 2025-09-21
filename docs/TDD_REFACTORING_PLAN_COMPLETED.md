@@ -9,6 +9,15 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
+
+- 완료 범위: 직접 색상 키워드(white/black) 0건, `transition: all` 전역 0건
+  - 가드 테스트 유지: css-modules/global/injected CSS no-transition-all,
+    hardcoded-colors
+  - reduced-motion 가드 일관 적용(토큰/유틸 정리 포함)
+- 메트릭: 빌드 산출물/소스 grep 검사 모두 0건 확인, 스냅샷/가드 GREEN
+- 조치: 활성 계획서에서 EPIC-A 섹션 제거, 본 완료 로그에 요약만 유지
+
 2025-09-21: PLAN — 활성 Epic 2건 등록 및 Placeholder 제거 (간략)
 
 - 활성 계획서에 신규 Epic 2건을 정식 등록:
