@@ -226,7 +226,7 @@
   border: 1px solid var(--xeg-toast-border-info);
   /* Interaction element radius policy: use md */
   border-radius: var(--xeg-radius-md);
-  color: white;
+  color: var(--color-base-white);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;

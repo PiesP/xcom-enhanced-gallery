@@ -207,7 +207,7 @@
 .navButton:active:not(:disabled),
 .navButton.active {
   background: var(--xeg-color-primary);
-  color: white;
+  color: var(--color-base-white);
 }
 
 .fitButton,
@@ -236,7 +236,7 @@ button.fitButton {
 
 .fitButton.selected {
   background: var(--xeg-color-primary);
-  color: white;
+  color: var(--color-base-white);
 }
 /* (P3 제거) MediaCounter forward styles 삭제: 단일 책임 유지 */
 /* 다운로드 버튼 - 기본 스타일 상속 */
@@ -280,7 +280,7 @@ button.fitButton {
   width: 0.75em; /* 12px → 0.75em */
   height: 0.75em; /* 12px → 0.75em */
   background: var(--color-green-500);
-  color: white;
+  color: var(--color-base-white);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -368,19 +368,19 @@ button.fitButton {
   .navButton {
     background: var(--xeg-color-primary-500);
     border: 1px solid var(--xeg-color-neutral-900);
-    color: var(--xeg-color-neutral-100);
+    color: var(--color-base-white);
   }
 
   .downloadButton {
     background: var(--xeg-color-success-500);
     border: 1px solid var(--xeg-color-neutral-900);
-    color: var(--xeg-color-neutral-100);
+    color: var(--color-base-white);
   }
 
   .closeButton {
     background: var(--xeg-color-error-500);
     border: 1px solid var(--xeg-color-neutral-900);
-    color: var(--xeg-color-neutral-100);
+    color: var(--color-base-white);
   }
 }
 

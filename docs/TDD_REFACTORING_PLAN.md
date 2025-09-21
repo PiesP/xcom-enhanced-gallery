@@ -90,14 +90,13 @@
 
 단계별 TDD 과제
 
-1. RED: 토큰 위반 탐지 테스트 강화(`scripts/find-token-violations.js` 기반 스냅
-   테스트) — raw hex/px 차단
-2. GREEN: Toolbar 버튼 CSS 단순화(불필요한 중첩 제거). CSS Modules에서 토큰만
-   사용
-3. RED: ThemeService 동작 테스트 — auto/light/dark 전환,
-   localStorage/`matchMedia` 상호작용 모킹
-4. GREEN: `ThemeService` 이벤트/리스너 누락 케이스 보강 및 데이터 속성 적용 지연
-   로직 개선(FOUC 최소화)
+1. (완료) RED: 토큰 위반 탐지 테스트 강화 — CSS Modules에서 raw 명명 색상 사용
+   금지
+2. (완료) GREEN: Toolbar/Button/Gallery/Toast CSS의 명명 색상 값을 토큰으로 전환
+   및 잔존 치환
+3. (완료) RED: ThemeService 전환/FOUC/중복 적용 가드 테스트 추가
+4. (완료) GREEN: `ThemeService` 이벤트/리스너 누락 케이스 보강 및 데이터 속성
+   적용 지연 로직 개선(FOUC 최소화)
 
 수용 기준(샘플)
 
