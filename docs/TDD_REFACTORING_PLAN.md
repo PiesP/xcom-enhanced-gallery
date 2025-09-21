@@ -123,8 +123,7 @@ TDD 작업 목록(RED → GREEN → REFACTOR):
 
 우선순위(남은 작업 실행 순서):
 
-1. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2 — 진행 중:
-   invalid selector 폴백 하드닝 완료)
+1. 선택자 폴백 강화 — SelectorRegistry 보조 셀렉터/폴백 (Phase 2 — 진행 중)
 2. 성능(스크롤) — useGalleryScroll 스로틀/rAF 스케줄링 (Phase 3)
 3. UX(경량) — 진행률 토스트 통합 (Phase 4)
 
@@ -137,6 +136,11 @@ Phase 2 — 선택자 폴백
     확정, 진단 로그 정리
 - Tests (RED → GREEN)
   - 가짜 DOM 변형 시 1차 실패 → 보조 셀렉터로 추출 성공 가드(성공률 ≥ 90%)
+
+- 순서(제안)
+  1. 데이터 속성/role 기반 보조 셀렉터 추가 및 폴백 우선순위 확정
+  2. 진단 로그 포맷/레벨 정리(최소 warn/debug 키-값 페이로드 통일)
+  3. 셀렉터 매핑 테이블화 및 테스트 픽스처 공유화(리팩토링)
 
 Phase 3 — 성능(스크롤)
 
