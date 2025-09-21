@@ -98,6 +98,8 @@ interface VerticalImageItemProps extends GalleryComponentProps {
   className?: string;
   /** 테스트 ID */
   'data-testid'?: string;
+  /** data-xeg-role forwarding for DOM attribute */
+  'data-xeg-role'?: string;
   /** 접근성 레이블 */
   'aria-label'?: string;
   /** ARIA 속성들 */
@@ -161,6 +163,7 @@ function BaseVerticalImageItemCore({
   onFocus,
   onBlur,
   onKeyDown,
+  'data-xeg-role': dataXegRole,
 }: VerticalImageItemProps): VNode | null {
   const { useCallback, useEffect, useRef, useState } = getPreactHooks();
 
@@ -404,6 +407,7 @@ function BaseVerticalImageItemCore({
         styles.imageWrapper // imageWrapper 스타일을 container에 병합
       )}
       data-index={index}
+      data-xeg-role={dataXegRole}
       onClick={handleClick}
       onFocus={onFocus as (event: FocusEvent) => void}
       onBlur={onBlur as (event: FocusEvent) => void}

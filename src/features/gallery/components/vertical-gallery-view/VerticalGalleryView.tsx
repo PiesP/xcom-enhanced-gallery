@@ -43,6 +43,13 @@ export interface VerticalGalleryViewProps {
   onNext?: () => void;
   onDownloadCurrent?: () => void;
   onDownloadAll?: () => void;
+  /**
+   * Simple windowing enable flag. When true (default), only items within ±N of current index
+   * are rendered, while others are replaced by placeholders to keep children length stable.
+   */
+  windowingEnabled?: boolean;
+  /** Optional override for window size (N). Defaults to 5. */
+  windowSize?: number;
 }
 
 function VerticalGalleryViewCore({
@@ -52,6 +59,8 @@ function VerticalGalleryViewCore({
   onNext,
   onDownloadCurrent,
   onDownloadAll,
+  windowingEnabled,
+  windowSize,
 }: VerticalGalleryViewProps) {
   const { useCallback, useEffect, useRef, useState, useMemo } = getPreactHooks();
   const { createElement } = getPreact();
@@ -151,8 +160,19 @@ function VerticalGalleryViewCore({
     return itemsWithKeys;
   }, [mediaItems]);
 
-  // 렌더링할 아이템들 (가상 스크롤링 제거 - 항상 모든 아이템 렌더링)
-  const itemsToRender = memoizedMediaItems;
+  // Simple windowing calculation
+  const windowingEnabledSetting = getSetting<boolean>(
+    'gallery.windowingEnabled' as unknown as string,
+    true
+  );
+  const effectiveWindowingEnabled =
+    typeof windowingEnabled === 'boolean' ? windowingEnabled : (windowingEnabledSetting ?? true);
+  const windowSizeSetting = getSetting<number>('gallery.windowSize' as unknown as string, 5);
+  const sanitizedPropWindowSize =
+    typeof windowSize === 'number' ? Math.max(0, windowSize) : undefined;
+  const effectiveWindowSize = sanitizedPropWindowSize ?? windowSizeSetting ?? 5;
+
+  const itemsToRender = memoizedMediaItems; // full dataset for index mapping
 
   // Settings: preloadCount 소비 → 주변 항목을 강제 가시화(preload)하여 초기 지연을 줄임
   const preloadIndices = useMemo(() => {
@@ -568,26 +588,38 @@ function VerticalGalleryViewCore({
         {itemsToRender.map((item, index) => {
           const actualIndex = index;
           const itemKey = `${item.id || item.url}-${actualIndex}`;
-          // 현재 아이템은 항상 가시화하여 테스트/초기 UX 모두에서 즉시 접근 가능
+          const inWindow = Math.abs(actualIndex - currentIndex) <= effectiveWindowSize;
           const forcePreload = preloadIndices.includes(actualIndex) || actualIndex === currentIndex;
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return createElement(VerticalImageItem as any, {
-            key: itemKey,
-            media: item,
-            index: actualIndex,
-            isActive: actualIndex === currentIndex,
-            isFocused: actualIndex === focusedIndex,
-            forceVisible: forceVisibleItems.has(actualIndex) || forcePreload,
-            fitMode: imageFitMode,
-            onClick: () => handleMediaItemClick(actualIndex),
-            onMediaLoad: handleMediaLoad,
-            className: `${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`,
+          if (!effectiveWindowingEnabled || inWindow || forcePreload) {
+            // Render real item
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return createElement(VerticalImageItem as any, {
+              key: itemKey,
+              media: item,
+              index: actualIndex,
+              isActive: actualIndex === currentIndex,
+              isFocused: actualIndex === focusedIndex,
+              forceVisible: forceVisibleItems.has(actualIndex) || forcePreload,
+              fitMode: imageFitMode,
+              onClick: () => handleMediaItemClick(actualIndex),
+              onMediaLoad: handleMediaLoad,
+              className: `${styles.galleryItem} ${actualIndex === currentIndex ? styles.itemActive : ''}`,
+              'data-index': actualIndex,
+              'data-xeg-role': 'gallery-item',
+              onDownload: onDownloadAll ? () => handleDownloadCurrent() : undefined,
+              onFocus: () => setFocusedIndex(actualIndex),
+              onBlur: () => setFocusedIndex(-1),
+            });
+          }
+
+          // Render placeholder to preserve children length and index-based query
+          return createElement('div', {
+            key: `${itemKey}-ph`,
+            'data-xeg-role': 'gallery-item-placeholder',
             'data-index': actualIndex,
-            'data-xeg-role': 'gallery-item',
-            onDownload: onDownloadAll ? () => handleDownloadCurrent() : undefined,
-            onFocus: () => setFocusedIndex(actualIndex),
-            onBlur: () => setFocusedIndex(-1),
+            className: styles.galleryItem,
+            style: 'min-height: 1px;',
           });
         })}
       </div>
