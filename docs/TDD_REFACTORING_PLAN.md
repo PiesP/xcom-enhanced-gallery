@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-21 — 활성 Epic 1건(정리)
+업데이트: 2025-09-21 — 활성 Epic 1건(정리, EPIC-B 하위 REFACTOR 일부 완료)
 
 - EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
 
@@ -32,9 +32,10 @@
 - EPIC-B: Userscript 폴백 하드닝 v2(테스트 강화)
   - 목표: `getUserscript()` 폴백 경로의 오류 매핑/타임아웃/중단 처리 단위 테스트
     보강 및 회귀 가드, 서비스 계층의 비-2xx 표준화
-  - 상태: In Progress — xhr/download 폴백 GREEN, 서비스 비-2xx 표준화
-    완료(Completed에 이관). 남은 작업: REFACTOR(에러 메시지 포맷 통일, 토스트
-    라우팅 정책 점검/정제)
+  - 상태: In Progress — xhr/download 폴백 GREEN, 서비스 비-2xx 표준화 완료
+    (Completed에 이관). REFACTOR 하위 과제 중 다음 두 항목 완료(Completed에
+    이관): 에러 메시지 포맷 통일(http\_<status>), 토스트 라우팅 정책 가드. 남은
+    작업: 로깅 상관관계 보강만 진행 예정.
 
 ---
 

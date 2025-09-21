@@ -141,8 +141,7 @@ export class BulkDownloadService {
             ? status >= 200 && status < 300
             : true; // if both ok and status are missing (mock), treat as ok
         if (!computedOk) {
-          const statusText = (response as Response).statusText ?? '';
-          throw new Error(`http_${status ?? 0}${statusText ? ` ${statusText}` : ''}`);
+          throw new Error(`http_${status ?? 0}`);
         }
         const arrayBuffer = await response.arrayBuffer();
         return new Uint8Array(arrayBuffer);
@@ -193,8 +192,7 @@ export class BulkDownloadService {
           ? status >= 200 && status < 300
           : true;
       if (!computedOk) {
-        const statusText = (response as Response).statusText ?? '';
-        throw new Error(`http_${status ?? 0}${statusText ? ` ${statusText}` : ''}`);
+        throw new Error(`http_${status ?? 0}`);
       }
       const blob = await response.blob();
       download.downloadBlob(blob, filename);
@@ -488,7 +486,18 @@ export class BulkDownloadService {
           languageService.getString('messages.download.allFailed.title'),
           languageService.getString('messages.download.allFailed.body')
         );
-        throw new Error('All downloads failed');
+        // 구조화된 실패 결과를 반환하여 per-item 실패 원인(failures[])을 노출
+        const result: DownloadResult & { code: ErrorCode } = {
+          success: false,
+          status: 'error',
+          filesProcessed: mediaItems.length,
+          filesSuccessful: 0,
+          // ZIP 파일은 생성되지 않았으므로 filename 생략
+          failures,
+          error: 'All downloads failed',
+          code: ErrorCode.ALL_FAILED,
+        };
+        return result;
       }
 
       // ZIP 생성

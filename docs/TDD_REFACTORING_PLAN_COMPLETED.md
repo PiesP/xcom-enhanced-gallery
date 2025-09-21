@@ -32,6 +32,18 @@
   - 기존 fetch mock과의 호환을 위해 ok/status 미제공 시 성공으로 간주하는 안전
     로직 추가(테스트 친화)
 
+  2025-09-21: EPIC-B — 에러 메시지 포맷/토스트 정책 표준화 (완료)
+  - 에러 메시지: 모든 비-2xx 응답 에러 메시지를 정확히 `http_<status>` 형식으로
+    통일(statusText 미포함). 적용 범위: Userscript 어댑터(fallbackDownload),
+    BulkDownloadService(fetchArrayBufferWithRetry/downloadSingle),
+    MediaService(downloadSingle/downloadMultiple)
+  - 토스트 라우팅 정책: 기본 정책 가드 추가 — info/success는 live-only,
+    warning은 toast-only, error는 both(announce + toast). UnifiedToastManager에
+    대한 RED 테스트를 GREEN으로 전환
+  - BulkDownloadService: 전체 실패 시 throw 대신 구조화된 결과를 반환하도록 변경
+    (status=error, code=ALL_FAILED, failures[] 포함) — per-item 실패 원인 노출로
+    진단성 향상. 관련 테스트 GREEN
+
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리

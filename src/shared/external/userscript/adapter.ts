@@ -121,8 +121,7 @@ async function fallbackDownload(url: string, filename: string): Promise<void> {
   // GM_download와의 정합성을 위해 비-2xx 응답은 오류로 처리
   if (!response.ok) {
     const status = response.status ?? 0;
-    const statusText = response.statusText ?? '';
-    throw new Error(`http_${status}${statusText ? ` ${statusText}` : ''}`);
+    throw new Error(`http_${status}`);
   }
   const blob = await response.blob();
   // 안전한 Object URL 생성/해제
