@@ -46,28 +46,38 @@ Refactoring Tests 토글 도입까지 완료(Completed 로그 참조).
 
 스코프(What)
 
-- 모션 접근성 가드: prefers-reduced-motion 전역 유틸/토큰 레벨 적용(1차 적용
-  완료)
-- 리팩토링 테스트 재활성화(단건 검증 후) — 토글 경로 도입 완료, 단계적 GREEN
-  확인 예정
-- 스타일 Hex 사용 임계 상향 계획 수립(문서화 중심)
+- 정적 규칙 강화: 벤더 getter/Userscript 어댑터 미경유 직접 import 금지 자동
+  검사
+- 네트워크/다운로드 표준 유틸 정비: 타임아웃/재시도/취소, ZIP 리소스 해제/진행률
 
 상태 메모(2025-09-22)
 
-- 최근 완료 항목은 모두 Completed 로그로 이관되었으며, 활성 계획서는 진행/착수
-  예정 작업만 유지합니다. 현재 활성 작업 없음(회귀 가드/메트릭 모니터링만 지속).
+- 최근 완료 항목은 Completed 로그로 이관. EPIC-C의 P0 3건(빌드 validator 강화,
+  리팩토링 테스트 재활성화, 모션 가드 적용율 자동 체크)은 완료되었습니다. 현재는
+  P1(정적 규칙 강화, 네트워크/다운로드 표준화)만 활성 상태이며, 회귀 가드/메트릭
+  모니터링을 병행합니다.
 
 Acceptance(측정 기준)
 
-- 빌드 산출물 validator 통과 + Userscript 헤더 검사 추가 항목 녹색
-- 테스트: 신규/갱신 테스트 GREEN, 제외 테스트 단계적 재활성화(개별 실행 GREEN
-  확인)
+- 빌드 산출물 validator: Userscript 헤더
+  스키마(@name/@version/@namespace/@match|@include/@grant/@connect/@run-at)
+  통과, prod 빌드에서 sourcemap 완전 제거 확인, 헤더와 `release/metadata.json`
+  간 name/version 동기성 녹색
+- 테스트: 신규/갱신 테스트 GREEN, 제외 테스트 단계적 재활성화(개별 파일 단위
+  GREEN 확인 후 복구)
 - 접근성 가드: 애니메이션 존재 파일의 “prefers-reduced-motion” 고려율 100%(허용
   리스트 제외 0)
 
 작업 분해(Tasks · TDD)
 
-- 현재 활성 작업 없음 — 상태 모니터링/회귀 가드 유지
+P1 — 남은 작업
+
+4. 정적 규칙 강화: 벤더 getter/Userscript 어댑터 미준수 정적
+   검사(ESLint/dep-cruiser)
+5. 네트워크/다운로드 표준화: 요청 타임아웃/재시도/취소 유틸 도입, ZIP 다운로드
+   취소/리소스 해제/진행률 테스트
+
+실행 순서(권장): 4 → 5
 
 완료 정의(DoD)
 
@@ -89,7 +99,8 @@ Gate 체크리스트 (병합 전):
 - `npm run typecheck`
 - `npm run lint`
 - `npm test` (selective RED 허용)
-- `npm run build:prod` + 산출물 validator
+- `npm run build:prod` + 산출물 validator(Userscript 헤더/퍼미션/메타데이터
+  정합성 포함)
 
 ---
 

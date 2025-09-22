@@ -1,3 +1,13 @@
+2025-09-22: EPIC-C — P0 3건 완료(요약)
+
+- US-Validator-001: Userscript 헤더 스키마/퍼미션(@grant/@connect) 검사, prod
+  sourcemap 제거 확인, 헤더↔`release/metadata.json` 동기성 검증을 빌드
+  validator에 통합 — GREEN
+- Tests-Refactor-001: 제외(refactoring) 테스트 개별 GREEN 확인 후 기본 포함으로
+  전환 — CI/로컬 모두 GREEN
+- A11y-Motion-Guard-001: 애니메이션 경로 prefers-reduced-motion 가드 적용율 100%
+  자동 체크 도입 — 허용 리스트 제외 0 유지
+
 ### 2025-09-21 — Epic: 유저스크립트 하드닝 v1 — Phase 1(보안/네트워크)
 
 - TwitterTokenExtractor에 동의(Consent) 게이트 추가: 동의 전 추출 차단, 일시
