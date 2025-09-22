@@ -5,8 +5,8 @@
 
 :root {
   /* Base Colors - Raw Values */
-  --color-base-white: #ffffff;
-  --color-base-black: #000000;
+  --color-base-white: oklch(1 0 0);
+  --color-base-black: oklch(0 0 0);
 
   /* Blue Scale - Enhanced Contrast */
   --color-blue-50: oklch(0.97 0.013 228);

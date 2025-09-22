@@ -82,9 +82,11 @@ Acceptance(측정 기준)
 
 - 현재: 경고/허용 수치 기반(Phase 6 테스트)
 - 로드맵: 25 → 15 → 10 → 5 → 0 (각 단계는 테스트 기준 변경으로 관리)
-- 현재 단계(2025-09-22): 10 적용 — phase-6-final-metrics.test.ts 임계 갱신
-- 다음 단계: 잔여 base 색상(hex) 토큰을 OKLCH로 이관(white/black 기본값은 영향
-  범위 평가 후 토큰 레벨 전환) 및 헤더/주석 전면 OKLCH 표기 일원화
+- 현재 단계(2025-09-22): 5 적용 — phase-6-final-metrics.test.ts 임계 갱신
+- 베이스 색상(hex) 토큰을 OKLCH로 이관 완료(white/black → oklch), 주석/헤더는
+  OKLCH 표기로 일원화됨
+
+  다음 단계: 잔여 예외 케이스 점검 후 최종 0으로 절하
 
 완료 정의(DoD)
 

@@ -173,6 +173,15 @@ Userscript 하드닝 v3 (1차 완료)
   스위트 GREEN, dev/prod 빌드 및 Userscript 산출물 검증 통과. 다음 단계에서 base
   색상 토큰을 OKLCH로 이관 검토
 
+2025-09-22: PLAN — Style-Guard-001 Hex 임계 하향(10→5) 적용
+
+- 테스트 기준: `test/phase-6-final-metrics.test.ts`의 Hex 직접 사용 임계치를
+  10에서 5로 하향
+- 구현: 남은 base 색상(hex) 토큰 2건(white/black)을 OKLCH로 전환
+  (`oklch(1 0 0)`, `oklch(0 0 0)`)
+- 현황: 소스 내 Hex 사용 집계는 5 이하(실사용 0, 추후 예외 검사만 남음). 전체
+  스위트 GREEN, dev/prod 빌드 및 Userscript 산출물 검증 통과 예정
+
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
 
 - 완료 범위: 직접 색상 키워드(white/black) 0건, `transition: all` 전역 0건
