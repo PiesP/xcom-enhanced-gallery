@@ -842,7 +842,10 @@ export class MediaService {
   /**
    * 단일 미디어 다운로드
    */
-  async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
+  async downloadSingle(
+    media: MediaInfo | MediaItem,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<SingleDownloadResult> {
     try {
       const correlationId = createCorrelationId();
       const slog = createScopedLoggerWithCorrelation('MediaDownload', correlationId);
@@ -852,7 +855,12 @@ export class MediaService {
 
       // URL에서 fetch하여 Blob으로 다운로드
       slog.info('Single download started', { url: media.url, filename });
-      const response = await fetch(media.url);
+      if (options.signal?.aborted) {
+        throw new Error('Download cancelled by user');
+      }
+      const response = await fetch(media.url, {
+        ...(options.signal ? { signal: options.signal } : {}),
+      } as RequestInit);
       if (!response.ok) {
         const status = (response as Response).status ?? 0;
         throw new Error(`http_${status}`);
@@ -937,7 +945,7 @@ export class MediaService {
 
       // 파일들을 다운로드하여 ZIP에 추가
       for (let i = 0; i < mediaItems.length; i++) {
-        if (this.currentAbortController?.signal.aborted) {
+        if (options.signal?.aborted) {
           throw new Error('Download cancelled by user');
         }
 
@@ -953,7 +961,9 @@ export class MediaService {
         });
 
         try {
-          const response = await fetch(media.url);
+          const response = await fetch(media.url, {
+            ...(options.signal ? { signal: options.signal } : {}),
+          } as RequestInit);
           if (!response.ok) {
             const status = (response as Response).status ?? 0;
             throw new Error(`http_${status}`);
@@ -981,7 +991,7 @@ export class MediaService {
       const { createZipBlobFromFileMap } = await import('@shared/external/zip/zip-creator');
       const zipBlob = await createZipBlobFromFileMap(new Map(Object.entries(files)), {
         compressionLevel: 0,
-        // MediaService currently lacks a dedicated controller; rely on options.signal if added in future
+        ...(options.signal ? { abortSignal: options.signal } : {}),
         zipTimeoutMs: 60_000,
         zipRetries: 0,
       });
