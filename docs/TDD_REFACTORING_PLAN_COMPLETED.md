@@ -165,6 +165,14 @@ Userscript 하드닝 v3 (1차 완료)
 - 현황: 소스 내 Hex 사용 집계는 15 이하(주석 포함). 다음 단계에서 주석 내 Hex
   표기도 제거하여 임계 10 준비
 
+2025-09-22: PLAN — Style-Guard-001 Hex 임계 하향(15→10) 적용
+
+- 테스트 기준: `test/phase-6-final-metrics.test.ts`의 Hex 직접 사용 임계치를
+  15에서 10으로 하향
+- 현황: 소스 내 Hex 사용 집계는 10 이하(주석 제외, base white/black 잔존). 전체
+  스위트 GREEN, dev/prod 빌드 및 Userscript 산출물 검증 통과. 다음 단계에서 base
+  색상 토큰을 OKLCH로 이관 검토
+
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
 
 - 완료 범위: 직접 색상 키워드(white/black) 0건, `transition: all` 전역 0건
