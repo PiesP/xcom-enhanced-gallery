@@ -5582,7 +5582,6 @@
         "src/shared/services/index.ts",
         "src/shared/services/core-services.ts",
         "src/shared/services/service-initialization.ts",
-        "src/shared/services/UnifiedServiceDiagnostics.ts",
         "src/utils/index.ts"
       ],
       "orphan": false,
@@ -7247,59 +7246,8 @@
       "source": "src/shared/services/EventManager.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/services/UnifiedEventManager.ts",
         "src/shared/services/event-managers.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/UnifiedEventManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./EventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/EventManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/UnifiedServiceDiagnostics.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./ServiceManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/ServiceManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -8790,8 +8738,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 262,
-    "totalDependenciesCruised": 362,
+    "totalCruised": 260,
+    "totalDependenciesCruised": 360,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
