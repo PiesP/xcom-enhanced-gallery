@@ -89,6 +89,14 @@
 - 유틸: `@shared/utils` 배럴에 withRetry 재노출 추가로 서비스 전반 재사용 준비.
 - 게이트: 타입/린트/전체 테스트 GREEN, 기존 회귀 스위트 무변.
 
+2025-09-22: EPIC-C — NETWORK-ZIP-002 ZIP 유틸 점진 적용 (완료)
+
+- 적용 범위: MediaService/BulkDownloadService의 ZIP 생성 경로를
+  `@shared/external/zip/zip-creator`로 중앙화하여 fflate 직접 사용 제거.
+- 영향: 기능 동등(파일 수/이름 충돌 처리/결과 코드 유지), 향후
+  취소/타임아웃/재시도 옵션 전파를 위한 공용 진입점 정리. 기존 테스트/빌드 GREEN
+  유지.
+
 2025-09-22: STYLE-ISOLATION-P1 — ShadowRoot 스타일 주입 단일화 (완료)
 
 - 구현: Shadow DOM 사용 시 단일 <style> 요소로 번들 전역

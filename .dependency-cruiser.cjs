@@ -49,11 +49,12 @@ module.exports = {
     {
       name: 'no-direct-vendor-imports',
       comment: '외부 라이브러리는 vendors getter를 통해 접근',
-      severity: 'warn',
+      severity: 'error',
       from: {
         path: '^src',
         pathNot: [
-          '^src/(shared/utils/vendors|infrastructure/external/vendors)', // vendors 유틸리티
+          '^src/shared/external/vendors',
+          '^src/infrastructure/external/vendors',
           '^src/shared/types/vendor.types.ts', // 타입 정의 파일
           '^src/types/', // 전역 타입 정의
         ],

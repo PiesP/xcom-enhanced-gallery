@@ -9018,10 +9018,10 @@
         {
           "name": "no-direct-vendor-imports",
           "comment": "외부 라이브러리는 vendors getter를 통해 접근",
-          "severity": "warn",
+          "severity": "error",
           "from": {
             "path": "^src",
-            "pathNot": "^src/(shared/utils/vendors|infrastructure/external/vendors)|^src/shared/types/vendor.types.ts|^src/types/"
+            "pathNot": "^src/shared/external/vendors|^src/infrastructure/external/vendors|^src/shared/types/vendor.types.ts|^src/types/"
           },
           "to": {
             "path": "^(fflate|preact|@preact)"

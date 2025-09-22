@@ -842,7 +842,10 @@ export class MediaService {
   /**
    * 단일 미디어 다운로드
    */
-  async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
+  async downloadSingle(
+    media: MediaInfo | MediaItem,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<SingleDownloadResult> {
     try {
       const correlationId = createCorrelationId();
       const slog = createScopedLoggerWithCorrelation('MediaDownload', correlationId);
@@ -852,7 +855,12 @@ export class MediaService {
 
       // URL에서 fetch하여 Blob으로 다운로드
       slog.info('Single download started', { url: media.url, filename });
-      const response = await fetch(media.url);
+      if (options.signal?.aborted) {
+        throw new Error('Download cancelled by user');
+      }
+      const response = await fetch(media.url, {
+        ...(options.signal ? { signal: options.signal } : {}),
+      } as RequestInit);
       if (!response.ok) {
         const status = (response as Response).status ?? 0;
         throw new Error(`http_${status}`);
@@ -897,8 +905,6 @@ export class MediaService {
           code: ErrorCode.EMPTY_INPUT,
         } as DownloadResult;
       }
-      const { getFflate } = await import('@shared/external/vendors');
-      const fflate = getFflate();
       const download = getNativeDownload();
 
       const files: Record<string, Uint8Array> = {};
@@ -939,7 +945,7 @@ export class MediaService {
 
       // 파일들을 다운로드하여 ZIP에 추가
       for (let i = 0; i < mediaItems.length; i++) {
-        if (this.currentAbortController?.signal.aborted) {
+        if (options.signal?.aborted) {
           throw new Error('Download cancelled by user');
         }
 
@@ -955,7 +961,9 @@ export class MediaService {
         });
 
         try {
-          const response = await fetch(media.url);
+          const response = await fetch(media.url, {
+            ...(options.signal ? { signal: options.signal } : {}),
+          } as RequestInit);
           if (!response.ok) {
             const status = (response as Response).status ?? 0;
             throw new Error(`http_${status}`);
@@ -979,13 +987,18 @@ export class MediaService {
         throw new Error('All downloads failed');
       }
 
-      // ZIP 생성
-      const zipData = fflate.zipSync(files);
+      // ZIP 생성 (표준 유틸 경유)
+      const { createZipBlobFromFileMap } = await import('@shared/external/zip/zip-creator');
+      const zipBlob = await createZipBlobFromFileMap(new Map(Object.entries(files)), {
+        compressionLevel: 0,
+        ...(options.signal ? { abortSignal: options.signal } : {}),
+        zipTimeoutMs: 60_000,
+        zipRetries: 0,
+      });
       const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
 
       // ZIP 다운로드
-      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
-      download.downloadBlob(blob, zipFilename);
+      download.downloadBlob(zipBlob, zipFilename);
 
       options.onProgress?.({
         phase: 'complete',

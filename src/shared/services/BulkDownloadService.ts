@@ -388,8 +388,6 @@ export class BulkDownloadService {
     try {
       const correlationId = options.correlationId ?? createCorrelationId();
       const slog = createScopedLoggerWithCorrelation('BulkDownload', correlationId);
-      const { getFflate } = await import('@shared/external/vendors');
-      const fflate = getFflate();
       const download = getNativeDownload();
 
       const files: Record<string, Uint8Array> = {};
@@ -518,15 +516,21 @@ export class BulkDownloadService {
         return result;
       }
 
-      // ZIP 생성
+      // ZIP 생성 (표준 유틸 경유)
       const zipStart = Date.now();
-      const zipData = fflate.zipSync(files);
+      const { createZipBlobFromFileMap } = await import('@shared/external/zip/zip-creator');
+      const zipBlob = await createZipBlobFromFileMap(new Map(Object.entries(files)), {
+        compressionLevel: 0,
+        // forward cancellation/timeouts/retries to zip-creator
+        ...(abortSignal ? { abortSignal } : {}),
+        zipTimeoutMs: Math.max(0, 60_000),
+        zipRetries: Math.max(0, retries),
+      });
       const zipDurationMs = Math.max(0, Date.now() - zipStart);
       const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
 
       // ZIP 다운로드
-      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
-      download.downloadBlob(blob, zipFilename);
+      download.downloadBlob(zipBlob, zipFilename);
 
       options.onProgress?.({
         phase: 'complete',
@@ -535,10 +539,7 @@ export class BulkDownloadService {
         percentage: 100,
       });
 
-      const zipSize =
-        (zipData as unknown as { length?: number; byteLength?: number }).length ??
-        (zipData as unknown as { length?: number; byteLength?: number }).byteLength ??
-        0;
+      const zipSize = zipBlob.size ?? 0;
       slog.info(
         'ZIP download complete',
         logFields({
