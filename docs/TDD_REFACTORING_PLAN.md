@@ -78,14 +78,7 @@ Acceptance(측정 기준)
 
 작업 분해(Tasks · TDD)
 
-6. Style-Guard-001 — Hex 직접 사용 임계 상향 계획(단계적)
-
-- 상태: 최종 단계(0) 달성 — phase-6-final-metrics.test.ts에서 hexUsage <= 0으로
-  갱신됨(2025-09-22)
-- 베이스 색상(hex) 토큰을 OKLCH로 이관 완료(white/black → oklch), 주석/헤더는
-  OKLCH 표기로 일원화됨
-
-  본 항목은 Completed 로그로 이관합니다.
+- 현재 활성 작업 없음 — 상태 모니터링/회귀 가드 유지
 
 완료 정의(DoD)
 
