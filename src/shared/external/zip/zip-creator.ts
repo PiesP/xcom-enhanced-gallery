@@ -10,7 +10,7 @@
 
 import { logger } from '@shared/logging';
 import { getFflate } from '@shared/external/vendors';
-import { safeParseInt } from '@shared/utils';
+import { safeParseInt } from '@shared/utils/type-safety-helpers';
 
 /**
  * Media item interface for ZIP creation
@@ -95,6 +95,20 @@ export async function createZipFromItems(
   } finally {
     logger.timeEnd('[ZipCreator] createZipFromItems');
   }
+}
+
+/**
+ * Creates a ZIP blob from an existing map of filename -> Uint8Array.
+ * This is useful when callers already handled downloading/validation
+ * but want a single, standardized ZIP creation path (fflate + options).
+ */
+export async function createZipBlobFromFileMap(
+  fileData: Map<string, Uint8Array>,
+  config: Partial<ZipCreationConfig> = {}
+): Promise<Blob> {
+  const fullConfig = { ...DEFAULT_ZIP_CONFIG, ...config } as ZipCreationConfig;
+  // zip filename argument is unused in createZipBlob (kept for API symmetry)
+  return createZipBlob(fileData, 'bundle.zip', fullConfig);
 }
 
 /**

@@ -897,8 +897,6 @@ export class MediaService {
           code: ErrorCode.EMPTY_INPUT,
         } as DownloadResult;
       }
-      const { getFflate } = await import('@shared/external/vendors');
-      const fflate = getFflate();
       const download = getNativeDownload();
 
       const files: Record<string, Uint8Array> = {};
@@ -979,13 +977,15 @@ export class MediaService {
         throw new Error('All downloads failed');
       }
 
-      // ZIP 생성
-      const zipData = fflate.zipSync(files);
+      // ZIP 생성 (표준 유틸 경유)
+      const { createZipBlobFromFileMap } = await import('@shared/external/zip/zip-creator');
+      const zipBlob = await createZipBlobFromFileMap(new Map(Object.entries(files)), {
+        compressionLevel: 0,
+      });
       const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
 
       // ZIP 다운로드
-      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
-      download.downloadBlob(blob, zipFilename);
+      download.downloadBlob(zipBlob, zipFilename);
 
       options.onProgress?.({
         phase: 'complete',
