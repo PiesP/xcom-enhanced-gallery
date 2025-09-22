@@ -189,6 +189,9 @@ Toolbar/Modal  → z-index는 토큰(`--xeg-z-toolbar`, `--xeg-z-modal`)만 사�
   - 전역 정리(cleanup)는 엔트리(`src/main.ts`)에서만 수행
 - Settings
   - 저장/복원은 SettingsService 경유, 타입/기본값/마이그레이션을 중앙에서 관리
+  - settings-access 키 가이드: 'download.showProgressToast' — SettingsModal에서
+    setSetting/getSetting으로 저장/복원, GalleryRenderer가 getSetting으로 읽어
+    BulkDownloadService.downloadMultiple(..., { showProgressToast })로 전달
 - Toast
   - 전역 `UnifiedToastManager` 사용, 컴포넌트 로컬 토스트 금지
   - 기본 라우팅: info/success(live-only), warning/error(toast-only)

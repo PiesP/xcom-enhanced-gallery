@@ -74,6 +74,34 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-22: EPIC-SM — Settings Modal Implementation Audit (완료)
+
+- 메뉴 연동
+  - Theme: select 변경 시 document.documentElement[data-theme] 즉시 반영 —
+    test/unit/shared/components/ui/settings-modal.theme-language.integration.test.tsx
+    GREEN
+  - Language: select 변경 시 문자열 리소스가 해당 언어로 전환 — 동일 테스트에서
+    레이블 변경 확인 GREEN
+  - Download 진행 토스트: settings-access 키('download.showProgressToast')
+    저장/로드, GalleryRenderer → BulkDownloadService 옵션 전달(
+    src/features/gallery/GalleryRenderer.ts: getSetting→downloadMultiple(...{
+    showProgressToast }) ) — 서비스 레벨 진행 토스트 동작 테스트
+    test/unit/shared/services/bulk-download.progress-toast.test.ts GREEN
+- 접근성/키보드 스모크
+  - Panel/Modal 모드: Escape 닫힘, backdrop 클릭 닫힘, dialog aria 속성 —
+    test/features/settings/settings-modal.accessibility.smoke.test.ts,
+    test/features/settings/settings-modal.modal-accessibility.smoke.test.ts
+    GREEN
+  - Tab/Shift+Tab 순환(스모크): 컨테이너 내 포커스 유지 —
+    test/unit/shared/components/ui/settings-modal.focus-trap.tab-cycle.test.tsx
+    GREEN
+- 문서: 코딩 가이드(Settings 섹션)에 'download.showProgressToast' 키와 소비
+  경로를 명시
+
+영향: 설정 모달의 기능/접근성 회귀 가드가 스모크 수준으로 확보되었고,
+GalleryRenderer의 대량 다운로드 경로는 사용자 설정과 일치하게 토스트 표시 정책을
+준수합니다.
+
 2025-09-22: EPIC-SM — Settings Modal 접근성 스모크 1차 완료
 
 - panel 모드 스모크: dialog role/aria 속성, Escape/배경 클릭 닫힘 가드 —
