@@ -49,19 +49,7 @@ export default defineConfig({
 
     // 글로브 패턴
     include: ['test/**/*.{test,spec}.{ts,tsx}'],
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/e2e/**',
-      // 임시 비활성화: 구현되지 않은 의존성이 있는 테스트들
-      // 환경 변수로 임시 포함을 허용: VITEST_INCLUDE_REF_TESTS=1 인 경우 아래 2개 항목을 제외 목록에서 제거
-      ...(process.env.VITEST_INCLUDE_REF_TESTS === '1'
-        ? []
-        : [
-            'test/refactoring/event-manager-integration.test.ts',
-            'test/refactoring/service-diagnostics-integration.test.ts',
-          ]),
-    ],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
 
     // 커버리지 설정
     coverage: {

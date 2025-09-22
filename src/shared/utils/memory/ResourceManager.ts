@@ -15,23 +15,39 @@ export type ResourceType = 'image' | 'audio' | 'video' | 'data' | 'cache';
  * 리소스 관리자
  */
 export class ResourceManager {
-  private readonly resources = new Map<string, () => void>();
+  private readonly resources = new Map<
+    string,
+    { cleanup: () => void; type?: ResourceType | string; context?: string }
+  >();
 
   /**
    * 리소스 등록
    */
-  register(id: string, cleanup: () => void): void {
-    this.resources.set(id, cleanup);
+  register(
+    id: string,
+    cleanup: () => void,
+    options?: { type?: ResourceType | string; context?: string }
+  ): void {
+    const entry: { cleanup: () => void; type?: ResourceType | string; context?: string } = {
+      cleanup,
+    };
+    if (options && 'type' in options && options.type !== undefined) {
+      entry.type = options.type;
+    }
+    if (options && 'context' in options && options.context !== undefined) {
+      entry.context = options.context;
+    }
+    this.resources.set(id, entry);
   }
 
   /**
    * 리소스 해제
    */
   release(id: string): boolean {
-    const cleanup = this.resources.get(id);
-    if (cleanup) {
+    const entry = this.resources.get(id);
+    if (entry) {
       try {
-        cleanup();
+        entry.cleanup();
         this.resources.delete(id);
         return true;
       } catch (error) {
@@ -48,9 +64,9 @@ export class ResourceManager {
   releaseAll(): void {
     const errors: Error[] = [];
 
-    this.resources.forEach((cleanup, id) => {
+    this.resources.forEach((entry, id) => {
       try {
-        cleanup();
+        entry.cleanup();
       } catch (error) {
         errors.push(error instanceof Error ? error : new Error(String(error)));
         logger.error(`Failed to release resource ${id}:`, error);
@@ -76,6 +92,51 @@ export class ResourceManager {
    */
   hasResource(id: string): boolean {
     return this.resources.has(id);
+  }
+
+  /**
+   * (최소) 타입별 리소스 카운트
+   * - 명시적 type 메타가 없으면 id의 접두사(":" 이전)를 타입으로 간주
+   */
+  getCountsByType(): Record<string, number> {
+    const map: Record<string, number> = {};
+    for (const [id, entry] of this.resources) {
+      const t = entry.type ?? this.deriveTypeFromId(id);
+      map[t] = (map[t] ?? 0) + 1;
+    }
+    return map;
+  }
+
+  /**
+   * (최소) 컨텍스트별 리소스 카운트
+   * - 명시적 context 메타가 없으면 집계하지 않음(안전 기본값)
+   */
+  getCountsByContext(): Record<string, number> {
+    const map: Record<string, number> = {};
+    for (const [, entry] of this.resources) {
+      if (!entry.context) continue;
+      map[entry.context] = (map[entry.context] ?? 0) + 1;
+    }
+    return map;
+  }
+
+  /** 전체 진단 스냅샷 */
+  getDiagnostics(): {
+    total: number;
+    byType: Record<string, number>;
+    byContext: Record<string, number>;
+  } {
+    return {
+      total: this.getResourceCount(),
+      byType: this.getCountsByType(),
+      byContext: this.getCountsByContext(),
+    };
+  }
+
+  private deriveTypeFromId(id: string): string {
+    const idx = id.indexOf(':');
+    if (idx > 0) return id.slice(0, idx);
+    return 'generic';
   }
 }
 

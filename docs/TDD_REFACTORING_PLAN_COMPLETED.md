@@ -93,6 +93,24 @@ Userscript 하드닝 v3 (1차 완료)
 - 활성 계획의 남은 스코프는 윈도우링 성능 가드, 모션 접근성 가드, 제외 테스트
   재활성화, Hex 임계 상향 계획으로 축소되었습니다.
 
+2025-09-22: TESTS — Refactoring 통합 테스트 기본 포함 전환 (완료)
+
+- 변경: vitest.config.ts에서 exclude 항목을 정리하여
+  test/refactoring/event-manager-integration.test.ts와
+  test/refactoring/service-diagnostics-integration.test.ts를 기본 포함.
+- 정합화: Diagnostics 테스트는 테스트 내부 경량 헬퍼로 대체해 Unified\*
+  어댑터/별칭 의존성 제거. EventManager 테스트도 현 구조에 맞게 정비.
+- 결과: 단일 파일 GREEN 확인 후 전체 스위트 재실행 GREEN. CI/훅 영향 없음.
+
+2025-09-22: MEMORY — ResourceManager 최소 진단 메트릭 도입 (완료)
+
+- 구현: ResourceManager에 선택적 메타(type/context)와 집계 API(getCountsByType,
+  getCountsByContext, getDiagnostics) 추가. id 접두사 기반 타입 유추를 제공해
+  기존 호출과 호환 유지.
+- 테스트: unit/shared/utils/memory-resource.diagnostics.test.ts 추가 —
+  총계/타입/ 컨텍스트 집계 가드 GREEN. 기존 object-url-manager 등과의 계약 영향
+  없음.
+
 2025-09-22: PLAN — EPIC-C 윈도우링 항목 완료에 따른 활성 계획서 정리
 
 - Gallery-Perf-001(간단 윈도우링) 항목이 완료되어 활성 계획서의 EPIC-C 스코프와

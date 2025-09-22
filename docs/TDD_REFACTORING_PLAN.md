@@ -60,9 +60,13 @@ Refactoring Tests 토글 도입까지 완료(Completed 로그 참조).
   항목 제거.
 - A11y-001: CSS 애니메이션 정적 스캔 테스트 추가 및 CSS 보정으로 1차 완성. 전체
   스위트 GREEN 유지.
-- Tests-Refactor-001: 환경 변수(VITEST_INCLUDE_REF_TESTS=1) 토글·vitest alias로
-  개별 실행 경로 도입 완료. 테스트 본체 재활성화는 단계적 진행(개별 GREEN 확인
-  후 exclude 제거).
+- Tests-Refactor-001: 환경 변수(VITEST_INCLUDE_REF_TESTS=1) 토글 경로는
+  유지하되, event-manager-integration / service-diagnostics-integration 2개 통합
+  테스트는 정합화 완료되어 기본 포함으로 전환(exclude 제거). 전체 스위트 GREEN
+  재확인. Unified\* 어댑터/별칭 제거 완료.
+
+- Memory-Diag-001: ResourceManager 최소 진단(byType/byContext) 메트릭 추가 및
+  단위 테스트 도입. 기존 API 비호환 변경 없음.
 
 Acceptance(측정 기준)
 
@@ -81,7 +85,7 @@ Acceptance(측정 기준)
 - 테스트: 애니메이션 선언 파일이 가드를 포함하는지 정적 검사(화이트리스트 예외
   허용) — 테스트 및 CSS 보정 완료
 
-6. Tests-Refactor-001 — 제외 테스트 재활성화 플랜
+6. Tests-Refactor-001 — 제외 테스트 재활성화 플랜 (완료)
 
 - 절차: 개별 파일 단독 실행으로 GREEN 확인 → vitest.config.ts exclude에서 제거
 - 파일:
@@ -90,14 +94,19 @@ Acceptance(측정 기준)
   - [완료] test/refactoring/service-diagnostics-integration.test.ts — 현
     구조(CoreService/BrowserService)로 정합화, 테스트 내부 헬퍼로 대체, GREEN
     확인
-- 현황:
-  - VITEST_INCLUDE_REF_TESTS=1 토글 유지(개별 실행용)
-  - UnifiedEventManager/UnifiedServiceDiagnostics 테스트 어댑터 및 별칭 제거
-    완료
-  - exclude 제거 검토 대상: event-manager-integration,
-    service-diagnostics-integration (단일 실행 GREEN 확인됨)
+- 현황: exclude 제거 및 기본 포함 완료, 양 테스트 정합화/단독 GREEN 검증 및 전체
+  스위트 GREEN 재확인. UnifiedEventManager/UnifiedServiceDiagnostics 테스트
+  어댑터 및 별칭 제거 완료.
 
-7. Style-Guard-001 — Hex 직접 사용 임계 상향 계획(단계적)
+7. Memory-Diag-001 — ResourceManager 최소 진단(byType/byContext) (완료)
+
+- 구현: ResourceManager.register 옵션(type/context) 추가(선택), byType/byContext
+  카운트 및 getDiagnostics 스냅샷 제공. id 접두사("type:") 기반 타입 유추 로직
+  포함. 기존 호출 호환 유지.
+- 테스트: memory-resource.diagnostics.test.ts 추가 — 총계/타입/컨텍스트 집계
+  가드.
+
+8. Style-Guard-001 — Hex 직접 사용 임계 상향 계획(단계적)
 
 - 현재: 경고/허용 수치 기반(Phase 6 테스트)
 - 계획: 릴리스마다 허용 수치 점진 하향(예: 25 → 15 → 5 → 0) 로드맵을
