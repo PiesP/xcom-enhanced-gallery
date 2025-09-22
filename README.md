@@ -116,19 +116,16 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ### 아키텍처
 
-- **3-Layer Architecture**: Features → Shared → External 구조로 모듈화
-- **타입 안전성**: TypeScript 기반 완전한 타입 안전성 보장
-- **성능 최적화**: 번들 크기 최소화 및 지연 로딩 구현
-- **격리된 렌더링**: X.com 원본 스타일에 영향 없는 독립적 UI
-
-### 핵심 기술
-
-- **UI 프레임워크**: Preact (3KB) - React 호환, 경량화
-- **상태 관리**: Preact Signals - 반응형 상태 관리
+- Heroicons(React) 컴포넌트를 안전하게 사용하는 “벤더 getter” 패턴을 적용합니다.
+  자세한 설계는 문서를 참고하세요.
+  - 참고: `docs/vendors-safe-api.md`
 - **압축**: fflate - 고성능 ZIP 압축 라이브러리
 - **스타일링**: CSS Modules + 디자인 토큰 시스템
 
-### 아이콘 시스템
+빠른 가이드는 CONTRIBUTING을 확인하세요: [CONTRIBUTING.md](CONTRIBUTING.md) 개발
+워크플로/CI/스크립트는 AGENTS를 참고하세요: [AGENTS.md](AGENTS.md)
+아키텍처/규칙/가이드는 문서 진입점을 참고하세요:
+[docs/README.md](docs/README.md)
 
 - **아이콘 라이브러리**: Heroicons (React) 컴포넌트를 안전하게 사용하기 위해
   “벤더 getter” 패턴을 적용했습니다.
@@ -202,8 +199,11 @@ npm test
 
 - 아키텍처와 책임 분리 설계서: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 코딩 가이드라인: [docs/CODING_GUIDELINES.md](docs/CODING_GUIDELINES.md)
-- 의존성 그래프(인터랙티브):
-  [docs/dependency-graph.html](docs/dependency-graph.html)
+- 의존성 그래프(인터랙티브): 문서 진입점: [docs/README.md](docs/README.md)
+  아키텍처 설계: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 코딩 가이드:
+  [docs/CODING_GUIDELINES.md](docs/CODING_GUIDELINES.md) 의존성
+  그래프(인터랙티브): [docs/dependency-graph.html](docs/dependency-graph.html)
+  - 그래프 생성/검증 방법은 [AGENTS.md](AGENTS.md) 참고
 
 의존성 그래프 생성/뷰어
 

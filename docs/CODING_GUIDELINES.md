@@ -1,6 +1,7 @@
-# 💻 코딩 가이드라인
+# 코딩 가이드라인
 
-> **일관된 코드 스타일과 품질 보장**
+일관된 코드 스타일과 품질을 위한 집행 가능한 규칙만 정리합니다. 서술형 중복은
+제거하고, 세부 설계는 `ARCHITECTURE.md`/`vendors-safe-api.md`를 참조하세요.
 
 ## 🎨 코딩 스타일
 
@@ -58,28 +59,7 @@ Gallery
   .controls (집합 pill 형태)                -> var(--xeg-radius-pill)
   .xegCloseButton / .xegNavButton (shape)   -> var(--xeg-radius-full)
   .mediaElement / .error (standard surface) -> var(--xeg-radius-lg)
-# xcom-enhanced-gallery 코딩 가이드라인
-
-프로젝트의 현재 아키텍처와 테스트 규칙에 맞춘 실무 지침입니다. 변경 시에는 관련 테스트와 문서를 함께 업데이트하세요.
-
-## 목차
-
-1. 핵심 스택 · 스크립트 · 경로 별칭
-2. 아키텍처 계층과 의존성 경계
-3. Import 순서 · 파일/심볼 네이밍
-4. 외부 의존성 접근: Vendor getters · Userscript 어댑터
-5. 상태/컴포넌트: Signals · Preact 패턴 · PC 전용 입력
-6. 스타일 가이드: CSS Modules · 디자인 토큰(색상/반경/간격/애니메이션) · A11y
-7. Userscript 통합: 스타일 주입 게이팅 · 빌드/소스맵 정책
-8. 서비스/도메인 규칙: Settings · Toast · 다운로드/ZIP · 로그/상관관계
-9. 테스트 전략(TDD) · 모킹 · 임시 제외 규칙
-10. 툴바 키보드 내비 · Wheel 정책
-11. 성능/수명주기: 프리로드 · 타이머/리스너 클린업
-12. 품질 게이트 · 빠른 체크리스트
-
----
-
-## 1) 핵심 스택 · 스크립트 · 경로 별칭
+## 핵심 스택 · 스크립트 · 경로 별칭
 
 - Stack: TypeScript(strict) + Vite 7 + Preact 10 + @preact/signals + Vitest 3(JSDOM)
 - Userscript 번들: 단일 파일 산출물
@@ -93,7 +73,7 @@ Gallery
   - 종합 검증: `npm run validate` (typecheck + lint:fix + format)
 - 경로 별칭(빌드/테스트/TS 공통): `@`, `@features`, `@shared`, `@assets`
 
-## 2) 아키텍처 계층과 의존성 경계
+## 아키텍처 계층과 의존성 경계
 
 - 계층 규칙(단방향)
   - Features(UI/도메인) → Shared(services/state/utils/logging) → External(브라우저/벤더/Userscript 어댑터)
@@ -102,7 +82,7 @@ Gallery
   - preact / @preact/signals / fflate 등을 코드에서 직접 import 금지
 - Userscript 통합은 `@shared/external/userscript/adapter`를 통해서만 사용
 
-## 3) Import 순서 · 파일/심볼 네이밍
+## Import 순서 · 파일/심볼 네이밍
 
 - Import 순서: 타입 → 벤더 getter → 내부 모듈 → 스타일
 - 파일/디렉터리: kebab-case (`gallery-app.tsx`, `bulk-download-service.ts`)
@@ -110,7 +90,7 @@ Gallery
 - 상수: SCREAMING_SNAKE_CASE (`MAX_CONCURRENCY`)
 - 타입/인터페이스: PascalCase (`MediaItem`, `LoadingState`)
 
-## 4) 외부 의존성 접근: Vendor getters · Userscript 어댑터
+## 외부 의존성 접근: Vendor getters · Userscript 어댑터
 
 - Vendor getters(`@shared/external/vendors`)
   - TDZ-safe 정적 API 사용: `initializeVendors()`, `getPreact()`, `getPreactSignals()`, `getFflate()`, `getNativeDownload()` 등
@@ -132,7 +112,7 @@ const { signal, computed } = getPreactSignals();
 await getUserscript().download(url, filename);
 ````
 
-## 5) 상태/컴포넌트: Signals · Preact 패턴 · PC 전용 입력
+## 상태/컴포넌트: Signals · Preact 패턴 · PC 전용 입력
 
 - Signals 기반 전역 상태는 `src/shared/state/**`에 정의, 파생값은 selector 유틸
   사용
@@ -149,7 +129,7 @@ Lint 가드
 - 전역 타입: TouchEvent/PointerEvent 사용은 경고로 표시(예외가 필요한 경우
   테스트/설계 문서로 근거를 남기고 제한적으로 허용)
 
-## 6) 스타일 가이드: CSS Modules · 디자인 토큰 · A11y
+## 스타일 가이드: CSS Modules · 디자인 토큰 · A11y
 
 - CSS Modules + 디자인 토큰만 사용. 하드코딩 색상/시간/이징 금지
 - 토큰 계층
@@ -171,18 +151,34 @@ Gallery        → control: --xeg-radius-md / pill group: --xeg-radius-pill
 Toolbar/Modal  → z-index는 토큰(`--xeg-z-toolbar`, `--xeg-z-modal`)만 사용
 ```
 
-## 7) Userscript 통합: 스타일 주입 게이팅 · 빌드/소스맵
+## Userscript 통합: 스타일 주입 게이팅 · 빌드/소스맵
 
 - 스타일 주입 게이팅(vite 플러그인에서 자동 지원)
   - 글로벌 CSS 텍스트: `window.XEG_CSS_TEXT`
   - Head 주입 모드: `window.XEG_STYLE_HEAD_MODE ∈ {'auto'|'off'|'defer'}`
   - ShadowRoot 사용 시 글로벌 CSS 텍스트를 직접 주입(@import 금지)
-- 소스맵 정책(dev/prod 공통)
-  - `build.sourcemap: true`, `.map` 파일 생성, Userscript 끝에
-    `//# sourceMappingURL=` 주석 부착
-  - validator가 `sources/sourcesContent` 무결성 검사 및 dead-preload 제거 확인
+- 소스맵 정책
+  - 공통: `build.sourcemap: true`로 dev/prod 모두 .map 파일은 생성한다.
+  - 주석(//# sourceMappingURL=): 기본 정책은 dev에만 부착한다.
+  - 예외: prod에서 .map을 릴리즈 아티팩트에 포함하는 경우에 한해 주석을 부착할
+    수 있다(정책 택1, validator로 일관성 확인).
+  - validator는 `sources/sourcesContent` 무결성과 dead-preload 제거를 검증한다.
 
-## 8) 서비스/도메인 규칙: Settings · Toast · 다운로드/ZIP · 로그
+- 단일 파일 보장(자산 인라인)
+  - CSS 내 `url()` 자산(아이콘/폰트/이미지)은 data URI로 인라인한다.
+  - 빌드 설정에서 `assetsInlineLimit`을 충분히 크게(사실상 Infinity) 설정한다.
+  - 산출물에 dist/assets 의존이 남지 않도록 validator가 검증한다.
+
+- 헤더 메타 체크리스트
+  - 필수: `@name`, `@namespace`, `@version`, `@description`, `@author`,
+    `@license`
+  - 실행 범위: `@match`(x.com/_, _.x.com/_) — 필요 시 twitter.com/_ 확장 검토
+  - 권한: `@grant` 최소화(GM_setValue, GM_getValue, GM_download,
+    GM_xmlhttpRequest), `@connect` 도메인 화이트리스트 최신화
+  - 배포: `@downloadURL`, `@updateURL`, `@supportURL`
+  - 품질: `@homepageURL`, `@source`, `@icon`, `@antifeature none`
+
+## 서비스/도메인 규칙: Settings · Toast · 다운로드/ZIP · 로그
 
 - ServiceManager 접근
   - features → 직접 import 금지. `@shared/container/*` 액세서/브리지 사용
@@ -204,7 +200,7 @@ Toolbar/Modal  → z-index는 토큰(`--xeg-z-toolbar`, `--xeg-z-modal`)만 사�
 - 로깅/상관관계
   - 대량 작업에 `correlationId` 적용, 범위 지정 로거 사용
 
-## 9) 테스트 전략(TDD) · 모킹 · 제외 규칙
+## 테스트 전략(TDD) · 모킹 · 제외 규칙
 
 - Vitest + JSDOM, 기본 URL `https://x.com`, `test/setup.ts` 자동 로드
 - 포함: `test/**/*.{test,spec}.{ts,tsx}`
@@ -222,14 +218,14 @@ Toolbar/Modal  → z-index는 토큰(`--xeg-z-toolbar`, `--xeg-z-modal`)만 사�
 - 장시간 실행 시나리오(100+ 미디어 아이템)에서 메모리/리스너 누수 0을 검증하는
   테스트를 제공합니다.
 
-## 10) 툴바 키보드 내비 · Wheel 정책
+## 툴바 키보드 내비 · Wheel 정책
 
 - 툴바 포커스 흐름: Prev → Next → Fit 토글들 → 다운로드 → Settings → Close
 - 키 매핑: Arrow/Home/End/Escape만 자체 처리(Tab은 브라우저 기본 순서)
 - 그룹 데이터 속성: `data-toolbar-group`, `data-group-first="true"` 규약
 - Wheel 정책: 전용 유틸 `ensureWheelLock` 사용, 필요 시에만 preventDefault
 
-## 11.5) Signals 최적화 가이드
+## Signals 최적화 가이드
 
 - 대형 배열/맵은 불변 업데이트를 적용하고, 파생 연산은 `computed` 또는
   `useSignalSelector`로 메모이즈합니다.
@@ -239,13 +235,13 @@ Toolbar/Modal  → z-index는 토큰(`--xeg-z-toolbar`, `--xeg-z-modal`)만 사�
   사용합니다.
 - 신호 파생에서 DOM을 직접 접근하지 않습니다(부작용 분리).
 
-## 11) 성능/수명주기: 프리로드 · 타이머/리스너
+## 성능/수명주기: 프리로드 · 타이머/리스너
 
 - 프리로드: `computePreloadIndices` 기반, 거리 우선 정렬, 스케줄
   모드(immediate/idle/raf/microtask) 지원
 - 타이머/리스너: 공통 매니저를 통해 등록/정리, 종료 시 누수 0 보장
 
-## 12) 품질 게이트 · 빠른 체크리스트 ✅
+## 품질 게이트 · 빠른 체크리스트
 
 - 커밋/PR 전
   - 타입: `npm run typecheck`

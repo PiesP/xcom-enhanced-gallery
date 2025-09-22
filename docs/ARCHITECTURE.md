@@ -6,11 +6,10 @@
 
 관련 문서
 
-- 코딩 가이드: docs/CODING_GUIDELINES.md (코딩 규칙/토큰/A11y/테스트 전략)
+- 코딩 가이드: docs/CODING_GUIDELINES.md (집행 가능한 규칙/토큰/A11y/TDD)
+- Vendors Safe API: docs/vendors-safe-api.md (getter/adapter 계약/모킹/안티패턴)
+- 실행/CI: 루트의 AGENTS.md
 - 의존성 그래프: docs/dependency-graph.(svg|json|dot|html)
-- 실행/CI: AGENTS.md
-- Vendors Safe API: docs/vendors-safe-api.md (getter/adapter, feature detection,
-  모킹)
 
 ## 1. 시스템 개요와 레이어 경계
 
@@ -26,7 +25,7 @@ External (vendors/userscript/zip)
 
 - Path Aliases: `@` → `src`, `@features` → `src/features`, `@shared` →
   `src/shared`, `@assets` → `src/assets`
-- 외부 라이브러리 접근은 반드시 getter 경유 (`@shared/external/vendors`),
+- 외부 라이브러리 접근은 반드시 getter 경유(`@shared/external/vendors`),
   Userscript API는 `@shared/external/userscript/adapter`
 
 금지 규칙(핵심)
@@ -34,7 +33,7 @@ External (vendors/userscript/zip)
 - Features → 외부 벤더 직접 import 금지, Userscript API 직접 사용 금지
 - Features → `@shared/services/ServiceManager` 직접 import 금지(액세서 경유)
 - Shared/Features → 하드코딩 색상/시간/이징 금지(디자인 토큰만)
-- PC 전용 입력만 사용(Touch/Pointer 금지)
+- PC 전용 입력만 사용(Touch/Pointer 금지). 세부 키/휠 정책은 코딩 가이드를 참조.
 
 ## 2. 레이어별 책임과 공개 표면
 
@@ -120,8 +119,9 @@ Must Not
   기반 감시자를 두고, 마운트 대상이 사라지면 안전하게 언마운트/재마운트를
   수행합니다(배치 스케줄러 사용). 관찰자는 엔트리/렌더러에서 등록하고, 언마운트
   시 정리합니다.
-- 이벤트 경계: PC 전용 입력만 처리하며, 기본 스크롤/단축키와의 충돌을 최소화하기
-  위해 목적 동작에 한해 `preventDefault()`를 적용합니다.
+- 이벤트 경계: PC 전용 입력만 처리합니다. 기본 스크롤/단축키 충돌 최소화를 위해
+  목적 동작에 한해 `preventDefault()`를 적용합니다. 키/휠 세부 정책은 코딩
+  가이드를 참조하세요.
 - Vendor/Userscript 경유: Preact/Signals/ZIP/다운로드 등 외부 의존성은 항상
   getter/어댑터를 통해 접근합니다(TDZ-safe, 모킹 가능).
 
@@ -138,7 +138,7 @@ Must Not
 불변 조건
 
 - import 부작용 금지(리스너 등록/DOM 변경은 함수 호출 시점에만)
-- 개발/프로덕션 모두 소스맵 생성(vite 플러그인에서 처리)
+- 소스맵/헤더/자산 인라인 정책은 코딩 가이드와 빌드 검증 스크립트를 따릅니다.
 
 ## 4. 대표 유스케이스 흐름
 
@@ -169,22 +169,16 @@ Must Not
 - UI는 액션 함수를 통해 상태 변경(직접 변경 최소화)
 - 경계: 큰 배열/객체는 불변 업데이트, 파생 연산은 computed/selector로 격리
 
-## 6. 이벤트/입력 경계(PC 전용)
+## 6. 이벤트/입력 경계(요지)
 
-- 허용: click, keydown/keyup(ArrowLeft/Right, Home/End, Escape, Space), wheel,
-  contextmenu, mouseenter/leave/move/down/up
-- 금지: 모든 Touch/Pointer 계열
-- 휠: `ensureWheelLock`/`addWheelListener` 유틸 사용, 필요 시에만 preventDefault
-- 툴바 키보드 내비: 그룹 데이터 속성(`data-toolbar-group`,
-  `data-group-first="true"`), Arrow/Home/End/Escape 지원, Tab은 기본 순서
+- PC 전용 입력만 허용(세부 허용/금지 목록은 코딩 가이드 참조)
+- 휠/키보드 정책은 공용 유틸을 사용하고 필요한 경우에만 preventDefault 적용
 
-## 7. 스타일 시스템 경계
+## 7. 스타일 시스템 경계(요지)
 
-- CSS Modules + 디자인 토큰만 사용(색상/반경/간격/애니메이션)
-- 하드코딩 px/색/이징/시간 금지, `transition: all` 금지
-- 레이어/z-index는 토큰만 사용(`--xeg-z-*`)
-- 스타일 주입 게이팅: `window.XEG_CSS_TEXT`,
-  `window.XEG_STYLE_HEAD_MODE`('auto'|'off'|'defer') 준수
+- CSS Modules + 디자인 토큰만 사용. 세부 토큰/레이어 규칙은 코딩 가이드 참조
+- 스타일 주입 게이팅 변수(`XEG_CSS_TEXT`, `XEG_STYLE_HEAD_MODE`)는 Userscript
+  통합 정책을 따른다
 
 ## 8. 외부 통합 계약(Contracts)
 
@@ -258,11 +252,10 @@ type UserscriptAPI = {
   - 훅/수명주기: 효과 의존성/클린업 계약 테스트와 장시간 실행 누수 감시 테스트를
     추가하여, 리스너·타이머·관찰자 누수 0을 가드합니다.
 
-## 13. 빌드 산출물/소스맵/검증
+## 13. 빌드/소스맵/검증(요지)
 
-- 단일 Userscript 산출(dev/prod), 소스맵은 dev/prod 공통 생성
-- 플러그인에서 내부 sourceMappingURL 제거 후 Userscript 끝에만 주석 삽입
-- `scripts/validate-build.js`가 .map 무결성과 dead-preload 제거를 검증
+- 단일 파일 보장(자산 인라인), 소스맵/헤더 정책은 코딩 가이드와
+  `scripts/validate-build.js`에 의해 가드됩니다.
 
 ## 14. 확장/변경 가이드(Practices)
 

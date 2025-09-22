@@ -21,6 +21,13 @@
 
 <!-- MEM_PROFILE 승격 및 완료 (2025-09-12): 경량 메모리 프로파일러 유틸 추가, 문서/테스트 포함 -->
 
+READY | A11Y_LAYER_TOKENS | 레이어(z-index)/포커스 링/대비 토큰 재점검 및 회귀
+테스트 | 접근성/스타일 회귀 방지 | M | READY | CONNECT_SYNC_AUTOMATION | 실행 시
+접근 호스트 수집→@connect 동기화 스크립트 | 퍼미션 미스 방지/릴리즈 안정성 | M |
+READY | SOURCEMAP_VALIDATOR | prod 주석 정책/릴리즈 .map 포함 여부 검사 스크립트
+| 빌드 노이즈(404) 제거 | S | READY | SPA_IDEMPOTENT_MOUNT | 라우트/DOM 교체 시
+단일 마운트/클린업 가드 테스트 | 중복 마운트/누수 방지 | M |
+
 ---
 
 ## Parking Lot (미보류)
