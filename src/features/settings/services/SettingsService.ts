@@ -491,6 +491,9 @@ export class SettingsService {
       'tokens.bearerToken',
       'performance.debugMode',
       'accessibility.reduceMotion',
+      // Persist frequently-toggled UX settings immediately
+      'gallery.imageFitMode',
+      'download.showProgressToast',
     ];
 
     return criticalSettings.includes(key);

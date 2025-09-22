@@ -32,6 +32,9 @@ const pkg: PackageJsonMeta = JSON.parse(fs.readFileSync('./package.json', 'utf8'
 function userscriptHeader(flags: BuildFlags): string {
   const version = flags.isDev ? `${pkg.version}-dev.${Date.now()}` : pkg.version;
   const devSuffix = flags.isDev ? ' (Dev)' : '';
+  // Minimal inlined SVG icon (data URI) to keep single-file guarantee
+  const iconDataUri =
+    'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23000%22/%3E%3Cpath d=%22M7 8h4.5l3 4.5L17.5 8H22l-5.5 8L22 24h-4.5l-3-4.5L11.5 24H7l5.5-8L7 8z%22 fill=%22%23fff%22/%3E%3C/svg%3E';
   return (
     `// ==UserScript==\n` +
     `// @name         X.com Enhanced Gallery${devSuffix}\n` +
@@ -42,6 +45,8 @@ function userscriptHeader(flags: BuildFlags): string {
     `// @license      MIT\n` +
     `// @match        https://x.com/*\n` +
     `// @match        https://*.x.com/*\n` +
+    `// @match        https://twitter.com/*\n` +
+    `// @match        https://*.twitter.com/*\n` +
     `// @grant        GM_setValue\n` +
     `// @grant        GM_getValue\n` +
     `// @grant        GM_download\n` +
@@ -50,10 +55,16 @@ function userscriptHeader(flags: BuildFlags): string {
     `// @connect      api.twitter.com\n` +
     `// @connect      pbs.twimg.com\n` +
     `// @connect      video.twimg.com\n` +
+    `// @connect      abs.twimg.com\n` +
+    `// @connect      abs-0.twimg.com\n` +
     `// @run-at       document-idle\n` +
     `// @supportURL   https://github.com/piesp/xcom-enhanced-gallery/issues\n` +
     `// @downloadURL  https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js\n` +
     `// @updateURL    https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js\n` +
+    `// @homepageURL  https://github.com/piesp/xcom-enhanced-gallery#readme\n` +
+    `// @source       https://github.com/piesp/xcom-enhanced-gallery\n` +
+    `// @icon         ${iconDataUri}\n` +
+    `// @antifeature  none\n` +
     `// @noframes\n` +
     `// ==/UserScript==\n\n`
   );
@@ -187,7 +198,8 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       emptyOutDir: flags.isDev, // dev 빌드 시에만 정리, prod는 추가
       cssCodeSplit: false,
-      assetsInlineLimit: 0,
+      // Inline all assets to favor single-file userscript policy
+      assetsInlineLimit: Number.MAX_SAFE_INTEGER,
       sourcemap: flags.sourcemap,
       minify: flags.isProd ? 'terser' : false,
       reportCompressedSize: flags.isProd,

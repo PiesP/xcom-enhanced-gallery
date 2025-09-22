@@ -3555,7 +3555,8 @@
       "source": "src/shared/container/service-bridge.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/container/service-accessors.ts"
+        "src/shared/container/service-accessors.ts",
+        "src/shared/container/settings-access.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3574,6 +3575,23 @@
             "import"
           ],
           "resolved": "src/shared/container/AppContainer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./service-bridge",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/container/service-bridge.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8739,7 +8757,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 260,
-    "totalDependenciesCruised": 360,
+    "totalDependenciesCruised": 361,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

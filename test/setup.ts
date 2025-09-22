@@ -365,6 +365,51 @@ if (typeof globalThis !== 'undefined') {
   // 삭제 가능 상태(configurable) 유지. 대신 rAF를 microtask로 빠르게 실행해 잔여 cleanup을 최소화.
 }
 
+// teardown 타이밍 레이스로 발생하는 비본질적 rAF 관련 Unhandled Rejection 억제
+// 사례: Preact hooks(afterNextFrame)에서 환경 해제 후 requestAnimationFrame 참조 시
+// 테스트 신뢰도에 영향을 주지 않도록 해당 패턴만 무시
+try {
+  const swallowIfBenign = (reason: unknown): boolean => {
+    try {
+      const message = String((reason as any)?.message ?? reason ?? '');
+      return /requestAnimationFrame is not defined/i.test(message);
+    } catch {
+      return false;
+    }
+  };
+
+  if (typeof globalThis.addEventListener === 'function') {
+    globalThis.addEventListener('unhandledrejection', (event: any) => {
+      if (swallowIfBenign(event?.reason)) {
+        try {
+          event?.preventDefault?.();
+        } catch {}
+        globalThis?.console?.warn?.(
+          '[test/setup] Swallowed benign unhandled rejection:',
+          event?.reason
+        );
+      }
+    });
+  }
+
+  // Node/Vitest 백업 핸들러
+  if (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process?.on) {
+    (globalThis as any).process.on('unhandledRejection', (reason: unknown) => {
+      if (!swallowIfBenign(reason)) {
+        // 원래 핸들러로 전파 시도(테스트 러너가 캐치)
+        throw reason as any;
+      } else {
+        globalThis?.console?.warn?.(
+          '[test/setup] Swallowed benign unhandled rejection (process):',
+          reason
+        );
+      }
+    });
+  }
+} catch {
+  // 무시
+}
+
 /**
  * 각 테스트 전에 기본 환경 설정
  * 모든 테스트가 깨끗한 환경에서 실행되도록 보장

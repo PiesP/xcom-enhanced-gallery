@@ -146,4 +146,65 @@ describe('Gallery PC-only event policy', () => {
     // 정리
     closeGallery();
   });
+
+  it('갤러리 열림 상태에서 네비게이션 키(Home/End/ArrowLeft/ArrowRight/Space)는 기본 스크롤을 차단한다', async () => {
+    const { initializeGalleryEvents, openGallery } = await importEventsWithVendorsMock();
+
+    const handlers = {
+      onMediaClick: vi.fn(async () => {}),
+      onGalleryClose: vi.fn(() => {}),
+      onKeyboardEvent: vi.fn(() => {}),
+    };
+
+    await initializeGalleryEvents(handlers, { enableKeyboard: true, enableMediaDetection: false });
+
+    // 갤러리 오픈 → 네비게이션 키의 기본 동작이 차단되어야 함
+    openGallery([]);
+
+    // 프로토타입 스파이로 기본 동작 차단 여부 확인(인스턴스 메서드 비구성 가능성 회피)
+    const preventSpy = vi.spyOn(KeyboardEvent.prototype, 'preventDefault');
+    const stopSpy = vi.spyOn(KeyboardEvent.prototype, 'stopPropagation');
+    try {
+      for (const key of ['Home', 'End', 'ArrowLeft', 'ArrowRight', ' ']) {
+        const prevPrevent = preventSpy.mock.calls.length;
+        const prevStop = stopSpy.mock.calls.length;
+        const ev = new globalThis.KeyboardEvent('keydown', { key, bubbles: true });
+        globalThis.document.dispatchEvent(ev);
+        expect(preventSpy.mock.calls.length).toBeGreaterThan(prevPrevent);
+        expect(stopSpy.mock.calls.length).toBeGreaterThan(prevStop);
+      }
+    } finally {
+      preventSpy.mockRestore();
+      stopSpy.mockRestore();
+    }
+  });
+
+  it('리스너는 캡처 단계(capture: true)와 passive: false로 등록되어야 한다', async () => {
+    const { initializeGalleryEvents } = await importEventsWithVendorsMock();
+
+    const handlers = {
+      onMediaClick: vi.fn(async () => {}),
+      onGalleryClose: vi.fn(() => {}),
+      onKeyboardEvent: vi.fn(() => {}),
+    };
+
+    await initializeGalleryEvents(handlers, { enableKeyboard: true, enableMediaDetection: false });
+
+    // addEventListener 스파이에서 옵션 확인
+    const calls = addSpy.mock.calls as unknown as Array<
+      [type: string, listener: any, options?: any]
+    >;
+
+    // keydown/click 각각에 대해 capture: true, passive: false 확인
+    const keydownCall = calls.find(c => c[0] === 'keydown');
+    const clickCall = calls.find(c => c[0] === 'click');
+
+    expect(keydownCall?.[2]).toBeTruthy();
+    expect((keydownCall?.[2] as any)?.capture).toBe(true);
+    expect((keydownCall?.[2] as any)?.passive).toBe(false);
+
+    expect(clickCall?.[2]).toBeTruthy();
+    expect((clickCall?.[2] as any)?.capture).toBe(true);
+    expect((clickCall?.[2] as any)?.passive).toBe(false);
+  });
 });

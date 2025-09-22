@@ -62,6 +62,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
   private rebindWatcher: RebindWatcher | null = null;
+  private rebindInProgress = false;
 
   constructor() {
     this.setupStateSubscription();
@@ -121,6 +122,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * 컨테이너 생성 - 갤러리 컨테이너 생성
    */
   private createContainer(): void {
+    // 테스트/SSR 환경에서 document가 없을 수 있음
+    if (typeof document === 'undefined' || !document.body) {
+      logger.debug('[GalleryRenderer] createContainer skipped: no document/body');
+      return;
+    }
     this.cleanupContainer();
 
     this.container = document.createElement('div');
@@ -145,6 +151,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
    */
   private renderComponent(): void {
     if (!this.container) return;
+    if (typeof document === 'undefined') {
+      logger.debug('[GalleryRenderer] renderComponent skipped: no document');
+      return;
+    }
 
     const { render, createElement } = getPreact();
 
@@ -274,13 +284,53 @@ export class GalleryRenderer implements GalleryRendererInterface {
     this.rebindWatcher = new RebindWatcher({
       isTargetNode: node => node === target,
       onContainerLost: async () => {
+        if (typeof document === 'undefined') {
+          // 환경이 정리된 경우 재바인드 시도 생략
+          return;
+        }
         // 갤러리가 열려있다면 컨테이너를 재생성하고, 이미 렌더 중이 아니면 컴포넌트 다시 렌더링
         const isOpen = galleryState.value.isOpen;
         if (!isOpen) return;
+        if (this.rebindInProgress) return;
+        this.rebindInProgress = true;
         logger.info('[GalleryRenderer] 컨테이너 분실 감지 → 재바인드 시도');
-        this.createContainer();
-        // 이미 신컨테이너가 만들어졌으니 컴포넌트만 다시 렌더
-        this.renderComponent();
+        try {
+          // 혹시 존재하는 동일 클래스 컨테이너를 모두 제거하여 단일성 보장
+          try {
+            if (typeof document === 'undefined') {
+              return;
+            }
+            const nodes = document.querySelectorAll('.xeg-gallery-renderer');
+            if (nodes.length > 0) {
+              nodes.forEach(n => {
+                try {
+                  // preact 언마운트 시도 후 제거
+                  const { render } = getPreact();
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  render(null as any, n as HTMLElement);
+                } catch (err) {
+                  // 언마운트 과정에서의 오류는 재바인드 진행을 막지 않도록 디버그로만 기록
+                  logger.debug('[GalleryRenderer] preact 언마운트 중 오류(무시):', err);
+                }
+                try {
+                  if (n.parentNode) n.parentNode.removeChild(n);
+                } catch (err) {
+                  // DOM 제거 실패도 무시 가능(중복 정리 경합 등)
+                  logger.debug('[GalleryRenderer] 컨테이너 DOM 제거 중 오류(무시):', err);
+                }
+              });
+            }
+          } catch (err) {
+            // 쿼리/정리 루프 전체가 실패해도 재바인드 자체는 진행
+            logger.debug('[GalleryRenderer] 기존 컨테이너 정리 스캔 중 오류(무시):', err);
+          }
+          this.container = null;
+          this.createContainer();
+          // 이미 신컨테이너가 만들어졌으니 컴포넌트만 다시 렌더
+          this.renderComponent();
+        } finally {
+          this.rebindInProgress = false;
+        }
       },
       rebindDelayMs: 150,
     });
@@ -324,5 +374,5 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 }
 
-// 싱글톤 인스턴스 export
-export const galleryRenderer = new GalleryRenderer();
+// 싱글톤 인스턴스는 사이드이펙트를 유발할 수 있으므로 여기서 생성하지 않습니다.
+// 필요한 곳에서 명시적으로 new GalleryRenderer() 하거나 DI를 통해 주입하세요.

@@ -74,6 +74,40 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-22: PLAN — EPIC-USH-v4 Userscript 하드닝 v4 (Epic 종료/계획서 정리)
+
+- 완료 범위: P0(단일 파일/소스맵/헤더 메타), P1-1(SPA 라우팅/마운트
+  아이덤포턴시), P1-2(PC 전용 이벤트 가드/접근성 스모크), P1-3(@connect 도메인
+  정합) 모두 GREEN.
+- Acceptance: prod .user.js의 sourceMappingURL/소스맵 검증 PASS, dist/assets
+  부재, 헤더 메타 최신 정책 충족 및 validator PASS, SPA 네비/이벤트/접근성
+  스모크 GREEN 및 중복 마운트 0.
+- 조치: 활성 계획서(`docs/TDD_REFACTORING_PLAN.md`)에서 EPIC-USH-v4 섹션 제거,
+  본 Completed 로그에 요약만 유지.
+
+2025-09-22: EPIC-USH-v4 — P1-1/P1-3 완료(요약)
+
+- P1-1 SPA 라우팅/마운트 아이덤포턴시: GalleryRenderer의 단일 컨테이너 강제 및
+  중복 마운트 프루닝, RebindWatcher(≤250ms) 통합으로 SPA push/replace/pop 시
+  단일 마운트 유지. 환경 가드(window/document)로 teardown 안전. 테스트:
+  integration/spa-routing-idempotency.test.ts 등 GREEN.
+- P1-3 @connect 도메인 정합: userscript 헤더/런타임 allowlist에 abs.twimg.com,
+  abs-0.twimg.com 추가 정합화. 빌드 검증 스크립트와 헤더 동기화 PASS.
+
+2025-09-22: EPIC-USH-v4 — Userscript 하드닝 v4 P0 완료(단일 파일/소스맵/헤더)
+
+- P0-1 단일 파일 보장: Vite 설정에서 모든 자산 인라인화(assetsInlineLimit
+  최대치) + 번들 플러그인 후처리로 dist/assets 폴더 제거. 빌드 검증 스크립트에
+  dist/assets 부재 검사 추가 — GREEN
+- P0-2 소스맵 정책: prod/dev 모두 .map 파일을 산출하고 userscript 말미에
+  sourceMappingURL 주석을 부착(대안 정책 선택), validator에서 주석↔파일
+  존재/일치 검증 통과 — GREEN
+- P0-3 헤더 메타 보강: @homepageURL, @source, @icon(data URI), @antifeature none
+  추가. @match에 twitter.com 도메인도 포함 — validator 확장으로 스키마 PASS
+
+영향: release/metadata.json 자동 동기화 유지, 빌드 후 검증 전체 PASS. Epic의 P1
+항목(SPA 라우팅/PC 전용 이벤트 가드/@connect 감사)은 활성 계획서에 유지.
+
 2025-09-22: EPIC-SM — Settings Modal Implementation Audit (완료)
 
 - 메뉴 연동
@@ -148,6 +182,17 @@ GalleryRenderer의 대량 다운로드 경로는 사용자 설정과 일치하�
   GREEN — 전역 CSS 텍스트 포함/소스 경로 @import 부재 가드.
 - 영향: Style isolation 경로가 단일화되어 dist 내 소스 @import 경로 유입 방지.
   Userscript 주입 일관성 강화.
+
+  2025-09-22: EPIC-USH-v4 — P1-2 PC 전용 이벤트 가드/접근성 스모크 (완료)
+  - 접근성 스모크 강화: focus trap 순환/복귀 스모크 추가 —
+    `test/unit/accessibility/focus-trap-smoke.test.ts` GREEN (Tab/Shift+Tab
+    순환, Escape 후 이전 포커스 복원).
+  - Wheel 정책 교차 확인: `addWheelListener`는 passive: true,
+    `ensureWheelLock`는 passive: false로 등록되고 필요 시 preventDefault 수행 —
+    `test/unit/events/wheel-policy-smoke.test.ts` GREEN.
+  - 교차 가드: 기존 PC 전용 이벤트 테스트(`gallery-pc-only-events.test.ts`)와
+    함께 네비게이션 키 기본 스크롤 차단/캡처 단게(capture: true)/passive: false
+    계약을 재확인. 전체 테스트/타입/린트/빌드 GREEN 유지.
 
 2025-09-22: ICN-R2 — LazyIcon placeholder semantics 표준화 (완료)
 

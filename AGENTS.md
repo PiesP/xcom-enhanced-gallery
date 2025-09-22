@@ -111,6 +111,24 @@ CI
 - 스타일/토큰/접근성은 `docs/CODING_GUIDELINES.md`와 테스트 스위트 기준을
   따릅니다.
 
+## Copilot 프롬프트 전처리 정책 (요약)
+
+자동화/보조 작업은 실행 전에 요청 의도를 분석하고, 최적화된 프롬프트를 도출한 뒤
+진행합니다. 세부 체크리스트는 `.github/copilot-instructions.md`의 "프롬프트
+전처리 규칙" 섹션이 단일 소스입니다. 아래는 실행 요약입니다.
+
+- Intent 분석: 목표 1-3문장 요약, 요구/제약/Acceptance 추출.
+  - 참고 문서: `docs/CODING_GUIDELINES.md`, `docs/vendors-safe-api.md`,
+    `AGENTS.md`
+- 최적화 프롬프트: 목표/불변 Acceptance/성공 지표(GREEN: 타입·린트·테스트·빌드)
+  정리, 저리스크 가정 1-2개만 선언 후 즉시 검증.
+- 계획/추적: Todo 작성 → 첫 항목 in-progress → 완료 즉시 체크(배치 금지).
+- 컨텍스트 수집: 큰 의미 블록 위주로 읽고 중복 호출 방지. 외부 호출/비밀 유출
+  금지. Userscript API는 어댑터 경유.
+- 실행: TDD(RED→GREEN→REFACTOR), PC 전용 입력만, 벤더 접근은 getter만.
+- 리포팅/게이트: 3~5회 도구 호출마다 요약 보고, 종료 전
+  Build/Lint/Typecheck/Tests TRIAGE 및 요구사항 커버리지 명시.
+
 ## 커밋/푸시 전 Husky 훅 검증
 
 로컬에서 커밋 또는 푸시하기 전에 다음을 확인하세요. 코파일럿 자동화도 동일

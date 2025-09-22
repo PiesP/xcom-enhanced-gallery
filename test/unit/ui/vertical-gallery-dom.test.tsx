@@ -4,14 +4,14 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { galleryRenderer as rendererSingleton } from '@/features/gallery/GalleryRenderer';
+import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
 import { closeGallery } from '@/shared/state/signals/gallery.signals';
 
 describe('Vertical Gallery DOM – overlay/renderer class deduplication', () => {
-  let renderer: typeof rendererSingleton | null = null;
+  let renderer: GalleryRenderer | null = null;
 
   beforeEach(() => {
-    renderer = rendererSingleton;
+    renderer = new GalleryRenderer();
   });
 
   afterEach(() => {

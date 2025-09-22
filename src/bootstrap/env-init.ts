@@ -14,7 +14,14 @@ export async function initializeEnvironment(): Promise<void> {
     setUserscriptNetworkPolicy({
       enabled: true,
       // vite.config.ts 헤더의 @connect와 일치하도록 유지
-      allowlist: ['x.com', 'api.twitter.com', 'pbs.twimg.com', 'video.twimg.com'],
+      allowlist: [
+        'x.com',
+        'api.twitter.com',
+        'pbs.twimg.com',
+        'video.twimg.com',
+        'abs.twimg.com',
+        'abs-0.twimg.com',
+      ],
       notifyOnBlock: true,
     });
     logger.debug('✅ Network policy enabled (prod)');

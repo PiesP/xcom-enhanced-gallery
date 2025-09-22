@@ -26,46 +26,8 @@
 
 ## 2. 활성 Epic 현황
 
-### EPIC-USH-v4 — Userscript 하드닝 v4
-
-목표
-
-- “단일 파일 보장”과 “소스맵/헤더 정책”을 명확히 하여 릴리즈 환경에서
-  노이즈(404, 자산 누락)를 제거하고, SPA 라우팅/입력 이벤트/접근성의 기본 가드를
-  테스트로 강화합니다.
-
-스코프(현 단계)
-
-- P0-1: 단일 파일 보장 — assets 인라인화 정책 상향
-  - 변경: build.assetsInlineLimit → Infinity (또는 동등한 “모든 자산 인라인”
-    설정)
-  - 검증: dist 내 assets/ 폴더 없이도 UI/아이콘/폰트/이미지 참조가 정상 동작
-  - 테스트: CSS url() 참조가 data URI로 변환되었는지 정적 검사 + 런타임 스모크
-
-- P0-2: 소스맵 정책 일원화 — prod의 sourceMappingURL 주석 제거
-  - 변경: prod 빌드 산출물(.user.js) 말미 sourceMappingURL 주석 미부착
-  - 대안 경로: prod에서 .map을 릴리즈 아티팩트에 포함한다면 주석 유지(정책 중
-    택1)
-  - 검증: scripts/validate-build.js가 정책을 감지해 PASS/FAIL 결정
-
-- P0-3: Userscript 헤더 메타 보강
-  - 추가: @homepageURL, @source, @icon, @antifeature none
-  - 옵션: @match twitter.com/_, https://_.twitter.com/\* (지원 범위 확장 필요
-    시)
-  - 검증: validator에서 헤더 필수/선택 메타 충족, 퍼미션/커넥트 정합성 PASS
-
-- P1-1: SPA 라우팅/마운트 안정화 테스트
-  - idempotent 마운팅 가드, 라우트 전환 시 단일 마운트 유지, detach 누락 방지
-  - MutationObserver/History 훅 병행 시 스로틀/클린업 검증
-
-- P1-2: PC 전용 이벤트 가드/접근성 스모크 강화
-  - Touch/Pointer 사용 시 RED 테스트 추가(컴포넌트/유틸/리스너 등록 모두 검사)
-  - 키보드 내비(Arrow/Home/End/Escape/Space)와 스크롤 충돌 방지 스모크
-
-- P1-3: @connect 도메인 정합성 감사
-  - 실행 시점 네트워크 로그로 실제 접근 도메인 수집 후 @connect 동기화
-  - 예: x.com, api.twitter.com, pbs.twimg.com, video.twimg.com, (필요 시)
-    ton.twitter.com
+현재 활성 Epic 없음 — 최근 완료 항목은
+`docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
 Acceptance(에픽)
 

@@ -287,9 +287,18 @@ function ToolbarCore({
       }
     }); // RAF 기반으로 최적화된 스크롤 감지
 
-    window.addEventListener('scroll', throttledDetect, { passive: true });
+    // JSDOM/SSR 등 window가 없을 수 있는 환경을 고려해 가드 추가
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('scroll', throttledDetect, { passive: true });
+    }
     return (): void => {
-      window.removeEventListener('scroll', throttledDetect);
+      try {
+        if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+          window.removeEventListener('scroll', throttledDetect);
+        }
+      } catch {
+        // 테스트 teardown 등 비정상 환경에서의 안전한 정리
+      }
     };
   }, [toolbarActions]);
 

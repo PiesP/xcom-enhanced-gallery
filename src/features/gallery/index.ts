@@ -5,7 +5,7 @@
  */
 
 // 통합된 갤러리 렌더러 (기본)
-export { GalleryRenderer, galleryRenderer } from './GalleryRenderer';
+export { GalleryRenderer } from './GalleryRenderer';
 
 // 갤러리 앱 (App 레이어에서 이동)
 export { GalleryApp } from './GalleryApp';

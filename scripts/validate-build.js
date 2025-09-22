@@ -25,14 +25,41 @@ function validateOne(scriptPath, { requireNoVitePreload = false } = {}) {
     process.exit(1);
   }
 
-  // 필수 메타데이터 검증
+  // 필수 메타데이터 검증 (EPIC-USH-v4 강화)
   const requiredMeta = ['@name', '@version', '@description', '@match'];
+  const requiredMetaUshV4 = ['@homepageURL', '@source', '@icon', '@antifeature'];
 
   for (const meta of requiredMeta) {
     if (!content.includes(meta)) {
       console.error(`❌ Required metadata ${meta} not found`);
       process.exit(1);
     }
+  }
+
+  for (const meta of requiredMetaUshV4) {
+    if (!content.includes(meta)) {
+      console.error(`❌ Required metadata ${meta} not found (EPIC-USH-v4)`);
+      process.exit(1);
+    }
+  }
+
+  // @antifeature none 값 검증
+  const antifeatureMatch = content.match(/\n\s*\/\/\s*@antifeature\s+([^\n]+)/);
+  if (!antifeatureMatch || antifeatureMatch[1].trim().toLowerCase() !== 'none') {
+    console.error('❌ @antifeature must be present with value "none"');
+    process.exit(1);
+  }
+
+  // @icon 은 data URI 여야 함(단일 파일 보장)
+  const iconMatch = content.match(/\n\s*\/\/\s*@icon\s+([^\n]+)/);
+  if (!iconMatch) {
+    console.error('❌ @icon not found');
+    process.exit(1);
+  }
+  const iconValue = iconMatch[1].trim();
+  if (!/^data:\w+\/.+/.test(iconValue)) {
+    console.error('❌ @icon must be a data URI (data:...) to ensure single-file userscript');
+    process.exit(1);
   }
 
   // PC 환경 최적화 검증
@@ -118,6 +145,13 @@ function validateUserScript() {
   // 상세 검증: dev (소스맵 포함), prod (소스맵 + dead code 제거)
   validateOne(devPath, { requireNoVitePreload: false });
   const prodInfo = validateOne(prodPath, { requireNoVitePreload: true });
+
+  // EPIC-USH-v4: dist 내 외부 assets 폴더가 없어야 함(단일 파일 보장)
+  const assetsDir = resolve(distPath, 'assets');
+  if (existsSync(assetsDir)) {
+    console.error('❌ dist/assets 폴더가 존재합니다. 모든 자산은 인라인되어야 합니다.');
+    process.exit(1);
+  }
 
   // 기본적인 JavaScript 구문 검증
   try {

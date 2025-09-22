@@ -32,7 +32,14 @@ export interface UserscriptNetworkPolicy {
 
 const DEFAULT_POLICY: UserscriptNetworkPolicy = {
   enabled: false, // 기본 Off (점진적 롤아웃)
-  allowlist: ['x.com', 'api.twitter.com', 'pbs.twimg.com', 'video.twimg.com'],
+  allowlist: [
+    'x.com',
+    'api.twitter.com',
+    'pbs.twimg.com',
+    'video.twimg.com',
+    'abs.twimg.com',
+    'abs-0.twimg.com',
+  ],
   notifyOnBlock: true,
 };
 

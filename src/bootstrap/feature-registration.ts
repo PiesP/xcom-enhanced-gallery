@@ -15,6 +15,13 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     // Settings Manager - Features 레이어
     const { getSettingsService } = await import('@features/settings/services/settings-factory');
     const settingsService = await getSettingsService();
+    // Ensure service loads persisted values before registration
+    try {
+      // initialize is available on concrete SettingsService; optional chaining for factory shape
+      await (settingsService as unknown as { initialize?: () => Promise<void> }).initialize?.();
+    } catch {
+      // ignore in tests where localStorage may not be available
+    }
     registerSettingsManager(settingsService);
 
     // 성능 설정(cacheTTL) 변화를 DOMCache에 반영
