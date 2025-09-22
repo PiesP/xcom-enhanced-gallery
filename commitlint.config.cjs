@@ -47,19 +47,42 @@ module.exports = {
       2,
       'always',
       [
+        // Layer-level scopes
+        'features', // 기능 계층 전반
+        'shared', // 공유 계층(services/state/utils/logging)
+        'external', // 외부 어댑터/벤더/유저스크립트
+
+        // Feature/domain scopes
         'gallery', // 갤러리 기능
+        'settings', // 설정 관리
         'media', // 미디어 처리
         'download', // 다운로드 기능
-        'settings', // 설정 관리
         'ui', // UI 컴포넌트
         'core', // 핵심 로직
-        'infra', // 인프라스트럭처
-        'build', // 빌드 시스템
+
+        // Shared sub-areas
+        'services', // shared/services
+        'state', // shared/state
+        'utils', // shared/utils
+        'vendors', // shared/external/vendors
+        'userscript', // shared/external/userscript
+
+        // Repo/infra scopes
+        'infra', // 인프라스트럭처 전반
+        'build', // 빌드 시스템/번들
         'deps', // 의존성
-        'config', // 설정 파일
-        'test', // 테스트
+        'config', // 설정/도구 구성
+        'scripts', // 스크립트(scripts/)
+        'release', // 릴리즈/배포 관련
         'ci', // CI/CD
-        'docs', // 문서
+        'docs', // 문서 전반
+
+        // Cross-cutting concerns
+        'styles', // 전역/모듈 스타일
+        'assets', // 정적 자산
+        'types', // 타입 정의
+        'security', // 보안 관련
+        'performance', // 성능 관련
       ],
     ],
     'scope-case': [2, 'always', 'lower-case'],
@@ -99,7 +122,7 @@ module.exports = {
   parserPreset: {
     parserOpts: {
       // 헤더 패턴: type(scope): description
-      headerPattern: /^(\w*)(?:\(([^\)]*)\))?: (.*)$/,
+  headerPattern: /^(\w*)(?:\(([^)]*)\))?: (.*)$/,
       headerCorrespondence: ['type', 'scope', 'subject'],
       // 참조 액션
       referenceActions: [
