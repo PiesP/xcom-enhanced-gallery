@@ -74,6 +74,21 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-22: EPIC-C — P1 완료(정적 규칙 강화/네트워크 표준화)
+
+- POLICY-Getter-001: dependency-cruiser 'no-direct-vendor-imports' 심각도
+  warn→error 격상, 예외 경로를 vendor wrapper 폴더로
+  한정(`^src/shared/external/vendors`, `^src/infrastructure/external/vendors`).
+  아키텍처 테스트 추가 —
+  `test/architecture/dependency-vendor-getter-enforcement.test.ts` GREEN.
+- NETWORK-ZIP-001: ZIP 경로 표준화 — `src/shared/external/zip/zip-creator.ts`에
+  취소(AbortSignal), 타임아웃, 재시도(withRetry) 도입. 외부 신호 취소/내부
+  타임아웃 사유 매핑(`cancelled`/`timeout`) 및 파일 미다운로드 시
+  `no_files_downloaded` 에러 가드. 단위 테스트 추가 —
+  `test/unit/external/zip/zip-creator.cancel-timeout.test.ts` GREEN.
+- 유틸: `@shared/utils` 배럴에 withRetry 재노출 추가로 서비스 전반 재사용 준비.
+- 게이트: 타입/린트/전체 테스트 GREEN, 기존 회귀 스위트 무변.
+
 2025-09-22: STYLE-ISOLATION-P1 — ShadowRoot 스타일 주입 단일화 (완료)
 
 - 구현: Shadow DOM 사용 시 단일 <style> 요소로 번들 전역
