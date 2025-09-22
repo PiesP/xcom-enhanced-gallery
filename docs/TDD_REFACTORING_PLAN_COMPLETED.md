@@ -111,6 +111,16 @@ Userscript 하드닝 v3 (1차 완료)
   총계/타입/ 컨텍스트 집계 가드 GREEN. 기존 object-url-manager 등과의 계약 영향
   없음.
 
+2025-09-22: EPIC-C — Tests-Refactor-001 제외 테스트 재활성화 (완료)
+
+- 변경: vitest 설정에서 임시 제외됐던 두 통합 테스트를 기본 포함으로 전환.
+  - test/refactoring/event-manager-integration.test.ts — EventManager 현 구조로
+    정합화, 단일 파일 GREEN 이후 전체 스위트 GREEN 확인
+  - test/refactoring/service-diagnostics-integration.test.ts —
+    CoreService/BrowserService 기반 정합화, 내부 헬퍼로 대체하여 Unified\* 의존
+    제거
+- 결과: exclude 제거, CI/로컬 모두 GREEN. 활성 계획서의 해당 작업은 제거됨.
+
 2025-09-22: PLAN — EPIC-C 윈도우링 항목 완료에 따른 활성 계획서 정리
 
 - Gallery-Perf-001(간단 윈도우링) 항목이 완료되어 활성 계획서의 EPIC-C 스코프와
