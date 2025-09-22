@@ -84,10 +84,15 @@ Acceptance(측정 기준)
 6. Tests-Refactor-001 — 제외 테스트 재활성화 플랜
 
 - 절차: 개별 파일 단독 실행으로 GREEN 확인 → vitest.config.ts exclude에서 제거
-- 파일: test/refactoring/event-manager-integration.test.ts,
-  test/refactoring/service-diagnostics-integration.test.ts
-- 현황: test 전용 어댑터 경로 및 조건부 alias 도입 완료. 본체 재활성화는 각 파일
-  GREEN 확인 후 순차 진행.
+- 파일:
+  - [완료] test/refactoring/event-manager-integration.test.ts — 현
+    구조(EventManager)로 정합화 및 GREEN 확인
+  - [진행 예정] test/refactoring/service-diagnostics-integration.test.ts —
+    UnifiedServiceDiagnostics 어댑터 경유로 점진 활성화
+- 현황:
+  - VITEST_INCLUDE_REF_TESTS=1 토글 및 조건부 alias 적용 유지
+  - UnifiedEventManager 테스트 어댑터와 별칭 제거(직접 EventManager 사용)
+  - 다음 사이클에서 diagnostics 테스트 GREEN 확인 후 exclude 제거 검토
 
 7. Style-Guard-001 — Hex 직접 사용 임계 상향 계획(단계적)
 

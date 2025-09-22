@@ -12,6 +12,7 @@
     "build": "npm run clean && npm run build:dev && npm run build:prod",
     "postbuild": "node ./scripts/validate-build.js",
     "test": "vitest run",
+    "test:ref": "cross-env VITEST_INCLUDE_REF_TESTS=1 vitest run",
     "test:fast": "cross-env TEST_FAST=true vitest run",
     "test:nobuild": "vitest run",
     "test:ci": "cross-env CI=true TEST_SKIP_BUILD=true vitest run --reporter=dot",

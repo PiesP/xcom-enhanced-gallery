@@ -14,25 +14,24 @@ export default defineConfig({
   plugins: [preact()],
 
   resolve: {
-    alias: {
-      '@': resolve(__dirname, './src'),
-      '@features': resolve(__dirname, './src/features'),
-      '@shared': resolve(__dirname, './src/shared'),
-      '@assets': resolve(__dirname, './src/assets'),
-      // 리팩터링 통합 테스트 호환을 위한 조건부 alias
+    // alias는 가장 먼저 일치하는 항목이 우선하므로, 특정 경로를 일반 프리픽스('@shared')보다 앞에 둡니다.
+    alias: [
+      // 리팩터링 통합 테스트 호환을 위한 조건부 alias (정확 매칭 우선)
       ...(process.env.VITEST_INCLUDE_REF_TESTS === '1'
-        ? {
-            '@shared/services/UnifiedEventManager': resolve(
-              __dirname,
-              './test/_adapters/UnifiedEventManager.ts'
-            ),
-            '@shared/services/UnifiedServiceDiagnostics': resolve(
-              __dirname,
-              './test/_adapters/UnifiedServiceDiagnostics.ts'
-            ),
-          }
-        : {}),
-    },
+        ? [
+            {
+              find: '@shared/services/UnifiedServiceDiagnostics',
+              replacement: resolve(__dirname, './test/_adapters/UnifiedServiceDiagnostics.ts'),
+            },
+          ]
+        : []),
+
+      // 일반 별칭 (프리픽스 매칭) — 특정 별칭 뒤에 배치
+      { find: '@', replacement: resolve(__dirname, './src') },
+      { find: '@features', replacement: resolve(__dirname, './src/features') },
+      { find: '@shared', replacement: resolve(__dirname, './src/shared') },
+      { find: '@assets', replacement: resolve(__dirname, './src/assets') },
+    ],
   },
 
   test: {

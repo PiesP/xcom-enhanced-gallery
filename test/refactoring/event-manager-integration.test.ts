@@ -4,9 +4,10 @@
  * TODO: UnifiedEventManager 구현 후 활성화
  */
 
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { EventManager } from '@shared/services/EventManager';
 
-describe.skip('UnifiedEventManager Integration (TDD) - DISABLED', () => {
+describe.skip('EventManager Integration (TDD) - DISABLED', () => {
   test('placeholder test - waiting for UnifiedEventManager implementation', () => {
     // TODO: UnifiedEventManager 구현 완료 후 실제 테스트로 교체
     expect(true).toBe(true);
@@ -14,19 +15,15 @@ describe.skip('UnifiedEventManager Integration (TDD) - DISABLED', () => {
 });
 
 // 테스트 더미 구현들
-const mockElement = {
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-};
-
+let el: any;
 const mockHandler = vi.fn();
 
-describe.skip('UnifiedEventManager Integration (TDD)', () => {
-  // TODO: UnifiedEventManager 구현 후 전체 테스트 활성화
-  let unifiedManager;
+describe('EventManager Integration (TDD)', () => {
+  let unifiedManager: EventManager;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    el = document.createElement('div');
   });
 
   afterEach(() => {
@@ -37,35 +34,28 @@ describe.skip('UnifiedEventManager Integration (TDD)', () => {
 
   describe('RED Phase: 기본 인터페이스 정의', () => {
     test.skip('should have DOMEventManager functionality', async () => {
-      // TODO: UnifiedEventManager 구현 후 활성화
-      // const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      // unifiedManager = new UnifiedEventManager();
       // DOMEventManager 핵심 기능들
-      // expect(unifiedManager.addEventListener).toBeDefined();
-      // expect(unifiedManager.addCustomEventListener).toBeDefined();
-      // expect(unifiedManager.cleanup).toBeDefined();
-      // expect(unifiedManager.getListenerCount).toBeDefined();
-      // expect(unifiedManager.getIsDestroyed).toBeDefined();
+      unifiedManager = new EventManager();
+      expect(unifiedManager.addEventListener).toBeDefined();
+      expect(unifiedManager.addCustomEventListener).toBeDefined();
+      expect(unifiedManager.cleanup).toBeDefined();
+      expect(unifiedManager.getListenerCount).toBeDefined();
+      expect(unifiedManager.getIsDestroyed).toBeDefined();
     });
 
     test.skip('should have GalleryEventManager functionality', async () => {
-      // TODO: UnifiedEventManager 구현 후 활성화
-      // const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      // unifiedManager = new UnifiedEventManager();
+      unifiedManager = new EventManager();
       // GalleryEventManager 핵심 기능들
-      // expect(unifiedManager.addListener).toBeDefined();
-      // expect(unifiedManager.removeListener).toBeDefined();
-      // expect(unifiedManager.removeByContext).toBeDefined();
-      // expect(unifiedManager.initializeGallery).toBeDefined();
-      // expect(unifiedManager.cleanupGallery).toBeDefined();
-      // expect(unifiedManager.getGalleryStatus).toBeDefined();
+      expect(unifiedManager.addListener).toBeDefined();
+      expect(unifiedManager.removeListener).toBeDefined();
+      expect(unifiedManager.removeByContext).toBeDefined();
+      expect(unifiedManager.initializeGallery).toBeDefined();
+      expect(unifiedManager.cleanupGallery).toBeDefined();
+      expect(unifiedManager.getGalleryStatus).toBeDefined();
     });
 
     test.skip('should have unified event management', async () => {
-      // TODO: UnifiedEventManager 구현 후 활성화
-      // const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      // unifiedManager = new UnifiedEventManager();
-
+      unifiedManager = new EventManager();
       // 통합된 기능들
       expect(unifiedManager.handleTwitterEvent).toBeDefined();
       expect(unifiedManager.getUnifiedStatus).toBeDefined();
@@ -75,11 +65,10 @@ describe.skip('UnifiedEventManager Integration (TDD)', () => {
 
   describe('GREEN Phase: 기본 기능 동작', () => {
     test('should register and cleanup DOM events', async () => {
-      const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      unifiedManager = new UnifiedEventManager();
+      unifiedManager = new EventManager();
 
       // DOM 이벤트 등록
-      unifiedManager.addEventListener(mockElement, 'click', mockHandler);
+      unifiedManager.addEventListener(el, 'click', (e: Event) => mockHandler(e));
       expect(unifiedManager.getListenerCount()).toBe(1);
 
       // 정리
@@ -88,8 +77,7 @@ describe.skip('UnifiedEventManager Integration (TDD)', () => {
     });
 
     test('should manage gallery events', async () => {
-      const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      unifiedManager = new UnifiedEventManager();
+      unifiedManager = new EventManager();
 
       const handlers = {
         onMediaClick: vi.fn(),
@@ -106,14 +94,13 @@ describe.skip('UnifiedEventManager Integration (TDD)', () => {
     });
 
     test('should handle Twitter events', async () => {
-      const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      unifiedManager = new UnifiedEventManager();
+      unifiedManager = new EventManager();
 
       // 트위터 이벤트 처리
       const listenerId = unifiedManager.handleTwitterEvent(
-        mockElement,
+        el,
         'click',
-        mockHandler,
+        (e: Event) => mockHandler(e),
         'twitter-test'
       );
 
@@ -124,12 +111,11 @@ describe.skip('UnifiedEventManager Integration (TDD)', () => {
 
   describe('REFACTOR Phase: 통합 최적화', () => {
     test('should prevent memory leaks', async () => {
-      const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      unifiedManager = new UnifiedEventManager();
+      unifiedManager = new EventManager();
 
       // 여러 이벤트 등록
-      unifiedManager.addEventListener(mockElement, 'click', mockHandler);
-      unifiedManager.addListener(mockElement, 'mouseover', mockHandler);
+      unifiedManager.addEventListener(el, 'click', (e: Event) => mockHandler(e));
+      unifiedManager.addListener(el, 'mouseover', (e: Event) => mockHandler(e));
 
       const initialCount = unifiedManager.getListenerCount();
       expect(initialCount).toBeGreaterThan(0);
@@ -141,8 +127,7 @@ describe.skip('UnifiedEventManager Integration (TDD)', () => {
     });
 
     test('should provide unified status', async () => {
-      const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      unifiedManager = new UnifiedEventManager();
+      unifiedManager = new EventManager();
 
       const status = unifiedManager.getUnifiedStatus();
       expect(status).toHaveProperty('domEvents');
@@ -152,12 +137,17 @@ describe.skip('UnifiedEventManager Integration (TDD)', () => {
     });
 
     test('should support context-based cleanup', async () => {
-      const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      unifiedManager = new UnifiedEventManager();
+      unifiedManager = new EventManager();
 
       // 컨텍스트별 이벤트 등록
-      unifiedManager.addListener(mockElement, 'click', mockHandler, undefined, 'context1');
-      unifiedManager.addListener(mockElement, 'mouseover', mockHandler, undefined, 'context2');
+      unifiedManager.addListener(el, 'click', (e: Event) => mockHandler(e), undefined, 'context1');
+      unifiedManager.addListener(
+        el,
+        'mouseover',
+        (e: Event) => mockHandler(e),
+        undefined,
+        'context2'
+      );
 
       expect(unifiedManager.removeByContext('context1')).toBe(1);
       expect(unifiedManager.removeByContext('context2')).toBe(1);
@@ -166,22 +156,19 @@ describe.skip('UnifiedEventManager Integration (TDD)', () => {
 
   describe('Backward Compatibility', () => {
     test('should maintain DOMEventManager interface', async () => {
-      const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-      unifiedManager = new UnifiedEventManager();
+      unifiedManager = new EventManager();
 
       // 기존 DOMEventManager처럼 체이닝 지원
       const result = unifiedManager
-        .addEventListener(mockElement, 'click', mockHandler)
-        .addCustomEventListener(mockElement, 'custom', mockHandler);
+        .addEventListener(el, 'click', (e: Event) => mockHandler(e))
+        .addCustomEventListener(el, 'custom', ((e: Event) => mockHandler(e)) as (e: Event) => void);
 
       expect(result).toBe(unifiedManager);
     });
 
     test('should maintain GalleryEventManager singleton pattern', async () => {
-      const { UnifiedEventManager } = await import('@shared/services/UnifiedEventManager');
-
-      const instance1 = UnifiedEventManager.getInstance();
-      const instance2 = UnifiedEventManager.getInstance();
+      const instance1 = EventManager.getInstance();
+      const instance2 = EventManager.getInstance();
 
       expect(instance1).toBe(instance2);
     });
