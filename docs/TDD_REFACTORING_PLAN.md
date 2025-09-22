@@ -4,13 +4,10 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-22 — EPIC-C의 남은 P1 작업(정적 규칙 강화, 네트워크/다운로드
-표준화)이 완료되어 EPIC-C는 모니터링 단계로 전환되었습니다. 직전 사이클 EPIC-B
-종료 항목은 Completed로 이관됨. A11y-001(모션 가드) 1차 적용 및 Refactoring
-Tests 토글 도입까지 완료(Completed 로그 참조).
-
-직전 사이클 Epic(유저스크립트 하드닝 v1) Phases 1–4 전체 완료(Completed 로그
-이관)
+업데이트: 2025-09-22 — EPIC-C(Userscript 하드닝 v3)의 P0/P1 범위가 완료되어
+모니터링 단계로 전환되었고, 활성 계획서에서는 제거되었습니다(Completed 로그
+참조). 이번 사이클의 활성 작업으로 “EPIC-SM — Settings Modal Implementation
+Audit”를 등록하여 설정 모달 각 메뉴의 실제 동작/연동을 점검합니다.
 
 ---
 
@@ -30,56 +27,72 @@ Tests 토글 도입까지 완료(Completed 로그 참조).
 
 ## 2. 활성 Epic 현황
 
-- 활성 Epic 1건 — EPIC-C(Userscript 하드닝 v3). 현재는 P1 범위 완료 후
-  모니터링/회귀 가드 유지 단계입니다.
+- 활성 Epic 1건 — EPIC-SM(Settings Modal Implementation Audit)
 
 ---
 
 ## 3. 활성 Epic 상세
 
-### EPIC-C — Userscript 하드닝 v3 (경량·신뢰성)
+### EPIC-SM — Settings Modal Implementation Audit
 
 목표(Outcome)
 
-- 배포 신뢰성 강화: 헤더/릴리즈 메타데이터 정합성, 네트워크 권한/정책 일치
-- UX 품질 유지하며 성능/접근성 리스크 완화(가벼운 가드 수준)
-- RED 가드 유지: PC 전용 입력, 벤더 getter 정책, 디자인 토큰 일관성
+- 설정 모달 각 메뉴가 실제 기능과 정확히 연동되는지 검증하고 회귀 가드를 강화
+- 접근성/키보드 내비게이션과 패널/모달 모드 전환의 동작 일관성을 보장
 
 스코프(What)
 
-- 정적 규칙 강화: 벤더 getter/Userscript 어댑터 미경유 직접 import 금지 자동
-  검사(완료)
-- 네트워크/다운로드 표준 유틸 정비: 타임아웃/재시도/취소, ZIP 경로 취소/타임아웃
-  표준화(완료)
-
-상태 메모(2025-09-22)
-
-- 최근 완료 항목은 Completed 로그로 이관. EPIC-C의 P0 3건(빌드 validator 강화,
-  리팩토링 테스트 재활성화, 모션 가드 적용율 자동 체크)은 완료되었습니다.
-  P1(정적 규칙 강화, 네트워크/다운로드 표준화)도 완료되어 현재는 모니터링/회귀
-  가드 유지 상태입니다.
+- 메뉴 동작 점검 및 연동 검증
+  - Theme: select 변경 시 ThemeService.setTheme 호출 및 document.documentElement
+    data-theme 반영, ThemeService의 저장(localStorage) 보존 확인
+  - Language: select 변경 시 LanguageService.setLanguage 호출 및 문자열 리소스
+    반영 확인(지속성 여부는 서비스 정책에 따름 — 현재는 메모리)
+  - Download: “대량 다운로드 진행 토스트 표시” 체크박스 — settings-access 경유로
+    'download.showProgressToast' 저장/로드가 동작하고, GalleryRenderer →
+    BulkDownloadService 옵션 전달이 일치하는지 확인
+- 패널/모달 동작 및 접근성
+  - 키보드: Escape 닫힘, Tab/Shift+Tab 순환, 첫 포커스 요소 보장
+  - 포커스: 이전 포커스 동기 복원, 외부 inert 처리 해제/복구 일관성
+  - 위치: position 'toolbar-below'|'top-right'|'center'|'bottom-sheet' 클래스
+    매핑 및 외부 클릭(backdrop/panel) 닫힘 동작
 
 Acceptance(측정 기준)
 
-- 빌드 산출물 validator: Userscript 헤더
-  스키마(@name/@version/@namespace/@match|@include/@grant/@connect/@run-at)
-  통과, prod 빌드에서 sourcemap 완전 제거 확인, 헤더와 `release/metadata.json`
-  간 name/version 동기성 녹색
-- 테스트: 신규/갱신 테스트 GREEN, 제외 테스트 단계적 재활성화(개별 파일 단위
-  GREEN 확인 후 복구)
-- 접근성 가드: 애니메이션 존재 파일의 “prefers-reduced-motion” 고려율 100%(허용
-  리스트 제외 0)
+- 메뉴 연동
+  - Theme: select 변경 시 data-theme가 기대값으로 즉시 갱신되고 재방문 시 저장값
+    복원(ThemeService 저장 정책 기준) — 단위/통합 테스트 GREEN
+  - Language: select 변경 시 LanguageService의 현재 언어가 변경되고 UI 문자열
+    조회 결과가 바뀌는 경로에 대해 스모크 테스트 GREEN
+  - Download: settings-access로 저장된 'download.showProgressToast'가 이후 ZIP
+    다운로드 경로에서 읽혀 옵션으로 전달되는지 통합 테스트 GREEN
+- 접근성/키보드: Esc 닫힘, Tab 루프, 첫 포커스, inert 처리에 대한 테스트가
+  jsdom에서 신뢰 가능한 형태로 통과하거나 최소한 회귀 스냅샷을 제공
 
 작업 분해(Tasks · TDD)
 
-P1 — 남은 작업: 없음 (최근 완료 — Completed 로그 참조)
+1. 메뉴 연동 검증
+   - Theme select → ThemeService.setTheme 및 data-theme 반영 테스트 추가/보강
+   - Language select → LanguageService.setLanguage 호출 스파이 및 문자열 조회
+     스모크
+   - Download 진행 토스트 토글 → setSetting/getSetting 경로 저장/복원 및
+     GalleryRenderer/BulkDownloadService 옵션 전달 가드
+2. 패널/모달 a11y 스모크
+   - Esc 닫힘/외부 클릭 닫힘/Tab 루프(단순 순환 가드)/초기 포커스 보장 스모크
+   - describe.skip된 settings-modal.accessibility 테스트의 부분 재활성화 또는
+     대체 스모크 추가(jsdom 포커스 한계를 고려한 최소 명세)
+3. 문서/가이드
+   - 코딩 가이드에 settings-access 키('download.showProgressToast') 명시 및 소비
+     경로 주석 보강
 
-실행 순서(권장): —
+실행 순서(권장)
+
+- 메뉴 연동 스모크 → 접근성 스모크 → 문서 보강
 
 완료 정의(DoD)
 
 - typecheck/lint/test/build 모두 GREEN, postbuild validator 통과
-- Epic 산출물/결과 요약을 Completed 로그로 이관(변경 파일/테스트/지표 링크 포함)
+- 활성 테스트에서 Settings Modal 관련 동작이 최소 스모크 수준으로 보장됨
+- 본 문서의 Epic 항목을 Completed로 이관하고 간결 요약만 유지
 
 ---
 
