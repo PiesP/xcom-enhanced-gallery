@@ -64,6 +64,14 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-22: A11y-001 — 모션 가드 1차 완료
+
+- 테스트: 애니메이션 선언 파일 정적 스캔 가드 추가(prefer-reduced-motion 고려),
+  화이트리스트 제외 0 유지
+- 구현: 토큰/유틸 레벨에서 reduced-motion 가드 적용 및 누락 CSS 보정 완료
+- 결과: 전체 스위트 GREEN, dev/prod 빌드 및 Userscript 산출물 검증 통과 — 접근성
+  가드 적용율 100%
+
 2025-09-22: EPIC-B — Userscript 폴백 하드닝 v2 (Epic 종료) 2025-09-22: EPIC-C —
 Userscript 하드닝 v3 (1차 완료)
 
@@ -156,6 +164,23 @@ Userscript 하드닝 v3 (1차 완료)
   25에서 15로 하향
 - 현황: 소스 내 Hex 사용 집계는 15 이하(주석 포함). 다음 단계에서 주석 내 Hex
   표기도 제거하여 임계 10 준비
+
+2025-09-22: PLAN — Style-Guard-001 Hex 임계 하향(15→10) 적용
+
+- 테스트 기준: `test/phase-6-final-metrics.test.ts`의 Hex 직접 사용 임계치를
+  15에서 10으로 하향
+- 현황: 소스 내 Hex 사용 집계는 10 이하(주석 제외, base white/black 잔존). 전체
+  스위트 GREEN, dev/prod 빌드 및 Userscript 산출물 검증 통과. 다음 단계에서 base
+  색상 토큰을 OKLCH로 이관 검토
+
+2025-09-22: PLAN — Style-Guard-001 Hex 임계 하향(10→5) 적용
+
+- 테스트 기준: `test/phase-6-final-metrics.test.ts`의 Hex 직접 사용 임계치를
+  10에서 5로 하향
+- 구현: 남은 base 색상(hex) 토큰 2건(white/black)을 OKLCH로 전환
+  (`oklch(1 0 0)`, `oklch(0 0 0)`)
+- 현황: 소스 내 Hex 사용 집계는 5 이하(실사용 0, 추후 예외 검사만 남음). 전체
+  스위트 GREEN, dev/prod 빌드 및 Userscript 산출물 검증 통과 예정
 
 2025-09-21: EPIC-A — 스타일 하드닝 v1(디자인 토큰/모션) 최종 정리
 
