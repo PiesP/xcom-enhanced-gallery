@@ -118,6 +118,16 @@
   GREEN — 표준 data/ARIA 속성 가드.
 - 영향: 접근성/진행 상태 인식 개선 및 회귀 가드 확립.
 
+2025-09-22: PLAN — EPIC-C 모니터링 전환 및 EPIC-SM(설정 모달 구현 점검) 등록
+
+- 조치: 활성 계획서(`TDD_REFACTORING_PLAN.md`)에서 EPIC-C 상세 섹션을 제거하고,
+  “EPIC-SM — Settings Modal Implementation Audit” Epic을 신규 등록했습니다.
+- 범위: 테마/언어/다운로드 진행 토스트 설정의 실제 연동 검증, 패널/모달 접근성
+  스모크 강화, describe.skip 테스트의 신뢰 가능한 범위 재활성화 또는 대체 스모크
+  추가.
+- 영향: 활성 계획서는 진행 중 작업만 유지하고, EPIC-C 관련 완료 항목은 본 로그에
+  일원화되어 추적됩니다.
+
 2025-09-22: PREFETCH-SCHEDULER — MediaService 프리페치 스케줄 커버리지 확장
 (완료)
 

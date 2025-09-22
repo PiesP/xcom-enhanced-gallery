@@ -479,6 +479,8 @@ export function SettingsModal({
       className: `${toolbarStyles.toolbarButton} ${styles.select}`,
       value: currentTheme,
       onChange: handleThemeChange,
+      // Preact/JSDOM 상호운용성: onInput에서도 동일 처리하여 테스트 안정성 확보
+      onInput: handleThemeChange,
     },
     [
       h('option', { value: 'auto' }, languageService.getString('settings.themeAuto')),
@@ -495,6 +497,7 @@ export function SettingsModal({
       className: `${toolbarStyles.toolbarButton} ${styles.select}`,
       value: currentLanguage,
       onChange: handleLanguageChange,
+      onInput: handleLanguageChange,
     },
     [
       h('option', { value: 'auto' }, '자동 / Auto / 自動'),
