@@ -6,6 +6,7 @@ import { render, cleanup, fireEvent } from '@testing-library/preact';
 import { SettingsModal } from '@/shared/components/ui/SettingsModal/SettingsModal';
 import { registerSettingsManager } from '@/shared/container/service-accessors';
 import { SettingsService } from '@/features/settings/services/SettingsService';
+import getUserscript from '@/shared/external/userscript/adapter';
 
 // Speed up i18n to English
 vi.stubGlobal('navigator', { language: 'en-US' } as any);
@@ -53,8 +54,10 @@ describe('SettingsModal – persists download.showProgressToast', () => {
     fireEvent.click(input);
     expect(input.checked).toBe(true);
 
-    // ensure persisted in storage
-    const raw = (globalThis as any).localStorage.getItem('xeg-app-settings');
+    // ensure persisted in storage (GM first, fallback to localStorage)
+    const us = getUserscript();
+    const gmRaw = await us.storage.get('xeg-app-settings');
+    const raw = gmRaw ?? (globalThis as any).localStorage.getItem('xeg-app-settings');
     expect(raw).toBeTruthy();
     const parsed = JSON.parse(raw);
     expect(parsed?.download?.showProgressToast).toBe(true);

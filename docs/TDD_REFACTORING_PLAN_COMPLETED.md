@@ -1,3 +1,60 @@
+2025-09-23: EPIC-SM-v2 — Settings Persistence Hardening (LocalStorage→Hybrid)
+(완료)
+
+- 범위: localStorage 단일 저장 → 하이브리드 저장 전환(GM_setValue/GM_getValue
+  우선, localStorage 폴백) 및 SettingsService 마이그레이션
+- 구현
+  - Userscript 어댑터에 storage API 추가(storage.get/set/remove/keys) — GM\_\*
+    우선, 환경별 안전 폴백
+  - SettingsService가 readStore/writeStore 경유 저장·로드, 최초 1회 legacy
+    localStorage → GM 저장소 마이그레이션(migrateLegacyLocalStorageIfNeeded) —
+    GM 저장소가 비어있지 않으면 스킵, 재실행 안전
+  - hasGM는 download/xhr 가용성만 반영(기존 계약 유지)
+  - 크리티컬 키(gallery.imageFitMode, download.showProgressToast)는 즉시 저장
+    정책 유지
+- 테스트
+  - 어댑터 storage 하이브리드 동작(우선순위/키 열거/제거) 가드
+  - 마이그레이션 아이덤포턴시/GM 우선 환경/로컬 폴백(Node/Vitest) 안전성
+  - 설정/모달 퍼시스턴스 테스트를 storage-agnostic으로 갱신
+- 결과/게이트
+  - 전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS
+  - Windows PowerShell(Clear-Host && npm run build) 기준도 무결 — 경고/오류 0
+  - 계획서(TDD_REFACTORING_PLAN.md)에서 EPIC-SM-v2 섹션 제거, 본 완료 로그로
+    이관
+
+2025-09-23: EPIC-SM — Settings Persistence Audit (완료)
+
+- 범위: 이미지 크기 모드(gallery.imageFitMode)와 설정 모달 항목의 저장/복원 경로
+  점검 및 하드닝 결정
+- 구현/확인 사항
+  - 저장소: SettingsService는 localStorage('xeg-app-settings')를 사용 — 검증 및
+    유지 결정(단순/성능/테스트 용이성 장점)
+  - 이미지 크기 모드: VerticalGalleryView 초기 로드 시
+    getSetting('gallery.imageFitMode','fitWidth')로 적용, 변경 시
+    setSetting(...)로 즉시 저장(critical key)
+  - 설정 모달: download.showProgressToast 토글을 getSetting/setSetting으로
+    로드/저장, 재열기 시 유지 확인
+  - 구독 반영: performance.cacheTTL 변경 시 DOMCache 기본 TTL 즉시 반영(등록 시
+    초기값도 주입)
+  - 구조: SettingsService의 validate/migrate로 기본값 보정 및 스키마 유지,
+    resetToDefaults는 카테고리 단위 안전 복제
+- Acceptance
+  - 브라우저 새로고침 후 imageFitMode/ProgressToast 설정이 유지된다 — PASS
+  - SettingsService 초기화 이후 DOMCache의 TTL이 설정값과 동기화된다 — PASS
+  - 저장 실패/부재 환경(Node/Vitest)에서도 setSetting 호출이 안전(no-op) —
+    PASS(폴백 경로 확인)
+- 결정
+  - GM\_\* 저장 전환은 보류(복잡도↑). 필요 시 어댑터 추가로 점진 전환 검토
+  - Critical 키(예: gallery.imageFitMode, download.showProgressToast)는 즉시
+    저장 정책 유지, 비크리티컬 키는 배치 저장 선호
+- 게이트: 타입/린트/테스트/빌드 GREEN, 산출물 검증(script/validate-build) 통과
+
+2025-09-23: PLAN — 활성 계획서 문서 정리(간단)
+
+- 조치: `TDD_REFACTORING_PLAN.md`에서 USH-v4 관련 추가 게이트 블록을 제거하고,
+  EPIC-SM-v2 섹션을 Draft(제안) 상태로 명시하여 활성 Epic 아님을 분명히
+  했습니다. 기능/코드 변경 없음. 빌드/테스트 GREEN 상태 유지.
+
 2025-09-22: EPIC-C — P0 3건 완료(요약)
 
 - US-Validator-001: Userscript 헤더 스키마/퍼미션(@grant/@connect) 검사, prod
@@ -84,6 +141,13 @@
   스모크 GREEN 및 중복 마운트 0.
 - 조치: 활성 계획서(`docs/TDD_REFACTORING_PLAN.md`)에서 EPIC-USH-v4 섹션 제거,
   본 Completed 로그에 요약만 유지.
+
+2025-09-23: PLAN — 활성 계획서 Acceptance 블록 정리 (USH-v4)
+
+- 조치: 활성 계획서의 일반 Acceptance 중 USH-v4 관련 빌드/소스맵/헤더 메타/SPA
+  네비/이벤트 스모크 항목(이미 완료된 에픽 수용 기준)을 Completed 로그로
+  이관하고 계획서에서는 삭제했습니다. 활성 문서는 “진행/착수 예정” 작업만
+  유지합니다.
 
 2025-09-22: EPIC-USH-v4 — P1-1/P1-3 완료(요약)
 

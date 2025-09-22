@@ -4,13 +4,10 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-22 — EPIC-C(Userscript 하드닝 v3) P0/P1 완료 및 모니터링 전환
-완료. “EPIC-SM — Settings Modal Implementation Audit”의 스코프(메뉴 연동/접근성
-스모크)가 모두 GREEN으로 확인되어 Completed 로그로 이관했습니다.
-
-새 사이클 제안(승격): EPIC-USH-v4 — Userscript 하드닝 v4 (빌드
-일관성/헤더/테스트 강化) 본 문서의 활성 Epic에 P0/P1 작업을 적재하고, 코드
-변경은 RED→GREEN 절차로 진행합니다.
+업데이트: 2025-09-23 — 문서 정리: USH-v4 관련 추가 게이트(수용 기준) 블록을
+Completed 로그로 일원화하고, 활성 계획서에서는 제거했습니다. “EPIC-SM — Settings
+Modal Implementation Audit”의 스코프(메뉴 연동/접근성 스모크)는 GREEN으로
+확인되어 Completed 로그에 반영되어 있습니다.
 
 ---
 
@@ -28,14 +25,6 @@
 
 현재 활성 Epic 없음 — 최근 완료 항목은
 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
-
-Acceptance(에픽)
-
-- prod .user.js에서 404 sourceMappingURL 네트워크 오류가 관측되지 않는다(또는
-  .map이 실제 포함되어 정상 동작).
-- dist에 assets/ 폴더가 없어도 스타일/이미지/폰트가 정상 표시된다.
-- 헤더 메타가 최신 정책을 충족하며 validator PASS.
-- SPA 네비/이벤트/접근성 스모크가 GREEN이며, 누수/중복 마운트 0.
 
 ---
 
@@ -58,9 +47,6 @@ Gate 체크리스트(요지):
 
 - 타입/린트/테스트/빌드 검증은 `AGENTS.md`와 `CODING_GUIDELINES.md`의 품질
   게이트를 따릅니다.
-- USH-v4 추가 검증:
-  - prod 소스맵 주석 정책 준수(dev만 주석 또는 prod .map 포함 시 일치)
-  - 단일 파일 보장(외부 자산 참조 없음), dist/assets 미존재
 
 ---
 

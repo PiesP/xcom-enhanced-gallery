@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerSettingsManager } from '@/shared/container/service-accessors';
 import { SettingsService } from '@/features/settings/services/SettingsService';
 import { getSetting, setSetting } from '@/shared/container/settings-access';
+import getUserscript from '@/shared/external/userscript/adapter';
 
 // Basic localStorage polyfill to operate in JSDOM
 const memoryStorage = (() => {
@@ -42,8 +43,10 @@ describe('Settings persistence – gallery.imageFitMode', () => {
 
     await setSetting('gallery.imageFitMode', 'fitHeight');
 
-    // Verify localStorage content reflects change
-    const raw = (globalThis as any).localStorage.getItem('xeg-app-settings');
+    // Verify persisted content reflects change (GM storage → fallback localStorage)
+    const us = getUserscript();
+    const gmRaw = await us.storage.get('xeg-app-settings');
+    const raw = gmRaw ?? (globalThis as any).localStorage.getItem('xeg-app-settings');
     expect(raw).toBeTruthy();
     const parsed = JSON.parse(raw);
     expect(parsed?.gallery?.imageFitMode).toBe('fitHeight');

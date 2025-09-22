@@ -17,6 +17,13 @@ export interface UserscriptAPI {
   info(): UserScriptInfo | null;
   download(url: string, filename: string): Promise<void>;
   xhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined;
+  /** 하이브리드 스토리지 API (GM_* 우선 → localStorage 폴백) */
+  storage: {
+    get(key: string): Promise<string | null>;
+    set(key: string, value: string): Promise<void>;
+    remove(key: string): Promise<void>;
+    keys(): Promise<string[]>;
+  };
 }
 
 // ================================
@@ -268,6 +275,11 @@ export function getUserscript(): UserscriptAPI {
   const g: any = globalThis as any;
   const hasGMDownload = typeof g.GM_download === 'function';
   const hasGMXhr = typeof g.GM_xmlhttpRequest === 'function';
+  const hasGMStorage =
+    typeof g.GM_setValue === 'function' &&
+    typeof g.GM_getValue === 'function' &&
+    typeof g.GM_deleteValue === 'function' &&
+    typeof g.GM_listValues === 'function';
 
   return Object.freeze({
     hasGM: hasGMDownload || hasGMXhr,
@@ -315,6 +327,67 @@ export function getUserscript(): UserscriptAPI {
         }
       }
       return fallbackXhr(options);
+    },
+    storage: {
+      async get(key: string): Promise<string | null> {
+        try {
+          if (hasGMStorage) {
+            // GM_getValue는 동기/비동기 구현 차이가 있으므로 안전하게 직접 호출
+            return g.GM_getValue(key, null) as unknown as string | null;
+          }
+          if (typeof localStorage !== 'undefined') {
+            return localStorage.getItem(key);
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      },
+      async set(key: string, value: string): Promise<void> {
+        try {
+          if (hasGMStorage) {
+            await g.GM_setValue(key, value);
+            return;
+          }
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(key, value);
+          }
+        } catch {
+          // ignore
+        }
+      },
+      async remove(key: string): Promise<void> {
+        try {
+          if (hasGMStorage) {
+            await g.GM_deleteValue(key);
+            return;
+          }
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(key);
+          }
+        } catch {
+          // ignore
+        }
+      },
+      async keys(): Promise<string[]> {
+        try {
+          if (hasGMStorage) {
+            const ks = g.GM_listValues();
+            return Array.isArray(ks) ? ks.slice() : [];
+          }
+          if (typeof localStorage !== 'undefined') {
+            const arr: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k) arr.push(k);
+            }
+            return arr;
+          }
+          return [];
+        } catch {
+          return [];
+        }
+      },
     },
   });
 }

@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import getUserscript from '@shared/external/userscript/adapter';
 import type {
   AppSettings,
   NestedSettingKey,
@@ -60,6 +61,8 @@ export class SettingsService {
    */
   async initialize(): Promise<void> {
     try {
+      // 1) 하이브리드 저장소 마이그레이션(최초 1회) 후 로드
+      await this.migrateLegacyLocalStorageIfNeeded();
       await this.loadSettings();
       this.initialized = true;
       logger.debug('SettingsService 초기화 완료');
@@ -349,7 +352,7 @@ export class SettingsService {
    */
   private async loadSettings(): Promise<void> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = await this.readStore(STORAGE_KEY);
       if (!stored) {
         logger.debug('저장된 설정이 없음, 기본값 사용');
         return;
@@ -377,10 +380,72 @@ export class SettingsService {
    */
   private async saveSettings(): Promise<void> {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.settings));
+      await this.writeStore(STORAGE_KEY, JSON.stringify(this.settings));
       logger.debug('설정 저장 완료');
     } catch (error) {
       logger.error('설정 저장 실패:', error);
+    }
+  }
+
+  /**
+   * 저장소 읽기 (하이브리드: GM → localStorage 폴백)
+   */
+  private async readStore(key: string): Promise<string | null> {
+    try {
+      const us = getUserscript();
+      const value = await us.storage.get(key);
+      return value;
+    } catch {
+      try {
+        return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  /**
+   * 저장소 쓰기 (하이브리드: GM → localStorage 폴백)
+   */
+  private async writeStore(key: string, value: string): Promise<void> {
+    try {
+      const us = getUserscript();
+      await us.storage.set(key, value);
+    } catch {
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  /**
+   * 1회 마이그레이션: 기존 LocalStorage에만 존재하는 설정을 하이브리드 우선 저장소(GM)에 이관
+   * - Idempotent: 대상 저장소에 이미 값이 있으면 수행하지 않음
+   */
+  private async migrateLegacyLocalStorageIfNeeded(): Promise<void> {
+    try {
+      const us = getUserscript();
+      const [gmExisting, legacy] = await Promise.all([
+        us.storage.get(STORAGE_KEY),
+        (async () => {
+          try {
+            return typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+          } catch {
+            return null;
+          }
+        })(),
+      ]);
+
+      if (!gmExisting && legacy) {
+        // 대상 저장소가 비어 있고, legacy에만 존재 → 이관
+        await us.storage.set(STORAGE_KEY, legacy);
+        logger.info('SettingsService: legacy localStorage → hybrid(GM 우선) 마이그레이션 완료');
+      }
+    } catch (error) {
+      // 마이그레이션 실패는 기능 중단 사유 아님 — 경고만 기록
+      logger.warn('SettingsService: 마이그레이션 중 경고(무시 가능):', error);
     }
   }
 
