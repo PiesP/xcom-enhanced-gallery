@@ -68,6 +68,13 @@ Refactoring Tests 토글 도입까지 완료(Completed 로그 참조).
 - Memory-Diag-001: ResourceManager 최소 진단(byType/byContext) 메트릭 추가 및
   단위 테스트 도입. 기존 API 비호환 변경 없음.
 
+- STYLE-ISOLATION-P1: ShadowRoot 스타일 주입 경로 단일화 완료(단일 style 주입,
+  소스 @import 금지). Completed 로그에 이관.
+- ICN-R2: LazyIcon placeholder 표준 data/ARIA 속성 정비 완료. Completed 로그에
+  이관.
+- PREFETCH-SCHEDULER: MediaService 프리페치 스케줄 옵션 경계/정리 커버리지 확장
+  완료. Completed 로그에 이관.
+
 Acceptance(측정 기준)
 
 - 빌드 산출물 validator 통과 + Userscript 헤더 검사 추가 항목 녹색

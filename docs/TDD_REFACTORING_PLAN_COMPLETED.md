@@ -64,6 +64,38 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-22: STYLE-ISOLATION-P1 — ShadowRoot 스타일 주입 단일화 (완료)
+
+- 구현: Shadow DOM 사용 시 단일 <style> 요소로 번들 전역
+  CSS(window.XEG_CSS_TEXT)와 host 규칙만 주입. 소스 경로 @import('/src/...')
+  사용 금지.
+- 테스트:
+  test/unit/shared/components/isolation/GalleryContainer.shadow-style.isolation.red.test.tsx
+  GREEN — 전역 CSS 텍스트 포함/소스 경로 @import 부재 가드.
+- 영향: Style isolation 경로가 단일화되어 dist 내 소스 @import 경로 유입 방지.
+  Userscript 주입 일관성 강화.
+
+2025-09-22: ICN-R2 — LazyIcon placeholder semantics 표준화 (완료)
+
+- 구현: 아이콘 미로딩 시 기본 placeholder div에 표준 속성 부여 —
+  data-xeg-icon-loading="true", data-testid="lazy-icon-loading", role="img",
+  aria-label("아이콘 로딩 중"), aria-busy="true". size 지정 시 width/height
+  인라인 사이즈만 적용.
+- 테스트: test/unit/shared/components/ui/lazy-icon.placeholder.red.test.tsx
+  GREEN — 표준 data/ARIA 속성 가드.
+- 영향: 접근성/진행 상태 인식 개선 및 회귀 가드 확립.
+
+2025-09-22: PREFETCH-SCHEDULER — MediaService 프리페치 스케줄 커버리지 확장
+(완료)
+
+- 구현: prefetchNextMedia 옵션 schedule="immediate|idle|raf|microtask" 보강.
+  immediate는 동기 드레이닝, 나머지는 비동기 시드 후 동시성 한도로 큐 소진.
+  라이프사이클 정리 시 취소/캐시 정리 로그 유지.
+- 테스트: test/unit/performance/media-prefetch.idle-schedule.test.ts,
+  media-prefetch.microtask-schedule.test.ts, media-prefetch.raf-schedule.test.ts
+  GREEN — 기본 동작/스케줄별 실행/정리 가드.
+- 영향: 스케줄 경계/취소 시나리오에 대한 회귀 방어 강화, 성능/UX 안정성 확보.
+
 2025-09-22: A11y-001 — 모션 가드 1차 완료
 
 - 테스트: 애니메이션 선언 파일 정적 스캔 가드 추가(prefer-reduced-motion 고려),
