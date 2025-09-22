@@ -74,6 +74,19 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-22: EPIC-SM — Settings Modal 접근성 스모크 1차 완료
+
+- panel 모드 스모크: dialog role/aria 속성, Escape/배경 클릭 닫힘 가드 —
+  test/features/settings/settings-modal.accessibility.smoke.test.ts GREEN
+- modal 모드 스모크: dialog role/aria 속성, Escape/배경 클릭 닫힘 가드 —
+  test/features/settings/settings-modal.modal-accessibility.smoke.test.ts GREEN
+- focus-trap 순환 탭(단순 가드): panel 모드에서 Tab/Shift+Tab 시 포커스가
+  컨테이너에 머무름을 스모크 수준으로 검증 —
+  test/unit/shared/components/ui/settings-modal.focus-trap.tab-cycle.test.tsx
+  GREEN
+- 레거시 중복 TSX 테스트 정리: tsx 파일은 no-op 주석으로 남기고, 활성 스모크는
+  .ts 기반으로 유지
+
 2025-09-22: EPIC-C — P1 완료(정적 규칙 강화/네트워크 표준화)
 
 - POLICY-Getter-001: dependency-cruiser 'no-direct-vendor-imports' 심각도

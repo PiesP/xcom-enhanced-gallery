@@ -1,9 +1,13 @@
+// Legacy integration around ToolbarWithSettings; currently skipped due to jsdom focus nuances.
+// Prefer smoke tests:
+//  - test/features/settings/settings-modal.accessibility.smoke.test.ts (panel)
+//  - test/features/settings/settings-modal.modal-accessibility.smoke.test.ts (modal)
+//
 // Safe document accessor (jsdom or browser)
-function getDoc(): Document | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getDoc(): typeof document | null {
   if (typeof document !== 'undefined') return document;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (globalThis as any)?.document || null;
+  const g = globalThis as { document?: unknown };
+  return (g.document as typeof document) || null;
 }
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/preact';

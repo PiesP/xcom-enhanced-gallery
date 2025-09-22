@@ -76,11 +76,7 @@ Acceptance(측정 기준)
      스모크
    - Download 진행 토스트 토글 → setSetting/getSetting 경로 저장/복원 및
      GalleryRenderer/BulkDownloadService 옵션 전달 가드
-2. 패널/모달 a11y 스모크
-   - Esc 닫힘/외부 클릭 닫힘/Tab 루프(단순 순환 가드)/초기 포커스 보장 스모크
-   - describe.skip된 settings-modal.accessibility 테스트의 부분 재활성화 또는
-     대체 스모크 추가(jsdom 포커스 한계를 고려한 최소 명세)
-3. 문서/가이드
+2. 문서/가이드
    - 코딩 가이드에 settings-access 키('download.showProgressToast') 명시 및 소비
      경로 주석 보강
 
