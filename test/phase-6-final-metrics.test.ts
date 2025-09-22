@@ -77,8 +77,8 @@ describe('Phase 6: 최종 정리 & 계측', () => {
 
     test('Hex 직접 사용이 최소화되어야 함', () => {
       // 임계 하향(로드맵): 25 → 15 → 10 → 5 → 0
-      // 현재 단계: 5 (2025-09-22)
-      expect(metricsData.hexUsage).toBeLessThanOrEqual(5);
+      // 현재 단계: 0 (2025-09-22)
+      expect(metricsData.hexUsage).toBeLessThanOrEqual(0);
     });
 
     test('토큰 네이밍이 일관성을 유지해야 함', () => {

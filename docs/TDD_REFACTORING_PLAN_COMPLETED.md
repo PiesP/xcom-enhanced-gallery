@@ -398,12 +398,19 @@ gallery-prefetch.viewport-weight / skeleton.tokens) rename 처리 및 내부 '(R
      수행
   2. rename 직후 기존 RED 파일(원본 경로)은 절대 별도 사본
      형태(placeholder/export {}/describe.skip)로 남기지 않는다
-  3. 만약 Vitest가 빈 파일 문제로 실패하는 경우라도 임시 placeholder 사용 대신
-     즉시 최소 GREEN 구현을 적용한다
-  4. Graduation 커밋에는 (a) rename diff, (b) 내부 `(RED)` 주석/라벨 제거가
-     포함되어야 한다
-  5. 완료 후 활성 계획 문서에서 해당 식별자를 제거하고 본 완료 로그에는 1줄
-     요약만 추가한다
+
+2025-09-22: Style-Guard-001 — Hex 임계 하향 최종(5→0) 완료
+
+- 테스트: `test/phase-6-final-metrics.test.ts`의 Hex 직접 사용 임계치를 5에서
+  0으로 하향
+- 구현: 남은 base 색상 토큰(hex) 미사용 확인 — white/black은 `oklch(1 0 0)`,
+  `oklch(0 0 0)`로 이관 완료
+- 결과: 소스 내 CSS에서 Hex 직접 사용 0, 전체 스위트 GREEN, dev/prod 빌드 및
+  Userscript 산출물 검증 통과 3. 만약 Vitest가 빈 파일 문제로 실패하는 경우라도
+  임시 placeholder 사용 대신 즉시 최소 GREEN 구현을 적용한다 4. Graduation
+  커밋에는 (a) rename diff, (b) 내부 `(RED)` 주석/라벨 제거가 포함되어야 한다 5.
+  완료 후 활성 계획 문서에서 해당 식별자를 제거하고 본 완료 로그에는 1줄 요약만
+  추가한다
 - 근거: Batch F 후속 정리에서 placeholder 9건을 물리 삭제하면서 GREEN 가드
   중복으로 인해 사본 유지 가치가 0임을 재확인
 - 기대 효과: 테스트 실행 시간 단축(중복 skip 제거), RED 메트릭 신뢰도 제고,

@@ -80,13 +80,12 @@ Acceptance(측정 기준)
 
 6. Style-Guard-001 — Hex 직접 사용 임계 상향 계획(단계적)
 
-- 현재: 경고/허용 수치 기반(Phase 6 테스트)
-- 로드맵: 25 → 15 → 10 → 5 → 0 (각 단계는 테스트 기준 변경으로 관리)
-- 현재 단계(2025-09-22): 5 적용 — phase-6-final-metrics.test.ts 임계 갱신
+- 상태: 최종 단계(0) 달성 — phase-6-final-metrics.test.ts에서 hexUsage <= 0으로
+  갱신됨(2025-09-22)
 - 베이스 색상(hex) 토큰을 OKLCH로 이관 완료(white/black → oklch), 주석/헤더는
   OKLCH 표기로 일원화됨
 
-  다음 단계: 잔여 예외 케이스 점검 후 최종 0으로 절하
+  본 항목은 Completed 로그로 이관합니다.
 
 완료 정의(DoD)
 
