@@ -131,6 +131,23 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-23: EPIC-REF — REF-01/REF-02 완료(경량화 1차)
+
+- REF-01 Deprecated 래퍼 제거:
+  `src/shared/utils/performance/signalOptimization.ts` 삭제.
+  - 테스트/소스는 `@shared/utils/signalSelector`(canonical)로 경로 정합화.
+  - 결과: 타입/린트/전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator
+    PASS.
+- REF-02 스크립트 중복 정리: scripts 폴더의 legacy 사본(.cjs/.js) 제거, 단일
+  소스(.ts/.mjs)만 유지.
+  - 제거 목록: button-wrapper-codemod.(cjs|js),
+    convert-colors-to-oklch.(cjs|js), deps-runner.cjs,
+    fix-gallery-hoc-naming.(cjs|js), generate-icon-map.cjs
+  - 결과: deps:all 파이프라인 GREEN, 빌드/문서/테스트 GREEN 유지. 번들
+    사이즈(gzip) 변화 ±0% 수준.
+- 문서: 활성 계획서(TDD_REFACTORING_PLAN.md)에서 REF-01/REF-02 항목 제거, 본
+  완료 로그에 요약 이관.
+
 2025-09-22: PLAN — EPIC-USH-v4 Userscript 하드닝 v4 (Epic 종료/계획서 정리)
 
 - 완료 범위: P0(단일 파일/소스맵/헤더 메타), P1-1(SPA 라우팅/마운트

@@ -28,8 +28,8 @@ describe('Phase 6: Performance Optimization', () => {
     });
 
     it('should optimize signal-based state management', async () => {
-      // Signal optimization should be implemented
-      const signalModule = await import('../../src/shared/utils/performance/signalOptimization.ts');
+      // Signal optimization should be implemented via unified selector utils
+      const signalModule = await import('../../src/shared/utils/signalSelector.ts');
       expect(signalModule.createSelector).toBeDefined();
       expect(signalModule.useAsyncSelector).toBeDefined();
     });
