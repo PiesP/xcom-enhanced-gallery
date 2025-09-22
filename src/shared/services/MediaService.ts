@@ -981,6 +981,9 @@ export class MediaService {
       const { createZipBlobFromFileMap } = await import('@shared/external/zip/zip-creator');
       const zipBlob = await createZipBlobFromFileMap(new Map(Object.entries(files)), {
         compressionLevel: 0,
+        // MediaService currently lacks a dedicated controller; rely on options.signal if added in future
+        zipTimeoutMs: 60_000,
+        zipRetries: 0,
       });
       const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
 
