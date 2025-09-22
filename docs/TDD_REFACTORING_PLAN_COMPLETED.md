@@ -180,6 +180,12 @@ Userscript 하드닝 v3 (1차 완료)
 - 영향: useGalleryItemScroll의 인덱스 기반 스크롤 계약 보존, VerticalImageItem이
   data-xeg-role을 DOM에 전달하도록 보강. 타입/린트/테스트/빌드 모두 GREEN.
 
+2025-09-22: PLAN — 활성 계획 상태 메모 간결화(Completed 이관 정리)
+
+- 활성 계획서의 상태 메모에서 완료 항목 상세 나열을 제거하고, "최근 완료 항목은
+  Completed 로그로 이관" 문구로 축약했습니다. 활성 문서는 진행/착수 예정 작업만
+  유지합니다.
+
 2025-09-22: PLAN — 리팩토링 테스트 일시 포함 토글 추가(진행 현황 기록)
 
 - vitest 설정에 환경 변수(`VITEST_INCLUDE_REF_TESTS=1`)로 제외 테스트를 임시

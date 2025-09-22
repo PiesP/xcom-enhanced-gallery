@@ -54,26 +54,8 @@ Refactoring Tests 토글 도입까지 완료(Completed 로그 참조).
 
 상태 메모(2025-09-22)
 
-- 다음 3개 항목은 완료되어 Completed 로그로 이관됨: 헤더 정합성, 릴리즈
-  메타데이터 동기화, 네트워크 정책 기본값 강화
-- Gallery-Perf-001(간단 윈도우링) 완료 — Completed 로그 참조. 스코프/AC에서 관련
-  항목 제거.
-- A11y-001: CSS 애니메이션 정적 스캔 테스트 추가 및 CSS 보정으로 1차 완성. 전체
-  스위트 GREEN 유지.
-- Tests-Refactor-001: 환경 변수(VITEST_INCLUDE_REF_TESTS=1) 토글 경로는
-  유지하되, event-manager-integration / service-diagnostics-integration 2개 통합
-  테스트는 정합화 완료되어 기본 포함으로 전환(exclude 제거). 전체 스위트 GREEN
-  재확인. Unified\* 어댑터/별칭 제거 완료.
-
-- Memory-Diag-001: ResourceManager 최소 진단(byType/byContext) 메트릭 추가 및
-  단위 테스트 도입. 기존 API 비호환 변경 없음.
-
-- STYLE-ISOLATION-P1: ShadowRoot 스타일 주입 경로 단일화 완료(단일 style 주입,
-  소스 @import 금지). Completed 로그에 이관.
-- ICN-R2: LazyIcon placeholder 표준 data/ARIA 속성 정비 완료. Completed 로그에
-  이관.
-- PREFETCH-SCHEDULER: MediaService 프리페치 스케줄 옵션 경계/정리 커버리지 확장
-  완료. Completed 로그에 이관.
+- 최근 완료 항목은 모두 Completed 로그로 이관되었으며, 활성 계획서는 진행/착수
+  예정 작업만 유지합니다. 현재 활성 작업 없음(회귀 가드/메트릭 모니터링만 지속).
 
 Acceptance(측정 기준)
 
