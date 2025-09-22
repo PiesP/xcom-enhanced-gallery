@@ -122,7 +122,7 @@ module.exports = {
   parserPreset: {
     parserOpts: {
       // 헤더 패턴: type(scope): description
-  headerPattern: /^(\w*)(?:\(([^)]*)\))?: (.*)$/,
+      headerPattern: /^(\w*)(?:\(([^)]*)\))?: (.*)$/,
       headerCorrespondence: ['type', 'scope', 'subject'],
       // 참조 액션
       referenceActions: [
