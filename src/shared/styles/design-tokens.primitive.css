@@ -38,16 +38,16 @@
   --color-yellow-500: oklch(0.761 0.16 70.7);
   --color-yellow-600: oklch(0.699 0.148 64.9);
 
-  /* Twitter Brand Colors */
-  --color-twitter-blue: oklch(0.676 0.151 237.8); /* #1d9bf0 */
-  --color-twitter-blue-hover: oklch(0.616 0.144 238.1); /* #1a8cd8 */
-  --color-twitter-blue-active: oklch(0.549 0.138 238.7); /* #1570b8 */
-  --color-twitter-red: oklch(0.628 0.227 17); /* #f4212e */
-  --color-twitter-red-hover: oklch(0.558 0.208 16.5); /* #dc1928 */
-  --color-twitter-green: oklch(0.671 0.146 166.4); /* #00ba7c */
-  --color-twitter-green-hover: oklch(0.61 0.135 165.8); /* #00a46c */
-  --color-twitter-orange: oklch(0.775 0.122 57.5); /* #ffad1f */
-  --color-twitter-orange-hover: oklch(0.729 0.14 50.2); /* #fd9700 */
+  /* Twitter Brand Colors (expressed in OKLCH; original hex references removed) */
+  --color-twitter-blue: oklch(0.676 0.151 237.8);
+  --color-twitter-blue-hover: oklch(0.616 0.144 238.1);
+  --color-twitter-blue-active: oklch(0.549 0.138 238.7);
+  --color-twitter-red: oklch(0.628 0.227 17);
+  --color-twitter-red-hover: oklch(0.558 0.208 16.5);
+  --color-twitter-green: oklch(0.671 0.146 166.4);
+  --color-twitter-green-hover: oklch(0.61 0.135 165.8);
+  --color-twitter-orange: oklch(0.775 0.122 57.5);
+  --color-twitter-orange-hover: oklch(0.729 0.14 50.2);
 
   /* Spacing Scale - 4px base */
   --space-xs: 4px;

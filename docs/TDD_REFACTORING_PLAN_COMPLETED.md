@@ -64,6 +64,14 @@
 
 # ✅ TDD 리팩토링 완료 항목 (간결 로그)
 
+2025-09-22: A11y-001 — 모션 가드 1차 완료
+
+- 테스트: 애니메이션 선언 파일 정적 스캔 가드 추가(prefer-reduced-motion 고려),
+  화이트리스트 제외 0 유지
+- 구현: 토큰/유틸 레벨에서 reduced-motion 가드 적용 및 누락 CSS 보정 완료
+- 결과: 전체 스위트 GREEN, dev/prod 빌드 및 Userscript 산출물 검증 통과 — 접근성
+  가드 적용율 100%
+
 2025-09-22: EPIC-B — Userscript 폴백 하드닝 v2 (Epic 종료) 2025-09-22: EPIC-C —
 Userscript 하드닝 v3 (1차 완료)
 
