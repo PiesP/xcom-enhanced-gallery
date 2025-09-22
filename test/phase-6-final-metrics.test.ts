@@ -76,8 +76,9 @@ describe('Phase 6: 최종 정리 & 계측', () => {
     });
 
     test('Hex 직접 사용이 최소화되어야 함', () => {
-      // 기본 black/white 및 fallback 색상들을 고려하여 범위 확대
-      expect(metricsData.hexUsage).toBeLessThanOrEqual(25); // 현실적인 수준으로 조정 (21개 현재)
+      // 임계 하향(로드맵): 25 → 15 → 10 → 5 → 0
+      // 현재 단계: 15 (2025-09-22)
+      expect(metricsData.hexUsage).toBeLessThanOrEqual(15);
     });
 
     test('토큰 네이밍이 일관성을 유지해야 함', () => {
