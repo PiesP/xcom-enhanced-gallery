@@ -108,6 +108,38 @@
 - 빌드 산출물 검증: `npm run build:dev|prod` 후 `scripts/validate-build.js` 자동
   실행
 
+## Git 커밋/푸시 자동화 정책 (Copilot)
+
+코파일럿이 로컬에서 커밋 메시지를 생성하거나 `git commit`/`git push`를 실행하기
+전에 반드시 Husky 훅이 정상 동작하는지 확인하고, 훅이 준비된 경우에만 작업을
+진행합니다.
+
+- 대상 훅: `.husky/pre-commit`, `.husky/commit-msg`, `.husky/pre-push`
+- 훅 검증 절차(빠른 체크)
+  - 세 훅 파일이 모두 존재하는지 확인합니다.
+  - 누락 시 자동 복구를 시도합니다(아래 순서 중 가능한 항목을 적용).
+    1. `npm ci`(필요 시 의존성 설치)
+    2. `npm run prepare` 또는 `npx husky`로 Husky 초기화
+    3. `node ./scripts/setup-dev.js`로 훅/개발 도구 일괄 점검
+- 커밋 메시지 작성 규칙
+  - `commit-msg` 훅(commitlint) 통과를 목표로 Conventional Commits 형식을
+    사용합니다: `type(scope): description`
+  - 필요 시 사전 검증: PowerShell 기준 예)
+    - `"feat: short message" | npx --no-install commitlint --config commitlint.config.cjs`
+    - 또는 `npx --no-install commitlint --from HEAD~1`로 직전 커밋 범위를 점검
+- 실행 정책
+  - `git commit`은 `pre-commit` 훅이 준비된 상태에서만 시도하고, 실패 시
+    린트/포맷을 먼저 수정합니다.
+  - `git push`는 `pre-push` 훅(타입 체크 + 테스트)이 통과 가능한 상태에서만
+    시도합니다.
+- 예외 처리(페일세이프)
+  - 훅이 계속 누락되거나 비정상일 경우, 코파일럿은 훅을 우회하지 않고 복구
+    절차를 시도한 뒤 원인을 보고합니다(예: Git 설정의 `core.hooksPath` 변경 등).
+  - 수동 확인 스니펫(Windows PowerShell):
+    - `Test-Path .husky\pre-commit`
+    - `Test-Path .husky\commit-msg`
+    - `Test-Path .husky\pre-push`
+
 ## 빠른 체크리스트 (AI 요청 문구에 포함)
 
 - “TDD로 … 구현”, “getter 함수 사용하여(벤더/유저스크립트)”, “TypeScript strict

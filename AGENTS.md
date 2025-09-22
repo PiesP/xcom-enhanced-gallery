@@ -107,6 +107,28 @@ CI
 - 스타일/토큰/접근성은 `docs/CODING_GUIDELINES.md`와 테스트 스위트 기준을
   따릅니다.
 
+## 커밋/푸시 전 Husky 훅 검증
+
+로컬에서 커밋 또는 푸시하기 전에 다음을 확인하세요. 코파일럿 자동화도 동일
+정책을 따릅니다.
+
+- 필수 훅 존재 여부
+  - `.husky/pre-commit`, `.husky/commit-msg`, `.husky/pre-push`
+  - PowerShell 빠른 체크:
+    - `Test-Path .husky\pre-commit`
+    - `Test-Path .husky\commit-msg`
+    - `Test-Path .husky\pre-push`
+- 복구/설치
+  - `npm ci` 후 `npm run prepare` (또는 `npx husky`)
+  - 일괄 점검: `node ./scripts/setup-dev.js`
+- 사전 검증(선택 사항)
+  - 커밋 메시지 규칙 확인:
+    `"feat: message" | npx --no-install commitlint --config commitlint.config.cjs`
+  - 푸시 전 타입/테스트: `npm run typecheck` · `npm test`
+- 실패 시 조치
+  - 훅 우회 금지. 훅 오류 메시지를 기준으로 린트/타입/테스트/커밋 메시지를 수정
+  - Git 전역 설정으로 `core.hooksPath`가 다른 경로로 지정되어 있지 않은지 확인
+
 ## 트러블슈팅 팁
 
 - 훅/테스트 타임아웃: 테스트가 느릴 경우 `-t`로 범위를 좁히거나
