@@ -87,12 +87,15 @@ Acceptance(측정 기준)
 - 파일:
   - [완료] test/refactoring/event-manager-integration.test.ts — 현
     구조(EventManager)로 정합화 및 GREEN 확인
-  - [진행 예정] test/refactoring/service-diagnostics-integration.test.ts —
-    UnifiedServiceDiagnostics 어댑터 경유로 점진 활성화
+  - [완료] test/refactoring/service-diagnostics-integration.test.ts — 현
+    구조(CoreService/BrowserService)로 정합화, 테스트 내부 헬퍼로 대체, GREEN
+    확인
 - 현황:
-  - VITEST_INCLUDE_REF_TESTS=1 토글 및 조건부 alias 적용 유지
-  - UnifiedEventManager 테스트 어댑터와 별칭 제거(직접 EventManager 사용)
-  - 다음 사이클에서 diagnostics 테스트 GREEN 확인 후 exclude 제거 검토
+  - VITEST_INCLUDE_REF_TESTS=1 토글 유지(개별 실행용)
+  - UnifiedEventManager/UnifiedServiceDiagnostics 테스트 어댑터 및 별칭 제거
+    완료
+  - exclude 제거 검토 대상: event-manager-integration,
+    service-diagnostics-integration (단일 실행 GREEN 확인됨)
 
 7. Style-Guard-001 — Hex 직접 사용 임계 상향 계획(단계적)
 

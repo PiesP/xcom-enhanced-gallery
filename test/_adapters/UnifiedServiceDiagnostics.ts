@@ -42,6 +42,11 @@ export class UnifiedServiceDiagnostics {
     await svc.diagnoseServiceManager();
   }
 
+  // 인스턴스 메서드 호환성: 정적 메서드에 위임
+  public async diagnoseServiceManager(): Promise<void> {
+    return UnifiedServiceDiagnostics.diagnoseServiceManager();
+  }
+
   public getServiceStatus() {
     const svc = CoreService.getInstance();
     const d = svc.getDiagnostics();
@@ -60,6 +65,19 @@ export class UnifiedServiceDiagnostics {
       isPageVisible: diag.isPageVisible,
       isDOMReady: diag.isDOMReady,
     };
+  }
+
+  // BrowserService 호환 단일 접근 메서드들 (테스트 기대 API)
+  public getPageVisibility(): boolean {
+    return this.browser.isPageVisible();
+  }
+
+  public getDOMReadyState(): boolean {
+    return this.browser.isDOMReady();
+  }
+
+  public getInjectedStylesCount(): number {
+    return this.browser.getDiagnostics().injectedStylesCount;
   }
 
   public getResourceUsage() {
