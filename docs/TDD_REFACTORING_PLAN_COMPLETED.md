@@ -43,6 +43,10 @@
 - 문서: 활성 계획서(TDD_REFACTORING_PLAN.md)에서 EPIC-FIX 섹션 제거, 본 완료
   로그에 요약 이관
 
+  메모: EPIC-FIX는 VerticalGalleryView의 지연 복원(useEffect)과 SettingsService
+  구독, DOM 즉시 반영(data-fit-mode)로 해결되었으며, 관련 테스트 두 건이
+  GREEN입니다.
+
 2025-09-23: EPIC-REF — REF-03 보강: vendor getter 정책 스캔에 `preact/compat`
 추가 (완료)
 

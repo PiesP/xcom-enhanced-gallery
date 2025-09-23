@@ -6,8 +6,9 @@
 
 업데이트: 2025-09-23 — 문서 정리: USH-v4 관련 추가 게이트(수용 기준) 블록을
 Completed 로그로 일원화하고, 활성 계획서에서는 제거했습니다. “EPIC-SM — Settings
-Modal Implementation Audit”의 스코프(메뉴 연동/접근성 스모크)는 GREEN으로
-확인되어 Completed 로그에 반영되어 있습니다.
+Modal Implementation Audit”은 Completed로 이관되었으며, “EPIC-FIX — Gallery
+Image Fit Mode Persistence” 또한 완료되어 본 문서에서 제거되었습니다(Completed
+참조).
 
 ---
 
