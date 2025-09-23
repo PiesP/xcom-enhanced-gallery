@@ -36,6 +36,13 @@ READY | SOURCEMAP_VALIDATOR | prod 주석 정책/릴리즈 .map 포함 여부 �
 
 ---
 
+## Detailed Plan Proposal — 코드 경량화 v2 (중복/충돌/불필요 코드 제거)
+
+상태: PROMOTED | 식별자: REF-LITE-V2 | 비고: 활성 계획으로 승격됨 — 상세 내용은
+`docs/TDD_REFACTORING_PLAN.md`의 EPIC-REF — REF-LITE-V2 섹션을 참조하세요.
+
+---
+
 ## Template
 
 ```

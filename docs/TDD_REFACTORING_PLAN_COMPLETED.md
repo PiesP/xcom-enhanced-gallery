@@ -1,3 +1,32 @@
+2025-09-23: EPIC-REF — REF-LITE-V2 코드 경량화 v2 (완료)
+
+- 목표: 중복/충돌/불필요 코드를 제거하고 벤더 getter 정책·ZIP/Userscript 경계를
+  재검증하여 번들/유지보수 비용을 경감
+- 액션 요약(RED→GREEN)
+  1. 중복 유틸/배럴 정리 및 unused export 스캔 테스트 GREEN
+  2. 컴포넌트/스타일 중복 제거 및 디자인 토큰 위반 0 유지
+  3. http\_<status>/토스트 라우팅 표준화 잔재 정리, UnifiedToast 스모크 GREEN
+  4. direct vendor import 회귀 방지 보강(preact/compat 포함) — 스캔 테스트 GREEN
+  5. 서비스·ZIP 경로 중앙화 재검증(fflate 직접 사용 0, zip-creator 경유)
+  6. Dead Code 제거 — noUnusedLocals/Parameters 기준 정리, guard tests GREEN
+- 지표/게이트: 타입/린트/테스트/빌드 모두 GREEN, dependency-cruiser 위반 0,
+  direct vendor import 위반 0, Userscript 산출물 검증 PASS, 번들 gzip 118.70 KB
+- 문서: 활성 계획서에서 Epic 제거, 본 완료 로그에 간결 요약 이관
+
+2025-09-23: FIX — Toolbar 초기 핏 모드 동기화 (완료)
+
+- 증상: 초기 진입 시 툴바의 이미지 핏 모드가 설정과 무관하게 "가로
+  맞춤(fitWidth)"으로 표시됨.
+- 원인: Toolbar가 내부 훅 기본값만 참조하고, 화면 로직은 설정 복원값을 사용하여
+  UI/상태 불일치 발생.
+- 조치: Toolbar에 선택적 제어 prop `currentFitMode?: ImageFitMode` 도입, 제공 시
+  해당 값을 선택 상태로 사용. VerticalGalleryView가 복원된 `imageFitMode`를
+  `ToolbarWithSettings`로 전달(`currentFitMode={imageFitMode}`).
+- 테스트: `test/unit/shared/components/ui/Toolbar.fit-mode.test.tsx` — prop
+  미제공 시 기본값 유지, `currentFitMode="fitContainer"` 전달 시 버튼 선택 가드.
+- 결과: 타입/린트/테스트/빌드 GREEN, Userscript 정책(벤더 getter/PC 전용
+  입력/strict TS) 준수. 활성 계획서의 해당 Change Note는 본 완료 로그로 이관.
+
 2025-09-23: EPIC-SM-v2 — Settings Persistence Hardening (LocalStorage→Hybrid)
 (완료)
 

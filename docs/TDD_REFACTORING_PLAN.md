@@ -4,11 +4,9 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-23 — 문서 정리: USH-v4 관련 추가 게이트(수용 기준) 블록을
-Completed 로그로 일원화하고, 활성 계획서에서는 제거했습니다. “EPIC-SM — Settings
-Modal Implementation Audit”은 Completed로 이관되었으며, “EPIC-FIX — Gallery
-Image Fit Mode Persistence” 또한 완료되어 본 문서에서 제거되었습니다(Completed
-참조).
+업데이트: 2025-09-23 — REF-LITE-V2(코드 경량화 v2)를 다음 사이클 활성 Epic으로
+승격했습니다. 세부 액션/Acceptance/지표는 아래 Epic 섹션을 참조하세요. 이전
+사이클 완료 항목들은 Completed 로그에 정리되어 있습니다.
 
 ---
 
@@ -24,17 +22,14 @@ Image Fit Mode Persistence” 또한 완료되어 본 문서에서 제거되었�
 
 ## 2. 활성 Epic 현황
 
-현재 활성 Epic 없음.
-
-메모: 직전 사이클의 EPIC-REF(코드 경량화 v1) 하위 작업(REF-04..07)은 모두
-완료되어 완료 로그로 이관되었습니다(Completed 참조).
+<!-- EPIC-REF — REF-LITE-V2는 2025-09-23에 완료되어 Completed 로그로 이관되었습니다. -->
 
 ---
 
 ## 3. 다음 사이클 준비 메모(Placeholder)
 
-- 신규 Epic 제안 시 백로그에 초안 등록(Problem/Outcome/Metrics) 후 합의되면 본
-  문서로 승격합니다.
+- 신규 Epic 제안은 백로그에 초안 등록 후 합의되면 본 문서의 활성 Epic으로
+  승격합니다.
 
 ---
 
@@ -90,18 +85,5 @@ Gate 체크리스트(요지):
 
 ## Change Notes (Active Session)
 
-2025-09-23 — Toolbar 초기 핏 모드 동기화 (bugfix)
-
-- 증상: 갤러리 초기 진입 시 툴바의 핏 모드가 저장된 설정과 무관하게 "가로
-  맞춤(fitWidth)"으로 표시됨.
-- 원인: `Toolbar`가 내부 훅 상태(`useToolbarState().currentFitMode`의 기본값:
-  fitWidth)만 참조하고, 실제 화면 로직(`VerticalGalleryView`)은 설정에서 복원한
-  모드로 동작하여 UI와 상태가 분리됨.
-- 조치: `Toolbar`에 제어 프로퍼티 `currentFitMode?: ImageFitMode` 추가. 제공 시
-  해당 값을 선택 상태로 사용. `VerticalGalleryView`는 복원된 `imageFitMode`를
-  `ToolbarWithSettings`로 전달(`currentFitMode={imageFitMode}`).
-- 테스트: `test/unit/shared/components/ui/Toolbar.fit-mode.test.tsx` 추가
-  - prop 미제공 시 내부 기본값(fitWidth) 선택이 유지됨
-  - `currentFitMode="fitContainer"` 전달 시 해당 버튼 선택
-- 비고: 벤더 getter, PC 전용 이벤트, strict TS 준수. 공개 API 변경은 선택적 prop
-  추가로 후방 호환을 유지하며 onFit\* 콜백 흐름은 동일.
+현재 활성 세션 변경 없음. 다음 사이클 제안/선정은 `TDD_REFACTORING_BACKLOG.md`를
+참고하세요.
