@@ -82,6 +82,8 @@ jobs:
         with:
           name: coverage-report-${{ github.sha }}
           path: coverage/
+          # CI에서 커버리지 디렉터리가 비어있는 경우 경고를 억제
+          if-no-files-found: ignore
           retention-days: 7
 
       - name: 🏗️ Test builds
@@ -95,9 +97,10 @@ jobs:
       - name: ✅ Validate build outputs
         run: node ./scripts/validate-build.js
 
-      - name: 📊 Upload build artifacts
+      - name: 📊 Upload build artifacts (Node 20 only)
         uses: actions/upload-artifact@v4
-        if: success()
+        # 매트릭스 병렬 실행 시 동일 이름 충돌(409) 방지를 위해 Node 20에서만 업로드
+        if: ${{ success() && matrix.node-version == 20 }}
         with:
           name: build-artifacts-${{ github.sha }}
           path: dist/
