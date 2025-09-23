@@ -4,9 +4,9 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-23 — 현재 활성 Epic 없음(REF-LITE-V2 종료, Completed로 이관).
-다음 사이클 선정 전까지 Placeholder 상태를 유지합니다. 세부 히스토리는
-`TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
+업데이트: 2025-09-23 — 신규 Epic 등록: "뷰포트 기반 인디케이터/포커스 자동
+갱신(무 스크롤)" 진행 중. 이전 사이클(REF-LITE-V2)은 Completed로 이관되었습니다.
+세부 히스토리는 `TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
 ---
 
@@ -22,9 +22,9 @@
 
 ## 2. 활성 Epic 현황
 
-- 현재 활성 Epic 없음
-
----
+현재 활성 Epic 없음 — 최근 Epic "VP-Focus-Indicator-001 (뷰포트 기반
+인디케이터/포커스 자동 갱신)"는 완료되어 `TDD_REFACTORING_PLAN_COMPLETED.md`로
+이관되었습니다. 세부 구현/테스트/게이트는 Completed 로그를 참조하세요.
 
 ## 3. 다음 사이클 준비 메모(Placeholder)
 

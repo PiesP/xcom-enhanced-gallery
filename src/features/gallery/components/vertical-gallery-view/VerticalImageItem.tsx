@@ -272,6 +272,12 @@ function BaseVerticalImageItemCore({
       return; // 이미 visible 상태이거나 강제 렌더링 모드면 observer 설정하지 않음
     }
 
+    // 환경에 IntersectionObserver가 없는 경우 즉시 가시 처리로 폴백
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       entries => {
         const entry = entries[0];

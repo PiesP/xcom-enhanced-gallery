@@ -35,6 +35,11 @@ import { getSetting, setSetting, tryGetSettingsService } from '@shared/container
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
 import { useSelector } from '@shared/utils/signalSelector';
 import type { MediaInfo } from '@shared/types';
+import { useGalleryVisibleIndex } from '../../hooks/useVisibleIndex';
+import {
+  nextGalleryIndexByVisible,
+  previousGalleryIndexByVisible,
+} from '../../utils/visible-navigation';
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -55,8 +60,8 @@ export interface VerticalGalleryViewProps {
 function VerticalGalleryViewCore({
   onClose,
   className = '',
-  onPrevious,
-  onNext,
+  onPrevious: _onPrevious,
+  onNext: _onNext,
   onDownloadCurrent,
   onDownloadAll,
   windowingEnabled,
@@ -144,6 +149,30 @@ function VerticalGalleryViewCore({
     // 인덱스가 변경되면 자동 스크롤 상태 초기화
     setLastAutoScrolledIndex(-1);
   }, [currentIndex]);
+
+  // 뷰포트 가시성 기반 인덱스 계산 훅
+  const { visibleIndex } = useGalleryVisibleIndex(containerRef, mediaItems.length, {
+    thresholds: [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1],
+    rootMargin: '0px',
+  });
+
+  // visibleIndex가 바뀌면 시각적 포커스 업데이트 (자동 스크롤 금지)
+  useEffect(() => {
+    if (visibleIndex < 0 || visibleIndex >= mediaItems.length) return;
+    if (focusedIndex !== visibleIndex) {
+      setFocusedIndex(visibleIndex);
+      // 접근성/키보드 경로 보완: 포커스를 항목에 부여하되 스크롤 방지
+      try {
+        const itemsRoot = containerRef.current?.querySelector(
+          '[data-xeg-role="items-container"]'
+        ) as HTMLElement | null;
+        const el = (itemsRoot?.children[visibleIndex] as HTMLElement) || null;
+        el?.focus?.({ preventScroll: true } as unknown as FocusOptions);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [visibleIndex, mediaItems.length, focusedIndex]);
 
   // 메모이제이션 최적화
   const memoizedMediaItems = useMemo(() => {
@@ -689,6 +718,17 @@ function VerticalGalleryViewCore({
     );
   }
 
+  // 내비게이션: visibleIndex 기준으로 이전/다음 계산
+  const handlePreviousByVisible = useCallback(() => {
+    const nextIndex = previousGalleryIndexByVisible(visibleIndex, currentIndex, mediaItems.length);
+    navigateToItem(nextIndex);
+  }, [visibleIndex, currentIndex, mediaItems.length]);
+
+  const handleNextByVisible = useCallback(() => {
+    const nextIndex = nextGalleryIndexByVisible(visibleIndex, currentIndex, mediaItems.length);
+    navigateToItem(nextIndex);
+  }, [visibleIndex, currentIndex, mediaItems.length]);
+
   return (
     <div
       ref={containerRef}
@@ -706,9 +746,9 @@ function VerticalGalleryViewCore({
       <div className={styles.toolbarWrapper} ref={toolbarWrapperRef}>
         <ToolbarWithSettings
           onClose={onClose || (() => {})}
-          onPrevious={onPrevious || (() => {})}
-          onNext={onNext || (() => {})}
-          currentIndex={currentIndex}
+          onPrevious={handlePreviousByVisible}
+          onNext={handleNextByVisible}
+          currentIndex={visibleIndex >= 0 ? visibleIndex : currentIndex}
           totalCount={mediaItems.length}
           isDownloading={isDownloading}
           onDownloadCurrent={handleDownloadCurrent}

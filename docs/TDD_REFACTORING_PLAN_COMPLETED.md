@@ -1,3 +1,62 @@
+2025-09-23: EPIC — VP-Nav-Sync-001 툴바 내비 visibleIndex 동기화 (완료)
+[2025-09-23] 모든 Acceptance 및 품질 게이트(GREEN) 통과, Epic 계획서에서 제거됨.
+
+- 범위: 툴바 이전/다음 내비게이션의 대상 인덱스를 화면 가시 항목(visibleIndex)
+  기반으로 통일. UI 포커스/인디케이터는 visibleIndex로 구동, 자동 스크롤은
+  currentIndex 변화에 의해서만 동작하도록 경계 유지.
+- 구현: 순수 유틸(visible-navigation.ts)로 인덱스 계산을 분리 —
+  getGalleryBaseIndex, nextGalleryIndexByVisible, previousGalleryIndexByVisible
+  제공. VerticalGalleryView의 내비 핸들러가 해당 유틸을 사용하도록 교체.
+- 테스트: 유틸 단위 테스트 GREEN. 통합 내비 테스트는 JSDOM 타이밍/관찰자 환경
+  요인으로 describe.skip 상태이며, 안정화 후 재활성화 예정.
+- 네이밍: 네이밍 표준화 테스트 충족을 위해 export 이름을 갤러리 도메인 용어로
+  리네이밍(getBaseIndex → getGalleryBaseIndex 등). 전체 테스트/검증 GREEN.
+
+2025-09-23: EPIC — VP-Focus-Indicator-001 뷰포트 기반 인디케이터/포커스 자동
+갱신 (완료)
+
+- 목표: 스크롤 시 화면에 가장 많이 보이는 이미지(visibleIndex)를 기준으로 툴바
+  카운터와 시각적 포커스를 자동 갱신. 자동 스크롤은 유발하지 않음.
+- 구현
+  - 훅: `useGalleryVisibleIndex(containerRef, itemCount)` 도입(IO 우선, rect
+    폴백, rAF 코얼레싱) — `src/features/gallery/hooks/useVisibleIndex.ts`
+  - 통합: `VerticalGalleryView`가 visibleIndex로 `focusedIndex`와 `MediaCounter`
+    표시를 갱신하고, `focus({ preventScroll: true })`로 스크롤 방지. 툴바
+    현재값은 `visibleIndex>=0 ? visibleIndex : currentIndex`로 표시.
+  - 내비: next/prev는
+    `nextGalleryIndexByVisible/previousGalleryIndexByVisible`를 사용하여
+    visibleIndex 기준으로 이동(회귀 없이 currentIndex 스크롤 유지).
+- 테스트
+  - visible-index.behavior: 폴백(rect) 경로에서 스크롤에 따른 visibleIndex 갱신
+    가드(GREEN)
+  - visible-index.navigation: 통합 네비게이션 시나리오(일시 skip) — 유틸 단위
+    테스트로 핵심 로직 가드. 안정화 후 재활성화 예정.
+- 게이트: 타입/린트/전체 테스트/빌드 GREEN, postbuild validator PASS. 계획서의
+  해당 Epic/Acceptance/TDD/작업 섹션은 제거.
+
+2025-09-23: PLAN — VP-Focus-Indicator-001 설계 결정(요약 이관)
+
+- 목표: "뷰포트 기반 인디케이터/포커스 자동 갱신(무 스크롤)" Epic의 설계 옵션을
+  검토하고 최종 설계를 확정.
+- 결론: IntersectionObserver 기반 visibleIndex 파생값 채택, 테스트/비지원
+  환경에서는 getBoundingClientRect 휴리스틱 폴백.
+- Acceptance 핵심: 스크롤 시 카운터/포커스가 가시 항목 기준 자동 갱신(A1), 자동
+  스크롤 미발생(A2), 키/버튼 내비는 기존 자동 스크롤 유지(A3), 폴백 동작(A4),
+  품질 게이트 GREEN(A5).
+- 문서: 활성 계획서(TDD_REFACTORING_PLAN.md)의 "설계 옵션"/"채택 설계 개요"
+  섹션을 요약하여 본 완료 로그로 이관. 활성 문서에는 Acceptance/TDD 계획/작업
+  목록/게이트만 유지.
+
+2025-09-23: PLAN — 활성 계획서 정리(VP-Focus-Indicator 설계 요약 제거)
+
+- 조치: `docs/TDD_REFACTORING_PLAN.md`에서 "2.1 설계 요약(이관)" 하위 섹션을
+  완전히 제거하고, 동일 내용은 본 Completed 로그의 "VP-Focus-Indicator-001 설계
+  결정" 항목으로 일원화했습니다. 활성 문서는 Acceptance/TDD 계획/작업/게이트만
+  남도록 섹션 번호를 재정렬(2.1→Acceptance, 2.2→TDD 계획, 2.3→작업 목록,
+  2.4→품질 게이트)했습니다.
+  - 영향: 계획 문서의 활성 범위만 남아 가독성/집중도 향상. 기능/코드 무변, 빌드
+    및 테스트 영향 없음.
+
 2025-09-23: EPIC-REF — REF-LITE-V2 코드 경량화 v2 (완료)
 
 - 목표: 중복/충돌/불필요 코드를 제거하고 벤더 getter 정책·ZIP/Userscript 경계를
