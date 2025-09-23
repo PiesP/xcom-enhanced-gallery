@@ -47,6 +47,13 @@
   구독, DOM 즉시 반영(data-fit-mode)로 해결되었으며, 관련 테스트 두 건이
   GREEN입니다.
 
+2025-09-23: EPIC-REF — REF-03 Vendor getter 일원화 잔여 스캔/정리 (완료)
+
+- 내용: `preact/compat` 직접 import 스캔을 포함해 벤더 getter 정책 가드를
+  테스트와 아키텍처 스캔으로 일원화. 회귀 리스크 제거 완료.
+- 결과: dependency-cruiser + 단위 스캔 GREEN, direct vendor import 위반 0 유지.
+- 문서: 활성 계획서에서 REF-03 항목 제거, 본 Completed 로그에 간결 이관.
+
 2025-09-23: EPIC-REF — REF-03 보강: vendor getter 정책 스캔에 `preact/compat`
 추가 (완료)
 

@@ -38,26 +38,19 @@ EPIC-REF — 코드 경량화 v1(중복/충돌/불필요 코드 제거)
 
 작업 목록(스프린트 단위, 우선순위 상→하):
 
-1. REF-03 Vendor getter 일원화 잔여 스캔/정리
-
-- 현황: preact/compat 직접 import 스캔 보강 완료(Completed 참조). 향후 회귀는
-  테스트로 가드됨.
-- 남은 조치: 주기적 스캔 유지 및 신규 모듈 추가 시 getter 정책 검증 반영
-- 테스트: dependency-cruiser + 단위 스캔 GREEN, 위반 0 유지
-
-2. REF-04 Dead/Unused 코드 제거(배럴/유틸/컴포넌트)
+1. REF-04 Dead/Unused 코드 제거(배럴/유틸/컴포넌트)
    - 조치: unused-exports.scan 테스트 재활성/범위 확대, noUnusedLocals 확인
    - 테스트: 스캔 GREEN, 제거 후 타입/린트/테스트/빌드 GREEN
 
-3. REF-05 스냅샷/중복 테스트 통합(기능 가드 유지)
+2. REF-05 스냅샷/중복 테스트 통합(기능 가드 유지)
    - 조치: 겹치는 스냅샷/구조 가드를 통합 테스트로 축소, 의미 중복 제거
    - 테스트: 통합 후 커버리지/행동 동등성 스모크 GREEN
 
-4. REF-06 CSS 잔재/주석/레거시 토큰 제거
+3. REF-06 CSS 잔재/주석/레거시 토큰 제거
    - 조치: 레거시 클래스/주석 블록 삭제, 디자인 토큰 위반 스캐너로 회귀 가드
    - 테스트: design-token-violations, no-transition-all, theme coverage GREEN
 
-5. REF-07 브릿지 에러 메시지/토스트 정책 잔재 제거
+4. REF-07 브릿지 에러 메시지/토스트 정책 잔재 제거
    - 전제: http\_<status> 포맷/라우팅 정책 표준화 완료(Completed 참조)
    - 조치: 구 정책 호환 브릿지/분기 제거, 메시지 상수 표준화만 유지
    - 테스트: 서비스 계약/토스트 라우팅 가드 GREEN
