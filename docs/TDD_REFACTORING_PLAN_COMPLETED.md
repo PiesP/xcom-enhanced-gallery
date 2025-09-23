@@ -13,6 +13,12 @@
   direct vendor import 위반 0, Userscript 산출물 검증 PASS, 번들 gzip 118.70 KB
 - 문서: 활성 계획서에서 Epic 제거, 본 완료 로그에 간결 요약 이관
 
+2025-09-23: PLAN — TDD 활성 계획 정리(REF-LITE-V2 종료 표시) (완료)
+
+- 조치: `docs/TDD_REFACTORING_PLAN.md`에서 REF-LITE-V2 잔여 언급을 제거하고
+  "현재 활성 Epic 없음"으로 명시. 세부 히스토리는 본 완료 로그에 유지.
+  (빌드/검증 상태는 GREEN 그대로)
+
 2025-09-23: FIX — Toolbar 초기 핏 모드 동기화 (완료)
 
 - 증상: 초기 진입 시 툴바의 이미지 핏 모드가 설정과 무관하게 "가로

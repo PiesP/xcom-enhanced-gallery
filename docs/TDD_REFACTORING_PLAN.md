@@ -4,9 +4,9 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-23 — REF-LITE-V2(코드 경량화 v2)를 다음 사이클 활성 Epic으로
-승격했습니다. 세부 액션/Acceptance/지표는 아래 Epic 섹션을 참조하세요. 이전
-사이클 완료 항목들은 Completed 로그에 정리되어 있습니다.
+업데이트: 2025-09-23 — 현재 활성 Epic 없음(REF-LITE-V2 종료, Completed로 이관).
+다음 사이클 선정 전까지 Placeholder 상태를 유지합니다. 세부 히스토리는
+`TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
 ---
 
@@ -22,7 +22,7 @@
 
 ## 2. 활성 Epic 현황
 
-<!-- EPIC-REF — REF-LITE-V2는 2025-09-23에 완료되어 Completed 로그로 이관되었습니다. -->
+- 현재 활성 Epic 없음
 
 ---
 
