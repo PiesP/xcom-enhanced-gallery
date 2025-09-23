@@ -8,11 +8,17 @@
 import { logger } from '@shared/logging';
 
 // 정적 import로 모든 라이브러리를 안전하게 로드
-import * as fflate from 'fflate';
 import * as preact from 'preact';
 import * as preactHooks from 'preact/hooks';
 import * as preactSignals from '@preact/signals';
 import * as preactCompat from 'preact/compat';
+
+import {
+  createDeprecatedFflateApi,
+  warnFflateDeprecated,
+  type FflateAPI,
+  FFLATE_REMOVAL_MESSAGE,
+} from './fflate-deprecated';
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {
@@ -23,17 +29,6 @@ const MEMORY_CONSTANTS = {
 } as const;
 
 // 타입 정의들 (기존과 동일)
-export interface FflateAPI {
-  zip: typeof fflate.zip;
-  unzip: typeof fflate.unzip;
-  strToU8: typeof fflate.strToU8;
-  strFromU8: typeof fflate.strFromU8;
-  zipSync: typeof fflate.zipSync;
-  unzipSync: typeof fflate.unzipSync;
-  deflate: typeof fflate.deflate;
-  inflate: typeof fflate.inflate;
-}
-
 export interface PreactAPI {
   h: typeof preact.h;
   render: typeof preact.render;
@@ -90,12 +85,13 @@ export class StaticVendorManager {
 
   // 정적으로 로드된 라이브러리들 (TDZ 문제 없음)
   private readonly vendors = {
-    fflate,
     preact,
     preactHooks,
     preactSignals,
     preactCompat,
   };
+
+  private readonly deprecatedFflateApi: FflateAPI = createDeprecatedFflateApi();
 
   // 검증된 API 캐시
   private readonly apiCache = new Map<string, unknown>();
@@ -150,11 +146,6 @@ export class StaticVendorManager {
   }
 
   private validateStaticImports(): void {
-    // fflate 검증
-    if (!this.vendors.fflate.deflate || typeof this.vendors.fflate.deflate !== 'function') {
-      throw new Error('fflate 라이브러리 검증 실패');
-    }
-
     // Preact 검증
     if (!this.vendors.preact.render || typeof this.vendors.preact.render !== 'function') {
       throw new Error('Preact 라이브러리 검증 실패');
@@ -192,18 +183,6 @@ export class StaticVendorManager {
   }
 
   private cacheAPIs(): void {
-    // fflate API
-    const fflateAPI: FflateAPI = {
-      zip: this.vendors.fflate.zip,
-      unzip: this.vendors.fflate.unzip,
-      strToU8: this.vendors.fflate.strToU8,
-      strFromU8: this.vendors.fflate.strFromU8,
-      zipSync: this.vendors.fflate.zipSync,
-      unzipSync: this.vendors.fflate.unzipSync,
-      deflate: this.vendors.fflate.deflate,
-      inflate: this.vendors.fflate.inflate,
-    };
-
     // Preact API
     const preactAPI: PreactAPI = {
       h: this.vendors.preact.h,
@@ -246,7 +225,6 @@ export class StaticVendorManager {
     };
 
     // 캐시에 저장
-    this.apiCache.set('fflate', fflateAPI);
     this.apiCache.set('preact', preactAPI);
     this.apiCache.set('preact-hooks', preactHooksAPI);
     this.apiCache.set('preact-signals', preactSignalsAPI);
@@ -259,19 +237,9 @@ export class StaticVendorManager {
    * fflate 라이브러리 안전 접근
    */
   public getFflate(): FflateAPI {
-    if (!this.isInitialized) {
-      logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      // 동기 초기화 시도 (정적 import이므로 안전)
-      this.validateStaticImports();
-      this.cacheAPIs();
-      this.isInitialized = true;
-    }
-
-    const api = this.apiCache.get('fflate') as FflateAPI;
-    if (!api) {
-      throw new Error('fflate API를 찾을 수 없습니다.');
-    }
-    return api;
+    warnFflateDeprecated('zip-creator now relies on StoreZipWriter.');
+    logger.debug(`[Vendors] ${FFLATE_REMOVAL_MESSAGE}`);
+    return this.deprecatedFflateApi;
   }
 
   /**
@@ -435,16 +403,16 @@ export class StaticVendorManager {
     success: boolean;
     loadedLibraries: string[];
     errors: string[];
+    skippedLibraries: string[];
   }> {
     const loadedLibraries: string[] = [];
     const errors: string[] = [];
+    const skippedLibraries: string[] = [];
 
-    try {
-      this.getFflate();
-      loadedLibraries.push('fflate');
-    } catch (error) {
-      errors.push(`fflate: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    logger.info(
+      '[Vendors] Skipping fflate validation: dependency removed in favor of StoreZipWriter.'
+    );
+    skippedLibraries.push('fflate');
 
     try {
       this.getPreact();
@@ -482,7 +450,7 @@ export class StaticVendorManager {
       logger.error('라이브러리 검증 중 오류 발생', { errors });
     }
 
-    return { success, loadedLibraries, errors };
+    return { success, loadedLibraries, errors, skippedLibraries };
   }
 
   /**
@@ -490,7 +458,7 @@ export class StaticVendorManager {
    */
   public getVersionInfo() {
     return Object.freeze({
-      fflate: '0.8.2',
+      fflate: 'removed',
       preact: '10.27.1',
       signals: '2.3.1',
       motion: 'removed', // Motion One 완전 제거
@@ -549,3 +517,5 @@ export class StaticVendorManager {
     }
   }
 }
+
+export type { FflateAPI } from './fflate-deprecated';

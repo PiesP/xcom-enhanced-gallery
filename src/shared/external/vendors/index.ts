@@ -10,7 +10,6 @@
 // 💡 새로운 TDZ-safe 정적 import 기반 API (권장)
 export {
   initializeVendorsSafe as initializeVendors,
-  getFflateSafe as getFflate,
   getPreactSafe as getPreact,
   getPreactHooksSafe as getPreactHooks,
   getPreactSignalsSafe as getPreactSignals,
@@ -29,7 +28,6 @@ export {
 
 // 타입 정의 exports (정적 import 기반으로 변경)
 export type {
-  FflateAPI,
   PreactAPI,
   PreactHooksAPI,
   PreactSignalsAPI,
@@ -53,7 +51,6 @@ export type {
 // 🔄 기존 동적 import API 호환성 (deprecated, 점진적 마이그레이션용)
 export {
   initializeVendors as initializeVendorsLegacy,
-  getFflate as getFflateLegacy,
   getPreact as getPreactLegacy,
   getPreactHooks as getPreactHooksLegacy,
   getPreactSignals as getPreactSignalsLegacy,
@@ -72,3 +69,5 @@ export {
 export { StaticVendorManager } from './vendor-manager-static';
 
 export { VendorManager } from './vendor-manager';
+
+export type { FflateAPI } from './fflate-deprecated';

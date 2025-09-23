@@ -8,13 +8,13 @@
 import { logger } from '@shared/logging';
 import {
   StaticVendorManager,
-  type FflateAPI,
   type PreactAPI,
   type PreactHooksAPI,
   type PreactSignalsAPI,
   type PreactCompatAPI,
   type NativeDownloadAPI,
 } from './vendor-manager-static';
+import { warnFflateDeprecated, FFLATE_REMOVAL_MESSAGE, type FflateAPI } from './fflate-deprecated';
 
 // ================================
 // 안전한 공개 API
@@ -61,11 +61,12 @@ export async function initializeVendorsSafe(): Promise<void> {
  * fflate 라이브러리 안전 접근 (동기)
  */
 export function getFflateSafe(): FflateAPI {
+  warnFflateDeprecated('zip-creator now relies on StoreZipWriter.');
   try {
     return staticVendorManager.getFflate();
   } catch (error) {
     logger.error('fflate 접근 실패:', error);
-    throw new Error('fflate 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
+    throw new Error(FFLATE_REMOVAL_MESSAGE);
   }
 }
 
@@ -164,15 +165,19 @@ export function isVendorsInitializedSafe(): boolean {
 export function getVendorInitializationReportSafe() {
   const status = staticVendorManager.getInitializationStatus();
   const versions = getVendorVersionsSafe();
+  const availableCount = status.availableAPIs.length;
+  const removedApis = ['fflate'];
+  const totalCount = availableCount + removedApis.length;
 
   return {
     isInitialized: status.isInitialized,
     cacheSize: status.cacheSize,
     availableAPIs: status.availableAPIs,
     versions,
+    removedAPIs: removedApis,
     initializationRate: status.isInitialized ? 100 : 0,
-    totalCount: 5, // fflate, preact, hooks, signals, compat
-    initializedCount: status.isInitialized ? 5 : 0,
+    totalCount,
+    initializedCount: status.isInitialized ? availableCount : 0,
   };
 }
 

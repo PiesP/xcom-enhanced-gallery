@@ -4,7 +4,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { getFflate } from '@shared/external/vendors';
+import { createStoreZipBlob } from './store-zip-writer';
 import { safeParseInt } from '@shared/utils/type-safety-helpers';
 
 export interface MediaItemForZip {
@@ -202,101 +202,19 @@ async function createZipBlob(
     zipRetries: number;
   }
 ): Promise<Blob> {
-  const fflate = await getFflate();
-  if (!fflate) throw new Error('fflate library not available');
-
-  const attemptOnce = (): Promise<Blob> =>
-    new Promise((resolve, reject) => {
-      let done = false;
-      const finish = (err?: Error, blob?: Blob) => {
-        if (done) return;
-        done = true;
-        cleanup();
-        if (err) reject(err);
-        else resolve(blob!);
-      };
-
-      const timeoutMs = Math.max(0, config.zipTimeoutMs ?? ZIP_TIMEOUT_MS);
-      const timeoutId =
-        timeoutMs > 0
-          ? setTimeout(() => finish(new Error('ZIP creation timeout')), timeoutMs)
-          : undefined;
-
-      const onAbort = () => finish(new DOMException('Aborted', 'AbortError'));
-      if (config.abortSignal) {
-        if (config.abortSignal.aborted) {
-          onAbort();
-          return;
-        }
-        config.abortSignal.addEventListener('abort', onAbort, { once: true });
-      }
-
-      const cleanup = () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        if (config.abortSignal) config.abortSignal.removeEventListener('abort', onAbort);
-      };
-
-      try {
-        const files: Record<string, Uint8Array> = {};
-        for (const [name, data] of fileData) files[name] = data;
-
-        const api = fflate as unknown as {
-          zipSync?: (files: Record<string, Uint8Array>, opts: { level: number }) => Uint8Array;
-          zip?: (
-            files: Record<string, Uint8Array>,
-            opts: { level: number },
-            cb: (error: Error | null, data: Uint8Array) => void
-          ) => void;
-        };
-
-        if (typeof api.zipSync === 'function') {
-          if (config.abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-          const data = api.zipSync(files, { level: config.compressionLevel });
-          if (!data || data.byteLength === 0)
-            return finish(new Error('No valid data returned from fflate.zip'));
-          try {
-            const blob = new Blob([new Uint8Array(data)], { type: 'application/zip' });
-            finish(undefined, blob);
-          } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : String(e);
-            finish(new Error(`Failed to create ZIP blob: ${msg}`));
-          }
-          return;
-        }
-
-        api.zip?.(
-          files,
-          { level: config.compressionLevel },
-          (error: Error | null, data: Uint8Array) => {
-            if (done) return;
-            if (error)
-              return finish(new Error(`ZIP creation failed: ${error?.message ?? String(error)}`));
-            if (!data || data.byteLength === 0)
-              return finish(new Error('No valid data returned from fflate.zip'));
-            try {
-              const blob = new Blob([new Uint8Array(data)], { type: 'application/zip' });
-              finish(undefined, blob);
-            } catch (e: unknown) {
-              const msg = e instanceof Error ? e.message : String(e);
-              finish(new Error(`Failed to create ZIP blob: ${msg}`));
-            }
-          }
-        );
-        if (!api.zip) throw new Error('fflate.zip API not available');
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
-        finish(new Error(`ZIP creation failed: ${msg}`));
-      }
-    });
-
   const attempts = Math.max(1, (config.zipRetries ?? 0) + 1);
   let lastErr: unknown;
   for (let i = 1; i <= attempts; i++) {
     try {
-      return await attemptOnce();
+      if (config.abortSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      return await createStoreZipBlob(fileData);
     } catch (e) {
       lastErr = e;
-      if (i < attempts) logger.warn(`[ZipCreator] ZIP attempt ${i} failed, retrying...`);
+      if (config.abortSignal?.aborted) throw e;
+      if (i < attempts) {
+        const message = e instanceof Error ? e.message : String(e);
+        logger.warn(`[ZipCreator] ZIP attempt ${i} failed, retrying...`, { message });
+      }
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));

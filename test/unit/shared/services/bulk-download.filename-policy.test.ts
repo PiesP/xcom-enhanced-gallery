@@ -2,23 +2,24 @@
  * BulkDownloadService - filename collision & failure summary (TDD)
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Blob } from 'node:buffer';
 // Avoid strict type imports in tests to keep parser compatibility
 
 // Mock vendors: capture zipSync input and stub downloadBlob
-/** @type {Record<string, Uint8Array> | null} */
+/** @type {Map<string, Uint8Array> | null} */
 let capturedZipInput = null;
+vi.mock('@shared/external/zip/zip-creator', () => ({
+  createZipBlobFromFileMap: async (fileMap: Map<string, Uint8Array>) => {
+    capturedZipInput = fileMap;
+    return new Blob([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], {
+      type: 'application/zip',
+    });
+  },
+}));
 vi.mock('@shared/external/vendors', async () => {
   const actual = await vi.importActual<any>('@shared/external/vendors');
   return {
     ...actual,
-    getFflate: () => ({
-      /** @param {Record<string, Uint8Array>} files */
-      zipSync: files => {
-        capturedZipInput = files;
-        // return dummy bytes
-        return new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
-      },
-    }),
     getNativeDownload: () => ({
       downloadBlob: vi.fn(),
     }),
@@ -38,7 +39,7 @@ function mediaItem(overrides: any = {}): any {
 }
 
 describe('BulkDownloadService - filename collision & failure summary', () => {
-  let originalFetch: typeof fetch;
+  let originalFetch: typeof globalThis.fetch;
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
@@ -73,7 +74,7 @@ describe('BulkDownloadService - filename collision & failure summary', () => {
     expect(res.success).toBe(true);
     expect(capturedZipInput).toBeTruthy();
 
-    const keys = Object.keys(capturedZipInput!);
+    const keys = Array.from(capturedZipInput!.keys());
     // base + -1 + -2
     expect(keys).toHaveLength(3);
     expect(keys).toContain('alice_100_1.jpg');
@@ -88,8 +89,8 @@ describe('BulkDownloadService - filename collision & failure summary', () => {
     const okItem = mediaItem({ id: '100_media_0', url: 'https://ok/item.jpg' });
     const badItem = mediaItem({ id: '100_media_1', url: 'https://bad/item.jpg' });
 
-    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? input : (input as URL).toString();
+    globalThis.fetch = vi.fn(async (input: any) => {
+      const url = typeof input === 'string' ? input : String(input);
       if (url.includes('bad')) {
         throw new Error('Network unreachable');
       }

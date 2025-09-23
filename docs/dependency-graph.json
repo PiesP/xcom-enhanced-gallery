@@ -3886,6 +3886,24 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./fflate-deprecated",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./vendor-api",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3997,8 +4015,38 @@
       "valid": true
     },
     {
+      "source": "src/shared/external/vendors/fflate-deprecated.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/vendors/index.ts",
+        "src/shared/external/vendors/vendor-api.ts",
+        "src/shared/external/vendors/vendor-manager.ts",
+        "src/shared/external/vendors/vendor-api-safe.ts",
+        "src/shared/external/vendors/vendor-manager-static.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/external/vendors/vendor-api.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./fflate-deprecated",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./vendor-manager",
@@ -4025,7 +4073,43 @@
     },
     {
       "source": "src/shared/external/vendors/vendor-manager.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./fflate-deprecated",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./fflate-deprecated",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/external/vendors/index.ts",
         "src/shared/external/vendors/vendor-api.ts"
@@ -4036,6 +4120,23 @@
     {
       "source": "src/shared/external/vendors/vendor-api-safe.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./fflate-deprecated",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./vendor-manager-static",
@@ -4062,7 +4163,43 @@
     },
     {
       "source": "src/shared/external/vendors/vendor-manager-static.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./fflate-deprecated",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./fflate-deprecated",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/external/vendors/index.ts",
         "src/shared/external/vendors/vendor-api-safe.ts"
@@ -4108,9 +4245,36 @@
     },
     {
       "source": "src/shared/external/zip/zip-creator.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./store-zip-writer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/zip/store-zip-writer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/external/zip/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/zip/store-zip-writer.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/zip/zip-creator.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8800,8 +8964,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 261,
-    "totalDependenciesCruised": 363,
+    "totalCruised": 263,
+    "totalDependenciesCruised": 371,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

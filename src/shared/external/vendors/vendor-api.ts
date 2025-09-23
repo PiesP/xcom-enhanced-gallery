@@ -8,13 +8,18 @@
 import { logger } from '@shared/logging';
 import {
   VendorManager,
-  type FflateAPI,
   type PreactAPI,
   type PreactHooksAPI,
   type PreactSignalsAPI,
   type PreactCompatAPI,
   type NativeDownloadAPI,
 } from './vendor-manager';
+import {
+  createDeprecatedFflateApi,
+  warnFflateDeprecated,
+  FFLATE_REMOVAL_MESSAGE,
+  type FflateAPI,
+} from './fflate-deprecated';
 
 // ================================
 // 공개 API
@@ -22,8 +27,10 @@ import {
 
 const vendorManager = VendorManager.getInstance();
 
+const deprecatedFflateApi = createDeprecatedFflateApi();
+
 // 동기 접근을 위한 캐시된 API들
-let cachedFflate: FflateAPI | null = null;
+let cachedFflate: FflateAPI = deprecatedFflateApi;
 let cachedPreact: PreactAPI | null = null;
 let cachedPreactHooks: PreactHooksAPI | null = null;
 let cachedPreactSignals: PreactSignalsAPI | null = null;
@@ -37,15 +44,14 @@ export async function initializeVendors(): Promise<void> {
   if (isInitialized) return;
 
   try {
-    const [fflate, preact, hooks, signals, compat] = await Promise.all([
-      vendorManager.getFflate(),
+    const [preact, hooks, signals, compat] = await Promise.all([
       vendorManager.getPreact(),
       vendorManager.getPreactHooks(),
       vendorManager.getPreactSignals(),
       vendorManager.getPreactCompat(),
     ]);
 
-    cachedFflate = fflate;
+    cachedFflate = deprecatedFflateApi;
     cachedPreact = preact;
     cachedPreactHooks = hooks;
     cachedPreactSignals = signals;
@@ -63,9 +69,9 @@ export async function initializeVendors(): Promise<void> {
  * fflate 라이브러리 접근 (동기)
  */
 export function getFflate(): FflateAPI {
-  if (!cachedFflate) {
-    throw new Error('fflate가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
-  }
+  warnFflateDeprecated('StoreZipWriter handles ZIP creation.');
+  logger.debug(`[Vendors] ${FFLATE_REMOVAL_MESSAGE}`);
+  cachedFflate = deprecatedFflateApi;
   return cachedFflate;
 }
 
@@ -241,7 +247,7 @@ export const getVendorVersions = () => vendorManager.getVersionInfo();
  */
 export const cleanupVendors = (): void => {
   vendorManager.cleanup();
-  cachedFflate = null;
+  cachedFflate = deprecatedFflateApi;
   cachedPreact = null;
   cachedPreactHooks = null;
   cachedPreactSignals = null;
@@ -259,15 +265,16 @@ export function isVendorsInitialized(): boolean {
  * vendor 초기화 보고서 생성
  */
 export function getVendorInitializationReport() {
-  const statuses = {
-    fflate: { initialized: !!cachedFflate },
+  const statuses: Record<string, { initialized: boolean; removed?: boolean }> = {
     preact: { initialized: !!cachedPreact },
     preactHooks: { initialized: !!cachedPreactHooks },
     preactSignals: { initialized: !!cachedPreactSignals },
+    fflate: { initialized: false, removed: true },
   };
 
-  const initializedCount = Object.values(statuses).filter(status => status.initialized).length;
-  const totalCount = Object.keys(statuses).length;
+  const trackedEntries = Object.entries(statuses).filter(([name]) => name !== 'fflate');
+  const initializedCount = trackedEntries.filter(([, status]) => status.initialized).length;
+  const totalCount = trackedEntries.length;
   const initializationRate = (initializedCount / totalCount) * 100;
 
   return {
@@ -285,7 +292,7 @@ export function getVendorInitializationReport() {
  */
 export function getVendorStatuses() {
   return {
-    fflate: !!cachedFflate,
+    fflate: false,
     preact: !!cachedPreact,
     preactHooks: !!cachedPreactHooks,
     preactSignals: !!cachedPreactSignals,
@@ -298,7 +305,7 @@ export function getVendorStatuses() {
 export function isVendorInitialized(vendorName: string): boolean {
   switch (vendorName) {
     case 'fflate':
-      return !!cachedFflate;
+      return false;
     case 'preact':
       return !!cachedPreact;
     case 'preactHooks':

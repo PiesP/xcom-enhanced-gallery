@@ -4,6 +4,7 @@
  */
 
 import { vi } from 'vitest';
+import { TextDecoder, TextEncoder } from 'node:util';
 
 // ================================
 // 브라우저 환경 Mock
@@ -157,15 +158,111 @@ export class MockImage {
 /**
  * Blob 생성 모의
  */
-export const mockBlob = vi.fn((data, options) => {
-  return {
-    size: data ? data.length : 0,
-    type: options?.type || 'application/octet-stream',
-    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-    text: () => Promise.resolve(data?.join?.('') || ''),
-    stream: () => ({ getReader: () => ({}) }),
-    slice: vi.fn(),
+const blobTextEncoder = new TextEncoder();
+const blobTextDecoder = new TextDecoder();
+
+function normalizeBlobPart(part: any): Uint8Array {
+  if (part instanceof Uint8Array) {
+    return part.slice();
+  }
+  if (part instanceof ArrayBuffer) {
+    return new Uint8Array(part.slice(0));
+  }
+  if (ArrayBuffer.isView(part)) {
+    const view = part as ArrayBufferView;
+    return new Uint8Array(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength));
+  }
+  if (typeof part === 'string') {
+    return blobTextEncoder.encode(part);
+  }
+  if (typeof part === 'object' && part !== null && typeof part.arrayBuffer === 'function') {
+    // 동기 API 제약으로 즉시 처리 어려움 → 빈 배열 반환 (테스트에서 해당 케이스 사용하지 않음)
+    return new Uint8Array();
+  }
+  if (part == null) {
+    return new Uint8Array();
+  }
+  // 숫자/기타 타입은 문자열로 처리
+  return blobTextEncoder.encode(String(part));
+}
+
+function clampBounds(index: number | undefined, length: number, fallback: number): number {
+  if (typeof index !== 'number' || Number.isNaN(index)) return fallback;
+  const clamped = Math.min(Math.max(index, 0), length);
+  return clamped;
+}
+
+function createMockBlob(parts: readonly any[], options?: { type?: string }): any {
+  const normalizedParts = parts.flatMap(part => (part == null ? [] : [part]));
+  const chunks = normalizedParts.map(normalizeBlobPart);
+  const totalSize = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
+  const bytes = new Uint8Array(totalSize);
+  let cursor = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, cursor);
+    cursor += chunk.byteLength;
+  }
+
+  const type = options?.type ?? 'application/octet-stream';
+
+  const slice = (start?: number, end?: number, contentType?: string): any => {
+    const len = bytes.byteLength;
+    const relativeStart = clampBounds(start, len, 0);
+    const relativeEnd = clampBounds(end, len, len);
+    const sliceStart = Math.min(relativeStart, relativeEnd);
+    const sliceEnd = Math.max(relativeStart, relativeEnd);
+    const sliceBytes = bytes.slice(sliceStart, sliceEnd);
+    return createMockBlob([sliceBytes], { type: contentType ?? type });
   };
+
+  const stream = (): any => {
+    const chunk = bytes.slice();
+    const ReadableStreamCtor = (globalThis as any)?.ReadableStream;
+    if (typeof ReadableStreamCtor === 'function') {
+      return new ReadableStreamCtor({
+        start(controller) {
+          controller.enqueue(chunk);
+          controller.close();
+        },
+      });
+    }
+    let consumed = false;
+    return {
+      getReader() {
+        return {
+          async read() {
+            if (consumed) {
+              return { done: true, value: undefined };
+            }
+            consumed = true;
+            return { done: false, value: chunk };
+          },
+          releaseLock() {
+            consumed = true;
+          },
+        };
+      },
+    };
+  };
+
+  return {
+    size: bytes.byteLength,
+    type,
+    async arrayBuffer() {
+      return bytes.slice().buffer;
+    },
+    async text() {
+      return blobTextDecoder.decode(bytes);
+    },
+    stream,
+    slice,
+    [Symbol.toStringTag]: 'Blob',
+  };
+}
+
+export const mockBlob = vi.fn((data?: any[] | any, options?: { type?: string }) => {
+  const parts = Array.isArray(data) ? data : data != null ? [data] : [];
+  return createMockBlob(parts, options);
 });
 
 // ================================

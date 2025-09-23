@@ -1,3 +1,30 @@
+2025-09-25: EPIC — REF-LITE-V3 Stage 1 Store ZIP Writer 전환 (완료)
+
+- 목표: `fflate` 의존성을 제거하고 저장 전용(Store) ZIP writer를 도입해 번들
+  용량을 즉시 감축.
+- 구현
+  - `src/shared/external/zip/store-zip-writer.ts`를 추가해 중앙 디렉터리/EOCD를
+    직접 작성하고 CRC32 계산을 내부 구현으로 대체.
+  - `zip-creator`와 `BulkDownloadService`가 새 writer를 사용하도록 교체, ZIP
+    재시도 로직은 동일하게 유지.
+  - `vendor-manager` 계층에 `fflate` getter를 제거 대신 deprecated stub을 남겨
+    테스트/모킹 호환성을 유지하고 번들에서 모듈을 배제.
+  - `fflate` 패키지를 dependencies에서 제거하여 Userscript 번들 트리쉐이킹을
+    마무리.
+- 테스트/게이트
+  - `test/shared/external/zip/store-zip-writer.test.ts` GREEN, ZIP
+    구조/CRC/UTF-8 플래그 검증.
+  - `npm run typecheck`, `npm test`, `Clear-Host && npm run build` 모두 통과하여
+    Stage 1 게이트 충족.
+- 문서: `TDD_REFACTORING_PLAN.md`에서 Stage 1 섹션 제거, 본 로그에 요약 이관.
+  번들 사이즈 재측정은 Stage 2 착수 전 실시 예정.
+
+2025-09-24: EPIC — VP-Focus-Indicator-001 뷰포트 인디케이터 자동 갱신 (완료)
+[2025-09-24] IntersectionObserver 기반 visibleIndex로 포커스/카운터 자동 갱신,
+설정 복원 지연 대응(useEffect+폴링), DOM data-fit-mode 즉시 반영.
+타입/린트/테스트 및 dev/prod 빌드, postbuild 검증 모두 GREEN. 세부 구현/테스트
+내역은 2025-09-23 로그 항목을 참조.
+
 2025-09-23: EPIC — VP-Nav-Sync-001 툴바 내비 visibleIndex 동기화 (완료)
 [2025-09-23] 모든 Acceptance 및 품질 게이트(GREEN) 통과, Epic 계획서에서 제거됨.
 

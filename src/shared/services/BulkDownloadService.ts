@@ -520,7 +520,6 @@ export class BulkDownloadService {
       const zipStart = Date.now();
       const { createZipBlobFromFileMap } = await import('@shared/external/zip/zip-creator');
       const zipBlob = await createZipBlobFromFileMap(new Map(Object.entries(files)), {
-        compressionLevel: 0,
         // forward cancellation/timeouts/retries to zip-creator
         ...(abortSignal ? { abortSignal } : {}),
         zipTimeoutMs: Math.max(0, 60_000),

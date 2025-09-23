@@ -136,11 +136,10 @@ describe('TDZ 문제 해결 검증', () => {
       const result = await validateVendorsSafe();
 
       expect(result.success).toBe(true);
-      expect(result.loadedLibraries).toContain('fflate');
-      expect(result.loadedLibraries).toContain('Preact');
-      expect(result.loadedLibraries).toContain('PreactHooks');
-      expect(result.loadedLibraries).toContain('PreactSignals');
-      expect(result.loadedLibraries).toContain('PreactCompat');
+      expect(result.loadedLibraries).toEqual(
+        expect.arrayContaining(['Preact', 'PreactHooks', 'PreactSignals', 'PreactCompat'])
+      );
+      expect(result.skippedLibraries).toContain('fflate');
       expect(result.errors).toHaveLength(0);
     });
   });
@@ -250,13 +249,17 @@ describe('TDZ 문제 해결 검증', () => {
       expect(report).toHaveProperty('availableAPIs');
       expect(report).toHaveProperty('versions');
       expect(report).toHaveProperty('initializationRate');
-      expect(report.totalCount).toBe(5);
+      expect(report).toHaveProperty('removedAPIs');
+      expect(report.totalCount).toBe(
+        report.availableAPIs.length + (report.removedAPIs?.length ?? 0)
+      );
+      expect(report.removedAPIs).toContain('fflate');
 
       if (report.isInitialized) {
         expect(report.initializationRate).toBe(100);
-        expect(report.initializedCount).toBe(5);
-        expect(report.availableAPIs).toContain('fflate');
+        expect(report.initializedCount).toBe(report.availableAPIs.length);
         expect(report.availableAPIs).toContain('preact');
+        expect(report.availableAPIs).not.toContain('fflate');
       }
     });
   });

@@ -42,8 +42,7 @@
   },
   "dependencies": {
     "preact": "10.27.2",
-    "@preact/signals": "2.3.1",
-    "fflate": "0.8.2"
+    "@preact/signals": "2.3.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

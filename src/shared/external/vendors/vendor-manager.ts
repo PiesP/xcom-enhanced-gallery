@@ -3,6 +3,12 @@
  */
 
 import { logger } from '@shared/logging';
+import {
+  createDeprecatedFflateApi,
+  warnFflateDeprecated,
+  type FflateAPI,
+  FFLATE_REMOVAL_MESSAGE,
+} from './fflate-deprecated';
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {
@@ -13,17 +19,6 @@ const MEMORY_CONSTANTS = {
 } as const;
 
 // 타입 정의들
-export interface FflateAPI {
-  zip: typeof import('fflate').zip;
-  unzip: typeof import('fflate').unzip;
-  strToU8: typeof import('fflate').strToU8;
-  strFromU8: typeof import('fflate').strFromU8;
-  zipSync: typeof import('fflate').zipSync;
-  unzipSync: typeof import('fflate').unzipSync;
-  deflate: typeof import('fflate').deflate;
-  inflate: typeof import('fflate').inflate;
-}
-
 export interface PreactAPI {
   h: typeof import('preact').h;
   render: typeof import('preact').render;
@@ -84,6 +79,8 @@ export class VendorManager {
   private readonly createdUrls = new Set<string>();
   private readonly urlTimers = new Map<string, number>();
 
+  private readonly deprecatedFflateApi: FflateAPI = createDeprecatedFflateApi();
+
   private constructor() {
     logger.debug('VendorManager: 인스턴스 생성');
   }
@@ -97,37 +94,9 @@ export class VendorManager {
    * fflate 라이브러리 안전 접근
    */
   public async getFflate(): Promise<FflateAPI> {
-    const cacheKey = 'fflate';
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey) as FflateAPI;
-    }
-
-    try {
-      const fflate = await import('fflate');
-
-      if (!fflate.deflate || typeof fflate.deflate !== 'function') {
-        throw new Error('fflate 라이브러리 검증 실패');
-      }
-
-      const api: FflateAPI = {
-        zip: fflate.zip,
-        unzip: fflate.unzip,
-        strToU8: fflate.strToU8,
-        strFromU8: fflate.strFromU8,
-        zipSync: fflate.zipSync,
-        unzipSync: fflate.unzipSync,
-        deflate: fflate.deflate,
-        inflate: fflate.inflate,
-      };
-
-      this.cache.set(cacheKey, api);
-      logger.debug('fflate 로드 성공');
-      return api;
-    } catch (error) {
-      logger.error('fflate 로드 실패:', error);
-      throw new Error('fflate 라이브러리를 사용할 수 없습니다');
-    }
+    warnFflateDeprecated('StoreZipWriter handles ZIP creation.');
+    logger.debug(`[Vendors] ${FFLATE_REMOVAL_MESSAGE}`);
+    return this.deprecatedFflateApi;
   }
 
   /**
@@ -359,8 +328,11 @@ export class VendorManager {
     loadedLibraries: string[];
     errors: string[];
   }> {
+    logger.info(
+      '[Vendors] Skipping fflate validation: dependency removed in favor of StoreZipWriter.'
+    );
+
     const results = await Promise.allSettled([
-      this.getFflate().then(() => 'fflate'),
       this.getPreact().then(() => 'Preact'),
       this.getPreactHooks().then(() => 'PreactHooks'),
       this.getPreactSignals().then(() => 'PreactSignals'),
@@ -369,11 +341,12 @@ export class VendorManager {
     const loadedLibraries: string[] = [];
     const errors: string[] = [];
 
+    const libNames = ['Preact', 'PreactHooks', 'PreactSignals'] as const;
+
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
         loadedLibraries.push(result.value);
       } else {
-        const libNames = ['fflate', 'Preact', 'PreactHooks', 'PreactSignals'];
         errors.push(`${libNames[index]}: ${result.reason.message}`);
       }
     });
@@ -394,7 +367,7 @@ export class VendorManager {
    */
   public getVersionInfo() {
     return Object.freeze({
-      fflate: '0.8.2',
+      fflate: 'removed',
       preact: '10.26.9',
       signals: '2.2.0',
       motion: 'removed', // Motion One 완전 제거
@@ -427,3 +400,5 @@ export class VendorManager {
     logger.debug('VendorManager: 메모리 정리 완료');
   }
 }
+
+export type { FflateAPI } from './fflate-deprecated';
