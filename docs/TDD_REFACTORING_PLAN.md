@@ -24,56 +24,10 @@ Image Fit Mode Persistence” 또한 완료되어 본 문서에서 제거되었�
 
 ## 2. 활성 Epic 현황
 
-EPIC-REF — 코드 경량화 v1(중복/충돌/불필요 코드 제거)
+현재 활성 Epic 없음.
 
-- 목적: 이미 통합된 경로(Selector/Timer/LiveRegion/ZIP/Scheduler 등)와 정책(벤더
-  getter, PC 전용 입력, 디자인 토큰)에 맞춰 잔존 중복/래퍼/브릿지/죽은 코드를
-  제거하고, 스크립트/테스트 중복을 정리하여 번들/유지비를 낮춥니다.
-- 제약: 기능/공개 API 동등 유지, Features → Shared → External 단방향 의존, 벤더
-  접근은 getter만 사용, PC 전용 이벤트만 사용.
-- 수용 기준(각 항목 공통):
-  - 타입/린트/테스트/빌드 모두 GREEN, `scripts/validate-build.js` PASS
-  - 번들 사이즈(gzip) 비악화(±1% 이내), dist/assets 부재, 소스맵 무결성 유지
-  - 새/변경 테스트가 회귀 가드를 제공(RED→GREEN→REFACTOR 순서)
-
-작업 목록(스프린트 단위, 우선순위 상→하):
-
-1. REF-03 Vendor getter 일원화 잔여 스캔/정리
-
-- 현황: preact/compat 직접 import 스캔 보강 완료(Completed 참조). 향후 회귀는
-  테스트로 가드됨.
-- 남은 조치: 주기적 스캔 유지 및 신규 모듈 추가 시 getter 정책 검증 반영
-- 테스트: dependency-cruiser + 단위 스캔 GREEN, 위반 0 유지
-
-2. REF-04 Dead/Unused 코드 제거(배럴/유틸/컴포넌트)
-   - 조치: unused-exports.scan 테스트 재활성/범위 확대, noUnusedLocals 확인
-   - 테스트: 스캔 GREEN, 제거 후 타입/린트/테스트/빌드 GREEN
-
-3. REF-05 스냅샷/중복 테스트 통합(기능 가드 유지)
-   - 조치: 겹치는 스냅샷/구조 가드를 통합 테스트로 축소, 의미 중복 제거
-   - 테스트: 통합 후 커버리지/행동 동등성 스모크 GREEN
-
-4. REF-06 CSS 잔재/주석/레거시 토큰 제거
-   - 조치: 레거시 클래스/주석 블록 삭제, 디자인 토큰 위반 스캐너로 회귀 가드
-   - 테스트: design-token-violations, no-transition-all, theme coverage GREEN
-
-5. REF-07 브릿지 에러 메시지/토스트 정책 잔재 제거
-   - 전제: http\_<status> 포맷/라우팅 정책 표준화 완료(Completed 참조)
-   - 조치: 구 정책 호환 브릿지/분기 제거, 메시지 상수 표준화만 유지
-   - 테스트: 서비스 계약/토스트 라우팅 가드 GREEN
-
-메트릭/검증
-
-- 빌드: dev/prod + postbuild validator GREEN, dist 단일 파일(.user.js)·소스맵
-  무결성
-- 사이즈: gzip Δ ≤ +1%, 스크립트/테스트 중복 제거에 따라 유지/감소 기대
-- 스캔: direct vendor import 0, touch/pointer 이벤트 0, Hex 0, transition: all 0
-
-진행 규칙
-
-- 각 작업 단위로 실패 테스트(스캔/계약)를 먼저 추가(RED) → 최소 변경으로 GREEN →
-  래퍼/중복 제거(REFACTOR) → 문서에 완료 로그 1줄 요약 추가 및 본 계획서에서
-  제거
+메모: 직전 사이클의 EPIC-REF(코드 경량화 v1) 하위 작업(REF-04..07)은 모두
+완료되어 완료 로그로 이관되었습니다(Completed 참조).
 
 ---
 

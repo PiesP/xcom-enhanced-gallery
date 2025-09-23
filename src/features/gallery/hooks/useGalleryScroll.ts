@@ -58,6 +58,7 @@ export function useGalleryScroll({
   enableScrollDirection = false,
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
+  const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
   const eventManagerRef = useRef(new EventManager());
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
@@ -201,7 +202,7 @@ export function useGalleryScroll({
 
   // 이벤트 리스너 설정
   useEffect(() => {
-    if (!enabled || !container) {
+    if (!enabled || !container || !hasDOM) {
       return;
     }
 
@@ -214,7 +215,7 @@ export function useGalleryScroll({
     });
 
     // 트위터 페이지 스크롤 차단 (옵션)
-    if (blockTwitterScroll) {
+    if (blockTwitterScroll && hasDOM) {
       const twitterContainer = findTwitterScrollContainer();
       if (twitterContainer) {
         eventManager.addEventListener(twitterContainer, 'wheel', preventTwitterScroll, {

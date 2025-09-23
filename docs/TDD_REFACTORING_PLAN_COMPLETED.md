@@ -47,6 +47,13 @@
   구독, DOM 즉시 반영(data-fit-mode)로 해결되었으며, 관련 테스트 두 건이
   GREEN입니다.
 
+2025-09-23: EPIC-REF — REF-03 Vendor getter 일원화 잔여 스캔/정리 (완료)
+
+- 내용: `preact/compat` 직접 import 스캔을 포함해 벤더 getter 정책 가드를
+  테스트와 아키텍처 스캔으로 일원화. 회귀 리스크 제거 완료.
+- 결과: dependency-cruiser + 단위 스캔 GREEN, direct vendor import 위반 0 유지.
+- 문서: 활성 계획서에서 REF-03 항목 제거, 본 Completed 로그에 간결 이관.
+
 2025-09-23: EPIC-REF — REF-03 보강: vendor getter 정책 스캔에 `preact/compat`
 추가 (완료)
 
@@ -182,6 +189,18 @@
     사이즈(gzip) 변화 ±0% 수준.
 - 문서: 활성 계획서(TDD_REFACTORING_PLAN.md)에서 REF-01/REF-02 항목 제거, 본
   완료 로그에 요약 이관.
+
+  2025-09-23: EPIC-REF — REF-04..07 완료(경량화 v1 마감)
+  - REF-04 Dead/Unused 코드 제거: 배럴/유틸/컴포넌트의 미사용 export/파일 정리.
+    - 확인: TypeScript noUnusedLocals/Parameters 유지, unused-code 스캔 테스트
+      GREEN.
+  - REF-05 스냅샷/중복 테스트 통합: 의미 중복 테스트를 통합 스모크로 축소.
+  - REF-06 CSS 잔재/주석/레거시 토큰 제거: design-token-violations,
+    no-transition-all, theme coverage 가드 GREEN.
+  - REF-07 브릿지 잔재 제거: http\_<status> 메시지/토스트 라우팅 표준화 유지, 구
+    정책 분기 삭제. 서비스 계약/토스트 라우팅 가드 GREEN.
+  - 게이트: 타입/린트/전체 테스트/빌드(GREEN), postbuild validator PASS, dist
+    단일 파일· 소스맵 무결성, 사이즈(gzip) Δ ≤ +1%.
 
 2025-09-22: PLAN — EPIC-USH-v4 Userscript 하드닝 v4 (Epic 종료/계획서 정리)
 
