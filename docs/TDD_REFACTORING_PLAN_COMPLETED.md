@@ -43,6 +43,16 @@
 - 문서: 활성 계획서(TDD_REFACTORING_PLAN.md)에서 EPIC-FIX 섹션 제거, 본 완료
   로그에 요약 이관
 
+2025-09-23: EPIC-REF — REF-03 보강: vendor getter 정책 스캔에 `preact/compat`
+추가 (완료)
+
+- 문제: `preact/compat` 직접 import가 회귀로 유입될 리스크가 있었으나, 기존 소스
+  스캔 가드에는 compat 경로가 누락됨
+- 조치: `test/unit/lint/direct-imports-compat-scan.test.ts` 추가 및 JS 스캔
+  테스트(`direct-imports-source-scan.test.js`)에 compat 패턴 보강
+- 게이트: typecheck/lint/tests/build GREEN, postbuild validator PASS, 번들 영향
+  없음
+
 2025-09-23: EPIC-SM — Settings Persistence Audit (완료)
 
 - 범위: 이미지 크기 모드(gallery.imageFitMode)와 설정 모달 항목의 저장/복원 경로

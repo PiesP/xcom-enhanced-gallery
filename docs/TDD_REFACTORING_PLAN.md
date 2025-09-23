@@ -38,9 +38,11 @@ EPIC-REF — 코드 경량화 v1(중복/충돌/불필요 코드 제거)
 작업 목록(스프린트 단위, 우선순위 상→하):
 
 1. REF-03 Vendor getter 일원화 잔여 스캔/정리
-   - 조치: direct import 스캔 테스트 강화 + 발견 시 경로 수정(getPreact/
-     getPreactSignals/getFflate/getUserscript 등)
-   - 테스트: dependency-cruiser + 단위 스캔 RED→GREEN, 위반 0 유지
+
+- 현황: preact/compat 직접 import 스캔 보강 완료(Completed 참조). 향후 회귀는
+  테스트로 가드됨.
+- 남은 조치: 주기적 스캔 유지 및 신규 모듈 추가 시 getter 정책 검증 반영
+- 테스트: dependency-cruiser + 단위 스캔 GREEN, 위반 0 유지
 
 2. REF-04 Dead/Unused 코드 제거(배럴/유틸/컴포넌트)
    - 조치: unused-exports.scan 테스트 재활성/범위 확대, noUnusedLocals 확인
