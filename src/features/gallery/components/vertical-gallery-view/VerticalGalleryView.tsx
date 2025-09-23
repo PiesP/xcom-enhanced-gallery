@@ -31,7 +31,7 @@ import { useViewportConstrainedVar } from './hooks/useViewportConstrainedVar';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
-import { getSetting, setSetting } from '@shared/container/settings-access';
+import { getSetting, setSetting, tryGetSettingsService } from '@shared/container/settings-access';
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
 import { useSelector } from '@shared/utils/signalSelector';
 import type { MediaInfo } from '@shared/types';
@@ -229,6 +229,148 @@ function VerticalGalleryViewCore({
   };
 
   const [imageFitMode, updateImageFitMode] = useState<ImageFitMode>(() => getInitialFitMode());
+
+  // 현재 표시 중인 미디어 요소에 data-fit-mode를 즉시 반영(테스트/비동기 렌더 타이밍 보호)
+  const reflectFitModeToDOM = useCallback(
+    (mode: ImageFitMode) => {
+      try {
+        const container = containerRef.current;
+        const itemsRoot = container?.querySelector(
+          '[data-xeg-role="items-container"]'
+        ) as HTMLElement | null;
+        const target = (itemsRoot?.children[currentIndex] as HTMLElement) || null;
+        const mediaEl = (target?.querySelector('img, video') as HTMLElement) || null;
+        if (mediaEl) mediaEl.setAttribute('data-fit-mode', mode);
+      } catch {
+        /* no-op */
+      }
+    },
+    [currentIndex]
+  );
+
+  // Post-mount delayed restore: retry polling to absorb service init delay/race and sync state
+  useEffect(() => {
+    // 즉시 1회 시도 + 짧은 폴링으로 보강 (테스트 환경의 가짜 타이머에서도 안전)
+    let interval: number | undefined;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 50; // ~2.5s @50ms
+
+    const trySync = (): boolean => {
+      try {
+        const saved = getSetting<ImageFitMode>(
+          'gallery.imageFitMode' as unknown as string,
+          'fitWidth'
+        );
+        if (saved && saved !== imageFitMode) {
+          updateImageFitMode(saved);
+          // DOM 즉시 반영으로 테스트/렌더 타이밍 보호
+          reflectFitModeToDOM(saved);
+          return true;
+        }
+      } catch {
+        // ignore in non-DOM/test environments
+      }
+      return false;
+    };
+
+    if (!trySync()) {
+      interval = setInterval(() => {
+        attempts++;
+        if (trySync() || attempts >= MAX_ATTEMPTS) {
+          if (interval) clearInterval(interval);
+          interval = undefined;
+        }
+      }, 50) as unknown as number;
+    }
+
+    return () => {
+      try {
+        if (interval) clearInterval(interval);
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
+
+  // 설정 변경 구독: 외부에서 imageFitMode가 변경되면 로컬 상태와 동기화
+  useEffect(() => {
+    // 로컬 최소 이벤트 타입(교차-feature import 금지 준수)
+    type SettingsEvent = { key: string; newValue: unknown };
+
+    let unsubscribe: (() => void) | undefined;
+    let interval: number | undefined;
+
+    const handler = (event: SettingsEvent) => {
+      try {
+        if (event?.key === 'gallery.imageFitMode' && event?.newValue) {
+          const next = event.newValue as ImageFitMode;
+          updateImageFitMode(prev => {
+            return prev !== next ? next : prev;
+          });
+          // 상태가 변한 경우 DOM에 즉시 반영
+          reflectFitModeToDOM(next);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    const tryAttach = (): boolean => {
+      const svc = tryGetSettingsService();
+      const anySvc = svc as unknown as {
+        subscribe?: (fn: (e: SettingsEvent) => void) => () => void;
+      };
+      if (svc && typeof anySvc?.subscribe === 'function') {
+        // 메서드를 객체에서 직접 호출하여 this 바인딩 유지
+        unsubscribe = (
+          svc as unknown as { subscribe: (fn: (e: SettingsEvent) => void) => () => void }
+        ).subscribe(handler);
+        // 서비스 가용 시 즉시 1회 동기화 (저장값 → 로컬 상태)
+        try {
+          const saved = getSetting<ImageFitMode>(
+            'gallery.imageFitMode' as unknown as string,
+            'fitWidth'
+          );
+          let changed = false;
+          updateImageFitMode(prev => {
+            changed = !!saved && prev !== saved;
+            return changed ? (saved as ImageFitMode) : prev;
+          });
+          if (saved) reflectFitModeToDOM(saved);
+        } catch {
+          // ignore
+        }
+        return true;
+      }
+      return false;
+    };
+
+    if (!tryAttach()) {
+      // Short polling with retries to handle late service registration (considering test timer flush)
+      let attempts = 0;
+      const MAX_ATTEMPTS = 50; // up to ~2.5s if 50ms interval
+      interval = setInterval(() => {
+        attempts++;
+        if (tryAttach() || attempts >= MAX_ATTEMPTS) {
+          if (interval) clearInterval(interval);
+          interval = undefined;
+        }
+      }, 50) as unknown as number;
+    }
+
+    return () => {
+      try {
+        if (interval) clearInterval(interval);
+      } catch {
+        // ignore
+      }
+      try {
+        unsubscribe?.();
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
 
   // UI 상태와 독립적으로 스크롤 가용성 보장
   useEffect(() => {

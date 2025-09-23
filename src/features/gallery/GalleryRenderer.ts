@@ -253,11 +253,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private cleanupContainer(): void {
     if (this.container) {
       try {
-        const { render } = getPreact();
-        render(null, this.container);
+        // 테스트/SSR 환경에서 document가 없을 수 있으므로 안전 가드
+        if (typeof document !== 'undefined') {
+          const { render } = getPreact();
+          render(null, this.container);
 
-        if (document.contains(this.container)) {
-          this.container.remove();
+          if (document.contains(this.container)) {
+            this.container.remove();
+          }
         }
       } catch (error) {
         logger.warn('[GalleryRenderer] 컨테이너 정리 실패:', error);
