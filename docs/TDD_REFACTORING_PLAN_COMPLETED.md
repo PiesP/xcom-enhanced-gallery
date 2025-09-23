@@ -190,6 +190,18 @@
 - 문서: 활성 계획서(TDD_REFACTORING_PLAN.md)에서 REF-01/REF-02 항목 제거, 본
   완료 로그에 요약 이관.
 
+  2025-09-23: EPIC-REF — REF-04..07 완료(경량화 v1 마감)
+  - REF-04 Dead/Unused 코드 제거: 배럴/유틸/컴포넌트의 미사용 export/파일 정리.
+    - 확인: TypeScript noUnusedLocals/Parameters 유지, unused-code 스캔 테스트
+      GREEN.
+  - REF-05 스냅샷/중복 테스트 통합: 의미 중복 테스트를 통합 스모크로 축소.
+  - REF-06 CSS 잔재/주석/레거시 토큰 제거: design-token-violations,
+    no-transition-all, theme coverage 가드 GREEN.
+  - REF-07 브릿지 잔재 제거: http\_<status> 메시지/토스트 라우팅 표준화 유지, 구
+    정책 분기 삭제. 서비스 계약/토스트 라우팅 가드 GREEN.
+  - 게이트: 타입/린트/전체 테스트/빌드(GREEN), postbuild validator PASS, dist
+    단일 파일· 소스맵 무결성, 사이즈(gzip) Δ ≤ +1%.
+
 2025-09-22: PLAN — EPIC-USH-v4 Userscript 하드닝 v4 (Epic 종료/계획서 정리)
 
 - 완료 범위: P0(단일 파일/소스맵/헤더 메타), P1-1(SPA 라우팅/마운트

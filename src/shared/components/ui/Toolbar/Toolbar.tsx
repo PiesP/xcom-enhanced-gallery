@@ -6,7 +6,7 @@
  * See docs/CODING_GUIDELINES.md → "Toolbar 가시성 가이드라인 (Hover/CSS 변수)".
  */
 
-import type { ViewMode } from '@shared/types';
+import type { ViewMode, ImageFitMode } from '@shared/types';
 import { getPreact, getPreactHooks, type VNode } from '@shared/external/vendors';
 import {
   useToolbarState,
@@ -62,6 +62,8 @@ export interface ToolbarProps {
   role?: string;
   /** 탭 인덱스 */
   tabIndex?: number;
+  /** 외부에서 제어하는 현재 이미지 핏 모드 (옵션) */
+  currentFitMode?: ImageFitMode;
   /** ImageFitCallbacks 지원 */
   onFitOriginal?: (event?: Event) => void;
   onFitWidth?: (event?: Event) => void;
@@ -88,6 +90,7 @@ function ToolbarCore({
   onDownloadAll,
   onClose,
   onOpenSettings,
+  currentFitMode,
   onFitOriginal,
   onFitHeight,
   onFitWidth,
@@ -327,6 +330,10 @@ function ToolbarCore({
     [toolbarActions, disabled]
   );
 
+  // 외부 제어(currentFitMode)가 주어지면 우선 사용하고, 없으면 내부 상태 사용
+  const effectiveFitMode: string =
+    (currentFitMode as string | undefined) ?? toolbarState.currentFitMode;
+
   return h(
     'div',
     {
@@ -427,7 +434,7 @@ function ToolbarCore({
               'aria-label': '원본 크기',
               title: '원본 크기 (1:1)',
               'data-gallery-element': 'fit-original',
-              selected: toolbarState.currentFitMode === 'original',
+              selected: effectiveFitMode === 'original',
               key: 'fit-original',
               icon: 'ZoomIn',
             }),
@@ -437,7 +444,7 @@ function ToolbarCore({
               'aria-label': '가로에 맞춤',
               title: '가로에 맞추기',
               'data-gallery-element': 'fit-width',
-              selected: toolbarState.currentFitMode === 'fitWidth',
+              selected: effectiveFitMode === 'fitWidth',
               key: 'fit-width',
               icon: 'ArrowAutofitWidth',
             }),
@@ -447,7 +454,7 @@ function ToolbarCore({
               'aria-label': '세로에 맞춤',
               title: '세로에 맞추기',
               'data-gallery-element': 'fit-height',
-              selected: toolbarState.currentFitMode === 'fitHeight',
+              selected: effectiveFitMode === 'fitHeight',
               key: 'fit-height',
               icon: 'ArrowAutofitHeight',
             }),
@@ -457,7 +464,7 @@ function ToolbarCore({
               'aria-label': '창에 맞춤',
               title: '창에 맞추기',
               'data-gallery-element': 'fit-container',
-              selected: toolbarState.currentFitMode === 'fitContainer',
+              selected: effectiveFitMode === 'fitContainer',
               key: 'fit-container',
               icon: 'ArrowsMaximize',
             }),
@@ -528,6 +535,8 @@ export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarP
 
   // ViewMode 비교
   if (prevProps.currentViewMode !== nextProps.currentViewMode) return false;
+  // 외부 제어 핏 모드 비교
+  if (prevProps.currentFitMode !== nextProps.currentFitMode) return false;
 
   // 함수 props 참조 비교
   if (prevProps.onPrevious !== nextProps.onPrevious) return false;
