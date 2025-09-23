@@ -393,6 +393,12 @@ export class StaticVendorManager {
             try {
               URL.revokeObjectURL(url);
               this.createdUrls.delete(url);
+              // 타이머 실행 후에도 urlTimers 엔트리가 남지 않도록 정리
+              try {
+                this.urlTimers.delete(url);
+              } catch {
+                // ignore
+              }
             } catch (error) {
               logger.warn('자동 URL 정리 실패:', error);
             }
