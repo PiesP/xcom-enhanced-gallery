@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
 import { closeGallery } from '@/shared/state/signals/gallery.signals';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * P1-1: SPA 라우팅/마운트 아이덤포턴시
@@ -10,6 +11,16 @@ import { closeGallery } from '@/shared/state/signals/gallery.signals';
 describe('SPA routing idempotency and rebind robustness', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+  });
+
+  // 테스트 종료 시점에 남아있는 지연 타이머/인터벌로 인해
+  // JSDOM 환경 해제 이후 document 접근이 발생하지 않도록 강제 정리한다.
+  afterEach(() => {
+    try {
+      globalTimerManager.cleanup();
+    } catch {
+      // noop
+    }
   });
 
   it('pushState/replaceState/popstate 중복 마운트 없이 유지', async () => {
