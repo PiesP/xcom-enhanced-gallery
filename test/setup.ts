@@ -5,6 +5,7 @@
 
 import '@testing-library/jest-dom';
 import { beforeEach, afterEach } from 'vitest';
+import { globalTimerManager } from '@/shared/utils/timer-management';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
 
@@ -443,6 +444,13 @@ beforeEach(async () => {
 afterEach(async () => {
   // Mock API 상태 초기화
   resetMockApiState();
+
+  // 전역 타이머 정리: 테스트 종료 후 잔여 타이머로 인한 teardown 레이스 방지
+  try {
+    globalTimerManager.cleanup();
+  } catch {
+    // 무시: 테스트 안정성 목적
+  }
 
   await cleanupTestEnvironment();
 });
