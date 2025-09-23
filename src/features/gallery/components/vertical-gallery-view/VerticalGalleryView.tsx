@@ -713,6 +713,7 @@ function VerticalGalleryViewCore({
           isDownloading={isDownloading}
           onDownloadCurrent={handleDownloadCurrent}
           onDownloadAll={handleDownloadAll}
+          currentFitMode={imageFitMode}
           onFitOriginal={handleFitOriginal}
           onFitWidth={handleFitWidth}
           onFitHeight={handleFitHeight}

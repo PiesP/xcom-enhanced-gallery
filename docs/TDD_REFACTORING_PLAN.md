@@ -85,3 +85,23 @@ Gate 체크리스트(요지):
 메모리 전용 스모크:
 
 - 타이머/리스너 카운트 0, revoke 큐 0, 대량 로딩 후 회복 확인(모킹)
+
+---
+
+## Change Notes (Active Session)
+
+2025-09-23 — Toolbar 초기 핏 모드 동기화 (bugfix)
+
+- 증상: 갤러리 초기 진입 시 툴바의 핏 모드가 저장된 설정과 무관하게 "가로
+  맞춤(fitWidth)"으로 표시됨.
+- 원인: `Toolbar`가 내부 훅 상태(`useToolbarState().currentFitMode`의 기본값:
+  fitWidth)만 참조하고, 실제 화면 로직(`VerticalGalleryView`)은 설정에서 복원한
+  모드로 동작하여 UI와 상태가 분리됨.
+- 조치: `Toolbar`에 제어 프로퍼티 `currentFitMode?: ImageFitMode` 추가. 제공 시
+  해당 값을 선택 상태로 사용. `VerticalGalleryView`는 복원된 `imageFitMode`를
+  `ToolbarWithSettings`로 전달(`currentFitMode={imageFitMode}`).
+- 테스트: `test/unit/shared/components/ui/Toolbar.fit-mode.test.tsx` 추가
+  - prop 미제공 시 내부 기본값(fitWidth) 선택이 유지됨
+  - `currentFitMode="fitContainer"` 전달 시 해당 버튼 선택
+- 비고: 벤더 getter, PC 전용 이벤트, strict TS 준수. 공개 API 변경은 선택적 prop
+  추가로 후방 호환을 유지하며 onFit\* 콜백 흐름은 동일.
