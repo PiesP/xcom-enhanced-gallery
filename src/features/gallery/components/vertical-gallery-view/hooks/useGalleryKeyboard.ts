@@ -67,7 +67,9 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
   );
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
+    // Guard against non-DOM environments or teardown timing
+    const doc: Document | undefined = typeof document !== 'undefined' ? document : undefined;
+    doc?.addEventListener('keydown', handleKeyDown, true);
+    return () => doc?.removeEventListener('keydown', handleKeyDown, true);
   }, [handleKeyDown]);
 }

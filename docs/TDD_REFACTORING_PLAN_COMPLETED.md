@@ -22,6 +22,27 @@
   - 계획서(TDD_REFACTORING_PLAN.md)에서 EPIC-SM-v2 섹션 제거, 본 완료 로그로
     이관
 
+2025-09-23: EPIC-FIX — Gallery Image Fit Mode Persistence (완료)
+
+- 문제: 갤러리 닫기/재열기나 설정 서비스 지연 등록 상황에서 이미지 크기 모드가
+  항상 기본값(fitWidth)으로 되돌아가는 회귀.
+- 구현
+  - VerticalGalleryView에 마운트 후 지연 복원(useEffect) 추가: 저장된
+    `gallery.imageFitMode`를 재조회해 로컬 상태가 다르면 동기화
+  - SettingsService 구독 경로 추가: 서비스 가용 시 `subscribe`로 변경 이벤트를
+    수신하여 상태를 최신으로 유지(지연 등록 대비 폴링 재시도 포함)
+  - 즉시 DOM 반영: 변경 시 `data-fit-mode`를 즉시 반영해 타이밍 의존성을 완화
+  - 안전 가드: 키보드 훅에서 document 접근을 환경 가드로 보호, i18n 리터럴 스캔
+    경고 제거(주석 영어화)
+- 테스트
+  - image-fit-mode-persistence: 변경 후 닫기/재열기 시 저장 모드 복원 가드
+  - image-fit-mode-delayed-restore: 설정 서비스가 늦게 등록되어도 변경 반영 가드
+- 게이트
+  - 타입/린트/전체 테스트 GREEN, dev/prod 빌드 및 postbuild validator PASS
+  - Windows PowerShell(Clear-Host && npm run build) 기준 무결
+- 문서: 활성 계획서(TDD_REFACTORING_PLAN.md)에서 EPIC-FIX 섹션 제거, 본 완료
+  로그에 요약 이관
+
 2025-09-23: EPIC-SM — Settings Persistence Audit (완료)
 
 - 범위: 이미지 크기 모드(gallery.imageFitMode)와 설정 모달 항목의 저장/복원 경로

@@ -7023,8 +7023,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/index.ts",
-        "src/shared/utils/performance/index.ts",
-        "src/shared/utils/performance/signalOptimization.ts"
+        "src/shared/utils/performance/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8572,31 +8571,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/performance/signalOptimization.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../signalSelector",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/signalSelector.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/styles/index.ts",
       "dependencies": [
         {
@@ -8756,8 +8730,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 260,
-    "totalDependenciesCruised": 361,
+    "totalCruised": 259,
+    "totalDependenciesCruised": 360,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
