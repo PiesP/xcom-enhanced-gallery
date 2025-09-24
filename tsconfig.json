@@ -27,7 +27,8 @@
     "paths": {
       "@/*": ["./*"],
       "@features/*": ["features/*"],
-      "@shared/*": ["shared/*"]
+      "@shared/*": ["shared/*"],
+      "@assets/*": ["assets/*"]
     },
     "types": ["vite/client", "vitest/globals"],
     "incremental": true,
