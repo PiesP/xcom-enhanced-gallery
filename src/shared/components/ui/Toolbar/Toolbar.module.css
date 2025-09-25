@@ -155,7 +155,7 @@
 }
 
 [data-theme='dark'] .galleryToolbar[data-high-contrast='true'] {
-  background: var(--xeg-color-neutral-900, rgba(0, 0, 0, 0.95));
+  background: var(--xeg-color-neutral-900);
 }
 
 .toolbarContent {

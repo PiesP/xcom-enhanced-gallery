@@ -1,24 +1,15 @@
 import type { VNode } from '@shared/external/vendors';
+import { getXegIconComponent } from '@shared/components/ui/Icon/icons';
+import type { XegIconComponentName } from '@shared/components/ui/Icon/icons';
 // CORE 아이콘 관리 통합 (기존 core-icons.ts 제거)
 // - 분리 파일은 orphan 상태 + 타입 중복 정의로 유지 비용 증가
 // - IconName 내 코어 아이콘은 preloadCommonIcons에서 재사용되므로 단일 소스로 유지
 // - isCoreIcon/CORE_ICONS를 여기서 export하여 기존 테스트(icon-bundle-guard, icon-preload-contract) 경로 대체
 
-export type IconName =
-  | 'Download'
-  | 'Settings'
-  | 'X'
-  | 'ChevronLeft'
-  | 'ChevronRight'
-  | 'ZoomIn'
-  | 'ArrowAutofitWidth'
-  | 'ArrowAutofitHeight'
-  | 'ArrowsMaximize'
-  | 'FileZip'
-  | (string & {});
+export type IconName = XegIconComponentName | (string & {});
 
 // 단일 소스 CORE 아이콘 목록 (ICN-R5)
-export const CORE_ICONS: readonly IconName[] = [
+export const CORE_ICONS: readonly XegIconComponentName[] = [
   'Download',
   'Settings',
   'X',
@@ -29,13 +20,17 @@ export const CORE_ICONS: readonly IconName[] = [
   'ArrowAutofitHeight',
   'ArrowsMaximize',
   'FileZip',
-];
+] as const;
 
 export function isCoreIcon(name: string): boolean {
   return (CORE_ICONS as readonly string[]).includes(name);
 }
 
 type IconComponent = (props?: Record<string, unknown>) => VNode | unknown;
+
+function resolveXegIconComponent(name: XegIconComponentName): IconComponent {
+  return getXegIconComponent(name) as unknown as IconComponent;
+}
 
 export interface IconRegistry {
   loadIcon: (name: IconName) => Promise<IconComponent>;
@@ -59,52 +54,28 @@ let _caches: WeakMap<object, Map<IconName, IconComponent>> = new WeakMap();
 const _globalLoaded = new Map<IconName, IconComponent>();
 
 // Declarative import 맵 (ICN-R5)
-const ICON_IMPORTS: Record<string, () => Promise<IconComponent>> = {
-  Download: () =>
-    import('@shared/components/ui/Icon/hero/HeroDownload.tsx').then(
-      m => m.HeroDownload as unknown as IconComponent
-    ),
-  Settings: () =>
-    import('@shared/components/ui/Icon/hero/HeroSettings.tsx').then(
-      m => m.HeroSettings as unknown as IconComponent
-    ),
-  X: () =>
-    import('@shared/components/ui/Icon/hero/HeroX.tsx').then(
-      m => m.HeroX as unknown as IconComponent
-    ),
-  ChevronLeft: () =>
-    import('@shared/components/ui/Icon/hero/HeroChevronLeft.tsx').then(
-      m => m.HeroChevronLeft as unknown as IconComponent
-    ),
-  ChevronRight: () =>
-    import('@shared/components/ui/Icon/hero/HeroChevronRight.tsx').then(
-      m => m.HeroChevronRight as unknown as IconComponent
-    ),
-  ZoomIn: () =>
-    import('@shared/components/ui/Icon/hero/HeroZoomIn.tsx').then(
-      m => m.HeroZoomIn as unknown as IconComponent
-    ),
-  ArrowAutofitWidth: () =>
-    import('@shared/components/ui/Icon/hero/HeroArrowAutofitWidth.tsx').then(
-      m => m.HeroArrowAutofitWidth as unknown as IconComponent
-    ),
-  ArrowAutofitHeight: () =>
-    import('@shared/components/ui/Icon/hero/HeroArrowAutofitHeight.tsx').then(
-      m => m.HeroArrowAutofitHeight as unknown as IconComponent
-    ),
-  ArrowsMaximize: () =>
-    import('@shared/components/ui/Icon/hero/HeroArrowsMaximize.tsx').then(
-      m => m.HeroArrowsMaximize as unknown as IconComponent
-    ),
-  FileZip: () =>
-    import('@shared/components/ui/Icon/hero/HeroFileZip.tsx').then(
-      m => m.HeroFileZip as unknown as IconComponent
-    ),
-};
+const ICON_IMPORTS = {
+  Download: () => Promise.resolve(resolveXegIconComponent('Download')),
+  Settings: () => Promise.resolve(resolveXegIconComponent('Settings')),
+  X: () => Promise.resolve(resolveXegIconComponent('X')),
+  ChevronLeft: () => Promise.resolve(resolveXegIconComponent('ChevronLeft')),
+  ChevronRight: () => Promise.resolve(resolveXegIconComponent('ChevronRight')),
+  ZoomIn: () => Promise.resolve(resolveXegIconComponent('ZoomIn')),
+  ArrowAutofitWidth: () => Promise.resolve(resolveXegIconComponent('ArrowAutofitWidth')),
+  ArrowAutofitHeight: () => Promise.resolve(resolveXegIconComponent('ArrowAutofitHeight')),
+  ArrowsMaximize: () => Promise.resolve(resolveXegIconComponent('ArrowsMaximize')),
+  FileZip: () => Promise.resolve(resolveXegIconComponent('FileZip')),
+} as const satisfies Record<XegIconComponentName, () => Promise<IconComponent>>;
+
+function isXegIconComponentName(name: IconName): name is XegIconComponentName {
+  return Object.prototype.hasOwnProperty.call(ICON_IMPORTS, name);
+}
 
 function dynamicImport(name: IconName): Promise<IconComponent> {
-  const loader = ICON_IMPORTS[name];
-  if (loader) return loader();
+  if (isXegIconComponentName(name)) {
+    const loader = ICON_IMPORTS[name];
+    return loader();
+  }
   if (_fallback) return Promise.resolve(_fallback);
   return Promise.reject(new Error(`Icon not found: ${name}`));
 }

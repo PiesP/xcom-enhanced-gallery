@@ -34,33 +34,73 @@ vi.mock('../../../src/shared/external/vendors', () => ({
   }),
 }));
 
-// Mock 기존 아이콘 컴포넌트들 - 올바른 export 구조 제공 (.tsx 파일)
-vi.mock('../../../src/shared/components/ui/Icon/hero/HeroDownload.tsx', () => ({
-  HeroDownload: vi.fn(() => ({
+function getIconStubNames() {
+  return [
+    'Download',
+    'Settings',
+    'X',
+    'ChevronLeft',
+    'ChevronRight',
+    'ZoomIn',
+    'ArrowAutofitWidth',
+    'ArrowAutofitHeight',
+    'ArrowsMaximize',
+    'FileZip',
+  ] as const;
+}
+
+type IconStubName = ReturnType<typeof getIconStubNames>[number];
+
+type IconStubComponent = ReturnType<typeof createIconStub>;
+
+function createIconStub(name: IconStubName) {
+  return vi.fn(() => ({
     tag: 'div',
-    props: { 'data-testid': 'icon-download' },
-    children: ['Download Icon'],
-  })),
-}));
-vi.mock('../../../src/shared/components/ui/Icon/hero/HeroSettings.tsx', () => ({
-  HeroSettings: vi.fn(() => ({
-    tag: 'div',
-    props: { 'data-testid': 'icon-settings' },
-    children: ['Settings Icon'],
-  })),
-}));
-vi.mock('../../../src/shared/components/ui/Icon/hero/HeroX.tsx', () => ({
-  HeroX: vi.fn(() => ({ tag: 'div', props: { 'data-testid': 'icon-x' }, children: ['X Icon'] })),
-}));
-vi.mock('../../../src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx', () => ({
-  HeroChevronLeft: vi.fn(() => ({
-    tag: 'div',
-    props: { 'data-testid': 'icon-chevron-left' },
-    children: ['Chevron Left Icon'],
-  })),
-}));
+    props: { 'data-testid': `icon-${name.toLowerCase()}` },
+    children: [`${name} Icon`],
+  }));
+}
+
+const {
+  getIconStubMap,
+  resetIconStubs,
+}: {
+  getIconStubMap: () => Record<IconStubName, IconStubComponent>;
+  resetIconStubs: () => void;
+} = vi.hoisted(() => {
+  const iconStubMap = {} as Record<IconStubName, IconStubComponent>;
+
+  const hydrateStubs = () => {
+    getIconStubNames().forEach(name => {
+      iconStubMap[name] = createIconStub(name);
+    });
+  };
+
+  hydrateStubs();
+
+  return {
+    getIconStubMap: () => iconStubMap,
+    resetIconStubs: hydrateStubs,
+  };
+});
+
+const performanceApi = globalThis.performance ?? {
+  now: () => Date.now(),
+};
+
+vi.mock('../../../src/shared/components/ui/Icon/icons', () => {
+  const map = getIconStubMap();
+  return {
+    getXegIconComponent: (name: IconStubName) => map[name],
+    XEG_ICON_COMPONENTS: map,
+  };
+});
 
 describe('P7: Performance Optimization Unit Tests', () => {
+  beforeEach(() => {
+    resetIconStubs();
+  });
+
   describe('IconRegistry', () => {
     let registry: IconRegistry;
 
@@ -339,11 +379,11 @@ describe('P7: Performance Optimization Unit Tests', () => {
       const iconName: IconName = 'X';
 
       // 여러 번의 동시 요청
-      const startTime = performance.now();
+      const startTime = performanceApi.now();
       const promises = Array.from({ length: 10 }, () => registry.loadIcon(iconName));
 
       const results = await Promise.all(promises);
-      const endTime = performance.now();
+      const endTime = performanceApi.now();
 
       // 모든 결과가 동일해야 함 (중복 로딩 방지)
       const firstResult = results[0];

@@ -75,6 +75,8 @@ function hydrateBundledCssText(): void {
     const distDir = resolve(process.cwd(), 'dist');
     const candidates = ['xcom-enhanced-gallery.dev.user.js', 'xcom-enhanced-gallery.user.js'];
 
+    const cssLiteralPattern = /XEG_CSS_TEXT\s*=\s*(['"`])([\s\S]*?)\1\s*;/;
+
     for (const file of candidates) {
       const fullPath = resolve(distDir, file);
       if (!existsSync(fullPath)) {
@@ -82,33 +84,21 @@ function hydrateBundledCssText(): void {
       }
 
       const content = readFileSync(fullPath, 'utf8');
-      const marker = 'XEG_CSS_TEXT = ';
-      const startIndex = content.indexOf(marker);
-      if (startIndex === -1) {
+      const match = content.match(cssLiteralPattern);
+      if (!match) {
         continue;
       }
 
-      const sliceStart = startIndex + marker.length;
-      const sliceEnd = content.indexOf(';', sliceStart);
-      if (sliceEnd === -1) {
-        continue;
-      }
+      const literalWithQuotes = `${match[1]}${match[2]}${match[1]}`;
 
-      const literal = content.slice(sliceStart, sliceEnd).trim();
-      if (!literal) {
-        continue;
-      }
-
-      let parsed: unknown;
       try {
-        parsed = JSON.parse(literal);
+        const parsed = Function(`"use strict"; return (${literalWithQuotes});`)();
+        if (typeof parsed === 'string' && parsed.length > 0) {
+          (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT = parsed;
+          return;
+        }
       } catch {
         continue;
-      }
-
-      if (typeof parsed === 'string' && parsed.length > 0) {
-        (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT = parsed;
-        return;
       }
     }
   } catch (error) {

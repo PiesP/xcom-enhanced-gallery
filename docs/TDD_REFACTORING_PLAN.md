@@ -4,9 +4,10 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-24 — Epic "REF-LITE-V3 (Userscript 번들 경량화)" 진행 중. 직전
-Epic "VP-Focus-Indicator-001"은 Completed 로그로 이관되었습니다. 세부 히스토리는
-`TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
+업데이트: 2025-09-25 — Epic "REF-LITE-V3 (Userscript 번들 경량화)" Stage 3까지
+완료되어 현재 활성 작업 없음. 직전 Epic "VP-Focus-Indicator-001"은 Completed
+로그로 이관되었습니다. 세부 히스토리는 `TDD_REFACTORING_PLAN_COMPLETED.md`를
+참조하세요.
 
 ---
 
@@ -38,7 +39,7 @@ Epic "VP-Focus-Indicator-001"은 Completed 로그로 이관되었습니다. 세�
   | `VerticalGalleryView.tsx`        |  27,744 | UI 핵심 컴포넌트                                                 |
   | `shared/utils/events.ts`         |  27,379 | 이벤트 매니저, 추후 분리 후보                                    |
   | CSS Modules 전체                 | 106,674 | Button/Toolbar/Gallery가 대부분                                  |
-  | Heroicons outline 9종            |  ~8,500 | React → compat 브릿지 오버헤드 포함                              |
+  | Heroicons outline 9종 (제거됨)   |  ~8,500 | Stage 3(2025-09-25)에서 로컬 SVG 맵으로 대체                     |
 
 #### 검토한 대안 (요약)
 
@@ -51,45 +52,22 @@ Epic "VP-Focus-Indicator-001"은 Completed 로그로 이관되었습니다. 세�
 
 #### 선정 전략 (Multi-Stage)
 
-Stage 1(StoreZipWriter 전환)은 2025-09-25 완료되어 Completed 로그로
-이관되었습니다. 남은 단계는 다음과 같습니다.
-
-1. **Stage 2 — CSS primitives & budget 가드**
-   - `@shared/styles/primitives.module.css` 신설, Button/Toolbar/Gallery 등에서
-     `composes` 사용.
-   - 공통 변형(사이즈/variant)을 CSS 커스텀 프로퍼티로 전환.
-   - 새로운 Vitest budget(`test/optimization/css-budget.test.ts`)으로 번들 CSS
-     길이 상한(<=70 KB) 가드.
-   - 목표 절감: ~35 KB.
-2. **Stage 3 — Heroicons 경량화 및 compat 정리**
-   - 남은 작업
-     - Heroicons 어댑터 및 벤더 getter 제거, `@heroicons/react` devDependency
-       삭제, 라이선스 파일 업데이트.
-   - 목표 절감: ~12 KB + 렌더링 경로 단순화.
-   - 참고: 로컬 SVG 맵 구축 및 LazyIcon/registry 경량화는 Completed
-     로그(2025-09-25 항목)에서 추적.
+Stage 1(StoreZipWriter 전환)과 Stage 2(CSS primitives & budget 가드)는 모두
+2025-09-25에 Completed 로그로 이관되었으며, Stage 3(Heroicons 경량화 및 compat
+정리) 역시 동일 날짜에 완료되어 Epic REF-LITE-V3가 종결되었습니다. 현재 이
+Epic에 대한 활성 단계는 없습니다 — 후속 경량화 작업은 신규 Epic으로 별도
+기획합니다.
 
 #### TDD/실행 단계 메모
 
-- **Stage 2**
-  1. CSS budget 테스트(RED) → `XEG_CSS_TEXT.length` 한계 설정.
-  2. Primitives 도입, Button/Toolbar/Gallery 순으로 이관.
-  3. Vitest + Playwright 시각 리그레션 스냅(`test/ui/toolbar*.test.tsx`) 갱신.
-  4. Budget 테스트 GREEN, 시각 스냅 재승인.
-- **Stage 3**
-  1. Heroicons vendor 제거 스캔(RED) → direct import 감지 테스트 강화.
-  2. Heroicons 어댑터/벤더 getter 제거, `@heroicons/react` devDependency 삭제.
-  3. LICENSE/metadata 업데이트 및 Stage 3 관련 회귀 테스트 리프레시.
-  4. 빌드/테스트 통과, 번들 사이즈 재측정 및 Completed 로그 갱신.
+- 현재 활성 단계 없음 — Stage 3 Heroicons 정리는 2025-09-25에 RED→GREEN→
+  Completed까지 마무리되어 Completed 로그에서 추적합니다.
 
 #### Acceptance / 품질 게이트
 
-- dist prod 번들 용량 목표: **≤ 340 KB** (±5 KB, CSS budget 포함).
-- 기능 회귀 금지: Bulk ZIP 생성, 단일 다운로드, 갤러리 UI, 설정/토스트 모두 기존
-  E2E 테스트 레벨 통과.
-- 필수 스크립트: `npm run typecheck`, `npm run lint`, `npm test`,
-  `npm run build:prod` + `node scripts/validate-build.js` (사이즈 보고).
-- 문서/CHANGELOG: Heroicons 제거 시 라이선스 정리(`LICENSES/*.txt` 업데이트).
+- 현재 Epic에 대한 활성 Acceptance 없음. REF-LITE-V3 Stage 3는 2025-09-25 기준
+  dist 사이즈/테스트/문서 게이트를 모두 충족했으며, 세부 내역은 Completed 로그에
+  기록했습니다.
 
 #### 리스크 & 대응
 
@@ -163,5 +141,5 @@ Gate 체크리스트(요지):
 
 ## Change Notes (Active Session)
 
-- 2025-09-24: Epic `REF-LITE-V3` 착수, 번들 경량화 3단계 계획 확정(현재 Stage
-  2/3 진행).
+- 2025-09-25: REF-LITE-V3 Stage 3 Heroicons 정리 완료. Epic 전체가 Completed
+  로그로 이관되었으며, 신규 경량화 착수 전까지 활성 작업 없음.

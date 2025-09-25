@@ -213,18 +213,25 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
     });
 
     it('아이콘 컴포넌트들이 일관된 스타일을 사용해야 한다', async () => {
-      const iconsDir = path.resolve(currentDir, '../../src/shared/components/ui/Icon/hero');
-      const iconFiles = fs.readdirSync(iconsDir).filter(file => file.endsWith('.tsx'));
+      const iconsDir = path.resolve(currentDir, '../../src/shared/components/ui/Icon/icons');
+      const registryPath = path.join(iconsDir, 'registry.ts');
 
-      for (const file of iconFiles) {
-        const filePath = path.join(iconsDir, file);
-        const content = fs.readFileSync(filePath, 'utf-8');
+      expect(fs.existsSync(registryPath)).toBe(true);
 
-        // 모든 아이콘 파일이 기본 Icon 컴포넌트를 사용해야 함
-        expect(content).toMatch(/import.*Icon.*from.*Icon/);
-        // 포맷팅에 의해 '(' 다음 줄바꿈이 들어갈 수 있으므로 공백 허용
-        expect(content).toMatch(/h\(\s*Icon,/);
-      }
+      const registryContent = fs.readFileSync(registryPath, 'utf-8');
+
+      // 로컬 SVG 아이콘 맵을 통해 createSvgIcon을 사용하고 Hero 아이콘 잔재가 없어야 함
+      expect(registryContent).toMatch(/createSvgIcon\(/);
+      expect(registryContent).not.toMatch(/Hero/);
+
+      const { XEG_ICON_COMPONENTS } = await import(
+        '../../src/shared/components/ui/Icon/icons/registry'
+      );
+
+      Object.entries(XEG_ICON_COMPONENTS).forEach(([name, component]) => {
+        expect(typeof component).toBe('function');
+        expect(name).toMatch(/^[A-Z][A-Za-z0-9]+$/);
+      });
     });
 
     it('빌드된 CSS에서 Icon 관련 하드코딩된 값이 제거되어야 한다', async () => {

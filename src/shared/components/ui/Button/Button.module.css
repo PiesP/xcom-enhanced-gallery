@@ -304,10 +304,10 @@
   .variant-outline,
   .variant-ghost,
   .variant-icon {
-    --xeg-control-bg: rgba(255, 255, 255, 0.08);
-    --xeg-control-bg-hover: rgba(255, 255, 255, 0.16);
-    --xeg-control-border: rgba(255, 255, 255, 0.18);
-    --xeg-control-border-hover: rgba(255, 255, 255, 0.32);
+    --xeg-control-bg: var(--color-overlay-light);
+    --xeg-control-bg-hover: var(--color-overlay-medium);
+    --xeg-control-border: var(--color-overlay-medium);
+    --xeg-control-border-hover: var(--color-overlay-strong);
     --xeg-control-color: var(--color-text-inverse);
     --xeg-control-color-hover: var(--color-text-inverse);
   }
@@ -318,7 +318,24 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .unifiedButton {
+    transition: none;
+    transform: none;
+  }
+
   .spinner {
     animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .unifiedButton {
+    --xeg-control-min-height: var(--xeg-size-button-touch);
+    --xeg-control-min-width: var(--xeg-size-button-touch);
+  }
+
+  .iconOnly {
+    --xeg-control-width: var(--xeg-size-button-touch);
+    --xeg-control-height: var(--xeg-size-button-touch);
   }
 }

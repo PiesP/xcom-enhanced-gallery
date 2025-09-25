@@ -12,6 +12,35 @@
   통과했습니다. Userscript 빌드는 기존 Stage 1(REF-LITE-V3) 검증 흐름과 동일하게
   영향이 없음을 재확인했습니다.
 
+2025-09-25: EPIC — REF-LITE-V3 Stage 2 CSS primitives & budget 가드 (완료)
+
+- 공통 컨트롤 표면을 `@shared/styles/primitives.module.css`로 추출하고
+  UnifiedButton, ToolbarButton, SettingsModal 등 주요 인터랙션 컴포넌트가 해당
+  프리미티브를 기반으로 토큰만 오버라이드하도록 재구성했습니다.
+- 중복 스타일을 제거하면서 hover/active/focus 상태는 CSS 커스텀 프로퍼티로
+  통일했으며, 관련 UI 스냅샷·툴바 행위 테스트를 Stage 2 스펙에 맞게
+  갱신했습니다.
+- 글로벌 CSS 텍스트 길이를 70 KiB 이하로 제한하는
+  `test/optimization/css-budget.test.ts`를 도입하고, `Clear-Host; npm run build`
+  실행으로 budget 가드를 통과함을 확인했습니다.
+
+2025-09-25: EPIC — REF-LITE-V3 Stage 3 Heroicons 경량화 (완료)
+
+- Heroicons outline 9종을 사용하는 compat 어댑터와 벤더 getter를 모두 제거하고
+  `src/shared/services/iconRegistry.ts`가 로컬 SVG 맵(`getXegIconComponent`)
+  만을 참조하도록 재구성했습니다. `@heroicons/react` devDependency 및 관련
+  vendor shim도 삭제해 번들에서 Heroicons 코드 경로를 완전히 제거했습니다.
+- `test/unit/lint/no-heroicons-usage.scan.test.ts`를 추가해 Heroicons import가
+  다시 유입될 경우 RED가 나는 스캔을 상시 가드로 유지합니다. `icon-registry`
+  관련 단위 테스트와 기존 LazyIcon 접근성 스위트를 SVG 전용 경로에 맞게 갱신해
+  GREEN 상태를 확인했습니다.
+- 품질 게이트: `npm run typecheck`, `npm run lint`, `npm test`,
+  `npm run build:prod` 및 `node scripts/validate-build.js`를 실행해 모두
+  통과했습니다.
+- 문서/메타: Heroicons 제거 사항을 활성 계획서에서 Completed 로그로 이관하고,
+  Stage 3 종료 후 dist 번들 사이즈 점검을 REF-LITE-V3 Epic 기록으로 정리해 Epic
+  전 단계 종료를 명확히 했습니다.
+
 2025-09-25: EPIC — REF-LITE-V3 Stage 1 Store ZIP Writer 전환 (완료)
 
 - 목표: `fflate` 의존성을 제거하고 저장 전용(Store) ZIP writer를 도입해 번들
