@@ -4,8 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-26 — Epic "SETTINGS-FORM-CONTROL-CONSISTENCY"를 완료하여 현재
-활성 작업이 없습니다. 최근 작업 요약은
+업데이트: 2025-09-27 — 현재 활성 Epic 없음. 최근 완료 내역은
 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
 ---
@@ -22,9 +21,7 @@
 
 ## 2. 활성 Epic 현황
 
-현재 활성 Epic이 없습니다. 최근 완료된 Epic
-`SETTINGS-FORM-CONTROL-CONSISTENCY`의 세부 내용은 Completed 로그(2025-09-26
-기록)를 확인하세요.
+- 현재 활성 Epic 없음. 신규 Epic 착수 시 본 섹션에 등록합니다.
 
 ## 3. 다음 사이클 준비 메모(Placeholder)
 
@@ -85,8 +82,4 @@ Gate 체크리스트(요지):
 
 ## Change Notes (Active Session)
 
-- 2025-09-25: REF-LITE-V3 Stage 3 Heroicons 정리 완료. Epic 전체가 Completed
-  로그로 이관되었으며, 신규 경량화 착수 전까지 활성 작업 없음.
-- 2025-09-26: Settings 폼 컨트롤 Epic 선행 작업으로 중간 톤 중립 색상 토큰과
-  `--xeg-color-border-hover` alias를 토큰 계층에 추가하고, 이에 대한 TDD 가드
-  `test/styles/design-tokens.neutral-scale.test.ts`를 도입했습니다.
+- 현재 공유할 활성 Change Note 없음.

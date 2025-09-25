@@ -1,3 +1,17 @@
+2025-09-27: EPIC — GALLERY-OVERLAY-TOKEN-HARDENING (완료)
+
+- Semantic 토큰 계층에 `--xeg-color-overlay-dark`/`--xeg-color-overlay-subtle`을
+  정의하고, 고대비 모드에서 CanvasText/Canvas 매핑으로 hover·backdrop 대비를
+  안정화했습니다. Aggregator(`design-tokens.css`)가 신규 토큰을 재정의하지 않는
+  것도 확인했습니다.
+- Vitest 가드를 추가해 토큰 대비율과 소비 경로를 상시 검증합니다:
+  `test/styles/design-tokens.overlay-accessibility.test.ts`는 토큰 해석과
+  WCAG-AA 대비를,
+  `test/features/gallery/vertical/vertical-gallery.high-contrast.test.tsx` 는
+  VerticalGallery 툴바/호버 경로가 신규 토큰을 사용하는지 확인합니다.
+- 품질 게이트: `Clear-Host && npm run build` 실행으로 deps/typecheck/lint/format
+  및 dev/prod 빌드·postbuild 검증까지 모두 PASS 상태를 확인했습니다.
+
 2025-09-26: EPIC — SETTINGS-FORM-CONTROL-CONSISTENCY (완료)
 
 - SettingsModal spacing을 위한 `--xeg-comp-settings-modal-*` 컴포넌트 토큰을

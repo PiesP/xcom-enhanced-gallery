@@ -56,6 +56,8 @@
   --color-overlay-dark-bg: rgba(0, 0, 0, 0.95);
   --color-overlay-button-light: rgba(0, 0, 0, 0.1);
   --color-overlay-button-light-hover: rgba(0, 0, 0, 0.2);
+  --xeg-color-overlay-dark: rgba(0, 0, 0, 0.95);
+  --xeg-color-overlay-subtle: rgba(255, 255, 255, 0.1);
 
   /* Form Control Tokens */
   --xeg-form-control-bg: var(--xeg-color-neutral-100);
@@ -258,6 +260,8 @@
     --xeg-form-control-checked-bg: CanvasText;
     --xeg-form-control-checked-border: CanvasText;
     --xeg-form-control-check-color: Canvas;
+    --xeg-color-overlay-dark: CanvasText;
+    --xeg-color-overlay-subtle: Canvas;
   }
 }
 
