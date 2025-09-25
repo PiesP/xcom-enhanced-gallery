@@ -110,6 +110,8 @@ module.exports = {
           '^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)[.]tsx$',
           '^src/shared/components/ui/Toolbar/toolbarConfig[.]ts$',
           '^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal|EnhancedSettingsModal)[.]tsx$',
+          '^src/shared/components/ui/Icon/hero/.*$',
+          '^src/shared/external/vendors/heroicons-react[.]ts$',
           // --- Intentional placeholders / future expansion points (keep allowed) ---
           '^src/shared/services/icon-types[.]ts$',
           '^src/shared/loader/progressive-loader[.]ts$',

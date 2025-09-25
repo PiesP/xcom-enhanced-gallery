@@ -48,6 +48,6 @@ describe('local icon registry', () => {
 
     expect(iconNames).toContain('Download');
     expect(iconNames).toContain('Settings');
-    expect(iconNames).toContain('X');
+    expect(iconNames).toContain('Close');
   });
 });

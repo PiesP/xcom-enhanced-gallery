@@ -513,7 +513,7 @@ function ToolbarCore({
               onClick: (e: Event) => handleButtonClick(e, 'close', onClose),
               'data-gallery-element': 'close',
               key: 'close',
-              icon: 'X',
+              icon: 'Close',
             }),
           ]
         ),

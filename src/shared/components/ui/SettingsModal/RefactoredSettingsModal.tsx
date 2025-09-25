@@ -239,7 +239,7 @@ export function SettingsModal({
       onClick: onClose,
       'aria-label': 'Close',
       key: 'close',
-      iconName: 'X',
+      iconName: 'Close',
       size: 'md',
     }),
   ]);

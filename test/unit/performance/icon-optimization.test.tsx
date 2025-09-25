@@ -38,7 +38,7 @@ function getIconStubNames() {
   return [
     'Download',
     'Settings',
-    'X',
+    'Close',
     'ChevronLeft',
     'ChevronRight',
     'ZoomIn',
@@ -147,7 +147,7 @@ describe('P7: Performance Optimization Unit Tests', () => {
     });
 
     test('로딩 상태를 추적해야 함', () => {
-      const iconName: IconName = 'X';
+      const iconName: IconName = 'Close';
 
       // 초기에는 로딩 중이 아님
       expect(registry.isLoading(iconName)).toBe(false);
@@ -277,7 +277,7 @@ describe('P7: Performance Optimization Unit Tests', () => {
         children: ['Icon not found'],
       };
 
-      const result = LazyIcon({ name: 'X', errorFallback: customErrorFallback });
+      const result = LazyIcon({ name: 'Close', errorFallback: customErrorFallback });
 
       // LazyIcon은 초기에는 로딩 상태이므로, 에러 상태 테스트를 위해 다른 접근법 필요
       // 여기서는 errorFallback이 제대로 전달되는지만 확인
@@ -376,7 +376,7 @@ describe('P7: Performance Optimization Unit Tests', () => {
 
     test('중복 요청을 효율적으로 처리해야 함', async () => {
       const registry = getIconRegistry();
-      const iconName: IconName = 'X';
+      const iconName: IconName = 'Close';
 
       // 여러 번의 동시 요청
       const startTime = performanceApi.now();

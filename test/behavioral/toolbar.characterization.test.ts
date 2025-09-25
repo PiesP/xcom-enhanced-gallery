@@ -67,7 +67,7 @@ vi.mock('@shared/components/ui/Icon', () => ({
   Download: () => ({ tag: 'svg', props: { 'data-icon': 'download' }, children: [] }),
   FileZip: () => ({ tag: 'svg', props: { 'data-icon': 'file-zip' }, children: [] }),
   Settings: () => ({ tag: 'svg', props: { 'data-icon': 'settings' }, children: [] }),
-  X: () => ({ tag: 'svg', props: { 'data-icon': 'x' }, children: [] }),
+  Close: () => ({ tag: 'svg', props: { 'data-icon': 'close' }, children: [] }),
   ZoomIn: () => ({ tag: 'svg', props: { 'data-icon': 'zoom-in' }, children: [] }),
   ArrowAutofitWidth: () => ({
     tag: 'svg',

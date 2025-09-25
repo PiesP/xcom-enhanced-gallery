@@ -25,7 +25,14 @@
 }
 
 /* ===== Size variants ===== */
-.size-sm,
+.size-sm {
+  --xeg-control-padding-block: var(--xeg-spacing-xs);
+  --xeg-control-padding-inline: var(--xeg-spacing-sm);
+  --xeg-control-font-size: var(--xeg-font-size-sm);
+  --xeg-control-min-height: var(--xeg-size-button-sm);
+  --xeg-control-radius: var(--xeg-radius-sm);
+}
+
 .sm {
   --xeg-control-padding-block: var(--xeg-spacing-xs);
   --xeg-control-padding-inline: var(--xeg-spacing-sm);
@@ -34,14 +41,26 @@
   --xeg-control-radius: var(--xeg-radius-sm);
 }
 
-.size-md,
+.size-md {
+  --xeg-control-padding-block: var(--xeg-spacing-sm);
+  --xeg-control-padding-inline: var(--xeg-spacing-md);
+  --xeg-control-min-height: var(--xeg-size-button-md);
+}
+
 .md {
   --xeg-control-padding-block: var(--xeg-spacing-sm);
   --xeg-control-padding-inline: var(--xeg-spacing-md);
   --xeg-control-min-height: var(--xeg-size-button-md);
 }
 
-.size-lg,
+.size-lg {
+  --xeg-control-padding-block: var(--xeg-spacing-md);
+  --xeg-control-padding-inline: var(--xeg-spacing-lg);
+  --xeg-control-font-size: var(--xeg-font-size-lg);
+  --xeg-control-min-height: var(--xeg-size-button-lg);
+  --xeg-control-radius: var(--xeg-radius-lg);
+}
+
 .lg {
   --xeg-control-padding-block: var(--xeg-spacing-md);
   --xeg-control-padding-inline: var(--xeg-spacing-lg);

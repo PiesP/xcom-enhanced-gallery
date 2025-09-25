@@ -70,19 +70,19 @@ function setupURLPolyfill() {
 // URL 폴백 설정 실행
 setupURLPolyfill();
 
-function hydrateBundledCssText(): void {
-  try {
-    const distDir = resolve(process.cwd(), 'dist');
-    const candidates = ['xcom-enhanced-gallery.dev.user.js', 'xcom-enhanced-gallery.user.js'];
+const cssLiteralPattern = /XEG_CSS_TEXT\s*=\s*(['"`])([\s\S]*?)\1\s*;/;
 
-    const cssLiteralPattern = /XEG_CSS_TEXT\s*=\s*(['"`])([\s\S]*?)\1\s*;/;
+function readCssTextFromBundle(): string | null {
+  const distDir = resolve(process.cwd(), 'dist');
+  const candidates = ['xcom-enhanced-gallery.dev.user.js', 'xcom-enhanced-gallery.user.js'];
 
-    for (const file of candidates) {
-      const fullPath = resolve(distDir, file);
-      if (!existsSync(fullPath)) {
-        continue;
-      }
+  for (const file of candidates) {
+    const fullPath = resolve(distDir, file);
+    if (!existsSync(fullPath)) {
+      continue;
+    }
 
+    try {
       const content = readFileSync(fullPath, 'utf8');
       const match = content.match(cssLiteralPattern);
       if (!match) {
@@ -90,16 +90,60 @@ function hydrateBundledCssText(): void {
       }
 
       const literalWithQuotes = `${match[1]}${match[2]}${match[1]}`;
+      const parsed = Function(`"use strict"; return (${literalWithQuotes});`)();
+      if (typeof parsed === 'string' && parsed.length > 0) {
+        return parsed;
+      }
+    } catch {
+      continue;
+    }
+  }
 
-      try {
-        const parsed = Function(`"use strict"; return (${literalWithQuotes});`)();
-        if (typeof parsed === 'string' && parsed.length > 0) {
-          (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT = parsed;
-          return;
-        }
-      } catch {
+  return null;
+}
+
+function readCssTextFromSourceFiles(): string | null {
+  const fallbackFiles = [
+    'src/shared/styles/design-tokens.semantic.css',
+    'src/shared/styles/design-tokens.css',
+    'src/styles/isolated-gallery.css',
+    'src/assets/styles/modern-features.css',
+  ];
+
+  const contents: string[] = [];
+  for (const relativePath of fallbackFiles) {
+    try {
+      const fullPath = resolve(process.cwd(), relativePath);
+      if (!existsSync(fullPath)) {
         continue;
       }
+      const css = readFileSync(fullPath, 'utf8');
+      if (css.trim().length > 0) {
+        contents.push(css);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  if (contents.length === 0) {
+    return null;
+  }
+
+  return contents.join('\n');
+}
+
+function hydrateBundledCssText(): void {
+  try {
+    const bundleCss = readCssTextFromBundle();
+    if (bundleCss) {
+      (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT = bundleCss;
+      return;
+    }
+
+    const fallbackCss = readCssTextFromSourceFiles();
+    if (fallbackCss) {
+      (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT = fallbackCss;
     }
   } catch (error) {
     globalThis?.console?.warn?.(

@@ -469,7 +469,7 @@ export function SettingsModal({
       // close는 파괴적 액션이 아니므로 intent 미지정(중립)
       size: 'md',
       key: 'close',
-      iconName: 'X',
+      iconName: 'Close',
     }),
   ]);
 

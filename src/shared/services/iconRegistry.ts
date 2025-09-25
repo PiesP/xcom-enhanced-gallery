@@ -12,7 +12,7 @@ export type IconName = XegIconComponentName | (string & {});
 export const CORE_ICONS: readonly XegIconComponentName[] = [
   'Download',
   'Settings',
-  'X',
+  'Close',
   'ChevronLeft',
   'ChevronRight',
   'ZoomIn',
@@ -57,7 +57,7 @@ const _globalLoaded = new Map<IconName, IconComponent>();
 const ICON_IMPORTS = {
   Download: () => Promise.resolve(resolveXegIconComponent('Download')),
   Settings: () => Promise.resolve(resolveXegIconComponent('Settings')),
-  X: () => Promise.resolve(resolveXegIconComponent('X')),
+  Close: () => Promise.resolve(resolveXegIconComponent('Close')),
   ChevronLeft: () => Promise.resolve(resolveXegIconComponent('ChevronLeft')),
   ChevronRight: () => Promise.resolve(resolveXegIconComponent('ChevronRight')),
   ZoomIn: () => Promise.resolve(resolveXegIconComponent('ZoomIn')),

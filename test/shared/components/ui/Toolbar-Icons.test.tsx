@@ -58,7 +58,7 @@ vi.mock('@shared/services/iconRegistry', () => {
   const names = [
     'Download',
     'Settings',
-    'X',
+    'Close',
     'ChevronLeft',
     'ChevronRight',
     'ZoomIn',
