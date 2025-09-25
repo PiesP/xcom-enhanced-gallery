@@ -1,3 +1,16 @@
+2025-09-26: EPIC — SETTINGS-FORM-CONTROL-CONSISTENCY (완료)
+
+- SettingsModal spacing을 위한 `--xeg-comp-settings-modal-*` 컴포넌트 토큰을
+  `src/shared/styles/design-tokens.component.css`에 추가하고,
+  `SettingsModal.module.css`에서 padding·gap을 모두 em 기반 토큰으로
+  교체했습니다.
+- 라이트/다크/고대비 테마를 통틀어
+  `test/refactoring/settings-modal-unit-consistency.test.ts` 가 요구하는 px 금지
+  규칙을 만족하며 포커스 링 버그도 해결했습니다.
+- Form control 계층 토큰(`design-tokens.semantic.css`)과 SettingsModal
+  컴포넌트를 대상으로 전체 Vitest 스위트, 타입 체크, 린트를 재실행하여 GREEN
+  상태를 확인했습니다.
+
 2025-09-25: TASK — MEDIA-HALT-ON-GALLERY 갤러리 진입 시 배경 미디어 정지 (완료)
 
 - `GalleryApp.openGallery`와 `GalleryRenderer.render`가 갤러리 띄우기 전에

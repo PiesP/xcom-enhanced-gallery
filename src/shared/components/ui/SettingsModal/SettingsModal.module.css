@@ -8,29 +8,33 @@
 .modal {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg, 24px); /* 트위터 간격 시스템 적용 */
+  gap: 1.5em;
+  gap: var(--xeg-comp-settings-modal-gap, 1.5em); /* 트위터 간격 시스템 적용 */
   border-radius: var(--xeg-radius-xl); /* 트위터 스타일 둥근 모서리 */
-  padding: var(--space-xl, 32px); /* 충분한 내부 여백 */
+  padding: 2em; /* 충분한 내부 여백 */
+  padding: var(--xeg-comp-settings-modal-padding, 2em);
   /* Use semantic tokens for primary styling */
   background: var(--xeg-modal-bg);
-  border: 1px solid var(--xeg-modal-border);
-  /* Explicit semantic tokens to satisfy strict tests */
-  /* prettier-ignore */
-  background: var(--xeg-modal-bg);
-  /* prettier-ignore */
   border: 1px solid var(--xeg-modal-border);
 }
 
 .panel {
   position: fixed;
-  top: calc(var(--space-xl, 32px) + var(--space-2xl, 48px)); /* 툴바 아래 충분한 여유 */
+  top: calc(
+    var(--xeg-comp-settings-modal-top-offset, 2em) +
+      var(--xeg-comp-settings-modal-toolbar-offset, 3em)
+  ); /* 툴바 아래 충분한 여유 */
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-modal);
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg, 24px); /* 요소 간 넉넉한 간격 */
-  padding: var(--space-xl, 32px) var(--space-lg, 24px) var(--space-xl, 32px); /* 상하좌우 충분한 패딩 */
+  gap: 1.5em; /* 요소 간 넉넉한 간격 */
+  gap: var(--xeg-comp-settings-modal-panel-gap, 1.5em);
+  padding-block: 2em; /* 상하 충분한 패딩 */
+  padding-block: var(--xeg-comp-settings-modal-panel-padding-block, 2em);
+  padding-inline: 1.5em; /* 좌우 충분한 패딩 */
+  padding-inline: var(--xeg-comp-settings-modal-panel-padding-inline, 1.5em);
   min-width: 20em; /* 최소 너비 증가 */
   max-width: 28em; /* 최대 너비 증가 */
   border-radius: var(--xeg-radius-xl); /* 트위터 스타일 둥근 모서리 */
@@ -39,19 +43,16 @@
   /* Use semantic tokens for primary styling */
   background: var(--xeg-modal-bg);
   border: 1px solid var(--xeg-modal-border);
-  /* Explicit semantic tokens to satisfy strict tests */
-  /* prettier-ignore */
-  background: var(--xeg-modal-bg);
-  /* prettier-ignore */
-  border: 1px solid var(--xeg-modal-border);
 }
 
 /* 내부 컨테이너 (레이아웃만) */
 .inner {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg, 24px); /* 일관된 간격 */
-  padding: var(--space-md, 16px); /* 추가 내부 패딩 */
+  gap: 1.5em; /* 일관된 간격 */
+  gap: var(--xeg-comp-settings-modal-inner-gap, 1.5em);
+  padding: 1em; /* 추가 내부 패딩 */
+  padding: var(--xeg-comp-settings-modal-inner-padding, 1em);
 }
 
 /* 레거시 위치 클래스 (테스트 기대) */
@@ -59,7 +60,10 @@
   /* center 위치 스타일 명시적 정의 */
   left: 50%;
   transform: translateX(-50%);
-  top: calc(var(--space-xl, 32px) + var(--space-2xl, 48px));
+  top: calc(
+    var(--xeg-comp-settings-modal-top-offset, 2em) +
+      var(--xeg-comp-settings-modal-toolbar-offset, 3em)
+  );
 }
 
 .bottomSheet {
@@ -90,10 +94,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-lg, 24px);
-  padding-bottom: var(--space-md, 16px);
+  gap: 1.5em;
+  gap: var(--xeg-comp-settings-modal-header-gap, 1.5em);
+  padding-bottom: 1em;
+  padding-bottom: var(--xeg-comp-settings-modal-header-padding-block-end, 1em);
   border-bottom: 1px solid var(--xeg-modal-border);
-  margin-bottom: var(--space-lg, 24px);
+  margin-bottom: 1.5em;
+  margin-bottom: var(--xeg-comp-settings-modal-header-margin-block-end, 1.5em);
 }
 
 .title {
@@ -107,14 +114,17 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl, 32px);
+  gap: 2em;
+  gap: var(--xeg-comp-settings-modal-body-gap, 2em);
 }
 
 .setting {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md, 16px);
-  padding: var(--space-md, 16px);
+  gap: 1em;
+  gap: var(--xeg-comp-settings-modal-setting-gap, 1em);
+  padding: 1em;
+  padding: var(--xeg-comp-settings-modal-setting-padding, 1em);
   border-radius: var(--xeg-radius-lg);
   background: var(--xeg-color-bg-hover);
   border: 1px solid var(--xeg-color-border-primary);
@@ -126,7 +136,8 @@
   /* '설정' 타이틀과 동일한 색상 계열 적용(Primary) */
   color: var(--xeg-color-text-primary);
   letter-spacing: 0.01em;
-  margin-bottom: var(--space-xs, 4px);
+  margin-bottom: 0.25em;
+  margin-bottom: var(--xeg-comp-settings-modal-label-margin-block-end, 0.25em);
   text-transform: uppercase;
   border-radius: var(--xeg-radius-sm);
 }
