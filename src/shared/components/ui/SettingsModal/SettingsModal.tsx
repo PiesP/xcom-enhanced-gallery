@@ -14,7 +14,6 @@ import { ComponentStandards } from '../StandardProps';
 // R4: 직접 아이콘 import 제거 (X) → IconButton.iconName 사용
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
-import toolbarStyles from '../Toolbar/Toolbar.module.css';
 import primitiveStyles from '@shared/styles/primitives.module.css';
 // Barrel import 제거 (cycle 감소) - direct relative import
 import { IconButton } from '../Button/IconButton';
@@ -477,7 +476,7 @@ export function SettingsModal({
     'select',
     {
       id: 'theme-select',
-      className: [primitiveStyles.controlSurface, toolbarStyles.toolbarButton, styles.select]
+      className: [primitiveStyles.controlSurface, styles.formControl, styles.select]
         .filter(Boolean)
         .join(' '),
       value: currentTheme,
@@ -497,7 +496,7 @@ export function SettingsModal({
     {
       ref: lastFocusableRef,
       id: 'language-select',
-      className: [primitiveStyles.controlSurface, toolbarStyles.toolbarButton, styles.select]
+      className: [primitiveStyles.controlSurface, styles.formControl, styles.select]
         .filter(Boolean)
         .join(' '),
       value: currentLanguage,
@@ -541,6 +540,7 @@ export function SettingsModal({
         type: 'checkbox',
         checked: showProgressToast,
         onChange: handleProgressToastToggle,
+        className: styles.formControlToggle,
       }),
     ]),
   ]);

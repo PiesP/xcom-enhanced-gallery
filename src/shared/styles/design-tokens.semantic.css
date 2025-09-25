@@ -27,6 +27,8 @@
   --color-border-muted: var(--color-gray-100);
   --color-border-subtle: var(--color-gray-100);
   --color-border-emphasis: var(--color-gray-500);
+  --color-border-primary: var(--color-border-default);
+  --color-border-hover: var(--color-gray-300);
 
   /* State Colors - Semantic Roles */
   --color-success: var(--color-green-500);
@@ -54,6 +56,34 @@
   --color-overlay-dark-bg: rgba(0, 0, 0, 0.95);
   --color-overlay-button-light: rgba(0, 0, 0, 0.1);
   --color-overlay-button-light-hover: rgba(0, 0, 0, 0.2);
+
+  /* Form Control Tokens */
+  --xeg-form-control-bg: var(--xeg-color-neutral-100);
+  --xeg-form-control-bg-hover: var(--xeg-color-neutral-200);
+  --xeg-form-control-bg-active: var(--xeg-color-neutral-200);
+  --xeg-form-control-border: var(--color-border-default);
+  --xeg-form-control-border-hover: var(--color-border-hover);
+  --xeg-form-control-border-active: var(--color-border-hover);
+  --xeg-form-control-checked-bg: var(--color-primary);
+  --xeg-form-control-checked-border: var(--color-primary);
+  --xeg-form-control-color: var(--color-text-primary);
+  --xeg-form-control-color-hover: var(--color-text-primary);
+  --xeg-form-control-accent: var(--color-primary);
+  --xeg-form-control-check-color: var(--color-base-white);
+  --xeg-form-control-check-weight: 2px;
+  --xeg-form-control-radius: var(--xeg-radius-md);
+  --xeg-form-control-shadow: none;
+  --xeg-form-control-shadow-hover: var(--xeg-shadow-xs);
+  --xeg-form-control-shadow-active: var(--xeg-shadow-xs);
+  --xeg-form-control-disabled-opacity: var(--xeg-opacity-disabled);
+  --xeg-form-control-focus-outline: var(--xeg-focus-ring);
+  --xeg-form-control-focus-offset: var(--xeg-focus-ring-offset);
+  --xeg-form-control-padding-block: 0.375em;
+  --xeg-form-control-padding-inline: 0.75em;
+  --xeg-form-control-gap: var(--xeg-spacing-xs);
+  --xeg-form-control-font-size: var(--xeg-font-size-sm);
+  --xeg-form-control-font-weight: var(--xeg-font-weight-medium);
+  --xeg-form-control-toggle-size: 1.125em;
 
   /* Glass Effect - Semantic Roles */
   --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
@@ -175,6 +205,20 @@
   --color-text-primary: var(--color-base-white);
   --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
 
+  --xeg-form-control-bg: var(--xeg-color-neutral-800);
+  --xeg-form-control-bg-hover: var(--xeg-color-neutral-700);
+  --xeg-form-control-bg-active: var(--xeg-color-neutral-700);
+  --xeg-form-control-border: var(--xeg-color-neutral-600);
+  --xeg-form-control-border-hover: var(--xeg-color-neutral-500);
+  --xeg-form-control-border-active: var(--xeg-color-neutral-500);
+  --xeg-form-control-checked-bg: var(--color-primary);
+  --xeg-form-control-checked-border: var(--color-primary);
+  --xeg-form-control-color: var(--color-text-primary);
+  --xeg-form-control-color-hover: var(--color-text-primary);
+  --xeg-form-control-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --xeg-form-control-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --xeg-form-control-shadow-active: 0 0 0 1px rgba(255, 255, 255, 0.08);
+
   /* 다크 테마 갤러리 배경 */
   --xeg-gallery-bg: var(--color-gray-900);
   --xeg-bg-toolbar: var(--color-gray-800);
@@ -205,6 +249,15 @@
   :root {
     --xeg-focus-outline: 3px solid var(--color-primary);
     --color-border-emphasis: var(--color-base-black);
+    --xeg-form-control-bg: Canvas;
+    --xeg-form-control-bg-hover: Canvas;
+    --xeg-form-control-bg-active: Canvas;
+    --xeg-form-control-border: CanvasText;
+    --xeg-form-control-border-hover: CanvasText;
+    --xeg-form-control-border-active: CanvasText;
+    --xeg-form-control-checked-bg: CanvasText;
+    --xeg-form-control-checked-border: CanvasText;
+    --xeg-form-control-check-color: Canvas;
   }
 }
 

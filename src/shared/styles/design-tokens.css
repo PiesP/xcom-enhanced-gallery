@@ -98,8 +98,13 @@
   /* Semantic Colors */
   /* Legacy Neutral Colors - 호환성 보장 */
   --xeg-color-neutral-100: var(--color-gray-100);
+  --xeg-color-neutral-200: var(--color-gray-200);
+  --xeg-color-neutral-300: var(--color-gray-300);
+  --xeg-color-neutral-400: var(--color-gray-400);
   --xeg-color-neutral-500: var(--color-gray-500);
+  --xeg-color-neutral-600: var(--color-gray-600);
   --xeg-color-neutral-700: var(--color-gray-700);
+  --xeg-color-neutral-800: var(--color-gray-800);
   --xeg-color-neutral-900: var(--color-gray-900);
 
   /* Legacy Semantic Colors - 호환성 보장 */
@@ -118,6 +123,7 @@
   --xeg-color-text-primary: var(--color-text-primary);
   --xeg-color-text-secondary: var(--color-text-secondary);
   --xeg-color-border-primary: var(--color-border-primary);
+  --xeg-color-border-hover: var(--color-border-hover);
 
   /* Legacy Glass System - 호환성 보장 */
   --xeg-glass-bg: var(--glass-bg);

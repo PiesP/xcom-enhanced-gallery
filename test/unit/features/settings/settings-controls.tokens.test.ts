@@ -23,6 +23,21 @@ describe('SettingsModal — tokenized styling and focus ring consistency', () =>
     expect(css).toMatch(/:focus-visible\s*{[^}]*outline-offset: var\(--xeg-focus-ring-offset\)/m);
   });
 
+  it('form controls reference dedicated --xeg-form-control-* tokens', () => {
+    const requiredTokens = [
+      '--xeg-form-control-bg',
+      '--xeg-form-control-border',
+      '--xeg-form-control-color',
+      '--xeg-form-control-bg-hover',
+      '--xeg-form-control-border-hover',
+      '--xeg-form-control-focus-outline',
+    ];
+
+    requiredTokens.forEach(token => {
+      expect(css.includes(token), `${token} missing from SettingsModal CSS`).toBe(true);
+    });
+  });
+
   it('runtime: close button is present and labeled, selects have classes', () => {
     try {
       const { h } = getPreact();

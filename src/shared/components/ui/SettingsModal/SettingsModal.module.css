@@ -131,17 +131,137 @@
   border-radius: var(--xeg-radius-sm);
 }
 
+.formControl {
+  --xeg-control-gap: var(--xeg-form-control-gap, var(--xeg-spacing-xs));
+  --xeg-control-padding-block: var(--xeg-form-control-padding-block);
+  --xeg-control-padding-inline: var(--xeg-form-control-padding-inline);
+  --xeg-control-font-size: var(--xeg-form-control-font-size);
+  --xeg-control-font-weight: var(--xeg-form-control-font-weight);
+  --xeg-control-bg: var(--xeg-form-control-bg);
+  --xeg-control-bg-hover: var(--xeg-form-control-bg-hover);
+  --xeg-control-bg-active: var(--xeg-form-control-bg-active);
+  --xeg-control-border: var(--xeg-form-control-border);
+  --xeg-control-border-hover: var(--xeg-form-control-border-hover);
+  --xeg-control-border-active: var(--xeg-form-control-border-active);
+  --xeg-control-color: var(--xeg-form-control-color);
+  --xeg-control-color-hover: var(--xeg-form-control-color-hover);
+  --xeg-control-shadow: var(--xeg-form-control-shadow);
+  --xeg-control-shadow-hover: var(--xeg-form-control-shadow-hover);
+  --xeg-control-shadow-active: var(--xeg-form-control-shadow-active);
+  --xeg-control-radius: var(--xeg-form-control-radius);
+  --xeg-control-focus-outline: var(--xeg-form-control-focus-outline);
+  --xeg-control-focus-offset: var(--xeg-form-control-focus-offset);
+  --xeg-control-disabled-opacity: var(--xeg-form-control-disabled-opacity);
+  min-width: 10.5em;
+}
+
 .select {
   width: auto;
   min-width: 11.5em;
-  font-size: 0.875em;
-  padding: 0.375em 0.75em;
-  border-radius: var(--xeg-radius-md);
-  /* 툴바 버튼과 동일한 포커스/호버 체계 공유 */
-  background: var(--xeg-color-neutral-0, transparent);
-  color: var(--xeg-color-text-primary);
-  border: 1px solid var(--xeg-color-border-primary);
+  font-size: var(--xeg-form-control-font-size, 0.875em);
+  color: var(--xeg-form-control-color);
+  background: var(--xeg-form-control-bg);
+  border: 1px solid var(--xeg-form-control-border);
+  border-radius: var(--xeg-form-control-radius);
   transition: var(--xeg-transition-fast);
+  appearance: none;
+  padding-right: calc(var(--xeg-form-control-padding-inline, 0.75em) * 2);
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.1em) 50%,
+    calc(100% - 0.7em) 50%;
+  background-size:
+    0.45em 0.45em,
+    0.45em 0.45em;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.select:hover {
+  background: var(--xeg-form-control-bg-hover);
+  border-color: var(--xeg-form-control-border-hover);
+  box-shadow: var(--xeg-form-control-shadow-hover);
+  color: var(--xeg-form-control-color-hover);
+}
+
+.select:active {
+  background: var(--xeg-form-control-bg-active);
+  border-color: var(--xeg-form-control-border-active);
+  box-shadow: var(--xeg-form-control-shadow-active);
+}
+
+.select:disabled {
+  opacity: var(--xeg-form-control-disabled-opacity);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.select::-ms-expand {
+  display: none;
+}
+
+.formControlToggle {
+  --_toggle-size: var(--xeg-form-control-toggle-size);
+  appearance: none;
+  width: var(--_toggle-size);
+  height: var(--_toggle-size);
+  border-radius: var(--xeg-form-control-radius);
+  border: 1px solid var(--xeg-form-control-border);
+  background: var(--xeg-form-control-bg);
+  color: var(--xeg-form-control-color);
+  box-shadow: var(--xeg-form-control-shadow);
+  transition: var(--xeg-transition-fast);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  accent-color: var(--xeg-form-control-accent);
+}
+
+.formControlToggle::after {
+  content: '';
+  width: calc(var(--_toggle-size) * 0.45);
+  height: calc(var(--_toggle-size) * 0.25);
+  border-left: var(--xeg-form-control-check-weight) solid var(--xeg-form-control-check-color);
+  border-bottom: var(--xeg-form-control-check-weight) solid var(--xeg-form-control-check-color);
+  transform: rotate(-45deg) scale(0.75);
+  opacity: 0;
+  transition:
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transform-origin: center;
+}
+
+.formControlToggle:hover {
+  background: var(--xeg-form-control-bg-hover);
+  border-color: var(--xeg-form-control-border-hover);
+  box-shadow: var(--xeg-form-control-shadow-hover);
+}
+
+.formControlToggle:active {
+  background: var(--xeg-form-control-bg-active);
+  border-color: var(--xeg-form-control-border-active);
+  box-shadow: var(--xeg-form-control-shadow-active);
+}
+
+.formControlToggle:checked {
+  background: var(--xeg-form-control-checked-bg);
+  border-color: var(--xeg-form-control-checked-border);
+  box-shadow: var(--xeg-form-control-shadow-active);
+}
+
+.formControlToggle:checked::after {
+  opacity: 1;
+  transform: rotate(-45deg) scale(1);
+}
+
+.formControlToggle:disabled {
+  opacity: var(--xeg-form-control-disabled-opacity);
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* 닫기 버튼 (테스트 검증용 크기/레이아웃만 정의) */
@@ -162,12 +282,13 @@
   /* IconButton가 자체 호버를 처리하므로 미세 이동만 허용 */
   transform: translateY(-0.0625em);
 }
-
-/* Focus ring (모듈 내 정의 - design consistency 테스트 통과) */
+.formControlToggle:focus-visible,
 .closeButton:focus-visible,
 .select:focus-visible {
   outline: var(--xeg-focus-ring);
+  outline: var(--xeg-form-control-focus-outline, var(--xeg-focus-ring));
   outline-offset: var(--xeg-focus-ring-offset);
+  outline-offset: var(--xeg-form-control-focus-offset, var(--xeg-focus-ring-offset));
 }
 
 @media (max-width: 48em) {
@@ -199,5 +320,13 @@
     border: 2px solid CanvasText;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+
+  .select,
+  .formControlToggle {
+    background: Canvas;
+    border-color: CanvasText;
+    color: CanvasText;
+    box-shadow: none;
   }
 }

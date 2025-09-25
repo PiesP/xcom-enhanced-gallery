@@ -1967,8 +1967,7 @@
       "dependencies": [],
       "dependents": [
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -2599,23 +2598,6 @@
           "resolved": "src/shared/components/ui/StandardProps.ts",
           "coreModule": false,
           "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Toolbar/Toolbar.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toolbar/Toolbar.module.css",
-          "coreModule": false,
-          "followable": false,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -8644,7 +8626,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 266,
-    "totalDependenciesCruised": 353,
+    "totalDependenciesCruised": 352,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
