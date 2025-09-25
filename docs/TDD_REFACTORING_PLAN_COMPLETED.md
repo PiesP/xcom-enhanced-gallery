@@ -41,6 +41,17 @@
   Stage 3 종료 후 dist 번들 사이즈 점검을 REF-LITE-V3 Epic 기록으로 정리해 Epic
   전 단계 종료를 명확히 했습니다.
 
+2025-09-25: DOC — REF-LITE-V3 Epic Stage 1–3 완료 요약 이관 (완료)
+
+- Epic REF-LITE-V3(Userscript 번들 경량화)의 문제 정의·대안 비교·Stage 진행
+  내역을 활성 계획서에서 제거하고, 본 Completed 로그에 Stage별 결과만 유지하도록
+  정리했습니다.
+- Stage 1(Store ZIP Writer), Stage 2(CSS primitives & budget 가드), Stage
+  3(Heroicons 경량화) 모두 dist 사이즈 절감 및 Tampermonkey 경고 임계 대비 여유
+  확보 목표를 달성했으며, 타입·린트·테스트·빌드 게이트를 통과한 상태로 Epic을
+  종료했습니다.
+- 후속 경량화 시도는 신규 Epic으로 등록하여 진행할 예정입니다.
+
 2025-09-25: EPIC — REF-LITE-V3 Stage 1 Store ZIP Writer 전환 (완료)
 
 - 목표: `fflate` 의존성을 제거하고 저장 전용(Store) ZIP writer를 도입해 번들

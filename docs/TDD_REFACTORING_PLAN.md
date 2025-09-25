@@ -23,64 +23,10 @@
 
 ## 2. 활성 Epic 현황
 
-### Epic REF-LITE-V3 — Userscript 번들 경량화 (단일 파일 유지)
-
-#### 문제 정의 & 현재 상태
-
-- 2025-09-24 prod 번들(`dist/xcom-enhanced-gallery.user.js`) 용량 477,525 byte.
-  - Terser minify 적용 상태에서도 CSS·벤더 코드 비중이 높아 Tampermonkey 설치
-    경고(>500 KB) 임계치에 근접.
-- Sourcemap 분석(`dist/xcom-enhanced-gallery.user.js.map`) 주요 기여도:
-
-  | 모듈                             |   bytes | 비고                                                             |
-  | -------------------------------- | ------: | ---------------------------------------------------------------- |
-  | `fflate/esm/browser.js` (제거됨) | ~89,198 | Stage 1(StoreZipWriter) 도입으로 번들에서 제거됨, 신규 측정 예정 |
-  | `MediaService.ts`                |  33,739 | 통합 서비스, 로직 축소 어려움                                    |
-  | `VerticalGalleryView.tsx`        |  27,744 | UI 핵심 컴포넌트                                                 |
-  | `shared/utils/events.ts`         |  27,379 | 이벤트 매니저, 추후 분리 후보                                    |
-  | CSS Modules 전체                 | 106,674 | Button/Toolbar/Gallery가 대부분                                  |
-  | Heroicons outline 9종 (제거됨)   |  ~8,500 | Stage 3(2025-09-25)에서 로컬 SVG 맵으로 대체                     |
-
-#### 검토한 대안 (요약)
-
-| 대안                                        | 장점                                                   | 단점/위험                                                       | 판단            |
-| ------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------- | --------------- |
-| A. `fflate` 대체(직접 Store ZIP 작성)       | 90 KB 이상 절감, 번들 초기 로드 감소, 실행 중 CPU 감소 | ZIP 포맷 직접 구현 필요, 회귀 테스트 필수                       | ✅ 선택         |
-| B. CSS 모듈 공통화(`composes` + primitives) | 30~40% CSS 절감 예상, 디자인 토큰 재사용 강화          | 다수 컴포넌트 수정, 스타일 회귀 가능성                          | ✅ 선택 (2단계) |
-| C. Heroicons 제거 → 경량 아이콘 맵          | React 의존 제거, compat 호출 단순화, 약 10 KB 절감     | 아이콘 접근성/디자인 재검증 필요                                | ✅ 선택 (3단계) |
-| D. 서비스 로직 분할(동적 import 복원)       | 추후 기능 단위로 lazy 가능                             | `inlineDynamicImports: true` 정책 상 현재는 실효 없음, 복잡도 ↑ | ❌ 보류         |
-
-#### 선정 전략 (Multi-Stage)
-
-Stage 1(StoreZipWriter 전환)과 Stage 2(CSS primitives & budget 가드)는 모두
-2025-09-25에 Completed 로그로 이관되었으며, Stage 3(Heroicons 경량화 및 compat
-정리) 역시 동일 날짜에 완료되어 Epic REF-LITE-V3가 종결되었습니다. 현재 이
-Epic에 대한 활성 단계는 없습니다 — 후속 경량화 작업은 신규 Epic으로 별도
-기획합니다.
-
-#### TDD/실행 단계 메모
-
-- 현재 활성 단계 없음 — Stage 3 Heroicons 정리는 2025-09-25에 RED→GREEN→
-  Completed까지 마무리되어 Completed 로그에서 추적합니다.
-
-#### Acceptance / 품질 게이트
-
-- 현재 Epic에 대한 활성 Acceptance 없음. REF-LITE-V3 Stage 3는 2025-09-25 기준
-  dist 사이즈/테스트/문서 게이트를 모두 충족했으며, 세부 내역은 Completed 로그에
-  기록했습니다.
-
-#### 리스크 & 대응
-
-- ZIP 포맷 구현 오류 → 독립 테스트에서 JSZip 검증 + Windows/macOS 아카이브 수동
-  확인 절차 문서화.
-- CSS 리팩토링 회귀 → Playwright 스냅샷 + 수동 QA 체크리스트(PC/다크 모드).
-- 아이콘 교체 시 미세 시각 차이 → figma spec 재비교, 디자인 토큰 사용 준수.
-
-#### 예상 효과
-
-- 번들 사이즈 약 25~30% 감소, 초기 로드/메모리 압박 완화.
-- 외부 의존성(`fflate`, `@heroicons/react`) 제거로 장기적 유지보수 비용 절감.
-- CSS 구조 단순화 → 이후 테마/다크모드 변형 작업 속도 향상.
+현재 활성 Epic 없음. Epic `REF-LITE-V3`(Userscript 번들 경량화)의 Stage 1–3은
+2025-09-25 기준으로 모두 완료되어 `TDD_REFACTORING_PLAN_COMPLETED.md`에 요약이
+이관되었습니다. 향후 번들 경량화나 관련 개선은 백로그 검토 후 새로운 Epic으로
+등록해 본 문서에 추가합니다.
 
 ## 3. 다음 사이클 준비 메모(Placeholder)
 
