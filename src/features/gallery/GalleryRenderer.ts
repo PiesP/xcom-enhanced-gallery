@@ -25,6 +25,7 @@ import {
 import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
 import { GalleryContainer } from '@shared/components/isolation';
+import { getMediaServiceFromContainer } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging/logger';
 import { getPreact } from '@shared/external/vendors';
 import { FEATURE_FLAGS } from '@/constants';
@@ -348,6 +349,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
     mediaItems: readonly MediaInfo[],
     renderOptions?: GalleryRenderOptions
   ): Promise<void> {
+    try {
+      const mediaService = getMediaServiceFromContainer();
+      await mediaService.prepareForGallery();
+    } catch (error) {
+      logger.error('[GalleryRenderer] prepareForGallery failed:', error);
+      throw error;
+    }
+
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
 
     if (renderOptions?.viewMode) {

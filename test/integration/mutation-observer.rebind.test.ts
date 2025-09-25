@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { galleryState, openGallery, closeGallery } from '@/shared/state/signals/gallery.signals';
 import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
+import { CoreService } from '@shared/services/ServiceManager';
+import { SERVICE_KEYS } from '@/constants';
 
 /**
  * RED: SPA DOM 교체 시 컨테이너 분실 → 250ms 내 자동 재바인드 확인
@@ -8,7 +10,17 @@ import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
 
 describe('[RED] mutation observer rebind', () => {
   beforeEach(() => {
+    CoreService.resetInstance();
+    const serviceManager = CoreService.getInstance();
+    serviceManager.register(SERVICE_KEYS.MEDIA_SERVICE, {
+      prepareForGallery: async () => undefined,
+      restoreBackgroundVideos: () => undefined,
+    });
     document.body.innerHTML = '';
+  });
+
+  afterEach(() => {
+    CoreService.resetInstance();
   });
 
   it('컨테이너 제거 후 자동 재마운트 (≤250ms)', async () => {

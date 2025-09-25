@@ -205,6 +205,9 @@ export class GalleryApp {
         startIndex: validIndex,
       });
 
+      const mediaService = await this.getMediaService();
+      await mediaService.prepareForGallery();
+
       // 갤러리 컨테이너 확인
       await this.ensureGalleryContainer();
 
@@ -260,6 +263,8 @@ export class GalleryApp {
       document.body.appendChild(container);
       logger.debug('갤러리 컨테이너 생성됨');
     }
+
+    this.galleryContainer = container;
   }
 
   /**

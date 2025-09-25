@@ -1,3 +1,17 @@
+2025-09-25: TASK — MEDIA-HALT-ON-GALLERY 갤러리 진입 시 배경 미디어 정지 (완료)
+
+- `GalleryApp.openGallery`와 `GalleryRenderer.render`가 갤러리 띄우기 전에
+  `MediaService.prepareForGallery()`를 await하도록 보강해 타임라인 배경 비디오를
+  즉시 일시 정지합니다. 종료 시 기존 `restoreBackgroundVideos()` 경로를 유지해
+  재생 상태를 복원합니다.
+- 컨테이너 기반 서비스 주입이 필요한 테스트 전반에 MediaService 스텁을 등록하고
+  prepare/restore 호출 순서를 검증하는 단위 테스트 2종을 신규 추가했습니다.
+  갤러리 활성화/리바인드/SP A 라우팅/세로 갤러리 DOM 스위트가 모두 GREEN으로
+  유지됨을 확인했습니다.
+- `npm run typecheck`, `npm run lint`, `npm test` 전체 스위트로 품질 게이트를
+  통과했습니다. Userscript 빌드는 기존 Stage 1(REF-LITE-V3) 검증 흐름과 동일하게
+  영향이 없음을 재확인했습니다.
+
 2025-09-25: EPIC — REF-LITE-V3 Stage 1 Store ZIP Writer 전환 (완료)
 
 - 목표: `fflate` 의존성을 제거하고 저장 전용(Store) ZIP writer를 도입해 번들

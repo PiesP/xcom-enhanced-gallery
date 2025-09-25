@@ -64,6 +64,8 @@ describe('갤러리 앱 활성화', () => {
         mediaItems: [],
       }),
       isInitialized: vi.fn().mockReturnValue(true),
+      prepareForGallery: vi.fn().mockResolvedValue(undefined),
+      restoreBackgroundVideos: vi.fn(),
     };
     serviceManager.register(SERVICE_KEYS.MEDIA_SERVICE, mockMediaService);
 

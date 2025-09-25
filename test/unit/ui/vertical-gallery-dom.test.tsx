@@ -6,11 +6,19 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
 import { closeGallery } from '@/shared/state/signals/gallery.signals';
+import { CoreService } from '@shared/services/ServiceManager';
+import { SERVICE_KEYS } from '@/constants';
 
 describe('Vertical Gallery DOM – overlay/renderer class deduplication', () => {
   let renderer: GalleryRenderer | null = null;
 
   beforeEach(() => {
+    CoreService.resetInstance();
+    const serviceManager = CoreService.getInstance();
+    serviceManager.register(SERVICE_KEYS.MEDIA_SERVICE, {
+      prepareForGallery: async () => undefined,
+      restoreBackgroundVideos: () => undefined,
+    });
     renderer = new GalleryRenderer();
   });
 
@@ -23,6 +31,7 @@ describe('Vertical Gallery DOM – overlay/renderer class deduplication', () => 
       const nodes = Array.from(document.querySelectorAll('.xeg-gallery-renderer'));
       nodes.forEach(n => n.remove());
     }
+    CoreService.resetInstance();
   });
 
   it('should render exactly one .xeg-gallery-renderer element', async () => {

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
 import { closeGallery } from '@/shared/state/signals/gallery.signals';
+import { CoreService } from '@shared/services/ServiceManager';
+import { SERVICE_KEYS } from '@/constants';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
@@ -10,6 +12,12 @@ import { globalTimerManager } from '@shared/utils/timer-management';
  */
 describe('SPA routing idempotency and rebind robustness', () => {
   beforeEach(() => {
+    CoreService.resetInstance();
+    const serviceManager = CoreService.getInstance();
+    serviceManager.register(SERVICE_KEYS.MEDIA_SERVICE, {
+      prepareForGallery: async () => undefined,
+      restoreBackgroundVideos: () => undefined,
+    });
     document.body.innerHTML = '';
   });
 
@@ -21,6 +29,7 @@ describe('SPA routing idempotency and rebind robustness', () => {
     } catch {
       // noop
     }
+    CoreService.resetInstance();
   });
 
   it('pushState/replaceState/popstate 중복 마운트 없이 유지', async () => {
