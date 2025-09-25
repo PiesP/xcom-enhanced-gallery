@@ -8,6 +8,7 @@ import { getPreact } from '@shared/external/vendors';
 import { LazyIcon } from '@shared/components/LazyIcon';
 import type { IconName } from '@shared/services/iconRegistry';
 import styles from './ToolbarButton.module.css';
+import primitiveStyles from '@shared/styles/primitives.module.css';
 
 export interface ToolbarButtonProps {
   readonly icon?: IconName;
@@ -51,7 +52,13 @@ export function ToolbarButton({
     {
       key,
       type: 'button',
-      className: `${styles.toolbarButton} ${intent === 'danger' ? styles['intent-danger'] : ''}`,
+      className: [
+        primitiveStyles.controlSurface,
+        styles.toolbarButton,
+        intent === 'danger' ? styles['intent-danger'] : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
       'aria-label': ariaLabel,
       title: title || ariaLabel,
       disabled: disabled || loading,

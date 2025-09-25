@@ -33,6 +33,12 @@
 - 문서: `TDD_REFACTORING_PLAN.md`에서 Stage 1 섹션 제거, 본 로그에 요약 이관.
   번들 사이즈 재측정은 Stage 2 착수 전 실시 예정.
 
+2025-09-25: DOC — REF-LITE-V3 Stage 1 Change Note 이관 (완료)
+
+- `TDD_REFACTORING_PLAN.md`의 Stage 1 완료 메모를 제거하고 본 Completed 로그만을
+  단일 기록 지점으로 유지해 활성 문서는 Stage 2/3 진행 상황에 집중하도록
+  정리했습니다.
+
 2025-09-25: PLAN — REF-LITE-V3 Stage 3 아이콘 스택 준비 완료 (완료)
 
 - `src/assets/icons/xeg-icons.ts`와 `SvgIcon` 팩토리로 로컬 아이콘 맵을 구축하고

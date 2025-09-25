@@ -5,6 +5,9 @@
 
 import '@testing-library/jest-dom';
 import { beforeEach, afterEach } from 'vitest';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import process from 'node:process';
 import { globalTimerManager } from '@/shared/utils/timer-management';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
@@ -66,6 +69,57 @@ function setupURLPolyfill() {
 
 // URL 폴백 설정 실행
 setupURLPolyfill();
+
+function hydrateBundledCssText(): void {
+  try {
+    const distDir = resolve(process.cwd(), 'dist');
+    const candidates = ['xcom-enhanced-gallery.dev.user.js', 'xcom-enhanced-gallery.user.js'];
+
+    for (const file of candidates) {
+      const fullPath = resolve(distDir, file);
+      if (!existsSync(fullPath)) {
+        continue;
+      }
+
+      const content = readFileSync(fullPath, 'utf8');
+      const marker = 'XEG_CSS_TEXT = ';
+      const startIndex = content.indexOf(marker);
+      if (startIndex === -1) {
+        continue;
+      }
+
+      const sliceStart = startIndex + marker.length;
+      const sliceEnd = content.indexOf(';', sliceStart);
+      if (sliceEnd === -1) {
+        continue;
+      }
+
+      const literal = content.slice(sliceStart, sliceEnd).trim();
+      if (!literal) {
+        continue;
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(literal);
+      } catch {
+        continue;
+      }
+
+      if (typeof parsed === 'string' && parsed.length > 0) {
+        (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT = parsed;
+        return;
+      }
+    }
+  } catch (error) {
+    globalThis?.console?.warn?.(
+      '[test/setup] Failed to hydrate XEG_CSS_TEXT from dist bundle',
+      error
+    );
+  }
+}
+
+hydrateBundledCssText();
 
 // jsdom 환경 호환성 향상을 위한 polyfill 설정
 function setupJsdomPolyfills() {

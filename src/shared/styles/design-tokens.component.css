@@ -21,6 +21,18 @@
   --xeg-size-toolbar-button: 2.5em;
 
   /* Button Component */
+  --size-button-sm: 32px;
+  --size-button-md: 40px;
+  --size-button-lg: 48px;
+  --size-button-touch: 56px;
+  --xeg-size-button-sm: var(--size-button-sm);
+  --xeg-size-button-md: var(--size-button-md);
+  --xeg-size-button-lg: var(--size-button-lg);
+  --xeg-size-button-touch: var(--size-button-touch);
+  --xeg-button-height-sm: var(--xeg-size-button-sm);
+  --xeg-button-height-md: var(--xeg-size-button-md);
+  --xeg-button-height-lg: var(--xeg-size-button-lg);
+  --xeg-button-height-touch: var(--xeg-size-button-touch);
   --button-bg-primary: var(--color-primary);
   --button-bg-primary-hover: var(--color-primary-hover);
   --button-bg-primary-active: var(--color-primary-active);
@@ -30,7 +42,7 @@
   --button-radius: var(--xeg-radius-md);
   --button-padding-x: var(--space-md);
   --button-padding-y: var(--space-sm);
-  --button-height: var(--size-button-height);
+  --button-height: var(--xeg-size-button-md);
   --button-transition: var(--transition-fast);
 
   /* Toast Component */

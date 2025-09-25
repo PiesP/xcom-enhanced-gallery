@@ -1,368 +1,272 @@
 /**
- * @fileoverview UnifiedButton CSS Module (Phase 2 GREEN - v4.1)
- * @description 통합된 버튼 스타일 - 모든 버튼 변형을 단일 소스로 관리
+ * @fileoverview UnifiedButton CSS Module (Stage 2 primitives)
+ * @description Button variants composed from shared controlSurface primitives.
+ * @notes Button-specific tokens: --xeg-button-lift, --xeg-size-button-sm/md/lg/touch
  */
 
-/* ===== 기본 버튼 스타일 ===== */
 .unifiedButton {
-  /* 기본 레이아웃 */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--xeg-spacing-sm);
-  border: 1px solid transparent;
-  border-radius: var(--xeg-radius-md);
-
-  /* 타이포그래피 */
-  font-family: var(
-    --xeg-font-family-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif
-  );
-  font-weight: var(--xeg-font-weight-medium);
-  text-decoration: none;
-  cursor: pointer;
-  user-select: none;
-
-  /* 기본 상태 */
-  background: transparent;
-  color: inherit;
-
-  /* 트랜지션 */
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-
-  /* 접근성 */
-  outline: none;
-
-  /* 포커스 상태 */
-  &:focus-visible {
-    outline: var(--xeg-focus-ring);
-    outline-offset: var(--xeg-focus-ring-offset);
-    z-index: 1;
-  }
-
-  /* 비활성화 상태 */
-  &:disabled {
-    opacity: var(--xeg-opacity-disabled);
-    cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
-  }
+  --xeg-control-gap: var(--xeg-spacing-sm);
+  --xeg-control-padding-block: var(--xeg-spacing-sm);
+  --xeg-control-padding-inline: var(--xeg-spacing-md);
+  --xeg-control-min-height: var(--xeg-size-button-md);
+  --xeg-control-bg: var(--xeg-color-neutral-100, var(--color-bg-secondary));
+  --xeg-control-bg-hover: var(--xeg-color-neutral-200, var(--color-bg-primary));
+  --xeg-control-border: var(--xeg-color-border-primary, var(--color-border-default));
+  --xeg-control-border-hover: var(--xeg-color-border-hover, var(--color-border-emphasis));
+  --xeg-control-color: var(--xeg-color-text-primary, var(--color-text-primary));
+  --xeg-control-color-hover: var(--xeg-color-text-secondary, var(--color-text-secondary));
+  --xeg-control-font-size: var(--xeg-font-size-base);
+  --xeg-control-font-weight: var(--xeg-font-weight-medium);
+  --xeg-control-lift: var(--xeg-button-lift, -1px);
+  --xeg-control-radius: var(--xeg-radius-md);
+  --xeg-control-shadow: none;
+  --xeg-control-shadow-hover: var(--xeg-shadow-sm);
+  --xeg-control-shadow-active: var(--xeg-shadow-xs, var(--xeg-shadow-sm));
 }
 
-/* ===== 크기 변형 ===== */
-.size-sm {
-  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
-  font-size: var(--xeg-font-size-sm);
-  min-height: var(--xeg-size-button-sm);
-  border-radius: var(--xeg-radius-sm);
+/* ===== Size variants ===== */
+.size-sm,
+.sm {
+  --xeg-control-padding-block: var(--xeg-spacing-xs);
+  --xeg-control-padding-inline: var(--xeg-spacing-sm);
+  --xeg-control-font-size: var(--xeg-font-size-sm);
+  --xeg-control-min-height: var(--xeg-size-button-sm);
+  --xeg-control-radius: var(--xeg-radius-sm);
 }
 
-.size-md {
-  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
-  font-size: var(--xeg-font-size-base);
-  min-height: var(--xeg-size-button-md);
+.size-md,
+.md {
+  --xeg-control-padding-block: var(--xeg-spacing-sm);
+  --xeg-control-padding-inline: var(--xeg-spacing-md);
+  --xeg-control-min-height: var(--xeg-size-button-md);
 }
 
-.size-lg {
-  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
-  font-size: var(--xeg-font-size-lg);
-  min-height: var(--xeg-size-button-lg);
-  border-radius: var(--xeg-radius-lg);
+.size-lg,
+.lg {
+  --xeg-control-padding-block: var(--xeg-spacing-md);
+  --xeg-control-padding-inline: var(--xeg-spacing-lg);
+  --xeg-control-font-size: var(--xeg-font-size-lg);
+  --xeg-control-min-height: var(--xeg-size-button-lg);
+  --xeg-control-radius: var(--xeg-radius-lg);
 }
 
-/* ===== 색상 변형 ===== */
-.variant-primary {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary);
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-.variant-primary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-  transform: translateY(var(--xeg-button-lift));
-  box-shadow: var(--xeg-shadow-md);
-}
-
-.variant-primary:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-.variant-secondary {
-  background: var(--xeg-color-neutral-100);
-  color: var(--xeg-color-text-primary);
-  border-color: var(--xeg-color-border-primary);
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-.variant-secondary:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-200);
-  border-color: var(--xeg-color-border-hover);
-  transform: translateY(var(--xeg-button-lift));
-  box-shadow: var(--xeg-shadow-md);
-}
-
-.variant-secondary:active:not(:disabled) {
-  transform: translateY(0);
-  background: var(--xeg-color-neutral-100);
-}
-
-.variant-outline {
-  background: transparent;
-  color: var(--xeg-color-text-primary);
-  border-color: var(--xeg-color-border-primary);
-}
-
-.variant-outline:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-border-hover);
-  transform: translateY(var(--xeg-button-lift));
-}
-
-.variant-outline:active:not(:disabled) {
-  transform: translateY(0);
-  background: var(--xeg-color-neutral-200);
-}
-
-.variant-ghost {
-  background: transparent;
-  color: var(--xeg-color-text-secondary);
-  border-color: transparent;
-}
-
-.variant-ghost:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-100);
-  color: var(--xeg-color-text-primary);
-  transform: translateY(var(--xeg-button-lift));
-}
-
-.variant-ghost:active:not(:disabled) {
-  transform: translateY(0);
-  background: var(--xeg-color-neutral-200);
-}
-
-.variant-danger {
-  background: var(--color-error);
-  color: var(--color-text-inverse);
-  border-color: var(--color-error);
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-.variant-danger:hover:not(:disabled) {
-  background: var(--color-error-hover);
-  border-color: var(--color-error-hover);
-  transform: translateY(var(--xeg-button-lift));
-  box-shadow: var(--xeg-shadow-md);
-}
-
-.variant-danger:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-.variant-icon {
-  background: transparent;
-  color: var(--xeg-color-text-secondary);
-  border-color: var(--xeg-color-border-primary);
-  aspect-ratio: 1;
-  padding: var(--xeg-spacing-sm);
-}
-
-.variant-icon:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-100);
-  color: var(--xeg-color-text-primary);
-  border-color: var(--xeg-color-border-hover);
-  transform: translateY(var(--xeg-button-lift));
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-.variant-icon:active:not(:disabled) {
-  transform: translateY(0);
-  background: var(--xeg-color-neutral-200);
-}
-
-/* ===== 툴바 전용 변형 ===== */
-.variant-toolbar {
-  background: transparent;
-  color: var(--xeg-color-text-primary);
-  border-color: var(--xeg-color-border-primary);
-  width: var(--xeg-size-toolbar-button);
-  height: var(--xeg-size-toolbar-button);
-  min-width: var(--xeg-size-toolbar-button);
-  min-height: var(--xeg-size-toolbar-button);
-  padding: 0.5em;
-  aspect-ratio: 1;
-}
-
-.variant-toolbar:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-border-hover);
-  transform: translateY(var(--xeg-button-lift));
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-.variant-toolbar:active:not(:disabled) {
-  transform: translateY(0);
-  background: var(--xeg-color-neutral-200);
-}
-
-.variant-navigation {
-  background: var(--xeg-color-primary);
-  color: var(--color-text-inverse);
-  border-color: var(--xeg-color-primary);
-  width: var(--xeg-size-toolbar-button);
-  height: var(--xeg-size-toolbar-button);
-  min-width: var(--xeg-size-toolbar-button);
-  min-height: var(--xeg-size-toolbar-button);
-  padding: 0.5em;
-  aspect-ratio: 1;
-}
-
-.variant-navigation:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-  transform: translateY(var(--xeg-button-lift));
-  box-shadow: var(--xeg-shadow-md);
-}
-
-.variant-navigation:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-.variant-action {
-  background: var(--xeg-color-success);
-  color: var(--color-text-inverse);
-  border-color: var(--xeg-color-success);
-  width: var(--xeg-size-toolbar-button);
-  height: var(--xeg-size-toolbar-button);
-  min-width: var(--xeg-size-toolbar-button);
-  min-height: var(--xeg-size-toolbar-button);
-  padding: 0.5em;
-  aspect-ratio: 1;
-}
-
-.variant-action:hover:not(:disabled) {
-  background: var(--color-success-hover);
-  border-color: var(--color-success-hover);
-  transform: translateY(var(--xeg-button-lift));
-  box-shadow: var(--xeg-shadow-md);
-}
-
-.variant-action:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--xeg-shadow-sm);
-}
-
-/* ===== 툴바 전용 크기 ===== */
 .size-toolbar {
-  width: var(--xeg-size-toolbar-button);
-  height: var(--xeg-size-toolbar-button);
-  min-width: var(--xeg-size-toolbar-button);
-  min-height: var(--xeg-size-toolbar-button);
-  padding: 0.5em;
-  font-size: 0.875em;
+  --xeg-control-width: var(--xeg-size-toolbar-button);
+  --xeg-control-height: var(--xeg-size-toolbar-button);
+  --xeg-control-min-width: var(--xeg-size-toolbar-button);
+  --xeg-control-min-height: var(--xeg-size-toolbar-button);
+  --xeg-control-padding-block: 0.5em;
+  --xeg-control-padding-inline: 0.5em;
+  --xeg-control-aspect-ratio: 1;
 }
 
-/* ===== 아이콘 전용 모드 ===== */
+/* ===== Icon only helpers ===== */
 .iconOnly {
-  aspect-ratio: 1;
-  padding: var(--xeg-spacing-sm);
+  --xeg-control-aspect-ratio: 1;
+  --xeg-control-padding-block: var(--xeg-spacing-sm);
+  --xeg-control-padding-inline: var(--xeg-spacing-sm);
+  --xeg-control-width: var(--xeg-size-button-md);
+  --xeg-control-height: var(--xeg-size-button-md);
 }
 
 .iconOnly.size-sm {
-  padding: var(--xeg-spacing-xs);
-  width: var(--xeg-size-button-sm);
-  height: var(--xeg-size-button-sm);
-}
-
-.iconOnly.size-md {
-  padding: var(--xeg-spacing-sm);
-  width: var(--xeg-size-button-md);
-  height: var(--xeg-size-button-md);
+  --xeg-control-width: var(--xeg-size-button-sm);
+  --xeg-control-height: var(--xeg-size-button-sm);
 }
 
 .iconOnly.size-lg {
-  padding: var(--xeg-spacing-md);
-  width: var(--xeg-size-button-lg);
-  height: var(--xeg-size-button-lg);
+  --xeg-control-width: var(--xeg-size-button-lg);
+  --xeg-control-height: var(--xeg-size-button-lg);
+  --xeg-control-padding-block: var(--xeg-spacing-md);
+  --xeg-control-padding-inline: var(--xeg-spacing-md);
 }
 
-/* ===== Intent 변형 (iconVariant 대체) ===== */
-.intent-primary {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+/* ===== Visual variants ===== */
+.variant-primary {
+  --xeg-control-bg: var(--color-primary);
+  --xeg-control-bg-hover: var(--color-primary-hover);
+  --xeg-control-bg-active: var(--color-primary-active);
+  --xeg-control-color: var(--color-text-inverse);
+  --xeg-control-color-hover: var(--color-text-inverse);
+  --xeg-control-border: var(--color-primary);
+  --xeg-control-border-hover: var(--color-primary-hover);
+  --xeg-control-border-active: var(--color-primary-active);
+  --xeg-control-shadow: var(--xeg-shadow-sm);
+  --xeg-control-shadow-hover: var(--xeg-shadow-md);
 }
 
-.intent-primary:hover:not(:disabled) {
-  background: var(--color-info-bg);
-  border-color: var(--color-primary-hover);
+.variant-secondary {
+  --xeg-control-bg: var(--color-bg-secondary);
+  --xeg-control-bg-hover: var(--color-bg-primary);
+  --xeg-control-border: var(--color-border-default);
+  --xeg-control-border-hover: var(--color-border-emphasis);
+  --xeg-control-color: var(--color-text-primary);
+  --xeg-control-shadow: var(--xeg-shadow-sm);
+  --xeg-control-shadow-hover: var(--xeg-shadow-md);
 }
 
-.intent-success {
-  border-color: var(--color-success);
-  color: var(--color-success);
+.variant-outline {
+  --xeg-control-bg: transparent;
+  --xeg-control-bg-hover: var(--color-bg-secondary);
+  --xeg-control-border: var(--color-border-default);
+  --xeg-control-border-hover: var(--color-border-emphasis);
+  --xeg-control-color: var(--color-text-primary);
 }
 
-.intent-success:hover:not(:disabled) {
-  background: var(--color-success-bg);
-  border-color: var(--color-success-hover);
+.variant-ghost {
+  --xeg-control-bg: transparent;
+  --xeg-control-border: transparent;
+  --xeg-control-bg-hover: var(--color-overlay-button-light);
+  --xeg-control-color: var(--color-text-secondary);
+  --xeg-control-color-hover: var(--color-text-primary);
 }
 
-.intent-danger {
-  border-color: var(--color-error);
-  color: var(--color-error);
+.variant-danger {
+  --xeg-control-bg: var(--color-error);
+  --xeg-control-bg-hover: var(--color-error-hover);
+  --xeg-control-border: var(--color-error);
+  --xeg-control-border-hover: var(--color-error-hover);
+  --xeg-control-color: var(--color-text-inverse);
+  --xeg-control-shadow: var(--xeg-shadow-sm);
+  --xeg-control-shadow-hover: var(--xeg-shadow-md);
 }
 
-.intent-danger:hover:not(:disabled) {
-  background: var(--color-error-bg);
-  border-color: var(--color-error-hover);
+.variant-icon,
+.icon {
+  --xeg-control-aspect-ratio: 1;
+  --xeg-control-padding-block: var(--xeg-spacing-sm);
+  --xeg-control-padding-inline: var(--xeg-spacing-sm);
+  --xeg-control-border: var(--color-border-default);
+  --xeg-control-border-hover: var(--color-border-emphasis);
+  --xeg-control-bg: transparent;
+  --xeg-control-bg-hover: var(--color-bg-secondary);
+  --xeg-control-color: var(--color-text-secondary);
+  --xeg-control-color-hover: var(--color-text-primary);
+  --xeg-control-shadow-hover: var(--xeg-shadow-sm);
 }
 
-.intent-neutral {
-  border-color: var(--xeg-color-neutral-400);
-  color: var(--xeg-color-text-secondary);
+.variant-toolbar {
+  --xeg-control-width: var(--xeg-size-toolbar-button);
+  --xeg-control-height: var(--xeg-size-toolbar-button);
+  --xeg-control-min-width: var(--xeg-size-toolbar-button);
+  --xeg-control-min-height: var(--xeg-size-toolbar-button);
+  --xeg-control-padding-block: 0.5em;
+  --xeg-control-padding-inline: 0.5em;
+  --xeg-control-aspect-ratio: 1;
+  --xeg-control-bg: transparent;
+  --xeg-control-border: var(--color-border-default);
+  --xeg-control-border-hover: var(--color-border-emphasis);
+  --xeg-control-color: var(--color-text-primary);
+  --xeg-control-bg-hover: var(--color-bg-secondary);
 }
 
-.intent-neutral:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-neutral-500);
+.variant-navigation {
+  --xeg-control-width: var(--xeg-size-toolbar-button);
+  --xeg-control-height: var(--xeg-size-toolbar-button);
+  --xeg-control-min-width: var(--xeg-size-toolbar-button);
+  --xeg-control-min-height: var(--xeg-size-toolbar-button);
+  --xeg-control-padding-block: 0.5em;
+  --xeg-control-padding-inline: 0.5em;
+  --xeg-control-aspect-ratio: 1;
+  --xeg-control-bg: var(--color-primary);
+  --xeg-control-bg-hover: var(--color-primary-hover);
+  --xeg-control-bg-active: var(--color-primary-active);
+  --xeg-control-border: var(--color-primary);
+  --xeg-control-border-hover: var(--color-primary-hover);
+  --xeg-control-color: var(--color-text-inverse);
+  --xeg-control-shadow: var(--xeg-shadow-sm);
+  --xeg-control-shadow-hover: var(--xeg-shadow-md);
 }
 
-/* ===== 상태 변형 ===== */
-.loading {
-  opacity: 0.8;
+.variant-action {
+  --xeg-control-width: var(--xeg-size-toolbar-button);
+  --xeg-control-height: var(--xeg-size-toolbar-button);
+  --xeg-control-min-width: var(--xeg-size-toolbar-button);
+  --xeg-control-min-height: var(--xeg-size-toolbar-button);
+  --xeg-control-padding-block: 0.5em;
+  --xeg-control-padding-inline: 0.5em;
+  --xeg-control-aspect-ratio: 1;
+  --xeg-control-bg: var(--color-success);
+  --xeg-control-bg-hover: var(--color-success-hover);
+  --xeg-control-border: var(--color-success);
+  --xeg-control-border-hover: var(--color-success-hover);
+  --xeg-control-color: var(--color-text-inverse);
+  --xeg-control-shadow: var(--xeg-shadow-sm);
+  --xeg-control-shadow-hover: var(--xeg-shadow-md);
+}
+
+/* ===== Intent modifiers ===== */
+.intent-primary,
+.primary {
+  --xeg-control-border: var(--color-primary);
+  --xeg-control-border-hover: var(--color-primary-hover);
+  --xeg-control-color: var(--color-primary);
+  --xeg-control-color-hover: var(--color-primary-hover);
+  --xeg-control-bg-hover: var(--color-info-bg);
+}
+
+.intent-success,
+.success {
+  --xeg-control-border: var(--color-success);
+  --xeg-control-border-hover: var(--color-success-hover);
+  --xeg-control-color: var(--color-success);
+  --xeg-control-color-hover: var(--color-success-hover);
+  --xeg-control-bg-hover: var(--color-success-bg);
+}
+
+.intent-danger,
+.danger {
+  --xeg-control-border: var(--color-error);
+  --xeg-control-border-hover: var(--color-error-hover);
+  --xeg-control-color: var(--color-error);
+  --xeg-control-color-hover: var(--color-error-hover);
+  --xeg-control-bg-hover: var(--color-error-bg);
+}
+
+.intent-neutral,
+.neutral {
+  --xeg-control-border: var(--color-border-default);
+  --xeg-control-border-hover: var(--color-border-emphasis);
+  --xeg-control-color: var(--color-text-secondary);
+  --xeg-control-color-hover: var(--color-text-primary);
+  --xeg-control-bg-hover: var(--color-bg-secondary);
+}
+
+/* ===== State helpers ===== */
+.loading,
+.variant-loading {
   cursor: wait;
   pointer-events: none;
+  opacity: 0.8;
+}
+
+.unifiedButton:hover:not(:disabled):not([data-disabled='true']) {
+  transform: translateY(var(--xeg-button-lift, -1px));
+}
+
+.unifiedButton:active:not(:disabled):not([data-disabled='true']) {
+  transform: translateY(0);
+}
+
+.unifiedButton:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
 }
 
 .disabled {
-  opacity: var(--xeg-opacity-disabled, 0.5);
   cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
+  pointer-events: none;
+  opacity: var(--xeg-opacity-disabled, 0.5);
 }
 
-/* ===== 로딩 스피너 ===== */
 .spinner {
   width: 1em;
   height: 1em;
   border: 2px solid transparent;
   border-top: 2px solid currentColor;
   border-radius: 50%;
-  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
-  margin-right: var(--xeg-spacing-xs);
+  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear, linear) infinite;
+  margin-inline-end: var(--xeg-spacing-xs);
 }
 
 @keyframes xeg-spin {
@@ -374,282 +278,47 @@
   }
 }
 
-/* ===== 다크 모드 지원 ===== */
-@media (prefers-color-scheme: dark) {
-  .variant-secondary {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-secondary:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-700);
-    border-color: var(--xeg-color-border-hover);
-  }
-
-  .variant-outline {
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-outline:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    border-color: var(--xeg-color-border-hover);
-  }
-
-  .variant-ghost {
-    color: var(--xeg-color-text-secondary);
-  }
-
-  .variant-ghost:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-  }
-
-  .variant-icon {
-    color: var(--xeg-color-text-secondary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-icon:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-hover);
-  }
+.hasIcon {
+  --xeg-control-gap: var(--xeg-spacing-xs);
 }
 
-/* ===== 고대비 모드 지원 ===== */
 @media (prefers-contrast: high) {
-  .unifiedButton {
-    border-width: 2px;
-  }
-
   .variant-secondary,
   .variant-outline,
   .variant-ghost,
   .variant-icon {
-    background: var(--color-base-white);
-    color: var(--color-base-black);
-    border-color: var(--color-base-black);
+    --xeg-control-bg: var(--color-base-white);
+    --xeg-control-color: var(--color-base-black);
+    --xeg-control-border: var(--color-base-black);
+    --xeg-control-bg-hover: var(--color-base-black);
+    --xeg-control-color-hover: var(--color-base-white);
   }
 
-  .variant-secondary:hover:not(:disabled),
-  .variant-outline:hover:not(:disabled),
-  .variant-ghost:hover:not(:disabled),
-  .variant-icon:hover:not(:disabled) {
-    background: var(--color-base-black);
-    color: var(--color-base-white);
-    border-color: var(--color-base-white);
+  .unifiedButton {
+    border-width: 2px;
   }
 }
 
-/* ===== 애니메이션 감소 지원 ===== */
-@media (prefers-reduced-motion: reduce) {
-  .unifiedButton {
-    transition: none;
+@media (prefers-color-scheme: dark) {
+  .variant-secondary,
+  .variant-outline,
+  .variant-ghost,
+  .variant-icon {
+    --xeg-control-bg: rgba(255, 255, 255, 0.08);
+    --xeg-control-bg-hover: rgba(255, 255, 255, 0.16);
+    --xeg-control-border: rgba(255, 255, 255, 0.18);
+    --xeg-control-border-hover: rgba(255, 255, 255, 0.32);
+    --xeg-control-color: var(--color-text-inverse);
+    --xeg-control-color-hover: var(--color-text-inverse);
   }
 
+  .variant-ghost {
+    --xeg-control-border: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
   .spinner {
     animation: none;
   }
-
-  .unifiedButton:hover:not(:disabled) {
-    transform: none;
-  }
-}
-
-/* ===== 반응형 디자인 ===== */
-@media (max-width: 768px) {
-  .unifiedButton {
-    min-height: var(--xeg-size-button-touch);
-    min-width: var(--xeg-size-button-touch);
-  }
-
-  .size-sm {
-    min-height: var(--xeg-size-button-md);
-    min-width: var(--xeg-size-button-md);
-  }
-
-  .iconOnly {
-    width: var(--xeg-size-button-touch);
-    height: var(--xeg-size-button-touch);
-  }
-
-  .iconOnly.size-sm {
-    width: var(--xeg-size-button-md);
-    height: var(--xeg-size-button-md);
-  }
-}
-
-/* ===== 하위 호환성 클래스 ===== */
-.icon {
-  content: '';
-} /* variant='icon'을 위한 추가 클래스 */
-.sm {
-  content: '';
-} /* size='sm'을 위한 추가 클래스 */
-.md {
-  content: '';
-} /* size='md'를 위한 추가 클래스 */
-.lg {
-  content: '';
-} /* size='lg'를 위한 추가 클래스 */
-.primary {
-  content: '';
-} /* intent='primary'를 위한 추가 클래스 */
-.success {
-  content: '';
-} /* intent='success'를 위한 추가 클래스 */
-.danger {
-  content: '';
-} /* intent='danger'를 위한 추가 클래스 */
-.neutral {
-  content: '';
-} /* intent='neutral'을 위한 추가 클래스 */
-
-/* ===== 레거시 통합 클래스 (Phase 3 Consolidation) ===== */
-/* ToolbarButton.module.css / IconButton.css 에서 필요한 최소 스타일만 유지 */
-
-/* toolbarButton: 기존 ToolbarButton 기본 스타일을 unifiedButton 스타일에 매핑 */
-.toolbarButton,
-.xeg-toolbar-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--xeg-spacing-sm);
-  font-family: var(
-    --xeg-font-family-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif
-  );
-  font-weight: var(--xeg-font-weight-medium);
-  font-size: var(--xeg-font-size-sm);
-  line-height: 1.2;
-  border: 1px solid transparent;
-  border-radius: var(--xeg-radius-md);
-  background: transparent;
-  color: currentColor;
-  cursor: pointer;
-  text-decoration: none;
-  white-space: nowrap;
-  user-select: none;
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  outline: none;
-}
-
-.toolbarButton:hover:not(:disabled),
-.xeg-toolbar-button:hover {
-  transform: translateY(var(--xeg-button-lift, -1px));
-}
-
-.toolbarButton:active:not(:disabled),
-.xeg-toolbar-button:active {
-  transform: translateY(0);
-}
-
-.toolbarButton:disabled,
-.xeg-toolbar-button:disabled {
-  opacity: var(--xeg-opacity-disabled, 0.5);
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.toolbarButton:focus-visible,
-.xeg-toolbar-button:focus-visible {
-  outline: var(--xeg-focus-ring, 2px solid var(--color-primary));
-  outline-offset: var(--xeg-focus-ring-offset, 2px);
-  z-index: 1;
-}
-
-/* IconButton primitive 매핑 */
-.xeg-icon-button {
-  background: transparent;
-  border: 1px solid var(--xeg-color-border-primary, transparent);
-  border-radius: var(--xeg-radius-md);
-  padding: var(--xeg-spacing-sm);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  color: var(--xeg-color-text-secondary);
-  font: inherit;
-  line-height: 1;
-  cursor: pointer;
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  outline: none;
-}
-
-.xeg-icon-button:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-100, var(--color-overlay-light));
-  color: var(--xeg-color-text-primary);
-  border-color: var(--xeg-color-border-primary, var(--xeg-color-neutral-300));
-  transform: translateY(var(--xeg-button-lift, -1px));
-  box-shadow: var(--xeg-shadow-sm, 0 1px 2px var(--color-overlay-light));
-}
-
-.xeg-icon-button:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--xeg-shadow-xs, 0 0 0 1px var(--color-overlay-light));
-  background: var(--xeg-color-border-primary, var(--xeg-color-neutral-200));
-}
-
-.xeg-icon-button:focus-visible {
-  outline: var(--xeg-focus-ring, 2px solid var(--xeg-color-primary));
-  outline-offset: var(--xeg-focus-ring-offset, 2px);
-  z-index: 1;
-}
-
-.xeg-icon-button:disabled {
-  opacity: var(--xeg-opacity-disabled, 0.5);
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* IconButton size variants */
-.xeg-icon-button--sm {
-  padding: var(--xeg-spacing-xs);
-  width: 28px;
-  height: 28px;
-}
-.xeg-icon-button--md {
-  padding: var(--xeg-spacing-sm);
-  width: 36px;
-  height: 36px;
-}
-.xeg-icon-button--lg {
-  padding: var(--xeg-spacing-md);
-  width: 44px;
-  height: 44px;
-}
-
-/* loading spinner placeholder (ToolbarButton -> Unified) */
-.loadingSpinner {
-  display: inline-block;
-  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
-  font-size: 0.875em;
-}
-
-/* variant-loading (map to .loading state) */
-.variant-loading {
-  cursor: wait;
-  pointer-events: none;
-}
-
-/* hasIcon spacing 유지 */
-.hasIcon {
-  gap: var(--xeg-spacing-xs);
 }

@@ -15,6 +15,7 @@ import type { ComponentChildren, VNode } from '@shared/external/vendors';
 import { getPreact, getPreactHooks } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import styles from './Button.module.css';
+import primitiveStyles from '@shared/styles/primitives.module.css';
 
 // 간단한 clsx 대체 함수
 function classnames(...classes: (string | undefined | null | false)[]): string {
@@ -173,6 +174,7 @@ function ButtonComponent(props: ButtonProps): VNode {
 
   // 클래스 조합
   const buttonClasses = classnames(
+    primitiveStyles.controlSurface,
     styles.unifiedButton,
     styles[`variant-${variant}`],
     styles[`size-${size}`],

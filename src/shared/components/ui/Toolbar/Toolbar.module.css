@@ -68,10 +68,8 @@
 
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
-  /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
-  background: var(--xeg-bg-toolbar);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--xeg-radius-lg);
+  --xeg-toolbar-opacity: 1;
+  --xeg-toolbar-pointer-events: auto;
 
   /* 레이아웃 속성 */
   position: fixed;
@@ -83,13 +81,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 3em; /* 48px → 3em */
-  padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
   gap: 0.75em; /* 12px → 0.75em */
+  padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
+  min-height: 3em; /* 48px → 3em */
+
+  /* 배경, 테두리, 그림자 */
+  background: var(--xeg-bg-toolbar);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--xeg-shadow-sm);
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 (namespaced tokens) */
-  opacity: var(--xeg-toolbar-opacity, 1);
-  pointer-events: var(--xeg-toolbar-pointer-events, auto);
+  opacity: var(--xeg-toolbar-opacity);
+  pointer-events: var(--xeg-toolbar-pointer-events);
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
     transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
@@ -144,20 +148,28 @@
   pointer-events: auto !important;
 }
 
+.galleryToolbar[data-high-contrast='true'] {
+  background: var(--xeg-color-neutral-100, var(--color-bg-primary));
+  border-width: 2px;
+  box-shadow: var(--xeg-shadow-md);
+}
+
+[data-theme='dark'] .galleryToolbar[data-high-contrast='true'] {
+  background: var(--xeg-color-neutral-900, rgba(0, 0, 0, 0.95));
+}
+
 .toolbarContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
   gap: 0.5em; /* 8px → 0.5em */
-  max-width: 100%;
-  overflow: hidden;
+  width: 100%;
 }
 
 .toolbarSection {
   display: flex;
   align-items: center;
-  gap: 0.125em; /* 2px → 0.125em */
+  gap: 0.25em; /* 4px → 0.25em */
   position: relative;
 }
 

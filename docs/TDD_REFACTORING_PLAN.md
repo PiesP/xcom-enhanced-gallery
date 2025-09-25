@@ -163,5 +163,5 @@ Gate 체크리스트(요지):
 
 ## Change Notes (Active Session)
 
-- 2025-09-24: Epic `REF-LITE-V3` 착수, 번들 경량화 3단계 계획 확정.
-- 2025-09-25: Stage 1(StoreZipWriter) 완료, 활성 계획은 Stage 2/3만 남김.
+- 2025-09-24: Epic `REF-LITE-V3` 착수, 번들 경량화 3단계 계획 확정(현재 Stage
+  2/3 진행).

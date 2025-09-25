@@ -84,6 +84,7 @@
   --xeg-easing-linear: linear;
 
   /* Shadow 토큰 - 테스트 요구사항 */
+  --xeg-shadow-xs: 0 0 0 1px var(--color-overlay-light);
   --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
   --xeg-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
   --xeg-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
@@ -138,10 +139,21 @@
   --xeg-color-backdrop: var(--color-overlay-backdrop);
 
   /* Legacy Spacing - 호환성 보장 */
+  --xeg-spacing-xs: var(--space-xs);
   --xeg-spacing-sm: var(--space-sm);
   --xeg-spacing-md: var(--space-md);
   --xeg-spacing-lg: var(--space-lg);
   --xeg-spacing-xl: var(--space-xl);
+
+  /* Legacy Button sizing - 호환성 보장 */
+  --xeg-size-button-sm: var(--size-button-sm);
+  --xeg-size-button-md: var(--size-button-md);
+  --xeg-size-button-lg: var(--size-button-lg);
+  --xeg-size-button-touch: var(--size-button-touch);
+  --xeg-button-height-sm: var(--xeg-size-button-sm);
+  --xeg-button-height-md: var(--xeg-size-button-md);
+  --xeg-button-height-lg: var(--xeg-size-button-lg);
+  --xeg-button-height-touch: var(--xeg-size-button-touch);
 
   /* Legacy Radius - 호환성 보장 */
   --xeg-radius-sm: var(--radius-sm);

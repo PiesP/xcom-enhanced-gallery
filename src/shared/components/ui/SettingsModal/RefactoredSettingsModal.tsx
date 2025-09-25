@@ -17,6 +17,7 @@ import { IconButton } from '../Button/IconButton';
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
+import primitiveStyles from '@shared/styles/primitives.module.css';
 import styles from './SettingsModal.module.css';
 
 export interface SettingsModalProps {
@@ -232,7 +233,9 @@ export function SettingsModal({
         firstFocusableRef.current = el;
       },
       type: 'button',
-      className: `${toolbarStyles.toolbarButton} ${styles.closeButton}`,
+      className: [primitiveStyles.controlSurface, toolbarStyles.toolbarButton, styles.closeButton]
+        .filter(Boolean)
+        .join(' '),
       onClick: onClose,
       'aria-label': 'Close',
       key: 'close',
@@ -245,7 +248,9 @@ export function SettingsModal({
     'select',
     {
       id: 'theme-select',
-      className: `${toolbarStyles.toolbarButton} ${styles.select}`,
+      className: [primitiveStyles.controlSurface, toolbarStyles.toolbarButton, styles.select]
+        .filter(Boolean)
+        .join(' '),
       value: currentTheme,
       onChange: handleThemeChange,
     },
@@ -261,7 +266,9 @@ export function SettingsModal({
     {
       ref: lastFocusableRef,
       id: 'language-select',
-      className: `${toolbarStyles.toolbarButton} ${styles.select}`,
+      className: [primitiveStyles.controlSurface, toolbarStyles.toolbarButton, styles.select]
+        .filter(Boolean)
+        .join(' '),
       value: currentLanguage,
       onChange: handleLanguageChange,
     },

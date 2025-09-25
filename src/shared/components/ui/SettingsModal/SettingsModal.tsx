@@ -15,6 +15,7 @@ import { ComponentStandards } from '../StandardProps';
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
+import primitiveStyles from '@shared/styles/primitives.module.css';
 // Barrel import 제거 (cycle 감소) - direct relative import
 import { IconButton } from '../Button/IconButton';
 import styles from './SettingsModal.module.css';
@@ -476,7 +477,9 @@ export function SettingsModal({
     'select',
     {
       id: 'theme-select',
-      className: `${toolbarStyles.toolbarButton} ${styles.select}`,
+      className: [primitiveStyles.controlSurface, toolbarStyles.toolbarButton, styles.select]
+        .filter(Boolean)
+        .join(' '),
       value: currentTheme,
       onChange: handleThemeChange,
       // Preact/JSDOM 상호운용성: onInput에서도 동일 처리하여 테스트 안정성 확보
@@ -494,7 +497,9 @@ export function SettingsModal({
     {
       ref: lastFocusableRef,
       id: 'language-select',
-      className: `${toolbarStyles.toolbarButton} ${styles.select}`,
+      className: [primitiveStyles.controlSurface, toolbarStyles.toolbarButton, styles.select]
+        .filter(Boolean)
+        .join(' '),
       value: currentLanguage,
       onChange: handleLanguageChange,
       onInput: handleLanguageChange,

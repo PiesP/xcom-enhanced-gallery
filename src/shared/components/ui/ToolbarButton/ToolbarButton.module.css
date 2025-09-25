@@ -4,34 +4,27 @@
  */
 
 .toolbarButton {
-  /* 크기: 토큰 기반 (하드코딩 제거 목표) */
-  width: var(--xeg-size-toolbar-button);
-  height: var(--xeg-size-toolbar-button);
-  min-width: var(--xeg-size-toolbar-button);
-  min-height: var(--xeg-size-toolbar-button);
-  /* 내부 패딩 (아이콘 가시성) - 후속 토큰화 후보 */
-  padding: 0.5em;
-  box-sizing: border-box;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--xeg-spacing-xs);
-  border: 1px solid var(--xeg-color-border-primary, transparent);
-  border-radius: var(--xeg-radius-md);
-  background: transparent;
-  color: var(--xeg-color-text-secondary);
-  font: inherit;
-  line-height: 1;
-  cursor: pointer;
-  user-select: none;
-
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  --xeg-control-width: var(--xeg-size-toolbar-button);
+  --xeg-control-height: var(--xeg-size-toolbar-button);
+  --xeg-control-min-width: var(--xeg-size-toolbar-button);
+  --xeg-control-min-height: var(--xeg-size-toolbar-button);
+  --xeg-control-padding-block: 0.5em;
+  --xeg-control-padding-inline: 0.5em;
+  --xeg-control-aspect-ratio: 1;
+  --xeg-control-gap: var(--xeg-spacing-xs);
+  --xeg-control-border: var(--xeg-color-border-primary, transparent);
+  --xeg-control-border-hover: var(--xeg-color-border-hover, var(--color-border-emphasis));
+  --xeg-control-bg: transparent;
+  --xeg-control-bg-hover: var(--color-bg-secondary);
+  --xeg-control-bg-active: var(--color-bg-secondary);
+  --xeg-control-color: var(--color-text-secondary);
+  --xeg-control-color-hover: var(--color-text-primary);
+  --xeg-control-shadow-hover: var(--xeg-shadow-sm, 0 1px 2px var(--color-overlay-light));
+  --xeg-control-shadow-active: var(--xeg-shadow-xs, 0 0 0 1px var(--color-overlay-light));
+  --xeg-control-loading-opacity: 0.75;
+  --xeg-control-bg-selected: var(--color-info-bg);
+  --xeg-control-border-selected: var(--color-primary);
+  --xeg-control-color-selected: var(--color-primary);
 }
 
 .toolbarButton:hover:not([data-disabled='true']) {
@@ -54,31 +47,37 @@
 }
 
 .toolbarButton[data-selected='true'] {
-  background: var(--xeg-color-primary-50, var(--color-primary-bg));
-  color: var(--xeg-color-primary, var(--color-primary));
-  border-color: var(--xeg-color-primary, var(--color-primary));
+  --xeg-control-bg: var(--color-info-bg);
+  --xeg-control-color: var(--color-primary);
+  --xeg-control-border: var(--color-primary);
 }
 
 .toolbarButton[data-loading='true'] {
-  opacity: 0.75;
-  cursor: wait;
-  pointer-events: none;
+  --xeg-control-loading-opacity: 0.6;
 }
 
 .toolbarButton[data-disabled='true'] {
-  opacity: var(--xeg-opacity-disabled, 0.5);
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
+  --xeg-control-shadow-hover: none;
+  --xeg-control-shadow-active: none;
 }
 
 .intent-danger {
-  color: var(--color-error);
-  border-color: var(--color-error);
-}
-.intent-danger:hover:not([data-disabled='true']) {
-  background: var(--color-error-bg, var(--xeg-color-error-50));
-  color: var(--color-error);
+  --xeg-control-border: var(--color-error);
+  --xeg-control-border-hover: var(--color-error-hover);
+  --xeg-control-color: var(--color-error);
+  --xeg-control-color-hover: var(--color-error-hover);
+  --xeg-control-bg-hover: var(--color-error-bg);
+  --xeg-control-bg-selected: var(--color-error);
+  --xeg-control-color-selected: var(--color-text-inverse);
 }
 
-/* (미래 확장 placeholder 제거: 빈 rule 금지) */
+@media (prefers-contrast: high) {
+  .toolbarButton {
+    --xeg-control-border: var(--color-base-black);
+    --xeg-control-border-hover: var(--color-base-black);
+    --xeg-control-bg: var(--color-base-white);
+    --xeg-control-bg-hover: var(--color-base-black);
+    --xeg-control-color: var(--color-base-black);
+    --xeg-control-color-hover: var(--color-base-white);
+  }
+}

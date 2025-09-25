@@ -1,0 +1,118 @@
+/**
+ * @fileoverview Shared control primitives
+ * @description Base styles for interactive surfaces (buttons, icon controls, toolbar actions)
+ * @note Consumers customize appearance via CSS custom properties exposed here.
+ */
+
+.controlSurface {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--xeg-control-gap, var(--xeg-spacing-sm));
+  box-sizing: border-box;
+
+  padding-block: var(--xeg-control-padding-block, var(--xeg-spacing-sm));
+  padding-inline: var(--xeg-control-padding-inline, var(--xeg-spacing-md));
+
+  min-width: var(--xeg-control-min-width, auto);
+  min-height: var(--xeg-control-min-height, auto);
+  width: var(--xeg-control-width, auto);
+  height: var(--xeg-control-height, auto);
+
+  border-width: var(--xeg-control-border-width, 1px);
+  border-style: solid;
+  border-color: var(--xeg-control-border, transparent);
+  border-radius: var(--xeg-control-radius, var(--xeg-radius-md));
+
+  background: var(--xeg-control-bg, transparent);
+  color: var(--xeg-control-color, inherit);
+  box-shadow: var(--xeg-control-shadow, none);
+
+  font-family: var(
+    --xeg-font-family-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
+  font-size: var(--xeg-control-font-size, var(--xeg-font-size-base));
+  font-weight: var(--xeg-control-font-weight, var(--xeg-font-weight-medium));
+  line-height: var(--xeg-control-line-height, 1.2);
+  text-decoration: none;
+
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  position: relative;
+  transition: var(
+    --xeg-control-transition,
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out)
+  );
+
+  aspect-ratio: var(--xeg-control-aspect-ratio, auto);
+}
+
+.controlSurface:hover:not(:disabled):not([data-disabled='true']) {
+  background: var(--xeg-control-bg-hover, var(--xeg-control-bg));
+  border-color: var(--xeg-control-border-hover, var(--xeg-control-border));
+  color: var(--xeg-control-color-hover, var(--xeg-control-color));
+  transform: translateY(var(--xeg-control-hover-translate, var(--xeg-control-lift, 0)));
+  box-shadow: var(--xeg-control-shadow-hover, var(--xeg-control-shadow));
+}
+
+.controlSurface:active:not(:disabled):not([data-disabled='true']) {
+  background: var(--xeg-control-bg-active, var(--xeg-control-bg-hover, var(--xeg-control-bg)));
+  border-color: var(
+    --xeg-control-border-active,
+    var(--xeg-control-border-hover, var(--xeg-control-border))
+  );
+  color: var(--xeg-control-color-active, var(--xeg-control-color-hover, var(--xeg-control-color)));
+  transform: translateY(var(--xeg-control-active-translate, 0));
+  box-shadow: var(--xeg-control-shadow-active, var(--xeg-control-shadow));
+}
+
+.controlSurface:focus-visible {
+  outline: var(--xeg-control-focus-outline, var(--xeg-focus-ring));
+  outline-offset: var(--xeg-control-focus-offset, var(--xeg-focus-ring-offset));
+  z-index: var(--xeg-control-focus-z-index, 1);
+}
+
+.controlSurface[data-selected='true'] {
+  background: var(--xeg-control-bg-selected, var(--xeg-control-bg-active, var(--xeg-control-bg)));
+  border-color: var(--xeg-control-border-selected, var(--xeg-control-border));
+  color: var(--xeg-control-color-selected, var(--xeg-control-color));
+  box-shadow: var(--xeg-control-shadow-selected, var(--xeg-control-shadow));
+}
+
+.controlSurface[data-loading='true'] {
+  cursor: wait;
+  pointer-events: none;
+  opacity: var(--xeg-control-loading-opacity, 0.8);
+}
+
+.controlSurface:disabled,
+.controlSurface[aria-disabled='true'],
+.controlSurface[data-disabled='true'] {
+  opacity: var(--xeg-control-disabled-opacity, var(--xeg-opacity-disabled, 0.5));
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .controlSurface {
+    transition: none;
+    transform: none !important;
+  }
+
+  .controlSurface:hover:not(:disabled):not([data-disabled='true']),
+  .controlSurface:active:not(:disabled):not([data-disabled='true']) {
+    transform: none;
+  }
+}
