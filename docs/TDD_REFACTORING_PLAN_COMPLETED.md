@@ -19,6 +19,14 @@
 - 문서: `TDD_REFACTORING_PLAN.md`에서 Stage 1 섹션 제거, 본 로그에 요약 이관.
   번들 사이즈 재측정은 Stage 2 착수 전 실시 예정.
 
+2025-09-25: PLAN — REF-LITE-V3 Stage 3 아이콘 스택 준비 완료 (완료)
+
+- `src/assets/icons/xeg-icons.ts`와 `SvgIcon` 팩토리로 로컬 아이콘 맵을 구축하고
+  LazyIcon/iconRegistry가 새 맵과 접근성 스냅샷을 사용하도록 통합했습니다.
+- 관련 테스트(`icon-registry.local-icons`, `lazy-icon.accessibility`) GREEN
+  상태로 Stage 3 잔여 범위는 Heroicons 어댑터 제거 및 라이선스 정리만
+  남았습니다.
+
 2025-09-24: EPIC — VP-Focus-Indicator-001 뷰포트 인디케이터 자동 갱신 (완료)
 [2025-09-24] IntersectionObserver 기반 visibleIndex로 포커스/카운터 자동 갱신,
 설정 복원 지연 대응(useEffect+폴링), DOM data-fit-mode 즉시 반영.

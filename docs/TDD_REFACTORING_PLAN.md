@@ -62,11 +62,12 @@ Stage 1(StoreZipWriter 전환)은 2025-09-25 완료되어 Completed 로그로
      길이 상한(<=70 KB) 가드.
    - 목표 절감: ~35 KB.
 2. **Stage 3 — Heroicons 경량화 및 compat 정리**
-   - `@assets/icons/xeg-icons.ts`에 path 데이터/뷰박스 정의 → 경량 `SvgIcon`
-     컴포넌트 도입.
-   - Heroicons/compat 브릿지 제거, UI 컴포넌트는 새 아이콘 매퍼 사용.
-   - 접근성: `role="img"`, `aria-hidden`, 라벨러 매핑 테스트 추가.
+   - 남은 작업
+     - Heroicons 어댑터 및 벤더 getter 제거, `@heroicons/react` devDependency
+       삭제, 라이선스 파일 업데이트.
    - 목표 절감: ~12 KB + 렌더링 경로 단순화.
+   - 참고: 로컬 SVG 맵 구축 및 LazyIcon/registry 경량화는 Completed
+     로그(2025-09-25 항목)에서 추적.
 
 #### TDD/실행 단계 메모
 
@@ -76,10 +77,10 @@ Stage 1(StoreZipWriter 전환)은 2025-09-25 완료되어 Completed 로그로
   3. Vitest + Playwright 시각 리그레션 스냅(`test/ui/toolbar*.test.tsx`) 갱신.
   4. Budget 테스트 GREEN, 시각 스냅 재승인.
 - **Stage 3**
-  1. 아이콘 접근성 스냅(RED) → `getComputedAccessibleNode` 기반 이름 검사.
-  2. `SvgIcon`/아이콘 맵 구현, UI 교체.
-  3. Heroicons/compat 관련 벤더 제거, dead export 청소.
-  4. 빌드/테스트 통과, 번들 사이즈 측정 업데이트.
+  1. Heroicons vendor 제거 스캔(RED) → direct import 감지 테스트 강화.
+  2. Heroicons 어댑터/벤더 getter 제거, `@heroicons/react` devDependency 삭제.
+  3. LICENSE/metadata 업데이트 및 Stage 3 관련 회귀 테스트 리프레시.
+  4. 빌드/테스트 통과, 번들 사이즈 재측정 및 Completed 로그 갱신.
 
 #### Acceptance / 품질 게이트
 
