@@ -104,6 +104,71 @@ Stage 1(StoreZipWriter 전환)은 2025-09-25 완료되어 Completed 로그로
 - 외부 의존성(`fflate`, `@heroicons/react`) 제거로 장기적 유지보수 비용 절감.
 - CSS 구조 단순화 → 이후 테마/다크모드 변형 작업 속도 향상.
 
+### Task MEDIA-HALT-ON-GALLERY — 갤러리 진입 시 배경 미디어 정지
+
+#### 문제 정의 & 관찰
+
+- 갤러리 진입 시 트위터 타임라인에서 재생 중이던 비디오가 계속 재생되어 오디오가
+  겹치는 문제가 보고되었음.
+- `MediaService`에 `pauseAllBackgroundVideos`/`prepareForGallery` API가
+  존재하지만 갤러리 오픈 경로에서 호출되지 않아 기능이 dormant 상태.
+- `VideoControlService`는 갤러리 활성화 여부를 내부적으로 가드하므로 중복 호출
+  시 안전하게 무시된다.
+
+#### 해결 대안 비교
+
+| 옵션                                                     | 설명                                                                     | 장점                                                                    | 단점/리스크                                                                            |
+| -------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| A. `GalleryApp.openGallery`에서 `prepareForGallery` 호출 | 갤러리 앱 오픈 절차 직전에 MediaService를 lazy 로드하고 배경 비디오 정지 | 구현 범위 최소, 기존 아키텍처(Features → Shared) 내에서 자연스러운 위치 | `GalleryRenderer.render`처럼 상태 시그널을 직접 여는 예외 경로는 보호하지 못할 수 있음 |
+| B. 갤러리 state change effect에서 MediaService 호출      | `galleryState`가 `isOpen=true`로 변할 때 공통 훅에서 정지 처리           | 모든 오픈 경로를 자동으로 감지                                          | State 레이어가 서비스에 의존하게 되어 계층 경계를 약화시키는 위험, 순환 의존 가능성    |
+| C. 미디어 추출 이벤트(`onMediaClick`)에서 즉시 정지      | 추출 성공 여부와 무관하게 클릭 시 배경 비디오를 먼저 정지                | UI 체감 속도가 가장 빠름, 갤러리 렌더 진입 전 정지 보장                 | 추출 실패 시 복원 처리를 별도로 넣어야 하며, 다른 오픈 경로와 동기화가 어려움          |
+
+#### 채택안
+
+- 기본 경로는 **옵션 A**를 채택한다. `GalleryApp.openGallery`에서
+  `MediaService.prepareForGallery()`를 `openGallery` 시그널 호출 전에 실행하여
+  표준 진입점에서 배경 비디오가 멈추도록 한다.
+- `GalleryRenderer.render`가 외부에서 직접 호출되는 경우에도 일관성 있는 동작을
+  보장하기 위해 동일한 guard 호출을 추가한다. (서비스는 컨테이너 getter를 통해
+  접근)
+- 기존 종료 흐름(`mediaService.restoreBackgroundVideos`)은 유지되어 갤러리 종료
+  시 재생 상태를 복원한다.
+
+#### TDD/실행 단계
+
+1. **RED**: `test/unit/features/gallery-app-activation.test.ts`에 `openGallery`
+   호출 시 `MediaService.prepareForGallery`가 실행되는지 검증하는 테스트 추가
+   (컨테이너 getter mock 활용).
+2. **RED**: `GalleryRenderer.render` 경로에서도 동일 호출이 보장되는지 확인하는
+   단위 테스트 신규 작성.
+3. **GREEN**: `GalleryApp`과 `GalleryRenderer`에 `prepareForGallery` 호출을
+   추가하고, 필요 시 DOM 없는 환경에서도 안정적으로 동작하도록 가드한다.
+4. **REFACTOR**: 중복 로깅/예외 처리를 정리하고, `VideoControlService`가 이미
+   활성화된 경우 중복 호출을 무시한다는 테스트를 보강한다.
+5. 통합 확인: 간단한 통합 테스트에서 더미 `<video>` 요소를 삽입한 뒤 갤러리를
+   열어 `paused` 상태가 true로 바뀌는지 검증한다.
+
+#### Acceptance / 품질 게이트
+
+- `npm run typecheck`, `npm run lint`, `npm test` 전부 GREEN.
+- 새 단위/통합 테스트가 `prepareForGallery` 호출 및 비디오 일시 정지를 보장한다.
+- 갤러리 종료 시 배경 비디오 복원 동작이 기존과 동일하게 유지됨을 회귀 테스트로
+  확인한다.
+- Userscript 번들 빌드(`npm run build:prod` + `scripts/validate-build.js`)에서
+  새 로직으로 인해 사이즈/헤더 문제가 발생하지 않는다.
+
+#### 리스크 & 대응
+
+- 컨테이너 등록 순서 문제로 `MediaService`가 아직 준비되지 않은 상태에서 호출될
+  가능성 → `GalleryApp.initialize` 시점에 이미 `MediaService`가 container에
+  등록되어 있음을 테스트로 보증하고, 예외 발생 시 사용자에게 토스트 경고 및 로그
+  기록.
+- 통합 테스트에서 실제 비디오 요소를 제어할 때 JSDOM 호환성이 떨어질 수 있음 →
+  `HTMLVideoElement`를 모킹하거나 `play/pause`를 spy 처리하여 안정적인 assertion
+  확보.
+- 향후 갤러리 오픈 경로가 추가될 때 잊고 guard를 붙이지 않는 리스크 → 컨테이너
+  레벨 테스트(5단계)로 회귀 감지.
+
 ## 3. 다음 사이클 준비 메모(Placeholder)
 
 - 신규 Epic 제안은 백로그에 초안 등록 후 합의되면 본 문서의 활성 Epic으로
