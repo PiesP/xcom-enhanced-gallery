@@ -2223,7 +2223,7 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/Icon/icons/registry.ts"
+        "src/shared/components/ui/Icon/icons.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2695,54 +2695,11 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/icons/index.ts",
+      "source": "src/shared/components/ui/Icon/icons.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./registry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/registry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./registry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/registry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/registry.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../SvgIcon",
+          "module": "./SvgIcon",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -2758,9 +2715,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -9080,10 +9035,10 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 266,
-    "totalDependenciesCruised": 376,
+    "totalCruised": 265,
+    "totalDependenciesCruised": 374,
     "optionsUsed": {
-      "baseDir": "C:\\git\\xcom-enhanced-gallery",
+      "baseDir": "/home/runner/work/xcom-enhanced-gallery/xcom-enhanced-gallery",
       "combinedDependencies": false,
       "detectJSDocImports": false,
       "doNotFollow": {

@@ -1,3 +1,21 @@
+2025-09-25: EPIC — REF-LITE-V3 Stage 3 Icon Infrastructure (부분 완료)
+
+- 구현: `@assets/icons/xeg-icons.ts`에 경량 SVG path 데이터 정의 완료
+  - 10개 핵심 아이콘 (Download, Settings, X, ChevronLeft/Right, ZoomIn,
+    ArrowAutofit\*, ArrowsMaximize, FileZip)
+  - Heroicons outline 24x24 기반 정적 path 데이터로 변환하여 React 의존성 제거
+  - 타입 안전성: SvgPathDefinition, XegIconDefinition 인터페이스 제공
+- SvgIcon 시스템: `SvgIcon.tsx` 및 `icons.ts` 팩토리로 경량 컴포넌트 생성 경로
+  확립
+  - TypeScript strict 모드 호환, 벤더 getter 정책 준수
+  - 접근성 기본 지원: role="img", aria-hidden, data-icon-name 메타데이터
+- 테스트: `icon-registry.local-icons.test.tsx` GREEN으로 SvgIcon
+  렌더링/메타데이터 검증
+- 게이트: TypeScript/린트/빌드 모두 통과, 번들 사이즈 435.91 KB (108.75 KB
+  gzipped)
+- 잔여: UI 컴포넌트 교체, Heroicons 의존성 제거, 접근성 테스트 보강은 Stage 3
+  완료 작업에서 처리
+
 2025-09-25: EPIC — REF-LITE-V3 Stage 1 Store ZIP Writer 전환 (완료)
 
 - 목표: `fflate` 의존성을 제거하고 저장 전용(Store) ZIP writer를 도입해 번들

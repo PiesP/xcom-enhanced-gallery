@@ -54,7 +54,7 @@ export function createSvgIcon(
       'data-icon-name': definition.metadata,
     };
 
-    const pathNodes = definition.paths.map((path, index) =>
+    const pathNodes = definition.paths.map((path: SvgPathDefinition, index: number) =>
       h('path', {
         key: `${definition.metadata}-path-${index}`,
         ...buildPathAttributes(path),
