@@ -6,65 +6,20 @@
 
 import { logger } from '@shared/logging/logger';
 import { safeParseInt } from '@shared/utils/type-safety-helpers';
+import { decodeHtmlEntitiesSafely } from '@shared/utils/html/decode-html-entities';
+import { createTrustedHostnameGuard, TWITTER_MEDIA_HOSTS } from '@shared/utils/url-safety';
 
-const TRUSTED_X_HOSTS = new Set(['x.com', 'www.x.com', 'mobile.x.com', 'm.x.com']);
-const TRUSTED_TWITTER_HOSTS = new Set([
+const TRUSTED_X_HOSTS = ['x.com', 'www.x.com', 'mobile.x.com', 'm.x.com'] as const;
+const TRUSTED_TWITTER_HOSTS = [
   'twitter.com',
   'www.twitter.com',
   'mobile.twitter.com',
   'm.twitter.com',
-]);
+] as const;
 
-const AMP_HTML_ENTITY_SAFE_PATTERN = /&amp;(?!#\d+;|#x[0-9a-f]+;|[a-z]+;)/gi;
-const HTML_ENTITY_REPLACERS: ReadonlyArray<[RegExp, string]> = [
-  [/&quot;/gi, '"'],
-  [/&#39;/g, "'"],
-  [/&lt;/gi, '<'],
-  [/&gt;/gi, '>'],
-];
-
-function decodeHtmlEntitiesSafely(value: string): string {
-  let result = value.replace(AMP_HTML_ENTITY_SAFE_PATTERN, '&');
-
-  for (const [pattern, replacement] of HTML_ENTITY_REPLACERS) {
-    result = result.replace(pattern, replacement);
-  }
-
-  return result;
-}
-
-function hasTrustedHostname(url: string, trustedHosts: ReadonlySet<string>): boolean {
-  if (!url || typeof url !== 'string' || url === 'null' || url === 'undefined') {
-    return false;
-  }
-
-  let URLConstructor: typeof URL | undefined;
-
-  if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
-    URLConstructor = globalThis.URL;
-  } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
-    URLConstructor = window.URL;
-  }
-
-  if (!URLConstructor) {
-    try {
-      const match = url.match(/^https?:\/\/([^/?#]+)/i);
-      const hostname = match?.[1]?.toLowerCase();
-      return hostname ? trustedHosts.has(hostname) : false;
-    } catch {
-      return false;
-    }
-  }
-
-  try {
-    const parsed = new URLConstructor(url);
-    const hostname = parsed.hostname.toLowerCase();
-    return trustedHosts.has(hostname);
-  } catch (error) {
-    logger.debug('Failed to parse URL during trusted hostname check:', error);
-    return false;
-  }
-}
+const isTrustedXHostname = createTrustedHostnameGuard(TRUSTED_X_HOSTS);
+const isTrustedTwitterHostname = createTrustedHostnameGuard(TRUSTED_TWITTER_HOSTS);
+const isTrustedTwitterMediaHostname = createTrustedHostnameGuard(TWITTER_MEDIA_HOSTS);
 
 /**
  * URL 패턴 매칭 및 추출을 위한 유틸리티 클래스
@@ -129,7 +84,7 @@ export const URLPatterns = {
    */
   isXcomUrl(url: string): boolean {
     try {
-      return hasTrustedHostname(url, TRUSTED_X_HOSTS);
+      return isTrustedXHostname(url);
     } catch (error) {
       logger.error('Failed to check X.com URL:', error);
       return false;
@@ -144,7 +99,7 @@ export const URLPatterns = {
    */
   isTwitterUrl(url: string): boolean {
     try {
-      return hasTrustedHostname(url, TRUSTED_TWITTER_HOSTS);
+      return isTrustedTwitterHostname(url);
     } catch (error) {
       logger.error('Failed to check Twitter URL:', error);
       return false;
@@ -331,9 +286,15 @@ export const URLPatterns = {
         return false;
       }
 
-      // Twitter 도메인인 경우 더 엄격한 검사
-      if (url.includes('twimg.com')) {
+      const isTrustedTwitterMedia = isTrustedTwitterMediaHostname(url);
+
+      if (isTrustedTwitterMedia) {
         return this.TWITTER_IMAGE_PATTERN.test(url);
+      }
+
+      // twimg 문자열을 포함하지만 허용된 호스트가 아닌 경우 즉시 거부
+      if (/twimg\.com/i.test(url) && !isTrustedTwitterMedia) {
+        return false;
       }
 
       // 기타 도메인의 경우 일반 이미지 패턴 사용
@@ -390,7 +351,7 @@ export const URLPatterns = {
       }
 
       // Twitter/X 이미지 URL에서 크기 제한 파라미터 제거
-      if (url.includes('pbs.twimg.com')) {
+      if (isTrustedTwitterMediaHostname(url)) {
         // :small, :medium, :large 등의 크기 지정자 제거하고 :orig로 변환
         let result = url.replace(/:(?:small|medium|large|thumb)$/, ':orig');
 
@@ -421,7 +382,9 @@ export const URLPatterns = {
         return url;
       }
 
-      let normalized = decodeHtmlEntitiesSafely(url.trim());
+      const trimmedInput = url.trim();
+      const decoded = decodeHtmlEntitiesSafely(trimmedInput);
+      let normalized = decoded ?? trimmedInput;
 
       // 따옴표 제거
       normalized = normalized.replace(/^["']|["']$/g, '');
@@ -430,8 +393,17 @@ export const URLPatterns = {
       normalized = normalized.replace(/[?&](s|t|utm_[^&]*|ref_[^&]*)=[^&]*/g, '');
       normalized = normalized.replace(/[?&]$/, ''); // 마지막 ? 또는 & 제거
 
-      // 해시 제거
-      normalized = normalized.replace(/#.*$/, '');
+      // 해시 제거 (HTML 엔티티의 일부인 경우는 유지)
+      let hashIndex = normalized.indexOf('#');
+      while (hashIndex !== -1) {
+        const isEntityReference = hashIndex > 0 && normalized[hashIndex - 1] === '&';
+        if (!isEntityReference) {
+          normalized = normalized.slice(0, hashIndex);
+          break;
+        }
+
+        hashIndex = normalized.indexOf('#', hashIndex + 1);
+      }
 
       // 끝의 슬래시 제거
       normalized = normalized.replace(/\/$/, '');
@@ -469,12 +441,17 @@ export const URLPatterns = {
         URLConstructor = window.URL;
       }
 
-      if (!URLConstructor) {
-        // Fallback: 기본적인 검증만 수행
+      let urlObj: URL;
+
+      if (URLConstructor) {
+        urlObj = new URLConstructor(url);
+      } else {
+        const hostname = url.match(/^https?:\/\/([^/?#]+)/i)?.[1];
+        if (!hostname) {
+          return false;
+        }
         return url.includes('://') && url.length > 10;
       }
-
-      const urlObj = new URLConstructor(url);
 
       // 추가 검증: hostname이 존재해야 함
       if (!urlObj.hostname || urlObj.hostname.length === 0) {
@@ -861,7 +838,9 @@ export function cleanUrl(url: string): string | null {
   }
 
   try {
-    let cleaned = decodeHtmlEntitiesSafely(url);
+    const trimmedInput = url.trim();
+    const decoded = decodeHtmlEntitiesSafely(trimmedInput);
+    let cleaned = decoded ?? trimmedInput;
 
     // 따옴표 제거
     cleaned = cleaned.replace(/^["']|["']$/g, '');

@@ -17,6 +17,73 @@ import { DEFAULT_SETTINGS as defaultSettings } from '../types/settings.types';
  * 설정 저장 키
  */
 const STORAGE_KEY = 'xeg-app-settings';
+const UNSAFE_SETTING_KEY_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
+
+export class SettingsSecurityError extends Error {
+  constructor(path: string) {
+    super(`Disallowed settings key segment detected: ${path}`);
+    this.name = 'SettingsSecurityError';
+  }
+}
+
+function assertSafeSettingPath(pathSegments: readonly string[]): void {
+  for (const segment of pathSegments) {
+    if (!segment) continue;
+    if (UNSAFE_SETTING_KEY_SEGMENTS.has(segment)) {
+      throw new SettingsSecurityError(pathSegments.join('.'));
+    }
+  }
+}
+
+function sanitizeSettingsTree<T>(value: T, path: string[] = []): T {
+  if (Array.isArray(value)) {
+    return value.map((item, index) =>
+      sanitizeSettingsTree(item, [...path, String(index)])
+    ) as unknown as T;
+  }
+
+  if (value && typeof value === 'object') {
+    const source = value as Record<string, unknown>;
+    const prototype = Object.getPrototypeOf(source);
+    if (prototype && prototype !== Object.prototype) {
+      throw new SettingsSecurityError([...path, '<prototype>'].join('.'));
+    }
+    const safeObject = Object.create(null) as Record<string, unknown>;
+
+    for (const [key, nested] of Object.entries(source)) {
+      assertSafeSettingPath([...path, key]);
+
+      if (nested && typeof nested === 'object') {
+        safeObject[key] = sanitizeSettingsTree(nested, [...path, key]);
+      } else {
+        safeObject[key] = nested;
+      }
+    }
+
+    return safeObject as T;
+  }
+
+  return value;
+}
+
+function mergeCategory<T extends Record<string, unknown>>(
+  defaults: T,
+  overrides?: Record<string, unknown>
+): T {
+  const target = Object.create(null) as Record<string, unknown>;
+
+  for (const [key, value] of Object.entries(defaults)) {
+    target[key] = value;
+  }
+
+  if (overrides && typeof overrides === 'object') {
+    for (const [key, value] of Object.entries(overrides)) {
+      target[key] = value;
+    }
+  }
+
+  return target as T;
+}
 
 /**
  * 설정 변경 이벤트 타입
@@ -44,16 +111,15 @@ export class SettingsService {
 
   /** 기본 설정 깊은 복제 (1단계 depth - 각 카테고리 객체 분리) */
   private static cloneDefaults(): AppSettings {
-    return {
-      ...defaultSettings,
-      gallery: { ...defaultSettings.gallery },
-      download: { ...defaultSettings.download },
-      tokens: { ...defaultSettings.tokens },
-      performance: { ...defaultSettings.performance },
-      accessibility: { ...defaultSettings.accessibility },
-      // lastModified 는 새 타임스탬프로 재설정
-      lastModified: Date.now(),
-    } as AppSettings;
+    const clone = Object.create(null) as Record<string, unknown>;
+    clone.gallery = mergeCategory(defaultSettings.gallery);
+    clone.download = mergeCategory(defaultSettings.download);
+    clone.tokens = mergeCategory(defaultSettings.tokens);
+    clone.performance = mergeCategory(defaultSettings.performance);
+    clone.accessibility = mergeCategory(defaultSettings.accessibility);
+    clone.version = defaultSettings.version;
+    clone.lastModified = Date.now();
+    return clone as unknown as AppSettings;
   }
 
   /**
@@ -95,7 +161,7 @@ export class SettingsService {
    * @returns 현재 설정 (읽기 전용)
    */
   getAllSettings(): Readonly<AppSettings> {
-    return { ...this.settings };
+    return sanitizeSettingsTree(this.settings) as AppSettings;
   }
 
   /**
@@ -146,6 +212,7 @@ export class SettingsService {
 
     const oldValue = this.get(key); // 설정 값 업데이트
     const keys = key.split('.');
+    assertSafeSettingPath(keys);
     let target = this.settings as unknown as Record<string, unknown>;
 
     for (let i = 0; i < keys.length - 1; i++) {
@@ -153,14 +220,16 @@ export class SettingsService {
       if (!currentKey) continue;
 
       if (!target[currentKey] || typeof target[currentKey] !== 'object') {
-        target[currentKey] = {};
+        target[currentKey] = Object.create(null);
       }
       target = target[currentKey] as Record<string, unknown>;
     }
 
     const finalKey = keys[keys.length - 1];
     if (finalKey) {
-      target[finalKey] = value;
+      const sanitizedValue =
+        value && typeof value === 'object' ? sanitizeSettingsTree(value as unknown, keys) : value;
+      target[finalKey] = sanitizedValue;
     }
     this.settings.lastModified = Date.now();
 
@@ -200,6 +269,8 @@ export class SettingsService {
 
     // 모든 변경사항 검증
     for (const [key, value] of Object.entries(updates)) {
+      const pathSegments = (key as NestedSettingKey).split('.');
+      assertSafeSettingPath(pathSegments);
       const validation = this.validateSetting(key as NestedSettingKey, value);
       if (!validation.valid) {
         throw new Error(`유효하지 않은 설정 값 (${key}): ${validation.error}`);
@@ -217,14 +288,16 @@ export class SettingsService {
         if (!currentKey) continue;
 
         if (!target[currentKey] || typeof target[currentKey] !== 'object') {
-          target[currentKey] = {};
+          target[currentKey] = Object.create(null);
         }
         target = target[currentKey] as Record<string, unknown>;
       }
 
       const finalKey = keys[keys.length - 1];
       if (finalKey) {
-        target[finalKey] = value;
+        const sanitizedValue =
+          value && typeof value === 'object' ? sanitizeSettingsTree(value as unknown, keys) : value;
+        target[finalKey] = sanitizedValue;
       }
 
       changes.push({
@@ -258,11 +331,12 @@ export class SettingsService {
     if (category) {
       // 카테고리 단위 깊은 복제 (shared reference 제거)
       const defaultsRecord = defaultSettings as unknown as Record<string, unknown>;
-      const cloned = {
-        ...(defaultsRecord[category as string] as Record<string, unknown>),
-      };
-      // 기존 객체에 주입 (다른 카테고리 영향 없음)
-      (this.settings as unknown as Record<string, unknown>)[category] = cloned;
+      const source = defaultsRecord[category as string];
+      if (source && typeof source === 'object') {
+        const cloned = sanitizeSettingsTree(source as unknown, [category as string]);
+        const target = this.settings as unknown as Record<string, unknown>;
+        target[category as string] = cloned as unknown;
+      }
     } else {
       // 전체 재설정은 안전한 깊은 복제 사용
       this.settings = SettingsService.cloneDefaults();
@@ -314,14 +388,15 @@ export class SettingsService {
   async importSettings(jsonString: string): Promise<void> {
     try {
       const importedSettings = JSON.parse(jsonString) as AppSettings;
+      const sanitizedSettings = sanitizeSettingsTree(importedSettings);
 
       // 설정 검증
-      if (!this.validateSettingsStructure(importedSettings)) {
+      if (!this.validateSettingsStructure(sanitizedSettings)) {
         throw new Error('유효하지 않은 설정 구조');
       }
 
       // 마이그레이션 수행 (필요한 경우)
-      const migratedSettings = this.migrateSettings(importedSettings);
+      const migratedSettings = this.migrateSettings(sanitizedSettings);
 
       const oldSettings = { ...this.settings };
       this.settings = migratedSettings;
@@ -340,6 +415,11 @@ export class SettingsService {
 
       logger.info('설정 가져오기 완료');
     } catch (error) {
+      if (error instanceof SettingsSecurityError) {
+        logger.error('설정 가져오기 보안 차단:', error);
+        throw error;
+      }
+
       logger.error('설정 가져오기 실패:', error);
       throw new Error('설정을 가져올 수 없습니다. 올바른 형식인지 확인해주세요.');
     }
@@ -359,18 +439,24 @@ export class SettingsService {
       }
 
       const parsedSettings = JSON.parse(stored) as AppSettings;
+      const sanitizedSettings = sanitizeSettingsTree(parsedSettings);
 
       // 설정 구조 검증
-      if (!this.validateSettingsStructure(parsedSettings)) {
+      if (!this.validateSettingsStructure(sanitizedSettings)) {
         logger.warn('유효하지 않은 설정 구조, 기본값으로 복원');
         return;
       }
 
       // 마이그레이션 수행
-      this.settings = this.migrateSettings(parsedSettings);
+      this.settings = this.migrateSettings(sanitizedSettings);
 
       logger.debug('설정 로드 완료');
     } catch (error) {
+      if (error instanceof SettingsSecurityError) {
+        logger.warn('설정 로드 중 보안 위협 감지, 기본값 사용:', error);
+        return;
+      }
+
       logger.error('설정 로드 실패, 기본값 사용:', error);
     }
   }

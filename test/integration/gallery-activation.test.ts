@@ -3,8 +3,9 @@
  * @description 미디어 클릭 시 갤러리가 정상적으로 활성화되는지 테스트
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import '../setup';
+import { initializeGalleryEvents, cleanupGalleryEvents } from '@/shared/utils/events';
 
 // 전역 변수 안전 접근
 const doc = globalThis.document;
@@ -43,47 +44,63 @@ function createMockTweet() {
   return tweetElement;
 }
 
-// setupImageClickHandlers 함수를 직접 구현
-function setupImageClickHandlers() {
-  // Mock 함수 - 테스트용 갤러리 모달 생성
-  doc.addEventListener('click', event => {
-    const target = event.target;
-    if (
-      target &&
-      target.tagName === 'IMG' &&
-      target.src &&
-      (() => {
-        try {
-          const url = new URL(target.src);
-          return url.host === 'pbs.twimg.com';
-        } catch {
-          return false;
-        }
-      })()
-    ) {
-      // 갤러리 모달 생성 모킹
-      const modal = doc.createElement('div');
-      modal.setAttribute('data-testid', 'photoModal');
-      modal.style.position = 'fixed';
-      modal.style.top = '0';
-      modal.style.left = '0';
-      modal.style.width = '100%';
-      modal.style.height = '100%';
-      modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-      doc.body.appendChild(modal);
-    }
-  });
+async function setupGalleryEventMocks(): Promise<void> {
+  const globalState = globalThis as { __XEG_GALLERY_STATE?: { isOpen: boolean } };
+  globalState.__XEG_GALLERY_STATE = { isOpen: false };
 
-  console.log('Image click handlers set up for testing');
+  await initializeGalleryEvents(
+    {
+      onMediaClick: async () => {
+        const existing = doc.querySelector('[data-testid="photoModal"]');
+        if (existing) {
+          return;
+        }
+
+        const modal = doc.createElement('div');
+        modal.setAttribute('data-testid', 'photoModal');
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        doc.body.appendChild(modal);
+
+        globalState.__XEG_GALLERY_STATE = { isOpen: true };
+      },
+      onGalleryClose: () => {
+        doc.querySelector('[data-testid="photoModal"]')?.remove();
+        if (globalState.__XEG_GALLERY_STATE) {
+          globalState.__XEG_GALLERY_STATE.isOpen = false;
+        }
+      },
+    },
+    {
+      preventBubbling: false,
+      debugMode: false,
+      context: 'gallery-test',
+    }
+  );
+
+  console.log('Gallery events initialized for testing');
 }
 
 describe('갤러리 활성화 통합 테스트', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // DOM 초기화
     doc.body.innerHTML = '';
 
     // 이벤트 핸들러 설정
-    setupImageClickHandlers();
+    await setupGalleryEventMocks();
+  });
+
+  afterEach(() => {
+    cleanupGalleryEvents();
+    doc.querySelector('[data-testid="photoModal"]')?.remove();
+    const globalState = globalThis as { __XEG_GALLERY_STATE?: { isOpen: boolean } };
+    if (globalState.__XEG_GALLERY_STATE) {
+      globalState.__XEG_GALLERY_STATE.isOpen = false;
+    }
   });
 
   describe('환경 격리 테스트', () => {
@@ -147,8 +164,8 @@ describe('갤러리 활성화 통합 테스트', () => {
 
       // Then: 갤러리가 닫혀야 함 (modal이 DOM에서 제거되거나 숨겨짐)
       const closedModal = doc.querySelector('[data-testid="photoModal"]');
-      // ESC 키 이벤트는 아직 구현되지 않았으므로 모달은 여전히 존재
-      expect(closedModal).toBeTruthy(); // 나중에 null로 변경될 예정
+      // ESC 키 이벤트가 정상적으로 동작하면 모달이 제거되어야 함
+      expect(closedModal).toBeFalsy();
     });
   });
 

@@ -1,3 +1,24 @@
+2025-09-27: EPIC — SEC-2025-09 CodeQL 하드닝 패스 (완료)
+
+- URL 신뢰성 가드를 `@shared/utils/url-safety`로 통합하고 갤러리/서비스 전반의
+  트위터 호스트 검증을 `TrustedHostnameGuard` 기반으로 교체했습니다.
+  `test/shared/utils/url-patterns.security.test.ts` 등 도메인 회귀 테스트가
+  GREEN입니다.
+- `decodeHtmlEntitiesSafely`를 DOM 기반 싱글 패스 디코더로 재작성하고 JSDOM 및
+  노드 환경 폴백을 추가했습니다. 이중 디코딩을 차단하는 회귀 테스트를 확장해
+  RED→GREEN 사이클을 완료했습니다.
+- SettingsService에 `SettingsSecurityError`와 `assertSafeSettingPath`를 도입해
+  `set`/`updateBatch`/`importSettings` 전반에서 `__proto__`·`prototype` 오염을
+  차단하고, 저장/마이그레이션 경로가 모두 `Object.create(null)` 기반의 안전한
+  병합을 수행하도록 정비했습니다. 신규 보안 테스트
+  (`test/unit/shared/services/settings-service.security.test.ts`)도 GREEN 상태로
+  유지됩니다.
+- 품질 게이트: `npx vitest run test/shared/utils/url-patterns.security.test.ts`
+  와
+  `npx vitest run test/unit/shared/services/settings-service.security.test.ts`
+  실행으로 신규 하드닝 테스트를 검증했습니다. 추가 린트/빌드 게이트는 Epic 통합
+  검증에서 재사용합니다.
+
 2025-09-27: FIX — Gallery wheel scroll containment 회귀 복구 (완료)
 
 - 증상: EventManager 리바인드 경로에서 document 레벨 휠 이벤트 리스너가 항상

@@ -14,7 +14,10 @@ import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VNode } from '@shared/types/app.types';
 import { getPreactHooks, getPreactCompat } from '@shared/external/vendors';
+import { createTrustedHostnameGuard, TWITTER_MEDIA_HOSTS } from '@shared/utils/url-safety';
 import styles from './VerticalImageItem.module.css';
+
+const isTrustedTwitterMediaHostname = createTrustedHostnameGuard(TWITTER_MEDIA_HOSTS);
 
 /**
  * Clean up filename by removing verbose path information
@@ -49,6 +52,9 @@ function isVideoMedia(media: MediaInfo): boolean {
   const urlLowerCase = media.url.toLowerCase();
 
   if (videoExtensions.some(ext => urlLowerCase.includes(ext))) {
+    if (urlLowerCase.includes('twimg.com')) {
+      return isTrustedTwitterMediaHostname(media.url);
+    }
     return true;
   }
 
@@ -61,7 +67,11 @@ function isVideoMedia(media: MediaInfo): boolean {
   }
 
   // Twitter 비디오 URL 패턴 확인
-  if (urlLowerCase.includes('video.twimg.com') || urlLowerCase.includes('/video/')) {
+  if (urlLowerCase.includes('video.twimg.com')) {
+    return isTrustedTwitterMediaHostname(media.url);
+  }
+
+  if (urlLowerCase.includes('/video/')) {
     return true;
   }
 

@@ -8086,6 +8086,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/html/decode-html-entities.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/lifecycle/rebind-watcher.ts",
       "dependencies": [
         {
@@ -8517,6 +8524,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/url-safety.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/types/index.ts",
       "dependencies": [
         {
@@ -8607,7 +8621,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 266,
+    "totalCruised": 268,
     "totalDependenciesCruised": 351,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

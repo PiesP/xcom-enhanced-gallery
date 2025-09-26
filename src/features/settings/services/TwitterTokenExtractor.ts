@@ -5,6 +5,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils';
+import { createTrustedHostnameGuard } from '@shared/utils/url-safety';
 import { isTokenExtractionConsentEnabled } from './token-consent';
 
 /**
@@ -49,6 +50,11 @@ export class TwitterTokenExtractor {
     'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
     'AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw',
   ];
+
+  private readonly isTrustedApiHost = createTrustedHostnameGuard(
+    ['api.twitter.com', 'x.com', 'www.x.com', 'mobile.x.com', 'mobile.twitter.com', 'twitter.com'],
+    { allowSubdomains: true }
+  );
 
   /**
    * 서비스 초기화
@@ -290,13 +296,23 @@ export class TwitterTokenExtractor {
 
       for (const entry of entries.slice(-50)) {
         // 최근 50개 요청만 확인
-        if (entry.name.includes('api.twitter.com') || entry.name.includes('x.com/i/api')) {
-          // 실제 요청의 Authorization 헤더는 보안상 접근 불가
-          // 대신 URL 패턴으로 토큰 추출 가능한 요청인지 확인
-          if (this.isTokenRelevantRequest(entry.name)) {
-            logger.debug(`토큰 관련 요청 감지: ${entry.name}`);
-            // 여기서는 실제 토큰 추출이 어려우므로 다른 방법으로 전환
+        try {
+          const url = new URL(entry.name);
+          if (!this.isTrustedApiHost(url.href)) {
+            continue;
           }
+
+          if (url.hostname === 'api.twitter.com' || url.pathname.startsWith('/i/api')) {
+            // 실제 요청의 Authorization 헤더는 보안상 접근 불가
+            // 대신 URL 패턴으로 토큰 추출 가능한 요청인지 확인
+            if (this.isTokenRelevantRequest(url.href)) {
+              logger.debug(`토큰 관련 요청 감지: ${entry.name}`);
+              // 여기서는 실제 토큰 추출이 어려우므로 다른 방법으로 전환
+            }
+          }
+        } catch (error) {
+          logger.debug('네트워크 항목 URL 파싱 실패, 무시:', error);
+          continue;
         }
       }
 

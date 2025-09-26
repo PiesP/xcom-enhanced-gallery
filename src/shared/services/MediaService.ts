@@ -21,6 +21,9 @@ import { ErrorCode } from '@shared/types/result.types';
 // Schedulers for prefetch task coordination
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { createTrustedHostnameGuard, TWITTER_MEDIA_HOSTS } from '@shared/utils/url-safety';
+
+const isTrustedTwitterMediaHostname = createTrustedHostnameGuard(TWITTER_MEDIA_HOSTS);
 
 // 통합된 서비스 타입들
 /**
@@ -440,7 +443,7 @@ export class MediaService {
     }
 
     // Twitter 이미지 URL에서 WebP 변환
-    if (originalUrl.includes('pbs.twimg.com') && !originalUrl.includes('format=webp')) {
+    if (isTrustedTwitterMediaHostname(originalUrl) && !originalUrl.includes('format=webp')) {
       const separator = originalUrl.includes('?') ? '&' : '?';
       return `${originalUrl}${separator}format=webp`;
     }

@@ -6,6 +6,9 @@
 import { SELECTORS } from '@/constants';
 import { logger } from '@shared/logging/logger';
 import { cachedQuerySelector } from '@shared/dom';
+import { createTrustedHostnameGuard, TWITTER_MEDIA_HOSTS } from '@shared/utils/url-safety';
+
+const isTrustedTwitterMediaHostname = createTrustedHostnameGuard(TWITTER_MEDIA_HOSTS);
 
 /**
  * 미디어 감지 결과
@@ -76,7 +79,8 @@ export class MediaClickDetector {
       '.media-entity img',
     ];
     for (const selector of imageSelectors) {
-      if (target.closest(selector)) {
+      const match = target.closest(selector);
+      if (match && MediaClickDetector.hasTrustedImage(match)) {
         logger.info(`✅ MediaClickDetector: 이미지 컨테이너 감지 - ${selector}`);
         return true;
       }
@@ -118,7 +122,8 @@ export class MediaClickDetector {
       'a[href*="pbs.twimg.com"]',
     ];
     for (const selector of linkSelectors) {
-      if (target.closest(selector)) {
+      const match = target.closest(selector);
+      if (match && MediaClickDetector.hasTrustedLink(match)) {
         logger.info(`✅ MediaClickDetector: 미디어 링크 감지 - ${selector}`);
         return true;
       }
@@ -273,15 +278,54 @@ export class MediaClickDetector {
   private static isTwitterMediaElement(element: HTMLElement): boolean {
     if (element.tagName === 'IMG') {
       const img = element as HTMLImageElement;
-      return img.src.includes('pbs.twimg.com') || img.src.includes('twimg.com');
+      return isTrustedTwitterMediaHostname(img.src);
     }
 
     if (element.tagName === 'VIDEO') {
       // 트위터 비디오는 보통 특정 컨테이너 안에 있음
-      return !!element.closest('[data-testid="videoPlayer"], [data-testid="tweetVideo"]');
+      const video = element as HTMLVideoElement;
+      const hasTrustedPoster = video.poster ? isTrustedTwitterMediaHostname(video.poster) : false;
+      return (
+        hasTrustedPoster ||
+        !!element.closest('[data-testid="videoPlayer"], [data-testid="tweetVideo"]')
+      );
     }
 
     return false;
+  }
+
+  private static hasTrustedImage(element: Element): boolean {
+    const candidate =
+      element instanceof HTMLImageElement
+        ? element
+        : (element.querySelector('img[src]') as HTMLImageElement | null);
+    if (!candidate) {
+      return false;
+    }
+    return isTrustedTwitterMediaHostname(candidate.src);
+  }
+
+  private static hasTrustedLink(element: Element): boolean {
+    const anchor =
+      element instanceof HTMLAnchorElement
+        ? element
+        : (element.closest('a[href]') as HTMLAnchorElement | null) ||
+          (element.querySelector('a[href]') as HTMLAnchorElement | null);
+
+    if (!anchor) {
+      return false;
+    }
+
+    const href = anchor.href;
+    if (!href) {
+      return false;
+    }
+
+    if (/twimg\.com/i.test(href)) {
+      return isTrustedTwitterMediaHostname(href);
+    }
+
+    return true;
   }
 
   /**
@@ -320,8 +364,8 @@ export class MediaClickDetector {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
           // 이미지 찾기
-          const img = container.querySelector('img[src*="twimg.com"]') as HTMLImageElement;
-          if (img) {
+          const img = container.querySelector('img[src]') as HTMLImageElement;
+          if (img && isTrustedTwitterMediaHostname(img.src)) {
             return {
               type: 'image',
               element: img,

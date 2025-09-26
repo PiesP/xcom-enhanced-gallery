@@ -12,6 +12,9 @@ import { logger } from '@shared/logging/logger';
 import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { MediaInfo } from '@shared/types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '@shared/dom';
+import { createTrustedHostnameGuard, TWITTER_MEDIA_HOSTS } from '@shared/utils/url-safety';
+
+const isTrustedTwitterMediaHostname = createTrustedHostnameGuard(TWITTER_MEDIA_HOSTS);
 
 /**
  * 트윗 document에서 미디어 URL들을 추출
@@ -36,7 +39,11 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
         const src = imgElement.src;
 
         // 썸네일이나 프로필 이미지가 아닌 실제 미디어만 추출
-        if (src.includes('/media/') && !src.includes('profile_images')) {
+        if (
+          isTrustedTwitterMediaHostname(src) &&
+          src.includes('/media/') &&
+          !src.includes('profile_images')
+        ) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
           if (mediaInfo) {
             mediaItems.push(mediaInfo);
@@ -63,7 +70,7 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     if (tweetPhotos && tweetPhotos.length > 0) {
       Array.from(tweetPhotos).forEach(photo => {
         const imgElement = cachedQuerySelector('img', photo as Element, 2000) as HTMLImageElement;
-        if (imgElement?.src?.includes('pbs.twimg.com')) {
+        if (imgElement?.src && isTrustedTwitterMediaHostname(imgElement.src)) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
           if (mediaInfo && !mediaItems.some(item => item.url === mediaInfo.url)) {
             mediaItems.push(mediaInfo);
@@ -146,6 +153,14 @@ export function createMediaInfoFromVideo(
 
     // 유효한 비디오 URL이 있는지 확인
     if (!src && !poster) {
+      return null;
+    }
+
+    if (src && src.includes('twimg.com') && !isTrustedTwitterMediaHostname(src)) {
+      return null;
+    }
+
+    if (poster && poster.includes('twimg.com') && !isTrustedTwitterMediaHostname(poster)) {
       return null;
     }
 
@@ -240,7 +255,12 @@ export function isValidMediaUrl(url: string): boolean {
       return isValidMediaUrlFallback(url);
     }
 
+    if (!isTrustedTwitterMediaHostname(url)) {
+      return false;
+    }
+
     const urlObj = new URLConstructor(url);
+    const hostname = urlObj.hostname.toLowerCase();
 
     // 프로토콜 검증 - https 또는 http만 허용
     if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
@@ -248,7 +268,7 @@ export function isValidMediaUrl(url: string): boolean {
     }
 
     // 도메인별 경로 검증
-    if (urlObj.hostname === 'pbs.twimg.com') {
+    if (hostname === 'pbs.twimg.com') {
       // pbs.twimg.com은 /media/ 또는 video thumbnail 경로를 포함해야 하고, profile_images는 제외
       const path = urlObj.pathname;
       const isMedia = path.includes('/media/');
@@ -259,7 +279,7 @@ export function isValidMediaUrl(url: string): boolean {
       return (isMedia || isVideoThumb) && !path.includes('/profile_images/');
     }
 
-    if (urlObj.hostname === 'video.twimg.com') {
+    if (hostname === 'video.twimg.com') {
       // video.twimg.com은 모든 경로 허용
       return true;
     }
@@ -282,35 +302,21 @@ function isValidMediaUrlFallback(url: string): boolean {
     return false;
   }
 
-  // 지원하지 않는 트위터 서브도메인 명시적 거부
-  if (url.includes('ton.twimg.com')) {
+  if (!isTrustedTwitterMediaHostname(url)) {
     return false;
   }
 
-  // 도메인 스푸핑 방지: 정확한 호스트명 매칭
-  const protocolRegex = /^https?:\/\/([^/]+)/;
-  const match = url.match(protocolRegex);
-  if (!match) {
+  const isMedia = url.includes('/media/');
+  const isVideoThumb =
+    url.includes('/ext_tw_video_thumb/') ||
+    url.includes('/tweet_video_thumb/') ||
+    url.includes('/video_thumb/');
+
+  if (url.includes('profile_images')) {
     return false;
   }
 
-  const hostname = match[1];
-
-  // 트위터 미디어 도메인 정확한 검사
-  if (hostname === 'pbs.twimg.com') {
-    const isMedia = url.includes('/media/');
-    const isVideoThumb =
-      url.includes('/ext_tw_video_thumb/') ||
-      url.includes('/tweet_video_thumb/') ||
-      url.includes('/video_thumb/');
-    return (isMedia || isVideoThumb) && !url.includes('/profile_images/');
-  }
-
-  if (hostname === 'video.twimg.com') {
-    return true;
-  }
-
-  return false;
+  return isMedia || isVideoThumb || url.includes('video.twimg.com');
 }
 
 /**

@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-26 — 현재 활성 Epic 없음. 최근 완료 내역은
+업데이트: 2025-09-27 — 현재 활성 Epic 없음. SEC-2025-09 Epic 완료 내역은
 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
 ---
@@ -21,17 +21,14 @@
 
 ## 2. 활성 Epic 현황
 
-현재 진행 중인 Epic이 없습니다. 신규 작업이 확정되면 Problem Statement와
-Acceptance를 본 섹션에 재정리합니다.
+현재 등록된 활성 Epic이 없습니다.
 
 ## 3. 다음 사이클 준비 메모(Placeholder)
 
 - 신규 Epic 제안은 백로그에 초안 등록 후 합의되면 본 문서의 활성 Epic으로
   승격합니다.
-- CodeQL(JavaScript) 스캔 결과 후속 검토 항목
-  - 트위터 도메인 검증 로직을 `URL.hostname` 기반 화이트리스트로 정비
-  - URL 이스케이프 유틸의 이중 디코딩 경로 제거 및 회귀 테스트 추가
-  - `SettingsService` 딥 머지 시 `__proto__` 등 금지 키 차단 가드 도입
+- 현재 추가로 대기 중인 리팩토링 제안 없음. CodeQL 하드닝 Epic 진행 상황에 따라
+  백로그를 재평가합니다.
 
 ---
 
@@ -87,6 +84,8 @@ Gate 체크리스트(요지):
 
 ## Change Notes (Active Session)
 
+- 2025-09-27 — SEC-2025-09 Epic(TrustedHostnameGuard/HTML 디코더/SettingsService
+  가드) 실행 완료, Completed 로그로 세부 이관.
 - 2025-09-26 — 문서 검토, 활성 Epic 없음 재확인.
 - 2025-09-26 — GitHub CodeQL(JavaScript) 스캔 수행. 경고 30건(중복 포함)으로
   `js/incomplete-url-substring-sanitization`, `js/double-escaping`,
