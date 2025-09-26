@@ -507,35 +507,68 @@ async function main() {
       await removeIfExists(config.planPath);
     }
 
-    await runCommand(config.codeqlPath, [
-      'database',
-      'create',
-      config.dbPath,
-      '--language=javascript',
-      '--overwrite',
-      '--source-root',
-      workspaceRoot,
-      '--threads',
-      config.threads,
-    ]);
+    // Create a temporary package.json without "type": "module" for CodeQL compatibility
+    const originalPackageJson = resolve(workspaceRoot, 'package.json');
+    const tempPackageJson = resolve(workspaceRoot, 'package.json.codeql-temp');
+    const packageContent = await fs.readFile(originalPackageJson, 'utf8');
+    const packageData = JSON.parse(packageContent);
+    
+    // Remove the "type": "module" field for CodeQL
+    const tempPackageData = { ...packageData };
+    delete tempPackageData.type;
+    
+    await fs.writeFile(tempPackageJson, JSON.stringify(tempPackageData, null, 2));
+    await fs.rename(originalPackageJson, `${originalPackageJson}.backup`);
+    await fs.rename(tempPackageJson, originalPackageJson);
 
-    const analyzeArgs = [
-      'database',
-      'analyze',
-      config.dbPath,
-      ...packs,
-      '--format=sarif-latest',
-      '--output',
-      config.sarifPath,
-      '--threads',
-      config.threads,
-    ];
+    try {
+      await runCommand(config.codeqlPath, [
+        'database',
+        'create',
+        config.dbPath,
+        '--language=javascript',
+        '--overwrite',
+        '--source-root',
+        workspaceRoot,
+        '--threads',
+        config.threads,
+        // Exclude the CodeQL CLI directory that contains incompatible JS files
+        '--exclude-path',
+        'codeql-cli/**',
+        '--exclude-path',
+        'node_modules/**',
+        '--exclude-path', 
+        'dist/**',
+      ]);
 
-    await ensureParentDir(config.sarifPath);
-    await runCommand(config.codeqlPath, analyzeArgs);
+      const analyzeArgs = [
+        'database',
+        'analyze',
+        config.dbPath,
+        ...packs,
+        '--format=sarif-latest',
+        '--output',
+        config.sarifPath,
+        '--threads',
+        config.threads,
+      ];
 
-    await generateReports(config, packs);
-    logStep('CodeQL 분석이 완료되었습니다.');
+      await ensureParentDir(config.sarifPath);
+      await runCommand(config.codeqlPath, analyzeArgs);
+
+      await generateReports(config, packs);
+      logStep('CodeQL 분석이 완료되었습니다.');
+    } finally {
+      // Restore the original package.json
+      try {
+        await fs.rename(originalPackageJson, tempPackageJson);
+        await fs.rename(`${originalPackageJson}.backup`, originalPackageJson);
+        // Clean up temp file
+        await removeIfExists(tempPackageJson);
+      } catch (restoreError) {
+        process.stderr.write(`Warning: Failed to restore package.json: ${restoreError.message}\n`);
+      }
+    }
   } catch (error) {
     process.stderr.write(`CodeQL 실행이 실패했습니다: ${error.message}\n`);
     process.exitCode = 1;
