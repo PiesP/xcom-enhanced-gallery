@@ -24,7 +24,7 @@ import styles from './Component.module.css';
 
 ### 파일 네이밍
 
-```
+```text
 // 파일 및 디렉토리: kebab-case
 gallery-view.tsx
 media-processor.ts
@@ -49,7 +49,7 @@ services/
 
 #### 구현 예시 (Toast / Gallery)
 
-````text
+```text
 Toast
   .toast (container / surface large)        -> var(--xeg-radius-2xl)
   .actionButton / .closeButton (interaction)-> var(--xeg-radius-md)
@@ -59,16 +59,20 @@ Gallery
   .controls (집합 pill 형태)                -> var(--xeg-radius-pill)
   .xegCloseButton / .xegNavButton (shape)   -> var(--xeg-radius-full)
   .mediaElement / .error (standard surface) -> var(--xeg-radius-lg)
+```
+
 ## 핵심 스택 · 스크립트 · 경로 별칭
 
-- Stack: TypeScript(strict) + Vite 7 + Preact 10 + @preact/signals + Vitest 3(JSDOM)
+- Stack: TypeScript(strict) + Vite 7 + Preact 10 + @preact/signals + Vitest
+  3(JSDOM)
 - Userscript 번들: 단일 파일 산출물
   - dev: `dist/xcom-enhanced-gallery.dev.user.js` (+ `.map`)
   - prod: `dist/xcom-enhanced-gallery.user.js` (+ `.map`)
 - 주요 스크립트(package.json)
   - 타입: `npm run typecheck`
   - 린트: `npm run lint` / 자동수정 `npm run lint:fix`
-  - 테스트: `npm test` · 워치 `npm run test:watch` · 커버리지 `npm run test:coverage`
+  - 테스트: `npm test` · 워치 `npm run test:watch` · 커버리지
+    `npm run test:coverage`
   - 빌드: `npm run build:dev` · `npm run build:prod` · 전체 `npm run build`
   - 종합 검증: `npm run validate` (typecheck + lint:fix + format)
 - 경로 별칭(빌드/테스트/TS 공통): `@`, `@features`, `@shared`, `@assets`
@@ -76,9 +80,11 @@ Gallery
 ## 아키텍처 계층과 의존성 경계
 
 - 계층 규칙(단방향)
-  - Features(UI/도메인) → Shared(services/state/utils/logging) → External(브라우저/벤더/Userscript 어댑터)
+  - Features(UI/도메인) → Shared(services/state/utils/logging) →
+    External(브라우저/벤더/Userscript 어댑터)
 - External 접근은 반드시 안전 getter 경유
-  - 예: `const { h, render } = getPreact(); const { signal } = getPreactSignals(); const { zip } = getFflate();`
+  - 예:
+    `const { h, render } = getPreact(); const { signal } = getPreactSignals(); const { zip } = getFflate();`
   - preact / @preact/signals / fflate 등을 코드에서 직접 import 금지
 - Userscript 통합은 `@shared/external/userscript/adapter`를 통해서만 사용
 
@@ -93,12 +99,14 @@ Gallery
 ## 외부 의존성 접근: Vendor getters · Userscript 어댑터
 
 - Vendor getters(`@shared/external/vendors`)
-  - TDZ-safe 정적 API 사용: `initializeVendors()`, `getPreact()`, `getPreactSignals()`, `getFflate()`, `getNativeDownload()` 등
+  - TDZ-safe 정적 API 사용: `initializeVendors()`, `getPreact()`,
+    `getPreactSignals()`, `getFflate()`, `getNativeDownload()` 등
   - Heroicons는 어댑터 경유: `@shared/external/vendors/heroicons-react`
   - 테스트에서 모킹 가능해야 하므로 직접 import 금지(정적 스캔 가드)
 - Userscript 어댑터(`@shared/external/userscript/adapter`)
   - `getUserscript().download(url, name)` / `.xhr(opts)`만 사용
-  - GM_* 미지원 환경(JSDOM/Node)에서도 안전 폴백 제공(fetch/BlobURL 등). 비브라우저 환경엔 no-op
+  - GM\_\* 미지원 환경(JSDOM/Node)에서도 안전 폴백 제공(fetch/BlobURL 등).
+    비브라우저 환경엔 no-op
 
 간단 예시
 
@@ -110,7 +118,7 @@ const { h, Fragment, useEffect } = getPreact();
 const { signal, computed } = getPreactSignals();
 
 await getUserscript().download(url, filename);
-````
+```
 
 ## 상태/컴포넌트: Signals · Preact 패턴 · PC 전용 입력
 
@@ -145,7 +153,7 @@ Lint 가드
 
 반경/레이어 예시
 
-```
+```text
 Toast          → container: --xeg-radius-2xl / action: --xeg-radius-md
 Gallery        → control: --xeg-radius-md / pill group: --xeg-radius-pill
 Toolbar/Modal  → z-index는 토큰(`--xeg-z-toolbar`, `--xeg-z-modal`)만 사용
@@ -273,14 +281,14 @@ const items = signal<string[]>([]);
 const first = computed(() => items.value[0] ?? null);
 ```
 
-2. Userscript 어댑터 다운로드
+1. Userscript 어댑터 다운로드
 
 ```ts
 import { getUserscript } from '@shared/external/userscript/adapter';
 await getUserscript().download('https://example.com/file.jpg', 'file.jpg');
 ```
 
-3. Wheel 정책 유틸
+1. Wheel 정책 유틸
 
 ```ts
 import { ensureWheelLock } from '@shared/utils/events/wheel';
@@ -288,7 +296,7 @@ const cleanup = ensureWheelLock(overlayEl, e => shouldConsume(e));
 // 언마운트 시 cleanup()
 ```
 
-4. ZIP 생성
+1. ZIP 생성
 
 ```ts
 import { createZipFromItems } from '@shared/external/zip/zip-creator';

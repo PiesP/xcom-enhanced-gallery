@@ -5,7 +5,6 @@
  * 안전한 제거 과정을 위한 기준점을 제공합니다.
  */
 
-/* eslint-disable no-unused-vars */
 import { describe, test, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';

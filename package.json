@@ -7,6 +7,7 @@
   "scripts": {
     "pretest": "node ./scripts/pretest-hook.mjs",
     "clean": "rimraf dist",
+    "dev": "vite --mode development",
     "build:dev": "vite build --mode development",
     "build:prod": "vite build --mode production",
     "build": "npm run clean && npm run build:dev && npm run build:prod",

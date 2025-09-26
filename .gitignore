@@ -62,9 +62,6 @@ mcp-debug.log
 .settings/
 .vs/
 
-# VS Code workspace settings (keep project-wide settings)
-# .vscode/ - commented out to include project settings
-
 # OS
 .DS_Store
 Thumbs.db
@@ -74,7 +71,6 @@ $RECYCLE_BIN/
 # Project specific
 project-tree*.json
 FileScopeMCP-tree.json
-mcp-debug.log
 sample_pages/
 src_backup/
 backup*/

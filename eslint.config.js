@@ -215,25 +215,6 @@ export default [
       ],
     },
   },
-
-  // Core 레이어
-  {
-    files: ['src/core/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'warn',
-        {
-          patterns: [
-            {
-              group: ['../app/**', '../features/**', '../shared/**'],
-              message: 'Core는 infrastructure에만 의존해주세요',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
   // === 특수 파일들 - 완화된 규칙 ===
 
   // 설정 파일들

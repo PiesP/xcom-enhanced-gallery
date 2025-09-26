@@ -4,7 +4,7 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-27 — 현재 활성 Epic 없음. 최근 완료 내역은
+업데이트: 2025-09-26 — 현재 활성 Epic 없음. 최근 완료 내역은
 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
 ---
@@ -83,4 +83,4 @@ Gate 체크리스트(요지):
 
 ## Change Notes (Active Session)
 
-- 현재 공유할 활성 Change Note 없음.
+- 2025-09-26 — 문서 검토, 활성 Epic 없음 재확인.

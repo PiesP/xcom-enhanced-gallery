@@ -4,7 +4,7 @@
 > 유저스크립트**
 
 [![설치하기](https://img.shields.io/badge/설치하기-클릭-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
-[![버전](https://img.shields.io/badge/버전-v3.2.0-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
+[![버전](https://img.shields.io/badge/버전-v0.2.4-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
 [![라이센스](https://img.shields.io/badge/라이센스-MIT-green.svg)](LICENSE)
 [![Chrome/Edge](https://img.shields.io/badge/Chrome%2FEdge-✓-4285F4)](https://www.google.com/chrome/)
 [![Firefox](https://img.shields.io/badge/Firefox-✓-FF7139)](https://www.mozilla.org/firefox/)
@@ -116,27 +116,23 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ### 아키텍처
 
-- Heroicons(React) 컴포넌트를 안전하게 사용하는 “벤더 getter” 패턴을 적용합니다.
-  자세한 설계는 문서를 참고하세요.
-  - 참고: `docs/vendors-safe-api.md`
-- **압축**: fflate - 고성능 ZIP 압축 라이브러리
-- **스타일링**: CSS Modules + 디자인 토큰 시스템
+- **3계층 구조**: Features → Shared → External 단방향 의존을 유지하며 진입점은
+  `src/main.ts`입니다.
+- **벤더 getter 패턴**: `@shared/external/vendors`와
+  `@shared/external/userscript/adapter`가 외부 의존성을 TDZ-safe하게 주입합니다.
+  자세한 계약은 [`docs/vendors-safe-api.md`](docs/vendors-safe-api.md)를
+  참고하세요.
+- **스타일 & 접근성**: CSS Modules + 디자인 토큰, PC 전용 입력 규약을
+  적용합니다. 세부 규칙은
+  [`docs/CODING_GUIDELINES.md`](docs/CODING_GUIDELINES.md)에 정리되어 있습니다.
+- **아이콘 시스템**: Heroicons(React) 컴포넌트를 getter에서 Preact VNode로
+  변환해 안전하게 사용합니다.
+- **압축 & 다운로드**: `fflate` 기반 ZIP 생성과 Userscript API 어댑터가 원본
+  화질 다운로드를 지원합니다.
 
-빠른 가이드는 CONTRIBUTING을 확인하세요: [CONTRIBUTING.md](CONTRIBUTING.md) 개발
-워크플로/CI/스크립트는 AGENTS를 참고하세요: [AGENTS.md](AGENTS.md)
-아키텍처/규칙/가이드는 문서 진입점을 참고하세요:
-[docs/README.md](docs/README.md)
-
-- **아이콘 라이브러리**: Heroicons (React) 컴포넌트를 안전하게 사용하기 위해
-  “벤더 getter” 패턴을 적용했습니다.
-  - 애플리케이션 코드에서는 `@shared/external/vendors`의 getter만 사용하며, 외부
-    라이브러리를 직접 import하지 않습니다.
-  - `@heroicons/react` 컴포넌트는 getter 내부에서 React Element → Preact VNode로
-    변환되어 jsdom/테스트 환경(QName/DOM mutation 오류)을 회피합니다.
-  - UI에서는 의미적 이름의 어댑터(예: `HeroDownload` → `Download`)를 통해 일관된
-    `Icon` 래퍼로 렌더링합니다.
-  - 레거시 Tabler 아이콘은 제거되었고(내보내기 대상에서 제외), 현재는 Heroicons
-    기반만 사용합니다.
+추가 운영/아키텍처 문서는 [`CONTRIBUTING.md`](CONTRIBUTING.md),
+[`AGENTS.md`](AGENTS.md), [`docs/README.md`](docs/README.md)에서 확인할 수
+있습니다.
 
 ### 브라우저 호환성
 
@@ -181,13 +177,16 @@ git clone https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
 
 # 의존성 설치
-npm install
+npm ci
 
 # 개발 서버 실행
 npm run dev
 
 # 빌드
 npm run build
+
+# 품질 게이트 (typecheck + lint + format)
+npm run validate
 
 # 테스트
 npm test
@@ -223,10 +222,6 @@ npm test
 
 ---
 
-<div align="center">
+### 🌟 이 프로젝트가 유용하다면 Star를 눌러주세요
 
-**🌟 이 프로젝트가 유용하다면 Star를 눌러주세요! 🌟**
-
-**Made with ❤️ and GitHub Copilot by [PiesP](https://github.com/PiesP)**
-
-</div>
+Made with ❤️ and GitHub Copilot by [PiesP](https://github.com/PiesP)

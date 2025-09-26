@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* eslint-disable no-undef */
+
 /* @vitest-environment jsdom */
 // @ts-nocheck
 /**
