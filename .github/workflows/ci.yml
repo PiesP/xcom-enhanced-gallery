@@ -47,19 +47,20 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
 
-      - name: � Install dependencies
+      - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🧩 Install Graphviz (for SVG graphs)
+        if: ${{ matrix.node-version == 20 }}
         run: |
           sudo apt-get update
           sudo apt-get install -y graphviz
 
-      - name: �️ Generate dependency graphs (Node 20)
+      - name: 🗺️ Generate dependency graphs (Node 20)
         if: ${{ matrix.node-version == 20 }}
         run: npm run deps:all
 
-      - name: �🔎 Type check
+      - name: � Type check
         run: npm run typecheck
 
       - name: 🧹 Lint

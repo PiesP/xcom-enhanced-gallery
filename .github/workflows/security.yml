@@ -12,6 +12,7 @@ on:
 
 env:
   NODE_VERSION: "20"
+  CODEQL_CLI_VERSION: "v2.16.6"
 
 jobs:
   security-audit:
@@ -90,3 +91,53 @@ jobs:
           name: license-report-${{ github.sha }}
           path: licenses.json
           retention-days: 7
+
+  codeql-analysis:
+    name: 🛡️ CodeQL Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs:
+      - security-audit
+      - license-check
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 📥 Download CodeQL CLI
+        run: |
+          curl -sSL -o codeql.zip https://github.com/github/codeql-cli-binaries/releases/download/${CODEQL_CLI_VERSION}/codeql-linux64.zip
+          unzip -q codeql.zip -d codeql-cli
+          rm codeql.zip
+          echo "${PWD}/codeql-cli/codeql" >> "$GITHUB_PATH"
+
+      - name: ✅ Verify CodeQL CLI
+        run: codeql --version
+
+      - name: 🛡️ Run CodeQL scan
+        run: node ./scripts/run-codeql.mjs --codeql-path codeql
+
+      - name: 📤 Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: codeql-results.sarif
+
+      - name: 📦 Archive CodeQL reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-reports-${{ github.sha }}
+          path: |
+            codeql-results.sarif
+            codeql-results-summary.csv
+            codeql-improvement-plan.md
+          retention-days: 30
+          if-no-files-found: error

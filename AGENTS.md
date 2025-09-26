@@ -91,10 +91,27 @@ CI
   - dev/prod 빌드 후 `scripts/validate-build.js`로 산출물 검증
   - 커버리지/빌드 아티팩트 업로드
 
+## CodeQL 워크플로
+
+- CodeQL 자동화 스크립트: `scripts/run-codeql.mjs`
+  - 미리보기: `npm run codeql:dry-run`
+  - 전체 분석: `npm run codeql:scan`
+- 실행 결과(루트 디렉터리 생성)
+  - `codeql-db/`: 최신 데이터베이스 (옵션 `--keep-db`로 유지 가능)
+  - `codeql-results.sarif`: SARIF 2.1.0 호환 결과 파일
+  - `codeql-results-summary.csv`: 규칙·위치·메시지 요약 테이블
+  - `codeql-improvement-plan.md`: 심각도별 체크리스트 형태의 후속 계획
+- 추가 팩 / 커스텀 쿼리
+  - `--packs=<pack1,pack2>`로 CodeQL 공식 팩을 더 실행할 수 있습니다.
+  - `codeql-custom-queries-javascript` 디렉터리가 존재하면 자동으로 포함됩니다.
+- CLI가 설치되어 있지 않으면 친절한 설치 안내 메시지를 제공합니다.
+
 보안/라이선스
 
 - 워크플로: `.github/workflows/security.yml`
 - `npm audit`와 라이선스 보고서 업로드를 자동화
+- CodeQL CLI를 다운로드해 `npm run codeql:scan`을 실행하고 SARIF/요약/개선
+  계획을 업로드하며 GitHub Code Scanning으로 전송
 
 릴리즈
 
@@ -102,7 +119,7 @@ CI
 - master로의 버전 변경(또는 수동 트리거) 시 프로덕션 빌드, 산출물 검증, GitHub
   Release 생성
 - 릴리즈 산출물: `xcom-enhanced-gallery.user.js`, `checksums.txt`,
-  `metadata.json`
+  `metadata.json`, CodeQL 리포트(요약/개선 계획/SARIF)
 
 ## PR 규칙
 

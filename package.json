@@ -36,6 +36,8 @@
     "deps:gen": "node ./scripts/deps-runner.mjs",
     "deps:all": "npm run deps:gen && npm run deps:check",
     "deps:all:legacy": "npm run deps:all",
+    "codeql:dry-run": "node ./scripts/run-codeql.mjs --dry-run",
+    "codeql:scan": "node ./scripts/run-codeql.mjs",
     "prepare": "husky"
   },
   "engines": {

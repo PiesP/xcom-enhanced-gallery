@@ -21,6 +21,7 @@ on:
 
 env:
   NODE_VERSION: "20"
+  CODEQL_CLI_VERSION: "v2.16.6"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -96,7 +97,25 @@ jobs:
       - name: 🧪 Run tests
         run: npm run test
 
-      - name: 📈 Bump version (if manual)
+      - name: � Download CodeQL CLI
+        run: |
+          curl -sSL -o codeql.zip https://github.com/github/codeql-cli-binaries/releases/download/${CODEQL_CLI_VERSION}/codeql-linux64.zip
+          unzip -q codeql.zip -d codeql-cli
+          rm codeql.zip
+          echo "${PWD}/codeql-cli/codeql" >> "$GITHUB_PATH"
+
+      - name: ✅ Verify CodeQL CLI
+        run: codeql --version
+
+      - name: 🛡️ Run CodeQL scan
+        run: node ./scripts/run-codeql.mjs --codeql-path codeql
+
+      - name: 📤 Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: codeql-results.sarif
+
+      - name: �📈 Bump version (if manual)
         if: github.event_name == 'workflow_dispatch'
         run: |
           git config --local user.email "action@github.com"
@@ -134,6 +153,19 @@ jobs:
 
           # Copy userscript
           cp dist/xcom-enhanced-gallery.user.js release/
+
+          # Attach CodeQL reports if present
+          if [ -f codeql-results-summary.csv ]; then
+            cp codeql-results-summary.csv release/
+          fi
+
+          if [ -f codeql-improvement-plan.md ]; then
+            cp codeql-improvement-plan.md release/
+          fi
+
+          if [ -f codeql-results.sarif ]; then
+            cp codeql-results.sarif release/
+          fi
 
           # Generate checksums
           cd release
