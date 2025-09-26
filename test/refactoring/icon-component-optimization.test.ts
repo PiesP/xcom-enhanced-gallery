@@ -110,8 +110,10 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
         'svg',
         expect.objectContaining({
           'stroke-width': 'var(--xeg-icon-stroke-width)',
-          width: 'var(--xeg-icon-size)',
-          height: 'var(--xeg-icon-size)',
+          style: expect.objectContaining({
+            width: 'var(--xeg-icon-size)',
+            height: 'var(--xeg-icon-size)',
+          }),
         }),
         []
       );

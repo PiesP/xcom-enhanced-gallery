@@ -29,9 +29,11 @@ describe('Icon Component', () => {
 
       const svg = container.querySelector('svg');
       expect(svg).toBeTruthy();
-      // TDD 개선 후 CSS 변수 사용
-      expect(svg?.getAttribute('width')).toBe('var(--xeg-icon-size)');
-      expect(svg?.getAttribute('height')).toBe('var(--xeg-icon-size)');
+      // TDD 개선 후 CSS 변수는 style.width/height로 적용
+      expect(svg?.getAttribute('width')).toBeNull();
+      expect(svg?.getAttribute('height')).toBeNull();
+      expect(svg?.style.width).toBe('var(--xeg-icon-size)');
+      expect(svg?.style.height).toBe('var(--xeg-icon-size)');
       expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
       expect(svg?.getAttribute('fill')).toBe('none');
       expect(svg?.getAttribute('stroke')).toBe('var(--xeg-icon-color, currentColor)');
@@ -62,18 +64,22 @@ describe('Icon Component', () => {
       const { container } = render(h(Icon, { size: 16 }, [h('path', { d: 'M18 6l-12 12' })]));
 
       const svg = container.querySelector('svg');
-      // TDD 개선 후 size prop이 픽셀 단위로 처리됨
+      // 숫자 size prop은 width/height 속성으로 적용됨
       expect(svg?.getAttribute('width')).toBe('16px');
       expect(svg?.getAttribute('height')).toBe('16px');
+      expect(svg?.style.width).toBe('');
+      expect(svg?.style.height).toBe('');
     });
 
     it('기본 size는 CSS 변수를 사용해야 함', () => {
       const { container } = render(h(Icon, {}, [h('path', { d: 'M18 6l-12 12' })]));
 
       const svg = container.querySelector('svg');
-      // TDD 개선 후 기본값은 CSS 변수 사용
-      expect(svg?.getAttribute('width')).toBe('var(--xeg-icon-size)');
-      expect(svg?.getAttribute('height')).toBe('var(--xeg-icon-size)');
+      // 기본값은 CSS 변수가 style로 적용됨
+      expect(svg?.getAttribute('width')).toBeNull();
+      expect(svg?.getAttribute('height')).toBeNull();
+      expect(svg?.style.width).toBe('var(--xeg-icon-size)');
+      expect(svg?.style.height).toBe('var(--xeg-icon-size)');
     });
 
     it('className이 올바르게 전달되어야 함', () => {

@@ -1,3 +1,31 @@
+2025-09-27: FIX — Gallery wheel scroll containment 회귀 복구 (완료)
+
+- 증상: EventManager 리바인드 경로에서 document 레벨 휠 이벤트 리스너가 항상
+  `preventDefault()`를 호출해 갤러리 컨테이너 안에서도 기본 스크롤이 차단되는
+  회귀가 발생했습니다.
+- 조치: `useGalleryScroll`에 이벤트 `composedPath()` 기반 컨테이너 포함 여부
+  검사를 추가해, 갤러리 컨테이너 내부에서 발생한 휠 이벤트는 기본 동작을
+  허용하고 외부에서 버블된 이벤트만 차단하도록 조정했습니다.
+- 테스트: RED → GREEN 사이클로
+  `test/unit/features/gallery/use-gallery-scroll.rebind.test.tsx`에 휠 정책
+  테스트 2종을 추가하고,
+  `npx vitest run test/unit/features/gallery/use-gallery-scroll.rebind.test.tsx`
+  실행을 통해 회귀를 재현/해결했습니다. 전체 `npm test` 스위트도 GREEN입니다
+  (2087 passed / 33 skipped / 1 todo).
+- 게이트: `npm run typecheck`, `npm run lint`, `Clear-Host && npm run build`까지
+  전부 성공해 deps/typecheck/lint/format/dev·prod 빌드 및 postbuild 검증이 모두
+  PASS 상태임을 확인했습니다.
+
+2025-09-26: EPIC — GALLERY-WARNING-HARDENING Step 1 (완료)
+
+- SettingsService에 `gallery.windowingEnabled`/`gallery.windowSize` 기본값을
+  추가하고 마이그레이션 경로에서 누락 시 값을 보충하도록 강화했습니다.
+- 해당 기본값을 보장하는 계약 테스트를 확장해 경고 없이 기본값/보강 로드가
+  확인되도록 했습니다(`settings-service.contract.test.ts`).
+- 품질 게이트: `npm run typecheck`,
+  `npx vitest run test/unit/shared/services/settings-service.contract.test.ts`
+  GREEN.
+
 2025-09-27: EPIC — GALLERY-OVERLAY-TOKEN-HARDENING (완료)
 
 - Semantic 토큰 계층에 `--xeg-color-overlay-dark`/`--xeg-color-overlay-subtle`을

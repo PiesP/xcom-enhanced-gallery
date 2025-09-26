@@ -84,25 +84,57 @@ export function Icon({
     accessibilityProps['aria-hidden'] = 'true';
   }
 
-  // 크기 값 처리 - 숫자인 경우 픽셀로, 문자열인 경우 그대로 사용
-  const sizeValue = typeof size === 'number' ? `${size}px` : size;
+  const isNumericSize = typeof size === 'number';
+  const sizeValue = isNumericSize ? `${size}px` : size;
 
-  return h(
-    'svg',
-    {
-      xmlns: 'http://www.w3.org/2000/svg',
-      width: sizeValue,
-      height: sizeValue,
-      viewBox: '0 0 24 24',
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      'stroke-width': 'var(--xeg-icon-stroke-width)',
-      'stroke-linecap': 'round' as const,
-      'stroke-linejoin': 'round' as const,
-      className,
-      ...accessibilityProps,
-      ...otherProps,
-    } as Record<string, unknown>,
-    children
-  );
+  const otherPropsRecord = otherProps as Record<string, unknown>;
+  const restProps: Record<string, unknown> = { ...otherPropsRecord };
+
+  const incomingStyle = otherPropsRecord.style;
+  delete restProps.style;
+
+  let styleProp: unknown = incomingStyle;
+
+  if (!isNumericSize) {
+    delete restProps.width;
+    delete restProps.height;
+
+    if (typeof incomingStyle === 'string') {
+      const trimmed = incomingStyle.trim();
+      const needsSemicolon = trimmed.length > 0 && !trimmed.endsWith(';');
+      styleProp = `${trimmed}${needsSemicolon ? ';' : ''}width:${sizeValue};height:${sizeValue};`;
+    } else {
+      const baseStyle =
+        incomingStyle && typeof incomingStyle === 'object'
+          ? { ...(incomingStyle as Record<string, unknown>) }
+          : {};
+      baseStyle.width = sizeValue;
+      baseStyle.height = sizeValue;
+      styleProp = baseStyle;
+    }
+  }
+
+  const svgProps: Record<string, unknown> = {
+    xmlns: 'http://www.w3.org/2000/svg',
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'var(--xeg-icon-color, currentColor)',
+    'stroke-width': 'var(--xeg-icon-stroke-width)',
+    'stroke-linecap': 'round' as const,
+    'stroke-linejoin': 'round' as const,
+    className,
+    ...accessibilityProps,
+    ...restProps,
+  };
+
+  if (isNumericSize) {
+    svgProps.width = sizeValue;
+    svgProps.height = sizeValue;
+  }
+
+  if (styleProp !== undefined) {
+    svgProps.style = styleProp;
+  }
+
+  return h('svg', svgProps, children);
 }
