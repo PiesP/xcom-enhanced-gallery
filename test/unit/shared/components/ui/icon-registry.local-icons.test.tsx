@@ -1,11 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/preact';
 
-import {
-  XEG_ICON_COMPONENTS,
-  getXegIconComponent,
-} from '@shared/components/ui/Icon/icons/index.ts';
-import { XEG_ICON_DEFINITIONS } from '@assets/icons/xeg-icons.ts';
+import { XEG_ICON_COMPONENTS, getXegIconComponent } from '@shared/components/ui/Icon/icons';
+import { XEG_ICON_DEFINITIONS } from '@assets/icons/xeg-icons';
 
 describe('local icon registry', () => {
   afterEach(() => {

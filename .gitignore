@@ -143,6 +143,8 @@ secret.key
 .AppleDouble
 .LSOverride
 Icon?
+!src/assets/icons/
+!src/assets/icons/**
 ._*
 .DocumentRevisions-V100
 .fseventsd

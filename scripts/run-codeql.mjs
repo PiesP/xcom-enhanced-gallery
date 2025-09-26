@@ -38,6 +38,8 @@ const DEFAULT_QUERY_PACKS = [
   'codeql/javascript-security-and-quality',
 ];
 
+const CODEQL_REQUIRED_NODE_OPTION = '--experimental-default-type=commonjs';
+
 const severityOrdering = ['error', 'warning', 'note'];
 
 const workspaceRoot = resolve(process.cwd());
@@ -213,6 +215,26 @@ async function runCommand(command, args, options = {}) {
       }
     });
   });
+}
+
+function ensureRequiredNodeOptions(currentOptions) {
+  const normalized = typeof currentOptions === 'string' ? currentOptions.trim() : '';
+  if (!normalized) {
+    return CODEQL_REQUIRED_NODE_OPTION;
+  }
+
+  const tokens = normalized.split(/\s+/g);
+  if (tokens.includes(CODEQL_REQUIRED_NODE_OPTION)) {
+    return normalized;
+  }
+
+  return `${normalized} ${CODEQL_REQUIRED_NODE_OPTION}`;
+}
+
+function createCodeqlEnv() {
+  const env = { ...process.env };
+  env.NODE_OPTIONS = ensureRequiredNodeOptions(env.NODE_OPTIONS);
+  return env;
 }
 
 function composeQueryPackList(includeDefault, extraPacks) {
@@ -507,17 +529,23 @@ async function main() {
       await removeIfExists(config.planPath);
     }
 
-    await runCommand(config.codeqlPath, [
-      'database',
-      'create',
-      config.dbPath,
-      '--language=javascript',
-      '--overwrite',
-      '--source-root',
-      workspaceRoot,
-      '--threads',
-      config.threads,
-    ]);
+    await runCommand(
+      config.codeqlPath,
+      [
+        'database',
+        'create',
+        config.dbPath,
+        '--language=javascript',
+        '--overwrite',
+        '--source-root',
+        workspaceRoot,
+        '--threads',
+        config.threads,
+      ],
+      {
+        env: createCodeqlEnv(),
+      }
+    );
 
     const analyzeArgs = [
       'database',
@@ -532,7 +560,9 @@ async function main() {
     ];
 
     await ensureParentDir(config.sarifPath);
-    await runCommand(config.codeqlPath, analyzeArgs);
+    await runCommand(config.codeqlPath, analyzeArgs, {
+      env: createCodeqlEnv(),
+    });
 
     await generateReports(config, packs);
     logStep('CodeQL 분석이 완료되었습니다.');
