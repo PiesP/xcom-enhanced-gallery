@@ -2211,7 +2211,7 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
+        "src/shared/components/ui/Icon/icons/registry.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2298,6 +2298,31 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./registry",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/registry.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/icons/registry.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
           "module": "../SvgIcon",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2315,33 +2340,8 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/Icon/icons/registry.ts"
+        "src/shared/components/ui/Icon/icons/index.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/registry.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./index",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },

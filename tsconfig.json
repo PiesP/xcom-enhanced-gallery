@@ -27,6 +27,7 @@
     "paths": {
       "@/*": ["./*"],
       "@features/*": ["features/*"],
+      "@shared/components/ui/Icon/icons": ["shared/components/ui/Icon/icons/index.ts"],
       "@shared/*": ["shared/*"],
       "@assets/*": ["assets/*"]
     },

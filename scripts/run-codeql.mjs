@@ -39,6 +39,7 @@ const DEFAULT_QUERY_PACKS = [
 ];
 
 const CODEQL_REQUIRED_NODE_OPTION = '--experimental-default-type=commonjs';
+const isWindows = process.platform === 'win32';
 
 const severityOrdering = ['error', 'warning', 'note'];
 
@@ -229,6 +230,80 @@ function ensureRequiredNodeOptions(currentOptions) {
   }
 
   return `${normalized} ${CODEQL_REQUIRED_NODE_OPTION}`;
+}
+
+async function resolveExecutablePath(command) {
+  if (!command) {
+    return null;
+  }
+
+  const containsPathSeparator = /[\\/]/.test(command);
+  if (containsPathSeparator) {
+    try {
+      return await fs.realpath(command);
+    } catch {
+      return null;
+    }
+  }
+
+  const locator = isWindows ? 'where' : 'which';
+  try {
+    const { stdout } = await execFileAsync(locator, [command]);
+    const firstLine = stdout
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .find(Boolean);
+    if (!firstLine) {
+      return null;
+    }
+    return await fs.realpath(firstLine);
+  } catch {
+    return null;
+  }
+}
+
+async function ensureCliCommonJsCompatibility(executablePath) {
+  if (!executablePath) {
+    return;
+  }
+
+  const cliDir = dirname(executablePath);
+  const packageJsonPath = resolve(cliDir, 'package.json');
+
+  try {
+    let existing = {};
+    let hasExistingFile = false;
+
+    try {
+      const raw = await fs.readFile(packageJsonPath, 'utf8');
+      existing = JSON.parse(raw);
+      hasExistingFile = true;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+
+    if (existing.type === 'commonjs') {
+      return;
+    }
+
+    const next = { ...existing, type: 'commonjs' };
+    const serialized = `${JSON.stringify(next, null, 2)}\n`;
+    await fs.writeFile(packageJsonPath, serialized, 'utf8');
+
+    const note = hasExistingFile ? 'Patched' : 'Created';
+    logStep(
+      `${note} CodeQL CLI package.json at ${relative(
+        workspaceRoot,
+        packageJsonPath
+      )} to enforce CommonJS isolation`
+    );
+  } catch (error) {
+    logStep(
+      `Skipping CodeQL CommonJS shim (non-fatal): ${error?.message ?? error}. CLI path: ${executablePath}`
+    );
+  }
 }
 
 function createCodeqlEnv() {
@@ -517,6 +592,8 @@ async function main() {
 
   try {
     await assertCodeqlAvailable(config.codeqlPath);
+    const resolvedCliPath = await resolveExecutablePath(config.codeqlPath);
+    await ensureCliCommonJsCompatibility(resolvedCliPath);
 
     if (!config.keepDb && (await pathExists(config.dbPath))) {
       logStep(`Removing existing database at ${config.dbPath}`);

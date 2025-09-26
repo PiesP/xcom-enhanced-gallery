@@ -17,6 +17,10 @@ export default defineConfig({
     // alias는 가장 먼저 일치하는 항목이 우선하므로, 특정 경로를 일반 프리픽스('@shared')보다 앞에 둡니다.
     alias: [
       // 특정 경로 -> 일반 프리픽스 순으로 배치해 우선순위 보장
+      {
+        find: '@shared/components/ui/Icon/icons',
+        replacement: resolve(__dirname, './src/shared/components/ui/Icon/icons/index.ts'),
+      },
       { find: '@features', replacement: resolve(__dirname, './src/features') },
       { find: '@shared', replacement: resolve(__dirname, './src/shared') },
       { find: '@assets', replacement: resolve(__dirname, './src/assets') },
