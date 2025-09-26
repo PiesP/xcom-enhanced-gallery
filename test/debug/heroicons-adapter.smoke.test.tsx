@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
 import { getPreact } from '@shared/external/vendors';
 import { Icon } from '@shared/components/ui/Icon/Icon';
-import { getXegIconComponent } from '@shared/components/ui/Icon/icons';
+import { getXegIconComponent } from '@shared/components/ui/Icon/icons/index.ts';
 
 const { h, render } = getPreact();
 

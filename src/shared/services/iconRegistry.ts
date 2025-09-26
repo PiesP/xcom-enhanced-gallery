@@ -1,6 +1,6 @@
 import type { VNode } from '@shared/external/vendors';
-import { getXegIconComponent } from '@shared/components/ui/Icon/icons';
-import type { XegIconComponentName } from '@shared/components/ui/Icon/icons';
+import { getXegIconComponent } from '@shared/components/ui/Icon/icons/index.ts';
+import type { XegIconComponentName } from '@shared/components/ui/Icon/icons/index.ts';
 // CORE 아이콘 관리 통합 (기존 core-icons.ts 제거)
 // - 분리 파일은 orphan 상태 + 타입 중복 정의로 유지 비용 증가
 // - IconName 내 코어 아이콘은 preloadCommonIcons에서 재사용되므로 단일 소스로 유지

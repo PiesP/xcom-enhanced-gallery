@@ -5,7 +5,7 @@
 
 import type { VNode } from '@shared/external/vendors';
 import type { IconProps } from './Icon';
-import type { SvgPathDefinition, XegIconDefinition } from '@assets/icons/xeg-icons';
+import type { SvgPathDefinition, XegIconDefinition } from '@assets/icons/xeg-icons.ts';
 
 import { getPreact } from '@shared/external/vendors';
 import { Icon } from './Icon';

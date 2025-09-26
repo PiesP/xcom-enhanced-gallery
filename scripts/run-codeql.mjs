@@ -67,14 +67,33 @@ function parseArgs(argv) {
     extraPacks: [],
   };
 
-  for (const raw of argv) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const raw = argv[index];
     if (!raw.startsWith('--')) {
       continue;
     }
 
-    const [flag, value] = raw.includes('=')
-      ? raw.slice(2).split(/=(.*)/)
-      : [raw.slice(2), undefined];
+    let flag = raw.slice(2);
+    let value;
+
+    if (flag.includes('=')) {
+      const [name, inline] = flag.split(/=(.*)/);
+      flag = name;
+      value = inline === '' ? undefined : inline;
+    }
+
+    const ensureValue = errorMessage => {
+      if (value == null) {
+        const next = argv[index + 1];
+        if (typeof next === 'string' && !next.startsWith('--')) {
+          value = next;
+          index += 1;
+        }
+      }
+      if (value == null || value === '') {
+        throw new Error(errorMessage);
+      }
+    };
 
     switch (flag) {
       case 'dry-run':
@@ -87,48 +106,34 @@ function parseArgs(argv) {
         options.keepResults = true;
         break;
       case 'codeql-path':
-        if (!value) {
-          throw new Error('--codeql-path requires a value');
-        }
+        ensureValue('--codeql-path requires a value');
         options.codeqlPath = value;
         break;
       case 'db':
-        if (!value) {
-          throw new Error('--db requires a directory path');
-        }
+        ensureValue('--db requires a directory path');
         options.dbPath = resolve(workspaceRoot, value);
         break;
       case 'sarif':
-        if (!value) {
-          throw new Error('--sarif requires a file path');
-        }
+        ensureValue('--sarif requires a file path');
         options.sarifPath = resolve(workspaceRoot, value);
         break;
       case 'summary':
-        if (!value) {
-          throw new Error('--summary requires a file path');
-        }
+        ensureValue('--summary requires a file path');
         options.summaryPath = resolve(workspaceRoot, value);
         break;
       case 'plan':
-        if (!value) {
-          throw new Error('--plan requires a file path');
-        }
+        ensureValue('--plan requires a file path');
         options.planPath = resolve(workspaceRoot, value);
         break;
       case 'threads':
-        if (!value) {
-          throw new Error('--threads requires a numeric value');
-        }
+        ensureValue('--threads requires a numeric value');
         if (!Number.isInteger(Number(value))) {
           throw new Error('--threads must be an integer');
         }
         options.threads = String(value);
         break;
       case 'packs':
-        if (!value) {
-          throw new Error('--packs requires a comma-separated list');
-        }
+        ensureValue('--packs requires a comma-separated list');
         options.extraPacks.push(
           ...value
             .split(',')
