@@ -179,10 +179,6 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@shared/components/ui/Icon/icons': path.resolve(
-          process.cwd(),
-          'src/shared/components/ui/Icon/icons/index.ts'
-        ),
         '@': path.resolve(process.cwd(), 'src'),
         '@shared': path.resolve(process.cwd(), 'src/shared'),
         '@features': path.resolve(process.cwd(), 'src/features'),

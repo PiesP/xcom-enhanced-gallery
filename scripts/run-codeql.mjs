@@ -22,7 +22,7 @@ import { promises as fs } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import { URL } from 'node:url';
-import { dirname, normalize, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, normalize, relative, resolve } from 'node:path';
 import { cpus } from 'node:os';
 import process from 'node:process';
 import { promisify } from 'node:util';
@@ -547,6 +547,51 @@ async function determineQueryPacks(includeDefault, extraPacks) {
   return packs;
 }
 
+async function isLocalPackReference(pack) {
+  if (typeof pack !== 'string' || pack.length === 0) {
+    return false;
+  }
+
+  if (pack.startsWith('file://')) {
+    return true;
+  }
+
+  if (isAbsolute(pack)) {
+    return true;
+  }
+
+  if (await pathExists(pack)) {
+    return true;
+  }
+
+  const resolvedCandidate = resolve(workspaceRoot, pack);
+  if (await pathExists(resolvedCandidate)) {
+    return true;
+  }
+
+  return false;
+}
+
+async function ensureQueryPacksAvailable(codeqlPath, packs) {
+  const remoteCandidates = [];
+  for (const pack of packs) {
+    if (await isLocalPackReference(pack)) {
+      continue;
+    }
+    remoteCandidates.push(pack);
+  }
+
+  if (remoteCandidates.length === 0) {
+    return;
+  }
+
+  const uniqueRemote = Array.from(new Set(remoteCandidates));
+  logStep(`Resolving CodeQL query packs: ${uniqueRemote.join(', ')}`);
+  await runCommand(codeqlPath, ['pack', 'download', ...uniqueRemote], {
+    env: createCodeqlEnv(),
+  });
+}
+
 async function dryRun(config) {
   const packs = await determineQueryPacks(config.includeDefaultPacks, config.extraPacks);
   logDryRunDetails('실행 설정', [
@@ -594,6 +639,7 @@ async function main() {
     await assertCodeqlAvailable(config.codeqlPath);
     const resolvedCliPath = await resolveExecutablePath(config.codeqlPath);
     await ensureCliCommonJsCompatibility(resolvedCliPath);
+    await ensureQueryPacksAvailable(config.codeqlPath, packs);
 
     if (!config.keepDb && (await pathExists(config.dbPath))) {
       logStep(`Removing existing database at ${config.dbPath}`);

@@ -99,7 +99,7 @@ export function LazyIcon(props: LazyIconProps): VNode | unknown {
       registry
         .loadIcon(props.name)
         .then(c => {
-          if (active) setComponent(() => c as IconComponent);
+          if (active) setComponent(c);
         })
         .catch(() => {
           /* ignore */
