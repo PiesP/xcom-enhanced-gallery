@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { URLPatterns } from '@shared/utils/patterns';
 
 // ================================
 // DOM 유틸리티
@@ -316,6 +317,10 @@ export function extractTweetInfoFromUrl(
   url: string
 ): { username?: string; tweetId?: string } | null {
   if (!url) return null;
+
+  if (!URLPatterns.isTwitterUrl(url) && !URLPatterns.isXcomUrl(url)) {
+    return null;
+  }
 
   const twitterUrlPattern = /(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/;
   const match = url.match(twitterUrlPattern);

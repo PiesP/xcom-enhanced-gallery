@@ -7,6 +7,65 @@
 import { logger } from '@shared/logging/logger';
 import { safeParseInt } from '@shared/utils/type-safety-helpers';
 
+const TRUSTED_X_HOSTS = new Set(['x.com', 'www.x.com', 'mobile.x.com', 'm.x.com']);
+const TRUSTED_TWITTER_HOSTS = new Set([
+  'twitter.com',
+  'www.twitter.com',
+  'mobile.twitter.com',
+  'm.twitter.com',
+]);
+
+const AMP_HTML_ENTITY_SAFE_PATTERN = /&amp;(?!#\d+;|#x[0-9a-f]+;|[a-z]+;)/gi;
+const HTML_ENTITY_REPLACERS: ReadonlyArray<[RegExp, string]> = [
+  [/&quot;/gi, '"'],
+  [/&#39;/g, "'"],
+  [/&lt;/gi, '<'],
+  [/&gt;/gi, '>'],
+];
+
+function decodeHtmlEntitiesSafely(value: string): string {
+  let result = value.replace(AMP_HTML_ENTITY_SAFE_PATTERN, '&');
+
+  for (const [pattern, replacement] of HTML_ENTITY_REPLACERS) {
+    result = result.replace(pattern, replacement);
+  }
+
+  return result;
+}
+
+function hasTrustedHostname(url: string, trustedHosts: ReadonlySet<string>): boolean {
+  if (!url || typeof url !== 'string' || url === 'null' || url === 'undefined') {
+    return false;
+  }
+
+  let URLConstructor: typeof URL | undefined;
+
+  if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
+    URLConstructor = globalThis.URL;
+  } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
+    URLConstructor = window.URL;
+  }
+
+  if (!URLConstructor) {
+    try {
+      const match = url.match(/^https?:\/\/([^/?#]+)/i);
+      const hostname = match?.[1]?.toLowerCase();
+      return hostname ? trustedHosts.has(hostname) : false;
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    const parsed = new URLConstructor(url);
+    const hostname = parsed.hostname.toLowerCase();
+    return trustedHosts.has(hostname);
+  } catch (error) {
+    logger.debug('Failed to parse URL during trusted hostname check:', error);
+    return false;
+  }
+}
+
 /**
  * URL 패턴 매칭 및 추출을 위한 유틸리티 클래스
  */
@@ -70,10 +129,7 @@ export const URLPatterns = {
    */
   isXcomUrl(url: string): boolean {
     try {
-      if (!url || typeof url !== 'string' || url === 'null' || url === 'undefined') {
-        return false;
-      }
-      return this.XCOM_URL_PATTERN.test(url);
+      return hasTrustedHostname(url, TRUSTED_X_HOSTS);
     } catch (error) {
       logger.error('Failed to check X.com URL:', error);
       return false;
@@ -88,10 +144,7 @@ export const URLPatterns = {
    */
   isTwitterUrl(url: string): boolean {
     try {
-      if (!url || typeof url !== 'string' || url === 'null' || url === 'undefined') {
-        return false;
-      }
-      return this.TWITTER_URL_PATTERN.test(url);
+      return hasTrustedHostname(url, TRUSTED_TWITTER_HOSTS);
     } catch (error) {
       logger.error('Failed to check Twitter URL:', error);
       return false;
@@ -107,6 +160,10 @@ export const URLPatterns = {
   extractTweetId(url: string): string | null {
     try {
       if (!url || typeof url !== 'string') {
+        return null;
+      }
+
+      if (!this.isTwitterUrl(url) && !this.isXcomUrl(url)) {
         return null;
       }
 
@@ -132,6 +189,10 @@ export const URLPatterns = {
   extractUsername(url: string): string | null {
     try {
       if (!url || typeof url !== 'string') {
+        return null;
+      }
+
+      if (!this.isTwitterUrl(url) && !this.isXcomUrl(url)) {
         return null;
       }
 
@@ -180,6 +241,10 @@ export const URLPatterns = {
         return null;
       }
 
+      if (!this.isTwitterUrl(url) && !this.isXcomUrl(url)) {
+        return null;
+      }
+
       const match = url.match(this.TWEET_PHOTO_URL_PATTERN);
       if (!match) {
         return null;
@@ -215,6 +280,9 @@ export const URLPatterns = {
       if (!url || typeof url !== 'string') {
         return false;
       }
+      if (!this.isTwitterUrl(url) && !this.isXcomUrl(url)) {
+        return false;
+      }
       return this.MEDIA_PAGE_PATTERN.test(url);
     } catch (error) {
       logger.error('Failed to check media page URL:', error);
@@ -231,6 +299,10 @@ export const URLPatterns = {
   extractUsernameFromMediaPage(url: string): string | null {
     try {
       if (!url || typeof url !== 'string') {
+        return null;
+      }
+
+      if (!this.isTwitterUrl(url) && !this.isXcomUrl(url)) {
         return null;
       }
 
@@ -349,14 +421,7 @@ export const URLPatterns = {
         return url;
       }
 
-      let normalized = url.trim();
-
-      // HTML 엔티티 디코딩
-      normalized = normalized.replace(/&amp;/g, '&');
-      normalized = normalized.replace(/&quot;/g, '"');
-      normalized = normalized.replace(/&#39;/g, "'");
-      normalized = normalized.replace(/&lt;/g, '<');
-      normalized = normalized.replace(/&gt;/g, '>');
+      let normalized = decodeHtmlEntitiesSafely(url.trim());
 
       // 따옴표 제거
       normalized = normalized.replace(/^["']|["']$/g, '');
@@ -657,6 +722,10 @@ export function extractTweetInfoFromUrl(url: string): {
     return null;
   }
 
+  if (!URLPatterns.isTwitterUrl(url) && !URLPatterns.isXcomUrl(url)) {
+    return null;
+  }
+
   const match = url.match(URLPatterns.TWEET_URL_PATTERN);
   if (!match) {
     return null;
@@ -792,14 +861,7 @@ export function cleanUrl(url: string): string | null {
   }
 
   try {
-    let cleaned = url;
-
-    // HTML 엔티티 디코딩
-    cleaned = cleaned.replace(/&amp;/g, '&');
-    cleaned = cleaned.replace(/&quot;/g, '"');
-    cleaned = cleaned.replace(/&#39;/g, "'");
-    cleaned = cleaned.replace(/&lt;/g, '<');
-    cleaned = cleaned.replace(/&gt;/g, '>');
+    let cleaned = decodeHtmlEntitiesSafely(url);
 
     // 따옴표 제거
     cleaned = cleaned.replace(/^["']|["']$/g, '');

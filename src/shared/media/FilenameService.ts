@@ -6,6 +6,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { URLPatterns } from '@shared/utils/patterns';
 // barrel(@shared/utils) 경유는 events → MediaService 경로를 통해 순환을 유도하므로 직접 모듈 import
 import { safeParseInt, undefinedToNull } from '@shared/utils/type-safety-helpers';
 import type { MediaInfoForFilename, MediaItemForFilename } from '@shared/types/media.types';
@@ -277,6 +278,10 @@ export class FilenameService {
    */
   private extractUsernameFromUrl(url: string): string | null {
     try {
+      if (!URLPatterns.isTwitterUrl(url) && !URLPatterns.isXcomUrl(url)) {
+        return null;
+      }
+
       const match = url.match(/(?:twitter\.com|x\.com)\/([^/?#]+)/);
       if (match?.[1]) {
         const username = match[1];

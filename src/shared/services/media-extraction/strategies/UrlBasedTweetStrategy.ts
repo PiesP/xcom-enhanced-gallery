@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { URLPatterns } from '@shared/utils/patterns';
 import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
@@ -47,12 +48,18 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
   }
 
   private extractTweetIdFromUrl(url: string): string | null {
+    if (!URLPatterns.isTwitterUrl(url) && !URLPatterns.isXcomUrl(url)) {
+      return null;
+    }
     const match = url.match(/\/status\/(\d+)/);
     return match ? (match[1] ?? null) : null;
   }
 
   private extractUsernameFromUrl(url: string): string | null {
-    const match = url.match(/twitter\.com\/([^/]+)\//);
+    if (!URLPatterns.isTwitterUrl(url) && !URLPatterns.isXcomUrl(url)) {
+      return null;
+    }
+    const match = url.match(/(?:twitter\.com|x\.com)\/([^/]+)/);
     return match ? (match[1] ?? null) : null;
   }
 }

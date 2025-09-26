@@ -28,6 +28,10 @@ Acceptance를 본 섹션에 재정리합니다.
 
 - 신규 Epic 제안은 백로그에 초안 등록 후 합의되면 본 문서의 활성 Epic으로
   승격합니다.
+- CodeQL(JavaScript) 스캔 결과 후속 검토 항목
+  - 트위터 도메인 검증 로직을 `URL.hostname` 기반 화이트리스트로 정비
+  - URL 이스케이프 유틸의 이중 디코딩 경로 제거 및 회귀 테스트 추가
+  - `SettingsService` 딥 머지 시 `__proto__` 등 금지 키 차단 가드 도입
 
 ---
 
@@ -84,3 +88,7 @@ Gate 체크리스트(요지):
 ## Change Notes (Active Session)
 
 - 2025-09-26 — 문서 검토, 활성 Epic 없음 재확인.
+- 2025-09-26 — GitHub CodeQL(JavaScript) 스캔 수행. 경고 30건(중복 포함)으로
+  `js/incomplete-url-substring-sanitization`, `js/double-escaping`,
+  `js/prototype-pollution-utility` 패턴이 보고됨. 위 "다음 사이클 준비" 메모에
+  정리된 후속 하드닝 작업을 백로그에 편입 예정.
