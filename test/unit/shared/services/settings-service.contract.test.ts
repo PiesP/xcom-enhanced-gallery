@@ -5,6 +5,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // SUT (경로: features/settings/services)
 import { SettingsService } from '../../../../src/features/settings/services/SettingsService';
+import { logger } from '../../../../src/shared/logging/logger';
+import { DEFAULT_SETTINGS } from '../../../../src/constants';
+import { clearMockStorage, setMockStorageValue } from '../../../__mocks__/userscript-api.mock';
 
 const PUBLIC_METHODS = [
   'initialize',
@@ -20,10 +23,23 @@ const PUBLIC_METHODS = [
   'importSettings',
 ];
 
+const STORAGE_KEY = 'xeg-app-settings';
+
+function createLegacySettingsSnapshot(): Record<string, any> {
+  const snapshot = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as Record<string, any>;
+  if (snapshot?.gallery) {
+    delete snapshot.gallery.windowingEnabled;
+    delete snapshot.gallery.windowSize;
+  }
+  snapshot.lastModified = 1234567890;
+  return snapshot;
+}
+
 describe('Phase E: SettingsService 계약(Contract) 가드', () => {
   let svc: SettingsService;
 
   beforeEach(async () => {
+    clearMockStorage();
     // localStorage 초기화 (JSDOM) - globalThis 경유로 접근 (타입 가드)
     (globalThis as any).localStorage?.clear?.();
     svc = new SettingsService();
@@ -72,5 +88,36 @@ describe('Phase E: SettingsService 계약(Contract) 가드', () => {
     await newSvc.initialize();
     await newSvc.importSettings(exported);
     expect(newSvc.get('gallery.preloadCount')).toBe(6);
+  });
+
+  it('windowing 기본 설정을 제공하며 경고 없이 조회된다', () => {
+    const warnSpy = vi.spyOn(logger, 'warn');
+    warnSpy.mockClear();
+
+    expect(svc.get('gallery.windowingEnabled')).toBe(true);
+    expect(svc.get('gallery.windowSize')).toBe(5);
+
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
+  it('기존 저장 설정을 마이그레이션할 때 windowing 설정을 채운다', async () => {
+    clearMockStorage();
+    const legacySettings = createLegacySettingsSnapshot();
+    setMockStorageValue(STORAGE_KEY, JSON.stringify(legacySettings));
+
+    const warnSpy = vi.spyOn(logger, 'warn');
+
+    const newSvc = new SettingsService();
+    await newSvc.initialize();
+
+    warnSpy.mockClear();
+
+    expect(newSvc.get('gallery.windowingEnabled')).toBe(true);
+    expect(newSvc.get('gallery.windowSize')).toBe(5);
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
   });
 });

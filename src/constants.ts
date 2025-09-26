@@ -443,6 +443,8 @@ export const DEFAULT_SETTINGS = {
     imageFitMode: 'fitWidth' as const,
     theme: 'auto' as const,
     animations: true,
+    windowingEnabled: true,
+    windowSize: 5,
   },
   download: {
     filenamePattern: 'original' as const,

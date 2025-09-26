@@ -19,6 +19,10 @@ export interface GallerySettings {
   theme: 'auto' | 'light' | 'dark';
   /** 애니메이션 활성화 */
   animations: boolean;
+  /** 단순 windowing 렌더링 사용 여부 */
+  windowingEnabled: boolean;
+  /** 렌더링 창 크기 (현재 인덱스 ±N) */
+  windowSize: number;
 }
 
 /**
