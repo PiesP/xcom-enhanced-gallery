@@ -2211,7 +2211,7 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/Icon/icons/registry.ts"
+        "src/shared/components/ui/Icon/icons/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2298,49 +2298,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./registry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/registry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./registry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/Icon/icons/registry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/registry.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
           "module": "../SvgIcon",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2358,8 +2315,33 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/Icon/icons/index.ts"
+        "src/shared/components/ui/Icon/icons/registry.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/icons/registry.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./index",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/Icon/icons/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -8626,7 +8608,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 266,
-    "totalDependenciesCruised": 352,
+    "totalDependenciesCruised": 351,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
