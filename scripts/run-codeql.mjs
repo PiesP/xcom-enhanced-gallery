@@ -17,6 +17,10 @@
  *
  * The script intentionally avoids external dependencies to simplify execution inside
  * GitHub Actions or local developer environments.
+ *
+ * Environment overrides:
+ * - CODEQL_DEFAULT_QUERY_PACKS: Comma-separated list to replace the default query packs.
+ * - CODEQL_FALLBACK_QUERY_PACKS: Comma-separated list to replace fallback packs when default packs are unavailable.
  */
 
 import { promises as fs } from 'node:fs';
@@ -30,12 +34,30 @@ import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
+function parseEnvList(rawValue) {
+  if (!rawValue) {
+    return [];
+  }
+
+  return rawValue
+    .split(',')
+    .map(entry => entry.trim())
+    .filter(Boolean);
+}
+
+const envDefaultQueryPacks = parseEnvList(process.env.CODEQL_DEFAULT_QUERY_PACKS);
+const envFallbackQueryPacks = parseEnvList(process.env.CODEQL_FALLBACK_QUERY_PACKS);
+
 const DEFAULT_DB_DIR = 'codeql-db';
 const DEFAULT_SARIF = 'codeql-results.sarif';
 const DEFAULT_SUMMARY = 'codeql-results-summary.csv';
 const DEFAULT_PLAN = 'codeql-improvement-plan.md';
-const DEFAULT_QUERY_PACKS = ['codeql/javascript-security-and-quality'];
-const FALLBACK_QUERY_PACKS = ['codeql/javascript-queries'];
+const DEFAULT_QUERY_PACKS =
+  envDefaultQueryPacks.length > 0
+    ? envDefaultQueryPacks
+    : ['codeql/javascript-security-and-quality'];
+const FALLBACK_QUERY_PACKS =
+  envFallbackQueryPacks.length > 0 ? envFallbackQueryPacks : ['codeql/javascript-queries'];
 const OPTIONAL_DEFAULT_QUERY_PACKS = ['codeql/javascript-security-extended'];
 
 const includeExtendedDefaultPackFlag = (process.env.CODEQL_INCLUDE_EXTENDED ?? '').trim();
