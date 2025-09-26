@@ -48,7 +48,19 @@ function setupImageClickHandlers() {
   // Mock 함수 - 테스트용 갤러리 모달 생성
   doc.addEventListener('click', event => {
     const target = event.target;
-    if (target && target.tagName === 'IMG' && target.src && target.src.includes('pbs.twimg.com')) {
+    if (
+      target &&
+      target.tagName === 'IMG' &&
+      target.src &&
+      (() => {
+        try {
+          const url = new URL(target.src);
+          return url.host === 'pbs.twimg.com';
+        } catch {
+          return false;
+        }
+      })()
+    ) {
       // 갤러리 모달 생성 모킹
       const modal = doc.createElement('div');
       modal.setAttribute('data-testid', 'photoModal');
