@@ -35,6 +35,7 @@ const DEFAULT_SARIF = 'codeql-results.sarif';
 const DEFAULT_SUMMARY = 'codeql-results-summary.csv';
 const DEFAULT_PLAN = 'codeql-improvement-plan.md';
 const DEFAULT_QUERY_PACKS = ['codeql/javascript-security-and-quality'];
+const FALLBACK_QUERY_PACKS = ['codeql/javascript-queries'];
 const OPTIONAL_DEFAULT_QUERY_PACKS = ['codeql/javascript-security-extended'];
 
 const includeExtendedDefaultPackFlag = (process.env.CODEQL_INCLUDE_EXTENDED ?? '').trim();
@@ -666,7 +667,32 @@ async function main() {
     await assertCodeqlAvailable(config.codeqlPath);
     const resolvedCliPath = await resolveExecutablePath(config.codeqlPath);
     await ensureCliCommonJsCompatibility(resolvedCliPath);
-    const availablePacks = await ensureQueryPacksAvailable(config.codeqlPath, packs);
+    let availablePacks = await ensureQueryPacksAvailable(config.codeqlPath, packs);
+
+    if (availablePacks.length === 0 && config.includeDefaultPacks) {
+      const fallbackCandidates = [];
+
+      if (config.includeDefaultPacks) {
+        fallbackCandidates.push(...FALLBACK_QUERY_PACKS);
+      }
+
+      if (config.extraPacks.length > 0) {
+        fallbackCandidates.push(...config.extraPacks);
+      }
+
+      if (await pathExists(customQueryPackPath)) {
+        fallbackCandidates.push(customQueryPackPath);
+      }
+
+      const uniqueFallbacks = [...new Set(fallbackCandidates)];
+
+      if (uniqueFallbacks.length > 0) {
+        logStep(
+          `기본 CodeQL 쿼리 팩 접근이 거부되어 fallback 팩을 시도합니다: ${uniqueFallbacks.join(', ')}`
+        );
+        availablePacks = await ensureQueryPacksAvailable(config.codeqlPath, uniqueFallbacks);
+      }
+    }
 
     if (availablePacks.length === 0) {
       throw new Error(
