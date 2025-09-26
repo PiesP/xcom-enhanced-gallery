@@ -13,6 +13,7 @@
  *   node ./scripts/run-codeql.mjs --dry-run
  *   node ./scripts/run-codeql.mjs --codeql-path "C:/codeql/codeql.exe"
  *   node ./scripts/run-codeql.mjs --threads=4 --packs=codeql/javascript-security-extended
+ *   CODEQL_INCLUDE_EXTENDED=true node ./scripts/run-codeql.mjs
  *
  * The script intentionally avoids external dependencies to simplify execution inside
  * GitHub Actions or local developer environments.
@@ -33,10 +34,13 @@ const DEFAULT_DB_DIR = 'codeql-db';
 const DEFAULT_SARIF = 'codeql-results.sarif';
 const DEFAULT_SUMMARY = 'codeql-results-summary.csv';
 const DEFAULT_PLAN = 'codeql-improvement-plan.md';
-const DEFAULT_QUERY_PACKS = [
-  'codeql/javascript-security-extended',
-  'codeql/javascript-security-and-quality',
-];
+const DEFAULT_QUERY_PACKS = ['codeql/javascript-security-and-quality'];
+const OPTIONAL_DEFAULT_QUERY_PACKS = ['codeql/javascript-security-extended'];
+
+const includeExtendedDefaultPackFlag = (process.env.CODEQL_INCLUDE_EXTENDED ?? '').trim();
+const shouldIncludeExtendedDefaultPack = includeExtendedDefaultPackFlag
+  ? ['1', 'true', 'yes', 'on'].includes(includeExtendedDefaultPackFlag.toLowerCase())
+  : false;
 
 const CODEQL_REQUIRED_NODE_OPTION = '--experimental-default-type=commonjs';
 const isWindows = process.platform === 'win32';
@@ -316,6 +320,9 @@ function composeQueryPackList(includeDefault, extraPacks) {
   const packs = [];
   if (includeDefault) {
     packs.push(...DEFAULT_QUERY_PACKS);
+    if (shouldIncludeExtendedDefaultPack) {
+      packs.push(...OPTIONAL_DEFAULT_QUERY_PACKS);
+    }
   }
   if (extraPacks.length > 0) {
     packs.push(...extraPacks);
@@ -573,23 +580,43 @@ async function isLocalPackReference(pack) {
 }
 
 async function ensureQueryPacksAvailable(codeqlPath, packs) {
-  const remoteCandidates = [];
+  const available = [];
   for (const pack of packs) {
     if (await isLocalPackReference(pack)) {
+      available.push(pack);
       continue;
     }
-    remoteCandidates.push(pack);
+
+    try {
+      logStep(`Resolving CodeQL query pack: ${pack}`);
+      await execFileAsync(codeqlPath, ['pack', 'download', pack], {
+        env: createCodeqlEnv(),
+      });
+      available.push(pack);
+    } catch (error) {
+      const stdout = typeof error?.stdout === 'string' ? error.stdout : '';
+      const stderr = typeof error?.stderr === 'string' ? error.stderr : '';
+      const combined = [stdout, stderr]
+        .map(entry => entry.trim())
+        .filter(Boolean)
+        .join('\n');
+      const normalized = combined.toLowerCase();
+      if (normalized.includes('http/1.1 403') || normalized.includes('403 forbidden')) {
+        logStep(
+          `Skipping CodeQL pack "${pack}" — access forbidden (GitHub Advanced Security 전용일 수 있습니다).`
+        );
+        continue;
+      }
+      if (normalized.includes('http/1.1 404') || normalized.includes('404 not found')) {
+        logStep(`Skipping CodeQL pack "${pack}" — 레지스트리에서 찾을 수 없습니다.`);
+        continue;
+      }
+      const reason = combined || error?.message || String(error);
+      throw new Error(`Failed to download CodeQL pack "${pack}": ${reason}`);
+    }
   }
 
-  if (remoteCandidates.length === 0) {
-    return;
-  }
-
-  const uniqueRemote = Array.from(new Set(remoteCandidates));
-  logStep(`Resolving CodeQL query packs: ${uniqueRemote.join(', ')}`);
-  await runCommand(codeqlPath, ['pack', 'download', ...uniqueRemote], {
-    env: createCodeqlEnv(),
-  });
+  return available;
 }
 
 async function dryRun(config) {
@@ -639,7 +666,13 @@ async function main() {
     await assertCodeqlAvailable(config.codeqlPath);
     const resolvedCliPath = await resolveExecutablePath(config.codeqlPath);
     await ensureCliCommonJsCompatibility(resolvedCliPath);
-    await ensureQueryPacksAvailable(config.codeqlPath, packs);
+    const availablePacks = await ensureQueryPacksAvailable(config.codeqlPath, packs);
+
+    if (availablePacks.length === 0) {
+      throw new Error(
+        '사용 가능한 CodeQL 쿼리 팩이 없습니다. access가 허용된 팩을 지정하거나 기본 팩을 복원해 주세요.'
+      );
+    }
 
     if (!config.keepDb && (await pathExists(config.dbPath))) {
       logStep(`Removing existing database at ${config.dbPath}`);
@@ -674,7 +707,7 @@ async function main() {
       'database',
       'analyze',
       config.dbPath,
-      ...packs,
+      ...availablePacks,
       '--format=sarif-latest',
       '--output',
       config.sarifPath,
@@ -687,7 +720,7 @@ async function main() {
       env: createCodeqlEnv(),
     });
 
-    await generateReports(config, packs);
+    await generateReports(config, availablePacks);
     logStep('CodeQL 분석이 완료되었습니다.');
   } catch (error) {
     process.stderr.write(`CodeQL 실행이 실패했습니다: ${error.message}\n`);

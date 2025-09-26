@@ -143,6 +143,8 @@ secret.key
 .AppleDouble
 .LSOverride
 Icon?
+!src/shared/components/ui/Icon/icons/
+!src/shared/components/ui/Icon/icons/**
 !src/assets/icons/
 !src/assets/icons/**
 ._*
