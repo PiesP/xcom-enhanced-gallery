@@ -167,6 +167,10 @@ CI
 - 실패 시 조치
   - 훅 우회 금지. 훅 오류 메시지를 기준으로 린트/타입/테스트/커밋 메시지를 수정
   - Git 전역 설정으로 `core.hooksPath`가 다른 경로로 지정되어 있지 않은지 확인
+- Pre-push 테스트는 `TEST_SKIP_BUILD=true` 플래그와 함께 실행되어
+  `scripts/pretest-hook.mjs` 의 빌드가 생략됩니다. 푸시 전에 번들/문서 산출물을
+  최신화해야 한다면 별도로 `npm run build`(또는 `npm run build:dev|prod`)를 수동
+  실행하세요.
 
 ## 트러블슈팅 팁
 

@@ -127,7 +127,7 @@ jobs:
         run: node ./scripts/run-codeql.mjs --codeql-path codeql
 
       - name: 📤 Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: codeql-results.sarif
 
