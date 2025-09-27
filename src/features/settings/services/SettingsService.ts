@@ -602,8 +602,8 @@ export class SettingsService {
    */
   private migrateSettings(settings: AppSettings): AppSettings {
     // 버전별 마이그레이션 로직
-    // 현재는 기본값으로 누락된 필드 채우기
-    return {
+    // 현재는 기본값으로 누락된 필드 채우기 후 재살균 처리
+    const merged = {
       ...defaultSettings,
       ...settings,
       gallery: { ...defaultSettings.gallery, ...settings.gallery },
@@ -613,7 +613,9 @@ export class SettingsService {
       accessibility: { ...defaultSettings.accessibility, ...settings.accessibility },
       version: defaultSettings.version, // 항상 최신 버전으로
       lastModified: Date.now(),
-    };
+    } as AppSettings;
+
+    return sanitizeSettingsTree(merged);
   }
 
   /**

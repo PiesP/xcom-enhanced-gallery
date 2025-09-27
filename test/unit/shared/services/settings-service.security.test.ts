@@ -43,4 +43,14 @@ describe('SettingsService prototype pollution guards', () => {
     await expect(service.importSettings(payload)).rejects.toBeInstanceOf(SettingsSecurityError);
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
+
+  it('preserves null prototypes after exporting and re-importing settings', async () => {
+    const service = new SettingsService();
+    const exported = service.exportSettings();
+
+    await service.importSettings(exported);
+
+    const gallerySettings = service.get('gallery');
+    expect(Object.getPrototypeOf(gallerySettings)).toBeNull();
+  });
 });

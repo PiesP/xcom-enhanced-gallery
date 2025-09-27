@@ -44,6 +44,11 @@ describe('URLPatterns domain validation', () => {
     expect(URLPatterns.isImageUrl(TRUSTED_TWIMG_IMAGE)).toBe(true);
   });
 
+  it('rejects non-HTTPS twitter media URLs for image detection', () => {
+    const insecureMedia = 'http://pbs.twimg.com/media/example.jpg';
+    expect(URLPatterns.isImageUrl(insecureMedia)).toBe(false);
+  });
+
   it('does not extract tweet info from spoofed hostnames (URLPatterns)', () => {
     expect(extractTweetInfoFromPatterns(SPOOFED_TWITTER_URL)).toBeNull();
     expect(extractTweetInfoFromPatterns(SPOOFED_X_URL)).toBeNull();

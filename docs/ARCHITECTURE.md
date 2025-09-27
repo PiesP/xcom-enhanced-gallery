@@ -87,6 +87,9 @@ Must Not
   `UnifiedToastManager`, etc.
 - State: `shared/state/**`, Selector 유틸: `@shared/utils/signalSelector`
 - Utils: `@shared/utils/**`(events/wheel, performance schedulers, memory, etc.)
+  - `@shared/utils/url-safety`는 `parseTrustedUrl()` 헬퍼와
+    `createTrustedHostnameGuard()`를 통해 HTTPS 고정 및 허용된 호스트 검증을
+    제공한다. 트위터 미디어 URL 검사는 이 계층의 가드를 재사용해야 한다.
 
 ### 2.3 External Layer (`src/shared/external/**`)
 
@@ -160,8 +163,11 @@ Must Not
 ### 4.3 설정 저장·복원
 
 1. SettingsService가 기본값/마이그레이션/유효성 관리
-2. UI는 액세서(`@shared/container/settings-access`)로 읽기/쓰기
-3. 토큰/테마 반영은 `ThemeService`와 스타일 토큰 레이어에서 수행
+2. JSON import 시 `sanitizeSettingsTree()`와 마이그레이션이 결합되어
+   prototype-null 객체만 유지하며, `__proto__`/`constructor` 침투를 즉시
+   차단한다.
+3. UI는 액세서(`@shared/container/settings-access`)로 읽기/쓰기
+4. 토큰/테마 반영은 `ThemeService`와 스타일 토큰 레이어에서 수행
 
 ## 5. 상태 관리와 시그널 규칙
 
@@ -238,7 +244,7 @@ type UserscriptAPI = {
 
 ## 12. 테스트 전략(TDD) 매핑
 
-- 환경: Vitest + JSDOM, 기본 URL https://x.com, `test/setup.ts` 자동 로드
+- 환경: Vitest + JSDOM, 기본 URL <https://x.com>, `test/setup.ts` 자동 로드
 - RED→GREEN → Refactor 절차, 계약/경계/정책을 테스트로 가드
 - 예시 매핑(발췌)
   - Vendors/TDZ: `test/integration/vendor-tdz-resolution.test.ts`

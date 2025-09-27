@@ -19,7 +19,10 @@ const TRUSTED_TWITTER_HOSTS = [
 
 const isTrustedXHostname = createTrustedHostnameGuard(TRUSTED_X_HOSTS);
 const isTrustedTwitterHostname = createTrustedHostnameGuard(TRUSTED_TWITTER_HOSTS);
-const isTrustedTwitterMediaHostname = createTrustedHostnameGuard(TWITTER_MEDIA_HOSTS);
+const HTTPS_ONLY_PROTOCOLS = Object.freeze(['https:'] as const);
+const isTrustedTwitterMediaHostname = createTrustedHostnameGuard(TWITTER_MEDIA_HOSTS, {
+  allowedProtocols: HTTPS_ONLY_PROTOCOLS,
+});
 
 /**
  * URL 패턴 매칭 및 추출을 위한 유틸리티 클래스

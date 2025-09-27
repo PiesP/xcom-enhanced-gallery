@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createTrustedHostnameGuard, isTrustedHostname } from '@shared/utils/url-safety';
+import * as urlSafety from '@shared/utils/url-safety';
 
 describe('Trusted hostname guard', () => {
   const ALLOWLIST = ['pbs.twimg.com', 'video.twimg.com'] as const;
@@ -33,5 +34,39 @@ describe('Trusted hostname guard', () => {
     expect(guard('https://media.pbs.twimg.com/media/foo.jpg')).toBe(true);
     expect(guard('https://twimg.com/media/foo.jpg')).toBe(true);
     expect(guard('https://twimg.com.evil')).toBe(false);
+  });
+
+  describe('parseTrustedUrl helper (pending implementation)', () => {
+    const parseTrustedUrl = (urlSafety as Record<string, unknown>)['parseTrustedUrl'] as
+      | ((
+          candidate: string,
+          allowlist: readonly string[]
+        ) => { href: string; hostname: string } | null)
+      | undefined;
+    const ALLOWLIST = ['pbs.twimg.com'] as const;
+
+    it('exposes parseTrustedUrl function for structured URL validation', () => {
+      expect(typeof parseTrustedUrl).toBe('function');
+    });
+
+    it('rejects http protocol even for allowlisted hosts', () => {
+      if (typeof parseTrustedUrl !== 'function') {
+        expect(typeof parseTrustedUrl).toBe('function');
+        return;
+      }
+
+      const result = parseTrustedUrl('http://pbs.twimg.com/media/foo.jpg', ALLOWLIST);
+      expect(result).toBeNull();
+    });
+
+    it('rejects deceptive suffix matches when parsing trusted URLs', () => {
+      if (typeof parseTrustedUrl !== 'function') {
+        expect(typeof parseTrustedUrl).toBe('function');
+        return;
+      }
+
+      const result = parseTrustedUrl('https://pbs.twimg.com.attacker/media/foo.jpg', ALLOWLIST);
+      expect(result).toBeNull();
+    });
   });
 });
