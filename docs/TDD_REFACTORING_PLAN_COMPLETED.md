@@ -1,3 +1,19 @@
+2025-09-27: EPIC — SEC-2025-10 CodeQL URL/Settings 하드닝 (완료)
+
+- `@shared/utils/url-safety`의 `parseTrustedUrl`/`createTrustedHostnameGuard`
+  파생 가드를 모든 미디어 추출 경로에 적용하고, `URLPatterns.normalizeUrl`을
+  단일 디코딩/정규화 경로로 고정해 CodeQL
+  `js/incomplete-url-substring-sanitization` 및 `js/double-escaping` 경고를
+  제거했습니다.
+- SettingsService 전 경로를 `assertSafeSettingPath` + null prototype 병합으로
+  통합하고, import/export/updateBatch에서 프로토타입 오염을 차단하는 보안 회귀
+  테스트(`test/unit/shared/services/settings-service.security.test.ts`)를 GREEN
+  상태로 유지하고 있습니다.
+- 통합 검증: `npx vitest run test/shared/utils/url-patterns.security.test.ts`
+  `test/unit/shared/services/settings-service.security.test.ts`와
+  `Clear-Host; npm run build`를 실행해 타입/린트/포맷/dev·prod 빌드·postbuild
+  검증까지 모두 PASS임을 확인했습니다.
+
 2025-09-27: EPIC — SEC-2025-09 CodeQL 하드닝 패스 (완료)
 
 - URL 신뢰성 가드를 `@shared/utils/url-safety`로 통합하고 갤러리/서비스 전반의
