@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
+import { render, cleanup } from '@test-utils/testing-library';
 import { GalleryContainer } from '@/shared/components/isolation/GalleryContainer';
 
 // LEGACY RED: superseded by GREEN guard in GalleryContainer.minimal-markup.test.tsx

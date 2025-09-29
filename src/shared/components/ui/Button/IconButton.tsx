@@ -1,15 +1,12 @@
 /**
  * @file IconButton - Thin wrapper over Unified Button for icon-only actions
  */
-import type { ComponentChildren, VNode } from '@shared/external/vendors';
-import { getPreact } from '@shared/external/vendors';
+
+import type { JSX } from 'solid-js';
 import { LazyIcon } from '@shared/components/LazyIcon';
 import type { IconName } from '@shared/services/iconRegistry';
-import { Button } from './Button';
-import type { ButtonProps } from './Button';
+import { Button, type ButtonProps } from './Button';
 
-// IconButton 사이즈 맵 (TDD: icon-button.size-map)
-// 중앙에서 허용되는 사이즈 키를 관리하여 테스트로 일관성 가드
 export const ICON_BUTTON_SIZES: ReadonlyArray<'sm' | 'md' | 'lg' | 'toolbar'> = [
   'sm',
   'md',
@@ -17,33 +14,31 @@ export const ICON_BUTTON_SIZES: ReadonlyArray<'sm' | 'md' | 'lg' | 'toolbar'> = 
   'toolbar',
 ] as const;
 
-export interface IconButtonProps extends Omit<ButtonProps, 'variant' | 'iconOnly' | 'children'> {
-  /** 기존 children 대신 아이콘 이름을 제공하여 Lazy 로딩 적용 */
+export interface IconButtonProps
+  extends Omit<ButtonProps, 'variant' | 'iconOnly' | 'children' | 'size'> {
   readonly iconName?: IconName;
-  readonly children?: ComponentChildren;
+  readonly children?: JSX.Element | JSX.Element[] | string | number | boolean | null;
+  readonly size?: (typeof ICON_BUTTON_SIZES)[number];
 }
 
-export function IconButton({ size = 'md', iconName, children, ...props }: IconButtonProps): VNode {
-  // 방어적: 허용되지 않은 값이 들어오면 기본 md 사용
-  const safeSize: IconButtonProps['size'] = ICON_BUTTON_SIZES.includes(
-    size as 'sm' | 'md' | 'lg' | 'toolbar'
-  )
-    ? size
-    : 'md';
-  const { h } = getPreact();
-  const iconChild = iconName
-    ? h(LazyIcon as unknown as (p: { name: IconName }) => VNode, { name: iconName })
-    : children;
-  return h(
-    Button as unknown as (p: ButtonProps) => VNode,
-    {
-      ...props,
-      variant: 'icon',
-      size: safeSize,
-      iconOnly: true,
-    },
-    iconChild
-  );
-}
+export const IconButton = (props: IconButtonProps): JSX.Element => {
+  const normalizedSize: (typeof ICON_BUTTON_SIZES)[number] =
+    typeof props.size === 'string' &&
+    ICON_BUTTON_SIZES.includes(props.size as (typeof ICON_BUTTON_SIZES)[number])
+      ? (props.size as (typeof ICON_BUTTON_SIZES)[number])
+      : 'md';
+
+  const { iconName, children, ...rest } = props;
+  const content = iconName ? <LazyIcon name={iconName} /> : children;
+
+  const buttonProps = {
+    ...(rest as ButtonProps),
+    variant: 'icon' as const,
+    size: normalizedSize,
+    iconOnly: true,
+  } satisfies ButtonProps;
+
+  return <Button {...buttonProps}>{content}</Button>;
+};
 
 export default IconButton;

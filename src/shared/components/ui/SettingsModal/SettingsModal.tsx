@@ -1,605 +1,455 @@
 /**
- * @fileoverview SettingsModal - Unified Settings Modal Component
- * @description Single source of truth for all settings modal functionality
+ * @fileoverview SettingsModal - SolidJS implementation
+ * @description FRAME-ALT-001 Stage D Phase 2 shared UI migration
  */
-import {
-  getPreact,
-  getPreactHooks,
-  type VNode,
-  type ComponentChildren,
-} from '@shared/external/vendors';
-import { useFocusTrap } from '@shared/hooks/useFocusTrap';
-import { useScrollLock } from '@shared/hooks/useScrollLock';
+
+import type { JSX } from 'solid-js';
+import { getSolidCore } from '@shared/external/vendors';
 import { ComponentStandards } from '../StandardProps';
-// R4: 직접 아이콘 import 제거 (X) → IconButton.iconName 사용
+import { ModalShell } from '../ModalShell';
+import { IconButton } from '../Button/IconButton';
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
-import primitiveStyles from '@shared/styles/primitives.module.css';
-// Barrel import 제거 (cycle 감소) - direct relative import
-import { IconButton } from '../Button/IconButton';
-import styles from './SettingsModal.module.css';
 import { getSetting, setSetting } from '@shared/container/settings-access';
+import primitiveStyles from '@shared/styles/primitives.module.css';
+import styles from './SettingsModal.module.css';
 
 export interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  mode?: 'panel' | 'modal';
-  position?: 'toolbar-below' | 'top-right' | 'center' | 'bottom-sheet';
-  children?: ComponentChildren;
-  className?: string;
-  'data-testid'?: string;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly mode?: 'panel' | 'modal';
+  readonly position?: 'toolbar-below' | 'top-right' | 'center' | 'bottom-sheet';
+  readonly children?: JSX.Element;
+  readonly className?: string;
+  readonly 'data-testid'?: string;
 }
 
-/**
- * SettingsModal - Unified settings modal component
- *
- * Supports both panel and modal modes with accessibility features
- */
-export function SettingsModal({
-  isOpen,
-  onClose,
-  mode = 'panel',
-  position = 'center',
-  children,
-  className = '',
-  'data-testid': testId,
-}: SettingsModalProps): VNode | null {
-  const { h } = getPreact();
-  const { useState, useEffect, useRef, useCallback } = getPreactHooks();
-  // 일부 테스트 환경(jsdom + preact/test-utils)에서 useLayoutEffect가 제공되지 않을 수 있으므로 안전한 폴백을 사용
-  const hooks = getPreactHooks();
-  const useIsoLayoutEffect: (cb: () => void, deps?: unknown[]) => void =
-    typeof (hooks as unknown as Record<string, unknown>).useLayoutEffect === 'function'
-      ? (hooks as unknown as { useLayoutEffect: (cb: () => void, deps?: unknown[]) => void })
-          .useLayoutEffect
-      : useEffect;
+type ThemeOption = 'auto' | 'light' | 'dark';
+type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
-  const [currentTheme, setCurrentTheme] = useState<'auto' | 'light' | 'dark'>('auto');
-  const [currentLanguage, setCurrentLanguage] = useState<'auto' | 'ko' | 'en' | 'ja'>('auto');
-  const [languageService] = useState(() => new LanguageService());
-  const [themeService] = useState(() => new ThemeService());
-  const [showProgressToast, setShowProgressToast] = useState<boolean>(false);
+const FOCUSABLE_SELECTORS = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+  '[contenteditable="true"]',
+].join(', ');
 
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const innerRef = useRef<HTMLDivElement | null>(null);
-  const modalContainerRef = useRef<HTMLDivElement | null>(null);
-  const firstFocusableRef = useRef<HTMLButtonElement | null>(null);
-  const lastFocusableRef = useRef<HTMLSelectElement | null>(null);
-  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
-  const docKeydownNoopRef = useRef<((e: KeyboardEvent) => void) | null>(null);
-  const focusRetryTimerRef = useRef<number | null>(null);
-  const refFocusTimerRef = useRef<number | null>(null);
+interface LocalizedStrings {
+  readonly title: string;
+  readonly theme: string;
+  readonly language: string;
+  readonly themeAuto: string;
+  readonly themeLight: string;
+  readonly themeDark: string;
+  readonly downloadProgressToast: string;
+}
 
-  // 이전 포커스 요소로의 동기 복원 유틸리티
-  const restorePrevFocusSync = useCallback((): void => {
-    const prev = previouslyFocusedRef.current;
-    if (!prev || typeof document === 'undefined') return;
-    try {
-      const hadTabIndex = prev.hasAttribute('tabindex');
-      const prevTabIndex = prev.getAttribute('tabindex');
-      prev.setAttribute('tabindex', '0');
-      prev.focus();
-      if (!hadTabIndex) {
-        prev.removeAttribute('tabindex');
-      } else if (prevTabIndex !== null) {
-        prev.setAttribute('tabindex', prevTabIndex);
-      }
-    } catch {
-      /* noop */
-    }
-  }, []);
+const computeLocalizedStrings = (service: LanguageService): LocalizedStrings => ({
+  title: service.getString('settings.title'),
+  theme: service.getString('settings.theme'),
+  language: service.getString('settings.language'),
+  themeAuto: service.getString('settings.themeAuto'),
+  themeLight: service.getString('settings.themeLight'),
+  themeDark: service.getString('settings.themeDark'),
+  downloadProgressToast: service.getString('settings.downloadProgressToast'),
+});
 
-  // 동기 캡처: 렌더-즉시 닫힘 같은 케이스에서 이펙트 전에 이전 포커스 요소를 기록
-  if (isOpen && mode === 'panel' && typeof document !== 'undefined') {
-    if (!previouslyFocusedRef.current) {
-      const active = document.activeElement;
-      previouslyFocusedRef.current = active instanceof HTMLElement ? active : null;
-    }
-  }
-
-  // 포커스 트랩 구현 (DOM 쿼리 기반 - ref 의존성 제거)
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      const container = panelRef.current;
-      if (!isOpen || !container?.contains(event.target as Node)) return;
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (event.key === 'Tab') {
-        event.preventDefault();
-
-        const focusable = Array.from(
-          container.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
-          )
-        );
-        if (focusable.length === 0) return;
-
-        const firstElement = focusable[0];
-        const lastElement = focusable[focusable.length - 1];
-
-        if (event.shiftKey) {
-          // Shift+Tab: 첫 번째에서 마지막으로
-          if (document.activeElement === firstElement) {
-            try {
-              lastElement?.focus();
-            } catch {
-              /* no-op for jsdom */
-            }
-          } else {
-            try {
-              // 이전 요소로 이동이 아닌 간단 순환 요구만 충족: 첫 요소가 아니면 마지막으로 이동
-              lastElement?.focus();
-            } catch {
-              /* no-op for jsdom */
-            }
-          }
-        } else {
-          // Tab: 마지막에서 첫 번째로
-          if (document.activeElement === lastElement) {
-            try {
-              firstElement?.focus();
-            } catch {
-              /* no-op for jsdom */
-            }
-          } else {
-            try {
-              // 다음 요소로 이동 대신 테스트 요구 충족을 위해 마지막으로 점프 (간단 순환)
-              lastElement?.focus();
-            } catch {
-              /* no-op for jsdom */
-            }
-          }
-        }
-      }
+export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | null => {
+  const solid = getSolidCore();
+  const props = solid.mergeProps(
+    {
+      mode: 'panel' as const,
+      position: 'center' as const,
+      className: '',
     },
-    [isOpen, onClose]
+    providedProps
   );
 
-  // 배경 요소 비활성화 - 접근성 개선
-  const setBackgroundInert = useCallback((inert: boolean) => {
-    // 배경 inert 처리는 모달 루트(panelRef) 자체나 그 조상에 aria-hidden을 적용하지 않아야 한다.
-    if (typeof document === 'undefined') return;
-    const panel = panelRef.current;
-    const bodyChildren = Array.from(document.querySelectorAll('body > *')) as HTMLElement[];
-    bodyChildren.forEach(el => {
-      // panel 자신 또는 panel을 포함(조상)하는 요소는 건너뛴다.
-      const skip = !!panel && (el === panel || el.contains(panel));
-      if (skip) return;
-      if (inert) {
-        if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
-        el.setAttribute('aria-hidden', 'true');
-      } else {
-        if (el.getAttribute('aria-hidden') === 'true') el.removeAttribute('aria-hidden');
-        if (el.getAttribute('tabindex') === '-1') el.removeAttribute('tabindex');
-      }
-    });
-  }, []);
+  const [local, rest] = solid.splitProps(props, [
+    'isOpen',
+    'onClose',
+    'mode',
+    'position',
+    'children',
+    'className',
+    'data-testid',
+  ]);
 
-  // Panel mode logic
-  useEffect(() => {
-    if (!isOpen || mode !== 'panel') return;
+  const [currentTheme, setCurrentTheme] = solid.createSignal<ThemeOption>('auto');
+  const [currentLanguage, setCurrentLanguage] = solid.createSignal<LanguageOption>('auto');
+  const [showProgressToast, setShowProgressToast] = solid.createSignal(false);
+
+  const languageService = new LanguageService();
+  const themeService = new ThemeService();
+
+  const [localizedStrings, setLocalizedStrings] = solid.createSignal(
+    computeLocalizedStrings(languageService)
+  );
+
+  let panelRef: HTMLDivElement | undefined;
+  let closeButtonRef: HTMLButtonElement | undefined;
+  let previousFocus: HTMLElement | null = null;
+  let scrollLocked = false;
+  let originalBodyOverflow: string | null = null;
+
+  const focusSafely = (element: HTMLElement | null | undefined) => {
+    if (!element) return;
+    try {
+      if (element.tabIndex < 0 && !element.hasAttribute('tabindex')) {
+        element.setAttribute('tabindex', '-1');
+      }
+      element.focus();
+    } catch {
+      /* no-op */
+    }
+  };
+
+  const capturePreviousFocus = () => {
+    if (typeof document === 'undefined') return;
+    const active = document.activeElement;
+    previousFocus = active instanceof HTMLElement ? active : null;
+  };
+
+  const restorePreviousFocus = () => {
+    if (!previousFocus) return;
+    if (previousFocus.isConnected) {
+      focusSafely(previousFocus);
+    }
+    previousFocus = null;
+  };
+
+  const lockBodyScroll = (locked: boolean) => {
+    if (typeof document === 'undefined') return;
+    if (locked) {
+      if (scrollLocked) return;
+      originalBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      scrollLocked = true;
+    } else if (scrollLocked) {
+      document.body.style.overflow = originalBodyOverflow ?? '';
+      scrollLocked = false;
+    }
+  };
+
+  const runNextTick = (callback: () => void) => {
+    try {
+      const queue = (globalThis as { queueMicrotask?: (cb: () => void) => void }).queueMicrotask;
+      if (typeof queue === 'function') {
+        queue(callback);
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    if (typeof window !== 'undefined') {
+      window.setTimeout(callback, 0);
+    }
+  };
+
+  const getFocusableElements = (): HTMLElement[] => {
+    if (!panelRef) return [];
+    const nodes = panelRef.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS);
+    return Array.from(nodes).filter(element => {
+      if (element.hasAttribute('disabled')) return false;
+      const ariaDisabled = element.getAttribute('aria-disabled');
+      return ariaDisabled !== 'true';
+    });
+  };
+
+  const refreshLocalization = () => {
+    setLocalizedStrings(computeLocalizedStrings(languageService));
+  };
+
+  const setPanelRef = (element: HTMLDivElement | null) => {
+    panelRef = element ?? undefined;
+  };
+
+  const setCloseButtonRef = (element: HTMLButtonElement | null) => {
+    closeButtonRef = element ?? undefined;
+  };
+
+  type SelectChangeEvent = Event & {
+    readonly currentTarget: HTMLSelectElement;
+    readonly target: Element;
+  };
+  type InputChangeEvent = Event & {
+    readonly currentTarget: HTMLInputElement;
+    readonly target: Element;
+  };
+  type PanelMouseEvent = MouseEvent & {
+    readonly currentTarget: HTMLDivElement;
+    readonly target: Element;
+  };
+  type PanelKeyboardEvent = KeyboardEvent & {
+    readonly currentTarget: HTMLDivElement;
+    readonly target: Element;
+  };
+
+  const handleThemeChange = (event: SelectChangeEvent) => {
+    const element = event.currentTarget;
+    const newTheme = element.value as ThemeOption;
+    setCurrentTheme(newTheme);
+    try {
+      themeService.setTheme(newTheme);
+    } catch {
+      /* ignore theme errors */
+    }
+  };
+
+  const handleLanguageChange = (event: SelectChangeEvent) => {
+    const element = event.currentTarget;
+    const newLanguage = element.value as LanguageOption;
+    setCurrentLanguage(newLanguage);
+    languageService.setLanguage(newLanguage);
+    refreshLocalization();
+  };
+
+  const handleProgressToastToggle = (event: InputChangeEvent) => {
+    const element = event.currentTarget;
+    const checked = element.checked;
+    setShowProgressToast(checked);
+    setSetting('download.showProgressToast', checked).catch(() => undefined);
+  };
+
+  const handleCloseClick = () => {
+    local.onClose?.();
+  };
+
+  const handlePanelClick = (event: PanelMouseEvent) => {
+    if (event.target === event.currentTarget) {
+      event.preventDefault();
+      local.onClose?.();
+    }
+  };
+
+  const handleKeyDown = (event: PanelKeyboardEvent) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      local.onClose?.();
+      return;
+    }
+
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const focusable = getFocusableElements();
+    if (focusable.length === 0) {
+      event.preventDefault();
+      focusSafely(panelRef ?? null);
+      return;
+    }
+
+    const active =
+      typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null;
+    let index = active ? focusable.indexOf(active) : -1;
+
+    if (event.shiftKey) {
+      index = index <= 0 ? focusable.length - 1 : index - 1;
+    } else {
+      index = index === focusable.length - 1 ? 0 : index + 1;
+    }
+
+    event.preventDefault();
+    focusSafely(focusable[index]);
+  };
+
+  solid.createEffect(() => {
+    if (!local.isOpen) {
+      lockBodyScroll(false);
+      restorePreviousFocus();
+      return;
+    }
+
+    capturePreviousFocus();
+
+    try {
+      themeService.initialize();
+    } catch {
+      /* ignore init errors */
+    }
+
+    try {
+      const themeSetting = themeService.getCurrentTheme();
+      setCurrentTheme((themeSetting ?? 'auto') as ThemeOption);
+    } catch {
+      setCurrentTheme('auto');
+    }
 
     setCurrentLanguage(languageService.getCurrentLanguage());
-    setCurrentTheme(
-      themeService.getCurrentTheme
-        ? (themeService.getCurrentTheme() as typeof currentTheme)
-        : 'auto'
-    );
-    // Load persisted setting safely
+    refreshLocalization();
+
     try {
-      const persisted = getSetting<boolean>(
-        'download.showProgressToast' as unknown as string,
-        false
-      );
-      setShowProgressToast(!!persisted);
+      const persisted = getSetting<boolean>('download.showProgressToast', false);
+      setShowProgressToast(Boolean(persisted));
     } catch {
       setShowProgressToast(false);
     }
 
-    // 접근성 설정
-    if (typeof document !== 'undefined') {
-      const active = document.activeElement;
-      if (!previouslyFocusedRef.current) {
-        previouslyFocusedRef.current = active instanceof HTMLElement ? active : null;
-      }
-      // 패널 외부 요소에 머물러 있는 포커스를 먼저 해제해 전환을 확실히 함
-      const activeEl = active as HTMLElement | null;
-      if (activeEl && !panelRef.current?.contains(activeEl)) {
-        try {
-          activeEl.blur?.();
-        } catch {
-          /* no-op */
-        }
-      }
+    if (local.mode === 'panel') {
+      lockBodyScroll(true);
+      runNextTick(() => focusSafely(closeButtonRef));
     }
-    setBackgroundInert(true);
+  });
 
-    // 문서 레벨 키다운 리스너는 테스트 호환성용(noop)으로만 등록
-    // 실제 키 처리(on Tab/Escape)는 컨테이너 onKeyDown에서 처리
-    const noop = (_e: KeyboardEvent) => {
-      // intentionally empty
-    };
-    docKeydownNoopRef.current = noop;
-    document.addEventListener('keydown', noop, true);
+  const unsubscribeLanguage = languageService.onLanguageChange(() => {
+    refreshLocalization();
+  });
 
-    // Focus first focusable element (retry loop to ensure refs are attached)
-    let tries = 0;
-    const tryFocus = () => {
-      let el = firstFocusableRef.current as HTMLElement | null;
-      if (!el && panelRef.current) {
-        el = panelRef.current.querySelector<HTMLElement>(
-          'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
-        );
-      }
-      if (el) {
-        try {
-          el.focus();
-        } catch {
-          /* no-op for jsdom */
-        }
-        // If activeElement not target, retry to ensure focus transition
-        if (typeof document !== 'undefined' && document.activeElement !== el && tries < 10) {
-          tries += 1;
-          focusRetryTimerRef.current = window.setTimeout(tryFocus, 0);
-        }
-        return;
-      }
-      if (tries < 10) {
-        tries += 1;
-        focusRetryTimerRef.current = window.setTimeout(tryFocus, 0);
-      }
-    };
-    tryFocus();
+  solid.onCleanup(() => {
+    lockBodyScroll(false);
+    restorePreviousFocus();
+    unsubscribeLanguage();
+  });
 
-    // Basic scroll lock for panel mode
-    if (typeof document !== 'undefined') {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-
-      return () => {
-        document.body.style.overflow = originalOverflow;
-        if (docKeydownNoopRef.current) {
-          document.removeEventListener('keydown', docKeydownNoopRef.current, true);
-        }
-        if (focusRetryTimerRef.current) {
-          clearTimeout(focusRetryTimerRef.current);
-          focusRetryTimerRef.current = null;
-        }
-        setBackgroundInert(false);
-        // 포커스 복원은 useIsoLayoutEffect 클린업에서 보장되므로 여기서는 생략 (보조적인 inert 해제만 수행)
-      };
-    }
-
-    return () => {
-      if (docKeydownNoopRef.current) {
-        document.removeEventListener('keydown', docKeydownNoopRef.current, true);
-      }
-      if (focusRetryTimerRef.current) {
-        clearTimeout(focusRetryTimerRef.current);
-        focusRetryTimerRef.current = null;
-      }
-      setBackgroundInert(false);
-      // 포커스 복원은 useIsoLayoutEffect 클린업에서 수행
-    };
-  }, [isOpen, mode, languageService, themeService, handleKeyDown, setBackgroundInert]);
-
-  // isOpen 변경/언마운트 시 레이아웃 이펙트 클린업에서 포커스 복원 (DOM 변경 이전에 실행)
-  useIsoLayoutEffect(() => {
-    if (!isOpen || mode !== 'panel') return;
-    return () => {
-      // 타이머/리스너는 다른 클린업에서 정리되므로 여기서는 순수 포커스 복원만 담당
-      setBackgroundInert(false);
-      restorePrevFocusSync();
-    };
-  }, [isOpen, mode, restorePrevFocusSync, setBackgroundInert]);
-
-  // 초기 포커스를 동기적으로 강제 (jsdom 호환) - useLayoutEffect 미제공 환경에서는 useEffect로 대체
-  useIsoLayoutEffect(() => {
-    if (!isOpen || mode !== 'panel') return;
-    const closeByAria =
-      panelRef.current?.querySelector<HTMLElement>(
-        'button[aria-label="Close"], [aria-label="Close"]'
-      ) || null;
-    const elFromRef = firstFocusableRef.current as HTMLElement | null;
-    const elFromQuery =
-      panelRef.current?.querySelector<HTMLElement>(
-        'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
-      ) || null;
-    const target = closeByAria || elFromRef || elFromQuery;
-    if (target) {
-      try {
-        target.focus();
-      } catch {
-        /* no-op */
-      }
-    }
-    // 페인트 이후에도 보장
-    const afterPaint = () => {
-      if (!isOpen || mode !== 'panel') return;
-      const el = (panelRef.current?.querySelector(
-        'button[aria-label="Close"], [aria-label="Close"]'
-      ) ||
-        firstFocusableRef.current ||
-        panelRef.current?.querySelector(
-          'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
-        )) as HTMLElement | null;
-      if (el) {
-        try {
-          el.focus();
-        } catch {
-          /* no-op */
-        }
-      }
-    };
-    const t = window.setTimeout(afterPaint, 0);
-    return () => {
-      clearTimeout(t);
-    };
-  }, [isOpen, mode]);
-
-  // Modal mode logic
-  if (mode === 'modal') {
-    useFocusTrap(modalContainerRef, isOpen, { onEscape: onClose, restoreFocus: true });
-    useScrollLock({ enabled: isOpen, reserveScrollBarGap: true });
-  }
-
-  const handleThemeChange = useCallback(
-    (event: Event) => {
-      const newTheme = (event.target as HTMLSelectElement).value as 'auto' | 'light' | 'dark';
-      setCurrentTheme(newTheme);
-      themeService.setTheme(newTheme);
-      if (typeof document !== 'undefined') {
-        if (newTheme === 'auto') {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-        } else {
-          document.documentElement.setAttribute('data-theme', newTheme);
-        }
-      }
-    },
-    [themeService]
-  );
-
-  const handleLanguageChange = useCallback(
-    (event: Event) => {
-      const newLanguage = (event.target as HTMLSelectElement).value as 'auto' | 'ko' | 'en' | 'ja';
-      setCurrentLanguage(newLanguage);
-      languageService.setLanguage(newLanguage);
-    },
-    [languageService]
-  );
-
-  const handleProgressToastToggle = useCallback((event: Event) => {
-    const checked = (event.target as HTMLInputElement).checked;
-    setShowProgressToast(checked);
-    // persist asynchronously; ignore errors in non-bridge envs
-    setSetting('download.showProgressToast' as unknown as string, checked).catch(() => {});
-  }, []);
-
-  if (!isOpen) {
-    // 패널 비활성화 이전에 inert 해제 및 포커스 복원 타이머 정리
-    if (focusRetryTimerRef.current) {
-      clearTimeout(focusRetryTimerRef.current);
-      focusRetryTimerRef.current = null;
-    }
-    if (refFocusTimerRef.current) {
-      clearTimeout(refFocusTimerRef.current);
-      refFocusTimerRef.current = null;
-    }
-    setBackgroundInert(false);
-
-    // 동기 복원: 렌더 타이밍에 바로 이전 포커스 요소로 복귀
-    restorePrevFocusSync();
+  if (!local.isOpen) {
     return null;
   }
 
-  const testProps = ComponentStandards.createTestProps(testId);
-
-  // 위치 클래스 결정 로직
-  const getPositionClass = (): string => {
-    switch (position) {
+  const positionClass = solid.createMemo(() => {
+    switch (local.position) {
       case 'center':
-        return styles.center || '';
+        return styles.center ?? '';
       case 'bottom-sheet':
-        return styles.bottomSheet || '';
+        return styles.bottomSheet ?? '';
       case 'top-right':
-        return styles.topRight || '';
+        return styles.topRight ?? '';
       case 'toolbar-below':
       default:
-        return styles.toolbarBelow || '';
+        return styles.toolbarBelow ?? '';
     }
-  };
+  });
 
-  const panelClass = ComponentStandards.createClassName(
-    styles.panel,
-    getPositionClass(),
-    className
+  const panelClass = solid.createMemo(() =>
+    ComponentStandards.createClassName(styles.panel, positionClass(), local.className ?? '')
   );
-  const innerClass = ComponentStandards.createClassName(styles.modal, styles.inner);
-
-  const header = h('div', { className: styles.header, key: 'header' }, [
-    h(
-      'h2',
-      { id: 'settings-title', className: styles.title, key: 'title' },
-      languageService.getString('settings.title')
-    ),
-    h(IconButton, {
-      ref: (el: HTMLButtonElement | null) => {
-        // 포커스 트랩의 첫 요소로 지정
-        firstFocusableRef.current = el;
-        if (isOpen && el) {
-          let attempts = 0;
-          const run = () => {
-            if (typeof document === 'undefined') return;
-            try {
-              el.focus();
-            } catch {
-              /* no-op */
-            }
-            if (document.activeElement !== el && attempts < 10) {
-              attempts += 1;
-              refFocusTimerRef.current = window.setTimeout(run, 0);
-            }
-          };
-          const g = globalThis as unknown as {
-            queueMicrotask?: (cb: () => void) => void;
-          };
-          const qmicro = g.queueMicrotask;
-          if (typeof qmicro === 'function') {
-            qmicro(run);
-          } else {
-            refFocusTimerRef.current = window.setTimeout(run, 0);
-          }
-        }
-        if (!el && refFocusTimerRef.current) {
-          clearTimeout(refFocusTimerRef.current);
-          refFocusTimerRef.current = null;
-        }
-      },
-      className: styles.closeButton || '',
-      onClick: onClose,
-      'aria-label': 'Close',
-      autoFocus: true,
-      // close는 파괴적 액션이 아니므로 intent 미지정(중립)
-      size: 'md',
-      key: 'close',
-      iconName: 'Close',
-    }),
-  ]);
-
-  const themeSelect = h(
-    'select',
-    {
-      id: 'theme-select',
-      className: [primitiveStyles.controlSurface, styles.formControl, styles.select]
-        .filter(Boolean)
-        .join(' '),
-      value: currentTheme,
-      onChange: handleThemeChange,
-      // Preact/JSDOM 상호운용성: onInput에서도 동일 처리하여 테스트 안정성 확보
-      onInput: handleThemeChange,
-    },
-    [
-      h('option', { value: 'auto' }, languageService.getString('settings.themeAuto')),
-      h('option', { value: 'light' }, languageService.getString('settings.themeLight')),
-      h('option', { value: 'dark' }, languageService.getString('settings.themeDark')),
-    ]
+  const innerClass = solid.createMemo(() =>
+    ComponentStandards.createClassName(styles.modal, styles.inner, local.className ?? '')
   );
 
-  const languageSelect = h(
-    'select',
-    {
-      ref: lastFocusableRef,
-      id: 'language-select',
-      className: [primitiveStyles.controlSurface, styles.formControl, styles.select]
-        .filter(Boolean)
-        .join(' '),
-      value: currentLanguage,
-      onChange: handleLanguageChange,
-      onInput: handleLanguageChange,
-    },
-    [
-      h('option', { value: 'auto' }, '자동 / Auto / 自動'),
-      h('option', { value: 'ko' }, '한국어'),
-      h('option', { value: 'en' }, 'English'),
-      h('option', { value: 'ja' }, '日本語'),
-    ]
+  const testProps = ComponentStandards.createTestProps(local['data-testid']);
+
+  const header = () => (
+    <div class={styles.header} data-settings-section='header'>
+      <h2 id='settings-title' class={styles.title}>
+        {localizedStrings().title}
+      </h2>
+      <IconButton
+        ref={setCloseButtonRef}
+        className={styles.closeButton ?? ''}
+        onClick={handleCloseClick}
+        aria-label='Close'
+        autoFocus
+        size='md'
+        intent='secondary'
+        iconName='Close'
+      />
+    </div>
   );
 
-  const defaultBody = h('div', { className: styles.body, key: 'body' }, [
-    h('div', { className: styles.setting, key: 'theme-setting' }, [
-      h(
-        'label',
-        { htmlFor: 'theme-select', className: styles.label },
-        languageService.getString('settings.theme')
-      ),
-      themeSelect,
-    ]),
-    h('div', { className: styles.setting, key: 'language-setting' }, [
-      h(
-        'label',
-        { htmlFor: 'language-select', className: styles.label },
-        languageService.getString('settings.language')
-      ),
-      languageSelect,
-    ]),
-    // Download: progress toast toggle
-    h('div', { className: styles.setting, key: 'download-progress-toast-setting' }, [
-      h(
-        'label',
-        { htmlFor: 'download-progress-toast', className: styles.label },
-        languageService.getString('settings.downloadProgressToast')
-      ),
-      h('input', {
-        id: 'download-progress-toast',
-        type: 'checkbox',
-        checked: showProgressToast,
-        onChange: handleProgressToastToggle,
-        className: styles.formControlToggle,
-      }),
-    ]),
-  ]);
+  const themeSelectClass = [primitiveStyles.controlSurface, styles.formControl, styles.select]
+    .filter(Boolean)
+    .join(' ');
 
-  const contentChildren = children ? [header, children] : [header, defaultBody];
-  const content = h(
-    'div',
-    { ref: innerRef, id: 'settings-content', className: innerClass },
-    contentChildren
+  const languageSelectClass = [primitiveStyles.controlSurface, styles.formControl, styles.select]
+    .filter(Boolean)
+    .join(' ');
+
+  const defaultBody = () => (
+    <div class={styles.body} data-settings-section='body'>
+      <div class={styles.setting} data-settings-field='theme'>
+        <label for='theme-select' class={styles.label}>
+          {localizedStrings().theme}
+        </label>
+        <select
+          id='theme-select'
+          class={themeSelectClass}
+          value={currentTheme()}
+          onChange={handleThemeChange}
+          onInput={handleThemeChange}
+        >
+          <option value='auto'>{localizedStrings().themeAuto}</option>
+          <option value='light'>{localizedStrings().themeLight}</option>
+          <option value='dark'>{localizedStrings().themeDark}</option>
+        </select>
+      </div>
+      <div class={styles.setting} data-settings-field='language'>
+        <label for='language-select' class={styles.label}>
+          {localizedStrings().language}
+        </label>
+        <select
+          id='language-select'
+          class={languageSelectClass}
+          value={currentLanguage()}
+          onChange={handleLanguageChange}
+          onInput={handleLanguageChange}
+        >
+          <option value='auto'>자동 / Auto / 自動</option>
+          <option value='ko'>한국어</option>
+          <option value='en'>English</option>
+          <option value='ja'>日本語</option>
+        </select>
+      </div>
+      <div class={styles.setting} data-settings-field='download-progress-toast'>
+        <label for='download-progress-toast' class={styles.label}>
+          {localizedStrings().downloadProgressToast}
+        </label>
+        <input
+          id='download-progress-toast'
+          type='checkbox'
+          class={styles.formControlToggle}
+          checked={showProgressToast()}
+          onChange={handleProgressToastToggle}
+          onInput={handleProgressToastToggle}
+        />
+      </div>
+    </div>
   );
 
-  if (mode === 'panel') {
-    return h(
-      'div',
-      {
-        ref: panelRef,
-        className: panelClass,
-        role: 'dialog',
-        'aria-modal': 'true',
-        'aria-labelledby': 'settings-title',
-        'aria-describedby': 'settings-content',
-        'data-position': position,
-        onClick: (e: MouseEvent) => {
-          if (panelRef.current && e.target === panelRef.current) onClose();
-        },
-        onKeyDown: handleKeyDown,
-        ...testProps,
-      },
-      content
-    ) as unknown as VNode;
+  const content = () => (
+    <div id='settings-content' class={innerClass()} data-settings-section='content'>
+      {header()}
+      {local.children ?? defaultBody()}
+    </div>
+  );
+
+  if (local.mode === 'modal') {
+    return (
+      <ModalShell
+        isOpen={local.isOpen}
+        onClose={local.onClose}
+        className={ComponentStandards.createClassName(styles.modal, local.className ?? '')}
+        aria-label={localizedStrings().title}
+        closeOnBackdropClick
+        closeOnEscape
+        {...(local['data-testid'] ? { 'data-testid': local['data-testid'] } : {})}
+        {...rest}
+      >
+        {content()}
+      </ModalShell>
+    );
   }
 
-  // Modal mode
-  const backdropProps = {
-    class: 'settings-modal-backdrop',
-    onClick: (event: Event) => {
-      if (event.target === event.currentTarget) onClose();
-    },
-    onKeyDown: handleKeyDown,
-    role: 'dialog',
-    'aria-modal': 'true',
-    'aria-labelledby': 'settings-title',
-    'aria-describedby': 'settings-content',
-    ...testProps,
-  } as const;
-
-  return h(
-    'div',
-    backdropProps as Record<string, unknown>,
-    h(
-      'div',
-      {
-        ref: modalContainerRef,
-        class: 'settings-modal-content',
-        role: 'document',
-      },
-      content
-    )
+  return (
+    <div
+      ref={setPanelRef}
+      class={panelClass()}
+      role='dialog'
+      aria-modal='true'
+      aria-labelledby='settings-title'
+      aria-describedby='settings-content'
+      data-position={local.position}
+      onClick={handlePanelClick}
+      onKeyDown={handleKeyDown}
+      {...testProps}
+      {...rest}
+    >
+      {content()}
+    </div>
   );
-}
+};
 
 export default SettingsModal;

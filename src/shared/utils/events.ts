@@ -222,7 +222,7 @@ export function cleanupEventDispatcher(): void {
 function checkGalleryOpen(): boolean {
   try {
     const signals = tryGetGallerySignals();
-    const viaSignal = !!signals?.isOpen.value;
+    const viaSignal = signals ? signals.isOpen() : false;
     if (viaSignal) return true;
     // 테스트/모킹 환경에서 effect가 비동작(단발 실행)하여 isOpen 반영이 안 되는 경우 글로벌 폴백 사용
     const g = globalThis as unknown as { __XEG_GALLERY_STATE?: { isOpen: boolean } };
@@ -631,7 +631,7 @@ function handleKeyboardEvent(
             const items = root?.querySelector('[data-xeg-role="items-container"]');
             if (!items) return null;
             const signals = tryGetGallerySignals();
-            const index = signals?.currentIndex.value ?? 0;
+            const index = signals ? signals.currentIndex() : 0;
             const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
             if (!target) return null;
             const v = target.querySelector('video');

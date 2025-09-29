@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as solid from 'solid-js';
+import * as solidStore from 'solid-js/store';
+import * as solidWeb from 'solid-js/web';
 
 vi.mock('@/constants', async () => {
   const actual = await vi.importActual<typeof import('@/constants')>('@/constants');
@@ -45,6 +48,30 @@ vi.mock('@shared/external/vendors', () => ({
     }),
   }),
   initializeVendors: () => undefined,
+  getSolidCore: () => ({
+    createSignal: solid.createSignal,
+    createEffect: solid.createEffect,
+    createMemo: solid.createMemo,
+    onCleanup: solid.onCleanup,
+    createRoot: solid.createRoot,
+    createComputed: solid.createComputed,
+    createComponent: solid.createComponent,
+    mergeProps: solid.mergeProps,
+    splitProps: solid.splitProps,
+    batch: solid.batch,
+    untrack: solid.untrack,
+    createContext: solid.createContext,
+    useContext: solid.useContext,
+  }),
+  getSolidStore: () => ({
+    createStore: solidStore.createStore,
+    produce: solidStore.produce,
+    reconcile: solidStore.reconcile,
+    unwrap: solidStore.unwrap,
+  }),
+  getSolidWeb: () => ({
+    render: solidWeb.render,
+  }),
 }));
 
 type GalleryState = {
@@ -123,6 +150,8 @@ function createDocumentStub() {
     })),
     body,
     contains: vi.fn((node: object) => body.contains(node)),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
   } as unknown;
 }
 

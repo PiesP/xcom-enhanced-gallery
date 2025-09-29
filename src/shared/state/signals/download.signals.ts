@@ -7,14 +7,8 @@
 
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
 import type { Result } from '@shared/types/core/core-types';
-import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
-
-// Signal 타입 정의
-type Signal<T> = {
-  value: T;
-  subscribe?: (callback: (value: T) => void) => () => void;
-};
+import { createGlobalSignal } from '../createGlobalSignal';
 
 /**
  * 다운로드 작업 상태
@@ -67,40 +61,35 @@ export type DownloadEvents = {
   'download:queue-updated': { queueLength: number };
 };
 
-// Preact Signals 지연 초기화
-let downloadStateSignal: Signal<DownloadState> | null = null;
+const signal = createGlobalSignal<DownloadState>(INITIAL_STATE);
 
 // 로거 인스턴스 (의존성 주입 가능)
 const logger: ILogger = defaultLogger;
-
-function getDownloadState(): Signal<DownloadState> {
-  if (!downloadStateSignal) {
-    const { signal } = getPreactSignals();
-    downloadStateSignal = signal<DownloadState>(INITIAL_STATE);
-  }
-  return downloadStateSignal!;
-}
 
 /**
  * 다운로드 상태 접근자
  */
 export const downloadState = {
   get value(): DownloadState {
-    return getDownloadState().value;
+    return signal.value;
   },
 
   set value(newState: DownloadState) {
-    getDownloadState().value = newState;
+    signal.value = newState;
   },
 
-  /**
-   * 상태 변경 구독
-   */
   subscribe(callback: (state: DownloadState) => void): () => void {
-    const { effect } = getPreactSignals();
-    return effect(() => {
-      callback(this.value);
-    });
+    return signal.subscribe(callback);
+  },
+
+  update(updater: (previous: DownloadState) => DownloadState): void {
+    signal.update(updater);
+  },
+
+  accessor: signal.accessor,
+
+  peek(): DownloadState {
+    return signal.peek();
   },
 };
 

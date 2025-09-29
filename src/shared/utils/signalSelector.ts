@@ -5,17 +5,20 @@
  * 불필요한 리렌더링을 방지하여 성능을 최적화합니다.
  */
 
-import { getPreactHooks, getPreactSignals } from '@shared/external/vendors';
+import type { Accessor } from 'solid-js';
+
+import { getSolidCore } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
-// 타입 정의
-type Signal<T> = {
-  /**
-   * Current value of the signal. Accessing this inside a computed/effect
-   * body will correctly register reactive dependencies via preact/signals.
-   */
+// 타입 정의: Solid store/Signal wrapper와의 호환을 위한 최소 인터페이스
+export interface ObservableValue<T> {
   value: T;
+  subscribe?: (listener: (value: T) => void) => () => void;
+}
+
+type CombinedValues<TSignals extends readonly ObservableValue<unknown>[]> = {
+  [K in keyof TSignals]: TSignals[K] extends ObservableValue<infer U> ? U : never;
 };
 
 /**
@@ -164,32 +167,58 @@ export function createSelector<T, R>(
 /**
  * Signal용 최적화된 Hook
  *
- * @param signal - Preact Signal
+ * @param store - Observable signal (예: createGlobalSignal 반환값)
  * @param selector - 선택 함수
  * @param options - 셀렉터 옵션
  * @returns 선택된 값
  */
 export function useSelector<T, R>(
-  signalInstance: Signal<T>,
+  store: ObservableValue<T>,
   selector: SelectorFn<T, R>,
   options: SelectorOptions<T> = {}
-): R {
-  const { useMemo } = getPreactHooks();
-  const { computed } = getPreactSignals();
+): Accessor<R> & { readonly value: R } {
+  const solid = getSolidCore();
+  const memoizedSelector = createSelector(selector, options);
 
-  // 메모이제이션된 셀렉터 생성
-  const memoizedSelector = useMemo(
-    () => createSelector(selector, options),
-    [selector, options.dependencies, options.debug, options.name]
-  );
+  const [selected, setSelected] = solid.createSignal<R>(memoizedSelector(store.value), {
+    equals: Object.is,
+  });
 
-  // Signal 값에 셀렉터 적용
-  const computedValue = useMemo(
-    () => computed(() => memoizedSelector(signalInstance.value)),
-    [signalInstance, memoizedSelector]
-  );
+  let latestValue = selected();
 
-  return computedValue.value;
+  const handleUpdate = (state: T) => {
+    const next = memoizedSelector(state);
+    if (!Object.is(next, latestValue)) {
+      latestValue = next;
+      setSelected(() => next);
+    }
+  };
+
+  const unsubscribe =
+    typeof store.subscribe === 'function'
+      ? store.subscribe(value => {
+          handleUpdate(value);
+        })
+      : undefined;
+
+  handleUpdate(store.value);
+
+  solid.onCleanup(() => {
+    if (unsubscribe) {
+      try {
+        unsubscribe();
+      } catch {
+        /* noop */
+      }
+    }
+  });
+
+  const accessor = (() => selected()) as Accessor<R> & { readonly value: R };
+  Object.defineProperty(accessor, 'value', {
+    get: accessor,
+    enumerable: true,
+  });
+  return accessor;
 }
 
 /**
@@ -200,95 +229,127 @@ export function useSelector<T, R>(
  * @param dependencies - 의존성 추출 함수
  * @returns 조합된 값
  */
-export function useCombinedSelector<T extends readonly Signal<unknown>[], R>(
+export function useCombinedSelector<T extends readonly ObservableValue<unknown>[], R>(
   signals: T,
-  combiner: (...values: { [K in keyof T]: T[K] extends Signal<infer U> ? U : never }) => R,
-  dependencies?: (
-    ...values: { [K in keyof T]: T[K] extends Signal<infer U> ? U : never }
-  ) => readonly unknown[]
-): R {
-  const { useMemo } = getPreactHooks();
-  const { computed } = getPreactSignals();
+  combiner: (...values: CombinedValues<T>) => R,
+  dependencies?: (...values: CombinedValues<T>) => readonly unknown[]
+): Accessor<R> & { readonly value: R } {
+  type Values = CombinedValues<T>;
 
-  const combinedSignal = useMemo(() => {
-    return computed(() => {
-      const values = signals.map(s => s.value) as {
-        [K in keyof T]: T[K] extends Signal<infer U> ? U : never;
+  const combinedStore: ObservableValue<Values> = {
+    get value() {
+      return signals.map(signal => signal.value) as Values;
+    },
+    subscribe(listener) {
+      const unsubscribers = signals
+        .map(signal =>
+          typeof signal.subscribe === 'function'
+            ? signal.subscribe(() => {
+                listener(signals.map(s => s.value) as Values);
+              })
+            : undefined
+        )
+        .filter((fn): fn is () => void => typeof fn === 'function');
+
+      return () => {
+        for (const unsubscribe of unsubscribers) {
+          try {
+            unsubscribe();
+          } catch {
+            /* noop */
+          }
+        }
       };
-      return combiner(...values);
-    });
-  }, [signals, combiner]);
+    },
+  } satisfies ObservableValue<Values>;
 
-  // 의존성 기반 최적화
-  if (dependencies) {
-    // 타입 체크를 우회하여 실제 동작에 집중
-    const signalValues = signals.map(s => s.value);
-    const deps = (dependencies as (...args: unknown[]) => readonly unknown[])(...signalValues);
-    return useMemo(() => combinedSignal.value, [combinedSignal, ...deps]);
-  }
+  const selectorOptions: SelectorOptions<Values> = dependencies
+    ? {
+        dependencies: values => dependencies(...values),
+        name: 'combined',
+      }
+    : { name: 'combined' };
 
-  return combinedSignal.value;
+  return useSelector<Values, R>(combinedStore, values => combiner(...values), selectorOptions);
 }
 
 /**
  * 비동기 셀렉터 Hook
  *
- * @param signal - Preact Signal
+ * @param store - Observable signal (예: createGlobalSignal 반환값)
  * @param asyncSelector - 비동기 선택 함수
  * @param defaultValue - 기본값
  * @param debounceMs - 디바운스 시간 (밀리초)
  * @returns 선택된 값과 로딩 상태
  */
 export function useAsyncSelector<T, R>(
-  signalInstance: Signal<T>,
+  store: ObservableValue<T>,
   asyncSelector: (state: T) => Promise<R>,
   defaultValue: R,
   debounceMs = 300
-): { value: R; loading: boolean; error: Error | null } {
-  const { useMemo, useCallback, useRef, useEffect } = getPreactHooks();
-  const { signal } = getPreactSignals();
+): { readonly value: R; readonly loading: boolean; readonly error: Error | null } {
+  const solid = getSolidCore();
 
-  const result = useMemo(
-    () => signal({ value: defaultValue, loading: false, error: null as Error | null }),
-    [defaultValue]
+  type AsyncSelectorState = { value: R; loading: boolean; error: Error | null };
+
+  const [state, setState] = solid.createSignal<AsyncSelectorState>(
+    { value: defaultValue, loading: false, error: null },
+    { equals: false }
   );
 
-  // Generation counter로 race condition 방지
-  const generationRef = useRef(0);
+  let generation = 0;
 
-  const debouncedSelector = useCallback(
-    debounce(async (state: T) => {
-      const currentGeneration = ++generationRef.current;
+  const debouncedSelector = debounce(async (input: T) => {
+    const currentGeneration = ++generation;
 
-      result.value = { value: result.value.value, loading: true, error: null };
+    setState(prev => ({ ...prev, loading: true, error: null }));
 
-      try {
-        const value = await asyncSelector(state);
-
-        // 최신 요청인지 확인 (race condition 방지)
-        if (currentGeneration === generationRef.current) {
-          result.value = { value, loading: false, error: null };
-        }
-      } catch (error) {
-        // 최신 요청인지 확인
-        if (currentGeneration === generationRef.current) {
-          result.value = {
-            value: result.value.value,
-            loading: false,
-            error: error instanceof Error ? error : new Error(String(error)),
-          };
-        }
+    try {
+      const value = await asyncSelector(input);
+      if (currentGeneration === generation) {
+        setState({ value, loading: false, error: null });
       }
-    }, debounceMs),
-    [asyncSelector, result, debounceMs]
-  );
+    } catch (error) {
+      if (currentGeneration === generation) {
+        setState(prev => ({
+          value: prev.value,
+          loading: false,
+          error: error instanceof Error ? error : new Error(String(error)),
+        }));
+      }
+    }
+  }, debounceMs);
 
-  // Signal 값 변경 시 비동기 셀렉터 실행
-  useEffect(() => {
-    debouncedSelector(signalInstance.value);
-  }, [signalInstance.value, debouncedSelector]);
+  const handler = (value: T) => {
+    debouncedSelector(value);
+  };
 
-  return result.value;
+  const unsubscribe = typeof store.subscribe === 'function' ? store.subscribe(handler) : undefined;
+
+  handler(store.value);
+
+  solid.onCleanup(() => {
+    generation += 1;
+    if (unsubscribe) {
+      try {
+        unsubscribe();
+      } catch {
+        /* noop */
+      }
+    }
+  });
+
+  return {
+    get value(): R {
+      return state().value;
+    },
+    get loading(): boolean {
+      return state().loading;
+    },
+    get error(): Error | null {
+      return state().error;
+    },
+  };
 }
 
 /**
@@ -348,3 +409,9 @@ export function getGlobalSelectorStats(): Record<string, SelectorStats> {
 export function clearGlobalSelectorStats(): void {
   globalSelectorStats.clear();
 }
+
+/**
+ * Legacy signalSelector utilities removed during Solid migration.
+ */
+
+export {};

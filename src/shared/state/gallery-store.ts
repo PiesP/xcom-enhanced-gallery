@@ -1,4 +1,4 @@
-import { getPreactSignals } from '@shared/external/vendors';
+import { createGlobalSignal } from './createGlobalSignal';
 
 export interface GalleryUIState {
   readonly toolbarVisible: boolean;
@@ -18,8 +18,6 @@ export interface GalleryState {
   readonly ui: GalleryUIState;
 }
 
-const { signal } = getPreactSignals();
-
 const initialState: GalleryState = {
   items: [],
   currentIndex: 0,
@@ -27,41 +25,49 @@ const initialState: GalleryState = {
   ui: { toolbarVisible: false, settingsOpen: false },
 };
 
-const stateSignal = signal<GalleryState>(initialState);
+const signal = createGlobalSignal<GalleryState>(initialState);
 
 export const galleryState = {
   get value(): GalleryState {
-    return stateSignal.value;
+    return signal.value;
   },
   set value(v: GalleryState) {
-    stateSignal.value = v;
+    signal.value = v;
   },
   subscribe(listener: (v: GalleryState) => void): () => void {
-    const { effect } = getPreactSignals();
-    return effect(() => listener(stateSignal.value));
+    return signal.subscribe(listener);
+  },
+  update(updater: (previous: GalleryState) => GalleryState): void {
+    signal.update(updater);
+  },
+  accessor: signal.accessor,
+  peek(): GalleryState {
+    return signal.peek();
   },
 };
 
 export const galleryActions = {
   setItems(items: readonly GalleryItem[]): void {
-    stateSignal.value = { ...stateSignal.value, items: [...items] };
+    galleryState.value = { ...galleryState.value, items: [...items] };
   },
   setCurrentIndex(index: number): void {
-    stateSignal.value = { ...stateSignal.value, currentIndex: index };
+    galleryState.value = { ...galleryState.value, currentIndex: index };
   },
   setLoading(loading: boolean): void {
-    stateSignal.value = { ...stateSignal.value, loading };
+    galleryState.value = { ...galleryState.value, loading };
   },
   setToolbarVisible(visible: boolean): void {
-    stateSignal.value = {
-      ...stateSignal.value,
-      ui: { ...stateSignal.value.ui, toolbarVisible: visible },
+    const current = galleryState.value;
+    galleryState.value = {
+      ...current,
+      ui: { ...current.ui, toolbarVisible: visible },
     };
   },
   setSettingsOpen(open: boolean): void {
-    stateSignal.value = {
-      ...stateSignal.value,
-      ui: { ...stateSignal.value.ui, settingsOpen: open },
+    const current = galleryState.value;
+    galleryState.value = {
+      ...current,
+      ui: { ...current.ui, settingsOpen: open },
     };
   },
 };

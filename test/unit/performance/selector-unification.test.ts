@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { signal } from '@preact/signals';
 import * as perf from '../../../src/shared/utils/performance/index.ts';
 import * as ss from '../../../src/shared/utils/signalSelector.ts';
-import { renderHook } from '@testing-library/preact';
+import { renderHook } from '@test-utils/testing-library';
 
 describe('XEG-SEL-01: Selector 유틸 통합', () => {
   it('createSelector: 옵션 객체(dependencies/debug/name)를 동일하게 지원해야 한다', () => {

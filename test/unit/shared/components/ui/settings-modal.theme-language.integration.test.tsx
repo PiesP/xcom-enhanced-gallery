@@ -1,8 +1,9 @@
 /**
  * SettingsModal – theme/language integration tests
  */
+/** @jsxImportSource solid-js */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/preact';
+import { cleanup, fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import { SettingsModal } from '@/shared/components/ui/SettingsModal/SettingsModal';
 
 // Force i18n to start in English for deterministic label queries
@@ -25,7 +26,7 @@ describe('SettingsModal – theme/language integration', () => {
 
   it('updates data-theme attribute when theme select changes (light/dark/auto)', async () => {
     // Note: SettingsModal creates its own ThemeService instance; we observe DOM side-effect instead.
-    render(<SettingsModal {...baseProps} />);
+    render(() => <SettingsModal {...baseProps} />);
 
     const themeLabel = screen.getByText('Theme');
     expect(themeLabel).toBeDefined();
@@ -59,7 +60,7 @@ describe('SettingsModal – theme/language integration', () => {
   });
 
   it('changes visible labels when language select switches to Korean', async () => {
-    render(<SettingsModal {...baseProps} />);
+    render(() => <SettingsModal {...baseProps} />);
 
     // English labels first
     const titleEn = screen.getByText('Settings');

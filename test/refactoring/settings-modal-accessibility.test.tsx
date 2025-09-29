@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, fireEvent, screen, cleanup, waitFor } from '@testing-library/preact';
+import { render, fireEvent, screen, cleanup, waitFor } from '@test-utils/testing-library';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal Accessibility Improvements (TDD)', () => {

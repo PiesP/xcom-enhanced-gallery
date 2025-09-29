@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 import { describe, it, expect } from 'vitest';
-import { getPreact, initializeVendors, isVendorsInitialized } from '@shared/external/vendors';
+import { initializeVendors, isVendorsInitialized } from '@shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { MediaCounter } from '@shared/components/ui/MediaCounter/MediaCounter';
 
 // GREEN 목표: MediaCounter가 렌더되고 기본 ARIA/진행률 구조가 존재

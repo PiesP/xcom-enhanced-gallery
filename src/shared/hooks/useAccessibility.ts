@@ -9,7 +9,7 @@
  * - ARIA 상태 관리
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { getSolidCore } from '@shared/external/vendors';
 
 /**
  * 간소화된 키보드 네비게이션 훅 (Esc 키만 지원)
@@ -18,12 +18,24 @@ export function useKeyboardNavigation(
   handlers: {
     onEscape?: () => void;
   } = {},
-  dependencies: unknown[] = []
+  dependencies: Array<unknown | (() => unknown)> = []
 ) {
-  const { useEffect } = getPreactHooks();
+  const { createEffect, onCleanup } = getSolidCore();
   const { onEscape } = handlers;
 
-  useEffect(() => {
+  const normalizedDependencies = dependencies.map(dependency => {
+    if (typeof dependency === 'function') {
+      return dependency as () => unknown;
+    }
+
+    return () => dependency;
+  });
+
+  createEffect(() => {
+    for (const trackDependency of normalizedDependencies) {
+      trackDependency();
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       switch (event.key) {
         case 'Escape':
@@ -36,8 +48,11 @@ export function useKeyboardNavigation(
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, dependencies);
+
+    onCleanup(() => {
+      document.removeEventListener('keydown', handleKeyDown);
+    });
+  });
 }
 
 /**
@@ -47,3 +62,9 @@ export function useKeyboardNavigation(
 // - Focus Trap: src/shared/hooks/useFocusTrap.ts 사용
 // - Live Region: src/shared/utils/accessibility/live-region-manager.ts 사용
 // - Media Query/Click Outside: 필요 시 개별 훅으로 분리 도입 예정
+
+/**
+ * Legacy useAccessibility hook removed during Solid migration.
+ */
+
+export {};

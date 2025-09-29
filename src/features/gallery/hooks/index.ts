@@ -1,10 +1,7 @@
-// 개선된 갤러리 스크롤 훅
 export { useGalleryScroll } from './useGalleryScroll';
-
-// 통합된 아이템 스크롤 훅
-export { useGalleryItemScroll } from './useGalleryItemScroll';
-
-// 뷰포트 가시성 기반 인덱스 계산 훅
-export { useGalleryVisibleIndex } from './useVisibleIndex';
-
-// 위치 기반 툴바 제어 훅은 제거됨 - 순수 CSS 호버 시스템으로 대체
+export type {
+  GalleryScrollMeta,
+  GalleryScrollOptions,
+  GalleryScrollDirection,
+  UseGalleryScrollOptions,
+} from './useGalleryScroll';

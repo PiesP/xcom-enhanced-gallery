@@ -1,181 +1,115 @@
-/**
- * @fileoverview Settings Modal Focus Management Tests (Phase S1 RED)
- * @description 기본적인 포커스 관리 및 이벤트 핸들링 구조 검증
- */
-
-import { describe, it, expect, vi } from 'vitest';
-import { h } from '@shared/external/vendors';
+/** @jsxImportSource solid-js */
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library';
 import { RefactoredSettingsModal } from '@shared/components/ui/SettingsModal/RefactoredSettingsModal';
 
 describe('SettingsModal Focus Management', () => {
-  const mockOnClose = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('Component Rendering', () => {
-    it('should render close button with proper aria-label', () => {
-      const props = {
-        isOpen: true,
-        onClose: mockOnClose,
-        mode: 'panel',
-        'data-testid': 'focus-test-panel',
-      };
-
-      const component = h(RefactoredSettingsModal, props);
-      expect(component).toBeDefined();
-      expect(component.type).toBe(RefactoredSettingsModal);
-    });
-
-    it('should render modal structure with proper roles', () => {
-      const props = {
-        isOpen: true,
-        onClose: mockOnClose,
-        mode: 'modal',
-        'data-testid': 'focus-test-modal',
-      };
-
-      const component = h(RefactoredSettingsModal, props);
-      expect(component).toBeDefined();
-      expect(component.props.mode).toBe('modal');
-    });
-
-    it('should not render when closed', () => {
-      const props = {
-        isOpen: false,
-        onClose: mockOnClose,
-        mode: 'panel',
-      };
-
-      const component = h(RefactoredSettingsModal, props);
-      expect(component).toBeDefined();
-      expect(component.props.isOpen).toBe(false);
-    });
+  afterEach(() => {
+    cleanup();
   });
 
-  describe('Event Handler Props', () => {
-    it('should accept onClose callback for panel mode', () => {
-      const customOnClose = vi.fn();
-      const props = {
-        isOpen: true,
-        onClose: customOnClose,
-        mode: 'panel',
-      };
+  it('renders close button with proper aria-label', async () => {
+    render(() => <RefactoredSettingsModal isOpen onClose={vi.fn()} mode='panel' />);
 
-      const component = h(RefactoredSettingsModal, props);
-      expect(component.props.onClose).toBe(customOnClose);
-    });
-
-    it('should accept onClose callback for modal mode', () => {
-      const customOnClose = vi.fn();
-      const props = {
-        isOpen: true,
-        onClose: customOnClose,
-        mode: 'modal',
-      };
-
-      const component = h(RefactoredSettingsModal, props);
-      expect(component.props.onClose).toBe(customOnClose);
-    });
+    const closeButton = await screen.findByRole('button', { name: /close/i });
+    expect(closeButton).toBeVisible();
   });
 
-  describe('Mode Switching', () => {
-    it('should support panel mode', () => {
-      const props = {
-        isOpen: true,
-        onClose: mockOnClose,
-        mode: 'panel',
-      };
+  it('renders modal structure with proper roles', async () => {
+    render(() => (
+      <RefactoredSettingsModal
+        isOpen
+        onClose={vi.fn()}
+        mode='modal'
+        data-testid='focus-test-modal'
+      />
+    ));
 
-      const component = h(RefactoredSettingsModal, props);
-      expect(component.props.mode).toBe('panel');
-    });
-
-    it('should support modal mode', () => {
-      const props = {
-        isOpen: true,
-        onClose: mockOnClose,
-        mode: 'modal',
-      };
-
-      const component = h(RefactoredSettingsModal, props);
-      expect(component.props.mode).toBe('modal');
-    });
-
-    it('should default to panel mode when mode not specified', () => {
-      const props = {
-        isOpen: true,
-        onClose: mockOnClose,
-      };
-
-      const component = h(RefactoredSettingsModal, props);
-      expect(component.props.mode).toBeUndefined(); // Will use default in component
-    });
+    const dialog = await screen.findByRole('dialog', { name: 'Settings' });
+    expect(dialog).toHaveAttribute('data-testid', 'focus-test-modal');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
   });
 
-  describe('Props Validation', () => {
-    it('should handle all required props', () => {
-      const props = {
-        isOpen: true,
-        onClose: mockOnClose,
-        mode: 'panel',
-        position: 'top-right',
-        className: 'custom-class',
-        'data-testid': 'test-modal',
-      };
+  it('does not render when closed', () => {
+    render(() => <RefactoredSettingsModal isOpen={false} onClose={vi.fn()} />);
 
-      const component = h(RefactoredSettingsModal, props);
-      expect(component.props.isOpen).toBe(true);
-      expect(component.props.onClose).toBe(mockOnClose);
-      expect(component.props.mode).toBe('panel');
-      expect(component.props.position).toBe('top-right');
-      expect(component.props.className).toBe('custom-class');
-      expect(component.props['data-testid']).toBe('test-modal');
-    });
-
-    it('should handle custom children in modal mode', () => {
-      const customContent = h('div', { className: 'custom-content' }, 'Custom Settings');
-      const props = {
-        isOpen: true,
-        onClose: mockOnClose,
-        mode: 'modal',
-        children: customContent,
-      };
-
-      const component = h(RefactoredSettingsModal, props);
-      expect(component.props.children).toBe(customContent);
-    });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  describe('Integration Points', () => {
-    it('should be compatible with wrapper components', () => {
-      // Test structure that wrappers depend on
-      const props = {
-        isOpen: true,
-        onClose: mockOnClose,
-        mode: 'panel',
-        position: 'center', // Legacy position support
-      };
+  it('invokes onClose callback when close button is clicked (panel mode)', async () => {
+    const handleClose = vi.fn();
+    render(() => <RefactoredSettingsModal isOpen mode='panel' onClose={handleClose} />);
 
-      const component = h(RefactoredSettingsModal, props);
-      expect(component.props.position).toBe('center');
-    });
+    const closeButton = await screen.findByRole('button', { name: /close/i });
+    fireEvent.click(closeButton);
 
-    it('should support all legacy position values', () => {
-      const positions = ['toolbar-below', 'top-right', 'center', 'bottom-sheet'];
+    expect(handleClose).toHaveBeenCalledTimes(1);
+  });
 
-      positions.forEach(position => {
-        const props = {
-          isOpen: true,
-          onClose: mockOnClose,
-          mode: 'panel',
-          position,
-        };
+  it('invokes onClose callback when close button is clicked (modal mode)', async () => {
+    const handleClose = vi.fn();
+    render(() => <RefactoredSettingsModal isOpen mode='modal' onClose={handleClose} />);
 
-        const component = h(RefactoredSettingsModal, props);
-        expect(component.props.position).toBe(position);
-      });
-    });
+    const closeButton = await screen.findByRole('button', { name: /close/i });
+    fireEvent.click(closeButton);
+
+    expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('defaults to panel mode when mode is not specified', async () => {
+    render(() => <RefactoredSettingsModal isOpen onClose={vi.fn()} />);
+
+    const dialog = await screen.findByRole('dialog', { name: 'Settings' });
+    expect(dialog).toHaveAttribute('data-position', 'center');
+  });
+
+  it('supports all legacy position values', async () => {
+    const positions = ['toolbar-below', 'top-right', 'center', 'bottom-sheet'] as const;
+
+    for (const position of positions) {
+      const { unmount } = render(() => (
+        <RefactoredSettingsModal
+          isOpen
+          mode='panel'
+          position={position}
+          data-testid={`focus-${position}`}
+          onClose={vi.fn()}
+        />
+      ));
+
+      const dialog = await screen.findByTestId(`focus-${position}`);
+      expect(dialog).toHaveAttribute('data-position', position);
+      unmount();
+    }
+  });
+
+  it('forwards className and data attributes', async () => {
+    render(() => (
+      <RefactoredSettingsModal
+        isOpen
+        mode='panel'
+        className='custom-class'
+        data-testid='focus-custom'
+        onClose={vi.fn()}
+      />
+    ));
+
+    const dialog = await screen.findByTestId('focus-custom');
+    expect(dialog.className).toContain('custom-class');
+  });
+
+  it('renders custom children', async () => {
+    render(() => (
+      <RefactoredSettingsModal isOpen mode='modal' onClose={vi.fn()}>
+        <p data-testid='custom-content'>Custom Settings</p>
+      </RefactoredSettingsModal>
+    ));
+
+    const custom = await screen.findByTestId('custom-content');
+    expect(custom).toHaveTextContent('Custom Settings');
   });
 });

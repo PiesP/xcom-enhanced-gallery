@@ -1,14 +1,12 @@
-import { render, fireEvent } from '@testing-library/preact';
-import { getPreact } from '@shared/external/vendors';
+/** @jsxImportSource solid-js */
 import { KeyboardHelpOverlay } from '@/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
-
-const { h } = getPreact();
+import { render, fireEvent } from '../../../utils/preact-testing-library';
 
 describe('KeyboardHelpOverlay', () => {
-  it('opens and closes with ESC and backdrop click', () => {
+  it('opens and closes with ESC and backdrop click', async () => {
     const onClose = vi.fn();
-    const { getByRole, queryByRole, rerender, container } = render(
-      h(KeyboardHelpOverlay, { open: true, onClose })
+    const { getByRole, queryByRole, rerender, container, unmount } = render(
+      <KeyboardHelpOverlay open onClose={onClose} />
     );
 
     const dialog = getByRole('dialog');
@@ -19,13 +17,17 @@ describe('KeyboardHelpOverlay', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
 
     // Backdrop click closes (re-open with same instance)
-    rerender(h(KeyboardHelpOverlay, { open: true, onClose }));
+    rerender(<KeyboardHelpOverlay open onClose={onClose} />);
     const backdrop = container.firstElementChild as unknown as any;
     fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledTimes(2);
 
     // Closed state renders null
-    rerender(h(KeyboardHelpOverlay, { open: false, onClose }));
-    expect(queryByRole('dialog')).toBeNull();
+    unmount();
+
+    const { queryByRole: queryWhenClosed } = render(
+      <KeyboardHelpOverlay open={false} onClose={onClose} />
+    );
+    expect(queryWhenClosed('dialog')).toBeNull();
   });
 });

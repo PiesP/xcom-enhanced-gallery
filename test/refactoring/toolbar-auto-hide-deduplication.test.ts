@@ -6,8 +6,72 @@
  */
 
 import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
+import type { SolidCoreAPI } from '@shared/external/vendors';
 
 // vendor 시스템 목업 - REFACTOR: 더 현실적인 Mock 구현
+function createSolidCoreStub(): SolidCoreAPI {
+  type Cleanup = () => void;
+  const cleanups = new Set<Cleanup>();
+
+  return {
+    createSignal<T>(initial: T) {
+      let value = initial;
+      const getter = () => value;
+      const setter = (next: T | ((prev: T) => T)) => {
+        value = typeof next === 'function' ? (next as (prev: T) => T)(value) : next;
+        return value;
+      };
+      return [getter, setter];
+    },
+    createEffect(effect: () => void) {
+      effect();
+      return undefined;
+    },
+    createMemo<T>(factory: () => T) {
+      return () => factory();
+    },
+    onCleanup(handler: Cleanup) {
+      cleanups.add(handler);
+    },
+    createRoot: <T>(fn: (dispose: Cleanup) => T) => {
+      const dispose = () => {
+        for (const cleanup of cleanups) {
+          try {
+            cleanup();
+          } catch {
+            // ignore cleanup errors in mock
+          }
+        }
+        cleanups.clear();
+      };
+      return fn(dispose);
+    },
+    createComputed: () => undefined,
+    createComponent: <P, R>(comp: (props: P) => R, props: P) => comp(props),
+    mergeProps: Object.assign,
+    splitProps: <P extends Record<string, unknown>, K extends keyof P>(props: P, keys: K[]) => {
+      const picked = {} as Pick<P, K>;
+      const rest = { ...props } as Omit<P, K>;
+      for (const key of keys) {
+        if (key in props) {
+          (picked as Record<string, unknown>)[key] = props[key];
+          delete (rest as Record<string, unknown>)[key];
+        }
+      }
+      return [picked, rest];
+    },
+    batch: (fn: () => void) => fn(),
+    untrack: <T>(fn: () => T) => fn(),
+    createContext: (() => ({
+      Provider: ({ children }: { children: unknown }) => children,
+      defaultValue: undefined,
+    })) as SolidCoreAPI['createContext'],
+    useContext: (() => undefined) as SolidCoreAPI['useContext'],
+  } as SolidCoreAPI;
+}
+
+const solidCoreStub = createSolidCoreStub();
+
 vi.mock('@shared/external/vendors', () => {
   let stateCounter = 0;
   const stateMap = new Map();
@@ -37,6 +101,7 @@ vi.mock('@shared/external/vendors', () => {
         ];
       }),
     }),
+    getSolidCore: () => solidCoreStub,
   };
 });
 

@@ -1,13 +1,11 @@
-import { render } from '@testing-library/preact';
-import { getPreact } from '@shared/external/vendors';
+/** @jsxImportSource solid-js */
 import { KeyboardHelpOverlay } from '@/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
-
-const { h } = getPreact();
+import { render } from '../../../utils/preact-testing-library';
 
 describe('KeyboardHelpOverlay a11y', () => {
   it('has role=dialog and labelled/ described by title/desc', () => {
     const onClose = vi.fn();
-    const { getByRole, getByText } = render(h(KeyboardHelpOverlay, { open: true, onClose }));
+    const { getByRole, getByText } = render(<KeyboardHelpOverlay open onClose={onClose} />);
 
     const dialog = getByRole('dialog');
     expect(dialog.getAttribute('aria-modal')).toBe('true');

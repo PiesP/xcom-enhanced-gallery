@@ -2,6 +2,7 @@
  * 런타임 vendor 초기화 에러 테스트
  * 실제 프로덕션 환경에서 발생하는 vendor 초기화 문제를 재현하고 검증
  */
+/* global console */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,7 +28,7 @@ describe('런타임 vendor 초기화 에러', () => {
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       // vendor-api를 새로 import
-      const { getPreactCompat } = await import('@shared/external/vendors');
+      const { getPreactCompat } = await import('@test-utils/legacy-preact');
 
       // 자동 초기화가 작동하여 에러가 발생하지 않아야 함
       expect(() => {
@@ -76,7 +77,7 @@ describe('런타임 vendor 초기화 에러', () => {
           },
         });
 
-        const { getPreactCompat } = await import('@shared/external/vendors');
+        const { getPreactCompat } = await import('@test-utils/legacy-preact');
 
         expect(() => {
           const compat = getPreactCompat();
@@ -90,7 +91,7 @@ describe('런타임 vendor 초기화 에러', () => {
 
   describe('fallback 메커니즘', () => {
     it('초기화 실패 시에도 기본 memo/forwardRef 구현을 제공해야 한다', async () => {
-      const { getPreactCompat } = await import('@shared/external/vendors');
+      const { getPreactCompat } = await import('@test-utils/legacy-preact');
 
       const compat = getPreactCompat();
       expect(compat.memo).toBeDefined();

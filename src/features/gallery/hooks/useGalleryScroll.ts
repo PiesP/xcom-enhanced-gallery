@@ -6,307 +6,222 @@
  * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
-import { logger } from '@shared/logging/logger';
-import { EventManager } from '@shared/services/EventManager';
+import { getSolidCore } from '@shared/external/vendors';
+import { ensureWheelLock } from '@shared/utils/events/wheel';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-import { findTwitterScrollContainer } from '@shared/utils';
 
-const { useEffect, useRef, useCallback } = getPreactHooks();
+let activeCleanup: (() => void) | null = null;
 
-interface UseGalleryScrollOptions {
-  /** 갤러리 컨테이너 참조 */
-  container: HTMLElement | null;
-  /** 스크롤 콜백 함수 */
-  onScroll?: (delta: number) => void;
-  /** 스크롤 처리 활성화 여부 */
-  enabled?: boolean;
-  /** 트위터 페이지 스크롤 차단 여부 */
-  blockTwitterScroll?: boolean;
-  /** 스크롤 방향 감지 활성화 여부 */
-  enableScrollDirection?: boolean;
-  /** 스크롤 방향 변경 콜백 */
-  onScrollDirectionChange?: (direction: 'up' | 'down' | 'idle') => void;
+type MaybeAccessor<T> = T | (() => T);
+
+const BODY_ELEMENTS = new Set<EventTarget | null>([
+  typeof document !== 'undefined' ? document.body : null,
+  typeof document !== 'undefined' ? document.documentElement : null,
+  typeof document !== 'undefined' ? document : null,
+  typeof window !== 'undefined' ? window : null,
+]);
+
+export type GalleryScrollDirection = 'up' | 'down';
+
+export interface GalleryScrollMeta {
+  readonly direction: GalleryScrollDirection;
+  readonly event: WheelEvent;
 }
 
-interface UseGalleryScrollReturn {
-  /** 마지막 스크롤 시간 */
-  lastScrollTime: number;
-  /** 현재 스크롤 중인지 여부 */
-  isScrolling: boolean;
-  /** 현재 스크롤 방향 (옵션) */
-  scrollDirection?: 'up' | 'down' | 'idle';
+export interface UseGalleryScrollOptions {
+  container: MaybeAccessor<HTMLElement | null | undefined>;
+  onScroll: (delta: number, meta?: GalleryScrollMeta) => void;
+  enabled?: MaybeAccessor<boolean>;
+  blockTwitterScroll?: MaybeAccessor<boolean>;
+  enableScrollDirection?: MaybeAccessor<boolean>;
 }
 
-/**
- * 갤러리 스크롤 처리를 위한 개선된 커스텀 훅
- *
- * @description
- * - 갤러리 열림 상태 기반 스크롤 감지 (event.target 의존성 제거)
- * - 가상 스크롤링과 DOM 재배치에 안정적으로 대응
- * - 트위터 페이지와의 이벤트 충돌 방지
- * - 안정적인 이벤트 리스너 관리
- * - 메모리 누수 방지
- *
- * @version 2.0.0 - DOM 재배치 대응 개선
- */
-export function useGalleryScroll({
-  container,
-  onScroll,
-  enabled = true,
-  blockTwitterScroll = true,
-  enableScrollDirection = false,
-  onScrollDirectionChange,
-}: UseGalleryScrollOptions): UseGalleryScrollReturn {
-  const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
-  const eventManagerRef = useRef<EventManager | null>(null);
-  const isScrollingRef = useRef(false);
-  const lastScrollTimeRef = useRef(0);
-  const scrollTimeoutRef = useRef<number | null>(null);
+function resolve<T>(value: MaybeAccessor<T>): T {
+  return typeof value === 'function' ? (value as () => T)() : value;
+}
 
-  // 성능: onScroll 호출 코얼레싱(스로틀)
-  const pendingDeltaRef = useRef(0);
-  const flushScheduledRef = useRef(false);
-  const useRafForFlush = true; // 향후 옵션화 가능
+function resolveWithDefault<T>(value: MaybeAccessor<T> | undefined, fallback: T): T {
+  if (value === undefined) {
+    return fallback;
+  }
+  return resolve(value);
+}
 
-  const flushOnScroll = useCallback(() => {
-    flushScheduledRef.current = false;
-    const delta = pendingDeltaRef.current;
-    pendingDeltaRef.current = 0;
-    if (onScroll && delta !== 0) {
-      try {
-        onScroll(delta);
-      } catch (err) {
-        logger.error('useGalleryScroll: onScroll 처리 중 오류', err);
-      }
-    }
-  }, [onScroll]);
+function isBodyLike(container: HTMLElement | null): boolean {
+  if (!container || typeof document === 'undefined') {
+    return false;
+  }
 
-  const scheduleFlush = useCallback(() => {
-    if (flushScheduledRef.current) return;
-    flushScheduledRef.current = true;
-    if (useRafForFlush && typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(() => flushOnScroll());
-      return;
-    }
-    // 폴백: 마이크로태스크
-    Promise.resolve().then(() => flushOnScroll());
-  }, [flushOnScroll]);
+  return container === document.body || container === document.documentElement;
+}
 
-  // 스크롤 방향 감지 관련 상태 (옵션)
-  const scrollDirectionRef = useRef<'up' | 'down' | 'idle'>('idle');
-  const directionTimeoutRef = useRef<number | null>(null);
+function isTargetWithinContainer(event: WheelEvent, container: HTMLElement): boolean {
+  if (!container) {
+    return false;
+  }
 
-  // 스크롤 상태 업데이트
-  const updateScrollState = useCallback((isScrolling: boolean) => {
-    isScrollingRef.current = isScrolling;
-    if (isScrolling) {
-      lastScrollTimeRef.current = Date.now();
-    }
-  }, []);
+  const target = event.target as Node | null;
 
-  // 스크롤 방향 업데이트 (옵션)
-  const updateScrollDirection = useCallback(
-    (delta: number) => {
-      if (!enableScrollDirection) return;
+  if (target && container.contains(target)) {
+    return true;
+  }
 
-      const newDirection: 'up' | 'down' | 'idle' = delta > 0 ? 'down' : 'up';
-
-      if (scrollDirectionRef.current !== newDirection) {
-        scrollDirectionRef.current = newDirection;
-        onScrollDirectionChange?.(newDirection);
-
-        logger.debug('useGalleryScroll: 스크롤 방향 변경', {
-          direction: newDirection,
-          delta,
-        });
-      }
-
-      // 스크롤 방향 idle 상태로 전환 타이머
-      if (directionTimeoutRef.current) {
-        clearTimeout(directionTimeoutRef.current);
-      }
-
-      directionTimeoutRef.current = window.setTimeout(() => {
-        if (scrollDirectionRef.current !== 'idle') {
-          scrollDirectionRef.current = 'idle';
-          onScrollDirectionChange?.('idle');
-        }
-      }, 150);
-    },
-    [enableScrollDirection, onScrollDirectionChange]
-  );
-
-  // 스크롤 종료 감지
-  const handleScrollEnd = useCallback(() => {
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+  if (typeof event.composedPath === 'function') {
+    const path = event.composedPath();
+    if (path.includes(container)) {
+      return true;
     }
 
-    scrollTimeoutRef.current = window.setTimeout(() => {
-      updateScrollState(false);
-      logger.debug('useGalleryScroll: 스크롤 종료');
-    }, 150);
-  }, [updateScrollState]);
-
-  // 트위터 페이지 스크롤 차단
-  const preventTwitterScroll = useCallback(
-    (event: Event) => {
-      if (isScrollingRef.current && blockTwitterScroll) {
-        event.preventDefault();
-        event.stopPropagation();
-        logger.debug('useGalleryScroll: 트위터 스크롤 차단');
-      }
-    },
-    [blockTwitterScroll]
-  );
-
-  // 갤러리 휠 이벤트 처리
-  const handleGalleryWheel = useCallback(
-    (event: WheelEvent) => {
-      // 갤러리가 열려있지 않으면 무시
-      if (!galleryState.value.isOpen) {
-        logger.debug('useGalleryScroll: 갤러리가 열려있지 않음 - 휠 이벤트 무시');
-        return;
-      }
-
-      const isWithinContainer = (() => {
-        if (!container) {
-          return false;
-        }
-
-        const targetNode = (event.target as Node | null) ?? null;
-        if (targetNode && (targetNode === container || container.contains(targetNode))) {
-          return true;
-        }
-
-        const composedPath = typeof event.composedPath === 'function' ? event.composedPath() : null;
-        if (Array.isArray(composedPath) && composedPath.includes(container)) {
-          return true;
-        }
-
-        return false;
-      })();
-
-      if (!isWithinContainer) {
-        if (blockTwitterScroll) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-
-        logger.debug('useGalleryScroll: 갤러리 외부 휠 이벤트 차단', {
-          isGalleryOpen: galleryState.value.isOpen,
-          targetElement: (event.target as HTMLElement)?.tagName || 'unknown',
-        });
-        return;
-      }
-
-      const delta = event.deltaY;
-      updateScrollState(true);
-
-      // 스크롤 방향 감지 (옵션)
-      updateScrollDirection(delta);
-
-      // 스크롤 콜백 실행(코얼레싱)
-      pendingDeltaRef.current += delta;
-      scheduleFlush();
-
-      // 스크롤 종료 감지 타이머 재설정
-      handleScrollEnd();
-
-      logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
-        delta,
-        isGalleryOpen: galleryState.value.isOpen,
-        targetElement: (event.target as HTMLElement)?.tagName || 'unknown',
-        targetClass: (event.target as HTMLElement)?.className || 'none',
-        timestamp: Date.now(),
-      });
-    },
-    [
-      onScroll,
-      blockTwitterScroll,
-      updateScrollState,
-      handleScrollEnd,
-      updateScrollDirection,
-      scheduleFlush,
-      container,
-    ]
-  );
-
-  // 이벤트 리스너 설정
-  useEffect(() => {
-    if (!enabled || !container || !hasDOM) {
-      return;
+    if (isBodyLike(container) && path.some(node => BODY_ELEMENTS.has(node))) {
+      return true;
     }
+  }
 
-    let eventManager = eventManagerRef.current;
+  if (isBodyLike(container)) {
+    return BODY_ELEMENTS.has(target);
+  }
 
-    if (!eventManager || eventManager.getIsDestroyed()) {
-      eventManager = new EventManager();
-      eventManagerRef.current = eventManager;
-    }
+  return target === container;
+}
 
-    // 문서 레벨에서 휠 이벤트 처리 (갤러리 열림 상태에 따라 동작)
-    eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
-      capture: true,
-      passive: false,
-    });
+export function useGalleryScroll(options: UseGalleryScrollOptions): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
 
-    // 트위터 페이지 스크롤 차단 (옵션)
-    if (blockTwitterScroll && hasDOM) {
-      const twitterContainer = findTwitterScrollContainer();
-      if (twitterContainer) {
-        eventManager.addEventListener(twitterContainer, 'wheel', preventTwitterScroll, {
-          capture: true,
-          passive: false,
-        });
-      }
-    }
+  const { onCleanup } = getSolidCore();
+  const getGalleryState = galleryState.accessor;
 
-    logger.debug('useGalleryScroll: 이벤트 리스너 등록 완료', {
-      hasContainer: !!container,
-      blockTwitterScroll,
-    });
+  if (activeCleanup) {
+    activeCleanup();
+  }
 
-    return () => {
-      eventManager.cleanup();
-      eventManagerRef.current = null;
+  const containerAccessor = () => resolve(options.container) ?? null;
+  const getEnabled = () => resolveWithDefault(options.enabled, true);
+  const getBlockPolicy = () => resolveWithDefault(options.blockTwitterScroll, true);
+  const getDirectionFlag = () => resolveWithDefault(options.enableScrollDirection, false);
 
-      // 타이머 정리
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
+  let scheduled = false;
+  let accumulatedDelta = 0;
+  let lastEvent: WheelEvent | null = null;
+  let cancelScheduled: (() => void) | null = null;
 
-      // 코얼레싱 상태 정리
-      pendingDeltaRef.current = 0;
-      flushScheduledRef.current = false;
-
-      // 방향 감지 타이머 정리
-      if (directionTimeoutRef.current) {
-        clearTimeout(directionTimeoutRef.current);
-      }
-
-      logger.debug('useGalleryScroll: 정리 완료');
-    };
-  }, [enabled, container, blockTwitterScroll, handleGalleryWheel, preventTwitterScroll]);
-
-  // 컴포넌트 언마운트 시 정리
-  useEffect(() => {
-    return () => {
-      eventManagerRef.current?.cleanup();
-      eventManagerRef.current = null;
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      if (directionTimeoutRef.current) {
-        clearTimeout(directionTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  return {
-    lastScrollTime: lastScrollTimeRef.current,
-    isScrolling: isScrollingRef.current,
-    ...(enableScrollDirection && { scrollDirection: scrollDirectionRef.current }),
+  const resetScheduler = () => {
+    scheduled = false;
+    accumulatedDelta = 0;
+    lastEvent = null;
+    cancelScheduled = null;
   };
+
+  const cancelScheduledFlush = () => {
+    if (cancelScheduled) {
+      cancelScheduled();
+    }
+    resetScheduler();
+  };
+
+  const flushScroll = () => {
+    const event = lastEvent;
+    const delta = accumulatedDelta;
+
+    resetScheduler();
+
+    if (!event || !Number.isFinite(delta) || delta === 0) {
+      return;
+    }
+
+    if (!getEnabled() || !getGalleryState().isOpen) {
+      return;
+    }
+
+    const container = containerAccessor();
+    if (!container || !isTargetWithinContainer(event, container)) {
+      return;
+    }
+
+    const callback = options.onScroll;
+    if (typeof callback !== 'function') {
+      return;
+    }
+
+    if (getDirectionFlag()) {
+      const direction: GalleryScrollDirection = delta >= 0 ? 'down' : 'up';
+      callback(delta, { direction, event });
+    } else {
+      callback(delta);
+    }
+  };
+
+  const scheduleFlush = (event: WheelEvent) => {
+    accumulatedDelta += event.deltaY;
+    lastEvent = event;
+
+    if (scheduled) {
+      return;
+    }
+
+    scheduled = true;
+
+    if (typeof requestAnimationFrame === 'function' && typeof cancelAnimationFrame === 'function') {
+      const frameId = requestAnimationFrame(() => {
+        flushScroll();
+      });
+
+      cancelScheduled = () => {
+        cancelAnimationFrame(frameId);
+      };
+    } else {
+      const timeoutId = window.setTimeout(() => {
+        flushScroll();
+      }, 16);
+
+      cancelScheduled = () => {
+        window.clearTimeout(timeoutId);
+      };
+    }
+  };
+
+  const handleWheel = (event: WheelEvent): boolean => {
+    const container = containerAccessor();
+    if (!container) {
+      cancelScheduledFlush();
+      return false;
+    }
+
+    if (!getEnabled() || !getGalleryState().isOpen) {
+      cancelScheduledFlush();
+      return false;
+    }
+
+    if (isTargetWithinContainer(event, container)) {
+      scheduleFlush(event);
+      return false;
+    }
+
+    cancelScheduledFlush();
+
+    if (getBlockPolicy() && event.cancelable) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const cleanupWheel = ensureWheelLock(document, handleWheel);
+
+  const removeListener = () => {
+    cleanupWheel();
+    cancelScheduledFlush();
+    if (activeCleanup === removeListener) {
+      activeCleanup = null;
+    }
+  };
+
+  activeCleanup = removeListener;
+
+  onCleanup(() => {
+    removeListener();
+  });
 }
+
+export type { UseGalleryScrollOptions as GalleryScrollOptions };

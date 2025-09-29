@@ -1,5 +1,4 @@
 /* eslint-env browser */
-/* global Event, HTMLElement */
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery - MIT License
  *
@@ -8,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/preact';
+import { renderHook, act } from '@test-utils/testing-library';
 import { useToolbarPositionBased } from '@features/gallery/hooks/useToolbarPositionBased';
 
 // Mock CSS 변수 조작

@@ -29,20 +29,25 @@ export const mockPreactAPI = {
 // Mock Preact Hooks API
 export const mockPreactHooksAPI = {
   useState: vi.fn(initial => [initial, vi.fn()]),
-  useEffect: vi.fn((effect, deps) => {
+  useEffect: vi.fn((effect, _deps) => {
+    void _deps;
     if (typeof effect === 'function') {
       // 즉시 실행하여 side effect 시뮬레이션
       const cleanup = effect();
       return cleanup;
     }
   }),
-  useMemo: vi.fn((factory, deps) => {
+  useMemo: vi.fn((factory, _deps) => {
+    void _deps;
     if (typeof factory === 'function') {
       return factory();
     }
     return factory;
   }),
-  useCallback: vi.fn((callback, deps) => callback),
+  useCallback: vi.fn((callback, _deps) => {
+    void _deps;
+    return callback;
+  }),
   useRef: vi.fn(initial => ({ current: initial })),
   useContext: vi.fn(),
   useReducer: vi.fn((reducer, initialState) => [initialState, vi.fn()]),
@@ -65,7 +70,8 @@ export const mockPreactSignalsAPI = {
 
 // Mock Preact Compat API
 export const mockPreactCompatAPI = {
-  memo: vi.fn((Component, compare) => {
+  memo: vi.fn((Component, _compare) => {
+    void _compare;
     const MemoComponent = props => Component(props);
     MemoComponent.displayName = `memo(${Component.displayName || Component.name || 'Component'})`;
     return MemoComponent;
@@ -100,12 +106,21 @@ export const mockNativeDownloadAPI = {
  * vendor-api mock 설정
  */
 export function setupVendorMocks() {
-  vi.doMock('@shared/external/vendors', () => ({
-    getFflate: vi.fn(() => mockFflateAPI),
+  const legacyPreactExports = {
     getPreact: vi.fn(() => mockPreactAPI),
     getPreactHooks: vi.fn(() => mockPreactHooksAPI),
     getPreactSignals: vi.fn(() => mockPreactSignalsAPI),
     getPreactCompat: vi.fn(() => mockPreactCompatAPI),
+    h: mockPreactAPI.h,
+    render: mockPreactAPI.render,
+    Component: mockPreactAPI.Component,
+    Fragment: mockPreactAPI.Fragment,
+  };
+
+  vi.doMock('@shared/external/vendors', () => ({
+    __esModule: true,
+    getFflate: vi.fn(() => mockFflateAPI),
+    legacyPreact: legacyPreactExports,
     getNativeDownload: vi.fn(() => mockNativeDownloadAPI),
     initializeVendors: vi.fn(() => Promise.resolve()),
     cleanupVendors: vi.fn(() => Promise.resolve()),
@@ -114,6 +129,11 @@ export function setupVendorMocks() {
     getVendorInitializationReport: vi.fn(() => ({})),
     getVendorStatuses: vi.fn(() => ({})),
     isVendorInitialized: vi.fn(() => true),
+  }));
+
+  vi.doMock('@test-utils/legacy-preact', () => ({
+    __esModule: true,
+    ...legacyPreactExports,
   }));
 }
 

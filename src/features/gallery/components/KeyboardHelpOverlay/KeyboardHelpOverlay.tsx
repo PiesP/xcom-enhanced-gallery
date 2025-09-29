@@ -1,5 +1,6 @@
-import { getPreact, getPreactHooks } from '@shared/external/vendors';
-import { useFocusTrap } from '@shared/hooks/useFocusTrap';
+import type { JSX } from 'solid-js';
+import { getSolidCore } from '@shared/external/vendors';
+import { logger } from '@shared/logging/logger';
 import styles from './KeyboardHelpOverlay.module.css';
 import { IconButton } from '@shared/components/ui';
 
@@ -8,240 +9,211 @@ export interface KeyboardHelpOverlayProps {
   onClose: () => void;
 }
 
-export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps) {
-  const { h } = getPreact();
-  const { useRef, useMemo, useEffect } = getPreactHooks();
+let overlayIdCounter = 0;
 
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const titleId = useMemo(() => 'xeg-kho-title', []);
-  const descId = useMemo(() => 'xeg-kho-desc', []);
+const FOCUSABLE_SELECTORS = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+  '[contenteditable="true"]',
+].join(', ');
 
-  const prevFocusElRef = useRef<HTMLElement | null>(null);
-  const prevFocusSelectorRef = useRef<string | null>(null);
-  const timeoutsRef = useRef<number[]>([]);
-  const intervalRef = useRef<number | null>(null);
+export const KeyboardHelpOverlay = (props: KeyboardHelpOverlayProps) => {
+  const { createEffect, createMemo, onCleanup } = getSolidCore();
 
-  // Synchronous capture: when opening, record currently focused trigger before trap runs
-  if (open) {
-    const ae = (document.activeElement as HTMLElement | null) || null;
-    if (ae && ae.tagName !== 'BODY') {
-      prevFocusElRef.current = ae;
-      const id = ae.getAttribute('id');
-      const aria = ae.getAttribute('aria-label');
-      prevFocusSelectorRef.current = id ? `#${id}` : aria ? `[aria-label="${aria}"]` : null;
-    } else {
-      prevFocusElRef.current = null;
-      prevFocusSelectorRef.current = null;
+  const instanceId = ++overlayIdCounter;
+  const titleId = `xeg-kho-title-${instanceId}`;
+  const descId = `xeg-kho-desc-${instanceId}`;
+
+  let dialogRef: HTMLDivElement | undefined;
+  let closeButtonRef: HTMLButtonElement | undefined;
+  let previousFocus: HTMLElement | null = null;
+  let keydownHandler: ((event: KeyboardEvent) => void) | null = null;
+
+  const resolveFocusableElements = (): HTMLElement[] => {
+    if (!dialogRef) {
+      return [];
     }
-  }
-
-  // Capture previous focus target at open time (before trap steals focus) as effect fallback
-  useEffect(() => {
-    if (!open) return;
-    const ae = (document.activeElement as HTMLElement | null) || null;
-    prevFocusElRef.current = ae && ae.tagName !== 'BODY' ? ae : null;
-    if (prevFocusElRef.current) {
-      const id = prevFocusElRef.current.getAttribute('id');
-      const aria = prevFocusElRef.current.getAttribute('aria-label');
-      prevFocusSelectorRef.current = id ? `#${id}` : aria ? `[aria-label="${aria}"]` : null;
-    } else {
-      prevFocusSelectorRef.current = null;
-    }
-  }, [open]);
-
-  const resolvePrevTarget = () => {
-    if (typeof document === 'undefined') return null;
-    let el = prevFocusElRef.current;
-    if (!el?.isConnected) {
-      if (prevFocusSelectorRef.current) {
-        const q = document.querySelector(prevFocusSelectorRef.current) as HTMLElement | null;
-        if (q) el = q;
-      }
-      // Fallback: any non-close aria-labeled button (likely the trigger)
-      if (!el?.isConnected) {
-        const fallback = document.querySelector(
-          'button[aria-label]:not([aria-label="Close"])'
-        ) as HTMLElement | null;
-        if (fallback) el = fallback;
-      }
-    }
-    return el?.isConnected ? el : null;
+    const elements = dialogRef.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS);
+    return Array.from(elements).filter(element => !element.hasAttribute('disabled'));
   };
 
-  // Helper: resolve+focus previous trigger safely
-  const focusPrevNow = () => {
-    if (typeof document === 'undefined') return;
-    const target = resolvePrevTarget();
-    if (!target) return;
+  const focusElement = (element: HTMLElement | null | undefined) => {
+    if (!element) return;
     try {
-      if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
-      const cur = document.activeElement as HTMLElement | null;
-      if (cur && cur !== document.body) cur.blur?.();
-      target.focus?.();
-      target.setAttribute('data-xeg-focused', '1');
-    } catch {
-      /* ignore */
+      if (!element.hasAttribute('tabindex')) {
+        element.setAttribute('tabindex', '-1');
+      }
+      element.focus({ preventScroll: true });
+      element.setAttribute('data-xeg-focused', '1');
+    } catch (error) {
+      logger.debug('[KeyboardHelpOverlay] focus attempt failed', error);
     }
   };
 
-  // Focus trap handles: initial focus and restore to trigger on close (Escape/backdrop)
-  useFocusTrap(dialogRef, open, {
-    onEscape: () => {
-      // Try to restore focus immediately before closing
-      focusPrevNow();
-      // Schedule a few retries to stabilize in jsdom
-      [0, 10, 20, 50, 100, 250, 500].forEach(ms => {
-        const id = setTimeout(() => {
-          focusPrevNow();
-        }, ms) as unknown as number;
-        timeoutsRef.current.push(id);
-      });
-      // Brief enforcement loop (<=1s)
-      try {
-        const start = Date.now();
-        const iv = setInterval(() => {
-          if (typeof document === 'undefined') return;
-          try {
-            focusPrevNow();
-          } catch {
-            /* ignore */
-          }
-          if (Date.now() - start > 950) {
-            try {
-              clearInterval(iv);
-            } catch {
-              /* ignore */
-            }
-          }
-        }, 20);
-        intervalRef.current = iv as unknown as number;
-      } catch {
-        /* ignore */
+  const restoreFocus = () => {
+    if (!previousFocus) {
+      return;
+    }
+    focusElement(previousFocus);
+    previousFocus = null;
+  };
+
+  const trapFocus = (event: KeyboardEvent) => {
+    const focusable = resolveFocusableElements();
+    if (focusable.length === 0) {
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+
+    if (event.shiftKey) {
+      if (active === first || !dialogRef?.contains(active)) {
+        event.preventDefault();
+        focusElement(last);
       }
-      // Now close
-      onClose();
-    },
-    initialFocus: 'button[aria-label="Close"]',
-    restoreFocus: true,
-    previousFocusElement: prevFocusElRef.current,
-    previousFocusSelector: prevFocusSelectorRef.current,
+    } else if (active === last || !dialogRef?.contains(active)) {
+      event.preventDefault();
+      focusElement(first);
+    }
+  };
+
+  const attachKeydownHandler = () => {
+    if (keydownHandler) {
+      return;
+    }
+
+    keydownHandler = (event: KeyboardEvent) => {
+      if (!props.open) {
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        restoreFocus();
+        props.onClose();
+        return;
+      }
+      if (event.key === 'Tab') {
+        trapFocus(event);
+      }
+    };
+
+    document.addEventListener('keydown', keydownHandler, true);
+  };
+
+  const detachKeydownHandler = () => {
+    if (!keydownHandler) {
+      return;
+    }
+    document.removeEventListener('keydown', keydownHandler, true);
+    keydownHandler = null;
+  };
+
+  const scheduleMicrotask = (callback: () => void) => {
+    const queue = (globalThis as { queueMicrotask?: (cb: () => void) => void }).queueMicrotask;
+    if (typeof queue === 'function') {
+      queue(callback);
+      return;
+    }
+    Promise.resolve()
+      .then(callback)
+      .catch(error => {
+        logger.debug('[KeyboardHelpOverlay] microtask scheduling failed', error);
+      });
+  };
+
+  const isOpenMemo = createMemo(() => props.open);
+
+  createEffect(() => {
+    if (!isOpenMemo()) {
+      detachKeydownHandler();
+      restoreFocus();
+      return;
+    }
+
+    if (typeof document !== 'undefined') {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active !== document.body) {
+        previousFocus = active;
+      } else {
+        previousFocus = null;
+      }
+    }
+
+    attachKeydownHandler();
+
+    scheduleMicrotask(() => {
+      focusElement(closeButtonRef ?? resolveFocusableElements()[0] ?? null);
+    });
+
+    return () => {
+      detachKeydownHandler();
+    };
   });
 
-  // Additional post-close stabilization in test/jsdom: retry focus on the original trigger
-  useEffect(() => {
-    if (open) return;
-    const attempts = [0, 10, 20, 50, 100, 250, 500, 800, 900, 1200];
-    attempts.forEach(ms => {
-      const id = setTimeout(() => {
-        if (typeof document === 'undefined') return;
-        const target = resolvePrevTarget();
-        if (!target) return;
-        try {
-          if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
-          target.focus?.();
-          target.setAttribute('data-xeg-focused', '1');
-        } catch {
-          /* ignore */
-        }
-      }, ms) as unknown as number;
-      timeoutsRef.current.push(id);
-    });
-    return () => {
-      // Clear scheduled retries when effect re-runs
-      while (timeoutsRef.current.length) {
-        const id = timeoutsRef.current.pop();
-        if (id) {
-          try {
-            clearTimeout(id);
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-      const iv = intervalRef.current;
-      if (iv) {
-        try {
-          clearInterval(iv);
-        } catch {
-          /* ignore */
-        }
-        intervalRef.current = null;
-      }
-    };
-  }, [open]);
+  onCleanup(() => {
+    detachKeydownHandler();
+    previousFocus = null;
+  });
 
-  // Global cleanup on unmount
-  useEffect(() => {
-    return () => {
-      while (timeoutsRef.current.length) {
-        const id = timeoutsRef.current.pop();
-        if (id) {
-          try {
-            clearTimeout(id);
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-      const iv = intervalRef.current;
-      if (iv) {
-        try {
-          clearInterval(iv);
-        } catch {
-          /* ignore */
-        }
-        intervalRef.current = null;
-      }
-    };
-  }, []);
+  const handleBackdropClick: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent> = (
+    event: MouseEvent
+  ) => {
+    if (event.currentTarget === event.target) {
+      restoreFocus();
+      props.onClose();
+    }
+  };
 
-  if (!open) return null;
-
-  return h(
-    'div',
-    {
-      className: styles.backdrop,
-      role: 'presentation',
-      onClick: (e: MouseEvent) => {
-        if (e.target === e.currentTarget) onClose();
-      },
-    },
-    h(
-      'div',
-      {
-        ref: dialogRef,
-        className: styles.dialog,
-        role: 'dialog',
-        'aria-modal': 'true',
-        'aria-labelledby': titleId,
-        'aria-describedby': descId,
-      },
-      [
-        h(IconButton, {
-          key: 'close',
-          className: styles.closeButton || '',
-          size: 'md',
-          tabIndex: 0,
-          onClick: () => onClose(),
-          'aria-label': 'Close',
-        }),
-        h('h2', { id: titleId, className: styles.title }, 'Keyboard shortcuts'),
-        h(
-          'div',
-          { id: descId, className: styles.content },
-          (() => {
-            const items = [
-              h('li', { key: 'nav-left' }, 'ArrowLeft: Previous media'),
-              h('li', { key: 'nav-right' }, 'ArrowRight: Next media'),
-              h('li', { key: 'close' }, 'Escape: Close gallery'),
-              h('li', { key: 'toggle' }, '?: Show this help'),
-            ];
-            return h('ul', { className: styles.shortcutList }, items);
-          })()
-        ),
-      ]
-    )
+  return (
+    <>
+      {isOpenMemo() && (
+        <div class={styles.backdrop} role='presentation' onClick={handleBackdropClick}>
+          <div
+            ref={(node: HTMLDivElement | null) => {
+              dialogRef = node ?? undefined;
+            }}
+            class={styles.dialog}
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby={titleId}
+            aria-describedby={descId}
+            data-open='true'
+          >
+            <IconButton
+              ref={(node: HTMLButtonElement | null) => {
+                closeButtonRef = node ?? undefined;
+              }}
+              className={styles.closeButton ?? undefined}
+              size='md'
+              tabIndex={0}
+              aria-label='Close'
+              onClick={() => {
+                restoreFocus();
+                props.onClose();
+              }}
+            />
+            <h2 id={titleId} class={styles.title}>
+              Keyboard shortcuts
+            </h2>
+            <div id={descId} class={styles.content}>
+              <ul class={styles.shortcutList}>
+                <li>ArrowLeft: Previous media</li>
+                <li>ArrowRight: Next media</li>
+                <li>Escape: Close gallery</li>
+                <li>?: Show this help</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
-}
+};
 
 export default KeyboardHelpOverlay;

@@ -16,22 +16,22 @@
  * @module useToolbarState
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
+import { getSolidCore, getSolidStore } from '@shared/external/vendors';
 
 /**
  * 툴바 상태 인터페이스
  */
 export interface ToolbarState {
   /** 다운로드 진행 상태 */
-  readonly isDownloading: boolean;
+  isDownloading: boolean;
   /** 로딩 상태 */
-  readonly isLoading: boolean;
+  isLoading: boolean;
   /** 에러 발생 상태 */
-  readonly hasError: boolean;
+  hasError: boolean;
   /** 현재 핏 모드 */
-  readonly currentFitMode: string;
+  currentFitMode: string;
   /** 고대비 모드 필요 여부 */
-  readonly needsHighContrast: boolean;
+  needsHighContrast: boolean;
 }
 
 /**
@@ -91,100 +91,87 @@ const INITIAL_STATE: ToolbarState = {
  * ```
  */
 export function useToolbarState(): [ToolbarState, ToolbarActions] {
-  const { useState, useCallback, useRef, useEffect } = getPreactHooks();
-  const [state, setState] = useState<ToolbarState>(INITIAL_STATE);
+  const { createSignal, onCleanup, batch } = getSolidCore();
+  const { createStore } = getSolidStore();
 
-  // 다운로드 상태 변경 시간 추적
-  const lastDownloadToggleRef = useRef(0);
-  const downloadTimeoutRef = useRef<number | null>(null);
+  const [state, setState] = createStore<ToolbarState>(INITIAL_STATE);
+  const [lastDownloadToggle, setLastDownloadToggle] = createSignal(0);
+  const [downloadTimeoutId, setDownloadTimeoutId] = createSignal<number | null>(null);
 
-  // 다운로드 상태 설정 - 최소 표시 시간 적용
-  const setDownloading = useCallback((downloading: boolean) => {
+  const clearDownloadTimeout = () => {
+    const timeoutId = downloadTimeoutId();
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      setDownloadTimeoutId(null);
+    }
+  };
+
+  const setDownloading = (downloading: boolean) => {
     const now = Date.now();
 
     if (downloading) {
-      // 다운로드 시작
-      lastDownloadToggleRef.current = now;
-      setState((prev: ToolbarState) => ({
-        ...prev,
-        isDownloading: true,
-        hasError: false,
-      }));
+      setLastDownloadToggle(now);
+      clearDownloadTimeout();
+      batch(() => {
+        setState('isDownloading', true);
+        setState('hasError', false);
+      });
+      return;
+    }
+
+    const timeSinceStart = now - lastDownloadToggle();
+    const minDisplayTime = 300;
+
+    const applyStop = () => setState('isDownloading', false);
+
+    if (timeSinceStart < minDisplayTime) {
+      clearDownloadTimeout();
+      const timeoutId = window.setTimeout(applyStop, minDisplayTime - timeSinceStart);
+      setDownloadTimeoutId(timeoutId);
     } else {
-      // 다운로드 완료 - 최소 300ms 표시 시간 보장
-      const timeSinceStart = now - lastDownloadToggleRef.current;
-      const minDisplayTime = 300;
-
-      if (timeSinceStart < minDisplayTime) {
-        // 최소 표시 시간이 지나지 않았으면 지연 후 변경
-        if (downloadTimeoutRef.current) {
-          clearTimeout(downloadTimeoutRef.current);
-        }
-        downloadTimeoutRef.current = window.setTimeout(() => {
-          setState((prev: ToolbarState) => ({
-            ...prev,
-            isDownloading: false,
-          }));
-        }, minDisplayTime - timeSinceStart);
-      } else {
-        // 충분한 시간이 지났으면 즉시 변경
-        setState((prev: ToolbarState) => ({
-          ...prev,
-          isDownloading: false,
-        }));
-      }
+      applyStop();
     }
-  }, []);
+  };
 
-  // 로딩 상태 설정
-  const setLoading = useCallback((loading: boolean) => {
-    setState((prev: ToolbarState) => ({
-      ...prev,
-      isLoading: loading,
-      // 로딩 시작 시 에러 상태 초기화
-      hasError: loading ? false : prev.hasError,
-    }));
-  }, []);
-
-  // 에러 상태 설정
-  const setError = useCallback((hasError: boolean) => {
-    setState((prev: ToolbarState) => ({
-      ...prev,
-      hasError,
-      // 에러 발생 시 로딩/다운로드 상태 초기화
-      isLoading: hasError ? false : prev.isLoading,
-      isDownloading: hasError ? false : prev.isDownloading,
-    }));
-  }, []);
-
-  // 핏 모드 설정
-  const setCurrentFitMode = useCallback((mode: string) => {
-    setState((prev: ToolbarState) => ({ ...prev, currentFitMode: mode }));
-  }, []);
-
-  // 고대비 모드 설정
-  const setNeedsHighContrast = useCallback((needsHighContrast: boolean) => {
-    setState((prev: ToolbarState) => ({ ...prev, needsHighContrast }));
-  }, []);
-
-  // 상태 초기화 및 cleanup
-  const resetState = useCallback(() => {
-    // 타이머 정리
-    if (downloadTimeoutRef.current) {
-      clearTimeout(downloadTimeoutRef.current);
-      downloadTimeoutRef.current = null;
-    }
-    setState(INITIAL_STATE);
-  }, []);
-
-  // 컴포넌트 언마운트 시 cleanup
-  useEffect(() => {
-    return () => {
-      if (downloadTimeoutRef.current) {
-        clearTimeout(downloadTimeoutRef.current);
+  const setLoading = (loading: boolean) => {
+    batch(() => {
+      setState('isLoading', loading);
+      if (loading) {
+        setState('hasError', false);
       }
-    };
-  }, []);
+    });
+  };
+
+  const setError = (hasError: boolean) => {
+    batch(() => {
+      setState('hasError', hasError);
+      if (hasError) {
+        setState('isLoading', false);
+        setState('isDownloading', false);
+      }
+    });
+  };
+
+  const setCurrentFitMode = (mode: string) => {
+    setState('currentFitMode', mode);
+  };
+
+  const setNeedsHighContrast = (needsHighContrast: boolean) => {
+    setState('needsHighContrast', needsHighContrast);
+  };
+
+  const resetState = () => {
+    clearDownloadTimeout();
+    setLastDownloadToggle(0);
+    batch(() => {
+      setState(INITIAL_STATE);
+      setDownloadTimeoutId(null);
+    });
+  };
+
+  onCleanup(() => {
+    clearDownloadTimeout();
+  });
 
   const actions: ToolbarActions = {
     setDownloading,

@@ -1,19 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/preact';
-import { h } from 'preact';
+/** @jsxImportSource solid-js */
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { cleanup, fireEvent, render } from '@solidjs/testing-library';
 // Vendor & hook mocks to isolate keyboard navigation behavior without full environment side-effects
-vi.mock('@shared/external/vendors', () => ({
-  getPreact: () => ({ h }),
-  getPreactHooks: () => ({
-    useMemo: (fn: any) => fn(),
-    useCallback: (fn: any) => fn,
-    useEffect: () => void 0,
-    useRef: (init?: any) => ({ current: init ?? null }),
-  }),
-  getPreactCompat: () => ({ memo: (C: any) => C }),
-  initializeVendors: vi.fn(() => Promise.resolve()),
-  isVendorsInitialized: vi.fn(() => true),
-}));
 vi.mock('@shared/hooks/useToolbarState', () => ({
   useToolbarState: () => [
     {
@@ -42,26 +30,30 @@ import { Toolbar } from '@/shared/components/ui/Toolbar/Toolbar';
 // Focus order (enabled buttons only): prev -> next -> fit-original -> fit-width -> fit-height -> fit-container -> download-current -> download-all -> settings -> close
 
 describe('toolbar keyboard navigation (P5 GREEN)', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   function setup() {
     const calls = { close: 0 };
-    const utils = render(
-      h(Toolbar, {
-        currentIndex: 1, // prev & next enabled
-        totalCount: 5,
-        isDownloading: false,
-        onPrevious: () => void 0,
-        onNext: () => void 0,
-        onDownloadCurrent: () => void 0,
-        onDownloadAll: () => void 0,
-        onClose: () => calls.close++,
-        onOpenSettings: () => void 0,
-        onFitOriginal: () => void 0,
-        onFitWidth: () => void 0,
-        onFitHeight: () => void 0,
-        onFitContainer: () => void 0,
-        'data-testid': 'toolbar',
-      })
-    );
+    const utils = render(() => (
+      <Toolbar
+        currentIndex={1} // prev & next enabled
+        totalCount={5}
+        isDownloading={false}
+        onPrevious={() => void 0}
+        onNext={() => void 0}
+        onDownloadCurrent={() => void 0}
+        onDownloadAll={() => void 0}
+        onClose={() => calls.close++}
+        onOpenSettings={() => void 0}
+        onFitOriginal={() => void 0}
+        onFitWidth={() => void 0}
+        onFitHeight={() => void 0}
+        onFitContainer={() => void 0}
+        data-testid='toolbar'
+      />
+    ));
     const toolbar = utils.getByRole('toolbar');
     return { ...utils, toolbar, calls };
   }

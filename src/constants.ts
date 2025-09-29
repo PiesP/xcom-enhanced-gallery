@@ -235,6 +235,8 @@ export const SERVICE_KEYS = {
 
 export const FEATURE_FLAGS = {
   vdomRebind: true, // SPA DOM 교체 시 Shadow DOM 컨테이너 재바인드 시도
+  solidGalleryShell: true,
+  solidSettingsPanel: true,
 } as const;
 
 // ================================

@@ -5,7 +5,8 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/preact';
+import type { SolidCoreAPI } from '../../../src/shared/external/vendors.js';
+import { render, screen } from '@test-utils/testing-library';
 import {
   IconRegistry,
   getIconRegistry,
@@ -18,6 +19,75 @@ import {
   useIconPreload,
   useCommonIconPreload,
 } from '../../../src/shared/components/LazyIcon.js';
+
+function createSolidCoreStub(): SolidCoreAPI {
+  type Cleanup = () => void;
+  const cleanups = new Set<Cleanup>();
+
+  const runCleanup = () => {
+    for (const cleanup of cleanups) {
+      try {
+        cleanup();
+      } catch {
+        // ignore cleanup errors in mock environment
+      }
+    }
+    cleanups.clear();
+  };
+
+  return {
+    createSignal<T>(initial: T) {
+      let value = initial;
+      const getter = () => value;
+      const setter = (next: T | ((prev: T) => T)) => {
+        value = typeof next === 'function' ? (next as (prev: T) => T)(value) : next;
+        return value;
+      };
+      return [getter, setter];
+    },
+    createEffect(effect: () => void) {
+      effect();
+      return undefined;
+    },
+    createMemo<T>(factory: () => T) {
+      const memoized = factory();
+      return () => memoized;
+    },
+    onCleanup(handler: Cleanup) {
+      cleanups.add(handler);
+    },
+    createRoot: <T,>(fn: (dispose: Cleanup) => T) => {
+      const dispose = () => {
+        runCleanup();
+      };
+      const result = fn(dispose);
+      return result;
+    },
+    createComputed: () => undefined,
+    createComponent: <P, R>(comp: (props: P) => R, props: P) => comp(props),
+    mergeProps: Object.assign,
+    splitProps: <P extends Record<string, unknown>, K extends keyof P>(props: P, keys: K[]) => {
+      const picked = {} as Pick<P, K>;
+      const rest = { ...props } as Omit<P, K>;
+      for (const key of keys) {
+        if (key in props) {
+          (picked as Record<string, unknown>)[key] = props[key];
+          delete (rest as Record<string, unknown>)[key];
+        }
+      }
+      return [picked, rest];
+    },
+    batch: (fn: () => void) => fn(),
+    untrack: <T,>(fn: () => T) => fn(),
+    createContext: (() => ({
+      Provider: ({ children }: { children: unknown }) => children,
+      defaultValue: undefined,
+    })) as SolidCoreAPI['createContext'],
+    useContext: (() => undefined) as SolidCoreAPI['useContext'],
+  } as unknown as SolidCoreAPI;
+}
+
+const solidCoreStub = createSolidCoreStub();
 
 // Mock external vendors
 vi.mock('../../../src/shared/external/vendors', () => ({
@@ -32,6 +102,7 @@ vi.mock('../../../src/shared/external/vendors', () => ({
       }
     }),
   }),
+  getSolidCore: () => solidCoreStub,
 }));
 
 function getIconStubNames() {

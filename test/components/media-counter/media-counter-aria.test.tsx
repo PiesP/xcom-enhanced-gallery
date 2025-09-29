@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPreact } from '@shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { MediaCounter } from '@shared/components/ui/MediaCounter/MediaCounter';
 
 // P6 GREEN: progressbar에 aria-valuetext 및 now/max/min 계약 검증

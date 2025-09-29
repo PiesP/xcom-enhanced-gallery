@@ -3,7 +3,7 @@
  * @description 기본 패널/표면 컴포넌트
  */
 
-import type { ComponentChildren } from '@shared/external/vendors';
+import type { ComponentChildren } from '@shared/types/app.types';
 import './Panel.css';
 
 export interface PanelProps {
@@ -23,7 +23,7 @@ export function Panel({
   const paddingClass = padding ? 'xeg-panel--padded' : '';
 
   return (
-    <div className={`xeg-panel xeg-panel--${variant} ${paddingClass} ${className}`} {...props}>
+    <div class={`xeg-panel xeg-panel--${variant} ${paddingClass} ${className}`} {...props}>
       {children}
     </div>
   );

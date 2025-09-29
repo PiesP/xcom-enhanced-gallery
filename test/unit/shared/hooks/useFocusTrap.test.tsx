@@ -4,9 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { cleanup, render } from '@testing-library/preact';
+import { cleanup, render } from '@test-utils/testing-library';
 import { useFocusTrap } from '@shared/hooks/useFocusTrap';
-import { h } from 'preact';
 
 describe('P4: Focus Trap Hook', () => {
   let container;
@@ -44,7 +43,7 @@ describe('P4: Focus Trap Hook', () => {
         (outputs as any).api = api;
         return null;
       };
-      render(h(Harness, {}));
+      render(() => <Harness />);
       const result = outputs.api;
       expect(typeof result).toBe('object');
       expect(typeof result.isActive).toBe('boolean');
@@ -57,7 +56,7 @@ describe('P4: Focus Trap Hook', () => {
         useFocusTrap(null, true);
         return null;
       };
-      expect(() => render(h(Harness, {}))).not.toThrow();
+      expect(() => render(() => <Harness />)).not.toThrow();
     });
   });
 
@@ -70,7 +69,7 @@ describe('P4: Focus Trap Hook', () => {
         (outputs as any).api = api;
         return null;
       };
-      render(h(Harness, {}));
+      render(() => <Harness />);
       expect(typeof outputs.api.isActive).toBe('boolean');
     });
 
@@ -82,7 +81,7 @@ describe('P4: Focus Trap Hook', () => {
         (outputs as any).api = api;
         return null;
       };
-      render(h(Harness, {}));
+      render(() => <Harness />);
       expect(outputs.api.isActive).toBe(false);
     });
   });
@@ -96,7 +95,7 @@ describe('P4: Focus Trap Hook', () => {
         useFocusTrap(emptyContainer, true);
         return null;
       };
-      expect(() => render(h(Harness, {}))).not.toThrow();
+      expect(() => render(() => <Harness />)).not.toThrow();
       document.body.removeChild(emptyContainer);
     });
 
@@ -110,7 +109,7 @@ describe('P4: Focus Trap Hook', () => {
         (outputs as any).api = api;
         return null;
       };
-      render(h(Harness, {}));
+      render(() => <Harness />);
       document.body.removeChild(tempContainer);
       expect(() => {
         outputs.api.activate();
@@ -144,8 +143,8 @@ describe('P4: Focus Trap Hook', () => {
         useFocusTrap(modalContainer, true, { onEscape: () => {}, restoreFocus: false });
         return null;
       };
-      expect(() => render(h(HarnessBasic, {}))).not.toThrow();
-      expect(() => render(h(HarnessWithOptions, {}))).not.toThrow();
+      expect(() => render(() => <HarnessBasic />)).not.toThrow();
+      expect(() => render(() => <HarnessWithOptions />)).not.toThrow();
     });
   });
 });

@@ -5,7 +5,7 @@
  * - Output: single userscript file
  */
 import { defineConfig, Plugin, UserConfig } from 'vite';
-import preact from '@preact/preset-vite';
+import solidPlugin from 'vite-plugin-solid';
 import fs from 'node:fs';
 import path from 'node:path';
 import { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
@@ -28,6 +28,28 @@ function resolveFlags(mode: string): BuildFlags {
 }
 
 const pkg: PackageJsonMeta = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+const solidExtensions: (string | [string, { typescript?: boolean }])[] = [
+  '.solid.tsx',
+  '.solid.ts',
+  '.solid.jsx',
+  '.solid.js',
+];
+const solidIncludePatterns = [
+  '**/*.solid.{ts,tsx,js,jsx}',
+  '**/*.solid.*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/Toolbar/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/ToolbarButton/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/ToolbarWithSettings/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/MediaCounter/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/Button/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/Icon/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/SettingsModal/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/Toast/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/ModalShell/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/isolation/**/*.{ts,tsx,js,jsx}',
+  '**/features/gallery/components/KeyboardHelpOverlay/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/LazyIcon.{ts,tsx,js,jsx}',
+];
 
 function userscriptHeader(flags: BuildFlags): string {
   const version = flags.isDev ? `${pkg.version}-dev.${Date.now()}` : pkg.version;
@@ -166,7 +188,17 @@ export default defineConfig(({ mode }) => {
   const flags = resolveFlags(mode);
   const config: UserConfig = {
     plugins: [
-      preact({ devToolsEnabled: flags.isDev, prefreshEnabled: flags.isDev }),
+      solidPlugin({
+        include: solidIncludePatterns,
+        dev: flags.isDev,
+        hot: flags.isDev,
+        ssr: false,
+        extensions: solidExtensions,
+        solid: {
+          generate: 'dom',
+          hydratable: false,
+        },
+      }),
       userscriptPlugin(flags),
     ],
     define: {
@@ -183,7 +215,13 @@ export default defineConfig(({ mode }) => {
         '@shared': path.resolve(process.cwd(), 'src/shared'),
         '@features': path.resolve(process.cwd(), 'src/features'),
         '@assets': path.resolve(process.cwd(), 'src/assets'),
+        'solid-js/web': 'solid-js/web/dist/web.js',
+        'solid-js/jsx-dev-runtime': path.resolve(
+          process.cwd(),
+          'src/shared/polyfills/solid-jsx-dev-runtime.ts'
+        ),
       },
+      dedupe: ['solid-js', 'solid-js/web', 'solid-js/store'],
     },
     css: {
       modules: {
@@ -228,7 +266,7 @@ export default defineConfig(({ mode }) => {
       }),
     },
     optimizeDeps: {
-      include: ['preact', 'preact/hooks', '@preact/signals'],
+      include: ['solid-js', 'solid-js/web'],
       force: flags.isDev,
     },
     server: { port: 3000, hmr: flags.isDev },

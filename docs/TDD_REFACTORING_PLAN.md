@@ -4,9 +4,10 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-업데이트: 2025-09-27 — FRAME-ALT-001 SolidJS 전체 전환 Epic 단독 진행.
-SEC-2025-10 Epic 완료 내역은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를
-참조하세요.
+업데이트: 2025-09-29 — Stage B·Stage C·Stage D 범위는 Completed 로그로 모두
+이관되었으며, 활성 계획은 Stage E Solid shell UI parity 복구에만 집중합니다.
+관련 검증 결과와 세부 실행 로그는 `TDD_REFACTORING_PLAN_COMPLETED.md`에서 확인할
+수 있습니다.
 
 ---
 
@@ -46,14 +47,50 @@ SEC-2025-10 Epic 완료 내역은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를
 - ⏸️ React 18 전환: 호스트와의 스택 통합 장점은 있지만 번들 크기/실행 성능에서
   이점이 없고 userscript 빌드 특성과 충돌하여 제외합니다.
 
+#### FRAME-ALT-001 · 추가 대안 비교 — Stage E UI 정합성
+
+- ⚠️ **Option A — 최소 CSS 재매핑**: `SolidGalleryShell`에서 기존 클래스명으로
+  치환하고 누락된 전역 CSS를 import하여 스타일만 복원합니다. 구현이 빠르고 회귀
+  범위가 작지만, 수동 DOM 패치/로컬라이제이션 부재·접근성 결함이 그대로 유지되어
+  장기 유지보수에 취약합니다.
+- ✅ **선택 — Solid UI 재구성 + 격리 복원**: `GalleryRenderer`가
+  `#xeg-gallery-root` 격리 컨테이너와 `mountGallery`를 재사용하고,
+  `SolidGalleryShell`을 공용 UI 컴포넌트(`GalleryContainer`, `Toolbar`,
+  `SolidVerticalImageItem` 등)로 조합해 디자인·접근성·테스트 파이프라인을
+  일관되게 유지합니다. 초기 투자 비용은 크지만 Epic 전반의 아키텍처 원칙과 품질
+  목표를 가장 잘 만족합니다.
+- ⏸️ **Option C — Solid 전용 CSS 신규 작성**: `xeg-solid-*` 접두사의 전용 스타일
+  세트를 작성해 디자인을 복제합니다. 단기 시연에는 활용 가능하지만, 디자인
+  토큰과 글로벌 규칙이 이중화되어 차후 가드 테스트/토큰 갱신과 충돌하므로
+  제외합니다.
+
 #### FRAME-ALT-001 · 선택한 해법 — 4 Stage 계획
 
-| Stage                                      | 목표                                                                 | 핵심 작업                                                                                                                                                    | TDD 게이트                                                                                                                                              |
-| ------------------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stage A — Solid Foundation & Tooling       | SolidJS 빌드/테스트 파이프라인을 준비하고 Signals 호환 어댑터를 구축 | `vite.config.ts`와 `tsconfig.json`에 Solid 플러그인 구성, `@shared/state/solid-adapter.ts` 설계, `docs/research/solid-feasibility.md`를 실험 결과로 업데이트 | RED → GREEN: `test/research/solid-foundation.red.test.ts`(신규) → `solid-foundation.test.ts`, `npm run typecheck`, `npm run build:dev`                  |
-| Stage B — Gallery & Settings Migration     | 주요 UI(갤러리/설정)와 루트 엔트리포인트를 SolidJS로 재구성          | `src/main.ts` Solid 진입점 작성, `features/gallery`와 `features/settings` 핵심 컴포넌트 Solid 포팅, Dual-render 스냅샷 테스트 작성                           | `test/features/gallery/solid-migration.integration.test.tsx`, `test/features/settings/solid-migration.test.tsx`, 전체 `npm test`                        |
-| Stage C — Feature Sweep & Performance Gate | 나머지 기능/서비스를 SolidJS 기반으로 이전하고 성능/번들 예산을 확정 | Notifications/단축키/다운로드 등 부가 기능 Solid 포팅, 번들 메트릭(`metrics/bundle-metrics.json`) 갱신, 접근성 회귀 테스트 강화                              | `test/optimization/bundle-budget.test.ts` 갱신, `test/accessibility/solid-regressions.test.ts`, `npm run build:prod` + `node scripts/validate-build.js` |
-| Stage D — Preact Retirement & Cleanup      | Preact/Signals 의존성을 제거하고 Solid 전용 아키텍처로 최종 전환     | `package.json`에서 Preact 제거, Userscript 헤더/Docs 업데이트, 남은 compat 경로 삭제, Feature flag 제거                                                      | `npm run validate`, `npm run build:prod`, `test/tooling/no-preact-usage.scan.test.ts`(신규), dist 비교 스냅샷 테스트                                    |
+| Stage                                  | 목표                                                                                           | 핵심 작업                                                                                                                                                                                                                       | TDD 게이트                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stage E — Solid Shell UI Parity (활성) | Solid 갤러리 오버레이가 격리 스타일·툴바·썸네일·로컬라이제이션까지 기존 디자인과 동등하게 동작 | `GalleryRenderer`가 `#xeg-gallery-root` + `mountGallery`를 재사용하도록 리팩토링, `SolidGalleryShell`을 `GalleryContainer`/`Toolbar`/`SolidVerticalImageItem` 조합으로 재작성, 수동 DOM 동기화 제거 및 Signals 반응형 흐름 복구 | 핵심 RED 스펙 졸업: `test/features/gallery/solid-shell-ui.test.tsx`, `test/accessibility/gallery-toolbar-parity.test.ts`, `test/features/gallery/solid-shell-settings.test.tsx` → Solid 런타임/빌드 경고 제거용 신규 RED 추가 예정. GREEN 후 `npm run typecheck`, `npm run lint`, `npm test`, `npm run build:prod` + `node scripts/validate-build.js`, 영향도 있는 메트릭(`metrics/bundle-metrics.json`, `metrics/button-consolidation-metrics.json`) 갱신 |
+
+#### FRAME-ALT-001 · 진행 중 우선 작업
+
+- Stage E — Solid shell UI parity 하드닝 (2025-10-14 업데이트)
+  - 최근 완료 항목은 Completed 로그(2025-09-29 parity 가드 졸업, 2025-10-06
+    Solid 경고 제거, 2025-10-13 Solid 전용 훅 하드닝)에 정리되어 있습니다.
+  - Acceptance 게이트 재실행(2025-10-14):
+    - `npm run typecheck` ✅, `npm run lint` ✅
+    - `npm test` ❌ — Stage D 잔여 RED 가드가 여전히 실패합니다. 대표적으로
+      Solid primitive 테스트에서 `React` 네임스페이스 참조, Stage D 번들 메트릭
+      노트 기대값 불일치, Preact/legacy 스캔 가드가 RED 상태를 유지합니다.
+    - `Clear-Host && npm run build` ✅ — deps:all →
+      validate(typecheck/lint/format) → dev/prod 빌드 및 postbuild validator까지
+      모두 PASS
+  - 남은 작업
+    - Stage D RED 가드와 Stage E acceptance 범위 재조정: Solid primitive
+      테스트의 React 참조 제거, Stage D 스캔 가드 성공 기준 재확인, Stage E
+      기준에서 RED를 허용할지 여부 결정
+    - `metrics/bundle-metrics.json`과
+      `metrics/button-consolidation-metrics.json` 최신화 필요성 검토(현재
+      version 3/Stage E 메모 유지). 필요 시 `scripts/build-metrics.js` 재실행
+    - 위 조치 이후 `npm test` 재실행으로 GREEN 확인, acceptance 게이트 종료
 
 #### FRAME-ALT-001 · Acceptance (Epic 레벨)
 
@@ -68,12 +105,15 @@ SEC-2025-10 Epic 완료 내역은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를
   `docs/research/solid-migration.md` 에 기록해야 합니다.
 - Stage D 완료 후 Preact 관련 의존성과 토글이 완전히 제거되고, Tampermonkey 배포
   스모크 테스트(실행/업데이트)가 GREEN을 유지해야 합니다.
+- Stage E 완료 후 Solid 갤러리 오버레이는 `GalleryContainer`/Toolbar/썸네일 UI를
+  공유 컴포넌트로 구동하고, `#xeg-gallery-root`에 `xeg-root` 격리 스타일이
+  적용된 상태에서 parity/접근성/번들 메트릭 가드가 모두 GREEN이어야 합니다.
 
 #### FRAME-ALT-001 · 리스크 및 완화
 
-- 기존 Userscript 빌드 파이프라인(Vite)이 SolidJS 최적화와 충돌할 수 있으므로,
-  Stage A에서 빌드 플러그인 충돌 여부를 테스트하고, 문제가 있을 경우
-  `BUILD-ALT-001` 백로그 항목을 재승격해 esbuild 전환을 준비합니다.
+- Userscript 빌드 파이프라인(Vite)은 Stage A 검증에서 충돌이 없었지만, Stage B
+  에서 Solid 렌더링 범위가 확장될 때 문제가 발생하면 `BUILD-ALT-001` 백로그를
+  재승격해 esbuild 전환을 준비합니다.
 - Signals 의존 서비스(예: ToastManager, UnifiedDownload)가 Solid store 전환 시
   race condition을 유발할 수 있으므로, Stage B에서 서비스별 짝 테스트를 작성하고
   Stage C에서 회귀 모니터링을 자동화합니다.
@@ -83,19 +123,21 @@ SEC-2025-10 Epic 완료 내역은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를
 
 #### FRAME-ALT-001 · 준비 사항 & 일정 가이드
 
-- Stage A는 2주 이내 완료를 목표로 하며, 이 단계에서 REF-LITE-V4/BUILD-ALT-001
-  관련 개선 사항은 백로그로 유지합니다.
-- Stage B·C는 각각 3~4주를 예상하며, Stage B 종료 후 1주간 실제 트위터에서 smoke
-  테스트를 수행해 이벤트/메모리 회귀를 확인합니다.
+- Stage B는 3~4주를 예상하며, 종료 후 1주간 실제 트위터 환경에서 smoke 테스트를
+  수행해 이벤트/메모리 회귀를 확인합니다.
+- Stage C 역시 3~4주를 예상하며, Stage B 결과에 따라 smoke 테스트 범위를
+  확장하고 Bundle/접근성 메트릭을 재산출합니다.
 - Stage D는 2주 이내로 계획하되, 배포 전 최소 3일 동안 베타 배포(프리플래그)
   모니터링을 실시하고 문제가 발견되면 Stage C로 롤백합니다.
+- Stage E는 설계/RED 1주, 구현 1.5주, 하드닝/검증 0.5주로 3주 이내 완료를 목표로
+  하며, 베타 플래그(내부 only)로 1주간 UI 회귀 관찰 후 전면 활성화를 결정합니다.
 
 ## 3. 다음 사이클 준비 메모(Placeholder)
 
 - 신규 Epic 제안은 백로그에 초안 등록 후 합의되면 본 문서의 활성 Epic으로
   승격합니다.
 - REF-LITE-V4 Runtime Slim과 BUILD-ALT-001 Userscript Bundler 교체 파일럿은
-  백로그 Candidate로 이동했으며, SolidJS 전환 Stage A 도중 빌드/런타임 리스크가
+  백로그 Candidate로 이동했으며, SolidJS 전환 Stage 진행 중 빌드/런타임 리스크가
   재현되면 즉시 재승격합니다.
 - CodeQL 하드닝 Epic 진행 상황 점검 후 추가 보안 하드닝 대상(예: Userscript
   sandbox 정책) 여부를 재평가합니다.
@@ -154,11 +196,9 @@ Gate 체크리스트(요지):
 
 ## Change Notes (Active Session)
 
-- 2025-09-27 — 활성 Epic을 SolidJS 전체 전환으로 단일화하고, REF-LITE-V4 및
-  BUILD-ALT-001을 백로그로 이동.
-- 2025-09-27 — SEC-2025-10 Epic을 Completed 로그로 이관하고 활성 계획서를 정리.
-- 2025-09-26 — 문서 검토, 활성 Epic 없음 재확인.
-- 2025-09-26 — GitHub CodeQL(JavaScript) 스캔 수행. 경고 30건(중복 포함)으로
-  `js/incomplete-url-substring-sanitization`, `js/double-escaping`,
-  `js/prototype-pollution-utility` 패턴이 보고됨. 위 "다음 사이클 준비" 메모에
-  정리된 후속 하드닝 작업을 백로그에 편입 예정.
+- Stage E Solid shell UI parity 계획을 본 문서에 반영했으며, RED 스펙을 `.test`
+  표면으로 졸업하고 격리/디자인 복구 작업을 순차적으로 진행합니다.
+- Stage E parity 가드와 Solid 경고 가드가 모두 GREEN 상태이며, 번들 메트릭
+  재측정을 위한 acceptance 게이트 재실행만 남았습니다. 2025-10-14 재실행 결과
+  typecheck/lint/build는 GREEN, 전체 `npm test`는 Stage D RED 가드로 인해 RED
+  상태입니다.

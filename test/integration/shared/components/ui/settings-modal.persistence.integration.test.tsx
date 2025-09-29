@@ -2,7 +2,7 @@
  * SettingsModal – persistence integration for progress toast toggle
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/preact';
+import { render, cleanup, fireEvent } from '@test-utils/testing-library';
 import { SettingsModal } from '@/shared/components/ui/SettingsModal/SettingsModal';
 import { registerSettingsManager } from '@/shared/container/service-accessors';
 import { SettingsService } from '@/features/settings/services/SettingsService';

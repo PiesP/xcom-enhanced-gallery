@@ -1,8 +1,9 @@
+/** @jsxImportSource solid-js */
 /**
  * SettingsModal – progress toast toggle
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/preact';
+import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library';
 import { SettingsModal } from '@/shared/components/ui/SettingsModal/SettingsModal';
 
 // Bridge mock for settings-access
@@ -33,7 +34,7 @@ describe('SettingsModal – progress toast toggle', () => {
   });
 
   it('renders the toggle and reflects default false', () => {
-    render(<SettingsModal {...baseProps} />);
+    render(() => <SettingsModal {...baseProps} />);
 
     const label = screen.getByText('Show progress toast during bulk download');
     expect(label).toBeDefined();
@@ -49,7 +50,7 @@ describe('SettingsModal – progress toast toggle', () => {
   });
 
   it('can be toggled and persists via settings-access', async () => {
-    render(<SettingsModal {...baseProps} />);
+    render(() => <SettingsModal {...baseProps} />);
 
     const input = document.getElementById('download-progress-toast') as any;
     expect(input).toBeTruthy();
@@ -59,7 +60,7 @@ describe('SettingsModal – progress toast toggle', () => {
 
     // Re-render to verify persisted value is loaded
     cleanup();
-    render(<SettingsModal {...baseProps} />);
+    render(() => <SettingsModal {...baseProps} />);
     const input2 = document.getElementById('download-progress-toast') as any;
     expect(input2.checked).toBe(true);
   });

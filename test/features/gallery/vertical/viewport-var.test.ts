@@ -3,7 +3,7 @@
  * @description useViewportConstrainedVar 훅이 컨테이너에 CSS 변수를 설정/갱신하는지 검증 (P1 RED → GREEN)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getPreact, getPreactHooks } from '@/shared/external/vendors';
+import { getPreact, getPreactHooks } from '@test-utils/legacy-preact';
 
 // 간단한 테스트 컴포넌트: 훅을 연결하여 동작 검증
 function TestComponent({ refEl }: { refEl: { current: HTMLElement | null } }) {

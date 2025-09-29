@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
+import { render, cleanup } from '@test-utils/testing-library';
 import { GalleryContainer } from '@/shared/components/isolation/GalleryContainer';
 
 // DOM 전역 타입을 직접 참조하지 않고, 런타임에서 안전하게 검사한다.

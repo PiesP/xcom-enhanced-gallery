@@ -1,0 +1,440 @@
+/**
+ * @fileoverview SolidJS 기반 갤러리 쉘
+ * @description FRAME-ALT-001 Stage B - Gallery shell Solid 마이그레이션 1단계
+ */
+
+import type { JSX } from 'solid-js';
+import { getSolidCore } from '@shared/external/vendors';
+import { GalleryContainer } from '@shared/components/isolation';
+import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
+import {
+  ToolbarWithSettings,
+  type ToolbarSettingsRendererFactory,
+} from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
+import { SolidVerticalImageItem } from '@/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid';
+import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@shared/types/media.types';
+import type { ImageFitMode } from '@shared/types';
+import { DEFAULT_SETTINGS } from '@/constants';
+import { getSetting, setSetting } from '@shared/container/settings-access';
+import { createSolidKeyboardHelpOverlayController } from './createSolidKeyboardHelpOverlayController';
+import type { SolidSettingsPanelInstance } from '@/features/settings/solid/renderSolidSettingsPanel';
+import styles from './SolidGalleryShell.module.css';
+
+export interface SolidGalleryShellOverrides {
+  readonly toolbarVariant?: 'standard' | 'with-settings';
+  readonly dataAttributes?: Record<string, string | undefined>;
+  readonly useShadowDom?: boolean;
+  readonly settingsRendererFactory?: ToolbarSettingsRendererFactory | null;
+}
+
+export interface SolidGalleryShellProps {
+  readonly onClose: () => void;
+  readonly onPrevious: () => void;
+  readonly onNext: () => void;
+  readonly onDownloadCurrent: () => void;
+  readonly onDownloadAll: () => void;
+  readonly uiOverrides?: SolidGalleryShellOverrides;
+}
+
+const FIT_SETTING_KEY = 'gallery.imageFitMode' as const;
+
+const resolveInitialFitMode = (): ImageFitMode =>
+  getSetting<ImageFitMode>(FIT_SETTING_KEY, DEFAULT_SETTINGS.gallery.imageFitMode);
+
+const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
+  const solid = getSolidCore();
+  const { createSignal, createMemo, createEffect, onCleanup, batch } = solid;
+
+  const overrides = {
+    toolbarVariant: props.uiOverrides?.toolbarVariant ?? 'standard',
+    dataAttributes: props.uiOverrides?.dataAttributes ?? { 'data-xeg-solid-shell': '' },
+    useShadowDom: props.uiOverrides?.useShadowDom ?? true,
+    settingsRendererFactory: props.uiOverrides?.settingsRendererFactory,
+  } as const;
+
+  const hostAttributes: Record<string, string | undefined> = {
+    ...overrides.dataAttributes,
+    'data-xeg-solid-shell': overrides.dataAttributes['data-xeg-solid-shell'] ?? '',
+  };
+
+  const useToolbarWithSettings = overrides.toolbarVariant === 'with-settings';
+
+  let defaultSettingsRendererFactory: ToolbarSettingsRendererFactory | undefined;
+  let settingsModulePromise: Promise<
+    typeof import('@/features/settings/solid/renderSolidSettingsPanel')
+  > | null = null;
+
+  const loadSettingsModule = async () => {
+    if (!settingsModulePromise) {
+      settingsModulePromise = import('@/features/settings/solid/renderSolidSettingsPanel');
+    }
+    return settingsModulePromise;
+  };
+
+  const getToolbarSettingsRendererFactory = (): ToolbarSettingsRendererFactory => {
+    if (overrides.settingsRendererFactory) {
+      return overrides.settingsRendererFactory;
+    }
+    if (!defaultSettingsRendererFactory) {
+      defaultSettingsRendererFactory = options => {
+        let disposed = false;
+        let instance: SolidSettingsPanelInstance | null = null;
+        let instancePromise: Promise<SolidSettingsPanelInstance> | null = null;
+
+        const ensureInstance = async (): Promise<SolidSettingsPanelInstance | null> => {
+          if (disposed) {
+            return null;
+          }
+          if (instance) {
+            return instance;
+          }
+          if (!instancePromise) {
+            instancePromise = loadSettingsModule().then(module =>
+              module.renderSolidSettingsPanel({
+                container: options.container,
+                onClose: () => {
+                  options.onClose();
+                },
+                position: options.position,
+                testId: options.testId,
+                defaultOpen: false,
+              })
+            );
+          }
+          instance = await instancePromise;
+          return instance;
+        };
+
+        return {
+          open: () => {
+            void ensureInstance().then(inst => inst?.open());
+          },
+          close: () => {
+            void ensureInstance().then(inst => inst?.close());
+          },
+          dispose: () => {
+            disposed = true;
+            if (instance) {
+              try {
+                instance.close();
+              } catch {
+                /* noop */
+              }
+              instance.dispose();
+              instance = null;
+            } else if (instancePromise) {
+              void instancePromise.then(inst => {
+                inst.dispose();
+              });
+            }
+            instancePromise = null;
+            try {
+              options.container.replaceChildren();
+            } catch {
+              /* noop */
+            }
+          },
+        };
+      };
+    }
+    return defaultSettingsRendererFactory;
+  };
+
+  const helpOverlayController = createSolidKeyboardHelpOverlayController();
+
+  const initialState = galleryState.value;
+
+  const [isOpen, setIsOpen] = createSignal(initialState.isOpen);
+  const [isLoading, setIsLoading] = createSignal(initialState.isLoading);
+  const [errorText, setErrorText] = createSignal<string | null>(initialState.error);
+  const [mediaItems, setMediaItems] = createSignal<readonly MediaInfo[]>(initialState.mediaItems);
+  const [currentIndex, setCurrentIndex] = createSignal(initialState.currentIndex);
+  const [fitMode, setFitMode] = createSignal<ImageFitMode>(resolveInitialFitMode());
+  const [settingsInstance, setSettingsInstance] = createSignal<SolidSettingsPanelInstance | null>(
+    null
+  );
+
+  let shellRef: HTMLDivElement | undefined;
+  let itemsContainerRef: HTMLDivElement | undefined;
+  let settingsHost: HTMLDivElement | null = null;
+
+  const totalCount = createMemo(() => mediaItems().length);
+
+  const currentPositionLabel = createMemo(() => {
+    const total = totalCount();
+    if (total === 0) {
+      return '0/0';
+    }
+    const position = Math.min(currentIndex() + 1, total);
+    return `${position}/${total}`;
+  });
+
+  const ensureSettingsModule = async (): Promise<SolidSettingsPanelInstance | null> => {
+    if (useToolbarWithSettings) {
+      return null;
+    }
+
+    const existing = settingsInstance();
+    if (existing) {
+      return existing;
+    }
+
+    if (typeof document === 'undefined' || !shellRef) {
+      return null;
+    }
+
+    if (!settingsHost) {
+      settingsHost = document.createElement('div');
+      settingsHost.setAttribute('data-xeg-solid-settings-host', '');
+      shellRef.appendChild(settingsHost);
+    }
+
+    const module = await loadSettingsModule();
+
+    const instance = module.renderSolidSettingsPanel({
+      container: settingsHost,
+      onClose: () => {
+        setSettingsInstance(null);
+        if (settingsHost) {
+          settingsHost.replaceChildren();
+        }
+      },
+    });
+
+    setSettingsInstance(instance);
+    return instance;
+  };
+
+  const handleOpenSettings = async () => {
+    const instance = await ensureSettingsModule();
+    instance?.open();
+  };
+
+  const handleFitModeChange = (mode: ImageFitMode) => {
+    setFitMode(mode);
+    void setSetting(FIT_SETTING_KEY, mode);
+  };
+
+  const unsubscribe = galleryState.subscribe(nextState => {
+    batch(() => {
+      setIsOpen(nextState.isOpen);
+      setIsLoading(nextState.isLoading);
+      setErrorText(nextState.error);
+      setMediaItems(nextState.mediaItems);
+      setCurrentIndex(nextState.currentIndex);
+    });
+
+    if (!nextState.isOpen) {
+      helpOverlayController.close();
+    }
+  });
+
+  createEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    if (isOpen()) {
+      document.body.setAttribute('data-xeg-gallery-open', 'true');
+    } else {
+      document.body.removeAttribute('data-xeg-gallery-open');
+    }
+  });
+
+  createEffect(() => {
+    const container = itemsContainerRef;
+    if (!container) {
+      return;
+    }
+    const activeIndex = currentIndex();
+    const activeNode = container.querySelector(`[data-index="${activeIndex}"]`);
+    if (activeNode instanceof HTMLElement && typeof activeNode.scrollIntoView === 'function') {
+      try {
+        activeNode.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } catch {
+        activeNode.scrollIntoView({ block: 'center' });
+      }
+    }
+  });
+
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const handleGlobalKeydown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.contentEditable === 'true') {
+          return;
+        }
+      }
+
+      if (!isOpen()) {
+        return;
+      }
+
+      const navigation = () => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+
+      switch (event.key) {
+        case 'Escape':
+          navigation();
+          if (helpOverlayController.isOpen()) {
+            helpOverlayController.close();
+            break;
+          }
+          props.onClose?.();
+          break;
+        case 'ArrowLeft':
+          navigation();
+          props.onPrevious?.();
+          break;
+        case 'ArrowRight':
+          navigation();
+          props.onNext?.();
+          break;
+        case '?':
+          navigation();
+          helpOverlayController.open();
+          break;
+        case '/':
+          if (event.shiftKey) {
+            navigation();
+            helpOverlayController.open();
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeydown, true);
+    window.addEventListener('keydown', handleGlobalKeydown, true);
+
+    onCleanup(() => {
+      document.removeEventListener('keydown', handleGlobalKeydown, true);
+      window.removeEventListener('keydown', handleGlobalKeydown, true);
+    });
+  }
+
+  const handleItemSelection = (index: number) => {
+    if (index === currentIndex()) {
+      return;
+    }
+    navigateToItem(index);
+  };
+
+  const renderItems = createMemo(() =>
+    mediaItems().map((media, index) => (
+      <SolidVerticalImageItem
+        media={media}
+        index={index}
+        isActive={index === currentIndex()}
+        isFocused={index === currentIndex()}
+        forceVisible={index === currentIndex()}
+        fitMode={fitMode()}
+        onClick={() => handleItemSelection(index)}
+      />
+    ))
+  );
+
+  onCleanup(() => {
+    unsubscribe?.();
+    helpOverlayController.dispose();
+    const instance = settingsInstance();
+    try {
+      instance?.dispose();
+    } catch {
+      /* noop */
+    }
+    if (settingsHost?.parentNode) {
+      settingsHost.parentNode.removeChild(settingsHost);
+    }
+    if (typeof document !== 'undefined') {
+      document.body.removeAttribute('data-xeg-gallery-open');
+    }
+  });
+
+  return (
+    <GalleryContainer onClose={props.onClose} useShadowDOM={overrides.useShadowDom}>
+      <div
+        ref={node => {
+          shellRef = node ?? undefined;
+        }}
+        class={styles.shell}
+        {...hostAttributes}
+        data-open={isOpen() ? 'true' : 'false'}
+        aria-hidden={isOpen() ? 'false' : 'true'}
+        hidden={!isOpen()}
+      >
+        {useToolbarWithSettings ? (
+          <ToolbarWithSettings
+            currentIndex={currentIndex()}
+            totalCount={totalCount()}
+            isLoading={isLoading()}
+            disabled={!isOpen()}
+            onPrevious={props.onPrevious}
+            onNext={props.onNext}
+            onDownloadCurrent={props.onDownloadCurrent}
+            onDownloadAll={props.onDownloadAll}
+            onClose={props.onClose}
+            currentFitMode={fitMode()}
+            onFitOriginal={() => handleFitModeChange('original')}
+            onFitWidth={() => handleFitModeChange('fitWidth')}
+            onFitHeight={() => handleFitModeChange('fitHeight')}
+            onFitContainer={() => handleFitModeChange('fitContainer')}
+            settingsRendererFactory={
+              overrides.settingsRendererFactory === undefined
+                ? getToolbarSettingsRendererFactory()
+                : (overrides.settingsRendererFactory ?? undefined)
+            }
+            aria-label='갤러리 도구모음'
+          />
+        ) : (
+          <Toolbar
+            currentIndex={currentIndex()}
+            totalCount={totalCount()}
+            isLoading={isLoading()}
+            disabled={!isOpen()}
+            onPrevious={props.onPrevious}
+            onNext={props.onNext}
+            onDownloadCurrent={props.onDownloadCurrent}
+            onDownloadAll={props.onDownloadAll}
+            onClose={props.onClose}
+            currentFitMode={fitMode()}
+            onFitOriginal={() => handleFitModeChange('original')}
+            onFitWidth={() => handleFitModeChange('fitWidth')}
+            onFitHeight={() => handleFitModeChange('fitHeight')}
+            onFitContainer={() => handleFitModeChange('fitContainer')}
+            onOpenSettings={handleOpenSettings}
+            aria-label='갤러리 도구모음'
+          />
+        )}
+
+        <div class={styles.contentArea} data-gallery-element='items-area'>
+          <div
+            ref={node => {
+              itemsContainerRef = node ?? undefined;
+            }}
+            class={styles.itemsContainer}
+            data-xeg-role='items-container'
+            aria-live='polite'
+          >
+            {renderItems()}
+          </div>
+        </div>
+
+        {errorText() ? (
+          <div class={styles.statusBanner} data-variant='error' role='status'>
+            {errorText()}
+          </div>
+        ) : null}
+        <div class={styles.statusBanner} role='status' aria-live='polite'>
+          {currentPositionLabel()}
+        </div>
+      </div>
+    </GalleryContainer>
+  );
+};
+
+export default SolidGalleryShell;

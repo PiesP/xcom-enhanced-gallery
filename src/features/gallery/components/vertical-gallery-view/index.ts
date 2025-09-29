@@ -1,3 +1,5 @@
-export { VerticalGalleryView } from './VerticalGalleryView';
-export type { VerticalGalleryViewProps } from './VerticalGalleryView';
-export { VerticalImageItem } from './VerticalImageItem';
+/**
+ * Legacy vertical gallery view components removed during Solid migration.
+ */
+
+export {};

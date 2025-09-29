@@ -9,6 +9,8 @@
  * - app.types.ts (앱 특화 타입)
  */
 
+import type { JSX } from 'solid-js';
+
 // ================================
 // 기본 서비스 인터페이스
 // ================================
@@ -284,19 +286,15 @@ export interface BaseConfig {
 }
 
 // ================================
-// Preact/React 타입들
+// 컴포넌트 타입 정의 (Solid 기반)
 // ================================
 
-export interface VNode {
-  type: string | Function;
-  props: Record<string, unknown> | null;
-  key: string | number | null;
-}
+export type VNode = JSX.Element;
 
-export type ComponentType<P = Record<string, unknown>> = (props: P) => VNode | null;
+export type ComponentType<P = Record<string, unknown>> = (props: P) => JSX.Element | null;
 
 export type ComponentChildren =
-  | VNode
+  | JSX.Element
   | string
   | number
   | boolean

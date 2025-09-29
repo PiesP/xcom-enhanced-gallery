@@ -2,7 +2,7 @@
  * @fileoverview Gallery State Management
  * @version 1.0.0 - Clean Architecture
  *
- * Gallery state management using Preact signals
+ * Gallery state management using Solid signals
  * - Clear structure
  * - Type safety
  * - Immutable state
@@ -14,15 +14,9 @@ import type { MediaInfo } from '@shared/types/media.types';
 type XegGlobal = {
   __XEG_GALLERY_STATE?: { isOpen: boolean };
 } & Record<string, unknown>;
-import { getPreactSignals } from '@shared/external/vendors';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
 import { registerGallerySignalAccess } from '../mediators/gallery-signal-mediator';
-
-// Signal type
-type Signal<T> = {
-  value: T;
-  subscribe?: (callback: (value: T) => void) => void;
-};
+import { createGlobalSignal } from '../createGlobalSignal';
 
 /**
  * Gallery state interface
@@ -58,54 +52,40 @@ export type GalleryEvents = {
   'gallery:error': { error: string };
 };
 
-// Preact Signals lazy initialization
-let galleryStateSignal: Signal<GalleryState> | null = null;
+const signal = createGlobalSignal<GalleryState>(INITIAL_STATE);
 
 // Logger instance (default fallback)
 const logger: ILogger = defaultLogger;
 
-function getGalleryStateSignal(): Signal<GalleryState> {
-  if (!galleryStateSignal) {
-    const { signal } = getPreactSignals();
-    galleryStateSignal = signal<GalleryState>(INITIAL_STATE);
-    // mediator accessor 등록 (idempotent)
-    const { signal: createSignal, effect } = getPreactSignals();
-    // 파생 신호 생성 (lightweight derived signals)
-    const isOpenSignal = createSignal(galleryState.value.isOpen);
-    const currentIndexSignal = createSignal(galleryState.value.currentIndex);
-    effect(() => {
-      const state = galleryState.value;
-      isOpenSignal.value = state.isOpen;
-      currentIndexSignal.value = state.currentIndex;
-    });
-    registerGallerySignalAccess(() => ({
-      isOpen: isOpenSignal,
-      currentIndex: currentIndexSignal,
-    }));
-  }
-  return galleryStateSignal;
-}
+registerGallerySignalAccess(() => ({
+  isOpen: () => signal.peek().isOpen,
+  currentIndex: () => signal.peek().currentIndex,
+}));
 
 /**
  * Gallery state access
  */
 export const galleryState = {
   get value(): GalleryState {
-    return getGalleryStateSignal().value;
+    return signal.value;
   },
 
   set value(newState: GalleryState) {
-    getGalleryStateSignal().value = newState;
+    signal.value = newState;
   },
 
-  /**
-   * Subscribe to state changes
-   */
   subscribe(callback: (state: GalleryState) => void): () => void {
-    const { effect } = getPreactSignals();
-    return effect(() => {
-      callback(getGalleryStateSignal().value);
-    });
+    return signal.subscribe(callback);
+  },
+
+  update(updater: (previous: GalleryState) => GalleryState): void {
+    signal.update(updater);
+  },
+
+  accessor: signal.accessor,
+
+  peek(): GalleryState {
+    return signal.peek();
   },
 };
 

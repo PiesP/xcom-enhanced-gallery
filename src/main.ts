@@ -19,6 +19,8 @@ import {
 import { CoreService } from '@shared/services/ServiceManager';
 import { cleanupVendors } from '@shared/external/vendors';
 import { globalTimerManager } from '@shared/utils';
+import type { SolidBootstrapHandle } from '@/bootstrap/solid-bootstrap';
+import type { SolidToastHostHandle } from '@/features/notifications/solid/renderSolidToastHost';
 
 // 전역 스타일
 // 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.
@@ -30,6 +32,8 @@ let isStarted = false;
 let startPromise: Promise<void> | null = null;
 let galleryApp: unknown = null; // Features GalleryApp 인스턴스
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
+let solidBootstrapHandle: SolidBootstrapHandle | null = null;
+let solidToastHostHandle: SolidToastHostHandle | null = null;
 
 /**
  * 애플리케이션 설정 생성
@@ -73,8 +77,8 @@ async function initializeCriticalSystems(): Promise<void> {
     warmupCriticalServices();
 
     // Toast 컨테이너 초기화 (동적 import)
-    // 테스트 모드에서는 Preact의 전역 이벤트 위임 리스너가 남아
-    // 누수 스캔에 영향을 줄 수 있으므로 생략한다.
+    // 테스트 모드에서는 과거 Preact 전역 이벤트 위임 리스너 누수 회귀를 감시하기 위해
+    // 토스트 초기화를 건너뛴다(Solid 경로에서도 안전장치 유지).
     if (import.meta.env.MODE !== 'test') {
       await initializeToastContainer();
     } else {
@@ -93,6 +97,21 @@ async function initializeCriticalSystems(): Promise<void> {
  */
 async function registerFeatureServicesLazy(): Promise<void> {
   await registerFeatures();
+}
+
+async function initializeSolidBootstrap(): Promise<void> {
+  if (solidBootstrapHandle) {
+    logger.debug('Solid 부트스트랩이 이미 초기화되었습니다.');
+    return;
+  }
+
+  try {
+    const { startSolidBootstrap } = await import('@/bootstrap/solid-bootstrap');
+    solidBootstrapHandle = await startSolidBootstrap();
+    logger.info('✅ Solid 부트스트랩 초기화 완료');
+  } catch (error) {
+    logger.error('❌ Solid 부트스트랩 초기화 실패:', error);
+  }
 }
 
 /**
@@ -130,22 +149,38 @@ async function initializeToastContainer(): Promise<void> {
   try {
     logger.debug('Toast 컨테이너 지연 로딩 시작');
 
-    // UI 컴포넌트를 지연 로딩
-    const [{ ToastContainer }, { getPreact }] = await Promise.all([
-      import('@shared/components/ui'),
-      import('@shared/external/vendors'),
-    ]);
+    const currentContainer = document.getElementById('xeg-toast-container');
 
-    const { h, render } = getPreact();
-    let toastContainer = document.getElementById('xeg-toast-container');
+    let toastContainer = currentContainer;
     if (!toastContainer) {
       toastContainer = document.createElement('div');
       toastContainer.id = 'xeg-toast-container';
       document.body.appendChild(toastContainer);
+    } else {
+      try {
+        toastContainer.replaceChildren();
+      } catch (cleanupError) {
+        logger.warn('기존 Toast 컨테이너 정리 중 경고:', cleanupError);
+      }
     }
 
-    render(h(ToastContainer, {}), toastContainer as HTMLElement);
-    logger.debug('✅ Toast 컨테이너 지연 초기화 완료');
+    if (solidToastHostHandle) {
+      logger.debug('Solid toast 호스트가 이미 초기화되었습니다.');
+      return;
+    }
+
+    const { renderSolidToastHost } = await import(
+      '@features/notifications/solid/renderSolidToastHost'
+    );
+
+    solidToastHostHandle = renderSolidToastHost({
+      container: toastContainer,
+      position: 'top-right',
+      maxToasts: 5,
+      testId: 'solid-toast-container',
+    });
+
+    logger.debug('✅ Solid toast 호스트 초기화 완료');
   } catch (error) {
     logger.warn('Toast 컨테이너 초기화 실패:', error);
   }
@@ -197,20 +232,40 @@ async function cleanup(): Promise<void> {
       }
     }
 
+    if (solidBootstrapHandle) {
+      try {
+        await Promise.resolve(solidBootstrapHandle.dispose());
+      } catch (error) {
+        logger.warn('Solid 부트스트랩 정리 중 경고:', error);
+      } finally {
+        solidBootstrapHandle = null;
+      }
+    }
+
     // CoreService 인스턴스 정리 (features 레이어에서 접근 금지이므로 여기서만 수행)
     CoreService.getInstance().cleanup();
 
     // Toast 컨테이너 언마운트 및 DOM 제거
     try {
-      // 테스트 모드에서는 초기화 자체를 건너뛰므로 언마운트도 생략
       if (import.meta.env.MODE !== 'test') {
         const container = document.getElementById('xeg-toast-container');
+
+        if (solidToastHostHandle) {
+          try {
+            solidToastHostHandle.dispose();
+          } catch (disposeError) {
+            logger.warn('Solid toast 호스트 정리 중 경고:', disposeError);
+          } finally {
+            solidToastHostHandle = null;
+          }
+        }
+
         if (container) {
-          const { getPreact } = await import('@shared/external/vendors');
-          const { render } = getPreact();
-          // 언마운트
-          render(null, container as HTMLElement);
-          // DOM 제거
+          try {
+            container.replaceChildren();
+          } catch (cleanupError) {
+            logger.warn('Toast 컨테이너 내용 정리 중 경고:', cleanupError);
+          }
           container.remove();
         }
       }
@@ -394,19 +449,22 @@ async function startApplication(): Promise<void> {
     // 3단계: Feature Services 지연 등록
     await registerFeatureServicesLazy();
 
-    // 4단계: 전역 이벤트 핸들러 설정
+    // 4단계: Solid 부트스트랩 초기화 (기본 활성)
+    await initializeSolidBootstrap();
+
+    // 5단계: 전역 이벤트 핸들러 설정
     setupGlobalEventHandlers();
 
-    // 5단계: 갤러리 앱을 즉시 초기화 (지연 없음)
-    // 테스트 모드에서는 Preact의 전역 이벤트 위임 리스너가 등록되어
-    // 누수 스캔 테스트(active EventTarget listeners)에 간섭할 수 있으므로 생략한다.
+    // 6단계: 갤러리 앱을 즉시 초기화 (지연 없음)
+    // 테스트 모드에서는 과거 Preact 전역 이벤트 위임 리스너 누수 회귀를 감시하기 위해
+    // 갤러리 즉시 초기화를 건너뛴다(Solid 경로에서도 안전장치 유지).
     if (import.meta.env.MODE !== 'test') {
       await initializeGalleryImmediately();
     } else {
       logger.debug('Gallery initialization skipped (test mode)');
     }
 
-    // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
+    // 7단계: 백그라운드에서 Non-Critical 시스템 초기화
     initializeNonCriticalSystems();
 
     isStarted = true;

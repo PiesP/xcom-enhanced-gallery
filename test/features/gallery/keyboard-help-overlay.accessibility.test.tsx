@@ -1,102 +1,98 @@
-// Safe document accessor (jsdom or browser)
+/** @jsxImportSource solid-js */
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { fireEvent, waitFor, cleanup } from '@test-utils/testing-library';
+import { initializeVendors } from '@shared/external/vendors';
+import {
+  createSolidKeyboardHelpOverlayController,
+  type SolidKeyboardHelpOverlayController,
+} from '@/features/gallery/solid/createSolidKeyboardHelpOverlayController';
+
 function getDoc() {
   return (globalThis as any)?.document || null;
 }
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/preact';
-import { getPreact, getPreactSignals, initializeVendors } from '@/shared/external/vendors';
-import { KeyboardHelpOverlay } from '@/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
 
-// Contract: When overlay opens, initial focus should be on the close button.
-// When overlay closes (escape or backdrop), focus should be restored to the previously focused trigger element.
+function appendTrigger(label: string) {
+  const doc = getDoc();
+  if (!doc) {
+    throw new Error('Document is not available in the current environment.');
+  }
+  const trigger = doc.createElement('button');
+  trigger.type = 'button';
+  trigger.setAttribute('aria-label', label);
+  trigger.textContent = 'open';
+  doc.body.appendChild(trigger);
+  return trigger;
+}
 
 describe('KeyboardHelpOverlay accessibility (N5)', () => {
-  const { h } = getPreact();
-  const { signal } = getPreactSignals();
-  let root: any;
+  let controller: SolidKeyboardHelpOverlayController | null = null;
 
-  beforeEach(() => {
-    initializeVendors();
-    const d = getDoc();
-    root = d?.createElement('div') || null;
-    if (d && root) {
-      d.body.innerHTML = '';
-      d.body.appendChild(root);
+  beforeEach(async () => {
+    await initializeVendors();
+    const doc = getDoc();
+    if (doc) {
+      doc.body.innerHTML = '';
     }
   });
 
-  function setup(triggerLabel = 'Open Help') {
-    const openSig = signal(false);
-
-    const Trigger = () =>
-      h(
-        'button',
-        {
-          type: 'button',
-          'aria-label': triggerLabel,
-          onClick: () => (openSig.value = true),
-        },
-        'open'
-      );
-
-    function App() {
-      return h(
-        'div',
-        {},
-        h(Trigger, {}),
-        h(KeyboardHelpOverlay, {
-          open: openSig.value,
-          onClose: () => (openSig.value = false),
-        })
-      );
+  afterEach(() => {
+    controller?.dispose();
+    controller = null;
+    const doc = getDoc();
+    if (doc) {
+      doc.body.innerHTML = '';
     }
-
-    return { App, openSig };
-  }
+    cleanup();
+  });
 
   it('sets initial focus to close button on open', async () => {
-    const { App } = setup();
-    const { container } = render(h(App, {}), { container: root || undefined });
-    const trigger = container.querySelector('button[aria-label="Open Help"]');
-    expect(trigger).toBeTruthy();
-    if (!trigger) return;
-    fireEvent.focus(trigger);
-    fireEvent.click(trigger);
+    const doc = getDoc();
+    const trigger = appendTrigger('Open Help');
+    expect(doc).toBeTruthy();
+    trigger.focus();
+
+    controller = createSolidKeyboardHelpOverlayController();
+    controller.open();
+
     await waitFor(() => {
-      const closeBtn = container.querySelector('button[aria-label="Close"]');
+      const closeBtn = doc?.querySelector(
+        '[data-xeg-solid-help-overlay] button[aria-label="Close"]'
+      ) as HTMLElement | null;
       expect(closeBtn).toBeTruthy();
-      // jsdom에서 activeElement가 즉시 반영되지 않을 수 있으므로 waitFor로 안정화
-      expect(getDoc()?.activeElement).toBe(closeBtn);
+      expect(doc?.activeElement).toBe(closeBtn);
     });
   });
 
   it('restores focus to trigger when closed via Escape', async () => {
-    const { App } = setup('Help Trigger');
-    const { container } = render(h(App, {}), { container: root || undefined });
-    const trigger = container.querySelector('button[aria-label="Help Trigger"]');
-    expect(trigger).toBeTruthy();
-    if (!trigger) return;
-    fireEvent.focus(trigger);
-    fireEvent.click(trigger);
+    const doc = getDoc();
+    const trigger = appendTrigger('Help Trigger');
+    expect(doc).toBeTruthy();
+    trigger.focus();
 
-    const dialog = container.querySelector('[role="dialog"]');
-    expect(dialog).toBeTruthy();
+    controller = createSolidKeyboardHelpOverlayController();
+    controller.open();
 
-    const d = getDoc();
-    if (d) fireEvent.keyDown(d, { key: 'Escape' });
+    await waitFor(() => {
+      expect(doc?.querySelector('[data-xeg-solid-help-overlay] [role="dialog"]')).toBeTruthy();
+    });
+
+    if (doc) {
+      fireEvent.keyDown(doc, { key: 'Escape' });
+    }
 
     await waitFor(
       () => {
-        // After close, focus should return to trigger (allow DOM node reuse)
-        const doc = getDoc();
-        const ae = doc?.activeElement as HTMLElement | null;
-        const currentTrigger = container.querySelector(
-          'button[aria-label="Help Trigger"]'
-        ) as HTMLElement | null;
-        const marked = currentTrigger && currentTrigger.getAttribute('data-xeg-focused') === '1';
-        expect(ae === trigger || (currentTrigger && ae === currentTrigger) || marked).toBe(true);
+        const overlay = doc?.querySelector('[data-xeg-solid-help-overlay] [role="dialog"]');
+        expect(overlay).toBeFalsy();
       },
       { timeout: 1500 }
     );
+
+    await waitFor(() => {
+      const activeElement = doc?.activeElement as HTMLElement | null;
+      const marked = trigger.getAttribute('data-xeg-focused') === '1';
+      expect(activeElement === trigger || marked).toBe(true);
+    });
   });
 });

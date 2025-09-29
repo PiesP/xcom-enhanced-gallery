@@ -1,4 +1,4 @@
-import { getPreactHooks, type VNode } from '@shared/external/vendors';
+import { createEffect, createMemo, createSignal, type JSX } from 'solid-js';
 
 export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
@@ -53,18 +53,20 @@ export interface ToolbarHeadlessProps {
   readonly onFitWidth?: () => void;
   readonly onFitHeight?: () => void;
   readonly onFitContainer?: () => void;
-  readonly children: (state: ToolbarState, actions: ToolbarActions) => VNode;
+  readonly children: (state: ToolbarState, actions: ToolbarActions) => JSX.Element;
 }
 
-export function ToolbarHeadless(props: ToolbarHeadlessProps): VNode {
-  const { useMemo, useState } = getPreactHooks();
+export function ToolbarHeadless(props: ToolbarHeadlessProps): JSX.Element {
+  const [currentFitMode, setCurrentFitMode] = createSignal<FitMode>('original');
+  const [isDownloading, setDownloading] = createSignal<boolean>(!!props.isDownloading);
+  const [highContrast, setHighContrast] = createSignal<boolean>(false);
+  const [mode, setMode] = createSignal<string>('default');
 
-  const [currentFitMode, setCurrentFitMode] = useState<FitMode>('original');
-  const [isDownloading, setDownloading] = useState<boolean>(!!props.isDownloading);
-  const [highContrast, setHighContrast] = useState<boolean>(false);
-  const [mode, setMode] = useState<string>('default');
+  createEffect(() => {
+    setDownloading(!!props.isDownloading);
+  });
 
-  const items = useMemo<readonly ToolbarItem[]>(() => {
+  const items = createMemo<readonly ToolbarItem[]>(() => {
     const disabledPrev = props.currentIndex <= 0;
     const disabledNext = props.currentIndex >= props.totalCount - 1;
     return [
@@ -103,13 +105,13 @@ export function ToolbarHeadless(props: ToolbarHeadlessProps): VNode {
       {
         type: 'downloadCurrent',
         group: 'downloads',
-        loading: isDownloading,
+        loading: isDownloading(),
         ...(props.onDownloadCurrent ? { onAction: props.onDownloadCurrent } : {}),
       },
       {
         type: 'downloadAll',
         group: 'downloads',
-        loading: isDownloading,
+        loading: isDownloading(),
         ...(props.onDownloadAll ? { onAction: props.onDownloadAll } : {}),
       },
       {
@@ -118,29 +120,33 @@ export function ToolbarHeadless(props: ToolbarHeadlessProps): VNode {
         disabled: !props.onOpenSettings,
         ...(props.onOpenSettings ? { onAction: props.onOpenSettings } : {}),
       },
-      { type: 'close', group: 'controls', ...(props.onClose ? { onAction: props.onClose } : {}) },
+      {
+        type: 'close',
+        group: 'controls',
+        ...(props.onClose ? { onAction: props.onClose } : {}),
+      },
     ];
-  }, [props.currentIndex, props.totalCount, isDownloading]);
+  });
 
-  const state: ToolbarState = {
-    items,
-    currentMode: mode,
-    needsHighContrast: highContrast,
-    isDownloading,
+  const state = createMemo<ToolbarState>(() => ({
+    items: items(),
+    currentMode: mode(),
+    needsHighContrast: highContrast(),
+    isDownloading: isDownloading(),
     currentIndex: props.currentIndex,
     totalCount: props.totalCount,
-    currentFitMode,
-  };
+    currentFitMode: currentFitMode(),
+  }));
 
   const actions: ToolbarActions = {
-    setMode,
-    setHighContrast,
-    setFitMode: (m: FitMode) => setCurrentFitMode(m),
-    setDownloading,
+    setMode: value => setMode(value),
+    setHighContrast: value => setHighContrast(value),
+    setFitMode: value => setCurrentFitMode(value),
+    setDownloading: value => setDownloading(value),
     updateItems: () => void 0,
   };
 
-  return props.children(state, actions);
+  return props.children(state(), actions);
 }
 
 export default ToolbarHeadless;

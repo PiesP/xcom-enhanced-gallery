@@ -3,7 +3,7 @@
  * @description 갤러리 닫기/다시 열기 후 이미지 핏 모드가 저장/복원되는지 검증 (RED)
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { VerticalGalleryView } from '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { openGallery, closeGallery } from '@/shared/state/signals/gallery.signals';
 import { registerSettingsManager } from '@/shared/container/service-accessors';

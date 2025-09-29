@@ -2,6 +2,9 @@
  * @fileoverview 갤러리 이벤트: PC 전용 핫키/이벤트 등록 검증
  */
 
+import * as solid from 'solid-js';
+import * as solidStore from 'solid-js/store';
+import * as solidWeb from 'solid-js/web';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // 전역 스파이(타입 주석 제거: 파서 호환)
@@ -36,6 +39,28 @@ async function importEventsWithVendorsMock() {
 
     return {
       getPreactSignals: vi.fn(() => ({ signal, effect })),
+      getSolidCore: vi.fn(() => ({
+        createSignal: solid.createSignal,
+        createEffect: solid.createEffect,
+        createMemo: solid.createMemo,
+        createRoot: solid.createRoot,
+        createComputed: solid.createComputed,
+        createComponent: solid.createComponent,
+        mergeProps: solid.mergeProps,
+        splitProps: solid.splitProps,
+        onCleanup: solid.onCleanup,
+        batch: solid.batch,
+        untrack: solid.untrack,
+        createContext: solid.createContext,
+        useContext: solid.useContext,
+      })),
+      getSolidStore: vi.fn(() => ({
+        createStore: solidStore.createStore,
+        produce: solidStore.produce,
+        reconcile: solidStore.reconcile,
+        unwrap: solidStore.unwrap,
+      })),
+      getSolidWeb: vi.fn(() => ({ render: solidWeb.render })),
     };
   });
 

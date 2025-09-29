@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPreact } from '@shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { IconButton } from '@shared/components/ui';
 import { preloadCommonIcons, resetIconRegistry } from '@shared/services/iconRegistry';
 

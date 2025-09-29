@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import type { ComponentChildren } from '@shared/external/vendors';
+import type { ComponentChildren } from '@shared/types/app.types';
 
 /**
  * 모든 컴포넌트의 최상위 기본 Props

@@ -3,7 +3,7 @@
  * @description 기본 버튼 컴포넌트 - 디자인 토큰 사용
  */
 
-import type { ComponentChildren } from '@shared/external/vendors';
+import type { ComponentChildren } from '@shared/types/app.types';
 import './Button.css';
 
 export interface ButtonProps {
@@ -91,7 +91,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={classes}
+      class={classes}
       disabled={disabled || loading}
       onClick={handleClick}
       onKeyDown={handleKeyDown}

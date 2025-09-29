@@ -54,7 +54,7 @@ describe('벤더 초기화 순서 에러 해결', () => {
 
       // 초기화 후에도 컴포넌트가 정상 작동해야 함
       expect(VerticalImageItem).toBeDefined();
-      expect(VerticalImageItem.displayName).toContain('memo');
+      expect(VerticalImageItem.displayName).toBe('SolidVerticalImageItem');
     });
 
     it('lazy initialization이 정상 작동해야 한다', async () => {
@@ -93,7 +93,7 @@ describe('벤더 초기화 순서 에러 해결', () => {
       await initializeVendors();
 
       // 초기화 후에도 모든 컴포넌트가 정상 작동
-      expect(VerticalImageItem.displayName).toContain('memo');
+      expect(VerticalImageItem.displayName).toBe('SolidVerticalImageItem');
       expect(Toolbar.displayName).toContain('memo');
       // UnifiedGalleryContainer는 Phase 1에서 제거됨
     });

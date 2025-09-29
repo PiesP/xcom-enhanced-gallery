@@ -3,7 +3,7 @@
  * @description Simple windowing (viewport ±N) behavior tests for VerticalGalleryView (TDD: RED → GREEN)
  */
 import { describe, it, expect } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { openGallery, closeGallery } from '@/shared/state/signals/gallery.signals';
 import { VerticalGalleryView } from '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 

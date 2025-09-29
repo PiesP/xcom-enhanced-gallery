@@ -1,5 +1,6 @@
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
-import { initializeVendors, getPreact, getPreactHooks } from '@shared/external/vendors';
+import { initializeVendors } from '@shared/external/vendors';
+import { getPreact, getPreactHooks } from '@test-utils/legacy-preact';
 import { useGalleryScroll } from '@/features/gallery/hooks';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
@@ -21,7 +22,7 @@ async function flushEffects() {
   await new Promise(resolve => setTimeout(resolve, 0));
 }
 
-function dispatchWheel(delta = 8, target?: HTMLElement | Document) {
+function dispatchWheel(delta = 8, target?: HTMLElement | typeof document) {
   const wheelEvent = new globalThis.WheelEvent('wheel', {
     deltaY: delta,
     bubbles: true,

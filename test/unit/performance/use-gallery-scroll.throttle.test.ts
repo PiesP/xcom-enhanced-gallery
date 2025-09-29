@@ -1,7 +1,7 @@
 import { describe, it, vi, beforeEach, afterEach, expect } from 'vitest';
 import { initializeVendors } from '@shared/external/vendors';
 import { useGalleryScroll } from '@/features/gallery/hooks';
-import { getPreact, getPreactHooks } from '@shared/external/vendors';
+import { getPreact, getPreactHooks } from '@test-utils/legacy-preact';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 
 // ensure vendors are initialized in test env

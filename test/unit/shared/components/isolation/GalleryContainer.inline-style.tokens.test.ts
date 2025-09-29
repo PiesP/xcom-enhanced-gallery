@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, cleanup } from '@test-utils/testing-library';
+import { h } from '@test-utils/legacy-preact';
 import { GalleryContainer } from '@/shared/components/isolation/GalleryContainer';
 
 describe('GalleryContainer (inline style policy)', () => {

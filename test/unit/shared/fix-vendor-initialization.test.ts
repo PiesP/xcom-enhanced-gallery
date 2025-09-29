@@ -17,7 +17,7 @@ describe('Vendor 초기화 에러 수정', () => {
   describe('초기화 순서 문제', () => {
     it('initializeVendors() 없이 getPreactCompat() 호출 시 자동 초기화가 작동해야 한다', async () => {
       // vendor-api를 다시 import하여 초기화되지 않은 상태 테스트
-      const { getPreactCompat } = await import('@shared/external/vendors');
+      const { getPreactCompat } = await import('@test-utils/legacy-preact');
 
       // 자동 초기화가 작동하므로 에러가 발생하지 않아야 함
       const compat = getPreactCompat();
@@ -27,7 +27,8 @@ describe('Vendor 초기화 에러 수정', () => {
     });
 
     it('initializeVendors() 호출 후에는 getPreactCompat()이 정상 작동해야 한다', async () => {
-      const { initializeVendors, getPreactCompat } = await import('@shared/external/vendors');
+      const { initializeVendors } = await import('@shared/external/vendors');
+      const { getPreactCompat } = await import('@test-utils/legacy-preact');
 
       // 초기화 수행
       await initializeVendors();
@@ -45,7 +46,7 @@ describe('Vendor 초기화 에러 수정', () => {
       // 동적 import 패턴 검증
       const dynamicGetMemo = async () => {
         try {
-          const { getPreactCompat } = await import('@shared/external/vendors');
+          const { getPreactCompat } = await import('@test-utils/legacy-preact');
           return getPreactCompat().memo;
         } catch {
           // fallback for 미초기화 상태

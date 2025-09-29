@@ -34,6 +34,8 @@ export type { ToolbarProps } from './Toolbar/Toolbar';
 // Settings Modal Components
 export { SettingsModal } from './SettingsModal';
 export type { SettingsModalProps } from './SettingsModal';
+export { SolidModalShell } from './ModalShell';
+export type { SolidModalShellProps } from './ModalShell';
 
 // ToolbarWithSettings 컴포넌트
 export { ToolbarWithSettings } from './ToolbarWithSettings/ToolbarWithSettings';

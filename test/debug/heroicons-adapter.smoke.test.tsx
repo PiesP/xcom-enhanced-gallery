@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { getPreact } from '@shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { Icon } from '@shared/components/ui/Icon/Icon';
 import { getXegIconComponent } from '@shared/components/ui/Icon/icons/registry';
 

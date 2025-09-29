@@ -1,10 +1,11 @@
+/** @jsxImportSource solid-js */
 /**
  * @fileoverview SettingsModal 컴포넌트 테스트
  * @description TDD 기반 설정 모달 컴포넌트 테스트
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, fireEvent, screen, cleanup } from '@testing-library/preact';
+import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal', () => {
@@ -23,7 +24,7 @@ describe('SettingsModal', () => {
 
   describe('rendering', () => {
     it('isOpen이 true일 때 모달이 렌더링되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const modal = screen.getByRole('dialog');
       expect(modal).toBeDefined();
@@ -31,35 +32,35 @@ describe('SettingsModal', () => {
     });
 
     it('isOpen이 false일 때 모달이 렌더링되지 않아야 함', () => {
-      render(<SettingsModal {...mockProps} isOpen={false} />);
+      render(() => <SettingsModal {...mockProps} isOpen={false} />);
 
       const modal = screen.queryByRole('dialog');
       expect(modal).toBeNull();
     });
 
     it('모달 제목이 표시되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const title = screen.getByText('Settings');
       expect(title).toBeDefined();
     });
 
     it('테마 설정 옵션들이 표시되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const themeLabel = screen.getByText('Theme');
       expect(themeLabel).toBeDefined();
     });
 
     it('언어 설정 옵션들이 표시되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const languageLabel = screen.getByText('Language');
       expect(languageLabel).toBeDefined();
     });
 
     it('닫기 버튼이 표시되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const closeButton = screen.getByLabelText('Close');
       expect(closeButton).toBeDefined();
@@ -69,7 +70,7 @@ describe('SettingsModal', () => {
 
   describe('interactions', () => {
     it('닫기 버튼 클릭 시 onClose가 호출되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const closeButton = screen.getByLabelText('Close');
       fireEvent.click(closeButton);
@@ -78,7 +79,7 @@ describe('SettingsModal', () => {
     });
 
     it('배경 클릭 시 onClose가 호출되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const backdrop = screen.getByRole('dialog');
       fireEvent.click(backdrop);
@@ -87,7 +88,7 @@ describe('SettingsModal', () => {
     });
 
     it('모달 내부 클릭 시 onClose가 호출되지 않아야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const modalContent = screen.getByText('Settings').closest('div');
       if (modalContent) {
@@ -97,7 +98,7 @@ describe('SettingsModal', () => {
     });
 
     it('ESC 키 입력 시 onClose가 호출되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const modal = screen.getByRole('dialog');
       fireEvent.keyDown(modal, { key: 'Escape' });
@@ -106,7 +107,7 @@ describe('SettingsModal', () => {
     });
 
     it('다른 키 입력 시 onClose가 호출되지 않아야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       fireEvent.keyDown(document, { key: 'Enter' });
 
@@ -116,9 +117,9 @@ describe('SettingsModal', () => {
 
   describe('theme settings', () => {
     it('테마 변경 시 즉시 적용되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
-      const themeSelect = screen.getByLabelText('Theme') as HTMLSelectElement;
+      const themeSelect = screen.getByLabelText('Theme') as globalThis.HTMLSelectElement;
       fireEvent.change(themeSelect, { target: { value: 'dark' } });
 
       // 테마 변경이 즉시 적용되는지 확인
@@ -126,7 +127,7 @@ describe('SettingsModal', () => {
     });
 
     it('테마 옵션들이 올바르게 표시되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const autoOption = screen.getByText('Auto');
       const lightOption = screen.getByText('Light');
@@ -140,9 +141,9 @@ describe('SettingsModal', () => {
 
   describe('language settings', () => {
     it('언어 변경 시 즉시 적용되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
-      const languageSelect = screen.getByLabelText('Language') as HTMLSelectElement;
+      const languageSelect = screen.getByLabelText('Language') as globalThis.HTMLSelectElement;
       fireEvent.change(languageSelect, { target: { value: 'en' } });
 
       // 언어 변경이 즉시 적용되는지 확인
@@ -150,7 +151,7 @@ describe('SettingsModal', () => {
     });
 
     it('언어 옵션들이 올바르게 표시되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const autoOption = screen.getByText('자동 / Auto / 自動');
       const koOption = screen.getByText('한국어');
@@ -166,7 +167,7 @@ describe('SettingsModal', () => {
 
   describe('accessibility', () => {
     it('모달이 올바른 ARIA 속성을 가져야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const modal = screen.getByRole('dialog');
       expect(modal.getAttribute('aria-modal')).toBe('true');
@@ -174,21 +175,21 @@ describe('SettingsModal', () => {
     });
 
     it('제목이 올바른 ID를 가져야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const title = screen.getByText('Settings');
       expect(title.id).toBe('settings-title');
     });
 
     it('테마 선택이 올바른 레이블과 연결되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const themeSelect = screen.getByLabelText('Theme');
       expect(themeSelect.id).toBe('theme-select');
     });
 
     it('언어 선택이 올바른 레이블과 연결되어야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const languageSelect = screen.getByLabelText('Language');
       expect(languageSelect.id).toBe('language-select');
@@ -198,7 +199,7 @@ describe('SettingsModal', () => {
   describe('styling', () => {
     it('커스텀 className이 적용되어야 함', () => {
       const customClassName = 'custom-modal';
-      render(<SettingsModal {...mockProps} className={customClassName} />);
+      render(() => <SettingsModal {...mockProps} className={customClassName} />);
 
       const modal = screen.getByRole('dialog');
       expect(modal.className).toContain(customClassName);
@@ -206,7 +207,7 @@ describe('SettingsModal', () => {
 
     it('테스트 ID가 적용되어야 함', () => {
       const testId = 'settings-modal-test';
-      render(<SettingsModal {...mockProps} data-testid={testId} />);
+      render(() => <SettingsModal {...mockProps} data-testid={testId} />);
 
       const modal = screen.getByTestId(testId);
       expect(modal).toBeDefined();
@@ -215,28 +216,28 @@ describe('SettingsModal', () => {
 
   describe('TDD: 모달 위치 설정', () => {
     it('기본 위치는 center여야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const backdrop = screen.getByRole('dialog');
       expect(backdrop.className).toContain('center');
     });
 
     it('position="toolbar-below"일 때 툴바 아래 위치 스타일이 적용되어야 함', () => {
-      render(<SettingsModal {...mockProps} position='toolbar-below' />);
+      render(() => <SettingsModal {...mockProps} position='toolbar-below' />);
 
       const backdrop = screen.getByRole('dialog');
       expect(backdrop.className).toContain('toolbarBelow');
     });
 
     it('position="bottom-sheet"일 때 하단 시트 스타일이 적용되어야 함', () => {
-      render(<SettingsModal {...mockProps} position='bottom-sheet' />);
+      render(() => <SettingsModal {...mockProps} position='bottom-sheet' />);
 
       const backdrop = screen.getByRole('dialog');
       expect(backdrop.className).toContain('bottomSheet');
     });
 
     it('position="top-right"일 때 우측 상단 위치 스타일이 적용되어야 함', () => {
-      render(<SettingsModal {...mockProps} position='top-right' />);
+      render(() => <SettingsModal {...mockProps} position='top-right' />);
 
       const backdrop = screen.getByRole('dialog');
       expect(backdrop.className).toContain('topRight');
@@ -245,7 +246,7 @@ describe('SettingsModal', () => {
 
   describe('TDD: 툴바와 디자인 일관성', () => {
     it('설정 모달이 테마 토큰 기반 스타일을 사용해야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const modal = screen.getByRole('dialog').firstElementChild;
       expect(modal).toBeDefined();
@@ -255,7 +256,7 @@ describe('SettingsModal', () => {
     });
 
     it('닫기 버튼이 올바른 CSS 클래스를 가져야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const closeButton = screen.getByLabelText('Close');
 
@@ -264,7 +265,7 @@ describe('SettingsModal', () => {
     });
 
     it('닫기 버튼이 에러 색상이 아닌 중립색 기반 CSS를 사용해야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const closeButton = screen.getByLabelText('Close');
 
@@ -274,7 +275,7 @@ describe('SettingsModal', () => {
     });
 
     it('select 요소가 올바른 CSS 클래스를 가져야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const themeSelect = screen.getByLabelText('Theme');
 
@@ -283,7 +284,7 @@ describe('SettingsModal', () => {
     });
 
     it('label 요소가 올바른 CSS 클래스를 가져야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const themeLabel = screen.getByText('Theme');
 
@@ -292,7 +293,7 @@ describe('SettingsModal', () => {
     });
 
     it('모든 주요 요소들이 glassmorphism 관련 CSS를 가져야 함', () => {
-      render(<SettingsModal {...mockProps} />);
+      render(() => <SettingsModal {...mockProps} />);
 
       const closeButton = screen.getByLabelText('Close');
       const themeSelect = screen.getByLabelText('Theme');

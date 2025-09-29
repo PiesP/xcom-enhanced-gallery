@@ -128,9 +128,9 @@ describe('번들 환경 Vendor TDZ 문제', () => {
         // 번들러가 생성한 순서
         const moduleOrder = [
           'vendor-api.ts', // vendor 초기화 코드
-          'vendor-manager.ts', // vendor 관리 코드
+          'vendor-manager-static.ts', // Solid 전용 vendor 관리 코드
           'fflate module', // 실제 라이브러리
-          'preact module', // 실제 라이브러리
+          'solid-js module', // 실제 라이브러리
         ];
 
         // vendor-api가 먼저 로드되면서 아직 정의되지 않은 모듈에 접근 시도

@@ -2,11 +2,9 @@
  * @fileoverview SettingsModal form control theming tests (RED)
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/preact';
-import { getPreact } from '../../../src/shared/external/vendors';
-import { SettingsModal } from '../../../src/shared/components/ui/SettingsModal/SettingsModal';
-
-const { h } = getPreact();
+import { createComponent } from 'solid-js';
+import { render, screen, cleanup, fireEvent } from '@test-utils/testing-library';
+import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 afterEach(() => {
   cleanup();
@@ -14,8 +12,8 @@ afterEach(() => {
 
 describe('SettingsModal form controls — themed surface consistency', () => {
   it('keeps form-control classes on selects and checkbox across theme changes', async () => {
-    render(
-      h(SettingsModal as any, {
+    render(() =>
+      createComponent(SettingsModal as any, {
         isOpen: true,
         onClose: () => void 0,
       })

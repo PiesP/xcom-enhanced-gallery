@@ -3,7 +3,7 @@
  * Ensures the '/' separator uses text color tokens for adequate contrast
  */
 import { describe, it, expect } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { Toolbar } from '@/shared/components/ui/Toolbar/Toolbar';
 
 const { h, render } = getPreact();

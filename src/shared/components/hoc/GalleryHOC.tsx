@@ -4,10 +4,9 @@
  * @version 3.0.0 - GalleryMarker 기능 통합
  */
 
+import type { JSX } from 'solid-js';
 import { logger } from '@shared/logging/logger';
 import type { ComponentType } from '@shared/types/app.types';
-import { getPreact } from '@shared/external/vendors';
-import type { VNode } from '@shared/external/vendors';
 import type { GalleryComponentProps as BaseGalleryComponentProps } from '../base/BaseComponentProps';
 
 /**
@@ -103,9 +102,7 @@ export function withGallery<P extends GalleryComponentProps>(
   // 타입별 기본값과 사용자 옵션 병합
   const mergedOptions = mergeOptionsWithDefaults(options);
 
-  const GalleryComponent = (props: P): VNode | null => {
-    const { createElement } = getPreact();
-
+  const GalleryComponent = (props: P): JSX.Element | null => {
     // 마킹 속성 생성
     const markerAttributes = createMarkerAttributes(mergedOptions);
 
@@ -133,8 +130,7 @@ export function withGallery<P extends GalleryComponentProps>(
       events: mergedOptions.events,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return createElement(Component as any, finalProps) as unknown as VNode;
+    return Component(finalProps as P);
   };
 
   // 컴포넌트 이름 설정

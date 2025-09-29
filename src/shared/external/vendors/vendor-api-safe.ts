@@ -8,11 +8,10 @@
 import { logger } from '@shared/logging';
 import {
   StaticVendorManager,
-  type PreactAPI,
-  type PreactHooksAPI,
-  type PreactSignalsAPI,
-  type PreactCompatAPI,
   type NativeDownloadAPI,
+  type SolidCoreAPI,
+  type SolidStoreAPI,
+  type SolidWebAPI,
 } from './vendor-manager-static';
 import { warnFflateDeprecated, FFLATE_REMOVAL_MESSAGE, type FflateAPI } from './fflate-deprecated';
 
@@ -71,56 +70,6 @@ export function getFflateSafe(): FflateAPI {
 }
 
 /**
- * Preact 라이브러리 안전 접근 (동기)
- */
-export function getPreactSafe(): PreactAPI {
-  try {
-    return staticVendorManager.getPreact();
-  } catch (error) {
-    logger.error('Preact 접근 실패:', error);
-    throw new Error('Preact 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
- * Preact Hooks 안전 접근 (동기)
- */
-export function getPreactHooksSafe(): PreactHooksAPI {
-  try {
-    return staticVendorManager.getPreactHooks();
-  } catch (error) {
-    logger.error('Preact Hooks 접근 실패:', error);
-    throw new Error('Preact Hooks 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
- * Preact Signals 안전 접근 (동기)
- */
-export function getPreactSignalsSafe(): PreactSignalsAPI {
-  try {
-    return staticVendorManager.getPreactSignals();
-  } catch (error) {
-    logger.error('Preact Signals 접근 실패:', error);
-    throw new Error('Preact Signals 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
- * Preact Compat 안전 접근 (동기) - TDZ 문제 완전 해결
- */
-export function getPreactCompatSafe(): PreactCompatAPI {
-  try {
-    return staticVendorManager.getPreactCompat();
-  } catch (error) {
-    logger.error('Preact Compat 접근 실패:', error);
-
-    // 정적 import 기반이므로 fallback 없이 즉시 에러
-    throw new Error('Preact Compat 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
  * 네이티브 다운로드 안전 접근
  */
 export const getNativeDownloadSafe = (): NativeDownloadAPI => {
@@ -131,6 +80,33 @@ export const getNativeDownloadSafe = (): NativeDownloadAPI => {
     throw new Error('네이티브 다운로드 기능을 사용할 수 없습니다.');
   }
 };
+
+export function getSolidCoreSafe(): SolidCoreAPI {
+  try {
+    return staticVendorManager.getSolidCore();
+  } catch (error) {
+    logger.error('SolidJS Core 접근 실패:', error);
+    throw new Error('SolidJS Core 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
+  }
+}
+
+export function getSolidStoreSafe(): SolidStoreAPI {
+  try {
+    return staticVendorManager.getSolidStore();
+  } catch (error) {
+    logger.error('SolidJS Store 접근 실패:', error);
+    throw new Error('SolidJS Store 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
+  }
+}
+
+export function getSolidWebSafe(): SolidWebAPI {
+  try {
+    return staticVendorManager.getSolidWeb();
+  } catch (error) {
+    logger.error('SolidJS Web 접근 실패:', error);
+    throw new Error('SolidJS Web 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
+  }
+}
 
 /**
  * 모든 라이브러리 검증
@@ -190,19 +166,17 @@ export function getVendorStatusesSafe() {
   if (!status.isInitialized) {
     return {
       fflate: false,
-      preact: false,
-      preactHooks: false,
-      preactSignals: false,
-      preactCompat: false,
+      solidCore: false,
+      solidStore: false,
+      solidWeb: false,
     };
   }
 
   return {
     fflate: status.availableAPIs.includes('fflate'),
-    preact: status.availableAPIs.includes('preact'),
-    preactHooks: status.availableAPIs.includes('preact-hooks'),
-    preactSignals: status.availableAPIs.includes('preact-signals'),
-    preactCompat: status.availableAPIs.includes('preact-compat'),
+    solidCore: status.availableAPIs.includes('solid-core'),
+    solidStore: status.availableAPIs.includes('solid-store'),
+    solidWeb: status.availableAPIs.includes('solid-web'),
   };
 }
 
@@ -215,14 +189,12 @@ export function isVendorInitializedSafe(vendorName: string): boolean {
   switch (vendorName) {
     case 'fflate':
       return statuses.fflate;
-    case 'preact':
-      return statuses.preact;
-    case 'preactHooks':
-      return statuses.preactHooks;
-    case 'preactSignals':
-      return statuses.preactSignals;
-    case 'preactCompat':
-      return statuses.preactCompat;
+    case 'solidCore':
+      return statuses.solidCore;
+    case 'solidStore':
+      return statuses.solidStore;
+    case 'solidWeb':
+      return statuses.solidWeb;
     default:
       return false;
   }
@@ -253,27 +225,3 @@ export const resetVendorManagerInstance = (): void => {
   isInitializing = false;
   initializationPromise = null;
 };
-
-// ================================
-// Preact 함수들 직접 export (UI 컴포넌트용)
-// ================================
-
-/**
- * Preact h 함수 (JSX createElement)
- */
-export const h = getPreactSafe().h;
-
-/**
- * Preact render 함수
- */
-export const render = getPreactSafe().render;
-
-/**
- * Preact Component 클래스
- */
-export const Component = getPreactSafe().Component;
-
-/**
- * Preact Fragment 컴포넌트
- */
-export const Fragment = getPreactSafe().Fragment;

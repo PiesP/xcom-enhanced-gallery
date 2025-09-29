@@ -2,7 +2,7 @@
  * @fileoverview Integration test for prev/next navigation scrolling
  */
 import { describe, it, expect, vi } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { VerticalGalleryView } from '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { openGallery, closeGallery } from '@/shared/state/signals/gallery.signals';
 

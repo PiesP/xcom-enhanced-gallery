@@ -5,7 +5,6 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { signal, computed } from '@preact/signals';
 import {
   createSelector,
   useSelector,
@@ -16,7 +15,8 @@ import {
   clearGlobalSelectorStats,
   type SelectorFn,
 } from '../../../src/shared/utils/signalSelector.js';
-import { renderHook } from '@testing-library/preact';
+import { renderHook } from '../../utils/preact-testing-library';
+import { createGlobalSignal } from '../../../src/shared/state/createGlobalSignal';
 
 describe('P7: Signal Selector Optimization Unit Tests', () => {
   beforeEach(() => {
@@ -82,7 +82,7 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
     test('디버그 모드에서 성능 통계를 제공해야 함', () => {
       setDebugMode(true);
 
-      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(globalThis.console, 'info').mockImplementation(() => {});
 
       const selector = createSelector((state: { value: number }) => state.value * 2, {
         debug: true,
@@ -127,15 +127,15 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
 
   describe('useSelector Hook', () => {
     test('Signal에서 값을 선택해야 함', () => {
-      const testSignal = signal({ user: { name: 'John', age: 30 }, counter: 0 });
+      const testSignal = createGlobalSignal({ user: { name: 'John', age: 30 }, counter: 0 });
 
       const { result } = renderHook(() => useSelector(testSignal, state => state.user.name));
 
-      expect(result.current).toBe('John');
+      expect(result.current.value).toBe('John');
     });
 
     test('Signal 변경 시 선택된 값만 업데이트해야 함', () => {
-      const testSignal = signal({ user: { name: 'John', age: 30 }, counter: 0 });
+      const testSignal = createGlobalSignal({ user: { name: 'John', age: 30 }, counter: 0 });
 
       const renderSpy = vi.fn();
 
@@ -147,7 +147,7 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
         return name;
       });
 
-      expect(result.current).toBe('John');
+      expect(result.current.value).toBe('John');
       expect(renderSpy).toHaveBeenCalledTimes(1);
 
       // counter만 변경 (name은 동일)
@@ -155,11 +155,11 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
       rerender();
 
       // name이 변경되지 않았으므로 컴포넌트가 리렌더링되지 않아야 함
-      expect(result.current).toBe('John');
+      expect(result.current.value).toBe('John');
     });
 
     test('의존성 배열을 통한 최적화를 제공해야 함', () => {
-      const testSignal = signal({ a: 1, b: 2, c: 3 });
+      const testSignal = createGlobalSignal({ a: 1, b: 2, c: 3 });
 
       const computeSpy = vi.fn((state: typeof testSignal.value) => state.a + state.b);
 
@@ -169,7 +169,7 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
         })
       );
 
-      expect(result.current).toBe(3);
+      expect(result.current.value).toBe(3);
       expect(computeSpy).toHaveBeenCalledTimes(1);
 
       // c만 변경
@@ -182,20 +182,20 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
 
   describe('useCombinedSelector Hook', () => {
     test('여러 Signal을 조합해야 함', () => {
-      const signal1 = signal(10);
-      const signal2 = signal(20);
-      const signal3 = signal(30);
+      const signal1 = createGlobalSignal(10);
+      const signal2 = createGlobalSignal(20);
+      const signal3 = createGlobalSignal(30);
 
       const { result } = renderHook(() =>
         useCombinedSelector([signal1, signal2, signal3], (a, b, c) => a + b + c)
       );
 
-      expect(result.current).toBe(60);
+      expect(result.current.value).toBe(60);
     });
 
     test('조합된 Signal의 의존성을 최적화해야 함', () => {
-      const signal1 = signal({ value: 10, metadata: 'a' });
-      const signal2 = signal({ value: 20, metadata: 'b' });
+      const signal1 = createGlobalSignal({ value: 10, metadata: 'a' });
+      const signal2 = createGlobalSignal({ value: 20, metadata: 'b' });
 
       const combineSpy = vi.fn(
         (a: typeof signal1.value, b: typeof signal2.value) => a.value + b.value
@@ -209,7 +209,7 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
         )
       );
 
-      expect(result.current).toBe(30);
+      expect(result.current.value).toBe(30);
       expect(combineSpy).toHaveBeenCalledTimes(1);
 
       // metadata만 변경
@@ -222,7 +222,7 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
 
   describe('useAsyncSelector Hook', () => {
     test('비동기 selector를 처리해야 함', async () => {
-      const testSignal = signal({ id: 1 });
+      const testSignal = createGlobalSignal({ id: 1 });
 
       const asyncSelector = vi.fn(async (state: typeof testSignal.value) => {
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -250,7 +250,7 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
     });
 
     test('비동기 selector 에러를 처리해야 함', async () => {
-      const testSignal = signal({ id: 1 });
+      const testSignal = createGlobalSignal({ id: 1 });
 
       const asyncSelector = vi.fn(async () => {
         throw new Error('Async error');
@@ -274,7 +274,7 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
     });
 
     test('디바운싱을 통한 요청 최적화를 수행해야 함', async () => {
-      const testSignal = signal({ query: 'initial' });
+      const testSignal = createGlobalSignal({ query: 'initial' });
 
       const asyncSelector = vi.fn(async (state: typeof testSignal.value) => {
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -322,7 +322,7 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
     test('디버그 모드를 전역으로 설정할 수 있어야 함', () => {
       setDebugMode(true);
 
-      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(globalThis.console, 'info').mockImplementation(() => {});
 
       const selector = createSelector((state: { value: number }) => state.value, {
         name: 'GlobalDebugTest',

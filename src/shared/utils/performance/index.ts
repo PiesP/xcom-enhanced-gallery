@@ -9,8 +9,5 @@ export * from './idleScheduler';
 export * from './schedulers';
 export * from './prefetch-bench';
 
-// Signal Optimization (Unified API via signalSelector)
-export { createSelector, useAsyncSelector, useCombinedSelector } from '../signalSelector';
-
 // Component Memoization
 export { memo, useCallback, useMemo } from './memoization';

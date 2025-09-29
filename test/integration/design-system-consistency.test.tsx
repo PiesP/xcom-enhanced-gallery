@@ -1,54 +1,62 @@
+/** @jsxImportSource solid-js */
 /**
  * @fileoverview 디자인 시스템 일관성 통합 테스트
- * @description 툴바와 설정 모달 간의 디자인 일관성을 검증
+ * @description Solid 기반 툴바와 설정 패널 간의 디자인 일관성을 검증
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
-import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
+import { render, cleanup } from '@solidjs/testing-library';
 
-// Mock dependencies
-vi.mock('@shared/external/vendors', () => ({
-  getPreact: () => ({ h, Fragment: h }),
-  getPreactHooks: () => {
-    return {
-      // effect는 통합 테스트에서 사이드이펙트 최소화를 위해 noop
-      useEffect: vi.fn(),
-      // useState 초기값(또는 이니셜라이저 함수) 실행하여 실제 인스턴스를 유지
-      useState: vi.fn(initial => {
-        const value = typeof initial === 'function' ? initial() : initial;
-        return [value, vi.fn()];
-      }),
-      useRef: vi.fn(initial => ({ current: initial ?? null })),
-      useCallback: vi.fn(fn => fn),
-      useMemo: vi.fn(factory => factory()),
-    };
-  },
-  getPreactCompat: () => ({
-    memo: vi.fn(component => component),
-    forwardRef: vi.fn(fn => fn),
-  }),
-  h,
-}));
-
-vi.mock('@shared/logging', () => ({
-  logger: {
-    warn: vi.fn(),
-    error: vi.fn(),
+vi.mock('@shared/components/ui/Toolbar/Toolbar.module.css', () => ({
+  default: {
+    toolbar: 'toolbar',
+    galleryToolbar: 'galleryToolbar',
+    toolbarContent: 'toolbarContent',
+    toolbarSection: 'toolbarSection',
+    toolbarLeft: 'toolbarLeft',
+    toolbarRight: 'toolbarRight',
+    toolbarCenter: 'toolbarCenter',
+    toolbarButton: 'toolbarButton',
+    navButton: 'navButton',
+    downloadButton: 'downloadButton',
+    settingsButton: 'settingsButton',
+    closeButton: 'closeButton',
+    fitButton: 'fitButton',
+    progressBar: 'progressBar',
+    progressFill: 'progressFill',
   },
 }));
 
-vi.mock('@shared/services', () => ({
-  languageService: {
-    getString: vi.fn(key => key),
+vi.mock('@shared/components/ui/SettingsModal/SettingsModal.module.css', () => ({
+  default: {
+    modal: 'modal',
+    panel: 'panel',
+    inner: 'inner',
+    header: 'header',
+    title: 'title',
+    body: 'body',
+    setting: 'setting',
+    label: 'label',
+    formControl: 'formControl',
+    select: 'select',
+    formControlToggle: 'formControlToggle',
+    closeButton: 'closeButton',
+    toolbarBelow: 'toolbarBelow',
+    topRight: 'topRight',
+    bottomSheet: 'bottomSheet',
+    center: 'center',
+  },
+}));
+
+vi.mock('@shared/styles/primitives.module.css', () => ({
+  default: {
+    controlSurface: 'controlSurface',
   },
 }));
 
 vi.mock('@shared/services/LanguageService', () => ({
   LanguageService: vi.fn().mockImplementation(() => ({
-    getString: vi.fn(key => key),
+    getString: vi.fn((key: string) => key),
     getCurrentLanguage: vi.fn(() => 'en'),
     setLanguage: vi.fn(),
   })),
@@ -62,7 +70,23 @@ vi.mock('@shared/services/ThemeService', () => ({
   })),
 }));
 
-// Mock getComputedStyle for testing
+vi.mock('@shared/container/settings-access', () => ({
+  getSetting: vi.fn(() => false),
+  setSetting: vi.fn(() => Promise.resolve()),
+}));
+
+vi.mock('@shared/logging', () => ({
+  logger: {
+    warn: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
+import SolidSettingsPanel from '@features/settings/solid/SolidSettingsPanel.solid';
+
 const mockGetComputedStyle = vi.fn(() => ({
   height: '40px',
   backdropFilter: 'blur(12px)',
@@ -70,19 +94,35 @@ const mockGetComputedStyle = vi.fn(() => ({
   backgroundColor: 'rgb(59, 130, 246)',
 }));
 
-// Setup global mocks for Node.js test environment
 const getComputedStyle = mockGetComputedStyle;
+
+const createToolbarProps = () => ({
+  currentIndex: 1,
+  totalCount: 5,
+  isDownloading: false,
+  disabled: false,
+  onPrevious: vi.fn(),
+  onNext: vi.fn(),
+  onDownloadCurrent: vi.fn(),
+  onDownloadAll: vi.fn(),
+  onClose: vi.fn(),
+  onOpenSettings: vi.fn(),
+  onFitOriginal: vi.fn(),
+  onFitHeight: vi.fn(),
+  onFitWidth: vi.fn(),
+  onFitContainer: vi.fn(),
+});
 
 describe('디자인 시스템 일관성 테스트', () => {
   beforeEach(() => {
-    // Reset mocks
     vi.clearAllMocks();
-    mockGetComputedStyle.mockReturnValue({
+    mockGetComputedStyle.mockReset();
+    mockGetComputedStyle.mockImplementation(() => ({
       height: '40px',
       backdropFilter: 'blur(12px)',
       borderRadius: '8px',
       backgroundColor: 'rgb(59, 130, 246)',
-    });
+    }));
   });
 
   afterEach(() => {
@@ -91,149 +131,92 @@ describe('디자인 시스템 일관성 테스트', () => {
 
   describe('버튼 디자인 일관성', () => {
     it('모든 버튼이 통일된 스타일 클래스를 사용해야 함', () => {
-      const mockProps = {
-        currentIndex: 1,
-        totalCount: 5,
-        onPrevious: vi.fn(),
-        onNext: vi.fn(),
-        onDownloadCurrent: vi.fn(),
-        onDownloadAll: vi.fn(),
-        onClose: vi.fn(),
-        onOpenSettings: vi.fn(),
-        onFitOriginal: vi.fn(),
-        onFitHeight: vi.fn(),
-        onFitWidth: vi.fn(),
-        onFitContainer: vi.fn(),
-      };
+      const { container } = render(() => <Toolbar {...createToolbarProps()} />);
 
-      const { container } = render(h(Toolbar, mockProps));
+      const buttons = Array.from(container.querySelectorAll('button'));
+      expect(buttons.length).toBeGreaterThan(0);
 
-      // 툴바 내 모든 버튼 요소 찾기
-      const buttons = container.querySelectorAll('button');
-
-      // 각 버튼이 통일된 스타일을 사용하는지 확인
       buttons.forEach(button => {
         const classes = button.className;
-
-        // 통일된 버튼 클래스 사용 확인
-        expect(classes.includes('unifiedButton') || classes.includes('toolbarButton')).toBe(true);
+        expect(classes).toMatch(
+          /(toolbarButton|navButton|downloadButton|settingsButton|closeButton|fitButton)/
+        );
       });
     });
 
-    it('툴바와 설정 모달의 버튼이 일관된 크기를 가져야 함', () => {
-      const toolbarProps = {
-        currentIndex: 1,
-        totalCount: 5,
-        onPrevious: vi.fn(),
-        onNext: vi.fn(),
-        onDownloadCurrent: vi.fn(),
-        onDownloadAll: vi.fn(),
-        onClose: vi.fn(),
-        onOpenSettings: vi.fn(),
-        onFitOriginal: vi.fn(),
-        onFitHeight: vi.fn(),
-        onFitWidth: vi.fn(),
-        onFitContainer: vi.fn(),
-      };
+    it('툴바와 설정 패널의 버튼이 일관된 크기를 가져야 함', () => {
+      const { container: toolbarContainer } = render(() => <Toolbar {...createToolbarProps()} />);
+      const { container: panelContainer } = render(() => (
+        <SolidSettingsPanel
+          isOpen={() => true}
+          onClose={() => void 0}
+          position='top-right'
+          testId='consistency-settings'
+        />
+      ));
 
-      const settingsProps = {
-        isOpen: true,
-        onClose: vi.fn(),
-      };
+      const toolbarButtons = Array.from(toolbarContainer.querySelectorAll('button'));
+      const panelButtons = Array.from(panelContainer.querySelectorAll('button'));
 
-      const { container: toolbarContainer } = render(h(Toolbar, toolbarProps));
-      const { container: modalContainer } = render(h(SettingsModal, settingsProps));
-
-      const toolbarButtons = toolbarContainer.querySelectorAll('button');
-      const modalButtons = modalContainer.querySelectorAll('button');
-
-      // 최소 1개 이상의 버튼이 있어야 함
       expect(toolbarButtons.length).toBeGreaterThan(0);
-      expect(modalButtons.length).toBeGreaterThan(0);
+      expect(panelButtons.length).toBeGreaterThan(0);
 
-      // 모든 버튼의 스타일 일관성 확인
-      [...toolbarButtons, ...modalButtons].forEach(button => {
+      [...toolbarButtons, ...panelButtons].forEach(button => {
         const styles = getComputedStyle(button);
-
-        // 표준 버튼 크기 확인 (툴바 전용 크기 포함)
-        const height = styles.height;
-        expect(height).toMatch(/^(2\.5em|40px|2em|32px|44px)$/);
+        expect(styles.height).toMatch(/^(2\.5em|40px|2em|32px|44px)$/);
       });
     });
   });
 
   describe('Glassmorphism 일관성', () => {
-    it('툴바와 설정 모달이 동일한 glassmorphism 효과를 사용해야 함', () => {
-      const toolbarProps = {
-        currentIndex: 1,
-        totalCount: 5,
-        onPrevious: vi.fn(),
-        onNext: vi.fn(),
-        onDownloadCurrent: vi.fn(),
-        onDownloadAll: vi.fn(),
-        onClose: vi.fn(),
-        onOpenSettings: vi.fn(),
-        onFitOriginal: vi.fn(),
-        onFitHeight: vi.fn(),
-        onFitWidth: vi.fn(),
-        onFitContainer: vi.fn(),
-      };
+    it('툴바와 설정 패널이 동일한 glassmorphism 효과를 사용해야 함', () => {
+      const { container: toolbarContainer } = render(() => <Toolbar {...createToolbarProps()} />);
+      const { container: panelContainer } = render(() => (
+        <SolidSettingsPanel
+          isOpen={() => true}
+          onClose={() => void 0}
+          position='top-right'
+          testId='glass-settings'
+        />
+      ));
 
-      const settingsProps = {
-        isOpen: true,
-        onClose: vi.fn(),
-      };
+      const toolbarGlass =
+        toolbarContainer.querySelector('.galleryToolbar') ??
+        toolbarContainer.querySelector('.glass-surface');
+      const panelGlass =
+        panelContainer.querySelector('.panel') ?? panelContainer.querySelector('.glass-surface');
 
-      const { container: toolbarContainer } = render(h(Toolbar, toolbarProps));
-      const { container: modalContainer } = render(h(SettingsModal, settingsProps));
+      expect(toolbarGlass).toBeTruthy();
+      expect(panelGlass).toBeTruthy();
 
-      // glass-surface 클래스를 가진 요소들 찾기
-      const toolbarGlass = toolbarContainer.querySelector('.glass-surface, .galleryToolbar');
-      const modalGlass = modalContainer.querySelector('.glass-surface, .panel');
+      if (toolbarGlass && panelGlass) {
+        const toolbarStyles = getComputedStyle(toolbarGlass as HTMLElement);
+        const panelStyles = getComputedStyle(panelGlass as HTMLElement);
 
-      if (toolbarGlass && modalGlass) {
-        const toolbarStyles = getComputedStyle(toolbarGlass);
-        const modalStyles = getComputedStyle(modalGlass);
-
-        // backdrop-filter 일관성 확인
-        expect(toolbarStyles.backdropFilter).toBe(modalStyles.backdropFilter);
+        expect(toolbarStyles.backdropFilter).toBe(panelStyles.backdropFilter);
       }
     });
 
     it('모든 glass surface가 일관된 border-radius를 사용해야 함', () => {
-      const toolbarProps = {
-        currentIndex: 1,
-        totalCount: 5,
-        onPrevious: vi.fn(),
-        onNext: vi.fn(),
-        onDownloadCurrent: vi.fn(),
-        onDownloadAll: vi.fn(),
-        onClose: vi.fn(),
-        onOpenSettings: vi.fn(),
-        onFitOriginal: vi.fn(),
-        onFitHeight: vi.fn(),
-        onFitWidth: vi.fn(),
-        onFitContainer: vi.fn(),
-      };
+      const { container: toolbarContainer } = render(() => <Toolbar {...createToolbarProps()} />);
+      const { container: panelContainer } = render(() => (
+        <SolidSettingsPanel
+          isOpen={() => true}
+          onClose={() => void 0}
+          position='top-right'
+          testId='radius-settings'
+        />
+      ));
 
-      const settingsProps = {
-        isOpen: true,
-        onClose: vi.fn(),
-      };
-
-      const { container: toolbarContainer } = render(h(Toolbar, toolbarProps));
-      const { container: modalContainer } = render(h(SettingsModal, settingsProps));
-
-      const glassSurfaces = [
+      const surfaces = [
         ...toolbarContainer.querySelectorAll('.glass-surface, .galleryToolbar'),
-        ...modalContainer.querySelectorAll('.glass-surface, .panel'),
-      ];
+        ...panelContainer.querySelectorAll('.glass-surface, .panel'),
+      ] as HTMLElement[];
 
-      // 모든 glass surface가 일관된 border-radius 사용
-      const radiusValues = glassSurfaces.map(surface => getComputedStyle(surface).borderRadius);
+      expect(surfaces.length).toBeGreaterThan(0);
 
-      // 표준 border-radius 값들 확인
-      radiusValues.forEach(radius => {
+      surfaces.forEach(surface => {
+        const radius = getComputedStyle(surface).borderRadius;
         expect(radius).toMatch(/^(8px|12px|16px|var\(--[\w-]+\))$/);
       });
     });
@@ -241,36 +224,22 @@ describe('디자인 시스템 일관성 테스트', () => {
 
   describe('색상 일관성', () => {
     it('모든 primary 버튼이 동일한 색상을 사용해야 함', () => {
-      const toolbarProps = {
-        currentIndex: 1,
-        totalCount: 5,
-        onPrevious: vi.fn(),
-        onNext: vi.fn(),
-        onDownloadCurrent: vi.fn(),
-        onDownloadAll: vi.fn(),
-        onClose: vi.fn(),
-        onOpenSettings: vi.fn(),
-        onFitOriginal: vi.fn(),
-        onFitHeight: vi.fn(),
-        onFitWidth: vi.fn(),
-        onFitContainer: vi.fn(),
-      };
+      const { container } = render(() => <Toolbar {...createToolbarProps()} />);
 
-      const { container } = render(h(Toolbar, toolbarProps));
-
-      const primaryButtons = container.querySelectorAll(
-        '.variant-primary, .downloadButton, .navButton'
+      const primaryButtons = Array.from(
+        container.querySelectorAll('.variant-primary, .downloadButton, .navButton')
       );
 
-      if (primaryButtons.length > 1) {
-        const colors = Array.from(primaryButtons).map(btn => getComputedStyle(btn).backgroundColor);
-
-        // 모든 primary 버튼이 동일한 배경색 사용
-        const firstColor = colors[0];
-        colors.forEach(color => {
-          expect(color).toBe(firstColor);
-        });
+      if (primaryButtons.length <= 1) {
+        expect(primaryButtons.length).toBeGreaterThan(0);
+        return;
       }
+
+      const colors = primaryButtons.map(button => getComputedStyle(button).backgroundColor);
+      const firstColor = colors[0];
+      colors.forEach(color => {
+        expect(color).toBe(firstColor);
+      });
     });
   });
 });

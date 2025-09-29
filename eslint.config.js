@@ -14,7 +14,6 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-plugin-prettier';
-// Preact 사용: react 전용 플러그인 의존 제거
 
 export default [
   eslint.configs.recommended,
@@ -140,7 +139,11 @@ export default [
           patterns: [
             { group: ['../../../*', '../../../../*'], message: '절대 경로 alias 사용 권장' },
             {
-              group: ['preact', 'preact/hooks', 'preact/compat', '@preact/signals', 'fflate'],
+              group: ['preact', 'preact/hooks', 'preact/compat', '@preact/signals'],
+              message: 'vendors getter를 통해 접근',
+            },
+            {
+              group: ['fflate'],
               message: 'vendors getter를 통해 접근',
             },
           ],

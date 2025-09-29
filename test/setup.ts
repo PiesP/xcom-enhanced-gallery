@@ -4,6 +4,7 @@
  */
 
 import '@testing-library/jest-dom';
+import { cleanup as solidCleanup } from '@solidjs/testing-library';
 import { beforeEach, afterEach } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -515,7 +516,7 @@ beforeEach(async () => {
 
   // Vendor 초기화 - 모든 테스트에서 사용할 수 있도록
   try {
-    const { initializeVendors } = await import('../src/shared/external/vendors/vendor-api.js');
+    const { initializeVendors } = await import('@shared/external/vendors');
     await initializeVendors();
   } catch {
     // vendor 초기화 실패는 무시하고 계속 진행
@@ -530,6 +531,11 @@ beforeEach(async () => {
  * 메모리 누수 방지 및 테스트 격리 보장
  */
 afterEach(async () => {
+  try {
+    solidCleanup();
+  } catch {
+    // ignore cleanup errors from Solid testing library
+  }
   // Mock API 상태 초기화
   resetMockApiState();
 

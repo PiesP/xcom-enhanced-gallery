@@ -3,11 +3,11 @@
  * @description 툴바의 공통 레이아웃/스타일 Shell - semantic props 사용
  */
 
-import { getPreact, type ComponentChildren } from '@shared/external/vendors';
+import type { JSX } from 'solid-js';
 
 export interface ToolbarShellProps {
   /** 컨텐츠 */
-  children: ComponentChildren;
+  children: JSX.Element | JSX.Element[] | string | number | boolean | null;
 
   /** 시맨틱 elevation 레벨 */
   elevation?: 'low' | 'medium' | 'high';
@@ -31,7 +31,7 @@ export interface ToolbarShellProps {
 /**
  * 툴바의 공통 껍데기 - 디자인 토큰 기반
  */
-export function ToolbarShell({
+export const ToolbarShell = ({
   children,
   elevation = 'medium',
   surfaceVariant = 'glass',
@@ -40,23 +40,22 @@ export function ToolbarShell({
   'data-testid': testId,
   'aria-label': ariaLabel,
   ...props
-}: ToolbarShellProps) {
-  const { h } = getPreact();
+}: ToolbarShellProps): JSX.Element => {
   const elevationClass = `toolbar-elevation-${elevation}`;
   const surfaceClass = `toolbar-surface-${surfaceVariant}`;
   const positionClass = `toolbar-position-${position}`;
 
-  return h(
-    'div',
-    {
-      class: `toolbar-shell ${elevationClass} ${surfaceClass} ${positionClass} ${className}`.trim(),
-      role: 'toolbar',
-      'aria-label': ariaLabel || 'Toolbar',
-      'data-testid': testId,
-      ...props,
-    },
-    children
+  return (
+    <div
+      class={`toolbar-shell ${elevationClass} ${surfaceClass} ${positionClass} ${className}`.trim()}
+      role='toolbar'
+      aria-label={ariaLabel || 'Toolbar'}
+      data-testid={testId}
+      {...(props as Record<string, unknown>)}
+    >
+      {children}
+    </div>
   );
-}
+};
 
 export default ToolbarShell;

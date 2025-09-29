@@ -106,7 +106,7 @@ export class VideoControlService {
       const items = container.querySelector('[data-xeg-role="items-container"]');
       if (!items) return null;
 
-      const index = getGallerySignals().currentIndex.value;
+      const index = getGallerySignals().currentIndex();
       const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
       if (!target) return null;
 

@@ -1,3 +1,6 @@
+import * as solid from 'solid-js';
+import * as solidStore from 'solid-js/store';
+import * as solidWeb from 'solid-js/web';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 async function setup() {
@@ -24,7 +27,31 @@ async function setup() {
       }
       return () => {};
     }
-    return { getPreactSignals: vi.fn(() => ({ signal, effect })) };
+    return {
+      getPreactSignals: vi.fn(() => ({ signal, effect })),
+      getSolidCore: vi.fn(() => ({
+        createSignal: solid.createSignal,
+        createEffect: solid.createEffect,
+        createMemo: solid.createMemo,
+        createRoot: solid.createRoot,
+        createComputed: solid.createComputed,
+        createComponent: solid.createComponent,
+        mergeProps: solid.mergeProps,
+        splitProps: solid.splitProps,
+        onCleanup: solid.onCleanup,
+        batch: solid.batch,
+        untrack: solid.untrack,
+        createContext: solid.createContext,
+        useContext: solid.useContext,
+      })),
+      getSolidStore: vi.fn(() => ({
+        createStore: solidStore.createStore,
+        produce: solidStore.produce,
+        reconcile: solidStore.reconcile,
+        unwrap: solidStore.unwrap,
+      })),
+      getSolidWeb: vi.fn(() => ({ render: solidWeb.render })),
+    };
   });
 
   const events = await import('@/shared/utils/events');

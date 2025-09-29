@@ -10,9 +10,10 @@ function getDoc(): typeof document | null {
   return (g.document as typeof document) || null;
 }
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/preact';
-import { getPreact, initializeVendors } from '@shared/external/vendors';
-import { ToolbarWithSettings } from '../../../src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
+import { createComponent } from 'solid-js';
+import { render, fireEvent, waitFor } from '@test-utils/testing-library';
+import { initializeVendors } from '@shared/external/vendors';
+import { ToolbarWithSettings } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 
 const baseToolbarProps = {
   currentIndex: 0,
@@ -33,7 +34,9 @@ describe.skip('SettingsModal Accessibility (focus management)', () => {
   });
 
   it('설정 버튼 클릭 시 테마 select 렌더되어야 한다 (구조 검증)', async () => {
-    const { container } = render(getPreact().h(ToolbarWithSettings, { ...baseToolbarProps }));
+    const { container } = render(() =>
+      createComponent(ToolbarWithSettings, { ...baseToolbarProps })
+    );
     const settingsButton = container.querySelector('button[aria-label="설정 열기"]');
     expect(settingsButton).toBeTruthy();
     if (!settingsButton) return;
@@ -42,7 +45,9 @@ describe.skip('SettingsModal Accessibility (focus management)', () => {
   });
 
   it('Esc 누르면 패널이 닫혀야 한다 (구조 검증)', async () => {
-    const { container } = render(getPreact().h(ToolbarWithSettings, { ...baseToolbarProps }));
+    const { container } = render(() =>
+      createComponent(ToolbarWithSettings, { ...baseToolbarProps })
+    );
     const settingsButton = container.querySelector('button[aria-label="설정 열기"]');
     expect(settingsButton).toBeTruthy();
     if (!settingsButton) return;

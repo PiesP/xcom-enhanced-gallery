@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { initializeVendors, getPreact, getPreactSignals } from '@shared/external/vendors';
+import { initializeVendors } from '@shared/external/vendors';
 
 describe('외부 라이브러리 통합 테스트', () => {
   beforeEach(async () => {
@@ -80,12 +80,10 @@ describe('외부 라이브러리 통합 테스트', () => {
 
     it('라이브러리들이 기존 시스템과 호환되어야 한다', async () => {
       // 기존 vendor 시스템과의 호환성 확인
-      const { getPreact, getPreactSignals, getMotionOne } = await import(
-        '@shared/external/vendors'
-      );
+      const { legacyPreact, getMotionOne } = await import('@shared/external/vendors');
 
-      const preact = getPreact();
-      const signals = getPreactSignals();
+      const preact = legacyPreact.getPreact();
+      const signals = legacyPreact.getPreactSignals();
 
       expect(preact).toBeDefined();
       expect(signals).toBeDefined();

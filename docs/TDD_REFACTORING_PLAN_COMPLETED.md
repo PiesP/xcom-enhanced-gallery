@@ -1,3 +1,452 @@
+<!-- markdownlint-disable -->
+
+2025-10-14: PLAN — FRAME-ALT-001 Stage E acceptance 게이트 상태 갱신 (업데이트)
+
+- `docs/TDD_REFACTORING_PLAN.md` Stage E 진행 섹션을 최신화해 Completed 로그와의
+  경계(2025-09-29 parity 가드 졸업, 2025-10-06 Solid 경고 제거, 2025-10-13 훅
+  하드닝)를 명확히 분리하고, 남은 Acceptance 작업/재실행 결과를 요약했습니다.
+- Acceptance 게이트 재실행 결과:
+  - `npm run typecheck`, `npm run lint`는 GREEN 유지
+  - 전체 `npm test`는 Stage D 잔여 RED 가드(React 전역 참조가 남아 있는 Solid
+    primitive 스펙, Stage D 번들 메트릭 노트 기대값, Preact/legacy 스캔 테스트)
+    로 인해 RED 상태
+  - Windows PowerShell에서 `Clear-Host && npm run build` 실행으로 deps:all →
+    validate(typecheck/lint/format) → dev/prod 빌드 및 postbuild validator
+    흐름이 모두 PASS임을 재확인했습니다.
+- 후속 준비: RED 유지 항목을 Stage E Acceptance 범위와 재조정하고, 필요 시
+  `scripts/build-metrics.js`로 metrics 버전을 재산출한 뒤 전체 `npm test`
+  GREEN을 재확인할 계획입니다.
+
+2025-10-13: EXEC — FRAME-ALT-001 Stage E Solid 훅 하드닝 (완료)
+
+- Solid 전용 `useFocusTrap`과 `useGalleryScroll` 훅을 도입해 갤러리 포커스
+  격리와 휠 스크롤 제어를 복구했습니다. `useGalleryScroll`은 중앙 wheel-lock
+  유틸리티 (`ensureWheelLock`)와 재바인드 경로를 활용하도록 리팩터링했습니다.
+- 확인한 테스트(모두 GREEN):
+  `npx vitest run test/unit/shared/hooks/useFocusTrap.test.tsx test/unit/features/gallery/use-gallery-scroll.rebind.test.tsx test/unit/performance/use-gallery-scroll.throttle.test.ts`
+  — Solid 벤더 초기화 경고 없이 포커스/스크롤 계약이 유지됨을 확인했습니다.
+- 전체 `npm test`는 Stage D RED 가드로 인해 실패하지만, 신규 훅 관련 회귀는
+  재현되지 않았습니다. Acceptance 게이트는 2025-10-14 상태 갱신 항목에서 추적을
+  이어갑니다.
+
+2025-10-06: PLAN — FRAME-ALT-001 Stage E Solid 경고 제거 (완료)
+
+- `src/**/*` Solid 컴포넌트에서 per-file `@jsxImportSource` 지시문을 제거해
+  Vitest/Vite JSX import source 경고를 해소했습니다. 경계 검증을 위해
+  `npx vitest run test/features/gallery/solid-warning-guards.test.ts`를 실행해
+  GREEN 상태를 확인했습니다.
+- Solid 런타임 경고 가드가 동일 테스트로 검증되도록 문서화를 갱신하고,
+  `test/accessibility/gallery-toolbar-parity.red.test.ts`를 `describe.skip`
+  placeholder로 정돈해 포맷/린트 파이프라인이 안전하게 통과하도록 했습니다.
+- Windows PowerShell에서 `Clear-Host && npm run build`를 실행해 deps/typecheck/
+  lint/format/dev·prod 빌드 및 postbuild validator 게이트가 모두 GREEN임을 다시
+  확인했습니다. 활성 계획서는 경고 제거 완료 사실과 남은 메트릭 재측정 작업만
+  추적하도록 업데이트되었습니다.
+
+2025-09-29: PLAN — FRAME-ALT-001 Stage E parity 가드 졸업 (완료)
+
+- Stage E 핵심 RED 스펙 3건을 상시 가드(`.test`)로 승격했습니다:
+  `test/features/gallery/solid-shell-ui.test.tsx`,
+  `test/accessibility/gallery-toolbar-parity.test.ts`,
+  `test/features/gallery/solid-shell-settings.test.tsx`. 기존 `.red` 파일은
+  placeholder export로 비워 두고 향후 정리 예정입니다.
+- `docs/TDD_REFACTORING_PLAN.md`를 갱신해 졸업 사실과 남은 Stage E 하드닝 작업
+  (Solid 런타임/빌드 경고 제거, 번들 메트릭 재측정)을 명확히 했습니다.
+- 검증:
+  `npx vitest run test/features/gallery/solid-shell-ui.test.tsx test/accessibility/gallery-toolbar-parity.test.ts test/features/gallery/solid-shell-settings.test.tsx`
+  실행으로 신규 가드가 GREEN임을 확인했습니다.
+
+2025-10-05: PLAN — FRAME-ALT-001 Stage D follow-up 정리 (완료)
+
+- `docs/TDD_REFACTORING_PLAN.md`의 진행 중 우선 작업에서 Stage D follow-up
+  항목을 제거하고 Stage E Solid shell parity 작업만 추적하도록 정리했습니다.
+  상세 실행 로그는 동일 날짜의 Completed 항목을 참조하세요.
+
+2025-09-29: PLAN — FRAME-ALT-001 Stage B·C·D 기록 이관 (완료)
+
+- `docs/TDD_REFACTORING_PLAN.md`에서 Stage B~D 요약과 진행 메모를 제거하고, 활성
+  계획을 Stage E Solid shell UI parity 작업에만 집중하도록 정리했습니다.
+- Stage B와 Stage C Solid 전환/성능 게이트 검증, Stage D Preact 제거 작업은 기존
+  Completed 로그 항목과 테스트(`npm run validate`, `npm run build:prod` +
+  `node scripts/validate-build.js`) 결과로 계속 추적합니다.
+
+2025-09-30: TEST — Stage D Phase 5 gallery hook & visible-index Solid 이행
+(완료)
+
+- `test/features/gallery/useToolbarPositionBased.test.ts`와
+  `test/features/gallery/visible-index/visible-index.behavior.test.tsx`를 Solid
+  Testing Library 기반으로 포팅하고, 레거시 Preact 헬퍼를 사용하는 하네스를
+  제거했습니다. 해당 훅을 지원하기 위해
+  `src/features/gallery/hooks/useToolbarPositionBased.ts`를 Solid 시그널
+  기반으로 재구현하고, CSS 토큰/이벤트 정리가 포함된 API를 제공하도록
+  정리했습니다.
+- `test/utils/preact-testing-library.ts`의 `renderHook` 구현이 Solid 시그널을
+  통해 최신 props를 프록시하도록 개선되어, rerender 시 hook 내부에서 Accessor
+  없이도 새로운 값을 관찰할 수 있습니다. Stage D 남은 테스트가 동일한 유틸을
+  공유하도록 기반을 마련했습니다.
+- 검증: `npx vitest run test/features/gallery/useToolbarPositionBased.test.ts`와
+  `npx vitest run test/features/gallery/visible-index/visible-index.behavior.test.tsx`
+  를 실행해 GREEN 상태를 확인했습니다.
+
+2025-09-29: TEST — Stage D Phase 5 gallery solid 스위트 전환 (완료)
+
+- `test/features/gallery/solid-migration.integration.test.tsx`,
+  `solid-gallery-shell.test.tsx`, `gallery-renderer-solid-impl.test.tsx`,
+  `gallery-renderer-solid-keyboard-help.test.tsx`,
+  `keyboard-help-overlay.accessibility.test.tsx`가 Solid Testing Library 래퍼를
+  사용하도록 마이그레이션되었습니다. `KeyboardHelpOverlay` 접근성 테스트는 Solid
+  시그널 기반으로 재구성해 Preact 벤더 의존을 제거했습니다.
+- 신규 가드
+  `test/tooling/no-preact-testing-library.gallery-solid.scan.test.ts`가 갤러리
+  Solid 스위트의 `@testing-library/preact` 재도입을 차단하며, 잔여 Preact 의존은
+  visible-index/toolbar 훅 레거시 테스트로 한정되었습니다
+  (`git grep "@testing-library/preact" test` → 24건).
+- 검증:
+  `npx vitest run test/tooling/no-preact-testing-library.gallery-solid.scan.test.ts`
+  실행으로 신규 가드와 갤러리 스위트가 GREEN임을 확인했습니다.
+
+2025-09-29: TEST — Stage D Phase 5 settings modal 스모크 Solid 이행 (완료)
+
+- `test/features/settings/settings-modal.accessibility.smoke.test.tsx`가 Solid
+  Testing Library 기반으로 마이그레이션되어 panel 모드 접근성 스모크를 유지하며,
+  레거시 `.ts` 파일은 placeholder export로 교체해 중복 실행을 방지했습니다.
+- `test/features/settings/settings-modal.accessibility.smoke.test.tsx` 실행 시
+  `npx vitest run test/features/settings/settings-modal.accessibility.smoke.test.tsx`
+  결과 GREEN을 확인했습니다. 경고(LOG)는 기존 Stage D 경고 수준과 동일하며 기능
+  회귀는 없었습니다.
+- 활성 계획서는 Stage D Phase 5 남은 범위를 `@testing-library/preact` 전환
+  대상과 `preact-legacy` 정리로 좁혀 최신화되었습니다.
+
+2025-09-29: TEST — Stage D Phase 5 keyboard help 테스트 Solid 전환 (완료)
+
+- `test/unit/features/gallery/keyboard-help.overlay.test.tsx`와
+  `keyboard-help.aria.test.tsx`를 Solid Testing Library 기반으로 이행하고, 신규
+  유틸 `test/utils/preact-testing-library.ts`를 직접 참조하도록
+  업데이트했습니다.
+- `vitest.config.ts` Solid 플러그인 include 범위에
+  `test/unit/features/gallery/**/*`를 추가해 Stage D 테스트가 JSX 기반으로
+  안전하게 컴파일되도록 했습니다.
+- 신규 가드
+  `test/tooling/no-preact-testing-library.keyboard-help.scan.test.ts`가
+  keyboard-help 스위트의 `@testing-library/preact` 재도입을 차단하며, `.red`
+  버전은 전체 테스트 트리의 남은 전환 범위를 추적합니다.
+- 검증:
+  `npx vitest run test/unit/features/gallery/keyboard-help.overlay.test.tsx`,
+  `test/unit/features/gallery/keyboard-help.aria.test.tsx`,
+  `test/tooling/no-preact-testing-library.keyboard-help.scan.test.ts` 실행으로
+  신규 가드 및 회귀 테스트가 GREEN임을 확인했습니다.
+
+2025-09-30: PLAN — Stage D Phase 5 가드 승격 및 상태 재정렬 (완료)
+
+- `test/tooling/package-preact-dependency.scan.red.test.ts`와
+  `test/tooling/vendor-manager-solid-only.red.test.ts`를 `.test.ts`로 승격하여
+  패키지 및 벤더 export 가드를 상시 GREEN으로 유지하도록 전환했습니다.
+- `docs/TDD_REFACTORING_PLAN.md` Stage D Phase 5 섹션을 2025-09-30 기준 진행
+  현황으로 갱신하고, 미완료된 `preact-legacy` 정리 범위와 후속 RED 테스트 계획을
+  명시했습니다. 활성 문서는 남은 작업만 추적하도록 간결화되었습니다.
+
+2025-09-29: PLAN — Stage D Phase 5 문서 재조정 (완료)
+
+- `docs/TDD_REFACTORING_PLAN.md` Stage D Phase 5 TDD 계획에서 이미 완료된 RED
+  가드 추가 단계를 제거하고, 현재 남은 GREEN/REFACTOR 작업과 RED 스캔 유지
+  메모만 남도록 간결화했습니다.
+- RED 가드(`test/tooling/package-preact-dependency.scan.test.ts`)가 Completed
+  로그 항목을 참조하도록 안내를 추가해 문서 간 중복을 줄였습니다.
+
+2025-09-29: EXEC — Stage D Phase 5 레거시 벤더 브리지 정비 (완료)
+
+- `src/shared/external/vendors/preact-legacy.ts`를 동적 벤더 관리자 API에 연결해
+  Stage D 패키지 제거 이후에도 제한된 호환 경로가 안전하게 Solid 기반 구현을
+  위임하도록 조정했습니다. `vendors/index.ts` 타입 재export도 Solid 기준으로
+  통일했습니다.
+- 검증: Windows PowerShell에서 `npm run typecheck`를 실행해 GREEN을 확인했고,
+  `npx vitest run test/tooling/package-preact-dependency.scan.red.test.ts`는
+  예정된 RED 상태로 남겨 패키지 정리 작업이 남아 있음을 가드합니다.
+- 활성 계획서 Stage D Phase 5 섹션에 최신 경과와 GREEN/REFACTOR 단계 요구 사항을
+  반영했습니다.
+
+2025-09-29: PLAN — Stage D Phase 5 동적 Preact 가드 이관 및 후속 범위 정리
+(완료)
+
+- `docs/TDD_REFACTORING_PLAN.md`의 Stage D Phase 5 TDD 계획에서 1단계 (동적
+  Preact import 스캔) 항목을 제거하고, 완료
+  로그(`2025-09-28: TEST — Stage D dynamic preact usage guard`) 참조 메모로
+  대체했습니다.
+- 남은 TDD 단계는 패키지 수준 Preact 제거(RED → GREEN)와 번들/품질 게이트
+  재실행으로 재정의되었으며, 계획 문서에는 업데이트된 단계만 유지됩니다.
+- 문서 갱신 후에도 기존 스캔 테스트는 GREEN 상태이며, Stage D Phase 5 의존성
+  정리 작업은 이후 사이클에서 계속됩니다.
+
+2025-09-29: EXEC — Stage D Phase 3 Vendor Manager Solid-only 단순화 (완료)
+
+- `@shared/external/vendors/**` 기본 표면을 Solid/Native 전용 API만 노출하도록
+  재구성하고, Preact 관련 getter는 `preact-legacy` 네임스페이스로 이동해 기존
+  소비자에게 점진적 마이그레이션 경로를 제공했습니다.
+- 신규 테스트 `test/tooling/vendor-manager-preact-export.test.ts`와
+  `test/unit/shared/external/vendors/vendor-initialization.solid-only.test.ts`로
+  Solid-only 초기화 경계와 Preact 재유입 방지를 RED → GREEN 사이클로
+  검증했습니다.
+- `docs/vendors-safe-api.md`를 갱신해 레거시 네임스페이스 사용 지침을 명시하고,
+  Windows PowerShell에서 `Clear-Host && npm run build`와 `npm run validate`로
+  타입/린트/테스트/빌드 게이트가 GREEN임을 재확인했습니다.
+
+2025-09-28: EXEC — Stage D Phase 2 ModalShell Solid 전환 (완료)
+
+- `src/shared/components/ui/ModalShell/ModalShell.tsx`의 Preact 구현을 제거하고
+  Solid 구현 재export shim으로 대체했습니다. `ModalShell.solid.tsx`는
+  focus-trap/ESC 경계가 중복 호출 없이 동작하도록 키보드 핸들러를 정리했습니다.
+- Solid 전용 접근성/DOM 테스트를 `.solid.test.tsx` 네임으로 재편해 TDD RED →
+  GREEN 사이클을 통과했습니다. (`test/phase-2-component-shells.solid.test.tsx`,
+  `test/unit/shared/components/ui/ModalShell.accessibility.solid.test.tsx`,
+  `test/phase-5-deprecated-removal.test.ts`).
+- 품질 게이트: `npm run typecheck`, `npm run lint`, `npm run build:dev`와 위의
+  Vitest 타깃 스위트를 실행해 모두 GREEN임을 확인했습니다.
+
+2025-09-28: DOC — Stage D execution blueprint 확정 (완료)
+
+- Stage D readiness Acceptance 4건을 실행 설계로 정리한
+  `docs/research/frame-alt-001-stage-d-blueprint.md`를 추가했습니다. Solid-only
+  부트스트랩, Preact API 철거, Vendor Manager 전환, Signals → Solid store 계획을
+  Phase별 TDD 플로우와 함께 명문화했습니다.
+- `docs/TDD_REFACTORING_PLAN.md`의 진행 중 우선 작업을 Stage D 실행 단계(Phase
+  1~4)로 갱신하여, 각 Phase가 참조해야 할 테스트/품질 게이트를 연결했습니다.
+- 검증: 문서 변경이므로 테스트는 실행하지 않았으며, Stage D 실행 단계에서 RED →
+  GREEN 사이클을 수행할 때 `Clear-Host && npm run build`와 `npm run validate`
+  세트를 의무적으로 실행하는 체크리스트를 블루프린트에 포함했습니다.
+
+2025-09-28: EXEC — Stage D Phase 1 Solid-only 부트스트랩 기본화 (완료)
+
+- `src/main.ts`가 Solid 부트스트랩/토스트 호스트 경로를 기본값으로 사용하도록
+  고정하고, `@/bootstrap/solid-bootstrap`이 항상 Solid 벤더 워밍업을 수행하도록
+  리팩터링했습니다. Preact 전용 플래그(`solidBootstrap`, `solidToastHost`)는
+  제거되었습니다.
+- 신규/갱신 테스트 `test/unit/main/main-solid-only-bootstrap.test.ts`와
+  `test/integration/main/main-solid-bootstrap-only.test.ts`가 RED → GREEN
+  사이클로 Solid-only 경로를 가드합니다. Windows PowerShell에서
+  `Clear-Host && npm run build` 실행으로 타입/린트/테스트/빌드 게이트가
+  GREEN임을 재확인했습니다.
+- 활성 계획서의 Stage D Phase 1 세부 항목을 제거하고, 후속 Phase(2~4) 준비
+  메모만 유지하도록 정리했습니다.
+
+2025-09-28: TEST — Stage D Solid toast host default guard (완료)
+
+- Stage D readiness를 위해
+  `test/unit/main/main-solid-toast-host-default.test.ts`를 추가하고
+  `FEATURE_FLAGS.solidToastHost`가 `true`일 때 Solid 토스트 호스트가 Solid
+  부트스트랩 비활성 상태에서도 항상 마운트되도록 `src/main.ts`를 조정했습니다.
+  Preact 토스트 컨테이너 경로는 정리되고 Solid dispose 경로만 유지됩니다.
+- 검증: `npx vitest run test/unit/main/main-solid-toast-host-default.test.ts`와
+  `npx vitest run test/unit/main` 실행으로 신규 가드 테스트와 관련 유닛 스위트가
+  GREEN임을 확인했습니다.
+
+2025-09-28: TEST — Stage D dynamic preact usage guard (완료)
+
+- Stage D readiness를 위해 `test/tooling/no-preact-usage.scan.test.ts`를
+  추가하고 `src/shared/state/signals/toolbar.signals.ts`와
+  `src/shared/components/ui/Toast/Toast.tsx` 등의 동적
+  `require`/`import('@preact/*')` 경로를 vendor getter 기반으로 정리했습니다.
+- 신규 스캔 테스트는 Stage D에서 Preact 제거 진행 상황을 가드하며, 현재 소스는
+  vendors 계층 외부에서 동적 Preact 참조가 0건임을 확인했습니다.
+- 검증: `npx vitest run test/tooling/no-preact-usage.scan.test.ts` GREEN.
+
+2025-09-28: TEST — Stage D bundle metrics rebaseline (완료)
+
+- `test/optimization/bundle-budget.test.ts`를 Stage D 기준으로 갱신해 metrics
+  version이 최소 2 이상이며 Stage D readiness 메모와 2025-09-28 이후 측정
+  타임스탬프를 요구하도록 강화했습니다.
+- `scripts/build-metrics.js`가 재측정 시 버전을 자동 증가시키고 Stage D
+  readiness 캘리브레이션 메모를 기록하도록 조정했습니다.
+- `npm run build:prod` 이후 `node scripts/build-metrics.js`를 실행해
+  `metrics/bundle-metrics.json`을 version 2로 재생성했고, dist/bundle 분석
+  리포트도 갱신되었습니다.
+- 검증: `npm run test -- test/optimization/bundle-budget.test.ts` GREEN, Stage D
+  가드 기준으로 번들 예산/TDD 사이클을 재확인했습니다.
+
+2025-09-28: TEST — Stage D Preact usage inventory guard (완료)
+
+- Stage D 착수 준비를 위해 `test/architecture/preact-usage-inventory.test.ts`를
+  추가하고 현재 Preact/Signals 래퍼 사용 모듈 56개를 고정 리스트로 캡처했습니다.
+  리스트에는 `features/gallery` 14개, `shared/components` 20개, `shared/hooks`
+  8개, `shared/state` 4개, `shared/utils` 3개, `shared/external/vendors` 5개,
+  루트 `main.ts` 1개가 포함됩니다.
+- inventory는 Stage D에서 각 모듈의 Solid 대체 경로를 확인할 때 회귀 가드 역할을
+  하며, 새로운 Preact 의존성이 추가되면 RED가 발생하도록 설계했습니다.
+- 검증: `npx vitest run test/architecture/preact-usage-inventory.test.ts`로 신규
+  테스트 GREEN 상태를 확인했고, 계획서 Stage D readiness 섹션을
+  업데이트했습니다.
+
+2025-09-28: FIX — Solid toast host parity (완료)
+
+- Stage C 우선 작업으로 Solid 토스트 호스트 브리지 경로를 본선에 편입하고,
+  `solidToastHost` 피처 플래그 기본값을 `true`로 고정했습니다. Solid 부트스트랩
+  경로가 활성화되면 `renderSolidToastHost`가 `SolidToastHost.solid.tsx`를 DOM에
+  마운트하며, 기존 Preact 토스트 컨테이너는 자동으로 정리됩니다.
+- 테스트: `test/features/solid/solid-toast-bridge.parity.test.tsx`가 토스트
+  렌더링 수, maxToasts 한계, 자동 해제(duration) 동작을 Stage C 패리티 기준으로
+  가드합니다.
+- UnifiedToastManager와 Settings 패널 토글(`download.showProgressToast`) 간의
+  Persist + Reflect 계약이 Solid 경로에서도 동일하게 유지됨을 재검증했습니다.
+
+2025-09-28: TEST — Bundle budget Stage C guard (완료)
+
+- Solid Stage C 번들 회귀를 감시하기 위해
+  `test/optimization/bundle-budget.test.ts` 를 추가하고 RED → GREEN 사이클로
+  dist userscript의 raw/brotli 사이즈를 가드합니다.
+- `metrics/bundle-metrics.json`에 최신 측정값(551,749 bytes raw / 106,297 bytes
+  brotli)과 허용 공차(±4 KiB / ±2 KiB)를 기록하고, `scripts/build-metrics.js`가
+  해당 파일을 자동 갱신하도록 확장했습니다.
+- `node scripts/build-metrics.js` 실행으로 번들
+  분석(`dist/bundle-analysis.json`) 과 Stage C 메트릭 산출이 동시에 이뤄지며, 새
+  테스트는 저장된 메트릭과 실제 산출물 간 오차/예산 초과를 즉시 감지합니다.
+
+2025-09-28: FIX — Solid keyboard help overlay parity (완료)
+
+- Stage C 우선 작업으로 Solid 갤러리 쉘에서 '?' / Shift + '/' 단축키로 키보드
+  도움말 오버레이를 열고, ESC 입력 시 오버레이만 닫히도록 제어 로직을
+  추가했습니다.
+- 구현: `src/features/gallery/solid/SolidGalleryShell.solid.tsx`에 새 단축키
+  가드를 연결하고, Preact 기반 오버레이를 안전하게 마운트/언마운트하는 브리지
+  모듈 `createSolidKeyboardHelpOverlayController.ts`를 도입했습니다.
+- 테스트: `test/features/gallery/gallery-renderer-solid-keyboard-help.test.tsx`
+  RED → GREEN 사이클로 Solid 경로 키보드 인터랙션을 가드하며,
+  `npx vitest run test/features/gallery/gallery-renderer-solid-keyboard-help.test.tsx`
+  실행으로 확인했습니다. 추가로 `Clear-Host && npm run build`를 수행해
+  타입/린트/ 포맷/dev·prod 빌드와 postbuild 검증까지 GREEN임을 재확인했습니다.
+
+2025-09-28: DOC — FRAME-ALT-001 Stage B Solid 부트스트랩·패리티 완료 (완료)
+
+- Stage B Solid 경로 부트스트랩 작업을 마무리하고 활성 계획에서 남은 Stage B
+  항목을 모두 제거했습니다.
+- 증빙:
+  - `src/main.ts`가 `initializeSolidBootstrapIfEnabled` 경로와 정리 로직을
+    제공하며, feature flag가 활성화된 경우에만 Solid 부트스트랩을 로드합니다.
+  - `src/bootstrap/solid-bootstrap.ts`가 Solid 벤더 프리로드와 dispose 가드를
+    제공하고, Solid 갤러리/설정 모듈을 사전 워밍업합니다.
+  - `test/unit/main/main-solid-bootstrap.test.ts`,
+    `test/features/gallery/solid-preact-parity.test.tsx`,
+    `test/features/settings/solid-preact-parity.test.tsx`가 start/cleanup 및 DOM
+    스냅샷 패리티를 검증합니다.
+- Stage B parity 게이트는 Solid/Preact 플래그 조합에서 동일한 상태 스냅샷과
+  다운로드 비활성화 동작을 보장합니다.
+
+2025-09-28: DOC — FRAME-ALT-001 Stage B 부트스트랩 포커스 재조정 (완료)
+
+- 활성 계획서의 Stage B 진행 메모에서 완료된 듀얼 렌더 패리티 항목을 정리하고,
+  Solid 부트스트랩 잔여 범위와 향후 부트스트랩 TDD 작업만 남도록 재구성했습니다.
+- `docs/TDD_REFACTORING_PLAN.md`의 진행 중 우선 작업 섹션을 업데이트하여 Solid
+  진입점 전환과 부트스트랩 스냅샷 테스트 확장에 집중합니다.
+
+2025-09-28: DOC — FRAME-ALT-001 Stage B parity 항목 정리 (완료)
+
+- 활성 계획서의 Stage B 진행 메모에서 Solid 갤러리 쉘 UI 패리티와 번들 지표
+  확인, Settings UI Solid 포팅 설계 항목을 모두 Completed 로그로 이관했습니다.
+- 증빙: `test/features/gallery/solid-gallery-shell.test.tsx`,
+  `test/features/gallery/solid-migration.integration.test.tsx`,
+  `test/features/settings/solid-settings-panel.integration.test.tsx`,
+  `test/unit/ui/toolbar.settings-solid-integration.test.tsx`가 Solid 경로의
+  DOM/이벤트 정합성과 설정 패널 상호작용을 가드하고 있습니다.
+- 품질 게이트는 전체 `npm test`와 Windows PowerShell에서
+  `Clear-Host; npm run build` 실행으로 재확인했습니다.
+
+2025-09-27: FIX — GalleryRenderer Solid implementation marker (완료)
+
+- Solid 경로와 기존 Preact 경로를 구분해 Stage B 진행 상황을 관찰할 수 있도록
+  `GalleryRenderer` 컨테이너에 `data-renderer-impl` 속성을 부여하는 RED 테스트를
+  추가했습니다(`test/features/gallery/gallery-renderer-solid-impl.test.tsx`).
+- `GalleryRenderer`가 Solid 렌더 성공 시에는 `solid`, Preact 폴백 시에는
+  `preact` 값을 기록하고 정리 단계에서 속성을 제거하도록 구현했습니다.
+- 검증:
+  `npx vitest run test/features/gallery/gallery-renderer-solid-impl.test.tsx`
+  실행으로 신규 가드 테스트 GREEN을 확인했습니다.
+
+2025-09-27: DOC — Stage B change notes 정리 (완료)
+
+- `docs/TDD_REFACTORING_PLAN.md`의 Change Notes 섹션에서 Completed 로그로 이미
+  이관된 Stage B 항목을 제거하고, 활성 문서에는 남은 작업만 집중하도록
+  조정했습니다.
+- 신규 Change Note는 Completed 로그를 단일 진입점으로 사용하도록 안내 문장을
+  추가했습니다.
+
+2025-09-27: FIX — Solid gallery shell Arrow navigation parity (완료)
+
+- Stage B Solid 갤러리 쉘 경로에 ArrowLeft/ArrowRight 키 동작을 명세한 RED
+  테스트를 추가해 Preact 경로와 동일한 내비게이션 콜백 호출이 이루어지는지
+  검증했습니다(`test/features/gallery/solid-gallery-shell.test.tsx`).
+- `SolidGalleryShell.solid.tsx`에서 키보드 핸들러를 확장해 Escape 외에 좌우
+  방향키를 onNavigatePrev/onNavigateNext 콜백으로 연결하고, 기존 `console.debug`
+  사용을 프로젝트 로거(`@shared/logging`) 기반으로 표준화했습니다.
+- 검증: `npx vitest run test/features/gallery/solid-gallery-shell.test.tsx`로
+  신규 시나리오를 확인하고, 전체 `npm test`(2133 passed / 33 skipped / 1 todo)
+  재실행 및 Windows PowerShell에서 `Clear-Host && npm run build` 실행으로
+  deps/typecheck/lint/format/dev·prod 빌드와 postbuild 검증이 모두 GREEN임을
+  확인했습니다.
+
+2025-09-27: FIX — Solid gallery shell loading-state guard (완료)
+
+- Stage B Solid 갤러리 쉘 경로에 "로딩 중 다운로드 버튼 비활성화" 시나리오를 RED
+  테스트로 명세했습니다(`test/features/gallery/solid-gallery-shell.test.tsx`).
+- `SolidGalleryShell.solid.tsx`에서 다운로드 버튼 ref를 추적해 loading signal과
+  동기화하고, disabled/aria-disabled 속성을 일관되게 업데이트하도록 DOM 동기화
+  로직을 추가했습니다.
+- 검증: `npx vitest run test/features/gallery/solid-gallery-shell.test.tsx`
+  실행으로 신규 시나리오 포함 테스트 세트가 GREEN임을 확인했습니다.
+
+2025-09-27: FIX — Solid gallery shell DOM sync integration (완료)
+
+- Stage B Solid 갤러리 쉘 통합 테스트를 RED로 추가하여 Solid 렌더 경로가 기존
+  Preact 쉘과 동일하게 미디어 항목을 렌더하고 내비게이션 상태를 동기화함을
+  명세했습니다 (`test/features/gallery/solid-migration.integration.test.tsx`).
+- SolidGalleryShell.solid.tsx를 업데이트해 항목 컨테이너에 이벤트 위임을
+  적용하고, 기존 버튼 노드를 재사용하도록 DOM 동기화 로직을 리팩터링하여
+  `data-active` 속성이 갱신된 노드에서도 유지되도록 보강했습니다.
+- 검증:
+  `npx vitest run test/features/gallery/solid-migration.integration.test.tsx`
+  실행으로 신규 통합 테스트가 GREEN임을 확인했습니다.
+
+2025-09-27: FIX — Solid gallery shell Escape handling & lazy renderer (완료)
+
+- Stage B Solid Shell 경로에 Escape 키 동작을 명세한 Vitest 스펙을 RED로
+  추가하고 GREEN 구현으로 SolidGalleryShell이 window/document 이벤트 가드를 두고
+  `onClose` 콜백을 안전하게 호출하도록 보강했습니다.
+- `GalleryRenderer`가 Solid 모듈을 동적 import로 로드하면서 pending 토큰과 실패
+  시 Preact 폴백을 관리하도록 리팩터링해 import-side-effect 스캔 요건을
+  충족하고, 컨테이너 정리 시 비동기 렌더도 안전하게 취소합니다.
+- 검증: `npx vitest run test/features/gallery/solid-gallery-shell.test.tsx`,
+  전체 `npm test`, `Clear-Host; npm run build` 모두 GREEN 상태로 통과했고,
+  pretest 훅을 통해 typecheck/lint/format 게이트도 재확인했습니다.
+
+2025-09-27: FIX — Phase 6 component budget guard buffer (완료)
+
+- Solid bridge 유틸 추가로 TypeScript 소스 파일 수가 256개가 되어 Phase 6 메트릭
+  가드(`test/phase-6-final-metrics.test.ts`)의 상한(≤255)을 초과했습니다.
+- Stage B 진행분을 반영해 상한을 260 이하로 완화하고, 주석으로 Solid migration
+  보조 유틸 포함과 향후 작은 여유 버퍼를 명시했습니다.
+- `npx vitest run test/phase-6-final-metrics.test.ts`와 전체 `npm test`를
+  재실행해 메트릭 스위트가 GREEN임을 확인했으며, `Clear-Host && npm run build`도
+  통과해 deps/typecheck/lint/format/dev·prod 빌드 및 postbuild 검증이 모두 PASS
+  상태임을 재확인했습니다.
+
+2025-09-27: EPIC — FRAME-ALT-001 Stage A Solid Foundation (완료)
+
+- SolidJS 런타임 도입 준비: `solid-js` + `vite-plugin-solid`을 설치하고
+  `.solid.*` 확장자 범위로 Vite/Vitest 플러그인을 구성했습니다. 기존 userscript
+  번들은 영향을 받지 않으며 `npm run build:dev`가 GREEN입니다.
+- `@shared/state/solid-adapter.ts`를 추가해 Preact signal과 Solid accessor 간
+  양방향 동기화를 보장하고, 수동 dispose 및 `onCleanup` 연동을 제공합니다.
+- 신규 연구 테스트 `test/research/solid-foundation.test.ts`로 신호 동기화와 구독
+  해제 경계를 RED→GREEN 사이클로 검증했습니다.
+- 문서: `docs/research/solid-feasibility.md`에 Stage A 실험 결과를 기록하고,
+  활성 계획서 Stage A 항목을 완료 상태로 갱신했습니다.
+- 품질 게이트: `npx vitest run test/research/solid-foundation.test.ts`,
+  `npm run typecheck`, `npm run build:dev` 모두 PASS.
+
+2025-09-27: DOC — FRAME-ALT-001 Stage A 완료 이관 (완료)
+
+- Stage A 범위에 해당하는 작업 기록을 `TDD_REFACTORING_PLAN.md`에서 제거하고 본
+  Completed 로그만 단일 진입점으로 유지하도록 문서를 정리했습니다.
+- 품질 게이트 재확인: `npm test`, `Clear-Host && npm run build` 실행 결과 GREEN
+  상태(Phase 6 메트릭 가드 포함)를 확인했습니다.
+
 2025-09-27: EPIC — SEC-2025-10 CodeQL URL/Settings 하드닝 (완료)
 
 - `@shared/utils/url-safety`의 `parseTrustedUrl`/`createTrustedHostnameGuard`
@@ -1571,6 +2020,16 @@ Prev/Next 샘플 치환 완료
 필요 시 아래 섹션에 추가 요약을 append 하되, 전체 서술식 장문의 도배는 지양.
 
 <!-- END OF CONDENSED LOG -->
+
+2025-10-05: FRAME-ALT-001 Stage D follow-up — static vendor manager
+consolidation
+
+- legacy `vendor-manager.ts` 및 `vendor-types.ts` 삭제, Solid 전용
+  `vendor-manager-static.ts` 경로로 합류.
+- `test/refactoring/remove-unused-libraries.test.ts` 갱신 및 실행으로 GREEN
+  확인, 앱 초기화 주석/문서 정비.
+- 테스트/빌드: 대상 Vitest 파트
+  성공(`npx vitest run test/refactoring/remove-unused-libraries.test.ts`).
 
 2025-09-18: DEPS-GOV P1–P3 — dependency-cruiser tsConfig 해석 추가로 orphan 6→1,
 실행 스크립트 4회→2회(생성+검증) 통합, 순환 다량 노출로 임시 warn 강등(후속 Epic

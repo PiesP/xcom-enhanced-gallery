@@ -6,8 +6,10 @@
  * @description 이미지의 점진적 로딩과 품질 향상을 제공하는 훅
  */
 
+import type { Accessor } from 'solid-js';
+
+import { getSolidCore, getSolidStore } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
-import { getPreactHooks } from '@shared/external/vendors';
 
 export interface ProgressiveImageState {
   isLoading: boolean;
@@ -18,9 +20,31 @@ export interface ProgressiveImageState {
   retryCount: number;
 }
 
+type MaybeAccessor<T> = T | Accessor<T>;
+
+const resolve = <T>(value: MaybeAccessor<T>): T => {
+  return typeof value === 'function' ? (value as Accessor<T>)() : value;
+};
+
+const resolveOptional = <T>(value: MaybeAccessor<T> | undefined): T | undefined => {
+  if (typeof value === 'function') {
+    return (value as Accessor<T>)();
+  }
+  return value;
+};
+
+const createInitialState = (): ProgressiveImageState => ({
+  isLoading: false,
+  isLoaded: false,
+  hasError: false,
+  loadedSrc: null,
+  progress: 0,
+  retryCount: 0,
+});
+
 export interface UseProgressiveImageOptions {
-  src: string;
-  lowQualitySrc?: string;
+  src: MaybeAccessor<string>;
+  lowQualitySrc?: MaybeAccessor<string | null | undefined>;
   maxRetries?: number;
   retryDelay?: number;
   timeout?: number;
@@ -53,110 +77,164 @@ export function useProgressiveImage({
   timeout = 30000,
   enableProgressTracking = true,
 }: UseProgressiveImageOptions): UseProgressiveImageReturn {
-  const { useState, useEffect, useCallback, useRef } = getPreactHooks();
-  const [state, setState] = useState<ProgressiveImageState>({
-    isLoading: false,
-    isLoaded: false,
-    hasError: false,
-    loadedSrc: null,
-    progress: 0,
-    retryCount: 0,
-  });
+  const solid = getSolidCore();
+  const store = getSolidStore();
 
-  const timeoutRef = useRef<number | null>(null);
-  const retryTimeoutRef = useRef<number | null>(null);
-  const imageRef = useRef<HTMLImageElement | null>(null);
+  const { createMemo, createEffect, onCleanup, untrack } = solid;
+  const { createStore, produce } = store;
 
-  // 상태 업데이트 헬퍼
-  const updateState = useCallback((updates: Partial<ProgressiveImageState>) => {
-    setState(prev => ({ ...prev, ...updates }));
-  }, []);
+  const [state, setState] = createStore(createInitialState());
 
-  // 타이머 정리
-  const clearTimers = useCallback(() => {
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+  let timeoutId: number | undefined;
+  let retryTimeoutId: number | undefined;
+  let currentImage: HTMLImageElement | null = null;
+  let disposed = false;
+  let lastPrimarySrc = resolve(src);
+  let lastPreviewSrc = resolveOptional(lowQualitySrc) ?? null;
+
+  const clearTimers = () => {
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+      timeoutId = undefined;
     }
-    if (retryTimeoutRef.current) {
-      window.clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
+    if (retryTimeoutId !== undefined) {
+      window.clearTimeout(retryTimeoutId);
+      retryTimeoutId = undefined;
     }
-  }, []);
+  };
 
-  // 이미지 로딩 함수
-  const loadImage = useCallback(
-    (imageSrc: string, isRetry = false) => {
-      if (!imageSrc) {
-        logger.warn('Empty image source provided');
+  const disposeImage = () => {
+    if (currentImage) {
+      currentImage.onload = null;
+      currentImage.onerror = null;
+      currentImage = null;
+    }
+  };
+
+  const safeUpdate = (updates: Partial<ProgressiveImageState>) => {
+    if (disposed) {
+      return;
+    }
+    setState(
+      produce(draft => {
+        Object.assign(draft, updates);
+      })
+    );
+  };
+
+  const resetState = () => {
+    if (disposed) {
+      return;
+    }
+    setState(() => createInitialState());
+  };
+
+  const handleError = (error: Error) => {
+    if (disposed) {
+      return;
+    }
+
+    const currentRetry = untrack(() => state.retryCount);
+    logger.warn('Image load error:', {
+      error: error.message,
+      src: lastPrimarySrc,
+      retryCount: currentRetry,
+    });
+
+    if (currentRetry < maxRetries) {
+      const nextRetry = currentRetry + 1;
+      const delay = retryDelay * Math.pow(2, currentRetry);
+
+      safeUpdate({ retryCount: nextRetry, hasError: true });
+
+      retryTimeoutId = window.setTimeout(() => {
+        if (disposed) {
+          return;
+        }
+        logger.info('Retrying image load:', { src: lastPrimarySrc, attempt: nextRetry });
+        loadSequence(true);
+      }, delay);
+      return;
+    }
+
+    safeUpdate({
+      isLoading: false,
+      hasError: true,
+      progress: 0,
+    });
+    logger.error('Image load failed after all retries:', lastPrimarySrc);
+  };
+
+  const loadImage = (
+    imageSrc: string,
+    options: { isRetry?: boolean; isPreview?: boolean; isCancelled: () => boolean }
+  ) => {
+    if (!imageSrc || options.isCancelled()) {
+      return;
+    }
+
+    const img = new Image();
+    currentImage = img;
+
+    if (enableProgressTracking && !options.isPreview) {
+      fetch(imageSrc)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const reader = response.body?.getReader();
+          const contentLength = response.headers.get('Content-Length');
+
+          if (!reader || !contentLength) {
+            return;
+          }
+
+          const total = parseInt(contentLength, 10);
+          let loaded = 0;
+
+          const readChunk = (): void => {
+            reader
+              .read()
+              .then(({ done, value }) => {
+                if (done || options.isCancelled()) {
+                  return;
+                }
+
+                loaded += value?.length ?? 0;
+                const progress = Math.round((loaded / total) * 100);
+                safeUpdate({ progress });
+                readChunk();
+              })
+              .catch(fetchError => {
+                logger.debug('Progress tracking error:', fetchError);
+              });
+          };
+
+          readChunk();
+        })
+        .catch(fetchError => {
+          logger.debug('Progress fetch error:', fetchError);
+        });
+    }
+
+    timeoutId = window.setTimeout(() => {
+      if (options.isCancelled()) {
+        return;
+      }
+      img.onload = null;
+      img.onerror = null;
+      handleError(new Error('Image load timeout'));
+    }, timeout);
+
+    img.onload = () => {
+      if (options.isCancelled()) {
         return;
       }
 
       clearTimers();
-
-      if (!isRetry) {
-        updateState({
-          isLoading: true,
-          isLoaded: false,
-          hasError: false,
-          progress: 0,
-        });
-      }
-
-      const img = new Image();
-      imageRef.current = img;
-
-      // 진행률 추적 (Fetch API 사용)
-      if (enableProgressTracking) {
-        fetch(imageSrc)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`);
-            }
-
-            const reader = response.body?.getReader();
-            const contentLength = response.headers.get('Content-Length');
-
-            if (reader && contentLength) {
-              const total = parseInt(contentLength, 10);
-              let loaded = 0;
-
-              const readChunk = () => {
-                reader
-                  .read()
-                  .then(({ done, value }) => {
-                    if (done) return;
-
-                    loaded += value?.length || 0;
-                    const progress = Math.round((loaded / total) * 100);
-                    updateState({ progress });
-
-                    readChunk();
-                  })
-                  .catch(error => {
-                    logger.debug('Progress tracking error:', error);
-                  });
-              };
-
-              readChunk();
-            }
-          })
-          .catch(error => {
-            logger.debug('Progress fetch error:', error);
-          });
-      }
-
-      // 타임아웃 설정
-      timeoutRef.current = window.setTimeout(() => {
-        img.onload = null;
-        img.onerror = null;
-        handleError(new Error('Image load timeout'));
-      }, timeout);
-
-      // 로드 성공 핸들러
-      img.onload = () => {
-        clearTimers();
-        updateState({
+      if (!options.isPreview) {
+        safeUpdate({
           isLoading: false,
           isLoaded: true,
           hasError: false,
@@ -164,114 +242,133 @@ export function useProgressiveImage({
           progress: 100,
         });
         logger.info('Image loaded successfully:', imageSrc);
-      };
-
-      // 로드 실패 핸들러
-      img.onerror = () => {
-        clearTimers();
-        handleError(new Error('Image load failed'));
-      };
-
-      img.src = imageSrc;
-    },
-    [enableProgressTracking, timeout, clearTimers, updateState]
-  );
-
-  // 에러 처리
-  const handleError = useCallback(
-    (error: Error) => {
-      logger.warn('Image load error:', { error: error.message, src, retryCount: state.retryCount });
-
-      if (state.retryCount < maxRetries) {
-        const delay = retryDelay * Math.pow(2, state.retryCount); // 지수 백오프
-
-        updateState({
-          retryCount: state.retryCount + 1,
-        });
-
-        retryTimeoutRef.current = window.setTimeout(() => {
-          logger.info('Retrying image load:', { src, att: state.retryCount + 1 });
-          loadImage(src, true);
-        }, delay);
       } else {
-        updateState({
-          isLoading: false,
-          hasError: true,
-          progress: 0,
+        safeUpdate({
+          loadedSrc: imageSrc,
+          progress: Math.max(
+            untrack(() => state.progress),
+            10
+          ),
         });
-        logger.error('Image load failed after all retries:', src);
       }
-    },
-    [src, state.retryCount, maxRetries, retryDelay, loadImage, updateState]
-  );
+    };
 
-  // Manual retry
-  const retry = useCallback(() => {
-    if (state.retryCount < maxRetries) {
-      logger.info('Manual retry triggered:', src);
-      updateState({ retryCount: 0 });
-      loadImage(src);
-    }
-  }, [src, state.retryCount, maxRetries, loadImage, updateState]);
+    img.onerror = () => {
+      if (options.isCancelled()) {
+        return;
+      }
+      clearTimers();
+      handleError(new Error('Image load failed'));
+    };
 
-  // 상태 리셋
-  const reset = useCallback(() => {
+    img.src = imageSrc;
+  };
+
+  const loadSequence = (isRetry: boolean) => {
     clearTimers();
-    updateState({
-      isLoading: false,
+    disposeImage();
+
+    const primary = resolve(src);
+    const preview = resolveOptional(lowQualitySrc) ?? null;
+    lastPrimarySrc = primary;
+    lastPreviewSrc = preview;
+
+    if (!primary) {
+      safeUpdate({
+        isLoading: false,
+        hasError: true,
+        loadedSrc: null,
+        progress: 0,
+      });
+      return;
+    }
+
+    safeUpdate({
+      isLoading: true,
       isLoaded: false,
       hasError: false,
-      loadedSrc: null,
       progress: 0,
-      retryCount: 0,
     });
-  }, [clearTimers, updateState]);
 
-  // 이미지 소스 변경 시 로딩 시작
-  useEffect(() => {
-    if (src) {
-      // 저품질 이미지가 있으면 먼저 로드
-      if (lowQualitySrc && !state.isLoaded) {
-        loadImage(lowQualitySrc);
-        // 고품질 이미지는 잠시 후 로드
-        setTimeout(() => loadImage(src), 100);
-      } else {
-        loadImage(src);
-      }
+    const cancelledRef = { cancelled: false };
+
+    const cancel = () => {
+      cancelledRef.cancelled = true;
+      clearTimers();
+      disposeImage();
+    };
+
+    const isCancelled = () => cancelledRef.cancelled || disposed;
+
+    onCleanup(cancel);
+
+    const startPrimary = () => {
+      loadImage(primary, { isRetry, isCancelled });
+    };
+
+    if (preview && !isRetry && !untrack(() => state.isLoaded)) {
+      loadImage(preview, { isPreview: true, isCancelled });
+      window.setTimeout(startPrimary, 100);
+    } else {
+      startPrimary();
     }
+  };
 
-    return () => {
-      clearTimers();
-    };
-  }, [src, lowQualitySrc]); // state.isLoaded 의존성 제거로 무한 루프 방지
+  const retry = () => {
+    const canRetry = untrack(() => state.retryCount) < maxRetries;
+    if (!canRetry) {
+      return;
+    }
+    logger.info('Manual retry triggered:', lastPrimarySrc);
+    safeUpdate({ retryCount: 0, hasError: false });
+    loadSequence(false);
+  };
 
-  // 컴포넌트 언마운트 시 정리
-  useEffect(() => {
-    return () => {
-      clearTimers();
-      if (imageRef.current) {
-        imageRef.current.onload = null;
-        imageRef.current.onerror = null;
-      }
-    };
-  }, [clearTimers]);
+  const reset = () => {
+    clearTimers();
+    disposeImage();
+    resetState();
+  };
 
-  // 이미지 엘리먼트 속성
+  const sourceMemo = createMemo(() => ({
+    primary: resolve(src),
+    preview: resolveOptional(lowQualitySrc) ?? null,
+  }));
+
+  createEffect(() => {
+    const { primary } = sourceMemo();
+    if (!primary) {
+      resetState();
+      safeUpdate({ hasError: true });
+      return;
+    }
+    loadSequence(false);
+  });
+
+  onCleanup(() => {
+    disposed = true;
+    clearTimers();
+    disposeImage();
+  });
+
   const imageProps = {
-    src: state.loadedSrc ?? lowQualitySrc ?? src,
+    get src() {
+      return state.loadedSrc ?? lastPreviewSrc ?? lastPrimarySrc;
+    },
     onLoad: () => {
-      if (state.loadedSrc === src) {
-        // 고품질 이미지 로딩 완료
-        updateState({ isLoading: false, isLoaded: true });
+      if (state.loadedSrc === lastPrimarySrc) {
+        safeUpdate({ isLoading: false, isLoaded: true });
       }
     },
     onError: () => handleError(new Error('Image element error')),
-    style: {
-      opacity: state.isLoaded ? 1 : 0.7,
-      transition: 'opacity var(--xeg-duration-normal) var(--xeg-ease-standard)',
-      transform: state.loadedSrc === lowQualitySrc ? 'scale(0.98)' : 'scale(1)',
+    get style() {
+      return {
+        opacity: state.isLoaded ? 1 : 0.7,
+        transition: 'opacity var(--xeg-duration-normal) var(--xeg-ease-standard)',
+        transform: state.loadedSrc === lastPreviewSrc ? 'scale(0.98)' : 'scale(1)',
+      } as Record<string, string | number>;
     },
-  };
+  } satisfies UseProgressiveImageReturn['imageProps'];
 
   return {
     state,
@@ -280,3 +377,9 @@ export function useProgressiveImage({
     imageProps,
   };
 }
+
+/**
+ * Legacy useProgressiveImage hook removed during Solid migration.
+ */
+
+export {};

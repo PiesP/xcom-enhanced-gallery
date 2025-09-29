@@ -23,13 +23,24 @@ import {
   navigateNext,
 } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
-import { VerticalGalleryView } from './components/vertical-gallery-view';
-import { GalleryContainer } from '@shared/components/isolation';
 import { getMediaServiceFromContainer } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging/logger';
-import { getPreact } from '@shared/external/vendors';
 import { FEATURE_FLAGS } from '@/constants';
+import { isFeatureFlagEnabled } from '@shared/config/feature-flags';
 import { RebindWatcher } from '@shared/utils/lifecycle/rebind-watcher';
+import type {
+  SolidGalleryShellInstance,
+  SolidGalleryShellRenderOptions,
+} from './solid/renderSolidGalleryShell';
+type SolidGalleryModule = typeof import('./solid/renderSolidGalleryShell');
+import type { SolidGalleryShellOverrides } from './solid/SolidGalleryShell.solid';
+
+type RendererMode = 'preact' | 'solid';
+
+interface SolidRenderConfig {
+  readonly rendererMode: RendererMode;
+  readonly uiOverrides?: SolidGalleryShellOverrides;
+}
 
 /**
  * 갤러리 정리 관리자
@@ -54,7 +65,7 @@ class GalleryCleanupManager {
 }
 
 /**
- * 간소화된 갤러리 렌더러
+      void this.renderComponent();
  */
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
@@ -64,6 +75,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private onCloseCallback?: () => void;
   private rebindWatcher: RebindWatcher | null = null;
   private rebindInProgress = false;
+  private solidShellInstance: SolidGalleryShellInstance | null = null;
+  private solidShellModule: SolidGalleryModule | null = null;
+  private solidShellModulePromise: Promise<SolidGalleryModule> | null = null;
+  private pendingSolidRenderToken: symbol | null = null;
+  private currentRendererMode: RendererMode | null = null;
 
   constructor() {
     this.setupStateSubscription();
@@ -119,6 +135,25 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
   }
 
+  private markRendererImplementation(mode: RendererMode | null): void {
+    if (!this.container) {
+      this.currentRendererMode = null;
+      return;
+    }
+
+    if (this.currentRendererMode === mode) {
+      return;
+    }
+
+    this.currentRendererMode = mode;
+
+    if (mode) {
+      this.container.setAttribute('data-renderer-impl', mode);
+    } else {
+      this.container.removeAttribute('data-renderer-impl');
+    }
+  }
+
   /**
    * 컨테이너 생성 - 갤러리 컨테이너 생성
    */
@@ -130,11 +165,29 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
     this.cleanupContainer();
 
-    this.container = document.createElement('div');
-    this.container.className = 'xeg-gallery-renderer';
-    this.container.setAttribute('data-renderer', 'gallery');
+    let container = document.querySelector('#xeg-gallery-root') as HTMLDivElement | null;
 
-    document.body.appendChild(this.container);
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'xeg-gallery-root';
+      container.classList.add('xeg-root', 'xeg-gallery-renderer');
+      container.style.position = 'fixed';
+      container.style.inset = '0';
+      container.style.width = '100%';
+      container.style.height = '100%';
+      container.style.zIndex = 'var(--xeg-layer-root)';
+      container.style.pointerEvents = 'none';
+      document.body.appendChild(container);
+    } else {
+      container.classList.add('xeg-root', 'xeg-gallery-renderer');
+      if (!container.parentElement) {
+        document.body.appendChild(container);
+      }
+    }
+
+    container.setAttribute('data-renderer', 'gallery');
+
+    this.container = container;
 
     // 정리 작업 등록
     this.cleanupManager.addTask(() => {
@@ -157,21 +210,128 @@ export class GalleryRenderer implements GalleryRendererInterface {
       return;
     }
 
-    const { render, createElement } = getPreact();
+    const renderConfig = this.resolveSolidRenderConfig();
+    this.markRendererImplementation(renderConfig.rendererMode);
+    const rendered = this.renderSolidComponent(renderConfig);
+    if (!rendered) {
+      logger.error('[GalleryRenderer] Solid shell render failed');
+    }
+  }
 
-    // GalleryContainer로 VerticalGalleryView를 래핑
-    const galleryElement = createElement(GalleryContainer, {
-      onClose: () => {
-        closeGallery();
-        if (this.onCloseCallback) {
-          this.onCloseCallback();
+  private resolveSolidRenderConfig(): SolidRenderConfig {
+    const solidFlagEnabled = isFeatureFlagEnabled('solidGalleryShell');
+    if (solidFlagEnabled) {
+      return { rendererMode: 'solid' };
+    }
+
+    const fallbackOverrides: SolidGalleryShellOverrides = {
+      toolbarVariant: 'with-settings',
+      useShadowDom: false,
+    } satisfies SolidGalleryShellOverrides;
+
+    return {
+      rendererMode: 'preact',
+      uiOverrides: fallbackOverrides,
+    };
+  }
+
+  private renderSolidComponent(config: SolidRenderConfig): boolean {
+    if (!this.container) {
+      return false;
+    }
+
+    if (this.solidShellModule) {
+      return this.renderSolidShellWithModule(this.solidShellModule, config);
+    }
+
+    try {
+      const modulePromise = this.loadSolidShellModule();
+      this.scheduleSolidShellRender(modulePromise, config);
+      return true;
+    } catch (error) {
+      logger.error('[GalleryRenderer] Solid 모듈 로딩 준비 실패:', error);
+      return false;
+    }
+  }
+
+  private loadSolidShellModule(): Promise<SolidGalleryModule> {
+    if (this.solidShellModule) {
+      return Promise.resolve(this.solidShellModule);
+    }
+
+    if (this.solidShellModulePromise) {
+      return this.solidShellModulePromise;
+    }
+
+    this.solidShellModulePromise = import('./solid/renderSolidGalleryShell')
+      .then(module => {
+        this.solidShellModule = module;
+        return module;
+      })
+      .catch(error => {
+        this.solidShellModulePromise = null;
+        throw error;
+      });
+
+    return this.solidShellModulePromise;
+  }
+
+  private scheduleSolidShellRender(
+    modulePromise: Promise<SolidGalleryModule>,
+    config: SolidRenderConfig
+  ): void {
+    if (this.pendingSolidRenderToken) {
+      return;
+    }
+
+    const renderToken = Symbol('solid-render');
+    this.pendingSolidRenderToken = renderToken;
+
+    modulePromise
+      .then(module => {
+        if (this.pendingSolidRenderToken !== renderToken) {
+          return;
         }
-      },
-      // 내부 컨테이너에는 renderer 클래스를 중복 부여하지 않는다 (DOM 간소화)
-      className: '',
-      useShadowDOM: true, // Shadow DOM 활성화로 스타일 격리
-      children: createElement(VerticalGalleryView, {
-        // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
+        this.pendingSolidRenderToken = null;
+
+        if (!this.container) {
+          return;
+        }
+
+        const rendered = this.renderSolidShellWithModule(module, config);
+        if (!rendered && this.container) {
+          logger.warn('[GalleryRenderer] Solid shell render failed after module load');
+          setError('갤러리 렌더링에 실패했습니다.');
+        }
+      })
+      .catch(error => {
+        if (this.pendingSolidRenderToken === renderToken) {
+          this.pendingSolidRenderToken = null;
+        }
+        logger.error('[GalleryRenderer] Solid 모듈 로딩 실패:', error);
+        if (this.container) {
+          setError('갤러리 모듈 로딩에 실패했습니다.');
+        }
+      });
+  }
+
+  private renderSolidShellWithModule(
+    module: SolidGalleryModule,
+    config: SolidRenderConfig
+  ): boolean {
+    this.pendingSolidRenderToken = null;
+
+    if (!this.container) {
+      return false;
+    }
+
+    const { rendererMode, uiOverrides } = config;
+
+    try {
+      this.disposeSolidShell();
+      this.markRendererImplementation(rendererMode);
+      const renderOptions: SolidGalleryShellRenderOptions = {
+        container: this.container,
         onClose: () => {
           closeGallery();
           if (this.onCloseCallback) {
@@ -180,14 +340,25 @@ export class GalleryRenderer implements GalleryRendererInterface {
         },
         onPrevious: () => this.handleNavigation('previous'),
         onNext: () => this.handleNavigation('next'),
-        onDownloadCurrent: () => this.handleDownload('current'),
-        onDownloadAll: () => this.handleDownload('all'),
-        className: 'xeg-vertical-gallery',
-      }),
-    });
+        onDownloadCurrent: () => {
+          void this.handleDownload('current');
+        },
+        onDownloadAll: () => {
+          void this.handleDownload('all');
+        },
+        ...(uiOverrides ? { uiOverrides } : {}),
+      };
 
-    render(galleryElement, this.container);
-    logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료');
+      this.solidShellInstance = module.renderSolidGalleryShell(renderOptions);
+      this.markRendererImplementation(rendererMode);
+      logger.info('[GalleryRenderer] Solid 갤러리 쉘 렌더링 완료');
+      return true;
+    } catch (error) {
+      logger.error('[GalleryRenderer] Solid 쉘 렌더링 실패:', error);
+      this.disposeSolidShell();
+      this.markRendererImplementation(null);
+      return false;
+    }
   }
 
   /**
@@ -235,6 +406,20 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
   }
 
+  private disposeSolidShell(): void {
+    if (!this.solidShellInstance) {
+      return;
+    }
+    try {
+      this.solidShellInstance.dispose();
+    } catch (error) {
+      logger.warn('[GalleryRenderer] Solid 쉘 정리 중 경고:', error);
+    } finally {
+      this.solidShellInstance = null;
+      this.markRendererImplementation(null);
+    }
+  }
+
   /**
    * 갤러리 정리
    */
@@ -254,19 +439,19 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private cleanupContainer(): void {
     if (this.container) {
       try {
-        // 테스트/SSR 환경에서 document가 없을 수 있으므로 안전 가드
-        if (typeof document !== 'undefined') {
-          const { render } = getPreact();
-          render(null, this.container);
-
-          if (document.contains(this.container)) {
-            this.container.remove();
-          }
+        if (this.solidShellInstance) {
+          this.disposeSolidShell();
+        }
+        if (typeof document !== 'undefined' && document.contains(this.container)) {
+          this.markRendererImplementation(null);
+          this.container.remove();
         }
       } catch (error) {
         logger.warn('[GalleryRenderer] 컨테이너 정리 실패:', error);
       }
       this.container = null;
+      this.pendingSolidRenderToken = null;
+      this.currentRendererMode = null;
     }
     // 리바인드 워처 중지
     if (this.rebindWatcher) {
@@ -308,15 +493,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
             if (nodes.length > 0) {
               nodes.forEach(n => {
                 try {
-                  // preact 언마운트 시도 후 제거
-                  const { render } = getPreact();
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  render(null as any, n as HTMLElement);
-                } catch (err) {
-                  // 언마운트 과정에서의 오류는 재바인드 진행을 막지 않도록 디버그로만 기록
-                  logger.debug('[GalleryRenderer] preact 언마운트 중 오류(무시):', err);
-                }
-                try {
                   if (n.parentNode) n.parentNode.removeChild(n);
                 } catch (err) {
                   // DOM 제거 실패도 무시 가능(중복 정리 경합 등)
@@ -354,6 +530,13 @@ export class GalleryRenderer implements GalleryRendererInterface {
       await mediaService.prepareForGallery();
     } catch (error) {
       logger.error('[GalleryRenderer] prepareForGallery failed:', error);
+      throw error;
+    }
+
+    try {
+      await this.loadSolidShellModule();
+    } catch (error) {
+      logger.error('[GalleryRenderer] Solid shell module preload failed:', error);
       throw error;
     }
 

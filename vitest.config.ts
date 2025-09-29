@@ -3,24 +3,77 @@
  * 간결하고 효율적인 테스트 환경 구성
  */
 
-import preact from '@preact/preset-vite';
+import solidPlugin from 'vite-plugin-solid';
+import type { Plugin } from 'vite';
 import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath, URL } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const solidExtensions: (string | [string, { typescript?: boolean }])[] = [
+  '.solid.tsx',
+  '.solid.ts',
+  '.solid.jsx',
+  '.solid.js',
+];
+const solidIncludePatterns = [
+  '**/*.solid.{ts,tsx,js,jsx}',
+  '**/*.solid.*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/Toolbar/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/ToolbarShell/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/ToolbarButton/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/ToolbarWithSettings/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/MediaCounter/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/Button/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/Icon/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/SettingsModal/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/Toast/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/isolation/**/*.{ts,tsx,js,jsx}',
+  '**/features/gallery/components/KeyboardHelpOverlay/**/*.{ts,tsx,js,jsx}',
+  'test/unit/features/gallery/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/LazyIcon.{ts,tsx,js,jsx}',
+  'test/**/*.{ts,tsx,js,jsx}',
+];
+const shouldDisableSolidPlugin = process.env.XEG_DISABLE_SOLID_PLUGIN === '1';
+
+const createVitestSolidPlugin = (): Plugin =>
+  solidPlugin({
+    include: solidIncludePatterns,
+    dev: false,
+    ssr: false,
+    hot: false,
+    extensions: solidExtensions,
+    solid: {
+      generate: 'dom',
+      hydratable: false,
+    },
+  }) as Plugin;
 
 export default defineConfig({
-  plugins: [preact()],
+  plugins: [...(shouldDisableSolidPlugin ? [] : [createVitestSolidPlugin()])],
 
   resolve: {
     // alias는 가장 먼저 일치하는 항목이 우선하므로, 특정 경로를 일반 프리픽스('@shared')보다 앞에 둡니다.
     alias: [
+      {
+        find: '@test-utils/testing-library',
+        replacement: resolve(__dirname, './test/utils/preact-testing-library.ts'),
+      },
+      {
+        find: '@test-utils',
+        replacement: resolve(__dirname, './test/utils'),
+      },
       { find: '@features', replacement: resolve(__dirname, './src/features') },
       { find: '@shared', replacement: resolve(__dirname, './src/shared') },
       { find: '@assets', replacement: resolve(__dirname, './src/assets') },
+      { find: 'solid-js/web', replacement: 'solid-js/web/dist/web.js' },
+      {
+        find: 'solid-js/jsx-dev-runtime',
+        replacement: resolve(__dirname, './src/shared/polyfills/solid-jsx-dev-runtime.ts'),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
     ],
+    dedupe: ['solid-js', 'solid-js/web', 'solid-js/store'],
   },
 
   test: {

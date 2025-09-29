@@ -3,11 +3,47 @@
  * 프로젝트의 vendors getter 패턴에 맞는 테스트 Mock
  */
 
+import * as solid from 'solid-js';
+import * as solidStore from 'solid-js/store';
+import * as solidWeb from 'solid-js/web';
 import { vi } from 'vitest';
 
 // ================================
 // Mock Vendor Implementations
 // ================================
+
+export function createMockSolidCore() {
+  return {
+    createSignal: solid.createSignal,
+    createEffect: solid.createEffect,
+    createMemo: solid.createMemo,
+    createRoot: solid.createRoot,
+    createComputed: solid.createComputed,
+    createComponent: solid.createComponent,
+    mergeProps: solid.mergeProps,
+    splitProps: solid.splitProps,
+    onCleanup: solid.onCleanup,
+    batch: solid.batch,
+    untrack: solid.untrack,
+    createContext: solid.createContext,
+    useContext: solid.useContext,
+  };
+}
+
+export function createMockSolidStore() {
+  return {
+    createStore: solidStore.createStore,
+    produce: solidStore.produce,
+    reconcile: solidStore.reconcile,
+    unwrap: solidStore.unwrap,
+  };
+}
+
+export function createMockSolidWeb() {
+  return {
+    render: solidWeb.render,
+  };
+}
 
 /**
  * Mock fflate API 생성
@@ -322,6 +358,27 @@ export class MockVendorManager {
     return this.cache.get('motion');
   }
 
+  getSolidCore() {
+    if (!this.cache.has('solid-core')) {
+      this.cache.set('solid-core', createMockSolidCore());
+    }
+    return this.cache.get('solid-core');
+  }
+
+  getSolidStore() {
+    if (!this.cache.has('solid-store')) {
+      this.cache.set('solid-store', createMockSolidStore());
+    }
+    return this.cache.get('solid-store');
+  }
+
+  getSolidWeb() {
+    if (!this.cache.has('solid-web')) {
+      this.cache.set('solid-web', createMockSolidWeb());
+    }
+    return this.cache.get('solid-web');
+  }
+
   // 테스트 헬퍼 메서드
   clearCache() {
     this.cache.clear();
@@ -340,12 +397,16 @@ export function setupVendorMocks() {
 
   // @shared/external/vendors 모듈 Mock
   vi.doMock('@shared/external/vendors', () => ({
+    __esModule: true,
     getFflate: () => mockManager.getFflate(),
     getPreact: () => mockManager.getPreact(),
     getPreactHooks: () => mockManager.getPreactHooks(),
     getPreactSignals: () => mockManager.getPreactSignals(),
     getPreactCompat: () => mockManager.getPreactCompat(),
     getMotion: () => mockManager.getMotion(),
+    getSolidCore: () => mockManager.getSolidCore(),
+    getSolidStore: () => mockManager.getSolidStore(),
+    getSolidWeb: () => mockManager.getSolidWeb(),
   }));
 
   return mockManager;

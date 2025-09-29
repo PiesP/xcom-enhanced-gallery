@@ -3,12 +3,11 @@
  * 목표: Shadow DOM 사용 시, 번들된 전역 CSS 텍스트(window.XEG_CSS_TEXT)를 ShadowRoot에 주입하고
  *       소스 경로 @import('/src/...')를 사용하지 않는다.
  */
+/** @jsxImportSource solid-js */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getPreact } from '@shared/external/vendors';
 import { mountGallery, unmountGallery } from '@/shared/components/isolation/GalleryContainer';
 
 describe('STYLE-ISOLATION-UNIFY P1 (RED)', () => {
-  const h = getPreact().h;
   const origCssText = (globalThis as Record<string, unknown>).XEG_CSS_TEXT;
 
   beforeEach(() => {
@@ -28,7 +27,7 @@ describe('STYLE-ISOLATION-UNIFY P1 (RED)', () => {
     try {
       const { shadowRoot } = mountGallery(
         host,
-        h('div', { class: 'xeg-gallery-container' }, 'content'),
+        () => <div class='xeg-gallery-container'>content</div>,
         true
       );
       expect(shadowRoot).toBeDefined();

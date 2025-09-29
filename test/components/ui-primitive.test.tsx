@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/preact';
+import { render, fireEvent } from '@test-utils/testing-library';
 import { Button, Panel } from '@shared/components/ui/primitive';
 
 describe('Phase 2: UI Primitive 컴포넌트 (GREEN 테스트)', () => {

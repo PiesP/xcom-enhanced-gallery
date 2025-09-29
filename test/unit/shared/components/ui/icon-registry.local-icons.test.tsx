@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/preact';
+import { render, screen, cleanup } from '@solidjs/testing-library';
 
 import {
   XEG_ICON_COMPONENTS,
@@ -7,15 +7,20 @@ import {
 } from '@shared/components/ui/Icon/icons/registry';
 import { XEG_ICON_DEFINITIONS } from '@assets/icons/xeg-icons';
 
-describe('local icon registry', () => {
-  afterEach(() => {
-    cleanup();
-  });
+afterEach(() => {
+  cleanup();
+});
 
+describe('local icon registry', () => {
   it('renders download icon metadata via SvgIcon factory', () => {
     const DownloadIcon = getXegIconComponent('Download');
 
-    render(<DownloadIcon aria-label='download icon' data-testid='download-icon' />);
+    render(() =>
+      DownloadIcon({
+        'aria-label': 'download icon',
+        'data-testid': 'download-icon',
+      })
+    );
 
     const svgElement = screen.getByLabelText('download icon');
 

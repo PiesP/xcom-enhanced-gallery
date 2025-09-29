@@ -3,10 +3,10 @@
  * @description IntersectionObserver 우선 + DOM rect 폴백. TypeScript strict.
  */
 
-import { getPreactHooks } from '@shared/external/vendors';
-import { logger } from '@shared/logging/logger';
+import type { Accessor } from 'solid-js';
 
-const { useCallback, useEffect, useMemo, useRef, useState } = getPreactHooks();
+import { getSolidCore } from '@shared/external/vendors';
+import { logger } from '@shared/logging/logger';
 
 export interface UseVisibleIndexOptions {
   /** 관측 임계값들. 기본값은 0~1 사이 간격 값 */
@@ -19,7 +19,9 @@ export interface UseVisibleIndexOptions {
 
 export interface UseVisibleIndexResult {
   /** 가시성 기준으로 선택된 인덱스. 없으면 -1 */
-  visibleIndex: number;
+  readonly visibleIndex: number;
+  /** Solid 컴포넌트에서 직접 구독 가능한 accessor */
+  readonly visibleIndexAccessor: Accessor<number>;
   /** 강제 재계산 트리거 (테스트/희귀 케이스 용) */
   recompute: () => void;
 }
@@ -78,32 +80,58 @@ function pickBestIndex(entries: Array<{ index: number; ratio: number; dist: numb
  * useVisibleIndex 훅 구현
  */
 export function useGalleryVisibleIndex(
-  containerRef: { current: HTMLElement | null },
+  containerRef: Accessor<HTMLElement | null> | { current: HTMLElement | null },
   itemCount: number,
   options: UseVisibleIndexOptions = {}
 ): UseVisibleIndexResult {
-  const thresholds = useMemo(
-    () => options.thresholds ?? [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1],
-    [options.thresholds]
+  const { createMemo, createSignal, createEffect, onCleanup } = getSolidCore();
+
+  const thresholdsMemo = createMemo<number[]>(() =>
+    options.thresholds ? [...options.thresholds] : [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
   );
   const rootMargin = options.rootMargin ?? '0px';
   const rafCoalesce = options.rafCoalesce ?? true;
 
-  const [visibleIndex, setVisibleIndex] = useState<number>(-1);
-  const ioRef = useRef<IntersectionObserver | null>(null);
-  const ratiosRef = useRef<Map<number, number>>(new Map());
-  const framePendingRef = useRef(false);
+  const clampIndex = (candidate: number): number => {
+    if (itemCount <= 0 || candidate < 0) {
+      return -1;
+    }
+    return Math.min(candidate, itemCount - 1);
+  };
 
-  const updateByRects = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const items = queryGalleryItems(container);
-    if (!items.length) {
-      setVisibleIndex(-1);
+  const [visibleIndexSignal, setVisibleIndex] = createSignal<number>(-1);
+
+  let intersectionObserver: IntersectionObserver | null = null;
+  const ratios = new Map<number, number>();
+  let framePending = false;
+
+  const resolveContainer = (): HTMLElement | null => {
+    if (typeof containerRef === 'function') {
+      return (containerRef as Accessor<HTMLElement | null>)();
+    }
+    return containerRef.current ?? null;
+  };
+
+  const updateVisibleIndex = (next: number) => {
+    setVisibleIndex(prev => (prev !== next ? next : prev));
+  };
+
+  const updateByRects = () => {
+    const container = resolveContainer();
+    if (!container) {
+      updateVisibleIndex(-1);
       return;
     }
+
+    const items = queryGalleryItems(container);
+    if (!items.length) {
+      updateVisibleIndex(-1);
+      return;
+    }
+
     const containerRect = container.getBoundingClientRect();
     const scored: Array<{ index: number; ratio: number; dist: number }> = [];
+
     for (const el of items) {
       const idxAttr = el.getAttribute('data-index');
       const idx = Number(idxAttr ?? '-1');
@@ -113,129 +141,162 @@ export function useGalleryVisibleIndex(
       const dist = distanceToViewportCenter(containerRect, rect);
       scored.push({ index: idx, ratio, dist });
     }
-    const best = pickBestIndex(scored);
-    setVisibleIndex(prev => (prev !== best ? best : prev));
-  }, [containerRef]);
 
-  const scheduleRectUpdate = useCallback(() => {
+    updateVisibleIndex(clampIndex(pickBestIndex(scored)));
+  };
+
+  const scheduleRectUpdate = () => {
     if (!rafCoalesce) {
       updateByRects();
       return;
     }
-    if (framePendingRef.current) return;
-    framePendingRef.current = true;
-    requestAnimationFrame(() => {
-      framePendingRef.current = false;
-      updateByRects();
-    });
-  }, [rafCoalesce, updateByRects]);
 
-  // IntersectionObserver 기반 업데이트
-  useEffect(() => {
-    const container = containerRef.current;
-    const hasIO = typeof window !== 'undefined' && 'IntersectionObserver' in window;
-    if (!container) return;
-
-    const items = queryGalleryItems(container);
-    if (!items.length) {
-      setVisibleIndex(-1);
+    if (framePending) {
       return;
     }
 
-    // IO 미지원 시 폴백으로 전환
-    if (!hasIO) {
-      // 초기 1회 + 스크롤/리사이즈에 반응
+    framePending = true;
+    requestAnimationFrame(() => {
+      framePending = false;
       updateByRects();
-      const onScroll = () => scheduleRectUpdate();
-      const onResize = () => scheduleRectUpdate();
-      container.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onResize, { passive: true });
-      return () => {
-        container.removeEventListener('scroll', onScroll as EventListener);
-        window.removeEventListener('resize', onResize as EventListener);
-      };
-    }
+    });
+  };
 
-    // IO 지원 경로
-    ratiosRef.current.clear();
-    const rootEl = container;
+  const disconnectObserver = () => {
+    if (!intersectionObserver) {
+      return;
+    }
     try {
-      ioRef.current = new IntersectionObserver(
-        entries => {
-          const containerRect = rootEl.getBoundingClientRect();
-          for (const entry of entries) {
-            const target = entry.target as HTMLElement;
-            const idxAttr = target.getAttribute('data-index');
-            const idx = Number(idxAttr ?? '-1');
-            if (idx < 0) continue;
-            // 일부 브라우저/폴리필은 intersectionRatio 대신 rect 비교가 더 안정적
-            const rect = target.getBoundingClientRect();
-            const ratio = Math.max(
-              entry.intersectionRatio ?? 0,
-              computeVerticalIntersectionRatio(containerRect, rect)
-            );
-            ratiosRef.current.set(idx, ratio);
-          }
+      intersectionObserver.disconnect();
+    } catch {
+      /* noop */
+    }
+    intersectionObserver = null;
+    ratios.clear();
+  };
 
-          // best pick
-          const scored: Array<{ index: number; ratio: number; dist: number }> = [];
-          const itemsNow = queryGalleryItems(containerRef.current);
-          const containerNow = rootEl.getBoundingClientRect();
-          for (const el of itemsNow) {
-            const idx = Number(el.getAttribute('data-index') ?? '-1');
-            if (idx < 0) continue;
-            const ratio = ratiosRef.current.get(idx) ?? 0;
-            const dist = distanceToViewportCenter(containerNow, el.getBoundingClientRect());
-            scored.push({ index: idx, ratio, dist });
-          }
-          const best = pickBestIndex(scored);
-          setVisibleIndex(prev => (prev !== best ? best : prev));
-        },
-        { root: rootEl, rootMargin, threshold: thresholds }
-      );
+  const observeWithIntersectionObserver = (
+    container: HTMLElement,
+    items: HTMLElement[],
+    thresholds: readonly number[]
+  ) => {
+    disconnectObserver();
 
-      for (const el of items) {
-        ioRef.current.observe(el);
-      }
-    } catch (err) {
-      logger.warn('useVisibleIndex: IntersectionObserver 설정 실패, 폴백 사용', err);
+    intersectionObserver = new IntersectionObserver(
+      entries => {
+        const containerRect = container.getBoundingClientRect();
+
+        for (const entry of entries) {
+          const target = entry.target as HTMLElement;
+          const idx = Number(target.getAttribute('data-index') ?? '-1');
+          if (idx < 0) continue;
+
+          const rect = target.getBoundingClientRect();
+          const ratio = Math.max(
+            entry.intersectionRatio ?? 0,
+            computeVerticalIntersectionRatio(containerRect, rect)
+          );
+          ratios.set(idx, ratio);
+        }
+
+        const currentItems = queryGalleryItems(container);
+        const scored: Array<{ index: number; ratio: number; dist: number }> = [];
+        const currentContainerRect = container.getBoundingClientRect();
+
+        for (const el of currentItems) {
+          const idx = Number(el.getAttribute('data-index') ?? '-1');
+          if (idx < 0) continue;
+          const ratio = ratios.get(idx) ?? 0;
+          const dist = distanceToViewportCenter(currentContainerRect, el.getBoundingClientRect());
+          scored.push({ index: idx, ratio, dist });
+        }
+
+        updateVisibleIndex(clampIndex(pickBestIndex(scored)));
+      },
+      { root: container, rootMargin, threshold: [...thresholds] }
+    );
+
+    for (const el of items) {
+      intersectionObserver.observe(el);
+    }
+  };
+
+  createEffect(() => {
+    const container = resolveContainer();
+    const thresholds = thresholdsMemo();
+
+    if (!container) {
+      updateVisibleIndex(-1);
+      return;
+    }
+
+    const items = queryGalleryItems(container);
+    if (!items.length) {
+      updateVisibleIndex(-1);
+      return;
+    }
+
+    const hasIntersectionObserver =
+      typeof window !== 'undefined' && 'IntersectionObserver' in window;
+
+    if (!hasIntersectionObserver) {
+      updateByRects();
+
+      const onScroll = () => scheduleRectUpdate();
+      const onResize = () => scheduleRectUpdate();
+
+      container.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onResize, { passive: true });
+
+      onCleanup(() => {
+        container.removeEventListener('scroll', onScroll as EventListener);
+        window.removeEventListener('resize', onResize as EventListener);
+      });
+      return;
+    }
+
+    try {
+      observeWithIntersectionObserver(container, items, thresholds);
+    } catch (error) {
+      logger.warn('useVisibleIndex: IntersectionObserver 설정 실패, 폴백 사용', error);
       updateByRects();
       const onScroll = () => scheduleRectUpdate();
       const onResize = () => scheduleRectUpdate();
       container.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onResize, { passive: true });
-      return () => {
+      onCleanup(() => {
         container.removeEventListener('scroll', onScroll as EventListener);
         window.removeEventListener('resize', onResize as EventListener);
-      };
+      });
+      return;
     }
 
-    return () => {
-      try {
-        ioRef.current?.disconnect();
-      } catch {
-        // ignore cleanup errors in test environments
-      }
-      ioRef.current = null;
-      ratiosRef.current.clear();
-    };
-  }, [
-    containerRef,
-    itemCount,
-    thresholds,
-    rootMargin,
-    rafCoalesce,
-    updateByRects,
-    scheduleRectUpdate,
-  ]);
+    onCleanup(() => {
+      disconnectObserver();
+    });
+  });
 
-  // itemCount 변화 등으로 인한 강제 재계산 진입점
-  const recompute = useCallback(() => {
-    // 강제 재계산은 항상 rect 기반으로 수행하여 테스트에서도 결정론적으로 동작
+  const recompute = () => {
     updateByRects();
-  }, [updateByRects]);
+  };
 
-  return { visibleIndex, recompute };
+  onCleanup(() => {
+    disconnectObserver();
+  });
+
+  return {
+    get visibleIndex() {
+      return visibleIndexSignal();
+    },
+    visibleIndexAccessor: visibleIndexSignal,
+    recompute,
+  };
 }
 
 export default useGalleryVisibleIndex;
+
+/**
+ * Legacy useVisibleIndex hook removed during Solid migration.
+ */
+
+export {};

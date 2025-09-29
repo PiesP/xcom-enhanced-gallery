@@ -1,22 +1,6 @@
-import { render, screen } from '@testing-library/preact';
-import { describe, it, expect } from 'vitest';
-import { h } from 'preact';
-import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-
-vi.mock('@shared/external/vendors', () => ({
-  getFflate: vi.fn(() => ({})),
-  getPreact: vi.fn(() => ({ h })),
-  getPreactHooks: vi.fn(() => ({
-    useMemo: (fn: any) => fn(),
-    useCallback: (fn: any) => fn,
-    useEffect: () => void 0,
-    useRef: (init?: any) => ({ current: init ?? null }),
-  })),
-  getPreactSignals: vi.fn(() => ({})),
-  getPreactCompat: vi.fn(() => ({ memo: (C: any) => C })),
-  initializeVendors: vi.fn(() => Promise.resolve()),
-  isVendorsInitialized: vi.fn(() => true),
-}));
+import { render, screen, cleanup } from '@solidjs/testing-library';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Toolbar, type ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar';
 
 vi.mock('@shared/hooks/useToolbarState', () => ({
   useToolbarState: vi.fn(() => [
@@ -37,8 +21,20 @@ vi.mock('@shared/hooks/useToolbarState', () => ({
     },
   ]),
   getToolbarDataState: vi.fn(() => 'idle'),
-  getToolbarClassName: vi.fn((_s: any, base: string) => base || 'toolbar'),
+  getToolbarClassName: vi.fn((_s: unknown, base: string) => base || 'toolbar'),
 }));
+
+vi.mock('@shared/utils', () => ({
+  throttleScroll: (fn: (event?: Event) => void) => fn,
+}));
+
+beforeEach(() => {
+  cleanup();
+});
+
+afterEach(() => {
+  cleanup();
+});
 
 // Focus order behavioral guard for grouped toolbar (P4)
 // Ensures each data-toolbar-group has exactly one element marked data-group-first
@@ -46,7 +42,7 @@ vi.mock('@shared/hooks/useToolbarState', () => ({
 // We approximate focusability by filtering standard interactive elements.
 
 describe('TBAR-R P4 GREEN: toolbar grouping focus order', () => {
-  const mkProps = () => ({
+  const mkProps = (): ToolbarProps => ({
     currentIndex: 0,
     totalCount: 5,
     isDownloading: false,
@@ -64,7 +60,7 @@ describe('TBAR-R P4 GREEN: toolbar grouping focus order', () => {
   });
 
   function setup() {
-    render(h(Toolbar as any, mkProps()));
+    render(() => <Toolbar {...mkProps()} />);
     const toolbar = screen.getByRole('toolbar');
     return { toolbar };
   }
@@ -124,7 +120,7 @@ describe('TBAR-R P4 GREEN: toolbar grouping focus order', () => {
       }
       const first = focusables[0];
       // Container-level marker: marker contains first. Child-level marker: marker === first or contains.
-      const valid = marker === first || marker.contains(first) || first.contains(marker);
+      const valid = marker === first || marker?.contains(first) || first.contains(marker!);
       expect(valid).toBe(true);
     }
   });

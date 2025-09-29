@@ -30,26 +30,18 @@ describe('RED: 불필요한 라이브러리 제거 확인', () => {
     expect(packageJson.dependencies).not.toHaveProperty('@tanstack/query-core');
   });
 
-  it('vendor-manager.ts에서 Motion 관련 메서드들이 제거되어야 한다', async () => {
+  it('legacy vendor-manager.ts 파일이 존재하지 않아야 한다', () => {
     const vendorManagerPath = join(process.cwd(), 'src/shared/external/vendors/vendor-manager.ts');
-    expect(existsSync(vendorManagerPath)).toBe(true);
 
-    const content = readFileSync(vendorManagerPath, 'utf-8');
-
-    // RED: 현재는 Motion 관련 코드가 있어서 실패할 것
-    expect(content).not.toContain('getMotion()');
-    expect(content).not.toContain('getMotionOne()');
-    expect(content).not.toContain('MotionAPI');
-    expect(content).not.toContain('MotionOneAPI');
+    // RED: 현재는 legacy 파일이 남아 있어서 실패할 것
+    expect(existsSync(vendorManagerPath)).toBe(false);
   });
 
-  it('vendor-manager.ts에서 TanStack Query 관련 메서드가 제거되어야 한다', async () => {
-    const vendorManagerPath = join(process.cwd(), 'src/shared/external/vendors/vendor-manager.ts');
-    const content = readFileSync(vendorManagerPath, 'utf-8');
+  it('legacy vendor-types.ts 파일이 존재하지 않아야 한다', () => {
+    const legacyTypesPath = join(process.cwd(), 'src/shared/external/vendors/vendor-types.ts');
 
-    // RED: 현재는 TanStack Query 관련 코드가 있어서 실패할 것
-    expect(content).not.toContain('getTanStackQuery()');
-    expect(content).not.toContain('TanStackQueryAPI');
+    // RED: 현재는 legacy 타입 정의 파일이 남아 있어서 실패할 것
+    expect(existsSync(legacyTypesPath)).toBe(false);
   });
 
   it('UserScript 헤더에서 제거된 라이브러리들이 명시되지 않아야 한다', () => {
@@ -105,14 +97,16 @@ describe('성능 테스트: 라이브러리 제거 후 번들 크기 개선', ()
   });
 
   it('필수 라이브러리들은 여전히 사용 가능해야 한다', async () => {
-    // vendor-manager에서 필수 라이브러리들이 여전히 접근 가능한지 확인
-    const vendorManagerPath = join(process.cwd(), 'src/shared/external/vendors/vendor-manager.ts');
-    const content = readFileSync(vendorManagerPath, 'utf-8');
+    // Solid 전용 vendor-manager-static에서 필수 라이브러리들이 접근 가능한지 확인
+    const vendorManagerStaticPath = join(
+      process.cwd(),
+      'src/shared/external/vendors/vendor-manager-static.ts'
+    );
+    const content = readFileSync(vendorManagerStaticPath, 'utf-8');
 
-    // 유지되어야 할 라이브러리들
-    expect(content).toContain('getPreact()');
-    expect(content).toContain('getPreactHooks()');
-    expect(content).toContain('getPreactSignals()');
-    expect(content).toContain('getFflate()');
+    expect(content).toContain('getSolidCore');
+    expect(content).toContain('getSolidStore');
+    expect(content).toContain('getSolidWeb');
+    expect(content).not.toContain('getPreact');
   });
 });

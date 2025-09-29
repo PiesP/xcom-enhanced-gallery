@@ -36,7 +36,7 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
+      const { getPreact } = await import('@test-utils/legacy-preact');
       const { h, render } = getPreact();
 
       if (typeof document === 'undefined') return;
@@ -109,7 +109,7 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
+      const { getPreact } = await import('@test-utils/legacy-preact');
       const { h, render } = getPreact();
 
       if (typeof document === 'undefined') return;
@@ -139,7 +139,7 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
+      const { getPreact } = await import('@test-utils/legacy-preact');
       const { h, render } = getPreact();
 
       if (typeof document === 'undefined') return;
@@ -168,7 +168,7 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
+      const { getPreact } = await import('@test-utils/legacy-preact');
       const { h, render } = getPreact();
 
       if (typeof document === 'undefined') return;
@@ -212,7 +212,7 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
+      const { getPreact } = await import('@test-utils/legacy-preact');
       const { h, render } = getPreact();
 
       if (typeof document === 'undefined') return;

@@ -2,7 +2,7 @@
  * @file visibleIndex 기반 네비게이션 동기화 테스트
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/preact';
+import { render, fireEvent } from '@test-utils/testing-library';
 
 // VerticalGalleryView 내부 설정 폴링(setInterval)과 구독 폴링을 제거하기 위해 설정 API 모킹
 vi.mock('@shared/container/settings-access', async () => {
@@ -112,7 +112,7 @@ describe.skip('Toolbar next/prev uses visibleIndex', () => {
     (globalThis as any).window && ((globalThis as any).window.IntersectionObserver = undefined);
     (globalThis as any).IntersectionObserver = undefined;
     // Import components and state
-    const { getPreact } = await import('@shared/external/vendors');
+    const { getPreact } = await import('@test-utils/legacy-preact');
     const { h } = getPreact();
     const { VerticalGalleryView } = await import(
       '@features/gallery/components/vertical-gallery-view'
@@ -174,7 +174,7 @@ describe.skip('Toolbar next/prev uses visibleIndex', () => {
     const savedIO = (globalThis as any).IntersectionObserver;
     (globalThis as any).window && ((globalThis as any).window.IntersectionObserver = undefined);
     (globalThis as any).IntersectionObserver = undefined;
-    const { getPreact } = await import('@shared/external/vendors');
+    const { getPreact } = await import('@test-utils/legacy-preact');
     const { h } = getPreact();
     const { VerticalGalleryView } = await import(
       '@features/gallery/components/vertical-gallery-view'

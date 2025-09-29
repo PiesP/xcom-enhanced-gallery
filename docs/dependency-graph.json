@@ -29,6 +29,13 @@
       "valid": true
     },
     {
+      "source": "src/bootstrap/solid-bootstrap.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/constants.ts",
       "dependencies": [],
       "dependents": [
@@ -52,14 +59,50 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./components/vertical-gallery-view",
+          "module": "./solid/renderSolidGalleryShell",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-import"
+          ],
+          "resolved": "src/features/gallery/solid/renderSolidGalleryShell.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./solid/renderSolidGalleryShell",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
             "import"
           ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/index.ts",
+          "resolved": "src/features/gallery/solid/renderSolidGalleryShell.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./solid/SolidGalleryShell.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/gallery/solid/SolidGalleryShell.solid.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -70,42 +113,53 @@
       ],
       "dependents": [
         "src/features/gallery/createAppContainer.ts",
-        "src/features/gallery/index.ts"
+        "src/features/gallery/index.ts",
+        "src/features/gallery/solid/createParitySnapshot.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/vertical-gallery-view/index.ts",
+      "source": "src/features/gallery/solid/renderSolidGalleryShell.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./VerticalGalleryView",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VerticalGalleryView",
+          "module": "./SolidGalleryShell.solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "type-only",
-            "export"
+            "import"
           ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+          "resolved": "src/features/gallery/solid/SolidGalleryShell.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/GalleryRenderer.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/solid/SolidGalleryShell.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./createSolidKeyboardHelpOverlayController",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/solid/createSolidKeyboardHelpOverlayController.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -115,16 +169,16 @@
         },
         {
           "dynamic": false,
-          "module": "./VerticalImageItem",
+          "module": "./SolidGalleryShell.module.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "export"
+            "import"
           ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+          "resolved": "src/features/gallery/solid/SolidGalleryShell.module.css",
           "coreModule": false,
-          "followable": true,
+          "followable": false,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -133,194 +187,13 @@
       ],
       "dependents": [
         "src/features/gallery/GalleryRenderer.ts",
-        "src/features/gallery/index.ts"
+        "src/features/gallery/solid/renderSolidGalleryShell.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../hooks/useGalleryItemScroll",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/hooks/useGalleryItemScroll.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../hooks/useGalleryScroll",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/hooks/useGalleryScroll.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../hooks/useVisibleIndex",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/hooks/useVisibleIndex.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../utils/visible-navigation",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/utils/visible-navigation.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../KeyboardHelpOverlay/KeyboardHelpOverlay",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/useGalleryCleanup",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/useGalleryKeyboard",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/useViewportConstrainedVar",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VerticalGalleryView.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./VerticalImageItem",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/index.ts",
-        "src/features/gallery/components/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css",
+      "source": "src/features/gallery/solid/SolidGalleryShell.module.css",
       "followable": false,
       "coreModule": false,
       "couldNotResolve": false,
@@ -331,46 +204,16 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
+        "src/features/gallery/solid/SolidGalleryShell.solid.tsx"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/features/gallery/hooks/useGalleryItemScroll.ts",
+      "source": "src/features/gallery/solid/createSolidKeyboardHelpOverlayController.ts",
       "dependencies": [],
       "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/hooks/useGalleryScroll.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/hooks/useVisibleIndex.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/utils/visible-navigation.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
+        "src/features/gallery/solid/SolidGalleryShell.solid.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -396,9 +239,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -420,37 +261,21 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
+      "source": "src/features/gallery/components/index.ts",
       "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
       "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
       "dependencies": [
         {
           "dynamic": false,
@@ -468,12 +293,28 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VerticalImageItem.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/index.ts",
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/features/gallery/components/index.ts"
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -490,24 +331,34 @@
       ],
       "dependencies": [],
       "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/index.ts",
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./vertical-gallery-view/hooks",
+          "module": "./VerticalImageItem.solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "export"
+            "import"
           ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/index.ts",
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -517,49 +368,15 @@
         },
         {
           "dynamic": false,
-          "module": "./vertical-gallery-view/VerticalGalleryView",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vertical-gallery-view/VerticalGalleryView",
+          "module": "./VerticalImageItem.types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "type-only",
-            "export"
+            "import"
           ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vertical-gallery-view/VerticalImageItem",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -574,89 +391,44 @@
     },
     {
       "source": "src/features/gallery/components/vertical-gallery-view/hooks/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./useGalleryCleanup",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./useGalleryKeyboard",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./useProgressiveImage",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./useViewportConstrainedVar",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/components/index.ts"
-      ],
-      "orphan": false,
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
       "source": "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
       "dependencies": [],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/index.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -734,23 +506,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./useGalleryItemScroll",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/hooks/useGalleryItemScroll.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./useGalleryScroll",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -768,14 +523,15 @@
         },
         {
           "dynamic": false,
-          "module": "./useVisibleIndex",
+          "module": "./useGalleryScroll",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "export"
           ],
-          "resolved": "src/features/gallery/hooks/useVisibleIndex.ts",
+          "resolved": "src/features/gallery/hooks/useGalleryScroll.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -789,7 +545,30 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/hooks/useGalleryScroll.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/hooks/useGalleryItemScroll.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/hooks/useToolbarPositionBased.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/hooks/useVisibleIndex.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -798,23 +577,6 @@
     {
       "source": "src/features/gallery/index.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./components/vertical-gallery-view",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/features/gallery/components/vertical-gallery-view/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./GalleryApp",
@@ -895,6 +657,73 @@
       "dependents": [
         "src/features/gallery/index.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/solid/createParitySnapshot.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../GalleryRenderer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/GalleryRenderer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/utils/visible-navigation.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/features/notifications/solid/SolidToastHost.solid.tsx",
+      "dependencies": [],
+      "dependents": [
+        "src/features/notifications/solid/renderSolidToastHost.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/notifications/solid/renderSolidToastHost.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SolidToastHost.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/notifications/solid/SolidToastHost.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -1133,6 +962,68 @@
         }
       ],
       "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/settings/solid/SolidSettingsPanel.solid.tsx",
+      "dependencies": [],
+      "dependents": [
+        "src/features/settings/solid/renderSolidSettingsPanel.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/settings/solid/createParitySnapshot.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./renderSolidSettingsPanel",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/settings/solid/renderSolidSettingsPanel.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/settings/solid/renderSolidSettingsPanel.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SolidSettingsPanel.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/features/settings/solid/SolidSettingsPanel.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/settings/solid/createParitySnapshot.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -1401,10 +1292,8 @@
       ],
       "dependents": [
         "src/shared/components/hoc/GalleryHOC.tsx",
-        "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/index.ts"
       ],
@@ -1682,14 +1571,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../StandardProps",
+          "module": "./SolidToast.solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
+          "resolved": "src/shared/components/ui/Toast/SolidToast.solid.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1699,7 +1588,7 @@
         },
         {
           "dynamic": false,
-          "module": "../StandardProps",
+          "module": "./SolidToast.solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -1707,14 +1596,25 @@
             "type-only",
             "import"
           ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
+          "resolved": "src/shared/components/ui/Toast/SolidToast.solid.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
+        }
+      ],
+      "dependents": [
+        "src/shared/components/index.ts",
+        "src/shared/components/ui/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Toast/SolidToast.solid.tsx",
+      "dependencies": [
         {
           "dynamic": false,
           "module": "./Toast.module.css",
@@ -1734,9 +1634,8 @@
         }
       ],
       "dependents": [
-        "src/shared/components/index.ts",
-        "src/shared/components/ui/Toast/ToastContainer.tsx",
-        "src/shared/components/ui/index.ts"
+        "src/shared/components/ui/Toast/Toast.tsx",
+        "src/shared/components/ui/Toast/ToastContainer.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1753,7 +1652,7 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/shared/components/ui/Toast/Toast.tsx"
+        "src/shared/components/ui/Toast/SolidToast.solid.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1816,14 +1715,14 @@
         },
         {
           "dynamic": false,
-          "module": "./Toast",
+          "module": "./SolidToast.solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/components/ui/Toast/Toast.tsx",
+          "resolved": "src/shared/components/ui/Toast/SolidToast.solid.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1966,8 +1865,7 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx"
+        "src/shared/components/ui/Toolbar/Toolbar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -2107,28 +2005,9 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Button",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Button/Button.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/index.ts"
       ],
@@ -2389,27 +2268,28 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/ModalShell/ModalShell.tsx",
+      "source": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
       "dependencies": [],
       "dependents": [
+        "src/shared/components/ui/ModalShell/ModalShell.tsx",
         "src/shared/components/ui/ModalShell/index.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/ModalShell/index.ts",
+      "source": "src/shared/components/ui/ModalShell/ModalShell.tsx",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./ModalShell",
+          "module": "./ModalShell.solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/ModalShell/ModalShell.tsx",
+          "resolved": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2419,7 +2299,7 @@
         },
         {
           "dynamic": false,
-          "module": "./ModalShell",
+          "module": "./ModalShell.solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -2427,7 +2307,7 @@
             "type-only",
             "export"
           ],
-          "resolved": "src/shared/components/ui/ModalShell/ModalShell.tsx",
+          "resolved": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2437,6 +2317,52 @@
         }
       ],
       "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ModalShell/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ModalShell.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ModalShell.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/shared/components/ui/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -2459,67 +2385,16 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../Button/IconButton",
+          "module": "./SettingsModal",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/components/ui/Button/IconButton.tsx",
+          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
           "coreModule": false,
           "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../StandardProps",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Toolbar/Toolbar.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toolbar/Toolbar.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./SettingsModal.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.module.css",
-          "coreModule": false,
-          "followable": false,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -2527,24 +2402,6 @@
         }
       ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/SettingsModal/SettingsModal.module.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
-      ],
       "orphan": false,
       "valid": true
     },
@@ -2570,6 +2427,23 @@
         },
         {
           "dynamic": false,
+          "module": "../ModalShell",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/ModalShell/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../StandardProps",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2604,6 +2478,8 @@
         }
       ],
       "dependents": [
+        "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
+        "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/index.ts",
         "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx"
       ],
@@ -2611,10 +2487,63 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
+      "source": "src/shared/components/ui/SettingsModal/SettingsModal.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
       "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SettingsModal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SettingsModal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
-      "orphan": true,
+      "orphan": false,
       "valid": true
     },
     {
@@ -2905,6 +2834,41 @@
             "export"
           ],
           "resolved": "src/shared/components/ui/Icon/Icon.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ModalShell",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ModalShell/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ModalShell",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/components/ui/ModalShell/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3277,6 +3241,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/config/feature-flags.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/container/service-accessors.ts",
       "dependencies": [
         {
@@ -3584,23 +3555,6 @@
         },
         {
           "dynamic": false,
-          "module": "./vendor-api",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-api.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./vendor-api-safe",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3618,23 +3572,6 @@
         },
         {
           "dynamic": false,
-          "module": "./vendor-manager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./vendor-manager-static",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3661,24 +3598,6 @@
             "export"
           ],
           "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-types.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3698,100 +3617,8 @@
       "dependencies": [],
       "dependents": [
         "src/shared/external/vendors/index.ts",
-        "src/shared/external/vendors/vendor-api.ts",
-        "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/external/vendors/vendor-api-safe.ts",
         "src/shared/external/vendors/vendor-manager-static.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-api.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./fflate-deprecated",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-manager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/external/vendors/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-manager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./fflate-deprecated",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./fflate-deprecated",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/external/vendors/index.ts",
-        "src/shared/external/vendors/vendor-api.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3835,7 +3662,8 @@
         }
       ],
       "dependents": [
-        "src/shared/external/vendors/index.ts"
+        "src/shared/external/vendors/index.ts",
+        "src/shared/external/vendors/vendor-api.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3882,15 +3710,6 @@
       "dependents": [
         "src/shared/external/vendors/index.ts",
         "src/shared/external/vendors/vendor-api-safe.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-types.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/external/vendors/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3973,42 +3792,33 @@
       "valid": true
     },
     {
-      "source": "src/shared/hooks/index.ts",
+      "source": "src/shared/external/vendors/vendor-api.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./useAccessibility",
+          "module": "./vendor-api-safe",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/hooks/useAccessibility.ts",
+          "resolved": "src/shared/external/vendors/vendor-api-safe.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./useDOMReady",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/useDOMReady.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/index.ts",
+      "dependencies": [
         {
           "dynamic": false,
           "module": "./useToolbarState",
@@ -4032,30 +3842,26 @@
       "valid": true
     },
     {
-      "source": "src/shared/hooks/useAccessibility.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/useDOMReady.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/hooks/useToolbarState.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/hooks/index.ts"
       ],
       "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useAccessibility.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useDOMReady.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -4068,28 +3874,22 @@
     {
       "source": "src/shared/hooks/useFocusTrap.ts",
       "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
       "source": "src/shared/hooks/useGalleryToolbarLogic.ts",
       "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
       "source": "src/shared/hooks/useScrollLock.ts",
       "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -4146,57 +3946,6 @@
             "export"
           ],
           "resolved": "src/shared/components/ui/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/useFocusTrap",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/useFocusTrap.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/useGalleryToolbarLogic",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/useGalleryToolbarLogic.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/useScrollLock",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/useScrollLock.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4386,23 +4135,6 @@
             "export"
           ],
           "resolved": "src/shared/utils/optimization/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./utils/signalSelector",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/signalSelector.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5663,7 +5395,25 @@
     },
     {
       "source": "src/shared/state/signals/download.signals.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../createGlobalSignal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/state/createGlobalSignal.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/state/index.ts",
         "src/shared/state/app-state.ts"
@@ -5672,8 +5422,37 @@
       "valid": true
     },
     {
+      "source": "src/shared/state/createGlobalSignal.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/state/signals/download.signals.ts",
+        "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/state/signals/toolbar.signals.ts",
+        "src/shared/state/gallery-store.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/state/signals/gallery.signals.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../createGlobalSignal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/state/createGlobalSignal.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../mediators/gallery-signal-mediator",
@@ -5710,7 +5489,25 @@
     },
     {
       "source": "src/shared/state/signals/toolbar.signals.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../createGlobalSignal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/state/createGlobalSignal.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/state/index.ts",
         "src/shared/state/app-state.ts"
@@ -6896,16 +6693,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/signalSelector.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/index.ts",
-        "src/shared/utils/performance/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/interfaces/ServiceInterfaces.ts",
       "dependencies": [],
       "dependents": [
@@ -7134,6 +6921,13 @@
         "src/shared/types/core/core-types.ts"
       ],
       "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/polyfills/solid-jsx-dev-runtime.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -7538,6 +7332,31 @@
     },
     {
       "source": "src/shared/state/gallery-store.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./createGlobalSignal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/state/createGlobalSignal.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/state/solid-adapter.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -8278,23 +8097,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../signalSelector",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/signalSelector.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./idleScheduler",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8452,6 +8254,20 @@
         "src/shared/utils/performance/index.ts"
       ],
       "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/signalSelector.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/solidSignalBridge.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
       "valid": true
     },
     {
@@ -8621,8 +8437,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 268,
-    "totalDependenciesCruised": 351,
+    "totalCruised": 285,
+    "totalDependenciesCruised": 334,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -1,21 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { render, cleanup } from '@solidjs/testing-library';
 import { LazyIcon } from '@shared/components/LazyIcon';
+import { resetIconRegistry } from '@shared/services/iconRegistry';
 
-// [ICN-R2][RED] LazyIcon은 기본 placeholder에 표준 data 속성과 aria-label을 제공해야 한다.
-// 현재 구현은 data-xeg-icon-loading, role, aria-busy 등을 제공하지 않으므로 RED.
+// [ICN-R2] LazyIcon placeholder는 표준 data/ARIA 속성을 제공해야 한다.
 
-describe('[ICN-R2][RED] LazyIcon placeholder semantics', () => {
+describe('[ICN-R2] LazyIcon placeholder semantics', () => {
+  beforeEach(() => {
+    cleanup();
+    resetIconRegistry();
+  });
+
   it('기본 fallback 없음일 때 표준 placeholder data 속성/접근성 속성을 제공해야 한다', () => {
-    const vnode = LazyIcon({ name: 'ChevronLeft' });
-    // LazyIcon은 placeholder div VNode를 직접 반환해야 한다.
-    const props: any = (vnode as any).props || {};
-    // 기대: data-xeg-icon-loading="true"
-    expect(props['data-xeg-icon-loading']).toBe('true');
-    expect(props['data-testid']).toBe('lazy-icon-loading');
-    expect(props['aria-label']).toMatch(/로딩/);
-    // 추가: role=img 또는 progress semantics (우린 role=img 채택 예정)
-    expect(props['role']).toBe('img');
-    // busy 표시
-    expect(props['aria-busy']).toBe('true');
+    const { container } = render(() => <LazyIcon name='ChevronLeft' />);
+    const placeholder = container.querySelector('[data-xeg-icon-loading="true"]');
+
+    expect(placeholder).toBeTruthy();
+    expect(placeholder?.getAttribute('data-testid')).toBe('lazy-icon-loading');
+    expect(placeholder?.getAttribute('role')).toBe('img');
+    expect(placeholder?.getAttribute('aria-busy')).toBe('true');
+    expect(placeholder?.getAttribute('aria-label')).toMatch(/로딩/);
   });
 });

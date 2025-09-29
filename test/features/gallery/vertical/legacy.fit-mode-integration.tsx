@@ -3,7 +3,7 @@
  * @description Toolbar의 세로 맞춤 버튼 클릭 시, 아이템에 fitHeight 클래스 및 컨테이너 CSS 변수가 존재하는지 검증
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { VerticalGalleryView } from '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { openGallery, closeGallery } from '@/shared/state/signals/gallery.signals';
 

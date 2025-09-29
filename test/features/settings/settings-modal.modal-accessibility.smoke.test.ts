@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/preact';
-import { getPreact, initializeVendors } from '@shared/external/vendors';
+import { createComponent } from 'solid-js';
+import { render, fireEvent } from '@test-utils/testing-library';
+import { initializeVendors } from '@shared/external/vendors';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal a11y smoke (modal mode)', () => {
@@ -11,8 +12,8 @@ describe('SettingsModal a11y smoke (modal mode)', () => {
 
   it('renders dialog semantics on backdrop container', () => {
     const onClose = vi.fn();
-    const { container } = render(
-      getPreact().h(SettingsModal, {
+    const { container } = render(() =>
+      createComponent(SettingsModal, {
         isOpen: true,
         onClose,
         mode: 'modal',
@@ -31,8 +32,8 @@ describe('SettingsModal a11y smoke (modal mode)', () => {
 
   it('closes on Escape and backdrop click', () => {
     const onClose = vi.fn();
-    const { container } = render(
-      getPreact().h(SettingsModal, {
+    const { container } = render(() =>
+      createComponent(SettingsModal, {
         isOpen: true,
         onClose,
         mode: 'modal',
@@ -49,8 +50,8 @@ describe('SettingsModal a11y smoke (modal mode)', () => {
 
     // reopen and test backdrop click
     onClose.mockReset();
-    const { container: container2 } = render(
-      getPreact().h(SettingsModal, {
+    const { container: container2 } = render(() =>
+      createComponent(SettingsModal, {
         isOpen: true,
         onClose,
         mode: 'modal',

@@ -15,3 +15,11 @@ export function bridgeTryGet<T>(key: string): T | null {
 export function bridgeRegister<T>(key: string, instance: T): void {
   CoreService.getInstance().register<T>(key, instance);
 }
+
+export function bridgeHasService(key: string): boolean {
+  return CoreService.getInstance().has(key);
+}
+
+export function bridgeResetServices(): void {
+  CoreService.resetInstance();
+}

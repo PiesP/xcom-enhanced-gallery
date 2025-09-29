@@ -1,25 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { render, screen } from '@testing-library/preact';
-import { h } from 'preact';
-
-// Minimal vendor mocks (same pattern as previous RED test)
-vi.mock('@shared/external/vendors', () => ({
-  getFflate: vi.fn(() => ({})),
-  getPreact: vi.fn(() => ({ h })),
-  getPreactHooks: vi.fn(() => ({
-    useMemo: (fn: any) => fn(),
-    useCallback: (fn: any) => fn,
-    useEffect: () => void 0,
-    useRef: (init?: any) => ({ current: init ?? null }),
-  })),
-  getPreactSignals: vi.fn(() => ({})),
-  getPreactCompat: vi.fn(() => ({ memo: (C: any) => C })),
-  initializeVendors: vi.fn(() => Promise.resolve()),
-  isVendorsInitialized: vi.fn(() => true),
-}));
+import { render, screen, cleanup } from '@solidjs/testing-library';
 
 vi.mock('@shared/hooks/useToolbarState', () => ({
   useToolbarState: vi.fn(() => [
@@ -47,9 +30,9 @@ vi.mock('@shared/utils', () => ({
   throttleScroll: (fn: any) => fn,
 }));
 
-import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
+import { Toolbar, type ToolbarProps } from '@shared/components/ui/Toolbar/Toolbar';
 
-const mkProps = (overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) => ({
+const mkProps = (overrides: Partial<ToolbarProps> = {}): ToolbarProps => ({
   currentIndex: 0,
   totalCount: 5,
   isDownloading: false,
@@ -82,6 +65,14 @@ const readProjectFile = (segments: string[]): string => {
  */
 
 describe('Toolbar refinement (selector consolidation + structure)', () => {
+  beforeEach(() => {
+    cleanup();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   it('removes legacy hardcoded 2.5em dimension usages', () => {
     const buttonCss = readProjectFile([
       'src',
@@ -133,7 +124,7 @@ describe('Toolbar refinement (selector consolidation + structure)', () => {
   });
 
   it('renders sections in correct accessible order', () => {
-    render(h(Toolbar as any, mkProps()));
+    render(() => <Toolbar {...mkProps()} />);
     const toolbar = screen.getByRole('toolbar');
     const sections = Array.from(
       toolbar.querySelectorAll(

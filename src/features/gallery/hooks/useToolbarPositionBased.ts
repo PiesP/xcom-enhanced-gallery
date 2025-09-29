@@ -1,87 +1,168 @@
-import { getPreactHooks } from '@shared/external/vendors';
+/**
+ * @fileoverview 위치 기반 툴바 가시성 관리 훅 (Solid)
+ * @description 호버 존/툴바 DOM 이벤트를 기반으로 CSS 토큰을 업데이트하며,
+ *              PC 전용 입력 규칙을 준수합니다.
+ */
 
-// Toolbar visibility guideline:
-// See docs/CODING_GUIDELINES.md → "Toolbar 가시성 가이드라인 (Hover/CSS 변수)"
-// - Visibility is controlled by CSS variables only (no timers/animations)
-// - Variables: --xeg-toolbar-opacity, --xeg-toolbar-pointer-events
+import type { Accessor } from 'solid-js';
+
+import { getSolidCore } from '@shared/external/vendors';
+
+type MaybeAccessor<T> = T | Accessor<T>;
+
 export interface UseToolbarPositionBasedOptions {
-  readonly toolbarElement: HTMLElement | null | undefined;
-  readonly hoverZoneElement: HTMLElement | null | undefined;
-  readonly enabled?: boolean;
-  readonly initialAutoHideDelay?: number; // not used in minimal impl
+  readonly toolbarElement: MaybeAccessor<HTMLElement | null> | null;
+  readonly hoverZoneElement: MaybeAccessor<HTMLElement | null> | null;
+  readonly enabled?: MaybeAccessor<boolean | undefined>;
 }
 
-export function useToolbarPositionBased(options: UseToolbarPositionBasedOptions): {
-  isVisible: boolean;
+export interface UseToolbarPositionBasedResult {
+  /** 현재 가시성 상태 (enabled를 고려한 최종 상태) */
+  readonly isVisible: boolean;
+  /** Solid 컴포넌트에서 직접 구독 가능한 accessor */
+  readonly isVisibleAccessor: Accessor<boolean>;
+  /** 수동으로 툴바를 표시 */
   show: () => void;
+  /** 수동으로 툴바를 숨김 */
   hide: () => void;
-} {
-  const { useEffect, useRef, useState } = getPreactHooks();
-  const enabled = options.enabled !== false;
+}
 
-  const [isVisible, setIsVisible] = useState<boolean>(enabled);
-  const hoverEnterRef = useRef<((e?: Event) => void) | null>(null);
-  const hoverLeaveRef = useRef<((e?: Event) => void) | null>(null);
-  const toolbarEnterRef = useRef<((e?: Event) => void) | null>(null);
-  const toolbarLeaveRef = useRef<((e?: Event) => void) | null>(null);
+const TOOLBAR_OPACITY_TOKEN = '--xeg-toolbar-opacity';
+const TOOLBAR_POINTER_EVENTS_TOKEN = '--xeg-toolbar-pointer-events';
 
-  const applyVisibility = (visible: boolean): void => {
-    try {
-      // Unified namespaced tokens (finalized)
-      document.documentElement.style.setProperty('--xeg-toolbar-opacity', visible ? '1' : '0');
-      document.documentElement.style.setProperty(
-        '--xeg-toolbar-pointer-events',
-        visible ? 'auto' : 'none'
-      );
-    } catch {
-      // no-op in non-DOM environments
+function resolveMaybeAccessor<T>(
+  candidate: MaybeAccessor<T> | null | undefined
+): T | null | undefined {
+  if (typeof candidate === 'function') {
+    return (candidate as Accessor<T>)();
+  }
+  return candidate;
+}
+
+function applyDocumentTokens(visible: boolean): void {
+  const root = globalThis.document?.documentElement;
+  const style = root?.style;
+  if (!style || typeof style.setProperty !== 'function') {
+    return;
+  }
+  style.setProperty(TOOLBAR_OPACITY_TOKEN, visible ? '1' : '0');
+  style.setProperty(TOOLBAR_POINTER_EVENTS_TOKEN, visible ? 'auto' : 'none');
+}
+
+function applyToolbarInlineStyle(toolbar: HTMLElement | null, visible: boolean): void {
+  const style = toolbar?.style;
+  if (!style || typeof style.setProperty !== 'function') {
+    return;
+  }
+  style.setProperty('opacity', visible ? '1' : '0');
+  style.setProperty('pointer-events', visible ? 'auto' : 'none');
+}
+
+export function useToolbarPositionBased(
+  options: UseToolbarPositionBasedOptions
+): UseToolbarPositionBasedResult {
+  const { createSignal, createMemo, createEffect, onCleanup } = getSolidCore();
+
+  const enabledMemo = createMemo<boolean>(() => {
+    const resolved = resolveMaybeAccessor(options.enabled);
+    if (typeof resolved === 'boolean') {
+      return resolved;
     }
+    return true;
+  });
+
+  const toolbarMemo = createMemo<HTMLElement | null>(
+    () => resolveMaybeAccessor(options.toolbarElement) ?? null
+  );
+
+  const hoverZoneMemo = createMemo<HTMLElement | null>(
+    () => resolveMaybeAccessor(options.hoverZoneElement) ?? null
+  );
+
+  const [visibilityIntent, setVisibilityIntent] = createSignal<boolean>(true);
+
+  const resolvedVisibility = createMemo<boolean>(() => {
+    if (!enabledMemo()) {
+      return false;
+    }
+    return visibilityIntent();
+  });
+
+  const setVisibility = (next: boolean) => {
+    setVisibilityIntent(prev => (prev === next ? prev : next));
   };
 
-  const show = (): void => {
-    setIsVisible(true);
-    applyVisibility(true);
+  const show = () => {
+    setVisibility(true);
   };
 
-  const hide = (): void => {
-    setIsVisible(false);
-    applyVisibility(false);
+  const hide = () => {
+    setVisibility(false);
   };
 
-  useEffect(() => {
-    // set initial visibility according to enabled
-    setIsVisible(enabled);
-    applyVisibility(enabled);
-  }, [enabled]);
+  createEffect(() => {
+    const visible = resolvedVisibility();
+    const toolbarElement = toolbarMemo();
+    applyDocumentTokens(visible);
+    applyToolbarInlineStyle(toolbarElement, visible);
+  });
 
-  useEffect(() => {
-    const hoverEl = options.hoverZoneElement ?? null;
-    const toolbarEl = options.toolbarElement ?? null;
+  createEffect(() => {
+    const enabled = enabledMemo();
+    const hoverZone = hoverZoneMemo();
+    const toolbar = toolbarMemo();
 
-    if (!enabled || (!hoverEl && !toolbarEl)) return;
+    const attachments: Array<[HTMLElement, string, EventListener]> = [];
 
-    const onEnter = () => show();
-    const onLeave = () => hide();
+    if (enabled) {
+      const handleShow: EventListener = () => {
+        show();
+      };
+      const handleHide: EventListener = () => {
+        hide();
+      };
 
-    hoverEnterRef.current = onEnter;
-    hoverLeaveRef.current = onLeave;
-    toolbarEnterRef.current = onEnter;
-    toolbarLeaveRef.current = onLeave;
+      if (hoverZone) {
+        hoverZone.addEventListener('mouseenter', handleShow);
+        hoverZone.addEventListener('mouseleave', handleHide);
+        attachments.push([hoverZone, 'mouseenter', handleShow]);
+        attachments.push([hoverZone, 'mouseleave', handleHide]);
+      }
 
-    hoverEl?.addEventListener('mouseenter', onEnter as EventListener);
-    hoverEl?.addEventListener('mouseleave', onLeave as EventListener);
-    toolbarEl?.addEventListener('mouseenter', onEnter as EventListener);
-    toolbarEl?.addEventListener('mouseleave', onLeave as EventListener);
+      if (toolbar) {
+        toolbar.addEventListener('mouseenter', handleShow);
+        toolbar.addEventListener('mouseleave', handleHide);
+        attachments.push([toolbar, 'mouseenter', handleShow]);
+        attachments.push([toolbar, 'mouseleave', handleHide]);
+      }
+    }
 
-    return () => {
-      hoverEl?.removeEventListener('mouseenter', onEnter as EventListener);
-      hoverEl?.removeEventListener('mouseleave', onLeave as EventListener);
-      toolbarEl?.removeEventListener('mouseenter', onEnter as EventListener);
-      toolbarEl?.removeEventListener('mouseleave', onLeave as EventListener);
-    };
-  }, [options.hoverZoneElement, options.toolbarElement, enabled]);
+    if (!enabled) {
+      hide();
+    }
 
-  return { isVisible, show, hide };
+    onCleanup(() => {
+      for (const [element, type, handler] of attachments) {
+        element.removeEventListener(type, handler);
+      }
+    });
+  });
+
+  onCleanup(() => {
+    // Solid 컴포넌트 언마운트 시 마지막으로 적용된 CSS 토큰을 정리하여 일관성 유지
+    applyDocumentTokens(false);
+    const toolbarElement = toolbarMemo();
+    applyToolbarInlineStyle(toolbarElement, false);
+  });
+
+  return {
+    get isVisible() {
+      return resolvedVisibility();
+    },
+    isVisibleAccessor: resolvedVisibility,
+    show,
+    hide,
+  };
 }
 
 export default useToolbarPositionBased;

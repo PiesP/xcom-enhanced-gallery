@@ -13,7 +13,7 @@ export * from './components/isolation';
 // HOC 컴포넌트들
 export * from './components/hoc';
 
-// 최적화 컴포넌트들 제거됨 (기본 Preact memo 사용 권장)
+// 최적화 컴포넌트들 제거됨 (필요 시 Solid memoization 사용 권장)
 // export * from './components/optimization';
 
 // 서비스들 (기존 Core에서 이동)
@@ -51,21 +51,8 @@ export { isInsideGallery } from './utils/dom';
 export * from './utils/optimization';
 
 // 새로운 P4-P7 유틸리티들
-export {
-  createSelector,
-  useSelector,
-  useCombinedSelector,
-  useAsyncSelector,
-  getGlobalSelectorStats,
-  clearGlobalSelectorStats,
-} from './utils/signalSelector';
 export { createFocusTrap } from './utils/focusTrap';
 export type { FocusTrapOptions, FocusTrap } from './utils/focusTrap';
-
-// 새로운 P4-P7 훅들
-export { useScrollLock } from './hooks/useScrollLock';
-export { useGalleryToolbarLogic } from './hooks/useGalleryToolbarLogic';
-export { useFocusTrap } from './hooks/useFocusTrap';
 
 export * from './styles/tokens';
 

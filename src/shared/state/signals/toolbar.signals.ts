@@ -9,6 +9,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { createGlobalSignal } from '../createGlobalSignal';
 
 /**
  * 간소화된 툴바 상태 인터페이스
@@ -33,54 +34,34 @@ export type ToolbarEvents = {
   'toolbar:mode-change': { mode: ToolbarState['currentMode'] };
 };
 
-// Signal 타입 정의 (Preact Signals 지연 로딩 대응)
-type Signal<T> = {
-  value: T;
-  subscribe?: (callback: (value: T) => void) => () => void;
-};
+const signal = createGlobalSignal<ToolbarState>(INITIAL_TOOLBAR_STATE);
 
-// Preact Signals 지연 초기화
-let toolbarStateSignal: Signal<ToolbarState> | null = null;
-
-function getToolbarStateSignal(): Signal<ToolbarState> {
-  if (!toolbarStateSignal) {
-    try {
-      // Preact Signals 동적 로딩
-      const signalsModule = require('@preact/signals');
-      const { signal } = signalsModule;
-      toolbarStateSignal = signal(INITIAL_TOOLBAR_STATE);
-      logger.debug('Toolbar state signal initialized');
-    } catch (error) {
-      logger.warn('Failed to initialize Preact Signals, using fallback', { error });
-      // 폴백 구현
-      toolbarStateSignal = {
-        value: INITIAL_TOOLBAR_STATE,
-        subscribe: () => () => {},
-      };
-    }
-  }
-  return toolbarStateSignal!;
-}
+logger.debug('Toolbar state signal initialized (Solid)');
 
 /**
  * 툴바 상태 접근자
  */
 export const toolbarState = {
   get value(): ToolbarState {
-    return getToolbarStateSignal().value;
+    return signal.value;
   },
 
   set value(newState: ToolbarState) {
-    const signal = getToolbarStateSignal();
     signal.value = newState;
   },
 
-  /**
-   * 상태 변경 구독
-   */
   subscribe(callback: (state: ToolbarState) => void): () => void {
-    const signal = getToolbarStateSignal();
-    return signal.subscribe?.(callback) || (() => {});
+    return signal.subscribe(callback);
+  },
+
+  update(updater: (previous: ToolbarState) => ToolbarState): void {
+    signal.update(updater);
+  },
+
+  accessor: signal.accessor,
+
+  peek(): ToolbarState {
+    return signal.peek();
   },
 };
 

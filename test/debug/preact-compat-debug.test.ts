@@ -1,9 +1,10 @@
 /**
  * @fileoverview Preact Compat ForwardRef Debug Test
  */
+/* global console */
 
 import { describe, it, expect, vi } from 'vitest';
-import { getPreactCompat } from '@shared/external/vendors';
+import { getPreactCompat } from '@test-utils/legacy-preact';
 
 describe('Debug: Preact Compat ForwardRef', () => {
   it('should have forwardRef function available', () => {

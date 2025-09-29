@@ -10,6 +10,7 @@
 
 import { describe, test, expect, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
+import process from 'node:process';
 import { resolve } from 'node:path';
 
 // Phase 5: RED 테스트 - Deprecated 요소 감지 및 경고
@@ -28,6 +29,8 @@ describe('Phase 5: Deprecated 제거 & 안전망 (RED)', () => {
       'shared/components/ui/Button/Button.tsx',
       'shared/components/ui/ToolbarShell/ToolbarShell.tsx',
       'shared/components/ui/ModalShell/ModalShell.tsx',
+      'shared/components/ui/ModalShell/ModalShell.solid.tsx',
+      'shared/components/ui/ModalShell/index.ts',
     ];
 
     projectFiles = componentPaths.map(path => {
@@ -108,35 +111,51 @@ describe('Phase 5: Deprecated 제거 & 안전망 (RED)', () => {
 
       // RED 단계에서는 legacy 클래스가 있을 수 있음
       // 실제로는 없을 수도 있으므로 있다면 경고를 출력
-      if (foundLegacyClasses) {
-        console.warn('Legacy 클래스가 발견되었습니다');
-      }
-
       // 유연한 검증: 있어도 없어도 됨 (실제 상황에 따라)
       expect(typeof foundLegacyClasses).toBe('boolean');
     });
   });
 
   describe('안전한 제거 준비', () => {
-    test('ModalShell과 ToolbarShell 대체재가 준비되어야 함', () => {
+    test('ModalShell Solid 전환 완료 및 ToolbarShell 대체재가 준비되어야 함', () => {
       const toolbarShellPath = resolve(
         process.cwd(),
         'src/shared/components/ui/ToolbarShell/ToolbarShell.tsx'
       );
-      const modalShellPath = resolve(
+
+      const modalShellLegacyPath = resolve(
         process.cwd(),
         'src/shared/components/ui/ModalShell/ModalShell.tsx'
       );
+      const modalShellSolidPath = resolve(
+        process.cwd(),
+        'src/shared/components/ui/ModalShell/ModalShell.solid.tsx'
+      );
+      const modalShellIndexPath = resolve(
+        process.cwd(),
+        'src/shared/components/ui/ModalShell/index.ts'
+      );
 
       expect(existsSync(toolbarShellPath)).toBe(true);
-      expect(existsSync(modalShellPath)).toBe(true);
+      expect(existsSync(modalShellIndexPath)).toBe(true);
+      expect(existsSync(modalShellSolidPath)).toBe(true);
+
+      const legacyExists = existsSync(modalShellLegacyPath);
 
       // 대체재가 제대로 export되는지 확인
       const toolbarShellContent = readFileSync(toolbarShellPath, 'utf-8');
-      const modalShellContent = readFileSync(modalShellPath, 'utf-8');
+      const modalShellContent = readFileSync(modalShellSolidPath, 'utf-8');
+      const modalShellIndexContent = readFileSync(modalShellIndexPath, 'utf-8');
 
       expect(toolbarShellContent).toMatch(/export.*ToolbarShell/);
-      expect(modalShellContent).toMatch(/export.*ModalShell/);
+      expect(modalShellContent).toMatch(/export\s+const\s+ModalShell/);
+      expect(modalShellIndexContent).toMatch(/ModalShell/);
+
+      if (legacyExists) {
+        const legacyContent = readFileSync(modalShellLegacyPath, 'utf-8');
+        expect(legacyContent).not.toMatch(/getPreact/);
+        expect(legacyContent).toMatch(/export\s+\{?\s*ModalShell/);
+      }
     });
 
     test('migration 가이드나 주석이 존재해야 함', () => {

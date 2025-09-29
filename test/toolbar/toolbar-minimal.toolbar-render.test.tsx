@@ -1,19 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/preact';
-import { h } from 'preact';
+/** @jsxImportSource solid-js */
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { cleanup, render } from '@solidjs/testing-library';
 
-vi.mock('@shared/external/vendors', () => ({
-  getPreact: () => ({ h }),
-  getPreactHooks: () => ({
-    useMemo: (fn: any) => fn(),
-    useCallback: (fn: any) => fn,
-    useEffect: () => void 0,
-    useRef: (init?: any) => ({ current: init ?? null }),
-  }),
-  getPreactCompat: () => ({ memo: (C: any) => C }),
-  initializeVendors: vi.fn(() => Promise.resolve()),
-  isVendorsInitialized: vi.fn(() => true),
-}));
 vi.mock('@shared/hooks/useToolbarState', () => ({
   useToolbarState: () => [
     {
@@ -41,18 +29,22 @@ import { Toolbar } from '@/shared/components/ui/Toolbar/Toolbar';
 // GREEN: 최소 렌더 회귀 방지 (과거 hang 재발 차단)
 
 describe('toolbar minimal render', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders toolbar without interaction', () => {
-    const { getByRole } = render(
-      h(Toolbar, {
-        currentIndex: 0,
-        totalCount: 1,
-        onPrevious: () => {},
-        onNext: () => {},
-        onDownloadCurrent: () => {},
-        onDownloadAll: () => {},
-        onClose: () => {},
-      })
-    );
+    const { getByRole } = render(() => (
+      <Toolbar
+        currentIndex={0}
+        totalCount={1}
+        onPrevious={() => {}}
+        onNext={() => {}}
+        onDownloadCurrent={() => {}}
+        onDownloadAll={() => {}}
+        onClose={() => {}}
+      />
+    ));
     const toolbar = getByRole('toolbar');
     expect(toolbar).toBeTruthy();
   });

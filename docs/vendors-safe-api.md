@@ -7,9 +7,12 @@
 
 - 직접 import 금지: preact / @preact/signals / fflate / preact/compat 등은
   코드에서 직접 import하지 않습니다.
-- 항상 getter 사용: `@shared/external/vendors`의 `initializeVendors()` 및
-  `getPreact()`, `getPreactSignals()`, `getFflate()`, `getPreactCompat()`,
-  `getNativeDownload()`로만 접근합니다.
+- 항상 getter 사용: `@shared/external/vendors`는 Solid 전용 표면만 노출합니다.
+  (`initializeVendors()`, `getSolidCore()`, `getSolidStore()`, `getSolidWeb()`,
+  `getNativeDownload()`, `validateVendors()`, `cleanupVendors()` 등)
+- Stage D Phase 3부터 Preact 계열 API는 `@shared/external/vendors/preact-legacy`
+  네임스페이스로 이동했습니다. 레거시 코드 유지 목적에 한해 사용하고, 신규
+  구현은 Solid API로 전환합니다.
 - Userscript API는 어댑터 경유: `@shared/external/userscript/adapter`의
   `getUserscript()`만 사용합니다.
   - 금지: 코드에서 `GM_*` API를 직접 참조/호출하지 않습니다.(테스트/Node 환경
@@ -20,16 +23,34 @@
   축소)를 적용합니다.
 - 테스트 모킹 용이성: getter/어댑터 경유라 Vitest에서 모킹이 간단합니다.
 
-## 예시: Preact/Signals 사용
+## 예시: Solid Core/Store 사용
 
 ```ts
 import {
   initializeVendors,
-  getPreact,
-  getPreactSignals,
+  getSolidCore,
+  getSolidStore,
 } from '@shared/external/vendors';
 
-initializeVendors(); // TDZ-safe 초기화
+await initializeVendors(); // TDZ-safe 초기화
+
+const solidCore = getSolidCore();
+const solidStore = getSolidStore();
+
+const [count, setCount] = solidCore.createSignal(0);
+const [state, setState] = solidStore.createStore({ value: 0 });
+
+setCount(previous => previous + 1);
+setState('value', value => value + 1);
+```
+
+### 레거시 예시: Preact/Signals 사용 (이관 중)
+
+```ts
+import {
+  getPreact,
+  getPreactSignals,
+} from '@shared/external/vendors/preact-legacy';
 
 const { h, render } = getPreact();
 const { signal, computed } = getPreactSignals();
@@ -65,9 +86,9 @@ async function download(url: string, name: string) {
 ## Feature detection 스텁
 
 ```ts
-import { getPreact } from '@shared/external/vendors';
+import { getPreact } from '@shared/external/vendors/preact-legacy';
 
-export function ensurePreactAvailable(): boolean {
+export function ensureLegacyPreactAvailable(): boolean {
   try {
     const { h, render } = getPreact();
     return typeof h === 'function' && typeof render === 'function';
@@ -80,8 +101,8 @@ export function ensurePreactAvailable(): boolean {
 ## 테스트 모킹 패턴(Vitest)
 
 ```ts
-// setup에서 벤더 초기화 이전에 모킹(또는 전용 모듈로 주입)
-vi.mock('@shared/external/vendors', async orig => {
+// setup에서 레거시 Preact getter를 모킹 (Solid 표면은 그대로 유지)
+vi.mock('@shared/external/vendors/preact-legacy', async orig => {
   const actual = await orig();
   return {
     ...actual,

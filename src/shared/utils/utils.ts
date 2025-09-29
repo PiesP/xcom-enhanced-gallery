@@ -89,7 +89,7 @@ export function canTriggerGallery(target: HTMLElement | null): boolean {
 
   // 갤러리가 이미 열려있으면 트리거하지 않음
   const signals = tryGetGallerySignals();
-  if (signals?.isOpen.value) {
+  if (signals?.isOpen()) {
     return false;
   }
 

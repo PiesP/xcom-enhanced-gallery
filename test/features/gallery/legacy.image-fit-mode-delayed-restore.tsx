@@ -4,7 +4,7 @@
  *              구독을 통해 핏 모드가 동기화되는지 검증 (RED)
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getPreact } from '@test-utils/legacy-preact';
 import { VerticalGalleryView } from '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { openGallery, closeGallery } from '@/shared/state/signals/gallery.signals';
 import { registerSettingsManager } from '@/shared/container/service-accessors';

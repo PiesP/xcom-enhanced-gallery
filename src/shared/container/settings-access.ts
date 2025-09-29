@@ -4,19 +4,22 @@
  * - Uses optional global adapter bridge or lazy getter functions
  */
 import { SERVICE_KEYS } from '@/constants';
-import { bridgeTryGet } from './service-bridge';
+import { bridgeTryGet, bridgeHasService } from './service-bridge';
 import type { ISettingsService } from './AppContainer';
 
 /**
  * Attempt to get settings service via legacy adapter if present, otherwise null.
  */
 export function tryGetSettingsService(): ISettingsService | null {
+  const settingsKey = SERVICE_KEYS.SETTINGS as unknown as string;
   // 1) Prefer CoreService bridge registration (registerSettingsManager)
-  try {
-    const viaBridge = bridgeTryGet<ISettingsService>(SERVICE_KEYS.SETTINGS as unknown as string);
-    if (viaBridge) return viaBridge;
-  } catch {
-    // ignore and fallback
+  if (bridgeHasService(settingsKey)) {
+    try {
+      const viaBridge = bridgeTryGet<ISettingsService>(settingsKey);
+      if (viaBridge) return viaBridge;
+    } catch {
+      // ignore and fallback
+    }
   }
 
   // 2) Fallback to global legacy adapter bridge installed by AppContainer when enabled
@@ -27,9 +30,7 @@ export function tryGetSettingsService(): ISettingsService | null {
   try {
     const adapter = anyGlobal.__XEG_LEGACY_ADAPTER__;
     if (adapter) {
-      const svc = adapter.getService(
-        SERVICE_KEYS.SETTINGS as unknown as string
-      ) as unknown as ISettingsService;
+      const svc = adapter.getService(settingsKey) as unknown as ISettingsService;
       return svc ?? null;
     }
   } catch {

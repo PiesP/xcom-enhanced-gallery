@@ -3,16 +3,15 @@
  * Ensures icons remain tree-shake friendly and adhere to shared Icon container contract.
  */
 
-import type { VNode } from '@shared/external/vendors';
+import type { JSX } from 'solid-js';
 import type { IconProps } from './Icon';
 import type { SvgPathDefinition, XegIconDefinition } from '@assets/icons/xeg-icons';
 
-import { getPreact } from '@shared/external/vendors';
 import { Icon } from './Icon';
 
 export type SvgIconProps = Omit<IconProps, 'children'>;
 
-export type SvgIconComponent = (props: SvgIconProps) => VNode;
+export type SvgIconComponent = (props?: SvgIconProps) => JSX.Element;
 
 function buildPathAttributes(pathDefinition: SvgPathDefinition): Record<string, unknown> {
   const attributes: Record<string, unknown> = {
@@ -39,29 +38,30 @@ export function createSvgIcon(
   displayName: string,
   definition: XegIconDefinition
 ): SvgIconComponent {
-  const { h } = getPreact();
-
-  const SvgIcon: SvgIconComponent = props => {
+  const SvgIcon: SvgIconComponent = (props = {}) => {
     const {
       ['data-icon-name']: _ignoredIconName,
       children: _ignoredChildren,
       ...restProps
-    } = props as SvgIconProps & Record<string, unknown>;
+    } = (props ?? {}) as SvgIconProps & Record<string, unknown>;
 
-    const iconProps: Record<string, unknown> = {
+    const iconProps: IconProps = {
       ...restProps,
       viewBox: definition.viewBox,
       'data-icon-name': definition.metadata,
-    };
+    } as IconProps;
 
-    const pathNodes = definition.paths.map((path, index) =>
-      h('path', {
-        key: `${definition.metadata}-path-${index}`,
-        ...buildPathAttributes(path),
-      })
+    return (
+      <Icon {...iconProps}>
+        {definition.paths.map((path, index) => (
+          <path
+            aria-hidden='true'
+            data-icon-path={`${definition.metadata}-path-${index}`}
+            {...buildPathAttributes(path)}
+          />
+        ))}
+      </Icon>
     );
-
-    return h(Icon, iconProps, pathNodes);
   };
 
   Object.defineProperty(SvgIcon, 'displayName', {

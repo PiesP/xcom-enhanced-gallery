@@ -1,83 +1,136 @@
 /**
  * @fileoverview 갤러리 컨테이너
- * @description 간소화된 갤러리 컨테이너
+ * @description Solid 기반 갤러리 컨테이너와 Shadow DOM 마운트 도우미
  */
 
-import { getPreact, getPreactHooks } from '@shared/external/vendors';
-import type { ComponentChildren } from '@shared/external/vendors';
+import type { JSX } from 'solid-js';
+import { getSolidCore, getSolidWeb } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
+
+type GalleryChild = JSX.Element | JSX.Element[] | string | number | boolean | null | undefined;
+
+const containerRegistry = new WeakMap<
+  Element,
+  {
+    dispose: () => void;
+    shadowRoot?: ShadowRoot;
+    contentRoot: Element;
+  }
+>();
 
 /**
  * 갤러리 컨테이너 Props
  */
 export interface GalleryContainerProps {
   /** 자식 컴포넌트 */
-  children: ComponentChildren;
+  readonly children?: GalleryChild;
   /** 갤러리 닫기 콜백 */
-  onClose?: () => void;
+  readonly onClose?: () => void;
   /** CSS 클래스명 */
-  className?: string;
+  readonly className?: string;
   /** Shadow DOM 사용 여부 */
-  useShadowDOM?: boolean;
+  readonly useShadowDOM?: boolean;
+}
+
+const HOST_RULES = `
+  :host {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: var(--xeg-z-overlay);
+    isolation: isolate;
+  }
+`;
+
+function injectShadowStyles(shadowRoot: ShadowRoot): void {
+  const globalCssText = (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT ?? '';
+  const styleElement = document.createElement('style');
+  styleElement.textContent = `${globalCssText}\n${HOST_RULES}`;
+  shadowRoot.appendChild(styleElement);
+}
+
+function ensureShadowRoot(container: Element): ShadowRoot | undefined {
+  if (!(container instanceof HTMLElement)) {
+    return undefined;
+  }
+  if (!('attachShadow' in container)) {
+    return undefined;
+  }
+
+  if (container.shadowRoot) {
+    return container.shadowRoot;
+  }
+
+  try {
+    return container.attachShadow({ mode: 'open' });
+  } catch (error) {
+    logger.warn('Shadow DOM attachment failed, falling back to light DOM', error);
+    return undefined;
+  }
+}
+
+function prepareShadowDom(container: Element): { shadowRoot?: ShadowRoot; renderTarget: Element } {
+  const shadowRoot = ensureShadowRoot(container);
+  if (!shadowRoot) {
+    container.replaceChildren();
+    return { renderTarget: container };
+  }
+
+  // cleanup previous nodes while preserving new structure
+  while (shadowRoot.firstChild) {
+    shadowRoot.removeChild(shadowRoot.firstChild);
+  }
+
+  injectShadowStyles(shadowRoot);
+
+  const contentRoot = document.createElement('div');
+  contentRoot.setAttribute('data-xeg-shadow-content', 'true');
+  shadowRoot.appendChild(contentRoot);
+
+  logger.info('Gallery mounted with Shadow DOM for style isolation');
+
+  return { shadowRoot, renderTarget: contentRoot };
 }
 
 /**
- * 갤러리 마운트 함수 - Shadow DOM 지원
- * @param container - 마운트할 DOM 컨테이너
- * @param element - 렌더링할 Preact 요소
- * @param useShadowDOM - Shadow DOM 사용 여부
+ * 갤러리 마운트 함수 - Solid 기반 Shadow DOM 지원
  */
 export function mountGallery(
   container: Element,
-  element: unknown,
+  element: JSX.Element | (() => JSX.Element),
   useShadowDOM = false
 ): { root: Element; shadowRoot?: ShadowRoot } {
-  const preact = getPreact();
+  if (typeof document === 'undefined') {
+    throw new Error('mountGallery cannot run without a DOM environment');
+  }
+
+  const { render } = getSolidWeb();
 
   try {
-    let renderTarget: Element;
-    let shadowRoot: ShadowRoot | undefined;
+    const { shadowRoot, renderTarget } = useShadowDOM
+      ? prepareShadowDom(container)
+      : { shadowRoot: undefined, renderTarget: container };
 
-    if (useShadowDOM && 'attachShadow' in container) {
-      // Shadow DOM 지원
-      shadowRoot = (container as HTMLElement).attachShadow({ mode: 'open' });
-
-      // 갤러리 스타일을 Shadow DOM에 주입: 번들된 CSS 텍스트를 사용 (userscript plugin이 window.XEG_CSS_TEXT로 노출)
-      const styleElement = document.createElement('style');
-      const globalCssText = (globalThis as unknown as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT || '';
-      const hostRules = `
-        :host {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          z-index: var(--xeg-z-overlay);
-          isolation: isolate;
-        }
-      `;
-      styleElement.textContent = `${globalCssText}\n${hostRules}`;
-      shadowRoot.appendChild(styleElement);
-
-      // ShadowRoot를 Element로 타입 캐스팅 (preact 렌더링 호환성)
-      renderTarget = shadowRoot as unknown as Element;
-      logger.info('Gallery mounted with Shadow DOM for style isolation');
-    } else {
-      // 일반 DOM 마운트 (폴백)
-      renderTarget = container;
-      shadowRoot = undefined;
+    if (!shadowRoot) {
+      container.replaceChildren();
       logger.debug('Gallery mounted without Shadow DOM (fallback mode)');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    preact.render(element as any, renderTarget);
+    const factory: () => JSX.Element =
+      typeof element === 'function' ? (element as () => JSX.Element) : () => element;
 
-    // exactOptionalPropertyTypes 호환성을 위한 조건부 반환
-    if (shadowRoot) {
-      return { root: renderTarget, shadowRoot };
-    } else {
-      return { root: renderTarget };
-    }
+    const dispose = render(factory, renderTarget as unknown as HTMLElement);
+
+    containerRegistry.set(
+      container,
+      shadowRoot
+        ? { dispose, shadowRoot, contentRoot: renderTarget }
+        : { dispose, contentRoot: renderTarget }
+    );
+
+    return shadowRoot ? { root: renderTarget, shadowRoot } : { root: renderTarget };
   } catch (error) {
     logger.error('Failed to mount gallery:', error);
     throw error;
@@ -85,19 +138,34 @@ export function mountGallery(
 }
 
 /**
- * 갤러리 언마운트 함수 (간소화)
- * @param container - 언마운트할 DOM 컨테이너
+ * 갤러리 언마운트 함수 (Solid 렌더러 정리)
  */
 export function unmountGallery(container: Element): void {
-  const preact = getPreact();
+  const lifecycle = containerRegistry.get(container);
+
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    preact.render(null as any, container);
-    logger.debug('Gallery unmounted successfully');
+    lifecycle?.dispose();
   } catch (error) {
-    logger.error('Failed to unmount gallery:', error);
-    throw error;
+    logger.warn('Error disposing gallery renderer', error);
   }
+
+  try {
+    if (lifecycle?.shadowRoot) {
+      const { shadowRoot } = lifecycle;
+      if (shadowRoot) {
+        while (shadowRoot.firstChild) {
+          shadowRoot.removeChild(shadowRoot.firstChild);
+        }
+      }
+    } else {
+      container.replaceChildren();
+    }
+  } catch (error) {
+    logger.warn('Error clearing gallery container', error);
+  }
+
+  containerRegistry.delete(container);
+  logger.debug('Gallery unmounted successfully');
 }
 
 /**
@@ -109,47 +177,44 @@ export function GalleryContainer({
   className = '',
   useShadowDOM = false,
 }: GalleryContainerProps) {
-  const { useCallback, useEffect, useRef } = getPreactHooks();
-  const h = getPreact().h;
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { createEffect, onCleanup } = getSolidCore();
+  let containerRef: HTMLDivElement | undefined;
 
-  // 키보드 이벤트 핸들러
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && onClose) {
+  createEffect(() => {
+    if (!onClose) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
         onClose();
       }
-    },
-    [onClose]
-  );
+    };
 
-  // Shadow DOM 초기화
-  useEffect(() => {
-    if (useShadowDOM && containerRef.current && 'attachShadow' in containerRef.current) {
+    document.addEventListener('keydown', handleKeyDown);
+    onCleanup(() => {
+      document.removeEventListener('keydown', handleKeyDown);
+    });
+  });
+
+  createEffect(() => {
+    if (useShadowDOM && containerRef && 'attachShadow' in containerRef) {
       logger.debug('Shadow DOM container initialized');
     }
-  }, [useShadowDOM]);
+  });
 
-  // 키보드 이벤트 리스너 등록
-  useEffect(() => {
-    if (onClose) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown);
-      };
-    }
-    return undefined;
-  }, [handleKeyDown, onClose]);
-
-  return h(
-    'div',
-    {
-      ref: containerRef,
-      className: `xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`,
-    },
-    children
+  return (
+    <div
+      ref={node => {
+        containerRef = node ?? undefined;
+      }}
+      class={`xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`.trim()}
+      data-shadow={useShadowDOM ? 'true' : undefined}
+    >
+      {children}
+    </div>
   );
 }
 

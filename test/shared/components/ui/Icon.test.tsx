@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, cleanup } from '@test-utils/testing-library';
+import { h } from '@test-utils/legacy-preact';
 import { Icon } from '@shared/components/ui/Icon/Icon';
 
 describe('Icon Component', () => {

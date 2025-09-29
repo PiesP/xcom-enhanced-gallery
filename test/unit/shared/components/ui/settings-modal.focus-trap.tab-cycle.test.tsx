@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/preact';
-import { getPreact, initializeVendors } from '@shared/external/vendors';
+/** @jsxImportSource solid-js */
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, waitFor } from '@solidjs/testing-library';
+import { initializeVendors } from '@shared/external/vendors';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal focus trap - Tab/Shift+Tab cycle (panel)', () => {
@@ -9,22 +10,20 @@ describe('SettingsModal focus trap - Tab/Shift+Tab cycle (panel)', () => {
     document.body.innerHTML = '';
   });
 
-  it('keeps focus within dialog on Tab and Shift+Tab', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('keeps focus within dialog on Tab and Shift+Tab', async () => {
     const onClose = vi.fn();
-    const { container } = render(
-      getPreact().h(SettingsModal, {
-        isOpen: true,
-        onClose,
-        mode: 'panel',
-        position: 'center',
-      })
-    );
+    const { container } = render(() => (
+      <SettingsModal isOpen mode='panel' position='center' onClose={onClose} />
+    ));
 
     const dialog = container.querySelector('[role="dialog"]') as HTMLElement | null;
     expect(dialog).toBeTruthy();
     if (!dialog) return;
 
-    // find focusable elements within the dialog
     const focusables = Array.from(
       dialog.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
@@ -32,18 +31,21 @@ describe('SettingsModal focus trap - Tab/Shift+Tab cycle (panel)', () => {
     );
     expect(focusables.length).toBeGreaterThan(1);
 
-    // initial focus is close button per component behavior
-    const initialActive = document.activeElement as HTMLElement | null;
-    expect(initialActive && dialog.contains(initialActive)).toBe(true);
+    await waitFor(() => {
+      const active = document.activeElement as HTMLElement | null;
+      expect(active && dialog.contains(active)).toBe(true);
+    });
 
-    // Press Tab: focus should remain within dialog (we assert containment only)
     fireEvent.keyDown(dialog, { key: 'Tab' });
-    const afterTab = document.activeElement as HTMLElement | null;
-    expect(afterTab && dialog.contains(afterTab)).toBe(true);
+    await waitFor(() => {
+      const active = document.activeElement as HTMLElement | null;
+      expect(active && dialog.contains(active)).toBe(true);
+    });
 
-    // Press Shift+Tab: still contained
     fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
-    const afterShiftTab = document.activeElement as HTMLElement | null;
-    expect(afterShiftTab && dialog.contains(afterShiftTab)).toBe(true);
+    await waitFor(() => {
+      const active = document.activeElement as HTMLElement | null;
+      expect(active && dialog.contains(active)).toBe(true);
+    });
   });
 });

@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { render } from '@test-utils/testing-library';
+import { h } from '@test-utils/legacy-preact';
 import { useGalleryToolbarLogic } from '@shared/hooks/useGalleryToolbarLogic';
 
 // 테스트용 컴포넌트
