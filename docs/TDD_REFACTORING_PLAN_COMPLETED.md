@@ -1,5 +1,61 @@
 <!-- markdownlint-disable -->
 
+2025-01-01: EXEC — Epic SOLID-NATIVE-001 Phase G-4-3 완료 (SolidToastHost +
+SolidToast 최적화)
+
+- **범위**: Phase G-4-3 (SolidToastHost + SolidToast 최적화) — 토스트 컴포넌트
+  리스트 렌더링 및 조건부 렌더링 최적화
+- **핵심 성과**:
+  - **RED → GREEN → REFACTOR 사이클 완료**:
+    1. **RED**: 최적화 패턴 검증 테스트 작성 (`toast-optimization.test.tsx`)
+       - For/createMemo/Show 컴포넌트 사용 검증 (24개 테스트)
+       - Baseline 성능 측정 및 최적화 패턴 적용 검증
+    2. **GREEN**: 최적화 패턴 적용
+       - vendor-manager-static.ts에 `For` 컴포넌트 추가 (SolidCoreAPI 인터페이스
+         확장)
+       - SolidToastHost: `managedToasts().map()` → `<For>` 컴포넌트 전환 (key
+         기반 리스트 렌더링)
+       - SolidToastHost: containerClass를 createMemo로 전환 (position 변경
+         시에만 재계산)
+       - SolidToast: toastClass, icon을 createMemo로 전환 (type 변경 시에만
+         재계산)
+       - SolidToast: action button을 Show 컴포넌트로 전환 (조건부 렌더링 최적화)
+    3. **REFACTOR**: 품질 게이트 및 접근성 검증
+       - 전체 테스트 24/24 GREEN (회귀 없음)
+       - 접근성 회귀 검증 완료 (aria-live, aria-atomic, aria-label, role 유지)
+       - 8개 Acceptance 테스트 검증 완료 (기능 무결성 보장)
+  - **적용 패턴 요약**:
+    - **For 컴포넌트**: 1개 (SolidToastHost 리스트 렌더링)
+    - **createMemo**: 4개 (containerClass, toastClass, icon, hasAction)
+    - **Show 컴포넌트**: 1개 (action button 조건부 렌더링)
+- **테스트 메트릭**: 24/24 PASSED (새 최적화 테스트)
+  - RED: Baseline 성능 측정 (5/5 PASSED)
+  - GREEN: 최적화 패턴 적용 검증 (5/5 PASSED)
+  - REFACTOR: 접근성 및 기능 검증 (4/4 PASSED)
+  - REFACTOR: 성능 벤치마크 (2/2 PASSED)
+  - Acceptance Criteria 검증 (8/8 PASSED)
+- **빌드 메트릭**: 443.33 KB raw, 112.13 KB gzip (550KB 예산 내, Phase G-4-2
+  대비 +0.22 KB)
+- **품질 게이트**: ✅ typecheck/lint/build (ALL GREEN)
+- **실제 소요**: ~2시간 (예상 2-3시간, 목표 범위 내)
+- **커밋**: 1d658e8d
+- **교훈**:
+  - For 컴포넌트는 리스트 렌더링 최적화의 표준 패턴 (key 기반 재렌더링)
+  - createMemo는 파생 값 계산 비용 절감에 효과적 (특히 문자열 조합)
+  - Show 컴포넌트는 조건부 렌더링을 명확하고 최적화된 방식으로 표현
+  - 작은 최적화(createMemo 4개, Show 1개, For 1개)로도 코드 품질과 유지보수성
+    향상
+- **Phase G-4 진행 현황**:
+  - Phase G-4-1: 컴포넌트 분석 ✅ 완료
+  - Phase G-4-2: VerticalImageItem 최적화 ✅ 완료 (createMemo 2개, Show 4개,
+    78.57% 성능 개선)
+  - Phase G-4-3: SolidToastHost + SolidToast 최적화 ✅ 완료 (For 1개, createMemo
+    4개, Show 1개)
+  - **누적 메트릭**: createMemo 6개, Show 5개, For 1개 (목표: memo 25-30개, Show
+    10-15개, For 3-5개)
+- **다음 작업**: Phase G-4-4 (SolidGalleryShell 최적화) 또는 Phase G-4-5
+  (ModalShell 최적화)
+
 2025-01-01: EXEC — Epic SOLID-NATIVE-001 Phase G-4-2 완료 (VerticalImageItem
 반응성 최적화)
 

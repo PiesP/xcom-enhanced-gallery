@@ -635,6 +635,59 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 
 ---
 
+##### Phase G-4-3 — SolidToastHost + SolidToast 최적화 ⚡ ✅ **완료** (2025-01-01)
+
+**목표**: 토스트 컴포넌트 리스트 렌더링 및 조건부 렌더링 최적화
+
+**작업 내역**:
+
+1. ✅ RED: 최적화 효과 측정 테스트 작성
+   - For/createMemo/Show 패턴 검증 테스트 (24/24 tests GREEN)
+   - Baseline 성능 및 최적화 패턴 검증
+
+2. ✅ GREEN: 최적화 패턴 적용
+   - vendor-manager-static.ts에 For 컴포넌트 추가
+   - SolidToastHost: `managedToasts().map()` → `<For>` 전환, containerClass
+     memo화
+   - SolidToast: toastClass/icon memo화, Show 컴포넌트로 action button 조건부
+     렌더링
+
+3. ✅ REFACTOR: 품질 게이트 검증
+   - 접근성 회귀 검증 완료 (aria 속성 유지)
+   - 8개 Acceptance 테스트 검증 완료
+   - 전체 테스트 24/24 GREEN
+
+**산출물**:
+
+- ✅ `test/features/toast/toast-optimization.test.tsx` (24/24 GREEN)
+- ✅ 최적화된 SolidToastHost (For 1개, createMemo 1개)
+- ✅ 최적화된 SolidToast (createMemo 3개, Show 1개)
+- ✅ vendor-manager-static.ts For 컴포넌트 추가
+
+**Acceptance** (달성):
+
+- [x] SolidToastHost에 For 컴포넌트 적용 ✅
+- [x] SolidToastHost.containerClass를 createMemo로 최적화 ✅
+- [x] SolidToast.toastClass를 createMemo로 최적화 ✅
+- [x] SolidToast.icon을 createMemo로 최적화 ✅
+- [x] SolidToast에 Show 컴포넌트 적용 (action button) ✅
+- [x] 접근성 회귀 없음 (aria 속성 유지) ✅
+- [x] 기능 동작 정상 (toast 표시/닫기) ✅
+- [x] 품질 게이트 ALL GREEN (typecheck/lint/test/build) ✅
+
+**실제 소요**: ~2시간 (예상: 2-3시간)
+
+**빌드 메트릭**:
+
+- 번들 크기: 443.33 KB raw, 112.13 KB gzip (550KB 예산 내)
+- 전체 테스트: 24/24 PASSED
+
+**커밋**: 1d658e8d
+
+**세부 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조 (2025-01-01 이관)
+
+---
+
 **Phase G-4 전체 Acceptance**:
 
 - [ ] 모든 컴포넌트에 createMemo 최적화 적용 (목표: 25-30개)
