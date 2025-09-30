@@ -99,107 +99,23 @@ export function useGalleryScroll(options: UseGalleryScrollOptions): void {
   const containerAccessor = () => resolve(options.container) ?? null;
   const getEnabled = () => resolveWithDefault(options.enabled, true);
   const getBlockPolicy = () => resolveWithDefault(options.blockTwitterScroll, true);
-  const getDirectionFlag = () => resolveWithDefault(options.enableScrollDirection, false);
-
-  let scheduled = false;
-  let accumulatedDelta = 0;
-  let lastEvent: WheelEvent | null = null;
-  let cancelScheduled: (() => void) | null = null;
-
-  const resetScheduler = () => {
-    scheduled = false;
-    accumulatedDelta = 0;
-    lastEvent = null;
-    cancelScheduled = null;
-  };
-
-  const cancelScheduledFlush = () => {
-    if (cancelScheduled) {
-      cancelScheduled();
-    }
-    resetScheduler();
-  };
-
-  const flushScroll = () => {
-    const event = lastEvent;
-    const delta = accumulatedDelta;
-
-    resetScheduler();
-
-    if (!event || !Number.isFinite(delta) || delta === 0) {
-      return;
-    }
-
-    if (!getEnabled() || !getGalleryState().isOpen) {
-      return;
-    }
-
-    const container = containerAccessor();
-    if (!container || !isTargetWithinContainer(event, container)) {
-      return;
-    }
-
-    const callback = options.onScroll;
-    if (typeof callback !== 'function') {
-      return;
-    }
-
-    if (getDirectionFlag()) {
-      const direction: GalleryScrollDirection = delta >= 0 ? 'down' : 'up';
-      callback(delta, { direction, event });
-    } else {
-      callback(delta);
-    }
-  };
-
-  const scheduleFlush = (event: WheelEvent) => {
-    accumulatedDelta += event.deltaY;
-    lastEvent = event;
-
-    if (scheduled) {
-      return;
-    }
-
-    scheduled = true;
-
-    if (typeof requestAnimationFrame === 'function' && typeof cancelAnimationFrame === 'function') {
-      const frameId = requestAnimationFrame(() => {
-        flushScroll();
-      });
-
-      cancelScheduled = () => {
-        cancelAnimationFrame(frameId);
-      };
-    } else {
-      const timeoutId = window.setTimeout(() => {
-        flushScroll();
-      }, 16);
-
-      cancelScheduled = () => {
-        window.clearTimeout(timeoutId);
-      };
-    }
-  };
 
   const handleWheel = (event: WheelEvent): boolean => {
     const container = containerAccessor();
     if (!container) {
-      cancelScheduledFlush();
       return false;
     }
 
     if (!getEnabled() || !getGalleryState().isOpen) {
-      cancelScheduledFlush();
       return false;
     }
 
     if (isTargetWithinContainer(event, container)) {
-      scheduleFlush(event);
+      // 갤러리 내부 이벤트는 네이티브 스크롤 허용
       return false;
     }
 
-    cancelScheduledFlush();
-
+    // 배경(Twitter) 이벤트는 차단하여 배경 스크롤 방지
     if (getBlockPolicy() && event.cancelable) {
       return true;
     }
@@ -211,7 +127,6 @@ export function useGalleryScroll(options: UseGalleryScrollOptions): void {
 
   const removeListener = () => {
     cleanupWheel();
-    cancelScheduledFlush();
     if (activeCleanup === removeListener) {
       activeCleanup = null;
     }

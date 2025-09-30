@@ -55,7 +55,7 @@ Must
 Must Not
 
 - `@shared/services/ServiceManager` 직접 import
-- `preact`, `@preact/signals`, `fflate` 등 외부 라이브러리 직접 import
+- `solid-js`, `fflate` 등 외부 라이브러리 직접 import
 - `GM_*` 직접 사용(→ `getUserscript()` 사용)
 
 공개 표면(예)
@@ -95,14 +95,14 @@ Must Not
 
 책임
 
-- 외부 종속성 캡슐화: Preact/Signals/fflate/Userscript API/ZIP
+- 외부 종속성 캡슐화: SolidJS/fflate/Userscript API/ZIP
 - TDZ-safe 초기화/정리, 테스트에서 모킹 용이성 보장
 
 공개 표면
 
 - Vendors: `@shared/external/vendors`
-  - `initializeVendors()`, `getPreact()`, `getPreactSignals()`, `getFflate()`,
-    `getNativeDownload()`, `getPreactCompat()` 등
+  - `initializeVendors()`, `getSolidCore()`, `getSolidStore()`, `getSolidWeb()`,
+    `getFflate()`, `getNativeDownload()` 등
 - Userscript Adapter: `@shared/external/userscript/adapter`
   - `getUserscript().download(url, name)`, `.xhr(opts)`, `.info()`, `hasGM`,
     `manager`
@@ -110,7 +110,7 @@ Must Not
 
 ### 2.4 vDOM/Shadow DOM/SPA 공존 전략
 
-본 프로젝트는 Preact 기반 vDOM과 X.com(내부 React SPA) DOM이 공존합니다. 충돌을
+본 프로젝트는 SolidJS 기반 vDOM과 X.com(내부 React SPA) DOM이 공존합니다. 충돌을
 피하고 안정성을 높이기 위해 다음 원칙을 따릅니다.
 
 - 단일 마운트 포인트: 기능 UI는 단일 컨테이너(필요 시 ShadowRoot) 아래에
@@ -125,7 +125,7 @@ Must Not
 - 이벤트 경계: PC 전용 입력만 처리합니다. 기본 스크롤/단축키 충돌 최소화를 위해
   목적 동작에 한해 `preventDefault()`를 적용합니다. 키/휠 세부 정책은 코딩
   가이드를 참조하세요.
-- Vendor/Userscript 경유: Preact/Signals/ZIP/다운로드 등 외부 의존성은 항상
+- Vendor/Userscript 경유: SolidJS/ZIP/다운로드 등 외부 의존성은 항상
   getter/어댑터를 통해 접근합니다(TDZ-safe, 모킹 가능).
 
 ## 3. 애플리케이션 시작(bootstrap) 흐름
@@ -191,7 +191,7 @@ Must Not
 ### 8.1 Vendors API (요지)
 
 - 초기화: `initializeVendors()` → TDZ-safe
-- 접근: `getPreact()`, `getPreactSignals()`, `getFflate()`, `getPreactCompat()`,
+- 접근: `getSolidCore()`, `getSolidStore()`, `getSolidWeb()`, `getFflate()`,
   `getNativeDownload()`
 - Clean-up: `cleanupVendors()`, `registerVendorCleanupOnUnloadSafe()`
 
@@ -235,8 +235,7 @@ type UserscriptAPI = {
 
 메모리/수명주기 가드
 
-- 컴포넌트/훅의 모든 리스너·타이머·관찰자는 useEffect 반환(cleanup)에서
-  해제합니다.
+- 컴포넌트/훅의 모든 리스너·타이머·관찰자는 `onCleanup`에서 해제합니다.
 - 대용량 갤러리 시나리오에서도 장시간 실행 누수가 없도록, 마운트/언마운트 사이의
   살아있는 리스너/타이머 수가 0으로 회귀해야 합니다.
 - Vendors/외부 자원 정리는 `cleanupVendors()` 또는 unload-safe 등록 유틸을

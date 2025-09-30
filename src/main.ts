@@ -55,6 +55,13 @@ async function initializeInfrastructure(): Promise<void> {
   try {
     await initializeEnvironment();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
+
+    // [UX-001][Phase A] 아이콘 프리로드 - 툴바 첫 렌더링 시 placeholder 방지
+    const { preloadCommonIcons } = await import('@shared/services/iconRegistry');
+    const preloadStart = performance.now();
+    await preloadCommonIcons();
+    const preloadDuration = performance.now() - preloadStart;
+    logger.debug(`✅ CORE 아이콘 프리로드 완료 (${preloadDuration.toFixed(2)}ms)`);
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);
     throw error;

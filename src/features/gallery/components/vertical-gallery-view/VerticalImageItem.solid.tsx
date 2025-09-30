@@ -21,20 +21,6 @@ const cleanFilename = (input?: string): string => {
   return trimmed.length > 120 ? `${trimmed.slice(0, 117)}...` : trimmed;
 };
 
-const formatFileSize = (size?: number): string | null => {
-  if (!size || size <= 0) {
-    return null;
-  }
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let index = 0;
-  let value = size;
-  while (value >= 1024 && index < units.length - 1) {
-    value /= 1024;
-    index += 1;
-  }
-  return `${value.toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-};
-
 const isVideoMedia = (media: MediaInfo): boolean => {
   const normalizedUrl = media.url.toLowerCase();
   if (VIDEO_EXTENSIONS.some(extension => normalizedUrl.endsWith(extension))) {
@@ -70,7 +56,6 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
 
   const mediaIsVideo = solid.createMemo(() => isVideoMedia(props.media));
   const filename = solid.createMemo(() => cleanFilename(props.media.filename));
-  const fileSizeText = solid.createMemo(() => formatFileSize(props.media.fileSize));
 
   let imageRef: HTMLImageElement | undefined;
   let videoRef: HTMLVideoElement | undefined;
@@ -290,13 +275,6 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
             </span>
           </Button>
         ) : null}
-      </div>
-
-      <div class={styles.metadata} data-role='metadata'>
-        <p class={styles.filename} title={filename()}>
-          {filename()}
-        </p>
-        {fileSizeText() ? <span class={styles.fileSize}>{fileSizeText()}</span> : null}
       </div>
     </div>
   );

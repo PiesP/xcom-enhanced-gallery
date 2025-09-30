@@ -78,4 +78,26 @@ describe('VerticalImageItem Solid bridge', () => {
 
     expect(onDownload).toHaveBeenCalledTimes(1);
   });
+
+  it('does not render metadata section (data-role="metadata")', async () => {
+    await act(async () => {
+      render(
+        h(VerticalImageItem as any, {
+          media: {
+            id: 'media-3',
+            url: 'https://example.com/media.png',
+            type: 'image',
+            filename: 'test-image.png',
+          },
+          index: 2,
+          isActive: true,
+        }),
+        container
+      );
+      await Promise.resolve();
+    });
+
+    const metadata = container.querySelector('[data-role="metadata"]');
+    expect(metadata).toBeNull();
+  });
 });

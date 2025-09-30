@@ -1,5 +1,43 @@
 <!-- markdownlint-disable -->
 
+2025-01-13: EXEC — Epic UX-001 Phase C 완료 (Gallery Wheel Scroll 수정)
+
+- **범위**: SolidGalleryShell wheel 스크롤 문제 수정 (Preact → SolidJS
+  마이그레이션 이후 발생)
+- **핵심 성과**:
+  - **문제 재정의**: 초기 useGalleryScroll 접근 방식이 잘못됨 발견 (이미지
+    네비게이션 vs 스크롤)
+    - `useGalleryScroll`은 wheel 기반 **이미지 간
+      네비게이션**(onNext/onPrevious)을 위한 훅
+    - 실제 요구사항: `.contentArea`의 **네이티브 브라우저 스크롤** + Twitter
+      페이지 스크롤 차단
+  - **솔루션 재설계**: 직접 ensureWheelLock 구현으로 변경
+    - 갤러리 shell 내부 wheel 이벤트 → preventDefault() 호출 안 함 (네이티브
+      스크롤 허용)
+    - 갤러리 shell 외부 wheel 이벤트 → preventDefault() 호출 (Twitter 스크롤
+      차단)
+    - 갤러리 닫힘 → preventDefault() 호출 안 함 (비활성 상태)
+  - **테스트 재작성**: 콜백 검증 → preventDefault() 행동 검증으로 변경
+    - 3개 테스트 모두 GREEN (76ms)
+    - Shell 내부/외부/닫힘 상태 시나리오 커버
+- **구현 세부사항**:
+  - `shellRef?.contains(target)` 로 이벤트 발생 위치 판단
+  - Shadow DOM 지원 위해 `event.composedPath()` 추가
+  - `.contentArea { overflow-y: auto }` CSS 속성으로 네이티브 스크롤 자동 동작
+- **테스트 메트릭**:
+  - Tests: 3/3 PASSED (solid-gallery-shell-wheel.test.tsx)
+  - 테스트 실행 시간: 76ms
+- **빌드 메트릭**:
+  - 번들 크기: 441.06 KB raw, 111.20 KB gzip
+  - 크기 변화: -1.48 KB raw, -0.51 KB gzip (Phase C 이전 대비)
+- **품질 게이트**: ✅ typecheck/lint/format/build (ALL GREEN)
+- **교훈**:
+  - CSS 구조 분석 중요성: `.contentArea`가 실제 스크롤 컨테이너였음
+  - 훅의 원래 목적 이해: `useGalleryScroll`은 스크롤이 아닌 네비게이션 용도
+  - 테스트 전략 차이: 콜백 vs 실제 브라우저 동작(preventDefault)
+- **다음 작업**: Epic UX-001 Phase A (Toolbar Icon Immediate Rendering) 또는
+  Phase B (Toolbar Auto-Hide)
+
 2025-09-30: EXEC — FRAME-ALT-001 Stage E·F 완료 (SolidJS 전환 테스트 안정화)
 
 - **범위**: Stage E (Solid Shell UI Parity) 및 Stage F (테스트 정리 및 안정화)

@@ -14,6 +14,9 @@ import {
   getToolbarDataState,
   getToolbarClassName,
 } from '@shared/hooks/useToolbarState';
+
+const { createSignal } = getSolidCore();
+import { useToolbarPositionBased } from '@shared/hooks/useToolbarPositionBased';
 import { throttleScroll } from '@shared/utils';
 import { ComponentStandards } from '../StandardProps';
 import styles from './Toolbar.module.css';
@@ -58,18 +61,30 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
 
   const [toolbarState, toolbarActions] = useToolbarState();
 
-  let toolbarElement: HTMLDivElement | null = null;
+  // Phase B: toolbarElement와 hoverTriggerElement를 분리
+  const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
+  const [hoverTriggerElement, setHoverTriggerElement] = createSignal<HTMLDivElement | null>(null);
   let focusableCache: HTMLElement[] = [];
 
+  // Phase B (UX-001): Toolbar auto-hide after 2 seconds
+  // hoverTriggerElement는 항상 pointer-events를 유지하여 숨겨진 toolbar에도 hover 감지
+  useToolbarPositionBased({
+    toolbarElement, // signal을 직접 전달 (accessor 함수)
+    hoverZoneElement: hoverTriggerElement, // 별도의 hover trigger 영역
+    enabled: () => !props.disabled,
+    initialAutoHideDelay: 2000,
+  });
+
   const setToolbarRef = (element: HTMLDivElement | null) => {
-    toolbarElement = element;
+    setToolbarElement(element); // signal setter 사용
     if (!element) {
       focusableCache = [];
     }
   };
 
   const collectFocusables = (): HTMLElement[] => {
-    if (!toolbarElement) {
+    const element = toolbarElement(); // signal getter 호출
+    if (!element) {
       focusableCache = [];
       return focusableCache;
     }
@@ -89,7 +104,7 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
 
     const nodes: HTMLElement[] = [];
     for (const selector of selectors) {
-      const node = toolbarElement.querySelector(selector) as HTMLElement | null;
+      const node = element.querySelector(selector) as HTMLElement | null;
       if (node && !node.hasAttribute('disabled') && node.getAttribute('aria-disabled') !== 'true') {
         nodes.push(node);
       }
@@ -253,8 +268,9 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
 
     const detectBackgroundBrightness = () => {
       try {
-        if (!toolbarElement) return;
-        const rect = toolbarElement.getBoundingClientRect();
+        const element = toolbarElement(); // signal getter 호출
+        if (!element) return;
+        const rect = element.getBoundingClientRect();
         if (!rect || rect.width === 0 || rect.height === 0) {
           toolbarActions.setNeedsHighContrast(false);
           return;
@@ -317,7 +333,7 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
 
   onCleanup(() => {
     focusableCache = [];
-    toolbarElement = null;
+    setToolbarElement(null); // signal setter 사용
   });
 
   type ToolbarKeyboardEvent = KeyboardEvent & {
@@ -333,144 +349,153 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
   const defaultToolbarRole: JSX.AriaRole = 'toolbar';
 
   return (
-    <div
-      ref={setToolbarRef}
-      class={toolbarClass()}
-      role={props.role ?? defaultToolbarRole}
-      aria-label={ariaLabel()}
-      aria-describedby={props['aria-describedby']}
-      aria-disabled={props.disabled ? 'true' : 'false'}
-      data-testid={props['data-testid']}
-      data-gallery-element='toolbar'
-      data-state={dataState()}
-      data-disabled={props.disabled ? 'true' : undefined}
-      data-high-contrast={toolbarState.needsHighContrast ? 'true' : undefined}
-      tabIndex={resolvedTabIndex()}
-      onFocus={props.onFocus as JSX.EventHandlerUnion<HTMLDivElement, FocusEvent>}
-      onBlur={props.onBlur as JSX.EventHandlerUnion<HTMLDivElement, FocusEvent>}
-      onKeyDown={handleRootKeyDown}
-      {...(restProps() as Record<string, unknown>)}
-    >
-      <div class={styles.toolbarContent} data-gallery-element='toolbar-content'>
-        <div
-          class={`${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft`}
-          data-gallery-element='navigation-left'
-          data-toolbar-group='navigation'
-          data-group-first='true'
-        >
-          <ToolbarButton
-            aria-label='이전 미디어'
-            title='이전 미디어 (←)'
-            disabled={Boolean(props.disabled || !canGoPrevious())}
-            onClick={event => handleButtonClick(event, props.onPrevious)}
-            data-gallery-element='nav-previous'
-            icon='ChevronLeft'
-          />
-          <ToolbarButton
-            aria-label='다음 미디어'
-            title='다음 미디어 (→)'
-            disabled={Boolean(props.disabled || !canGoNext())}
-            onClick={event => handleButtonClick(event, props.onNext)}
-            data-gallery-element='nav-next'
-            icon='ChevronRight'
-          />
-        </div>
-        <div
-          class={`${styles.toolbarSection} ${styles.toolbarCenter}`}
-          data-gallery-element='counter-section'
-          data-toolbar-group='counter'
-          data-group-first='true'
-        >
-          <MediaCounter
-            current={props.currentIndex + 1}
-            total={props.totalCount}
-            showProgress
-            layout='stacked'
-          />
-        </div>
-        <div
-          class={`${styles.toolbarSection} ${styles.toolbarRight}`}
-          data-gallery-element='actions-right'
-          data-toolbar-group='actions'
-          data-group-first='true'
-        >
-          <ToolbarButton
-            onClick={event => handleFitMode(event, 'original', props.onFitOriginal)}
-            disabled={Boolean(props.disabled || !props.onFitOriginal)}
-            aria-label='원본 크기'
-            title='원본 크기 (1:1)'
-            data-gallery-element='fit-original'
-            selected={effectiveFitMode() === 'original'}
-            icon='ZoomIn'
-          />
-          <ToolbarButton
-            onClick={event => handleFitMode(event, 'fitWidth', props.onFitWidth)}
-            disabled={Boolean(props.disabled || !props.onFitWidth)}
-            aria-label='가로에 맞춤'
-            title='가로에 맞추기'
-            data-gallery-element='fit-width'
-            selected={effectiveFitMode() === 'fitWidth'}
-            icon='ArrowAutofitWidth'
-          />
-          <ToolbarButton
-            onClick={event => handleFitMode(event, 'fitHeight', props.onFitHeight)}
-            disabled={Boolean(props.disabled || !props.onFitHeight)}
-            aria-label='세로에 맞춤'
-            title='세로에 맞추기'
-            data-gallery-element='fit-height'
-            selected={effectiveFitMode() === 'fitHeight'}
-            icon='ArrowAutofitHeight'
-          />
-          <ToolbarButton
-            onClick={event => handleFitMode(event, 'fitContainer', props.onFitContainer)}
-            disabled={Boolean(props.disabled || !props.onFitContainer)}
-            aria-label='창에 맞춤'
-            title='창에 맞추기'
-            data-gallery-element='fit-container'
-            selected={effectiveFitMode() === 'fitContainer'}
-            icon='ArrowsMaximize'
-          />
-          <ToolbarButton
-            loading={Boolean(props.isDownloading)}
-            onClick={event => handleButtonClick(event, props.onDownloadCurrent)}
-            disabled={Boolean(props.disabled || props.isDownloading || props.isLoading)}
-            aria-label='현재 파일 다운로드'
-            title='현재 파일 다운로드 (Ctrl+D)'
-            data-gallery-element='download-current'
-            icon='Download'
-          />
-          {props.totalCount > 1 ? (
+    <>
+      {/* Hover trigger wrapper: 항상 pointer-events를 유지하여 숨겨진 toolbar에도 hover 감지 */}
+      <div
+        ref={setHoverTriggerElement}
+        class={styles.hoverTrigger}
+        data-gallery-element='toolbar-hover-trigger'
+        aria-hidden='true'
+      />
+      <div
+        ref={setToolbarRef}
+        class={toolbarClass()}
+        role={props.role ?? defaultToolbarRole}
+        aria-label={ariaLabel()}
+        aria-describedby={props['aria-describedby']}
+        aria-disabled={props.disabled ? 'true' : 'false'}
+        data-testid={props['data-testid']}
+        data-gallery-element='toolbar'
+        data-state={dataState()}
+        data-disabled={props.disabled ? 'true' : undefined}
+        data-high-contrast={toolbarState.needsHighContrast ? 'true' : undefined}
+        tabIndex={resolvedTabIndex()}
+        onFocus={props.onFocus as JSX.EventHandlerUnion<HTMLDivElement, FocusEvent>}
+        onBlur={props.onBlur as JSX.EventHandlerUnion<HTMLDivElement, FocusEvent>}
+        onKeyDown={handleRootKeyDown}
+        {...(restProps() as Record<string, unknown>)}
+      >
+        <div class={styles.toolbarContent} data-gallery-element='toolbar-content'>
+          <div
+            class={`${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft`}
+            data-gallery-element='navigation-left'
+            data-toolbar-group='navigation'
+            data-group-first='true'
+          >
             <ToolbarButton
-              onClick={event => handleButtonClick(event, props.onDownloadAll)}
+              aria-label='이전 미디어'
+              title='이전 미디어 (←)'
+              disabled={Boolean(props.disabled || !canGoPrevious())}
+              onClick={event => handleButtonClick(event, props.onPrevious)}
+              data-gallery-element='nav-previous'
+              icon='ChevronLeft'
+            />
+            <ToolbarButton
+              aria-label='다음 미디어'
+              title='다음 미디어 (→)'
+              disabled={Boolean(props.disabled || !canGoNext())}
+              onClick={event => handleButtonClick(event, props.onNext)}
+              data-gallery-element='nav-next'
+              icon='ChevronRight'
+            />
+          </div>
+          <div
+            class={`${styles.toolbarSection} ${styles.toolbarCenter}`}
+            data-gallery-element='counter-section'
+            data-toolbar-group='counter'
+            data-group-first='true'
+          >
+            <MediaCounter
+              current={props.currentIndex + 1}
+              total={props.totalCount}
+              showProgress
+              layout='stacked'
+            />
+          </div>
+          <div
+            class={`${styles.toolbarSection} ${styles.toolbarRight}`}
+            data-gallery-element='actions-right'
+            data-toolbar-group='actions'
+            data-group-first='true'
+          >
+            <ToolbarButton
+              onClick={event => handleFitMode(event, 'original', props.onFitOriginal)}
+              disabled={Boolean(props.disabled || !props.onFitOriginal)}
+              aria-label='원본 크기'
+              title='원본 크기 (1:1)'
+              data-gallery-element='fit-original'
+              selected={effectiveFitMode() === 'original'}
+              icon='ZoomIn'
+            />
+            <ToolbarButton
+              onClick={event => handleFitMode(event, 'fitWidth', props.onFitWidth)}
+              disabled={Boolean(props.disabled || !props.onFitWidth)}
+              aria-label='가로에 맞춤'
+              title='가로에 맞추기'
+              data-gallery-element='fit-width'
+              selected={effectiveFitMode() === 'fitWidth'}
+              icon='ArrowAutofitWidth'
+            />
+            <ToolbarButton
+              onClick={event => handleFitMode(event, 'fitHeight', props.onFitHeight)}
+              disabled={Boolean(props.disabled || !props.onFitHeight)}
+              aria-label='세로에 맞춤'
+              title='세로에 맞추기'
+              data-gallery-element='fit-height'
+              selected={effectiveFitMode() === 'fitHeight'}
+              icon='ArrowAutofitHeight'
+            />
+            <ToolbarButton
+              onClick={event => handleFitMode(event, 'fitContainer', props.onFitContainer)}
+              disabled={Boolean(props.disabled || !props.onFitContainer)}
+              aria-label='창에 맞춤'
+              title='창에 맞추기'
+              data-gallery-element='fit-container'
+              selected={effectiveFitMode() === 'fitContainer'}
+              icon='ArrowsMaximize'
+            />
+            <ToolbarButton
+              loading={Boolean(props.isDownloading)}
+              onClick={event => handleButtonClick(event, props.onDownloadCurrent)}
               disabled={Boolean(props.disabled || props.isDownloading || props.isLoading)}
-              aria-label={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
-              title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
-              data-gallery-element='download-all'
-              icon='FileZip'
+              aria-label='현재 파일 다운로드'
+              title='현재 파일 다운로드 (Ctrl+D)'
+              data-gallery-element='download-current'
+              icon='Download'
             />
-          ) : null}
-          {props.onOpenSettings ? (
+            {props.totalCount > 1 ? (
+              <ToolbarButton
+                onClick={event => handleButtonClick(event, props.onDownloadAll)}
+                disabled={Boolean(props.disabled || props.isDownloading || props.isLoading)}
+                aria-label={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
+                title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
+                data-gallery-element='download-all'
+                icon='FileZip'
+              />
+            ) : null}
+            {props.onOpenSettings ? (
+              <ToolbarButton
+                aria-label='설정 열기'
+                title='설정'
+                disabled={Boolean(props.disabled)}
+                onClick={event => handleButtonClick(event, props.onOpenSettings)}
+                data-gallery-element='settings'
+                icon='Settings'
+              />
+            ) : null}
             <ToolbarButton
-              aria-label='설정 열기'
-              title='설정'
+              intent='danger'
+              aria-label='갤러리 닫기'
+              title='갤러리 닫기 (Esc)'
               disabled={Boolean(props.disabled)}
-              onClick={event => handleButtonClick(event, props.onOpenSettings)}
-              data-gallery-element='settings'
-              icon='Settings'
+              onClick={event => handleButtonClick(event, props.onClose)}
+              data-gallery-element='close'
+              icon='Close'
             />
-          ) : null}
-          <ToolbarButton
-            intent='danger'
-            aria-label='갤러리 닫기'
-            title='갤러리 닫기 (Esc)'
-            disabled={Boolean(props.disabled)}
-            onClick={event => handleButtonClick(event, props.onClose)}
-            data-gallery-element='close'
-            icon='Close'
-          />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

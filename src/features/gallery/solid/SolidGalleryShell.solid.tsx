@@ -19,6 +19,7 @@ import { DEFAULT_SETTINGS } from '@/constants';
 import { getSetting, setSetting } from '@shared/container/settings-access';
 import { createSolidKeyboardHelpOverlayController } from './createSolidKeyboardHelpOverlayController';
 import type { SolidSettingsPanelInstance } from '@/features/settings/solid/renderSolidSettingsPanel';
+import { useGalleryScroll } from '@/features/gallery/hooks/useGalleryScroll';
 import styles from './SolidGalleryShell.module.css';
 
 export interface SolidGalleryShellOverrides {
@@ -156,6 +157,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
   );
 
   let shellRef: HTMLDivElement | undefined;
+  let contentAreaRef: HTMLDivElement | undefined;
   let itemsContainerRef: HTMLDivElement | undefined;
   let settingsHost: HTMLDivElement | null = null;
 
@@ -306,6 +308,21 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     });
   }
 
+  // Phase C (UX-001): 배경 스크롤 차단 전용
+  // useGalleryScroll은 갤러리 외부(Twitter 배경) 스크롤만 차단
+  // 갤러리 내부에서는 네이티브 스크롤 허용
+  // 네비게이션은 키보드 이벤트로만 처리 (ArrowLeft/Right)
+  // 수정: contentAreaRef를 전달하여 실제 스크롤 가능 영역을 올바르게 인식
+  useGalleryScroll({
+    container: () => contentAreaRef,
+    onScroll: () => {
+      // 배경 이벤트 감지용 - 실제로는 아무 동작도 하지 않음
+      // blockTwitterScroll이 true이므로 배경 스크롤만 preventDefault됨
+    },
+    enabled: () => isOpen(),
+    blockTwitterScroll: true,
+  });
+
   const handleItemSelection = (index: number) => {
     if (index === currentIndex()) {
       return;
@@ -397,7 +414,13 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
           />
         )}
 
-        <div class={styles.contentArea} data-gallery-element='items-area'>
+        <div
+          ref={node => {
+            contentAreaRef = node ?? undefined;
+          }}
+          class={styles.contentArea}
+          data-gallery-element='items-area'
+        >
           <div
             ref={node => {
               itemsContainerRef = node ?? undefined;

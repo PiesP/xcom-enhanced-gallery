@@ -96,31 +96,37 @@ describe('Gallery keyboard navigation (Home/End/Page/Arrow/Space)', () => {
     handled.length = 0;
     r = dispatchKey('End');
     expect(handled.includes('End')).toBe(true);
-    expect(r.defaultPrevented).toBe(true);
+    // End는 세로 스크롤 키이므로 preventDefault 호출되지 않음
+    expect(r.defaultPrevented).toBe(false);
 
     handled.length = 0;
     r = dispatchKey('PageDown');
     expect(handled.includes('PageDown')).toBe(true);
-    expect(r.defaultPrevented).toBe(true);
+    // PageDown은 세로 스크롤 키이므로 preventDefault 호출되지 않음
+    expect(r.defaultPrevented).toBe(false);
 
     handled.length = 0;
     r = dispatchKey('PageUp');
     expect(handled.includes('PageUp')).toBe(true);
-    expect(r.defaultPrevented).toBe(true);
+    // PageUp은 세로 스크롤 키이므로 preventDefault 호출되지 않음
+    expect(r.defaultPrevented).toBe(false);
 
     handled.length = 0;
     r = dispatchKey('ArrowLeft');
     expect(handled.includes('ArrowLeft')).toBe(true);
+    // ArrowLeft는 갤러리 네비게이션 키이므로 preventDefault 호출됨
     expect(r.defaultPrevented).toBe(true);
 
     handled.length = 0;
     r = dispatchKey('ArrowRight');
     expect(handled.includes('ArrowRight')).toBe(true);
+    // ArrowRight는 갤러리 네비게이션 키이므로 preventDefault 호출됨
     expect(r.defaultPrevented).toBe(true);
 
     handled.length = 0;
     r = dispatchKey(' ');
     expect(handled.includes(' ')).toBe(true);
+    // Space는 비디오 재생 제어 키이므로 preventDefault 호출됨
     expect(r.defaultPrevented).toBe(true);
 
     // cleanup

@@ -172,7 +172,7 @@ describe('Gallery PC-only event policy', () => {
     closeGallery();
   });
 
-  it('갤러리 열림 상태에서 네비게이션 키(Home/End/ArrowLeft/ArrowRight/Space)는 기본 스크롤을 차단한다', async () => {
+  it('갤러리 열림 상태에서 갤러리 네비게이션 키(ArrowLeft/ArrowRight/Space)는 기본 동작을 차단하지만, 세로 스크롤 키(Home/End)는 허용한다', async () => {
     const { initializeGalleryEvents, openGallery } = await importEventsWithVendorsMock();
 
     const handlers = {
@@ -183,14 +183,15 @@ describe('Gallery PC-only event policy', () => {
 
     await initializeGalleryEvents(handlers, { enableKeyboard: true, enableMediaDetection: false });
 
-    // 갤러리 오픈 → 네비게이션 키의 기본 동작이 차단되어야 함
+    // 갤러리 오픈
     openGallery([]);
 
     // 프로토타입 스파이로 기본 동작 차단 여부 확인(인스턴스 메서드 비구성 가능성 회피)
     const preventSpy = vi.spyOn(KeyboardEvent.prototype, 'preventDefault');
     const stopSpy = vi.spyOn(KeyboardEvent.prototype, 'stopPropagation');
     try {
-      for (const key of ['Home', 'End', 'ArrowLeft', 'ArrowRight', ' ']) {
+      // 갤러리 네비게이션 키: ArrowLeft, ArrowRight, Space는 차단되어야 함
+      for (const key of ['ArrowLeft', 'ArrowRight', ' ']) {
         const prevPrevent = preventSpy.mock.calls.length;
         const prevStop = stopSpy.mock.calls.length;
         const ev = new globalThis.KeyboardEvent('keydown', { key, bubbles: true });
@@ -198,6 +199,15 @@ describe('Gallery PC-only event policy', () => {
         expect(preventSpy.mock.calls.length).toBeGreaterThan(prevPrevent);
         expect(stopSpy.mock.calls.length).toBeGreaterThan(prevStop);
       }
+
+      // 세로 스크롤 키: Home, End는 차단되지 않아야 함
+      const beforePreventCount = preventSpy.mock.calls.length;
+      for (const key of ['Home', 'End']) {
+        const ev = new globalThis.KeyboardEvent('keydown', { key, bubbles: true });
+        globalThis.document.dispatchEvent(ev);
+      }
+      // Home/End는 preventDefault를 호출하지 않으므로 카운트가 증가하지 않음
+      expect(preventSpy.mock.calls.length).toBe(beforePreventCount);
     } finally {
       preventSpy.mockRestore();
       stopSpy.mockRestore();

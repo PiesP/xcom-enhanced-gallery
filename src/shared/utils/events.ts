@@ -590,21 +590,16 @@ function handleKeyboardEvent(
   if (!options.enableKeyboard) return;
 
   try {
-    // 갤러리 열린 상태에서 네비게이션 키들의 기본 스크롤을 차단하여 충돌 방지
+    // 갤러리 열린 상태에서 갤러리 네비게이션 키만 선택적으로 차단
     if (checkGalleryOpen()) {
       const key = event.key;
-      const isNavKey =
-        key === 'Home' ||
-        key === 'End' ||
-        key === 'PageDown' ||
-        key === 'PageUp' ||
-        key === 'ArrowLeft' ||
-        key === 'ArrowRight' ||
-        key === ' ' ||
-        key === 'Space';
+
+      // 갤러리 가로 네비게이션 키: 기본 동작을 차단하여 갤러리 네비게이션 우선
+      const isGalleryNavKey = key === 'ArrowLeft' || key === 'ArrowRight';
 
       // 비디오 제어 키: Space(재생/일시정지), ArrowUp/Down(볼륨), M/m(음소거)
-      const isVideoKey =
+      // 비디오 제어 시에만 preventDefault 호출
+      const isVideoControlKey =
         key === ' ' ||
         key === 'Space' ||
         key === 'ArrowUp' ||
@@ -612,10 +607,27 @@ function handleKeyboardEvent(
         key === 'm' ||
         key === 'M';
 
-      if (isNavKey || isVideoKey) {
-        // 기본 스크롤/페이지 전환을 차단
+      // 갤러리 네비게이션 키는 항상 차단
+      if (isGalleryNavKey) {
         event.preventDefault();
         event.stopPropagation();
+
+        // 커스텀 핸들러 위임
+        if (handlers.onKeyboardEvent) {
+          handlers.onKeyboardEvent(event);
+        }
+        return;
+      }
+
+      // 비디오 제어 키는 비디오가 있을 때만 차단
+      if (isVideoControlKey) {
+        // Space는 비디오 재생 제어이므로 항상 차단
+        const shouldPreventDefault = key === ' ' || key === 'Space';
+
+        if (shouldPreventDefault) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
 
         // 비디오 키 처리
         // 내부 헬퍼: 현재 갤러리 비디오 검색 (Service 미사용 폴백)
@@ -720,6 +732,15 @@ function handleKeyboardEvent(
               logger.debug('toggleMuteCurrent dispatch failed', err);
             }
             break;
+        }
+
+        // 비디오 제어 키(ArrowUp/ArrowDown/M)는 비디오가 있을 때만 preventDefault
+        if (key !== ' ' && key !== 'Space') {
+          const v = getCurrentGalleryVideo();
+          if (v) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
         }
 
         // 커스텀 핸들러 위임

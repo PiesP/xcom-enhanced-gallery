@@ -5,6 +5,21 @@
 
 /* 통합 디자인 토큰 사용 - 로컬 CSS 변수 제거됨 */
 
+/* ===== Hover Trigger Wrapper ===== */
+/* toolbar가 숨겨져도 항상 pointer-events를 유지하여 hover 감지 */
+.hoverTrigger {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - var(--xeg-spacing-lg) * 2);
+  max-width: var(--xeg-toolbar-max-width, 1200px);
+  height: var(--xeg-toolbar-height, 48px);
+  pointer-events: auto !important; /* 항상 이벤트 수신 가능 */
+  z-index: calc(var(--xeg-z-toolbar, 9998) - 1); /* toolbar 아래 */
+  background: transparent; /* 보이지 않음 */
+}
+
 /* ===== 상태 기반 CSS ===== */
 
 /* 클릭/호버/포커스 상태 - 단일 베이스 셀렉터 (TBAR-R Selector Consolidation) */
@@ -108,42 +123,38 @@
   }
 }
 
-/* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
+/* 상태별 CSS 커스텀 프로퍼티 정의 - Phase B: auto-hide를 위해 !important 제거 */
 .galleryToolbar[data-state='idle'],
 .galleryToolbar:not([data-state]) {
-  --xeg-toolbar-opacity: 1 !important;
-  --xeg-toolbar-pointer-events: auto !important;
-  /* 명시적 가시성 보장 */
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  pointer-events: auto !important;
+  /* auto-hide가 동작하도록 !important 제거 (Phase B UX-001) */
+  --xeg-toolbar-opacity: var(--xeg-toolbar-opacity, 1);
+  --xeg-toolbar-pointer-events: var(--xeg-toolbar-pointer-events, auto);
 }
 
 .galleryToolbar[data-state='loading'] {
+  /* 로딩 중에는 auto-hide 무시하고 항상 표시 */
   --xeg-toolbar-opacity: 0.7 !important;
   --xeg-toolbar-pointer-events: auto !important;
   --toolbar-bg: var(--toolbar-bg-loading);
-  /* 로딩 상태에서도 가시성 보장 */
   opacity: 0.7 !important;
   pointer-events: auto !important;
 }
 
 .galleryToolbar[data-state='downloading'] {
+  /* 다운로드 중에는 auto-hide 무시하고 항상 표시 */
   --xeg-toolbar-opacity: 1 !important;
   --xeg-toolbar-pointer-events: auto !important;
   --toolbar-bg: var(--toolbar-bg-downloading);
-  /* 다운로드 상태에서도 가시성 보장 */
   opacity: 1 !important;
   pointer-events: auto !important;
 }
 
 .galleryToolbar[data-state='error'] {
+  /* 에러 상태에서는 auto-hide 무시하고 항상 표시 */
   --xeg-toolbar-opacity: 1 !important;
   --xeg-toolbar-pointer-events: auto !important;
   --toolbar-bg: var(--toolbar-bg-error);
   --toolbar-offset-y: -0.25em; /* -4px → -0.25em */
-  /* 에러 상태에서도 가시성 보장 */
   opacity: 1 !important;
   pointer-events: auto !important;
 }

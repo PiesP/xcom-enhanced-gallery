@@ -5,14 +5,11 @@
 
 ## 핵심 원칙
 
-- 직접 import 금지: preact / @preact/signals / fflate / preact/compat 등은
-  코드에서 직접 import하지 않습니다.
-- 항상 getter 사용: `@shared/external/vendors`는 Solid 전용 표면만 노출합니다.
+- 직접 import 금지: solid-js / fflate 등은 코드에서 직접 import하지 않습니다.
+- 항상 getter 사용: `@shared/external/vendors`는 SolidJS 전용 표면만 노출합니다.
   (`initializeVendors()`, `getSolidCore()`, `getSolidStore()`, `getSolidWeb()`,
   `getNativeDownload()`, `validateVendors()`, `cleanupVendors()` 등)
-- Stage D Phase 3부터 Preact 계열 API는 `@shared/external/vendors/preact-legacy`
-  네임스페이스로 이동했습니다. 레거시 코드 유지 목적에 한해 사용하고, 신규
-  구현은 Solid API로 전환합니다.
+- Preact 계열 API는 완전히 제거되었습니다. 모든 구현은 SolidJS API를 사용합니다.
 - Userscript API는 어댑터 경유: `@shared/external/userscript/adapter`의
   `getUserscript()`만 사용합니다.
   - 금지: 코드에서 `GM_*` API를 직접 참조/호출하지 않습니다.(테스트/Node 환경
@@ -23,46 +20,39 @@
   축소)를 적용합니다.
 - 테스트 모킹 용이성: getter/어댑터 경유라 Vitest에서 모킹이 간단합니다.
 
-## 예시: Solid Core/Store 사용
+## 예시: SolidJS Core/Store 사용
 
 ```ts
 import {
   initializeVendors,
   getSolidCore,
   getSolidStore,
+  getSolidWeb,
 } from '@shared/external/vendors';
 
 await initializeVendors(); // TDZ-safe 초기화
 
-const solidCore = getSolidCore();
-const solidStore = getSolidStore();
+const solid = getSolidCore();
+const store = getSolidStore();
+const web = getSolidWeb();
 
-const [count, setCount] = solidCore.createSignal(0);
-const [state, setState] = solidStore.createStore({ value: 0 });
+// Signal 생성
+const [count, setCount] = solid.createSignal(0);
+const doubled = solid.createMemo(() => count() * 2);
 
+// Store 생성
+const [state, setState] = store.createStore({ value: 0 });
+
+// 업데이트
 setCount(previous => previous + 1);
 setState('value', value => value + 1);
-```
 
-### 레거시 예시: Preact/Signals 사용 (이관 중)
+// 컴포넌트 렌더링
+const App = () => {
+  return <div>Count x2 = {doubled()}</div>;
+};
 
-```ts
-import {
-  getPreact,
-  getPreactSignals,
-} from '@shared/external/vendors/preact-legacy';
-
-const { h, render } = getPreact();
-const { signal, computed } = getPreactSignals();
-
-const count = signal(0);
-const doubled = computed(() => count.value * 2);
-
-function App() {
-  return h('div', null, `x2 = ${doubled.value}`);
-}
-
-render(h(App, null), document.body);
+web.render(() => <App />, document.body);
 ```
 
 ## 예시: Userscript 다운로드
@@ -86,12 +76,15 @@ async function download(url: string, name: string) {
 ## Feature detection 스텁
 
 ```ts
-import { getPreact } from '@shared/external/vendors/preact-legacy';
+import { getSolidCore } from '@shared/external/vendors';
 
-export function ensureLegacyPreactAvailable(): boolean {
+export function ensureSolidAvailable(): boolean {
   try {
-    const { h, render } = getPreact();
-    return typeof h === 'function' && typeof render === 'function';
+    const solid = getSolidCore();
+    return (
+      typeof solid.createSignal === 'function' &&
+      typeof solid.createEffect === 'function'
+    );
   } catch {
     return false; // graceful degrade 경로로 분기
   }
@@ -101,12 +94,17 @@ export function ensureLegacyPreactAvailable(): boolean {
 ## 테스트 모킹 패턴(Vitest)
 
 ```ts
-// setup에서 레거시 Preact getter를 모킹 (Solid 표면은 그대로 유지)
-vi.mock('@shared/external/vendors/preact-legacy', async orig => {
+// setup에서 SolidJS getter를 모킹
+vi.mock('@shared/external/vendors', async orig => {
   const actual = await orig();
   return {
     ...actual,
-    getPreact: () => ({ h: vi.fn(), render: vi.fn() }),
+    getSolidCore: () => ({
+      createSignal: vi.fn(() => [vi.fn(), vi.fn()]),
+      createEffect: vi.fn(),
+      createMemo: vi.fn(),
+      onCleanup: vi.fn(),
+    }),
   };
 });
 ```
@@ -127,6 +125,7 @@ vi.mock('@shared/external/vendors/preact-legacy', async orig => {
 
 ## Anti-Patterns
 
-- preact, @preact/signals, fflate 등을 직접 import
+- solid-js, fflate 등을 직접 import
 - 코드 상단에서 `GM_*`를 직접 참조(테스트/Node 환경 붕괴)
 - TDZ 이후에만 접근해야 하는 벤더 API를 모듈 최상위에서 즉시 사용
+- `createSignal()`의 반환값을 `.value` 속성으로 접근 (SolidJS는 함수 호출 방식)

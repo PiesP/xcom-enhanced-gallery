@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@test-utils/testing-library';
-import { useToolbarPositionBased } from '@features/gallery/hooks/useToolbarPositionBased';
+import { useToolbarPositionBased } from '@shared/hooks/useToolbarPositionBased';
 
 // Mock CSS 변수 조작
 const mockSetProperty = vi.fn();

@@ -14,6 +14,8 @@ export interface UseToolbarPositionBasedOptions {
   readonly toolbarElement: MaybeAccessor<HTMLElement | null> | null;
   readonly hoverZoneElement: MaybeAccessor<HTMLElement | null> | null;
   readonly enabled?: MaybeAccessor<boolean | undefined>;
+  /** 초기 표시 후 자동으로 숨기기까지의 시간(ms). 0이면 자동 숨김 비활성화. 기본값: 2000ms */
+  readonly initialAutoHideDelay?: number;
 }
 
 export interface UseToolbarPositionBasedResult {
@@ -80,6 +82,8 @@ export function useToolbarPositionBased(
   );
 
   const [visibilityIntent, setVisibilityIntent] = createSignal<boolean>(true);
+  // 타이머 ID는 reactive하지 않아야 함 (무한 루프 방지)
+  let autoHideTimerId: number | null = null;
 
   const resolvedVisibility = createMemo<boolean>(() => {
     if (!enabledMemo()) {
@@ -88,15 +92,24 @@ export function useToolbarPositionBased(
     return visibilityIntent();
   });
 
+  const clearAutoHideTimer = () => {
+    if (autoHideTimerId !== null) {
+      clearTimeout(autoHideTimerId);
+      autoHideTimerId = null;
+    }
+  };
+
   const setVisibility = (next: boolean) => {
     setVisibilityIntent(prev => (prev === next ? prev : next));
   };
 
   const show = () => {
+    clearAutoHideTimer(); // show() 호출 시 타이머 취소
     setVisibility(true);
   };
 
   const hide = () => {
+    clearAutoHideTimer(); // hide() 호출 시 타이머 취소
     setVisibility(false);
   };
 
@@ -105,6 +118,28 @@ export function useToolbarPositionBased(
     const toolbarElement = toolbarMemo();
     applyDocumentTokens(visible);
     applyToolbarInlineStyle(toolbarElement, visible);
+  });
+
+  // 초기 자동 숨김 타이머 설정 (한 번만 실행되도록 의존성 최소화)
+  createEffect(() => {
+    const enabled = enabledMemo();
+    const toolbar = toolbarMemo(); // toolbar가 준비될 때까지 대기
+    const delay = options.initialAutoHideDelay ?? 2000; // 기본값 2초
+
+    // 기존 타이머 정리
+    clearAutoHideTimer();
+
+    // enabled이고, toolbar가 존재하며, delay가 0보다 크면 자동 숨김 활성화
+    if (enabled && toolbar && delay > 0) {
+      // 새 타이머 시작
+      autoHideTimerId = setTimeout(() => {
+        hide();
+      }, delay) as unknown as number;
+    }
+
+    onCleanup(() => {
+      clearAutoHideTimer();
+    });
   });
 
   createEffect(() => {
@@ -116,10 +151,10 @@ export function useToolbarPositionBased(
 
     if (enabled) {
       const handleShow: EventListener = () => {
-        show();
+        show(); // show()는 타이머를 취소함
       };
       const handleHide: EventListener = () => {
-        hide();
+        hide(); // hover 이탈 시 즉시 숨김
       };
 
       if (hoverZone) {
@@ -150,6 +185,7 @@ export function useToolbarPositionBased(
 
   onCleanup(() => {
     // Solid 컴포넌트 언마운트 시 마지막으로 적용된 CSS 토큰을 정리하여 일관성 유지
+    clearAutoHideTimer();
     applyDocumentTokens(false);
     const toolbarElement = toolbarMemo();
     applyToolbarInlineStyle(toolbarElement, false);

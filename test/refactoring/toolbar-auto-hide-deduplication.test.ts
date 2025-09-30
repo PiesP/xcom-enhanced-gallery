@@ -211,9 +211,7 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
 
   describe('REFACTOR: 개선된 자동 숨김 기능 테스트', () => {
     it('initialAutoHideDelay 옵션으로 자동 숨김 시간을 제어할 수 있다', async () => {
-      const { useToolbarPositionBased } = await import(
-        '@features/gallery/hooks/useToolbarPositionBased'
-      );
+      const { useToolbarPositionBased } = await import('@shared/hooks/useToolbarPositionBased');
 
       // 테스트를 단순화 - 함수 시그니처만 검증
       const hookResult = useToolbarPositionBased({
@@ -234,9 +232,7 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
     });
 
     it('initialAutoHideDelay가 0이면 자동 숨김이 비활성화된다', async () => {
-      const { useToolbarPositionBased } = await import(
-        '@features/gallery/hooks/useToolbarPositionBased'
-      );
+      const { useToolbarPositionBased } = await import('@shared/hooks/useToolbarPositionBased');
 
       const hookResult = useToolbarPositionBased({
         toolbarElement: mockToolbarElement,
@@ -252,9 +248,7 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
     });
 
     it('마우스 호버 시 자동 숨김이 취소된다', async () => {
-      const { useToolbarPositionBased } = await import(
-        '@features/gallery/hooks/useToolbarPositionBased'
-      );
+      const { useToolbarPositionBased } = await import('@shared/hooks/useToolbarPositionBased');
 
       const hookResult = useToolbarPositionBased({
         toolbarElement: mockToolbarElement,
@@ -271,9 +265,7 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
 
   describe('REFACTOR: 타이머 관리 최적화', () => {
     it('여러 개의 타이머가 동시에 실행되지 않는다', async () => {
-      const { useToolbarPositionBased } = await import(
-        '@features/gallery/hooks/useToolbarPositionBased'
-      );
+      const { useToolbarPositionBased } = await import('@shared/hooks/useToolbarPositionBased');
 
       const hookResult = useToolbarPositionBased({
         toolbarElement: mockToolbarElement,
@@ -289,9 +281,7 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
     });
 
     it('컴포넌트 언마운트 시 타이머가 정리된다', async () => {
-      const { useToolbarPositionBased } = await import(
-        '@features/gallery/hooks/useToolbarPositionBased'
-      );
+      const { useToolbarPositionBased } = await import('@shared/hooks/useToolbarPositionBased');
 
       const hookResult = useToolbarPositionBased({
         toolbarElement: mockToolbarElement,
@@ -306,9 +296,7 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
     });
 
     it('disabled 상태에서는 자동 숨김이 작동하지 않는다', async () => {
-      const { useToolbarPositionBased } = await import(
-        '@features/gallery/hooks/useToolbarPositionBased'
-      );
+      const { useToolbarPositionBased } = await import('@shared/hooks/useToolbarPositionBased');
 
       const hookResult = useToolbarPositionBased({
         toolbarElement: mockToolbarElement,

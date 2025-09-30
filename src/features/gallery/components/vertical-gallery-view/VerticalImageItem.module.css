@@ -233,26 +233,6 @@
   padding: 0 var(--xeg-spacing-sm);
 }
 
-.metadata {
-  padding: var(--xeg-spacing-sm);
-  background: var(--xeg-color-bg-primary);
-}
-
-.filename {
-  font-size: var(--xeg-font-size-sm);
-  font-weight: var(--xeg-font-weight-medium);
-  color: var(--xeg-color-text-primary);
-  margin-bottom: var(--xeg-spacing-xs);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.fileSize {
-  font-size: var(--xeg-font-size-xs);
-  color: var(--xeg-color-text-secondary);
-}
-
 .downloadButton {
   position: absolute;
   top: var(--xeg-spacing-sm);

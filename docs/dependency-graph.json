@@ -533,13 +533,6 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/hooks/useToolbarPositionBased.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/features/gallery/hooks/useVisibleIndex.ts",
       "dependencies": [],
       "dependents": [],
@@ -3883,6 +3876,13 @@
     },
     {
       "source": "src/shared/hooks/useFocusTrap.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useToolbarPositionBased.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
