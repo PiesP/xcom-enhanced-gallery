@@ -1,15 +1,19 @@
 /**
  * @fileoverview Toolbar State Management
- * @version 2.0.0 - CSS Hover System
+ * @version 3.0.0 - Native SolidJS Pattern
  *
  * 간소화된 툴바 상태 관리 시스템
+ * - Native SolidJS createSignal() 사용
  * - CSS 호버 기반으로 대부분의 상태 관리 제거
  * - 설정 및 모드 관리만 유지
  * - 타입 안전성 보장
  */
 
+import { getSolidCore } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
-import { createGlobalSignal } from '../createGlobalSignal';
+
+const solid = getSolidCore();
+const { createSignal, createMemo } = solid;
 
 /**
  * 간소화된 툴바 상태 인터페이스
@@ -34,36 +38,21 @@ export type ToolbarEvents = {
   'toolbar:mode-change': { mode: ToolbarState['currentMode'] };
 };
 
-const signal = createGlobalSignal<ToolbarState>(INITIAL_TOOLBAR_STATE);
+// Native SolidJS signal
+const [toolbarStateSignal, setToolbarStateSignal] =
+  createSignal<ToolbarState>(INITIAL_TOOLBAR_STATE);
 
 logger.debug('Toolbar state signal initialized (Solid)');
 
 /**
- * 툴바 상태 접근자
+ * 툴바 상태 접근자 (Accessor<ToolbarState>)
  */
-export const toolbarState = {
-  get value(): ToolbarState {
-    return signal.value;
-  },
+export const toolbarState = toolbarStateSignal;
 
-  set value(newState: ToolbarState) {
-    signal.value = newState;
-  },
-
-  subscribe(callback: (state: ToolbarState) => void): () => void {
-    return signal.subscribe(callback);
-  },
-
-  update(updater: (previous: ToolbarState) => ToolbarState): void {
-    signal.update(updater);
-  },
-
-  accessor: signal.accessor,
-
-  peek(): ToolbarState {
-    return signal.peek();
-  },
-};
+/**
+ * 툴바 상태 설정자 (Setter<ToolbarState>)
+ */
+export const setToolbarState = setToolbarStateSignal;
 
 /**
  * 이벤트 디스패처
@@ -86,10 +75,10 @@ function dispatchEvent<K extends keyof ToolbarEvents>(event: K, data: ToolbarEve
  * 툴바 모드 변경
  */
 export function updateToolbarMode(mode: ToolbarState['currentMode']): void {
-  const currentState = toolbarState.value;
+  const currentState = toolbarState();
 
   if (currentState.currentMode !== mode) {
-    toolbarState.value = { ...currentState, currentMode: mode };
+    setToolbarState({ ...currentState, currentMode: mode });
     dispatchEvent('toolbar:mode-change', { mode });
     logger.debug(`Toolbar mode changed to: ${mode}`);
   }
@@ -99,38 +88,33 @@ export function updateToolbarMode(mode: ToolbarState['currentMode']): void {
  * 고대비 모드 설정
  */
 export function setHighContrast(enabled: boolean): void {
-  const currentState = toolbarState.value;
+  const currentState = toolbarState();
 
   if (currentState.needsHighContrast !== enabled) {
-    toolbarState.value = { ...currentState, needsHighContrast: enabled };
+    setToolbarState({ ...currentState, needsHighContrast: enabled });
     logger.debug(`High contrast mode ${enabled ? 'enabled' : 'disabled'}`);
   }
 }
 
 // =============================================================================
-// 간소화된 선택자 함수들
+// 간소화된 선택자 함수들 (Native SolidJS createMemo 사용)
 // =============================================================================
 
 /**
- * 현재 툴바 모드 가져오기
+ * 현재 툴바 모드 가져오기 (Memoized Accessor)
  */
-export function getCurrentToolbarMode(): ToolbarState['currentMode'] {
-  return toolbarState.value.currentMode;
-}
+export const getCurrentToolbarMode = createMemo(() => toolbarState().currentMode);
 
 /**
- * 툴바 상태 요약 정보 (CSS 호버 시스템용으로 간소화)
+ * 툴바 상태 요약 정보 (CSS 호버 시스템용으로 간소화, Memoized Accessor)
  */
-export function getToolbarInfo(): {
-  currentMode: string;
-  needsHighContrast: boolean;
-} {
-  const state = toolbarState.value;
+export const getToolbarInfo = createMemo(() => {
+  const state = toolbarState();
   return {
     currentMode: state.currentMode,
     needsHighContrast: state.needsHighContrast,
   };
-}
+});
 
 /**
  * 이벤트 리스너 등록
