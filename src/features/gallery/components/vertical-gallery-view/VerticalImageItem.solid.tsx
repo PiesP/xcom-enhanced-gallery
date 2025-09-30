@@ -51,6 +51,7 @@ const getMediaFitClass = getContainerFitClass;
 
 const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
   const solid = getSolidCore();
+  const { Show } = solid;
   const [isLoaded, setIsLoaded] = solid.createSignal(false);
   const [hasError, setHasError] = solid.createSignal(false);
 
@@ -59,7 +60,6 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
 
   let imageRef: HTMLImageElement | undefined;
   let videoRef: HTMLVideoElement | undefined;
-  const [containerEl, setContainerEl] = solid.createSignal<HTMLDivElement | null>(null);
 
   const resetState = () => {
     setIsLoaded(false);
@@ -115,24 +115,28 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
     props.onImageContextMenu?.(event, props.media);
   };
 
-  const ariaOptions: Partial<Record<string, string | number>> = {
-    'aria-label': props['aria-label'] ?? `Media ${props.index + 1}: ${filename()}`,
-    role: props.role ?? 'button',
-  };
+  const ariaProps = solid.createMemo(() => {
+    const ariaOptions: Partial<Record<string, string | number>> = {
+      'aria-label': props['aria-label'] ?? `Media ${props.index + 1}: ${filename()}`,
+      role: props.role ?? 'button',
+    };
 
-  if (props['aria-describedby']) {
-    ariaOptions['aria-describedby'] = props['aria-describedby'];
-  }
+    if (props['aria-describedby']) {
+      ariaOptions['aria-describedby'] = props['aria-describedby'];
+    }
 
-  if (typeof props.tabIndex === 'number') {
-    ariaOptions.tabIndex = props.tabIndex;
-  } else {
-    ariaOptions.tabIndex = 0;
-  }
+    if (typeof props.tabIndex === 'number') {
+      ariaOptions.tabIndex = props.tabIndex;
+    } else {
+      ariaOptions.tabIndex = 0;
+    }
 
-  const ariaProps = ComponentStandards.createAriaProps(ariaOptions);
+    return ComponentStandards.createAriaProps(ariaOptions);
+  });
 
-  const testProps = ComponentStandards.createTestProps(props['data-testid']);
+  const testProps = solid.createMemo(() =>
+    ComponentStandards.createTestProps(props['data-testid'])
+  );
 
   const containerClass = solid.createMemo(() =>
     ComponentStandards.createClassName(
@@ -174,30 +178,10 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
     props.onKeyDown?.(event);
   };
 
-  solid.createEffect(() => {
-    const node = containerEl();
-    if (!node) {
-      return;
-    }
-    const listener = (event: MouseEvent) => {
-      handleContainerClick(event);
-    };
-    node.addEventListener('click', listener);
-    solid.onCleanup(() => {
-      try {
-        node.removeEventListener('click', listener);
-      } catch {
-        /* noop */
-      }
-    });
-  });
-
   return (
     <div
-      ref={node => {
-        setContainerEl(node ?? null);
-      }}
       class={containerClass()}
+      onClick={handleContainerClick}
       data-index={props.index}
       data-xeg-gallery='true'
       data-xeg-gallery-type='item'
@@ -209,17 +193,35 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
       onFocus={handleFocus as JSX.EventHandlerUnion<HTMLDivElement, FocusEvent>}
       onBlur={handleBlur as JSX.EventHandlerUnion<HTMLDivElement, FocusEvent>}
       onKeyDown={handleKeyDown as JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent>}
-      {...ariaProps}
-      {...testProps}
+      {...ariaProps()}
+      {...testProps()}
     >
       <div class={styles.imageWrapper}>
-        {!isLoaded() && !hasError() ? (
+        <Show when={!isLoaded() && !hasError()}>
           <div class={styles.placeholder} role='presentation'>
             <span class={styles.loadingSpinner} aria-hidden='true' />
           </div>
-        ) : null}
+        </Show>
 
-        {mediaIsVideo() ? (
+        <Show
+          when={mediaIsVideo()}
+          fallback={
+            <img
+              ref={node => {
+                imageRef = node ?? undefined;
+              }}
+              class={imageClass()}
+              src={props.media.url}
+              alt={filename()}
+              loading='lazy'
+              decoding='async'
+              data-fit-mode={props.fitMode ?? 'unset'}
+              onLoad={notifyLoaded}
+              onError={handleMediaError}
+              onContextMenu={handleContextMenu}
+            />
+          }
+        >
           <video
             ref={node => {
               videoRef = node ?? undefined;
@@ -232,36 +234,21 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
             onError={handleMediaError}
             onContextMenu={handleContextMenu}
           />
-        ) : (
-          <img
-            ref={node => {
-              imageRef = node ?? undefined;
-            }}
-            class={imageClass()}
-            src={props.media.url}
-            alt={filename()}
-            loading='lazy'
-            decoding='async'
-            data-fit-mode={props.fitMode ?? 'unset'}
-            onLoad={notifyLoaded}
-            onError={handleMediaError}
-            onContextMenu={handleContextMenu}
-          />
-        )}
+        </Show>
 
-        {hasError() ? (
+        <Show when={hasError()}>
           <div class={styles.error} role='status'>
             <span class={styles.errorIcon} aria-hidden='true'>
               ⚠️
             </span>
             <span class={styles.errorText}>Failed to load media</span>
           </div>
-        ) : null}
+        </Show>
       </div>
 
       <div class={styles.overlay} aria-hidden='true'>
         <span class={styles.indexBadge}>{props.index + 1}</span>
-        {props.onDownload ? (
+        <Show when={props.onDownload}>
           <Button
             variant='icon'
             size='sm'
@@ -274,7 +261,7 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
               ⬇️
             </span>
           </Button>
-        ) : null}
+        </Show>
       </div>
     </div>
   );
