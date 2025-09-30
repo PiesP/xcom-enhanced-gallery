@@ -581,53 +581,11 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 
 ##### Phase G-4-1 — 컴포넌트 분석 및 최적화 대상 선정 ✅ **완료** (2025-09-30)
 
-**목표**: SolidJS 컴포넌트 파일 스캔 및 최적화 대상 우선순위 설정
-
-**작업 내역**:
-
-1. ✅ 컴포넌트 파일 인벤토리
-   - 총 6개 SolidJS 컴포넌트 파일 스캔
-   - 현재 상태 분석 (createMemo/createEffect/createSignal 사용 현황)
-   - 최적화 기회 식별
-
-2. ✅ 최적화 패턴 카탈로그 작성
-   - createMemo 적용 대상 (파생 상태 계산)
-   - Show 컴포넌트 적용 대상 (조건부 렌더링)
-   - For 컴포넌트 적용 대상 (리스트 렌더링)
-   - Effect 정리 대상 (불필요한 Effect 제거)
-
-3. ✅ 우선순위 매트릭스 수립
-   - **High**: VerticalImageItem (리스트 렌더링, 예상 소요 2-3h)
-   - **Medium**: SolidToastHost/Toast (토스트 렌더링, 2-3h)
-   - **Medium**: SolidGalleryShell (핵심 shell, 3-4h)
-   - **Medium**: ModalShell (focus trap 최적화, 2-3h)
-   - **Medium**: SolidSettingsPanel (설정 UI, 2h)
-
-**산출물**:
-
-- ✅ `docs/PHASE_G4_COMPONENT_OPTIMIZATION_ANALYSIS.md` (상세 분석 보고서)
-- ✅ Phase G-4-2 ~ G-4-6 하위 작업 정의
-- ✅ 최적화 패턴 Before/After 예시 가이드
-- ✅ 리스크 평가 및 완화 전략
-
-**Acceptance** (달성):
-
-- [x] 6개 컴포넌트 파일 스캔 및 분석 완료
-- [x] createMemo/Show/For 적용 대상 식별
-- [x] 우선순위 기반 Phase G-4-2~G-4-6 로드맵 수립
-- [x] 예상 메트릭 개선 목표 설정 (Memo 15→25-30개, Show 0→10-15개, For 0→3-5개)
-
-**실제 소요**: 1.5시간 (예상: 2-3시간)
-
-**핵심 결과**:
-
-- 컴포넌트별 최적화 기회 명확히 식별
-- TDD 방식으로 진행 가능한 세부 작업 정의 완료
-- Phase G-4-2부터 즉시 착수 가능한 상태
+**완료 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조 (2025-01-13 이관)
 
 ---
 
-##### Phase G-4-2 — VerticalImageItem 최적화 ⚡ **계획** (High Priority)
+##### Phase G-4-2 — VerticalImageItem 최적화 ⚡ **진행 중** (High Priority)
 
 **목표**: 리스트 렌더링 성능 개선 (갤러리 아이템 다수 렌더링)
 
