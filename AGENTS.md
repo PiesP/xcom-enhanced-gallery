@@ -31,9 +31,6 @@ Windows PowerShell에서도 위 명령 그대로 사용 가능합니다.
 - 포맷: `npm run format`
 - 테스트:
   - 전체: `npm test` (vitest run)
-  - 워치: `npm run test:watch`
-  - 커버리지: `npm run test:coverage`
-  - UI: `npm run test:ui`
 - 빌드:
   - 개발: `npm run build:dev`
   - 프로덕션: `npm run build:prod`
@@ -68,6 +65,8 @@ npx vitest run test/path/to/file.test.ts
 - 변경 시 반드시 관련 테스트를 추가/수정하세요. 커버리지 리포트는 `coverage/`에
   생성됩니다.
 - PC 전용 입력/디자인 토큰/벤더 getter 규칙 위반은 테스트로 RED가 됩니다.
+- **SolidJS 네이티브 패턴** 준수: 신규 코드는 `createSignal()` 함수 호출 방식
+  사용, `createGlobalSignal` 레거시 패턴 사용 금지 (Epic SOLID-NATIVE-001 참조)
 
 ## 빌드/검증 플로우
 

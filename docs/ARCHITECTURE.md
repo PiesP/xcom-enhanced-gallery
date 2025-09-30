@@ -169,9 +169,34 @@ Must Not
 3. UI는 액세서(`@shared/container/settings-access`)로 읽기/쓰기
 4. 토큰/테마 반영은 `ThemeService`와 스타일 토큰 레이어에서 수행
 
-## 5. 상태 관리와 시그널 규칙
+## 5. 상태 관리와 시그널 규칙 (SolidJS 네이티브 패턴)
 
-- Signals는 `shared/state/**`에 정의하고, 파생값은 selector 유틸로 메모이즈
+### 권장: SolidJS 네이티브 패턴
+
+- Signals는 `shared/state/**`에 정의
+- `getSolidCore()`의 `createSignal()` 직접 사용
+- 파생값은 `createMemo()` 또는 selector 유틸로 메모이즈
+- 부작용/구독은 `createEffect()`로 처리
+- 예시:
+
+```ts
+const solid = getSolidCore();
+const [items, setItems] = solid.createSignal<Item[]>([]);
+const firstItem = solid.createMemo(() => items()[0] ?? null);
+solid.createEffect(() => {
+  console.log('Items changed:', items());
+});
+```
+
+### 레거시: 호환 레이어 (`createGlobalSignal`) - 점진적 제거 예정
+
+- 기존 코드 호환성을 위해 유지 중
+- Preact Signals 스타일 API (`.value`, `.subscribe()`) 제공
+- Epic SOLID-NATIVE-001 완료 후 전면 제거 예정
+- 신규 코드에서는 사용 금지
+
+### 공통 규칙
+
 - UI는 액션 함수를 통해 상태 변경(직접 변경 최소화)
 - 경계: 큰 배열/객체는 불변 업데이트, 파생 연산은 computed/selector로 격리
 
