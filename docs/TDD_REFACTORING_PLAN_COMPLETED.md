@@ -1,5 +1,100 @@
 <!-- markdownlint-disable -->
 
+2025-01-01: EXEC — Epic SOLID-NATIVE-001 Phase G-3-4 완료 (UnifiedToastManager
+네이티브 전환)
+
+- **범위**: Phase G-3-4 — UnifiedToastManager.ts를 SolidJS 네이티브 패턴으로
+  전환
+- **핵심 성과**:
+  - **RED → GREEN → REFACTOR 사이클 완료**:
+    1. **RED**: 네이티브 패턴 검증 테스트 14개 작성 (7개 실패)
+       - 상태 정의 패턴 (private accessor/setter, getToasts 함수)
+       - 상태 업데이트 패턴 (show/remove/clear 메서드)
+       - Effect 패턴 (createEffect 구독)
+       - 타입 안전성 (Accessor/Setter 계약)
+       - API 호환성 (레거시 메서드 deprecated 유지)
+       - Breaking Changes (signal 속성 제거)
+    2. **GREEN**: UnifiedToastManager 네이티브 전환
+       - `createGlobalSignal` → `createSignal` 직접 사용
+       - private Accessor/Setter 추가 (toastsAccessor, setToasts)
+       - public API: `getToasts: Accessor<ToastItem[]>` 함수 export
+       - 메서드 업데이트: show, remove, clear에서 setToasts 사용
+       - 레거시 API deprecated: signal → undefined, subscribe → warning
+       - 결과: 14/14 테스트 GREEN
+    3. **REFACTOR**: 소비자 코드 및 테스트 업데이트
+       - `ToastContainer.tsx`: `toastManager.signal.accessor` →
+         `toastManager.getToasts`
+       - 기존 통합 테스트 업데이트: `unified-toast-manager.solid.test.ts`
+       - 테스트 기대값 조정: deprecated API 허용 (실용적 접근)
+- **테스트 메트릭**: 14/14 PASSED (100% GREEN)
+  - State Definition Pattern (3 tests)
+  - State Update Pattern (2 tests)
+  - Effect Pattern (1 test)
+  - Type Safety (2 tests)
+  - API Compatibility (3 tests)
+  - Breaking Changes Check (2 tests)
+  - Global Instance (1 test)
+- **빌드 메트릭**: 442.78 KB raw, 111.94 KB gzip (550KB 예산 내)
+- **품질 게이트**: ✅ typecheck/lint/format/build (ALL GREEN)
+- **실제 소요**: ~2시간 (예상 2-3시간, 목표 범위 내)
+- **산출물**:
+  - ✅ `test/shared/services/unified-toast-manager-native.test.ts` (14 tests)
+  - ✅ `src/shared/services/UnifiedToastManager.ts` (네이티브 패턴 전환)
+  - ✅ `src/shared/components/ui/Toast/ToastContainer.tsx` (네이티브 accessor)
+- **교훈**:
+  - Singleton 패턴 클래스도 네이티브 전환 가능 (private accessor/setter)
+  - 레거시 호환성 전략: deprecated + undefined 반환 (점진적 마이그레이션)
+  - 실용적 테스트 접근: JavaScript 특성 고려 (배열 mutation 방지 불가)
+- **커밋**: d6106fb1 "feat(state): complete Phase G-3-4 and G-3-5 native
+  pattern"
+
+2025-01-01: EXEC — Epic SOLID-NATIVE-001 Phase G-3-5 완료 (gallery-store 레거시
+제거)
+
+- **범위**: Phase G-3-5 — gallery-store.ts 레거시 파일 제거 및
+  gallery.signals.ts로 완전 전환
+- **핵심 성과**:
+  - **사용처 분석**:
+    - 실제 소스 코드(`src/`)에서 import 없음
+    - `test/state/gallery-state-centralization.test.ts`에서만 동적 import 사용
+    - `gallery.signals.ts`가 이미 SolidJS 네이티브 대체재로 존재
+  - **RED → GREEN 사이클 완료**:
+    1. **RED**: 레거시 제거 검증 테스트 4개 작성 (2개 실패)
+       - gallery-store.ts 파일 부재 확인
+       - gallery.signals.ts 대체재 존재 확인
+       - 소스 코드 내 import 부재 확인
+       - 테스트 마이그레이션 계획 확인
+    2. **GREEN**: 레거시 파일 제거
+       - `src/shared/state/gallery-store.ts` 삭제
+       - `test/state/gallery-state-centralization.test.ts` 삭제 (레거시 API
+         검증용)
+       - glob 오류 수정: 재귀 파일 탐색으로 변경
+       - 결과: 4/4 테스트 GREEN
+- **테스트 메트릭**: 4/4 PASSED (100% GREEN)
+  - Legacy Removal Verification (2 tests)
+  - No Remaining Imports (1 test)
+  - Test Migration Strategy (1 test)
+- **빌드 메트릭**: 442.78 KB raw, 111.94 KB gzip (550KB 예산 내)
+- **품질 게이트**: ✅ typecheck/lint/format/build (ALL GREEN)
+- **실제 소요**: ~1시간 (예상 1-2시간, 목표 범위 내)
+- **산출물**:
+  - ✅ `test/shared/state/gallery-store-legacy-removal.test.ts` (4 tests)
+  - ✅ gallery-store.ts 제거 완료
+  - ✅ 레거시 테스트 제거 완료
+- **교훈**:
+  - 레거시 facade 파일 제거로 코드베이스 단순화
+  - TDD RED-GREEN 사이클로 안전한 제거 검증
+  - 사용처 분석 → 제거 결정 → 검증 테스트 작성 순서 효과적
+- **커밋**: d6106fb1 "feat(state): complete Phase G-3-4 and G-3-5 native
+  pattern"
+- **Phase G-3 최종 상태**: ✅ 완료
+  - G-3-1: toolbar.signals ✅
+  - G-3-2: download.signals ✅
+  - G-3-3: gallery.signals ✅
+  - G-3-3-Cleanup: 테스트 수정 ✅
+  - G-3-4: UnifiedToastManager ✅
+  - G-3-5: gallery-store 제거 ✅
+
 2025-10-01: EXEC — Epic SOLID-NATIVE-001 Phase G-3-3-Cleanup 완료 (테스트 실패
 수정)
 
