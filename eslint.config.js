@@ -259,6 +259,7 @@ export default [
       sourceType: 'module',
       ecmaVersion: 2022,
       globals: {
+        console: 'readonly',
         vi: 'readonly',
         describe: 'readonly',
         it: 'readonly',

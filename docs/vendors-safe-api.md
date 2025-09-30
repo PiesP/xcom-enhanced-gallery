@@ -20,7 +20,7 @@
   축소)를 적용합니다.
 - 테스트 모킹 용이성: getter/어댑터 경유라 Vitest에서 모킹이 간단합니다.
 
-## 예시: SolidJS Core/Store 사용
+## 예시: SolidJS Core/Store 사용 (네이티브 패턴)
 
 ```ts
 import {
@@ -36,9 +36,14 @@ const solid = getSolidCore();
 const store = getSolidStore();
 const web = getSolidWeb();
 
-// Signal 생성
+// Signal 생성 (네이티브 패턴)
 const [count, setCount] = solid.createSignal(0);
 const doubled = solid.createMemo(() => count() * 2);
+
+// 부작용/구독 (네이티브 패턴)
+solid.createEffect(() => {
+  console.log('Count changed:', count());
+});
 
 // Store 생성
 const [state, setState] = store.createStore({ value: 0 });
@@ -53,6 +58,21 @@ const App = () => {
 };
 
 web.render(() => <App />, document.body);
+```
+
+## 레거시 호환 레이어 (신규 코드에서는 사용 금지)
+
+```ts
+import { createGlobalSignal } from '@shared/state/createGlobalSignal';
+
+// ⚠️ 레거시 패턴 - 신규 코드에서는 사용하지 마세요
+// Epic SOLID-NATIVE-001 완료 후 제거 예정
+const countSignal = createGlobalSignal(0);
+
+// Preact Signals 스타일 API (호환성을 위해 유지 중)
+countSignal.value = 42; // setter
+const current = countSignal.value; // getter
+countSignal.subscribe(value => console.log(value)); // 구독
 ```
 
 ## 예시: Userscript 다운로드
@@ -125,7 +145,13 @@ vi.mock('@shared/external/vendors', async orig => {
 
 ## Anti-Patterns
 
-- solid-js, fflate 등을 직접 import
+- solid-js, fflate 등을 직접 import (❌ 직접 import, ✅ getter 사용)
 - 코드 상단에서 `GM_*`를 직접 참조(테스트/Node 환경 붕괴)
 - TDZ 이후에만 접근해야 하는 벤더 API를 모듈 최상위에서 즉시 사용
-- `createSignal()`의 반환값을 `.value` 속성으로 접근 (SolidJS는 함수 호출 방식)
+- **SolidJS 네이티브 패턴 위반**:
+  - `createSignal()`의 반환값을 `.value` 속성으로 접근 (❌ `count.value`, ✅
+    `count()`)
+  - `.subscribe()` 메서드 사용 (❌ `signal.subscribe(cb)`, ✅
+    `createEffect(() => cb(signal()))`)
+  - `createGlobalSignal()` 신규 사용 (레거시 호환 레이어 - Epic SOLID-NATIVE-001
+    완료 후 제거 예정)

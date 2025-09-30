@@ -16,6 +16,8 @@ export interface UseToolbarPositionBasedOptions {
   readonly enabled?: MaybeAccessor<boolean | undefined>;
   /** 초기 표시 후 자동으로 숨기기까지의 시간(ms). 0이면 자동 숨김 비활성화. 기본값: 2000ms */
   readonly initialAutoHideDelay?: number;
+  /** 자동 숨김을 일시 중지할지 여부 (예: 설정 모달 열림 시). true이면 자동 숨김 타이머가 시작되지 않음. */
+  readonly pauseAutoHide?: MaybeAccessor<boolean | undefined>;
 }
 
 export interface UseToolbarPositionBasedResult {
@@ -120,17 +122,31 @@ export function useToolbarPositionBased(
     applyToolbarInlineStyle(toolbarElement, visible);
   });
 
+  // pauseAutoHide를 memo로 래핑
+  const pauseAutoHideMemo = createMemo<boolean>(() => {
+    const resolved = resolveMaybeAccessor(options.pauseAutoHide);
+    if (typeof resolved === 'boolean') {
+      return resolved;
+    }
+    return false; // undefined이면 기본값 false (자동 숨김 활성화)
+  });
+
   // 초기 자동 숨김 타이머 설정 (한 번만 실행되도록 의존성 최소화)
   createEffect(() => {
     const enabled = enabledMemo();
     const toolbar = toolbarMemo(); // toolbar가 준비될 때까지 대기
     const delay = options.initialAutoHideDelay ?? 2000; // 기본값 2초
+    const paused = pauseAutoHideMemo(); // pauseAutoHide 상태 확인
 
     // 기존 타이머 정리
     clearAutoHideTimer();
 
-    // enabled이고, toolbar가 존재하며, delay가 0보다 크면 자동 숨김 활성화
-    if (enabled && toolbar && delay > 0) {
+    // paused 상태가 변경될 때 즉시 visibility 업데이트
+    if (paused) {
+      // paused=true이면 툴바를 표시
+      show();
+    } else if (enabled && toolbar && delay > 0) {
+      // enabled이고, paused가 아니며, toolbar가 존재하고, delay가 0보다 크면 자동 숨김 활성화
       // 새 타이머 시작
       autoHideTimerId = setTimeout(() => {
         hide();

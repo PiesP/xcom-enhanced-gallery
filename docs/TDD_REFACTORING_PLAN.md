@@ -137,7 +137,13 @@
 **목표**: 호환 레이어(createGlobalSignal .value 방식)에서 SolidJS 네이티브
 패턴(createSignal 함수 호출)으로 완전 전환
 
-**현 상태**: 제안 단계 (2025-09-30)
+**현 상태**: ✅ **즉시 착수 가능** (2025-09-30)
+
+**우선순위**: ⬆️ **High** (Medium에서 상향 조정)
+
+- 기술 부채 축적 방지 (신규 코드가 레거시 패턴을 답습)
+- SolidJS 생태계 표준 정합성 확보 (학습 곡선 개선)
+- 장기 유지보수성 향상 (중간 추상화 레이어 제거)
 
 **배경**:
 
@@ -147,6 +153,8 @@
 - 목적: Preact Signals 스타일 유지하여 점진적 마이그레이션 및 기존 코드 변경
   최소화
 - 현재 상태: 안정적 작동, 테스트 통과, 성능 문제 없음
+- **문서 업데이트 완료** (2025-09-30): CODING_GUIDELINES, vendors-safe-api,
+  ARCHITECTURE 모두 네이티브 패턴 권장으로 갱신됨
 
 **변경 필요성**:
 
@@ -171,15 +179,23 @@ const isOpen = galleryState().isOpen;       // getter 함수 호출
 createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 ```
 
-**변경 범위 분석**:
+**변경 범위 분석** (Phase G-1 완료 후 확정):
 
-| 영역          | 파일 수 (예상) | 주요 변경                                  | 영향도 |
+| 영역          | 파일 수 (실제) | 주요 변경                                  | 영향도 |
 | ------------- | -------------- | ------------------------------------------ | ------ |
-| State Signals | 5-7개          | `createGlobalSignal` → `createSignal` 전환 | High   |
-| Components    | 20-30개        | `.value` → 함수 호출 방식 수정             | Medium |
-| Services      | 10-15개        | `.subscribe()` → `createEffect()` 전환     | Medium |
-| Utils         | 3-5개          | `signalSelector.ts` 등 유틸리티 조정       | Low    |
-| Tests         | 50-100개       | 테스트 패턴 업데이트                       | Medium |
+| State Signals | 5개            | `createGlobalSignal` → `createSignal` 전환 | High   |
+| Components    | 6개            | `.value` → 함수 호출 방식 수정 (50회)      | Medium |
+| Services      | 1개            | UnifiedToastManager 내부 signal 전환       | Low    |
+| Utils         | 1개            | `signalSelector.ts` 유틸리티 조정          | Medium |
+| Tests         | 미정           | 테스트 패턴 업데이트 (Phase G-5에서 확정)  | Medium |
+
+**세부 파일 목록** (`docs/SOLID_NATIVE_INVENTORY_REPORT.md` 참조):
+
+- **State Signals (5개)**: gallery.signals.ts, download.signals.ts,
+  toolbar.signals.ts, gallery-store.ts, UnifiedToastManager.ts
+- **Components (6개)**: GalleryApp.ts, GalleryRenderer.ts,
+  SolidGalleryShell.solid.tsx, createParitySnapshot.ts (gallery/settings),
+  app-state.ts, feature-registration.ts
 
 **메트릭 목표**:
 
@@ -190,42 +206,58 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 
 ---
 
-### Stage G — SolidJS 네이티브 패턴 전환 계획
+### Stage G — SolidJS 네이티브 패턴 전환 계획 (진행 중)
 
-#### Phase G-1 — 인벤토리 및 영향도 분석 📊 **계획**
+**현 상태**: Phase G-1 완료 ✅ → Phase G-2 준비 중
+
+#### Phase G-1 — 인벤토리 및 영향도 분석 ✅ **완료** (2025-09-30)
 
 **목표**: 전환 대상 파일 및 패턴 사용처 완전 파악
 
-**작업**:
+**작업 내역**:
 
-1. 전역 상태 사용 패턴 스캔
-   - `createGlobalSignal` 호출 위치 및 타입 분석
-   - `.value` 속성 접근 패턴 (getter/setter) 추출
-   - `.subscribe()` 메서드 호출 추적
+1. ✅ RED: 인벤토리 테스트 작성
+   (`test/architecture/solid-native-inventory.test.ts`)
+   - 전역 상태 사용 패턴 자동 스캔 구현
+   - `.value` 속성 접근 패턴 (setter 31개, getter 19개) 추출
+   - `.subscribe()` 메서드 호출 (15개) 추적
+   - 파일별 영향도 점수 계산 알고리즘
 
-2. 컴포넌트 반응성 패턴 분석
-   - 파생 상태 (`createMemo` 후보) 식별
-   - 부작용 (`createEffect` 후보) 식별
-   - 조건부 렌더링 최적화 기회 파악
+2. ✅ GREEN: 인벤토리 실행 및 결과 분석
+   - 총 11개 파일 영향 확인
+   - 5개 createGlobalSignal 정의 파일 식별
+   - 50개 .value 접근, 6개 createGlobalSignal 호출 확인
 
-3. 테스트 패턴 조사
-   - 상태 모킹 패턴
-   - 비동기 업데이트 검증 방법
-   - JSDOM 환경 제약사항
+3. ✅ REFACTOR: 상세 분석 보고서 작성
+   - `docs/SOLID_NATIVE_INVENTORY_REPORT.md` 생성
+   - 우선순위 분류: toolbar(Low) → download(Medium) → gallery(High)
+   - Phase G-2 ~ G-6 로드맵 구체화
 
 **산출물**:
 
-- 전환 대상 파일 리스트 (우선순위 포함)
-- 패턴별 변경 가이드 (Before/After)
-- 리스크 평가 및 완화 전략
+- ✅ `test/architecture/solid-native-inventory.test.ts` (11 tests GREEN)
+- ✅ `docs/SOLID_NATIVE_INVENTORY_REPORT.md` (상세 분석 보고서)
+- ✅ 전환 대상 파일 리스트 (우선순위 포함)
+- ✅ 패턴별 변경 가이드 (Before/After 예시)
+- ✅ 리스크 평가 및 완화 전략
 
-**Acceptance**:
+**인벤토리 결과 요약**:
 
-- [ ] `createGlobalSignal` 사용처 100% 식별
-- [ ] `.value` 속성 접근 패턴 카탈로그 작성
-- [ ] 우선순위 기반 전환 로드맵 수립
+| 항목                         | 개수           |
+| ---------------------------- | -------------- |
+| `createGlobalSignal` imports | 5 files        |
+| `createGlobalSignal` calls   | 6 occurrences  |
+| `.value` property access     | 50 occurrences |
+| `.subscribe()` method calls  | 15 occurrences |
+| **총 영향받는 파일**         | **11 files**   |
 
-**예상 소요**: 3-4시간
+**Acceptance** (달성):
+
+- [x] `createGlobalSignal` 사용처 100% 식별 ✅
+- [x] `.value` 속성 접근 패턴 카탈로그 작성 ✅
+- [x] 우선순위 기반 전환 로드맵 수립 ✅
+
+**실제 소요**: 2시간 (예상 3-4시간)
 
 ---
 
@@ -798,18 +830,103 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 
 ---
 
+#### Phase E — 설정 모달 활성 시 툴바 유지 (문제 5) ✅ **완료** (2025-09-30)
+
+**목표**: 설정 모달이 표시되어 있는 동안 툴바 자동 숨김을 일시 중지하여 사용자가
+설정을 조정하는 동안 툴바가 유지되도록 함
+
+**완료 시점**: 2025-09-30
+
+**문제 정의**:
+
+- Phase B에서 구현한 툴바 자동 숨김 기능이 설정 모달이 열려 있는 동안에도 작동함
+- 사용자가 설정을 조정하는 중에 툴바가 사라지면 혼란스러운 UX 제공
+- 설정 버튼이 툴바에 위치하므로, 설정 모달 활성 중에는 툴바가 항상 표시되어야 함
+
+**근본 원인**:
+
+- `useToolbarPositionBased` 훅의 자동 숨김 타이머가 갤러리 상태(isOpen)만
+  고려하고 모달 상태는 고려하지 않음
+- 설정 모달 상태와 툴바 가시성 로직 간 연동 부재
+
+**영향도**: Medium (사용성 저해, 설정 조정 중 툴바 재호출 필요)
+
+**솔루션 옵션**:
+
+| 옵션 | 접근법                                                       | 장점                            | 단점                              | TDD 적용 | 추천 |
+| ---- | ------------------------------------------------------------ | ------------------------------- | --------------------------------- | -------- | ---- |
+| A    | `useToolbarPositionBased` 훅에 `pauseAutoHide` 파라미터 추가 | 훅 인터페이스 확장, 명시적 제어 | 훅 호출부에서 모달 상태 전달 필요 | 쉬움     | ⭐   |
+| B    | 모달 내부에서 toolbar.show() 명령적 호출                     | 간단한 구현                     | 모달-툴바 결합도 증가, 명령형     | 중간     | -    |
+| C    | 전역 상태에서 모달 활성화 감지 후 훅 내부 체크               | 느슨한 결합                     | 전역 상태 의존성 증가, 복잡도     | 어려움   | -    |
+
+**선택**: 옵션 A
+
+**근거**:
+
+- `useToolbarPositionBased` 훅은 이미 `enabled` 파라미터로 조건부 활성화 지원
+- `pauseAutoHide` 파라미터 추가로 일관된 인터페이스 유지
+- Toolbar 컴포넌트가 설정 모달 상태를 알고 있으므로 props 전달 자연스러움
+- TDD: RED (모달 열림 시 자동 숨김 테스트) → GREEN (pauseAutoHide 로직 추가) →
+  REFACTOR (타이머 취소 검증)
+
+**작업 내역**:
+
+1. ✅ RED: `test/features/gallery/toolbar-settings-modal-pause.test.ts` 생성
+   (7개 테스트)
+   - pauseAutoHide=true일 때 initialAutoHideDelay 무효화 검증
+   - pauseAutoHide=false일 때 정상적으로 자동 숨김 동작 검증
+   - pauseAutoHide=undefined일 때 기본 동작 (Phase B 회귀 방지) 검증
+   - 타이머 진행 중 pauseAutoHide가 true로 전환되면 타이머 취소 검증
+   - pauseAutoHide가 true→false 전환 시 자동 숨김 타이머 재시작 검증
+   - 모달 열림→닫힘→재열림 반복 시나리오 검증
+   - pauseAutoHide=true이고 initialAutoHideDelay=0일 때 (둘 다 비활성화) 검증
+   - 예상대로 4/7 FAILED 확인
+
+2. ✅ GREEN: `useToolbarPositionBased.ts` 훅 파라미터 및 로직 추가
+   - `pauseAutoHide?: MaybeAccessor<boolean | undefined>` 파라미터 추가
+   - `pauseAutoHideMemo = createMemo()` 로 래핑 (undefined → false 기본값)
+   - createEffect에서 paused 상태 확인하여 타이머 시작 조건 제어
+   - paused=true이면 `show()` 호출, paused=false이면 타이머 재시작
+   - 7/7 PASSED 확인
+
+3. ✅ REFACTOR: 테스트 안정화 및 반응성 개선
+   - `setupTest`에서 `toolbarElement`/`hoverZoneElement` 파라미터 이름 수정
+   - `vi.runAllTimers()` 호출하여 반응성 시스템 초기화 대기
+   - 전체 테스트 스위트 7/7 PASSED
+
+**Acceptance** (달성):
+
+- [x] 설정 모달이 열려 있는 동안 툴바 자동 숨김 타이머가 시작되지 않음 ✅
+- [x] 모달 열림 전에 진행 중이던 자동 숨김 타이머가 취소됨 ✅
+- [x] 모달이 닫힌 후 `initialAutoHideDelay` 경과 시 툴바가 자동으로 숨겨짐 ✅
+- [x] pauseAutoHide가 false일 때는 기존 동작과 동일 (Phase B 회귀 방지) ✅
+- [x] 모달 열림→닫힘→재열림 반복 시나리오에서도 정상 동작 ✅
+
+**실제 소요**: ~2시간 (예상 2-3시간 내 완료)
+
+**리스크**: Low (Phase B 로직 확장, 새로운 아키텍처 변경 없음)
+
+**빌드 메트릭**:
+
+- 번들 크기: 443.48 KB raw (+0.09 KB), 112.24 KB gzip (+0.03 KB)
+- 테스트: 신규 7개 GREEN, 기존 Phase B 테스트 유지
+- 품질 게이트: ✅ typecheck/lint/format/build ALL GREEN
+
+---
+
 ### 종합 일정 및 우선순위 (재정렬 완료)
 
-| Phase    | 문제                    | 우선순위 | 예상 소요 | 실제 소요 | 리스크 | 비고                                 |
-| -------- | ----------------------- | -------- | --------- | --------- | ------ | ------------------------------------ |
-| Phase A  | 툴바 아이콘 렌더링 지연 | High     | 2-3h      | **2h**    | Low    | ✅ 완료 (2025-09-30) ⚡              |
-| Phase B  | 툴바 자동 숨김 미작동   | High     | 3-4h      | **5h**    | Medium | ✅ 완료 (2025-09-30) 🎯 (5회 디버깅) |
-| Phase D  | DOM 구조 복잡도         | Low      | 1-2h      | **1h**    | Low    | ✅ 완료 (2025-09-30) 📊              |
-| Phase C  | 갤러리 스크롤 비활성    | Critical | 2-3h      | **2h**    | Medium | 🔄 **이후 해결** (추가 분석 필요)    |
-| **합계** |                         |          | **8-12h** | **10h**   |        | **3/4 Phase 완료 (75% 진행)** ✅     |
+| Phase    | 문제                        | 우선순위 | 예상 소요  | 실제 소요 | 리스크 | 비고                                   |
+| -------- | --------------------------- | -------- | ---------- | --------- | ------ | -------------------------------------- |
+| Phase A  | 툴바 아이콘 렌더링 지연     | High     | 2-3h       | **2h**    | Low    | ✅ 완료 (2025-09-30) ⚡                |
+| Phase B  | 툴바 자동 숨김 미작동       | High     | 3-4h       | **5h**    | Medium | ✅ 완료 (2025-09-30) 🎯 (5회 디버깅)   |
+| Phase D  | DOM 구조 복잡도             | Low      | 1-2h       | **1h**    | Low    | ✅ 완료 (2025-09-30) 📊                |
+| Phase E  | 설정 모달 활성 시 툴바 유지 | Medium   | 2-3h       | **2h**    | Low    | ✅ 완료 (2025-09-30) 🎯 (Phase B 확장) |
+| Phase C  | 갤러리 스크롤 비활성        | Critical | 2-3h       | **2h**    | Medium | 🔄 **이후 해결** (추가 분석 필요)      |
+| **합계** |                             |          | **12-17h** | **12h**   |        | **4/5 Phase 완료 (80% 진행)** ✅       |
 
 **진행 순서**: ~~Phase A (High)~~ ✅ → ~~Phase B (High)~~ ✅ → ~~Phase D (Low)~~
-✅ → Phase C (Critical, 보류)
+✅ → ~~Phase E (Medium)~~ ✅ → Phase C (Critical, 보류)
 
 **현황**:
 
@@ -818,7 +935,13 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
   분리 (5h, 5회 디버깅)
   - **핵심 해결**: 별도 hover trigger 영역으로 `pointer-events` 충돌 해결
   - **실제 브라우저 검증 완료**: 자동 숨김 + hover 재표시 정상 작동 ✅
-- Phase D: **백로그** — DOM 간소화 (기능 동작 무관, 다음 우선순위)
+- Phase D: ✅ 완료 — DOM 간소화 (1h)
+- Phase E: ✅ 완료 — `pauseAutoHide` 파라미터 추가로 설정 모달 활성 시 툴바 유지
+  (2h)
+  - **핵심 해결**: SolidJS reactivity로 paused 상태 전환 시 즉시 show() 호출
+  - **테스트 검증 완료**: 7/7 GREEN (모달 열림/닫힘/반복 시나리오 모두 통과) ✅
+- Phase C: 🔄 **이후 해결** — 테스트는 통과했으나 실제 환경에서 문제 지속, 추가
+  분석 필요 확장)
 - Phase C: 🔄 **이후 해결** — 테스트는 통과했으나 실제 환경에서 문제 지속, 추가
   디버깅 필요
 
@@ -836,7 +959,7 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 **Epic 완료 기준** (전체):
 
 - 모든 Phase Acceptance 달성
-- 4가지 문제 모두 재현되지 않음 (수동 검증)
+- 5가지 문제 모두 재현되지 않음 (수동 검증)
 - 번들 크기 변화 ±5KB 이내 (440KB 기준)
 - 품질 게이트: typecheck/lint/format/build ALL GREEN
 
