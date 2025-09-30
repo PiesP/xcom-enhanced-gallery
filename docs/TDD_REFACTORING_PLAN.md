@@ -478,6 +478,99 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 
 ---
 
+##### Phase G-3-3 — gallery.signals.ts 전환 ✅ **완료** (2025-09-30)
+
+**목표**: 최고 리스크의 gallery.signals.ts를 SolidJS 네이티브 패턴으로 전환
+
+**작업 내역**:
+
+1. ✅ RED: 네이티브 패턴 테스트 작성 (15개 테스트)
+   - 상태 정의 패턴 검증 (Accessor 함수, 레거시 API 제거)
+   - 상태 업데이트 패턴 검증 (직접 setter, 함수 업데이터)
+   - 파생 상태 검증 (11개 createMemo 기반 accessors)
+   - Effect 패턴 검증 (createEffect 구독)
+   - 타입 안전성 검증 (Accessor/Setter 계약)
+   - 초기 결과: 14/15 실패 (예상대로)
+
+2. ✅ GREEN: gallery.signals.ts 네이티브 전환
+   - `createGlobalSignal` → `createSignal` 전환
+   - 레거시 API 제거 (.value, .subscribe, .update, .accessor, .peek)
+   - 네이티브 Accessor/Setter 직접 export
+   - 11개 utility functions → `createMemo` 전환 (getMediaCount,
+     canNavigatePrevious/Next 등)
+   - 8개 액션 함수 업데이트 (openGallery, closeGallery, navigatePrevious/Next,
+     updateMedia, setViewMode, setError, setLoading)
+   - 255 라인 파일, 핵심 상태 관리 (~25 패턴 변경)
+   - 결과: 15/15 테스트 GREEN (refinement 없이 완료)
+
+3. ✅ REFACTOR: 소비자 코드 업데이트 (7개 파일)
+   - `app-state.ts`: `galleryState.value` → `galleryState()`, subscribe 제거
+   - `GalleryRenderer.ts`:
+     - setupStateSubscription 비활성화 (native signal은 createEffect 필요)
+     - render() 메서드에서 명시적 renderComponent() 호출 추가
+     - `.value` → `()` 변환 (3곳)
+   - `GalleryApp.ts`:
+     - openGallery에서 renderer.render() 명시적 호출 추가
+     - unused openGallery import 제거
+   - `SolidGalleryShell.solid.tsx`: `.subscribe` → `createEffect` 전환
+   - `useGalleryScroll.ts`: `.accessor` → direct accessor 사용
+   - `createParitySnapshot.ts` (gallery/settings): `.value` → `()`, setter 사용
+   - 인벤토리 테스트 업데이트: gallery.signals.ts 제외 처리, 완료 마킹
+
+4. 🔧 **Critical Fix**: 렌더링 트리거 복원
+   - **문제**: GalleryRenderer의 setupStateSubscription 비활성화로 렌더링 미실행
+   - **원인**: Legacy `.subscribe()` 제거 후 대체 메커니즘 누락
+   - **해결**:
+     - GalleryRenderer.render()에서 명시적 `this.renderComponent()` 호출
+     - GalleryApp.openGallery()에서 명시적 `renderer.render()` 호출
+   - **검증**: 실제 브라우저 테스트 완료 ✅
+
+5. ✅ 품질 게이트 검증
+   - typecheck: ✅ PASSED
+   - lint:fix: ✅ PASSED
+   - test: ✅ 전체 테스트 스위트 PASSED
+   - build: ✅ PASSED (775.16 KB dev, 443.01 KB prod, 112.07 KB gzip)
+
+**산출물**:
+
+- ✅ `test/shared/state/gallery-signals-native.test.ts` (15 tests, 100% GREEN)
+- ✅ `src/shared/state/signals/gallery.signals.ts` (네이티브 패턴 전환, 255
+  lines)
+- ✅ 7개 consumer 파일 업데이트 (app-state, GalleryRenderer, GalleryApp 등)
+- ✅ `test/architecture/solid-native-inventory.test.ts` (gallery 제외 처리)
+
+**Acceptance** (달성):
+
+- [x] gallery.signals.ts 네이티브 패턴 전환 완료 (255 lines, 8 actions, 11
+      memos)
+- [x] 15개 새 테스트 100% GREEN (refinement 없이 완료)
+- [x] 전체 테스트 스위트 GREEN
+- [x] 소비자 코드 타입 오류 0
+- [x] 빌드 산출물 검증 통과
+- [x] **Critical Fix**: 렌더링 트리거 복원 (실제 브라우저 검증 완료)
+- [x] Breaking changes 0 (외부 API 시그니처 유지)
+- [x] 11개 createMemo 최적화 적용
+
+**실제 소요**: ~3시간 (예상: 2-4시간, 렌더링 이슈 디버깅 포함)
+
+**핵심 결과**:
+
+- 최고 리스크 파일(255 lines) 네이티브 전환 성공
+- TDD RED-GREEN-REFACTOR 사이클 완벽 준수 (15/15 GREEN)
+- **Runtime Regression 발견 및 해결**: 렌더링 트리거 복원으로 실제 동작 보장
+- 11개 파생 상태 메모이제이션으로 성능 최적화
+- 타입 안전성 유지 (strict mode, Accessor/Setter 계약)
+- 품질 게이트 전체 통과 (typecheck/lint/test/build)
+- Phase G-3 완료: toolbar, download, gallery 3개 상태 모두 네이티브 전환 ✅
+
+**교훈**:
+
+- Non-reactive 컨텍스트(GalleryRenderer)에서는 명시적 렌더링 호출 필요
+- Legacy `.subscribe()` 제거 시 대체 트리거 메커니즘 필수 구현
+- 테스트 GREEN ≠ 실제 동작 보장 → 브라우저 검증 필수
+
+---
+
 #### Phase G-4 — 컴포넌트 반응성 최적화 ⚡ **계획**
 
 **목표**: 컴포넌트 레벨 반응성을 SolidJS 네이티브로 최적화
