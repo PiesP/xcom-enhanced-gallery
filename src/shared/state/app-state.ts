@@ -72,7 +72,7 @@ import { toolbarState } from './signals/toolbar.signals';
  * 애플리케이션 전체 상태 스냅샷
  */
 export interface AppStateSnapshot {
-  gallery: typeof galleryState.value;
+  gallery: ReturnType<typeof galleryState>; // Native SolidJS Accessor
   download: ReturnType<typeof downloadState>; // Native SolidJS Accessor
   toolbar: ReturnType<typeof toolbarState>; // Native SolidJS Accessor
 }
@@ -82,7 +82,7 @@ export interface AppStateSnapshot {
  */
 export function getAppState(): AppStateSnapshot {
   return {
-    gallery: galleryState.value,
+    gallery: galleryState(), // Native SolidJS Accessor
     download: downloadState(), // Native SolidJS Accessor
     toolbar: toolbarState(), // Native SolidJS Accessor
   };
@@ -92,8 +92,8 @@ export function getAppState(): AppStateSnapshot {
  * 앱 상태 초기화 (개발/테스트용)
  */
 export async function resetAppState(): Promise<void> {
-  // Gallery state reset
-  if (galleryState.value.isOpen) {
+  // Gallery state reset - Native SolidJS Accessor
+  if (galleryState().isOpen) {
     const { closeGallery } = await import('./signals/gallery.signals');
     closeGallery();
   }
@@ -104,16 +104,27 @@ export async function resetAppState(): Promise<void> {
 
 /**
  * 상태 변경 감지를 위한 통합 구독
+ * @deprecated Native SolidJS signals에서는 createEffect를 직접 사용하세요
+ * @see {@link https://www.solidjs.com/docs/latest/api#createeffect}
  */
-export function subscribeToAppState(callback: (state: AppStateSnapshot) => void): () => void {
-  const unsubscribers = [
-    galleryState.subscribe?.(() => callback(getAppState())),
-    // downloadState는 native SolidJS signal이므로 createEffect 필요 (여기서는 생략)
-    // toolbarState는 native SolidJS signal이므로 createEffect 필요 (여기서는 생략)
-  ].filter(Boolean);
+export function subscribeToAppState(_callback: (state: AppStateSnapshot) => void): () => void {
+  // Gallery, Download, Toolbar 모두 native SolidJS signal로 변환 완료
+  // createEffect를 사용하여 구독하는 것을 권장합니다:
+  //
+  // import { createEffect } from 'solid-js';
+  // import { galleryState, downloadState, toolbarState } from '@shared/state/app-state';
+  //
+  // createEffect(() => {
+  //   const state = {
+  //     gallery: galleryState(),
+  //     download: downloadState(),
+  //     toolbar: toolbarState(),
+  //   };
+  //   callback(state);
+  // });
 
-  // 모든 구독 해제하는 함수 반환
+  // Legacy 호환성을 위한 빈 unsubscribe 함수 반환
   return () => {
-    unsubscribers.forEach(unsubscribe => unsubscribe?.());
+    // No-op: Native signals는 createEffect로 자동 정리됨
   };
 }

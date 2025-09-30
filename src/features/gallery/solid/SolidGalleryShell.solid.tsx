@@ -144,7 +144,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
 
   const helpOverlayController = createSolidKeyboardHelpOverlayController();
 
-  const initialState = galleryState.value;
+  const initialState = galleryState(); // Native SolidJS Accessor
 
   const [isOpen, setIsOpen] = createSignal(initialState.isOpen);
   const [isLoading, setIsLoading] = createSignal(initialState.isLoading);
@@ -218,16 +218,18 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     void setSetting(FIT_SETTING_KEY, mode);
   };
 
-  const unsubscribe = galleryState.subscribe(nextState => {
+  // Native SolidJS signal 구독 - createEffect로 자동 추적
+  createEffect(() => {
+    const state = galleryState(); // Native SolidJS Accessor
     batch(() => {
-      setIsOpen(nextState.isOpen);
-      setIsLoading(nextState.isLoading);
-      setErrorText(nextState.error);
-      setMediaItems(nextState.mediaItems);
-      setCurrentIndex(nextState.currentIndex);
+      setIsOpen(state.isOpen);
+      setIsLoading(state.isLoading);
+      setErrorText(state.error);
+      setMediaItems(state.mediaItems);
+      setCurrentIndex(state.currentIndex);
     });
 
-    if (!nextState.isOpen) {
+    if (!state.isOpen) {
       helpOverlayController.close();
     }
   });
@@ -345,7 +347,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
   );
 
   onCleanup(() => {
-    unsubscribe?.();
+    // Native SolidJS signal은 createEffect가 자동으로 정리하므로 unsubscribe 불필요
     helpOverlayController.dispose();
     const instance = settingsInstance();
     try {
