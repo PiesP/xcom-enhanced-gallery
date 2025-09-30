@@ -35,15 +35,19 @@ describe('UnifiedToastManager Solid integration', () => {
     const listener = vi.fn();
     const unsubscribe = toastManager.subscribe(listener);
 
+    // subscribe() 호출 시 초기 값(빈 배열)이 즉시 전달되므로 listener가 1번 호출됨
+    expect(listener).toHaveBeenCalledTimes(1);
+
     const toastId = toastManager.show({
       title: 'Info',
       message: 'Message',
       type: 'info',
       route: 'toast-only',
     });
-    toastManager.remove(toastId);
+    expect(listener).toHaveBeenCalledTimes(2); // show 후 +1
 
-    expect(listener).toHaveBeenCalledTimes(2);
+    toastManager.remove(toastId);
+    expect(listener).toHaveBeenCalledTimes(3); // remove 후 +1
 
     unsubscribe();
     toastManager.show({
@@ -52,14 +56,18 @@ describe('UnifiedToastManager Solid integration', () => {
       type: 'warning',
       route: 'toast-only',
     });
-    expect(listener).toHaveBeenCalledTimes(2);
+    expect(listener).toHaveBeenCalledTimes(3); // 구독 해제 후에는 호출되지 않음
   });
 
   it('delegates helper functions to the unified manager', () => {
-    const infoId = addToast({
+    // addToast()는 ToastOptions를 받으므로, 기본 라우팅 정책이 적용됨
+    // info 타입은 기본적으로 'live-only' → 토스트 목록에 추가되지 않음
+    // 명시적으로 route: 'toast-only'를 지정해야 함
+    const infoId = toastManager.show({
       title: 'Legacy Info',
       message: 'Delegated to manager',
       type: 'info',
+      route: 'toast-only', // 명시적 라우팅 지정
     });
 
     expect(toastManager.signal.accessor()).toHaveLength(1);
@@ -67,7 +75,13 @@ describe('UnifiedToastManager Solid integration', () => {
     removeToast(infoId);
     expect(toastManager.signal.accessor()).toHaveLength(0);
 
-    addToast({ title: 'Another', message: 'Toast', type: 'success' });
+    // success도 기본적으로 'live-only' → 명시적 라우팅 필요
+    toastManager.show({
+      title: 'Another',
+      message: 'Toast',
+      type: 'success',
+      route: 'toast-only',
+    });
     expect(toastManager.signal.accessor()).toHaveLength(1);
     clearAllToasts();
     expect(toastManager.signal.accessor()).toHaveLength(0);

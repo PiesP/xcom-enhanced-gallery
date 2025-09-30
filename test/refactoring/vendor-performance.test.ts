@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   initializeVendorsSafe,
   getFflateSafe,
-  getPreactSafe,
+  getSolidCoreSafe,
   resetVendorManagerInstance,
   getVendorStatusesSafe,
   cleanupVendorsSafe,
@@ -71,9 +71,9 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
       // 동시에 여러 vendor API 요청
       const promises = await Promise.all([
         getFflateSafe(),
-        getPreactSafe(),
+        getSolidCoreSafe(),
         getFflateSafe(), // 중복 요청
-        getPreactSafe(), // 중복 요청
+        getSolidCoreSafe(), // 중복 요청
       ]);
 
       const endTime = now();
@@ -85,7 +85,7 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
 
       // 동일한 타입의 API는 같은 인스턴스여야 함 (캐시)
       expect(promises[0]).toBe(promises[2]); // fflate
-      expect(promises[1]).toBe(promises[3]); // preact
+      expect(promises[1]).toBe(promises[3]); // solidCore
 
       // 합리적인 시간 내에 완료
       expect(duration).toBeLessThan(100);
@@ -113,7 +113,7 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
       for (let i = 0; i < 5; i++) {
         await initializeVendorsSafe();
         await getFflateSafe();
-        await getPreactSafe();
+        await getSolidCoreSafe();
         cleanupVendorsSafe();
         resetVendorManagerInstance();
       }
@@ -135,7 +135,7 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
     it('should cleanup properly without memory leaks', async () => {
       // 초기화
       await initializeVendorsSafe();
-      const apis = await Promise.all([getFflateSafe(), getPreactSafe()]);
+      const apis = await Promise.all([getFflateSafe(), getSolidCoreSafe()]);
 
       expect(apis.every(api => api !== null)).toBe(true);
 
@@ -145,7 +145,7 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
 
       // 상태 확인
       const statuses = getVendorStatusesSafe();
-      expect(Object.values(statuses).every(status => !status.initialized)).toBe(true);
+      expect(Object.values(statuses).every(status => !status)).toBe(true);
     });
   });
 
@@ -172,13 +172,13 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
       await initializeVendorsSafe();
 
       const fflate = await getFflateSafe();
-      const preact = await getPreactSafe();
+      const solidCore = await getSolidCoreSafe();
 
       // 모든 메서드가 사용 가능해야 함
       expect(fflate).toHaveProperty('deflate');
       expect(fflate).toHaveProperty('inflate');
-      expect(preact).toHaveProperty('createElement');
-      expect(preact).toHaveProperty('render');
+      expect(solidCore).toHaveProperty('createSignal');
+      expect(solidCore).toHaveProperty('createEffect');
     });
 
     it('should eliminate TDZ risks completely', async () => {
@@ -207,13 +207,13 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
 
       // vendor API 실제 접근해서 초기화 확인
       const fflate = await getFflateSafe();
-      const preact = await getPreactSafe();
+      const solidCore = await getSolidCoreSafe();
 
       // 실제 API가 사용 가능한지 확인
       expect(fflate).toBeTruthy();
-      expect(preact).toBeTruthy();
+      expect(solidCore).toBeTruthy();
       expect(typeof fflate.deflate).toBe('function');
-      expect(typeof preact.createElement).toBe('function');
+      expect(typeof solidCore.createSignal).toBe('function');
     });
 
     it('should handle rapid successive calls gracefully', async () => {

@@ -32,8 +32,10 @@ describe('Icon CSS variable sizing', () => {
     ));
 
     const icon = screen.getByTestId('icon-string');
-    expect(icon.getAttribute('style')).toContain('width:2rem');
-    expect(icon.getAttribute('style')).toContain('height:2rem');
+    // SolidJS는 스타일을 렌더링할 때 공백을 추가할 수 있음 (width: 2rem)
+    const style = icon.getAttribute('style') ?? '';
+    expect(style).toMatch(/width:\s*2rem/);
+    expect(style).toMatch(/height:\s*2rem/);
   });
 
   it('falls back to CSS variables when size undefined', () => {
@@ -44,8 +46,10 @@ describe('Icon CSS variable sizing', () => {
     ));
 
     const icon = screen.getByTestId('icon-default');
-    expect(icon.getAttribute('style')).not.toContain('width');
-    expect(icon.getAttribute('style')).not.toContain('height');
+    // size가 undefined일 때도 CSS 변수를 통해 width/height가 설정됨
+    const style = icon.getAttribute('style') ?? '';
+    expect(style).toMatch(/width:\s*var\(--xeg-icon-size\)/);
+    expect(style).toMatch(/height:\s*var\(--xeg-icon-size\)/);
     expect(icon).toHaveAttribute('stroke', 'var(--xeg-icon-color, currentColor)');
   });
 });

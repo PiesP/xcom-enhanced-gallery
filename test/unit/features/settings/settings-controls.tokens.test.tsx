@@ -1,12 +1,12 @@
 /**
  * @fileoverview SettingsModal controls token/focus consistency tests (A4)
  */
+/** @jsxImportSource solid-js */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
-import { render, screen, cleanup } from '@test-utils/testing-library';
-import { getPreact } from '../../../../src/shared/external/vendors';
+import { render, screen, cleanup } from '@solidjs/testing-library';
 import { SettingsModal } from '../../../../src/shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal — tokenized styling and focus ring consistency', () => {
@@ -40,8 +40,7 @@ describe('SettingsModal — tokenized styling and focus ring consistency', () =>
 
   it('runtime: close button is present and labeled, selects have classes', () => {
     try {
-      const { h } = getPreact();
-      render(h(SettingsModal as any, { isOpen: true, onClose: () => void 0 }));
+      render(() => <SettingsModal isOpen={true} onClose={() => void 0} />);
       const closeBtn = screen.getByLabelText('Close');
       expect(closeBtn).toBeDefined();
       const themeSelect = screen.getByLabelText('Theme');

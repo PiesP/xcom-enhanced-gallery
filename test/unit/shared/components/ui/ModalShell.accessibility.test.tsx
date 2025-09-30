@@ -73,7 +73,12 @@ describe('ModalShell accessibility - focus trap and semantics', () => {
       });
 
       return (
-        <ModalShell isOpen={open()} onClose={onClose} aria-label='Test Modal'>
+        <ModalShell
+          isOpen={open()}
+          onClose={onClose}
+          aria-label='Test Modal'
+          data-testid='test-modal'
+        >
           <div>
             <button id='first'>First</button>
             <button id='last'>Last</button>
@@ -84,7 +89,12 @@ describe('ModalShell accessibility - focus trap and semantics', () => {
 
     vi.runAllTimers();
 
-    fireEvent.keyDown(document, { key: 'Escape' });
+    // 모달 내부 요소에서 Escape 키 발생 (handleKeyDown은 containerRef.contains 체크)
+    const dialog = await screen.findByRole('dialog');
+    const firstButton = dialog.querySelector('#first') as HTMLElement;
+    expect(firstButton).toBeTruthy();
+
+    fireEvent.keyDown(firstButton, { key: 'Escape' });
 
     expect(onClose).toHaveBeenCalledTimes(1);
 

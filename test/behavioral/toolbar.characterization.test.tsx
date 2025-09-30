@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@solidjs/testing-library';
+import { render, cleanup, fireEvent } from '@solidjs/testing-library';
 import { createRoot, type JSX } from 'solid-js';
 
 vi.mock('@shared/services/iconRegistry', () => {
@@ -215,8 +215,8 @@ describe('Toolbar Characterization (Solid)', () => {
       const prev = queryToolbarButton(container, 'nav-previous');
       const download = queryToolbarButton(container, 'download-current');
 
-      prev?.click();
-      download?.click();
+      if (prev) fireEvent.click(prev);
+      if (download) fireEvent.click(download);
 
       expect(onPrevious).toHaveBeenCalledTimes(1);
       expect(onDownloadCurrent).toHaveBeenCalledTimes(1);

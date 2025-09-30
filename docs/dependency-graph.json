@@ -397,28 +397,7 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/hooks/useViewportConstrainedVar.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -551,13 +530,6 @@
         "src/features/gallery/hooks/index.ts"
       ],
       "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/hooks/useGalleryItemScroll.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
       "valid": true
     },
     {
@@ -3821,6 +3793,40 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./useFocusScope",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useFocusScope.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./useSettingsModal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/hooks/useSettingsModal.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./useToolbarState",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3842,6 +3848,24 @@
       "valid": true
     },
     {
+      "source": "src/shared/hooks/useFocusScope.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/useSettingsModal.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/hooks/useToolbarState.ts",
       "dependencies": [],
       "dependents": [
@@ -3858,42 +3882,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/hooks/useDOMReady.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/useFocusScope.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/hooks/useFocusTrap.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/useGalleryToolbarLogic.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/useScrollLock.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/useSettingsModal.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -7356,13 +7345,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/state/solid-adapter.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/styles/index.ts",
       "dependencies": [
         {
@@ -8264,13 +8246,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/solidSignalBridge.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/styles/index.ts",
       "dependencies": [
         {
@@ -8437,8 +8412,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 285,
-    "totalDependenciesCruised": 334,
+    "totalCruised": 276,
+    "totalDependenciesCruised": 336,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

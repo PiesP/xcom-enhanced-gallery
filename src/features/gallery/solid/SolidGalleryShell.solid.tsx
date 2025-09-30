@@ -231,17 +231,6 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
   });
 
   createEffect(() => {
-    if (typeof document === 'undefined') {
-      return;
-    }
-    if (isOpen()) {
-      document.body.setAttribute('data-xeg-gallery-open', 'true');
-    } else {
-      document.body.removeAttribute('data-xeg-gallery-open');
-    }
-  });
-
-  createEffect(() => {
     const container = itemsContainerRef;
     if (!container) {
       return;
@@ -349,9 +338,6 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     }
     if (settingsHost?.parentNode) {
       settingsHost.parentNode.removeChild(settingsHost);
-    }
-    if (typeof document !== 'undefined') {
-      document.body.removeAttribute('data-xeg-gallery-open');
     }
   });
 

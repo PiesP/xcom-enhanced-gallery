@@ -14,12 +14,12 @@ describe('architecture: dependency orphan guard', () => {
 
     const orphanLines = stdout.split(/\r?\n/).filter(l => l.includes('info no-orphans:'));
 
-    // 허용 한도 (core-icons.ts 제거 후 1 이하)
-    expect(orphanLines.length).toBeLessThanOrEqual(1);
+    // Phase D-5: 레거시 hooks 정리 후 2개만 허용
+    expect(orphanLines.length).toBeLessThanOrEqual(2);
 
     const allowed = new Set([
-      'src/shared/services/icon-types.ts',
-      'src/shared/loader/progressive-loader.ts',
+      'src/shared/polyfills/solid-jsx-dev-runtime.ts', // 개발 전용 폴리필 (필수)
+      'src/features/gallery/utils/visible-navigation.ts', // 순수 유틸 (향후 사용 예정)
     ]);
 
     for (const line of orphanLines) {

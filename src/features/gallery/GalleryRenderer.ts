@@ -26,7 +26,6 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { getMediaServiceFromContainer } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging/logger';
 import { FEATURE_FLAGS } from '@/constants';
-import { isFeatureFlagEnabled } from '@shared/config/feature-flags';
 import { RebindWatcher } from '@shared/utils/lifecycle/rebind-watcher';
 import type {
   SolidGalleryShellInstance,
@@ -35,10 +34,7 @@ import type {
 type SolidGalleryModule = typeof import('./solid/renderSolidGalleryShell');
 import type { SolidGalleryShellOverrides } from './solid/SolidGalleryShell.solid';
 
-type RendererMode = 'preact' | 'solid';
-
 interface SolidRenderConfig {
-  readonly rendererMode: RendererMode;
   readonly uiOverrides?: SolidGalleryShellOverrides;
 }
 
@@ -79,7 +75,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private solidShellModule: SolidGalleryModule | null = null;
   private solidShellModulePromise: Promise<SolidGalleryModule> | null = null;
   private pendingSolidRenderToken: symbol | null = null;
-  private currentRendererMode: RendererMode | null = null;
 
   constructor() {
     this.setupStateSubscription();
@@ -132,25 +127,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
       setError('갤러리 렌더링에 실패했습니다.');
     } finally {
       this.isRenderingFlag = false;
-    }
-  }
-
-  private markRendererImplementation(mode: RendererMode | null): void {
-    if (!this.container) {
-      this.currentRendererMode = null;
-      return;
-    }
-
-    if (this.currentRendererMode === mode) {
-      return;
-    }
-
-    this.currentRendererMode = mode;
-
-    if (mode) {
-      this.container.setAttribute('data-renderer-impl', mode);
-    } else {
-      this.container.removeAttribute('data-renderer-impl');
     }
   }
 
@@ -211,7 +187,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
 
     const renderConfig = this.resolveSolidRenderConfig();
-    this.markRendererImplementation(renderConfig.rendererMode);
+    this.container.setAttribute('data-renderer-impl', 'solid');
     const rendered = this.renderSolidComponent(renderConfig);
     if (!rendered) {
       logger.error('[GalleryRenderer] Solid shell render failed');
@@ -219,20 +195,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   private resolveSolidRenderConfig(): SolidRenderConfig {
-    const solidFlagEnabled = isFeatureFlagEnabled('solidGalleryShell');
-    if (solidFlagEnabled) {
-      return { rendererMode: 'solid' };
-    }
-
-    const fallbackOverrides: SolidGalleryShellOverrides = {
-      toolbarVariant: 'with-settings',
-      useShadowDom: false,
-    } satisfies SolidGalleryShellOverrides;
-
-    return {
-      rendererMode: 'preact',
-      uiOverrides: fallbackOverrides,
-    };
+    // Stage D: Solid-only rendering, no feature flags needed
+    return {};
   }
 
   private renderSolidComponent(config: SolidRenderConfig): boolean {
@@ -325,11 +289,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
       return false;
     }
 
-    const { rendererMode, uiOverrides } = config;
+    const { uiOverrides } = config;
 
     try {
       this.disposeSolidShell();
-      this.markRendererImplementation(rendererMode);
       const renderOptions: SolidGalleryShellRenderOptions = {
         container: this.container,
         onClose: () => {
@@ -350,13 +313,11 @@ export class GalleryRenderer implements GalleryRendererInterface {
       };
 
       this.solidShellInstance = module.renderSolidGalleryShell(renderOptions);
-      this.markRendererImplementation(rendererMode);
       logger.info('[GalleryRenderer] Solid 갤러리 쉘 렌더링 완료');
       return true;
     } catch (error) {
       logger.error('[GalleryRenderer] Solid 쉘 렌더링 실패:', error);
       this.disposeSolidShell();
-      this.markRendererImplementation(null);
       return false;
     }
   }
@@ -416,7 +377,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
       logger.warn('[GalleryRenderer] Solid 쉘 정리 중 경고:', error);
     } finally {
       this.solidShellInstance = null;
-      this.markRendererImplementation(null);
     }
   }
 
@@ -443,7 +403,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
           this.disposeSolidShell();
         }
         if (typeof document !== 'undefined' && document.contains(this.container)) {
-          this.markRendererImplementation(null);
           this.container.remove();
         }
       } catch (error) {
@@ -451,7 +410,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
       }
       this.container = null;
       this.pendingSolidRenderToken = null;
-      this.currentRendererMode = null;
     }
     // 리바인드 워처 중지
     if (this.rebindWatcher) {

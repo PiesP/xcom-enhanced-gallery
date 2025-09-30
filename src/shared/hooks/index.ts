@@ -14,6 +14,10 @@ export {
   type ToolbarDataState,
 } from './useToolbarState';
 
+// Settings Modal hooks (Solid)
+export { useSettingsModal, type UseSettingsModalReturn } from './useSettingsModal';
+export { useFocusScope, type UseFocusScopeOptions } from './useFocusScope';
+
 // useScrollDirection이 제거되었으므로 주석 처리
 // export {
 //   useScrollDirection,

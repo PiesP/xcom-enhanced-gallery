@@ -44,11 +44,24 @@ const HOST_RULES = `
   }
 `;
 
+/**
+ * WeakMap 캐시: Shadow DOM당 1회만 스타일 주입
+ */
+const shadowStyleCache = new WeakMap<ShadowRoot, boolean>();
+
 function injectShadowStyles(shadowRoot: ShadowRoot): void {
+  // 이미 주입된 Shadow DOM은 스킵
+  if (shadowStyleCache.has(shadowRoot)) {
+    return;
+  }
+
   const globalCssText = (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT ?? '';
   const styleElement = document.createElement('style');
   styleElement.textContent = `${globalCssText}\n${HOST_RULES}`;
   shadowRoot.appendChild(styleElement);
+
+  // 캐시에 기록
+  shadowStyleCache.set(shadowRoot, true);
 }
 
 function ensureShadowRoot(container: Element): ShadowRoot | undefined {

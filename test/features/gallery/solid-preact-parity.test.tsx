@@ -27,7 +27,9 @@ const SAMPLE_MEDIA = [
 ];
 
 describe('FRAME-ALT-001 Stage B — Solid vs Preact gallery parity', () => {
-  it('produces matching gallery snapshots for Solid and Preact renderers', async () => {
+  it.skip('produces matching gallery snapshots for Solid and Preact renderers', async () => {
+    // SKIP: FRAME-ALT-001에서 Preact 제거 후 parity 테스트는 더 이상 의미 없음
+    // Solid-only 마이그레이션 완료 시 이 테스트는 완전히 제거 예정 (Phase F-2)
     const snapshot = await createGalleryParitySnapshot({
       mediaItems: SAMPLE_MEDIA,
       startIndex: 1,

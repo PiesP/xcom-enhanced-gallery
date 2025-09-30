@@ -46,6 +46,7 @@ const solidIncludePatterns = [
   '**/shared/components/ui/SettingsModal/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/ui/Toast/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/ui/ModalShell/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/primitive/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/isolation/**/*.{ts,tsx,js,jsx}',
   '**/features/gallery/components/KeyboardHelpOverlay/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/LazyIcon.{ts,tsx,js,jsx}',

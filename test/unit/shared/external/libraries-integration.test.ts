@@ -78,16 +78,9 @@ describe('외부 라이브러리 통합 테스트', () => {
       expect(typeof animationService.fadeIn).toBe('function');
     });
 
-    it('라이브러리들이 기존 시스템과 호환되어야 한다', async () => {
-      // 기존 vendor 시스템과의 호환성 확인
-      const { legacyPreact, getMotionOne } = await import('@shared/external/vendors');
-
-      const preact = legacyPreact.getPreact();
-      const signals = legacyPreact.getPreactSignals();
-
-      expect(preact).toBeDefined();
-      expect(signals).toBeDefined();
-      // Motion One은 제거되었으므로 더 이상 검증하지 않음
+    it.skip('라이브러리들이 기존 시스템과 호환되어야 한다 - SKIP: Preact 제거됨', async () => {
+      // SolidJS 전환 완료로 인해 legacyPreact는 더 이상 존재하지 않음
+      // 이 테스트는 Preact 호환성을 검증하는 목적이었으므로 SKIP 처리
     });
 
     it('메모리 정리가 올바르게 작동해야 한다', async () => {

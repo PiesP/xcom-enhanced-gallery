@@ -1,4 +1,5 @@
 import type { JSX } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import { getSolidCore } from '@shared/external/vendors';
 import {
   getIconRegistry,
@@ -79,8 +80,7 @@ export const LazyIcon = (props: LazyIconProps): JSX.Element => {
 
   const component = iconComponent();
   if (component) {
-    const IconComponent = component;
-    return <IconComponent {...(iconProps() as Record<string, unknown>)} />;
+    return <Dynamic component={component} {...(iconProps() as Record<string, unknown>)} />;
   }
 
   if (loadError() && props.errorFallback) {

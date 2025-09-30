@@ -218,7 +218,7 @@ export const Button = (props: ButtonProps): JSX.Element => {
       disabled={props.disabled || props.loading}
       class={buttonClass()}
       title={props.title}
-      role={props.role}
+      role={props.role ?? 'button'}
       tabIndex={resolvedTabIndex()}
       aria-label={props['aria-label'] as string | undefined}
       aria-labelledby={props['aria-labelledby'] as string | undefined}

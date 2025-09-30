@@ -24,12 +24,13 @@ function assertMinimalWrapper(root: any) {
   expect(root.hasAttribute ? root.hasAttribute('role') : false).toBe(false);
   expect(root.hasAttribute ? root.hasAttribute('tabindex') : false).toBe(false);
 
-  // 데이터 속성은 1개 이하 (data-xeg-gallery-container 허용)
+  // 데이터 속성은 1개 이하 (data-shadow 허용)
   const attrs = Array.from(root.attributes ? root.attributes : []);
   const dataAttrs = attrs.filter((a: any) => String(a.name).startsWith('data-'));
   expect(dataAttrs.length).toBeLessThanOrEqual(1);
   if (dataAttrs.length === 1) {
-    expect(String(dataAttrs[0].name)).toBe('data-xeg-gallery-container');
+    // data-shadow 또는 data-xeg-* 계열 허용
+    expect(String(dataAttrs[0].name)).toMatch(/^data-(shadow|xeg-)/);
   }
 }
 

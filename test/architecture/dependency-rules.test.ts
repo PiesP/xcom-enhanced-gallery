@@ -230,13 +230,13 @@ describe('Architecture Dependency Rules', () => {
         const content = await readFile(file, 'utf-8');
         const filePath = file.replace(/\\/g, '/');
 
-        // vendors getter 사용 패턴 검사
+        // vendors getter 사용 패턴 검사 (SolidJS 기반)
         const vendorGetterPatterns = [
-          /getFflate\(\)/g,
-          /getPreact\(\)/g,
-          /getPreactHooks\(\)/g,
-          /getPreactSignals\(\)/g,
-          /getMotion\(\)/g,
+          /getSolidCore\(\)/g,
+          /getSolidStore\(\)/g,
+          /getSolidWeb\(\)/g,
+          /getNativeDownload\(\)/g,
+          /getFflate\(\)/g, // deprecated but still checked
         ];
 
         for (const pattern of vendorGetterPatterns) {

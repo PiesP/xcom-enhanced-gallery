@@ -61,7 +61,9 @@ describe('GalleryRenderer implementation marker', () => {
     });
   });
 
-  it('falls back to the preact implementation when Solid flag is explicitly disabled', async () => {
+  it.skip('falls back to the preact implementation when Solid flag is explicitly disabled', async () => {
+    // SKIP: FRAME-ALT-001에서 Preact 완전 제거 후 fallback은 더 이상 존재하지 않음
+    // Solid-only 마이그레이션 완료 (Phase F-2)
     const instance = renderer!;
     setFeatureFlagOverride('solidGalleryShell', false);
 

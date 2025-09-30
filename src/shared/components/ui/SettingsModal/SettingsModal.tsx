@@ -94,6 +94,7 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
   let previousFocus: HTMLElement | null = null;
   let scrollLocked = false;
   let originalBodyOverflow: string | null = null;
+  let inertElements: Array<{ element: HTMLElement; originalTabIndex: string | null }> = [];
 
   const focusSafely = (element: HTMLElement | null | undefined) => {
     if (!element) return;
@@ -121,15 +122,51 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
     previousFocus = null;
   };
 
+  const setBackgroundInert = (inert: boolean) => {
+    if (typeof document === 'undefined') return;
+    if (!panelRef) return;
+
+    if (inert) {
+      // 모달 외부의 모든 직계 자식들을 찾아서 비활성화
+      const rootChildren = Array.from(document.body.children) as HTMLElement[];
+      rootChildren.forEach(child => {
+        // 현재 모달은 제외
+        if (child === panelRef || panelRef?.contains(child)) return;
+
+        const originalTabIndex = child.getAttribute('tabindex');
+        child.setAttribute('tabindex', '-1');
+        inertElements.push({ element: child, originalTabIndex });
+      });
+    } else {
+      // 원래 tabindex 복원
+      inertElements.forEach(({ element, originalTabIndex }) => {
+        if (originalTabIndex === null) {
+          element.removeAttribute('tabindex');
+        } else {
+          element.setAttribute('tabindex', originalTabIndex);
+        }
+      });
+      inertElements = [];
+    }
+  };
+
   const lockBodyScroll = (locked: boolean) => {
     if (typeof document === 'undefined') return;
     if (locked) {
       if (scrollLocked) return;
-      originalBodyOverflow = document.body.style.overflow;
+      // 현재 overflow 값을 캡처 (빈 문자열이면 명시적으로 null로 저장)
+      const currentOverflow = document.body.style.overflow;
+      originalBodyOverflow = currentOverflow || null;
       document.body.style.overflow = 'hidden';
       scrollLocked = true;
     } else if (scrollLocked) {
-      document.body.style.overflow = originalBodyOverflow ?? '';
+      // 복원 시 원래 값이 없으면 'overflow' 속성 자체를 제거
+      if (originalBodyOverflow === null || originalBodyOverflow === '') {
+        document.body.style.removeProperty('overflow');
+      } else {
+        document.body.style.overflow = originalBodyOverflow;
+      }
+      originalBodyOverflow = null;
       scrollLocked = false;
     }
   };
@@ -260,6 +297,7 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
   solid.createEffect(() => {
     if (!local.isOpen) {
       lockBodyScroll(false);
+      setBackgroundInert(false);
       restorePreviousFocus();
       return;
     }
@@ -291,7 +329,10 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
 
     if (local.mode === 'panel') {
       lockBodyScroll(true);
-      runNextTick(() => focusSafely(closeButtonRef));
+      runNextTick(() => {
+        setBackgroundInert(true);
+        focusSafely(closeButtonRef);
+      });
     }
   });
 
@@ -301,6 +342,7 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
 
   solid.onCleanup(() => {
     lockBodyScroll(false);
+    setBackgroundInert(false);
     restorePreviousFocus();
     unsubscribeLanguage();
   });
