@@ -1,14 +1,17 @@
 /**
  * @fileoverview Download State Management with Signals
- * @version 1.0.0 - Clean Architecture 적용
+ * @version 2.0.0 - SolidJS Native Pattern (Phase G-3-2)
  *
  * Result 타입 패턴과 브랜드 타입을 활용한 타입 안전한 다운로드 상태 관리
+ * 네이티브 SolidJS createSignal 및 createMemo 패턴 적용
  */
 
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
 import type { Result } from '@shared/types/core/core-types';
 import { defaultLogger, type ILogger } from '@shared/services/core-services';
-import { createGlobalSignal } from '../createGlobalSignal';
+import { getSolidCore } from '@shared/external/vendors';
+
+const { createSignal, createMemo } = getSolidCore();
 
 /**
  * 다운로드 작업 상태
@@ -61,37 +64,22 @@ export type DownloadEvents = {
   'download:queue-updated': { queueLength: number };
 };
 
-const signal = createGlobalSignal<DownloadState>(INITIAL_STATE);
+// 네이티브 SolidJS signal 생성
+const [downloadStateSignal, setDownloadStateSignal] = createSignal<DownloadState>(INITIAL_STATE);
+
+/**
+ * 다운로드 상태 accessor (네이티브 SolidJS 패턴)
+ * @returns 현재 다운로드 상태
+ */
+export const downloadState = downloadStateSignal;
+
+/**
+ * 다운로드 상태 setter (네이티브 SolidJS 패턴)
+ */
+export const setDownloadState = setDownloadStateSignal;
 
 // 로거 인스턴스 (의존성 주입 가능)
 const logger: ILogger = defaultLogger;
-
-/**
- * 다운로드 상태 접근자
- */
-export const downloadState = {
-  get value(): DownloadState {
-    return signal.value;
-  },
-
-  set value(newState: DownloadState) {
-    signal.value = newState;
-  },
-
-  subscribe(callback: (state: DownloadState) => void): () => void {
-    return signal.subscribe(callback);
-  },
-
-  update(updater: (previous: DownloadState) => DownloadState): void {
-    signal.update(updater);
-  },
-
-  accessor: signal.accessor,
-
-  peek(): DownloadState {
-    return signal.peek();
-  },
-};
 
 /**
  * 이벤트 디스패처
@@ -127,18 +115,18 @@ export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Res
       startedAt: Date.now(),
     };
 
-    const currentState = downloadState.value;
+    const currentState = downloadState();
     const newTasks = new Map(currentState.activeTasks);
     newTasks.set(taskId, task);
 
-    downloadState.value = {
+    setDownloadState({
       ...currentState,
       activeTasks: newTasks,
       queue: [...currentState.queue, taskId],
-    };
+    });
 
     logger.info(`[Download] 작업 생성: ${taskId} - ${mediaInfo.url}`);
-    dispatchEvent('download:queue-updated', { queueLength: downloadState.value.queue.length });
+    dispatchEvent('download:queue-updated', { queueLength: downloadState().queue.length });
 
     return { success: true, data: taskId };
   } catch (error) {
@@ -152,7 +140,7 @@ export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Res
  * 다운로드 시작
  */
 export function startDownload(taskId: string): Result<void, Error> {
-  const currentState = downloadState.value;
+  const currentState = downloadState();
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
@@ -176,11 +164,11 @@ export function startDownload(taskId: string): Result<void, Error> {
   const newTasks = new Map(currentState.activeTasks);
   newTasks.set(taskId, updatedTask);
 
-  downloadState.value = {
+  setDownloadState({
     ...currentState,
     activeTasks: newTasks,
     isProcessing: true,
-  };
+  });
 
   logger.info(`[Download] 다운로드 시작: ${taskId}`);
   dispatchEvent('download:started', { taskId, mediaId: task.mediaId });
@@ -192,7 +180,7 @@ export function startDownload(taskId: string): Result<void, Error> {
  * 다운로드 진행률 업데이트
  */
 export function updateDownloadProgress(taskId: string, progress: number): Result<void, Error> {
-  const currentState = downloadState.value;
+  const currentState = downloadState();
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
@@ -213,11 +201,11 @@ export function updateDownloadProgress(taskId: string, progress: number): Result
   const allTasks = Array.from(newTasks.values());
   const totalProgress = allTasks.reduce((sum, t) => sum + t.progress, 0) / allTasks.length;
 
-  downloadState.value = {
+  setDownloadState({
     ...currentState,
     activeTasks: newTasks,
     globalProgress: totalProgress,
-  };
+  });
 
   dispatchEvent('download:progress', { taskId, progress: clampedProgress });
 
@@ -228,7 +216,7 @@ export function updateDownloadProgress(taskId: string, progress: number): Result
  * 다운로드 완료
  */
 export function completeDownload(taskId: string): Result<void, Error> {
-  const currentState = downloadState.value;
+  const currentState = downloadState();
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
@@ -248,12 +236,12 @@ export function completeDownload(taskId: string): Result<void, Error> {
 
   const newQueue = currentState.queue.filter(id => id !== taskId);
 
-  downloadState.value = {
+  setDownloadState({
     ...currentState,
     activeTasks: newTasks,
     queue: newQueue,
     isProcessing: newQueue.length > 0,
-  };
+  });
 
   logger.info(`[Download] 다운로드 완료: ${taskId}`);
   dispatchEvent('download:completed', { taskId, mediaId: task.mediaId });
@@ -265,7 +253,7 @@ export function completeDownload(taskId: string): Result<void, Error> {
  * Download failure
  */
 export function failDownload(taskId: string, error: string): Result<void, Error> {
-  const currentState = downloadState.value;
+  const currentState = downloadState();
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
@@ -285,12 +273,12 @@ export function failDownload(taskId: string, error: string): Result<void, Error>
 
   const newQueue = currentState.queue.filter(id => id !== taskId);
 
-  downloadState.value = {
+  setDownloadState({
     ...currentState,
     activeTasks: newTasks,
     queue: newQueue,
     isProcessing: newQueue.length > 0,
-  };
+  });
 
   logger.error(`[Download] download failed: ${taskId} - ${error}`);
   dispatchEvent('download:failed', { taskId, error });
@@ -302,7 +290,7 @@ export function failDownload(taskId: string, error: string): Result<void, Error>
  * 작업 제거 (완료/실패한 작업 정리)
  */
 export function removeTask(taskId: string): Result<void, Error> {
-  const currentState = downloadState.value;
+  const currentState = downloadState();
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
@@ -318,10 +306,10 @@ export function removeTask(taskId: string): Result<void, Error> {
   const newTasks = new Map(currentState.activeTasks);
   newTasks.delete(taskId);
 
-  downloadState.value = {
+  setDownloadState({
     ...currentState,
     activeTasks: newTasks,
-  };
+  });
 
   logger.debug(`[Download] 작업 제거: ${taskId}`);
 
@@ -332,7 +320,7 @@ export function removeTask(taskId: string): Result<void, Error> {
  * 모든 완료된 작업 정리
  */
 export function clearCompletedTasks(): void {
-  const currentState = downloadState.value;
+  const currentState = downloadState();
   const newTasks = new Map<string, DownloadTask>();
 
   for (const [id, task] of currentState.activeTasks) {
@@ -341,10 +329,10 @@ export function clearCompletedTasks(): void {
     }
   }
 
-  downloadState.value = {
+  setDownloadState({
     ...currentState,
     activeTasks: newTasks,
-  };
+  });
 
   logger.info('[Download] 완료된 작업들 정리');
 }
@@ -354,29 +342,17 @@ export function clearCompletedTasks(): void {
 // =============================================================================
 
 /**
- * 특정 작업 가져오기
+ * 특정 작업 가져오기 (Selector)
  */
 export function getDownloadTask(taskId: string): DownloadTask | null {
-  return downloadState.value.activeTasks.get(taskId) ?? null;
+  return downloadState().activeTasks.get(taskId) ?? null;
 }
 
 /**
- * 다운로드 정보 요약
+ * 다운로드 정보 요약 (createMemo 기반 파생 상태)
  */
-export function getDownloadInfo(): {
-  isAnyDownloading: boolean;
-  currentCount: number;
-  totalCount: number;
-  totalTasks: number;
-  activeTasks: number;
-  pendingTasks: number;
-  completedTasks: number;
-  failedTasks: number;
-  queueLength: number;
-  isProcessing: boolean;
-  globalProgress: number;
-} {
-  const state = downloadState.value;
+export const getDownloadInfo = createMemo(() => {
+  const state = downloadState();
   const tasks = Array.from(state.activeTasks.values());
 
   return {
@@ -392,7 +368,7 @@ export function getDownloadInfo(): {
     isProcessing: state.isProcessing,
     globalProgress: state.globalProgress,
   };
-}
+});
 
 /**
  * 이벤트 리스너 등록

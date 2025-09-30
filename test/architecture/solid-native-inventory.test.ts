@@ -130,10 +130,8 @@ describe('SOLID-NATIVE-001 Phase G-1: createGlobalSignal 인벤토리', () => {
       // 예상 파일들이 포함되어 있는지 검증
       const importFiles = Array.from(inventory.createGlobalSignalImports.keys());
       // Note: toolbar.signals.ts는 Phase G-3-1에서 네이티브 패턴으로 변환됨 (2025-01)
-      const expectedFiles = [
-        '/src/shared/state/signals/gallery.signals.ts',
-        '/src/shared/state/signals/download.signals.ts',
-      ];
+      // Note: download.signals.ts는 Phase G-3-2에서 네이티브 패턴으로 변환됨 (2025-09)
+      const expectedFiles = ['/src/shared/state/signals/gallery.signals.ts'];
 
       for (const expectedFile of expectedFiles) {
         expect(
@@ -327,17 +325,17 @@ describe('SOLID-NATIVE-001 Phase G-1: createGlobalSignal 인벤토리', () => {
         {
           level: 'Low',
           files: ['/src/shared/state/signals/toolbar.signals.ts'],
-          reason: '독립적, 사용처 적음',
+          reason: '독립적, 사용처 적음 - ✅ Phase G-3-1 완료',
         },
         {
           level: 'Medium',
           files: ['/src/shared/state/signals/download.signals.ts'],
-          reason: '서비스 레이어와 밀접',
+          reason: '서비스 레이어와 밀접 - ✅ Phase G-3-2 완료',
         },
         {
           level: 'High',
           files: ['/src/shared/state/signals/gallery.signals.ts'],
-          reason: '핵심 상태, 의존성 많음',
+          reason: '핵심 상태, 의존성 많음 - 🔄 Phase G-3-3 진행 예정',
         },
       ];
 
@@ -382,9 +380,9 @@ describe('SOLID-NATIVE-001 Phase G-1: createGlobalSignal 인벤토리', () => {
       );
       console.log('─'.repeat(50));
 
-      // 검증: 최소 기대치
-      expect(totalImports).toBeGreaterThanOrEqual(3); // gallery, toolbar, download signals
-      expect(totalCalls).toBeGreaterThanOrEqual(3);
+      // 검증: 최소 기대치 (Phase G-3-1, G-3-2 완료 후)
+      expect(totalImports).toBeGreaterThanOrEqual(1); // gallery signals만 남음
+      expect(totalCalls).toBeGreaterThanOrEqual(1);
       expect(totalValueAccess).toBeGreaterThanOrEqual(20);
       expect(totalSubscribes).toBeGreaterThanOrEqual(5);
     });

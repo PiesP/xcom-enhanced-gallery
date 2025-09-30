@@ -73,7 +73,7 @@ import { toolbarState } from './signals/toolbar.signals';
  */
 export interface AppStateSnapshot {
   gallery: typeof galleryState.value;
-  download: typeof downloadState.value;
+  download: ReturnType<typeof downloadState>; // Native SolidJS Accessor
   toolbar: ReturnType<typeof toolbarState>; // Native SolidJS Accessor
 }
 
@@ -83,7 +83,7 @@ export interface AppStateSnapshot {
 export function getAppState(): AppStateSnapshot {
   return {
     gallery: galleryState.value,
-    download: downloadState.value,
+    download: downloadState(), // Native SolidJS Accessor
     toolbar: toolbarState(), // Native SolidJS Accessor
   };
 }
@@ -108,7 +108,7 @@ export async function resetAppState(): Promise<void> {
 export function subscribeToAppState(callback: (state: AppStateSnapshot) => void): () => void {
   const unsubscribers = [
     galleryState.subscribe?.(() => callback(getAppState())),
-    downloadState.subscribe?.(() => callback(getAppState())),
+    // downloadState는 native SolidJS signal이므로 createEffect 필요 (여기서는 생략)
     // toolbarState는 native SolidJS signal이므로 createEffect 필요 (여기서는 생략)
   ].filter(Boolean);
 

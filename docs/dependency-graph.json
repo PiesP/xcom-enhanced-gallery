@@ -5384,39 +5384,10 @@
     },
     {
       "source": "src/shared/state/signals/download.signals.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../createGlobalSignal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/state/createGlobalSignal.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/state/index.ts",
         "src/shared/state/app-state.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/state/createGlobalSignal.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/state/signals/download.signals.ts",
-        "src/shared/state/signals/gallery.signals.ts",
-        "src/shared/state/gallery-store.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5462,6 +5433,16 @@
       "dependents": [
         "src/shared/state/index.ts",
         "src/shared/state/app-state.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/state/createGlobalSignal.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/state/gallery-store.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8394,7 +8375,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 276,
-    "totalDependenciesCruised": 335,
+    "totalDependenciesCruised": 334,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
