@@ -125,29 +125,28 @@ describe('SOLID-NATIVE-001 Phase G-1: createGlobalSignal 인벤토리', () => {
 
   describe('1. createGlobalSignal import 사용처 식별', () => {
     it('createGlobalSignal을 import하는 파일 목록을 수집해야 함', () => {
-      expect(inventory.createGlobalSignalImports.size).toBeGreaterThan(0);
-
-      // 예상 파일들이 포함되어 있는지 검증
+      // Phase G-3-3 완료 후: gallery.signals.ts도 네이티브 전환 완료
+      // 모든 signals 파일에서 createGlobalSignal 제거됨
       const importFiles = Array.from(inventory.createGlobalSignalImports.keys());
-      // Note: toolbar.signals.ts는 Phase G-3-1에서 네이티브 패턴으로 변환됨 (2025-01)
-      // Note: download.signals.ts는 Phase G-3-2에서 네이티브 패턴으로 변환됨 (2025-09)
-      const expectedFiles = ['/src/shared/state/signals/gallery.signals.ts'];
 
-      for (const expectedFile of expectedFiles) {
-        expect(
-          importFiles.some(f => f.includes(expectedFile)),
-          `Expected file ${expectedFile} to be found in imports`
-        ).toBe(true);
-      }
+      // Note: Phase G-3-1에서 toolbar.signals.ts 네이티브 전환 완료 (2025-01-01)
+      // Note: Phase G-3-2에서 download.signals.ts 네이티브 전환 완료 (2025-09-30)
+      // Note: Phase G-3-3에서 gallery.signals.ts 네이티브 전환 완료 (2025-09-30)
+      // 예상: createGlobalSignal import가 더 이상 없어야 함
+      expect(inventory.createGlobalSignalImports.size).toBe(0);
 
       // 상세 로그 출력
       console.log('\n📦 createGlobalSignal Import 사용처:');
-      inventory.createGlobalSignalImports.forEach((matches, file) => {
-        console.log(`\n  ${file}`);
-        matches.forEach(match => {
-          console.log(`    Line ${match.line}: ${match.content}`);
+      if (inventory.createGlobalSignalImports.size === 0) {
+        console.log('  ✅ 모든 파일에서 createGlobalSignal import 제거 완료!');
+      } else {
+        inventory.createGlobalSignalImports.forEach((matches, file) => {
+          console.log(`\n  ${file}`);
+          matches.forEach(match => {
+            console.log(`    Line ${match.line}: ${match.content}`);
+          });
         });
-      });
+      }
     });
 
     it('각 import 위치의 라인 번호를 기록해야 함', () => {
@@ -380,11 +379,12 @@ describe('SOLID-NATIVE-001 Phase G-1: createGlobalSignal 인벤토리', () => {
       );
       console.log('─'.repeat(50));
 
-      // 검증: 최소 기대치 (Phase G-3-1, G-3-2 완료 후)
-      expect(totalImports).toBeGreaterThanOrEqual(1); // gallery signals만 남음
-      expect(totalCalls).toBeGreaterThanOrEqual(1);
-      expect(totalValueAccess).toBeGreaterThanOrEqual(20);
-      expect(totalSubscribes).toBeGreaterThanOrEqual(5);
+      // 검증: Phase G-3 완료 후 기대치
+      // 모든 State Signals가 네이티브 패턴으로 전환됨
+      expect(totalImports).toBe(0); // 모든 createGlobalSignal import 제거
+      expect(totalCalls).toBe(0); // 모든 createGlobalSignal 호출 제거
+      expect(totalValueAccess).toBe(0); // 모든 .value 접근 제거
+      expect(totalSubscribes).toBe(0); // 모든 .subscribe() 호출 제거
     });
   });
 });

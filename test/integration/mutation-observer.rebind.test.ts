@@ -30,7 +30,7 @@ describe('[RED] mutation observer rebind', () => {
     ];
     await renderer.render(media, { startIndex: 0, viewMode: 'vertical' });
 
-    expect(galleryState.value.isOpen).toBe(true);
+    expect(galleryState().isOpen).toBe(true);
     // 컨테이너 존재 확인
     const initial = document.querySelector('.xeg-gallery-renderer');
     expect(initial).not.toBeNull();
