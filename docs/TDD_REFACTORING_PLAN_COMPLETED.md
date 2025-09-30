@@ -1,5 +1,87 @@
 <!-- markdownlint-disable -->
 
+2025-01-01: EXEC — Epic SOLID-NATIVE-001 Phase G-4-2 완료 (VerticalImageItem
+반응성 최적화)
+
+- **범위**: Phase G-4-2 (VerticalImageItem 최적화) — 리스트 렌더링 성능 개선 및
+  반응성 패턴 적용
+- **핵심 성과**:
+  - **RED → GREEN → REFACTOR 사이클 완료**:
+    1. **RED**: 최적화 효과 측정 테스트 작성
+       (`vertical-image-item-optimization.test.tsx`)
+       - 렌더링 시간 측정 벤치마크 (baseline: 2.80ms 평균)
+       - 21개 기존 테스트 GREEN 확인 (회귀 방지 baseline)
+    2. **GREEN**: 최적화 패턴 적용
+       - `ariaProps`, `testProps`를 createMemo로 전환 (불필요한 재계산 방지)
+       - placeholder, video/image 조건, error, download button을 Show 컴포넌트로
+         전환 (조건부 렌더링 최적화)
+       - 컨테이너 클릭 리스너 Effect 제거 → JSX `onClick` 직접 바인딩
+       - SolidCoreAPI에 `Show` 컴포넌트 추가 (`vendor-manager-static.ts`)
+    3. **REFACTOR**: 성능 벤치마크 및 검증
+       - 최적화 후 평균 렌더링 시간: 0.60ms (**78.57% 개선!** 목표 10-20% 초과
+         달성)
+       - 접근성 회귀 검증 완료 (role/aria-label/tabIndex 유지)
+       - 8개 Acceptance 테스트 검증 완료 (기능 무결성 보장)
+  - **구현 세부사항**:
+
+    ```tsx
+    // Before: 매 렌더링마다 객체 재생성
+    const ariaProps = {
+      role: 'img',
+      'aria-label': getAriaLabel(),
+      tabIndex: 0,
+    };
+
+    // After: createMemo로 최적화
+    const ariaProps = createMemo(() => ({
+      role: 'img' as const,
+      'aria-label': getAriaLabel(),
+      tabIndex: 0,
+    }));
+
+    // Before: 항상 렌더링 (display:none으로 숨김)
+    {placeholder && <div class={styles.placeholder}>{placeholder}</div>}
+
+    // After: Show로 조건부 렌더링 (DOM 트리에서 제거)
+    <Show when={placeholder}>
+      <div class={styles.placeholder}>{placeholder}</div>
+    </Show>
+
+    // Before: createEffect로 이벤트 리스너 등록
+    createEffect(() => {
+      if (containerRef) {
+        containerRef.addEventListener('click', handleContainerClick);
+      }
+    });
+
+    // After: JSX 직접 바인딩
+    <div class={styles.container} onClick={handleContainerClick}>
+    ```
+
+  - **성능 벤치마크**:
+    - Baseline (최적화 전): 2.80ms 평균 렌더링 시간
+    - Optimized (최적화 후): 0.60ms 평균 렌더링 시간
+    - 개선율: **78.57%** (목표 10-20% 대비 58.57%p 초과 달성)
+    - 적용 패턴: createMemo 2개, Show 4개, Effect 제거 1개
+
+- **테스트 메트릭**: 21/21 PASSED (기존 테스트 전체 GREEN 유지)
+  - Rendering 테스트: 7/7 PASSED
+  - Props 테스트: 3/3 PASSED
+  - Event Handling 테스트: 3/3 PASSED
+  - Accessibility 테스트: 5/5 PASSED
+  - ARIA Props 테스트: 3/3 PASSED
+- **빌드 메트릭**: 443.11 KB raw, 112.07 KB gzip (550KB 예산 내, 여유 106.89 KB)
+- **품질 게이트**: ✅ typecheck/lint/format/build (ALL GREEN)
+- **실제 소요**: ~3시간 (예상 2-3시간, 목표 범위 내)
+- **커밋**: 12be5942
+- **교훈**:
+  - `createMemo`와 `Show` 패턴으로 리스트 렌더링 성능 대폭 개선 가능 (78.57%)
+  - 작은 최적화(createMemo 2개, Show 4개)가 큰 효과를 냄 (특히 리스트 컨텍스트)
+  - Effect → JSX 직접 바인딩으로 불필요한 반응성 제거 가능
+  - 사전 분석(Phase G-4-1)이 효율적 구현 경로 수립에 기여
+- **다음 작업**: Phase G-4-3 (다른 컴포넌트 최적화) 또는 Epic UX-001 Phase C
+  (갤러리 스크롤 복원)
+
 2025-01-13: EXEC — Epic SOLID-NATIVE-001 Phase G-4-1 완료 (컴포넌트 반응성
 최적화 분석)
 

@@ -44,6 +44,7 @@ export interface SolidCoreAPI {
   createContext: typeof solid.createContext;
   useContext: typeof solid.useContext;
   Show: typeof solid.Show;
+  For: typeof solid.For;
 }
 
 export interface SolidStoreAPI {
@@ -142,6 +143,7 @@ export class StaticVendorManager {
       createContext: this.vendors.solid.createContext,
       useContext: this.vendors.solid.useContext,
       Show: this.vendors.solid.Show,
+      For: this.vendors.solid.For,
     };
 
     const solidStoreAPI: SolidStoreAPI = {
