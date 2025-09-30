@@ -90,7 +90,7 @@ export function useGalleryScroll(options: UseGalleryScrollOptions): void {
   }
 
   const { onCleanup } = getSolidCore();
-  const getGalleryState = galleryState.accessor;
+  const getGalleryState = galleryState; // Native SolidJS Accessor
 
   if (activeCleanup) {
     activeCleanup();

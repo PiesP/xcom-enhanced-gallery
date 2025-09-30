@@ -89,45 +89,17 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   /**
    * 상태 구독 설정
+   * Native SolidJS signal을 사용하여 상태 변경 감지
    */
   private setupStateSubscription(): void {
-    this.stateUnsubscribe = galleryState.subscribe(state => {
-      if (state.isOpen && !this.container) {
-        // 갤러리가 열렸고 컨테이너가 없을 때만 최초 렌더링
-        this.renderGallery();
-      } else if (!state.isOpen && this.container) {
-        // 갤러리가 닫혔을 때만 정리
-        this.cleanupGallery();
-      }
-      // 이미 렌더링된 상태에서는 컴포넌트가 signal을 직접 구독하므로 재렌더링하지 않음
-    });
-  }
+    // Native SolidJS signal을 사용하여 createEffect로 구독
+    // 하지만 GalleryRenderer는 non-reactive 컨텍스트이므로
+    // render() 메서드를 통해 외부에서 명시적으로 렌더링을 트리거합니다.
 
-  /**
-   * 갤러리 렌더링 - 한 번만 실행
-   */
-  private renderGallery(): void {
-    if (this.isRenderingFlag || this.container) {
-      // 이미 렌더링 중이거나 컨테이너가 존재하면 중복 렌더링 방지
-      return;
-    }
-
-    const state = galleryState.value;
-    if (!state.isOpen || state.mediaItems.length === 0) return;
-
-    this.isRenderingFlag = true;
-    logger.info('[GalleryRenderer] 최초 렌더링 시작 - Signal 기반 반응형 컴포넌트');
-
-    try {
-      this.createContainer();
-      this.renderComponent();
-      logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료 - 이후 Signal로 자동 업데이트');
-    } catch (error) {
-      logger.error('[GalleryRenderer] 렌더링 실패:', error);
-      setError('갤러리 렌더링에 실패했습니다.');
-    } finally {
-      this.isRenderingFlag = false;
-    }
+    // Legacy subscribe 제거 - native signal에서는 createEffect 사용 필요
+    // 이 클래스는 render() 메서드를 통해 외부에서 호출되므로
+    // 구독이 필요하지 않습니다.
+    this.stateUnsubscribe = null;
   }
 
   /**
@@ -343,7 +315,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       // 다운로드 서비스 - factory 경유 사용 (Phase 6)
       const { getBulkDownloadService } = await import('@shared/services/service-factories');
       const downloadService = await getBulkDownloadService();
-      const state = galleryState.value;
+      const state = galleryState(); // Native SolidJS Accessor
 
       if (type === 'current') {
         const currentMedia = state.mediaItems[state.currentIndex];
@@ -436,7 +408,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
           return;
         }
         // 갤러리가 열려있다면 컨테이너를 재생성하고, 이미 렌더 중이 아니면 컴포넌트 다시 렌더링
-        const isOpen = galleryState.value.isOpen;
+        const isOpen = galleryState().isOpen; // Native SolidJS Accessor
         if (!isOpen) return;
         if (this.rebindInProgress) return;
         this.rebindInProgress = true;
@@ -506,7 +478,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
       setViewMode(mode);
     }
 
-    logger.info(`[GalleryRenderer] ${mediaItems.length}개 미디어로 갤러리 렌더링`);
+    // Native signal에서는 render() 호출 시점에 명시적으로 컴포넌트 렌더링
+    // (Legacy subscribe 방식은 제거되었으므로)
+    if (!this.container) {
+      this.createContainer();
+    }
+    this.renderComponent();
+
+    logger.info(`[GalleryRenderer] ${mediaItems.length}개 미디어로 갤러리 렌더링 완료`);
   }
 
   close(): void {

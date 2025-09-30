@@ -5397,23 +5397,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../createGlobalSignal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/state/createGlobalSignal.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../mediators/gallery-signal-mediator",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5433,16 +5416,6 @@
       "dependents": [
         "src/shared/state/index.ts",
         "src/shared/state/app-state.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/state/createGlobalSignal.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/state/signals/gallery.signals.ts",
-        "src/shared/state/gallery-store.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7282,6 +7255,15 @@
       "valid": true
     },
     {
+      "source": "src/shared/state/createGlobalSignal.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/state/gallery-store.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/state/gallery-store.ts",
       "dependencies": [
         {
@@ -8375,7 +8357,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 276,
-    "totalDependenciesCruised": 334,
+    "totalDependenciesCruised": 333,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

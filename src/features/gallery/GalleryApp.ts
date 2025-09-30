@@ -13,7 +13,7 @@ import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
 } from '@shared/container/service-accessors';
-import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
+import { galleryState, closeGallery } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { MediaService } from '@shared/services/MediaService';
@@ -160,7 +160,7 @@ export class GalleryApp {
           this.closeGallery();
         },
         onKeyboardEvent: event => {
-          if (event.key === 'Escape' && galleryState.value.isOpen) {
+          if (event.key === 'Escape' && galleryState().isOpen) {
             this.closeGallery();
           }
         },
@@ -211,8 +211,13 @@ export class GalleryApp {
       // 갤러리 컨테이너 확인
       await this.ensureGalleryContainer();
 
-      // 갤러리 상태 업데이트
-      openGallery(mediaItems, validIndex);
+      // Native signal에서는 명시적으로 렌더러 호출 필요
+      // (Legacy subscribe 방식은 제거되었으므로)
+      if (this.galleryRenderer) {
+        await this.galleryRenderer.render(mediaItems, { startIndex: validIndex });
+      } else {
+        logger.error('갤러리 렌더러가 초기화되지 않았습니다');
+      }
 
       logger.info(`✅ 갤러리 열기 성공: ${mediaItems.length}개 미디어`);
     } catch (error) {
@@ -231,7 +236,7 @@ export class GalleryApp {
    */
   public closeGallery(): void {
     try {
-      if (galleryState.value.isOpen) {
+      if (galleryState().isOpen) {
         closeGallery();
       }
 
@@ -290,9 +295,9 @@ export class GalleryApp {
       isInitialized: this.isInitialized,
       config: this.config,
       galleryState: {
-        isOpen: galleryState.value.isOpen,
-        mediaCount: galleryState.value.mediaItems.length,
-        currentIndex: galleryState.value.currentIndex,
+        isOpen: galleryState().isOpen,
+        mediaCount: galleryState().mediaItems.length,
+        currentIndex: galleryState().currentIndex,
       },
     };
   }
@@ -305,7 +310,7 @@ export class GalleryApp {
       openGallery: this.openGallery.bind(this),
       closeGallery: this.closeGallery.bind(this),
       getDiagnostics: this.getDiagnostics.bind(this),
-      getState: () => galleryState.value,
+      getState: () => galleryState(),
     };
 
     logger.debug('갤러리 디버그 API 노출됨: xegGalleryDebug');
@@ -319,7 +324,7 @@ export class GalleryApp {
       logger.info('GalleryApp 정리 시작 - 격리된 시스템');
 
       // 갤러리가 열려있다면 닫기
-      if (galleryState.value.isOpen) {
+      if (galleryState().isOpen) {
         this.closeGallery();
       }
 

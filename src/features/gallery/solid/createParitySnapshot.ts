@@ -5,7 +5,7 @@
 
 import { GalleryRenderer } from '../GalleryRenderer';
 import type { GalleryState } from '@shared/state/signals/gallery.signals';
-import { galleryState, closeGallery } from '@shared/state/signals/gallery.signals';
+import { galleryState, setGalleryState, closeGallery } from '@shared/state/signals/gallery.signals';
 import { bridgeRegister, bridgeResetServices } from '@shared/container/service-bridge';
 import { SERVICE_KEYS } from '@/constants';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -86,7 +86,7 @@ async function renderAndCaptureVariant(
       return node as HTMLElement;
     });
 
-    const state = galleryState.value;
+    const state = galleryState(); // Native SolidJS Accessor
     if (!state.isOpen) {
       throw new Error('Gallery state did not open during parity snapshot capture');
     }
@@ -322,13 +322,13 @@ function resetGalleryDom(): void {
 }
 
 function resetGalleryState(): void {
-  const current = galleryState.value;
-  galleryState.value = {
+  const current = galleryState(); // Native SolidJS Accessor
+  setGalleryState({
     ...current,
     isOpen: false,
     mediaItems: [],
     currentIndex: 0,
     isLoading: false,
     error: null,
-  };
+  });
 }
